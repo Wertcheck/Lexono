@@ -36,7 +36,10 @@ import re
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
 from app.privacy.presidio_ner import detect_presidio_entities
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
-from app.privacy.security_check import SecurityCheckService
+from app.privacy.security_check import (
+    SecurityCheckService,
+    check_payload_placeholder_integrity,
+)
 
 # Interne, kollisionsarme Trennmarkierungen - werden NIE an Claude
 # gesendet, dienen nur dem Zusammenfuehren/Aufteilen innerhalb des
@@ -155,6 +158,22 @@ class ClaudePrivacyGateway:
             schreibvorlage=pseudo_vorlage,
             anonymisierte_anwaltliche_anmerkungen=pseudo_anmerkungen,
         )
+
+        # FINAL PAYLOAD GATE: prueft die tatsaechlich fertig aufgeteilte
+        # Payload noch einmal, unmittelbar bevor sie als sendefertig
+        # zurueckgegeben wird - siehe check_payload_placeholder_integrity
+        # fuer die Begruendung, warum das trotz des bereits bestandenen
+        # SecurityCheckService-Durchlaufs oben eine eigenstaendige Pruefung
+        # ist (deckt Fehler im Aufteilungsschritt selbst ab).
+        payload_gate_reasons = check_payload_placeholder_integrity(payload, mappings)
+        if payload_gate_reasons:
+            return GatewayResult(
+                allowed=False,
+                purpose=purpose,
+                payload=None,
+                mappings=mappings,
+                reasons=payload_gate_reasons,
+            )
 
         return GatewayResult(
             allowed=True, purpose=purpose, payload=payload, mappings=mappings, reasons=[]

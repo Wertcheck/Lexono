@@ -4,6 +4,8 @@ Schwerpunkt: die kritische Eigenschaft, dass derselbe Name ueber mehrere
 Payload-Felder hinweg IMMER denselben Platzhalter erhaelt (siehe
 Moduldocstring in gateway.py fuer die Begruendung)."""
 
+import pytest
+
 from app.privacy.gateway import ClaudePrivacyGateway
 
 
@@ -286,3 +288,60 @@ def test_attorney_anmerkungen_go_through_security_check_like_other_fields() -> N
     assert result.allowed is False
     assert result.payload is None
     assert len(result.reasons) > 0
+
+
+# --- FINAL PAYLOAD GATE (check_payload_placeholder_integrity) ---
+# Im Normalbetrieb sollte dieses Gate nie auslösen (die vorgelagerte
+# Pseudonymisierung/Security-Check + die strikt verankerte Split-Regex in
+# _split_combined_text sind bereits korrekt). Um zu beweisen, dass das Gate
+# tatsaechlich wirkt (nicht nur toter Code ist), wird hier gezielt ein
+# fehlerhaftes Aufteilungsergebnis simuliert - genau die Fehlerklasse, gegen
+# die dieses Gate zusaetzlich zum bestehenden Security-Check absichert.
+
+
+def test_final_payload_gate_blocks_when_split_drops_a_placeholder(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Simuliert einen (hypothetischen) Fehler im Aufteilungsschritt selbst:
+    der Sachverhalt-Teil der aufgeteilten Payload verliert einen Platzhalter,
+    der laut Mapping vorhanden sein muesste. Das bestehende
+    SecurityCheckService.check() hat den ZUSAMMENGEFUEHRTEN Text VORHER
+    bereits korrekt geprueft - nur das neue Payload-Gate kann diesen
+    nachgelagerten Fehler noch abfangen."""
+    gw = ClaudePrivacyGateway()
+    real_split = gw._split_combined_text
+
+    def _tampered_split(combined: str):
+        sachverhalt, argumente, quellen, vorlage, anmerkungen = real_split(combined)
+        # Platzhalter aus dem Sachverhalt entfernen, als wäre beim
+        # Wiederzusammensetzen etwas verlorengegangen.
+        tampered_sachverhalt = sachverhalt.replace("[MANDANT_01]", "MANDANT EINS")
+        return tampered_sachverhalt, argumente, quellen, vorlage, anmerkungen
+
+    monkeypatch.setattr(gw, "_split_combined_text", staticmethod(_tampered_split))
+
+    result = gw.prepare_request(
+        purpose="formulate_draft",
+        sachverhalt="Mandant Max Mustermann wendet sich gegen den Steuerbescheid.",
+        known_entities={"mandant": ["Max Mustermann"]},
+    )
+
+    assert result.allowed is False
+    assert result.payload is None
+    assert any("MANDANT_01" in reason for reason in result.reasons)
+
+
+def test_final_payload_gate_passes_through_clean_payload_unaffected() -> None:
+    """Regressionsschutz: das neue Gate darf einen unveraenderten,
+    korrekten Ablauf nicht faelschlich blockieren."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="formulate_draft",
+        sachverhalt="Mandant Max Mustermann wendet sich gegen den Steuerbescheid.",
+        argumentationspunkte=["Max Mustermann handelte fristgerecht."],
+        known_entities={"mandant": ["Max Mustermann"]},
+    )
+
+    assert result.allowed is True
+    assert result.payload is not None

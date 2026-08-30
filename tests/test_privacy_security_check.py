@@ -5,10 +5,12 @@ eindeutigen Ergebnis: KEIN API-AUFRUF." - jeder Test, der einen Grund zum
 Blockieren simuliert, muss `passed=False` liefern."""
 
 from app.privacy.detectors import DetectedSpan
+from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
 from app.privacy.security_check import (
     ALLOWED_PURPOSES,
     SecurityCheckService,
+    check_payload_placeholder_integrity,
     check_response_placeholder_integrity,
 )
 
@@ -246,3 +248,57 @@ def test_without_ner_detector_behaves_exactly_as_before() -> None:
     # hier (wie im bestehenden Test test_possible_unrecognized_name_blocks_
     # the_call) als moeglicher unbekannter Name erkannt.
     assert result.passed is False
+
+
+# --- check_payload_placeholder_integrity: FINAL PAYLOAD GATE, prueft die
+# tatsaechlich fertig aufgeteilte ClaudeRequestPayload (nicht nur den
+# zusammengefuehrten Text davor - siehe gateway.py::prepare_request). ---
+
+
+def test_payload_with_correct_placeholders_passes() -> None:
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft",
+        anonymisierter_sachverhalt="Mandant [MANDANT_01] bittet um Rueckmeldung.",
+        anonymisierte_argumentationspunkte=["[MANDANT_01] handelte fristgerecht."],
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons == []
+
+
+def test_payload_missing_placeholder_in_any_field_fails() -> None:
+    """Der Platzhalter fehlt im Sachverhalt UND in den Argumentationspunkten -
+    genau die Fehlerklasse, die ein Bug im Aufteilungsschritt verursachen
+    koennte, ohne dass der vorgelagerte Security-Check (der auf dem noch
+    NICHT aufgeteilten Text laeuft) das haette bemerken koennen."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft",
+        anonymisierter_sachverhalt="Unser Mandant bittet um Rueckmeldung.",
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons != []
+    assert any("MANDANT_01" in r for r in reasons)
+
+
+def test_payload_with_original_value_leak_fails() -> None:
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft",
+        anonymisierter_sachverhalt="Mandant [MANDANT_01], alias Erika Mustermann, bittet um Rueckmeldung.",
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)

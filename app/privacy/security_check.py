@@ -31,6 +31,7 @@ import re
 from collections.abc import Callable
 
 from app.privacy.detectors import DetectedSpan, detect_all
+from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.privacy.pseudonymizer import PseudonymMapping
 from app.privacy.security_check_schema import SecurityCheckResult
 
@@ -202,6 +203,47 @@ def check_response_placeholder_integrity(
             )
 
     return reasons
+
+
+def _flatten_payload_text(payload: ClaudeRequestPayload) -> str:
+    """Alle String-Werte aus allen sieben Allowlist-Feldern zu EINEM Text
+    zusammengefuehrt (Listenfelder aufgeloest) - Grundlage fuer
+    `check_payload_placeholder_integrity` unten."""
+    dump = payload.model_dump()
+    parts: list[str] = []
+    for value in dump.values():
+        if value is None:
+            continue
+        if isinstance(value, list):
+            parts.extend(v for v in value if isinstance(v, str))
+        elif isinstance(value, str):
+            parts.append(value)
+    return "\n".join(parts)
+
+
+def check_payload_placeholder_integrity(
+    payload: ClaudeRequestPayload, mappings: list[PseudonymMapping]
+) -> list[str]:
+    """FINAL PAYLOAD GATE: letzte, deterministische Pruefung der bereits
+    fertig zusammengebauten `ClaudeRequestPayload` - unmittelbar bevor
+    `ClaudePrivacyGateway.prepare_request()` sie als `allowed=True`
+    zurueckgibt (siehe dort). Bewusst KEIN LLM (siehe Diagnose/Benchmarks
+    zur lokalen KI in dieser Sitzung - nicht zuverlaessig genug fuer eine
+    Aufgabe, bei der Unsicherheit IMMER zu einem Block fuehren muss).
+
+    Ergaenzt, ersetzt NICHT den bestehenden `SecurityCheckService.check()`-
+    Durchlauf: jener prueft den ZUSAMMENGEFUEHRTEN Text VOR dem Aufteilen in
+    Felder (`gateway.py::_split_combined_text`); diese Funktion prueft
+    stattdessen das TATSAECHLICHE, bereits aufgeteilte Payload-Objekt, das
+    wirklich an den Cloud-Provider gehen wuerde - schliesst damit die
+    Luecke, dass ein Fehler im Aufteilungs-/Wiederzusammensetzungs-Schritt
+    selbst (nicht in der Pseudonymisierung) unbemerkt bliebe. Nutzt dieselbe
+    bereits bewaehrte Platzhalter-Integritaetslogik wie
+    `check_response_placeholder_integrity` (fehlende, veraenderte/erfundene
+    oder unerwartet wieder aufgetauchte Original-Platzhalter-Werte), hier
+    auf die AUSGEHENDE statt die eingehende Richtung angewendet."""
+    combined = _flatten_payload_text(payload)
+    return check_response_placeholder_integrity(combined, mappings)
 
 
 class SecurityCheckService:
