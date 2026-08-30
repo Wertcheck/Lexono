@@ -83,3 +83,26 @@ class LocalLLMProvider(Protocol):
         Inferenz auszulösen (siehe §65 Punkt 6) - für Startup-/Diagnose-
         Zwecke, unabhängig von einem tatsächlichen `process()`-Aufruf."""
         ...
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        """Fuehrt eine schema-constrained lokale Anfrage aus und liefert
+        das geparste JSON-Ergebnis. Bewusst GENERISCH gehalten (nur Prompt +
+        JSON-Schema als Parameter, kein Bezug zu einem konkreten Aufrufer
+        wie z. B. der Claude-Antwortpruefung) - dieselbe Faehigkeit wird in
+        kuenftigen Schritten fuer weitere Aufgaben wiederverwendet (u. a.
+        PII-/Pseudonymisierungspruefung, Lektorat, globale Suche,
+        Recherche-Vorbereitung, Pruefung eingehender Dokumente/E-Mails),
+        ohne dass dieses Protocol dafuer erneut geaendert werden muss.
+
+        Empirisch belegt (siehe ARCHITECTURE.md, lokale Modell-Evaluierung):
+        JSON-Schema-Constraint reduziert auf CPU-only-Legacy-Hardware die
+        Antwortzeit eines sonst >600s dauernden, unkonstrainierten Aufrufs
+        auf ca. 25s UND verbessert dabei die Antwortkorrektheit - der mit
+        Abstand wirkungsvollste bisher gemessene Hebel, unabhaengig von der
+        Modellgroesse.
+
+        Wirft `LocalLLMUnavailableError` bei jedem Fehler (nicht erreichbar,
+        Timeout, kein gueltiges JSON) - identische Fehlerbehandlung wie
+        `process()`, damit Aufrufer beide Methoden im selben Fail-Closed-Muster
+        behandeln koennen."""
+        ...

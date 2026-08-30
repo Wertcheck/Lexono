@@ -132,6 +132,78 @@ def _find_possible_unrecognized_names(text: str) -> list[str]:
     return candidates
 
 
+def check_placeholders_present(text: str, mappings: list[PseudonymMapping]) -> list[str]:
+    """Vorgabe-Punkt 5: jeder `PseudonymMapping`-Eintrag muss im Text
+    tatsaechlich vorkommen. Eigenstaendige Funktion (statt Inline-Code in
+    `SecurityCheckService.check()`), damit dieselbe Pruefung auch fuer die
+    NEUE, umfassendere Pruefung der eingehenden Claude-Antwort
+    (`check_response_placeholder_integrity` unten, genutzt von
+    app/drafting/response_validation.py) wiederverwendet werden kann, statt
+    sie zweimal zu implementieren."""
+    reasons: list[str] = []
+    for mapping in mappings:
+        if mapping.placeholder not in text:
+            reasons.append(
+                f"Platzhalter {mapping.placeholder} fehlt im Text (Inkonsistenz "
+                "zwischen Mapping und Text)"
+            )
+    return reasons
+
+
+# Erkennt jedes Platzhalter-foermige Token im Text (z. B. "[PERSON_01]",
+# "[STEUER_ID_02]") - bewusst GROSSZUEGIG (erlaubt jede Buchstaben-/
+# Unterstrich-Folge vor der Nummer), damit auch eine von Claude leicht
+# VERAENDERTE Variante (andere Nummer, anderes Praefix, andere
+# Gross-/Kleinschreibung) noch als "platzhalteraehnliches Token" erkannt
+# und gegen die tatsaechlich erwarteten Platzhalter abgeglichen wird - eine
+# zu enge Regex wuerde genau die Faelle uebersehen, die diese Pruefung
+# aufdecken soll.
+_PLACEHOLDER_TOKEN_PATTERN = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d+\]")
+
+
+def check_response_placeholder_integrity(
+    text: str, mappings: list[PseudonymMapping]
+) -> list[str]:
+    """Deterministische (KEIN LLM) Pruefung einer vom Claude-Aufruf
+    zurueckgekommenen, noch pseudonymisierten Antwort - VOR jeder
+    Rekonstruktion (siehe app/drafting/response_validation.py). Anders als
+    `check_placeholders_present` (nur "sind alle erwarteten Platzhalter da")
+    prueft diese Funktion zusaetzlich zwei weitere, fuer eine EINGEHENDE
+    Antwort relevante Faelle, die beim bestehenden, nur fuer AUSGEHENDEN
+    Text gedachten `SecurityCheckService.check()` keine Rolle spielen:
+
+    1. Wurde ein Platzhalter-Token in eine unerwartete/veraenderte Form
+       gebracht (z. B. andere Nummer, Tippfehler, Gross-/Kleinschreibung)?
+       -> jedes im Text gefundene platzhalteraehnliche Token, das NICHT
+       exakt einem der erwarteten `mapping.placeholder`-Werte entspricht,
+       ist ein Fund.
+    2. Ist einer der URSPRUENGLICHEN (nicht pseudonymisierten) Werte aus dem
+       Mapping woertlich im Text wieder aufgetaucht? Claude sieht diese
+       Werte strukturell nie (siehe ClaudeRequestPayload/Gateway) - ein
+       Treffer hier waere entweder ein technischer Fehler an anderer Stelle
+       oder ein Zufallstreffer, in jedem Fall ein Grund zum kontrollierten
+       Abbruch statt stillschweigender Weiterverarbeitung."""
+    reasons = check_placeholders_present(text, mappings)
+
+    expected_placeholders = {mapping.placeholder for mapping in mappings}
+    found_tokens = set(_PLACEHOLDER_TOKEN_PATTERN.findall(text))
+    unexpected_tokens = found_tokens - expected_placeholders
+    if unexpected_tokens:
+        reasons.append(
+            "Unerwartete oder veraenderte Platzhalter-Tokens im Text gefunden "
+            f"(Struktur-/ID-Manipulation vermutet): {sorted(unexpected_tokens)}"
+        )
+
+    for mapping in mappings:
+        if mapping.original_value and mapping.original_value in text:
+            reasons.append(
+                f"Urspruenglicher, nicht pseudonymisierter Wert fuer "
+                f"{mapping.placeholder} im Text gefunden - moeglicher Datenschutzverstoss"
+            )
+
+    return reasons
+
+
 class SecurityCheckService:
     def __init__(
         self, *, ner_detector: Callable[[str], list[DetectedSpan]] | None = None
@@ -170,12 +242,7 @@ class SecurityCheckService:
             )
 
         # Punkt 5: jeder Mapping-Eintrag muss im Text tatsächlich vorkommen.
-        for mapping in mappings:
-            if mapping.placeholder not in pseudonymized_text:
-                reasons.append(
-                    f"Platzhalter {mapping.placeholder} aus dem Mapping fehlt "
-                    "im Text (Inkonsistenz zwischen Mapping und Text)"
-                )
+        reasons.extend(check_placeholders_present(pseudonymized_text, mappings))
 
         # Punkt 6: heuristischer Hinweis auf evtl. nicht erkannte Namen.
         unclear = _find_possible_unrecognized_names(pseudonymized_text)

@@ -27,7 +27,21 @@ dependencies = [
     "pytesseract>=0.3.10",
     "pillow>=10.0",
     "openpyxl>=3.1",
-    "fastembed>=0.4",
+    # Hart auf 0.7.4 + onnxruntime==1.20.1 gepinnt statt "fastembed>=0.4"
+    # frei aufzuloesen: reale Legacy-Kanzlei-Hardware ohne AVX2 (getestet:
+    # Intel i7-3720QM, Ivy Bridge) scheitert mit JEDER onnxruntime-Version
+    # ab 1.21.0 beim Import ("DLL load failed... DLL-Initialisierungsroutine
+    # ist fehlgeschlagen"), waehrend 1.20.1 dort nachweislich funktioniert
+    # (echter Modell-Download + echte FastEmbed-Inferenz erfolgreich
+    # getestet). fastembed==0.8.0 (die aktuellste, Python-3.13-faehige
+    # Version) erzwingt fuer Python 3.13 selbst "onnxruntime>1.21.0" und
+    # waere damit nur ueber einen versteckten "pip install --no-deps"-
+    # Workaround mit 1.20.1 kombinierbar. fastembed==0.7.4 erklaert dagegen
+    # fuer Python 3.13 "onnxruntime>1.20.0" - 1.20.1 erfuellt das direkt,
+    # die Kombination ist ueber einen normalen "pip install -e ." OHNE
+    # Sonderbehandlung auflösbar (kein --no-deps, kein zusaetzliches Tool).
+    "fastembed==0.7.4",
+    "onnxruntime==1.20.1",
     "anthropic>=0.40",
     # Lokale PII-Erkennung/-Anonymisierung (app/privacy/presidio_ner.py, §63
     # 20.08.) - laeuft komplett offline, keine Mandantendaten verlassen dabei

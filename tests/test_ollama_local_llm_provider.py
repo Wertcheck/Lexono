@@ -185,6 +185,121 @@ def test_constructor_rejects_blank_model() -> None:
         OllamaLocalLLMProvider(base_url="http://localhost:11434", model="")
 
 
+# --- generate_structured (Increment "lokale KI als Datenschutz-/
+# Qualitaetsschicht") ---
+
+
+def test_generate_structured_returns_parsed_json_from_response_field(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *a, **k: _FakeResponse(json_data={"response": '{"passed": true, "issues": []}'}),
+    )
+    provider = _provider()
+
+    result = provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+    assert result == {"passed": True, "issues": []}
+
+
+def test_generate_structured_falls_back_to_thinking_field(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Real beobachtete Ollama-Eigenheit: bei schema-constrained Antworten
+    landet das JSON manchmal im `thinking`- statt im `response`-Feld."""
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *a, **k: _FakeResponse(
+            json_data={"response": "", "thinking": '{"passed": false, "issues": []}'}
+        ),
+    )
+    provider = _provider()
+
+    result = provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+    assert result == {"passed": False, "issues": []}
+
+
+def test_generate_structured_sends_schema_and_no_think_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def _fake_post(url, *, json, timeout):
+        captured["json"] = json
+        return _FakeResponse(json_data={"response": '{"passed": true, "issues": []}'})
+
+    monkeypatch.setattr(httpx, "post", _fake_post)
+    provider = _provider()
+    schema = {"type": "object", "properties": {"passed": {"type": "boolean"}}}
+
+    provider.generate_structured("Pruefe [MANDANT_01].", schema)
+
+    assert captured["json"]["format"] == schema
+    assert captured["json"]["prompt"].startswith("/no_think\n")
+    assert "[MANDANT_01]" in captured["json"]["prompt"]
+    assert captured["json"]["options"]["temperature"] == 0.0
+
+
+def test_generate_structured_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(*a, **k):
+        raise httpx.TimeoutException("timed out")
+
+    monkeypatch.setattr(httpx, "post", _raise)
+    provider = _provider()
+
+    with pytest.raises(LocalLLMUnavailableError):
+        provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+
+def test_generate_structured_raises_on_connection_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(*a, **k):
+        raise httpx.ConnectError("refused")
+
+    monkeypatch.setattr(httpx, "post", _raise)
+    provider = _provider()
+
+    with pytest.raises(LocalLLMUnavailableError):
+        provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+
+def test_generate_structured_raises_on_empty_response_and_thinking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        httpx, "post", lambda *a, **k: _FakeResponse(json_data={"response": "", "thinking": ""})
+    )
+    provider = _provider()
+
+    with pytest.raises(LocalLLMUnavailableError):
+        provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+
+def test_generate_structured_raises_on_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *a, **k: _FakeResponse(json_data={"response": "kein gueltiges JSON"}),
+    )
+    provider = _provider()
+
+    with pytest.raises(LocalLLMUnavailableError):
+        provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+
+def test_generate_structured_raises_on_non_object_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ein syntaktisch gueltiges JSON-Array ist trotzdem kein verwertbares
+    Ergebnis - der Aufrufer erwartet immer ein Objekt (dict)."""
+    monkeypatch.setattr(
+        httpx, "post", lambda *a, **k: _FakeResponse(json_data={"response": "[1, 2, 3]"})
+    )
+    provider = _provider()
+
+    with pytest.raises(LocalLLMUnavailableError):
+        provider.generate_structured("Pruefe den Text.", {"type": "object"})
+
+
 # --- list_local_models / pull_model (§68) ---
 
 

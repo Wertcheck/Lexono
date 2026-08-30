@@ -6,7 +6,11 @@ Blockieren simuliert, muss `passed=False` liefern."""
 
 from app.privacy.detectors import DetectedSpan
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
-from app.privacy.security_check import ALLOWED_PURPOSES, SecurityCheckService
+from app.privacy.security_check import (
+    ALLOWED_PURPOSES,
+    SecurityCheckService,
+    check_response_placeholder_integrity,
+)
 
 
 def _clean_pseudonymized_text() -> tuple[str, list[PseudonymMapping]]:
@@ -161,6 +165,71 @@ def test_ner_detector_catches_residual_pii_the_regex_heuristic_missed() -> None:
     result = checker.check("Kontakt bitte an Julia Neumann.", [], purpose="formulate_draft")
 
     assert result.passed is False
+
+
+# --- check_response_placeholder_integrity: deterministische Pruefung der
+# EINGEHENDEN Claude-Antwort vor der Rekonstruktion (Increment "lokale KI
+# als Datenschutz-/Qualitaetsschicht") - "Ein LLM darf niemals eine
+# deterministische Privacy-Regel ueberschreiben." ---
+
+
+def test_response_missing_placeholder_fails() -> None:
+    """Fall 1: die Claude-Antwort vergisst einen erwarteten Platzhalter."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+
+    reasons = check_response_placeholder_integrity(
+        "Vielen Dank fuer Ihre Nachricht.", mappings
+    )
+
+    assert reasons != []
+    assert any("MANDANT_01" in r for r in reasons)
+
+
+def test_response_with_altered_placeholder_token_fails() -> None:
+    """Fall 2: ein erfundener/veraenderter Platzhalter-Token (Struktur-/
+    ID-Manipulation), der so nicht im Mapping steht."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    text = "Sehr geehrte Frau [MANDANT_99], vielen Dank fuer Ihre Nachricht."
+
+    reasons = check_response_placeholder_integrity(text, mappings)
+
+    assert reasons != []
+    assert any("MANDANT_99" in r for r in reasons)
+
+
+def test_response_containing_original_value_fails() -> None:
+    """Fall 3: der pseudonymisierte Originalwert taucht zusaetzlich zum
+    korrekten Platzhalter im Klartext auf - deterministisch erkennbarer
+    Datenschutzverstoss."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    text = (
+        "Sehr geehrte Frau [MANDANT_01], wir haben mit Erika Mustermann "
+        "bereits telefoniert."
+    )
+
+    reasons = check_response_placeholder_integrity(text, mappings)
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)
+
+
+def test_response_with_correct_placeholders_passes() -> None:
+    """Fall 4: unauffaellige Antwort mit ausschliesslich korrekten,
+    unveraenderten Platzhaltern -> keine Beanstandung."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    text = "Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+
+    reasons = check_response_placeholder_integrity(text, mappings)
+
+    assert reasons == []
 
 
 def test_without_ner_detector_behaves_exactly_as_before() -> None:

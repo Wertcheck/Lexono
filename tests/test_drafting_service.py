@@ -33,11 +33,21 @@ class FakeClaudeWritingProvider:
 
 class FakeLocalLLMProvider:
     """Test-Double fuer app/ai_providers/local_llm_provider.py::LocalLLMProvider
-    (§65) - kein echter Ollama-Aufruf."""
+    (§65) - kein echter Ollama-Aufruf. `structured_result` steuert das
+    Ergebnis von `generate_structured()` (genutzt von der Claude-
+    Antwortpruefung, siehe app/drafting/response_validation.py) - Default
+    "passed" haelt bestehende Tests, die nur den Vorabanalyse-Schritt
+    pruefen, unveraendert gruen."""
 
-    def __init__(self, response_text: str = "Lokale Zusammenfassung.") -> None:
+    def __init__(
+        self,
+        response_text: str = "Lokale Zusammenfassung.",
+        structured_result: dict | None = None,
+    ) -> None:
         self.response_text = response_text
+        self.structured_result = structured_result or {"passed": True, "issues": []}
         self.received_payloads: list[ClaudeRequestPayload] = []
+        self.structured_calls: list[tuple[str, dict]] = []
 
     def process(self, payload: ClaudeRequestPayload):
         from app.ai_providers.local_llm_provider import LocalLLMResult
@@ -48,9 +58,15 @@ class FakeLocalLLMProvider:
     def check_health(self):
         raise NotImplementedError("nicht benoetigt in diesen Tests")
 
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        self.structured_calls.append((prompt, schema))
+        return self.structured_result
+
 
 class FailingLocalLLMProvider:
-    """Simuliert ein nicht erreichbares Ollama (§65 Punkt 10)."""
+    """Simuliert ein nicht erreichbares Ollama (§65 Punkt 10) - sowohl fuer
+    den Vorabanalyse-Schritt (`process`) als auch fuer die Claude-
+    Antwortpruefung (`generate_structured`)."""
 
     def process(self, payload: ClaudeRequestPayload):
         from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
@@ -59,6 +75,36 @@ class FailingLocalLLMProvider:
 
     def check_health(self):
         raise NotImplementedError("nicht benoetigt in diesen Tests")
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
+
+        raise LocalLLMUnavailableError("Ollama nicht erreichbar (simuliert)")
+
+
+class SucceedingProcessFailingStructuredLocalLLMProvider:
+    """Simuliert: Vorabanalyse (process) funktioniert, aber die lokale
+    Antwortpruefung (generate_structured) schlaegt fehl - z. B. Ollama faellt
+    genau zwischen dem Claude-Aufruf und der Antwortpruefung aus. Claude
+    wurde in diesem Fall bereits aufgerufen; die Rekonstruktion darf trotzdem
+    NIE stattfinden (Fail-Closed)."""
+
+    def __init__(self) -> None:
+        self.received_payloads: list[ClaudeRequestPayload] = []
+
+    def process(self, payload: ClaudeRequestPayload):
+        from app.ai_providers.local_llm_provider import LocalLLMResult
+
+        self.received_payloads.append(payload)
+        return LocalLLMResult(text="Kurzfassung.", model="fake-model")
+
+    def check_health(self):
+        raise NotImplementedError("nicht benoetigt in diesen Tests")
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
+
+        raise LocalLLMUnavailableError("Ollama Timeout bei Antwortpruefung (simuliert)")
 
 
 @pytest.fixture()
@@ -458,7 +504,14 @@ def test_claude_never_receives_original_plaintext_with_local_llm_enabled(
         Document(matter_id=matter.id, file_path="/tmp/x.pdf", extracted_text=document_text)
     )
     db_session.commit()
-    writing_provider = FakeClaudeWritingProvider()
+    # Antworttext enthaelt bewusst den erwarteten Platzhalter - ein
+    # generischer, entitaetsfreier Text wuerde seit der neuen
+    # Antwortvalidierung (Platzhalter-Integritaetspruefung, s. o.) zu Recht
+    # als Inkonsistenz abgelehnt; dieser Test soll ausschliesslich die
+    # Datenisolation pruefen, nicht die Antwortvalidierung.
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrter Herr [MANDANT_01], vielen Dank für Ihre Nachricht."
+    )
     local_llm = FakeLocalLLMProvider()
     service, _ = _service(writing_provider, local_llm_provider=local_llm)
 
@@ -543,3 +596,194 @@ def test_full_orchestrated_path_presidio_local_ai_claude_reconstruction(
     # Die lokale Rekonstruktion liefert am Ende wieder den echten Namen.
     assert "Anna Beispielperson" in result.draft_text
     assert "[MANDANT_01]" not in result.draft_text
+
+
+# --- Antwortvalidierung: deterministische + lokale semantische Pruefung der
+# Claude-Antwort vor der Rekonstruktion (Increment "lokale KI als
+# Datenschutz-/Qualitaetsschicht") ---
+
+
+def test_missing_placeholder_in_response_fails_closed(db_session: Session) -> None:
+    """Fall 1: Claude "vergisst" einen erwarteten Platzhalter -> kontrollierter
+    Abbruch, KEINE Rekonstruktion, KEIN fertiges Dokument. Die deterministische
+    Pruefung greift VOR dem lokalen LLM - generate_structured wird bei einem
+    deterministischen Fehlschlag bewusst NICHT aufgerufen."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Vielen Dank fuer Ihre Nachricht.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert len(result.blocked_reasons) > 0
+    assert db_session.query(Draft).count() == 0
+    assert local_llm.structured_calls == []
+
+
+def test_altered_placeholder_in_response_fails_closed(db_session: Session) -> None:
+    """Fall 2: veraenderte/erfundene Platzhalter-ID in der Claude-Antwort
+    (Struktur-/ID-Manipulation) -> kontrollierter Abbruch."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_99], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+    assert local_llm.structured_calls == []
+
+
+def test_original_pii_in_response_fails_closed(db_session: Session) -> None:
+    """Fall 3: der pseudonymisierte Originalwert taucht zusaetzlich zum
+    korrekten Platzhalter im Klartext der Claude-Antwort auf - deterministisch
+    erkennbarer Datenschutzverstoss -> kontrollierter Abbruch."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text=(
+            "Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht. "
+            "Wir haben mit Frau Erika Mustermann bereits telefoniert."
+        )
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert any("Datenschutzverstoss" in reason for reason in result.blocked_reasons)
+    assert db_session.query(Draft).count() == 0
+    assert local_llm.structured_calls == []
+
+
+def test_correct_placeholders_triggers_local_semantic_check(db_session: Session) -> None:
+    """Fall 4a: bei korrekten Platzhaltern laeuft (nach bestandener
+    deterministischer Pruefung) tatsaechlich die lokale semantische Pruefung -
+    generate_structured wird mit dem erwarteten kleinen Schema aufgerufen."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert len(local_llm.structured_calls) == 1
+    prompt, schema = local_llm.structured_calls[0]
+    assert "passed" in schema["properties"]
+    assert "[MANDANT_01]" in prompt
+
+
+def test_semantically_conspicuous_response_fails_closed(db_session: Session) -> None:
+    """Fall 5: lokale semantische Pruefung meldet eine Auffaelligkeit (z. B.
+    Platzhalter falscher Entitaet zugeordnet) -> kontrollierter Abbruch,
+    obwohl die deterministische Pruefung bestanden hat."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider(
+        structured_result={
+            "passed": False,
+            "issues": [
+                {
+                    "type": "placeholder_inconsistency",
+                    "severity": "high",
+                    "description": "Platzhalter wirkt der falschen Person zugeordnet.",
+                }
+            ],
+        }
+    )
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert any("placeholder_inconsistency" in reason for reason in result.blocked_reasons)
+    assert db_session.query(Draft).count() == 0
+
+
+def test_ollama_timeout_during_response_validation_fails_closed(db_session: Session) -> None:
+    """Ollama faellt genau bei der Antwortpruefung aus (nach dem bereits
+    erfolgten Claude-Aufruf) -> kontrollierter Abbruch, KEINE Rekonstruktion,
+    KEIN fertiges Dokument - trotz bereits erfolgtem Claude-Aufruf."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = SucceedingProcessFailingStructuredLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert len(writing_provider.received_payloads) == 1  # Claude WURDE aufgerufen
+    assert db_session.query(Draft).count() == 0  # aber es gibt kein fertiges Dokument
+    logs = db_session.query(ApiCallLog).filter_by(result_status="error").all()
+    assert any(log.error_status == "local_ai_unavailable" for log in logs)

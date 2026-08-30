@@ -38,6 +38,7 @@ from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
 from app.drafting.quick_matter import create_quick_matter
+from app.drafting.response_validation import validate_claude_response
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
@@ -247,6 +248,59 @@ class DraftingService:
             input_tokens=writing_result.input_tokens,
             output_tokens=writing_result.output_tokens,
         )
+
+        # Lokale Datenschutz-/Qualitaetspruefung der (noch pseudonymisierten)
+        # Claude-Antwort, VOR jeder Rekonstruktion - siehe
+        # app/drafting/response_validation.py. Nur aktiv, wenn lokale KI
+        # ueberhaupt konfiguriert ist (derselbe Schalter wie der bestehende
+        # Vorabanalyse-Schritt oben, kein neuer Toggle). Zweistufig,
+        # deterministisch VOR semantisch - ein LLM-Urteil kann eine
+        # fehlgeschlagene deterministische Pruefung nie ueberstimmen (siehe
+        # Moduldocstring dort). Bei jedem Fehlschlag: kontrollierter Abbruch,
+        # NIEMALS automatische Neuformulierung/Reparatur.
+        if self.local_llm_provider is not None:
+            try:
+                validation = validate_claude_response(
+                    writing_result.text,
+                    gateway_result.mappings,
+                    payload.anonymisierter_sachverhalt,
+                    self.local_llm_provider,
+                )
+            except LocalLLMUnavailableError:
+                self.api_logger.log_error(
+                    db,
+                    workflow_id=matter_id,
+                    model=self.model_name,
+                    purpose=purpose,
+                    payload=payload,
+                    error_status="local_ai_unavailable",
+                )
+                return DraftingResult(
+                    success=False,
+                    blocked_reasons=[
+                        "Lokale Prüfung der Antwort (Ollama) nicht erreichbar - "
+                        "Entwurf wurde nicht übernommen."
+                    ],
+                    open_review_points=open_review_points,
+                )
+            if not validation.passed:
+                self.api_logger.log_error(
+                    db,
+                    workflow_id=matter_id,
+                    model=self.model_name,
+                    purpose=purpose,
+                    payload=payload,
+                    error_status="response_validation_failed",
+                )
+                return DraftingResult(
+                    success=False,
+                    blocked_reasons=[
+                        "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
+                        "Entwurf wurde nicht übernommen.",
+                        *validation.issues,
+                    ],
+                    open_review_points=open_review_points,
+                )
 
         reconstructed_text = self.gateway.reconstruct_response(
             writing_result.text, gateway_result.mappings

@@ -21,6 +21,8 @@ Freitext-Escape-Hatch) bleibt dabei strukturell unverändert.
 
 from __future__ import annotations
 
+import json
+
 import httpx
 
 from app.ai_providers.local_llm_provider import (
@@ -150,6 +152,67 @@ class OllamaLocalLLMProvider:
             )
 
         return LocalLLMResult(text=text.strip(), model=self.model)
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        """Schema-constrained Variante von `process()` (Ollamas `format`-
+        Feld, siehe LocalLLMProvider.generate_structured fuer die
+        empirische Begruendung). `/no_think` wird dem Prompt vorangestellt -
+        real getestet: reduziert sichtbaren "Denk"-Text, die eigentliche
+        Zeitersparnis kommt aber vom `format`-Constraint selbst (real
+        gemessen, nicht angenommen).
+
+        Ollama-Eigenheit (real beobachtet, nicht dokumentiert): bei
+        schema-constrained Antworten landet das erzeugte JSON teils im
+        `response`-Feld, teils im `thinking`-Feld der Antwort - deshalb
+        werden hier BEIDE geprueft, das nicht-leere verwendet."""
+        try:
+            response = httpx.post(
+                f"{self.base_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": f"/no_think\n{prompt}",
+                    "stream": False,
+                    "format": schema,
+                    "options": {"temperature": 0.0},
+                },
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+        except httpx.TimeoutException as exc:
+            raise LocalLLMUnavailableError(
+                f"Ollama-Zeitüberschreitung nach {self.timeout_seconds}s"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise LocalLLMUnavailableError(
+                f"Ollama nicht erreichbar oder Fehler: {type(exc).__name__}"
+            ) from exc
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise LocalLLMUnavailableError(
+                "Ollama-Antwort war kein gültiges JSON"
+            ) from exc
+
+        raw = data.get("response") or data.get("thinking") or ""
+        if not isinstance(raw, str) or not raw.strip():
+            raise LocalLLMUnavailableError(
+                "Ollama lieferte keine verwertbare strukturierte Antwort (leer)"
+            )
+
+        try:
+            parsed = json.loads(raw)
+        except ValueError as exc:
+            raise LocalLLMUnavailableError(
+                f"Lokale strukturierte Antwort war kein gültiges JSON: {raw[:200]!r}"
+            ) from exc
+
+        if not isinstance(parsed, dict):
+            raise LocalLLMUnavailableError(
+                "Lokale strukturierte Antwort war kein JSON-Objekt"
+            )
+
+        return parsed
 
     def list_local_models(self) -> list[str]:
         """Wie in `check_health()` verwendet, hier als eigener, direkt
