@@ -35,7 +35,35 @@ verpackt.
 
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_data_files, copy_metadata
+
 PROJECT_ROOT = Path(SPECPATH).resolve().parent  # noqa: F821 (SPECPATH von PyInstaller injiziert)
+
+# Deutsches spaCy-Modell (app/privacy/presidio_ner.py, Presidios NER-Grundlage
+# fuer Personen/Orte/Organisationen) - real gefundener Packaging-Bug: dieses
+# Spec bündelte das Modell bislang NICHT, obwohl es als eigenstaendiges,
+# importierbares Paket "de_core_news_lg" installiert ist (per
+# "python -m spacy download de_core_news_lg", ~600 MB Modelldaten). Ohne
+# diesen Include wirft `NlpEngineProvider(...).create_engine()` im
+# installierten Produkt ein OSError ("Can't find model") - Presidios
+# NER-Erkennung faellt komplett aus, JEDE Entwurfserstellung schlaegt fehl
+# (siehe ARCHITECTURE.md/Security-Review, Packaging-Befund). collect_data_files
+# holt die eigentlichen Modelldateien; copy_metadata wird zusaetzlich
+# gebraucht, weil spaCy Modellpakete ueber deren installierte
+# Paket-Metadaten (importlib.metadata) aufloest, nicht nur ueber die
+# Datendateien selbst.
+_SPACY_MODEL_PACKAGE = "de_core_news_lg"
+
+# ZWEITER, beim echten Installer-Smoke-Test nach Beheben des ersten Bugs neu
+# aufgedeckter Packaging-Fehler (real am gebauten kanzlei_ai.exe verifiziert,
+# nicht nur vermutet): presidio-analyzer laedt seine Recognizer-Registry zur
+# Laufzeit aus mitgelieferten YAML-Dateien (conf/default_recognizers.yaml
+# u. a.) - PyInstallers statische Analyse sieht auch diese Nicht-Python-Daten
+# nicht automatisch. Ohne diesen Include: FileNotFoundError beim ersten
+# Presidio-Aufruf im installierten Produkt (".../conf/default_recognizers.yaml"
+# nicht gefunden), identische Symptomatik (Entwurfserstellung schlaegt fehl)
+# wie beim fehlenden spaCy-Modell, nur eine Ebene tiefer.
+_PRESIDIO_ANALYZER_PACKAGE = "presidio_analyzer"
 
 a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
     [str(PROJECT_ROOT / "run.py")],
@@ -53,8 +81,15 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
         # Path(__file__)-Berechnungen erwarten.
         (str(PROJECT_ROOT / "app" / "web" / "templates"), "app/web/templates"),
         (str(PROJECT_ROOT / "app" / "web" / "static"), "app/web/static"),
+        *collect_data_files(_SPACY_MODEL_PACKAGE),
+        *copy_metadata(_SPACY_MODEL_PACKAGE),
+        *collect_data_files(_PRESIDIO_ANALYZER_PACKAGE),
     ],
     hiddenimports=[
+        # Siehe Kommentar zu _SPACY_MODEL_PACKAGE oben - spacy.load(name)
+        # importiert das Modellpaket per Namen, PyInstallers statische
+        # Analyse folgt diesem dynamischen Import nicht automatisch.
+        _SPACY_MODEL_PACKAGE,
         # run.py importiert dies erst zur Laufzeit (lazy import in
         # cmd_create_admin) - PyInstallers statische Analyse verfolgt
         # verschachtelte/späte Imports nicht immer zuverlässig.
