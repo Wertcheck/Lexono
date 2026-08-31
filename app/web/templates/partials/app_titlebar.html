@@ -1,0 +1,32 @@
+{% import "_icons.html" as icons %}
+{# Eigene Titelleiste (Masterprompt V2, Task #61) - geteiltes Partial statt
+   Duplikat in jedem Template: das gebuendelte Fenster startet auf
+   /dashboard/login (login.html) bzw. kann auf /dashboard/unlock
+   (unlock.html) landen - BEIDE sind bewusst eigenstaendige, NICHT von
+   base.html erbende Templates (kein Sidebar-/Nav-Layout vor dem Login
+   noetig). Ein real gefundener Bug (01.09.): die Titelleiste war
+   zunaechst NUR in base.html eingebaut - auf der Login-Seite (erste
+   Seite ueberhaupt, current_user nicht relevant, da das Template base.html
+   gar nicht nutzt) blieb das frameless-Fenster dadurch komplett ohne
+   Bedienelemente (kein X, kein Minimieren, kein Verschieben - nur per
+   Task-Manager beendbar, real am echten Fenster beobachtet). Dieses
+   Partial + app_titlebar.js werden daher in ALLEN DREI Templates
+   (base.html, login.html, unlock.html) unveraendert eingebunden. #}
+<div id="app-titlebar" class="app-titlebar" style="display:none;">
+  <div id="app-titlebar-drag" class="app-titlebar__drag-region">
+    <img src="/dashboard/static/img/logo.svg" alt="" class="app-titlebar__logo" />
+    <span class="app-titlebar__title">Lexono</span>
+  </div>
+  <div class="app-titlebar__controls">
+    <button type="button" id="app-titlebar-minimize" class="app-titlebar__btn"
+            title="Minimieren" aria-label="Minimieren">
+      {{ icons.minimize_window(class_="icon") }}
+    </button>
+    <button type="button" id="app-titlebar-close" class="app-titlebar__btn app-titlebar__btn--close"
+            title="Schließen" aria-label="Schließen">
+      {{ icons.close_window(class_="icon") }}
+    </button>
+  </div>
+</div>
+<div id="app-resize-handle" class="app-resize-handle" style="display:none;"
+     title="Fenstergröße ändern" aria-hidden="true"></div>

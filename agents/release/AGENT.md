@@ -37,11 +37,14 @@ Frischer Build+Install+Smoke-Test am 31.08. erfolgreich (Installer
 `dist/installer/Lexono_Setup.exe`, ~525MB, WebView2-Fix bestätigt stabil).
 
 **01.09.**: `run.py` wechselte auf `frameless=True` (eigene Titelleiste,
-Task #61 - siehe `.agentic/DECISIONS.md`). Python-Logik per Unit-Tests
-abgesichert, volle Testsuite grün, ABER die visuelle Korrektheit des
-nativen Fensters selbst wurde noch NICHT durch einen echten Installer-
-Build + reales Fenster + menschliche Sichtpruefung bestaetigt (kein
-Browser-/Screenshot-Tool in dieser Umgebung verfuegbar). Ein neuer
-Installer-Build + realer Fenstertest ist der naechste faellige Schritt fuer
-dieses spezifische Feature (Task #66), bevor es als vollstaendig
-verifiziert gilt.
+Task #61 - siehe `.agentic/DECISIONS.md`). Erster Installer-Build+Install+
+realer Fenstertest fand einen ECHTEN, schwerwiegenden Bug: die Titelleiste
+existierte nur in `base.html`, das gebuendelte Fenster startet aber auf
+`login.html` (eigenstaendiges Template, erbt nicht von base.html) - das
+Fenster war beim ersten echten Test komplett unbedienbar (kein X), der
+Nutzer musste ueber den Task-Manager beenden. Behoben durch Auslagerung in
+ein gemeinsames Partial (`partials/app_titlebar.html`) + eine gemeinsame
+statische JS-Datei (`static/js/app_titlebar.js`), eingebunden in ALLEN
+DREI eigenstaendigen Root-Templates (`base.html`, `login.html`,
+`unlock.html`). Regressionstest ergaenzt. Zweiter Installer-Build+Install+
+Fenstertest steht als naechstes an, um den Fix real zu bestaetigen.

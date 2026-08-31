@@ -133,6 +133,39 @@ DATE: 01.09.
 
 ---
 
+DECISION: Die Titelleiste (Task #61) wird als gemeinsames Partial
+(`partials/app_titlebar.html`) + gemeinsame statische Datei
+(`static/js/app_titlebar.js`) implementiert und in DREI Templates
+eingebunden: `base.html`, `login.html`, `unlock.html`.
+REASON: **Realer Bug, gefunden durch tatsächlichen Nutzertest am echten
+installierten Fenster** (01.09.): Nach dem ersten Rebuild+Install zeigte
+das Fenster keinerlei Bedienelemente - der Nutzer musste die App über den
+Task-Manager beenden ("Task Manager, there was noch clone Button" = kein
+Close-Button vorhanden). Ursache: `login.html` (die vom Fenster beim Start
+zuerst geladene Seite, `run.py::_serve_with_window` lädt
+`{base_url}/dashboard/login`) und `unlock.html` (PIN-Sperrbildschirm) sind
+BEIDE eigenständige Templates, die `base.html` NICHT erben (kein
+Sidebar-/Nav-Layout vor dem Login nötig) - die Titelleiste existierte
+ursprünglich ausschließlich in `base.html`. Mit `frameless=True` bereits
+ohne native Titelleiste UND ohne die eigene (weil nur in `base.html`)
+ergab das ein komplett unbedienbares Fenster auf der allerersten Seite -
+in JEDEM Fall, nicht nur in einem Edge-Case. Ein erster Zwischenfix (das
+Aktivierungsskript aus `{% if current_user %}` in `base.html` herausholen)
+war zwar für sich genommen ein echter, separater Bug (siehe unten), löste
+aber nicht das eigentliche Problem, weil `login.html` `base.html` gar
+nicht verwendet.
+LEHRE: Ein Fenster-weites UI-Element (hier: Fenster-Chrome-Ersatz) darf
+nicht an EIN Template gebunden werden, wenn mehrere unabhängige
+Root-Templates existieren, die dasselbe Fenster füllen können - IMMER
+zuerst prüfen, welche Templates tatsächlich NICHT von der gemeinsamen
+Basis erben (`grep -L 'extends "base.html"' app/web/templates/*.html`),
+bevor ein Feature als "auf jeder Seite vorhanden" angenommen wird.
+Regressionstest: `tests/test_auth_web.py::
+test_login_page_activates_custom_titlebar_script_before_login`.
+DATE: 01.09.
+
+---
+
 DECISION: `request.app.state.<beliebiges Feld>` ist in Jinja-Templates
 sicher lesbar (liefert `Undefined`, wirft nicht), WENN nur eine einzige
 Ebene tief zugegriffen und das Ergebnis sofort per `if`/Ternary geprüft

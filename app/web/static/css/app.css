@@ -123,7 +123,8 @@ a {
    Browser-Modus bleibt "display:none" unveraendert bestehen, hier also
    KEINE Layoutaenderung fuer den Browser-/--no-window-Fall. */
 
-body.has-app-titlebar .app-shell {
+body.has-app-titlebar .app-shell,
+body.has-app-titlebar .login-shell {
   min-height: calc(100vh - 36px);
 }
 

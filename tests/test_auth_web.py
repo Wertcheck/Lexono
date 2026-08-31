@@ -154,6 +154,35 @@ def _login(client: TestClient, email: str, password: str = "TestPasswort123") ->
     assert response.status_code == 303, f"Login fehlgeschlagen: {response.headers}"
 
 
+# --- Eigene Fenster-Titelleiste auch VOR dem Login (Masterprompt V2,
+#     Task #61) ---
+
+
+def test_login_page_activates_custom_titlebar_script_before_login(
+    client: TestClient,
+) -> None:
+    """Regressionstest fuer einen real gefundenen Bug (01.09.): das
+    gebuendelte Fenster startet auf /dashboard/login, wo current_user noch
+    None ist. Das Titelleisten-Aktivierungsskript lag zunaechst faelschlich
+    INNERHALB von "{% if current_user %}" in base.html - dadurch blieb die
+    per frameless=True bereits chromfreie Titelleiste auf der allerersten
+    Seite dauerhaft unsichtbar (kein X, kein Minimieren, kein Verschieben -
+    einzig per Task-Manager beendbar, real am echten Fenster beobachtet).
+    Dieser Test stellt sicher, dass sowohl das Titelleisten-Markup ALS AUCH
+    das Aktivierungsskript (nicht nur eines von beiden) bereits auf der
+    unauthentifizierten Login-Seite im HTML vorhanden sind."""
+    response = client.get("/dashboard/login")
+    assert response.status_code == 200
+    assert 'id="app-titlebar-close"' in response.text
+    assert 'id="app-titlebar-minimize"' in response.text
+    assert '<script src="/dashboard/static/js/app_titlebar.js"></script>' in response.text
+
+    script_response = client.get("/dashboard/static/js/app_titlebar.js")
+    assert script_response.status_code == 200
+    assert "activateCustomTitlebar" in script_response.text
+    assert "close_window" in script_response.text
+
+
 # --- #1 Login erfolgreich ---
 
 

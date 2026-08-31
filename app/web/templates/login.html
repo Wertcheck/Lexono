@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="/dashboard/static/css/app.css" />
 </head>
 <body>
+  {# Eigene Titelleiste (Masterprompt V2, Task #61) - siehe
+     partials/app_titlebar.html: diese Seite ist die ALLERERSTE, die das
+     gebuendelte Fenster zeigt (run.py::_serve_with_window laedt
+     {base_url}/dashboard/login), muss die Titelleiste also unabhaengig
+     von base.html besitzen. #}
+  {% include "partials/app_titlebar.html" %}
   <div class="login-shell">
     <div class="login-box">
       <div class="sidebar__brand" style="color: var(--ink-900);">
@@ -35,5 +41,6 @@
       </form>
     </div>
   </div>
+  <script src="/dashboard/static/js/app_titlebar.js"></script>
 </body>
 </html>
