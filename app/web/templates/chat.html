@@ -24,6 +24,16 @@
     </aside>
 
     <section class="chat-panel">
+      <div class="chat-panel__header">
+        <div class="chat-panel__header-title">
+          {% if active_conversation %}{{ active_conversation.matter.title }}{% else %}Chat{% endif %}
+        </div>
+        <div class="chat-panel__header-status" title="{{ 'Cloud-KI verbunden' if provider_configured else 'Cloud-KI nicht konfiguriert' }}">
+          <span class="chat-status-dot {% if provider_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
+          <span>{{ "KI verbunden" if provider_configured else "KI nicht konfiguriert" }}</span>
+        </div>
+      </div>
+
       {% if not provider_configured %}
         <div class="banner banner--error chat-panel__banner">
           Die Cloud-KI ist nicht konfiguriert (kein Anthropic-API-Schlüssel hinterlegt). Sie können
@@ -63,17 +73,42 @@
                 {% if message.role == "user" %}{{ current_user.email[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
               </div>
               <div class="chat-message__body">
+                <div class="chat-message__sender">
+                  {% if message.role == "user" %}Sie{% else %}KanzleiAI{% endif %}
+                </div>
                 {% if message.attached_documents %}
                   <div class="chat-message__attachments">
                     {% for link in message.attached_documents %}
-                      <span class="doc-chip">
+                      {% set doc = link.document %}
+                      {% set status = doc.ocr_status %}
+                      <span class="doc-chip chat-attachment-chip">
                         {{ icons.document(class_="icon") }}
-                        {{ link.document.original_filename }}
+                        <span class="chat-attachment-chip__name">{{ doc.original_filename }}</span>
+                        {% if status in ("done", "not_needed") %}
+                          <span class="chat-attachment-status chat-attachment-status--ok" title="Dokument verarbeitet">
+                            {{ icons.check(class_="icon") }} Verarbeitet
+                          </span>
+                        {% elif status == "pending" %}
+                          <span class="chat-attachment-status chat-attachment-status--pending" title="Wartet auf Texterkennung (OCR)">
+                            Wartet auf OCR
+                          </span>
+                        {% elif status == "failed" %}
+                          <span class="chat-attachment-status chat-attachment-status--error" title="Verarbeitung fehlgeschlagen - bitte erneut versuchen oder das Dokument prüfen">
+                            {{ icons.warning(class_="icon") }} Verarbeitung fehlgeschlagen
+                          </span>
+                        {% elif status == "unsupported_format" %}
+                          <span class="chat-attachment-status chat-attachment-status--error" title="Dateiformat wird nicht unterstützt">
+                            {{ icons.warning(class_="icon") }} Format nicht unterstützt
+                          </span>
+                        {% endif %}
                       </span>
                     {% endfor %}
                   </div>
                 {% endif %}
-                <div class="chat-message__text">{{ message.content }}</div>
+                <div class="chat-message__text">
+                  {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
+                  <span>{{ message.content }}</span>
+                </div>
               </div>
             </div>
           {% endfor %}

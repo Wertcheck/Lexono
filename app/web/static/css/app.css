@@ -2599,7 +2599,12 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 12px;
+  /* 26px oben - identischer Wert wie .topbar auf jeder anderen Seite,
+     damit der Kopfbereich zuverlaessig unterhalb der schwebenden
+     .header-icons-Leiste (top:24px, 34px hoch) beginnt, statt von ihr
+     ueberlagert zu werden - dieselbe Deckungshoehe wie .chat-panel__header
+     rechts daneben, fuer eine optisch bündige erste Zeile. */
+  padding: 26px 20px 12px;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-500);
@@ -2685,6 +2690,54 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* Kopfbereich (Abschnitt 4A des Auftrags: "KanzleiAI/Chat-Kontext, optional
+   dezenter KI-Status") - padding identisch zu .topbar, damit dieser Bereich
+   zuverlaessig unterhalb der schwebenden .header-icons-Leiste beginnt
+   (siehe Kommentar bei .chat-conversations__header). */
+.chat-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 26px 32px 14px;
+  border-bottom: 1px solid var(--paper-line);
+  flex-shrink: 0;
+}
+
+.chat-panel__header-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-panel__header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.chat-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chat-status-dot--ok {
+  background: #2f8f5b;
+}
+
+.chat-status-dot--warn {
+  background: var(--amber);
 }
 
 .chat-panel__banner {
@@ -2799,6 +2852,13 @@ body::-webkit-scrollbar-thumb:hover,
   padding-top: 4px;
 }
 
+.chat-message__sender {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+  margin-bottom: 4px;
+}
+
 .chat-message__text {
   font-size: 14.5px;
   line-height: 1.7;
@@ -2807,12 +2867,34 @@ body::-webkit-scrollbar-thumb:hover,
   word-wrap: break-word;
 }
 
+/* Dezenter Karten-Hintergrund NUR fuer KI-Antworten - bewusst kein
+   "Bubble"-Look fuer Nutzernachrichten (Auftrag: "keine uebertriebene
+   Bubble-Optik"/"keine ChatGPT-Kopie") - die Karte hebt lediglich das
+   KI-Ergebnis als eigenstaendigen, abgeschlossenen Block hervor. */
+.chat-message--assistant:not(.chat-message--blocked) .chat-message__text {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
 .chat-message--blocked .chat-message__text {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   color: var(--wax-red);
   background: var(--wax-red-tint);
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-md);
-  display: inline-block;
+  font-size: 13.5px;
+}
+
+.chat-message--blocked .chat-message__text .icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
 }
 
 .chat-message__attachments {
@@ -2820,6 +2902,55 @@ body::-webkit-scrollbar-thumb:hover,
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
+}
+
+.chat-attachment-chip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 8px;
+}
+
+.chat-attachment-chip .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.chat-attachment-chip__name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-attachment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  padding-left: 8px;
+  border-left: 1px solid var(--paper-line);
+  white-space: nowrap;
+}
+
+.chat-attachment-status .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.chat-attachment-status--ok {
+  color: #2f8f5b;
+}
+
+.chat-attachment-status--pending {
+  color: var(--amber);
+}
+
+.chat-attachment-status--error {
+  color: var(--wax-red);
 }
 
 .chat-composer {
@@ -2848,16 +2979,22 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  min-height: 52px;
   border: 1px solid var(--paper-line);
-  border-radius: var(--radius-md);
+  /* Groesserer Radius als der Standard-Karten-Radius - unterstreicht,
+     dass dies das wichtigste Bedienelement der Seite ist (Auftrag:
+     "Eingabefeld ist eines der wichtigsten Elemente"), ohne in eine
+     verspielte "Pill"-Optik zu kippen. */
+  border-radius: 16px;
   background: var(--paper-000);
-  padding: 8px 8px 8px 12px;
+  padding: 10px 10px 10px 16px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.12s ease;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .chat-composer__row:focus-within {
   border-color: var(--seal-green);
+  box-shadow: var(--shadow-elevated);
 }
 
 .chat-composer__input {
@@ -2866,11 +3003,11 @@ body::-webkit-scrollbar-thumb:hover,
   outline: none;
   resize: none;
   font-family: var(--font-body);
-  font-size: 14.5px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
   color: var(--ink-900);
   background: transparent;
-  padding: 6px 0;
+  padding: 8px 0;
   max-height: 200px;
 }
 
@@ -2881,9 +3018,9 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-composer__attach-btn,
 .chat-composer__send-btn {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
   border: none;
   background: transparent;
   color: var(--ink-500);
@@ -2891,7 +3028,11 @@ body::-webkit-scrollbar-thumb:hover,
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.1s var(--ease-elevate);
+}
+
+.chat-composer__send-btn:not(:disabled):active {
+  transform: scale(0.94);
 }
 
 .chat-composer__attach-btn:hover {
@@ -2932,10 +3073,23 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (max-height: 800px) {
+  .chat-panel__header,
+  .chat-conversations__header {
+    padding-top: 18px;
+    padding-bottom: 10px;
+  }
   .chat-panel__messages {
     padding-top: 14px;
+    gap: 14px;
   }
   .chat-empty-state__greeting {
     font-size: 22px;
+  }
+  .chat-empty-state__hint {
+    margin-bottom: 14px;
+  }
+  .chat-composer {
+    padding-top: 10px;
+    padding-bottom: 12px;
   }
 }

@@ -389,3 +389,123 @@ def test_chat_appears_as_first_flat_nav_item(client: TestClient, db_session: Ses
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
     assert 'href="/dashboard/chat"' in response.text
+
+
+# ==========================================================================
+# Phase 2 (visuelle/UX-Fertigstellung): mehrere Nachrichten,
+# Konversationswechsel, Dokumentstatus-Anzeige, Kopfbereich
+# ==========================================================================
+
+
+def test_multiple_messages_appear_in_correct_order(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Antwort eins.")
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer)
+    )
+    # Bewusst EIN Wort pro Nachricht statt "Erste Frage"/"Zweite Frage" -
+    # zwei aufeinanderfolgende grossgeschriebene Woerter wuerden von der
+    # bestehenden PII-Heuristik als moeglicher unerkannter Name geblockt
+    # (siehe app/privacy/security_check.py, an mehreren Stellen dieser
+    # Session bereits beobachtet) und damit die KI-Antwort selbst blockieren -
+    # fuer DIESEN Test irrelevant, es geht nur um Nachrichten-Reihenfolge.
+    csrf = _csrf(client)
+    first = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Erstfrage"},
+        follow_redirects=False,
+    )
+    conversation_url = first.headers["location"]
+
+    writer.response_text = "Antwort zwei."
+    page = client.get(conversation_url)
+    csrf2 = extract_csrf(page.text)
+    client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf2, "conversation_id": conversation_url.rsplit("/", 1)[-1], "content": "Zweitfrage"},
+        follow_redirects=False,
+    )
+
+    final_page = client.get(conversation_url)
+    text = final_page.text
+    assert text.index("Erstfrage") < text.index("Antwort eins.") < text.index("Zweitfrage") < text.index(
+        "Antwort zwei."
+    )
+
+
+def test_switching_between_conversations_shows_correct_messages(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    login_as_admin(db_session, client)
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service()
+    )
+    csrf = _csrf(client)
+    r1 = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Unterhaltung Eins Inhalt"},
+        follow_redirects=False,
+    )
+    csrf = _csrf(client)
+    r2 = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Unterhaltung Zwei Inhalt"},
+        follow_redirects=False,
+    )
+
+    def _messages_panel(html: str) -> str:
+        start = html.index('id="chat-messages"')
+        end = html.index('<form method="post" action="/dashboard/chat/send"')
+        return html[start:end]
+
+    page1 = _messages_panel(client.get(r1.headers["location"]).text)
+    assert "Unterhaltung Eins Inhalt" in page1
+    assert "Unterhaltung Zwei Inhalt" not in page1
+
+    full_page2 = client.get(r2.headers["location"]).text
+    page2 = _messages_panel(full_page2)
+    assert "Unterhaltung Zwei Inhalt" in page2
+    assert "Unterhaltung Eins Inhalt" not in page2
+
+    # Beide Unterhaltungen bleiben in der Konversationsliste sichtbar
+    # (Auftrag Abschnitt 6) - unabhaengig davon, welche gerade aktiv ist.
+    assert 'href="' + r1.headers["location"] + '"' in full_page2
+
+
+def test_document_status_badge_shows_processed_for_text_pdf(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ein Dokument mit Text-Layer wird direkt extrahiert (ocr_status
+    'not_needed') - die Chat-UI muss das als 'Verarbeitet' anzeigen, nicht
+    als technischen Rohstatus."""
+    login_as_admin(db_session, client)
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service()
+    )
+    csrf = _csrf(client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 72), "Echter Text-Layer fuer den Status-Test.")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    response = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        files={"documents": ("textdokument.pdf", pdf_bytes, "application/pdf")},
+        follow_redirects=True,
+    )
+    assert "Verarbeitet" in response.text
+    assert "textdokument.pdf" in response.text
+
+
+def test_chat_page_header_shows_ai_status_dot(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert "chat-status-dot" in response.text
+    assert "KI nicht konfiguriert" in response.text or "KI verbunden" in response.text
