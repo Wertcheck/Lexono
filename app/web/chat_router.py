@@ -103,6 +103,15 @@ def _render_chat_page(
     error: str | None = None,
 ) -> HTMLResponse:
     settings = get_settings()
+    # Phase 3 (§71): war bisher nur auf den direkten Dev-Modus geprueft
+    # (anthropic_api_key) - eine echte Kanzlei-Installation im
+    # Produktionsmodus hat KEINEN anthropic_api_key gesetzt, sondern
+    # ausschliesslich lexono_gateway_url (siehe ARCHITECTURE.md §70) und
+    # haette den Cloud-KI-Status faelschlich als "nicht konfiguriert"
+    # angezeigt, obwohl der Gateway-Pfad korrekt eingerichtet war. Deckt
+    # jetzt beide Faelle ab, analog zur Auswahllogik in
+    # app/ai_providers/factory.py::build_writing_provider.
+    provider_configured = bool(settings.lexono_gateway_url) or settings.anthropic_api_key is not None
     context = {
         "request": request,
         "active_nav": "Chat",
@@ -112,7 +121,12 @@ def _render_chat_page(
         "active_conversation": active_conversation,
         "messages": active_conversation.messages if active_conversation else [],
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
-        "provider_configured": settings.anthropic_api_key is not None,
+        "provider_configured": provider_configured,
+        # Kein erfundener Zwischenzustand, solange der stille Startcheck
+        # (app/main.py::_run_silent_local_ai_check) noch läuft oder in
+        # Tests kein Lifespan durchlief - siehe chat.html für die
+        # entsprechende "wird geprüft..."-Darstellung.
+        "local_ai_status": getattr(request.app.state, "local_ai_status", None),
         "error": error,
     }
     return templates.TemplateResponse(request, "chat.html", context)

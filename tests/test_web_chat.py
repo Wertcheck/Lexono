@@ -364,6 +364,122 @@ def test_chat_page_shows_banner_when_provider_not_configured(
     assert "nicht konfiguriert" in response.text
 
 
+def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_key(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """Regression (Phase 3, §71): ein echter Produktivbetrieb hat NUR
+    lexono_gateway_url gesetzt, keinen anthropic_api_key - die
+    Statusanzeige prüfte bisher ausschließlich anthropic_api_key und
+    zeigte in diesem (korrekt konfigurierten!) Fall fälschlich
+    "nicht konfiguriert" an."""
+    from app.config.settings import Settings
+
+    login_as_admin(db_session, client)
+    fake_settings = Settings(
+        chat_upload_storage_dir=str(tmp_path / "chat_uploads"),
+        anthropic_api_key=None,
+        lexono_gateway_url="https://gateway.lexono.test",
+        lexono_gateway_client_id="test-client",
+        lexono_gateway_client_secret="lxg_secret_test",
+    )
+    monkeypatch.setattr(chat_router_module, "get_settings", lambda: fake_settings)
+
+    response = client.get("/dashboard/chat")
+
+    assert response.status_code == 200
+    assert "Cloud-KI verbunden" in response.text
+
+
+def test_chat_page_shows_local_ai_checking_state_without_lifespan(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der TestClient hier durchläuft keinen Lifespan-Start (kein `with`-
+    Block), `app.state.local_ai_status` ist also nie gesetzt - die Seite
+    muss trotzdem sauber rendern (neutraler "wird geprüft"-Zustand statt
+    eines AttributeError).
+
+    `app.state` gehört zur EINEN, prozessweiten `app`-Instanz (siehe
+    `from app.main import app`) - läuft an anderer Stelle in der Suite
+    (z. B. tests/test_main_local_ai_startup_check.py) ein Test mit
+    `with TestClient(app) as ...`, durchläuft dort der ECHTE Lifespan
+    inkl. Local-AI-Startcheck und setzt `local_ai_status` dauerhaft für
+    den Rest des Testprozesses - unabhängig von der Ausführungsreihenfolge
+    wird das Attribut hier deshalb bewusst entfernt/zurückgesetzt statt
+    seine Abwesenheit vorauszusetzen."""
+    login_as_admin(db_session, client)
+    from app.main import app as main_app
+
+    had_attr = hasattr(main_app.state, "local_ai_status")
+    if had_attr:
+        previous_status = main_app.state.local_ai_status
+        del main_app.state.local_ai_status
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        if had_attr:
+            main_app.state.local_ai_status = previous_status
+
+    assert response.status_code == 200
+    assert "Lokale KI wird geprüft" in response.text
+    assert "chat-status-dot--neutral" in response.text
+
+
+def test_chat_page_shows_local_ai_ready_state(
+    client: TestClient, db_session: Session
+) -> None:
+    from app.local_ai.setup_orchestrator import LocalAiState, LocalAiStatus
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.local_ai_status = LocalAiStatus(
+        state=LocalAiState.READY, configured_model="qwen2.5:1.5b"
+    )
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.local_ai_status
+
+    assert response.status_code == 200
+    assert "Lokale KI bereit" in response.text
+    assert "chat-status-dot--ok" in response.text
+
+
+def test_chat_page_shows_local_ai_disabled_state(
+    client: TestClient, db_session: Session
+) -> None:
+    from app.local_ai.setup_orchestrator import LocalAiState, LocalAiStatus
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.local_ai_status = LocalAiStatus(state=LocalAiState.DISABLED, configured_model=None)
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.local_ai_status
+
+    assert response.status_code == 200
+    assert "Lokale KI deaktiviert" in response.text
+
+
+def test_chat_page_shows_local_ai_unreachable_state_as_warning(
+    client: TestClient, db_session: Session
+) -> None:
+    from app.local_ai.setup_orchestrator import LocalAiState, LocalAiStatus
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.local_ai_status = LocalAiStatus(
+        state=LocalAiState.RUNTIME_UNREACHABLE, configured_model="qwen2.5:1.5b"
+    )
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.local_ai_status
+
+    assert response.status_code == 200
+    assert "Lokale KI nicht erreichbar" in response.text
+
+
 # ==========================================================================
 # TEST E - BESTEHENDE FUNKTIONEN BLEIBEN ERREICHBAR
 # ==========================================================================

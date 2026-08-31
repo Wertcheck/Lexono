@@ -28,17 +28,42 @@
         <div class="chat-panel__header-title">
           {% if active_conversation %}{{ active_conversation.matter.title }}{% else %}Chat{% endif %}
         </div>
-        <div class="chat-panel__header-status" title="{{ 'Cloud-KI verbunden' if provider_configured else 'Cloud-KI nicht konfiguriert' }}">
-          <span class="chat-status-dot {% if provider_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
-          <span>{{ "KI verbunden" if provider_configured else "KI nicht konfiguriert" }}</span>
+        <div class="chat-panel__header-status-group">
+          {% set lai_state = local_ai_status.state.value if local_ai_status else "checking" %}
+          <div
+            class="chat-panel__header-status"
+            title="{{ {
+              'checking': 'Lokale KI: Status wird ermittelt...',
+              'disabled': 'Lokale KI ist deaktiviert',
+              'ready': 'Lokale KI bereit (' ~ (local_ai_status.configured_model or '') ~ ')',
+              'runtime_missing': 'Lokale KI: Ollama ist nicht installiert',
+              'runtime_unreachable': 'Lokale KI: Ollama ist installiert, aber nicht erreichbar',
+              'model_missing': 'Lokale KI: konfiguriertes Modell ist nicht installiert',
+            }[lai_state] }}"
+          >
+            <span class="chat-status-dot {% if lai_state == 'ready' %}chat-status-dot--ok{% elif lai_state in ('disabled', 'checking') %}chat-status-dot--neutral{% else %}chat-status-dot--warn{% endif %}"></span>
+            <span>{{ {
+              'checking': 'Lokale KI wird geprüft...',
+              'disabled': 'Lokale KI deaktiviert',
+              'ready': 'Lokale KI bereit',
+              'runtime_missing': 'Lokale KI nicht installiert',
+              'runtime_unreachable': 'Lokale KI nicht erreichbar',
+              'model_missing': 'Lokale-KI-Modell fehlt',
+            }[lai_state] }}</span>
+          </div>
+          <div class="chat-panel__header-status" title="{{ 'Cloud-KI verbunden' if provider_configured else 'Cloud-KI nicht konfiguriert' }}">
+            <span class="chat-status-dot {% if provider_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
+            <span>{{ "Cloud-KI verbunden" if provider_configured else "Cloud-KI nicht konfiguriert" }}</span>
+          </div>
         </div>
       </div>
 
       {% if not provider_configured %}
         <div class="banner banner--error chat-panel__banner">
-          Die Cloud-KI ist nicht konfiguriert (kein Anthropic-API-Schlüssel hinterlegt). Sie können
-          weiterhin Nachrichten senden - die KI-Antwort wird eine entsprechende Meldung anzeigen, bis
-          eine Administratorin oder ein Administrator einen Schlüssel hinterlegt hat.
+          Die Cloud-KI ist nicht konfiguriert (kein Lexono-Gateway und kein lokaler
+          Entwicklungs-API-Schlüssel hinterlegt). Sie können weiterhin Nachrichten senden - die
+          KI-Antwort wird eine entsprechende Meldung anzeigen, bis eine Administratorin oder ein
+          Administrator die Cloud-Anbindung eingerichtet hat.
         </div>
       {% endif %}
 

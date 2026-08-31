@@ -2716,6 +2716,16 @@ body::-webkit-scrollbar-thumb:hover,
   white-space: nowrap;
 }
 
+/* Phase 3 (§71): zwei Statusanzeigen (lokale KI + Cloud-KI) nebeneinander
+   statt nur einer - eigener Flex-Container haelt den Abstand konsistent
+   und faellt bei wenig Platz (siehe media query unten) sauber um. */
+.chat-panel__header-status-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .chat-panel__header-status {
   display: flex;
   align-items: center;
@@ -2738,6 +2748,14 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-status-dot--warn {
   background: var(--amber);
+}
+
+/* Bewusst kein Warnsignal fuer "deaktiviert"/"wird geprueft" - das sind
+   neutrale, erwartbare Zustaende (z. B. lokale KI bewusst nicht
+   eingerichtet), kein Fehler. */
+.chat-status-dot--neutral {
+  background: var(--ink-500);
+  opacity: 0.4;
 }
 
 .chat-panel__banner {

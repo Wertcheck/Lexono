@@ -4742,3 +4742,108 @@ braucht ohnehin Internetzugang für die Cloud-KI-Anbindung (§70), ein kleinerer
 Installer-Download ist der bessere Kompromiss für den Regelfall; bei Bedarf später ohne
 strukturelle Änderung an `installer.iss` auf den Offline-Installer umstellbar. 4 neue
 Tests in `tests/test_installer_config.py`.
+
+## 71. Phase 3: Local AI praxistauglich gemacht + tatsächlich an die Setup-/Chat-Pfade angebunden (01.09.)
+
+Ausgangslage (Bestandsaufnahme dieser Sitzung, vollständig code-basiert geprüft): die
+lokale KI (§65-§69) war architektonisch korrekt in `DraftingService.create_draft`
+verdrahtet und der Chat-Pfad (`ChatService.send_message`) rief tatsächlich denselben
+Code auf - es gab also **keine** fehlende Verkabelung zwischen Chat und lokaler KI. Zwei
+echte Lücken bestanden stattdessen: (1) das bisherige Standardmodell `qwen3:4b` war auf
+CPU-only-Hardware unpraktikabel langsam (§66: 247-485s), (2) die vollständig bestehende
+Hardware-Erkennungs-/Modell-Empfehlungs-/Ollama-Installer-Logik (§67/§68) hatte **keinen
+einzigen Aufrufpfad** - weder im Setup-Assistenten noch sonst irgendwo im Produkt wurde
+sie jemals tatsächlich ausgeführt (TODO.md bestätigte dies bereits explizit: "Bewusst
+OHNE neue Dashboard-/Wizard-UI").
+
+### Datenbasierter Modellwechsel (Auftrag §8: "Treffe diese Entscheidung datenbasiert durch Tests")
+
+Echter Ollama-Benchmark auf derselben CPU-only-Referenzmaschine wie §66, mit den bereits
+lokal vorhandenen Modellen `llama3.2:1b`, `qwen2.5:1.5b`, `qwen3:4b`:
+
+| Modell | Ergebnis |
+|---|---|
+| `qwen3:4b` | Erneut >20 Minuten für eine einfache Zusammenfassung (Abbruch durch Timeout) - "thinking"-Overhead bestätigt sich als strukturelles Problem der qwen3-Familie, nicht als einmaliger Messfehler. |
+| `llama3.2:1b` | Schnell (~32s inkl. Kaltstart), aber verweigerte die Aufgabe inhaltlich ("Ich kann diese Anfrage nicht bearbeiten"). |
+| `qwen2.5:1.5b` | Inhaltlich korrekte, brauchbare deutsche Zusammenfassung in ~37s (kalt) bzw. **~10-11s (warm)**. |
+
+Neuer Standard (`app/config/settings.py::ollama_model`): `qwen2.5:1.5b`. Katalog
+(`app/local_ai/model_catalog.py`) um einen entsprechenden Eintrag ergänzt (Priorität 0,
+verdrängt qwen3 für CPU-only-Empfehlungen), qwen3-Limitationen um einen dokumentierten
+Hinweis auf das reale "thinking"-Latenzrisiko ergänzt - bestehende qwen3-Einträge
+bleiben unverändert bestehen (weiterhin sinnvoll für GPU-beschleunigte Installationen,
+wo der Reasoning-Overhead weniger stark ins Gewicht fällt). `OllamaLocalLLMProvider`s
+Default-Timeout von 600s auf 120s gesenkt (mit den neuen Zahlen ausreichend, begrenzt
+gleichzeitig die maximale Blockierzeit einer einzelnen Chat-Anfrage - Auftrag §27);
+`check_health()` nutzt jetzt ein festes, kurzes 5s-Timeout statt des Inferenz-Timeouts.
+
+**Echter End-zu-Ende-Beweis** (nicht nur Unit-Test mit Fakes): synthetischer Sachverhalt
+→ Presidio-Pseudonymisierung → echter lokaler Ollama-Aufruf (`qwen2.5:1.5b`, 17,7s) →
+echter Lexono-Gateway (lokal laufend, §70) → echter Anthropic-Aufruf (12,9s) → lokale
+Rekonstruktion. Gesamtlatenz 33,3s - für eine interaktive Chat-Antwort mit sichtbarem
+Ladezustand praktikabel, ein Bruchteil der vorherigen 247+s. Antwortqualität: sachlich,
+erfand keine Fakten, markierte fehlende Informationen explizit als offene Prüfpunkte
+statt sie zu erfinden (`scripts/local_ai_smoke_test.py`, manuell mit echtem
+Development-Key ausgeführt, danach vollständig aus dem Dateisystem entfernt - kein Key,
+keine Gateway-Testdaten im Repository zurückgelassen).
+
+### Lokale KI jetzt tatsächlich einrichtbar (größte geschlossene Lücke)
+
+Neuer `run.py`-Subcommand `local-ai-setup` (`cmd_local_ai_setup`) ruft
+`LocalAiSetupService.run_setup()` auf - Hardware-Erkennung → Modell-Empfehlung → Ollama-
+Installation → Modell-Download → Health-Check → `.env`-Eintrag, alles bereits
+bestehender, getesteter Code aus §67/§68, jetzt erstmals tatsächlich erreichbar.
+`cmd_setup()` (Ersteinrichtungs-Dialog) bietet dies als Standardvorschlag an (leere
+Eingabe = Ja) - passend zu Auftrag §6 ("Local AI ist jetzt Pflicht"), aber bewusst NICHT
+erzwungen: `run_setup_wizard()` bekam einen neuen optionalen Parameter
+`run_local_ai_setup`, dessen Fehlschlag (z. B. kein Internetzugang während der
+Installation) explizit abgefangen wird und NICHT die gesamte Ersteinrichtung scheitern
+lässt (`WizardResult.local_ai_setup_succeeded` dokumentiert nur den Ausgang) - Migration
+und Admin-Anlage bleiben die einzigen wirklich ladungstragenden Schritte. Wer die
+Einrichtung ablehnt oder sie fehlschlägt, kann sie jederzeit später erneut auslösen
+(`kanzlei_ai.exe local-ai-setup`, eigenständig aufrufbar).
+
+### Chat-UI: zwei echte Bugs gefunden und behoben
+
+1. **Cloud-KI-Statusanzeige berücksichtigte den Gateway-Modus nicht.** `provider_configured`
+   prüfte ausschließlich `settings.anthropic_api_key is not None` - eine korrekt für
+   Produktion konfigurierte Installation (nur `lexono_gateway_url` gesetzt, siehe §70)
+   hätte fälschlich "Cloud-KI nicht konfiguriert" angezeigt, obwohl die Cloud-Anbindung
+   tatsächlich funktionierte. Behoben: prüft jetzt beide Fälle, analog zur tatsächlichen
+   Auswahllogik in `app/ai_providers/factory.py::build_writing_provider`.
+2. **Keine Local-AI-Statusanzeige vorhanden** (Auftrag §29 verlangt explizit, dass der
+   Local-AI-Status im Chat sichtbar/testbar ist). Neue zweite Statusanzeige im
+   Chat-Kopfbereich (`chat-panel__header-status-group`), liest
+   `app.state.local_ai_status` (bereits bestehend seit §69, aber bisher von keiner
+   Route gelesen) - zeigt "wird geprüft"/"deaktiviert"/"bereit"/"nicht
+   erreichbar"/"Modell fehlt" je nach `LocalAiState`. Bewusst NUR `.state`/
+   `.configured_model` gerendert, NIEMALS `.detail` (könnte interne Fehlertexte
+   enthalten) - konsistent mit Auftrag §28 ("keine internen Architekturdetails" in
+   Fehlermeldungen).
+
+### Getestet
+
+29 neue/angepasste Tests über `tests/test_ollama_local_llm_provider.py`,
+`tests/test_ai_provider_factory.py`, `tests/test_local_ai_model_catalog.py`,
+`tests/test_setup_wizard.py`, `tests/test_run_entrypoint.py`, `tests/test_web_chat.py`.
+Ein echter Testisolations-Fund dabei selbst gemacht und behoben: `app.state` gehört zur
+EINEN, prozessweiten `app`-Instanz - ein an anderer Stelle mit `with TestClient(app) as
+...` laufender Test (`tests/test_main_local_ai_startup_check.py`) durchläuft den echten
+Lifespan und setzt `local_ai_status` dauerhaft für den Rest des Testprozesses; der neue
+"wird geprüft"-Test musste deshalb den Attributzustand explizit sichern/wiederherstellen
+statt sich auf eine saubere Ausgangslage zu verlassen - nur bei vollständigem
+Suite-Lauf reproduzierbar, nicht bei isoliertem Lauf der einzelnen Testdatei.
+
+### Bewusst NICHT umgesetzt (Vorgabe wörtlich beachtet)
+
+Kein vollständiger asynchroner Job-/Queue-Architekturumbau der Chat-Antwortpfad
+(WebSocket-/Polling-basierte Fortschrittsanzeige während eines laufenden Ollama-Aufrufs)
+- der bestehende synchrone Aufruf ist mit dem neuen Modell/Timeout jetzt UI-vertretbar
+(zweistellige Sekundenzahl statt mehrerer Minuten), ein vollständiger Async-Umbau wäre
+für den erreichten Nutzen unverhältnismäßig groß (Auftrag §30 sinngemäß: keine
+unkontrollierte Großarchitektur, wenn die Kernanwendung dadurch unfertig bliebe) - als
+offener, dokumentierter Folgepunkt festgehalten, nicht stillschweigend ignoriert. Ebenso
+nicht umgesetzt: `/no_think`-Prefix in `OllamaLocalLLMProvider.process()` (existiert
+bereits in `generate_structured()`) - mit dem neuen Nicht-"thinking"-Standardmodell
+`qwen2.5:1.5b` nicht erforderlich; bliebe für eine künftige Rückkehr zu einem
+qwen3-Modell ein sinnvoller, aber ungetesteter nächster Schritt.
