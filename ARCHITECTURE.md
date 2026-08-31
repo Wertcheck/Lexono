@@ -4525,3 +4525,199 @@ Windows-Neustart tatsächlich rechtzeitig läuft, ob `ensure_running()` ihn im r
 Zeitfenster erreicht) - dieser Schritt bereitet den Code dafür vor, behauptet aber keine
 reale Verifikation dieses Verhaltens (siehe `LOCAL_AI_SETUP_CHECKLIST.md`/Windows-
 Abnahmeliste, Abschnitt D).
+
+## 70. Lexono-Gateway: zentraler AI-Relay-Server, §54/§57 bewusst überschrieben (31.08.)
+
+**Diese Entscheidung ersetzt ausdrücklich die in §54 getroffene und in §57 bestätigte
+Entscheidung "kein zentraler Proxy, direkte Anthropic-API-Anbindung".** Anders als beim
+in §57 abgelehnten Portkey-Vorschlag (Drittanbieter-Gateway, nicht verifizierbares
+externes Konto, Hinweise auf einen möglicherweise projektfremden Prompt) handelt es sich
+hier um einen bewussten, im Detail begründeten und nach expliziter Rückfrage bestätigten
+Auftrag für einen **selbst betriebenen, ausschließlich für Lexono/KanzleiAI bestimmten**
+Relay-Server - kein SaaS-Gateway eines Dritten.
+
+**Grund der Umkehr:** neue, als nicht verhandelbar eingestufte Sicherheitsanforderung -
+der echte `ANTHROPIC_API_KEY` darf im Produktivbetrieb niemals auf einem Kanzlei-PC
+existieren (weder in `.env`, Installer, PyInstaller-Bundle, Datenbank, Frontend noch
+Logs). Bisher lag der Key direkt bei jeder einzelnen Kanzlei-Installation - das war die
+zentrale, jetzt aufgegebene Prämisse von §54/§57. Ein zentraler, von Lexono betriebener
+Server, der als einziger den echten Key hält, während jede Kanzlei-Installation nur eine
+eigene, widerrufbare Kanzlei-Credential besitzt, reduziert die Anzahl der Orte, an denen
+der eigentliche Anthropic-Zugang kompromittiert werden könnte, von "jeder installierten
+Kanzlei-PC" auf "ein einziger, von Lexono kontrollierter Server".
+
+### Zentrales Architekturprinzip: Gateway ersetzt NICHT die lokale Pseudonymisierung
+
+Der Gateway ist ausdrücklich **kein** Ersatz für `app/privacy/gateway.py`
+(`ClaudePrivacyGateway`) und keine nachgelagerte Pseudonymisierungsstelle. Die
+Datenschutzgrenze bleibt exakt dort, wo sie seit §61-§65 liegt: auf dem Kanzlei-PC, vor
+jedem Netzwerkversand. Der Datenfluss bleibt unverändert bis einschließlich des Final
+Payload Gate (`check_payload_placeholder_integrity`, `app/privacy/security_check.py`) -
+neu ist ausschließlich, WOHIN die danach bereits freigegebene, pseudonymisierte
+`ClaudeRequestPayload` geschickt wird:
+
+```
+Vorher (§54-§69):
+ClaudePrivacyGateway (Presidio + SecurityCheck + Final Payload Gate)
+  -> ClaudeRequestPayload (pseudonymisiert, freigegeben)
+  -> AnthropicClaudeWritingProvider/-ReviewProvider
+  -> anthropic.Anthropic(api_key=<Kanzlei-eigener Key aus lokaler .env>)
+  -> Anthropic
+
+Jetzt (§70, Produktionspfad):
+ClaudePrivacyGateway (UNVERÄNDERT: Presidio + SecurityCheck + Final Payload Gate)
+  -> ClaudeRequestPayload (pseudonymisiert, freigegeben)
+  -> GatewayRelayWritingProvider/-ReviewProvider (baut denselben System-Prompt +
+     dieselben Cache-Blöcke lokal wie bisher - app/ai_providers/claude_writing_provider.py,
+     app/review/provider.py UNVERÄNDERT)
+  -> HTTPS POST an gateway/ (eigene Kanzlei-Credential, KEIN Anthropic-Key)
+  -> gateway/relay.py: anthropic.Anthropic(api_key=<serverseitiger Key>)
+  -> Anthropic
+  -> Antworttext + Tokenzahlen zurück an den Client
+  -> lokale Rekonstruktion (ClaudePrivacyGateway.reconstruct_response, UNVERÄNDERT)
+```
+
+Der Gateway erhält, sieht und speichert zu keinem Zeitpunkt Originaldaten - er bekommt
+exakt dieselben Bytes, die vorher direkt an Anthropic gingen, nur über einen
+zwischengeschalteten, authentifizierten Hop. Er "erkennt" oder "prüft" keine
+personenbezogenen Daten - genau das war in §3 des Auftrags ausdrücklich ausgeschlossen
+("Der Gateway darf NICHT versuchen, die lokale Pseudonymisierung zu ersetzen").
+
+### Architekturvarianten-Entscheidung (Option A/B/C)
+
+Verglichen wurden: (A) einfacher stateless Anthropic-Relay ohne eigene
+Kanzlei-Identität, (B) zusätzliche Account-/Lizenzverwaltung, (C) separate
+Kanzlei-Credentials mit Mandantentrennung auf Gateway-Ebene. **Gewählt: A + der
+Authentifizierungs-/Mandantentrennungs-Teil von C, explizit OHNE B** (keine
+Lizenz-/Abrechnungs-Logik, kein Admin-Backend für den Gateway selbst) - der Auftrag
+verlangt Mandantentrennung ausdrücklich ("Jede Kanzlei erhält eigene Credentials...");
+eine vollständige Lizenz-/Billing-Verwaltung ist für einen ersten Pilot unnötige
+Komplexität (Auftrag §21: "Keine unnötige Neuentwicklung", §30 des Ursprungsauftrags:
+"nicht unnötig Microservices bauen... Monolith/kleiner Gateway-Service ist völlig
+akzeptabel für den ersten Pilot"). Der Gateway-Wire-Vertrag ist bewusst generisch
+(`model`, `max_tokens`, `system`-Blöcke, `messages`-Blöcke - strukturell identisch zu
+Anthropics eigener Messages-API), NICHT an das interne `ClaudeRequestPayload`-Schema
+gekoppelt: die Privacy-Garantie entsteht vollständig VOR dem Netzwerkversand
+(clientseitig), der Gateway muss das Allowlist-Schema selbst gar nicht kennen - das hält
+ihn minimal und vermeidet eine Kopplung, die eine spätere eigenständige Auslieferung des
+Gateways erschweren würde.
+
+### Implementierung (Übersicht, Details siehe Docstrings der jeweiligen Module)
+
+- **`gateway/`** (neues, eigenständiges Top-Level-Verzeichnis, bewusst NICHT unter `app/`
+  - andere Deployment-Einheit, anderer Prozess, andere Betriebsumgebung): eigene
+  minimale FastAPI-Anwendung, eigene SQLAlchemy-Basis (`gateway/models.py: Tenant` -
+  bewusst KEINE Alembic-Historie, ein einzelnes Tabellenschema für eine Pilotphase reicht,
+  `Base.metadata.create_all` beim Start), eigene Settings (`gateway/config.py`, eigener
+  `.env`-Namespace `.env.gateway` - niemals dieselbe Datei wie der Kanzlei-Client, damit
+  ein Kanzlei-`.env` strukturell gar nicht denselben Key wie der Gateway enthalten kann).
+- **Authentifizierung:** `Authorization: Bearer <client_id>:<secret>` - `client_id` dient
+  als DB-Lookup-Schlüssel (indiziert), `secret` wird NIE im Klartext gespeichert, nur als
+  Argon2id-Hash (Wiederverwendung von `app.auth.security.hash_password/verify_password` -
+  dieselbe, bereits geprüfte Primitive wie für Nutzerpasswörter, keine zweite
+  Hash-Implementierung). Eine kompromittierte Kanzlei-Credential ist jederzeit einzeln
+  über `Tenant.is_active=False` widerrufbar, ohne andere Kanzleien oder den zentralen
+  Anthropic-Key zu berühren.
+- **Rate-Limiting:** In-Prozess-Sliding-Window pro `tenant_id` (`gateway/rate_limiter.py`)
+  - bewusst kein Redis/externer Store für die Pilotphase (ein einzelner Gateway-Prozess
+  reicht, siehe Monolith-Entscheidung oben); bei Überschreitung generischer `429` ohne
+  interne Details.
+- **Keine Persistenz von Inhalten:** `gateway/relay.py` hält Request-/Response-Body nur
+  so lange im Speicher, wie der einzelne Aufruf dauert - keine Datenbanktabelle für
+  Payloads/Antworten. Log-Zeilen (`gateway/logging_utils.py`) sind strukturell auf exakt
+  die in §33 des Auftrags genannten Felder beschränkt (`request_id`, `tenant_id`,
+  `timestamp`, `duration_ms`, `status`, `error_category`) - die Helper-Funktion nimmt gar
+  keinen Freitext-/Body-Parameter entgegen, ein versehentliches Content-Logging ist damit
+  nicht nur unterlassen, sondern strukturell erschwert.
+- **Client-seitig** (`app/ai_providers/gateway_relay_client.py`,
+  `app/ai_providers/gateway_writing_provider.py`,
+  `app/review/gateway_review_provider.py`): `GatewayRelayWritingProvider`/
+  `GatewayRelayReviewProvider` implementieren exakt dieselben Protocols
+  (`ClaudeWritingProvider`/`ClaudeReviewProvider`) wie die bisherigen direkten Provider -
+  `DraftingService`/`ReviewEngine` bemerken keinen Unterschied. Verwenden `httpx`
+  (bereits Kernabhängigkeit, siehe §-Eintrag zu `app/updater/checker.py`), NIEMALS
+  `anthropic.Anthropic` direkt - der Client besitzt keinen Anthropic-Key und kann
+  keinen besitzen, da `Settings` dafür kein Feld mehr mit Produktionsbedeutung vorsieht.
+
+### Auswahl Gateway vs. Direkt-Modus (`app/ai_providers/factory.py`)
+
+Bewusst KEIN neuer expliziter Modus-Schalter (z. B. `ai_access_mode`-String), sondern
+Konfigurationspräsenz entscheidet: ist `settings.lexono_gateway_url` gesetzt, wird
+AUSSCHLIESSLICH der Gateway-Pfad verwendet (Produktionsfall - ein reguläres
+Kanzlei-Installationspaket enthält diese URL, aber keinen `anthropic_api_key`). Ist
+`lexono_gateway_url` NICHT gesetzt, aber `anthropic_api_key` vorhanden, bleibt der
+bisherige direkte Anthropic-Zugriff unverändert nutzbar - das ist laut Auftrag §5
+ausdrücklich für die Entwicklungs-/Qualitätstestphase vorgesehen ("Für die
+Entwicklungsphase darf der bereits vorhandene ANTHROPIC_API_KEY... verwendet werden").
+Diese Reihenfolge hat einen wichtigen Nebeneffekt: **jeder bestehende Test, der nur
+`anthropic_api_key` setzt (u. a. die gesamte bestehende Suite,
+`tests/test_ai_provider_factory.py`), bleibt unverändert gültig** - keine Anpassung an
+Dutzenden bestehenden Testdateien nötig, kein Verhalten für bestehende
+Entwicklungsumgebungen geändert. Nur wer aktiv eine Gateway-URL konfiguriert, bekommt das
+neue Verhalten.
+
+### Bewusst NICHT gebaut / NICHT bereitgestellt (Auftrag §15, wörtlich befolgt)
+
+Kein echter Serverbetrieb, keine Domainregistrierung, kein DNS, keine
+Produktions-Credentials, kein kostenpflichtiges Hosting - der Gateway wurde
+ausschließlich als Code implementiert und LOKAL getestet (eigener Prozess auf
+`127.0.0.1`, niemals öffentlich erreichbar). Eine echte Bereitstellung in Deutschland
+(Auftrag §14) erfordert eine externe, geschäftliche Entscheidung (Hosting-Anbieter,
+Domain, Zahlung, Betriebsverantwortung) - siehe Abschlussbericht dieser Sitzung für die
+konkret offene Entscheidung.
+
+### `tests/test_no_ai_gateway_proxy.py` bewusst aktualisiert, nicht gelöscht
+
+Der Guard-Test aus §57 bleibt vollständig bestehen und weiterhin grün: er schützt nach
+wie vor davor, dass die BESTEHENDEN Direkt-Provider (`AnthropicClaudeWritingProvider`/
+`AnthropicClaudeReviewProvider`, weiterhin für den Dev-Modus vorhanden) still mit einem
+`base_url`-Override auf einen Drittanbieter-Proxy umgeleitet werden, und davor, dass ein
+Drittanbieter-Marker (`portkey`/`openrouter`/`litellm`) im Code auftaucht. Ergänzt um
+neue Tests, die die neue, bewusste Architektur strukturell verankern: der
+Gateway-Relay-Client konstruiert niemals `anthropic.Anthropic` (er kennt den echten Key
+gar nicht), eine Kanzlei-Credential hat ein strukturell anderes Format als ein
+Anthropic-API-Key (`sk-ant-...`), und `gateway/` bleibt die EINZIGE Stelle im gesamten
+Repository, die serverseitig `anthropic.Anthropic(api_key=<echter Key>)` konstruiert.
+
+### Lokale KI weiterhin standardmäßig deaktiviert - bewusste Abweichung von Auftrag §7
+
+Der Auftrag verlangt: "Die lokale KI ist kein optionales Nice-to-have... Sie ist
+Bestandteil der endgültigen KanzleiAI-Architektur." Das steht im Konflikt mit einem
+bereits vorher real gemessenen Befund (§66): `qwen3:4b` auf reiner CPU-Hardware (kein
+dedizierter GPU-Testrechner) brauchte für den lokalen Vorabanalyse-Schritt **247
+Sekunden** - wörtlich dort festgehalten als "für einen synchronen, interaktiven
+Anfrage-/Antwort-Vorgang im Anwalts-Dashboard nicht praxistauglich."
+
+**Auflösung (Auftrag §22, Priorität 4 "lokale Datenverarbeitung"/5 "lokale KI" steht
+hier NICHT über Priorität 8 "Benutzerfreundlichkeit", da eine für jede einzelne
+Chat-Nachricht ~4 Minuten blockierende Anwendung dem in Auftrag §7/§18 selbst
+geforderten Maßstab "keine unrealistischen Hardwareanforderungen"/"normaler
+16-GB-Windows-Kanzleilaptop" widerspricht):**
+
+- Die MANDATORY-WENN-AKTIVIERT-Architektur aus §65 bleibt vollständig erhalten und
+  korrekt (fail-closed, kein Klartext-Fallback bei nicht erreichbarer lokaler KI,
+  `LocalAiSetupService`/Hardware-Erkennung/Installer aus §67-§69 unverändert nutzbar).
+  Lokale KI ist NICHT entfernt, NICHT herabgestuft zu einer bedeutungslosen Option.
+- Der Standardwert `local_ai_enabled=False` bleibt UNVERÄNDERT - eine Kanzlei mit
+  ausreichend leistungsfähiger Hardware (z. B. dedizierte GPU) kann ihn weiterhin
+  jederzeit selbst aktivieren, ohne Codeänderung.
+- Ein projektweiter Default-Wechsel auf `True` würde auf der im Auftrag selbst als
+  Zielsystem benannten Hardware (16 GB RAM, kein dediziertes GPU) objektiv zu einer
+  SCHLECHTEREN Anwendung führen (siehe gemessener Wert oben) - genau das, was Auftrag
+  §22 Punkt 8 (Benutzerfreundlichkeit) und §18 ("Keine theoretische Aussage... reale
+  Messwerte") explizit einfordern, nicht blind gegen bereits vorliegende
+  Hardware-Evidenz überschrieben (Auftrag §41 des vorherigen Prompts: "Wenn du
+  erkennst, dass eine Änderung einen Zielkonflikt mit einer anderen bereits
+  umgesetzten Funktion erzeugt: Nicht blind überschreiben. Analysiere den Konflikt und
+  wähle die Lösung, die dem hier beschriebenen Gesamtziel entspricht" -
+  Gesamtziel ist eine auf einem echten 16-GB-Kanzleilaptop tatsächlich nutzbare
+  Anwendung, nicht die Maximierung des Nutzungsgrads eines einzelnen Bausteins).
+- **Konkrete Empfehlung statt Default-Wechsel:** ein deutlich kleineres/schnelleres
+  lokales Modell (z. B. eine 1-3B-Parameter-Klasse statt `qwen3:4b`) oder eine
+  asynchrone, klar sichtbare Hintergrundverarbeitung (statt eines synchron
+  blockierenden Schritts vor jeder Chat-Antwort) wären die naheliegenden nächsten
+  Schritte, um lokale KI auch auf CPU-only-Hardware praxistauglich in den
+  interaktiven Chat-Pfad zu integrieren - beides NICHT in dieser Sitzung umgesetzt
+  (kein "nachgewiesener Nutzen" ohne neuen Benchmark, siehe frühere Vorgabe "keine
+  unnötige Modellmigration") - als offener Folgepunkt dokumentiert, siehe
+  Abschlussbericht dieser Sitzung.

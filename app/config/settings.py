@@ -142,6 +142,20 @@ class Settings(BaseSettings):
     claude_model_name: str = "claude-sonnet-5"
     claude_max_tokens: int = 2000
 
+    # --- Lexono-Gateway (§70, 31.08.) ---
+    # Ist lexono_gateway_url gesetzt, verwendet die Anwendung
+    # AUSSCHLIESSLICH den Gateway-Pfad (Produktionsfall - der echte
+    # Anthropic-Key existiert dann NICHT auf diesem Rechner, siehe
+    # ARCHITECTURE.md §70). Ist lexono_gateway_url NICHT gesetzt, aber
+    # anthropic_api_key vorhanden, bleibt der bisherige direkte
+    # Anthropic-Zugriff unveraendert nutzbar - ausdruecklich NUR fuer
+    # lokale Entwicklung/Qualitaetstests vorgesehen, niemals der
+    # Produktionsdefault fuer eine ausgelieferte Kanzlei-Installation.
+    lexono_gateway_url: str | None = None
+    lexono_gateway_client_id: str | None = None
+    lexono_gateway_client_secret: SecretStr | None = None
+    lexono_gateway_timeout_seconds: float = 60.0
+
     # --- Lokale KI (Ollama) (§65, 20.08.) ---
     # Bewusst standardmaessig DEAKTIVIERT (local_ai_enabled=False): die
     # bestehende, vollstaendig getestete Presidio+Claude-Pipeline bleibt

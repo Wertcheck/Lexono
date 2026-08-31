@@ -20,19 +20,21 @@ from __future__ import annotations
 
 from app.ai_providers.anthropic_writing_provider import AnthropicClaudeWritingProvider
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
+from app.ai_providers.gateway_writing_provider import GatewayRelayWritingProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider
 from app.ai_providers.ollama_provider import OllamaLocalLLMProvider
 from app.config import Settings
 from app.review.anthropic_review_provider import AnthropicClaudeReviewProvider
+from app.review.gateway_review_provider import GatewayRelayReviewProvider
 from app.review.provider import ClaudeReviewProvider
 
 
 class ProviderNotConfiguredError(Exception):
-    """Wird ausgelöst, wenn kein gültiger `ANTHROPIC_API_KEY` konfiguriert
-    ist. Bewusst EINE gemeinsame Exception für Writing UND Review (statt
-    zwei praktisch identischer Typen) - der Dashboard-Router fängt sie ab,
-    um dem Anwalt eine verständliche Meldung statt eines Stacktrace zu
-    zeigen (siehe app/web/drafts_router.py)."""
+    """Wird ausgelöst, wenn weder ein Lexono-Gateway noch ein direkter
+    `ANTHROPIC_API_KEY` konfiguriert ist. Bewusst EINE gemeinsame Exception
+    für Writing UND Review (statt zwei praktisch identischer Typen) - der
+    Dashboard-Router fängt sie ab, um dem Anwalt eine verständliche
+    Meldung statt eines Stacktrace zu zeigen (siehe app/web/drafts_router.py)."""
 
 
 def _require_anthropic_api_key(settings: Settings) -> str:
@@ -43,14 +45,43 @@ def _require_anthropic_api_key(settings: Settings) -> str:
     )
     if not api_key or not api_key.strip():
         raise ProviderNotConfiguredError(
-            "ANTHROPIC_API_KEY ist nicht konfiguriert - in der .env-Datei hinterlegen."
+            "Weder ein Lexono-Gateway noch ANTHROPIC_API_KEY sind konfiguriert - "
+            "in der .env-Datei hinterlegen."
         )
     return api_key
 
 
+def _require_gateway_credentials(settings: Settings) -> tuple[str, str]:
+    client_id = settings.lexono_gateway_client_id
+    client_secret = (
+        settings.lexono_gateway_client_secret.get_secret_value()
+        if settings.lexono_gateway_client_secret is not None
+        else None
+    )
+    if not client_id or not client_secret:
+        raise ProviderNotConfiguredError(
+            "LEXONO_GATEWAY_URL ist gesetzt, aber LEXONO_GATEWAY_CLIENT_ID/"
+            "LEXONO_GATEWAY_CLIENT_SECRET fehlen - beide in der .env-Datei hinterlegen."
+        )
+    return client_id, client_secret
+
+
 def build_writing_provider(settings: Settings) -> ClaudeWritingProvider:
-    """Baut den Anthropic-Schreib-Provider. Wirft `ProviderNotConfiguredError`,
-    wenn kein `ANTHROPIC_API_KEY` hinterlegt ist."""
+    """Baut den Schreib-Provider - über den Lexono-Gateway, wenn
+    `lexono_gateway_url` gesetzt ist (Produktionspfad, ARCHITECTURE.md
+    §70), sonst über den bisherigen direkten Anthropic-Zugriff (NUR
+    Entwicklung/Qualitätstests). Wirft `ProviderNotConfiguredError`, wenn
+    keins von beidem vollständig konfiguriert ist."""
+    if settings.lexono_gateway_url:
+        client_id, client_secret = _require_gateway_credentials(settings)
+        return GatewayRelayWritingProvider(
+            base_url=settings.lexono_gateway_url,
+            client_id=client_id,
+            client_secret=client_secret,
+            model=settings.claude_model_name,
+            max_tokens=settings.claude_max_tokens,
+            timeout_seconds=settings.lexono_gateway_timeout_seconds,
+        )
     api_key = _require_anthropic_api_key(settings)
     return AnthropicClaudeWritingProvider(
         api_key=api_key,
@@ -61,6 +92,16 @@ def build_writing_provider(settings: Settings) -> ClaudeWritingProvider:
 
 def build_review_provider(settings: Settings) -> ClaudeReviewProvider:
     """Wie `build_writing_provider`, für die Review-Engine."""
+    if settings.lexono_gateway_url:
+        client_id, client_secret = _require_gateway_credentials(settings)
+        return GatewayRelayReviewProvider(
+            base_url=settings.lexono_gateway_url,
+            client_id=client_id,
+            client_secret=client_secret,
+            model=settings.claude_model_name,
+            max_tokens=settings.claude_max_tokens,
+            timeout_seconds=settings.lexono_gateway_timeout_seconds,
+        )
     api_key = _require_anthropic_api_key(settings)
     return AnthropicClaudeReviewProvider(
         api_key=api_key,

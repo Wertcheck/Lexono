@@ -101,3 +101,66 @@ def test_service_factory_reexports_provider_not_configured_error_as_old_name() -
     from app.web.service_factory import WritingProviderNotConfiguredError
 
     assert WritingProviderNotConfiguredError is ProviderNotConfiguredError
+
+
+# --- Lexono-Gateway (§70) ---
+
+
+def _settings_with_gateway(**overrides) -> Settings:
+    defaults = {
+        "lexono_gateway_url": "http://127.0.0.1:8700",
+        "lexono_gateway_client_id": "test-client-id",
+        "lexono_gateway_client_secret": "lxg_secret_test",
+    }
+    defaults.update(overrides)
+    return Settings(**defaults)
+
+
+def test_build_writing_provider_uses_gateway_when_url_configured() -> None:
+    from app.ai_providers.gateway_writing_provider import GatewayRelayWritingProvider
+
+    settings = _settings_with_gateway()
+    provider = build_writing_provider(settings)
+    assert isinstance(provider, GatewayRelayWritingProvider)
+
+
+def test_build_review_provider_uses_gateway_when_url_configured() -> None:
+    from app.review.gateway_review_provider import GatewayRelayReviewProvider
+
+    settings = _settings_with_gateway()
+    provider = build_review_provider(settings)
+    assert isinstance(provider, GatewayRelayReviewProvider)
+
+
+def test_gateway_takes_priority_over_direct_anthropic_key_when_both_present() -> None:
+    """Ist eine Gateway-URL konfiguriert, wird IMMER der Gateway-Pfad
+    verwendet - auch wenn zufaellig zusaetzlich ein anthropic_api_key
+    gesetzt ist (z. B. in einer Entwicklungsumgebung mit beidem). Sicherer
+    Default: niemals versehentlich am Gateway vorbei direkt zu Anthropic."""
+    from app.ai_providers.gateway_writing_provider import GatewayRelayWritingProvider
+
+    settings = _settings_with_gateway(anthropic_api_key="sk-ant-should-be-ignored")
+    provider = build_writing_provider(settings)
+    assert isinstance(provider, GatewayRelayWritingProvider)
+
+
+def test_build_writing_provider_raises_when_gateway_url_set_without_credentials() -> None:
+    settings = Settings(lexono_gateway_url="http://127.0.0.1:8700")
+    with pytest.raises(ProviderNotConfiguredError):
+        build_writing_provider(settings)
+
+
+def test_build_review_provider_raises_when_gateway_url_set_without_credentials() -> None:
+    settings = Settings(lexono_gateway_url="http://127.0.0.1:8700")
+    with pytest.raises(ProviderNotConfiguredError):
+        build_review_provider(settings)
+
+
+def test_direct_anthropic_mode_still_works_without_any_gateway_config() -> None:
+    """Regression: bestehende Entwicklungsumgebungen (nur ANTHROPIC_API_KEY
+    in .env, keine Gateway-Variablen) funktionieren unveraendert."""
+    from app.ai_providers.anthropic_writing_provider import AnthropicClaudeWritingProvider
+
+    settings = _settings_with_key()
+    provider = build_writing_provider(settings)
+    assert isinstance(provider, AnthropicClaudeWritingProvider)
