@@ -107,10 +107,15 @@ Source: "..\dist\kanzlei_ai\*"; DestDir: "{app}"; Flags: ignoreversion recursesu
 Source: "..\Start.vbs"; DestDir: "{app}"; Flags: ignoreversion
 ; WebView2-Evergreen-Bootstrapper (ARCHITECTURE.md §70/Pilot-Readiness-
 ; Review) - siehe windows\fetch_webview2.ps1 fuer Herkunft/Lizenz. "Flags:
-; dontcopy" - wird nur in einen temporaeren Ordner entpackt und im [Run]-
-; Schritt unten ausgefuehrt, bleibt NICHT im Installationsverzeichnis
+; dontcopy" - wird NICHT automatisch nach {tmp} entpackt (Fund aus einem
+; echten Installationslauf, 31.08.: "dontcopy" bedeutet nur "nicht nach
+; {app} kopieren" - ohne einen expliziten `ExtractTemporaryFile`-Aufruf im
+; [Code]-Abschnitt unten bleibt die Datei komplett unentpackt, der
+; [Run]-Schritt scheitert dann mit "Datei kann nicht ausgefuehrt werden" /
+; CreateProcess-Fehlercode 2. Bleibt NICHT im Installationsverzeichnis
 ; liegen (kein dauerhaft benoetigtes Programmbestandteil, nur ein
-; einmaliger Setup-Schritt).
+; einmaliger Setup-Schritt) - siehe [Code] fuer die tatsaechliche
+; Entpackung vor dem [Run]-Aufruf.
 Source: "vendor\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: dontcopy
 
 [Tasks]
@@ -168,3 +173,19 @@ Filename: "wscript.exe"; Parameters: """{app}\Start.vbs"""; Description: "{#MyAp
 ; NIEMALS automatisch löschen. Eine bewusste Datenlöschung bleibt dem
 ; Betreiber vorbehalten (siehe ARCHITECTURE.md, Abschnitt zu Backup/Export,
 ; Prompt 35, wo dieselbe Sensibilität bereits dokumentiert ist).
+
+[Code]
+// Entpackt den WebView2-Bootstrapper VOR dem eigentlichen Dateikopiervorgang
+// nach {tmp} - "Flags: dontcopy" im [Files]-Abschnitt allein entpackt NICHTS
+// automatisch (echter Fund aus einem realen Installationslauf, 31.08.: ohne
+// diesen expliziten ExtractTemporaryFile-Aufruf schlägt der [Run]-Schritt mit
+// "CreateProcess schlug fehl; Code 2 - Datei nicht gefunden" fehl, obwohl der
+// Installer selbst fehlerfrei durchläuft). ssInstall ist frühzeitig genug -
+// die Extraktion nach {tmp} ist unabhängig vom eigentlichen {app}-Kopiervorgang.
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+  begin
+    ExtractTemporaryFile('MicrosoftEdgeWebview2Setup.exe');
+  end;
+end;

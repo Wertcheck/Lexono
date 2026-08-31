@@ -117,3 +117,25 @@ def test_runs_webview2_bootstrapper_silently_before_app_start() -> None:
     webview2_index = content.index('"{tmp}\\MicrosoftEdgeWebview2Setup.exe"')
     app_start_index = content.index('Parameters: """{app}\\Start.vbs"""; Description:')
     assert webview2_index < app_start_index
+
+
+def test_webview2_bootstrapper_is_actually_extracted_before_run() -> None:
+    """Regression für einen echten, nur bei einem realen Installationslauf
+    gefundenen Bug (31.08.): "Flags: dontcopy" allein entpackt eine Datei
+    NICHT automatisch nach {tmp} - ohne einen expliziten
+    `ExtractTemporaryFile`-Aufruf im [Code]-Abschnitt scheitert der
+    [Run]-Schritt mit "Datei kann nicht ausgeführt werden" (CreateProcess-
+    Fehlercode 2), obwohl der Installer selbst fehlerfrei durchläuft und
+    kein Text-basierter Test dies bemerkt hätte."""
+    content = _read_installer()
+    assert "[Code]" in content
+    assert "ExtractTemporaryFile('MicrosoftEdgeWebview2Setup.exe')" in content
+    # Muss zeitlich vor dem [Run]-Aufruf laufen - ssInstall (Beginn der
+    # Dateiinstallation) ist frueh genug, [Run]-Eintraege werden erst danach
+    # ausgefuehrt. Inno Setup ist bei der TEXTUELLEN Reihenfolge der
+    # Abschnitte in der .iss-Datei selbst frei (CurStepChanged ist ein
+    # Callback, kein Ablaufschritt "von oben nach unten") - deshalb hier
+    # bewusst KEINE Prüfung auf Text-Reihenfolge, nur auf den korrekten
+    # SetupStep.
+    code_section = content[content.index("[Code]") :]
+    assert "CurStep = ssInstall" in code_section
