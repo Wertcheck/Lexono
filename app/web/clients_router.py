@@ -43,13 +43,15 @@ from app.clients.service import (
 )
 from app.db.session import get_db
 from app.models import AuditEvent, Client, Document, Matter, Message, User
+from app.web.download_staging import cleanup_stale_files, delete_after_send
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/clients", tags=["dashboard-clients"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Eigenes, temporäres Verzeichnis für Datenauszug-Downloads - gleiches
-# Muster wie app/web/backup_router.py (_DOWNLOAD_STAGING_DIR).
+# Muster wie app/web/backup_router.py (_DOWNLOAD_STAGING_DIR), inkl.
+# automatischer Löschung nach dem Download (app/web/download_staging.py).
 _DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "kanzlei_ai_dashboard_exports"
 
 _MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
@@ -338,6 +340,7 @@ def export_client_action(
     current_user: User = Depends(require_role(permission=PERM_CLIENT_MANAGE)),
 ) -> FileResponse:
     client = get_or_404(db, Client, client_id, "Mandant")
+    cleanup_stale_files(_DOWNLOAD_STAGING_DIR)
     service = ClientExportService()
     archive_path = service.export_client(client.id, db, _DOWNLOAD_STAGING_DIR)
     db.add(
@@ -351,5 +354,8 @@ def export_client_action(
     )
     db.commit()
     return FileResponse(
-        archive_path, filename=archive_path.name, media_type="application/zip"
+        archive_path,
+        filename=archive_path.name,
+        media_type="application/zip",
+        background=delete_after_send(archive_path),
     )

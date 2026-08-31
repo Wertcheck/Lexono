@@ -374,6 +374,28 @@ def test_export_client_returns_zip_file(client: TestClient, db_session: Session)
     assert response.content[:2] == b"PK"  # ZIP-Magic-Bytes
 
 
+def test_export_client_archive_deleted_after_download(
+    client: TestClient, db_session: Session, tmp_path, monkeypatch
+) -> None:
+    """Pilot-Readiness-Härtung: das DSGVO-Datenauszug-Archiv (enthält
+    unpseudonymisierte Mandanteninhalte) darf nach dem Download nicht im
+    Staging-Verzeichnis liegen bleiben. Siehe app/web/download_staging.py."""
+    import app.web.clients_router as clients_module
+
+    monkeypatch.setattr(clients_module, "_DOWNLOAD_STAGING_DIR", tmp_path)
+
+    row = _create_client_row(db_session, name="Export-Mandant-Cleanup", number="EX-2")
+    csrf_token = _csrf(client, f"/dashboard/clients/{row.id}")
+    response = client.post(
+        f"/dashboard/clients/{row.id}/export",
+        data={"csrf_token": csrf_token},
+    )
+    assert response.status_code == 200
+
+    remaining = list(tmp_path.glob("*.zip"))
+    assert remaining == [], f"DSGVO-Export-Archiv nicht aufgeräumt: {remaining}"
+
+
 # --- CSV-/Excel-Import ---
 
 

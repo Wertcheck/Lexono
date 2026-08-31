@@ -22,6 +22,7 @@ from app.config import get_settings
 from app.db.session import get_db
 from app.export import MatterExportService
 from app.models import Matter, User
+from app.web.download_staging import cleanup_stale_files, delete_after_send
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/backup", tags=["dashboard-backup"])
@@ -29,8 +30,8 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Eigenes, temporäres Verzeichnis für über das Dashboard erzeugte
 # Archive - getrennt von einem evtl. per CLI-Skript befüllten
-# `backups/`-Ordner. Wird von FileResponse gestreamt, nicht automatisch
-# geloescht - siehe Betriebsdokumentation: regelmässig manuell leeren.
+# `backups/`-Ordner. Wird nach dem Download automatisch gelöscht (siehe
+# app/web/download_staging.py: delete_after_send + cleanup_stale_files).
 _DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "kanzlei_ai_dashboard_exports"
 
 
@@ -61,6 +62,7 @@ def backup_page(
 def create_full_backup(
     current_user: User = Depends(require_role("admin")),
 ) -> FileResponse:
+    cleanup_stale_files(_DOWNLOAD_STAGING_DIR)
     settings = get_settings()
     service = BackupService(
         database_url=settings.database_url,
@@ -77,7 +79,10 @@ def create_full_backup(
 
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return FileResponse(
-        archive_path, filename=archive_path.name, media_type="application/zip"
+        archive_path,
+        filename=archive_path.name,
+        media_type="application/zip",
+        background=delete_after_send(archive_path),
     )
 
 
@@ -88,8 +93,12 @@ def export_matter(
     current_user: User = Depends(require_role("admin")),
 ) -> FileResponse:
     get_or_404(db, Matter, matter_id, "Akte")  # sauberer 404 vor dem eigentlichen Export
+    cleanup_stale_files(_DOWNLOAD_STAGING_DIR)
     service = MatterExportService()
     archive_path = service.export_matter(matter_id, db, _DOWNLOAD_STAGING_DIR)
     return FileResponse(
-        archive_path, filename=archive_path.name, media_type="application/zip"
+        archive_path,
+        filename=archive_path.name,
+        media_type="application/zip",
+        background=delete_after_send(archive_path),
     )
