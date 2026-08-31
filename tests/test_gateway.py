@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from gateway.config import GatewaySettings, get_gateway_settings
+from gateway.db import build_engine
 from gateway.main import app, get_db
 from gateway.models import Base, Tenant
 from gateway.rate_limiter import SlidingWindowRateLimiter
@@ -103,6 +104,21 @@ def _mock_anthropic_response(text: str = "Antworttext") -> MagicMock:
     usage.output_tokens = 5
     response.usage = usage
     return response
+
+
+# --- Datenbank-Verzeichnis (echter Bug, gefunden beim ersten realen
+# Gateway-Start: SQLite legt das Verzeichnis der DB-Datei nicht selbst an) ---
+
+
+def test_build_engine_creates_missing_sqlite_parent_directory(tmp_path) -> None:
+    nested_db_path = tmp_path / "does" / "not" / "exist" / "gateway.db"
+    settings = GatewaySettings(database_url=f"sqlite:///{nested_db_path}")
+
+    engine = build_engine(settings)
+    Base.metadata.create_all(engine)  # darf nicht mit "unable to open database file" scheitern
+
+    assert nested_db_path.parent.exists()
+    engine.dispose()
 
 
 # --- Health ---

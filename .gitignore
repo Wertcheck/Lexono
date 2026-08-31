@@ -1,7 +1,14 @@
 # Secrets / lokale Konfiguration
 .env
+.env.*
+!.env.example
+!.env.gateway.example
 *.local.env
 .claude/launch.json
+
+# Lexono-Gateway (ARCHITECTURE.md §70) - eigene lokale Datenbank/Daten,
+# niemals Teil des Repos (enthaelt Kanzlei-Credential-Hashes).
+/gateway_data/
 
 # Laufzeit-Logs (Schritt 3, Start.vbs) - koennen technische Details/
 # Stacktraces enthalten, gehoeren nicht ins Repo.
