@@ -4721,3 +4721,24 @@ geforderten Maßstab "keine unrealistischen Hardwareanforderungen"/"normaler
   (kein "nachgewiesener Nutzen" ohne neuen Benchmark, siehe frühere Vorgabe "keine
   unnötige Modellmigration") - als offener Folgepunkt dokumentiert, siehe
   Abschlussbericht dieser Sitzung.
+
+### WebView2-Runtime jetzt im Installer gebündelt (bisher offener Pilot-Readiness-Punkt)
+
+Bisher prüfte `run.py::_is_webview2_runtime_available()` nur per Registry, ob die
+WebView2-Runtime vorhanden ist, und zeigte bei Fehlen einen manuellen Download-Link -
+`windows/installer.iss` bündelte oder installierte die Runtime selbst nicht. Behoben:
+`windows/fetch_webview2.ps1` lädt den offiziellen Microsoft-"Evergreen Bootstrapper"
+(~1,8 MB, offizieller Redistribution-Kurzlink) nach `windows/vendor/webview2/`
+(gitignored, wie das bestehende Tesseract-Vendor-Bundle). `installer.iss` bündelt ihn
+als temporäre Datei (`Flags: dontcopy`, kein dauerhafter Installationsbestandteil) und
+führt ihn als ERSTEN `[Run]`-Schritt mit `/silent /install` aus, bevor die Anwendung
+selbst startet - bewusst OHNE `abortonerror`: schlägt der Schritt fehl (z. B. kein
+Internetzugang während der Installation, da der kleine Bootstrapper die eigentliche
+Runtime bei der Installation nachlädt), greift weiterhin die bereits bestehende,
+getestete Laufzeit-Fehlerbehandlung in `run.py` mit einer klaren Meldung + manuellem
+Download-Link - kein Absturz, kein stiller Fehlschlag. Bewusst der kleine Bootstrapper
+statt des großen (~130-180 MB) Offline-"Evergreen Standalone Installer" - die Anwendung
+braucht ohnehin Internetzugang für die Cloud-KI-Anbindung (§70), ein kleinerer
+Installer-Download ist der bessere Kompromiss für den Regelfall; bei Bedarf später ohne
+strukturelle Änderung an `installer.iss` auf den Offline-Installer umstellbar. 4 neue
+Tests in `tests/test_installer_config.py`.

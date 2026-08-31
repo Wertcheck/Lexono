@@ -111,9 +111,13 @@
 
 ### Minor Issues (Won't Affect Pilot)
 
-1. **Tesseract OCR is External Dependency**
-   - Requires separate Windows installation
-   - Workaround: Setup docs provided
+1. **Tesseract OCR is External Dependency** — ⚠️ STALE, corrected below (see
+   ARCHITECTURE.md §70/"Tesseract in Windows-Installer gebündelt" commit):
+   Tesseract is bundled into the Windows installer since a later change
+   (`windows/fetch_tesseract.ps1`, `windows/kanzlei_ai.spec`) - no separate
+   installation or manual PATH setup is required anymore. This entry
+   predates that fix and is kept here unchanged for historical accuracy
+   (this document describes the v0.1.0 state as originally released).
    - Fallback: Status set to "pending_ocr", not error
 
 2. **Log Files Not Auto-Rotated**
@@ -142,7 +146,8 @@
 - **RAM:** ≥4 GB (8 GB recommended)
 - **Disk Space:** ≥500 MB (for database + documents)
 - **Internet:** Stable connection (for Claude API only)
-- **Tesseract** (optional, for OCR): Separate download + PATH setup
+- **Tesseract** (for OCR): bundled in the installer since a later fix -
+  ⚠️ this line is STALE, see the corrected note under "Minor Issues" above
 
 ### Quick Start
 
@@ -314,7 +319,15 @@ Use restricted to authorized pilot participants and development team.
 **A:** Not in v0.1.0 (installer is Windows-only). v1.0 may add Docker support.
 
 ### Q: Can I self-host the Claude API?
-**A:** No, Claude API calls still require Anthropic credentials. Ollama integration (local LLM) planned for v1.0.
+**A:** ⚠️ STALE (this answer describes the v0.1.0 state; see ARCHITECTURE.md
+§65-§70 for the current, superseding state). Local LLM support via Ollama
+was implemented as an optional, fail-closed pre-processing step (default
+off - real-hardware testing found it too slow for synchronous interactive
+use on a typical CPU-only laptop, see ARCHITECTURE.md §66/§70). Separately,
+production Claude access no longer requires Anthropic credentials on the
+Kanzlei PC at all - a self-operated Lexono Gateway server now holds the
+real API key centrally (ARCHITECTURE.md §70); the Kanzlei PC only needs
+its own gateway credential.
 
 ### Q: What happens if my internet goes down?
 **A:** The system still works locally (documents, database, search). Draft generation will fail (Claude API unreachable).

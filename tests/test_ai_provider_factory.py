@@ -156,6 +156,21 @@ def test_build_review_provider_raises_when_gateway_url_set_without_credentials()
         build_review_provider(settings)
 
 
+def test_gateway_url_must_be_https_outside_development() -> None:
+    with pytest.raises(Exception):  # noqa: PT011 - pydantic ValidationError
+        Settings(app_env="production", lexono_gateway_url="http://insecure.example.com")
+
+
+def test_gateway_url_https_accepted_in_production() -> None:
+    settings = Settings(app_env="production", lexono_gateway_url="https://secure.example.com")
+    assert settings.lexono_gateway_url == "https://secure.example.com"
+
+
+def test_gateway_url_http_allowed_in_development_for_local_testing() -> None:
+    settings = Settings(lexono_gateway_url="http://127.0.0.1:8700")
+    assert settings.lexono_gateway_url == "http://127.0.0.1:8700"
+
+
 def test_direct_anthropic_mode_still_works_without_any_gateway_config() -> None:
     """Regression: bestehende Entwicklungsumgebungen (nur ANTHROPIC_API_KEY
     in .env, keine Gateway-Variablen) funktionieren unveraendert."""

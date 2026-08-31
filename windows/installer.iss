@@ -105,6 +105,13 @@ Source: "..\dist\kanzlei_ai\*"; DestDir: "{app}"; Flags: ignoreversion recursesu
 ; Betrieb kein Konsolenfenster erscheint (nur beim allerersten Start
 ; bleibt die Konsole sichtbar, siehe Start.vbs-Kommentar).
 Source: "..\Start.vbs"; DestDir: "{app}"; Flags: ignoreversion
+; WebView2-Evergreen-Bootstrapper (ARCHITECTURE.md §70/Pilot-Readiness-
+; Review) - siehe windows\fetch_webview2.ps1 fuer Herkunft/Lizenz. "Flags:
+; dontcopy" - wird nur in einen temporaeren Ordner entpackt und im [Run]-
+; Schritt unten ausgefuehrt, bleibt NICHT im Installationsverzeichnis
+; liegen (kein dauerhaft benoetigtes Programmbestandteil, nur ein
+; einmaliger Setup-Schritt).
+Source: "vendor\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: dontcopy
 
 [Tasks]
 ; Startmenü-Verknüpfung ist immer da (siehe [Icons] unten, kein Task
@@ -135,6 +142,24 @@ Name: "{group}\{#MyAppName} deinstallieren"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "wscript.exe"; Parameters: """{app}\Start.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; WebView2-Runtime automatisch bereitstellen (ARCHITECTURE.md §70) - laeuft
+; VOR dem eigentlichen App-Start (siehe Reihenfolge der [Run]-Eintraege,
+; Inno Setup fuehrt sie sequenziell aus), damit "kanzlei_ai.exe serve"
+; beim allerersten Start die Runtime bereits vorfindet, statt mit der
+; bisherigen Fehlermeldung (run.py::_is_webview2_runtime_available) manuell
+; auf einen Download zu verweisen. "/silent /install" - keine
+; Bootstrapper-eigene UI; Windows kann dennoch EINMALIG UAC-Zustimmung
+; einfordern, falls die Runtime noch fehlt und maschinenweit installiert
+; werden muss (identisches Verhalten wie bei jeder anderen Anwendung, die
+; WebView2 einbindet). "Flags: waituntilterminated" (App braucht die
+; Runtime sofort), aber bewusst OHNE "Flags: abortonerror" - schlaegt
+; dieser Schritt fehl (z. B. kein Internetzugang waehrend der
+; Installation), bricht die Lexono-Installation selbst NICHT ab; die
+; bestehende, bereits getestete Laufzeit-Fehlerbehandlung in run.py
+; greift dann beim ersten Programmstart mit einer klaren Meldung + Link
+; zum manuellen Download (siehe run.py::cmd_serve).
+Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "WebView2-Laufzeitumgebung wird bereitgestellt..."; Flags: waituntilterminated
+
 Filename: "wscript.exe"; Parameters: """{app}\Start.vbs"""; Description: "{#MyAppName} jetzt starten (öffnet beim allerersten Start den Setup-Assistenten in einem Konsolenfenster, danach unsichtbar im Hintergrund - siehe app.log)"; Flags: postinstall nowait skipifsilent
 
 ; BEWUSST KEIN [UninstallDelete]-Abschnitt für %PROGRAMDATA%\KanzleiAI:

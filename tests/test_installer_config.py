@@ -88,3 +88,32 @@ def test_postinstall_run_uses_silent_launcher_too() -> None:
         'Filename: "wscript.exe"; Parameters: """{app}\\Start.vbs"""; '
         'Description:' in content
     )
+
+
+# --- WebView2-Bundling (ARCHITECTURE.md §70) ---
+
+
+def test_bundles_webview2_bootstrapper_as_temp_file() -> None:
+    content = _read_installer()
+    assert 'Source: "vendor\\webview2\\MicrosoftEdgeWebview2Setup.exe"' in content
+    # "dontcopy" - nur temporaer entpackt, kein dauerhafter Bestandteil des
+    # Installationsverzeichnisses (reiner Einmal-Setup-Schritt).
+    assert "Flags: dontcopy" in content
+
+
+def test_runs_webview2_bootstrapper_silently_before_app_start() -> None:
+    content = _read_installer()
+    assert '"{tmp}\\MicrosoftEdgeWebview2Setup.exe"' in content
+    assert '/silent /install' in content
+    # Ein fehlgeschlagener WebView2-Bootstrap darf die gesamte
+    # Lexono-Installation NICHT abbrechen - die bestehende Laufzeit-
+    # Fehlerbehandlung (run.py) greift beim ersten Programmstart.
+    webview2_run_line = next(
+        line for line in content.splitlines() if "MicrosoftEdgeWebview2Setup.exe" in line and "Filename" in line
+    )
+    assert "abortonerror" not in webview2_run_line
+
+    # Reihenfolge: der WebView2-Schritt muss VOR dem App-Start-Eintrag stehen.
+    webview2_index = content.index('"{tmp}\\MicrosoftEdgeWebview2Setup.exe"')
+    app_start_index = content.index('Parameters: """{app}\\Start.vbs"""; Description:')
+    assert webview2_index < app_start_index

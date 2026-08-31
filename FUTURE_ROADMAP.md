@@ -162,15 +162,18 @@
 - **Complexity:** Höher (Windows-spezifisch, muss auf echter Windows-Maschine getestet werden)
 
 #### Feature 4: Ollama-Integration (Lokale LLM Alternative)
-- **Status:** Bewusst zurückgestellt (Prompt 34/43)
-- **Implementierung:**
-  - LocalAI-Provider (wie AnthropicClaudeWritingProvider)
-  - Ollama-Server erwarten (lokal oder Remote)
-  - Fallback zu Claude API wenn Ollama nicht verfügbar
-  - Kosten-freie Alternative für Budget-bewusste Kanzleien
-- **Estimated Effort:** 12–16 Stunden
-- **Risk:** Model-Quality kann schlechter sein (Prompt Engineering nötig)
-- **Test-Requirement:** Ollama-Installation auf Windows testen
+- **Status:** ⚠️ STALE - dieser Eintrag beschreibt einen längst überholten
+  Stand. Tatsächlich umgesetzt (ARCHITECTURE.md §65-§69): `OllamaLocalLLMProvider`,
+  Hardware-Erkennung/Modell-Empfehlung, automatischer Installer
+  (`LocalAiSetupService`), Anbindung an den Anwendungsstart. Standardmäßig
+  AUS (`local_ai_enabled=False`) - real auf CPU-only-Hardware gemessen:
+  ~247s pro Anfrage für `qwen3:4b`, für synchrone Chat-Interaktion nicht
+  praxistauglich (ARCHITECTURE.md §66/§70). KEIN Fallback-zu-Claude-Verhalten
+  wie hier ursprünglich geplant - bewusst das Gegenteil: fail-closed, kein
+  Klartext-Fallback bei nicht erreichbarer lokaler KI (Datenschutz vor
+  Verfügbarkeit). Offener Folgepunkt: kleineres/schnelleres lokales Modell
+  oder asynchrone Verarbeitung, um lokale KI praxistauglich in den
+  interaktiven Chat-Pfad zu integrieren (siehe ARCHITECTURE.md §70).
 
 #### Feature 5: macOS Support (Future Consideration)
 - **Status:** Bewusst zurückgestellt (Handoff-Punkt 4)
@@ -213,7 +216,12 @@
 
 1. **Docker-Containerisierung**
    - Vorteil: Einfacher Deployment auf Linux-Servern
-   - Use-Case: Multi-Kanzlei Cloud-Hosting (zukünftig)
+   - Use-Case: bezieht sich auf die KanzleiAI-Client-Anwendung selbst
+     (weiterhin offen). Der Multi-Kanzlei-Aspekt ist inzwischen TEILWEISE
+     erledigt: `gateway/` (ARCHITECTURE.md §70) ist bereits eine
+     eigenständige, deploybare FastAPI-Komponente mit
+     Kanzlei-Mandantentrennung - noch nicht containerisiert/deployed, aber
+     als Code fertig und lokal getestet.
    - Estimated Effort: 4–6 Stunden (Dockerfile + docker-compose)
 
 2. **PostgreSQL-Vollständigkeit**

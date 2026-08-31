@@ -83,7 +83,11 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 python -m spacy download de_core_news_lg  # lokales PII-Erkennungsmodell (Presidio)
 cp .env.example .env
-# .env: ANTHROPIC_API_KEY setzen (sonst funktionieren Entwurfserstellung/-pruefung nicht)
+# .env: ANTHROPIC_API_KEY setzen (sonst funktionieren Entwurfserstellung/-pruefung nicht).
+# NUR fuer lokale Entwicklung/Qualitaetstests - siehe ARCHITECTURE.md §70:
+# in Produktion wird stattdessen LEXONO_GATEWAY_URL + eine Kanzlei-Credential
+# konfiguriert, der echte Anthropic-Key existiert dann nur auf dem
+# Lexono-Gateway-Server (siehe gateway/ und .env.gateway.example).
 alembic upgrade head
 ADMIN_EMAIL=admin@example.test python scripts/create_admin.py
 uvicorn app.main:app --reload

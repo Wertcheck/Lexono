@@ -386,6 +386,26 @@ class Settings(BaseSettings):
     retention_days: int = 0
 
     @model_validator(mode="after")
+    def lexono_gateway_url_must_use_https_outside_development(self) -> "Settings":
+        """Wie `resolved_session_secret_key`: in Produktion (`app_env !=
+        "development"`) ist eine unverschluesselte Gateway-Verbindung ein
+        Konfigurationsfehler, kein akzeptabler stiller Fallback - die
+        Kanzlei-Credential (Auftrag §29: "HTTPS only") wuerde sonst im
+        Klartext uebertragen. Lokale Entwicklung/Tests gegen
+        `http://127.0.0.1:...` bleiben davon unberuehrt."""
+        if (
+            self.app_env != "development"
+            and self.lexono_gateway_url is not None
+            and not self.lexono_gateway_url.startswith("https://")
+        ):
+            raise ValueError(
+                "LEXONO_GATEWAY_URL muss in Produktion (APP_ENV != 'development') "
+                "mit https:// beginnen - eine unverschluesselte Verbindung wuerde "
+                "die Kanzlei-Credential im Klartext uebertragen."
+            )
+        return self
+
+    @model_validator(mode="after")
     def review_threshold_must_not_exceed_auto_assign_threshold(self) -> "Settings":
         if self.matching_review_threshold > self.matching_auto_assign_threshold:
             raise ValueError(
