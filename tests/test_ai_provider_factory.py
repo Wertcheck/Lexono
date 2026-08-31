@@ -94,6 +94,15 @@ def test_settings_local_ai_disabled_by_default() -> None:
     assert Settings().local_ai_enabled is False
 
 
+def test_settings_default_ollama_model_is_the_phase3_benchmark_winner() -> None:
+    """Phase 3 (§71): datenbasierter Wechsel von qwen3:4b (>20 Min. real
+    gemessen auf CPU-only-Hardware wegen 'thinking'-Overhead) zu
+    qwen2.5:1.5b (~10-11s warm, inhaltlich korrekte Antwort im selben
+    echten Test). Regressionsschutz gegen eine versehentliche Rueckkehr
+    zum alten, unpraktikablen Default."""
+    assert Settings().ollama_model == "qwen2.5:1.5b"
+
+
 # --- Rückwärtskompatibilität (bestehender Code/Tests nutzen den alten Namen) ---
 
 

@@ -173,10 +173,17 @@ class Settings(BaseSettings):
     # kuenftige weitere Runtime nicht erneut eine Schema-Aenderung braucht.
     local_ai_runtime: str = "ollama"
     ollama_base_url: str = "http://localhost:11434"
-    # Konkret unterstuetztes Modell fuer den heutigen Kern-Pfad (Schritt
-    # "erste funktionierende Implementierung", siehe ARCHITECTURE.md §65) -
-    # bewusst EIN Modell, kein Model-Catalog (bleibt ein spaeterer Schritt).
-    ollama_model: str = "qwen3:4b"
+    # Phase 3 (§71, 01.09.): Default von "qwen3:4b" auf "qwen2.5:1.5b"
+    # geaendert - datenbasierter Fund auf der Referenz-CPU-only-Maschine:
+    # qwen3:4b brauchte fuer eine einfache Zusammenfassung erneut >20
+    # Minuten (thinking-Overhead), qwen2.5:1.5b lieferte dieselbe Aufgabe
+    # inhaltlich korrekt in ~10-11s (warm) bzw. ~37s (kalt) - siehe
+    # app/local_ai/model_catalog.py Moduldocstring fuer die vollstaendigen
+    # Messwerte und ARCHITECTURE.md §71. Weiterhin EIN konfiguriertes
+    # Modell (kein automatischer Katalog-Bezug hier) - der Katalog
+    # (app/local_ai/model_catalog.py) dient der Empfehlung im
+    # Setup-Assistenten, nicht der Laufzeitauswahl.
+    ollama_model: str = "qwen2.5:1.5b"
 
     @field_validator("local_ai_runtime")
     @classmethod

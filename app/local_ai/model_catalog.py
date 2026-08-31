@@ -1,13 +1,34 @@
 """ModelCatalog – zentrale, versionierbare Metadaten freigegebener lokaler
-Modelle (§67).
+Modelle (§67, erweitert Phase 3/§8: "andere lokal verfuegbare Modelle
+pruefen, datenbasierte Entscheidung").
 
 Modelldaten (Name, Download-Groesse, Kontextlaenge) stammen von der
 offiziellen Ollama-Modellseite (https://ollama.com/library/qwen3, Stand
 21.08.) - `download_size_gb` fuer `qwen3:4b` zusaetzlich real durch einen
 tatsaechlichen `ollama pull` in dieser Session bestaetigt (siehe
-ARCHITECTURE.md §66). Ausschliesslich Modelle der `qwen3`-Familie (aktuell
-über die konfigurierte Ollama-Runtime bezogen, siehe
-app/ai_providers/ollama_provider.py) - keine Drittanbieter-/Fantasiewerte.
+ARCHITECTURE.md §66). Bis Phase 3 ausschliesslich Modelle der
+`qwen3`-Familie (aktuell über die konfigurierte Ollama-Runtime bezogen,
+siehe app/ai_providers/ollama_provider.py) - keine Drittanbieter-/
+Fantasiewerte.
+
+PHASE 3, ECHTER BENCHMARK-FUND (31.08./01.09., dieselbe i7-3720QM-CPU-only-
+Maschine wie §66): `qwen3:4b` benoetigte fuer denselben einfachen
+Zusammenfassungs-Prompt wie in §66 ERNEUT eine extrem lange Zeit (>20
+Minuten, Abbruch durch den Nutzer-seitigen Timeout) - der Grund ist
+plausibel das "thinking"-Verhalten der qwen3-Modellfamilie (die Ollama-
+Modellkarte listet `qwen3` explizit mit `capabilities: ["completion",
+"tools", "thinking"]|), das bei manchen Prompts sehr lange interne
+Reasoning-Ketten erzeugt, BEVOR ueberhaupt die eigentliche Antwort beginnt.
+Im selben echten Test lieferte `qwen2.5:1.5b` (KEINE thinking-Faehigkeit,
+laut Modellkarte nur `["completion", "tools"]`) fuer denselben Prompt eine
+inhaltlich korrekte, brauchbare deutsche Zusammenfassung in ~37s (kalt,
+Modell noch nicht im Ollama-Speicher-Cache) bzw. ~10-11s (warm, Modell
+bereits geladen) - `llama3.2:1b` verweigerte die Aufgabe ganz ("Ich kann
+diese Anfrage nicht bearbeiten"). Datenbasiertes Ergebnis: `qwen2.5:1.5b`
+ist auf dieser Referenzmaschine dem bisherigen Standardmodell `qwen3:4b`
+sowohl bei Geschwindigkeit als auch bei tatsaechlicher Aufgabenerfuellung
+klar ueberlegen - siehe `app/config/settings.py::ollama_model` (neuer
+Standardwert) und ARCHITECTURE.md §71.
 
 `min_ram_gb`/`recommended_ram_gb` sind eine dokumentierte, konservative
 Faustregel (Download-/Diskgroesse als Naeherung fuer den GGUF-Speicherbedarf
@@ -78,6 +99,25 @@ _QWEN3_LIMITATIONS = (
     "keine anspruchsvolle juristische Argumentation",
     "ersetzt nicht die Claude-Textproduktionsschicht",
     "keine eigenstaendige Rechtsberatung/Rechtsentscheidung",
+    "'thinking'-Faehigkeit kann bei manchen Prompts zu sehr langen internen "
+    "Reasoning-Ketten und dadurch stark verlaengerter Antwortzeit fuehren "
+    "(real gemessen: >20 Minuten fuer eine einfache Zusammenfassung auf "
+    "CPU-only-Hardware, Phase 3) - fuer den interaktiven Chat-Pfad nur mit "
+    "Vorsicht empfehlbar, siehe qwen2.5-Alternative unten",
+)
+
+_QWEN25_CAPABILITIES = (
+    "lokale Textvorverarbeitung",
+    "Klassifikation",
+    "Zusammenfassung",
+    "einfache Extraktion",
+)
+_QWEN25_LIMITATIONS = (
+    "keine anspruchsvolle juristische Argumentation",
+    "ersetzt nicht die Claude-Textproduktionsschicht",
+    "keine eigenstaendige Rechtsberatung/Rechtsentscheidung",
+    "kleineres Kontextfenster als qwen3 (32K statt bis zu 256K) - für sehr "
+    "lange Sachverhalte ggf. nicht ausreichend",
 )
 
 
@@ -123,7 +163,39 @@ def _qwen3_entry(
 # kein realistischer Kanzlei-PC-Anwendungsfall und bewusst nicht
 # aufgenommen (siehe ARCHITECTURE.md §67, "keine ueberdimensionierte
 # Katalogbreite ohne Produktbedarf").
+#: Reale Daten aus `ollama pull qwen2.5:1.5b` + `ollama list`/Ollama-API in
+#: dieser Session (Phase 3, siehe Moduldocstring) - download_size_gb aus der
+#: tatsaechlichen lokalen Modellgroesse (986 MB), context_length aus der
+#: Ollama-API-Antwort (`/api/tags`, `context_length: 32768`). Kein
+#: `thinking`-Reasoning-Overhead beobachtet - deutlich konsistentere,
+#: kuerzere Antwortzeiten als qwen3 bei vergleichbarer Modellgroesse.
+_QWEN25_1_5B = ModelCatalogEntry(
+    model_name="Qwen2.5",
+    runtime="ollama",
+    tag="qwen2.5:1.5b",
+    download_size_gb=0.99,
+    context_length=32_768,
+    min_ram_gb=3.3,
+    recommended_ram_gb=5.3,
+    min_vram_gb=1.1,
+    recommended_vram_gb=1.3,
+    cpu_only_supported=True,
+    gpu_supported=True,
+    capability_profile=_QWEN25_CAPABILITIES,
+    strengths=(
+        "läuft rein lokal, keine Cloud-Abhängigkeit für diesen Schritt",
+        "unterstützt sowohl CPU-only- als auch GPU-beschleunigten Betrieb",
+        "kein 'thinking'-Overhead - real gemessen deutlich schnellere und "
+        "konsistentere Antwortzeiten als vergleichbar große qwen3-Modelle "
+        "auf CPU-only-Hardware (Phase 3, ~10-11s warm statt >20 Minuten)",
+    ),
+    limitations=_QWEN25_LIMITATIONS,
+    expected_performance_class=RelativePerformanceClass.FAST,
+    recommendation_priority=0,
+)
+
 MODEL_CATALOG: tuple[ModelCatalogEntry, ...] = (
+    _QWEN25_1_5B,
     _qwen3_entry("0.6b", 0.523, 40_000, RelativePerformanceClass.FAST, priority=1),
     _qwen3_entry("1.7b", 1.4, 40_000, RelativePerformanceClass.FAST, priority=2),
     _qwen3_entry("4b", 2.5, 256_000, RelativePerformanceClass.BALANCED, priority=3),

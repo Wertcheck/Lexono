@@ -114,6 +114,81 @@ def test_wizard_overwrites_existing_env_with_force(tmp_path) -> None:
     assert "EXISTING=1" not in result.env_path.read_text(encoding="utf-8")
 
 
+# --- Lokale KI (Phase 3, §71) ---
+
+
+def test_wizard_calls_local_ai_setup_when_provided(tmp_path) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+    calls: list[bool] = []
+
+    result = run_setup_wizard(
+        data_dir=data_dir,
+        admin_email="anwalt@kanzlei.test",
+        admin_password=None,
+        run_migrations=lambda: None,
+        create_admin=lambda email, password: None,
+        run_local_ai_setup=lambda: calls.append(True) or True,
+    )
+
+    assert calls == [True]
+    assert result.local_ai_setup_succeeded is True
+
+
+def test_wizard_skips_local_ai_setup_when_not_provided(tmp_path) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+
+    result = run_setup_wizard(
+        data_dir=data_dir,
+        admin_email="anwalt@kanzlei.test",
+        admin_password=None,
+        run_migrations=lambda: None,
+        create_admin=lambda email, password: None,
+    )
+
+    assert result.local_ai_setup_succeeded is None
+
+
+def test_wizard_records_local_ai_setup_failure_without_raising(tmp_path) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+
+    result = run_setup_wizard(
+        data_dir=data_dir,
+        admin_email="anwalt@kanzlei.test",
+        admin_password=None,
+        run_migrations=lambda: None,
+        create_admin=lambda email, password: None,
+        run_local_ai_setup=lambda: False,
+    )
+
+    assert result.local_ai_setup_succeeded is False
+    # Kein Fehler geworfen, Setup insgesamt trotzdem "erfolgreich"
+    # (Admin/Migration liefen durch) - .env existiert.
+    assert result.env_path.exists()
+
+
+def test_wizard_survives_local_ai_setup_raising_an_exception(tmp_path) -> None:
+    """Ein fehlgeschlagener Local-AI-Einrichtungsversuch (z. B. fehlendes
+    Internet waehrend der Installation) darf die gesamte Ersteinrichtung
+    NICHT scheitern lassen (Auftrag §33 sinngemaess umgekehrt: Local AI
+    darf die Kernanwendung nicht blockieren)."""
+    data_dir = tmp_path / "kanzlei_data"
+
+    def _raise() -> bool:
+        raise RuntimeError("kein Internetzugang")
+
+    result = run_setup_wizard(
+        data_dir=data_dir,
+        admin_email="anwalt@kanzlei.test",
+        admin_password=None,
+        run_migrations=lambda: None,
+        create_admin=lambda email, password: None,
+        run_local_ai_setup=_raise,
+    )
+
+    assert result.local_ai_setup_succeeded is False
+    assert result.env_path.exists()
+
+
 def test_wizard_generates_a_fresh_session_secret_each_call(tmp_path) -> None:
     secrets_found = []
     for index in range(2):

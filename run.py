@@ -2,7 +2,7 @@
 
 Dies ist die einzige Datei, die PyInstaller bündelt (siehe
 windows/kanzlei_ai.spec) - ein dünner Dispatcher, keine Fachlogik. Bietet
-vier Subkommandos:
+fünf Subkommandos:
 
     kanzlei_ai.exe serve          (Standard, auch ohne Argument) - startet
                                    den Webserver UND öffnet ein natives
@@ -26,11 +26,24 @@ vier Subkommandos:
                                    für Entwickler/Debugging/Kopfstationen).
     kanzlei_ai.exe setup          - Ersteinrichtung: Datenverzeichnis,
                                    `.env` (inkl. generiertem
-                                   SESSION_SECRET_KEY), Migration, Admin.
+                                   SESSION_SECRET_KEY), Migration, Admin,
+                                   optional (Standardvorschlag: ja) lokale
+                                   KI (siehe local-ai-setup unten) - Phase 3,
+                                   §71: "Local AI ist jetzt Pflicht" der
+                                   Zielarchitektur, ein Fehlschlag/Ablehnen
+                                   dieses Schritts verhindert aber nicht die
+                                   Installation/Nutzung der Anwendung.
     kanzlei_ai.exe migrate        - führt nur `alembic upgrade head` aus.
     kanzlei_ai.exe create-admin   - ruft scripts/create_admin.py auf
                                    (liest ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD
                                    aus der Prozessumgebung).
+    kanzlei_ai.exe local-ai-setup - erkennt Hardware, empfiehlt/installiert
+                                   ein passendes lokales Ollama-Modell und
+                                   aktiviert `LOCAL_AI_ENABLED` in `.env`
+                                   (Phase 3, §71 - siehe
+                                   app/local_ai/setup_orchestrator.py).
+                                   Eigenständig jederzeit erneut aufrufbar,
+                                   nicht nur während `setup`.
     kanzlei_ai.exe restore        - stellt Datenbank + Dokumentenspeicher aus
                                    einem Backup-Archiv wieder her (Schritt 3,
                                    siehe app/backup/restore_service.py). Die
@@ -547,6 +560,45 @@ def _run_create_admin_subprocess(data_dir: Path, email: str, password: str | Non
         raise RuntimeError(f"Anlegen des Admin-Nutzers fehlgeschlagen (Exit-Code {result.returncode}).")
 
 
+def cmd_local_ai_setup() -> int:
+    """Erkennt Hardware, waehlt ein passendes lokales Modell und richtet
+    Ollama automatisiert ein (Phase 3, §71) - siehe
+    app/local_ai/setup_orchestrator.py::LocalAiSetupService.run_setup fuer
+    die eigentliche Ablauflogik (Hardware -> Empfehlung -> Ollama-Install
+    -> Modell-Download -> Health Check -> `.env`-Eintrag). Laeuft (wie
+    `create-admin`/`migrate`) als eigener Subprozess mit dem
+    Datenverzeichnis als Arbeitsverzeichnis, damit `LocalAiSetupService`s
+    Standard-`.env`-Pfad (relativ zu `cwd`) korrekt aufgeloest wird."""
+    from pathlib import Path as _Path
+
+    from app.local_ai.setup_orchestrator import LocalAiSetupService
+
+    print("Erkenne Hardware und ermittle ein passendes lokales KI-Modell...")
+    service = LocalAiSetupService()
+    result = service.run_setup(download_dir=_Path("local_ai_download"))
+    if not result.success:
+        print(
+            f"HINWEIS: Lokale KI konnte nicht automatisch eingerichtet werden "
+            f"(Schritt: {result.stage.value}): {result.error}\n"
+            "Die Anwendung funktioniert weiterhin - die Cloud-Anbindung ist "
+            "davon unabhaengig. Die Einrichtung kann spaeter erneut versucht werden.",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"Lokale KI eingerichtet: Modell '{result.installed_model}' ist einsatzbereit.")
+    return 0
+
+
+def _run_local_ai_setup_subprocess(data_dir: Path) -> bool:
+    """Wie `_run_migrate_subprocess`, aber bewusst NICHT ladungstragend -
+    gibt nur zurueck, ob es geklappt hat, statt bei Fehlschlag eine
+    Exception zu werfen (siehe run_setup_wizard-Docstring: ein
+    fehlgeschlagener Local-AI-Setup darf die Ersteinrichtung nicht
+    scheitern lassen)."""
+    result = subprocess.run(_self_command("local-ai-setup"), cwd=str(data_dir), check=False)
+    return result.returncode == 0
+
+
 def cmd_setup(data_dir: Path, *, force: bool) -> int:
     from app.config.settings import Settings
     from app.setup import WizardError, run_setup_wizard
@@ -558,6 +610,18 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
         "Initiales Admin-Passwort (leer lassen, um automatisch eines zu generieren): "
     )
     admin_password = entered_password or None
+
+    # Lokale KI ist Bestandteil der Zielarchitektur (Phase 3, §6: "Local AI
+    # ist jetzt Pflicht") - deshalb als Standardvorschlag beim Setup
+    # angeboten (leere Eingabe = Ja), aber NICHT erzwungen: ein Nein hier
+    # (oder ein spaeterer Fehlschlag, z. B. fehlendes Internet) verhindert
+    # nicht die Installation/Nutzung der Anwendung, siehe run_setup_wizard.
+    setup_local_ai_answer = input(
+        "Lokale KI (Ollama) jetzt automatisch einrichten? Erkennt die "
+        "Hardware und laedt bei Bedarf ein passendes Modell herunter (ca. "
+        "1 GB, je nach Internetverbindung einige Minuten). [J/n]: "
+    ).strip().lower()
+    setup_local_ai = setup_local_ai_answer not in ("n", "nein", "no")
 
     default_host = Settings.model_fields["host"].default
     default_port = Settings.model_fields["port"].default
@@ -571,6 +635,9 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
             create_admin=lambda email, password: _run_create_admin_subprocess(
                 data_dir, email, password
             ),
+            run_local_ai_setup=(
+                (lambda: _run_local_ai_setup_subprocess(data_dir)) if setup_local_ai else None
+            ),
             host=default_host,
             port=default_port,
             force=force,
@@ -580,6 +647,14 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
         return 1
 
     print(f"Setup abgeschlossen. Konfiguration geschrieben nach: {result.env_path}")
+    if result.local_ai_setup_succeeded is True:
+        print("Lokale KI wurde erfolgreich eingerichtet.")
+    elif result.local_ai_setup_succeeded is False:
+        print(
+            "Lokale KI konnte nicht automatisch eingerichtet werden - die "
+            "Anwendung ist trotzdem einsatzbereit. Ein erneuter Versuch ist "
+            "spaeter jederzeit moeglich (kanzlei_ai.exe local-ai-setup)."
+        )
     return 0
 
 
@@ -610,6 +685,11 @@ def main(argv: list[str] | None = None) -> int:
         "create-admin",
         help="Legt den initialen Admin-Nutzer an (liest ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD)",
     )
+    subparsers.add_parser(
+        "local-ai-setup",
+        help="Richtet die lokale KI (Ollama) automatisiert ein (Hardware-Erkennung, "
+        "Modell-Empfehlung, Installation, Download, Health Check)",
+    )
     restore_parser = subparsers.add_parser(
         "restore",
         help="Stellt Datenbank + Dokumentenspeicher aus einem Backup-Archiv wieder her "
@@ -635,6 +715,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_migrate()
     if command == "create-admin":
         return cmd_create_admin()
+    if command == "local-ai-setup":
+        return cmd_local_ai_setup()
     if command == "restore":
         return cmd_restore(archive=args.archive, yes=args.yes)
 

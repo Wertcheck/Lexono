@@ -99,6 +99,17 @@ def test_main_dispatches_create_admin(tmp_path, monkeypatch) -> None:
     assert calls == ["create-admin"]
 
 
+def test_main_dispatches_local_ai_setup(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    calls: list[str] = []
+    monkeypatch.setattr(
+        run, "cmd_local_ai_setup", lambda: (calls.append("local-ai-setup"), 0)[1]
+    )
+
+    assert run.main(["local-ai-setup"]) == 0
+    assert calls == ["local-ai-setup"]
+
+
 def test_main_dispatches_restore_with_archive_and_yes_flag(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     calls: list[tuple[str, bool]] = []
@@ -122,6 +133,56 @@ def test_main_dispatches_restore_without_yes_flag(tmp_path, monkeypatch) -> None
     run.main(["restore", "--archive", "backup.zip"])
 
     assert calls == [("backup.zip", False)]
+
+
+def test_cmd_setup_offers_local_ai_setup_by_default_on_empty_answer(tmp_path, monkeypatch) -> None:
+    """Phase 3 (§71): leere Eingabe (nur Enter) bei der Local-AI-Frage muss
+    als "Ja" gewertet werden - lokale KI ist der Standardvorschlag."""
+    import getpass
+
+    monkeypatch.chdir(tmp_path)
+    answers = iter(["admin@kanzlei.test", ""])  # E-Mail, dann Local-AI-Frage (leer = ja)
+    monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(answers))
+    monkeypatch.setattr(getpass, "getpass", lambda *_a, **_k: "")
+
+    captured = {}
+
+    def fake_run_setup_wizard(**kwargs):
+        captured.update(kwargs)
+        from app.setup.wizard import WizardResult
+
+        return WizardResult(env_path=tmp_path / ".env", data_dir=tmp_path)
+
+    monkeypatch.setattr("app.setup.run_setup_wizard", fake_run_setup_wizard)
+
+    exit_code = run.cmd_setup(tmp_path, force=False)
+
+    assert exit_code == 0
+    assert captured["run_local_ai_setup"] is not None
+
+
+def test_cmd_setup_skips_local_ai_setup_when_declined(tmp_path, monkeypatch) -> None:
+    import getpass
+
+    monkeypatch.chdir(tmp_path)
+    answers = iter(["admin@kanzlei.test", "n"])
+    monkeypatch.setattr("builtins.input", lambda *_a, **_k: next(answers))
+    monkeypatch.setattr(getpass, "getpass", lambda *_a, **_k: "")
+
+    captured = {}
+
+    def fake_run_setup_wizard(**kwargs):
+        captured.update(kwargs)
+        from app.setup.wizard import WizardResult
+
+        return WizardResult(env_path=tmp_path / ".env", data_dir=tmp_path)
+
+    monkeypatch.setattr("app.setup.run_setup_wizard", fake_run_setup_wizard)
+
+    exit_code = run.cmd_setup(tmp_path, force=False)
+
+    assert exit_code == 0
+    assert captured["run_local_ai_setup"] is None
 
 
 def test_main_dispatches_setup_with_force_flag(tmp_path, monkeypatch) -> None:

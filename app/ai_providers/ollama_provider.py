@@ -65,17 +65,22 @@ def _build_local_llm_prompt(payload: ClaudeRequestPayload) -> str:
 
 
 class OllamaLocalLLMProvider:
-    # 600s (real gemessen, 20./21.08. auf einer CPU-only-VM ohne GPU): ein
-    # trivialer Test-Prompt brauchte bereits ~22s (166 Antwort-Tokens,
-    # ~8 Tok/s), der reale, mehrsaetzige Vorabanalyse-Prompt mit
-    # ausfuehrlichem internen Reasoning ("Thinking"-Modell qwen3) ~485s
-    # (1882 Tokens inkl. Denkprozess). Ohne dedizierte GPU ist dieses
-    # Modell fuer diesen Zwischenschritt SEHR langsam - das ist ein reales
-    # Hardware-/Modell-Ergebnis, keine geschaetzte Annahme. Ein produktiver
-    # Kanzleirechner mit GPU waere hier deutlich schneller; auf reiner
-    # CPU-Hardware ist die praktische Nutzbarkeit dieses konkreten Modells
-    # fuer den lokalen KI-Schritt fraglich (siehe ARCHITECTURE.md §65-Update).
-    def __init__(self, *, base_url: str, model: str, timeout_seconds: float = 600.0) -> None:
+    # Phase 3 (§71, 01.09.): Default von 600s auf 120s gesenkt - reale
+    # Messwerte auf derselben CPU-only-Referenzmaschine mit dem NEUEN
+    # Standardmodell qwen2.5:1.5b (siehe app/config/settings.py::
+    # ollama_model): ~11s warm, ~37s kalt (Modell noch nicht im
+    # Ollama-Speicher-Cache) fuer einen realistischen Vorabanalyse-Prompt.
+    # 120s laesst grosszuegigen Puffer fuer langsamere Kanzlei-Hardware,
+    # begrenzt aber die maximale Blockierzeit einer einzelnen Chat-Anfrage
+    # auf ein UI-vertretbares Mass (Auftrag §27: "keine langen synchronen
+    # Operationen"; §28: "verstaendliche Fehler" statt endlosem Haengen).
+    # Frueherer Default (600s) war fuer das damalige qwen3:4b-Modell
+    # dimensioniert (bis zu ~485s real gemessen, siehe ARCHITECTURE.md
+    # §66) - mit dem neuen, deutlich schnelleren Standardmodell nicht mehr
+    # noetig. Wer weiterhin ein groesseres/langsameres Modell konfiguriert
+    # (z. B. qwen3 fuer eine GPU-Maschine), kann `timeout_seconds` weiterhin
+    # explizit ueberschreiben.
+    def __init__(self, *, base_url: str, model: str, timeout_seconds: float = 120.0) -> None:
         if not base_url or not base_url.strip():
             raise ValueError("base_url darf nicht leer sein - OLLAMA_BASE_URL in .env setzen")
         if not model or not model.strip():
@@ -90,9 +95,14 @@ class OllamaLocalLLMProvider:
         model_available prueft zusaetzlich, ob das konfigurierte Modell
         tatsaechlich lokal vorhanden ist (Ollama laedt Modelle nicht
         automatisch nach - ein fehlendes Modell ist ein haeufiger,
-        eigenstaendiger Fehlerfall, siehe §65 Punkt 5/6)."""
+        eigenstaendiger Fehlerfall, siehe §65 Punkt 5/6).
+
+        Bewusst ein FESTES, kurzes Timeout (5s) statt `self.timeout_seconds`
+        (Phase 3, §71) - dies ist ein reiner Erreichbarkeits-Check (`GET
+        /api/tags`), keine Inferenz, und soll deshalb niemals so lange wie
+        ein tatsaechlicher Generierungsaufruf brauchen duerfen."""
         try:
-            response = httpx.get(f"{self.base_url}/api/tags", timeout=self.timeout_seconds)
+            response = httpx.get(f"{self.base_url}/api/tags", timeout=5.0)
             response.raise_for_status()
             data = response.json()
         except Exception as exc:  # noqa: BLE001 - jeder Fehler bedeutet "nicht erreichbar"

@@ -75,6 +75,39 @@ def test_health_check_reachable_but_model_missing(monkeypatch: pytest.MonkeyPatc
     assert "qwen3:4b" in status.error
 
 
+def test_health_check_uses_fixed_short_timeout_not_the_inference_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Phase 3 (§71): der Erreichbarkeits-Check ist ein reines `GET` ohne
+    Inferenz und darf deshalb niemals so lange wie ein echter
+    Generierungsaufruf warten - fest auf 5s statt `timeout_seconds`."""
+    captured = {}
+
+    def _fake_get(url, *, timeout):
+        captured["timeout"] = timeout
+        return _FakeResponse(json_data={"models": []})
+
+    monkeypatch.setattr(httpx, "get", _fake_get)
+    provider = OllamaLocalLLMProvider(
+        base_url="http://localhost:11434", model="qwen2.5:1.5b", timeout_seconds=120.0
+    )
+
+    provider.check_health()
+
+    assert captured["timeout"] == 5.0
+
+
+def test_default_timeout_is_bounded_not_ten_minutes() -> None:
+    """Phase 3 (§71): frueherer Default war 600s (fuer qwen3:4b
+    dimensioniert) - mit dem neuen, schnelleren Standardmodell
+    (qwen2.5:1.5b, siehe app/config/settings.py) reicht ein deutlich
+    kuerzeres, UI-vertretbares Timeout. Regressionsschutz gegen eine
+    versehentliche Rueckkehr zum alten 600s-Default."""
+    provider = OllamaLocalLLMProvider(base_url="http://localhost:11434", model="qwen2.5:1.5b")
+    assert provider.timeout_seconds == 120.0
+    assert provider.timeout_seconds < 600.0
+
+
 def test_health_check_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
     def _raise(*a, **k):
         raise httpx.ConnectError("refused")

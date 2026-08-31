@@ -8,12 +8,15 @@ von `run_setup_wizard` für die Begründung (Prozessgrenzen wegen
 
 from __future__ import annotations
 
+import logging
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 from .env_writer import build_env_content, write_env_file
+
+logger = logging.getLogger(__name__)
 
 
 class WizardError(Exception):
@@ -24,6 +27,7 @@ class WizardError(Exception):
 class WizardResult:
     env_path: Path
     data_dir: Path
+    local_ai_setup_succeeded: bool | None = None
 
 
 def run_setup_wizard(
@@ -33,6 +37,7 @@ def run_setup_wizard(
     admin_password: str | None,
     run_migrations: Callable[[], None],
     create_admin: Callable[[str, str | None], None],
+    run_local_ai_setup: Callable[[], bool] | None = None,
     host: str = "127.0.0.1",
     port: int = 8000,
     force: bool = False,
@@ -51,10 +56,23 @@ def run_setup_wizard(
     einfacher In-Prozess-Callable (siehe tests/test_setup_wizard.py).
 
     Reihenfolge bewusst: Validierung → Verzeichnisse → `.env` schreiben →
-    Migration → Admin-Anlage. Ein Fehler in einem späteren Schritt lässt die
-    vorherigen Ergebnisse (Verzeichnisse, `.env`) bestehen - ein erneuter
-    Lauf mit `force=True` kann daran anknüpfen, statt bei Null zu beginnen.
-    """
+    Migration → Admin-Anlage → (optional) lokale KI. Ein Fehler in einem
+    späteren Schritt lässt die vorherigen Ergebnisse (Verzeichnisse, `.env`)
+    bestehen - ein erneuter Lauf mit `force=True` kann daran anknüpfen,
+    statt bei Null zu beginnen.
+
+    `run_local_ai_setup` (Phase 3, §71): anders als `run_migrations`/
+    `create_admin` ist dieser Schritt bewusst NICHT ladungstragend für den
+    Setup-Erfolg - Migration/Admin-Anlage MÜSSEN gelingen, damit die
+    Anwendung überhaupt startet, die lokale KI-Einrichtung ist dagegen ein
+    optionaler, potenziell langsamer (Download) Zusatzschritt (Auftrag §33:
+    "Local AI dauerhaft deaktivieren, nur weil ein Testgerät langsam ist"
+    ist verboten - das Gegenteil gilt hier ebenso: ein FEHLGESCHLAGENER
+    Local-AI-Setup-Versuch darf nicht die gesamte Ersteinrichtung
+    scheitern lassen, z. B. bei fehlendem Internetzugang während der
+    Installation). Ein Fehlschlag wird daher abgefangen und nur als
+    `local_ai_setup_succeeded=False` im Ergebnis vermerkt - der Anwalt/die
+    Kanzlei kann die Einrichtung jederzeit später manuell nachholen."""
     _validate_admin_email(admin_email)
 
     (data_dir / "data").mkdir(parents=True, exist_ok=True)
@@ -70,7 +88,19 @@ def run_setup_wizard(
     run_migrations()
     create_admin(admin_email, admin_password)
 
-    return WizardResult(env_path=env_path, data_dir=data_dir)
+    local_ai_setup_succeeded: bool | None = None
+    if run_local_ai_setup is not None:
+        try:
+            local_ai_setup_succeeded = run_local_ai_setup()
+        except Exception:  # noqa: BLE001 - darf die Ersteinrichtung nie scheitern lassen
+            logger.exception("Lokale-KI-Einrichtung während des Setup-Assistenten fehlgeschlagen")
+            local_ai_setup_succeeded = False
+
+    return WizardResult(
+        env_path=env_path,
+        data_dir=data_dir,
+        local_ai_setup_succeeded=local_ai_setup_succeeded,
+    )
 
 
 def _validate_admin_email(email: str) -> None:
