@@ -89,6 +89,10 @@
                 {{ icons.bulb(class_="icon") }}
                 <span>Dokument zusammenfassen</span>
               </button>
+              <a href="/dashboard/matters" class="chat-quick-action">
+                {{ icons.folder(class_="icon") }}
+                <span>Akte öffnen</span>
+              </a>
             </div>
           </div>
         {% else %}
@@ -99,7 +103,7 @@
               </div>
               <div class="chat-message__body">
                 <div class="chat-message__sender">
-                  {% if message.role == "user" %}Sie{% else %}KanzleiAI{% endif %}
+                  {% if message.role == "user" %}Sie{% else %}Lexono{% endif %}
                 </div>
                 {% if message.attached_documents %}
                   <div class="chat-message__attachments">
@@ -155,14 +159,14 @@
           <input type="file" name="documents" id="chat-file-input" multiple
                  accept="{{ allowed_upload_extensions | join(',') }}" style="display: none;" />
           <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
-                    placeholder="Nachricht an KanzleiAI …" autofocus></textarea>
+                    placeholder="Nachricht an Lexono …" autofocus></textarea>
           <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
                   title="Senden" aria-label="Senden">
             {{ icons.send(class_="icon") }}
           </button>
         </div>
         <p class="chat-composer__hint">
-          Dokumentinhalte werden vor jeder KI-Anfrage lokal anonymisiert (Presidio + Pseudonymisierung) -
+          Dokumentinhalte werden vor jeder KI-Anfrage lokal pseudonymisiert -
           es werden nie unpseudonymisierte Mandantendaten an die Cloud-KI gesendet.
         </p>
       </form>

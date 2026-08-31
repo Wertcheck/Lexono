@@ -71,10 +71,9 @@
            fuer die Trennung "Lokal" (Mandant/Akte/Dokument, reine SQL-
            Abfrage) vs. "Extern" (Rechtsquellen). #}
         <button type="button" class="sidebar__search-trigger" data-command-bar-open
-                aria-label="Suche öffnen (Strg+K)">
+                aria-label="Suche öffnen (Tastenkürzel Strg+K bzw. ⌘K)">
           {{ icons.search(class_="icon") }}
           <span>Suchen…</span>
-          <span class="sidebar__search-trigger-kbd" data-command-bar-kbd>Strg+K</span>
         </button>
       {% endif %}
       <div class="sidebar__nav">
@@ -299,14 +298,6 @@
             openCommandBar();
           }
         }
-      });
-
-      // Plattformabhaengiger Tastenkuerzel-Hinweis (Mac: Cmd, sonst Strg) -
-      // rein kosmetisch, die Tastenkombination selbst reagiert oben
-      // ohnehin auf BEIDE (ctrlKey || metaKey).
-      var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-      document.querySelectorAll("[data-command-bar-kbd]").forEach(function (el) {
-        el.textContent = isMac ? "⌘K" : "Strg+K";
       });
 
       // Erstes Ergebnis nach jeder HTMX-Aktualisierung automatisch aktiv
