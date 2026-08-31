@@ -28,6 +28,14 @@ dist/
 # jederzeit per windows/build.ps1 aus dem Quellcode neu erzeugbar (Prompt 47).
 INSTALLER/
 
+# Gebuendeltes Tesseract-OCR (~70 MB Binaerdaten) - wie das spaCy-Modell/
+# Embedding-Modell bewusst NICHT im Repo, sondern jederzeit per
+# windows/fetch_tesseract.ps1 neu erzeugbar (siehe dort). windows/kanzlei_ai.spec
+# bricht den Build mit einer klaren Fehlermeldung ab, falls dieser Ordner beim
+# Erzeugen des Installers fehlt.
+windows/vendor/
+build_tools/
+
 # Virtuelle Umgebungen
 .venv/
 venv/

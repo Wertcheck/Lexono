@@ -238,10 +238,18 @@ Implementiert in `app/documents/`:
   (`not_needed/pending/done/failed`) – siehe aktualisierten Kommentar in `app/models/document.py`.
 - **Bewusst nicht enthalten:** jede Form inhaltlicher/juristischer Interpretation des extrahierten
   Texts – reine technische Extraktion. Klassifikation folgt in Prompt 08.
-- **Setup-Hinweis für den Anwalt (Windows):** Tesseract OCR ist eine externe Programmdatei, keine
-  Python-Bibliothek – muss separat installiert werden (z. B. über den offiziellen
-  Tesseract-Windows-Installer), sonst schlägt OCR mit `OcrError` fehl, auch bei
-  `OCR_ENABLED=true`. Pfad ggf. über `TESSERACT_CMD` in `.env` setzen.
+- **Setup-Hinweis (aktualisiert nach Pilot-Finding):** Tesseract OCR ist eine externe
+  Programmdatei, keine Python-Bibliothek. Der **Windows-Installer bündelt seit diesem Fix ein
+  eigenständiges Tesseract** (`windows/vendor/tesseract/`, erzeugt über
+  `windows/fetch_tesseract.ps1`, eingebunden in `windows/kanzlei_ai.spec`) – im installierten
+  Produkt ist **keine separate manuelle Tesseract-Installation mehr nötig**.
+  `app/documents/ocr.py::configure_tesseract` löst den gebündelten Pfad automatisch auf, sofern
+  keine explizite `TESSERACT_CMD`-Überschreibung gesetzt ist (die weiterhin Vorrang hat, z. B. für
+  eine bewusst abweichende Version). Im **Dev-Betrieb** (kein PyInstaller-Bundle) bleibt weiterhin
+  eine lokal installierte Tesseract-Instanz nötig (PATH oder `TESSERACT_CMD`). Verfügbarkeit
+  jederzeit über die Systemstatus-Seite prüfbar (`tesseract_health_check()`,
+  `app/web/monitoring_router.py` – zeigt bei aktiviertem OCR eine klare Ja/Nein-Meldung statt
+  eines erst dokumentweise auffallenden Fehlers).
 - **Getestet:** Textextraktion aus echtem PDF/DOCX-Text, Erkennung von OCR-Bedarf bei
   gescannten/leeren PDFs und Bilddateien, echte Tesseract-Ausführung (kein Mock) gegen
   synthetische Testbilder, sicherer Pending-Default bei deaktiviertem OCR, Format nicht

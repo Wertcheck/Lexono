@@ -59,6 +59,15 @@
             <td>OCR aktiviert</td>
             <td><span class="tag {% if ocr_enabled %}tag--matched{% else %}tag--unmatched{% endif %}">{{ "ja" if ocr_enabled else "nein" }}</span></td>
           </tr>
+          {% if ocr_enabled %}
+          <tr>
+            <td>Tesseract OCR verfügbar</td>
+            <td>
+              <span class="tag {% if tesseract_available %}tag--matched{% else %}tag--unmatched{% endif %}">{{ "ja" if tesseract_available else "nein" }}</span>
+              <span class="form-hint">{{ tesseract_status_message }}</span>
+            </td>
+          </tr>
+          {% endif %}
           <tr>
             <td>E-Mail-Abruf konfiguriert</td>
             <td><span class="tag {% if mail_configured %}tag--matched{% else %}tag--unmatched{% endif %}">{{ "ja" if mail_configured else "nein" }}</span></td>

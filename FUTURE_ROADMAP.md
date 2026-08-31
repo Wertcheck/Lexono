@@ -30,13 +30,15 @@
 - **Estimated Effort:** 6–8 Stunden
 - **Architecture:** Neues `app/scheduler/` Modul
 
-#### Feature 3: Setup-Docs für Tesseract
+#### Feature 3: Setup-Docs für Tesseract — ✅ ERLEDIGT (statt Doku: echte Bündelung)
 - **Problem (Pilot-Finding):** Tesseract nicht auf allen Windows-Systemen einfach installierbar
-- **Lösung:** 
-  - Windows-Setup-Guide (Download-Link, `PATH`-Konfiguration)
-  - Fallback: "Tesseract nicht verfügbar" → Status auf "pending_ocr" statt Error
-  - Aktueller Code handhabt das schon teilweise
-- **Estimated Effort:** 2–3 Stunden (Doku + Test)
+- **Umgesetzte Lösung (weitergehend als ursprünglich geplant):** statt nur Doku wird Tesseract
+  jetzt direkt im Windows-Installer mitgeliefert (`windows/vendor/tesseract/`, erzeugt über
+  `windows/fetch_tesseract.ps1`, siehe `windows/kanzlei_ai.spec`) – keine manuelle
+  Zusatzinstallation mehr nötig. Zusätzlich: verständliche Verfügbarkeitsanzeige auf der
+  Systemstatus-Seite (`tesseract_health_check()` in `app/documents/ocr.py`) statt eines erst
+  dokumentweise auffallenden Fehlers, für den Fall, dass ein älterer Build ohne Bündel oder eine
+  manuelle Portable-Installation ohne den Installer läuft.
 
 #### Feature 4: Log-Rotation
 - **Problem (Pilot-Finding):** Logs wachsen unbegrenzt

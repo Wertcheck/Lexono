@@ -139,6 +139,22 @@ def monitoring_page(
     disk_status = health_service.check_disk_space(_disk_check_path(settings.database_url))
     database_status = health_service.check_database_status(db, settings.database_url)
 
+    # OCR-Verfuegbarkeit (Pilot-Finding, siehe app/documents/ocr.py
+    # Moduldocstring): nur relevant/geprueft, wenn OCR ueberhaupt aktiviert
+    # ist - sonst irrefuehrende Warnung fuer ein bewusst ungenutztes Feature.
+    # `configure_tesseract` muss hier explizit aufgerufen werden (sonst kein
+    # Garant, dass bereits ein Dokument verarbeitet und damit die
+    # Bundle-Erkennung ausgeloest wurde) - `tesseract_health_check` ist
+    # `@lru_cache`d, kostet also nur beim allerersten Aufruf pro Prozess
+    # tatsaechlich einen Tesseract-Unterprozessaufruf.
+    tesseract_available = True
+    tesseract_status_message = ""
+    if settings.ocr_enabled:
+        from app.documents.ocr import configure_tesseract, tesseract_health_check
+
+        configure_tesseract(settings.tesseract_cmd)
+        tesseract_available, tesseract_status_message = tesseract_health_check()
+
     pending_count = (
         db.query(func.count(ProcessingError.id))
         .filter(ProcessingError.status == "pending_retry")
@@ -175,6 +191,8 @@ def monitoring_page(
         "current_user": current_user,
         "app_env": settings.app_env,
         "ocr_enabled": settings.ocr_enabled,
+        "tesseract_available": tesseract_available,
+        "tesseract_status_message": tesseract_status_message,
         "mail_configured": settings.mail_password is not None,
         "claude_api_configured": settings.anthropic_api_key is not None,
         "session_cookie_secure": settings.resolved_session_cookie_secure,

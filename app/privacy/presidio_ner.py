@@ -89,6 +89,29 @@ _INTERNAL_MARKER_PATTERN = re.compile(r"@@[A-Z_]+@@")
 _INTERNAL_PLACEHOLDER_PATTERN = re.compile(r"\[[A-Z][A-Z_]*_\d{2}\]")
 _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN = re.compile(r"^[A-Z0-9_@\s]+$")
 
+# Deterministische Ausnahmeliste fuer Standard-Kanzleibrief-Textbausteine, die
+# vom NER-Modell gelegentlich als PERSON/LOCATION/ORGANIZATION fehlklassifiziert
+# werden - widerspricht sonst der oben dokumentierten Begruendung fuer
+# _MIN_SCORE ("lieber ein knapp verpasster Name ... als eine Kanzlei-
+# Standardformulierung, die faelschlich einen Block ausloest"). Real
+# beobachtet (Prompt-28-Testfall mit OCR-Verstuemmelung "Mlt" statt "Mit"):
+# das isolierte Wort "Gruessen" aus der praktisch in jedem deutschen
+# Geschaeftsbrief vorkommenden Grussformel "Mit freundlichen Gruessen/Grüßen"
+# wurde als LOCATION erkannt, sobald der Kontext (z. B. durch Platzhalter-
+# Neutralisierung direkt davor) etwas ungewoehnlich war - fuehrte zu einem
+# unnoetigen Block eines vollkommen unauffaelligen Standardschreibens.
+# Bewusst NUR feste, in der Grussformel vorkommende Einzelwoerter (keine
+# Namens-/Adressbestandteile) - kein allgemeiner Blocklist-Mechanismus, der
+# als Umgehungsweg fuer echte PII missbraucht werden koennte (ein echter
+# Personen-/Orts-/Firmenname lautet nie woertlich "Gruessen" oder
+# "Hochachtungsvoll").
+_NEVER_ENTITY_WORDS = frozenset(
+    {
+        "gruessen", "grüßen", "grussen",
+        "hochachtungsvoll",
+    }
+)
+
 
 def _neutralize_internal_tokens(text: str) -> str:
     """Ersetzt gateway-/pseudonymizer-interne Marker/Platzhalter durch
@@ -150,6 +173,8 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             # Trennmarkierungs-Struktur in gateway.py durcheinanderbringen.
             continue
         if _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN.match(value):
+            continue
+        if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
         spans.append(
             DetectedSpan(category=category, start=result.start, end=result.end, value=value)

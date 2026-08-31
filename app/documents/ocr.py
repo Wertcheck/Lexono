@@ -4,10 +4,24 @@ Wird nur aufgerufen, wenn `settings.ocr_enabled=True` ist (Entscheidung
 liegt beim aufrufenden Service, nicht hier). Für PDFs werden die Seiten
 gerastert (über PyMuPDF, kein zusätzliches externes Tool wie Poppler
 nötig) und einzeln per Tesseract erkannt; für Bilddateien direkt.
+
+WICHTIG (Pilot-Finding, siehe FUTURE_ROADMAP.md/RELEASE_NOTES.md "Tesseract
+als Abhängigkeit"): Tesseract ist keine Python-Bibliothek, sondern ein
+externes Programm - ohne separate Installation auf dem Zielsystem schlägt
+OCR bislang mit `TesseractNotFoundError` fehl, auch wenn `OCR_ENABLED=true`
+gesetzt ist. Ab jetzt bündelt der Windows-Installer ein eigenständiges
+Tesseract (siehe windows/vendor_tesseract.ps1, windows/kanzlei_ai.spec) -
+`configure_tesseract()` löst dessen Pfad automatisch auf, wenn keine
+explizite `TESSERACT_CMD`-Überschreibung gesetzt ist. Im Dev-Betrieb (kein
+PyInstaller-Bundle) bleibt weiterhin eine lokal installierte Tesseract-
+Instanz (PATH oder `TESSERACT_CMD`) nötig.
 """
 
 from __future__ import annotations
 
+import os
+import sys
+from functools import lru_cache
 from pathlib import Path
 
 import pymupdf
@@ -24,12 +38,84 @@ class OcrError(Exception):
     "failed" statt "done" setzen kann."""
 
 
+def _bundle_base_dir() -> Path:
+    """Wie `run.py::_bundle_base_dir` (bewusst unabhängig re-implementiert,
+    um diesem Modul keine Abhängigkeit auf `run.py` aufzuerlegen) - im
+    Dev-Betrieb das Repository-Root, im gebündelten Produkt das von
+    PyInstaller bereitgestellte Verzeichnis neben `kanzlei_ai.exe`
+    (onedir-Build, siehe windows/kanzlei_ai.spec: KEIN `sys._MEIPASS`-
+    Extraktionsverzeichnis, die Bundle-Dateien liegen direkt neben der
+    .exe)."""
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def _bundled_tesseract_paths() -> tuple[Path, Path] | None:
+    """Liefert `(tesseract.exe, tessdata-Verzeichnis)` des mit dem Windows-
+    Installer gebündelten Tesseract, falls vorhanden - `None`, wenn diese
+    Anwendung nicht als PyInstaller-Bundle läuft oder die Dateien fehlen
+    (z. B. ein älterer, vor diesem Fix erzeugter Build). Reine Pfadprüfung,
+    kein Ausführen/Netzwerkzugriff."""
+    base = _bundle_base_dir()
+    exe = base / "tesseract" / "bin" / "tesseract.exe"
+    tessdata = base / "tesseract" / "tessdata"
+    if exe.is_file() and tessdata.is_dir():
+        return exe, tessdata
+    return None
+
+
 def configure_tesseract(tesseract_cmd: str | None) -> None:
-    """Setzt einen expliziten Pfad zur Tesseract-Programmdatei, falls
-    konfiguriert (z. B. unter Windows, wo Tesseract oft nicht automatisch
-    im PATH liegt)."""
+    """Setzt den zu verwendenden Tesseract-Pfad.
+
+    Reihenfolge (erste zutreffende gewinnt):
+    1. `tesseract_cmd` (explizite `TESSERACT_CMD`-Konfiguration) - manueller
+       Override hat immer Vorrang, z. B. für eine bereits vorhandene
+       System-Installation oder eine abweichende Version.
+    2. Mit dem Installer gebündeltes Tesseract (siehe
+       `_bundled_tesseract_paths`) - läuft ohne jede weitere manuelle
+       Installation auf dem Zielsystem.
+    3. Unverändertes `pytesseract`-Standardverhalten (Suche nach
+       "tesseract" im PATH) - insbesondere der Dev-Betrieb ohne Bundle.
+    """
     if tesseract_cmd:
         pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        return
+
+    bundled = _bundled_tesseract_paths()
+    if bundled is not None:
+        exe, tessdata = bundled
+        pytesseract.pytesseract.tesseract_cmd = str(exe)
+        # Tesseract sucht Sprachdaten sonst relativ zur .exe an einem fest
+        # einprogrammierten Pfad, der von unserer Bundle-Struktur abweichen
+        # kann - TESSDATA_PREFIX macht den Ort explizit statt sich auf eine
+        # zufällig passende Heuristik zu verlassen.
+        os.environ["TESSDATA_PREFIX"] = str(tessdata)
+
+
+@lru_cache(maxsize=1)
+def tesseract_health_check() -> tuple[bool, str]:
+    """Deterministische, seiteneffektarme Prüfung, ob Tesseract tatsächlich
+    aufrufbar ist - für den System-Health-/Setup-Bereich (verständliche
+    Fehlermeldung STATT eines erst dokumentweise auffallenden
+    `TesseractNotFoundError` nach mehreren Retry-Versuchen). Ergebnis wird
+    für die Prozesslaufzeit gecacht (Tesseract-Verfügbarkeit ändert sich
+    nicht während eines laufenden Serverprozesses).
+
+    Gibt `(verfügbar, für den Anwalt verständliche Meldung)` zurück - ruft
+    absichtlich `configure_tesseract(None)` NICHT selbst auf (das bleibt
+    Aufgabe des Aufrufers/`DocumentProcessingService`, damit eine explizite
+    `TESSERACT_CMD`-Konfiguration konsistent berücksichtigt wird)."""
+    try:
+        version = pytesseract.get_tesseract_version()
+    except Exception:  # noqa: BLE001 - jede Form von "nicht verfügbar" abfangen
+        return False, (
+            "Tesseract OCR wurde nicht gefunden. Gescannte Dokumente/Bilder "
+            "können nicht per Texterkennung verarbeitet werden. Prüfen Sie "
+            "die Installation (siehe README.md/ARCHITECTURE.md, Abschnitt "
+            "OCR) oder deaktivieren Sie OCR_ENABLED, falls nicht benötigt."
+        )
+    return True, f"Tesseract OCR verfügbar (Version {version})."
 
 
 def run_ocr(path: Path, *, languages: str = "deu+eng", dpi: int = 200) -> str:

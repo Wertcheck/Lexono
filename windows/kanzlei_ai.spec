@@ -65,6 +65,25 @@ _SPACY_MODEL_PACKAGE = "de_core_news_lg"
 # wie beim fehlenden spaCy-Modell, nur eine Ebene tiefer.
 _PRESIDIO_ANALYZER_PACKAGE = "presidio_analyzer"
 
+# Gebuendeltes Tesseract-OCR (Pilot-Finding, siehe FUTURE_ROADMAP.md/
+# RELEASE_NOTES.md "Tesseract als Abhaengigkeit" + app/documents/ocr.py
+# Moduldocstring): OHNE dieses Buendel muesste jede Kanzlei Tesseract
+# manuell separat installieren, sonst schlaegt jede OCR-Anfrage im
+# fertigen Produkt fehl. windows/fetch_tesseract.ps1 erzeugt diesen Ordner
+# (kein Teil des versionierten Quellcodes, ~70 MB Binaerdaten - siehe
+# .gitignore). `app/documents/ocr.py::configure_tesseract` erwartet ihn
+# genau unter "tesseract/bin" bzw. "tesseract/tessdata" relativ zum
+# Bundle-Wurzelverzeichnis (= relativ zu kanzlei_ai.exe im onedir-Build).
+_TESSERACT_VENDOR_DIR = PROJECT_ROOT / "windows" / "vendor" / "tesseract"
+if not (_TESSERACT_VENDOR_DIR / "bin" / "tesseract.exe").is_file():
+    raise SystemExit(
+        "windows/vendor/tesseract/bin/tesseract.exe fehlt - vor dem Build "
+        "einmalig 'powershell -ExecutionPolicy Bypass -File "
+        "windows\\fetch_tesseract.ps1' ausführen (lädt ein eigenständiges "
+        "Tesseract-OCR herunter, damit OCR im installierten Produkt ohne "
+        "manuelle Zusatzinstallation funktioniert)."
+    )
+
 a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
     [str(PROJECT_ROOT / "run.py")],
     pathex=[str(PROJECT_ROOT)],
@@ -81,6 +100,9 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
         # Path(__file__)-Berechnungen erwarten.
         (str(PROJECT_ROOT / "app" / "web" / "templates"), "app/web/templates"),
         (str(PROJECT_ROOT / "app" / "web" / "static"), "app/web/static"),
+        (str(_TESSERACT_VENDOR_DIR / "bin"), "tesseract/bin"),
+        (str(_TESSERACT_VENDOR_DIR / "tessdata"), "tesseract/tessdata"),
+        (str(_TESSERACT_VENDOR_DIR / "THIRD_PARTY_NOTICES.md"), "tesseract"),
         *collect_data_files(_SPACY_MODEL_PACKAGE),
         *copy_metadata(_SPACY_MODEL_PACKAGE),
         *collect_data_files(_PRESIDIO_ANALYZER_PACKAGE),

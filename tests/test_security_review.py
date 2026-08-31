@@ -9,6 +9,7 @@ Einordnung (Risiko/Priorität/Pilotbetrieb vs. Produktivbetrieb).
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -154,6 +155,36 @@ def test_intake_rejects_symlinks(db_session: Session, tmp_path: Path) -> None:
         service.ingest_file(symlink_path, db_session)
 
     # Es darf NICHTS kopiert und KEIN Document-Datensatz angelegt worden sein.
+    assert not storage_dir.exists() or not list(storage_dir.iterdir())
+    assert db_session.query(Document).count() == 0
+
+
+def test_intake_rejects_hardlinks(db_session: Session, tmp_path: Path) -> None:
+    """Beweis fuer eine real verifizierte Erkennungsluecke des obigen
+    Symlink-Schutzes: ein NTFS-Hardlink (`os.link`, KEIN Symlink) im
+    ueberwachten Ordner auf eine Datei ausserhalb wird von
+    `Path.is_symlink()` NICHT erkannt (ein Hardlink ist kein Reparse-Point).
+    Anders als ein Symlink erfordert das Anlegen eines Hardlinks unter
+    Windows kein besonderes Recht (kein `SeCreateSymbolicLinkPrivilege`) -
+    ein normaler Nutzer mit Schreibzugriff auf den ueberwachten Ordner kann
+    das jederzeit tun. Ohne die `st_nlink`-Pruefung in
+    `IntakeService.ingest_file` waere der Inhalt der Zieldatei (z. B. einer
+    anderen Akte) unbemerkt kopiert worden - real reproduziert, nicht nur
+    vermutet."""
+    watched_folder = tmp_path / "scan_eingang"
+    watched_folder.mkdir()
+    storage_dir = tmp_path / "intake_storage"
+
+    secret_file = tmp_path / "geheime_datei_ausserhalb.txt"
+    secret_file.write_text("Streng vertraulicher Inhalt einer anderen Akte.")
+
+    hardlink_path = watched_folder / "unauffaellig_aussehendes_dokument.pdf"
+    os.link(secret_file, hardlink_path)
+
+    service = IntakeService(storage_dir)
+    with pytest.raises(IntakeError):
+        service.ingest_file(hardlink_path, db_session)
+
     assert not storage_dir.exists() or not list(storage_dir.iterdir())
     assert db_session.query(Document).count() == 0
 
