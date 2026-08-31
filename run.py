@@ -109,6 +109,14 @@ _WEBVIEW2_CLIENT_GUIDS = (
 )
 _WEBVIEW2_DOWNLOAD_URL = "https://developer.microsoft.com/en-us/microsoft-edge/webview2/"
 
+#: Untergrenzen fuer den hand-gerollten Resize-Griff (Masterprompt V2,
+#: Task #61, frameless-Fenster) - verhindert ein auf (fast) 0 verkleinertes,
+#: nicht mehr bedienbares Fenster. Werte grosszuegig unter der
+#: Startgroesse (1400x900), aber hoch genug, dass Sidebar+Chat noch
+#: sinnvoll nutzbar bleiben.
+_MIN_WINDOW_WIDTH = 900
+_MIN_WINDOW_HEIGHT = 600
+
 
 def _bundle_base_dir() -> Path:
     """Verzeichnis mit `alembic.ini`/`migrations/` - im Dev-Betrieb das
@@ -434,6 +442,51 @@ class _NativeApi:
             return ""
         return str(result[0])
 
+    # --- Eigene Titelleiste (Masterprompt V2, Task #61) ---
+    # Das Fenster laeuft seit dieser Aenderung mit frameless=True (siehe
+    # _serve_with_window unten) - ohne native Titelleiste braucht es einen
+    # JS-erreichbaren Ersatz fuer Verschieben/Groesse-Aendern/Minimieren/
+    # Schliessen. Alle vier Methoden delegieren an bereits vom installierten
+    # pywebview (6.2.1) bereitgestellte `webview.Window`-Methoden (siehe
+    # ARCHITECTURE.md-Recherche zu dieser Version) - hier wird NICHTS an der
+    # Fenstermechanik selbst neu erfunden, nur JS-aufrufbar gemacht
+    # (identisches Prinzip wie `pick_folder` oben).
+    #
+    # close_window() ist bewusst die simpelste, robusteste Methode ohne
+    # jede Fehlerbehandlung drumherum, die etwas verschlucken koennte -
+    # "X muss zuverlaessig funktionieren" ist eine harte Vorgabe.
+    def minimize_window(self) -> None:
+        if self._window is not None:
+            self._window.minimize()  # type: ignore[attr-defined]
+
+    def close_window(self) -> None:
+        if self._window is not None:
+            self._window.destroy()  # type: ignore[attr-defined]
+
+    def move_window_by(self, dx: float, dy: float) -> None:
+        """Verschiebt das Fenster um ein Mausbewegungs-Delta - `dx`/`dy`
+        kommen als Differenz aufeinanderfolgender `event.screenX/Y`-Werte
+        aus dem JS-Drag-Handler in base.html, nicht als absolute Position
+        (die JS-Seite kennt die native Fensterposition nicht)."""
+        if self._window is None:
+            return
+        current_x = self._window.x  # type: ignore[attr-defined]
+        current_y = self._window.y  # type: ignore[attr-defined]
+        self._window.move(current_x + int(dx), current_y + int(dy))  # type: ignore[attr-defined]
+
+    def resize_window_by(self, dw: float, dh: float) -> None:
+        """Analog zu `move_window_by`, aber fuer die Fenstergroesse -
+        gespeist vom Resize-Griff unten rechts. Untergrenze verhindert ein
+        versehentlich auf (fast) 0 geschrumpftes, nicht mehr bedienbares
+        Fenster."""
+        if self._window is None:
+            return
+        current_width = self._window.width  # type: ignore[attr-defined]
+        current_height = self._window.height  # type: ignore[attr-defined]
+        new_width = max(_MIN_WINDOW_WIDTH, current_width + int(dw))
+        new_height = max(_MIN_WINDOW_HEIGHT, current_height + int(dh))
+        self._window.resize(new_width, new_height)  # type: ignore[attr-defined]
+
 
 def cmd_serve(*, open_window: bool = True) -> int:
     from app.config import get_settings
@@ -530,10 +583,16 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         width=1400,
         height=900,
         resizable=True,
+        frameless=True,
         background_color="#F8FAFC",
         js_api=native_api,
     )
     native_api._window = window
+    # _apply_light_title_bar (DWM-Titelleistenfarbe) ist mit frameless=True
+    # wirkungslos (keine native Titelleiste mehr vorhanden), aber auch
+    # harmlos - bewusst NICHT entfernt statt eines riskanten Eingriffs in
+    # eine bereits funktionierende, unabhaengige Funktion (siehe deren
+    # eigenen try/except-Schutz).
     window.events.shown += _apply_light_title_bar
     # Blockiert im Hauptthread, bis der Nutzer das Fenster schließt.
     webview.start()

@@ -625,3 +625,95 @@ def test_chat_page_header_shows_ai_status_dot(client: TestClient, db_session: Se
     response = client.get("/dashboard/chat")
     assert "chat-status-dot" in response.text
     assert "KI nicht konfiguriert" in response.text or "KI verbunden" in response.text
+
+
+# --- Dokument-Workspace (Masterprompt V2, Task #62) ---------------------
+
+
+def test_document_workspace_shows_highlighted_pii_and_context_panel(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Voller Weg: Dokument mit erkennbarer PII (E-Mail) hochladen ->
+    Anhangs-Chip im Chat ist ein Link -> Dokument-Workspace zeigt die
+    E-Mail hervorgehoben UND in der rechten Kontextleiste."""
+    login_as_admin(db_session, client)
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service()
+    )
+    csrf = _csrf(client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 72), "Bitte kontaktieren Sie mandant@beispielkanzlei.de zeitnah.")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    upload_response = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        files={"documents": ("mandantenbrief.pdf", pdf_bytes, "application/pdf")},
+        follow_redirects=True,
+    )
+    assert "chat-attachment-chip--link" in upload_response.text
+
+    conversation = db_session.query(ChatConversation).first()
+    document = db_session.query(chat_router_module.Document).first()
+    assert conversation is not None
+    assert document is not None
+
+    workspace_response = client.get(
+        f"/dashboard/chat/{conversation.id}/document/{document.id}"
+    )
+    assert workspace_response.status_code == 200
+    assert "chat-shell--document-view" in workspace_response.text
+    assert "mandantenbrief.pdf" in workspace_response.text
+    assert "mandant@beispielkanzlei.de" in workspace_response.text
+    assert 'pii-highlight--email' in workspace_response.text
+    assert "Pseudonymisierung" in workspace_response.text
+    assert "Erkannte Mandantendaten" in workspace_response.text
+
+
+def test_document_workspace_rejects_document_from_other_conversation(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    login_as_admin(db_session, client)
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service()
+    )
+    csrf = _csrf(client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 72), "Vertraulicher Inhalt.")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
+        files={"documents": ("erste.pdf", pdf_bytes, "application/pdf")},
+        follow_redirects=True,
+    )
+    csrf2 = _csrf(client)
+    client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf2, "conversation_id": "", "content": "Zweite Unterhaltung ohne Dokument."},
+        follow_redirects=True,
+    )
+
+    conversations = db_session.query(ChatConversation).order_by(ChatConversation.created_at).all()
+    document = db_session.query(chat_router_module.Document).first()
+    assert len(conversations) == 2
+    assert document is not None
+    other_conversation = conversations[1]
+
+    response = client.get(
+        f"/dashboard/chat/{other_conversation.id}/document/{document.id}",
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "nicht%20gefunden" in response.headers["location"]

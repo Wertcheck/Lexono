@@ -57,6 +57,32 @@
   </script>
 </head>
 <body>
+  {# Eigene Titelleiste (Masterprompt V2, Task #61) - ersetzt die native
+     Fenster-Titelleiste NUR im gebuendelten pywebview-Fenster
+     (run.py::_serve_with_window nutzt jetzt frameless=True). Bleibt per
+     Feature-Detection (dasselbe "pywebviewready"-Muster wie bereits in
+     settings.html fuer pick_folder) im reinen Browser-/--no-window-Modus
+     unsichtbar - dort aendert sich optisch NICHTS. Schliessen (X) bleibt
+     IMMER vorhanden und zuverlaessig (webview.Window.destroy(), dieselbe
+     Methode wie ein normaler Fensterabschluss). #}
+  <div id="app-titlebar" class="app-titlebar" style="display:none;">
+    <div id="app-titlebar-drag" class="app-titlebar__drag-region">
+      <img src="/dashboard/static/img/logo.svg" alt="" class="app-titlebar__logo" />
+      <span class="app-titlebar__title">Lexono</span>
+    </div>
+    <div class="app-titlebar__controls">
+      <button type="button" id="app-titlebar-minimize" class="app-titlebar__btn"
+              title="Minimieren" aria-label="Minimieren">
+        {{ icons.minimize_window(class_="icon") }}
+      </button>
+      <button type="button" id="app-titlebar-close" class="app-titlebar__btn app-titlebar__btn--close"
+              title="Schließen" aria-label="Schließen">
+        {{ icons.close_window(class_="icon") }}
+      </button>
+    </div>
+  </div>
+  <div id="app-resize-handle" class="app-resize-handle" style="display:none;"
+       title="Fenstergröße ändern" aria-hidden="true"></div>
   <div class="app-shell">
     <nav class="sidebar">
       <div class="sidebar__brand">
@@ -168,6 +194,60 @@
         {% set settings_href = "/dashboard/settings" if is_admin else "/dashboard/account" %}
         {% set account_active = active_nav in ['Profil & Einstellungen', 'Anonymisierung & Datenschutz', 'Kanzlei-Profil & Briefkopf', 'System & Lizenz', 'Mein Konto & Abmelden', 'Einstellungen', 'Backup'] %}
         <div class="sidebar__footer">
+          {# Globale KI-Statusanzeige (Masterprompt V2, MEDIUM) - bewusst
+             OHNE Aenderung an chat_router.py/chat.html direkt aus
+             request.app.state gelesen (dort bereits von
+             app/main.py::lifespan/_run_silent_local_ai_check gesetzt), um
+             keine der bestehenden, bereits getesteten Chat-Statuspfade
+             anzufassen. Auf der Chat-Seite selbst bewusst ausgeblendet
+             (dort steht der Status bereits im Chat-Header) - genau die
+             vom Auftrag geforderte "ohne die Chat-Oberflaeche zu
+             ueberladen"-Regel. Nutzt Jinjas lenienten Undefined-Fallback:
+             fehlt request.app.state.settings/.local_ai_status (z. B. in
+             Tests ohne durchlaufenen Lifespan), wird der Block schlicht
+             als "nicht konfiguriert"/"wird geprueft" gerendert statt zu
+             crashen (siehe .agentic/DECISIONS.md). #}
+          {% if active_nav != "Chat" %}
+            {% set _lai_status = request.app.state.local_ai_status %}
+            {% set _settings = request.app.state.settings %}
+            {% set lai_state = _lai_status.state.value if _lai_status else "checking" %}
+            {# Wichtig: der Modellname wird HIER, ausserhalb des
+               Dict-Literals unten, mit einem echten if/else-Kurzschluss
+               berechnet - Jinjas Standard-Undefined wirft beim direkten
+               Verketten (z. B. undefined.configured_model) sofort einen
+               UndefinedError, auch wenn die betroffene Dict-Zeile am Ende
+               gar nicht ausgewaehlt wird (Dict-Literale werden vollstaendig
+               ausgewertet). Realer Fund waehrend dieser Aenderung (siehe
+               .agentic/DECISIONS.md). #}
+            {% set configured_model = (_lai_status.configured_model or '') if _lai_status else '' %}
+            {% set cloud_configured = (_settings.lexono_gateway_url or _settings.anthropic_api_key) if _settings else false %}
+            <div class="sidebar__status-panel">
+              <div class="sidebar__status-row" title="{{ {
+                'checking': 'Lokale KI: Status wird ermittelt...',
+                'disabled': 'Lokale KI ist deaktiviert',
+                'ready': 'Lokale KI bereit (' ~ configured_model ~ ')',
+                'runtime_missing': 'Lokale KI: Ollama ist nicht installiert',
+                'runtime_unreachable': 'Lokale KI: Ollama ist installiert, aber nicht erreichbar',
+                'model_missing': 'Lokale KI: konfiguriertes Modell ist nicht installiert',
+              }[lai_state] }}">
+                <span class="chat-status-dot {% if lai_state == 'ready' %}chat-status-dot--ok{% elif lai_state in ('disabled', 'checking') %}chat-status-dot--neutral{% else %}chat-status-dot--warn{% endif %}"></span>
+                <span>Lokale KI</span>
+                <span class="sidebar__status-value">{{ {
+                  'checking': 'wird geprüft…',
+                  'disabled': 'deaktiviert',
+                  'ready': 'Bereit',
+                  'runtime_missing': 'nicht installiert',
+                  'runtime_unreachable': 'nicht erreichbar',
+                  'model_missing': 'Modell fehlt',
+                }[lai_state] }}</span>
+              </div>
+              <div class="sidebar__status-row" title="{{ 'Cloud-KI verbunden' if cloud_configured else 'Cloud-KI nicht konfiguriert' }}">
+                <span class="chat-status-dot {% if cloud_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
+                <span>Cloud-KI</span>
+                <span class="sidebar__status-value">{{ "Bereit" if cloud_configured else "nicht konfiguriert" }}</span>
+              </div>
+            </div>
+          {% endif %}
           {# Dezenter Hilfe-/Systemstatus-Streifen - ersetzt die vorherige
              eigene Sidebar-Gruppe "Pilot-Feedback & Support" (die Seite
              existiert unveraendert weiter, ist aber kein Hauptmodul). #}
@@ -339,6 +419,98 @@
           }
         }
       });
+    })();
+  </script>
+  <script>
+    // Eigene Titelleiste (Masterprompt V2, Task #61): nur aktiv, wenn die
+    // native pywebview-JS-Bruecke tatsaechlich vorhanden ist (siehe
+    // settings.html fuer dasselbe Feature-Detection-Muster). Drag/Resize
+    // sind bewusst schmal geschnitten (nur die Titelleiste zieht das
+    // Fenster, nur eine Ecke veraendert die Groesse) statt eines
+    // vollflaechigen "easy_drag" - pywebview 6.2.1 hat auf Windows ohnehin
+    // keine eingebaute Hit-Test-Logik dafuer (siehe .agentic/DECISIONS.md).
+    (function () {
+      var titlebar = document.getElementById("app-titlebar");
+      var dragRegion = document.getElementById("app-titlebar-drag");
+      var minimizeBtn = document.getElementById("app-titlebar-minimize");
+      var closeBtn = document.getElementById("app-titlebar-close");
+      var resizeHandle = document.getElementById("app-resize-handle");
+      if (!titlebar || !dragRegion || !resizeHandle) { return; }
+
+      function nativeApiAvailable() {
+        return !!(window.pywebview && window.pywebview.api
+          && window.pywebview.api.move_window_by && window.pywebview.api.close_window);
+      }
+
+      function activateCustomTitlebar() {
+        if (!nativeApiAvailable()) { return; }
+        titlebar.style.display = "";
+        resizeHandle.style.display = "";
+        document.body.classList.add("has-app-titlebar");
+      }
+      activateCustomTitlebar();
+      window.addEventListener("pywebviewready", activateCustomTitlebar);
+
+      var lastX = 0;
+      var lastY = 0;
+
+      function onDragMove(evt) {
+        var dx = evt.screenX - lastX;
+        var dy = evt.screenY - lastY;
+        lastX = evt.screenX;
+        lastY = evt.screenY;
+        if (dx !== 0 || dy !== 0) {
+          window.pywebview.api.move_window_by(dx, dy);
+        }
+      }
+      function onDragEnd() {
+        document.removeEventListener("mousemove", onDragMove);
+        document.removeEventListener("mouseup", onDragEnd);
+      }
+      dragRegion.addEventListener("mousedown", function (evt) {
+        if (!nativeApiAvailable()) { return; }
+        lastX = evt.screenX;
+        lastY = evt.screenY;
+        document.addEventListener("mousemove", onDragMove);
+        document.addEventListener("mouseup", onDragEnd);
+      });
+
+      var lastRX = 0;
+      var lastRY = 0;
+      function onResizeMove(evt) {
+        var dw = evt.screenX - lastRX;
+        var dh = evt.screenY - lastRY;
+        lastRX = evt.screenX;
+        lastRY = evt.screenY;
+        if (dw !== 0 || dh !== 0) {
+          window.pywebview.api.resize_window_by(dw, dh);
+        }
+      }
+      function onResizeEnd() {
+        document.removeEventListener("mousemove", onResizeMove);
+        document.removeEventListener("mouseup", onResizeEnd);
+      }
+      resizeHandle.addEventListener("mousedown", function (evt) {
+        if (!nativeApiAvailable()) { return; }
+        evt.preventDefault();
+        lastRX = evt.screenX;
+        lastRY = evt.screenY;
+        document.addEventListener("mousemove", onResizeMove);
+        document.addEventListener("mouseup", onResizeEnd);
+      });
+
+      if (minimizeBtn) {
+        minimizeBtn.addEventListener("click", function () {
+          if (nativeApiAvailable()) { window.pywebview.api.minimize_window(); }
+        });
+      }
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          if (window.pywebview && window.pywebview.api && window.pywebview.api.close_window) {
+            window.pywebview.api.close_window();
+          }
+        });
+      }
     })();
   </script>
   <script>

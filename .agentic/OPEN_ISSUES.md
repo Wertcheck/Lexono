@@ -11,17 +11,28 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
 
 ## HIGH
 
-- **Vollständiger Dokument-Workspace mit Pseudonymisierungs-Highlighting**
-  (Referenzbild 2 aus Masterprompt V2): Chat zeigt bei Dokumenten aktuell
-  nur Anhangs-Chips mit OCR-Status (`chat.html`), keine inline
-  Dokumentansicht mit farblich hervorgehobenen erkannten PII-Kategorien und
-  keine rechte Kontextleiste mit „Erkannte Mandantendaten“. Erfordert:
-  PDF-Rendering im Frontend, Koordinaten-/Span-Mapping der
-  Presidio-Erkennungen auf die Dokumentdarstellung, neue
-  Router-/Template-Struktur für die Dokumentansicht. Größtes noch fehlendes
-  UX-Feature aus dem Masterprompt. Zuständig: Agent D (Chat/Document
-  Workspace) + Agent B (Frontend).
-  Status: NV (nicht begonnen).
+- **Dokument-Workspace mit Pseudonymisierungs-Highlighting** (Referenzbild
+  2 aus Masterprompt V2) - **01.09. umgesetzt (V, real getestet)**: neue
+  Route `GET /dashboard/chat/{conversation_id}/document/{document_id}`
+  (`app/web/chat_router.py::chat_document_view`) zeigt den bereits lokal
+  extrahierten Dokumenttext (`Document.extracted_text`) mit inline
+  hervorgehobenen erkannten Kategorien (`app/chat/document_preview.py`,
+  nutzt exakt dieselben Detektoren wie der echte Pseudonymisierungslauf)
+  plus rechter Kontextleiste "Erkannte Mandantendaten" plus eingeklappter
+  Unterhaltungsliste. Aktenisolation getestet (`ChatService.
+  get_attached_document`, Dokument aus fremder Konversation liefert 404-
+  Redirect). 5 neue Tests (test_document_preview.py,
+  test_chat_service.py, test_web_chat.py), volle Suite grün.
+  **Bewusst NICHT umgesetzt**: echtes PDF-Seiten-Rendering mit Zoom/Print/
+  Seitennavigation wie im Referenzbild (bräuchte eine PDF.js-artige
+  Client-Bibliothek + Koordinaten-Mapping der Presidio-Spans auf
+  Pixel-Positionen im PDF - deutlich größerer, eigener Workstream). Die
+  aktuelle Lösung zeigt stattdessen den EXTRAHIERTEN TEXT (denselben, den
+  auch die KI tatsächlich verarbeitet) mit Text-Span-Highlighting - liefert
+  dieselbe Kernfunktion (sehen, was als sensibel erkannt wurde), aber
+  nicht die pixelgenaue PDF-Optik. Zuständig für eine spätere PDF-Variante:
+  Agent D (Chat/Document Workspace) + Agent B (Frontend).
+  Status: V (Textbasierte Variante), OFFEN (echtes PDF-Rendering).
 
 - **Model Evaluation Engine über mehrere Runtimes/Modelle** (Masterprompt
   V2 §15–17): Bisher nur Ollama + 3 Qwen/Llama-Modellvarianten real
@@ -30,7 +41,17 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
   wiederverwendbare Scoring-Engine mit repräsentativen
   Kanzlei-Testaufgaben vorhanden. Zuständig: Agent F (Local AI/Model
   Engineer).
-  Status: NV.
+  **01.09. konkretisiert**: Architektur-Readiness verifiziert (Protocol-
+  basiert, `Settings.local_ai_runtime` + `ModelCatalogEntry.runtime`
+  bereits als Erweiterungspunkte vorhanden, siehe MODEL_EVALUATION.md) -
+  nächster konkreter Schritt ist NICHT mehr Recherche, sondern: (1) eine
+  `LlamaCppLocalLLMProvider`-Klasse gegen dasselbe `LocalLLMProvider`-
+  Protocol schreiben, (2) `build_local_llm_provider` um Dispatch auf
+  `settings.local_ai_runtime` erweitern, (3) echten Benchmark gegen die
+  bestehende `qwen2.5:1.5b`-Baseline fahren. Absichtlich nicht in dieser
+  Session begonnen (mehrstündiger Download-/Kompilier-/Messaufwand,
+  unverhältnismäßig neben den übrigen Punkten dieser Iteration).
+  Status: NV (Umsetzung), Architektur-Readiness V (verifiziert).
 
 ## MEDIUM
 

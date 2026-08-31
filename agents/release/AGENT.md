@@ -35,3 +35,13 @@ Fensteränderung einen neuen Installer-Testzyklus erfordert.
 
 Frischer Build+Install+Smoke-Test am 31.08. erfolgreich (Installer
 `dist/installer/Lexono_Setup.exe`, ~525MB, WebView2-Fix bestätigt stabil).
+
+**01.09.**: `run.py` wechselte auf `frameless=True` (eigene Titelleiste,
+Task #61 - siehe `.agentic/DECISIONS.md`). Python-Logik per Unit-Tests
+abgesichert, volle Testsuite grün, ABER die visuelle Korrektheit des
+nativen Fensters selbst wurde noch NICHT durch einen echten Installer-
+Build + reales Fenster + menschliche Sichtpruefung bestaetigt (kein
+Browser-/Screenshot-Tool in dieser Umgebung verfuegbar). Ein neuer
+Installer-Build + realer Fenstertest ist der naechste faellige Schritt fuer
+dieses spezifische Feature (Task #66), bevor es als vollstaendig
+verifiziert gilt.

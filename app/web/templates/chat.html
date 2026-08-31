@@ -2,7 +2,12 @@
 {% import "_icons.html" as icons %}
 {% block title %}Chat{% endblock %}
 {% block content %}
-  <div class="chat-shell">
+  {# Dokument-Workspace (Masterprompt V2, Task #62): "viewing_document" wird
+     NUR von chat_document_view (app/web/chat_router.py) gesetzt. Die
+     Unterhaltungsliste wird dabei ausgeblendet statt permanent entfernt
+     ("sinnvoll einklappen") - ueber den Zurueck-Pfeil im Header oder "+"
+     kommt man jederzeit wieder dorthin. #}
+  <div class="chat-shell{% if viewing_document %} chat-shell--document-view{% endif %}">
     <aside class="chat-conversations">
       <div class="chat-conversations__header">
         <span>Unterhaltungen</span>
@@ -26,7 +31,18 @@
     <section class="chat-panel">
       <div class="chat-panel__header">
         <div class="chat-panel__header-title">
-          {% if active_conversation %}{{ active_conversation.matter.title }}{% else %}Chat{% endif %}
+          {% if viewing_document %}
+            <a href="/dashboard/chat/{{ active_conversation.id }}" class="chat-document-back"
+               title="Zurück zur Unterhaltung" aria-label="Zurück zur Unterhaltung">
+              {{ icons.back_arrow(class_="icon") }}
+            </a>
+            <span>{{ viewing_document.original_filename }}</span>
+            <span class="tag tag--matched">Dokument analysiert</span>
+          {% elif active_conversation %}
+            {{ active_conversation.matter.title }}
+          {% else %}
+            Chat
+          {% endif %}
         </div>
         <div class="chat-panel__header-status-group">
           {% set lai_state = local_ai_status.state.value if local_ai_status else "checking" %}
@@ -110,7 +126,12 @@
                     {% for link in message.attached_documents %}
                       {% set doc = link.document %}
                       {% set status = doc.ocr_status %}
-                      <span class="doc-chip chat-attachment-chip">
+                      {% set has_preview = status in ("done", "not_needed") and doc.extracted_text %}
+                      {% set chip_tag = "a" if has_preview else "span" %}
+                      <{{ chip_tag }}
+                        {% if has_preview %}href="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}"{% endif %}
+                        class="doc-chip chat-attachment-chip{% if has_preview %} chat-attachment-chip--link{% endif %}"
+                        {% if has_preview %}title="Dokument mit hervorgehobenen Mandantendaten öffnen"{% endif %}>
                         {{ icons.document(class_="icon") }}
                         <span class="chat-attachment-chip__name">{{ doc.original_filename }}</span>
                         {% if status in ("done", "not_needed") %}
@@ -130,7 +151,7 @@
                             {{ icons.warning(class_="icon") }} Format nicht unterstützt
                           </span>
                         {% endif %}
-                      </span>
+                      </{{ chip_tag }}>
                     {% endfor %}
                   </div>
                 {% endif %}
@@ -149,17 +170,27 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
 
+        <div id="chat-dropzone-hint" class="chat-dropzone-hint" hidden>
+          {{ icons.upload(class_="icon") }}
+          <span>Dateien hier ablegen, um sie anzuhängen</span>
+        </div>
+
         <div id="chat-file-list" class="chat-composer__file-list"></div>
 
         <div class="chat-composer__row">
           <button type="button" class="chat-composer__attach-btn" id="chat-attach-btn"
                   title="Dokument anhängen" aria-label="Dokument anhängen">
-            {{ icons.upload(class_="icon") }}
+            {{ icons.clip(class_="icon") }}
           </button>
           <input type="file" name="documents" id="chat-file-input" multiple
                  accept="{{ allowed_upload_extensions | join(',') }}" style="display: none;" />
           <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
                     placeholder="Nachricht an Lexono …" autofocus></textarea>
+          <button type="button" class="chat-composer__mic-btn" id="chat-mic-btn"
+                  title="Spracheingabe (in Vorbereitung)" aria-label="Spracheingabe (in Vorbereitung)"
+                  aria-pressed="false">
+            {{ icons.mic(class_="icon") }}
+          </button>
           <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
                   title="Senden" aria-label="Senden">
             {{ icons.send(class_="icon") }}
@@ -171,6 +202,61 @@
         </p>
       </form>
     </section>
+
+    {% if viewing_document %}
+      {# Dokument-Vorschau (Mitte) + Pseudonymisierungs-Kontextleiste
+         (rechts) - Masterprompt V2, Task #62. Zeigt den bereits lokal
+         extrahierten Dokumenttext mit denselben Hervorhebungen, die auch
+         der echte Pseudonymisierungslauf erkennen wuerde (siehe
+         app/chat/document_preview.py) - NUR reale erkannte Kategorien,
+         keine erfundene Datenlogik. #}
+      <section class="chat-document-pane">
+        {% if document_preview and document_preview.highlighted_html %}
+          <div class="chat-document-pane__text">{{ document_preview.highlighted_html | safe }}</div>
+        {% else %}
+          <div class="chat-document-pane__empty">
+            Für dieses Dokument liegt (noch) kein extrahierter Text vor.
+          </div>
+        {% endif %}
+      </section>
+
+      <aside class="chat-context-pane">
+        <div class="chat-context-pane__header">
+          {{ icons.check(class_="icon") }}
+          <span>Pseudonymisierung</span>
+        </div>
+        <div class="chat-context-pane__status">
+          <span class="tag tag--matched">Abgeschlossen</span>
+        </div>
+        <div class="chat-context-pane__section-title">
+          Erkannte Mandantendaten
+          <span class="chat-context-pane__count">{{ document_preview.entities | length if document_preview else 0 }}</span>
+        </div>
+        {% if document_preview and document_preview.entities %}
+          <ul class="chat-context-pane__entity-list">
+            {% for entity in document_preview.entities %}
+              <li class="chat-context-pane__entity">
+                <span class="pii-highlight pii-highlight--{{ entity.category }} chat-context-pane__entity-dot"></span>
+                <span class="chat-context-pane__entity-label">{{ entity.label }}</span>
+                <span class="chat-context-pane__entity-value">{{ entity.value }}</span>
+                {% if entity.count > 1 %}
+                  <span class="chat-context-pane__entity-count">×{{ entity.count }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="chat-context-pane__empty">Keine Mandantendaten erkannt.</div>
+        {% endif %}
+        <div class="chat-context-pane__section-title">Dokumentstatus</div>
+        <dl class="chat-context-pane__meta">
+          <dt>Datei</dt>
+          <dd>{{ viewing_document.original_filename }}</dd>
+          <dt>Verarbeitung</dt>
+          <dd>{{ "Abgeschlossen" if viewing_document.ocr_status in ("done", "not_needed") else viewing_document.ocr_status }}</dd>
+        </dl>
+      </aside>
+    {% endif %}
   </div>
 
   <script>
@@ -188,8 +274,10 @@
       var composer = document.getElementById("chat-composer");
       var sendBtn = document.getElementById("chat-send-btn");
       var attachBtn = document.getElementById("chat-attach-btn");
+      var micBtn = document.getElementById("chat-mic-btn");
       var fileInput = document.getElementById("chat-file-input");
       var fileList = document.getElementById("chat-file-list");
+      var dropzoneHint = document.getElementById("chat-dropzone-hint");
       var messages = document.getElementById("chat-messages");
 
       // Automatisch wachsende Texteingabe (bis zu einer Obergrenze) statt
@@ -211,16 +299,68 @@
         });
       }
 
+      function renderFileList() {
+        fileList.innerHTML = "";
+        Array.prototype.forEach.call(fileInput.files, function (file) {
+          var chip = document.createElement("span");
+          chip.className = "doc-chip";
+          chip.textContent = file.name;
+          fileList.appendChild(chip);
+        });
+      }
+
       if (attachBtn && fileInput) {
         attachBtn.addEventListener("click", function () { fileInput.click(); });
-        fileInput.addEventListener("change", function () {
-          fileList.innerHTML = "";
-          Array.prototype.forEach.call(fileInput.files, function (file) {
-            var chip = document.createElement("span");
-            chip.className = "doc-chip";
-            chip.textContent = file.name;
-            fileList.appendChild(chip);
-          });
+        fileInput.addEventListener("change", renderFileList);
+      }
+
+      // Drag & Drop (Masterprompt V2): Dateien koennen direkt auf den
+      // Composer gezogen werden statt zwingend ueber den Dateidialog -
+      // nutzt denselben "documents"-Dateiinput wie der Bueroklammer-Button,
+      // ueber ein DataTransfer-Objekt (input.files ist sonst read-only).
+      if (composer && fileInput) {
+        var dragDepth = 0;
+        composer.addEventListener("dragover", function (evt) {
+          evt.preventDefault();
+        });
+        composer.addEventListener("dragenter", function (evt) {
+          evt.preventDefault();
+          dragDepth += 1;
+          if (dropzoneHint) { dropzoneHint.hidden = false; }
+        });
+        composer.addEventListener("dragleave", function () {
+          dragDepth = Math.max(0, dragDepth - 1);
+          if (dragDepth === 0 && dropzoneHint) { dropzoneHint.hidden = true; }
+        });
+        composer.addEventListener("drop", function (evt) {
+          evt.preventDefault();
+          dragDepth = 0;
+          if (dropzoneHint) { dropzoneHint.hidden = true; }
+          var dropped = evt.dataTransfer && evt.dataTransfer.files;
+          if (!dropped || !dropped.length) { return; }
+          var transfer = new DataTransfer();
+          Array.prototype.forEach.call(fileInput.files, function (file) { transfer.items.add(file); });
+          Array.prototype.forEach.call(dropped, function (file) { transfer.items.add(file); });
+          fileInput.files = transfer.files;
+          renderFileList();
+        });
+      }
+
+      // Spracheingabe (Masterprompt V2, UI-Vorgabe: "vorgesehen bzw.
+      // implementiert"): bewusst NUR als vorbereitete UI, NICHT an eine
+      // echte Spracherkennung angebunden. Browser-native Speech-to-Text
+      // (z. B. das Web Speech API `SpeechRecognition`) sendet Audio bei
+      // Chromium/WebView2 an einen Cloud-Spracherkennungsdienst, BEVOR die
+      // lokale Pseudonymisierung greifen koennte - das wuerde den
+      // Kernschutz ("sensible Daten verlassen den Kanzlei-PC nie
+      // unpseudonymisiert") direkt unterlaufen. Siehe .agentic/DECISIONS.md
+      // fuer die vollstaendige Begruendung und die Voraussetzung fuer eine
+      // spaetere echte Anbindung (lokale/on-device Spracherkennung).
+      if (micBtn) {
+        micBtn.addEventListener("click", function () {
+          var active = micBtn.getAttribute("aria-pressed") === "true";
+          micBtn.setAttribute("aria-pressed", String(!active));
+          micBtn.classList.toggle("chat-composer__mic-btn--active", !active);
         });
       }
 

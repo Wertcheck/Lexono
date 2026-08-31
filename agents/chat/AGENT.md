@@ -26,14 +26,29 @@ darstellung, Kontextleiste, Mandanten-/Aktenkontext.
 - Zwei Statusindikatoren im Chat-Header: Lokale KI (5 Zustände) und
   Cloud-KI (Gateway- oder Dev-Key-bewusst).
 
-## Größte offene Aufgabe
+## Dokument-Workspace (umgesetzt 01.09., Task #62)
 
-Dokument-Workspace mit inline PDF-Ansicht, Pseudonymisierungs-Highlights
-und rechter Kontextleiste (Referenzbild 2) – siehe
-`.agentic/OPEN_ISSUES.md`, Kategorie HIGH, und `agents/ux/AGENT.md` für das
-Designkonzept. Erfordert Abstimmung mit Agent H (Security/Privacy), da nur
-REAL erkannte Presidio-Kategorien angezeigt werden dürfen, keine
-Fake-Datenlogik (Masterprompt §13).
+Neue Route `GET /dashboard/chat/{conversation_id}/document/{document_id}`
+(`chat_document_view`) + `app/chat/document_preview.py::build_document_preview`
+(nutzt `app/privacy/detectors.py::detect_all` + `presidio_ner.py` - exakt
+dieselben Detektoren wie der echte Pseudonymisierungslauf, KEINE zweite
+Erkennungslogik). Zeigt den extrahierten Dokumenttext mit inline
+`<mark class="pii-highlight pii-highlight--{kategorie}">`-Hervorhebungen
+plus rechter Kontextleiste ("Erkannte Mandantendaten", gruppiert nach
+Kategorie/Wert mit Vorkommen-Zaehler). Unterhaltungsliste wird dabei per
+CSS ausgeblendet (`chat-shell--document-view`), ueber einen Zurueck-Pfeil
+im Header wieder erreichbar. `ChatService.get_attached_document` erzwingt
+Aktenisolation (Dokument muss an eine Nachricht DIESER Konversation
+angehaengt sein, sonst 404-Redirect) - 3 Tests in test_chat_service.py, 2
+Integrationstests in test_web_chat.py, 6 Tests in test_document_preview.py.
+
+**Bewusst NICHT umgesetzt**: echtes PDF-Seiten-Rendering (Zoom/Print/
+Seitennavigation wie im Referenzbild) - bräuchte eine PDF.js-artige
+Bibliothek + Pixel-Koordinaten-Mapping der Presidio-Spans. Die aktuelle
+Lösung zeigt den EXTRAHIERTEN TEXT (denselben, den die KI tatsächlich
+verarbeitet), nicht die pixelgenaue PDF-Optik - liefert dieselbe
+Kernfunktion (sehen was als sensibel erkannt wurde), aber nicht die
+visuelle PDF-Wiedergabe. Siehe OPEN_ISSUES.md für den Status.
 
 ## Sicherheitsregeln
 

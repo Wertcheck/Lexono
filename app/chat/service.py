@@ -189,6 +189,28 @@ class ChatService:
         db.refresh(message)
         return message
 
+    def get_attached_document(
+        self, db: Session, *, conversation: ChatConversation, document_id: str
+    ) -> Document | None:
+        """Laedt ein Dokument NUR, wenn es tatsaechlich an eine Nachricht
+        DIESER Konversation angehaengt ist (Dokument-Workspace, Masterprompt
+        V2, Task #62) - verhindert, dass ueber eine erratene/manipulierte
+        Dokument-ID ein Dokument aus einer fremden Konversation/Akte
+        abgerufen werden kann (Aktenisolation, CLAUDE.md "Aktenkontext
+        strikt isolieren"). Der Aufrufer (chat_router.py) hat bereits
+        vorher per `_require_own_conversation` sichergestellt, dass die
+        Konversation selbst dem angemeldeten Nutzer gehoert."""
+        return (
+            db.query(Document)
+            .join(ChatMessageDocument, ChatMessageDocument.document_id == Document.id)
+            .join(ChatMessage, ChatMessage.id == ChatMessageDocument.message_id)
+            .filter(
+                ChatMessage.conversation_id == conversation.id,
+                Document.id == document_id,
+            )
+            .first()
+        )
+
     def record_user_message(
         self,
         db: Session,

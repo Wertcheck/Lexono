@@ -18,4 +18,48 @@ DECISIONS.md. Volle Testsuite noch gegenzuprüfen (Agent I).
 **31.08.** · Agent B → Agent I (QA) · Bitte volle Regressionssuite nach
 Template-/CSS-Änderungen in `chat.html`, `base.html`, `app.css` laufen
 lassen, Baseline (1463/1/0) darf sich nicht verschlechtern · Ergebnis:
-ausstehend zum Zeitpunkt dieses Eintrags.
+bestätigt, 1463 passed/1 skipped/0 failed, unverändert.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · Entscheidung Task #61 (Fenster-
+Chrome): natives Chrome entfernen, X muss zuverlässig bleiben, Resize darf
+nicht kaputtgehen, sonst sicherste Variante wählen. Zusätzlich: Agenten-
+organisation aktiv als Arbeitsstruktur nutzen (nicht nur Dokumentation),
+weitere offene HIGH/MEDIUM-Punkte abarbeiten.
+
+---
+
+**01.09.** · Agent K (Release) → Agent B (Frontend) · Recherche zu
+pywebview 6.2.1 Frameless-/Resize-/Drag-Faehigkeiten (echter Blick in den
+installierten Quellcode, kein Trainingswissen) · Ergebnis: frameless=True
+liefert auf Windows nur FormBorderStyle.None, kein eingebautes Hit-Testing;
+easy_drag ist im WinForms-Backend toter Code; `window.move()`/`resize()`/
+`minimize()`/`destroy()` sind bereits vorhanden und live (echte
+x/y/width/height-Properties). Empfehlung: schmale, hand-gerollte Lösung
+(nur Titelleiste draggable, nur ein Eck-Resize-Griff) statt vollflächigem
+Hit-Testing. Siehe DECISIONS.md.
+
+---
+
+**01.09.** · Agent B (Frontend) → Agent I (QA) · Umgesetzt: frameless
+Fenster + eigene Titelleiste (`run.py`, `base.html`, `_NativeApi`), globale
+Sidebar-Statusanzeige (`base.html`, ohne Router-Aenderungen via
+`request.app.state`), Buerklammer-/Mikrofon-/Drag&Drop-UI im Chat-Composer,
+Dokument-Workspace mit Pseudonymisierungs-Highlighting (`app/chat/
+document_preview.py`, neue Route `chat_document_view`). Bitte volle
+Regressionssuite + neue gezielte Tests pruefen · Ergebnis: siehe TEST_STATE.md
+fuer den aktuellen Stand nach diesem Block.
+
+---
+
+**01.09.** · Agent H (Security/Privacy) · Eigenpruefung (kein separater
+Agent-Handoff noetig, da keine neue Cloud-/Netzwerk-/Speicher-Operation
+eingefuehrt wurde): Dokument-Workspace berechnet Presidio-Erkennung NUR
+in-memory bei jedem Request neu (kein neues persistentes Feld), nutzt
+dieselben Detektoren wie der echte Pseudonymisierungspfad, erzwingt
+Aktenisolation ueber `ChatService.get_attached_document` (getestet: Dokument
+aus fremder Konversation liefert 404-Redirect, nicht die Daten). Mikrofon-
+Button bewusst NICHT an eine echte (typischerweise cloud-basierte)
+Spracherkennung angebunden - haette den Privacy-Kernschutz umgangen. Keine
+Einwaende gegen Integration.

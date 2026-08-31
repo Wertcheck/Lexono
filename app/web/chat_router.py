@@ -26,11 +26,12 @@ from app.auth.permissions import (
     require_login,
     require_role,
 )
+from app.chat.document_preview import build_document_preview
 from app.chat.service import ChatService
 from app.config import get_settings
 from app.db.session import get_db
 from app.documents.extraction import SUPPORTED_TEXT_EXTENSIONS
-from app.models import ChatConversation, User
+from app.models import ChatConversation, Document, User
 from app.web.service_factory import WritingProviderNotConfiguredError, get_drafting_service
 from app.web.template_paths import TEMPLATES_DIR
 
@@ -94,6 +95,51 @@ def chat_conversation_page(
     return _render_chat_page(request, db, current_user, conversations, active_conversation, error)
 
 
+@router.get(
+    "/{conversation_id}/document/{document_id}",
+    response_class=HTMLResponse,
+    response_model=None,
+)
+def chat_document_view(
+    conversation_id: str,
+    document_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> HTMLResponse | RedirectResponse:
+    """Dokument-Workspace (Masterprompt V2, Task #62): zeigt ein im Chat
+    angehängtes Dokument inline mit hervorgehobenen erkannten
+    Mandantendaten + Kontextleiste, bei eingeklappter Unterhaltungsliste -
+    der Chat-Verlauf/Composer derselben Konversation bleibt daneben
+    weiterhin nutzbar (kein separates, isoliertes "Dokumenten-Modul").
+
+    Der extrahierte Dokumenttext (`Document.extracted_text`) wird HIER, bei
+    jedem Aufruf frisch, durch dieselben Erkennungsdetektoren geschickt wie
+    der echte Pseudonymisierungspfad (siehe app/chat/document_preview.py) -
+    es wird nichts zusätzlich dauerhaft gespeichert."""
+    chat_service = _get_chat_service()
+    conversations = chat_service.list_conversations(db, user=current_user)
+    active_conversation = _require_own_conversation(db, conversation_id, current_user)
+    document = chat_service.get_attached_document(
+        db, conversation=active_conversation, document_id=document_id
+    )
+    if document is None:
+        return _redirect_with_error(
+            active_conversation.id, "Dokument wurde in dieser Unterhaltung nicht gefunden."
+        )
+
+    preview = build_document_preview(document.extracted_text)
+    return _render_chat_page(
+        request,
+        db,
+        current_user,
+        conversations,
+        active_conversation,
+        viewing_document=document,
+        document_preview=preview,
+    )
+
+
 def _render_chat_page(
     request: Request,
     db: Session,
@@ -101,6 +147,8 @@ def _render_chat_page(
     conversations: list[ChatConversation],
     active_conversation: ChatConversation | None,
     error: str | None = None,
+    viewing_document: Document | None = None,
+    document_preview=None,
 ) -> HTMLResponse:
     settings = get_settings()
     # Phase 3 (§71): war bisher nur auf den direkten Dev-Modus geprueft
@@ -128,6 +176,11 @@ def _render_chat_page(
         # entsprechende "wird geprüft..."-Darstellung.
         "local_ai_status": getattr(request.app.state, "local_ai_status", None),
         "error": error,
+        # Dokument-Workspace (Task #62) - beide None ausserhalb von
+        # chat_document_view, chat.html schaltet darueber zwischen dem
+        # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
+        "viewing_document": viewing_document,
+        "document_preview": document_preview,
     }
     return templates.TemplateResponse(request, "chat.html", context)
 

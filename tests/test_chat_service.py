@@ -285,3 +285,103 @@ def test_attach_document_path_traversal_filename_stays_contained(
     stored_path = Path(document.file_path).resolve()
     upload_dir = (tmp_path / "chat_uploads").resolve()
     assert upload_dir in stored_path.parents
+
+
+# --- Dokument-Workspace (Masterprompt V2, Task #62) --------------------
+
+
+def test_get_attached_document_returns_document_attached_to_this_conversation(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    client = Client(name="Mandant GmbH")
+    matter = Matter(client=client, title="Testakte")
+    db_session.add_all([client, matter])
+    db_session.commit()
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=matter.id, title="Dokument-Test", actor=user.email
+    )
+
+    from io import BytesIO
+
+    from fastapi import UploadFile
+
+    upload = UploadFile(filename="finanzamt.pdf", file=BytesIO(b"%PDF-1.4 canary"))
+    document = chat_service.attach_document(
+        db_session,
+        conversation=conversation,
+        upload=upload,
+        ocr_enabled=False,
+        ocr_languages="deu+eng",
+        tesseract_cmd=None,
+        actor=user.email,
+    )
+    assert document is not None
+    chat_service.record_user_message(
+        db_session, conversation=conversation, content="Bitte prüfen.", document_ids=[document.id]
+    )
+
+    found = chat_service.get_attached_document(
+        db_session, conversation=conversation, document_id=document.id
+    )
+    assert found is not None
+    assert found.id == document.id
+
+
+def test_get_attached_document_returns_none_for_document_from_other_conversation(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    """Aktenisolation: eine erratene/manipulierte Dokument-ID aus einer
+    FREMDEN Konversation darf ueber den Dokument-Workspace nicht abrufbar
+    sein (siehe ChatService.get_attached_document-Docstring)."""
+    client = Client(name="Mandant GmbH")
+    matter_a = Matter(client=client, title="Akte A")
+    matter_b = Matter(client=client, title="Akte B")
+    db_session.add_all([client, matter_a, matter_b])
+    db_session.commit()
+    conversation_a = chat_service.create_conversation(
+        db_session, user=user, matter_id=matter_a.id, title="Konversation A", actor=user.email
+    )
+    conversation_b = chat_service.create_conversation(
+        db_session, user=user, matter_id=matter_b.id, title="Konversation B", actor=user.email
+    )
+
+    from io import BytesIO
+
+    from fastapi import UploadFile
+
+    upload = UploadFile(filename="geheim.pdf", file=BytesIO(b"%PDF-1.4 canary"))
+    document = chat_service.attach_document(
+        db_session,
+        conversation=conversation_a,
+        upload=upload,
+        ocr_enabled=False,
+        ocr_languages="deu+eng",
+        tesseract_cmd=None,
+        actor=user.email,
+    )
+    assert document is not None
+    chat_service.record_user_message(
+        db_session, conversation=conversation_a, content="Bitte prüfen.", document_ids=[document.id]
+    )
+
+    found = chat_service.get_attached_document(
+        db_session, conversation=conversation_b, document_id=document.id
+    )
+    assert found is None
+
+
+def test_get_attached_document_returns_none_for_unknown_document_id(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    client = Client(name="Mandant GmbH")
+    matter = Matter(client=client, title="Testakte")
+    db_session.add_all([client, matter])
+    db_session.commit()
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=matter.id, title="Leere Konversation", actor=user.email
+    )
+
+    found = chat_service.get_attached_document(
+        db_session, conversation=conversation, document_id="does-not-exist"
+    )
+    assert found is None

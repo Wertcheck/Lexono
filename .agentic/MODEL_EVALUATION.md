@@ -26,6 +26,38 @@ Netzwerktest, synthetisches Dokument): 17,7s (lokale KI) + 12,9s
   Finanzamt, fehlende Informationen erkennen, strukturierte Ausgabe) –
   bisher nur Einzelfall-Stichproben, kein reproduzierbarer Score.
 
+## Runtime-Erweiterbarkeit (verifiziert, 01.09., Masterprompt V2 Task #63)
+
+Konkreter Code-Befund, KEINE Vermutung: die Architektur ist bereits auf
+mehrere Runtimes vorbereitet, aber es existiert bisher nur eine konkrete
+Implementierung (Ollama):
+
+- `app/ai_providers/local_llm_provider.py::LocalLLMProvider` ist ein
+  `typing.Protocol` (`process`/`check_health`/`generate_structured`) - ein
+  neuer Runtime-Provider (z. B. llama.cpp) müsste nur dieses Protocol
+  erfüllen, `DraftingService` kennt nie eine konkrete Implementierung.
+- `Settings.local_ai_runtime: str = "ollama"` (app/config/settings.py:174)
+  existiert bereits als eigenes Konfigurationsfeld mit einem
+  Validator (`local_ai_runtime_must_be_supported`, Zeile 188-195), der
+  aktuell nur `{"ollama"}` als unterstützten Wert akzeptiert - das Feld
+  selbst ist also bereits für weitere Werte angelegt.
+- `ModelCatalogEntry.runtime` (app/local_ai/model_catalog.py) trägt
+  bereits ein `runtime`-Feld pro Katalogeintrag (aktuell ausschließlich
+  `"ollama"` befüllt).
+- `app/ai_providers/factory.py::build_local_llm_provider` baut aktuell
+  IMMER `OllamaLocalLLMProvider` (Zeile 123-126, kein Runtime-Dispatch) -
+  das ist die einzige Stelle, die für eine zweite Runtime erweitert werden
+  müsste (Dispatch auf `settings.local_ai_runtime`).
+
+**Bewusst NICHT umgesetzt in dieser Session**: eine echte llama.cpp-
+Integration (Installation, Modell-Download, Provider-Implementierung,
+Benchmark) wurde NICHT begonnen - das wäre ein eigener, mehrstündiger
+Workstream (Kompilierung/Installation, GB-große Modell-Downloads, echte
+Vergleichsmessungen) und stand in dieser Iteration nicht im Verhältnis zu
+den übrigen bearbeiteten Punkten. Der obige Befund ist die konkrete,
+code-basierte Grundlage für diesen Workstream, kein Ersatz dafür - siehe
+`.agentic/OPEN_ISSUES.md` (HIGH) für den nächsten konkreten Schritt.
+
 ## Entscheidungslogik (aktuell implementiert)
 
 `app/local_ai/hardware_detector.py` + `model_catalog.py` +

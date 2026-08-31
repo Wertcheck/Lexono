@@ -117,6 +117,97 @@ a {
   min-height: 100vh;
 }
 
+/* --- Eigene Titelleiste (Masterprompt V2, Task #61) ---
+   Nur sichtbar/aktiv im gebuendelten pywebview-Fenster (frameless=True,
+   siehe run.py) - per JS-Feature-Detection eingeblendet, im reinen
+   Browser-Modus bleibt "display:none" unveraendert bestehen, hier also
+   KEINE Layoutaenderung fuer den Browser-/--no-window-Fall. */
+
+body.has-app-titlebar .app-shell {
+  min-height: calc(100vh - 36px);
+}
+
+.app-titlebar {
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 6px 0 14px;
+  background: var(--paper-000);
+  border-bottom: 1px solid var(--paper-line);
+  flex-shrink: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body.has-app-titlebar .app-titlebar {
+  display: flex;
+}
+
+.app-titlebar__drag-region {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  height: 100%;
+  cursor: default;
+}
+
+.app-titlebar__logo {
+  width: 15px;
+  height: 15px;
+}
+
+.app-titlebar__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-700);
+}
+
+.app-titlebar__controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-titlebar__btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  color: var(--ink-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.app-titlebar__btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.app-titlebar__btn:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.app-titlebar__btn--close:hover {
+  background: var(--wax-red);
+  color: var(--paper-000);
+}
+
+.app-resize-handle {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 500;
+}
+
 /* --- Sidebar --- */
 
 .sidebar {
@@ -1320,6 +1411,29 @@ textarea:focus {
   margin-top: auto;
   padding-top: 4px;
   border-top: 1px solid var(--paper-line);
+}
+
+.sidebar__status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.sidebar__status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-700);
+}
+
+.sidebar__status-value {
+  margin-left: auto;
+  color: var(--ink-500);
+  font-weight: 400;
 }
 
 .sidebar__footer-status {
@@ -2673,6 +2787,214 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--ink-500);
 }
 
+/* --- Dokument-Workspace (Masterprompt V2, Task #62) ---
+   Unterhaltungsliste beim Dokument-Betrachten ausgeblendet ("sinnvoll
+   einklappen") statt permanent entfernt - ueber den Zurueck-Pfeil im
+   Header (.chat-document-back) oder "+" jederzeit wieder erreichbar. */
+.chat-shell--document-view .chat-conversations {
+  display: none;
+}
+
+.chat-document-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.chat-document-back:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.chat-document-back .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-document-pane {
+  width: 40%;
+  min-width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--paper-line);
+  background: var(--paper-000);
+  padding: 24px 28px;
+}
+
+.chat-document-pane__text {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-900);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.chat-document-pane__empty {
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
+.chat-context-pane {
+  width: 260px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-left: 1px solid var(--paper-line);
+  background: var(--paper-050, var(--paper-100));
+  padding: 20px;
+}
+
+.chat-context-pane__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 10px;
+}
+
+.chat-context-pane__header .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--seal-green);
+}
+
+.chat-context-pane__status {
+  margin-bottom: 18px;
+}
+
+.chat-context-pane__section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-500);
+  margin: 16px 0 8px;
+}
+
+.chat-context-pane__count {
+  background: var(--paper-200);
+  color: var(--ink-700);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+.chat-context-pane__entity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-context-pane__entity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+}
+
+.chat-context-pane__entity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chat-context-pane__entity-label {
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.chat-context-pane__entity-value {
+  color: var(--ink-900);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-context-pane__entity-count {
+  margin-left: auto;
+  color: var(--ink-500);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.chat-context-pane__empty {
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.chat-context-pane__meta {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.chat-context-pane__meta dt {
+  color: var(--ink-500);
+  margin-top: 8px;
+}
+
+.chat-context-pane__meta dd {
+  margin: 2px 0 0;
+  color: var(--ink-900);
+  font-weight: 500;
+}
+
+/* Hervorhebung erkannter Mandantendaten im Dokumenttext - dieselben
+   Kategorien wie app/privacy/detectors.py/presidio_ner.py. Bewusst
+   dezente, unterscheidbare Farben statt grellem Marker-Look (Auftrag:
+   "ruhige Kanzleiaesthetik"). */
+.pii-highlight {
+  border-radius: 3px;
+  padding: 0 2px;
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.pii-highlight--person,
+.pii-highlight--mandant { background: #fde68a; }
+.pii-highlight--gegner { background: #fecaca; }
+.pii-highlight--anwalt { background: #bfdbfe; }
+.pii-highlight--gericht { background: #ddd6fe; }
+.pii-highlight--organisation { background: #bae6fd; }
+.pii-highlight--ort,
+.pii-highlight--adresse { background: #fed7aa; }
+.pii-highlight--datum { background: #d9f99d; }
+.pii-highlight--email,
+.pii-highlight--telefon { background: #e9d5ff; }
+.pii-highlight--iban,
+.pii-highlight--betrag,
+.pii-highlight--steuer_id,
+.pii-highlight--kundennummer,
+.pii-highlight--aktenzeichen { background: #a7f3d0; }
+
+.chat-context-pane__entity-dot.pii-highlight {
+  padding: 0;
+}
+
+.chat-attachment-chip--link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.chat-attachment-chip--link:hover {
+  border-color: var(--seal-green);
+  box-shadow: var(--shadow-sm);
+}
+
 .chat-panel {
   flex: 1;
   min-width: 0;
@@ -2696,6 +3018,9 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-panel__header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
@@ -3023,6 +3348,7 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-composer__attach-btn,
+.chat-composer__mic-btn,
 .chat-composer__send-btn {
   flex-shrink: 0;
   width: 36px;
@@ -3042,9 +3368,35 @@ body::-webkit-scrollbar-thumb:hover,
   transform: scale(0.94);
 }
 
-.chat-composer__attach-btn:hover {
+.chat-composer__attach-btn:hover,
+.chat-composer__mic-btn:hover {
   background: var(--paper-200);
   color: var(--ink-900);
+}
+
+.chat-composer__mic-btn--active {
+  background: var(--wax-red);
+  color: var(--paper-000);
+}
+
+.chat-dropzone-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 14px;
+  border: 1.5px dashed var(--seal-green);
+  border-radius: 12px;
+  background: var(--seal-green-tint, rgba(16, 122, 87, 0.06));
+  color: var(--seal-green-dark);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.chat-dropzone-hint .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .chat-composer__send-btn {
