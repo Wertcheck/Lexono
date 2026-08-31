@@ -108,6 +108,42 @@ def test_errors_list_shows_seeded_error(
     assert "Tesseract nicht gefunden" in response.text
 
 
+def test_intake_file_path_never_leaks_into_errors_page(
+    client: TestClient, db_session: Session, roles
+) -> None:
+    """Sicherheitsregression (real gefundene Luecke): `entity_id`/
+    `error_message` sind bei `entity_type="IntakeFile"` der volle
+    Quelldateipfad im ueberwachten Scan-Ordner und koennen daher einen
+    echten Mandantennamen tragen (Dateien werden in der Praxis oft nach
+    dem Mandanten benannt). Diese Seite ist fuer ALLE angemeldeten Rollen
+    sichtbar (siehe Moduldocstring), unabhaengig von Aktenzuordnung - ein
+    Mandantenname im Dateipfad darf hier daher NIE im Klartext auftauchen,
+    auch nicht in Tooltip/title-Attribut (nur CSS-Ellipsis wuerde den Text
+    NICHT aus dem HTML entfernen)."""
+    client_marker = "Mustermann_ABC_987654"
+    retry_service = RetryService()
+    retry_service.record_failure(
+        db_session,
+        entity_type="IntakeFile",
+        entity_id=f"C:\\Kanzlei\\Scan_Eingang\\{client_marker}_Steuerbescheid.pdf",
+        operation="intake",
+        error_category="permanent",
+        error_message=(
+            "Symbolische Verknüpfungen werden aus Sicherheitsgründen nicht erfasst: "
+            f"C:\\Kanzlei\\Scan_Eingang\\{client_marker}_Steuerbescheid.pdf"
+        ),
+    )
+    create_test_user(db_session, roles["mitarbeiter"], "mitarbeiter@kanzlei.test")
+    login(client, "mitarbeiter@kanzlei.test")
+
+    response = client.get("/dashboard/errors")
+
+    assert response.status_code == 200
+    assert client_marker not in response.text
+    assert "Scan_Eingang" not in response.text
+    assert "***" in response.text
+
+
 @pytest.mark.parametrize("role_name", ["admin", "anwalt", "mitarbeiter"])
 def test_all_roles_can_trigger_manual_retry(
     client: TestClient, db_session: Session, roles, seeded_error: dict, role_name: str

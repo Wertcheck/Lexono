@@ -245,3 +245,53 @@ def test_uploaded_pdf_becomes_document_linked_to_matter(
     document = db_session.query(Document).filter_by(matter_id=matter.id).first()
     assert document is not None
     assert document.original_filename == "beleg.pdf"
+
+
+def test_upload_filename_with_path_traversal_stays_inside_storage_dir(
+    client: TestClient, db_session: Session, tmp_path
+) -> None:
+    """Sicherheitsregression (real verifizierte Luecke, siehe
+    _store_uploaded_document): ein Dateiname mit eingebetteten "../"-
+    Segmenten (vom Client im Content-Disposition-Header frei waehlbar,
+    kein Browser-Zwang) darf NICHT dazu fuehren, dass die Datei ausserhalb
+    des konfigurierten Upload-Speicherordners landet."""
+    csrf_token = _csrf(client)
+    marker = b"PATH-TRAVERSAL-CANARY-SHOULD-STAY-CONTAINED"
+
+    response = client.post(
+        "/dashboard/tools/schriftsatz/generate",
+        data={
+            "csrf_token": csrf_token,
+            "matter_id": "",
+            "new_matter_title": "Path Traversal Testakte",
+            "new_client_name": "",
+            "stil": "",
+            "vorlage": "",
+            "attorney_anmerkungen": "",
+        },
+        files={"documents": ("../../../evil_marker.pdf", marker, "application/pdf")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    matter = db_session.query(Matter).filter_by(title="Path Traversal Testakte").first()
+    assert matter is not None
+    document = db_session.query(Document).filter_by(matter_id=matter.id).first()
+    assert document is not None
+
+    from pathlib import Path
+
+    stored_path = Path(document.file_path).resolve()
+    upload_dir = (tmp_path / "uploads").resolve()
+    assert upload_dir in stored_path.parents, (
+        f"Datei liegt ausserhalb des Upload-Ordners: {stored_path} (erwartet unter {upload_dir})"
+    )
+    assert stored_path.read_bytes() == marker
+
+    # Beweis, dass der Canary-Marker NICHT ausserhalb (z. B. direkt unter
+    # tmp_path oder im Repository-Arbeitsverzeichnis) gelandet ist.
+    escaped_candidates = list(tmp_path.glob("evil_marker.pdf")) + list(
+        tmp_path.glob("*evil_marker.pdf")
+    )
+    escaped_candidates = [p for p in escaped_candidates if upload_dir not in p.resolve().parents]
+    assert not escaped_candidates, f"Datei ausserhalb des Upload-Ordners gefunden: {escaped_candidates}"

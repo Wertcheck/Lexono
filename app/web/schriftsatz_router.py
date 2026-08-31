@@ -151,7 +151,20 @@ def _store_uploaded_document(
         )
 
     storage_dir.mkdir(parents=True, exist_ok=True)
-    destination_filename = f"{uuid.uuid4()}_{upload.filename}"
+    # SICHERHEITSKRITISCH (Path-Traversal, real verifiziert): `upload.filename`
+    # stammt direkt aus dem vom Client gesendeten `Content-Disposition`-Header
+    # und kann Verzeichnistrenner/".."-Segmente enthalten (z. B.
+    # "../../../evil.txt") - ungefiltert in den Zielpfad eingebaut, wuerde die
+    # Datei ausserhalb von `storage_dir` geschrieben (Path.__truediv__
+    # interpretiert eingebettete "/"/"\\" im String als weitere
+    # Pfadsegmente). `.name` behaelt nur den letzten Pfadbestandteil - exakt
+    # dasselbe Muster wie IntakeService.ingest_file, mail/service.py und
+    # settings_router.py::_store_profile_image. Der rohe `upload.filename`
+    # bleibt weiterhin als reines Anzeige-/Metadatenfeld
+    # (`original_filename` unten) erhalten - nur der tatsaechliche
+    # Dateisystempfad wird saniert.
+    safe_filename = Path(upload.filename).name or "unbenannt"
+    destination_filename = f"{uuid.uuid4()}_{safe_filename}"
     destination_path = storage_dir / destination_filename
     destination_path.write_bytes(content)
 

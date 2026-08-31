@@ -33,6 +33,28 @@ _BACKOFF_BASE_SECONDS = 120  # 2 Minuten
 _BACKOFF_FACTOR = 4
 
 
+def mask_path_like(value: str) -> str:
+    """Maskiert einen Wert, der wie ein Dateisystempfad aussieht (enthält
+    "/" oder "\\") - `entity_id`/`error_message` sind bei
+    `entity_type="IntakeFile"` der volle Quelldateipfad im überwachten
+    Scan-Ordner und tragen daher (anders als eine `Document`-UUID) den
+    UNVERÄNDERTEN ursprünglichen Dateinamen, der einen echten Personen-/
+    Mandantennamen enthalten kann (siehe `record_failure` unten für die
+    ursprüngliche, bislang NUR auf den Logeintrag/das AuditEvent
+    angewendete Fassung dieser Regel). Wiederverwendet von
+    `app/web/errors_router.py`, um dieselbe Maskierung auch auf die
+    Fehler-/Retry-DASHBOARD-ANZEIGE anzuwenden (real gefundene Lücke: die
+    zugrunde liegende `ProcessingError`-Zeile selbst blieb unmaskiert in
+    der Datenbank - für den Retry-Mechanismus notwendig, siehe
+    `execute_retry`/`list_due_for_retry`, die den echten Pfad brauchen -,
+    wurde aber auf der für ALLE angemeldeten Nutzer sichtbaren
+    `/dashboard/errors`-Seite roh gerendert, unabhängig von Aktenzuordnung
+    - Verletzung der Aktenisolation)."""
+    if "/" in value or "\\" in value:
+        return "***"
+    return value
+
+
 def _compute_next_retry_at(attempt_count: int) -> datetime:
     delay_seconds = _BACKOFF_BASE_SECONDS * (_BACKOFF_FACTOR ** (attempt_count - 1))
     return datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
@@ -104,7 +126,7 @@ class RetryService:
         # ursprünglichen Dateinamen und kann daher einen echten
         # Personen-/Mandantennamen enthalten. Nur bei UUID-artigen
         # entity_ids (kein "/" enthalten) wird der Wert geloggt.
-        safe_entity_id = entity_id if "/" not in entity_id and "\\" not in entity_id else "***"
+        safe_entity_id = mask_path_like(entity_id)
         logger.warning(
             "%s fehlgeschlagen: %s %s (Versuch %d/%d, Status %s)",
             operation,

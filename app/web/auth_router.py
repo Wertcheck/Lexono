@@ -43,7 +43,7 @@ def _set_session_cookie(response, token: str, settings: Settings) -> None:
 @router.get("/login", response_class=HTMLResponse)
 def login_page(
     request: Request,
-    next: str = "/dashboard/inbox",  # noqa: A002
+    next: str = "/dashboard/chat",  # noqa: A002
     error: str | None = None,
     current_user: User | None = Depends(get_current_user_optional),
 ) -> HTMLResponse:
@@ -59,7 +59,7 @@ def login_submit(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
-    next: str = Form("/dashboard/inbox"),  # noqa: A002
+    next: str = Form("/dashboard/chat"),  # noqa: A002
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:

@@ -75,12 +75,13 @@ def _load_detail_context(db: Session, message_id: str) -> dict:
 def dashboard_root(
     request: Request, current_user: User = Depends(require_login)
 ) -> HTMLResponse:
-    """Platzhalter fuer das eigentliche Dashboard (Prompt 25) - leitet fuer
-    den aktuellen Entwicklungsstand direkt auf den einzigen fertigen
-    Bereich weiter, statt eine leere Seite zu zeigen."""
+    """`/dashboard` selbst zeigt keine eigene Seite - leitet auf die Chat-
+    Startseite weiter (UI-Überarbeitung: Chat ist die zentrale
+    Arbeitsoberfläche, siehe app/web/chat_router.py), vormals der
+    Posteingang."""
     from fastapi.responses import RedirectResponse
 
-    return RedirectResponse(url="/dashboard/inbox")
+    return RedirectResponse(url="/dashboard/chat")
 
 
 @router.get("/inbox", response_class=HTMLResponse)

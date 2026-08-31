@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     # Sinn (keine Akte/kein OCR), daher bewusst getrennt von
     # intake_storage_dir/schriftsatz_upload_storage_dir gehalten.
     firm_profile_asset_storage_dir: str = "data/firm_profile_assets"
+    # Ablagebereich für Dokumente, die direkt im Chat (neue Chat-
+    # Startseite) angehängt werden - eigener Ordner analog zu den obigen
+    # (Herkunft am Speicherort erkennbar), gleiches Sicherheitsmuster wie
+    # schriftsatz_upload_storage_dir (app/chat/service.py::attach_document).
+    chat_upload_storage_dir: str = "data/chat_uploads"
 
     # --- Klassifikation ---
     # Ab welchem Konfidenzwert (0.0-1.0) eine Klassifikation als

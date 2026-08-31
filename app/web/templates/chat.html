@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+  <div class="chat-shell">
+    <aside class="chat-conversations">
+      <div class="chat-conversations__header">
+        <span>Unterhaltungen</span>
+        <a href="/dashboard/chat" class="chat-conversations__new" title="Neue Unterhaltung" aria-label="Neue Unterhaltung">
+          {{ icons.plus(class_="icon") }}
+        </a>
+      </div>
+      <div class="chat-conversations__list">
+        {% for conversation in conversations %}
+          <a href="/dashboard/chat/{{ conversation.id }}"
+             class="chat-conversations__item{% if active_conversation and conversation.id == active_conversation.id %} chat-conversations__item--active{% endif %}">
+            <span class="chat-conversations__item-title">{{ conversation.title }}</span>
+            <span class="chat-conversations__item-meta">{{ conversation.matter.title }}</span>
+          </a>
+        {% else %}
+          <div class="chat-conversations__empty">Noch keine Unterhaltungen.</div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section class="chat-panel">
+      {% if not provider_configured %}
+        <div class="banner banner--error chat-panel__banner">
+          Die Cloud-KI ist nicht konfiguriert (kein Anthropic-API-Schlüssel hinterlegt). Sie können
+          weiterhin Nachrichten senden - die KI-Antwort wird eine entsprechende Meldung anzeigen, bis
+          eine Administratorin oder ein Administrator einen Schlüssel hinterlegt hat.
+        </div>
+      {% endif %}
+
+      {% if error %}
+        <div class="banner banner--error chat-panel__banner">{{ error }}</div>
+      {% endif %}
+
+      <div class="chat-panel__messages" id="chat-messages">
+        {% if not active_conversation %}
+          <div class="chat-empty-state">
+            <h1 class="chat-empty-state__greeting" id="chat-greeting">Guten Tag.</h1>
+            <p class="chat-empty-state__hint">Wie kann ich Sie heute unterstützen?</p>
+            <div class="chat-empty-state__actions">
+              <button type="button" class="chat-quick-action" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
+                {{ icons.document(class_="icon") }}
+                <span>Dokument analysieren</span>
+              </button>
+              <button type="button" class="chat-quick-action" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
+                {{ icons.printer(class_="icon") }}
+                <span>Schriftsatz erstellen</span>
+              </button>
+              <button type="button" class="chat-quick-action" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
+                {{ icons.bulb(class_="icon") }}
+                <span>Dokument zusammenfassen</span>
+              </button>
+            </div>
+          </div>
+        {% else %}
+          {% for message in messages %}
+            <div class="chat-message chat-message--{{ message.role }}{% if message.blocked %} chat-message--blocked{% endif %}">
+              <div class="chat-message__avatar">
+                {% if message.role == "user" %}{{ current_user.email[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
+              </div>
+              <div class="chat-message__body">
+                {% if message.attached_documents %}
+                  <div class="chat-message__attachments">
+                    {% for link in message.attached_documents %}
+                      <span class="doc-chip">
+                        {{ icons.document(class_="icon") }}
+                        {{ link.document.original_filename }}
+                      </span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                <div class="chat-message__text">{{ message.content }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <form method="post" action="/dashboard/chat/send" enctype="multipart/form-data"
+            class="chat-composer" id="chat-composer">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
+
+        <div id="chat-file-list" class="chat-composer__file-list"></div>
+
+        <div class="chat-composer__row">
+          <button type="button" class="chat-composer__attach-btn" id="chat-attach-btn"
+                  title="Dokument anhängen" aria-label="Dokument anhängen">
+            {{ icons.upload(class_="icon") }}
+          </button>
+          <input type="file" name="documents" id="chat-file-input" multiple
+                 accept="{{ allowed_upload_extensions | join(',') }}" style="display: none;" />
+          <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
+                    placeholder="Nachricht an KanzleiAI …" autofocus></textarea>
+          <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
+                  title="Senden" aria-label="Senden">
+            {{ icons.send(class_="icon") }}
+          </button>
+        </div>
+        <p class="chat-composer__hint">
+          Dokumentinhalte werden vor jeder KI-Anfrage lokal anonymisiert (Presidio + Pseudonymisierung) -
+          es werden nie unpseudonymisierte Mandantendaten an die Cloud-KI gesendet.
+        </p>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var hour = new Date().getHours();
+      var greetingEl = document.getElementById("chat-greeting");
+      if (greetingEl) {
+        var greeting = "Guten Tag.";
+        if (hour < 11) { greeting = "Guten Morgen."; }
+        else if (hour >= 18) { greeting = "Guten Abend."; }
+        greetingEl.textContent = greeting;
+      }
+
+      var textarea = document.getElementById("chat-input");
+      var composer = document.getElementById("chat-composer");
+      var sendBtn = document.getElementById("chat-send-btn");
+      var attachBtn = document.getElementById("chat-attach-btn");
+      var fileInput = document.getElementById("chat-file-input");
+      var fileList = document.getElementById("chat-file-list");
+      var messages = document.getElementById("chat-messages");
+
+      // Automatisch wachsende Texteingabe (bis zu einer Obergrenze) statt
+      // einer festen Zeilenzahl - fuehlt sich wie eine echte
+      // Chat-Eingabe an, bleibt aber auf kleinen Bildschirmen (1366x768)
+      // beherrschbar.
+      function autoGrow() {
+        textarea.style.height = "auto";
+        textarea.style.height = Math.min(textarea.scrollHeight, 200) + "px";
+      }
+      if (textarea) {
+        textarea.addEventListener("input", autoGrow);
+        // Enter sendet, Shift+Enter fuegt einen Zeilenumbruch ein.
+        textarea.addEventListener("keydown", function (evt) {
+          if (evt.key === "Enter" && !evt.shiftKey) {
+            evt.preventDefault();
+            composer.requestSubmit();
+          }
+        });
+      }
+
+      if (attachBtn && fileInput) {
+        attachBtn.addEventListener("click", function () { fileInput.click(); });
+        fileInput.addEventListener("change", function () {
+          fileList.innerHTML = "";
+          Array.prototype.forEach.call(fileInput.files, function (file) {
+            var chip = document.createElement("span");
+            chip.className = "doc-chip";
+            chip.textContent = file.name;
+            fileList.appendChild(chip);
+          });
+        });
+      }
+
+      document.querySelectorAll(".chat-quick-action").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          textarea.value = btn.getAttribute("data-prefill");
+          textarea.focus();
+          autoGrow();
+          if (btn.getAttribute("data-attach") === "true" && fileInput) {
+            fileInput.click();
+          }
+        });
+      });
+
+      if (composer) {
+        composer.addEventListener("submit", function () {
+          // Deutlicher Verarbeitungs-/Disabled-Zustand: der eigentliche
+          // Seitenwechsel (voller Redirect nach Serververarbeitung, kein
+          // eigenes Streaming) uebernimmt danach die Browser-eigene
+          // Ladeanzeige.
+          sendBtn.disabled = true;
+          textarea.disabled = true;
+          sendBtn.classList.add("chat-composer__send-btn--loading");
+        });
+      }
+
+      if (messages) {
+        messages.scrollTop = messages.scrollHeight;
+      }
+    })();
+  </script>
+{% endblock %}

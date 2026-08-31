@@ -32,15 +32,15 @@
           {% for error in errors %}
             <tr>
               <td class="mono">{{ error.operation }}</td>
-              <td class="mono">{{ error.entity_type }} · {{ error.entity_id[:8] }}…</td>
+              <td class="mono">{{ error.entity_type }} · {{ error.entity_id_display }}…</td>
               <td>
                 <span class="tag {% if error.status == 'failed_permanent' %}tag--outbound{% else %}tag--unmatched{% endif %}">
                   {{ "dauerhaft fehlgeschlagen" if error.status == "failed_permanent" else "wartet auf Wiederholung" }}
                 </span>
               </td>
               <td class="mono">{{ error.attempt_count }} / {{ error.max_attempts }}</td>
-              <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ error.error_message }}">
-                {{ error.error_message }}
+              <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ error.error_message_display }}">
+                {{ error.error_message_display }}
               </td>
               <td>
                 <form method="post" action="/dashboard/errors/{{ error.id }}/retry" style="display:inline;">

@@ -18,12 +18,38 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_or_404
 from app.auth.permissions import require_login, require_role
 from app.db.session import get_db
-from app.errors import ProcessingError, RetryService
+from app.errors import ProcessingError, RetryService, mask_path_like
 from app.models import User
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/errors", tags=["dashboard-errors"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+
+def _to_display_row(error: ProcessingError) -> dict:
+    """Baut eine fuer ALLE angemeldeten Nutzer (jede Rolle, unabhaengig von
+    Aktenzuordnung, siehe Moduldocstring) sichere Anzeige-Fassung.
+
+    SICHERHEITSKRITISCH (real gefundene Luecke): `entity_id`/`error_message`
+    sind bei `entity_type="IntakeFile"` der volle, unveraenderte
+    Quelldateipfad im ueberwachten Scan-Ordner und koennen daher einen
+    echten Mandantennamen tragen (z. B. "Max_Mustermann_Steuerbescheid.pdf")
+    - anders als bei einem `Document` (immer eine UUID). Die zugrunde
+    liegende `ProcessingError`-Zeile MUSS den echten Pfad behalten (der
+    Retry-Mechanismus braucht ihn, siehe RetryService.execute_retry) - hier
+    wird nur die fuer die Dashboard-ANZEIGE bestimmte Kopie maskiert
+    (dieselbe Regel, die `RetryService.record_failure` bereits fuer den
+    Logeintrag/das AuditEvent anwendet, siehe app/errors/service.py)."""
+    return {
+        "id": error.id,
+        "operation": error.operation,
+        "entity_type": error.entity_type,
+        "entity_id_display": mask_path_like(error.entity_id)[:8],
+        "status": error.status,
+        "attempt_count": error.attempt_count,
+        "max_attempts": error.max_attempts,
+        "error_message_display": mask_path_like(error.error_message),
+    }
 
 
 @router.get("", response_class=HTMLResponse)
@@ -37,7 +63,7 @@ def errors_list_page(
     context = {
         "request": request,
         "active_nav": "Fehler",
-        "errors": errors,
+        "errors": [_to_display_row(error) for error in errors],
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
     }

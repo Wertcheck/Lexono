@@ -13,6 +13,8 @@ from app.models.attorney_instruction import (
 )
 from app.models.audit_event import AuditEvent, AuditLogImmutableError
 from app.models.base import Base
+from app.models.chat_conversation import ChatConversation
+from app.models.chat_message import VALID_CHAT_MESSAGE_ROLES, ChatMessage, ChatMessageDocument
 from app.models.client import VALID_CLIENT_STATUSES, Client
 from app.models.deadline import Deadline
 from app.models.document import Document
@@ -93,4 +95,8 @@ __all__ = [
     "LawSection",
     "DocumentTemplate",
     "GeneratedDocument",
+    "ChatConversation",
+    "ChatMessage",
+    "ChatMessageDocument",
+    "VALID_CHAT_MESSAGE_ROLES",
 ]

@@ -82,6 +82,7 @@ def test_scanned_pdf_stays_pending_when_ocr_disabled(
     assert result.extracted_text is None
 
 
+@pytest.mark.usefixtures("use_bundled_tesseract_if_no_system_install")
 def test_scanned_pdf_is_processed_when_ocr_enabled(
     tmp_path: Path, db_session: Session
 ) -> None:

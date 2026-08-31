@@ -21,6 +21,13 @@ from app.documents.ocr import (
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
+# Siehe tests/conftest.py::use_bundled_tesseract_if_no_system_install -
+# faellt auf das mit windows/fetch_tesseract.ps1 gebuendelte Tesseract
+# zurueck, falls kein System-Tesseract im PATH gefunden wird (Pilot
+# Readiness Review, Abschnitt 8: "Testumgebungsproblem" fuer die drei
+# echten OCR-Tests unten behoben statt nur dokumentiert).
+pytestmark = pytest.mark.usefixtures("use_bundled_tesseract_if_no_system_install")
+
 
 def test_ocr_recognizes_text_in_scanned_pdf() -> None:
     text = run_ocr(FIXTURES / "scanned_document.pdf")

@@ -38,6 +38,7 @@ from app.updater.checker import UpdateCheckResult, check_for_update
 from app.web.account_router import router as account_web_router
 from app.web.auth_router import router as auth_web_router
 from app.web.backup_router import router as backup_web_router
+from app.web.chat_router import router as chat_web_router
 from app.web.clients_router import router as clients_web_router
 from app.web.document_generator_router import router as document_generator_web_router
 from app.web.document_templates_router import router as document_templates_web_router
@@ -199,6 +200,7 @@ def health() -> dict[str, str]:
 
 app.include_router(api_router)
 app.include_router(web_router)
+app.include_router(chat_web_router)
 app.include_router(drafts_web_router)
 app.include_router(schriftsatz_web_router)
 app.include_router(outbox_web_router)

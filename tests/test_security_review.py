@@ -139,7 +139,18 @@ def test_intake_rejects_symlinks(db_session: Session, tmp_path: Path) -> None:
     """Beweis: eine im überwachten Ordner platzierte symbolische
     Verknüpfung auf eine Datei ausserhalb wird NICHT verarbeitet - ohne
     diesen Schutz hätte `shutil.copy2` den Link transparent aufgelöst und
-    den Inhalt der Zieldatei kopiert."""
+    den Inhalt der Zieldatei kopiert.
+
+    Das ERZEUGEN eines Symlinks (nicht die hier geprüfte Erkennung/
+    Ablehnung selbst) verlangt unter Windows `SeCreateSymbolicLinkPrivilege`
+    (Standard: nur Administratoren bzw. aktivierter Entwicklermodus) - auf
+    einer Entwicklungsmaschine/einem CI-Runner ohne dieses Recht wird der
+    Testaufbau selbst (nicht der geprüfte Anwendungscode) mit `OSError`
+    abgelehnt. Klarer, expliziter Skip statt eines irreführenden
+    Fehlschlags - der eigentliche Schutzmechanismus (`is_symlink()`-Prüfung
+    in `IntakeService.ingest_file`) bleibt unabhängig davon durch
+    `test_intake_rejects_hardlinks` (nutzt `os.link`, kein Sonderrecht
+    nötig) UND jeden echten Installationslauf abgesichert."""
     watched_folder = tmp_path / "scan_eingang"
     watched_folder.mkdir()
     storage_dir = tmp_path / "intake_storage"
@@ -148,7 +159,16 @@ def test_intake_rejects_symlinks(db_session: Session, tmp_path: Path) -> None:
     secret_file.write_text("Streng vertraulicher Inhalt einer anderen Akte.")
 
     symlink_path = watched_folder / "unauffaellig_aussehendes_dokument.pdf"
-    symlink_path.symlink_to(secret_file)
+    try:
+        symlink_path.symlink_to(secret_file)
+    except OSError as exc:
+        pytest.skip(
+            "Symlink-Erzeugung im Testaufbau nicht möglich (fehlendes "
+            f"SeCreateSymbolicLinkPrivilege, {exc}) - dieses Recht fehlt "
+            "Standard-Windows-Konten ohne Entwicklermodus/Admin-Rechte; "
+            "der geprüfte Schutz selbst ist unabhängig davon durch "
+            "test_intake_rejects_hardlinks abgesichert."
+        )
 
     service = IntakeService(storage_dir)
     with pytest.raises(IntakeError):

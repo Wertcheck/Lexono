@@ -132,10 +132,14 @@ def seeded(db_session: Session) -> dict[str, str]:
 # --- Grundfunktionen ---
 
 
-def test_dashboard_root_redirects_to_inbox(client: TestClient) -> None:
+def test_dashboard_root_redirects_to_chat(client: TestClient) -> None:
+    """UI-Überarbeitung: Chat ist jetzt die zentrale Startseite nach dem
+    Login (vormals Posteingang) - siehe app/web/chat_router.py. Der
+    Posteingang selbst bleibt unverändert unter /dashboard/inbox erreichbar
+    (siehe test_inbox_page_returns_200 unten)."""
     response = client.get("/dashboard", follow_redirects=False)
     assert response.status_code == 307
-    assert response.headers["location"] == "/dashboard/inbox"
+    assert response.headers["location"] == "/dashboard/chat"
 
 
 def test_inbox_page_returns_200(client: TestClient, seeded: dict) -> None:
@@ -286,10 +290,14 @@ def test_sidebar_shows_all_group_and_item_labels(client: TestClient, seeded: dic
     drei bleiben aufklappbare Gruppen. "Einstellungen" ist weiterhin kein
     sichtbares Hauptmenue-Label - der Profil-/Einstellungen-Bereich wird
     ueber die Account-Zeile im Sidebar-Footer erreicht (siehe
-    test_sidebar_has_profile_link_at_bottom)."""
+    test_sidebar_has_profile_link_at_bottom).
+
+    UI-Ueberarbeitung: der vormals flache "Uebersicht"-Link wurde durch
+    "Chat" ersetzt (neue zentrale Startseite, siehe app/web/chat_router.py) -
+    "Uebersicht" existiert als Nav-Label nicht mehr."""
     response = client.get("/dashboard/inbox")
     for label in [
-        "Übersicht",
+        "Chat",
         "Akten &amp; Ordner",
         "Posteingang",
         "Aktive Akten",

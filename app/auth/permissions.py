@@ -118,7 +118,7 @@ class NotAuthenticatedError(Exception):
     gültige Session vorliegt. Für Web-Routen von einem Exception-Handler
     (siehe app/main.py) zu einem Redirect auf /dashboard/login übersetzt."""
 
-    def __init__(self, next_path: str = "/dashboard/inbox") -> None:
+    def __init__(self, next_path: str = "/dashboard/chat") -> None:
         self.next_path = next_path
 
 
