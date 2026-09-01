@@ -551,26 +551,27 @@ def test_existing_pages_remain_reachable(client: TestClient, db_session: Session
     assert response.status_code == 200, f"{path} nicht mehr erreichbar (Status {response.status_code})"
 
 
-def test_chat_appears_as_first_nav_item(client: TestClient, db_session: Session) -> None:
-    """Seit dem Referenzbild-Redesign (01.09.) ist "Chat" auf der Chat-
-    Seite selbst eine echte Aufklapp-Gruppe mit der Unterhaltungshistorie
-    als Unterpunkten (ersetzt die vorherige, staendig sichtbare eigene
-    "Unterhaltungen"-Spalte) - "Neue Unterhaltung" ist dort der erste
-    Unterpunkt."""
+def test_chat_appears_as_first_flat_nav_item(client: TestClient, db_session: Session) -> None:
+    """"Chat" ist bewusst ein einfacher flacher Sidebar-Link OHNE
+    Aufklapp-Unterpunkte (Nutzerkorrektur, 01.09.: eine zwischenzeitliche
+    Aenderung hatte die Unterhaltungshistorie vertikal unter "Chat" in
+    die Sidebar eingeblendet, wodurch die Sidebar bei laengerer Historie
+    hoeher als das Fenster wurde und gescrollt werden musste - das
+    veraendert seitdem NIE die Sidebar-Hoehe)."""
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
-    assert 'href="/dashboard/chat?new=1"' in response.text
-    assert "Neue Unterhaltung" in response.text
+    assert 'href="/dashboard/chat"' in response.text
+    assert 'class="sidebar__group-summary sidebar__group-summary--flat' in response.text
 
 
-def test_sidebar_shows_conversation_history_as_chat_group_items(
+def test_chat_conversations_shown_as_separate_column_next_to_sidebar(
     client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Regression (01.09., Nutzerfeedback): die vorherige, staendig
-    sichtbare eigene "Unterhaltungen"-Spalte existiert nicht mehr - die
-    Historie muss stattdessen als Unterpunkte der Sidebar-Gruppe "Chat"
-    erscheinen, mit korrekter Aktiv-Markierung der gerade geoeffneten
-    Unterhaltung."""
+    """Regression (01.09., Nutzerkorrektur): die Unterhaltungshistorie
+    erscheint als EIGENE SPALTE RECHTS NEBEN der Haupt-Sidebar (wie im
+    ürsprünglichen, funktionierenden Design), NICHT als Unterpunkte in
+    der Haupt-Sidebar selbst - mit korrekter Aktiv-Markierung der gerade
+    geoeffneten Unterhaltung."""
     login_as_admin(db_session, client)
     writer = FakeClaudeWritingProvider("Antwort.")
     monkeypatch.setattr(
@@ -579,13 +580,13 @@ def test_sidebar_shows_conversation_history_as_chat_group_items(
     csrf = _csrf(client)
     send_response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Testnachricht fuer Sidebar."},
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Testnachricht fuer Spalte."},
         follow_redirects=True,
     )
 
-    assert "chat-conversations" not in send_response.text
-    assert "Testnachricht fuer Sidebar." in send_response.text
-    assert "sidebar__link--active" in send_response.text
+    assert "chat-conversations" in send_response.text
+    assert "Testnachricht fuer Spalte." in send_response.text
+    assert "chat-conversations__item--active" in send_response.text
 
 
 # ==========================================================================

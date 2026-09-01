@@ -3004,12 +3004,6 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--ink-500);
 }
 
-.sidebar__group-empty {
-  padding: 7px 24px 7px 42px;
-  font-size: 12px;
-  color: var(--ink-500);
-}
-
 /* --- Dokument-Workspace (Masterprompt V2, Task #62) ---
    Unterhaltungsliste beim Dokument-Betrachten ausgeblendet ("sinnvoll
    einklappen") statt permanent entfernt - ueber den Zurueck-Pfeil im
