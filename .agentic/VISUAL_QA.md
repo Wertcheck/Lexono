@@ -160,6 +160,53 @@ der komplette untere Fensterbereich normal aussehen - nicht ungeprüft als
 Regression in OPEN_ISSUES.md übernehmen, nur als offener
 Beobachtungspunkt vermerkt (siehe dort, Kategorie LOW).
 
+## Neue Erkenntnis: echte UI-Automatisierung möglich (01.09., später)
+
+Über PowerShell + `[System.Windows.Forms.Cursor]::Position` +
+`mouse_event` (P/Invoke) + `SendKeys::SendWait` lässt sich das native
+Fenster tatsächlich BEDIENEN (Login, Klicks auf echte UI-Elemente),
+nicht nur fotografieren. Damit war es möglich, den Chat einzuloggen,
+zu einem Dokument-Workspace zu navigieren und dessen echten,
+gerenderten Zustand zu fotografieren - nicht nur die Login-Seite.
+Voraussetzung: `SetForegroundWindow` vor jedem Klick, feste
+Pixel-Koordinaten relativ zum zuvor per `GetWindowRect` ermittelten
+Fenster-Ursprung (Layout ändert sich nicht zwischen Sessions, solange
+Fenstergröße gleich bleibt).
+
+## WICHTIGE KORREKTUR zur bisherigen 1366×768/1920×1080-Einschränkung
+
+Die tatsächliche Bildschirmauflösung dieser Entwicklungsumgebung ist
+NUR **1024×768** (`[System.Windows.Forms.Screen]::AllScreens`,
+01.09. verifiziert). Das erklärt rückwirkend, warum `MoveWindow`-Aufrufe
+auf 1366×768/1920×1080 nie die angeforderte Breite lieferten (siehe
+oben, "unbestätigter Befund") - das war KEINE DPI-Virtualisierungs-
+Anomalie, sondern schlicht eine physische Bildschirmgrenze: das Fenster
+kann in dieser Umgebung gar nicht breiter als ~1024-1044px werden.
+**Konsequenz**: 1366×768 und 1920×1080 sind in dieser konkreten
+Sandbox/VM NICHT testbar - jeder Versuch, dies zu simulieren, liefert
+falsche/irreführende Ergebnisse. Für echte Tests bei diesen Auflösungen
+wäre eine Umgebung mit entsprechend größerem (virtuellem) Bildschirm
+nötig. Dies ist eine Umgebungseinschränkung, kein Anwendungsfehler.
+
+## Echter, bestätigter Layout-Bug gefunden UND behoben (01.09., später)
+
+Bei der Navigation in den Dokument-Workspace (per echter UI-Automatisierung,
+nicht nur HTTP) zeigte sich bei der tatsächlichen Fensterbreite dieser
+Umgebung (~1024-1028px) ein reproduzierbarer Layout-Fehler: `.chat-panel`
+(Nachrichten-Thread + Composer, bleibt im Dokument-Workspace bewusst
+sichtbar, siehe `chat-shell--document-view`) hatte kein `min-width`,
+während `.chat-document-pane` (40%) und `.chat-context-pane` (260px)
+feste/prozentuale Breiten beanspruchten - der Chat-Thread wurde auf
+einen schmalen Streifen (~150-200px) zusammengedrückt, Nachrichtentext
+brach auf ein Wort pro Zeile um (Screenshot:
+`lexono_document_workspace_click.png`).
+**Behoben** (`app.css`, Commit `b92e1cb`): `.chat-panel` bekommt
+`min-width: 240px`, `.chat-context-pane` von `260px` auf `220px`
+reduziert. Vorher/Nachher per echtem Login+Klick in einer Dev-Instanz
+verifiziert (`lexono_dev_docworkspace_fixed2.png` zeigt normalen,
+mehrwortigen Zeilenumbruch statt Ein-Wort-pro-Zeile). Volle Testsuite
+weiterhin grün (1487/1/0).
+
 ## Was weiterhin fehlt
 
 - Kein Browser-Tool für Chat-UI-Seiten mit dynamischem Inhalt über HTTP
