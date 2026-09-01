@@ -134,6 +134,24 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
   `.chat-panel__header` Kommentarblock) – rein interner Kommentar, keine
   sichtbare UI, niedrige Priorität für Bereinigung.
 
+## FUTURE (erwogen, bewusst nicht umgesetzt)
+
+- **Maximieren per Doppelklick auf die Titelleiste**: erwogen als
+  Ergänzung zum Eck-Resize-Griff (der einzige aktuelle Weg, die
+  Fenstergröße zu ändern - Griff ist klein, für Nutzer mit
+  motorischen Einschränkungen ggf. schwer zu treffen). `webview.Window.
+  maximize()`/`.restore()` existieren bereits und sind ein echtes
+  Toggle-Paar (`WindowState = Maximized`/`Normal`, in `winforms.py`
+  verifiziert) - das Problem ist NICHT die Umsetzung des Togglens
+  selbst, sondern die zuverlässige Erkennung des AKTUELLEN Zustands
+  (maximiert oder nicht) vor jedem Doppelklick, ohne die native
+  Fenster-Objektebene direkt anzufassen. `_NativeApi`s eigener
+  Docstring (`run.py`) warnt ausdrücklich vor genau diesem Bereich -
+  ein früherer, real aufgetretener Bug (`get_functions`-Rekursion durch
+  ein öffentliches `window`-Attribut) führte zu einem kompletten
+  Programmhänger beim Fensteraufbau. Nicht umgesetzt, um dieses Risiko
+  nicht für ein unaufgefordertes Komfort-Feature einzugehen.
+
 ## FUTURE (explizit nicht jetzt zu bauen, Masterprompt §30–32)
 
 - Mehrstufige Multi-Agenten-Unternehmensorganisation (CEO/Product/SWE/QA/
