@@ -327,6 +327,81 @@ def test_settings_changes_apply_immediately_without_restart(
     assert get_settings().retention_days == 42
 
 
+# --- Lokale KI (01.09., Product Completion Cycle: Modell war zuvor nur
+# per .env/CLI-Setup-Assistent konfigurierbar, nicht ueber die Web-UI) ---
+
+
+def test_settings_page_shows_local_ai_section_when_enabled(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    env_path.write_text(
+        env_path.read_text(encoding="utf-8")
+        + "\nLOCAL_AI_ENABLED=true\nOLLAMA_MODEL=qwen2.5:1.5b\nOLLAMA_BASE_URL=http://localhost:11434\n",
+        encoding="utf-8",
+    )
+    get_settings.cache_clear()
+    _login_admin(client, db_session)
+
+    response = client.get("/dashboard/settings")
+    assert response.status_code == 200
+    assert "Lokale KI" in response.text
+    assert 'value="qwen2.5:1.5b"' in response.text
+    assert 'value="http://localhost:11434"' in response.text
+
+
+def test_settings_page_shows_disabled_hint_when_local_ai_off(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_admin(client, db_session)
+
+    response = client.get("/dashboard/settings")
+    assert response.status_code == 200
+    assert "Lokale KI ist derzeit deaktiviert" in response.text
+    assert 'action="/dashboard/settings/local-ai"' not in response.text
+
+
+def test_update_local_ai_settings_persists_model_and_base_url(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    env_path.write_text(
+        env_path.read_text(encoding="utf-8") + "\nLOCAL_AI_ENABLED=true\n",
+        encoding="utf-8",
+    )
+    get_settings.cache_clear()
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/settings/local-ai",
+        data={
+            "csrf_token": csrf,
+            "ollama_model": "mistral:7b",
+            "ollama_base_url": "http://127.0.0.1:11434",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    env_text = env_path.read_text(encoding="utf-8")
+    assert "OLLAMA_MODEL=" in env_text and "mistral:7b" in env_text
+    assert "OLLAMA_BASE_URL=" in env_text and "http://127.0.0.1:11434" in env_text
+    assert get_settings().ollama_model == "mistral:7b"
+
+
+def test_update_local_ai_settings_rejects_blank_model(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/settings/local-ai",
+        data={"csrf_token": csrf, "ollama_model": "  ", "ollama_base_url": "http://localhost:11434"},
+        follow_redirects=False,
+    )
+    assert "error=" in response.headers["location"]
+    assert "OLLAMA_MODEL" not in env_path.read_text(encoding="utf-8")
+
+
 # --- Kanzlei-Profil (Name/Anschrift/Kontakt, 20.08.) ---
 
 

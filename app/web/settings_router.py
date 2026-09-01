@@ -102,8 +102,46 @@ def settings_page(
         "mail_configured": settings.mail_password is not None,
         "retention_days": settings.retention_days,
         "anthropic_api_key_configured": settings.anthropic_api_key is not None,
+        "local_ai_enabled": settings.local_ai_enabled,
+        "local_ai_runtime": settings.local_ai_runtime,
+        "ollama_base_url": settings.ollama_base_url,
+        "ollama_model": settings.ollama_model,
+        # Bewusst KEIN synchroner Health-Check hier (derselbe Grundsatz wie
+        # oben fuer die API-Erreichbarkeit) - wiederverwendet stattdessen
+        # den beim Start bzw. periodisch ohnehin schon berechneten Zustand
+        # aus app.state.local_ai_status (siehe app/main.py,
+        # _run_silent_local_ai_check) - keine zweite Netzwerkoperation nur
+        # fuer diese Seitenanzeige.
+        "local_ai_status": getattr(request.app.state, "local_ai_status", None),
     }
     return templates.TemplateResponse(request, "settings.html", context)
+
+
+@router.post("/local-ai")
+def update_local_ai_settings(
+    ollama_model: str = Form(...),
+    ollama_base_url: str = Form(...),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Aendert NUR das konfigurierte Modell-Tag/die Basis-URL der bereits
+    aktivierten lokalen KI (dieselbe env-Schreiblogik wie update_mail_settings/
+    update_retention oben) - KEIN Ersatz fuer den vollstaendigen
+    Einrichtungsassistenten (`kanzlei_ai.exe setup`, siehe
+    app/local_ai/setup_orchestrator.py::LocalAiSetupService.run_setup), der
+    zusaetzlich Hardware-Erkennung, Ollama-Installation und den eigentlichen
+    Modell-Download uebernimmt. Das hier gesetzte Modell muss lokal bereits
+    vorhanden sein (z. B. per `ollama pull <tag>` oder besagtem Assistenten) -
+    sonst zeigt der naechste Status-Check schlicht MODEL_MISSING an, exakt
+    wie bei jeder anderen falschen Konfiguration."""
+    model = ollama_model.strip()
+    base_url = ollama_base_url.strip()
+    if not model:
+        return _redirect(error="Modell-Tag darf nicht leer sein")
+    if not base_url:
+        return _redirect(error="Ollama-Basis-URL darf nicht leer sein")
+
+    _apply({"OLLAMA_MODEL": model, "OLLAMA_BASE_URL": base_url})
+    return _redirect(success="Lokale-KI-Einstellungen gespeichert")
 
 
 @router.post("/intake-folders/add")

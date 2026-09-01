@@ -100,6 +100,60 @@
     </div>
 
     <div class="settings-section">
+      <h2 class="settings-section__title">Lokale KI</h2>
+      <p class="settings-section__hint">
+        Pflicht-Zwischenschritt vor jeder Cloud-Anfrage (Ollama). Das
+        konkrete Modell ist bewusst austauschbar - je nach Kanzlei-Hardware
+        kann ein anderes lokales Modell besser geeignet sein.
+      </p>
+      {% set _lai_status = local_ai_status %}
+      {% set lai_state = _lai_status.state.value if _lai_status else "checking" %}
+      {% set lai_detail = (_lai_status.detail or '') if _lai_status else '' %}
+      <div style="margin-bottom: 16px;">
+        <span class="tag {% if lai_state == 'ready' %}tag--matched{% else %}tag--unmatched{% endif %}">
+          {{ {
+            'checking': 'Status wird ermittelt…',
+            'disabled': 'deaktiviert (LOCAL_AI_ENABLED=false)',
+            'ready': 'bereit',
+            'runtime_missing': 'Ollama nicht installiert',
+            'runtime_unreachable': 'Ollama installiert, aber nicht erreichbar',
+            'model_missing': 'konfiguriertes Modell nicht installiert',
+          }[lai_state] }}
+        </span>
+        {% if lai_detail %}<p class="settings-section__hint" style="margin-top: 8px;">{{ lai_detail }}</p>{% endif %}
+      </div>
+      {% if local_ai_enabled %}
+        <form method="post" action="/dashboard/settings/local-ai" class="dashboard-form" style="max-width: none;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <div class="settings-grid">
+            <label class="form-label">
+              Modell-Tag (OLLAMA_MODEL)
+              <input type="text" name="ollama_model" value="{{ ollama_model }}" placeholder="z. B. qwen2.5:1.5b" />
+            </label>
+            <label class="form-label">
+              Ollama-Basis-URL (OLLAMA_BASE_URL)
+              <input type="text" name="ollama_base_url" value="{{ ollama_base_url }}" placeholder="http://localhost:11434" />
+            </label>
+          </div>
+          <p class="settings-section__hint">
+            Das Modell muss auf dieser Maschine bereits über Ollama vorhanden
+            sein (z. B. per <span class="mono">ollama pull &lt;tag&gt;</span>
+            oder dem Einrichtungsassistenten) - diese Einstellung wählt nur
+            aus, welches installierte Modell verwendet wird, lädt selbst
+            keines herunter.
+          </p>
+          <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">Speichern</button>
+        </form>
+      {% else %}
+        <p class="settings-section__hint">
+          Lokale KI ist derzeit deaktiviert. Aktivierung und Ersteinrichtung
+          (Hardware-Erkennung, Modellempfehlung, Installation) erfolgen über
+          den Einrichtungsassistenten (<span class="mono">kanzlei_ai.exe setup</span>).
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="settings-section">
       <h2 class="settings-section__title">KI-Anbindung</h2>
       <p class="settings-section__hint">
         Ausschließlich Claude (Anthropic-API). Text wird vor jedem API-Aufruf lokal
