@@ -102,7 +102,13 @@
 {% endmacro %}
 
 {% macro minimize_window(class_="icon") %}
-<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg>
+{#- Nutzerfeedback (01.09.): Icon war als duenner, exakt zentrierter
+   Strich (stroke-width 1.8, y=12 von 24) neben dem kraeftigeren
+   Schliessen-X kaum wahrnehmbar. Angepasst an die uebliche
+   Betriebssystem-Konvention (kurzer Strich nahe dem UNTEREN Rand statt
+   exakt mittig) und auf dieselbe visuelle Staerke wie das Schliessen-X
+   gebracht (stroke-width 2.2 statt 1.8). -#}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 18h14"/></svg>
 {% endmacro %}
 
 {% macro close_window(class_="icon") %}
