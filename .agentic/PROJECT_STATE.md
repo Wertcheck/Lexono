@@ -52,14 +52,19 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   vorherigen kompakten Pillen), 4. Karte "Weitere Funktion hinzufügen"
   verlinkt die bestehende Standard-Prompts-Verwaltung, ausführlicher
   Datenschutzhinweis (Icon + Text + "Mehr erfahren"-Link) nur auf der
-  reinen Startansicht. Die vorherige, ständig sichtbare eigene
-  "Unterhaltungen"-Spalte existiert NICHT mehr (Nutzerfeedback) - die
-  Historie ist jetzt als Aufklapp-Unterpunkte der Sidebar-Gruppe "Chat"
-  zu finden (nur auf der Chat-Seite selbst befüllt, sonst bleibt "Chat"
-  ein flacher Link ohne zusätzliche DB-Abfrage). `?new=1`-Parameter auf
-  `GET /dashboard/chat` erzwingt einen echten Leerzustand (behobener
-  Bug: zeigte vorher bei bestehendem Verlauf immer die letzte
-  Unterhaltung, auch bei explizitem "Neue Unterhaltung"-Klick).
+  reinen Startansicht. Die Unterhaltungshistorie erscheint als eigene
+  Spalte RECHTS NEBEN der Haupt-Sidebar (`chat.html`,
+  `.chat-conversations` - das ursprüngliche, funktionierende Verhalten).
+  Ein zwischenzeitlicher Versuch, die Historie stattdessen vertikal
+  unter "Chat" in die Haupt-Sidebar einzublenden, wurde vom Nutzer
+  ausdrücklich zurückgewiesen (Sidebar wurde dabei bei längerer Historie
+  höher als das Fenster, untere Menüpunkte nur noch nach Scrollen
+  erreichbar) und rückgängig gemacht - "Chat" ist wieder ein einfacher
+  flacher Sidebar-Link mit konstanter Sidebar-Höhe in jedem Zustand.
+  `?new=1`-Parameter auf `GET /dashboard/chat` erzwingt weiterhin einen
+  echten Leerzustand (behobener Bug: zeigte vorher bei bestehendem
+  Verlauf immer die letzte Unterhaltung, auch bei explizitem "Neue
+  Unterhaltung"-Klick) - dieser Fix blieb von der Korrektur unberührt.
 - **Dokument-Workspace**: `/dashboard/chat/{conversation_id}/document/
   {document_id}` – extrahierter Text mit Pseudonymisierungs-Highlighting,
   Aktenisolation getestet. Kein PDF-Seiten-Rendering (bewusst, siehe
