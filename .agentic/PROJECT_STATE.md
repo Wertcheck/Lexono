@@ -40,6 +40,21 @@ Siehe `agents/` (Rollen/Akten) und `skills/` (wiederverwendbares Vorgehen).
 Diese Struktur wurde am 31.08. im Rahmen des Masterprompts V2 neu angelegt
 (vorher nicht vorhanden) – siehe AGENT_HANDOFFS.md für den Log.
 
+## Aktueller Live-Zustand (01.09., spät abends - autonome Weiterarbeit)
+
+Die real installierte App (`%LOCALAPPDATA%\Lexono\kanzlei_ai.exe`) läuft
+bewusst weiter im Hintergrund (windowed mode), damit die neue
+Fenster-Titelleiste (Task #61) beim nächsten Blick auf den Bildschirm
+sofort sichtbar ist. Automatisiert bestätigt (echter HTTP-Smoke-Test
+gegen die Installation, nicht nur TestClient): Login→Chat, Titelleisten-
+Markup + Skript im ausgelieferten HTML, alle Bestandsseiten erreichbar,
+Dokument-Upload funktioniert. **NICHT bestätigt**: die eigentliche
+visuelle/interaktive Korrektheit (sieht die Titelleiste richtig aus,
+funktioniert Drag/Resize/Close-Klick tatsächlich) - das kann nur ein
+Mensch am echten Fenster beurteilen. Admin-Login für Tests:
+`admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur in dieser
+lokalen Test-Installation, kein Produktivsystem).
+
 ## Nächste größere Workstreams (noch nicht begonnen)
 
 Siehe OPEN_ISSUES.md für die vollständige, kategorisierte Liste. Die

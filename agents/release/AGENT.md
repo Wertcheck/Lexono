@@ -46,5 +46,30 @@ Nutzer musste ueber den Task-Manager beenden. Behoben durch Auslagerung in
 ein gemeinsames Partial (`partials/app_titlebar.html`) + eine gemeinsame
 statische JS-Datei (`static/js/app_titlebar.js`), eingebunden in ALLEN
 DREI eigenstaendigen Root-Templates (`base.html`, `login.html`,
-`unlock.html`). Regressionstest ergaenzt. Zweiter Installer-Build+Install+
-Fenstertest steht als naechstes an, um den Fix real zu bestaetigen.
+`unlock.html`). Regressionstest ergaenzt (`test_auth_web.py::
+test_login_page_activates_custom_titlebar_script_before_login`).
+
+**Zweiter Rebuild+Install (01.09., spaeter Abend)**: PyInstaller-Build +
+Inno-Setup-Compile erfolgreich (`dist/installer/Lexono_Setup.exe`,
+~524,7MB). Erster Silent-Install-Versuch haengte sich >18 Min. bei
+konstant 0% CPU auf (sichtbares, aber inaktives "Setup - Lexono..."-
+Fenster, keine Kindprozesse, install_log2.txt nie erzeugt) - nach
+Ausbleiben jeder Fortschrittsaenderung ueber 5+ Min. hinweg als echter
+Stall bewertet und der Prozess beendet; ZWEITER Versuch (identischer
+Befehl, unveraendertes .exe) lief anschliessend sauber durch und beendete
+sich normal. Ursache des ersten Haengers nicht abschliessend geklaert
+(Kandidaten: Windows-Defender-Echtzeitpruefung der frisch entpackten
+~1,1GB, oder ein einmaliger Inno-Setup-internal-Zustand) - kein
+reproduzierbares Muster ueber beide Versuche hinweg, daher nicht als
+systemischer Installer-Fehler eingestuft, aber als bekanntes Risiko in
+OPEN_ISSUES.md festgehalten.
+
+Automatisierter HTTP-Smoke-Test GEGEN DIE ECHTE INSTALLATION (nicht nur
+gegen TestClient) bestaetigt: Login -> Chat, Titelleisten-Markup +
+`app_titlebar.js` im ausgelieferten HTML vorhanden, alle bestehenden
+Seiten erreichbar (200), Dokument-Upload im Chat funktioniert. Die
+App laeuft absichtlich WEITERHIN (windowed mode, PID wurde nicht
+gestoppt), damit die Titelleiste beim naechsten Blick auf den Bildschirm
+sofort sichtbar ist - visuelle Bestaetigung (Drag/Resize/Close-Button
+tatsaechlich klicken) steht noch aus, Nutzer war beim zweiten Rebuild
+nicht mehr am Rechner.

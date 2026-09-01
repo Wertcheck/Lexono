@@ -11,12 +11,17 @@
    Bedienelemente (kein X, kein Minimieren, kein Verschieben - nur per
    Task-Manager beendbar, real am echten Fenster beobachtet). Dieses
    Partial + app_titlebar.js werden daher in ALLEN DREI Templates
-   (base.html, login.html, unlock.html) unveraendert eingebunden. #}
+   (base.html, login.html, unlock.html) unveraendert eingebunden.
+
+   BEWUSST OHNE Logo/Wortmarke in dieser Leiste (Korrektur, 01.09., beim
+   Vergleich mit den Referenzbildern gefunden): base.html zeigt das
+   Lexono-Logo bereits gross in der Sidebar, login.html/unlock.html in
+   der eigenen .login-box - eine zusaetzliche Marke hier waere exakt die
+   vom Auftrag ausdruecklich zu vermeidende "doppelte Logo-Darstellung".
+   Die Referenzbilder zeigen oben tatsaechlich nur eine schmale, leere
+   Leiste mit Minimieren/Schliessen in der Ecke, keine zweite Marke. #}
 <div id="app-titlebar" class="app-titlebar" style="display:none;">
-  <div id="app-titlebar-drag" class="app-titlebar__drag-region">
-    <img src="/dashboard/static/img/logo.svg" alt="" class="app-titlebar__logo" />
-    <span class="app-titlebar__title">Lexono</span>
-  </div>
+  <div id="app-titlebar-drag" class="app-titlebar__drag-region"></div>
   <div class="app-titlebar__controls">
     <button type="button" id="app-titlebar-minimize" class="app-titlebar__btn"
             title="Minimieren" aria-label="Minimieren">

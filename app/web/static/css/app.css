@@ -153,18 +153,6 @@ body.has-app-titlebar .app-titlebar {
   cursor: default;
 }
 
-.app-titlebar__logo {
-  width: 15px;
-  height: 15px;
-}
-
-.app-titlebar__title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--ink-700);
-}
-
 .app-titlebar__controls {
   display: flex;
   align-items: center;

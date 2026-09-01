@@ -84,6 +84,16 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
 
 ## LOW
 
+- **Silent-Install gelegentlich haengend beobachtet**: Beim zweiten
+  Installer-Rebuild (01.09.) haengte sich ein `/VERYSILENT`-Lauf >18 Min.
+  bei konstant 0% CPU auf (sichtbares, aber inaktives Setup-Fenster, keine
+  Kindprozesse). Ein direkt danach gestarteter zweiter Versuch mit
+  IDENTISCHEM Installer lief sauber durch. Ursache nicht abschliessend
+  geklaert (Kandidaten: Windows-Defender-Echtzeitpruefung der frisch
+  entpackten ~1,1GB, ein einmaliger Inno-Setup-Zustand). Kein
+  reproduzierbares Muster - beobachten, ob es bei kuenftigen Builds erneut
+  auftritt, bevor tiefer investiert wird.
+
 - App.css enthält einen Kommentar mit „KanzleiAI“ (Zeile ~2695,
   `.chat-panel__header` Kommentarblock) – rein interner Kommentar, keine
   sichtbare UI, niedrige Priorität für Bereinigung.
