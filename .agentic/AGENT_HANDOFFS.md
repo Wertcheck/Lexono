@@ -162,4 +162,68 @@ unbestaetigte MoveWindow-Beobachtung als physische Grenze statt
 DPI-Anomalie; 1366x768/1920x1080 sind hier kategorisch nicht testbar.
 `skills/visual_qa/SKILL.md` entsprechend aktualisiert (war veraltet,
 ging von einem Browser-Tool aus statt der nativen Fenstertechnik).
-Sechster Installer-Rebuild mit diesem Fix angestossen.
+Sechster Installer-Rebuild mit diesem Fix angestossen, installiert und
+per UI-Automatisierung verifiziert (Titelleiste korrekt, Layout-Fix
+bestaetigt) - siehe Commit `b286f97`.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · Neuer Auftrag "LEXONO – MASTER
+PROMPT: Autonomous Agentic Coding — Product Completion Cycle": CI-Frage
+(Nutzer nennt jetzt selbst die verbindlichen Werte `#101828`/`#f8fafc`/
+`#ffffff`/`#64748b`), Produkt-Gap-Analyse (Dokumente/Chat als
+Arbeitszentrale), Local-AI-Architektur nicht verengen (Modell muss
+austauschbar bleiben), Windows-Update-Verhalten pruefen, Security/
+Testing/Visual-QA/Delegation wie gehabt.
+
+---
+
+**01.09.** · Orchestrator (Prio 1: CI-Konflikt) · Gegenpruefung des
+tatsaechlichen Codes gegen die vom Nutzer genannten CI-Werte: ALLE VIER
+bereits exakt implementiert (`--seal-green: #101828`, `--paper-100:
+#f8fafc`, `--paper-000: #ffffff`, `--ink-500: #64748b`, `logo.svg`-Fill
+`#101828`). Keine Code-Aenderung noetig - der fruehere "gruenes
+Logo"-Konflikt ist damit endgueltig geklaert (die urspruengliche
+Erwartung war veraltet, das pixelverifizierte Navy war durchgehend
+richtig). OPEN_ISSUES.md/PROJECT_STATE.md/TASK_MAP.md entsprechend
+aktualisiert.
+
+---
+
+**01.09.** · Orchestrator (Prio 5: Local-AI-Architektur) · Codepruefung
+bestaetigt: `LocalLLMProvider`-Protocol + `OllamaLocalLLMProvider` sind
+bereits sauber modellunabhaengig (Modell/Basis-URL als
+Konstruktorparameter, `Settings.ollama_model`/`ollama_base_url`
+konfigurierbar). Echter, vorher unbekannter Gap gefunden: KEINE Web-UI
+zum Ansehen/Aendern des Modells - nur per `.env`-Handbearbeitung oder
+CLI-Setup-Assistent moeglich. Neue "Lokale KI"-Sektion in
+`/dashboard/settings` ergaenzt (Commit `31a3ede`), wiederverwendet
+bestehende `_apply()`-env-Schreiblogik (dasselbe Muster wie Mail-/
+Aufbewahrungs-Einstellungen). Prio 6 (Update-Verhalten) gegengeprueft:
+bereits korrekt implementiert (`update_badge.html`, unaufdringlich, kein
+Zwang) UND bereits global in `base.html` eingebunden - kein Gap, keine
+Aenderung noetig.
+
+---
+
+**01.09.** · Agent zur unabhaengigen Review delegiert (Agent-Tool,
+isolierter Worktree) · Pruefung der neuen Lokale-KI-Settings-Route:
+Autorisierung/CSRF korrekt, Privacy-Grenze unangetastet, ABER echter
+Fund: `format_env_value()` escapte `\n`/`\r` nicht - ein Formularwert
+mit eingebettetem Zeilenumbruch konnte aus seiner `.env`-Zeile ausbrechen
+und beliebige neue Zeilen einschleusen (z. B. `SESSION_SECRET_KEY`
+ueberschreibbar). Betraf alle bestehenden Aufrufer, nicht nur die neue
+Route. Zentral behoben (Commit `ba2f286`), 2 neue Regressionstests,
+volle Suite weiterhin gruen (1493/1/0).
+
+---
+
+**01.09.** · Agent J (Visual QA) · Settings-Seite per echter
+UI-Automatisierung geprueft (Login, Navigation zum Zahnrad-Icon,
+Scroll). Dabei ein Umgebungs-Detail geklaert (nicht appseitig): das
+1024x768-Fenster kann teilweise unter der Windows-Taskleiste liegen,
+wodurch Klicks auf untere Sidebar-Elemente ins Leere gehen koennen -
+kein App-Bug, behoben durch Verkleinern/Neupositionieren des Fensters
+vor dem Klick. Neue "Lokale KI"-Sektion visuell bestaetigt (Status-Tag,
+Hinweistext im deaktivierten Zustand). Siebter Installer-Rebuild
+angestossen, um Settings-Feature + Sicherheitsfix real auszuliefern.

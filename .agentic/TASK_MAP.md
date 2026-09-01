@@ -12,6 +12,15 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 - Dokument-Workspace-Isolation, XSS im Highlighting, native
   Fenster-API-Exposition, Titelleiste auf Pre-Auth-Seiten: **ERLEDIGT**
   (unabhängige Subagent-Security-Review, 01.09., keine Funde).
+- **`.env`-Key-Injection über eingebettete Zeilenumbrüche**: **BEHOBEN**
+  (01.09., Fund einer unabhängigen Subagent-Review der neuen
+  Lokale-KI-Settings-Route, Commit `ba2f286`) - `format_env_value()`
+  escapte `\`/`"`, nicht aber `\n`/`\r`; ein Formularwert mit
+  eingebettetem Zeilenumbruch konnte aus seiner eigenen `KEY="..."`-Zeile
+  ausbrechen und beliebige neue `.env`-Zeilen einschleusen (u. a.
+  `SESSION_SECRET_KEY` überschreibbar). Betraf ALLE Aufrufer von
+  `update_env_values` (Mail-/Aufbewahrungs-/jetzt Lokale-KI-Settings),
+  nicht nur die neue Route - zentral behoben, 2 neue Regressionstests.
 - Multi-Kanzlei-/Cross-Tenant-Unterstützung (`PROMPT38_ANALYSIS.md`):
   **OFFEN, PRODUKTENTSCHEIDUNG ERFORDERLICH** - nicht ungefragt begonnen.
 
@@ -55,12 +64,10 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 - Doppelte Logo-Darstellung (Titelleiste + Sidebar gleichzeitig):
   **ERLEDIGT** (Code-seitig behoben, Commit `39a574d`; strukturell im
   ausgelieferten HTML bestätigt).
-- **Logo-/Akzentfarbe grün statt Navy**: **BLOCKIERT, Produktentscheidung
-  erforderlich** (01.09.) – siehe `OPEN_ISSUES.md`, Kategorie
-  "Produktentscheidung erforderlich", ganz oben. Aktuelles `#101828`
-  wurde in einer früheren Sitzung per Pixelmessung aus dem echten
-  offiziellen Logo verifiziert (Navy, nicht grün) - echter Zielkonflikt
-  mit dem aktuellen Auftrag, nicht eigenmächtig entschieden.
+- **Logo-/Akzentfarbe grün statt Navy**: **GEKLÄRT** (01.09., Product
+  Completion Cycle) - Nutzer hat die verbindliche CI selbst benannt
+  (`#101828`/`#f8fafc`/`#ffffff`/`#64748b`), Code entspricht dem bereits
+  exakt. Kein offener Punkt mehr, siehe `OPEN_ISSUES.md`.
 - **Weitere Akzentfarben (Chat-Schnellaktionen)**: **ERLEDIGT** (01.09.,
   später) - vier farblich unterschiedliche Icon-Badges
   (grün/blau/lila/orange), neue `--accent-blue`/`-purple`/`-orange`-Tokens
@@ -102,6 +109,17 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   basiert, vorbereitete Erweiterungspunkte), aber keine echte
   Implementierung/Benchmark. Bewusst nicht ungefragt gestartet
   (mehrstündiger Download-/Kompilieraufwand).
+- **Modell-Konfigurierbarkeit über die Web-UI** (01.09., Product
+  Completion Cycle): **ERLEDIGT** - echter, vorher unbekannter
+  Produktgap gefunden: `OLLAMA_MODEL`/`OLLAMA_BASE_URL` waren nur per
+  manueller `.env`-Bearbeitung oder CLI-Setup-Assistent
+  (`kanzlei_ai.exe setup`) änderbar, nicht über die Web-Oberfläche - für
+  eine nicht-technische Kanzlei kein realistischer Weg. Neue "Lokale
+  KI"-Sektion in `/dashboard/settings` (Commit `31a3ede`) zeigt Status
+  (wiederverwendet `app.state.local_ai_status`) und erlaubt
+  Modell-Tag-/Basis-URL-Änderung über den bestehenden env-Schreib-
+  Mechanismus. Ändert nichts an Provider-Architektur/Pseudonymisierung.
+  4 neue Tests + Visual QA (native UI-Automatisierung) durchgeführt.
 
 ## H – Installer / Deployment
 

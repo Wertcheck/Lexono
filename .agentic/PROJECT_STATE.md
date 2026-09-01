@@ -38,8 +38,12 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
 
 - **Gateway-Architektur**: produktiv einsatzbereit, Baseline.
 - **Local AI**: Pflichtkomponente (wenn aktiviert), über Ollama
-  (`qwen2.5:1.5b`, datenbasiert gewählt) angebunden, per Setup-Wizard
-  verdrahtet.
+  (`qwen2.5:1.5b`, datenbasiert gewählt, AUSDRÜCKLICH austauschbar - kein
+  fest verdrahtetes Modell, siehe `LocalLLMProvider`-Protocol in
+  `app/ai_providers/local_llm_provider.py`) angebunden, per CLI-Setup-
+  Wizard verdrahtet. Seit 01.09. zusätzlich über die Web-Settings-Seite
+  (`/dashboard/settings`, Abschnitt "Lokale KI") sichtbar UND das
+  Modell-Tag/die Basis-URL änderbar - vorher nur per `.env`/CLI möglich.
 - **Chat**: zentrale Startseite nach Login (`/dashboard/chat`), mit
   KI-Ladezustand (Puls-Sprechblase), Büroklammer-Upload, Drag & Drop,
   vorbereitetem (nicht cloud-angebundenem) Mikrofon-Button.
@@ -69,16 +73,13 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Kontextleiste, referenzieren den echten Dateinamen, nutzen den
   bestehenden Prefill-/Sende-Weg (kein neuer Code-Pfad).
 
-## Offener, ungeklärter Punkt: Logo-/Akzentfarbe grün vs. Navy
+## CI-/Branding-Frage: GEKLÄRT (01.09.)
 
-Nutzerauftrag verlangt ein "neues grünes Logo" - der aktuelle Farbcode
-`#101828` (Logo + `--seal-green`) wurde jedoch in einer früheren Sitzung
-bewusst aus dem tatsächlichen, vom Anwalt gelieferten offiziellen
-Logo-Bild per Pixelmessung verifiziert (dunkles Navy, nicht grün).
-**Nicht eigenmächtig geändert** - echter Zielkonflikt zwischen einer
-bereits verifizierten Markenentscheidung und der aktuellen Anweisung.
-Siehe `OPEN_ISSUES.md` (Kategorie "Produktentscheidung erforderlich")
-für die vollständige Herleitung und die konkrete Frage an den Nutzer.
+Der Nutzer hat die verbindliche CI explizit benannt (Primary/Logo
+`#101828`, Canvas `#f8fafc`, Cards `#ffffff`, Secondary Text `#64748b`)
+- Gegenprüfung ergab, dass der Code bereits exakt diese Werte verwendet.
+Keine Änderung nötig, kein offener Punkt mehr. Siehe `OPEN_ISSUES.md`
+für die Herleitung.
 
 ## Installer
 

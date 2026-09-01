@@ -9,43 +9,21 @@ zurückgestellt (mit Begründung).
 
 _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
 
-## OFFEN – PRODUKTENTSCHEIDUNG ERFORDERLICH
+## GEKLÄRT (vormals "Produktentscheidung erforderlich")
 
-- **Logo-/Akzentfarbe: grün (Nutzerauftrag) vs. verifiziertes Navy
-  `#101828` (frühere Sitzung)** – **NEU, 01.09., höchste Priorität
-  dieser Kategorie.** Der Nutzer verlangt explizit ein "neues grünes
-  Logo" sowie weitere, konsequent umgesetzte Akzentfarben. Der aktuelle
-  Farbcode `#101828` für Logo (`app/web/static/img/logo.svg`) UND die
-  primäre UI-Akzentfarbe (`--seal-green`/`-dark`/`-tint` in
-  `app/web/static/css/app.css`, ~72 Verwendungsstellen) wurde jedoch in
-  einer früheren Sitzung NICHT willkürlich gewählt, sondern per
-  Pixelfarbmessung aus dem tatsächlichen, vom Anwalt bereitgestellten
-  offiziellen Logo-Bild (`Desktop\Lexono Logo.png`) verifiziert
-  (Kernfarbwert ~`#0d1526`, dunkles Navy) und danach bewusst auf
-  primäre UI-Elemente ausgeweitet - dokumentiert in `ARCHITECTURE.md`
-  §61/§62 mit vollständiger Herleitung.
-  **Konkrete Frage an den Nutzer**: Gibt es eine NEUERE/andere offizielle
-  Logo-Datei (grün), die die Grundlage für diese Anweisung ist? Falls ja,
-  bitte bereitstellen (Datei oder exakter Hex-Farbwert) - dann wird die
-  Änderung sauber und pixelgenau wie beim vorherigen Mal durchgeführt.
-  Falls die Erwartung auf den textuellen Referenzbeschreibungen aus
-  früheren Prompts beruht (die von einem "grünen Icon" sprachen, ohne
-  dass dafür je eine reale Datei vorlag) und das verifizierte Navy
-  tatsächlich das korrekte, aktuelle offizielle Logo ist, wäre stattdessen
-  zu klären, ob die Erwartungshaltung (grün) angepasst werden soll.
-  Nicht eigenmächtig entschieden - beide Interpretationen sind mit den
-  vorliegenden Informationen plausibel, eine Markenfarbentscheidung
-  gehört nicht zu den "normalen Implementierungsentscheidungen", die
-  autonom getroffen werden dürfen.
-  **Update 01.09., später**: der unabhängige Teil ("weitere Akzentfarben")
-  wurde umgesetzt - die vier Chat-Schnellaktionen zeigen jetzt farblich
-  unterschiedliche Icon-Badges (`--accent-blue`/`-purple`/`-orange`, neu
-  in `app.css`, unabhängig von der Primärfarbe). NUR die "grüne" Badge
-  bindet weiterhin bewusst an `--seal-green` (die umstrittene
-  Primärfarbe) - sobald die Logo-Frage geklärt ist, übernimmt diese Badge
-  automatisch den finalen Wert, ohne weitere Änderung nötig.
-  Status: OE nur noch für die Logo-/Primärfarbe selbst (siehe
-  `PROJECT_STATE.md`); "weitere Akzentfarben" V (umgesetzt, getestet).
+- **Logo-/Akzentfarbe: grün vs. Navy `#101828`** – **ENDGÜLTIG GEKLÄRT
+  (01.09., Product Completion Cycle).** Der Nutzer hat im aktuellen
+  Masterprompt selbst die verbindliche CI explizit benannt: "Primary/
+  Logo Tone: #101828, Canvas: #f8fafc, Cards: #ffffff, Secondary Text:
+  #64748b". Gegenprüfung des tatsächlichen Codes ergab: ALLE VIER Werte
+  sind bereits exakt so implementiert (`--seal-green: #101828`,
+  `--paper-100: #f8fafc`, `--paper-000: #ffffff`, `--ink-500: #64748b`
+  in `app/web/static/css/app.css`; `logo.svg`-Fill ebenfalls `#101828`).
+  Die frühere "grünes Logo"-Anweisung beruhte offenbar auf einer
+  veralteten/unzutreffenden Erwartung - das pixelverifizierte Navy war
+  die ganze Zeit korrekt. **Keine Code-Änderung nötig.** Die vier
+  Akzentfarben-Badges (`--accent-blue`/`-purple`/`-orange`, unabhängig
+  von der Primärfarbe) bleiben wie zuvor umgesetzt.
 
 - **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
   ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit
