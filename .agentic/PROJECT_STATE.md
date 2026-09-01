@@ -118,23 +118,20 @@ Canvas-/Card-Töne gültig - nur die Aussage "Logo ist rein Navy" ist
 
 ## Installer
 
-**Neunter Rebuild (01.09., ~14:18-14:23 Uhr) erfolgreich GEBAUT,
-INSTALLIERT UND SMOKE-GETESTET.** Enthält zusätzlich zum siebten Rebuild
-(Lokale-KI-Settings + `.env`-Injection-Fix): `AppMutex` im Installer
-(Commit `cfa68bc`, empirisch verifiziert - Reinstall bei laufender App
-wird jetzt sauber abgelehnt statt Dateien zu riskieren) und den
-Minimieren-Icon-Sichtbarkeitsfix (Commit `391361a`, Nutzerfeedback).
-Silent-Install lief erneut ohne Stall. Per HTTP-Smoke-Test bestätigt:
-Login, Dokument-Workflow, alle Bestandsseiten erreichbar; Lokale-KI-
-Konfiguration korrekt auf Standardzustand (deaktiviert) zurückgesetzt
-nach dem `mistral:7b`-Testlauf. Läuft aktuell für den Nutzer
+**Zwölfter Rebuild (01.09., ~17:16-17:20 Uhr) erfolgreich GEBAUT,
+INSTALLIERT UND VERIFIZIERT.** Enthält das komplette Referenzbild-
+Redesign (Logo/Farben/Sidebar/Chat) inkl. der finalen Nutzerkorrektur
+(Chat-Historie wieder als eigene Spalte statt Sidebar-Aufklapp). Silent-
+Install lief ohne Stall. Per HTTP-Smoke-Test UND echter UI-Automatisierung
+im installierten Build bestätigt: Login, Dokument-Workflow, alle
+Bestandsseiten erreichbar, Sidebar zeigt alle Menüpunkte ohne Scrollen
+bei geöffneter Unterhaltungsspalte. Läuft aktuell für den Nutzer
 (`kanzlei_ai.exe serve`).
 
-**Silent-Install-Stall**: in dieser Sitzung ECHT REPRODUZIERT (60s+ ohne
-CPU-Fortschritt vor der Extraktion), Ursache aber NICHT zweifelsfrei
-bewiesen - beste Hypothese: Defender-Cloud-Scan des unsignierten
-~525-MB-Executables. Siehe OPEN_ISSUES.md (HIGH) für die vollständige,
-ehrliche Root-Cause-Dokumentation.
+**Silent-Install-Stall**: bleibt ein bekanntes, nicht zweifelsfrei
+bewiesenes Risiko (siehe OPEN_ISSUES.md, HIGH) - trat bei den letzten
+mehreren Rebuilds dieser Sitzung nicht mehr auf, aber das allein ist
+kein Beweis für eine Behebung.
 
 Admin-Testlogin unverändert: `admin@kanzlei.de` /
 `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten
