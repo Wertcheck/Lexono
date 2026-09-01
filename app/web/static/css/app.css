@@ -147,7 +147,16 @@ body.has-app-titlebar .login-shell {
   align-items: center;
   justify-content: space-between;
   height: 36px;
-  padding: 0 6px 0 14px;
+  /* Rechts bewusst grosszuegiger Sicherheitsabstand (20px statt der
+     urspruenglichen 6px) - per echtem Screenshot (01.09.) bestaetigt:
+     mit knappem Abstand wurde das Schliessen-Icon am rechten Fensterrand
+     sichtbar angeschnitten (vermutlich ein kleiner, unsichtbarer
+     Rand-/Resize-Bereich, den Windows auch bei frameless-Fenstern
+     manchmal reserviert - GetWindowRect meldet ihn mit, der tatsaechlich
+     gerenderte WebView2-Inhalt ist minimal schmaler). Klick-Funktion war
+     davon nicht betroffen (vom Nutzer bereits bestaetigt), nur die
+     Optik. */
+  padding: 0 20px 0 14px;
   background: var(--paper-000);
   border-bottom: 1px solid var(--paper-line);
   flex-shrink: 0;
