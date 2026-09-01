@@ -55,6 +55,25 @@ Mensch am echten Fenster beurteilen. Admin-Login für Tests:
 `admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur in dieser
 lokalen Test-Installation, kein Produktivsystem).
 
+**WICHTIG für die visuelle Prüfung**: Die gerade laufende Instanz wurde
+VOR dem Logo-Fix (Commit `39a574d`) gebaut - sie zeigt in der
+Titelleiste also noch ein kleines Lexono-Logo + Wortmarke links (das
+inzwischen als "doppelte Logo-Darstellung" erkannte und im Quellcode
+bereits behobene Problem). Das ist beim jetzigen Hinsehen normal/erwartet
+und kein neuer Fehler - der Fix ist im Code, aber noch nicht in einem
+Installer ausgeliefert (dritter Rebuild am selben Abend erschien
+unverhältnismäßig für eine rein kosmetische Änderung). Ein weiterer
+Rebuild liefert auch diesen Fix aus.
+
+**Für den nächsten Blick auf den Bildschirm, worauf zu achten ist**:
+1. Native Windows-Titelleiste weg? (sollte ja sein)
+2. Eigene schmale Leiste oben mit Minimieren (−) und Schließen (✕) rechts
+   sichtbar? (aktuell NOCH mit Logo links, das ist erwartet, siehe oben)
+3. Lässt sich das Fenster durch Ziehen an dieser Leiste verschieben?
+4. Gibt es unten rechts einen Resize-Griff, der die Fenstergröße ändert?
+5. Funktioniert der Schließen-Button (✕) zuverlässig? (das war der
+   ursprüngliche Fehler - unbedingt bestätigen)
+
 ## Nächste größere Workstreams (noch nicht begonnen)
 
 Siehe OPEN_ISSUES.md für die vollständige, kategorisierte Liste. Die
