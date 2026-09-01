@@ -101,6 +101,29 @@ UI-Elemente (28×28px-Buttons, 14px-Icons) am Bildschirm klar erkennbar.
   `e10c04e`, Abstand auf 20px erhöht) - erneute Verifikation über einen
   frischen Installer-Build steht aus (siehe PROJECT_STATE.md).
 
+## Wichtige Einschränkung der Technik (01.09., später)
+
+Bei wiederholten Screenshot-Versuchen desselben, vom Nutzer bereits als
+funktionierend bestätigten Builds zeigte sich INKONSISTENTES Verhalten:
+manchmal war die Titelleiste (Minimieren/Schließen) sichtbar, manchmal
+komplett leer (kein Icon, weder Minimieren noch Schließen). Da der Nutzer
+den Schließen-Button an genau diesem Build bereits real als
+funktionierend bestätigt hat ("x button closes the app"), ist die
+plausibelste Erklärung, dass `ShowWindow`/`SetForegroundWindow` direkt
+vor dem Screenshot-Aufruf mit dem `pywebviewready`-Timing der Titelleisten-
+Aktivierung (`app_titlebar.js`) kollidiert - NICHT, dass die Titelleiste
+tatsächlich unzuverlässig ist. Bei einem normalen Programmstart (Nutzer
+startet die App reibungslos einmal) tritt dieses Timing-Problem
+vermutlich nicht auf.
+**Konsequenz**: ein per dieser Technik aufgenommener Screenshot, der die
+Titelleiste leer zeigt, ist NICHT als Beweis für einen echten Bug zu
+werten - im Zweifel mehrfach neu aufnehmen oder, besser, den Nutzer direkt
+fragen/warten lassen, statt aus einem einzelnen automatisierten Screenshot
+eine falsche Fehlermeldung abzuleiten. Ein WIEDERHOLT (mehrfach in Folge)
+angeschnittenes Element (wie der Schließen-Icon-Clipping-Fund, der auch
+außerhalb des Fensterrands per Zoom bestätigt wurde) ist dagegen ein
+belastbarer Befund.
+
 ## Was weiterhin fehlt
 
 - Kein Browser-Tool für Chat-UI-Seiten mit dynamischem Inhalt über HTTP
