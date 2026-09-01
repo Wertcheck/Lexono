@@ -82,18 +82,19 @@ für die vollständige Herleitung und die konkrete Frage an den Nutzer.
 
 ## Installer
 
-**Fünfter Rebuild (01.09., ~11:16-11:21 Uhr) erfolgreich GEBAUT UND
-INSTALLIERT.** Enthält zusätzlich zu allen vorherigen Fixes: die neuen
-Dokument-Workspace-Schnellaktionen ("Antwort entwerfen"/"Fristen &
-Risiken prüfen"/"Zusammenfassung erstellen"). Silent-Install lief dieses
-Mal OHNE Stall durch (~60-90s, keine Kill+Retry nötig) - der zuvor beim
-vierten Rebuild beobachtete persistente Stall (siehe OPEN_ISSUES.md/LOW)
-trat diesmal NICHT auf; keine Windows-Defender-Änderung vorgenommen.
-Nach der Installation per HTTP-Smoke-Test bestätigt
-(`lexono_rebuild4_smoke.py`, Scratchpad): Login→Chat, Dokument-Upload,
-Dokument-Workspace mit PII-Highlighting UND den drei neuen
-Schnellaktionen, sowie alle Bestandsseiten weiterhin erreichbar - alles
-grün. Läuft aktuell für den Nutzer (`kanzlei_ai.exe serve`).
+**Sechster Rebuild (01.09., ~12:14 Uhr) erfolgreich GEBAUT, INSTALLIERT
+UND VISUELL VERIFIZIERT.** Enthält zusätzlich zum fünften Rebuild
+(Dokument-Workspace-Schnellaktionen) den `.chat-panel`-Layout-Fix
+(Commit `b92e1cb`, behebt einen bei der tatsächlichen Fensterbreite
+dieser Umgebung reproduzierbaren Kollaps der Chat-Spalte im
+Dokument-Workspace). Silent-Install lief erneut OHNE Stall durch
+(~60s). Per HTTP-Smoke-Test UND per echter UI-Automatisierung
+(Login + Klick-Navigation im tatsächlichen nativen Fenster) bestätigt:
+Titelleiste korrekt (Minimieren/Schließen beide sichtbar), Dokument-
+Workspace-Layout korrekt (normaler Zeilenumbruch statt Ein-Wort-pro-
+Zeile), alle drei Schnellaktionen sichtbar und funktional verdrahtet,
+PII-Highlighting korrekt, alle Bestandsseiten erreichbar. Läuft aktuell
+für den Nutzer (`kanzlei_ai.exe serve`).
 
 Admin-Testlogin unverändert: `admin@kanzlei.de` /
 `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten

@@ -207,6 +207,28 @@ verifiziert (`lexono_dev_docworkspace_fixed2.png` zeigt normalen,
 mehrwortigen Zeilenumbruch statt Ein-Wort-pro-Zeile). Volle Testsuite
 weiterhin grün (1487/1/0).
 
+## Bestätigung: sechster Rebuild, echte Titelleiste UND Layout-Fix verifiziert (01.09., später)
+
+Nach dem sechsten Installer-Rebuild (enthält den `.chat-panel`-Layout-Fix,
+Commit `b92e1cb`) wurde per echter UI-Automatisierung erneut eingeloggt
+und in den Dokument-Workspace navigiert. Der resultierende Screenshot
+(`lexono_rebuild6_docworkspace.png`) zeigt in EINER Aufnahme:
+
+- Titelleiste vollständig und korrekt gerendert (Minimieren- UND
+  Schließen-Icon beide sichtbar, kein Anschnitt) - löst die zuvor als
+  "unbestätigt" eingestufte Beobachtung (leere Titelleiste bei
+  automatisierten Screenshots) endgültig auf: es war tatsächlich ein
+  login-seiten-/timing-spezifisches Artefakt, kein echter Bug.
+- Dokument-Workspace-Layout korrekt: Chat-Spalte mit normalem,
+  mehrwortigem Zeilenumbruch (nicht mehr Ein-Wort-pro-Zeile), rechte
+  Kontextleiste vollständig sichtbar (Schnellaktionen, Erkannte
+  Mandantendaten mit Zähler, Dokumentstatus) - der `.chat-panel`-Fix
+  wirkt auch im echten installierten Build, nicht nur im Dev-Vergleich.
+
+Damit ist sowohl die frühere unbestätigte Beobachtung aufgeklärt als
+auch der neue Layout-Fix im tatsächlich ausgelieferten Installer
+bestätigt.
+
 ## Was weiterhin fehlt
 
 - Kein Browser-Tool für Chat-UI-Seiten mit dynamischem Inhalt über HTTP
