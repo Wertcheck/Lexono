@@ -1,5 +1,9 @@
 # Übergabe an Claude Code (Windows) – Prompt 36 + 37
 
+> **Historisches Einmal-Handoff-Dokument (Prompt 36/37).** Sein Zweck ist
+> erfüllt - `CLAUDE.md` übernimmt diese Rolle seitdem dauerhaft. Nur bei
+> Interesse an der damaligen Übergabesituation relevant.
+
 Dieses Dokument ist der Übergabepunkt von der Entwicklungssitzung im Chat (Claude Sonnet 5)
 an eine Claude-Code-Sitzung auf deiner Windows-Zielmaschine. Claude Code liest `CLAUDE.md`
 automatisch zuerst – dieses Dokument ergänzt nur den für Prompt 36/37 spezifischen Kontext,

@@ -4,6 +4,11 @@ Status: **Analyse abgeschlossen, Implementierung noch NICHT begonnen.** Kein Cod
 Grundlage für die nächste Umsetzungssitzung (Chat, nicht Claude Code – reine Python-/
 Konfigurationslogik, kein Windows-natives Tooling nötig).
 
+> Weiterhin unverändert offen (zuletzt geprüft 01.09.2026, siehe
+> `.agentic/OPEN_ISSUES.md`, Kategorie "Produktentscheidung
+> erforderlich") - ob Lexono mehrere Kanzleien pro Instanz unterstützen
+> soll, ist eine Produktentscheidung, kein rein technisches Detail.
+
 ## Prämisse
 
 Basiert auf der am 16.08. getroffenen Entscheidung "getrennte Installation je Kanzlei"

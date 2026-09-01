@@ -1,5 +1,12 @@
 # Security Review – Lexono (Prompt 27)
 
+> **Historischer Snapshot (Stand 15.08.2026).** Seitdem gab es weitere,
+> unabhängige Security-Reviews (u. a. Gateway-Architektur, Chat/
+> Dokument-Workspace, 01.09.2026) – siehe `.agentic/DECISIONS.md` und
+> `.agentic/OPEN_ISSUES.md` für den aktuellen Stand. Dieses Dokument
+> bleibt als historischer Nachweis erhalten, ist aber NICHT die
+> aktuellste Sicherheitsbewertung.
+
 Stand: 15.08.2026. Dieser Review bewertet den Code-Stand nach Prompt 26 (Rollen &
 Berechtigungen) und ergänzt/verifiziert ihn – er ersetzt keine der bisherigen
 Architekturentscheidungen, sondern prüft sie unter Angriffsannahmen nach. **Grüne Tests
