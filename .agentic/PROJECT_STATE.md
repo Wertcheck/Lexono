@@ -83,19 +83,14 @@ für die Herleitung.
 
 ## Installer
 
-**Sechster Rebuild (01.09., ~12:14 Uhr) erfolgreich GEBAUT, INSTALLIERT
-UND VISUELL VERIFIZIERT.** Enthält zusätzlich zum fünften Rebuild
-(Dokument-Workspace-Schnellaktionen) den `.chat-panel`-Layout-Fix
-(Commit `b92e1cb`, behebt einen bei der tatsächlichen Fensterbreite
-dieser Umgebung reproduzierbaren Kollaps der Chat-Spalte im
-Dokument-Workspace). Silent-Install lief erneut OHNE Stall durch
-(~60s). Per HTTP-Smoke-Test UND per echter UI-Automatisierung
-(Login + Klick-Navigation im tatsächlichen nativen Fenster) bestätigt:
-Titelleiste korrekt (Minimieren/Schließen beide sichtbar), Dokument-
-Workspace-Layout korrekt (normaler Zeilenumbruch statt Ein-Wort-pro-
-Zeile), alle drei Schnellaktionen sichtbar und funktional verdrahtet,
-PII-Highlighting korrekt, alle Bestandsseiten erreichbar. Läuft aktuell
-für den Nutzer (`kanzlei_ai.exe serve`).
+**Siebter Rebuild (01.09., ~13:06-13:11 Uhr) erfolgreich GEBAUT,
+INSTALLIERT UND SMOKE-GETESTET.** Enthält zusätzlich zum sechsten
+Rebuild die neue "Lokale KI"-Sektion in den Web-Settings sowie den
+`.env`-Injection-Sicherheitsfix (Commits `31a3ede`/`ba2f286`). Silent-
+Install erneut ohne Stall (~60s). Per HTTP-Smoke-Test bestätigt: Login,
+Dokument-Upload/-Workspace mit Schnellaktionen, alle Bestandsseiten
+UND die neue Settings-Seite mit "Lokale KI"-Sektion erreichbar. Läuft
+aktuell für den Nutzer (`kanzlei_ai.exe serve`).
 
 Admin-Testlogin unverändert: `admin@kanzlei.de` /
 `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten
