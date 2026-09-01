@@ -136,6 +136,37 @@ def test_chat_home_shows_empty_state_for_new_user(client: TestClient, db_session
     assert "Wie kann ich Sie heute unterstützen" in response.text
 
 
+def test_chat_home_with_new_param_shows_empty_state_despite_existing_history(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression (01.09.): "Neuen Chat starten"/das "+"-Icon zeigten bei
+    bereits vorhandenem Unterhaltungsverlauf bisher faelschlich wieder die
+    zuletzt aktive Unterhaltung, weil GET /dashboard/chat immer conversations[0]
+    waehlte. `?new=1` erzwingt jetzt einen echten Leerzustand."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Antwort.")
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer)
+    )
+    csrf = _csrf(client)
+    client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
+        follow_redirects=True,
+    )
+
+    without_param = client.get("/dashboard/chat")
+    assert "Erste Unterhaltung." in without_param.text
+
+    with_new_param = client.get("/dashboard/chat?new=1")
+    assert with_new_param.status_code == 200
+    assert "chat-empty-state" in with_new_param.text
+    assert "Wie kann ich Sie heute unterstützen" in with_new_param.text
+    # Der Verlauf bleibt in der Unterhaltungsliste sichtbar (gewuenscht) -
+    # nur das Hauptpanel muss den Leerzustand zeigen, keine Nachrichten.
+    assert "chat-message--user" not in with_new_param.text
+
+
 def test_send_message_creates_conversation_and_ai_reply(
     client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:

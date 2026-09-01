@@ -11,7 +11,7 @@
     <aside class="chat-conversations">
       <div class="chat-conversations__header">
         <span>Unterhaltungen</span>
-        <a href="/dashboard/chat" class="chat-conversations__new" title="Neue Unterhaltung" aria-label="Neue Unterhaltung">
+        <a href="/dashboard/chat?new=1" class="chat-conversations__new" title="Neue Unterhaltung" aria-label="Neue Unterhaltung">
           {{ icons.plus(class_="icon") }}
         </a>
       </div>
@@ -82,26 +82,30 @@
               </a>
             </div>
             <div class="chat-empty-state__actions">
-              <button type="button" class="chat-quick-action" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
+              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
                 <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.document(class_="icon") }}</span>
-                <span>Dokumente analysieren</span>
+                <span class="chat-quick-action__title">Dokumente analysieren</span>
+                <span class="chat-quick-action__desc">Dokumente hochladen und von Lexono analysieren lassen.</span>
               </button>
-              <button type="button" class="chat-quick-action" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
+              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
                 <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.printer(class_="icon") }}</span>
-                <span>Schriftsatz erstellen</span>
+                <span class="chat-quick-action__title">Schriftsatz erstellen</span>
+                <span class="chat-quick-action__desc">Einen Schriftsatz oder ein Schreiben auf Basis Ihrer Angaben erstellen.</span>
               </button>
-              <button type="button" class="chat-quick-action" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
+              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
                 <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.bulb(class_="icon") }}</span>
-                <span>Dokument zusammenfassen</span>
+                <span class="chat-quick-action__title">Dokument zusammenfassen</span>
+                <span class="chat-quick-action__desc">Wesentliche Inhalte eines Dokuments in Kürze erfassen.</span>
               </button>
               {# "Weitere Funktion hinzufügen" (Referenzbild, 01.09.) - fuehrt
                  zur bereits bestehenden Standard-Prompts-Verwaltung, in der
                  ein Nutzer echte, wiederverwendbare Prompt-Vorlagen anlegen
                  kann (app/web/prompt_library_router.py) - kein Fake-Button,
                  dieselbe reale Funktion wie der Link oben. #}
-              <a href="/dashboard/library/prompts" class="chat-quick-action">
+              <a href="/dashboard/library/prompts" class="chat-quick-action chat-quick-action--card chat-quick-action--add">
                 <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.plus(class_="icon") }}</span>
-                <span>Weitere Funktion hinzufügen</span>
+                <span class="chat-quick-action__title">Weitere Funktion hinzufügen</span>
+                <span class="chat-quick-action__desc">Fügen Sie eine Funktion hinzu, die Sie häufig benötigen.</span>
               </a>
             </div>
           </div>

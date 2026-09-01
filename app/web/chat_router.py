@@ -67,15 +67,25 @@ def _require_own_conversation(
 def chat_home(
     request: Request,
     error: str | None = None,
+    new: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
     """Neue Startseite nach dem Login: zeigt die zuletzt aktive
     Unterhaltung, oder einen ruhigen Leerzustand, wenn noch keine
-    existiert (siehe chat.html)."""
+    existiert (siehe chat.html).
+
+    `?new=1` (01.09., real gefundener Bug): "Neuen Chat starten"/das
+    "+"-Icon in der Unterhaltungsliste verlinkten bisher BEIDE einfach
+    auf diese Route ohne Parameter - bei bereits vorhandenem
+    Unterhaltungsverlauf zeigte das faelschlich wieder die zuletzt
+    aktive Unterhaltung statt eines echten Leerzustands. Erzwingt
+    `active_conversation=None`, unabhaengig von vorhandenem Verlauf -
+    kein neuer Datensatz wird angelegt (die erste Nachricht legt wie
+    bisher eine neue Unterhaltung an, siehe chat_send weiter unten)."""
     chat_service = _get_chat_service()
     conversations = chat_service.list_conversations(db, user=current_user)
-    active_conversation = conversations[0] if conversations else None
+    active_conversation = None if new else (conversations[0] if conversations else None)
 
     return _render_chat_page(request, db, current_user, conversations, active_conversation, error)
 
