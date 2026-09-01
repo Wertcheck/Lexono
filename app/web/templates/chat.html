@@ -377,13 +377,33 @@
 
       if (composer) {
         composer.addEventListener("submit", function () {
-          // Deutlicher Verarbeitungs-/Disabled-Zustand: der eigentliche
-          // Seitenwechsel (voller Redirect nach Serververarbeitung, kein
-          // eigenes Streaming) uebernimmt danach die Browser-eigene
-          // Ladeanzeige.
+          // Deutlicher Verarbeitungs-/Ladezustand (Masterprompt-Vorgabe
+          // "KI-Ladezustand" - ein reines dezentes Abdunkeln des
+          // Sendebuttons reicht bei echten Antwortzeiten von 15-30+
+          // Sekunden nicht als Feedback aus). Der eigentliche Seitenwechsel
+          // (voller Redirect nach Serververarbeitung, kein eigenes
+          // Streaming) uebernimmt danach zusaetzlich die Browser-eigene
+          // Ladeanzeige - diese "denkt nach"-Sprechblase ueberbrueckt nur
+          // die Zeit BIS zu diesem Seitenwechsel sichtbar.
           sendBtn.disabled = true;
           textarea.disabled = true;
           sendBtn.classList.add("chat-composer__send-btn--loading");
+
+          if (messages) {
+            var thinkingBubble = document.createElement("div");
+            thinkingBubble.className = "chat-message chat-message--assistant chat-message--thinking";
+            thinkingBubble.innerHTML =
+              '<div class="chat-message__avatar">' +
+              '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2h6"/><path d="M9.5 21h5"/><path d="M12 3.3a5.7 5.7 0 0 0-3.3 10.4c.6.5 1 1.2 1 2v.3h4.6v-.3c0-.8.4-1.5 1-2A5.7 5.7 0 0 0 12 3.3Z"/></svg>' +
+              '</div>' +
+              '<div class="chat-message__body">' +
+              '<div class="chat-message__sender">Lexono</div>' +
+              '<div class="chat-message__text chat-thinking-indicator" role="status" aria-label="Lexono antwortet …">' +
+              '<span></span><span></span><span></span>' +
+              '</div></div>';
+            messages.appendChild(thinkingBubble);
+            messages.scrollTop = messages.scrollHeight;
+          }
         });
       }
 

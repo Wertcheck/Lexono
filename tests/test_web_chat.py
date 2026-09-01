@@ -627,6 +627,22 @@ def test_chat_page_header_shows_ai_status_dot(client: TestClient, db_session: Se
     assert "KI nicht konfiguriert" in response.text or "KI verbunden" in response.text
 
 
+def test_chat_page_includes_thinking_indicator_for_ai_loading_state(
+    client: TestClient, db_session: Session
+) -> None:
+    """KI-Ladezustand (Masterprompt-Vorgabe): eine echte lokale+Cloud-KI-
+    Antwort kann 15-30+ Sekunden dauern (siehe ARCHITECTURE.md §71 fuer
+    reale gemessene Zeiten) - ein rein abgedunkelter Sendebutton reicht
+    dafuer nicht als Feedback. Prueft nur, dass die client-seitige Logik
+    (Sprechblase mit Puls-Animation, per JS beim Absenden eingefuegt) im
+    ausgelieferten HTML vorhanden ist - das tatsaechliche Verhalten im
+    Browser ist nur per Browser-Tool/menschlicher Pruefung verifizierbar."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert "chat-message--thinking" in response.text
+    assert "chat-thinking-indicator" in response.text
+
+
 # --- Dokument-Workspace (Masterprompt V2, Task #62) ---------------------
 
 
