@@ -49,6 +49,7 @@ from app.web.prompt_library_router import router as prompt_library_web_router
 from app.web.quality_router import router as quality_web_router
 from app.web.schriftsatz_router import router as schriftsatz_web_router
 from app.web.settings_router import router as settings_web_router
+from app.web.tasks_router import router as tasks_web_router
 from app.web.template_paths import STATIC_DIR
 from app.web.errors_router import router as errors_web_router
 from app.web.global_search_router import router as global_search_web_router
@@ -217,6 +218,7 @@ app.include_router(document_generator_web_router)
 app.include_router(quality_web_router)
 app.include_router(account_web_router)
 app.include_router(settings_web_router)
+app.include_router(tasks_web_router)
 app.include_router(feedback_web_router)
 app.include_router(lock_web_router)
 app.include_router(prompt_library_web_router)

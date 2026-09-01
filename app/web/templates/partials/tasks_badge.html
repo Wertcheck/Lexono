@@ -1,0 +1,5 @@
+{# Echte Anzahl offener Aufgaben (01.09.) - per HTMX in base.html geladen,
+   kein erfundener Platzhalterwert. Kein Badge, wenn 0 offene Aufgaben. #}
+{% if count and count > 0 %}
+<span class="sidebar__group-badge">{{ count }}</span>
+{% endif %}

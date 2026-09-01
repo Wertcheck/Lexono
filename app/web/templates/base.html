@@ -64,11 +64,31 @@
      verfuegbar, wodurch die allererste Seite (Login) ohne jede
      Fensterbedienung war). #}
   {% include "partials/app_titlebar.html" %}
+  {# Sidebar-Einklapp-Zustand (Referenzbild, 01.09.): synchrones Inline-
+     Skript VOR jedem sichtbaren Rendering der Sidebar, liest denselben
+     localStorage-Schluessel wie app_sidebar.js - vermeidet ein kurzes
+     Aufblitzen der ausgeklappten Breite beim Seitenladen (die Sidebar
+     selbst wird server-seitig gerendert, kein SPA-State verfuegbar). #}
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("lexono_sidebar_collapsed") === "1") {
+          document.documentElement.classList.add("sidebar-collapsed");
+        }
+      } catch (e) {}
+    })();
+  </script>
   <div class="app-shell">
     <nav class="sidebar">
       <div class="sidebar__brand">
         <img src="/dashboard/static/img/logo.svg" alt="Lexono" class="sidebar__brand-logo" />
-        <span>Lexono</span>
+        <span class="sidebar__brand-text">Lexono</span>
+        {% if current_user %}
+          <button type="button" id="sidebar-collapse-toggle" class="sidebar__collapse-btn"
+                  title="Navigation einklappen" aria-label="Navigation ein-/ausklappen">
+            {{ icons.collapse(class_="icon") }}
+          </button>
+        {% endif %}
       </div>
       {% if current_user %}
         {# Universal Command Bar (Strg+K/⌘K, 20.08.) - Sidebar-Einstiegspunkt
@@ -81,10 +101,25 @@
                 aria-label="Suche öffnen (Tastenkürzel Strg+K bzw. ⌘K)">
           {{ icons.search(class_="icon") }}
           <span>Suchen…</span>
+          <span class="sidebar__search-trigger-kbd" aria-hidden="true">Strg K</span>
         </button>
+        <a href="/dashboard/chat" class="sidebar__new-chat">
+          {{ icons.plus(class_="icon") }}
+          <span>Neuen Chat starten</span>
+        </a>
       {% endif %}
       <div class="sidebar__nav">
         {% set is_admin = current_user and current_user.role and current_user.role.name.lower() == "admin" %}
+        {# Flachere Navigation (Referenzbild, 01.09.): Punkte, die im
+           Referenzbild als eigene Top-Level-Zeile erscheinen
+           (Schriftsatz-Generator, Monitoring, Aufgaben, Backup, Fehler &
+           Logs), wurden aus ihren bisherigen Gruppen herausgeloest und
+           stehen jetzt als flache Links direkt in der Sidebar - dieselben
+           Routen wie zuvor, keine neue Seite fuer diese fuenf. Die
+           verbleibenden Gruppen (Akten & Ordner/E-Mail & Posteingang/
+           Kanzleiwissen & KI) behalten ihre Aufklapp-Unterpunkte, da das
+           Referenzbild selbst "wo sinnvoll" weiterhin Auf-/Zuklapp-
+           Indikatoren vorsieht. #}
         {% set nav_groups = [
           {
             "label": "Chat",
@@ -109,14 +144,18 @@
               ("Posteingang", "/dashboard/inbox", icons.envelope, false),
               ("Postausgang", "/dashboard/outbox", icons.send, false),
               ("Entwürfe zur Prüfung", "/dashboard/drafts", icons.document, false),
-              ("Fehler", "/dashboard/errors", icons.warning, false),
             ],
+          },
+          {
+            "label": "Schriftsatz-Generator",
+            "icon": icons.printer,
+            "href": "/dashboard/tools/schriftsatz",
+            "flat": true,
           },
           {
             "label": "Kanzleiwissen & KI",
             "icon": icons.bulb,
             "links": [
-              ("Schriftsatz-Generator", "/dashboard/tools/schriftsatz", icons.printer, false),
               ("Dokumentengenerator", "/dashboard/tools/dokumentgenerator", icons.document, false),
               ("Fristen-Check", "/dashboard/tools/fristen", icons.clock, false),
               ("Zeitleiste", "/dashboard/tools/zeitleiste", icons.chart, false),
@@ -127,7 +166,6 @@
               ("Standard-Prompts", "/dashboard/library/prompts", icons.bulb, false),
               ("Kanzlei-Wissen", "/dashboard/knowledge", icons.bulb, false),
               ("Gespeicherte Analysen", "/dashboard/history/analysen", icons.chart, false),
-              ("Systemstatus", "/dashboard/monitoring", icons.chart, true),
             ],
           },
           {
@@ -136,16 +174,51 @@
             "href": "/dashboard/clients",
             "flat": true,
           },
+          {
+            "label": "Monitoring",
+            "icon": icons.chart,
+            "href": "/dashboard/monitoring",
+            "flat": true,
+            "admin_only": true,
+          },
+          {
+            "label": "Aufgaben",
+            "icon": icons.check,
+            "href": "/dashboard/tasks",
+            "flat": true,
+          },
+          {
+            "label": "Backup",
+            "icon": icons.archive,
+            "href": "/dashboard/backup",
+            "flat": true,
+            "admin_only": true,
+          },
+          {
+            "label": "Fehler & Logs",
+            "icon": icons.warning,
+            "href": "/dashboard/errors",
+            "flat": true,
+          },
         ] %}
         {% for group in nav_groups %}
           {% if group.flat %}
-            <div class="sidebar__group sidebar__group--flat">
-              <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == group.label %} sidebar__group-summary--active{% endif %}"
-                 href="{{ group.href }}">
-                {{ group.icon(class_="icon sidebar__group-icon") }}
-                <span class="sidebar__group-label">{{ group.label }}</span>
-              </a>
-            </div>
+            {% if not group.admin_only or is_admin %}
+              <div class="sidebar__group sidebar__group--flat">
+                <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == group.label %} sidebar__group-summary--active{% endif %}"
+                   href="{{ group.href }}">
+                  {{ group.icon(class_="icon sidebar__group-icon" ~ (" sidebar__group-icon--danger" if group.label == "Fehler & Logs" else "")) }}
+                  <span class="sidebar__group-label">{{ group.label }}</span>
+                  {% if group.label == "Aufgaben" %}
+                    {# Echte, offene Aufgabenzahl - per HTMX lazy nachgeladen
+                       (dasselbe Muster wie budget-badge/update-badge), damit
+                       KEIN Router ausserhalb von tasks_router.py diesen Wert
+                       kennen muss. Kein erfundener Platzhalterwert. #}
+                    <span hx-get="/dashboard/tasks/badge" hx-trigger="load" hx-swap="innerHTML"></span>
+                  {% endif %}
+                </a>
+              </div>
+            {% endif %}
           {% else %}
             {% set ns = namespace(has_active=false) %}
             {% for label, href, icon, admin_only in group.links %}
@@ -175,60 +248,59 @@
         {% set settings_href = "/dashboard/settings" if is_admin else "/dashboard/account" %}
         {% set account_active = active_nav in ['Profil & Einstellungen', 'Anonymisierung & Datenschutz', 'Kanzlei-Profil & Briefkopf', 'System & Lizenz', 'Mein Konto & Abmelden', 'Einstellungen', 'Backup'] %}
         <div class="sidebar__footer">
-          {# Globale KI-Statusanzeige (Masterprompt V2, MEDIUM) - bewusst
-             OHNE Aenderung an chat_router.py/chat.html direkt aus
-             request.app.state gelesen (dort bereits von
-             app/main.py::lifespan/_run_silent_local_ai_check gesetzt), um
-             keine der bestehenden, bereits getesteten Chat-Statuspfade
-             anzufassen. Auf der Chat-Seite selbst bewusst ausgeblendet
-             (dort steht der Status bereits im Chat-Header) - genau die
-             vom Auftrag geforderte "ohne die Chat-Oberflaeche zu
-             ueberladen"-Regel. Nutzt Jinjas lenienten Undefined-Fallback:
-             fehlt request.app.state.settings/.local_ai_status (z. B. in
-             Tests ohne durchlaufenen Lifespan), wird der Block schlicht
-             als "nicht konfiguriert"/"wird geprueft" gerendert statt zu
+          {# Globale KI-Statusanzeige (Masterprompt V2, MEDIUM; seit
+             Referenzbild 01.09. auf JEDER Seite inkl. Chat sichtbar - das
+             Referenzbild zeigt sie explizit auch auf der Chat-
+             Startansicht, daher die vorherige Chat-Ausnahme entfernt; der
+             redundante Status im Chat-Panel-Header wurde im Gegenzug
+             entfernt, siehe chat.html). Bewusst OHNE Aenderung an
+             chat_router.py direkt aus request.app.state gelesen (dort
+             bereits von app/main.py::lifespan/_run_silent_local_ai_check
+             gesetzt). Nutzt Jinjas lenienten Undefined-Fallback: fehlt
+             request.app.state.settings/.local_ai_status (z. B. in Tests
+             ohne durchlaufenen Lifespan), wird der Block schlicht als
+             "nicht konfiguriert"/"wird geprueft" gerendert statt zu
              crashen (siehe .agentic/DECISIONS.md). #}
-          {% if active_nav != "Chat" %}
-            {% set _lai_status = request.app.state.local_ai_status %}
-            {% set _settings = request.app.state.settings %}
-            {% set lai_state = _lai_status.state.value if _lai_status else "checking" %}
-            {# Wichtig: der Modellname wird HIER, ausserhalb des
-               Dict-Literals unten, mit einem echten if/else-Kurzschluss
-               berechnet - Jinjas Standard-Undefined wirft beim direkten
-               Verketten (z. B. undefined.configured_model) sofort einen
-               UndefinedError, auch wenn die betroffene Dict-Zeile am Ende
-               gar nicht ausgewaehlt wird (Dict-Literale werden vollstaendig
-               ausgewertet). Realer Fund waehrend dieser Aenderung (siehe
-               .agentic/DECISIONS.md). #}
-            {% set configured_model = (_lai_status.configured_model or '') if _lai_status else '' %}
-            {% set cloud_configured = (_settings.lexono_gateway_url or _settings.anthropic_api_key) if _settings else false %}
-            <div class="sidebar__status-panel">
-              <div class="sidebar__status-row" title="{{ {
-                'checking': 'Lokale KI: Status wird ermittelt...',
-                'disabled': 'Lokale KI ist deaktiviert',
-                'ready': 'Lokale KI bereit (' ~ configured_model ~ ')',
-                'runtime_missing': 'Lokale KI: Ollama ist nicht installiert',
-                'runtime_unreachable': 'Lokale KI: Ollama ist installiert, aber nicht erreichbar',
-                'model_missing': 'Lokale KI: konfiguriertes Modell ist nicht installiert',
-              }[lai_state] }}">
-                <span class="chat-status-dot {% if lai_state == 'ready' %}chat-status-dot--ok{% elif lai_state in ('disabled', 'checking') %}chat-status-dot--neutral{% else %}chat-status-dot--warn{% endif %}"></span>
-                <span>Lokale KI</span>
-                <span class="sidebar__status-value">{{ {
-                  'checking': 'wird geprüft…',
-                  'disabled': 'deaktiviert',
-                  'ready': 'Bereit',
-                  'runtime_missing': 'nicht installiert',
-                  'runtime_unreachable': 'nicht erreichbar',
-                  'model_missing': 'Modell fehlt',
-                }[lai_state] }}</span>
-              </div>
-              <div class="sidebar__status-row" title="{{ 'Cloud-KI verbunden' if cloud_configured else 'Cloud-KI nicht konfiguriert' }}">
-                <span class="chat-status-dot {% if cloud_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
-                <span>Cloud-KI</span>
-                <span class="sidebar__status-value">{{ "Bereit" if cloud_configured else "nicht konfiguriert" }}</span>
-              </div>
+          {% set _lai_status = request.app.state.local_ai_status %}
+          {% set _settings = request.app.state.settings %}
+          {% set lai_state = _lai_status.state.value if _lai_status else "checking" %}
+          {# Wichtig: der Modellname wird HIER, ausserhalb des
+             Dict-Literals unten, mit einem echten if/else-Kurzschluss
+             berechnet - Jinjas Standard-Undefined wirft beim direkten
+             Verketten (z. B. undefined.configured_model) sofort einen
+             UndefinedError, auch wenn die betroffene Dict-Zeile am Ende
+             gar nicht ausgewaehlt wird (Dict-Literale werden vollstaendig
+             ausgewertet). Realer Fund waehrend dieser Aenderung (siehe
+             .agentic/DECISIONS.md). #}
+          {% set configured_model = (_lai_status.configured_model or '') if _lai_status else '' %}
+          {% set cloud_configured = (_settings.lexono_gateway_url or _settings.anthropic_api_key) if _settings else false %}
+          {% set lai_ready = lai_state == 'ready' %}
+          <div class="sidebar__status-panel">
+            <div class="sidebar__status-row" title="{{ 'Cloud-KI verbunden' if cloud_configured else 'Cloud-KI nicht konfiguriert' }}">
+              {{ icons.cloud(class_="icon sidebar__status-icon") }}
+              <span>Cloud-KI (Gateway)</span>
+              <span class="sidebar__status-value{% if cloud_configured %} sidebar__status-value--ok{% endif %}">{{ "Bereit" if cloud_configured else "nicht konfiguriert" }}</span>
             </div>
-          {% endif %}
+            <div class="sidebar__status-row" title="{{ {
+              'checking': 'Lokale KI: Status wird ermittelt...',
+              'disabled': 'Lokale KI ist deaktiviert',
+              'ready': 'Lokale KI bereit (' ~ configured_model ~ ')',
+              'runtime_missing': 'Lokale KI: Ollama ist nicht installiert',
+              'runtime_unreachable': 'Lokale KI: Ollama ist installiert, aber nicht erreichbar',
+              'model_missing': 'Lokale KI: konfiguriertes Modell ist nicht installiert',
+            }[lai_state] }}">
+              {{ icons.cpu(class_="icon sidebar__status-icon") }}
+              <span>Lokale KI</span>
+              <span class="sidebar__status-value{% if lai_ready %} sidebar__status-value--ok{% endif %}">{{ {
+                'checking': 'wird geprüft…',
+                'disabled': 'deaktiviert',
+                'ready': 'Bereit',
+                'runtime_missing': 'nicht installiert',
+                'runtime_unreachable': 'nicht erreichbar',
+                'model_missing': 'Modell fehlt',
+              }[lai_state] }}</span>
+            </div>
+          </div>
           {# Dezenter Hilfe-/Systemstatus-Streifen - ersetzt die vorherige
              eigene Sidebar-Gruppe "Pilot-Feedback & Support" (die Seite
              existiert unveraendert weiter, ist aber kein Hauptmodul). #}
@@ -312,6 +384,7 @@
      Begruendung (auch von login.html/unlock.html eingebunden). #}
   <script src="/dashboard/static/js/app_titlebar.js"></script>
   {% if current_user %}
+  <script src="/dashboard/static/js/app_sidebar.js"></script>
   <dialog id="command-bar-modal" class="modal command-bar-modal">
     <div class="command-bar__input-row">
       {{ icons.search(class_="icon command-bar__input-icon") }}

@@ -383,11 +383,28 @@ def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_
         lexono_gateway_client_secret="lxg_secret_test",
     )
     monkeypatch.setattr(chat_router_module, "get_settings", lambda: fake_settings)
+    # Seit Referenzbild (01.09.) steht der Status in der globalen Sidebar
+    # (base.html), die bewusst NICHT chat_router_module.get_settings()
+    # pro Anfrage neu aufruft, sondern denselben beim Start gesetzten
+    # request.app.state.settings liest wie local_ai_status (siehe dortiger
+    # Kommentar) - fuer diesen Test deshalb zusaetzlich direkt gesetzt.
+    from app.main import app as main_app
 
-    response = client.get("/dashboard/chat")
+    previous_settings = getattr(main_app.state, "settings", None)
+    main_app.state.settings = fake_settings
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        if previous_settings is not None:
+            main_app.state.settings = previous_settings
+        else:
+            del main_app.state.settings
 
     assert response.status_code == 200
-    assert "Cloud-KI verbunden" in response.text
+    # Seit Referenzbild (01.09.) steht der Status in der globalen Sidebar
+    # statt im Chat-Panel-Header (chat.html hat keine eigene Kopie mehr).
+    assert "Cloud-KI (Gateway)" in response.text
+    assert 'sidebar__status-value--ok">Bereit' in response.text
 
 
 def test_chat_page_shows_local_ai_checking_state_without_lifespan(
@@ -420,8 +437,8 @@ def test_chat_page_shows_local_ai_checking_state_without_lifespan(
             main_app.state.local_ai_status = previous_status
 
     assert response.status_code == 200
-    assert "Lokale KI wird geprüft" in response.text
-    assert "chat-status-dot--neutral" in response.text
+    assert "Lokale KI" in response.text
+    assert "wird geprüft…" in response.text
 
 
 def test_chat_page_shows_local_ai_ready_state(
@@ -440,8 +457,8 @@ def test_chat_page_shows_local_ai_ready_state(
         del main_app.state.local_ai_status
 
     assert response.status_code == 200
-    assert "Lokale KI bereit" in response.text
-    assert "chat-status-dot--ok" in response.text
+    assert "Lokale KI" in response.text
+    assert 'sidebar__status-value--ok">Bereit' in response.text
 
 
 def test_chat_page_shows_local_ai_disabled_state(
@@ -458,7 +475,8 @@ def test_chat_page_shows_local_ai_disabled_state(
         del main_app.state.local_ai_status
 
     assert response.status_code == 200
-    assert "Lokale KI deaktiviert" in response.text
+    assert "Lokale KI" in response.text
+    assert "deaktiviert" in response.text
 
 
 def test_chat_page_shows_local_ai_unreachable_state_as_warning(
@@ -477,7 +495,8 @@ def test_chat_page_shows_local_ai_unreachable_state_as_warning(
         del main_app.state.local_ai_status
 
     assert response.status_code == 200
-    assert "Lokale KI nicht erreichbar" in response.text
+    assert "Lokale KI" in response.text
+    assert "nicht erreichbar" in response.text
 
 
 # ==========================================================================
@@ -620,11 +639,14 @@ def test_document_status_badge_shows_processed_for_text_pdf(
     assert "textdokument.pdf" in response.text
 
 
-def test_chat_page_header_shows_ai_status_dot(client: TestClient, db_session: Session) -> None:
+def test_chat_page_shows_ai_status_in_sidebar(client: TestClient, db_session: Session) -> None:
+    """Seit dem Referenzbild-Redesign (01.09.) steht der KI-Status nicht
+    mehr im Chat-Panel-Header, sondern durchgaengig in der globalen
+    Sidebar (base.html) - auch auf der Chat-Seite selbst."""
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
-    assert "chat-status-dot" in response.text
-    assert "KI nicht konfiguriert" in response.text or "KI verbunden" in response.text
+    assert "sidebar__status-panel" in response.text
+    assert "Cloud-KI (Gateway)" in response.text
 
 
 def test_chat_page_includes_thinking_indicator_for_ai_loading_state(
@@ -646,18 +668,18 @@ def test_chat_page_includes_thinking_indicator_for_ai_loading_state(
 def test_chat_empty_state_quick_actions_have_distinct_accent_colors(
     client: TestClient, db_session: Session
 ) -> None:
-    """Weitere Akzentfarben (01.09., Nutzerauftrag "CI-/Branding-
-    Ueberarbeitung"): die vier Chat-Schnellaktionen sollen sich farblich
-    unterscheiden statt alle dasselbe einfarbige Icon zu zeigen. Nur die
-    "gruene" Variante bindet weiterhin an --seal-green (die umstrittene
-    Primaerfarbe, siehe .agentic/OPEN_ISSUES.md) - blau/lila/orange sind
-    davon unabhaengige, bereits geklaerte Akzenttoene."""
+    """Weitere Akzentfarben (01.09., Referenzbild-Redesign): die vier
+    Chat-Schnellaktionen sollen sich farblich unterscheiden statt alle
+    dasselbe einfarbige Icon zu zeigen. Seit dem Referenzbild-Redesign
+    bewusst OHNE Gruen - Gruen bleibt exklusiv die Markenfarbe (Logo/
+    Sendebutton/aktive Chat-Navigation, siehe --brand-green in app.css),
+    nicht fuer generische Schnellaktions-Icons wiederverwendet."""
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
-    assert "chat-quick-action__icon--green" in response.text
     assert "chat-quick-action__icon--blue" in response.text
     assert "chat-quick-action__icon--purple" in response.text
     assert "chat-quick-action__icon--orange" in response.text
+    assert "chat-quick-action__icon--neutral" in response.text
 
 
 # --- Dokument-Workspace (Masterprompt V2, Task #62) ---------------------

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Aufgaben{% endblock %}
+{% block content %}
+  <div class="topbar">
+    <h1 class="topbar__title">Aufgaben</h1>
+    <div class="topbar__meta"><strong>{{ tasks|length }}</strong> offene Aufgaben</div>
+  </div>
+  {% if tasks %}
+    <div class="settings-list" style="max-width: 720px; margin: 24px 32px;">
+      {% for task in tasks %}
+        <a href="/dashboard/matters/{{ task.matter_id }}" class="settings-list__item" style="align-items: flex-start;">
+          {{ icons.check(class_="icon") }}
+          <span style="flex: 1;">
+            <span class="settings-list__item-path" style="display: block; font-weight: 500; color: var(--ink-900);">{{ task.title }}</span>
+            <span style="display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px;">
+              {{ task.matter.title }}
+              {% if task.due_date %} &middot; Fällig {{ task.due_date.strftime("%d.%m.%Y") }}{% endif %}
+            </span>
+          </span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state" style="margin: 32px;">
+      <p>Keine offenen Aufgaben.</p>
+    </div>
+  {% endif %}
+{% endblock %}

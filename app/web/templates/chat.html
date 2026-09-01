@@ -29,50 +29,27 @@
     </aside>
 
     <section class="chat-panel">
-      <div class="chat-panel__header">
-        <div class="chat-panel__header-title">
-          {% if viewing_document %}
-            <a href="/dashboard/chat/{{ active_conversation.id }}" class="chat-document-back"
-               title="Zurück zur Unterhaltung" aria-label="Zurück zur Unterhaltung">
-              {{ icons.back_arrow(class_="icon") }}
-            </a>
-            <span>{{ viewing_document.original_filename }}</span>
-            <span class="tag tag--matched">Dokument analysiert</span>
-          {% elif active_conversation %}
-            {{ active_conversation.matter.title }}
-          {% else %}
-            Chat
-          {% endif %}
-        </div>
-        <div class="chat-panel__header-status-group">
-          {% set lai_state = local_ai_status.state.value if local_ai_status else "checking" %}
-          <div
-            class="chat-panel__header-status"
-            title="{{ {
-              'checking': 'Lokale KI: Status wird ermittelt...',
-              'disabled': 'Lokale KI ist deaktiviert',
-              'ready': 'Lokale KI bereit (' ~ (local_ai_status.configured_model or '') ~ ')',
-              'runtime_missing': 'Lokale KI: Ollama ist nicht installiert',
-              'runtime_unreachable': 'Lokale KI: Ollama ist installiert, aber nicht erreichbar',
-              'model_missing': 'Lokale KI: konfiguriertes Modell ist nicht installiert',
-            }[lai_state] }}"
-          >
-            <span class="chat-status-dot {% if lai_state == 'ready' %}chat-status-dot--ok{% elif lai_state in ('disabled', 'checking') %}chat-status-dot--neutral{% else %}chat-status-dot--warn{% endif %}"></span>
-            <span>{{ {
-              'checking': 'Lokale KI wird geprüft...',
-              'disabled': 'Lokale KI deaktiviert',
-              'ready': 'Lokale KI bereit',
-              'runtime_missing': 'Lokale KI nicht installiert',
-              'runtime_unreachable': 'Lokale KI nicht erreichbar',
-              'model_missing': 'Lokale-KI-Modell fehlt',
-            }[lai_state] }}</span>
-          </div>
-          <div class="chat-panel__header-status" title="{{ 'Cloud-KI verbunden' if provider_configured else 'Cloud-KI nicht konfiguriert' }}">
-            <span class="chat-status-dot {% if provider_configured %}chat-status-dot--ok{% else %}chat-status-dot--warn{% endif %}"></span>
-            <span>{{ "Cloud-KI verbunden" if provider_configured else "Cloud-KI nicht konfiguriert" }}</span>
+      {# Kopfzeile nur bei aktiver Unterhaltung/Dokumentansicht - die reine
+         Chat-Startansicht (Referenzbild, 01.09.) zeigt KEINE eigene
+         Kopfzeile mehr; der Lokale-KI-/Cloud-KI-Status steht seitdem
+         durchgaengig in der globalen Sidebar (base.html), keine Dopplung
+         mehr hier. #}
+      {% if viewing_document or active_conversation %}
+        <div class="chat-panel__header">
+          <div class="chat-panel__header-title">
+            {% if viewing_document %}
+              <a href="/dashboard/chat/{{ active_conversation.id }}" class="chat-document-back"
+                 title="Zurück zur Unterhaltung" aria-label="Zurück zur Unterhaltung">
+                {{ icons.back_arrow(class_="icon") }}
+              </a>
+              <span>{{ viewing_document.original_filename }}</span>
+              <span class="tag tag--matched">Dokument analysiert</span>
+            {% else %}
+              {{ active_conversation.matter.title }}
+            {% endif %}
           </div>
         </div>
-      </div>
+      {% endif %}
 
       {% if not provider_configured %}
         <div class="banner banner--error chat-panel__banner">
@@ -90,24 +67,41 @@
       <div class="chat-panel__messages" id="chat-messages">
         {% if not active_conversation %}
           <div class="chat-empty-state">
-            <h1 class="chat-empty-state__greeting" id="chat-greeting">Guten Tag.</h1>
-            <p class="chat-empty-state__hint">Wie kann ich Sie heute unterstützen?</p>
+            <div class="chat-empty-state__top">
+              <div>
+                <h1 class="chat-empty-state__greeting" id="chat-greeting">Guten Tag.</h1>
+                <p class="chat-empty-state__hint">Wie kann ich Sie heute unterstützen?</p>
+              </div>
+              {# Verlinkt die bereits bestehende Standard-Prompts-Verwaltung
+                 (app/web/prompt_library_router.py, /dashboard/library/prompts)
+                 - keine neue Funktion, nur ein zweiter Einstiegspunkt
+                 dorthin (Referenzbild, 01.09.). #}
+              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts">
+                {{ icons.printer(class_="icon") }}
+                <span>Standard-Prompts bearbeiten</span>
+              </a>
+            </div>
             <div class="chat-empty-state__actions">
               <button type="button" class="chat-quick-action" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
-                <span>Dokument analysieren</span>
+                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.document(class_="icon") }}</span>
+                <span>Dokumente analysieren</span>
               </button>
               <button type="button" class="chat-quick-action" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
+                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.printer(class_="icon") }}</span>
                 <span>Schriftsatz erstellen</span>
               </button>
               <button type="button" class="chat-quick-action" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
+                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.bulb(class_="icon") }}</span>
                 <span>Dokument zusammenfassen</span>
               </button>
-              <a href="/dashboard/matters" class="chat-quick-action">
-                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
-                <span>Akte öffnen</span>
+              {# "Weitere Funktion hinzufügen" (Referenzbild, 01.09.) - fuehrt
+                 zur bereits bestehenden Standard-Prompts-Verwaltung, in der
+                 ein Nutzer echte, wiederverwendbare Prompt-Vorlagen anlegen
+                 kann (app/web/prompt_library_router.py) - kein Fake-Button,
+                 dieselbe reale Funktion wie der Link oben. #}
+              <a href="/dashboard/library/prompts" class="chat-quick-action">
+                <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.plus(class_="icon") }}</span>
+                <span>Weitere Funktion hinzufügen</span>
               </a>
             </div>
           </div>

@@ -71,6 +71,20 @@
   --accent-orange: #b5651d;
   --accent-orange-tint: #f6ebdf;
 
+  --accent-amber: #a16207;
+  --accent-amber-tint: #faf0d7;
+
+  /* Eigenstaendige Markenfarbe "Lexono Gruen" (Referenzbild, 01.09.) -
+     GETRENNT von --seal-green (bleibt Navy/Tinte, weiterhin fuer die
+     "Lexono"-Wortmarke und generelle dunkle UI-Akzente). Gruen ist die
+     Logo-/CTA-Farbe: Logo-Schildsymbol, primaerer Sendebutton, "Neuen
+     Chat starten", aktive Chat-Navigation - bewusst NICHT fuer die
+     Schnellaktions-Icons wiederverwendet (Vorgabe: Markenfarbe bleibt
+     eigenstaendig, siehe .agentic/OPEN_ISSUES.md). */
+  --brand-green: #16a34a;
+  --brand-green-dark: #15803d;
+  --brand-green-tint: #dcfce7;
+
   /* --- Typografie --- */
   /* Bewusst KEINE Serifenschrift mehr (auch nicht fuer Ueberschriften) -
      --font-display und --font-body sind seit Schritt 3 identisch. */
@@ -268,6 +282,99 @@ body.has-app-titlebar .app-titlebar {
   color: var(--ink-500);
 }
 
+.sidebar__brand-text {
+  flex: 1;
+}
+
+.sidebar__collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar__collapse-btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.sidebar__collapse-btn:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+/* --- Sidebar eingeklappt (Referenzbild, 01.09.) ---
+   Nur die Navigation klappt ein - das Logo-Icon bleibt laut Vorgabe
+   immer sichtbar. Textlabels/Suchfeld/Statuswerte werden ausgeblendet,
+   Icons bleiben zentriert stehen. Ein einziger Ahnen-Selektor
+   (html.sidebar-collapsed) haelt die Regel wartbar statt einer
+   JS-getriebenen Inline-Style-Kaskade. */
+html.sidebar-collapsed .sidebar {
+  width: 68px;
+}
+
+html.sidebar-collapsed .sidebar__brand {
+  padding: 0 0 4px;
+  justify-content: center;
+}
+
+html.sidebar-collapsed .sidebar__brand-text,
+html.sidebar-collapsed .sidebar__collapse-btn,
+html.sidebar-collapsed .sidebar__search-trigger span,
+html.sidebar-collapsed .sidebar__group-label,
+html.sidebar-collapsed .sidebar__link-label,
+html.sidebar-collapsed .sidebar__status-panel,
+html.sidebar-collapsed .sidebar__footer-help span,
+html.sidebar-collapsed .sidebar__profile-info,
+html.sidebar-collapsed .sidebar__new-chat span {
+  display: none;
+}
+
+html.sidebar-collapsed .sidebar__group-summary,
+html.sidebar-collapsed .sidebar__group-summary--flat,
+html.sidebar-collapsed .sidebar__link,
+html.sidebar-collapsed .sidebar__search-trigger,
+html.sidebar-collapsed .sidebar__new-chat,
+html.sidebar-collapsed .sidebar__footer-help,
+html.sidebar-collapsed .sidebar__footer-account {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+html.sidebar-collapsed .sidebar__group-summary::after {
+  display: none;
+}
+
+html.sidebar-collapsed .sidebar__nav,
+html.sidebar-collapsed .sidebar__footer {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Beim Einklappen erscheint der Klapp-Button stattdessen als Hover-Icon
+   ueber dem Logo (schmaler Platz) - einfacher, robuster Kompromiss statt
+   eines separat positionierten schwebenden Buttons. */
+html.sidebar-collapsed .sidebar__brand:hover .sidebar__collapse-btn {
+  display: flex;
+  position: absolute;
+  top: 24px;
+  left: 44px;
+  background: var(--paper-000);
+  box-shadow: var(--shadow-sm);
+}
+
+html.sidebar-collapsed .sidebar__brand {
+  position: relative;
+}
+
 .sidebar__nav {
   display: flex;
   flex-direction: column;
@@ -340,15 +447,40 @@ body.has-app-titlebar .app-titlebar {
 }
 
 .sidebar__group-summary--active {
-  color: var(--ink-900);
+  color: var(--brand-green-dark);
+  background: var(--brand-green-tint);
+  box-shadow: inset 2px 0 0 var(--brand-green);
+}
+
+.sidebar__group-summary--active .sidebar__group-icon {
+  color: var(--brand-green);
+}
+
+.sidebar__group-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
   background: var(--paper-200);
+  color: var(--ink-700);
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar__group-icon {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  color: var(--seal-green);
+  color: var(--ink-500);
+}
+
+.sidebar__group-icon--danger {
+  color: var(--wax-red);
 }
 
 .sidebar__group-items {
@@ -1429,24 +1561,51 @@ textarea:focus {
 .sidebar__status-panel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 2px;
+  margin: 8px 16px;
+  padding: 6px 4px;
+  border-top: 1px solid var(--paper-line);
   border-bottom: 1px solid var(--paper-line);
 }
 
 .sidebar__status-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
+  gap: 8px;
+  padding: 5px 4px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--ink-700);
+}
+
+.sidebar__status-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--ink-500);
 }
 
 .sidebar__status-value {
   margin-left: auto;
   color: var(--ink-500);
-  font-weight: 400;
+  font-weight: 500;
+  font-size: 11.5px;
+}
+
+.sidebar__status-value--ok {
+  color: var(--brand-green-dark);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sidebar__status-value--ok::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-green);
+  flex-shrink: 0;
 }
 
 .sidebar__footer-status {
@@ -2416,6 +2575,50 @@ body::-webkit-scrollbar-thumb:hover,
   text-align: left;
 }
 
+.sidebar__search-trigger-kbd {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-500);
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+
+/* "Neuen Chat starten" (Referenzbild, 01.09.) - eigenstaendiger,
+   markenfarbener CTA-Button unterhalb der Suche, fuehrt zur leeren
+   Chat-Startansicht (GET /dashboard/chat ohne conversation_id). */
+.sidebar__new-chat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 0 16px 16px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--brand-green);
+  color: var(--paper-000);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-elevate);
+}
+
+.sidebar__new-chat:hover {
+  background: var(--brand-green-dark);
+}
+
+.sidebar__new-chat .icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
 .command-bar-modal {
   max-width: 640px;
   width: 90vw;
@@ -3130,6 +3333,47 @@ body::-webkit-scrollbar-thumb:hover,
   gap: 10px;
 }
 
+/* Kopfzeile der Chat-Startansicht mit "Standard-Prompts bearbeiten"
+   (Referenzbild, 01.09.) - Begruessung bleibt fuer sich zentriert lesbar,
+   der Button sitzt rechts daneben auf gleicher Hoehe. */
+.chat-empty-state__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  max-width: 900px;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.chat-empty-state__edit-prompts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--brand-green);
+  background: var(--paper-000);
+  color: var(--brand-green-dark);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s var(--ease-elevate);
+}
+
+.chat-empty-state__edit-prompts:hover {
+  background: var(--brand-green-tint);
+}
+
+.chat-empty-state__edit-prompts .icon {
+  width: 14px;
+  height: 14px;
+}
+
 .chat-quick-action {
   display: flex;
   align-items: center;
@@ -3190,6 +3434,11 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-quick-action__icon--orange {
   background: var(--accent-orange-tint);
   color: var(--accent-orange);
+}
+
+.chat-quick-action__icon--neutral {
+  background: var(--paper-200);
+  color: var(--ink-500);
 }
 
 /* Kompakte Variante fuer die Dokument-Workspace-Kontextleiste (schmale
