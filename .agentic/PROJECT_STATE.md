@@ -83,14 +83,23 @@ für die Herleitung.
 
 ## Installer
 
-**Siebter Rebuild (01.09., ~13:06-13:11 Uhr) erfolgreich GEBAUT,
-INSTALLIERT UND SMOKE-GETESTET.** Enthält zusätzlich zum sechsten
-Rebuild die neue "Lokale KI"-Sektion in den Web-Settings sowie den
-`.env`-Injection-Sicherheitsfix (Commits `31a3ede`/`ba2f286`). Silent-
-Install erneut ohne Stall (~60s). Per HTTP-Smoke-Test bestätigt: Login,
-Dokument-Upload/-Workspace mit Schnellaktionen, alle Bestandsseiten
-UND die neue Settings-Seite mit "Lokale KI"-Sektion erreichbar. Läuft
-aktuell für den Nutzer (`kanzlei_ai.exe serve`).
+**Neunter Rebuild (01.09., ~14:18-14:23 Uhr) erfolgreich GEBAUT,
+INSTALLIERT UND SMOKE-GETESTET.** Enthält zusätzlich zum siebten Rebuild
+(Lokale-KI-Settings + `.env`-Injection-Fix): `AppMutex` im Installer
+(Commit `cfa68bc`, empirisch verifiziert - Reinstall bei laufender App
+wird jetzt sauber abgelehnt statt Dateien zu riskieren) und den
+Minimieren-Icon-Sichtbarkeitsfix (Commit `391361a`, Nutzerfeedback).
+Silent-Install lief erneut ohne Stall. Per HTTP-Smoke-Test bestätigt:
+Login, Dokument-Workflow, alle Bestandsseiten erreichbar; Lokale-KI-
+Konfiguration korrekt auf Standardzustand (deaktiviert) zurückgesetzt
+nach dem `mistral:7b`-Testlauf. Läuft aktuell für den Nutzer
+(`kanzlei_ai.exe serve`).
+
+**Silent-Install-Stall**: in dieser Sitzung ECHT REPRODUZIERT (60s+ ohne
+CPU-Fortschritt vor der Extraktion), Ursache aber NICHT zweifelsfrei
+bewiesen - beste Hypothese: Defender-Cloud-Scan des unsignierten
+~525-MB-Executables. Siehe OPEN_ISSUES.md (HIGH) für die vollständige,
+ehrliche Root-Cause-Dokumentation.
 
 Admin-Testlogin unverändert: `admin@kanzlei.de` /
 `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten
