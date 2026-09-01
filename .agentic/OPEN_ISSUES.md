@@ -7,7 +7,52 @@ zurückgestellt (mit Begründung).
 
 ## CRITICAL
 
-_Keine offenen CRITICAL-Punkte zum Stand 31.08._
+_Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
+
+## OFFEN – PRODUKTENTSCHEIDUNG ERFORDERLICH
+
+- **Logo-/Akzentfarbe: grün (Nutzerauftrag) vs. verifiziertes Navy
+  `#101828` (frühere Sitzung)** – **NEU, 01.09., höchste Priorität
+  dieser Kategorie.** Der Nutzer verlangt explizit ein "neues grünes
+  Logo" sowie weitere, konsequent umgesetzte Akzentfarben. Der aktuelle
+  Farbcode `#101828` für Logo (`app/web/static/img/logo.svg`) UND die
+  primäre UI-Akzentfarbe (`--seal-green`/`-dark`/`-tint` in
+  `app/web/static/css/app.css`, ~72 Verwendungsstellen) wurde jedoch in
+  einer früheren Sitzung NICHT willkürlich gewählt, sondern per
+  Pixelfarbmessung aus dem tatsächlichen, vom Anwalt bereitgestellten
+  offiziellen Logo-Bild (`Desktop\Lexono Logo.png`) verifiziert
+  (Kernfarbwert ~`#0d1526`, dunkles Navy) und danach bewusst auf
+  primäre UI-Elemente ausgeweitet - dokumentiert in `ARCHITECTURE.md`
+  §61/§62 mit vollständiger Herleitung.
+  **Konkrete Frage an den Nutzer**: Gibt es eine NEUERE/andere offizielle
+  Logo-Datei (grün), die die Grundlage für diese Anweisung ist? Falls ja,
+  bitte bereitstellen (Datei oder exakter Hex-Farbwert) - dann wird die
+  Änderung sauber und pixelgenau wie beim vorherigen Mal durchgeführt.
+  Falls die Erwartung auf den textuellen Referenzbeschreibungen aus
+  früheren Prompts beruht (die von einem "grünen Icon" sprachen, ohne
+  dass dafür je eine reale Datei vorlag) und das verifizierte Navy
+  tatsächlich das korrekte, aktuelle offizielle Logo ist, wäre stattdessen
+  zu klären, ob die Erwartungshaltung (grün) angepasst werden soll.
+  Nicht eigenmächtig entschieden - beide Interpretationen sind mit den
+  vorliegenden Informationen plausibel, eine Markenfarbentscheidung
+  gehört nicht zu den "normalen Implementierungsentscheidungen", die
+  autonom getroffen werden dürfen.
+  **Was UNABHÄNGIG von dieser Entscheidung bereits sinnvoll ist**: das
+  Fehlen MEHRERER, unterschiedlicher Akzentfarben (z. B. für die vier
+  Chat-Schnellaktionen, die im Referenzbild farblich unterschiedliche
+  Icon-Badges zeigen - aktuell nutzen alle vier denselben einzigen
+  `--seal-green`-Ton) ist ein echter, von der Logo-Frage unabhängiger
+  Gestaltungspunkt und kann umgesetzt werden, sobald die Basis-Akzentfarbe
+  geklärt ist.
+  Status: OE (Entscheidung erforderlich, siehe `PROJECT_STATE.md`).
+
+- **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
+  ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit
+  markiert "Implementierung noch NICHT begonnen. Kein Code geändert."
+  Ob Lexono mehrere Kanzleien in einer Instanz unterstützen soll, ist
+  eine Produktentscheidung, keine rein technische - nicht ungefragt
+  begonnen. Bei Bedarf: `PROMPT38_ANALYSIS.md` zuerst lesen, dann mit dem
+  Nutzer klären, ob/wann das noch relevant ist.
 
 ## HIGH
 
@@ -55,43 +100,18 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
 
 ## MEDIUM
 
-- **Fenster-Chrome (natives WinForms-Fenster vs. frameless)**: siehe
-  DECISIONS.md. Reference-Screenshots zeigen ein Fenster ohne native
-  Titelleiste (nur minimalistische −/✕-Icons oben rechts). Aktuell nutzt
-  `run.py` ein natives `webview.create_window(...)`-Fenster mit
-  OS-Titelleiste. Änderung ist möglich, aber risikobehaftet (Resize-
-  Verhalten, Custom-Drag-Region über die JS-Bridge). Erfordert explizite
-  Priorisierungsentscheidung, da sie die stabilisierte Desktop-Shell
-  anfasst. Zuständig: Agent B (Frontend) + Agent K (Build/Release).
-  Status: OE (Entscheidung aussteht).
-
-- **Statusindikatoren (Lokale KI/Cloud-KI) global statt nur im Chat-Header**:
-  Referenzbild 1 zeigt die Statusanzeigen in der linken App-Sidebar
-  (`base.html`), nicht im Chat-Panel-Header. Aktuell wird `local_ai_status`
-  nur in `chat_router.py` berechnet; eine Verlagerung in die globale
-  Sidebar würde einen gemeinsamen Kontext-Provider für alle ~20 Router
-  erfordern (aktuell rendert jeder Router seinen `TemplateResponse`-Kontext
-  einzeln, kein zentraler Context-Injector). Bewusst nicht im selben
-  Durchgang wie die Textänderungen umgesetzt, da es ein breiter,
-  cross-cutting Eingriff wäre. Zuständig: Agent E (Backend) + Agent B.
-  Status: NV.
-
 - **Visual QA Loop (§23)**: Noch kein echter Screenshot-Vergleichslauf
   gegen die bereitgestellten Referenzbilder in dieser Session durchgeführt
   (kein Browser-Tool in dieser Umgebung aktiv verfügbar). Zuständig: Agent
   J (Visual QA).
   Status: NV, siehe VISUAL_QA.md.
 
-## OFFEN – PRODUKTENTSCHEIDUNG ERFORDERLICH
-
-- **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
-  ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit
-  markiert "Implementierung noch NICHT begonnen. Kein Code geändert."
-  Gefunden bei der Repository-Hygiene-Durchsicht (01.09., Master
-  Workstream V3, §24). Ob Lexono mehrere Kanzleien in einer Instanz
-  unterstützen soll, ist eine Produktentscheidung, keine rein technische
-  - nicht ungefragt begonnen. Bei Bedarf: `PROMPT38_ANALYSIS.md` zuerst
-  lesen, dann mit dem Nutzer klären, ob/wann das noch relevant ist.
+- **ERLEDIGT, hier nur zur Nachvollziehbarkeit erwähnt**: "Fenster-Chrome"
+  (frameless statt nativ) und "Statusindikatoren global in der Sidebar"
+  standen hier vorher als offen - beides ist seit 01.09. umgesetzt und
+  getestet (Fenster-Chrome zusätzlich vom Nutzer real am Schließen-Button
+  bestätigt). Siehe `PROJECT_STATE.md` für den aktuellen Stand,
+  `SESSION_LOG.md` für den Verlauf.
 
 ## LOW
 

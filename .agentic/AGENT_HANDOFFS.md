@@ -63,3 +63,34 @@ aus fremder Konversation liefert 404-Redirect, nicht die Daten). Mikrofon-
 Button bewusst NICHT an eine echte (typischerweise cloud-basierte)
 Spracherkennung angebunden - haette den Privacy-Kernschutz umgangen. Keine
 Einwaende gegen Integration.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · Zwei parallele Auftraege: (1)
+CI-/Branding-Ueberarbeitung (grünes Logo + weitere Akzentfarben), (2)
+Dokumentationskonsolidierung + Klarstellung des verbindlichen
+Architekturstands gegenueber ueberholten historischen MD-Staenden.
+
+---
+
+**01.09.** · Agent E (Backend/Architecture) → Orchestrator · Bei der
+Umsetzung von (1) gefunden: der aktuelle Logo-/Akzentfarbcode `#101828`
+wurde in einer frueheren Sitzung bewusst per Pixelmessung aus dem
+tatsaechlichen offiziellen Logo verifiziert (Navy, nicht gruen) - echter
+Zielkonflikt mit dem neuen Auftrag. Keine Code-Aenderung vorgenommen,
+stattdessen in OPEN_ISSUES.md als Produktentscheidung markiert und dem
+Nutzer eine konkrete Frage vorgelegt (neue gruene Logo-Datei vorhanden?).
+
+---
+
+**01.09.** · Agent L (Documentation) → Orchestrator · Auftrag (2)
+umgesetzt: `.agentic/SESSION_LOG.md` neu angelegt (Archiv der bisherigen
+Verlaufserzaehlung aus PROJECT_STATE.md), `PROJECT_STATE.md` auf reinen
+Ist-Zustand reduziert, `TEST_STATE.md`/`OPEN_ISSUES.md`/`TASK_MAP.md`
+gegen den tatsaechlichen Code-/Test-/Git-Stand aktualisiert (u. a.
+veraltete "1463 Tests"-Angabe auf 1486 korrigiert, erledigte MEDIUM-
+Punkte entfernt). `ARCHITECTURE.md` bekam einen neuen "AKTUELLER
+VERBINDLICHER ARCHITEKTURSTAND"-Block direkt nach dem Titel plus
+"ÜBERHOLT"-Markierungen an §57/§60/§63 (dokumentierte
+Architektur-Kehrtwenden zur lokalen KI/zum zentralen Proxy) - nichts
+geloescht, nur gekennzeichnet.

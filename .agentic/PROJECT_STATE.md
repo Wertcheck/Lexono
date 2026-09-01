@@ -1,16 +1,29 @@
 # Lexono – Projektgedächtnis: PROJECT_STATE
 
+**Single Source of Truth für den aktuellen Zustand.** Diese Datei enthält
+NUR den Ist-Zustand, keine chronologische Verlaufserzählung mehr - für
+die Historie siehe `SESSION_LOG.md`. Bei jeder wesentlichen Änderung wird
+diese Datei aktualisiert, nicht durch einen neuen datierten Abschnitt
+ergänzt.
+
 Kanonische Architekturquelle bleibt `ARCHITECTURE.md` (Root) – dieses
 Verzeichnis dupliziert sie NICHT, sondern ergänzt sie um agentenbezogenes
-Arbeitsgedächtnis (Entscheidungen, offene Punkte, Teststand, Handoffs).
+Arbeitsgedächtnis. Weitere Dateien in diesem Verzeichnis:
+`OPEN_ISSUES.md` (offene Punkte, kategorisiert), `DECISIONS.md`
+(Entscheidungen mit Begründung), `TASK_MAP.md` (Gesamtstand nach
+Kategorien A–K), `TEST_STATE.md` (Testbaseline), `MODEL_EVALUATION.md`,
+`VISUAL_QA.md`, `AGENT_HANDOFFS.md`, `SESSION_LOG.md` (Archiv).
 
 ## Produktidentität
 
 - Produktname: **Lexono**. „KanzleiAI“/„Kanzlei AI“ war ausschließlich ein
   früherer interner Arbeitstitel und darf in sichtbarer Produktidentität
   nicht mehr auftauchen (Ausnahme: interne technische Pfade/Modulnamen wie
-  `kanzlei_ai.exe`, `app/`-Paketstruktur – siehe DECISIONS.md, kein blindes
-  globales Rename).
+  `kanzlei_ai.exe`, `app/`-Paketstruktur, `%LOCALAPPDATA%\Lexono` intern
+  weiterhin `KanzleiAI` als `ProgramData`-Verzeichnisname – siehe
+  DECISIONS.md, kein blindes globales Rename bestehender Datenpfade).
+  Verifiziert: kein „KanzleiAI“-Rest mehr in Templates oder sichtbaren
+  UI-Strings (Stand 01.09., vollständig gegengeprüft).
 - Zielgruppe: Steuer-/Wirtschaftskanzleien (nicht primär Arbeitsrecht).
 
 ## Architektur-Kernprinzip (nicht verhandelbar)
@@ -21,95 +34,70 @@ Lexono Gateway → Cloud-KI (Anthropic). Der Gateway ist Infrastruktur für
 Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
 `ARCHITECTURE.md` §§ zur Gateway- und Local-AI-Architektur (zuletzt §71).
 
-## Aktueller Stand (31.08., Beginn Masterprompt V2)
+## Aktueller funktionaler Stand
 
-- Gateway-Architektur: produktiv einsatzbereit, Baseline, nicht neu
-  diskutiert.
-- Local AI: Pflichtkomponente, über Ollama (`qwen2.5:1.5b`, datenbasiert
-  gewählt) angebunden, real per Setup-Wizard verdrahtet (`local-ai-setup`
-  CLI-Subcommand).
-- Chat: zentrale Startseite nach Login (`/dashboard/chat`), mit zwei
-  Statusindikatoren (Lokale KI / Cloud-KI) im Chat-Header.
-- Test-Baseline: **1463 passed, 1 skipped, 0 failed** (siehe TEST_STATE.md).
-- Installer zuletzt real gebaut+installiert+smoke-getestet: erfolgreich
-  (WebView2-Fix bestätigt stabil).
+- **Gateway-Architektur**: produktiv einsatzbereit, Baseline.
+- **Local AI**: Pflichtkomponente (wenn aktiviert), über Ollama
+  (`qwen2.5:1.5b`, datenbasiert gewählt) angebunden, per Setup-Wizard
+  verdrahtet.
+- **Chat**: zentrale Startseite nach Login (`/dashboard/chat`), mit
+  KI-Ladezustand (Puls-Sprechblase), Büroklammer-Upload, Drag & Drop,
+  vorbereitetem (nicht cloud-angebundenem) Mikrofon-Button.
+- **Dokument-Workspace**: `/dashboard/chat/{conversation_id}/document/
+  {document_id}` – extrahierter Text mit Pseudonymisierungs-Highlighting,
+  Aktenisolation getestet. Kein PDF-Seiten-Rendering (bewusst, siehe
+  OPEN_ISSUES.md).
+- **Fenster-Chrome**: eigene, frameless Titelleiste (Task #61) statt
+  nativer OS-Titelleiste – Schließen-Button vom Nutzer real bestätigt
+  funktionsfähig. Logo-Entfernung aus der Titelleiste ebenfalls
+  bestätigt (kein `app-titlebar__logo` mehr im HTML).
+- **Statusanzeigen**: Lokale-KI-/Cloud-KI-Status global in der Sidebar
+  (`base.html`, aus `request.app.state`, ohne Router-Änderungen) sowie
+  weiterhin im Chat-Header.
+- **Feedback-System**: `app/pilot_feedback/` – Erfassung + lokale
+  Keyword-Kategorisierung + Admin-Freigabe-Schleife für System-relevante
+  Vorschläge. Für die Pilotphase als ausreichend bewertet.
+- **Agentenorganisation**: `agents/` (Rollenakten) + `skills/`
+  (wiederverwendbares Vorgehen), tatsächlich genutzt (u. a. ein
+  Security-Review-Subagent in dieser Sitzung).
 
-## Agentenorganisation
+## Offener, ungeklärter Punkt: Logo-/Akzentfarbe grün vs. Navy
 
-Siehe `agents/` (Rollen/Akten) und `skills/` (wiederverwendbares Vorgehen).
-Diese Struktur wurde am 31.08. im Rahmen des Masterprompts V2 neu angelegt
-(vorher nicht vorhanden) – siehe AGENT_HANDOFFS.md für den Log.
+Nutzerauftrag verlangt ein "neues grünes Logo" - der aktuelle Farbcode
+`#101828` (Logo + `--seal-green`) wurde jedoch in einer früheren Sitzung
+bewusst aus dem tatsächlichen, vom Anwalt gelieferten offiziellen
+Logo-Bild per Pixelmessung verifiziert (dunkles Navy, nicht grün).
+**Nicht eigenmächtig geändert** - echter Zielkonflikt zwischen einer
+bereits verifizierten Markenentscheidung und der aktuellen Anweisung.
+Siehe `OPEN_ISSUES.md` (Kategorie "Produktentscheidung erforderlich")
+für die vollständige Herleitung und die konkrete Frage an den Nutzer.
 
-## Aktueller Live-Zustand (01.09., spät abends - autonome Weiterarbeit)
+## Installer
 
-Die real installierte App (`%LOCALAPPDATA%\Lexono\kanzlei_ai.exe`) läuft
-bewusst weiter im Hintergrund (windowed mode), damit die neue
-Fenster-Titelleiste (Task #61) beim nächsten Blick auf den Bildschirm
-sofort sichtbar ist. Automatisiert bestätigt (echter HTTP-Smoke-Test
-gegen die Installation, nicht nur TestClient): Login→Chat, Titelleisten-
-Markup + Skript im ausgelieferten HTML, alle Bestandsseiten erreichbar,
-Dokument-Upload funktioniert. **NICHT bestätigt**: die eigentliche
-visuelle/interaktive Korrektheit (sieht die Titelleiste richtig aus,
-funktioniert Drag/Resize/Close-Klick tatsächlich) - das kann nur ein
-Mensch am echten Fenster beurteilen. Admin-Login für Tests:
-`admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur in dieser
-lokalen Test-Installation, kein Produktivsystem).
+Zuletzt real gebaut (dritter Rebuild derselben Nacht), installiert und
+per automatisiertem HTTP-Smoke-Test bestätigt (Login→Chat, Bestandsseiten
+erreichbar). Pfad: `dist/installer/Lexono_Setup.exe` (~525 MB). Bekanntes
+Risiko: Silent-Install hängt gelegentlich beim ersten Versuch (siehe
+OPEN_ISSUES.md, zuverlässig durch Kill+Retry behoben, Ursache nicht
+identifiziert). Admin-Testlogin für die lokale Installation:
+`admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale
+Testinstanz, kein Produktivsystem, keine echten Mandantendaten).
 
-**WICHTIG für die visuelle Prüfung**: Die gerade laufende Instanz wurde
-VOR dem Logo-Fix (Commit `39a574d`) gebaut - sie zeigt in der
-Titelleiste also noch ein kleines Lexono-Logo + Wortmarke links (das
-inzwischen als "doppelte Logo-Darstellung" erkannte und im Quellcode
-bereits behobene Problem). Das ist beim jetzigen Hinsehen normal/erwartet
-und kein neuer Fehler - der Fix ist im Code, aber noch nicht in einem
-Installer ausgeliefert (dritter Rebuild am selben Abend erschien
-unverhältnismäßig für eine rein kosmetische Änderung). Ein weiterer
-Rebuild liefert auch diesen Fix aus.
+## Test-Baseline
 
-**Für den nächsten Blick auf den Bildschirm, worauf zu achten ist**:
-1. Native Windows-Titelleiste weg? (sollte ja sein)
-2. Eigene schmale Leiste oben mit Minimieren (−) und Schließen (✕) rechts
-   sichtbar? (aktuell NOCH mit Logo links, das ist erwartet, siehe oben)
-3. Lässt sich das Fenster durch Ziehen an dieser Leiste verschieben?
-4. Gibt es unten rechts einen Resize-Griff, der die Fenstergröße ändert?
-5. Funktioniert der Schließen-Button (✕) zuverlässig? (das war der
-   ursprüngliche Fehler - unbedingt bestätigen)
+Siehe `TEST_STATE.md` für den exakten, aktuell gültigen Stand.
 
-## Finaler Installer-Rebuild erfolgreich (01.09., ~08:20 Uhr)
+## Git
 
-Dritter Installer-Rebuild dieser Nacht, jetzt mit ALLEN drei Fixes:
-Titelleisten-Fix (Task #61), Logo-Entfernung, KI-Ladezustand. Nutzer hat
-den Schließen-Button am VORHERIGEN Build bereits real bestätigt
-("x button closes the app") - der ursprüngliche kritische Bug ist damit
-menschlich verifiziert behoben. Installation stolperte diesmal über
-ZWEI aufeinanderfolgende hängende Silent-Install-Versuche (siehe
-OPEN_ISSUES.md) - dritter Versuch lief sauber durch (erkennbar am
-tatsächlich steigenden CPU-Verbrauch, 67s echte Arbeit statt konstant
-~0,15s). Automatisierter HTTP-Smoke-Test gegen die finale Installation
-bestätigt: Login→Chat, alle Bestandsseiten erreichbar, UND strukturell
-im ausgelieferten HTML bestätigt: kein `app-titlebar__logo` mehr
-vorhanden, `chat-thinking-indicator`/`chat-message--thinking` vorhanden.
-App läuft im Vordergrund für die finale visuelle Prüfung (Drag/Resize/
-kein doppeltes Logo) - der Schließen-Button selbst ist bereits bestätigt.
+Alle Änderungen lokal committet, **kein Push** (durchgehend eingehalten).
+Working Tree sauber halten – vor jeder größeren Änderung `git status`
+prüfen.
 
-## Nacht-Automode-Zyklus abgeschlossen (01.09., früher Morgen)
+## Größte offene Workstreams
 
-Zusätzlich zum Titelleisten-Fix und Logo-Fix wurde ein sichtbarer
-KI-Ladezustand im Chat ergänzt (Commit `f55925b`) - echte KI-Antworten
-dauern 15-30+ Sekunden, ein rein abgedunkelter Sendebutton war kein
-ausreichendes Feedback. Repository-Audit gegen den neuen, breiten
-"Nacht-Automode"-Auftrag ergab: Branding (kein KanzleiAI mehr in
-Templates), Feedback-/Kategorisierungssystem (`app/pilot_feedback/`),
-Session-Ablauf-Handling und Tesseract-Bündelung waren bereits vorhanden
-und funktionsfähig - nicht erneut gebaut. Vollständiger Abschlussbericht
-wurde als Chat-Nachricht geliefert (nicht in einer neuen Datei
-dupliziert). Test-Baseline: 1486 passed, 1 skipped, 0 failed. Kein
-Git-Push. 19 lokale Commits seit Sessionbeginn.
-
-## Nächste größere Workstreams (noch nicht begonnen)
-
-Siehe OPEN_ISSUES.md für die vollständige, kategorisierte Liste. Die
-größten offenen Posten sind: vollständiger Dokument-Workspace mit
-Pseudonymisierungs-Highlighting (Referenzbild 2), Model-Evaluation-Engine
-über mehrere Runtimes/Modelle, echter Visual-QA-Screenshot-Loop, und die
-Entscheidung zum nativen Fenster-Chrome (frameless vs. aktuelles
-natives WinForms-Fenster).
+Siehe `OPEN_ISSUES.md` für die vollständige, kategorisierte Liste.
+Zusammengefasst die wichtigsten: (1) Logo-/Akzentfarben-Zielkonflikt
+(Entscheidung ausstehend), (2) Model-Evaluation über mehrere Runtimes
+(Architektur-Readiness verifiziert, Umsetzung nicht begonnen), (3)
+echter Visual-QA-Screenshot-Loop (kein Tool verfügbar), (4) echtes
+PDF-Seiten-Rendering im Dokument-Workspace (bewusst zurückgestellt).

@@ -3,6 +3,53 @@
 Status: Entwurf nach Schritt 1 (Projektstart und Bestandsaufnahme)
 Basis: `Anwaltskanzlei_AI_Pipeline_Claude_Code_Konzept` (Konzeptdokument)
 
+> ## AKTUELLER VERBINDLICHER ARCHITEKTURSTAND (zuletzt geprüft 01.09.2026)
+>
+> Dieses Dokument ist chronologisch gewachsen (71 Abschnitte, siehe unten) -
+> mehrere frühe Entscheidungen wurden in SPÄTEREN Abschnitten bewusst
+> überschrieben. Für einen schnellen, korrekten Überblick gilt **ausschließlich
+> dieser Block** als verbindlich; ältere Abschnitte unten sind historisch und
+> dürfen NICHT isoliert als aktueller Stand gelesen werden (Markierungen
+> "> ÜBERHOLT" an den betroffenen Stellen weisen zusätzlich direkt darauf hin).
+>
+> - **Lokale KI ist zwingender, nicht-optionaler Architekturbestandteil.**
+>   Sie ist ein PFLICHT-Zwischenschritt zwischen Privacy Gateway und Claude
+>   (`app/ai_providers/ollama_provider.py`, orchestriert über
+>   `DraftingService.create_draft`) - siehe §65 (Einführung als Pflichtschritt)
+>   und §71 (praxistauglich gemacht, an Setup/Chat angebunden). Sie ersetzt
+>   Claude NICHT und ist NICHT zugunsten einer reinen Cloud-Lösung zu
+>   entfernen oder generell optional zu machen. **§60 ("Local-First, Ollama
+>   als Standard") und §63 ("Ollama vollständig entfernt") sind beide
+>   ÜBERHOLT** - keiner der beiden Zwischenstände (Ollama als einziger
+>   Provider bzw. Ollama komplett entfernt) beschreibt den heutigen Zustand.
+> - **Lokale Pseudonymisierung (Presidio + Final Payload Gate) ist
+>   zwingend** und darf von der Cloud-Anbindung nicht umgangen werden -
+>   unverändert seit §63, durch die Gateway-Architektur (§70) nicht
+>   berührt: der Gateway ist Infrastruktur für Schlüssel-/Zugriffsverwaltung,
+>   NICHT die Privacy-Prüfstelle (die bleibt lokal, vor dem Verlassen des
+>   Kanzlei-PCs).
+> - **Lexono-Gateway als zentraler Cloud-Relay ist die aktuelle,
+>   verbindliche Architektur** (§70) - **überschreibt §54/§57's frühere
+>   "kein zentraler Proxy"-Entscheidung** bewusst und dauerhaft. Kein
+>   direkter Anthropic-Zugriff vom Kanzlei-PC in Produktion.
+> - **Natives Windows-Fenster (kein reiner Browser-Zugriff) ist zwingender
+>   Bestandteil des Produkts** (§50, seither durchgehend weiterentwickelt,
+>   zuletzt: eigene Titelleiste statt nativer OS-Chrome, 01.09.).
+> - **Produktname Lexono** (§59) - "KanzleiAI"/"Kanzlei-AI" nur noch als
+>   interner technischer Bezeichner (Pfade/Modulnamen), nicht in sichtbarer
+>   Produktidentität.
+> - **Offen/in Klärung**: der CI-Farbcode `#101828` für Logo/primäre
+>   UI-Akzente (§61/§62) steht Stand 01.09. im Konflikt mit einem neuen
+>   Nutzerauftrag ("grünes Logo") - siehe `.agentic/OPEN_ISSUES.md` für den
+>   vollständigen Sachverhalt. Bis zur Klärung bleibt `#101828` der
+>   TATSÄCHLICH IMPLEMENTIERTE Wert im Code, ist aber nicht mehr
+>   zweifelsfrei "final" in dem Sinne, wie es §61/§62 ursprünglich
+>   beschreiben.
+>
+> Vollständige Historie/Begründungen: `.agentic/SESSION_LOG.md` (diese
+> Sitzung) sowie die einzelnen nummerierten Abschnitte unten (gesamte
+> Projektgeschichte).
+
 ## 1. Ausgangslage (Bestandsaufnahme)
 
 - Repository ist aktuell leer (Neuanlage).
@@ -3260,6 +3307,16 @@ unverändert 4 Umgebungslimitierungen der Sandbox.
 
 ## 57. Abgelehnt: Portkey-Gateway-Umleitung; Presidio-Umbau zurückgestellt (20.08.)
 
+> **TEILWEISE ÜBERHOLT** (siehe "AKTUELLER VERBINDLICHER ARCHITEKTURSTAND"
+> ganz oben). Die HIER abgelehnte konkrete Portkey-Anbindung bleibt korrekt
+> abgelehnt (nie umgesetzt). Die ZUGRUNDELIEGENDE, breitere Begründung
+> ("kein zentraler Proxy, direkte Anthropic-API-Anbindung", aus §54) wurde
+> jedoch in §70 (Lexono-Gateway) bewusst und dauerhaft überschrieben - ein
+> zentraler Cloud-Relay ist heute die verbindliche Architektur, nur eben
+> ein selbst betriebener (Lexono Gateway), nicht Portkey. Der
+> "Presidio-Umbau zurückgestellt"-Teil wurde ebenfalls später umgesetzt
+> (siehe §63).
+
 Ein Prompt verlangte drei Dinge: (1) die bestehende lokale Pseudonymisierung
 (`app/privacy/`) durch Microsoft Presidio + spaCy `de_core_news_lg` zu ersetzen, (2) die
 Anthropic-Anbindung über **Portkey** (`api.portkey.ai`, Header `x-portkey-api-key`, fester
@@ -3538,6 +3595,14 @@ Fehlschläge durch die Umbenennung.
    ableitbar, falls gewünscht.
 
 ## 60. Local-First-Architektur: Ollama als Standard, §57 bewusst überschrieben (20.08.)
+
+> **ÜBERHOLT** (siehe "AKTUELLER VERBINDLICHER ARCHITEKTURSTAND" ganz oben
+> in diesem Dokument). Der hier beschriebene Zwischenstand ("Ollama als
+> alleiniger Standard-Provider, Cloud nur als Opt-in") wurde in §63
+> ("Ollama vollständig entfernt") und danach erneut in §65/§71 überschrieben
+> - der heutige Stand ist: lokale KI als PFLICHT-Zwischenschritt VOR Claude,
+> nicht als dessen Ersatz. Dieser Abschnitt bleibt als historischer
+> Zwischenstand erhalten, beschreibt aber NICHT die aktuelle Architektur.
 
 Fünfter Auftrag desselben Tages, in zwei Teilen: (1) ein UI-Refactoring auf ein
 durchgehend helles Layout (keine dunkle Sidebar mehr) und (2) eine Umstellung der
@@ -3982,6 +4047,15 @@ Fehlschläge außerhalb der bekannten 4 Umgebungslimitierungen der Sandbox.
    Fenster-Änderungen (siehe §46/§56).
 
 ## 63. Presidio-Datenschutzservice umgesetzt, Ollama vollständig entfernt (20.08.)
+
+> **TEILWEISE ÜBERHOLT** (siehe "AKTUELLER VERBINDLICHER ARCHITEKTURSTAND"
+> ganz oben). Der Presidio-Datenschutzservice-Teil dieses Abschnitts ist
+> weiterhin aktuell und gültig (unverändert seit 20.08.). Der "Ollama
+> vollständig entfernt"-Teil ist NICHT mehr aktuell - §65 (noch am selben
+> Tag) führte lokale KI als verbindlichen Pflicht-Zwischenschritt wieder
+> ein (nicht als Alternative zu Claude, sondern als vorgeschalteter
+> Schritt), §71 machte sie praxistauglich. Lokale KI ist heute zwingender
+> Bestandteil der Architektur, nicht entfernt.
 
 Ausdrücklicher Auftrag des Anwalts: (1) lokale PII-Anonymisierung mittels Microsoft
 Presidio (Analyzer, deutsches Sprachmodell) vor jedem Claude-API-Aufruf, (2) sichere

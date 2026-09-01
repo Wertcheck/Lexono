@@ -166,6 +166,42 @@ DATE: 01.09.
 
 ---
 
+DECISION: `ARCHITECTURE.md` bekommt einen neuen, prominenten Block
+"AKTUELLER VERBINDLICHER ARCHITEKTURSTAND" direkt nach dem Titel, der die
+Architektur-Fragen mit dokumentierter Historie von Kehrtwenden (lokale
+KI: Pflicht → entfernt → wieder Pflicht; zentraler Proxy: abgelehnt →
+als Lexono-Gateway eingeführt) eindeutig und ohne Notwendigkeit,
+71 Abschnitte chronologisch zu lesen, klärt. Zusätzlich bekommen die drei
+konkret überholten Abschnitte (§57, §60, §63) je eine kurze
+"> ÜBERHOLT/TEILWEISE ÜBERHOLT"-Markierung direkt am Abschnittsanfang.
+REASON: Expliziter Nutzerauftrag (01.09.): "frühere Überlegungen,
+alternative Architekturen... sind als historische Stände zu behandeln,
+sofern sie dem aktuellen finalen Architekturentscheid widersprechen...
+sicherstellen, dass ein zukünftiger Agent beim Lesen der Dokumentation
+sofort erkennt, welche Architektur verbindlich ist." Alte Abschnitte
+wurden NICHT gelöscht oder inhaltlich verändert (nur eine kurze Notiz
+vorangestellt) - der Auftrag verlangt ausdrücklich Kennzeichnung statt
+Löschen, Nachvollziehbarkeit bleibt erhalten.
+DATE: 01.09.
+
+---
+
+DECISION: `.agentic/PROJECT_STATE.md` wird von einem chronologisch
+wachsenden Log zu einem reinen Ist-Zustands-Dokument ohne datierte
+Verlaufsabschnitte umgebaut; die bisherige Verlaufserzählung wandert
+unverändert in eine neue `.agentic/SESSION_LOG.md`.
+REASON: Expliziter Nutzerauftrag (01.09.) zur Dokumentationskonsolidierung
+- nach einer sehr langen Sitzung (24+ Commits über eine Nacht) war
+`PROJECT_STATE.md` an mehreren Stellen widersprüchlich geworden (z. B.
+`TEST_STATE.md` noch mit dem Stand vom 31.08., mehrere überlappende
+datierte "Aktueller Stand"-Abschnitte in PROJECT_STATE.md selbst). Der
+Auftrag verlangt ausdrücklich "eine klare aktuelle Single Source of
+Truth" bei gleichzeitigem Erhalt der Historie zur Nachvollziehbarkeit -
+Archivierung statt Löschen.
+DATE: 01.09.
+
+---
+
 DECISION: `request.app.state.<beliebiges Feld>` ist in Jinja-Templates
 sicher lesbar (liefert `Undefined`, wirft nicht), WENN nur eine einzige
 Ebene tief zugegriffen und das Ergebnis sofort per `if`/Ternary geprüft

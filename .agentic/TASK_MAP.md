@@ -48,10 +48,22 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 
 - Branding (Lexono statt KanzleiAI in sichtbarer UI): **ERLEDIGT**,
   systematisch gegengeprüft (kein Rest in Templates).
-- Doppelte Logo-Darstellung: **ERLEDIGT** (Code-seitig behoben, Commit
-  `39a574d`; visuelle Bestätigung am echten Fenster noch **OFFEN**).
-- CI-Farben/Design-System: **ERLEDIGT** (unverändert aus Vorsessions,
-  konsistent genutzt).
+- Doppelte Logo-Darstellung (Titelleiste + Sidebar gleichzeitig):
+  **ERLEDIGT** (Code-seitig behoben, Commit `39a574d`; strukturell im
+  ausgelieferten HTML bestätigt).
+- **Logo-/Akzentfarbe grün statt Navy**: **BLOCKIERT, Produktentscheidung
+  erforderlich** (01.09.) – siehe `OPEN_ISSUES.md`, Kategorie
+  "Produktentscheidung erforderlich", ganz oben. Aktuelles `#101828`
+  wurde in einer früheren Sitzung per Pixelmessung aus dem echten
+  offiziellen Logo verifiziert (Navy, nicht grün) - echter Zielkonflikt
+  mit dem aktuellen Auftrag, nicht eigenmächtig entschieden.
+- **Weitere Akzentfarben (z. B. für Chat-Schnellaktionen)**: **NICHT
+  BEGONNEN**, wartet auf die Klärung der Basis-Akzentfarbe oben (baut
+  technisch darauf auf, macht sonst doppelte Arbeit).
+- CI-Farben/Design-System (Grundstruktur: Tinte/Papier/Akzent-Tokens):
+  **ERLEDIGT** (unverändert aus Vorsessions, konsistent über ~72
+  Verwendungsstellen genutzt - siehe Farbfrage oben für den konkreten
+  Wert der Akzentfarbe).
 
 ## F – Agenten / Feedback
 
@@ -97,12 +109,25 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 ## J – Dokumentation / Repository-Hygiene
 
 - `.agentic/`-Projektgedächtnis: **ERLEDIGT**, laufend gepflegt.
-- Root-Markdown-Sichtung (63 `.md`-Dateien gesamt, 12 im Root):
-  **TEILWEISE** - historische Prompt-Artefakte identifiziert
+- Root-Markdown-Hinweis-Header auf historischen Dokumenten: **ERLEDIGT**
   (`FINAL_REVIEW_REPORT.md`, `HANDOFF_PROMPT36_37_WINDOWS.md`,
-  `PROMPT38_ANALYSIS.md` u. a.), noch nicht mit Hinweis-Headern
-  versehen. Keine umfangreiche Aufräumaktion (bewusst, §24: Produktarbeit
-  hat Vorrang).
+  `PROMPT38_ANALYSIS.md`, `SECURITY_REVIEW.md` zeigen jetzt auf
+  aktuellere Quellen, Inhalt unverändert). Keine umfangreiche
+  Aufräumaktion darüber hinaus (bewusst, §24: Produktarbeit hat Vorrang).
+- **Dokumentationskonsolidierung (01.09., expliziter Nutzerauftrag)**:
+  **ERLEDIGT**. `.agentic/SESSION_LOG.md` neu (Archiv der bisherigen
+  chronologischen Verlaufserzählung), `PROJECT_STATE.md` auf reinen
+  Ist-Zustand reduziert, `TEST_STATE.md` (veraltete Zahl 1463→1486)/
+  `OPEN_ISSUES.md` (erledigte MEDIUM-Punkte entfernt)/`TASK_MAP.md`
+  gegen den tatsächlichen Stand aktualisiert.
+- **Klarstellung verbindlicher Architekturstand vs. historische
+  Kehrtwenden in `ARCHITECTURE.md` (01.09., expliziter Nutzerauftrag)**:
+  **ERLEDIGT**. Neuer "AKTUELLER VERBINDLICHER ARCHITEKTURSTAND"-Block
+  direkt nach dem Titel (lokale KI zwingend, Presidio zwingend,
+  Lexono-Gateway verbindlich, natives Windows-Fenster zwingend,
+  CI-Farbe offen). §57/§60/§63 (dokumentierte Kehrtwenden zu lokaler
+  KI/zentralem Proxy) bekamen "ÜBERHOLT"-Markierungen direkt am
+  Abschnittsanfang - nichts gelöscht, nur gekennzeichnet.
 
 ## K – langfristige Architektur
 
