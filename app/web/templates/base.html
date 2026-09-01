@@ -126,10 +126,37 @@
            Sidebar eingeblendet - dadurch wurde die Sidebar bei laengerer
            Historie hoeher als das Fenster und musste gescrollt werden,
            wodurch untere Menuepunkte nicht mehr ohne Scrollen erreichbar
-           waren. Stattdessen wie zuvor: die Unterhaltungshistorie
-           erscheint als EIGENE SPALTE RECHTS NEBEN der Sidebar, nur auf
-           der Chat-Seite selbst - siehe chat.html, ".chat-conversations".
-           Die Sidebar-Hoehe bleibt dadurch in jedem Zustand konstant. #}
+           waren. Die Sidebar-Hoehe bleibt dadurch in jedem Zustand
+           konstant.
+
+           Zweite Nutzerkorrektur (01.09., spaeter): eine als "eigene
+           Spalte rechts" (statisch, immer sichtbar sobald man auf der
+           Chat-Seite ist) umgesetzte Zwischenloesung war ebenfalls NICHT
+           das gewuenschte Verhalten - die Spalte soll im Normalzustand
+           GAR KEINEN Platz einnehmen (weder horizontal noch vertikal)
+           und erst per Klick auf "Chat" als Flyout nach rechts
+           auffahren. Recherche in der Git-Historie (base.html/app.css/
+           JS, alle Branches) ergab: ein echtes Klick-Toggle fuer diese
+           Spalte hat es in diesem Repository nie gegeben - nur den
+           flachen Link (urspruenglich) und die zwei oben genannten,
+           beide vom Nutzer verworfenen Zwischenstaende. Es gibt also
+           keinen "alten Code", der wiederhergestellt werden koennte;
+           das Flyout-Verhalten ist neu:
+             - id="sidebar-chat-link" dient app_sidebar.js als Hook.
+             - Ist .chat-shell im DOM (nur auf der Chat-Seite der Fall),
+               wird der Klick abgefangen (preventDefault) und stattdessen
+               die Klasse "chat-shell--history-open" umgeschaltet, statt
+               zu navigieren - CSS blendet ".chat-conversations" dadurch
+               rein/aus (siehe app.css), ohne dass Breite/Hoehe der
+               Haupt-Sidebar sich je aendert.
+             - Auf allen anderen Seiten existiert .chat-shell nicht -
+               dort bleibt der Link ein stinknormaler <a href>-Link
+               (kein JS-Effekt, volle Navigation zur Chat-Seite).
+             - Jeder vollstaendige Seitenaufruf (auch Klick auf eine
+               konkrete Unterhaltung oder auf einen anderen
+               Sidebar-Punkt) rendert .chat-shell serverseitig OHNE
+               "--history-open" neu - die Spalte ist danach wieder zu,
+               exakt wie gefordert. #}
         {% set nav_groups = [
           {
             "label": "Chat",
@@ -216,7 +243,7 @@
             {% if not group.admin_only or is_admin %}
               <div class="sidebar__group sidebar__group--flat">
                 <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == group.label %} sidebar__group-summary--active{% endif %}"
-                   href="{{ group.href }}">
+                   href="{{ group.href }}"{% if group.label == "Chat" %} id="sidebar-chat-link" aria-expanded="false"{% endif %}>
                   {{ group.icon(class_="icon sidebar__group-icon" ~ (" sidebar__group-icon--danger" if group.label == "Fehler & Logs" else "")) }}
                   <span class="sidebar__group-label">{{ group.label }}</span>
                   {% if group.label == "Aufgaben" %}

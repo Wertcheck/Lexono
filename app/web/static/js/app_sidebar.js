@@ -15,3 +15,20 @@
     } catch (e) {}
   });
 })();
+
+// Chat-Historie als Flyout (Nutzerkorrektur 01.09.: keine dauerhaft
+// sichtbare Spalte mehr, siehe base.html-Kommentar bei "sidebar-chat-
+// link"). .chat-shell existiert nur, wenn die Chat-Seite selbst gerade
+// gerendert ist - auf allen anderen Seiten bleibt der Link dadurch ein
+// stinknormaler <a href>, da hier gar kein Listener angehaengt wird.
+(function () {
+  var chatLink = document.getElementById("sidebar-chat-link");
+  var chatShell = document.querySelector(".chat-shell");
+  if (!chatLink || !chatShell) { return; }
+
+  chatLink.addEventListener("click", function (evt) {
+    evt.preventDefault();
+    var open = chatShell.classList.toggle("chat-shell--history-open");
+    chatLink.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+})();

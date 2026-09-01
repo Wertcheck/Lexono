@@ -52,15 +52,27 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   vorherigen kompakten Pillen), 4. Karte "Weitere Funktion hinzufügen"
   verlinkt die bestehende Standard-Prompts-Verwaltung, ausführlicher
   Datenschutzhinweis (Icon + Text + "Mehr erfahren"-Link) nur auf der
-  reinen Startansicht. Die Unterhaltungshistorie erscheint als eigene
-  Spalte RECHTS NEBEN der Haupt-Sidebar (`chat.html`,
-  `.chat-conversations` - das ursprüngliche, funktionierende Verhalten).
-  Ein zwischenzeitlicher Versuch, die Historie stattdessen vertikal
-  unter "Chat" in die Haupt-Sidebar einzublenden, wurde vom Nutzer
-  ausdrücklich zurückgewiesen (Sidebar wurde dabei bei längerer Historie
-  höher als das Fenster, untere Menüpunkte nur noch nach Scrollen
-  erreichbar) und rückgängig gemacht - "Chat" ist wieder ein einfacher
-  flacher Sidebar-Link mit konstanter Sidebar-Höhe in jedem Zustand.
+  reinen Startansicht. Die Unterhaltungshistorie ist seit der ZWEITEN
+  Nutzerkorrektur (01.09., spaeter) ein rechtes FLYOUT, KEINE dauerhaft
+  sichtbare Spalte mehr: `.chat-conversations` ist standardmaessig
+  breite 0/unsichtbar (nimmt weder horizontal noch vertikal Platz ein)
+  und faehrt erst per Klick auf "Chat" in der Haupt-Sidebar (Hook:
+  `#sidebar-chat-link`, siehe `app_sidebar.js`) als Spalte rechts neben
+  der Sidebar auf (`.chat-shell--history-open`) - schliesst sich wieder
+  bei erneutem Klick oder bei jeder echten Navigation (frischer
+  Seitenaufruf rendert die Klasse serverseitig nie). Git-Historie-
+  Recherche (auf explizite Nutzeranweisung VOR der Neuimplementierung)
+  ergab: ein echtes Klick-Toggle hat es fuer dieses Element nie gegeben -
+  nur den flachen Link (urspruenglich) und zwei vom Nutzer verworfene
+  Zwischenstaende: (1) vertikal unter "Chat" in der Sidebar eingeblendet
+  (machte die Sidebar bei laengerer Historie hoeher als das Fenster,
+  untere Menuepunkte nur noch nach Scrollen erreichbar) und (2) eine
+  IMMER sichtbare statische Spalte rechts (nahm dauerhaft Platz ein,
+  selbst im "Normalzustand"). Beide Male per echter nativer
+  UI-Automatisierung (dev + installierter Build) verifiziert: geschlossen
+  = nur Haupt-Sidebar, kein Scrollbedarf, alle unteren Menuepunkte
+  sichtbar; Klick auf "Chat" = Flyout rechts, Sidebar-Hoehe unveraendert;
+  erneuter Klick bzw. Navigation zu anderem Menuepunkt = Flyout wieder zu.
   `?new=1`-Parameter auf `GET /dashboard/chat` erzwingt weiterhin einen
   echten Leerzustand (behobener Bug: zeigte vorher bei bestehendem
   Verlauf immer die letzte Unterhaltung, auch bei explizitem "Neue
@@ -100,6 +112,15 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Risiken prüfen"/"Zusammenfassung erstellen"): ergänzt in der
   Kontextleiste, referenzieren den echten Dateinamen, nutzen den
   bestehenden Prefill-/Sende-Weg (kein neuer Code-Pfad).
+- **Standard-Prompts** (`/dashboard/library/prompts`): volle CRUD
+  (Anlegen/Bearbeiten/Löschen) war bereits vollständig implementiert
+  (`prompt_library_router.py` + Templates) - bei der Nutzeranfrage nach
+  fehlendem Löschen 01.09. stellte sich heraus, dass nur eine Verifikation
+  nötig war, kein neuer Code. Echtes hartes Löschen (`db.delete()` +
+  Audit-Event), keine Soft-Delete-Attrappe. Per echter nativer
+  UI-Automatisierung (Anlegen → Bearbeiten inkl. Versionssprung v1→v2 →
+  Löschen → Leerzustand "Noch keine Kanzlei-Prompts angelegt.") im
+  installierten Build bestätigt.
 
 ## CI-/Branding-Frage: AKTUALISIERT (01.09., später)
 
@@ -118,15 +139,19 @@ Canvas-/Card-Töne gültig - nur die Aussage "Logo ist rein Navy" ist
 
 ## Installer
 
-**Zwölfter Rebuild (01.09., ~17:16-17:20 Uhr) erfolgreich GEBAUT,
-INSTALLIERT UND VERIFIZIERT.** Enthält das komplette Referenzbild-
-Redesign (Logo/Farben/Sidebar/Chat) inkl. der finalen Nutzerkorrektur
-(Chat-Historie wieder als eigene Spalte statt Sidebar-Aufklapp). Silent-
-Install lief ohne Stall. Per HTTP-Smoke-Test UND echter UI-Automatisierung
-im installierten Build bestätigt: Login, Dokument-Workflow, alle
-Bestandsseiten erreichbar, Sidebar zeigt alle Menüpunkte ohne Scrollen
-bei geöffneter Unterhaltungsspalte. Läuft aktuell für den Nutzer
+**Dreizehnter Rebuild (01.09., ~18:08-18:13 Uhr) erfolgreich GEBAUT,
+INSTALLIERT UND VERIFIZIERT.** Enthält das Chat-Historie-Flyout (zweite
+Korrektur, siehe oben) + die verifizierte Standard-Prompts-CRUD. Silent-
+Install lief ohne Stall. Per echter nativer UI-Automatisierung im
+installierten Build bestätigt: Login, Chat-Flyout (geschlossen/offen/
+Navigation-schliesst-wieder, Sidebar-Höhe konstant), identisches
+Verhalten wie im Dev-Server. Läuft aktuell für den Nutzer
 (`kanzlei_ai.exe serve`).
+
+Vorheriger (zwölfter) Rebuild: enthielt das komplette Referenzbild-
+Redesign (Logo/Farben/Sidebar/Chat) inkl. der ERSTEN Nutzerkorrektur
+(Chat-Historie als eigene, aber noch dauerhaft sichtbare Spalte) - diese
+Zwischenstufe ist mit dem 13. Rebuild überholt (siehe Flyout oben).
 
 **Silent-Install-Stall**: bleibt ein bekanntes, nicht zweifelsfrei
 bewiesenes Risiko (siehe OPEN_ISSUES.md, HIGH) - trat bei den letzten

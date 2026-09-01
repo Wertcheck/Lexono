@@ -9,6 +9,7 @@ geforderten Szenarien TEST A-E ab."""
 from __future__ import annotations
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -587,6 +588,44 @@ def test_chat_conversations_shown_as_separate_column_next_to_sidebar(
     assert "chat-conversations" in send_response.text
     assert "Testnachricht fuer Spalte." in send_response.text
     assert "chat-conversations__item--active" in send_response.text
+
+
+def test_chat_history_column_is_collapsed_by_default(
+    client: TestClient, db_session: Session
+) -> None:
+    """Zweite Nutzerkorrektur (01.09.): die Spalte darf im Normalzustand
+    KEINEN Platz einnehmen - sie wird zwar weiterhin serverseitig
+    gerendert (fuer den Flyout-Inhalt), aber .chat-shell traegt bei
+    jedem frischen Seitenaufruf NIE die Klasse "chat-shell--history-open"
+    (CSS blendet sie dadurch standardmaessig auf Breite 0 aus)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert 'class="chat-shell' in response.text
+    assert "chat-shell--history-open" not in response.text
+
+
+def test_chat_sidebar_link_has_flyout_toggle_hook(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der "Chat"-Link in der Haupt-Sidebar braucht das id-Attribut, an
+    dem app_sidebar.js den Klick-Toggle fuer das Flyout anhaengt (siehe
+    app/web/static/js/app_sidebar.js)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert 'id="sidebar-chat-link"' in response.text
+    assert 'aria-expanded="false"' in response.text
+
+
+def test_app_sidebar_js_wires_chat_history_flyout_toggle() -> None:
+    """Statische Verdrahtungspruefung: das JS muss existieren, das Klicks
+    auf #sidebar-chat-link abfaengt und "chat-shell--history-open"
+    umschaltet - Regressionsschutz, falls die Datei versehentlich
+    ueberschrieben/gekuerzt wird."""
+    js_path = Path(__file__).resolve().parent.parent / "app" / "web" / "static" / "js" / "app_sidebar.js"
+    content = js_path.read_text(encoding="utf-8")
+    assert "sidebar-chat-link" in content
+    assert "chat-shell--history-open" in content
+    assert "preventDefault" in content
 
 
 # ==========================================================================

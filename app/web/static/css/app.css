@@ -2905,14 +2905,29 @@ body::-webkit-scrollbar-thumb:hover,
   max-height: calc(100vh - 8px);
 }
 
+/* Standardzustand: eingeklappt, nimmt WEDER horizontal noch vertikal
+   Platz ein (Nutzerkorrektur 01.09.: keine dauerhaft sichtbare Spalte
+   mehr). Erst .chat-shell--history-open (per Klick auf "Chat" in der
+   Haupt-Sidebar, siehe app_sidebar.js) faehrt sie als Flyout nach
+   rechts auf - reine Breiten-/Opacity-Animation, veraendert nie Hoehe
+   oder Breite der Haupt-Sidebar selbst. */
 .chat-conversations {
-  width: 240px;
+  width: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--paper-line);
+  overflow: hidden;
+  border-right: 1px solid transparent;
   background: var(--paper-000);
   min-height: 0;
+  opacity: 0;
+  transition: width 0.16s ease, opacity 0.12s ease;
+}
+
+.chat-shell--history-open .chat-conversations {
+  width: 240px;
+  border-right-color: var(--paper-line);
+  opacity: 1;
 }
 
 .chat-conversations__header {
@@ -3869,7 +3884,7 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (max-width: 1440px) {
-  .chat-conversations {
+  .chat-shell--history-open .chat-conversations {
     width: 200px;
   }
   .chat-message,
