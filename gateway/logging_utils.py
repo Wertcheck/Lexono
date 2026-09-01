@@ -21,12 +21,23 @@ def log_relay_request(
     duration_ms: float,
     status: int,
     error_category: str | None,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
 ) -> None:
+    """`input_tokens`/`output_tokens` (Umsetzungsplan Punkt 4, Nutzungsbasis
+    fuer spaetere Auswertung/Abrechnung) sind wie alle anderen Felder hier
+    ausschliesslich Zahlen - kein Prompt-/Antworttext, kein Dokumentinhalt.
+    Optional (`None` bei Fehlerfaellen vor dem eigentlichen Anthropic-
+    Aufruf, z. B. Rate-Limit/Auth/Validierungsfehler - dort gibt es noch
+    keine Tokenzahlen)."""
     _logger.info(
-        "request_id=%s tenant_id=%s duration_ms=%.1f status=%s error_category=%s",
+        "request_id=%s tenant_id=%s duration_ms=%.1f status=%s error_category=%s "
+        "input_tokens=%s output_tokens=%s",
         request_id,
         tenant_id or "-",
         duration_ms,
         status,
         error_category or "-",
+        input_tokens if input_tokens is not None else "-",
+        output_tokens if output_tokens is not None else "-",
     )

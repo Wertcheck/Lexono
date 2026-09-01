@@ -36,7 +36,42 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
 
 ## Aktueller funktionaler Stand
 
-- **Gateway-Architektur**: produktiv einsatzbereit, Baseline.
+- **Gateway-Architektur**: produktiv einsatzbereit, Baseline. Erweitert
+  (01.09., separater Hetzner-VPS-Umsetzungsauftrag, noch KEIN echter
+  Server/Key/Tenant): (1) zentrale Modellsteuerung -
+  `GatewaySettings.default_model` bestimmt jetzt ausschliesslich, welches
+  Anthropic-Modell tatsaechlich aufgerufen wird (`gateway/relay.py`
+  `call_anthropic(model=...)` statt `request.model`); das vom Client
+  gesendete `model`-Feld wird weiterhin gegen `allowed_models` geprueft
+  (Abwaertskompatibilitaet, bestehende Tests unveraendert gueltig), hat
+  aber keinen Einfluss mehr auf den tatsaechlichen Aufruf - ein
+  Modellwechsel ist damit reine `.env.gateway`-Aenderung + Neustart, kein
+  Client-Rebuild. Neuer `model_validator` verhindert eine in sich
+  widerspruechliche Konfiguration (`default_model` nicht in
+  `allowed_models`). (2) `GatewaySettings.max_request_bytes` (Default
+  200 KB) - Groessenpruefung in `relay_messages()` VOR dem Anthropic-
+  Aufruf, HTTP 413 + `error_category="payload_too_large"` bei
+  Ueberschreitung, Payload selbst wird dabei nicht zusaetzlich
+  gespeichert. Zweite, groebere Schutzschicht im vorbereiteten
+  `deploy/Caddyfile` (`request_body max_size 250KB`). (3)
+  `log_relay_request()` um `input_tokens`/`output_tokens` erweitert (rein
+  numerisch, Nutzungsbasis fuer spaetere Auswertung - keine Inhalte). (4)
+  `scripts/revoke_gateway_tenant.py`/`rotate_gateway_tenant_secret.py`
+  ergaenzt (duenne Wrapper um bereits vorhandene
+  `gateway/tenant_admin.py`-Funktionen, keine neue Credential-Logik). (5)
+  `deploy/`-Verzeichnis NEU: `lexono-gateway.service` (systemd,
+  `--workers 1` bewusst wegen In-Memory-Rate-Limiter, startet via
+  `python -m uvicorn` statt des Konsolenskripts, da `gateway`/`app` nicht
+  ueber `pyproject.toml`s `packages.find` als Pakete installiert werden),
+  `Caddyfile` (TLS-Terminierung + Bodylimit-Vorlage, Platzhalter-Domain),
+  `README.md` (vollstaendiges Hetzner-/Linux-Runbook: Firewall/SSH-
+  Haertung, Secrets-Konfiguration, API-Key-/Tenant-Credential-Rotation,
+  Update/Rollback, Backup - durchgehend nur Platzhalter, kein echter Key).
+  38 neue Tests (`tests/test_gateway.py` erweitert +
+  `tests/test_gateway_tenant_scripts.py` neu), volle Suite weiterhin
+  gruen (1515 passed/2 skipped). Noch **kein** echter Hetzner-Server,
+  **kein** echter Anthropic-Key, **keine** produktive Kanzlei-Credential -
+  ausdruecklich nur Code/Tests/Deployment-Vorlagen, wie beauftragt.
 - **Local AI**: Pflichtkomponente (wenn aktiviert), über Ollama
   (`qwen2.5:1.5b`, datenbasiert gewählt, AUSDRÜCKLICH austauschbar - kein
   fest verdrahtetes Modell, siehe `LocalLLMProvider`-Protocol in

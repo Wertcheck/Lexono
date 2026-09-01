@@ -1,0 +1,62 @@
+# systemd-Unit fuer den Lexono-Gateway (ARCHITECTURE.md §70, Umsetzungsplan
+# Punkt 7). Vorlage - Pfade/Benutzer ggf. an die tatsaechliche Server-
+# Konvention anpassen, siehe deploy/README.md fuer die vollstaendige
+# Installationsanleitung.
+#
+# WICHTIG: --workers 1 ist BEABSICHTIGT, keine Nachlaessigkeit. Der Gateway
+# haelt sein Rate-Limit (gateway/rate_limiter.py) im Prozessspeicher, nicht
+# in einem geteilten Store (bewusste Pilotphase-Entscheidung, siehe
+# ARCHITECTURE.md §70). Mehrere Worker haetten je einen eigenen, unabhaengigen
+# Rate-Limiter - die konfigurierten Kanzlei-Limits wuerden sich effektiv mit
+# der Worker-Zahl multiplizieren. Vor einer Mehr-Worker-/Mehr-Instanz-
+# Bereitstellung muesste das Rate-Limiting zuerst auf einen geteilten Store
+# (z. B. Redis) umgestellt werden - das ist eine spaetere Erweiterung, kein
+# Teil dieser Pilot-Umsetzung.
+#
+# Installation (siehe deploy/README.md fuer alle Schritte im Detail):
+#   sudo cp deploy/lexono-gateway.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now lexono-gateway
+
+[Unit]
+Description=Lexono AI Gateway (reiner Cloud-KI-Relay, siehe ARCHITECTURE.md §70)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lexono-gateway
+Group=lexono-gateway
+
+WorkingDirectory=/opt/lexono-gateway/current
+
+# Secrets kommen AUSSCHLIESSLICH aus dieser Datei, NIEMALS aus dem
+# Anwendungsverzeichnis/Repository - siehe deploy/README.md Abschnitt
+# "Secrets-Konfiguration". Datei muss vor dem ersten Start existieren,
+# Owner=lexono-gateway, chmod 600.
+EnvironmentFile=/etc/lexono-gateway/.env.gateway
+
+# "python -m uvicorn" (NICHT das uvicorn-Konsolenskript direkt) ist
+# beabsichtigt: "-m" fuegt WorkingDirectory automatisch zu sys.path hinzu,
+# wodurch "gateway" (und das von gateway/security.py importierte
+# "app.auth.security") als plain Verzeichnisse auffindbar sind, ohne dass
+# "gateway"/"app" als Setuptools-Pakete installiert sein muessen (siehe
+# pyproject.toml: "packages.find" ist bewusst auf "app*" begrenzt, deckt
+# "gateway" gar nicht ab - "pip install -e ." installiert nur die
+# Third-Party-Abhaengigkeiten, siehe deploy/README.md).
+ExecStart=/opt/lexono-gateway/current/.venv/bin/python -m uvicorn gateway.main:app --host 127.0.0.1 --port 8700 --workers 1
+
+Restart=on-failure
+RestartSec=5
+
+# --- Haertung (Standard-systemd-Sandboxing, siehe deploy/README.md) ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# Einzige beschreibbare Stelle: die kleine SQLite-Datei mit Tenant-
+# Metadaten (keine Kanzlei-/Mandantendaten, siehe gateway/models.py).
+ReadWritePaths=/opt/lexono-gateway/current/gateway_data
+
+[Install]
+WantedBy=multi-user.target

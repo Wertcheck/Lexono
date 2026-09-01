@@ -21,12 +21,17 @@ class RelayError(Exception):
 
 
 def call_anthropic(
-    *, api_key: str, request: RelayRequest, timeout_seconds: float = 60.0
+    *, api_key: str, model: str, request: RelayRequest, timeout_seconds: float = 60.0
 ) -> RelayResponse:
+    """`model` ist das zentral in `GatewaySettings.default_model`
+    konfigurierte Modell - bewusst NICHT `request.model` (Umsetzungsplan
+    Punkt 1: zentrale Modellsteuerung, siehe gateway/main.py::relay_messages).
+    `request.model` wird dort weiterhin gegen die Allowlist geprueft, aber
+    hier nicht mehr verwendet."""
     client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
     try:
         response = client.messages.create(
-            model=request.model,
+            model=model,
             max_tokens=request.max_tokens,
             system=[block.model_dump(exclude_none=True) for block in request.system],
             messages=[block.model_dump(exclude_none=True) for block in request.messages],

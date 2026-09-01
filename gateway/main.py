@@ -101,6 +101,23 @@ def relay_messages(
         )
         raise HTTPException(status_code=429, detail="Rate-Limit überschritten")
 
+    # Größenlimit (Umsetzungsplan Punkt 2): grober, serverseitiger Schutz
+    # VOR dem Anthropic-Aufruf - der Payload selbst wird dabei nicht
+    # zusaetzlich gespeichert, nur seine Groesse gemessen. Zweite,
+    # vorgelagerte Schutzschicht ist das Reverse-Proxy-Bodylimit (siehe
+    # deploy/Caddyfile) - diese Pruefung hier ist die Absicherung fuer den
+    # Fall, dass der Gateway-Prozess direkt (ohne Proxy davor) erreicht wird.
+    payload_size = len(request.model_dump_json().encode("utf-8"))
+    if payload_size > settings.max_request_bytes:
+        log_relay_request(
+            request_id=request_id,
+            tenant_id=tenant.id,
+            duration_ms=(time.monotonic() - started) * 1000,
+            status=413,
+            error_category="payload_too_large",
+        )
+        raise HTTPException(status_code=413, detail="Anfrage überschreitet das Größenlimit")
+
     if request.model not in settings.allowed_models:
         log_relay_request(
             request_id=request_id,
@@ -137,7 +154,15 @@ def relay_messages(
         raise HTTPException(status_code=503, detail="Gateway ist nicht konfiguriert")
 
     try:
-        result = call_anthropic(api_key=api_key, request=request)
+        # `model=settings.default_model`, NICHT `request.model` (Umsetzungsplan
+        # Punkt 1): das tatsaechlich verwendete Anthropic-Modell wird
+        # ausschliesslich zentral ueber die Gateway-Konfiguration bestimmt.
+        # Der Client darf weiterhin ein Modell mitsenden (oben bereits gegen
+        # `allowed_models` geprueft, fuer Abwaertskompatibilitaet/Logging),
+        # es bestimmt aber nicht mehr die tatsaechliche Modellwahl - ein
+        # Modellwechsel ist damit ausschliesslich eine `.env.gateway`-
+        # Aenderung + Neustart, kein Client-Rebuild noetig.
+        result = call_anthropic(api_key=api_key, model=settings.default_model, request=request)
     except RelayError:
         log_relay_request(
             request_id=request_id,
@@ -154,5 +179,7 @@ def relay_messages(
         duration_ms=(time.monotonic() - started) * 1000,
         status=200,
         error_category=None,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
     )
     return result

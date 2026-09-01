@@ -1,0 +1,37 @@
+# Reverse-Proxy-Vorlage fuer den Lexono-Gateway (ARCHITECTURE.md §70,
+# Umsetzungsplan Punkte 3+7). Caddy empfohlen (automatisches Let's-Encrypt-
+# Zertifikat, minimale Konfiguration) - eine gleichwertige nginx-Variante
+# steht in deploy/README.md, falls bereits vorhandenes Ops-Know-how das
+# nahelegt. Nichts hier ist Hetzner-spezifisch - auf jedem Linux-VPS mit
+# oeffentlicher IPv4 und einer auf diese IP zeigenden Domain einsetzbar.
+#
+# Platzhalter <GATEWAY_DOMAIN> vor dem Deployment durch die tatsaechliche
+# Domain ersetzen (z. B. gateway.lexono.example.de) - hier bewusst KEIN
+# echter Domainname, da noch kein Server/keine Domain existiert.
+
+<GATEWAY_DOMAIN> {
+	# Der Gateway-Prozess selbst bindet NUR an 127.0.0.1:8700 (siehe
+	# gateway/config.py: host="127.0.0.1") - ausschliesslich ueber diesen
+	# Reverse Proxy oeffentlich erreichbar.
+	reverse_proxy 127.0.0.1:8700
+
+	# Zweite, grobkoernigere Schutzschicht VOR der Anwendung (die
+	# feingranulare Pruefung sitzt bereits serverseitig in
+	# gateway/main.py::relay_messages ueber GatewaySettings.max_request_bytes,
+	# Default 200 KB) - hier bewusst etwas grosszuegiger (250 KB), damit die
+	# Anwendung selbst die praezise, geloggte 413-Antwort liefert und diese
+	# Proxy-Schicht nur als Netz fuer den Fall dient, dass der Gateway-
+	# Prozess direkt (ohne diese Pruefung) erreicht wuerde.
+	request_body {
+		max_size 250KB
+	}
+
+	encode gzip
+
+	log {
+		output file /var/log/caddy/lexono-gateway-access.log
+		# Nur Standard-Zugriffsfelder (Methode/Pfad/Status/Dauer) - der
+		# Request-BODY (der bereits pseudonymisierte Payload) wird von
+		# Caddys Access-Log strukturell nicht mitgeschnitten.
+	}
+}

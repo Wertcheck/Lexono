@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -401,3 +402,128 @@ def test_rotate_tenant_secret_invalidates_old_secret(
             headers={"Authorization": f"Bearer {tenant.client_id}:{new_secret}"},
         )
     assert new_response.status_code == 200
+
+
+# --- Zentrale Modellsteuerung (Umsetzungsplan Punkt 1) ---
+
+
+def test_relay_uses_default_model_not_client_requested_model(
+    client: TestClient, db_session: Session, tenant_credential: tuple[Tenant, str]
+) -> None:
+    """Der Client sendet ein zulaessiges, aber vom zentral konfigurierten
+    `default_model` ABWEICHENDES Modell - der tatsaechliche Anthropic-Aufruf
+    muss trotzdem `default_model` verwenden, nicht `request.model`."""
+    tenant, secret = tenant_credential
+    app.dependency_overrides[get_gateway_settings] = lambda: GatewaySettings(
+        anthropic_api_key="sk-ant-fake-server-side-key",
+        allowed_models=["claude-sonnet-5", "claude-opus-4-8"],
+        default_model="claude-opus-4-8",
+    )
+    with patch("gateway.relay.anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value.messages.create.return_value = _mock_anthropic_response()
+        response = client.post(
+            "/v1/relay/messages",
+            json=_relay_body(model="claude-sonnet-5"),
+            headers=_auth_header(tenant, secret),
+        )
+    assert response.status_code == 200
+    called_kwargs = mock_cls.return_value.messages.create.call_args.kwargs
+    assert called_kwargs["model"] == "claude-opus-4-8"
+    assert called_kwargs["model"] != "claude-sonnet-5"
+
+
+def test_relay_still_rejects_client_model_not_in_allowlist(
+    client: TestClient, tenant_credential: tuple[Tenant, str]
+) -> None:
+    """Bestehendes Verhalten bleibt unveraendert: das vom Client gesendete
+    Modell wird weiterhin gegen `allowed_models` geprueft, auch wenn es
+    fuer den tatsaechlichen Aufruf nicht mehr verwendet wird - verhindert,
+    dass eine kompromittierte Kanzlei-Credential beliebige Modellnamen
+    unbemerkt durchreichen kann."""
+    tenant, secret = tenant_credential
+    response = client.post(
+        "/v1/relay/messages",
+        json=_relay_body(model="irgendein-nicht-erlaubtes-modell"),
+        headers=_auth_header(tenant, secret),
+    )
+    assert response.status_code == 400
+
+
+def test_default_model_must_be_in_allowed_models() -> None:
+    with pytest.raises(ValidationError):
+        GatewaySettings(default_model="nicht-erlaubt", allowed_models=["claude-sonnet-5"])
+
+
+# --- Groessenlimit (Umsetzungsplan Punkt 2) ---
+
+
+def test_relay_rejects_oversized_payload_with_413(
+    client: TestClient, tenant_credential: tuple[Tenant, str]
+) -> None:
+    tenant, secret = tenant_credential
+    app.dependency_overrides[get_gateway_settings] = lambda: GatewaySettings(
+        anthropic_api_key="sk-ant-fake-server-side-key",
+        allowed_models=["claude-sonnet-5"],
+        max_request_bytes=100,  # winzig - der normale _relay_body() ueberschreitet das bereits
+    )
+    response = client.post(
+        "/v1/relay/messages", json=_relay_body(), headers=_auth_header(tenant, secret)
+    )
+    assert response.status_code == 413
+    assert response.json()["detail"] != ""
+
+
+def test_relay_accepts_payload_within_size_limit(
+    client: TestClient, tenant_credential: tuple[Tenant, str]
+) -> None:
+    """Regression: das neue Groessenlimit darf normale, kleine Anfragen
+    (wie sie jeder bestehende Test verwendet) nicht faelschlich blockieren."""
+    tenant, secret = tenant_credential
+    with patch("gateway.relay.anthropic.Anthropic") as mock_cls:
+        mock_cls.return_value.messages.create.return_value = _mock_anthropic_response()
+        response = client.post(
+            "/v1/relay/messages", json=_relay_body(), headers=_auth_header(tenant, secret)
+        )
+    assert response.status_code == 200
+
+
+# --- Nutzungslogging (Umsetzungsplan Punkt 4) ---
+
+
+def test_successful_relay_logs_numeric_token_counts_only(
+    client: TestClient, tenant_credential: tuple[Tenant, str], caplog: pytest.LogCaptureFixture
+) -> None:
+    tenant, secret = tenant_credential
+    with caplog.at_level("INFO", logger="lexono_gateway.relay"):
+        with patch("gateway.relay.anthropic.Anthropic") as mock_cls:
+            mock_cls.return_value.messages.create.return_value = _mock_anthropic_response(
+                "Diese Antwort darf NICHT im Log auftauchen."
+            )
+            response = client.post(
+                "/v1/relay/messages", json=_relay_body(), headers=_auth_header(tenant, secret)
+            )
+    assert response.status_code == 200
+    log_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert "input_tokens=10" in log_text
+    assert "output_tokens=5" in log_text
+    # Strukturelle Absicherung: der Antworttext darf nirgendwo im Log stehen.
+    assert "Diese Antwort darf NICHT im Log auftauchen." not in log_text
+
+
+def test_failed_relay_logs_dash_for_missing_token_counts(
+    client: TestClient, tenant_credential: tuple[Tenant, str], caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fehlerfaelle vor dem eigentlichen Anthropic-Aufruf (hier: Rate-Limit)
+    haben keine Tokenzahlen - `log_relay_request` darf dafuer nicht crashen,
+    sondern muss den bestehenden "-"-Platzhalter verwenden."""
+    tenant, secret = tenant_credential
+    with caplog.at_level("INFO", logger="lexono_gateway.relay"):
+        response = client.post(
+            "/v1/relay/messages",
+            json=_relay_body(max_tokens=999999),
+            headers=_auth_header(tenant, secret),
+        )
+    assert response.status_code == 400
+    log_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert "input_tokens=-" in log_text
+    assert "output_tokens=-" in log_text
