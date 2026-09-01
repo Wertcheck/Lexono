@@ -82,7 +82,30 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
   J (Visual QA).
   Status: NV, siehe VISUAL_QA.md.
 
+## OFFEN – PRODUKTENTSCHEIDUNG ERFORDERLICH
+
+- **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
+  ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit
+  markiert "Implementierung noch NICHT begonnen. Kein Code geändert."
+  Gefunden bei der Repository-Hygiene-Durchsicht (01.09., Master
+  Workstream V3, §24). Ob Lexono mehrere Kanzleien in einer Instanz
+  unterstützen soll, ist eine Produktentscheidung, keine rein technische
+  - nicht ungefragt begonnen. Bei Bedarf: `PROMPT38_ANALYSIS.md` zuerst
+  lesen, dann mit dem Nutzer klären, ob/wann das noch relevant ist.
+
 ## LOW
+
+- **`move_window_by`/`resize_window_by` ohne Bildschirm-Clamp**
+  (`run.py::_NativeApi`, gefunden bei unabhängiger Sicherheitsdurchsicht
+  01.09.): kein oberes Limit und keine Prüfung, ob das Fenster (bzw.
+  zumindest die Titelleiste) noch sichtbar bleibt - ein Fenster könnte
+  theoretisch vollständig aus dem sichtbaren Bereich gezogen werden, ohne
+  offensichtlichen Weg, es zurückzuholen (kein Alt+Leertaste-Menü
+  garantiert). Ausdrücklich KEIN Sicherheitsproblem (Review-Ergebnis:
+  "acceptable for a fully trusted first-party desktop shell"), nur
+  UX-Robustheit. Nicht behoben, da spekulativ (bräuchte
+  Bildschirmgrößen-Erkennung für einen sauberen Clamp) und durch reines
+  Draggen der eigenen Titelleiste in der Praxis kaum auslösbar.
 
 - **Silent-Install gelegentlich haengend beobachtet**: Beim zweiten
   Installer-Rebuild (01.09.) haengte sich ein `/VERYSILENT`-Lauf >18 Min.
