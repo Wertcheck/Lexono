@@ -74,12 +74,30 @@ für die vollständige Herleitung und die konkrete Frage an den Nutzer.
 
 ## Installer
 
-Zuletzt real gebaut (dritter Rebuild derselben Nacht), installiert und
-per automatisiertem HTTP-Smoke-Test bestätigt (Login→Chat, Bestandsseiten
-erreichbar). Pfad: `dist/installer/Lexono_Setup.exe` (~525 MB). Bekanntes
-Risiko: Silent-Install hängt gelegentlich beim ersten Versuch (siehe
-OPEN_ISSUES.md, zuverlässig durch Kill+Retry behoben, Ursache nicht
-identifiziert). Admin-Testlogin für die lokale Installation:
+**Vierter (letzter) Rebuild der Nacht (~09:39 Uhr) erfolgreich GEBAUT**
+(`dist/installer/Lexono_Setup.exe`, ~525 MB, enthält zusätzlich zu den
+drei vorherigen Fixes auch: Titelleisten-Padding-Fix
+(Schließen-Icon-Anschnitt behoben) + vierfarbige Schnellaktions-Badges),
+**aber NICHT mehr erfolgreich real installiert** - vier
+aufeinanderfolgende Silent-Install-Versuche stockten (siehe
+OPEN_ISSUES.md für die volle Diagnose: Windows-Defender-Echtzeitschutz
+als Hauptverdächtiger, nicht deaktiviert ohne Rückfrage). Bewusst nach
+dem vierten Versuch gestoppt statt endlos weiterzuversuchen.
+
+**Aktuell laufend und installiert**: der DRITTE Rebuild der Nacht
+(Installationsverzeichnis-Zeitstempel 07:53 Uhr) - enthält Titelleisten-
+Fix + Logo-Entfernung + KI-Ladezustand, aber NOCH NICHT den
+Padding-Fix und die Akzentfarben-Badges. Dieser Build läuft aktuell für
+den Nutzer (`kanzlei_ai.exe serve`, PID wechselt je nach Neustart).
+Login→Chat und Bestandsseiten per HTTP-Smoke-Test bestätigt.
+
+**Nächster Schritt**: den bereits fertig gebauten neuesten Installer
+(`dist/installer/Lexono_Setup.exe`, Zeitstempel ~09:39) zu einem anderen
+Zeitpunkt real installieren - der Build selbst ist NICHT das Problem
+(ISCC-Compile lief jedes Mal fehlerfrei durch), nur der lokale
+Silent-Install-Vorgang auf dieser Maschine stockte wiederholt.
+
+Admin-Testlogin für die lokale Installation:
 `admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale
 Testinstanz, kein Produktivsystem, keine echten Mandantendaten).
 

@@ -133,6 +133,31 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
   Bildschirmgrößen-Erkennung für einen sauberen Clamp) und durch reines
   Draggen der eigenen Titelleiste in der Praxis kaum auslösbar.
 
+- **Silent-Install-Stall eskalierte beim VIERTEN Rebuild derselben Nacht
+  zu einem PERSISTENTEN Problem (01.09., ~10:00 Uhr)**: bei den ersten
+  drei Rebuilds der Nacht loeste sich ein Haenger zuverlaessig nach 1-2
+  Kill+Retry-Versuchen. Beim vierten (letzten) Rebuild der Nacht
+  (Bündel: Titelleisten-Padding-Fix + Akzentfarben) haengten sich VIER
+  aufeinanderfolgende Versuche auf, davon einer sogar nach 8+ Minuten
+  konstant bei ~0% CPU (nicht nur 5 Minuten wie zuvor). Diagnose
+  durchgefuehrt statt blind weiter zu versuchen: `Get-MpPreference` zeigt
+  `DisableRealtimeMonitoring: False` (Windows-Defender-Echtzeitschutz
+  aktiv - weiterhin Hauptverdaechtiger, NICHT deaktiviert, da das eine
+  sicherheitsrelevante Systemaenderung waere, die nicht ohne Rueckfrage
+  vorgenommen wird). Keine Application-Log-Fehler im relevanten Zeitraum
+  gefunden (Prozess haengt, stuerzt aber nicht ab - passt zur
+  Scan-Blockade-Theorie, nicht zu einem Absturz). Nach dem vierten
+  gescheiterten Versuch bewusst GESTOPPT statt endlos weiterzuversuchen -
+  das Installationsverzeichnis wurde als unbeschaedigt verifiziert (der
+  vorherige erfolgreiche Build von 07:53 Uhr blieb intakt und lauffaehig,
+  wurde fuer den Nutzer gestartet). **Der neueste Installer
+  (Titelleisten-Padding-Fix + Akzentfarben) liegt fertig gebaut unter
+  `dist/installer/Lexono_Setup.exe` vor, konnte aber in dieser Sitzung
+  NICHT mehr erfolgreich real installiert werden - naechster Versuch
+  sollte idealerweise mit einer Windows-Defender-Ausnahme fuer den
+  Installationsordner beginnen (erfordert Nutzerfreigabe) oder einfach zu
+  einem anderen Zeitpunkt erneut versucht werden.**
+
 - **Silent-Install haengt gelegentlich beim ersten Versuch (wiederholt
   beobachtet, 01.09., drei separate Installer-Rebuilds derselben Nacht)**:
   Bei JEDEM der drei Installer-Rebuilds dieser Nacht haengte sich
