@@ -74,6 +74,20 @@ Rebuild liefert auch diesen Fix aus.
 5. Funktioniert der Schließen-Button (✕) zuverlässig? (das war der
    ursprüngliche Fehler - unbedingt bestätigen)
 
+## Nacht-Automode-Zyklus abgeschlossen (01.09., früher Morgen)
+
+Zusätzlich zum Titelleisten-Fix und Logo-Fix wurde ein sichtbarer
+KI-Ladezustand im Chat ergänzt (Commit `f55925b`) - echte KI-Antworten
+dauern 15-30+ Sekunden, ein rein abgedunkelter Sendebutton war kein
+ausreichendes Feedback. Repository-Audit gegen den neuen, breiten
+"Nacht-Automode"-Auftrag ergab: Branding (kein KanzleiAI mehr in
+Templates), Feedback-/Kategorisierungssystem (`app/pilot_feedback/`),
+Session-Ablauf-Handling und Tesseract-Bündelung waren bereits vorhanden
+und funktionsfähig - nicht erneut gebaut. Vollständiger Abschlussbericht
+wurde als Chat-Nachricht geliefert (nicht in einer neuen Datei
+dupliziert). Test-Baseline: 1486 passed, 1 skipped, 0 failed. Kein
+Git-Push. 19 lokale Commits seit Sessionbeginn.
+
 ## Nächste größere Workstreams (noch nicht begonnen)
 
 Siehe OPEN_ISSUES.md für die vollständige, kategorisierte Liste. Die
