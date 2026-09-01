@@ -124,6 +124,42 @@ angeschnittenes Element (wie der Schließen-Icon-Clipping-Fund, der auch
 außerhalb des Fensterrands per Zoom bestätigt wurde) ist dagegen ein
 belastbarer Befund.
 
+## Neuer, UNBESTÄTIGTER Befund (01.09., später) – nicht als Bug werten
+
+Bei einem systematischen Test der bislang fehlenden 1366×768/1920×1080-
+Vergleiche (siehe unten) wurde `MoveWindow` (P/Invoke) genutzt, um das
+laufende Fenster extern auf diese Zielgrößen zu setzen. Ergebnis
+unerwartet: `GetWindowRect` nach dem Aufruf zeigte KEINE der angeforderten
+Zielgrößen (angefordert 1920×1080, gemessen ~1044×788) - vermutlich
+DPI-Virtualisierung zwischen einem DPI-unaware WinForms-Fenster und dem
+aufrufenden PowerShell-Prozess, kein Befund über echtes App-Verhalten.
+
+Zusätzlich zeigten ALLE Screenshots dieser Testreihe (inkl. eines
+komplett frischen Programmstarts ohne jede externe Fenstermanipulation,
+mehrfach wiederholt inkl. 18s Wartezeit) eine leere, titelleistenlose
+Fensteroberkante UND einen auffälligen, konsistent positionierten
+schwarzen Trennstrich mit vollständig leerem, weißem Bereich darunter
+(ca. unteres Achtel des Fensters). Ein Versuch, dies wie beim
+Icon-Clipping-Fund über eine erweiterte Aufnahme (150px über den
+gemeldeten unteren Fensterrand hinaus) zu verifizieren, war NICHT
+schlüssig - der erweiterte Bereich sah identisch aus wie der Bereich
+knapp über dem gemeldeten Rand (durchgehend weiß), was sowohl "das ist
+tatsächlich noch Fensterinhalt" als auch "das ist bereits ein
+weißer/heller Desktop-Hintergrund hinter dem Fenster" erklären könnte -
+im Gegensatz zum Icon-Clipping-Fall gibt es hier keinen Kontrastwechsel,
+der die beiden Fälle unterscheidbar macht.
+
+**Bewusst NICHT als bestätigter Bug gemeldet**, weil: (1) der Nutzer
+denselben installierten Build bereits direkt und hands-on bestätigt hat
+("x button closes the app"), was im Widerspruch zu einer echt fehlenden
+Titelleiste steht; (2) die bekannte `pywebviewready`-Timing-Unschärfe
+dieser Technik bereits dokumentiert ist; (3) der Erweiterungs-Test hier
+technisch nicht schlüssig war (weiß auf weiß). Empfehlung: bei
+Gelegenheit einmal echt mit eigenen Augen pruefen, ob die Titelleiste und
+der komplette untere Fensterbereich normal aussehen - nicht ungeprüft als
+Regression in OPEN_ISSUES.md übernehmen, nur als offener
+Beobachtungspunkt vermerkt (siehe dort, Kategorie LOW).
+
 ## Was weiterhin fehlt
 
 - Kein Browser-Tool für Chat-UI-Seiten mit dynamischem Inhalt über HTTP

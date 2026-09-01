@@ -121,6 +121,18 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
 
 ## LOW
 
+- **UNBESTÄTIGTE Beobachtung: leerer unterer Fensterbereich + fehlende
+  Titelleiste bei automatisierten Screenshots (01.09., später)** - bei
+  mehreren Screenshot-Versuchen (auch nach frischem Neustart, auch nach
+  18s Wartezeit) zeigte sich konsistent ein leerer weißer Bereich im
+  unteren Achtel des Fensters plus fehlende Titelleiste. Ausdruecklich
+  NICHT als Bug gewertet - widerspricht der direkten Nutzerbestaetigung
+  ("x button closes the app") am selben Build, und ein Kontrolltest
+  (erweiterte Aufnahme ueber den Fensterrand hinaus) war technisch nicht
+  schluessig (weiss auf weiss, siehe VISUAL_QA.md fuer Details). Nur als
+  Beobachtungspunkt vermerkt - bei Gelegenheit einmal mit echten Augen
+  pruefen, ob Titelleiste und unterer Fensterbereich normal aussehen.
+
 - **`move_window_by`/`resize_window_by` ohne Bildschirm-Clamp**
   (`run.py::_NativeApi`, gefunden bei unabhängiger Sicherheitsdurchsicht
   01.09.): kein oberes Limit und keine Prüfung, ob das Fenster (bzw.
