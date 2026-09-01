@@ -82,28 +82,22 @@ für die vollständige Herleitung und die konkrete Frage an den Nutzer.
 
 ## Installer
 
-**Vierter (letzter) Rebuild der Nacht (~09:39 Uhr) erfolgreich GEBAUT**
-(`dist/installer/Lexono_Setup.exe`, ~525 MB, enthält zusätzlich zu den
-drei vorherigen Fixes auch: Titelleisten-Padding-Fix
-(Schließen-Icon-Anschnitt behoben) + vierfarbige Schnellaktions-Badges),
-**aber NICHT mehr erfolgreich real installiert** - vier
-aufeinanderfolgende Silent-Install-Versuche stockten (siehe
-OPEN_ISSUES.md für die volle Diagnose: Windows-Defender-Echtzeitschutz
-als Hauptverdächtiger, nicht deaktiviert ohne Rückfrage). Bewusst nach
-dem vierten Versuch gestoppt statt endlos weiterzuversuchen.
+**Fünfter Rebuild (01.09., ~11:16-11:21 Uhr) erfolgreich GEBAUT UND
+INSTALLIERT.** Enthält zusätzlich zu allen vorherigen Fixes: die neuen
+Dokument-Workspace-Schnellaktionen ("Antwort entwerfen"/"Fristen &
+Risiken prüfen"/"Zusammenfassung erstellen"). Silent-Install lief dieses
+Mal OHNE Stall durch (~60-90s, keine Kill+Retry nötig) - der zuvor beim
+vierten Rebuild beobachtete persistente Stall (siehe OPEN_ISSUES.md/LOW)
+trat diesmal NICHT auf; keine Windows-Defender-Änderung vorgenommen.
+Nach der Installation per HTTP-Smoke-Test bestätigt
+(`lexono_rebuild4_smoke.py`, Scratchpad): Login→Chat, Dokument-Upload,
+Dokument-Workspace mit PII-Highlighting UND den drei neuen
+Schnellaktionen, sowie alle Bestandsseiten weiterhin erreichbar - alles
+grün. Läuft aktuell für den Nutzer (`kanzlei_ai.exe serve`).
 
-**Aktuell laufend und installiert**: der DRITTE Rebuild der Nacht
-(Installationsverzeichnis-Zeitstempel 07:53 Uhr) - enthält Titelleisten-
-Fix + Logo-Entfernung + KI-Ladezustand, aber NOCH NICHT den
-Padding-Fix und die Akzentfarben-Badges. Dieser Build läuft aktuell für
-den Nutzer (`kanzlei_ai.exe serve`, PID wechselt je nach Neustart).
-Login→Chat und Bestandsseiten per HTTP-Smoke-Test bestätigt.
-
-**Nächster Schritt**: den bereits fertig gebauten neuesten Installer
-(`dist/installer/Lexono_Setup.exe`, Zeitstempel ~09:39) zu einem anderen
-Zeitpunkt real installieren - der Build selbst ist NICHT das Problem
-(ISCC-Compile lief jedes Mal fehlerfrei durch), nur der lokale
-Silent-Install-Vorgang auf dieser Maschine stockte wiederholt.
+Admin-Testlogin unverändert: `admin@kanzlei.de` /
+`Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten
+Mandantendaten).
 
 Admin-Testlogin für die lokale Installation:
 `admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale

@@ -145,6 +145,15 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
   Bildschirmgrößen-Erkennung für einen sauberen Clamp) und durch reines
   Draggen der eigenen Titelleiste in der Praxis kaum auslösbar.
 
+- **Update 01.09., ~11:20 Uhr**: Der FÜNFTE Rebuild (Dokument-Workspace-
+  Schnellaktionen) installierte beim ERSTEN Versuch ohne jeden Stall
+  (~60-90s Gesamtdauer, CPU-Monitoring zeigte durchgehende Aktivität statt
+  einer flachen Kurve). Bestätigt also NICHT, dass das Problem behoben
+  ist (nur ein einzelner erneuter Erfolg, wie auch bei den ersten drei
+  Rebuilds der Nacht) - aber auch kein erneutes Auftreten. Weiterhin als
+  bekanntes, nicht abschließend geklärtes Risiko für künftige Rebuilds
+  vermerkt, keine Ursachenänderung.
+
 - **Silent-Install-Stall eskalierte beim VIERTEN Rebuild derselben Nacht
   zu einem PERSISTENTEN Problem (01.09., ~10:00 Uhr)**: bei den ersten
   drei Rebuilds der Nacht loeste sich ein Haenger zuverlaessig nach 1-2
