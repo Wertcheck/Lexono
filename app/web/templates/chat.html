@@ -228,6 +228,24 @@
         <div class="chat-context-pane__status">
           <span class="tag tag--matched">Abgeschlossen</span>
         </div>
+        <div class="chat-context-pane__section-title">Schnellaktionen</div>
+        <div class="chat-context-pane__actions">
+          <button type="button" class="chat-quick-action chat-quick-action--compact"
+                  data-prefill="Bitte entwirf auf Basis von „{{ viewing_document.original_filename }}“ eine Antwort auf dieses Dokument.">
+            <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
+            <span>Antwort entwerfen</span>
+          </button>
+          <button type="button" class="chat-quick-action chat-quick-action--compact"
+                  data-prefill="Bitte pruefe „{{ viewing_document.original_filename }}“ auf Fristen und rechtliche Risiken und fasse sie zusammen.">
+            <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.clock(class_="icon") }}</span>
+            <span>Fristen &amp; Risiken pruefen</span>
+          </button>
+          <button type="button" class="chat-quick-action chat-quick-action--compact"
+                  data-prefill="Bitte fasse „{{ viewing_document.original_filename }}“ in wenigen Saetzen zusammen.">
+            <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
+            <span>Zusammenfassung erstellen</span>
+          </button>
+        </div>
         <div class="chat-context-pane__section-title">
           Erkannte Mandantendaten
           <span class="chat-context-pane__count">{{ document_preview.entities | length if document_preview else 0 }}</span>

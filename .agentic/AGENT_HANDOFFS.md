@@ -94,3 +94,43 @@ VERBINDLICHER ARCHITEKTURSTAND"-Block direkt nach dem Titel plus
 "ÜBERHOLT"-Markierungen an §57/§60/§63 (dokumentierte
 Architektur-Kehrtwenden zur lokalen KI/zum zentralen Proxy) - nichts
 geloescht, nur gekennzeichnet.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · Neuer Auftrag "LEXONO – MASTER AGENTIC
+CODING ORCHESTRATION" (34 Abschnitte): zuerst Audit der bestehenden
+Agenten-/Skills-/`.agentic`-Struktur (was existiert wirklich, was wird
+tatsaechlich genutzt vs. nur dokumentiert), NICHT ersetzen, nur echte
+Luecken schliessen; danach konkrete Produktarbeit an Chat +
+Dokument-Workspace anhand zweier Referenzbilder; lokales KI-Modell
+(`qwen2.5:1.5b`) muss austauschbar bleiben; kein Sales-/CRM-/
+Business-Org-Agent jetzt.
+
+---
+
+**01.09.** · Orchestrator (Audit) · Ergebnis: `agents/`/`skills/` sind
+rollenbasierte Kontextdateien, `.agentic/` das Arbeitsgedaechtnis - real
+genutzt (u. a. Security-Review-Subagent, Dokumentationskonsolidierung als
+paralleler Arbeitsstrang). Kein Multi-Agenten-Laufzeitsystem vorhanden oder
+noetig; einzig echter Delegationsmechanismus ist das `Agent`-Tool fuer
+eigenstaendig verifizierbare Teilaufgaben. Klarstellung dazu in
+`agents/lead/AGENT.md` ergaenzt (Abschnitt "Funktionsweise der
+Delegation"), da die bisherigen "Agent X -> Agent Y"-Log-Eintraege
+missverstaendlich als getrennte Laufzeitinstanzen lesbar waren. Keine
+Ersetzung der Struktur, keine neuen Agenten-/Skill-Dateien angelegt (kein
+echter Verantwortungsluecke gefunden, die eine neue Datei rechtfertigt).
+
+---
+
+**01.09.** · Agent D (Chat/Document Workspace) · Echter Produktgap
+gefunden: die Dokument-Workspace-Kontextleiste (Referenzbild 2) hatte noch
+keine Schnellaktionen ("Antwort entwerfen"/"Fristen & Risiken pruefen"/
+"Zusammenfassung erstellen"), obwohl das Referenzbild sie zeigt. Umgesetzt
+per Wiederverwendung des bestehenden `data-prefill`-Mechanismus (derselbe
+Klick-Handler wie die leeren Chat-Quick-Actions, keine neue Sende-Logik,
+keine Fake-Buttons) - referenziert den echten Dateinamen des gerade
+angesehenen Dokuments, fuellt nur das bestehende Composer-Textfeld,
+sendet ueber die normale, bereits privacy-geprüfte Chat-Pipeline. Neue
+CSS-Klasse `.chat-quick-action--compact` fuer die schmale Spalte. Test
+erweitert (`test_document_workspace_shows_highlighted_pii_and_context_panel`).
+Volle Suite: 1487 passed / 1 skipped / 0 failed, unveraendert.

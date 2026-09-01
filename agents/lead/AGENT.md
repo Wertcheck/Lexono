@@ -25,6 +25,37 @@ Integration, verhindert Regressionen, verwaltet offene Aufgaben.
 6. Backend/Frontend/AI/Security/Tests/Installer/UX gemeinsam betrachten
 7. Selbstständig testen, visualisieren, Fehler finden und korrigieren
 
+## Funktionsweise der Delegation (Klarstellung, 01.09., Agenten-Audit)
+
+Wichtig fuer das Verstaendnis dieser Struktur: `agents/*/AGENT.md` und
+`skills/*/SKILL.md` sind KEINE eigenstaendig laufenden Prozesse und kein
+Multi-Agenten-Laufzeitsystem. Es handelt sich um rollenbasierte
+Kontext-/Checklisten-Dateien, die von der EINEN ausfuehrenden Claude-Code-
+Instanz vor/waehrend einer Aufgabe gelesen und als Leitplanken befolgt
+werden ("Wenn ich gerade an Chat/Dokument-Workspace arbeite, gilt
+`agents/chat/AGENT.md`/`skills/chat/SKILL.md`"). Die Eintraege in
+`AGENT_HANDOFFS.md` mit Formulierungen wie "Agent B -> Agent I" beschreiben
+denselben ausfuehrenden Strang, der zwischen Verantwortungsbereichen
+wechselt, NICHT tatsaechlich getrennt laufende Instanzen.
+
+Der einzige echte Delegationsmechanismus ist das `Agent`-Tool von Claude
+Code (spawnt eine eigenstaendige Unterinstanz mit eigenem Kontextfenster
+fuer eine klar abgegrenzte, unabhaengig ueberpruefbare Teilaufgabe, z. B.
+die Security-Review am 01.09.). Es lohnt sich nur fuer Aufgaben, deren
+Ergebnis eigenstaendig verifizierbar ist (Testlauf, Review-Befund) und die
+NICHT denselben Dateikontext wie die laufende Hauptarbeit brauchen - fuer
+eng verzahnte UI-/Backend-Aenderungen im selben Featurebereich ist direktes
+Arbeiten im Hauptstrang schneller und weniger fehleranfaellig als ein
+Kontext-Handoff an eine Unterinstanz.
+
+**Ergebnis des Audits (01.09.)**: Diese Struktur ist als Konvention/
+Gedaechtnisstuetze bereits real nuetzlich (klare Verantwortungsteilung,
+wiederholbare Skill-Checklisten, `AGENT_HANDOFFS.md` als Entscheidungslog)
+und wird NICHT durch ein neues Framework ersetzt (Nutzerauftrag). Kein
+funktionaler Fehlbestand gefunden - lediglich diese Klarstellung ergaenzt,
+damit ein kuenftiger Bearbeiter (Mensch oder Agent) den Mechanismus nicht
+mit einer tatsaechlichen Laufzeit-Orchestrierung verwechselt.
+
 ## Relevante Dateien
 
 - `.agentic/PROJECT_STATE.md` – Gesamtstatus

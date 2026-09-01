@@ -59,7 +59,15 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Vorschläge. Für die Pilotphase als ausreichend bewertet.
 - **Agentenorganisation**: `agents/` (Rollenakten) + `skills/`
   (wiederverwendbares Vorgehen), tatsächlich genutzt (u. a. ein
-  Security-Review-Subagent in dieser Sitzung).
+  Security-Review-Subagent in dieser Sitzung). Audit 01.09.: kein
+  Multi-Agenten-Laufzeitsystem, sondern rollenbasierte Kontextdateien für
+  die eine ausführende Instanz + das `Agent`-Tool als einziger echter
+  Delegationsmechanismus – siehe `agents/lead/AGENT.md` ("Funktionsweise
+  der Delegation") und `AGENT_HANDOFFS.md`.
+- **Dokument-Workspace-Schnellaktionen** ("Antwort entwerfen"/"Fristen &
+  Risiken prüfen"/"Zusammenfassung erstellen"): ergänzt in der
+  Kontextleiste, referenzieren den echten Dateinamen, nutzen den
+  bestehenden Prefill-/Sende-Weg (kein neuer Code-Pfad).
 
 ## Offener, ungeklärter Punkt: Logo-/Akzentfarbe grün vs. Navy
 

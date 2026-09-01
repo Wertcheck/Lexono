@@ -42,6 +42,10 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 - Dokument-Workspace mit Pseudonymisierungs-Highlighting: **ERLEDIGT**
   (textbasiert, nicht PDF-Seiten-Rendering - bewusste Entscheidung,
   siehe OPEN_ISSUES.md).
+- **Schnellaktionen im Dokument-Workspace** ("Antwort entwerfen"/"Fristen &
+  Risiken prüfen"/"Zusammenfassung erstellen", Referenzbild 2): **ERLEDIGT**
+  (01.09., später) - Wiederverwendung des bestehenden Prefill-Mechanismus,
+  keine neue Sende-/Analyse-Logik.
 - OCR-Status-Anzeige, Fehlerzustände: **ERLEDIGT** (Vorsessions).
 
 ## E – UI / Visual
@@ -74,6 +78,15 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 - Agentenorganisation (`agents/`, `skills/`, `.agentic/`): **ERLEDIGT**
   (heute Nacht aufgebaut, tatsächlich genutzt - u. a. ein
   Security-Review-Subagent).
+- **Agentic-Architektur-Audit (01.09., expliziter Nutzerauftrag)**:
+  **ERLEDIGT**. Ergebnis: `agents/`/`skills/` sind rollenbasierte
+  Kontextdateien, kein Multi-Agenten-Laufzeitsystem; einziger echter
+  Delegationsmechanismus ist das `Agent`-Tool (bisher 1x genutzt,
+  Security-Review). Kein funktionaler Fehlbestand gefunden, Struktur NICHT
+  ersetzt (Nutzerauftrag §5-6). Einzige Ergänzung: Klarstellungsabschnitt
+  "Funktionsweise der Delegation" in `agents/lead/AGENT.md`, damit die
+  "Agent X → Agent Y"-Handoff-Einträge nicht als getrennte Laufzeit-
+  instanzen missverstanden werden.
 - Feedback→Kategorisierung→Priorisierung→Freigabe-Architektur:
   **TEILWEISE** - Erfassung + lokale Kategorisierung vorhanden, keine
   automatisierte Priorisierungs-/Reporting-Stufe. Für die Pilotphase als

@@ -707,6 +707,18 @@ def test_document_workspace_shows_highlighted_pii_and_context_panel(
     assert "Pseudonymisierung" in workspace_response.text
     assert "Erkannte Mandantendaten" in workspace_response.text
 
+    # Schnellaktionen im Dokument-Workspace (Referenzbild "Antwort
+    # entwerfen"/"Fristen & Risiken pruefen"/"Zusammenfassung erstellen")
+    # nutzen denselben Prefill-Mechanismus wie die leeren Chat-Quick-Actions
+    # und referenzieren den echten Dateinamen - keine neue Sende-Logik.
+    assert "Schnellaktionen" in workspace_response.text
+    assert "Antwort entwerfen" in workspace_response.text
+    assert "Fristen &amp; Risiken pruefen" in workspace_response.text
+    assert "Zusammenfassung erstellen" in workspace_response.text
+    assert "mandantenbrief.pdf" in workspace_response.text.split("Schnellaktionen", 1)[1].split(
+        "Erkannte Mandantendaten", 1
+    )[0]
+
 
 def test_document_workspace_rejects_document_from_other_conversation(
     client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch

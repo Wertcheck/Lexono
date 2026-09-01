@@ -3192,6 +3192,26 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--accent-orange);
 }
 
+/* Kompakte Variante fuer die Dokument-Workspace-Kontextleiste (schmale
+   Spalte, volle Breite statt Pill-Grid). Nutzt dieselbe Klasse
+   ".chat-quick-action" (und damit denselben bestehenden Klick-Handler,
+   der ".chat-quick-action" per querySelectorAll bindet) - keine zweite
+   JS-Logik noetig. */
+.chat-context-pane__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.chat-quick-action--compact {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  justify-content: flex-start;
+}
+
 .chat-message {
   display: flex;
   gap: 14px;
