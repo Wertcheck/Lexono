@@ -3,14 +3,13 @@
 ## Aktuelle Baseline (verbindlich, darf sich nicht verschlechtern)
 
 ```
-1486 passed, 1 skipped, 0 failed  (221.01s, voller Lauf via pytest)
+1487 passed, 1 skipped, 0 failed  (231.25s, voller Lauf via pytest)
 ```
 
-Letzter voller, bestätigter Lauf: 01.09., früher Morgen (nach dem
-Titelleisten-Fix, Logo-Entfernung aus der Titelleiste und dem
-KI-Ladezustand-Feature). Verlauf der Baseline: 1463 (31.08.) → 1472 →
-1484 → 1485 → 1486 (01.09., diverse Fixes + neue Tests derselben Nacht,
-siehe `SESSION_LOG.md` für Details).
+Letzter voller, bestätigter Lauf: 01.09. (nach den Dokument-Workspace-
+Schnellaktionen). Verlauf der Baseline: 1463 (31.08.) → 1472 → 1484 →
+1485 → 1486 → 1487 (01.09., diverse Fixes + neue Tests, siehe
+`SESSION_LOG.md` für Details).
 
 ## Wie ausführen
 
