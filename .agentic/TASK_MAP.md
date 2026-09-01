@@ -57,9 +57,13 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   wurde in einer früheren Sitzung per Pixelmessung aus dem echten
   offiziellen Logo verifiziert (Navy, nicht grün) - echter Zielkonflikt
   mit dem aktuellen Auftrag, nicht eigenmächtig entschieden.
-- **Weitere Akzentfarben (z. B. für Chat-Schnellaktionen)**: **NICHT
-  BEGONNEN**, wartet auf die Klärung der Basis-Akzentfarbe oben (baut
-  technisch darauf auf, macht sonst doppelte Arbeit).
+- **Weitere Akzentfarben (Chat-Schnellaktionen)**: **ERLEDIGT** (01.09.,
+  später) - vier farblich unterschiedliche Icon-Badges
+  (grün/blau/lila/orange), neue `--accent-blue`/`-purple`/`-orange`-Tokens
+  in `app.css`, unabhängig von der offenen Primärfarben-Frage umgesetzt
+  (die "grüne" Badge bindet weiterhin bewusst an `--seal-green` und
+  übernimmt automatisch den finalen Wert, sobald die Logo-Frage geklärt
+  ist). Getestet: `test_chat_empty_state_quick_actions_have_distinct_accent_colors`.
 - CI-Farben/Design-System (Grundstruktur: Tinte/Papier/Akzent-Tokens):
   **ERLEDIGT** (unverändert aus Vorsessions, konsistent über ~72
   Verwendungsstellen genutzt - siehe Farbfrage oben für den konkreten

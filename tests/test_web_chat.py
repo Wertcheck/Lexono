@@ -643,6 +643,23 @@ def test_chat_page_includes_thinking_indicator_for_ai_loading_state(
     assert "chat-thinking-indicator" in response.text
 
 
+def test_chat_empty_state_quick_actions_have_distinct_accent_colors(
+    client: TestClient, db_session: Session
+) -> None:
+    """Weitere Akzentfarben (01.09., Nutzerauftrag "CI-/Branding-
+    Ueberarbeitung"): die vier Chat-Schnellaktionen sollen sich farblich
+    unterscheiden statt alle dasselbe einfarbige Icon zu zeigen. Nur die
+    "gruene" Variante bindet weiterhin an --seal-green (die umstrittene
+    Primaerfarbe, siehe .agentic/OPEN_ISSUES.md) - blau/lila/orange sind
+    davon unabhaengige, bereits geklaerte Akzenttoene."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert "chat-quick-action__icon--green" in response.text
+    assert "chat-quick-action__icon--blue" in response.text
+    assert "chat-quick-action__icon--purple" in response.text
+    assert "chat-quick-action__icon--orange" in response.text
+
+
 # --- Dokument-Workspace (Masterprompt V2, Task #62) ---------------------
 
 

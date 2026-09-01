@@ -37,14 +37,15 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
   vorliegenden Informationen plausibel, eine Markenfarbentscheidung
   gehört nicht zu den "normalen Implementierungsentscheidungen", die
   autonom getroffen werden dürfen.
-  **Was UNABHÄNGIG von dieser Entscheidung bereits sinnvoll ist**: das
-  Fehlen MEHRERER, unterschiedlicher Akzentfarben (z. B. für die vier
-  Chat-Schnellaktionen, die im Referenzbild farblich unterschiedliche
-  Icon-Badges zeigen - aktuell nutzen alle vier denselben einzigen
-  `--seal-green`-Ton) ist ein echter, von der Logo-Frage unabhängiger
-  Gestaltungspunkt und kann umgesetzt werden, sobald die Basis-Akzentfarbe
-  geklärt ist.
-  Status: OE (Entscheidung erforderlich, siehe `PROJECT_STATE.md`).
+  **Update 01.09., später**: der unabhängige Teil ("weitere Akzentfarben")
+  wurde umgesetzt - die vier Chat-Schnellaktionen zeigen jetzt farblich
+  unterschiedliche Icon-Badges (`--accent-blue`/`-purple`/`-orange`, neu
+  in `app.css`, unabhängig von der Primärfarbe). NUR die "grüne" Badge
+  bindet weiterhin bewusst an `--seal-green` (die umstrittene
+  Primärfarbe) - sobald die Logo-Frage geklärt ist, übernimmt diese Badge
+  automatisch den finalen Wert, ohne weitere Änderung nötig.
+  Status: OE nur noch für die Logo-/Primärfarbe selbst (siehe
+  `PROJECT_STATE.md`); "weitere Akzentfarben" V (umgesetzt, getestet).
 
 - **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
   ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit

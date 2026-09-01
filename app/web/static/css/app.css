@@ -56,6 +56,21 @@
   --amber: #b8863b;
   --amber-tint: #f5ecda;
 
+  /* Weitere Akzentfarben (01.09.) - fuer mehrfarbige Icon-Badges (z. B.
+     Chat-Schnellaktionen), unabhaengig von der Primaerfarbe
+     --seal-green. Bewusst gedeckte, nicht grelle Toene passend zur
+     "ruhigen, seriösen" Kanzleiaesthetik - keine Aussage zur
+     Primaer-/Markenfarbe selbst, siehe .agentic/OPEN_ISSUES.md fuer den
+     dortigen offenen Punkt. */
+  --accent-blue: #2f5aa8;
+  --accent-blue-tint: #e8eef7;
+
+  --accent-purple: #6b4e9e;
+  --accent-purple-tint: #efe9f5;
+
+  --accent-orange: #b5651d;
+  --accent-orange-tint: #f6ebdf;
+
   /* --- Typografie --- */
   /* Bewusst KEINE Serifenschrift mehr (auch nicht fuer Ueberschriften) -
      --font-display und --font-body sind seit Schritt 3 identisch. */
@@ -3127,10 +3142,45 @@ body::-webkit-scrollbar-thumb:hover,
   box-shadow: var(--shadow-sm);
 }
 
-.chat-quick-action .icon {
-  width: 16px;
-  height: 16px;
+/* Mehrfarbige Icon-Badges (01.09.) statt eines einzelnen einfarbigen
+   Icons - eine kompakte, gedeckte Farbmarkierung pro Schnellaktion statt
+   vier identisch eingefaerbter Icons. "--green" bindet bewusst weiterhin
+   an --seal-green/-tint (die Primaerfarbe), die drei anderen nutzen
+   eigenstaendige, von der Primaerfarbe unabhaengige Akzenttoene - siehe
+   Variablendefinition oben im :root-Block. */
+.chat-quick-action__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.chat-quick-action__icon .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-quick-action__icon--green {
+  background: var(--seal-green-tint);
   color: var(--seal-green);
+}
+
+.chat-quick-action__icon--blue {
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+}
+
+.chat-quick-action__icon--purple {
+  background: var(--accent-purple-tint);
+  color: var(--accent-purple);
+}
+
+.chat-quick-action__icon--orange {
+  background: var(--accent-orange-tint);
+  color: var(--accent-orange);
 }
 
 .chat-message {

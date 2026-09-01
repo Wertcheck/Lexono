@@ -94,19 +94,19 @@
             <p class="chat-empty-state__hint">Wie kann ich Sie heute unterstützen?</p>
             <div class="chat-empty-state__actions">
               <button type="button" class="chat-quick-action" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
-                {{ icons.document(class_="icon") }}
+                <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
                 <span>Dokument analysieren</span>
               </button>
               <button type="button" class="chat-quick-action" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                {{ icons.printer(class_="icon") }}
+                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
                 <span>Schriftsatz erstellen</span>
               </button>
               <button type="button" class="chat-quick-action" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                {{ icons.bulb(class_="icon") }}
+                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
                 <span>Dokument zusammenfassen</span>
               </button>
               <a href="/dashboard/matters" class="chat-quick-action">
-                {{ icons.folder(class_="icon") }}
+                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
                 <span>Akte öffnen</span>
               </a>
             </div>
