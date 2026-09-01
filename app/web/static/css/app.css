@@ -2853,7 +2853,7 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-context-pane {
-  width: 260px;
+  width: 220px;
   flex-shrink: 0;
   overflow-y: auto;
   border-left: 1px solid var(--paper-line);
@@ -3010,7 +3010,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-panel {
   flex: 1;
-  min-width: 0;
+  min-width: 240px;
   display: flex;
   flex-direction: column;
   min-height: 0;
