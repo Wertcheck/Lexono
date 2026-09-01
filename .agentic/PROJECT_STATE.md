@@ -74,6 +74,23 @@ Rebuild liefert auch diesen Fix aus.
 5. Funktioniert der Schließen-Button (✕) zuverlässig? (das war der
    ursprüngliche Fehler - unbedingt bestätigen)
 
+## Finaler Installer-Rebuild erfolgreich (01.09., ~08:20 Uhr)
+
+Dritter Installer-Rebuild dieser Nacht, jetzt mit ALLEN drei Fixes:
+Titelleisten-Fix (Task #61), Logo-Entfernung, KI-Ladezustand. Nutzer hat
+den Schließen-Button am VORHERIGEN Build bereits real bestätigt
+("x button closes the app") - der ursprüngliche kritische Bug ist damit
+menschlich verifiziert behoben. Installation stolperte diesmal über
+ZWEI aufeinanderfolgende hängende Silent-Install-Versuche (siehe
+OPEN_ISSUES.md) - dritter Versuch lief sauber durch (erkennbar am
+tatsächlich steigenden CPU-Verbrauch, 67s echte Arbeit statt konstant
+~0,15s). Automatisierter HTTP-Smoke-Test gegen die finale Installation
+bestätigt: Login→Chat, alle Bestandsseiten erreichbar, UND strukturell
+im ausgelieferten HTML bestätigt: kein `app-titlebar__logo` mehr
+vorhanden, `chat-thinking-indicator`/`chat-message--thinking` vorhanden.
+App läuft im Vordergrund für die finale visuelle Prüfung (Drag/Resize/
+kein doppeltes Logo) - der Schließen-Button selbst ist bereits bestätigt.
+
 ## Nacht-Automode-Zyklus abgeschlossen (01.09., früher Morgen)
 
 Zusätzlich zum Titelleisten-Fix und Logo-Fix wurde ein sichtbarer

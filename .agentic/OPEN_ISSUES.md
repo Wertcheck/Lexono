@@ -107,15 +107,28 @@ _Keine offenen CRITICAL-Punkte zum Stand 31.08._
   Bildschirmgrößen-Erkennung für einen sauberen Clamp) und durch reines
   Draggen der eigenen Titelleiste in der Praxis kaum auslösbar.
 
-- **Silent-Install gelegentlich haengend beobachtet**: Beim zweiten
-  Installer-Rebuild (01.09.) haengte sich ein `/VERYSILENT`-Lauf >18 Min.
-  bei konstant 0% CPU auf (sichtbares, aber inaktives Setup-Fenster, keine
-  Kindprozesse). Ein direkt danach gestarteter zweiter Versuch mit
-  IDENTISCHEM Installer lief sauber durch. Ursache nicht abschliessend
-  geklaert (Kandidaten: Windows-Defender-Echtzeitpruefung der frisch
-  entpackten ~1,1GB, ein einmaliger Inno-Setup-Zustand). Kein
-  reproduzierbares Muster - beobachten, ob es bei kuenftigen Builds erneut
-  auftritt, bevor tiefer investiert wird.
+- **Silent-Install haengt gelegentlich beim ersten Versuch (wiederholt
+  beobachtet, 01.09., drei separate Installer-Rebuilds derselben Nacht)**:
+  Bei JEDEM der drei Installer-Rebuilds dieser Nacht haengte sich
+  mindestens ein `/VERYSILENT`-Lauf bei konstant ~0% CPU auf (sichtbares,
+  aber inaktives Setup-Fenster, keine Kindprozesse, kein Fortschritt bei
+  der Datei-Extraktion) - meist nach 5-10 Minuten erkennbar. Beim letzten
+  Rebuild sogar ZWEI aufeinanderfolgende haengende Versuche vor einem
+  erfolgreichen dritten. **Zuverlaessig behobenes Muster**: betroffenen
+  `Lexono_Setup`/`Lexono_Setup.tmp`-Prozess beenden und denselben Befehl
+  erneut ausfuehren - hat in JEDEM Fall beim naechsten oder uebernaechsten
+  Versuch funktioniert (erkennbar am tatsaechlich steigenden CPU-Verbrauch
+  des `.tmp`-Prozesses, z. B. 67s echte CPU-Zeit bei einem erfolgreichen
+  Versuch vs. konstant ~0,15s bei einem haengenden). Ursache weiterhin
+  NICHT geklaert (Kandidaten unveraendert: Windows-Defender-
+  Echtzeitpruefung der frisch entpackten ~1,1GB, ein Inno-Setup-eigener
+  Zustand) - Disk-Speicherplatz wurde als Ursache ausgeschlossen (~324GB
+  frei). Fuer zukuenftige Installer-Laeufe: IMMER CPU-Verbrauch des
+  `.tmp`-Prozesses ueber mehrere Minuten vergleichen statt nur auf den
+  Log-Dateipfad zu warten (der wird ohnehin erst beim Prozessende
+  geschrieben, in dieser Umgebung nie zuverlaessig beobachtet) - flache
+  CPU-Kurve ueber 5+ Minuten ist der zuverlaessigste Hinweis auf einen
+  echten Haenger.
 
 - App.css enthält einen Kommentar mit „KanzleiAI“ (Zeile ~2695,
   `.chat-panel__header` Kommentarblock) – rein interner Kommentar, keine
