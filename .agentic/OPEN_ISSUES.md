@@ -202,9 +202,13 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
   CPU-Kurve ueber 5+ Minuten ist der zuverlaessigste Hinweis auf einen
   echten Haenger.
 
-- App.css enthält einen Kommentar mit „KanzleiAI“ (Zeile ~2695,
-  `.chat-panel__header` Kommentarblock) – rein interner Kommentar, keine
-  sichtbare UI, niedrige Priorität für Bereinigung.
+- ~~App.css enthält einen Kommentar mit „KanzleiAI” (`.chat-panel__header`
+  Kommentarblock)~~ – **ERLEDIGT (01.09., später)**, auf „Lexono”
+  korrigiert. Verbleibende `KanzleiAI`-Vorkommen in `app/setup/paths.py`,
+  `app/web/template_paths.py`, `app/web/monitoring_router.py` sind
+  bewusst unverändert (interner `%PROGRAMDATA%`-Pfadname, keine sichtbare
+  UI, Änderung würde bestehende Installationen brechen - siehe
+  DECISIONS.md).
 
 ## FUTURE (erwogen, bewusst nicht umgesetzt)
 

@@ -3016,7 +3016,7 @@ body::-webkit-scrollbar-thumb:hover,
   min-height: 0;
 }
 
-/* Kopfbereich (Abschnitt 4A des Auftrags: "KanzleiAI/Chat-Kontext, optional
+/* Kopfbereich (Abschnitt 4A des Auftrags: "Lexono/Chat-Kontext, optional
    dezenter KI-Status") - padding identisch zu .topbar, damit dieser Bereich
    zuverlaessig unterhalb der schwebenden .header-icons-Leiste beginnt
    (siehe Kommentar bei .chat-conversations__header). */
