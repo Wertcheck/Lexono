@@ -35,6 +35,118 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
 
 ## HIGH
 
+- **Installer-Silent-Install-Stall: Root-Cause-Untersuchung (01.09.,
+  Reliability & Deployment Hardening Cycle)** — **REPRODUZIERT** (echte,
+  eindeutige Messung in dieser Sitzung, nicht nur Vermutung), **URSACHE
+  NICHT ZWEIFELSFREI BEWIESEN, ABER GUT GESTUETZTE HYPOTHESE**, **KEIN
+  Fix am eigentlichen Mechanismus** (siehe unten, warum).
+
+  **Symptom**: Bei einem frischen `Lexono_Setup.exe /VERYSILENT
+  /SUPPRESSMSGBOXES`-Lauf blieb die CPU-Zeit des `Lexono_Setup`-Prozesses
+  exakt 60+ Sekunden lang bei konstant 0,17s (7 Messpunkte im 10s-Raster,
+  keine Aenderung), OHNE Kindprozesse, BEVOR die eigentliche
+  Datei-Extraktion sichtbar begann. Danach lief die Installation normal
+  durch (Gesamtdauer 92s: Start 13:25:51, "Installation process
+  succeeded" 13:27:08, WebView2-Schritt 13:27:08-13:27:23, Log
+  geschlossen 13:27:23 - siehe `%TEMP%\lexono_freshinstall_log.txt`).
+
+  **Reproduktionsschritte** (genau wie durchgefuehrt):
+  1. Bestehende Installation deinstallieren (`unins000.exe /VERYSILENT
+     /SUPPRESSMSGBOXES`) - lief sauber in 3,1s durch.
+  2. `Lexono_Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /LOG=<pfad>` starten.
+  3. Alle 10s `Get-Process Lexono_Setup*` (TotalProcessorTime) UND
+     Kindprozess-Anzahl protokollieren.
+  4. Ergebnis: 60s lang keinerlei CPU-Fortschritt, dann normaler
+     Abschluss.
+
+  **Root-Cause-Hypothesen, geordnet nach Evidenzstaerke**:
+  1. **Antivirus-/Cloud-Reputations-Scan des frisch gebauten,
+     UNSIGNIERTEN ~525-MB-Installer-Executables beim ersten Ausfuehren**
+     (gut gestuetzt, nicht bewiesen). Belege: (a) Windows-Defender-
+     Echtzeitschutz nachweislich aktiv waehrend des exakten Stall-Fensters
+     (Get-WinEvent-Health-Report-Event um 13:26:17, mitten im
+     Beobachtungsfenster, RTP-Status: Aktiviert); (b) `Get-AuthenticodeSignature`
+     bestaetigt: WEDER `Lexono_Setup.exe` NOCH `kanzlei_ai.exe` sind
+     code-signiert (Status: NotSigned) - unsignierte, "low prevalence"
+     Executables loesen bei Windows Defender/SmartScreen typischerweise
+     zusaetzliche Cloud-Lookups aus; (c) unabhaengig gemessene,
+     inkonsistente Netzwerklatenz zu Microsoft-Endpunkten in dieser
+     Umgebung (TCP-Connect zu go.microsoft.com: 6,25s, zu zwei anderen
+     microsoft.com-Subdomains: 0,3s) - ein cloud-abhaengiger
+     Reputations-Check waere genau von solcher Latenz betroffen; (d) KEIN
+     Application-/Defender-Operational-Log-Eintrag, der einen konkreten
+     Scan-Vorgang fuer genau diese Datei zeigt (Defender protokolliert
+     routinemaessige On-Access-Scans nicht standardmaessig, nur Funde) -
+     daher NICHT zweifelsfrei bewiesen, nur konsistent mit allen
+     verfuegbaren Indizien.
+  2. **WebView2-Bootstrapper-Schritt (`waituntilterminated`, kein
+     Timeout)** - durch unabhaengige Review-Delegation GEPRUEFT UND ALS
+     UNWAHRSCHEINLICHE URSACHE FUER DIESES SYMPTOM EINGESTUFT: Inno
+     Setups `[Run]`-Eintraege laufen laut Dokumentation ERST NACH dem
+     vollstaendigen `[Files]`-Kopiervorgang, waehrend der beobachtete
+     Stall eindeutig VOR jedem sichtbaren Extraktions-Fortschritt und
+     OHNE Kindprozess auftrat (der WebView2-Bootstrapper waere als
+     Kindprozess sichtbar gewesen). Bleibt trotzdem als eigenstaendiges,
+     noch unbehobenes Risiko fuer ein ANDERES Szenario im Blick (siehe
+     "Isolierte Bootstrapper-Tests" unten).
+
+  **Isolierte Bootstrapper-Tests** (separate Diagnose, nicht der
+  eigentliche Fund): `MicrosoftEdgeWebview2Setup.exe /silent /install`
+  fuenfmal direkt (ausserhalb des Gesamtinstallers) ausgefuehrt - immer
+  konsistent 7-8s, immer derselbe Exit-Code (`0x80040828`, laut
+  Web-Recherche vermutlich ein regulaerer "bereits installiert/nichts zu
+  tun"-Fruehausstieg, siehe auch das bekannte, von Microsoft selbst als
+  "tracked"/"priority-low" gefuehrte Verhalten, dass der Bootstrapper bei
+  `/silent /install` teils VOR Abschluss der eigentlichen Installation
+  zurueckkehrt: https://github.com/MicrosoftEdge/WebView2Feedback/issues/1349).
+  Kein Hang in diesen 5 isolierten Laeufen - bestaetigt die obige
+  Einstufung als unwahrscheinliche Ursache fuer DIESEN Stall.
+
+  **Was NICHT getan wurde (bewusst)**: Windows-Defender-Echtzeitschutz
+  wurde NICHT deaktiviert und KEINE Ausschlussregel fuer den
+  Build-/Installationsordner angelegt - beides waere eine
+  sicherheitsrelevante Systemaenderung, die laut Standardregel nicht ohne
+  ausdrueckliche Nutzerfreigabe vorgenommen wird. Eine
+  Defender-Ausschlussregel waere der naheliegendste naechste Diagnose-
+  /Verifikationsschritt (wuerde bei zutreffender Hypothese den Stall
+  zuverlaessig zum Verschwinden bringen) - **empfohlen fuer den naechsten
+  Zyklus, MIT Nutzerfreigabe**.
+
+  **Tatsaechlich umgesetzter Fix (kleinerer, aber echter Reliability-Gap,
+  gefunden bei derselben Review-Delegation)**: `installer.iss` hatte
+  bisher KEIN `AppMutex` gesetzt, obwohl `run.py` selbst einen benannten
+  Single-Instance-Mutex fuehrt (`Lexono_SingleInstance_Mutex`,
+  `CreateMutexW`). Ohne `AppMutex` erkennt der Installer eine laufende
+  Lexono-Instanz nicht - ein Reinstall/Update waehrend die App im
+  Hintergrund laeuft (real moeglich, da `Start.vbs` sie unsichtbar
+  startet, kein Tray-Icon als Erinnerung) haette laufende .exe-/DLL-
+  Dateien mitten im Kopiervorgang sperren und im ungünstigsten Fall ein
+  teilweise ueberschriebenes Installationsverzeichnis hinterlassen
+  koennen. Behoben: `AppMutex=Lexono_SingleInstance_Mutex` ergaenzt
+  (Commit siehe AGENT_HANDOFFS.md). Dies behebt NICHT den oben
+  beschriebenen Silent-Install-Stall (anderes Problem), ist aber ein
+  echter, unabhaengig vom Stall bestehender Reliability-Fund.
+
+  **Ebenfalls gefunden, NICHT behoben (Produktentscheidung/Aufwand
+  erforderlich)**: weder `Lexono_Setup.exe` noch `kanzlei_ai.exe` sind
+  code-signiert. Das ist sowohl ein eigenstaendiges Vertrauens-/
+  SmartScreen-Problem fuer einen echten Kanzlei-Rollout (unbekannter
+  Herausgeber-Warnhinweis bei jeder Erstinstallation) als auch ein
+  moeglicher Beitrag zum obigen Stall-Symptom. Erfordert ein echtes
+  Code-Signing-Zertifikat (Kauf/Beschaffung bei einer Zertifizierungs-
+  stelle) - eine Beschaffungs-/Kostenentscheidung, keine rein technische
+  Aenderung, daher NICHT eigenmaechtig umgesetzt. **Empfehlung fuer eine
+  Nutzerentscheidung.**
+
+  **Verbleibendes Risiko**: der Silent-Install-Stall kann weiterhin
+  auftreten (in 2 von 3 realen Testlaeufen dieser Sitzung TRAT ER NICHT
+  auf, in 1 von 3 SCHON - keine 100%ige Reproduktionsrate, konsistent mit
+  einer netzwerk-/cache-abhaengigen Ursache). Fuer einen echten
+  Kanzlei-Rollout: IT-Administratoren sollten vorgewarnt werden, dass ein
+  scheinbar haengender Installationsvorgang (mehrere Minuten ohne
+  sichtbaren Fortschritt) nicht zwingend ein Fehler ist und in den bisher
+  beobachteten Faellen von selbst abschloss - NICHT vorschnell abbrechen.
+
 - **Dokument-Workspace mit Pseudonymisierungs-Highlighting** (Referenzbild
   2 aus Masterprompt V2) - **01.09. umgesetzt (V, real getestet)**: neue
   Route `GET /dashboard/chat/{conversation_id}/document/{document_id}`

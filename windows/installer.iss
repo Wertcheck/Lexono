@@ -32,6 +32,19 @@ AppId={{9F4B9E7A-2B1E-4C77-9C7C-3D9B5E5B0B21}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+; Reliability-Fund (01.09., unabhaengige Installer-Review): dieselbe
+; Windows-Mutex, die run.py selbst zur Single-Instance-Absicherung nutzt
+; (siehe run.py::_SINGLE_INSTANCE_MUTEX_NAME/"Lexono_SingleInstance_Mutex",
+; CreateMutexW), war Inno Setup bisher NICHT bekannt - ein Reinstall/Update
+; waehrend Lexono noch im Hintergrund laeuft (real moeglich: Start.vbs
+; startet die App unsichtbar, kein Tray-Icon als Erinnerung) konnte
+; laufende .exe-/DLL-Dateien mitten im Kopiervorgang sperren, im
+; ungünstigsten Fall ein teilweise ueberschriebenes {app}-Verzeichnis
+; hinterlassen. AppMutex laesst Setup denselben Mutex-Namen pruefen und
+; den Nutzer VOR dem Kopieren zum Schliessen der laufenden Instanz
+; auffordern, statt mitten im Kopiervorgang auf eine gesperrte Datei zu
+; stossen.
+AppMutex=Lexono_SingleInstance_Mutex
 ; Geaendert (Schritt 3, 20.08.): Installation je Windows-Benutzerkonto unter
 ; %LocalAppData%\Lexono statt {autopf} ("Program Files") - Ziel laut
 ; Vorgabe: Updates ohne Windows-Administratorrechte moeglich, da
