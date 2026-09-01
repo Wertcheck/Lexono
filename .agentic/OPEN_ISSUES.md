@@ -90,14 +90,19 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
   **01.09. konkretisiert**: Architektur-Readiness verifiziert (Protocol-
   basiert, `Settings.local_ai_runtime` + `ModelCatalogEntry.runtime`
   bereits als Erweiterungspunkte vorhanden, siehe MODEL_EVALUATION.md) -
-  nächster konkreter Schritt ist NICHT mehr Recherche, sondern: (1) eine
-  `LlamaCppLocalLLMProvider`-Klasse gegen dasselbe `LocalLLMProvider`-
-  Protocol schreiben, (2) `build_local_llm_provider` um Dispatch auf
-  `settings.local_ai_runtime` erweitern, (3) echten Benchmark gegen die
-  bestehende `qwen2.5:1.5b`-Baseline fahren. Absichtlich nicht in dieser
-  Session begonnen (mehrstündiger Download-/Kompilier-/Messaufwand,
-  unverhältnismäßig neben den übrigen Punkten dieser Iteration).
-  Status: NV (Umsetzung), Architektur-Readiness V (verifiziert).
+  eine echte llama.cpp-Runtime-Integration bleibt ein eigener,
+  mehrstündiger Download-/Kompilier-/Messaufwand und wurde bewusst NICHT
+  begonnen (unverhältnismäßig).
+  **01.09., später: viertes Modell real benchmarkt** - `gemma2:2b`
+  (bounded, nur ein weiteres Ollama-Modell, kein neuer Runtime-Aufwand)
+  real getestet: langsamer (18,2s warm vs. 10-11s bei qwen2.5:1.5b) UND
+  bei einem Pflichtkriterium (Platzhaltererhaltung) unzuverlässig - zwei
+  reale Fälle von veränderten/verlorenen Platzhaltern in nur zwei
+  Testläufen, siehe MODEL_EVALUATION.md für Details. `qwen2.5:1.5b`
+  bleibt datenbasiert bestätigt die beste Wahl - kein Konfigurationswechsel.
+  Status: NV (llama.cpp-Runtime), V (Mistral/Gemma-Modellfamilie
+  stichprobenhaft evaluiert - gemma2:2b negativ beschieden), Architektur-
+  Readiness V (verifiziert).
 
 ## MEDIUM
 

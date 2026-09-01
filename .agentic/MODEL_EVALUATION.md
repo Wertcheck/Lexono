@@ -26,6 +26,41 @@ Netzwerktest, synthetisches Dokument): 17,7s (lokale KI) + 12,9s
   Finanzamt, fehlende Informationen erkennen, strukturierte Ausgabe) –
   bisher nur Einzelfall-Stichproben, kein reproduzierbarer Score.
 
+## Vierter Modellvergleich: gemma2:2b (01.09., real getestet)
+
+Auf expliziten Nutzerauftrag ("Model Evaluation" als offener Punkt
+weiterverfolgen, sofern ohne unverhältnismäßigen Aufwand möglich) wurde
+ein zusätzliches, bisher nicht getestetes Modell derselben Gewichtsklasse
+real benchmarkt (`ollama pull gemma2:2b`, ~1,6GB, kein neuer Runtime -
+weiterhin Ollama, daher kein unverhältnismäßiger Aufwand). Identischer
+synthetischer Prompt wie beim ursprünglichen 3-Modell-Vergleich, echte
+lokale Aufrufe, keine Mocks.
+
+| Lauf | Gesamtzeit | Anmerkung |
+|---|---|---|
+| gemma2:2b cold | 42,1s | vergleichbar mit qwen2.5:1.5b cold (~37s) |
+| gemma2:2b warm | **18,2s** | deutlich langsamer als qwen2.5:1.5b warm (10-11s) |
+
+**Qualität: disqualifizierender Befund.** Platzhalter-Erhaltung
+(Pflichtkriterium, siehe Masterprompt §17 "korrekte Platzhalter") wurde
+in BEIDEN Läufen verletzt:
+- Cold-Run: `[MANDANT_01]` wurde zu `**Mandant[01]**` umgeschrieben
+  (Markdown-Fettung mit dem Platzhalter verschmolzen, Klammerposition
+  verändert) - der spätere Rücktausch (`Pseudonymizer.reconstruct()`,
+  exakter String-Ersatz) würde diesen veränderten Platzhalter NICHT mehr
+  finden und ihn unverändert im finalen Dokument stehen lassen.
+- Warm-Run: `[GEGNER_01]` wurde komplett durch ein erfundenes Wort
+  ("Steuerbescheidgeber", kein reales deutsches Wort) ERSETZT statt
+  erhalten - echte Halluzination UND vollständiger Platzhalterverlust,
+  nicht nur eine Formatierungsabweichung.
+
+**Ergebnis: `qwen2.5:1.5b` bleibt die datenbasiert beste Wahl.**
+gemma2:2b ist sowohl langsamer (warm ~65% mehr Zeit) als auch bei einem
+Pflichtkriterium (Platzhaltererhaltung) unzuverlässig - `app/config/
+settings.py::ollama_model` bewusst NICHT geändert. Ein negatives, aber
+werthaltiges Ergebnis: bestätigt die bestehende Wahl erneut, statt sie in
+Frage zu stellen.
+
 ## Runtime-Erweiterbarkeit (verifiziert, 01.09., Masterprompt V2 Task #63)
 
 Konkreter Code-Befund, KEINE Vermutung: die Architektur ist bereits auf
