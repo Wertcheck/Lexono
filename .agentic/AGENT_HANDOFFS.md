@@ -134,3 +134,32 @@ sendet ueber die normale, bereits privacy-geprüfte Chat-Pipeline. Neue
 CSS-Klasse `.chat-quick-action--compact` fuer die schmale Spalte. Test
 erweitert (`test_document_workspace_shows_highlighted_pii_and_context_panel`).
 Volle Suite: 1487 passed / 1 skipped / 0 failed, unveraendert.
+
+---
+
+**01.09.** · Agent J (Visual QA, unterstuetzt durch Sub-Agent-Review) ·
+Zweite Auftragswelle desselben Masterprompts: fuenfter Installer-
+Rebuild gebaut, ohne Stall installiert, per HTTP-Smoke-Test bestaetigt
+(Login, Upload, PII-Highlighting, alle drei Schnellaktionen, Bestands-
+seiten - alles gruen). Anschliessend echte Sub-Agent-Delegation
+(Agent-Tool, isolierter Worktree) fuer eine unabhaengige Security-/
+Code-Review der neuen Schnellaktionen: XSS-Pruefung (Jinja-Autoescape
+aktiv, bestaetigt sicher), Privacy-Pfad (unveraendert, kein neuer
+Sende-Weg), Aktenisolation (bestaetigt) - keine Funde.
+
+Danach echte UI-Automatisierung entdeckt (Maus-/Tastatursimulation im
+nativen Fenster per PowerShell/P-Invoke) - damit erstmals tatsaechlich
+in den Dokument-Workspace navigiert (nicht nur die Login-Seite
+fotografiert). Dabei realen, reproduzierbaren Layout-Bug gefunden:
+`.chat-panel` kollabierte bei der tatsaechlichen Fensterbreite dieser
+Umgebung (~1024px) auf einen unlesbaren Streifen. Ursache gefunden
+(`.chat-panel` ohne `min-width`, `.chat-document-pane`/
+`.chat-context-pane` mit festen Breiten), behoben (Commit `b92e1cb`),
+per Vorher/Nachher-Screenshot in einer Dev-Instanz verifiziert, volle
+Testsuite weiterhin gruen. Nebenbefund: die Bildschirmaufloesung dieser
+Umgebung ist nur 1024x768 - erklaert rueckwirkend die fruehere
+unbestaetigte MoveWindow-Beobachtung als physische Grenze statt
+DPI-Anomalie; 1366x768/1920x1080 sind hier kategorisch nicht testbar.
+`skills/visual_qa/SKILL.md` entsprechend aktualisiert (war veraltet,
+ging von einem Browser-Tool aus statt der nativen Fenstertechnik).
+Sechster Installer-Rebuild mit diesem Fix angestossen.

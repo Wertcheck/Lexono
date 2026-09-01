@@ -106,11 +106,15 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
 
 ## MEDIUM
 
-- **Visual QA Loop (§23)**: Noch kein echter Screenshot-Vergleichslauf
-  gegen die bereitgestellten Referenzbilder in dieser Session durchgeführt
-  (kein Browser-Tool in dieser Umgebung aktiv verfügbar). Zuständig: Agent
-  J (Visual QA).
-  Status: NV, siehe VISUAL_QA.md.
+- **Visual QA Loop (§23)**: **TEILWEISE, 01.09. später erweitert.** Echte
+  UI-Automatisierung (Klicks + Texteingabe im nativen Fenster, nicht nur
+  Screenshots) ermöglichte Navigation zu echten Zuständen (Login → Chat
+  mit Unterhaltung → Dokument-Workspace) und deckte dabei einen realen
+  Layout-Bug auf (behoben, Commit `b92e1cb`, siehe VISUAL_QA.md).
+  1366×768/1920×1080 bleiben in dieser Umgebung NICHT testbar (Bildschirm
+  nur 1024×768 - physische Umgebungsgrenze, verifiziert, kein
+  Anwendungsfehler). Zuständig: Agent J (Visual QA).
+  Status: TEILWEISE, siehe VISUAL_QA.md für Details.
 
 - **ERLEDIGT, hier nur zur Nachvollziehbarkeit erwähnt**: "Fenster-Chrome"
   (frameless statt nativ) und "Statusindikatoren global in der Sidebar"

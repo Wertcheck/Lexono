@@ -120,12 +120,17 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   bereits vorhanden (`test_e2e_pilot_scenario.py`,
   `test_e2e_gateway_pilot_scenario.py`), erfüllen §23 vollständig
   (Dokument verarbeitet, PII bleibt lokal, Rekonstruktion funktioniert).
-- Visual QA mit echten Screenshots: **TEILWEISE, seit 01.09. verbessert**
-  - kein Browser-Tool für HTTP-Seiten, ABER eine echte, funktionierende
-  Technik zum Fotografieren des nativen Fensters wurde entdeckt und
-  genutzt (PowerShell + System.Drawing, siehe VISUAL_QA.md) - damit
-  bereits einen echten, vorher unbekannten Bug gefunden und behoben
-  (Schließen-Icon der Titelleiste war am Rand angeschnitten).
+- Visual QA mit echten Screenshots: **TEILWEISE, seit 01.09. deutlich
+  erweitert** - kein Browser-Tool für HTTP-Seiten, ABER eine echte,
+  funktionierende Technik zum Fotografieren UND BEDIENEN (Maus-/
+  Tastatursimulation) des nativen Fensters wurde entdeckt und genutzt
+  (PowerShell + System.Drawing + P/Invoke, siehe VISUAL_QA.md und
+  `skills/visual_qa/SKILL.md`) - damit zwei echte, vorher unbekannte
+  Bugs gefunden und behoben: Schließen-Icon-Anschnitt der Titelleiste
+  (früher) sowie ein Dokument-Workspace-Layout-Kollaps bei der
+  tatsächlichen Fensterbreite dieser Umgebung (01.09., später, Commit
+  `b92e1cb`). 1366×768/1920×1080 bleiben in dieser konkreten Umgebung
+  NICHT testbar (Bildschirm nur 1024×768, physische Grenze).
 
 ## J – Dokumentation / Repository-Hygiene
 
