@@ -168,6 +168,92 @@ bestaetigt) - siehe Commit `b286f97`.
 
 ---
 
+**01.09.** · Nutzer → Orchestrator · Neuer Auftrag "LEXONO – Reliability
+& Deployment Hardening Cycle": Schwerpunkt Installer-Silent-Install-
+Stall-Root-Cause-Untersuchung (echte Reproduktion statt Umgehung
+gefordert, explizit "kein Fake-Testing"), danach praktischer
+Modell-Austauschbarkeitstest (zweites Modell, z. B. Mistral), explizit
+NICHT das lokale Modell neu fest verdrahten.
+
+---
+
+**01.09.** · Orchestrator (Installer-Root-Cause) · Stall ECHT
+REPRODUZIERT (nicht nur vermutet): frischer Silent-Install zeigte 60+
+Sekunden konstante 0,17s-CPU-Zeit VOR jedem Extraktions-Fortschritt,
+keine Kindprozesse. Isolierte WebView2-Bootstrapper-Tests (5x) zeigten
+dagegen konsistent 7-8s, kein Hang - dieser Schritt allein erklaert das
+Symptom nicht. Windows-Defender-Health-Report-Event lag mitten im
+Stall-Fenster (RTP aktiv bestaetigt). `Get-AuthenticodeSignature`
+bestaetigt: weder Setup.exe noch kanzlei_ai.exe sind code-signiert.
+Web-Recherche (WebSearch/WebFetch) zu einem bekannten, von Microsoft
+selbst als "tracked" gefuehrten WebView2-Bootstrapper-Fruehausstiegs-
+Verhalten durchgefuehrt (GitHub-Issue #1349) - liefert Kontext, aber
+nicht den Beweis fuer DIESES Symptom.
+
+---
+
+**01.09.** · Agent zur unabhaengigen Review delegiert (Agent-Tool,
+isolierter Worktree) · Installer-/Deployment-Review: stufte den
+WebView2-Bootstrap-Schritt korrekt als UNWAHRSCHEINLICHE Ursache fuer
+DIESES Symptom ein (Inno-Setup-`[Run]`-Eintraege laufen laut
+Dokumentation ERST NACH dem `[Files]`-Kopiervorgang, der Stall trat aber
+VOR jedem Extraktions-Fortschritt und OHNE Kindprozess auf). Fand
+stattdessen zwei echte, unabhaengige Gaps: (1) fehlendes `AppMutex` in
+`installer.iss` trotz eigenem Single-Instance-Mutex in `run.py` -
+Reinstall waehrend laufender App haette Dateien sperren/beschaedigen
+koennen; (2) keine Code-Signierung irgendwo in der Build-Pipeline -
+sowohl eigenstaendiges SmartScreen-Vertrauensproblem als auch
+plausibler Beitrag zum Defender-Scan-Stall. Uninstall-Datensicherheit
+(kein `%PROGRAMDATA%`-Zugriff) und Privilegien-Modell wurden UNABHAENGIG
+gegengeprueft und als korrekt bestaetigt (nicht nur dem Kommentar
+vertraut).
+
+---
+
+**01.09.** · Orchestrator · `AppMutex=Lexono_SingleInstance_Mutex`
+ergaenzt (Commit `cfa68bc`). Empirisch verifiziert: Reinstall-Versuch bei
+laufender App wird jetzt sauber mit `EAbort`/ExitCode 1 abgelehnt
+(Installer-Log zeigt explizit die deutsche "Setup hat entdeckt, dass
+Lexono zurzeit ausgefuehrt wird"-Meldung), laufende App bleibt
+unangetastet; normaler Reinstall (App vorher geschlossen) funktioniert
+weiterhin fehlerfrei (ExitCode 0). Code-Signierung als
+Nutzerentscheidung (Zertifikat-Beschaffung) dokumentiert, NICHT
+implementiert. Silent-Install-Stall selbst bleibt ehrlich als
+unbewiesene, aber gut gestuetzte Hypothese dokumentiert - keine
+Behauptung eines Fixes ohne Beweis.
+
+---
+
+**01.09.** · Orchestrator (Modell-Austauschbarkeit) · `mistral:7b` per
+Ollama-API gepullt (778s) und gegen den echten `OllamaLocalLLMProvider`
+getestet: Health Check, generate, generate_structured, Fehlerverhalten,
+Startup-Statusanzeige - alles funktioniert unveraendert, rein per
+`OLLAMA_MODEL`-Konfigurationsaenderung, KEINE Code-Aenderung. Damit
+architektonische Modellunabhaengigkeit praktisch bestaetigt. Modell
+selbst aber disqualifiziert: Platzhaltererhaltung fehlgeschlagen
+(`[MANDANT_01]` in beiden Laeufen verloren) UND 6-7x langsamer als die
+`qwen2.5:1.5b`-Baseline. Voller End-to-End-Test ueber den echten
+Chat-Endpunkt war nicht moeglich (Cloud-Provider-Check schlaegt vor dem
+lokalen KI-Schritt fehl, kein echter API-Schluessel in dieser
+Testumgebung - bestehendes, korrektes Fail-Closed-Verhalten). Test-
+Konfiguration nach Abschluss vollstaendig zurueckgesetzt.
+
+---
+
+**01.09.** · Nutzer (Live-Feedback waehrend der Sitzung) · "der fenster
+verkleinern button fehlt" - direkte Rueckmeldung zum zuvor als korrekt
+gemeldeten Titelleisten-Screenshot. Untersuchung: Button existiert und
+funktioniert (JS-Handler korrekt verdrahtet), aber das SVG-Icon war ein
+duenner, exakt zentrierter Strich (stroke-width 1.8) - neben dem
+kraeftigeren Schliessen-X per Zoom-Screenshot bestaetigt kaum sichtbar.
+Behoben (Commit `391361a`, stroke-width 2.2, Position naeher an die
+uebliche OS-Konvention). Per UI-Automatisierung sowohl visuell
+(Vorher/Nachher-Zoom) als auch FUNKTIONAL bestaetigt (echter Klick ->
+`IsIconic()==true`, Fenster minimiert tatsaechlich). Neunter
+Installer-Rebuild mit diesem Fix angestossen.
+
+---
+
 **01.09.** · Nutzer → Orchestrator · Neuer Auftrag "LEXONO – MASTER
 PROMPT: Autonomous Agentic Coding — Product Completion Cycle": CI-Frage
 (Nutzer nennt jetzt selbst die verbindlichen Werte `#101828`/`#f8fafc`/

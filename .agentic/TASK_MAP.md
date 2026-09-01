@@ -109,6 +109,14 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   basiert, vorbereitete Erweiterungspunkte), aber keine echte
   Implementierung/Benchmark. Bewusst nicht ungefragt gestartet
   (mehrstündiger Download-/Kompilieraufwand).
+- **Praktischer Modell-Austauschbarkeitstest (01.09., Reliability Cycle)**:
+  **ERLEDIGT** - `mistral:7b` real gegen den echten
+  `OllamaLocalLLMProvider` getestet (Health Check, generate,
+  generate_structured, Fehlerverhalten, Startup-Statusanzeige), rein per
+  Config-Änderung, ohne jede Code-Änderung. Bestätigt: Architektur ist
+  echt modellunabhängig. `mistral:7b` selbst aber disqualifiziert
+  (Platzhaltererhaltung fehlgeschlagen + 6-7x langsamer) -
+  `qwen2.5:1.5b` bleibt unverändert Standard. Siehe MODEL_EVALUATION.md.
 - **Modell-Konfigurierbarkeit über die Web-UI** (01.09., Product
   Completion Cycle): **ERLEDIGT** - echter, vorher unbekannter
   Produktgap gefunden: `OLLAMA_MODEL`/`OLLAMA_BASE_URL` waren nur per
