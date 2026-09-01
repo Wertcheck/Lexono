@@ -551,10 +551,41 @@ def test_existing_pages_remain_reachable(client: TestClient, db_session: Session
     assert response.status_code == 200, f"{path} nicht mehr erreichbar (Status {response.status_code})"
 
 
-def test_chat_appears_as_first_flat_nav_item(client: TestClient, db_session: Session) -> None:
+def test_chat_appears_as_first_nav_item(client: TestClient, db_session: Session) -> None:
+    """Seit dem Referenzbild-Redesign (01.09.) ist "Chat" auf der Chat-
+    Seite selbst eine echte Aufklapp-Gruppe mit der Unterhaltungshistorie
+    als Unterpunkten (ersetzt die vorherige, staendig sichtbare eigene
+    "Unterhaltungen"-Spalte) - "Neue Unterhaltung" ist dort der erste
+    Unterpunkt."""
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
-    assert 'href="/dashboard/chat"' in response.text
+    assert 'href="/dashboard/chat?new=1"' in response.text
+    assert "Neue Unterhaltung" in response.text
+
+
+def test_sidebar_shows_conversation_history_as_chat_group_items(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression (01.09., Nutzerfeedback): die vorherige, staendig
+    sichtbare eigene "Unterhaltungen"-Spalte existiert nicht mehr - die
+    Historie muss stattdessen als Unterpunkte der Sidebar-Gruppe "Chat"
+    erscheinen, mit korrekter Aktiv-Markierung der gerade geoeffneten
+    Unterhaltung."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Antwort.")
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer)
+    )
+    csrf = _csrf(client)
+    send_response = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Testnachricht fuer Sidebar."},
+        follow_redirects=True,
+    )
+
+    assert "chat-conversations" not in send_response.text
+    assert "Testnachricht fuer Sidebar." in send_response.text
+    assert "sidebar__link--active" in send_response.text
 
 
 # ==========================================================================

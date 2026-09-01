@@ -120,13 +120,50 @@
            Kanzleiwissen & KI) behalten ihre Aufklapp-Unterpunkte, da das
            Referenzbild selbst "wo sinnvoll" weiterhin Auf-/Zuklapp-
            Indikatoren vorsieht. #}
+        {# "Chat" wird separat vor der generischen Gruppenschleife gerendert
+           (Nutzerfeedback, 01.09.: die zuvor staendig sichtbare eigene
+           "Unterhaltungen"-Spalte in chat.html soll nicht mehr in dieser
+           Form existieren, sondern unter dem Menuepunkt "Chat" zu finden
+           sein). Ist `conversations` im aktuellen Seitenkontext vorhanden
+           (nur auf chat.html-Seiten der Fall, via Template-Vererbung auch
+           in base.html sichtbar - kein Router-Umbau noetig), erscheint
+           "Chat" als echte Aufklapp-Gruppe mit der Unterhaltungshistorie
+           als Unterpunkten, exakt wie die anderen Gruppen. Auf allen
+           anderen Seiten (kein `conversations` im Kontext) bleibt "Chat"
+           ein einfacher flacher Link, um dort keine zusaetzliche
+           Datenbankabfrage zu erzwingen. #}
+        {% if conversations is defined %}
+          <details class="sidebar__group" {% if active_nav == "Chat" %}open{% endif %}>
+            <summary class="sidebar__group-summary{% if active_nav == 'Chat' and not active_conversation %} sidebar__group-summary--active{% endif %}">
+              {{ icons.chat(class_="icon sidebar__group-icon") }}
+              <span class="sidebar__group-label">Chat</span>
+            </summary>
+            <div class="sidebar__group-items">
+              <a href="/dashboard/chat?new=1" class="sidebar__link{% if active_nav == 'Chat' and not active_conversation %} sidebar__link--active{% endif %}">
+                {{ icons.plus(class_="icon sidebar__link-icon") }}
+                <span class="sidebar__link-label">Neue Unterhaltung</span>
+              </a>
+              {% for conversation in conversations %}
+                <a href="/dashboard/chat/{{ conversation.id }}"
+                   class="sidebar__link{% if active_conversation and conversation.id == active_conversation.id %} sidebar__link--active{% endif %}">
+                  {{ icons.document(class_="icon sidebar__link-icon") }}
+                  <span class="sidebar__link-label">{{ conversation.title }}</span>
+                </a>
+              {% else %}
+                <div class="sidebar__group-empty">Noch keine Unterhaltungen.</div>
+              {% endfor %}
+            </div>
+          </details>
+        {% else %}
+          <div class="sidebar__group sidebar__group--flat">
+            <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == 'Chat' %} sidebar__group-summary--active{% endif %}"
+               href="/dashboard/chat">
+              {{ icons.chat(class_="icon sidebar__group-icon") }}
+              <span class="sidebar__group-label">Chat</span>
+            </a>
+          </div>
+        {% endif %}
         {% set nav_groups = [
-          {
-            "label": "Chat",
-            "icon": icons.chat,
-            "href": "/dashboard/chat",
-            "flat": true,
-          },
           {
             "label": "Akten & Ordner",
             "icon": icons.folder,
