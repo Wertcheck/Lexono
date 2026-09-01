@@ -11,19 +11,23 @@ _Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
 
 ## GEKLÄRT (vormals "Produktentscheidung erforderlich")
 
-- **Logo-/Akzentfarbe: grün vs. Navy `#101828`** – **ENDGÜLTIG GEKLÄRT
-  (01.09., Product Completion Cycle).** Der Nutzer hat im aktuellen
-  Masterprompt selbst die verbindliche CI explizit benannt: "Primary/
-  Logo Tone: #101828, Canvas: #f8fafc, Cards: #ffffff, Secondary Text:
-  #64748b". Gegenprüfung des tatsächlichen Codes ergab: ALLE VIER Werte
-  sind bereits exakt so implementiert (`--seal-green: #101828`,
-  `--paper-100: #f8fafc`, `--paper-000: #ffffff`, `--ink-500: #64748b`
-  in `app/web/static/css/app.css`; `logo.svg`-Fill ebenfalls `#101828`).
-  Die frühere "grünes Logo"-Anweisung beruhte offenbar auf einer
-  veralteten/unzutreffenden Erwartung - das pixelverifizierte Navy war
-  die ganze Zeit korrekt. **Keine Code-Änderung nötig.** Die vier
-  Akzentfarben-Badges (`--accent-blue`/`-purple`/`-orange`, unabhängig
-  von der Primärfarbe) bleiben wie zuvor umgesetzt.
+- **Logo-/Akzentfarbe: grün vs. Navy `#101828`** – **ENDGÜLTIG GEKLÄRT,
+  AKTUALISIERT (01.09., später, Referenzbild-Redesign).** Zwischenstand
+  (Product Completion Cycle, s. u.) ging von einem rein navyfarbenen
+  Logo aus, basierend auf einer textuellen CI-Beschreibung ("Primary/
+  Logo Tone: #101828"). Eine DANACH vom Nutzer bereitgestellte konkrete
+  Bild-Referenz zeigt jedoch eindeutig ein GRÜNES Schild-/Logo-Icon mit
+  weißem Kettensymbol UND eine separate navyfarbene "Lexono"-Wortmarke -
+  kein Widerspruch, sondern zwei unterschiedliche Elemente (Icon-Farbe
+  vs. Text-/Ink-Farbe). Umgesetzt: `logo.svg` jetzt grün (`#16a34a`,
+  Commit im Redesign-Batch), Wortmarke bleibt navy/`--ink-900`. Neue,
+  von `--seal-green` (bleibt Navy für generelle UI-Elemente) GETRENNTE
+  Markenfarbe `--brand-green` für Logo/Sendebutton/aktive Chat-
+  Navigation. Die übrigen drei CI-Werte (Canvas `#f8fafc`, Cards
+  `#ffffff`, Secondary Text `#64748b`) bleiben unverändert gültig. Die
+  vier Schnellaktions-Akzentfarben (`--accent-blue`/`-purple`/`-orange`,
+  jetzt auch `--accent-amber`) nutzen bewusst weiterhin NICHT Grün
+  (bleibt exklusive Markenfarbe).
 
 - **`PROMPT38_ANALYSIS.md` (Repo-Root)**: dokumentiert eine abgeschlossene
   ANALYSE zu "Multi-Kanzlei-Profile + Cross-Tenant-Tests", explizit

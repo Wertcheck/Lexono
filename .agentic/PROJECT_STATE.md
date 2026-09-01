@@ -46,7 +46,20 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Modell-Tag/die Basis-URL änderbar - vorher nur per `.env`/CLI möglich.
 - **Chat**: zentrale Startseite nach Login (`/dashboard/chat`), mit
   KI-Ladezustand (Puls-Sprechblase), Büroklammer-Upload, Drag & Drop,
-  vorbereitetem (nicht cloud-angebundenem) Mikrofon-Button.
+  vorbereitetem (nicht cloud-angebundenem) Mikrofon-Button. Seit 01.09.
+  (Referenzbild-Redesign) vollständig überarbeitet: 4 große
+  Schnellaktions-Karten (Icon-Kreis + Titel + Beschreibung, ersetzt die
+  vorherigen kompakten Pillen), 4. Karte "Weitere Funktion hinzufügen"
+  verlinkt die bestehende Standard-Prompts-Verwaltung, ausführlicher
+  Datenschutzhinweis (Icon + Text + "Mehr erfahren"-Link) nur auf der
+  reinen Startansicht. Die vorherige, ständig sichtbare eigene
+  "Unterhaltungen"-Spalte existiert NICHT mehr (Nutzerfeedback) - die
+  Historie ist jetzt als Aufklapp-Unterpunkte der Sidebar-Gruppe "Chat"
+  zu finden (nur auf der Chat-Seite selbst befüllt, sonst bleibt "Chat"
+  ein flacher Link ohne zusätzliche DB-Abfrage). `?new=1`-Parameter auf
+  `GET /dashboard/chat` erzwingt einen echten Leerzustand (behobener
+  Bug: zeigte vorher bei bestehendem Verlauf immer die letzte
+  Unterhaltung, auch bei explizitem "Neue Unterhaltung"-Klick).
 - **Dokument-Workspace**: `/dashboard/chat/{conversation_id}/document/
   {document_id}` – extrahierter Text mit Pseudonymisierungs-Highlighting,
   Aktenisolation getestet. Kein PDF-Seiten-Rendering (bewusst, siehe
@@ -56,8 +69,18 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   funktionsfähig. Logo-Entfernung aus der Titelleiste ebenfalls
   bestätigt (kein `app-titlebar__logo` mehr im HTML).
 - **Statusanzeigen**: Lokale-KI-/Cloud-KI-Status global in der Sidebar
-  (`base.html`, aus `request.app.state`, ohne Router-Änderungen) sowie
-  weiterhin im Chat-Header.
+  (`base.html`, aus `request.app.state`, ohne Router-Änderungen), seit
+  01.09. auf JEDER Seite inkl. Chat sichtbar (vorher dort ausgeblendet
+  wegen Dopplung mit dem Chat-Header - die Header-Kopie wurde im
+  Gegenzug entfernt, Sidebar ist jetzt die einzige Quelle). Cloud-KI vor
+  Lokaler KI, eigene Cloud-/CPU-Icons statt generischem Zahnrad.
+- **Branding/Logo**: neues Logo (grünes Schildsymbol + weißes
+  Kettensymbol, `app/web/static/img/logo.svg`) - löst den vorherigen
+  reinen Navy-Icon-Stand ab. Neue eigenständige Markenfarbe
+  `--brand-green` (Logo/Sendebutton/"Neuen Chat starten"/aktive Chat-
+  Navigation), GETRENNT von `--seal-green` (bleibt Navy/Tinte für
+  generelle UI-Elemente). Schnellaktions-Icons nutzen bewusst NICHT
+  Grün (bleibt exklusive Markenfarbe) - blau/lila/orange/neutral.
 - **Feedback-System**: `app/pilot_feedback/` – Erfassung + lokale
   Keyword-Kategorisierung + Admin-Freigabe-Schleife für System-relevante
   Vorschläge. Für die Pilotphase als ausreichend bewertet.
@@ -73,13 +96,20 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Kontextleiste, referenzieren den echten Dateinamen, nutzen den
   bestehenden Prefill-/Sende-Weg (kein neuer Code-Pfad).
 
-## CI-/Branding-Frage: GEKLÄRT (01.09.)
+## CI-/Branding-Frage: AKTUALISIERT (01.09., später)
 
-Der Nutzer hat die verbindliche CI explizit benannt (Primary/Logo
-`#101828`, Canvas `#f8fafc`, Cards `#ffffff`, Secondary Text `#64748b`)
-- Gegenprüfung ergab, dass der Code bereits exakt diese Werte verwendet.
-Keine Änderung nötig, kein offener Punkt mehr. Siehe `OPEN_ISSUES.md`
-für die Herleitung.
+**Überholt der vorherige Stand dieses Abschnitts** (der eine reine
+Navy-Wortmarke/-Icon als final bestätigt ansah): der Nutzer stellte
+danach eine explizite, verbindliche Bild-Referenz bereit, die ein
+grünes Schild-/Logo-Icon mit weißem Kettensymbol UND eine separate
+navyfarbene "Lexono"-Wortmarke zeigt - beides existiert nebeneinander,
+kein Widerspruch. Umgesetzt: `logo.svg` grün (`#16a34a`), Wortmarken-Text
+bleibt bei `--ink-900`/navy. Neue, von `--seal-green` (bleibt Navy/Tinte
+für generelle UI-Elemente) GETRENNTE Markenfarbe `--brand-green` für
+Logo/Sendebutton/aktive Chat-Navigation. Die zuvor genannten Werte
+(`#101828`/`#f8fafc`/`#ffffff`/`#64748b`) bleiben weiterhin als Ink-/
+Canvas-/Card-Töne gültig - nur die Aussage "Logo ist rein Navy" ist
+überholt. Kein weiterer offener Punkt.
 
 ## Installer
 

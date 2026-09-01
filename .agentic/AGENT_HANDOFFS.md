@@ -313,3 +313,64 @@ kein App-Bug, behoben durch Verkleinern/Neupositionieren des Fensters
 vor dem Klick. Neue "Lokale KI"-Sektion visuell bestaetigt (Status-Tag,
 Hinweistext im deaktivierten Zustand). Siebter Installer-Rebuild
 angestossen, um Settings-Feature + Sicherheitsfix real auszuliefern.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · Neue, sehr detaillierte visuelle
+Referenzvorlage (Bild) bereitgestellt, "verbindliches Abnahmekriterium"
+- Logo, Sidebar-Aufbau/-Einklappen, Navigation, Profil-/Einstellungen-
+Position, Hilfe & Support-Position, Chat-Eingabe, Schnellaktions-Icons,
+Farbwelt. Explizite Abnahmekriterien: Anwendung tatsaechlich im nativen
+Fenster starten, einloggen, Sidebar ein-/ausklappen, mit der Vorlage
+vergleichen, Abweichungen selbststaendig korrigieren.
+
+---
+
+**01.09.** · Orchestrator (Redesign-Umsetzung) · Grossflaechig
+umgesetzt: neues gruenes Logo-Icon (weisses Kettensymbol, navyfarbene
+Wortmarke bleibt getrennt), neue eigenstaendige Markenfarbe
+`--brand-green` (getrennt von `--seal-green`/Navy), Sidebar-Einklappen
+(localStorage-persistiert, kein Ladeflackern), "Neuen Chat starten"-
+Button, Suchfeld-Tastaturkuerzel-Badge wieder sichtbar, flachere
+Navigation (Schriftsatz-Generator/Monitoring/Backup/Fehler & Logs als
+Top-Level-Punkte), Lokale-KI-/Cloud-KI-Status auf jeder Seite inkl.
+Chat. Echter, vorher unbekannter Gap gefunden und geschlossen: "Aufgaben"
+(Task-Datenmodell existierte, keine Seite) - neue
+`app/web/tasks_router.py` mit echtem HTMX-Badge-Zaehler.
+
+---
+
+**01.09.** · Nutzer → Orchestrator · AKTUALISIERTE Referenzvorlage
+bereitgestellt, ersetzt die vorherige vollstaendig. Wichtigste
+Aenderung: 4. Chat-Schnellaktion ist "Weitere Funktion hinzufuegen"
+(nicht "Akte oeffnen"), neuer "Standard-Prompts bearbeiten"-Button,
+Sidebar-Status-Reihenfolge Cloud-KI zuerst mit eigenen Icons.
+
+---
+
+**01.09.** · Orchestrator · Umgesetzt: 4. Karte verlinkt die bereits
+bestehende Standard-Prompts-Verwaltung (kein Fake-Button), "Fehler &
+Logs"-Icon rot, Schnellaktionen als grosse Karten (Icon-Kreis + Titel +
+Beschreibung) statt kompakter Pillen. Dabei echten, unabhaengigen Bug
+gefunden: "Neuen Chat starten"/das "+"-Icon zeigten bei bestehendem
+Verlauf immer die letzte Unterhaltung statt eines Leerzustands (`GET
+/dashboard/chat` waehlte immer `conversations[0]`) - behoben mit
+`?new=1`-Parameter.
+
+---
+
+**01.09.** · Nutzer (Live-Feedback waehrend der Sitzung, 3 Punkte) ·
+(1) "die Spalte Unterhaltungen sollte nicht mehr in dieser Form
+existieren und unter den Menuepunkt chats zu finden sein" - die
+staendig sichtbare `.chat-conversations`-Spalte entfernt, "Chat" ist
+auf der Chat-Seite selbst jetzt eine echte Aufklapp-Gruppe mit der
+Historie als Unterpunkten (Template-Vererbung liefert `conversations`
+in base.html, kein Router-Umbau); auf anderen Seiten bleibt "Chat" ein
+flacher Link ohne zusaetzliche DB-Abfrage. (2) "die Umrandung fuer
+weitere Funktionen hinzufuegen fehlt" - echter CSS-Spezifitaets-Bug
+gefunden (Modifier-Klasse hatte dieselbe Spezifitaet wie die spaeter im
+Stylesheet stehende Basisregel und wurde ueberschrieben) und behoben
+mit zusammengesetzten Selektoren. (3) "Logo naeher an den oberen Rand" -
+Sidebar-Padding reduziert. Alle drei per echter UI-Automatisierung
+(Login, Navigation, Screenshot-Vergleich) verifiziert. Elfter Installer-
+Rebuild mit allen Redesign-Aenderungen angestossen.
