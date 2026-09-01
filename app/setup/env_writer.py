@@ -93,6 +93,18 @@ def format_env_value(value: str | bool | list[str] | int | float) -> str:
       String, IMMER gequotet (nicht nur bei Leerzeichen) - robust gegen
       Sonderzeichen (z. B. "#" würde ohne Quotes als Kommentarbeginn
       fehlinterpretiert) in nutzergesteuerten Werten (Pfade, E-Mail-Zugangsdaten).
+
+    WICHTIG (gefunden bei unabhängiger Review, 01.09.): eingebettete
+    Zeilenumbrüche (`\n`/`\r`) MÜSSEN escaped werden, nicht nur `\\`/`"` -
+    sonst kann ein Formularwert mit echtem Zeilenumbruch aus seiner
+    eigenen gequoteten `KEY="..."`-Zeile "ausbrechen" und eine beliebige
+    neue `ANDERER_KEY=...`-Zeile in die `.env` einschleusen (z. B.
+    `SESSION_SECRET_KEY` überschreiben, was alle aktiven Sessions
+    ungültig macht). `\n`/`\r` als literale Escape-Sequenz innerhalb der
+    Anführungszeichen ist sowohl für python-dotenv als auch
+    pydantic-settings (beide werten `\n` in gequoteten Werten als echten
+    Zeilenumbruch aus) korrekt weiter lesbar - kein Informationsverlust,
+    nur kein Ausbruch aus der Zeile mehr möglich.
     """
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -100,7 +112,13 @@ def format_env_value(value: str | bool | list[str] | int | float) -> str:
         return json.dumps(value)
     if isinstance(value, (int, float)):
         return str(value)
-    escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    escaped = (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
     return f'"{escaped}"'
 
 

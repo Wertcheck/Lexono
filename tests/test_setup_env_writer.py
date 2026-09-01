@@ -107,6 +107,39 @@ def test_format_env_value_escapes_quotes_and_backslashes() -> None:
     assert format_env_value('a"b\\c') == '"a\\"b\\\\c"'
 
 
+def test_format_env_value_escapes_embedded_newlines_preventing_key_injection() -> None:
+    """Regression fuer einen bei unabhaengiger Review (01.09.) gefundenen
+    echten Fund: ein Wert mit eingebettetem Zeilenumbruch konnte zuvor aus
+    seiner eigenen gequoteten KEY="..."-Zeile ausbrechen und eine beliebige
+    neue Zeile in die .env einschleusen (z. B. SESSION_SECRET_KEY
+    ueberschreiben)."""
+    malicious = "http://localhost:11434\nSESSION_SECRET_KEY=attacker-controlled"
+    formatted = format_env_value(malicious)
+
+    # Der escapte Wert darf KEINEN echten Zeilenumbruch mehr enthalten -
+    # das gesamte Ergebnis muss eine einzige physische Zeile bleiben.
+    assert "\n" not in formatted
+    assert formatted == '"http://localhost:11434\\nSESSION_SECRET_KEY=attacker-controlled"'
+
+
+def test_update_env_values_with_embedded_newline_does_not_inject_new_key(tmp_path) -> None:
+    target = tmp_path / ".env"
+    target.write_text(
+        "SESSION_SECRET_KEY=real-secret\nOLLAMA_BASE_URL=http://old:11434\n",
+        encoding="utf-8",
+    )
+
+    malicious = "http://localhost:11434\nSESSION_SECRET_KEY=attacker-controlled"
+    update_env_values(target, {"OLLAMA_BASE_URL": malicious})
+
+    content = target.read_text(encoding="utf-8")
+    lines = content.splitlines()
+    # Genau EINE Zeile pro Schluessel - der eingeschleuste Zeilenumbruch
+    # darf keine zusaetzliche SESSION_SECRET_KEY-Zeile erzeugt haben.
+    session_lines = [line for line in lines if line.startswith("SESSION_SECRET_KEY=")]
+    assert session_lines == ["SESSION_SECRET_KEY=real-secret"]
+
+
 # --- update_env_values ---
 
 
