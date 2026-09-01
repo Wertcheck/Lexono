@@ -93,6 +93,67 @@ den übrigen bearbeiteten Punkten. Der obige Befund ist die konkrete,
 code-basierte Grundlage für diesen Workstream, kein Ersatz dafür - siehe
 `.agentic/OPEN_ISSUES.md` (HIGH) für den nächsten konkreten Schritt.
 
+## Praktischer Austauschbarkeitstest: mistral:7b (01.09., Reliability & Deployment Hardening Cycle)
+
+**Ziel war NICHT eine Modellbewertung, sondern die praktische Verifikation:
+"Kann Lexono dasselbe Local-AI-Interface tatsächlich mit einem zweiten
+Modell betreiben?"** Referenzmaschine identisch zu allen bisherigen
+Benchmarks (i7-3720QM, CPU-only, 16GB RAM, 300GB frei).
+
+**Ergebnis: JA, architektonisch vollständig bestätigt** - `mistral:7b`
+wurde per `OLLAMA_MODEL="mistral:7b"` (derselbe env-Mechanismus wie die
+neue Lokale-KI-Settings-Seite) konfiguriert, OHNE JEDE Code-Änderung:
+
+- **Health Check** (echter `OllamaLocalLLMProvider.check_health()`):
+  `reachable=True, model_available=True` - funktioniert unverändert.
+- **Startup-Statusanzeige**: Sidebar/Chat-Header zeigten korrekt "Lokale
+  KI bereit (mistral:7b)" nach Neustart - derselbe Code-Pfad wie bei
+  `qwen2.5:1.5b`.
+- **`generate()`** (`/api/generate`): funktioniert, liefert eine
+  inhaltlich plausible deutsche Zusammenfassung.
+- **`generate_structured()`** (schema-constrained JSON, derselbe
+  Codepfad wie die echte Claude-Antwortvalidierung): funktioniert,
+  liefert gültiges JSON in 120,5s.
+- **Fehlerverhalten** bei nicht-installiertem Modell-Tag: korrekt
+  kontrolliert (`model_available=False`, klare Fehlermeldung, kein
+  Absturz) - identisch zum bestehenden Verhalten.
+- **Dokument-Workflow über den echten Chat-Endpunkt** (`POST
+  /dashboard/chat/send` mit angehängtem PDF): NICHT vollständig
+  end-to-end durchtestbar, weil `DraftingService`/der Chat-Router
+  bereits VOR dem lokalen KI-Schritt prüft, ob überhaupt ein Cloud-
+  Provider konfiguriert ist (in dieser Testumgebung bewusst nicht der
+  Fall, kein echter Anthropic-Schlüssel) - das ist bestehendes,
+  korrektes Fail-Closed-Verhalten, KEIN mistral-spezifisches Problem.
+  Die lokale KI-Schicht selbst wurde stattdessen direkt und vollständig
+  gegen den echten `OllamaLocalLLMProvider` verifiziert (siehe oben).
+
+**Aber: `mistral:7b` selbst ist auf DIESER Referenzhardware KEINE gute
+praktische Wahl** (bestätigt die bisherige `qwen2.5:1.5b`-Entscheidung,
+ändert sie NICHT):
+
+| Messung | qwen2.5:1.5b (Baseline) | mistral:7b |
+|---|---|---|
+| Cold | ~37s | 142,6s (~3,9× langsamer) |
+| Warm | ~10-11s | 68,0s (~6,4× langsamer) |
+| Platzhaltererhaltung | zuverlässig (Pflichtkriterium erfüllt) | **FEHLGESCHLAGEN** - `[MANDANT_01]` wurde in BEIDEN Läufen (cold UND warm, reproduzierbar) durch Fließtext ("Der Mandant") ersetzt statt unverändert übernommen |
+
+Die Platzhaltererhaltung ist ein **disqualifizierendes** Kriterium
+(exakt wie beim bereits zuvor verworfenen `gemma2:2b`, siehe oben) - die
+in `app/pseudonymize/reconstruct()`-artiger Logik verwendete exakte
+String-Ersetzung würde bei einem verlorenen Platzhalter schlicht nicht
+greifen. **Konsequenz: `qwen2.5:1.5b` bleibt datenbasiert die beste
+Wahl für diese Hardware, KEIN Konfigurationswechsel.** `mistral:7b`
+bleibt technisch nutzbar (falls eine Kanzlei stärkere Hardware und
+höhere Geschwindigkeitstoleranz hat), aber ohne bestätigte
+Platzhaltererhaltung nicht ohne Weiteres empfehlenswert.
+
+**Wichtig, gemäß Auftrag (§8)**: dieser Test führt NICHT dazu, dass ein
+bestimmtes Modell neu "fest verdrahtet" wird - `qwen2.5:1.5b` bleibt ein
+konfigurierter Standardwert (`Settings.ollama_model`), keine
+Architekturannahme. Die Test-Konfiguration (`LOCAL_AI_ENABLED=true`,
+`OLLAMA_MODEL=mistral:7b`) wurde nach dem Test vollständig zurückgesetzt
+(`.env`-Backup wiederhergestellt, Original-Zustand verifiziert).
+
 ## Entscheidungslogik (aktuell implementiert)
 
 `app/local_ai/hardware_detector.py` + `model_catalog.py` +
