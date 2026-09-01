@@ -107,8 +107,12 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   bereits vorhanden (`test_e2e_pilot_scenario.py`,
   `test_e2e_gateway_pilot_scenario.py`), erfüllen §23 vollständig
   (Dokument verarbeitet, PII bleibt lokal, Rekonstruktion funktioniert).
-- Visual QA mit echten Screenshots: **BLOCKIERT** - kein Browser-/
-  Screenshot-Tool in dieser Umgebung verfügbar.
+- Visual QA mit echten Screenshots: **TEILWEISE, seit 01.09. verbessert**
+  - kein Browser-Tool für HTTP-Seiten, ABER eine echte, funktionierende
+  Technik zum Fotografieren des nativen Fensters wurde entdeckt und
+  genutzt (PowerShell + System.Drawing, siehe VISUAL_QA.md) - damit
+  bereits einen echten, vorher unbekannten Bug gefunden und behoben
+  (Schließen-Icon der Titelleiste war am Rand angeschnitten).
 
 ## J – Dokumentation / Repository-Hygiene
 

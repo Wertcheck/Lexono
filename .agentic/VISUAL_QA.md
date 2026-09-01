@@ -1,29 +1,113 @@
 # VISUAL_QA – Screenshot-/Referenzabgleich
 
-Status: **NV (nicht verifiziert)** – in dieser Umgebung steht aktuell kein
-Browser-Automatisierungstool zur Verfügung, mit dem eigenständig
-Screenshots der laufenden Anwendung erzeugt und mit den bereitgestellten
-Referenzbildern verglichen werden könnten. Der Nutzer hat die
-Chrome-Erweiterung für diese Session abgelehnt.
+Status: **TEILWEISE VERFÜGBAR (seit 01.09., echte Kapazitätserweiterung)**
+– kein Browser-Automatisierungstool verfügbar (Nutzer hat die Chrome-
+Erweiterung für diese Session abgelehnt), ABER: für das native Windows-
+Fenster der Desktop-App existiert eine echte, funktionierende
+Screenshot-Technik (unten) - kein Browser-Tool nötig, da es sich um ein
+natives Fenster handelt, kein Browser-Tab.
 
-## Was stattdessen gemacht wurde
+## Funktionierende Technik: natives Fenster fotografieren (01.09. entdeckt)
 
-- Referenzbilder (Chat-Startseite, Dokument-Workspace) wurden visuell
-  analysiert (nicht kopiert) und daraus konkrete, verifizierbare
-  UI-Diffs abgeleitet: vierte Quick-Action „Akte öffnen“, Entfernen des
-  sichtbaren „Strg+K“-Badges, Branding-Korrekturen. Siehe DECISIONS.md
-  und den Git-Commit-Log für die tatsächlich umgesetzten Änderungen.
-- Der große Dokument-Workspace mit Pseudonymisierungs-Highlighting
-  (Referenzbild 2) und die mögliche Sidebar-Statusanzeige (Referenzbild 1)
-  wurden bewusst NICHT blind nachgebaut, da sie größere strukturelle
-  Änderungen erfordern (siehe OPEN_ISSUES.md).
+PowerShell + .NET `System.Drawing` kann den Bildschirminhalt eines
+bestimmten Fensterbereichs als PNG sichern, das anschließend mit dem
+`Read`-Tool tatsächlich VISUELL angesehen werden kann (das Tool liest
+auch Bilddateien). Damit ist echte Visual QA für das native Fenster
+möglich, ohne Browser-Tool.
 
-## Wie ein echter Visual-QA-Lauf nachgeholt werden kann
+```powershell
+Add-Type -AssemblyName System.Drawing
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WinCap {
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+    public struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+}
+"@
 
-1. App im Dev-Modus starten (`python run.py serve --no-window` o. ä.) oder
-   die installierte Version verwenden.
-2. Mit einem Browser-Tool (z. B. Claude-in-Chrome-Erweiterung, wenn vom
-   Nutzer aktiviert) Screenshots bei 1366×768 und 1920×1080 erzeugen.
-3. Mit den Referenzbildern vergleichen, Abweichungen dokumentieren,
-   Korrekturen vornehmen, erneut prüfen (Loop gemäß Masterprompt §23).
-4. Ergebnis hier mit Datum und Status (V/NV) nachtragen.
+# WICHTIG: die korrekte PID ermitteln - NICHT die von Start-Process
+# zurueckgegebene PID blind verwenden (das kann ein Launcher-/
+# Wrapper-Prozess sein, dessen MainWindowHandle 0/ungueltig ist, was zu
+# GARBAGE-Koordinaten fuehrt - real passiert am 01.09., siehe unten).
+# Immer zuerst per MainWindowTitle verifizieren:
+Get-Process | Where-Object { $_.ProcessName -match "kanzlei" } | Select-Object ProcessName, Id, MainWindowTitle
+
+$proc = Get-Process -Id <VERIFIZIERTE_PID>
+$handle = $proc.MainWindowHandle
+[WinCap]::ShowWindow($handle, 9) | Out-Null       # SW_RESTORE, falls minimiert
+[WinCap]::SetForegroundWindow($handle) | Out-Null
+Start-Sleep -Milliseconds 800
+
+$rect = New-Object WinCap+RECT
+[WinCap]::GetWindowRect($handle, [ref]$rect) | Out-Null
+$width = $rect.Right - $rect.Left
+$height = $rect.Bottom - $rect.Top
+
+$bitmap = New-Object System.Drawing.Bitmap $width, $height
+$graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+# NUR den Fensterbereich erfassen (Left/Top/Width/Height), NIEMALS den
+# gesamten Desktop - vermeidet, unbeteiligte sichtbare Inhalte auf dem
+# Bildschirm des Nutzers zu erfassen.
+$graphics.CopyFromScreen($rect.Left, $rect.Top, 0, 0, (New-Object System.Drawing.Size $width, $height))
+$bitmap.Save("<pfad>.png", [System.Drawing.Imaging.ImageFormat]::Png)
+```
+
+Danach: `Read`-Tool auf die gespeicherte PNG-Datei anwenden - das Bild
+wird tatsächlich angezeigt und kann inhaltlich beurteilt werden.
+
+**Für Detailprüfung (z. B. Icon-Rendering in einer Fensterecke)**: einen
+kleinen Ausschnitt croppen und mit `InterpolationMode.NearestNeighbor`
+hochskalieren (z. B. 3-4x), bevor gespeichert wird - macht kleine
+UI-Elemente (28×28px-Buttons, 14px-Icons) am Bildschirm klar erkennbar.
+
+### Bekannte Fallstricke (real erlebt, 01.09.)
+
+1. **Falsche PID → Garbage-Screenshot**: `Start-Process` gibt die PID des
+   gestarteten Prozesses zurück - bei `python run.py serve` ist das
+   NICHT zwingend derselbe Prozess, der später das native Fenster
+   besitzt (pywebview kann intern weitere Prozesse involvieren). Ohne
+   Verifikation über `MainWindowTitle` kann `GetWindowRect` auf einem
+   Fenster mit Handle `0` oder einem völlig anderen, zufällig an
+   denselben Koordinaten liegenden Fenster (z. B. der IDE/dem Terminal
+   des Nutzers) aufgerufen werden - das Ergebnis sieht dann komplett
+   anders aus (z. B. wurde einmal ein natives dunkles 3-Button-Fenster
+   fotografiert, das mit ziemlicher Sicherheit gar nicht Lexono war).
+   **Immer** `MainWindowTitle -eq "Lexono"` vor dem Screenshot prüfen.
+2. **Dev-Modus-Start via `Start-Process` kann inkonsistentes Timing
+   zeigen**: bei einem so gestarteten Dev-Fenster aktivierte sich die
+   eigene Titelleiste (JS-Feature-Detection auf `window.pywebview.api`)
+   in einem Testlauf gar nicht (leere weiße Leiste, kein Button
+   sichtbar), obwohl dieselbe Logik am ECHTEN installierten Build zuvor
+   nachweislich funktionierte. Ursache nicht abschließend geklärt -
+   könnte am Start-Mechanismus liegen (nicht derselbe Pfad wie ein
+   normaler Doppelklick-Start). **Für belastbare Aussagen immer den
+   echten Installer-Build testen, nicht nur einen ad-hoc
+   PowerShell-gestarteten Dev-Prozess.**
+
+## Bereits real durchgeführte Prüfungen
+
+- **01.09.**: Screenshot der laufenden installierten App (Login-Seite)
+  zeigte einen ECHTEN, vorher unbekannten Bug: das Schließen-Icon der
+  eigenen Titelleiste wurde am rechten Fensterrand sichtbar
+  angeschnitten (zu knapper rechter Innenabstand, 6px). Per Zoom-Crop
+  bestätigt (auch außerhalb des gemeldeten Fensterrands weiterhin
+  abgeschnitten, also kein Screenshot-Artefakt). Behoben (Commit
+  `e10c04e`, Abstand auf 20px erhöht) - erneute Verifikation über einen
+  frischen Installer-Build steht aus (siehe PROJECT_STATE.md).
+
+## Was weiterhin fehlt
+
+- Kein Browser-Tool für Chat-UI-Seiten mit dynamischem Inhalt über HTTP
+  (die native-Fenster-Technik oben funktioniert nur für das, was gerade
+  sichtbar im Fenster gerendert ist - für einen systematischen Loop über
+  viele Seiten/Zustände bräuchte es weiterhin Navigation + wiederholtes
+  Screenshotten, technisch möglich, aber manuell pro Zustand).
+- Kein Vergleich bei 1366×768 vs. 1920×1080 (Fenstergröße müsste dafür
+  gezielt per `window.resize()`/`_NativeApi.resize_window_by` gesetzt
+  werden, bisher nicht systematisch durchgeführt).
