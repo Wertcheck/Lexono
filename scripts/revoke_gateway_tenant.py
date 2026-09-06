@@ -1,6 +1,10 @@
 """Widerruft eine bestehende Kanzlei-Credential am Lexono-Gateway (ARCHITECTURE.md §70).
 
-    GATEWAY_TENANT_CLIENT_ID="<client_id>" python scripts/revoke_gateway_tenant.py
+    GATEWAY_TENANT_CLIENT_ID="<client_id>" python -m scripts.revoke_gateway_tenant
+
+WICHTIG: als Modul aufrufen ("python -m scripts.revoke_gateway_tenant"), NICHT
+als Datei - siehe Docstring von scripts/create_gateway_tenant.py für die
+Begründung (sys.path/ModuleNotFoundError).
 
 Duenner Wrapper um `gateway.tenant_admin.revoke_tenant` (analog zu
 `scripts/create_gateway_tenant.py`) - implementiert KEINE eigene

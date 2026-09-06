@@ -1,7 +1,11 @@
 """Rotiert das Secret einer bestehenden Kanzlei-Credential am Lexono-Gateway
 (ARCHITECTURE.md §70).
 
-    GATEWAY_TENANT_CLIENT_ID="<client_id>" python scripts/rotate_gateway_tenant_secret.py
+    GATEWAY_TENANT_CLIENT_ID="<client_id>" python -m scripts.rotate_gateway_tenant_secret
+
+WICHTIG: als Modul aufrufen ("python -m scripts.rotate_gateway_tenant_secret"),
+NICHT als Datei - siehe Docstring von scripts/create_gateway_tenant.py für die
+Begründung (sys.path/ModuleNotFoundError).
 
 Duenner Wrapper um `gateway.tenant_admin.rotate_tenant_secret` (analog zu
 `scripts/create_gateway_tenant.py`) - implementiert KEINE eigene

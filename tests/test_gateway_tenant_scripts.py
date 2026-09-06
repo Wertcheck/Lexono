@@ -8,7 +8,11 @@ aufrufen - keine neue Credential-Logik hier."""
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from sqlalchemy import create_engine
@@ -18,6 +22,8 @@ from sqlalchemy.pool import StaticPool
 import scripts.revoke_gateway_tenant as revoke_script
 import scripts.rotate_gateway_tenant_secret as rotate_script
 from gateway.models import Base, Tenant
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
 from gateway.tenant_admin import create_tenant
 
 
@@ -121,3 +127,59 @@ def test_rotate_script_reports_unknown_client_id(
 
     assert exit_code == 1
     assert "FEHLER" in capsys.readouterr().err
+
+
+# --- Regression: dokumentierte Aufrufform muss tatsaechlich funktionieren
+# (Release-Review-Befund: "python scripts/x.py" schlaegt mit
+# "ModuleNotFoundError: No module named 'gateway'" fehl, weil dabei nur das
+# scripts/-Verzeichnis selbst zu sys.path hinzugefuegt wird, nicht das
+# Repository-Root. "python -m scripts.x" fuegt stattdessen das aktuelle
+# Arbeitsverzeichnis hinzu - siehe deploy/README.md und die Docstrings der
+# drei Skripte, die jetzt konsistent die "-m"-Form dokumentieren.) ---
+
+
+def test_create_gateway_tenant_script_runs_via_module_invocation(tmp_path: Path) -> None:
+    db_path = tmp_path / "gateway.db"
+    env = dict(os.environ)
+    env["GATEWAY_TENANT_NAME"] = "Subprozess-Test-Kanzlei"
+    env["DATABASE_URL"] = f"sqlite:///{db_path}"
+    env.pop("LEXONO_GATEWAY_URL", None)  # nur die Gateway-eigene .env-Namespace-Variable zaehlt
+
+    result = subprocess.run(
+        [sys.executable, "-m", "scripts.create_gateway_tenant"],
+        cwd=_REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
+    assert "client_id:" in result.stdout
+
+
+def test_create_gateway_tenant_script_fails_with_documented_broken_invocation(
+    tmp_path: Path,
+) -> None:
+    """Dokumentiert bewusst das GEGENTEIL des obigen Tests: die frueher in
+    README/Docstrings verwendete Aufrufform ("python scripts/datei.py")
+    scheitert nachweislich - Beleg dafuer, dass der Fix (siehe Test oben)
+    tatsaechlich einen realen, reproduzierbaren Fehler behebt und nicht nur
+    kosmetisch ist."""
+    db_path = tmp_path / "gateway.db"
+    env = dict(os.environ)
+    env["GATEWAY_TENANT_NAME"] = "Subprozess-Test-Kanzlei"
+    env["DATABASE_URL"] = f"sqlite:///{db_path}"
+
+    result = subprocess.run(
+        [sys.executable, "scripts/create_gateway_tenant.py"],
+        cwd=_REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    assert result.returncode != 0
+    assert "ModuleNotFoundError" in result.stderr

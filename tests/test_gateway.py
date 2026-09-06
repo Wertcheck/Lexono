@@ -8,6 +8,8 @@ einzige Stelle ist, die den echten Anthropic-Key tatsächlich verwendet."""
 
 from __future__ import annotations
 
+import io
+import logging
 from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
@@ -20,10 +22,10 @@ from sqlalchemy.pool import StaticPool
 
 from gateway.config import GatewaySettings, get_gateway_settings
 from gateway.db import build_engine
-from gateway.main import app, get_db
+from gateway.main import _configure_logging, app, get_db
 from gateway.models import Base, Tenant
 from gateway.rate_limiter import SlidingWindowRateLimiter
-from gateway.security import generate_client_secret, hash_client_secret
+from gateway.security import generate_client_secret, hash_client_secret, verify_client_secret
 from gateway.tenant_admin import create_tenant, revoke_tenant, rotate_tenant_secret
 
 
@@ -527,3 +529,117 @@ def test_failed_relay_logs_dash_for_missing_token_counts(
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "input_tokens=-" in log_text
     assert "output_tokens=-" in log_text
+
+
+# --- Release-Review-Befunde (01.09.) ---
+
+
+def test_configure_logging_makes_relay_log_lines_actually_visible() -> None:
+    """Regressionstest fuer einen realen, per Deployment-Simulation
+    gefundenen Fehler: ohne `_configure_logging()` blieb der Root-Logger auf
+    Level WARNING ohne Handler - `log_relay_request`s INFO-Zeilen wurden
+    still verworfen, `journalctl` haette in Produktion NIE die
+    strukturierten request_id/tenant_id/.../input_tokens-Zeilen gezeigt,
+    nur uvicorns eigene Access-Log-Zeilen. Dieser Test haengt einen echten
+    Handler an root, ruft `_configure_logging` auf und prueft, dass eine
+    anschliessende `log_relay_request`-Zeile tatsaechlich dort ankommt -
+    im Unterschied zu den Logging-Tests oben, die bewusst NICHT
+    `caplog.at_level(...)` verwenden (das wuerde genau diesen Fehler
+    maskieren, da es den Root-/Logger-Level unabhaengig von der echten
+    Anwendungskonfiguration erzwingt)."""
+    from gateway.logging_utils import log_relay_request
+
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    root_logger = logging.getLogger()
+    original_handlers = root_logger.handlers[:]
+    original_level = root_logger.level
+    try:
+        settings = GatewaySettings(anthropic_api_key="sk-ant-fake", log_level="INFO")
+        _configure_logging(settings)
+        # _configure_logging (force=True) hat alle vorherigen Root-Handler
+        # entfernt - fuer die Pruefung selbst braucht es einen eigenen, der
+        # Ausgabe tatsaechlich mitschneidet.
+        root_logger.addHandler(handler)
+
+        log_relay_request(
+            request_id="regression-check",
+            tenant_id="tenant-x",
+            duration_ms=1.0,
+            status=200,
+            error_category=None,
+            input_tokens=7,
+            output_tokens=3,
+        )
+
+        output = stream.getvalue()
+        assert "regression-check" in output
+        assert "input_tokens=7" in output
+        assert "output_tokens=3" in output
+    finally:
+        root_logger.handlers = original_handlers
+        root_logger.setLevel(original_level)
+
+
+def test_configure_logging_respects_configured_level() -> None:
+    settings = GatewaySettings(anthropic_api_key="sk-ant-fake", log_level="WARNING")
+    original_level = logging.getLogger().level
+    try:
+        _configure_logging(settings)
+        assert logging.getLogger("lexono_gateway.relay").getEffectiveLevel() == logging.WARNING
+    finally:
+        logging.getLogger().setLevel(original_level)
+
+
+# --- Release-Review-Befund: keine oeffentliche API-Dokumentation fuer einen
+# minimalen, ausschliesslich authentifizierten Relay ---
+
+
+def test_docs_endpoints_are_disabled(client: TestClient) -> None:
+    assert client.get("/docs").status_code == 404
+    assert client.get("/redoc").status_code == 404
+    assert client.get("/openapi.json").status_code == 404
+
+
+# --- Release-Review-Befund: Timing-Seitenkanal in require_tenant() ---
+
+
+def test_unknown_client_id_still_triggers_a_dummy_argon2_verify(
+    client: TestClient,
+) -> None:
+    """Strukturelle (nicht zeitbasierte, daher nicht flaky) Absicherung:
+    verify_client_secret() muss auch fuer eine UNBEKANNTE client_id
+    aufgerufen werden, nicht nur fuer eine bekannte mit falschem Secret -
+    sonst waere die Argon2-Laufzeit ein messbarer Hinweis darauf, ob eine
+    client_id ueberhaupt zu einem Tenant gehoert (CWE-208)."""
+    with patch("gateway.main.verify_client_secret", wraps=verify_client_secret) as spy:
+        response = client.post(
+            "/v1/relay/messages",
+            json=_relay_body(),
+            headers={"Authorization": "Bearer unknown-client-id:some-secret"},
+        )
+    assert response.status_code == 401
+    assert spy.call_count == 1
+
+
+def test_revoked_tenant_still_triggers_a_dummy_argon2_verify(
+    client: TestClient, db_session: Session, tenant_credential: tuple[Tenant, str]
+) -> None:
+    tenant, secret = tenant_credential
+    revoke_tenant(db_session, client_id=tenant.client_id)
+    with patch("gateway.main.verify_client_secret", wraps=verify_client_secret) as spy:
+        response = client.post(
+            "/v1/relay/messages", json=_relay_body(), headers=_auth_header(tenant, secret)
+        )
+    assert response.status_code == 401
+    assert spy.call_count == 1
+
+
+def test_dummy_verify_uses_a_fixed_hash_not_the_looked_up_tenants_hash() -> None:
+    """`_DUMMY_SECRET_HASH` muss ein fixer, beim Modul-Import berechneter
+    Wert sein - kein echtes/persistiertes Tenant-Secret."""
+    from gateway.main import _DUMMY_SECRET_HASH
+
+    assert _DUMMY_SECRET_HASH.startswith("$argon2")
+    assert verify_client_secret("lxg_secret_dummy-value-fuer-timing-schutz-nur", _DUMMY_SECRET_HASH) is True
+    assert verify_client_secret("irgendein-anderes-secret", _DUMMY_SECRET_HASH) is False

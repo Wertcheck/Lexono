@@ -90,8 +90,22 @@ nötig). `gateway/` selbst wird dabei **nicht** als eigenes Paket installiert
 deshalb startet der Service unten über `python -m uvicorn` statt des
 `uvicorn`-Konsolenskripts, siehe Kommentar in `deploy/lexono-gateway.service`.
 
-`gateway_data/` (SQLite-Datei mit Tenant-Metadaten) wird beim ersten Start
-automatisch angelegt (`gateway/db.py::_ensure_sqlite_directory_exists`).
+`gateway_data/` (SQLite-Datei mit Tenant-Metadaten) wird von der Anwendung
+selbst beim ersten Start automatisch angelegt
+(`gateway/db.py::_ensure_sqlite_directory_exists`) – das gilt aber nur für
+einen direkten, ungesandboxten Start. Die mitgelieferte systemd-Unit setzt
+`ProtectSystem=strict` und gewährt Schreibzugriff ausschließlich über
+`ReadWritePaths=/opt/lexono-gateway/current/gateway_data` (siehe
+`deploy/lexono-gateway.service`) – ob systemd diesen Pfad automatisch anlegt,
+falls er beim ersten Start noch nicht existiert, ist versionsabhängig und
+hier nicht zweifelsfrei verifizierbar. Um das Risiko eines fehlschlagenden
+ersten Starts ganz zu vermeiden, das Verzeichnis deshalb **explizit vor**
+`systemctl enable --now lexono-gateway` (Schritt 4) anlegen:
+
+```bash
+mkdir -p /opt/lexono-gateway/current/gateway_data
+chown lexono-gateway:lexono-gateway /opt/lexono-gateway/current/gateway_data
+```
 
 ## 3. Secrets konfigurieren
 
@@ -193,8 +207,14 @@ Freigabe des echten Serverbetriebs durchzuführen.
 
 ```bash
 cd /opt/lexono-gateway/current
-GATEWAY_TENANT_NAME="Kanzlei Mustermann" .venv/bin/python scripts/create_gateway_tenant.py
+GATEWAY_TENANT_NAME="Kanzlei Mustermann" .venv/bin/python -m scripts.create_gateway_tenant
 ```
+
+Wichtig: als Modul aufrufen (`-m scripts.create_gateway_tenant`), nicht als
+Datei (`.venv/bin/python scripts/create_gateway_tenant.py`) - Letzteres
+schlägt mit `ModuleNotFoundError: No module named 'gateway'` fehl, da nur das
+`scripts`-Verzeichnis selbst zu `sys.path` hinzugefügt wird, nicht das
+Repository-Root. Gilt für alle drei Skripte in diesem Dokument.
 
 Gibt `client_id` und das Klartext-`client_secret` **einmalig** aus. Beide
 Werte in der betroffenen Kanzlei-`.env` eintragen:
@@ -226,12 +246,12 @@ Anthropic-Key bleiben unberührt:
 
 ```bash
 # Sofortiger Widerruf (Kanzlei kann sich danach nicht mehr authentifizieren):
-GATEWAY_TENANT_CLIENT_ID="<client_id>" .venv/bin/python scripts/revoke_gateway_tenant.py
+GATEWAY_TENANT_CLIENT_ID="<client_id>" .venv/bin/python -m scripts.revoke_gateway_tenant
 
 # Alternative: nur das Secret rotieren (client_id bleibt, altes Secret
 # wird sofort ungueltig, neues Secret muss in der Kanzlei-.env hinterlegt
 # werden):
-GATEWAY_TENANT_CLIENT_ID="<client_id>" .venv/bin/python scripts/rotate_gateway_tenant_secret.py
+GATEWAY_TENANT_CLIENT_ID="<client_id>" .venv/bin/python -m scripts.rotate_gateway_tenant_secret
 ```
 
 ## 10. Update-Prozess / Rollback
@@ -240,7 +260,7 @@ GATEWAY_TENANT_CLIENT_ID="<client_id>" .venv/bin/python scripts/rotate_gateway_t
 cd /opt/lexono-gateway/current
 git fetch
 git checkout <neuer-tag-oder-commit>
-.venv/bin/pip install -e ".[gateway]"
+.venv/bin/pip install -e .
 sudo systemctl restart lexono-gateway
 curl https://.../health   # verifizieren
 ```

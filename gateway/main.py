@@ -6,6 +6,7 @@ Ein einziger funktionaler Endpunkt (`POST /v1/relay/messages`) plus
 
 from __future__ import annotations
 
+import logging
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -22,9 +23,25 @@ from gateway.models import Tenant
 from gateway.rate_limiter import SlidingWindowRateLimiter
 from gateway.relay import RelayError, call_anthropic
 from gateway.schemas import RelayRequest, RelayResponse
-from gateway.security import parse_bearer_credential, verify_client_secret
+from gateway.security import hash_client_secret, parse_bearer_credential, verify_client_secret
 
 _rate_limiter = SlidingWindowRateLimiter()
+
+# Release-Review-Befund: Timing-Seitenkanal in require_tenant(). Ohne diesen
+# Dummy-Hash kehrte die Funktion bei unbekannter/deaktivierter client_id
+# SOFORT zurueck (nur ein DB-Lookup, keine Argon2-Pruefung), waehrend eine
+# bekannte, aktive client_id mit falschem Secret zusaetzlich einen echten
+# Argon2id-Verify durchlief (~60-70ms auf typischer Server-Hardware, siehe
+# Review-Notiz) - dieser Laufzeitunterschied laesst sich messen und erlaubt,
+# gueltige/aktive client_id-Werte zu enumerieren, OHNE das zugehoerige
+# Secret zu kennen (CWE-208). client_id ist zwar bewusst kein Geheimnis fuer
+# sich allein (siehe gateway/models.py), aber die Existenz/den Aktivstatus
+# einer Kanzlei-Installation sollte ein nicht authentifizierter Aufrufer
+# trotzdem nicht per Zeitmessung erfahren koennen. Fixer, einmalig beim
+# Modul-Import berechneter Dummy-Hash (kein echtes Secret, keine
+# Persistenz) - wird im "Tenant nicht gefunden"-Pfad gegengeprueft, um dort
+# dieselbe Argon2-Laufzeit wie im echten Pruefpfad zu erzeugen.
+_DUMMY_SECRET_HASH = hash_client_secret("lxg_secret_dummy-value-fuer-timing-schutz-nur")
 
 
 @lru_cache
@@ -41,13 +58,48 @@ def get_db() -> Session:
     yield from iter_session(_session_factory())
 
 
+def _configure_logging(settings: GatewaySettings) -> None:
+    """Release-Review-Befund (01.09.): OHNE diese Konfiguration erreichen die
+    INFO-Log-Zeilen aus `log_relay_request` (request_id/tenant_id/duration_ms/
+    status/error_category/input_tokens/output_tokens) NIE einen Handler -
+    Pythons Root-Logger hat ohne explizite Konfiguration Level WARNING und
+    keine Handler, `.info(...)`-Aufrufe werden dann still verworfen. Empirisch
+    bestaetigt: in einem so gestarteten Prozess zeigte `journalctl` bisher NUR
+    uvicorns eigene Access-Log-Zeilen ("POST ... 200 OK"), nie die
+    strukturierten Zeilen aus `gateway/logging_utils.py` - die gesamte
+    Nutzungs-/Audit-Logging-Funktionalitaet war dadurch faktisch unsichtbar.
+    `force=True` sorgt fuer deterministisches Verhalten unabhaengig davon, ob
+    zuvor bereits (z. B. durch ein aufrufendes Test-/Entwicklungs-Tool) andere
+    Root-Handler gesetzt wurden - dieses Modul ist der Prozesseinstiegspunkt
+    des Gateway, eine eigene, vollstaendige Kontrolle ueber die Logging-
+    Konfiguration ist hier sachgerecht."""
+    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        force=True,
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    _configure_logging(get_gateway_settings())
     init_db(_engine())
     yield
 
 
-app = FastAPI(title="Lexono Gateway", lifespan=lifespan)
+app = FastAPI(
+    title="Lexono Gateway",
+    lifespan=lifespan,
+    # Release-Review-Befund: ein minimaler, ausschliesslich fuer
+    # authentifizierte Kanzlei-Installationen bestimmter Relay braucht keine
+    # oeffentlich erreichbare Swagger-UI/OpenAPI-Schema-Exposition -
+    # unnoetige Angriffsflaeche/Informationspreisgabe ueber die interne
+    # API-Struktur ohne fachlichen Nutzen fuer diesen Dienst.
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 def _unauthorized() -> HTTPException:
@@ -69,6 +121,12 @@ def require_tenant(
     client_id, secret = parsed
     tenant = db.query(Tenant).filter(Tenant.client_id == client_id).first()
     if tenant is None or not tenant.is_active:
+        # Dummy-Verify GEGEN EINEN FIXEN HASH (siehe _DUMMY_SECRET_HASH oben) -
+        # nicht um "secret" zu pruefen (das Ergebnis wird bewusst verworfen),
+        # sondern um dieselbe Argon2-Laufzeit wie im echten Pruefpfad unten zu
+        # erzeugen und damit eine client_id-Enumeration per Antwortzeit zu
+        # verhindern.
+        verify_client_secret(secret, _DUMMY_SECRET_HASH)
         raise _unauthorized()
     if not verify_client_secret(secret, tenant.secret_hash):
         raise _unauthorized()

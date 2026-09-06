@@ -1,6 +1,13 @@
 """Legt eine neue Kanzlei-Credential am Lexono-Gateway an (ARCHITECTURE.md §70).
 
-    GATEWAY_TENANT_NAME="Kanzlei Mustermann" python scripts/create_gateway_tenant.py
+    GATEWAY_TENANT_NAME="Kanzlei Mustermann" python -m scripts.create_gateway_tenant
+
+WICHTIG: als Modul aufrufen ("python -m scripts.create_gateway_tenant"), NICHT
+als Datei ("python scripts/create_gateway_tenant.py") - Letzteres fügt nur das
+"scripts"-Verzeichnis selbst zu sys.path hinzu, wodurch "gateway" (ein
+Geschwister-Package auf Repository-Root-Ebene) nicht gefunden wird
+("ModuleNotFoundError: No module named 'gateway'"). "-m" fügt stattdessen das
+aktuelle Arbeitsverzeichnis (Repository-Root) hinzu - siehe deploy/README.md.
 
 Liest den Anzeigenamen aus `GATEWAY_TENANT_NAME` (Pflicht) und optional
 `GATEWAY_TENANT_RATE_LIMIT` (Default: `default_rate_limit_per_minute` aus
