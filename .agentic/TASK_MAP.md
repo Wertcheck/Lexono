@@ -40,11 +40,15 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   cloud-angebunden): **ERLEDIGT** (heute Nacht).
 - KI-Ladezustand (Puls-Sprechblase): **ERLEDIGT** (heute Nacht,
   Commit `f55925b`).
-- Eigene Fenster-Titelleiste (Task #61): **ERLEDIGT, funktional verifiziert**
-  (Nutzer hat Schließen-Button real bestätigt: "x button closes the
-  app"). Rein optische Feinheiten (Logo entfernt) sind im Code behoben
-  und in der finalen Installation ausgeliefert, aber noch nicht vom
-  Nutzer visuell bestätigt (Nutzer ist unterwegs).
+- Eigene Fenster-Titelleiste (Task #61): **ÜBERHOLT (12.09.)** - per
+  explizitem Nutzerauftrag ("Master Agentic Execution Prompt") wieder auf
+  natives OS-Fenster-Chrome (inkl. nativer abgerundeter Ecken via DWM)
+  umgestellt; die eigene Titelleiste existiert nicht mehr. Real verifiziert
+  über echte Win32/DWM-API-Abfragen gegen den laufenden Prozess. Siehe
+  `LEXONO_MASTER_PRODUCT.md` §19 ("Drift #1") - dieser Eintrag blieb
+  bewusst als historischer Stand stehen, beschreibt aber NICHT mehr die
+  aktuelle Architektur. `ARCHITECTURE.md`s Kanonik-Block ist auf diesem
+  Punkt ebenfalls noch veraltet und noch nicht korrigiert.
 
 ## D – Dokumentworkflow
 

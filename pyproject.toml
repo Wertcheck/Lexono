@@ -1,5 +1,5 @@
 [project]
-name = "kanzlei-ai"
+name = "lexono"
 version = "0.1.0"
 description = "Konfigurierbare KI-gestuetzte Workflow-Plattform fuer eine Anwaltskanzlei (Prototyp)"
 readme = "README.md"
@@ -63,14 +63,14 @@ dependencies = [
     # scheitert (Cython-Fehler in blis) - deshalb dieser Ansatz.
     "spacy>=3.7",
     # HINWEIS (Folgepunkt, bewusst nicht Teil von §63): Das PyInstaller-Spec
-    # (windows/kanzlei_ai.spec) buendelt das spaCy-Modell noch nicht - fuer
+    # (windows/lexono.spec) buendelt das spaCy-Modell noch nicht - fuer
     # den Windows-Installer-Build muss dort ein zusaetzlicher Daten-Include
     # ergaenzt werden, sonst fehlt das Modell im gepackten Build.
     # HTTP-Client fuer app/updater/checker.py (Update-Manifest-Abruf). War
     # zuvor nur unter [dev] gelistet (dort ueber FastAPIs eigenen
     # httpx-Bedarf fuer TestClient bereits vorhanden) - echter, bisher
     # unbemerkter Laufzeit-Bedarf, jetzt korrekt als Kernabhaengigkeit
-    # gefuehrt, damit auch der PyInstaller-Build (windows/kanzlei_ai.spec)
+    # gefuehrt, damit auch der PyInstaller-Build (windows/lexono.spec)
     # sie bundlet.
     "httpx>=0.27",
     # Natives Fensterfenster um den bestehenden Web-Stack (Prompt 46) - zieht

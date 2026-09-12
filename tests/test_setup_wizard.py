@@ -114,6 +114,74 @@ def test_wizard_overwrites_existing_env_with_force(tmp_path) -> None:
     assert "EXISTING=1" not in result.env_path.read_text(encoding="utf-8")
 
 
+# --- Ersteinrichtungs-Marker fuer Start.vbs (real beim Endanwender
+# aufgetretener P0-Vorfall, siehe OPEN_ISSUES.md: `.env` allein ist KEIN
+# verlaesslicher Beweis fuer "Ersteinrichtung abgeschlossen", da es bereits
+# vor Migration/Admin-Anlage geschrieben wird) ---
+
+
+def test_wizard_writes_setup_complete_marker_after_successful_admin_creation(
+    tmp_path,
+) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+
+    run_setup_wizard(
+        data_dir=data_dir,
+        admin_email="anwalt@kanzlei.test",
+        admin_password=None,
+        run_migrations=lambda: None,
+        create_admin=lambda email, password: None,
+    )
+
+    assert (data_dir / ".setup_complete").exists()
+
+
+def test_wizard_does_not_write_setup_complete_marker_when_admin_creation_fails(
+    tmp_path,
+) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+
+    def _failing_create_admin(email: str, password: str | None) -> None:
+        raise RuntimeError("Admin-Anlage fehlgeschlagen (simulierter Subprozessfehler)")
+
+    with pytest.raises(RuntimeError):
+        run_setup_wizard(
+            data_dir=data_dir,
+            admin_email="anwalt@kanzlei.test",
+            admin_password=None,
+            run_migrations=lambda: None,
+            create_admin=_failing_create_admin,
+        )
+
+    # .env existiert bereits (erster Schritt), der Marker aber NICHT - genau
+    # dieser Zustand (.env ja, Marker/Benutzer nein) ist der real
+    # reproduzierte Fehlerfall.
+    assert (data_dir / ".env").exists()
+    assert not (data_dir / ".setup_complete").exists()
+
+
+def test_wizard_does_not_write_setup_complete_marker_when_migration_fails(
+    tmp_path,
+) -> None:
+    data_dir = tmp_path / "kanzlei_data"
+
+    def _failing_migration() -> None:
+        raise RuntimeError("Migration fehlgeschlagen (simulierter Subprozessfehler)")
+
+    with pytest.raises(RuntimeError):
+        run_setup_wizard(
+            data_dir=data_dir,
+            admin_email="anwalt@kanzlei.test",
+            admin_password=None,
+            run_migrations=_failing_migration,
+            create_admin=lambda email, password: pytest.fail(
+                "Admin-Anlage sollte nach fehlgeschlagener Migration nicht aufgerufen werden"
+            ),
+        )
+
+    assert not (data_dir / ".setup_complete").exists()
+
+
 # --- Lokale KI (Phase 3, §71) ---
 
 

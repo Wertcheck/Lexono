@@ -21,8 +21,14 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
 from app.config import Settings
 
-SESSION_COOKIE_NAME = "kanzlei_ai_session"
-_SALT = "kanzlei-ai-session-v1"
+# Produktidentitaets-Bereinigung (KanzleiAI -> Lexono): Nebeneffekt einer
+# Aenderung hier ist, dass jede bereits aktive Session beim naechsten
+# Update einmalig neu angemeldet werden muss (das alte Cookie wird nicht
+# mehr erkannt bzw. die Signatur nicht mehr validiert) - akzeptiert, kein
+# Datenverlust, nur eine einmalige erneute Anmeldung mit dem bereits
+# bekannten Passwort.
+SESSION_COOKIE_NAME = "lexono_session"
+_SALT = "lexono-session-v1"
 
 
 def _serializer(settings: Settings) -> URLSafeTimedSerializer:

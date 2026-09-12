@@ -18,12 +18,29 @@ Kategorien A–K), `TEST_STATE.md` (Testbaseline), `MODEL_EVALUATION.md`,
 
 - Produktname: **Lexono**. „KanzleiAI“/„Kanzlei AI“ war ausschließlich ein
   früherer interner Arbeitstitel und darf in sichtbarer Produktidentität
-  nicht mehr auftauchen (Ausnahme: interne technische Pfade/Modulnamen wie
-  `kanzlei_ai.exe`, `app/`-Paketstruktur, `%LOCALAPPDATA%\Lexono` intern
-  weiterhin `KanzleiAI` als `ProgramData`-Verzeichnisname – siehe
-  DECISIONS.md, kein blindes globales Rename bestehender Datenpfade).
-  Verifiziert: kein „KanzleiAI“-Rest mehr in Templates oder sichtbaren
-  UI-Strings (Stand 01.09., vollständig gegengeprüft).
+  nicht mehr auftauchen.
+  **Stand 12.09. (aktuell, ersetzt die vorherigen Einträge vom 01.09./
+  12.09. früher am selben Tag):** auf ausdrücklichen, erweiterten
+  Nutzerauftrag vollständig durchgeführter Rename über das gesamte aktive
+  Produkt - `windows/kanzlei_ai.spec` → `windows/lexono.spec`
+  (`EXE`/`COLLECT`-Name "Lexono"), `pyproject.toml`-Paketname → `lexono`,
+  Session-Cookie-Name/-Salt, Backup-Archiv-Dateiname, Log-Download-
+  Dateiname, Uvicorn-Thread-Name, `Start.vbs`-exe-Suche, sowie die beiden
+  einzigen verbliebenen sichtbaren CLI-Hinweistexte in `backup.html`/
+  `settings.html`. Installer (`Lexono.exe`/`Lexono_Setup.exe`) neu gebaut
+  und die tatsächlich gebündelten Template-Dateien direkt inspiziert, um
+  zu bestätigen, dass die Korrektur wirklich ausgeliefert wird.
+  Bewusst UNVERÄNDERT (Datenmigration statt Rename, siehe DECISIONS.md):
+  DB-Dateiname `kanzlei_ai.db`, Log-Dateiname `kanzlei_ai.log`, der
+  Legacy-Env-Var-Name `KANZLEI_AI_DATA_DIR` (nur noch als Fallback) und
+  der `AppId`/`AppMutex` des Installers (Upgrade-Kontinuität).
+  `%ProgramData%\KanzleiAI` wird beim nächsten echten Start automatisch
+  und sicher (atomares Rename, Fallback bei Fehlschlag) nach
+  `%ProgramData%\Lexono` migriert - bestehende Daten werden dabei NICHT
+  gelöscht. Verifiziert: volle Testsuite (1538 bestanden, 1 übersprungen,
+  0 fehlgeschlagen); Zero-Active-Legacy-Scan über den gesamten
+  Quellbaum durchgeführt (Ergebnisliste ausschließlich historische
+  Dokumentation und bewusst beibehaltene Legacy-Fallback-Pfade).
 - Zielgruppe: Steuer-/Wirtschaftskanzleien (nicht primär Arbeitsrecht).
 
 ## Architektur-Kernprinzip (nicht verhandelbar)
@@ -35,6 +52,22 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
 `ARCHITECTURE.md` §§ zur Gateway- und Local-AI-Architektur (zuletzt §71).
 
 ## Aktueller funktionaler Stand
+
+- **Cloud AI / Claude, aktueller Pilotpfad (12.09., P0 Cloud-AI Direct-
+  Anthropic-Validierungslauf)**: **Direct-Anthropic-Pilotpfad (kein
+  Gateway, `LEXONO_GATEWAY_URL` ungesetzt) real end-to-end verifiziert** -
+  echter Presidio-Lauf, echte Pseudonymisierung, echter lokaler
+  Ollama-Schritt (`qwen3:8b`), echter direkter Anthropic-API-Aufruf,
+  echte Rekonstruktion, alles ueber die reale
+  `service_factory.get_drafting_service()`/`DraftingService.create_draft()`
+  - dieselbe Funktion, die auch der echte Chat-Endpunkt aufruft. Der
+  Lexono-Gateway (`gateway/`, siehe Absatz unten "produktiv
+  einsatzbereit") bleibt fuer diesen Pilotpfad bewusst **DEFERRED**, nicht
+  Teil dieses Nachweises - "produktiv einsatzbereit" unten bezieht sich
+  auf den Gateway-CODE, nicht auf einen tatsaechlich verifizierten,
+  deployten Lauf (siehe `LEXONO_MASTER_PRODUCT.md` P0-08 fuer die
+  praezise Unterscheidung). Nicht verwechseln: Direct-Key-Pilot verifiziert
+  != Gateway-Produktionspfad verifiziert.
 
 - **Gateway-Architektur**: produktiv einsatzbereit, Baseline. Erweitert
   (01.09., separater Hetzner-VPS-Umsetzungsauftrag, noch KEIN echter
@@ -79,6 +112,29 @@ Schlüssel-/Zugriffsverwaltung, NICHT die Privacy-Prüfstelle. Siehe
   Wizard verdrahtet. Seit 01.09. zusätzlich über die Web-Settings-Seite
   (`/dashboard/settings`, Abschnitt "Lokale KI") sichtbar UND das
   Modell-Tag/die Basis-URL änderbar - vorher nur per `.env`/CLI möglich.
+- **Installierter Windows-Produktpfad, real Ende-zu-Ende bewiesen (12.09.)**:
+  Installer → echter Clean-Room-DATA_DIR (`%ProgramData%\KanzleiAI`
+  reversibel umbenannt, nicht gelöscht) → First Run (Migration + Admin-
+  Anlage) → Login → erzwungener Passwortwechsel → Neustart → Login erneut
+  → Local-AI-Bootstrap MIT echtem, zuvor deinstalliertem Ollama (echte
+  Neuinstallation + Modell-Download `qwen3:8b` trotz real beobachteter
+  Netzwerk-Stalls, siehe Ollama-eigenes `server.log`) → echte lokale
+  Inferenz (~96s) - alles über die tatsächlich installierte .exe, nicht
+  den Entwicklungsbetrieb. Passwort-Recovery (`kanzlei_ai.exe
+  reset-admin-password`, siehe `run.py::cmd_reset_admin_password`) real
+  gegen einen bestehenden Admin verifiziert. Bekanntes Risiko dabei
+  gefunden: siehe `OPEN_ISSUES.md` CRITICAL, Antivirus kann Teile des
+  installierten Bundles nachträglich entfernen.
+- Natives Windows-Fenster-Chrome (12.09.): Rückbau der bisherigen
+  `frameless=True`-Lösung (Masterprompt V2 Task #61) auf natives
+  Fenster-Chrome (`run.py::_serve_with_window`) - reale Win32-Style-Bits
+  (`WS_CAPTION`/`WS_MAXIMIZEBOX`/`WS_MINIMIZEBOX`/`WS_THICKFRAME`, kein
+  `WS_POPUP`) und `DwmGetWindowAttribute` (`DWMWA_WINDOW_CORNER_
+  PREFERENCE=2`) bestätigen echtes natives Maximieren/Resize + native
+  abgerundete Ecken. `_NativeApi`s vier alte JS-Methoden entfernt
+  (dadurch deaktiviert sich die alte Custom-Titelleiste selbst, siehe
+  deren Feature-Detection in `app_titlebar.js` - keine Template-/CSS-
+  Änderung nötig).
 - **Chat**: zentrale Startseite nach Login (`/dashboard/chat`), mit
   KI-Ladezustand (Puls-Sprechblase), Büroklammer-Upload, Drag & Drop,
   vorbereitetem (nicht cloud-angebundenem) Mikrofon-Button. Seit 01.09.
@@ -174,32 +230,92 @@ Canvas-/Card-Töne gültig - nur die Aussage "Logo ist rein Navy" ist
 
 ## Installer
 
-**Dreizehnter Rebuild (01.09., ~18:08-18:13 Uhr) erfolgreich GEBAUT,
-INSTALLIERT UND VERIFIZIERT.** Enthält das Chat-Historie-Flyout (zweite
-Korrektur, siehe oben) + die verifizierte Standard-Prompts-CRUD. Silent-
-Install lief ohne Stall. Per echter nativer UI-Automatisierung im
-installierten Build bestätigt: Login, Chat-Flyout (geschlossen/offen/
-Navigation-schliesst-wieder, Sidebar-Höhe konstant), identisches
-Verhalten wie im Dev-Server. Läuft aktuell für den Nutzer
-(`kanzlei_ai.exe serve`).
+**Redaktion (12.09., zweiter Release-Engineering-Run):** die beiden
+vorherigen Zeilen dieses Abschnitts enthielten ein Test-Admin-Passwort
+im Klartext - das ist ein Verstoss gegen die CLAUDE.md-Grundregel
+"Niemals Secrets in Code oder Logs schreiben" (gilt auch für reine
+Testinstanz-Passwörter) und wurde ersatzlos entfernt. Falls ein
+Test-Login für eine lokale Instanz benötigt wird: neuen Admin über
+`kanzlei_ai.exe create-admin` (ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD als
+Prozess-Umgebungsvariablen, NIE in Dateien) anlegen, nicht dokumentieren.
 
-Vorheriger (zwölfter) Rebuild: enthielt das komplette Referenzbild-
-Redesign (Logo/Farben/Sidebar/Chat) inkl. der ERSTEN Nutzerkorrektur
-(Chat-Historie als eigene, aber noch dauerhaft sichtbare Spalte) - diese
-Zwischenstufe ist mit dem 13. Rebuild überholt (siehe Flyout oben).
+**Aktueller Release Candidate (12.09., Zero-Excuse-Release-Run NACH dem
+First-Run-Fix in `run.py`):** `dist\installer\Lexono_Setup.exe`, SHA-256
+`01351b5fd32ee9ed74911e1ead503d995195d92a5d7b68f7b49ff60557783239`,
+525.416.953 Bytes, gebaut 12.09. ~20:18 Uhr, Commit
+`90897cea90f4acf8137b72fcd16a75bff053a94c` (Working Tree). Installer-Hash
+der vorherigen Baseline (`6b36026c...`, 18:51 Uhr) ist damit fuer den
+Code-Zustand nach dem First-Run-Fix UNGÜLTIG (Change Invalidation Rule).
+**Echter Endanwender-Fehler real behoben und verifiziert:** ein
+tatsaechlich real gemeldeter P0-Fehler (Endanwender landet nach
+Installation auf der Login-Seite ohne bekannte Zugangsdaten) wurde im
+Code root-verursacht (`run.py::main()` pruefte nur `.env`-Praesenz, nicht
+ob ein Benutzer existiert), minimal gefixt
+(`_first_run_setup_required()`), und am tatsaechlich installierten,
+frisch gebauten Release Candidate real reproduziert UND als behoben
+verifiziert - echte Rekonstruktion des Fehlerzustands (fehlgeschlagene
+`create-admin`, kein Trick/Mock), vorher: stiller Sprung zur Login-Seite;
+nachher: korrekte Konsolenmeldung + erneuter Setup-Versuch. Voller
+Clean-Room-Zyklus danach durchgefuehrt: frisches `%ProgramData%\KanzleiAI`
+(reversibel umbenannt, nicht geloescht), echter First-Run-Pfad (Setup-
+Assistent korrekt automatisch gestartet, real bestaetigt bis zur
+Eingabeaufforderung - die eigentliche Tastatureingabe bleibt die bekannte,
+seit laengerem dokumentierte `getpass`/Automatisierungsgrenze, siehe
+OPEN_ISSUES.md GEKLAERT), Admin-Anlage, Login, erzwungener
+Passwortwechsel, Neustart, erneuter Login, echter Chat-Workflow ueber den
+tatsaechlichen HTTP-Endpunkt der installierten `.exe` (echte
+Presidio-Erkennung, echter lokaler `qwen3:8b`-Aufruf, echter direkter
+Anthropic-Aufruf, korrekte Rekonstruktion - nach zwei real beobachteten,
+nicht mit dem Fix zusammenhaengenden Blockierungen durch bereits
+bestehende, unveraenderte Datenschutz-/Qualitaetsgates ("Interner
+Konsistenzfehler"/"moeglicherweise nicht erkannte Namen") gelang ein
+vollstaendiger, echter Entwurf: "Sehr geehrte/r Max Mustermann, vielen
+Dank fuer Ihre Nachfrage..." - kein Platzhalter-Leak). **Zusaetzlicher,
+unerwarteter Befund waehrend dieses Laufs:** das zuvor als vollstaendig
+bestaetigte Bundle verlor erneut selektiv `app/`/`migrations/`/
+`presidio_analyzer/`/`de_core_news_lg/`/`tesseract/` (dieselbe
+Antivirus-verdaechtige Symptomatik wie zuvor, siehe OPEN_ISSUES.md HIGH) -
+durch Neuinstallation behoben, nicht Ursache dieses First-Run-Fixes.
+Alle Test-Zugangsdaten nach Abschluss aus dem DATA_DIR entfernt, keine
+Secrets in Logs/Dokumentation.
+
+**Aktueller Release Candidate (12.09., Legacy-Cleanup-/Start.vbs-Fix-Run,
+zweiter unabhaengiger Fund derselben Fehlerklasse):**
+`dist\installer\Lexono_Setup.exe`, SHA-256
+`a973cf1f66eb77beef3a3e3be5e62b22af78ba750ddbff9092b18385a8e0f258`,
+525.424.998 Bytes, gebaut 12.09. ~21:46 Uhr, Commit
+`90897cea90f4acf8137b72fcd16a75bff053a94c` (Working Tree). Installer-Hash
+der vorherigen Baseline (`01351b5f...`, 20:18 Uhr) ist damit UNGÜLTIG.
+**Zweiter, unabhaengiger Fund derselben Fehlerklasse:** `Start.vbs` (der
+tatsaechliche Startmenue-/Desktop-Verknuepfungs-Mechanismus) hatte eine
+eigene, unkorrigierte Kopie der exakt gleichen `.env`-Praesenz-Logik wie
+der zuvor in `run.py` gefixte Fehler - entdeckt bei der Untersuchung eines
+echten Nutzerberichts (`bonitzki@live.de`: First Run hatte tatsaechlich
+funktioniert, echter Benutzer real in der DB, aber das einmalig gezeigte
+Passwort war nicht mehr zugaenglich - vermutlich vom sofort folgenden
+nativen Fenster verdeckt). Fix: `.setup_complete`-Marker (siehe
+DECISIONS.md), real gegen die neu installierte `.exe` ueber echte
+Produktions-Subprozessaufrufe verifiziert (Marker korrekt fehlend nach
+echtem `create-admin`-Fehlschlag, korrekt vorhanden nach echtem Erfolg).
+Voller Clean-Room-Zyklus mit einem GENUIN NEUEN Testkonto (nicht dem
+echten Nutzerkonto) durchgefuehrt und bestanden: First Run, Login,
+erzwungener Passwortwechsel, Neustart, erneuter Login, echter
+Chat-Workflow (Presidio, lokaler `qwen3:8b`, direkter Claude-Aufruf,
+korrekte Rekonstruktion - nach zwei real beobachteten, unveraenderten,
+nicht mit diesem Fix zusammenhaengenden Blockierungen durch bereits
+bestehende Qualitaetsgates gelang ein vollstaendiger echter Entwurf).
+**Legacy-Artefakt-Analyse (expliziter Nutzerauftrag):** kein separates
+`dist\KanzleiAI`-Verzeichnis, keine `KanzleiAI_Setup.exe` - nur EIN Spec,
+EIN Installer-Output. `kanzlei_ai.exe`/`Start.vbs`/`%ProgramData%\KanzleiAI`/
+`_internal\` sind alle Klasse A (produktiv, bewusst, ARCHITECTURE.md §59).
+Der real betroffene Endnutzer wurde per `reset-admin-password` sofort
+wieder zugangsfaehig gemacht (legitime Wiederherstellung des EIGENEN
+echten Kontos, kein Clean-Room-Ersatz) - neues Passwort ausschliesslich
+in der Konversation genannt, nirgends dokumentiert/geloggt.
 
 **Silent-Install-Stall**: bleibt ein bekanntes, nicht zweifelsfrei
-bewiesenes Risiko (siehe OPEN_ISSUES.md, HIGH) - trat bei den letzten
-mehreren Rebuilds dieser Sitzung nicht mehr auf, aber das allein ist
-kein Beweis für eine Behebung.
-
-Admin-Testlogin unverändert: `admin@kanzlei.de` /
-`Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale Testinstanz, keine echten
-Mandantendaten).
-
-Admin-Testlogin für die lokale Installation:
-`admin@kanzlei.de` / `Lexono-Smoke-Test-Pw-2026-Neu!` (nur lokale
-Testinstanz, kein Produktivsystem, keine echten Mandantendaten).
+bewiesenes Risiko (siehe OPEN_ISSUES.md) - trat auch bei diesem
+Reinstall nicht auf, aber das allein ist kein Beweis für eine Behebung.
 
 ## Test-Baseline
 

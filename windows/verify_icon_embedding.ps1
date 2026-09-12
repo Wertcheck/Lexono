@@ -15,5 +15,5 @@ function Extract-Icon($exePath, $outPngPath) {
 }
 
 $root = Split-Path -Parent $PSScriptRoot
-Extract-Icon "$root\dist\kanzlei_ai\kanzlei_ai.exe" "$root\windows\_verify_exe_icon.png"
+Extract-Icon "$root\dist\Lexono\Lexono.exe" "$root\windows\_verify_exe_icon.png"
 Extract-Icon "$root\dist\installer\Lexono_Setup.exe" "$root\windows\_verify_installer_icon.png"

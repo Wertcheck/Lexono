@@ -126,7 +126,7 @@ def update_local_ai_settings(
     """Aendert NUR das konfigurierte Modell-Tag/die Basis-URL der bereits
     aktivierten lokalen KI (dieselbe env-Schreiblogik wie update_mail_settings/
     update_retention oben) - KEIN Ersatz fuer den vollstaendigen
-    Einrichtungsassistenten (`kanzlei_ai.exe setup`, siehe
+    Einrichtungsassistenten (`Lexono.exe setup`, siehe
     app/local_ai/setup_orchestrator.py::LocalAiSetupService.run_setup), der
     zusaetzlich Hardware-Erkennung, Ollama-Installation und den eigentlichen
     Modell-Download uebernimmt. Das hier gesetzte Modell muss lokal bereits

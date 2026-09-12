@@ -243,6 +243,26 @@ class OllamaLocalLLMProvider:
             if isinstance(entry, dict) and entry.get("name")
         ]
 
+    # Realer Fund (Installer-Reality-Check, Referenzmaschine i5-1145G7):
+    # `pull_model` verwendete bisher `self.timeout_seconds` (Default 120s,
+    # siehe __init__-Kommentar - bewusst fuer eine EINZELNE Inferenzanfrage
+    # dimensioniert) auch fuer den Modell-Download selbst. Ollamas
+    # `/api/pull` mit `"stream": False` haelt die HTTP-Verbindung waehrend
+    # des GESAMTEN Downloads offen und sendet ERST danach die komplette
+    # Antwort - bei einem Mehrere-GB-Modell (z. B. qwen3:8b, ~5,2 GB)
+    # ueberschreitet allein schon die Wartezeit auf die ersten Response-
+    # Bytes den 120s-Inferenz-Timeout bei weitem, was reproduzierbar zu
+    # `httpx.ReadTimeout` fuehrt ("Modell-Download fehlgeschlagen (qwen3:8b):
+    # ReadTimeout") - unabhaengig von der tatsaechlichen Downloadbandbreite.
+    # Download- und Inferenz-Timeout sind funktional grundverschieden (siehe
+    # Vorgabe: "ein normaler Inference-Timeout darf keinen langen Modell-
+    # Download beenden") und werden deshalb ab hier bewusst getrennt: kein
+    # Read-Timeout fuer den Download (Dauer haengt von Modellgroesse/
+    # Bandbreite ab, nicht sinnvoll vorhersagbar), aber ein kurzer
+    # Connect-Timeout (ist Ollama ueberhaupt erreichbar, scheitert schnell
+    # statt endlos zu haengen).
+    _DOWNLOAD_TIMEOUT = httpx.Timeout(connect=10.0, read=None, write=10.0, pool=10.0)
+
     def pull_model(self, model: str | None = None) -> None:
         """Laedt ein Modell ueber die lokale Ollama-API (`POST /api/pull`)
         herunter - dieselbe Operation wie `ollama pull <tag>` auf der
@@ -250,17 +270,16 @@ class OllamaLocalLLMProvider:
         das bei der Konstruktion konfigurierte Modell; ein expliziter
         Parameter erlaubt dem Setup-Assistenten (§68), ein ANDERES, von der
         `RecommendationEngine` empfohlenes Modell zu laden, OHNE eine
-        zweite Provider-Instanz bauen zu muessen. Kein eigener Timeout-
-        Multiplikator - Downloads koennen (je nach Bandbreite/Modellgroesse)
-        laenger dauern als eine Inferenz; Aufrufer sollten fuer grosse
-        Modelle einen grosszuegigen `timeout_seconds`-Wert bei der
-        Konstruktion setzen."""
+        zweite Provider-Instanz bauen zu muessen. Verwendet `_DOWNLOAD_TIMEOUT`
+        (kein Read-Timeout), NICHT `self.timeout_seconds` (Inferenz-Timeout,
+        siehe Klassenkommentar oben) - ein Modell-Download kann laenger
+        dauern als jede einzelne Inferenzanfrage."""
         target_model = model or self.model
         try:
             response = httpx.post(
                 f"{self.base_url}/api/pull",
                 json={"model": target_model, "stream": False},
-                timeout=self.timeout_seconds,
+                timeout=self._DOWNLOAD_TIMEOUT,
             )
             response.raise_for_status()
         except httpx.HTTPError as exc:

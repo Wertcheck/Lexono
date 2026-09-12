@@ -1,8 +1,8 @@
 ; Inno-Setup-Skript für die Windows-Installation (Prompt 36; App-Icon
 ; Prompt 47; Installation unter %LocalAppData% ohne Admin-Rechte Schritt 3).
 ;
-; Voraussetzung: der PyInstaller-Build liegt bereits unter dist\kanzlei_ai\
-; (siehe windows\kanzlei_ai.spec bzw. windows\build.ps1, das beide Schritte
+; Voraussetzung: der PyInstaller-Build liegt bereits unter dist\Lexono\
+; (siehe windows\lexono.spec bzw. windows\build.ps1, das beide Schritte
 ; nacheinander ausführt). Übersetzen mit dem Inno-Setup-Compiler (ISCC.exe,
 ; Teil der kostenlosen Inno-Setup-Installation von jrsoftware.org):
 ;
@@ -13,18 +13,25 @@
 ; Projekt-Root - daher unten "app_icon.ico" (liegt direkt daneben in
 ; windows\), NICHT "windows\app_icon.ico" (das würde windows\windows\...
 ; suchen und fehlschlagen). Aus demselben Grund referenziert [Files] oben
-; bereits "..\dist\kanzlei_ai\*".
+; bereits "..\dist\Lexono\*".
 ; Installiert AUSSCHLIESSLICH den Programmordner (Code, Templates,
 ; statische Assets, Migrationsskripte) unter %LocalAppData%\Lexono (bis
 ; Prompt 36-Schritt 3 unter {autopf}\"Program Files") - KEINE Mandantendaten.
 ; Konfiguration/Datenbank/Dokumente entstehen erst beim ersten Start des
-; Setup-Assistenten (app/setup/, Prompt 37) weiterhin unter
-; %PROGRAMDATA%\KanzleiAI - bewusst getrennt vom Installationsverzeichnis,
-; siehe ARCHITECTURE.md (Programminstallation vs. Anwendungsdaten).
+; Setup-Assistenten (app/setup/, Prompt 37) unter %PROGRAMDATA%\Lexono -
+; bewusst getrennt vom Installationsverzeichnis, siehe ARCHITECTURE.md
+; (Programminstallation vs. Anwendungsdaten). Bis zur KanzleiAI->Lexono-
+; Produktidentitaets-Bereinigung hiess dieses Datenverzeichnis
+; %PROGRAMDATA%\KanzleiAI - eine bestehende Installation mit echten
+; Mandantendaten dort wird von app/setup/paths.py::resolve_data_dir()
+; beim ersten Start dieser Version SICHER und EINMALIG (echter, atomarer
+; Verzeichnis-Rename, niemals Loeschen/Kopieren) auf den neuen Namen
+; migriert - siehe dort fuer die genaue, bewusst konservative Umsetzung
+; und .agentic/DECISIONS.md fuer die Begruendung.
 
 #define MyAppName "Lexono"
 #define MyAppVersion "0.1.0"
-#define MyAppExeName "kanzlei_ai.exe"
+#define MyAppExeName "Lexono.exe"
 #define MyAppPublisher "Lexono Projekt"
 
 [Setup]
@@ -59,10 +66,20 @@ AppMutex=Lexono_SingleInstance_Mutex
 ; Bereits installierte Pilot-Instanzen aktualisieren dank stabiler AppId (siehe
 ; oben) weiterhin am zuvor gewaehlten Pfad (Inno Setup verwendet bei
 ; erkannter AppId den zuletzt genutzten Installationsort, nicht DefaultDirName) -
-; keine manuelle Nacharbeit fuer bestehende Installationen noetig. Das
-; getrennte, persistente Datenverzeichnis (%PROGRAMDATA%\KanzleiAI, siehe
-; app/setup/paths.py) bleibt BEWUSST unveraendert - eine Umbenennung dort
-; wuerde bestehenden Mandantendaten-Bestaenden den Pfad entziehen.
+; keine manuelle Nacharbeit fuer bestehende Installationen noetig.
+;
+; UPDATE (KanzleiAI->Lexono-Produktidentitaets-Bereinigung): das getrennte,
+; persistente Datenverzeichnis wechselt JETZT ebenfalls von
+; %PROGRAMDATA%\KanzleiAI auf %PROGRAMDATA%\Lexono (siehe
+; app/setup/paths.py::resolve_data_dir) - die frühere Begründung ("bleibt
+; BEWUSST unveraendert, eine Umbenennung wuerde den Pfad entziehen") ist
+; damit UEBERHOLT: statt den alten Namen dauerhaft zu behalten, migriert
+; resolve_data_dir() ein bestehendes Verzeichnis jetzt selbst sicher und
+; atomar (echter Rename, kein Kopieren/Loeschen, mit Fallback auf den
+; alten Pfad, falls der Rename aus irgendeinem Grund fehlschlaegt) - siehe
+; dort fuer Details. Diese Installer-Datei selbst loest die Migration
+; NICHT aus (reine Laufzeit-/Python-Logik), muss sie aber auch nicht
+; kennen.
 DefaultDirName={localappdata}\Lexono
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
@@ -79,8 +96,8 @@ SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Geaendert (Schritt 3): "lowest" statt "admin" - keine UAC-Erhoehung mehr
 ; noetig, konsistent mit der Installation unter %LocalAppData% oben. Das
-; persistente Datenverzeichnis (%PROGRAMDATA%\KanzleiAI, siehe
-; app/setup/paths.py) bleibt unveraendert - dort war ohnehin nie eine
+; persistente Datenverzeichnis (%PROGRAMDATA%\Lexono, siehe
+; app/setup/paths.py) bleibt davon unberuehrt - dort war ohnehin nie eine
 ; Admin-Erhoehung fuer den Setup-Assistenten noetig (laeuft unter dem Konto
 ; des Anwalts/der Kanzleimitarbeiter).
 PrivilegesRequired=lowest
@@ -92,7 +109,7 @@ PrivilegesRequired=lowest
 ; #101828 als Icon-Hintergrund) - dasselbe Icon erscheint unveraendert auf
 ; der Desktop-/Startmenue-Verknuepfung (siehe [Icons] unten, IconFilename
 ; zeigt auf {#MyAppExeName}, dessen eingebettetes Icon wiederum aus
-; derselben app_icon.ico stammt, siehe windows/kanzlei_ai.spec).
+; derselben app_icon.ico stammt, siehe windows/lexono.spec).
 SetupIconFile=app_icon.ico
 ; Weiterhin KEIN WizardImageFile (grossflaechiges Bild auf den
 ; Assistenten-Seiten) - kanzleispezifisches Vollbild-Branding ist Teil der
@@ -111,8 +128,17 @@ UninstallDisplayName={#MyAppName}
 [Languages]
 Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 
+; KanzleiAI->Lexono-Produktidentitaets-Bereinigung: eine bestehende
+; Installation (identifiziert ueber die stabile AppId oben) hatte bisher
+; "kanzlei_ai.exe" unter {app} liegen - Inno Setup entfernt Dateien, die
+; nicht mehr im aktuellen [Files]-Abschnitt vorkommen, bei einem Upgrade
+; NICHT automatisch. Ohne diesen Eintrag bliebe die alte, funktionslose
+; .exe als Altlast im Installationsverzeichnis liegen.
+[InstallDelete]
+Type: files; Name: "{app}\kanzlei_ai.exe"
+
 [Files]
-Source: "..\dist\kanzlei_ai\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\Lexono\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Stummer Starter (Schritt 3) - siehe [Icons] unten: Start Menü/Desktop
 ; starten die App darüber statt direkt über die .exe, damit im normalen
 ; Betrieb kein Konsolenfenster erscheint (nur beim allerersten Start
@@ -144,7 +170,7 @@ Name: "desktopicon"; Description: "Desktop-Verknüpfung anlegen"; GroupDescripti
 [Icons]
 ; IconFilename explizit gesetzt (Prompt 47) statt sich auf Inno Setups
 ; Standardverhalten zu verlassen (das ohne diese Angabe automatisch das in
-; kanzlei_ai.exe eingebettete Icon - siehe windows/kanzlei_ai.spec,
+; Lexono.exe eingebettete Icon - siehe windows/lexono.spec,
 ; EXE(icon=...) - übernommen hätte, im Ergebnis identisch, hier aber
 ; ausdrücklich dokumentiert statt implizit).
 ;
@@ -162,7 +188,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "wscript.exe"; Parameters: """{app
 [Run]
 ; WebView2-Runtime automatisch bereitstellen (ARCHITECTURE.md §70) - laeuft
 ; VOR dem eigentlichen App-Start (siehe Reihenfolge der [Run]-Eintraege,
-; Inno Setup fuehrt sie sequenziell aus), damit "kanzlei_ai.exe serve"
+; Inno Setup fuehrt sie sequenziell aus), damit "Lexono.exe serve"
 ; beim allerersten Start die Runtime bereits vorfindet, statt mit der
 ; bisherigen Fehlermeldung (run.py::_is_webview2_runtime_available) manuell
 ; auf einen Download zu verweisen. "/silent /install" - keine
@@ -180,7 +206,8 @@ Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"
 
 Filename: "wscript.exe"; Parameters: """{app}\Start.vbs"""; Description: "{#MyAppName} jetzt starten (öffnet beim allerersten Start den Setup-Assistenten in einem Konsolenfenster, danach unsichtbar im Hintergrund - siehe app.log)"; Flags: postinstall nowait skipifsilent
 
-; BEWUSST KEIN [UninstallDelete]-Abschnitt für %PROGRAMDATA%\KanzleiAI:
+; BEWUSST KEIN [UninstallDelete]-Abschnitt für %PROGRAMDATA%\Lexono (bzw.
+; ein eventuell noch nicht migriertes %PROGRAMDATA%\KanzleiAI):
 ; dieses Verzeichnis enthält vollständige, unpseudonymisierte
 ; Mandanteninhalte (Datenbank, Dokumente) - eine Deinstallation darf das
 ; NIEMALS automatisch löschen. Eine bewusste Datenlöschung bleibt dem

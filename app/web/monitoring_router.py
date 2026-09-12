@@ -44,7 +44,7 @@ def _disk_check_path(database_url: str):  # -> Path
     ablegt: bei SQLite das Verzeichnis der Datenbankdatei (i. d. R.
     dieselbe Partition wie die Dokumentenspeicher), sonst als sinnvoller
     Fallback das per Prompt 36/37 aufgelöste Datenverzeichnis
-    (%PROGRAMDATA%\\KanzleiAI)."""
+    (%PROGRAMDATA%\\Lexono)."""
     from pathlib import Path
 
     if database_url.startswith("sqlite:///"):
@@ -123,7 +123,7 @@ def download_logs(current_user: User = Depends(_require_admin)) -> PlainTextResp
     return PlainTextResponse(
         content,
         headers={
-            "Content-Disposition": 'attachment; filename="kanzlei_ai_log_anonymisiert.txt"'
+            "Content-Disposition": 'attachment; filename="lexono_log_anonymisiert.txt"'
         },
     )
 

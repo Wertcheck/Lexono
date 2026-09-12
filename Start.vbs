@@ -2,15 +2,33 @@
 ' "produktiver Piloteinsatz"; Local-First-Architektur 20.08., siehe
 ' ARCHITECTURE.md §60).
 '
-' WICHTIGE AUSNAHME (bewusst, kein Versehen): Beim ALLERERSTEN Start - wenn
-' im persistenten Datenverzeichnis noch keine .env existiert - braucht der
-' interaktive Setup-Assistent (E-Mail-/Passwort-Abfrage in der Konsole,
-' siehe app/setup/wizard.py, run.py: cmd_setup) eine SICHTBARE Konsole.
-' Eine von Anfang an versteckte Konsole würde dort unsichtbar auf eine
+' WICHTIGE AUSNAHME (bewusst, kein Versehen): Solange die Ersteinrichtung
+' noch nicht ERFOLGREICH abgeschlossen ist, braucht der interaktive
+' Setup-Assistent (E-Mail-/Passwort-Abfrage in der Konsole, siehe
+' app/setup/wizard.py, run.py: cmd_setup) eine SICHTBARE Konsole. Eine von
+' Anfang an versteckte Konsole würde dort unsichtbar auf eine
 ' Tastatureingabe warten, die nie ankommen kann - die App würde scheinbar
 ' "hängen", ohne dass der Anwalt/die Kanzleimitarbeiterin einen Hinweis
-' bekäme. Deshalb: erster Start SICHTBAR (wie bisher), jeder weitere Start
-' STUMM (Server-Logs stdout/stderr -> app.log neben diesem Skript).
+' bekäme. Deshalb: solange kein abgeschlossenes Setup vorliegt, SICHTBAR;
+' danach jeder weitere Start STUMM (Server-Logs stdout/stderr -> app.log
+' neben diesem Skript).
+'
+' WICHTIG (real beim Endanwender aufgetreten, 12.09.): NICHT anhand von
+' `.env` allein entscheiden, ob die Ersteinrichtung abgeschlossen ist -
+' `.env` wird als ALLERERSTER Schritt von `run_setup_wizard()` geschrieben,
+' VOR Migration und Admin-Anlage. Schlug einer dieser spaeteren, tatsaechlich
+' ladungstragenden Schritte fehl, existierte `.env` trotzdem bereits - jeder
+' folgende Start waere dann STUMM gelaufen, WAEHREND `run.py::main()`
+' (das zusaetzlich pruefen kann, ob tatsaechlich ein Benutzer existiert)
+' versucht haette, den Setup-Assistenten erneut zu starten: unsichtbar
+' wartende Konsole, fuer den Benutzer nicht von einem Haenger zu
+' unterscheiden. Deshalb prueft dieses Skript stattdessen `.setup_complete`
+' - eine Markerdatei, die `run_setup_wizard()` ERST nach tatsaechlich
+' erfolgreicher Admin-Anlage schreibt (VBScript besitzt keinen
+' SQLite-Treiber, kann also nicht direkt wie `run.py::main()` in der
+' Datenbank nachsehen, ob ein Benutzer existiert - dieser Marker ist die
+' naechstbeste, aber bewusst konservative Annäherung: er wird nur bei
+' echtem Erfolg gesetzt, nie vorzeitig).
 '
 ' Ersetzt keinen bestehenden Mechanismus - ruft lediglich denselben Befehl
 ' auf, den auch die Startmenü-/Desktop-Verknüpfung (windows/installer.iss)
@@ -19,7 +37,7 @@
 Option Explicit
 
 Dim objShell, objFSO, strScriptDir, strDataDir, strProgramData
-Dim strEnvPath, strExePath, strPythonExe, strRunPy, strLogPath, strCommand
+Dim strSetupCompletePath, strExePath, strPythonExe, strRunPy, strLogPath, strCommand
 Dim strRedirectedCommand
 
 Set objShell = CreateObject("WScript.Shell")
@@ -29,21 +47,37 @@ strScriptDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
 strLogPath = strScriptDir & "\app.log"
 
 ' Persistentes Datenverzeichnis - identische Ableitung wie
-' app/setup/paths.py (resolve_data_dir): KANZLEI_AI_DATA_DIR-Override,
-' sonst %PROGRAMDATA%\KanzleiAI.
-strDataDir = objShell.ExpandEnvironmentStrings("%KANZLEI_AI_DATA_DIR%")
+' app/setup/paths.py (resolve_data_dir): LEXONO_DATA_DIR-Override (oder der
+' aeltere Name KANZLEI_AI_DATA_DIR, weiterhin unterstuetzt), sonst
+' %PROGRAMDATA%\Lexono.
+strDataDir = objShell.ExpandEnvironmentStrings("%LEXONO_DATA_DIR%")
+If strDataDir = "%LEXONO_DATA_DIR%" Then
+    strDataDir = objShell.ExpandEnvironmentStrings("%KANZLEI_AI_DATA_DIR%")
+End If
 If strDataDir = "%KANZLEI_AI_DATA_DIR%" Then
     strProgramData = objShell.ExpandEnvironmentStrings("%PROGRAMDATA%")
-    strDataDir = strProgramData & "\KanzleiAI"
+    strDataDir = strProgramData & "\Lexono"
 End If
-strEnvPath = strDataDir & "\.env"
+strSetupCompletePath = strDataDir & "\.setup_complete"
+
+' HINWEIS (KanzleiAI->Lexono-Produktidentitaets-Bereinigung): die echte
+' Migration eines bestehenden `%PROGRAMDATA%\KanzleiAI`-Verzeichnisses
+' passiert innerhalb von Lexono.exe (app/setup/paths.py::resolve_data_dir),
+' NICHT hier in Start.vbs (VBScript hat keine eigene Migrationslogik).
+' Nebeneffekt: bei GENAU EINEM Upgrade-Start eines bestehenden
+' KanzleiAI-Nutzers sieht dieses Skript `.setup_complete` unter dem NEUEN
+' Pfad noch nicht (die Migration lief ja noch nicht) und zeigt einmalig
+' die Konsole sichtbar an, obwohl die Ersteinrichtung tatsaechlich bereits
+' abgeschlossen war - rein kosmetisch, kein Datenverlust, kein
+' Funktionsausfall, und ab dem naechsten Start (nach der Migration durch
+' den ersten echten Lexono.exe-Aufruf) wieder korrekt stumm.
 
 ' Gebündelte .exe (neben diesem Skript, z. B. nach der Installation)
 ' bevorzugt, sonst Entwicklungsbetrieb über die venv-Python-Installation
 ' im Projekt-Root (dieses Skript liegt dort - "Hauptverzeichnis").
-strExePath = strScriptDir & "\kanzlei_ai.exe"
+strExePath = strScriptDir & "\Lexono.exe"
 If Not objFSO.FileExists(strExePath) Then
-    strExePath = strScriptDir & "\dist\kanzlei_ai\kanzlei_ai.exe"
+    strExePath = strScriptDir & "\dist\Lexono\Lexono.exe"
 End If
 
 If objFSO.FileExists(strExePath) Then
@@ -54,7 +88,7 @@ Else
     strCommand = """" & strPythonExe & """ """ & strRunPy & """ serve"
 End If
 
-If objFSO.FileExists(strEnvPath) Then
+If objFSO.FileExists(strSetupCompletePath) Then
     ' Bereits eingerichtet: stummer Start, komplett verstecktes Fenster
     ' (0 = SW_HIDE), alle Server-Logs (stdout/stderr) landen in app.log.
     '
@@ -77,7 +111,7 @@ If objFSO.FileExists(strEnvPath) Then
     ' unangetastet.
     objShell.Run "cmd /c """ & strRedirectedCommand & """", 0, False
 Else
-    ' Allererster Start: Setup-Assistent braucht eine sichtbare,
+    ' Ersteinrichtung noch nicht abgeschlossen: Setup-Assistent braucht eine sichtbare,
     ' interaktive Konsole - NICHT verstecken (1 = normales Fenster).
     objShell.Run strCommand, 1, False
 End If

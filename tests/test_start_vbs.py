@@ -31,16 +31,24 @@ def test_hides_the_window_for_normal_silent_start() -> None:
 
 
 def test_shows_the_window_for_the_interactive_first_run() -> None:
-    """Der allererste Start (noch keine .env im Datenverzeichnis) MUSS
-    sichtbar bleiben - der Setup-Assistent fragt interaktiv E-Mail/
-    Passwort ab (siehe app/setup/wizard.py)."""
+    """Solange die Ersteinrichtung noch nicht abgeschlossen ist, MUSS die
+    Konsole sichtbar bleiben - der Setup-Assistent fragt interaktiv
+    E-Mail/Passwort ab (siehe app/setup/wizard.py)."""
     content = _read_vbs()
     assert "objShell.Run strCommand, 1, False" in content
 
 
-def test_checks_for_env_file_before_deciding_visibility() -> None:
+def test_checks_for_setup_complete_marker_before_deciding_visibility() -> None:
+    """Regressionsschutz (real beim Endanwender aufgetretener P0-Vorfall,
+    siehe OPEN_ISSUES.md): NICHT anhand von `.env` allein entscheiden, ob
+    die Ersteinrichtung abgeschlossen ist - `.env` wird bereits VOR
+    Migration/Admin-Anlage geschrieben, ein `.setup_complete`-Marker aber
+    erst nach tatsaechlich erfolgreicher Admin-Anlage
+    (app/setup/wizard.py::run_setup_wizard)."""
     content = _read_vbs()
-    assert "objFSO.FileExists(strEnvPath)" in content
+    assert "objFSO.FileExists(strSetupCompletePath)" in content
+    assert '"\\.setup_complete"' in content
+    assert '"\\.env"' not in content
 
 
 def test_redirects_stdout_and_stderr_to_app_log() -> None:
@@ -67,14 +75,27 @@ def test_falls_back_to_dev_python_when_no_packaged_exe_present() -> None:
     assert "run.py" in content
 
 
+def test_looks_for_the_lexono_exe_not_the_legacy_name() -> None:
+    """KanzleiAI->Lexono-Produktidentitaets-Bereinigung: das Skript muss
+    nach `Lexono.exe` suchen, nicht mehr nach `kanzlei_ai.exe`."""
+    content = _read_vbs()
+    assert 'strScriptDir & "\\Lexono.exe"' in content
+    assert 'strScriptDir & "\\dist\\Lexono\\Lexono.exe"' in content
+    assert '"\\kanzlei_ai.exe"' not in content
+
+
 def test_resolves_data_dir_consistent_with_python_setup_paths() -> None:
     """Muss dieselbe Ableitung wie app/setup/paths.py verwenden - sonst
     prüft dieses Skript die .env am falschen Ort und triggert faelschlich
     den sichtbaren Erststart-Zweig auch bei laengst eingerichteten
-    Installationen."""
+    Installationen. Primaer jetzt LEXONO_DATA_DIR/%PROGRAMDATA%\\Lexono -
+    der aeltere Name KANZLEI_AI_DATA_DIR bleibt als Fallback unterstuetzt
+    (keine stillschweigend brechende Aenderung fuer bestehende
+    Entwickler-/Testskripte)."""
     content = _read_vbs()
+    assert "LEXONO_DATA_DIR" in content
     assert "KANZLEI_AI_DATA_DIR" in content
     assert "PROGRAMDATA" in content
-    assert "KanzleiAI" in content
+    assert 'strDataDir = strProgramData & "\\Lexono"' in content
 
 

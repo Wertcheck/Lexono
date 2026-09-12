@@ -88,6 +88,19 @@ def run_setup_wizard(
     run_migrations()
     create_admin(admin_email, admin_password)
 
+    # Erst HIER (nach tatsaechlich erfolgreicher Admin-Anlage) geschrieben -
+    # bewusst NICHT gleichzeitig mit `.env` oben, da `.env` bereits VOR
+    # Migration/Admin-Anlage existiert und daher allein kein verlaesslicher
+    # Beweis fuer "Ersteinrichtung abgeschlossen" ist (siehe
+    # OPEN_ISSUES.md: realer Endanwender-Vorfall, `run.py::main()` prueft
+    # deshalb inzwischen zusaetzlich die Datenbank). `Start.vbs` kann keine
+    # Datenbankabfrage durchfuehren (kein SQLite-Treiber in VBScript) und
+    # braucht daher dieses einfache, aber nur bei echtem Erfolg gesetzte
+    # Datei-Signal, um zu entscheiden, ob die Konsole beim naechsten Start
+    # sichtbar sein muss (Ersteinrichtung evtl. noch unvollstaendig) oder
+    # verborgen bleiben darf.
+    (data_dir / ".setup_complete").write_text("1", encoding="utf-8")
+
     local_ai_setup_succeeded: bool | None = None
     if run_local_ai_setup is not None:
         try:

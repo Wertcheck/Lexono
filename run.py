@@ -1,10 +1,10 @@
 """Windows-Entry-Point für die gebündelte Anwendung (Prompt 36/37, Prompt 46).
 
 Dies ist die einzige Datei, die PyInstaller bündelt (siehe
-windows/kanzlei_ai.spec) - ein dünner Dispatcher, keine Fachlogik. Bietet
+windows/lexono.spec) - ein dünner Dispatcher, keine Fachlogik. Bietet
 fünf Subkommandos:
 
-    kanzlei_ai.exe serve          (Standard, auch ohne Argument) - startet
+    Lexono.exe serve          (Standard, auch ohne Argument) - startet
                                    den Webserver UND öffnet ein natives
                                    Fenster (Edge-WebView2, siehe Prompt 46),
                                    das auf das Dashboard zeigt - kein
@@ -24,7 +24,7 @@ fünf Subkommandos:
         --no-window                - nur der Server, kein Fenster (bisheriges
                                    Verhalten vor Prompt 46, weiterhin nützlich
                                    für Entwickler/Debugging/Kopfstationen).
-    kanzlei_ai.exe setup          - Ersteinrichtung: Datenverzeichnis,
+    Lexono.exe setup          - Ersteinrichtung: Datenverzeichnis,
                                    `.env` (inkl. generiertem
                                    SESSION_SECRET_KEY), Migration, Admin,
                                    optional (Standardvorschlag: ja) lokale
@@ -33,18 +33,24 @@ fünf Subkommandos:
                                    Zielarchitektur, ein Fehlschlag/Ablehnen
                                    dieses Schritts verhindert aber nicht die
                                    Installation/Nutzung der Anwendung.
-    kanzlei_ai.exe migrate        - führt nur `alembic upgrade head` aus.
-    kanzlei_ai.exe create-admin   - ruft scripts/create_admin.py auf
+    Lexono.exe migrate        - führt nur `alembic upgrade head` aus.
+    Lexono.exe create-admin   - ruft scripts/create_admin.py auf
                                    (liest ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD
                                    aus der Prozessumgebung).
-    kanzlei_ai.exe local-ai-setup - erkennt Hardware, empfiehlt/installiert
+    Lexono.exe reset-admin-password
+                                   - ruft scripts/reset_admin_password.py auf
+                                   (liest ADMIN_EMAIL/RESET_PASSWORD aus der
+                                   Prozessumgebung) - Recovery-Pfad, falls das
+                                   initiale, nur einmalig angezeigte Admin-
+                                   Passwort verloren ging.
+    Lexono.exe local-ai-setup - erkennt Hardware, empfiehlt/installiert
                                    ein passendes lokales Ollama-Modell und
                                    aktiviert `LOCAL_AI_ENABLED` in `.env`
                                    (Phase 3, §71 - siehe
                                    app/local_ai/setup_orchestrator.py).
                                    Eigenständig jederzeit erneut aufrufbar,
                                    nicht nur während `setup`.
-    kanzlei_ai.exe restore        - stellt Datenbank + Dokumentenspeicher aus
+    Lexono.exe restore        - stellt Datenbank + Dokumentenspeicher aus
                                    einem Backup-Archiv wieder her (Schritt 3,
                                    siehe app/backup/restore_service.py). Die
                                    Anwendung MUSS dafür gestoppt sein - bewusst
@@ -109,11 +115,16 @@ _WEBVIEW2_CLIENT_GUIDS = (
 )
 _WEBVIEW2_DOWNLOAD_URL = "https://developer.microsoft.com/en-us/microsoft-edge/webview2/"
 
-#: Untergrenzen fuer den hand-gerollten Resize-Griff (Masterprompt V2,
-#: Task #61, frameless-Fenster) - verhindert ein auf (fast) 0 verkleinertes,
-#: nicht mehr bedienbares Fenster. Werte grosszuegig unter der
-#: Startgroesse (1400x900), aber hoch genug, dass Sidebar+Chat noch
-#: sinnvoll nutzbar bleiben.
+#: Minimalgroesse des nativen Fensters (siehe `webview.create_window(...,
+#: min_size=...)` in `_serve_with_window`) - verhindert ein auf (fast) 0
+#: verkleinertes, nicht mehr bedienbares Fenster. Werte grosszuegig unter
+#: der Startgroesse (1400x900), aber hoch genug, dass Sidebar+Chat noch
+#: sinnvoll nutzbar bleiben. Seit der Umstellung auf natives Fenster-Chrome
+#: (Rueckbau von Masterprompt V2 Task #61s frameless-Loesung - echtes
+#: Windows-Maximieren/Snap/Alt+Tab/Taskbar-Verhalten war mit einem
+#: frameless-Fenster strukturell nicht erreichbar) durchgesetzt vom
+#: Betriebssystem selbst (WM_GETMINMAXINFO), nicht mehr per Hand in
+#: `_NativeApi` nachgebildet.
 _MIN_WINDOW_WIDTH = 900
 _MIN_WINDOW_HEIGHT = 600
 
@@ -122,7 +133,7 @@ def _bundle_base_dir() -> Path:
     """Verzeichnis mit `alembic.ini`/`migrations/` - im Dev-Betrieb das
     Repository-Root (diese Datei liegt dort), in der gebündelten .exe das
     von PyInstaller bereitgestellte Bundle-Verzeichnis (siehe
-    windows/kanzlei_ai.spec, `datas`-Eintrag für beide)."""
+    windows/lexono.spec, `datas`-Eintrag für beide)."""
     if getattr(sys, "frozen", False):
         return Path(getattr(sys, "_MEIPASS", Path(sys.executable).resolve().parent))
     return Path(__file__).resolve().parent
@@ -130,7 +141,7 @@ def _bundle_base_dir() -> Path:
 
 def _self_command(*extra_args: str) -> list[str]:
     """Kommandozeile, um DIESES Programm (dev: `python run.py ...`,
-    gebündelt: `kanzlei_ai.exe ...`) als neuen Subprozess zu starten."""
+    gebündelt: `Lexono.exe ...`) als neuen Subprozess zu starten."""
     if getattr(sys, "frozen", False):
         return [sys.executable, *extra_args]
     return [sys.executable, str(Path(__file__).resolve()), *extra_args]
@@ -149,6 +160,20 @@ def cmd_create_admin() -> int:
     from scripts.create_admin import main as create_admin_main
 
     return create_admin_main()
+
+
+def cmd_reset_admin_password() -> int:
+    """Recovery-Pfad fuer "Admin existiert, Passwort ist unbekannt" (real
+    aufgetretener Fall: das einmalig beim Setup angezeigte Zufallspasswort
+    ging verloren, `.env` existiert bereits, First Run wird deshalb korrekt
+    NICHT erneut ausgeloest). `scripts/reset_admin_password.py` selbst
+    existierte bereits, war aber - anders als `create-admin`/`restore` -
+    weder hier noch in windows/lexono.spec (hiddenimports) angebunden
+    und dadurch aus der installierten .exe heraus nicht erreichbar. Liest
+    wie `create-admin` ADMIN_EMAIL/RESET_PASSWORD aus der Prozessumgebung."""
+    from scripts.reset_admin_password import main as reset_admin_password_main
+
+    return reset_admin_password_main()
 
 
 def cmd_restore(*, archive: str, yes: bool) -> int:
@@ -390,6 +415,46 @@ def _apply_light_title_bar(window: object | None = None) -> None:
         pass
 
 
+#: DWMWA_WINDOW_CORNER_PREFERENCE (Windows 11, Build 22000+) - macht die
+#: aeusseren Fensterecken des nativen Fenster-Chrome (siehe
+#: _serve_with_window: kein `frameless` mehr) modern abgerundet, angelehnt
+#: an aktuelle native Microsoft-Apps (z. B. Outlook), OHNE das Fenster
+#: selbst zu einem Custom-/Frameless-Fenster zu machen - Maximieren/Snap/
+#: Alt+Tab/Taskleiste bleiben dabei vollstaendig unveraendert vom
+#: Betriebssystem bereitgestellt, genau wie bei jedem anderen normalen
+#: Windows-Fenster.
+_DWMWA_WINDOW_CORNER_PREFERENCE = 33
+_DWMWCP_ROUND = 2
+
+
+def _apply_rounded_corners(window: object | None = None) -> None:
+    """Aktiviert native abgerundete Fensterecken (Windows 11) fuer das
+    Lexono-Hauptfenster. Nutzt dieselbe DWM-API/dasselbe Aufrufmuster wie
+    `_apply_light_title_bar` (eigener try/except-Block, gleiche
+    hwnd-Ermittlung ueber `window.native.Handle`) - bewusst NICHT in
+    dieselbe Funktion zusammengelegt, damit ein Fehler bei einer der beiden
+    rein kosmetischen Einstellungen niemals die andere verhindern kann.
+
+    Auf Windows-Versionen vor Build 22000 (kein Windows 11) liefert
+    `DwmSetWindowAttribute` fuer dieses Attribut lediglich einen
+    Fehler-HRESULT zurueck (kein Python-Fehler, kein Effekt) - eckige
+    Fensterecken auf aelterem Windows sind dort das normale, erwartete
+    Verhalten, kein Bug."""
+    try:
+        import ctypes
+
+        hwnd = window.native.Handle.ToInt32()  # type: ignore[union-attr]
+        dwmapi = ctypes.windll.dwmapi  # type: ignore[attr-defined]
+        dwmapi.DwmSetWindowAttribute(
+            hwnd,
+            _DWMWA_WINDOW_CORNER_PREFERENCE,
+            ctypes.byref(ctypes.c_int(_DWMWCP_ROUND)),
+            4,
+        )
+    except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
+        pass
+
+
 class _NativeApi:
     """JS-Brücke für das native WebView2-Fenster (20.08., Scan-Ordner-Dialog)
     - macht `webview.Window.create_file_dialog` als `window.pywebview.api.
@@ -442,50 +507,22 @@ class _NativeApi:
             return ""
         return str(result[0])
 
-    # --- Eigene Titelleiste (Masterprompt V2, Task #61) ---
-    # Das Fenster laeuft seit dieser Aenderung mit frameless=True (siehe
-    # _serve_with_window unten) - ohne native Titelleiste braucht es einen
-    # JS-erreichbaren Ersatz fuer Verschieben/Groesse-Aendern/Minimieren/
-    # Schliessen. Alle vier Methoden delegieren an bereits vom installierten
-    # pywebview (6.2.1) bereitgestellte `webview.Window`-Methoden (siehe
-    # ARCHITECTURE.md-Recherche zu dieser Version) - hier wird NICHTS an der
-    # Fenstermechanik selbst neu erfunden, nur JS-aufrufbar gemacht
-    # (identisches Prinzip wie `pick_folder` oben).
-    #
-    # close_window() ist bewusst die simpelste, robusteste Methode ohne
-    # jede Fehlerbehandlung drumherum, die etwas verschlucken koennte -
-    # "X muss zuverlaessig funktionieren" ist eine harte Vorgabe.
-    def minimize_window(self) -> None:
-        if self._window is not None:
-            self._window.minimize()  # type: ignore[attr-defined]
-
-    def close_window(self) -> None:
-        if self._window is not None:
-            self._window.destroy()  # type: ignore[attr-defined]
-
-    def move_window_by(self, dx: float, dy: float) -> None:
-        """Verschiebt das Fenster um ein Mausbewegungs-Delta - `dx`/`dy`
-        kommen als Differenz aufeinanderfolgender `event.screenX/Y`-Werte
-        aus dem JS-Drag-Handler in base.html, nicht als absolute Position
-        (die JS-Seite kennt die native Fensterposition nicht)."""
-        if self._window is None:
-            return
-        current_x = self._window.x  # type: ignore[attr-defined]
-        current_y = self._window.y  # type: ignore[attr-defined]
-        self._window.move(current_x + int(dx), current_y + int(dy))  # type: ignore[attr-defined]
-
-    def resize_window_by(self, dw: float, dh: float) -> None:
-        """Analog zu `move_window_by`, aber fuer die Fenstergroesse -
-        gespeist vom Resize-Griff unten rechts. Untergrenze verhindert ein
-        versehentlich auf (fast) 0 geschrumpftes, nicht mehr bedienbares
-        Fenster."""
-        if self._window is None:
-            return
-        current_width = self._window.width  # type: ignore[attr-defined]
-        current_height = self._window.height  # type: ignore[attr-defined]
-        new_width = max(_MIN_WINDOW_WIDTH, current_width + int(dw))
-        new_height = max(_MIN_WINDOW_HEIGHT, current_height + int(dh))
-        self._window.resize(new_width, new_height)  # type: ignore[attr-defined]
+    # Frueher (Masterprompt V2, Task #61): vier JS-aufrufbare Methoden
+    # (minimize_window/close_window/move_window_by/resize_window_by), die
+    # eine HTML-Titelleiste im frameless-Fenster mit Verschieben/Resize/
+    # Minimieren/Schliessen ausstatteten. Real gefundener, schwerwiegender
+    # Nachteil dieser Loesung (Window-Chrome-Review): ein frameless-Fenster
+    # hat strukturell KEIN echtes Windows-Maximieren, keinen funktionierenden
+    # Windows-Snap und keine garantiert normale Alt+Tab-/Taskleisten-
+    # Darstellung - Verhalten, das eine echte Windows-Desktop-Anwendung
+    # haben MUSS. Deshalb zurueckgebaut auf natives Fenster-Chrome
+    # (`frameless` nicht mehr gesetzt, siehe `_serve_with_window`) - Windows
+    # selbst stellt Verschieben/Resize/Minimieren/Maximieren/Schliessen/Snap/
+    # Alt+Tab/Taskleiste bereit, keine JS-Bruecke mehr dafuer noetig. Das
+    # zugehoerige HTML/CSS/JS (partials/app_titlebar.html, static/js/
+    # app_titlebar.js) bleibt im Repository, aktiviert sich aber NICHT mehr:
+    # dessen eigene Feature-Detection prueft exakt auf die Existenz von
+    # `move_window_by`/`close_window` auf diesem JS-Api-Objekt (siehe dort).
 
 
 def cmd_serve(*, open_window: bool = True) -> int:
@@ -545,7 +582,7 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         app, host=settings.host, port=settings.port, log_level=settings.log_level.lower()
     )
     server = uvicorn.Server(config)
-    server_thread = threading.Thread(target=server.run, name="kanzlei-ai-uvicorn", daemon=True)
+    server_thread = threading.Thread(target=server.run, name="lexono-uvicorn", daemon=True)
     server_thread.start()
 
     base_url = f"http://{settings.host}:{settings.port}"
@@ -568,7 +605,7 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
             "dem Dashboard nicht kompatible Anzeige-Engine zurückfallen.\n"
             f"Bitte die Runtime herunterladen und installieren: {_WEBVIEW2_DOWNLOAD_URL}\n"
             "Alternativ jetzt ohne Fenster starten und im Browser öffnen: "
-            "kanzlei_ai.exe serve --no-window",
+            "Lexono.exe serve --no-window",
             file=sys.stderr,
         )
         _shutdown_server()
@@ -582,18 +619,21 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         f"{base_url}/dashboard/login",
         width=1400,
         height=900,
+        min_size=(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT),
         resizable=True,
-        frameless=True,
+        # Bewusst KEIN frameless=True mehr (siehe _NativeApi-Kommentar
+        # oben) - natives Fenster-Chrome ist Voraussetzung fuer echtes
+        # Windows-Maximieren/Snap/Alt+Tab/Taskleisten-Verhalten.
         background_color="#F8FAFC",
         js_api=native_api,
     )
     native_api._window = window
-    # _apply_light_title_bar (DWM-Titelleistenfarbe) ist mit frameless=True
-    # wirkungslos (keine native Titelleiste mehr vorhanden), aber auch
-    # harmlos - bewusst NICHT entfernt statt eines riskanten Eingriffs in
-    # eine bereits funktionierende, unabhaengige Funktion (siehe deren
-    # eigenen try/except-Schutz).
+    # Beide Funktionen sind rein kosmetisch und unabhaengig voneinander
+    # (siehe deren eigene try/except-Bloecke) - _apply_light_title_bar
+    # ist seit dem Rueckbau von frameless=True wieder wirksam (echte
+    # native Titelleiste vorhanden).
     window.events.shown += _apply_light_title_bar
+    window.events.shown += _apply_rounded_corners
     # Blockiert im Hauptthread, bis der Nutzer das Fenster schließt.
     webview.start()
 
@@ -619,6 +659,9 @@ def _run_create_admin_subprocess(data_dir: Path, email: str, password: str | Non
         raise RuntimeError(f"Anlegen des Admin-Nutzers fehlgeschlagen (Exit-Code {result.returncode}).")
 
 
+_LOCAL_AI_SETUP_HEARTBEAT_INTERVAL_SECONDS = 30.0
+
+
 def cmd_local_ai_setup() -> int:
     """Erkennt Hardware, waehlt ein passendes lokales Modell und richtet
     Ollama automatisiert ein (Phase 3, §71) - siehe
@@ -627,14 +670,46 @@ def cmd_local_ai_setup() -> int:
     -> Modell-Download -> Health Check -> `.env`-Eintrag). Laeuft (wie
     `create-admin`/`migrate`) als eigener Subprozess mit dem
     Datenverzeichnis als Arbeitsverzeichnis, damit `LocalAiSetupService`s
-    Standard-`.env`-Pfad (relativ zu `cwd`) korrekt aufgeloest wird."""
+    Standard-`.env`-Pfad (relativ zu `cwd`) korrekt aufgeloest wird.
+
+    `run_setup()` ist EIN blockierender Aufruf ueber den gesamten Ablauf
+    (Hardware -> Ollama-Install -> Modell-Download -> Health-Check) - bei
+    einem grossen, hardware-abhaengig gewaehlten Modell (real beobachtet:
+    5,2 GB, ueber eine Stunde auf einer normalen Internetverbindung) gibt
+    es sonst zwischen dem einleitenden `print()` und dem Abschluss-`print()`
+    ueberhaupt keine Konsolenausgabe - fuer einen Benutzer nicht von einem
+    Haenger zu unterscheiden (real beobachtet, siehe OPEN_ISSUES.md).
+    Deshalb hier ein simpler Heartbeat-Thread: keine erfundene
+    Fortschritts-/Prozentanzeige (Ollamas `/api/pull` laeuft bewusst mit
+    `stream:false`, siehe ollama_provider.py._DOWNLOAD_TIMEOUT), nur eine
+    ehrliche, periodische "laeuft noch"-Meldung."""
     from pathlib import Path as _Path
 
     from app.local_ai.setup_orchestrator import LocalAiSetupService
 
     print("Erkenne Hardware und ermittle ein passendes lokales KI-Modell...")
     service = LocalAiSetupService()
-    result = service.run_setup(download_dir=_Path("local_ai_download"))
+
+    stop_heartbeat = threading.Event()
+
+    def _print_heartbeat() -> None:
+        elapsed = 0.0
+        while not stop_heartbeat.wait(_LOCAL_AI_SETUP_HEARTBEAT_INTERVAL_SECONDS):
+            elapsed += _LOCAL_AI_SETUP_HEARTBEAT_INTERVAL_SECONDS
+            print(
+                f"... Einrichtung laeuft noch ({elapsed:.0f}s vergangen). "
+                "Je nach Hardware und Internetverbindung kann der Download "
+                "des lokalen KI-Modells laenger dauern - dies ist kein Fehler.",
+                flush=True,
+            )
+
+    heartbeat_thread = threading.Thread(target=_print_heartbeat, daemon=True)
+    heartbeat_thread.start()
+    try:
+        result = service.run_setup(download_dir=_Path("local_ai_download"))
+    finally:
+        stop_heartbeat.set()
+        heartbeat_thread.join(timeout=1.0)
     if not result.success:
         print(
             f"HINWEIS: Lokale KI konnte nicht automatisch eingerichtet werden "
@@ -658,6 +733,52 @@ def _run_local_ai_setup_subprocess(data_dir: Path) -> bool:
     return result.returncode == 0
 
 
+def _first_run_setup_required(data_dir: Path) -> bool:
+    """Entscheidet, ob die Ersteinrichtung (noch einmal) laufen muss.
+
+    ROOT CAUSE (real reproduziert, siehe OPEN_ISSUES.md): die fruehere
+    Bedingung pruefte AUSSCHLIESSLICH, ob `.env` existiert. `.env` wird
+    aber als ALLERERSTER Schritt von `run_setup_wizard()` geschrieben,
+    VOR Migration und Admin-Anlage (siehe app/setup/wizard.py) - schlaegt
+    einer dieser beiden spaeteren, tatsaechlich ladungstragenden Schritte
+    fehl (z. B. ein einmaliger Subprozess-/Datenbankfehler, unterbrochene
+    Installation, Antivirus-Interferenz waehrend des ersten Starts), bleibt
+    `.env` bestehen, OHNE dass je ein Admin angelegt wurde. Jeder folgende
+    Start hat die alte Bedingung dann als "Ersteinrichtung bereits erfolgt"
+    gewertet und direkt die Login-Seite geoeffnet - fuer einen echten
+    Endanwender ohne bekannte Zugangsdaten eine Sackgasse (kein Setup, kein
+    Login moeglich). Deshalb genuegt eine bestehende `.env` allein nicht
+    mehr - zusaetzlich muss mindestens ein Benutzer tatsaechlich in der
+    Datenbank existieren.
+
+    Bewusst zustandslos fuer den Rest des Prozesses: der `get_settings()`-
+    Cache wird nach der Pruefung wieder geleert, damit ein anschliessender
+    `cmd_setup()`/`cmd_serve()`-Aufruf garantiert die aktuelle `.env`
+    frisch einliest (siehe run_setup_wizard-Docstring zum selben Thema)."""
+    env_path = data_dir / ".env"
+    if not env_path.exists():
+        return True
+    from app.config import get_settings
+
+    try:
+        from app.db.session import SessionLocal
+        from app.models import User
+
+        db = SessionLocal()
+        try:
+            return db.query(User).first() is None
+        finally:
+            db.close()
+    except Exception:
+        # DB/Tabelle fehlt oder ist aus einem anderen Grund nicht lesbar -
+        # dann ist die Ersteinrichtung ebenfalls nicht abgeschlossen. Lieber
+        # den Assistenten erneut anbieten, als den Benutzer in einer
+        # Login-Sackgasse ohne Zugangsdaten zu lassen.
+        return True
+    finally:
+        get_settings.cache_clear()
+
+
 def cmd_setup(data_dir: Path, *, force: bool) -> int:
     from app.config.settings import Settings
     from app.setup import WizardError, run_setup_wizard
@@ -677,8 +798,11 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
     # nicht die Installation/Nutzung der Anwendung, siehe run_setup_wizard.
     setup_local_ai_answer = input(
         "Lokale KI (Ollama) jetzt automatisch einrichten? Erkennt die "
-        "Hardware und laedt bei Bedarf ein passendes Modell herunter (ca. "
-        "1 GB, je nach Internetverbindung einige Minuten). [J/n]: "
+        "Hardware und laedt bei Bedarf ein passendes Modell herunter "
+        "(Groesse und Dauer haengen von der erkannten Hardware ab - von "
+        "unter einer Minute bis zu einer Stunde oder mehr, je nach "
+        "Internetverbindung; waehrend des Downloads erscheint regelmaessig "
+        "eine Statusmeldung). [J/n]: "
     ).strip().lower()
     setup_local_ai = setup_local_ai_answer not in ("n", "nein", "no")
 
@@ -712,7 +836,7 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
         print(
             "Lokale KI konnte nicht automatisch eingerichtet werden - die "
             "Anwendung ist trotzdem einsatzbereit. Ein erneuter Versuch ist "
-            "spaeter jederzeit moeglich (kanzlei_ai.exe local-ai-setup)."
+            "spaeter jederzeit moeglich (Lexono.exe local-ai-setup)."
         )
     return 0
 
@@ -720,7 +844,7 @@ def cmd_setup(data_dir: Path, *, force: bool) -> int:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
 
-    parser = argparse.ArgumentParser(prog="kanzlei_ai", description=__doc__)
+    parser = argparse.ArgumentParser(prog="Lexono", description=__doc__)
     subparsers = parser.add_subparsers(dest="command")
     serve_parser = subparsers.add_parser(
         "serve", help="Startet den Webserver + natives Fenster (Standard ohne Argument)"
@@ -743,6 +867,11 @@ def main(argv: list[str] | None = None) -> int:
     subparsers.add_parser(
         "create-admin",
         help="Legt den initialen Admin-Nutzer an (liest ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD)",
+    )
+    subparsers.add_parser(
+        "reset-admin-password",
+        help="Setzt das Passwort eines bestehenden Admin-Nutzers zurück, falls das initiale "
+        "Passwort verloren ging (liest ADMIN_EMAIL/RESET_PASSWORD)",
     )
     subparsers.add_parser(
         "local-ai-setup",
@@ -774,6 +903,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_migrate()
     if command == "create-admin":
         return cmd_create_admin()
+    if command == "reset-admin-password":
+        return cmd_reset_admin_password()
     if command == "local-ai-setup":
         return cmd_local_ai_setup()
     if command == "restore":
@@ -784,10 +915,16 @@ def main(argv: list[str] | None = None) -> int:
     # getattr mit sicherem Default statt args.no_window direkt).
     open_window = not getattr(args, "no_window", False)
 
-    env_path = data_dir / ".env"
-    if not env_path.exists():
-        print("Keine Konfiguration gefunden - Ersteinrichtung wird gestartet.")
-        setup_exit_code = cmd_setup(data_dir, force=False)
+    if _first_run_setup_required(data_dir):
+        env_existed_already = (data_dir / ".env").exists()
+        if env_existed_already:
+            print(
+                "Unvollstaendige Ersteinrichtung erkannt (Konfiguration vorhanden, "
+                "aber kein Benutzer angelegt) - Ersteinrichtung wird erneut gestartet."
+            )
+        else:
+            print("Keine Konfiguration gefunden - Ersteinrichtung wird gestartet.")
+        setup_exit_code = cmd_setup(data_dir, force=env_existed_already)
         if setup_exit_code != 0:
             return setup_exit_code
     return cmd_serve(open_window=open_window)

@@ -149,6 +149,28 @@ def default_ollama_app_path() -> Path:
     return Path(local_app_data) / "Programs" / "Ollama" / "ollama app.exe"
 
 
+def default_ollama_cli_path() -> Path:
+    """Installationsort der Ollama-CLI (`ollama.exe`, NICHT die Tray-
+    Anwendung `ollama app.exe` - siehe `default_ollama_app_path`), am
+    selben Ort wie oben. Real gefundener Fehler (Installer-Reality-Check,
+    Referenzmaschine i5-1145G7): der offizielle Ollama-Installer traegt
+    `%LOCALAPPDATA%\\Programs\\Ollama` zwar in die PATH-Registry ein, ein
+    bereits LAUFENDER Prozess (z. B. `Lexono.exe`, gestartet ueber
+    Start.vbs beim Login) erbt diese Aenderung nie - Windows aktualisiert
+    `os.environ`/den PATH eines laufenden Prozesses nicht rueckwirkend. Ein
+    reiner `subprocess.run(["ollama", "--version"])`-PATH-Aufruf schlaegt
+    deshalb sowohl VOR als auch (real beobachtet) DIREKT NACH einer
+    frischen automatischen Installation fehl, obwohl `ollama.exe`
+    nachweislich am erwarteten, vom eigenen Installer verwendeten Ort
+    liegt - `detect_installed_version` faellt deshalb auf diesen Pfad
+    zurueck, statt eine funktionierende Installation faelschlich als
+    "nicht gefunden" zu melden."""
+    import os
+
+    local_app_data = os.environ.get("LOCALAPPDATA", "")
+    return Path(local_app_data) / "Programs" / "Ollama" / "ollama.exe"
+
+
 class OllamaInstaller:
     def __init__(
         self,
@@ -170,15 +192,29 @@ class OllamaInstaller:
     def detect_installed_version(self) -> str | None:
         """`ollama --version` - `None`, wenn Ollama nicht installiert
         bzw. nicht auf PATH ist ODER der Aufruf aus irgendeinem Grund
-        fehlschlaegt (kein Absturz, siehe HardwareDetector-Prinzip)."""
-        try:
-            result = self._run_command(["ollama", "--version"], timeout=10.0)
-        except Exception:  # noqa: BLE001 - "nicht installiert" ist ein gueltiges Ergebnis
-            return None
-        if result.returncode != 0:
+        fehlschlaegt (kein Absturz, siehe HardwareDetector-Prinzip).
+
+        Faellt bei einem PATH-Fehlschlag auf den bekannten Installationsort
+        (`default_ollama_cli_path`) zurueck, BEVOR "nicht installiert"
+        gefolgert wird - siehe dortige Begruendung: ein laufender Prozess
+        sieht eine waehrend seiner Laufzeit aktualisierte PATH-Registry
+        nicht, eine tatsaechlich vorhandene Installation darf dadurch nicht
+        faelschlich als fehlend gelten."""
+        result = self._try_version_command(["ollama", "--version"])
+        if result is None:
+            cli_path = default_ollama_cli_path()
+            if cli_path.is_file():
+                result = self._try_version_command([str(cli_path), "--version"])
+        if result is None or result.returncode != 0:
             return None
         match = re.search(r"(\d+\.\d+\.\d+)", result.stdout or "")
         return match.group(1) if match else None
+
+    def _try_version_command(self, args: list[str]) -> subprocess.CompletedProcess | None:
+        try:
+            return self._run_command(args, timeout=10.0)
+        except Exception:  # noqa: BLE001 - jeder Fehler bedeutet "so nicht erreichbar"
+            return None
 
     def is_version_compatible(self, version: str) -> bool:
         return _parse_version(version) >= _parse_version(self.version_policy.minimum_supported_version)

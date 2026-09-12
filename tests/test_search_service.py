@@ -364,3 +364,62 @@ def test_source_search_filters_by_source_type(db_session: Session) -> None:
 
     assert law.id in result_ids
     assert admin_guidance.id not in result_ids
+
+
+class _SpyEmbeddingProvider(FakeEmbeddingProvider):
+    """Zaehlt echte `embed()`-Aufrufe - P1-Speicherdruck-Befund
+    (OPEN_ISSUES.md, 12.09.): das reale FastEmbed-Modell (~1,7 GB) darf
+    nicht geladen werden, wenn es ohnehin nichts zu durchsuchen gibt."""
+
+    def __init__(self) -> None:
+        self.call_count = 0
+
+    def embed(self, text: str) -> list[float]:
+        self.call_count += 1
+        return super().embed(text)
+
+
+def test_search_within_matter_does_not_embed_when_no_candidate_documents(
+    db_session: Session,
+) -> None:
+    matter = _matter(db_session)
+    provider = _SpyEmbeddingProvider()
+
+    DocumentSearchService(provider).search_within_matter(matter.id, "Mietvertrag", db_session)
+
+    assert provider.call_count == 0
+
+
+def test_search_within_matter_still_embeds_when_candidate_documents_exist(
+    db_session: Session,
+) -> None:
+    matter = _matter(db_session)
+    db_session.add(
+        Document(file_path="/tmp/x.pdf", matter_id=matter.id, extracted_text="Mietvertrag Text")
+    )
+    db_session.commit()
+    provider = _SpyEmbeddingProvider()
+
+    DocumentSearchService(provider).search_within_matter(matter.id, "Mietvertrag", db_session)
+
+    assert provider.call_count == 1
+
+
+def test_search_knowledge_base_does_not_embed_when_no_approved_items(
+    db_session: Session,
+) -> None:
+    provider = _SpyEmbeddingProvider()
+
+    DocumentSearchService(provider).search_knowledge_base("Kuendigungsfrist", db_session)
+
+    assert provider.call_count == 0
+
+
+def test_search_sources_does_not_embed_when_no_approved_sources(
+    db_session: Session,
+) -> None:
+    provider = _SpyEmbeddingProvider()
+
+    DocumentSearchService(provider).search_sources("Regelung", db_session)
+
+    assert provider.call_count == 0

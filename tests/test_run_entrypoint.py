@@ -63,9 +63,9 @@ def test_self_command_in_dev_mode_uses_python_and_script_path(monkeypatch) -> No
 
 def test_self_command_when_frozen_uses_only_executable(monkeypatch) -> None:
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(sys, "executable", r"C:\Program Files\KanzleiAI\kanzlei_ai.exe")
+    monkeypatch.setattr(sys, "executable", r"C:\Users\Test\AppData\Local\Lexono\Lexono.exe")
     command = run._self_command("create-admin")
-    assert command == [r"C:\Program Files\KanzleiAI\kanzlei_ai.exe", "create-admin"]
+    assert command == [r"C:\Users\Test\AppData\Local\Lexono\Lexono.exe", "create-admin"]
 
 
 def test_main_changes_into_resolved_data_dir(tmp_path, monkeypatch) -> None:
@@ -97,6 +97,23 @@ def test_main_dispatches_create_admin(tmp_path, monkeypatch) -> None:
 
     assert run.main(["create-admin"]) == 0
     assert calls == ["create-admin"]
+
+
+def test_main_dispatches_reset_admin_password(tmp_path, monkeypatch) -> None:
+    """Realer Fund: `scripts/reset_admin_password.py` existierte bereits
+    (Recovery-Pfad fuer "Admin existiert, initiales Passwort verloren"),
+    war aber - anders als create-admin/restore - nicht als CLI-Subkommando
+    angebunden und dadurch aus der installierten .exe nicht erreichbar."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    calls: list[str] = []
+    monkeypatch.setattr(
+        run,
+        "cmd_reset_admin_password",
+        lambda: (calls.append("reset-admin-password"), 0)[1],
+    )
+
+    assert run.main(["reset-admin-password"]) == 0
+    assert calls == ["reset-admin-password"]
 
 
 def test_main_dispatches_local_ai_setup(tmp_path, monkeypatch) -> None:
@@ -213,20 +230,104 @@ def test_main_serve_without_env_runs_setup_first(tmp_path, monkeypatch) -> None:
     assert order == ["setup", "serve"]
 
 
-def test_main_serve_skips_setup_when_env_already_exists(tmp_path, monkeypatch) -> None:
+def _patch_fake_user_session(monkeypatch, *, has_user: bool) -> None:
+    """Baut eine echte, isolierte In-Memory-SQLite-Session mit dem echten
+    `User`-Modell (kein Mock der Datenbank-Schicht selbst) und ersetzt nur
+    `app.db.session.SessionLocal` - so wie `_first_run_setup_required()`
+    es tatsaechlich importiert (`from app.db.session import SessionLocal`
+    loest sich zur Aufrufzeit neu auf, das Patchen der Modul-Referenz greift
+    also korrekt)."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from app.models.base import Base
+    from app.models.user import User
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine, tables=[User.__table__])
+    TestSessionLocal = sessionmaker(bind=engine)
+
+    if has_user:
+        session = TestSessionLocal()
+        session.add(User(email="bestehender.admin@lexono-test.local", is_active=True))
+        session.commit()
+        session.close()
+
+    import app.db.session as db_session_module
+
+    monkeypatch.setattr(db_session_module, "SessionLocal", TestSessionLocal)
+
+
+def test_main_serve_skips_setup_when_env_exists_and_admin_exists(tmp_path, monkeypatch) -> None:
+    """Der eigentliche, korrekte Fall: `.env` UND mindestens ein Benutzer
+    existieren bereits - dann darf Setup nicht erneut laufen."""
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    _patch_fake_user_session(monkeypatch, has_user=True)
 
     monkeypatch.setattr(
         run,
         "cmd_setup",
         lambda data_dir, *, force: (_ for _ in ()).throw(
-            AssertionError("Setup sollte bei bestehender .env nicht aufgerufen werden")
+            AssertionError("Setup sollte nicht erneut laufen, wenn bereits ein Benutzer existiert")
         ),
     )
     monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
 
     assert run.main(["serve"]) == 0
+
+
+def test_main_serve_reruns_setup_when_env_exists_but_no_admin_was_ever_created(
+    tmp_path, monkeypatch
+) -> None:
+    """Root-Cause-Regressionstest (real reproduziert, siehe OPEN_ISSUES.md):
+    `.env` existiert (z. B. weil ein fruehrer Migrations-/Admin-Anlage-
+    Schritt fehlgeschlagen ist), aber es wurde nie ein Benutzer angelegt -
+    ein echter Endanwender darf hier NICHT direkt zur Login-Seite ohne
+    bekannte Zugangsdaten geschickt werden. Setup MUSS erneut laufen, und
+    zwar mit `force=True` (sonst wuerde `write_env_file` mit
+    `FileExistsError` abbrechen, siehe app/setup/env_writer.py)."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    _patch_fake_user_session(monkeypatch, has_user=False)
+
+    recorded: list[tuple[Path, bool]] = []
+    monkeypatch.setattr(
+        run, "cmd_setup", lambda data_dir, *, force: (recorded.append((data_dir, force)), 0)[1]
+    )
+    monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
+
+    assert run.main(["serve"]) == 0
+    assert recorded == [(tmp_path, True)]
+
+
+def test_main_serve_reruns_setup_when_users_table_does_not_exist_yet(
+    tmp_path, monkeypatch
+) -> None:
+    """Noch fruehere Fehlschlagsstufe: `.env` existiert, aber die Migration
+    ist nie gelaufen (keine `users`-Tabelle) - muss ebenfalls als
+    "Setup noch nicht abgeschlossen" gewertet werden, nicht als Fehler
+    durchschlagen."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    EmptySessionLocal = sessionmaker(bind=engine)  # keine Tabellen angelegt
+    import app.db.session as db_session_module
+
+    monkeypatch.setattr(db_session_module, "SessionLocal", EmptySessionLocal)
+
+    recorded: list[tuple[Path, bool]] = []
+    monkeypatch.setattr(
+        run, "cmd_setup", lambda data_dir, *, force: (recorded.append((data_dir, force)), 0)[1]
+    )
+    monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
+
+    assert run.main(["serve"]) == 0
+    assert recorded == [(tmp_path, True)]
 
 
 def test_main_serve_aborts_if_setup_fails(tmp_path, monkeypatch) -> None:
@@ -247,6 +348,7 @@ def test_main_serve_default_opens_window(tmp_path, monkeypatch) -> None:
     """Prompt 46: ohne --no-window ist open_window=True der neue Standard."""
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    monkeypatch.setattr(run, "_first_run_setup_required", lambda data_dir: False)
     recorded: list[bool] = []
     monkeypatch.setattr(
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
@@ -262,6 +364,7 @@ def test_main_serve_bare_invocation_without_subcommand_opens_window(tmp_path, mo
     das getattr-Fallback in main() muss trotzdem sicher greifen."""
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    monkeypatch.setattr(run, "_first_run_setup_required", lambda data_dir: False)
     recorded: list[bool] = []
     monkeypatch.setattr(
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
@@ -287,6 +390,7 @@ def test_main_serve_no_window_flag_disables_window(tmp_path, monkeypatch) -> Non
     original_cwd = Path.cwd()
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    monkeypatch.setattr(run, "_first_run_setup_required", lambda data_dir: False)
     recorded: list[bool] = []
     monkeypatch.setattr(
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
@@ -542,3 +646,94 @@ def test_title_bar_colorref_constants_match_app_css_brand_colors() -> None:
     nicht nur behauptet werden."""
     assert run._TITLE_BAR_CAPTION_COLORREF == 0x00FCFAF8  # R=F8,G=FA,B=FC -> BB GG RR
     assert run._TITLE_BAR_TEXT_COLORREF == 0x00281810  # R=10,G=18,B=28 -> BB GG RR
+
+
+# --- _apply_rounded_corners (native abgerundete Fensterecken, Windows 11) ---
+
+
+def test_apply_rounded_corners_calls_dwm_with_correct_attribute(monkeypatch) -> None:
+    """Beweis auf Aufrufebene: DWMWA_WINDOW_CORNER_PREFERENCE (33) wird auf
+    DWMWCP_ROUND (2) gesetzt - dieselbe hwnd-Ermittlung/dasselbe
+    Aufrufmuster wie _apply_light_title_bar."""
+    calls: list[tuple[int, int, int]] = []
+
+    class _FakeDwmApi:
+        def DwmSetWindowAttribute(self, hwnd, attribute, value_ptr, size):
+            import ctypes
+
+            calls.append((hwnd, attribute, ctypes.cast(value_ptr, ctypes.POINTER(ctypes.c_int)).contents.value))
+            return 0
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"dwmapi": _FakeDwmApi()})(), raising=False)
+
+    run._apply_rounded_corners(_FakeWindow())
+
+    assert calls == [(12345, run._DWMWA_WINDOW_CORNER_PREFERENCE, run._DWMWCP_ROUND)]
+
+
+def test_apply_rounded_corners_never_raises_when_native_handle_missing() -> None:
+    """Rein kosmetische Funktion - darf den App-Start nie gefaehrden."""
+    run._apply_rounded_corners(object())  # kein .native Attribut
+
+
+class _FakeSetupResult:
+    def __init__(self, *, success: bool, stage: str = "ready", installed_model: str | None = "qwen3:1.7b", error: str | None = None) -> None:
+        self.success = success
+        self.stage = type("S", (), {"value": stage})()
+        self.installed_model = installed_model
+        self.error = error
+
+
+def test_cmd_local_ai_setup_prints_heartbeat_during_long_running_setup(monkeypatch, capsys) -> None:
+    """Beweis, dass waehrend eines langen `run_setup()`-Aufrufs NICHT
+    einfach nur Stille herrscht (real beobachtet: 5,2-GB-Modell, ueber
+    eine Stunde, keine Konsolenausgabe zwischen Start und Ende - siehe
+    OPEN_ISSUES.md). Heartbeat-Intervall wird fuer den Test drastisch
+    verkuerzt statt echte 30s zu warten."""
+    import time as time_module
+
+    monkeypatch.setattr(run, "_LOCAL_AI_SETUP_HEARTBEAT_INTERVAL_SECONDS", 0.05)
+
+    class _FakeService:
+        def run_setup(self, *, download_dir):
+            time_module.sleep(0.2)
+            return _FakeSetupResult(success=True)
+
+    import app.local_ai.setup_orchestrator as setup_orchestrator_module
+
+    monkeypatch.setattr(setup_orchestrator_module, "LocalAiSetupService", _FakeService)
+
+    exit_code = run.cmd_local_ai_setup()
+
+    assert exit_code == 0
+    out = capsys.readouterr().out
+    assert out.count("laeuft noch") >= 1
+    assert "eingerichtet" in out
+
+
+def test_cmd_local_ai_setup_stops_heartbeat_thread_after_fast_setup(monkeypatch, capsys) -> None:
+    """Fuer eine schnell abgeschlossene Einrichtung darf kein Heartbeat
+    anspringen (kein unnoetiges Rauschen) und der Hintergrund-Thread darf
+    nicht ueber die Funktion hinaus weiterlaufen (kein Thread-Leak)."""
+    import threading as threading_module
+
+    monkeypatch.setattr(run, "_LOCAL_AI_SETUP_HEARTBEAT_INTERVAL_SECONDS", 30.0)
+
+    class _FakeService:
+        def run_setup(self, *, download_dir):
+            return _FakeSetupResult(success=True)
+
+    import app.local_ai.setup_orchestrator as setup_orchestrator_module
+
+    monkeypatch.setattr(setup_orchestrator_module, "LocalAiSetupService", _FakeService)
+
+    threads_before = {t.ident for t in threading_module.enumerate()}
+    exit_code = run.cmd_local_ai_setup()
+    threads_after = {t.ident for t in threading_module.enumerate()}
+
+    assert exit_code == 0
+    assert "laeuft noch" not in capsys.readouterr().out
+    assert threads_after - threads_before == set()
+    run._apply_rounded_corners(None)

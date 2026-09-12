@@ -212,7 +212,7 @@ def _login(client: TestClient, email: str) -> None:
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert "kanzlei_ai_session" in response.cookies
+    assert "lexono_session" in response.cookies
 
 
 def test_full_case_journey_from_synthetic_data_to_sent_outbox(

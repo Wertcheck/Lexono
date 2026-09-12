@@ -10,7 +10,7 @@ als Abhängigkeit"): Tesseract ist keine Python-Bibliothek, sondern ein
 externes Programm - ohne separate Installation auf dem Zielsystem schlägt
 OCR bislang mit `TesseractNotFoundError` fehl, auch wenn `OCR_ENABLED=true`
 gesetzt ist. Ab jetzt bündelt der Windows-Installer ein eigenständiges
-Tesseract (siehe windows/vendor_tesseract.ps1, windows/kanzlei_ai.spec) -
+Tesseract (siehe windows/vendor_tesseract.ps1, windows/lexono.spec) -
 `configure_tesseract()` löst dessen Pfad automatisch auf, wenn keine
 explizite `TESSERACT_CMD`-Überschreibung gesetzt ist. Im Dev-Betrieb (kein
 PyInstaller-Bundle) bleibt weiterhin eine lokal installierte Tesseract-
@@ -42,8 +42,8 @@ def _bundle_base_dir() -> Path:
     """Wie `run.py::_bundle_base_dir` (bewusst unabhängig re-implementiert,
     um diesem Modul keine Abhängigkeit auf `run.py` aufzuerlegen) - im
     Dev-Betrieb das Repository-Root, im gebündelten Produkt das von
-    PyInstaller bereitgestellte Verzeichnis neben `kanzlei_ai.exe`
-    (onedir-Build, siehe windows/kanzlei_ai.spec: KEIN `sys._MEIPASS`-
+    PyInstaller bereitgestellte Verzeichnis neben `Lexono.exe`
+    (onedir-Build, siehe windows/lexono.spec: KEIN `sys._MEIPASS`-
     Extraktionsverzeichnis, die Bundle-Dateien liegen direkt neben der
     .exe)."""
     if getattr(sys, "frozen", False):

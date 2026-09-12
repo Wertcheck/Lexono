@@ -5,9 +5,268 @@ Kein Eintrag hier bedeutet automatisch Untätigkeit – Einträge werden aktiv
 von den zuständigen Agenten (siehe `agents/`) abgearbeitet oder bewusst
 zurückgestellt (mit Begründung).
 
-## CRITICAL
+## CRITICAL — BEHOBEN (12.09., Zero-Excuse-Release-Run)
 
-_Keine offenen CRITICAL-Punkte (zuletzt geprüft 01.09.)._
+- **P0-Produktfehler: echter Endanwender landet nach Installation auf der
+  Login-Seite OHNE erreichbare Zugangsdaten (real vom Nutzer gemeldet,
+  real reproduziert, Root Cause im Code bewiesen)**: `run.py::main()`
+  entschied "Ersteinrichtung noetig?" AUSSCHLIESSLICH anhand von
+  `env_path.exists()` - `.env` wird aber als ALLERERSTER Schritt von
+  `run_setup_wizard()` geschrieben, VOR Migration und Admin-Anlage
+  (`app/setup/wizard.py`). Schlaegt einer dieser beiden spaeteren,
+  tatsaechlich ladungstragenden Schritte fehl (ein einzelner Subprozess-/
+  DB-Fehler genuegt, real reproduziert durch bewusstes Weglassen von
+  `ADMIN_EMAIL`), bleibt `.env` bestehen, OHNE dass je ein Admin angelegt
+  wurde. Jeder folgende Start wertete das als "Ersteinrichtung bereits
+  erfolgt" und oeffnete direkt die Login-Seite - fuer einen echten
+  Endanwender eine Sackgasse ohne bekannte Zugangsdaten. Eine bestehende
+  Testdatei (`tests/test_run_entrypoint.py::test_main_serve_skips_setup_when_env_already_exists`)
+  kodierte dieses fehlerhafte Verhalten faelschlich als "korrekt" - real
+  gefundener Beweis, dass der Fehler bereits laenger bestand, nicht neu
+  eingefuehrt wurde.
+  **Fix (minimal, generisch, hardwareunabhaengig):** neue Funktion
+  `run._first_run_setup_required(data_dir)` prueft zusaetzlich, ob
+  mindestens ein Benutzer tatsaechlich in der Datenbank existiert (nicht
+  nur `.env`-Praesenz); bei fehlendem Benutzer wird `cmd_setup(data_dir,
+  force=True)` erneut aufgerufen (`force=True`, da `write_env_file`
+  sonst mit `FileExistsError` abbricht - dieses Recovery-Muster war
+  bereits im `run_setup_wizard`-Docstring als vorgesehen dokumentiert,
+  nur nie tatsaechlich verdrahtet). Kein Hardcoding, keine Test-
+  Credentials, keine historischen Zugangsdaten, keine Entwickleraktion
+  erforderlich - funktioniert generisch auf jeder Windows-Installation.
+  **Real verifiziert** (nicht nur Unit-Test): am tatsaechlich installierten,
+  neu gebauten Release Candidate (SHA-256 siehe PROJECT_STATE.md) real
+  reproduziert (Setup-Assistent wurde nach fehlgeschlagener
+  Admin-Anlage korrekt erneut gestartet, Konsolenmeldung "Unvollstaendige
+  Ersteinrichtung erkannt..." statt stillschweigendem Sprung zur
+  Login-Seite) UND der volle Folgeablauf (Admin anlegen, Login,
+  erzwungener Passwortwechsel, Neustart, erneuter Login, Chat mit echtem
+  Presidio/lokalem `qwen3:8b`/direktem Claude-Aufruf, korrekte
+  Rekonstruktion) real bestaetigt. 3 neue Regressionstests, 1 bestehender
+  Test korrigiert (kodierte zuvor das fehlerhafte Verhalten).
+
+- **P0-Produktfehler, zweiter, unabhaengiger Fund derselben Fehlerklasse:
+  `Start.vbs` (der tatsaechliche Startmenue-/Desktop-Verknuepfungs-Mechanismus,
+  `installer.iss` Zeile 158/160/181) entschied die Konsolen-Sichtbarkeit
+  komplett unabhaengig von `run.py::main()` und ebenfalls anhand von
+  `.env`-Praesenz allein - derselbe Denkfehler wie oben, nur in VBScript
+  dupliziert.** Real beim Endanwender aufgetreten: ein echter Nutzer
+  (`bonitzki@live.de`) hatte den Setup-Assistenten tatsaechlich erfolgreich
+  durchlaufen (echter Benutzer real in der DB bestaetigt, `created_at`
+  19:28:03), kannte aber sein Passwort nicht mehr (voraussichtlich: das
+  einmalig angezeigte Passwort wurde von der sich sofort danach oeffnenden
+  nativen Fensterinstanz verdeckt) - **das war KEIN First-Run-Fehler**
+  (First Run hatte technisch funktioniert), sondern zeigt den zweiten,
+  unabhaengigen Bug: bei einem KUENFTIGEN fehlgeschlagenen Setup-Versuch
+  (z. B. Admin-Anlage schlaegt fehl, `.env` existiert trotzdem bereits)
+  haette Start.vbs den erneuten, von `run.py::main()` korrekt ausgeloesten
+  Setup-Wiederholungsversuch STUMM/UNSICHTBAR gestartet - fuer den Nutzer
+  nicht von einem Haenger zu unterscheiden. **Fix:** `app/setup/wizard.py::
+  run_setup_wizard()` schreibt jetzt einen `.setup_complete`-Marker ERST
+  nach tatsaechlich erfolgreicher Admin-Anlage (nicht gleichzeitig mit
+  `.env`); `Start.vbs` prueft jetzt `.setup_complete` statt `.env` (VBScript
+  hat keinen SQLite-Treiber, kann also nicht wie `run.py::main()` direkt in
+  der DB nachsehen - der Marker ist die naechstbeste, bewusst konservative
+  Annaeherung). Real gegen die neu gebaute, installierte `.exe` verifiziert:
+  ueber die REALEN, produktiven Subprozess-Aufrufe (`_run_migrate_subprocess`/
+  `_run_create_admin_subprocess`, exakt wie `cmd_setup()` sie nutzt) wird der
+  Marker nach echtem Erfolg gesetzt; ein echter fehlgeschlagener
+  `create-admin`-Aufruf (fehlende `ADMIN_EMAIL`) laesst ihn korrekt fehlen.
+  Der real betroffene Nutzer wurde sofort per `reset-admin-password`
+  (legitime Account-Wiederherstellung fuer sein EIGENES echtes Konto, NICHT
+  als Clean-Room-Nachweis verwendet) wieder zugangsfaehig gemacht - neues
+  Passwort ausschliesslich in der Konversation, nie in Datei/Log/Report
+  festgehalten. 4 Regressionstests (2 neu in `test_setup_wizard.py`, 1 neu +
+  1 korrigiert in `test_start_vbs.py`).
+  **Legacy-Artefakt-Analyse (auf ausdruecklichen Nutzerauftrag durchgefuehrt):**
+  `kanzlei_ai.exe`, `Start.vbs`, `%ProgramData%\KanzleiAI`, `_internal\`
+  waren zum Zeitpunkt dieser Analyse alle Klasse A (produktiv erforderlich).
+  **UPDATE 12.09. (spaeter am selben Tag): diese Klassifizierung wurde per
+  explizitem, erweitertem Nutzerauftrag AUFGEHOBEN** - vollstaendiger Rename
+  durchgefuehrt (`windows/lexono.spec`, Paketname `lexono`, Session-Cookie,
+  Backup-/Log-Dateinamen, Thread-Name, `Start.vbs`, verbleibende
+  CLI-Hinweistexte in Templates). Siehe DECISIONS.md ("Supersedes...").
+  Kein separates `dist\KanzleiAI`-Verzeichnis und keine
+  `KanzleiAI_Setup.exe` existieren im Repository oder Build-Output (verifiziert
+  per Verzeichnis-Listing) - nur EIN Spec (jetzt `windows/lexono.spec`), EIN
+  Installer-Output (`Lexono_Setup.exe`). Kein Zusammenhang zwischen
+  Legacy-Benennung und dem First-Run-/Login-Fehler gefunden - die tatsaechliche
+  Ursache war ausschliesslich die oben beschriebene `.env`-Praesenz-Logik in
+  zwei Dateien.
+
+## MEDIUM — MITIGATED
+
+- **Speicherdruck bei gleichzeitigem Presidio+FastEmbed+geladenem
+  Ollama-Modell - Root Cause gefunden, minimaler Fix angewendet (12.09.,
+  P1-Speicherdruck-Root-Cause-Untersuchung, real gemessen)**: auf der
+  16-GB-Referenzmaschine (CPU-only) fiel der freie Arbeitsspeicher beim
+  gleichzeitigen Laden von spaCy/Presidio (+938 MB), dem echten
+  `FastEmbedProvider`-Multilingual-Modell (+1,71 GB) UND einem bereits im
+  Speicher gehaltenen `qwen3:8b`-Ollama-Modell (separater
+  `llama-server`-Prozess, ~5,6 GB) auf **unter 1 GB frei** - dabei
+  reproduzierte sich real (zweimal) ein `HTTP 404` beim tatsaechlichen
+  `/api/generate`-Aufruf gegen Ollama, obwohl `/api/ps` das Modell als
+  geladen auswies; nach Entlastung (Speicher wieder >3 GB frei) verhielt
+  sich Ollama wieder normal - der Fehler korrelierte eindeutig mit dem
+  Speicherdruckzeitpunkt, nicht mit einem dauerhaften Ollama-Defekt.
+  **Root Cause (Code-verifiziert, nicht nur vermutet):** `app/search/
+  service.py`s `search_within_matter`/`search_knowledge_base`/
+  `search_sources` riefen `self.embedding_provider.embed(query)`
+  bedingungslos auf, auch wenn die jeweilige Kandidatenliste (Dokumente/
+  freigegebene Wissensbausteine/freigegebene Quellen) leer war - das
+  Ergebnis ist in diesem Fall so oder so leer, das reale Laden des
+  FastEmbed-Modells (+1,71 GB) war damit fuer eine neue Akte/Kanzlei ohne
+  bestehende Wissensbasis reine, unnoetige Ressourcenbindung, nicht
+  funktional erforderlich. **Fix (minimal, Verhalten bei nicht-leerer
+  Kandidatenliste unveraendert):** `query_vector` wird jetzt erst
+  berechnet, wenn tatsaechlich mindestens ein Kandidat vorhanden ist,
+  in allen drei Methoden. 4 neue Regressionstests
+  (`tests/test_search_service.py`), volle Suite: 1526 bestanden/1
+  Skip/0 Fehlschlaege. **Real vor/nach gemessen:** vorher Presidio+
+  FastEmbed zusammen ~2,68 GB Prozessspeicher; nachher ein echter
+  vollstaendiger `create_draft()`-Aufruf gegen eine leere Wissensbasis
+  nur ~1,00 GB (= Presidio-Kosten allein, FastEmbed nicht mehr geladen).
+  **Verbleibendes, bewusst nicht angefasstes Risiko:** `qwen3:8b`
+  (~5,6 GB als separater Ollama-Prozess) bleibt der groesste Einzelposten,
+  wenn Local AI aktiviert ist - unveraendert RISK_ACCEPTED (siehe
+  `LEXONO_MASTER_PRODUCT.md` Drift #2, Nutzervorgabe "qwen3:8b NICHT
+  einfach ersetzen"). Status hier: **MITIGATED**, nicht VERIFIED RESOLVED
+  - eine reale Kanzlei MIT bereits gefuellter Wissensbasis/Quellensammlung
+  wird weiterhin das volle FastEmbed-Gewicht tragen (dann aber fuer einen
+  echten Suchtreffer, nicht mehr unnoetig). Vor dem naechsten echten
+  Piloteinsatz empfohlen: neuen Installer bauen (release-relevante
+  Code-Aenderung) und den vollen Clean-Room-Zyklus erneut durchlaufen.
+
+  **Release-Validierung (12.09., spaeter, "Release Candidate Validation
+  After Memory-Pressure Fix"-Lauf):** mit echter Laufzeitevidenz (nicht
+  nur Code-Inspektion) bestaetigt - leerer Korpus: `_model is None` bleibt
+  nach drei realen Aufrufen `True` (kein Laden), Ergebnis korrekt leer,
+  keine Exception. Nicht-leerer Korpus (echte synthetische Dokumente/
+  Wissensbausteine/Quellen, echtes FastEmbed-Modell, kein Fake):
+  `_model` wechselt beim ersten Aufruf zu `False` (= geladen), alle drei
+  Suchmethoden liefern echte semantische Treffer (Score bis 0,64) -
+  semantische Suche also NICHT versehentlich deaktiviert. Voller
+  Drafting-Workflow mit echtem, nicht-leerem Korpus + echtem Ollama
+  (`qwen3:8b`, 103,9s) + echter Anthropic-API lief vollstaendig durch
+  (Speicher sank dabei real auf ~1,0 GB frei, aber ohne Absturz) - der
+  finale Entwurf wurde von der VORBESTEHENDEN, vom Fix unabhaengigen
+  Antwort-Qualitaetspruefung korrekt blockiert (fehlender Platzhalter in
+  Claudes Antworttext), kein Regressionsfund. Neuer Installer (SHA-256
+  `6b36026c...`, siehe PROJECT_STATE.md) gebaut und real clean-room
+  installiert; echter HTTP-Chat-Aufruf gegen genau diese `.exe` (nicht
+  nur Dev-venv) mit echtem, nicht-leerem PII-Text lief erfolgreich durch
+  (Presidio → Pseudonymisierung → lokales `qwen3:8b` → echter Claude →
+  korrekte Rekonstruktion, kein Platzhalter-Leak im finalen Render).
+
+## HIGH
+
+- **Antivirus/Windows-Defender kann Teile der installierten Anwendung
+  nachträglich entfernen (12.09., real beobachtet, Referenzmaschine
+  i5-1145G7) - Klassifikation D, mit neuer Gegenevidenz gegen A
+  (12.09., zweite Untersuchung)**: eine frisch installierte
+  Lexono-Instanz lief zunächst korrekt (Login/Local AI erfolgreich
+  getestet), zeigte aber beim nächsten First-Run-Test plötzlich
+  `alembic.util.exc.CommandError: No 'script_location' key found in
+  configuration` beim Migrieren. Forensik: `%LocalAppData%\Lexono\_internal`
+  enthielt nur noch 127 MB (30 Top-Level-Dateien) statt der echten 1,1 GB
+  (60+ Verzeichnisse, u. a. `app/`, `migrations/`, `presidio_analyzer/`,
+  `spacy/`, `de_core_news_lg/`, `tesseract/` KOMPLETT fehlend) - ein
+  sofortiger Reinstall aus demselben, unveränderten `Lexono_Setup.exe`
+  erzeugte reproduzierbar wieder die vollständigen 1,1 GB. Der Installer
+  selbst ist damit NICHT die Ursache (Root Cause bewiesen, nicht nur
+  vermutet).
+  **Neue Untersuchung (zweiter Durchlauf):** `Microsoft-Windows-Windows
+  Defender/Operational`-Log vollständig ausgewertet (Retention deckt
+  16.10.2025 bis heute ab, 702 Events im Abrufzeitraum, damit auch das
+  ursprüngliche Vorfallsfenster) - KEIN einziges Detection-/Quarantäne-/
+  Remediation-Event (IDs 1006-1117) und KEIN Controlled-Folder-Access-/
+  ASR-Event (IDs 1121-1127) im gesamten Log; ebenso keine passenden
+  Application-Log-Einträge zu kanzlei/Lexono/PyInstaller. Damit gibt es
+  jetzt aktive Gegenevidenz gegen die Windows-Defender-Standarderkennung
+  als Ursache - NICHT mehr nur "unbewiesen", sondern durch Log-Abwesenheit
+  aktiv unwahrscheinlicher gemacht. **Klassifikation bleibt D (aktuell
+  nicht reproduzierbar) statt A** (kein Nachweis für Defender) **und auch
+  nicht B** (keine andere konkrete Ursache bewiesen) - der ursprüngliche
+  Mechanismus bleibt technisch ungeklärt, aber das Risiko ist
+  niedriger einzuschätzen als zuvor angenommen. Bei erneutem Auftreten:
+  gezielt nach Defender-Log-Einträgen IM Vorfallsfenster suchen (Timeline
+  T0-T6) sowie Ereignisanzeige/Sicherheitslog auf andere
+  Sicherheitssoftware prüfen. Nächster Schritt unverändert empfohlen vor
+  Pilotbetrieb: Code-Signing der PyInstaller-Ausgabe (reduziert das
+  Risiko unabhängig von der ungeklärten Ursache).
+
+  **Dritter, live waehrend dieser Sitzung reproduzierter Vorfall (12.09.,
+  ~19:00-20:10 Uhr):** dieselbe, kurz zuvor real als vollstaendig (1022 MB,
+  alle kritischen Verzeichnisse, Hash-verifiziert) bestaetigte Installation
+  (`C:\Users\Bonit\AppData\Local\Lexono`, exe-Hash `8775fc6c...`
+  unveraendert) schrumpfte binnen ca. einer Stunde auf 95 MB - exakt
+  dieselbe `alembic.util.exc.CommandError: No 'script_location' key
+  found`-Fehlermeldung wie beim ersten Vorfall. **Neu diesmal:** ein
+  klares, selektives Muster erkennbar - vollstaendig fehlend: `app/`,
+  `migrations/`, `presidio_analyzer/`, `de_core_news_lg/`, `tesseract/`
+  (grosse, kanzleispezifische/unsignierte/ausfuehrbare Inhalte);
+  vollstaendig UNVERAENDERT erhalten: alle generischen, signierten
+  System-/Drittanbieter-Bibliotheken (`numpy`, `lxml`, `sqlalchemy`,
+  `pymupdf`, `VCRUNTIME140.dll`, `.pyd`-Dateien usw.). Erneut KEIN
+  Defender-Detection-/Quarantaene-Event im relevanten Zeitfenster
+  gefunden (nur harmlose 1150/1151-Scan-Infoeintraege), `Get-MpThreatDetection`
+  weiterhin ohne Adminrechte nicht einsehbar. Das selektive Muster ist
+  ein staerkerer (aber weiterhin nicht abschliessender) Hinweis auf ein
+  heuristik-basiertes Sicherheitsprodukt als auf zufaellige Korruption -
+  Klassifikation bleibt **D**, jetzt aber mit qualitativ neuer,
+  musterbasierter Evidenz statt nur Groessenverlust. Wurde durch
+  Neuinstallation behoben (siehe PROJECT_STATE.md); Code-Signing-Empfehlung
+  unveraendert, jetzt mit hoeherer Dringlichkeit.
+
+## GEKLÄRT
+
+- **`local-ai-setup` im echten Clean-Room-Test (Ollama zu Beginn
+  nachweislich nicht installiert) wirkte scheinbar "gehängt" (12.09., real
+  beobachtet, dann real widerlegt)**: Testskript rief den echten
+  `local-ai-setup`-Befehl über `subprocess.run(..., timeout=1800)` gegen
+  die installierte `.exe` auf; nach 1800s (30 Min.) warf Python
+  `TimeoutExpired`, das Testskript meldete Exit-Code 1. Forensik im
+  selben DATA_DIR danach: `ollama.exe`/`ollama app.exe` liefen
+  nachweislich weiter (Prozessstart 13:31 Uhr laut `Get-Process`),
+  `ollama list` zeigte `qwen3:8b` (5.2 GB) vollständig und mit
+  korrektem Digest vorhanden; die App-Logdatei im selben Verzeichnis
+  zeigt bei einem regulären Neustart um 14:32:08 bereits
+  "Lokale KI bereit (Modell 'qwen3:8b')" - und `LocalAiSetupService`
+  persistiert `LOCAL_AI_ENABLED`/`OLLAMA_MODEL` in `.env` laut
+  `setup_orchestrator.py` AUSSCHLIESSLICH bei tatsächlichem Erfolg
+  (Hardware→Modellwahl→Ollama-Install→Modell-Download→Health-Check
+  alle erfolgreich durchlaufen). D. h. der reale Setup-Vorgang ist
+  tatsächlich vollständig und korrekt durchgelaufen; nur mein
+  Test-Timeout (30 Min.) war für die tatsächliche Download-Dauer auf
+  dieser Netzwerkverbindung zu knapp bemessen - kein Lexono-Bug,
+  sondern eine zu kurze Testharness-Zeitschranke. NICHT abschliessend
+  erklärt (bewusst als offen markiert, nicht spekuliert): Ollamas
+  `modified_at` für das Modell zeigt 15:30:43 Uhr, rund eine Stunde
+  NACH dem ersten "bereit"-Log-Eintrag (14:32:08) im selben
+  Datenverzeichnis - Ursache dieser Differenz nicht durch Log-Evidenz
+  belegt, daher hier bewusst nicht spekulativ erklärt.
+  **Verbleibender, echter P1-Punkt (kein Blocker):** In
+  `setup_orchestrator.py`/dem zugehörigen UI-Flow wurde KEINE
+  Fortschrittsanzeige (Prozent/Byte-Fortschritt) während eines langen
+  Modell-Downloads gefunden - unklar/ungeprüft, ob ein echter Nutzer
+  während eines mehrere-zig-Minuten-Downloads eine erkennbare
+  "läuft noch"-Rückmeldung sieht oder der Bildschirm dabei wie
+  eingefroren wirkt. Empfehlung vor Pilotbetrieb: UI-Fortschritts-
+  anzeige für den Modell-Download ergänzen oder zumindest verifizieren,
+  dass ein Wartehinweis sichtbar ist.
+
+- **`getpass.getpass()` in `cmd_setup` kann nicht automatisiert (CI/Skript)
+  getestet werden (12.09., real diagnostiziert)** - unter Windows liest
+  `getpass.getpass()` ueber `msvcrt.getwch()` direkt aus dem Konsolen-
+  Eingabepuffer, NICHT aus `sys.stdin` - jede Form von Stdin-Umleitung
+  (Pipe, Datei, .NET-Stream) wird dabei vollstaendig ignoriert, der Aufruf
+  blockiert dann dauerhaft. Kein Lexono-Bug: ein echter Benutzer an einer
+  echten, sichtbaren Konsole (genau das, was Start.vbs beim allerersten
+  Start oeffnet) ist davon nicht betroffen. Betrifft nur zukuenftige
+  automatisierte End-to-End-Tests des interaktiven Setup-Assistenten -
+  ein Test muesste echte Tastatur-Events in ein echtes, sichtbares
+  Konsolenfenster injizieren (z. B. SendKeys), reine Stdin-Umleitung
+  reicht dafuer nicht aus.
 
 ## GEKLÄRT (vormals "Produktentscheidung erforderlich")
 

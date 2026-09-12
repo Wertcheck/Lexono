@@ -194,7 +194,7 @@ def test_login_successful(client: TestClient, users: dict) -> None:
     )
     assert response.status_code == 303
     assert response.headers["location"] == "/dashboard/inbox"
-    assert "kanzlei_ai_session" in response.cookies
+    assert "lexono_session" in response.cookies
 
 
 # --- #2 Login mit falschem Passwort ---
@@ -208,7 +208,7 @@ def test_login_with_wrong_password(client: TestClient, users: dict) -> None:
     )
     assert response.status_code == 303
     assert "error=" in response.headers["location"]
-    assert "kanzlei_ai_session" not in response.cookies
+    assert "lexono_session" not in response.cookies
 
     # Und tatsaechlich weiterhin nicht angemeldet:
     protected = client.get("/dashboard/inbox", follow_redirects=False)

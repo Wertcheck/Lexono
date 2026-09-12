@@ -1,6 +1,6 @@
 """Gemeinsame Aufräumlogik für temporäre Download-Archive (Backup-Voll-
 export, Akten-Export, Mandanten-DSGVO-Datenauszug) - alle drei landen im
-selben `%TEMP%\\kanzlei_ai_dashboard_exports\\`-Verzeichnis (siehe
+selben `%TEMP%\\lexono_dashboard_exports\\`-Verzeichnis (siehe
 `_DOWNLOAD_STAGING_DIR` in `backup_router.py`/`clients_router.py`) und
 enthalten vollständige, unpseudonymisierte Mandanteninhalte.
 

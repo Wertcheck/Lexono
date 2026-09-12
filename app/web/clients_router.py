@@ -52,7 +52,7 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 # Eigenes, temporäres Verzeichnis für Datenauszug-Downloads - gleiches
 # Muster wie app/web/backup_router.py (_DOWNLOAD_STAGING_DIR), inkl.
 # automatischer Löschung nach dem Download (app/web/download_staging.py).
-_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "kanzlei_ai_dashboard_exports"
+_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "lexono_dashboard_exports"
 
 _MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 

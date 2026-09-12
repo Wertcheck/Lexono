@@ -26,11 +26,13 @@ Kauf genommene, kleinere kosmetische Einschränkung.
 Aufruf (aus dem Projekt-Root, mit aktivierter venv,
 `pip install -e .[build]` vorher ausgeführt):
 
-    pyinstaller windows/kanzlei_ai.spec --distpath dist --workpath build
+    pyinstaller windows/lexono.spec --distpath dist --workpath build
 
-Ergebnis: dist/kanzlei_ai/kanzlei_ai.exe + alle Abhängigkeiten im selben
+Ergebnis: dist/Lexono/Lexono.exe + alle Abhängigkeiten im selben
 Ordner - genau der Ordner, den windows/installer.iss anschließend
-verpackt.
+verpackt. (Historisch: `windows/kanzlei_ai.spec` / `dist/kanzlei_ai/
+kanzlei_ai.exe`, vor der KanzleiAI->Lexono-Produktidentitaets-
+Bereinigung - siehe .agentic/DECISIONS.md.)
 """
 
 from pathlib import Path
@@ -73,7 +75,7 @@ _PRESIDIO_ANALYZER_PACKAGE = "presidio_analyzer"
 # (kein Teil des versionierten Quellcodes, ~70 MB Binaerdaten - siehe
 # .gitignore). `app/documents/ocr.py::configure_tesseract` erwartet ihn
 # genau unter "tesseract/bin" bzw. "tesseract/tessdata" relativ zum
-# Bundle-Wurzelverzeichnis (= relativ zu kanzlei_ai.exe im onedir-Build).
+# Bundle-Wurzelverzeichnis (= relativ zu Lexono.exe im onedir-Build).
 _TESSERACT_VENDOR_DIR = PROJECT_ROOT / "windows" / "vendor" / "tesseract"
 if not (_TESSERACT_VENDOR_DIR / "bin" / "tesseract.exe").is_file():
     raise SystemExit(
@@ -116,6 +118,11 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
         # cmd_create_admin) - PyInstallers statische Analyse verfolgt
         # verschachtelte/späte Imports nicht immer zuverlässig.
         "scripts.create_admin",
+        # Wie "scripts.create_admin" - real gefundener Packaging-Fund:
+        # dieses Recovery-Skript existierte bereits im Quellcode, war aber
+        # nicht als hiddenimport gelistet und dadurch aus der installierten
+        # .exe heraus nicht lauffähig (siehe run.py::cmd_reset_admin_password).
+        "scripts.reset_admin_password",
         # Wiederherstellungs-CLI (Schritt 3) - wie "scripts.create_admin"
         # nur zur Laufzeit ueber run.py cmd_restore lazy importiert.
         "scripts.restore_backup",
@@ -150,7 +157,7 @@ exe = EXE(  # noqa: F821
     a.scripts,
     [],
     exclude_binaries=True,
-    name="kanzlei_ai",
+    name="Lexono",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -159,7 +166,7 @@ exe = EXE(  # noqa: F821
     disable_windowed_traceback=False,
     # Anwendungssymbol (Prompt 47) - aus dem echten Lexono-Markenzeichen
     # generiert (siehe windows/generate_placeholder_icon.py, Dateiname
-    # historisch). Wird als Datei-Icon von kanzlei_ai.exe UND (ohne
+    # historisch). Wird als Datei-Icon von Lexono.exe UND (ohne
     # gesonderte Einbindung, Windows liest es direkt aus der .exe) von den
     # Verknuepfungen aus windows/installer.iss uebernommen, wo keine
     # eigene IconFilename gesetzt ist.
@@ -173,5 +180,5 @@ coll = COLLECT(  # noqa: F821
     a.datas,
     strip=False,
     upx=False,
-    name="kanzlei_ai",
+    name="Lexono",
 )

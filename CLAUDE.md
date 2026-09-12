@@ -52,5 +52,9 @@ erfolgen.**
 
 ## Referenzdokumente
 
+- `LEXONO_MASTER_PRODUCT.md` – **Vor jeder substanziellen Lexono-Aufgabe lesen und
+  anwenden.** Verbindliche Produkt-Ebene über `ARCHITECTURE.md`/`.agentic/`: was Lexono
+  ist, welche P0-Gates existieren, was tatsächlich VERIFIED ist. Lexono bzw. ein Release
+  niemals als vollständig einstufen, ohne die dortigen P0-Gates zu prüfen.
 - `ARCHITECTURE.md` – Zielarchitektur, Annahmen, offene Entscheidungen.
 - `TODO.md` – Phasenplan mit den 45 vorgesehenen Entwicklungsschritten (Prompts 01–45).

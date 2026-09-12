@@ -14,8 +14,8 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
-Write-Host "== 1/2: PyInstaller-Build (dist\kanzlei_ai\) =="
-pyinstaller windows\kanzlei_ai.spec --distpath dist --workpath build --noconfirm
+Write-Host "== 1/2: PyInstaller-Build (dist\Lexono\) =="
+pyinstaller windows\lexono.spec --distpath dist --workpath build --noconfirm
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller-Build fehlgeschlagen (Exit-Code $LASTEXITCODE)."
 }

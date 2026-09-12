@@ -401,3 +401,37 @@ def test_pull_model_raises_on_connection_error(monkeypatch: pytest.MonkeyPatch) 
 
     with pytest.raises(LocalLLMUnavailableError):
         provider.pull_model()
+
+
+def test_pull_model_uses_independent_download_timeout_not_inference_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Realer Fund (Installer-Reality-Check, Referenzmaschine i5-1145G7):
+    `pull_model` verwendete bisher `timeout_seconds` (Default 120s, fuer
+    eine EINZELNE Inferenzanfrage dimensioniert) auch fuer den Download
+    selbst - ein Mehrere-GB-Modell (z. B. qwen3:8b) ueberschreitet diese
+    Zeit beim Warten auf die erste Response fast immer, was reproduzierbar
+    zu `httpx.ReadTimeout` fuehrte, unabhaengig von der tatsaechlichen
+    Downloadgeschwindigkeit. Dieser Test verankert die Trennung: ein klein
+    gewaehlter `timeout_seconds` (der eine Inferenzanfrage sofort abbrechen
+    wuerde) darf den Download-Timeout NICHT beeinflussen - `pull_model` muss
+    weiterhin ohne Read-Timeout aufgerufen werden."""
+    captured = {}
+
+    def _fake_post(url, *, json, timeout):
+        captured["timeout"] = timeout
+        return _FakeResponse(json_data={"status": "success"})
+
+    monkeypatch.setattr(httpx, "post", _fake_post)
+    # Absichtlich winzig - eine reale Inferenzanfrage wuerde damit sofort
+    # scheitern. Der Download-Aufruf darf diesen Wert trotzdem nicht nutzen.
+    provider = OllamaLocalLLMProvider(
+        base_url="http://localhost:11434", model="qwen3:8b", timeout_seconds=0.001
+    )
+
+    provider.pull_model()
+
+    used_timeout = captured["timeout"]
+    assert used_timeout is not provider.timeout_seconds
+    assert isinstance(used_timeout, httpx.Timeout)
+    assert used_timeout.read is None

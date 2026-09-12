@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 #: Muss synchron mit `[project].version` in pyproject.toml gehalten werden -
 #: kein automatischer Abgleich, da pyproject.toml zur Laufzeit einer
-#: PyInstaller-.exe nicht mehr vorliegt (siehe windows/kanzlei_ai.spec).
+#: PyInstaller-.exe nicht mehr vorliegt (siehe windows/lexono.spec).
 CURRENT_APP_VERSION = "0.1.0"
 
 

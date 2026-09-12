@@ -1,6 +1,6 @@
 """Recovery-Skript: setzt das Passwort eines BESTEHENDEN Admin-Nutzers neu
 (für den Fall, dass das ursprünglich beim Setup vergebene Passwort verloren
-gegangen ist - z. B. weil `kanzlei_ai.exe setup` nicht interaktiv lief und
+gegangen ist - z. B. weil `Lexono.exe setup` nicht interaktiv lief und
 das einmalig ausgegebene Zufallspasswort nirgendwo gesichert wurde).
 
 Bewusst GETRENNT von `scripts/create_admin.py` (das legt NUR den allerersten
@@ -12,7 +12,13 @@ manuell ausgeloeste administrative Aktion, kein Nebeneffekt eines Neustarts
 (sonst könnte jede Person mit Zugriff auf den Server-Prozess/-Start das
 Admin-Passwort stillschweigend zurücksetzen).
 
-Aufruf:
+Aufruf (installierte Anwendung, kein Python/keine Shell-Kenntnisse jenseits
+dieses einen Befehls nötig - siehe run.py::cmd_reset_admin_password):
+
+    set ADMIN_EMAIL=admin@kanzlei.de
+    Lexono.exe reset-admin-password
+
+Aufruf (Entwicklungsbetrieb, äquivalent):
     ADMIN_EMAIL=admin@kanzlei.de RESET_PASSWORD=<neues Passwort> \\
         python scripts/reset_admin_password.py
 
@@ -45,7 +51,8 @@ def main() -> int:
     if not email:
         print(
             "FEHLER: Umgebungsvariable ADMIN_EMAIL ist nicht gesetzt.\n"
-            "Beispiel: ADMIN_EMAIL=admin@kanzlei.de python scripts/reset_admin_password.py",
+            "Beispiel (installierte Anwendung): set ADMIN_EMAIL=admin@kanzlei.de "
+            "&& Lexono.exe reset-admin-password",
             file=sys.stderr,
         )
         return 1

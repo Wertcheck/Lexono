@@ -32,7 +32,7 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 # Archive - getrennt von einem evtl. per CLI-Skript befüllten
 # `backups/`-Ordner. Wird nach dem Download automatisch gelöscht (siehe
 # app/web/download_staging.py: delete_after_send + cleanup_stale_files).
-_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "kanzlei_ai_dashboard_exports"
+_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "lexono_dashboard_exports"
 
 
 def _require_admin(current_user: User = Depends(require_login)) -> User:

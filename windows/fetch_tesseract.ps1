@@ -1,7 +1,7 @@
 # Laedt ein eigenstaendiges, portables Tesseract-OCR (inkl. aller
 # Laufzeit-DLLs + deutscher/englischer Sprachdaten) herunter und legt es
 # unter windows\vendor\tesseract\ ab - genau der Ort, den
-# windows\kanzlei_ai.spec anschliessend in den PyInstaller-Build aufnimmt
+# windows\lexono.spec anschliessend in den PyInstaller-Build aufnimmt
 # (siehe dort). NICHT im Repository versioniert (windows/vendor/ ist in
 # .gitignore) - wie das spaCy-/Embedding-Modell ein bei Bedarf neu
 # erzeugbares Build-Artefakt, kein Quellcode.
@@ -118,7 +118,7 @@ foreach ($lang in $Languages) {
 }
 
 @"
-Dieses Verzeichnis enthaelt Binaerdateien Dritter, gebuendelt mit KanzleiAI:
+Dieses Verzeichnis enthaelt Binaerdateien Dritter, gebuendelt mit Lexono:
 
 - Tesseract OCR (tesseract.exe, tesseract55.dll) - Apache License 2.0
   https://github.com/tesseract-ocr/tesseract
@@ -135,4 +135,4 @@ Neu erzeugt durch windows\fetch_tesseract.ps1 - dieses Verzeichnis ist
 KEIN Teil des versionierten Quellcodes (siehe .gitignore).
 "@ | Out-File -FilePath "$VendorDir\THIRD_PARTY_NOTICES.md" -Encoding utf8
 
-Write-Host "Fertig. $VendorDir ist bereit fuer windows\build.ps1 / windows\kanzlei_ai.spec."
+Write-Host "Fertig. $VendorDir ist bereit fuer windows\build.ps1 / windows\lexono.spec."

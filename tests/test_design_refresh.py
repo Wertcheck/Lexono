@@ -17,7 +17,7 @@ _BASE_HTML_PATH = (
     Path(__file__).resolve().parent.parent / "app" / "web" / "templates" / "base.html"
 )
 _LOGO_PATH = (
-    Path(__file__).resolve().parent.parent / "app" / "web" / "static" / "img" / "logo.svg"
+    Path(__file__).resolve().parent.parent / "app" / "web" / "static" / "img" / "logo-mark.png"
 )
 
 
@@ -93,15 +93,19 @@ def test_prototype_footer_text_removed() -> None:
 
 def test_logo_is_embedded_in_sidebar() -> None:
     html = _read_base_html()
-    assert 'src="/dashboard/static/img/logo.svg"' in html
+    assert 'src="/dashboard/static/img/logo-mark.png"' in html
     assert "sidebar__brand-logo" in html
 
 
-def test_logo_file_exists_and_is_valid_svg() -> None:
+def test_logo_file_exists_and_is_valid_png() -> None:
+    # Verbindliches Lexono-Logo (Dokument+Schild+Kette) als PNG mit
+    # transparentem Hintergrund - siehe assets/branding/lexono-logo.png
+    # (Quelle) bzw. app/web/static/img/logo-mark.png (auf die Icon-Marke
+    # zugeschnittener, unveraendert uebernommener Ausschnitt).
     assert _LOGO_PATH.exists()
-    content = _LOGO_PATH.read_text(encoding="utf-8")
-    assert content.strip().startswith("<svg")
-    assert content.strip().endswith("</svg>")
+    with _LOGO_PATH.open("rb") as f:
+        signature = f.read(8)
+    assert signature == b"\x89PNG\r\n\x1a\n"
 
 
 def test_scrollbars_are_thin_and_use_design_tokens() -> None:

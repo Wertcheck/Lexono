@@ -2,7 +2,7 @@
 
 WICHTIG - eigener Deployment-Kontext:
 
-Dieses Paket ist bewusst NICHT Teil von `app/` (der KanzleiAI-Kanzlei-
+Dieses Paket ist bewusst NICHT Teil von `app/` (der Lexono-Kanzlei-
 Anwendung). Es läuft als separater Prozess, auf separater Infrastruktur,
 mit einem eigenen `.env.gateway` - niemals demselben Prozess oder derselben
 Konfigurationsdatei wie eine Kanzlei-Installation. Der einzige Zweck: den

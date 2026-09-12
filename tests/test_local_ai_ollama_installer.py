@@ -224,6 +224,36 @@ def test_detect_installed_version_returns_none_on_any_failure() -> None:
     assert installer.detect_installed_version() is None
 
 
+def test_detect_installed_version_falls_back_to_known_install_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Realer Fund (Installer-Reality-Check, Referenzmaschine i5-1145G7):
+    ein bereits laufender Prozess (z. B. `Lexono.exe`, gestartet ueber
+    Start.vbs) sieht eine WAEHREND seiner Laufzeit per Installer aktualisierte
+    PATH-Registry nicht - `subprocess.run(["ollama", "--version"])` scheitert
+    dann mit `FileNotFoundError`, obwohl `ollama.exe` nachweislich am
+    erwarteten Installationsort liegt. `detect_installed_version` muss in
+    diesem Fall auf den bekannten Pfad zurueckfallen, statt eine tatsaechlich
+    funktionierende Installation faelschlich als fehlend zu melden."""
+    import app.local_ai.ollama_installer as ollama_installer_module
+
+    fake_cli_path = tmp_path / "ollama.exe"
+    fake_cli_path.write_bytes(b"")  # nur .is_file() muss True liefern
+    monkeypatch.setattr(
+        ollama_installer_module, "default_ollama_cli_path", lambda: fake_cli_path
+    )
+
+    def run_command(args, **kwargs):
+        if args[0] == "ollama":
+            raise FileNotFoundError("PATH veraltet, Prozess laeuft bereits")
+        assert args[0] == str(fake_cli_path)
+        return _completed(0, "ollama version is 0.34.0")
+
+    installer = _installer(run_command=run_command)
+
+    assert installer.detect_installed_version() == "0.34.0"
+
+
 def test_version_policy_is_centrally_defined_not_scattered() -> None:
     policy = OllamaVersionPolicy()
     assert policy.installer_source.startswith("https://")

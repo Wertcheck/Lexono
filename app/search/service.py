@@ -116,7 +116,17 @@ class DocumentSearchService:
             db_query = db_query.filter(Document.classified_type == document_type)
         candidate_documents = db_query.all()
 
-        query_vector = self.embedding_provider.embed(query) if query.strip() else None
+        # Nur einbetten, wenn es ueberhaupt Kandidaten gibt, gegen die
+        # bewertet werden koennte - bei einer leeren Kandidatenliste bleibt
+        # das Ergebnis so oder so leer (siehe Schleife unten), das reale
+        # Modell-Laden von FastEmbed (~1,7 GB, P1-Speicherdruck-Befund,
+        # OPEN_ISSUES.md) waere sonst reine Verschwendung, u. a. bei jeder
+        # neu angelegten Akte ohne vorhandene Dokumente.
+        query_vector = (
+            self.embedding_provider.embed(query)
+            if query.strip() and candidate_documents
+            else None
+        )
 
         results: list[SearchResult] = []
         for document in candidate_documents:
@@ -151,7 +161,10 @@ class DocumentSearchService:
             )
             .all()
         )
-        query_vector = self.embedding_provider.embed(query) if query.strip() else None
+        # Siehe Kommentar in search_within_matter - dieselbe Begruendung.
+        query_vector = (
+            self.embedding_provider.embed(query) if query.strip() and items else None
+        )
 
         results: list[SearchResult] = []
         for item in items:
@@ -182,7 +195,10 @@ class DocumentSearchService:
         ).filter((Source.valid_until.is_(None)) | (Source.valid_until >= today))
         sources = db_query.all()
 
-        query_vector = self.embedding_provider.embed(query) if query.strip() else None
+        # Siehe Kommentar in search_within_matter - dieselbe Begruendung.
+        query_vector = (
+            self.embedding_provider.embed(query) if query.strip() and sources else None
+        )
 
         results: list[SearchResult] = []
         for source in sources:

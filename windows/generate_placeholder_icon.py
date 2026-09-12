@@ -5,7 +5,7 @@ Dokument+Schild+Kette-Logo, 20.08.).
 Historisch hiess dieses Skript "Platzhalter", weil zunaechst kein echtes
 Kanzlei-/Produktlogo vorlag (Kreissiegel-Motiv mit Initialen "KA") - der
 Dateiname wurde bewusst NICHT geaendert (siehe Referenzen in
-windows/installer.iss, windows/kanzlei_ai.spec, README.md, ARCHITECTURE.md),
+windows/installer.iss, windows/lexono.spec, README.md, ARCHITECTURE.md),
 nur der Inhalt: das Icon rastert dieselbe Pfadgeometrie wie
 app/web/static/img/logo.svg (das offizielle Lexono-Icon: Dokument mit
 umgeknickter Ecke, zwei Textzeilen, darunter ein Schild mit Kettenglied)

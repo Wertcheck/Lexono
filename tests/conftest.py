@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 #: Vom Windows-Installer gebuendeltes Tesseract (siehe
-#: windows/fetch_tesseract.ps1 + windows/kanzlei_ai.spec) - auf einer
+#: windows/fetch_tesseract.ps1 + windows/lexono.spec) - auf einer
 #: Entwicklungsmaschine ohne SEPARAT installiertes System-Tesseract der
 #: einzig realistische Weg, echte OCR-Tests lauffaehig zu machen, ohne eine
 #: weitere manuelle Abhaengigkeit einzufuehren (Pilot Readiness Review,

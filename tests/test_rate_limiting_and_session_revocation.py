@@ -144,12 +144,12 @@ def test_login_gets_locked_out_after_repeated_failures(
     for _ in range(5):
         response = _login(client, "anwalt@kanzlei.test", "falschesPasswort")
         assert response.status_code == 303
-        assert "kanzlei_ai_session" not in response.cookies
+        assert "lexono_session" not in response.cookies
 
     # Der 6. Versuch - diesmal mit dem RICHTIGEN Passwort - wird trotzdem
     # blockiert, weil die Kontosperre bereits ausgelöst wurde.
     response = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
-    assert "kanzlei_ai_session" not in response.cookies
+    assert "lexono_session" not in response.cookies
     assert "Zu%20viele%20Fehlversuche" in response.headers["location"]
 
 
@@ -158,19 +158,19 @@ def test_login_not_locked_out_below_threshold(client: TestClient, user: User) ->
         _login(client, "anwalt@kanzlei.test", "falschesPasswort")
 
     response = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
-    assert "kanzlei_ai_session" in response.cookies
+    assert "lexono_session" in response.cookies
 
 
 def test_successful_login_resets_failure_count(client: TestClient, user: User) -> None:
     for _ in range(3):
         _login(client, "anwalt@kanzlei.test", "falschesPasswort")
     success = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
-    assert "kanzlei_ai_session" in success.cookies
+    assert "lexono_session" in success.cookies
 
     for _ in range(3):
         _login(client, "anwalt@kanzlei.test", "falschesPasswort")
     response = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
-    assert "kanzlei_ai_session" in response.cookies
+    assert "lexono_session" in response.cookies
 
 
 def test_rate_limit_error_message_does_not_reveal_account_existence(
@@ -201,7 +201,7 @@ def test_password_change_invalidates_other_existing_sessions(
     login_response = _login(
         stolen_session_client, "anwalt@kanzlei.test", "UrsprungsPasswort123"
     )
-    assert "kanzlei_ai_session" in login_response.cookies
+    assert "lexono_session" in login_response.cookies
 
     still_valid = stolen_session_client.get("/dashboard/inbox")
     assert still_valid.status_code == 200
@@ -224,7 +224,7 @@ def test_new_login_after_password_change_works_normally(
         db_session, user, "NeuesPasswort456", actor="anwalt@kanzlei.test"
     )
     response = _login(client, "anwalt@kanzlei.test", "NeuesPasswort456")
-    assert "kanzlei_ai_session" in response.cookies
+    assert "lexono_session" in response.cookies
 
 
 def test_sessions_issued_after_password_change_remain_valid(
@@ -236,7 +236,7 @@ def test_sessions_issued_after_password_change_remain_valid(
         db_session, user, "NeuesPasswort456", actor="anwalt@kanzlei.test"
     )
     login_response = _login(client, "anwalt@kanzlei.test", "NeuesPasswort456")
-    assert "kanzlei_ai_session" in login_response.cookies
+    assert "lexono_session" in login_response.cookies
 
     still_works = client.get("/dashboard/inbox")
     assert still_works.status_code == 200
@@ -274,12 +274,12 @@ def test_admin_force_logout_invalidates_target_users_sessions(
     app.dependency_overrides[get_db] = lambda: db_session
     target_client = TestClient(app)
     login_response = _login(target_client, "anwalt2@kanzlei.test", "ZielPasswort123")
-    assert "kanzlei_ai_session" in login_response.cookies
+    assert "lexono_session" in login_response.cookies
     assert target_client.get("/dashboard/inbox").status_code == 200
 
     admin_client = TestClient(app)
     admin_login = _login(admin_client, "admin@kanzlei.test", "AdminPasswort123")
-    assert "kanzlei_ai_session" in admin_login.cookies
+    assert "lexono_session" in admin_login.cookies
     users_page = admin_client.get("/dashboard/admin/users")
     csrf = _extract_csrf(users_page.text)
 
@@ -305,7 +305,7 @@ def test_deactivation_still_works_immediately_as_before(
     ursprünglichen Einschätzung im Security-Review-Bericht - Deaktivierung
     war nie verzögert, siehe SECURITY_REVIEW.md-Nachtrag)."""
     login_response = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
-    assert "kanzlei_ai_session" in login_response.cookies
+    assert "lexono_session" in login_response.cookies
     assert client.get("/dashboard/inbox").status_code == 200
 
     UserService().set_active(db_session, user, False, actor="admin@kanzlei.test")

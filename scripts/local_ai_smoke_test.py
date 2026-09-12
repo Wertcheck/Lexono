@@ -11,8 +11,16 @@ Prüft nacheinander (bricht bei einem fehlgeschlagenen Schritt kontrolliert
 ab, führt niemals einen späteren Schritt "trotzdem" aus):
 1. Ist Ollama unter der konfigurierten OLLAMA_BASE_URL erreichbar?
 2. Ist das konfigurierte OLLAMA_MODEL lokal vorhanden?
-3. Erkennt Presidio eine synthetische Testperson im Beispieltext?
-4. Wird der synthetische Name korrekt zu einem Platzhalter pseudonymisiert?
+3. Erkennt die ECHTE Presidio-NER (nicht `known_entities`) die synthetische
+   Testperson im Beispieltext - über denselben `ClaudePrivacyGateway`, der
+   auch produktiv der einzige erlaubte Weg Richtung Claude ist (siehe
+   app/privacy/gateway.py)?
+4. Wird der synthetische Name korrekt zu einem Platzhalter pseudonymisiert
+   UND besteht die fertig aufgeteilte Payload das Gateway-eigene
+   Privacy-Boundary-Gate (`GatewayResult.allowed`)?
+4b. Explizite Boundary-Assertion (Architecture-Proof, Kernanforderung):
+    der Originalname darf in der tatsächlich sendefertigen Payload NICHT
+    vorkommen, der Platzhalter MUSS vorkommen.
 5. Liefert der lokale Ollama-Aufruf (`OllamaLocalLLMProvider.process`) eine
    Antwort auf die bereits pseudonymisierte Payload?
 6. Liefert der echte Claude-Aufruf (`AnthropicClaudeWritingProvider`) eine
@@ -36,14 +44,16 @@ from app.ai_providers.factory import (
 )
 from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
 from app.config import get_settings
-from app.privacy.gateway_schema import ClaudeRequestPayload
-from app.privacy.pseudonymizer import Pseudonymizer
+from app.privacy.gateway import ClaudePrivacyGateway
 
 _SYNTHETIC_TEXT = (
     "Sehr geehrte Damen und Herren, unser Mandant Erika Testperson bittet um "
     "eine kurze Rückmeldung zur Betriebsprüfung 2027."
 )
-_SYNTHETIC_KNOWN_ENTITIES = {"mandant": ["Erika Testperson"]}
+# Bewusst KEINE `known_entities` - der Name soll ausschliesslich ueber die
+# echte Presidio-NER erkannt werden (Architecture-Proof Phase 6: "Wenn
+# Presidio nicht erkennt: FAIL. Nicht manuell nachhelfen.").
+_SYNTHETIC_TEST_VALUE = "Erika Testperson"
 
 
 def _fail(step: str, detail: str) -> int:
@@ -75,20 +85,60 @@ def main() -> int:
             return _fail("Ollama-Modell", health.error or "Modell nicht gefunden")
         print(f"[OK] Modell '{settings.ollama_model}' ist lokal vorhanden")
 
-    # --- 3+4: Presidio + Pseudonymisierung ---
-    pseudonymizer = Pseudonymizer()
-    pseudonymized_text, mappings = pseudonymizer.pseudonymize(
-        _SYNTHETIC_TEXT, known_entities=_SYNTHETIC_KNOWN_ENTITIES
+    # --- 3+4: echte Presidio-NER + Pseudonymisierung ueber den
+    # produktiven ClaudePrivacyGateway (einziger erlaubter Weg Richtung
+    # Claude, siehe app/privacy/gateway.py) ---
+    gateway = ClaudePrivacyGateway()
+    presidio_start = time.monotonic()
+    gateway_result = gateway.prepare_request(
+        purpose="formulate_draft", sachverhalt=_SYNTHETIC_TEXT
     )
-    if "Erika Testperson" in pseudonymized_text:
-        return _fail("Pseudonymisierung", "Synthetischer Name wurde NICHT ersetzt")
-    if not mappings:
-        return _fail("Pseudonymisierung", "Keine Mapping-Eintraege erzeugt")
-    print(f"[OK] Pseudonymisierung erfolgreich: {pseudonymized_text!r}")
+    presidio_seconds = time.monotonic() - presidio_start
 
-    payload = ClaudeRequestPayload(
-        schreibauftrag="formulate_draft",
-        anonymisierter_sachverhalt=pseudonymized_text,
+    if not gateway_result.allowed or gateway_result.payload is None:
+        return _fail(
+            "Presidio/Privacy-Gateway",
+            f"Gateway hat blockiert: {gateway_result.reasons}",
+        )
+    mappings = gateway_result.mappings
+    if not mappings:
+        return _fail(
+            "Presidio-Erkennung",
+            "Presidio hat die synthetische Testperson NICHT erkannt "
+            "(keine Mapping-Eintraege) - kein manuelles Nachhelfen erlaubt",
+        )
+    detected_categories = sorted({m.category for m in mappings})
+    print(
+        f"[OK] Presidio real ausgefuehrt: entities_detected={len(mappings)} "
+        f"categories={detected_categories} latency={presidio_seconds:.2f}s"
+    )
+
+    payload = gateway_result.payload
+    if _SYNTHETIC_TEST_VALUE in payload.anonymisierter_sachverhalt:
+        return _fail(
+            "Pseudonymisierung", "Synthetischer Name wurde NICHT aus der Payload entfernt"
+        )
+    placeholder = mappings[0].placeholder
+    if placeholder not in payload.anonymisierter_sachverhalt:
+        return _fail(
+            "Pseudonymisierung", f"Platzhalter {placeholder} fehlt in der Payload"
+        )
+    print(f"[OK] Pseudonymisierung erfolgreich: {payload.anonymisierter_sachverhalt!r}")
+
+    # --- 4b: PRIVACY BOUNDARY GATE (Architecture-Proof, wichtigstes Gate) ---
+    # Prueft programmatisch genau die Payload, die tatsaechlich Richtung
+    # Ollama/Claude verlassen wird - nicht nur ein Zwischenwert.
+    cloud_payload_text = payload.model_dump_json()
+    assert _SYNTHETIC_TEST_VALUE not in cloud_payload_text, (
+        "PRIVACY BOUNDARY VERLETZT: Originalname im Cloud-Payload gefunden"
+    )
+    assert placeholder in cloud_payload_text, (
+        "PRIVACY BOUNDARY FEHLER: Platzhalter fehlt im Cloud-Payload"
+    )
+    print(
+        "[OK] Privacy-Boundary-Gate bestanden: Originalname NICHT im "
+        f"Cloud-Payload, Platzhalter {placeholder} vorhanden "
+        f"(payload_length={len(cloud_payload_text)} Zeichen)"
     )
 
     # --- 5: lokaler Ollama-Aufruf ---
@@ -124,8 +174,12 @@ def main() -> int:
     )
 
     # --- 7: lokale Rekonstruktion ---
-    reconstructed = pseudonymizer.reconstruct(writing_result.text, mappings)
+    reconstructed = gateway.reconstruct_response(writing_result.text, mappings)
     print(f"[OK] Rekonstruktion durchgeführt: {reconstructed!r}")
+    if placeholder in reconstructed:
+        return _fail(
+            "Rekonstruktion", f"Platzhalter {placeholder} wurde NICHT durch Original ersetzt"
+        )
 
     overall_seconds = time.monotonic() - overall_start
     print("\nAlle Schritte erfolgreich.")

@@ -54,7 +54,7 @@ def test_ocr_raises_for_missing_file(tmp_path: Path) -> None:
 
 
 # --- Gebuendeltes Tesseract (Windows-Installer, siehe windows/fetch_tesseract.ps1
-# + windows/kanzlei_ai.spec + Moduldocstring in app/documents/ocr.py) ---
+# + windows/lexono.spec + Moduldocstring in app/documents/ocr.py) ---
 
 
 def test_bundled_tesseract_paths_none_when_not_frozen(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -67,7 +67,7 @@ def test_bundled_tesseract_paths_none_when_not_frozen(monkeypatch: pytest.Monkey
 def test_bundled_tesseract_paths_found_when_frozen_and_present(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Simuliert die onedir-Bundle-Struktur (kanzlei_ai.exe neben
+    """Simuliert die onedir-Bundle-Struktur (Lexono.exe neben
     tesseract/bin/tesseract.exe + tesseract/tessdata/) - reine Pfadlogik,
     ohne die Datei tatsaechlich auszufuehren."""
     bin_dir = tmp_path / "tesseract" / "bin"
@@ -77,7 +77,7 @@ def test_bundled_tesseract_paths_found_when_frozen_and_present(
     (bin_dir / "tesseract.exe").write_bytes(b"dummy")
 
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "kanzlei_ai.exe"), raising=False)
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "Lexono.exe"), raising=False)
     monkeypatch.delattr(sys, "_MEIPASS", raising=False)
 
     result = _bundled_tesseract_paths()
@@ -91,7 +91,7 @@ def test_bundled_tesseract_paths_none_when_frozen_but_missing(
     """Ein aelterer, vor diesem Fix erzeugter Build ohne Tesseract-Ordner
     darf nicht faelschlich einen nicht existierenden Pfad zurueckgeben."""
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "kanzlei_ai.exe"), raising=False)
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "Lexono.exe"), raising=False)
     monkeypatch.delattr(sys, "_MEIPASS", raising=False)
 
     assert _bundled_tesseract_paths() is None
@@ -110,7 +110,7 @@ def test_configure_tesseract_explicit_override_wins_over_bundle(
     (tmp_path / "tesseract" / "tessdata").mkdir()
     (bin_dir / "tesseract.exe").write_bytes(b"dummy")
     monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.setattr(sys, "executable", str(tmp_path / "kanzlei_ai.exe"), raising=False)
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "Lexono.exe"), raising=False)
     monkeypatch.delattr(sys, "_MEIPASS", raising=False)
 
     configure_tesseract("C:/custom/tesseract.exe")

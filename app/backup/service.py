@@ -74,7 +74,7 @@ class BackupService:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        archive_path = output_dir / f"kanzlei_ai_backup_{timestamp}.zip"
+        archive_path = output_dir / f"lexono_backup_{timestamp}.zip"
 
         db_path = self._sqlite_db_path()
         if not db_path.exists():

@@ -216,3 +216,120 @@ Statusanzeige (Lokale KI/Cloud-KI) auf allen Seiten außer Chat (dort
 bewusst nicht dupliziert, siehe "ohne die Chat-Oberfläche zu
 überladen"-Vorgabe).
 DATE: 01.09.
+
+---
+
+DECISION: `app/search/service.py`'s `search_within_matter`/
+`search_knowledge_base`/`search_sources` only call the real embedding
+provider (`FastEmbedProvider.embed`) when the candidate list (documents/
+approved knowledge items/approved sources) is non-empty, instead of
+unconditionally embedding the query.
+REASON: P1 memory-pressure root-cause investigation (12.09.) measured
+FastEmbed's real model load at ~1.71GB, invoked on every single
+`create_draft()`/chat call regardless of whether there was anything to
+search - for a new firm/matter with an empty knowledge base (the common
+pilot case), this was pure waste and, combined with Presidio (~0.94GB)
+and a loaded local-AI model (`qwen3:8b`, ~5.6GB in Ollama's separate
+`llama-server` process), drove free RAM on the 16GB-class reference
+machine below 1GB, correlating with a real, reproducible Ollama request
+failure (HTTP 404 despite the model showing as loaded). The fix is
+behavior-preserving when candidates exist (identical embedding still
+happens) and does not touch Presidio, pseudonymization, Local AI, or the
+Claude call. Real Local AI/Claude direct pilot path (see
+LEXONO_MASTER_PRODUCT.md P0-07/P0-09) remains unaffected/unchanged.
+DATE: 12.09.
+
+---
+
+DECISION: First-run detection (`run.py::main()`) now requires BOTH `.env`
+presence AND at least one real user in the database before skipping
+`cmd_setup()`; a partial setup (`.env` written but no admin created)
+automatically re-triggers the setup assistant with `force=True`.
+REASON: Real user-reported P0 defect - a genuine end user reached the
+login page with no way to know credentials. Root-caused to `main()`
+checking only `.env` existence, which `run_setup_wizard()` writes as its
+very first step, before migration/admin-creation (the actually
+load-bearing steps) even run. Any single failure in those later steps
+(a subprocess hiccup, antivirus interference, disk issue) left `.env`
+behind with zero users, and every subsequent launch treated that as
+"setup already done." Confirmed real via a faithful reproduction (a
+genuinely failed `create-admin` step, no synthetic shortcuts) against
+the actual installed release candidate, both before the fix (silent
+login dead-end) and after (correct re-invocation of setup, printed
+console message). A pre-existing test
+(`test_main_serve_skips_setup_when_env_already_exists`) had encoded the
+broken behavior as expected - corrected as part of this fix, alongside
+3 new regression tests covering the real failure condition.
+DATE: 12.09.
+
+---
+
+DECISION: `Start.vbs` decides console visibility by checking a new
+`.setup_complete` marker file instead of `.env` presence.
+`app/setup/wizard.py::run_setup_wizard()` writes this marker only after
+`create_admin()` actually succeeds (not at the same time as `.env`,
+which is written first, before migration/admin-creation even run).
+REASON: `Start.vbs` had its own, separate, unfixed copy of the exact
+same flawed logic just corrected in `run.py::main()` (checking `.env`
+presence as a proxy for "setup complete"). Discovered while
+investigating a real end user's report: they had genuinely completed
+setup once (a real admin, `bonitzki@live.de`, existed in the database
+with a real `created_at` timestamp) but had lost access to the
+one-time-shown initial password, most likely because the native window
+opened immediately after and covered the console where it was printed
+- a separate finding from the original P0. The `Start.vbs` gap itself
+is real and forward-looking: on a FUTURE failed setup attempt (`.env`
+written, admin creation fails), `Start.vbs` would launch the resulting
+setup retry silently/hidden, indistinguishable from a hang, even though
+`run.py::main()` correctly triggers the retry. VBScript has no SQLite
+driver and cannot query the database directly the way `main()` now
+does; the marker file is the closest safe approximation, deliberately
+conservative (only ever written on genuine success). Verified against
+the actual newly-built installed `.exe` via the real production
+subprocess calls (`_run_migrate_subprocess`/`_run_create_admin_subprocess`,
+exactly what `cmd_setup()` uses) — marker correctly absent after a real
+failed `create-admin`, correctly present after a real successful one.
+The affected real user was recovered via `reset-admin-password`
+(legitimate account recovery for their own real account, not used as
+clean-room evidence); the new password was relayed only in
+conversation, never written to a file, log, or report.
+DATE: 12.09.
+
+---
+
+DECISION: **Supersedes** the earlier "Klasse A / bewusst stabile interne
+Bezeichner" classification of `kanzlei_ai.exe`/`kanzlei_ai.spec`/
+`KANZLEI_AI_DATA_DIR`/`%ProgramData%\KanzleiAI` recorded above and in
+`PROJECT_STATE.md`/`OPEN_ISSUES.md` (12.09., earlier entries this same
+day). The user explicitly authorized and demanded a full rename of
+these previously-accepted internal identifiers in a later, more
+expansive mega-prompt this same day. Executed: `windows/kanzlei_ai.spec`
+→ `windows/lexono.spec` (`EXE`/`COLLECT` name "Lexono"), `pyproject.toml`
+package name `kanzlei-ai` → `lexono`, session cookie name/salt, backup
+archive filename prefix, temp-export directory names, log download
+filename, uvicorn thread name, `Start.vbs` exe lookup and data-dir
+resolution, and the two remaining user-visible CLI-help mentions in
+`backup.html`/`settings.html` (`kanzlei_ai.exe` → `Lexono.exe`).
+REASON: user's explicit, repeated instruction that the end user must
+never be confronted with "KanzleiAI" anywhere in the active product
+identity, now extended (beyond the previously-agreed "UI/templates
+only" scope) to build artifacts, package metadata, and internal thread
+naming.
+NOT renamed (deliberately, unchanged from the earlier decision): the
+actual SQLite DB filename `kanzlei_ai.db` and log filename
+`kanzlei_ai.log` inside the data directory, and the legacy
+`KANZLEI_AI_DATA_DIR` env var and `%ProgramData%\KanzleiAI` directory
+name, which are preserved as fallback/migration-source identifiers only
+- `app/setup/paths.py::_migrate_legacy_dir_if_needed()` performs a safe,
+atomic, data-preserving one-time rename of an existing legacy directory
+to `%ProgramData%\Lexono` on first resolution after upgrade (existing
+data is migrated, never deleted; falls back to the legacy path if the
+rename fails for any reason). `windows/installer.iss`'s `AppId` and
+`AppMutex` were deliberately left unchanged (upgrade-detection
+continuity). Verified: full regression suite (1538 passed, 1 skipped,
+0 failed) after all changes; `resolve_data_dir()` migration logic
+covered by 11 dedicated tests including a real-SQLite-file fixture
+proving the full rename+migrate chain; PyInstaller + Inno Setup
+rebuilt and the resulting bundled templates inspected directly to
+confirm the fixed `Lexono.exe` text is what actually ships.
+DATE: 12.09.
