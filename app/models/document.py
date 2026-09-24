@@ -10,7 +10,9 @@ auch wenn die eigentliche OCR-/Extraktionslogik erst in Prompt 06 entsteht.
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -57,6 +59,24 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Boolean, nullable=True
     )
     classification_result_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Loeschen (20.09., Owner-Direktive "WORKSTREAM A — DOKUMENTE LOESCHBAR"):
+    # bewusst SOFT-DELETE statt Hard-Delete - ein Dokument ist bei einer
+    # Kanzlei potenziell eine aufbewahrungspflichtige Mandantenunterlage
+    # (bereits als bewusste Zurueckhaltung dokumentiert, siehe
+    # app/web/document_actions_router.py-Moduldocstring vom 18.09.: "ein
+    # Dokument endgueltig zu entfernen ist... eine Aufbewahrungs-/
+    # Compliance-Frage"). NULL = aktiv (Standardfall, alle bestehenden
+    # Zeilen). Gesetzt = "geloescht" aus Anwendersicht (verschwindet aus
+    # allen Listen/Viewer/Download), aber wiederherstellbar - identisches
+    # Prinzip wie `Client.status` (app/clients/service.py::archive_client),
+    # nur als Zeitstempel statt Status-String, da Document kein weiteres
+    # Statusfeld hat. Die physische Originaldatei bleibt beim Loeschen
+    # unangetastet (nur DB-seitig ausgeblendet) - siehe
+    # app/documents/lifecycle.py fuer die Schreiblogik.
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, index=True
+    )
 
     matter: Mapped["Matter | None"] = relationship(back_populates="documents")
     message: Mapped["Message | None"] = relationship(back_populates="documents")

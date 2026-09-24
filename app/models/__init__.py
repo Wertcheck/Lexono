@@ -37,6 +37,7 @@ from app.models.processing_error import (
     VALID_PROCESSING_ERROR_STATUSES,
     ProcessingError,
 )
+from app.models.note import Note
 from app.models.party import Party
 from app.models.pilot_feedback import (
     VALID_FEEDBACK_CATEGORIES,
@@ -57,6 +58,7 @@ __all__ = [
     "Client",
     "VALID_CLIENT_STATUSES",
     "Matter",
+    "Note",
     "Party",
     "Policy",
     "ReviewFinding",

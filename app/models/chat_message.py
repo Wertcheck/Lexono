@@ -43,9 +43,19 @@ class ChatMessage(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # verknuepfung zur bereits bestehenden Entwurfsansicht, kein Ersatz fuer
     # dortige Freigabe-/Audit-Mechanik.
     draft_id: Mapped[str | None] = mapped_column(ForeignKey("drafts.id"), nullable=True)
+    # Erweiterung (13.09., Anbindung "Gesetze im Internet"): gesetzt, wenn
+    # diese Antwort DIREKT aus einer lokal bereits vorhandenen,
+    # zitierfaehigen Einzelnorm beantwortet wurde (siehe
+    # app/chat/service.py::_answer_pure_norm_question) - OHNE Claude-
+    # Aufruf, da der amtliche Text bereits lokal vorliegt. `draft_id`
+    # bleibt in diesem Fall None (kein Draft/Schriftsatz erzeugt).
+    # Dieselbe Isolationslogik wie `draft_id`: nur bei role="assistant"
+    # UND blocked=False gesetzt.
+    law_section_id: Mapped[str | None] = mapped_column(ForeignKey("law_sections.id"), nullable=True)
 
     conversation: Mapped["ChatConversation"] = relationship(back_populates="messages")
     draft: Mapped["Draft | None"] = relationship()
+    law_section: Mapped["LawSection | None"] = relationship()
     attached_documents: Mapped[list["ChatMessageDocument"]] = relationship(
         back_populates="message", cascade="all, delete-orphan"
     )

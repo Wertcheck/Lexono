@@ -26,6 +26,15 @@ class Deadline(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     document_id: Mapped[str | None] = mapped_column(
         ForeignKey("documents.id"), nullable=True
     )
+    # Quelle "Nachricht" (20.09., Posteingang-Fristenerkennung) - analog zu
+    # `document_id`: eine erkannte Frist kann statt aus einem Dokument auch
+    # direkt aus dem E-Mail-Text (`Message.body_text`) stammen, siehe
+    # app/deadlines/service.py::analyze_message. Beide Quellenfelder bleiben
+    # unabhaengig nullable - eine Deadline hat immer GENAU eine Quelle
+    # (Dokument ODER Nachricht), nie beide gleichzeitig gesetzt.
+    message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("messages.id"), nullable=True
+    )
     source_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)

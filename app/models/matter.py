@@ -53,3 +53,6 @@ class Matter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     workflow_runs: Mapped[list["WorkflowRun"]] = relationship(
         back_populates="matter", cascade="all, delete-orphan"
     )
+    notes: Mapped[list["Note"]] = relationship(
+        back_populates="matter", cascade="all, delete-orphan"
+    )

@@ -36,4 +36,21 @@ class LawSection(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     text_content: Mapped[str] = mapped_column(Text, nullable=False)
     last_updated: Mapped[date] = mapped_column(Date, nullable=False)
 
+    # Erweiterung (13.09., Anbindung an "Gesetze im Internet"): zusaetzlich
+    # zu den bereits vorhandenen manuell kuratierten Fixture-Zeilen
+    # (source_name="Kuratierte Auswahl", source_url=NULL, doknr=NULL)
+    # koennen Zeilen jetzt auch aus dem offiziellen XML-Download
+    # importiert werden (app/laws/gesetze_im_internet.py). `doknr` ist
+    # der amtliche eindeutige Dokumentschluessel aus der Quelle (fuer
+    # stabile Re-Importe/Updates), `source_url` der echte, aus `doknr`/
+    # Gesetzes-Slug abgeleitete Deep-Link zur Einzelnorm (NIEMALS
+    # erfunden - siehe app/laws/gesetze_im_internet.py fuer die
+    # Herleitung). Beide bewusst nullable, um bestehende kuratierte
+    # Zeilen ohne Datenverlust/Zwangsmigration weiterzufuehren.
+    source_name: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="Kuratierte Auswahl", server_default="Kuratierte Auswahl"
+    )
+    doknr: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
     law: Mapped["Law"] = relationship(back_populates="sections")

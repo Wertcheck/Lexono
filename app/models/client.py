@@ -58,3 +58,6 @@ class Client(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="client", cascade="all, delete-orphan"
     )
     responsible_user: Mapped["User | None"] = relationship()
+    notes: Mapped[list["Note"]] = relationship(
+        back_populates="client", cascade="all, delete-orphan"
+    )
