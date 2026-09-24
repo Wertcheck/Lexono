@@ -194,16 +194,36 @@ def _load_user_from_session(request: Request, db: Session, settings: Settings) -
     # Session-Widerruf (Prompt 29): ein Token, das VOR der letzten
     # Passwortänderung/Admin-Sperre ausgestellt wurde, ist ungültig -
     # schließt die Lücke "gestohlenes Cookie überlebt Passwortänderung".
-    # `issued_at` stammt aus der itsdangerous-Signatur selbst (siehe
-    # session.py), ist also vom Client nicht manipulierbar.
+    # `issued_at` ist ein eigenes, mikrosekundengenaues Feld im signierten
+    # Payload selbst (siehe session.py), NICHT die interne, nur sekunden-
+    # genaue itsdangerous-Signaturzeit - ECHTER FUND (24.09., beim Live-
+    # E2E-Test von Passwortaenderung + sofortigem Neu-Login gegen die
+    # installierte Anwendung reproduziert, siehe DECISIONS.md): die
+    # urspruengliche Implementierung nutzte itsdangerous' eingebaute,
+    # nur sekundengenaue Signaturzeit - ein Neu-Login INNERHALB DERSELBEN
+    # Sekunde wie eine vorangegangene Passwortaenderung (auf einer lokalen
+    # Desktop-App mit minimaler Latenz real reproduzierbar, kein
+    # theoretischer Randfall) bekam dadurch faelschlich einen "juengeren"
+    # wirkenden, aber tatsaechlich aelter GERUNDETEN Zeitstempel und wurde
+    # sofort wieder abgemeldet. Da `payload["issued_at"]` jetzt echte
+    # Mikrosekundenpraezision traegt (session.py::create_session_token),
+    # ist der einfache Vergleich unten wieder in beide Richtungen korrekt:
+    # ein wirklich juengeres Token bleibt gueltig, ein wirklich aelteres
+    # (auch innerhalb derselben Sekunde) bleibt zuverlaessig ungueltig -
+    # anders als ein frueherer Zwischenstand dieses Fixes, der
+    # `invalidated_after` grob auf Sekunden abgeschnitten hatte und dadurch
+    # ein bereits laufendes, eigentlich zu widerrufendes Session-Cookie
+    # (Admin-"Sessions beenden"/Passwortaenderung im selben Sekundenfenster)
+    # faelschlich ueberleben liess - ein echter Sicherheitsruecksprung, den
+    # zwei bestehende Tests sofort aufgedeckt haben.
     invalidated_after = user.sessions_invalidated_after
     if invalidated_after is not None:
         # SQLite gibt DateTime(timezone=True)-Werte als NAIVE Datetimes
         # zurück (keine echte TZ-Unterstützung) - ohne diese Normalisierung
-        # würde der Vergleich mit dem TZ-bewussten `issued_at` (aus
-        # itsdangerous) eine TypeError auslösen. Der Wert wird immer als
-        # UTC geschrieben (siehe app/auth/service.py), daher hier sicher
-        # als UTC interpretierbar.
+        # würde der Vergleich mit dem TZ-bewussten `issued_at` eine
+        # TypeError auslösen. Der Wert wird immer als UTC geschrieben
+        # (siehe app/auth/service.py), daher hier sicher als UTC
+        # interpretierbar.
         if invalidated_after.tzinfo is None:
             invalidated_after = invalidated_after.replace(tzinfo=timezone.utc)
         if payload["issued_at"] < invalidated_after:

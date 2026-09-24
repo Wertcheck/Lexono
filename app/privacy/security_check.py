@@ -51,6 +51,20 @@ ALLOWED_PURPOSES = frozenset(
         # erstellten Entwurfs - weiterhin reine Textproduktions-/
         # Textanalyse-Aufgabe, keine Rechtsentscheidung.
         "review_draft",
+        # ECHTER FUND (realer Abnahme-Test, 13.09.): der zentrale Chat rief
+        # DraftingService.create_draft bisher IMMER mit "formulate_draft"
+        # auf, unabhaengig davon, ob die Nutzeranfrage ueberhaupt einen
+        # Schriftsatz verlangte - jede normale Frage ("Was steht in § 558
+        # BGB?") erzeugte dadurch einen formellen Briefentwurf mit
+        # Betreff/Anrede. "chat_response" ist der neue, per einfacher
+        # Stichwort-Erkennung (siehe app/chat/service.py::
+        # _looks_like_drafting_request) gewaehlte Default-Zweck fuer den
+        # Chat - weiterhin AUSSCHLIESSLICH Textproduktions-/Textanalyse-
+        # Aufgabe (Fragen beantworten, Dokumente/Texte analysieren,
+        # Textentwuerfe verbessern), keine neue Kategorie von Aufgabe im
+        # Sinne dieser Allowlist, nur ein anderer SYSTEMPROMPT (siehe
+        # app/ai_providers/claude_writing_provider.py::select_system_prompt).
+        "chat_response",
     }
 )
 
@@ -98,6 +112,44 @@ _COMMON_GERMAN_FORMAL_WORDS = frozenset(
         "punkt", "punkte", "erster", "erstens", "zweiter", "zweitens",
         "dritter", "drittens", "vierter", "viertens", "fünfter",
         "fünftens", "letzter", "nächster", "folgender", "obiger",
+        # Dokument-Kopfzeilen-/Titel-Woerter (realer Abnahme-Test-Fund,
+        # 13.09.: "Synthetisches Testdokument" - ein Dokumenttitel, keine
+        # zwei Namensbestandteile - loeste faelschlich einen Block aus).
+        # Bewusst nur eindeutig generische Titel-/Kennzeichnungs-Woerter,
+        # niemals Namensbestandteile im engeren Sinne (siehe Einschraenkung
+        # oben: kein allgemeiner Umgehungsweg fuer echte PII).
+        "synthetisches", "synthetisch", "testdokument", "musterdokument",
+        "beispieldokument", "testfall", "referenzdokument",
+    }
+)
+
+# ECHTER FUND (14.09., Overnight-Direktive §8, realer Regressionsfall "Frau
+# Müller"): die obige Ausschlussliste verhindert zwar, dass "Herr"/"Herrn"/
+# "Frau" selbst als Namensbestandteil gewertet werden (richtig) - macht damit
+# aber jeden BLOSSEN "Anrede/Rolle + Nachname"-Fall OHNE Vornamen ("Frau
+# Müller", "Herr Müller", "Klägerin Müller", "Der Beklagte Müller")
+# strukturell unsichtbar fuer diese Heuristik, weil die bisherige Paar-Regel
+# IMMER zwei nicht ausgeschlossene grossgeschriebene Woerter verlangte. Real
+# reproduziert: auch Presidio/spaCy (app/privacy/presidio_ner.py) erkennt
+# einen blossen Nachnamen ohne Vornamen in gewoehnlicher Satzmitte NICHT
+# zuverlaessig als PERSON ("Frau Müller kam gestern vorbei." -> keine
+# Treffer). Ohne diese Ergaenzung waere ein solcher Nachname an KEINER der
+# Erkennungsebenen (known_entities/NER/Heuristik) erkannt worden und
+# unpseudonymisiert in die Cloud-Anfrage gelangt.
+#
+# Diese Woerter selbst sind weiterhin KEIN Namensbestandteil (wie bei
+# _COMMON_GERMAN_FORMAL_WORDS) - sie loesen aber jetzt eine PRUEFUNG des
+# unmittelbar folgenden grossgeschriebenen Worts als moeglichen Nachnamen
+# aus, auch wenn dieses folgende Wort alleine (ohne Vorname) steht.
+_ROLE_OR_TITLE_PREFIX_WORDS = frozenset(
+    {
+        "frau", "herr", "herrn",
+        "mandant", "mandantin", "mandanten",
+        "kläger", "klaeger", "klägerin", "klaegerin",
+        "beklagte", "beklagter",
+        "zeuge", "zeugin", "zeugen",
+        "vermieter", "vermieterin",
+        "rechtsanwalt", "rechtsanwältin", "rechtsanwaeltin",
     }
 )
 
@@ -105,12 +157,33 @@ _COMMON_GERMAN_FORMAL_WORDS = frozenset(
 _WORD_PATTERN = re.compile(r"[A-Za-zÄÖÜäöüß]+")
 
 
-def _find_possible_unrecognized_names(text: str) -> list[str]:
+def _find_possible_unrecognized_names(
+    text: str, *, pos_tags: dict[tuple[int, int], str] | None = None
+) -> list[str]:
     """Wortbasiertes Scannen statt regex-basiertem Aufeinanderfolgen-Match:
     verhindert, dass ein "verbrauchtes" Wort (z. B. "Herrn" in "Herrn
     Peter") das eigentlich interessante Folgepaar ("Peter Müller")
     unsichtbar macht, weil `re.finditer` keine überlappenden Treffer
-    liefert."""
+    liefert.
+
+    `pos_tags` (optional, siehe app/privacy/presidio_ner.py::get_pos_tags)
+    ist ein {(start, end): "PROPN"/"NOUN"/"ADJ"/...}-Dict fuer das GENAU
+    diesen Aufruf betreffende `text` - ECHTER FUND (Abnahme-Test, 13.09.):
+    ohne diese Verfeinerung wertete diese Funktion JEDES Adjektiv+Substantiv-
+    Ueberschrift-Paar ("Synthetisches Testdokument", "Salvatorische
+    Klausel") faelschlich als Namenskandidat, weil im Deutschen ALLE
+    Substantive grossgeschrieben werden - eine reine Grossschreibungs-
+    Heuristik kann Adjektiv+Substantiv nicht von Vorname+Nachname
+    unterscheiden. Echte Personennamen werden von spaCys POS-Tagger
+    zuverlaessig als PROPN (Eigenname) getaggt; Rechtstitel-Ueberschriften
+    sind ADJ+NOUN - ist `pos_tags` angegeben, wird ein Kandidat nur dann
+    behalten, wenn BEIDE Woerter als PROPN getaggt sind. Bewusst weiterhin
+    OPTIONAL (Default `None` = altes, rein regelbasiertes Verhalten ohne
+    Modellabhaengigkeit) - erhaelt die urspruengliche "Defense in Depth
+    unabhaengig von Presidio/spaCy"-Eigenschaft dieser Heuristik (siehe
+    Moduldocstring), verfeinert sie aber deutlich, wenn ein Tagger
+    verfuegbar ist (immer der Fall im echten Produktivbetrieb, siehe
+    ClaudePrivacyGateway)."""
     words = list(_WORD_PATTERN.finditer(text))
     candidates: list[str] = []
 
@@ -121,13 +194,33 @@ def _find_possible_unrecognized_names(text: str) -> list[str]:
             # Nur direkt durch ein einzelnes Leerzeichen getrennte Wörter
             # gelten als zusammenhaengende Phrase (kein Satzzeichen dazwischen).
             continue
-        if not (word1.group()[:1].isupper() and word2.group()[:1].isupper()):
+        if not word2.group()[:1].isupper():
             continue
-        if (
-            word1.group().lower() in _COMMON_GERMAN_FORMAL_WORDS
-            or word2.group().lower() in _COMMON_GERMAN_FORMAL_WORDS
-        ):
+        word1_is_role_prefix = word1.group().lower() in _ROLE_OR_TITLE_PREFIX_WORDS
+        if not word1_is_role_prefix:
+            # Bisherige Regel unveraendert: OHNE ein erkanntes Anrede-/
+            # Rollenwort verlangen wir weiterhin ZWEI grossgeschriebene,
+            # nicht ausgeschlossene Woerter (Vorname + Nachname).
+            if not word1.group()[:1].isupper():
+                continue
+            if word1.group().lower() in _COMMON_GERMAN_FORMAL_WORDS:
+                continue
+        if word2.group().lower() in _COMMON_GERMAN_FORMAL_WORDS:
             continue
+        # Anrede-/Rollenwort direkt gefolgt von einem weiteren Anrede-/
+        # Rollenwort (Titel-Stapelung, z. B. "Herr Rechtsanwalt Schmidt") ist
+        # selbst noch kein Nachname - die naechste Schleifeniteration prueft
+        # dieses zweite Rollenwort dann seinerseits als Praefix.
+        if word1_is_role_prefix and word2.group().lower() in _ROLE_OR_TITLE_PREFIX_WORDS:
+            continue
+        if pos_tags is not None:
+            tag2 = pos_tags.get((word2.start(), word2.end()))
+            if tag2 != "PROPN":
+                continue
+            if not word1_is_role_prefix:
+                tag1 = pos_tags.get((word1.start(), word1.end()))
+                if tag1 != "PROPN":
+                    continue
         candidates.append(f"{word1.group()} {word2.group()}")
 
     return candidates
@@ -163,7 +256,10 @@ _PLACEHOLDER_TOKEN_PATTERN = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d+\]")
 
 
 def check_response_placeholder_integrity(
-    text: str, mappings: list[PseudonymMapping]
+    text: str,
+    mappings: list[PseudonymMapping],
+    *,
+    require_full_coverage: bool = True,
 ) -> list[str]:
     """Deterministische (KEIN LLM) Pruefung einer vom Claude-Aufruf
     zurueckgekommenen, noch pseudonymisierten Antwort - VOR jeder
@@ -183,8 +279,30 @@ def check_response_placeholder_integrity(
        Werte strukturell nie (siehe ClaudeRequestPayload/Gateway) - ein
        Treffer hier waere entweder ein technischer Fehler an anderer Stelle
        oder ein Zufallstreffer, in jedem Fall ein Grund zum kontrollierten
-       Abbruch statt stillschweigender Weiterverarbeitung."""
-    reasons = check_placeholders_present(text, mappings)
+       Abbruch statt stillschweigender Weiterverarbeitung.
+
+    `require_full_coverage` (15.09., CHAT-01, Chat-Intelligence-Forensik):
+    steuert NUR, ob `check_placeholders_present` (jeder Mapping-Platzhalter
+    MUSS im Text vorkommen) mit angewendet wird. Die beiden oben genannten,
+    tatsaechlich schuetzenden Pruefungen (Manipulation/Erfindung eines
+    Platzhalter-Tokens, Leck des Originalwerts) laufen davon UNBERUEHRT
+    IMMER.
+
+    ECHTER FUND: diese Vollstaendigkeitsforderung ergibt fuer einen Brief-
+    /Entwurfstext Sinn (der Text IST das Schreiben ueber die Beteiligten -
+    jeder referenzierte Platzhalter sollte darin vorkommen), aber nicht
+    fuer eine freie Chatantwort. Reproduziert: "Guten Tag, wie kann ich
+    Ihnen helfen?" und "Vielen Dank." wurden blockiert, weil sie nicht
+    JEDEN im Aktenkontext gefundenen Platzhalter woertlich enthielten - das
+    war die direkte Ursache dafuer, dass eine normale Chat-Begruessung
+    nicht beantwortet wurde. Default bleibt `True` (unveraendertes
+    Verhalten fuer alle bisherigen Aufrufer, insbesondere das AUSGEHENDE
+    Final Payload Gate `check_payload_placeholder_integrity` - dort bleibt
+    volle Abdeckung weiterhin zwingend, siehe dortiger Docstring). Der
+    Aufrufer (app/drafting/response_validation.py, verdrahtet ueber
+    app/drafting/service.py) setzt `False` NUR fuer `purpose=
+    "chat_response"`."""
+    reasons = check_placeholders_present(text, mappings) if require_full_coverage else []
 
     expected_placeholders = {mapping.placeholder for mapping in mappings}
     found_tokens = set(_PLACEHOLDER_TOKEN_PATTERN.findall(text))
@@ -248,14 +366,24 @@ def check_payload_placeholder_integrity(
 
 class SecurityCheckService:
     def __init__(
-        self, *, ner_detector: Callable[[str], list[DetectedSpan]] | None = None
+        self,
+        *,
+        ner_detector: Callable[[str], list[DetectedSpan]] | None = None,
+        pos_tagger: Callable[[str], dict[tuple[int, int], str]] | None = None,
     ) -> None:
         """`ner_detector` (optional, siehe Pseudonymizer.__init__ fuer
         dieselbe Begruendung) wird beim Restrisiko-Scan (Punkt 2/3/4)
         zusaetzlich zu den Regex-Detektoren eingesetzt - schaerft genau den
         Check, der aufdecken soll, ob die Pseudonymisierung etwas
-        uebersehen hat."""
+        uebersehen hat.
+
+        `pos_tagger` (optional, siehe app/privacy/presidio_ner.py::
+        get_pos_tags) verfeinert Punkt 6 (_find_possible_unrecognized_names)
+        - ohne Tagger bleibt die alte, rein regelbasierte Grossschreibungs-
+        Heuristik aktiv (funktioniert weiterhin unabhaengig von Presidio/
+        spaCy, siehe dortiger Docstring)."""
         self.ner_detector = ner_detector
+        self.pos_tagger = pos_tagger
 
     def check(
         self,
@@ -287,7 +415,8 @@ class SecurityCheckService:
         reasons.extend(check_placeholders_present(pseudonymized_text, mappings))
 
         # Punkt 6: heuristischer Hinweis auf evtl. nicht erkannte Namen.
-        unclear = _find_possible_unrecognized_names(pseudonymized_text)
+        pos_tags = self.pos_tagger(pseudonymized_text) if self.pos_tagger else None
+        unclear = _find_possible_unrecognized_names(pseudonymized_text, pos_tags=pos_tags)
         if unclear:
             reasons.append(
                 f"Möglicherweise nicht erkannte Namen/Entitäten gefunden: {unclear}"

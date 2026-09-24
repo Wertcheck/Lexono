@@ -6,6 +6,8 @@ Aktenzeichen, mehrere Personen, verschachtelte Angaben, Zitate,
 Dateinamen, manipulierte Dokumente, Prompt-Injection, nicht erkannte
 Daten."""
 
+import pytest
+
 from app.privacy.detectors import detect_all, detect_known_entities
 
 
@@ -42,6 +44,30 @@ def test_detects_address_street_and_postal_code() -> None:
     spans = detect_all("Wohnhaft in der Musterstraße 12, 12345 Musterstadt.")
     address_spans = [s for s in spans if s.category == "adresse"]
     assert len(address_spans) == 2
+
+
+@pytest.mark.parametrize(
+    "street",
+    [
+        "Elbchaussee 45",
+        "Kurfürstendamm 12",
+        "Rheinufer 3",
+        "Antonsteig 7",
+        "Schlossanger 9",
+    ],
+)
+def test_detects_additional_real_german_street_suffixes(street: str) -> None:
+    """ECHTER FUND (14.09., realer Performance-Benchmark-Testlauf gegen die
+    installierte Anwendung): "Elbchaussee 45" wurde vom bisherigen
+    Regex-Muster (nur straße/weg/allee/platz/gasse/ring) NICHT erfasst und
+    blieb dadurch bei der ersten Pseudonymisierung unerkannt - erst der
+    spaetere, kontextabhaengige NER-Restrisiko-Scan fing es auf und
+    blockierte (fail-closed, kein Leak, aber unnoetig). Diese und weitere
+    reale deutsche Strassennamen-Suffixe muessen bereits deterministisch
+    beim ersten Durchlauf erkannt werden."""
+    spans = detect_all(f"Die Wohnung befindet sich in der {street}, 3. OG.")
+    address_spans = [s for s in spans if s.category == "adresse"]
+    assert len(address_spans) == 1, f"{street} wurde nicht erkannt: {spans}"
 
 
 def test_detects_amount() -> None:

@@ -42,6 +42,111 @@ def test_different_values_get_incrementing_placeholders() -> None:
     assert len(mappings) == 2
 
 
+# --- Alias-Kanonisierung: voller Name + blosser Nachname derselben Person
+# (20.09., echter Fund waehrend eines E2E-Tests des Dokumentlebenszyklus)
+# ---
+#
+# `app/ai_providers/local_ai_provider.py::_build_known_entities` indiziert
+# seit dem "Frau Müller"-Fix (14.09.) fuer jede bekannte Person ZUSAETZLICH
+# zum vollen Namen auch deren blossen Nachnamen (z. B. "Weber" neben
+# "Sabine Weber") - notwendig, damit ein Text, der die Person nur mit
+# Nachnamen anspricht ("Frau Weber"), ueberhaupt pseudonymisiert wird.
+# OHNE die hier getestete Kanonisierung erhielten beide Formen aber ZWEI
+# VERSCHIEDENE Platzhalter fuer dieselbe reale Person - eine echte, sichere
+# KI-Antwort, die nur EINE der beiden Formen woertlich verwendete, wurde
+# dadurch von `check_placeholders_present`
+# (app/privacy/security_check.py) faelschlich als "Platzhalter fehlt im
+# Text (Inkonsistenz)" blockiert und komplett verworfen - real reproduziert
+# gegen die laufende Anwendung (Schriftsatz-Entwurf fuer eine Mandantin
+# "Sabine Weber" anhand eines Dokuments, das sie als "Frau Weber"
+# anspricht).
+
+
+def test_full_name_and_bare_surname_of_same_person_share_one_placeholder() -> None:
+    p = Pseudonymizer()
+    text = "Mandant: Sabine Weber. Sehr geehrte Frau Weber, ..."
+
+    result, mappings = p.pseudonymize(
+        text, known_entities={"mandant": ["Sabine Weber", "Weber"]}
+    )
+
+    assert result.count("[MANDANT_01]") == 2
+    assert "[MANDANT_02]" not in result
+    assert len(mappings) == 1
+    assert mappings[0].original_value == "Sabine Weber"
+
+
+def test_canonicalization_uses_the_longer_form_regardless_of_occurrence_order() -> None:
+    """Der Nachname darf zuerst im Text vorkommen - das Mapping muss
+    trotzdem auf den vollen Namen kanonisiert werden, nicht auf die zuerst
+    gesehene (kuerzere) Form."""
+    p = Pseudonymizer()
+    text = "Frau Weber teilte mit. Die Mandantin heisst Sabine Weber."
+
+    result, mappings = p.pseudonymize(
+        text, known_entities={"mandant": ["Sabine Weber", "Weber"]}
+    )
+
+    assert result.count("[MANDANT_01]") == 2
+    assert len(mappings) == 1
+    assert mappings[0].original_value == "Sabine Weber"
+
+
+def test_canonicalization_does_not_merge_unrelated_people_with_similar_surnames() -> None:
+    """Sicherheitsgrenze der Kanonisierung: "Weberer" ist NICHT einfach ein
+    Nachname-Alias von "Weber" (kein Substring-Match, siehe
+    _canonicalize_alias-Docstring) - unterschiedliche reale Personen
+    duerfen NIE denselben Platzhalter erhalten."""
+    p = Pseudonymizer()
+    text = "Mandant: Sabine Weber. Gegner: Klaus Weberer."
+
+    result, mappings = p.pseudonymize(
+        text,
+        known_entities={"mandant": ["Sabine Weber", "Weber"], "gegner": ["Klaus Weberer"]},
+    )
+
+    assert "[MANDANT_01]" in result
+    assert "[GEGNER_01]" in result
+    original_values = {m.original_value for m in mappings}
+    assert original_values == {"Sabine Weber", "Klaus Weberer"}
+
+
+def test_canonicalization_only_applies_within_the_same_category() -> None:
+    """Ein Nachname darf NICHT ueber Kategorie-Grenzen hinweg kanonisiert
+    werden, selbst wenn er zufaellig in einer anderen Kategorie als voller
+    Name vorkaeme - Mandant/Gegner/Anwalt/Gericht muessen strikt getrennt
+    bleiben (Aktenisolation/Rollentrennung)."""
+    p = Pseudonymizer()
+    text = "Mandant Weber. Gegner: Weber Immobilien GmbH."
+
+    result, mappings = p.pseudonymize(
+        text,
+        known_entities={"mandant": ["Weber"], "gegner": ["Weber Immobilien GmbH"]},
+    )
+
+    assert "[MANDANT_01]" in result
+    assert "[GEGNER_01]" in result
+    assert len(mappings) == 2
+
+
+def test_response_with_only_one_alias_form_now_passes_full_coverage_check() -> None:
+    """E2E-naher Regressionstest fuer den echten Fund: eine KI-Antwort, die
+    nur die volle Form verwendet (typisch fuer eine Anrede/Signatur),
+    besteht jetzt `check_placeholders_present` - vorher schlug das fehl,
+    weil der separate Nachname-Platzhalter im Antworttext nie vorkam."""
+    from app.privacy.security_check import check_placeholders_present
+
+    p = Pseudonymizer()
+    prompt = "Mandant: Sabine Weber. Im Dokument steht: Sehr geehrte Frau Weber, ..."
+    _, mappings = p.pseudonymize(prompt, known_entities={"mandant": ["Sabine Weber", "Weber"]})
+
+    simulated_response = "Sehr geehrte Frau [MANDANT_01], hiermit teilen wir Ihnen mit ..."
+
+    reasons = check_placeholders_present(simulated_response, mappings)
+
+    assert reasons == []
+
+
 def test_reconstruct_restores_original_text_exactly() -> None:
     p = Pseudonymizer()
     original = (

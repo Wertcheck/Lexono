@@ -15,6 +15,7 @@ from app.privacy.api_logger import (
     ApiCallLogger,
     categorize_block_reasons,
     compute_anonymized_prompt_id,
+    friendly_block_message,
 )
 from app.privacy.gateway_schema import ClaudeRequestPayload
 
@@ -150,3 +151,105 @@ def test_api_call_log_model_has_no_free_text_content_field() -> None:
     columns = {c.name for c in ApiCallLog.__table__.columns}
     forbidden_field_names = {"content", "text", "prompt", "response", "details", "message"}
     assert not (columns & forbidden_field_names)
+
+
+# --- Technischer Fehler vs. Datenschutz-Blockierung (15.09.) ---
+
+
+def test_technical_failure_is_not_reported_as_a_privacy_block() -> None:
+    """ECHTER FUND (Chat-Intelligence-Forensik, 15.09.): ein technischer
+    Fehlschlag der Textproduktion ("Interner Fehler bei der
+    Textproduktion", siehe app/ai_providers/orchestrator.py und
+    app/drafting/service.py) fiel in keine Kategorie und wurde dem Anwalt
+    als "Die Anfrage wurde aus Datenschutzgründen blockiert." angezeigt.
+    Das verschleiert den echten Fehler UND untergraebt das Vertrauen in
+    die Datenschutzmeldungen."""
+    message = friendly_block_message(["Interner Fehler bei der Textproduktion"])
+
+    assert "technischen Gründen" in message
+    assert "Datenschutzgründen blockiert" not in message
+
+
+def test_real_privacy_block_message_is_unchanged() -> None:
+    """Die Gegenprobe: eine echte Datenschutz-Blockierung muss weiterhin
+    als solche erscheinen."""
+    message = friendly_block_message(
+        ["Im Text wurden weiterhin erkennbare Muster gefunden: ..."]
+    )
+
+    assert "erkennbare Muster" in message
+    assert "technischen Gründen" not in message
+
+
+def test_technical_error_message_still_never_contains_the_raw_reason() -> None:
+    """Der Leak-Schutz gilt unveraendert auch fuer die neue Kategorie: die
+    rohen Gruende koennen sensible Werte enthalten und duerfen nie in die
+    Meldung geraten."""
+    message = friendly_block_message(
+        ["Interner Fehler bei der Textproduktion: Frau Müller, Musterweg 3"]
+    )
+
+    assert "Müller" not in message
+    assert "Musterweg" not in message
+
+
+# --- Original-Wert-Leck in der Claude-Antwort (17.09., UI-Live-Validierung) ---
+
+
+def test_leaked_original_value_reason_gets_its_own_category_not_unknown() -> None:
+    """ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion in der
+    laufenden App, 17.09., reproduziert per DraftingService-Direktaufruf
+    mit echter Presidio-Pseudonymisierung + echtem lokalem LLM): der Grund
+    aus `check_response_placeholder_integrity` (security_check.py) fuer
+    einen im Antworttext wiedergefundenen Originalwert - der
+    schwerwiegendste der drei Stufe-1-Befunde - matchte bisher KEINES der
+    Muster und landete im nichtssagenden "unknown_block_reason"-Eimer,
+    identisch zu jedem beliebigen unklassifizierten Fehler."""
+    reasons = [
+        "Urspruenglicher, nicht pseudonymisierter Wert fuer [MANDANT_01] im Text "
+        "gefunden - moeglicher Datenschutzverstoss"
+    ]
+
+    category = categorize_block_reasons(reasons)
+
+    assert category == "original_value_leaked"
+    assert category != "unknown_block_reason"
+
+
+def test_leaked_original_value_friendly_message_is_specific_and_pii_free() -> None:
+    message = friendly_block_message(
+        [
+            "Urspruenglicher, nicht pseudonymisierter Wert fuer [MANDANT_01] im Text "
+            "gefunden - moeglicher Datenschutzverstoss"
+        ]
+    )
+
+    assert message != "Die Anfrage wurde aus Datenschutzgründen blockiert."
+
+
+# --- Leere/abgeschnittene KI-Antwort (19.09., Schriftsatz-Generator-E2E) ---
+
+
+def test_empty_writing_response_reason_gets_its_own_category_not_unknown() -> None:
+    """ECHTER FUND (19.09., live am echten Server reproduziert, Owner-
+    Direktive "CONTINUE AUTONOMOUS PRODUCT COMPLETION"): der neue
+    Mindestinhalt-Check in app/drafting/service.py (leere/abgeschnittene
+    KI-Antwort, z. B. durch das Token-Limit) matchte bisher KEINES der
+    Muster und landete im nichtssagenden "unknown_block_reason"-Eimer -
+    identisches Fehlerbild wie "technical_error"/"original_value_leaked"
+    vorher, zeigte dem Anwalt faelschlich eine Datenschutz-Meldung."""
+    reasons = [
+        "Die KI hat keinen verwertbaren Text zurückgegeben (leere Antwort, "
+        "möglicherweise durch das Token-Limit abgeschnitten) - Entwurf "
+        "wurde nicht übernommen. Bitte erneut versuchen, ggf. mit "
+        "kürzeren Anmerkungen/weniger Dokumenten."
+    ]
+
+    category = categorize_block_reasons(reasons)
+
+    assert category == "empty_writing_response"
+    assert category != "unknown_block_reason"
+
+    message = friendly_block_message(reasons)
+    assert message != "Die Anfrage wurde aus Datenschutzgründen blockiert."
+    assert "Token-Limit" in message

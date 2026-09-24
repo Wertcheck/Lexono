@@ -125,3 +125,68 @@ def test_each_session_gets_a_different_csrf_token() -> None:
 def test_read_session_token_rejects_garbage_input() -> None:
     settings = _dev_settings()
     assert read_session_token("völlig-ungültiges-token", settings) is None
+
+
+# --- `issued_at`-Praezision (24.09., ECHTER FUND) ---
+#
+# itsdangerous' EIGENE Signaturzeit ist nur sekundengenau - verglichen mit
+# dem mikrosekundengenauen `User.sessions_invalidated_after`
+# (app/auth/service.py) fuehrte das dazu, dass eine Anmeldung INNERHALB
+# DERSELBEN Sekunde wie eine vorangegangene Passwortaenderung faelschlich
+# sofort wieder abgemeldet wurde (real gegen die installierte Anwendung
+# reproduziert, siehe DECISIONS.md und
+# tests/test_rate_limiting_and_session_revocation.py fuer den vollen
+# End-to-End-Beweis). Fix: `issued_at` ist jetzt ein eigenes,
+# mikrosekundengenaues Feld im signierten Payload selbst.
+
+
+def test_session_token_issued_at_is_a_timezone_aware_datetime() -> None:
+    settings = _dev_settings()
+    token, _csrf = create_session_token("user-123", settings)
+
+    payload = read_session_token(token, settings)
+
+    assert payload is not None
+    assert payload["issued_at"].tzinfo is not None
+
+
+def test_session_token_issued_at_reflects_the_real_creation_instant_not_a_truncated_one() -> None:
+    """Der eigentliche Kern des Fixes: `issued_at` muss der tatsaechliche,
+    mikrosekundengenaue Erzeugungszeitpunkt sein - NICHT itsdangerous'
+    eigene, nur sekundengenaue Signaturzeit. Geprueft durch einen fixierten
+    Zeitpunkt mit einer Mikrosekunde ungleich 0: mit der alten Implemen-
+    tierung (itsdangerous-Signaturzeit) waere dieser Wert immer auf 0
+    abgeschnitten worden."""
+    from unittest.mock import patch
+
+    from app.auth import session as session_module
+
+    fixed_instant = session_module.datetime(2027, 1, 1, 12, 0, 0, 654_321, tzinfo=session_module.timezone.utc)
+    with patch.object(session_module, "datetime") as mock_datetime:
+        mock_datetime.now.return_value = fixed_instant
+        settings = _dev_settings()
+        token, _csrf = create_session_token("user-123", settings)
+
+    payload = read_session_token(token, settings)
+
+    assert payload is not None
+    assert payload["issued_at"] == fixed_instant
+
+
+def test_read_session_token_falls_back_to_coarse_timestamp_for_pre_fix_tokens() -> None:
+    """Ein VOR diesem Fix ausgestelltes Token (kein `issued_at`-Feld im
+    Payload) darf nicht abgelehnt werden - dasselbe etablierte
+    Rueckwaertskompatibilitaets-Prinzip wie bei der KanzleiAI→Lexono-
+    Umbenennung (siehe session.py-Kommentar): ein bestehendes Cookie
+    bleibt nutzbar, nur mit der alten, groeberen Genauigkeit, bis zum
+    naechsten eigenen Neu-Login."""
+    from app.auth.session import _serializer
+
+    settings = _dev_settings()
+    old_format_token = _serializer(settings).dumps({"user_id": "user-123", "csrf": "abc"})
+
+    payload = read_session_token(old_format_token, settings)
+
+    assert payload is not None
+    assert payload["user_id"] == "user-123"
+    assert payload["issued_at"] is not None

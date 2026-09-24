@@ -1,8 +1,8 @@
 """Allowlist-Payload-Schema (Architekturvorgabe Punkt 7, wörtlich):
 
 "Nur explizit für die Textproduktion freigegebene Informationen dürfen
-Claude erreichen." Genau diese SIEBEN Felder - alles andere bleibt lokal.
-Kein Feld für "sonstige Daten", kein Freitext-Escape-Hatch.
+Claude erreichen." Genau diese Felder - alles andere bleibt lokal. Kein
+Feld für "sonstige Daten", kein Freitext-Escape-Hatch.
 
 Ergänzung (Vorgabe des Anwalts, wörtlich): "erweitere die bestehende
 Allowlist um genau ein eigenes Feld für anonymisierte anwaltliche
@@ -13,6 +13,18 @@ gemeinsamen Pseudonymisierungs-/Security-Check-Durchlauf wie Sachverhalt,
 Argumentationspunkte, Quellenverweise und Vorlage) - es gibt keinen
 zweiten, ungeprüften Weg, wie anwaltliche Anmerkungen dieses Schema
 erreichen könnten (siehe app/attorney_instructions/service.py).
+
+CHAT-02 (15.09., ausdrückliche Owner-Freigabe nach vorheriger, ausführlich
+begründeter Zurückstellung - siehe DECISIONS.md/OPEN_ISSUES.md für die
+vollständige Herleitung): achtes, LETZTES Feld
+`anonymisierter_gespraechsverlauf` für den bisherigen Chat-Gesprächsverlauf
+- Root Cause der Chat-Intelligence-Forensik war, dass das Modell frühere
+Turns strukturell nie erreichte. Entsteht wie alle anderen Felder
+AUSSCHLIESSLICH über `ClaudePrivacyGateway.prepare_request` (identischer
+gemeinsamer Pseudonymisierungs-/Security-Check-Durchlauf) - KEIN zweiter,
+ungeprüfter Pseudonymisierungspfad. Jetzt GENAU ACHT Felder - diese Zahl
+ist nach dieser Owner-Entscheidung die neue verbindliche Grenze, exakt wie
+zuvor bei sieben.
 """
 
 from __future__ import annotations
@@ -41,6 +53,15 @@ class ClaudeRequestPayload(BaseModel):
     # app/ai_providers/claude_writing_provider.py fuer die Regel, dass ein
     # fehlender Wert NIEMALS als inhaltliche Position ausgelegt werden darf.
     anonymisierte_anwaltliche_anmerkungen: str | None = None
+    # Achtes, letztes Feld (CHAT-02, s. o.): bisheriger Chat-Gesprächsverlauf
+    # als Folge bereits formatierter, pseudonymisierter Zeilen
+    # ("Anwalt: ..."/"Assistent: ..." - siehe
+    # app/chat/service.py::_HISTORY_ROLE_LABELS für die Formatierung, EIN
+    # Eintrag pro historischer Nachricht, chronologisch aufsteigend). Leere
+    # Liste = keine Historie zu übertragen (neue Konversation oder
+    # Nicht-Chat-Aufrufer wie der Schriftsatz-Generator/die anwaltlichen
+    # Anweisungen, die dieses Feld strukturell nie befüllen).
+    anonymisierter_gespraechsverlauf: list[str] = Field(default_factory=list)
 
     @field_validator("schreibauftrag", "anonymisierter_sachverhalt")
     @classmethod

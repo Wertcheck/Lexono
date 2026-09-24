@@ -2,11 +2,11 @@
 (Architekturvorgabe Punkt 3, wörtlich).
 
 WICHTIGE DESIGN-ENTSCHEIDUNG: Alle Payload-Felder (Sachverhalt,
-Argumentationspunkte, Quellenverweise, Vorlage, anwaltliche Anmerkungen)
-werden GEMEINSAM in EINEM Pseudonymizer-Aufruf verarbeitet, nicht Feld für
-Feld separat. Grund: Der Pseudonymizer vergibt Platzhalter-Nummern pro
-Aufruf neu (siehe pseudonymizer.py) - würde man Felder einzeln
-pseudonymisieren, könnte derselbe Name in zwei Feldern zwei
+Argumentationspunkte, Quellenverweise, Vorlage, anwaltliche Anmerkungen,
+Gesprächsverlauf) werden GEMEINSAM in EINEM Pseudonymizer-Aufruf
+verarbeitet, nicht Feld für Feld separat. Grund: Der Pseudonymizer vergibt
+Platzhalter-Nummern pro Aufruf neu (siehe pseudonymizer.py) - würde man
+Felder einzeln pseudonymisieren, könnte derselbe Name in zwei Feldern zwei
 unterschiedliche Platzhalter bekommen (z. B. "Max Mustermann" im
 Sachverhalt als [MANDANT_01], aber in einer anwaltlichen Anmerkung
 fälschlich erneut als [MANDANT_01] einer ANDEREN Person). Durch das
@@ -14,7 +14,8 @@ Zusammenführen in einen Text (mit eindeutigen, kollisionssicheren
 Trennmarkierungen) VOR der Pseudonymisierung bleiben Platzhalter über die
 gesamte Anfrage hinweg konsistent - das gilt seit Prompt 23 explizit auch
 für anwaltliche Anmerkungen (siebtes Allowlist-Feld, siehe
-gateway_schema.py): sie erhalten KEINEN eigenen, separaten
+gateway_schema.py) und seit CHAT-02 (15.09.) für den Gesprächsverlauf
+(achtes, letztes Feld): sie erhalten KEINEN eigenen, separaten
 Pseudonymisierungsdurchlauf.
 
 Ablauf (= der in der Vorgabe geforderte Datenfluss):
@@ -34,7 +35,7 @@ from __future__ import annotations
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
-from app.privacy.presidio_ner import detect_presidio_entities
+from app.privacy.presidio_ner import detect_presidio_entities, get_pos_tags
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
 from app.privacy.security_check import (
     SecurityCheckService,
@@ -51,6 +52,11 @@ _SEP_QUELLEN = "@@GATEWAY_QUELLEN@@"
 _SEP_VORLAGE = "@@GATEWAY_VORLAGE@@"
 _SEP_ANMERKUNGEN = "@@GATEWAY_ANMERKUNGEN@@"
 _SEP_LIST_ITEM = "@@GATEWAY_ITEM@@"
+# CHAT-02 (15.09.): achter, letzter Abschnitt - bewusst ANGEHÄNGT statt
+# zwischen bestehende Abschnitte eingefügt, damit die bereits bestehenden
+# sieben Marker/ihre Reihenfolge unverändert bleiben (keine Änderung an
+# etwas, das nicht Teil von CHAT-02 ist).
+_SEP_VERLAUF = "@@GATEWAY_VERLAUF@@"
 
 _ALL_MARKERS = (
     _SEP_SACHVERHALT,
@@ -59,6 +65,7 @@ _ALL_MARKERS = (
     _SEP_VORLAGE,
     _SEP_ANMERKUNGEN,
     _SEP_LIST_ITEM,
+    _SEP_VERLAUF,
 )
 
 
@@ -90,7 +97,7 @@ class ClaudePrivacyGateway:
             ner_detector=detect_presidio_entities
         )
         self.security_check = security_check or SecurityCheckService(
-            ner_detector=detect_presidio_entities
+            ner_detector=detect_presidio_entities, pos_tagger=get_pos_tags
         )
 
     def prepare_request(
@@ -104,6 +111,7 @@ class ClaudePrivacyGateway:
         vorlage: str | None = None,
         anwaltliche_anmerkungen: str | None = None,
         known_entities: dict[str, list[str]] | None = None,
+        gespraechsverlauf: list[str] | None = None,
     ) -> GatewayResult:
         """Baut eine sendefertige, pseudonymisierte Payload - oder
         blockiert (siehe GatewayResult.allowed). Ruft selbst KEINE Claude
@@ -113,9 +121,21 @@ class ClaudePrivacyGateway:
         gateway_schema.py) durchläuft GENAU DENSELBEN gemeinsamen
         Pseudonymisierungs-/Security-Check-Durchlauf wie alle anderen
         Felder - es gibt keinen Pfad, der anwaltliche Anmerkungen ungeprüft
-        an Claude weiterreichen könnte."""
+        an Claude weiterreichen könnte.
+
+        `gespraechsverlauf` (CHAT-02, achtes/letztes Allowlist-Feld):
+        bereits als "Rolle: Text"-Zeilen formatierte, aber NOCH NICHT
+        pseudonymisierte History-Einträge (siehe app/chat/service.py) -
+        durchläuft GENAU DENSELBEN gemeinsamen Durchlauf wie jedes andere
+        Feld. Das gilt ausdrücklich auch für bereits einmal rekonstruierte
+        Assistant-Antworten aus früheren Turns: sie erreichen diese Methode
+        hier erneut als Klartext und werden bei DIESEM Aufruf erneut vom
+        Presidio-Detektor geprüft - es gibt keinen "bereits sicher"-Fast-
+        Path an der Pseudonymisierung vorbei, unabhängig davon, ob der Text
+        schon einmal pseudonymisiert war."""
         argumentationspunkte = argumentationspunkte or []
         quellenverweise = quellenverweise or []
+        gespraechsverlauf = gespraechsverlauf or []
 
         combined = self._build_combined_text(
             sachverhalt,
@@ -123,6 +143,7 @@ class ClaudePrivacyGateway:
             quellenverweise,
             vorlage,
             anwaltliche_anmerkungen,
+            gespraechsverlauf,
         )
 
         pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
@@ -147,6 +168,7 @@ class ClaudePrivacyGateway:
             pseudo_quellen,
             pseudo_vorlage,
             pseudo_anmerkungen,
+            pseudo_verlauf,
         ) = self._split_combined_text(pseudonymized_combined)
 
         payload = ClaudeRequestPayload(
@@ -157,6 +179,7 @@ class ClaudePrivacyGateway:
             anonymisierte_quellenverweise=pseudo_quellen,
             schreibvorlage=pseudo_vorlage,
             anonymisierte_anwaltliche_anmerkungen=pseudo_anmerkungen,
+            anonymisierter_gespraechsverlauf=pseudo_verlauf,
         )
 
         # FINAL PAYLOAD GATE: prueft die tatsaechlich fertig aufgeteilte
@@ -193,6 +216,7 @@ class ClaudePrivacyGateway:
         quellenverweise: list[str],
         vorlage: str | None,
         anwaltliche_anmerkungen: str | None,
+        gespraechsverlauf: list[str],
     ) -> str:
         clean_sachverhalt = _sanitize_input(sachverhalt)
         clean_argumente = [_sanitize_input(a) for a in argumentationspunkte]
@@ -201,6 +225,10 @@ class ClaudePrivacyGateway:
         clean_anmerkungen = (
             _sanitize_input(anwaltliche_anmerkungen) if anwaltliche_anmerkungen else ""
         )
+        # CHAT-02: dieselbe Sanitisierung wie jedes andere Feld - jeder
+        # History-Eintrag (auch ein bereits rekonstruierter Assistant-Turn)
+        # könnte theoretisch einen der internen Trennmarker enthalten.
+        clean_verlauf = [_sanitize_input(v) for v in gespraechsverlauf]
 
         parts = [
             _SEP_SACHVERHALT,
@@ -213,17 +241,19 @@ class ClaudePrivacyGateway:
             clean_vorlage,
             _SEP_ANMERKUNGEN,
             clean_anmerkungen,
+            _SEP_VERLAUF,
+            _SEP_LIST_ITEM.join(clean_verlauf),
         ]
         return "\n".join(parts)
 
     @staticmethod
     def _split_combined_text(
         combined: str,
-    ) -> tuple[str, list[str], list[str], str | None, str | None]:
+    ) -> tuple[str, list[str], list[str], str | None, str | None, list[str]]:
         pattern = re.compile(
             rf"{re.escape(_SEP_SACHVERHALT)}\n(.*?)\n{re.escape(_SEP_ARGUMENTE)}\n"
             rf"(.*?)\n{re.escape(_SEP_QUELLEN)}\n(.*?)\n{re.escape(_SEP_VORLAGE)}\n(.*?)\n"
-            rf"{re.escape(_SEP_ANMERKUNGEN)}\n(.*)",
+            rf"{re.escape(_SEP_ANMERKUNGEN)}\n(.*?)\n{re.escape(_SEP_VERLAUF)}\n(.*)",
             re.DOTALL,
         )
         match = pattern.match(combined)
@@ -240,6 +270,7 @@ class ClaudePrivacyGateway:
             quellen_text,
             vorlage_text,
             anmerkungen_text,
+            verlauf_text,
         ) = match.groups()
 
         argumente = (
@@ -248,5 +279,6 @@ class ClaudePrivacyGateway:
         quellen = quellen_text.split(_SEP_LIST_ITEM) if quellen_text else []
         vorlage = vorlage_text if vorlage_text else None
         anmerkungen = anmerkungen_text if anmerkungen_text else None
+        verlauf = verlauf_text.split(_SEP_LIST_ITEM) if verlauf_text else []
 
-        return sachverhalt_text, argumente, quellen, vorlage, anmerkungen
+        return sachverhalt_text, argumente, quellen, vorlage, anmerkungen, verlauf

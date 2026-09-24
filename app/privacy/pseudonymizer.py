@@ -45,6 +45,37 @@ class PseudonymMapping:
     original_value: str
 
 
+def _canonicalize_alias(
+    category: str, value: str, known_entities: dict[str, list[str]] | None
+) -> str:
+    """Loest einen erkannten Wert auf sein umfassenderes Alias auf, WENN
+    beide Formen in derselben `known_entities`-Kategorie bekannt sind UND
+    `value` exakt dem letzten Wort (typischer Nachname) des laengeren
+    Kandidaten entspricht - spiegelt bewusst exakt die Nachname-Ableitung
+    in `app/ai_providers/local_ai_provider.py::_build_known_entities`
+    (`parts[-1]`) wider, damit z. B. "Weber" und "Sabine Weber" innerhalb
+    EINES Aufrufs denselben Platzhalter erhalten, statt als zwei
+    unabhaengige Entitaeten behandelt zu werden.
+
+    Bewusst NICHT ein generischer Substring-Check (`"weber" in "sabine
+    weber"`): das wuerde auch faelschlich unterschiedliche reale Personen
+    zusammenfuehren, deren Namen zufaellig als Substring ineinander
+    vorkommen (z. B. "Weber" faelschlich in "Weberer"). Die Pruefung auf
+    "ist exakt das LETZTE Wort" schliesst das aus, ohne die urspruengliche
+    Nachname-Erkennung (Privacy-kritisch, siehe dortiger Fund) einzuschraenken.
+    """
+    if not known_entities:
+        return value
+    candidates = known_entities.get(category, [])
+    for candidate in candidates:
+        if candidate.lower() == value.lower():
+            continue
+        candidate_parts = candidate.split()
+        if len(candidate_parts) >= 2 and candidate_parts[-1].lower() == value.lower():
+            return candidate
+    return value
+
+
 class Pseudonymizer:
     def __init__(
         self, *, ner_detector: Callable[[str], list[DetectedSpan]] | None = None
@@ -63,7 +94,10 @@ class Pseudonymizer:
 
         Derselbe Originalwert erhält innerhalb EINES Aufrufs immer
         denselben Platzhalter (z. B. "Max Mustermann" wird überall zu
-        [MANDANT_01], nicht bei jedem Vorkommen neu nummeriert).
+        [MANDANT_01], nicht bei jedem Vorkommen neu nummeriert). Dasselbe
+        gilt fuer einen blossen Nachnamen desselben bekannten Namens (z. B.
+        "Weber" neben "Sabine Weber") - siehe `_canonicalize_alias`
+        weiter unten fuer die Begruendung.
         """
         spans = detect_all(text, known_entities, ner_detector=self.ner_detector)
 
@@ -71,8 +105,12 @@ class Pseudonymizer:
         counters: dict[str, int] = {}
         mappings: list[PseudonymMapping] = []
 
+        def _key_and_canonical(span: DetectedSpan) -> tuple[tuple[str, str], str]:
+            canonical = _canonicalize_alias(span.category, span.value, known_entities)
+            return (span.category, canonical.lower()), canonical
+
         for span in spans:
-            key = (span.category, span.value.lower())
+            key, canonical = _key_and_canonical(span)
             if key not in value_to_placeholder:
                 counters[span.category] = counters.get(span.category, 0) + 1
                 prefix = _PLACEHOLDER_PREFIX_BY_CATEGORY.get(
@@ -80,11 +118,24 @@ class Pseudonymizer:
                 )
                 placeholder = f"[{prefix}_{counters[span.category]:02d}]"
                 value_to_placeholder[key] = placeholder
+                # `original_value` nutzt bewusst den KANONISCHEN (laengeren/
+                # vollstaendigeren) Wert der Aliasgruppe, nicht zwingend
+                # `span.value` - ECHTER FUND (20.09.): ohne diese
+                # Kanonisierung erhielten "Weber" und "Sabine Weber"
+                # (beide aus `_build_known_entities`s Nachname-Ergaenzung,
+                # 14.09.-Fix) ZWEI verschiedene Platzhalter fuer dieselbe
+                # reale Person - eine korrekte, sichere KI-Antwort, die nur
+                # EINE der beiden Formen woertlich verwendete, wurde dadurch
+                # faelschlich als "Platzhalter fehlt im Text (Inkonsistenz)"
+                # blockiert (real reproduziert: echter Schriftsatz-Entwurf
+                # fuer eine Mandantin "Sabine Weber", deren Dokument sie als
+                # "Frau Weber" anspricht, wurde vollstaendig verworfen,
+                # obwohl die Antwort inhaltlich korrekt und sicher war).
                 mappings.append(
                     PseudonymMapping(
                         placeholder=placeholder,
                         category=span.category,
-                        original_value=span.value,
+                        original_value=canonical,
                     )
                 )
 
@@ -92,7 +143,8 @@ class Pseudonymizer:
         # (frueherer) Treffer durch die Ersetzung nicht verschieben.
         result = text
         for span in sorted(spans, key=lambda s: s.start, reverse=True):
-            placeholder = value_to_placeholder[(span.category, span.value.lower())]
+            key, _ = _key_and_canonical(span)
+            placeholder = value_to_placeholder[key]
             result = result[: span.start] + placeholder + result[span.end :]
 
         return result, mappings

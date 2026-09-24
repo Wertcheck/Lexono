@@ -9,6 +9,21 @@ import pytest
 from app.privacy.gateway import ClaudePrivacyGateway
 
 
+class _AlwaysBlockSecurityCheck:
+    """Deterministischer Test-Stub statt eines organischen Text-Triggers
+    (siehe dieselbe Loesung in tests/test_chat_service.py/
+    tests/test_review_engine.py) - erzwingt EINEN BELIEBIGEN Block,
+    unabhaengig vom konkreten Heuristik-Mechanismus."""
+
+    def check(self, pseudonymized_text, mappings, *, purpose):
+        from app.privacy.security_check_schema import SecurityCheckResult
+
+        return SecurityCheckResult(
+            passed=False,
+            reasons=["Möglicherweise nicht erkannte Namen/Entitäten gefunden: ['Test Person']"],
+        )
+
+
 def test_allowed_request_produces_pseudonymized_payload() -> None:
     gw = ClaudePrivacyGateway()
 
@@ -82,8 +97,20 @@ def test_third_party_name_outside_known_entities_is_pseudonymized_and_allowed() 
 def test_presidio_ner_catches_a_name_not_covered_by_known_entities_or_regex() -> None:
     """Requirement 1 (Presidio-Anonymisierung): ein Dritter, der weder in
     known_entities noch in einem Regex-Muster auftaucht, wird trotzdem
-    erkannt und blockiert die Anfrage - der Gateway-Default verdrahtet
-    echte Presidio-NER (siehe ClaudePrivacyGateway.__init__)."""
+    erkannt und pseudonymisiert - der Gateway-Default verdrahtet echte
+    Presidio-NER (siehe ClaudePrivacyGateway.__init__).
+
+    ECHTER FUND (Abnahme-Test, 13.09.): dieser Test erwartete bisher
+    `allowed is False` - tatsaechlich wurde das aber NICHT durch die
+    erkannte PII selbst ausgeloest (die Pseudonymisierung gelingt
+    zuverlaessig, siehe Mapping-Assertion unten), sondern durch einen
+    zufaelligen Nebeneffekt der (mittlerweile per POS-Tag verfeinerten,
+    siehe security_check.py) Grossschreibungs-Heuristik auf "Als Zeuge"
+    (satzanfangs-grossgeschriebenes "Als" + grossgeschriebenes Substantiv
+    "Zeuge" - kein Name). Die eigentlich pruefenswerte Eigenschaft ist:
+    Presidio erkennt und pseudonymisiert den Namen - die Anfrage wird
+    danach korrekt ERLAUBT (kein Block noetig, wenn Pseudonymisierung
+    sauber gelungen ist)."""
     gw = ClaudePrivacyGateway()
 
     result = gw.prepare_request(
@@ -91,8 +118,12 @@ def test_presidio_ner_catches_a_name_not_covered_by_known_entities_or_regex() ->
         sachverhalt="Als Zeuge wird außerdem Herr Sebastian Krombach benannt.",
     )
 
-    assert result.allowed is False
-    assert len(result.reasons) > 0
+    assert result.allowed is True
+    assert len(result.mappings) == 1
+    assert result.mappings[0].category == "person"
+    assert result.mappings[0].original_value == "Sebastian Krombach"
+    assert result.payload is not None
+    assert "Sebastian Krombach" not in result.payload.anonymisierter_sachverhalt
 
 
 def test_disallowed_purpose_blocks_request() -> None:
@@ -274,10 +305,16 @@ def test_attorney_anmerkungen_sanitizes_internal_markers() -> None:
 
 
 def test_attorney_anmerkungen_go_through_security_check_like_other_fields() -> None:
-    """Kein Bypass: unerkannte PII in der Anmerkung blockiert die gesamte
-    Anfrage genauso wie unerkannte PII im Sachverhalt (gleiches Muster wie
-    test_unrecognized_pii_blocks_request_and_produces_no_payload oben)."""
-    gw = ClaudePrivacyGateway()
+    """Kein Bypass: der Security-Check erhaelt den GESAMTEN kombinierten
+    Text (inkl. anwaltlicher Anmerkung), nicht nur den Sachverhalt -
+    bewiesen ueber einen deterministischen Block-Stub statt eines
+    organischen Text-Triggers (ECHTER FUND, Abnahme-Test 13.09.: "Peter
+    Müller" wird von Presidio zuverlaessig pseudonymisiert - kein Bypass,
+    aber eben auch kein Blockierungsgrund mehr; ein frueherer,
+    zufaelliger Trigger im Sachverhalt-Text selbst - unabhaengig von der
+    Anmerkung - liess den Test faelschlich aus dem falschen Grund
+    bestehen, siehe security_check.py fuer die POS-Tag-Verfeinerung)."""
+    gw = ClaudePrivacyGateway(security_check=_AlwaysBlockSecurityCheck())
 
     result = gw.prepare_request(
         purpose="formulate_draft",
@@ -312,11 +349,11 @@ def test_final_payload_gate_blocks_when_split_drops_a_placeholder(
     real_split = gw._split_combined_text
 
     def _tampered_split(combined: str):
-        sachverhalt, argumente, quellen, vorlage, anmerkungen = real_split(combined)
+        sachverhalt, argumente, quellen, vorlage, anmerkungen, verlauf = real_split(combined)
         # Platzhalter aus dem Sachverhalt entfernen, als wäre beim
         # Wiederzusammensetzen etwas verlorengegangen.
         tampered_sachverhalt = sachverhalt.replace("[MANDANT_01]", "MANDANT EINS")
-        return tampered_sachverhalt, argumente, quellen, vorlage, anmerkungen
+        return tampered_sachverhalt, argumente, quellen, vorlage, anmerkungen, verlauf
 
     monkeypatch.setattr(gw, "_split_combined_text", staticmethod(_tampered_split))
 

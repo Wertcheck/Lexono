@@ -4,6 +4,8 @@ Kernanforderung (Architekturvorgabe, wörtlich): "Bei einem nicht
 eindeutigen Ergebnis: KEIN API-AUFRUF." - jeder Test, der einen Grund zum
 Blockieren simuliert, muss `passed=False` liefern."""
 
+import pytest
+
 from app.privacy.detectors import DetectedSpan
 from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
@@ -89,6 +91,61 @@ def test_possible_unrecognized_name_blocks_the_call() -> None:
 
     assert result.passed is False
     assert any("Peter Müller" in r for r in result.reasons)
+
+
+def test_legal_heading_does_not_trigger_false_positive_when_pos_tagger_is_wired() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): "Salvatorische Klausel"
+    ist eine ganz gewoehnliche Rechtsdokument-Ueberschrift (Adjektiv +
+    Substantiv), keine zwei Namensbestandteile - blockierte real JEDE
+    Chat-Nachricht in einer Unterhaltung mit einem angehaengten,
+    voellig gewoehnlichen Vertragsdokument. Mit `pos_tagger` (echte
+    Produktivkonfiguration, siehe ClaudePrivacyGateway) korrekt NICHT
+    mehr blockiert - ohne (alte Stopwortliste allein) waere dieser
+    KONKRETE Fall nicht abgedeckt (bewusst NICHT in der Stopwortliste,
+    um genau diesen Unterschied zu beweisen)."""
+    from app.privacy.presidio_ner import get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags)
+
+    result = checker.check(
+        "Salvatorische Klausel. Sollte eine Bestimmung unwirksam sein, "
+        "bleibt der Rest des Vertrags davon unberührt.",
+        [],
+        purpose="chat_response",
+    )
+
+    assert result.passed is True
+
+
+def test_real_name_still_blocks_even_with_pos_tagger_wired() -> None:
+    """Gegenprobe: der POS-Tag-Filter darf echte Namen nicht durchlassen -
+    "Peter Müller" bleibt PROPN+PROPN und damit weiterhin ein Fund."""
+    from app.privacy.presidio_ner import get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags)
+
+    result = checker.check(
+        "Bitte informieren Sie auch Herrn Peter Müller.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+    assert any("Peter Müller" in r for r in result.reasons)
+
+
+def test_synthetic_test_document_title_does_not_trigger_false_positive() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): "Synthetisches
+    Testdokument" ist ein Dokumenttitel (Adjektiv + Substantiv), keine
+    zwei Namensbestandteile - blockierte real jede Chat-Nachricht in
+    Unterhaltungen, die dieses Testdokument angehängt hatten."""
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Synthetisches Testdokument für Lexono. 1. Sachverhalt.",
+        [],
+        purpose="formulate_draft",
+    )
+
+    assert result.passed is True
 
 
 def test_common_german_formal_letter_does_not_trigger_false_positive() -> None:
@@ -234,6 +291,102 @@ def test_response_with_correct_placeholders_passes() -> None:
     assert reasons == []
 
 
+# --- require_full_coverage (15.09., CHAT-01): Vollstaendigkeitsforderung
+# nur fuer Brief-/Entwurfstext, nicht fuer freie Chatantworten. Die beiden
+# ANDEREN Stufe-1-Pruefungen (Manipulation, Original-Leck) bleiben in
+# BEIDEN Modi Pflicht. ---
+
+
+def test_missing_placeholder_is_ignored_when_full_coverage_not_required() -> None:
+    """Der reproduzierte Kernfall: eine natuerliche Chat-Begruessung, die
+    keinen einzigen Platzhalter erwaehnt, darf nicht mehr blockiert
+    werden, wenn `require_full_coverage=False`."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+
+    reasons = check_response_placeholder_integrity(
+        "Guten Tag, wie kann ich Ihnen helfen?", mappings, require_full_coverage=False
+    )
+
+    assert reasons == []
+
+
+def test_missing_placeholder_still_fails_by_default() -> None:
+    """Default bleibt `True` - unveraendertes Verhalten fuer jeden
+    bestehenden Aufrufer, der den neuen Parameter nicht setzt."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+
+    reasons = check_response_placeholder_integrity(
+        "Vielen Dank fuer Ihre Nachricht.", mappings
+    )
+
+    assert reasons != []
+
+
+def test_altered_placeholder_token_still_fails_even_without_full_coverage() -> None:
+    """Die Manipulations-Pruefung ist KEINE Vollstaendigkeitsforderung und
+    muss deshalb unabhaengig vom neuen Parameter immer greifen."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    text = "Sehr geehrte Frau [MANDANT_99], vielen Dank fuer Ihre Nachricht."
+
+    reasons = check_response_placeholder_integrity(
+        text, mappings, require_full_coverage=False
+    )
+
+    assert reasons != []
+    assert any("MANDANT_99" in r for r in reasons)
+
+
+def test_original_value_leak_still_fails_even_without_full_coverage() -> None:
+    """Dieselbe Garantie fuer die zweite tatsaechlich schuetzende Pruefung:
+    ein geleakter Originalwert darf durch `require_full_coverage=False`
+    NICHT unentdeckt bleiben."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    text = "Guten Tag, wir haben bereits mit Erika Mustermann telefoniert."
+
+    reasons = check_response_placeholder_integrity(
+        text, mappings, require_full_coverage=False
+    )
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)
+
+
+def test_outgoing_payload_gate_keeps_full_coverage_requirement() -> None:
+    """Der AUSGEHENDE Payload-Gate-Aufruf (`check_payload_placeholder_integrity`)
+    ruft dieselbe Funktion ohne den neuen Parameter auf und muss deshalb
+    UNVERAENDERT die volle Abdeckung verlangen - CHAT-01 betrifft
+    ausschliesslich die eingehende Antwortpruefung, niemals das, was an
+    Claude gesendet wird."""
+    from app.privacy.security_check import check_payload_placeholder_integrity
+    from app.privacy.gateway_schema import ClaudeRequestPayload
+
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="person", original_value="Erika Mustermann")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt="Guten Tag.",
+        anonymisierte_argumentationspunkte=[],
+        anonymisierte_quellenverweise=[],
+        anonymisierte_anwaltliche_anmerkungen=None,
+        gewuenschter_stil=None,
+        schreibvorlage=None,
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons != []
+    assert any("MANDANT_01" in r for r in reasons)
+
+
 def test_without_ner_detector_behaves_exactly_as_before() -> None:
     checker = SecurityCheckService()
 
@@ -302,3 +455,126 @@ def test_payload_with_original_value_leak_fails() -> None:
 
     assert reasons != []
     assert any("Datenschutzverstoss" in r for r in reasons)
+
+
+# --- ECHTER FUND (14.09., Overnight-Direktive §8/§9): realer Security-/
+# Privacy-Regressionsfall "Frau Müller". Root Cause (per script-Reproduktion
+# in dieser Sitzung bestaetigt): WEDER Presidio/spaCy-NER (ein blosser
+# Nachname ohne Vornamen wird in gewoehnlicher Satzmitte nicht zuverlaessig
+# als PERSON erkannt) NOCH die bisherige `_find_possible_unrecognized_names`-
+# Heuristik (verlangte zwingend ZWEI nicht ausgeschlossene grossgeschriebene
+# Woerter - "Frau"/"Herr"/"Herrn" waren aber bewusst ausgeschlossen, wodurch
+# ein blosses "Anrede/Rolle + Nachname"-Paar nie geprueft wurde) erkannten
+# diesen sehr haeufigen Kanzleitext-Fall. Fix: `_ROLE_OR_TITLE_PREFIX_WORDS`
+# loest jetzt gezielt eine Pruefung des unmittelbar folgenden Worts als
+# moeglichen Nachnamen aus, auch OHNE Vornamen. Diese Tests sind der Kern
+# der in §9 geforderten Privacy Test Matrix fuer Einzelpersonen.
+def test_frau_nachname_without_first_name_blocks_the_call() -> None:
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Frau Müller kam gestern vorbei.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+    assert any("Frau Müller" in r for r in result.reasons)
+
+
+def test_herr_nachname_without_first_name_blocks_the_call() -> None:
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Herr Müller kam gestern vorbei.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+    assert any("Herr Müller" in r for r in result.reasons)
+
+
+def test_role_word_plus_nachname_blocks_the_call() -> None:
+    """Deckt die in §9 explizit genannten Rollen-/Kontextwoerter ab
+    (Mandantin/Klägerin/Beklagter), jeweils direkt gefolgt von einem
+    Nachnamen ohne Vornamen."""
+    checker = SecurityCheckService()
+
+    cases = [
+        "Die Mandantin Müller hat angerufen.",
+        "Klägerin Müller ist zu einem Termin erschienen.",
+        "Der Beklagte Müller wurde geladen.",
+    ]
+    for text in cases:
+        result = checker.check(text, [], purpose="chat_response")
+        assert result.passed is False, text
+        assert any("Müller" in r for r in result.reasons), text
+
+
+def test_role_word_alone_without_any_name_does_not_false_positive() -> None:
+    """Gegenprobe: ein reines Rollenwort OHNE folgenden Namen (§9: 'die
+    Mandantin') darf keinen Namensfund ausloesen - es gibt hier schlicht
+    keinen Namen zu erkennen."""
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Die Mandantin hat heute angerufen.", [], purpose="chat_response"
+    )
+
+    assert result.passed is True
+
+
+@pytest.mark.parametrize(
+    "role_word",
+    [
+        "Frau", "Herr", "Herrn",
+        "Mandant", "Mandantin",
+        "Kläger", "Klägerin",
+        "Beklagter", "Beklagte",
+        "Zeuge", "Zeugin",
+        "Vermieter", "Vermieterin",
+        "Rechtsanwalt", "Rechtsanwältin",
+    ],
+)
+def test_all_named_role_words_from_privacy_test_matrix_block_bare_surname(
+    role_word: str,
+) -> None:
+    """§9 der Overnight-Direktive: vollstaendige Privacy Test Matrix fuer
+    alle dort namentlich genannten Kontext-/Rollenwoerter, jeweils direkt
+    gefolgt von einem Nachnamen OHNE Vornamen - der real gefundene
+    Kernfall des "Frau Müller"-Regressionsfalls (§8)."""
+    checker = SecurityCheckService()
+
+    result = checker.check(f"{role_word} Schulz war gestern da.", [], purpose="chat_response")
+
+    assert result.passed is False, f"{role_word} Schulz haette blockieren muessen"
+
+
+def test_multiple_persons_in_one_text_are_all_detected() -> None:
+    """§9: mehrere Personen in einem Text - deckt weiterhin korrekt ueber
+    die bestehende Presidio/spaCy-NER + Zwei-Wort-Heuristik ab (kein
+    Regressionsfund, Gegenprobe zur "Frau Müller"-Luecke)."""
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Anna Müller und Thomas Müller sowie Anna Schmidt und Thomas Schmidt "
+        "waren alle anwesend.",
+        [],
+        purpose="chat_response",
+    )
+
+    assert result.passed is False
+    combined_reasons = " ".join(result.reasons)
+    for name in ("Anna Müller", "Thomas Müller", "Anna Schmidt", "Thomas Schmidt"):
+        assert name in combined_reasons
+
+
+def test_title_stacking_does_not_misreport_the_title_itself_as_the_name() -> None:
+    """'Herr Rechtsanwalt Schmidt' - 'Rechtsanwalt' ist selbst ein
+    Rollenwort, kein Namensbestandteil; der Fund muss auf den tatsaechlichen
+    Nachnamen ('Rechtsanwalt Schmidt', da 'Rechtsanwalt' unmittelbar vor dem
+    Nachnamen steht) hindeuten, jedenfalls aber sicher blockieren."""
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Herr Rechtsanwalt Schmidt hat sich gemeldet.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False

@@ -34,6 +34,44 @@ _BLOCK_CATEGORIES = (
     ("Platzhalter", "mapping_inconsistency"),
     ("nicht erkannte Namen", "unrecognized_entity_suspected"),
     ("Kostenlimit", "budget_exceeded"),
+    # ECHTER FUND (Chat-Intelligence-Forensik, 15.09.): ein TECHNISCHER
+    # Fehlschlag der Textproduktion ("Interner Fehler bei der
+    # Textproduktion", siehe app/ai_providers/orchestrator.py und
+    # app/drafting/service.py) landete hier in keiner Kategorie und wurde
+    # dem Anwalt als "Die Anfrage wurde aus Datenschutzgründen blockiert."
+    # angezeigt. Das ist doppelt schaedlich: es verschleiert einen echten
+    # technischen Fehler und untergraebt zugleich das Vertrauen in die
+    # Datenschutzmeldungen, weil dieselbe Meldung dann auch dann erscheint,
+    # wenn datenschutzrechtlich gar nichts vorgefallen ist.
+    ("Interner Fehler", "technical_error"),
+    # ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion, 17.09.,
+    # reproduziert per direktem DraftingService-Aufruf mit echter
+    # Pseudonymisierung + echtem lokalem LLM + Spy-Writing-Provider, siehe
+    # DECISIONS.md): der Grund, den `check_response_placeholder_integrity`
+    # (security_check.py) erzeugt, wenn ein URSPRÜNGLICHER, nicht
+    # pseudonymisierter Wert in der Claude-Antwort auftaucht - der
+    # schwerwiegendste und am präzisesten verstandene der drei Stufe-1-
+    # Befunde - matchte bisher KEINES der obigen Muster und landete
+    # dadurch, genau wie der technische Fehler oben, im nichtssagenden
+    # "unknown_block_reason"-Eimer. Das ist irreführend in beide
+    # Richtungen: der Anwalt sieht dieselbe generische Meldung wie bei
+    # jedem anderen, unklassifizierten Fall, UND im Audit-Log
+    # (`ApiCallLog.error_status`) ist dieser sicherheitskritischste Befund
+    # nicht von einem harmlosen unbekannten Fall unterscheidbar. Pattern
+    # bewusst auf den eindeutigen, inhaltsfreien Teil des Grundtexts
+    # beschränkt ("... nicht pseudonymisierter Wert ... gefunden -
+    # möglicher Datenschutzverstoß").
+    ("nicht pseudonymisierter Wert", "original_value_leaked"),
+    # ECHTER FUND (19.09., live am echten Server reproduziert, Owner-
+    # Direktive "CONTINUE AUTONOMOUS PRODUCT COMPLETION"): derselbe
+    # Kategorisierungs-Fehler wie oben ("Interner Fehler"/
+    # "original_value_leaked") traf jetzt den neuen Mindestinhalt-Check
+    # in app/drafting/service.py (leere/abgeschnittene KI-Antwort, siehe
+    # dortiger Kommentar) - landete ebenfalls im nichtssagenden
+    # "unknown_block_reason"-Eimer und wurde dem Anwalt als "aus
+    # Datenschutzgründen blockiert" angezeigt, obwohl datenschutzrechtlich
+    # nichts vorgefallen war (reines Token-Limit-/Truncation-Problem).
+    ("keinen verwertbaren Text", "empty_writing_response"),
 )
 
 
@@ -64,12 +102,30 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
         "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden."
     ),
     "mapping_inconsistency": "Interner Konsistenzfehler bei der Pseudonymisierung.",
+    "original_value_leaked": (
+        "Die von der KI erzeugte Antwort enthielt einen nicht ausreichend "
+        "anonymisierten Wert und wurde deshalb sicherheitshalber blockiert - "
+        "kein Text wurde übernommen."
+    ),
     "unrecognized_entity_suspected": (
         "Im Text wurden möglicherweise nicht erkannte Namen/Daten gefunden."
     ),
     "budget_exceeded": (
         "Das monatliche Kostenlimit für KI-Aufrufe wurde erreicht. Bitte einen Administrator "
         "kontaktieren."
+    ),
+    # Ehrliche, aber weiterhin inhaltsfreie Meldung: WAS schiefging, ohne
+    # den rohen Grund preiszugeben (der Leak-Schutz unten bleibt unberührt).
+    "technical_error": (
+        "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. "
+        "Es handelt sich nicht um eine Datenschutz-Blockierung."
+    ),
+    "empty_writing_response": (
+        "Die KI hat keinen verwertbaren Text zurückgegeben (möglicherweise "
+        "durch das Token-Limit abgeschnitten) - kein Text wurde übernommen. "
+        "Es handelt sich nicht um eine Datenschutz-Blockierung. Bitte "
+        "erneut versuchen, ggf. mit kürzeren Anmerkungen oder weniger "
+        "Dokumenten."
     ),
     "unknown_block_reason": "Die Anfrage wurde aus Datenschutzgründen blockiert.",
 }

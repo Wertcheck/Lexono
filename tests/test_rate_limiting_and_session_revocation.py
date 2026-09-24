@@ -242,6 +242,79 @@ def test_sessions_issued_after_password_change_remain_valid(
     assert still_works.status_code == 200
 
 
+def test_session_issued_within_the_same_wall_clock_second_as_invalidation_is_ordered_correctly(
+    client: TestClient, db_session: Session, user: User
+) -> None:
+    """ECHTER FUND (24.09., beim Live-E2E-Test von Passwortaenderung +
+    sofortigem Neu-Login gegen die echte installierte Anwendung real
+    reproduziert, siehe DECISIONS.md): `read_session_token` nutzte fuer
+    `issued_at` frueher itsdangerous' eigene, nur SEKUNDENGENAUE
+    Signaturzeit, waehrend `sessions_invalidated_after` mikrosekundengenau
+    gesetzt wird (`datetime.now(timezone.utc)`). Eine Anmeldung INNERHALB
+    DERSELBEN Sekunde wie eine vorangegangene Passwortaenderung (auf einer
+    schnellen lokalen Desktop-App real reproduzierbar, kein theoretischer
+    Randfall) bekam dadurch einen auf 0 abgeschnittenen, faelschlich
+    "aelter" wirkenden Zeitstempel und wurde sofort wieder abgemeldet - der
+    vorherige Test oben (`test_sessions_issued_after_password_change_remain_valid`)
+    deckte das NICHT zuverlaessig auf, weil er von der tatsaechlichen
+    Wanduhrzeit abhing ("bestand durch Glueck", sobald zufaellig eine echte
+    Sekundengrenze ueberschritten wurde).
+
+    Der Fix (`app/auth/session.py`) betet `issued_at` jetzt als eigenes,
+    mikrosekundengenaues Feld direkt in den signierten Payload ein, statt
+    sich auf itsdangerous' interne Signaturzeit zu verlassen - dieser Test
+    prueft beide Richtungen der Zeitordnung PRAEZISE (Differenz von nur
+    einer Mikrosekunde), statt sich auf zufaelliges Timing zu verlassen.
+
+    Ein erster Loesungsversuch (grobes Abschneiden von
+    `sessions_invalidated_after` auf ganze Sekunden statt der jetzigen
+    Praezisions-Loesung) behob zwar diesen Fall, liess dabei aber eine
+    ECHTE bereits laufende, per Admin-"Sessions beenden"/Passwortaenderung
+    im selben Sekundenfenster widerrufene Session faelschlich ueberleben -
+    von den beiden bestehenden Tests `test_password_change_invalidates_
+    other_existing_sessions`/`test_admin_force_logout_invalidates_target_
+    users_sessions` sofort aufgedeckt. Die Gegenprobe unten deckt exakt
+    dieses Sicherheitsnetz ab."""
+    from datetime import timedelta
+
+    from app.auth.session import read_session_token
+    from app.config import get_settings
+
+    login_response = _login(client, "anwalt@kanzlei.test", "UrsprungsPasswort123")
+    cookie = login_response.cookies.get("lexono_session")
+    assert cookie is not None
+    payload = read_session_token(cookie, get_settings())
+    issued_at = payload["issued_at"]
+
+    # Fall A: Invalidierung eine Mikrosekunde VOR der Session-Ausstellung -
+    # die Session muss gueltig bleiben, obwohl beide in derselben
+    # Wanduhr-Sekunde liegen.
+    user.sessions_invalidated_after = (
+        issued_at - timedelta(microseconds=1)
+    ).replace(tzinfo=None)
+    db_session.commit()
+
+    still_works = client.get("/dashboard/inbox", follow_redirects=False)
+    assert still_works.status_code == 200, (
+        "Eine Session, die (wenn auch nur um eine Mikrosekunde) NACH der "
+        "Invalidierung ausgestellt wurde, darf nicht faelschlich verworfen "
+        "werden."
+    )
+
+    # Fall B (Sicherheitsnetz - der Fix darf die eigentliche Schutzwirkung
+    # nicht aufweichen): Invalidierung eine Mikrosekunde NACH der
+    # Session-Ausstellung muss weiterhin zuverlaessig greifen, selbst
+    # innerhalb derselben Wanduhr-Sekunde.
+    user.sessions_invalidated_after = (
+        issued_at + timedelta(microseconds=1)
+    ).replace(tzinfo=None)
+    db_session.commit()
+
+    rejected = client.get("/dashboard/inbox", follow_redirects=False)
+    assert rejected.status_code == 303
+    assert "/dashboard/login" in rejected.headers["location"]
+
+
 # ==========================================================================
 # 4. Admin-Aktion "Sessions beenden" (ohne Passwortänderung)
 # ==========================================================================

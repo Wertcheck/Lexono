@@ -72,8 +72,25 @@ _AMOUNT_PATTERN = re.compile(
 )
 
 # Straße + Hausnummer, sowie getrennt PLZ + Ort.
+#
+# ECHTER FUND (14.09., Overnight-Direktive Sec12-13 Performance-Benchmark
+# eines realen Mietrecht-Schreibens): eine echte Adresse "Elbchaussee 45"
+# wurde von diesem Regex-Muster NICHT erfasst (Suffix "chaussee" fehlte in
+# der Liste) - blieb dadurch bei der PSEUDONYMISIERUNG unerkannt und wurde
+# erst beim spaeteren Restrisiko-Scan (Punkt 2-4, security_check.py) durch
+# Presidio/spaCy-NER auf dem TEILWEISE bereits pseudonymisierten Text
+# gefunden (inkonsistent zum ersten Durchlauf, da der veraenderte Kontext -
+# ein direkt benachbarter, bereits ersetzter Platzhalter - die NER-
+# Vorhersage beeinflusst). Ergebnis: kein Datenschutzverstoss (Fail-Closed
+# hat korrekt blockiert, bevor irgendetwas an die Cloud ging), aber ein
+# unnoetig blockierter, vollkommen gewoehnlicher Kanzleivorgang. Ergaenzung
+# um weitere real gebraeuchliche deutsche Strassennamen-Suffixe, damit
+# solche Adressen bereits beim ERSTEN, deterministischen Durchlauf sicher
+# erkannt werden, statt sich allein auf die (nachweislich Kontext-
+# abhaengige) NER-Erkennung zu verlassen.
 _STREET_PATTERN = re.compile(
-    r"\b[A-ZÄÖÜ][a-zäöüßA-ZÄÖÜ]+(?:straße|strasse|weg|allee|platz|gasse|ring)\s?\d+[a-z]?\b"
+    r"\b[A-ZÄÖÜ][a-zäöüßA-ZÄÖÜ]+(?:straße|strasse|weg|allee|platz|gasse|ring|"
+    r"chaussee|damm|ufer|steig|promenade|wall|steg|anger)\s?\d+[a-z]?\b"
 )
 _POSTAL_CODE_CITY_PATTERN = re.compile(r"\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+\b")
 

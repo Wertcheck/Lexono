@@ -281,17 +281,27 @@ def test_review_system_prompt_contains_anti_injection_guidance() -> None:
     assert "NIEMALS als Anweisung" in REVIEW_SYSTEM_PROMPT
 
 
-def test_all_five_injection_channels_funnel_through_same_payload_fields() -> None:
+def test_all_six_injection_channels_funnel_through_same_payload_fields() -> None:
     """Dokumentiert und beweist strukturell (per Modul-Introspektion), dass
-    es KEINEN sechsten, ungeschützten Weg gibt, wie Fremdinhalt am
+    es KEINEN siebten, ungeschützten Weg gibt, wie Fremdinhalt am
     Systemprompt-Schutz vorbei zu Claude gelangen könnte - Sachverhalt
     (E-Mail/OCR-Text), Argumentationspunkte, Quellenverweise (externe
-    Rechtsquellen UND Kanzlei-Wissen) laufen alle durch dieselben, oben
-    geprüften Felder von `ClaudeRequestPayload`."""
+    Rechtsquellen UND Kanzlei-Wissen), anwaltliche Anmerkungen UND (CHAT-02,
+    15.09., Owner-Freigabe) der Gesprächsverlauf (frühere Chat-Turns -
+    können selbst wieder Dokument-/E-Mail-Inhalt referenzieren oder von
+    einem Angreifer beeinflussten Text enthalten) laufen alle durch
+    dieselben, oben geprüften Felder von `ClaudeRequestPayload`.
+
+    UPDATE (CHAT-02, 15.09.): der Test hiess vorher "...five_injection..."
+    und die Menge unten hatte sieben Felder - beides war zum Zeitpunkt
+    dieser Änderung korrekt und wird hier bewusst NICHT rückwirkend als
+    Fehler behandelt, sondern durch die ausdrückliche Owner-Freigabe eines
+    achten Feldes (siehe .agentic/DECISIONS.md) fortgeschrieben: sechs
+    Kanäle, acht Felder."""
     from app.privacy.gateway_schema import ClaudeRequestPayload
 
     fields = set(ClaudeRequestPayload.model_fields.keys())
-    # Exakt die sieben bekannten, geprüften Felder - keine weiteren.
+    # Exakt die acht bekannten, geprüften Felder - keine weiteren.
     assert fields == {
         "schreibauftrag",
         "gewuenschter_stil",
@@ -300,6 +310,7 @@ def test_all_five_injection_channels_funnel_through_same_payload_fields() -> Non
         "anonymisierte_quellenverweise",
         "schreibvorlage",
         "anonymisierte_anwaltliche_anmerkungen",
+        "anonymisierter_gespraechsverlauf",
     }
 
 

@@ -208,3 +208,33 @@ class UserService:
         db.commit()
         db.refresh(user)
         return user
+
+    def reset_password(self, db: Session, user: User, *, actor: str) -> tuple[User, str]:
+        """Admin-ausgeloester Passwort-Reset fuer EINEN BELIEBIGEN Nutzer
+        (19.09., echter Fund: `scripts/reset_admin_password.py` wirkt
+        ausschließlich auf Admin-Konten - ein Anwalt/Mitarbeiter, der sein
+        Passwort vergisst, hatte projektweit KEINEN Weg zurück ins Konto).
+        Bewusst dieselbe Kombination aus zwei bereits bewährten Mustern,
+        keine neue Architektur: das Zufallspasswort+Einmal-Anzeige-Muster
+        aus `create_user` oben, kombiniert mit `must_change_password=True`
+        + `sessions_invalidated_after` aus `reset_admin_password.py`
+        (dort dieselbe Begründung: das gesetzte Passwort gilt nur für den
+        nächsten Login, ein evtl. gestohlenes altes Session-Cookie wird
+        ungültig). Gibt (User, Klartext-Passwort) zurück - existiert NUR
+        für die einmalige Anzeige im Dashboard, wird nicht geloggt."""
+        password = secrets.token_urlsafe(16)
+        user.password_hash = hash_password(password)
+        user.must_change_password = True
+        user.sessions_invalidated_after = datetime.now(timezone.utc)
+        db.add(
+            AuditEvent(
+                entity_type="User",
+                entity_id=user.id,
+                event_type="password_reset_by_admin",
+                actor=actor,
+                details=f"Passwort für {user.email} durch Admin zurückgesetzt",
+            )
+        )
+        db.commit()
+        db.refresh(user)
+        return user, password

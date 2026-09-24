@@ -105,10 +105,33 @@ _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN = re.compile(r"^[A-Z0-9_@\s]+$")
 # als Umgehungsweg fuer echte PII missbraucht werden koennte (ein echter
 # Personen-/Orts-/Firmenname lautet nie woertlich "Gruessen" oder
 # "Hochachtungsvoll").
+#
+# "erbschaftsteuerbescheid" (24.09., ECHTER FUND beim Live-E2E-Test des
+# neuen Erbschaftsteuer-Komplexfalls "ROADMAP-ALIGNED PRODUCT COMPLETION"):
+# das isolierte, grossgeschriebene Wort "Erbschaftsteuerbescheid" (Ueber-
+# schrift-Zeile des Dokuments, siehe app/synthetic_data/generator.py::
+# generate_complex_case_erbschaftsteuer) wird vom Modell zuverlaessig
+# (Score 0.85) als PERSON erkannt, obwohl es sich um den Dokumenttyp-Namen
+# handelt, nie um einen Namen. Da nur DIESES eine Vorkommen (die Ueber-
+# schrift) einen Platzhalter bekam, das Wort aber an anderer Stelle
+# desselben zusammengefuehrten Aktenkontexts erneut woertlich auftaucht
+# (z. B. "im Erbschaftsteuerbescheid angesetzte Grundbesitzwert" - dort
+# NICHT als PERSON erkannt, da nicht isoliert grossgeschrieben), loeste das
+# zuverlaessig das ausgehende Final Payload Gate aus
+# (`original_value_leaked`) und blockierte JEDE KI-Aktion auf einem
+# Erbschaftsteuer-Dokument, bevor ueberhaupt ein Claude-Aufruf erfolgte -
+# live reproduziert (2/2), root-caused per direktem Presidio-Analyzer-Aufruf
+# (siehe DECISIONS.md fuer die volle Herleitung). Verwandte, bereits laenger
+# bestehende Dokumenttyp-Woerter ("Steuerbescheid", "Pruefungsanordnung",
+# "Handelsregisterauszug", "Gesellschaftsvertrag", "Nachlassverzeichnis")
+# wurden GEGENGEPRUEFT und zeigen dieses Verhalten NICHT - bewusst nur
+# dieses eine, konkret belegte Wort ergaenzt, keine vorsorgliche Liste ohne
+# Beleg.
 _NEVER_ENTITY_WORDS = frozenset(
     {
         "gruessen", "grüßen", "grussen",
         "hochachtungsvoll",
+        "erbschaftsteuerbescheid",
     }
 )
 
@@ -176,7 +199,55 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             continue
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
+        if _INTERNAL_PLACEHOLDER_PATTERN.search(value):
+            # ECHTER FUND (realer Abnahme-Test, 13.09.): auf dem bereits
+            # PSEUDONYMISIERTEN Text (zweiter Durchlauf, Restrisiko-Scan in
+            # security_check.py Punkt 2/3/4) erkennt das Modell einen
+            # Anredetitel unmittelbar vor einem neutralisierten Platzhalter
+            # (z. B. "Herr " gefolgt von den zu Leerzeichen neutralisierten
+            # Zeichen von "[PERSON_06]") weiterhin als EIGENEN, neuen
+            # PERSON-Treffer - real reproduziert: "Herr [PERSON_06] " wurde
+            # trotz bereits erfolgreich vergebenem Platzhalter erneut als
+            # "moegliche restliche PII" gemeldet und blockierte dadurch
+            # JEDE Chat-Nachricht dauerhaft, obwohl die Pseudonymisierung
+            # selbst korrekt gearbeitet hatte. Ein Treffer, dessen Wert
+            # (aus dem ORIGINALEN, nicht neutralisierten Text) bereits
+            # einen erkennbaren Platzhalter-Token enthaelt, ist keine neue
+            # PII - der eigentliche Name wurde bereits sicher ersetzt.
+            continue
         spans.append(
             DetectedSpan(category=category, start=result.start, end=result.end, value=value)
         )
     return spans
+
+
+def get_pos_tags(text: str) -> dict[tuple[int, int], str]:
+    """Liefert die Wortart (Universal-POS-Tag, z. B. "PROPN"/"NOUN"/"ADJ")
+    fuer jedes Token in `text`, als {(start, end): pos_tag}.
+
+    ECHTER FUND (realer Abnahme-Test, 13.09.): security_check.py::
+    _find_possible_unrecognized_names (Punkt 6, "moeglicherweise nicht
+    erkannte Namen") wertete JEDES Paar aus zwei durch genau ein
+    Leerzeichen getrennten, grossgeschriebenen Woertern als Namens-
+    Kandidaten - im Deutschen werden aber ALLE Substantive grossgeschrieben,
+    und Adjektiv+Substantiv-Ueberschriften sind in Rechtstexten allgegenwaertig
+    ("Synthetisches Testdokument", "Salvatorische Klausel", "Ordentliche
+    Kuendigung" usw.) - real reproduziert: blockierte JEDE Chat-Nachricht in
+    einer Unterhaltung mit einem angehaengten, vollkommen gewoehnlichen
+    Rechtsdokument. Echte deutsche Personennamen werden von spaCys POS-
+    Tagger dagegen zuverlaessig als "PROPN" (Eigenname) getaggt, waehrend
+    solche Ueberschriften "ADJ"+"NOUN" sind (siehe reale Beispiele oben,
+    waehrend der Untersuchung direkt gegengeprueft) - ein Kandidatenpaar ist
+    daher nur dann tatsaechlich namensverdaechtig, wenn BEIDE Woerter als
+    PROPN getaggt sind.
+
+    Nutzt DIESELBE bereits geladene spaCy-Pipeline wie Presidio selbst
+    (ueber `analyzer.nlp_engine`) - kein zweites Modell, keine zusaetzliche
+    Speicherlast (siehe die eigenstaendige, dokumentierte Untersuchung zu
+    Presidio+FastEmbed+Ollama-Speicherdruck in dieser Session - ein
+    zweites geladenes de_core_news_lg-Modell waere hier fahrlaessig)."""
+    if not text or not text.strip():
+        return {}
+    analyzer = _get_analyzer_engine()
+    artifacts = analyzer.nlp_engine.process_text(text, "de")
+    return {(token.idx, token.idx + len(token.text)): token.pos_ for token in artifacts.tokens}

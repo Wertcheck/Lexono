@@ -197,6 +197,57 @@ def test_login_successful(client: TestClient, users: dict) -> None:
     assert "lexono_session" in response.cookies
 
 
+# --- Login-Referenzbild (19.09.): "Angemeldet bleiben" steuert echt die
+# Cookie-Persistenz, nicht nur ein Kosmetik-Feld ---
+
+
+def test_login_without_remember_me_sets_session_only_cookie(
+    client: TestClient, users: dict
+) -> None:
+    """Ohne `remember_me` darf das Cookie KEIN `Max-Age` tragen (echtes
+    Browser-/WebView-Session-Cookie) - andernfalls waere die Checkbox nur
+    Kosmetik ohne tatsaechliche Wirkung."""
+    response = client.post(
+        "/dashboard/login",
+        data={"email": "anwalt@kanzlei.test", "password": "TestPasswort123", "next": "/dashboard/inbox"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    set_cookie = response.headers["set-cookie"]
+    assert "lexono_session=" in set_cookie
+    assert "max-age" not in set_cookie.lower()
+
+
+def test_login_with_remember_me_sets_persistent_cookie(client: TestClient, users: dict) -> None:
+    """Mit `remember_me=true` bleibt das bisherige, unveraenderte Verhalten
+    (persistentes Cookie mit `Max-Age`) erhalten."""
+    response = client.post(
+        "/dashboard/login",
+        data={
+            "email": "anwalt@kanzlei.test",
+            "password": "TestPasswort123",
+            "next": "/dashboard/inbox",
+            "remember_me": "true",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    set_cookie = response.headers["set-cookie"]
+    assert "lexono_session=" in set_cookie
+    assert "max-age" in set_cookie.lower()
+
+
+def test_password_help_page_accessible_without_login(client: TestClient) -> None:
+    """Ziel des "Passwort vergessen?"-Links - muss OHNE Session erreichbar
+    sein (die Person, die sie braucht, kann sich per Definition nicht
+    anmelden)."""
+    response = client.get("/dashboard/password-help", follow_redirects=False)
+    assert response.status_code == 200
+    assert "Passwort vergessen" in response.text
+    # Ehrlich, keine vorgetaeuschte E-Mail-Reset-Faehigkeit:
+    assert "reset-admin-password" in response.text
+
+
 # --- #2 Login mit falschem Passwort ---
 
 
@@ -429,6 +480,71 @@ def test_admin_can_manage_users(client: TestClient, db_session: Session, users: 
     created = db_session.query(User).filter_by(email="neu@kanzlei.test").first()
     assert created is not None
     assert created.must_change_password is True
+
+
+# --- Admin kann das Passwort eines ANDEREN Nutzers zuruecksetzen (19.09.,
+# schliesst die Luecke, dass scripts/reset_admin_password.py nur fuer
+# Admin-Konten wirkt) ---
+
+
+def test_admin_can_reset_another_users_password(
+    client: TestClient, db_session: Session, users: dict
+) -> None:
+    _login(client, "admin@kanzlei.test")
+    target = users["anwalt"]
+    old_hash = target.password_hash
+
+    users_page = client.get("/dashboard/admin/users")
+    csrf = _extract_csrf(users_page.text)
+    response = client.post(
+        f"/dashboard/admin/users/{target.id}/reset-password",
+        data={"csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "created_password=" in response.headers["location"]
+
+    db_session.refresh(target)
+    assert target.password_hash != old_hash
+    assert target.must_change_password is True
+
+
+def test_reset_password_invalidates_existing_sessions(
+    client: TestClient, db_session: Session, users: dict
+) -> None:
+    target_client = TestClient(app)
+    _login(target_client, "anwalt@kanzlei.test")
+    still_valid = target_client.get("/dashboard/inbox", follow_redirects=False)
+    assert still_valid.status_code == 200
+
+    _login(client, "admin@kanzlei.test")
+    users_page = client.get("/dashboard/admin/users")
+    csrf = _extract_csrf(users_page.text)
+    target = users["anwalt"]
+    client.post(
+        f"/dashboard/admin/users/{target.id}/reset-password",
+        data={"csrf_token": csrf},
+        follow_redirects=False,
+    )
+
+    now_blocked = target_client.get("/dashboard/inbox", follow_redirects=False)
+    assert now_blocked.status_code == 303
+    assert "/dashboard/login" in now_blocked.headers["location"]
+
+
+def test_mitarbeiter_cannot_reset_another_users_password(
+    client: TestClient, users: dict
+) -> None:
+    _login(client, "mitarbeiter@kanzlei.test")
+    target = users["anwalt"]
+    detail = client.get("/dashboard/inbox")
+    csrf_match = _CSRF_RE.search(detail.text)
+    csrf = csrf_match.group(1) if csrf_match else "x"
+    response = client.post(
+        f"/dashboard/admin/users/{target.id}/reset-password",
+        data={"csrf_token": csrf},
+    )
+    assert response.status_code == 403
 
 
 # --- #13 Mitarbeiter kann keine Nutzer verwalten ---
