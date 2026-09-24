@@ -16,9 +16,9 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.session import get_db
 from app.main import app
-from app.models import Client, Matter, Task
+from app.models import Client, Deadline, Matter, Task
 from app.models.base import Base
-from tests.auth_test_utils import login_as_admin
+from tests.auth_test_utils import extract_csrf, login_as_admin
 
 
 @pytest.fixture()
@@ -115,3 +115,329 @@ def test_tasks_badge_empty_when_no_open_tasks(client: TestClient, db_session: Se
 
     assert response.status_code == 200
     assert "sidebar__group-badge" not in response.text
+
+
+# --- Fristen auf der Seite "Aufgaben & Fristen" (14.09.) -------------------
+# ECHTER FUND bei der Gold-Workflow-Pruefung ("Fristen/Aufgaben erkennen"):
+# Diese Seite fragte AUSSCHLIESSLICH `Task` ab - und `Task` wird von KEINEM
+# Code-Pfad der Anwendung je erzeugt. Gleichzeitig lagen in der realen
+# Produktionsdatenbank 178 vom produktiven DeadlineAnalysisService erkannte
+# `Deadline`-Datensaetze. Die Fristenuebersicht war damit strukturell IMMER
+# leer, jede erkannte Frist nur ueber die einzelne Akte auffindbar. Fuer eine
+# Kanzlei ist eine uebersehene Frist der folgenreichste Fehler ueberhaupt.
+
+
+def _matter_with_deadline(db: Session, *, due_date, review_status="unreviewed"):
+    from datetime import date as _date
+
+    client = Client(name="Testmandant Frist")
+    matter = Matter(client=client, title="Einspruch Steuerbescheid 2025")
+    db.add_all([client, matter])
+    db.flush()
+    deadline = Deadline(
+        matter_id=matter.id, due_date=due_date, review_status=review_status
+    )
+    db.add(deadline)
+    db.commit()
+    return matter, deadline
+
+
+def test_deadline_with_document_links_directly_to_that_document(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (17.09., Owner-Direktive §6/§7 "Workflows verbinden"):
+    `Deadline.document_id` existiert bereits (gesetzt vom produktiven
+    `DeadlineAnalysisService`), wurde auf dieser Seite aber nie genutzt -
+    jede Frist verlinkte immer nur auf die Akte-Uebersicht, obwohl das
+    tatsaechlich erkennende Dokument (inkl. der dort bereits gebauten
+    "Erkannte Fristen"-Anzeige) direkt bekannt ist."""
+    from datetime import date, timedelta
+
+    from app.models import Document
+
+    matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    document = Document(
+        matter_id=matter.id,
+        file_path="/tmp/steuerbescheid.pdf",
+        original_filename="steuerbescheid.pdf",
+    )
+    db_session.add(document)
+    db_session.flush()
+    deadline.document_id = document.id
+    db_session.commit()
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert response.status_code == 200
+    assert f'/dashboard/matters/{matter.id}/document/{document.id}' in response.text
+
+
+def test_deadline_without_document_links_to_the_matter_overview(
+    client: TestClient, db_session: Session
+) -> None:
+    """Gegenprobe: ohne bekanntes Dokument bleibt der bisherige, weiterhin
+    funktionierende Akte-Link bestehen - kein toter Link vorgetaeuscht."""
+    from datetime import date, timedelta
+
+    matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    assert deadline.document_id is None
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert response.status_code == 200
+    assert f'href="/dashboard/matters/{matter.id}"' in response.text
+
+
+def test_page_lists_detected_deadlines(client: TestClient, db_session: Session) -> None:
+    from datetime import date, timedelta
+
+    matter, _ = _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=14))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert response.status_code == 200
+    assert "Einspruch Steuerbescheid 2025" in response.text
+    assert "Testmandant Frist" in response.text
+
+
+def test_page_marks_unreviewed_deadlines_as_such(
+    client: TestClient, db_session: Session
+) -> None:
+    """Eine nur VERMUTETE Frist darf optisch nicht wie eine bestaetigte
+    wirken - der Anwalt muss den Pruefstatus sehen."""
+    from datetime import date, timedelta
+
+    _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=7))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "ungeprüft" in response.text
+
+
+def test_rejected_deadlines_are_not_listed(
+    client: TestClient, db_session: Session
+) -> None:
+    """Eine vom Anwalt ausdruecklich verworfene Frist soll nicht weiter als
+    offener Punkt erscheinen."""
+    from datetime import date, timedelta
+
+    _matter_with_deadline(
+        db_session,
+        due_date=date.today() + timedelta(days=5),
+        review_status="rejected",
+    )
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "Einspruch Steuerbescheid 2025" not in response.text
+
+
+def test_badge_counts_deadlines_not_only_tasks(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der Navigationspunkt heisst "Aufgaben & Fristen" - die Zahl daneben
+    stand vorher dauerhaft auf 0, obwohl real erkannte Fristen offen waren."""
+    from datetime import date, timedelta
+
+    _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=3))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks/badge")
+
+    assert response.status_code == 200
+    assert "1" in response.text
+
+
+def test_overdue_deadline_is_marked_as_overdue(
+    client: TestClient, db_session: Session
+) -> None:
+    """Eine versaeumte Frist ist in einer Kanzlei der folgenreichste Fehler
+    ueberhaupt - "ueberfaellig" muss als Text erscheinen, nicht nur als
+    Farbe (Farbe allein waere fuer farbfehlsichtige Nutzer kein Signal)."""
+    from datetime import date, timedelta
+
+    _matter_with_deadline(db_session, due_date=date.today() - timedelta(days=3))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "überfällig" in response.text
+
+
+def test_future_deadline_is_not_marked_overdue(
+    client: TestClient, db_session: Session
+) -> None:
+    from datetime import date, timedelta
+
+    _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=30))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "überfällig" not in response.text
+
+
+# --- Frist bestaetigen/verwerfen (17.09., Owner-Direktive §5/§6/§10) ------
+# ECHTER FUND: `Deadline.review_status` (unreviewed/confirmed/rejected)
+# existierte im Datenmodell und in der Anzeige bereits vollstaendig, aber es
+# gab PROJEKTWEIT keinen einzigen Schreibpfad, der ihn tatsaechlich aendert -
+# weder im Dashboard noch in der read-only REST-API (app/api/routers/
+# tasks.py). Der "Anwalt prueft"-Schritt des Gold-Workflows fuer Fristen war
+# damit reine Anzeige ohne Aktion.
+
+
+def test_unreviewed_deadline_shows_confirm_and_reject_buttons(
+    client: TestClient, db_session: Session
+) -> None:
+    from datetime import date, timedelta
+
+    _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=14))
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "Bestätigen" in response.text
+    assert "Verwerfen" in response.text
+
+
+def test_already_confirmed_deadline_hides_the_action_buttons(
+    client: TestClient, db_session: Session
+) -> None:
+    from datetime import date, timedelta
+
+    _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14), review_status="confirmed"
+    )
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "Bestätigen" not in response.text
+    assert "Verwerfen" not in response.text
+
+
+def test_confirm_action_updates_review_status_and_logs_audit_event(
+    client: TestClient, db_session: Session
+) -> None:
+    from datetime import date, timedelta
+
+    from app.models import AuditEvent
+
+    _matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    login_as_admin(db_session, client)
+    page = client.get("/dashboard/tasks")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        f"/dashboard/tasks/{deadline.id}/review",
+        data={"csrf_token": csrf, "status": "confirmed"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard/tasks"
+    db_session.refresh(deadline)
+    assert deadline.review_status == "confirmed"
+    event = (
+        db_session.query(AuditEvent)
+        .filter_by(entity_type="Deadline", entity_id=deadline.id)
+        .first()
+    )
+    assert event is not None
+    assert event.event_type == "deadline_review_status_changed"
+
+
+def test_reject_action_updates_review_status(client: TestClient, db_session: Session) -> None:
+    from datetime import date, timedelta
+
+    _matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    login_as_admin(db_session, client)
+    page = client.get("/dashboard/tasks")
+    csrf = extract_csrf(page.text)
+
+    client.post(
+        f"/dashboard/tasks/{deadline.id}/review",
+        data={"csrf_token": csrf, "status": "rejected"},
+        follow_redirects=False,
+    )
+
+    db_session.refresh(deadline)
+    assert deadline.review_status == "rejected"
+
+
+def test_review_action_rejects_an_invalid_status_value(
+    client: TestClient, db_session: Session
+) -> None:
+    """Fail-Closed: nur "confirmed"/"rejected" sind gueltige Ziele - "unre-
+    viewed" (kein sinnvoller manueller Fall) und beliebige andere Werte
+    werden abgelehnt statt stillschweigend uebernommen."""
+    from datetime import date, timedelta
+
+    _matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    login_as_admin(db_session, client)
+    page = client.get("/dashboard/tasks")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        f"/dashboard/tasks/{deadline.id}/review",
+        data={"csrf_token": csrf, "status": "unreviewed"},
+    )
+
+    assert response.status_code == 400
+    db_session.refresh(deadline)
+    assert deadline.review_status == "unreviewed"
+
+
+def test_review_action_404s_for_unknown_deadline(client: TestClient, db_session: Session) -> None:
+    from datetime import date, timedelta
+
+    # Eine (andere) echte Frist nur, damit die Seite ueberhaupt ein
+    # csrf_token-Feld rendert (siehe tasks.html: das Feld steht innerhalb
+    # der Fristen-Schleife) - die eigentliche Anfrage unten zielt bewusst
+    # auf eine ANDERE, nicht existierende ID.
+    _matter_with_deadline(db_session, due_date=date.today() + timedelta(days=14))
+    login_as_admin(db_session, client)
+    page = client.get("/dashboard/tasks")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        "/dashboard/tasks/does-not-exist/review",
+        data={"csrf_token": csrf, "status": "confirmed"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_review_action_requires_a_valid_csrf_token(
+    client: TestClient, db_session: Session
+) -> None:
+    from datetime import date, timedelta
+
+    _matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    login_as_admin(db_session, client)
+
+    response = client.post(
+        f"/dashboard/tasks/{deadline.id}/review",
+        data={"csrf_token": "invalid-token", "status": "confirmed"},
+    )
+
+    assert response.status_code == 403
+    db_session.refresh(deadline)
+    assert deadline.review_status == "unreviewed"

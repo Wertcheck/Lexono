@@ -2,8 +2,12 @@
 {% import "_icons.html" as icons %}
 {% block title %}Mandantendatenbank{% endblock %}
 {% block content %}
+  {# Titel bewusst "Mandanten" (nicht mehr "Mandantendatenbank", 14.09.):
+     identisch zum Navigationspunkt in der Sidebar UND zur Referenz
+     (assets/ux-ui/29_mandanten_uebersicht.png) - vorher wich die
+     Seitenueberschrift als einzige von beidem ab. #}
   <div class="topbar">
-    <h1 class="topbar__title">Mandantendatenbank</h1>
+    <h1 class="topbar__title">Mandanten</h1>
     <div class="topbar__meta">
       <strong>{{ rows|length }}</strong> Mandant{{ "en" if rows|length != 1 else "" }} in dieser Ansicht
     </div>
@@ -31,29 +35,12 @@
 
   <div class="draft-page">
     <div class="instructions-panel">
-      <h2 class="panel-title">CSV-/Excel-Import</h2>
-      <p class="settings-section__hint">
-        Pflichtspalten: <strong>Name</strong> und <strong>Mandantennummer</strong> (auch als
-        "Mandant"/"Kundennummer" o. Ä. erkannt) - Zeilen ohne diese Angaben oder mit bereits
-        vergebener Mandantennummer werden übersprungen und unten aufgelistet, der restliche
-        Import läuft trotzdem durch. Erkannt werden zusätzlich E-Mail, Telefon und Rechtsgebiet.
-      </p>
-      <form method="post" action="/dashboard/clients/import" enctype="multipart/form-data" id="import-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-        <div id="import-dropzone" class="dropzone" tabindex="0" role="button"
-             aria-label="CSV- oder Excel-Datei hierher ziehen oder klicken, um eine Datei auszuwählen">
-          {{ icons.upload(class_="dropzone__icon") }}
-          <div class="dropzone__text">Datei hierher ziehen oder klicken</div>
-          <div class="dropzone__hint">.csv oder .xlsx · max. 10 MB</div>
-        </div>
-        <input type="file" name="file" id="import-file-input" accept=".csv,.xlsx" style="display: none;" required />
-        <div id="import-file-list" class="dropzone__file-list"></div>
-      </form>
-    </div>
-
-    <div class="instructions-panel">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-        <h2 class="panel-title" style="margin: 0;">Mandanten</h2>
+      {# Kein zusaetzliches Panel-<h2>: die Seite hat bereits das <h1>
+         "Mandanten" im Topbar (s.o.), ein zweites "Mandanten" direkt
+         darunter waere eine reine Wiederholung ohne Informationswert -
+         anders als bei anderen Seiten, deren Panel-Titel den jeweiligen
+         Panelinhalt benennen (z.B. "Verknüpfte Akten", "Vorlagen"). #}
+      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
         <button type="button" class="btn btn--primary"
                 onclick="document.getElementById('create-client-modal').showModal()">
           {{ icons.plus(class_="icon") }} Mandant anlegen
@@ -103,8 +90,10 @@
               <th>Bearbeiter</th>
               <th>E-Mail</th>
               <th>Telefon</th>
+              <th>Aktive Akten</th>
               <th>Letzter Kontakt</th>
               <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -116,19 +105,100 @@
                 <td>{{ (row.client.responsible_user.display_name or row.client.responsible_user.email) if row.client.responsible_user else "–" }}</td>
                 <td>{{ row.client.contact_email or "–" }}</td>
                 <td>{{ row.client.contact_phone or "–" }}</td>
+                <td class="mono">{{ row.open_matter_count }}</td>
                 <td class="mono">{{ row.last_contact_at.strftime("%d.%m.%Y") if row.last_contact_at else "–" }}</td>
                 <td>
                   <span class="tag {{ 'tag--matched' if row.client.status == 'active' else 'tag--outbound' }}">
-                    {{ "aktiv" if row.client.status == "active" else "archiviert" }}
+                    <span class="tag__dot"></span>{{ "aktiv" if row.client.status == "active" else "archiviert" }}
                   </span>
+                </td>
+                {# Schnellzugriff-Menü (19.09., UI/UX-Referenzabgleich
+                   "29_mandanten_uebersicht.png", derselbe Fund/dasselbe
+                   Muster wie zuvor bei matters_list.html - siehe dort fuer
+                   die volle Begruendung inkl. des entdeckten [hidden]-CSS-
+                   Bugs, hier von Anfang an korrekt). "Löschen" bewusst
+                   NICHT hier (existiert echt, aber mit einer "nur ohne
+                   verknuepfte Akten"-Bedingung + Bestaetigungsdialog auf
+                   der Detailseite - dort mit vollem Kontext sicherer als
+                   in einem kompakten Listen-Menü). #}
+                <td class="row-menu-cell" onclick="event.stopPropagation();">
+                  <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen"
+                          onclick="Lexono.toggleRowMenu(this)">
+                    {{ icons.dots_vertical(class_="icon") }}
+                  </button>
+                  <div class="row-menu" hidden>
+                    <a href="/dashboard/clients/{{ row.client.id }}" class="row-menu__item">
+                      {{ icons.users(class_="icon") }} Mandant öffnen
+                    </a>
+                    {% if row.client.status == "active" %}
+                      <form method="post" action="/dashboard/clients/{{ row.client.id }}/archive">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button">
+                          {{ icons.archive(class_="icon") }} Archivieren
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="/dashboard/clients/{{ row.client.id }}/reactivate">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button">
+                          {{ icons.archive(class_="icon") }} Reaktivieren
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="8" class="empty-state">Keine Mandanten in dieser Ansicht.</td></tr>
+              <tr><td colspan="10" class="empty-state">Keine Mandanten in dieser Ansicht.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+    </div>
+
+    <script>
+      window.Lexono = window.Lexono || {};
+      Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
+        var menu = trigger.nextElementSibling;
+        var wasOpen = !menu.hidden;
+        document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+        menu.hidden = wasOpen;
+      };
+      document.addEventListener("click", function () {
+        document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      });
+    </script>
+
+    {# Hierarchie-Korrektur (UI/UX-Audit 14.09., echter Screenshot-Abgleich
+       gegen assets/ux-ui/29_mandanten_uebersicht.png): der CSV-/Excel-Import
+       stand bisher als grosses Panel GANZ OBEN und schob die eigentliche
+       Mandantenliste - den Hauptinhalt der Seite - komplett unter den
+       sichtbaren Bereich. Jetzt unterhalb der Liste UND standardmaessig
+       zugeklappt: die Liste ist sofort sichtbar, der Import bleibt mit
+       einem Klick erreichbar (Funktion unveraendert, nichts entfernt).
+       Nach einem Import-Versuch bleibt der Bereich aufgeklappt, damit das
+       Ergebnis-Banner oben und der zugehoerige Bereich zusammenpassen. #}
+    <div class="instructions-panel">
+      <details class="manual-edit-toggle"{% if import_result or import_error %} open{% endif %}>
+        <summary>CSV-/Excel-Import</summary>
+        <p class="settings-section__hint">
+          Pflichtspalten: <strong>Name</strong> und <strong>Mandantennummer</strong> (auch als
+          "Mandant"/"Kundennummer" o. Ä. erkannt) - Zeilen ohne diese Angaben oder mit bereits
+          vergebener Mandantennummer werden übersprungen und unten aufgelistet, der restliche
+          Import läuft trotzdem durch. Erkannt werden zusätzlich E-Mail, Telefon und Rechtsgebiet.
+        </p>
+        <form method="post" action="/dashboard/clients/import" enctype="multipart/form-data" id="import-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <div id="import-dropzone" class="dropzone" tabindex="0" role="button"
+               aria-label="CSV- oder Excel-Datei hierher ziehen oder klicken, um eine Datei auszuwählen">
+            {{ icons.upload(class_="dropzone__icon") }}
+            <div class="dropzone__text">Datei hierher ziehen oder klicken</div>
+            <div class="dropzone__hint">.csv oder .xlsx · max. 10 MB</div>
+          </div>
+          <input type="file" name="file" id="import-file-input" accept=".csv,.xlsx" style="display: none;" required />
+          <div id="import-file-list" class="dropzone__file-list"></div>
+        </form>
+      </details>
     </div>
   </div>
 

@@ -17,7 +17,7 @@
 
   <div class="draft-page">
     <form method="post" action="/dashboard/tools/schriftsatz/generate"
-          enctype="multipart/form-data" class="dashboard-form" style="max-width: none;">
+          enctype="multipart/form-data" class="dashboard-form js-ai-form" style="max-width: none;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
 
       <div class="settings-section">
@@ -42,10 +42,26 @@
             Betreff der neuen Akte
             <input type="text" name="new_matter_title" placeholder="z. B. Kündigungsschutzklage Muster GmbH" />
           </label>
-          <label class="form-label">
-            Mandant (optional)
-            <input type="text" name="new_client_name" placeholder="z. B. Muster GmbH" />
-          </label>
+          {# ECHTER FUND (17.09., siehe app/drafting/quick_matter.py::
+             create_quick_matter fuer die volle Begruendung): kam der
+             Einstieg von einem BEREITS bekannten Mandanten ohne Akte
+             (`client_detail.html`s "Akte anlegen"), fuehrte das freie
+             Namensfeld unten bisher zuverlaessig zu einem DUPLIZIERTEN
+             Mandanten statt der Wiederverwendung des bestehenden - jetzt:
+             Name schreibgeschuetzt anzeigen + die echte ID unsichtbar
+             mitschicken, statt erneut zur Eingabe aufzufordern. #}
+          {% if preselected_client %}
+            <input type="hidden" name="new_client_id" value="{{ preselected_client.id }}" />
+            <label class="form-label">
+              Mandant
+              <input type="text" value="{{ preselected_client.name }}" disabled />
+            </label>
+          {% else %}
+            <label class="form-label">
+              Mandant (optional)
+              <input type="text" name="new_client_name" placeholder="z. B. Muster GmbH" />
+            </label>
+          {% endif %}
         </div>
       </div>
 
@@ -90,7 +106,7 @@
         <div id="file-list" class="dropzone__file-list"></div>
       </div>
 
-      <button type="submit" class="btn btn--primary">Schriftsatz generieren</button>
+      <button type="submit" class="btn btn--primary" data-ai-loading-label="Schriftsatz wird generiert …">Schriftsatz generieren</button>
     </form>
   </div>
 
@@ -119,6 +135,7 @@
         currentFiles.forEach(function (file, index) {
           var chip = document.createElement("span");
           chip.className = "doc-chip dropzone__file-chip";
+          if (window.lexonoFileTypeBadge) { chip.appendChild(window.lexonoFileTypeBadge(file.name)); }
           var label = document.createElement("span");
           label.textContent = file.name;
           chip.appendChild(label);

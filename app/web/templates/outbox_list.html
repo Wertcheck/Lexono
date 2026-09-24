@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_labels.html" as labels %}
 {% block title %}Postausgang{% endblock %}
 {% block content %}
   <div class="topbar">
@@ -31,6 +32,7 @@
         <thead>
           <tr>
             <th>Akte</th>
+            <th>Mandant</th>
             <th>Status</th>
             <th>Freigegeben</th>
             <th>Versendet</th>
@@ -46,10 +48,19 @@
                 </a>
               </td>
               <td>
-                <span class="tag {% if entry.status == 'sent' %}tag--matched{% else %}tag--unmatched{% endif %}">
-                  {{ entry.status }}
-                </span>
+                {%- if entry.draft and entry.draft.matter and entry.draft.matter.client -%}
+                  <a href="/dashboard/clients/{{ entry.draft.matter.client.id }}">
+                    {{ entry.draft.matter.client.name }}</a>
+                {%- else -%}
+                  <span class="form-hint">–</span>
+                {%- endif -%}
               </td>
+              {# Das Makro liefert bereits eine vollstaendige Pille. Vorher
+                 stand es zusaetzlich in einem eigenen `<span class="tag">` -
+                 also eine Pille IN einer Pille (doppelter Rahmen, doppelter
+                 Hintergrund) und dazu zwei konkurrierende Farblogiken fuer
+                 denselben Status. #}
+              <td>{{ labels.outbox_status_tag(entry.status) }}</td>
               <td class="mono">{{ entry.created_at.strftime("%d.%m.%Y, %H:%M") }}</td>
               <td class="mono">
                 {% if entry.sent_at %}

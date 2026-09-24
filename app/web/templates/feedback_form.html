@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_labels.html" as labels %}
 {% block title %}Pilot-Feedback & Support{% endblock %}
 {% block content %}
   <div class="topbar">
@@ -69,9 +70,7 @@
                 {{ entry.message }}
               </td>
               <td>
-                <span class="tag {% if entry.review_status == 'zur_pruefung' %}tag--unmatched{% elif entry.review_status == 'freigegeben' %}tag--outbound{% endif %}">
-                  {{ entry.review_status }}
-                </span>
+                {{ labels.feedback_status_tag(entry.review_status) }}
                 {% if entry.requires_admin_review %}
                   <span class="form-hint">(betrifft ggf. KI-Verhalten/System)</span>
                 {% endif %}

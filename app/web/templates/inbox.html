@@ -8,18 +8,45 @@
       <strong>{{ total_count }}</strong> Nachrichten insgesamt
       &middot; <strong>{{ unmatched_count }}</strong> ohne Aktenzuordnung
     </div>
-    <div class="filters">
-      {% for key, label in filter_options %}
-        <a
-          class="filter-tab{% if active_filter == key %} filter-tab--active{% endif %}"
-          href="/dashboard/inbox?filter={{ key }}"
-          hx-get="/dashboard/inbox/list?filter={{ key }}"
-          hx-target="#message-list"
-          hx-swap="outerHTML"
-          hx-push-url="/dashboard/inbox?filter={{ key }}"
-        >{{ label }}</a>
-      {% endfor %}
-    </div>
+    {% if total_count > 0 %}
+      {# ECHTER FUND (18.09., gefunden per systematischer JS-/HTMX-
+         Ziel-Pruefung): Filter-Tabs und Suche zielten mit `hx-target=
+         "#message-list"` auf ein Element, das NUR existiert, wenn
+         `total_count > 0` (siehe unten, partials/message_list.html wird
+         sonst durch den Onboarding-Banner ersetzt). Bei einem leeren
+         Posteingang (genau der erste Eindruck eines neuen Nutzers) waren
+         Filter/Suche sichtbar und bedienbar, taten aber beim Klicken/
+         Tippen still gar nichts (htmx findet kein Ziel, kein Fehler
+         sichtbar). Jetzt konsistent nur dann gezeigt, wenn es ueberhaupt
+         etwas zu filtern/durchsuchen gibt. #}
+      <div class="filters">
+        {% for key, label in filter_options %}
+          <a
+            class="filter-tab{% if active_filter == key %} filter-tab--active{% endif %}"
+            href="/dashboard/inbox?filter={{ key }}&amp;q={{ search }}"
+            hx-get="/dashboard/inbox/list?filter={{ key }}&amp;q={{ search }}"
+            hx-target="#message-list"
+            hx-swap="outerHTML"
+            hx-push-url="/dashboard/inbox?filter={{ key }}&amp;q={{ search }}"
+          >{{ label }}</a>
+        {% endfor %}
+      </div>
+      {# Suche (18.09., Owner-Direktive "WEITERARBEITEN" - siehe
+         app/web/router.py::_load_messages fuer die volle Begruendung): der
+         Posteingang hatte projektweit kein Suchfeld, nur die vier groben
+         Filter-Tabs. #}
+      <form method="get" action="/dashboard/inbox" class="clients-search-bar" style="margin-top: 12px;">
+        <input type="hidden" name="filter" value="{{ active_filter }}" />
+        <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+        <input type="text" name="q" value="{{ search }}" placeholder="Absender oder Betreff durchsuchen…"
+               hx-get="/dashboard/inbox/list?filter={{ active_filter }}"
+               hx-include="this"
+               hx-trigger="input changed delay:300ms, search"
+               hx-target="#message-list"
+               hx-swap="outerHTML"
+               hx-push-url="/dashboard/inbox?filter={{ active_filter }}" />
+      </form>
+    {% endif %}
   </div>
   {% if total_count == 0 %}
     {% include "partials/onboarding_banner.html" %}

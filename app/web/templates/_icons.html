@@ -150,3 +150,81 @@
 {% macro trash(class_="icon") %}
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M9.5 7V5.3A1.3 1.3 0 0 1 10.8 4h2.4A1.3 1.3 0 0 1 14.5 5.3V7"/><path d="M7 7l.8 11.4A1.6 1.6 0 0 0 9.4 20h5.2a1.6 1.6 0 0 0 1.6-1.6L17 7"/><path d="M10.2 11v5.2M13.8 11v5.2"/></svg>
 {% endmacro %}
+
+{% macro eye(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg>
+{% endmacro %}
+
+{% macro eye_off(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5l17 17"/><path d="M10.6 6.1c.45-.07.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a15.6 15.6 0 0 1-3.4 4.2M7 7.4A15.4 15.4 0 0 0 2.5 12S6 18.5 12 18.5c1.3 0 2.5-.3 3.6-.8"/><path d="M9.9 10a2.8 2.8 0 0 0 3.95 3.95"/></svg>
+{% endmacro %}
+
+{% macro shield(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3l7 2.5v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9v-6l7-2.5Z"/><path d="M9 12.3l2.1 2.1 4-4"/></svg>
+{% endmacro %}
+
+{% macro chevron_down(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8.5 12 15l6.5-6.5"/></svg>
+{% endmacro %}
+
+{% macro dots_vertical(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
+{% endmacro %}
+
+{# Seitennavigation/Zoom im Dokumentviewer (20.09., Owner-Direktive
+   "PRIORITAETSERGAENZUNG: ECHTER DOKUMENTVIEWER"). #}
+{% macro chevron_left(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 5.5 9 12l6.5 6.5"/></svg>
+{% endmacro %}
+
+{% macro chevron_right(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5.5 15 12l-6.5 6.5"/></svg>
+{% endmacro %}
+
+{% macro zoom_out(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15.2 15.2"/><path d="M7.5 10.5h6"/></svg>
+{% endmacro %}
+
+{% macro zoom_in(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15.2 15.2"/><path d="M7.5 10.5h6M10.5 7.5v6"/></svg>
+{% endmacro %}
+
+{# Dateiformat-Badge (19.09.) - bewusst KEIN SVG-Icon wie die uebrigen
+   Makros hier, sondern ein kleines farbiges Text-Badge (siehe
+   .file-type-badge in app.css) - entspricht dem Referenzbild-Muster
+   ("PDF"/"DOC" als farbige Kurzbezeichnung, nicht als abstraktes
+   Symbol). Leitet den Typ AUSSCHLIESSLICH aus der echten Dateiendung
+   von `filename` ab - kein erfundenes Icon fuer unbekannte Formate,
+   diese zeigen ehrlich ihre tatsaechliche Endung in Grau.
+
+   WICHTIG fuer Aufrufer mit einem echten `Document`-Datensatz: hier
+   IMMER `document.file_path` uebergeben, NICHT `document.original_
+   filename` (ECHTER FUND, 20.09.: `original_filename` ist ueber
+   "Umbenennen" frei vom Nutzer aenderbar, OHNE Endungspruefung -
+   `document_actions_router.py::rename_document` erlaubt z. B. das
+   Umbenennen einer echten .pdf-Datei zu "Notizen" ganz ohne Endung.
+   `file_path` (Speicherort auf der Platte, `{uuid}_{urspruenglicher_
+   Dateiname}`) traegt dagegen dauerhaft die ECHTE Endung von beim
+   Upload, unveraendert durch eine spaetere Umbenennung - das Badge
+   bliebe damit auch nach einem irrefuehrenden Umbenennen korrekt.
+   Ausnahme: die JS-Vorschau eines noch nicht hochgeladenen Browser-
+   `File`-Objekts (kein `file_path` vorhanden) nutzt zwangslaeufig
+   dessen `.name`. #}
+{% macro file_type_badge(filename, class_="file-type-badge") %}
+{%- set ext = (filename.rsplit(".", 1)[-1] | lower) if (filename and "." in filename) else "" -%}
+{%- if ext == "pdf" -%}
+<span class="{{ class_ }} {{ class_ }}--pdf" title="PDF-Dokument">PDF</span>
+{%- elif ext == "docx" -%}
+<span class="{{ class_ }} {{ class_ }}--docx" title="Word-Dokument">DOCX</span>
+{%- elif ext == "doc" -%}
+<span class="{{ class_ }} {{ class_ }}--docx" title="Word-Dokument">DOC</span>
+{%- elif ext in ("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif") -%}
+<span class="{{ class_ }} {{ class_ }}--image" title="Bilddatei">{{ (ext | upper)[:4] }}</span>
+{%- elif ext == "txt" -%}
+<span class="{{ class_ }} {{ class_ }}--txt" title="Textdatei">TXT</span>
+{%- elif ext -%}
+<span class="{{ class_ }} {{ class_ }}--generic" title="{{ ext | upper }}-Datei">{{ (ext | upper)[:4] }}</span>
+{%- else -%}
+<span class="{{ class_ }} {{ class_ }}--generic" title="Unbekannter Dateityp">?</span>
+{%- endif -%}
+{% endmacro %}

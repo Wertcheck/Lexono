@@ -1,17 +1,35 @@
 {% extends "base.html" %}
-{% from "partials/_macros.html" import matter_tag %}
+{% import "_labels.html" as labels %}
 {% import "_icons.html" as icons %}
 {% block title %}Entwurf v{{ draft.version }}{% endblock %}
 {% block content %}
   <div class="topbar">
     <h1 class="topbar__title">
       Entwurf · Version {{ draft.version }}
+      {# Statuspille (UI/UX-Ueberarbeitung, Phase 5, 13.09.) - macht den
+         Freigabestatus auf einen Blick sichtbar, wie bei einem
+         Dokument-Editor (Referenzbilder 12/17/24/31/38/41). #}
+      {{ labels.draft_status_tag(draft.status) }}
       {% if not is_latest_version %}<span class="tag tag--unmatched">nicht aktuellste Version</span>{% endif %}
     </h1>
     <div class="topbar__meta">
-      Status: <strong>{{ draft.status }}</strong>
-      &middot; Akte <span class="mono">{{ draft.matter_id }}</span>
+      Zuletzt gespeichert: <strong>{{ draft.updated_at.strftime("%d.%m.%Y, %H:%M") }} Uhr</strong>
+      {# Rueckweg in die Akte (14.09.). Vorher stand hier die ROHE
+         Akten-UUID als toter Text - fuer den Anwalt weder lesbar noch
+         benutzbar, obwohl der Gold-Workflow genau hier endet
+         ("... -> Schreiben -> Speichern -> Akte"). #}
+      &middot; Akte
+      <a href="/dashboard/matters/{{ draft.matter_id }}">
+        {{ draft.matter.title if draft.matter else draft.matter_id }}</a>
+      {%- if draft.matter and draft.matter.client %}
+        ({{ draft.matter.client.name }})
+      {%- endif %}
       &middot; <a href="/dashboard/drafts">zur Liste</a>
+      {# PDF vor DOCX (18.09., Referenzabgleich `31_dokumentanalyse_
+         detailansicht.png`/Entwurf-Export-Panel): die Referenz zeigt PDF
+         als PRIMÄREN, vorausgewählten Export-Format-Radiobutton - siehe
+         app/export/pdf_export_service.py-Moduldocstring. #}
+      &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.pdf">Als PDF exportieren</a>
       &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.docx">Als DOCX exportieren</a>
     </div>
   </div>
@@ -25,7 +43,7 @@
       {% for v in version_chain %}
         <a href="/dashboard/drafts/{{ v.id }}"
            class="version-chip{% if v.id == draft.id %} version-chip--active{% endif %}">
-          v{{ v.version }} · {{ v.status }}
+          v{{ v.version }} · {{ labels.draft_status_text(v.status) }}
         </a>
         {% if not loop.last %}<span class="version-arrow">→</span>{% endif %}
       {% endfor %}
@@ -43,8 +61,17 @@
           <div class="original-box__body">{{ original_message.body_text or "(kein Inhalt extrahiert)" }}</div>
           {% if original_documents %}
             <div class="detail-section-label">Anhänge ({{ original_documents|length }})</div>
+            {# 17.09., Overnight-Direktive §6: identischer Fix wie
+               partials/message_detail.html - echter Link auf die
+               Aktendokument-Seite, sobald das Dokument einer Akte
+               zugeordnet ist, statt eines toten <span>s. #}
             {% for document in original_documents %}
-              <span class="doc-chip">{{ document.original_filename or "Dokument" }}</span>
+              {% if document.matter_id %}
+                <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}"
+                   class="doc-chip doc-chip--link" title="Dokument öffnen">{{ icons.file_type_badge(document.file_path) }} {{ document.original_filename or "Dokument" }}</a>
+              {% else %}
+                <span class="doc-chip">{{ icons.file_type_badge(document.file_path) }} {{ document.original_filename or "Dokument" }}</span>
+              {% endif %}
             {% endfor %}
           {% endif %}
         {% else %}
@@ -57,7 +84,46 @@
 
       <div class="original-box">
         <h2 class="panel-title">Entwurf</h2>
-        <div class="draft-content-box">{{ draft.content }}</div>
+        {# Seiten-Vorschau mit echtem Briefkopf/Signatur (20.09., Owner-
+           Direktive "CONTEXT EXTENSION" §5/§6) - zeigt GENAU das, was der
+           PDF-/DOCX-Export tatsaechlich erzeugt (dieselben Helper, siehe
+           app/export/letterhead.py), statt einer reinen Text-Box ohne
+           jeden Bezug zum fertigen Schreiben. Bewusst weiterhin einfacher
+           Fliesstext (kein Rich-Text-Editor) - siehe DECISIONS.md fuer die
+           Begruendung der "kleinsten professionellen Loesung". #}
+        <div class="document-page">
+          {% if show_letterhead %}
+            <div class="document-page__letterhead">
+              {% if firm_logo_exists %}
+                <img class="document-page__logo" src="/dashboard/settings/profile/logo-file" alt="Kanzlei-Logo" />
+              {% endif %}
+              {% if firm_profile.firm_name.strip() %}
+                <div class="document-page__firm-name">{{ firm_profile.firm_name.strip() }}</div>
+              {% endif %}
+              {% for line in firm_contact_lines %}
+                <div class="document-page__contact-line">{{ line }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          <div class="document-page__content">{{ draft.content }}</div>
+          {% if show_signature_block %}
+            <div class="document-page__signature">
+              {% if firm_signature_exists %}
+                <img class="document-page__signature-image" src="/dashboard/settings/profile/signature-file" alt="Unterschrift" />
+              {% endif %}
+              {% if firm_profile.signatory_name %}
+                <div class="document-page__signatory-name">{{ firm_profile.signatory_name }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% if not show_letterhead and not show_signature_block %}
+          <p class="form-hint">
+            Kein Kanzleiprofil hinterlegt - Briefkopf/Signatur erscheinen hier UND im
+            PDF-/DOCX-Export erst, sobald unter <a href="/dashboard/settings/profile">Einstellungen
+            &gt; Kanzleiprofil</a> Name, Logo oder Unterschrift eingetragen sind.
+          </p>
+        {% endif %}
 
         <div class="instruction-bar">
           <div class="instruction-bar__header">
@@ -67,7 +133,7 @@
             </span>
           </div>
           <form method="post" action="/dashboard/drafts/{{ draft.id }}/instructions"
-                id="instruction-form" class="instruction-bar__form">
+                id="instruction-form" class="instruction-bar__form js-ai-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <div class="instruction-bar__input-row">
               <textarea name="instruction_text" id="instruction-text" rows="2" required
@@ -81,7 +147,7 @@
               <button type="submit" class="btn">Anmerkung speichern</button>
               {% if can_claude_call %}
                 <button type="submit" formaction="/dashboard/drafts/{{ draft.id }}/instructions/apply"
-                        class="btn btn--primary">
+                        class="btn btn--primary" data-ai-loading-label="Wird neu formuliert …">
                   Änderungen übernehmen &amp; neu formulieren
                 </button>
               {% endif %}
@@ -89,6 +155,58 @@
           </form>
           {% if not can_claude_call %}
             <p class="form-hint">Nur Anwalt/Admin können eine Neuformulierung auslösen (KI-Aufruf).</p>
+          {% endif %}
+          {# "Vorschläge" (24.09., Owner-Direktive "PRODUCT COMPLETION MODE"
+             §5/§6 - Referenzbilder 12/24/38 zeigen im KI-Assistenten immer
+             VIER feste Schnellaktionen zur Entwurfs-Verfeinerung, getrennt
+             von den darunter bereits bestehenden, variablen
+             Standard-Prompts). Bewusst KEIN zweites System: reines
+             Vorausfuellen desselben bereits bestehenden
+             "Änderungsauftrag an die KI"-Felds (identisches
+             `data-prefill`-Muster wie die Standard-Prompts-Chips direkt
+             darunter) - der Anwalt sieht und bestaetigt den Text weiterhin
+             ueber den bestehenden Button, kein ueberraschender
+             KI-Aufruf per einzelnem Klick. #}
+          <div class="instruction-bar__prompts">
+            <span class="instruction-bar__prompts-label">Vorschläge:</span>
+            <button type="button" class="instruction-bar__prompt-chip"
+                    data-prefill="Bitte formuliere den Text klarer und rechtssicherer."
+                    title="Formulierung präzisieren">
+              Formulierung präzisieren
+            </button>
+            <button type="button" class="instruction-bar__prompt-chip"
+                    data-prefill="Bitte kürze den Text auf die wesentlichen Aussagen."
+                    title="Text kürzen">
+              Text kürzen
+            </button>
+            <button type="button" class="instruction-bar__prompt-chip"
+                    data-prefill="Bitte prüfe den Text auf rechtliche Risiken und weise auf mögliche Probleme hin."
+                    title="Rechtliche Prüfung">
+              Rechtliche Prüfung
+            </button>
+            <button type="button" class="instruction-bar__prompt-chip"
+                    data-prefill="Bitte formuliere den Text sachlicher und formeller."
+                    title="Ton anpassen">
+              Ton anpassen
+            </button>
+          </div>
+          {% if prompt_templates %}
+            {# Standard-Prompts (16.09., UI/UX-Sweep - Referenzbilder 12/17/
+               24/31/38/41 zeigen eine Standard-Prompts-Liste neben der
+               KI-Anweisung). Dieselbe, bereits bestehende Vorlagenbibliothek
+               wie im Chat (app/web/prompt_library_router.py) - reines
+               Vorausfuellen des Anweisungsfelds, der Anwalt sieht und
+               bestaetigt den Text wie bei jeder anderen Anweisung auch. #}
+            <div class="instruction-bar__prompts">
+              <span class="instruction-bar__prompts-label">Standard-Prompts:</span>
+              {% for template in prompt_templates %}
+                <button type="button" class="instruction-bar__prompt-chip"
+                        data-prefill="{{ template.content }}" title="{{ template.description or '' }}">
+                  {{ template.name }}
+                </button>
+              {% endfor %}
+              <a href="/dashboard/library/prompts" class="instruction-bar__prompts-manage">Verwalten</a>
+            </div>
           {% endif %}
         </div>
 
@@ -165,7 +283,7 @@
               {% for instr in instructions %}
                 <li class="instruction-item">
                   <span class="tag {% if instr.status == 'applied' %}tag--matched{% elif instr.status == 'discarded' %}tag--outbound{% else %}tag--unmatched{% endif %}">
-                    {{ instr.status }}
+                    {{ labels.instruction_status_text(instr.status) }}
                   </span>
                   <p class="instruction-text">{{ instr.instruction_text }}</p>
                   <span class="instruction-meta">
@@ -174,6 +292,69 @@
                 </li>
               {% endfor %}
             </ul>
+          </div>
+        {% endif %}
+
+        {% if draft.status == "approved" %}
+          {# Qualitätsbewertung (18.09., siehe app/web/quality_router.py-
+             Moduldocstring): ein bereits vollständig gebauter, per Login+
+             CSRF gesicherter Router existierte projektweit ohne jede
+             Verlinkung - weder Formular noch Anzeige. Nur für bereits
+             freigegebene Entwürfe sichtbar, identisch zur bestehenden
+             Server-Voraussetzung (`DraftQualityService.record_rating`:
+             "Entwurf muss Status 'approved' haben"). #}
+          <div class="instructions-panel">
+            <h2 class="panel-title">Qualitätsbewertung</h2>
+            {% if quality_stats.total_ratings %}
+              <p class="form-hint" style="margin-top: 0;">
+                {{ quality_stats.total_ratings }} Bewertung{{ "en" if quality_stats.total_ratings != 1 else "" }}
+                {% if quality_stats.avg_overall %} &middot; Ø {{ "%.1f"|format(quality_stats.avg_overall) }} / 5{% endif %}
+              </p>
+              <ul class="instruction-list">
+                {% for rating in quality_ratings %}
+                  <li class="instruction-item">
+                    <span class="instruction-meta">
+                      {{ rating.created_at.strftime("%d.%m.%Y, %H:%M") }} Uhr
+                    </span>
+                    <p class="instruction-text" style="margin: 4px 0;">
+                      {% if rating.content_quality %}Inhalt: {{ rating.content_quality }}/5{% endif %}
+                      {% if rating.usefulness %} &middot; Nützlichkeit: {{ rating.usefulness }}/5{% endif %}
+                      {% if rating.completeness %} &middot; Vollständigkeit: {{ rating.completeness }}/5{% endif %}
+                      {% if rating.language_quality %} &middot; Sprache: {{ rating.language_quality }}/5{% endif %}
+                    </p>
+                    {% if rating.comment %}<p class="instruction-text">{{ rating.comment }}</p>{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="form-hint" style="margin-top: 0;">Noch keine Bewertung abgegeben.</p>
+            {% endif %}
+            <form method="post" action="/dashboard/drafts/{{ draft.id }}/ratings" class="dashboard-form" style="margin-top: 12px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              {% for field, label in [
+                ("content_quality", "Inhaltliche Qualität"),
+                ("usefulness", "Nützlichkeit"),
+                ("completeness", "Vollständigkeit"),
+                ("language_quality", "Sprachliche Qualität"),
+              ] %}
+                <label class="form-label">
+                  {{ label }}
+                  <select name="{{ field }}">
+                    <option value="">– keine Angabe –</option>
+                    {% for n in range(1, 6) %}
+                      <option value="{{ n }}">{{ n }} / 5</option>
+                    {% endfor %}
+                  </select>
+                </label>
+              {% endfor %}
+              <label class="form-label">
+                Kommentar (optional)
+                <textarea name="comment" rows="2"></textarea>
+              </label>
+              <button type="submit" class="btn" style="align-self: flex-start; margin-top: 8px;">
+                Bewertung abgeben
+              </button>
+            </form>
           </div>
         {% endif %}
 
@@ -203,9 +384,9 @@
         </form>
       {% endif %}
       {% if can_claude_call %}
-        <form method="post" action="/dashboard/drafts/{{ draft.id }}/regenerate">
+        <form method="post" action="/dashboard/drafts/{{ draft.id }}/regenerate" class="js-ai-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-          <button type="submit" class="btn">Neu generieren</button>
+          <button type="submit" class="btn" data-ai-loading-label="Wird neu generiert …">Neu generieren</button>
         </form>
       {% endif %}
       {% if can_reject %}
@@ -221,93 +402,86 @@
         </p>
       {% endif %}
     </div>
-    <p class="form-hint" style="margin-top:8px;">
-      Hinweis: "Freigeben &amp; Postausgang übergeben" markiert den Entwurf als freigegeben.
-      Ein tatsächlicher Postausgang mit Versandfunktion existiert noch nicht (Prompt 25) - es
-      wird in keinem Fall automatisch etwas versendet.
-    </p>
+    {# KORREKTUR 14.09.: hier stand "Ein tatsaechlicher Postausgang mit
+       Versandfunktion existiert noch nicht (Prompt 25)". Das war zum
+       Zeitpunkt dieser Pruefung SCHLICHT FALSCH - `approve_draft` legt seit
+       Prompt 25 ueber `OutboxService.add_to_outbox` wirklich einen
+       Postausgang-Eintrag an, und `/dashboard/outbox` zeigt ihn. Eine
+       Oberflaeche, die dem Anwalt sagt, sein freigegebener Entwurf sei
+       nirgends gelandet, ist schlimmer als gar kein Hinweis.
+
+       Die Garantie, die WIRKLICH gilt, bleibt ausdruecklich stehen: der
+       Postausgang ist eine Warteschlange OHNE Versandfaehigkeit (siehe
+       app/models/outbox_entry.py), es wird nie automatisch etwas
+       versendet. #}
+    {% if outbox_entry %}
+      <p class="form-hint" style="margin-top:8px;">
+        Dieser Entwurf liegt im
+        <a href="/dashboard/outbox">Postausgang</a>
+        {{ labels.outbox_status_tag(outbox_entry.status) }}
+        (seit {{ outbox_entry.created_at.strftime("%d.%m.%Y, %H:%M") }} Uhr).
+        Lexono versendet nichts automatisch - der Versand bleibt ein
+        manueller Schritt.
+      </p>
+    {% else %}
+      <p class="form-hint" style="margin-top:8px;">
+        "Freigeben &amp; Postausgang übergeben" gibt den Entwurf frei und legt ihn
+        zugleich in den <a href="/dashboard/outbox">Postausgang</a> - eine
+        Warteschlange ohne Versandfunktion. Es wird in keinem Fall automatisch
+        etwas versendet.
+      </p>
+    {% endif %}
   </div>
 
   <script>
-    // Diktierfunktion für die Anweisungs-Leiste (native Web Speech API,
-    // deutsche Spracherkennung) - bewusst reines Vanilla-JS, kein Build-
-    // Schritt (siehe base.html/settings.html für dasselbe Prinzip). Nur in
-    // Chromium-basierten Browsern (Chrome/Edge - auch das gebündelte
-    // WebView2-Fenster) verfügbar; Firefox/Safari kennen `webkitSpeech
-    // Recognition`/`SpeechRecognition` nicht - der Mikrofon-Button wird in
-    // dem Fall deaktiviert statt eine Funktion vorzutäuschen, die nicht
-    // existiert (Feature-Detection, kein Fehlerfall).
+    // Diktier-BUTTON fuer die Anweisungs-Leiste - bewusst OHNE echte
+    // Spracherkennung verdrahtet (15.09., Privacy-Korrektur).
+    //
+    // ECHTER FUND (Nutzerauftrag "lokale Spracherkennung evaluieren", 15.09.):
+    // dieser Button rief bis dahin die native Browser-`SpeechRecognition`
+    // auf (`window.SpeechRecognition || window.webkitSpeechRecognition`).
+    // In Chromium/WebView2 gibt es dafuer KEIN On-Device-Modell - das Audio
+    // wird an einen CLOUD-Spracherkennungsdienst gesendet, BEVOR die lokale
+    // Pseudonymisierung ueberhaupt greifen kann. Ein Anwalt, der hier
+    // "fuege hinzu, dass Herr Mueller die Frist bestreitet" diktiert (der
+    // kanonische Regressionsfall dieses Projekts), haette den Mandantennamen
+    // damit unpseudonymisiert an einen externen Dienst geschickt - ein
+    // direkter Verstoss gegen die nicht verhandelbare Privacy-Grundregel
+    // (CLAUDE.md: "Aktenkontext strikt isolieren" / lokale
+    // Pseudonymisierung vor jedem externen Aufruf).
+    //
+    // `chat.html` hatte genau diese Erkenntnis bereits fuer den
+    // Chat-Composer gezogen (siehe dortiger Kommentar) - diese Anweisungs-
+    // Leiste war jedoch NICHT auf denselben Stand gebracht worden. Jetzt
+    // konsistent: derselbe ehrliche "in Vorbereitung"-Zustand wie im Chat,
+    // bis eine echte LOKALE Spracherkennung evaluiert und angebunden ist
+    // (siehe .agentic/OPEN_ISSUES.md, STT-Evaluation).
     (function () {
       var micButton = document.getElementById("instruction-mic-btn");
-      var textarea = document.getElementById("instruction-text");
-      var SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-      if (!SpeechRecognitionImpl) {
-        micButton.disabled = true;
-        micButton.title = "Spracheingabe wird von diesem Browser nicht unterstützt (funktioniert z. B. in Chrome/Edge).";
-        return;
+      if (micButton) {
+        micButton.title = "Spracheingabe (in Vorbereitung - wartet auf lokale Spracherkennung)";
+        micButton.setAttribute("aria-label", micButton.title);
+        micButton.addEventListener("click", function () {
+          var active = micButton.getAttribute("aria-pressed") === "true";
+          micButton.setAttribute("aria-pressed", String(!active));
+          micButton.classList.toggle("instruction-bar__mic--recording", !active);
+        });
       }
+    })();
 
-      var recognition = new SpeechRecognitionImpl();
-      recognition.lang = "de-DE";
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      var recording = false;
-      var baseValue = "";
-      var finalTranscript = "";
-
-      function setRecording(value) {
-        recording = value;
-        micButton.classList.toggle("instruction-bar__mic--recording", recording);
-        micButton.setAttribute("aria-pressed", recording ? "true" : "false");
-      }
-
-      recognition.addEventListener("result", function (event) {
-        var interimTranscript = "";
-        for (var i = event.resultIndex; i < event.results.length; i++) {
-          var transcriptPart = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcriptPart + " ";
-          } else {
-            interimTranscript += transcriptPart;
-          }
-        }
-        textarea.value = (baseValue + finalTranscript + interimTranscript).trim();
-      });
-
-      recognition.addEventListener("end", function () {
-        // Manche Browser beenden eine "continuous"-Erkennung nach einer
-        // Stillephase von selbst - automatisch neu starten, solange der
-        // Anwalt nicht explizit per Klick gestoppt hat (`recording` wird
-        // beim manuellen Stopp SYNCHRON vor `recognition.stop()` bereits
-        // auf false gesetzt, siehe unten).
-        if (recording) {
-          try {
-            recognition.start();
-          } catch (err) {
-            setRecording(false);
-          }
-        }
-      });
-
-      recognition.addEventListener("error", function (event) {
-        if (event.error === "no-speech" || event.error === "aborted") {
-          return;
-        }
-        setRecording(false);
-      });
-
-      micButton.addEventListener("click", function () {
-        if (recording) {
-          setRecording(false);
-          recognition.stop();
-        } else {
-          baseValue = textarea.value ? textarea.value.trim() + " " : "";
-          finalTranscript = "";
-          setRecording(true);
-          recognition.start();
-        }
+    // Standard-Prompts-Chips (16.09., UI/UX-Sweep) - reines Vorausfuellen
+    // des Anweisungsfelds, identisches Muster wie die Quick-Action-Karten
+    // in chat.html (dort ".chat-quick-action"/"data-prefill"). Kein
+    // automatisches Absenden - der Anwalt sieht den Text im Feld und
+    // bestaetigt ihn wie jede andere Anweisung ueber den bestehenden Button.
+    (function () {
+      var instructionText = document.getElementById("instruction-text");
+      if (!instructionText) { return; }
+      document.querySelectorAll(".instruction-bar__prompt-chip").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+          instructionText.value = chip.getAttribute("data-prefill") || "";
+          instructionText.focus();
+        });
       });
     })();
   </script>

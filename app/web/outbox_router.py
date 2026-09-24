@@ -28,7 +28,7 @@ from app.auth.permissions import (
     require_role,
 )
 from app.db.session import get_db
-from app.models import Draft, OutboxEntry, User
+from app.models import Draft, Matter, OutboxEntry, User
 from app.outbox.service import OutboxService
 from app.web.template_paths import TEMPLATES_DIR
 
@@ -45,8 +45,11 @@ def outbox_list_page(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
+    # Mandant mitladen (14.09.) - die Liste zeigt ihn jetzt als eigene
+    # Spalte; ohne dieses dritte `joinedload` waere das eine N+1-Abfrage
+    # pro Zeile.
     query = db.query(OutboxEntry).options(
-        joinedload(OutboxEntry.draft).joinedload(Draft.matter)
+        joinedload(OutboxEntry.draft).joinedload(Draft.matter).joinedload(Matter.client)
     )
     if status in ("pending", "sent"):
         query = query.filter(OutboxEntry.status == status)

@@ -20,11 +20,25 @@
       </div>
       <div class="chat-conversations__list">
         {% for conversation in conversations %}
-          <a href="/dashboard/chat/{{ conversation.id }}"
-             class="chat-conversations__item{% if active_conversation and conversation.id == active_conversation.id %} chat-conversations__item--active{% endif %}">
-            <span class="chat-conversations__item-title">{{ conversation.title }}</span>
-            <span class="chat-conversations__item-meta">{{ conversation.matter.title }}</span>
-          </a>
+          {# Loeschen (20.09., Owner-Direktive "WORKSTREAM A — CHATS
+             LOESCHBAR") - eigenes Element NEBEN dem Link statt darin
+             verschachtelt (ein <form>/<button> in einem <a> ist ungueltiges
+             HTML und wuerde Klick-Ereignisse ueberlagern). #}
+          <div class="chat-conversations__row">
+            <a href="/dashboard/chat/{{ conversation.id }}"
+               class="chat-conversations__item{% if active_conversation and conversation.id == active_conversation.id %} chat-conversations__item--active{% endif %}">
+              <span class="chat-conversations__item-title">{{ conversation.title }}</span>
+              <span class="chat-conversations__item-meta">{{ conversation.matter.title }}</span>
+            </a>
+            <form method="post" action="/dashboard/chat/{{ conversation.id }}/delete"
+                  class="chat-conversations__delete-form"
+                  onsubmit="return confirm('Unterhaltung \'{{ conversation.title }}\' löschen? Dies kann nicht rückgängig gemacht werden (bereits erzeugte Entwürfe bleiben erhalten).');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="chat-conversations__delete-btn" title="Unterhaltung löschen" aria-label="Unterhaltung löschen">
+                {{ icons.trash(class_="icon") }}
+              </button>
+            </form>
+          </div>
         {% else %}
           <div class="chat-conversations__empty">Noch keine Unterhaltungen.</div>
         {% endfor %}
@@ -38,6 +52,28 @@
          durchgaengig in der globalen Sidebar (base.html), keine Dopplung
          mehr hier. #}
       {% if viewing_document or active_conversation %}
+        {# Breadcrumb (UI/UX-Ueberarbeitung, Phase 4, 13.09.): macht den
+           aktuellen Arbeitskontext sichtbar (Referenzbilder zeigen dies
+           durchgaengig ueber dem Chat-Header) - rein informativ/
+           navigierend, keine neue Zustandslogik. #}
+        <div class="chat-breadcrumb">
+          <a href="/dashboard/chat">Chat</a>
+          <span class="chat-breadcrumb__sep">›</span>
+          {% if viewing_document %}
+            <a href="/dashboard/chat/{{ active_conversation.id }}">{{ active_conversation.matter.title }}</a>
+            <span class="chat-breadcrumb__sep">›</span>
+            <span>{{ viewing_document.original_filename }}</span>
+          {% else %}
+            {# ECHTER FUND (17.09., Owner-Direktive §5/§7 "Chat bleibt die
+               zentrale Arbeitsoberflaeche... Mandant/Akte/Dokument ...
+               weiterarbeiten"): reiner Text ohne Verweis auf die laengst
+               existierende, vollstaendige Aktendetailseite
+               (matters_router.py) - der Anwalt konnte aus dem Chat heraus
+               nicht direkt zu Dokumenten/Aufgaben & Fristen/Kommunikation
+               dieser Akte wechseln. #}
+            <a href="/dashboard/matters/{{ active_conversation.matter_id }}">{{ active_conversation.matter.title }}</a>
+          {% endif %}
+        </div>
         <div class="chat-panel__header">
           <div class="chat-panel__header-title">
             {% if viewing_document %}
@@ -51,6 +87,37 @@
               {{ active_conversation.matter.title }}
             {% endif %}
           </div>
+          {# "Aktenbezug" (UI/UX-Ueberarbeitung, Phase 4, 13.09.): mehrfach
+             angefragte Funktion, eine Unterhaltung einer ANDEREN
+             bestehenden Akte zuzuordnen (siehe app/web/chat_router.py::
+             link_matter) - bewusst als kompaktes <details>-Popover statt
+             einer eigenen dauerhaften Seitenleiste (Vorgabe: "keine
+             permanente rechte Seitenleiste im normalen Chat"). #}
+          {% if not viewing_document and other_matters %}
+            <details class="chat-matter-link">
+              <summary class="chat-matter-link__trigger">
+                {{ icons.folder(class_="icon") }}
+                <span>Akte ändern</span>
+              </summary>
+              <form method="post" action="/dashboard/chat/{{ active_conversation.id }}/link-matter" class="chat-matter-link__form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <label class="form-label">
+                  Diese Unterhaltung einer anderen Akte zuordnen
+                  <select name="matter_id" required>
+                    <option value="" disabled selected>— Akte wählen —</option>
+                    {% for matter in other_matters %}
+                      <option value="{{ matter.id }}">{{ matter.reference_number or "" }} {{ matter.title }} ({{ matter.client.name }})</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <p class="form-hint">
+                  Wirkt nur für künftige Nachrichten dieser Unterhaltung - bereits gesendete
+                  Nachrichten und erstellte Entwürfe bleiben bei der bisherigen Akte.
+                </p>
+                <button type="submit" class="btn btn--primary">Zuordnen</button>
+              </form>
+            </details>
+          {% endif %}
         </div>
       {% endif %}
 
@@ -85,30 +152,33 @@
               </a>
             </div>
             <div class="chat-empty-state__actions">
-              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.document(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Dokumente analysieren</span>
-                <span class="chat-quick-action__desc">Dokumente hochladen und von Lexono analysieren lassen.</span>
+              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-green" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
+                <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
+                <span class="chat-quick-action__title">Dokument analysieren</span>
+                <span class="chat-quick-action__subtitle">Inhalte verstehen und auswerten</span>
               </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.printer(class_="icon") }}</span>
+              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-blue" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
+                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
                 <span class="chat-quick-action__title">Schriftsatz erstellen</span>
-                <span class="chat-quick-action__desc">Einen Schriftsatz oder ein Schreiben auf Basis Ihrer Angaben erstellen.</span>
+                <span class="chat-quick-action__subtitle">Z. B. an Mandanten, Gericht oder Behörde</span>
               </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.bulb(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Dokument zusammenfassen</span>
-                <span class="chat-quick-action__desc">Wesentliche Inhalte eines Dokuments in Kürze erfassen.</span>
+              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-purple" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
+                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
+                <span class="chat-quick-action__title">Zusammenfassen</span>
+                <span class="chat-quick-action__subtitle">Wesentliche Inhalte auf den Punkt bringen</span>
               </button>
-              {# "Weitere Funktion hinzufügen" (Referenzbild, 01.09.) - fuehrt
-                 zur bereits bestehenden Standard-Prompts-Verwaltung, in der
-                 ein Nutzer echte, wiederverwendbare Prompt-Vorlagen anlegen
-                 kann (app/web/prompt_library_router.py) - kein Fake-Button,
-                 dieselbe reale Funktion wie der Link oben. #}
-              <a href="/dashboard/library/prompts" class="chat-quick-action chat-quick-action--card chat-quick-action--add">
-                <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.plus(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Weitere Funktion hinzufügen</span>
-                <span class="chat-quick-action__desc">Fügen Sie eine Funktion hinzu, die Sie häufig benötigen.</span>
+              {# "Weitere Prompts" (Referenzbild-Redesign, 13.09., Farb-/
+                 Kartenstil an assets/ux-ui/05_chat_startseite.png
+                 angeglichen, 14.09.) - fuehrt weiterhin zur bereits
+                 bestehenden Standard-Prompts-Verwaltung
+                 (app/web/prompt_library_router.py), in der echte,
+                 wiederverwendbare Prompt-Vorlagen angelegt werden koennen -
+                 kein Fake-Button, dieselbe reale Funktion wie der Link oben
+                 in der Kopfzeile. #}
+              <a href="/dashboard/library/prompts" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange">
+                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.plus(class_="icon") }}</span>
+                <span class="chat-quick-action__title">Weitere Prompts</span>
+                <span class="chat-quick-action__subtitle">Eigene Vorlagen verwalten</span>
               </a>
             </div>
           </div>
@@ -116,7 +186,10 @@
           {% for message in messages %}
             <div class="chat-message chat-message--{{ message.role }}{% if message.blocked %} chat-message--blocked{% endif %}">
               <div class="chat-message__avatar">
-                {% if message.role == "user" %}{{ current_user.email[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
+                {# Konsistent mit dem Sidebar-Avatar (base.html, 19.09.,
+                   UI/UX-Referenzabgleich): dieselbe display_name-Fallback-
+                   Regel statt ausschliesslich der rohen E-Mail-Adresse. #}
+                {% if message.role == "user" %}{{ (current_user.display_name or current_user.email)[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
               </div>
               <div class="chat-message__body">
                 <div class="chat-message__sender">
@@ -133,7 +206,7 @@
                         {% if has_preview %}href="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}"{% endif %}
                         class="doc-chip chat-attachment-chip{% if has_preview %} chat-attachment-chip--link{% endif %}"
                         {% if has_preview %}title="Dokument mit hervorgehobenen Mandantendaten öffnen"{% endif %}>
-                        {{ icons.document(class_="icon") }}
+                        {{ icons.file_type_badge(doc.file_path) }}
                         <span class="chat-attachment-chip__name">{{ doc.original_filename }}</span>
                         {% if status in ("done", "not_needed") %}
                           <span class="chat-attachment-status chat-attachment-status--ok" title="Dokument verarbeitet">
@@ -156,10 +229,46 @@
                     {% endfor %}
                   </div>
                 {% endif %}
-                <div class="chat-message__text">
+                <div class="chat-message__text" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
                   {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
                   <span>{{ message.content }}</span>
                 </div>
+                {% if message.role == "assistant" and not message.blocked %}
+                  {# Feedback-/Metazeile (UI/UX-Ueberarbeitung, Phase 4,
+                     13.09.): "Kopieren" ist eine ECHTE, funktionierende
+                     Aktion (Clipboard-API) - kein Daumen-hoch/-runter, um
+                     keine vorgetaeuschte Feedback-Speicherung zu zeigen,
+                     fuer die es noch keine Auswertung gibt. #}
+                  <div class="chat-message__meta-row">
+                    <button type="button" class="chat-message__copy-btn" data-copy-target="chat-message-text-{{ message.id }}" title="Antwort kopieren" aria-label="Antwort kopieren">
+                      {{ icons.clip(class_="icon") }}
+                      <span>Kopieren</span>
+                    </button>
+                    <span class="chat-message__timestamp">{{ message.created_at.strftime("%H:%M") }} Uhr</span>
+                    {% if message.draft_id %}
+                      <a href="/dashboard/drafts/{{ message.draft_id }}" class="chat-message__open-editor">
+                        Vollständigen Editor öffnen →
+                      </a>
+                    {% endif %}
+                  </div>
+                  {% if message_sources.get(message.id) %}
+                    <div class="chat-sources-card">
+                      <div class="chat-sources-card__title">{{ icons.book(class_="icon") }}<span>Quellen &amp; Verweise</span></div>
+                      <ul class="chat-sources-card__list">
+                        {% for source in message_sources[message.id] %}
+                          <li class="chat-sources-card__item">
+                            {% if source.url %}
+                              <a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }}</a>
+                            {% else %}
+                              <span>{{ source.title }}</span>
+                            {% endif %}
+                            {% if source.reference %}<span class="chat-sources-card__ref">{{ source.reference }}</span>{% endif %}
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  {% endif %}
+                {% endif %}
               </div>
             </div>
           {% endfor %}
@@ -170,6 +279,11 @@
             class="chat-composer" id="chat-composer">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
+        {# Vorgemerkte Akte aus dem "Mit dieser Akte im Chat arbeiten"-
+           Einstieg (14.09.) - erst die erste Nachricht legt die
+           Unterhaltung an, deshalb wird die Akte bis dahin im Formular
+           mitgefuehrt. #}
+        <input type="hidden" name="matter_id" value="{{ pending_matter.id if pending_matter else '' }}" />
 
         <div id="chat-dropzone-hint" class="chat-dropzone-hint" hidden>
           {{ icons.upload(class_="icon") }}
@@ -177,25 +291,6 @@
         </div>
 
         <div id="chat-file-list" class="chat-composer__file-list"></div>
-
-        {% if not active_conversation %}
-          {# Ausfuehrlicher Datenschutzhinweis (Referenzbild, 01.09.) - nur
-             auf der reinen Chat-Startansicht, um bestehende Unterhaltungen
-             nicht mit einem grossen Banner bei jeder Nachricht zu
-             ueberladen (dort bleibt der bestehende, knappe Text-Hinweis
-             unterhalb des Composers). Verlinkt die bereits bestehende
-             Datenschutz-Seite (app/web/account_router.py::account_privacy). #}
-          <div class="chat-privacy-banner">
-            {{ icons.check(class_="icon chat-privacy-banner__icon") }}
-            <div class="chat-privacy-banner__text">
-              <p>Dokumentinhalte werden vor jeder KI-Anfrage lokal anonymisiert (Pseudonymisierung).</p>
-              <p>Es werden nie unpseudonymisierte Mandantendaten an die Cloud-KI gesendet.</p>
-            </div>
-            <a href="/dashboard/account/privacy" class="chat-privacy-banner__link">
-              Mehr erfahren →
-            </a>
-          </div>
-        {% endif %}
 
         <div class="chat-composer__row">
           <button type="button" class="chat-composer__attach-btn" id="chat-attach-btn"
@@ -250,6 +345,25 @@
         <div class="chat-context-pane__status">
           <span class="tag tag--matched">Abgeschlossen</span>
         </div>
+
+        {# KI-Analyse-Transparenzkarte (UI/UX-Ueberarbeitung, Phase 5,
+           13.09.) - macht sichtbar, WAS technisch bereits passiert ist
+           (Presidio-Erkennung lokal auf diesem Rechner), bevor irgendein
+           Cloud-KI-Aufruf stattfindet - eine wahre, bereits durch die
+           bestehende Architektur zutreffende Aussage, keine neue
+           Funktion. #}
+        <div class="chat-transparency-card">
+          {{ icons.shield(class_="icon") }}
+          <div class="chat-transparency-card__text">
+            <strong>Lokal analysiert.</strong>
+            Mandantendaten in diesem Dokument wurden mit Presidio
+            <em>lokal auf diesem Rechner</em> erkannt. Nur bei einer
+            KI-Anfrage zu diesem Dokument wird der Text zusätzlich lokal
+            pseudonymisiert - unpseudonymisierte Daten verlassen diesen
+            Rechner nie.
+          </div>
+        </div>
+
         <div class="chat-context-pane__section-title">Schnellaktionen</div>
         <div class="chat-context-pane__actions">
           <button type="button" class="chat-quick-action chat-quick-action--compact"
@@ -295,6 +409,19 @@
           <dt>Verarbeitung</dt>
           <dd>{{ "Abgeschlossen" if viewing_document.ocr_status in ("done", "not_needed") else viewing_document.ocr_status }}</dd>
         </dl>
+        {% if viewing_document.matter_id %}
+          {# "Herunterladen" (16.09., UI/UX-Sweep - Referenz
+             `02_chat_dokumentkontext.png`) - derselbe Download-Endpunkt
+             wie in matter_document.html, keine zweite Serving-Logik. Nur
+             wenn das Dokument bereits einer Akte zugeordnet ist (bei
+             Chat-Uploads immer der Fall, siehe ChatService.attach_document -
+             ein neuer Schnellentwurf legt die Akte VOR dem Anhang an). #}
+          <a class="chat-context-pane__download"
+             href="/dashboard/matters/{{ viewing_document.matter_id }}/document/{{ viewing_document.id }}/download">
+            {{ icons.download(class_="icon") }}
+            <span>Herunterladen</span>
+          </a>
+        {% endif %}
       </aside>
     {% endif %}
   </div>
@@ -344,7 +471,10 @@
         Array.prototype.forEach.call(fileInput.files, function (file) {
           var chip = document.createElement("span");
           chip.className = "doc-chip";
-          chip.textContent = file.name;
+          if (window.lexonoFileTypeBadge) { chip.appendChild(window.lexonoFileTypeBadge(file.name)); }
+          var label = document.createElement("span");
+          label.textContent = file.name;
+          chip.appendChild(label);
           fileList.appendChild(chip);
         });
       }
@@ -404,6 +534,26 @@
         });
       }
 
+      // "Kopieren"-Button unter KI-Antworten (UI/UX-Ueberarbeitung, Phase 4,
+      // 13.09.) - echte Funktion (Clipboard-API), kein Deko-Element.
+      document.querySelectorAll(".chat-message__copy-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var targetId = btn.getAttribute("data-copy-target");
+          var textEl = document.getElementById(targetId);
+          if (!textEl || !navigator.clipboard) { return; }
+          navigator.clipboard.writeText(textEl.innerText).then(function () {
+            var label = btn.querySelector("span");
+            var original = label ? label.textContent : null;
+            if (label) { label.textContent = "Kopiert"; }
+            btn.classList.add("chat-message__copy-btn--done");
+            setTimeout(function () {
+              if (label && original) { label.textContent = original; }
+              btn.classList.remove("chat-message__copy-btn--done");
+            }, 1500);
+          }).catch(function () {});
+        });
+      });
+
       document.querySelectorAll(".chat-quick-action").forEach(function (btn) {
         btn.addEventListener("click", function () {
           textarea.value = btn.getAttribute("data-prefill");
@@ -415,35 +565,164 @@
         });
       });
 
-      if (composer) {
-        composer.addEventListener("submit", function () {
-          // Deutlicher Verarbeitungs-/Ladezustand (Masterprompt-Vorgabe
-          // "KI-Ladezustand" - ein reines dezentes Abdunkeln des
-          // Sendebuttons reicht bei echten Antwortzeiten von 15-30+
-          // Sekunden nicht als Feedback aus). Der eigentliche Seitenwechsel
-          // (voller Redirect nach Serververarbeitung, kein eigenes
-          // Streaming) uebernimmt danach zusaetzlich die Browser-eigene
-          // Ladeanzeige - diese "denkt nach"-Sprechblase ueberbrueckt nur
-          // die Zeit BIS zu diesem Seitenwechsel sichtbar.
-          sendBtn.disabled = true;
-          textarea.disabled = true;
-          sendBtn.classList.add("chat-composer__send-btn--loading");
+      function appendThinkingBubble() {
+        if (!messages) { return null; }
+        var thinkingBubble = document.createElement("div");
+        thinkingBubble.className = "chat-message chat-message--assistant chat-message--thinking";
+        thinkingBubble.innerHTML =
+          '<div class="chat-message__avatar">' +
+          '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2h6"/><path d="M9.5 21h5"/><path d="M12 3.3a5.7 5.7 0 0 0-3.3 10.4c.6.5 1 1.2 1 2v.3h4.6v-.3c0-.8.4-1.5 1-2A5.7 5.7 0 0 0 12 3.3Z"/></svg>' +
+          '</div>' +
+          '<div class="chat-message__body">' +
+          '<div class="chat-message__sender">Lexono</div>' +
+          '<div class="chat-message__text chat-thinking-indicator" role="status" aria-label="Lexono antwortet …">' +
+          '<span></span><span></span><span></span>' +
+          '<span class="chat-thinking-indicator__status"></span>' +
+          '</div></div>';
+        messages.appendChild(thinkingBubble);
+        messages.scrollTop = messages.scrollHeight;
+        return thinkingBubble;
+      }
 
-          if (messages) {
-            var thinkingBubble = document.createElement("div");
-            thinkingBubble.className = "chat-message chat-message--assistant chat-message--thinking";
-            thinkingBubble.innerHTML =
-              '<div class="chat-message__avatar">' +
-              '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2h6"/><path d="M9.5 21h5"/><path d="M12 3.3a5.7 5.7 0 0 0-3.3 10.4c.6.5 1 1.2 1 2v.3h4.6v-.3c0-.8.4-1.5 1-2A5.7 5.7 0 0 0 12 3.3Z"/></svg>' +
-              '</div>' +
-              '<div class="chat-message__body">' +
-              '<div class="chat-message__sender">Lexono</div>' +
-              '<div class="chat-message__text chat-thinking-indicator" role="status" aria-label="Lexono antwortet …">' +
-              '<span></span><span></span><span></span>' +
-              '</div></div>';
-            messages.appendChild(thinkingBubble);
-            messages.scrollTop = messages.scrollHeight;
+      function setLoadingState() {
+        sendBtn.disabled = true;
+        // ECHTER FUND (Abnahme-Test, 13.09.): die Textarea vorher per
+        // "disabled"-Flag zu sperren fuehrte dazu, dass der Browser das
+        // Feld beim eigentlichen Form-Submit NICHT mehr mitschickt
+        // (deaktivierte Formularfelder werden per HTML-Spezifikation von
+        // der Uebermittlung ausgeschlossen) - der Server erhielt IMMER
+        // einen leeren "content"-Wert, unabhaengig davon, was
+        // tatsaechlich getippt wurde ("Bitte eine Nachricht eingeben."
+        // trotz sichtbar eingegebenem Text). "readOnly" verhindert
+        // weitere Eingaben waehrend des Ladezustands genauso, wird aber
+        // weiterhin als Formularwert uebermittelt.
+        textarea.readOnly = true;
+        sendBtn.classList.add("chat-composer__send-btn--loading");
+      }
+
+      // Streaming (13.09., Streaming-Architekturentscheidung, siehe
+      // DECISIONS.md): bricht die "denkt nach"-Sprechblase auf, sobald das
+      // erste echte Text-Delta eintrifft, statt bis zum vollstaendigen
+      // Seitenwechsel zu warten (TTFR-Gewinn, siehe app/web/chat_router.py::
+      // send_message_stream). Der abschliessende Seitenwechsel (`finish`)
+      // bleibt bewusst bestehen - er liefert das endgueltige, vollstaendig
+      // server-gerenderte Ergebnis (Kopieren-Button, "Quellen & Verweise"-
+      // Karte, Editor-Link) ueber denselben, bereits getesteten Jinja-Pfad,
+      // statt diese Bausteine riskant per Hand in JS nachzubauen. OHNE
+      // `fetch`/`ReadableStream` (aeltere WebView2-Runtime) faellt dies
+      // vollstaendig auf den klassischen Formular-Redirect zurueck (kein
+      // `preventDefault()`, siehe unten).
+      var supportsStreaming = !!(
+        window.fetch && window.ReadableStream && window.TextDecoder
+      );
+
+      function runStreamingSend(evt) {
+        evt.preventDefault();
+        setLoadingState();
+        var thinkingBubble = appendThinkingBubble();
+        var textSpan = null;
+        var conversationIdField = composer.querySelector("input[name=\"conversation_id\"]");
+        var formData = new FormData(composer);
+
+        function revealFirstDelta() {
+          if (textSpan || !thinkingBubble) { return; }
+          thinkingBubble.classList.remove("chat-message--thinking");
+          var textEl = thinkingBubble.querySelector(".chat-message__text");
+          textEl.classList.remove("chat-thinking-indicator");
+          textEl.removeAttribute("role");
+          textEl.removeAttribute("aria-label");
+          textEl.innerHTML = "<span></span>";
+          textSpan = textEl.querySelector("span");
+        }
+
+        // P1 Performance-Feedback-Follow-up (17.09., siehe OPEN_ISSUES.md):
+        // fuer JEDEN Aufruf mit Dokument-/Aktenkontext kommt vor dem
+        // abschliessenden "delta" jetzt eine Folge von "status"-Ereignissen
+        // (fester, inhaltsfreier Text aus DraftingService._STEP_STATUS_
+        // LABELS) - aktualisiert nur die bereits bestehende "denkt
+        // nach"-Sprechblase, ersetzt sie NICHT, kein neuer UI-Baustein.
+        // Nach `revealFirstDelta()` (Fast-Path-Faelle) gibt es die
+        // Sprechblase nicht mehr - dann bewusst ein No-Op.
+        function updateThinkingStatus(status) {
+          if (textSpan || !thinkingBubble || !status) { return; }
+          var statusEl = thinkingBubble.querySelector(".chat-thinking-indicator__status");
+          if (statusEl) { statusEl.textContent = status; }
+        }
+
+        function finish(conversationId) {
+          if (!conversationId) {
+            window.location.reload();
+            return;
           }
+          var targetPath = "/dashboard/chat/" + conversationId;
+          if (window.location.pathname === targetPath) {
+            window.location.reload();
+          } else {
+            window.location.href = targetPath;
+          }
+        }
+
+        fetch("/dashboard/chat/send-stream", { method: "POST", body: formData })
+          .then(function (response) {
+            if (!response.ok || !response.body) { throw new Error("stream_failed"); }
+            var reader = response.body.getReader();
+            var decoder = new TextDecoder("utf-8");
+            var buffer = "";
+            var conversationId = conversationIdField ? conversationIdField.value : null;
+
+            function handleFrame(frame) {
+              var line = frame.trim();
+              if (line.indexOf("data: ") !== 0) { return; }
+              var payload;
+              try {
+                payload = JSON.parse(line.slice("data: ".length));
+              } catch (parseError) {
+                return;
+              }
+              if (payload.kind === "start") {
+                conversationId = payload.conversation_id;
+                if (conversationIdField) { conversationIdField.value = conversationId; }
+              } else if (payload.kind === "delta") {
+                revealFirstDelta();
+                if (textSpan) {
+                  textSpan.textContent += payload.text;
+                  messages.scrollTop = messages.scrollHeight;
+                }
+              } else if (payload.kind === "status") {
+                updateThinkingStatus(payload.status);
+              } else if (payload.kind === "done") {
+                finish(conversationId);
+              }
+            }
+
+            function pump() {
+              return reader.read().then(function (result) {
+                if (result.done) { return; }
+                buffer += decoder.decode(result.value, { stream: true });
+                var frames = buffer.split("\n\n");
+                buffer = frames.pop();
+                frames.forEach(handleFrame);
+                return pump();
+              });
+            }
+
+            return pump();
+          })
+          .catch(function () {
+            finish(null);
+          });
+      }
+
+      if (composer) {
+        composer.addEventListener("submit", function (evt) {
+          if (supportsStreaming) {
+            runStreamingSend(evt);
+            return;
+          }
+          // Fallback ohne preventDefault(): klassischer Formular-Redirect
+          // (unveraendertes Verhalten wie vor der Streaming-Einfuehrung).
+          setLoadingState();
+          appendThinkingBubble();
         });
       }
 

@@ -162,3 +162,39 @@ def test_feedback_page_lists_nav_entry(client: TestClient, db_session: Session, 
     response = client.get("/dashboard/feedback")
     assert response.status_code == 200
     assert "Pilot-Feedback" in response.text
+
+
+def test_feedback_list_shows_readable_status_not_the_internal_value(
+    client: TestClient, db_session: Session, roles
+) -> None:
+    """ECHTER FUND (14.09.): die Statusspalte rief das FRISTEN-Makro
+    `deadline_status_tag` auf. Dessen Wertebereich (unreviewed/confirmed/
+    rejected) passt nicht zu `PilotFeedback.review_status`
+    (neu/zur_pruefung/freigegeben/abgelehnt) - die Zuordnung fiel durch und
+    zeigte dem Piloten den ROHEN Wert "zur_pruefung". Zusaetzlich steckte
+    die fertige Pille in einer zweiten Pille, deren Farblogik nur zwei der
+    vier Zustaende kannte."""
+    import re
+
+    create_test_user(db_session, roles["mitarbeiter"], "mitarbeiter@kanzlei.test")
+    login(client, "mitarbeiter@kanzlei.test")
+    db_session.add(
+        PilotFeedback(
+            submitted_by_actor="mitarbeiter@kanzlei.test",
+            category="fehler",
+            message="Testmeldung aus dem Pilotbetrieb.",
+            review_status="zur_pruefung",
+            requires_admin_review=True,
+        )
+    )
+    db_session.commit()
+
+    response = client.get("/dashboard/feedback")
+    page = " ".join(response.text.split())
+
+    assert response.status_code == 200
+    assert "zur Prüfung" in page
+    # Der rohe interne Wert darf nicht als Beschriftung erscheinen.
+    assert ">zur_pruefung<" not in page
+    # Keine Pille in einer Pille.
+    assert re.search(r'<span class="tag[^"]*">\s*<span class="tag(?!__dot)', page) is None

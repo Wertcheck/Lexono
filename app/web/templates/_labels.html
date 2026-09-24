@@ -1,0 +1,87 @@
+{# Gemeinsame, nutzerlesbare Beschriftungen für interne Statuswerte
+   (14.09.).
+
+   ECHTER FUND beim UI-Durchgang: derselbe Entwurfsstatus erschien an
+   verschiedenen Stellen unterschiedlich - `draft_detail.html` übersetzte
+   ihn ("freigegeben"), `drafts_list.html` und `matter_detail.html` zeigten
+   dagegen den ROHEN internen Wert ("approved"). Für den Anwalt sind das
+   zwei verschiedene Sprachen für dieselbe Sache, und interne
+   Statusbezeichner gehören nach der UI-Direktive (§11) gar nicht erst in
+   die Produktoberfläche.
+
+   Bewusst EIN gemeinsames Makro statt dreimal derselben Inline-Map -
+   dieselbe "eine Stelle statt viele Templates"-Logik wie bei
+   `_icons.html`. Unbekannte Werte werden unverändert durchgereicht (kein
+   stilles Verschlucken eines neuen Status). #}
+
+{% macro draft_status_text(status) -%}
+  {{- {
+        "draft": "Entwurf",
+        "legal_review": "in Prüfung",
+        "approved": "freigegeben",
+        "rejected": "zurückgewiesen",
+      }.get(status, status) -}}
+{%- endmacro %}
+
+{% macro draft_status_tag(status) -%}
+  <span class="tag {% if status == 'approved' %}tag--matched{% elif status == 'rejected' %}tag--outbound{% else %}tag--unmatched{% endif %}">
+    <span class="tag__dot"></span>{{ draft_status_text(status) }}
+  </span>
+{%- endmacro %}
+
+{# Pruefstatus einer erkannten Frist. Gleiche Begruendung wie oben: auf der
+   Aktenseite erschien bisher der rohe interne Wert ("unreviewed"). Eine nur
+   VERMUTETE Frist darf ausserdem optisch nicht wie eine bestaetigte wirken. #}
+{% macro deadline_status_tag(review_status) -%}
+  <span class="tag {% if review_status == 'confirmed' %}tag--matched{% elif review_status == 'rejected' %}tag--outbound{% else %}tag--unmatched{% endif %}">
+    <span class="tag__dot"></span>{{ {
+        "unreviewed": "ungeprüft",
+        "confirmed": "bestätigt",
+        "rejected": "verworfen",
+      }.get(review_status, review_status) }}
+  </span>
+{%- endmacro %}
+
+{# Aktenstatus. `matters_list.html` und `matter_detail.html` uebersetzten
+   ihn bereits, `client_detail.html` zeigte dagegen "open"/"closed" roh. #}
+{% macro matter_status_tag(status) -%}
+  <span class="tag {% if status == 'open' %}tag--matched{% else %}tag--outbound{% endif %}">
+    <span class="tag__dot"></span>{{ {"open": "offen", "closed": "abgeschlossen"}.get(status, status) }}
+  </span>
+{%- endmacro %}
+
+{# Postausgang: "pending" = wartet auf die manuelle Freigabe zum Versand.
+   Bewusst "wartet auf Versand" statt "ausstehend" - Lexono versendet
+   NICHT automatisch, das soll die Beschriftung auch sagen. #}
+{% macro outbox_status_tag(status) -%}
+  <span class="tag {% if status == 'sent' %}tag--matched{% else %}tag--unmatched{% endif %}">
+    <span class="tag__dot"></span>{{ {"pending": "wartet auf Versand", "sent": "versendet"}.get(status, status) }}
+  </span>
+{%- endmacro %}
+
+{# Pilot-Feedback (`PilotFeedback.review_status`, Wertebereich siehe
+   app/models/pilot_feedback.py: neu / zur_pruefung / freigegeben /
+   abgelehnt).
+
+   ECHTER FUND (14.09.): `feedback_form.html` rief hierfür das FRISTEN-Makro
+   `deadline_status_tag` auf. Dessen Wertebereich (unreviewed/confirmed/
+   rejected) passt nicht - die Zuordnung fiel also durch und zeigte dem
+   Piloten den ROHEN internen Wert "zur_pruefung". Zusätzlich steckte das
+   Makro in einem zweiten `<span class="tag">` (Pille in Pille), dessen
+   Farblogik nur zwei der vier Zustände kannte. Deshalb ein eigenes Makro
+   mit dem RICHTIGEN Wertebereich statt einer geliehenen Beschriftung. #}
+{% macro feedback_status_tag(review_status) -%}
+  <span class="tag {% if review_status == 'freigegeben' %}tag--matched{% elif review_status == 'abgelehnt' %}tag--outbound{% else %}tag--unmatched{% endif %}">
+    <span class="tag__dot"></span>{{ {
+        "neu": "neu",
+        "zur_pruefung": "zur Prüfung",
+        "freigegeben": "freigegeben",
+        "abgelehnt": "abgelehnt",
+      }.get(review_status, review_status) }}
+  </span>
+{%- endmacro %}
+
+{# Anwaltliche Anmerkung (AttorneyInstruction). #}
+{% macro instruction_status_text(status) -%}
+  {{- {"open": "offen", "applied": "angewendet", "discarded": "verworfen"}.get(status, status) -}}
+{%- endmacro %}

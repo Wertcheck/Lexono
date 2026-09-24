@@ -46,12 +46,10 @@ _PLACEHOLDER_PAGES: dict[str, tuple[str, str]] = {
         "Eine Schnellübersicht der zuletzt bearbeiteten Akten befindet sich in der "
         "finalen Vorbereitung für das v0.2-Update.",
     ),
-    "/matters": (
-        "Aktive Akten",
-        "Eine eigenständige, nach Aktenzeichen/Mandant sortierbare Akten-Übersicht "
-        "(unabhängig vom Posteingang) befindet sich in der finalen Vorbereitung für "
-        "das v0.2-Update.",
-    ),
+    # "/matters" ("Akten") ist seit der UI/UX-Ueberarbeitung (13.09.) KEIN
+    # Platzhalter mehr - siehe app/web/matters_router.py (echte,
+    # rein lesende Akten-Uebersicht + Detailansicht mit Dokumenten/
+    # Aufgaben/Fristen/Kommunikation/Chat-Unterhaltungen/Entwuerfen).
     "/documents": (
         "Dokumenten-Viewer",
         "Eine dedizierte Dokumentenansicht mit Vorschau befindet sich in der finalen "
@@ -96,11 +94,10 @@ _PLACEHOLDER_PAGES: dict[str, tuple[str, str]] = {
     # Platzhalter mehr - siehe app/web/prompt_library_router.py (echte
     # Prompt-Bibliothek: read-only Referenz der tatsächlichen System-Prompts
     # + editierbare Kanzlei-Prompts mit Platzhalter-Variablen).
-    "/knowledge": (
-        "Kanzlei-Wissen",
-        "Die Verwaltungsoberfläche für die Kanzlei-Wissensbasis befindet sich in der "
-        "finalen Vorbereitung für das v0.2-Update.",
-    ),
+    # "/knowledge" ("Kanzleiwissen") ist seit 14.09. KEIN Platzhalter mehr -
+    # siehe app/web/knowledge_router.py (echte Uebersicht ueber Textbausteine,
+    # Rechtsquellen und die importierte Gesetzesbibliothek; die Daten und der
+    # KnowledgeItemService existierten laengst, nur die Oberflaeche fehlte).
     "/history/analysen": (
         "Gespeicherte Analysen",
         "Ein durchsuchbares Verlaufsarchiv früherer KI-Analysen befindet sich in der "

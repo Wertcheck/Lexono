@@ -127,6 +127,27 @@ def activate_user(
     return RedirectResponse(url="/dashboard/admin/users", status_code=303)
 
 
+@router.post("/{user_id}/reset-password")
+def reset_user_password(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Schließt eine echte Lücke (19.09., gefunden beim Login-Referenzbild-
+    Abgleich für "Passwort vergessen?"): bisher konnte ein Admin das
+    Passwort eines KOLLEGEN (Anwalt/Mitarbeiter) nirgends zurücksetzen -
+    `scripts/reset_admin_password.py` wirkt nur auf Admin-Konten. Bewusst
+    auch für das eigene Konto erlaubt (anders als deactivate_user) - ein
+    Admin, der sein eigenes Passwort vergisst, aber noch angemeldet ist,
+    darf sich selbst helfen."""
+    user = get_or_404(db, User, user_id, "Nutzer")
+    _user, password = UserService().reset_password(db, user, actor=current_user.email)
+    return RedirectResponse(
+        url=f"/dashboard/admin/users?created_email={user.email}&created_password={password}",
+        status_code=303,
+    )
+
+
 @router.post("/{user_id}/force-logout")
 def force_logout_user(
     user_id: str,

@@ -1,4 +1,5 @@
 {% from "partials/_macros.html" import matter_tag, direction_tag %}
+{% import "_icons.html" as icons %}
 <div id="detail-pane" class="detail-pane">
   <div class="detail-header">
     {{ matter_tag(message) }} {{ direction_tag(message) }}
@@ -7,20 +8,161 @@
       <span>Von: {{ message.sender or "unbekannt" }}</span>
       {% if message.recipient %}<span>An: {{ message.recipient }}</span>{% endif %}
       <span>{{ message.created_at.strftime("%d.%m.%Y, %H:%M") }} Uhr</span>
-      {% if message.matter %}<span>Akte: {{ message.matter.title }}</span>{% endif %}
+      {# ECHTER FUND (18.09., Flow-Audit "Posteingang -> Akte" - Owner-
+         Direktive "AUTONOMOUS PRODUCT COMPLETION"): zeigte bereits die
+         echte, zugeordnete Akte an, war aber KEIN Link dorthin - identisches
+         Bug-Muster wie die bereits behobenen Dokument-Chips in dieser
+         Datei (siehe Kommentar unten), hier nur an einer Stelle vergessen. #}
+      {% if message.matter %}<span>Akte: <a href="/dashboard/matters/{{ message.matter_id }}">{{ message.matter.title }}</a></span>{% endif %}
     </div>
   </div>
+
+  {% if message.matter %}
+    {# "Zusammenfassen"/"Antworten" (16.09., UI/UX-Sweep - Referenz
+       `04_posteingang_nachricht_detail.png`). Beide starten eine neue
+       Chat-Unterhaltung fuer die Akte dieser Nachricht ueber
+       `app/web/chat_router.py::start_conversation_from_message` - GENAU
+       derselbe, bereits vollstaendig getestete Weg wie jede andere Chat-
+       Nachricht (Privacy Gateway, Aktenisolation, Fail-Closed). "Antworten"
+       erzeugt dadurch einen echten, im Editor pruef-/bearbeitbaren
+       Entwurf, NIE einen automatischen Versand - es gibt schlicht keine
+       Versandfunktion in dieser Pipeline. Braucht zwingend eine bereits
+       zugeordnete Akte (Aktenisolation) - fuer nicht zugeordnete
+       Nachrichten deshalb bewusst NICHT angezeigt, siehe die Zuordnungs-
+       Karten oben. #}
+    <div class="detail-actions">
+      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="action" value="summarize" />
+        <button type="submit" class="btn" data-ai-loading-label="Wird gestartet …">{{ icons.document(class_="icon") }} Zusammenfassen</button>
+      </form>
+      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="action" value="draft_reply" />
+        <button type="submit" class="btn btn--primary" data-ai-loading-label="Wird gestartet …">{{ icons.send(class_="icon") }} Antworten</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if detected_deadline_preview is defined and detected_deadline_preview %}
+    {# "Frist"-Vorschau (24.09., Owner-Direktive "PRODUCT COMPLETION MODE"
+       §2/§9 - Referenzbild `04_posteingang_nachricht_detail.png` zeigt ein
+       drittes Feld "Frist" direkt neben Mandant/Akte in der Zuordnungs-
+       Karte; bereits am 14.09. als bewusst zurueckgestellte Luecke
+       dokumentiert, siehe PROJECT_STATE.md). Reine Vorschau derselben
+       Erkennung, die `DeadlineAnalysisService.analyze_message` beim
+       tatsaechlichen Zuordnen ohnehin ausfuehrt (app/web/router.py::
+       _preview_deadline) - kein neuer, konkurrierender Erfassungsweg. #}
+    <div class="match-suggestion-card match-suggestion-card--deadline">
+      <div class="match-suggestion-card__title">
+        {{ icons.clock(class_="icon") }}
+        <span>Erkannte Frist im Nachrichtentext</span>
+      </div>
+      <p class="match-suggestion-card__text">
+        <strong>
+          {{ detected_deadline_preview.due_date.strftime("%d.%m.%Y") if detected_deadline_preview.due_date else detected_deadline_preview.raw_date_text }}
+        </strong>
+      </p>
+      <p class="match-suggestion-card__meta">
+        {{ detected_deadline_preview.reasoning }} - wird nach der
+        Aktenzuordnung automatisch als Frist erfasst (Status
+        „unreviewed", manuelle Prüfung erforderlich).
+      </p>
+    </div>
+  {% endif %}
+
+  {% if match_suggestion %}
+    {# "Automatische Zuordnung (Vorschlag)" (14.09.) - MatterAssignmentService
+       existierte bereits vollstaendig implementiert, war aber nie mit dem
+       Posteingang verbunden (siehe app/web/router.py::_build_match_suggestion
+       fuer den vollen Befund). Reine Anzeige, KEINE automatische Wirkung -
+       nur "Übernehmen" wendet den Vorschlag tatsaechlich an. #}
+    <div class="match-suggestion-card">
+      <div class="match-suggestion-card__title">
+        {{ icons.folder(class_="icon") }}
+        <span>Automatische Zuordnung (Vorschlag)</span>
+      </div>
+      <p class="match-suggestion-card__text">
+        <strong>{{ match_suggestion.matter_title }}</strong>
+        {% if match_suggestion.client_name %} · {{ match_suggestion.client_name }}{% endif %}
+      </p>
+      <p class="match-suggestion-card__meta">
+        Übereinstimmung: {{ (match_suggestion.score * 100) | round | int }} %
+      </p>
+      <form method="post" action="/dashboard/inbox/{{ message.id }}/assign-matter" class="match-suggestion-card__form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="matter_id" value="{{ match_suggestion.matter_id }}" />
+        <button type="submit" class="btn btn--primary">Übernehmen</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if assignable_matters is defined %}
+    {# Manuelle Aktenzuordnung (16.09., UI/UX-Sweep - Referenz
+       `04_posteingang_nachricht_detail.png` zeigt eine editierbare
+       Zuordnung, nicht nur die automatische Vorschlagskarte oben). Der
+       Endpunkt `accept_matter_suggestion` existierte bereits, akzeptiert
+       jede existierende `matter_id` und wurde bisher NUR vom "Übernehmen"-
+       Button der Vorschlagskarte genutzt - fuer Nachrichten ganz OHNE
+       gefundenen Vorschlag gab es dadurch bisher keinen Weg, sie ueberhaupt
+       einer Akte zuzuordnen. Erscheint auch NEBEN einer vorhandenen
+       Vorschlagskarte (als bewusste Alternative/Korrekturmoeglichkeit,
+       falls der automatische Vorschlag falsch liegt). #}
+    <div class="match-suggestion-card match-suggestion-card--manual">
+      <div class="match-suggestion-card__title">
+        {{ icons.folder(class_="icon") }}
+        <span>Manuell einer Akte zuordnen</span>
+      </div>
+      {% if assignable_matters %}
+        <form method="post" action="/dashboard/inbox/{{ message.id }}/assign-matter" class="match-suggestion-card__form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <select name="matter_id" required>
+            <option value="" disabled selected>Akte auswählen …</option>
+            {% for matter in assignable_matters %}
+              <option value="{{ matter.id }}">
+                {{ matter.client.name }} – {{ matter.title }}{% if matter.reference_number %} ({{ matter.reference_number }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn">Zuordnen</button>
+        </form>
+      {% else %}
+        <p class="match-suggestion-card__text">Noch keine Akten vorhanden.</p>
+      {% endif %}
+    </div>
+  {% endif %}
 
   <div class="detail-body">{{ message.body_text or "(kein Inhalt extrahiert)" }}</div>
 
   {% if documents %}
     <div class="detail-section-label">Anhänge / zugehörige Dokumente ({{ documents|length }})</div>
     <div>
+      {# ECHTER FUND (17.09., Overnight-Direktive §6 "Dokumente sind ein
+         Hauptluecken-Bereich"): diese Chips zeigten bereits echte,
+         persistierte `Document`-Zeilen an, waren aber reine <span>s ohne
+         jeden Weg, das Dokument tatsaechlich zu oeffnen - identisches
+         Bug-Muster, das `chat.html` fuer den Chat-Dokumentkontext bereits
+         korrekt loest (bedingtes <a>/<span>, siehe dort). Reused hier auf
+         die bereits vollstaendige Aktendokument-Seite (Vorschau/KI-
+         Aktionen/Download/Erkannte Fristen, heute selbst gebaut) - nur
+         moeglich, sobald die Nachricht (und damit das Dokument) bereits
+         einer Akte zugeordnet ist (`document.matter_id`), da die Route
+         eine matter_id in der URL braucht. Fuer noch unzugeordnete
+         Nachrichten bleibt der Chip bewusst ein <span> (ehrlich - dort
+         gibt es noch keine oeffenbare Zielseite), statt einen toten Link
+         vorzutaeuschen. #}
       {% for document in documents %}
-        <span class="doc-chip">
+        {% if document.matter_id %}
+          <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}"
+             class="doc-chip doc-chip--link"
+             title="Dokument öffnen">
+        {% else %}
+          <span class="doc-chip">
+        {% endif %}
+          {{ icons.file_type_badge(document.file_path) }}
           {{ document.original_filename or "Dokument" }}
           {% if document.classified_type %} · {{ document.classified_type }}{% endif %}
-        </span>
+        {% if document.matter_id %}</a>{% else %}</span>{% endif %}
       {% endfor %}
     </div>
   {% endif %}

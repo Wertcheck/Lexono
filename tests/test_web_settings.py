@@ -683,3 +683,58 @@ def test_logo_file_route_404_without_logo(
     assert response.status_code == 404
 
 
+def test_logo_file_route_accessible_to_non_admin(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    """ECHTER FUND (20.09., beim Bauen der Briefkopf-Vorschau im Entwurf-
+    Editor entdeckt): diese Route war bisher `_require_admin`-gesperrt,
+    obwohl `export_draft_docx`/`export_draft_pdf` (app/web/drafts_router.py)
+    exakt dieselben Bilddaten laengst OHNE Rolleneinschraenkung an jeden
+    angemeldeten Nutzer ausliefern - ein Anwalt/Mitarbeiter ohne Admin-Rolle
+    konnte die identischen Bytes also bereits ueber jeden Export erhalten,
+    nur die direkte Bildansicht (jetzt auch fuer die Briefkopf-Vorschau im
+    Entwurf-Editor benoetigt) war ihm verwehrt. Upload als Admin, Abruf als
+    Mitarbeiter."""
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+    client.post(
+        "/dashboard/settings/profile/logo",
+        data={"csrf_token": csrf},
+        files={"logo": ("logo.png", _TINY_PNG_BYTES, "image/png")},
+    )
+    client.post("/dashboard/logout", follow_redirects=False)
+
+    _login_non_admin(client, db_session)
+    response = client.get("/dashboard/settings/profile/logo-file")
+    assert response.status_code == 200
+    assert response.content == _TINY_PNG_BYTES
+
+
+def test_logo_file_route_requires_login(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    response = client.get("/dashboard/settings/profile/logo-file", follow_redirects=False)
+    assert response.status_code == 303
+    assert "/dashboard/login" in response.headers["location"]
+
+
+def test_signature_file_route_accessible_to_non_admin(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    """Gleiche Begruendung wie test_logo_file_route_accessible_to_non_admin
+    oben, fuer die Signatur-Datei-Route."""
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+    client.post(
+        "/dashboard/settings/profile/signature",
+        data={"csrf_token": csrf},
+        files={"signature": ("signature.png", _TINY_PNG_BYTES, "image/png")},
+    )
+    client.post("/dashboard/logout", follow_redirects=False)
+
+    _login_non_admin(client, db_session)
+    response = client.get("/dashboard/settings/profile/signature-file")
+    assert response.status_code == 200
+    assert response.content == _TINY_PNG_BYTES
+
+

@@ -69,7 +69,9 @@ def anonymous_client(db_session: Session) -> Iterator[TestClient]:
 
 _PLACEHOLDER_CASES = [
     ("/dashboard/recent", "Letzte Akten"),
-    ("/dashboard/matters", "Aktive Akten"),
+    # "/dashboard/matters" ("Akten") ist seit der UI/UX-Ueberarbeitung
+    # (13.09.) KEIN Platzhalter mehr - siehe tests/test_web_matters.py
+    # (echte, rein lesende Akten-Uebersicht + Detailansicht).
     ("/dashboard/documents", "Dokumenten-Viewer"),
     ("/dashboard/archive", "Archiv"),
     # "/dashboard/tools/schriftsatz" ("Schriftsatz-Generator") ist seit
@@ -80,7 +82,9 @@ _PLACEHOLDER_CASES = [
     ("/dashboard/sources", "Rechtsquellen"),
     # "/dashboard/library/prompts" ("Standard-Prompts") ist seit Schritt 3
     # KEIN Platzhalter mehr - siehe tests/test_web_prompt_library.py.
-    ("/dashboard/knowledge", "Kanzlei-Wissen"),
+    # "/dashboard/knowledge" ist seit 14.09. KEIN Platzhalter mehr -
+    # echte Uebersicht, siehe app/web/knowledge_router.py und
+    # tests/test_web_knowledge.py.
     ("/dashboard/history/analysen", "Gespeicherte Analysen"),
     # "/dashboard/account/profile" ("Kanzlei-Profil & Briefkopf") ist seit
     # 20.08. KEIN Platzhalter mehr - siehe tests/test_web_settings.py

@@ -9,11 +9,21 @@
     </div>
   </div>
 
+  {# KORREKTUR (14.09.): dieser Hinweis sprach von einer "kuratierten Auswahl
+     als lokale Fixture-Daten". Das war einmal richtig, ist es aber nicht mehr:
+     der gesamte Bestand stammt inzwischen aus dem amtlichen Angebot
+     "Gesetze im Internet" (BMJ/BfJ) - real geprueft, alle 11.137 Normen tragen
+     `source_name = 'Gesetze im Internet'` samt Deep-Link. Einem Anwalt
+     faelschlich zu sagen, es handle sich um Beispieldaten, untergraebt das
+     Vertrauen in eine Funktion, die tatsaechlich amtliche Texte liefert.
+     Der rechtliche Vorbehalt (keine Gewaehr fuer Aktualitaet, verbindlich ist
+     die amtliche Fassung) bleibt selbstverstaendlich bestehen. #}
   <div class="banner banner--info">
-    Kuratierte Auswahl bekannter Kernvorschriften als lokale Fixture-Daten (amtliche Werke,
-    § 5 UrhG urheberrechtsfrei) - kein vollständiger oder live aktualisierter Gesetzestext.
-    Für die verbindliche aktuelle Fassung bitte eine offizielle Quelle (z. B.
-    gesetze-im-internet.de) konsultieren.
+    Amtliche Gesetzestexte aus „Gesetze im Internet“ (BMJ/BfJ, § 5 UrhG
+    urheberrechtsfrei), lokal auf diesem Rechner verfügbar – jede Norm mit
+    Fundstelle und Link zur amtlichen Quelle. Maßgeblich ist stets die dort
+    veröffentlichte Fassung; der lokale Bestand wird nicht automatisch
+    aktualisiert.
   </div>
 
   <div class="split">
@@ -24,6 +34,14 @@
              class="law-sidebar__law-link{% if selected_law and selected_law.code == law.code %} law-sidebar__law-link--active{% endif %}">
             <span class="law-sidebar__law-code">{{ law.code }}</span>
             <span class="law-sidebar__law-title">{{ law.title }}</span>
+            {# Echter Umfang + echter Stand je Gesetz (14.09.) - fuer eine
+               Kanzlei aussagekraeftiger als eine Dateigroesse. #}
+            {% if law_stats and law_stats.get(law.code) %}
+              <span class="law-sidebar__law-meta" style="display: block; font-size: 11px; color: var(--ink-300); margin-top: 2px;">
+                {{ law_stats[law.code].count }} Normen
+                {% if law_stats[law.code].stand %} · Stand {{ law_stats[law.code].stand.strftime("%d.%m.%Y") }}{% endif %}
+              </span>
+            {% endif %}
           </a>
         {% else %}
           <div class="empty-state">Noch keine Gesetzeswerke importiert.</div>
@@ -48,8 +66,11 @@
       {% if selected_section %}
         <div class="law-reading-pane">
           <div class="law-reading-pane__meta">
-            {{ selected_law.code }} · {{ selected_law.title }} · Fixture-Stand:
+            {{ selected_law.code }} · {{ selected_law.title }} · Stand:
             {{ selected_section.last_updated.strftime("%d.%m.%Y") }}
+            {% if selected_section.source_url %}
+              · <a href="{{ selected_section.source_url }}" target="_blank" rel="noopener noreferrer">amtliche Quelle</a>
+            {% endif %}
           </div>
           <h1 class="law-reading-pane__heading">{{ selected_section.section_number }} {{ selected_section.title }}</h1>
           <p class="law-reading-pane__text">{{ selected_section.text_content }}</p>

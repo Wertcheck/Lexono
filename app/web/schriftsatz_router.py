@@ -47,7 +47,7 @@ from app.documents.extraction import SUPPORTED_TEXT_EXTENSIONS
 from app.documents.service import DocumentProcessingService
 from app.drafting.quick_matter import create_quick_matter
 from app.ingestion.stability import compute_sha256
-from app.models import Document, Matter, User
+from app.models import Client, Document, Matter, User
 from app.privacy.api_logger import friendly_block_message
 from app.web.service_factory import WritingProviderNotConfiguredError, get_drafting_service
 from app.web.template_paths import TEMPLATES_DIR
@@ -82,6 +82,7 @@ def schriftsatz_generator_page(
     request: Request,
     error: str | None = None,
     matter_id: str | None = None,
+    client_id: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
@@ -99,6 +100,15 @@ def schriftsatz_generator_page(
     preselected_matter_id = (
         matter_id if matter_id and any(m.id == matter_id for m in open_matters) else None
     )
+    # `client_id` (17.09., ECHTER FUND - siehe create_quick_matter fuer die
+    # volle Begruendung): identisches Prinzip wie `matter_id` oben - nur die
+    # ID wandert durch die URL, der Mandantenname wird serverseitig anhand
+    # dieser ID geladen. Nur genutzt, wenn KEINE Akte vorausgewaehlt ist
+    # (ein Mandant OHNE Akte, sonst waere `matter_id` bereits der praezisere
+    # Weg). Ungueltige/fremde ID wird ebenso stillschweigend ignoriert.
+    preselected_client = (
+        db.get(Client, client_id) if client_id and not preselected_matter_id else None
+    )
     context = {
         "request": request,
         "active_nav": "Schriftsatz-Generator",
@@ -106,6 +116,7 @@ def schriftsatz_generator_page(
         "csrf_token": getattr(request.state, "csrf_token", ""),
         "open_matters": open_matters,
         "preselected_matter_id": preselected_matter_id,
+        "preselected_client": preselected_client,
         "error": error,
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
         "max_upload_files": _MAX_UPLOAD_FILES,
@@ -189,6 +200,7 @@ def generate_schriftsatz(
     matter_id: str = Form(""),
     new_matter_title: str = Form(""),
     new_client_name: str = Form(""),
+    new_client_id: str = Form(""),
     stil: str = Form(""),
     vorlage: str = Form(""),
     attorney_anmerkungen: str = Form(""),
@@ -219,6 +231,7 @@ def generate_schriftsatz(
             db,
             title=new_matter_title.strip() or None,
             client_name=new_client_name.strip() or None,
+            client_id=new_client_id.strip() or None,
             actor=current_user.email,
         )
 

@@ -130,12 +130,22 @@ def test_overview_page_is_not_a_placeholder(client: TestClient) -> None:
     assert "Gesetzesbibliothek" in response.text
 
 
-def test_overview_page_shows_disclaimer_about_fixture_data(client: TestClient) -> None:
-    """Ehrlichkeitsgebot (siehe app/models/law.py): die Seite darf NICHT
-    den Eindruck einer vollständigen/aktuellen Gesetzessammlung erwecken."""
+def test_overview_page_shows_currency_disclaimer(client: TestClient) -> None:
+    """Ehrlichkeitsgebot (siehe app/models/law.py): die Seite darf NICHT den
+    Eindruck einer automatisch aktuellen Gesetzessammlung erwecken.
+
+    AKTUALISIERT 14.09.: der frühere Hinweistext sprach von "kuratierter
+    Auswahl als lokale Fixture-Daten" - das war inzwischen schlicht FALSCH
+    (real geprüft: alle 11.137 Normen tragen `source_name = 'Gesetze im
+    Internet'`, also amtliche Texte mit Deep-Link). Die eigentliche
+    Garantie - Aktualitätsvorbehalt + Verweis auf die maßgebliche amtliche
+    Fassung - wird hier unverändert geprüft, nur nicht mehr über einen
+    inhaltlich unrichtigen Satz."""
     response = client.get("/dashboard/laws")
-    assert "kein vollständiger" in response.text
     assert "§ 5 UrhG" in response.text
+    # Aktualitätsvorbehalt muss weiterhin vorhanden sein.
+    assert "nicht automatisch" in response.text
+    assert "Maßgeblich" in response.text
 
 
 def test_law_selected_page_lists_its_sections(client: TestClient, db_session: Session) -> None:
@@ -187,6 +197,46 @@ def test_sections_partial_filters_by_search_term(client: TestClient, db_session:
 
 
 def test_sidebar_links_to_law_library(client: TestClient) -> None:
+    """UI/UX-Ueberarbeitung (13.09.): der Hauptmenuepunkt heisst jetzt
+    "Kanzleiwissen" (verbindliche Vorgabe) statt des Seitentitels
+    "Gesetzesbibliothek" - er verlinkt aber weiterhin auf dieselbe echte
+    Seite (/dashboard/laws)."""
     response = client.get("/dashboard/inbox")
     assert 'href="/dashboard/laws"' in response.text
-    assert "Gesetzesbibliothek" in response.text
+    assert "Kanzleiwissen" in response.text
+
+
+# --- Echte Kennzahlen je Gesetz (14.09., Abgleich mit der Referenzansicht
+# "Gesetze & Normen": dort stehen Version/Stand und Umfang je Gesetzbuch) ---
+
+
+def test_overview_shows_real_norm_count_and_stand_per_law(
+    client: TestClient, db_session: Session
+) -> None:
+    """Umfang und Stand werden aus dem tatsaechlichen Bestand abgeleitet
+    (`count(LawSection)` bzw. `max(last_updated)`) - keine erfundenen
+    Angaben. Eine Dateigroesse in MB, wie die Referenz sie zeigt, existiert
+    im Datenmodell NICHT und wird deshalb bewusst nicht dargestellt."""
+    _seed_test_law(db_session)
+
+    response = client.get("/dashboard/laws")
+
+    assert "1 Normen" in response.text
+    assert "20.08.2026" in response.text
+
+
+def test_reading_pane_links_to_official_source(
+    client: TestClient, db_session: Session
+) -> None:
+    """Jede Norm traegt eine amtliche Fundstelle - der Link dorthin ist in
+    einem Rechtsprodukt die wichtigste Vertrauensinformation ueberhaupt."""
+    from app.models import LawSection
+
+    law, section = _seed_test_law(db_session)
+    section.source_url = "https://www.gesetze-im-internet.de/testg/__1.html"
+    db_session.commit()
+
+    response = client.get(f"/dashboard/laws/{law.code}/{section.id}")
+
+    assert "amtliche Quelle" in response.text
+    assert "gesetze-im-internet.de/testg/__1.html" in response.text

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Kanzleiwissen{% endblock %}
+{% block content %}
+  {# Ersetzt den bisherigen "In Vorbereitung"-Platzhalter (14.09.): die
+     Inhalte (Textbausteine, Rechtsquellen, Gesetzesbibliothek) existieren
+     laengst - nur die Oberflaeche fehlte. Bewusst rein lesend, siehe
+     knowledge_router.py. #}
+  {# Kopfbereich an assets/ux-ui (Kanzleiwissen-Referenz) angelehnt: Icon,
+     Titel, erklaerende Unterzeile. Bewusst OHNE den dort gezeigten
+     "+ Neues Dokument"-Button - siehe Hinweis am Seitenende: das Hochladen
+     von Wissensdokumenten existiert im Produkt (noch) nicht, und ein
+     Button ohne Funktion waere eine Fake-Interaktion. #}
+  <div class="topbar">
+    <h1 class="topbar__title">{{ icons.book(class_="icon") }} Kanzleiwissen</h1>
+    <div class="topbar__meta">
+      Ihre zentrale Wissensbasis – Textbausteine, Rechtsquellen und Gesetze.
+    </div>
+  </div>
+
+  <div class="draft-page">
+    {# Kategorie-Kacheln mit ECHTEN Zahlen aus dem tatsaechlichen Bestand -
+       bewusst nur die Kategorien, die es wirklich gibt (die Referenz zeigt
+       zusaetzlich Rechtsprechung/Vorlagen/Fachwissen/Interne Dokumente/
+       Favoriten; dafuer existiert im Datenmodell nichts, erfundene Zahlen
+       waeren irrefuehrend). #}
+    <div class="account-grid" style="margin-bottom: 20px;">
+      <div class="account-card" style="cursor: default;">
+        {{ icons.document(class_="account-card__icon") }}
+        <span class="account-card__title">Textbausteine</span>
+        <span class="account-card__text">{{ items|length }}</span>
+      </div>
+      <div class="account-card" style="cursor: default;">
+        {{ icons.archive(class_="account-card__icon") }}
+        <span class="account-card__title">Rechtsquellen</span>
+        <span class="account-card__text">{{ sources|length }}</span>
+      </div>
+      <a href="/dashboard/laws" class="account-card">
+        {{ icons.book(class_="account-card__icon") }}
+        <span class="account-card__title">Gesetze &amp; Normen</span>
+        <span class="account-card__text">{{ law_count }}</span>
+      </a>
+    </div>
+
+    <form method="get" action="/dashboard/knowledge" class="clients-search-bar" style="margin-bottom: 20px;">
+      <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+      <input type="text" name="search" value="{{ search }}" placeholder="Kanzleiwissen durchsuchen…" />
+      <button type="submit" class="btn">Suchen</button>
+    </form>
+    {# --- Gesetzesbibliothek: nur Einstieg, die vollstaendige Ansicht hat
+         mit /dashboard/laws bereits eine eigene Oberflaeche --- #}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Gesetzesbibliothek</h2>
+      <p class="settings-section__hint">
+        {{ law_count }} Gesetze mit insgesamt {{ "{:,}".format(section_count).replace(",", ".") }}
+        Normen stehen lokal zur Verfügung – aus den amtlichen Quellen importiert
+        und im Chat direkt zitierbar.
+      </p>
+      <a href="/dashboard/laws" class="btn btn--primary" style="align-self: flex-start;">
+        {{ icons.book(class_="icon") }} Gesetze durchsuchen
+      </a>
+    </div>
+
+    {# --- Textbausteine (KnowledgeItem) --- #}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Textbausteine &amp; Kanzleiwissen</h2>
+      {% if items %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Kategorie</th>
+                <th>Rechtsgebiet</th>
+                <th>Version</th>
+                <th>Zuletzt aktualisiert</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>{{ item.title }}</td>
+                  <td>{{ item.category or "–" }}</td>
+                  <td>{{ item.practice_area or "–" }}</td>
+                  <td class="mono">v{{ item.version }}</td>
+                  <td class="mono">{{ item.updated_at.strftime("%d.%m.%Y") if item.updated_at else "–" }}</td>
+                  <td>
+                    {# Der Freigabestatus ist fachlich entscheidend: ein noch
+                       nicht freigegebener Baustein darf nicht wie ein
+                       geprüfter wirken. #}
+                    <span class="tag {{ 'tag--matched' if item.approval_status == 'approved' else 'tag--unmatched' }}">
+                      <span class="tag__dot"></span>{{ "freigegeben" if item.approval_status == "approved" else item.approval_status }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">
+          Noch keine Textbausteine hinterlegt. Textbausteine entstehen aus
+          freigegebenen Formulierungen der Kanzlei und stehen anschließend bei
+          der Schriftsatzerstellung zur Verfügung.
+        </p>
+      {% endif %}
+    </div>
+
+    {# --- Rechtsquellen (Source) --- #}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Rechtsquellen</h2>
+      {% if sources %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Fundstelle</th>
+                <th>Art</th>
+                <th>Freigabe</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for source in sources %}
+                <tr>
+                  <td>
+                    {% if source.url %}
+                      <a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }}</a>
+                    {% else %}
+                      {{ source.title }}
+                    {% endif %}
+                  </td>
+                  <td class="mono">{{ source.reference or "–" }}</td>
+                  <td>{{ source.source_type }}</td>
+                  <td>
+                    <span class="tag {{ 'tag--matched' if source.approval_level == 'freigegeben' else 'tag--unmatched' }}">
+                      <span class="tag__dot"></span>{{ source.approval_level }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">
+          Noch keine eigenen Rechtsquellen hinterlegt.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

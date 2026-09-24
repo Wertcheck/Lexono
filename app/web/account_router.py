@@ -102,6 +102,36 @@ def clear_pin(
     return RedirectResponse(url="/dashboard/account/me", status_code=303)
 
 
+@router.post("/me/display-name")
+def set_display_name(
+    display_name: str = Form(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role()),
+) -> RedirectResponse:
+    """Anzeigename setzen/entfernen (18.09., Owner-Direktive "WEITERARBEITEN"
+    Fortsetzung - gefunden per systematischer Suche nach gelesenen, aber nie
+    beschriebenen Modellfeldern).
+
+    ECHTER FUND: `User.display_name` wird an mehreren Stellen gelesen
+    (`{{ user.display_name or user.email }}` - Mandanten-Übersicht/-Detail,
+    Dokumentgenerator-Platzhalter), aber projektweit NIE geschrieben - weder
+    die Nutzeranlage (`UserService.create_user`, nur E-Mail+Rolle) noch
+    irgendeine andere Stelle bot ein Eingabefeld dafür. Das Feld zeigte
+    dadurch strukturell IMMER die rohe E-Mail-Adresse statt eines lesbaren
+    Namens, obwohl der Lesecode erkennbar für einen echten Anzeigenamen
+    gebaut wurde.
+
+    Bewusst hier (Selbstbedienung auf der "Mein Konto"-Seite), NICHT in
+    `users_router.py`s Admin-Anlageformular: wie jemand angezeigt werden
+    möchte, weiß die Person selbst am besten - ein Admin, der ein Konto für
+    einen Kollegen anlegt, kennt dessen bevorzugte Anzeigeform meist nicht.
+    Leeres Feld entfernt den Anzeigenamen wieder (fällt dann ehrlich auf die
+    bereits bestehende `or user.email`-Fallback-Logik zurück)."""
+    current_user.display_name = display_name.strip() or None
+    db.commit()
+    return RedirectResponse(url="/dashboard/account/me", status_code=303)
+
+
 @router.get("/privacy", response_class=HTMLResponse)
 def account_privacy(
     request: Request, current_user: User = Depends(require_login)

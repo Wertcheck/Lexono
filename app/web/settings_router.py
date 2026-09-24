@@ -385,8 +385,20 @@ def remove_firm_logo(
 @router.get("/profile/logo-file")
 def firm_logo_file(
     db: Session = Depends(get_db),
-    current_user: User = Depends(_require_admin),
+    current_user: User = Depends(require_login),
 ) -> FileResponse:
+    """ECHTER FUND (20.09., beim Bauen der Briefkopf-Vorschau im
+    Entwurf-Editor entdeckt): diese Route war bisher `_require_admin`-
+    gesperrt, obwohl `export_draft_docx`/`export_draft_pdf`
+    (app/web/drafts_router.py) exakt dieselben Bilddaten laengst OHNE
+    Rolleneinschraenkung (`require_login`) in jede heruntergeladene PDF-/
+    DOCX-Datei einbetten - ein Anwalt ohne Admin-Rolle konnte die
+    identischen Bytes also bereits ueber jeden Export erhalten, nur die
+    direkte Bildansicht war ihm verwehrt. Kein echtes Datenschutz-/
+    Sicherheitsmerkmal (Kanzlei-eigenes, auf jedem versendeten Schreiben
+    ohnehin sichtbares Branding, keine Mandantendaten) - reine
+    Inkonsistenz, jetzt an das bereits etablierte, korrekte Berechtigungs-
+    niveau der Export-Routen angeglichen."""
     profile = get_firm_profile(db)
     if not profile.logo_path or not Path(profile.logo_path).exists():
         raise HTTPException(status_code=404, detail="Kein Logo hinterlegt")
@@ -441,8 +453,9 @@ def remove_firm_signature(
 @router.get("/profile/signature-file")
 def firm_signature_file(
     db: Session = Depends(get_db),
-    current_user: User = Depends(_require_admin),
+    current_user: User = Depends(require_login),
 ) -> FileResponse:
+    """Gleiche Begruendung wie `firm_logo_file` oben."""
     profile = get_firm_profile(db)
     if not profile.signature_path or not Path(profile.signature_path).exists():
         raise HTTPException(status_code=404, detail="Keine Unterschrift hinterlegt")

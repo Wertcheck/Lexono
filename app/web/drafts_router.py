@@ -41,9 +41,19 @@ from app.auth.permissions import (
 from app.db.session import get_db
 from app.drafting.versioning import create_manual_edit_version
 from app.export.docx_export_service import DOCX_MEDIA_TYPE, DraftDocxExportService
+from app.export.filenames import safe_download_filename
+from app.export.letterhead import (
+    address_and_contact_lines,
+    has_letterhead_content,
+    has_signature_content,
+    image_exists,
+)
+from app.export.pdf_export_service import PDF_MEDIA_TYPE, DraftPdfExportService
 from app.firm_profile import get_firm_profile
 from app.feedback.schema import DraftFeedbackInput
 from app.feedback.service import DraftFeedbackService
+from app.prompt_library.service import PromptTemplateService
+from app.quality.service import DraftQualityService
 from app.models import (
     AttorneyInstruction,
     AuditEvent,
@@ -51,7 +61,9 @@ from app.models import (
     Draft,
     DraftKnowledgeItemLink,
     DraftSourceLink,
+    Matter,
     Message,
+    OutboxEntry,
     ReviewFinding,
     User,
 )
@@ -138,7 +150,11 @@ def _load_original_context(draft: Draft, db: Session) -> tuple[Message | None, l
     message = db.get(Message, draft.message_id)
     if message is None:
         return None, []
-    documents = db.query(Document).filter(Document.message_id == message.id).all()
+    documents = (
+        db.query(Document)
+        .filter(Document.message_id == message.id, Document.deleted_at.is_(None))
+        .all()
+    )
     return message, documents
 
 
@@ -196,7 +212,10 @@ def drafts_list_page(
     sind - über die Versions-Zeitleiste in der Einzelansicht weiterhin
     einsehbar. Lesen ist für alle drei Rollen erlaubt (require_login
     ohne zusätzliche Berechtigungsprüfung, siehe Rechte-Matrix)."""
-    query = db.query(Draft).options(joinedload(Draft.matter))
+    # Mandant mitladen (14.09.): die Liste zeigt ihn jetzt als eigene
+    # Spalte. Ohne dieses zweite `joinedload` waere das eine N+1-Abfrage
+    # pro Zeile, nur um einen Namen anzuzeigen.
+    query = db.query(Draft).options(joinedload(Draft.matter).joinedload(Matter.client))
     if status is not None:
         query = query.filter(Draft.status == status)
     all_drafts = query.order_by(Draft.updated_at.desc()).all()
@@ -235,6 +254,44 @@ def draft_detail_page(
     sources, knowledge_items = _load_sources_and_knowledge(draft, db)
     findings = _load_findings(draft, db)
     audit_events = _load_audit_trail(draft, instructions, db)
+    # Der Postausgang-Eintrag dieses Entwurfs (14.09.). Die Seite behauptete
+    # bis dahin im Fliesstext, ein "tatsaechlicher Postausgang" existiere
+    # noch nicht - seit Prompt 25 ist das FALSCH: `approve_draft` legt ueber
+    # `OutboxService.add_to_outbox` wirklich einen Eintrag an. Statt den
+    # Satz nur zu streichen, zeigt die Seite jetzt den echten Verbleib des
+    # freigegebenen Entwurfs (Gold-Workflow-Abschluss "-> Postausgang").
+    outbox_entry = db.query(OutboxEntry).filter(OutboxEntry.draft_id == draft.id).first()
+    # UI/UX-Sweep (16.09.): Referenzbilder des Schreiben-Editors (12/17/24/
+    # 31/38/41) zeigen eine "Standard-Prompts"-Liste neben der KI-Anweisung
+    # zum direkten Uebernehmen - dieselbe, bereits bestehende und in
+    # `chat.html` schon produktiv genutzte Vorlagenbibliothek
+    # (`app/prompt_library/service.py::PromptTemplateService`), hier nur um
+    # einen zweiten Einstiegspunkt ergaenzt. Bewusst reines Vorausfuellen
+    # des ohnehin vorhandenen, vom Anwalt geprueften Anweisungsfelds - KEINE
+    # neue Anbindung an die Drafting-Pipeline (siehe PromptTemplate-
+    # Moduldocstring, warum das bewusst getrennt bleibt).
+    prompt_templates = PromptTemplateService().list_templates(db)
+    # Qualitätsbewertung (18.09., siehe app/web/quality_router.py-
+    # Moduldocstring: ein bereits vollstaendig gebauter, gesicherter Router
+    # war projektweit unverlinkt). Direkt ueber den Service statt per HTTP
+    # gelesen - dieselbe Seite rendert die Daten server-seitig.
+    quality_service = DraftQualityService(db)
+    quality_ratings = quality_service.get_ratings_for_draft(draft.id)
+    quality_stats = quality_service.compute_stats(draft.id)
+
+    # Briefkopf-/Signatur-Vorschau im Editor (20.09., Owner-Direktive
+    # "CONTEXT EXTENSION" §5/§6 - der zuvor als "decision-dependent"
+    # eingeordnete Editor-Ausbau, siehe OPEN_ISSUES.md/DECISIONS.md fuer
+    # die Einordnung: kleinste professionelle Verbesserung statt eines
+    # Rich-Text-Vollausbaus). ECHTER FUND beim Umsetzen: die Entwurfsseite
+    # zeigte den Entwurfstext bisher in einer schlichten umrandeten Box
+    # OHNE jede Vorschau des tatsaechlichen Briefkopfs/Signatur, obwohl
+    # genau diese bereits echt im PDF-/DOCX-Export erscheinen (siehe
+    # app/export/letterhead.py) - ein Anwalt sah vor dem Export nie, wie
+    # das fertige Schreiben tatsaechlich aussehen wird. Wiederverwendet
+    # exakt dieselben Helper wie der echte Export (KEINE zweite,
+    # potenziell abweichende Vorschau-Logik).
+    firm_profile = get_firm_profile(db)
 
     context = {
         "request": request,
@@ -242,6 +299,7 @@ def draft_detail_page(
         "draft": draft,
         "version_chain": version_chain,
         "instructions": instructions,
+        "prompt_templates": prompt_templates,
         "is_latest_version": version_chain[-1].id == draft.id,
         "original_message": original_message,
         "original_documents": original_documents,
@@ -249,6 +307,15 @@ def draft_detail_page(
         "knowledge_items": knowledge_items,
         "findings": findings,
         "audit_events": audit_events,
+        "outbox_entry": outbox_entry,
+        "quality_ratings": quality_ratings,
+        "quality_stats": quality_stats,
+        "firm_profile": firm_profile,
+        "show_letterhead": has_letterhead_content(firm_profile),
+        "show_signature_block": has_signature_content(firm_profile),
+        "firm_logo_exists": image_exists(firm_profile.logo_path),
+        "firm_signature_exists": image_exists(firm_profile.signature_path),
+        "firm_contact_lines": address_and_contact_lines(firm_profile),
         "error": error,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
@@ -287,14 +354,59 @@ def export_draft_docx(
     )
     db.commit()
 
-    safe_title = "".join(
-        c for c in (draft.matter.title or "Schriftsatz") if c.isalnum() or c in " -_"
-    ).strip() or "Schriftsatz"
+    # 17.09., Datenintegritaets-Fund (siehe DraftDocxExportService.export_draft
+    # fuer die volle Begruendung): `draft.matter` kann strukturell `None`
+    # sein (verwaister `matter_id`) - derselbe Fallback wie dort, statt
+    # eines `AttributeError` bei `.title` auf `None`.
+    safe_title = safe_download_filename(
+        (draft.matter.title if draft.matter else None) or "Schriftsatz",
+        fallback="Schriftsatz",
+    )
     filename = f"{safe_title}_v{draft.version}.docx"
 
     return Response(
         content=buffer.getvalue(),
         media_type=DOCX_MEDIA_TYPE,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{draft_id}/export.pdf")
+def export_draft_pdf(
+    draft_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> Response:
+    """Exportiert diese Entwurfsversion als `.pdf` (18.09., Owner-Direktive
+    "WEITERARBEITEN" - siehe app/export/pdf_export_service.py für die
+    Begründung: die Referenzen zeigen PDF als den primären, vorausgewählten
+    Export-Format-Radiobutton, projektweit existierte bisher nur DOCX).
+    Identisches Zuschnitts-/Berechtigungsmuster wie `export_draft_docx`."""
+    draft = get_or_404(db, Draft, draft_id, "Entwurf")
+
+    firm_profile = get_firm_profile(db)
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter, firm_profile)
+
+    db.add(
+        AuditEvent(
+            entity_type="Draft",
+            entity_id=draft.id,
+            event_type="draft_exported_pdf",
+            actor=current_user.email,
+            details=f"Entwurf v{draft.version} als PDF exportiert",
+        )
+    )
+    db.commit()
+
+    safe_title = safe_download_filename(
+        (draft.matter.title if draft.matter else None) or "Schriftsatz",
+        fallback="Schriftsatz",
+    )
+    filename = f"{safe_title}_v{draft.version}.pdf"
+
+    return Response(
+        content=buffer.getvalue(),
+        media_type=PDF_MEDIA_TYPE,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

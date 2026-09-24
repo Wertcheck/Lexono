@@ -22,7 +22,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.session import get_db
 from app.main import app
 from app.models.base import Base
-from tests.auth_test_utils import create_test_user, login, seed_roles
+from tests.auth_test_utils import create_test_user, extract_csrf, login, seed_roles
 
 
 @pytest.fixture()
@@ -74,9 +74,14 @@ def mitarbeiter_client(db_session: Session, client: TestClient) -> TestClient:
 
 
 def test_account_overview_returns_200(admin_client: TestClient) -> None:
+    """UI/UX-Ueberarbeitung (13.09.): Titel ist jetzt schlicht
+    "Einstellungen" - "Mein Profil" ist ein eigener Menuepunkt geworden
+    (siehe base.html-Profilmenue), diese Seite ist die reine
+    Einstellungen-Uebersicht."""
     response = admin_client.get("/dashboard/account")
     assert response.status_code == 200
-    assert "Profil &amp; Einstellungen" in response.text or "Profil & Einstellungen" in response.text
+    assert "<title>Einstellungen" in response.text
+    assert '<h1 class="topbar__title">Einstellungen</h1>' in response.text
 
 
 def test_account_overview_shows_admin_only_card_for_admin(admin_client: TestClient) -> None:
@@ -145,6 +150,79 @@ def test_account_me_has_working_logout_form(admin_client: TestClient) -> None:
     response = admin_client.get("/dashboard/account/me")
     assert 'action="/dashboard/logout"' in response.text
     assert 'method="post"' in response.text
+
+
+def test_account_me_shows_email_fallback_when_no_display_name_set(
+    admin_client: TestClient,
+) -> None:
+    """ECHTER FUND (18.09.): `User.display_name` wurde an mehreren Stellen
+    mit `or user.email`-Fallback gelesen, hatte aber projektweit keinen
+    Schreibweg - zeigte dadurch strukturell immer die rohe E-Mail-Adresse."""
+    response = admin_client.get("/dashboard/account/me")
+    assert "wird angezeigt" in response.text
+
+
+def test_sidebar_footer_shows_display_name_once_set(admin_client: TestClient) -> None:
+    """ECHTER FUND (19.09., UI/UX-Referenzabgleich): `display_name` war seit
+    18.09. selbst editierbar, hatte aber ausgerechnet im auf JEDER Seite
+    sichtbaren Sidebar-Fuss (base.html) keine Wirkung - Avatar-Initiale und
+    Name kamen dort weiterhin ausschliesslich aus der rohen E-Mail-Adresse."""
+    page = admin_client.get("/dashboard/account/me")
+    csrf = extract_csrf(page.text)
+    admin_client.post(
+        "/dashboard/account/me/display-name",
+        data={"csrf_token": csrf, "display_name": "Rechtsanwältin Anna Muster"},
+    )
+
+    response = admin_client.get("/dashboard/chat")
+
+    assert "Rechtsanwältin Anna Muster" in response.text
+    assert '<span class="sidebar__profile-avatar">R</span>' in response.text
+
+
+def test_set_display_name_persists_it(admin_client: TestClient) -> None:
+    page = admin_client.get("/dashboard/account/me")
+    csrf = extract_csrf(page.text)
+
+    response = admin_client.post(
+        "/dashboard/account/me/display-name",
+        data={"csrf_token": csrf, "display_name": "Rechtsanwältin Anna Muster"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    updated_page = admin_client.get("/dashboard/account/me")
+    assert "Rechtsanwältin Anna Muster" in updated_page.text
+    assert "wird angezeigt" not in updated_page.text
+
+
+def test_set_display_name_to_blank_clears_it(admin_client: TestClient) -> None:
+    page = admin_client.get("/dashboard/account/me")
+    csrf = extract_csrf(page.text)
+    admin_client.post(
+        "/dashboard/account/me/display-name",
+        data={"csrf_token": csrf, "display_name": "Rechtsanwältin Anna Muster"},
+    )
+
+    page2 = admin_client.get("/dashboard/account/me")
+    csrf2 = extract_csrf(page2.text)
+    response = admin_client.post(
+        "/dashboard/account/me/display-name",
+        data={"csrf_token": csrf2, "display_name": "   "},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    final_page = admin_client.get("/dashboard/account/me")
+    assert "wird angezeigt" in final_page.text
+
+
+def test_set_display_name_requires_a_valid_csrf_token(admin_client: TestClient) -> None:
+    response = admin_client.post(
+        "/dashboard/account/me/display-name",
+        data={"csrf_token": "invalid", "display_name": "Sollte nicht gespeichert werden"},
+    )
+    assert response.status_code == 403
 
 
 # --- Anonymisierung & Datenschutz ---

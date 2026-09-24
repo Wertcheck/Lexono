@@ -142,7 +142,10 @@ def test_search_finds_source_with_extern_badge(client: TestClient, db_session: S
     assert "Handelsgesetzbuch" in response.text
     assert "tag--extern" in response.text
     assert "Extern" in response.text
-    assert 'href="/dashboard/sources"' in response.text
+    # ECHTER FUND (17.09.): verlinkt seit heute auf die echte, befuellte
+    # Rechtsquellen-Tabelle unter Kanzleiwissen statt des toten
+    # "/dashboard/sources"-Platzhalters (siehe global_search_service.py).
+    assert 'href="/dashboard/knowledge"' in response.text
 
 
 def test_search_finds_law_section_with_extern_gesetz_badge(

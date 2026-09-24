@@ -11,11 +11,15 @@
   {% endif %}
 
   {% if created_password %}
+    {# Derselbe Banner fuer "Nutzer angelegt" UND "Passwort zurückgesetzt"
+       (19.09.) - beide liefern ein einmalig anzuzeigendes Passwort nach
+       demselben Redirect-Muster (create_user/reset_user_password), ein
+       zweiter fast-identischer Banner wäre reine Duplizierung. #}
     <div class="banner" style="background: var(--seal-green-tint); border: 1px solid rgba(16,24,40,0.25); color: var(--seal-green-dark);">
-      Nutzer <strong>{{ created_email }}</strong> angelegt. Initiales Passwort (wird nur
-      EINMALIG angezeigt, bitte jetzt sicher weitergeben):
+      Passwort für <strong>{{ created_email }}</strong> gesetzt (neu angelegt oder
+      zurückgesetzt). Wird nur EINMALIG angezeigt, bitte jetzt sicher weitergeben:
       <span class="mono" style="display:block; margin-top:6px; font-size: 14px;">{{ created_password }}</span>
-      Der Nutzer muss es beim ersten Login sofort ändern.
+      Der Nutzer muss es beim nächsten Login sofort ändern.
     </div>
   {% endif %}
 
@@ -71,6 +75,17 @@
               </span>
             </td>
             <td>
+              {# Bewusst AUCH fuer das eigene Konto erlaubt (anders als
+                 Deaktivieren/Aktivieren) - ein Admin, der sein eigenes
+                 Passwort vergisst, aber noch angemeldet ist, darf sich
+                 selbst helfen (19.09., schliesst die Luecke, dass
+                 scripts/reset_admin_password.py nur per Server-Zugriff
+                 nutzbar war, siehe users_router.py::reset_user_password). #}
+              <form method="post" action="/dashboard/admin/users/{{ user.id }}/reset-password" style="display:inline;"
+                    onsubmit="return confirm('Passwort für \'{{ user.email }}\' zurücksetzen? Der Nutzer wird sofort abgemeldet und muss beim nächsten Login ein neues Passwort vergeben.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn" title="Setzt ein neues, einmalig angezeigtes Passwort und meldet den Nutzer ab">Passwort zurücksetzen</button>
+              </form>
               {% if user.id != current_user.id %}
                 {% if user.is_active %}
                   <form method="post" action="/dashboard/admin/users/{{ user.id }}/deactivate" style="display:inline;">

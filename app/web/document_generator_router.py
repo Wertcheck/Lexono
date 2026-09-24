@@ -27,6 +27,7 @@ from app.document_generator.docx_export import DOCX_MEDIA_TYPE, GeneratedDocumen
 from app.document_generator.pdf_export import PDF_MEDIA_TYPE, GeneratedDocumentPdfExportService
 from app.document_generator.service import generate_from_template, get_unresolved_placeholders, update_content
 from app.document_generator.template_service import DocumentTemplateService
+from app.export.filenames import safe_download_filename
 from app.firm_profile.service import get_firm_profile
 from app.models import DocumentTemplate, GeneratedDocument, Matter, User
 from app.web.template_paths import TEMPLATES_DIR
@@ -36,8 +37,11 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
 def _safe_filename(text: str) -> str:
-    keep = "".join(c if c.isalnum() or c in " -_" else "" for c in text)
-    return "_".join(keep.split()) or "dokument"
+    """Wie `safe_download_filename` (app/export/filenames.py, gemeinsame
+    Zeichenbereinigung inkl. Halbgeviertstrich-Korrektur seit 19.09.),
+    hier zusätzlich mit Leerzeichen -> Unterstrich - unveraendertes,
+    eigenstaendiges Dateinamensformat dieses Routers."""
+    return "_".join(safe_download_filename(text, fallback="dokument").split())
 
 
 @router.get("", response_class=HTMLResponse)

@@ -148,3 +148,24 @@ def test_scrollbar_thumb_uses_primary_ink_token() -> None:
     hover_block_end = css.index("}", hover_block_start)
     hover_block = css[hover_block_start:hover_block_end]
     assert "background-color: var(--scrollbar-thumb-hover);" in hover_block
+
+
+def test_chat_dropzone_hint_respects_hidden_attribute() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): `.chat-dropzone-hint {
+    display: flex; }` galt bedingungslos und ueberschrieb damit das
+    `hidden`-Attribut, das chat.html per JS beim Verlassen einer echten
+    Drag-Aktion wieder setzt (siehe dragenter/dragleave-Handler dort) -
+    die Box "Dateien hier ablegen" blieb dadurch PERMANENT sichtbar statt
+    nur waehrend eines echten Datei-Drags. Der bedingungslose Basis-
+    Selektor muss auf "display: none" stehen, die sichtbare Variante nur
+    unter ":not([hidden])" gelten."""
+    css = _read_css()
+    base_start = css.index(".chat-dropzone-hint {")
+    base_end = css.index("}", base_start)
+    base_block = css[base_start:base_end]
+    assert "display: none;" in base_block
+
+    visible_start = css.index(".chat-dropzone-hint:not([hidden]) {")
+    visible_end = css.index("}", visible_start)
+    visible_block = css[visible_start:visible_end]
+    assert "display: flex;" in visible_block

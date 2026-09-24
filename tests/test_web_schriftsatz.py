@@ -113,6 +113,47 @@ def test_generator_page_is_no_longer_a_placeholder(client: TestClient) -> None:
     assert "Schriftsatz-Generator" in response.text
 
 
+def test_generator_form_has_ai_loading_wiring(client: TestClient) -> None:
+    """KI-Waiting-/Buffering-UX (20.09., Owner-Direktive "KI-WAITING-/
+    BUFFERING-UX PROJEKTWEIT PRÜFEN UND VERBESSERN"): "Schriftsatz
+    generieren" löst einen echten, synchronen, kostenpflichtigen Claude-
+    Aufruf vor dem Redirect aus (app/web/schriftsatz_router.py) - ohne
+    Feedback sah ein Klick hier wie ein eingefrorenes System aus."""
+    response = client.get("/dashboard/tools/schriftsatz")
+    assert response.status_code == 200
+    assert "js-ai-form" in response.text
+    assert 'data-ai-loading-label="Schriftsatz wird generiert' in response.text
+
+
+def test_generator_page_preselects_a_client_passed_via_query_param(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (17.09., siehe app/drafting/quick_matter.py::
+    create_quick_matter fuer die volle Begruendung): "Akte anlegen" von
+    einer bestehenden Mandanten-Detailseite aus zeigte den bekannten
+    Mandanten bisher gar nicht an - der Name wird jetzt serverseitig
+    geladen und schreibgeschuetzt angezeigt, die echte ID unsichtbar per
+    Hidden-Feld mitgeschickt."""
+    client_row = Client(name="Bereits bekannter Mandant GmbH")
+    db_session.add(client_row)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/tools/schriftsatz?client_id={client_row.id}")
+
+    assert response.status_code == 200
+    assert "Bereits bekannter Mandant GmbH" in response.text
+    assert f'name="new_client_id" value="{client_row.id}"' in response.text
+
+
+def test_generator_page_ignores_unknown_client_id(
+    client: TestClient, db_session: Session
+) -> None:
+    response = client.get("/dashboard/tools/schriftsatz?client_id=does-not-exist")
+
+    assert response.status_code == 200
+    assert 'name="new_client_id"' not in response.text
+
+
 def test_generator_page_lists_open_matters(client: TestClient, db_session: Session) -> None:
     client_row = Client(name="Testmandant GmbH")
     matter = Matter(client=client_row, title="Bestehende Testakte", status="open")
@@ -162,6 +203,46 @@ def test_generate_without_matter_creates_matter_and_redirects_to_draft(
     draft = db_session.query(Draft).filter_by(matter_id=matter.id).first()
     assert draft is not None
     assert draft.content == "Formulierter Schriftsatz."
+
+
+def test_generate_with_new_client_id_reuses_the_existing_client_not_a_duplicate(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (17.09.): der Kernfall - "Akte anlegen" fuer einen
+    bereits bekannten Mandanten OHNE bestehende Akte darf KEINEN
+    zusaetzlichen, duplizierten `Client`-Datensatz erzeugen, auch wenn das
+    Formular (wie bisher immer) `new_client_name` mitschickt."""
+    client_row = Client(name="Bereits bekannter Mandant GmbH")
+    db_session.add(client_row)
+    db_session.commit()
+    csrf_token = _csrf(client)
+
+    response = client.post(
+        "/dashboard/tools/schriftsatz/generate",
+        data={
+            "csrf_token": csrf_token,
+            "matter_id": "",
+            "new_matter_title": "Neue Akte fuer bekannten Mandanten",
+            "new_client_name": "",
+            "new_client_id": client_row.id,
+            "stil": "",
+            "vorlage": "",
+            "attorney_anmerkungen": "",
+        },
+        files={"documents": ("leer.pdf", b"", "application/pdf")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert (
+        db_session.query(Client)
+        .filter_by(name="Bereits bekannter Mandant GmbH")
+        .count()
+        == 1
+    )
+    matter = db_session.query(Matter).filter_by(title="Neue Akte fuer bekannten Mandanten").first()
+    assert matter is not None
+    assert matter.client_id == client_row.id
 
 
 def test_generate_with_existing_matter_reuses_it(

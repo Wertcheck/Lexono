@@ -117,6 +117,34 @@ def test_clients_page_lists_created_client(client: TestClient, db_session: Sessi
     assert "Sichtbarer Mandant" in response.text
 
 
+def test_clients_page_row_menu_offers_quick_actions_without_opening_the_client(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (19.09., UI/UX-Referenzabgleich "29_mandanten_uebersicht.png",
+    dasselbe Muster wie zuvor bei den Akten): Direktzugriff auf "Mandant
+    öffnen"/"Archivieren" ohne vorheriges Öffnen - beide Aktionen sind
+    bereits bestehende, echte Routen (reine Verdrahtung)."""
+    row = _create_client_row(db_session, name="Mandant mit Schnellmenü", number="Q-1")
+    response = client.get("/dashboard/clients")
+
+    assert f'href="/dashboard/clients/{row.id}"' in response.text
+    assert f'action="/dashboard/clients/{row.id}/archive"' in response.text
+    assert "Reaktivieren" not in response.text
+
+
+def test_clients_page_row_menu_offers_reactivate_for_archived_clients(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Archivierter Mandant", number="Q-2")
+    row.status = "archived"
+    db_session.commit()
+
+    response = client.get("/dashboard/clients", params={"status": "all"})
+
+    assert f'action="/dashboard/clients/{row.id}/reactivate"' in response.text
+    assert f'action="/dashboard/clients/{row.id}/archive"' not in response.text
+
+
 def test_clients_page_search_filters_by_name(client: TestClient, db_session: Session) -> None:
     _create_client_row(db_session, name="Findbar GmbH", number="F-1")
     _create_client_row(db_session, name="Anderer Mandant", number="F-2")
@@ -207,9 +235,10 @@ def test_client_detail_page_shows_matters_messages_documents(
     matter = Matter(client_id=row.id, title="Verknüpfte Akte", status="open")
     db_session.add(matter)
     db_session.flush()
-    db_session.add(
-        Message(matter_id=matter.id, direction="inbound", sender="a@b.test", subject="Betreff X")
+    message = Message(
+        matter_id=matter.id, direction="inbound", sender="a@b.test", subject="Betreff X"
     )
+    db_session.add(message)
     db_session.commit()
 
     response = client.get(f"/dashboard/clients/{row.id}")
@@ -217,11 +246,116 @@ def test_client_detail_page_shows_matters_messages_documents(
     assert "Detail-Mandant" in response.text
     assert "Verknüpfte Akte" in response.text
     assert "Betreff X" in response.text
+    # ECHTER FUND (17.09., Owner-Direktive §5/§7): diese Zeile zeigte
+    # bereits eine echte Nachricht an, war aber kein Link auf die
+    # vollstaendige Posteingang-Detailansicht - jetzt ein echter Link.
+    assert f'href="/dashboard/inbox/{message.id}"' in response.text
 
 
 def test_client_detail_page_404_for_unknown_id(client: TestClient) -> None:
     response = client.get("/dashboard/clients/does-not-exist")
     assert response.status_code == 404
+
+
+def test_client_detail_page_shows_tab_navigation(client: TestClient, db_session: Session) -> None:
+    """ECHTER FUND (19.09., UI/UX-Referenzabgleich "30_mandant_detail.png",
+    dasselbe Muster wie zuvor bei matter_detail.html): die Mandanten-
+    Detailseite war eine lange Einzelseite statt der in der Referenz
+    gezeigten Tab-Struktur."""
+    row = _create_client_row(db_session, name="Tab-Mandant", number="T-1")
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    for tab_name in ["uebersicht", "akten", "dokumente", "aufgaben", "notizen", "kommunikation"]:
+        assert f'data-tab="{tab_name}"' in response.text
+        assert f'id="tab-{tab_name}"' in response.text
+
+
+def test_client_detail_page_aggregates_tasks_and_deadlines_across_matters(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (19.09.): ein Mandant traegt selbst keine Aufgaben/
+    Fristen (die haengen an einer Akte) - die Referenz zeigt trotzdem einen
+    "Aufgaben & Fristen"-Tab auf Mandantenebene, hier ueber alle Akten
+    dieses Mandanten aggregiert."""
+    from datetime import date
+
+    from app.models import Deadline, Task
+
+    row = _create_client_row(db_session, name="Aufgaben-Mandant", number="A-1")
+    matter = Matter(client_id=row.id, title="Akte mit Fristen", status="open")
+    db_session.add(matter)
+    db_session.flush()
+    db_session.add(Task(matter_id=matter.id, title="Frist pruefen"))
+    db_session.add(
+        Deadline(matter_id=matter.id, source_text="Einspruchsfrist", due_date=date(2026, 12, 1))
+    )
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Frist pruefen" in response.text
+    assert "Einspruchsfrist" in response.text
+
+
+def test_client_detail_page_shows_empty_notes_honestly(client: TestClient, db_session: Session) -> None:
+    row = _create_client_row(db_session, name="Notizloser Mandant", number="N-1")
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Noch keine Notizen zu diesem Mandanten." in response.text
+
+
+def test_create_client_note_persists_it_and_shows_it_on_the_client_page(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (19.09., UI/UX-Referenzabgleich, siehe app/models/note.py):
+    bisher gab es projektweit keine Moeglichkeit, eine freie Notiz an einem
+    Mandanten zu hinterlegen (nur an einer Akte, ebenfalls 19.09. gebaut)."""
+    row = _create_client_row(db_session, name="Notiz-Mandant", number="N-2")
+    csrf = extract_csrf(client.get(f"/dashboard/clients/{row.id}").text)
+
+    response = client.post(
+        f"/dashboard/clients/{row.id}/notes",
+        data={"csrf_token": csrf, "text": "Anruf erhalten: bittet um Rückruf."},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].endswith(f"/dashboard/clients/{row.id}#notizen")
+
+    detail = client.get(f"/dashboard/clients/{row.id}")
+    assert "Anruf erhalten: bittet um Rückruf." in detail.text
+    assert "Noch keine Notizen zu diesem Mandanten." not in detail.text
+
+
+def test_create_client_note_with_blank_text_is_rejected(client: TestClient, db_session: Session) -> None:
+    from app.models import Note
+
+    row = _create_client_row(db_session, name="Leernotiz-Mandant", number="N-3")
+    csrf = extract_csrf(client.get(f"/dashboard/clients/{row.id}").text)
+
+    response = client.post(
+        f"/dashboard/clients/{row.id}/notes",
+        data={"csrf_token": csrf, "text": "   "},
+    )
+
+    assert response.status_code == 400
+    assert db_session.query(Note).count() == 0
+
+
+def test_create_client_note_requires_a_valid_csrf_token(client: TestClient, db_session: Session) -> None:
+    from app.models import Note
+
+    row = _create_client_row(db_session, name="CSRF-Mandant", number="N-4")
+
+    response = client.post(
+        f"/dashboard/clients/{row.id}/notes",
+        data={"csrf_token": "invalid", "text": "Sollte nicht gespeichert werden."},
+    )
+
+    assert response.status_code == 403
+    assert db_session.query(Note).count() == 0
 
 
 def test_client_detail_shows_ai_cta_link_for_single_open_matter(

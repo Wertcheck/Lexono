@@ -157,6 +157,25 @@
                Sidebar-Punkt) rendert .chat-shell serverseitig OHNE
                "--history-open" neu - die Spalte ist danach wieder zu,
                exakt wie gefordert. #}
+        {# UI/UX-Ueberarbeitung (13.09.): Hauptnavigation auf EXAKT sechs
+           Kernbereiche reduziert (verbindliche Vorgabe) - "Einstellungen"
+           ist bewusst KEIN eigener Hauptmenuepunkt mehr (siehe
+           Profilmenue im Footer weiter unten). Alles, was vorher als
+           eigene Sidebar-Gruppe/Zeile existierte, aber nicht in diese
+           sechs Bereiche passt, ist erreichbar geblieben - nur nicht mehr
+           im Hauptmenue:
+             - Standard-Prompts/Dokumentvorlagen/Schriftsatz-Generator/
+               Briefkoepfe -> Einstellungen, Abschnitt "Vorlagen &
+               Funktionen" (settings.html)
+             - Monitoring/Backup/Fehler & Logs -> Einstellungen, Abschnitt
+               "System & Hilfe"
+             - Rechtsquellen/Kanzlei-Wissen/Gespeicherte Analysen ->
+               Unterbereiche INNERHALB von "Kanzleiwissen"
+               (law_library.html), kein zweiter Sidebar-Eintrag
+             - Postausgang/Entwuerfe zur Pruefung -> Reiter INNERHALB von
+               "Posteingang" (inbox.html)
+           Kein Backend-Router wurde entfernt - ausschliesslich die
+           Sidebar-Praesenz. #}
         {% set nav_groups = [
           {
             "label": "Chat",
@@ -165,120 +184,54 @@
             "flat": true,
           },
           {
-            "label": "Akten & Ordner",
-            "icon": icons.folder,
-            "links": [
-              ("Aktive Akten", "/dashboard/matters", icons.folder, false),
-              ("Letzte Akten", "/dashboard/recent", icons.clock, false),
-              ("Dokumenten-Viewer", "/dashboard/documents", icons.document, false),
-              ("Archiv", "/dashboard/archive", icons.archive, false),
-            ],
-          },
-          {
-            "label": "E-Mail & Posteingang",
-            "icon": icons.envelope,
-            "links": [
-              ("Posteingang", "/dashboard/inbox", icons.envelope, false),
-              ("Postausgang", "/dashboard/outbox", icons.send, false),
-              ("Entwürfe zur Prüfung", "/dashboard/drafts", icons.document, false),
-            ],
-          },
-          {
-            "label": "Schriftsatz-Generator",
-            "icon": icons.printer,
-            "href": "/dashboard/tools/schriftsatz",
-            "flat": true,
-          },
-          {
-            "label": "Kanzleiwissen & KI",
-            "icon": icons.bulb,
-            "links": [
-              ("Dokumentengenerator", "/dashboard/tools/dokumentgenerator", icons.document, false),
-              ("Fristen-Check", "/dashboard/tools/fristen", icons.clock, false),
-              ("Zeitleiste", "/dashboard/tools/zeitleiste", icons.chart, false),
-              ("Beleg-Extraktion", "/dashboard/tools/beleg-extraktion", icons.upload, false),
-              ("Rechtsquellen", "/dashboard/sources", icons.book, false),
-              ("Gesetzesbibliothek", "/dashboard/laws", icons.book, false),
-              ("Kanzlei-Mustertexte", "/dashboard/library/mustertexte", icons.document, false),
-              ("Standard-Prompts", "/dashboard/library/prompts", icons.bulb, false),
-              ("Kanzlei-Wissen", "/dashboard/knowledge", icons.bulb, false),
-              ("Gespeicherte Analysen", "/dashboard/history/analysen", icons.chart, false),
-            ],
-          },
-          {
-            "label": "Mandantendatenbank",
+            "label": "Mandanten",
             "icon": icons.users,
             "href": "/dashboard/clients",
             "flat": true,
           },
           {
-            "label": "Monitoring",
-            "icon": icons.chart,
-            "href": "/dashboard/monitoring",
+            "label": "Akten",
+            "icon": icons.folder,
+            "href": "/dashboard/matters",
             "flat": true,
-            "admin_only": true,
           },
           {
-            "label": "Aufgaben",
+            "label": "Posteingang",
+            "icon": icons.envelope,
+            "href": "/dashboard/inbox",
+            "flat": true,
+          },
+          {
+            "label": "Aufgaben & Fristen",
             "icon": icons.check,
             "href": "/dashboard/tasks",
             "flat": true,
           },
           {
-            "label": "Backup",
-            "icon": icons.archive,
-            "href": "/dashboard/backup",
-            "flat": true,
-            "admin_only": true,
-          },
-          {
-            "label": "Fehler & Logs",
-            "icon": icons.warning,
-            "href": "/dashboard/errors",
+            "label": "Kanzleiwissen",
+            "icon": icons.bulb,
+            "href": "/dashboard/laws",
             "flat": true,
           },
         ] %}
+        {# Alle sechs Bereiche sind bewusst flach (kein <details>-Aufklapp
+           mehr) - eine feste, immer sechs Zeilen hohe Hauptnavigation ist
+           Teil der verbindlichen Vorgabe. #}
         {% for group in nav_groups %}
-          {% if group.flat %}
-            {% if not group.admin_only or is_admin %}
-              <div class="sidebar__group sidebar__group--flat">
-                <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == group.label %} sidebar__group-summary--active{% endif %}"
-                   href="{{ group.href }}"{% if group.label == "Chat" %} id="sidebar-chat-link" aria-expanded="false"{% endif %}>
-                  {{ group.icon(class_="icon sidebar__group-icon" ~ (" sidebar__group-icon--danger" if group.label == "Fehler & Logs" else "")) }}
-                  <span class="sidebar__group-label">{{ group.label }}</span>
-                  {% if group.label == "Aufgaben" %}
-                    {# Echte, offene Aufgabenzahl - per HTMX lazy nachgeladen
-                       (dasselbe Muster wie budget-badge/update-badge), damit
-                       KEIN Router ausserhalb von tasks_router.py diesen Wert
-                       kennen muss. Kein erfundener Platzhalterwert. #}
-                    <span hx-get="/dashboard/tasks/badge" hx-trigger="load" hx-swap="innerHTML"></span>
-                  {% endif %}
-                </a>
-              </div>
-            {% endif %}
-          {% else %}
-            {% set ns = namespace(has_active=false) %}
-            {% for label, href, icon, admin_only in group.links %}
-              {% if active_nav == label %}{% set ns.has_active = true %}{% endif %}
-            {% endfor %}
-            <details class="sidebar__group"{% if ns.has_active %} open{% endif %}>
-              <summary class="sidebar__group-summary">
-                {{ group.icon(class_="icon sidebar__group-icon") }}
-                <span class="sidebar__group-label">{{ group.label }}</span>
-              </summary>
-              <div class="sidebar__group-items">
-                {% for label, href, icon, admin_only in group.links %}
-                  {% if not admin_only or is_admin %}
-                    <a class="sidebar__link{% if active_nav == label %} sidebar__link--active{% endif %}"
-                       href="{{ href }}">
-                      {{ icon(class_="icon sidebar__link-icon") }}
-                      <span class="sidebar__link-label">{{ label }}</span>
-                    </a>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            </details>
-          {% endif %}
+          <div class="sidebar__group sidebar__group--flat">
+            <a class="sidebar__group-summary sidebar__group-summary--flat{% if active_nav == group.label %} sidebar__group-summary--active{% endif %}"
+               href="{{ group.href }}"{% if group.label == "Chat" %} id="sidebar-chat-link" aria-expanded="false"{% endif %}>
+              {{ group.icon(class_="icon sidebar__group-icon") }}
+              <span class="sidebar__group-label">{{ group.label }}</span>
+              {% if group.label == "Aufgaben & Fristen" %}
+                {# Echte, offene Aufgabenzahl - per HTMX lazy nachgeladen
+                   (dasselbe Muster wie budget-badge/update-badge), damit
+                   KEIN Router ausserhalb von tasks_router.py diesen Wert
+                   kennen muss. Kein erfundener Platzhalterwert. #}
+                <span hx-get="/dashboard/tasks/badge" hx-trigger="load" hx-swap="innerHTML"></span>
+              {% endif %}
+            </a>
+          </div>
         {% endfor %}
       </div>
       {% if current_user %}
@@ -338,26 +291,54 @@
               }[lai_state] }}</span>
             </div>
           </div>
-          {# Dezenter Hilfe-/Systemstatus-Streifen - ersetzt die vorherige
-             eigene Sidebar-Gruppe "Pilot-Feedback & Support" (die Seite
-             existiert unveraendert weiter, ist aber kein Hauptmodul). #}
-          <div class="sidebar__footer-status">
-            <a href="/dashboard/feedback" class="sidebar__footer-help" title="Hilfe &amp; Support">
-              {{ icons.help(class_="icon") }}
-              <span>Hilfe &amp; Support</span>
-            </a>
-          </div>
+          {# UI/UX-Ueberarbeitung (13.09.): "Einstellungen" ist kein
+             Hauptmenuepunkt mehr (verbindliche Vorgabe) - der bisherige
+             separate Hilfe-Streifen + eigener Zahnrad-Button sind jetzt
+             EIN einziges Profilmenue (Klick auf Name/Avatar oeffnet ein
+             Dropdown nach oben, da die Zeile ganz unten in der Sidebar
+             sitzt): Mein Profil / Einstellungen / Hilfe & Support /
+             Abmelden - siehe app_sidebar.js fuer den Toggle. Kein neuer
+             Router noetig, alle vier Ziele existierten bereits
+             (account/me, settings_href, feedback, POST /dashboard/logout -
+             siehe account_me.html fuer dasselbe, bewusst
+             csrf-token-lose Logout-Formular, dort begruendet). #}
           <div class="sidebar__footer-account">
-            <a href="/dashboard/account" class="sidebar__profile{% if account_active %} sidebar__profile--active{% endif %}">
-              <span class="sidebar__profile-avatar">{{ current_user.email[0]|upper }}</span>
+            <button type="button" id="sidebar-profile-trigger" class="sidebar__profile{% if account_active %} sidebar__profile--active{% endif %}"
+                    aria-haspopup="true" aria-expanded="false" aria-controls="sidebar-profile-menu">
+              {# ECHTER FUND (19.09., UI/UX-Referenzabgleich): der bereits
+                 gebaute `display_name` (18.09., app/web/account_router.py::
+                 set_display_name - eigenes Profil dort schon bearbeitbar)
+                 hatte AUSGERECHNET hier, im auf JEDER Seite sichtbaren
+                 Sidebar-Fuss (Referenzbilder zeigen konsistent den Namen,
+                 z. B. "Max Mustermann"), keine Wirkung - Avatar-Initiale
+                 und Name kamen weiterhin ausschliesslich aus der rohen
+                 E-Mail-Adresse. Selbe Fallback-Regel wie ueberall sonst im
+                 Projekt (`display_name or email`, siehe z. B.
+                 account_me.html/client_detail.html/clients_list.html). #}
+              <span class="sidebar__profile-avatar">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
               <span class="sidebar__profile-info">
-                <span class="sidebar__profile-email">{{ current_user.email }}</span>
+                <span class="sidebar__profile-email">{{ current_user.display_name or current_user.email }}</span>
                 <span class="sidebar__profile-role">{{ current_user.role.name if current_user.role else "?" }}</span>
               </span>
-            </a>
-            <a href="{{ settings_href }}" class="sidebar__settings-btn" title="Einstellungen" aria-label="Einstellungen">
-              {{ icons.settings(class_="icon") }}
-            </a>
+              {{ icons.chevron_down(class_="icon sidebar__profile-chevron") }}
+            </button>
+            <div id="sidebar-profile-menu" class="sidebar__profile-menu" role="menu" hidden>
+              <a href="/dashboard/account/me" class="sidebar__profile-menu-item" role="menuitem">
+                {{ icons.users(class_="icon") }}<span>Mein Profil</span>
+              </a>
+              <a href="{{ settings_href }}" class="sidebar__profile-menu-item" role="menuitem">
+                {{ icons.settings(class_="icon") }}<span>Einstellungen</span>
+              </a>
+              <a href="/dashboard/feedback" class="sidebar__profile-menu-item" role="menuitem">
+                {{ icons.help(class_="icon") }}<span>Hilfe &amp; Support</span>
+              </a>
+              <div class="sidebar__profile-menu-divider" role="separator"></div>
+              <form method="post" action="/dashboard/logout" class="sidebar__profile-menu-form">
+                <button type="submit" class="sidebar__profile-menu-item sidebar__profile-menu-item--logout" role="menuitem">
+                  {{ icons.logout(class_="icon") }}<span>Abmelden</span>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       {% endif %}
@@ -422,6 +403,7 @@
   <script src="/dashboard/static/js/app_titlebar.js"></script>
   {% if current_user %}
   <script src="/dashboard/static/js/app_sidebar.js"></script>
+  <script src="/dashboard/static/js/app_ai_loading.js"></script>
   <dialog id="command-bar-modal" class="modal command-bar-modal">
     <div class="command-bar__input-row">
       {{ icons.search(class_="icon command-bar__input-icon") }}

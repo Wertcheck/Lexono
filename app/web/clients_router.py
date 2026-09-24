@@ -42,7 +42,7 @@ from app.clients.service import (
     update_client,
 )
 from app.db.session import get_db
-from app.models import AuditEvent, Client, Document, Matter, Message, User
+from app.models import AuditEvent, Client, Deadline, Document, Matter, Message, Note, Task, User
 from app.web.download_staging import cleanup_stale_files, delete_after_send
 from app.web.template_paths import TEMPLATES_DIR
 
@@ -83,7 +83,7 @@ def _list_page_context(
     )
     return {
         "request": request,
-        "active_nav": "Mandantendatenbank",
+        "active_nav": "Mandanten",
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
         "rows": rows,
@@ -222,7 +222,7 @@ def _client_detail_context(
     )
     documents = (
         db.query(Document)
-        .filter(Document.matter_id.in_(matter_ids))
+        .filter(Document.matter_id.in_(matter_ids), Document.deleted_at.is_(None))
         .order_by(Document.created_at.desc())
         .limit(50)
         .all()
@@ -230,15 +230,47 @@ def _client_detail_context(
         else []
     )
     open_matters = [m for m in matters if m.status == "open"]
+    # "Aufgaben & Fristen" (19.09., UI/UX-Referenzabgleich
+    # "30_mandant_detail.png"): ein Mandant traegt selbst keine Aufgaben/
+    # Fristen (die haengen strukturell an einer Akte) - hier ueber ALLE
+    # Akten dieses Mandanten aggregiert, dieselben real existierenden
+    # Modelle wie auf der Akte-Detailseite, keine neue Datenquelle.
+    tasks = (
+        db.query(Task)
+        .filter(Task.matter_id.in_(matter_ids))
+        .order_by(Task.created_at.desc())
+        .all()
+        if matter_ids
+        else []
+    )
+    deadlines = (
+        db.query(Deadline)
+        .filter(Deadline.matter_id.in_(matter_ids))
+        .order_by(Deadline.due_date.asc())
+        .all()
+        if matter_ids
+        else []
+    )
+    # Notizen (19.09., UI/UX-Referenzabgleich, siehe app/models/note.py) -
+    # echte Mandanten-Notizen, nicht ueber Akten aggregiert.
+    notes = (
+        db.query(Note)
+        .filter(Note.client_id == client.id)
+        .order_by(Note.created_at.desc())
+        .all()
+    )
     return {
         "request": request,
-        "active_nav": "Mandantendatenbank",
+        "active_nav": "Mandanten",
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
         "client": client,
         "matters": matters,
         "messages": messages,
         "documents": documents,
+        "tasks": tasks,
+        "deadlines": deadlines,
+        "notes": notes,
         "practice_areas": PRACTICE_AREA_SUGGESTIONS,
         "users": _active_users(db),
         # Fuer die "Mit lokaler KI arbeiten"-Kachel (siehe Modul-/Template-

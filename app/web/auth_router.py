@@ -28,16 +28,30 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard-auth"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
-def _set_session_cookie(response, token: str, settings: Settings) -> None:
-    response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=token,
-        max_age=settings.session_max_age_seconds,
-        httponly=True,  # per JavaScript nicht auslesbar (mindert XSS-Risiko)
-        secure=settings.resolved_session_cookie_secure,
-        samesite="lax",
-        path="/",
-    )
+def _set_session_cookie(
+    response, token: str, settings: Settings, *, persistent: bool = True
+) -> None:
+    """`persistent=False` setzt bewusst KEIN `max_age` (echtes
+    Browser-/WebView-Session-Cookie, endet mit der Sitzung statt nach
+    `session_max_age_seconds` fortzubestehen) - Gegenstück zur
+    "Angemeldet bleiben"-Checkbox auf der Login-Seite (19.09., neues
+    Login-Referenzbild). Ändert NICHTS an der serverseitigen
+    Session-Gültigkeit selbst (`read_session_token` prüft weiterhin
+    unabhängig vom Cookie-Attribut dieselbe `session_max_age_seconds`-
+    Grenze, siehe app/auth/session.py) - nur ob das Cookie einen
+    App-Neustart übersteht. Default `True` erhält das bisherige,
+    einzige Verhalten für den einzigen bestehenden Aufrufer unverändert."""
+    cookie_kwargs: dict = {
+        "key": SESSION_COOKIE_NAME,
+        "value": token,
+        "httponly": True,  # per JavaScript nicht auslesbar (mindert XSS-Risiko)
+        "secure": settings.resolved_session_cookie_secure,
+        "samesite": "lax",
+        "path": "/",
+    }
+    if persistent:
+        cookie_kwargs["max_age"] = settings.session_max_age_seconds
+    response.set_cookie(**cookie_kwargs)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -60,6 +74,7 @@ def login_submit(
     email: str = Form(...),
     password: str = Form(...),
     next: str = Form("/dashboard/chat"),  # noqa: A002
+    remember_me: bool = Form(False),
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
@@ -105,8 +120,29 @@ def login_submit(
     token, _csrf = create_session_token(user.id, settings)
     target = "/dashboard/change-password" if user.must_change_password else next
     response = RedirectResponse(url=target, status_code=303)
-    _set_session_cookie(response, token, settings)
+    _set_session_cookie(response, token, settings, persistent=remember_me)
     return response
+
+
+@router.get("/password-help", response_class=HTMLResponse)
+def password_help_page(request: Request) -> HTMLResponse:
+    """Ziel des "Passwort vergessen?"-Links auf der Login-Seite (19.09.,
+    neues Login-Referenzbild). BEWUSST kein automatisierter E-Mail-
+    Reset-Flow: Lexono hat aktuell keine Ausgehend-E-Mail-Infrastruktur
+    fuer System-Mails und ein token-basierter Self-Service-Reset waere
+    eine eigene, nicht ungefragt zu treffende Sicherheitsentscheidung
+    (Token-Ablauf, Versandweg, Missbrauchsschutz). Stattdessen wird EHRLICH
+    der tatsaechliche, heute reale Stand erklaert: `scripts/
+    reset_admin_password.py` / `Lexono.exe reset-admin-password` wirkt
+    weiterhin nur auf Admin-Konten (Server-Zugriff noetig), aber seit
+    19.09. gibt es zusaetzlich einen echten Admin-Oberflaechen-Weg fuer
+    JEDEN Nutzer (`users_router.py::reset_user_password`, "Passwort
+    zurücksetzen" in der Nutzerverwaltung) - schliesst die urspruenglich
+    hier gefundene Luecke ("kein Reset-Weg fuer Nicht-Admin-Konten"),
+    siehe .agentic/OPEN_ISSUES.md fuer den vollen Fund-zu-Fix-Verlauf.
+    Diese Seite bewusst OHNE Login (die Person, die sie braucht, kann
+    sich per Definition nicht anmelden)."""
+    return templates.TemplateResponse(request, "password_help.html", {"request": request})
 
 
 @router.post("/logout")

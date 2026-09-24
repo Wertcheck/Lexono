@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% import "_labels.html" as labels %}
+{% block title %}{{ document.original_filename or "Dokument" }}{% endblock %}
+{% block content %}
+  {# Dokumentansicht innerhalb der Akte (14.09.) - schliesst die Luecke, dass
+     Aktendokumente (insbesondere Mail-Anhaenge) im Produkt ueberhaupt nicht
+     zu oeffnen waren. Nutzt dieselbe Vorschau inkl. PII-Hervorhebung wie der
+     Chat-Dokumentbereich (app/chat/document_preview.py), KEINE zweite
+     Darstellungslogik. #}
+  <div class="topbar">
+    <h1 class="topbar__title" id="document-title-display">
+      {{ icons.file_type_badge(document.file_path) }}
+      {{ document.original_filename or "Dokument" }}
+    </h1>
+    <div class="topbar__meta">
+      <a href="/dashboard/matters/{{ matter.id }}">{{ matter.title }}</a>
+      {% if document.classified_type %} &middot; {{ document.classified_type }}{% endif %}
+      {% if document.created_at %} &middot; {{ document.created_at.strftime("%d.%m.%Y") }}{% endif %}
+      &middot; <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download">Herunterladen</a>
+      &middot; <a href="#" id="document-rename-toggle" onclick="event.preventDefault(); document.getElementById('document-rename-form').showModal();">Umbenennen</a>
+      &middot;
+      <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/delete"
+            style="display: inline;"
+            onsubmit="return confirm('Dokument \'{{ document.original_filename or document.id }}\' löschen? Es verschwindet aus der Akte, bleibt aber wiederherstellbar.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button type="submit" class="link-button" style="color: var(--wax-red);">Löschen</button>
+      </form>
+    </div>
+  </div>
+
+  {# "Umbenennen" (18.09., Owner-Direktive "WEITERARBEITEN" - Referenz-
+     Kontextmenü zeigt Vorschau/Herunterladen/Umbenennen/Verschieben/
+     Kopieren/Löschen pro Dokument; Umbenennen war die einzige davon
+     technisch risikofreie, vollstaendig fehlende Aktion, siehe
+     app/web/document_actions_router.py-Moduldocstring). #}
+  <dialog id="document-rename-form" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Dokument umbenennen</h3>
+      <button type="button" class="modal__close" onclick="document.getElementById('document-rename-form').close()" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/rename" class="dashboard-form" style="max-width: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="form-label">
+          Dateiname
+          <input type="text" name="original_filename" required value="{{ document.original_filename or '' }}" autofocus />
+        </label>
+        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">Speichern</button>
+      </form>
+    </div>
+  </dialog>
+
+  <div class="draft-page">
+    {# ECHTE VISUELLE DOKUMENTANSICHT (20.09., Owner-Direktive
+       "PRIORITAETSERGAENZUNG: ECHTER DOKUMENTVIEWER" - Referenz
+       `28_dokument_vorschau_export.png`). Zeigt die tatsaechlich
+       gespeicherte Originaldatei - echtes Seiten-Rendering fuer PDF/DOCX
+       (app/documents/rendering.py, PyMuPDF), direktes Bild fuer
+       Bildformate, Textansicht fuer .txt, ehrlicher Fallback fuer alles
+       andere. STRIKT getrennt von der Textextraktions-/PII-Vorschau
+       weiter unten - diese hier ist die visuelle Ansicht der Datei
+       selbst, nicht extrahierter Text. #}
+    <div class="document-viewer-shell">
+      <div class="document-viewer-main">
+        {% if viewer_mode.kind == "pages" %}
+          <div class="document-viewer" data-page-count="{{ viewer_mode.page_count }}" data-page-url-base="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/page" data-page-dpi="{{ viewer_page_dpi }}">
+            <div class="document-viewer__toolbar">
+              <div class="document-viewer__toolbar-group">
+                <button type="button" class="icon-btn" id="doc-viewer-prev" aria-label="Vorherige Seite" {% if viewer_mode.page_count <= 1 %}disabled{% endif %}>{{ icons.chevron_left() }}</button>
+                <span class="document-viewer__page-indicator"><span id="doc-viewer-current-page">1</span> / {{ viewer_mode.page_count }}</span>
+                <button type="button" class="icon-btn" id="doc-viewer-next" aria-label="Nächste Seite" {% if viewer_mode.page_count <= 1 %}disabled{% endif %}>{{ icons.chevron_right() }}</button>
+              </div>
+              <div class="document-viewer__toolbar-group">
+                <button type="button" class="icon-btn" id="doc-viewer-zoom-out" aria-label="Verkleinern">{{ icons.zoom_out() }}</button>
+                <span class="document-viewer__zoom-indicator" id="doc-viewer-zoom-level">100%</span>
+                <button type="button" class="icon-btn" id="doc-viewer-zoom-in" aria-label="Vergrößern">{{ icons.zoom_in() }}</button>
+              </div>
+              <div class="document-viewer__toolbar-group">
+                <a class="icon-btn" href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download" aria-label="Herunterladen">{{ icons.download() }}</a>
+              </div>
+            </div>
+            <div class="document-viewer__body">
+              {% if viewer_mode.page_count and viewer_mode.page_count > 1 %}
+                <div class="document-viewer__thumbnails" id="doc-viewer-thumbnails">
+                  {% for n in range(1, viewer_mode.page_count + 1) %}
+                    <button type="button" class="document-viewer__thumbnail{% if n == 1 %} document-viewer__thumbnail--active{% endif %}" data-page="{{ n }}" aria-label="Seite {{ n }}">
+                      <img src="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/page/{{ n }}.png?dpi={{ viewer_thumbnail_dpi }}" alt="" loading="lazy" />
+                      <span>{{ n }}</span>
+                    </button>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              <div class="document-viewer__main-area">
+                <img class="document-viewer__page-image" id="doc-viewer-page-image"
+                     src="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/page/1.png?dpi={{ viewer_page_dpi }}"
+                     alt="Seite 1 von {{ document.original_filename or 'Dokument' }}" />
+              </div>
+            </div>
+          </div>
+        {% elif viewer_mode.kind == "image" %}
+          <div class="document-viewer document-viewer--image">
+            <div class="document-viewer__toolbar">
+              <div class="document-viewer__toolbar-group"></div>
+              <div class="document-viewer__toolbar-group">
+                <a class="icon-btn" href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download" aria-label="Herunterladen">{{ icons.download() }}</a>
+              </div>
+            </div>
+            <div class="document-viewer__main-area">
+              <img class="document-viewer__page-image" src="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download" alt="{{ document.original_filename or 'Dokument' }}" />
+            </div>
+          </div>
+        {% elif viewer_mode.kind == "text" %}
+          <div class="document-viewer document-viewer--text">
+            <div class="document-viewer__toolbar">
+              <div class="document-viewer__toolbar-group"></div>
+              <div class="document-viewer__toolbar-group">
+                <a class="icon-btn" href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download" aria-label="Herunterladen">{{ icons.download() }}</a>
+              </div>
+            </div>
+            <div class="document-viewer__main-area document-viewer__main-area--text">
+              {% if document.extracted_text %}
+                <pre class="document-viewer__text-content">{{ document.extracted_text }}</pre>
+              {% else %}
+                <div class="empty-state">Kein Textinhalt vorhanden.</div>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <div class="document-viewer-fallback">
+            {{ icons.file_type_badge(document.file_path) }}
+            <p>Für dieses Dateiformat steht keine visuelle Vorschau zur Verfügung.</p>
+            <a class="btn btn--primary" href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/download">{{ icons.download() }} Original herunterladen</a>
+          </div>
+        {% endif %}
+      </div>
+
+      {# KI-Aktionen (16.09., UI/UX-Sweep). Identisches Muster wie die
+         Posteingang-Aktionen (app/web/chat_router.py::
+         start_conversation_from_document): startet eine neue, matter-
+         gebundene Chat-Unterhaltung mit einer auf DIESES Dokument
+         bezogenen, vorformulierten Nachricht - kein neuer KI-/Privacy-Pfad.
+         Bewusst NUR diese vier realen Aktionen (kein "Aufgaben & Fristen
+         vorschlagen"-Button wie im Referenzbild - diese KI-Aktion existiert
+         nicht, "Erkannte Fristen" weiter unten ist bereits die ehrliche,
+         regelbasierte Entsprechung ohne KI-Button). #}
+      <div class="document-viewer-sidebar">
+        <h2 class="panel-title">KI-Aktionen</h2>
+        <div class="detail-actions detail-actions--vertical">
+          {% for action, label in [
+            ("analyze", "Dokument analysieren"),
+            ("summarize", "Zusammenfassung erstellen"),
+            ("extract_data", "Wichtige Daten extrahieren"),
+            ("draft_reply", "Schriftsatz-Entwurf erstellen"),
+          ] %}
+            <form method="post" action="/dashboard/chat/from-document/{{ document.id }}" class="js-ai-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <input type="hidden" name="action" value="{{ action }}" />
+              <button type="submit" class="btn{% if action == 'draft_reply' %} btn--primary{% endif %}" data-ai-loading-label="Wird gestartet …">{{ label }}</button>
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="split-two" style="margin-top: 28px;">
+      <div class="original-box">
+        {# Extrahierter Inhalt (Textextraktion, PII-Hervorhebung) - bewusst
+           getrennt von der visuellen Dokumentansicht oben, siehe
+           app/documents/rendering.py-Moduldocstring zur Abgrenzung. #}
+        <h2 class="panel-title">Extrahierter Text &amp; erkannte Daten</h2>
+        {% if preview and preview.highlighted_html %}
+          <div class="chat-document-pane__text">{{ preview.highlighted_html | safe }}</div>
+        {% elif document.ocr_status == "pending" %}
+          <div class="empty-state">
+            Der Text dieses Dokuments wurde noch nicht ausgelesen (Texterkennung steht aus).
+          </div>
+        {% elif document.ocr_status == "failed" %}
+          <div class="empty-state">
+            Der Text dieses Dokuments konnte nicht ausgelesen werden.
+          </div>
+        {% elif document.ocr_status == "unsupported_format" %}
+          <div class="empty-state">
+            Für dieses Dateiformat steht keine Textvorschau zur Verfügung.
+          </div>
+        {% else %}
+          <div class="empty-state">Kein Textinhalt vorhanden.</div>
+        {% endif %}
+      </div>
+
+      <div class="original-box">
+        {# Dieselbe Information wie im Chat-Dokumentbereich: WELCHE
+           personenbezogenen Daten in diesem Dokument erkannt wurden. Fuer
+           eine Kanzlei ist das vor jeder KI-Nutzung die entscheidende
+           Transparenz. #}
+        <h2 class="panel-title">
+          Erkannte personenbezogene Daten
+          <span class="chat-context-pane__count">{{ preview.entities | length if preview else 0 }}</span>
+        </h2>
+        {% if preview and preview.entities %}
+          <ul class="chat-context-pane__entity-list">
+            {% for entity in preview.entities %}
+              <li class="chat-context-pane__entity">
+                <span class="pii-highlight pii-highlight--{{ entity.category }} chat-context-pane__entity-dot"></span>
+                <span class="chat-context-pane__entity-label">{{ entity.label }}</span>
+                <span class="chat-context-pane__entity-value">{{ entity.value }}</span>
+                {% if entity.count > 1 %}
+                  <span class="chat-context-pane__entity-count">×{{ entity.count }}</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+          <p class="form-hint">
+            Diese Angaben werden vor jeder Anfrage an die Cloud-KI lokal durch
+            Platzhalter ersetzt und erst in der Antwort wieder eingesetzt.
+          </p>
+        {% else %}
+          <div class="empty-state">Keine personenbezogenen Daten erkannt.</div>
+        {% endif %}
+
+        {# "Erkannte Fristen" (16.09., UI/UX-Sweep - Referenz
+           `24_dokument_editor_ki_assistent.png`). Reine Anzeige bereits
+           vorhandener `Deadline`-Zeilen (automatisch von
+           `DeadlineAnalysisService` nach der Textextraktion angelegt,
+           siehe app/deadlines/service.py) - KEIN neues Aufgaben-/
+           Prioritaets-Datenmodell und KEINE "Uebernehmen"-Aktion (das
+           bleibt der bereits dokumentierte FALL-3-Fund "Aufgaben &
+           Fristen", siehe .agentic/OPEN_ISSUES.md). Identisches Muster
+           wie die Aufgaben-&-Fristen-Liste in matter_detail.html. #}
+        <h2 class="panel-title" style="margin-top: 22px;">
+          Erkannte Fristen
+          <span class="chat-context-pane__count">{{ document_deadlines | length }}</span>
+        </h2>
+        {% if document_deadlines %}
+          <ul class="instruction-list">
+            {% for deadline in document_deadlines %}
+              <li class="instruction-item">
+                <div class="message-row__top" style="margin-bottom: 2px;">
+                  <span class="message-row__sender">{{ deadline.source_text or "Frist" }}</span>
+                  <span class="message-row__time">{{ deadline.due_date.strftime("%d.%m.%Y") if deadline.due_date else "–" }}</span>
+                </div>
+                {{ labels.deadline_status_tag(deadline.review_status) }}
+              </li>
+            {% endfor %}
+          </ul>
+          <p class="form-hint">
+            Regelbasiert erkannt, nicht rechtsverbindlich bestätigt - manuelle Prüfung
+            erforderlich (siehe „Aufgaben &amp; Fristen").
+          </p>
+        {% else %}
+          <div class="empty-state">Keine Fristen in diesem Dokument erkannt.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script src="/dashboard/static/js/app_document_viewer.js"></script>
+{% endblock %}

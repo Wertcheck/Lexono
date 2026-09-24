@@ -305,10 +305,26 @@ def test_approve_sets_status_and_redirects(
 
 
 def test_approve_does_not_send_anything(client: TestClient, seeded: dict) -> None:
-    """Grundregel: kein automatischer Versand, unabhängig von der
-    Freigabe - es gibt schlicht keine Versandfunktion (Prompt 25)."""
+    """Grundregel: kein automatischer Versand, unabhängig von der Freigabe.
+
+    PRÄZISIERT am 14.09. (NICHT abgeschwächt): dieser Test nagelte bisher
+    den Satz "Postausgang mit Versandfunktion existiert noch nicht" fest -
+    und hat damit eine INHALTLICH FALSCHE Aussage der Oberfläche
+    abgesichert. Seit Prompt 25 existiert der Postausgang sehr wohl
+    (`approve_draft` -> `OutboxService.add_to_outbox`, `/dashboard/outbox`);
+    was NICHT existiert, ist eine Versandfähigkeit. Geprüft wird deshalb
+    jetzt die Garantie selbst statt einer veralteten Formulierung: kein
+    automatischer Versand, Postausgang als reine Warteschlange.
+    """
     response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
-    assert "Postausgang mit Versandfunktion existiert noch nicht" in response.text
+    # Whitespace normalisieren: die Aussage steht im Template über mehrere
+    # Zeilen. Ein Test, der an der Zeilenumbruchstelle scheitert, prüft die
+    # Formatierung statt der Garantie.
+    page = " ".join(response.text.split())
+    assert "Warteschlange ohne Versandfunktion" in page
+    assert "Es wird in keinem Fall automatisch etwas versendet" in page
+    # Die widerlegte Behauptung darf nicht zurückkehren.
+    assert "existiert noch nicht" not in page
 
 
 # --- Aktion: Zurückweisen ---

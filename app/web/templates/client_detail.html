@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_labels.html" as labels %}
 {% import "_icons.html" as icons %}
 {% block title %}{{ client.name }}{% endblock %}
 {% block content %}
@@ -16,129 +17,234 @@
 
   <div class="draft-page">
     <div class="instructions-panel">
-      <div class="client-detail-header">
-        <div class="client-detail-header__meta">
-          <div class="client-detail-header__meta-row"><strong>Rechtsgebiet:</strong> {{ client.practice_area or "–" }}</div>
-          <div class="client-detail-header__meta-row"><strong>Zuständiger Bearbeiter:</strong> {{ (client.responsible_user.display_name or client.responsible_user.email) if client.responsible_user else "–" }}</div>
-          <div class="client-detail-header__meta-row"><strong>E-Mail:</strong> {{ client.contact_email or "–" }}</div>
-          <div class="client-detail-header__meta-row"><strong>Telefon:</strong> {{ client.contact_phone or "–" }}</div>
+      {# Tab-Struktur (19.09., UI/UX-Referenzabgleich "30_mandant_detail.png" -
+         zeigt dieselbe Tab-Architektur wie zuvor bei matter_detail.html
+         gefunden/umgesetzt, siehe dort fuer die volle Begruendung zu
+         serverseitigem Vollstaendig-im-DOM-Rendering statt HTMX-
+         Nachladen). Bewusst KEIN "Verlauf"-Tab hier - die Referenz zeigt
+         fuer den Mandanten selbst keinen (anders als bei der Akte), nicht
+         spekulativ ergaenzt. #}
+      <div class="tab-nav" role="tablist">
+        <button type="button" class="tab-nav__item tab-nav__item--active" data-tab="uebersicht" onclick="Lexono.switchTab(this)">Übersicht</button>
+        <button type="button" class="tab-nav__item" data-tab="akten" onclick="Lexono.switchTab(this)">Akten ({{ matters|length }})</button>
+        <button type="button" class="tab-nav__item" data-tab="dokumente" onclick="Lexono.switchTab(this)">Dokumente ({{ documents|length }})</button>
+        <button type="button" class="tab-nav__item" data-tab="aufgaben" onclick="Lexono.switchTab(this)">Aufgaben &amp; Fristen ({{ tasks|length + deadlines|length }})</button>
+        <button type="button" class="tab-nav__item" data-tab="notizen" onclick="Lexono.switchTab(this)">Notizen ({{ notes|length }})</button>
+        <button type="button" class="tab-nav__item" data-tab="kommunikation" onclick="Lexono.switchTab(this)">Kommunikation ({{ messages|length }})</button>
+      </div>
+
+      <div class="tab-panel" id="tab-uebersicht">
+        <div class="client-detail-header">
+          <div class="client-detail-header__meta">
+            <div class="client-detail-header__meta-row"><strong>Rechtsgebiet:</strong> {{ client.practice_area or "–" }}</div>
+            <div class="client-detail-header__meta-row"><strong>Zuständiger Bearbeiter:</strong> {{ (client.responsible_user.display_name or client.responsible_user.email) if client.responsible_user else "–" }}</div>
+            <div class="client-detail-header__meta-row"><strong>E-Mail:</strong> {{ client.contact_email or "–" }}</div>
+            <div class="client-detail-header__meta-row"><strong>Telefon:</strong> {{ client.contact_phone or "–" }}</div>
+          </div>
+          <button type="button" class="btn" onclick="document.getElementById('edit-client-modal').showModal()">
+            Bearbeiten
+          </button>
         </div>
-        <button type="button" class="btn" onclick="document.getElementById('edit-client-modal').showModal()">
-          Bearbeiten
-        </button>
-      </div>
 
-      <div class="action-bar" style="margin-top: 0; padding-top: 0; border-top: none;">
-        {% if client.status == "active" %}
-          <form method="post" action="/dashboard/clients/{{ client.id }}/archive">
+        <div class="action-bar" style="margin-top: 0; padding-top: 0; border-top: none;">
+          {% if client.status == "active" %}
+            <form method="post" action="/dashboard/clients/{{ client.id }}/archive">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="btn">Archivieren</button>
+            </form>
+          {% else %}
+            <form method="post" action="/dashboard/clients/{{ client.id }}/reactivate">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="btn">Reaktivieren</button>
+            </form>
+          {% endif %}
+          <form method="post" action="/dashboard/clients/{{ client.id }}/export">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <button type="submit" class="btn">Archivieren</button>
+            <button type="submit" class="btn">{{ icons.download(class_="icon") }} Datenauszug exportieren</button>
           </form>
-        {% else %}
-          <form method="post" action="/dashboard/clients/{{ client.id }}/reactivate">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <button type="submit" class="btn">Reaktivieren</button>
-          </form>
-        {% endif %}
-        <form method="post" action="/dashboard/clients/{{ client.id }}/export">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-          <button type="submit" class="btn">{{ icons.download(class_="icon") }} Datenauszug exportieren</button>
-        </form>
-        {% if matters|length == 0 %}
-          <form method="post" action="/dashboard/clients/{{ client.id }}/delete"
-                onsubmit="return confirm('Mandant \'{{ client.name }}\' endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <button type="submit" class="btn btn--danger">{{ icons.trash(class_="icon") }} Endgültig löschen</button>
-          </form>
-        {% else %}
-          <span class="form-hint" title="Löschen ist gesperrt, solange Akten verknüpft sind - bitte stattdessen archivieren.">
-            Löschen erst möglich ohne verknüpfte Akten ({{ matters|length }} vorhanden)
-          </span>
-        {% endif %}
-      </div>
+          {% if matters|length == 0 %}
+            <form method="post" action="/dashboard/clients/{{ client.id }}/delete"
+                  onsubmit="return confirm('Mandant \'{{ client.name }}\' endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="btn btn--danger">{{ icons.trash(class_="icon") }} Endgültig löschen</button>
+            </form>
+          {% else %}
+            <span class="form-hint" title="Löschen ist gesperrt, solange Akten verknüpft sind - bitte stattdessen archivieren.">
+              Löschen erst möglich ohne verknüpfte Akten ({{ matters|length }} vorhanden)
+            </span>
+          {% endif %}
+        </div>
 
-      <div class="client-ai-cta">
-        <div class="client-ai-cta__text">
-          <strong>Mit lokaler KI arbeiten</strong>
+        <div class="client-ai-cta">
+          <div class="client-ai-cta__text">
+            <strong>Mit lokaler KI arbeiten</strong>
+            {% if single_open_matter_id %}
+              Öffnet den Schriftsatz-Generator direkt mit der offenen Akte dieses Mandanten -
+              läuft wie jede Entwurfserstellung über den Privacy Gateway (Pseudonymisierung).
+            {% elif matters|length == 0 %}
+              Es ist noch keine Akte verknüpft - zuerst über den Schriftsatz-Generator eine
+              Akte für diesen Mandanten anlegen.
+            {% else %}
+              Dieser Mandant hat mehrere Akten - bitte im "Akten"-Tab die gewünschte Akte
+              auswählen (KI-Kontext bezieht sich immer auf genau eine Akte, siehe
+              Aktenisolation).
+            {% endif %}
+          </div>
           {% if single_open_matter_id %}
-            Öffnet den Schriftsatz-Generator direkt mit der offenen Akte dieses Mandanten -
-            läuft wie jede Entwurfserstellung über den Privacy Gateway (Pseudonymisierung).
+            <a href="/dashboard/tools/schriftsatz?matter_id={{ single_open_matter_id }}" class="btn btn--primary">
+              Zum Schriftsatz-Generator
+            </a>
           {% elif matters|length == 0 %}
-            Es ist noch keine Akte verknüpft - zuerst über den Schriftsatz-Generator eine
-            Akte für diesen Mandanten anlegen.
+            {# 17.09., ECHTER FUND (siehe app/drafting/quick_matter.py::
+               create_quick_matter): OHNE client_id legte diese Aktion beim
+               erneuten Eintippen desselben Mandantennamens einen
+               DUPLIZIERTEN Mandanten an, statt DIESEN hier wiederzuverwenden. #}
+            <a href="/dashboard/tools/schriftsatz?client_id={{ client.id }}" class="btn">Akte anlegen</a>
           {% else %}
-            Dieser Mandant hat mehrere Akten - bitte unten die gewünschte Akte auswählen
-            (KI-Kontext bezieht sich immer auf genau eine Akte, siehe Aktenisolation).
+            <button type="button" class="btn" onclick="Lexono.switchTabByName('akten')">Akte wählen ↓</button>
           {% endif %}
         </div>
-        {% if single_open_matter_id %}
-          <a href="/dashboard/tools/schriftsatz?matter_id={{ single_open_matter_id }}" class="btn btn--primary">
-            Zum Schriftsatz-Generator
-          </a>
-        {% elif matters|length == 0 %}
-          <a href="/dashboard/tools/schriftsatz" class="btn">Akte anlegen</a>
+      </div>
+
+      <div class="tab-panel" id="tab-akten" hidden>
+        <h2 class="panel-title">Akten ({{ matters|length }})</h2>
+        {% if matters %}
+          <div class="table-container">
+            <table class="draft-table">
+              <thead>
+                <tr><th>Aktenzeichen</th><th>Titel</th><th>Rechtsgebiet</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                {% for matter in matters %}
+                  <tr>
+                    <td class="mono">{{ matter.reference_number or "–" }}</td>
+                    <td>{{ matter.title }}</td>
+                    <td>{{ matter.practice_area or "–" }}</td>
+                    <td>{{ labels.matter_status_tag(matter.status) }}</td>
+                    <td>
+                      <a href="/dashboard/matters/{{ matter.id }}" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Akte öffnen</a>
+                      <a href="/dashboard/tools/schriftsatz?matter_id={{ matter.id }}" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Mit KI arbeiten</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% else %}
-          <a href="#client-matters" class="btn">Akte wählen ↓</a>
+          <div class="empty-state">Noch keine Akten verknüpft.</div>
         {% endif %}
       </div>
 
-      <div class="client-detail-grid">
-        <div>
-          <h2 class="panel-title" id="client-matters">Verknüpfte Akten ({{ matters|length }})</h2>
-          {% if matters %}
-            <div class="table-container">
-              <table class="draft-table">
-                <thead>
-                  <tr><th>Aktenzeichen</th><th>Titel</th><th>Rechtsgebiet</th><th>Status</th><th></th></tr>
-                </thead>
-                <tbody>
-                  {% for matter in matters %}
-                    <tr>
-                      <td class="mono">{{ matter.reference_number or "–" }}</td>
-                      <td>{{ matter.title }}</td>
-                      <td>{{ matter.practice_area or "–" }}</td>
-                      <td><span class="tag {{ 'tag--matched' if matter.status == 'open' else 'tag--outbound' }}">{{ matter.status }}</span></td>
-                      <td><a href="/dashboard/tools/schriftsatz?matter_id={{ matter.id }}" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Mit KI arbeiten</a></td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="empty-state">Noch keine Akten verknüpft.</div>
-          {% endif %}
-        </div>
+      <div class="tab-panel" id="tab-dokumente" hidden>
+        <h2 class="panel-title">Dokumente ({{ documents|length }})</h2>
+        {% if documents %}
+          <div>
+            {# 17.09., Overnight-Direktive §6: identischer Fix wie
+               partials/message_detail.html/draft_detail.html - echter
+               Link auf die Aktendokument-Seite statt eines toten <span>s. #}
+            {% for document in documents %}
+              {% if document.matter_id %}
+                <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}"
+                   class="doc-chip doc-chip--link" title="Dokument öffnen">{{ icons.file_type_badge(document.file_path) }} {{ document.original_filename or document.id }}</a>
+              {% else %}
+                <span class="doc-chip">{{ icons.file_type_badge(document.file_path) }} {{ document.original_filename or document.id }}</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">Keine Dokumente verknüpft.</div>
+        {% endif %}
+      </div>
 
-        <div>
-          <h2 class="panel-title">Nachrichten ({{ messages|length }})</h2>
-          {% if messages %}
-            <ul class="instruction-list">
-              {% for message in messages %}
-                <li class="instruction-item">
+      <div class="tab-panel" id="tab-aufgaben" hidden>
+        {# "Aufgaben & Fristen" (19.09., UI/UX-Referenzabgleich): ueber ALLE
+           Akten dieses Mandanten aggregiert, siehe
+           app/web/clients_router.py::_client_detail_context fuer die
+           Begruendung. #}
+        <h2 class="panel-title">Aufgaben &amp; Fristen ({{ tasks|length + deadlines|length }})</h2>
+        {% if tasks or deadlines %}
+          <ul class="instruction-list">
+            {% for task in tasks %}
+              <li class="instruction-item">
+                <div class="message-row__top" style="margin-bottom: 2px;">
+                  <span class="message-row__sender">{{ task.title }}</span>
+                  <span class="message-row__time">{{ task.due_date.strftime("%d.%m.%Y") if task.due_date else "–" }}</span>
+                </div>
+                <span class="tag {{ 'tag--matched' if task.status == 'done' else 'tag--outbound' }}">{{ "erledigt" if task.status == "done" else "offen" }}</span>
+              </li>
+            {% endfor %}
+            {% for deadline in deadlines %}
+              <li class="instruction-item">
+                <div class="message-row__top" style="margin-bottom: 2px;">
+                  <span class="message-row__sender">{{ deadline.source_text or "Frist" }}</span>
+                  <span class="message-row__time">{{ deadline.due_date.strftime("%d.%m.%Y") if deadline.due_date else "–" }}</span>
+                </div>
+                {{ labels.deadline_status_tag(deadline.review_status) }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">Keine Aufgaben oder Fristen in den Akten dieses Mandanten.</div>
+        {% endif %}
+      </div>
+
+      <div class="tab-panel" id="tab-notizen" hidden>
+        {# "Notizen" (19.09., UI/UX-Referenzabgleich, siehe app/models/note.py
+           und app/web/note_actions_router.py fuer die volle Begruendung). #}
+        <h2 class="panel-title">Notizen ({{ notes|length }})</h2>
+        <p class="settings-section__hint" style="margin-top: -4px;">
+          Freier Vermerk zu diesem Mandanten - z. B. ein Telefonat, eine Erinnerung oder eine
+          Einschätzung. Notizen werden nicht von der KI erzeugt und nicht automatisch
+          ausgewertet.
+        </p>
+        {% if notes %}
+          <ul class="instruction-list">
+            {% for note in notes %}
+              <li class="instruction-item">
+                <div class="message-row__top" style="margin-bottom: 2px;">
+                  <span class="message-row__sender">{{ note.author }}</span>
+                  <span class="message-row__time">{{ note.created_at.strftime("%d.%m.%Y %H:%M") }}</span>
+                </div>
+                <div class="instruction-text" style="white-space: pre-wrap;">{{ note.text }}</div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">Noch keine Notizen zu diesem Mandanten.</div>
+        {% endif %}
+        <form method="post" action="/dashboard/clients/{{ client.id }}/notes" class="dashboard-form" style="max-width: 720px; margin-top: 12px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="form-label">
+            Neue Notiz
+            <textarea name="text" rows="3" required placeholder="z. B. Telefonat mit Mandant am ..."></textarea>
+          </label>
+          <button type="submit" class="btn btn--primary" style="align-self: flex-start;">Notiz hinzufügen</button>
+        </form>
+      </div>
+
+      <div class="tab-panel" id="tab-kommunikation" hidden>
+        <h2 class="panel-title">Nachrichten ({{ messages|length }})</h2>
+        {% if messages %}
+          {# ECHTER FUND (17.09., Owner-Direktive §5/§7 - identisches
+             Muster wie soeben in matter_detail.html behoben): reiner
+             Text ohne Weg zur vollstaendigen Posteingang-Detailansicht. #}
+          <ul class="instruction-list">
+            {% for message in messages %}
+              <li>
+                <a href="/dashboard/inbox/{{ message.id }}" class="instruction-item" style="display: block; text-decoration: none; color: inherit;">
                   <div class="message-row__top" style="margin-bottom: 2px;">
                     <span class="message-row__sender">{{ message.sender or "–" }}</span>
                     <span class="message-row__time">{{ message.created_at.strftime("%d.%m.%Y") }}</span>
                   </div>
                   <div class="instruction-text" style="margin: 2px 0;">{{ message.subject or "(kein Betreff)" }}</div>
                   <span class="tag {{ 'tag--outbound' if message.direction == 'outbound' else 'tag--matched' }}">{{ "ausgehend" if message.direction == "outbound" else "eingehend" }}</span>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <div class="empty-state">Keine Nachrichten verknüpft.</div>
-          {% endif %}
-
-          <h2 class="panel-title" style="margin-top: 26px;">Dokumente ({{ documents|length }})</h2>
-          {% if documents %}
-            <div>
-              {% for document in documents %}
-                <span class="doc-chip">{{ document.original_filename or document.id }}</span>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="empty-state">Keine Dokumente verknüpft.</div>
-          {% endif %}
-        </div>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">Keine Nachrichten verknüpft.</div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -191,4 +297,39 @@
       </form>
     </div>
   </dialog>
+
+  <script>
+    (function () {
+      window.Lexono = window.Lexono || {};
+
+      // Identische Logik wie matter_detail.html (bewusst dupliziert statt in
+      // eine gemeinsame Datei ausgelagert - beide Seiten laden ihr <script>
+      // unabhaengig, ein gemeinsames Modul waere fuer zwei kurze Funktionen
+      // unverhaeltnismaessig).
+      Lexono.switchTab = function (trigger) {
+        var tabName = trigger.getAttribute("data-tab");
+        document.querySelectorAll(".tab-nav__item").forEach(function (el) {
+          el.classList.toggle("tab-nav__item--active", el === trigger);
+        });
+        document.querySelectorAll(".tab-panel").forEach(function (el) {
+          el.hidden = el.id !== "tab-" + tabName;
+        });
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, "", "#" + tabName);
+        }
+      };
+
+      Lexono.switchTabByName = function (tabName) {
+        var trigger = document.querySelector('.tab-nav__item[data-tab="' + tabName + '"]');
+        if (trigger) {
+          Lexono.switchTab(trigger);
+        }
+      };
+
+      var initialHash = window.location.hash.replace("#", "");
+      if (initialHash) {
+        Lexono.switchTabByName(initialHash);
+      }
+    })();
+  </script>
 {% endblock %}

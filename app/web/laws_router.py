@@ -18,6 +18,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.permissions import require_login
@@ -76,11 +77,30 @@ def _library_context(
         if selected_section is None:
             raise HTTPException(status_code=404, detail="Paragraph nicht gefunden")
 
+    # Echte Kennzahlen je Gesetz (14.09.): Anzahl Normen und tatsaechlicher
+    # Stand (juengstes `last_updated`). Eine einzige gruppierte Abfrage statt
+    # eines Zaehl-Querys pro Gesetz (kein N+1 bei 34 Gesetzen).
+    # Hintergrund: die Referenzansicht "Gesetze & Normen" zeigt je Gesetz
+    # Version/Stand und Umfang - beides laesst sich aus dem vorhandenen
+    # Datenmodell WAHRHEITSGEMAESS ableiten (Groessenangaben in MB dagegen
+    # nicht, die werden bewusst nicht erfunden).
+    stats_rows = (
+        db.query(
+            LawSection.law_code,
+            func.count(LawSection.id),
+            func.max(LawSection.last_updated),
+        )
+        .group_by(LawSection.law_code)
+        .all()
+    )
+    law_stats = {code: {"count": count, "stand": stand} for code, count, stand in stats_rows}
+
     return {
         "request": request,
-        "active_nav": "Gesetzesbibliothek",
+        "active_nav": "Kanzleiwissen",
         "current_user": current_user,
         "laws": laws,
+        "law_stats": law_stats,
         "selected_law": selected_law,
         "sections": sections,
         "selected_section": selected_section,

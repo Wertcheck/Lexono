@@ -81,8 +81,18 @@
      Chat starten", aktive Chat-Navigation - bewusst NICHT fuer die
      Schnellaktions-Icons wiederverwendet (Vorgabe: Markenfarbe bleibt
      eigenstaendig, siehe .agentic/OPEN_ISSUES.md). */
-  --brand-green: #16a34a;
-  --brand-green-dark: #15803d;
+  /* Exakter CI-Farbcode #249D74 (19.09., Owner-Vorgabe) - real gegen das
+     tatsaechliche Logo-Asset (logo-mark.png) verifiziert: dessen
+     Gruenton IST bereits exakt RGB(36,157,116)=#249D74, die vorherige
+     `--brand-green`-Variable (#16a34a) war ein abweichender, nur
+     AEHNLICHER Gruenton - genau die "Approximation statt exaktem CI-Wert"
+     die die Vorgabe ausdruecklich ausschliesst. `--brand-green-dark`
+     bleibt EIN abgeleiteter, sichtbar dunklerer Hover-Ton desselben
+     Grundfarbtons (keine zweite, abweichende Primaerfarbe) -
+     `--brand-green-tint` (helle Badge-/Hintergrundflaeche) unveraendert
+     belassen, da nicht Teil der Icon-/Primaerfarben-Vorgabe. */
+  --brand-green: #249d74;
+  --brand-green-dark: #1d805f;
   --brand-green-tint: #dcfce7;
 
   /* --- Typografie --- */
@@ -139,6 +149,23 @@ body {
 
 a {
   color: inherit;
+}
+
+/* Erlaubt einer <form>/<button>-Aktion (CSRF-Schutz braucht POST, kein
+   <a href>) exakt wie ein umgebender Inline-Link auszusehen - z. B.
+   "Akte abschließen" neben echten <a>-Links in .topbar__meta (18.09.). */
+.link-button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
 }
 
 .app-shell {
@@ -884,6 +911,49 @@ html.sidebar-collapsed .sidebar__brand {
   color: var(--ink-700);
 }
 
+/* "Automatische Zuordnung (Vorschlag)"-Karte (14.09.), gleiches
+   Kartenmuster wie .chat-sources-card - siehe partials/message_detail.html. */
+.match-suggestion-card {
+  margin: 12px 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  background: var(--paper-100);
+  max-width: 480px;
+}
+
+.match-suggestion-card__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-700);
+  margin-bottom: 8px;
+}
+
+.match-suggestion-card__title .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-500);
+}
+
+.match-suggestion-card__text {
+  font-size: 13px;
+  color: var(--ink-900);
+  margin: 0 0 4px;
+}
+
+.match-suggestion-card__meta {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  margin: 0 0 12px;
+}
+
+.match-suggestion-card__form {
+  margin: 0;
+}
+
 .detail-section-label {
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -901,6 +971,71 @@ html.sidebar-collapsed .sidebar__brand {
   border-radius: var(--radius-sm);
   margin: 0 6px 6px 0;
   background: var(--paper-100);
+}
+
+/* 17.09., Overnight-Direktive §6: Dokument-Chips, die auf ein echtes,
+   bereits einer Akte zugeordnetes Dokument verweisen, sind jetzt ein
+   echter Link (message_detail.html, draft_detail.html) - gleiche visuelle
+   Sprache wie das bestehende `.chat-attachment-chip--link`-Muster. */
+.doc-chip--link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.doc-chip--link:hover {
+  border-color: var(--seal-green);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Dateiformat-Badges (19.09., Owner-Direktive "Dateiformat-Icons") -
+   ECHTER FUND: Dokumente wurden projektweit ausschliesslich als reiner
+   Dateiname angezeigt, ohne jede visuelle Typ-Kennzeichnung (weder in
+   der Akte-Dokumentenliste noch in den `.doc-chip`-Anhaengen im
+   Posteingang/Chat/Editor) - die Referenzbilder (u. a.
+   21_akten_dokumente_uebersicht.png, 15_akte_dokumente_und_
+   kommunikation.png) zeigen durchgaengig ein farbiges Typ-Badge
+   ("PDF" rot, "W"/"DOC" blau, Bild gruen) vor jedem Dateinamen. Die
+   Zuordnung erfolgt ausschliesslich anhand der ECHTEN Dateiendung
+   (siehe icons.file_type_badge-Makro) - kein erfundenes Icon fuer ein
+   nicht wirklich unterstuetztes Format, ein unbekanntes Format zeigt
+   ehrlich seine tatsaechliche Endung in Grau statt eines falschen
+   Formathinweises. */
+.file-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--paper-000);
+  vertical-align: middle;
+  flex: none;
+}
+
+.file-type-badge--pdf {
+  background: var(--wax-red);
+}
+
+.file-type-badge--docx {
+  background: var(--accent-blue);
+}
+
+.file-type-badge--image {
+  background: var(--accent-purple);
+}
+
+.file-type-badge--txt {
+  background: var(--ink-500);
+}
+
+.file-type-badge--generic {
+  background: var(--ink-300);
 }
 
 /* --- Leerzustand --- */
@@ -1052,6 +1187,70 @@ button:focus-visible {
   line-height: 1.7;
   white-space: pre-wrap;
   color: var(--ink-700);
+}
+
+/* Entwurf-Seitenvorschau mit echtem Briefkopf/Signatur (20.09., Owner-
+   Direktive "CONTEXT EXTENSION" §5/§6 - kleinste professionelle
+   Editor-Verbesserung statt eines Rich-Text-Vollausbaus, siehe
+   DECISIONS.md). Ersetzt `.draft-content-box` als primäre Ansicht -
+   zeigt GENAU dieselben Bausteine wie der echte PDF-/DOCX-Export
+   (app/export/letterhead.py), damit der Anwalt vor dem Export sieht,
+   wie das fertige Schreiben tatsächlich aussehen wird. */
+.document-page {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 32px 36px;
+}
+
+.document-page__letterhead {
+  text-align: center;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.document-page__logo {
+  max-height: 56px;
+  max-width: 220px;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.document-page__firm-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+
+.document-page__contact-line {
+  font-size: 11px;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+.document-page__content {
+  font-size: 13.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--ink-700);
+  min-height: 120px;
+}
+
+.document-page__signature {
+  margin-top: 28px;
+}
+
+.document-page__signature-image {
+  max-height: 64px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.document-page__signatory-name {
+  font-size: 13px;
+  color: var(--ink-900);
 }
 
 .manual-edit-toggle {
@@ -1211,6 +1410,22 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+/* KI-Aktionen-Leiste (16.09., UI/UX-Sweep) - genutzt in
+   partials/message_detail.html (Zusammenfassen/Antworten) und
+   matter_document.html (Dokument analysieren/Zusammenfassung erstellen/
+   Wichtige Daten extrahieren/Schriftsatz-Entwurf erstellen). */
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+
+.detail-actions form {
+  margin: 0;
+  max-width: none;
+}
+
 .instruction-list {
   list-style: none;
   margin: 10px 0 0;
@@ -1330,6 +1545,43 @@ textarea:focus {
   margin-top: 10px;
 }
 
+/* Standard-Prompts-Chips im Entwurf-Editor (16.09., UI/UX-Sweep,
+   Referenzbilder 12/17/24/31/38/41) - dieselbe Vorlagenbibliothek wie im
+   Chat, hier als Vorausfuell-Chips fuer die KI-Anweisung. */
+.instruction-bar__prompts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 10px;
+}
+
+.instruction-bar__prompts-label {
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+
+.instruction-bar__prompt-chip {
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.instruction-bar__prompt-chip:hover {
+  border-color: var(--ink-300);
+  background: var(--paper-100);
+}
+
+.instruction-bar__prompts-manage {
+  font-size: 11.5px;
+  margin-left: auto;
+}
+
 /* --- Entwürfe-Liste (Prompt 24) --- */
 
 .draft-table {
@@ -1390,6 +1642,273 @@ textarea:focus {
   border: 1px solid var(--paper-line);
   border-radius: var(--radius-md);
   padding: 18px 20px;
+}
+
+/* --- Echter Dokumentviewer (20.09., Owner-Direktive
+   "PRIORITAETSERGAENZUNG: ECHTER DOKUMENTVIEWER") - Referenz
+   `28_dokument_vorschau_export.png`: Hauptbereich (Toolbar + Thumbnails +
+   grosses Seitenbild) links, KI-Aktionen-Sidebar rechts. Primaerfarbe
+   fuer die aktive Seite/Fokuszustaende ist --brand-green (#249d74),
+   keine neue Primaerfarbe eingefuehrt. */
+.document-viewer-shell {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .document-viewer-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.document-viewer-main {
+  min-width: 0;
+}
+
+.document-viewer {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.document-viewer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--ink-900);
+  color: #fff;
+}
+
+.document-viewer__toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 60px;
+}
+
+.document-viewer__page-indicator,
+.document-viewer__zoom-indicator {
+  font-size: 12.5px;
+  color: #e2e8f0;
+  min-width: 44px;
+  text-align: center;
+}
+
+.document-viewer .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.document-viewer .icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.document-viewer .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.document-viewer .icon-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.document-viewer__body {
+  display: flex;
+  background: var(--ink-300);
+  min-height: 420px;
+  max-height: 74vh;
+}
+
+.document-viewer__thumbnails {
+  width: 92px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #1e293b;
+}
+
+.document-viewer__thumbnail {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.document-viewer__thumbnail img {
+  width: 100%;
+  border-radius: 2px;
+  display: block;
+  background: #fff;
+}
+
+.document-viewer__thumbnail span {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.document-viewer__thumbnail--active {
+  border-color: var(--brand-green);
+}
+
+.document-viewer__thumbnail--active span {
+  color: #fff;
+  font-weight: 600;
+}
+
+.document-viewer__main-area {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.document-viewer__page-image {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(15, 23, 42, 0.25));
+  background: #fff;
+}
+
+.document-viewer--image .document-viewer__main-area,
+.document-viewer--text .document-viewer__main-area {
+  background: var(--paper-000);
+}
+
+.document-viewer--image .document-viewer__page-image {
+  box-shadow: none;
+}
+
+.document-viewer__main-area--text {
+  display: block;
+  padding: 20px 24px;
+}
+
+.document-viewer__text-content {
+  font-family: "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-900);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.document-viewer-fallback {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink-500);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.document-viewer-sidebar {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+
+.detail-actions--vertical {
+  flex-direction: column;
+}
+
+.detail-actions--vertical form,
+.detail-actions--vertical .btn {
+  width: 100%;
+}
+
+/* --- KI-Waiting-/Buffering-UX (20.09., Owner-Direktive "KI-WAITING-/
+   BUFFERING-UX PROJEKTWEIT PRÜFEN UND VERBESSERN") ---
+
+   Generischer, wiederverwendbarer "Verarbeitung läuft"-Zustand fuer
+   Formulare, deren Submit-Button einen ECHTEN, synchronen KI-Aufruf
+   ausloest, der VOR dem Redirect/Seitenwechsel abgeschlossen sein muss
+   (z. B. "Änderungen übernehmen & neu formulieren" im Editor, "Dokument
+   analysieren" im Dokumentviewer, "Zusammenfassen"/"Antworten" im
+   Posteingang, "Schriftsatz generieren"). ECHTER FUND: fuer all diese
+   Stellen gab es bislang GAR KEIN Feedback zwischen Klick und dem
+   fertigen Ergebnis - nur der native, nichtssagende Browser-Ladezustand
+   waehrend derselben mehrsekuendigen Wartezeit wie beim (dort bereits
+   gestreamten) Chat. Bewusst KEIN Streaming hier: das Ergebnis dieser
+   Aktionen ist eine VOLLSTAENDIG NEUE Seite (neue Entwurfsversion, neuer
+   Chat), kein inkrementeller Text auf der aktuellen Seite - Streaming
+   waere hier Architektur-Overkill fuer denselben Nutzen. Stattdessen ein
+   ehrlicher, ruhiger "Inline-Processing"-Zustand direkt am Button
+   (angewendet von app_ai_loading.js): Button gesperrt, Beschriftung
+   wechselt auf einen ehrlichen Text ("Wird verarbeitet…"), keine
+   erfundenen Prozent-/Zeitangaben. Bewusst NUR der Button/das Formular
+   gesperrt, nicht die restliche Seite (Navigation, andere Bereiche
+   bleiben bedienbar). */
+.btn--ai-loading {
+  opacity: 0.85;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn--ai-loading .btn__spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.btn--ai-loading .btn__spinner span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+  animation: ai-loading-pulse 1.2s ease-in-out infinite;
+}
+
+.btn--ai-loading .btn__spinner span:nth-child(2) { animation-delay: 0.2s; }
+.btn--ai-loading .btn__spinner span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes ai-loading-pulse {
+  0%, 80%, 100% { opacity: 0.35; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--ai-loading .btn__spinner span {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+button[disabled].btn--ai-loading {
+  pointer-events: none;
 }
 
 .original-box__meta {
@@ -1522,23 +2041,486 @@ textarea:focus {
   border-color: var(--wax-red);
 }
 
-/* --- Login-Seite (Prompt 26) --- */
+/* --- Login-Seite (Prompt 26; Referenzbild-Redesign 13.09.) ---
+   Zweispaltig (Marken-/Feature-Panel links, Anmelde-Karte rechts) ab einer
+   Mindestbreite - darunter (kleiner als das native Fenster-Minimum von
+   900px, siehe run.py::_MIN_WINDOW_WIDTH, hier trotzdem als echter
+   Fallback fuer den reinen Browser-/--no-window-Modus) nur die Karte,
+   zentriert. Absichtlich NUR visuelle Elemente ohne Backend-Entsprechung
+   ("Angemeldet bleiben", "Passwort vergessen", Nutzerwechsel aus der
+   Referenz) - keine Eingabe/kein Link, der nichts bewirkt. */
 
 .login-shell {
-  min-height: 100vh;
+  /* min-height:100vh -> height:100vh (19.09., "kein Scrollen"-Hardfund):
+     `min-height` alleine erlaubt dem Shell-Container, ueber die
+     Fensterhoehe hinauszuwachsen, sobald sein Inhalt mehr Platz braucht -
+     genau das geschah real (Tagline/Systemstatus fielen wiederholt aus
+     dem sichtbaren Fensterausschnitt, siehe OPEN_ISSUES.md). Ein echtes
+     `height:100vh` deckelt den Container auf die tatsaechliche
+     Fensterhoehe; erst DAS macht ueberschuessigen Inhalt ueberhaupt
+     sichtbar/messbar statt ihn einfach nach unten wachsen zu lassen -
+     die eigentliche Korrektur ist die Verkleinerung des Inhalts selbst
+     (Headline/Abstaende/Icons, siehe die einzelnen Selektoren unten),
+     NICHT dieses Hoehen-Cap allein (das waere nur verstecktes Overflow -
+     ausdruecklich NICHT die geforderte Loesung - hier bewusst KEIN
+     `overflow:hidden` ergaenzt, das waere exakt das verbotene
+     Kaschieren; wenn Inhalt nicht passt, MUSS er kleiner werden, nicht
+     unsichtbar gemacht). */
+  height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  /* EIN durchgehender Verlauf ueber die GESAMTE Breite (19.09.,
+     Owner-Feedback "keine harten Trennlinien zwischen den drei
+     Bereichen") - vorher hatten `.login-shell__brand` und
+     `.login-shell__illustration-zone` je EIGENE, unabhaengig berechnete
+     Hintergrund-Gradienten (jeweils relativ zur eigenen Box), wodurch an
+     der Zonengrenze ein sichtbarer Bruch entstand, und `.login-shell__
+     card-wrap` hatte GAR KEINEN Verlauf (abrupter Wechsel zu reinem
+     `--paper-100`). Jetzt EIN gemeinsamer Hintergrund hier auf dem
+     Flex-Container selbst, der ueber alle drei Kind-Zonen hinweg als
+     eine zusammenhaengende Flaeche erscheint (die Kind-Zonen selbst
+     sind jetzt transparent, siehe dort). Exakt aus der CI-Farbe
+     #249D74 abgeleitet (rgba, sehr geringe Deckkraft - Owner-Vorgabe
+     "dezent als Glow, nicht als vollflaechige Farbe"), Schwerpunkt in
+     der Mitte (bei der Illustration), weich nach links UND rechts
+     auslaufend bis in den Kartenbereich hinein. */
+  background:
+    radial-gradient(1100px 750px at 38% 35%, rgba(36, 157, 116, 0.14) 0%, transparent 62%),
+    radial-gradient(900px 700px at 62% 68%, rgba(36, 157, 116, 0.10) 0%, transparent 60%),
+    radial-gradient(700px 600px at 88% 30%, rgba(36, 157, 116, 0.05) 0%, transparent 60%),
+    var(--paper-100);
+}
+
+.login-shell__brand {
+  position: relative;
+  /* min-width:0 überschreibt den Flex-Item-Default `min-width:auto`
+     (19.09., realer Fund: ohne das weigert sich ein Flex-Kind, unter die
+     Content-Breite seiner Kinder zu schrumpfen - bei drei Spalten mit
+     fester Kartenbreite + fester Illustrationsbreite führte das zu
+     echtem horizontalem Overflow statt sauberem Schrumpfen, per Live-
+     Screenshot bestätigt: die Karte wurde rechts abgeschnitten). */
+  min-width: 0;
+  flex: 1 1 480px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 64px;
+  /* Bewusst transparent (19.09.) - der Verlauf kommt jetzt vom
+     gemeinsamen `.login-shell`-Hintergrund, siehe dortige Begruendung. */
+  background: transparent;
+}
+
+.login-shell__brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.login-shell__brand-logo img {
+  /* Root Cause (19.09., Owner-Fund "linkes Icon zu breit"): eine feste
+     width:56px + height:56px zwingt das Bild in ein QUADRAT, obwohl das
+     zugrunde liegende Asset (logo-mark.png, 317x420px) natuerlicherweise
+     HOEHER als BREIT ist (Seitenverhaeltnis ~0.755:1) - das Ergebnis war
+     eine sichtbar horizontal gestauchte/verbreiterte Marke. Das rechte
+     Icon in der Login-Karte (`.login-box__brand-icon img`) setzt bewusst
+     NUR `width`, `height:auto` und ist dadurch korrekt proportioniert -
+     dasselbe Muster jetzt hier uebernommen, KEIN neues/anderes Asset,
+     KEINE manuelle Kompensation der Verzerrung. */
+  width: 56px;
+  height: auto;
+}
+
+.login-shell__headline {
+  /* 38px -> 30px, line-height 1.2 -> 1.15 (19.09., "kein Scrollen"-Fund):
+     bei 38px + der jetzt schmaleren Textspalte (Drei-Zonen-Layout nimmt
+     ihr Platz weg) brach die Zeile auf real BIS ZU VIER statt zwei/drei
+     Zeilen um - Hauptverursacher des vertikalen Overflows, siehe
+     Begruendung am `.login-shell`-Selektor weiter unten. */
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 4px 0 0;
+}
+
+.login-shell__headline span {
+  color: var(--brand-green-dark);
+}
+
+.login-shell__subheadline {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink-700);
+  margin: 0;
+}
+
+.login-shell__body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-500);
+  margin: 0;
+  max-width: 42ch;
+}
+
+.login-shell__features {
+  display: flex;
+  gap: 24px;
+  margin-top: 6px;
+}
+
+.login-shell__feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-700);
+  text-align: center;
+  width: 92px;
+}
+
+.login-shell__feature-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--paper-100);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+}
+
+.login-shell__feature-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.login-shell__feature-icon--blue {
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+}
+
+.login-shell__feature-icon--purple {
+  background: var(--accent-purple-tint);
+  color: var(--accent-purple);
+}
+
+.login-shell__feature-icon--orange {
+  background: var(--accent-orange-tint);
+  color: var(--accent-orange);
+}
+
+.login-shell__tagline {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--paper-line);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-300);
+}
+
+.login-shell__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+
+.login-shell__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink-300);
+  flex: none;
+}
+
+.login-shell__status-dot--ok {
+  background: var(--brand-green);
+}
+
+.login-shell__card-wrap {
+  /* min-width:0 aus demselben Grund wie bei den beiden anderen Zonen -
+     enthaelt mit `.login-box` selbst ein nicht-schrumpfendes (420px
+     festes) Kind. */
+  min-width: 0;
+  flex: 1 1 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
 }
 
 .login-box {
   background: var(--paper-000);
   border: 1px solid var(--paper-line);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 36px 40px;
-  width: 340px;
+  box-shadow: var(--shadow-elevated);
+  padding: 44px 44px 36px;
+  /* 420px -> 460px (19.09., Korrekturrunde): bei 420px brach die
+     "Angemeldet bleiben"/"Passwort vergessen?"-Zeile real sichtbar in
+     zwei Zeilen um (Live-Screenshot), die Referenz zeigt beides auf
+     je einer Zeile UND eine insgesamt etwas breitere Karte
+     (Referenzbild-Vermessung: ca. 556px bei 1536px Gesamtbreite). */
+  width: 460px;
+}
+
+.login-box__brand-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.login-box__brand-icon img {
+  width: 64px;
+  height: auto;
+}
+
+.login-box__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.login-box__subtitle {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+.login-box__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 4px;
+  font-size: 13px;
+}
+
+.login-box__link {
+  color: var(--brand-green-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-box__link:hover {
+  text-decoration: underline;
+}
+
+.login-box .form-label {
+  margin-top: 4px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon__icon {
+  position: absolute;
+  left: 12px;
+  width: 17px;
+  height: 17px;
+  color: var(--ink-300);
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  padding-left: 38px !important;
+}
+
+.input-with-icon__toggle {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-300);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.input-with-icon__toggle:hover {
+  color: var(--ink-700);
+  background: var(--paper-200);
+}
+
+.input-with-icon__toggle .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.login-box__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  /* Bewusste, lokale Ausnahme von der globalen .btn--primary-Farbe
+     (bleibt Navy/--seal-green fuer alle sonstigen primaeren Aktionen im
+     Dashboard, siehe dortige Begruendung) - die Login-Seite ist eine
+     eigene, markenorientierte Einstiegsseite (Referenzbild), auf der
+     GENAU wie beim Logo/Sendebutton/"Neuen Chat starten" die Marken-
+     farbe Gruen gilt (--brand-green), siehe .agentic/OPEN_ISSUES.md. */
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+}
+
+.login-box__submit:hover {
+  background: var(--brand-green-dark);
+  border-color: var(--brand-green-dark);
+}
+
+.login-box__submit .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Eigene dritte Layout-Zone zwischen Textspalte und Login-Karte (19.09.,
+   Korrektur nach Owner-Feedback "das ist keine Dekoration in einer Ecke,
+   sondern eine eigene mittlere Zone der Komposition") - vorher war
+   `.login-shell__illustration` per `position:absolute` an
+   `.login-shell__brand` gebunden (dadurch auf dessen `max-width`-Box
+   beschraenkt und viel zu klein/an den Rand gedraengt). Dieselbe
+   1180px-Abschaltschwelle wie zuvor (jetzt auf die ganze Zone statt nur
+   das Element), unterhalb dessen die Illustration weicht statt die
+   Textspalte/Karte zu bedraengen. */
+.login-shell__illustration-zone {
+  /* min-width:0 aus demselben Grund wie bei `.login-shell__brand` oben -
+     enthaelt mit `.login-shell__illustration` (340px fest) selbst ein
+     nicht-schrumpfendes Kind. */
+  min-width: 0;
+  flex: 1 1 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 0;
+  /* Bewusst transparent (19.09., Korrektur "kein sichtbarer Bruch
+     zwischen den drei Zonen") - der Verlauf kommt jetzt vom
+     gemeinsamen `.login-shell`-Hintergrund (siehe dortige Begruendung),
+     eine eigene, nur relativ zu DIESER Box berechnete Gradient-Definition
+     erzeugte an der Zonengrenze eine sichtbare Naht. */
+  background: transparent;
+}
+
+@media (max-width: 1180px) {
+  .login-shell__illustration-zone {
+    display: none;
+  }
+}
+
+.login-shell__illustration {
+  position: relative;
+  /* 340x340 -> 280x290 (19.09., Korrekturrunde 2: Owner-Fund "zu gross/zu
+     dominant") - Referenzbild-Vermessung ergab eine deutlich kompaktere
+     Komposition als zuvor umgesetzt. */
+  width: 280px;
+  height: 290px;
+}
+
+.login-shell__illustration-sheet {
+  position: absolute;
+  /* 250x320 -> 190x250 (siehe Container-Kommentar oben, gleiche Quelle). */
+  width: 190px;
+  height: 250px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Reihenfolge/Versatz nach direkter Pixelvermessung des Referenzbilds
+   korrigiert (19.09., Korrekturrunde 2): das HINTERE Blatt sitzt OBEN
+   RECHTS, das VORDERE (volldeckende, mit Textzeilen) Blatt sitzt UNTEN
+   LINKS - vorher war das genau umgekehrt umgesetzt (front oben-links,
+   back unten-rechts), was zusammen mit gegenläufigen Rotationswerten
+   (+6deg/-3deg, ein "Faecher" statt einer Diagonale) den vom Owner
+   beschriebenen Effekt "nicht diagonal genug, keine klare Schichtung"
+   erzeugte. Jetzt: EIN durchgehender Versatz nach unten-links UND
+   durchgehend gleichsinnige (statt gegenläufige), sehr dezente Rotation -
+   ergibt eine ruhige Diagonale statt eines Fächers. */
+.login-shell__illustration-sheet--back {
+  top: 0;
+  left: 82px;
+  transform: rotate(3deg);
+  opacity: 0.7;
+}
+
+.login-shell__illustration-sheet--mid {
+  top: 9px;
+  left: 56px;
+  transform: rotate(1.5deg);
+  opacity: 0.85;
+}
+
+.login-shell__illustration-sheet--front {
+  top: 18px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 22px 19px;
+}
+
+.login-shell__illustration-sheet--front span {
+  display: block;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-200);
+}
+
+.login-shell__illustration-sheet--front span:nth-child(1) { width: 70%; }
+.login-shell__illustration-sheet--front span:nth-child(2) { width: 100%; }
+.login-shell__illustration-sheet--front span:nth-child(3) { width: 85%; }
+.login-shell__illustration-sheet--front span:nth-child(4) { width: 55%; }
+
+.login-shell__illustration-badge {
+  position: absolute;
+  /* Positioniert relativ zum VORDEREN Blatt (top:18px;left:28px;
+     width:190px) - ueberlappt dessen unteren, mittig-rechten Bereich,
+     wie im Referenzbild vermessen. */
+  bottom: 6px;
+  left: 84px;
+  width: 82px;
+  height: 82px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-green);
+  color: var(--paper-000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-elevated);
+}
+
+.login-shell__illustration-badge .icon {
+  width: 38px;
+  height: 38px;
+}
+
+@media (max-width: 900px) {
+  .login-shell__brand {
+    display: none;
+  }
+
+  .login-shell__card-wrap {
+    flex: 1 1 auto;
+  }
 }
 
 /* ==========================================================================
@@ -1609,58 +2591,35 @@ textarea:focus {
   flex-shrink: 0;
 }
 
-.sidebar__footer-status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--paper-line);
-}
-
-.sidebar__footer-help {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ink-500);
-  text-decoration: none;
-  transition: color 0.12s ease;
-}
-
-.sidebar__footer-help:hover {
-  color: var(--seal-green-dark);
-}
-
-.sidebar__footer-help .icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
 .sidebar__footer-account {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  position: relative;
   padding: 8px 12px 10px;
 }
 
+/* Profilmenue-Ausloeser (UI/UX-Ueberarbeitung, 13.09.) - jetzt ein
+   <button> statt <a>, da er kein Sprungziel selbst ist, sondern das
+   Dropdown darunter oeffnet (Mein Profil/Einstellungen/Hilfe &
+   Support/Abmelden, siehe base.html + app_sidebar.js). */
 .sidebar__profile {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
+  width: 100%;
   min-width: 0;
   padding: 7px 8px;
+  border: none;
   border-radius: var(--radius-md);
-  text-decoration: none;
+  background: transparent;
   color: var(--ink-700);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   transition: background-color 0.12s ease;
 }
 
 .sidebar__profile:hover,
-.sidebar__profile--active {
+.sidebar__profile--active,
+.sidebar__profile[aria-expanded="true"] {
   background: var(--paper-200);
 }
 
@@ -1692,6 +2651,7 @@ textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--ink-900);
 }
 
 .sidebar__profile-role {
@@ -1699,34 +2659,101 @@ textarea:focus {
   color: var(--ink-500);
 }
 
-.sidebar__settings-btn {
+.sidebar__profile-chevron {
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--ink-500);
+  transition: transform 0.15s var(--ease-elevate);
+}
+
+.sidebar__profile[aria-expanded="true"] .sidebar__profile-chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown oeffnet NACH OBEN (die Ausloeser-Zeile sitzt ganz unten in
+   der Sidebar, ein normales Dropdown nach unten wuerde ausserhalb des
+   Fensters landen).
+
+   Bewusst in zwei Regeln aufgeteilt (bekannter Fund, siehe
+   .chat-dropzone-hint weiter unten fuer die volle Herleitung): eine
+   Autoren-Regel wie ".sidebar__profile-menu { display: flex }" hat
+   dieselbe Spezifitaet wie die UA-Stylesheet-Regel "[hidden] {
+   display: none }" und gewinnt durch spaetere Cascade-Position - das
+   [hidden]-Attribut wuerde das Element sonst NICHT zuverlaessig
+   verstecken. ":not([hidden])" macht die Regel spezifischer als die
+   UA-Regel. */
+.sidebar__profile-menu {
+  display: none;
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 6px);
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  padding: 6px;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 20;
+}
+
+.sidebar__profile-menu:not([hidden]) {
+  display: flex;
+}
+
+.sidebar__profile-menu-form {
+  display: contents;
+}
+
+.sidebar__profile-menu-divider {
+  height: 1px;
+  margin: 4px 4px;
+  background: var(--paper-line);
+}
+
+.sidebar__profile-menu-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--paper-line);
-  background: var(--paper-000);
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--ink-700);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
   text-decoration: none;
-  transition: border-color 0.15s var(--ease-elevate), color 0.15s var(--ease-elevate),
-    transform 0.15s var(--ease-elevate);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
-.sidebar__settings-btn:hover {
-  border-color: var(--seal-green);
-  color: var(--seal-green-dark);
+.sidebar__profile-menu-item:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
 }
 
-.sidebar__settings-btn:active {
-  transform: scale(0.92);
-}
-
-.sidebar__settings-btn .icon {
+.sidebar__profile-menu-item .icon {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
+  color: var(--ink-500);
+}
+
+.sidebar__profile-menu-item--logout {
+  color: var(--wax-red);
+}
+
+.sidebar__profile-menu-item--logout:hover {
+  background: var(--wax-red-tint);
+  color: var(--wax-red);
+}
+
+.sidebar__profile-menu-item--logout .icon {
+  color: var(--wax-red);
 }
 
 /* ==========================================================================
@@ -3013,6 +4040,57 @@ body::-webkit-scrollbar-thumb:hover,
   white-space: nowrap;
 }
 
+/* Loeschen (20.09., Owner-Direktive "WORKSTREAM A — CHATS LOESCHBAR") -
+   der Papierkorb-Button bleibt dezent (opacity 0) bis die Zeile per Maus/
+   Tastatur fokussiert wird, damit die Liste im Normalzustand nicht
+   ueberladen wirkt (Direktive: "dezent, ruhig, professionell"). */
+.chat-conversations__row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.chat-conversations__row .chat-conversations__item {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-conversations__delete-form {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.chat-conversations__delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 4px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--ink-500);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.chat-conversations__row:hover .chat-conversations__delete-btn,
+.chat-conversations__delete-btn:focus-visible {
+  opacity: 1;
+}
+
+.chat-conversations__delete-btn:hover {
+  background: var(--wax-red-tint);
+  color: var(--wax-red);
+}
+
+.chat-conversations__delete-btn .icon {
+  width: 15px;
+  height: 15px;
+}
+
 .chat-conversations__empty {
   padding: 12px;
   font-size: 12.5px;
@@ -3100,6 +4178,35 @@ body::-webkit-scrollbar-thumb:hover,
   margin-bottom: 18px;
 }
 
+/* KI-Analyse-Transparenzkarte (Phase 5, 13.09.). */
+.chat-transparency-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--brand-green-tint);
+  margin-bottom: 4px;
+}
+
+.chat-transparency-card .icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  color: var(--brand-green-dark);
+}
+
+.chat-transparency-card__text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-700);
+}
+
+.chat-transparency-card__text strong {
+  color: var(--ink-900);
+}
+
 .chat-context-pane__section-title {
   display: flex;
   align-items: center;
@@ -3184,6 +4291,20 @@ body::-webkit-scrollbar-thumb:hover,
   font-weight: 500;
 }
 
+.chat-context-pane__download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink-700);
+}
+
+.chat-context-pane__download .icon {
+  width: 14px;
+  height: 14px;
+}
+
 /* Hervorhebung erkannter Mandantendaten im Dokumenttext - dieselben
    Kategorien wie app/privacy/detectors.py/presidio_ner.py. Bewusst
    dezente, unterscheidbare Farben statt grellem Marker-Look (Auftrag:
@@ -3239,6 +4360,33 @@ body::-webkit-scrollbar-thumb:hover,
    dezenter KI-Status") - padding identisch zu .topbar, damit dieser Bereich
    zuverlaessig unterhalb der schwebenden .header-icons-Leiste beginnt
    (siehe Kommentar bei .chat-conversations__header). */
+/* Breadcrumb (UI/UX-Ueberarbeitung, Phase 4, 13.09.) - rein informativ,
+   macht den aktuellen Arbeitskontext sichtbar (Chat -> Akte ->
+   ggf. Dokument). */
+.chat-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 32px 0;
+  font-size: 12.5px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.chat-breadcrumb a {
+  color: var(--ink-500);
+  text-decoration: none;
+}
+
+.chat-breadcrumb a:hover {
+  color: var(--ink-900);
+  text-decoration: underline;
+}
+
+.chat-breadcrumb__sep {
+  color: var(--ink-300);
+}
+
 .chat-panel__header {
   display: flex;
   align-items: baseline;
@@ -3247,6 +4395,60 @@ body::-webkit-scrollbar-thumb:hover,
   padding: 26px 32px 14px;
   border-bottom: 1px solid var(--paper-line);
   flex-shrink: 0;
+}
+
+/* "Akte ändern"-Popover (Aktenbezug, Phase 4, 13.09.). */
+.chat-matter-link {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.chat-matter-link__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-700);
+  cursor: pointer;
+  list-style: none;
+}
+
+.chat-matter-link__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.chat-matter-link__trigger:hover {
+  border-color: var(--seal-green);
+  color: var(--seal-green-dark);
+}
+
+.chat-matter-link__trigger .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-matter-link__form {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  width: 320px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-matter-link__form select {
+  width: 100%;
 }
 
 .chat-panel__header-title {
@@ -3344,32 +4546,35 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-empty-state__actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 220px));
+  grid-template-columns: repeat(4, minmax(150px, 220px));
   gap: 14px;
   width: 100%;
-  max-width: 900px;
+  max-width: 940px;
 }
 
-/* Grosse Aktionskarten der Chat-Startansicht (Referenzbild, 01.09.) -
-   eigenstaendiger Modifier statt Aenderung der Basis-.chat-quick-action-
-   Regeln, damit die bereits bestehende schmale --compact-Variante im
+/* Aktions-Kacheln der Chat-Startansicht: vertikal zentriert (Icon oben,
+   Titel, Untertitel) mit farblich getoentem Kartenhintergrund - an
+   assets/ux-ui/05_chat_startseite.png angeglichen (14.09., echter
+   Screenshot-Vergleich der laufenden Anwendung gegen die Referenz).
+   Eigenstaendiger Modifier statt Aenderung der Basis-.chat-quick-action-
+   Regeln, damit die bestehende schmale --compact-Variante im
    Dokument-Workspace (chat.html-Kontextleiste) unveraendert bleibt. */
 .chat-quick-action.chat-quick-action--card {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 4px;
+  gap: 10px;
   text-align: left;
-  padding: 22px 20px;
+  padding: 20px 18px;
   border-radius: var(--radius-md);
-  min-height: 168px;
+  border-color: transparent;
 }
 
 .chat-quick-action--card .chat-quick-action__icon {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  margin-bottom: 10px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
 }
 
 .chat-quick-action--card .chat-quick-action__icon .icon {
@@ -3381,22 +4586,37 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink-900);
+  line-height: 1.25;
 }
 
-.chat-quick-action__desc {
+.chat-quick-action__subtitle {
   font-size: 12.5px;
   font-weight: 400;
   color: var(--ink-500);
   line-height: 1.4;
 }
 
-.chat-quick-action.chat-quick-action--add {
-  border-style: dashed;
-  background: var(--paper-100);
+/* Hoehere Selektor-Spezifitaet noetig (echter Fund beim visuellen
+   Abgleich, 14.09.): die Basisregel ".chat-quick-action" (weiter unten in
+   dieser Datei, gleiche Spezifitaet als Einzelklassen-Selektor) setzt
+   ebenfalls "background" - ohne die Kombination mit ".chat-quick-action"
+   gewinnt bei gleicher Spezifitaet die spaeter im Stylesheet stehende
+   Basisregel und die Toenung blieb unsichtbar (reproduziert: Karten
+   blieben trotz gesetzter Klasse weiss statt farbig getoent). */
+.chat-quick-action.chat-quick-action--tint-green {
+  background: var(--seal-green-tint);
 }
 
-.chat-quick-action.chat-quick-action--add:hover {
-  background: var(--paper-000);
+.chat-quick-action.chat-quick-action--tint-blue {
+  background: var(--accent-blue-tint);
+}
+
+.chat-quick-action.chat-quick-action--tint-purple {
+  background: var(--accent-purple-tint);
+}
+
+.chat-quick-action.chat-quick-action--tint-orange {
+  background: var(--accent-orange-tint);
 }
 
 /* Kopfzeile der Chat-Startansicht mit "Standard-Prompts bearbeiten"
@@ -3452,6 +4672,7 @@ body::-webkit-scrollbar-thumb:hover,
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
   transition: border-color 0.12s ease, box-shadow 0.12s var(--ease-elevate);
 }
@@ -3561,6 +4782,40 @@ body::-webkit-scrollbar-thumb:hover,
   height: 15px;
 }
 
+/* Nutzernachrichten: rechtsbuendige Sprechblase + Avatar am ENDE (13.09.,
+   UI/UX-Ueberarbeitung, Referenzbilder 02/06/08/20/34/35/39 zeigen
+   durchgaengig dieses Muster). Betrifft NUR Nutzernachrichten - die
+   bewusste, real durch Nutzerfeedback bestaetigte Entscheidung, KI-
+   Antworten OHNE Karte/Rahmen darzustellen (siehe Kommentar bei
+   .chat-message--assistant .chat-message__text weiter unten), bleibt
+   davon unberuehrt. */
+.chat-message--user {
+  flex-direction: row-reverse;
+}
+
+.chat-message--user .chat-message__avatar {
+  background: var(--brand-green);
+  color: var(--paper-000);
+}
+
+.chat-message--user .chat-message__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.chat-message--user .chat-message__sender {
+  display: none;
+}
+
+.chat-message--user .chat-message__text {
+  background: var(--paper-200);
+  color: var(--ink-900);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  max-width: 80%;
+}
+
 /* "Lexono denkt nach..."-Sprechblase (KI-Ladezustand) - ueberbrueckt die
    Zeit zwischen Absenden und dem eigentlichen Seitenwechsel (voller
    Redirect nach Serververarbeitung, siehe chat.html). Bewusst als
@@ -3583,6 +4838,19 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-thinking-indicator span:nth-child(2) { animation-delay: 0.2s; }
 .chat-thinking-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+/* P1 Performance-Feedback-Follow-up (17.09.): Fortschritts-Text neben den
+   Puls-Punkten - nur befuellt/sichtbar, sobald ein "status"-SSE-Ereignis
+   eintrifft (Dokument-/Aktenkontext-Faelle), sonst leer und ausgeblendet. */
+.chat-thinking-indicator__status {
+  margin-left: 4px;
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.chat-thinking-indicator__status:empty {
+  display: none;
+}
 
 @keyframes chat-thinking-pulse {
   0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); }
@@ -3617,16 +4885,18 @@ body::-webkit-scrollbar-thumb:hover,
   word-wrap: break-word;
 }
 
-/* Dezenter Karten-Hintergrund NUR fuer KI-Antworten - bewusst kein
-   "Bubble"-Look fuer Nutzernachrichten (Auftrag: "keine uebertriebene
-   Bubble-Optik"/"keine ChatGPT-Kopie") - die Karte hebt lediglich das
-   KI-Ergebnis als eigenstaendigen, abgeschlossenen Block hervor. */
+/* ECHTER NUTZERFEEDBACK-FUND (13.09.): die vorherige gerahmte/beschattete
+   Karte um jede KI-Antwort wirkte nach der Chat/Drafting-Korrektur (jetzt
+   auch normale Antworten auf einfache Fragen, nicht mehr nur Entwuerfe)
+   wie ein "erstelltes Dokument" statt einer normalen Chat-Antwort - genau
+   das gewuenschte Gefuehl war aber "wie ein Chat mit einer normalen KI".
+   Bewusst auf reinen Fliesstext ohne Rahmen/Schatten/Kartenhintergrund
+   zurueckgebaut (kein Bubble-Hintergrund fuer KI-Antworten, aber auch
+   keine Dokumentenkarten-Optik) - die Unterscheidung zur Nutzernachricht
+   bleibt ueber Avatar + "Lexono"-Absenderzeile erhalten, keine zusaetzliche
+   Umrandung noetig. */
 .chat-message--assistant:not(.chat-message--blocked) .chat-message__text {
-  background: var(--paper-000);
-  border: 1px solid var(--paper-line);
-  border-radius: var(--radius-md);
-  padding: 14px 18px;
-  box-shadow: var(--shadow-sm);
+  padding: 0;
 }
 
 .chat-message--blocked .chat-message__text {
@@ -3645,6 +4915,122 @@ body::-webkit-scrollbar-thumb:hover,
   width: 16px;
   height: 16px;
   margin-top: 1px;
+}
+
+/* Feedback-/Meta-Zeile unter einer KI-Antwort (UI/UX-Ueberarbeitung,
+   Phase 4, 13.09.) - Kopieren (echte Funktion), Uhrzeit, optional
+   "Vollstaendigen Editor oeffnen" (nur wenn ein echter Draft existiert). */
+.chat-message__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.chat-message__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.chat-message__copy-btn:hover {
+  color: var(--ink-900);
+  background: var(--paper-200);
+}
+
+.chat-message__copy-btn--done {
+  color: var(--brand-green-dark);
+}
+
+.chat-message__copy-btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.chat-message__timestamp {
+  font-size: 12px;
+  color: var(--ink-300);
+}
+
+.chat-message__open-editor {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-500);
+  text-decoration: none;
+  margin-left: auto;
+}
+
+.chat-message__open-editor:hover {
+  color: var(--seal-green-dark);
+  text-decoration: underline;
+}
+
+/* "Quellen & Verweise"-Karte (Phase 4, 13.09.) - AUSSCHLIESSLICH reale,
+   bereits persistierte Draft-Quellen (siehe app/web/chat_router.py::
+   _gather_message_sources), niemals erfunden. */
+.chat-sources-card {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  background: var(--paper-100);
+  max-width: 480px;
+}
+
+.chat-sources-card__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-700);
+  margin-bottom: 8px;
+}
+
+.chat-sources-card__title .icon {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-500);
+}
+
+.chat-sources-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-sources-card__item {
+  font-size: 13px;
+  color: var(--ink-900);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chat-sources-card__item a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.chat-sources-card__item a:hover {
+  text-decoration: underline;
+}
+
+.chat-sources-card__ref {
+  font-size: 11.5px;
+  color: var(--ink-500);
 }
 
 .chat-message__attachments {
@@ -3798,6 +5184,17 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-dropzone-hint {
+  /* ECHTER FUND (Abnahme-Test, 13.09.): "display: flex" hier ungebedingt
+     ueberschrieb das "hidden"-Attribut (JS toggelt genau das, siehe
+     chat.html dragenter/dragleave) - der Browser-eigene Standard
+     "[hidden]"-Standardregel des Browsers hat als reine UA-Regel eine niedrigere
+     Prioritaet als JEDE Autoren-Regel mit gleicher Spezifitaet, weshalb die
+     Box permanent sichtbar blieb statt nur waehrend eines echten Datei-
+     Drags. ":not([hidden])" macht das Attribut wieder wirksam. */
+  display: none;
+}
+
+.chat-dropzone-hint:not([hidden]) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3914,4 +5311,162 @@ body::-webkit-scrollbar-thumb:hover,
     padding-top: 10px;
     padding-bottom: 12px;
   }
+}
+
+/* Zeilen-Schnellzugriffsmenü (19.09., UI/UX-Referenzabgleich Akten-
+   Übersicht, "13_akten_uebersicht.png") - kompaktes "..."-Menü pro
+   Tabellenzeile, siehe matters_list.html für die volle Begründung. */
+.row-menu-cell {
+  position: relative;
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+}
+
+.row-menu__trigger:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.row-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  margin-top: 4px;
+  min-width: 200px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ECHTER FUND (19.09., live per Screenshot entdeckt): `.row-menu { display:
+   flex; }` hat hoehere Spezifitaet als die UA-Stylesheet-Regel fuer das
+   `hidden`-Attribut ([hidden] { display: none }) und ueberschreibt sie -
+   ALLE Menues waren dadurch staendig sichtbar, das `hidden`-Attribut
+   wirkungslos. Muss explizit zurueckgesetzt werden. */
+.row-menu[hidden] {
+  display: none;
+}
+
+.row-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--ink-700);
+  font-size: 13.5px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.row-menu__item:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.row-menu__item .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.row-menu__item--button {
+  font: inherit;
+}
+
+/* Akte-Detail-Tabs (19.09., UI/UX-Referenzabgleich, siehe
+   matter_detail.html für die volle Begründung). Bewusst KEINE eigene
+   `display`-Eigenschaft auf `.tab-panel` (siehe Kommentar dort) - das
+   native `[hidden]`-Verhalten des Browsers genügt und vermeidet den
+   bereits einmal gefundenen CSS-Spezifitäts-Stolperstein. */
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 20px;
+  padding-bottom: 0;
+}
+
+.tab-nav__item {
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.tab-nav__item:hover {
+  color: var(--ink-900);
+}
+
+.tab-nav__item--active {
+  color: var(--brand-green);
+  border-bottom-color: var(--brand-green);
+}
+
+.matter-overview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.matter-overview-stats__item {
+  flex: 1 1 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  background: var(--paper-000);
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.matter-overview-stats__item:hover {
+  border-color: var(--brand-green);
+}
+
+.matter-overview-stats__value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.matter-overview-stats__label {
+  font-size: 12.5px;
+  color: var(--ink-500);
 }

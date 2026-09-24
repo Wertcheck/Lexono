@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -128,7 +129,12 @@ def test_outbox_list_shows_pending_entry(
     )
     response = client.get("/dashboard/outbox")
     assert "Einspruch Steuerbescheid 2025" in response.text
-    assert "pending" in response.text
+    # PRÄZISIERT 14.09. (nicht abgeschwächt): vorher stand hier
+    # `assert "pending" in response.text` - das sicherte ab, dass ein
+    # INTERNER Statuswert in der Oberfläche auftaucht, und bestand ohnehin
+    # nur zufällig über die Filter-URL `?status=pending`. Geprüft wird
+    # jetzt die Beschriftung, die der Anwalt tatsächlich liest.
+    assert "wartet auf Versand" in response.text
 
 
 def test_outbox_list_default_excludes_sent(
@@ -220,3 +226,36 @@ def test_mark_sent_twice_shows_friendly_error_instead_of_crashing(
     db_session.expire_all()
     reloaded = db_session.get(OutboxEntry, entry.id)
     assert reloaded.sent_by == "admin@kanzlei.test"  # unveraendert vom ersten Versuch
+
+
+def test_outbox_shows_the_client_and_exactly_one_status_pill(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """Zwei echte Funde beim UI-Durchgang (14.09.):
+
+    1. Die Statuszelle wickelte das fertige `outbox_status_tag`-Makro in ein
+       ZWEITES `<span class="tag">` - eine Pille in einer Pille, mit zwei
+       konkurrierenden Farblogiken fuer denselben Status.
+    2. Der Postausgang nannte den Mandanten nicht. Wer ein Schreiben
+       freigibt und es danach manuell versendet, muss sehen, an WEN.
+    """
+    csrf = _draft_csrf(client, seeded["draft_id"])
+    client.post(
+        f"/dashboard/drafts/{seeded['draft_id']}/approve",
+        data={"csrf_token": csrf},
+    )
+
+    response = client.get("/dashboard/outbox?status=pending")
+    page = " ".join(response.text.split())
+
+    assert response.status_code == 200
+    assert "Synthetischer Testmandant GmbH" in page
+    assert "wartet auf Versand" in page
+    # Genau EINE Statuspille, nicht zwei ineinander. Das Makro enthaelt
+    # legitim ein `<span class="tag__dot">` - geprueft wird deshalb gezielt
+    # eine Pille, die direkt eine WEITERE Pille enthaelt (alles ausser dem
+    # Punkt).
+    assert page.count("wartet auf Versand") == 1
+    assert re.search(r'<span class="tag[^"]*">\s*<span class="tag(?!__dot)', page) is None
+    # Interner Statuswert darf nicht roh in der Oberflaeche stehen.
+    assert ">pending<" not in page

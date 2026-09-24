@@ -19,8 +19,25 @@
             <td>Rolle</td>
             <td>{{ current_user.role.name if current_user.role else "?" }}</td>
           </tr>
+          <tr>
+            <td>Anzeigename</td>
+            <td>{{ current_user.display_name or "– (E-Mail-Adresse wird angezeigt)" }}</td>
+          </tr>
         </tbody>
       </table>
+      {# Anzeigename (18.09., siehe app/web/account_router.py::
+         set_display_name-Docstring): wird an mehreren Stellen (Mandanten-
+         Übersicht "Zuständiger Bearbeiter", Dokumentgenerator-Platzhalter)
+         als "{{ user.display_name or user.email }}" gelesen, hatte aber
+         projektweit keinen Weg, tatsächlich gesetzt zu werden. #}
+      <form method="post" action="/dashboard/account/me/display-name" class="dashboard-form" style="margin-top: 10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="form-label">
+          Anzeigename (optional, z. B. "Rechtsanwältin Anna Muster")
+          <input type="text" name="display_name" value="{{ current_user.display_name or '' }}" />
+        </label>
+        <button type="submit" class="btn" style="align-self: flex-start;">Speichern</button>
+      </form>
       <p class="form-hint" style="margin-top: 10px;">
         Passwort ändern: <a href="/dashboard/change-password">Zur Passwortänderung</a>
       </p>

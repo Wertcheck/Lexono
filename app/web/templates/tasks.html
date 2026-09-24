@@ -2,10 +2,93 @@
 {% import "_icons.html" as icons %}
 {% block title %}Aufgaben{% endblock %}
 {% block content %}
+  {# Titel "Aufgaben & Fristen" (14.09.): identisch zum Navigationspunkt.
+     Die Seite zeigt seit dem Gold-Workflow-Fund auch die real erkannten
+     Fristen - vorher fragte sie ausschliesslich `Task` ab und war dadurch
+     strukturell immer leer (siehe tasks_router.py::_open_deadlines). #}
   <div class="topbar">
-    <h1 class="topbar__title">Aufgaben</h1>
-    <div class="topbar__meta"><strong>{{ tasks|length }}</strong> offene Aufgaben</div>
+    <h1 class="topbar__title">Aufgaben &amp; Fristen</h1>
+    <div class="topbar__meta">
+      <strong>{{ deadline_total }}</strong> offene Frist{{ "en" if deadline_total != 1 else "" }},
+      <strong>{{ tasks|length }}</strong> offene Aufgabe{{ "n" if tasks|length != 1 else "" }}
+    </div>
   </div>
+
+  {% if deadlines %}
+    <h2 class="panel-title" style="margin: 24px 32px 8px;">Fristen</h2>
+    <div class="settings-list" style="max-width: 720px; margin: 0 32px 8px;">
+      {% for deadline in deadlines %}
+        {% set overdue = deadline.due_date and deadline.due_date < today %}
+        {# 17.09., Owner-Direktive §6/§7 "Workflows verbinden": zeigt direkt
+           auf das erkennende Dokument (mit der bereits gebauten "Erkannte
+           Fristen"-Anzeige dort), statt immer nur auf die Akte-Uebersicht -
+           `Deadline.document_id` existiert bereits, war hier nur nicht
+           genutzt. Ohne Dokumentbezug (z. B. manuell/zukuenftig ohne
+           Dokument erkannte Frist) bleibt der bisherige Akte-Link. #}
+        <div class="settings-list__item" style="align-items: flex-start; justify-content: space-between;">
+          <a href="{% if deadline.document_id %}/dashboard/matters/{{ deadline.matter_id }}/document/{{ deadline.document_id }}{% else %}/dashboard/matters/{{ deadline.matter_id }}{% endif %}"
+             style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; text-decoration: none; color: inherit;">
+            {{ icons.clock(class_="icon") }}
+            <span style="flex: 1;">
+              <span class="settings-list__item-path" style="display: block; font-weight: 500; color: var(--ink-900);">
+                {% if deadline.due_date %}Frist {{ deadline.due_date.strftime("%d.%m.%Y") }}{% else %}Frist ohne Datum{% endif %}
+                {# Ueberfaellig ist die sicherheitskritischste Information auf
+                   dieser Seite - eine versaeumte Frist ist in einer Kanzlei
+                   der folgenreichste Fehler ueberhaupt. Deshalb direkt am
+                   Datum und nicht nur farblich (Farbe allein waere fuer
+                   farbfehlsichtige Nutzer kein Signal). #}
+                {% if overdue %}<span style="color: var(--danger-red, #b42318); font-weight: 600;"> &middot; überfällig</span>{% endif %}
+              </span>
+              <span style="display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px;">
+                {{ deadline.matter.title }}
+                {% if deadline.matter.client %} &middot; {{ deadline.matter.client.name }}{% endif %}
+              </span>
+            </span>
+          </a>
+          {# ECHTER FUND (17.09., Owner-Direktive §5/§6/§10 "Missing core
+             workflow functionality"): `Deadline.review_status` (unreviewed/
+             confirmed/rejected) existierte im Datenmodell und in dieser
+             Anzeige bereits vollstaendig - der Pruefstatus ist fuer den
+             Anwalt entscheidend, eine nur VERMUTETE Frist darf optisch
+             nicht wie eine bestaetigte wirken. Es gab aber PROJEKTWEIT
+             keinen einzigen Schreibpfad, der ihn tatsaechlich AENDERT -
+             der "Anwalt prueft"-Schritt des Gold-Workflows fuer Fristen
+             war reine Anzeige ohne Aktion. Jetzt: echte Bestaetigen/
+             Verwerfen-Aktion, nur bei noch ungeprueften Fristen sichtbar. #}
+          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 10px;">
+            <span class="tag {{ 'tag--matched' if deadline.review_status == 'confirmed' else 'tag--unmatched' }}">
+              <span class="tag__dot"></span>{{ "bestätigt" if deadline.review_status == "confirmed" else "ungeprüft" }}
+            </span>
+            {% if deadline.review_status == "unreviewed" %}
+              <form method="post" action="/dashboard/tasks/{{ deadline.id }}/review" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="status" value="confirmed" />
+                <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Bestätigen</button>
+              </form>
+              <form method="post" action="/dashboard/tasks/{{ deadline.id }}/review" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="status" value="rejected" />
+                <button type="submit" class="btn btn--danger" style="padding: 4px 10px; font-size: 11.5px;">Verwerfen</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% if deadline_total > deadlines|length %}
+      {# Die Begrenzung wird offen benannt statt stillschweigend zu kappen -
+         der Anwalt muss wissen, dass er nicht alles sieht. #}
+      <p style="margin: 0 32px 24px; font-size: 12px; color: var(--ink-500);">
+        Es werden die {{ deadlines|length }} nächstfälligen von insgesamt
+        {{ deadline_total }} Fristen angezeigt. Weitere Fristen finden Sie in der
+        jeweiligen Akte.
+      </p>
+    {% endif %}
+  {% endif %}
+
+  {% if tasks %}
+    <h2 class="panel-title" style="margin: 24px 32px 8px;">Aufgaben</h2>
+  {% endif %}
   {% if tasks %}
     <div class="settings-list" style="max-width: 720px; margin: 24px 32px;">
       {% for task in tasks %}
@@ -21,9 +104,9 @@
         </a>
       {% endfor %}
     </div>
-  {% else %}
+  {% elif not deadlines %}
     <div class="empty-state" style="margin: 32px;">
-      <p>Keine offenen Aufgaben.</p>
+      <p>Keine offenen Aufgaben oder Fristen.</p>
     </div>
   {% endif %}
 {% endblock %}

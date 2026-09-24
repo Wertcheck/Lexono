@@ -1,62 +1,141 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
-{% block title %}Profil & Einstellungen{% endblock %}
+{% block title %}Einstellungen{% endblock %}
 {% block content %}
+  {# UI/UX-Ueberarbeitung (13.09.): diese Seite ist jetzt die einzige
+     "Einstellungen"-Landingpage (Ziel des Profilmenue-Eintrags
+     "Einstellungen", siehe base.html) - "Mein Profil" ist bewusst NICHT
+     mehr hier drin, sondern ein eigener Menuepunkt (-> /dashboard/account/me).
+     Kategorien folgen der verbindlichen Struktur: Kanzlei & Benutzer /
+     KI & Datenschutz / E-Mail & Import / Dokumente & OCR / Sicherung /
+     Vorlagen & Funktionen / System & Hilfe. Jede Kachel verlinkt einen
+     BEREITS bestehenden, echten Router - keine neue Backend-Funktion,
+     nur ein neuer, sinnvoll gruppierter Einstiegspunkt (ersetzt die vorher
+     im Sidebar-Hauptmenue verstreuten Eintraege wie "Schriftsatz-
+     Generator"/"Standard-Prompts"/"Monitoring"/"Backup"/"Fehler & Logs",
+     die dort laut verbindlicher Vorgabe nicht mehr stehen duerfen). #}
   <div class="topbar">
-    <h1 class="topbar__title">Profil &amp; Einstellungen</h1>
+    <h1 class="topbar__title">Einstellungen</h1>
     <div class="topbar__meta">Angemeldet als <strong>{{ current_user.email }}</strong></div>
   </div>
 
   <div class="placeholder-page">
-    <div class="account-grid">
-      <a href="/dashboard/account/privacy" class="account-card">
-        {{ icons.bulb(class_="account-card__icon") }}
-        <span class="account-card__title">Anonymisierung &amp; Datenschutz</span>
-        <span class="account-card__text">PII-Filter-Status, Verschlüsselung, Aufbewahrungsfrist</span>
-      </a>
-      <a href="/dashboard/settings/profile" class="account-card">
-        {{ icons.folder(class_="account-card__icon") }}
-        <span class="account-card__title">Kanzlei-Profil &amp; Briefkopf</span>
-        <span class="account-card__text">Kanzleiname, Anschrift, Kontaktdaten</span>
-      </a>
-      <a href="/dashboard/account/license" class="account-card">
-        {{ icons.chart(class_="account-card__icon") }}
-        <span class="account-card__title">System &amp; Lizenz</span>
-        <span class="account-card__text">Verbrauchsanzeige, Update-Check</span>
-      </a>
-      <a href="/dashboard/account/me" class="account-card">
-        {{ icons.users(class_="account-card__icon") }}
-        <span class="account-card__title">Mein Konto &amp; Abmelden</span>
-        <span class="account-card__text">Profildaten, Passwort, Logout</span>
-      </a>
-      {% if is_admin %}
-        <a href="/dashboard/settings" class="account-card">
-          {{ icons.settings(class_="account-card__icon") }}
-          <span class="account-card__title">Einstellungen</span>
-          <span class="account-card__text">Scan-Ordner, E-Mail-Zugang, Aufbewahrung, KI-Modus (nur Admin)</span>
-        </a>
-        <a href="/dashboard/admin/users" class="account-card">
-          {{ icons.users(class_="account-card__icon") }}
-          <span class="account-card__title">Nutzerverwaltung</span>
-          <span class="account-card__text">Kanzlei-Nutzerkonten anlegen/verwalten (nur Admin)</span>
-        </a>
-        {# Systemstatus/Backup sind seit der bereinigten Fuenf-Module-
-           Sidebar (20.08., siehe base.html) keine eigenen Hauptmenue-
-           Eintraege mehr - Systemstatus lebt jetzt in "Kanzleiwissen &
-           KI", Backup & Export ausschliesslich hier, analog zu
-           "Einstellungen"/"Nutzerverwaltung" (beides Admin-Funktionen ohne
-           eigenes Kernmodul). #}
-        <a href="/dashboard/monitoring" class="account-card">
-          {{ icons.chart(class_="account-card__icon") }}
-          <span class="account-card__title">Systemstatus</span>
-          <span class="account-card__text">Claude-API-Erreichbarkeit, Kosten, Fehlerstatistik (nur Admin)</span>
-        </a>
-        <a href="/dashboard/backup" class="account-card">
-          {{ icons.archive(class_="account-card__icon") }}
-          <span class="account-card__title">Backup &amp; Export</span>
-          <span class="account-card__text">Datensicherung, Wiederherstellung, Export-Protokolle (nur Admin)</span>
-        </a>
-      {% endif %}
+    <div class="settings-hub">
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">Kanzlei &amp; Benutzer</h2>
+        <div class="account-grid">
+          <a href="/dashboard/settings/profile" class="account-card">
+            {{ icons.folder(class_="account-card__icon") }}
+            <span class="account-card__title">Kanzlei-Profil &amp; Briefkopf</span>
+            <span class="account-card__text">Kanzleiname, Anschrift, Kontaktdaten</span>
+          </a>
+          {% if is_admin %}
+            <a href="/dashboard/admin/users" class="account-card">
+              {{ icons.users(class_="account-card__icon") }}
+              <span class="account-card__title">Nutzerverwaltung</span>
+              <span class="account-card__text">Kanzlei-Nutzerkonten anlegen/verwalten (nur Admin)</span>
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">KI &amp; Datenschutz</h2>
+        <div class="account-grid">
+          <a href="/dashboard/account/privacy" class="account-card">
+            {{ icons.bulb(class_="account-card__icon") }}
+            <span class="account-card__title">Anonymisierung &amp; Datenschutz</span>
+            <span class="account-card__text">PII-Filter-Status, Verschlüsselung, Aufbewahrungsfrist</span>
+          </a>
+          {% if is_admin %}
+            <a href="/dashboard/settings" class="account-card">
+              {{ icons.settings(class_="account-card__icon") }}
+              <span class="account-card__title">Lokale KI &amp; Cloud-Anbindung</span>
+              <span class="account-card__text">Ollama-Modell, Claude-Anbindung, Aufbewahrung (nur Admin)</span>
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">E-Mail &amp; Import</h2>
+        <div class="account-grid">
+          {% if is_admin %}
+            <a href="/dashboard/settings#email" class="account-card">
+              {{ icons.envelope(class_="account-card__icon") }}
+              <span class="account-card__title">E-Mail-Postfach (IMAP)</span>
+              <span class="account-card__text">Zugangsdaten für den automatischen Nachrichtenabruf (nur Admin)</span>
+            </a>
+            <a href="/dashboard/settings#scan-folders" class="account-card">
+              {{ icons.folder(class_="account-card__icon") }}
+              <span class="account-card__title">Scan-Ordner</span>
+              <span class="account-card__text">Überwachte Verzeichnisse für neue Dokumente (nur Admin)</span>
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">Vorlagen &amp; Funktionen</h2>
+        <div class="account-grid">
+          <a href="/dashboard/library/prompts" class="account-card">
+            {{ icons.bulb(class_="account-card__icon") }}
+            <span class="account-card__title">Standard-Prompts</span>
+            <span class="account-card__text">Wiederkehrende Chat-Anweisungen mit Platzhaltern verwalten</span>
+          </a>
+          <a href="/dashboard/library/mustertexte" class="account-card">
+            {{ icons.document(class_="account-card__icon") }}
+            <span class="account-card__title">Dokumentvorlagen</span>
+            <span class="account-card__text">Kanzlei-Mustertexte für den Schreiben-Editor</span>
+          </a>
+          <a href="/dashboard/tools/schriftsatz" class="account-card">
+            {{ icons.printer(class_="account-card__icon") }}
+            <span class="account-card__title">Schriftsatz-Generator (erweitert)</span>
+            <span class="account-card__text">Eigenständiger Editor-Modus außerhalb des Chats</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">Sicherung</h2>
+        <div class="account-grid">
+          {% if is_admin %}
+            <a href="/dashboard/backup" class="account-card">
+              {{ icons.archive(class_="account-card__icon") }}
+              <span class="account-card__title">Backup &amp; Export</span>
+              <span class="account-card__text">Datensicherung, Wiederherstellung, Export-Protokolle (nur Admin)</span>
+            </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="settings-hub__group">
+        <h2 class="settings-hub__group-title">System &amp; Hilfe</h2>
+        <div class="account-grid">
+          <a href="/dashboard/account/license" class="account-card">
+            {{ icons.chart(class_="account-card__icon") }}
+            <span class="account-card__title">System &amp; Lizenz</span>
+            <span class="account-card__text">Verbrauchsanzeige, Update-Check</span>
+          </a>
+          {% if is_admin %}
+            <a href="/dashboard/monitoring" class="account-card">
+              {{ icons.chart(class_="account-card__icon") }}
+              <span class="account-card__title">Systemstatus</span>
+              <span class="account-card__text">Claude-API-Erreichbarkeit, Kosten, Fehlerstatistik (nur Admin)</span>
+            </a>
+          {% endif %}
+          <a href="/dashboard/errors" class="account-card">
+            {{ icons.warning(class_="account-card__icon") }}
+            <span class="account-card__title">Fehler &amp; Hinweise</span>
+            <span class="account-card__text">Technische Fehlermeldungen und Systemhinweise</span>
+          </a>
+          <a href="/dashboard/feedback" class="account-card">
+            {{ icons.help(class_="account-card__icon") }}
+            <span class="account-card__title">Hilfe &amp; Support</span>
+            <span class="account-card__text">Feedback senden, Support kontaktieren</span>
+          </a>
+        </div>
+      </section>
     </div>
   </div>
 {% endblock %}

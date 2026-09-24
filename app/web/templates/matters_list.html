@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Akten{% endblock %}
+{% block content %}
+  <div class="topbar">
+    <h1 class="topbar__title">Akten</h1>
+    <div class="topbar__meta">{{ rows|length }} Akte{{ "n" if rows|length != 1 else "" }}</div>
+  </div>
+
+  {% if error %}
+    <div class="banner banner--error">{{ error }}</div>
+  {% endif %}
+
+  <div class="draft-page">
+    <div class="instructions-panel">
+      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <button type="button" class="btn btn--primary"
+                onclick="document.getElementById('create-matter-modal').showModal()">
+          {{ icons.plus(class_="icon") }} Akte anlegen
+        </button>
+      </div>
+
+      <div class="clients-toolbar">
+        <div class="filters" style="margin-top: 0;">
+          {% for key, label in [("", "Alle"), ("open", "Offen"), ("closed", "Abgeschlossen")] %}
+            <form method="get" action="/dashboard/matters">
+              <input type="hidden" name="search" value="{{ search }}" />
+              <input type="hidden" name="status" value="{{ key }}" />
+              <button type="submit" class="filter-tab{% if status == key %} filter-tab--active{% endif %}">{{ label }}</button>
+            </form>
+          {% endfor %}
+        </div>
+
+        <form method="get" action="/dashboard/matters" class="clients-search-bar">
+          <input type="hidden" name="status" value="{{ status }}" />
+          <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+          <input type="text" name="search" value="{{ search }}" placeholder="Aktenzeichen, Titel oder Mandant…" />
+          <button type="submit" class="btn">Filtern</button>
+        </form>
+      </div>
+
+      <div class="table-container">
+        <table class="draft-table">
+          <thead>
+            <tr>
+              <th>Aktenzeichen</th>
+              <th>Titel</th>
+              <th>Mandant</th>
+              <th>Rechtsgebiet</th>
+              <th>Status</th>
+              <th>Letzte Aktivität</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for matter in rows %}
+              <tr onclick="window.location='/dashboard/matters/{{ matter.id }}'">
+                <td class="mono">{{ matter.reference_number or "–" }}</td>
+                <td>{{ matter.title }}</td>
+                <td>{{ matter.client.name }}</td>
+                <td>{{ matter.practice_area or "–" }}</td>
+                <td>
+                  <span class="tag {{ 'tag--matched' if matter.status == 'open' else 'tag--outbound' }}">
+                    <span class="tag__dot"></span>{{ "offen" if matter.status == "open" else "abgeschlossen" }}
+                  </span>
+                </td>
+                <td>{{ matter.updated_at.strftime("%d.%m.%Y") if matter.updated_at else "–" }}</td>
+                {# Schnellzugriff-Menü (19.09., UI/UX-Referenzabgleich
+                   "13_akten_uebersicht.png"): die Referenz zeigt ein "..."-
+                   Menü pro Zeile mit direktem Zugriff auf Aktionen, ohne
+                   erst die Akte öffnen zu müssen - alle hier verlinkten
+                   Aktionen (öffnen/Chat/archivieren/wieder öffnen)
+                   existieren bereits real (matters_router.py), dieses Menü
+                   ist reine Schnellzugriffs-Verdrahtung, KEINE neue Logik.
+                   "Bearbeiten"/"Neues Dokument" (brauchen Modal/Datei-
+                   Dialog-Kontext) und "Akte löschen" (siehe TASK_MAP.md,
+                   Aktenlöschung ist eine bewusst zurückgestellte
+                   Entscheidung - Kaskadierung, Aufbewahrungspflicht) bleiben
+                   bewusst auf der Akte-Detailseite. #}
+                <td class="row-menu-cell" onclick="event.stopPropagation();">
+                  <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen"
+                          onclick="Lexono.toggleRowMenu(this)">
+                    {{ icons.dots_vertical(class_="icon") }}
+                  </button>
+                  <div class="row-menu" hidden>
+                    <a href="/dashboard/matters/{{ matter.id }}" class="row-menu__item">
+                      {{ icons.folder(class_="icon") }} Akte öffnen
+                    </a>
+                    <a href="/dashboard/chat?new=1&amp;matter={{ matter.id }}" class="row-menu__item">
+                      {{ icons.chat(class_="icon") }} In Chat öffnen
+                    </a>
+                    {% if matter.status == "open" %}
+                      <form method="post" action="/dashboard/matters/{{ matter.id }}/archive">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button">
+                          {{ icons.archive(class_="icon") }} Akte archivieren
+                        </button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="/dashboard/matters/{{ matter.id }}/reopen">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button">
+                          {{ icons.archive(class_="icon") }} Akte wieder öffnen
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="7" class="empty-state">
+                Noch keine Akten vorhanden. Legen Sie oben eine Akte manuell an, oder sie
+                entsteht automatisch, sobald im Chat oder im Schriftsatz-Generator ein neuer
+                Sachverhalt bearbeitet wird.
+              </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.Lexono = window.Lexono || {};
+    Lexono.toggleRowMenu = function (trigger) {
+      var menu = trigger.nextElementSibling;
+      var wasOpen = !menu.hidden;
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      menu.hidden = wasOpen;
+    };
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+  </script>
+
+  <dialog id="create-matter-modal" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Akte anlegen</h3>
+      <button type="button" class="modal__close" onclick="document.getElementById('create-matter-modal').close()" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <form method="post" action="/dashboard/matters/create" class="dashboard-form" style="max-width: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="form-label">
+          Titel *
+          <input type="text" name="title" required autofocus placeholder="z. B. Einspruch Steuerbescheid 2025" />
+        </label>
+        <label class="form-label">
+          Mandant *
+          <select name="client_id" required>
+            <option value="">— Mandant auswählen —</option>
+            {% for client in clients %}
+              <option value="{{ client.id }}">{{ client.name }}{% if client.client_number %} ({{ client.client_number }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="form-label">
+          Aktenzeichen (optional)
+          <input type="text" name="reference_number" placeholder="z. B. 001/2026" />
+        </label>
+        <label class="form-label">
+          Rechtsgebiet
+          <select name="practice_area">
+            <option value="">— Kein Rechtsgebiet —</option>
+            {% for area in practice_areas %}
+              <option value="{{ area }}">{{ area }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">
+          Akte anlegen
+        </button>
+      </form>
+    </div>
+  </dialog>
+{% endblock %}

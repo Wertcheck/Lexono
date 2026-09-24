@@ -1,4 +1,5 @@
-"""Web-Router für Draft Quality Ratings (Prompt 43; Sicherheits-Fix Prompt 46).
+"""Web-Router für Draft Quality Ratings (Prompt 43; Sicherheits-Fix Prompt 46;
+UI-Anbindung 18.09., Owner-Direktive "WEITERARBEITEN" Fortsetzung).
 
 GEFUNDEN+BEHOBEN im Zuge der Prompt-46-Testverifikation: dieser Router lag
 ursprünglich unter dem Prefix "/api/drafts" mit einem POST-Endpunkt - verletzt
@@ -17,9 +18,22 @@ angemeldeter Nutzer"). Der POST-Endpunkt nimmt jetzt Formular-Felder statt
 eines JSON-Bodys entgegen, damit der CSRF-Token als Formularfeld mitgeschickt
 werden kann - identisches Muster zu jeder anderen mutierenden Dashboard-Route
 im Projekt (drafts_router.py/outbox_router.py/users_router.py/errors_router.py).
-"""
 
-from fastapi import APIRouter, Depends, Form, HTTPException
+ECHTER FUND (18.09., systematische Suche nach verwaisten Endpunkten): trotz
+dieser sorgfältigen Sicherheits-Härtung (Prompt 46) blieb der Router
+komplett UNVERLINKT - kein Template, kein JS rief ihn je auf
+(`grep -rl "quality" app/web/templates/` fand nichts), keine
+Owner-Entscheidung dokumentierte ein bewusstes Zurückstellen. Der
+POST-Endpunkt gab bisher JSON zurück (`response_model=...`), passend zu
+einem gedachten Fetch-Aufruf - es gab aber projektweit keinen einzigen
+Aufrufer. Jetzt auf das etablierte Formular-POST-plus-Redirect-Muster
+umgestellt (wie jede andere Dashboard-Mutation), das GET-Auslesen
+(`get_draft_ratings`/`get_draft_quality_stats`) bleibt unverändert JSON
+(dient künftigen/externen Lesezugriffen, wird von `draft_detail_page`
+selbst direkt über den Service gelesen, nicht über HTTP)."""
+
+from fastapi import APIRouter, Depends, Form
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.permissions import require_login, require_role
@@ -34,7 +48,7 @@ from app.quality.service import DraftQualityService
 router = APIRouter(prefix="/dashboard/drafts", tags=["dashboard-draft-quality"])
 
 
-@router.post("/{draft_id}/ratings", response_model=DraftQualityRatingOutput)
+@router.post("/{draft_id}/ratings")
 def record_quality_rating(
     draft_id: str,
     content_quality: int | None = Form(None),
@@ -44,7 +58,7 @@ def record_quality_rating(
     comment: str | None = Form(None),
     current_user: User = Depends(require_role()),
     db: Session = Depends(get_db),
-) -> DraftQualityRatingOutput:
+) -> RedirectResponse:
     """Neue Qualitätsbewertung für einen freigegebenen Entwurf speichern.
 
     Der Anwalt kann einen bereits freigegebenen Entwurf bewerten (1-5 Skalen
@@ -62,14 +76,17 @@ def record_quality_rating(
     service = DraftQualityService(db)
 
     try:
-        rating = service.record_rating(
+        service.record_rating(
             draft_id=draft_id,
             rated_by_user_id=current_user.id,
             input_data=input_data,
         )
-        return DraftQualityRatingOutput.model_validate(rating)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return RedirectResponse(
+            url=f"/dashboard/drafts/{draft_id}?error={e}", status_code=303
+        )
+
+    return RedirectResponse(url=f"/dashboard/drafts/{draft_id}", status_code=303)
 
 
 @router.get("/{draft_id}/ratings", response_model=list[DraftQualityRatingOutput])

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/dashboard/static/css/app.css" />
 </head>
 <body>
+  {% import "_icons.html" as icons %}
   {# Eigene Titelleiste (Masterprompt V2, Task #61) - siehe
      partials/app_titlebar.html: diese Seite ist die ALLERERSTE, die das
      gebuendelte Fenster zeigt (run.py::_serve_with_window laedt
@@ -14,33 +15,164 @@
      von base.html besitzen. #}
   {% include "partials/app_titlebar.html" %}
   <div class="login-shell">
-    <div class="login-box">
-      <div class="sidebar__brand" style="color: var(--ink-900);">
-        <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo" />
+    <div class="login-shell__brand">
+      <div class="login-shell__brand-logo">
+        <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" />
         <span>Lexono</span>
       </div>
-      <div class="sidebar__brand-sub" style="color: var(--ink-500); margin-bottom: 24px;">
-        Anmelden
+      <h1 class="login-shell__headline">
+        Ihre KI-gestützte Workflow-Plattform <span>für Kanzleien.</span>
+      </h1>
+      <p class="login-shell__subheadline">Sicher. Effizient. Vertraulich.</p>
+      <p class="login-shell__body">
+        Lexono kombiniert lokale Datenpseudonymisierung mit moderner
+        KI-Technologie – für mehr Fokus auf das Wesentliche.
+      </p>
+      <div class="login-shell__features">
+        <div class="login-shell__feature">
+          <span class="login-shell__feature-icon login-shell__feature-icon--blue">
+            {{ icons.lock() }}
+          </span>
+          <span>Maximaler Datenschutz</span>
+        </div>
+        <div class="login-shell__feature">
+          <span class="login-shell__feature-icon login-shell__feature-icon--purple">
+            {{ icons.cpu() }}
+          </span>
+          <span>Intelligente KI</span>
+        </div>
+        <div class="login-shell__feature">
+          <span class="login-shell__feature-icon login-shell__feature-icon--orange">
+            {{ icons.document() }}
+          </span>
+          <span>Effiziente Workflows</span>
+        </div>
       </div>
+      <div class="login-shell__tagline">RECHT. EINFACH. SICHER.</div>
+      {# Systemstatus-Zeile (19.09., neues Login-Referenzbild) - bewusst
+         KEIN hartcodiertes "Alle Systeme aktiv": liest den bereits
+         bestehenden, echten stillen Startcheck (`app.state.local_ai_status`,
+         siehe app/main.py::_run_silent_local_ai_check), exakt dieselbe
+         Quelle wie der Sidebar-Statuspanel in base.html - kein zweiter,
+         abweichender Statuscheck. Faellt lenient auf "wird geprueft" zurueck,
+         falls der Hintergrund-Check noch nicht fertig ist (z. B. sehr kurz
+         nach dem Start) oder in Tests ohne durchlaufenen Lifespan, statt
+         zu crashen (identisches Undefined-Fallback-Muster wie base.html). #}
+      {% set _lai_status = request.app.state.local_ai_status %}
+      {% set lai_state = _lai_status.state.value if _lai_status else "checking" %}
+      <div class="login-shell__status">
+        <span class="login-shell__status-dot{% if lai_state == 'ready' %} login-shell__status-dot--ok{% endif %}"></span>
+        Systemstatus: {{ {
+          'checking': 'wird geprüft…',
+          'disabled': 'Lokale KI deaktiviert',
+          'ready': 'Alle Systeme aktiv',
+          'runtime_missing': 'Lokale KI nicht installiert',
+          'runtime_unreachable': 'Lokale KI nicht erreichbar',
+          'model_missing': 'KI-Modell fehlt',
+        }[lai_state] }}
+      </div>
+    </div>
 
-      {% if error %}
-        <div class="banner banner--error">{{ error }}</div>
-      {% endif %}
+    {# Eigene, dritte Layout-Zone (19.09., Korrektur nach Owner-Feedback):
+       die Referenz zeigt eine ECHTE dritte Spalte
+       (Text | Illustration | Karte), nicht die Illustration klein in
+       eine Ecke der Textspalte gequetscht - vorher war
+       `.login-shell__illustration` per `position:absolute` an
+       `.login-shell__brand` gebunden und damit auf dessen `max-width`-Box
+       beschraenkt statt im eigentlich vorgesehenen groszuegigen
+       Zwischenraum zur Karte zu stehen. #}
+    <div class="login-shell__illustration-zone" aria-hidden="true">
+      <div class="login-shell__illustration">
+        <div class="login-shell__illustration-sheet login-shell__illustration-sheet--back"></div>
+        <div class="login-shell__illustration-sheet login-shell__illustration-sheet--mid"></div>
+        <div class="login-shell__illustration-sheet login-shell__illustration-sheet--front">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="login-shell__illustration-badge">{{ icons.shield() }}</div>
+      </div>
+    </div>
 
-      <form method="post" action="/dashboard/login" class="dashboard-form">
-        <input type="hidden" name="next" value="{{ next }}" />
-        <label class="form-label">
-          E-Mail
-          <input type="email" name="email" required autofocus />
-        </label>
-        <label class="form-label">
-          Passwort
-          <input type="password" name="password" required />
-        </label>
-        <button type="submit" class="btn btn--primary">Anmelden</button>
-      </form>
+    <div class="login-shell__card-wrap">
+      <div class="login-box">
+        {# Nur noch die Bildmarke, KEIN zweites "Lexono"-Wortmarken-Label
+           hier (19.09., neues Login-Referenzbild + Owner-Fund "doppelte
+           Marke"): die volle Wortmarke steht bereits gross im linken
+           Bereich - eine zweite Textmarke in der Karte waere exakt die
+           vom Auftrag zu vermeidende Redundanz. Gleiches echtes Asset
+           (logo-mark.png) wie links, nur groesser/zentriert statt in
+           einer Zeile mit Text. #}
+        <div class="login-box__brand-icon">
+          <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" />
+        </div>
+        <h2 class="login-box__title">Anmeldung</h2>
+        <p class="login-box__subtitle">Melden Sie sich an, um fortzufahren.</p>
+
+        {% if error %}
+          <div class="banner banner--error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="/dashboard/login" class="dashboard-form" id="login-form">
+          <input type="hidden" name="next" value="{{ next }}" />
+          <label class="form-label">
+            E-Mail
+            <div class="input-with-icon">
+              {{ icons.envelope(class_="input-with-icon__icon") }}
+              <input type="email" name="email" required autofocus placeholder="name@kanzlei.de" />
+            </div>
+          </label>
+          <label class="form-label">
+            Passwort
+            <div class="input-with-icon">
+              {{ icons.lock(class_="input-with-icon__icon") }}
+              <input type="password" name="password" id="login-password" required placeholder="Ihr Passwort" />
+              <button
+                type="button"
+                class="input-with-icon__toggle"
+                id="login-password-toggle"
+                aria-label="Passwort anzeigen"
+              >
+                <span class="login-password-toggle__show">{{ icons.eye() }}</span>
+                <span class="login-password-toggle__hide" hidden>{{ icons.eye_off() }}</span>
+              </button>
+            </div>
+          </label>
+          <div class="login-box__row">
+            {# Echte Funktion, kein Kosmetik-Feld: steuert ob das
+               Session-Cookie einen App-Neustart uebersteht (`remember_me`
+               in auth_router.py::login_submit / `_set_session_cookie`,
+               siehe dortige Begruendung) - die serverseitige
+               Session-Gueltigkeit selbst bleibt in jedem Fall identisch. #}
+            <label class="checkbox-label">
+              <input type="checkbox" name="remember_me" value="true" />
+              Angemeldet bleiben
+            </label>
+            <a href="/dashboard/password-help" class="login-box__link">Passwort vergessen?</a>
+          </div>
+          <button type="submit" class="btn btn--primary login-box__submit">
+            {{ icons.send() }} Anmelden
+          </button>
+        </form>
+      </div>
     </div>
   </div>
   <script src="/dashboard/static/js/app_titlebar.js"></script>
+  <script>
+    (function () {
+      var toggle = document.getElementById("login-password-toggle");
+      var input = document.getElementById("login-password");
+      if (!toggle || !input) {
+        return;
+      }
+      var showIcon = toggle.querySelector(".login-password-toggle__show");
+      var hideIcon = toggle.querySelector(".login-password-toggle__hide");
+      toggle.addEventListener("click", function () {
+        var willShow = input.type === "password";
+        input.type = willShow ? "text" : "password";
+        showIcon.hidden = willShow;
+        hideIcon.hidden = !willShow;
+        toggle.setAttribute("aria-label", willShow ? "Passwort verbergen" : "Passwort anzeigen");
+      });
+    })();
+  </script>
 </body>
 </html>
