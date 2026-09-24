@@ -97,10 +97,22 @@ class RetryService:
         if existing is not None:
             existing.attempt_count += 1
             existing.error_message = error_message
-            if existing.attempt_count >= existing.max_attempts:
+            # ECHTER FUND (20.09., beim Beheben des "haengt dauerhaft auf
+            # retrying"-Funds selbst entdeckt): `error_category="permanent"`
+            # wurde hier bisher komplett ignoriert - nur die Erstanlage
+            # (Zweig unten) beruecksichtigte es, ein WIEDERHOLTER Fehlschlag
+            # fuer einen BEREITS bestehenden Eintrag wurde ausschliesslich
+            # anhand der Versuchsanzahl entschieden. Ein Aufrufer, der
+            # explizit "permanent" meldet (z. B. "das referenzierte
+            # Dokument existiert nicht mehr - kein weiterer Versuch kann
+            # jemals gelingen"), wurde damit trotzdem auf einen weiteren
+            # Backoff-Versuch eingeplant, wenn `attempt_count` das Limit
+            # noch nicht erreicht hatte.
+            if existing.attempt_count >= existing.max_attempts or error_category == "permanent":
                 existing.status = "failed_permanent"
                 existing.next_retry_at = None
             else:
+                existing.status = "pending_retry"
                 existing.next_retry_at = _compute_next_retry_at(existing.attempt_count)
             processing_error = existing
         else:
@@ -255,6 +267,35 @@ class RetryService:
 
             document = db.get(Document, error.entity_id)
             if document is None:
+                # ECHTER FUND (20.09., beim GUI-Durchgang durch die reale
+                # installierte Anwendung entdeckt): das zugrunde liegende
+                # `Document` kann zwischenzeitlich geloescht worden sein
+                # (z. B. durch einen Demo-Daten-Reset ODER durch die neue
+                # Dokument-Loeschfunktion, siehe app/documents/lifecycle.py)
+                # - der Status wurde oben bereits fest auf "retrying"
+                # gesetzt, ein einfaches `return False` liess den Eintrag
+                # DAUERHAFT in diesem Zwischenzustand haengen: die
+                # Bedingung oben (`status not in ("pending_retry",
+                # "failed_permanent")`) schliesst "retrying" explizit von
+                # jedem weiteren Versuch aus, der Eintrag war damit fuer
+                # immer weder abschliessbar noch erneut versuchbar. Real
+                # reproduziert an der installierten Instanz: ein Klick auf
+                # "Jetzt erneut versuchen" fuer ein bereits geloeschtes
+                # Dokument blieb seit dem 18.09. dauerhaft auf "retrying"
+                # stehen. `record_failure` mit `error_category="permanent"`
+                # ueberfuehrt den Eintrag stattdessen in den echten,
+                # abschliessenden Zustand "failed_permanent" - ehrlich
+                # sichtbar als endgueltig gescheitert statt eines stillen,
+                # unsichtbaren Haengers.
+                self.record_failure(
+                    db,
+                    entity_type=error.entity_type,
+                    entity_id=error.entity_id,
+                    operation=error.operation,
+                    error_category="permanent",
+                    error_message="Dokument nicht mehr vorhanden (gelöscht).",
+                    actor=actor,
+                )
                 return False
             processor = DocumentProcessingService(
                 ocr_enabled=settings.ocr_enabled,

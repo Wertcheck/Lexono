@@ -110,15 +110,15 @@ class _FakeReviewProvider(ClaudeReviewProvider):
 
 class _AlwaysAllowSecurityCheck(SecurityCheckService):
     """NUR für die Workflow-Reise in diesem Test: umgeht bewusst die
-    Security-Check-Heuristik. Deren tatsächliches Verhalten (inkl. des
-    gefundenen False-Positive-Problems bei realistischem deutschem
-    Rechtstext) ist bereits dediziert geprüft
-    (test_some_scenario_texts_trigger_unrecognized_entity_heuristic
-    unten, sowie test_security_review.py/test_prompt_injection_documents.py).
-    Dieser Test hier prüft die WORKFLOW-MASCHINERIE (Versionierung,
-    Rollen, Audit-Trail, Postausgang) - nicht erneut die
-    Heuristik-Präzision, die sonst bei praktisch jedem realistischen
-    deutschen Rechtstext störend eingreifen würde (siehe Fund unten)."""
+    Security-Check-Heuristik. Deren tatsächliches Verhalten ist bereits
+    dediziert geprüft
+    (test_realistic_scenario_texts_no_longer_trigger_unrecognized_entity_heuristic
+    unten, sowie test_security_review.py/test_prompt_injection_documents.py) -
+    seit der POS-Tag-Verfeinerung (13.09., siehe dort) loest die Heuristik
+    bei realistischem deutschem Rechtstext nicht mehr false-positiv aus,
+    dieser Bypass bleibt aber als zusaetzliche Isolation bestehen: dieser
+    Test prueft die WORKFLOW-MASCHINERIE (Versionierung, Rollen,
+    Audit-Trail, Postausgang), nicht die Heuristik-Praezision."""
 
     def check(self, pseudonymized_text, mappings, *, purpose):  # noqa: ANN001
         from app.privacy.security_check_schema import SecurityCheckResult
@@ -223,19 +223,13 @@ def test_full_case_journey_from_synthetic_data_to_sent_outbox(
 ) -> None:
     # --- 0. Synthetischer Fall (Prompt 29) - EIN Fall für die Hauptreise,
     # EIN zweiter, unabhängiger Fall zur späteren Isolationsprüfung.
-    # WICHTIG (echter Fund während der Entwicklung dieses Prompts, siehe
-    # test_some_scenario_texts_trigger_unrecognized_entity_heuristic
-    # unten): 4 der 6 Szenarien (inkl. Aktentitel + Dokumenttext, wie sie
-    # tatsächlich in den Sachverhalt einfließen) enthalten typische
-    # deutsche Verwaltungs-/Rechtsformulierungen mit zwei aufeinander-
-    # folgenden großgeschriebenen Wörtern ("Festgesetzte Einkommensteuer",
-    # "Mahnung Zahlungsverzug", "Fristlose Kündigung" u. Ä.) und werden
-    # dadurch von der BESTEHENDEN Security-Check-Heuristik für unerkannte
-    # Namen fälschlich blockiert (fail-closed - kein Datenschutzproblem,
-    # aber ein Nutzbarkeitsfund, siehe Abschlussbericht). Für DIESE
-    # Erfolgsreise bewusst "betriebspruefung" gewählt (eines von nur
-    # zwei Szenarien, die die Heuristik nicht auslösen) - der Fund selbst
-    # wird im Test unten separat und vollständig festgehalten.
+    # "betriebspruefung" historisch gewählt, weil es (vor der POS-Tag-
+    # Verfeinerung der Heuristik, siehe
+    # test_realistic_scenario_texts_no_longer_trigger_unrecognized_entity_heuristic
+    # unten) eines der wenigen Szenarien war, das die alte, rein
+    # grossschreibungsbasierte Heuristik nicht auslöste - diese Instanz
+    # nutzt ohnehin `_AlwaysAllowSecurityCheck` (s.o.) und ist von der
+    # Heuristik unabhängig, die Wahl selbst hat aber historischen Bezug.
     generator = SyntheticDataGenerator(seed=1)
     main_case = generator.generate_case(db_session, scenario_key="betriebspruefung")
     other_case = generator.generate_case(db_session, scenario_key="einspruch_steuerbescheid")
@@ -426,29 +420,31 @@ def test_full_case_journey_from_synthetic_data_to_sent_outbox(
     assert {e.event_type for e in other_matter_audit_events} == {"synthetic_case_generated"}
 
 
-def test_some_scenario_texts_trigger_unrecognized_entity_heuristic(
+def test_realistic_scenario_texts_no_longer_trigger_unrecognized_entity_heuristic(
     db_session: Session,
 ) -> None:
-    """Dokumentiert einen echten, während der Entwicklung dieses Prompts
-    gefundenen Nutzbarkeits-Fund: die bestehende Security-Check-Heuristik
-    für "möglicherweise unerkannte Namen" (zwei aufeinanderfolgende
-    großgeschriebene Wörter) löst bei realistischem deutschem
-    Verwaltungs-/Rechtstext ("Festgesetzte Einkommensteuer", "Mahnung
-    Zahlungsverzug", "Fristlose Kündigung") FALSCH aus - obwohl das keine
-    Namen sind, sondern normale deutsche Komposita/Formulierungen. Prüft
-    den GENAUEN Sachverhalts-Aufbau wie die echte Pipeline
-    (`RuleBasedLocalAIProvider._build_sachverhalt`: "Akte: {Titel}" +
-    "[{Typ}] {Dokumentauszug}") - bereits der Aktentitel allein kann die
-    Heuristik auslösen, nicht nur der Dokumentinhalt.
+    """ECHTER FUND, BEHOBEN (Abnahme-Test, 13.09.): dieser Test
+    dokumentierte urspruenglich einen realen Nutzbarkeits-Fund - die
+    Security-Check-Heuristik fuer "moeglicherweise unerkannte Namen" (zwei
+    aufeinanderfolgende grossgeschriebene Woerter) loeste bei
+    realistischem deutschem Verwaltungs-/Rechtstext ("Festgesetzte
+    Einkommensteuer", "Mahnung Zahlungsverzug", "Fristlose Kuendigung")
+    FALSCH aus, weil im Deutschen ALLE Substantive grossgeschrieben
+    werden - 4 von 6 realistischen Szenarien wurden faelschlich
+    blockiert, obwohl keine Namen vorkamen.
 
-    Kein Datenschutzrisiko (die Anfrage wird sicherheitshalber blockiert,
-    fail-closed - siehe SECURITY_REVIEW.md/Prompt 28), aber ein
-    spürbarer Nutzbarkeits-/Reibungsverlust-Fund: 4 von 6 realistischen
-    Szenarien (zwei Drittel) werden fälschlich blockiert. Wird hier
-    bewusst NICHT "repariert" (z. B. durch Lockern der Heuristik) - das
-    wäre eine Sicherheitsentscheidung, die eine bewusste Abwägung durch
-    den Anwalt braucht, kein technischer Nebeneffekt dieses Prompts. Für
-    den Abschlussbericht festgehalten."""
+    Root Cause: die Heuristik konnte Adjektiv+Substantiv-Phrasen nicht
+    von Vorname+Nachname unterscheiden. Fix: `security_check.py::
+    _find_possible_unrecognized_names` nutzt jetzt optional spaCys
+    POS-Tags (app/privacy/presidio_ner.py::get_pos_tags, DIESELBE bereits
+    geladene Pipeline, keine zusaetzliche Speicherlast) - ein Kandidat
+    gilt nur noch dann als namensverdaechtig, wenn BEIDE Woerter als
+    PROPN (Eigenname) getaggt sind, nicht nur grossgeschrieben. Bewusst
+    KEINE Lockerung "auf Verdacht" - eine echte, real gemessene
+    linguistische Unterscheidung.
+
+    Dieser Test prueft jetzt das GEGENTEIL des urspruenglichen Fundes:
+    ALLE sechs realistischen Szenarien muessen jetzt durchlaufen."""
     from app.privacy.gateway import ClaudePrivacyGateway
     from app.synthetic_data.scenarios import SCENARIOS
 
@@ -476,14 +472,7 @@ def test_some_scenario_texts_trigger_unrecognized_entity_heuristic(
         if not result.allowed:
             blocked_scenarios.append(scenario.key)
 
-    # Der Fund selbst: die Mehrheit der Szenarien wird blockiert - bewusst
-    # als Tatsachenfeststellung geprüft, nicht als "Fehler", der hier
-    # behoben werden soll. "betriebspruefung" und "vertragspruefung" sind
-    # die einzigen beiden, die zuverlässig durchlaufen (siehe Hauptreise
-    # oben, die deshalb bewusst "betriebspruefung" verwendet).
-    assert len(blocked_scenarios) >= 3
-    assert "einspruch_steuerbescheid" in blocked_scenarios
-    assert "betriebspruefung" not in blocked_scenarios
+    assert blocked_scenarios == []
 
 
 def test_unauthenticated_journey_is_blocked_at_every_step(

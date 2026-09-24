@@ -10,7 +10,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.audit import AuditLogService
-from app.models import AuditEvent, Client, Deadline, Document, Draft, Matter
+from app.models import (
+    AuditEvent,
+    ChatConversation,
+    Client,
+    Deadline,
+    Document,
+    Draft,
+    GeneratedDocument,
+    Matter,
+    OutboxEntry,
+    Party,
+    User,
+)
 from app.models.base import Base
 
 
@@ -91,6 +103,121 @@ def test_list_events_for_matter_includes_document_events(db_session: Session) ->
     events = service.list_events_for_matter(matter.id, db_session)
 
     assert any(e.event_type == "document_classified" for e in events)
+
+
+def test_list_events_for_matter_includes_party_events(db_session: Session) -> None:
+    """ECHTER FUND (18.09.): `Party` (17.09. dieser Sitzung angelegt)
+    schrieb bereits echte AuditEvents, fehlte aber in
+    `_MATTER_SCOPED_MODELS` - Beteiligte-Aenderungen waren dadurch bei
+    einer aktenweiten Verlaufsabfrage unsichtbar."""
+    matter = _matter(db_session)
+    party = Party(matter=matter, name="Vermieter Schmidt GmbH", role="Gegner")
+    db_session.add(party)
+    db_session.commit()
+    db_session.add(
+        AuditEvent(
+            entity_type="Party", entity_id=party.id, event_type="party_added", actor="system"
+        )
+    )
+    db_session.commit()
+    service = AuditLogService()
+
+    events = service.list_events_for_matter(matter.id, db_session)
+
+    assert any(e.event_type == "party_added" for e in events)
+
+
+def test_list_events_for_matter_includes_outbox_events(db_session: Session) -> None:
+    """ECHTER FUND (20.09., Overnight-Autonomielauf, beim Live-
+    Verifizieren des Postausgang-Workflows gefunden): `OutboxEntry`
+    schreibt bereits echte AuditEvents (draft_added_to_outbox/
+    draft_marked_sent, siehe app/outbox/service.py) und traegt bereits
+    eine direkte `matter_id`-Spalte (extra dafuer angelegt) - fehlte
+    aber, EXAKT dieselbe Art Luecke wie zuvor bei Party/Note, in
+    `_MATTER_SCOPED_MODELS`. Freigabe/Versand-Bestaetigung eines
+    Entwurfs war dadurch in der Akte-Verlaufsansicht unsichtbar."""
+    matter = _matter(db_session)
+    draft = Draft(matter_id=matter.id, content="Testinhalt.")
+    db_session.add(draft)
+    db_session.commit()
+    entry = OutboxEntry(matter_id=matter.id, draft_id=draft.id, status="sent")
+    db_session.add(entry)
+    db_session.commit()
+    db_session.add(
+        AuditEvent(
+            entity_type="OutboxEntry",
+            entity_id=entry.id,
+            event_type="draft_marked_sent",
+            actor="anwalt@kanzlei.test",
+        )
+    )
+    db_session.commit()
+    service = AuditLogService()
+
+    events = service.list_events_for_matter(matter.id, db_session)
+
+    assert any(e.event_type == "draft_marked_sent" for e in events)
+
+
+def test_list_events_for_matter_includes_chat_conversation_events(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (20.09., systematische Suche nach ALLEN Modellen mit
+    `matter_id`, ausgeloest durch den OutboxEntry-Fund oben):
+    `ChatConversation` schreibt bereits echte AuditEvents (u. a.
+    "chat_relinked_to_matter", wenn ein Anwalt eine Unterhaltung
+    nachtraeglich einer anderen Akte zuordnet - app/web/chat_router.py)
+    und traegt bereits `matter_id` - fehlte aber ebenfalls in
+    `_MATTER_SCOPED_MODELS`."""
+    matter = _matter(db_session)
+    user = User(email="anwalt@kanzlei.test")
+    db_session.add(user)
+    db_session.commit()
+    conversation = ChatConversation(matter_id=matter.id, user_id=user.id, title="Testchat")
+    db_session.add(conversation)
+    db_session.commit()
+    db_session.add(
+        AuditEvent(
+            entity_type="ChatConversation",
+            entity_id=conversation.id,
+            event_type="chat_relinked_to_matter",
+            actor="anwalt@kanzlei.test",
+        )
+    )
+    db_session.commit()
+    service = AuditLogService()
+
+    events = service.list_events_for_matter(matter.id, db_session)
+
+    assert any(e.event_type == "chat_relinked_to_matter" for e in events)
+
+
+def test_list_events_for_matter_includes_generated_document_events(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (20.09.), dieselbe Suche wie oben: `GeneratedDocument`
+    schreibt bereits echte AuditEvents ("document_generated"/
+    "document_edited", app/document_generator/service.py) und traegt
+    bereits `matter_id` (dort sogar explizit als "Pflicht" dokumentiert) -
+    fehlte aber ebenfalls in `_MATTER_SCOPED_MODELS`."""
+    matter = _matter(db_session)
+    document = GeneratedDocument(matter_id=matter.id, title="Testschreiben", content="Inhalt.")
+    db_session.add(document)
+    db_session.commit()
+    db_session.add(
+        AuditEvent(
+            entity_type="GeneratedDocument",
+            entity_id=document.id,
+            event_type="document_generated",
+            actor="anwalt@kanzlei.test",
+        )
+    )
+    db_session.commit()
+    service = AuditLogService()
+
+    events = service.list_events_for_matter(matter.id, db_session)
+
+    assert any(e.event_type == "document_generated" for e in events)
 
 
 def test_list_events_for_matter_includes_deadline_and_draft_events(

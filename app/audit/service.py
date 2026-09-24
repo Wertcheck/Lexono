@@ -26,10 +26,15 @@ from sqlalchemy.orm import Session
 from app.models import (
     AttorneyInstruction,
     AuditEvent,
+    ChatConversation,
     Deadline,
     Document,
     Draft,
+    GeneratedDocument,
     Message,
+    Note,
+    OutboxEntry,
+    Party,
     Task,
     WorkflowRun,
 )
@@ -50,6 +55,49 @@ _MATTER_SCOPED_MODELS: tuple[tuple[type, str], ...] = (
     # obwohl das Modell bereits matter_id trägt. Echte Luecke, jetzt
     # geschlossen.
     (AttorneyInstruction, "AttorneyInstruction"),
+    # Ergaenzt 18.09. (Owner-Direktive "WEITERARBEITEN" Fortsetzung, beim
+    # Anbinden einer Akte-Verlaufsansicht gefunden): `Party` (17.09. dieser
+    # Sitzung angelegt, siehe app/web/parties_router.py) schreibt bereits
+    # echte AuditEvents (party_added/party_removed) und traegt laengst
+    # `matter_id` - fehlte hier aber, dieselbe Art Luecke wie oben bei
+    # AttorneyInstruction. Ohne diesen Eintrag waeren Beteiligte-Aenderungen
+    # bei einer aktenweiten Verlaufsabfrage unsichtbar geblieben.
+    (Party, "Party"),
+    # Ergaenzt 19.09. (UI/UX-Referenzabgleich, neuer "Notizen"-Tab, siehe
+    # app/web/note_actions_router.py): dieselbe Art Luecke wie bei Party
+    # oben - direkt beim Anlegen mitbehoben statt sie erneut entstehen zu
+    # lassen.
+    (Note, "Note"),
+    # Ergaenzt 20.09. (Overnight-Autonomielauf, beim Live-Verifizieren des
+    # Postausgang-Workflows gefunden): EXAKT dieselbe Art Luecke wie bei
+    # Party/AttorneyInstruction/Note oben - `OutboxEntry` schreibt bereits
+    # echte AuditEvents (draft_added_to_outbox/draft_marked_sent, siehe
+    # app/outbox/service.py) und traegt bereits eine direkte `matter_id`-
+    # Spalte (extra dafuer angelegt, siehe dortiger Modell-Kommentar
+    # "ermöglicht Aktenisolations-Abfragen ohne Join") - fehlte hier aber
+    # ebenfalls. Freigabe/Versand-Bestaetigung eines Entwurfs war dadurch
+    # in der Akte-Verlaufsansicht unsichtbar, obwohl beides fachlich zu den
+    # wichtigsten nachvollziehbaren Aktionen einer Akte gehoert (CLAUDE.md:
+    # "Jede wichtige KI-Aktion muss nachvollziehbar sein").
+    (OutboxEntry, "OutboxEntry"),
+    # Ergaenzt 20.09. (systematische Suche nach ALLEN Modellen mit
+    # `matter_id`, ausgeloest durch den OutboxEntry-Fund oben) - ZWEI
+    # weitere Instanzen DERSELBEN Luecke, unabhaengig voneinander
+    # gefunden:
+    # - `ChatConversation` schreibt echte AuditEvents (u. a.
+    #   "chat_relinked_to_matter", wenn ein Anwalt eine Unterhaltung
+    #   nachtraeglich einer anderen Akte zuordnet - app/web/
+    #   chat_router.py) und traegt bereits `matter_id`.
+    # - `GeneratedDocument` schreibt echte AuditEvents ("document_
+    #   generated"/"document_edited", app/document_generator/
+    #   service.py) und traegt bereits `matter_id` (dort sogar explizit
+    #   als "Pflicht" dokumentiert).
+    # Beide fehlten hier - ihre Ereignisse waren in der Akte-
+    # Verlaufsansicht unsichtbar, obwohl beide Modelle strukturell
+    # exakt in dasselbe Muster wie Document/Draft/Party/Note/OutboxEntry
+    # passen.
+    (ChatConversation, "ChatConversation"),
+    (GeneratedDocument, "GeneratedDocument"),
 )
 
 

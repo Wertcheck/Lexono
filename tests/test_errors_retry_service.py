@@ -136,6 +136,51 @@ def test_repeated_failure_updates_error_message(db_session: Session) -> None:
     assert error.error_message == "Zweiter, aktuellerer Fehler"
 
 
+def test_record_failure_resets_status_from_retrying_back_to_pending_retry(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (20.09., beim Beheben eines verwandten Funds selbst
+    entdeckt - siehe test_execute_retry_document_missing_does_not_leave_
+    error_stuck_in_retrying): `record_failure` setzte fuer einen
+    BESTEHENDEN Eintrag bisher NUR bei erschoepfter Versuchsanzahl den
+    Status explizit (`failed_permanent`) - im "noch Versuche uebrig"-Zweig
+    wurde `next_retry_at` aktualisiert, der Status selbst aber unveraendert
+    gelassen. `execute_retry` setzt den Status VOR jedem Versuch auf
+    "retrying" - ein GANZ NORMALER, erneut transient fehlschlagender
+    OCR-Versuch (Dokument existiert weiterhin, nur die Extraktion
+    schlaegt wieder fehl) hinterliess den Eintrag dadurch faelschlich auf
+    "retrying" haengen, obwohl `next_retry_at` bereits einen neuen,
+    zukuenftigen Versuchszeitpunkt trug - fuer immer unerreichbar fuer
+    `list_due_for_retry` (fragt ausschliesslich `status="pending_retry"`
+    ab)."""
+    service = RetryService()
+    document = _make_document(db_session)
+    error = service.record_failure(
+        db_session,
+        entity_type="Document",
+        entity_id=document.id,
+        operation="ocr",
+        error_category="transient",
+        error_message="Erster Fehler",
+        max_attempts=5,
+    )
+    error.status = "retrying"  # wie execute_retry es vor jedem Versuch setzt
+    db_session.commit()
+
+    error = service.record_failure(
+        db_session,
+        entity_type="Document",
+        entity_id=document.id,
+        operation="ocr",
+        error_category="transient",
+        error_message="Zweiter, erneut transienter Fehler",
+        max_attempts=5,
+    )
+
+    assert error.status == "pending_retry"
+    assert error.next_retry_at is not None
+
+
 # ==========================================================================
 # 3. Exponentielles Backoff
 # ==========================================================================
@@ -475,6 +520,64 @@ def test_execute_retry_document_missing_returns_false_not_crash(
 
     result = service.execute_retry(db_session, error)
     assert result is False
+
+
+def test_execute_retry_document_missing_does_not_leave_error_stuck_in_retrying(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (20.09., beim GUI-Durchgang durch die installierte
+    Anwendung entdeckt): `execute_retry` setzte `error.status = "retrying"`
+    VOR der eigentlichen Arbeit, aber das fruehe `return False`, wenn das
+    Dokument nicht mehr existiert, ueberfuehrte den Status NIE wieder in
+    einen abschliessenden Zustand - der Eintrag blieb fuer immer auf
+    "retrying" haengen (ausgeschlossen von jedem weiteren Versuch UND von
+    `list_due_for_retry`, das nur "pending_retry" abfragt). Real in der
+    Produktions-DB gefunden: ein Eintrag, der seit einem einzigen Klick am
+    18.09. bis heute unveraendert auf "retrying" stand. Erwartet jetzt
+    stattdessen den echten, abschliessenden Zustand "failed_permanent"."""
+    service = RetryService()
+    document = _make_document(db_session)
+    error = service.record_failure(
+        db_session,
+        entity_type="Document",
+        entity_id=document.id,
+        operation="ocr",
+        error_category="transient",
+        error_message="Testfehler",
+    )
+    db_session.delete(document)
+    db_session.commit()
+
+    service.execute_retry(db_session, error)
+
+    db_session.refresh(error)
+    assert error.status == "failed_permanent"
+    assert error.status != "retrying"
+
+
+def test_execute_retry_document_missing_is_visible_via_list_all_unresolved(
+    db_session: Session,
+) -> None:
+    """Nach dem Fix bleibt der Eintrag als "failed_permanent" weiterhin
+    ehrlich in der Fehleruebersicht sichtbar (nicht heimlich geloescht) -
+    nur nicht mehr in einem toten, unerreichbaren Zwischenzustand."""
+    service = RetryService()
+    document = _make_document(db_session)
+    error = service.record_failure(
+        db_session,
+        entity_type="Document",
+        entity_id=document.id,
+        operation="ocr",
+        error_category="transient",
+        error_message="Testfehler",
+    )
+    db_session.delete(document)
+    db_session.commit()
+    service.execute_retry(db_session, error)
+
+    unresolved = service.list_all_unresolved(db_session)
+
+    assert any(e.id == error.id for e in unresolved)
 
 
 def test_execute_retry_unknown_operation_raises_value_error(db_session: Session) -> None:
