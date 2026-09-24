@@ -200,6 +200,23 @@ class MatterMatchingService:
                         score += 0.2
                         signals.append("party_name_match")
                         break
+                else:
+                    # ECHTER FUND (14.09., Posteingangs-Zuordnung auf der
+                    # synthetischen Kanzlei-Datenbasis): der Namensabgleich
+                    # betrachtete AUSSCHLIESSLICH `matter.parties` - der
+                    # MANDANT selbst, der wichtigste Beteiligte einer Akte
+                    # und im Kanzleialltag der haeufigste Absender
+                    # ueberhaupt, wurde nie verglichen. Eine Mail des
+                    # eigenen Mandanten erhielt dadurch kein einziges
+                    # Namenssignal. Gleiches Gewicht wie ein Party-Treffer
+                    # (der Mandant ist kein schwaecherer Beteiligter),
+                    # bewusst im else-Zweig: zaehlt nicht doppelt, wenn der
+                    # Mandant zusaetzlich als Party gefuehrt wird.
+                    if matter.client and matter.client.name and self._names_similar(
+                        sender_name, matter.client.name
+                    ):
+                        score += 0.2
+                        signals.append("client_name_match")
 
             topic_similarity = self._topic_similarity(text, matter)
             if topic_similarity > 0.3:
@@ -230,7 +247,19 @@ class MatterMatchingService:
             return None
         # "Max Mustermann <max@example.test>" -> "Max Mustermann"
         name_part = sender.split("<")[0].strip().strip('"')
-        return name_part or None
+        if not name_part:
+            return None
+        # ECHTER FUND (14.09., beim Durchspielen der Posteingangs-Zuordnung
+        # auf der synthetischen Kanzlei-Datenbasis): steht KEIN Anzeigename
+        # im Absender (also eine blosse Adresse "vorname.name@..."), lieferte
+        # diese Funktion die vollstaendige E-MAIL-ADRESSE als vermeintlichen
+        # "Anzeigenamen" zurueck. Der Namensabgleich verglich dann eine
+        # Adresse mit einem Personennamen - im besten Fall wirkungslos, im
+        # schlechten Fall ein Zufallstreffer. Ohne echten Anzeigenamen gibt
+        # es schlicht keinen Namen, der verglichen werden koennte.
+        if _EMAIL_PATTERN.fullmatch(name_part):
+            return None
+        return name_part
 
     @staticmethod
     def _names_similar(a: str, b: str, *, threshold: float = 0.8) -> bool:

@@ -99,12 +99,14 @@ def test_search_finds_client_by_client_number(
     assert any(r.entity_type == "Client" and r.title == "Unbekannter Name" for r in results)
 
 
-def test_search_finds_matter_and_links_to_client_detail_page(
+def test_search_finds_matter_and_links_to_the_real_matter_detail_page(
     service: GlobalSearchService, db_session: Session
 ) -> None:
-    """Es gibt keine eigene Aktendetailseite (Platzhalter, siehe
-    app/web/placeholder_router.py) - der Link muss ehrlich auf die
-    Mandanten-Detailseite (mit #client-matters-Anker) zeigen."""
+    """ECHTER FUND (17.09.): seit der UI/UX-Ueberarbeitung (13.09.) existiert
+    eine echte Aktendetailseite (`matters_router.py`) - der Suchtreffer
+    zeigte trotzdem noch auf die Mandanten-Detailseite (veralteter
+    Kommentar/Code aus der Zeit VOR dieser Seite). Jetzt korrekt direkt
+    verlinkt."""
     client, matter = _client_and_matter(
         db_session, name="Mieterbund", matter_title="Kündigungsschutzklage Mueller"
     )
@@ -112,7 +114,7 @@ def test_search_finds_matter_and_links_to_client_detail_page(
     matter_results = [r for r in results if r.entity_type == "Matter"]
     assert len(matter_results) == 1
     assert matter_results[0].badge_label == "Lokal"
-    assert matter_results[0].url == f"/dashboard/clients/{client.id}#client-matters"
+    assert matter_results[0].url == f"/dashboard/matters/{matter.id}"
 
 
 def test_search_finds_document_by_filename_only_not_by_content(
@@ -139,7 +141,10 @@ def test_search_finds_document_by_filename_only_not_by_content(
     doc_results = [r for r in by_filename if r.entity_type == "Document"]
     assert len(doc_results) == 1
     assert doc_results[0].badge_label == "Lokal"
-    assert doc_results[0].url == f"/dashboard/clients/{client.id}"
+    # ECHTER FUND (17.09., Owner-Direktive §5 "ein Link fuehrt zu keinem
+    # echten Ziel"): zeigte bisher auf die Mandanten-Uebersicht statt auf
+    # das Dokument selbst - jetzt direkt auf die echte Aktendokument-Seite.
+    assert doc_results[0].url == f"/dashboard/matters/{matter.id}/document/{document.id}"
 
     by_content = service.search("Zauberwort123", db_session)
     assert [r for r in by_content if r.entity_type == "Document"] == []
@@ -255,7 +260,10 @@ def test_search_finds_approved_source_and_marks_it_extern(
     source_results = [r for r in results if r.entity_type == "Source"]
     assert len(source_results) == 1
     assert source_results[0].badge_label == "Extern"
-    assert source_results[0].url == "/dashboard/sources"
+    # ECHTER FUND (17.09.): "/dashboard/sources" ist weiterhin nur die
+    # "in Vorbereitung"-Platzhalterseite - die echte, tatsaechlich befuellte
+    # Rechtsquellen-Tabelle lebt seit 14.09. unter "/dashboard/knowledge".
+    assert source_results[0].url == "/dashboard/knowledge"
 
 
 def test_search_ignores_unapproved_source_drafts(

@@ -163,12 +163,15 @@ class GlobalSearchService:
                     f"Akte · {matter.reference_number or 'ohne Aktenzeichen'}"
                     + (f" · {matter.practice_area}" if matter.practice_area else "")
                 ),
-                # Keine eigene Aktendetailseite im Dashboard (siehe
-                # app/web/placeholder_router.py: "/matters" ist Platzhalter) -
-                # verlinkt ehrlich auf die Mandanten-Detailseite, die diese
-                # Akte tatsächlich auflistet (app/web/templates/
-                # client_detail.html#client-matters).
-                url=f"/dashboard/clients/{matter.client_id}#client-matters",
+                # ECHTER FUND (17.09., Owner-Direktive §5): dieser Kommentar
+                # war veraltet - seit der UI/UX-Ueberarbeitung (13.09., siehe
+                # app/web/placeholder_router.py) ist "/matters" KEIN
+                # Platzhalter mehr, `matters_router.py` liefert eine echte
+                # Aktendetailseite (Tabs, Dokumente, Aufgaben & Fristen,
+                # Kommunikation). Der Suchtreffer zeigte bislang trotzdem
+                # noch auf die Mandanten-Detailseite - jetzt direkt auf die
+                # tatsaechliche, spezifischere Zielseite.
+                url=f"/dashboard/matters/{matter.id}",
                 badge_label="Lokal",
                 badge_title=_LOCAL_BADGE_TITLE,
             )
@@ -178,13 +181,16 @@ class GlobalSearchService:
     def _search_documents(self, query: str, db: Session, limit: int) -> list[GlobalSearchResult]:
         """Durchsucht bewusst NUR `original_filename` (Metadaten), NICHT
         `extracted_text` (Akteninhalt) - siehe Moduldocstring zur
-        Aktenisolation. Ein JOIN auf Matter liefert `client_id` in
+        Aktenisolation. Ein JOIN auf Matter liefert `matter.title` in
         derselben Abfrage (keine zusätzliche Query pro Treffer)."""
         like = f"%{query}%"
         rows = (
-            db.query(Document, Matter.client_id, Matter.title)
+            db.query(Document, Matter.title)
             .join(Matter, Document.matter_id == Matter.id)
-            .filter(Document.original_filename.ilike(like))
+            .filter(
+                Document.original_filename.ilike(like),
+                Document.deleted_at.is_(None),
+            )
             .order_by(Document.created_at.desc())
             .limit(limit)
             .all()
@@ -194,11 +200,17 @@ class GlobalSearchService:
                 entity_type="Document",
                 title=document.original_filename or document.id,
                 subtitle=f"Dokument · Akte „{matter_title}“",
-                url=f"/dashboard/clients/{client_id}",
+                # ECHTER FUND (17.09., Owner-Direktive §5 "ein Link fuehrt
+                # zu keinem echten Ziel"): zeigte bisher auf die Mandanten-
+                # Uebersicht statt auf das Dokument selbst - der Anwalt
+                # haette es dort manuell erneut suchen muessen. Die
+                # Aktendokument-Seite (Vorschau/KI-Aktionen/Download/
+                # Erkannte Fristen) existiert seit heute, jetzt genutzt.
+                url=f"/dashboard/matters/{document.matter_id}/document/{document.id}",
                 badge_label="Lokal",
                 badge_title=_LOCAL_BADGE_TITLE,
             )
-            for document, client_id, matter_title in rows
+            for document, matter_title in rows
         ]
 
     # --- "Extern/Gesetz": Gesetzesbibliothek (LawSection) -----------------
@@ -249,10 +261,17 @@ class GlobalSearchService:
                     title=source.title,
                     subtitle=f"Rechtsquelle · {source.source_type}"
                     + (f" · {source.reference}" if source.reference else ""),
-                    # Kein Detail-Link pro Quelle (Rechtsquellen-Verwaltung
-                    # ist noch Platzhalter, siehe placeholder_router.py) -
-                    # ehrlich auf die Übersichtsseite statt eines toten Links.
-                    url="/dashboard/sources",
+                    # ECHTER FUND (17.09., Owner-Direktive §5): "/dashboard/
+                    # sources" ist weiterhin die "in Vorbereitung"-
+                    # Platzhalterseite (siehe placeholder_router.py) - aber
+                    # seit 14.09. existiert unter "/dashboard/knowledge"
+                    # (Kanzleiwissen) eine ECHTE, tatsaechlich befuellte
+                    # Rechtsquellen-Tabelle (Titel/Fundstelle/Typ/Freigabe,
+                    # siehe knowledge_router.py). Kein Anker pro einzelner
+                    # Quelle moeglich (keine Zeilen-IDs im Template), aber
+                    # die Zielseite zeigt die gesuchte Quelle tatsaechlich
+                    # an, statt eines toten "in Vorbereitung"-Hinweises.
+                    url="/dashboard/knowledge",
                     badge_label="Extern",
                     badge_title=_EXTERNAL_BADGE_TITLE,
                 )

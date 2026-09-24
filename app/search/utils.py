@@ -27,8 +27,18 @@ def cosine_similarity(a: list[float], b: list[float]) -> float:
 def build_snippet(text: str, query: str) -> str:
     """Baut einen kurzen Kontextausschnitt um den ersten Treffer von
     `query` in `text`, oder - falls kein Volltext-Treffer vorliegt (z. B.
-    reiner semantischer Treffer) - die ersten Zeichen des Texts."""
-    normalized_text = text.replace("\n", " ")
+    reiner semantischer Treffer) - die ersten Zeichen des Texts.
+
+    ECHTER FUND (realer Abnahme-Test, 13.09., siehe dieselbe Korrektur in
+    app/deadlines/extractor.py::_context_window): ein einzelnes
+    Leerzeichen statt des Zeilenumbruchs verschmilzt eine Ueberschrift mit
+    dem direkt folgenden Absatz zu einem einzigen, scheinbar
+    zusammenhaengenden Zwei-Wort-Ausdruck - genau das Kriterium, mit dem
+    app/privacy/security_check.py::_find_possible_unrecognized_names einen
+    Namens-Kandidaten erkennt (nur bei GENAU einem Leerzeichen). Zwei
+    Leerzeichen bewahren die Absatzgrenze fuer diese Pruefung, bleiben
+    aber weiterhin ein lesbarer einzeiliger Ausschnitt."""
+    normalized_text = text.replace("\n", "  ")
     if query.strip():
         index = normalized_text.lower().find(query.lower())
         if index != -1:

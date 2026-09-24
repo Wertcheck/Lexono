@@ -27,6 +27,18 @@ class MatterAssignmentService:
             classification_low_confidence_threshold
         )
 
+    def suggest_matter(self, message: Message, db: Session) -> MatchResult:
+        """Wie `assign_matter`, aber REIN LESEND - wendet nichts an, legt
+        kein `AuditEvent` an. Fuer die "Automatische Zuordnung (Vorschlag)"-
+        Karte im Posteingang (app/web/router.py): zeigt dem Anwalt den
+        aktuellen Kandidaten fuer eine bereits unzugeordnete Nachricht,
+        OHNE dass das reine Ansehen der Seite bereits eine Zuordnung
+        bewirkt - die tatsaechliche Anwendung geschieht ausschliesslich
+        ueber eine explizite "Übernehmen"-Aktion (siehe
+        app/web/router.py::accept_matter_suggestion)."""
+        classification_ok = self._classification_is_sufficient(message)
+        return self.matcher.match_message(message, db, classification_ok=classification_ok)
+
     def assign_matter(self, message: Message, db: Session) -> MatchResult:
         classification_ok = self._classification_is_sufficient(message)
 

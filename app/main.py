@@ -32,7 +32,13 @@ from app.ai_providers.factory import build_local_llm_provider
 from app.api import api_router
 from app.auth.permissions import AppLockedError, ForcePasswordChangeError, NotAuthenticatedError
 from app.config import Settings, get_settings
+from app.db.session import SessionLocal
+from app.documents.service import DocumentProcessingService
 from app.local_ai.setup_orchestrator import LocalAiSetupService, LocalAiState
+from app.mail.factory import build_mail_provider
+from app.mail.service import MailIngestionService
+from app.matching.matcher import MatterMatchingService
+from app.matching.service import MatterAssignmentService
 from app.observability import configure_logging
 from app.updater.checker import UpdateCheckResult, check_for_update
 from app.web.account_router import router as account_web_router
@@ -45,6 +51,14 @@ from app.web.document_templates_router import router as document_templates_web_r
 from app.web.drafts_router import router as drafts_web_router
 from app.web.feedback_router import router as feedback_web_router
 from app.web.lock_router import router as lock_web_router
+from app.web.deadline_actions_router import router as deadline_actions_web_router
+from app.web.document_actions_router import router as document_actions_web_router
+from app.web.matters_router import router as matters_web_router
+from app.web.note_actions_router import (
+    clients_router as client_notes_web_router,
+    matters_router as note_actions_web_router,
+)
+from app.web.parties_router import router as parties_web_router
 from app.web.prompt_library_router import router as prompt_library_web_router
 from app.web.quality_router import router as quality_web_router
 from app.web.schriftsatz_router import router as schriftsatz_web_router
@@ -53,6 +67,7 @@ from app.web.tasks_router import router as tasks_web_router
 from app.web.template_paths import STATIC_DIR
 from app.web.errors_router import router as errors_web_router
 from app.web.global_search_router import router as global_search_web_router
+from app.web.knowledge_router import router as knowledge_web_router
 from app.web.laws_router import router as laws_web_router
 from app.web.monitoring_router import router as monitoring_web_router
 from app.web.outbox_router import router as outbox_web_router
@@ -123,6 +138,101 @@ async def _run_silent_local_ai_check(app: FastAPI, settings: Settings) -> None:
         )
 
 
+_MAIL_POLL_INTERVAL_SECONDS = 300.0
+
+
+async def _run_periodic_mail_ingestion(settings: Settings) -> None:
+    """ECHTER FUND (14.09., "AUTONOMOUS PRODUCT COMPLETION MASTER
+    DIRECTIVE" - Posteingang-Untersuchung): `MailIngestionService`
+    (E-Mail-Abruf, Prompt 07) UND `MatterAssignmentService`
+    (automatische Aktenzuordnung, Prompt 09) waren beide vollstaendig
+    implementiert und getestet, wurden aber an KEINER Stelle der
+    laufenden Anwendung jemals aufgerufen - ein konfiguriertes Postfach
+    (`MAIL_*` in .env, echte Einstellungsseite unter /dashboard/settings)
+    hatte in der Praxis NIE eine Wirkung, der Posteingang blieb immer
+    leer/manuell. Dies schliesst die Luecke: ist `settings.mail_provider`
+    NICHT gesetzt (Standard), kehrt diese Funktion sofort zurueck, OHNE
+    jemals eine Verbindung zu versuchen - identisches Prinzip wie
+    `build_local_llm_provider`/`_run_silent_local_ai_check` oben. Ist ein
+    Postfach konfiguriert, wird es alle 5 Minuten abgefragt und JEDE neu
+    erfasste Nachricht SOFORT ueber `MatterMatchingService`/
+    `MatterAssignmentService` bewertet - bei eindeutigem Treffer
+    automatisch zugeordnet, sonst bleibt sie unzugeordnet und erscheint
+    im Posteingang mit einem Zuordnungsvorschlag (siehe
+    app/web/router.py::_build_match_suggestion). Ein einzelner
+    fehlgeschlagener Abruf (z. B. Postfach kurzzeitig nicht erreichbar)
+    bricht die Schleife NICHT ab - naechster Versuch nach der Wartezeit,
+    analog zum bewusst fehlertoleranten `IntakeWatcher` (ARCHITECTURE.md
+    §Prompt 05: "Fehler bei einzelnen Dateien brechen die Ueberwachung
+    der uebrigen nicht ab").
+
+    ECHTER FUND (14.09., Nachtrag noch im selben Zyklus): `MailIngestionService`
+    legt Anhaenge bisher NUR als `Document`-Datensatz an (Datei + Zeile),
+    ruft aber NIE `DocumentProcessingService.process_document` auf (anders
+    als der Chat- und der Schriftsatz-Upload-Pfad, siehe app/chat/service.py
+    bzw. app/web/schriftsatz_router.py) - ein E-Mail-Anhang hätte daher
+    dauerhaft `extracted_text=None` gehabt, in der Posteingang-Detailansicht
+    für immer "(kein Inhalt extrahiert)" gezeigt. Ergänzt: jedes neu
+    erfasste Dokument wird jetzt VOR der Zuordnungsbewertung durch
+    dieselbe, bereits bestehende `DocumentProcessingService` geschickt
+    (identische Konfiguration wie die beiden anderen Upload-Pfade).
+    **Bewusst NICHT in diesem Zyklus ergänzt** (echter, aber SEPARATER,
+    bereits vorher bestehender Befund, betrifft alle drei Upload-Pfade
+    gleich, nicht nur Mail - siehe OPEN_ISSUES.md): `ClassificationService`
+    wird von KEINEM der drei Pfade aufgerufen, wodurch
+    `classification_confidence` nie gesetzt wird und
+    `MatterAssignmentService._classification_is_sufficient` bei JEDER
+    Nachricht mit Anhang konservativ `False` liefert (auto_assigned bleibt
+    dadurch auf anhangfreie Nachrichten beschränkt, needs_review bleibt
+    der Regelfall bei Anhang) - keine Verschlechterung durch diese
+    Aenderung, nur keine Verbesserung dieses spezifischen Punktes."""
+    provider = build_mail_provider(settings)
+    if provider is None:
+        return
+
+    ingestion_service = MailIngestionService(provider, settings.mail_attachment_storage_dir)
+    document_processor = DocumentProcessingService(
+        ocr_enabled=settings.ocr_enabled,
+        ocr_languages=settings.ocr_languages,
+        tesseract_cmd=settings.tesseract_cmd,
+    )
+    matcher = MatterMatchingService(
+        auto_assign_threshold=settings.matching_auto_assign_threshold,
+        review_threshold=settings.matching_review_threshold,
+    )
+    assignment_service = MatterAssignmentService(
+        matcher,
+        classification_low_confidence_threshold=settings.classification_low_confidence_threshold,
+    )
+
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                new_messages = await asyncio.to_thread(
+                    ingestion_service.ingest_new_messages, db
+                )
+                for message in new_messages:
+                    for document in message.documents:
+                        await asyncio.to_thread(
+                            document_processor.process_document, document, db, actor="system"
+                        )
+                    result = await asyncio.to_thread(
+                        assignment_service.assign_matter, message, db
+                    )
+                    logger.info(
+                        "E-Mail erfasst und bewertet (Entscheidung: %s).", result.decision
+                    )
+            finally:
+                db.close()
+        except Exception:  # noqa: BLE001 - siehe Docstring: darf die Schleife nicht beenden
+            logger.exception(
+                "Automatischer E-Mail-Abruf fehlgeschlagen - naechster Versuch in %ss.",
+                _MAIL_POLL_INTERVAL_SECONDS,
+            )
+        await asyncio.sleep(_MAIL_POLL_INTERVAL_SECONDS)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Laedt die validierte Konfiguration beim Start und konfiguriert das
@@ -146,6 +256,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     verzögern. Solange der Task noch läuft, ist `app.state.local_ai_status`
     schlicht noch nicht gesetzt (kein erfundener Zwischenzustand) - es gibt
     aktuell noch keine UI/Route, die diesen Wert läse.
+
+    Seit 14.09. zusätzlich: `_run_periodic_mail_ingestion` (siehe dort für
+    den vollen Befund) - schließt die Lücke, dass ein konfiguriertes
+    Postfach bisher nie automatisch abgerufen wurde.
     """
     settings = get_settings()
     configure_logging(log_level=settings.log_level, log_file_path=settings.log_file_path)
@@ -157,9 +271,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _run_silent_update_check(app, settings.update_manifest_url)
     )
     local_ai_task = asyncio.create_task(_run_silent_local_ai_check(app, settings))
+    mail_ingestion_task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
     yield
     update_task.cancel()
     local_ai_task.cancel()
+    mail_ingestion_task.cancel()
     logger.info("Anwendung wird beendet")
 
 
@@ -212,6 +328,7 @@ app.include_router(monitoring_web_router)
 app.include_router(backup_web_router)
 app.include_router(clients_web_router)
 app.include_router(global_search_web_router)
+app.include_router(knowledge_web_router)
 app.include_router(laws_web_router)
 app.include_router(document_templates_web_router)
 app.include_router(document_generator_web_router)
@@ -222,6 +339,12 @@ app.include_router(tasks_web_router)
 app.include_router(feedback_web_router)
 app.include_router(lock_web_router)
 app.include_router(prompt_library_web_router)
+app.include_router(matters_web_router)
+app.include_router(parties_web_router)
+app.include_router(document_actions_web_router)
+app.include_router(deadline_actions_web_router)
+app.include_router(note_actions_web_router)
+app.include_router(client_notes_web_router)
 app.include_router(placeholder_web_router)
 app.mount(
     "/dashboard/static",

@@ -111,7 +111,9 @@ class DocumentSearchService:
         `document_type` ist ein optionaler exakter Metadatenfilter
         (`Document.classified_type`, siehe Prompt 08).
         """
-        db_query = db.query(Document).filter(Document.matter_id == matter_id)
+        db_query = db.query(Document).filter(
+            Document.matter_id == matter_id, Document.deleted_at.is_(None)
+        )
         if document_type is not None:
             db_query = db_query.filter(Document.classified_type == document_type)
         candidate_documents = db_query.all()

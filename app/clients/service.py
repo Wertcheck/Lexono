@@ -59,6 +59,12 @@ class ClientHasMattersError(Exception):
 class ClientListRow:
     client: Client
     last_contact_at: datetime | None
+    # UI/UX-Audit (14.09., Abgleich gegen assets/ux-ui/29_mandanten_uebersicht.png):
+    # die Referenz zeigt je Mandant die Anzahl der OFFENEN Akten - bisher
+    # gar nicht vorhanden. Bewusst als weiteres Aggregat in derselben
+    # einen Query (siehe list_clients) statt eines Zaehl-Querys pro Zeile,
+    # damit das dort dokumentierte "kein N+1"-Versprechen gewahrt bleibt.
+    open_matter_count: int = 0
 
 
 def _validate_required_fields(name: str, client_number: str) -> None:
@@ -250,9 +256,28 @@ def list_clients(
         .subquery()
     )
 
+    # Zweites Aggregat in derselben Query (siehe ClientListRow.open_matter_count):
+    # Anzahl OFFENER Akten je Mandant, bewusst als eigene Subquery statt eines
+    # zusaetzlichen Joins auf `last_contact_subq` - sonst wuerden Mandanten ohne
+    # Nachrichten, aber mit offenen Akten, ihren Zaehler verlieren.
+    open_matters_subq = (
+        db.query(
+            Matter.client_id.label("client_id"),
+            func.count(Matter.id).label("open_matter_count"),
+        )
+        .filter(Matter.status == "open")
+        .group_by(Matter.client_id)
+        .subquery()
+    )
+
     query = (
-        db.query(Client, last_contact_subq.c.last_contact_at)
+        db.query(
+            Client,
+            last_contact_subq.c.last_contact_at,
+            open_matters_subq.c.open_matter_count,
+        )
         .outerjoin(last_contact_subq, last_contact_subq.c.client_id == Client.id)
+        .outerjoin(open_matters_subq, open_matters_subq.c.client_id == Client.id)
         .options(joinedload(Client.responsible_user))
     )
 
@@ -269,4 +294,14 @@ def list_clients(
         )
 
     query = query.order_by(Client.name.asc()).limit(limit)
-    return [ClientListRow(client=row[0], last_contact_at=row[1]) for row in query.all()]
+    return [
+        ClientListRow(
+            client=row[0],
+            last_contact_at=row[1],
+            # Mandanten ohne jede Akte liefern durch den OUTER JOIN NULL -
+            # als 0 darstellen, nicht als "–"/None (die Referenz zeigt dort
+            # ebenfalls eine echte 0, siehe Zeile "Schulz, Lisa").
+            open_matter_count=row[2] or 0,
+        )
+        for row in query.all()
+    ]

@@ -48,3 +48,14 @@ def test_build_snippet_handles_empty_query() -> None:
     text = "Ein normaler Text."
     snippet = build_snippet(text, "")
     assert snippet.startswith("Ein normaler Text")
+
+
+def test_build_snippet_preserves_paragraph_boundary_around_heading() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): eine Ueberschrift direkt
+    gefolgt vom naechsten Absatz durfte nicht zu "Schriftverkehr Mit" mit
+    nur einem Leerzeichen verschmelzen - siehe dieselbe Korrektur in
+    app/deadlines/extractor.py::_context_window fuer die volle Begruendung
+    (falscher Namens-Kandidat in security_check.py, Punkt 6)."""
+    text = "2. Schriftverkehr\nMit Schreiben vom 12.08.2026 forderte die Mieterin den Vermieter auf."
+    snippet = build_snippet(text, "")
+    assert "Schriftverkehr Mit" not in snippet

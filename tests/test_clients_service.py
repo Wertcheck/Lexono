@@ -441,3 +441,70 @@ def test_list_clients_computes_last_contact_from_messages_across_matters(
     # SQLite gibt datetime ggf. ohne tzinfo zurueck - nur auf den Tag genau
     # vergleichen, um TZ-Handling-Details nicht mitzutesten.
     assert rows[0].last_contact_at.date() == newer.date()
+
+
+def _client(db: Session, name: str, number: str) -> Client:
+    return create_client(
+        db,
+        name=name,
+        client_number=number,
+        contact_email=None,
+        contact_phone=None,
+        practice_area=None,
+        responsible_user_id=None,
+        actor="anwalt@kanzlei.test",
+    )
+
+
+def test_list_clients_counts_only_open_matters(db_session: Session) -> None:
+    """UI/UX-Audit (14.09., assets/ux-ui/29_mandanten_uebersicht.png): die
+    Mandantenliste zeigt jetzt die Anzahl der OFFENEN Akten je Mandant -
+    abgeschlossene Akten duerfen NICHT mitgezaehlt werden."""
+    client = _client(db_session, "Mit offenen Akten", "C-600")
+    db_session.add_all(
+        [
+            Matter(client_id=client.id, title="Offen 1", status="open"),
+            Matter(client_id=client.id, title="Offen 2", status="open"),
+            Matter(client_id=client.id, title="Erledigt", status="closed"),
+        ]
+    )
+    db_session.commit()
+
+    rows = list_clients(db_session, search="Mit offenen Akten")
+
+    assert len(rows) == 1
+    assert rows[0].open_matter_count == 2
+
+
+def test_list_clients_reports_zero_open_matters_without_any_matter(
+    db_session: Session,
+) -> None:
+    """Der OUTER JOIN liefert fuer Mandanten ganz ohne Akte NULL - die
+    Liste muss daraus eine echte 0 machen (die Referenz zeigt dort
+    ebenfalls "0", keinen Platzhalter)."""
+    _client(db_session, "Ohne jede Akte", "C-601")
+    db_session.commit()
+
+    rows = list_clients(db_session, search="Ohne jede Akte")
+
+    assert len(rows) == 1
+    assert rows[0].open_matter_count == 0
+
+
+def test_list_clients_counts_open_matters_even_without_any_message(
+    db_session: Session,
+) -> None:
+    """ECHTER, beim Bau bewusst mitgedachter Fall (siehe Kommentar in
+    list_clients): der Akten-Zaehler haengt an einer EIGENEN Subquery, nicht
+    am "letzter Kontakt"-Aggregat - ein Mandant mit offenen Akten, aber ganz
+    ohne Nachrichten, muss seinen Zaehler trotzdem behalten (waere bei einem
+    gemeinsamen Join ueber Message stillschweigend auf 0 gefallen)."""
+    client = _client(db_session, "Akten ohne Nachrichten", "C-602")
+    db_session.add(Matter(client_id=client.id, title="Offen", status="open"))
+    db_session.commit()
+
+    rows = list_clients(db_session, search="Akten ohne Nachrichten")
+
+    assert len(rows) == 1
+    assert rows[0].last_contact_at is None
+    assert rows[0].open_matter_count == 1

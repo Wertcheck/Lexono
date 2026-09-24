@@ -181,3 +181,64 @@ def test_party_name_fuzzy_match_contributes_score(db_session: Session) -> None:
 
     assert len(result.candidates) == 1
     assert "party_name_match" in result.candidates[0].matched_signals
+
+
+# --- Mandantenname + Anzeigename (14.09., echte Funde beim Durchspielen
+# der Posteingangs-Zuordnung auf der synthetischen Kanzlei-Datenbasis) ---
+
+
+def test_client_name_is_matched_not_only_parties(db_session: Session) -> None:
+    """ECHTER FUND: der Namensabgleich betrachtete ausschliesslich
+    `matter.parties`. Der MANDANT selbst - der wichtigste Beteiligte einer
+    Akte und im Kanzleialltag der haeufigste Absender ueberhaupt - wurde
+    nie verglichen. Eine Mail des eigenen Mandanten erhielt dadurch kein
+    einziges Namenssignal."""
+    client = Client(name="Sabine Schmidt")
+    matter = Matter(client=client, title="Einspruch Steuerbescheid 2025")
+    db_session.add_all([client, matter])
+    db_session.commit()
+
+    message = Message(
+        direction="inbound",
+        sender="Sabine Schmidt <sabine.schmidt@example-testdomain.invalid>",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    result = _matcher().match_message(message, db_session)
+
+    assert len(result.candidates) == 1
+    assert "client_name_match" in result.candidates[0].matched_signals
+
+
+def test_client_name_match_does_not_double_count_with_party_match(
+    db_session: Session,
+) -> None:
+    """Ist derselbe Mensch zusaetzlich als Party gefuehrt, darf der Name
+    nicht doppelt zaehlen (deshalb bewusst im else-Zweig)."""
+    client = Client(name="Sabine Schmidt")
+    matter = Matter(client=client, title="Akte")
+    party = Party(matter=matter, name="Sabine Schmidt")
+    db_session.add_all([client, matter, party])
+    db_session.commit()
+
+    message = Message(
+        direction="inbound", sender="Sabine Schmidt <s.schmidt@example.test>"
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    signals = _matcher().match_message(message, db_session).candidates[0].matched_signals
+    assert "party_name_match" in signals
+    assert "client_name_match" not in signals
+
+
+def test_bare_address_is_not_treated_as_a_display_name(db_session: Session) -> None:
+    """ECHTER FUND: ohne Anzeigenamen lieferte `_extract_display_name` die
+    vollstaendige E-MAIL-ADRESSE als vermeintlichen Namen zurueck - der
+    Namensabgleich verglich dann eine Adresse mit einem Personennamen.
+    Ohne echten Anzeigenamen gibt es keinen Namen zu vergleichen."""
+    matcher = _matcher()
+    assert matcher._extract_display_name("sabine.schmidt@example.test") is None
+    assert matcher._extract_display_name("Sabine Schmidt <s@example.test>") == "Sabine Schmidt"
+    assert matcher._extract_display_name("") is None
