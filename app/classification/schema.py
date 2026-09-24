@@ -23,6 +23,18 @@ ALLOWED_DOCUMENT_TYPES = frozenset(
         "Klage/Schriftsatz",
         "Gerichtliches Schreiben",
         "Vertrag",
+        # Steuerrechtliche Dokumenttypen (14.09.): ECHTER FUND beim
+        # Durchspielen der synthetischen Kanzlei-Datenbasis gegen den
+        # PRODUKTIVEN DocumentProcessingService - eine Datei namens
+        # "steuerbescheid_2025_*.pdf" mit dem Wort "Steuerbescheid" im Text
+        # wurde als "Unbekannt" (Konfidenz 0.1) eingestuft, weil die
+        # Typliste KEINEN EINZIGEN steuerrechtlichen Dokumenttyp enthielt.
+        # Fuer die Pilotkanzlei (Steuerfachanwaltskanzlei) sind das die mit
+        # Abstand haeufigsten Dokumente ueberhaupt.
+        "Steuerbescheid",
+        "Einspruch",
+        "Prüfungsanordnung",
+        "Steuererklärung",
         "Sonstiges",
         "Unbekannt",
     }

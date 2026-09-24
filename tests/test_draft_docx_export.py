@@ -78,6 +78,31 @@ def test_export_service_produces_readable_docx(db_session: Session) -> None:
     assert "Zweiter Absatz." in full_text
 
 
+def test_export_service_handles_a_draft_with_no_matter_gracefully(db_session: Session) -> None:
+    """ECHTER FUND (17.09., Datenintegritaets-Diagnose gegen die echte
+    Produktions-DB - strukturell, ohne PII gelesen): ein Draft mit einer
+    `matter_id`, die auf keine existierende Matter mehr zeigt (vermutlich
+    Rest eines aelteren manuellen Demo-Daten-Aufraeumens VOR der heutigen,
+    bereits korrekten `reset_demo_data`-Kaskade), liess `matter.title`
+    bisher direkt mit einem `AttributeError` abstuerzen - JEDER andere Ort
+    im Code behandelt `draft.matter is None` bereits korrekt (siehe
+    drafts_list.html/draft_detail.html), nur dieser Export-Pfad nicht."""
+    client = Client(name="Testmandant GmbH")
+    matter = Matter(client=client, title="Wird gleich wieder entfernt")
+    db_session.add_all([client, matter])
+    db_session.commit()
+    draft = Draft(matter_id=matter.id, content="Inhalt ohne Aktenbezug.")
+    db_session.add(draft)
+    db_session.commit()
+
+    buffer = DraftDocxExportService().export_draft(draft, None)
+
+    document = DocxDocument(BytesIO(buffer.getvalue()))
+    full_text = "\n".join(p.text for p in document.paragraphs)
+    assert "Schriftsatz" in full_text
+    assert "Inhalt ohne Aktenbezug." in full_text
+
+
 def test_export_service_without_firm_profile_has_no_letterhead(db_session: Session) -> None:
     draft = _seed_draft(db_session)
 
@@ -211,6 +236,30 @@ def test_export_route_returns_docx(client: TestClient, db_session: Session) -> N
     assert "attachment" in response.headers["content-disposition"]
     document = DocxDocument(BytesIO(response.content))
     assert any("Erster Absatz." in p.text for p in document.paragraphs)
+
+
+def test_export_route_handles_a_draft_with_no_matter_gracefully(
+    client: TestClient, db_session: Session
+) -> None:
+    """HTTP-Gegenprobe zu `test_export_service_handles_a_draft_with_no_
+    matter_gracefully` - schliesst den vollen Pfad inkl. Router/Audit-Log
+    ein. Simuliert real per direktem Zeilen-Loeschen der Matter (wie der
+    tatsaechlich in der Produktions-DB gefundene Fall) statt nur den
+    Service isoliert aufzurufen."""
+    draft = _seed_draft(db_session)
+    matter_id = draft.matter_id
+    db_session.query(Matter).filter_by(id=matter_id).delete()
+    db_session.commit()
+    db_session.refresh(draft)
+    assert draft.matter is None
+
+    response = client.get(f"/dashboard/drafts/{draft.id}/export.docx")
+
+    assert response.status_code == 200
+    document = DocxDocument(BytesIO(response.content))
+    full_text = "\n".join(p.text for p in document.paragraphs)
+    assert "Schriftsatz" in full_text
+    assert 'filename="Schriftsatz_v' in response.headers["content-disposition"]
 
 
 def test_export_route_includes_saved_firm_profile_letterhead(

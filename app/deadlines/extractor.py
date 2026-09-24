@@ -178,9 +178,53 @@ class PlaceholderDeadlineExtractor:
 
     @staticmethod
     def _context_window(text: str, start: int, end: int) -> str:
+        """ECHTER FUND (realer Abnahme-Test, 13.09.): ein einzelnes
+        Leerzeichen statt des Zeilenumbruchs zerstoerte die Grenze zwischen
+        einer Ueberschrift und dem direkt folgenden Absatz (z. B. Word-
+        Absaetze "2. Schriftverkehr" + "Mit Schreiben vom ..." wurden zu
+        "... Schriftverkehr Mit Schreiben ..." verschmolzen). Genau ein
+        Leerzeichen zwischen zwei grossgeschriebenen Woertern ist aber exakt
+        das Kriterium, mit dem `app/privacy/security_check.py::
+        _find_possible_unrecognized_names` einen zusammenhaengenden
+        Namens-Kandidaten erkennt (bewusst NUR bei genau einem Leerzeichen,
+        siehe dort) - die verschmolzene Ueberschrift+Folgesatz-Grenze wurde
+        dadurch faelschlich als moeglicher unerkannter Name gewertet und
+        blockierte JEDE Chat-Nachricht in der betroffenen Unterhaltung
+        dauerhaft, sobald ein Dokument mit nummerierten Ueberschriften
+        angehaengt war - real reproduziert, nicht angenommen. Zwei
+        Leerzeichen statt eines bewahren die Absatzgrenze fuer diese
+        Pruefung (die dort bewusst NUR einfache Leerzeichen als
+        "zusammenhaengende Phrase" wertet), bleiben aber weiterhin ein
+        lesbarer einzeiliger Ausschnitt.
+
+        ZWEITER ECHTER FUND (selbe Abnahme-Runde): eine feste Zeichenzahl
+        vor/nach dem Treffer kann GENAUSO GUT mitten in ein Wort schneiden
+        (z. B. "eschäftigungsmonat" statt "Beschäftigungsmonat", wenn das
+        Fenster zufällig einen Buchstaben nach dessen Anfang beginnt).
+        Presidios NER erkannte dieses abgeschnittene Fragment faelschlich
+        als eigene "Entitaet" - und weil das Fragment ZUFAELLIG ein
+        Teilstring des an anderer Stelle korrekt geschriebenen Worts ist,
+        meldete das Final Payload Gate (app/privacy/security_check.py::
+        check_response_placeholder_integrity) faelschlich einen "geleakten
+        Originalwert" und blockierte dadurch JEDE Chat-Nachricht in der
+        betroffenen Unterhaltung - real reproduziert, nicht angenommen.
+        Deshalb: Fenstergrenzen nach aussen auf die naechste Wortgrenze
+        "einrasten" (nie mitten in ein alphanumerisches Wort schneiden)."""
         window_start = max(0, start - _CONTEXT_WINDOW_CHARS)
         window_end = min(len(text), end + _CONTEXT_WINDOW_CHARS)
-        snippet = text[window_start:window_end].replace("\n", " ").strip()
+        while (
+            window_start > 0
+            and text[window_start - 1].isalnum()
+            and text[window_start].isalnum()
+        ):
+            window_start -= 1
+        while (
+            window_end < len(text)
+            and text[window_end - 1].isalnum()
+            and text[window_end].isalnum()
+        ):
+            window_end += 1
+        snippet = text[window_start:window_end].replace("\n", "  ").strip()
         return snippet
 
     @staticmethod

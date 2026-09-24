@@ -11,7 +11,7 @@ Ablauf pro `Document` (Konzept §3, Schritt 3 "Extraktion"):
    (Original) bleibt unverändert (siehe app/models/document.py).
 
 Enthält bewusst KEINE juristische Interpretation - reine technische
-Extraktion. Klassifikation und Aktenzuordnung folgen in Prompt 08/09.
+Extraktion.
 
 Seit Prompt 31: ein OCR-Fehlschlag wird zusätzlich im Fehler-/Retry-
 System (app/errors/) protokolliert - vorher blieb `ocr_status="failed"`
@@ -35,6 +35,22 @@ dasselbe Dokument (z. B. über den Retry-Pfad) erzeugt keine doppelten
 erfolgt), wird `analyze_document` bewusst gar nicht erst aufgerufen -
 würde ohnehin nur no-op + Audit-Rauschen erzeugen (siehe dortiger
 eigener Guard).
+
+ECHTER FUND (14.09., Reassess nach dem SGB-/Mail-Ingestion-Zyklus):
+`ClassificationService` (Prompt 08) war GENAU wie `DeadlineAnalysisService`
+vollstaendig implementiert und isoliert getestet, wurde aber von KEINEM
+der drei Upload-Pfade (Mail/Chat/Schriftsatz) je aufgerufen -
+`Document.classification_confidence` blieb dadurch projektweit IMMER
+`None`, wodurch `MatterAssignmentService._classification_is_sufficient`
+jede Nachricht MIT Anhang als "nicht ausreichend klassifiziert" behandelte
+und eine automatische Zuordnung dafuer strukturell nie moeglich war. Fix:
+`classify_document` wird jetzt - genau wie `analyze_document` - hier
+ZENTRAL EINMAL nach erfolgreicher Extraktion aufgerufen (gilt damit
+automatisch fuer alle drei Upload-Pfade). Anders als die Fristenerkennung
+ist `matter_id` dafuer NICHT erforderlich (Klassifikation bewertet nur
+den Dokumentinhalt) - laeuft daher auch fuer noch unzugeordnete
+Dokumente, genau der Fall, der fuer `_classification_is_sufficient`
+relevant ist, BEVOR eine Zuordnung ueberhaupt entschieden wird.
 """
 
 from __future__ import annotations
@@ -43,6 +59,8 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from app.classification.classifier import PlaceholderDocumentClassifier
+from app.classification.service import ClassificationService
 from app.deadlines.extractor import PlaceholderDeadlineExtractor
 from app.deadlines.service import DeadlineAnalysisService
 from app.documents.extraction import extract_text
@@ -51,6 +69,13 @@ from app.errors.service import RetryService
 from app.models import AuditEvent, Document
 
 _TEXT_READY_OCR_STATUSES = ("not_needed", "done")
+
+# Identisch mit `Settings.classification_low_confidence_threshold`s
+# Standardwert (app/config/settings.py) - hier bewusst dupliziert statt
+# importiert, da diese Klasse (wie `RetryService`/`DeadlineAnalysisService`)
+# keine Abhaengigkeit auf das Settings-Objekt haben soll, nur auf
+# explizit uebergebene Werte (siehe bestehende Konstruktor-Parameter).
+_DEFAULT_CLASSIFICATION_LOW_CONFIDENCE_THRESHOLD = 0.6
 
 
 class DocumentProcessingService:
@@ -63,6 +88,10 @@ class DocumentProcessingService:
         tesseract_cmd: str | None = None,
         retry_service: RetryService | None = None,
         deadline_service: DeadlineAnalysisService | None = None,
+        classification_service: ClassificationService | None = None,
+        classification_low_confidence_threshold: float = (
+            _DEFAULT_CLASSIFICATION_LOW_CONFIDENCE_THRESHOLD
+        ),
     ) -> None:
         self.ocr_enabled = ocr_enabled
         self.ocr_languages = ocr_languages
@@ -70,6 +99,10 @@ class DocumentProcessingService:
         self.retry_service = retry_service or RetryService()
         self.deadline_service = deadline_service or DeadlineAnalysisService(
             PlaceholderDeadlineExtractor()
+        )
+        self.classification_service = classification_service or ClassificationService(
+            PlaceholderDocumentClassifier(),
+            low_confidence_threshold=classification_low_confidence_threshold,
         )
         configure_tesseract(tesseract_cmd)
 
@@ -186,6 +219,16 @@ class DocumentProcessingService:
         )
         db.commit()
         db.refresh(document)
+
+        # Automatische Klassifikation NUR nach tatsaechlich erfolgreicher
+        # Extraktion/OCR (siehe Moduldocstring, ECHTER FUND 14.09.) - im
+        # Unterschied zur Fristenerkennung unten bewusst OHNE
+        # matter_id-Bedingung, da Klassifikation nur den Dokumentinhalt
+        # bewertet und genau der Fall (noch unzugeordnetes Dokument mit
+        # Anhang) fuer eine spaetere automatische Aktenzuordnung relevant
+        # ist.
+        if document.ocr_status in _TEXT_READY_OCR_STATUSES:
+            self.classification_service.classify_document(document, db)
 
         # Automatische Fristenerkennung NUR nach tatsaechlich erfolgreicher
         # Extraktion/OCR und NUR mit bereits erfolgter Aktenzuordnung (siehe

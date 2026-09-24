@@ -22,10 +22,66 @@ from app.classification.schema import ClassificationResult
 # hochsicher gelten, selbst wenn mehrere Keywords treffen.
 _PLACEHOLDER_MAX_CONFIDENCE = 0.4
 
+# Reihenfolge ist bedeutsam: bei Gleichstand gewinnt der ZUERST gefundene
+# Typ (siehe _detect_document_type). Die steuerrechtlichen Typen stehen
+# deshalb bewusst VOR den generischen - ein Steuerbescheid enthaelt
+# regelmaessig auch Woerter wie "Rechnung"/"Frist", soll aber als
+# Steuerbescheid gelten (Pilotkanzlei = Steuerfachanwaltskanzlei).
 _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    # --- Steuerrecht (14.09., echter Fund beim Durchspielen der
+    # synthetischen Kanzlei-Datenbasis: ein Steuerbescheid wurde als
+    # "Unbekannt"/0.1 eingestuft, da es KEINEN steuerrechtlichen Typ gab) ---
+    # ECHTER FUND beim Gegenpruefen am realen Dokumenttext (14.09.): ein
+    # echter deutscher Steuerbescheid schreibt NICHT das Kompositum
+    # "Einkommensteuerbescheid", sondern "Bescheid ueber Einkommensteuer"
+    # bzw. "festgesetzte Einkommensteuer" - eine reine Kompositum-Liste
+    # greift deshalb an echten Bescheiden gar nicht.
+    "Steuerbescheid": (
+        "steuerbescheid", "einkommensteuerbescheid", "körperschaftsteuerbescheid",
+        "koerperschaftsteuerbescheid", "gewerbesteuerbescheid",
+        "umsatzsteuerbescheid",
+        "bescheid für", "bescheid fuer", "bescheid über", "bescheid ueber",
+        "festgesetzte", "festsetzung", "rechtsbehelfsbelehrung",
+    ),
+    # "einspruch" allein ist bewusst KEIN Treffer mehr: die
+    # Rechtsbehelfsbelehrung ("Einspruch innerhalb eines Monats") steht auf
+    # praktisch JEDEM Steuerbescheid - das blosse Wort haette einen grossen
+    # Teil aller Bescheide faelschlich zum "Einspruch" gemacht (real
+    # reproduziert). Erkannt wird deshalb nur die AKTIVE Einlegung.
+    "Einspruch": (
+        "einspruch ein", "einspruch eingelegt", "einspruch gegen",
+        "einspruchsverfahren", "einspruchsentscheidung", "einspruchsschreiben",
+    ),
+    "Prüfungsanordnung": (
+        "prüfungsanordnung", "pruefungsanordnung", "betriebsprüfung",
+        "betriebspruefung", "außenprüfung", "aussenpruefung",
+        "umsatzsteuer-nachschau", "umsatzsteuernachschau",
+    ),
+    "Steuererklärung": (
+        "steuererklärung", "steuererklaerung", "umsatzsteuer-voranmeldung",
+        "umsatzsteuervoranmeldung", "einnahmenüberschussrechnung",
+        "einnahmenueberschussrechnung",
+    ),
+    # --- allgemeine Typen ---
     "Rechnung": ("rechnung", "invoice", "rechnungsnummer"),
     "Vollmacht": ("vollmacht",),
-    "Kündigungsschreiben": ("kündig", "kuendig"),
+    # ECHTER FUND (14.09., gleiche Fehlerklasse wie bei der
+    # Rechtsbehelfsbelehrung): das blosse Fragment "kündig" traf auch die
+    # **Kündigungsfrist**-Klausel, die in praktisch JEDEM Vertrag steht -
+    # ein "Vertragsentwurf ... Laufzeit: 24 Monate, Kündigungsfrist 3
+    # Monate" wurde dadurch als Kündigungsschreiben eingestuft (real am
+    # Demo-Dokument reproduziert). Erkannt wird deshalb nur die
+    # tatsaechliche Kuendigungs-HANDLUNG, nicht die blosse Erwaehnung.
+    # Bleibt bewusst VOR "Vertrag": ein echtes Kuendigungsschreiben nennt
+    # fast immer auch den gekuendigten Vertrag.
+    "Kündigungsschreiben": (
+        "kündigungsschreiben", "kuendigungsschreiben",
+        "kündige", "kuendige", "kündigen wir", "kuendigen wir",
+        "gekündigt", "gekuendigt",
+        "fristlose kündigung", "fristlose kuendigung",
+        "ordentliche kündigung", "ordentliche kuendigung",
+        "kündigung des", "kuendigung des",
+    ),
     "Mahnung": ("mahnung", "zahlungserinnerung"),
     "Klage/Schriftsatz": ("klage", "klageschrift", "schriftsatz"),
     "Gerichtliches Schreiben": ("gericht", "amtsgericht", "landgericht", "aktenzeichen des gerichts"),
@@ -97,7 +153,14 @@ class PlaceholderDocumentClassifier:
             return 0.1
         # Mehr Treffer = etwas mehr (aber weiterhin niedrige) Konfidenz;
         # nie über _PLACEHOLDER_MAX_CONFIDENCE.
-        return min(_PLACEHOLDER_MAX_CONFIDENCE, 0.2 + 0.1 * len(matched_keywords))
+        # `round` (14.09.): ohne Rundung liefert die Gleitkomma-Addition
+        # Werte wie 0.30000000000000004 - dieser Wert wird PERSISTIERT
+        # (Document.classification_confidence) und kann in Oberflaeche/
+        # Export auftauchen. Real beobachtet beim Durchspielen der
+        # synthetischen Datenbasis gegen den produktiven Verarbeitungspfad.
+        return round(
+            min(_PLACEHOLDER_MAX_CONFIDENCE, 0.2 + 0.1 * len(matched_keywords)), 2
+        )
 
     def _build_reasoning(
         self,

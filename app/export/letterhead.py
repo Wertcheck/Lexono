@@ -57,7 +57,12 @@ def add_bottom_border(paragraph, *, size: int = 6, space: int = 6) -> None:
     paragraph_format_element.append(border_element)
 
 
-def _address_and_contact_lines(firm_profile: FirmProfile) -> list[str]:
+def address_and_contact_lines(firm_profile: FirmProfile) -> list[str]:
+    """Oeffentlich (20.09., vorher `_address_and_contact_lines`): wird
+    jetzt zusaetzlich von `app/web/drafts_router.py` genutzt, um dieselben
+    Zeilen fuer die Briefkopf-VORSCHAU im Entwurf-Editor aufzubauen -
+    GENAU dieselbe Formatierung wie im echten PDF-/DOCX-Export, keine
+    zweite, potenziell abweichende Kopie dieser Logik."""
     address_line = ", ".join(
         part
         for part in (
@@ -98,7 +103,7 @@ def build_header(document: DocxDocument, firm_profile: FirmProfile) -> None:
         name_run.font.size = Pt(12)
         paragraphs_used += 1
 
-    detail_lines = _address_and_contact_lines(firm_profile)
+    detail_lines = address_and_contact_lines(firm_profile)
     last_paragraph = None
     for line in detail_lines:
         detail_paragraph = header.add_paragraph() if paragraphs_used else header.paragraphs[0]

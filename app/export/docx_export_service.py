@@ -30,8 +30,18 @@ DOCX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingm
 
 class DraftDocxExportService:
     def export_draft(
-        self, draft: Draft, matter: Matter, firm_profile: FirmProfile | None = None
+        self, draft: Draft, matter: Matter | None, firm_profile: FirmProfile | None = None
     ) -> BytesIO:
+        """`matter=None` (17.09., Datenintegritaets-Fund - real in der
+        Produktions-DB gefunden: ein Draft/Document-Paar mit `matter_id`,
+        die auf keine existierende Matter mehr zeigt, vermutlich Rest eines
+        aelteren manuellen Demo-Daten-Aufraeumens VOR der heutigen, bereits
+        korrekten `reset_demo_data`-Kaskade): degradiert ehrlich auf
+        "Schriftsatz" als Titel, statt mit einem `AttributeError` (`None`
+        hat kein `.title`) abzustuerzen - identisches Verhalten wie das
+        bereits etablierte `{{ draft.matter.title if draft.matter else ...
+        }}`-Muster in drafts_list.html/draft_detail.html, hier nur auch auf
+        den bisher ungeschuetzten Export-Pfad uebertragen."""
         document = DocxDocument()
 
         style = document.styles["Normal"]
@@ -41,7 +51,7 @@ class DraftDocxExportService:
         if has_letterhead_content(firm_profile):
             build_header(document, firm_profile)
 
-        document.add_heading(matter.title or "Schriftsatz", level=1)
+        document.add_heading((matter.title if matter else None) or "Schriftsatz", level=1)
         meta = document.add_paragraph()
         meta.add_run(
             f"Entwurf Version {draft.version} · Stand "

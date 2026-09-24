@@ -119,16 +119,44 @@ def test_original_file_is_never_modified(tmp_path: Path, db_session: Session) ->
 
 
 def test_processing_creates_audit_event(tmp_path: Path, db_session: Session) -> None:
+    """ECHTER FUND (14.09.): seit die Klassifikation zentral in
+    `process_document` mitlaeuft (siehe Moduldocstring), entsteht bei
+    erfolgreicher Extraktion ZUSAETZLICH ein `document_classified`-
+    AuditEvent - zwei Ereignisse sind hier das korrekte, erwartete
+    Verhalten, kein Regressionsfund."""
     document = _document_for_fixture(tmp_path, "text_document.pdf", db_session)
     service = DocumentProcessingService(ocr_enabled=False)
 
     result = service.process_document(document, db_session)
 
     events = db_session.query(AuditEvent).filter_by(entity_id=result.id).all()
-    assert len(events) == 1
-    assert events[0].entity_type == "Document"
-    assert events[0].event_type == "document_text_extracted"
-    assert events[0].actor == "system"
+    assert len(events) == 2
+    event_types = {e.event_type for e in events}
+    assert event_types == {"document_text_extracted", "document_classified"}
+    assert all(e.entity_type == "Document" and e.actor == "system" for e in events)
+
+
+def test_successful_extraction_triggers_real_classification(
+    tmp_path: Path, db_session: Session
+) -> None:
+    """ECHTER FUND (14.09., "AUTONOMOUS PRODUCT COMPLETION MASTER
+    DIRECTIVE" - Reassess nach dem SGB-/Mail-Ingestion-Zyklus):
+    `ClassificationService` war zwar implementiert, wurde aber von
+    KEINEM Upload-Pfad je aufgerufen - `classification_confidence` blieb
+    projektweit IMMER `None`, wodurch `MatterAssignmentService.
+    _classification_is_sufficient` jedes Dokument mit Anhang als "nicht
+    ausreichend" behandelte. Jetzt real behoben: nach erfolgreicher
+    Extraktion sind `classified_type`/`classification_confidence`
+    tatsaechlich gesetzt, OHNE dass eine `matter_id` noetig ist (anders
+    als bei der Fristenerkennung)."""
+    document = _document_for_fixture(tmp_path, "text_document.pdf", db_session)
+    assert document.matter_id is None
+    service = DocumentProcessingService(ocr_enabled=False)
+
+    result = service.process_document(document, db_session)
+
+    assert result.classified_type is not None
+    assert result.classification_confidence is not None
 
 
 # --- §64: automatische Fristenerkennung nach erfolgreicher Verarbeitung ---

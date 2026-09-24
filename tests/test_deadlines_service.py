@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.deadlines.extractor import PlaceholderDeadlineExtractor
 from app.deadlines.service import DeadlineAnalysisService
-from app.models import AuditEvent, Client, Deadline, Document, Matter
+from app.models import AuditEvent, Client, Deadline, Document, Matter, Message
 from app.models.base import Base
 
 
@@ -191,3 +191,80 @@ def test_reasoning_is_persisted_and_states_not_binding(db_session: Session) -> N
     assert created[0].reasoning is not None
     assert "NICHT als verbindlich bestätigt" in created[0].reasoning
     assert "regelbasiert, kein LLM" in created[0].reasoning
+
+
+# --- analyze_message (20.09., Posteingang-Fristenerkennung) ---
+
+
+def test_creates_deadlines_for_message_with_matter(db_session: Session) -> None:
+    matter = _matter(db_session)
+    message = Message(
+        direction="inbound",
+        matter_id=matter.id,
+        body_text="Bitte antworten Sie bis zum 15.03.2027.",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    service = DeadlineAnalysisService(PlaceholderDeadlineExtractor())
+    created = service.analyze_message(message, db_session)
+
+    assert len(created) == 1
+    assert created[0].matter_id == matter.id
+    assert created[0].message_id == message.id
+    assert created[0].document_id is None
+    assert created[0].review_status == "unreviewed"
+
+
+def test_skips_message_when_no_body_text(db_session: Session) -> None:
+    matter = _matter(db_session)
+    message = Message(direction="inbound", matter_id=matter.id, body_text=None)
+    db_session.add(message)
+    db_session.commit()
+
+    service = DeadlineAnalysisService(PlaceholderDeadlineExtractor())
+    created = service.analyze_message(message, db_session)
+
+    assert created == []
+    events = db_session.query(AuditEvent).filter_by(entity_id=message.id).all()
+    assert events[0].event_type == "deadline_analysis_skipped"
+
+
+def test_skips_message_when_not_assigned_to_matter(db_session: Session) -> None:
+    message = Message(
+        direction="inbound",
+        matter_id=None,
+        body_text="Bitte antworten Sie bis zum 15.03.2027.",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    service = DeadlineAnalysisService(PlaceholderDeadlineExtractor())
+    created = service.analyze_message(message, db_session)
+
+    assert created == []
+    assert db_session.query(Deadline).count() == 0
+    events = db_session.query(AuditEvent).filter_by(entity_id=message.id).all()
+    assert events[0].event_type == "deadline_analysis_skipped"
+    assert "Akte" in events[0].details
+
+
+def test_analyzing_same_message_twice_does_not_duplicate(db_session: Session) -> None:
+    matter = _matter(db_session)
+    message = Message(
+        direction="inbound",
+        matter_id=matter.id,
+        body_text="Bitte antworten Sie bis zum 15.03.2027.",
+    )
+    db_session.add(message)
+    db_session.commit()
+    service = DeadlineAnalysisService(PlaceholderDeadlineExtractor())
+
+    first_run = service.analyze_message(message, db_session)
+    second_run = service.analyze_message(message, db_session)
+
+    assert len(first_run) == 1
+    assert [d.id for d in second_run] == [d.id for d in first_run]
+    assert db_session.query(Deadline).filter_by(message_id=message.id).count() == 1
+    events = db_session.query(AuditEvent).filter_by(entity_id=message.id).all()
+    assert any(e.event_type == "deadline_analysis_already_done" for e in events)
