@@ -3366,7 +3366,25 @@ tatsächlich neue Teile: ein stummer Startprozess (Start.vbs) und ein Design-Ref
 ### Stummer Startprozess (Start.vbs)
 
 `Start.vbs` (Projekt-Root) startet die Anwendung ohne sichtbares Konsolenfenster, Server-Logs
-(stdout/stderr) landen in `app.log` neben dem Skript. **Bewusste Ausnahme:** beim ALLERERSTEN
+(stdout/stderr) landen in `app.log` **im persistenten Datenverzeichnis**
+(`%PROGRAMDATA%\Lexono\app.log`, dieselbe Ableitung wie `app/setup/paths.py`).
+
+> **Korrektur 14.09. (Desktop-Blocker):** bis dahin lag `app.log` *neben dem Skript*
+> (`strScriptDir`). Gemeldet war ein zweites, scheinbar leeres Element neben dem
+> Lexono-Desktop-Symbol. Es war **kein zweiter Shortcut und kein Installer-Fehler**
+> (`windows/installer.iss` legt nachweislich genau eine `{autodesktop}`-Zeile an), sondern
+> eine verwaiste `app.log` auf dem Desktop: Windows blendet bekannte Endungen aus
+> (`HideFileExt=1`) und für `.log` ist keine Anwendung registriert - Explorer zeichnet dann
+> ein generisches, praktisch leeres Symbol namens „app" direkt neben „Lexono". Möglich war
+> das, weil der Logpfad dem Ablageort des Skripts folgte: lief irgendwann eine Kopie von
+> `Start.vbs` an einem beliebigen Ort, entstand dort eine Lexono-Logdatei. Der Logpfad hängt
+> deshalb jetzt am Datenverzeichnis. Zweiter, unabhängiger Vorteil: bei einer Installation in
+> ein schreibgeschütztes Programmverzeichnis wäre `>> app.log` im Programmordner
+> fehlgeschlagen und hätte den stummen Start kommentarlos abgebrochen. Regressionstests:
+> `tests/test_start_vbs.py` (Logpfad + Auswertungsreihenfolge),
+> `tests/test_installer_config.py::test_creates_exactly_one_desktop_entry`.
+
+**Bewusste Ausnahme:** beim ALLERERSTEN
 Start (noch keine `.env` im persistenten Datenverzeichnis, geprüft über dieselbe Ableitung wie
 `app/setup/paths.py: resolve_data_dir`) bleibt die Konsole SICHTBAR - der interaktive
 Setup-Assistent fragt dort E-Mail/Passwort ab (`app/setup/wizard.py`); eine von Anfang an
@@ -4921,3 +4939,117 @@ nicht umgesetzt: `/no_think`-Prefix in `OllamaLocalLLMProvider.process()` (exist
 bereits in `generate_structured()`) - mit dem neuen Nicht-"thinking"-Standardmodell
 `qwen2.5:1.5b` nicht erforderlich; bliebe für eine künftige Rückkehr zu einem
 qwen3-Modell ein sinnvoller, aber ungetesteter nächster Schritt.
+
+## 72. Zentrale Server-Architektur: Model Registry + Legal-Source-Registry (Zielbild, NUR Dokumentation, 14.09.)
+
+**Auftragslage (Overnight-Engineering-Direktive §19-24)**: der zentrale
+Lexono-Server soll "in den nächsten Tagen" aufgesetzt werden - JETZT
+ausdrücklich nur die Architektur sauber dokumentieren, NICHT ein großes
+neues Serverprojekt beginnen, das laufende P0/P1-Arbeit verdrängen würde.
+Dieser Abschnitt ist daher **reine Zielbild-Dokumentation** - nichts
+hiervon ist implementiert, kein Code wurde für diesen Abschnitt
+geschrieben. Er baut bewusst auf der bereits real existierenden,
+produktionsreifen Server-Infrastruktur aus §70 (`gateway/` - Tenant-Auth,
+Rate-Limiting, Relay ohne Content-Persistenz) auf, statt eine zweite,
+parallele Server-Architektur zu entwerfen.
+
+### Warum jetzt nicht mehr als Dokumentation
+
+Weder Model Registry noch Legal-Source-Registry sind für den aktuellen
+Pilotbetrieb blockierend: die lokale `ModelCatalog` (§67,
+`app/local_ai/model_catalog.py`) deckt die Modellauswahl bereits
+statisch/lokal ab, die Gesetzesbibliothek (§24, `app/laws/
+gesetze_im_internet.py`) wird bereits lokal per Skript importiert und
+funktioniert produktiv (34 Gesetze, 11.137 Normen, siehe PROJECT_STATE.md).
+Eine zentrale Server-Variante ist eine ECHTE Verbesserung (zentrale
+Pflege statt Neuinstallation/manuellem Re-Import pro Kanzlei), aber kein
+P0/P1 - siehe Priorisierungsregel der Direktive (Zuverlässigkeit >
+Security > reale Nutzbarkeit > UI/UX > Performance > Kern-Workflows >
+Installer/Release > zusätzliche Features).
+
+### Drei-Schichten-Verantwortung (Zielbild)
+
+```
+SERVER (gateway/, von Lexono betrieben - Erweiterung des §70-Relays)
+  - AI-Relay (bereits real: gateway/relay.py, Tenant-Auth, Rate-Limiting)
+  - Model Registry: Katalog vetteter lokaler Modelle + Metadaten
+  - Legal-Source-Registry: Gesamtbestand aller unterstützten Rechtsquellen
+    (Gesetz/Version/Gültigkeit/Quelle-URL/Update-Status/Prüfsumme)
+  - Update-Verteilung (Installer-Update-Check existiert bereits real,
+    siehe app/updater/checker.py - Registry-Updates nutzen denselben,
+    bereits etablierten HTTPS-Check-Mechanismus, keine zweite Update-
+    Infrastruktur)
+  - Hält NIEMALS Kanzleidaten, NIEMALS Originaltexte, NIEMALS den
+    Presidio-Mapping-Schlüssel - exakt dieselbe Grenze wie beim
+    bestehenden AI-Relay (§70): der Server kennt Metadaten und
+    Referenzdaten (welche Gesetze/Modelle existieren), nie Mandanteninhalte.
+
+DESKTOP (Kanzlei-PC, unverändert die bestehende Lexono-Anwendung)
+  - Aktive, lokal installierte Rechtsquellen (Teilmenge der
+    Server-Registry, von der Kanzlei ausgewählt/aktiviert)
+  - Presidio, Pseudonymisierungs-Mapping, Local AI (Ollama), lokale
+    Inferenz - bleibt IMMER lokal, auch nach Einführung der Registry
+  - Fragt die Server-Registry nur nach METADATEN (welche Quellen/Modelle
+    gibt es, welche Version, welcher Hash) und lädt bei Bedarf die
+    eigentlichen Inhalte (Gesetzestexte/Modell-Gewichte) selbst herunter
+    - Rechtstexte kommen dabei weiterhin von der amtlichen Primärquelle
+      (gesetze-im-internet.de) bzw. bereits verifizierten Modell-
+      Downloadquellen (Ollama-Registry), NICHT vom Lexono-Server selbst
+      gehostet, um Haftung/Aktualität nicht auf Lexono zu verlagern.
+
+CLOUD (Anthropic, unverändert)
+  - Erreichbar AUSSCHLIESSLICH über den bestehenden Gateway-Relay (§70)
+  - Sieht nie unpseudonymisierte Daten, nie Registry-Interna
+```
+
+### Model Registry (Zielbild)
+
+Zentrale, serverseitig gepflegte Erweiterung der bereits bestehenden
+lokalen `ModelCatalog` (§67) - KEIN Ersatz, sondern eine Quelle, aus der
+die lokale Katalogliste künftig aktualisiert werden könnte, ohne dass
+jede Kanzlei auf einen neuen Installer-Release warten muss. Pro
+Modelleintrag: Modellname/-version, Quantisierung, RAM-Bedarf,
+CPU/GPU-Eignung, gemessene Performance-Kennzahlen (siehe die in dieser
+Sitzung real durchgeführten Benchmarks als Vorbild für das Datenformat),
+Qualitätsklasse, empfohlener Anwendungsfall (z. B. "chat_response
+interaktiv" vs. "Sachverhalts-Voranalyse"), kryptografischer Hash der
+Modell-Gewichte (Integritätsprüfung vor Installation), Kompatibilitäts-
+Constraints (Mindest-RAM/-CPU). Vorgesehener First-Run-Ablauf: lokale
+`HardwareDetector`-Erkennung (§67, bereits vorhanden) → Abfrage der
+Server-Registry nach geeigneten Kandidaten → Anzeige/Download über den
+bestehenden `OllamaInstaller`/`LocalAiSetupService`-Mechanismus (§68,
+bereits vorhanden) → Integritätsprüfung per Hash → lokale Installation →
+Inferenztest (bereits vorhandenes Health-Check-Muster, §68) → "Local AI
+bereit". Die eigentliche Inferenz bleibt in JEDEM Fall lokal - die
+Registry ändert nur, WOHER die Katalog-/Hash-Metadaten stammen, nicht WO
+gerechnet wird (Kernprinzip der Direktive: "Inferenz bleibt immer
+lokal").
+
+### Legal-Source-Registry (Zielbild)
+
+Zentraler Gesamtbestand: welche Gesetze/Quellen unterstützt Lexono
+prinzipiell (aktuell 34, siehe PROJECT_STATE.md), in welcher Version,
+mit welchem Gültigkeits-/Update-Status, welcher amtlichen Quelle-URL,
+welcher Prüfsumme des zuletzt importierten Standes. Die Desktop-Anwendung
+hält weiterhin nur die von der jeweiligen Kanzlei AKTIV genutzten Quellen
+lokal (Teilmenge, siehe Fachrichtungsprofil-Zielbild, Direktive §18) -
+die Registry ist der Gesamtkatalog, aus dem eine Kanzlei auswählt bzw.
+über den sie informiert wird, wenn eine neue Version einer bereits
+genutzten Quelle vorliegt (Update-Benachrichtigung analog zum
+bestehenden App-Update-Checker, `app/updater/checker.py`). Import/Parsing
+bleibt technisch der bereits bestehende, real getestete
+`gesetze_im_internet`-Mechanismus (§24) - die Registry verändert NICHT,
+WIE ein Gesetz importiert wird, nur WOHER die Desktop-Installation weiß,
+dass ein Import fällig/verfügbar ist.
+
+### Bewusst NICHT in diesem Abschnitt entschieden/gebaut
+
+Kein Datenbankschema, keine neuen Endpunkte, kein neuer Code in
+`gateway/` - das ist ausdrücklich der nächste, separate Schritt, wenn der
+zentrale Server laut Auftrag tatsächlich aufgesetzt wird. Keine
+Entscheidung über Hosting/Betriebsmodell des Registry-Teils (gleicher
+Prozess wie der bestehende AI-Relay vs. separater Dienst) - hängt von
+Latenz-/Betriebsanforderungen ab, die erst beim tatsächlichen Aufsetzen
+sinnvoll bewertet werden können. Keine Entscheidung über Monetarisierung/
+Zugriffskontrolle der Registry selbst (vermutlich dieselbe
+Tenant-Credential wie beim AI-Relay, aber nicht verbindlich festgelegt).

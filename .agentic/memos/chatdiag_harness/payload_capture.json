@@ -1,0 +1,134 @@
+[
+  {
+    "turn": 1,
+    "user_text": "Hallo",
+    "conversation_id": "1f005ffe-d2ab-42b5-9186-479fa28165f8",
+    "persisted_message_count": 2,
+    "persisted_roles": [
+      "user",
+      "assistant"
+    ],
+    "payload_sent_to_cloud": {
+      "schreibauftrag": "chat_response",
+      "gewuenschter_stil": null,
+      "anonymisierter_sachverhalt": "Akte: Einspruch Steuerbescheid 2025",
+      "anonymisierte_argumentationspunkte": [],
+      "anonymisierte_quellenverweise": [],
+      "schreibvorlage": null,
+      "anonymisierte_anwaltliche_anmerkungen": "Hallo",
+      "_payload_fields": [
+        "anonymisierte_anwaltliche_anmerkungen",
+        "anonymisierte_argumentationspunkte",
+        "anonymisierte_quellenverweise",
+        "anonymisierter_sachverhalt",
+        "gewuenschter_stil",
+        "schreibauftrag",
+        "schreibvorlage"
+      ]
+    },
+    "assistant_answer": "Guten Tag, wie kann ich Ihnen helfen?",
+    "blocked": false
+  },
+  {
+    "turn": 2,
+    "user_text": "Ich habe eine Frage zum Steuerrecht.",
+    "conversation_id": "1f005ffe-d2ab-42b5-9186-479fa28165f8",
+    "persisted_message_count": 4,
+    "persisted_roles": [
+      "user",
+      "assistant",
+      "user",
+      "assistant"
+    ],
+    "payload_sent_to_cloud": {
+      "schreibauftrag": "chat_response",
+      "gewuenschter_stil": null,
+      "anonymisierter_sachverhalt": "Akte: Einspruch Steuerbescheid 2025",
+      "anonymisierte_argumentationspunkte": [],
+      "anonymisierte_quellenverweise": [],
+      "schreibvorlage": null,
+      "anonymisierte_anwaltliche_anmerkungen": "Ich habe eine Frage zum Steuerrecht.",
+      "_payload_fields": [
+        "anonymisierte_anwaltliche_anmerkungen",
+        "anonymisierte_argumentationspunkte",
+        "anonymisierte_quellenverweise",
+        "anonymisierter_sachverhalt",
+        "gewuenschter_stil",
+        "schreibauftrag",
+        "schreibvorlage"
+      ]
+    },
+    "assistant_answer": "Guten Tag, wie kann ich Ihnen helfen?",
+    "blocked": false
+  },
+  {
+    "turn": 3,
+    "user_text": "Es geht um einen Steuerbescheid.",
+    "conversation_id": "1f005ffe-d2ab-42b5-9186-479fa28165f8",
+    "persisted_message_count": 6,
+    "persisted_roles": [
+      "user",
+      "assistant",
+      "user",
+      "assistant",
+      "user",
+      "assistant"
+    ],
+    "payload_sent_to_cloud": {
+      "schreibauftrag": "chat_response",
+      "gewuenschter_stil": null,
+      "anonymisierter_sachverhalt": "Akte: Einspruch Steuerbescheid 2025",
+      "anonymisierte_argumentationspunkte": [],
+      "anonymisierte_quellenverweise": [],
+      "schreibvorlage": null,
+      "anonymisierte_anwaltliche_anmerkungen": "Es geht um einen Steuerbescheid.",
+      "_payload_fields": [
+        "anonymisierte_anwaltliche_anmerkungen",
+        "anonymisierte_argumentationspunkte",
+        "anonymisierte_quellenverweise",
+        "anonymisierter_sachverhalt",
+        "gewuenschter_stil",
+        "schreibauftrag",
+        "schreibvorlage"
+      ]
+    },
+    "assistant_answer": "Guten Tag, wie kann ich Ihnen helfen?",
+    "blocked": false
+  },
+  {
+    "turn": 4,
+    "user_text": "Welche Frist gilt?",
+    "conversation_id": "1f005ffe-d2ab-42b5-9186-479fa28165f8",
+    "persisted_message_count": 8,
+    "persisted_roles": [
+      "user",
+      "assistant",
+      "user",
+      "assistant",
+      "user",
+      "assistant",
+      "user",
+      "assistant"
+    ],
+    "payload_sent_to_cloud": {
+      "schreibauftrag": "chat_response",
+      "gewuenschter_stil": null,
+      "anonymisierter_sachverhalt": "Akte: Einspruch Steuerbescheid 2025",
+      "anonymisierte_argumentationspunkte": [],
+      "anonymisierte_quellenverweise": [],
+      "schreibvorlage": null,
+      "anonymisierte_anwaltliche_anmerkungen": "Welche Frist gilt?",
+      "_payload_fields": [
+        "anonymisierte_anwaltliche_anmerkungen",
+        "anonymisierte_argumentationspunkte",
+        "anonymisierte_quellenverweise",
+        "anonymisierter_sachverhalt",
+        "gewuenschter_stil",
+        "schreibauftrag",
+        "schreibvorlage"
+      ]
+    },
+    "assistant_answer": "Guten Tag, wie kann ich Ihnen helfen?",
+    "blocked": false
+  }
+]

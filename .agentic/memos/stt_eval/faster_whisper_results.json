@@ -1,0 +1,37 @@
+{
+  "model_size": "base",
+  "cold_load_s": 50.18410080001922,
+  "warm_load_s": 0.74395120004192,
+  "results": [
+    {
+      "key": "01_kurz_hallo",
+      "reference": "Hallo, wie kann ich Ihnen helfen?",
+      "recognized": "Hallo, wie kann ich Ihnen helfen?",
+      "seconds": 0.7077217000187375
+    },
+    {
+      "key": "02_name_aktenzeichen",
+      "reference": "Fuegen Sie hinzu, dass Frau Erika Mustermann unter dem Aktenzeichen zwei null zwei fuenf Schraegstrich null sechs neun drei Bindestrich E S T widerspricht.",
+      "recognized": "Fugen Sie hinzu, das Frau Erika Mustermann unter dem Aktenzeichen 2030-25-Schräg-30693-Bindestrich EST widerspricht.",
+      "seconds": 0.9883369999588467
+    },
+    {
+      "key": "03_paragraph_frist",
+      "reference": "Der Einspruch ist gemaess Paragraph dreihundertfuenfundfuenfzig der Abgabenordnung innerhalb eines Monats nach Bekanntgabe des Bescheids einzulegen.",
+      "recognized": "Der Einspruch ist Gehmer-Sparagraf 350 der Abgabenordnung innerhalb eines Monats nach Bekanntgabe des Bescheids einzulegen.",
+      "seconds": 0.8894579999614507
+    },
+    {
+      "key": "04_betrag_datum",
+      "reference": "Die festgesetzte Einkommensteuer betraegt zwoelftausenddreihundertfuenfzig Euro, faellig zum funfzehnten Maerz zweitausendsiebenundzwanzig.",
+      "recognized": "Die festgesetzte Einkommensteuer beträgt 12.310 Euro, fahrerlich zum 15. März 2007.",
+      "seconds": 0.9890624000108801
+    },
+    {
+      "key": "05_langes_diktat",
+      "reference": "Sehr geehrte Damen und Herren, namens und in Vollmacht unseres Mandanten legen wir gegen den Bescheid fuer zweitausendvierundzwanzig ueber Einkommensteuer und Solidaritaetszuschlag Einspruch ein. Die Werbungskosten wurden lediglich mit dem Pauschbetrag von eintausendzweihundertdreissig Euro beruecksichtigt.",
+      "recognized": "Sehr geehrte Damen und Herren, namens und in Vollmacht unseres Mandanten legen wir gegen den Bescheid für 2024 über Einkommensteuer und Solidaritätszuschlag einsprach ein. Die Werbungskosten wurden lediglich mit dem Pauschbetrag von 1.230 Euro berücksichtigt.",
+      "seconds": 1.264517400006298
+    }
+  ]
+}

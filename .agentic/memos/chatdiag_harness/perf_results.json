@@ -1,0 +1,112 @@
+[
+  {
+    "label": "A1 neutraler Aktentitel, Local AI aktiv, 'Hallo' (COLD)",
+    "message": "Hallo",
+    "matter_title": "Steuersache 2025",
+    "local_ai_injected": true,
+    "success": false,
+    "blocked_reasons": [
+      "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - Entwurf wurde nicht übernommen.",
+      "Platzhalter [PERSON_01] fehlt im Text (Inkonsistenz zwischen Mapping und Text)"
+    ],
+    "total_s": 48.066,
+    "steps": {
+      "retrieval": 0.003,
+      "privacy_gateway": 3.12,
+      "local_ai_preanalysis": 44.915,
+      "claude": 0.0,
+      "validation": 0.0
+    }
+  },
+  {
+    "label": "A2 neutraler Aktentitel, Local AI aktiv, 'Hallo' (WARM)",
+    "message": "Hallo",
+    "matter_title": "Steuersache 2025",
+    "local_ai_injected": true,
+    "success": false,
+    "blocked_reasons": [
+      "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - Entwurf wurde nicht übernommen.",
+      "Platzhalter [PERSON_01] fehlt im Text (Inkonsistenz zwischen Mapping und Text)"
+    ],
+    "total_s": 10.11,
+    "steps": {
+      "retrieval": 0.007,
+      "privacy_gateway": 0.032,
+      "local_ai_preanalysis": 10.055,
+      "claude": 0.0,
+      "validation": 0.0
+    }
+  },
+  {
+    "label": "B1 PERSONENBEZOGENER Aktentitel (wie in der echten DB), 'Hallo' (COLD)",
+    "message": "Hallo",
+    "matter_title": "Muster, Anna offen 1",
+    "local_ai_injected": true,
+    "success": false,
+    "blocked_reasons": [
+      "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - Entwurf wurde nicht übernommen.",
+      "Platzhalter [MANDANT_01] fehlt im Text (Inkonsistenz zwischen Mapping und Text)"
+    ],
+    "total_s": 10.9,
+    "steps": {
+      "retrieval": 0.004,
+      "privacy_gateway": 0.027,
+      "local_ai_preanalysis": 10.854,
+      "claude": 0.0,
+      "validation": 0.0
+    }
+  },
+  {
+    "label": "B2 PERSONENBEZOGENER Aktentitel, 'Hallo' (WARM)",
+    "message": "Hallo",
+    "matter_title": "Muster, Anna offen 1",
+    "local_ai_injected": true,
+    "success": false,
+    "blocked_reasons": [
+      "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - Entwurf wurde nicht übernommen.",
+      "Platzhalter [MANDANT_01] fehlt im Text (Inkonsistenz zwischen Mapping und Text)"
+    ],
+    "total_s": 10.777,
+    "steps": {
+      "retrieval": 0.005,
+      "privacy_gateway": 0.033,
+      "local_ai_preanalysis": 10.722,
+      "claude": 0.0,
+      "validation": 0.0
+    }
+  },
+  {
+    "label": "C  personenbezogen, Anschlussfrage 'Welche Frist gilt?'",
+    "message": "Welche Frist gilt?",
+    "matter_title": "Muster, Anna offen 1",
+    "local_ai_injected": true,
+    "success": false,
+    "blocked_reasons": [
+      "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - Entwurf wurde nicht übernommen.",
+      "Platzhalter [MANDANT_01] fehlt im Text (Inkonsistenz zwischen Mapping und Text)"
+    ],
+    "total_s": 11.148,
+    "steps": {
+      "retrieval": 0.006,
+      "privacy_gateway": 0.031,
+      "local_ai_preanalysis": 11.088,
+      "claude": 0.0,
+      "validation": 0.0
+    }
+  },
+  {
+    "label": "D  ohne Local AI (Vergleichsbasis), 'Hallo'",
+    "message": "Hallo",
+    "matter_title": "Muster, Anna offen 1",
+    "local_ai_injected": false,
+    "success": true,
+    "blocked_reasons": [],
+    "total_s": 0.042,
+    "steps": {
+      "retrieval": 0.005,
+      "privacy_gateway": 0.02,
+      "claude": 0.0,
+      "reconstruction": 0.0
+    }
+  }
+]

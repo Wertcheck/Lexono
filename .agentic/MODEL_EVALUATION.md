@@ -163,3 +163,90 @@ enthält u. a. `qwen2.5:1.5b` (Priorität 0, empfohlen), verschiedene
 erfolgt über `RecommendationEngine.recommend(HardwareProfile)`. Diese
 Logik existierte bereits vor dieser Session (Verdrahtung war die Lücke,
 siehe DECISIONS.md).
+
+## Erneuter Benchmark: qwen3:8b vs. qwen2.5:1.5b für die §65-Rollen (13.09., P0 Performance-Follow-up)
+
+Kontext: nach dem `format`-Schema-Constraint-Fix (siehe DECISIONS.md) blieb
+`qwen3:8b` weiterhin der dominante Anteil der Chat-Latenz (real gemessen:
+~8-40s Vorabanalyse + ~17-45s Antwortvalidierung PRO Nachricht). Da beide
+Schritte architektonisch verpflichtend sind (§65) und Local-AI-Inferenz
+nachweislich der verbleibende Bottleneck ist (siehe DECISIONS.md,
+Hypothesenprüfung H1-H9), war ein Modell-Benchmark per Auftrag jetzt
+begründet - `qwen2.5:1.5b` war bereits datenbasiert als "beste Wahl"
+dokumentiert (siehe oben, Zeile 11/57), aber nie GEGEN die tatsächlich
+verwendeten §65-Prompts (Vorabanalyse-Schema + Antwortvalidierungs-Schema)
+UND nach dem Anti-Halluzinations-/Platzhalter-Beispiel-Fix getestet.
+
+**Geschwindigkeit** (real gemessen, identische Hardware, identische reale
+Produktions-Prompts):
+
+| Schritt | qwen3:8b | qwen2.5:1.5b |
+|---|---|---|
+| Vorabanalyse, cold | ~40s | ~10.5s |
+| Vorabanalyse, warm | ~8s | ~4.0s |
+| Validierung, warm | ~17-45s | ~12-15s |
+
+`qwen2.5:1.5b` ist deutlich schneller (~2-4x).
+
+**ABER: reale Qualitäts-/Zuverlässigkeitsprüfung mit denselben Prompts
+zeigt zwei neue, reale Regressionen**:
+
+1. **Anti-Halluzinations-Anweisung wird NICHT zuverlässig befolgt**: bei
+   identischem, praktisch leerem Sachverhalt ("Akte: Schnellentwurf
+   2026-09-13") sollte laut Prompt wörtlich "Kein inhaltlicher Sachverhalt
+   vorhanden." geantwortet werden (bei `qwen3:8b` nach Fix: 3/3 korrekt,
+   siehe DECISIONS.md). `qwen2.5:1.5b` antwortete stattdessen im Kaltstart
+   mit einer ERFUNDENEN Inhaltsangabe ("...befasst sich mit der Erstellung
+   eines Geschäftsschreibens für eine bestimmte Mandantur." - complett
+   erfunden) und in den Warmläufen mit einer zwar nicht erfundenen, aber
+   ANDEREN als der geforderten Antwort ("Ein Schnellentwurf vom 13.
+   September 2026" statt der wörtlich geforderten Formulierung) - ein
+   direkter Verstoß gegen CLAUDE.md ("Niemals ... erfinden").
+2. **Falsch-positive Validierung durch Verwechslung des eigenen
+   Instruktionsbeispiels**: bei der Antwortvalidierung (realer Text ohne
+   jeden echten Platzhalter) antwortete `qwen2.5:1.5b` faelschlich mit
+   `"passed": false`, weil es das rein instruktionelle Beispiel
+   `[KATEGORIE_XX]" (Teil des Prompt-Textes selbst, NICHT des zu
+   prüfenden Textes) als "inkonsistent verwendeten Platzhalter" im
+   GEPRÜFTEN Text fehlinterpretierte - identische Fundklasse wie der
+   bereits behobene qwen3-Bug (siehe DECISIONS.md), hier aber selbst
+   nach demselben "XX statt echter Ziffern"-Fix weiterhin reproduzierbar,
+   sogar in ALLEN 3 Wiederholungen (nicht nur vereinzelt). Das würde in
+   Produktion echte, korrekte Entwürfe systematisch fälschlich blockieren.
+
+**Ergebnis: KEIN Modellwechsel.** `qwen2.5:1.5b` ist zwar schneller, aber
+nachweislich UNZUVERLÄSSIGER genau für die zwei sicherheitskritischen
+Aufgaben, für die es hier eingesetzt würde (Anti-Halluzination,
+Platzhalter-Konsistenzprüfung) - ein Tausch würde Geschwindigkeit gegen
+genau die Garantien eintauschen, die §65 architektonisch verlangt
+("Ein schnelleres Modell ist KEIN Erfolg, wenn ... Halluzinationen
+steigen, Validation versagt"). `qwen3:8b` bleibt die konfigurierte
+Empfehlung - kein Hardcoding, weiterhin über `RecommendationEngine`
+hardwareadaptiv gewählt.
+
+**Separater, unabhängiger Architektur-Befund (nicht in diesem Lauf
+behoben, da eigenständige Produktentscheidung)**: `RecommendationEngine.
+recommend()` wählt unter mehreren gleichwertig als RECOMMENDED
+eingestuften Katalogeinträgen bewusst das GRÖSSTE Modell
+(`max(..., key=recommendation_priority)`, dokumentiert als "Empfehlung
+!= technisches Maximum bedeutet NICHT 'immer das kleinste Modell'").
+Der Katalogeintrag für `qwen3`-Modelle enthält jedoch selbst bereits eine
+explizite, dokumentierte Warnung in seinem `limitations`-Feld: "'thinking'-
+Fähigkeit kann ... zu sehr langen ... Reasoning-Ketten ... führen ... für
+den interaktiven Chat-Pfad nur mit Vorsicht empfehlbar, siehe
+qwen2.5-Alternative". Auf der realen Referenzmaschine (i5-1145G7, 15,7 GB
+RAM, `qwen3:8b` benötigt nur `min_ram_gb=8.8`) wird `qwen3:8b` trotzdem als
+`primary` gewählt, `qwen2.5:1.5b` (Priorität 0, EXPLIZIT als für den
+interaktiven Pfad geeigneter dokumentiert) nur als Alternative gelistet -
+die Auswahllogik gewichtet NUR RAM-Kapazität, nicht die im selben Katalog
+bereits vorhandene Chat-Eignungs-Information. Das ist ein echter,
+struktureller Mismatch zwischen dokumentiertem Wissen (im Katalog) und
+Auswahllogik (in `RecommendationEngine`) - JEDOCH: angesichts der oben
+gemessenen Zuverlässigkeitsregression von `qwen2.5:1.5b` bei genau diesen
+zwei Aufgaben waere eine naive "bevorzuge kleinere Modelle für Chat"-Regel
+JETZT KEINE sichere Lösung. Als offener Punkt für eine künftige,
+eigenständige Produktentscheidung vermerkt (siehe OPEN_ISSUES.md) - NICHT
+in diesem Lauf umgesetzt (Scope-Grenze: "keine Architekturänderung ohne
+explizite Freigabe").
+
+DATE: 13.09.

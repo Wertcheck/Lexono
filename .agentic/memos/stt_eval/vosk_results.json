@@ -1,0 +1,36 @@
+{
+  "cold_load_s": 0.450399000023026,
+  "warm_load_s": 0.44004479999421164,
+  "results": [
+    {
+      "key": "01_kurz_hallo",
+      "reference": "Hallo, wie kann ich Ihnen helfen?",
+      "recognized": "hallo wie kann ich ihnen helfen",
+      "seconds": 0.403271000017412
+    },
+    {
+      "key": "02_name_aktenzeichen",
+      "reference": "Fuegen Sie hinzu, dass Frau Erika Mustermann unter dem Aktenzeichen zwei null zwei fuenf Schraegstrich null sechs neun drei Bindestrich E S T widerspricht.",
+      "recognized": "fügen sie hinzu das frau erika mustermann unter dem aktenzeichen zwei null zwei fünf schrägstrich null sechs neuen drei bindestrich e s t widerspricht",
+      "seconds": 0.9243015999672934
+    },
+    {
+      "key": "03_paragraph_frist",
+      "reference": "Der Einspruch ist gemaess Paragraph dreihundertfuenfundfuenfzig der Abgabenordnung innerhalb eines Monats nach Bekanntgabe des Bescheids einzulegen.",
+      "recognized": "der einspruch ist gamer es paragraph dreihundert fuhr in fund fünfzig der abgaben ordnung innerhalb eines monats nach bekanntgabe des bescheids einzulegen",
+      "seconds": 0.8712298999889754
+    },
+    {
+      "key": "04_betrag_datum",
+      "reference": "Die festgesetzte Einkommensteuer betraegt zwoelftausenddreihundertfuenfzig Euro, faellig zum funfzehnten Maerz zweitausendsiebenundzwanzig.",
+      "recognized": "die festgesetzte einkommensteuer beträgt zwölf punkte dreihundertfünfzig euro feierlich zum fünfzehnten märz zweitausendsieben und zwanzig",
+      "seconds": 0.9427431999938563
+    },
+    {
+      "key": "05_langes_diktat",
+      "reference": "Sehr geehrte Damen und Herren, namens und in Vollmacht unseres Mandanten legen wir gegen den Bescheid fuer zweitausendvierundzwanzig ueber Einkommensteuer und Solidaritaetszuschlag Einspruch ein. Die Werbungskosten wurden lediglich mit dem Pauschbetrag von eintausendzweihundertdreissig Euro beruecksichtigt.",
+      "recognized": "sehr geehrte damen und herren namens und in vollmacht unseres mandanten legen wir gegen den bescheid für zweitausendvierundzwanzig über einkommensteuer und solidaritätszuschlag einspruch ein die werbung kosten wurden lediglich mit dem pauschbetrag von eintausend zweihundertdreißig euro berücksichtigt",
+      "seconds": 1.324628800037317
+    }
+  ]
+}
