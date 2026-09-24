@@ -63,6 +63,24 @@ def test_sachverhalt_includes_document_excerpts(db_session: Session) -> None:
     assert "Testakte" in result.sachverhalt
     assert "Wichtiger Inhalt des Dokuments." in result.sachverhalt
     assert "Steuerbescheid" in result.sachverhalt
+    assert result.has_document_context is True
+
+
+def test_has_document_context_is_false_without_any_attached_document(
+    db_session: Session,
+) -> None:
+    """P0-Performance-Follow-up (13.09.): `has_document_context` ist das
+    objektive Signal, das `DraftingService._should_skip_llm_privacy_layers`
+    nutzt, um zu entscheiden, ob die LLM-gestuetzten §65-Schritte fuer eine
+    einfache Chat-Nachricht ohne Aktendokument uebersprungen werden
+    duerfen - siehe DECISIONS.md fuer die volle Herleitung."""
+    matter = _matter(db_session, title="Testakte")
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    assert result.has_document_context is False
+    assert result.sachverhalt == "Akte: Testakte"
 
 
 def test_argumentationspunkte_include_deadlines(db_session: Session) -> None:
@@ -84,6 +102,41 @@ def test_known_entities_include_client_as_mandant(db_session: Session) -> None:
     result = provider.prepare_draft_context(matter.id, db_session)
 
     assert "Max Mustermann" in result.known_entities.get("mandant", [])
+
+
+def test_known_entities_also_include_bare_surname(db_session: Session) -> None:
+    """ECHTER FUND (14.09., Overnight-Direktive §8, realer Regressionsfall
+    "Frau Müller"): bisher wurde nur der VOLLSTAENDIGE Mandantenname als
+    bekannte Entitaet indiziert - `detect_known_entities` sucht aber exakt
+    danach, ein blosser Nachname-Verweis im Text ("Müller" ohne "Anna")
+    wurde dadurch NICHT erkannt. Jetzt wird zusaetzlich der Nachname
+    (letztes Wort) separat indiziert."""
+    matter = _matter(db_session, client_name="Anna Müller")
+    provider = RuleBasedLocalAIProvider()
+
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    mandant_entities = result.known_entities.get("mandant", [])
+    assert "Anna Müller" in mandant_entities
+    assert "Müller" in mandant_entities
+
+
+def test_known_entities_do_not_index_very_short_surnames(db_session: Session) -> None:
+    """ECHTER FUND (14.09., beim Haerten der obigen Ergaenzung): ein
+    einzelner Buchstabe als vermeintlicher 'Nachname' (z. B. synthetischer
+    Testname "Mandant A") wuerde per Substring-Suche JEDES Vorkommen
+    dieses Buchstabens irgendwo im Text treffen und die Pseudonymisierung
+    unbrauchbar machen (real reproduziert:
+    test_context_never_contains_data_from_other_matter in
+    test_drafting_service.py). Mindestlaenge 3 verhindert das."""
+    matter = _matter(db_session, client_name="Mandant A")
+    provider = RuleBasedLocalAIProvider()
+
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    mandant_entities = result.known_entities.get("mandant", [])
+    assert "Mandant A" in mandant_entities
+    assert "A" not in mandant_entities
 
 
 def test_party_with_opponent_role_is_categorized_as_gegner(db_session: Session) -> None:

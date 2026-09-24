@@ -4,6 +4,7 @@ Nutzt FakeEmbeddingProvider (kein echter Modell-Download) und einen Fake
 ClaudeWritingProvider (kein echter API-Aufruf)."""
 
 from collections.abc import Iterator
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import create_engine
@@ -11,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.ai_providers.claude_writing_provider import ClaudeWritingResult
 from app.ai_providers.local_ai_provider import RuleBasedLocalAIProvider
-from app.drafting.service import DraftingService
+from app.drafting.service import DraftingService, _should_skip_llm_privacy_layers
 from app.models import ApiCallLog, AuditEvent, Client, Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter, Source
 from app.models.base import Base
 from app.privacy.gateway import ClaudePrivacyGateway
@@ -213,6 +214,38 @@ def test_successful_draft_is_persisted(db_session: Session) -> None:
     assert persisted is not None
     assert persisted.status == "draft"
     assert persisted.content == result.draft_text
+
+
+def test_create_draft_with_message_id_persists_it_on_the_draft(db_session: Session) -> None:
+    """ECHTER FUND (17.09., Overnight-Direktive §6/§7 "Workflows
+    verbinden"): `create_new_draft_version` (app/drafting/versioning.py)
+    unterstuetzte `message_id` bereits laenger, aber `DraftingService.
+    create_draft` reichte es nie durch - das "Original links"-Panel in
+    draft_detail.html konnte dadurch strukturell nie eine Ursprungs-
+    nachricht anzeigen, unabhaengig davon, wie der Entwurf entstand."""
+    matter = _matter(db_session, title="Testakte")
+    service, _ = _service()
+
+    result = service.create_draft(
+        matter.id, "formulate_draft", db_session, message_id="msg-123"
+    )
+
+    assert result.success is True
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert persisted.message_id == "msg-123"
+
+
+def test_create_draft_without_message_id_leaves_it_none(db_session: Session) -> None:
+    """Gegenprobe: unveraendertes Verhalten fuer alle bestehenden Aufrufer
+    (Schriftsatz-Generator, anwaltliche Anweisungen), die dieses Feld nicht
+    kennen."""
+    matter = _matter(db_session, title="Testakte")
+    service, _ = _service()
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert persisted.message_id is None
 
 
 def test_draft_creation_logs_audit_event(db_session: Session) -> None:
@@ -491,6 +524,241 @@ def test_local_llm_result_is_added_as_argumentationspunkt(db_session: Session) -
     )
 
 
+def test_create_draft_records_a_perf_trace_step_per_real_pipeline_stage(
+    db_session: Session,
+) -> None:
+    """P0 Performance-Root-Cause-Run (13.09.): jeder create_draft()-Aufruf
+    muss ueber eine PerfTrace nachvollziehbar sein - ohne uebergebene
+    Instanz wird intern automatisch eine erzeugt (bestehende Aufrufer/
+    Tests bleiben unveraendert), mit uebergebener Instanz landen alle
+    Schritte darin, in der tatsaechlichen Ausfuehrungsreihenfolge."""
+    from app.observability.perf_trace import PerfTrace
+
+    matter = _matter(db_session)
+    writing_provider = FakeClaudeWritingProvider()
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+    trace = PerfTrace()
+
+    result = service.create_draft(
+        matter.id, "formulate_draft", db_session, trace=trace
+    )
+
+    assert result.success is True
+    step_names = [name for name, _ in trace.steps]
+    assert step_names == [
+        "retrieval",
+        "privacy_gateway",
+        "local_ai_preanalysis",
+        "claude",
+        "validation",
+        "reconstruction",
+    ]
+    assert all(duration >= 0 for _, duration in trace.steps)
+
+
+class TestShouldSkipLlmPrivacyLayers:
+    """P0 Performance-Follow-up (13.09.): Einheitstests fuer die
+    Entscheidungsfunktion selbst - siehe deren Docstring und
+    DECISIONS.md fuer die volle, evidenzbasierte Herleitung aus
+    LEXONO_MASTER_PRODUCT.md §4 ("the actual sensitive document/context
+    reasoning" bleibt lokal - existiert bei chat_response ohne Dokument
+    und ohne erkanntes PII schlicht nicht)."""
+
+    def test_skips_for_simple_chat_without_document_or_pii(self) -> None:
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response", has_document_context=False, mappings=[]
+        ) is True
+
+    def test_does_not_skip_when_document_context_present(self) -> None:
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response", has_document_context=True, mappings=[]
+        ) is False
+
+    def test_does_not_skip_when_unknown_pii_was_detected(self) -> None:
+        """Unveraendert: eine Entitaet, die zu KEINER bekannten Akten-Person
+        gehoert, erzwingt weiterhin die volle Pipeline."""
+        mapping = SimpleNamespace(original_value="Unbekannter Name")
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[mapping],
+            known_entities={"mandant": ["Erika Mustermann"]},
+        ) is False
+
+    def test_does_not_skip_for_explicit_drafting_purpose(self) -> None:
+        assert _should_skip_llm_privacy_layers(
+            purpose="formulate_draft", has_document_context=False, mappings=[]
+        ) is False
+
+    def test_skips_when_only_the_matters_own_known_client_was_detected(self) -> None:
+        """CHAT-04 (15.09.), der eigentliche Fix: der Sachverhalt ohne
+        Dokument ist exakt "Akte: {Titel}" - ein Aktentitel wie
+        "Muster, Anna offen 1" enthaelt fast immer den Mandantennamen, der
+        dann von Presidio pseudonymisiert wird, OBWOHL die eigentliche
+        Chatnachricht ("Hallo") nichts Sensibles enthaelt. Ein bereits der
+        Akte bekannter Name ist keine NEUE, ungeschuetzte Information."""
+        mapping = SimpleNamespace(original_value="Erika Mustermann")
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[mapping],
+            known_entities={"mandant": ["Erika Mustermann"]},
+        ) is True
+
+    def test_skip_is_case_insensitive_for_known_names(self) -> None:
+        mapping = SimpleNamespace(original_value="erika mustermann")
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[mapping],
+            known_entities={"mandant": ["Erika Mustermann"]},
+        ) is True
+
+    def test_does_not_skip_when_only_some_entities_are_known(self) -> None:
+        """Ein einziger unbekannter Treffer neben bekannten reicht, um die
+        volle Pipeline zu erzwingen - kein Mehrheitsentscheid."""
+        known = SimpleNamespace(original_value="Erika Mustermann")
+        unknown = SimpleNamespace(original_value="Peter Andersen")
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[known, unknown],
+            known_entities={"mandant": ["Erika Mustermann"]},
+        ) is False
+
+    def test_does_not_skip_without_known_entities_info(self) -> None:
+        """Sicherer Standardfall: ohne `known_entities` (Aufrufer liefert es
+        nicht) laesst sich Sicherheit nicht nachweisen - kein Skip, auch
+        wenn der Name zufaellig bekannt waere."""
+        mapping = SimpleNamespace(original_value="Erika Mustermann")
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[mapping],
+            known_entities=None,
+        ) is False
+        assert _should_skip_llm_privacy_layers(
+            purpose="chat_response",
+            has_document_context=False,
+            mappings=[mapping],
+            known_entities={},
+        ) is False
+
+
+def test_simple_chat_without_document_or_pii_skips_local_llm_calls(
+    db_session: Session,
+) -> None:
+    """Integrationstest (echter create_draft()-Aufruf, kein Unit-Test der
+    reinen Funktion): eine chat_response-Anfrage OHNE Aktendokument und
+    OHNE von Presidio erkanntes PII darf weder `process()` (Vorabanalyse)
+    noch `generate_structured()` (semantische Antwortvalidierung, Stufe 2)
+    aufrufen - Presidio/Pseudonymisierung selbst bleibt unveraendert
+    Pflicht (siehe FakeClaudeWritingProvider.write, das den bereits
+    pseudonymisierten Sachverhalt woertlich zurueckgibt)."""
+    matter = _matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(response_text="Eine normale Antwort ohne PII.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Was steht in § 558 BGB?",
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert local_llm.received_payloads == []
+    assert local_llm.structured_calls == []
+
+
+def test_chat_greeting_on_a_matter_titled_with_the_client_name_skips_local_llm(
+    db_session: Session,
+) -> None:
+    """CHAT-04 (15.09.), der eigentliche, real gemeldete Fall: eine Akte
+    mit einem Titel wie "Muster, Anna offen 1" (kanzleiueblich, enthaelt
+    den Mandantennamen) und eine simple Begruessung ("Hallo") ohne
+    Aktendokument. VORHER: die volle lokale Vorabanalyse lief trotzdem,
+    weil der Aktentitel selbst schon einen Presidio-Treffer erzeugt (real
+    gemessen 10,8 s warm / 48,1 s cold). NACHHER: da dieser Treffer
+    exakt der bereits bekannte Mandantenname ist, wird die lokale
+    Vorabanalyse uebersprungen - Presidio/Pseudonymisierung selbst bleibt
+    unveraendert Pflicht (siehe FakeClaudeWritingProvider, das den
+    pseudonymisierten Text woertlich zurueckgibt)."""
+    matter = _matter(db_session, client_name="Erika Mustermann", title="Erika Mustermann offen 1")
+    writing_provider = FakeClaudeWritingProvider(response_text="Guten Tag, wie kann ich helfen?")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id, "chat_response", db_session, attorney_anmerkungen="Hallo", actor="Testnutzer"
+    )
+
+    assert result.success is True
+    assert local_llm.received_payloads == [], "lokale Vorabanalyse haette uebersprungen werden muessen"
+    assert local_llm.structured_calls == [], "Stufe 2 der Antwortvalidierung haette uebersprungen werden muessen"
+
+
+def test_chat_message_with_a_new_unknown_name_still_runs_the_full_pipeline(
+    db_session: Session,
+) -> None:
+    """Gegenprobe zum Fix: tippt der Anwalt in der Chatnachricht selbst
+    einen NEUEN, der Akte nicht bekannten Namen, bleibt die volle Pipeline
+    (inkl. lokaler Vorabanalyse) Pflicht - genau der Fall, den CHAT-04
+    weiterhin schuetzen soll."""
+    matter = _matter(db_session, client_name="Erika Mustermann", title="Erika Mustermann offen 1")
+    writing_provider = FakeClaudeWritingProvider()
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Bitte notiere, dass auch Herr Klaus Andersen beteiligt ist.",
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert local_llm.received_payloads != [], "lokale Vorabanalyse haette laufen muessen (neuer Name)"
+
+
+def test_document_context_forces_full_pipeline_even_for_chat_purpose(
+    db_session: Session,
+) -> None:
+    """Ein Aktendokument allein (auch OHNE von Presidio erkanntes PII im
+    Dokumenttext) erzwingt weiterhin die volle Pipeline - verlaesst sich
+    NICHT allein auf Presidios Entitaetserkennung."""
+    from app.models import Document
+
+    matter = _matter(db_session)
+    document = Document(
+        matter=matter,
+        file_path="/tmp/x.pdf",
+        extracted_text="Ein Dokumenttext ohne erkennbare Namen oder Adressen.",
+        classified_type="Sonstiges",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    writing_provider = FakeClaudeWritingProvider()
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Bitte fasse das Dokument zusammen.",
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1
+
+
 def test_claude_never_receives_original_plaintext_with_local_llm_enabled(
     db_session: Session,
 ) -> None:
@@ -607,7 +875,18 @@ def test_missing_placeholder_in_response_fails_closed(db_session: Session) -> No
     """Fall 1: Claude "vergisst" einen erwarteten Platzhalter -> kontrollierter
     Abbruch, KEINE Rekonstruktion, KEIN fertiges Dokument. Die deterministische
     Pruefung greift VOR dem lokalen LLM - generate_structured wird bei einem
-    deterministischen Fehlschlag bewusst NICHT aufgerufen."""
+    deterministischen Fehlschlag bewusst NICHT aufgerufen.
+
+    purpose="improve_draft" (18.09., angepasst nach der dritten Eskalation
+    von CHAT-01/formulate_draft-Fund - siehe app/drafting/service.py fuer
+    die volle Begruendung): `require_full_placeholder_coverage` ist jetzt
+    fuer ALLE `formulate_draft`/`chat_response`-Aufrufe deaktiviert, da
+    `prepare_draft_context` deren Mappings identisch aus der gesamten Akte
+    baut. Fuer die verbleibenden Zwecke (improve_draft, correct_draft, ...)
+    gibt es dafuer noch KEINEN live-reproduzierten Gegenbeweis - dieser
+    Test demonstriert daher weiterhin mit einem NICHT befreiten Zweck,
+    dass der Fail-Closed-Mechanismus selbst (nicht nur die beiden
+    Manipulations-/Leck-Pruefungen) noch grundsaetzlich funktioniert."""
     matter = _matter(db_session, client_name="Erika Mustermann")
     from app.models import Document
 
@@ -623,12 +902,300 @@ def test_missing_placeholder_in_response_fails_closed(db_session: Session) -> No
     local_llm = FakeLocalLLMProvider()
     service, _ = _service(writing_provider, local_llm_provider=local_llm)
 
-    result = service.create_draft(matter.id, "formulate_draft", db_session)
+    result = service.create_draft(matter.id, "improve_draft", db_session)
 
     assert result.success is False
     assert len(result.blocked_reasons) > 0
     assert db_session.query(Draft).count() == 0
     assert local_llm.structured_calls == []
+
+
+def test_chat_response_missing_placeholder_is_not_blocked(db_session: Session) -> None:
+    """CHAT-01 (15.09., Chat-Intelligence-Forensik): der reproduzierte
+    Kernfall - EXAKT dieselbe Ausgangslage wie
+    `test_missing_placeholder_in_response_fails_closed` (Aktendokument mit
+    echtem Mandantennamen -> echtes Presidio-Mapping, volle Pipeline aktiv),
+    aber mit purpose="chat_response" statt "formulate_draft": eine
+    natuerliche Antwort ohne jeden Platzhalter darf jetzt NICHT mehr
+    blockiert werden. Vorher wurde genau das blockiert - die direkte
+    Ursache dafuer, dass eine normale Chat-Begruessung ("Hallo") nie
+    beantwortet wurde."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Guten Tag, wie kann ich Ihnen helfen?")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "chat_response", db_session)
+
+    assert result.success is True
+    assert result.draft_text == "Guten Tag, wie kann ich Ihnen helfen?"
+    assert db_session.query(Draft).count() == 1
+
+
+def test_formulate_draft_missing_placeholder_is_not_blocked_when_replying_to_a_message(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (18.09., Flow-Audit "Posteingang -> Antworten", live am
+    echten Server reproduziert): dieselbe Ueberforderung wie CHAT-01, aber
+    fuer einen ECHTEN Antwort-Entwurf (purpose="formulate_draft", NICHT
+    chat_response) - "Antworten" auf eine Posteingang-Nachricht baut den
+    Sachverhalt/die Mappings aus der GESAMTEN Akte, nicht nur der einen
+    Nachricht; eine kurze, korrekte Antwort muss nicht jeden Akte-weiten
+    Platzhalter woertlich enthalten. `message_id` ist das bereits
+    bestehende Signal dafuer, dass dieser Entwurf aus EINER konkreten
+    Nachricht/einem Dokument entstand (siehe app/drafting/service.py::
+    _finish_non_streaming_stream fuer die volle Begruendung)."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document, Message
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    message = Message(matter_id=matter.id, direction="inbound", sender="Erika Mustermann")
+    db_session.add(message)
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Vielen Dank fuer Ihre Nachricht.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id, "formulate_draft", db_session, message_id=message.id
+    )
+
+    assert result.success is True
+    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert db_session.query(Draft).count() == 1
+
+
+def test_formulate_draft_missing_placeholder_is_not_blocked_when_chat_triggered_without_message_id(
+    db_session: Session,
+) -> None:
+    """Erweiterung desselben Fundes (18.09.): "Dokument analysieren"/
+    "Schriftsatz-Entwurf erstellen" auf ein NICHT per E-Mail eingegangenes
+    Dokument (z. B. ueber die "Dokument hochladen"-Funktion) hat KEIN
+    `document.message_id` - ohne das zusaetzliche `chat_triggered`-Signal
+    waere dieser Fall weiterhin betroffen gewesen, siehe app/drafting/
+    service.py::_finish_non_streaming_stream fuer die volle Begruendung."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Vielen Dank fuer Ihre Nachricht.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id, "formulate_draft", db_session, message_id=None, chat_triggered=True
+    )
+
+    assert result.success is True
+    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert db_session.query(Draft).count() == 1
+
+
+def test_formulate_draft_via_schriftsatz_generator_missing_placeholder_is_not_blocked(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND, dritte Eskalation (18.09., Owner-Direktive "CONTINUE
+    AUTONOMOUS PRODUCT COMPLETION", Tiefen-E2E-Test Schriftsatz-Generator,
+    live am echten Server reproduziert): der KANONISCHE Schriftsatz-
+    Generator-Weg (message_id=None, chat_triggered=False - exakt dieser
+    Fall galt bisher als der EINE, fuer den volle Abdeckung noch zwingend
+    war) schlug live mit demselben Konsistenzfehler fehl wie die beiden
+    zuvor behobenen Faelle. Ersetzt den frueheren, jetzt falsifizierten
+    Test `test_formulate_draft_without_message_id_still_requires_full_coverage`
+    (der GENAU dieses Verhalten noch als Pflicht behauptete) - siehe
+    app/drafting/service.py fuer die volle Root-Cause-Begruendung
+    (`prepare_draft_context` baut Mappings fuer JEDEN Zweck identisch aus
+    der gesamten Akte, nicht nur fuer chat-getriggerte Faelle)."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Vielen Dank fuer Ihre Nachricht.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id, "formulate_draft", db_session, message_id=None
+    )
+
+    assert result.success is True
+    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert db_session.query(Draft).count() == 1
+
+
+def test_empty_writing_response_is_blocked_not_persisted_as_empty_draft(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (19.09., live am echten Server reproduziert, ZWEIMAL
+    deterministisch mit identischer Akte/identischem Schriftsatz-Auftrag):
+    ein Claude-Aufruf kann `max_tokens` komplett verbrauchen, ohne
+    sichtbaren finalen Text zu liefern (`writing_result.text == ""`). VOR
+    der `_RELAXED_COVERAGE_PURPOSES`-Lockerung wurde das als Nebeneffekt
+    ueber `check_placeholders_present` erkannt (eine leere Antwort
+    "enthaelt" trivialerweise keinen erwarteten Platzhalter) - mit der
+    Lockerung fuer `formulate_draft` waere ein leerer Entwurf sonst still
+    als `success=True` durchgereicht worden (Verstoss gegen §4 "REAL
+    OBJECTS - NO FAKE UI"). Der neue, purpose-unabhaengige Mindestinhalt-
+    Check in `_finish_non_streaming_stream` faengt das jetzt eigenstaendig
+    ab, siehe app/drafting/service.py."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    writing_provider = FakeClaudeWritingProvider(response_text="")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert any("leer" in reason.lower() for reason in result.blocked_reasons)
+    assert db_session.query(Draft).count() == 0
+
+
+def test_whitespace_only_writing_response_is_also_blocked(db_session: Session) -> None:
+    """Gegenprobe zum Mindestinhalt-Check: reine Leerraum-Antwort ist
+    ebenso wenig ein echter Entwurf wie eine komplett leere - `.strip()`
+    im Check muss auch diesen Fall abfangen."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    writing_provider = FakeClaudeWritingProvider(response_text="   \n\n  ")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+
+
+def test_chat_response_still_blocks_altered_placeholder(db_session: Session) -> None:
+    """Die Manipulations-Pruefung bleibt fuer chat_response unveraendert
+    Pflicht - CHAT-01 schaltet ausschliesslich die
+    Vollstaendigkeitsforderung ab, nicht die tatsaechlich schuetzenden
+    Pruefungen."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_99], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "chat_response", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+    assert local_llm.structured_calls == []
+
+
+def test_chat_response_still_blocks_leaked_original_value(db_session: Session) -> None:
+    """Dieselbe Garantie fuer die dritte Stufe-1-Pruefung: ein geleakter
+    Originalwert bleibt fuer chat_response ein Blocker.
+
+    ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion, 17.09.,
+    reproduziert per DraftingService-Direktaufruf mit echter Presidio-
+    Pseudonymisierung + echtem lokalem LLM): dieser exakte Blockfall - der
+    schwerwiegendste der drei Stufe-1-Pruefungen - landete im Audit-Log
+    bisher unter dem generischen `error_status="response_validation_failed"`
+    UND wurde dem Anwalt als nichtssagendes "Die Anfrage wurde aus
+    Datenschutzgruenden blockiert." angezeigt - nicht von einem beliebigen
+    unbekannten Fehler unterscheidbar. Seit dem Fix (api_logger.py::
+    _BLOCK_CATEGORIES) traegt sowohl das Audit-Log als auch die
+    Anwalts-Meldung die spezifische Kategorie."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import ApiCallLog, Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Guten Tag, wir haben bereits mit Erika Mustermann telefoniert."
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "chat_response", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+    error_logs = db_session.query(ApiCallLog).filter_by(result_status="error").all()
+    assert len(error_logs) == 1
+    assert error_logs[0].error_status == "original_value_leaked"
+    assert "Erika" not in (error_logs[0].error_status or "")
+    assert "Mustermann" not in (error_logs[0].error_status or "")
+
+
+def test_improve_draft_missing_placeholder_still_fails_closed_alongside_formulate_fix(
+    db_session: Session,
+) -> None:
+    """Gegenprobe zum Fix (18.09., angepasst nach der dritten Eskalation -
+    siehe app/drafting/service.py): `require_full_placeholder_coverage`
+    ist jetzt fuer chat_response UND formulate_draft deaktiviert (beide
+    live als Fehlalarm reproduziert), aber der Fail-Closed-Mechanismus
+    selbst bleibt fuer einen NICHT befreiten Zweck (hier: improve_draft,
+    fuer den es bislang keinen Gegenbeweis gibt) unveraendert aktiv -
+    ersetzt den frueheren, jetzt falsifizierten Test
+    `test_formulate_draft_missing_placeholder_still_fails_closed_alongside_chat_fix`."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Guten Tag, wie kann ich Ihnen helfen?")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "improve_draft", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
 
 
 def test_altered_placeholder_in_response_fails_closed(db_session: Session) -> None:

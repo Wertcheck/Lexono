@@ -99,12 +99,15 @@ def test_health_check_uses_fixed_short_timeout_not_the_inference_timeout(
 
 def test_default_timeout_is_bounded_not_ten_minutes() -> None:
     """Phase 3 (§71): frueherer Default war 600s (fuer qwen3:4b
-    dimensioniert) - mit dem neuen, schnelleren Standardmodell
-    (qwen2.5:1.5b, siehe app/config/settings.py) reicht ein deutlich
-    kuerzeres, UI-vertretbares Timeout. Regressionsschutz gegen eine
-    versehentliche Rueckkehr zum alten 600s-Default."""
-    provider = OllamaLocalLLMProvider(base_url="http://localhost:11434", model="qwen2.5:1.5b")
-    assert provider.timeout_seconds == 120.0
+    dimensioniert). ECHTER FUND (Abnahme-Test, 13.09.): der zwischenzeitliche
+    120s-Default reichte nicht fuer `qwen3:8b` (real durch die
+    RecommendationEngine automatisch empfohlen, kein Sonderfall) - 76-114s
+    real gemessen fuer denselben trivialen Prompt, vereinzelt ueber 120s.
+    240s bleibt weiterhin klar unter dem alten 600s-Default (Regressionsschutz
+    gegen eine Rueckkehr zu unbegrenzt langem Haengen), deckt aber den real
+    gemessenen Bereich zuverlaessig ab."""
+    provider = OllamaLocalLLMProvider(base_url="http://localhost:11434", model="qwen3:8b")
+    assert provider.timeout_seconds == 240.0
     assert provider.timeout_seconds < 600.0
 
 
@@ -126,10 +129,21 @@ def test_health_check_unreachable(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_process_returns_result_on_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ECHTER FUND (Performance-Untersuchung, 13.09.): `process()` nutzt
+    jetzt denselben Schema-Constraint wie `generate_structured()` (real
+    gemessen: ~9x schneller fuer denselben Task, siehe dortiger
+    Docstring) - die Fake-Antwort muss deshalb ein JSON-Objekt mit Feld
+    "zusammenfassung" sein, kein roher Freitext mehr."""
+    import json as json_module
+
     monkeypatch.setattr(
         httpx,
         "post",
-        lambda *a, **k: _FakeResponse(json_data={"response": "Kurze lokale Zusammenfassung."}),
+        lambda *a, **k: _FakeResponse(
+            json_data={
+                "response": json_module.dumps({"zusammenfassung": "Kurze lokale Zusammenfassung."})
+            }
+        ),
     )
     provider = _provider()
 
@@ -139,12 +153,22 @@ def test_process_returns_result_on_success(monkeypatch: pytest.MonkeyPatch) -> N
     assert result.model == "qwen3:4b"
 
 
-def test_process_sends_deterministic_temperature(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_process_sends_deterministic_temperature_and_schema_constraint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Erweitert um den Schema-Constraint-Beweis (Performance-Fix, 13.09.):
+    `process()` MUSS jetzt "format"+"/no_think" senden - ohne Constraint
+    braucht dasselbe Modell fuer denselben Task real ~9x laenger (siehe
+    Docstring von `process()`)."""
+    import json as json_module
+
     captured = {}
 
     def _fake_post(url, *, json, timeout):
         captured["json"] = json
-        return _FakeResponse(json_data={"response": "Ok."})
+        return _FakeResponse(
+            json_data={"response": json_module.dumps({"zusammenfassung": "Ok."})}
+        )
 
     monkeypatch.setattr(httpx, "post", _fake_post)
     provider = _provider()
@@ -153,6 +177,12 @@ def test_process_sends_deterministic_temperature(monkeypatch: pytest.MonkeyPatch
 
     assert captured["json"]["options"]["temperature"] == 0.0
     assert captured["json"]["model"] == "qwen3:4b"
+    assert captured["json"]["format"] == {
+        "type": "object",
+        "properties": {"zusammenfassung": {"type": "string"}},
+        "required": ["zusammenfassung"],
+    }
+    assert captured["json"]["prompt"].startswith("/no_think")
 
 
 def test_process_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -193,6 +223,80 @@ def test_process_raises_on_missing_response_field(monkeypatch: pytest.MonkeyPatc
 
     with pytest.raises(LocalLLMUnavailableError):
         provider.process(_payload())
+
+
+def test_local_llm_system_prompt_example_does_not_match_real_placeholder_pattern() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): der System-Prompt fuer die
+    lokale Vorabanalyse nannte als Beispiel-Syntax "[MANDANT_01]" - exakt
+    das Muster echter Platzhalter (app/privacy/security_check.py::
+    _PLACEHOLDER_TOKEN_PATTERN). "Thinking"-Modelle (z. B. qwen3) wiederholen
+    Instruktionen haeufig woertlich in ihrer Reasoning-Ausgabe, die als
+    Argumentationspunkt an Claude weitergereicht wird - das Beispiel tauchte
+    dadurch real als vermeintlicher Platzhalter in der Antwort auf und liess
+    die deterministische Platzhalter-Integritaetspruefung faelschlich
+    fehlschlagen, obwohl nie eine echte Entitaet dahinterstand."""
+    import re
+
+    from app.ai_providers.ollama_provider import _LOCAL_LLM_SYSTEM_PROMPT
+
+    real_placeholder_pattern = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d{2}\]")
+    assert not real_placeholder_pattern.search(_LOCAL_LLM_SYSTEM_PROMPT)
+
+
+def test_local_llm_system_prompt_forbids_inventing_facts_for_empty_sachverhalt() -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09., Performance-Untersuchung):
+    nachdem `process()` auf das `format`-Schema-Constraint umgestellt wurde
+    (~9x schneller, siehe `process()`-Docstring), erfand das Modell bei
+    einem praktisch leeren Sachverhalt ("Akte: Schnellentwurf 2026-09-13")
+    wiederholt VOELLIG FIKTIVE Fallgeschichten (u. a. eine erfundene
+    Veranstaltung mit Kosten, dann eine erfundene Steuerpruefung) - ein
+    direkter Verstoss gegen die nicht verhandelbare Regel "Niemals
+    Rechtsquellen, Fundstellen oder Zitate erfinden" (CLAUDE.md), hier
+    uebertragen auf erfundene SACHVERHALTE statt Rechtsquellen. Real
+    behoben durch eine explizite Anweisung im System-Prompt, bei fehlendem
+    Sachverhalt woertlich "Kein inhaltlicher Sachverhalt vorhanden." zu
+    antworten statt etwas zu erfinden - verifiziert durch 3 wiederholte
+    reale Ollama-Aufrufe mit dem exakten Produktions-Prompt (siehe
+    DECISIONS.md), hier als dauerhafte Regressionssicherung auf den
+    Prompt-Text selbst."""
+    from app.ai_providers.ollama_provider import _LOCAL_LLM_SYSTEM_PROMPT
+
+    assert "ERFINDE" in _LOCAL_LLM_SYSTEM_PROMPT
+    assert "Kein inhaltlicher Sachverhalt vorhanden" in _LOCAL_LLM_SYSTEM_PROMPT
+
+
+def test_process_falls_back_to_thinking_field_when_response_is_empty(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ECHTER FUND (realer Abnahme-Test, 13.09., mit dem tatsaechlich
+    empfohlenen Modell `qwen3:8b` reproduziert): dieselbe, bei
+    `generate_structured()` bereits bekannte Ollama-Eigenheit
+    ("thinking"-Modelle legen ihre Ausgabe manchmal ins `thinking`- statt
+    ins `response`-Feld) betraf bisher auch die einfache `process()`-
+    Variante - jede Chat-Nachricht schlug bei aktivierter lokaler KI
+    fehl, sobald `response` leer war, obwohl `thinking` eine echte Antwort
+    enthielt. Seit `process()` selbst schema-constrained ist (Performance-
+    Fix, 13.09.), muss das `thinking`-Feld ein JSON-Objekt enthalten, kein
+    Freitext mehr."""
+    import json as json_module
+
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *a, **k: _FakeResponse(
+            json_data={
+                "response": "",
+                "thinking": json_module.dumps(
+                    {"zusammenfassung": "Der Sachverhalt betrifft eine Mietsache."}
+                ),
+            }
+        ),
+    )
+    provider = _provider()
+
+    result = provider.process(_payload())
+
+    assert result.text == "Der Sachverhalt betrifft eine Mietsache."
 
 
 def test_process_never_sees_the_original_unpseudonymized_text() -> None:
@@ -273,6 +377,31 @@ def test_generate_structured_sends_schema_and_no_think_prefix(
     assert captured["json"]["prompt"].startswith("/no_think\n")
     assert "[MANDANT_01]" in captured["json"]["prompt"]
     assert captured["json"]["options"]["temperature"] == 0.0
+
+
+def test_generate_structured_sends_extended_keep_alive(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ECHTER FUND (Streaming-Architekturentscheidung, Folgeuntersuchung,
+    13.09.): real gegen die echte, installierte Produktionsinstanz
+    gemessen - Ollamas STANDARD-`keep_alive` (5 Minuten) entlaedt
+    `qwen3:8b` zwischen realistischen Kanzlei-Arbeitspausen aus dem
+    Speicher; ein danach gesendeter Chat mit Aktendokument/PII durchlaeuft
+    dann erneut den vollen Kaltstart (real isoliert gemessen: 144.67s
+    KALT vs. 6.79-10.26s WARM). `generate_structured()` setzt deshalb
+    explizit ein laengeres `keep_alive` (siehe Moduldocstring dort fuer
+    die volle Herleitung + reale `/api/ps`-Verifikation)."""
+    captured = {}
+
+    def _fake_post(url, *, json, timeout):
+        captured["json"] = json
+        return _FakeResponse(json_data={"response": '{"passed": true, "issues": []}'})
+
+    monkeypatch.setattr(httpx, "post", _fake_post)
+    provider = _provider()
+    schema = {"type": "object", "properties": {"passed": {"type": "boolean"}}}
+
+    provider.generate_structured("Testfrage.", schema)
+
+    assert captured["json"]["keep_alive"] == "30m"
 
 
 def test_generate_structured_raises_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:

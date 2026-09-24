@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.ai_providers.claude_writing_provider import WRITING_SYSTEM_PROMPT
+from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
 from app.promptlayer.builder import SYSTEM_RULES, SYSTEM_RULES_VERSION
 from app.review.provider import REVIEW_SYSTEM_PROMPT
 
@@ -47,10 +47,21 @@ SYSTEM_PROMPT_REFERENCES: list[SystemPromptReference] = [
     SystemPromptReference(
         name="Schreib-Assistent (Entwurfserstellung)",
         description=(
-            "Systemprompt für die eigentliche Textproduktion bei Claude - siehe "
-            "app/ai_providers/claude_writing_provider.py."
+            "Systemprompt für die eigentliche Textproduktion bei Claude, verwendet für "
+            "Drafting-Zwecke (Schriftsatz-Generator, explizite Schriftsatz-/"
+            "Entwurfsanfragen im Chat) - siehe app/ai_providers/claude_writing_provider.py."
         ),
         content=WRITING_SYSTEM_PROMPT,
+    ),
+    SystemPromptReference(
+        name="Chat-Assistent (allgemeine Anfragen)",
+        description=(
+            "Systemprompt für den zentralen Chat bei normalen Fragen/Analysen/"
+            "Textbearbeitung (Zweck \"chat_response\", Default - Drafting nur bei "
+            "ausdrücklicher Aufforderung) - siehe app/chat/service.py::"
+            "_looks_like_drafting_request und app/ai_providers/claude_writing_provider.py."
+        ),
+        content=CHAT_SYSTEM_PROMPT,
     ),
     SystemPromptReference(
         name="Review-Engine (Entwurfsprüfung)",

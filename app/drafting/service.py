@@ -19,6 +19,36 @@ Ablauf:
    Verfügbarkeit). Ohne injizierten Provider (Standard - siehe
    app/web/service_factory.py, `settings.local_ai_enabled=False`)
    unverändertes Verhalten wie vor §65.
+
+   RISIKOBASIERTE AUSNAHME (P0 Performance-Follow-up, 13.09., PRÄZISIERT
+   15.09. als CHAT-04 - real evidenzbasiert entschieden, siehe
+   DECISIONS.md fuer die volle Herleitung beider Schritte): Sinn dieses
+   Schritts ist laut LEXONO_MASTER_PRODUCT.md §4, dass "the actual
+   sensitive document/context reasoning" lokal bleibt, BEVOR irgendetwas
+   an Claude geht. Fuer eine einfache Chat-Nachricht OHNE Aktendokument,
+   bei der jede von Presidio erkannte Entitaet bereits eine der Akte
+   strukturell bekannte Person ist (Mandant/Gegner/Anwalt/Gericht - siehe
+   `RuleBasedLocalAIProvider._build_known_entities`), existiert kein
+   "sensibler Dokument-/Aktenkontext", den dieser Schritt schuetzen
+   koennte: der Sachverhalt ist ohne Dokument exakt `"Akte: {Titel}"`, und
+   ein bereits bekannter Name darin ist keine neue, ungeschuetzte
+   Information. ECHTER FUND (15.09.): die urspruengliche Bedingung
+   "mappings leer" griff in der Praxis fast nie, weil ein realer
+   Aktentitel fast immer den Mandantennamen enthaelt (z. B. "Muster, Anna
+   offen 1") - real gemessen 10,8 s (warm) / 48,1 s (cold) allein fuer
+   die dadurch erzwungene Vorabanalyse einer blossen Begruessung. Taucht
+   dagegen IRGENDEINE Entitaet auf, die NICHT zu den bekannten Namen
+   dieser Akte gehoert (neuer Name, Telefonnummer, IBAN - alles, was neu
+   in die Chatnachricht getippt worden sein koennte), bleibt die volle
+   Pipeline Pflicht. Presidio/Pseudonymisierung UND die DETERMINISTISCHE
+   Platzhalter-Integritaetspruefung (Stufe 1, siehe
+   response_validation.py) bleiben in JEDEM Fall PFLICHT und
+   unveraendert - nur die LLM-gestuetzten Schritte (lokale Vorabanalyse +
+   Stufe 2 der Antwortvalidierung) werden uebersprungen, NIE die
+   Pseudonymisierung selbst. Sobald ein Aktendokument beteiligt ist ODER
+   eine unbekannte Entitaet gefunden wird ODER es sich um einen
+   expliziten Schreibauftrag handelt, bleibt die VOLLE Pipeline
+   unveraendert PFLICHT - siehe `_should_skip_llm_privacy_layers`.
 6. Bei Erfolg: `ClaudeWritingProvider` aufrufen, protokollieren
    (Schritt 5), lokal rekonstruieren, als `Draft` persistieren.
 7. Unsicherheiten ergänzen (z. B. unbestätigte Fristen in der Akte).
@@ -31,6 +61,9 @@ vorbehalten.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+from dataclasses import dataclass
+
 from sqlalchemy.orm import Session
 
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
@@ -42,14 +75,202 @@ from app.drafting.response_validation import validate_claude_response
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
-from app.privacy.api_logger import ApiCallLogger
+from app.observability.perf_trace import PerfTrace
+from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
 from app.privacy.gateway import ClaudePrivacyGateway
+from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
+from app.privacy.security_check import check_response_placeholder_integrity
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
 
 _LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX = (
     "Lokale Vorabanalyse (automatisiert, Ollama, keine rechtliche Bewertung): "
 )
+
+# Muss mit app/chat/service.py::_PURPOSE_CHAT übereinstimmen (dort auch
+# in ALLOWED_PURPOSES, security_check.py, allowlisted) - bewusst als
+# String-Literal hier dupliziert statt importiert, um KEINE Abhängigkeit
+# von app/chat auf app/drafting einzuführen (Schichtenrichtung bliebe
+# sonst verkehrt: drafting ist die tiefere, generischere Schicht).
+_CHAT_PURPOSE = "chat_response"
+
+# ECHTER FUND, ROOT CAUSE FUER die purpose-gebundene Lockerung von
+# `require_full_placeholder_coverage` weiter unten in
+# `_finish_non_streaming_stream` (18.09., Owner-Direktive "CONTINUE
+# AUTONOMOUS PRODUCT COMPLETION", Tiefen-E2E-Test Schriftsatz-Generator,
+# live am echten Server reproduziert): `prepare_draft_context` (siehe
+# `_prepare_and_gate` unten) baut Sachverhalt/Mappings fuer JEDEN Zweck
+# IDENTISCH aus der GESAMTEN Akte (bis zu `_MAX_DOCUMENTS_IN_SACHVERHALT`
+# Dokumenten). Ein fokussierter, korrekter Text zu EINEM konkreten
+# Anliegen muss nicht JEDE in der Akte ueberhaupt vorkommende Person/
+# jeden Ort/jedes Datum woertlich erwaehnen, nur weil es irgendwo in
+# einem der Akte-Dokumente pseudonymisiert wurde.
+#
+# Live reproduziert bisher NUR fuer zwei Zwecke: `chat_response` (CHAT-01,
+# 15.09.) und `formulate_draft` (18.09., sowohl chat-getriggert als auch
+# der kanonische Schriftsatz-Generator-Weg). Die Lockerung gilt deshalb
+# BEWUSST NUR fuer diese beiden Zwecke (`_RELAXED_COVERAGE_PURPOSES`
+# unten) - fuer `improve_draft`/`correct_draft`/`optimize_style`/
+# `improve_clarity`/`apply_house_style`/`transform_content_to_letter`/
+# `review_draft` gibt es KEINE Live-Evidenz fuer denselben Fehlalarm, sie
+# bleiben daher unveraendert bei voller Abdeckungspflicht (Vorgabe:
+# "Keine Spekulation ueber weitere Purposes" - erst bei konkretem
+# Live-Fund fuer einen dieser Zwecke waere eine Erweiterung gerechtfertigt).
+#
+# Die beiden TATSAECHLICH schuetzenden Pruefungen (Platzhalter-
+# Manipulation/erfundene Tokens, Originalwert-Leck - siehe
+# check_response_placeholder_integrity) bleiben davon UNBERUEHRT fuer
+# JEDEN Zweck weiterhin zwingend aktiv - das hier ist ausschliesslich
+# eine Vollstaendigkeits-/Qualitaetsheuristik, keine Sicherheitsschranke,
+# und betrifft NICHT das separate, bewusst weiterhin strenge ausgehende
+# Final Payload Gate (`check_payload_placeholder_integrity`).
+_RELAXED_COVERAGE_PURPOSES = frozenset({_CHAT_PURPOSE, "formulate_draft"})
+
+# P1-Fund (14.09., Performance-Benchmark Sec12-13): fuer JEDEN Aufruf mit
+# Dokument-/Aktenkontext (Aktenanalyse, Schriftsatz) lief bisher 80-105+
+# Sekunden lang KEIN sichtbares Feedback, weil `_finish_non_streaming` eine
+# gewoehnliche, blockierende Funktion war - der bestehende risikobasierte
+# Fast Path liefert echte Text-Deltas NUR fuer eine PII-/dokumentfreie
+# Chat-Nachricht. Bewusst NICHT geloest durch echtes Text-Streaming des
+# vollen Pfads (waere ein eigenstaendiges, groesseres Architekturthema -
+# lokale Vorabanalyse UND Stufe-2-Validierung sind nicht trivial
+# "streambar", ohne die Fail-Closed-Garantien zu gefaehrden), sondern durch
+# genau die in OPEN_ISSUES.md selbst vorgeschlagene risikoaermere
+# Zwischenloesung: Status-Ereignisse VOR jedem bereits bestehenden
+# `trace.step(...)`-Block, aus einer festen, inhaltsfreien Vokabel-Liste -
+# IDENTISCHES Prinzip wie `_BLOCK_CATEGORIES` (api_logger.py): niemals
+# Sachverhalt/Text, nur ein bekannter Fortschritts-Code. Aendert NICHTS an
+# der eigentlichen Kontrolllogik (siehe `_finish_non_streaming_stream` -
+# reiner 1:1-Umbau von `return` auf `yield ... ; return`, jede
+# Fail-Closed-Verzweigung bleibt exakt an derselben Stelle bestehen).
+_STEP_STATUS_LABELS: dict[str, str] = {
+    "local_ai_preanalysis": "Lokale Vorabanalyse läuft…",
+    "local_ai_preanalysis_skipped": "Lokale Vorabanalyse läuft…",
+    "claude": "Anfrage wird an Claude gesendet…",
+    "validation": "Antwort wird lokal geprüft…",
+    "reconstruction": "Antwort wird zusammengesetzt…",
+}
+
+
+def _should_skip_llm_privacy_layers(
+    *,
+    purpose: str,
+    has_document_context: bool,
+    mappings: list,
+    known_entities: dict[str, list[str]] | None = None,
+) -> bool:
+    """P0 Performance-Follow-up (13.09.), PRÄZISIERT 15.09. (CHAT-04):
+    entscheidet, ob die LLM-gestuetzten §65-Schritte (lokale Vorabanalyse +
+    Stufe 2 der Antwortvalidierung) fuer DIESE Anfrage tatsaechlich
+    sensiblen Dokument-/Aktenkontext schuetzen wuerden - siehe
+    Moduldocstring Schritt 5 fuer die volle Herleitung aus
+    LEXONO_MASTER_PRODUCT.md §4.
+
+    Bewusst KONSERVATIV (alle Bedingungen muessen zutreffen, sonst bleibt
+    die volle Pipeline Pflicht):
+    - `purpose == "chat_response"`: kein expliziter Schreibauftrag (siehe
+      app/chat/service.py::_looks_like_drafting_request) - ein
+      Schriftsatz/Entwurf bleibt IMMER auf der vollen Pipeline.
+    - `not has_document_context`: kein Aktendokument ist in den
+      Sachverhalt eingeflossen (RuleBasedLocalAIProvider) - verlaesst
+      sich NICHT allein auf Presidios Entitaetserkennung, die ein
+      Dokument enthalten koennte, dessen Sensibilitaet Presidio nicht
+      als benanntes PII erkennt.
+    - JEDE gefundene Entitaet ist eine BEKANNTE, der Akte bereits
+      strukturell zugeordnete Entitaet (Mandant/Gegner/Anwalt/Gericht,
+      siehe `RuleBasedLocalAIProvider._build_known_entities`) - PRÄZISIERUNG
+      der urspruenglichen Bedingung `not mappings`.
+
+    ECHTER FUND (Chat-Intelligence-Forensik, 15.09.): `not mappings` schlug
+    in der Praxis fast IMMER fehl, weil der Sachverhalt ohne Dokument
+    exakt `"Akte: {matter.title}"` ist (siehe
+    RuleBasedLocalAIProvider._build_sachverhalt) und ein realer Aktentitel
+    ("Muster, Anna offen 1") fast immer den Mandantennamen enthaelt -
+    Presidio pseudonymisiert ihn also praktisch immer, auch wenn die
+    eigentliche Chatnachricht ("Hallo") nichts Sensibles enthaelt. Real
+    gemessen: 10,8 s (warm) / 48,1 s (cold) allein fuer die dadurch
+    erzwungene lokale Vorabanalyse einer Begruessung.
+
+    WARUM DIE PRÄZISIERUNG SICHER IST (nicht nur schneller): der Mandanten-/
+    Gegner-/Anwalts-/Gerichtsname ist bereits STRUKTURELL Teil der Akte -
+    er stammt aus `Client.name`/`Party.name`, nicht aus neu getipptem
+    Freitext, und wird ohnehin bereits zuverlaessig pseudonymisiert
+    (`known_entities` existiert eigens dafuer, siehe der "Frau Müller"-Fix
+    in `_build_known_entities`). Die ursprünglich befuerchtete Gefahr laut
+    Moduldocstring ("Dokumentinhalt, den Presidio nicht als PII erkennt")
+    bleibt durch `not has_document_context` VOLLSTAENDIG unveraendert
+    abgedeckt - das betraf nie den Aktentitel. Taucht dagegen IRGENDEINE
+    Entitaet auf, die NICHT zu den bekannten Namen dieser Akte gehoert (ein
+    neuer Name, eine Telefonnummer, eine IBAN - alles, was der Anwalt neu
+    in die Chatnachricht getippt haben koennte), bleibt die volle Pipeline
+    Pflicht - GENAU der Fall, den dieser Schritt tatsaechlich schuetzen
+    soll. Der Abgleich ist bewusst EXAKT (kein Fuzzy-Match): `known_entities`
+    wird von `detect_known_entities` (app/privacy/detectors.py) per exaktem
+    Teilstring-Pattern gesucht, der resultierende `original_value` ist
+    deshalb IMMER exakt einer der bekannten Namen selbst - ein
+    unpraeziser/verpasster Treffer faellt folglich IMMER auf die
+    langsamere, volle Pipeline zurueck, nie auf den schnellen Pfad
+    (sicherer Fehlerfall in beide Richtungen).
+
+    `known_entities=None` (Aufrufer liefert es nicht) verhaelt sich bei
+    nicht-leeren `mappings` bewusst konservativ (kein Skip) - ohne dieses
+    Wissen laesst sich Sicherheit nicht nachweisen.
+
+    Presidio/Pseudonymisierung und die deterministische Platzhalter-
+    Integritaetspruefung (Stufe 1) sind von dieser Funktion NICHT
+    betroffen - sie bleiben immer Pflicht, siehe Aufrufer."""
+    if purpose != _CHAT_PURPOSE or has_document_context:
+        return False
+    if not mappings:
+        return True
+    if not known_entities:
+        return False
+    known_names = {
+        name.strip().lower()
+        for names in known_entities.values()
+        for name in names
+        if name and name.strip()
+    }
+    return all((m.original_value or "").strip().lower() in known_names for m in mappings)
+
+
+@dataclass
+class _PreparedRequest:
+    """Interner Zwischenzustand nach dem gemeinsamen Vorbereitungs-/Gate-
+    Teil von `create_draft`/`create_draft_stream` (13.09., Streaming-
+    Architekturentscheidung - siehe DECISIONS.md) - EINMAL berechnet
+    (Aktenauflösung, Recherche, Privacy Gateway, Kostenkontrolle), von
+    BEIDEN Methoden weiterverwendet, damit `create_draft_stream` für den
+    nicht-streaming-faehigen Fall NICHT denselben teuren Presidio-/
+    Recherche-Durchlauf ein zweites Mal ausführen muss."""
+
+    matter_id: str
+    payload: ClaudeRequestPayload
+    gateway_result: GatewayResult
+    skip_llm_privacy_layers: bool
+    source_list: list[SourceReference]
+    knowledge_items_used: list[KnowledgeItemReference]
+    open_review_points: list[str]
+    message_id: str | None = None
+    chat_triggered: bool = False
+
+
+@dataclass(frozen=True)
+class DraftStreamEvent:
+    """Ein Ereignis aus `DraftingService.create_draft_stream` - eines von
+    DREI Arten: ein inkrementelles Text-Delta (`kind="delta"`, bereits
+    lokal rekonstruiert, NIE ein Platzhalter-Mapping), ein
+    Fortschritts-Hinweis (`kind="status"`, siehe `_STEP_STATUS_LABELS` -
+    IMMER eine feste, inhaltsfreie Vokabel, niemals Sachverhalt/Text -
+    KEIN Ersatz fuer "result", rein informativ, beliebig viele pro Aufruf
+    moeglich) oder das abschliessende Gesamtergebnis (`kind="result"`,
+    identische Form wie der Rückgabewert von `create_draft` - GENAU EIN
+    "result"-Ereignis pro Aufruf, immer als letztes)."""
+
+    kind: str
+    text: str = ""
+    status: str = ""
+    result: DraftingResult | None = None
 
 
 class DraftingService:
@@ -91,6 +312,10 @@ class DraftingService:
         actor: str = "system",
         new_matter_title: str | None = None,
         new_client_name: str | None = None,
+        trace: PerfTrace | None = None,
+        gespraechsverlauf: list[str] | None = None,
+        message_id: str | None = None,
+        chat_triggered: bool = False,
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
 
@@ -110,6 +335,13 @@ class DraftingService:
         Durchlauf wie Sachverhalt/Quellen/Vorlage, GENAU EINMAL, bevor
         irgendetwas Claude erreicht.
 
+        `trace` (Performance-Root-Cause-Run, 13.09.): optionale
+        `PerfTrace`-Instanz (app/observability/perf_trace.py) - misst nur
+        die bereits bestehenden Schritte (retrieval/privacy_gateway/
+        local_ai_preanalysis/claude/validation/reconstruction), erfindet
+        keine neuen. `None` (Standard, alle bestehenden Aufrufer)
+        erzeugt intern automatisch eine neue - unverändertes Verhalten.
+
         `matter_id=None` (Schriftsatz-Generator, 20.08.): statt einen Fehler
         zu werfen, wird automatisch eine neue Akte (mit einem ebenfalls neu
         angelegten Mandanten) angelegt, DAMIT dieser Entwurf überhaupt
@@ -120,7 +352,196 @@ class DraftingService:
         `matter_id`, bevor die bestehende Logik beginnt. Die Anlage selbst
         wird als eigenes `AuditEvent` festgehalten (nachvollziehbar, siehe
         CLAUDE.md-Grundregel), unabhängig vom Erfolg/Misserfolg der
-        anschließenden Entwurfserstellung."""
+        anschließenden Entwurfserstellung.
+
+        `gespraechsverlauf` (CHAT-02, 15.09.): optionale, bereits als
+        "Rolle: Text"-Zeilen formatierte Liste vorheriger Chat-Turns (siehe
+        app/chat/service.py::ChatService._build_history für Aufbau/Budget-
+        Logik) - durchläuft hier GENAU DENSELBEN Privacy-Gateway-Durchlauf
+        wie jedes andere Feld, bevor irgendetwas Claude erreicht.
+        `None`/leere Liste (Standard, alle bisherigen Aufrufer -
+        Schriftsatz-Generator, anwaltliche Anweisungen) = unverändertes
+        Verhalten wie vor CHAT-02.
+
+        `message_id` (17.09., Overnight-Direktive §6/§7 "Dokumente/Workflows
+        verbinden"): optionale ID der `Message`, auf die dieser Entwurf
+        antwortet (z. B. "Antworten" auf eine Posteingang-Nachricht, siehe
+        app/web/chat_router.py::start_conversation_from_message) - wird NUR
+        unveraendert an `Draft.message_id` durchgereicht (`create_new_draft_
+        version` unterstuetzt dieses Feld bereits laenger, siehe app/
+        drafting/versioning.py, war bisher aber von KEINEM Aufrufer
+        tatsaechlich verdrahtet). Speist den bereits bestehenden "Original
+        links / Entwurf rechts"-Split in `draft_detail.html`, der ohne
+        dieses Feld strukturell nie eine Original-Nachricht anzeigen konnte.
+        `None` (Standard, alle bisherigen Aufrufer) = unveraendertes
+        Verhalten (kein Original-Bezug, wie bisher immer).
+
+        `chat_triggered` (18.09., Flow-Audit "Posteingang -> Antworten",
+        live am echten Server reproduziert - siehe OPEN_ISSUES.md fuer die
+        volle Herleitung): `True` NUR wenn `ChatService.send_message`/
+        `-_stream` der Aufrufer ist (Chat-Freitext, "Zusammenfassen"/
+        "Antworten" auf eine Nachricht, "Dokument analysieren"/
+        "Schriftsatz-Entwurf erstellen" auf ein Dokument) - NIE von
+        `schriftsatz_router.py` (Schriftsatz-Generator, der den vollen
+        Akte-Kontext tatsaechlich ausschoepfen soll). Steuert zusammen mit
+        `message_id` (s.o.), ob `_finish_non_streaming_stream` die volle
+        Platzhalter-Abdeckung verlangt - ein Chat-getriggerter Entwurf ist
+        strukturell immer eine Antwort auf EINE Nachricht/EIN Dokument/EINE
+        Chat-Anfrage, nie ein eigenstaendiger, das gesamte Aktenwissen
+        ausschoepfender Schriftsatz."""
+        trace = trace or PerfTrace()
+        prepared = self._prepare_and_gate(
+            matter_id,
+            purpose,
+            db,
+            stil=stil,
+            vorlage=vorlage,
+            attorney_anmerkungen=attorney_anmerkungen,
+            previous_draft=previous_draft,
+            actor=actor,
+            new_matter_title=new_matter_title,
+            new_client_name=new_client_name,
+            trace=trace,
+            gespraechsverlauf=gespraechsverlauf,
+            message_id=message_id,
+            chat_triggered=chat_triggered,
+        )
+        if isinstance(prepared, DraftingResult):
+            return prepared
+        return self._finish_non_streaming(
+            prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
+        )
+
+    def create_draft_stream(
+        self,
+        matter_id: str | None,
+        purpose: str,
+        db: Session,
+        *,
+        stil: str | None = None,
+        vorlage: str | None = None,
+        attorney_anmerkungen: str | None = None,
+        previous_draft: Draft | None = None,
+        actor: str = "system",
+        new_matter_title: str | None = None,
+        new_client_name: str | None = None,
+        trace: PerfTrace | None = None,
+        gespraechsverlauf: list[str] | None = None,
+        message_id: str | None = None,
+        chat_triggered: bool = False,
+    ) -> Generator[DraftStreamEvent, None, None]:
+        """Streaming-Variante von `create_draft` (13.09., Streaming-
+        Architekturentscheidung - siehe DECISIONS.md fuer die volle
+        Herleitung). Liefert ECHTE inkrementelle Text-Deltas (TTFR-Gewinn)
+        NUR fuer den bereits etablierten risikobasierten Fast Path
+        (`_should_skip_llm_privacy_layers` = True, d. h. `purpose=
+        "chat_response"`, kein Aktendokument, UND jede von Presidio in der
+        GESAMTEN Payload gefundene Entitaet ist bereits eine der Akte
+        bekannte Person - siehe CHAT-04, 15.09.: `gateway_result.mappings`
+        ist in diesem Fall NICHT mehr zwingend leer, jeder darin
+        enthaltene Treffer ist aber ein bereits bekannter Name, kein neu
+        hinzugekommener).
+
+        JEDE Anfrage, die die volle Pipeline braucht (Dokumentkontext,
+        erkanntes PII, oder ein expliziter Schreibauftrag), wird
+        stattdessen UNVERAENDERT ueber `_finish_non_streaming` (= derselbe
+        Code wie `create_draft`) verarbeitet und als EIN einziges
+        "delta" + "result"-Ereignis ausgeliefert - kein TTFR-Gewinn fuer
+        diesen Fall, aber auch KEINE Abkuerzung/Aenderung der bestehenden
+        Validierungs-/Fail-Closed-Garantien (deterministische UND
+        semantische Antwortvalidierung bleiben fuer diesen Fall exakt wie
+        vor der Streaming-Einfuehrung Pflicht).
+
+        Sicherheitsmodell fuer den ECHTEN Streaming-Pfad (mappings
+        garantiert leer): das Platzhalter-Mapping verlaesst den Server nie
+        (es ist ohnehin leer), die Rekonstruktion bleibt vollstaendig
+        serverseitig (hier ein reiner No-Op, siehe reconstruct_response),
+        und die deterministische Platzhalter-Integritaetspruefung (Stufe 1,
+        siehe app/privacy/security_check.py::check_response_placeholder_integrity)
+        laeuft NACH JEDEM Delta auf dem bisher akkumulierten Text - findet
+        sie ein unerwartetes platzhalterfoermiges Token (z. B. weil Claude
+        entgegen der Systemanweisung eines erfindet), wird SOFORT
+        abgebrochen (kein weiteres Delta, Nachricht wird als blockiert
+        persistiert) - strenger/reaktionsschneller als die bisherige
+        Pruefung erst am Gesamttext, nicht schwaecher. Stufe 2 (semantische
+        Pruefung) ist fuer diesen Fall bereits seit dem P0
+        Performance-Follow-up (13.09.) uebersprungen (siehe
+        `_should_skip_llm_privacy_layers`), unveraendert durch Streaming."""
+        trace = trace or PerfTrace()
+        prepared = self._prepare_and_gate(
+            matter_id,
+            purpose,
+            db,
+            stil=stil,
+            vorlage=vorlage,
+            attorney_anmerkungen=attorney_anmerkungen,
+            previous_draft=previous_draft,
+            actor=actor,
+            new_matter_title=new_matter_title,
+            new_client_name=new_client_name,
+            trace=trace,
+            gespraechsverlauf=gespraechsverlauf,
+            message_id=message_id,
+            chat_triggered=chat_triggered,
+        )
+        if isinstance(prepared, DraftingResult):
+            yield DraftStreamEvent(kind="result", result=prepared)
+            return
+
+        streaming_eligible = prepared.skip_llm_privacy_layers and hasattr(
+            self.writing_provider, "write_stream"
+        )
+        if not streaming_eligible:
+            # P1 Performance-Feedback-Follow-up (17.09.): `_finish_non_
+            # streaming_stream` liefert jetzt selbst "status"-Zwischen-
+            # ereignisse (siehe dortiger Docstring/`_STEP_STATUS_LABELS`) -
+            # einfach durchreichen. Das abschliessende "delta"+"result"-Paar
+            # bleibt UNVERAENDERT identisch zum bisherigen Verhalten (vor
+            # diesem Umbau kam nur genau dieses eine Paar, ohne jeden
+            # Zwischenschritt).
+            for event in self._finish_non_streaming_stream(
+                prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
+            ):
+                if event.kind != "result":
+                    yield event
+                    continue
+                result = event.result
+                assert result is not None
+                if result.success and result.draft_text:
+                    yield DraftStreamEvent(kind="delta", text=result.draft_text)
+                yield DraftStreamEvent(kind="result", result=result)
+            return
+
+        yield from self._stream_from_writing_provider(
+            prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
+        )
+
+    def _prepare_and_gate(
+        self,
+        matter_id: str | None,
+        purpose: str,
+        db: Session,
+        *,
+        stil: str | None,
+        vorlage: str | None,
+        attorney_anmerkungen: str | None,
+        previous_draft: Draft | None,
+        actor: str,
+        new_matter_title: str | None,
+        new_client_name: str | None,
+        trace: PerfTrace,
+        gespraechsverlauf: list[str] | None = None,
+        message_id: str | None = None,
+        chat_triggered: bool = False,
+    ) -> DraftingResult | _PreparedRequest:
+        """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
+        `create_draft_stream` (Aktenauflösung, Recherche, Privacy Gateway,
+        Kostenkontrolle) - EINMAL ausgefuehrt, von BEIDEN Methoden
+        weiterverwendet (siehe `_PreparedRequest`-Docstring). Ein
+        zurueckgegebenes `DraftingResult` bedeutet: bereits an dieser
+        Stelle blockiert (Datenschutz-Gate oder Budget) - der Aufrufer
+        gibt es unveraendert zurueck bzw. als einziges Stream-Ereignis
+        weiter."""
         if not matter_id:
             matter = create_quick_matter(
                 db, title=new_matter_title, client_name=new_client_name, actor=actor
@@ -138,21 +559,24 @@ class DraftingService:
 
         preparation = self.local_ai.prepare_draft_context(matter_id, db)
 
-        source_list, quellen_texts, open_review_points = self._gather_legal_sources(
-            matter, db, actor=actor
-        )
-        knowledge_items_used, knowledge_texts = self._gather_knowledge_items(matter, db)
+        with trace.step("retrieval"):
+            source_list, quellen_texts, open_review_points = self._gather_legal_sources(
+                matter, db, actor=actor
+            )
+            knowledge_items_used, knowledge_texts = self._gather_knowledge_items(matter, db)
 
-        gateway_result = self.gateway.prepare_request(
-            purpose=purpose,
-            sachverhalt=preparation.sachverhalt,
-            argumentationspunkte=preparation.argumentationspunkte,
-            quellenverweise=quellen_texts + knowledge_texts,
-            stil=stil,
-            vorlage=vorlage,
-            anwaltliche_anmerkungen=attorney_anmerkungen,
-            known_entities=preparation.known_entities,
-        )
+        with trace.step("privacy_gateway"):
+            gateway_result = self.gateway.prepare_request(
+                purpose=purpose,
+                sachverhalt=preparation.sachverhalt,
+                argumentationspunkte=preparation.argumentationspunkte,
+                quellenverweise=quellen_texts + knowledge_texts,
+                stil=stil,
+                vorlage=vorlage,
+                anwaltliche_anmerkungen=attorney_anmerkungen,
+                known_entities=preparation.known_entities,
+                gespraechsverlauf=gespraechsverlauf,
+            )
 
         if not gateway_result.allowed:
             self.api_logger.log_blocked(
@@ -187,15 +611,109 @@ class DraftingService:
                 open_review_points=open_review_points,
             )
 
-        payload = gateway_result.payload
+        # P0 Performance-Follow-up (13.09.): siehe Moduldocstring Schritt 5
+        # und `_should_skip_llm_privacy_layers` fuer die volle Begruendung -
+        # Presidio/Pseudonymisierung (oben, gateway.prepare_request) UND die
+        # deterministische Platzhalter-Integritaetspruefung (Stufe 1, siehe
+        # validate_claude_response weiter unten) bleiben davon UNBERUEHRT.
+        skip_llm_privacy_layers = _should_skip_llm_privacy_layers(
+            purpose=purpose,
+            has_document_context=preparation.has_document_context,
+            mappings=gateway_result.mappings,
+            known_entities=preparation.known_entities,
+        )
+
+        return _PreparedRequest(
+            matter_id=matter_id,
+            payload=gateway_result.payload,
+            gateway_result=gateway_result,
+            skip_llm_privacy_layers=skip_llm_privacy_layers,
+            source_list=source_list,
+            knowledge_items_used=knowledge_items_used,
+            open_review_points=open_review_points,
+            message_id=message_id,
+            chat_triggered=chat_triggered,
+        )
+
+    def _finish_non_streaming(
+        self,
+        prepared: _PreparedRequest,
+        purpose: str,
+        db: Session,
+        *,
+        previous_draft: Draft | None,
+        actor: str,
+        trace: PerfTrace,
+    ) -> DraftingResult:
+        """Duenner, synchroner Wrapper um `_finish_non_streaming_stream` -
+        fuer `create_draft` (nicht-streamende Aufrufer: Schriftsatz-
+        Generator, anwaltliche Anweisungen, Tests), die weiterhin ein
+        einfaches `DraftingResult` statt eines Generators erwarten.
+        Verwirft die "status"-Zwischenereignisse, behaelt nur das
+        abschliessende "result" - IDENTISCHES Endergebnis wie vor der
+        Umstellung auf den Generator (P1 Performance-Feedback-Follow-up,
+        17.09.), siehe dortigen Docstring fuer die volle Begruendung."""
+        for event in self._finish_non_streaming_stream(
+            prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
+        ):
+            if event.kind == "result":
+                assert event.result is not None
+                return event.result
+        raise AssertionError(  # pragma: no cover - Invariante, kein echter Fehlerfall
+            "_finish_non_streaming_stream endete ohne 'result'-Ereignis"
+        )
+
+    def _finish_non_streaming_stream(
+        self,
+        prepared: _PreparedRequest,
+        purpose: str,
+        db: Session,
+        *,
+        previous_draft: Draft | None,
+        actor: str,
+        trace: PerfTrace,
+    ) -> Generator[DraftStreamEvent, None, None]:
+        """Der volle, verhaltensgleiche zweite Teil von `create_draft`
+        (lokale Vorabanalyse, Claude-Aufruf, Antwortvalidierung,
+        Rekonstruktion, Persistenz) - ausgelagert, damit `create_draft_stream`
+        denselben Code fuer den nicht-streaming-faehigen Fall wiederverwenden
+        kann, OHNE `_prepare_and_gate` ein zweites Mal auszufuehren (kein
+        doppelter Presidio-/Recherche-Durchlauf).
+
+        P1 Performance-Feedback-Follow-up (17.09., siehe OPEN_ISSUES.md/
+        `_STEP_STATUS_LABELS`): seit diesem Umbau ein GENERATOR statt einer
+        gewoehnlichen Funktion - liefert VOR jedem bereits bestehenden
+        `trace.step(...)`-Block ein `kind="status"`-Ereignis, damit
+        `create_draft_stream` fuer JEDEN Aufruf (nicht nur den
+        risikobasierten Fast Path) sichtbaren Fortschritt ausliefern kann,
+        statt 80-105+ Sekunden lang gar nichts zu senden. Reiner 1:1-Umbau
+        der bisherigen `return DraftingResult(...)`-Anweisungen auf
+        `yield DraftStreamEvent(kind="result", result=DraftingResult(...));
+        return` - jede Fail-Closed-Verzweigung, jede Bedingung, jede
+        Reihenfolge bleibt exakt unveraendert an derselben Stelle bestehen,
+        siehe `_finish_non_streaming` fuer die synchrone Gegenprobe (nutzt
+        denselben Code, verwirft nur die "status"-Ereignisse)."""
+        matter_id = prepared.matter_id
+        payload = prepared.payload
+        gateway_result = prepared.gateway_result
+        skip_llm_privacy_layers = prepared.skip_llm_privacy_layers
+        open_review_points = prepared.open_review_points
 
         # §65: PFLICHT-Zwischenschritt, sobald ein local_llm_provider
         # injiziert wurde (siehe app/web/service_factory.py) - schlaegt er
         # fehl, wird NIEMALS stattdessen direkt Claude aufgerufen
         # (Datenschutz vor Verfuegbarkeit, siehe Moduldocstring Schritt 5).
         if self.local_llm_provider is not None:
+            yield DraftStreamEvent(
+                kind="status", status=_STEP_STATUS_LABELS["local_ai_preanalysis"]
+            )
+        if self.local_llm_provider is not None and skip_llm_privacy_layers:
+            with trace.step("local_ai_preanalysis_skipped"):
+                pass
+        elif self.local_llm_provider is not None:
             try:
-                local_result = self.local_llm_provider.process(payload)
+                with trace.step("local_ai_preanalysis"):
+                    local_result = self.local_llm_provider.process(payload)
             except LocalLLMUnavailableError:
                 self.api_logger.log_error(
                     db,
@@ -205,14 +723,18 @@ class DraftingService:
                     payload=payload,
                     error_status="local_ai_unavailable",
                 )
-                return DraftingResult(
-                    success=False,
-                    blocked_reasons=[
-                        "Lokale KI (Ollama) nicht erreichbar - Anfrage wurde nicht "
-                        "an Claude gesendet."
-                    ],
-                    open_review_points=open_review_points,
+                yield DraftStreamEvent(
+                    kind="result",
+                    result=DraftingResult(
+                        success=False,
+                        blocked_reasons=[
+                            "Lokale KI (Ollama) nicht erreichbar - Anfrage wurde nicht "
+                            "an Claude gesendet."
+                        ],
+                        open_review_points=open_review_points,
+                    ),
                 )
+                return
             payload = payload.model_copy(
                 update={
                     "anonymisierte_argumentationspunkte": [
@@ -222,8 +744,10 @@ class DraftingService:
                 }
             )
 
+        yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["claude"])
         try:
-            writing_result = self.writing_provider.write(payload)
+            with trace.step("claude"):
+                writing_result = self.writing_provider.write(payload)
         except Exception:
             self.api_logger.log_error(
                 db,
@@ -232,11 +756,15 @@ class DraftingService:
                 purpose=purpose,
                 payload=payload,
             )
-            return DraftingResult(
-                success=False,
-                blocked_reasons=["Interner Fehler bei der Textproduktion"],
-                open_review_points=open_review_points,
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=["Interner Fehler bei der Textproduktion"],
+                    open_review_points=open_review_points,
+                ),
             )
+            return
 
         self.api_logger.log_success(
             db,
@@ -249,6 +777,59 @@ class DraftingService:
             output_tokens=writing_result.output_tokens,
         )
 
+        # ECHTER FUND (19.09., live am echten Server reproduziert, ZWEIMAL
+        # deterministisch mit identischer Akte/identischem Auftrag): der
+        # Schriftsatz-Generator lieferte bei einer grossen/vollen Akte einen
+        # Claude-Aufruf, der GENAU `max_tokens` (2000) Output-Tokens
+        # verbrauchte, aber `writing_result.text` war dabei LEER
+        # (`len(text) == 0`) - vermutlich verbraucht das Modell das gesamte
+        # Token-Budget, ohne einen sichtbaren finalen Text zu produzieren.
+        # VOR der Lockerung von `require_full_placeholder_coverage` (siehe
+        # `_RELAXED_COVERAGE_PURPOSES` oben) wurde dieser Fall als
+        # Nebeneffekt zuverlaessig erkannt: eine leere Antwort "enthaelt"
+        # trivialerweise keinen einzigen erwarteten Platzhalter und wurde
+        # daher ueber `check_placeholders_present` blockiert (mit der
+        # irrefuehrenden Meldung "Interner Konsistenzfehler bei der
+        # Pseudonymisierung", aber immerhin BLOCKIERT - kein leerer Entwurf
+        # als "Erfolg"). Die Lockerung entfernt diesen zufaelligen Schutz -
+        # ohne eigenstaendigen Ersatz wuerde ein leerer/abgeschnittener
+        # Entwurf jetzt still als `success=True` durchgereicht
+        # (`draft-content-box` blieb in der UI leer) - genau der von §4
+        # "REAL OBJECTS - NO FAKE UI" verbotene Fall ("Eine Erfolgsmeldung
+        # ohne die zugrunde liegende Operation ist NICHT vollstaendig").
+        # Deshalb hier ein EIGENSTAENDIGER, purpose-unabhaengiger
+        # Mindestinhalt-Check - bewusst VOR dem `local_llm_provider`-Block
+        # unten (der nur laeuft, wenn lokale KI ueberhaupt konfiguriert
+        # ist) und unabhaengig von `require_full_placeholder_coverage`,
+        # damit dieser Fall auch bei deaktivierter lokaler KI und fuer JEDEN
+        # Zweck sicher erkannt wird - keine Platzhalter-/PII-Pruefung,
+        # sondern eine reine Plausibilitaetspruefung ("kam ueberhaupt Text
+        # zurueck").
+        if not writing_result.text or not writing_result.text.strip():
+            self.api_logger.log_error(
+                db,
+                workflow_id=matter_id,
+                model=self.model_name,
+                purpose=purpose,
+                payload=payload,
+                error_status="empty_writing_response",
+            )
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=[
+                        "Die KI hat keinen verwertbaren Text zurückgegeben "
+                        "(leere Antwort, möglicherweise durch das "
+                        "Token-Limit abgeschnitten) - Entwurf wurde nicht "
+                        "übernommen. Bitte erneut versuchen, ggf. mit "
+                        "kürzeren Anmerkungen/weniger Dokumenten."
+                    ],
+                    open_review_points=open_review_points,
+                ),
+            )
+            return
+
         # Lokale Datenschutz-/Qualitaetspruefung der (noch pseudonymisierten)
         # Claude-Antwort, VOR jeder Rekonstruktion - siehe
         # app/drafting/response_validation.py. Nur aktiv, wenn lokale KI
@@ -259,13 +840,45 @@ class DraftingService:
         # Moduldocstring dort). Bei jedem Fehlschlag: kontrollierter Abbruch,
         # NIEMALS automatische Neuformulierung/Reparatur.
         if self.local_llm_provider is not None:
+            yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["validation"])
             try:
-                validation = validate_claude_response(
-                    writing_result.text,
-                    gateway_result.mappings,
-                    payload.anonymisierter_sachverhalt,
-                    self.local_llm_provider,
-                )
+                with trace.step("validation"):
+                    validation = validate_claude_response(
+                        writing_result.text,
+                        gateway_result.mappings,
+                        payload.anonymisierter_sachverhalt,
+                        self.local_llm_provider,
+                        skip_semantic_check=skip_llm_privacy_layers,
+                        # Entwicklungsgeschichte dieser einen Zeile (CHAT-01
+                        # 15.09. -> zwei weitere Eskalationen 18.09., volle
+                        # Root-Cause-Begruendung bei `_RELAXED_COVERAGE_PURPOSES`
+                        # oben): "jeder Mapping-Platzhalter muss im Text
+                        # vorkommen" wurde ZUERST fuer chat_response
+                        # deaktiviert (blockierte normale Chat-Begruessungen),
+                        # DANN fuer chat-getriggerte formulate_draft-Aufrufe
+                        # (blockierte "Antworten" auf eine Posteingang-
+                        # Nachricht), DANN live auch fuer den kanonischen
+                        # Schriftsatz-Generator-Weg reproduziert (KEIN
+                        # message_id/chat_triggered - der bis dahin letzte
+                        # Fall, der die Forderung noch erfuellen sollte).
+                        # Ursache in allen drei Faellen identisch:
+                        # `prepare_draft_context` baut Sachverhalt/Mappings
+                        # aus der GESAMTEN Akte. BEWUSST NUR fuer
+                        # `_RELAXED_COVERAGE_PURPOSES` deaktiviert (bisher
+                        # live reproduziert), NICHT fuer alle Zwecke - siehe
+                        # dortiger Kommentar fuer die Abgrenzung gegen
+                        # Spekulation ueber unbewiesene Zwecke. Die beiden
+                        # TATSAECHLICH schuetzenden Pruefungen (Platzhalter-
+                        # Manipulation/erfundene Tokens, Originalwert-Leck)
+                        # bleiben davon unberuehrt fuer JEDEN Zweck weiterhin
+                        # zwingend aktiv - siehe
+                        # check_response_placeholder_integrity. Betrifft NICHT
+                        # das separate, bewusst weiterhin strenge ausgehende
+                        # Final Payload Gate (check_payload_placeholder_integrity).
+                        require_full_placeholder_coverage=(
+                            purpose not in _RELAXED_COVERAGE_PURPOSES
+                        ),
+                    )
             except LocalLLMUnavailableError:
                 self.api_logger.log_error(
                     db,
@@ -275,36 +888,63 @@ class DraftingService:
                     payload=payload,
                     error_status="local_ai_unavailable",
                 )
-                return DraftingResult(
-                    success=False,
-                    blocked_reasons=[
-                        "Lokale Prüfung der Antwort (Ollama) nicht erreichbar - "
-                        "Entwurf wurde nicht übernommen."
-                    ],
-                    open_review_points=open_review_points,
+                yield DraftStreamEvent(
+                    kind="result",
+                    result=DraftingResult(
+                        success=False,
+                        blocked_reasons=[
+                            "Lokale Prüfung der Antwort (Ollama) nicht erreichbar - "
+                            "Entwurf wurde nicht übernommen."
+                        ],
+                        open_review_points=open_review_points,
+                    ),
                 )
+                return
             if not validation.passed:
+                # ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion,
+                # 17.09.): bis hierhin landete JEDER Stufe-1/Stufe-2-Befund
+                # unter demselben festen `error_status=
+                # "response_validation_failed"` im Audit-Log - der
+                # sicherheitskritischste Fall (Original-PII-Leck in der
+                # Antwort) war im Log nicht von einer harmlosen
+                # Formulierungs-Inkonsistenz zu unterscheiden. Nutzt
+                # dieselbe bereits existierende, inhaltsfreie
+                # Kategorisierung wie `ApiCallLogger.log_blocked` - siehe
+                # dort und api_logger.py::_BLOCK_CATEGORIES. Fallback bleibt
+                # der bisherige Wert, falls `validation.issues` einmal
+                # leer sein sollte (sollte laut `ResponseValidationResult`
+                # bei `passed=False` nicht vorkommen, aber kein erfundener
+                # Kategorie-Code fuer einen theoretischen Leerfall).
                 self.api_logger.log_error(
                     db,
                     workflow_id=matter_id,
                     model=self.model_name,
                     purpose=purpose,
                     payload=payload,
-                    error_status="response_validation_failed",
+                    error_status=(
+                        categorize_block_reasons(validation.issues)
+                        or "response_validation_failed"
+                    ),
                 )
-                return DraftingResult(
-                    success=False,
-                    blocked_reasons=[
-                        "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
-                        "Entwurf wurde nicht übernommen.",
-                        *validation.issues,
-                    ],
-                    open_review_points=open_review_points,
+                yield DraftStreamEvent(
+                    kind="result",
+                    result=DraftingResult(
+                        success=False,
+                        blocked_reasons=[
+                            "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
+                            "Entwurf wurde nicht übernommen.",
+                            *validation.issues,
+                        ],
+                        open_review_points=open_review_points,
+                    ),
                 )
+                return
 
-        reconstructed_text = self.gateway.reconstruct_response(
-            writing_result.text, gateway_result.mappings
-        )
+        yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["reconstruction"])
+        with trace.step("reconstruction"):
+            reconstructed_text = self.gateway.reconstruct_response(
+                writing_result.text, gateway_result.mappings
+            )
 
         draft = self._persist_draft(
             matter_id,
@@ -313,18 +953,194 @@ class DraftingService:
             db,
             actor=actor,
             previous_draft=previous_draft,
+            message_id=prepared.message_id,
         )
-        self._persist_reference_links(draft, source_list, knowledge_items_used, db)
+        self._persist_reference_links(
+            draft, prepared.source_list, prepared.knowledge_items_used, db
+        )
         uncertainties = self._gather_uncertainties(matter_id, db)
 
-        return DraftingResult(
-            success=True,
-            draft_id=draft.id,
-            draft_text=reconstructed_text,
-            source_list=source_list,
-            knowledge_items_used=knowledge_items_used,
-            open_review_points=open_review_points,
-            uncertainties=uncertainties,
+        yield DraftStreamEvent(
+            kind="result",
+            result=DraftingResult(
+                success=True,
+                draft_id=draft.id,
+                draft_text=reconstructed_text,
+                source_list=prepared.source_list,
+                knowledge_items_used=prepared.knowledge_items_used,
+                open_review_points=open_review_points,
+                uncertainties=uncertainties,
+            ),
+        )
+
+    def _stream_from_writing_provider(
+        self,
+        prepared: _PreparedRequest,
+        purpose: str,
+        db: Session,
+        *,
+        previous_draft: Draft | None,
+        actor: str,
+        trace: PerfTrace,
+    ) -> Generator[DraftStreamEvent, None, None]:
+        """Der ECHTE Streaming-Pfad (nur erreicht, wenn `create_draft_stream`
+        bereits `prepared.skip_llm_privacy_layers` UND eine `write_stream`-
+        Faehigkeit des Providers festgestellt hat - `gateway_result.mappings`
+        ist an dieser Stelle daher GARANTIERT leer, siehe Docstring von
+        `create_draft_stream`)."""
+        matter_id = prepared.matter_id
+        payload = prepared.payload
+        gateway_result = prepared.gateway_result
+        open_review_points = prepared.open_review_points
+
+        if self.local_llm_provider is not None:
+            with trace.step("local_ai_preanalysis_skipped"):
+                pass
+
+        accumulated: list[str] = []
+        anomaly_reasons: list[str] | None = None
+        writing_result = None
+
+        text_stream = self.writing_provider.write_stream(payload)
+        try:
+            with trace.step("claude"):
+                while True:
+                    try:
+                        delta = next(text_stream)
+                    except StopIteration as stop:
+                        writing_result = stop.value
+                        break
+                    accumulated.append(delta)
+                    # Deterministische Stufe-1-Pruefung (siehe Docstring
+                    # von create_draft_stream) - laeuft NACH JEDEM Delta auf
+                    # dem bisher akkumulierten Text, nicht erst am Ende.
+                    deterministic_issues = check_response_placeholder_integrity(
+                        "".join(accumulated), gateway_result.mappings
+                    )
+                    if deterministic_issues:
+                        anomaly_reasons = deterministic_issues
+                        text_stream.close()
+                        break
+                    yield DraftStreamEvent(kind="delta", text=delta)
+        except Exception:
+            self.api_logger.log_error(
+                db,
+                workflow_id=matter_id,
+                model=self.model_name,
+                purpose=purpose,
+                payload=payload,
+            )
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=["Interner Fehler bei der Textproduktion"],
+                    open_review_points=open_review_points,
+                ),
+            )
+            return
+
+        self.api_logger.log_success(
+            db,
+            workflow_id=matter_id,
+            model=self.model_name,
+            purpose=purpose,
+            payload=payload,
+            token_count=writing_result.token_count if writing_result else None,
+            input_tokens=writing_result.input_tokens if writing_result else None,
+            output_tokens=writing_result.output_tokens if writing_result else None,
+        )
+
+        # Analoger Mindestinhalt-Check wie im nicht-streamenden Pfad oben
+        # (19.09., gleiche Root Cause): hier ist `gateway_result.mappings`
+        # IMMER leer (siehe Kommentar bei `reconstruct_response` unten) -
+        # `check_response_placeholder_integrity` findet bei leerem
+        # `accumulated`-Text also STRUKTURELL nie einen Fund (weder
+        # Platzhalter-Manipulation noch Originalwert-Leck moeglich ohne
+        # Mappings), unabhaengig vom Zweck. Ohne diesen expliziten Check
+        # wuerde ein leerer/abgeschnittener Stream ebenso still als
+        # `success=True` durchgereicht.
+        if not "".join(accumulated).strip():
+            self.api_logger.log_error(
+                db,
+                workflow_id=matter_id,
+                model=self.model_name,
+                purpose=purpose,
+                payload=payload,
+                error_status="empty_writing_response",
+            )
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=[
+                        "Die KI hat keinen verwertbaren Text zurückgegeben "
+                        "(leere Antwort, möglicherweise durch das "
+                        "Token-Limit abgeschnitten) - Entwurf wurde nicht "
+                        "übernommen."
+                    ],
+                    open_review_points=open_review_points,
+                ),
+            )
+            return
+
+        if anomaly_reasons is not None:
+            self.api_logger.log_error(
+                db,
+                workflow_id=matter_id,
+                model=self.model_name,
+                purpose=purpose,
+                payload=payload,
+                error_status="response_validation_failed",
+            )
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=[
+                        "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
+                        "Entwurf wurde nicht übernommen.",
+                        *anomaly_reasons,
+                    ],
+                    open_review_points=open_review_points,
+                ),
+            )
+            return
+
+        full_text = "".join(accumulated)
+        with trace.step("reconstruction"):
+            # No-Op (gateway_result.mappings ist hier immer leer) - aus
+            # Konsistenzgruenden trotzdem ueber denselben Aufruf wie der
+            # nicht-streamende Pfad, kein Sonderfall.
+            reconstructed_text = self.gateway.reconstruct_response(
+                full_text, gateway_result.mappings
+            )
+
+        draft = self._persist_draft(
+            matter_id,
+            reconstructed_text,
+            purpose,
+            db,
+            actor=actor,
+            previous_draft=previous_draft,
+            message_id=prepared.message_id,
+        )
+        self._persist_reference_links(
+            draft, prepared.source_list, prepared.knowledge_items_used, db
+        )
+        uncertainties = self._gather_uncertainties(matter_id, db)
+
+        yield DraftStreamEvent(
+            kind="result",
+            result=DraftingResult(
+                success=True,
+                draft_id=draft.id,
+                draft_text=reconstructed_text,
+                source_list=prepared.source_list,
+                knowledge_items_used=prepared.knowledge_items_used,
+                open_review_points=open_review_points,
+                uncertainties=uncertainties,
+            ),
         )
 
     def _gather_legal_sources(
@@ -391,12 +1207,18 @@ class DraftingService:
         *,
         actor: str,
         previous_draft: Draft | None = None,
+        message_id: str | None = None,
     ) -> Draft:
         """Delegiert an `create_new_draft_version` (app/drafting/versioning.py) -
         siehe dort für die Begründung, warum das Anlegen neuer Draft-Zeilen
         an EINER zentralen Stelle gebündelt ist. `event_type` unterscheidet
         die allererste Version ("draft_created", unverändertes Verhalten)
         von einer Folgeversion durch Neugenerierung ("draft_version_created").
+
+        `message_id` (17.09.): einfach durchgereicht an `create_new_draft_
+        version`, das dieses Feld bereits unterstuetzt (inkl. automatischer
+        Vererbung an Folgeversionen, falls hier nicht explizit gesetzt) -
+        siehe DraftingService.create_draft für die volle Begründung.
         """
         event_type = "draft_created" if previous_draft is None else "draft_version_created"
         details = (
@@ -409,6 +1231,7 @@ class DraftingService:
             matter_id=matter_id,
             content=content,
             previous_draft=previous_draft,
+            message_id=message_id,
             actor=actor,
             event_type=event_type,
             details=details,

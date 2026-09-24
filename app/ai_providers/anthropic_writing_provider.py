@@ -16,12 +16,14 @@ gespeichert.
 
 from __future__ import annotations
 
+from collections.abc import Generator
+
 import anthropic
 
 from app.ai_providers.claude_writing_provider import (
-    WRITING_SYSTEM_PROMPT,
     ClaudeWritingResult,
     build_writing_prompt_cache_blocks,
+    select_system_prompt,
 )
 from app.privacy.gateway_schema import ClaudeRequestPayload
 
@@ -37,12 +39,13 @@ class AnthropicClaudeWritingProvider:
         self.max_tokens = max_tokens
 
     def write(self, payload: ClaudeRequestPayload) -> ClaudeWritingResult:
-        # Prompt-Caching (Schritt 3): das Systemprompt ist projektweit für
-        # JEDEN Aufruf identisch (siehe WRITING_SYSTEM_PROMPT) - als
-        # gecachter Block markiert, spart es ab dem zweiten Aufruf
-        # innerhalb des Cache-Fensters Eingabe-Tokens. Der Nachrichtentext
-        # trennt zusätzlich den wiederkehrenden Aktenkontext vom variablen
-        # Schreibauftrag (siehe build_writing_prompt_cache_blocks).
+        # Prompt-Caching (Schritt 3): je Zweck (siehe select_system_prompt)
+        # weiterhin projektweit IDENTISCH fuer jeden Aufruf mit demselben
+        # Zweck - als gecachter Block markiert, spart es ab dem zweiten
+        # Aufruf innerhalb des Cache-Fensters Eingabe-Tokens. Der
+        # Nachrichtentext trennt zusätzlich den wiederkehrenden
+        # Aktenkontext vom variablen Schreibauftrag (siehe
+        # build_writing_prompt_cache_blocks).
         response = self._client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,
@@ -56,7 +59,7 @@ class AnthropicClaudeWritingProvider:
             system=[
                 {
                     "type": "text",
-                    "text": WRITING_SYSTEM_PROMPT,
+                    "text": select_system_prompt(payload.schreibauftrag),
                     "cache_control": {"type": "ephemeral"},
                 }
             ],
@@ -81,3 +84,49 @@ class AnthropicClaudeWritingProvider:
             input_tokens=input_tokens,
             output_tokens=output_tokens,
         )
+
+    def write_stream(
+        self, payload: ClaudeRequestPayload
+    ) -> Generator[str, None, ClaudeWritingResult]:
+        """Streaming-Variante von `write()` (13.09., Streaming-
+        Architekturentscheidung, siehe app/drafting/service.py::
+        DraftingService.create_draft_stream) - nutzt das offizielle
+        Anthropic-SDK-Streaming (`messages.stream`, `with`-Block schliesst
+        die zugrundeliegende HTTP-Verbindung auch bei vorzeitigem Abbruch
+        korrekt, siehe Aufrufer). Gibt ROHE (weiterhin pseudonymisierte)
+        Text-Deltas zurueck - identische Datenschutzgarantie wie `write()`,
+        nur inkrementell statt am Stueck. Der Rueckgabewert (`return`, PEP
+        380) traegt dieselben Token-Zaehlungen wie `write()`, aus
+        `stream.get_final_message()` statt `response.usage`."""
+        with self._client.messages.stream(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=[
+                {
+                    "type": "text",
+                    "text": select_system_prompt(payload.schreibauftrag),
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ],
+            messages=[{"role": "user", "content": build_writing_prompt_cache_blocks(payload)}],
+        ) as stream:
+            yield from stream.text_stream
+
+            final_message = stream.get_final_message()
+            text = "".join(
+                block.text for block in final_message.content if block.type == "text"
+            )
+            token_count = None
+            input_tokens = None
+            output_tokens = None
+            if final_message.usage is not None:
+                input_tokens = final_message.usage.input_tokens
+                output_tokens = final_message.usage.output_tokens
+                token_count = input_tokens + output_tokens
+
+            return ClaudeWritingResult(
+                text=text,
+                token_count=token_count,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )

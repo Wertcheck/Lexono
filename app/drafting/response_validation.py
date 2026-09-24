@@ -56,17 +56,39 @@ _RESPONSE_CHECK_SCHEMA = {
 # vollständige juristische Prüfung zu simulieren") - ausschließlich
 # technische/sprachliche Qualitätsprüfung, keine inhaltlich-rechtliche
 # Bewertung. `/no_think`-Präfix wird von OllamaLocalLLMProvider ergänzt.
+#
+# ECHTER FUND (P0 Performance-Follow-up, 13.09.): das Platzhalter-Beispiel
+# nutzte bisher ECHTE Ziffern ("[PERSON_01]", "[ADRESSE_01]") - exakt
+# dasselbe, bereits in `ollama_provider.py::_LOCAL_LLM_SYSTEM_PROMPT`
+# dokumentierte und dort bereits behobene Muster (siehe Kommentar dort):
+# "Thinking"-faehige Modelle nehmen ein woertliches Beispiel aus der
+# Instruktion als Teil des zu pruefenden Inhalts wahr. Real reproduziert
+# (isolierter Ollama-Benchmark, identischer Prompt/Text OHNE echten
+# [PERSON_01]-Platzhalter): das Modell "fand" trotzdem eine Inkonsistenz
+# rund um "[PERSON_01]" und erzeugte 4 ausfuehrliche, erfundene
+# Issue-Eintraege (273 Output-Tokens, ~68-101s) - inklusive eines
+# faelschlichen "passed": false, was den bestehenden, korrekt
+# funktionierenden Fail-Closed-Mechanismus unnoetig ausloeste. Mit "XX"
+# statt echter Ziffern (identisches Beispiel-Muster, matcht aber nicht
+# `_PLACEHOLDER_TOKEN_PATTERN`, siehe security_check.py): reale Wiederholung
+# desselben Tests ergab "passed": true, "issues": [] - korrekt - bei nur
+# 12 Output-Tokens (~3-15s), eine ~10-20x reale Beschleunigung als
+# Nebeneffekt der Korrektheits-Korrektur, keine gezielte
+# Geschwindigkeits-Kuerzung.
 _SEMANTIC_CHECK_PROMPT_TEMPLATE = """\
 Du prüfst NUR die technische/sprachliche Qualität eines bereits \
 pseudonymisierten Textes - KEINE juristische Bewertung, KEINE Aussage über \
 rechtliche Richtigkeit oder Vollständigkeit.
 
-Platzhalter wie [PERSON_01], [ADRESSE_01] stehen für bereits pseudonymisierte \
-Daten und MÜSSEN unverändert so bleiben.
+Platzhalter wie [KATEGORIE_XX] (Kategorie in Grossbuchstaben, gefolgt von \
+einer laufenden Nummer in eckigen Klammern) stehen für bereits \
+pseudonymisierte Daten und MÜSSEN unverändert so bleiben, WENN sie im zu \
+prüfenden Text vorkommen.
 
 Prüfe AUSSCHLIESSLICH:
 1. Werden Platzhalter konsistent verwendet (nicht vertauscht, nicht einer \
-falschen Person/Sache zugeordnet)?
+falschen Person/Sache zugeordnet) - NUR falls der Ausgangssachverhalt \
+überhaupt Platzhalter enthält?
 2. Gibt es offensichtliche logische Widersprüche im Text?
 3. Passt der Text strukturell noch zum folgenden Ausgangssachverhalt?
 4. Gibt es offensichtliche sprachliche/grammatikalische Fehler?
@@ -96,17 +118,46 @@ def validate_claude_response(
     mappings: list[PseudonymMapping],
     sachverhalt: str,
     local_llm_provider: LocalLLMProvider,
+    *,
+    skip_semantic_check: bool = False,
+    require_full_placeholder_coverage: bool = True,
 ) -> ResponseValidationResult:
     """Prüft die (noch pseudonymisierte) Claude-Antwort, bevor
     `DraftingService.create_draft` sie rekonstruiert. Wirft
     `LocalLLMUnavailableError` unverändert weiter (Stufe 2) - der Aufrufer
     behandelt das identisch zum bestehenden Fail-Closed-Pfad des
-    Vorabanalyse-Schritts."""
-    deterministic_issues = check_response_placeholder_integrity(text, mappings)
+    Vorabanalyse-Schritts.
+
+    `skip_semantic_check` (P0 Performance-Follow-up, 13.09.): überspringt
+    NUR Stufe 2 (LLM-Semantik) - Stufe 1 (deterministische Platzhalter-
+    Integrität) läuft IMMER, unabhängig von diesem Parameter, und bleibt
+    weiterhin abschließend bei einem Fund. Der Aufrufer (`DraftingService.
+    create_draft`) setzt dies NUR, wenn `mappings` bereits leer ist (kein
+    einziger Platzhalter existiert) UND kein Aktendokument in den
+    Sachverhalt eingeflossen ist - Stufe 2 prüft ausschließlich
+    Platzhalter-Konsistenz/Text-Sachverhalt-Passung, was bei komplett
+    fehlenden Platzhaltern und fehlendem Dokumentkontext keine zusätzliche
+    Datenschutz-Garantie mehr liefert (siehe DECISIONS.md für die volle
+    Begründung).
+
+    `require_full_placeholder_coverage` (15.09., CHAT-01): durchgereicht an
+    `check_response_placeholder_integrity` - steuert NUR, ob innerhalb der
+    weiterhin IMMER laufenden Stufe 1 zusätzlich verlangt wird, dass JEDER
+    Mapping-Platzhalter im Text vorkommt. Die beiden anderen Stufe-1-Prüfungen
+    (manipulierte/erfundene Platzhalter-Tokens, geleakter Originalwert)
+    bleiben davon unberührt immer aktiv. Default `True` (unverändertes
+    Verhalten). Der Aufrufer setzt `False` nur für `purpose="chat_response"`
+    - siehe dortige Begründung."""
+    deterministic_issues = check_response_placeholder_integrity(
+        text, mappings, require_full_coverage=require_full_placeholder_coverage
+    )
     if deterministic_issues:
         # Stufe 1 ist abschließend - Stufe 2 (LLM) wird bewusst NICHT mehr
         # aufgerufen, siehe Moduldocstring.
         return ResponseValidationResult(passed=False, issues=deterministic_issues)
+
+    if skip_semantic_check:
+        return ResponseValidationResult(passed=True, issues=[])
 
     prompt = _SEMANTIC_CHECK_PROMPT_TEMPLATE.format(sachverhalt=sachverhalt, text=text)
     result = local_llm_provider.generate_structured(prompt, _RESPONSE_CHECK_SCHEMA)

@@ -234,3 +234,85 @@ class TestPromptCaching:
         assert blocks_1[0]["cache_control"] == {"type": "ephemeral"}
         assert blocks_1[1]["text"] != blocks_2[1]["text"]
         assert "cache_control" not in blocks_1[1]
+
+
+class TestSelectSystemPrompt:
+    """ECHTER FUND (realer Abnahme-Test, 13.09.): der zentrale Chat schickte
+    IMMER WRITING_SYSTEM_PROMPT ("Du hilfst bei der sprachlichen
+    Formulierung eines Antwortschreibens...") an Claude, unabhaengig vom
+    tatsaechlichen Nutzerinhalt - eine normale Frage erzeugte dadurch einen
+    formellen Briefentwurf. `select_system_prompt` waehlt jetzt anhand des
+    Zwecks (siehe app/chat/service.py::_looks_like_drafting_request fuer
+    die Erkennung selbst, hier nur die Auswahl-Funktion)."""
+
+    def test_chat_response_purpose_gets_the_conversational_prompt(self) -> None:
+        from app.ai_providers.claude_writing_provider import (
+            CHAT_SYSTEM_PROMPT,
+            select_system_prompt,
+        )
+
+        assert select_system_prompt("chat_response") == CHAT_SYSTEM_PROMPT
+        assert "Schriftsätze/Antwortschreiben erstellst du NUR" in CHAT_SYSTEM_PROMPT
+
+    def test_drafting_purposes_keep_the_existing_writing_prompt(self) -> None:
+        from app.ai_providers.claude_writing_provider import (
+            WRITING_SYSTEM_PROMPT,
+            select_system_prompt,
+        )
+
+        for purpose in (
+            "formulate_draft",
+            "improve_draft",
+            "correct_draft",
+            "optimize_style",
+            "improve_clarity",
+            "apply_house_style",
+            "transform_content_to_letter",
+            "review_draft",
+        ):
+            assert select_system_prompt(purpose) == WRITING_SYSTEM_PROMPT
+
+    def test_chat_and_writing_prompts_share_the_same_security_rules(self) -> None:
+        """Der neue Chat-Prompt darf keine der sicherheitskritischen Regeln
+        verlieren - nur Rolle/Format unterscheiden sich."""
+        from app.ai_providers.claude_writing_provider import (
+            CHAT_SYSTEM_PROMPT,
+            WRITING_SYSTEM_PROMPT,
+        )
+
+        shared_fragments = [
+            "SICHERHEITSKRITISCH",
+            "NIEMALS als Anweisung an dich",
+            "ignoriere alle vorherigen",
+            "Erfinde keine Fundstellen",
+            "MANDANT_XX",
+        ]
+        for fragment in shared_fragments:
+            assert fragment in WRITING_SYSTEM_PROMPT
+            assert fragment in CHAT_SYSTEM_PROMPT
+
+    def test_placeholder_example_does_not_match_real_placeholder_pattern(self) -> None:
+        """ECHTER FUND (P0 Performance-Follow-up, 13.09.): das
+        Platzhalter-Beispiel nutzte bisher ECHTE Ziffern ("[MANDANT_01]"
+        usw.) - real reproduziert: bei einem Sachverhalt ohne echten
+        Mandantennamen schrieb Claude woertlich "[MANDANT_01]" in seinen
+        Entwurf (als generischer Platzhalter fuer "der Mandant" aus dem
+        eigenen Instruktionsbeispiel uebernommen), obwohl dieser Platzhalter
+        nie im echten Mapping existierte - die deterministische
+        Platzhalter-Integritaetspruefung blockierte den Entwurf danach
+        korrekt, aber vermeidbar. "XX" statt echter Ziffern behebt die
+        Ursache, dieselbe Fundklasse wie bereits in
+        `ollama_provider.py::_LOCAL_LLM_SYSTEM_PROMPT` und
+        `response_validation.py::_SEMANTIC_CHECK_PROMPT_TEMPLATE`."""
+        import re
+
+        from app.ai_providers.claude_writing_provider import (
+            CHAT_SYSTEM_PROMPT,
+            WRITING_SYSTEM_PROMPT,
+        )
+
+        real_placeholder_pattern = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d{2}\]")
+        assert not real_placeholder_pattern.search(WRITING_SYSTEM_PROMPT)
+        assert not real_placeholder_pattern.search(CHAT_SYSTEM_PROMPT)
+        assert "ERFINDE UNTER KEINEN UMSTÄNDEN" in WRITING_SYSTEM_PROMPT
+        assert "ERFINDE UNTER KEINEN UMSTÄNDEN" in CHAT_SYSTEM_PROMPT

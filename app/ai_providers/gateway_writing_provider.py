@@ -2,19 +2,19 @@
 den Lexono-Gateway statt eines direkten Anthropic-SDK-Aufrufs
 (ARCHITECTURE.md §70).
 
-Baut denselben System-Prompt und dieselben Cache-Blöcke wie
-`AnthropicClaudeWritingProvider` (unveränderte Funktionen aus
-`claude_writing_provider.py`) - der einzige Unterschied ist das
-Transportziel: HTTP zum Gateway statt eines direkten `anthropic.Anthropic`-
-Aufrufs. Besitzt strukturell keinen Anthropic-Key (kein entsprechendes
-Feld im Konstruktor)."""
+Waehlt denselben System-Prompt (ueber `select_system_prompt`, je nach
+Zweck) und baut dieselben Cache-Blöcke wie `AnthropicClaudeWritingProvider`
+(unveränderte Funktionen aus `claude_writing_provider.py`) - der einzige
+Unterschied ist das Transportziel: HTTP zum Gateway statt eines direkten
+`anthropic.Anthropic`-Aufrufs. Besitzt strukturell keinen Anthropic-Key
+(kein entsprechendes Feld im Konstruktor)."""
 
 from __future__ import annotations
 
 from app.ai_providers.claude_writing_provider import (
-    WRITING_SYSTEM_PROMPT,
     ClaudeWritingResult,
     build_writing_prompt_cache_blocks,
+    select_system_prompt,
 )
 from app.ai_providers.gateway_relay_client import call_gateway_messages
 from app.privacy.gateway_schema import ClaudeRequestPayload
@@ -50,7 +50,7 @@ class GatewayRelayWritingProvider:
             system_blocks=[
                 {
                     "type": "text",
-                    "text": WRITING_SYSTEM_PROMPT,
+                    "text": select_system_prompt(payload.schreibauftrag),
                     "cache_control": {"type": "ephemeral"},
                 }
             ],

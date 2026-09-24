@@ -21,6 +21,7 @@ from io import BytesIO
 
 import pymupdf
 
+from app.export.pdf_text import sanitize_for_base14_font
 from app.models import GeneratedDocument, Matter
 
 PDF_MEDIA_TYPE = "application/pdf"
@@ -42,7 +43,9 @@ class GeneratedDocumentPdfExportService:
             if state["y"] + _LINE_HEIGHT > _PAGE_HEIGHT - _MARGIN:
                 state["page"] = pdf.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
                 state["y"] = float(_MARGIN)
-            state["page"].insert_text((_MARGIN, state["y"]), text, fontsize=size, fontname=_FONT)
+            state["page"].insert_text(
+                (_MARGIN, state["y"]), sanitize_for_base14_font(text), fontsize=size, fontname=_FONT
+            )
             state["y"] += _LINE_HEIGHT * (size / _FONT_SIZE)
 
         write_line(document.title, size=16)

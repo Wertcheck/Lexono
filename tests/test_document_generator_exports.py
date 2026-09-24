@@ -105,6 +105,30 @@ def test_pdf_export_paginates_long_content_into_multiple_pages(db_session: Sessi
     pdf.close()
 
 
+def test_pdf_export_does_not_corrupt_typographic_characters(db_session: Session) -> None:
+    """Derselbe Fund wie test_draft_pdf_export.py::
+    test_export_service_does_not_corrupt_typographic_characters (19.09.) -
+    dieser Export verwendet dieselbe PDF-Standard-14-Schrift ("helv") und
+    war vom selben Korruptionsfehler betroffen (Halbgeviertstrich/
+    Euro-Zeichen -> falscher Mittelpunkt-Platzhalter)."""
+    import pymupdf
+
+    document, matter = _generated_document(
+        db_session,
+        content="Der Betrag von 12.350 € ist strittig – bitte prüfen.",
+    )
+    buffer = GeneratedDocumentPdfExportService().export(document, matter)
+
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+
+    assert "EUR" in full_text
+    assert "12.350" in full_text
+    assert "strittig - bitte" in full_text
+    assert "12.350 ·" not in full_text
+
+
 def test_pdf_export_handles_single_pathologically_long_paragraph(db_session: Session) -> None:
     """Ein einzelner, extrem langer Absatz (kein doppeltes Zeilenumbruch-
     Zeichen) darf keine Endlosschleife ausloesen - siehe pdf_export.py:

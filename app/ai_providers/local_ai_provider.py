@@ -44,6 +44,14 @@ class DraftPreparationResult:
     argumentationspunkte: list[str] = field(default_factory=list)
     quellenverweise: list[str] = field(default_factory=list)
     known_entities: dict[str, list[str]] = field(default_factory=dict)
+    # P0 Performance-Follow-up (13.09.): objektives, bereits aus der
+    # ohnehin ausgefuehrten Dokumentenabfrage abgeleitetes Signal - OB
+    # tatsaechlich Aktendokumente in den Sachverhalt eingeflossen sind.
+    # Wird von DraftingService genutzt, um zu entscheiden, ob die
+    # verpflichtenden lokalen KI-Schritte (§65) fuer eine Anfrage
+    # tatsaechlich sensiblen Dokument-/Aktenkontext verarbeiten - siehe
+    # dortigen Kommentar fuer die volle Begruendung.
+    has_document_context: bool = False
 
 
 class LocalAIProvider(Protocol):
@@ -69,7 +77,7 @@ class RuleBasedLocalAIProvider:
         if matter is None:
             raise ValueError(f"Matter {matter_id} nicht gefunden")
 
-        sachverhalt = self._build_sachverhalt(matter_id, matter, db)
+        sachverhalt, has_document_context = self._build_sachverhalt(matter_id, matter, db)
         argumentationspunkte = self._build_argumentationspunkte(matter_id, db)
         quellenverweise = self._build_quellenverweise(matter, db)
         known_entities = self._build_known_entities(matter_id, matter, db)
@@ -79,14 +87,18 @@ class RuleBasedLocalAIProvider:
             argumentationspunkte=argumentationspunkte,
             quellenverweise=quellenverweise,
             known_entities=known_entities,
+            has_document_context=has_document_context,
         )
 
-    def _build_sachverhalt(self, matter_id: str, matter: Matter, db: Session) -> str:
+    def _build_sachverhalt(
+        self, matter_id: str, matter: Matter, db: Session
+    ) -> tuple[str, bool]:
         parts = [f"Akte: {matter.title}"]
         documents = (
             db.query(Document)
             .filter(Document.matter_id == matter_id)
             .filter(Document.extracted_text.isnot(None))
+            .filter(Document.deleted_at.is_(None))
             .order_by(Document.created_at.desc())
             .limit(_MAX_DOCUMENTS_IN_SACHVERHALT)
             .all()
@@ -97,7 +109,7 @@ class RuleBasedLocalAIProvider:
             )
             type_label = document.classified_type or "unklassifiziert"
             parts.append(f"[{type_label}] {excerpt}")
-        return "\n".join(parts)
+        return "\n".join(parts), bool(documents)
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
@@ -131,5 +143,42 @@ class RuleBasedLocalAIProvider:
                 known["anwalt"].append(party.name)
             else:
                 known.setdefault("beteiligter", []).append(party.name)
+
+        # ECHTER FUND (14.09., Overnight-Direktive §8, realer Regressionsfall
+        # "Frau Müller"): bisher wurde ausschliesslich der VOLLSTAENDIGE Name
+        # ("Anna Müller") als bekannte Entitaet indiziert. `detect_known_
+        # entities` (app/privacy/detectors.py) sucht aber nur EXAKT nach
+        # diesem vollstaendigen String - ein im echten Kanzleitext sehr
+        # haeufiger blosser Nachname-Verweis ohne Vornamen ("Frau Müller",
+        # "die Mandantin Müller", oder auch komplett ohne Anrede/Titel
+        # einfach "Müller") wurde dadurch NICHT erkannt, obwohl der Nachname
+        # Teil einer bekannten, der Akte zugeordneten Person ist. Ergaenzung:
+        # zusaetzlich zum vollen Namen wird auch das LETZTE Wort (typischer
+        # Nachname bei "Vorname Nachname"-Schema) separat als bekannte
+        # Entitaet derselben Kategorie indiziert - deckt damit auch den
+        # Fall OHNE jede Anrede ab (anders als die Ergaenzung in
+        # app/privacy/security_check.py::_find_possible_unrecognized_names,
+        # die ein Anrede-/Rollenwort direkt vor dem Nachnamen voraussetzt).
+        # Bewusst NUR bei mehrteiligen Namen (ein einzelnes Wort als Name
+        # waere bereits identisch zum vollen Namen, keine Ergaenzung noetig).
+        for category, names in list(known.items()):
+            surnames = []
+            for name in names:
+                parts = name.strip().split()
+                # ECHTER FUND (14.09., beim Haerten dieser Ergaenzung): eine
+                # Mindestlaenge ist zwingend - ohne sie wuerde z. B. ein
+                # (in echten Namen zwar unueblicher, aber testweise/real
+                # theoretisch moeglicher) einzelner Buchstabe als "Nachname"
+                # per Substring-Regex (siehe detect_known_entities) JEDES
+                # Vorkommen dieses Buchstabens IRGENDWO im Text treffen und
+                # damit die komplette Pseudonymisierung/Wiederaufteilung
+                # unbrauchbar machen (real reproduziert:
+                # test_context_never_contains_data_from_other_matter mit
+                # Mandant "Mandant A" -> "A" als Nachname haette jedes "a"
+                # im Fliesstext getroffen). Echte deutsche Nachnamen sind
+                # praktisch nie kuerzer als 3 Zeichen.
+                if len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
+                    surnames.append(parts[-1])
+            known[category] = names + [s for s in surnames if s not in names]
 
         return {category: names for category, names in known.items() if names}

@@ -107,6 +107,7 @@ class PromptContextBuilder:
             db.query(Document)
             .filter(Document.matter_id == matter_id)
             .filter(Document.extracted_text.isnot(None))
+            .filter(Document.deleted_at.is_(None))
             .all()
         )
         if documents:
