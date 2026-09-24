@@ -72,6 +72,27 @@ def test_creates_desktop_shortcut_checked_by_default() -> None:
     assert "Flags: unchecked" not in content
 
 
+def test_creates_exactly_one_desktop_entry() -> None:
+    """Regressionsschutz zum Desktop-Blocker vom 14.09.: gemeldet war ein
+    zweites, scheinbar leeres Element neben dem Lexono-Symbol. Die
+    Untersuchung hat den Installer ausdruecklich ENTLASTET (die Ursache war
+    eine verwaiste app.log, siehe Start.vbs) - genau deshalb wird der
+    Zustand hier festgenagelt: der Installer darf weiterhin GENAU EIN
+    Desktop-Element anlegen, und zwar die Verknuepfung selbst. Weder eine
+    zweite [Icons]-Zeile noch ein [Files]-Eintrag darf zusaetzlich auf dem
+    Desktop landen."""
+    content = _read_installer()
+    desktop_constants = ("{autodesktop}", "{commondesktop}", "{userdesktop}")
+    hits = [
+        line
+        for line in content.splitlines()
+        if not line.lstrip().startswith(";")
+        and any(constant in line for constant in desktop_constants)
+    ]
+    assert len(hits) == 1, f"Erwartet genau ein Desktop-Element, gefunden: {hits}"
+    assert hits[0].startswith('Name: "{autodesktop}\\{#MyAppName}"')
+
+
 def test_output_filename_matches_requested_exe_name() -> None:
     content = _read_installer()
     assert "OutputBaseFilename=Lexono_Setup" in content

@@ -58,6 +58,36 @@ def test_redirects_stdout_and_stderr_to_app_log() -> None:
     assert "2>&1" in content
 
 
+def test_app_log_goes_to_the_data_dir_not_next_to_the_script() -> None:
+    """Regressionsschutz fuer den real gemeldeten Desktop-Blocker (14.09.):
+    neben der Lexono-Verknuepfung stand eine zweite, scheinbar leere
+    Desktop-Kachel. Es war KEIN zweiter Shortcut, sondern eine verwaiste
+    `app.log` - Windows blendet bekannte Endungen aus und fuer `.log` ist
+    keine Anwendung registriert, also zeichnet Explorer ein leeres Symbol
+    namens "app".
+
+    Moeglich war das, weil der Logpfad dem SKRIPTVERZEICHNIS folgte: eine
+    Kopie dieses Skripts an einem beliebigen Ort erzeugte dort eine
+    Lexono-Logdatei. Der Logpfad muss deshalb am Datenverzeichnis haengen
+    (identischer Ort wie `.setup_complete`, siehe app/setup/paths.py), nie
+    am Ablageort des Skripts."""
+    content = _read_vbs()
+    assert 'strLogPath = strDataDir & "\\app.log"' in content
+    assert 'strScriptDir & "\\app.log"' not in content
+
+
+def test_log_path_is_resolved_after_the_data_dir_is_known() -> None:
+    """VBScript wertet von oben nach unten aus - stuende die
+    strLogPath-Zuweisung vor der %PROGRAMDATA%-Ableitung, waere strDataDir
+    dort noch leer und das Log landete in "\\app.log" auf dem
+    Laufwerks-Wurzelverzeichnis. Der Textcheck oben allein wuerde das nicht
+    bemerken."""
+    content = _read_vbs()
+    assert content.index('strDataDir = strProgramData & "\\Lexono"') < content.index(
+        'strLogPath = strDataDir & "\\app.log"'
+    )
+
+
 def test_uses_the_outer_quote_wrap_workaround_for_cmd_c() -> None:
     """Regressionsschutz für den waehrend der Umsetzung gefundenen echten
     Bug: ohne ein zusaetzliches, die GESAMTE Befehlszeile umschliessendes

@@ -678,6 +678,50 @@ def test_apply_rounded_corners_never_raises_when_native_handle_missing() -> None
     run._apply_rounded_corners(object())  # kein .native Attribut
 
 
+# --- _remove_title_bar_icon (Nutzerauftrag 13.09.: Icon aus der
+# Titelleiste entfernen) ---
+
+
+def test_remove_title_bar_icon_sends_wm_seticon_with_a_real_transparent_handle(
+    monkeypatch,
+) -> None:
+    """Beweis auf Aufrufebene: WM_SETICON wird fuer ICON_SMALL und
+    ICON_BIG mit einem ECHTEN (nicht-Null) Icon-Handle gesendet - real
+    verifiziert (Screenshot), dass ein NULL-Handle Windows stattdessen auf
+    ein generisches Platzhalter-Icon zurueckfallen laesst (schlechter als
+    vorher). Nur ein echtes, aber vollstaendig transparentes Handle
+    entfernt das Icon tatsaechlich sichtbar. `SendMessageW` selbst bleibt
+    gefaked (kein echtes Fenster in diesem Test), die Bitmap-/Icon-
+    Erzeugung ueber pythonnet laeuft echt (dieselbe Abhaengigkeit, die
+    pywebviews WinForms-Backend selbst bereits braucht)."""
+    calls: list[tuple[int, int, int, int]] = []
+
+    class _FakeUser32:
+        def SendMessageW(self, hwnd, msg, wparam, lparam):
+            calls.append((hwnd, msg, wparam, lparam))
+            return 0
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"user32": _FakeUser32()})(), raising=False)
+
+    run._remove_title_bar_icon(_FakeWindow())
+
+    assert len(calls) == 2
+    assert calls[0][:3] == (12345, run._WM_SETICON, run._ICON_SMALL)
+    assert calls[1][:3] == (12345, run._WM_SETICON, run._ICON_BIG)
+    # Echtes Icon-Handle, kein NULL (siehe Docstring-Begruendung oben) -
+    # und beide Aufrufe nutzen dasselbe Handle.
+    assert calls[0][3] != 0
+    assert calls[0][3] == calls[1][3]
+
+
+def test_remove_title_bar_icon_never_raises_when_native_handle_missing() -> None:
+    """Rein kosmetische Funktion - darf den App-Start nie gefaehrden."""
+    run._remove_title_bar_icon(object())  # kein .native Attribut
+    run._remove_title_bar_icon(None)
+
+
 class _FakeSetupResult:
     def __init__(self, *, success: bool, stage: str = "ready", installed_model: str | None = "qwen3:1.7b", error: str | None = None) -> None:
         self.success = success

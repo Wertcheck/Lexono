@@ -11,7 +11,7 @@
 ' "hängen", ohne dass der Anwalt/die Kanzleimitarbeiterin einen Hinweis
 ' bekäme. Deshalb: solange kein abgeschlossenes Setup vorliegt, SICHTBAR;
 ' danach jeder weitere Start STUMM (Server-Logs stdout/stderr -> app.log
-' neben diesem Skript).
+' im DATENVERZEICHNIS, siehe strLogPath weiter unten).
 '
 ' WICHTIG (real beim Endanwender aufgetreten, 12.09.): NICHT anhand von
 ' `.env` allein entscheiden, ob die Ersteinrichtung abgeschlossen ist -
@@ -44,7 +44,6 @@ Set objShell = CreateObject("WScript.Shell")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 
 strScriptDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
-strLogPath = strScriptDir & "\app.log"
 
 ' Persistentes Datenverzeichnis - identische Ableitung wie
 ' app/setup/paths.py (resolve_data_dir): LEXONO_DATA_DIR-Override (oder der
@@ -59,6 +58,35 @@ If strDataDir = "%KANZLEI_AI_DATA_DIR%" Then
     strDataDir = strProgramData & "\Lexono"
 End If
 strSetupCompletePath = strDataDir & "\.setup_complete"
+
+' Server-Log ins DATENVERZEICHNIS, NICHT neben dieses Skript (14.09.,
+' Desktop-Blocker-Diagnose).
+'
+' ECHTER, reproduzierter Befund: auf dem Desktop der Referenzmaschine lag
+' neben der Lexono-Verknuepfung eine zweite, scheinbar leere Kachel. Es war
+' kein zweiter Shortcut und kein Installer-Fehler (windows/installer.iss
+' legt nachweislich genau EINEN {autodesktop}-Eintrag an), sondern eine
+' verwaiste `app.log` vom 12.09.: Windows blendet bekannte Endungen aus
+' (HideFileExt) und fuer `.log` ist keine Anwendung registriert - Explorer
+' zeichnet dann ein generisches, praktisch leeres Symbol namens "app"
+' direkt neben "Lexono".
+'
+' Ursache dafuer, dass eine Lexono-Logdatei ueberhaupt dort landen konnte,
+' war diese Zeile: der Logpfad folgte dem SKRIPTVERZEICHNIS. Lief (wie am
+' 12.09.) irgendwann eine Kopie dieses Skripts von einem beliebigen Ort,
+' entstand dort eine app.log - inklusive Desktop, wo sie als Fremdkoerper
+' im Symbolgitter stehen bleibt.
+'
+' Das Datenverzeichnis ist der bereits etablierte, dafuer vorgesehene Ort
+' (app/setup/paths.py, ARCHITECTURE.md §2022: ausdruecklich NICHT
+' Desktop/Dokumente). Zweiter, unabhaengiger Vorteil: bei einer Installation
+' in ein schreibgeschuetztes Programmverzeichnis (maschinenweites Setup
+' unter %PROGRAMFILES%) wuerde `>> app.log` im Programmordner fehlschlagen
+' und den stummen Start kommentarlos abbrechen - im Datenverzeichnis nicht.
+' Der stumme Zweig unten laeuft ohnehin nur, wenn `.setup_complete` in
+' genau diesem Verzeichnis existiert, es ist also garantiert vorhanden und
+' beschreibbar.
+strLogPath = strDataDir & "\app.log"
 
 ' HINWEIS (KanzleiAI->Lexono-Produktidentitaets-Bereinigung): die echte
 ' Migration eines bestehenden `%PROGRAMDATA%\KanzleiAI`-Verzeichnisses

@@ -455,6 +455,59 @@ def _apply_rounded_corners(window: object | None = None) -> None:
         pass
 
 
+#: WM_SETICON (Win32-Nachricht) + deren beide Icon-Slots - siehe
+#: _remove_title_bar_icon fuer die Begruendung.
+_WM_SETICON = 0x0080
+_ICON_SMALL = 0
+_ICON_BIG = 1
+
+
+def _remove_title_bar_icon(window: object | None = None) -> None:
+    """Entfernt das App-Icon aus der nativen Titelleiste (Nutzerauftrag,
+    13.09.: "das kleine Icon oben links muss weg") - bewusst NUR das
+    Titelleisten-Icon, NICHT das Icon der .exe selbst (Taskleiste/
+    Datei-Explorer/Alt+Tab zeigen weiterhin das echte Lexono-Icon, das
+    kommt direkt aus der .exe-Ressource, nicht von hier).
+
+    ECHTER FUND (real per Screenshot verifiziert, 13.09.): ein NULL-Handle
+    fuer WM_SETICON entfernt das Icon NICHT - Windows faellt stattdessen
+    auf ein generisches Platzhalter-Icon zurueck (schlechter als vorher,
+    nicht "kein Icon"). Auch das zusaetzliche Nullen des KLASSEN-Icons
+    (SetClassLongPtr GCLP_HICON/-SM) aenderte daran nichts - real getestet.
+    Ein echtes, aber VOLLSTAENDIG TRANSPARENTES Icon-Handle funktioniert
+    dagegen (real per Screenshot bestaetigt: Titelleiste zeigt danach nur
+    noch den Text "Lexono", kein Icon mehr sichtbar) - Windows hat dann
+    "ein Icon", das aber unsichtbar ist, statt auf den generischen
+    Platzhalter auszuweichen.
+
+    Nutzt `System.Drawing.Bitmap` ueber pythonnet (`clr`) statt reinem
+    ctypes/GDI32 (CreateDIBSection/CreateIconIndirect waere gleichwertig,
+    aber deutlich mehr fehleranfaelliger Low-Level-Code) - pythonnet ist
+    hier GARANTIERT bereits geladen, da pywebviews WinForms-Backend selbst
+    darauf aufbaut (keine neue Abhaengigkeit)."""
+    try:
+        import ctypes
+
+        import clr  # type: ignore[import-not-found]
+
+        clr.AddReference("System.Drawing")
+        from System.Drawing import Bitmap, Color  # type: ignore[import-not-found]
+
+        hwnd = window.native.Handle.ToInt32()  # type: ignore[union-attr]
+        user32 = ctypes.windll.user32  # type: ignore[attr-defined]
+
+        transparent_bitmap = Bitmap(32, 32)
+        for x in range(32):
+            for y in range(32):
+                transparent_bitmap.SetPixel(x, y, Color.FromArgb(0, 0, 0, 0))
+        hicon = transparent_bitmap.GetHicon().ToInt64()
+
+        user32.SendMessageW(hwnd, _WM_SETICON, _ICON_SMALL, hicon)
+        user32.SendMessageW(hwnd, _WM_SETICON, _ICON_BIG, hicon)
+    except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
+        pass
+
+
 class _NativeApi:
     """JS-Brücke für das native WebView2-Fenster (20.08., Scan-Ordner-Dialog)
     - macht `webview.Window.create_file_dialog` als `window.pywebview.api.
@@ -615,7 +668,18 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
 
     native_api = _NativeApi()
     window = webview.create_window(
-        "Lexono",
+        # Bewusst LEER, nicht "Lexono" (Owner-Fund, 19.09., per neuem
+        # Login-Referenzbild bestaetigt und gegen die bereits laenger
+        # bestehende Dashboard-Referenz 05_chat_startseite.png
+        # gegengeprueft - BEIDE zeigen eine leere native Titelleiste ohne
+        # Text, nicht "Lexono"): `_remove_title_bar_icon` (siehe dort)
+        # entfernte bereits am 13.09. nur das Icon, liess den Text
+        # "Lexono" aber unveraendert stehen - dadurch erschien die Marke
+        # ZWEIMAL gleichzeitig (einmal hier in der nativen Titelleiste,
+        # einmal in der eigenen Sidebar-/Login-Kartenmarke). Die Taskleiste/
+        # Alt+Tab zeigen weiterhin das echte Lexono-Icon (kommt direkt aus
+        # der .exe-Ressource, unabhaengig vom Fenstertitel-Text).
+        "",
         f"{base_url}/dashboard/login",
         width=1400,
         height=900,
@@ -626,14 +690,21 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         # Windows-Maximieren/Snap/Alt+Tab/Taskleisten-Verhalten.
         background_color="#F8FAFC",
         js_api=native_api,
+        # ECHTER FUND (Nutzerfeedback, 13.09.): pywebview deaktiviert
+        # Textauswahl/-markierung standardmaessig (`text_select=False` ist
+        # der Default in webview.window.Window.__init__) - eine Chat-
+        # Antwort liess sich dadurch nicht markieren/kopieren, obwohl
+        # nichts im eigenen CSS/JS das verhinderte.
+        text_select=True,
     )
     native_api._window = window
-    # Beide Funktionen sind rein kosmetisch und unabhaengig voneinander
+    # Alle drei Funktionen sind rein kosmetisch und unabhaengig voneinander
     # (siehe deren eigene try/except-Bloecke) - _apply_light_title_bar
     # ist seit dem Rueckbau von frameless=True wieder wirksam (echte
     # native Titelleiste vorhanden).
     window.events.shown += _apply_light_title_bar
     window.events.shown += _apply_rounded_corners
+    window.events.shown += _remove_title_bar_icon
     # Blockiert im Hauptthread, bis der Nutzer das Fenster schließt.
     webview.start()
 
