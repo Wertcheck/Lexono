@@ -33,6 +33,19 @@ class CaseScenario:
     has_deadline: bool
     deadline_days_from_now: int | None
     deadline_source_text_template: str | None
+    #: Antwortentwurf der Kanzlei zu diesem Fall (15.09.).
+    #:
+    #: Grund: der Generator erzeugte Mandanten/Akten/Dokumente/Fristen, aber
+    #: KEINE Entwuerfe - die Gold-Workflow-Stationen am Ende (Entwurf ->
+    #: anwaltliche Freigabe -> Postausgang) hatten damit in der gesamten
+    #: Demo-/Testbasis keinen einzigen realistischen Datensatz und liessen
+    #: sich weder vorfuehren noch ehrlich End-to-End pruefen.
+    #:
+    #: Bewusst als feste Vorlage: der Generator ruft KEINE KI auf (keine
+    #: Kosten, deterministisch, siehe Modul-Docstring). Der Text ist ein
+    #: plausibler Kanzleischriftsatz, KEIN echter Rechtsrat - die Akte ist
+    #: ueber die DEMO-Mandantennummer eindeutig als synthetisch erkennbar.
+    draft_body_template: str | None = None
 
 
 SCENARIOS: tuple[CaseScenario, ...] = (
@@ -48,7 +61,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "meines Erachtens nicht vollständig berücksichtigt wurden.\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="steuerbescheid_{jahr}_{mandant_kurz}.pdf",
+        document_filename_template="steuerbescheid_{jahr}_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Bescheid für {jahr} über Einkommensteuer und Solidaritätszuschlag.\n"
             "Festgesetzte Einkommensteuer: {betrag} EUR.\n"
@@ -61,6 +74,21 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         deadline_source_text_template=(
             "Einspruch ist innerhalb eines Monats nach Bekanntgabe des Bescheids "
             "vom {bescheid_datum} einzulegen."
+        ),
+        draft_body_template=(
+            "Sehr geehrte Damen und Herren,\n\n"
+            "namens und in Vollmacht unseres Mandanten legen wir gegen den "
+            "Bescheid fuer {jahr} ueber Einkommensteuer und Solidaritaetszuschlag "
+            "vom {bescheid_datum}\n\n"
+            "                    E i n s p r u c h\n\n"
+            "ein.\n\n"
+            "Begruendung:\n"
+            "Die Werbungskosten wurden lediglich mit dem Pauschbetrag von "
+            "1.230 EUR beruecksichtigt. Tatsaechlich sind hoehere Aufwendungen "
+            "angefallen, die wir belegen koennen. Wir beantragen, den Bescheid "
+            "entsprechend zu aendern und die Steuer neu festzusetzen.\n\n"
+            "Die Belege reichen wir binnen zwei Wochen nach.\n\n"
+            "Mit freundlichen Gruessen"
         ),
     ),
     CaseScenario(
@@ -76,7 +104,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "begleiten?\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="pruefungsanordnung_{mandant_kurz}.pdf",
+        document_filename_template="pruefungsanordnung_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Prüfungsanordnung gemäß § 196 AO.\n"
             "Prüfungszeitraum: {jahr_von} bis {jahr}.\n"
@@ -87,6 +115,18 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         has_deadline=False,
         deadline_days_from_now=None,
         deadline_source_text_template=None,
+        draft_body_template=(
+            "Sehr geehrte Damen und Herren,\n\n"
+            "wir bestaetigen den Eingang der Pruefungsanordnung und zeigen an, "
+            "dass wir unseren Mandanten im Pruefungsverfahren vertreten.\n\n"
+            "Gegen die Pruefung als solche bestehen keine Einwaende. Wir bitten "
+            "jedoch um Verlegung des vorgesehenen Pruefungsbeginns am "
+            "{pruefungsbeginn}, da die angeforderten Unterlagen zu diesem "
+            "Zeitpunkt noch nicht vollstaendig aufbereitet vorliegen.\n\n"
+            "Wir schlagen einen Beginn zwei Wochen spaeter vor und sichern zu, "
+            "die Unterlagen bis dahin vollstaendig bereitzustellen.\n\n"
+            "Mit freundlichen Gruessen"
+        ),
     ),
     CaseScenario(
         key="umsatzsteuer_nachschau",
@@ -100,7 +140,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "dokumentiert sind.\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="ust_unterlagen_{mandant_kurz}.pdf",
+        document_filename_template="ust_unterlagen_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Zusammenstellung der Vorsteuerabzüge für den Zeitraum {jahr}.\n"
             "Summe Vorsteuer: {betrag} EUR.\n"
@@ -110,6 +150,17 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         has_deadline=False,
         deadline_days_from_now=None,
         deadline_source_text_template=None,
+        draft_body_template=(
+            "Sehr geehrte Damen und Herren,\n\n"
+            "wir nehmen Bezug auf die angekuendigte Umsatzsteuer-Nachschau und "
+            "uebersenden die angeforderten Unterlagen fuer den Zeitraum "
+            "{jahr_von} bis {jahr}.\n\n"
+            "Die Ausgangsrechnungen sind chronologisch geordnet; die "
+            "Vorsteuerbetraege sind in der beigefuegten Aufstellung den "
+            "jeweiligen Eingangsrechnungen zugeordnet.\n\n"
+            "Fuer Rueckfragen stehen wir zur Verfuegung.\n\n"
+            "Mit freundlichen Gruessen"
+        ),
     ),
     CaseScenario(
         key="mahnung_zahlungsverzug",
@@ -123,7 +174,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "erbracht wurde. Ich bitte um rechtliche Einschätzung.\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="mahnung_{mandant_kurz}.pdf",
+        document_filename_template="mahnung_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Mahnung wegen Zahlungsverzugs.\n"
             "Offener Betrag: {betrag} EUR zzgl. Verzugszinsen.\n"
@@ -133,6 +184,17 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         has_deadline=True,
         deadline_days_from_now=14,
         deadline_source_text_template="Zahlungsfrist: 14 Tage ab Zugang dieses Schreibens.",
+        draft_body_template=(
+            "Sehr geehrte Damen und Herren,\n\n"
+            "wir zeigen an, dass wir die rechtlichen Interessen des "
+            "Rechnungsempfaengers vertreten.\n\n"
+            "Die von Ihnen geltend gemachte Forderung ueber {betrag} EUR weisen "
+            "wir derzeit zurueck. Eine pruefbare Rechnung ist unserem Mandanten "
+            "nicht zugegangen; der Verzug ist damit nicht eingetreten.\n\n"
+            "Wir bitten um Uebersendung der Rechnung sowie um Nachweis des "
+            "Zugangs. Bis dahin weisen wir die Mahnkosten zurueck.\n\n"
+            "Mit freundlichen Gruessen"
+        ),
     ),
     CaseScenario(
         key="vertragspruefung",
@@ -145,7 +207,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "geprüft haben möchte, insbesondere die Haftungsklausel in § 8.\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="vertragsentwurf_{mandant_kurz}.pdf",
+        document_filename_template="vertragsentwurf_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Vertragsentwurf zwischen den Parteien.\n"
             "§ 8 Haftung: Die Haftung wird auf Vorsatz und grobe Fahrlässigkeit "
@@ -156,6 +218,19 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         has_deadline=False,
         deadline_days_from_now=None,
         deadline_source_text_template=None,
+        draft_body_template=(
+            "Sehr geehrter Mandant,\n\n"
+            "wir haben den uebersandten Vertragsentwurf geprueft und fassen das "
+            "Ergebnis zusammen.\n\n"
+            "1. Die Haftungsregelung ist einseitig zu Ihren Lasten ausgestaltet "
+            "und sollte auf Vorsatz und grobe Fahrlaessigkeit begrenzt werden.\n"
+            "2. Die Laufzeit von 24 Monaten bei automatischer Verlaengerung "
+            "empfehlen wir auf 12 Monate zu verkuerzen.\n"
+            "3. Die Zahlungsfrist von 60 Tagen sollte auf 30 Tage angepasst "
+            "werden.\n\n"
+            "Einen entsprechend geaenderten Entwurf fuegen wir bei.\n\n"
+            "Mit freundlichen Gruessen"
+        ),
     ),
     CaseScenario(
         key="kuendigung_widerspruch",
@@ -169,7 +244,7 @@ SCENARIOS: tuple[CaseScenario, ...] = (
             "der Erfolgsaussichten.\n\n"
             "Mit freundlichen Grüßen\n{mandant}"
         ),
-        document_filename_template="kuendigung_{mandant_kurz}.pdf",
+        document_filename_template="kuendigung_{mandant_dateiname}.pdf",
         document_extracted_text_template=(
             "Fristlose Kündigung des Arbeitsverhältnisses zum {bescheid_datum}.\n"
             "Begründung: Wiederholte Verletzung arbeitsvertraglicher Pflichten.\n"
@@ -180,6 +255,18 @@ SCENARIOS: tuple[CaseScenario, ...] = (
         deadline_days_from_now=21,
         deadline_source_text_template=(
             "Klagefrist von drei Wochen nach Zugang der Kündigung (§ 4 KSchG)."
+        ),
+        draft_body_template=(
+            "Sehr geehrte Damen und Herren,\n\n"
+            "namens und in Vollmacht unseres Mandanten widersprechen wir der "
+            "Kuendigung vom {bescheid_datum}.\n\n"
+            "Die Kuendigung ist aus unserer Sicht unwirksam. Eine "
+            "ordnungsgemaesse Anhoerung ist nicht erfolgt; zudem fehlt es an "
+            "einem hinreichenden Kuendigungsgrund.\n\n"
+            "Wir fordern Sie auf, die Kuendigung bis zum Ablauf von zwei Wochen "
+            "ab Zugang dieses Schreibens zurueckzunehmen und die Fortsetzung des "
+            "Vertragsverhaeltnisses zu bestaetigen.\n\n"
+            "Mit freundlichen Gruessen"
         ),
     ),
 )
