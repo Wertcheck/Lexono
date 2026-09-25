@@ -907,3 +907,20 @@ Dokument → nicht blockiert; Vorschläge-Zeile sichtbar; Erkannte-Frist-
 Vorschau sichtbar; 41 Demo-Mandanten/94 Akten bestaetigt) - **5/5 PASS**.
 Test-Artefakte durch den Smoketest selbst entfernt. Volle Herleitung
 siehe AGENT_HANDOFFS.md. Kein Commit.
+
+## Commit (25.09., auf explizite Nutzeranfrage "commit this")
+
+Das seit dem 13.09. (Commit `b17c2b1`) angehaeufte "Prozess-Risiko" (grosser
+unkommitteter Diff, s. o.) ist aufgeloest: 11 logisch nach Subsystem
+gruppierte Commits auf `main` (kein Push), git-Historie siehe `git log`.
+Reihenfolge: Privacy/Auth → KI-Anbieter/Drafting/Chat →
+Dokumente/Export/Gesetze → Datenmodell/Migrationen →
+Mandanten/Matching/Suche/Mail → Dashboard-UI (groesster Block) →
+Installer/Entrypoint → synthetische Testdaten → UX-Assets/Branding →
+Audit/Fehler/Performance → .agentic-Dokumentation. Arbeitsverzeichnis
+danach sauber bis auf eine bewusst NICHT committete Datei:
+`LEXONO_CHAT_UEBERGABE.zip` (redundantes Doku-/Code-Export-Snapshot vom
+12.09., kein Quellcode, in keiner .agentic-Datei als beabsichtigtes
+Artefakt referenziert) - liegt weiterhin unversioniert im Arbeitsbaum,
+Entscheidung (loeschen oder behalten) liegt beim Nutzer. Volle Suite nach
+dem Commit erneut gruen bestaetigt: 2174 passed, 1 skipped, 0 failed.
