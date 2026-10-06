@@ -128,7 +128,31 @@ def detect_steuer_id(text: str) -> list[DetectedSpan]:
 
 
 def detect_aktenzeichen(text: str) -> list[DetectedSpan]:
-    return _matches_from_pattern(text, _AKTENZEICHEN_PATTERN, "aktenzeichen", group=1)
+    """ECHTER FUND, LIVE REPRODUZIERT (05.10., Owner-Direktive
+    "Abschließende Live-Verifikation nach Aufladung des Anthropic-
+    Guthabens"): `_AKTENZEICHEN_PATTERN` verlangt nach "Aktenzeichen"/
+    "Az." nur IRGENDEIN naechstes Wort, kein tatsaechliches
+    Nummernformat. Ein Claude-Entwurf, der ehrlich auf ein FEHLENDES
+    Aktenzeichen hinweist ("Das Aktenzeichen der Gegenseite ist nicht
+    uebermittelt" / "Vollstaendiges Aktenzeichen und Postanschrift..."),
+    verwendet das Wort "Aktenzeichen" in ganz normaler Flusssprache - das
+    Muster fing dabei faelschlich die naechsten Woerter ("der", "und")
+    als vermeintlichen Aktenzeichen-WERT ein. Diese wurden dadurch als
+    `original_value="der"`/`"und"` pseudonymisiert - zwei der haeufigsten
+    deutschen Woerter ueberhaupt, die zwangslaeufig an anderer Stelle
+    desselben Texts erneut (unpseudonymisiert) auftauchen und dadurch
+    den nachgelagerten Original-Leck-Check ausloesten, obwohl kein
+    einziges echtes Aktenzeichen im Text stand - blockierte dadurch eine
+    voellig unauffaellige Folgefrage vollstaendig.
+
+    Ein echtes Aktenzeichen enthaelt IMMER mindestens eine Ziffer (z. B.
+    "123/24", "5 O 123/22", "VN-2024-88471") - "der"/"und" tun das nie.
+    Dieser Filter aendert NICHTS an der eigentlichen Regex (bewusst
+    minimal-invasiv, keine Neuformulierung des bestehenden Musters) und
+    SCHWAECHT die Erkennung nicht: ein echtes Aktenzeichen wird weiterhin
+    zuverlaessig erfasst, siehe tests/test_privacy_detectors.py."""
+    spans = _matches_from_pattern(text, _AKTENZEICHEN_PATTERN, "aktenzeichen", group=1)
+    return [s for s in spans if any(ch.isdigit() for ch in s.value)]
 
 
 def detect_kundennummer(text: str) -> list[DetectedSpan]:
@@ -184,6 +208,65 @@ _ALL_REGEX_DETECTORS = (
 )
 
 
+#: Mindestlaenge fuer `_extend_with_repeated_occurrences` (siehe dort) -
+#: verhindert, dass ein sehr kurzer, ohnehin unsicherer NER-/Regex-Treffer
+#: (z. B. ein abgeschnittenes Fragment) blind im gesamten Text wiederholt
+#: gesucht wird und dadurch neue, eigene Fehlalarme erzeugt.
+_MIN_REPEATED_OCCURRENCE_LENGTH = 4
+
+
+def _extend_with_repeated_occurrences(
+    text: str, spans: list[DetectedSpan]
+) -> list[DetectedSpan]:
+    """ECHTER FUND, live reproduziert (05.10., Owner-Direktive
+    "Vollstaendiger UX- und Workflow-Audit"): Presidios NER-Erkennung ist
+    INNERHALB EINES EINZIGEN Textes nicht zwingend konsequent - derselbe
+    Wert ("Bekanntgabefiktion", ein deutscher Rechtsbegriff, fälschlich
+    als Ort erkannt) wurde an einer Stelle (in einer Zwischenüberschrift)
+    als Entität erkannt und ersetzt, an einer ANDEREN Stelle desselben
+    Textes (eingebettet in einem normalen Satz) dagegen NICHT - abhängig
+    vom jeweiligen Satzkontext der einzelnen Fundstelle. Ergebnis: der
+    Originalwert blieb an der zweiten Stelle woertlich im pseudonymisierten
+    Text stehen und loeste beim nachgelagerten Leck-Check
+    (`check_response_placeholder_integrity`) einen Abbruch aus - ein
+    bereits bekannter, in diesem Modul fuer EINEN konkreten Fall
+    ("Elbchaussee 45", siehe `_STREET_PATTERN`-Kommentar oben) bereits
+    dokumentiertes Fundmuster, hier erstmals ALLGEMEIN behoben statt nur
+    fuer das eine, damals betroffene Regex-Muster.
+
+    Prinzip (identisch zu `detect_known_entities` oben, hier auf NEU per
+    NER/Regex gefundene Werte erweitert): ist ein Wert IRGENDWO im Text
+    einmal als Entität erkannt worden, werden ALLE weiteren wortgrenzen-
+    genauen Vorkommen DESSELBEN Werts im selben Text ebenfalls als
+    dieselbe Kategorie behandelt - unabhaengig davon, ob der jeweilige
+    Satzkontext die urspruengliche NER-Erkennung an dieser Stelle
+    individuell bestaetigt haette. Macht die Pseudonymisierung
+    KONSEQUENTER (strikt zusaetzliche Treffer, nie weniger), nicht
+    schwaecher - kein bestehender, bereits erkannter Fund wird dadurch
+    entfernt oder uebersprungen."""
+    covered = [(s.start, s.end) for s in spans]
+    seen_values: set[tuple[str, str]] = set()
+    extra: list[DetectedSpan] = []
+    for span in spans:
+        key = (span.category, span.value.lower())
+        if key in seen_values or len(span.value) < _MIN_REPEATED_OCCURRENCE_LENGTH:
+            continue
+        seen_values.add(key)
+        pattern = re.compile(r"\b" + re.escape(span.value) + r"\b", re.IGNORECASE)
+        for match in pattern.finditer(text):
+            if any(match.start() < c_end and match.end() > c_start for c_start, c_end in covered):
+                continue
+            extra.append(
+                DetectedSpan(
+                    category=span.category, start=match.start(), end=match.end(), value=match.group(0)
+                )
+            )
+            covered.append((match.start(), match.end()))
+    if not extra:
+        return spans
+    return _resolve_overlaps(spans + extra)
+
+
 def detect_all(
     text: str,
     known_entities: dict[str, list[str]] | None = None,
@@ -200,6 +283,11 @@ def detect_all(
     rollenzugeordnete Entität soll einer generischen NER-Erkennung (siehe
     app/privacy/presidio_ner.py, optional per `ner_detector` injiziert)
     vorgehen.
+
+    Abschliessend `_extend_with_repeated_occurrences` (05.10., siehe dort):
+    stellt sicher, dass ein einmal irgendwo erkannter Wert konsequent an
+    JEDER Stelle im Text erfasst wird, nicht nur dort, wo der jeweilige
+    Satzkontext die NER-Erkennung individuell bestaetigt hat.
     """
     all_spans: list[DetectedSpan] = []
     for detector in _ALL_REGEX_DETECTORS:
@@ -209,7 +297,8 @@ def detect_all(
     if ner_detector is not None:
         all_spans.extend(ner_detector(text))
 
-    return _resolve_overlaps(all_spans)
+    resolved = _resolve_overlaps(all_spans)
+    return _extend_with_repeated_occurrences(text, resolved)
 
 
 def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:

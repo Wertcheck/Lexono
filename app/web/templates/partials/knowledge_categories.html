@@ -1,0 +1,35 @@
+{% import "_icons.html" as icons %}
+{# Kategorie-Kacheln (26.09., Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+   IMPLEMENTATION" §10: "Sie sind die Navigation... die aktuell
+   ausgewaehlte Kategorie muss eindeutig aktiv sein"). Eigenes Partial
+   (ECHTER FUND waehrend eigener Visual-QA, 26.09.): vorher lebten die
+   Kacheln nur in knowledge.html, wurden beim Kategoriewechsel per HTMX
+   aber NICHT mitaktualisiert (nur der Panel-Inhalt darunter) - die aktive
+   Markierung blieb dadurch auf der zuerst geladenen Kategorie stehen,
+   obwohl der Inhalt bereits gewechselt hatte. Jetzt als Out-of-Band-Swap
+   (siehe knowledge_router.py::knowledge_panel + `hx-swap-oob` unten)
+   zusammen mit dem Panel aktualisiert - EINE Quelle fuer die Kachel-
+   Darstellung statt zweier Kopien. #}
+<div class="knowledge-categories" id="knowledge-categories"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for key, label, icon_name in categories %}
+    <a href="/dashboard/knowledge?category={{ key }}"
+       class="knowledge-category-card{% if key == active_category %} knowledge-category-card--active{% endif %}"
+       hx-get="/dashboard/knowledge/panel?category={{ key }}{% if search %}&search={{ search }}{% endif %}"
+       hx-target="#knowledge-panel" hx-swap="outerHTML"
+       hx-push-url="/dashboard/knowledge?category={{ key }}">
+      {% if icon_name == "document" %}{{ icons.document(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "chart" %}{{ icons.chart(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "book" %}{{ icons.book(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "printer" %}{{ icons.printer(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "bulb" %}{{ icons.bulb(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "archive" %}{{ icons.archive(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "shield" %}{{ icons.shield(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "scale" %}{{ icons.scale(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "graduation_cap" %}{{ icons.graduation_cap(class_="knowledge-category-card__icon") }}
+      {% elif icon_name == "users" %}{{ icons.users(class_="knowledge-category-card__icon") }}
+      {% endif %}
+      <span class="knowledge-category-card__title">{{ label }}</span>
+      <span class="knowledge-category-card__count">{{ category_counts[key] }}</span>
+    </a>
+  {% endfor %}
+</div>

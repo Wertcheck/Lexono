@@ -1,4 +1,5 @@
 {% from "partials/_macros.html" import matter_tag, direction_tag %}
+{% import "_icons.html" as icons %}
 <a
   class="message-row{% if active_message_id == message.id %} message-row--active{% endif %}"
   href="/dashboard/inbox/{{ message.id }}"
@@ -7,11 +8,23 @@
   hx-swap="outerHTML"
   hx-push-url="/dashboard/inbox/{{ message.id }}"
 >
-  <div class="message-row__top">
-    <span class="message-row__sender">{{ message.sender or "Unbekannter Absender" }}</span>
-    <span class="message-row__time">{{ message.created_at.strftime("%d.%m. %H:%M") }}</span>
+  <div class="message-row__layout">
+    <span class="message-row__avatar message-row__avatar--{{ avatar_color(message.sender) }}">
+      {{ avatar_initials(message.sender) }}
+    </span>
+    <div class="message-row__body">
+      <div class="message-row__top">
+        <span class="message-row__sender">{{ message.sender or "Unbekannter Absender" }}</span>
+        <span class="message-row__time">{{ message.created_at.strftime("%d.%m. %H:%M") }}</span>
+      </div>
+      <div class="message-row__subject">{{ message.subject or "(kein Betreff)" }}</div>
+      <div class="message-row__snippet">{{ (message.body_text or "")|truncate(90, true, "…") }}</div>
+      <div class="message-row__footer">
+        {{ matter_tag(message) }} {{ direction_tag(message) }}
+        {% if message.documents %}
+          {{ icons.clip(class_="icon message-row__attachment-icon") }}
+        {% endif %}
+      </div>
+    </div>
   </div>
-  <div class="message-row__subject">{{ message.subject or "(kein Betreff)" }}</div>
-  <div class="message-row__snippet">{{ (message.body_text or "")|truncate(90, true, "…") }}</div>
-  {{ matter_tag(message) }} {{ direction_tag(message) }}
 </a>

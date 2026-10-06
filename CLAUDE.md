@@ -42,6 +42,41 @@ erfolgen.**
 - Die Architektur wird nicht eigenmächtig verändert, solange eine fachliche Entscheidung dazu
   offen ist.
 
+## Modellwahl und Abschlussdisziplin (26.09., Owner-Direktive "LEXONO —
+AUTONOMOUS ENGINEERING OPERATING SYSTEM" - hier verankert, nicht nur im
+Prompt einer einzelnen Sitzung, damit künftige Sitzungen es vorfinden)
+
+Ergänzt, ersetzt NICHT die "Iteratives Vorgehen"/"Grundregeln"-Abschnitte
+oben - nur die dort noch nicht abgedeckten Punkte:
+
+- **Sonnet ist das Standardmodell.** Vor einem groesseren, komplexen Task
+  (schwierige Root-Cause-Analyse, Cross-Module-Architektur, Security-/
+  Privacy-Architektur, wiederholtes Scheitern ohne echten Fortschritt)
+  kurz pruefen, ob eine Eskalation auf ein staerkeres Modell angemessen
+  waere - nicht aus Prestige, nicht aus Kostengruenden zu lange beim
+  falschen Modell bleiben. Bei einer Eskalation kurz MODELL + GRUND
+  festhalten; bei normaler Sonnet-Arbeit keine zusaetzliche
+  Dokumentationslast.
+- **Evidence before Done.** "Code existiert"/"Test ist gruen"/"Build
+  erfolgreich"/"Browser zeigt UI" sind je fuer sich KEIN vollstaendiger
+  Fertigstellungsbeweis. Die Verifikationstiefe (Unit → Integration → E2E
+  → Visual QA → reale Runtime → Desktop/WebView2 → Build/Installation)
+  muss zum tatsaechlichen Risiko/Umfang der Aenderung passen, nicht jede
+  Aenderung braucht jede Ebene.
+- **Continuous Agentic Execution.** Nicht nach einem einzelnen gruenen
+  Test, einem erfolgreichen Build oder einer sichtbar aussehenden UI
+  stoppen, wenn das eigentliche Ziel damit noch nicht real erreicht ist.
+  Bei blockierten Teilaufgaben unabhaengige Arbeit fortsetzen statt
+  untaetig zu warten. Ist der Auftrag/Backlog erschoepft, echte
+  Produktluecken aus UX-Referenzen/`.agentic/`/Laufzeitverhalten
+  ableiten - keine kuenstlichen Aufgaben erzeugen.
+- **Keine Fake-Vollstaendigkeit.** Sichtbare Buttons/Controls ohne
+  echte Funktion, Erfolgsmeldungen ohne zugrundeliegende Operation und
+  Mock-Verhalten trotz moeglicher echter Implementierung gelten NICHT
+  als erledigt (Spezialfall der bereits bestehenden Regel "niemals
+  Rechtsquellen/Fundstellen erfinden" oben, hier auf UI/Produktflaechen
+  allgemein ausgeweitet).
+
 ## Festgelegte technische Grundsatzentscheidungen
 
 - **Zielsprache/-version:** Python 3.13.x (siehe Hinweis zur Entwicklungsumgebung in

@@ -459,7 +459,11 @@ def test_anwalt_can_trigger_claude_regeneration(
     assert response.status_code == 303
     new_draft_id = response.headers["location"].rsplit("/", 1)[-1]
     new_draft = db_session.get(Draft, new_draft_id)
-    assert new_draft.content == "Neu generierte Antwort."
+    # 05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D:
+    # KI-generierter Inhalt wird jetzt zu Editor-HTML gewandelt (siehe
+    # app/drafting/markdown_to_draft_html.py) statt roh gespeichert.
+    assert new_draft.content == "<p>Neu generierte Antwort.</p>"
+    assert new_draft.content_format == "html"
 
 
 # --- #12 Admin kann Nutzer verwalten ---
@@ -480,6 +484,82 @@ def test_admin_can_manage_users(client: TestClient, db_session: Session, users: 
     created = db_session.query(User).filter_by(email="neu@kanzlei.test").first()
     assert created is not None
     assert created.must_change_password is True
+
+
+# --- Letzter-Admin-Schutz (06.10., Owner-Direktive "SETTINGS -> BENUTZER",
+# Security-Invariant 5: echter, empirisch nachgewiesener Fund - weder
+# set_role noch set_active verhinderten vorher, dass der letzte aktive
+# Admin seine eigene Rolle wechselt bzw. deaktiviert wird) ---
+
+
+def test_last_admin_role_cannot_be_changed_away_from_admin(
+    client: TestClient, db_session: Session, users: dict
+) -> None:
+    """`users`-Fixture legt genau EINEN Admin an - der Versuch, dessen
+    Rolle zu wechseln, muss serverseitig abgelehnt werden, unabhängig
+    davon, ob der Request vom Admin selbst oder (manipuliert) von jemand
+    anderem käme."""
+    admin = users["admin"]
+    _login(client, admin.email)
+    users_page = client.get("/dashboard/admin/users")
+    csrf = _extract_csrf(users_page.text)
+
+    response = client.post(
+        f"/dashboard/admin/users/{admin.id}/role",
+        data={"role_name": "Anwalt", "csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    from urllib.parse import unquote
+
+    assert "aktiver Administrator" in unquote(response.headers["location"])
+
+    db_session.refresh(admin)
+    assert admin.role.name == "Admin"
+
+
+def test_role_change_away_from_admin_allowed_when_another_admin_remains(
+    client: TestClient, db_session: Session, roles: dict[str, Role], users: dict
+) -> None:
+    """Gegenprobe: sobald ein ZWEITER aktiver Admin existiert, muss der
+    Rollenwechsel weiterhin normal funktionieren - der Schutz darf nicht
+    pauschal jeden Rollenwechsel von Admins blockieren."""
+    second_admin = _make_user(db_session, roles["admin"], "zweiter-admin@kanzlei.test")
+    admin = users["admin"]
+    _login(client, admin.email)
+    users_page = client.get("/dashboard/admin/users")
+    csrf = _extract_csrf(users_page.text)
+
+    response = client.post(
+        f"/dashboard/admin/users/{second_admin.id}/role",
+        data={"role_name": "Anwalt", "csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "error" not in response.headers["location"]
+
+    db_session.refresh(second_admin)
+    assert second_admin.role.name == "Anwalt"
+
+
+def test_last_admin_cannot_be_deactivated_at_service_level(
+    db_session: Session, roles: dict[str, Role]
+) -> None:
+    """Service-Ebene (nicht über den Router: `deactivate_user` blockiert
+    die Selbst-Deaktivierung ohnehin bereits separat per `user.id ==
+    current_user.id`-Check, siehe app/web/users_router.py). Dieser Test
+    deckt ab, dass die Invariante auch dann greift, wenn
+    `UserService.set_active` über einen anderen Aufrufweg als die
+    bestehende Selbst-Check-Route erreicht würde (Defense in Depth,
+    Security-Invariant 5)."""
+    from app.auth.service import LastAdminError, UserService
+
+    only_admin = _make_user(db_session, roles["admin"], "only-admin@kanzlei.test")
+    with pytest.raises(LastAdminError):
+        UserService().set_active(db_session, only_admin, False, actor=only_admin.email)
+
+    db_session.refresh(only_admin)
+    assert only_admin.is_active is True
 
 
 # --- Admin kann das Passwort eines ANDEREN Nutzers zuruecksetzen (19.09.,

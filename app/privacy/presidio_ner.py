@@ -127,11 +127,33 @@ _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN = re.compile(r"^[A-Z0-9_@\s]+$")
 # wurden GEGENGEPRUEFT und zeigen dieses Verhalten NICHT - bewusst nur
 # dieses eine, konkret belegte Wort ergaenzt, keine vorsorgliche Liste ohne
 # Beleg.
+#: "offener" (05.10., Owner-Direktive "Abschließende Live-Verifikation
+#: nach Aufladung des Anthropic-Guthabens", live mit echtem Claude-Aufruf
+#: reproduziert): das haeufige deutsche Adjektiv "offen"/"offener" (z. B.
+#: in "Offener Prüfpunkt:" - einer in Anwaltsschreiben alltaeglichen
+#: Formulierung, hier Teil der Standard-Textbausteine dieses Projekts
+#: selbst, siehe draft_detail.html/response_validation.py) wird vom
+#: Modell zuverlaessig als PERSON erkannt, sobald es isoliert
+#: grossgeschrieben am Zeilen-/Satzanfang steht. Der dadurch entstehende
+#: Platzhalter ("[PERSON_XX] Prüfpunkt:*") loeste beim nachgelagerten
+#: Restrisiko-Scan (Punkt 2-4, security_check.py - laeuft auf dem
+#: bereits pseudonymisierten, an dieser Stelle kuenstlich luecken-
+#: haften Text) einen KASKADIERENDEN Fehlalarm aus: das direkt
+#: benachbarte, voellig unverdaechtige Wort "Prüfpunkt:*" wurde SEINERSEITS
+#: faelschlich als neue ORGANIZATION erkannt (dieselbe Out-of-
+#: Distribution-Schwaeche bei neutralisierten Platzhaltern, die oben
+#: bereits fuer "Herr [PERSON_06]" dokumentiert ist) - blockierte dadurch
+#: eine voellig unauffaellige, aus einem echten Claude-Aufruf stammende
+#: Folgefrage ("Bitte vervollstaendigen") vollstaendig. Ein echter
+#: Personen-Vorname lautet nie woertlich "offener" (es ist eine
+#: Adjektivform, kein Name) - identisches Ausschlussprinzip wie bei
+#: "gruessen"/"hochachtungsvoll" oben.
 _NEVER_ENTITY_WORDS = frozenset(
     {
         "gruessen", "grüßen", "grussen",
         "hochachtungsvoll",
         "erbschaftsteuerbescheid",
+        "offener",
     }
 )
 

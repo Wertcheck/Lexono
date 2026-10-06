@@ -22,11 +22,39 @@ neueren NICHT nachträglich verändert (auch ihr `status` bleibt
 eingefroren) - nur die jeweils aktuelle/neueste Zeile einer Kette erhält
 Status-Updates ohne Versionssprung (z. B. eine reine Freigabe ohne
 inhaltliche Änderung, siehe DraftFeedbackService).
+
+ERWEITERUNG (04.10., Owner-Direktive "Dokumenten-Editor produktionsnah
+implementieren" - siehe .agentic/DECISIONS.md fuer die volle Herleitung,
+INSBESONDERE die bewusste Abweichung von der fruaheren Entscheidung
+"Briefkopf-/Signatur-Vorschau statt Rich-Text-Editor" vom 20.09.):
+
+- `subject`/`recipient`: strukturierte Felder (Betreff/Empfaenger) fuer
+  den neuen Editor - NULL bei jeder Zeile, die (noch) ueber den alten
+  Weg (Schriftsatz-Generator/manuelle Bearbeitung ohne Editor) entstand.
+- `content_format`: "text" (Standard - `content` ist Klartext, siehe
+  app/export/letterhead.py und die PDF-/DOCX-Export-Services, UNVERAENDERT
+  fuer jede bestehende Zeile) oder "html" (nur vom neuen Rich-Text-Editor
+  erzeugt, serverseitig sanitisiert - siehe app/drafting/editor_service.py).
+- `last_autosaved_at`: Zeitstempel DERSELBEN aktuellen Zeile (siehe "ohne
+  Versionssprung" oben) - Autosave ueberschreibt `content`/`subject`/
+  `recipient` dieser einen Zeile nur, solange `status == "draft"` ist
+  (noch keine Freigabe-/Ablehnungsentscheidung getroffen wurde).
+- `status == "ai_suggestion_discarded"`: ein KI-Bearbeitungsvorschlag
+  (siehe app/drafting/editor_service.py) wird IMMER ueber die bestehende
+  `create_new_draft_version`-Kette als neue, eingefrorene Zeile erzeugt
+  (NIE eine zweite, parallele Persistenz-Logik) - "Verwerfen" aendert
+  NUR noch diesen einen Status-Wert auf der bereits erzeugten Zeile
+  (ohne Versionssprung, siehe oben), damit `_load_version_chain`
+  (app/web/drafts_router.py) sie nicht als aktive Kettenspitze
+  auswaehlt. Die Zeile selbst bleibt unveraendert in der Historie
+  erhalten (Nachvollziehbarkeit, CLAUDE.md) - nichts wird geloescht.
 """
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -54,10 +82,23 @@ class Draft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ForeignKey("drafts.id"), nullable=True, index=True
     )
 
+    # Siehe Moduldocstring "ERWEITERUNG (04.10.)".
+    subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    recipient: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    content_format: Mapped[str] = mapped_column(String(16), default="text", nullable=False)
+    last_autosaved_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+
     matter: Mapped["Matter"] = relationship(back_populates="drafts")
     previous_version: Mapped["Draft | None"] = relationship(
         remote_side="Draft.id", foreign_keys=[previous_version_id]
     )
     quality_ratings: Mapped[list["DraftQualityRating"]] = relationship(
         back_populates="draft", cascade="all, delete-orphan"
+    )
+    # 26.09., Owner-Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ
+    # PRODUCT-COMPLETION": Dokumente, die aus einem Export DIESER
+    # Entwurfsversion in der Akte gespeichert wurden - siehe
+    # app/models/document.py::generated_from_draft_id.
+    generated_documents: Mapped[list["Document"]] = relationship(
+        back_populates="generated_from_draft"
     )

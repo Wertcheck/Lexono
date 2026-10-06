@@ -476,6 +476,53 @@ def test_sidebar_no_longer_shows_removed_main_nav_items(
     assert 'sidebar__group-label">Einstellungen<' not in response.text
 
 
+def test_global_header_has_logo_and_global_search_before_sidebar(
+    client: TestClient, seeded: dict
+) -> None:
+    """25.09., Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+    IMPLEMENTATION" §5/§6, Referenzabgleich
+    `04_posteingang_nachricht_detail.png`: Logo + globale Suche leben jetzt
+    in einer eigenen, seitenuebergreifenden Kopfzeile OBERHALB von
+    Sidebar+Hauptbereich, nicht mehr verstreut in der Sidebar selbst."""
+    response = client.get("/dashboard/inbox")
+    header_start = response.text.index('<header class="global-header">')
+    sidebar_start = response.text.index('<nav class="sidebar">')
+    assert header_start < sidebar_start
+    header_html = response.text[header_start:sidebar_start]
+    assert "sidebar__brand-logo" in header_html
+    assert "In E-Mails, Mandanten, Akten oder Inhalten suchen" in header_html
+    assert 'data-command-bar-open' in header_html
+
+
+def test_sidebar_no_longer_has_its_own_search_but_has_new_chat_button(
+    client: TestClient, seeded: dict
+) -> None:
+    """25.09., Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+    IMPLEMENTATION" §5/§7: die Sidebar-eigene Suche ("Suchen… Strg K") ist
+    durch die globale Kopfzeilen-Suche ersetzt (nicht dupliziert) - dieser
+    Teil der damaligen Entscheidung bleibt unveraendert bestehen.
+
+    KURSKORREKTUR (26.09., Owner-Direktive "KANZLEIWISSEN FINAL POLISH +
+    APP-SHELL KORREKTUR" §P0, ausdruecklich als Fehler benannt): "Neuen
+    Chat starten" wurde in der 25.09.-Runde faelschlich ebenfalls entfernt
+    (Begruendung damals: "vollstaendig redundant zum '+'-Button auf der
+    Chat-Seite selbst") - der Owner hat klargestellt, dass die globale
+    Suche (Mandanten/Akten/Dokumente FINDEN) und "Neuen Chat starten" (die
+    primaere KI-Arbeitsflaeche OEFFNEN) verschiedene Zwecke haben, keine
+    Redundanz. Der Button ist jetzt wieder ein permanenter, von jeder
+    Seite aus sichtbarer Sidebar-Eintrag (siehe base.html/app.css
+    `.sidebar__new-chat-btn`), wiederverwendet dieselbe bestehende Route
+    wie der "+"-Button in chat.html (`/dashboard/chat?new=1`)."""
+    response = client.get("/dashboard/inbox")
+    sidebar_start = response.text.index('<nav class="sidebar">')
+    sidebar_end = response.text.index("</nav>", sidebar_start)
+    sidebar_html = response.text[sidebar_start:sidebar_end]
+    assert "sidebar__search-trigger" not in sidebar_html
+    assert "sidebar__new-chat-btn" in sidebar_html
+    assert "Neuen Chat starten" in sidebar_html
+    assert 'href="/dashboard/chat?new=1"' in sidebar_html
+
+
 def test_sidebar_has_profile_menu_trigger_at_bottom(client: TestClient, seeded: dict) -> None:
     """Der Sidebar-Footer zeigt jetzt einen Profilmenue-Ausloeser
     (Button, kein <a href="/dashboard/account"> mehr direkt) - das
@@ -490,13 +537,22 @@ def test_sidebar_profile_menu_has_all_four_mandated_items(
     client: TestClient, seeded: dict
 ) -> None:
     """Verbindliche Struktur: Mein Profil / Einstellungen / Hilfe &
-    Support / Abmelden - in dieser Reihenfolge, alle vier real verlinkt."""
+    Support / Abmelden - in dieser Reihenfolge, alle vier real verlinkt.
+
+    Sucht bewusst NUR innerhalb von `#sidebar-profile-menu` (25.09., ECHTER
+    FUND: seit dem Umzug der Kopfzeilen-Icons in die neue globale Kopfzeile,
+    siehe base.html/`.global-header`, enthaelt die Seite VOR dem
+    Profilmenue bereits einen eigenen Logout-Button mit `title="Abmelden"`
+    - eine ungescopte Suche nach "Abmelden" traf danach zuerst DIESEN statt
+    des Profilmenue-Eintrags)."""
     response = client.get("/dashboard/inbox")
     assert 'id="sidebar-profile-menu"' in response.text
-    mein_profil_pos = response.text.index("Mein Profil")
-    einstellungen_pos = response.text.index(">Einstellungen<")
-    hilfe_pos = response.text.index("Hilfe &amp; Support")
-    abmelden_pos = response.text.index("Abmelden")
+    menu_start = response.text.index('id="sidebar-profile-menu"')
+    menu_html = response.text[menu_start:]
+    mein_profil_pos = menu_html.index("Mein Profil")
+    einstellungen_pos = menu_html.index(">Einstellungen<")
+    hilfe_pos = menu_html.index("Hilfe &amp; Support")
+    abmelden_pos = menu_html.index("Abmelden")
     assert mein_profil_pos < einstellungen_pos < hilfe_pos < abmelden_pos
     assert 'href="/dashboard/account/me"' in response.text
     assert 'action="/dashboard/logout"' in response.text
@@ -504,7 +560,12 @@ def test_sidebar_profile_menu_has_all_four_mandated_items(
 
 def test_sidebar_links_main_nav_items_to_real_pages(client: TestClient, seeded: dict) -> None:
     """Jeder der sechs Hauptmenuepunkte ist ein echter, klickbarer Link -
-    kein `sidebar__link--disabled` mehr (unveraendert seit Prompt 48)."""
+    kein `sidebar__link--disabled` mehr (unveraendert seit Prompt 48).
+
+    "Kanzleiwissen" verlinkt seit 26.09. (Owner-Direktive "KANZLEIWISSEN
+    FINAL PRODUCT IMPLEMENTATION") auf die neue Kategorie-Uebersicht
+    (/dashboard/knowledge) statt direkt auf die reine Gesetzes-Leseansicht
+    (/dashboard/laws, siehe test_web_laws.py fuer diese Route selbst)."""
     response = client.get("/dashboard/inbox")
     for href in [
         "/dashboard/chat",
@@ -512,7 +573,7 @@ def test_sidebar_links_main_nav_items_to_real_pages(client: TestClient, seeded: 
         "/dashboard/matters",
         "/dashboard/inbox",
         "/dashboard/tasks",
-        "/dashboard/laws",
+        "/dashboard/knowledge",
     ]:
         assert f'href="{href}"' in response.text
     assert "sidebar__link--disabled" not in response.text
@@ -550,13 +611,22 @@ def test_sidebar_active_item_gets_active_class_and_stays_in_place(
 ) -> None:
     """Kein Aufklapp-Mechanismus mehr (keine <details>-Gruppen) - der
     aktive Hauptmenuepunkt bekommt stattdessen direkt die aktive Klasse,
-    an seiner FESTEN Position (siehe verbindliche Reihenfolge oben)."""
+    an seiner FESTEN Position (siehe verbindliche Reihenfolge oben).
+
+    Sucht bewusst erst AB `<nav class="sidebar">` (25.09., ECHTER FUND:
+    die neue globale Kopfzeile, siehe base.html/`.global-header`, enthaelt
+    VOR der Sidebar bereits einen eigenen Posteingang-Link
+    (`header-icons__btn`, Umschlag-Icon) - eine ungescopte Suche nach
+    `href="/dashboard/inbox"` traf danach zuerst DIESEN statt des
+    eigentlichen Sidebar-Navigationseintrags)."""
     response = client.get("/dashboard/inbox")
     assert "<details" not in response.text
-    posteingang_start = response.text.index('href="/dashboard/inbox"')
-    row_start = response.text.rindex("<a", 0, posteingang_start)
-    row_end = response.text.index(">", posteingang_start)
-    assert "sidebar__group-summary--active" in response.text[row_start:row_end]
+    sidebar_start = response.text.index('<nav class="sidebar">')
+    sidebar_html = response.text[sidebar_start:]
+    posteingang_start = sidebar_html.index('href="/dashboard/inbox"')
+    row_start = sidebar_html.rindex("<a", 0, posteingang_start)
+    row_end = sidebar_html.index(">", posteingang_start)
+    assert "sidebar__group-summary--active" in sidebar_html[row_start:row_end]
 
 
 def test_sidebar_profile_menu_settings_item_points_to_settings_page_for_admin(
@@ -588,28 +658,39 @@ def test_sidebar_profile_menu_settings_item_points_to_account_overview_for_non_a
     assert 'href="/dashboard/account"' in response.text[einstellungen_link_start:einstellungen_link_end]
 
 
-# --- Onboarding-Banner (Prompt 48) ---
+# --- Leerer Posteingang bleibt ein echter Posteingang (06.10., Owner-
+# Direktive "POSTEINGANG AUF DEN BESTEHENDEN REFERENZSTAND ZURUECKFUEHREN"
+# §5) - ersetzt die frueheren Onboarding-Banner-Tests (Prompt 48), die noch
+# das jetzt bewusst geaenderte Verhalten voraussetzten ("total_count == 0
+# zeigt das Onboarding-Banner STATT der Split-Pane-Ansicht"). Root Cause
+# des urspruenglichen Befunds: genau diese Kopplung liess eine frische/
+# leere Installation wie einen alten Setup-Screen wirken, obwohl Header/
+# Tabs/Filter/Nachrichtenbereich bereits vollstaendig implementiert waren -
+# siehe DECISIONS.md fuer die volle Herleitung.
 
 
-def test_onboarding_banner_shown_when_inbox_empty(client: TestClient) -> None:
-    """Ohne jede Nachricht (total_count == 0) zeigt der Posteingang das
-    Onboarding-Banner statt der leeren Split-Pane-Ansicht."""
+def test_inbox_shows_real_shell_not_onboarding_when_empty(client: TestClient) -> None:
+    """Ohne jede Nachricht (total_count == 0) bleibt der Posteingang die
+    echte Arbeitsoberflaeche (Split-Pane mit Liste+Detail) - die grosse
+    "Willkommen bei Lexono - Erste Schritte"-Karte ersetzt sie NICHT mehr."""
     response = client.get("/dashboard/inbox")
     assert response.status_code == 200
-    assert "Erste Schritte" in response.text
-    assert 'class="split"' not in response.text
+    assert "Erste Schritte" not in response.text
+    assert 'class="split"' in response.text
+    # Sinnvoller Empty State INNERHALB der Nachrichtenliste statt dessen.
+    assert "Noch keine Nachrichten." in response.text
 
 
-def test_empty_inbox_hides_filter_tabs_and_search(client: TestClient) -> None:
-    """ECHTER FUND (18.09., gefunden per systematischer HTMX-Ziel-Pruefung):
-    Filter-Tabs/Suche zielten mit hx-target="#message-list" auf ein
-    Element, das nur existiert, wenn total_count > 0 - bei leerem
-    Posteingang waren sie sichtbar/bedienbar, taten aber beim Klicken/
-    Tippen still gar nichts (htmx fand kein Ziel)."""
+def test_empty_inbox_still_shows_filter_tabs_and_search(client: TestClient) -> None:
+    """Tabs/Filterleiste/Suche bleiben auch bei leerem Posteingang sichtbar
+    und bedienbar (Direktive §5 "Tabs bleiben erhalten"/"Filter bleiben
+    erhalten") - der fruehere Grund, sie bei total_count == 0 zu
+    verbergen (ihr `hx-target="#message-list"` existierte dann nicht,
+    siehe Git-Historie), entfaellt: `#message-list` existiert jetzt immer."""
     response = client.get("/dashboard/inbox")
     assert response.status_code == 200
-    assert 'hx-target="#message-list"' not in response.text
-    assert "Absender oder Betreff durchsuchen" not in response.text
+    assert 'hx-target="#message-list"' in response.text
+    assert "Absender oder Betreff durchsuchen" in response.text
 
 
 def test_nonempty_inbox_still_shows_filter_tabs_and_search(
@@ -621,16 +702,6 @@ def test_nonempty_inbox_still_shows_filter_tabs_and_search(
     assert "Absender oder Betreff durchsuchen" in response.text
 
 
-def test_onboarding_banner_includes_claude_api_check(client: TestClient) -> None:
-    """§63: Schritt 3 des Onboarding-Banners prüft die Claude-API-
-    Erreichbarkeit (kein lokaler Installations-/Update-Assistent mehr, da
-    kein lokales LLM mehr existiert)."""
-    response = client.get("/dashboard/inbox")
-    assert response.status_code == 200
-    assert "Claude-API prüfen" in response.text
-    assert 'id="onboarding-api-result"' in response.text
-
-
 def test_onboarding_banner_hidden_when_messages_exist(
     client: TestClient, seeded: dict
 ) -> None:
@@ -638,6 +709,18 @@ def test_onboarding_banner_hidden_when_messages_exist(
     assert response.status_code == 200
     assert "Erste Schritte" not in response.text
     assert 'class="split"' in response.text
+
+
+def test_email_accounts_link_always_available_even_when_inbox_empty(
+    client: TestClient,
+) -> None:
+    """Direktive §5 "E-Mail-Konten verwalten bleibt verfügbar" - dieser
+    Link stand schon vorher ausserhalb der total_count-Verzweigung im
+    Seitenkopf, hier als expliziter Regressionstest festgehalten."""
+    response = client.get("/dashboard/inbox")
+    assert response.status_code == 200
+    assert "E-Mail-Konten verwalten" in response.text
+    assert 'href="/dashboard/settings#email-postfach"' in response.text
 
 
 # --- "Automatische Zuordnung (Vorschlag)" (14.09.) -------------------------
@@ -1066,7 +1149,8 @@ def test_attachment_chip_links_to_the_real_document_page_when_matter_known(
     assert (
         f'/dashboard/matters/{seeded["matter_id"]}/document/' in response.text
     )
-    assert 'class="doc-chip doc-chip--link"' in response.text
+    assert '<a href="/dashboard/matters/' in response.text
+    assert 'class="attachment-card__name"' in response.text
 
 
 def test_attachment_chip_stays_plain_span_when_not_yet_assigned_to_a_matter(
@@ -1100,7 +1184,7 @@ def test_attachment_chip_stays_plain_span_when_not_yet_assigned_to_a_matter(
 
     assert response.status_code == 200
     assert "noch_nicht_zugeordnet.pdf" in response.text
-    assert "doc-chip--link" not in response.text
+    assert '<a href="/dashboard/matters/' not in response.text
     assert "/document/" not in response.text
 
 
@@ -1186,3 +1270,308 @@ def test_mitarbeiter_can_accept_suggestion(
     assert response.status_code == 303
     db_session.refresh(candidate_message)
     assert candidate_message.matter_id == seeded["matter_id"]
+
+
+# --- Posteingang Produkt-Completion (25.09., Owner-Direktive "POSTEINGANG
+# PRODUCT COMPLETION" - Referenzabgleich `04_posteingang_nachricht_
+# detail.png") ---------------------------------------------------------
+
+
+def test_message_row_shows_real_avatar_initials_from_sender_name(
+    client: TestClient, seeded: dict
+) -> None:
+    """Absender-Avatar (app/web/router.py::_avatar_initials) - echte
+    Initialen aus dem echten Absendernamen, kein Fake-Icon. "j.mueller@..."
+    hat keine Leerzeichen/Buchstaben-"Woerter" im ueblichen Sinn aus der
+    E-Mail-Adresse selbst - die Funktion faellt dann auf den ersten
+    Buchstaben zurueck."""
+    response = client.get("/dashboard/inbox")
+
+    assert response.status_code == 200
+    assert 'class="message-row__avatar message-row__avatar--' in response.text
+
+
+def test_message_row_shows_attachment_icon_only_when_documents_exist(
+    client: TestClient, seeded: dict
+) -> None:
+    """Das Anhang-Icon in der Liste (25.09.) haengt an ECHTEN `Document`-
+    Zeilen (`message.documents`) - die zugeordnete Nachricht hat eines,
+    die unzugeordnete keins."""
+    response = client.get("/dashboard/inbox")
+
+    assert response.status_code == 200
+    # Von den drei Nachrichten in `seeded` hat GENAU die zugeordnete
+    # ("matched") ein Dokument - das Icon darf daher genau einmal
+    # auftauchen (nicht bei "unmatched"/"outbound").
+    assert response.text.count("message-row__attachment-icon") == 1
+
+
+def test_attachment_card_shows_real_file_size_when_file_exists_on_disk(
+    client: TestClient, db_session: Session, tmp_path, seeded: dict
+) -> None:
+    """Dateigroesse (app/web/router.py::_document_file_size) kommt live
+    von der echten Datei auf der Platte - kein DB-Feld, kein Fake-Wert.
+    Existierende Tests nutzen bewusst nicht existierende Pfade (siehe
+    `seeded`-Fixture) - dieser Test schreibt eine ECHTE Testdatei, um die
+    tatsaechliche Groessen-Anzeige zu verifizieren."""
+    real_file = tmp_path / "echte_testdatei.pdf"
+    real_file.write_bytes(b"%PDF-1.4 Testinhalt" * 50)
+
+    message = Message(
+        matter_id=seeded["matter_id"],
+        direction="inbound",
+        sender="mandant@example-testdomain.invalid",
+        subject="Nachricht mit echter Testdatei",
+        body_text="Testinhalt.",
+    )
+    db_session.add(message)
+    db_session.flush()
+    document = Document(
+        matter_id=seeded["matter_id"],
+        message_id=message.id,
+        original_filename="echte_testdatei.pdf",
+        file_path=str(real_file),
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/inbox/{message.id}")
+
+    assert response.status_code == 200
+    assert "attachment-card" in response.text
+    assert "KB" in response.text or "Bytes" in response.text
+
+
+def test_message_detail_body_renders_before_attachments_and_actions(
+    client: TestClient, seeded: dict
+) -> None:
+    """Verbindliche Reihenfolge (Owner-Direktive §12): Nachrichtentext vor
+    Anhaengen vor Aktionen - vorher standen Aktionen/Zuordnungs-Karten VOR
+    dem Nachrichtentext."""
+    response = client.get(f"/dashboard/inbox/{seeded['matched_message_id']}")
+
+    assert response.status_code == 200
+    body_pos = response.text.index('class="detail-body"')
+    attachments_pos = response.text.index("attachment-card")
+    actions_pos = response.text.index('class="detail-actions"')
+    assert body_pos < attachments_pos < actions_pos
+
+
+def test_inbox_filter_by_matter_shows_only_that_matters_messages(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """Echte Akten-Filterleiste (25.09., Owner-Direktive §9) - beeinflusst
+    reale Daten, kein Kosmetik-Dropdown."""
+    other_client = Client(name="Anderer Testmandant GmbH")
+    db_session.add(other_client)
+    db_session.flush()
+    other_matter = Matter(client_id=other_client.id, title="Andere Akte")
+    db_session.add(other_matter)
+    db_session.flush()
+    other_message = Message(
+        matter_id=other_matter.id,
+        direction="inbound",
+        sender="andere@example-testdomain.invalid",
+        subject="Nachricht der anderen Akte",
+        body_text="Testinhalt.",
+    )
+    db_session.add(other_message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/inbox?matter={seeded['matter_id']}")
+
+    assert response.status_code == 200
+    assert "Steuerbescheid 2025 - Einspruchsfrist" in response.text
+    assert "Nachricht der anderen Akte" not in response.text
+
+
+def test_inbox_sort_oldest_first_reverses_default_order(
+    client: TestClient, seeded: dict
+) -> None:
+    """Echte Sortierung (25.09.) - kein Fake-Toggle, tatsaechliche
+    Umkehrung der Datenbank-Reihenfolge."""
+    newest_first = client.get("/dashboard/inbox?sort=newest")
+    oldest_first = client.get("/dashboard/inbox?sort=oldest")
+
+    assert newest_first.status_code == 200
+    assert oldest_first.status_code == 200
+    newest_positions = newest_first.text.index("Steuerbescheid 2025 - Einspruchsfrist")
+    newest_outbound_pos = newest_first.text.index("RE: Steuerbescheid 2025")
+    oldest_positions = oldest_first.text.index("Steuerbescheid 2025 - Einspruchsfrist")
+    oldest_outbound_pos = oldest_first.text.index("RE: Steuerbescheid 2025")
+    # Outbound wurde nach "matched" angelegt, ist also juenger - bei
+    # "newest" zuerst, bei "oldest" zuletzt.
+    assert newest_outbound_pos < newest_positions
+    assert oldest_positions < oldest_outbound_pos
+
+
+def test_inbox_sort_toggle_button_targets_the_opposite_sort_order(
+    client: TestClient, seeded: dict
+) -> None:
+    """26.09., Owner-Direktive "POSTEINGANG FINAL POLISH" §10: das volle
+    "Neueste zuerst"-Textdropdown wurde durch einen kompakten Icon-Button
+    ersetzt (Referenzbild zeigt ein kleines quadratisches Sortier-Icon
+    statt eines Text-Dropdowns) - dieselbe, bereits bestehende
+    `sort`-Backend-Logik (siehe test_inbox_sort_oldest_first_reverses_
+    default_order), nur eine andere Bedienoberflaeche."""
+    default_response = client.get("/dashboard/inbox")
+    assert 'class="inbox-sort-toggle"' in default_response.text
+    assert '<select name="sort"' not in default_response.text
+    assert 'input type="hidden" name="sort" value="newest"' in default_response.text
+    # Standard ist "newest" - der Button muss auf "oldest" umschalten.
+    assert 'hx-vals=\'{"sort": "oldest"}\'' in default_response.text
+
+    oldest_response = client.get("/dashboard/inbox?sort=oldest")
+    assert 'hx-vals=\'{"sort": "newest"}\'' in oldest_response.text
+
+
+def test_inbox_filter_row_and_search_share_one_row(client: TestClient, seeded: dict) -> None:
+    """26.09., Owner-Direktive "POSTEINGANG FINAL POLISH" §4/§11: Filter-
+    Dropdowns, Sortier-Button und Suche sind jetzt EINE gemeinsame Zeile
+    (vorher zwei) - spart eine ganze Zeile vertikale Hoehe. Reine
+    Struktur-/CSS-Aenderung, dieselbe bestehende Filter-Logik."""
+    response = client.get("/dashboard/inbox")
+    filter_bar_start = response.text.index('class="inbox-filter-bar"')
+    filter_bar_html = response.text[filter_bar_start : filter_bar_start + 3000]
+    assert 'name="client"' in filter_bar_html
+    assert 'name="matter"' in filter_bar_html
+    assert 'name="period"' in filter_bar_html
+    assert 'class="inbox-sort-toggle"' in filter_bar_html
+    assert 'name="q"' in filter_bar_html
+
+
+def test_email_accounts_link_visible_for_admin_only(
+    client: TestClient, mitarbeiter_client: TestClient, seeded: dict
+) -> None:
+    """"E-Mail-Konten verwalten" verlinkt echt auf den bestehenden
+    IMAP-Bereich der (admin-only) Einstellungsseite - fuer Nicht-Admins
+    bewusst gar nicht sichtbar statt eines Links, der ohnehin 403 werfen
+    wuerde."""
+    admin_response = client.get("/dashboard/inbox")
+    mitarbeiter_response = mitarbeiter_client.get("/dashboard/inbox")
+
+    assert "E-Mail-Konten verwalten" in admin_response.text
+    assert "E-Mail-Konten verwalten" not in mitarbeiter_response.text
+
+
+# --- Posteingang Final UI/UX Product-Completion (25.09., Owner-Direktive
+# "POSTEINGANG FINAL UI/UX PRODUCT-COMPLETION" - Referenzabgleich
+# `04_posteingang_nachricht_detail.png`) ---------------------------------
+
+
+def test_inbox_page_auto_selects_a_message_by_default(
+    client: TestClient, seeded: dict
+) -> None:
+    """Kein leerer Standardzustand mehr (Direktive §17) - beim Oeffnen von
+    `/dashboard/inbox` OHNE explizite Nachrichten-ID zeigt das rechte
+    Panel direkt eine echte Nachricht (die erste der aktuellen Sortierung,
+    hier "newest" -> das zuletzt angelegte "outbound", siehe
+    `test_inbox_sort_oldest_first_reverses_default_order` fuer die
+    Zeitstempel-Reihenfolge in `seeded`), kein "Wähle links..."-Hinweis."""
+    response = client.get("/dashboard/inbox")
+
+    assert response.status_code == 200
+    assert "Wähle links eine Nachricht aus" not in response.text
+    assert "RE: Steuerbescheid 2025" in response.text
+    assert 'class="detail-body"' in response.text
+
+
+def test_inbox_page_shows_empty_state_when_filter_matches_nothing(
+    client: TestClient, seeded: dict
+) -> None:
+    """Gegenprobe: liefert der aktuelle Filter/die aktuelle Suche keine
+    Treffer, bleibt der ehrliche Empty State bestehen - keine erzwungene
+    Auswahl aus einer leeren Liste."""
+    response = client.get("/dashboard/inbox?q=definitiv-kein-treffer-xyz")
+
+    assert response.status_code == 200
+    assert "Wähle links eine Nachricht aus" in response.text
+
+
+def test_inbox_page_has_no_back_link(client: TestClient, seeded: dict) -> None:
+    """Posteingang ist eine Hauptnavigationsebene wie Chat, kein
+    Unterpunkt - der "Zurueck"-Pfeil (base.html) impliziert faelschlich
+    einen sinnvollen Vorgaenger-Kontext (Direktive §9)."""
+    response = client.get("/dashboard/inbox")
+
+    assert response.status_code == 200
+    assert "header-back" not in response.text
+
+
+def test_inbox_client_filter_shows_only_that_clients_messages(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """Echter, eigenstaendiger Mandanten-Filter (25.09., Korrektur einer
+    frueheren zu engen Annahme - ein Mandant kann mehrere Akten haben)."""
+    other_client = Client(name="Anderer Mandant fuer Client-Filter GmbH")
+    db_session.add(other_client)
+    db_session.flush()
+    other_matter = Matter(client_id=other_client.id, title="Andere Akte (Client-Filter)")
+    db_session.add(other_matter)
+    db_session.flush()
+    other_message = Message(
+        matter_id=other_matter.id,
+        direction="inbound",
+        sender="andere@example-testdomain.invalid",
+        subject="Nachricht des anderen Mandanten",
+        body_text="Testinhalt.",
+    )
+    db_session.add(other_message)
+    db_session.commit()
+
+    seeded_client_id = (
+        db_session.query(Matter).filter_by(id=seeded["matter_id"]).first().client_id
+    )
+    response = client.get(f"/dashboard/inbox?client={seeded_client_id}")
+
+    assert response.status_code == 200
+    assert "Steuerbescheid 2025 - Einspruchsfrist" in response.text
+    assert "Nachricht des anderen Mandanten" not in response.text
+
+
+def test_inbox_period_filter_excludes_older_messages(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """Echter Zeitraum-Filter (25.09.) - feste Presets statt eines freien
+    Datumsbereichs (Direktive §13: "kein neues Backend-System pro
+    Filter"), aber real auf `Message.created_at` filternd."""
+    from datetime import datetime, timedelta, timezone
+
+    old_message = Message(
+        matter_id=None,
+        direction="inbound",
+        sender="alt@example-testdomain.invalid",
+        subject="Sehr alte Nachricht",
+        body_text="Testinhalt.",
+        created_at=datetime.now(timezone.utc) - timedelta(days=200),
+    )
+    db_session.add(old_message)
+    db_session.commit()
+
+    all_time = client.get("/dashboard/inbox?period=all")
+    last_30_days = client.get("/dashboard/inbox?period=30d")
+
+    assert all_time.status_code == 200
+    assert last_30_days.status_code == 200
+    assert "Sehr alte Nachricht" in all_time.text
+    assert "Sehr alte Nachricht" not in last_30_days.text
+    # Die aktuellen (gerade erst angelegten) seeded-Nachrichten bleiben in
+    # beiden Zeitraeumen sichtbar.
+    assert "Steuerbescheid 2025 - Einspruchsfrist" in last_30_days.text
+
+
+def test_inbox_filter_tab_click_overrides_filter_param_via_htmx(
+    client: TestClient, seeded: dict
+) -> None:
+    """Das gemeinsame `#inbox-filter-form` (25.09.-Refactoring) darf den
+    Filter-Tab-Wert nicht verlieren - `hx-vals` muss den versteckten
+    "filter"-Wert des Formulars fuer den jeweiligen Tab ueberschreiben,
+    nicht nur zusaetzlich senden. Direkter Server-seitiger Nachweis (kein
+    echter Browser/htmx in diesem Test): derselbe Query-Parameter, den
+    `hx-vals` erzeugen wuerde, liefert tatsaechlich nur unzugeordnete
+    Nachrichten."""
+    response = client.get("/dashboard/inbox/list?filter=unmatched")
+
+    assert response.status_code == 200
+    assert "Betriebspruefung angekuendigt" in response.text
+    assert "Steuerbescheid 2025 - Einspruchsfrist" not in response.text

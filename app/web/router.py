@@ -16,6 +16,8 @@ base.html.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -36,6 +38,57 @@ from app.web.template_paths import TEMPLATES_DIR
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+# --- Posteingang: Avatar-Initialen/-Farbe, echte Dateigroesse (25.09.,
+# Owner-Direktive "POSTEINGANG PRODUCT COMPLETION" - Referenzabgleich
+# `04_posteingang_nachricht_detail.png`) --------------------------------
+# Bewusst als Jinja-Globals statt zusaetzlicher Kontext-Felder pro
+# Nachricht/Dokument: beide Templates (message_row.html/message_detail.html)
+# greifen bereits direkt auf `message`/`document`-ORM-Objekte zu, ein
+# Global spart das Durchreichen einer parallelen Zuordnungstabelle.
+
+
+def _avatar_initials(name: str | None) -> str:
+    """Echte Initialen aus dem echten Absendernamen (kein Fake-Icon) -
+    erste Buchstaben der ersten beiden "Wörter" (Vor-/Nachname oder erste
+    zwei Wörter eines Institutionsnamens wie "Amtsgericht Mitte" -> "AM")."""
+    if not name or not name.strip():
+        return "?"
+    parts = [p for p in name.replace("<", " ").split() if p.isalpha()]
+    if not parts:
+        return name.strip()[0].upper()
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[1][0]).upper()
+
+
+_AVATAR_COLORS = ("green", "blue", "purple", "orange")
+
+
+def _avatar_color(name: str | None) -> str:
+    """Deterministische Farbwahl aus den bereits bestehenden vier Akzent-
+    farben (siehe `.chat-quick-action__icon--*`, app.css) - keine neue
+    Farbsprache, nur eine weitere Verwendungsstelle derselben Tokens."""
+    seed = (name or "").strip()
+    if not seed:
+        return _AVATAR_COLORS[0]
+    return _AVATAR_COLORS[sum(ord(c) for c in seed) % len(_AVATAR_COLORS)]
+
+
+def _document_file_size(document: Document) -> int | None:
+    """Echte Dateigroesse von der Platte (kein DB-Feld vorhanden, siehe
+    `app/models/document.py`) - liest bewusst defensiv: eine verschobene/
+    geloeschte Datei darf die Seite nie zum Absturz bringen, nur die
+    Groessenanzeige entfaellt dann (kein Fake-Wert)."""
+    try:
+        return Path(document.file_path).stat().st_size
+    except OSError:
+        return None
+
+
+templates.env.globals["avatar_initials"] = _avatar_initials
+templates.env.globals["avatar_color"] = _avatar_color
+templates.env.globals["document_file_size"] = _document_file_size
 
 _FILTER_OPTIONS: list[tuple[str, str]] = [
     ("all", "Alle"),
@@ -84,9 +137,62 @@ def _apply_filter(query, filter_key: str):
     return query
 
 
-def _load_messages(db: Session, filter_key: str, search: str = "") -> list[Message]:
-    query = db.query(Message).options(joinedload(Message.matter))
+# Zeitraum-Filter (25.09., Owner-Direktive "POSTEINGANG FINAL UI/UX
+# PRODUCT-COMPLETION" §13) - bewusst feste Presets statt eines freien
+# Datumsbereich-Pickers (waere eine eigenstaendige, hier nicht beauftragte
+# UI-Entscheidung mit zwei Datumsfeldern) - echte Filterung auf
+# `Message.created_at`, keine Kosmetik.
+_PERIOD_OPTIONS: list[tuple[str, str]] = [
+    ("all", "Alle Zeiträume"),
+    ("7d", "Letzte 7 Tage"),
+    ("30d", "Letzte 30 Tage"),
+    ("90d", "Letzte 90 Tage"),
+]
+_VALID_PERIOD_KEYS = {key for key, _ in _PERIOD_OPTIONS}
+
+
+def _load_messages(
+    db: Session,
+    filter_key: str,
+    search: str = "",
+    matter_id: str = "",
+    client_id: str = "",
+    period: str = "all",
+    sort: str = "newest",
+) -> list[Message]:
+    # joinedload(documents) (25.09.): message_row.html zeigt jetzt ein
+    # Anhang-Icon pro Zeile (`message.documents`) - ohne Eager-Load waere
+    # das eine N+1-Abfrage pro sichtbarer Nachricht (Direktive §28
+    # "keine unnoetigen zusaetzlichen Requests/Datenbankabfragen").
+    query = db.query(Message).options(
+        joinedload(Message.matter), joinedload(Message.documents)
+    )
     query = _apply_filter(query, filter_key)
+    # Mandanten-/Akten-/Zeitraum-Filterleiste (25.09., Referenzbild zeigt
+    # "Alle Mandanten"/"Alle Akten"/"Alle Zeiträume"-Dropdowns). Mandant
+    # UND Akte jetzt bewusst als ZWEI unabhaengige Filter (Korrektur einer
+    # frueheren, zu engen Annahme dieser Sitzung - siehe DECISIONS.md): ein
+    # Mandant kann mehrere Akten haben, "nach Mandant filtern" ist eine
+    # eigenstaendige, gröbere Auswahl gegenueber "nach genau einer Akte
+    # filtern", beide sind real ueber bestehende Beziehungen (`Matter.
+    # client_id`) abbildbar. "Alle Konten" bleibt bewusst NICHT gebaut -
+    # es gibt nur ein einziges konfiguriertes IMAP-Postfach (siehe
+    # settings.html), kein Mehrkonten-Konzept; ein Dropdown mit genau
+    # einer Option waere eine Fake-Steuerung ohne echte Wirkung.
+    matter_id = matter_id.strip()
+    if matter_id:
+        query = query.filter(Message.matter_id == matter_id)
+    client_id = client_id.strip()
+    if client_id:
+        query = query.join(Matter, Message.matter_id == Matter.id).filter(
+            Matter.client_id == client_id
+        )
+    if period in _VALID_PERIOD_KEYS and period != "all":
+        from datetime import datetime, timedelta, timezone
+
+        days = {"7d": 7, "30d": 30, "90d": 90}[period]
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        query = query.filter(Message.created_at >= cutoff)
     search = search.strip()
     if search:
         # Suche (18.09., Owner-Direktive "WEITERARBEITEN" §5 "fehlende
@@ -101,7 +207,26 @@ def _load_messages(db: Session, filter_key: str, search: str = "") -> list[Messa
         query = query.filter(
             (Message.sender.ilike(needle)) | (Message.subject.ilike(needle))
         )
-    return query.order_by(Message.created_at.desc()).limit(100).all()
+    # Sortierung (25.09., Referenzbild zeigt einen Sortier-Control neben
+    # den Filtern) - echte Umkehrung derselben Spalte, kein Fake-Toggle.
+    order = Message.created_at.asc() if sort == "oldest" else Message.created_at.desc()
+    return query.order_by(order).limit(100).all()
+
+
+def _load_client_filter_options(db: Session) -> list[Client]:
+    """Fuer den "Alle Mandanten"-Filterdropdown (25.09.) - nur Mandanten
+    mit mindestens einer ECHTEN Akte (derselbe Platzhalter-Ausschluss wie
+    `_load_assignable_matters`), sonst koennte man einen Mandanten
+    auswaehlen, fuer den es serverseitig gar keine filterbare Nachricht
+    geben kann."""
+    return (
+        db.query(Client)
+        .join(Matter, Matter.client_id == Client.id)
+        .filter(Client.name != PLACEHOLDER_CLIENT_NAME)
+        .distinct()
+        .order_by(Client.name)
+        .all()
+    )
 
 
 def _load_assignable_matters(db: Session) -> list[Matter]:
@@ -223,18 +348,44 @@ def dashboard_root(
     return RedirectResponse(url="/dashboard/chat")
 
 
+_VALID_SORT_KEYS = {"newest", "oldest"}
+
+
 @router.get("/inbox", response_class=HTMLResponse)
 def inbox_page(
     request: Request,
     filter: str = "all",  # noqa: A002 - passender, konsistenter Query-Param-Name
     q: str = "",
+    matter: str = "",
+    client: str = "",
+    period: str = "all",
+    sort: str = "newest",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
     filter_key = filter if filter in _VALID_FILTER_KEYS else "all"
-    messages = _load_messages(db, filter_key, search=q)
+    sort_key = sort if sort in _VALID_SORT_KEYS else "newest"
+    period_key = period if period in _VALID_PERIOD_KEYS else "all"
+    messages = _load_messages(
+        db, filter_key, search=q, matter_id=matter, client_id=client,
+        period=period_key, sort=sort_key,
+    )
     total_count = db.query(Message).count()
     unmatched_count = db.query(Message).filter(Message.matter_id.is_(None)).count()
+
+    # Default-Auswahl (25.09., Owner-Direktive "POSTEINGANG FINAL UI/UX
+    # PRODUCT-COMPLETION" §17, Referenzabgleich - die Referenz zeigt beim
+    # Oeffnen des Posteingangs NIE eine leere Detailspalte). Kein
+    # "ungelesen"-Feld vorhanden (siehe `_FILTER_OPTIONS`-Kommentar oben,
+    # bewusst zurueckgestellte Produktentscheidung) - daher schlicht die
+    # ERSTE Nachricht der aktuellen, bereits vom Nutzer gewaehlten
+    # Filter-/Sortierreihenfolge, nicht eine zweite, konkurrierende
+    # Priorisierung.
+    detail_context: dict = {"message": None, "documents": []}
+    active_message_id = None
+    if messages:
+        active_message_id = messages[0].id
+        detail_context = _load_detail_context(db, active_message_id)
 
     context = {
         "request": request,
@@ -243,16 +394,25 @@ def inbox_page(
         "filter_options": _FILTER_OPTIONS,
         "active_filter": filter_key,
         "search": q,
+        "matter_filter_options": _load_assignable_matters(db),
+        "client_filter_options": _load_client_filter_options(db),
+        "period_options": _PERIOD_OPTIONS,
+        "active_matter_id": matter,
+        "active_client_id": client,
+        "active_period": period_key,
+        "active_sort": sort_key,
         "total_count": total_count,
         "unmatched_count": unmatched_count,
-        "message": None,
-        "documents": [],
-        "active_message_id": None,
+        "active_message_id": active_message_id,
         "current_user": current_user,
-        # Fuer partials/onboarding_banner.html (nur bei leerem Posteingang
-        # sichtbar) - dessen Formulare posten seit 20.08. echt gegen
-        # app/web/settings_router.py, brauchen also einen echten CSRF-Token.
+        # Fuer partials/message_detail.html ("In Akte speichern"/
+        # "Zusammenfassen"/"Antworten" posten echt, brauchen also einen
+        # echten CSRF-Token). Nicht mehr fuer onboarding_banner.html noetig
+        # (06.10., Owner-Direktive "POSTEINGANG AUF DEN BESTEHENDEN
+        # REFERENZSTAND ZURUECKFUEHREN" §5 - dessen einziger Einbindungsort
+        # in inbox.html wurde entfernt, siehe dort).
         "csrf_token": getattr(request.state, "csrf_token", ""),
+        **detail_context,
     }
     return templates.TemplateResponse(request, "inbox.html", context)
 
@@ -262,17 +422,35 @@ def inbox_list_partial(
     request: Request,
     filter: str = "all",  # noqa: A002
     q: str = "",
+    matter: str = "",
+    client: str = "",
+    period: str = "all",
+    sort: str = "newest",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
     """HTMX-Partial: nur die gefilterte Nachrichtenliste, fuer den
-    Filter-Tab-Wechsel/die Suche ohne vollen Seiten-Reload."""
+    Filter-Tab-/Filterleisten-Wechsel und die Suche ohne vollen
+    Seiten-Reload."""
     filter_key = filter if filter in _VALID_FILTER_KEYS else "all"
-    messages = _load_messages(db, filter_key, search=q)
+    sort_key = sort if sort in _VALID_SORT_KEYS else "newest"
+    period_key = period if period in _VALID_PERIOD_KEYS else "all"
+    messages = _load_messages(
+        db, filter_key, search=q, matter_id=matter, client_id=client,
+        period=period_key, sort=sort_key,
+    )
+    # total_count (06.10., Owner-Direktive "POSTEINGANG AUF DEN BESTEHENDEN
+    # REFERENZSTAND ZURUECKFUEHREN" §5): dasselbe Feld wie in `inbox_page`,
+    # damit partials/message_list.html bei JEDEM Renderweg (voller
+    # Seitenaufruf UND dieser HTMX-Tab-/Filterwechsel) zwischen "Mailbox
+    # komplett leer" und "aktueller Filter liefert 0 Treffer" unterscheiden
+    # kann - ohne dieses Feld waere die Unterscheidung nur beim ersten
+    # Seitenaufruf korrekt, nach dem ersten Tab-Klick aber wieder verloren.
     context = {
         "request": request,
         "messages": messages,
         "active_message_id": None,
+        "total_count": db.query(Message).count(),
     }
     return templates.TemplateResponse(request, "partials/message_list.html", context)
 
@@ -298,6 +476,13 @@ def inbox_message_page(
         "messages": messages,
         "filter_options": _FILTER_OPTIONS,
         "active_filter": "all",
+        "matter_filter_options": _load_assignable_matters(db),
+        "client_filter_options": _load_client_filter_options(db),
+        "period_options": _PERIOD_OPTIONS,
+        "active_matter_id": "",
+        "active_client_id": "",
+        "active_period": "all",
+        "active_sort": "newest",
         "total_count": total_count,
         "unmatched_count": unmatched_count,
         "active_message_id": message_id,

@@ -1,5 +1,9 @@
 {# Echte Anzahl offener Aufgaben (01.09.) - per HTMX in base.html geladen,
-   kein erfundener Platzhalterwert. Kein Badge, wenn 0 offene Aufgaben. #}
+   kein erfundener Platzhalterwert. Kein Badge, wenn 0 offene Aufgaben.
+   Ab 100 wird wie bei Messenger-Benachrichtigungen "99+" angezeigt (04.10.,
+   Owner-Direktive "UI-QUALITAETSRUNDE" P1) - verhindert, dass eine
+   dreistellige+ Zahl das kompakte Badge (insb. im eingeklappten
+   Sidebar-Zustand, wo es direkt am Icon haengt) sprengt. #}
 {% if count and count > 0 %}
-<span class="sidebar__group-badge">{{ count }}</span>
+<span class="sidebar__group-badge">{{ count if count <= 99 else "99+" }}</span>
 {% endif %}

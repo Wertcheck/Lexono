@@ -66,6 +66,7 @@ def address_and_contact_lines(firm_profile: FirmProfile) -> list[str]:
     address_line = ", ".join(
         part
         for part in (
+            firm_profile.address_addition,
             firm_profile.street,
             " ".join(p for p in (firm_profile.postal_code, firm_profile.city) if p) or None,
         )

@@ -1,0 +1,360 @@
+{% import "_icons.html" as icons %}
+{# Inhaltsbereich unterhalb der Kanzleiwissen-Kategorie-Kacheln (26.09.,
+   Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION") - eigenes
+   Partial, damit ein Kategoriewechsel per HTMX NUR diesen Bereich
+   austauscht (siehe knowledge_router.py::knowledge_panel), ohne Suchfeld/
+   Kategorie-Kacheln/Sidebar neu zu laden. #}
+<div id="knowledge-panel">
+  {% if active_category == "laws" %}
+    <div class="knowledge-laws-layout">
+      <div class="instructions-panel knowledge-laws-layout__table">
+        {# Tabellentitel + Spalten an die zweite Referenzrunde angeglichen
+           (26.09., "REFERENCE-MATCH / PRODUCT-COMPLETION PASS" §10):
+           "Gesetzbücher und Normen" -> "Gesetze & Normen" (exakter
+           Referenztitel), "Abkürzung" -> "Kürzel", "Herunterladen" ->
+           "Lokal verfügbar" (der Toggle repraesentiert den lokalen
+           Aktivierungszustand, nicht nur einen einmaligen Download -
+           dieselbe Umbenennung auch im Status-Text der Zeile selbst,
+           siehe law_catalog_row.html). #}
+        <div class="knowledge-laws-layout__header">
+          <h2 class="panel-title">Gesetze &amp; Normen</h2>
+          {# Kleine, kontextbezogene Suche direkt an der Liste statt im
+             Seitenheader (26.09., "APP-SHELL KORREKTUR" §2) - dieselbe
+             bestehende Filterlogik (knowledge_router.py::
+             _build_knowledge_context), nur die Platzierung hat sich
+             geaendert. Kategorie fest auf "laws" verdrahtet, damit die
+             Suche beim Absenden auf dieser Liste bleibt. #}
+          <form method="get" action="/dashboard/knowledge" class="knowledge-inline-search">
+            <input type="hidden" name="category" value="laws" />
+            {{ icons.search(class_="icon knowledge-inline-search__icon") }}
+            <input type="text" name="search" value="{{ search }}" placeholder="Suchen …" />
+          </form>
+        </div>
+        {% if law_rows %}
+          <div class="table-container">
+            <table class="draft-table law-catalog-table">
+              <thead>
+                <tr>
+                  <th style="width: 36%;">Name</th>
+                  <th style="width: 12%;">Kürzel</th>
+                  <th style="width: 15%;">Version</th>
+                  <th style="width: 10%;">Größe</th>
+                  <th style="width: 14%;">Status</th>
+                  <th style="width: 13%;">Lokal verfügbar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in law_rows %}
+                  {% include "partials/law_catalog_row.html" %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="settings-section__hint">Keine Gesetzbücher gefunden.</p>
+        {% endif %}
+      </div>
+      {# Rechte Info-Karte (Direktive §14/§22): bewusst OHNE jede
+         technische Erwaehnung (kein Presidio/Ollama/Claude/Gateway) -
+         erklaert nur das Produktprinzip. Illustration (26.09., Owner-
+         Anweisung "VERBINDLICHES ASSET FÜR KANZLEIWISSEN"): ersetzt die
+         zuvor handgefertigte SVG-Illustration durch das vom Owner als
+         verbindlich benannte, bereits unter assets/ux-ui/
+         Kanzleiwissen_Panellbackground.png hinterlegte Bild-Asset
+         (BGB/ZPO/StGB/VwGO-Buchruecken + §-Symbol, Lexono-Gruen + Navy) -
+         unveraendert (keine Nachbildung, keine zusaetzlichen Effekte/
+         Hintergruende/Wasserzeichen) 1:1 als PNG nach
+         app/web/static/img/ kopiert (dieselbe Datei, per SHA-256
+         verifiziert identisch - nur der Ordner unterscheidet sich, weil
+         assets/ux-ui/ die Referenzbild-Sammlung ist, nicht der von der
+         App tatsaechlich ausgelieferte Static-Ordner). Solides weisses
+         Motiv-Hintergrund (kein Alphakanal, PNG im RGB-Modus) -
+         unveraendert so belassen, wie vom Owner bereitgestellt. #}
+      <div class="law-info-card">
+        <img src="/dashboard/static/img/law-library-illustration.png" alt=""
+             class="law-info-card__illustration" />
+        <h3 class="law-info-card__title">Aktuelles Recht.<br />Lokal verfügbar.</h3>
+        <p class="law-info-card__text">
+          Wählen Sie die relevanten Gesetzbücher und Normen aus. Die Inhalte
+          werden lokal gespeichert und stehen Ihrer Kanzlei jederzeit für
+          eine rechtssichere KI-Nutzung zur Verfügung.
+        </p>
+        <div class="law-info-card__feature">
+          {{ icons.shield(class_="law-info-card__feature-icon") }}
+          <div>
+            <p class="law-info-card__feature-title">Rechtssicher</p>
+            <p class="law-info-card__feature-text">Alle Inhalte lokal auf Ihrem System</p>
+          </div>
+        </div>
+        <div class="law-info-card__feature">
+          {{ icons.download(class_="law-info-card__feature-icon") }}
+          <div>
+            <p class="law-info-card__feature-title">Flexibel</p>
+            <p class="law-info-card__feature-text">Nur das herunterladen, was Sie brauchen</p>
+          </div>
+        </div>
+        <div class="law-info-card__feature">
+          {{ icons.clock(class_="law-info-card__feature-icon") }}
+          <div>
+            <p class="law-info-card__feature-title">Immer aktuell</p>
+            <p class="law-info-card__feature-text">Regelmäßige Updates verfügbar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% elif active_category == "case_law" %}
+    <div class="instructions-panel">
+      <div class="knowledge-laws-layout__header">
+        <h2 class="panel-title">Rechtsprechung</h2>
+      </div>
+      {# Manuelle Erfassung (26.09., "AUTONOMOUS PRODUCT GAP AUDIT" - siehe
+         knowledge_router.py-Moduldocstring): vorher gab es projektweit
+         KEINEN Weg, eine Gerichtsentscheidung anzulegen - reine
+         Weiterleitung an den bereits vollstaendigen `SourceService`,
+         keine neue Logik. Bewusst KEIN Datum-Picker-Widget (schlichtes
+         `type="date"`-Eingabefeld genuegt, kein neues UI-Element noetig). #}
+      {% if can_curate_knowledge %}
+        <details class="manual-edit-toggle">
+          <summary>+ Neue Gerichtsentscheidung erfassen</summary>
+          <form method="post" action="/dashboard/knowledge/sources" class="dashboard-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="source_type" value="Rechtsprechung" />
+            <label class="form-label">Titel<input type="text" name="title" required /></label>
+            <label class="form-label">Fundstelle<input type="text" name="reference" placeholder="z. B. BGH, Urt. v. ..., Az. ..." /></label>
+            <label class="form-label">Datum<input type="date" name="document_date" /></label>
+            <label class="form-label">Link (optional)<input type="url" name="url" /></label>
+            <label class="form-label">Notizen<textarea name="notes" rows="2"></textarea></label>
+            <button type="submit" class="btn btn--primary" style="align-self: flex-start;">Erfassen</button>
+          </form>
+        </details>
+      {% endif %}
+      {% if case_law_sources %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr><th>Titel</th><th>Fundstelle</th><th>Datum</th><th>Freigabe</th>{% if can_curate_knowledge %}<th></th>{% endif %}</tr>
+            </thead>
+            <tbody>
+              {% for source in case_law_sources %}
+                <tr>
+                  <td>
+                    {% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }}</a>
+                    {% else %}{{ source.title }}{% endif %}
+                  </td>
+                  <td class="mono">{{ source.reference or "–" }}</td>
+                  <td class="mono">{{ source.document_date.strftime("%d.%m.%Y") if source.document_date else "–" }}</td>
+                  <td>
+                    <span class="tag {{ 'tag--matched' if source.approval_level == 'freigegeben' else ('tag--outbound' if source.approval_level == 'veraltet' else 'tag--unmatched') }}">
+                      <span class="tag__dot"></span>{{ source.approval_level }}
+                    </span>
+                  </td>
+                  {% if can_curate_knowledge %}
+                    <td>
+                      {% if source.approval_level == "entwurf" %}
+                        <form method="post" action="/dashboard/knowledge/sources/{{ source.id }}/approve" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <button type="submit" class="link-button">Freigeben</button>
+                        </form>
+                      {% elif source.approval_level == "freigegeben" %}
+                        <form method="post" action="/dashboard/knowledge/sources/{{ source.id }}/mark-outdated" style="display:inline;" onsubmit="return this.reason.value.trim().length > 0;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="text" name="reason" placeholder="Begründung" required style="width:110px; font-size:11.5px;" />
+                          <button type="submit" class="link-button">Als veraltet markieren</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">
+          Noch keine Rechtsprechung hinterlegt. Urteile/Beschlüsse entstehen über die
+          manuell erfasste Rechtsquellen-Verwaltung (Quellentyp „Rechtsprechung").
+        </p>
+      {% endif %}
+    </div>
+
+  {% elif active_category == "templates" %}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Vorlagen &amp; Muster</h2>
+      {% if document_templates %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr><th>Name</th><th>Kategorie</th><th>Version</th><th>Zuletzt aktualisiert</th></tr>
+            </thead>
+            <tbody>
+              {% for tpl in document_templates %}
+                <tr>
+                  <td><a href="/dashboard/library/mustertexte/{{ tpl.id }}/edit">{{ tpl.name }}</a></td>
+                  <td>{{ tpl.category or "–" }}</td>
+                  <td class="mono">v{{ tpl.version }}</td>
+                  <td class="mono">{{ tpl.updated_at.strftime("%d.%m.%Y") if tpl.updated_at else "–" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">Noch keine Dokumentvorlagen hinterlegt.</p>
+      {% endif %}
+    </div>
+
+  {% elif active_category == "internal" %}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Interne Dokumente</h2>
+      {# "Typ"-Spalte ergaenzt (26.09., §18 "keine bestehende
+         Funktionalitaet verloren"): diese Kategorie zeigt jetzt ALLE
+         Nicht-Rechtsprechung-Quellentypen (siehe knowledge_router.py fuer
+         die Begruendung), nicht mehr nur "Interne Leitlinie" - die
+         Typ-Spalte macht das transparent, statt z. B. eine "Gesetz"-
+         Quelle stillschweigend als "intern" auszugeben. #}
+      {% if can_curate_knowledge %}
+        <details class="manual-edit-toggle">
+          <summary>+ Neue Quelle erfassen</summary>
+          <form method="post" action="/dashboard/knowledge/sources" class="dashboard-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="form-label">Titel<input type="text" name="title" required /></label>
+            <label class="form-label">
+              Typ
+              <select name="source_type" required>
+                {% for t in source_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+              </select>
+            </label>
+            <label class="form-label">Fundstelle<input type="text" name="reference" /></label>
+            <label class="form-label">Link (optional)<input type="url" name="url" /></label>
+            <label class="form-label">Notizen<textarea name="notes" rows="2"></textarea></label>
+            <button type="submit" class="btn btn--primary" style="align-self: flex-start;">Erfassen</button>
+          </form>
+        </details>
+      {% endif %}
+      {% if internal_sources %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr><th>Titel</th><th>Typ</th><th>Fundstelle</th><th>Freigabe</th>{% if can_curate_knowledge %}<th></th>{% endif %}</tr>
+            </thead>
+            <tbody>
+              {% for source in internal_sources %}
+                <tr>
+                  <td>{{ source.title }}</td>
+                  <td>{{ source.source_type }}</td>
+                  <td class="mono">{{ source.reference or "–" }}</td>
+                  <td>
+                    <span class="tag {{ 'tag--matched' if source.approval_level == 'freigegeben' else ('tag--outbound' if source.approval_level == 'veraltet' else 'tag--unmatched') }}">
+                      <span class="tag__dot"></span>{{ source.approval_level }}
+                    </span>
+                  </td>
+                  {% if can_curate_knowledge %}
+                    <td>
+                      {% if source.approval_level == "entwurf" %}
+                        <form method="post" action="/dashboard/knowledge/sources/{{ source.id }}/approve" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <button type="submit" class="link-button">Freigeben</button>
+                        </form>
+                      {% elif source.approval_level == "freigegeben" %}
+                        <form method="post" action="/dashboard/knowledge/sources/{{ source.id }}/mark-outdated" style="display:inline;" onsubmit="return this.reason.value.trim().length > 0;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="text" name="reason" placeholder="Begründung" required style="width:110px; font-size:11.5px;" />
+                          <button type="submit" class="link-button">Als veraltet markieren</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">Noch keine internen Rechtsquellen/Dokumente hinterlegt.</p>
+      {% endif %}
+    </div>
+
+  {% elif active_category == "expertise" %}
+    <div class="instructions-panel">
+      <h2 class="panel-title">Fachwissen</h2>
+      {% if can_curate_knowledge %}
+        <details class="manual-edit-toggle">
+          <summary>+ Neuen Textbaustein erfassen</summary>
+          <form method="post" action="/dashboard/knowledge/items" class="dashboard-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="form-label">Titel<input type="text" name="title" required /></label>
+            <label class="form-label">Kategorie<input type="text" name="category" /></label>
+            <label class="form-label">Rechtsgebiet<input type="text" name="practice_area" /></label>
+            <label class="form-label">Quelle (optional)<input type="text" name="source" /></label>
+            <label class="form-label">Inhalt<textarea name="content" rows="5" required></textarea></label>
+            <button type="submit" class="btn btn--primary" style="align-self: flex-start;">Erfassen</button>
+          </form>
+        </details>
+      {% endif %}
+      {% if items %}
+        <div class="table-container">
+          <table class="draft-table">
+            <thead>
+              <tr>
+                <th>Titel</th><th>Kategorie</th><th>Rechtsgebiet</th><th>Version</th>
+                <th>Zuletzt aktualisiert</th><th>Status</th>{% if can_curate_knowledge %}<th></th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>
+                    {{ item.title }}
+                    {% if firm_practice_areas and (item.practice_area or "").strip().lower() in firm_practice_areas_lower %}
+                      {# Kanzleifachprofil-Relevanz (03.10., Owner-Direktive
+                         "KANZLEIFACHPROFIL UND JURISTISCHE WISSENSSTEUERUNG"
+                         §4.3) - rein informativ, blendet nichts aus; die
+                         eigentliche Priorisierung geschieht bereits in der
+                         Sortierreihenfolge (siehe knowledge_router.py). #}
+                      <span class="tag tag--firm-relevant" title="Passt zu den fachlichen Schwerpunkten der Kanzlei">
+                        <span class="tag__dot"></span>Kanzleischwerpunkt
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>{{ item.category or "–" }}</td>
+                  <td>{{ item.practice_area or "–" }}</td>
+                  <td class="mono">v{{ item.version }}</td>
+                  <td class="mono">{{ item.updated_at.strftime("%d.%m.%Y") if item.updated_at else "–" }}</td>
+                  <td>
+                    <span class="tag {{ 'tag--matched' if item.approval_status == 'approved' else ('tag--outbound' if item.approval_status == 'deactivated' else 'tag--unmatched') }}">
+                      <span class="tag__dot"></span>{{ "freigegeben" if item.approval_status == "approved" else item.approval_status }}
+                    </span>
+                  </td>
+                  {% if can_curate_knowledge %}
+                    <td>
+                      {% if item.approval_status == "pending" %}
+                        <form method="post" action="/dashboard/knowledge/items/{{ item.id }}/approve" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <button type="submit" class="link-button">Freigeben</button>
+                        </form>
+                      {% elif item.approval_status == "approved" %}
+                        <form method="post" action="/dashboard/knowledge/items/{{ item.id }}/deactivate" style="display:inline;" onsubmit="return this.reason.value.trim().length > 0;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="text" name="reason" placeholder="Begründung" required style="width:110px; font-size:11.5px;" />
+                          <button type="submit" class="link-button">Deaktivieren</button>
+                        </form>
+                      {% endif %}
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="settings-section__hint">
+          Noch keine Textbausteine hinterlegt. Textbausteine entstehen aus
+          freigegebenen Formulierungen der Kanzlei und stehen anschließend bei
+          der Schriftsatzerstellung zur Verfügung.
+        </p>
+      {% endif %}
+    </div>
+
+  {% endif %}
+</div>

@@ -18,7 +18,7 @@ Endgueltiges Loeschen = PERM_CLIENT_DELETE (nur Admin, irreversibel).
 
 from __future__ import annotations
 
-import tempfile
+import hashlib
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -31,10 +31,12 @@ from app.auth.permissions import PERM_CLIENT_DELETE, PERM_CLIENT_MANAGE, require
 from app.clients.export_service import ClientExportService
 from app.clients.import_service import ImportFileError, ImportResult, import_clients, parse_csv, parse_xlsx
 from app.clients.service import (
+    CLIENT_TYPE_SUGGESTIONS,
     PRACTICE_AREA_SUGGESTIONS,
     ClientHasMattersError,
     ClientValidationError,
     archive_client,
+    count_clients,
     create_client,
     delete_client,
     list_clients,
@@ -42,19 +44,126 @@ from app.clients.service import (
     update_client,
 )
 from app.db.session import get_db
+from app.documents.rendering import document_file_size_label
+from app.documents.shell_icons import get_shell_icon_data_uri
 from app.models import AuditEvent, Client, Deadline, Document, Matter, Message, Note, Task, User
-from app.web.download_staging import cleanup_stale_files, delete_after_send
+from app.web.download_staging import (
+    DOWNLOAD_STAGING_DIR as _DOWNLOAD_STAGING_DIR,
+    cleanup_stale_files,
+    delete_after_send,
+)
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/clients", tags=["dashboard-clients"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Eigenes, temporäres Verzeichnis für Datenauszug-Downloads - gleiches
-# Muster wie app/web/backup_router.py (_DOWNLOAD_STAGING_DIR), inkl.
-# automatischer Löschung nach dem Download (app/web/download_staging.py).
-_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "lexono_dashboard_exports"
+# Temporäres Verzeichnis für Datenauszug-Downloads - gleicher Ablageort wie
+# app/web/backup_router.py, zentral in app/web/download_staging.py definiert
+# (06.10., vorher hier unabhängig dupliziert), inkl. automatischer Löschung
+# nach dem Download.
 
 _MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+_ALLOWED_PAGE_SIZES = (10, 20, 50)
+
+# Deterministische Avatar-Darstellung (03.10., Owner-Direktive
+# "REFERENZGETREUE MANDANTENUEBERSICHT" §3.4: "Initialen duerfen
+# deterministisch aus den echten Mandantennamen gebildet werden. Die
+# Avatarfarbe darf ebenfalls deterministisch sein, sofern sie keine
+# zusaetzliche Persistenz erfordert.") - reine Anzeigelogik, NICHTS wird
+# in der DB gespeichert, bei jedem Seitenaufruf neu aus dem echten Namen/
+# der echten ID berechnet.
+_AVATAR_COLOR_COUNT = 8
+
+
+def _client_initials(name: str) -> str:
+    """Reale Mandantennamen sind uneinheitlich formatiert (gegen die echte
+    Produktions-DB geprueft): "Nachname, Vorname" (z. B. "Müller, Anna"),
+    "Vorname Nachname" (z. B. "Sabine Schmidt") UND Firmennamen mit
+    mehreren Woertern (z. B. "Becker GmbH", "Handwerk Schmidt & Söhne").
+    Bei einem Komma wird davon ausgegangen, dass "Nachname, Vorname"
+    vorliegt (Referenzabgleich bestaetigt: "Müller, Anna" -> Initialen
+    "AM", also Vorname-Initiale ZUERST) - sonst werden die ersten beiden
+    durch Leerzeichen getrennten Woerter verwendet (deckt sowohl
+    "Vorname Nachname" als auch Firmennamen ab)."""
+    name = (name or "").strip()
+    if not name:
+        return "–"
+    if "," in name:
+        nachname, _, vorname = name.partition(",")
+        vorname = vorname.strip()
+        nachname = nachname.strip()
+        if vorname and nachname:
+            return (vorname[0] + nachname[0]).upper()
+    tokens = [t for t in name.split() if t]
+    if len(tokens) >= 2:
+        return (tokens[0][0] + tokens[1][0]).upper()
+    if tokens:
+        return tokens[0][:2].upper()
+    return "–"
+
+
+def _client_avatar_color_index(client_id: str) -> int:
+    """Stabil ueber Prozessneustarts hinweg (anders als Pythons
+    `hash()` fuer Strings, das pro Prozess zufaellig gesalzen ist) -
+    `hashlib` liefert denselben Wert fuer dieselbe ID auf jedem Rechner
+    und bei jedem Seitenaufruf, ohne irgendetwas zu speichern."""
+    digest = hashlib.md5(client_id.encode("utf-8")).hexdigest()
+    return int(digest, 16) % _AVATAR_COLOR_COUNT
+
+
+#: Mandanten-Detailseite (03.10., Owner-Direktive "INDIVIDUELLE
+#: MANDANTENDETAILSEITE", Referenzabgleich `30_mandant_detail.png` §5.7):
+#: die Referenz zeigt eine Dateigroesse je Dokument ("1,2 MB") - es gibt
+#: dafuer KEIN gespeichertes Feld auf `Document` (gegengeprueft,
+#: app/models/document.py). Statt dafuer eine neue Spalte/Migration
+#: einzufuehren (keine nachgewiesene technische Notwendigkeit - die reale
+#: Datei liegt bereits vollstaendig am Dateisystem vor), wird die Groesse
+#: direkt von der tatsaechlichen Datei gelesen. Die Formatierung selbst
+#: lebt seit 05.10. (Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS"
+#: §19/§20) in app/documents/rendering.py::document_file_size_label - die
+#: Chat-Dokumentvorschau braucht dieselbe Logik ein zweites Mal, daher
+#: dorthin verschoben statt hier dupliziert zu bleiben.
+_document_file_size_label = document_file_size_label
+
+
+def _document_display_rows(documents: list[Document]) -> list[dict]:
+    """Kombiniert jedes `Document` mit seiner echten Dateigroesse und dem
+    nativen Windows-Shell-Icon (siehe app/documents/shell_icons.py) zu
+    einem fertigen Anzeige-Dict - einmal pro Seitenaufruf berechnet
+    (Icon-Extraktion selbst ist bereits pro Dateiendung gecacht), nicht
+    mehrfach im Template."""
+    rows = []
+    for document in documents:
+        filename = document.original_filename or document.id
+        rows.append(
+            {
+                "document": document,
+                "size_label": _document_file_size_label(document.file_path),
+                "shell_icon_uri": get_shell_icon_data_uri(filename),
+            }
+        )
+    return rows
+
+
+def _build_page_numbers(page: int, total_pages: int) -> list[int | str]:
+    """Identische Logik wie app/web/matters_router.py::_build_page_numbers
+    (kompakte Seitenzahl-Liste mit "…"-Ellipsen) - bewusst hier dupliziert
+    statt in ein gemeinsames Modul extrahiert, um das bereits verifizierte
+    Verhalten der Akten-Seite in dieser Aufgabe nicht anzutasten (kleinstes
+    robustes Risiko, siehe Owner-Direktive §Phase A Regel 5)."""
+    if total_pages <= 7:
+        return list(range(1, total_pages + 1))
+    window = {1, total_pages, page - 1, page, page + 1}
+    window = {p for p in window if 1 <= p <= total_pages}
+    result: list[int | str] = []
+    for p in range(1, total_pages + 1):
+        if p in window:
+            result.append(p)
+        elif result and result[-1] != "…":
+            result.append("…")
+    return result
 
 
 def _active_users(db: Session) -> list[User]:
@@ -68,18 +177,44 @@ def _list_page_context(
     *,
     search: str,
     practice_area: str,
+    client_type: str = "",
     responsible_user_id: str,
     status: str,
+    sort: str = "updated_desc",
+    page: int = 1,
+    page_size: int = 10,
     import_result: ImportResult | None = None,
     import_error: str | None = None,
     error: str | None = None,
 ) -> dict:
+    if sort not in ("updated_desc", "name_asc", "name_desc"):
+        sort = "updated_desc"
+    if page_size not in _ALLOWED_PAGE_SIZES:
+        page_size = 10
+    if page < 1:
+        page = 1
+
+    total_count = count_clients(
+        db,
+        search=search or None,
+        practice_area=practice_area or None,
+        client_type=client_type or None,
+        responsible_user_id=responsible_user_id or None,
+        status=status,
+    )
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    page = min(page, total_pages)
+
     rows = list_clients(
         db,
         search=search or None,
         practice_area=practice_area or None,
+        client_type=client_type or None,
         responsible_user_id=responsible_user_id or None,
         status=status,
+        sort=sort,
+        page=page,
+        page_size=page_size,
     )
     return {
         "request": request,
@@ -89,13 +224,23 @@ def _list_page_context(
         "rows": rows,
         "search": search,
         "practice_area": practice_area,
+        "client_type": client_type,
+        "client_types": CLIENT_TYPE_SUGGESTIONS,
         "responsible_user_id": responsible_user_id,
         "status": status,
+        "sort": sort,
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "page_numbers": _build_page_numbers(page, total_pages),
         "practice_areas": PRACTICE_AREA_SUGGESTIONS,
         "users": _active_users(db),
         "import_result": import_result,
         "import_error": import_error,
         "error": error,
+        "client_initials": _client_initials,
+        "client_avatar_color_index": _client_avatar_color_index,
     }
 
 
@@ -104,20 +249,35 @@ def clients_list_page(
     request: Request,
     q: str = "",
     practice_area: str = "",
+    client_type: str = "",
     responsible_user_id: str = "",
-    status: str = "active",
+    status: str = "all",
+    sort: str = "updated_desc",
+    page: int = 1,
+    page_size: int = 10,
     error: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
+    """`status`-Standard jetzt "all" statt "active" (03.10., Owner-
+    Direktive "REFERENZGETREUE MANDANTENUEBERSICHT", echter
+    Verhaltensabgleich gegen `29_mandanten_uebersicht.png`): die Referenz
+    zeigt in der Standardansicht sowohl "Aktiv"- als auch "Inaktiv"-
+    Mandanten gleichzeitig (siehe Zeile "Schulz, Lisa") - eine bewusste,
+    dokumentierte Verhaltensaenderung (siehe DECISIONS.md), kein
+    Versehen."""
     context = _list_page_context(
         request,
         db,
         current_user,
         search=q,
         practice_area=practice_area,
+        client_type=client_type,
         responsible_user_id=responsible_user_id,
         status=status,
+        sort=sort,
+        page=page,
+        page_size=page_size,
         error=error,
     )
     return templates.TemplateResponse(request, "clients_list.html", context)
@@ -131,6 +291,8 @@ def create_client_action(
     contact_email: str = Form(""),
     contact_phone: str = Form(""),
     practice_area: str = Form(""),
+    client_type: str = Form(""),
+    city: str = Form(""),
     responsible_user_id: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLIENT_MANAGE)),
@@ -143,6 +305,8 @@ def create_client_action(
             contact_email=contact_email,
             contact_phone=contact_phone,
             practice_area=practice_area,
+            client_type=client_type,
+            city=city,
             responsible_user_id=responsible_user_id or None,
             actor=current_user.email,
         )
@@ -194,7 +358,7 @@ def import_clients_action(
         search="",
         practice_area="",
         responsible_user_id="",
-        status="active",
+        status="all",
         import_result=import_result,
         import_error=import_error,
     )
@@ -206,7 +370,7 @@ def _client_detail_context(
 ) -> dict:
     matters = (
         db.query(Matter)
-        .filter(Matter.client_id == client.id)
+        .filter(Matter.client_id == client.id, Matter.deleted_at.is_(None))
         .order_by(Matter.updated_at.desc())
         .all()
     )
@@ -268,11 +432,25 @@ def _client_detail_context(
         "matters": matters,
         "messages": messages,
         "documents": documents,
+        # Fertige Anzeige-Zeilen (echte Dateigroesse + natives Shell-Icon,
+        # siehe _document_display_rows) fuer die neue Dokumentenkarte/-tab
+        # (03.10., Referenzabgleich `30_mandant_detail.png` §5.7/§5.8) -
+        # `documents` selbst bleibt unveraendert (Rueckwaertskompatibilitaet
+        # zu `documents|length` in den bestehenden Tab-Ueberschriften).
+        "document_rows": _document_display_rows(documents),
         "tasks": tasks,
         "deadlines": deadlines,
         "notes": notes,
         "practice_areas": PRACTICE_AREA_SUGGESTIONS,
+        "client_types": CLIENT_TYPE_SUGGESTIONS,
         "users": _active_users(db),
+        # Fuer die neue Mandantenkopf-/Stammdatenkarte (03.10.,
+        # Referenzabgleich `30_mandant_detail.png` §3/§5.2/§5.4) - exakt
+        # dieselben, bereits auf der Mandantenuebersicht verifizierten
+        # deterministischen Avatar-Funktionen, hier fuer den groesseren
+        # Kopf-Avatar wiederverwendet statt einer zweiten Implementierung.
+        "client_initials": _client_initials,
+        "client_avatar_color_index": _client_avatar_color_index,
         # Fuer die "Mit lokaler KI arbeiten"-Kachel (siehe Modul-/Template-
         # Docstring): bei genau EINER offenen Akte direkt verlinkbar, sonst
         # muss zwischen mehreren Akten gewaehlt werden (Aktenisolation -
@@ -303,6 +481,8 @@ def update_client_action(
     contact_email: str = Form(""),
     contact_phone: str = Form(""),
     practice_area: str = Form(""),
+    client_type: str = Form(""),
+    city: str = Form(""),
     responsible_user_id: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLIENT_MANAGE)),
@@ -317,6 +497,8 @@ def update_client_action(
             contact_email=contact_email,
             contact_phone=contact_phone,
             practice_area=practice_area,
+            client_type=client_type,
+            city=city,
             responsible_user_id=responsible_user_id or None,
             actor=current_user.email,
         )

@@ -66,16 +66,44 @@ class UserAlreadyExistsError(Exception):
     pass
 
 
+class LastAdminError(ValueError):
+    """Wird ausgelöst, wenn eine Aktion den letzten aktiven Administrator
+    entfernen würde (Rollenwechsel weg von Admin oder Deaktivierung) -
+    das System muss immer mindestens einen aktiven Admin behalten, sonst
+    kann sich niemand mehr selbst aus dieser Lage befreien."""
+
+
 class UserService:
     """Nutzerverwaltung - JEDE Methode hier ist ausschließlich für Admins
     gedacht (Berechtigungsprüfung erfolgt in der aufrufenden Router-Schicht
     über `require_role("admin")`, siehe app/auth/permissions.py - dieser
     Service selbst prüft keine Rollen, um Zuständigkeiten sauber zu
     trennen: WER etwas darf, entscheidet der Router; WAS die Aktion tut,
-    dieser Service)."""
+    dieser Service). Die "letzter Admin bleibt erhalten"-Prüfung ist
+    jedoch eine Dateninvariante, keine Zugriffsentscheidung, und gehört
+    deshalb HIER hin (nicht in den Router) - sie muss unabhängig davon
+    greifen, über welchen Aufrufweg set_role/set_active erreicht werden."""
 
     def list_users(self, db: Session) -> list[User]:
         return db.query(User).order_by(User.email).all()
+
+    def _is_last_active_admin(self, db: Session, user: User) -> bool:
+        """True, wenn `user` aktuell ein aktiver Admin ist UND kein
+        anderer aktiver Admin existiert. Vergleich über `role_id` (nicht
+        über den Rollennamen als String), damit es unabhängig von
+        Groß-/Kleinschreibung exakt dieselbe Rolle wie `user.role` trifft."""
+        if user.role is None or user.role.name.strip().lower() != "admin":
+            return False
+        other_active_admins = (
+            db.query(User)
+            .filter(
+                User.role_id == user.role_id,
+                User.is_active.is_(True),
+                User.id != user.id,
+            )
+            .count()
+        )
+        return other_active_admins == 0
 
     def create_user(
         self,
@@ -127,6 +155,11 @@ class UserService:
         role = db.query(Role).filter(Role.name == role_name).first()
         if role is None:
             raise ValueError(f"Rolle '{role_name}' existiert nicht")
+        if role.id != user.role_id and self._is_last_active_admin(db, user):
+            raise LastAdminError(
+                "Diese Rolle kann nicht geändert werden: Es muss mindestens ein "
+                "aktiver Administrator bestehen bleiben."
+            )
         old_role_name = user.role.name if user.role else None
         user.role_id = role.id
         db.add(
@@ -143,6 +176,11 @@ class UserService:
         return user
 
     def set_active(self, db: Session, user: User, is_active: bool, *, actor: str) -> User:
+        if not is_active and self._is_last_active_admin(db, user):
+            raise LastAdminError(
+                "Dieser Nutzer kann nicht deaktiviert werden: Es muss mindestens ein "
+                "aktiver Administrator bestehen bleiben."
+            )
         user.is_active = is_active
         if not is_active:
             # Deaktivierung wirkt ohnehin sofort (jede Anfrage laedt den

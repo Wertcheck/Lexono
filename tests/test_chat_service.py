@@ -454,6 +454,37 @@ def test_send_message_answers_pure_norm_question_directly_from_local_law_db(
     assert "Gesetze im Internet" in message.content
 
 
+def test_send_message_ignores_deactivated_law_and_falls_back(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    """26.09., Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION"
+    §20: ein in Kanzleiwissen DEAKTIVIERTES Gesetz (siehe app/laws/
+    service.py::toggle_law_active) darf vom Chat-Fast-Path nicht mehr
+    gefunden werden, obwohl die Paragraphen technisch noch in der DB
+    liegen - identisches Verhalten wie ein nie importiertes Gesetz
+    (transparenter Fallback auf die volle Pipeline, hier sichtbar an der
+    "nicht konfiguriert"-Meldung bei `drafting_service=None`)."""
+    from app.laws.service import toggle_law_active
+
+    _import_real_bgb_558(db_session)
+    toggle_law_active(db_session, "BGB", active=False)
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Frage", actor=user.email
+    )
+
+    message = chat_service.send_message(
+        db_session,
+        conversation=conversation,
+        content="Was steht in § 558 BGB?",
+        drafting_service=None,
+        actor=user.email,
+    )
+
+    assert message.law_section_id is None
+    assert message.blocked is True
+    assert "nicht konfiguriert" in message.content
+
+
 def test_send_message_norm_question_fast_path_needs_no_drafting_service(
     db_session: Session, user: User, chat_service: ChatService
 ) -> None:

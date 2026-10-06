@@ -15,10 +15,12 @@ Begründung der einzelnen Bausteine, hier nicht wiederholt)."""
 from __future__ import annotations
 
 import json
+import mimetypes
 from collections.abc import Iterator
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -30,10 +32,26 @@ from app.auth.permissions import (
     require_role,
 )
 from app.chat.document_preview import build_document_preview
+from app.chat.markdown_render import render_chat_markdown
 from app.chat.service import ChatService
+from app.chat.speech import (
+    SpeechDecodeError,
+    SpeechEmptyRecordingError,
+    SpeechModelUnavailableError,
+    SpeechTooLargeError,
+    transcribe_audio_bytes,
+)
+from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.config import get_settings
 from app.db.session import get_db
 from app.documents.extraction import SUPPORTED_TEXT_EXTENSIONS
+from app.documents.rendering import (
+    THUMBNAIL_DPI,
+    DocumentRenderError,
+    determine_viewer_mode,
+    document_file_size_label,
+    render_page_png,
+)
 from app.models import (
     AuditEvent,
     ChatConversation,
@@ -51,6 +69,62 @@ from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/chat", tags=["dashboard-chat"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# Markdown-Rendering fuer Chat-Nachrichten (05.10., Owner-Direktive
+# "LONG-RUN PRODUCT QUALITY PASS" Phase D) - siehe app/chat/markdown_render.py
+# fuer die volle Root-Cause-/Sicherheitsherleitung. Gleiches Registrierungs-
+# Muster wie "reference_break" in matters_router.py.
+templates.env.filters["chat_markdown"] = render_chat_markdown
+# Dokumentvorschau im Chat (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+# FLOW PASS" §19/§20) - echte Dateigroesse statt erfundener Angabe (siehe
+# app/documents/rendering.py::document_file_size_label) und eine einfache
+# Verfuegbarkeits-Pruefung, ob chat_document_thumbnail fuer ein Dokument
+# ueberhaupt ein Bild liefern kann (sonst zeigt chat.html den bestehenden
+# reinen Icon-Chip-Fallback statt eines kaputten <img>-Tags).
+templates.env.filters["document_file_size"] = document_file_size_label
+
+
+def _document_has_thumbnail(file_path: str | None) -> bool:
+    if not file_path:
+        return False
+    return determine_viewer_mode(Path(file_path)).kind in ("pages", "image")
+
+
+templates.env.filters["document_has_thumbnail"] = _document_has_thumbnail
+
+
+def _draft_panel_title(message: ChatMessage) -> str:
+    """Titel im Schriftsatz-Dokument-Panel (Owner-Direktive "Dokument-Upload
+    -> Schriftsatz -> Dokument-Panel -> Editor", /ux-panel).
+
+    Bevorzugt das echte, vom Editor gepflegte `Draft.subject`-Feld (siehe
+    app/web/draft_editor_router.py) - ein frisch im Chat erzeugter Entwurf
+    hat das bisher nie gesetzt (kein Feld dafuer im Chat-Pfad, siehe
+    app/chat/service.py::send_message), daher der Rueckfall auf dieselbe
+    Kuerzungsregel wie bei automatisch abgeleiteten Konversationstiteln
+    (app/chat/service.py::_derive_title) - bewusst dieselbe Regel ein
+    zweites Mal angewendet statt ein eigener neuer Titelgenerator
+    (Direktive: "Keinen unnötigen neuen Titelgenerator bauen").
+
+    ECHTER FUND (06.10., Visual-Verification-Direktive, live im Browser mit
+    einem echten KI-generierten Schriftsatz reproduziert): der Rueckfall
+    nutzte zunaechst `Draft.content` fuer die Kuerzung - das ist bei JEDEM
+    ueber den Chat erzeugten Schriftsatz bereits zu HTML konvertiert
+    (`content_format == "html"`, siehe app/drafting/service.py::
+    _persist_draft), wodurch rohe `<p>`/`<b>`-Tags im Titel sichtbar
+    wurden. `ChatMessage.content` (dieselbe Quelle, die der Panel-Inhalt
+    direkt darunter ueber den `chat_markdown`-Filter rendert) ist dagegen
+    IMMER Klartext/Markdown, nie HTML (siehe app/chat/service.py::
+    send_message: `content=result.draft_text`) - konsistente, bereits
+    vorhandene Datenquelle statt einer neuen HTML-Strip-Logik."""
+    if message.draft and message.draft.subject:
+        return message.draft.subject
+    normalized = " ".join(message.content.split())
+    if len(normalized) <= 60:
+        return normalized or "Schriftsatz"
+    return normalized[:57] + "…"
+
+
+templates.env.filters["draft_panel_title"] = _draft_panel_title
 
 # Gleiche Formate wie der Schriftsatz-Generator (app/web/schriftsatz_router.py)
 # - der Chat nutzt denselben Dokumentverarbeitungsweg, keine eigene Logik.
@@ -186,6 +260,60 @@ def chat_document_view(
     )
 
 
+@router.get("/{conversation_id}/document/{document_id}/thumbnail.png")
+def chat_document_thumbnail(
+    conversation_id: str,
+    document_id: str,
+    dpi: int = Query(default=THUMBNAIL_DPI),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> Response:
+    """Kompakte Vorschau-Kachel im Chat (05.10., Owner-Direktive
+    "ARCHITECTURE & PRODUCT FLOW PASS" §19/§20): liefert ein echtes
+    gerendertes Seitenbild (PNG) der tatsächlich gespeicherten
+    Originaldatei - keine neue Rendering-/Preview-Architektur, sondern
+    dieselbe `app/documents/rendering.py`, die bereits der vollwertige
+    Dokumentviewer (matters_router.py::matter_document_page_image)
+    verwendet. Isolation ÜBER `ChatService.get_attached_document`
+    (identisches Prinzip wie `chat_document_view` oben: ein Dokument ist
+    nur erreichbar, wenn es tatsächlich an eine Nachricht DIESER
+    Konversation angehängt ist - nie über eine erratene/fremde
+    Dokument-ID). Nicht-rasterbare Formate (DIRECT_IMAGE/TEXT/
+    unsupported) liefern 404 - chat.html zeigt dafür den bestehenden
+    reinen Icon-Chip-Fallback statt eines kaputten <img>."""
+    chat_service = _get_chat_service()
+    active_conversation = _require_own_conversation(db, conversation_id, current_user)
+    document = chat_service.get_attached_document(
+        db, conversation=active_conversation, document_id=document_id
+    )
+    if document is None:
+        raise HTTPException(status_code=404, detail="Dokument wurde in dieser Unterhaltung nicht gefunden.")
+
+    path = Path(document.file_path)
+    viewer_mode = determine_viewer_mode(path)
+
+    if viewer_mode.kind == "pages":
+        try:
+            png_bytes = render_page_png(path, 1, dpi=dpi)
+        except DocumentRenderError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return Response(content=png_bytes, media_type="image/png")
+
+    if viewer_mode.kind == "image":
+        # Echtes Bildformat (PNG/JPG/...): keine Rasterung noetig, dieselbe
+        # Originaldatei dient bereits als eigene Vorschau (identisches
+        # Prinzip wie viewer_mode.kind=="image" in matter_document.html,
+        # dort ueber die dortige /download-Route).
+        try:
+            image_bytes = path.read_bytes()
+        except OSError as exc:
+            raise HTTPException(status_code=404, detail="Datei nicht gefunden.") from exc
+        media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        return Response(content=image_bytes, media_type=media_type)
+
+    raise HTTPException(status_code=404, detail="Für dieses Dateiformat gibt es keine Vorschau.")
+
+
 def _render_chat_page(
     request: Request,
     db: Session,
@@ -247,6 +375,28 @@ def _render_chat_page(
         # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
         "viewing_document": viewing_document,
         "document_preview": document_preview,
+        # Allgemeiner Chat vs. Chat MIT Aktenkontext (05.10., Owner-Direktive
+        # "ARCHITECTURE & PRODUCT FLOW PASS" §5-9): jede Konversation ist
+        # technisch IMMER an eine Akte gebunden (Aktenisolation, siehe
+        # app/chat/service.py-Moduldocstring) - eine ohne explizite Auswahl
+        # gestartete Unterhaltung bekommt automatisch eine "Schnellentwurf"-
+        # Akte unter dem Sammel-Mandanten PLACEHOLDER_CLIENT_NAME
+        # ("Ohne Mandantenzuordnung", app/drafting/quick_matter.py).
+        # Bisher zeigte chat.html diese Platzhalter-Akte GENAUSO prominent
+        # wie eine bewusst gewaehlte echte Akte ("Schnellentwurf 2026-10-05"
+        # als Breadcrumb/Titel) - das widersprach dem Ziel "ein allgemeiner
+        # Chat darf nicht wirken wie Akte-Arbeit": der Anwalt sah einen
+        # Akte-Bezug, den er nie hergestellt hat. `has_explicit_matter_
+        # context` unterscheidet das rein anhand des bereits bestehenden
+        # Platzhalter-Mandanten-Namens (keine neue Datenbankspalte/Migration
+        # noetig) - chat.html zeigt bei `False` einen neutralen "Allgemeiner
+        # Chat"-Zustand statt der technischen Schnellentwurf-Akte.
+        "has_explicit_matter_context": (
+            active_conversation is not None
+            and active_conversation.matter is not None
+            and active_conversation.matter.client is not None
+            and active_conversation.matter.client.name != PLACEHOLDER_CLIENT_NAME
+        ),
     }
     return templates.TemplateResponse(request, "chat.html", context)
 
@@ -340,6 +490,53 @@ def _validate_uploads(documents: list[UploadFile]) -> str | None:
                 f"(erlaubt: {', '.join(sorted(_ALLOWED_UPLOAD_EXTENSIONS))})."
             )
     return None
+
+
+@router.post("/speech/transcribe")
+def transcribe_speech(
+    request: Request,
+    audio: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
+) -> JSONResponse:
+    """Lokale Spracheingabe (05.10., Owner-Direktive "ARCHITECTURE &
+    PRODUCT FLOW PASS" §22-27): nimmt eine einzelne, bereits im Browser
+    aufgenommene Audio-Datei entgegen, transkribiert sie LOKAL (siehe
+    app/chat/speech.py fuer die vollstaendige Architekturbegruendung) und
+    gibt NUR den erkannten Text zurueck - keine Persistierung des Audios in
+    der Datenbank, kein Chat-Nachrichten-Anhang, keine Weiterleitung an
+    einen externen Dienst. Dieselbe Login-/CSRF-/Berechtigungspruefung wie
+    `send_message` (PERM_CLAUDE_CALL, da Teil desselben Chat-Composers)."""
+    audio_bytes = audio.file.read()
+    suffix = Path(audio.filename or "aufnahme.webm").suffix or ".webm"
+
+    try:
+        text = transcribe_audio_bytes(audio_bytes, suffix=suffix)
+    except SpeechEmptyRecordingError:
+        return JSONResponse(
+            status_code=422,
+            content={"error": "empty_recording", "message": "Die Aufnahme ist leer oder zu kurz."},
+        )
+    except SpeechTooLargeError as exc:
+        return JSONResponse(status_code=413, content={"error": "too_large", "message": str(exc)})
+    except SpeechDecodeError:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "decode_failed",
+                "message": "Die Aufnahme konnte nicht verarbeitet werden.",
+            },
+        )
+    except SpeechModelUnavailableError:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "model_unavailable",
+                "message": "Lokale Spracherkennung ist derzeit nicht verfügbar.",
+            },
+        )
+
+    return JSONResponse(content={"text": text})
 
 
 @router.post("/send")
@@ -815,7 +1012,7 @@ def send_message_stream(
 @router.post("/{conversation_id}/link-matter")
 def link_matter(
     conversation_id: str,
-    matter_id: str = Form(...),
+    matter_id: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role()),
 ) -> RedirectResponse:
@@ -845,9 +1042,28 @@ def link_matter(
     `RuleBasedLocalAIProvider.prepare_draft_context`). BEREITS gesendete
     Nachrichten/erzeugte Drafts bleiben unverändert der alten Akte
     zugeordnet (`Draft.matter_id` wird hier nicht angefasst) - kein
-    rückwirkendes Vermischen von Aktenkontext."""
+    rückwirkendes Vermischen von Aktenkontext.
+
+    LEERES `matter_id` = "Kontext entfernen" (05.10., Owner-Direktive
+    "ARCHITECTURE & PRODUCT FLOW PASS" §9/TEST 4): `ChatConversation.
+    matter_id` ist NOT NULL (eine Unterhaltung braucht strukturell immer
+    eine Akte, u. a. fuer Dokument-Uploads) - "kein Kontext" bedeutet hier
+    deshalb dasselbe wie bei einer brandneuen Unterhaltung: eine frische
+    Schnellentwurf-Platzhalterakte (`create_quick_matter`, derselbe
+    Mechanismus wie beim ERSTEN Senden ohne Aktenauswahl, siehe
+    `send_message` - keine zweite, abweichende Implementierung)."""
     conversation = _require_own_conversation(db, conversation_id, current_user)
-    target_matter = get_or_404(db, Matter, matter_id, "Akte")
+
+    if matter_id:
+        target_matter = get_or_404(db, Matter, matter_id, "Akte")
+        event_type = "chat_relinked_to_matter"
+        details_verb = "umgehängt"
+    else:
+        target_matter = create_quick_matter(
+            db, title=conversation.title, client_name=None, actor=current_user.email
+        )
+        event_type = "chat_context_removed"
+        details_verb = "von Kontext gelöst (neue Platzhalterakte)"
 
     previous_matter_id = conversation.matter_id
     conversation.matter_id = target_matter.id
@@ -855,14 +1071,80 @@ def link_matter(
         AuditEvent(
             entity_type="ChatConversation",
             entity_id=conversation.id,
-            event_type="chat_relinked_to_matter",
+            event_type=event_type,
             actor=current_user.email,
-            details=f"Unterhaltung von Akte {previous_matter_id} zu Akte {target_matter.id} umgehängt",
+            details=f"Unterhaltung von Akte {previous_matter_id} zu Akte {target_matter.id} {details_verb}",
         )
     )
     db.commit()
 
     return RedirectResponse(url=f"/dashboard/chat/{conversation.id}", status_code=303)
+
+
+#: Gleiche Obergrenze wie die DB-Spalte selbst (app/models/chat_conversation.py
+#: `title: Mapped[str] = mapped_column(String(200), ...)`) - defensiv auch
+#: hier geprueft, statt sich allein auf einen DB-Fehler bei Ueberlaenge zu
+#: verlassen (der Nutzer saehe sonst einen haesslichen 500er statt einer
+#: klaren Meldung).
+_MAX_TITLE_LENGTH = 200
+
+
+@router.post("/{conversation_id}/rename")
+def rename_conversation(
+    conversation_id: str,
+    title: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role()),
+) -> JSONResponse:
+    """Chat umbenennen (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
+    PROFESSIONAL UX PASS" §13-§17) - aendert AUSSCHLIESSLICH das bereits
+    bestehende `ChatConversation.title`-Feld (keine Migration noetig,
+    siehe Modul-Docstring von app/models/chat_conversation.py: das Feld
+    wird bisher nur EINMAL bei `create_conversation` aus der ersten
+    Nachricht abgeleitet, nirgendwo sonst im Projekt erneut geschrieben -
+    ein manuell gesetzter Titel kann also strukturell nicht durch eine
+    spaetere automatische Generierung ueberschrieben werden, siehe
+    `_derive_title`/`ChatService.create_conversation`).
+
+    Bewusst ein JSON-Antwort-Endpunkt statt eines klassischen Formular-
+    Redirects (anders als `link_matter`/`delete_conversation` oben) - die
+    Direktive verlangt ausdruecklich "kein unnoetiger kompletter
+    Seitenreload" nach dem Umbenennen (§14/§39); der Titel wird clientseitig
+    sofort an den beiden Stellen aktualisiert, an denen er angezeigt wird
+    (Unterhaltungsliste + Kopfzeile, siehe chat.html), waehrend die
+    Konversations-ID und alle Nachrichten/der Kontext unveraendert bleiben
+    (§3/§15). Dieselbe Eigentuemer-/CSRF-Pruefung wie jede andere
+    Konversations-Aktion."""
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+
+    # §14: Leerstring/reines Whitespace wird NICHT gespeichert, Leading/
+    # Trailing-Whitespace entfernt. Mehrfache interne Leerzeichen bewusst
+    # NICHT kollabiert (anders als `_derive_title`) - ein manuell getippter
+    # Titel darf im Gegensatz zum automatisch abgeleiteten Titel genau so
+    # gespeichert werden, wie der Anwalt ihn eingegeben hat.
+    normalized = title.strip()
+    if not normalized:
+        return JSONResponse(
+            status_code=422,
+            content={"ok": False, "message": "Bitte einen Titel eingeben."},
+        )
+    if len(normalized) > _MAX_TITLE_LENGTH:
+        normalized = normalized[:_MAX_TITLE_LENGTH]
+
+    previous_title = conversation.title
+    conversation.title = normalized
+    db.add(
+        AuditEvent(
+            entity_type="ChatConversation",
+            entity_id=conversation.id,
+            event_type="chat_conversation_renamed",
+            actor=current_user.email,
+            details=f"Unterhaltung umbenannt: '{previous_title}' -> '{normalized}'",
+        )
+    )
+    db.commit()
+
+    return JSONResponse(content={"ok": True, "title": normalized})
 
 
 @router.post("/{conversation_id}/delete")
@@ -901,3 +1183,57 @@ def delete_conversation(
     db.commit()
 
     return RedirectResponse(url="/dashboard/chat", status_code=303)
+
+
+@router.post("/bulk-delete")
+def bulk_delete_conversations(
+    conversation_ids: list[str] = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role()),
+) -> JSONResponse:
+    """Mehrere Unterhaltungen gemeinsam loeschen (06.10., Owner-Direktive
+    "CHAT & CHAT-HISTORY PROFESSIONAL UX PASS" §18-§26) - erweitert die
+    bestehende `delete_conversation`-Loeschlogik (Cascade auf Messages,
+    Draft bleibt erhalten, siehe dortiger Docstring fuer die volle
+    Begruendung) um eine ECHTE Bulk-Operation statt N Einzel-Requests.
+
+    SECURITY (§23, "NIEMALS ausschliesslich auf UI-Checkboxen vertrauen"):
+    die WHERE-Klausel filtert serverseitig zusaetzlich auf
+    `user_id == current_user.id` - eine mitgeschickte fremde oder frei
+    erfundene ID wird dadurch STILLSCHWEIGEND aus der Treffermenge
+    entfernt (nicht geloescht, kein Fehler fuer die eigenen gueltigen IDs
+    in derselben Anfrage), nie durch bloßes Vertrauen auf die vom Client
+    gesendete Liste gefunden. Eine einzelne Query + ein einzelner
+    `db.commit()` fuer alle tatsaechlich berechtigten Treffer zusammen -
+    das ist bereits die transaktionale Bulk-Operation (§22), keine Schleife
+    mit N Einzel-Commits noetig."""
+    requested_ids = [cid for cid in conversation_ids if cid]
+    if not requested_ids:
+        return JSONResponse(
+            status_code=422, content={"ok": False, "message": "Keine Unterhaltungen ausgewählt."}
+        )
+
+    conversations = (
+        db.query(ChatConversation)
+        .filter(
+            ChatConversation.id.in_(requested_ids),
+            ChatConversation.user_id == current_user.id,
+        )
+        .all()
+    )
+    deleted_ids: list[str] = []
+    for conversation in conversations:
+        deleted_ids.append(conversation.id)
+        db.add(
+            AuditEvent(
+                entity_type="ChatConversation",
+                entity_id=conversation.id,
+                event_type="chat_conversation_deleted",
+                actor=current_user.email,
+                details=f"Unterhaltung gelöscht (Sammellöschung): {conversation.title}",
+            )
+        )
+        db.delete(conversation)
+    db.commit()
+
+    return JSONResponse(content={"ok": True, "deleted_ids": deleted_ids})

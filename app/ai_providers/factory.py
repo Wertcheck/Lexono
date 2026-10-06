@@ -73,6 +73,18 @@ def build_writing_provider(settings: Settings) -> ClaudeWritingProvider:
     Entwicklung/Qualitätstests). Wirft `ProviderNotConfiguredError`, wenn
     keins von beidem vollständig konfiguriert ist."""
     if settings.lexono_gateway_url:
+        # ECHTE WEBRECHERCHE (06.10., §0.6-§0.10): bewusst OHNE
+        # web_search_enabled/web_search_max_uses hier - der eigentliche
+        # Claude-Aufruf passiert bei gesetztem lexono_gateway_url auf einem
+        # separaten, nicht zu diesem Repository gehoerenden Lexono-Gateway-
+        # Server (siehe call_gateway_messages, fixe Request-Form ohne
+        # "tools"-Feld). Ein hier erdachtes Tool-Flag wuerde dort entweder
+        # einen Fehler ausloesen oder (schlimmer) still ignoriert werden -
+        # beides waere keine ehrliche Web-Zugriffs-Zusage. Um dieser
+        # Produktvorgabe nachzukommen, muss der separate Gateway-Server
+        # selbst ein Web-Search-Tool anhaengen und dies dem Client ueber die
+        # Relay-Antwort mitteilen - ausserhalb des Umfangs dieses
+        # Repositories, siehe Abschlussbericht "Offene Punkte".
         client_id, client_secret = _require_gateway_credentials(settings)
         return GatewayRelayWritingProvider(
             base_url=settings.lexono_gateway_url,
@@ -87,6 +99,8 @@ def build_writing_provider(settings: Settings) -> ClaudeWritingProvider:
         api_key=api_key,
         model=settings.claude_model_name,
         max_tokens=settings.claude_max_tokens,
+        web_search_enabled=settings.web_search_enabled,
+        web_search_max_uses=settings.web_search_max_uses,
     )
 
 

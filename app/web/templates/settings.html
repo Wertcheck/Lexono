@@ -2,19 +2,1562 @@
 {% import "_icons.html" as icons %}
 {% block title %}Einstellungen{% endblock %}
 {% block content %}
-  <div class="topbar">
-    <h1 class="topbar__title">Einstellungen</h1>
-    <div class="topbar__meta">Nur für Administratoren sichtbar · Änderungen wirken sofort, kein Neustart nötig</div>
+  {# Referenz-getriebener Rebuild (06.10., Owner-Direktive "LEXONO -
+     EINSTELLUNGEN UI REBUILD") - Header + Tab-Navigation + zweispaltiger
+     Content statt der bisherigen flachen Abschnittsliste. Bestehende
+     Funktionen (Scan-Ordner, E-Mail-Postfach, Aufbewahrung, Lokale KI,
+     KI-Anbindung, Kanzlei-Profil) bleiben vollstaendig erhalten, nur in
+     die passenden neuen Tabs verschoben - siehe Abschlussbericht fuer die
+     volle Zuordnung. #}
+  <div class="settings-header">
+    <span class="settings-header__icon">{{ icons.settings(class_="icon") }}</span>
+    <div>
+      <h1 class="settings-header__title">Einstellungen</h1>
+      <p class="settings-header__subtitle">Lexono an Ihre Kanzlei anpassen</p>
+    </div>
   </div>
 
   {% if success %}
-    <div class="banner banner--success">{{ success }}</div>
+    <div class="banner banner--success settings-banner">{{ success }}</div>
   {% endif %}
   {% if error %}
-    <div class="banner banner--error">{{ error }}</div>
+    <div class="banner banner--error settings-banner">{{ error }}</div>
   {% endif %}
 
-  <div class="draft-page">
+  <nav class="settings-tabs" id="settings-tabs" role="tablist" aria-label="Einstellungsbereiche">
+    <button type="button" class="settings-tab" data-tab="allgemein" role="tab">Allgemein</button>
+    <button type="button" class="settings-tab" data-tab="ki-datenschutz" role="tab">KI &amp; Datenschutz</button>
+    <button type="button" class="settings-tab" data-tab="email" role="tab">E-Mail</button>
+    <button type="button" class="settings-tab" data-tab="benutzer" role="tab">Benutzer</button>
+    <button type="button" class="settings-tab" data-tab="kanzlei" role="tab">Kanzlei</button>
+    <button type="button" class="settings-tab" data-tab="lizenz" role="tab">Lizenz</button>
+    <button type="button" class="settings-tab" data-tab="erweitert" role="tab">Erweitert</button>
+  </nav>
+
+  {# ===================== TAB: ALLGEMEIN ===================== #}
+  <div class="settings-tabpanel" data-tabpanel="allgemein">
+    <div class="settings-page-grid">
+      <div class="settings-page-grid__main">
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">Anwendung</h2>
+
+          <form method="post" action="/dashboard/settings/general/language" class="settings-row">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <span class="settings-row__icon">{{ icons.globe(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Sprache</span>
+              <span class="settings-row__desc">Sprache der Benutzeroberfläche</span>
+            </div>
+            <div class="settings-row__control">
+              {# Einzige tatsaechlich funktionierende Option (keine i18n-
+                 Infrastruktur vorhanden, siehe Settings.ui_language) -
+                 eine ehrlich funktionierende Einzelauswahl statt
+                 vorgetaeuschter weiterer Sprachen. #}
+              <select name="ui_language" class="settings-select" onchange="this.form.requestSubmit()">
+                <option value="de" selected>Deutsch</option>
+              </select>
+            </div>
+          </form>
+
+          <form method="post" action="/dashboard/settings/general/theme" class="settings-row">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <span class="settings-row__icon">{{ icons.monitor(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Design</span>
+              <span class="settings-row__desc">Erscheinungsbild der Anwendung</span>
+            </div>
+            <div class="settings-row__control">
+              {# Ebenfalls einzige real wirksame Option (kein Dark-Mode-
+                 Mechanismus vorhanden, siehe Settings.ui_theme). #}
+              <select name="ui_theme" class="settings-select" onchange="this.form.requestSubmit()">
+                <option value="light" selected>Hell (Standard)</option>
+              </select>
+            </div>
+          </form>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.bolt(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Beim Systemstart starten</span>
+              <span class="settings-row__desc">Lexono automatisch mit Windows starten</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/general/toggle" class="settings-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="key" value="start_with_system" />
+                <button type="submit" class="law-toggle{% if start_with_system %} law-toggle--on{% endif %}"
+                        aria-label="Beim Systemstart starten: {{ 'aktiviert' if start_with_system else 'deaktiviert' }}"
+                        title="{{ 'Deaktivieren' if start_with_system else 'Aktivieren' }}"></button>
+              </form>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.refresh(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Automatische Updates</span>
+              <span class="settings-row__desc">Neue Versionen automatisch herunterladen</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/general/toggle" class="settings-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="key" value="auto_update_download_enabled" />
+                <button type="submit" class="law-toggle{% if auto_update_download_enabled %} law-toggle--on{% endif %}"
+                        aria-label="Automatische Updates: {{ 'aktiviert' if auto_update_download_enabled else 'deaktiviert' }}"
+                        title="{{ 'Deaktivieren' if auto_update_download_enabled else 'Aktivieren' }}"></button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">Benachrichtigungen</h2>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.bell(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Desktop-Benachrichtigungen</span>
+              <span class="settings-row__desc">Hinweise zu neuen Nachrichten, Aufgaben und Fristen</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/general/toggle" class="settings-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="key" value="desktop_notifications_enabled" />
+                <button type="submit" class="law-toggle{% if desktop_notifications_enabled %} law-toggle--on{% endif %}"
+                        aria-label="Desktop-Benachrichtigungen: {{ 'aktiviert' if desktop_notifications_enabled else 'deaktiviert' }}"
+                        title="{{ 'Deaktivieren' if desktop_notifications_enabled else 'Aktivieren' }}"></button>
+              </form>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.envelope(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">E-Mail-Benachrichtigungen</span>
+              <span class="settings-row__desc">Zusätzliche Benachrichtigungen per E-Mail erhalten</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/general/toggle" class="settings-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="key" value="email_notifications_enabled" />
+                <button type="submit" class="law-toggle{% if email_notifications_enabled %} law-toggle--on{% endif %}"
+                        aria-label="E-Mail-Benachrichtigungen: {{ 'aktiviert' if email_notifications_enabled else 'deaktiviert' }}"
+                        title="{{ 'Deaktivieren' if email_notifications_enabled else 'Aktivieren' }}"></button>
+              </form>
+            </div>
+          </div>
+
+          <form method="post" action="/dashboard/settings/general/deadline-reminder" class="settings-row">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <span class="settings-row__icon">{{ icons.calendar_check(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Frist-Erinnerungen</span>
+              <span class="settings-row__desc">Erinnerungen vor Fristablauf</span>
+            </div>
+            <div class="settings-row__control">
+              <select name="deadline_reminder_lead_days" class="settings-select" onchange="this.form.requestSubmit()">
+                <option value="1" {% if deadline_reminder_lead_days == 1 %}selected{% endif %}>1 Tag vorher</option>
+                <option value="3" {% if deadline_reminder_lead_days == 3 %}selected{% endif %}>3 Tage vorher</option>
+                <option value="7" {% if deadline_reminder_lead_days == 7 %}selected{% endif %}>7 Tage vorher</option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">Daten &amp; Speicher</h2>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.database(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Speicherort der Daten</span>
+              <span class="settings-row__desc">Lokaler Speicherort der Anwendung</span>
+            </div>
+            <div class="settings-row__control settings-row__control--path">
+              <input type="text" class="settings-path-display" value="{{ data_dir }}" readonly
+                     title="{{ data_dir }}" aria-label="Lokaler Speicherort der Anwendung" />
+              {# Nativer "Ordner oeffnen"-Button (06.10.) - nur im gebuendelten
+                 WebView2-Fenster verfuegbar (run.py: _NativeApi.
+                 open_data_folder), gleiches Feature-Detection-Muster wie der
+                 bestehende Scan-Ordner-Ausw√§hlen-Button unten. #}
+              <button type="button" id="open-data-folder-btn" class="settings-icon-btn" style="display:none;"
+                      title="Ordner öffnen" aria-label="Datenordner im Explorer öffnen">
+                {{ icons.folder(class_="icon") }}
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.trash(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Cache leeren</span>
+              <span class="settings-row__desc">Temporäre Dateien und Cache entfernen</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/cache/clear">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn">Jetzt leeren</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.archive(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Datenbank sichern</span>
+              <span class="settings-row__desc">Manuelle Sicherung der Anwendungsdaten</span>
+            </div>
+            <div class="settings-row__control">
+              {# Reine Formular-Weiterleitung an die bereits bestehende,
+                 vollstaendig implementierte Backup-Aktion (app/web/
+                 backup_router.py::create_full_backup) - kein neuer
+                 Backup-Mechanismus. #}
+              <form method="post" action="/dashboard/backup/full">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn">Sicherung erstellen</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="settings-page-grid__side">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">Ihr Profil</h2>
+          <div class="settings-profile">
+            <span class="settings-profile-avatar">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
+            <div class="settings-profile__text">
+              <span class="settings-profile__name">{{ current_user.display_name or current_user.email }}</span>
+              <span class="settings-profile__role">{{ current_user.role.name if current_user.role else "Ohne Rolle" }}</span>
+              <span class="settings-profile__email">{{ current_user.email }}</span>
+            </div>
+          </div>
+          <a href="/dashboard/account/me" class="btn settings-info-card__action">
+            {{ icons.pencil(class_="icon") }}
+            <span>Profil bearbeiten</span>
+          </a>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.building(class_="icon settings-info-card__title-icon") }}
+            Kanzlei
+          </h2>
+          {% if firm_profile and firm_profile.firm_name %}
+            <p class="settings-info-card__line settings-info-card__line--strong">{{ firm_profile.firm_name }}</p>
+            {% if firm_profile.street %}
+              <p class="settings-info-card__line">{{ firm_profile.street }}</p>
+            {% endif %}
+            {% if firm_profile.postal_code or firm_profile.city %}
+              <p class="settings-info-card__line">{{ (firm_profile.postal_code or "") ~ " " ~ (firm_profile.city or "") }}</p>
+            {% endif %}
+          {% else %}
+            <p class="settings-info-card__line settings-info-card__line--muted">Noch keine Kanzleidaten hinterlegt.</p>
+          {% endif %}
+          <a href="/dashboard/settings?tab=kanzlei" class="btn settings-info-card__action">
+            {{ icons.pencil(class_="icon") }}
+            <span>Kanzleidaten bearbeiten</span>
+          </a>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.key(class_="icon settings-info-card__title-icon") }}
+            Lizenz
+          </h2>
+          {# ECHTE DATEN NUR (Direktive §17): es existiert aktuell KEIN
+             Lizenz-/Abo-Datenmodell in Lexono (Einzelinstallation pro
+             Kanzlei, keine SaaS-Lizenzverwaltung) - anders als die
+             Referenz zeigt diese Karte daher bewusst KEINEN erfundenen
+             Lizenztyp/kein erfundenes Gueltigkeitsdatum, sondern die
+             tatsaechlich vorhandene Nutzerzahl dieser Installation. #}
+          <p class="settings-info-card__line settings-info-card__line--strong">Lexono (lokale Installation)</p>
+          <p class="settings-info-card__line">{{ active_users }} von {{ total_users }} Benutzer{{ "n" if total_users != 1 else "" }} aktiv</p>
+          <p class="settings-info-card__line settings-info-card__line--muted">Keine zentrale Lizenzverwaltung konfiguriert</p>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">Systemstatus</h2>
+          <div class="settings-status-row">
+            <span class="settings-status-row__label">
+              <span class="settings-status-dot settings-status-dot--ok">{{ icons.check(class_="icon") }}</span>
+              Anwendung
+            </span>
+            <span class="settings-status-row__value settings-status-row__value--ok">v{{ app_version }}</span>
+          </div>
+          <div class="settings-status-row">
+            <span class="settings-status-row__label">
+              <span class="settings-status-dot{% if local_ai_status and local_ai_status.state.value == 'ready' %} settings-status-dot--ok{% else %} settings-status-dot--neutral{% endif %}">
+                {{ icons.check(class_="icon") }}
+              </span>
+              Lokale KI (Ollama)
+            </span>
+            {% set lai_state = local_ai_status.state.value if local_ai_status else "checking" %}
+            <span class="settings-status-row__value{% if lai_state == 'ready' %} settings-status-row__value--ok{% endif %}">
+              {{ {
+                "checking": "Wird ermittelt…",
+                "disabled": "Deaktiviert",
+                "ready": "Verbunden",
+                "runtime_missing": "Nicht installiert",
+                "runtime_unreachable": "Nicht erreichbar",
+                "model_missing": "Modell fehlt",
+              }[lai_state] }}
+            </span>
+          </div>
+          <div class="settings-status-row">
+            <span class="settings-status-row__label">
+              <span class="settings-status-dot settings-status-dot--ok">{{ icons.check(class_="icon") }}</span>
+              Datenschutz (Presidio)
+            </span>
+            {# Presidio laeuft vollstaendig lokal/im Prozess - keine externe
+               Verbindung, die "verbunden/nicht verbunden" sein koennte, daher
+               ehrlich "Aktiv" statt eines erfundenen Verbindungsstatus. #}
+            <span class="settings-status-row__value settings-status-row__value--ok">Aktiv</span>
+          </div>
+          <div class="settings-status-row">
+            <span class="settings-status-row__label">
+              <span class="settings-status-dot{% if mail_configured %} settings-status-dot--ok{% else %} settings-status-dot--neutral{% endif %}">
+                {{ icons.check(class_="icon") }}
+              </span>
+              E-Mail (IMAP/SMTP)
+            </span>
+            <span class="settings-status-row__value{% if mail_configured %} settings-status-row__value--ok{% endif %}">
+              {{ "Konfiguriert" if mail_configured else "Nicht konfiguriert" }}
+            </span>
+          </div>
+          <div class="settings-status-row">
+            <span class="settings-status-row__label">
+              <span class="settings-status-dot{% if gateway_configured %} settings-status-dot--ok{% else %} settings-status-dot--neutral{% endif %}">
+                {{ icons.check(class_="icon") }}
+              </span>
+              Gateway (Claude)
+            </span>
+            <span class="settings-status-row__value{% if gateway_configured %} settings-status-row__value--ok{% endif %}">
+              {{ "Konfiguriert" if gateway_configured else "Nicht konfiguriert" }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {# ===================== TAB: KI & DATENSCHUTZ ===================== #}
+  {# Endnutzer-Ansicht (06.10., Owner-Direktive "SETTINGS -> KI & DATENSCHUTZ",
+     /product-principle: "Der Anwender benutzt die KI. Lexono verwaltet die
+     technische KI-Infrastruktur automatisch."). Zeigt NUR die Entscheidung,
+     die ein normaler Kanzleianwender tatsaechlich treffen soll (Cloud-KI-
+     Anbieter) plus ehrliche, bereits bestehende Statuswerte
+     (local_ai_status/gateway_configured, siehe settings_router.py) - keine
+     Ollama-/Presidio-/Gateway-Konfiguration mehr. Diese technischen Felder
+     sind UNVERAENDERT erhalten, nur in den Tab "Erweitert" verschoben (siehe
+     dort) - "keine neue Admin-Architektur", die bestehende Admin-Gate der
+     gesamten Seite (_require_admin) bleibt die einzige Zugriffsschranke,
+     siehe Abschlussbericht fuer die volle Begruendung. Zweispaltiges Layout
+     wie der "Allgemein"-Tab, dieselben bestehenden Grid-/Karten-Klassen. #}
+  <div class="settings-tabpanel" data-tabpanel="ki-datenschutz" hidden>
+    <div class="settings-page-grid">
+      <div class="settings-page-grid__main">
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">
+            {{ icons.cloud(class_="icon") }}
+            Cloud-KI
+          </h2>
+          <p class="settings-section__hint">
+            Wählen Sie den KI-Anbieter, über den Lexono Ihre Anfragen verarbeitet.
+          </p>
+          <form method="post" action="/dashboard/settings/cloud-ai" style="margin: 14px 0 10px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            {# Nur "claude" ist aktuell real implementiert (siehe
+               app/ai_providers/factory.py - keine Mehr-Provider-
+               Abstraktion vorhanden) - Gemini/ChatGPT erscheinen bewusst
+               als sichtbar DEAKTIVIERTE Optionen (native
+               `disabled`-Option, kein Fake-Dropdown-Eintrag, der sich
+               auswaehlen liesse, aber nichts bewirkt). #}
+            <select name="cloud_ai_provider" class="settings-select" style="width: 100%;" onchange="this.form.requestSubmit()">
+              <option value="claude" {% if cloud_ai_provider == "claude" %}selected{% endif %}>{{ cloud_ai_model_label }}</option>
+              <option value="gemini" disabled>Gemini (bald verfügbar)</option>
+              <option value="chatgpt" disabled>ChatGPT / OpenAI (bald verfügbar)</option>
+            </select>
+          </form>
+          <p class="settings-section__hint">
+            {% if cloud_ai_via_gateway %}
+              Die Verarbeitung Ihrer Anfragen erfolgt über das sichere Lexono Gateway.
+            {% elif gateway_configured %}
+              Verarbeitung erfolgt direkt über die Anthropic-API (Entwicklungskonfiguration ohne Lexono Gateway).
+            {% else %}
+              Cloud-KI ist derzeit nicht konfiguriert - bitte eine Administratorin oder einen Administrator kontaktieren.
+            {% endif %}
+            Weitere Anbieter (z. B. Gemini, ChatGPT) werden in Kürze verfügbar sein.
+          </p>
+          <div class="chat-transparency-card">
+            {{ icons.shield(class_="icon") }}
+            <div class="chat-transparency-card__text">
+              <strong>Die Cloud-KI wird ausschließlich mit pseudonymisierten Daten verwendet.</strong>
+              <a href="/dashboard/feedback">Mehr erfahren</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">
+            {{ icons.shield(class_="icon") }}
+            Ihr Datenschutz ist aktiv
+          </h2>
+          <p class="settings-section__hint">
+            Lexono schützt sensible Daten Ihrer Kanzlei durch eine mehrstufige
+            Verarbeitung. Personenbezogene und vertrauliche Inhalte werden vor
+            der Übermittlung an externe KI-Dienste automatisch pseudonymisiert.
+          </p>
+
+          {# Pseudonymisierung: laeuft vollstaendig lokal/im Prozess (Presidio +
+             app/privacy/pseudonymizer.py) - keine externe Verbindung, die
+             ausfallen koennte, und NICHT abschaltbar (CLAUDE.md/Direktive
+             /privacy-security) - daher ehrlich immer "Aktiv", kein
+             erfundener Verbindungsstatus (identische Begruendung wie die
+             bestehende Systemstatus-Karte im Tab "Allgemein"). #}
+          <div class="settings-row" style="border-top: none;">
+            <span class="settings-row__icon">{{ icons.document(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Pseudonymisierung</span>
+              <span class="settings-row__desc">Personenbezogene Daten werden automatisch erkannt und pseudonymisiert.</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill settings-status-pill--ok">{{ icons.check(class_="icon") }}Aktiv</span>
+            </div>
+          </div>
+
+          {# Lokale Verarbeitung: bildet HIER bewusst den optionalen lokalen
+             KI-Zwischenschritt ab (Ollama/local_ai_status) - NICHT die
+             Pseudonymisierung (die hat die eigene Zeile oben) - echte
+             Statuswerte, niemals "Bereit" vortaeuschen, wenn Ollama
+             tatsaechlich nicht erreichbar/deaktiviert ist
+             (/status-rule). #}
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.monitor(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Lokale Verarbeitung</span>
+              <span class="settings-row__desc">Sensible Inhalte werden vor der Cloud-Verarbeitung zunächst lokal verarbeitet.</span>
+            </div>
+            <div class="settings-row__control">
+              {% set lai_state = local_ai_status.state.value if local_ai_status else "checking" %}
+              <span class="settings-status-pill{% if lai_state == 'ready' %} settings-status-pill--ok{% endif %}">
+                {% if lai_state == 'ready' %}{{ icons.check(class_="icon") }}{% endif %}
+                {{ {
+                  "checking": "Wird ermittelt…",
+                  "disabled": "Nicht aktiv",
+                  "ready": "Bereit",
+                  "runtime_missing": "Nicht verfügbar",
+                  "runtime_unreachable": "Nicht verfügbar",
+                  "model_missing": "Nicht verfügbar",
+                }[lai_state] }}
+              </span>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.link(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Lexono Gateway</span>
+              <span class="settings-row__desc">Sichere, verschlüsselte Verbindung zu externen KI-Diensten.</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill{% if gateway_configured %} settings-status-pill--ok{% endif %}">
+                {% if gateway_configured %}{{ icons.check(class_="icon") }}{% endif %}
+                {{ "Verbunden" if gateway_configured else "Nicht verbunden" }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="settings-page-grid__side">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.book(class_="icon settings-info-card__title-icon") }}
+            Funktionsweise
+          </h2>
+          <p class="settings-section__hint" style="margin-bottom: 4px;">So schützt Lexono Ihre Daten.</p>
+
+          {# Vier Schritte entsprechen 1:1 dem tatsaechlich implementierten
+             Ablauf (app/privacy/gateway.py::ClaudePrivacyGateway -
+             Pseudonymizer -> SecurityCheckService -> Versand -> lokale
+             reconstruct_response()) - keine Marketing-Behauptung ueber
+             nicht vorhandene Technik. #}
+          <div class="settings-howto-step">
+            <span class="settings-howto-step__number">1</span>
+            <div>
+              <div class="settings-howto-step__title">Automatische Erkennung</div>
+              <div class="settings-howto-step__desc">Personenbezogene und vertrauliche Daten werden in Ihren Dokumenten erkannt.</div>
+            </div>
+          </div>
+          <div class="settings-howto-step">
+            <span class="settings-howto-step__number">2</span>
+            <div>
+              <div class="settings-howto-step__title">Pseudonymisierung</div>
+              <div class="settings-howto-step__desc">Diese Daten werden vor der Übermittlung an externe KI-Dienste automatisch pseudonymisiert.</div>
+            </div>
+          </div>
+          <div class="settings-howto-step">
+            <span class="settings-howto-step__number">3</span>
+            <div>
+              <div class="settings-howto-step__title">Sichere Verarbeitung</div>
+              <div class="settings-howto-step__desc">Nur die pseudonymisierten Inhalte werden über das Lexono Gateway an den gewählten KI-Anbieter gesendet.</div>
+            </div>
+          </div>
+          <div class="settings-howto-step">
+            <span class="settings-howto-step__number">4</span>
+            <div>
+              <div class="settings-howto-step__title">Rückauflösung</div>
+              <div class="settings-howto-step__desc">Die KI-Antwort wird lokal verarbeitet und die Pseudonyme werden automatisch in die Originaldaten zurückgeführt.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.shield(class_="icon settings-info-card__title-icon") }}
+            Ihre Vorteile
+          </h2>
+          <div class="settings-benefit-item">{{ icons.check(class_="icon") }}<span>Ihre Originaldaten bleiben in Ihrer Kanzlei</span></div>
+          <div class="settings-benefit-item">{{ icons.check(class_="icon") }}<span>Nur pseudonymisierte Daten an externe KI-Dienste</span></div>
+          <div class="settings-benefit-item">{{ icons.check(class_="icon") }}<span>Sichere und verschlüsselte Übertragung über das Lexono Gateway</span></div>
+          <div class="settings-benefit-item">{{ icons.check(class_="icon") }}<span>Automatische Rückauflösung der Pseudonyme</span></div>
+
+          <div class="settings-benefit-highlight">
+            {{ icons.lock(class_="icon") }}
+            <div>
+              <div class="settings-benefit-highlight__title">Ihre Daten bleiben geschützt.</div>
+              <div class="settings-benefit-highlight__desc">Lexono kombiniert leistungsstarke KI mit Datensicherheit für Ihre Kanzlei.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {# ===================== TAB: E-MAIL ===================== #}
+  {# Endnutzer-Ansicht (06.10., Owner-Direktive "SETTINGS -> E-MAIL",
+     /core-principle: "E-Mail-Konto verbinden" ist NICHT dasselbe wie
+     "E-Mail-Inhalte an KI uebermitteln"). Wiederverwendet denselben
+     einzigen, bereits bestehenden IMAP-Connector (app/mail/ - KEINE
+     OAuth-/Microsoft-Graph-/Gmail-API-Anbindung in dieser Codebasis,
+     siehe Abschlussbericht) - Formularfelder/Endpunkt/Logik der
+     "Verbinden"-Karte sind UNVERAENDERT dieselben wie vorher (nur
+     umbenannt/umsortiert), KEINE zweite Connector-Implementierung.
+     "Microsoft 365"/"Google Workspace" sind hier ehrlich als IMAP-
+     kompatible Postfach-Typen dargestellt (beide unterstuetzen IMAP/SMTP
+     nativ), nicht als eigene OAuth-Integration. #}
+  <div class="settings-tabpanel" data-tabpanel="email" hidden>
+    <div class="settings-page-grid">
+      <div class="settings-page-grid__main">
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">
+            {{ icons.envelope(class_="icon") }}
+            E-Mail-Konto
+          </h2>
+
+          {% if mail_configured %}
+            {# Verbundener Zustand: Status + echte Kontodaten, KEIN
+               Formular standardmaessig sichtbar (progressive disclosure
+               ueber <details>, siehe unten) - /connection-vs-processing:
+               der Status bedeutet AUSSCHLIESSLICH "Lexono kann auf dieses
+               Postfach zugreifen", NICHT "KI aktiviert". #}
+            <div class="settings-row" style="border-top: none;">
+              <span class="settings-row__icon">{{ icons.envelope(class_="icon") }}</span>
+              <div class="settings-row__text">
+                <span class="settings-row__title">{{ mail_username }}</span>
+                <span class="settings-row__desc">{{ mail_provider_label }} · Postfach „{{ mail_mailbox or 'INBOX' }}“</span>
+              </div>
+              <div class="settings-row__control">
+                <span class="settings-status-pill settings-status-pill--ok">{{ icons.check(class_="icon") }}Verbunden</span>
+              </div>
+            </div>
+
+            <details class="settings-mail-manage">
+              <summary class="btn" style="margin-top: 12px; width: fit-content;">Verbindung verwalten</summary>
+              <form method="post" action="/dashboard/settings/mail" class="dashboard-form" style="max-width: none; margin-top: 14px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <div class="settings-grid-form">
+                  <label class="form-label">
+                    E-Mail-Server (IMAP)
+                    <input type="text" name="mail_host" value="{{ mail_host or '' }}" placeholder="imap.beispiel-kanzlei.de" />
+                  </label>
+                  <label class="form-label">
+                    Port
+                    <input type="number" name="mail_port" value="{{ mail_port }}" min="1" max="65535" />
+                  </label>
+                  <label class="form-label">
+                    E-Mail-Adresse
+                    <input type="text" name="mail_username" value="{{ mail_username or '' }}" autocomplete="off" />
+                  </label>
+                  <label class="form-label">
+                    Passwort
+                    <input type="password" name="mail_password" placeholder="hinterlegt - leer lassen, um es zu behalten" autocomplete="new-password" />
+                  </label>
+                  <label class="form-label">
+                    Postfach-Ordner
+                    <input type="text" name="mail_mailbox" value="{{ mail_mailbox or 'INBOX' }}" />
+                  </label>
+                  <label class="checkbox-label" style="align-self: end;">
+                    <input type="checkbox" name="mail_use_ssl" value="true" {% if mail_use_ssl %}checked{% endif %} />
+                    Verschlüsselte Verbindung (TLS/SSL) verwenden
+                  </label>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                  <button type="submit" class="btn btn--primary">Speichern</button>
+                </div>
+              </form>
+              <form method="post" action="/dashboard/settings/mail/disconnect" style="margin-top: 10px;"
+                    onsubmit="return confirm('E-Mail-Konto wirklich trennen? Bereits abgerufene Nachrichten bleiben erhalten, die Zugangsdaten werden entfernt.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn">{{ icons.close_window(class_="icon") }}<span>Verbindung trennen</span></button>
+              </form>
+            </details>
+          {% else %}
+            <p class="settings-section__hint">
+              Verbinden Sie Ihr Kanzlei-E-Mail-Konto, um E-Mails und Anhänge direkt in Lexono zu sehen und gezielt in Lexono-Workflows zu übernehmen.
+            </p>
+            <div class="settings-row" style="border-top: none; padding-bottom: 4px;">
+              <div class="settings-row__control">
+                <span class="settings-status-pill">Nicht verbunden</span>
+              </div>
+            </div>
+
+            {# Anbieter-Vorlagen (rein clientseitig, JS unten): fuellen nur
+               Host/Port im bereits bestehenden Formular vor - KEIN
+               zweiter Connector, KEIN eigenstaendiger OAuth-Button pro
+               Anbieter (der wuerde nichts tun - /no-fake-functionality). #}
+            <div class="settings-mail-presets">
+              <button type="button" class="settings-mail-preset" data-host="outlook.office365.com" data-port="993" data-ssl="true">
+                {{ icons.building(class_="icon") }}<span>Microsoft 365</span>
+              </button>
+              <button type="button" class="settings-mail-preset" data-host="imap.gmail.com" data-port="993" data-ssl="true">
+                {{ icons.cloud(class_="icon") }}<span>Google Workspace</span>
+              </button>
+              <button type="button" class="settings-mail-preset" data-host="" data-port="993" data-ssl="true">
+                {{ icons.envelope(class_="icon") }}<span>Anderer Anbieter</span>
+              </button>
+            </div>
+
+            <form method="post" action="/dashboard/settings/mail" class="dashboard-form" style="max-width: none; margin-top: 14px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <div class="settings-grid-form">
+                <label class="form-label">
+                  E-Mail-Server (IMAP)
+                  <input type="text" name="mail_host" id="mail-host-input" value="{{ mail_host or '' }}" placeholder="imap.beispiel-kanzlei.de" />
+                </label>
+                <label class="form-label">
+                  Port
+                  <input type="number" name="mail_port" id="mail-port-input" value="{{ mail_port }}" min="1" max="65535" />
+                </label>
+                <label class="form-label">
+                  E-Mail-Adresse
+                  <input type="text" name="mail_username" value="{{ mail_username or '' }}" autocomplete="off" placeholder="kanzlei@beispiel.de" />
+                </label>
+                <label class="form-label">
+                  Passwort
+                  <input type="password" name="mail_password" placeholder="noch nicht hinterlegt" autocomplete="new-password" />
+                </label>
+                <label class="form-label">
+                  Postfach-Ordner
+                  <input type="text" name="mail_mailbox" value="{{ mail_mailbox or 'INBOX' }}" />
+                </label>
+                <label class="checkbox-label" style="align-self: end;">
+                  <input type="checkbox" name="mail_use_ssl" id="mail-ssl-input" value="true" {% if mail_use_ssl %}checked{% endif %} />
+                  Verschlüsselte Verbindung (TLS/SSL) verwenden
+                </label>
+              </div>
+              <p class="settings-section__hint">
+                Bei Microsoft 365 oder Google Workspace wird meist ein separates
+                App-Passwort statt des normalen Anmeldekennworts benötigt.
+              </p>
+              <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">Verbinden</button>
+            </form>
+          {% endif %}
+        </div>
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">
+            {{ icons.refresh(class_="icon") }}
+            Synchronisation
+          </h2>
+          <p class="settings-section__hint">Einstellungen zur Synchronisation Ihrer E-Mails.</p>
+
+          {% if not mail_configured %}
+            <p class="settings-section__hint">Verbinden Sie zunächst ein E-Mail-Konto, um die Synchronisation zu steuern.</p>
+          {% endif %}
+
+          <div class="settings-row" style="border-top: none;">
+            <span class="settings-row__icon">{{ icons.refresh(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Automatische Synchronisation</span>
+              <span class="settings-row__desc">E-Mails regelmäßig abrufen und in Lexono anzeigen.</span>
+            </div>
+            <div class="settings-row__control">
+              <form method="post" action="/dashboard/settings/mail/auto-sync" class="settings-toggle-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="law-toggle{% if mail_auto_sync_enabled %} law-toggle--on{% endif %}"
+                        {% if not mail_configured %}disabled{% endif %}
+                        aria-label="Automatische Synchronisation: {{ 'aktiviert' if mail_auto_sync_enabled else 'deaktiviert' }}"></button>
+              </form>
+            </div>
+          </div>
+
+          <form method="post" action="/dashboard/settings/mail/interval" class="settings-row">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <span class="settings-row__icon">{{ icons.clock(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Synchronisationsintervall</span>
+              <span class="settings-row__desc">Wie oft sollen neue E-Mails abgerufen werden?</span>
+            </div>
+            <div class="settings-row__control">
+              <select name="mail_poll_interval_seconds" class="settings-select" onchange="this.form.requestSubmit()" {% if not mail_configured %}disabled{% endif %}>
+                <option value="60" {% if mail_poll_interval_seconds == 60 %}selected{% endif %}>Alle Minute</option>
+                <option value="300" {% if mail_poll_interval_seconds == 300 %}selected{% endif %}>Alle 5 Minuten</option>
+                <option value="900" {% if mail_poll_interval_seconds == 900 %}selected{% endif %}>Alle 15 Minuten</option>
+                <option value="1800" {% if mail_poll_interval_seconds == 1800 %}selected{% endif %}>Alle 30 Minuten</option>
+              </select>
+            </div>
+          </form>
+
+          <p class="settings-section__hint" style="margin-top: 10px;">
+            Neu verbundene oder getrennte Konten werden beim nächsten Start von Lexono aktiv.
+          </p>
+        </div>
+
+      </div>
+
+      <div class="settings-page-grid__side">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.envelope(class_="icon settings-info-card__title-icon") }}
+            Unterstützte Anbieter
+          </h2>
+          <p class="settings-section__hint" style="margin-bottom: 4px;">
+            Lexono unterstützt gängige E-Mail-Dienste über eine sichere IMAP/SMTP-Verbindung.
+          </p>
+          <div class="settings-row" style="border-top: none;">
+            <span class="settings-row__icon">{{ icons.building(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Microsoft 365</span>
+              <span class="settings-row__desc">IMAP/SMTP</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.cloud(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Google Workspace</span>
+              <span class="settings-row__desc">IMAP/SMTP</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row__icon">{{ icons.envelope(class_="icon") }}</span>
+            <div class="settings-row__text">
+              <span class="settings-row__title">Andere Anbieter</span>
+              <span class="settings-row__desc">IMAP/SMTP</span>
+            </div>
+          </div>
+
+          <div class="chat-transparency-card" style="margin-top: 12px;">
+            {{ icons.shield(class_="icon") }}
+            <div class="chat-transparency-card__text">
+              <strong>Ihre Zugangsdaten werden ausschließlich lokal in Ihrer Kanzlei gespeichert und nie an Dritte übermittelt.</strong>
+              Die Verbindung zum E-Mail-Server erfolgt verschlüsselt (TLS/SSL), sofern aktiviert.
+              <a href="/dashboard/feedback">Mehr erfahren</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.shield(class_="icon settings-info-card__title-icon") }}
+            E-Mails &amp; Datenschutz
+          </h2>
+          {# /privacy-information, woertlich gefordert - BEIDE Aussagen
+             entsprechen dem tatsaechlichen Code: app/mail/service.py legt
+             abgerufene Nachrichten nur als Message/Document-Zeilen an
+             (keine KI-Verarbeitung); ein KI-Workflow startet ausschliesslich
+             ueber die bestehenden, expliziten "Zusammenfassen"/"Antworten"-
+             Aktionen im Posteingang (app/web/chat_router.py::
+             start_conversation_from_message/_from_document), die denselben
+             Privacy-Gateway/Pseudonymisierungs-Pfad wie jede andere
+             Chat-Nachricht durchlaufen. #}
+          <p class="settings-section__hint">
+            Ihre E-Mails werden nicht automatisch an externe KI-Dienste übermittelt.
+          </p>
+          <p class="settings-section__hint">
+            Wenn Sie eine E-Mail oder einen Anhang gezielt in einen Lexono-KI-Workflow
+            übernehmen (z. B. „Zusammenfassen“ oder „Antworten“ im Posteingang), gelten
+            die bestehenden Lexono-Datenschutzmechanismen - Inhalte werden lokal
+            pseudonymisiert, bevor sie über das Lexono Gateway verarbeitet werden.
+          </p>
+          <a href="/dashboard/inbox" class="btn" style="margin-top: 8px;">
+            {{ icons.envelope(class_="icon") }}<span>Zum Posteingang</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var hostInput = document.getElementById("mail-host-input");
+      var portInput = document.getElementById("mail-port-input");
+      var sslInput = document.getElementById("mail-ssl-input");
+      document.querySelectorAll(".settings-mail-preset").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (!hostInput) { return; }
+          hostInput.value = btn.getAttribute("data-host") || "";
+          if (portInput) { portInput.value = btn.getAttribute("data-port") || "993"; }
+          if (sslInput) { sslInput.checked = btn.getAttribute("data-ssl") === "true"; }
+          hostInput.focus();
+        });
+      });
+    })();
+  </script>
+
+  {# ===================== TAB: BENUTZER ===================== #}
+  {# Eingebettete Nutzerverwaltung (06.10., Owner-Direktive "SETTINGS ->
+     BENUTZER") - ersetzt den bisherigen reinen Link-out auf die separate
+     Seite /dashboard/admin/users. Alle Formulare posten weiterhin direkt
+     an die dort unveraendert bestehenden Endpunkte (app/web/
+     users_router.py) - KEINE zweite Nutzer-/Rollen-Engine, nur eine neue,
+     in die Einstellungen eingebettete Ansicht derselben Daten. Suche/
+     Rollenfilter sind bewusst rein clientseitig (siehe <script> unten,
+     gleiches Muster wie .settings-mail-preset weiter oben) - bei der
+     ueberschaubaren Nutzerzahl einer einzelnen Kanzlei ohne echten
+     Mehrwert eines Server-Rundtrips pro Tastendruck. #}
+  <div class="settings-tabpanel" data-tabpanel="benutzer" hidden>
+    <div class="settings-page-grid">
+      <div class="settings-page-grid__main">
+
+        {% if created_password %}
+          {# Dasselbe Einmal-Anzeige-Banner-Muster wie zuvor in
+             admin_users.html (19.09.) - jetzt hier eingebettet. #}
+          <div class="banner" style="background: var(--seal-green-tint); border: 1px solid rgba(16,24,40,0.25); color: var(--seal-green-dark); margin-bottom: 16px;">
+            Passwort für <strong>{{ created_email }}</strong> gesetzt (neu eingeladen oder
+            zurückgesetzt). Wird nur EINMALIG angezeigt, bitte jetzt sicher weitergeben:
+            <span class="mono" style="display:block; margin-top:6px; font-size: 14px;">{{ created_password }}</span>
+            Der Nutzer muss es beim nächsten Login sofort ändern.
+          </div>
+        {% endif %}
+
+        <div class="settings-card">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <h2 class="settings-card__title">Benutzer Ihrer Kanzlei</h2>
+              <p class="settings-row__desc" style="margin-bottom: 10px;">
+                Verwalten Sie Benutzer, Rollen und Berechtigungen. {{ active_users }} von
+                {{ total_users }} Benutzer{{ "n" if total_users != 1 else "" }} aktiv.
+              </p>
+            </div>
+            <a href="#invite-user-card" class="btn btn--primary" style="flex-shrink:0;">
+              {{ icons.plus(class_="icon") }}<span>Benutzer einladen</span>
+            </a>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin: 4px 0 14px;">
+            <div class="clients-search-bar" style="flex:1; min-width:200px;">
+              <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+              <input type="text" id="user-search-input" placeholder="Benutzer suchen …" style="width:100%;" />
+            </div>
+            <select id="user-role-filter" class="settings-select" aria-label="Nach Rolle filtern">
+              <option value="">Alle Rollen</option>
+              {% for role in roles %}
+                <option value="{{ role.name }}">{{ role.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="table-container">
+            <table class="draft-table draft-table--compact" id="user-table">
+              <thead>
+                <tr>
+                  <th>Name / E-Mail</th>
+                  <th>Rolle</th>
+                  <th>Status</th>
+                  <th>Letzte Anmeldung</th>
+                  <th>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in user_rows %}
+                  {% set u = row.user %}
+                  <tr data-role="{{ row.role_name }}" data-search="{{ ((u.display_name or '') ~ ' ' ~ u.email) | lower }}" style="cursor:default;">
+                    <td>
+                      {% if u.display_name %}
+                        <strong>{{ u.display_name }}</strong><br />
+                        <span class="settings-row__desc">{{ u.email }}</span>
+                      {% else %}
+                        <strong>{{ u.email }}</strong>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form method="post" action="/dashboard/admin/users/{{ u.id }}/role" style="display:inline-flex;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <select name="role_name" class="settings-select" onchange="this.form.submit()" aria-label="Rolle von {{ u.email }} ändern">
+                          {% for role in roles %}
+                            <option value="{{ role.name }}" {% if u.role and u.role.name == role.name %}selected{% endif %}>{{ role.name }}</option>
+                          {% endfor %}
+                        </select>
+                      </form>
+                    </td>
+                    <td>
+                      <span class="tag tag--{{ row.status_modifier }}">{{ row.status_label }}</span>
+                    </td>
+                    <td class="mono">
+                      {{ row.last_login_at.strftime("%d.%m.%Y, %H:%M") if row.last_login_at else "Noch nie angemeldet" }}
+                    </td>
+                    <td style="white-space: nowrap;">
+                      <form method="post" action="/dashboard/admin/users/{{ u.id }}/reset-password" style="display:inline;"
+                            onsubmit="return confirm('Passwort für \'{{ u.email }}\' zurücksetzen? Der Nutzer wird sofort abgemeldet und muss beim nächsten Login ein neues Passwort vergeben.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="settings-icon-btn" title="Passwort zurücksetzen">{{ icons.key(class_="icon") }}</button>
+                      </form>
+                      {% if u.id != current_user.id %}
+                        {% if u.is_active %}
+                          <form method="post" action="/dashboard/admin/users/{{ u.id }}/deactivate" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                            <button type="submit" class="btn btn--danger" style="padding: 6px 10px; font-size: 12px;">Deaktivieren</button>
+                          </form>
+                          <form method="post" action="/dashboard/admin/users/{{ u.id }}/force-logout" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                            <button type="submit" class="settings-icon-btn" title="Alle Sitzungen dieses Nutzers beenden">{{ icons.lock(class_="icon") }}</button>
+                          </form>
+                        {% else %}
+                          <form method="post" action="/dashboard/admin/users/{{ u.id }}/activate" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                            <button type="submit" class="btn" style="padding: 6px 10px; font-size: 12px;">Aktivieren</button>
+                          </form>
+                        {% endif %}
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <p class="settings-row__desc" id="user-table-empty-hint" hidden style="margin-top: 10px;">
+            Keine Benutzer gefunden, die zu den aktuellen Filtern passen.
+          </p>
+        </div>
+
+        <div class="settings-card">
+          <h2 class="settings-card__title">Aktivitätsverlauf</h2>
+          <p class="settings-row__desc" style="margin-bottom: 10px;">
+            Die letzten protokollierten nutzerverwaltungsbezogenen Ereignisse (Anmeldungen,
+            Rollenwechsel, Aktivierung/Deaktivierung, Passwortänderungen).
+          </p>
+          <div class="table-container">
+            <table class="draft-table draft-table--compact">
+              <thead>
+                <tr>
+                  <th>Zeit</th>
+                  <th>Benutzer</th>
+                  <th>Aktion</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for event in recent_user_events %}
+                  <tr style="cursor:default;">
+                    <td class="mono">{{ event.created_at.strftime("%d.%m.%Y, %H:%M") }}</td>
+                    <td>{{ event.subject_label }}</td>
+                    <td>{{ event.action_label }}</td>
+                    <td class="settings-row__desc">{{ event.details or "–" }}</td>
+                  </tr>
+                {% else %}
+                  <tr style="cursor:default;">
+                    <td colspan="4" class="empty-state">Noch keine Aktivitäten protokolliert.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+      <div class="settings-page-grid__side">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">{{ icons.shield(class_="settings-info-card__title-icon") }}Rollen &amp; Berechtigungen</h2>
+          {% for role in role_permission_cards %}
+            <p class="settings-info-card__line settings-info-card__line--strong" {% if not loop.first %}style="margin-top: 12px;"{% endif %}>
+              {{ role.name }}
+            </p>
+            {% if role.description %}
+              <p class="settings-info-card__line settings-info-card__line--muted">{{ role.description }}</p>
+            {% endif %}
+            <p class="settings-info-card__line settings-info-card__line--muted">
+              {{ role.permissions | join(", ") if role.permissions else "Keine Berechtigungen" }}
+            </p>
+          {% endfor %}
+        </div>
+
+        <div class="settings-info-card" id="invite-user-card">
+          <h2 class="settings-info-card__title">{{ icons.users(class_="settings-info-card__title-icon") }}Benutzer einladen</h2>
+          <form method="post" action="/dashboard/admin/users" class="dashboard-form" style="margin-top: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="form-label">
+              E-Mail-Adresse
+              <input type="email" name="email" required />
+            </label>
+            <label class="form-label">
+              Rolle
+              <select name="role_name" required>
+                {% for role in roles %}
+                  <option value="{{ role.name }}">{{ role.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button type="submit" class="btn btn--primary settings-info-card__action">
+              {{ icons.envelope(class_="icon") }}<span>Einladung senden</span>
+            </button>
+          </form>
+          <p class="settings-info-card__line settings-info-card__line--muted" style="margin-top: 10px;">
+            Der neue Benutzer erhält ein einmaliges Passwort und muss es beim ersten
+            Login sofort ändern.
+          </p>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">{{ icons.lock(class_="settings-info-card__title-icon") }}Sicherheit</h2>
+          <div class="settings-row" style="border-top: none; padding-top: 0;">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Automatische Sperre bei Inaktivität</span>
+              <span class="settings-row__desc">
+                Nach {{ pin_lock_inactivity_minutes }} Minuten Inaktivität wird die App gesperrt
+                (PIN zum Entsperren erforderlich).
+              </span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill{% if pin_configured %} settings-status-pill--ok{% endif %}">
+                {% if pin_configured %}{{ icons.check(class_="icon") }}Aktiv{% else %}Keine PIN eingerichtet{% endif %}
+              </span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Zwei-Faktor-Authentifizierung</span>
+              <span class="settings-row__desc">Noch nicht verfügbar.</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill">Nicht verfügbar</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var searchInput = document.getElementById("user-search-input");
+      var roleFilter = document.getElementById("user-role-filter");
+      var table = document.getElementById("user-table");
+      if (!searchInput || !roleFilter || !table) { return; }
+      var rows = table.querySelectorAll("tbody tr");
+      var emptyHint = document.getElementById("user-table-empty-hint");
+
+      function applyFilter() {
+        var query = searchInput.value.trim().toLowerCase();
+        var role = roleFilter.value;
+        var visibleCount = 0;
+        rows.forEach(function (row) {
+          var matchesSearch = !query || (row.getAttribute("data-search") || "").indexOf(query) !== -1;
+          var matchesRole = !role || row.getAttribute("data-role") === role;
+          var visible = matchesSearch && matchesRole;
+          row.hidden = !visible;
+          if (visible) { visibleCount += 1; }
+        });
+        if (emptyHint) { emptyHint.hidden = visibleCount !== 0; }
+      }
+
+      searchInput.addEventListener("input", applyFilter);
+      roleFilter.addEventListener("change", applyFilter);
+    })();
+  </script>
+
+  {# ===================== TAB: KANZLEI ===================== #}
+  {# UX-Refactor (06.10., Owner-Direktive "SETTINGS -> KANZLEI UX
+     REFACTOR"): die Hauptseite ist jetzt eine KOMPAKTE UEBERSICHT
+     (kurze Zusammenfassungskarten), die vollstaendigen Formulare leben
+     in Bearbeiten-Dialogen (natives <dialog class="modal">, dasselbe
+     bereits bestehende Muster wie z. B. "Neue Aufgabe" in tasks.html -
+     KEIN neues Dialog-System). Alle Formulare posten weiterhin an
+     dieselben, unveraenderten Endpunkte (app/web/settings_router.py) -
+     reine UI-Umstrukturierung, KEIN Funktionsverlust (siehe Feature-
+     Inventur im Abschlussbericht). "Kanzlei-Defaults" und "Kanzlei-
+     Einstellungen" aus der Referenz werden bewusst NICHT als Karten
+     gezeigt - keine der beiden Funktionsgruppen hat eine echte
+     Grundlage im bestehenden System (/no-fake-functionality). #}
+  <div class="settings-tabpanel" data-tabpanel="kanzlei" hidden>
+    <div class="settings-page-grid">
+      <div class="settings-page-grid__main">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.building(class_="settings-info-card__title-icon") }}Kanzleiinformationen
+          </h2>
+          {% if firm_profile.firm_name %}
+            <p class="settings-info-card__line settings-info-card__line--strong">{{ firm_profile.firm_name }}</p>
+            {% if firm_profile.legal_form %}
+              <p class="settings-info-card__line settings-info-card__line--muted">{{ firm_profile.legal_form }}</p>
+            {% endif %}
+            {% if firm_profile.city or firm_profile.street %}
+              <p class="settings-info-card__line">
+                {{ firm_profile.city or "" }}{{ " · " if firm_profile.city and firm_profile.street else "" }}{{ firm_profile.street or "" }}
+              </p>
+            {% endif %}
+          {% else %}
+            <p class="settings-info-card__line settings-info-card__line--muted">Noch keine Kanzleidaten hinterlegt.</p>
+          {% endif %}
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('kanzleiinformationen-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Bearbeiten</span>
+          </button>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.building(class_="settings-info-card__title-icon") }}Standorte &amp; Adressen
+          </h2>
+          <p class="settings-info-card__line settings-info-card__line--strong">
+            {{ "1 Standort" if has_main_address else "0 Standorte" }}
+          </p>
+          {% if has_main_address %}
+            <p class="settings-info-card__line settings-info-card__line--muted">
+              Hauptsitz · {{ firm_profile.city or firm_profile.street }}
+            </p>
+          {% else %}
+            <p class="settings-info-card__line settings-info-card__line--muted">Noch keine Anschrift hinterlegt.</p>
+          {% endif %}
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('standorte-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Verwalten</span>
+          </button>
+        </div>
+
+      </div>
+      <div class="settings-page-grid__side">
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.upload(class_="settings-info-card__title-icon") }}Kanzlei-Logo &amp; Branding
+          </h2>
+          <p class="settings-info-card__line">Logo: {{ "hinterlegt" if firm_profile.logo_path else "nicht hinterlegt" }}</p>
+          <p class="settings-info-card__line">Unterschrift: {{ "hinterlegt" if firm_profile.signature_path else "nicht hinterlegt" }}</p>
+          <div style="display:flex; gap:6px; margin-top:8px;">
+            {% for color in brand_colors %}
+              <span title="{{ color.label }} · {{ color.hex }}"
+                    style="display:inline-block; width:16px; height:16px; border-radius:50%; background:{{ color.hex }}; border:1px solid var(--paper-line); flex-shrink:0;"></span>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('branding-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Bearbeiten</span>
+          </button>
+        </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.bulb(class_="settings-info-card__title-icon") }}Fachliche Schwerpunkte
+          </h2>
+          {% set selected_areas = practice_area_options | selectattr("selected") | list %}
+          {% if selected_areas %}
+            <p class="settings-info-card__line">{{ selected_areas | map(attribute="name") | join(" · ") }}</p>
+          {% else %}
+            <p class="settings-info-card__line settings-info-card__line--muted">Noch keine Schwerpunkte ausgewählt.</p>
+          {% endif %}
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('fachliche-schwerpunkte-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Bearbeiten</span>
+          </button>
+        </div>
+
+      </div>
+
+      {# Volle Breite am unteren Rand (06.10., Owner-Direktive "SETTINGS ->
+         KANZLEI FINAL UI/UX REFINEMENT"): das Referenzbild paart
+         "Kanzlei-Integrationen" eigentlich mit einer "Kanzlei-
+         Einstellungen"-Karte - die existiert in Lexono aber nicht
+         (bestaetigt per Grep, keine echte Grundlage, siehe
+         /no-fake-functionality) und wurde bewusst NICHT fabriziert.
+         Statt die Seitenspalte in dieser Zeile ungenutzt leer zu lassen
+         (/important-layout-rule: "Die verfuegbare Desktopbreite muss
+         genutzt werden"), nutzt die echte Integrationen-Karte die volle
+         Breite und zeigt ihre zwei Status-Zeilen nebeneinander statt
+         gestapelt. #}
+      <div class="settings-info-card settings-page-grid__full">
+        <h2 class="settings-info-card__title">
+          {{ icons.link(class_="settings-info-card__title-icon") }}Kanzlei-Integrationen
+        </h2>
+        <p class="settings-info-card__line settings-info-card__line--muted" style="margin-bottom: 10px;">
+          Verbindung zu externen Diensten. E-Mail-Postfächer werden separat im Tab „E-Mail“ verwaltet.
+        </p>
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <div class="settings-row" style="border-top: none; padding-top: 0; flex: 1 1 220px;">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Kalender</span>
+              <span class="settings-row__desc">Z. B. Microsoft 365, Google</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill">Nicht verbunden</span>
+            </div>
+          </div>
+          <div class="settings-row" style="border-top: none; padding-top: 0; flex: 1 1 220px;">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Dokumentenmanagement</span>
+              <span class="settings-row__desc">Externe DMS-Systeme</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill">Nicht verbunden</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===================== KANZLEI: BEARBEITEN-DIALOGE ===================== #}
+  {# Bewusst AUSSERHALB des obigen Tabpanels platziert (nicht Nachfahre
+     eines Elements mit [hidden]) - ein natives <dialog> wird beim
+     automatischen Wiederoeffnen nach einem Fehler (siehe Skript unten)
+     sonst von der Sichtbarkeit seines Vorfahren abhaengig, was je nach
+     Ausfuehrungsreihenfolge des Tab-Umschalt-Skripts unzuverlaessig
+     waere. #}
+
+  <dialog id="kanzleiinformationen-dialog" class="modal modal--large">
+    <div class="modal__header">
+      <h3 class="modal__title">Kanzleiinformationen bearbeiten</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('kanzleiinformationen-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <form method="post" action="/dashboard/settings/profile" style="display:contents;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <div class="modal__body">
+        <p class="settings-row__desc" style="margin: 0 0 14px;">
+          Verwalten Sie die Stammdaten Ihrer Kanzlei. Erscheinen als Briefkopf auf
+          generierten Schriftsätzen (PDF-/DOCX-Export).
+        </p>
+        {% if active_dialog == "kanzleiinformationen" and error %}
+          <div class="banner banner--error" style="margin-bottom: 14px;">{{ error }}</div>
+        {% endif %}
+        <div class="settings-grid">
+          <label class="form-label">
+            Kanzleiname
+            <input type="text" name="firm_name" value="{{ firm_profile.firm_name or '' }}"
+                   placeholder="Kanzlei Mustermann Rechtsanwälte" required />
+          </label>
+          <label class="form-label">
+            Rechtsform
+            <input type="text" name="legal_form" value="{{ firm_profile.legal_form or '' }}"
+                   placeholder="z. B. Partnerschaft mbB" />
+          </label>
+          <label class="form-label form-label--full">
+            Adresszusatz
+            <input type="text" name="address_addition" value="{{ firm_profile.address_addition or '' }}"
+                   placeholder="z. B. c/o, Gebäude, Etage" />
+          </label>
+          <label class="form-label form-label--full">
+            Straße &amp; Hausnummer
+            <input type="text" name="street" value="{{ firm_profile.street or '' }}"
+                   placeholder="Musterstraße 12" />
+          </label>
+          <label class="form-label">
+            PLZ
+            <input type="text" name="postal_code" value="{{ firm_profile.postal_code or '' }}"
+                   placeholder="10115" />
+          </label>
+          <label class="form-label">
+            Ort
+            <input type="text" name="city" value="{{ firm_profile.city or '' }}"
+                   placeholder="Berlin" />
+          </label>
+          <label class="form-label">
+            Telefon
+            <input type="text" name="phone" value="{{ firm_profile.phone or '' }}"
+                   placeholder="+49 30 1234567" />
+          </label>
+          <label class="form-label">
+            E-Mail
+            <input type="email" name="email" value="{{ firm_profile.email or '' }}"
+                   placeholder="kanzlei@beispiel-kanzlei.de" />
+          </label>
+          <label class="form-label form-label--full">
+            Website
+            <input type="text" name="website" value="{{ firm_profile.website or '' }}"
+                   placeholder="www.beispiel-kanzlei.de" />
+          </label>
+          <label class="form-label form-label--full">
+            Name der unterzeichnenden Person
+            <input type="text" name="signatory_name" value="{{ firm_profile.signatory_name or '' }}"
+                   placeholder="Rechtsanwältin Anna Muster" />
+            <span class="form-hint">Erscheint unter der Unterschriften-Grafik im DOCX-Export.</span>
+          </label>
+        </div>
+        {% if firm_profile.updated_by_actor %}
+          <p class="form-hint" style="margin-top: 14px;">
+            Zuletzt geändert von {{ firm_profile.updated_by_actor }} am
+            {{ firm_profile.updated_at.strftime("%d.%m.%Y, %H:%M") }} Uhr.
+          </p>
+        {% endif %}
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn" onclick="closeKanzleiDialog('kanzleiinformationen-dialog')">Abbrechen</button>
+        <button type="submit" class="btn btn--primary">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="standorte-dialog" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Standorte &amp; Adressen</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('standorte-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <p class="settings-row__desc" style="margin: 0 0 14px;">
+        Lexono läuft aktuell als Einzelstandort-Installation - Zweigstellen werden
+        nicht separat verwaltet. Die Anschrift wird aus den Kanzleiinformationen
+        übernommen.
+      </p>
+      <div class="table-container">
+        <table class="draft-table draft-table--compact">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Adresse</th>
+              <th>Typ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if has_main_address %}
+              <tr style="cursor:default;">
+                <td><strong>Hauptsitz</strong></td>
+                <td>
+                  {{ (firm_profile.address_addition ~ ", ") if firm_profile.address_addition else "" }}
+                  {{ firm_profile.street or "" }}{{ ", " if firm_profile.street and (firm_profile.postal_code or firm_profile.city) else "" }}
+                  {{ ((firm_profile.postal_code or "") ~ " " ~ (firm_profile.city or "")).strip() }}
+                </td>
+                <td><span class="tag tag--outbound">Hauptsitz</span></td>
+              </tr>
+            {% else %}
+              <tr style="cursor:default;">
+                <td colspan="3" class="empty-state">Noch keine Anschrift hinterlegt.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn" onclick="closeKanzleiDialog('standorte-dialog')">Schließen</button>
+    </div>
+  </dialog>
+
+  <dialog id="branding-dialog" class="modal modal--large">
+    <div class="modal__header">
+      <h3 class="modal__title">Kanzlei-Logo &amp; Branding bearbeiten</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('branding-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <p class="settings-row__desc" style="margin: 0 0 14px;">
+        PNG oder JPG, max. 5&nbsp;MB. Wird im PDF-/DOCX-Export als Kopfzeilen-Logo
+        bzw. Unterschriften-Grafik am Briefende eingebettet.
+      </p>
+      {% if active_dialog == "branding" and error %}
+        <div class="banner banner--error" style="margin-bottom: 14px;">{{ error }}</div>
+      {% endif %}
+
+      <div class="profile-asset-grid">
+        <div class="profile-asset-card">
+          <h3 class="profile-asset-card__title">Kanzlei-Logo</h3>
+          {% if firm_profile.logo_path %}
+            <img src="/dashboard/settings/profile/logo-file" alt="Kanzlei-Logo"
+                 class="profile-asset-card__preview" />
+            <p class="form-hint">{{ firm_profile.logo_original_filename }}</p>
+            <form method="post" action="/dashboard/settings/profile/logo/remove" style="margin-top:8px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="btn btn--danger">Logo entfernen</button>
+            </form>
+          {% else %}
+            <p class="form-hint">Noch kein Logo hinterlegt.</p>
+          {% endif %}
+          <form method="post" action="/dashboard/settings/profile/logo" enctype="multipart/form-data"
+                class="dashboard-form" style="max-width:none; margin-top:12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="profile-asset-upload">
+              {{ icons.upload(class_="profile-asset-upload__icon") }}
+              <span class="profile-asset-upload__label">{{ "Logo ersetzen" if firm_profile.logo_path else "Logo hochladen" }}</span>
+              <input type="file" name="logo" accept=".png,.jpg,.jpeg" required />
+            </label>
+            <button type="submit" class="btn" style="align-self: flex-start; margin-top: 10px;">Hochladen</button>
+          </form>
+        </div>
+
+        <div class="profile-asset-card">
+          <h3 class="profile-asset-card__title">Unterschrift</h3>
+          {% if firm_profile.signature_path %}
+            <img src="/dashboard/settings/profile/signature-file" alt="Unterschrift"
+                 class="profile-asset-card__preview" />
+            <p class="form-hint">{{ firm_profile.signature_original_filename }}</p>
+            <form method="post" action="/dashboard/settings/profile/signature/remove" style="margin-top:8px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button type="submit" class="btn btn--danger">Unterschrift entfernen</button>
+            </form>
+          {% else %}
+            <p class="form-hint">Noch keine Unterschrift hinterlegt.</p>
+          {% endif %}
+          <form method="post" action="/dashboard/settings/profile/signature" enctype="multipart/form-data"
+                class="dashboard-form" style="max-width:none; margin-top:12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="profile-asset-upload">
+              {{ icons.upload(class_="profile-asset-upload__icon") }}
+              <span class="profile-asset-upload__label">{{ "Unterschrift ersetzen" if firm_profile.signature_path else "Unterschrift hochladen" }}</span>
+              <input type="file" name="signature" accept=".png,.jpg,.jpeg" required />
+            </label>
+            <button type="submit" class="btn" style="align-self: flex-start; margin-top: 10px;">Hochladen</button>
+          </form>
+        </div>
+      </div>
+
+      <p class="settings-row__desc" style="margin: 16px 0 8px;">
+        Festgelegtes Lexono-Farbschema (kanzleiweit einheitlich, aktuell nicht
+        pro Installation anpassbar):
+      </p>
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        {% for color in brand_colors %}
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-block; width:20px; height:20px; border-radius:50%; background:{{ color.hex }}; border:1px solid var(--paper-line); flex-shrink:0;"></span>
+            <span class="settings-row__desc">{{ color.label }} · <span class="mono">{{ color.hex }}</span></span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn" onclick="closeKanzleiDialog('branding-dialog')">Schließen</button>
+    </div>
+  </dialog>
+
+  <dialog id="fachliche-schwerpunkte-dialog" class="modal modal--medium">
+    <div class="modal__header">
+      <h3 class="modal__title">Fachliche Schwerpunkte bearbeiten</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('fachliche-schwerpunkte-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <p class="settings-row__desc" style="margin: 0 0 14px;">
+        Rechtsgebiete, auf die sich diese Kanzlei spezialisiert hat. Lexono nutzt diese
+        Angabe, um passende Inhalte in Kanzleiwissen hervorzuheben - andere Inhalte bleiben
+        weiterhin vollständig erreichbar.
+      </p>
+      {% if active_dialog == "fachliche-schwerpunkte" and error %}
+        <div class="banner banner--error" style="margin-bottom: 14px;">{{ error }}</div>
+      {% endif %}
+      <form method="post" action="/dashboard/settings/profile/practice-areas" class="dashboard-form"
+            style="max-width:none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <div class="practice-area-grid">
+          {% for option in practice_area_options if option.recognized %}
+            <label class="form-label form-label--checkbox">
+              <input type="checkbox" name="practice_areas" value="{{ option.name }}"
+                     {% if option.selected %}checked{% endif %} />
+              {{ option.name }}
+            </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 12px;">
+          Speichern
+        </button>
+      </form>
+
+      {% set orphaned_options = practice_area_options | rejectattr("recognized") | list %}
+      {% if orphaned_options %}
+        <div style="margin-top: 16px;">
+          <p class="form-hint">
+            Gespeichert, aber nicht mehr in der aktuellen Liste vorhanden:
+          </p>
+          {% for option in orphaned_options %}
+            <form method="post"
+                  action="/dashboard/settings/profile/practice-areas/{{ option.name }}/remove"
+                  style="display:inline-flex; align-items:center; gap:6px; margin:4px 8px 0 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <span class="tag tag--not-installed">{{ option.name }} (nicht mehr verfügbar)</span>
+              <button type="submit" class="btn btn--danger" style="padding: 2px 8px; font-size: 11.5px;">
+                Entfernen
+              </button>
+            </form>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn" onclick="closeKanzleiDialog('fachliche-schwerpunkte-dialog')">Schließen</button>
+    </div>
+  </dialog>
+
+  <script>
+    // ECHTER FUND (06.10., per Interaction-QA entdeckt): Abbrechen/Schließen
+    // rief bisher nur `.close()` auf - die zuletzt getippten Formularwerte
+    // blieben dabei im DOM erhalten (kein echter Seiten-Reload). Oeffnete
+    // man danach denselben Dialog erneut und speicherte, wurde der
+    // eigentlich verworfene Wert STILLSCHWEIGEND mitgesendet (live
+    // reproduziert: firm_name nach Abbrechen geaendert, Dialog erneut
+    // geoeffnet, ein ANDERES Feld gespeichert - das verworfene firm_name
+    // landete trotzdem in der Datenbank). `closeKanzleiDialog` setzt daher
+    // JEDES <form> im Dialog auf seinen zuletzt vom Server gerenderten
+    // Zustand zurueck, bevor er geschlossen wird - "Abbrechen" verwirft
+    // damit wirklich, nicht nur optisch.
+    function closeKanzleiDialog(dialogId) {
+      var dialog = document.getElementById(dialogId);
+      if (!dialog) { return; }
+      var forms = dialog.querySelectorAll("form");
+      for (var i = 0; i < forms.length; i++) {
+        forms[i].reset();
+      }
+      dialog.close();
+    }
+
+    (function () {
+      // Dialog-Auto-Reopen nach einem Fehler (06.10., Owner-Direktive
+      // "SETTINGS -> KANZLEI UX REFACTOR" /error-handling: "Dialog bleibt
+      // geöffnet") - `activeDialog` ist serverseitig bereits gegen eine
+      // feste Allowlist geprüft (siehe app/web/settings_router.py:
+      // _VALID_DIALOGS), ein nicht erkannter Wert öffnet schlicht nichts.
+      var activeDialog = "{{ active_dialog or '' }}";
+      if (activeDialog) {
+        var dialog = document.getElementById(activeDialog + "-dialog");
+        if (dialog && typeof dialog.showModal === "function") {
+          dialog.showModal();
+        }
+      }
+    })();
+  </script>
+
+  {# ===================== TAB: LIZENZ ===================== #}
+  <div class="settings-tabpanel" data-tabpanel="lizenz" hidden>
+    <div class="settings-section">
+      <h2 class="settings-section__title">Lizenz</h2>
+      <p class="settings-section__hint">
+        Lexono läuft als lokale Einzelinstallation dieser Kanzlei - es gibt
+        aktuell keine zentrale, mandantenfähige Lizenzverwaltung.
+      </p>
+      <p>{{ active_users }} von {{ total_users }} Benutzer{{ "n" if total_users != 1 else "" }} aktiv.</p>
+    </div>
+  </div>
+
+  {# ===================== TAB: ERWEITERT ===================== #}
+  <div class="settings-tabpanel" data-tabpanel="erweitert" hidden>
     <div class="settings-section">
       <h2 class="settings-section__title">Scan-Ordner</h2>
       <p class="settings-section__hint">
@@ -48,43 +1591,6 @@
     </div>
 
     <div class="settings-section">
-      <h2 class="settings-section__title">E-Mail-Postfach (IMAP)</h2>
-      <p class="settings-section__hint">
-        Zugangsdaten für den automatischen Nachrichtenabruf (MAIL_*). Das Passwort wird nie angezeigt.
-      </p>
-      <form method="post" action="/dashboard/settings/mail" class="dashboard-form" style="max-width: none;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-        <div class="settings-grid">
-          <label class="form-label">
-            IMAP-Server
-            <input type="text" name="mail_host" value="{{ mail_host or '' }}" placeholder="imap.beispiel-kanzlei.de" />
-          </label>
-          <label class="form-label">
-            Port
-            <input type="number" name="mail_port" value="{{ mail_port }}" min="1" max="65535" />
-          </label>
-          <label class="form-label">
-            Benutzername
-            <input type="text" name="mail_username" value="{{ mail_username or '' }}" autocomplete="off" />
-          </label>
-          <label class="form-label">
-            Passwort
-            <input type="password" name="mail_password" placeholder="{{ 'hinterlegt - leer lassen, um es zu behalten' if mail_configured else 'noch nicht hinterlegt' }}" autocomplete="new-password" />
-          </label>
-          <label class="form-label">
-            Postfach
-            <input type="text" name="mail_mailbox" value="{{ mail_mailbox or 'INBOX' }}" />
-          </label>
-          <label class="checkbox-label" style="align-self: end;">
-            <input type="checkbox" name="mail_use_ssl" value="true" {% if mail_use_ssl %}checked{% endif %} />
-            SSL/TLS verwenden
-          </label>
-        </div>
-        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">Speichern</button>
-      </form>
-    </div>
-
-    <div class="settings-section">
       <h2 class="settings-section__title">Aufbewahrung</h2>
       <p class="settings-section__hint">
         Automatische Löschfrist in Tagen (RETENTION_DAYS) - 0 = keine automatische Löschung.
@@ -99,6 +1605,15 @@
       </form>
     </div>
 
+    {# Technische KI-Infrastruktur (06.10., Owner-Direktive "SETTINGS -> KI &
+       DATENSCHUTZ"): hierher aus dem Tab "KI & Datenschutz" verschoben -
+       Inhalt/Formulare/Logik UNVERAENDERT (1:1 derselbe Code wie vorher),
+       nur die Position. Normale Kanzleianwender sollen diese technischen
+       Local-AI-/Infrastruktur-Details nicht mehr sehen (/product-principle),
+       der Tab "Erweitert" ist bereits der bestehende Ort fuer technische,
+       nicht alltaegliche Konfiguration (Scan-Ordner/Aufbewahrung, s. o.) -
+       keine neue Admin-Ebene noetig, die gesamte Einstellungsseite bleibt
+       unveraendert admin-only (_require_admin). #}
     <div class="settings-section">
       <h2 class="settings-section__title">Lokale KI</h2>
       <p class="settings-section__hint">
@@ -125,7 +1640,7 @@
       {% if local_ai_enabled %}
         <form method="post" action="/dashboard/settings/local-ai" class="dashboard-form" style="max-width: none;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-          <div class="settings-grid">
+          <div class="settings-grid-form">
             <label class="form-label">
               Modell-Tag (OLLAMA_MODEL)
               <input type="text" name="ollama_model" value="{{ ollama_model }}" placeholder="z. B. qwen2.5:1.5b" />
@@ -160,7 +1675,7 @@
         anonymisiert (Presidio). Der API-Schlüssel wird über <span class="mono">ANTHROPIC_API_KEY</span>
         in der <span class="mono">.env</span>-Datei konfiguriert.
       </p>
-      <div style="margin-bottom: 16px;">
+      <div>
         <span class="tag {% if anthropic_api_key_configured %}tag--matched{% else %}tag--unmatched{% endif %}">
           Anthropic-Schlüssel {{ "hinterlegt" if anthropic_api_key_configured else "fehlt" }}
         </span>
@@ -222,6 +1737,63 @@
           }
         });
       });
+    })();
+
+    // "Ordner öffnen"-Button neben dem Datenverzeichnis-Pfad (06.10.) -
+    // dasselbe Feature-Detection-Muster wie der Scan-Ordner-Button oben.
+    (function () {
+      var openBtn = document.getElementById("open-data-folder-btn");
+      if (!openBtn) { return; }
+
+      function showIfNativeApiAvailable() {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.open_data_folder) {
+          openBtn.style.display = "";
+        }
+      }
+      showIfNativeApiAvailable();
+      window.addEventListener("pywebviewready", showIfNativeApiAvailable);
+
+      openBtn.addEventListener("click", function () {
+        window.pywebview.api.open_data_folder();
+      });
+    })();
+
+    // Tab-Navigation (06.10.) - rein clientseitiges Ein-/Ausblenden
+    // bereits servergerenderter Tabpanels (kein zweiter Request, kein
+    // Neuladen). Serverseitig gerendert bleibt dabei IMMER ALLES (auch
+    // nicht aktive Tabs) - wichtig fuer bestehende Tests, die Formular-
+    // Inhalte unabhaengig vom aktiven Tab im HTML erwarten, UND dafuer,
+    // dass ein Formular in einem nicht sichtbaren Tab trotzdem ganz normal
+    // funktioniert (siehe `tab`-Parameter in settings_router.py::_redirect
+    // - nach dem Speichern wird genau der Tab wieder aktiv, in dem das
+    // Formular lag).
+    (function () {
+      var tabs = document.querySelectorAll(".settings-tab");
+      var panels = document.querySelectorAll(".settings-tabpanel");
+      {# `active_tab` ist serverseitig gegen eine feste Allowlist geprueft
+         (siehe settings_router.py) - eine reine String-Interpolation ist
+         hier sicher, kein `tojson`-Filter in dieser Jinja-Umgebung
+         registriert/benoetigt. #}
+      var initialTab = "{{ active_tab }}";
+
+      function activate(tabName) {
+        tabs.forEach(function (btn) {
+          var isActive = btn.getAttribute("data-tab") === tabName;
+          btn.classList.toggle("settings-tab--active", isActive);
+          btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+        panels.forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-tabpanel") !== tabName;
+        });
+      }
+
+      tabs.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          activate(btn.getAttribute("data-tab"));
+        });
+      });
+
+      activate(initialTab);
     })();
   </script>
 {% endblock %}

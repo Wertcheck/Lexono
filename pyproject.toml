@@ -79,6 +79,49 @@ dependencies = [
     # bereits auf der Zielmaschine vorhandene Edge-WebView2-Runtime per
     # .NET-Interop ansteuert - kein eigenes Chromium-Bundle noetig.
     "pywebview>=6.0",
+    # Server-seitige HTML-Sanitisierung fuer den Rich-Text-Dokumenten-Editor
+    # (04.10., app/drafting/editor_service.py) - der Editor liefert HTML
+    # (contenteditable), das vor der Persistenz/Anzeige auf eine feste
+    # Tag-/Attribut-Allowlist reduziert wird (siehe app/drafting/
+    # html_sanitizer.py), damit kein injizierter Code (z. B. <script>,
+    # onerror-Attribute) ueberlebt. Rust-Bindung (Ammonia), keine eigene,
+    # fehleranfaellige Allowlist-Implementierung in Python. Wird ab 05.10.
+    # (siehe "markdown-it-py" direkt unten) ZUSAETZLICH fuer das Chat-
+    # Markdown-Rendering wiederverwendet statt einer zweiten Sanitisierungs-
+    # Bibliothek.
+    "nh3>=0.2",
+    # Markdown->HTML fuer Chat-Antworten (05.10., Owner-Direktive "LONG-RUN
+    # PRODUCT QUALITY PASS" Phase D, app/chat/markdown_render.py) - Claude
+    # produziert durchgaengig Markdown-formatierten Text (Ueberschriften,
+    # Fett, Listen), der zuvor als roher, unformatierter Text angezeigt
+    # wurde (sichtbare Sternchen/Rauten, echter im Live-Test gefundener
+    # UX-Fehler). War bereits zuvor transitiv ueber "rich" vorhanden, wird
+    # hier bewusst als direkte, explizite Abhaengigkeit gefuehrt statt sich
+    # auf einen fremden Paket-Unterbau zu verlassen.
+    "markdown-it-py>=3.0",
+    # Lokale Spracheingabe im Chat-Composer (05.10., Owner-Direktive
+    # "ARCHITECTURE & PRODUCT FLOW PASS" §22-27, app/chat/speech.py) -
+    # CTranslate2-basierte Whisper-Inferenz, bewusst NICHT die
+    # browser-native Web Speech API (siehe .agentic/DECISIONS.md, 15.09.:
+    # die wuerde Audio an einen Cloud-Dienst senden, BEVOR lokale
+    # Pseudonymisierung greifen kann). Anders als das oben dokumentierte
+    # onnxruntime-AVX2-Problem bietet CTranslate2 einen expliziten
+    # Nicht-AVX2-Fallback (`CT2_FORCE_CPU_ISA=GENERIC`) - in dieser Sitzung
+    # real mit erzwungenem GENERIC-Pfad getestet (funktioniert, ca. 25%
+    # langsamer, kein Absturz), siehe app/chat/speech.py Docstring.
+    "faster-whisper>=1.0",
+    # "av" (PyAV, Audio-Dekodierung fuer faster-whisper) OHNE oberes Limit
+    # installiert sich zwar (aktuell av 19.x), bricht dort aber beim
+    # tatsaechlichen Dekodieren ab ("TypeError: open() got an unexpected
+    # keyword argument 'metadata_errors'" - av hat diesen Parameter
+    # zwischenzeitlich aus seiner `av.open()`-Signatur entfernt,
+    # faster-whisper 1.2.1 uebergibt ihn aber weiterhin). Real in dieser
+    # Sitzung reproduziert UND den Fix verifiziert: mit av==13.1.0
+    # funktioniert dieselbe Transkription fehlerfrei. Gleiches Muster wie
+    # der fastembed/onnxruntime-Pin oben - ein frei aufgeloestes
+    # Mehr-Pakete-Zusammenspiel, das in der Praxis bricht, wird hier bewusst
+    # hart gepinnt statt der naechsten Sitzung ueberlassen.
+    "av==13.1.0",
 ]
 
 [project.optional-dependencies]

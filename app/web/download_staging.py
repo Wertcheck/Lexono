@@ -25,6 +25,7 @@ räumt sie aber nicht auf. Zwei sich ergänzende Mechanismen schließen das:
 
 from __future__ import annotations
 
+import tempfile
 import time
 from pathlib import Path
 
@@ -34,6 +35,16 @@ from starlette.background import BackgroundTask
 #: Zeit, in der eine liegen gebliebene, unpseudonymisierte Mandanten-ZIP
 #: unnötig auf der Platte steht.
 _DEFAULT_MAX_AGE_SECONDS = 15 * 60
+
+#: Zentraler Ablageort für alle drei Export-/Backup-Arten (06.10., Owner-
+#: Direktive "LEXONO - EINSTELLUNGEN UI REBUILD") - vorher identisch in
+#: backup_router.py UND clients_router.py dupliziert (echter Fund: beide
+#: Module deklarierten denselben Pfad unabhaengig voneinander). Jetzt hier
+#: EINMAL definiert, beide Router importieren diese Konstante - und die
+#: neue "Cache leeren"-Aktion der Einstellungen-Seite (app/web/
+#: settings_router.py) nutzt denselben, bereits bestehenden Ablageort statt
+#: einen weiteren, parallelen Temp-Ordner einzufuehren.
+DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "lexono_dashboard_exports"
 
 
 def cleanup_stale_files(

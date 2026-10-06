@@ -72,6 +72,17 @@ _BLOCK_CATEGORIES = (
     # Datenschutzgründen blockiert" angezeigt, obwohl datenschutzrechtlich
     # nichts vorgefallen war (reines Token-Limit-/Truncation-Problem).
     ("keinen verwertbaren Text", "empty_writing_response"),
+    # ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX" - siehe die
+    # ausfuehrliche Begruendung bei `_FRIENDLY_BLOCK_MESSAGES
+    # ["local_quality_check_uncertain"]` unten): Stufe 2 (lokales LLM,
+    # reine Qualitaetspruefung) landete bisher ebenfalls im
+    # nichtssagenden "unknown_block_reason"-Eimer, FAELSCHLICH als
+    # "Datenschutzgruende" angezeigt. Pattern matcht bewusst den
+    # SELBST KONTROLLIERTEN `user_message`-Text aus
+    # app/drafting/service.py (NICHT die vom lokalen Modell frei
+    # erfundenen `validation.issues` - deren Wortlaut ist nicht
+    # zuverlaessig genug fuer einen Mustervergleich, siehe dort).
+    ("lokale Qualitätsprüfung konnte", "local_quality_check_uncertain"),
 )
 
 
@@ -101,7 +112,24 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
     "residual_pii_detected": (
         "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden."
     ),
-    "mapping_inconsistency": "Interner Konsistenzfehler bei der Pseudonymisierung.",
+    # 26.09., Owner-Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ
+    # PRODUCT-COMPLETION" §17 (echter E2E-Test): reproduziert, dass diese
+    # Kategorie ("Platzhalter") in der Praxis fast immer bedeutet, dass
+    # das Modell selbst einen nie zugewiesenen Platzhalter erfunden hat
+    # (siehe app/ai_providers/claude_writing_provider.py fuer die
+    # Instruktions-Gegenmassnahme UND deren dokumentierte Grenzen) - KEIN
+    # echter Datenschutzvorfall (siehe "original_value_leaked" fuer den
+    # tatsaechlich schwerwiegenden, davon getrennten Fall). Die
+    # vorherige Meldung klang wie ein dauerhafter interner Fehler, obwohl
+    # ein erneuter Versuch (neue Formulierung derselben Anfrage) das
+    # Problem in der Praxis oft loest - der Nutzer wurde dadurch
+    # faelschlich zum Aufgeben statt zum erneuten Versuch angeleitet.
+    "mapping_inconsistency": (
+        "Die von der KI erzeugte Antwort enthielt einen unerwarteten "
+        "Platzhalter und wurde sicherheitshalber nicht übernommen - kein "
+        "Datenschutzvorfall, sondern ein Formulierungsfehler der KI-Antwort "
+        "selbst. Ein erneuter Versuch löst das in der Regel."
+    ),
     "original_value_leaked": (
         "Die von der KI erzeugte Antwort enthielt einen nicht ausreichend "
         "anonymisierten Wert und wurde deshalb sicherheitshalber blockiert - "
@@ -128,6 +156,35 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
         "Dokumenten."
     ),
     "unknown_block_reason": "Die Anfrage wurde aus Datenschutzgründen blockiert.",
+    # ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX: Schriftsatz
+    # unvollständig, Folgefragen blockiert, Datenschutzprüfung fehlerhaft",
+    # mit dem real konfigurierten lokalen Modell reproduziert): Stufe 2
+    # der Antwortprüfung (app/drafting/response_validation.py,
+    # "AUSDRÜCKLICH KEINE juristische Bewertung", nur Grammatik-/
+    # Struktur-Konsistenz) landete bisher bei einem Fund IMMER im selben
+    # Topf wie Stufe 1 (`response_validation_failed`/"unknown_block_
+    # reason" bei nicht erkanntem Freitext-Muster) - inklusive derselben
+    # "Datenschutzgründen"-Formulierung, OBWOHL diese Stufe KEINE
+    # Datenschutzentscheidung trifft. Reproduziert mit dem real
+    # konfigurierten lokalen Modell (qwen2.5:1.5b): hielt auf einem
+    # vollständigen, fehlerfreien Entwurf OHNE jeden Platzhalter frei
+    # erfundene "Befunde" fuer echte Probleme (u. a. einen nicht
+    # vorhandenen Platzhalter "[KATEGORIE_XX]" beanstandet). Diese
+    # Kategorie wird NICHT ueber `categorize_block_reasons` (Freitext-
+    # Mustervergleich auf vom lokalen Modell frei erfundenen Formulierungen,
+    # siehe dort - nicht robust genug) erreicht, sondern direkt vom
+    # Aufrufer gesetzt, wenn `ResponseValidationResult.stage == "semantic"`
+    # ist (siehe app/drafting/service.py). Aendert NICHTS an der
+    # Fail-Closed-Entscheidung selbst (der Entwurf wird weiterhin NICHT
+    # uebernommen) - nur die Einordnung wird ehrlich: keine Datenschutz-
+    # Behauptung fuer einen Fund, der keiner ist.
+    "local_quality_check_uncertain": (
+        "Die lokale Qualitätsprüfung konnte die KI-Antwort nicht eindeutig "
+        "bestätigen - kein Datenschutzvorfall, sondern eine unsichere "
+        "automatische Einschätzung (z. B. durch ein schwächeres lokales "
+        "Modell). Der Entwurf wurde sicherheitshalber nicht übernommen. "
+        "Bitte erneut versuchen oder den Entwurf manuell prüfen."
+    ),
 }
 
 

@@ -51,6 +51,14 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 - Feedback-/Kategorisierungssystem (`app/pilot_feedback/`): **ERLEDIGT**
   (bereits vorhanden, gegen Zielarchitektur geprüft, ausreichend für
   Pilotphase).
+- Kanzleiwissen: Quellen/Textbausteine manuell erfassen
+  ("Rechtsprechung"/"Interne Dokumente"/"Fachwissen"): **ERLEDIGT**
+  (26.09., Owner-Direktive "AUTONOMOUS PRODUCT GAP AUDIT → PRIORITIZE →
+  EXECUTE"). Backend (`SourceService`/`KnowledgeItemService`) war
+  bereits fertig/getestet, hatte aber keine Web-Route - jetzt sechs neue
+  kuratorengeschuetzte POST-Routen (Erfassen/Freigeben/Veraltet-
+  markieren/Deaktivieren) in `knowledge_router.py`. Siehe
+  PROJECT_STATE.md/DECISIONS.md.
 
 ## C – Chat / UX
 
@@ -97,6 +105,200 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
 
 ## E – UI / Visual
 
+- **Posteingang strukturell/visuell an Referenz angeglichen** (25.09.,
+  Owner-Direktive "POSTEINGANG PRODUCT COMPLETION"): **ERLEDIGT** -
+  Avatar+Anhang-Icon in der Liste, verbindliche Detail-Reihenfolge
+  (Text vor Anhaengen vor Aktionen vor Zuordnung), Anhang-Karten mit
+  echter Dateigroesse+Download, neue Akte-/Sortier-Filterleiste, Icon-
+  Seitenkopf, `.split{min-height:0}`-Scroll-Root-Cause-Fix. Voller
+  Referenz-Workflow (Posteingang->Nachricht->Anhang->Dokumentvorschau)
+  in der echten `Lexono.exe` bestaetigt. "Neue E-Mail"/"Alle Konten"/
+  Absendertyp-Badges bewusst nicht gebaut (Decision Blocker/kein
+  Backend), siehe OPEN_ISSUES.md/PROJECT_STATE.md.
+- **Posteingang Final UI/UX, zweite Referenz-Runde** (25.09., Owner-
+  Direktive "POSTEINGANG FINAL UI/UX PRODUCT-COMPLETION"): **P0-P4
+  ERLEDIGT** - kein "← Zurück" mehr, kompakter Header, vier echte
+  Filter-Dropdowns (Mandant NEU, Zeitraum NEU, Akte, Sortierung) auf
+  einer gemeinsamen `hx-include`-Filter-Form, weiter verdichtete Liste,
+  **automatische Erstauswahl der ersten Nachricht beim initialen Laden**
+  (kein Leerzustand mehr). Anhang-Typ-Label-Bug ("DATEI" statt "PDF")
+  waehrend eigener QA gefunden+behoben. Global-Sidebar bewusst
+  unangetastet gelassen (siehe DECISIONS.md). Real in der installierten
+  `Lexono.exe` verifiziert (Default-Auswahl + Auswahlwechsel + Struktur).
+  **P5 (visuelle Feinabstimmung) und die Aufloesungen 1366×768/1920×1080
+  bleiben fuer eine weitere Runde offen**, siehe OPEN_ISSUES.md.
+- **Posteingang / Strict Reference Implementation** (26.09., Owner-
+  Direktive "POSTEINGANG / STRICT REFERENCE IMPLEMENTATION - FINAL UI/UX
+  CORRECTION ROUND", direkter Screenshot-Vergleich): **P0-P4 ERLEDIGT** -
+  Liste/Detail von ~33/67 auf echte 50/50-Flex-Aufteilung korrigiert
+  (P0-Hauptfund); Logo/globale Suche/Kopfzeilen-Icons EINMAL zentral in
+  eine neue `.global-header`-Zeile verschoben statt seiten-lokal
+  gepatcht; Sidebar-Suche + "Neuen Chat starten" entfernt (redundant zum
+  Chat-eigenen "+"-Button); `GlobalSearchService` um eine echte
+  E-Mail-Kategorie erweitert, damit der neue Suchtext "In E-Mails, ..."
+  nicht faelschlich eine nicht existierende Funktion behauptet; rechter
+  Detailbereich weiter kompaktiert + `max-width` gegen zu lange
+  Textzeilen bei breiten Fenstern. Alle vier Auflösungen (1536×1024/
+  1366×768/1920×1080/1280×720) real per Edge-Headless-Screenshot einer
+  echten Serverantwort geprueft (kein Simulations-Vorbehalt mehr noetig -
+  fruehere "kein physischer Zugriff"-Annahme war ein DPI-Messfehler).
+  Real in neu gebauter/installierter `Lexono.exe` verifiziert
+  (Struktur + Nachrichtenauswahl-Wechsel). **P5 (letzte visuelle
+  Feinabstimmung) bleibt bewusst offen** - Kern-Layoutfehler (P0-P4) sind
+  behoben, siehe OPEN_ISSUES.md fuer die verbleibenden, bewusst
+  akzeptierten kosmetischen Abweichungen.
+- **Posteingang Final Polish** (26.09., Owner-Direktive "POSTEINGANG
+  FINAL POLISH - STRICT REFERENCE MATCH + VISUAL DENSITY + REAL
+  WORKFLOW"): **ERLEDIGT, Posteingang-Runde damit abgeschlossen** -
+  Filterzeile+Suche zu einer gemeinsamen Zeile zusammengefuehrt, volles
+  Sortier-Dropdown durch kompakten Icon-Button ersetzt (dieselbe
+  bestehende `sort`-Logik), mehrere Header-/Detail-Raender weiter
+  reduziert. Bei der Referenzaufloesung 1536×1024 ist die komplette
+  Detailstruktur (inkl. "Manuell einer Akte zuordnen") jetzt ohne
+  Scrollen sichtbar. Echter Nebenfund: die native App ist nicht
+  per-monitor-DPI-aware, effektiver Viewport bleibt ~1280×720 selbst bei
+  physisch maximiertem 1920×1080-Fenster - bewusst NICHT in dieser Runde
+  behoben (App-Shell-/Packaging-Scope, siehe OPEN_ISSUES.md fuer eine
+  Empfehlung an eine kuenftige Direktive). 2 neue Tests, volle Suite
+  gruen (2195/1/0). Installer neu gebaut, installiert, real verifiziert.
+  **Naechster Fokus laut Direktive**: Dokumenteditor / reale
+  KI-Aktionen / Schriftsatz-Workflow, nicht weitere Posteingang-Politur.
+- **Kanzleiwissen Final Product Implementation** (26.09., Owner-Direktive
+  "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION / REFERENCE-DRIVEN UI +
+  REAL LOCAL KNOWLEDGE MANAGEMENT", Referenzabgleich
+  `43_Kanzleiwissen_Gesetze.png`): **ERLEDIGT** - Kanzleiwissen ist jetzt
+  ein echter Rechtsquellen-Manager statt eines reinen Lese-Links.
+  Bestehende, bisher nur per CLI erreichbare Architektur (`Law`/
+  `LawSection`, 34 Gesetze/11.000+ Normen, echter Import von "Gesetze im
+  Internet") ueber die Weboberflaeche nutzbar gemacht: neuer geteilter
+  Katalog (`app/laws/catalog.py`, +2 real verifizierte Eintraege URHG/
+  BDSG), echter Hintergrund-Download mit echtem Fortschritt
+  (`app/laws/install_service.py`), echter Toggle (Installieren/
+  Aktivieren/Deaktivieren, `Law.is_active`-Feld + Migration
+  `schritt3_017`), Chat-/Suche-Gating fuer deaktivierte Gesetze. Kategorie-
+  Navigation (Alle Dokumente/Rechtsprechung/Gesetze & Normen/Vorlagen &
+  Muster/Fachwissen/Interne Dokumente/Favoriten) mit echten Zaehlern aus
+  bereits bestehenden Modellen (Source/DocumentTemplate/KnowledgeItem/
+  Law) - keine neue Architektur. Sidebar-Ziel von `/dashboard/laws` auf
+  `/dashboard/knowledge` umgestellt (Referenzabgleich), `/dashboard/laws`
+  bleibt unveraendert als Leseansicht bestehen. ECHTER FUND waehrend
+  eigener Visual-QA (real im installierten `Lexono.exe`): Kategorie-Klick
+  aktualisierte per HTMX nur den Panel-Inhalt, nicht die aktive Kachel -
+  behoben per HTMX-Out-of-Band-Swaps. Vollstaendiger End-to-End-Beweis
+  gegen die echte Produktions-DB (URHG real heruntergeladen: echter
+  Fortschritt, 250 echte Paragraphen, Chat-Fast-Path findet/verliert/
+  findet § 1 UrhG je nach Aktivierungsstatus). 32 neue Tests, volle Suite
+  gruen (2230/1/0). Installer zweimal neu gebaut (zweiter Durchlauf fuer
+  den OOB-Swap-Fund), real installiert und verifiziert. Bewusst NICHT
+  gebaut (echte, dokumentierte Produktluecken statt Fake-Funktion):
+  Favoriten (kein Datenmodell), granulare Rechtsprechungs-Registry (kein
+  automatisierter Urteils-Katalog) - siehe OPEN_ISSUES.md.
+- **Kanzleiwissen Reference-Match / Product-Completion Pass** (26.09.,
+  direkte Folgerunde derselben Sitzung, Owner-Direktive "KANZLEIWISSEN
+  REFERENCE-MATCH / PRODUCT-COMPLETION PASS", neues/praezisiertes
+  Referenzbild): **ERLEDIGT** - zweiter, gap-listen-gefuehrter
+  Abgleichsdurchlauf gegen dieselbe Seite (reiner visueller Abgleich,
+  keine neue Funktionalitaet). Kurskorrektur: "Favoriten" jetzt
+  VOLLSTAENDIG entfernt (vorherige Runde hatte es bewusst leer sichtbar
+  gelassen) - genau sechs Kacheln in einer Reihe (Alle Inhalte/
+  Rechtsprechung/Gesetze & Normen/Vorlagen & Muster/Fachwissen/Interne
+  Dokumente), "Alle Dokumente" -> "Alle Inhalte" umbenannt, neue
+  kategoriespezifische Erklaerzeile ergaenzt. Tabellen-/Statustexte an
+  die Referenz angeglichen (Titel/Spalten/Status-Woerter), neue
+  handgefertigte Gesetzbuch-Illustration eingebunden, Info-Karte auf
+  25-30 % Breite verbreitert. Nach direktem Bildvergleich zusaetzlich:
+  zwei neue Kategorie-Icons (Waage/Doktorhut), Status-Badges von Pillen
+  auf flachen Text+Punkt umgestellt, Tabellenkopf auf Satzschrift
+  umgestellt - alle drei Aenderungen bewusst eng gescoped (nur die eine
+  Tabelle/die Kacheln), keine Aenderung an den von vielen anderen Stellen
+  genutzten Basisklassen (`.tag`, `.draft-table`). Layout-Regression bei
+  1280×720 gefunden und behoben (letzte Tabellenspalte wurde aus dem
+  sichtbaren Bereich gedraengt - relevant, weil das reale `Lexono.exe`-
+  Fenster wegen der dokumentierten DPI-Einschraenkung tatsaechlich nur
+  ca. 1297×737px nutzbaren Viewport hat). Eigener CSS-Syntaxfehler
+  (`#}` statt `*/`) sofort selbst gefunden und behoben, siehe
+  OPEN_ISSUES.md. `test_web_knowledge.py` aktualisiert (24 Tests), volle
+  Suite gruen (2231/1/0). Vier-Aufloesungen-Visual-QA (1536/1366/1920/
+  1280) nach jeder Korrekturrunde wiederholt. Installer neu gebaut, real
+  installiert und verifiziert.
+- **Document Workspace / Schriftsatz Product-Completion** (26.09., Owner-
+  Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ"): **ERLEDIGT** - IST-Audit
+  des kompletten Dokument-Lebenszyklus zeigte, dass fast alles bereits
+  echt gebaut war; GENAU EIN grosser Gap gefunden: Export (PDF/DOCX)
+  landete NIE wieder in der Akte ("Ergebnis → Akte" fehlte komplett).
+  Behoben: neue Spalte `documents.generated_from_draft_id` (Migration
+  `schritt3_018`) + `_save_export_as_document` in drafts_router.py,
+  idempotent pro (Entwurfsversion, Format), reuse der bestehenden Upload-
+  Pipeline. Waehrend des Pflicht-E2E-Tests (§17, ECHTE Claude-Aufrufe,
+  kein Mock) zwei echte KI-Pipeline-Funde: Claude UND die lokale Ollama-
+  Vorabanalyse erfanden zuverlaessig einen nie zugewiesenen
+  "[AKTENZEICHEN_XX]"-Platzhalter - Systemprompts verstaerkt PLUS die
+  bestehende deterministische Platzhalter-Pruefung jetzt zusaetzlich VOR
+  jedem Claude-Aufruf auf die lokale Zusammenfassung angewendet (faengt
+  den Fund frueher/billiger ab). Bewusst KEIN automatischer Retry
+  eingefuehrt (bestehende "kontrollierter Abbruch"-Architekturaussage
+  respektiert), stattdessen ehrlichere Fehlermeldung. Design-System-
+  Konsistenz (Zusatzanweisung): `.btn--primary`/Chat-Senden/eine
+  "--green"-Quick-Action-Variante von `--seal-green` (Navy) auf echtes
+  `--brand-green` umgestellt. Kompletter 16-Schritte-E2E-Lauf am Ende
+  erfolgreich (Login→Akte→Dokument→KI-Analyse→Schreiben erstellen→
+  Editor→Bearbeitung→PDF/DOCX-Export→Akte→Dokument wiederfinden). Volle
+  Suite gruen (2236/1/0).
+- **Kanzleiwissen Final Polish + App-Shell Korrektur** (26.09., direkte
+  Folgedirektive derselben Sitzung): **ERLEDIGT**. P0-Fehlerkorrektur:
+  "Neuen Chat starten" (faelschlich in einer fruaheren Runde entfernt)
+  als permanenter Sidebar-Button wiederhergestellt, reuse der
+  bestehenden `/dashboard/chat?new=1`-Route. Kanzleiwissen-IA bereinigt:
+  "Alle Inhalte" komplett entfernt (war zu einer eigenen, unnoetigen
+  zweiten Dashboard-Ebene geworden), genau fuenf Kacheln bleiben,
+  "Gesetze & Normen" ist jetzt Standardkategorie. Dabei ECHTER
+  Regressions-Fund selbst entdeckt+behoben: sechs von sieben
+  `Source.source_type`-Werten haetten sonst keine Kachel mehr gehabt
+  (3 echte Produktionszeilen betroffen) - "Interne Dokumente" zeigt jetzt
+  alle Nicht-Rechtsprechung-Typen mit eigener "Typ"-Spalte. Kleine
+  Kanzleiwissen-Header-Suche entfernt, direkt an die Gesetzesliste
+  verschoben. Scroll-Architektur-Bug per selbst injiziertem Diagnose-
+  Overlay (scrollHeight/clientHeight-Messung, nicht vermutet) gefunden
+  und behoben: die rechte Info-Karte/Tabelle brauchten je ein eigenes
+  `max-height:100%`, da `align-items:flex-start` das uebliche
+  `flex:1`/`min-height:0`-Muster allein wirkungslos machte. Zusaetzliche
+  Hoehen-Media-Query fuer die Info-Karte bei ≤800px Fensterhoehe (echte
+  1366×768-Messung ergab sonst abgeschnittenen Inhalt). Drei echte
+  Regressionen durch eigene vorherige Aenderungen dieser Sitzung
+  gefunden+behoben (ein Sidebar-Test erwartete noch das alte Verhalten,
+  zwei Prompt-Tests wegen versehentlich echter Ziffern statt "XX").
+  Volle Suite gruen (2236/1/0).
+- **Editor-KI-Assistent als echte Seitenleiste (statt volltbreiter
+  Leiste unter dem Dokument)**: **ERLEDIGT** (25.09., Owner-Direktive
+  "EDITOR UI PRODUCT-COMPLETION"). Neue `.draft-workspace`-Struktur,
+  Vorschläge/Standard-Prompts als Icon-Zeilen (wiederverwendete Chat-
+  Icon-Badges). Layout mehrfach per Chromium-Diagnose UND echter
+  Desktop-/WebView2-Navigation verifiziert (kein Overflow, App-Shell-
+  Scroll funktioniert). Drei Folgepunkte bewusst als Decision Blocker
+  offen (Rich-Text-Toolbar, strukturierte Betreff-/Empfaenger-Felder,
+  personalisierte Vorschlaege) - siehe OPEN_ISSUES.md/PROJECT_STATE.md.
+  Neuer, unabhaengiger Content-Nebenfund (roher Markdown-Text in einem
+  synthetischen Entwurf) dokumentiert, nicht behoben.
+- **App-Shell/Main-Content: unabhaengiges Scrollverhalten (Sidebar
+  fixiert, nur Main Content scrollt)**: **ERLEDIGT** (25.09., Owner-
+  Zusatzanforderung "FIXED APP SHELL + INDEPENDENT MAIN-CONTENT
+  SCROLL"). Root Cause: `.app-shell` nutzte `min-height:100vh` statt
+  `height`, `.main` fehlte `min-height:0`/`overflow-y:auto`, `.chat-
+  shell` hatte einen eigenen, mit der 36px-Titelleiste inkonsistenten
+  `calc(100vh - 8px)`-Wert (realer 28px-Ueberlauf im gebuendelten
+  Windows-Fenster). Fix + volle Testsuite gruen (2174/1/0) + reale
+  Laufzeitpruefung (312-Eintraege-Liste, Devserver UND frisch gebaute/
+  installierte `Lexono.exe`) siehe OPEN_ISSUES.md/DECISIONS.md/
+  PROJECT_STATE.md fuer Details.
+- **Visual-QA-"Ueberlappung mit Browser-/Terminal-Fenstern"**: **KEIN
+  Produktfehler, GESCHLOSSEN** (25.09.) - per `EnumWindows`/
+  `PrintWindow`-Direktdiagnose auf ein verwaistes Fremdfenster
+  zurueckgefuehrt, nicht auf Lexono selbst. Siehe OPEN_ISSUES.md.
+- **Neuer Nebenfund, OFFEN**: Login-Seite (`.login-shell`) zeigt die
+  Anmeldekarte auf 1280x720 gar nicht sichtbar/erreichbar an (25.09.,
+  ausserhalb des obigen App-Shell-Auftrags entdeckt, nicht behoben) -
+  siehe OPEN_ISSUES.md, moeglich seit/durch die 19.09.-Aenderung oder
+  ein bisher unentdeckter Sonderfall dieser Aufloesung.
 - Branding (Lexono statt KanzleiAI in sichtbarer UI): **ERLEDIGT**,
   systematisch gegengeprüft (kein Rest in Templates).
 - Doppelte Logo-Darstellung (Titelleiste + Sidebar gleichzeitig):
@@ -133,6 +335,50 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   **ERLEDIGT** (unverändert aus Vorsessions, konsistent über ~72
   Verwendungsstellen genutzt - siehe Farbfrage oben für den konkreten
   Wert der Akzentfarbe).
+- **Akten-Startseite: finalisiert und produktionsreif verifiziert**
+  (03.10.): **ERLEDIGT** - Kartenhoehe (16px statt 60px Restabstand),
+  Aktenzeichen-Umbruch, fixierter Tabellenkopf (echter sticky-Bugfix,
+  siehe PROJECT_STATE.md), neue "Akte löschen"-Funktion (Soft-Delete).
+  Volle Details/Messwerte/Root-Cause-Analyse in PROJECT_STATE.md,
+  Abschnitt "Akten-Startseite: finalisiert und produktionsreif
+  verifiziert" - hier nur Verweis, keine zweite Beschreibung.
+
+## G – Model / AI (Fortsetzung: Gesetzesbibliothek)
+
+- **Gesetzesbibliothek: zuverlaessige automatisierte Aktualisierung**
+  (03.10., Owner-Direktive "RELIABLE LEGAL KNOWLEDGE UPDATES"):
+  **ERLEDIGT**, echt gegen die lebende Quelle (gesetze-im-internet.de)
+  und die echte geteilte DB verifiziert (nicht nur Unit-Tests) -
+  ETag-basierte Aenderungspruefung (`check_law_for_update`, HEAD-Request,
+  kein unnoetiger Volldownload), Validierung vor jeder Uebernahme
+  (`_validate_new_sections`, relativer statt fixer Normen-Schwellenwert),
+  taeglicher automatischer Pruef-Task (`_run_periodic_law_update_check`,
+  wiederverwendet den bereits bestehenden Scheduling-Mechanismus aus
+  `_run_periodic_mail_ingestion` - kein neues Framework), manuelle
+  "Jetzt prüfen"/"Jetzt aktualisieren"-Aktionen in der bestehenden
+  Kanzleiwissen-Tabelle. Reale Erstbestandsaufnahme ergab 36 Gesetze/
+  11.473 Normen (nicht die im Auftrag genannten 34/11.137 - der Auftrag
+  selbst verlangte diese Verifikation ausdruecklich). Volle Herleitung/
+  Messwerte/Tests/Phase-F-Live-Verifikation in PROJECT_STATE.md,
+  Abschnitt "Gesetzesbibliothek: zuverlaessige automatisierte
+  Aktualisierung".
+
+- **Kanzleifachprofil und juristische Wissenssteuerung** (03.10., Owner-
+  Direktive "KANZLEIFACHPROFIL UND JURISTISCHE WISSENSSTEUERUNG"):
+  **P4.1/4.2 ERLEDIGT, P4.3 TEILWEISE** (ehrlich begrenzt) - neue
+  Profilverwaltung fuer fachliche Schwerpunkte auf der bestehenden
+  "Kanzlei-Profil & Briefkopf"-Seite (`FirmPracticeArea`, Migration
+  `schritt3_021`), echt live verifiziert. Relevanzintegration nur fuer
+  `KnowledgeItem` ("Fachwissen") umgesetzt, da NUR dieses Modell ein
+  echtes `practice_area`-Feld traegt - fuer die Gesetzesbibliothek bewusst
+  NICHT umgesetzt (keine reale Zuordnung vorhanden). ECHTER FUND: von 9
+  real genutzten `practice_area`-Werten in Matters/Clients/KnowledgeItems
+  ueberschneiden sich nur 3 mit der bestehenden
+  `PRACTICE_AREA_SUGGESTIONS`-Liste - die uebrigen 6 (steuerrechtliche
+  Teilgebiete) sind im Kanzleifachprofil nicht abbildbar, siehe
+  OPEN_ISSUES.md fuer die Owner-Empfehlung. Volle Herleitung/Tests/
+  Live-Verifikation in PROJECT_STATE.md, Abschnitt "Kanzleifachprofil und
+  juristische Wissenssteuerung".
 
 ## F – Agenten / Feedback
 

@@ -76,8 +76,18 @@ def _synthetic_message(**overrides) -> FetchedMessage:
 async def _run_one_iteration(settings, monkeypatch, *, session_factory) -> None:
     """Treibt `_run_periodic_mail_ingestion` an, laesst genau EINEN
     Schleifendurchlauf real ausfuehren und beendet die Endlosschleife
-    danach deterministisch (wie ein echtes `task.cancel()`)."""
+    danach deterministisch (wie ein echtes `task.cancel()`).
+
+    `get_settings()` wird auf dasselbe `settings`-Objekt umgebogen, das
+    auch dem Funktionsargument uebergeben wird (06.10., Owner-Direktive
+    "SETTINGS -> E-MAIL"): die Schleife liest `mail_auto_sync_enabled`/
+    `mail_poll_interval_seconds` JEDE Iteration frisch ueber die globale
+    `get_settings()` neu ein (fuer echtes Hot-Reload ohne Neustart, siehe
+    app/main.py) - ohne dieses Monkeypatch wuerde der Test versehentlich
+    den PROZESSWEITEN `@lru_cache`-Zustand statt der hier extra gebauten
+    Test-Settings beeinflussen."""
     monkeypatch.setattr(main_module, "SessionLocal", session_factory)
+    monkeypatch.setattr(main_module, "get_settings", lambda: settings)
 
     sleep_calls = {"count": 0}
 
@@ -229,6 +239,79 @@ def test_configured_mailbox_leaves_ambiguous_message_unassigned(
     ).first()
     assert message is not None
     assert message.matter_id is None
+
+
+# ==========================================================================
+# Synchronisations-Schalter (06.10., Owner-Direktive "SETTINGS -> E-MAIL") -
+# echte, GEPRUEFTE Werte (kein kosmetischer UI-Schalter): `mail_auto_sync_
+# enabled`/`mail_poll_interval_seconds` werden JEDE Iteration frisch
+# eingelesen (siehe _run_one_iteration-Docstring oben).
+# ==========================================================================
+
+
+def test_auto_sync_disabled_skips_ingestion_but_keeps_loop_alive(
+    monkeypatch, db_session: Session
+) -> None:
+    """`mail_auto_sync_enabled=False` darf NICHT bedeuten "Schleife stoppt"
+    (sonst wuerde ein spaeteres Wiedereinschalten nie mehr wirken, da der
+    MailProvider nur einmal beim Start gebaut wird) - sie darf nur den
+    tatsaechlichen Abruf in DIESER Iteration ueberspringen."""
+    client = Client(name="Beispiel Mandant")
+    matter = Matter(client=client, title="Bestandsakte", reference_number="MUSTER-001")
+    db_session.add_all([client, matter])
+    db_session.commit()
+
+    provider = FakeMailProvider([_synthetic_message()])
+    monkeypatch.setattr(main_module, "build_mail_provider", lambda settings: provider)
+
+    engine = db_session.get_bind()
+    session_factory = sessionmaker(bind=engine)
+
+    settings = _settings_with_mail(
+        mail_attachment_storage_dir="data/mail_attachments_test",
+        mail_auto_sync_enabled=False,
+    )
+    asyncio.run(_run_one_iteration(settings, monkeypatch, session_factory=session_factory))
+
+    # Kein Abruf fand statt - die synthetische Nachricht wurde NICHT erfasst.
+    assert db_session.query(Message).count() == 0
+
+
+def test_poll_interval_is_read_fresh_each_iteration(monkeypatch, db_session: Session) -> None:
+    """`mail_poll_interval_seconds` steuert tatsaechlich die `asyncio.sleep`-
+    Dauer - kein hart codierter Wert mehr."""
+    provider = FakeMailProvider([])
+    monkeypatch.setattr(main_module, "build_mail_provider", lambda settings: provider)
+
+    engine = db_session.get_bind()
+    session_factory = sessionmaker(bind=engine)
+
+    settings = _settings_with_mail(
+        mail_attachment_storage_dir="data/mail_attachments_test",
+        mail_poll_interval_seconds=60,
+    )
+
+    sleep_durations: list[float] = []
+
+    async def _drive() -> None:
+        monkeypatch.setattr(main_module, "SessionLocal", session_factory)
+        monkeypatch.setattr(main_module, "get_settings", lambda: settings)
+
+        async def _fake_sleep(seconds: float) -> None:
+            sleep_durations.append(seconds)
+            raise asyncio.CancelledError()
+
+        monkeypatch.setattr(main_module.asyncio, "sleep", _fake_sleep)
+
+        task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    asyncio.run(_drive())
+
+    assert sleep_durations == [60]
 
 
 def test_ingestion_failure_does_not_crash_the_loop(monkeypatch, db_session: Session) -> None:

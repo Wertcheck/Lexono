@@ -19,6 +19,9 @@ manueller Platzhalter für den Actor, bis Prompt 26 echte Anmeldung bringt.
 
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -38,7 +41,9 @@ from app.auth.permissions import (
     require_login,
     require_role,
 )
+from app.config import get_settings
 from app.db.session import get_db
+from app.documents.service import DocumentProcessingService
 from app.drafting.versioning import create_manual_edit_version
 from app.export.docx_export_service import DOCX_MEDIA_TYPE, DraftDocxExportService
 from app.export.filenames import safe_download_filename
@@ -52,6 +57,7 @@ from app.export.pdf_export_service import PDF_MEDIA_TYPE, DraftPdfExportService
 from app.firm_profile import get_firm_profile
 from app.feedback.schema import DraftFeedbackInput
 from app.feedback.service import DraftFeedbackService
+from app.ingestion.stability import compute_sha256
 from app.prompt_library.service import PromptTemplateService
 from app.quality.service import DraftQualityService
 from app.models import (
@@ -215,7 +221,16 @@ def drafts_list_page(
     # Mandant mitladen (14.09.): die Liste zeigt ihn jetzt als eigene
     # Spalte. Ohne dieses zweite `joinedload` waere das eine N+1-Abfrage
     # pro Zeile, nur um einen Namen anzuzeigen.
+    # `chat_reference`-Drafts (05.10., Owner-Direktive "ARCHITECTURE &
+    # PRODUCT FLOW PASS" §11/§12) sind keine echten, freigabepflichtigen
+    # Schriftsaetze, sondern nur der interne Haltepunkt fuer Quellen-/
+    # Wissens-Verknuepfungen einer normalen Chat-Antwort (siehe
+    # app/drafting/service.py::_persist_draft) - gehoeren strukturell nicht
+    # in diese "Entwuerfe zur Pruefung"-Liste, unabhaengig vom `status`-
+    # Query-Parameter (der weiterhin zwischen draft/legal_review/approved/
+    # rejected filtert).
     query = db.query(Draft).options(joinedload(Draft.matter).joinedload(Matter.client))
+    query = query.filter(Draft.status != "chat_reference")
     if status is not None:
         query = query.filter(Draft.status == status)
     all_drafts = query.order_by(Draft.updated_at.desc()).all()
@@ -326,6 +341,107 @@ def draft_detail_page(
     return templates.TemplateResponse(request, "draft_detail.html", context)
 
 
+def _save_export_as_document(
+    db: Session,
+    *,
+    draft: Draft,
+    file_bytes: bytes,
+    filename: str,
+    mime_type: str,
+    actor: str,
+) -> None:
+    """Persistiert einen PDF-/DOCX-Export als echtes `Document`, sichtbar
+    in der Akte des Entwurfs (26.09., Owner-Direktive "DOCUMENT WORKSPACE /
+    SCHRIFTSATZ PRODUCT-COMPLETION" §12/§17 - der Export endete vorher als
+    reiner Browser-Download OHNE jeden Rueckweg in die Akte; das war beim
+    IST-Audit dieser Direktive der groesste real gefundene Gap: "Kein
+    'Export erfolgreich', wenn die Aktenintegration fehlt"). Wiederverwendet
+    dieselbe Speicher-/Hash-/Verarbeitungslogik wie jeder normale Upload
+    (`document_actions_router.py::upload_documents`) - keine zweite
+    Dokument-Ablagearchitektur.
+
+    Idempotent PRO (Entwurfsversion, Format): eine `Draft`-Zeile ist bereits
+    unveraenderlich (jede Bearbeitung erzeugt eine neue Version/Zeile, siehe
+    app/drafting/versioning.py), ein wiederholter Export DERSELBEN Version
+    liefert deterministisch denselben Inhalt - ein zweiter Klick auf
+    "Als PDF exportieren" aktualisiert deshalb die bereits gespeicherte
+    Datei, statt bei jedem Klick eine weitere, inhaltsgleiche Dokumentzeile
+    anzulegen (kein Daten-/Listen-Muell). Eine neue Entwurfsversion erzeugt
+    dagegen automatisch ein NEUES Dokument (andere `draft.id`).
+
+    Faehrt bewusst NICHT fehlschlagen, wenn `draft.matter` strukturell
+    `None` ist (verwaister `matter_id`, derselbe Fall wie beim
+    `safe_title`-Fallback oben) - der Download bleibt in diesem Fall
+    trotzdem nutzbar, es gibt schlicht keine Akte, in der das Dokument
+    erscheinen koennte."""
+    if draft.matter is None:
+        return
+
+    settings = get_settings()
+    storage_dir = Path(settings.schriftsatz_upload_storage_dir)
+    storage_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = (
+        db.query(Document)
+        .filter(
+            Document.generated_from_draft_id == draft.id,
+            Document.mime_type == mime_type,
+        )
+        .first()
+    )
+
+    if existing is not None:
+        destination_path = Path(existing.file_path)
+        destination_path.write_bytes(file_bytes)
+        existing.original_filename = filename
+        existing.content_hash = compute_sha256(destination_path)
+        # Ein erneuter Export macht ein zwischenzeitlich (versehentlich)
+        # geloeschtes Export-Dokument wieder sichtbar - die Datei existiert
+        # ja gerade wieder frisch geschrieben, siehe app/documents/lifecycle.py.
+        existing.deleted_at = None
+        document = existing
+        event_type = "document_generated_from_draft_updated"
+    else:
+        destination_path = storage_dir / f"{uuid.uuid4()}_{filename}"
+        destination_path.write_bytes(file_bytes)
+        document = Document(
+            matter_id=draft.matter_id,
+            file_path=str(destination_path),
+            original_filename=filename,
+            content_hash=compute_sha256(destination_path),
+            mime_type=mime_type,
+            generated_from_draft_id=draft.id,
+        )
+        db.add(document)
+        event_type = "document_generated_from_draft"
+
+    db.flush()  # document.id fuer das AuditEvent benoetigt (neuer Fall)
+    db.add(
+        AuditEvent(
+            entity_type="Document",
+            entity_id=document.id,
+            event_type=event_type,
+            actor=actor,
+            details=(
+                f"Aus Entwurf v{draft.version} generiert ({mime_type}), "
+                f"in Akte {draft.matter_id} gespeichert"
+            ),
+        )
+    )
+    db.commit()
+
+    # Dieselbe Extraktions-/Klassifikations-Pipeline wie jeder andere
+    # Upload (document_actions_router.py::upload_documents) - der
+    # generierte Schriftsatz soll genauso durchsuchbar/klassifiziert sein
+    # wie jedes andere Aktendokument, keine Sonderbehandlung.
+    processor = DocumentProcessingService(
+        ocr_enabled=settings.ocr_enabled,
+        ocr_languages=settings.ocr_languages,
+        tesseract_cmd=settings.tesseract_cmd,
+    )
+    processor.process_document(document, db, actor=actor)
+
+
 @router.get("/{draft_id}/export.docx")
 def export_draft_docx(
     draft_id: str,
@@ -337,11 +453,16 @@ def export_draft_docx(
     für die Begründung, warum bewusst OHNE Briefkopf/Logo). Reine Ausgabe
     ohne KI-Aufruf/Kostenrisiko - erlaubt für alle drei Rollen, wie das
     Lesen der Entwurfsansicht selbst (`require_login` ohne zusätzliche
-    Berechtigungsprüfung, siehe Rechte-Matrix)."""
+    Berechtigungsprüfung, siehe Rechte-Matrix).
+
+    Speichert den Export zusätzlich als echtes `Document` in der Akte
+    (26.09., siehe `_save_export_as_document`) - der Download bleibt
+    unverändert, die Akte zeigt das erzeugte Schreiben danach zusätzlich."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
 
     firm_profile = get_firm_profile(db)
     buffer = DraftDocxExportService().export_draft(draft, draft.matter, firm_profile)
+    file_bytes = buffer.getvalue()
 
     db.add(
         AuditEvent(
@@ -364,8 +485,17 @@ def export_draft_docx(
     )
     filename = f"{safe_title}_v{draft.version}.docx"
 
+    _save_export_as_document(
+        db,
+        draft=draft,
+        file_bytes=file_bytes,
+        filename=filename,
+        mime_type=DOCX_MEDIA_TYPE,
+        actor=current_user.email,
+    )
+
     return Response(
-        content=buffer.getvalue(),
+        content=file_bytes,
         media_type=DOCX_MEDIA_TYPE,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
@@ -381,11 +511,13 @@ def export_draft_pdf(
     "WEITERARBEITEN" - siehe app/export/pdf_export_service.py für die
     Begründung: die Referenzen zeigen PDF als den primären, vorausgewählten
     Export-Format-Radiobutton, projektweit existierte bisher nur DOCX).
-    Identisches Zuschnitts-/Berechtigungsmuster wie `export_draft_docx`."""
+    Identisches Zuschnitts-/Berechtigungsmuster wie `export_draft_docx`,
+    inklusive der Akte-Integration (siehe dortiger Docstring)."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
 
     firm_profile = get_firm_profile(db)
     buffer = DraftPdfExportService().export_draft(draft, draft.matter, firm_profile)
+    file_bytes = buffer.getvalue()
 
     db.add(
         AuditEvent(
@@ -404,8 +536,17 @@ def export_draft_pdf(
     )
     filename = f"{safe_title}_v{draft.version}.pdf"
 
+    _save_export_as_document(
+        db,
+        draft=draft,
+        file_bytes=file_bytes,
+        filename=filename,
+        mime_type=PDF_MEDIA_TYPE,
+        actor=current_user.email,
+    )
+
     return Response(
-        content=buffer.getvalue(),
+        content=file_bytes,
         media_type=PDF_MEDIA_TYPE,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

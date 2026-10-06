@@ -1,0 +1,9 @@
+{# HTMX-Antwort auf einen Kategorie-Klick (26.09.) - der eigentliche
+   Panel-Inhalt (regulaeres Swap-Ziel) PLUS drei Out-of-Band-Swaps
+   (Kategorie-Kacheln + Untertitel + Beschreibung), damit "aktive
+   Kategorie" ueberall konsistent bleibt, siehe
+   partials/knowledge_categories.html fuer den vollen Befund. #}
+{% include "partials/knowledge_panel.html" %}
+{% include "partials/knowledge_categories.html" %}
+{% include "partials/knowledge_subtitle.html" %}
+{% include "partials/knowledge_description.html" %}

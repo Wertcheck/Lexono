@@ -51,5 +51,22 @@ class Deadline(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     review_status: Mapped[str] = mapped_column(
         String(32), default="unreviewed", nullable=False
     )
+    # Erledigungsstatus (03.10., Owner-Direktive "AUFGABEN & FRISTEN",
+    # Referenzabgleich `18_akte_dokumente_detail.png`): ECHTER, bereits vorher
+    # dokumentierter Gap (siehe app/web/tasks_router.py::_open_deadlines,
+    # frueherer Kommentar "ein Erledigt-Status existiert fuer Fristen derzeit
+    # nicht; das waere eine eigene, separat zu planende Funktion") - genau
+    # diese Funktion verlangt die Referenz jetzt ausdruecklich ("Als erledigt
+    # markieren" als Primaeraktion im Detailpanel, auch fuer eine Frist).
+    # Bewusst orthogonal zu `review_status`: eine Frist kann bestaetigt UND
+    # noch offen sein, oder bestaetigt UND erledigt (z. B. der Schriftsatz
+    # wurde fristgerecht eingereicht) - zwei unabhaengige Achsen, kein
+    # Ersatz fuer `review_status`. Gleiches Wertepaar/-muster wie
+    # `Task.status` ("open"/"done"), NICHT nullable (jede bestehende Frist
+    # ist beim Hinzufuegen dieser Spalte reaslistischerweise noch offen -
+    # siehe Migration schritt3_023 fuer den server_default).
+    status: Mapped[str] = mapped_column(String(32), default="open", nullable=False)
+    # Prioritaet - identische Begruendung wie `Task.priority`.
+    priority: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     matter: Mapped["Matter"] = relationship(back_populates="deadlines")

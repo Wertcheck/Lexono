@@ -1,0 +1,137 @@
+{% import "_icons.html" as icons %}
+{# Eine Zeile der "Gesetze & Normen"-Katalogtabelle (26.09., Owner-Direktive
+   "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION"). Wird dreifach verwendet:
+   1. beim vollen Seitenaufbau (Schleife in knowledge.html),
+   2. als HTMX-Antwort auf den Toggle-Klick (sofortiges Feedback),
+   3. als Polling-Ziel waehrend eines laufenden Downloads (`hx-trigger`
+      unten - selbst-verkettetes Polling, stoppt automatisch, sobald der
+      zurueckgegebene Zustand terminal ist, siehe Kommentar dort). #}
+{% set progress = row.progress %}
+{% set law = row.law %}
+{% set in_progress = progress and progress.status in ["downloading", "installing"] %}
+{% set has_error = progress and progress.status == "error" %}
+{# Automatisierte Aktualisierung (03.10., Owner-Direktive "RELIABLE LEGAL
+   KNOWLEDGE UPDATES") - nur relevant, wenn das Gesetz bereits lokal
+   installiert ist UND gerade kein Download/Fehler-Zwischenzustand
+   angezeigt wird (sonst wuerde der Hinweis mit dem Fortschritt/Fehler
+   oben kollidieren). #}
+{% set update_available = law and not in_progress and not has_error and row.last_check_status == "update_available" %}
+{% set can_check_update = law and not in_progress and not has_error %}
+<tr id="law-row-{{ row.code }}"
+    {% if in_progress %}
+    hx-get="/dashboard/knowledge/laws/{{ row.code }}/row"
+    hx-trigger="load delay:900ms"
+    hx-target="this"
+    hx-swap="outerHTML"
+    {% endif %}>
+  <td class="law-catalog-table__title">
+    {# Buch-Icon je Zeile (26.09., Referenzabgleich §11: "[Gesetz-Icon]
+       Name") - dasselbe bestehende Buch-Icon wie die Kategorie-Kachel
+       "Gesetze & Normen", kein neues Icon-Set. #}
+    {{ icons.book(class_="icon law-catalog-table__row-icon") }}
+    {% if law %}
+      <a href="/dashboard/laws/{{ row.code }}">{{ row.title }}</a>
+    {% else %}
+      <span>{{ row.title }}</span>
+    {% endif %}
+  </td>
+  <td class="mono">{{ row.code }}</td>
+  <td class="mono" style="white-space: nowrap;">
+    {% if row.stand %}Stand&nbsp;{{ row.stand.strftime("%m/%Y") }}{% else %}–{% endif %}
+  </td>
+  <td class="mono">
+    {% if row.size_bytes %}{{ row.size_bytes | filesizeformat }}{% else %}–{% endif %}
+  </td>
+  <td>
+    {% if in_progress %}
+      <span class="tag tag--downloading">
+        <span class="tag__dot"></span>
+        {{ "Wird installiert …" if progress.status == "installing" else "Wird heruntergeladen …" }}
+      </span>
+      <div class="law-progress">
+        {% if progress.percent is not none %}
+          <span class="law-progress__label">{{ progress.percent }} %</span>
+          <div class="law-progress__track">
+            <div class="law-progress__fill" style="width: {{ progress.percent }}%;"></div>
+          </div>
+        {% else %}
+          <span class="law-progress__label">wird geladen …</span>
+        {% endif %}
+      </div>
+    {% elif has_error %}
+      <div class="law-error-retry">
+        <span class="tag tag--law-error" title="{{ progress.error_message or '' }}">
+          <span class="tag__dot"></span>Fehler beim Herunterladen
+        </span>
+      </div>
+    {% elif law and law.is_active %}
+      {# "Lokal verfügbar" statt "Installiert" (26.09., Referenzabgleich
+         §12: der Toggle repraesentiert den lokalen Aktivierungszustand,
+         nicht nur einen einmaligen Download - dieselbe Sprache wie die
+         Spaltenueberschrift "Lokal verfügbar"). #}
+      <span class="tag tag--installed"><span class="tag__dot"></span>Lokal verfügbar</span>
+    {% elif law and not law.is_active %}
+      <span class="tag tag--not-installed"><span class="tag__dot"></span>Deaktiviert</span>
+    {% else %}
+      <span class="tag tag--not-installed"><span class="tag__dot"></span>Nicht verfügbar</span>
+    {% endif %}
+    {% if update_available %}
+      {# Echter, aus `Law.last_check_status` gelesener Zustand (03.10.) -
+         NIE simuliert. Eigene Zeile unter dem bestehenden Verfuegbarkeits-
+         Tag, damit beide Aussagen ("lokal verfuegbar" UND "neue Fassung
+         bekannt") gleichzeitig sichtbar bleiben. #}
+      <div class="law-update-hint">
+        <span class="tag tag--update-available"><span class="tag__dot"></span>Aktualisierung verfügbar</span>
+      </div>
+    {% elif law and row.last_check_status == "unreachable" and row.last_checked_at %}
+      <div class="law-update-hint law-update-hint--muted" title="{{ row.last_check_error or '' }}">
+        Prüfung nicht möglich
+      </div>
+    {% elif law and row.last_checked_at %}
+      <div class="law-update-hint law-update-hint--muted">
+        Geprüft am {{ row.last_checked_at.strftime("%d.%m.%Y %H:%M") }}
+      </div>
+    {% endif %}
+  </td>
+  <td>
+    <div class="law-row-actions">
+      <form class="law-toggle-form" method="post" action="/dashboard/knowledge/laws/{{ row.code }}/toggle"
+            hx-post="/dashboard/knowledge/laws/{{ row.code }}/toggle"
+            hx-target="closest tr" hx-swap="outerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button type="submit"
+                class="law-toggle{% if law and law.is_active %} law-toggle--on{% endif %}{% if in_progress %} law-toggle--busy{% endif %}{% if has_error %} law-toggle--error{% endif %}"
+                {% if in_progress %}disabled{% endif %}
+                title="{% if has_error %}Erneut versuchen{% elif law and law.is_active %}Deaktivieren{% elif law %}Aktivieren{% else %}Herunterladen und lokal verfügbar machen{% endif %}"
+                aria-label="{{ row.title }}: lokale Verfügbarkeit umschalten">
+        </button>
+      </form>
+      {% if update_available %}
+        {# Manuelles Uebernehmen einer erkannten neuen Fassung (03.10.,
+           Direktive Phase D, Betriebsform 1) - startet denselben
+           Hintergrund-Download/-Import wie die Erstinstallation. #}
+        <form method="post" action="/dashboard/knowledge/laws/{{ row.code }}/update"
+              hx-post="/dashboard/knowledge/laws/{{ row.code }}/update"
+              hx-target="closest tr" hx-swap="outerHTML">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit" class="law-update-btn" title="Neue Fassung jetzt übernehmen">
+            Jetzt aktualisieren
+          </button>
+        </form>
+      {% elif can_check_update %}
+        {# Manuelle Pruefung (03.10., Direktive Phase D, Betriebsform 1) -
+           ein einzelner, kurzer HEAD-Request, laeuft synchron, kein
+           Polling noetig. #}
+        <form method="post" action="/dashboard/knowledge/laws/{{ row.code }}/check"
+              hx-post="/dashboard/knowledge/laws/{{ row.code }}/check"
+              hx-target="closest tr" hx-swap="outerHTML">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit" class="law-check-btn" title="Auf Aktualisierung prüfen"
+                  aria-label="{{ row.title }}: auf Aktualisierung prüfen">
+            {{ icons.refresh(class_="icon") }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </td>
+</tr>

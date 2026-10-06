@@ -34,7 +34,9 @@ from app.auth.permissions import AppLockedError, ForcePasswordChangeError, NotAu
 from app.config import Settings, get_settings
 from app.db.session import SessionLocal
 from app.documents.service import DocumentProcessingService
+from app.laws.install_service import check_law_for_update
 from app.local_ai.setup_orchestrator import LocalAiSetupService, LocalAiState
+from app.models import Law
 from app.mail.factory import build_mail_provider
 from app.mail.service import MailIngestionService
 from app.matching.matcher import MatterMatchingService
@@ -48,6 +50,7 @@ from app.web.chat_router import router as chat_web_router
 from app.web.clients_router import router as clients_web_router
 from app.web.document_generator_router import router as document_generator_web_router
 from app.web.document_templates_router import router as document_templates_web_router
+from app.web.draft_editor_router import router as draft_editor_web_router
 from app.web.drafts_router import router as drafts_web_router
 from app.web.feedback_router import router as feedback_web_router
 from app.web.lock_router import router as lock_web_router
@@ -138,8 +141,6 @@ async def _run_silent_local_ai_check(app: FastAPI, settings: Settings) -> None:
         )
 
 
-_MAIL_POLL_INTERVAL_SECONDS = 300.0
-
 
 async def _run_periodic_mail_ingestion(settings: Settings) -> None:
     """ECHTER FUND (14.09., "AUTONOMOUS PRODUCT COMPLETION MASTER
@@ -206,31 +207,92 @@ async def _run_periodic_mail_ingestion(settings: Settings) -> None:
     )
 
     while True:
+        # ECHTER SCHALTER (06.10., Owner-Direktive "SETTINGS -> E-MAIL"):
+        # JEDE Iteration liest `mail_auto_sync_enabled`/
+        # `mail_poll_interval_seconds` frisch ueber `get_settings()` neu
+        # ein (NICHT das einmalige `settings`-Funktionsargument oben, das
+        # nur fuer den Provider-/Service-Aufbau beim Start gilt) - ein in
+        # der Einstellungsseite umgeschalteter Wert wirkt dadurch ab dem
+        # naechsten Zyklus, ohne Neustart von Lexono.
+        current_settings = get_settings()
+        poll_interval = current_settings.mail_poll_interval_seconds
+        if current_settings.mail_auto_sync_enabled:
+            try:
+                db = SessionLocal()
+                try:
+                    new_messages = await asyncio.to_thread(
+                        ingestion_service.ingest_new_messages, db
+                    )
+                    for message in new_messages:
+                        for document in message.documents:
+                            await asyncio.to_thread(
+                                document_processor.process_document, document, db, actor="system"
+                            )
+                        result = await asyncio.to_thread(
+                            assignment_service.assign_matter, message, db
+                        )
+                        logger.info(
+                            "E-Mail erfasst und bewertet (Entscheidung: %s).", result.decision
+                        )
+                finally:
+                    db.close()
+            except Exception:  # noqa: BLE001 - siehe Docstring: darf die Schleife nicht beenden
+                logger.exception(
+                    "Automatischer E-Mail-Abruf fehlgeschlagen - naechster Versuch in %ss.",
+                    poll_interval,
+                )
+        await asyncio.sleep(poll_interval)
+
+
+async def _run_periodic_law_update_check(settings: Settings) -> None:
+    """Automatisierte Aktualisierungs-PRUEFUNG der Gesetzesbibliothek
+    (03.10., Owner-Direktive "RELIABLE LEGAL KNOWLEDGE UPDATES" Phase D,
+    Betriebsform 2: "automatisierte Prüfung in einem definierten
+    Intervall") - identisches Muster wie `_run_periodic_mail_ingestion`
+    oben (bereits bestehender, geeigneter Mechanismus fuer geplante
+    Aufgaben: `asyncio.create_task` + `while True`/`asyncio.sleep` im
+    Lifespan-Hook; Direktive Phase D: "Implementiere keinen neuen
+    Scheduler allein deshalb... Entscheide anhand der realen
+    Architektur" - genau das wird hier wiederverwendet, kein neues
+    Scheduling-Framework).
+
+    Bewusst NUR eine PRUEFUNG (leichtgewichtiger HEAD-Request je Gesetz,
+    siehe `check_law_for_update`), NIEMALS eine automatische inhaltliche
+    UEBERNAHME - das bleibt laut Direktive ein bewusster, manueller
+    Schritt (siehe app/laws/install_service.py::start_install, jetzt per
+    "Jetzt aktualisieren"-Knopf in der Kanzleiwissen-UI auslösbar). Ein
+    einzelner fehlgeschlagener Zyklus bricht die Schleife NICHT ab -
+    gleiches Fehlertoleranz-Prinzip wie beim Mail-Abruf."""
+    if not settings.law_update_check_enabled:
+        return
+
+    while True:
+        # Bewusst ZUERST warten, DANN pruefen (anders als
+        # `_run_periodic_mail_ingestion` oben, das sofort einen ersten
+        # Versuch macht) - diese Pruefung ist standardmaessig AKTIV (siehe
+        # Settings-Kommentar), braucht also, anders als der Mail-Abruf,
+        # keinen "unkonfiguriert"-Fruehausstieg, der nebenbei auch jeden
+        # App-/Test-Start vor einem sofortigen echten Netzwerkzugriff
+        # schuetzt. Ein verzoegerter erster Lauf ist fuer eine taeglich
+        # gedachte Pruefung voellig ausreichend UND verhindert, dass JEDER
+        # Anwendungsstart (inkl. automatisierter Tests, die `lifespan`
+        # ueber `with TestClient(app)` auslösen) sofort einen echten
+        # HEAD-Request gegen gesetze-im-internet.de abfeuert.
+        await asyncio.sleep(settings.law_update_check_interval_seconds)
         try:
             db = SessionLocal()
             try:
-                new_messages = await asyncio.to_thread(
-                    ingestion_service.ingest_new_messages, db
-                )
-                for message in new_messages:
-                    for document in message.documents:
-                        await asyncio.to_thread(
-                            document_processor.process_document, document, db, actor="system"
-                        )
-                    result = await asyncio.to_thread(
-                        assignment_service.assign_matter, message, db
-                    )
-                    logger.info(
-                        "E-Mail erfasst und bewertet (Entscheidung: %s).", result.decision
-                    )
+                law_codes = [code for (code,) in db.query(Law.code).all()]
+                for law_code in law_codes:
+                    await asyncio.to_thread(check_law_for_update, db, law_code)
             finally:
                 db.close()
         except Exception:  # noqa: BLE001 - siehe Docstring: darf die Schleife nicht beenden
             logger.exception(
-                "Automatischer E-Mail-Abruf fehlgeschlagen - naechster Versuch in %ss.",
-                _MAIL_POLL_INTERVAL_SECONDS,
+                "Automatische Gesetzes-Aktualisierungspruefung fehlgeschlagen - "
+                "naechster Versuch in %ss.",
+                settings.law_update_check_interval_seconds,
             )
-        await asyncio.sleep(_MAIL_POLL_INTERVAL_SECONDS)
 
 
 @asynccontextmanager
@@ -260,6 +322,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     Seit 14.09. zusätzlich: `_run_periodic_mail_ingestion` (siehe dort für
     den vollen Befund) - schließt die Lücke, dass ein konfiguriertes
     Postfach bisher nie automatisch abgerufen wurde.
+
+    Seit 03.10. zusätzlich: `_run_periodic_law_update_check` (siehe dort) -
+    periodische, rein lesende Aenderungspruefung der Gesetzesbibliothek
+    gegen die offizielle Quelle, standardmaessig aktiv (keine Zugangsdaten
+    noetig, anders als der Mail-Abruf).
     """
     settings = get_settings()
     configure_logging(log_level=settings.log_level, log_file_path=settings.log_file_path)
@@ -272,10 +339,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
     local_ai_task = asyncio.create_task(_run_silent_local_ai_check(app, settings))
     mail_ingestion_task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
+    law_update_check_task = asyncio.create_task(_run_periodic_law_update_check(settings))
     yield
     update_task.cancel()
     local_ai_task.cancel()
     mail_ingestion_task.cancel()
+    law_update_check_task.cancel()
     logger.info("Anwendung wird beendet")
 
 
@@ -319,6 +388,7 @@ app.include_router(api_router)
 app.include_router(web_router)
 app.include_router(chat_web_router)
 app.include_router(drafts_web_router)
+app.include_router(draft_editor_web_router)
 app.include_router(schriftsatz_web_router)
 app.include_router(outbox_web_router)
 app.include_router(auth_web_router)

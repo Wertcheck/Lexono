@@ -24,6 +24,8 @@ from __future__ import annotations
 import sys
 
 from app.db.session import SessionLocal
+from app.laws.catalog import CODE_OVERRIDES as _CODE_OVERRIDES
+from app.laws.catalog import KNOWN_TITLES as _KNOWN_TITLES
 from app.laws.gesetze_im_internet import (
     GesetzeImInternetError,
     extract_xml_from_zip,
@@ -32,108 +34,13 @@ from app.laws.gesetze_im_internet import (
     parse_law_xml,
 )
 
-# Bekannte, auf gesetze-im-internet.de real verifizierte Slug->Titel-
-# Zuordnung fuer die haeufigsten Gesetzeswerke - ein Titel kann beim
-# Aufruf jederzeit explizit ueberschrieben werden (zweites Argument),
-# dies ist nur eine Komfort-Vorbelegung, keine abschliessende Liste.
-_KNOWN_TITLES = {
-    "bgb": "Bürgerliches Gesetzbuch",
-    "stgb": "Strafgesetzbuch",
-    "gg": "Grundgesetz für die Bundesrepublik Deutschland",
-    "zpo": "Zivilprozessordnung",
-    "ao_1977": "Abgabenordnung",
-    # Erweiterung (13.09., Auftrag "AUTONOMOUS PRODUCT COMPLETION MASTER
-    # DIRECTIVE" §16/§39: BGB allein ist KEINE vollstaendige
-    # Gesetzesbibliothek) - alle Slugs real gegen die offizielle
-    # Inhaltsuebersicht (https://www.gesetze-im-internet.de/gii-toc.xml)
-    # verifiziert, keine erfundenen Zuordnungen.
-    "stpo": "Strafprozessordnung",
-    "hgb": "Handelsgesetzbuch",
-    "inso": "Insolvenzordnung",
-    "gmbhg": "Gesetz betreffend die Gesellschaften mit beschränkter Haftung",
-    "rvg": "Gesetz über die Vergütung der Rechtsanwältinnen und Rechtsanwälte",
-    "brao": "Bundesrechtsanwaltsordnung",
-    "vwgo": "Verwaltungsgerichtsordnung",
-    "vwvfg": "Verwaltungsverfahrensgesetz",
-    "kschg": "Kündigungsschutzgesetz",
-    "arbzg": "Arbeitszeitgesetz",
-    "tzbfg": "Gesetz über Teilzeitarbeit und befristete Arbeitsverträge",
-    "betrvg": "Betriebsverfassungsgesetz",
-    "milog": "Gesetz zur Regelung eines allgemeinen Mindestlohns",
-    "estg": "Einkommensteuergesetz",
-    "ustg_1980": "Umsatzsteuergesetz",
-    "kstg_1977": "Körperschaftsteuergesetz",
-    "gewstg": "Gewerbesteuergesetz",
-    # Erweiterung (14.09., Auftrag "SGB LEGAL KNOWLEDGE"): Sozialrecht-Kern
-    # (SGB I-XII). Slugs real gegen die TOC verifiziert. ECHTER FUND dabei:
-    # fuer SGB I/IV existieren ZUSAETZLICH die Slugs "sgbat"/"sgbsvvs" -
-    # real per Download geprueft (14.09.): beide sind veraltete
-    # VORGAENGER-Fassungen (Kuerzel "SGBAT" statt "SGB 1", ganz ueberwiegend
-    # "(weggefallen)", nur 12-14 statt 94+ echte Normen) - bewusst NICHT
-    # importiert, um keine "Vermischung verschiedener Fassungen" zu
-    # riskieren. Fuer SGB IX existiert ebenfalls eine aeltere Fassung unter
-    # dem Slug "sgb_9" (vor der Neufassung 2018) - bewusst "sgb_9_2018"
-    # (die aktuelle, seit 2018 geltende Fassung) verwendet. Fuer SGB X
-    # existieren zusaetzlich zwei aeltere, in Kapitel aufgeteilte Slugs
-    # ("sgb_10_kap1_2" zuletzt 2023, "sgb_10_kap3" zuletzt 2013) - "sgb_10"
-    # (zuletzt 2026 aktualisiert, vollstaendig) ist die aktuelle,
-    # zusammengefasste Fassung und wird daher allein verwendet.
-    "sgb_1": "Sozialgesetzbuch (SGB) Erstes Buch (I) - Allgemeiner Teil",
-    "sgb_2": "Sozialgesetzbuch (SGB) Zweites Buch (II) - Grundsicherung für Arbeitsuchende",
-    "sgb_3": "Sozialgesetzbuch (SGB) Drittes Buch (III) - Arbeitsförderung",
-    "sgb_4": (
-        "Sozialgesetzbuch (SGB) Viertes Buch (IV) - Gemeinsame Vorschriften "
-        "für die Sozialversicherung"
-    ),
-    "sgb_5": "Sozialgesetzbuch (SGB) Fünftes Buch (V) - Gesetzliche Krankenversicherung",
-    "sgb_6": "Sozialgesetzbuch (SGB) Sechstes Buch (VI) - Gesetzliche Rentenversicherung",
-    "sgb_7": "Sozialgesetzbuch (SGB) Siebtes Buch (VII) - Gesetzliche Unfallversicherung",
-    "sgb_8": "Sozialgesetzbuch (SGB) Achtes Buch (VIII) - Kinder- und Jugendhilfe",
-    "sgb_9_2018": (
-        "Sozialgesetzbuch (SGB) Neuntes Buch (IX) - Rehabilitation und "
-        "Teilhabe von Menschen mit Behinderungen"
-    ),
-    "sgb_10": (
-        "Sozialgesetzbuch (SGB) Zehntes Buch (X) - Sozialverwaltungsverfahren "
-        "und Sozialdatenschutz"
-    ),
-    "sgb_11": "Sozialgesetzbuch (SGB) Elftes Buch (XI) - Soziale Pflegeversicherung",
-    "sgb_12": "Sozialgesetzbuch (SGB) Zwölftes Buch (XII) - Sozialhilfe",
-}
-
-# ECHTER FUND (13.09., beim Import der priorisierten Gesetzesliste
-# entdeckt): einige offizielle Slugs tragen ein Jahres-Suffix
-# (z. B. "ao_1977", "ustg_1980", "kstg_1977") - naiv als `law_code` per
-# `slug.upper()` uebernommen, wuerde das die im Chat erwartete natuerliche
-# Abkuerzung ("AO", "USTG", "KSTG", siehe app/chat/service.py::
-# _looks_like_pure_norm_question, IMMER Grossbuchstaben OHNE Jahreszahl)
-# NIE treffen - der Fast Path faende diese Paragraphen dann trotz
-# erfolgtem Import nie. Explizite Ausnahmeliste statt einer generischen
-# "Suffix abschneiden"-Heuristik, da nicht jedes "_YYYY"-Suffix garantiert
-# ein reines Jahres-Artefakt ist.
-_CODE_OVERRIDES = {
-    "ao_1977": "AO",
-    "ustg_1980": "USTG",
-    "kstg_1977": "KSTG",
-    # SGB-Buecher (14.09.): der Slug enthaelt eine arabische Ziffer bzw.
-    # ein Jahres-Suffix ("sgb_1", "sgb_9_2018", "sgb_10") - der gespeicherte
-    # `law_code` muss aber "SGB<roemisch>" sein (reine Buchstaben, ohne
-    # Leerzeichen/Ziffern), konsistent mit app/chat/service.py::
-    # _normalize_law_code (dort wird "SGB I"/"SGB 1" aus einer Chat-Nachricht
-    # auf genau diese Form normalisiert, bevor nachgeschlagen wird).
-    "sgb_1": "SGBI",
-    "sgb_2": "SGBII",
-    "sgb_3": "SGBIII",
-    "sgb_4": "SGBIV",
-    "sgb_5": "SGBV",
-    "sgb_6": "SGBVI",
-    "sgb_7": "SGBVII",
-    "sgb_8": "SGBVIII",
-    "sgb_9_2018": "SGBIX",
-    "sgb_10": "SGBX",
-    "sgb_11": "SGBXI",
-    "sgb_12": "SGBXII",
-}
+# Der Katalog selbst (Slug->Titel/`Law.code`-Zuordnung, samt der vollen
+# Historie/Begruendung jedes Eintrags) lebt seit 26.09. zentral in
+# app/laws/catalog.py (Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+# IMPLEMENTATION" §3/§6/§7/§32) - wird hier nur unter den bisherigen
+# Namen `_KNOWN_TITLES`/`_CODE_OVERRIDES` wieder eingebunden, damit dieses
+# Skript UND die neue Kanzleiwissen-Weboberflaeche (app/web/laws_router.py)
+# denselben, einzigen Katalog verwenden statt zweier abweichender Listen.
 
 
 def main(argv: list[str]) -> int:

@@ -67,6 +67,26 @@ _SPACY_MODEL_PACKAGE = "de_core_news_lg"
 # wie beim fehlenden spaCy-Modell, nur eine Ebene tiefer.
 _PRESIDIO_ANALYZER_PACKAGE = "presidio_analyzer"
 
+# Lokale Spracheingabe (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+# FLOW PASS" §22-27, app/chat/speech.py) - DRITTER, beim Installer-Build
+# dieser Direktive ("INSTALLER BUILD & NATIVE WINDOWS ACCEPTANCE PASS")
+# real gefundener Packaging-Fehler, IDENTISCHE Fehlerklasse wie die beiden
+# obigen (spaCy-Modell/Presidio-YAML): `faster_whisper/vad.py` laedt sein
+# Voice-Activity-Detection-Modell (`faster_whisper/assets/
+# silero_vad_v6.onnx`, ueber `get_assets_path()` relativ zum installierten
+# Paket aufgeloest) als Nicht-Python-Paketdatei vom Datentraeger - ohne
+# diesen Include wuerde JEDE Transkription (app/chat/speech.py nutzt
+# `vad_filter=True`) im installierten Produkt mit FileNotFoundError
+# fehlschlagen, obwohl PyInstallers Importanalyse `faster_whisper`/
+# `ctranslate2` selbst (reine .py-Importe) bereits korrekt findet. Die
+# nativen DLLs von ctranslate2 (ctranslate2.dll/libiomp5md.dll) sowie die
+# von "av" vendorten FFmpeg-DLLs (av.libs\, delvewheel-Muster) werden
+# dagegen bereits ueber PyInstallers automatische Binary-Abhaengigkeits-
+# analyse (PE-Import-Tabellen der .pyd-Dateien) korrekt erfasst - gleiches,
+# bereits bewaehrtes Prinzip wie bei onnxruntime/onnxruntime.dll, das schon
+# vor dieser Direktive ohne eigenen Hook funktionierte.
+_FASTER_WHISPER_PACKAGE = "faster_whisper"
+
 # Gebuendeltes Tesseract-OCR (Pilot-Finding, siehe FUTURE_ROADMAP.md/
 # RELEASE_NOTES.md "Tesseract als Abhaengigkeit" + app/documents/ocr.py
 # Moduldocstring): OHNE dieses Buendel muesste jede Kanzlei Tesseract
@@ -108,6 +128,7 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
         *collect_data_files(_SPACY_MODEL_PACKAGE),
         *copy_metadata(_SPACY_MODEL_PACKAGE),
         *collect_data_files(_PRESIDIO_ANALYZER_PACKAGE),
+        *collect_data_files(_FASTER_WHISPER_PACKAGE),
     ],
     hiddenimports=[
         # Siehe Kommentar zu _SPACY_MODEL_PACKAGE oben - spacy.load(name)

@@ -196,13 +196,17 @@ def test_sections_partial_filters_by_search_term(client: TestClient, db_session:
 # --- Sidebar-Integration ---
 
 
-def test_sidebar_links_to_law_library(client: TestClient) -> None:
-    """UI/UX-Ueberarbeitung (13.09.): der Hauptmenuepunkt heisst jetzt
-    "Kanzleiwissen" (verbindliche Vorgabe) statt des Seitentitels
-    "Gesetzesbibliothek" - er verlinkt aber weiterhin auf dieselbe echte
-    Seite (/dashboard/laws)."""
+def test_sidebar_links_to_knowledge_overview(client: TestClient) -> None:
+    """26.09., Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION"
+    (Referenzabgleich `43_Kanzleiwissen_Gesetze.png`): der Hauptmenuepunkt
+    "Kanzleiwissen" verlinkt jetzt auf die Kategorie-Uebersicht
+    (/dashboard/knowledge, siehe app/web/knowledge_router.py) statt direkt
+    auf die reine Gesetzes-Leseansicht (/dashboard/laws) - Letztere bleibt
+    ueber die dortige "Gesetze & Normen"-Kategorie bzw. per Klick auf ein
+    installiertes Gesetz weiterhin voll erreichbar (siehe test_web_laws.py
+    fuer diese Route selbst, unveraendert)."""
     response = client.get("/dashboard/inbox")
-    assert 'href="/dashboard/laws"' in response.text
+    assert 'href="/dashboard/knowledge"' in response.text
     assert "Kanzleiwissen" in response.text
 
 

@@ -82,15 +82,35 @@ def _csrf(html: str) -> str:
 
 class _FakeWritingProvider:
     """Erzeugt einen erkennbar unterschiedlichen Text je Aufruf, damit
-    Versionen im Test klar auseinandergehalten werden können."""
+    Versionen im Test klar auseinandergehalten werden können.
+
+    ECHTER FUND (06.10., Owner-Direktive "Schriftsatz-Workflow,
+    Pseudonymisierung, lokale KI und DIN-A4-Dokumentdarstellung", Phase 8):
+    die deterministische Platzhalter-Integritaetspruefung
+    (app/privacy/security_check.py::check_response_placeholder_integrity)
+    laeuft jetzt IMMER (nicht mehr nur bei konfigurierter lokaler KI, siehe
+    app/drafting/service.py::_finish_non_streaming_stream) - ein Fake, der
+    JEDEN im Payload tatsaechlich vorhandenen Mapping-Platzhalter ignoriert,
+    verletzt damit fuer Zwecke ausserhalb von `_RELAXED_COVERAGE_PURPOSES`
+    (z. B. "improve_draft", der Anmerkung-Anwenden-Schritt dieser Reise)
+    dieselbe Regel, die ein real instruiertes Claude einhaelt ("verwende
+    NUR vorhandene Platzhalter" - UND haelt sie damit implizit auch ein,
+    wenn sie bereits im Sachverhalt vorkommen). Echot deshalb jeden im
+    Payload gefundenen Platzhalter in der Antwort mit - realistischeres
+    Verhalten, keine Lockerung der eigentlichen Pruefung."""
 
     def __init__(self) -> None:
         self.call_count = 0
 
     def write(self, payload: ClaudeRequestPayload) -> ClaudeWritingResult:
         self.call_count += 1
+        import re
+
+        placeholders = sorted(set(re.findall(r"\[[A-Z_]+_\d{2}\]", payload.anonymisierter_sachverhalt or "")))
+        placeholder_suffix = f" Betrifft: {' '.join(placeholders)}." if placeholders else ""
         return ClaudeWritingResult(
-            text=f"KI-generierte Antwort, Version {self.call_count}.", token_count=42
+            text=f"KI-generierte Antwort, Version {self.call_count}.{placeholder_suffix}",
+            token_count=42,
         )
 
 

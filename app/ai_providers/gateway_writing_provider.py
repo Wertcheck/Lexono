@@ -7,7 +7,21 @@ Zweck) und baut dieselben Cache-Blöcke wie `AnthropicClaudeWritingProvider`
 (unveränderte Funktionen aus `claude_writing_provider.py`) - der einzige
 Unterschied ist das Transportziel: HTTP zum Gateway statt eines direkten
 `anthropic.Anthropic`-Aufrufs. Besitzt strukturell keinen Anthropic-Key
-(kein entsprechendes Feld im Konstruktor)."""
+(kein entsprechendes Feld im Konstruktor).
+
+ECHTE WEBRECHERCHE (06.10., §0.6-§0.10) NICHT UNTERSTUETZT: anders als
+`AnthropicClaudeWritingProvider` haengt dieser Provider bewusst KEIN
+Web-Search-Tool an (`select_system_prompt` wird hier ohne
+`web_search_available=True` aufgerufen - bleibt also beim ehrlichen
+"kein Internetzugriff"-Systemprompt). Der eigentliche Claude-Aufruf
+passiert auf einem separaten Lexono-Gateway-Server (`call_gateway_messages`,
+fixe Request-Form ohne "tools"-Feld), der NICHT Teil dieses Repositories
+ist - ein hier blind mitgeschicktes Tool-Flag koennte dort ignoriert
+werden, was eine falsche Web-Zugriffs-Behauptung waere (siehe
+Produktvorgabe §0.10 "Web-Capability muss ehrlich sein"). Um Websuche auch
+fuer den Produktions-/Gateway-Pfad zu ermoeglichen, muss der separate
+Gateway-Server selbst ein Web-Search-Tool anhaengen UND `call_gateway_messages`
+entsprechend erweitert werden - ausserhalb des Umfangs dieses Repositories."""
 
 from __future__ import annotations
 

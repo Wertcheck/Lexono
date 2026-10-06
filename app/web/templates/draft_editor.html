@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% import "_labels.html" as labels %}
+{% import "_icons.html" as icons %}
+{% block title %}Editor · Entwurf v{{ draft.version }}{% endblock %}
+{% block content %}
+  {# Breadcrumb (04.10., Referenzbild 12_dokument_editor.png zeigt
+     "Chat > Dokument: ... > Schreiben erstellen > Entwurf") - wiederverwendet
+     exakt die bestehende .chat-breadcrumb-Klasse (app.css, bisher nur in
+     chat.html genutzt, rein informativ/kontextuell, kein chat-spezifischer
+     Inhalt in der Klasse selbst). #}
+  <div class="chat-breadcrumb">
+    <a href="/dashboard/chat">Chat</a>
+    <span class="chat-breadcrumb__sep">›</span>
+    {% if matter %}
+      <a href="/dashboard/matters/{{ matter.id }}">{{ matter.title }}</a>
+    {% else %}
+      <span>Dokument</span>
+    {% endif %}
+    <span class="chat-breadcrumb__sep">›</span>
+    <span>Schreiben erstellen</span>
+    <span class="chat-breadcrumb__sep">›</span>
+    <span>Entwurf v{{ draft.version }}</span>
+  </div>
+
+  {# Header nach Referenzbild 12_dokument_editor.png: Dokument-Icon +
+     Titel/Subtitle links, Aktionen (Als Vorlage speichern / Freigeben /
+     Weitere Aktionen) rechts - wiederverwendet exakt das bestehende
+     .topbar/.topbar__icon-row/.topbar__actions-Muster (siehe z.B.
+     matters_list.html, tasks.html), keine neue Header-Komponente. #}
+  <div class="topbar topbar--compact">
+    <div class="topbar__icon-row">
+      <span class="topbar__icon">{{ icons.document(class_="icon") }}</span>
+      <div class="topbar__heading">
+        <h1 class="topbar__title">
+          Schreiben erstellen
+          {{ labels.draft_status_tag(draft.status) }}
+        </h1>
+        <p class="topbar__subtitle">KI-gestützte Erstellung und Bearbeitung</p>
+      </div>
+      <div class="topbar__actions">
+        {% if can_manual_edit and draft.status == "draft" %}
+          <button type="button" class="btn" id="draft-editor-save-template-btn">
+            {{ icons.download(class_="icon") }} Als Vorlage speichern
+          </button>
+        {% endif %}
+        {% if can_approve %}
+          <form method="post" action="/dashboard/drafts/{{ draft.id }}/approve">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <button type="submit" class="btn btn--primary">
+              {{ icons.send(class_="icon") }} Freigeben &amp; Postausgang übergeben
+            </button>
+          </form>
+        {% endif %}
+        <div class="split-button" onclick="event.stopPropagation();">
+          <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen" onclick="Lexono.toggleRowMenu(this)">
+            {{ icons.dots_vertical(class_="icon") }}
+          </button>
+          <div class="row-menu" hidden>
+            <a href="/dashboard/drafts/{{ draft.id }}/export.pdf" class="row-menu__item">{{ icons.download(class_="icon") }} Als PDF exportieren</a>
+            <a href="/dashboard/drafts/{{ draft.id }}/export.docx" class="row-menu__item">{{ icons.download(class_="icon") }} Als DOCX exportieren</a>
+            <a href="/dashboard/drafts/{{ draft.id }}" class="row-menu__item">{{ icons.eye(class_="icon") }} Zur Entwurfsprüfung (Viewer)</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="topbar__description">
+      Akte
+      <a href="/dashboard/matters/{{ draft.matter_id }}">{{ matter.title if matter else draft.matter_id }}</a>
+    </p>
+  </div>
+
+  {% if error %}
+    <div class="banner banner--error">{{ error }}</div>
+  {% endif %}
+
+  <div class="draft-page" id="draft-editor-root"
+       data-draft-id="{{ draft.id }}"
+       data-matter-id="{{ draft.matter_id }}"
+       data-content-format="{{ draft.content_format }}"
+       data-can-claude-call="{{ "1" if can_claude_call else "0" }}"
+       data-is-draft-status="{{ "1" if draft.status == "draft" else "0" }}">
+    <div class="draft-workspace">
+      <div class="draft-workspace__main">
+
+        <div class="draft-editor-meta">
+          <label class="form-label draft-editor-meta__field">
+            Betreff
+            <input type="text" id="draft-editor-subject" value="{{ draft.subject or '' }}"
+                   placeholder="Betreff des Schreibens" {% if draft.status != "draft" %}disabled{% endif %} />
+          </label>
+          <label class="form-label draft-editor-meta__field">
+            Empfänger
+            <input type="text" id="draft-editor-recipient" value="{{ draft.recipient or '' }}"
+                   placeholder="Empfänger des Schreibens" {% if draft.status != "draft" %}disabled{% endif %} />
+          </label>
+        </div>
+
+        {% if draft.status != "draft" %}
+          <p class="form-hint draft-editor-frozen-hint">
+            Diese Version ist {{ labels.draft_status_text(draft.status) }} und eingefroren - Änderungen sind
+            nur über "Neu generieren"/"Als neue Version speichern" in der
+            <a href="/dashboard/drafts/{{ draft.id }}">Entwurfsprüfung</a> möglich.
+          </p>
+        {% endif %}
+
+        <div class="draft-editor-toolbar" id="draft-editor-toolbar" role="toolbar" aria-label="Formatierung">
+          <select id="draft-editor-paragraph-style" class="draft-editor-toolbar__select" title="Absatzstil">
+            <option value="p">Absatz</option>
+            <option value="h2">Überschrift</option>
+          </select>
+          <span class="draft-editor-toolbar__sep"></span>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="bold" title="Fett">{{ icons.bold(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="italic" title="Kursiv">{{ icons.italic(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="underline" title="Unterstrichen">{{ icons.underline(class_="icon") }}</button>
+          <span class="draft-editor-toolbar__sep"></span>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="insertUnorderedList" title="Aufzählung">{{ icons.list_bulleted(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="insertOrderedList" title="Nummerierte Liste">{{ icons.list_numbered(class_="icon") }}</button>
+          <span class="draft-editor-toolbar__sep"></span>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="outdent" title="Einzug verringern">{{ icons.outdent(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="indent" title="Einzug vergrößern">{{ icons.indent(class_="icon") }}</button>
+          <span class="draft-editor-toolbar__sep"></span>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="justifyLeft" title="Linksbündig">{{ icons.align_left(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="justifyCenter" title="Zentriert">{{ icons.align_center(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="justifyRight" title="Rechtsbündig">{{ icons.align_right(class_="icon") }}</button>
+          <span class="draft-editor-toolbar__sep"></span>
+          <button type="button" class="draft-editor-toolbar__btn" data-action="link" title="Link einfügen">{{ icons.link(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="undo" title="Rückgängig">{{ icons.undo(class_="icon") }}</button>
+          <button type="button" class="draft-editor-toolbar__btn" data-cmd="redo" title="Wiederholen">{{ icons.redo(class_="icon") }}</button>
+          {% if can_claude_call %}
+            <span class="draft-editor-toolbar__sep"></span>
+            <button type="button" class="draft-editor-toolbar__btn draft-editor-toolbar__btn--ai" id="draft-editor-ai-edit-selection-btn" title="Ausgewählten Text mit KI bearbeiten">
+              {{ icons.bolt(class_="icon") }} Mit KI bearbeiten
+            </button>
+          {% endif %}
+        </div>
+
+        <div class="document-page">
+          {% if show_letterhead %}
+            <div class="document-page__letterhead">
+              {% if firm_logo_exists %}
+                <img class="document-page__logo" src="/dashboard/settings/profile/logo-file" alt="Kanzlei-Logo" />
+              {% endif %}
+              {% if firm_profile.firm_name.strip() %}
+                <div class="document-page__firm-name">{{ firm_profile.firm_name.strip() }}</div>
+              {% endif %}
+              {% for line in firm_contact_lines %}
+                <div class="document-page__contact-line">{{ line }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+          <div id="draft-editor-surface" class="document-page__content document-page__content--rich"
+               contenteditable="{{ 'true' if draft.status == 'draft' else 'false' }}"
+               aria-label="Entwurfstext">{{ draft.content | safe if draft.content_format == "html" else draft.content }}</div>
+          {% if show_signature_block %}
+            <div class="document-page__signature">
+              {% if firm_signature_exists %}
+                <img class="document-page__signature-image" src="/dashboard/settings/profile/signature-file" alt="Unterschrift" />
+              {% endif %}
+              {% if firm_profile.signatory_name %}
+                <div class="document-page__signatory-name">{{ firm_profile.signatory_name }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+
+        {# KI-Vorschlagsvorschau (siehe EditorService._build_instruction_text-
+           Docstring: das Ergebnis ist IMMER ein vollstaendiger neuer
+           Versionsvorschlag, keine stille Teilersetzung) - standardmaessig
+           versteckt, wird von app_draft_editor.js eingeblendet. #}
+        <div id="draft-editor-ai-preview" class="draft-editor-ai-preview" hidden>
+          <div class="draft-editor-ai-preview__header">
+            <strong>KI-Vorschlag (neue Version)</strong>
+            <span class="form-hint" style="margin:0;">Vollständiger neuer Entwurf - nichts wird automatisch übernommen.</span>
+          </div>
+          <div id="draft-editor-ai-preview-content" class="draft-editor-ai-preview__content"></div>
+          <div class="draft-editor-ai-preview__actions">
+            <button type="button" class="btn btn--primary" id="draft-editor-ai-accept-btn">Übernehmen</button>
+            <button type="button" class="btn" id="draft-editor-ai-discard-btn">Verwerfen</button>
+          </div>
+        </div>
+
+        <div class="draft-editor-statusbar">
+          <span id="draft-editor-wordcount">Wortanzahl: 0</span>
+          <span class="draft-editor-statusbar__sep">&middot;</span>
+          <span id="draft-editor-savestate" class="draft-editor-statusbar__state">
+            {% if draft.status != "draft" %}
+              Eingefroren - keine Änderungen möglich
+            {% elif draft.last_autosaved_at %}
+              Zuletzt gespeichert: {{ draft.last_autosaved_at.strftime("%d.%m.%Y, %H:%M") }} Uhr
+            {% else %}
+              Noch nicht gespeichert
+            {% endif %}
+          </span>
+        </div>
+
+      </div>
+
+      <aside class="draft-assistant-panel">
+        <div class="draft-editor-tabs" role="tablist">
+          <button type="button" class="draft-editor-tab draft-editor-tab--active" data-tab="ai-assistant" role="tab" aria-selected="true">KI-Assistent</button>
+          <button type="button" class="draft-editor-tab" data-tab="templates" role="tab" aria-selected="false">Vorlagen</button>
+        </div>
+
+        <div data-tab-panel="ai-assistant">
+          <p class="draft-assistant-panel__intro">
+            Ich unterstütze Sie beim Schreiben. Nutzen Sie eine der Vorschläge
+            unten oder formulieren Sie unten eine eigene Anweisung.
+          </p>
+
+          <div class="draft-assistant-panel__section">
+            <span class="draft-assistant-panel__section-label">Vorschläge</span>
+            {% for suggestion in ai_suggestions %}
+              <button type="button" class="draft-suggestion draft-editor-ai-suggestion-btn"
+                      data-instruction="{{ suggestion.instruction_text }}"
+                      data-purpose="{{ suggestion.purpose }}"
+                      {% if not can_claude_call %}disabled{% endif %}
+                      title="{{ suggestion.label }}">
+                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.bolt(class_="icon") }}</span>
+                <span class="draft-suggestion__body">
+                  <span class="draft-suggestion__title">{{ suggestion.label }}</span>
+                  {% if suggestion.id == "legal_review" %}
+                    <span class="draft-suggestion__subtitle">{{ legal_review_disclaimer }}</span>
+                  {% endif %}
+                </span>
+                {{ icons.chevron_right(class_="icon draft-suggestion__chevron") }}
+              </button>
+            {% endfor %}
+          </div>
+
+          {% if prompt_templates %}
+            <div class="draft-assistant-panel__section">
+              <div class="draft-assistant-panel__section-header">
+                <span class="draft-assistant-panel__section-label">Standard-Prompts</span>
+                <a href="/dashboard/library/prompts" class="draft-assistant-panel__manage-link">Alle anzeigen</a>
+              </div>
+              {% for template in prompt_templates[:5] %}
+                <button type="button" class="draft-prompt-row" data-prefill-instruction="{{ template.content }}"
+                        title="{{ template.description or '' }}">
+                  <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.document(class_="icon") }}</span>
+                  <span>{{ template.name }}</span>
+                </button>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="draft-assistant-panel__composer">
+            <div class="instruction-bar__header">
+              <span class="instruction-bar__title">Weitere Anweisungen an die KI</span>
+            </div>
+            <div class="instruction-bar__input-row">
+              <textarea id="draft-editor-instruction-text" rows="2"
+                        placeholder="Weitere Anweisungen an die KI …" {% if not can_claude_call %}disabled{% endif %}></textarea>
+            </div>
+            <div class="instruction-actions">
+              <label class="draft-editor-attach-btn" title="Hinweis als Kontext anhängen (nutzt die aktuelle Textauswahl, falls vorhanden)">
+                {{ icons.clip(class_="icon") }}
+              </label>
+              <button type="button" class="btn btn--primary" id="draft-editor-send-instruction-btn"
+                      {% if not can_claude_call %}disabled{% endif %}
+                      data-ai-loading-label="Wird bearbeitet …">
+                {{ icons.send(class_="icon") }} Senden
+              </button>
+            </div>
+            {% if not can_claude_call %}
+              <p class="form-hint">Nur Anwalt/Admin können eine KI-Bearbeitung auslösen.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div data-tab-panel="templates" hidden>
+          <p class="draft-assistant-panel__intro">
+            Bestehende Dokumentvorlagen (Dokumenten-Generator) - zum Einfügen
+            des Vorlagentexts in den Entwurf anklicken.
+          </p>
+          {% if document_templates %}
+            <div class="draft-assistant-panel__section">
+              {% for template in document_templates %}
+                <button type="button" class="draft-prompt-row draft-editor-insert-template-btn"
+                        data-template-content="{{ template.content }}"
+                        {% if draft.status != "draft" %}disabled{% endif %}
+                        title="{{ template.description or '' }}">
+                  <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.document(class_="icon") }}</span>
+                  <span>{{ template.name }}</span>
+                </button>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="form-hint">Noch keine Dokumentvorlagen vorhanden.</p>
+          {% endif %}
+          <a href="/dashboard/library/mustertexte" class="draft-assistant-panel__manage-link">Vorlagen verwalten</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <input type="hidden" id="draft-editor-csrf-token" name="csrf_token" value="{{ csrf_token }}" />
+  <script>
+    {# Wiederverwendet exakt das bestehende Row-Menu-Muster (z.B.
+       client_detail.html/tasks.html) fuer das "Weitere Aktionen"-Menu im
+       Header - idempotente Definition, falls bereits anderswo gesetzt. #}
+    window.Lexono = window.Lexono || {};
+    Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
+      var menu = trigger.nextElementSibling;
+      var wasOpen = !menu.hidden;
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      menu.hidden = wasOpen;
+    };
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+  </script>
+  <script src="/dashboard/static/js/app_draft_editor.js"></script>
+{% endblock %}

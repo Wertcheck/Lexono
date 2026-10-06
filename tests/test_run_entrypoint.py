@@ -679,26 +679,77 @@ def test_apply_rounded_corners_never_raises_when_native_handle_missing() -> None
 
 
 # --- _remove_title_bar_icon (Nutzerauftrag 13.09.: Icon aus der
-# Titelleiste entfernen) ---
+# Titelleiste entfernen; ROOT-CAUSE-FIX 03.10. - siehe run.py-Docstring:
+# die fruehere WM_SETICON-Loesung ueberschrieb unbeabsichtigt das ECHTE,
+# von der Taskleiste gelesene Fenster-Icon mit einem transparenten
+# Handle. Per Live-Fenster-Diagnose (WM_GETICON gegen die tatsaechlich
+# laufende installierte Instanz) nachgewiesen, nicht nur vermutet.) ---
 
 
-def test_remove_title_bar_icon_sends_wm_seticon_with_a_real_transparent_handle(
+def test_remove_title_bar_icon_adds_dlgmodalframe_and_forces_frame_redraw(
     monkeypatch,
 ) -> None:
-    """Beweis auf Aufrufebene: WM_SETICON wird fuer ICON_SMALL und
-    ICON_BIG mit einem ECHTEN (nicht-Null) Icon-Handle gesendet - real
-    verifiziert (Screenshot), dass ein NULL-Handle Windows stattdessen auf
-    ein generisches Platzhalter-Icon zurueckfallen laesst (schlechter als
-    vorher). Nur ein echtes, aber vollstaendig transparentes Handle
-    entfernt das Icon tatsaechlich sichtbar. `SendMessageW` selbst bleibt
-    gefaked (kein echtes Fenster in diesem Test), die Bitmap-/Icon-
-    Erzeugung ueber pythonnet laeuft echt (dieselbe Abhaengigkeit, die
-    pywebviews WinForms-Backend selbst bereits braucht)."""
-    calls: list[tuple[int, int, int, int]] = []
+    """Beweis auf Aufrufebene fuer den root-cause-korrekten Ersatz: die
+    Funktion liest den aktuellen Fenster-Ex-Style, setzt ihn MIT dem
+    zusaetzlichen WS_EX_DLGMODALFRAME-Bit zurueck und erzwingt per
+    SetWindowPos(..., SWP_FRAMECHANGED) ein Neuzeichnen des Fensterrahmens
+    - OHNE jemals WM_SETICON oder eine Icon-Ressource anzufassen (das
+    tatsaechliche, von pywebview bereits korrekt aus der .exe extrahierte
+    Fenster-Icon - und damit die Taskleisten-/Alt+Tab-Darstellung - bleibt
+    dadurch unveraendert)."""
+    calls: dict[str, list] = {"get": [], "set": [], "pos": []}
+    existing_ex_style = 0x00010000  # ein beliebiges, bereits gesetztes Fremd-Bit
 
     class _FakeUser32:
-        def SendMessageW(self, hwnd, msg, wparam, lparam):
-            calls.append((hwnd, msg, wparam, lparam))
+        def GetWindowLongW(self, hwnd, index):
+            calls["get"].append((hwnd, index))
+            return existing_ex_style
+
+        def SetWindowLongW(self, hwnd, index, value):
+            calls["set"].append((hwnd, index, value))
+            return existing_ex_style
+
+        def SetWindowPos(self, hwnd, insert_after, x, y, cx, cy, flags):
+            calls["pos"].append((hwnd, insert_after, x, y, cx, cy, flags))
+            return True
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"user32": _FakeUser32()})(), raising=False)
+
+    run._remove_title_bar_icon(_FakeWindow())
+
+    assert calls["get"] == [(12345, run._GWL_EXSTYLE)]
+    # Das vorher gesetzte Fremd-Bit bleibt erhalten, WS_EX_DLGMODALFRAME
+    # wird zusaetzlich (nicht ersetzend) gesetzt.
+    assert calls["set"] == [(12345, run._GWL_EXSTYLE, existing_ex_style | run._WS_EX_DLGMODALFRAME)]
+    assert len(calls["pos"]) == 1
+    flags = calls["pos"][0][6]
+    assert flags & run._SWP_FRAMECHANGED
+    assert flags & run._SWP_NOMOVE
+    assert flags & run._SWP_NOSIZE
+    assert flags & run._SWP_NOZORDER
+
+
+def test_remove_title_bar_icon_never_touches_wm_seticon_or_window_icon(monkeypatch) -> None:
+    """Regressionsschutz fuer genau den gefundenen Root Cause: diese
+    Funktion darf NIE wieder WM_SETICON senden - das ist exakt der Wert,
+    den die Windows-Taskleiste fuer das Icon des laufenden Fensters
+    liest."""
+    calls: list[tuple] = []
+
+    class _FakeUser32:
+        def GetWindowLongW(self, hwnd, index):
+            return 0
+
+        def SetWindowLongW(self, hwnd, index, value):
+            return 0
+
+        def SetWindowPos(self, *args):
+            return True
+
+        def SendMessageW(self, *args):
+            calls.append(args)
             return 0
 
     import ctypes as ctypes_module
@@ -707,19 +758,183 @@ def test_remove_title_bar_icon_sends_wm_seticon_with_a_real_transparent_handle(
 
     run._remove_title_bar_icon(_FakeWindow())
 
-    assert len(calls) == 2
-    assert calls[0][:3] == (12345, run._WM_SETICON, run._ICON_SMALL)
-    assert calls[1][:3] == (12345, run._WM_SETICON, run._ICON_BIG)
-    # Echtes Icon-Handle, kein NULL (siehe Docstring-Begruendung oben) -
-    # und beide Aufrufe nutzen dasselbe Handle.
-    assert calls[0][3] != 0
-    assert calls[0][3] == calls[1][3]
+    assert calls == []
 
 
 def test_remove_title_bar_icon_never_raises_when_native_handle_missing() -> None:
     """Rein kosmetische Funktion - darf den App-Start nie gefaehrden."""
     run._remove_title_bar_icon(object())  # kein .native Attribut
     run._remove_title_bar_icon(None)
+
+
+def test_remove_title_bar_icon_also_sets_form_show_icon_false(monkeypatch) -> None:
+    """ERGAENZUNG (04.10., Owner-Direktive "... NATIVES MINI-LOGO
+    ENTFERNEN"): per echtem Owner-Screenshot bestaetigt, dass der
+    WS_EX_DLGMODALFRAME-Win32-Trick allein unter Windows 11 nicht mehr
+    zuverlaessig wirkt. `Form.ShowIcon = False` ist die zusaetzliche,
+    von WinForms selbst offiziell unterstuetzte Ergaenzung - prueft, dass
+    sie tatsaechlich gesetzt wird, OHNE den bestehenden Win32-Fix zu
+    ersetzen (beide Tests oben bleiben weiterhin gueltig)."""
+
+    class _FakeUser32:
+        def GetWindowLongW(self, hwnd, index):
+            return 0
+
+        def SetWindowLongW(self, hwnd, index, value):
+            return 0
+
+        def SetWindowPos(self, *args):
+            return True
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"user32": _FakeUser32()})(), raising=False)
+
+    # `_FakeWindow.native` ist eine seiteneigene, geteilte `_FakeNative`-
+    # Instanz (Klassenattribut, siehe oben) - keine Vorab-Annahme ueber
+    # ihren Zustand treffen (andere Tests in dieser Datei koennten bereits
+    # zuvor gelaufen sein), nur das tatsaechliche Ergebnis dieses Aufrufs
+    # pruefen.
+    window = _FakeWindow()
+    run._remove_title_bar_icon(window)
+
+    assert window.native.ShowIcon is False
+
+
+def test_remove_title_bar_icon_show_icon_failure_does_not_raise() -> None:
+    """Rein kosmetisch - ein Fehler beim Setzen von `ShowIcon` (z. B. ein
+    `.native`-Objekt ohne dieses Attribut) darf den App-Start nie
+    gefaehrden, exakt wie beim bestehenden Win32-Pfad."""
+
+    class _NativeWithoutShowIcon:
+        class Handle:
+            @staticmethod
+            def ToInt32() -> int:
+                return 12345
+
+        # Absichtlich KEIN beschreibbares ShowIcon - simuliert z. B. eine
+        # abweichende pywebview-Version ohne echtes WinForms-Form-Objekt.
+        __slots__ = ()
+
+    class _Window:
+        native = _NativeWithoutShowIcon()
+
+    run._remove_title_bar_icon(_Window())
+
+
+# --- _set_app_user_model_id (ROOT-CAUSE-FIX 03.10., Owner-Direktive
+# "WINDOWS-TASKLEISTEN-ICON, FENSTERIDENTITAET UND DESKTOP-VERKNUEPFUNG"):
+# stabile, produktspezifische AppUserModelID fuer den laufenden Prozess -
+# siehe run.py-Docstring zur Begruendung (Shortcuts starten ueber
+# wscript.exe/Start.vbs, nicht direkt Lexono.exe). ---
+
+
+def test_set_app_user_model_id_calls_shell32_with_stable_product_id(monkeypatch) -> None:
+    calls: list[str] = []
+
+    class _FakeShell32:
+        def SetCurrentProcessExplicitAppUserModelID(self, app_id):
+            calls.append(app_id)
+            return 0
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"shell32": _FakeShell32()})(), raising=False)
+
+    run._set_app_user_model_id()
+
+    assert calls == [run._APP_USER_MODEL_ID]
+    # Stabil (nicht leer/generisch) und im von Microsoft vorgegebenen
+    # Format ("Company.Product", <=128 Zeichen gesamt).
+    assert "." in run._APP_USER_MODEL_ID
+    assert len(run._APP_USER_MODEL_ID) <= 128
+
+
+def test_set_app_user_model_id_never_raises_without_windows_shell32(monkeypatch) -> None:
+    """Rein kosmetische Shell-Integration - darf den App-Start nie
+    gefaehrden, selbst wenn `shell32`/die Funktion fehlt (z. B. Tests auf
+    einer Nicht-Windows-CI-Maschine)."""
+    import ctypes as ctypes_module
+
+    class _EmptyWindll:
+        pass
+
+    monkeypatch.setattr(ctypes_module, "windll", _EmptyWindll(), raising=False)
+
+    run._set_app_user_model_id()
+
+
+# --- _hide_console_window (ROOT-CAUSE-FIX 03.10., zweiter per Live-
+# Fenster-Diagnose gefundener Beitrag: eine sichtbare "PseudoConsoleWindow"
+# ohne eigenes Icon bei direktem .exe-Start) ---
+
+
+def test_hide_console_window_calls_show_window_with_sw_hide_for_real_console_handle(
+    monkeypatch,
+) -> None:
+    calls: list[tuple[int, int]] = []
+
+    class _FakeKernel32:
+        def GetConsoleWindow(self):
+            return 999
+
+    class _FakeUser32:
+        def ShowWindow(self, hwnd, cmd):
+            calls.append((hwnd, cmd))
+            return True
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(
+        ctypes_module,
+        "windll",
+        type("W", (), {"kernel32": _FakeKernel32(), "user32": _FakeUser32()})(),
+        raising=False,
+    )
+
+    run._hide_console_window()
+
+    assert calls == [(999, 0)]  # 0 = SW_HIDE
+
+
+def test_hide_console_window_does_nothing_without_a_console(monkeypatch) -> None:
+    """Kein Konsolenfenster (z. B. GetConsoleWindow() liefert 0) - darf
+    keine ShowWindow-Faelschung ausloesen, kein Fehler."""
+    calls: list[tuple[int, int]] = []
+
+    class _FakeKernel32:
+        def GetConsoleWindow(self):
+            return 0
+
+    class _FakeUser32:
+        def ShowWindow(self, hwnd, cmd):
+            calls.append((hwnd, cmd))
+            return True
+
+    import ctypes as ctypes_module
+
+    monkeypatch.setattr(
+        ctypes_module,
+        "windll",
+        type("W", (), {"kernel32": _FakeKernel32(), "user32": _FakeUser32()})(),
+        raising=False,
+    )
+
+    run._hide_console_window()
+
+    assert calls == []
+
+
+def test_hide_console_window_never_raises_without_windows_kernel32(monkeypatch) -> None:
+    """Rein kosmetisch - darf den App-Start nie gefaehrden."""
+    import ctypes as ctypes_module
+
+    class _EmptyWindll:
+        pass
+
+    monkeypatch.setattr(ctypes_module, "windll", _EmptyWindll(), raising=False)
+
+    run._hide_console_window()
 
 
 class _FakeSetupResult:

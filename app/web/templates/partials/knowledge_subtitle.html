@@ -1,0 +1,17 @@
+{# Kategoriespezifischer Untertitel als eigenes Out-of-Band-Swap-Ziel
+   (26.09., siehe partials/knowledge_categories.html-Kommentar fuer den
+   vollen Befund - derselbe Synchronisations-Bug betraf auch diesen
+   Untertitel, nicht nur die Kacheln).
+
+   ECHTE KORREKTUR (26.09., zweite Referenzrunde): zeigt jetzt IMMER nur
+   das kurze Kategorie-Label (z. B. "Gesetze & Normen", auch fuer "Alle
+   Inhalte") - die laengere erklaerende Beschreibung lebt seit dieser
+   Runde in einer eigenen Zeile darunter, siehe
+   partials/knowledge_description.html (Referenzabgleich §6: "Icon /
+   Kanzleiwissen / Gesetze & Normen / darunter eine kurze erklaerende
+   Beschreibung" - zwei getrennte Zeilen, nicht eine). #}
+<div class="topbar__meta" id="knowledge-subtitle"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {% for key, label, _ in categories %}
+    {% if key == active_category %}{{ label }}{% endif %}
+  {% endfor %}
+</div>

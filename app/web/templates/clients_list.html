@@ -2,14 +2,31 @@
 {% import "_icons.html" as icons %}
 {% block title %}Mandantendatenbank{% endblock %}
 {% block content %}
-  {# Titel bewusst "Mandanten" (nicht mehr "Mandantendatenbank", 14.09.):
-     identisch zum Navigationspunkt in der Sidebar UND zur Referenz
-     (assets/ux-ui/29_mandanten_uebersicht.png) - vorher wich die
-     Seitenueberschrift als einzige von beidem ab. #}
-  <div class="topbar">
-    <h1 class="topbar__title">Mandanten</h1>
-    <div class="topbar__meta">
-      <strong>{{ rows|length }}</strong> Mandant{{ "en" if rows|length != 1 else "" }} in dieser Ansicht
+  {# Vollstaendig neu aufgebaut (03.10., Owner-Direktive "REFERENZGETREUE
+     MANDANTENUEBERSICHT", Referenzabgleich `29_mandanten_uebersicht.png`)
+     nach EXAKT demselben, bereits etablierten und verifizierten Muster wie
+     die Akten-Startseite (matters_list.html) - Topbar-Icon-Zeile,
+     freistehende Filterleiste, eigenstaendige Tabellenkarte mit fixiertem
+     Kopf + immer sichtbarer Pagination. Die dafuer genutzten CSS-Klassen
+     (`.matters-filter-bar`/`.matters-table-card`/`.matters-pagination*`/
+     `.draft-page--tight`) sind bereits rein generische Komponentenstile
+     OHNE Akten-spezifische Kopplung (gegengeprueft, 03.10.) - bewusst
+     WIEDERVERWENDET statt dupliziert (Owner-Direktive Phase A Regel 3:
+     "Keine neue Architektur einführen, wenn vorhandene Komponenten
+     ausreichen"). #}
+  <div class="topbar topbar--compact">
+    <div class="topbar__icon-row">
+      <span class="topbar__icon">{{ icons.users(class_="icon") }}</span>
+      <div class="topbar__heading">
+        <h1 class="topbar__title">Mandanten</h1>
+        <p class="topbar__subtitle">Alle Mandanten auf einen Blick. Verwalten Sie Ihre Mandantendaten und greifen Sie schnell auf zugehörige Akten zu.</p>
+      </div>
+      <div class="topbar__actions">
+        <button type="button" class="btn btn--primary"
+                onclick="document.getElementById('create-client-modal').showModal()">
+          {{ icons.plus(class_="icon") }} Neuer Mandant
+        </button>
+      </div>
     </div>
   </div>
 
@@ -33,65 +50,55 @@
     </div>
   {% endif %}
 
-  <div class="draft-page">
-    <div class="instructions-panel">
-      {# Kein zusaetzliches Panel-<h2>: die Seite hat bereits das <h1>
-         "Mandanten" im Topbar (s.o.), ein zweites "Mandanten" direkt
-         darunter waere eine reine Wiederholung ohne Informationswert -
-         anders als bei anderen Seiten, deren Panel-Titel den jeweiligen
-         Panelinhalt benennen (z.B. "Verknüpfte Akten", "Vorlagen"). #}
-      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-        <button type="button" class="btn btn--primary"
-                onclick="document.getElementById('create-client-modal').showModal()">
-          {{ icons.plus(class_="icon") }} Mandant anlegen
-        </button>
-      </div>
+  {# Filterleiste (03.10., Referenzabgleich §3.3): vier echte Elemente -
+     Suche/Kategorie(Mandanten-Typ)/Status/Sortierung. ECHTER FUND beim
+     Bildabgleich: die Referenz-Spalte "Kategorie" zeigt "Privatperson"/
+     "Unternehmen" - ein fundamental ANDERER Wert als das bestehende
+     `practice_area`-Feld (Rechtsgebiet) - siehe app/models/client.py fuer
+     die volle Herleitung des neuen `client_type`-Felds. Die vorher hier
+     sichtbaren "Rechtsgebiet"/"Bearbeiter"-Filter sind dadurch NICHT
+     verloren (beide Query-Parameter funktionieren serverseitig
+     unveraendert weiter, siehe app/clients/service.py), stehen nur nicht
+     mehr als eigene Dropdowns in dieser auf die Referenz reduzierten
+     Zeile - eine bewusste, dokumentierte Entscheidung (siehe
+     DECISIONS.md), kein Datenverlust. #}
+  <form method="get" action="/dashboard/clients" class="matters-filter-bar">
+    <input type="hidden" name="practice_area" value="{{ practice_area }}" />
+    <input type="hidden" name="responsible_user_id" value="{{ responsible_user_id }}" />
+    <div class="clients-search-bar matters-filter-bar__search">
+      <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+      <input type="text" name="q" value="{{ search }}" placeholder="Mandanten suchen …" />
+    </div>
+    <select name="client_type" onchange="this.form.submit()" aria-label="Nach Kategorie filtern">
+      <option value="">Alle Mandanten</option>
+      {% for type_option in client_types %}
+        <option value="{{ type_option }}" {% if client_type == type_option %}selected{% endif %}>{{ type_option }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" onchange="this.form.submit()" aria-label="Nach Status filtern">
+      <option value="all" {% if status == "all" %}selected{% endif %}>Alle Status</option>
+      <option value="active" {% if status == "active" %}selected{% endif %}>Aktiv</option>
+      <option value="archived" {% if status == "archived" %}selected{% endif %}>Inaktiv</option>
+    </select>
+    <select name="sort" onchange="this.form.submit()" aria-label="Sortierung">
+      <option value="updated_desc" {% if sort == "updated_desc" %}selected{% endif %}>Zuletzt aktualisiert</option>
+      <option value="name_asc" {% if sort == "name_asc" %}selected{% endif %}>Name (A–Z)</option>
+      <option value="name_desc" {% if sort == "name_desc" %}selected{% endif %}>Name (Z–A)</option>
+    </select>
+  </form>
 
-      <div class="clients-toolbar">
-        <div class="filters" style="margin-top: 0;">
-          {% for key, label in [("active", "Aktiv"), ("archived", "Archiviert"), ("all", "Alle")] %}
-            <form method="get" action="/dashboard/clients">
-              <input type="hidden" name="q" value="{{ search }}" />
-              <input type="hidden" name="practice_area" value="{{ practice_area }}" />
-              <input type="hidden" name="responsible_user_id" value="{{ responsible_user_id }}" />
-              <input type="hidden" name="status" value="{{ key }}" />
-              <button type="submit" class="filter-tab{% if status == key %} filter-tab--active{% endif %}">{{ label }}</button>
-            </form>
-          {% endfor %}
-        </div>
-
-        <form method="get" action="/dashboard/clients" class="clients-search-bar">
-          <input type="hidden" name="status" value="{{ status }}" />
-          <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
-          <input type="text" name="q" value="{{ search }}" placeholder="Name oder Mandantennummer…" />
-          <select name="practice_area" onchange="this.form.submit()">
-            <option value="">Alle Rechtsgebiete</option>
-            {% for area in practice_areas %}
-              <option value="{{ area }}"{% if area == practice_area %} selected{% endif %}>{{ area }}</option>
-            {% endfor %}
-          </select>
-          <select name="responsible_user_id" onchange="this.form.submit()">
-            <option value="">Alle Bearbeiter</option>
-            {% for user in users %}
-              <option value="{{ user.id }}"{% if user.id == responsible_user_id %} selected{% endif %}>{{ user.display_name or user.email }}</option>
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn">Filtern</button>
-        </form>
-      </div>
-
+  <div class="draft-page draft-page--tight">
+    <div class="matters-table-card">
       <div class="table-container">
-        <table class="draft-table">
+        <table class="draft-table draft-table--compact">
           <thead>
             <tr>
               <th>Name</th>
-              <th>Mandantennr.</th>
-              <th>Rechtsgebiet</th>
-              <th>Bearbeiter</th>
-              <th>E-Mail</th>
-              <th>Telefon</th>
+              <th>Kategorie</th>
+              <th>Ort</th>
+              <th>Kontakt</th>
               <th>Aktive Akten</th>
-              <th>Letzter Kontakt</th>
+              <th>Letzte Aktivität</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -99,28 +106,39 @@
           <tbody>
             {% for row in rows %}
               <tr onclick="window.location='/dashboard/clients/{{ row.client.id }}'">
-                <td>{{ row.client.name }}</td>
-                <td class="mono">{{ row.client.client_number or "–" }}</td>
-                <td>{{ row.client.practice_area or "–" }}</td>
-                <td>{{ (row.client.responsible_user.display_name or row.client.responsible_user.email) if row.client.responsible_user else "–" }}</td>
-                <td>{{ row.client.contact_email or "–" }}</td>
-                <td>{{ row.client.contact_phone or "–" }}</td>
+                <td>
+                  <div class="client-name-cell">
+                    <span class="client-avatar client-avatar--{{ client_avatar_color_index(row.client.id) }}">
+                      {{ client_initials(row.client.name) }}
+                    </span>
+                    <span class="client-name-cell__name">{{ row.client.name }}</span>
+                  </div>
+                </td>
+                <td>{{ row.client.client_type or "–" }}</td>
+                <td>{{ row.client.city or "–" }}</td>
+                <td>
+                  <div class="client-contact-cell">
+                    <span>{{ row.client.contact_email or "–" }}</span>
+                    {% if row.client.contact_phone %}
+                      <span class="client-contact-cell__secondary">{{ row.client.contact_phone }}</span>
+                    {% endif %}
+                  </div>
+                </td>
                 <td class="mono">{{ row.open_matter_count }}</td>
-                <td class="mono">{{ row.last_contact_at.strftime("%d.%m.%Y") if row.last_contact_at else "–" }}</td>
+                <td class="mono">{{ (row.last_contact_at or row.client.updated_at).strftime("%d.%m.%Y") }}</td>
                 <td>
                   <span class="tag {{ 'tag--matched' if row.client.status == 'active' else 'tag--outbound' }}">
-                    <span class="tag__dot"></span>{{ "aktiv" if row.client.status == "active" else "archiviert" }}
+                    <span class="tag__dot"></span>{{ "Aktiv" if row.client.status == "active" else "Inaktiv" }}
                   </span>
                 </td>
                 {# Schnellzugriff-Menü (19.09., UI/UX-Referenzabgleich
-                   "29_mandanten_uebersicht.png", derselbe Fund/dasselbe
-                   Muster wie zuvor bei matters_list.html - siehe dort fuer
-                   die volle Begruendung inkl. des entdeckten [hidden]-CSS-
-                   Bugs, hier von Anfang an korrekt). "Löschen" bewusst
-                   NICHT hier (existiert echt, aber mit einer "nur ohne
-                   verknuepfte Akten"-Bedingung + Bestaetigungsdialog auf
-                   der Detailseite - dort mit vollem Kontext sicherer als
-                   in einem kompakten Listen-Menü). #}
+                   "29_mandanten_uebersicht.png", unveraendert aus der
+                   vorherigen Fassung dieser Seite - siehe matters_list.html
+                   fuer dasselbe, bereits etablierte Muster). "Löschen"
+                   bewusst NICHT hier (existiert echt, aber mit einer "nur
+                   ohne verknuepfte Akten"-Bedingung + Bestaetigungsdialog
+                   auf der Detailseite - dort mit vollem Kontext sicherer
+                   als in einem kompakten Listen-Menü). #}
                 <td class="row-menu-cell" onclick="event.stopPropagation();">
                   <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen"
                           onclick="Lexono.toggleRowMenu(this)">
@@ -149,36 +167,79 @@
                 </td>
               </tr>
             {% else %}
-              <tr><td colspan="10" class="empty-state">Keine Mandanten in dieser Ansicht.</td></tr>
+              <tr><td colspan="8" class="empty-state">
+                {% if search or practice_area or client_type or responsible_user_id or status != "all" %}
+                  Keine Mandanten gefunden, die zu den aktuellen Filtern passen.
+                {% else %}
+                  Noch keine Mandanten vorhanden. Legen Sie oben einen Mandanten manuell an, oder importieren Sie eine CSV-/Excel-Datei.
+                {% endif %}
+              </td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+      {% if total_pages > 1 %}
+        <div class="matters-pagination">
+          <div class="matters-pagination__info">
+            {{ rows|length }} von {{ total_count }} Mandant{{ "en" if total_count != 1 else "" }}
+          </div>
+          <div class="matters-pagination__pages">
+            <a class="matters-pagination__nav-btn"
+               {% if page <= 1 %}aria-disabled="true"{% endif %}
+               href="?q={{ search }}&status={{ status }}&client_type={{ client_type }}&practice_area={{ practice_area }}&responsible_user_id={{ responsible_user_id }}&sort={{ sort }}&page={{ page - 1 }}&page_size={{ page_size }}"
+               aria-label="Vorherige Seite">{{ icons.chevron_left(class_="icon") }}</a>
+            {% for p in page_numbers %}
+              {% if p == "…" %}
+                <span class="matters-pagination__ellipsis">…</span>
+              {% else %}
+                <a class="matters-pagination__page-btn{% if p == page %} matters-pagination__page-btn--active{% endif %}"
+                   href="?q={{ search }}&status={{ status }}&client_type={{ client_type }}&practice_area={{ practice_area }}&responsible_user_id={{ responsible_user_id }}&sort={{ sort }}&page={{ p }}&page_size={{ page_size }}">{{ p }}</a>
+              {% endif %}
+            {% endfor %}
+            <a class="matters-pagination__nav-btn"
+               {% if page >= total_pages %}aria-disabled="true"{% endif %}
+               href="?q={{ search }}&status={{ status }}&client_type={{ client_type }}&practice_area={{ practice_area }}&responsible_user_id={{ responsible_user_id }}&sort={{ sort }}&page={{ page + 1 }}&page_size={{ page_size }}"
+               aria-label="Nächste Seite">{{ icons.chevron_right(class_="icon") }}</a>
+          </div>
+          <form method="get" action="/dashboard/clients" class="matters-pagination__size-form">
+            <input type="hidden" name="q" value="{{ search }}" />
+            <input type="hidden" name="status" value="{{ status }}" />
+            <input type="hidden" name="client_type" value="{{ client_type }}" />
+            <input type="hidden" name="practice_area" value="{{ practice_area }}" />
+            <input type="hidden" name="responsible_user_id" value="{{ responsible_user_id }}" />
+            <input type="hidden" name="sort" value="{{ sort }}" />
+            <select name="page_size" class="matters-pagination__size-select" onchange="this.form.submit()" aria-label="Mandanten pro Seite">
+              {% for size in [10, 20, 50] %}
+                <option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }} pro Seite</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      {% endif %}
     </div>
 
-    <script>
-      window.Lexono = window.Lexono || {};
-      Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
-        var menu = trigger.nextElementSibling;
-        var wasOpen = !menu.hidden;
-        document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
-        menu.hidden = wasOpen;
-      };
-      document.addEventListener("click", function () {
-        document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
-      });
-    </script>
-
-    {# Hierarchie-Korrektur (UI/UX-Audit 14.09., echter Screenshot-Abgleich
-       gegen assets/ux-ui/29_mandanten_uebersicht.png): der CSV-/Excel-Import
-       stand bisher als grosses Panel GANZ OBEN und schob die eigentliche
-       Mandantenliste - den Hauptinhalt der Seite - komplett unter den
-       sichtbaren Bereich. Jetzt unterhalb der Liste UND standardmaessig
-       zugeklappt: die Liste ist sofort sichtbar, der Import bleibt mit
-       einem Klick erreichbar (Funktion unveraendert, nichts entfernt).
-       Nach einem Import-Versuch bleibt der Bereich aufgeklappt, damit das
-       Ergebnis-Banner oben und der zugehoerige Bereich zusammenpassen. #}
-    <div class="instructions-panel">
+    {# ECHTER FUND (03.10., Pixel-/DOM-Abgleich per CDP-Screenshot gegen
+       `29_mandanten_uebersicht.png`): der CSV-/Excel-Import stand zuvor in
+       einem EIGENEN, zweiten `.draft-page`-Geschwisterblock NACH diesem
+       `.draft-page--tight`-Wrapper. `.draft-page` traegt `flex: 1` (geteilte
+       Basisklasse, siehe deren Kommentar) - zwei direkte Flex-Kinder
+       desselben Eltern-Containers mit je `flex: 1` teilen sich die
+       verfuegbare Resthoehe automatisch HAELFTIG, UNABHAENGIG vom
+       tatsaechlichen Platzbedarf. Ergebnis (per Screenshot bewiesen):
+       `.matters-table-card` bekam nur die Haelfte der eigentlich
+       verfuegbaren Hoehe und musste dadurch intern scrollen (nur ~5 von 10
+       Zeilen sichtbar), waehrend die zweite Haelfte als groesstenteils
+       leerer Raum unterhalb des zugeklappten Import-Akkordeons sichtbar
+       blieb - exakt das von der Owner-Direktive verbotene Muster
+       ("weder kuenstlich klein mit Leerraum darunter noch ueberlaufend").
+       Fix an der Wurzel (nicht per zusaetzlichem CSS-Override): der
+       Import-Block ist jetzt ein ZWEITES Kind INNERHALB dieses einen
+       `.draft-page--tight`-Flex-Containers, mit eigenem `flex: 0 0 auto`
+       (siehe `.clients-import-panel` in app.css) statt des geerbten
+       `flex: 1` - `.matters-table-card` (weiterhin `flex: 1`) bekommt
+       dadurch wieder die GESAMTE Resthoehe. #}
+    <div class="instructions-panel clients-import-panel">
       <details class="manual-edit-toggle"{% if import_result or import_error %} open{% endif %}>
         <summary>CSV-/Excel-Import</summary>
         <p class="settings-section__hint">
@@ -202,6 +263,20 @@
     </div>
   </div>
 
+  <script>
+    window.Lexono = window.Lexono || {};
+    Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
+      var menu = trigger.nextElementSibling;
+      var wasOpen = !menu.hidden;
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      menu.hidden = wasOpen;
+    };
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+  </script>
+
+
   <dialog id="create-client-modal" class="modal">
     <div class="modal__header">
       <h3 class="modal__title">Mandant anlegen</h3>
@@ -217,6 +292,19 @@
         <label class="form-label">
           Mandantennummer *
           <input type="text" name="client_number" required />
+        </label>
+        <label class="form-label">
+          Kategorie
+          <select name="client_type">
+            <option value="">— Keine Angabe —</option>
+            {% for type_option in client_types %}
+              <option value="{{ type_option }}">{{ type_option }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="form-label">
+          Ort
+          <input type="text" name="city" placeholder="z. B. Berlin" />
         </label>
         <label class="form-label">
           Rechtsgebiet

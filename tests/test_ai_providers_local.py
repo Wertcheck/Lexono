@@ -66,6 +66,109 @@ def test_sachverhalt_includes_document_excerpts(db_session: Session) -> None:
     assert result.has_document_context is True
 
 
+def test_sachverhalt_includes_document_content_beyond_160_characters(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND, SYNTHETISCH REPRODUZIERT (05.10., Owner-Direktive
+    "Vollstaendiger UX- und Workflow-Audit"): `_build_sachverhalt` rief
+    bisher `build_snippet(text[:500], "")` auf - mit leerer Suchanfrage
+    griff `build_snippet`s SUCHTREFFER-Vorschau-Fallback
+    (`_SNIPPET_FALLBACK_LENGTH = 160`), nicht die hier beabsichtigten 500
+    Zeichen. Jedes Dokument > 160 Zeichen wurde dadurch faktisch nach dem
+    Briefkopf/der Anrede abgeschnitten, BEVOR der eigentliche inhaltliche
+    Absatz (hier: Betrag/Begruendung) ueberhaupt erreicht wurde - live an
+    einem synthetischen Einspruchsschreiben reproduziert (Betrag "4.500,00
+    EUR" fehlte im generierten Entwurf vollstaendig, ein Bescheiddatum
+    wurde mitten im Jahr abgeschnitten). Der bisherige Test
+    `test_sachverhalt_includes_document_excerpts` (oben) nutzte nur einen
+    31 Zeichen langen Dokumenttext und konnte diesen Fehler strukturell
+    nie aufdecken - dieser Test nutzt bewusst einen laengeren, realistisch
+    strukturierten Text (> 160, < 500 Zeichen)."""
+    matter = _matter(db_session, title="Testakte")
+    long_text = (
+        "EINSPRUCH GEGEN STEUERBESCHEID\n"
+        "Finanzamt Musterstadt\n"
+        "Az.: 123/456/7890\n"
+        "Sehr geehrte Damen und Herren,\n"
+        "hiermit lege ich gegen den Steuerbescheid vom 01.09.2026 fuer das\n"
+        "Veranlagungsjahr 2025 form- und fristgerecht Einspruch ein.\n"
+        "Begruendung: Die Betriebsausgaben in Hoehe von 4.500,00 EUR fuer\n"
+        "Fortbildungsmassnahmen wurden nicht beruecksichtigt."
+    )
+    assert len(long_text) > 160  # Testvoraussetzung: muss den alten Fehler ueberhaupt treffen koennen
+    document = Document(
+        matter=matter, file_path="/tmp/x.pdf", extracted_text=long_text, classified_type="Steuerbescheid",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    # Das vollstaendige Datum - nicht mitten im Jahr abgeschnitten.
+    assert "01.09.2026" in result.sachverhalt
+    # Inhalt NACH Zeichen 160 (Betrag/Begruendung) muss ankommen.
+    assert "4.500,00 EUR" in result.sachverhalt
+    assert "Fortbildungsmassnahmen" in result.sachverhalt
+
+
+def test_document_excerpt_is_truncated_with_ellipsis_beyond_max_chars(
+    db_session: Session,
+) -> None:
+    """Gegenprobe: eine Obergrenze (`_MAX_DOCUMENT_EXCERPT_CHARS`) bleibt
+    bestehen - nur die fehlerhafte Zwischenkuerzung wurde entfernt, keine
+    Entgrenzung. Grenzwert selbst 05.10. mit echten Produktionsdaten neu
+    gemessen und auf 5000 Zeichen angehoben (siehe dortiger Kommentar) -
+    dieser Test prueft nur das PRINZIP (Kappung + Ellipse an der
+    tatsaechlich konfigurierten Grenze), nicht einen fest einprogrammierten
+    Zahlenwert."""
+    from app.ai_providers.local_ai_provider import _MAX_DOCUMENT_EXCERPT_CHARS
+
+    matter = _matter(db_session, title="Testakte")
+    long_text = "A" * (_MAX_DOCUMENT_EXCERPT_CHARS + 100)
+    document = Document(
+        matter=matter, file_path="/tmp/x.pdf", extracted_text=long_text, classified_type="Sonstiges",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    assert "A" * _MAX_DOCUMENT_EXCERPT_CHARS in result.sachverhalt
+    assert "A" * (_MAX_DOCUMENT_EXCERPT_CHARS + 1) not in result.sachverhalt
+    assert "…" in result.sachverhalt
+
+
+def test_document_excerpt_captures_the_full_real_world_test_document(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND, mit realen Produktionsdaten gemessen (05.10.): die
+    zuvor fest verdrahtete 500-Zeichen-Grenze schnitt bei einem realen
+    Testdokument (2638 Zeichen) die eigentliche Aufgabenstellung am Ende
+    des Dokuments komplett ab. Reproduziert mit einem realistisch
+    strukturierten, laengeren Dokument (Einleitung + Sachverhalt +
+    Aufgabenstellung am Ende, > 500 aber < 5000 Zeichen) - die
+    Aufgabenstellung am Ende MUSS im Sachverhalt ankommen."""
+    matter = _matter(db_session, title="Testakte")
+    long_text = (
+        "Einleitung. " * 50  # > 500 Zeichen Fuellwortlaut vor der eigentlichen Anweisung
+        + "AUFGABENSTELLUNG AM ENDE DES DOKUMENTS: Bitte einen Entwurf erstellen."
+    )
+    assert len(long_text) > 500
+    assert len(long_text) < 5000
+    document = Document(
+        matter=matter, file_path="/tmp/x.pdf", extracted_text=long_text, classified_type="Sonstiges",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    assert "AUFGABENSTELLUNG AM ENDE DES DOKUMENTS" in result.sachverhalt
+
+
 def test_has_document_context_is_false_without_any_attached_document(
     db_session: Session,
 ) -> None:

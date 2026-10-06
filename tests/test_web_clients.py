@@ -7,6 +7,7 @@ Gleiches Testmuster wie tests/test_web_schriftsatz.py: In-Memory-SQLite
 from __future__ import annotations
 
 import io
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -18,7 +19,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db.session import get_db
 from app.main import app
-from app.models import Client, Matter, Message
+from app.models import Client, Document, Matter, Message, Note
 from app.models.base import Base
 from tests.auth_test_utils import create_test_user, extract_csrf, login, login_as_admin, seed_roles
 
@@ -93,8 +94,26 @@ def _csrf(test_client: TestClient, path: str = "/dashboard/clients") -> str:
     return extract_csrf(page.text)
 
 
-def _create_client_row(db_session: Session, *, name: str = "Muster GmbH", number: str = "M-1") -> Client:
-    row = Client(name=name, client_number=number, status="active")
+def _create_client_row(
+    db_session: Session,
+    *,
+    name: str = "Muster GmbH",
+    number: str = "M-1",
+    contact_email: str | None = None,
+    contact_phone: str | None = None,
+    client_type: str | None = None,
+    city: str | None = None,
+    status: str = "active",
+) -> Client:
+    row = Client(
+        name=name,
+        client_number=number,
+        contact_email=contact_email,
+        contact_phone=contact_phone,
+        client_type=client_type,
+        city=city,
+        status=status,
+    )
     db_session.add(row)
     db_session.commit()
     db_session.refresh(row)
@@ -153,15 +172,36 @@ def test_clients_page_search_filters_by_name(client: TestClient, db_session: Ses
     assert "Anderer Mandant" not in response.text
 
 
-def test_clients_page_hides_archived_by_default(client: TestClient, db_session: Session) -> None:
+def test_clients_page_shows_archived_by_default_matching_reference(
+    client: TestClient, db_session: Session
+) -> None:
+    """Verhaltensaenderung (03.10., Owner-Direktive "REFERENZGETREUE
+    MANDANTENUEBERSICHT"): der Default-Status wurde bewusst von "active" auf
+    "all" umgestellt, weil die verbindliche Referenz `29_mandanten_uebersicht.png`
+    in der Default-Ansicht sowohl "Aktiv"- als auch "Inaktiv"-Mandanten zeigt
+    (z. B. "Schulz, Lisa" mit Status "Inaktiv") - siehe app/web/clients_router.py,
+    `clients_list_page`-Docstring. Der vorher hier getestete Verhalten
+    ("archiviert standardmaessig ausgeblendet") ist damit absichtlich nicht
+    mehr der Default; die Filterfaehigkeit selbst bleibt erhalten (siehe
+    test_clients_page_active_filter_hides_archived unten)."""
     row = _create_client_row(db_session, name="Archiviert GmbH", number="AR-1")
     row.status = "archived"
     db_session.commit()
+
     response = client.get("/dashboard/clients")
-    assert "Archiviert GmbH" not in response.text
+    assert "Archiviert GmbH" in response.text
 
     response_all = client.get("/dashboard/clients", params={"status": "all"})
     assert "Archiviert GmbH" in response_all.text
+
+
+def test_clients_page_active_filter_hides_archived(client: TestClient, db_session: Session) -> None:
+    row = _create_client_row(db_session, name="Archiviert KG", number="AR-2")
+    row.status = "archived"
+    db_session.commit()
+
+    response = client.get("/dashboard/clients", params={"status": "active"})
+    assert "Archiviert KG" not in response.text
 
 
 # --- Anlegen ---
@@ -266,9 +306,17 @@ def test_client_detail_page_shows_tab_navigation(client: TestClient, db_session:
 
     response = client.get(f"/dashboard/clients/{row.id}")
 
-    for tab_name in ["uebersicht", "akten", "dokumente", "aufgaben", "notizen", "kommunikation"]:
+    # "uebersicht" -> "client-uebersicht" (05.10., Owner-Direktive "LONG-RUN
+    # PRODUCT QUALITY PASS" Phase D): kollidierte mit derselben generischen
+    # ID auf matter_detail.html (siehe dortiger Testdocstring) - eine fuer
+    # diese Seite noetige ID-Selektor-Regel in app.css ueberschrieb per
+    # hoeherer CSS-Spezifitaet auch hier das `[hidden]`-basierte Tab-
+    # Umschalten (live per CDP reproduziert: der Uebersicht-Tab blieb beim
+    # Wechsel zu einem anderen Tab sichtbar).
+    for tab_name in ["client-uebersicht", "akten", "dokumente", "aufgaben", "notizen", "kommunikation"]:
         assert f'data-tab="{tab_name}"' in response.text
         assert f'id="tab-{tab_name}"' in response.text
+    assert 'id="tab-uebersicht"' not in response.text
 
 
 def test_client_detail_page_aggregates_tasks_and_deadlines_across_matters(
@@ -368,6 +416,253 @@ def test_client_detail_shows_ai_cta_link_for_single_open_matter(
 
     response = client.get(f"/dashboard/clients/{row.id}")
     assert f"/dashboard/tools/schriftsatz?matter_id={matter.id}" in response.text
+
+
+# --- Individuelle Mandantendetailseite (03.10., Owner-Direktive
+# "INDIVIDUELLE MANDANTENDETAILSEITE", Referenzabgleich
+# `30_mandant_detail.png`) - Header/Stammdaten/Schnellaktionen/Akten-&
+# Dokumentenkarte, siehe tests/test_shell_icons.py fuer die native
+# Windows-Shell-Icon-Extraktion selbst (hier nur die Integration). -----
+
+
+def test_client_detail_header_shows_initials_category_number_and_since_date(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(
+        db_session, name="Müller, Anna", number="M-0001", client_type="Privatperson"
+    )
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert response.status_code == 200
+    assert re.search(r'client-avatar[^"]*">\s*AM\s*<', response.text), "Avatar-Initialen 'AM' nicht gefunden"
+    assert "Privatperson" in response.text
+    assert "Mandantennummer: M-0001" in response.text
+    assert f"Seit {row.created_at.strftime('%d.%m.%Y')}" in response.text
+
+
+def test_client_detail_breadcrumb_links_back_to_clients_overview(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Breadcrumb-Mandant", number="B-1")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert 'href="/dashboard/clients">Mandanten</a>' in response.text
+    assert "Breadcrumb-Mandant" in response.text
+
+
+def test_client_detail_stammdaten_shows_real_fields_and_dash_for_missing(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(
+        db_session,
+        name="Vollstaendig GmbH",
+        number="V-1",
+        client_type="Unternehmen",
+        city="Hamburg",
+        contact_email="kontakt@vollstaendig.test",
+        contact_phone="+49 40 1234567",
+    )
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Hamburg" in response.text
+    assert 'href="mailto:kontakt@vollstaendig.test"' in response.text
+    assert 'href="tel:+49 40 1234567"' in response.text
+
+
+def test_client_detail_stammdaten_shows_dash_for_missing_optional_fields(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Minimal-Mandant", number="MIN-1")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert response.status_code == 200
+    # Kein Telefon/E-Mail hinterlegt - ehrlich als "–" gezeigt, kein
+    # erfundener Wert, kein toter mailto:/tel:-Link ohne Ziel.
+    assert 'href="mailto:"' not in response.text
+    assert 'href="tel:"' not in response.text
+
+
+def test_client_detail_quick_actions_are_present_and_real(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Schnellaktion-Mandant", number="S-1")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Dokument analysieren" in response.text
+    assert "Schreiben erstellen" in response.text
+    assert "Dokument zusammenfassen" in response.text
+    assert "Standard-Funktion hinzufügen" in response.text
+    assert 'href="/dashboard/library/prompts"' in response.text
+
+
+def test_client_detail_akten_card_shows_real_matters_not_hardcoded(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Akten-Mandant", number="AK-1")
+    matter = Matter(
+        client_id=row.id,
+        title="Einkommensteuer 2024",
+        reference_number="001/2024",
+        practice_area="Steuererklärung",
+        status="open",
+    )
+    db_session.add(matter)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "001/2024" in response.text
+    assert "Einkommensteuer 2024" in response.text
+    assert "Steuererklärung" in response.text
+    assert f"/dashboard/matters/{matter.id}" in response.text
+
+
+def test_client_detail_akten_card_empty_state(client: TestClient, db_session: Session) -> None:
+    row = _create_client_row(db_session, name="Aktenloser Mandant", number="AK-2")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Noch keine Akten verknüpft." in response.text
+    assert f"/dashboard/tools/schriftsatz?client_id={row.id}" in response.text
+
+
+def test_client_detail_akten_card_shows_overflow_link_beyond_five(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Viele-Akten-Mandant", number="AK-3")
+    for i in range(6):
+        db_session.add(Matter(client_id=row.id, title=f"Akte {i}", status="open"))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert f"/dashboard/matters?client_id={row.id}" in response.text
+
+
+def test_client_detail_dokumente_card_shows_real_document_with_size_and_type(
+    client: TestClient, db_session: Session
+) -> None:
+    import os
+
+    row = _create_client_row(db_session, name="Dokument-Mandant", number="D-2")
+    matter = Matter(client_id=row.id, title="Akte mit Dokument", status="open")
+    db_session.add(matter)
+    db_session.flush()
+
+    tmp_dir = os.path.join(os.environ.get("TEMP", "/tmp"), "lexono_test_docs")
+    os.makedirs(tmp_dir, exist_ok=True)
+    file_path = os.path.join(tmp_dir, "steuerbescheid_test.pdf")
+    with open(file_path, "wb") as fh:
+        fh.write(b"%PDF-1.4 test content " * 50)  # > 1 KB, real size on disk
+
+    document = Document(
+        matter_id=matter.id,
+        file_path=file_path,
+        original_filename="Steuerbescheid_2024.pdf",
+        classified_type="Bescheid",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Steuerbescheid_2024.pdf" in response.text
+    assert "Bescheid" in response.text
+    assert "KB" in response.text  # echte, von der Datei gelesene Größe
+
+    os.remove(file_path)
+
+
+def test_client_detail_dokumente_card_empty_state(client: TestClient, db_session: Session) -> None:
+    row = _create_client_row(db_session, name="Dokumentloser Mandant", number="D-3")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Keine Dokumente verknüpft." in response.text
+
+
+def test_client_detail_document_missing_file_shows_dash_size_not_crash(
+    client: TestClient, db_session: Session
+) -> None:
+    """Datei verschoben/geloescht - ehrlich "–" statt eines erfundenen
+    Werts oder eines Absturzes (os.path.getsize auf einem nicht
+    existierenden Pfad)."""
+    row = _create_client_row(db_session, name="Verwaistes-Dokument-Mandant", number="D-4")
+    matter = Matter(client_id=row.id, title="Akte", status="open")
+    db_session.add(matter)
+    db_session.flush()
+    document = Document(
+        matter_id=matter.id,
+        file_path="C:/does/not/exist/anymore.pdf",
+        original_filename="Verschwunden.pdf",
+    )
+    db_session.add(document)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert response.status_code == 200
+    assert "Verschwunden.pdf" in response.text
+
+
+def test_client_detail_notizen_card_shows_latest_notes(client: TestClient, db_session: Session) -> None:
+    row = _create_client_row(db_session, name="Notiz-Mandant", number="NO-1")
+    for i in range(4):
+        db_session.add(Note(client_id=row.id, text=f"Notiz {i}", author="anwalt@kanzlei.test"))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "Notiz 3" in response.text  # neueste zuerst
+
+
+def test_client_detail_long_names_and_titles_render_without_error(
+    client: TestClient, db_session: Session
+) -> None:
+    long_name = "Sehr " * 20 + "lange Mandantenbezeichnung GmbH"
+    row = _create_client_row(db_session, name=long_name, number="LONG-1")
+    long_title = "Ausserordentlich " * 10 + "lange Aktenbezeichnung"
+    db_session.add(Matter(client_id=row.id, title=long_title, status="open"))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert response.status_code == 200
+    assert long_name in response.text
+    assert long_title in response.text
+
+
+def test_client_detail_upload_document_modal_only_offered_with_matters(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="Ohne-Akte-Mandant", number="UP-1")
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert "upload-document-modal" not in response.text
+
+    matter = Matter(client_id=row.id, title="Akte", status="open")
+    db_session.add(matter)
+    db_session.commit()
+
+    response_with_matter = client.get(f"/dashboard/clients/{row.id}")
+    assert "upload-document-modal" in response_with_matter.text
+    assert f'<option value="{matter.id}">' in response_with_matter.text
+
+
+def test_client_detail_document_row_menu_offers_analyze_and_summarize(
+    client: TestClient, db_session: Session
+) -> None:
+    row = _create_client_row(db_session, name="KI-Mandant", number="KI-1")
+    matter = Matter(client_id=row.id, title="Akte", status="open")
+    db_session.add(matter)
+    db_session.flush()
+    document = Document(matter_id=matter.id, file_path="/tmp/x.pdf", original_filename="x.pdf")
+    db_session.add(document)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/clients/{row.id}")
+
+    assert f'action="/dashboard/chat/from-document/{document.id}"' in response.text
+    assert 'value="analyze"' in response.text
+    assert 'value="summarize"' in response.text
 
 
 # --- Bearbeiten ---
@@ -606,3 +901,132 @@ def test_unauthenticated_cannot_view_clients_list(db_session: Session) -> None:
         assert "/dashboard/login" in response.headers["location"]
     finally:
         app.dependency_overrides.clear()
+
+
+# --- Referenzabgleich 03.10. ("REFERENZGETREUE MANDANTENUEBERSICHT"):
+#     Kategorie/Ort, Sortierung, Pagination - Phase F der Owner-Direktive
+#     verlangt gezielte Regressionstests fuer genau diese neu eingefuehrte
+#     Funktionalitaet. ---
+
+
+def test_clients_page_empty_list_shows_empty_state(client: TestClient) -> None:
+    response = client.get("/dashboard/clients")
+    assert response.status_code == 200
+    assert "Noch keine Mandanten vorhanden" in response.text
+    # Pagination-Fusszeile bleibt bei genau einer (leeren) Seite ausgeblendet -
+    # exakt dasselbe, bereits verifizierte Verhalten wie matters_list.html
+    # (`{% if total_pages > 1 %}`), bewusst NICHT veraendert.
+    assert "matters-pagination__info" not in response.text
+
+
+def test_clients_page_no_search_results_shows_filtered_empty_state(
+    client: TestClient, db_session: Session
+) -> None:
+    _create_client_row(db_session, name="Vorhandener Mandant", number="S-1")
+    response = client.get("/dashboard/clients", params={"q": "Nichtvorhandener Suchbegriff"})
+    assert "Vorhandener Mandant" not in response.text
+    assert "Keine Mandanten gefunden, die zu den aktuellen Filtern passen." in response.text
+
+
+def test_clients_page_shows_category_and_city(client: TestClient, db_session: Session) -> None:
+    _create_client_row(
+        db_session, name="Mueller, Anna", number="K-1", client_type="Privatperson", city="Berlin"
+    )
+    response = client.get("/dashboard/clients")
+    assert "Privatperson" in response.text
+    assert "Berlin" in response.text
+
+
+def test_clients_page_filters_by_category(client: TestClient, db_session: Session) -> None:
+    _create_client_row(db_session, name="Privatperson Eins", number="K-2", client_type="Privatperson")
+    _create_client_row(db_session, name="Unternehmen Eins", number="K-3", client_type="Unternehmen")
+    response = client.get("/dashboard/clients", params={"client_type": "Unternehmen"})
+    assert "Unternehmen Eins" in response.text
+    assert "Privatperson Eins" not in response.text
+
+
+def test_clients_page_missing_optional_contact_fields_renders_without_error(
+    client: TestClient, db_session: Session
+) -> None:
+    """Weder `contact_email`/`contact_phone` noch `client_type`/`city` sind
+    Pflichtfelder (siehe app/models/client.py) - ein Mandant ganz ohne diese
+    Angaben darf die Seite nicht zum Absturz bringen, sondern muss die
+    Platzhalter ("–") anzeigen."""
+    _create_client_row(db_session, name="Minimal-Mandant", number="MIN-1")
+    response = client.get("/dashboard/clients")
+    assert response.status_code == 200
+    assert "Minimal-Mandant" in response.text
+
+
+def test_clients_page_handles_long_name_and_contact_values(
+    client: TestClient, db_session: Session
+) -> None:
+    long_name = "Rechtsanwaltskanzlei " + "Langername " * 10
+    long_email = "sehr.lange.email.adresse.fuer.diesen.mandanten@" + "beispiel" * 5 + ".de"
+    _create_client_row(
+        db_session,
+        name=long_name,
+        number="LNG-1",
+        contact_email=long_email,
+    )
+    response = client.get("/dashboard/clients")
+    assert response.status_code == 200
+    assert long_name in response.text
+    assert long_email in response.text
+
+
+def test_clients_page_sort_name_asc_and_desc(client: TestClient, db_session: Session) -> None:
+    _create_client_row(db_session, name="Zeta GmbH", number="SORT-1")
+    _create_client_row(db_session, name="Alpha GmbH", number="SORT-2")
+
+    response_asc = client.get("/dashboard/clients", params={"sort": "name_asc"})
+    assert response_asc.text.index("Alpha GmbH") < response_asc.text.index("Zeta GmbH")
+
+    response_desc = client.get("/dashboard/clients", params={"sort": "name_desc"})
+    assert response_desc.text.index("Zeta GmbH") < response_desc.text.index("Alpha GmbH")
+
+
+def test_clients_page_pagination_first_and_last_page(client: TestClient, db_session: Session) -> None:
+    for i in range(25):
+        _create_client_row(db_session, name=f"Mandant {i:02d}", number=f"PG-{i:02d}")
+
+    first_page = client.get("/dashboard/clients", params={"page": 1, "page_size": 10})
+    assert "10 von 25 Mandant" in first_page.text
+
+    last_page = client.get("/dashboard/clients", params={"page": 3, "page_size": 10})
+    assert "5 von 25 Mandant" in last_page.text
+
+    beyond_last_page = client.get("/dashboard/clients", params={"page": 99, "page_size": 10})
+    assert beyond_last_page.status_code == 200
+    assert "5 von 25 Mandant" in beyond_last_page.text
+
+
+def test_clients_page_size_change_affects_row_count(client: TestClient, db_session: Session) -> None:
+    for i in range(25):
+        _create_client_row(db_session, name=f"Seiten-Mandant {i:02d}", number=f"PS-{i:02d}")
+
+    response_default = client.get("/dashboard/clients")
+    assert "10 von 25 Mandant" in response_default.text
+
+    response_resized = client.get("/dashboard/clients", params={"page_size": 20})
+    assert "20 von 25 Mandant" in response_resized.text
+
+
+def test_clients_page_filter_then_paginate_keeps_filter_scoped_count(
+    client: TestClient, db_session: Session
+) -> None:
+    for i in range(12):
+        _create_client_row(
+            db_session, name=f"Gefiltert {i:02d}", number=f"FP-{i:02d}", client_type="Unternehmen"
+        )
+    for i in range(5):
+        _create_client_row(
+            db_session, name=f"Ausgeblendet {i:02d}", number=f"FX-{i:02d}", client_type="Privatperson"
+        )
+
+    response = client.get(
+        "/dashboard/clients",
+        params={"client_type": "Unternehmen", "page": 2, "page_size": 10},
+    )
+    assert "2 von 12 Mandant" in response.text
+    assert "Ausgeblendet" not in response.text

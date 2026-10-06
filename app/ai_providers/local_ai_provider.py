@@ -22,20 +22,77 @@ from sqlalchemy.orm import Session
 
 from app.models import Deadline, Document, Matter, Party
 from app.search.service import DocumentSearchService
-from app.search.utils import build_snippet
 
-_MAX_DOCUMENT_EXCERPT_CHARS = 500
+#: ECHTER FUND, MIT REALEN PRODUKTIONSDATEN GEMESSEN (05.10., Owner-
+#: Direktive "P1-BUGFIX: Schriftsatz unvollständig..."): die vorherige
+#: Grenze von 500 Zeichen (selbst nach dem Fix der vorherigen Runde, die
+#: urspruenglich NUR den `build_snippet`-Fallback-Fehler auf faktisch 160
+#: Zeichen behob) reicht fuer reale Dokumente NICHT aus - an einer echten
+#: Produktions-Akte reproduziert ("Lexono_Testdokument_Schreiben_
+#: erstellen.pdf", 2638 Zeichen): die eigentliche Aufgabenstellung
+#: ("Bitte analysiere das Dokument und erstelle einen sachlichen
+#: Entwurf...") stand GANZ AM ENDE des Dokuments, weit hinter Zeichen
+#: 500 - der Sachverhalt brach bereits nach dem ersten Absatz ab, bevor
+#: Claude die eigentliche Anweisung ueberhaupt sah. Verteilung ueber 100
+#: reale, bereits extrahierte Dokumente in der Produktions-DB gemessen
+#: (nicht geraten, siehe CLAUDE.md "keine pauschale Erhoehung von Limits
+#: ohne Messung"): Median 257 Zeichen, aber P75/P90/P95 bei 2607 Zeichen,
+#: Maximum 4594, KEIN einziges Dokument ueber 5000 Zeichen. 5000 Zeichen
+#: erfasst damit praktisch jedes real beobachtete Dokument vollstaendig,
+#: ohne eine willkuerlich grosse, ungemessene Zahl zu waehlen.
+_MAX_DOCUMENT_EXCERPT_CHARS = 5000
 # Sicherheitsergänzung (Prompt 28): ohne Obergrenze könnte eine Akte mit
 # sehr vielen (z. B. absichtlich zugeschickten) kleinen Anhängen den
 # Sachverhalt und damit die Kosten/Tokenzahl jeder Claude-Anfrage
 # unbegrenzt aufblähen. Begrenzung auf die neuesten N Dokumente -
 # konsistent mit der bereits bestehenden Pro-Dokument-Zeichenbegrenzung.
+# Worst Case bei der neuen Grenze: 30 Dokumente x 5000 Zeichen = 150.000
+# Zeichen (~37.500 Tokens) - weiterhin deutlich innerhalb des
+# Kontextfensters des Modells, auch wenn dieser Extremfall (30
+# gleichzeitig volle Dokumente an einer Akte) in den gemessenen
+# Produktionsdaten nicht vorkommt.
 _MAX_DOCUMENTS_IN_SACHVERHALT = 30
 
 # Grobe, tolerante Rollen-Zuordnung fuer Party.role (Freitext, Prompt 04).
 _OPPONENT_ROLE_KEYWORDS = ("gegner", "gegenseite", "beklagte", "beklagter")
 _COURT_ROLE_KEYWORDS = ("gericht", "finanzamt", "behörde", "behoerde")
 _LAWYER_ROLE_KEYWORDS = ("anwalt", "anwältin", "rechtsanwalt", "prozessbevollmächtigt")
+
+
+def _document_excerpt(extracted_text: str) -> str:
+    """Baut den tatsaechlich in den Sachverhalt eingehenden Dokument-
+    Ausschnitt - bis zu `_MAX_DOCUMENT_EXCERPT_CHARS` Zeichen, mit
+    Zeilenumbruch->Doppel-Leerzeichen-Normalisierung (identisches Prinzip
+    wie app/search/utils.py::build_snippet, siehe dortiger Docstring fuer
+    die Begruendung: Absatzgrenzen muessen fuer
+    `_find_possible_unrecognized_names` erkennbar bleiben).
+
+    ECHTER FUND, SYNTHETISCH REPRODUZIERT (05.10., Owner-Direktive
+    "Vollstaendiger UX- und Workflow-Audit"): diese Stelle rief bisher
+    `build_snippet(text[:500], "")` auf - mit LEERER Suchanfrage faellt
+    `build_snippet` aber auf seinen fuer SUCHTREFFER-Vorschauen gedachten
+    Fallback zurueck (`_SNIPPET_FALLBACK_LENGTH = 160`), NICHT auf die
+    hier eigentlich gewollten 500 Zeichen - jedes Dokument im Sachverhalt
+    wurde dadurch faktisch auf die ERSTEN 160 ZEICHEN verkuerzt (oft nur
+    Briefkopf/Anrede, VOR jedem inhaltlichen Absatz), und zwar per blindem
+    Zeichen-Slice OHNE Wort-/Satzgrenze - live reproduziert: ein
+    Bescheiddatum wurde exakt mitten im Jahr abgeschnitten ("01.09.20"
+    statt "01.09.2026"), waehrend die unabhaengige Fristenerkennung
+    (`_build_argumentationspunkte`) dasselbe Datum bereits vollstaendig
+    lieferte - Claude erhielt dadurch zwei widerspruechliche Datums-
+    angaben fuer denselben Sachverhalt und markierte dies (korrekt!) als
+    klaerungsbeduerftig, der eigentliche Dokumentinhalt (Betrag,
+    Begruendung) tauchte im generierten Entwurf ueberhaupt nicht auf, weil
+    er erst nach Zeichen 160 im Originaldokument stand. `build_snippet`
+    selbst bleibt UNVERAENDERT (wird an anderer Stelle korrekt fuer echte
+    Suchtreffer-Vorschauen mit einer echten Suchanfrage verwendet, siehe
+    app/search/service.py/app/promptlayer/builder.py) - dies ist eine
+    eigenstaendige, lokale Hilfsfunktion statt einer Wiederverwendung
+    einer fuer einen anderen Zweck bestimmten Funktion."""
+    normalized = extracted_text.replace("\n", "  ").strip()
+    truncated = normalized[:_MAX_DOCUMENT_EXCERPT_CHARS]
+    suffix = "…" if len(normalized) > _MAX_DOCUMENT_EXCERPT_CHARS else ""
+    return f"{truncated}{suffix}"
 
 
 @dataclass
@@ -104,9 +161,7 @@ class RuleBasedLocalAIProvider:
             .all()
         )
         for document in documents:
-            excerpt = build_snippet(
-                document.extracted_text[:_MAX_DOCUMENT_EXCERPT_CHARS], ""
-            )
+            excerpt = _document_excerpt(document.extracted_text)
             type_label = document.classified_type or "unklassifiziert"
             parts.append(f"[{type_label}] {excerpt}")
         return "\n".join(parts), bool(documents)

@@ -129,7 +129,7 @@ def test_draft_detail_shows_empty_state_hint_without_firm_profile(
     response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
     assert response.status_code == 200
     assert "Kein Kanzleiprofil hinterlegt" in response.text
-    assert '/dashboard/settings/profile"' in response.text
+    assert '/dashboard/settings?tab=kanzlei"' in response.text
     assert 'class="document-page__letterhead"' not in response.text
     assert 'class="document-page__signature"' not in response.text
 
@@ -307,7 +307,7 @@ def test_draft_detail_shows_no_standard_prompts_section_when_library_is_empty(
     Seite (Quellen, Anmerkungen, ...)."""
     response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
     assert response.status_code == 200
-    assert "Standard-Prompts:" not in response.text
+    assert "Standard-Prompts" not in response.text
 
 
 def test_draft_detail_shows_existing_prompt_templates_as_prefill_chips(
@@ -326,9 +326,9 @@ def test_draft_detail_shows_existing_prompt_templates_as_prefill_chips(
     response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
 
     assert response.status_code == 200
-    assert "Standard-Prompts:" in response.text
+    assert "Standard-Prompts" in response.text
     assert "Fristverlängerung beantragen" in response.text
-    assert 'class="instruction-bar__prompt-chip"' in response.text
+    assert 'class="draft-prompt-row"' in response.text
     assert "Bitte formuliere einen Antrag auf Fristverlängerung um zwei Wochen." in response.text
     # Derselbe, bereits bestehende Verwaltungs-Einstiegspunkt wie im Chat.
     assert 'href="/dashboard/library/prompts"' in response.text
@@ -354,7 +354,7 @@ def test_draft_detail_prompt_chips_only_prefill_never_auto_submit(
     # Formular/kein "submit" - das Absenden bleibt ausschliesslich ueber
     # die bestehenden "Anmerkung speichern"/"Änderungen übernehmen"-Buttons
     # im instruction-bar__form moeglich.
-    assert 'type="button" class="instruction-bar__prompt-chip"' in response.text
+    assert 'type="button" class="draft-prompt-row"' in response.text
 
 
 # --- "Vorschläge"-Schnellaktionen im Entwurf-Editor (24.09., Owner-
@@ -373,7 +373,8 @@ def test_draft_detail_always_shows_the_four_fixed_vorschlaege_regardless_of_prom
     response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
 
     assert response.status_code == 200
-    assert "Vorschläge:" in response.text
+    assert "Vorschläge" in response.text
+    assert 'class="draft-suggestion"' in response.text
     for label in ("Formulierung präzisieren", "Text kürzen", "Rechtliche Prüfung", "Ton anpassen"):
         assert label in response.text
 
@@ -538,7 +539,11 @@ def test_apply_instruction_via_web_creates_new_version(
     assert new_location != f"/dashboard/drafts/{seeded['draft_id']}"
     new_draft_id = new_location.rsplit("/", 1)[-1]
     new_draft = db_session.get(Draft, new_draft_id)
-    assert new_draft.content == "Neu formulierte Antwort."
+    # 05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D:
+    # KI-generierter Inhalt wird jetzt zu Editor-HTML gewandelt (siehe
+    # app/drafting/markdown_to_draft_html.py) statt roh gespeichert.
+    assert new_draft.content == "<p>Neu formulierte Antwort.</p>"
+    assert new_draft.content_format == "html"
     assert new_draft.previous_version_id == seeded["draft_id"]
 
     instructions = db_session.query(AttorneyInstruction).all()
@@ -667,4 +672,27 @@ def test_drafts_list_shows_the_client_and_a_real_link(
 
     assert response.status_code == 200
     assert "Synthetischer Testmandant GmbH" in response.text
+    assert f'href="/dashboard/drafts/{seeded["draft_id"]}"' in response.text
+
+
+def test_drafts_list_excludes_chat_reference_drafts(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12 -
+    ein `status="chat_reference"`-Draft (normale Chat-Antwort ohne
+    Schriftsatz-Intent, siehe app/drafting/service.py::_persist_draft) ist
+    kein freigabepflichtiger Schriftsatz und darf in dieser Liste nicht
+    auftauchen, auch nicht ohne expliziten `?status=`-Filter."""
+    chat_draft = Draft(
+        matter_id=seeded["matter_id"], content="<p>Chat-Antwort.</p>",
+        status="chat_reference", content_format="html",
+    )
+    db_session.add(chat_draft)
+    db_session.commit()
+
+    response = client.get("/dashboard/drafts")
+
+    assert response.status_code == 200
+    assert f'href="/dashboard/drafts/{chat_draft.id}"' not in response.text
+    # Der echte Schriftsatz aus der seeded-Fixture bleibt unveraendert sichtbar.
     assert f'href="/dashboard/drafts/{seeded["draft_id"]}"' in response.text

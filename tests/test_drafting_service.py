@@ -213,7 +213,48 @@ def test_successful_draft_is_persisted(db_session: Session) -> None:
     persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
     assert persisted is not None
     assert persisted.status == "draft"
-    assert persisted.content == result.draft_text
+    # 05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D:
+    # `persisted.content` ist jetzt vom rohen `result.draft_text`
+    # (Markdown) zu Editor-darstellbarem HTML gewandelt (siehe
+    # app/drafting/markdown_to_draft_html.py) - der reine Text bleibt
+    # inhaltlich enthalten, nur um HTML-Tags ergaenzt.
+    assert persisted.content_format == "html"
+    assert result.draft_text is not None
+    assert result.draft_text in persisted.content
+
+
+def test_chat_response_purpose_persists_as_chat_reference_status(db_session: Session) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12 -
+    eine normale Chat-Antwort (purpose="chat_response", keine erkannte
+    Schriftsatz-Absicht, siehe app/chat/service.py::
+    _looks_like_drafting_request) persistiert weiterhin eine Draft-Zeile
+    (Traeger fuer Quellen-/Wissens-Verknuepfungen), aber NICHT mit dem
+    normalen "draft"-Status - sonst wuerde sie wie ein echter, freigabe-
+    pflichtiger Schriftsatz in jeder Entwuerfe-Liste auftauchen und einen
+    "Vollstaendigen Editor oeffnen"-Link anbieten, obwohl der Nutzer nie
+    einen Schriftsatz angefordert hat."""
+    matter = _matter(db_session, title="Testakte")
+    service, _ = _service()
+
+    result = service.create_draft(matter.id, "chat_response", db_session)
+
+    assert result.success is True
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert persisted.status == "chat_reference"
+
+
+def test_formulate_draft_purpose_persists_as_normal_draft_status(db_session: Session) -> None:
+    """Gegenprobe zu test_chat_response_purpose_persists_as_chat_reference_
+    status - ein echter Schriftsatz-Intent bleibt unveraendert ein ganz
+    normaler "draft"-Status (erscheint in allen Entwuerfe-Listen, bietet
+    den Editor an)."""
+    matter = _matter(db_session, title="Testakte")
+    service, _ = _service()
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert persisted.status == "draft"
 
 
 def test_create_draft_with_message_id_persists_it_on_the_draft(db_session: Session) -> None:
@@ -757,6 +798,211 @@ def test_document_context_forces_full_pipeline_even_for_chat_purpose(
 
     assert result.success is True
     assert len(local_llm.received_payloads) == 1
+
+
+# ==========================================================================
+# Owner-Direktive "Schriftsatz-Workflow, Pseudonymisierung, lokale KI und
+# DIN-A4-Dokumentdarstellung" (06.10.) - Phase 12, Tests 1-4. Decken
+# ausdruecklich den PRODUKTIONS-STANDARDFALL ab (`local_llm_provider=None`,
+# `settings.local_ai_enabled=False`) - die bereits bestehenden
+# Pseudonymisierungs-/Rekonstruktions-Tests oben (z. B.
+# test_full_orchestrated_path_presidio_local_ai_claude_reconstruction)
+# nutzen durchgaengig einen FakeLocalLLMProvider und beweisen daher NICHT,
+# dass derselbe Datenschutz ohne lokale KI greift - genau diese Luecke
+# schliessen die folgenden Tests (/local-ai-causality-test).
+# ==========================================================================
+
+
+def test_pseudonymization_and_restoration_work_without_local_ai(
+    db_session: Session,
+) -> None:
+    """TEST 1 + TEST 2 kombiniert, OHNE lokale KI (lokale KI ist in der
+    Produktion standardmaessig deaktiviert, siehe app/config/settings.py::
+    local_ai_enabled). Cloud-Payload darf den Klarnamen NICHT enthalten,
+    MUSS den Platzhalter enthalten; das finale Dokument muss den Klarnamen
+    wieder enthalten und darf den Platzhalter NICHT mehr enthalten."""
+    matter = _matter(db_session, client_name="Max Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandant Max Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrter Herr [MANDANT_01], vielen Dank für Ihre Nachricht."
+    )
+    service, _ = _service(writing_provider, local_llm_provider=None)
+    assert service.local_llm_provider is None
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    sent_payload = writing_provider.received_payloads[0]
+    # CLOUD PAYLOAD -> enthaelt Max Mustermann NICHT
+    assert "Max Mustermann" not in sent_payload.anonymisierter_sachverhalt
+    # CLOUD PAYLOAD -> enthaelt [MANDANT_01]
+    assert "[MANDANT_01]" in sent_payload.anonymisierter_sachverhalt
+    # FINAL LOCAL DOCUMENT -> enthaelt Max Mustermann
+    assert "Max Mustermann" in result.draft_text
+    # FINAL LOCAL DOCUMENT -> enthaelt [MANDANT_01] NICHT
+    assert "[MANDANT_01]" not in result.draft_text
+
+
+def test_mapping_is_isolated_per_draft_not_reused_across_matters(
+    db_session: Session,
+) -> None:
+    """TEST 3 - Mapping-Isolation: zwei unabhaengige create_draft-Aufrufe
+    fuer zwei verschiedene Akten/Mandanten duerfen das Mapping des jeweils
+    ANDEREN Aufrufs nicht sehen. Jeder `prepare_request()`-Aufruf baut
+    `value_to_placeholder`/`counters` lokal in der Methode neu auf (siehe
+    app/privacy/pseudonymizer.py::Pseudonymizer.pseudonymize) - kein
+    globaler/geteilter Zustand."""
+    from app.models import Document
+
+    matter_a = _matter(db_session, client_name="Anna Beispiel", title="Akte A")
+    db_session.add(
+        Document(matter_id=matter_a.id, file_path="/tmp/a.pdf", extracted_text="Mandantin Anna Beispiel bittet um Rueckmeldung.")
+    )
+    matter_b = _matter(db_session, client_name="Bernd Muster", title="Akte B")
+    db_session.add(
+        Document(matter_id=matter_b.id, file_path="/tmp/b.pdf", extracted_text="Mandant Bernd Muster bittet um Rueckmeldung.")
+    )
+    db_session.commit()
+
+    writer_a = FakeClaudeWritingProvider(response_text="Sehr geehrte Frau [MANDANT_01], danke.")
+    writer_b = FakeClaudeWritingProvider(response_text="Sehr geehrter Herr [MANDANT_01], danke.")
+    service_a, _ = _service(writer_a, local_llm_provider=None)
+    service_b, _ = _service(writer_b, local_llm_provider=None)
+
+    result_a = service_a.create_draft(matter_a.id, "formulate_draft", db_session)
+    result_b = service_b.create_draft(matter_b.id, "formulate_draft", db_session)
+
+    assert result_a.success is True
+    assert result_b.success is True
+    # Jeder Aufruf loest "[MANDANT_01]" korrekt gegen das EIGENE Mapping auf -
+    # keine Vermischung zwischen den beiden unabhaengigen Akten.
+    assert "Anna Beispiel" in result_a.draft_text
+    assert "Bernd Muster" not in result_a.draft_text
+    assert "Bernd Muster" in result_b.draft_text
+    assert "Anna Beispiel" not in result_b.draft_text
+
+
+def test_unmapped_placeholder_in_claude_response_is_blocked_even_without_local_ai(
+    db_session: Session,
+) -> None:
+    """TEST 4 - Missing Mapping: enthaelt die Cloud-Antwort einen
+    Platzhalter, der zu KEINEM echten Mapping-Eintrag gehoert (von Claude
+    "erfunden"/vertauscht), darf er NICHT geraten/stillschweigend
+    durchgereicht werden - der Entwurf muss sicher BLOCKIERT werden.
+
+    ECHTER FUND (06.10., Visual-Verification-Direktive): dieser Fall war
+    bis zu diesem Fix NICHT abgesichert, wenn lokale KI deaktiviert ist
+    (Produktions-Standardkonfiguration) - die deterministische Pruefung
+    (app/privacy/security_check.py::check_response_placeholder_integrity)
+    lief nur, wenn `local_llm_provider` konfiguriert war, obwohl sie selbst
+    KEIN LLM benoetigt (siehe app/drafting/service.py::
+    _finish_non_streaming_stream, `else`-Zweig). Vor dem Fix lieferte dieser
+    exakte Testfall `result.success=True` mit dem rohen Platzhalter sichtbar
+    im Text."""
+    matter = _matter(db_session, client_name="Max Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandant Max Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    # "[UNBEKANNT_99]" gehoert zu KEINER Kategorie/keinem echten Mapping.
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrter Herr [UNBEKANNT_99], vielen Dank für Ihre Nachricht."
+    )
+    service, _ = _service(writing_provider, local_llm_provider=None)
+    assert service.local_llm_provider is None
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+
+
+def test_long_document_loses_no_text_through_the_full_pipeline(
+    db_session: Session,
+) -> None:
+    """TEST 7 - Long Document: ein mehrseitiger Schriftsatz (mehrere
+    Absaetze, insgesamt mehrere tausend Zeichen) darf die Pseudonymisierungs-
+    /Rekonstruktions-Pipeline vollstaendig durchlaufen, OHNE dass Text
+    verloren geht - jeder einzelne Absatz muss im finalen Dokument
+    wiederzufinden sein."""
+    matter = _matter(db_session, client_name="Max Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandant Max Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    paragraphs = [
+        f"Dies ist Absatz Nummer {i} des Schriftsatzes mit etwas Fuelltext, "
+        f"damit das Dokument insgesamt mehrseitig lang wird." for i in range(1, 31)
+    ]
+    long_response = "Sehr geehrter Herr [MANDANT_01],\n\n" + "\n\n".join(paragraphs)
+    writing_provider = FakeClaudeWritingProvider(response_text=long_response)
+    service, _ = _service(writing_provider, local_llm_provider=None)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert "Max Mustermann" in result.draft_text
+    for paragraph in paragraphs:
+        assert paragraph in result.draft_text
+
+
+def test_chat_and_editor_see_the_same_document_content(db_session: Session) -> None:
+    """TEST 8 - Chat -> Editor muss denselben Dokumentinhalt verwenden:
+    `ChatMessage.content` (Chat-Panel, Markdown) und `Draft.content`
+    (Editor, zu HTML konvertiert) stammen aus DEMSELBEN `reconstructed_
+    text` zum Erstellungszeitpunkt (app/chat/service.py::send_message setzt
+    `content=result.draft_text`; app/drafting/service.py::_persist_draft
+    konvertiert exakt denselben Text zu HTML) - kein zweites,
+    divergierendes Dokumentmodell (Phase 10: EIN Dokumentmodell)."""
+    matter = _matter(db_session, client_name="Max Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandant Max Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrter Herr [MANDANT_01], hiermit legen wir Einspruch ein."
+    )
+    service, _ = _service(writing_provider, local_llm_provider=None)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    draft = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    # Der Editor-Inhalt (HTML) muss denselben Klartext enthalten wie der
+    # Chat-Inhalt (result.draft_text, Quelle fuer ChatMessage.content) -
+    # dieselbe rekonstruierte Aussage, keine abweichende zweite Fassung.
+    assert "Max Mustermann" in draft.content
+    assert "hiermit legen wir Einspruch ein" in draft.content
+    assert draft.content_format == "html"
+    for sentence_fragment in ("Max Mustermann", "hiermit legen wir Einspruch ein"):
+        assert sentence_fragment in result.draft_text
 
 
 def test_claude_never_receives_original_plaintext_with_local_llm_enabled(
@@ -1324,6 +1570,60 @@ def test_semantically_conspicuous_response_fails_closed(db_session: Session) -> 
     assert result.success is False
     assert any("placeholder_inconsistency" in reason for reason in result.blocked_reasons)
     assert db_session.query(Draft).count() == 0
+
+
+def test_semantic_check_failure_gets_honest_category_not_privacy_violation(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX: Schriftsatz
+    unvollständig, Folgefragen blockiert, Datenschutzprüfung fehlerhaft",
+    mit dem real konfigurierten lokalen Modell (qwen2.5:1.5b) reproduziert):
+    ein Fund der rein qualitätsbezogenen Stufe 2 (lokales LLM,
+    "AUSDRÜCKLICH KEINE juristische Bewertung") landete bisher im selben
+    Audit-Log-Eimer wie ein echter Stufe-1-Datenschutzfund und wurde dem
+    Anwalt mit genau derselben "Datenschutzgründen"-Formulierung gezeigt -
+    obwohl diese Stufe gar keine Datenschutzentscheidung trifft. Die
+    Fail-Closed-ENTSCHEIDUNG selbst bleibt unveraendert (der Entwurf wird
+    weiterhin NICHT uebernommen) - nur `error_status`/die Nutzermeldung
+    sind jetzt ehrlich von einem echten Stufe-1-Fund unterscheidbar."""
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider(
+        structured_result={
+            "passed": False,
+            "issues": [
+                {
+                    "type": "consistent_placeholder_usage",
+                    "severity": "high",
+                    "description": "The placeholders [KATEGORIE_XX] are not used consistently.",
+                }
+            ],
+        }
+    )
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    error_logs = db_session.query(ApiCallLog).filter_by(result_status="error").all()
+    assert len(error_logs) == 1
+    assert error_logs[0].error_status == "local_quality_check_uncertain"
+    assert error_logs[0].error_status != "unknown_block_reason"
+    assert error_logs[0].error_status != "response_validation_failed"
+    assert any("lokale Qualitätsprüfung" in reason for reason in result.blocked_reasons)
+    assert not any("Datenschutzgründen blockiert" in reason for reason in result.blocked_reasons)
 
 
 def test_ollama_timeout_during_response_validation_fails_closed(db_session: Session) -> None:

@@ -68,6 +68,7 @@ from app.models import (
     ChatMessageDocument,
     Client,
     Document,
+    Law,
     LawSection,
     Matter,
     Message,
@@ -200,8 +201,21 @@ def _find_law_section(db: Session, *, law_code: str, section_number: str) -> Law
     aber schon, z. B. "§ 558" oder "Art 12a"), daher der Vergleich ueber
     die reine Nummer. Liefert None, wenn das Gesetz/die Norm lokal (noch)
     nicht importiert ist - der Aufrufer (send_message) faellt dann auf die
-    volle, unveraenderte Pipeline zurueck, KEIN Fehler/Abbruch."""
-    candidates = db.query(LawSection).filter(LawSection.law_code == law_code).all()
+    volle, unveraenderte Pipeline zurueck, KEIN Fehler/Abbruch.
+
+    `Law.is_active`-Filter (26.09., Owner-Direktive "KANZLEIWISSEN FINAL
+    PRODUCT IMPLEMENTATION" §20): ein vom Anwalt in Kanzleiwissen
+    DEAKTIVIERTES Gesetz darf hier nicht mehr gefunden werden, obwohl die
+    Paragraphen technisch noch in der DB liegen (Deaktivieren loescht
+    keine Daten, siehe app/laws/service.py::toggle_law_active) - dieselbe
+    "faellt transparent auf die volle Pipeline zurueck"-Behandlung wie ein
+    noch nie importiertes Gesetz, kein Fehler/Sonderfall."""
+    candidates = (
+        db.query(LawSection)
+        .join(Law, Law.code == LawSection.law_code)
+        .filter(LawSection.law_code == law_code, Law.is_active.is_(True))
+        .all()
+    )
     for candidate in candidates:
         match = _ENBEZ_SECTION_NUMBER_RE.search(candidate.section_number)
         if not match:

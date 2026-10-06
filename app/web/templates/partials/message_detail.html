@@ -17,6 +17,73 @@
     </div>
   </div>
 
+  {# Reihenfolge (25.09., Owner-Direktive "POSTEINGANG PRODUCT COMPLETION"
+     §12, verbindlich): Header -> Nachrichtentext -> Anhaenge -> Aktionen
+     -> automatische/manuelle Zuordnung. Vorher standen Aktionen UND alle
+     drei Zuordnungs-Karten VOR dem eigentlichen Nachrichtentext - der
+     Anwalt musste erst an Aktions-Buttons und Formularen vorbeiscrollen,
+     um zu lesen, worum es in der Nachricht ueberhaupt geht. Rein
+     strukturelle Umsortierung bestehender Bloecke, keine funktionale
+     Aenderung an einem der Formulare/Endpunkte. #}
+  <div class="detail-body">{{ message.body_text or "(kein Inhalt extrahiert)" }}</div>
+
+  {% if documents %}
+    {# Anhaenge als Karten mit Typ/Groesse/Download (25.09., vorher reine
+       Inline-Chips ohne Groessenangabe/Download-Button, siehe Referenz
+       `04_posteingang_nachricht_detail.png`). Dateigroesse kommt live von
+       der Platte (`document_file_size`, app/web/router.py) - es gibt kein
+       DB-Feld dafuer, siehe dort. "Download" nutzt dieselbe, bereits
+       bestehende Route wie die Aktendokument-Seite - keine zweite
+       Download-Implementierung. Fuer noch unzugeordnete Nachrichten bleibt
+       das Oeffnen bewusst deaktiviert (ehrlich - die Aktendokument-Route
+       braucht eine matter_id), der Download-Button funktioniert dort
+       weiterhin unabhaengig davon direkt ueber die Dokument-ID. #}
+    <div class="detail-section-label">Anhänge ({{ documents|length }})</div>
+    <div class="attachment-list">
+      {% for document in documents %}
+        <div class="attachment-card">
+          {{ icons.file_type_badge(document.file_path) }}
+          <div class="attachment-card__body">
+            {% if document.matter_id %}
+              <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}"
+                 class="attachment-card__name" title="Dokument öffnen">
+                {{ document.original_filename or "Dokument" }}
+              </a>
+            {% else %}
+              <span class="attachment-card__name">{{ document.original_filename or "Dokument" }}</span>
+            {% endif %}
+            {# Typ-Label bevorzugt aus der echten Dateiendung (25.09.,
+               Fund waehrend Visual QA: `mime_type` ist bei den meisten
+               echten Dokumenten NICHT gesetzt, das vorherige
+               MIME-basierte Label zeigte deshalb nur "DATEI" statt "PDF"
+               - dieselbe Endungs-Logik wie `icons.file_type_badge`
+               daneben, kein zweiter, abweichender Erkennungsweg). #}
+            {% set filename = document.original_filename or document.file_path %}
+            {% set ext = filename.rsplit(".", 1)[-1] | upper if filename and "." in filename else "" %}
+            <span class="attachment-card__meta">
+              {{ ext or (document.mime_type or "Datei").split("/")[-1].upper() }}
+              {% set size = document_file_size(document) %}
+              {% if size %} · {{ size|filesizeformat }}{% endif %}
+              {% if document.classified_type %} · {{ document.classified_type }}{% endif %}
+            </span>
+          </div>
+          {% if document.matter_id %}
+            {# Echte, bereits bestehende Download-Route - braucht eine
+               matter_id (Aktenisolationspruefung, siehe
+               matters_router.py::matter_document_download). Fuer noch
+               nicht zugeordnete Nachrichten gibt es dafuer bewusst KEINEN
+               Download-Button statt eines toten Links - die Datei liegt
+               in dem Fall noch keiner Akte zugeordnet vor. #}
+            <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}/download"
+               class="attachment-card__download" title="Herunterladen" aria-label="Anhang herunterladen">
+              {{ icons.download(class_="icon") }}
+            </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   {% if message.matter %}
     {# "Zusammenfassen"/"Antworten" (16.09., UI/UX-Sweep - Referenz
        `04_posteingang_nachricht_detail.png`). Beide starten eine neue
@@ -27,9 +94,10 @@
        erzeugt dadurch einen echten, im Editor pruef-/bearbeitbaren
        Entwurf, NIE einen automatischen Versand - es gibt schlicht keine
        Versandfunktion in dieser Pipeline. Braucht zwingend eine bereits
-       zugeordnete Akte (Aktenisolation) - fuer nicht zugeordnete
-       Nachrichten deshalb bewusst NICHT angezeigt, siehe die Zuordnungs-
-       Karten oben. #}
+       zugeordnete Akte (Aktenisolation, CLAUDE.md "Aktenkontext strikt
+       isolieren") - fuer nicht zugeordnete Nachrichten deshalb bewusst
+       NICHT angezeigt, siehe die Zuordnungs-Karten unten stattdessen. #}
+    <div class="detail-section-label">Aktion</div>
     <div class="detail-actions">
       <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
@@ -129,41 +197,6 @@
       {% else %}
         <p class="match-suggestion-card__text">Noch keine Akten vorhanden.</p>
       {% endif %}
-    </div>
-  {% endif %}
-
-  <div class="detail-body">{{ message.body_text or "(kein Inhalt extrahiert)" }}</div>
-
-  {% if documents %}
-    <div class="detail-section-label">Anhänge / zugehörige Dokumente ({{ documents|length }})</div>
-    <div>
-      {# ECHTER FUND (17.09., Overnight-Direktive §6 "Dokumente sind ein
-         Hauptluecken-Bereich"): diese Chips zeigten bereits echte,
-         persistierte `Document`-Zeilen an, waren aber reine <span>s ohne
-         jeden Weg, das Dokument tatsaechlich zu oeffnen - identisches
-         Bug-Muster, das `chat.html` fuer den Chat-Dokumentkontext bereits
-         korrekt loest (bedingtes <a>/<span>, siehe dort). Reused hier auf
-         die bereits vollstaendige Aktendokument-Seite (Vorschau/KI-
-         Aktionen/Download/Erkannte Fristen, heute selbst gebaut) - nur
-         moeglich, sobald die Nachricht (und damit das Dokument) bereits
-         einer Akte zugeordnet ist (`document.matter_id`), da die Route
-         eine matter_id in der URL braucht. Fuer noch unzugeordnete
-         Nachrichten bleibt der Chip bewusst ein <span> (ehrlich - dort
-         gibt es noch keine oeffenbare Zielseite), statt einen toten Link
-         vorzutaeuschen. #}
-      {% for document in documents %}
-        {% if document.matter_id %}
-          <a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}"
-             class="doc-chip doc-chip--link"
-             title="Dokument öffnen">
-        {% else %}
-          <span class="doc-chip">
-        {% endif %}
-          {{ icons.file_type_badge(document.file_path) }}
-          {{ document.original_filename or "Dokument" }}
-          {% if document.classified_type %} · {{ document.classified_type }}{% endif %}
-        {% if document.matter_id %}</a>{% else %}</span>{% endif %}
-      {% endfor %}
     </div>
   {% endif %}
 </div>

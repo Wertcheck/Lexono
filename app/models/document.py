@@ -27,6 +27,18 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     message_id: Mapped[str | None] = mapped_column(
         ForeignKey("messages.id"), nullable=True, index=True
     )
+    # 26.09., Owner-Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ
+    # PRODUCT-COMPLETION": analog zu `message_id` oben - ein Dokument kann
+    # optional aus einem Entwurfs-Export (PDF/DOCX) stammen, statt aus
+    # einem Upload/Mail-Anhang. NULL = unveraendertes Verhalten (alle
+    # bestehenden Zeilen, jeder normale Upload). Siehe
+    # app/web/drafts_router.py::_save_export_as_document fuer die
+    # Schreiblogik und DECISIONS.md fuer die volle Begruendung (der
+    # fehlende Rueckweg "Export -> Akte" war der groesste real gefundene
+    # Gap dieser Direktive).
+    generated_from_draft_id: Mapped[str | None] = mapped_column(
+        ForeignKey("drafts.id"), nullable=True, index=True
+    )
 
     original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     mime_type: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -80,3 +92,6 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     matter: Mapped["Matter | None"] = relationship(back_populates="documents")
     message: Mapped["Message | None"] = relationship(back_populates="documents")
+    generated_from_draft: Mapped["Draft | None"] = relationship(
+        back_populates="generated_documents"
+    )

@@ -4,8 +4,8 @@
    nachgeladen, ersetzt bei jedem Treffer vollstaendig den Inhalt von
    #command-bar-results. #}
 {% if query|length < min_length %}
-  <div class="command-bar__hint">Mindestens {{ min_length }} Zeichen eingeben, um Mandanten, Akten,
-    Dokumente und Rechtsquellen zu durchsuchen.</div>
+  <div class="command-bar__hint">Mindestens {{ min_length }} Zeichen eingeben, um E-Mails, Mandanten,
+    Akten, Dokumente und Rechtsquellen zu durchsuchen.</div>
 {% elif not results %}
   <div class="command-bar__hint">Keine Treffer für „{{ query }}“.</div>
 {% else %}

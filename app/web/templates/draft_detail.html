@@ -31,6 +31,11 @@
          app/export/pdf_export_service.py-Moduldocstring. #}
       &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.pdf">Als PDF exportieren</a>
       &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.docx">Als DOCX exportieren</a>
+      {# Rich-Text-Editor (04.10.) - diese Seite (draft_detail.html) bleibt
+         der "Viewer" (Versionen/Freigabe/Export/Review/Audit), der Editor
+         ist eine eigene Seite (siehe app/web/draft_editor_router.py-
+         Moduldocstring: bewusst getrennt, nicht ersetzt). #}
+      &middot; <a href="/dashboard/drafts/{{ draft.id }}/edit">Im Editor öffnen</a>
     </div>
   </div>
 
@@ -49,6 +54,18 @@
       {% endfor %}
     </div>
 
+    {# Editor-Arbeitsplatz (25.09., Owner-Direktive "EDITOR UI PRODUCT-
+       COMPLETION / REFERENCE-DRIVEN IMPLEMENTATION"): Dokument (links,
+       breit) + eigenstaendige KI-Assistent-Seitenleiste (rechts, fest),
+       statt der vorherigen ueber die volle Breite gestapelten
+       Anweisungs-Leiste - Referenzbilder 12/24/38 zeigen den KI-Assistenten
+       durchgehend als vertikale Spalte NEBEN dem Dokument, nicht darunter.
+       Die bestehende Original-vs-Entwurf-Vergleichsansicht (Lexono-eigene
+       Erweiterung, in keiner Referenz vorhanden, aber ein echter,
+       funktionierender Anwalts-Nutzen) bleibt vollstaendig erhalten - nur
+       innerhalb der linken Spalte statt ueber die gesamte Seitenbreite. #}
+    <div class="draft-workspace">
+    <div class="draft-workspace__main">
     <!-- Original links / Entwurf rechts (Design-Referenz des Anwalts) -->
     <div class="split-two">
       <div class="original-box">
@@ -105,7 +122,16 @@
               {% endfor %}
             </div>
           {% endif %}
-          <div class="document-page__content">{{ draft.content }}</div>
+          {# content_format (04.10., Dokumenten-Editor): "html" wird NUR
+             vom neuen Rich-Text-Editor erzeugt und VOR dem Speichern
+             serverseitig sanitisiert (app/drafting/html_sanitizer.py) -
+             "text" (jede bestehende Zeile, UNVERAENDERTES Verhalten)
+             bleibt escaped Klartext mit CSS white-space:pre-wrap. #}
+          {% if draft.content_format == "html" %}
+            <div class="document-page__content document-page__content--rich">{{ draft.content | safe }}</div>
+          {% else %}
+            <div class="document-page__content">{{ draft.content }}</div>
+          {% endif %}
           {% if show_signature_block %}
             <div class="document-page__signature">
               {% if firm_signature_exists %}
@@ -120,95 +146,10 @@
         {% if not show_letterhead and not show_signature_block %}
           <p class="form-hint">
             Kein Kanzleiprofil hinterlegt - Briefkopf/Signatur erscheinen hier UND im
-            PDF-/DOCX-Export erst, sobald unter <a href="/dashboard/settings/profile">Einstellungen
-            &gt; Kanzleiprofil</a> Name, Logo oder Unterschrift eingetragen sind.
+            PDF-/DOCX-Export erst, sobald unter <a href="/dashboard/settings?tab=kanzlei">Einstellungen
+            &gt; Kanzlei</a> Name, Logo oder Unterschrift eingetragen sind.
           </p>
         {% endif %}
-
-        <div class="instruction-bar">
-          <div class="instruction-bar__header">
-            <span class="instruction-bar__title">Änderungsauftrag an die KI</span>
-            <span class="instruction-bar__hint">
-              z. B. "Mach den Ton schärfer" oder "Füge § 286 BGB hinzu"
-            </span>
-          </div>
-          <form method="post" action="/dashboard/drafts/{{ draft.id }}/instructions"
-                id="instruction-form" class="instruction-bar__form js-ai-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <div class="instruction-bar__input-row">
-              <textarea name="instruction_text" id="instruction-text" rows="2" required
-                        placeholder="Änderungswunsch eingeben oder einsprechen…"></textarea>
-              <button type="button" id="instruction-mic-btn" class="instruction-bar__mic"
-                      title="Diktieren (Deutsch)" aria-label="Spracheingabe starten" aria-pressed="false">
-                {{ icons.mic(class_="icon") }}
-              </button>
-            </div>
-            <div class="instruction-actions">
-              <button type="submit" class="btn">Anmerkung speichern</button>
-              {% if can_claude_call %}
-                <button type="submit" formaction="/dashboard/drafts/{{ draft.id }}/instructions/apply"
-                        class="btn btn--primary" data-ai-loading-label="Wird neu formuliert …">
-                  Änderungen übernehmen &amp; neu formulieren
-                </button>
-              {% endif %}
-            </div>
-          </form>
-          {% if not can_claude_call %}
-            <p class="form-hint">Nur Anwalt/Admin können eine Neuformulierung auslösen (KI-Aufruf).</p>
-          {% endif %}
-          {# "Vorschläge" (24.09., Owner-Direktive "PRODUCT COMPLETION MODE"
-             §5/§6 - Referenzbilder 12/24/38 zeigen im KI-Assistenten immer
-             VIER feste Schnellaktionen zur Entwurfs-Verfeinerung, getrennt
-             von den darunter bereits bestehenden, variablen
-             Standard-Prompts). Bewusst KEIN zweites System: reines
-             Vorausfuellen desselben bereits bestehenden
-             "Änderungsauftrag an die KI"-Felds (identisches
-             `data-prefill`-Muster wie die Standard-Prompts-Chips direkt
-             darunter) - der Anwalt sieht und bestaetigt den Text weiterhin
-             ueber den bestehenden Button, kein ueberraschender
-             KI-Aufruf per einzelnem Klick. #}
-          <div class="instruction-bar__prompts">
-            <span class="instruction-bar__prompts-label">Vorschläge:</span>
-            <button type="button" class="instruction-bar__prompt-chip"
-                    data-prefill="Bitte formuliere den Text klarer und rechtssicherer."
-                    title="Formulierung präzisieren">
-              Formulierung präzisieren
-            </button>
-            <button type="button" class="instruction-bar__prompt-chip"
-                    data-prefill="Bitte kürze den Text auf die wesentlichen Aussagen."
-                    title="Text kürzen">
-              Text kürzen
-            </button>
-            <button type="button" class="instruction-bar__prompt-chip"
-                    data-prefill="Bitte prüfe den Text auf rechtliche Risiken und weise auf mögliche Probleme hin."
-                    title="Rechtliche Prüfung">
-              Rechtliche Prüfung
-            </button>
-            <button type="button" class="instruction-bar__prompt-chip"
-                    data-prefill="Bitte formuliere den Text sachlicher und formeller."
-                    title="Ton anpassen">
-              Ton anpassen
-            </button>
-          </div>
-          {% if prompt_templates %}
-            {# Standard-Prompts (16.09., UI/UX-Sweep - Referenzbilder 12/17/
-               24/31/38/41 zeigen eine Standard-Prompts-Liste neben der
-               KI-Anweisung). Dieselbe, bereits bestehende Vorlagenbibliothek
-               wie im Chat (app/web/prompt_library_router.py) - reines
-               Vorausfuellen des Anweisungsfelds, der Anwalt sieht und
-               bestaetigt den Text wie bei jeder anderen Anweisung auch. #}
-            <div class="instruction-bar__prompts">
-              <span class="instruction-bar__prompts-label">Standard-Prompts:</span>
-              {% for template in prompt_templates %}
-                <button type="button" class="instruction-bar__prompt-chip"
-                        data-prefill="{{ template.content }}" title="{{ template.description or '' }}">
-                  {{ template.name }}
-                </button>
-              {% endfor %}
-              <a href="/dashboard/library/prompts" class="instruction-bar__prompts-manage">Verwalten</a>
-            </div>
-          {% endif %}
-        </div>
 
         <details class="manual-edit-toggle">
           <summary>Entwurf manuell bearbeiten</summary>
@@ -226,6 +167,133 @@
           </form>
         </details>
       </div>
+    </div>
+    </div>
+
+    {# KI-Assistent-Seitenleiste (25.09.) - siehe Kommentar oben bei
+       .draft-workspace. Enthaelt exakt dieselbe Funktionalitaet wie zuvor
+       (identische Formulare/Endpunkte/data-prefill-Ziele), nur visuell als
+       eigenstaendige Spalte statt einer volltbreiten Leiste unter dem
+       Dokument - Vorschlaege/Standard-Prompts jetzt als vertikale
+       Icon-Zeilen (dieselben Akzentfarb-Icon-Badges wie die Chat-
+       Schnellaktionen, ".chat-quick-action__icon--*", keine neue
+       Farb-/Komponentensprache). #}
+    <aside class="draft-assistant-panel">
+      <div class="draft-assistant-panel__header">
+        <span class="draft-assistant-panel__title">KI-Assistent</span>
+      </div>
+      <p class="draft-assistant-panel__intro">
+        Ich unterstütze Sie beim Schreiben. Nutzen Sie eine der Vorschläge
+        unten oder formulieren Sie unten eine eigene Anweisung.
+      </p>
+
+      {# "Vorschläge" (24.09./25.09.) - Referenzbilder 12/24/38 zeigen im
+         KI-Assistenten immer VIER feste Schnellaktionen zur Entwurfs-
+         Verfeinerung, getrennt von den darunter bestehenden, variablen
+         Standard-Prompts. Bewusst KEIN zweites System: reines
+         Vorausfuellen desselben bestehenden "Änderungsauftrag an die
+         KI"-Felds (identisches `data-prefill`-Muster wie die Standard-
+         Prompts darunter) - der Anwalt sieht und bestaetigt den Text
+         weiterhin ueber den bestehenden Button, kein ueberraschender
+         KI-Aufruf per einzelnem Klick. #}
+      <div class="draft-assistant-panel__section">
+        <span class="draft-assistant-panel__section-label">Vorschläge</span>
+        <button type="button" class="draft-suggestion"
+                data-prefill="Bitte formuliere den Text klarer und rechtssicherer."
+                title="Formulierung präzisieren">
+          <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.document(class_="icon") }}</span>
+          <span class="draft-suggestion__body">
+            <span class="draft-suggestion__title">Formulierung präzisieren</span>
+            <span class="draft-suggestion__subtitle">Klarer und rechtssicherer formulieren</span>
+          </span>
+          {{ icons.chevron_right(class_="icon draft-suggestion__chevron") }}
+        </button>
+        <button type="button" class="draft-suggestion"
+                data-prefill="Bitte kürze den Text auf die wesentlichen Aussagen."
+                title="Text kürzen">
+          <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.archive(class_="icon") }}</span>
+          <span class="draft-suggestion__body">
+            <span class="draft-suggestion__title">Text kürzen</span>
+            <span class="draft-suggestion__subtitle">Wesentliche Aussagen kompakt darstellen</span>
+          </span>
+          {{ icons.chevron_right(class_="icon draft-suggestion__chevron") }}
+        </button>
+        <button type="button" class="draft-suggestion"
+                data-prefill="Bitte prüfe den Text auf rechtliche Risiken und weise auf mögliche Probleme hin."
+                title="Rechtliche Prüfung">
+          <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.shield(class_="icon") }}</span>
+          <span class="draft-suggestion__body">
+            <span class="draft-suggestion__title">Rechtliche Prüfung</span>
+            <span class="draft-suggestion__subtitle">Auf rechtliche Risiken prüfen</span>
+          </span>
+          {{ icons.chevron_right(class_="icon draft-suggestion__chevron") }}
+        </button>
+        <button type="button" class="draft-suggestion"
+                data-prefill="Bitte formuliere den Text sachlicher und formeller."
+                title="Ton anpassen">
+          <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.chat(class_="icon") }}</span>
+          <span class="draft-suggestion__body">
+            <span class="draft-suggestion__title">Ton anpassen</span>
+            <span class="draft-suggestion__subtitle">Sachlicher und formeller formulieren</span>
+          </span>
+          {{ icons.chevron_right(class_="icon draft-suggestion__chevron") }}
+        </button>
+      </div>
+
+      {% if prompt_templates %}
+        {# Standard-Prompts (16.09./25.09., UI/UX-Sweep - Referenzbilder
+           12/17/24/31/38/41 zeigen eine Standard-Prompts-Liste im
+           KI-Assistenten). Dieselbe, bereits bestehende Vorlagenbibliothek
+           wie im Chat (app/web/prompt_library_router.py) - reines
+           Vorausfuellen des Anweisungsfelds. #}
+        <div class="draft-assistant-panel__section">
+          <div class="draft-assistant-panel__section-header">
+            <span class="draft-assistant-panel__section-label">Standard-Prompts</span>
+            <a href="/dashboard/library/prompts" class="draft-assistant-panel__manage-link">Verwalten</a>
+          </div>
+          {% for template in prompt_templates %}
+            <button type="button" class="draft-prompt-row"
+                    data-prefill="{{ template.content }}" title="{{ template.description or '' }}">
+              <span class="chat-quick-action__icon chat-quick-action__icon--neutral">{{ icons.document(class_="icon") }}</span>
+              <span>{{ template.name }}</span>
+            </button>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="draft-assistant-panel__composer">
+        <div class="instruction-bar__header">
+          <span class="instruction-bar__title">Änderungsauftrag an die KI</span>
+          <span class="instruction-bar__hint">
+            z. B. "Mach den Ton schärfer" oder "Füge § 286 BGB hinzu"
+          </span>
+        </div>
+        <form method="post" action="/dashboard/drafts/{{ draft.id }}/instructions"
+              id="instruction-form" class="instruction-bar__form js-ai-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <div class="instruction-bar__input-row">
+            <textarea name="instruction_text" id="instruction-text" rows="2" required
+                      placeholder="Änderungswunsch eingeben oder einsprechen…"></textarea>
+            <button type="button" id="instruction-mic-btn" class="instruction-bar__mic"
+                    title="Diktieren (Deutsch)" aria-label="Spracheingabe starten" aria-pressed="false">
+              {{ icons.mic(class_="icon") }}
+            </button>
+          </div>
+          <div class="instruction-actions">
+            <button type="submit" class="btn">Anmerkung speichern</button>
+            {% if can_claude_call %}
+              <button type="submit" formaction="/dashboard/drafts/{{ draft.id }}/instructions/apply"
+                      class="btn btn--primary" data-ai-loading-label="Wird neu formuliert …">
+                Änderungen übernehmen &amp; neu formulieren
+              </button>
+            {% endif %}
+          </div>
+        </form>
+        {% if not can_claude_call %}
+          <p class="form-hint">Nur Anwalt/Admin können eine Neuformulierung auslösen (KI-Aufruf).</p>
+        {% endif %}
+      </div>
+    </aside>
     </div>
 
     <div class="draft-columns" style="margin-top: 20px;">
@@ -469,15 +537,16 @@
       }
     })();
 
-    // Standard-Prompts-Chips (16.09., UI/UX-Sweep) - reines Vorausfuellen
-    // des Anweisungsfelds, identisches Muster wie die Quick-Action-Karten
-    // in chat.html (dort ".chat-quick-action"/"data-prefill"). Kein
-    // automatisches Absenden - der Anwalt sieht den Text im Feld und
-    // bestaetigt ihn wie jede andere Anweisung ueber den bestehenden Button.
+    // Vorschlaege/Prompt-Vorlagen (16.09./25.09., UI/UX-Sweep) - reines
+    // Vorausfuellen des Anweisungsfelds, identisches Muster wie die
+    // Quick-Action-Karten in chat.html (dort ".chat-quick-action"/
+    // "data-prefill"). Kein automatisches Absenden - der Anwalt sieht den
+    // Text im Feld und bestaetigt ihn wie jede andere Anweisung ueber den
+    // bestehenden Button.
     (function () {
       var instructionText = document.getElementById("instruction-text");
       if (!instructionText) { return; }
-      document.querySelectorAll(".instruction-bar__prompt-chip").forEach(function (chip) {
+      document.querySelectorAll(".draft-suggestion, .draft-prompt-row").forEach(function (chip) {
         chip.addEventListener("click", function () {
           instructionText.value = chip.getAttribute("data-prefill") || "";
           instructionText.focus();

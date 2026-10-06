@@ -359,6 +359,85 @@ def test_original_value_leak_still_fails_even_without_full_coverage() -> None:
     assert any("Datenschutzverstoss" in r for r in reasons)
 
 
+# --- ECHTER FUND (05.10., Owner-Direktive "Vollstaendiger UX- und
+# Workflow-Audit", synthetisch reproduziert): der bisherige Originalwert-
+# Leck-Check war ein NAIVER Teilstring-Vergleich (`original_value in
+# text`) statt einer Wortgrenzen-Pruefung - ein Mandant namens "Fischer"
+# blockierte dadurch JEDE Antwort, die das voellig unabhaengige Wort
+# "Fischereirecht" enthielt (Teilstring-Treffer trotz fehlendem
+# inhaltlichen Bezug). Betraf sowohl die eingehende Antwortpruefung als
+# auch das ausgehende Final Payload Gate (beide rufen dieselbe
+# `_contains_original_value_leak`-Hilfsfunktion auf). ---
+
+
+def test_compound_word_containing_pseudonymized_surname_is_not_a_false_positive() -> None:
+    """Der konkrete, reproduzierte Fehlalarm: "Fischer" (Mandantenname)
+    taucht nur als gebundener Wortbestandteil von "Fischereirecht" auf -
+    KEIN echter Leck, darf NICHT mehr blockieren."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="mandant", original_value="Fischer")
+    ]
+    text = (
+        "Fuer die Einspruchsbegruendung ist relevant, ob das "
+        "Fischereirecht hier einschlaegig ist."
+    )
+
+    reasons = check_response_placeholder_integrity(text, mappings, require_full_coverage=False)
+
+    assert reasons == []
+
+
+def test_standalone_surname_is_still_detected_as_a_leak_despite_word_boundary_fix() -> None:
+    """Gegenprobe zum Fix oben: ein ECHTER, eigenstaendiger Leck-Fall
+    desselben Namens muss weiterhin zuverlaessig erkannt werden - die
+    Wortgrenzen-Pruefung darf die eigentliche Schutzfunktion nicht
+    schwaechen."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="mandant", original_value="Fischer")
+    ]
+    text = "Sehr geehrter Herr Fischer, hiermit bestaetigen wir den Eingang Ihres Schreibens."
+
+    reasons = check_response_placeholder_integrity(text, mappings, require_full_coverage=False)
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)
+
+
+def test_outgoing_payload_gate_compound_word_is_not_a_false_positive() -> None:
+    """Dieselbe Garantie fuer das AUSGEHENDE Final Payload Gate - eine
+    normale anwaltliche Anmerkung ueber "Fischereirecht" darf nicht schon
+    VOR dem Claude-Aufruf blockiert werden, nur weil ein Mandant
+    "Fischer" heisst."""
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="mandant", original_value="Fischer")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt="Akte: [MANDANT_01]",
+        anonymisierte_anwaltliche_anmerkungen="Ist das Fischereirecht hier relevant?",
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons == []
+
+
+def test_outgoing_payload_gate_compound_word_fix_does_not_hide_a_real_leak() -> None:
+    mappings = [
+        PseudonymMapping(placeholder="[MANDANT_01]", category="mandant", original_value="Fischer")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt="Akte: [MANDANT_01]",
+        anonymisierte_anwaltliche_anmerkungen="Bitte an Herrn Fischer persoenlich adressieren.",
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)
+
+
 def test_outgoing_payload_gate_keeps_full_coverage_requirement() -> None:
     """Der AUSGEHENDE Payload-Gate-Aufruf (`check_payload_placeholder_integrity`)
     ruft dieselbe Funktion ohne den neuen Parameter auf und muss deshalb

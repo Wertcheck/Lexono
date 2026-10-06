@@ -239,3 +239,56 @@ bestätigt.
 - Kein Vergleich bei 1366×768 vs. 1920×1080 (Fenstergröße müsste dafür
   gezielt per `window.resize()`/`_NativeApi.resize_window_by` gesetzt
   werden, bisher nicht systematisch durchgeführt).
+
+## NEUE TECHNIK (03.10.): echte Screenshots bei 1366×768/1536×1024/1920×1080 OHNE das native Fenster - löst die oben dokumentierte Bildschirmgrenze
+
+**Erkenntnis**: die 1024×768-Beschränkung oben gilt NUR für das sichtbare,
+native pywebview-Fenster (physisch an die Bildschirmauflösung dieser
+Sandbox gebunden). Lexono ist aber technisch eine normale HTTP-
+Server-Anwendung (FastAPI/Jinja2) - ein HEADLESS Browser rendert
+unabhängig von jeder physischen Bildschirmgröße, da nichts tatsächlich
+angezeigt wird. `msedge.exe` ist auf dieser Maschine vorhanden
+(`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`),
+Playwright/Selenium sind NICHT im Projekt-venv installiert (bewusst
+nicht nachinstalliert, um keine neue Architektur-/Dependency-Entscheidung
+einzuführen) - stattdessen ein ca. 150-Zeilen-Python-Skript OHNE jede
+externe Abhängigkeit (nur Standardbibliothek: `socket`/`struct`/`base64`/
+`subprocess`/`urllib`), das das Chrome DevTools Protocol direkt per
+rohem WebSocket-Handshake+Framing spricht:
+
+1. `msedge --headless=new --remote-debugging-port=<port>
+   --user-data-dir=<temp>` starten.
+2. `GET http://127.0.0.1:<port>/json` → `webSocketDebuggerUrl` der
+   Page ermitteln.
+3. Rohe WebSocket-Verbindung öffnen (RFC-6455-Handshake von Hand, dann
+   maskierte Text-Frames senden/empfangen - kein `websocket`-Paket
+   nötig).
+4. `Network.setCookie` mit einem ECHTEN, zuvor per normalem
+   HTTP-Login (`urllib`+`http.cookiejar`, exakt dasselbe Muster wie die
+   Test-Helper) erhaltenen Session-Cookie - löst das Login-Problem
+   OHNE jede UI-Automatisierung (kein Tastatur-/Maus-Fokus-Race wie bei
+   der PowerShell-Technik, siehe `ACCESS-BLOCKER`-Fund in
+   OPEN_ISSUES.md).
+5. `Emulation.setDeviceMetricsOverride` für die gewünschte
+   Viewport-Größe (funktioniert für JEDE Größe, auch deutlich größer als
+   der physische Bildschirm dieser Sandbox).
+6. `Page.navigate` + auf `Page.loadEventFired` warten + `Page.
+   captureScreenshot` (Base64-PNG) → Datei.
+
+**Sicherheit/Isolation (wichtig)**: NIEMALS direkt gegen die geteilte
+Produktions-DB einloggen/screenshotten. Stattdessen: echte DB-Datei
+(`%ProgramData%\Lexono\data\kanzlei_ai.db`) in ein Scratchpad-Verzeichnis
+KOPIEREN, in der Kopie per `app.auth.security.hash_password` +
+SQLAlchemy ein Wegwerf-Test-Admin mit bekanntem Passwort anlegen, einen
+ZWEITEN uvicorn-Prozess auf einem anderen Port mit `DATABASE_URL` auf
+diese Kopie zeigend starten, NUR gegen diesen zweiten Prozess
+login/screenshotten. Nach Abschluss: zweiten Server-Prozess beenden,
+echte DB per Zeilenzahl-Vergleich (`SELECT COUNT(*) FROM clients` o. ä.)
+als unverändert verifizieren. Erstmals am 03.10. bei der
+Mandantenübersicht-Referenzabgleich-Aufgabe eingesetzt und erfolgreich
+verifiziert (siehe PROJECT_STATE.md) - sollte ab sofort die
+BEVORZUGTE Technik für jede Seite sein, die (anders als das reine
+Fenster-Chrome/die Titelleiste) über HTTP normal erreichbar ist; die
+PowerShell-Fenster-Technik oben bleibt weiterhin die einzige Option für
+natives Fenster-Chrome selbst (Titelleiste, Fenstergröße/-rand) und für
+die Verifikation des tatsächlich installierten Builds.

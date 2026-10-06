@@ -8,6 +8,7 @@ geforderten Szenarien TEST A-E ab."""
 
 from __future__ import annotations
 
+import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -27,6 +28,7 @@ from app.models import (
     AuditEvent,
     ChatConversation,
     ChatMessage,
+    ChatMessageDocument,
     Client,
     Draft,
     DraftSourceLink,
@@ -174,7 +176,19 @@ def test_chat_home_with_new_param_shows_empty_state_despite_existing_history(
     assert "Wie kann ich Sie heute unterstützen" in with_new_param.text
     # Der Verlauf bleibt in der Unterhaltungsliste sichtbar (gewuenscht) -
     # nur das Hauptpanel muss den Leerzustand zeigen, keine Nachrichten.
-    assert "chat-message--user" not in with_new_param.text
+    # Hinweis (06.10., "CHAT & CHAT-HISTORY PROFESSIONAL UX PASS"): ein reiner
+    # Substring-Check auf die ganze Seite reicht nicht mehr aus, denn
+    # "Erste Unterhaltung." bleibt als Titel in der Unterhaltungsliste
+    # sichtbar (gewuenscht, siehe oben) und "chat-message--user" taucht seit
+    # der clientseitigen Sofort-Rendering-Funktion appendUserBubble() auch im
+    # <script>-Block JEDER Chat-Seite als JS-String auf (nicht als
+    # tatsaechlich gerendertes Element). Deshalb gezielt nur den Inhalt des
+    # Haupt-Nachrichtenbereichs (id="chat-messages") pruefen.
+    messages_panel_start = with_new_param.text.index('id="chat-messages"')
+    messages_panel_end = with_new_param.text.index('id="chat-composer"')
+    messages_panel_html = with_new_param.text[messages_panel_start:messages_panel_end]
+    assert "chat-message--user" not in messages_panel_html
+    assert "Erste Unterhaltung." not in messages_panel_html
 
 
 def test_send_message_creates_conversation_and_ai_reply(
@@ -804,6 +818,107 @@ def test_composer_submit_handler_never_disables_the_textarea() -> None:
     assert "setLoadingState()" in submit_handler
 
 
+# --- "CHAT / COMPOSER / CHAT-HISTORY FINAL UX & STATE-CONSISTENCY PASS"
+# (06.10.): Plus statt Buerooklammer, X waehrend Recording (strukturell
+# bereits durch die bestehende Zeilen-Umschaltung geloest, siehe
+# test_chat_composer_cancel_and_stop_buttons_have_distinct_labels oben),
+# Single-Source-of-Truth-Leeren des Composers. ---
+
+
+def test_chat_composer_attach_button_uses_plus_icon_not_clip(
+    client: TestClient, db_session: Session
+) -> None:
+    """§12/§13 - der bisherige Buerooklammer-Button wird als Plus
+    dargestellt, bleibt aber dieselbe Schaltflaeche (gleiche ID, gleiche
+    bestehende Attachment-Funktion/Klick-Handler)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    normal_controls_start = response.text.index('id="chat-normal-controls"')
+    attach_btn_end = response.text.index("</button>", normal_controls_start)
+    attach_btn_markup = response.text[normal_controls_start:attach_btn_end]
+    assert 'id="chat-attach-btn"' in attach_btn_markup
+    # Plus-Icon-Pfad ("M12 5v14M5 12h14", siehe _icons.html plus()), nicht
+    # mehr der Buerooklammer-Pfad.
+    assert "M12 5v14M5 12h14" in attach_btn_markup
+
+
+def test_chat_composer_attach_button_keeps_existing_upload_wiring(
+    client: TestClient, db_session: Session
+) -> None:
+    """Die Plus-Umstellung ist eine reine Icon-/Label-Aenderung - der
+    bestehende Klick-Handler (oeffnet den Datei-Dialog) und das
+    File-Input-Element muessen unveraendert vorhanden bleiben."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert 'id="chat-file-input"' in response.text
+    assert 'attachBtn.addEventListener("click", function () { fileInput.click(); });' in response.text
+
+
+def test_chat_composer_textarea_has_autocomplete_off(
+    client: TestClient, db_session: Session
+) -> None:
+    """Haertung (§8/§17): verhindert, dass der Browser bei einer Navigation
+    unabhaengig vom servergerenderten HTML einen alten Wert in das benannte
+    Formularfeld zurueckschreibt."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    textarea_start = response.text.index('id="chat-input"')
+    textarea_tag_end = response.text.index(">", textarea_start)
+    textarea_tag = response.text[textarea_start:textarea_tag_end]
+    assert 'autocomplete="off"' in textarea_tag
+
+
+def test_clear_composer_is_a_single_shared_function_used_by_streaming_send(
+    client: TestClient, db_session: Session
+) -> None:
+    """§8 "Single Source of Truth fuer den Composer" - EINE Funktion statt
+    mehrerer unabhaengiger `value = ""`-Stellen. Der Streaming-Sendepfad
+    (der tatsaechliche Pfad in jeder modernen WebView2-/Chromium-Umgebung,
+    siehe `supportsStreaming`) muss sie verwenden."""
+    chat_html_path = (
+        Path(__file__).resolve().parent.parent / "app" / "web" / "templates" / "chat.html"
+    )
+    content = chat_html_path.read_text(encoding="utf-8")
+    assert "function clearComposer()" in content
+
+    clear_fn_start = content.index("function clearComposer()")
+    clear_fn_end = content.index("}", clear_fn_start)
+    clear_fn_body = content[clear_fn_start:clear_fn_end]
+    assert 'textarea.value = "";' in clear_fn_body
+
+    streaming_fn_start = content.index("function runStreamingSend(")
+    streaming_fn_end = content.index("\n      if (composer) {", streaming_fn_start)
+    streaming_fn_body = content[streaming_fn_start:streaming_fn_end]
+    assert "clearComposer();" in streaming_fn_body
+    # Direkt im Streaming-Pfad darf NICHT zusaetzlich/unabhaengig ein
+    # zweites `textarea.value = ""` auftauchen (genau EINE Stelle).
+    assert streaming_fn_body.count('textarea.value = "";') == 0
+
+
+def test_clear_composer_is_not_called_in_the_native_fallback_submit_handler(
+    client: TestClient, db_session: Session
+) -> None:
+    """Gegenprobe, technisch begruendet: im klassischen Formular-Fallback
+    (ohne `preventDefault()`) liest der Browser die Feldwerte beim
+    eigentlichen nativen Submit erneut aus dem DOM - ein `clearComposer()`-
+    Aufruf an dieser Stelle wuerde den Inhalt LOESCHEN, BEVOR er uebermittelt
+    wird, und zu einer leer gesendeten Nachricht fuehren (derselbe
+    Mechanismus wie beim bereits bestehenden `disabled`-Fund, hier aber
+    ueber `value` statt `disabled`)."""
+    chat_html_path = (
+        Path(__file__).resolve().parent.parent / "app" / "web" / "templates" / "chat.html"
+    )
+    content = chat_html_path.read_text(encoding="utf-8")
+
+    submit_handler_start = content.index('composer.addEventListener("submit"')
+    submit_handler_end = content.index("});", submit_handler_start)
+    submit_handler = content[submit_handler_start:submit_handler_end]
+    assert "clearComposer()" not in submit_handler
+
+
 # ==========================================================================
 # Phase 2 (visuelle/UX-Fertigstellung): mehrere Nachrichten,
 # Konversationswechsel, Dokumentstatus-Anzeige, Kopfbereich
@@ -1100,6 +1215,448 @@ def test_document_workspace_rejects_document_from_other_conversation(
 
 
 # ==========================================================================
+# Dokumentvorschau im Chat (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+# FLOW PASS" §19-21): echtes Thumbnail-Rendering + Isolation.
+# ==========================================================================
+
+
+def _attach_document_to_new_conversation(
+    db: Session, *, current_user_email: str, file_path: str
+) -> tuple[ChatConversation, "chat_router_module.Document"]:
+    """Legt direkt eine Konversation (mit der technisch noetigen
+    Schnellentwurf-Platzhalterakte, siehe `_placeholder_conversation` oben)
+    + ein angehaengtes Dokument an, ohne den Upload-Weg zu nutzen (der
+    Chat-Upload selbst erlaubt nur PDF/DOCX, siehe
+    `_ALLOWED_UPLOAD_EXTENSIONS` - die Thumbnail-Route muss aber
+    unabhaengig davon fuer jedes von `determine_viewer_mode` unterstuetzte
+    Format korrekt funktionieren, z. B. ein direkt als Mail-Anhang
+    eingegangenes Bild)."""
+    conversation = _placeholder_conversation(db, current_user_email)
+
+    message = ChatMessage(conversation_id=conversation.id, role="user", content="Dokument.")
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+
+    document = chat_router_module.Document(file_path=file_path, original_filename=Path(file_path).name)
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+
+    link = ChatMessageDocument(message_id=message.id, document_id=document.id)
+    db.add(link)
+    db.commit()
+
+    return conversation, document
+
+
+def test_chat_document_thumbnail_renders_first_pdf_page(
+    client: TestClient, db_session: Session, tmp_path: Path
+) -> None:
+    login_as_admin(db_session, client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 72), "Seite eins.")
+    pdf_path = tmp_path / "anhang.pdf"
+    doc.save(pdf_path)
+    doc.close()
+
+    conversation, document = _attach_document_to_new_conversation(
+        db_session, current_user_email="admin@kanzlei.test", file_path=str(pdf_path)
+    )
+
+    response = client.get(f"/dashboard/chat/{conversation.id}/document/{document.id}/thumbnail.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_chat_document_thumbnail_serves_direct_image(
+    client: TestClient, db_session: Session, tmp_path: Path
+) -> None:
+    login_as_admin(db_session, client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    pixmap = page.get_pixmap(dpi=40)
+    png_path = tmp_path / "anhang.png"
+    png_path.write_bytes(pixmap.tobytes("png"))
+    doc.close()
+
+    conversation, document = _attach_document_to_new_conversation(
+        db_session, current_user_email="admin@kanzlei.test", file_path=str(png_path)
+    )
+
+    response = client.get(f"/dashboard/chat/{conversation.id}/document/{document.id}/thumbnail.png")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_chat_document_thumbnail_404_for_unsupported_format(
+    client: TestClient, db_session: Session, tmp_path: Path
+) -> None:
+    login_as_admin(db_session, client)
+
+    txt_path = tmp_path / "notiz.txt"
+    txt_path.write_text("Reiner Text ohne Seiten-Rendering.", encoding="utf-8")
+
+    conversation, document = _attach_document_to_new_conversation(
+        db_session, current_user_email="admin@kanzlei.test", file_path=str(txt_path)
+    )
+
+    response = client.get(f"/dashboard/chat/{conversation.id}/document/{document.id}/thumbnail.png")
+    assert response.status_code == 404
+
+
+def test_chat_document_thumbnail_rejects_document_from_other_conversation(
+    client: TestClient, db_session: Session, tmp_path: Path
+) -> None:
+    """Gleiche Isolationsgarantie wie `chat_document_view`
+    (`ChatService.get_attached_document`): ein Dokument, das in einer
+    anderen Konversation haengt, darf ueber die Thumbnail-Route nicht
+    erreichbar sein - auch nicht ueber eine erratene, aber gueltige
+    Dokument-ID."""
+    login_as_admin(db_session, client)
+
+    import pymupdf
+
+    doc = pymupdf.open()
+    doc.new_page()
+    pdf_path = tmp_path / "fremd.pdf"
+    doc.save(pdf_path)
+    doc.close()
+
+    _owning_conversation, document = _attach_document_to_new_conversation(
+        db_session, current_user_email="admin@kanzlei.test", file_path=str(pdf_path)
+    )
+
+    other_conversation, _other_document = _attach_document_to_new_conversation(
+        db_session, current_user_email="admin@kanzlei.test", file_path=str(pdf_path)
+    )
+
+    response = client.get(
+        f"/dashboard/chat/{other_conversation.id}/document/{document.id}/thumbnail.png"
+    )
+    assert response.status_code == 404
+
+
+# ==========================================================================
+# Kontext-Isolation zwischen Unterhaltungen (05.10., Owner-Direktive
+# "ARCHITECTURE & PRODUCT FLOW PASS" §10, TEST 11): Unterhaltung A mit
+# explizitem Aktenkontext darf NICHT in eine neue, allgemeine Unterhaltung
+# B durchsickern - weder als Gespraechsverlauf noch als Aktenbezug.
+# ==========================================================================
+
+
+def test_conversation_with_matter_context_does_not_leak_into_new_general_chat(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Echter End-to-End-Weg (ueber die tatsaechliche `/send`-Route, nicht
+    nur eine DB-Query) - prueft die an den KI-Provider gesendete Payload
+    (`ClaudeRequestPayload.anonymisierter_gespraechsverlauf`/
+    `anonymisierter_sachverhalt`) fuer eine BRANDNEUE allgemeine
+    Unterhaltung B, NACHDEM zuvor eine Unterhaltung A mit echtem,
+    vertraulichem Aktenkontext bedient wurde - mit derselben Fake-KI-
+    Instanz, damit beide Aufrufe in `received_payloads` landen."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider()
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer)
+    )
+
+    confidential_client = Client(name="Vertraulich Mueller", client_number="K-ISO-1")
+    confidential_matter = Matter(
+        client=confidential_client, title="Geheimakte Mueller./.Schmidt", reference_number="A-ISO-1"
+    )
+    db_session.add_all([confidential_client, confidential_matter])
+    db_session.commit()
+
+    csrf_a = _csrf(client)
+    response_a = client.post(
+        "/dashboard/chat/send",
+        data={
+            "csrf_token": csrf_a,
+            "conversation_id": "",
+            "matter_id": confidential_matter.id,
+            "content": "Vertraulicher Sachverhalt: Herr Mueller bestreitet die Kuendigungsfrist.",
+        },
+        follow_redirects=True,
+    )
+    assert response_a.status_code == 200
+
+    # Unterhaltung B: brandneuer, ALLGEMEINER Chat (kein matter_id-Feld) -
+    # genau das in §5/§6 der Direktive vorgeschriebene Standardverhalten.
+    csrf_b = _csrf(client)
+    response_b = client.post(
+        "/dashboard/chat/send",
+        data={
+            "csrf_token": csrf_b,
+            "conversation_id": "",
+            "content": "Wie funktioniert eine Kuendigung wegen Eigenbedarfs?",
+        },
+        follow_redirects=True,
+    )
+    assert response_b.status_code == 200
+
+    assert len(writer.received_payloads) == 2
+    payload_a, payload_b = writer.received_payloads
+
+    # Unterhaltung A hat (erwartungsgemaess) noch KEINE Historie (erste
+    # Nachricht), aber den vertraulichen Sachverhalt im eigenen Payload.
+    assert payload_a.anonymisierter_gespraechsverlauf == []
+
+    # Der eigentliche Isolationsbeweis: Unterhaltung B ist komplett sauber -
+    # weder Gespraechsverlauf noch Sachverhalt enthalten irgendeine Spur
+    # aus Unterhaltung A (Mandantenname/Aktentitel/Inhalt).
+    assert payload_b.anonymisierter_gespraechsverlauf == []
+    assert "Mueller" not in payload_b.anonymisierter_sachverhalt
+    assert "Kuendigungsfrist" not in payload_b.anonymisierter_sachverhalt
+    assert "Geheimakte" not in payload_b.anonymisierter_sachverhalt
+
+    # Auch auf DB-Ebene: zwei komplett getrennte Unterhaltungen/Akten.
+    conversations = db_session.query(ChatConversation).order_by(ChatConversation.created_at).all()
+    assert len(conversations) == 2
+    conversation_a, conversation_b = conversations
+    assert conversation_a.matter_id == confidential_matter.id
+    assert conversation_b.matter_id != confidential_matter.id
+
+
+# ==========================================================================
+# Aufnahme-UX im Chat-Composer (06.10., Owner-Direktive "SPRACHEINGABE IM
+# CHAT: VOLLSTAENDIGE RECORDING- UND SEND-UX") - reine Markup-
+# Regressionstests: die eigentliche Zustandslogik (X verwirft, Stop
+# transkribiert, Wellenform, Timer) ist JS-seitig im Browser und wird
+# hier bewusst NICHT per Python-Unittest nachgebaut (keine neue
+# JS-Testarchitektur, §16) - echter Ablauf wurde stattdessen live per CDP
+# verifiziert (siehe Abschlussbericht). Diese Tests stellen nur sicher,
+# dass die vom JS zwingend benoetigten Element-IDs/Klassen nicht durch
+# eine spaetere Template-Aenderung versehentlich verschwinden.
+# ==========================================================================
+
+
+def test_chat_composer_renders_recording_row_markup(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    # Normale Steuerelemente jetzt in einem eigenen Umschalt-Container
+    # (§4) - IDLE zeigt diesen, RECORDING die Aufnahme-Zeile darunter.
+    assert 'id="chat-normal-controls"' in response.text
+    assert 'id="chat-recording"' in response.text
+    assert 'id="chat-recording-cancel"' in response.text
+    assert 'id="chat-recording-stop"' in response.text
+    assert 'id="chat-waveform-canvas"' in response.text
+    assert 'id="chat-recording-time"' in response.text
+    # Aufnahme-Zeile ist initial (IDLE) versteckt.
+    assert '<div class="chat-composer__recording" id="chat-recording" hidden>' in response.text
+
+
+def test_chat_composer_cancel_and_stop_buttons_have_distinct_labels(
+    client: TestClient, db_session: Session
+) -> None:
+    """§6/§7 - X (verwerfen) und Stop/Rechteck (beenden) muessen fuer
+    Screenreader UND optisch eindeutig unterscheidbar sein, nicht nur
+    zwei gleich beschriftete Buttons."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert 'title="Aufnahme verwerfen"' in response.text
+    assert 'aria-label="Aufnahme verwerfen"' in response.text
+    assert 'title="Diktat beenden"' in response.text
+    assert 'aria-label="Diktat beenden"' in response.text
+
+
+def test_chat_composer_renders_transcribing_row_markup(
+    client: TestClient, db_session: Session
+) -> None:
+    """06.10., Owner-Direktive "SPEECH COMPOSER FINAL UX PASS" §8/§9/§22 -
+    TRANSCRIBING bekommt eine eigene Zeile INNERHALB des Composers (Status-
+    Text + Spinner), separat von `#chat-recording` und von der alten
+    Statuszeile `#chat-speech-status` (die fuer diesen Zustand nicht mehr
+    verwendet wird, siehe `startTranscription()` in chat.html)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert 'id="chat-transcribing"' in response.text
+    # Initial (IDLE) versteckt - wie die Aufnahme-Zeile.
+    assert '<div class="chat-composer__transcribing" id="chat-transcribing" hidden>' in response.text
+    assert '<span class="chat-composer__transcribing-label">Transkription läuft …</span>' in response.text
+    assert 'class="chat-composer__transcribing-spinner"' in response.text
+    # Die alte separate Statuszeile darf diesen Text nicht mehr selbst
+    # setzen (die Zeichenkette darf nur als HTML-Inhalt der neuen
+    # Composer-Zeile und ggf. in Kommentaren vorkommen, NICHT mehr als
+    # aktiver `setSpeechStatus(...)`-Aufruf).
+    assert 'setSpeechStatus("Transkription läuft …"' not in response.text
+
+
+def test_chat_composer_waveform_uses_segmented_bars_not_single_line(
+    client: TestClient, db_session: Session
+) -> None:
+    """06.10., Owner-Direktive "SPEECH COMPOSER FINAL UX PASS" §1/§3 -
+    reiner Code-Gegenbeweis gegen die alte, als Problem gemeldete
+    durchgehende Oszilloskop-Linie: `getByteFrequencyData()` (Spektrum,
+    je Segment unterschiedliche Werte) statt der vorherigen
+    `getByteTimeDomainData()` + einem einzigen `lineTo`-Pfad. Die
+    eigentliche visuelle Pruefung (sieht es wie getrennte Balken statt
+    einer Linie aus?) ist nur per echtem Rendering/CDP moeglich und wird
+    dort verifiziert (siehe Abschlussbericht) - dieser Test haelt nur den
+    Techniknachweis im Quellcode fest, damit er nicht versehentlich
+    zurueckgebaut wird."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert "analyser.getByteFrequencyData(frequencyData)" in response.text
+    assert "analyser.getByteTimeDomainData(" not in response.text
+    # Mehrere getrennte Segmente statt eines einzigen Pfades: pro Balken
+    # ein eigenes moveTo/lineTo-Paar in einer Schleife, nicht ein
+    # durchgaengiger Pfad ueber alle Datenpunkte.
+    assert "barLevels" in response.text
+    assert "computeBarCount" in response.text
+
+
+# ==========================================================================
+# Lokale Spracheingabe (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+# FLOW PASS" §22-27): die Route selbst, inkl. Auth/CSRF/Fehlerabbildung.
+# Die eigentliche Transkriptionslogik wird separat in
+# tests/test_chat_speech.py getestet - hier geht es nur um die
+# Web-Schicht (Auth/CSRF/HTTP-Statuscodes/JSON-Form).
+# ==========================================================================
+
+
+def test_speech_transcribe_returns_recognized_text(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+
+    monkeypatch.setattr(
+        chat_router_module, "transcribe_audio_bytes", lambda audio_bytes, **kw: "Bitte prüfen Sie die Frist."
+    )
+
+    response = client.post(
+        "/dashboard/chat/speech/transcribe",
+        data={"csrf_token": csrf},
+        files={"audio": ("aufnahme.webm", b"\x00" * 100, "audio/webm")},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"text": "Bitte prüfen Sie die Frist."}
+
+
+def test_speech_transcribe_requires_login(client: TestClient) -> None:
+    response = client.post(
+        "/dashboard/chat/speech/transcribe",
+        data={"csrf_token": "egal"},
+        files={"audio": ("aufnahme.webm", b"\x00" * 100, "audio/webm")},
+        follow_redirects=False,
+    )
+    assert response.status_code in (303, 401)
+
+
+def test_speech_transcribe_rejects_invalid_csrf_token(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    _csrf(client)  # Session aktiv, Token bewusst NICHT verwendet.
+
+    response = client.post(
+        "/dashboard/chat/speech/transcribe",
+        data={"csrf_token": "falsches-token"},
+        files={"audio": ("aufnahme.webm", b"\x00" * 100, "audio/webm")},
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    ("error_cls_name", "expected_status", "expected_error_key"),
+    [
+        ("SpeechEmptyRecordingError", 422, "empty_recording"),
+        ("SpeechTooLargeError", 413, "too_large"),
+        ("SpeechDecodeError", 422, "decode_failed"),
+        ("SpeechModelUnavailableError", 503, "model_unavailable"),
+    ],
+)
+def test_speech_transcribe_maps_errors_to_honest_json_responses(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    error_cls_name: str,
+    expected_status: int,
+    expected_error_key: str,
+) -> None:
+    """§26 (Fehlerzustaende) + CLAUDE.md "Keine Fake-Vollstaendigkeit": bei
+    jedem bekannten Fehlerfall ein ehrlicher Status/eine ehrliche Meldung,
+    nie ein stiller 200er mit leerem Text."""
+    from app.chat import speech as speech_module
+
+    error_cls = getattr(speech_module, error_cls_name)
+
+    def _raise(audio_bytes: bytes, **kwargs: object) -> str:
+        raise error_cls("Testfehler")
+
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    monkeypatch.setattr(chat_router_module, "transcribe_audio_bytes", _raise)
+
+    response = client.post(
+        "/dashboard/chat/speech/transcribe",
+        data={"csrf_token": csrf},
+        files={"audio": ("aufnahme.webm", b"\x00" * 100, "audio/webm")},
+    )
+    assert response.status_code == expected_status
+    assert response.json()["error"] == expected_error_key
+
+
+def test_speech_transcribe_never_writes_a_permanent_file(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """§24 "keine unnoetige Audiospeicherung" auf Web-Schicht-Ebene: ruft
+    tatsaechlich die echte Transkriptionsfunktion auf (mit einem Fake-
+    Modell, siehe tests/test_chat_speech.py fuer das Fake) und prueft, dass
+    danach keine Datei im tmp-Verzeichnis uebrig bleibt."""
+    from app.chat import speech as speech_module
+
+    class _FakeSegment:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+    class _FakeInfo:
+        duration = 2.0
+
+    class _FakeModel:
+        def transcribe(self, path: str, *, language: str, vad_filter: bool):
+            assert Path(path).exists()
+            return (iter([_FakeSegment("Erkannter Text.")]), _FakeInfo())
+
+    speech_module._model = _FakeModel()
+    speech_module._model_load_error = None
+    try:
+        login_as_admin(db_session, client)
+        csrf = _csrf(client)
+
+        before = set(Path(tempfile.gettempdir()).glob("tmp*"))
+        response = client.post(
+            "/dashboard/chat/speech/transcribe",
+            data={"csrf_token": csrf},
+            files={"audio": ("aufnahme.webm", b"\x00" * 2000, "audio/webm")},
+        )
+        after = set(Path(tempfile.gettempdir()).glob("tmp*"))
+
+        assert response.status_code == 200
+        assert response.json() == {"text": "Erkannter Text."}
+        assert after - before == set()
+    finally:
+        speech_module._model = None
+        speech_module._model_load_error = None
+
+
+# ==========================================================================
 # UI/UX-Ueberarbeitung, Phase 4 (13.09.): Breadcrumb, Aktenbezug, Kopieren/
 # Vollstaendigen-Editor-Link, echte Quellen-Karte.
 # ==========================================================================
@@ -1134,6 +1691,162 @@ def test_chat_shows_breadcrumb_with_matter_title(client: TestClient, db_session:
     # Aktendetailseite (Dokumente/Aufgaben & Fristen/Kommunikation) - jetzt
     # ein echter Link.
     assert f'href="/dashboard/matters/{conversation.matter_id}"' in response.text
+
+
+def _placeholder_conversation(db: Session, current_user_email: str, *, user_message: str = "Allgemeine Frage") -> ChatConversation:
+    """Eine Unterhaltung OHNE bewusste Aktenauswahl - wie sie
+    `create_quick_matter` (app/drafting/quick_matter.py) fuer jeden neuen
+    Chat ohne Kontext anlegt: Sammel-Mandant "Ohne Mandantenzuordnung"."""
+    from app.models import User
+
+    user = db.query(User).filter_by(email=current_user_email).first()
+    client_row = Client(name="Ohne Mandantenzuordnung")
+    matter = Matter(client=client_row, title="Schnellentwurf 2026-10-05")
+    db.add_all([client_row, matter])
+    db.commit()
+    conversation = ChatConversation(matter_id=matter.id, user_id=user.id, title=user_message)
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+    return conversation
+
+
+def test_chat_without_explicit_matter_hides_akte_breadcrumb(
+    client: TestClient, db_session: Session
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §5-9 -
+    ein allgemeiner Chat (keine bewusste Aktenauswahl, nur die technisch
+    noetige Schnellentwurf-Platzhalterakte im Hintergrund) darf NICHT wie
+    Akte-Arbeit wirken: keine "Schnellentwurf ..."-Akte im Breadcrumb/
+    Titel, stattdessen der natuerliche Unterhaltungstitel."""
+    login_as_admin(db_session, client)
+    conversation = _placeholder_conversation(
+        db_session, "admin@kanzlei.test", user_message="Was ist der Unterschied zwischen Besitz und Eigentum?"
+    )
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Schnellentwurf 2026-10-05" not in response.text
+    assert conversation.title in response.text
+    assert f'href="/dashboard/matters/{conversation.matter_id}"' not in response.text
+
+
+def test_chat_without_explicit_matter_offers_add_akte_not_change_akte(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    conversation = _placeholder_conversation(db_session, "admin@kanzlei.test")
+    # `other_matters` muss nicht-leer sein, damit das Popover ueberhaupt
+    # gerendert wird (siehe chat.html: "{% if not viewing_document and
+    # other_matters %}").
+    other_client = Client(name="Anderer Mandant")
+    other_matter = Matter(client=other_client, title="Andere Akte")
+    db_session.add_all([other_client, other_matter])
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Akte hinzufügen" in response.text
+    assert "Akte ändern" not in response.text
+
+
+def test_chat_with_explicit_matter_shows_matter_title_and_change_label(
+    client: TestClient, db_session: Session
+) -> None:
+    """Gegenprobe: eine bewusst gewaehlte/verknuepfte Akte bleibt
+    unveraendert sichtbar, inkl. "Akte ändern" (nicht "hinzufügen")."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    other_client = Client(name="Anderer Mandant")
+    other_matter = Matter(client=other_client, title="Andere Akte")
+    db_session.add_all([other_client, other_matter])
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert conversation.matter.title in response.text
+    assert "Akte ändern" in response.text
+    assert "Akte hinzufügen" not in response.text
+
+
+def test_chat_with_explicit_matter_offers_remove_context_button(
+    client: TestClient, db_session: Session
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §9/TEST 4
+    - eine bewusst verknuepfte Akte zeigt eine eigene "Kontext entfernen"-
+    Aktion (nicht nur "Akte ändern" gegen eine ANDERE Akte)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Kontext entfernen" in response.text
+    assert f'/dashboard/chat/{conversation.id}/link-matter' in response.text
+
+
+def test_general_chat_does_not_offer_remove_context_button(
+    client: TestClient, db_session: Session
+) -> None:
+    """Gegenprobe: ein bereits allgemeiner Chat hat nichts zu entfernen."""
+    login_as_admin(db_session, client)
+    conversation = _placeholder_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Kontext entfernen" not in response.text
+
+
+def test_link_matter_with_empty_matter_id_removes_context(
+    client: TestClient, db_session: Session
+) -> None:
+    """TEST 4 (§28): "Akte aktiv -> Kontext entfernen -> Frage -> wieder
+    allgemeiner Chat." Leeres `matter_id` loest die Unterhaltung von der
+    bisherigen (echten) Akte und haengt sie an eine frische Schnellentwurf-
+    Platzhalterakte - danach verhaelt sich die Unterhaltung wie ein
+    brandneuer allgemeiner Chat (kein Aktentitel im Breadcrumb/Header,
+    "Akte hinzufügen" statt "Akte ändern")."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    original_matter_id = conversation.matter_id
+    csrf = _csrf(client)
+
+    response = client.post(
+        f"/dashboard/chat/{conversation.id}/link-matter",
+        data={"csrf_token": csrf, "matter_id": ""},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db_session.refresh(conversation)
+    assert conversation.matter_id != original_matter_id
+    assert conversation.matter.client.name == "Ohne Mandantenzuordnung"
+
+    follow_up = client.get(f"/dashboard/chat/{conversation.id}")
+    # "Erste Akte" darf nur noch als AUSWAHLOPTION im "Akte hinzufügen"-
+    # Dropdown auftauchen (wieder anhängbar), NICHT mehr als aktiver
+    # Breadcrumb-Link (der immer auf die AKTUELLE `matter_id` zeigt).
+    assert f"/dashboard/matters/{original_matter_id}" not in follow_up.text
+    assert "Akte hinzufügen" in follow_up.text
+    assert "Kontext entfernen" not in follow_up.text
+
+
+def test_conversation_list_hides_placeholder_matter_meta(
+    client: TestClient, db_session: Session
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §5-9 -
+    die Unterhaltungsliste in der linken Spalte zeigt fuer eine Schnell-
+    entwurf-Platzhalterakte keine Akte-Metazeile (nur den natuerlichen
+    Unterhaltungstitel), fuer eine echte Akte weiterhin schon."""
+    login_as_admin(db_session, client)
+    general = _placeholder_conversation(
+        db_session, "admin@kanzlei.test", user_message="Allgemeine Rechtsfrage"
+    )
+    with_matter = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{general.id}")
+
+    assert "Schnellentwurf 2026-10-05" not in response.text
+    assert with_matter.matter.title in response.text
 
 
 def test_chat_header_offers_to_relink_conversation_to_another_matter(
@@ -1472,8 +2185,175 @@ def test_assistant_message_with_draft_shows_open_editor_link(
 
     response = client.get(f"/dashboard/chat/{conversation.id}")
 
-    assert f'href="/dashboard/drafts/{draft.id}"' in response.text
-    assert "Vollständigen Editor öffnen" in response.text
+    # 04.10., Dokumenten-Editor: zeigt jetzt auf den neuen Rich-Text-Editor
+    # (app/web/draft_editor_router.py), nicht mehr auf den reinen Viewer
+    # (draft_detail.html).
+    #
+    # 06.10., Owner-Direktive "Dokument-Upload -> Schriftsatz -> Dokument-
+    # Panel -> Editor": ein echter Schriftsatz erscheint jetzt als
+    # eigenstaendiges Dokument-Panel (".chat-document-panel") statt als
+    # normale Flieszext-Antwort - der Editor-Link lebt jetzt im
+    # Panel-Footer ("Editor öffnen" statt vorher "Vollständigen Editor
+    # öffnen", gleiche Zielseite).
+    assert "chat-document-panel" in response.text
+    assert f'href="/dashboard/drafts/{draft.id}/edit"' in response.text
+    assert "Editor öffnen" in response.text
+    # Ohne gesetztes Draft.subject wird der Titel aus `ChatMessage.content`
+    # abgeleitet (siehe app/web/chat_router.py::_draft_panel_title) - NICHT
+    # aus `Draft.content` (das ist bei einem echten, ueber den Chat erzeugten
+    # Schriftsatz bereits zu HTML konvertiert, siehe dortiger Docstring für
+    # den live im Browser gefundenen Fund) - keine erfundene Ueberschrift.
+    assert "Hier ist der Entwurf." in response.text
+
+
+def test_assistant_message_with_chat_reference_draft_hides_open_editor_link(
+    client: TestClient, db_session: Session
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12 -
+    eine normale Chat-Antwort ohne Schriftsatz-Intent persistiert zwar eine
+    Draft-Zeile (status="chat_reference", siehe app/drafting/service.py::
+    _persist_draft - Traeger fuer "Quellen & Verweise"), bietet dafuer aber
+    KEINEN Editor an. Gegenstueck zu
+    test_assistant_message_with_draft_shows_open_editor_link."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    draft = Draft(
+        matter_id=conversation.matter_id, content="<p>Antworttext.</p>",
+        version=1, status="chat_reference", content_format="html",
+    )
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id, role="assistant", content="Antworttext.", draft_id=draft.id
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "chat-document-panel" not in response.text
+    assert f'href="/dashboard/drafts/{draft.id}/edit"' not in response.text
+    assert "Editor öffnen" not in response.text
+
+
+def test_document_panel_title_has_no_raw_html_for_a_real_html_draft(
+    client: TestClient, db_session: Session
+) -> None:
+    """Regression (06.10., live im Browser mit einem echten, ueber den Chat
+    erzeugten Schriftsatz gefunden): JEDER echte, ueber DraftingService
+    erzeugte Schriftsatz hat `content_format == "html"` und `Draft.content`
+    als bereits konvertiertes HTML (siehe app/drafting/service.py::
+    _persist_draft) - ein erster Versuch leitete den Panel-Titel faelschlich
+    aus `Draft.content` ab und zeigte dadurch rohe `<p>`-Tags im Titel. Der
+    Titel muss stattdessen aus `ChatMessage.content` (immer Klartext/
+    Markdown, nie HTML) abgeleitet werden."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    draft = Draft(
+        matter_id=conversation.matter_id,
+        content="<p>Sehr geehrte Damen und Herren,</p><p>hiermit legen wir Einspruch ein.</p>",
+        version=1, status="draft", content_format="html",
+    )
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id, role="assistant",
+        content="Sehr geehrte Damen und Herren,\n\nhiermit legen wir Einspruch ein.",
+        draft_id=draft.id,
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    title_start = response.text.find('chat-document-panel__title">') + len('chat-document-panel__title">')
+    title_end = response.text.find("</div>", title_start)
+    title_section = response.text[title_start:title_end]
+    assert "<p>" not in title_section
+    assert "Sehr geehrte Damen und Herren" in title_section
+
+
+def test_document_panel_prefers_real_draft_subject_over_derived_title(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der Panel-Titel verwendet das echte `Draft.subject`-Feld (vom Editor
+    gepflegt), WENN es gesetzt ist - keine erfundene/abgeleitete
+    Ueberschrift, wenn bereits ein echter Betreff vorliegt (siehe
+    app/web/chat_router.py::_draft_panel_title)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    draft = Draft(
+        matter_id=conversation.matter_id, content="Sehr geehrte Damen und Herren, ...",
+        version=1, status="draft", subject="Klageschrift wegen Schadensersatz",
+    )
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id, role="assistant", content="Entwurf.", draft_id=draft.id
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Klageschrift wegen Schadensersatz" in response.text
+
+
+def test_document_panel_copy_button_targets_full_draft_content(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der Kopieren-Button im Panel-Header muss auf denselben Container
+    zeigen, der den VOLLSTAENDIGEN Entwurfstext enthaelt (kein Download,
+    keine neue Clipboard-Implementierung - derselbe bestehende
+    ".chat-message__copy-btn"/"data-copy-target"-Mechanismus wie bei einer
+    normalen Chat-Antwort)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    long_content = "Sehr geehrte Damen und Herren, " + ("dies ist ein langer Schriftsatz. " * 50)
+    draft = Draft(matter_id=conversation.matter_id, content=long_content, version=1, status="draft")
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id, role="assistant", content=long_content, draft_id=draft.id
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert f'data-copy-target="chat-message-text-{message.id}"' in response.text
+    assert f'id="chat-message-text-{message.id}"' in response.text
+    # /ux-long-content: der VOLLSTAENDIGE Text bleibt im Datenmodell/DOM
+    # erhalten - nur die sichtbare Hoehe wird per CSS begrenzt
+    # (".chat-document-panel__content"), keine Kuerzung im Markup.
+    assert long_content.strip() in response.text
+    assert "chat-document-panel__content" in response.text
+
+
+def test_document_panel_appears_only_once_per_schriftsatz_message(
+    client: TestClient, db_session: Session
+) -> None:
+    """Regression: eine Schriftsatz-Nachricht zeigt NICHT zusaetzlich auch
+    noch den normalen ".chat-message__text"-Flieszextblock - das Panel
+    ersetzt ihn vollstaendig, keine doppelte Darstellung desselben
+    Inhalts."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    draft = Draft(matter_id=conversation.matter_id, content="Entwurfstext", version=1, status="draft")
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id, role="assistant", content="Entwurfstext", draft_id=draft.id
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    # Der Inhalt darf nur EINMAL im Markup erscheinen (im Panel) - keine
+    # zusaetzliche, doppelte Darstellung ueber den normalen Flieszext-Block.
+    assert response.text.count(f'id="chat-message-text-{message.id}"') == 1
+    assert response.text.count("chat-document-panel\"") == 1
 
 
 def test_assistant_message_shows_real_sources_used_for_its_draft(
@@ -1949,3 +2829,414 @@ def test_document_action_on_unknown_document_returns_404(
     )
 
     assert response.status_code == 404
+
+
+# --- Chat umbenennen (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
+# PROFESSIONAL UX PASS" §13-§17). Kein neues Datenmodell/keine Migration -
+# `ChatConversation.title` ist bereits ein freies String(200)-Feld, das
+# ausserhalb von `_derive_title()` (nur bei Erstellung) nie wieder
+# ueberschrieben wird (siehe app/chat/service.py). Gleicher IDOR-Schutz wie
+# bei delete/link-matter (`_require_own_conversation`). ---
+
+
+def test_rename_conversation_updates_title(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    csrf = _csrf(client)
+
+    response = client.post(
+        f"/dashboard/chat/{conversation.id}/rename",
+        data={"csrf_token": csrf, "title": "Neuer Titel"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True, "title": "Neuer Titel"}
+    db_session.refresh(conversation)
+    assert conversation.title == "Neuer Titel"
+
+
+def test_rename_conversation_works_for_the_active_conversation_without_new_id(
+    client: TestClient, db_session: Session
+) -> None:
+    """Die Unterhaltungs-ID (und damit die konkrete Konversation) darf sich
+    durch das Umbenennen NICHT aendern - kein neuer Chat, keine Navigation
+    notwendig (Direktive §15)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    conversation_id = conversation.id
+    csrf = _csrf(client)
+
+    client.get(f"/dashboard/chat/{conversation_id}")
+    client.post(
+        f"/dashboard/chat/{conversation_id}/rename",
+        data={"csrf_token": csrf, "title": "Umbenannt waehrend aktiv"},
+    )
+
+    still_open = client.get(f"/dashboard/chat/{conversation_id}")
+    assert still_open.status_code == 200
+    assert "Umbenannt waehrend aktiv" in still_open.text
+    assert db_session.get(ChatConversation, conversation_id) is not None
+
+
+def test_rename_conversation_trims_whitespace(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    csrf = _csrf(client)
+
+    response = client.post(
+        f"/dashboard/chat/{conversation.id}/rename",
+        data={"csrf_token": csrf, "title": "   Getrimmt   "},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["title"] == "Getrimmt"
+    db_session.refresh(conversation)
+    assert conversation.title == "Getrimmt"
+
+
+def test_rename_conversation_rejects_empty_title(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    original_title = conversation.title
+    csrf = _csrf(client)
+
+    response = client.post(
+        f"/dashboard/chat/{conversation.id}/rename",
+        data={"csrf_token": csrf, "title": "   "},
+    )
+
+    assert response.status_code == 422
+    db_session.refresh(conversation)
+    assert conversation.title == original_title
+
+
+def test_rename_conversation_persists_across_reload(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    conversation_id = conversation.id
+    csrf = _csrf(client)
+
+    client.post(
+        f"/dashboard/chat/{conversation_id}/rename",
+        data={"csrf_token": csrf, "title": "Haelt nach Reload"},
+    )
+
+    overview = client.get("/dashboard/chat")
+    reopened = client.get(f"/dashboard/chat/{conversation_id}")
+    assert "Haelt nach Reload" in overview.text
+    assert "Haelt nach Reload" in reopened.text
+
+
+def test_rename_conversation_survives_further_messages_and_is_not_auto_overwritten(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Direktive §16: ein manuell gesetzter Titel darf durch die
+    automatische Titel-Generierung (`_derive_title`, nur bei Erstellung
+    aktiv) NIEMALS im Nachhinein stillschweigend ueberschrieben werden -
+    hier verifiziert durch eine weitere Nachricht NACH dem Umbenennen."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Antwort.")
+    monkeypatch.setattr(
+        chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer)
+    )
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    conversation_id = conversation.id
+    csrf = _csrf(client)
+
+    client.post(
+        f"/dashboard/chat/{conversation_id}/rename",
+        data={"csrf_token": csrf, "title": "Mein eigener Titel"},
+    )
+    client.post(
+        "/dashboard/chat/send",
+        data={
+            "csrf_token": csrf,
+            "conversation_id": conversation_id,
+            "content": "Eine weitere, ganz andere Nachricht.",
+        },
+        follow_redirects=True,
+    )
+
+    db_session.refresh(conversation)
+    assert conversation.title == "Mein eigener Titel"
+
+
+def test_rename_conversation_requires_csrf(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    original_title = conversation.title
+
+    response = client.post(
+        f"/dashboard/chat/{conversation.id}/rename",
+        data={"csrf_token": "falscher-erratener-token", "title": "Sollte nicht klappen"},
+    )
+
+    assert response.status_code == 403
+    db_session.refresh(conversation)
+    assert conversation.title == original_title
+
+
+def test_rename_conversation_rejects_another_users_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    roles = seed_roles(db_session)
+    other_user = create_test_user(db_session, roles["anwalt"], "andere-rename@kanzlei.test")
+    other_client_row = Client(name="X", client_number="K-REN")
+    matter = Matter(client=other_client_row, title="Fremde Akte", reference_number="A-REN")
+    db_session.add_all([other_client_row, matter])
+    db_session.commit()
+    foreign_conversation = ChatConversation(matter_id=matter.id, user_id=other_user.id, title="Fremd")
+    db_session.add(foreign_conversation)
+    db_session.commit()
+    foreign_id = foreign_conversation.id
+    csrf = _csrf(client)
+
+    response = client.post(
+        f"/dashboard/chat/{foreign_id}/rename",
+        data={"csrf_token": csrf, "title": "Uebernommen"},
+    )
+
+    assert response.status_code == 403
+    db_session.refresh(foreign_conversation)
+    assert foreign_conversation.title == "Fremd"
+
+
+def test_rename_conversation_on_unknown_conversation_returns_404(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/chat/does-not-exist/rename",
+        data={"csrf_token": csrf, "title": "Egal"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_rename_conversation_writes_an_audit_event(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    conversation_id = conversation.id
+    csrf = _csrf(client)
+
+    client.post(
+        f"/dashboard/chat/{conversation_id}/rename",
+        data={"csrf_token": csrf, "title": "Mit Audit-Eintrag"},
+    )
+
+    event = (
+        db_session.query(AuditEvent)
+        .filter_by(
+            entity_type="ChatConversation",
+            entity_id=conversation_id,
+            event_type="chat_conversation_renamed",
+        )
+        .first()
+    )
+    assert event is not None
+
+
+def test_chat_history_list_offers_rename_action_for_each_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get("/dashboard/chat")
+
+    assert "chat-conversations__rename-trigger" in response.text
+    assert f'data-conversation-id="{conversation.id}"' in response.text
+
+
+# --- Mehrfachauswahl/Sammelloeschung (06.10., Owner-Direktive "CHAT &
+# CHAT-HISTORY PROFESSIONAL UX PASS" §18-§22). Wiederverwendet dieselbe
+# Kaskade wie die Einzelloeschung (cascade="all, delete-orphan" auf
+# `ChatConversation.messages`) - eine Transaktion, ein Commit. Sicherheit:
+# NIE auf clientseitige Checkboxen verlassen - die Server-Query filtert
+# zusaetzlich zu den IDs auch auf `user_id == current_user.id`, fremde/
+# ungueltige IDs werden dadurch aus dem Ergebnis stillschweigend
+# ausgeschlossen statt den gesamten Batch abzulehnen. ---
+
+
+def test_bulk_delete_removes_all_selected_conversations(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    first = _active_conversation(db_session, "admin@kanzlei.test")
+    second = _placeholder_conversation(db_session, "admin@kanzlei.test", user_message="Zweiter Chat")
+    third = _placeholder_conversation(db_session, "admin@kanzlei.test", user_message="Dritter Chat")
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": [first.id, second.id]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ok"] is True
+    assert sorted(body["deleted_ids"]) == sorted([first.id, second.id])
+    assert db_session.get(ChatConversation, first.id) is None
+    assert db_session.get(ChatConversation, second.id) is None
+    assert db_session.get(ChatConversation, third.id) is not None
+
+
+def test_bulk_delete_cascades_messages_for_every_selected_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    first = _active_conversation(db_session, "admin@kanzlei.test")
+    second = _placeholder_conversation(db_session, "admin@kanzlei.test", user_message="Zweiter Chat")
+    message_a = ChatMessage(conversation_id=first.id, role="user", content="Hallo A")
+    message_b = ChatMessage(conversation_id=second.id, role="user", content="Hallo B")
+    db_session.add_all([message_a, message_b])
+    db_session.commit()
+    message_a_id, message_b_id = message_a.id, message_b.id
+    csrf = _csrf(client)
+
+    client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": [first.id, second.id]},
+    )
+
+    assert db_session.get(ChatMessage, message_a_id) is None
+    assert db_session.get(ChatMessage, message_b_id) is None
+
+
+def test_bulk_delete_with_nothing_selected_is_rejected(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": []},
+    )
+
+    assert response.status_code == 422
+
+
+def test_bulk_delete_requires_csrf(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    conversation_id = conversation.id
+
+    response = client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": "falscher-erratener-token", "conversation_ids": [conversation_id]},
+    )
+
+    assert response.status_code == 403
+    assert db_session.get(ChatConversation, conversation_id) is not None
+
+
+def test_bulk_delete_never_deletes_another_users_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    """NIEMALS ausschliesslich auf UI-Checkboxen vertrauen (Direktive §21):
+    eine fremde Konversations-ID in der Auswahl darf weder diese fremde
+    Konversation loeschen, noch den gesamten Batch zum Scheitern bringen -
+    die eigenen, gueltigen IDs werden trotzdem geloescht."""
+    login_as_admin(db_session, client)
+    roles = seed_roles(db_session)
+    other_user = create_test_user(db_session, roles["anwalt"], "andere-bulk@kanzlei.test")
+    other_client_row = Client(name="X", client_number="K-BULK")
+    matter = Matter(client=other_client_row, title="Fremde Akte", reference_number="A-BULK")
+    db_session.add_all([other_client_row, matter])
+    db_session.commit()
+    foreign_conversation = ChatConversation(matter_id=matter.id, user_id=other_user.id, title="Fremd")
+    db_session.add(foreign_conversation)
+    db_session.commit()
+    foreign_id = foreign_conversation.id
+
+    own_conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    own_id = own_conversation.id
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": [own_id, foreign_id]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["deleted_ids"] == [own_id]
+    assert db_session.get(ChatConversation, own_id) is None
+    assert db_session.get(ChatConversation, foreign_id) is not None
+
+
+def test_bulk_delete_ignores_unknown_conversation_ids(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    own_conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    own_id = own_conversation.id
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": [own_id, "does-not-exist"]},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["deleted_ids"] == [own_id]
+    assert db_session.get(ChatConversation, own_id) is None
+
+
+def test_bulk_delete_writes_an_audit_event_per_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    first = _active_conversation(db_session, "admin@kanzlei.test")
+    second = _placeholder_conversation(db_session, "admin@kanzlei.test", user_message="Zweiter Chat")
+    csrf = _csrf(client)
+
+    client.post(
+        "/dashboard/chat/bulk-delete",
+        data={"csrf_token": csrf, "conversation_ids": [first.id, second.id]},
+    )
+
+    events = (
+        db_session.query(AuditEvent)
+        .filter(
+            AuditEvent.entity_type == "ChatConversation",
+            AuditEvent.entity_id.in_([first.id, second.id]),
+            AuditEvent.event_type == "chat_conversation_deleted",
+        )
+        .all()
+    )
+    assert len(events) == 2
+
+
+def test_chat_history_list_offers_selection_toggle_when_multiple_conversations_exist(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    _active_conversation(db_session, "admin@kanzlei.test")
+    _placeholder_conversation(db_session, "admin@kanzlei.test", user_message="Zweiter Chat")
+
+    response = client.get("/dashboard/chat")
+
+    # Attribut-Form statt reinem Substring: "chat-selection-toggle" tritt
+    # auch im <script>-Block als JS-String (getElementById(...)) auf jeder
+    # Chat-Seite auf - erst `id="..."` identifiziert das echte, gerenderte
+    # Element eindeutig.
+    assert 'id="chat-selection-toggle"' in response.text
+    assert 'id="chat-selection-bar"' in response.text
+
+
+def test_chat_history_list_hides_selection_toggle_with_a_single_conversation(
+    client: TestClient, db_session: Session
+) -> None:
+    """Eine Mehrfachauswahl ergibt bei genau einer Unterhaltung keinen Sinn
+    (nichts, was man sinnvoll "mehrfach" waehlen koennte)."""
+    login_as_admin(db_session, client)
+    _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get("/dashboard/chat")
+
+    assert 'id="chat-selection-toggle"' not in response.text

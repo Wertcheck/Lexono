@@ -5,24 +5,30 @@ Jede Route hier verwendet `Depends(require_role("admin"))` (POST) bzw.
 app/auth/permissions.py. Ein Mitarbeiter oder Anwalt, der die URL direkt
 aufruft, bekommt serverseitig 403, unabhängig davon, dass der
 entsprechende Sidebar-Link im UI gar nicht erst angezeigt wird.
-"""
+
+Die eigentliche Anzeige lebt seit der Owner-Direktive "SETTINGS ->
+BENUTZER" (06.10.) im "Benutzer"-Tab von /dashboard/settings (siehe
+app/web/settings_router.py + settings.html) statt auf einer separaten
+Seite - GET "" ist deshalb nur noch ein Redirect dorthin (keine zweite,
+parallel zu pflegende Nutzerverwaltungs-UI). Alle POST-Endpunkte bleiben
+unveraendert hier und werden von der neuen UI direkt angesprochen, nur
+die Redirect-Ziele zeigen jetzt auf die Settings-Seite."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_or_404
 from app.auth.permissions import PermissionDeniedError, require_login, require_role
 from app.auth.service import UserAlreadyExistsError, UserService
 from app.db.session import get_db
-from app.models import Role, User
-from app.web.template_paths import TEMPLATES_DIR
+from app.models import User
 
 router = APIRouter(prefix="/dashboard/admin/users", tags=["dashboard-admin-users"])
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+_SETTINGS_BENUTZER_URL = "/dashboard/settings?tab=benutzer"
 
 
 def _require_admin_read(current_user: User = Depends(require_login)) -> User:
@@ -33,29 +39,11 @@ def _require_admin_read(current_user: User = Depends(require_login)) -> User:
     return current_user
 
 
-@router.get("", response_class=HTMLResponse)
+@router.get("")
 def list_users_page(
-    request: Request,
-    error: str | None = None,
-    created_password: str | None = None,
-    created_email: str | None = None,
-    db: Session = Depends(get_db),
     current_user: User = Depends(_require_admin_read),
-) -> HTMLResponse:
-    users = UserService().list_users(db)
-    roles = db.query(Role).order_by(Role.name).all()
-    context = {
-        "request": request,
-        "active_nav": None,
-        "users": users,
-        "roles": roles,
-        "error": error,
-        "created_password": created_password,
-        "created_email": created_email,
-        "csrf_token": getattr(request.state, "csrf_token", ""),
-        "current_user": current_user,
-    }
-    return templates.TemplateResponse(request, "admin_users.html", context)
+) -> RedirectResponse:
+    return RedirectResponse(url=_SETTINGS_BENUTZER_URL, status_code=303)
 
 
 @router.post("")
@@ -72,7 +60,7 @@ def create_user(
         )
     except (UserAlreadyExistsError, ValueError) as exc:
         return RedirectResponse(
-            url=f"/dashboard/admin/users?error={exc}", status_code=303
+            url=f"{_SETTINGS_BENUTZER_URL}&error={exc}", status_code=303
         )
     # Das initiale Passwort wird EINMALIG per Redirect-Query-Parameter an
     # die Admin-Ansicht zurückgegeben, damit der Admin es dem neuen Nutzer
@@ -80,7 +68,7 @@ def create_user(
     # (siehe UserService.create_user). Nach dem ersten Login MUSS der neue
     # Nutzer es ändern (must_change_password=True).
     return RedirectResponse(
-        url=f"/dashboard/admin/users?created_email={email}&created_password={password}",
+        url=f"{_SETTINGS_BENUTZER_URL}&created_email={email}&created_password={password}",
         status_code=303,
     )
 
@@ -96,8 +84,8 @@ def change_user_role(
     try:
         UserService().set_role(db, user, role_name, actor=current_user.email)
     except ValueError as exc:
-        return RedirectResponse(url=f"/dashboard/admin/users?error={exc}", status_code=303)
-    return RedirectResponse(url="/dashboard/admin/users", status_code=303)
+        return RedirectResponse(url=f"{_SETTINGS_BENUTZER_URL}&error={exc}", status_code=303)
+    return RedirectResponse(url=_SETTINGS_BENUTZER_URL, status_code=303)
 
 
 @router.post("/{user_id}/deactivate")
@@ -109,11 +97,14 @@ def deactivate_user(
     user = get_or_404(db, User, user_id, "Nutzer")
     if user.id == current_user.id:
         return RedirectResponse(
-            url="/dashboard/admin/users?error=Sie können sich nicht selbst deaktivieren",
+            url=f"{_SETTINGS_BENUTZER_URL}&error=Sie können sich nicht selbst deaktivieren",
             status_code=303,
         )
-    UserService().set_active(db, user, False, actor=current_user.email)
-    return RedirectResponse(url="/dashboard/admin/users", status_code=303)
+    try:
+        UserService().set_active(db, user, False, actor=current_user.email)
+    except ValueError as exc:
+        return RedirectResponse(url=f"{_SETTINGS_BENUTZER_URL}&error={exc}", status_code=303)
+    return RedirectResponse(url=_SETTINGS_BENUTZER_URL, status_code=303)
 
 
 @router.post("/{user_id}/activate")
@@ -124,7 +115,7 @@ def activate_user(
 ) -> RedirectResponse:
     user = get_or_404(db, User, user_id, "Nutzer")
     UserService().set_active(db, user, True, actor=current_user.email)
-    return RedirectResponse(url="/dashboard/admin/users", status_code=303)
+    return RedirectResponse(url=_SETTINGS_BENUTZER_URL, status_code=303)
 
 
 @router.post("/{user_id}/reset-password")
@@ -143,7 +134,7 @@ def reset_user_password(
     user = get_or_404(db, User, user_id, "Nutzer")
     _user, password = UserService().reset_password(db, user, actor=current_user.email)
     return RedirectResponse(
-        url=f"/dashboard/admin/users?created_email={user.email}&created_password={password}",
+        url=f"{_SETTINGS_BENUTZER_URL}&created_email={user.email}&created_password={password}",
         status_code=303,
     )
 
@@ -158,4 +149,4 @@ def force_logout_user(
     Passwort zu ändern (Prompt 29) - z. B. bei einem gestohlenen Gerät."""
     user = get_or_404(db, User, user_id, "Nutzer")
     UserService().force_logout(db, user, actor=current_user.email)
-    return RedirectResponse(url="/dashboard/admin/users", status_code=303)
+    return RedirectResponse(url=_SETTINGS_BENUTZER_URL, status_code=303)

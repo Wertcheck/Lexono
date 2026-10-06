@@ -62,6 +62,21 @@ class Settings(BaseSettings):
     # Neustart) nicht dieselben Nachrichten erneut als "neu" behandelt -
     # zusaetzlich schuetzt die externe Message-ID vor Duplikaten in der DB.
     mail_mark_seen: bool = True
+    # Synchronisations-Einstellungen (06.10., Owner-Direktive "SETTINGS ->
+    # E-MAIL") - echte, in app/main.py::_run_periodic_mail_ingestion
+    # GEPRUEFTE Werte (kein kosmetischer Schalter): die Hintergrundschleife
+    # liest beide Werte JEDE Iteration frisch ueber get_settings() neu ein
+    # (nicht nur einmal beim Start), ueberspringt den Abruf also sofort,
+    # wenn `mail_auto_sync_enabled=False` gesetzt wird, und uebernimmt ein
+    # geaendertes Intervall ab dem naechsten Zyklus - ohne Neustart.
+    # EHRLICHE EINSCHRAENKUNG (siehe Abschlussbericht "Open Issues"): der
+    # eigentliche `MailProvider` (Host/Zugangsdaten) wird weiterhin nur
+    # EINMAL beim Anwendungsstart aus den damaligen Settings gebaut
+    # (`build_mail_provider`, vor der Schleife aufgerufen) - ein frisch
+    # verbundenes/getrenntes Postfach wird erst nach einem Neustart von
+    # Lexono tatsaechlich synchronisiert, nicht sofort.
+    mail_auto_sync_enabled: bool = True
+    mail_poll_interval_seconds: int = 300
     # Getrennter Ablagebereich für E-Mail-Anhänge (analog zu
     # intake_storage_dir für den Scan-Eingang, aber bewusst eigener
     # Ordner, um die Herkunft nachvollziehbar zu halten).
@@ -100,6 +115,22 @@ class Settings(BaseSettings):
     # Ab welchem Score ein einzelner Treffer als "ausreichend belegend"
     # gilt (siehe app/research/service.py).
     research_min_score_for_sufficient: float = 0.5
+
+    # --- Gesetzesbibliothek: automatisierte Aktualisierung (03.10.,
+    # Owner-Direktive "RELIABLE LEGAL KNOWLEDGE UPDATES") ---
+    # Periodische HEAD-basierte Aenderungspruefung aller installierten
+    # Gesetze (siehe app/laws/install_service.py::check_law_for_update,
+    # app/main.py::_run_periodic_law_update_check) - braucht KEINE
+    # Zugangsdaten (oeffentliche, unauthentifizierte Quelle), daher anders
+    # als `mail_provider` standardmaessig AN statt opt-in. Reine PRUEFUNG,
+    # KEINE automatische inhaltliche Uebernahme (siehe dortigen
+    # Docstring) - das bleibt ein bewusster, manueller Schritt.
+    law_update_check_enabled: bool = True
+    # 24h (86400s) - Gesetzestexte aendern sich selten, ein haeufigerer
+    # Takt waere unnoetige Last fuer die oeffentliche Quelle. Bewusst
+    # konfigurierbar statt hart codiert, falls ein kuenftiger Betrieb
+    # einen anderen Takt braucht.
+    law_update_check_interval_seconds: int = 86400
 
     # --- Suche / Embeddings (Prompt 11) ---
     # Lokales, mehrsprachiges Embedding-Modell (via "fastembed",
@@ -140,7 +171,49 @@ class Settings(BaseSettings):
     # (siehe app/ai_providers/factory.py).
     anthropic_api_key: SecretStr | None = None
     claude_model_name: str = "claude-sonnet-5"
-    claude_max_tokens: int = 2000
+    # ECHTER FUND, LIVE REPRODUZIERT (05.10., Owner-Direktive "Vollstaendiger
+    # UX- und Workflow-Audit"): 2000 Output-Tokens reichten fuer eine
+    # realistische, mehrpunktige Rechtsauskunft (Fristenuebersicht zu einem
+    # Einspruch) NICHT aus - die Antwort wurde MITTEN IM WORT abgeschnitten
+    # ("...außerhalb des Ge"). Zwei konkrete Folgeschaeden beobachtet:
+    # (1) app/drafting/service.py kennt bereits den Grenzfall "genau
+    # max_tokens verbraucht, aber LEERER Text" (siehe dortiger Kommentar) -
+    # dieselbe Ursache kann auch zu einer NICHT-leeren, aber mitten im Satz/
+    # Wort abgeschnittenen Antwort fuehren, die OHNE Warnung gespeichert
+    # wird. (2) Der abgeschnittene Textfragment-Rest ("Ge") sowie normale
+    # grossgeschriebene deutsche Rechtsbegriffe wurden in einer SPAETEREN
+    # Chat-Runde (als Teil des Gespraechsverlaufs erneut pseudonymisiert)
+    # von der Presidio-NER faelschlich als Name/Ort erkannt und loesten
+    # eine falsche "Es wurden nach der Pseudonymisierung weiterhin
+    # erkennbare Muster gefunden"-Blockierung aus - siehe OPEN_ISSUES.md
+    # fuer die volle Herleitung dieser zusammenhaengenden Fundkette. Auf
+    # 4096 angehoben (keine im Code dokumentierte Begruendung fuer den
+    # bisherigen Wert 2000 gefunden - wirkte wie ein unveraendert
+    # gebliebener Ausgangswert, keine bewusste, belegte Entscheidung).
+    claude_max_tokens: int = 4096
+
+    # --- Echte Webrecherche fuer den Chat (06.10., Owner-Direktive "LEXONO
+    # ALS VOLLWERTIGER AI-ARBEITSPLATZ - ARCHITEKTUR-/REQUEST-FLOW-AUDIT"
+    # §0.6-§0.10) - nutzt Anthropics serverseitig ausgefuehrtes Web-Search-
+    # Tool (keine eigene Suchmaschinen-Anbindung/kein eigener API-Key
+    # noetig, siehe app/ai_providers/anthropic_writing_provider.py). Gilt
+    # AUSSCHLIESSLICH fuer den Chat (Zweck "chat_response") und NUR fuer
+    # den direkten Anthropic-Pfad - der Lexono-Gateway-Relay-Pfad
+    # (lexono_gateway_url gesetzt) unterstuetzt dies aktuell NICHT, siehe
+    # app/ai_providers/gateway_writing_provider.py fuer die Begruendung.
+    # Standardmaessig AN: ein geoeffneter Lexono-Chat soll sich wie ein
+    # moderner General-Purpose-Assistent verhalten (Produktvorgabe §0/§0.13),
+    # nicht standardmaessig eingeschraenkt sein - bei Bedarf (Kosten-
+    # /Compliance-Erwaegungen einer konkreten Kanzlei-Installation) in der
+    # .env auf false setzbar.
+    web_search_enabled: bool = True
+    # Obergrenze an tatsaechlichen Suchvorgaengen PRO Chat-Anfrage (nicht
+    # PRO Konversation) - begrenzt sowohl Kosten (jede Suche wird von
+    # Anthropic separat abgerechnet) als auch Antwortzeit. 3 ist ein
+    # bewusst moderater Startwert, kein aus echten Nutzungsdaten
+    # hergeleiteter Wert (dafuer fehlt bislang Produktivbetrieb mit
+    # aktivierter Websuche).
+    web_search_max_uses: int = 3
 
     # --- Lexono-Gateway (§70, 31.08.) ---
     # Ist lexono_gateway_url gesetzt, verwendet die Anwendung
@@ -391,6 +464,61 @@ class Settings(BaseSettings):
     # --- Aufbewahrung / Loeschung (Platzhalter, echte Logik erst Prompt 35) ---
     # 0 = keine automatische Loeschung (sicherer Default).
     retention_days: int = 0
+
+    # --- Allgemeine Oberflaechen-Einstellungen (06.10., Owner-Direktive
+    # "LEXONO - EINSTELLUNGEN UI REBUILD") - dieselbe .env-basierte
+    # Persistenz wie retention_days/mail_*/ollama_* oben (kein neues
+    # Datenmodell, keine Migration). WICHTIG, ehrlich dokumentiert: der
+    # GESPEICHERTE WERT dieser Einstellungen ist echt (persistiert,
+    # ueberlebt einen Neustart, direkt ueber get_settings() abrufbar) -
+    # die TIEFERE technische Wirkung mancher Werte existiert in dieser
+    # Codebasis aber noch NICHT und wird hier bewusst NICHT vorgetaeuscht
+    # (siehe jeweilige Feld-Kommentare sowie Abschlussbericht "Offene
+    # Punkte"):
+    # - ui_language: einzige tatsaechlich unterstuetzte/funktionierende
+    #   Oberflaechensprache ist Deutsch (die gesamte UI ist fest auf
+    #   Deutsch ausgelegt, keine i18n-Infrastruktur vorhanden) - das Feld
+    #   existiert fuer eine ehrliche, funktionierende Einzelauswahl, nicht
+    #   als Vorgriff auf eine nicht vorhandene Mehrsprachigkeit.
+    # - ui_theme: nur "light" hat tatsaechlich eine Wirkung (die gesamte
+    #   Desktop-Oberflaeche ist aktuell hell/fest verdrahtet, kein
+    #   Dark-Mode-Mechanismus vorhanden).
+    # - start_with_system: der Wert wird gespeichert, aber NICHT in die
+    #   Windows-Registrierung/den Autostart-Ordner eingetragen - das waere
+    #   eine Installer-/OS-Integrationsaenderung, ausdruecklich nicht Teil
+    #   dieser Direktive ("KEINEN INSTALLER BAUEN").
+    # - auto_update_download_enabled: der bestehende Updater (app/updater/
+    #   checker.py) fuehrt bewusst NIE einen automatischen Download/eine
+    #   automatische Installation aus (siehe dortiger Moduldocstring) -
+    #   dieser Schalter aendert daran nichts, er haelt nur die
+    #   Nutzerpraeferenz fest.
+    # - desktop_notifications_enabled/email_notifications_enabled: es
+    #   existiert aktuell weder eine Desktop-Benachrichtigungs- noch eine
+    #   E-Mail-Benachrichtigungs-Zustellung in dieser Codebasis - auch
+    #   hier wird nur die Praeferenz gespeichert.
+    # - deadline_reminder_lead_days: noch nicht an die bestehende Aufgaben-
+    #   /Fristenlogik angebunden (ausdruecklich ausserhalb dieser
+    #   Direktive: "Nicht veraendern: ... Aufgabenlogik").
+    # - cloud_ai_provider: einzig tatsaechlich unterstuetzter Wert ist
+    #   "claude" - `build_writing_provider`/`build_review_provider`
+    #   (app/ai_providers/factory.py) bauen aktuell ausschliesslich einen
+    #   Claude-/Anthropic-Provider (direkt oder ueber das Lexono-Gateway),
+    #   es existiert keine Mehr-Provider-Abstraktion. Das Feld ist bewusst
+    #   bereits vorhanden (ehrliche, funktionierende Einzelauswahl in der
+    #   Endnutzer-Oberflaeche, siehe app/web/settings_router.py
+    #   Owner-Direktive "SETTINGS -> KI & DATENSCHUTZ"), WIRKT aber noch
+    #   NICHT auf die Provider-Auswahl selbst (kein zweiter, toter
+    #   if-Zweig in factory.py fuer einen nicht existierenden zweiten
+    #   Provider) - sobald das Gateway einen weiteren Anbieter unterstuetzt,
+    #   ist dies die bereits vorbereitete Stelle dafuer.
+    cloud_ai_provider: str = "claude"
+    ui_language: str = "de"
+    ui_theme: str = "light"
+    start_with_system: bool = False
+    auto_update_download_enabled: bool = False
+    desktop_notifications_enabled: bool = True
+    email_notifications_enabled: bool = False
+    deadline_reminder_lead_days: int = 3
 
     @model_validator(mode="after")
     def lexono_gateway_url_must_use_https_outside_development(self) -> "Settings":

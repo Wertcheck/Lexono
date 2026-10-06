@@ -374,7 +374,11 @@ def test_regenerate_creates_new_version(
     assert response.status_code == 303
     new_id = response.headers["location"].rsplit("/", 1)[-1]
     new_draft = db_session.get(Draft, new_id)
-    assert new_draft.content == "Neu generierte Antwort."
+    # 05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D:
+    # KI-generierter Inhalt wird jetzt zu Editor-HTML gewandelt (siehe
+    # app/drafting/markdown_to_draft_html.py) statt roh gespeichert.
+    assert new_draft.content == "<p>Neu generierte Antwort.</p>"
+    assert new_draft.content_format == "html"
     assert new_draft.previous_version_id == seeded["draft_id"]
 
 

@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.laws.service import import_law_fixture_data
-from app.models import Client, Document, LawSection, Matter, Source
+from app.models import Client, Document, LawSection, Matter, Message, Source
 from app.models.base import Base
 from app.search.global_search_service import MIN_QUERY_LENGTH, GlobalSearchService
 from app.search.service import DocumentSearchService
@@ -159,6 +159,66 @@ def test_local_categories_never_mix_across_clients(
     assert all("Zweiter" not in r.title for r in results)
 
 
+# --- "Lokal": E-Mails/Posteingang-Nachrichten (25.09., Owner-Direktive
+# "POSTEINGANG / STRICT REFERENCE IMPLEMENTATION" §6 - die Referenz zeigt
+# "In E-Mails, Mandanten, Akten oder Inhalten suchen", die Command Bar
+# durchsuchte E-Mails bislang jedoch gar nicht) ---
+
+
+def test_search_finds_message_by_sender_and_marks_it_local(
+    service: GlobalSearchService, db_session: Session
+) -> None:
+    message = Message(
+        direction="inbound",
+        sender="Architekturbüro Neumann & Schulz GbR",
+        subject="Kündigung erhalten - Widerspruch prüfen",
+        body_text="Testinhalt, keine echten Mandantendaten.",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    results = service.search("Neumann & Schulz", db_session)
+    message_results = [r for r in results if r.entity_type == "Message"]
+    assert len(message_results) == 1
+    assert message_results[0].badge_label == "Lokal"
+    assert message_results[0].url == f"/dashboard/inbox/{message.id}"
+
+
+def test_search_finds_message_by_subject(
+    service: GlobalSearchService, db_session: Session
+) -> None:
+    message = Message(
+        direction="inbound",
+        sender="finanzamt@example-testdomain.invalid",
+        subject="Steuerbescheid 2025 - Rueckfrage",
+        body_text="Testinhalt.",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    results = service.search("Steuerbescheid 2025", db_session)
+    assert any(r.entity_type == "Message" and r.title == message.subject for r in results)
+
+
+def test_search_does_not_search_message_body_text(
+    service: GlobalSearchService, db_session: Session
+) -> None:
+    """Dieselbe Metadaten-statt-Volltext-Grenze wie bei Dokumenten (siehe
+    test_search_finds_document_by_filename_only_not_by_content) - nur
+    Absender/Betreff sind durchsuchbar, nicht der Nachrichtentext."""
+    message = Message(
+        direction="inbound",
+        sender="mandant@example-testdomain.invalid",
+        subject="Kurze Rückfrage",
+        body_text="Geheimer Inhalt, der garantiert nicht im Betreff steht: Zauberwort456",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    results = service.search("Zauberwort456", db_session)
+    assert [r for r in results if r.entity_type == "Message"] == []
+
+
 # --- "Extern/Gesetz": Gesetzesbibliothek ---
 
 
@@ -187,6 +247,38 @@ def test_search_finds_law_section_by_section_number_and_marks_it_extern_gesetz(
     assert len(law_results) == 1
     assert law_results[0].badge_label == "Extern/Gesetz"
     assert law_results[0].url == f"/dashboard/laws/BGB/{section.id}"
+
+
+def test_search_excludes_law_sections_of_a_deactivated_law(
+    service: GlobalSearchService, db_session: Session
+) -> None:
+    """26.09., Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION"
+    §19/§20: dieselbe Deaktivierungssperre wie im Chat-Fast-Path
+    (app/chat/service.py::_find_law_section) - ein in Kanzleiwissen
+    deaktiviertes Gesetz gilt als "für die lokale Nutzung nicht
+    aktiviert" und darf auch in der globalen Suche nicht mehr auftauchen."""
+    from app.laws.service import toggle_law_active
+
+    import_law_fixture_data(
+        db_session,
+        {
+            "code": "BGB",
+            "title": "Bürgerliches Gesetzbuch",
+            "sections": [
+                {
+                    "section_number": "§ 433",
+                    "title": "Vertragstypische Pflichten beim Kaufvertrag",
+                    "text_content": "Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet...",
+                    "last_updated": "2026-08-20",
+                }
+            ],
+        },
+    )
+    toggle_law_active(db_session, "BGB", active=False)
+
+    results = service.search("§ 433", db_session)
+
+    assert [r for r in results if r.entity_type == "LawSection"] == []
 
 
 def test_search_finds_law_section_by_title_or_text_content(

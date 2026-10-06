@@ -3,16 +3,18 @@
 Zwei strikt getrennte Kategorien, siehe app/search/__init__.py-
 Moduldocstring ("WICHTIGSTE REGEL") und app/models/source.py:
 
-- "Lokal" (Mandant/Akte/Dokument): AUSSCHLIESSLICH einfache, lokale
+- "Lokal" (Mandant/Akte/Dokument/E-Mail): AUSSCHLIESSLICH einfache, lokale
   SQL-Abfragen gegen die eigene SQLite-Datenbank (Name/Aktenzeichen/
-  Dateiname) - kein Embedding-Modell, kein KI-Aufruf, keine Netzwerk-
-  verbindung. Bewusst KEINE Volltext-/semantische Suche über
+  Dateiname/Absender+Betreff) - kein Embedding-Modell, kein KI-Aufruf,
+  keine Netzwerkverbindung. Bewusst KEINE Volltext-/semantische Suche über
   `Document.extracted_text`: `DocumentSearchService.search_within_matter`
   verlangt zwingend eine `matter_id` (Aktenisolation, siehe dortiges
   Moduldocstring) - eine aktenübergreifende Command-Bar würde genau diese
   Regel verletzen. Die Dokumenten-Kategorie hier durchsucht deshalb NUR
   den Dateinamen (Metadaten, kein Akteninhalt) über alle Akten hinweg,
-  was diese Isolation nicht berührt.
+  was diese Isolation nicht berührt. Die E-Mail-Kategorie (`_search_
+  messages`, 25.09.) folgt derselben Metadaten-Grenze und durchsucht nur
+  Absender/Betreff, nicht `Message.body_text`.
 - "Extern" (Rechtsquellen, `Source`-Modell): Gesetze/Rechtsprechung/
   Kommentare - laut app/models/source.py-Moduldocstring bewusst eine
   "eigene Schicht, strikt getrennt von Mandanten-/Aktendaten", nie durch
@@ -52,7 +54,7 @@ from dataclasses import dataclass
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.models import Client, Document, LawSection, Matter, Source
+from app.models import Client, Document, Law, LawSection, Matter, Message, Source
 from app.search.service import DocumentSearchService
 
 logger = logging.getLogger(__name__)
@@ -109,6 +111,7 @@ class GlobalSearchService:
         results.extend(self._search_clients(query, db, limit_per_category))
         results.extend(self._search_matters(query, db, limit_per_category))
         results.extend(self._search_documents(query, db, limit_per_category))
+        results.extend(self._search_messages(query, db, limit_per_category))
         results.extend(self._search_law_sections(query, db, limit_per_category))
         try:
             results.extend(self._search_sources(query, db, limit_per_category))
@@ -150,7 +153,10 @@ class GlobalSearchService:
         like = f"%{query}%"
         rows = (
             db.query(Matter)
-            .filter(or_(Matter.title.ilike(like), Matter.reference_number.ilike(like)))
+            .filter(
+                or_(Matter.title.ilike(like), Matter.reference_number.ilike(like)),
+                Matter.deleted_at.is_(None),
+            )
             .order_by(Matter.updated_at.desc())
             .limit(limit)
             .all()
@@ -213,22 +219,65 @@ class GlobalSearchService:
             for document, matter_title in rows
         ]
 
+    def _search_messages(self, query: str, db: Session, limit: int) -> list[GlobalSearchResult]:
+        """Posteingang-Nachrichten (25.09., Owner-Direktive "POSTEINGANG /
+        STRICT REFERENCE IMPLEMENTATION" §6 - die Referenz zeigt oben im
+        globalen Suchfeld "In E-Mails, Mandanten, Akten oder Inhalten
+        suchen ...", die bisherige Command Bar durchsuchte E-Mails jedoch
+        gar nicht). Durchsucht bewusst nur Absender/Betreff (Metadaten),
+        nicht `body_text` - dieselbe Metadaten-statt-Volltext-Grenze wie
+        bei `_search_documents` oben, aus demselben Grund: eine
+        aktenuebergreifende Volltextsuche ueber Nachrichteninhalte waere
+        keine reine Metadatensuche mehr. Absender/Betreff sind dagegen
+        genau das, was die Posteingang-eigene Suche (`Message.sender`/
+        `Message.subject`, app/web/router.py::_load_messages) ohnehin
+        bereits als durchsuchbar behandelt - keine neue, weitergehende
+        Datenkategorie."""
+        like = f"%{query}%"
+        rows = (
+            db.query(Message)
+            .filter(or_(Message.sender.ilike(like), Message.subject.ilike(like)))
+            .order_by(Message.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [
+            GlobalSearchResult(
+                entity_type="Message",
+                title=message.subject or "(kein Betreff)",
+                subtitle=f"E-Mail · {message.sender or 'unbekannter Absender'}",
+                url=f"/dashboard/inbox/{message.id}",
+                badge_label="Lokal",
+                badge_title=_LOCAL_BADGE_TITLE,
+            )
+            for message in rows
+        ]
+
     # --- "Extern/Gesetz": Gesetzesbibliothek (LawSection) -----------------
 
     def _search_law_sections(self, query: str, db: Session, limit: int) -> list[GlobalSearchResult]:
         """Reine SQL-Suche ueber alle Gesetzeswerke hinweg - siehe
         app/laws/service.py: get_sections fuer dieselbe Filterlogik,
         beschraenkt auf EIN Gesetzeswerk (hier bewusst uebergreifend, da
-        die Command Bar keine Gesetzesauswahl kennt)."""
+        die Command Bar keine Gesetzesauswahl kennt).
+
+        `Law.is_active`-Filter (26.09., Owner-Direktive "KANZLEIWISSEN
+        FINAL PRODUCT IMPLEMENTATION" §19/§20): ein in Kanzleiwissen
+        deaktiviertes Gesetz gilt als "für die lokale Nutzung nicht
+        aktiviert" - konsistent mit derselben Sperre im Chat-Fast-Path
+        (app/chat/service.py::_find_law_section) darf es auch hier nicht
+        auftauchen, obwohl die Paragraphen technisch noch vorhanden sind."""
         like = f"%{query}%"
         rows = (
             db.query(LawSection)
+            .join(Law, Law.code == LawSection.law_code)
             .filter(
+                Law.is_active.is_(True),
                 or_(
                     LawSection.section_number.ilike(like),
                     LawSection.title.ilike(like),
                     LawSection.text_content.ilike(like),
-                )
+                ),
             )
             .order_by(LawSection.law_code.asc(), LawSection.section_number.asc())
             .limit(limit)

@@ -85,15 +85,19 @@ def test_account_overview_returns_200(admin_client: TestClient) -> None:
 
 
 def test_account_overview_shows_admin_only_card_for_admin(admin_client: TestClient) -> None:
+    """Verlinkt seit der Owner-Direktive "SETTINGS -> BENUTZER" (06.10.)
+    direkt auf den eingebetteten "Benutzer"-Tab in den Einstellungen statt
+    auf die inzwischen entfernte eigenstaendige Seite /dashboard/admin/users
+    (deren POST-Endpunkte unveraendert bestehen, siehe users_router.py)."""
     response = admin_client.get("/dashboard/account")
-    assert 'href="/dashboard/admin/users"' in response.text
+    assert 'href="/dashboard/settings?tab=benutzer"' in response.text
 
 
 def test_account_overview_hides_admin_only_card_for_non_admin(
     mitarbeiter_client: TestClient,
 ) -> None:
     response = mitarbeiter_client.get("/dashboard/account")
-    assert 'href="/dashboard/admin/users"' not in response.text
+    assert 'href="/dashboard/settings?tab=benutzer"' not in response.text
 
 
 def test_account_overview_shows_monitoring_and_backup_cards_for_admin(
@@ -120,10 +124,12 @@ def test_account_overview_links_to_all_four_sections(admin_client: TestClient) -
     response = admin_client.get("/dashboard/account")
     for href in [
         "/dashboard/account/privacy",
-        # "Kanzlei-Profil & Briefkopf" verlinkt seit 20.08. auf die echte
-        # Seite unter /dashboard/settings/profile statt auf den
-        # ehemaligen Platzhalter /dashboard/account/profile.
-        "/dashboard/settings/profile",
+        # "Kanzlei-Profil & Briefkopf" verlinkt seit der Owner-Direktive
+        # "SETTINGS -> KANZLEI" (06.10.) direkt auf den eingebetteten
+        # "Kanzlei"-Tab in den Einstellungen statt auf die inzwischen
+        # entfernte eigenstaendige Seite /dashboard/settings/profile
+        # (deren POST-Endpunkte unveraendert bestehen).
+        "/dashboard/settings?tab=kanzlei",
         "/dashboard/account/license",
         "/dashboard/account/me",
     ]:

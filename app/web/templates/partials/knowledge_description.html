@@ -1,0 +1,11 @@
+{# Kurze, kategoriespezifische Erklaerung unter Titel/Untertitel (26.09.,
+   Owner-Direktive "KANZLEIWISSEN REFERENCE-MATCH / PRODUCT-COMPLETION
+   PASS" §6: "Der Benutzer entscheidet, welche Rechtsquellen lokal
+   verfügbar sind" - keine technischen Interna). Eigenes Out-of-Band-
+   Swap-Ziel (26.09., dasselbe Muster wie partials/knowledge_subtitle.html
+   - ohne das wuerde die Beschreibung beim HTMX-Kategoriewechsel stehen
+   bleiben, siehe partials/knowledge_categories.html-Kommentar fuer den
+   vollen Befund zu diesem Bug-Muster). #}
+<p class="topbar__description" id="knowledge-description"{% if oob %} hx-swap-oob="true"{% endif %}>
+  {{ category_description }}
+</p>

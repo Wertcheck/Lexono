@@ -20,7 +20,7 @@ import app.web.global_search_router as global_search_router_module
 from app.db.session import get_db
 from app.laws.service import import_law_fixture_data
 from app.main import app
-from app.models import Client, LawSection, Matter, Source
+from app.models import Client, LawSection, Matter, Message, Source
 from app.models.base import Base
 from app.search.global_search_service import GlobalSearchService
 from app.search.service import DocumentSearchService
@@ -123,6 +123,26 @@ def test_search_finds_client_with_local_badge(client: TestClient, db_session: Se
     assert "Suchbarer Mandant" in response.text
     assert f'href="/dashboard/clients/{row.id}"' in response.text
     assert "tag--matched" in response.text
+    assert "Lokal" in response.text
+
+
+def test_search_finds_message_with_local_badge(client: TestClient, db_session: Session) -> None:
+    """25.09., Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+    IMPLEMENTATION" §6 - die globale Suche muss jetzt auch E-Mails
+    finden (siehe app/search/global_search_service.py::_search_messages)."""
+    message = Message(
+        direction="inbound",
+        sender="Architekturbüro Neumann & Schulz GbR",
+        subject="Kündigung erhalten - Widerspruch prüfen",
+        body_text="Testinhalt.",
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get("/dashboard/search/results", params={"q": "Kündigung erhalten"})
+    assert response.status_code == 200
+    assert "Kündigung erhalten" in response.text
+    assert f'href="/dashboard/inbox/{message.id}"' in response.text
     assert "Lokal" in response.text
 
 

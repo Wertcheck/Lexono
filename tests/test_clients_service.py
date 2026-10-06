@@ -16,6 +16,7 @@ from app.clients.service import (
     ClientHasMattersError,
     ClientValidationError,
     archive_client,
+    count_clients,
     create_client,
     delete_client,
     list_clients,
@@ -508,3 +509,128 @@ def test_list_clients_counts_open_matters_even_without_any_message(
     assert len(rows) == 1
     assert rows[0].last_contact_at is None
     assert rows[0].open_matter_count == 1
+
+
+# --- client_type/city (03.10., Referenzabgleich "29_mandanten_uebersicht.png") ---
+
+
+def test_create_client_stores_client_type_and_city(db_session: Session) -> None:
+    client = create_client(
+        db_session,
+        name="Mueller, Anna",
+        client_number="CT-1",
+        contact_email=None,
+        contact_phone=None,
+        practice_area=None,
+        responsible_user_id=None,
+        actor="anwalt@kanzlei.test",
+        client_type="Privatperson",
+        city="Berlin",
+    )
+    assert client.client_type == "Privatperson"
+    assert client.city == "Berlin"
+
+
+def test_update_client_changes_client_type_and_city(db_session: Session) -> None:
+    client = _client(db_session, "Becker GmbH", "CT-2")
+    updated = update_client(
+        db_session,
+        client,
+        name=client.name,
+        client_number=client.client_number,
+        contact_email=None,
+        contact_phone=None,
+        practice_area=None,
+        responsible_user_id=None,
+        actor="anwalt@kanzlei.test",
+        client_type="Unternehmen",
+        city="Hamburg",
+    )
+    assert updated.client_type == "Unternehmen"
+    assert updated.city == "Hamburg"
+
+
+def test_list_clients_filters_by_client_type(db_session: Session) -> None:
+    create_client(
+        db_session,
+        name="Privatperson Eins",
+        client_number="CT-3",
+        contact_email=None,
+        contact_phone=None,
+        practice_area=None,
+        responsible_user_id=None,
+        actor="anwalt@kanzlei.test",
+        client_type="Privatperson",
+    )
+    create_client(
+        db_session,
+        name="Unternehmen Eins",
+        client_number="CT-4",
+        contact_email=None,
+        contact_phone=None,
+        practice_area=None,
+        responsible_user_id=None,
+        actor="anwalt@kanzlei.test",
+        client_type="Unternehmen",
+    )
+
+    rows = list_clients(db_session, client_type="Unternehmen")
+
+    assert [r.client.name for r in rows] == ["Unternehmen Eins"]
+
+
+# --- Sortierung/Pagination (03.10.) ---
+
+
+def test_list_clients_sort_name_asc_and_desc(db_session: Session) -> None:
+    _client(db_session, "Zeta GmbH", "SORT-1")
+    _client(db_session, "Alpha GmbH", "SORT-2")
+
+    asc_names = [r.client.name for r in list_clients(db_session, sort="name_asc")]
+    assert asc_names.index("Alpha GmbH") < asc_names.index("Zeta GmbH")
+
+    desc_names = [r.client.name for r in list_clients(db_session, sort="name_desc")]
+    assert desc_names.index("Zeta GmbH") < desc_names.index("Alpha GmbH")
+
+
+def test_list_clients_rejects_unknown_sort_falls_back_to_default(db_session: Session) -> None:
+    _client(db_session, "Irgendein Mandant", "SORT-3")
+    # Unbekannter Sortierwert darf nicht abstuerzen, sondern faellt auf den
+    # Default zurueck (siehe list_clients-Validierung).
+    rows = list_clients(db_session, sort="nicht-existent")
+    assert len(rows) == 1
+
+
+def test_list_clients_pagination_offsets_and_limits_results(db_session: Session) -> None:
+    for i in range(25):
+        _client(db_session, f"Mandant {i:02d}", f"PG-{i:02d}")
+
+    page_1 = list_clients(db_session, sort="name_asc", page=1, page_size=10)
+    page_2 = list_clients(db_session, sort="name_asc", page=2, page_size=10)
+    page_3 = list_clients(db_session, sort="name_asc", page=3, page_size=10)
+
+    assert len(page_1) == 10
+    assert len(page_2) == 10
+    assert len(page_3) == 5
+    # Keine Ueberlappung zwischen Seiten.
+    assert {r.client.id for r in page_1}.isdisjoint({r.client.id for r in page_2})
+
+
+def test_list_clients_rejects_invalid_page_size_falls_back_to_default(db_session: Session) -> None:
+    for i in range(5):
+        _client(db_session, f"Mandant {i:02d}", f"PGX-{i:02d}")
+    # Ungueltige page_size (nicht in _ALLOWED_CLIENT_PAGE_SIZES) darf nicht
+    # abstuerzen, sondern faellt auf den Default (10) zurueck.
+    rows = list_clients(db_session, page_size=7)
+    assert len(rows) == 5
+
+
+def test_count_clients_matches_total_regardless_of_pagination(db_session: Session) -> None:
+    for i in range(15):
+        _client(db_session, f"Zaehl-Mandant {i:02d}", f"CNT-{i:02d}")
+
+    total = count_clients(db_session)
+    paged_rows = list_clients(db_session, page=1, page_size=10)
+
+    assert total == 15
+    assert len(paged_rows) == 10

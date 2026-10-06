@@ -3,6 +3,34 @@
 ## Aktuelle Baseline (verbindlich, darf sich nicht verschlechtern)
 
 ```
+2558 passed, 1 skipped, 0 failed  (voller Lauf via pytest, 05.10., Owner-
+Direktive "ARCHITECTURE & PRODUCT FLOW PASS": Chat/Kontext/Intent/Artefakt-
+Trennung (chat_reference-Draftstatus, Schnellentwurf-UI-Tarnung entfernt),
+Web-Capability-Audit + ehrliches Prompt-Framing, Dokumentvorschau im Chat
+(Thumbnail-Route), lokale Spracheingabe (faster-whisper), explizite
+Kontext-Isolationstest, "Kontext entfernen"-Funktion - siehe DECISIONS.md
+fuer alle Einzelentscheidungen dieser Direktive.)
+```
+
+Vorherige Baseline:
+
+```
+2297 passed, 1 skipped, 0 failed  (voller Lauf via pytest, 03.10., Owner-
+Direktive "RELIABLE LEGAL KNOWLEDGE UPDATES": +25 Tests fuer die
+automatisierte Gesetzesbibliotheks-Aktualisierung (ETag-Pruefung,
+Validierung, periodischer Hintergrund-Task), siehe PROJECT_STATE.md)
+```
+
+HINWEIS: diese Datei war seit dem 24.09.-Eintrag unten (2174) ueber
+mehrere zwischenzeitliche Sitzungen NICHT fortlaufend aktualisiert worden,
+obwohl der tatsaechliche Testbestand laut PROJECT_STATE.md in dieser Zeit
+wiederholt gewachsen ist (u. a. 2231/2236/2262/2272 in frueheren, hier
+nicht einzeln nachgetragenen Rundenabschluessen) - 2297 ist der aktuell
+real gemessene Wert (03.10.), nicht lueckenlos aus 2174 hergeleitet.
+
+Vorherige, zuletzt in dieser Datei gepflegte Baseline:
+
+```
 2174 passed, 1 skipped, 0 failed  (voller Lauf via pytest, 24.09., "PRODUCT
 COMPLETION MODE": +4 Tests fuer die neue "Erkannte Frist"-Vorschau in der
 Posteingang-Zuordnungskarte, siehe DECISIONS.md)
@@ -746,3 +774,19 @@ Fristen"-Fund in OPEN_ISSUES.md) - real durch Pruefung der Aktendetailseite
 statt blinder Behauptung bestaetigt. Synthetische Nachricht + Deadline +
 Audit-Events danach vollstaendig aus der Produktions-DB entfernt, per
 Zaehlabfrage auf Null bestaetigt.
+
+## 05.10. - "Vollständiger UX- und Workflow-Audit" (siehe PROJECT_STATE.md/
+DECISIONS.md fuer die volle Herleitung)
+```
+2502 passed, 1 skipped, 0 failed
+```
++29 gegenueber dem letzten vollstaendigen Lauf dieser Sitzung (2473):
+6 neue Tests in tests/test_privacy_security_check.py (Wortgrenzen- statt
+Teilstring-Leck-Check), 4 in tests/test_privacy_detectors.py
+(Wiederholungssuche bei inkonsistenter NER-Erkennung), 2 in
+tests/test_ai_providers_local.py (Sachverhalt-Exzerpt-Laenge), 12 in neu
+angelegter tests/test_export_html_content.py (HTML-Parser fuer PDF-/
+DOCX-Export), 7 in tests/test_draft_pdf_export.py + 4 in
+tests/test_draft_docx_export.py (HTML-formatierter Export), 1 bestehender
+Test in tests/test_web_chat.py angepasst (keine neue Zahl, nur korrigiert).
+Keine Regression in den 2473 bereits bestehenden Tests.

@@ -7,9 +7,6 @@ Systemstatus-Ansicht (Prompt 32) und Nutzerverwaltung (Prompt 26).
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -22,17 +19,22 @@ from app.config import get_settings
 from app.db.session import get_db
 from app.export import MatterExportService
 from app.models import Matter, User
-from app.web.download_staging import cleanup_stale_files, delete_after_send
+from app.web.download_staging import (
+    DOWNLOAD_STAGING_DIR as _DOWNLOAD_STAGING_DIR,
+    cleanup_stale_files,
+    delete_after_send,
+)
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/backup", tags=["dashboard-backup"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Eigenes, temporäres Verzeichnis für über das Dashboard erzeugte
-# Archive - getrennt von einem evtl. per CLI-Skript befüllten
-# `backups/`-Ordner. Wird nach dem Download automatisch gelöscht (siehe
-# app/web/download_staging.py: delete_after_send + cleanup_stale_files).
-_DOWNLOAD_STAGING_DIR = Path(tempfile.gettempdir()) / "lexono_dashboard_exports"
+# Temporäres Verzeichnis für über das Dashboard erzeugte Archive - getrennt
+# von einem evtl. per CLI-Skript befüllten `backups/`-Ordner. Wird nach dem
+# Download automatisch gelöscht (siehe app/web/download_staging.py:
+# delete_after_send + cleanup_stale_files). Zentral dort definiert (06.10.,
+# vorher hier UND in clients_router.py unabhängig dupliziert) - unter dem
+# bisherigen lokalen Namen weitergeführt, um diese Datei minimal zu ändern.
 
 
 def _require_admin(current_user: User = Depends(require_login)) -> User:

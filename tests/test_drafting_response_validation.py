@@ -12,7 +12,7 @@ import re
 
 from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
 from app.drafting.response_validation import (
-    _SEMANTIC_CHECK_PROMPT_TEMPLATE,
+    _build_semantic_check_prompt,
     validate_claude_response,
 )
 from app.privacy.pseudonymizer import PseudonymMapping
@@ -51,7 +51,28 @@ def test_prompt_template_placeholder_example_does_not_match_real_placeholder_pat
     echten Grund aus) UND einer ~10-20x hoeheren Laufzeit (273 statt 12
     Output-Tokens, real gemessen). "XX" statt echter Ziffern vermittelt
     dieselbe Syntax-Information, matcht aber nicht das reale Muster."""
-    assert not _REAL_PLACEHOLDER_PATTERN.search(_SEMANTIC_CHECK_PROMPT_TEMPLATE)
+    prompt = _build_semantic_check_prompt(sachverhalt="x", text="y", has_mappings=True)
+    assert not _REAL_PLACEHOLDER_PATTERN.search(prompt)
+
+
+def test_prompt_omits_placeholder_criterion_entirely_when_no_mappings_exist() -> None:
+    """ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX", mit dem real
+    konfigurierten lokalen Modell reproduziert): das Platzhalter-Kriterium
+    war bereits als "NUR falls der Ausgangssachverhalt überhaupt
+    Platzhalter enthält" formuliert - ein schwaches lokales Modell
+    befolgte diese Bedingung nachweislich NICHT (beanstandete
+    "[KATEGORIE_XX]", obwohl weder Sachverhalt noch Text einen einzigen
+    Platzhalter enthielten). Das Kriterium darf deshalb bei leeren
+    `mappings` GAR NICHT erst im Prompt auftauchen."""
+    prompt = _build_semantic_check_prompt(sachverhalt="x", text="y", has_mappings=False)
+    assert "Platzhalter" not in prompt
+    assert "KATEGORIE_XX" not in prompt
+
+
+def test_prompt_includes_placeholder_criterion_when_mappings_exist() -> None:
+    prompt = _build_semantic_check_prompt(sachverhalt="x", text="y", has_mappings=True)
+    assert "Platzhalter" in prompt
+    assert "KATEGORIE_XX" in prompt
 
 
 def test_validate_claude_response_passes_deterministic_check_then_calls_llm() -> None:

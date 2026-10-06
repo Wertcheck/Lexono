@@ -33,15 +33,59 @@
   });
 })();
 
-// Profilmenue (UI/UX-Ueberarbeitung, 13.09.) - "Einstellungen" ist kein
+// Profilmenue (UI/UX-Ueberarbeitung, 13.09.; Positionierung neu 04.10.,
+// Owner-Direktive "UI-QUALITAETSRUNDE" P2) - "Einstellungen" ist kein
 // Hauptmenuepunkt mehr, sondern Teil dieses Dropdowns (Mein Profil/
 // Einstellungen/Hilfe & Support/Abmelden). Oeffnet per Klick, schliesst
 // per Klick ausserhalb, per Escape oder per erneutem Klick auf den
 // Ausloeser - dasselbe einfache, ID-gebundene IIFE-Muster wie oben.
+//
+// `.sidebar__profile-menu` ist jetzt `position:fixed` (siehe app.css-
+// Kommentar dort fuer die volle Root-Cause-Herleitung: die vorherige
+// `left:12px;right:12px`-Verankerung relativ zur Sidebar-Breite ergab im
+// eingeklappten 68px-Rail eine ~23px schmale, bis zur Unlesbarkeit
+// umgebrochene Box). Top/Left werden deshalb hier aus der tatsaechlichen
+// Trigger-Position berechnet - bevorzugt nach oben aufklappend (der
+// Ausloeser sitzt ganz unten in der Sidebar), faellt aber bei zu wenig
+// Platz nach unten um, und wird in jedem Fall an den sichtbaren
+// Viewport geklemmt (funktioniert dadurch identisch bei ausgeklappter/
+// eingeklappter Sidebar und bei jeder Fensterhoehe/-breite).
 (function () {
   var trigger = document.getElementById("sidebar-profile-trigger");
   var menu = document.getElementById("sidebar-profile-menu");
   if (!trigger || !menu) { return; }
+
+  var VIEWPORT_MARGIN = 8;
+
+  function positionMenu() {
+    var triggerRect = trigger.getBoundingClientRect();
+    var menuRect = menu.getBoundingClientRect();
+
+    var left = triggerRect.left;
+    if (left + menuRect.width > window.innerWidth - VIEWPORT_MARGIN) {
+      left = window.innerWidth - VIEWPORT_MARGIN - menuRect.width;
+    }
+    if (left < VIEWPORT_MARGIN) { left = VIEWPORT_MARGIN; }
+
+    var spaceAbove = triggerRect.top - VIEWPORT_MARGIN;
+    var spaceBelow = window.innerHeight - triggerRect.bottom - VIEWPORT_MARGIN;
+    var top;
+    if (spaceAbove >= menuRect.height || spaceAbove >= spaceBelow) {
+      // Bevorzugt: nach oben aufklappen (Standardfall, Trigger sitzt
+      // unten in der Sidebar).
+      top = triggerRect.top - menuRect.height - 6;
+      if (top < VIEWPORT_MARGIN) { top = VIEWPORT_MARGIN; }
+    } else {
+      // Zu wenig Platz oberhalb, aber mehr Platz unterhalb - umklappen.
+      top = triggerRect.bottom + 6;
+      if (top + menuRect.height > window.innerHeight - VIEWPORT_MARGIN) {
+        top = window.innerHeight - VIEWPORT_MARGIN - menuRect.height;
+      }
+    }
+
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+  }
 
   function closeMenu() {
     menu.hidden = true;
@@ -49,7 +93,10 @@
   }
 
   function openMenu() {
+    menu.style.visibility = "hidden";
     menu.hidden = false;
+    positionMenu();
+    menu.style.visibility = "";
     trigger.setAttribute("aria-expanded", "true");
   }
 

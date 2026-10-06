@@ -21,7 +21,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.session import get_db
 from app.export.pdf_export_service import PDF_MEDIA_TYPE, DraftPdfExportService
 from app.main import app
-from app.models import AuditEvent, Client, Draft, FirmProfile, Matter
+from app.models import AuditEvent, Client, Document, Draft, FirmProfile, Matter
 from app.models.base import Base
 from tests.auth_test_utils import login_as_admin
 
@@ -181,6 +181,29 @@ def test_export_service_with_firm_profile_adds_letterhead(db_session: Session) -
     pdf.close()
     assert "Kanzlei Mustermann Rechtsanwälte" in full_text
     assert "Musterstraße 12, 10115 Berlin" in full_text
+
+
+def test_export_service_letterhead_includes_address_addition(db_session: Session) -> None:
+    """06.10., Owner-Direktive "SETTINGS -> KANZLEI": `address_addition`
+    muss - genau wie im DOCX-Export (siehe test_draft_docx_export.py) -
+    auch im PDF-Briefkopf erscheinen, da beide Exportformate denselben
+    echten Adressbestand abbilden muessen (keine Inkonsistenz zwischen
+    den beiden Formaten)."""
+    draft = _seed_draft(db_session)
+    profile = FirmProfile(
+        firm_name="Kanzlei Mustermann Rechtsanwälte",
+        address_addition="c/o Bürogemeinschaft Musterhaus",
+        street="Musterstraße 12",
+        postal_code="10115",
+        city="Berlin",
+    )
+
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter, profile)
+
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+    assert "c/o Bürogemeinschaft Musterhaus, Musterstraße 12, 10115 Berlin" in full_text
 
 
 def test_export_service_embeds_logo_and_signature_images(
@@ -382,4 +405,169 @@ def test_draft_detail_page_shows_pdf_export_link(client: TestClient, db_session:
 
     assert response.status_code == 200
     assert f'href="/dashboard/drafts/{draft.id}/export.pdf"' in response.text
-    assert "Als PDF exportieren" in response.text
+
+
+def test_export_route_saves_the_export_as_a_document_in_the_matter(
+    client: TestClient, db_session: Session
+) -> None:
+    """26.09., Owner-Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ
+    PRODUCT-COMPLETION" §12: der groesste beim IST-Audit gefundene Gap -
+    ein Export landete vorher NIE wieder in der Akte. Reproduziert §17
+    Schritt 11+14: exportieren, dann die Akte erneut oeffnen und das
+    Dokument dort wiederfinden."""
+    draft = _seed_draft(db_session)
+
+    response = client.get(f"/dashboard/drafts/{draft.id}/export.pdf")
+    assert response.status_code == 200
+
+    document = (
+        db_session.query(Document)
+        .filter(Document.matter_id == draft.matter_id, Document.mime_type == PDF_MEDIA_TYPE)
+        .one()
+    )
+    assert document.generated_from_draft_id == draft.id
+    assert document.original_filename == f"Einspruch Steuerbescheid 2025_v{draft.version}.pdf"
+    assert document.deleted_at is None
+    # Dieselbe Extraktions-Pipeline wie jeder normale Upload lief tatsaechlich
+    # (kein Sonderfall "generierte Dokumente bleiben unverarbeitet").
+    assert document.extracted_text is not None
+    assert "Erster Absatz." in document.extracted_text
+
+    matter_page = client.get(f"/dashboard/matters/{draft.matter_id}")
+    assert matter_page.status_code == 200
+    assert document.original_filename in matter_page.text
+
+
+def test_export_route_reexport_updates_existing_document_instead_of_duplicating(
+    client: TestClient, db_session: Session
+) -> None:
+    """Zweiter Export DERSELBEN Entwurfsversion darf keine zweite,
+    inhaltsgleiche Dokumentzeile anlegen - siehe
+    `_save_export_as_document`-Docstring fuer die Begruendung."""
+    draft = _seed_draft(db_session)
+
+    client.get(f"/dashboard/drafts/{draft.id}/export.pdf")
+    client.get(f"/dashboard/drafts/{draft.id}/export.pdf")
+
+    documents = (
+        db_session.query(Document)
+        .filter(Document.matter_id == draft.matter_id, Document.mime_type == PDF_MEDIA_TYPE)
+        .all()
+    )
+    assert len(documents) == 1
+
+
+def test_export_route_with_no_matter_does_not_create_a_document(
+    client: TestClient, db_session: Session
+) -> None:
+    """Ergaenzt `test_export_route_handles_a_draft_with_no_matter_gracefully`
+    (Download bleibt nutzbar) um die neue Erwartung: es darf schlicht KEIN
+    Dokument angelegt werden, wenn es keine Akte gibt, in der es erscheinen
+    koennte - kein Absturz, aber auch keine verwaiste Dokumentzeile."""
+    draft = _seed_draft(db_session)
+    matter_id = draft.matter_id
+    db_session.query(Matter).filter_by(id=matter_id).delete()
+    db_session.commit()
+    db_session.refresh(draft)
+    assert draft.matter is None
+
+    response = client.get(f"/dashboard/drafts/{draft.id}/export.pdf")
+
+    assert response.status_code == 200
+    assert db_session.query(Document).filter_by(generated_from_draft_id=draft.id).count() == 0
+
+
+# --- content_format == "html" (05.10., Owner-Direktive "Vollstaendiger
+# UX- und Workflow-Audit" - ECHTER FUND, live reproduziert: der Export
+# eines im neuen Rich-Text-Editor gespeicherten Entwurfs gab bisher den
+# rohen HTML-Quelltext als sichtbaren Text aus, siehe
+# app/export/html_content.py-Moduldocstring fuer die volle Herleitung). ---
+
+
+def _seed_html_draft(db: Session, content: str) -> Draft:
+    client = Client(name="Testmandant GmbH")
+    matter = Matter(client=client, title="Einspruch Steuerbescheid 2025")
+    db.add_all([client, matter])
+    db.commit()
+    draft = Draft(matter_id=matter.id, content=content, content_format="html")
+    db.add(draft)
+    db.commit()
+    return draft
+
+
+def test_html_draft_export_contains_no_raw_html_tags(db_session: Session) -> None:
+    draft = _seed_html_draft(
+        db_session,
+        "<p>Hallo <b>Welt</b>, dies ist <i>kursiv</i> und <u>unterstrichen</u>.</p>",
+    )
+
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter)
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+
+    for raw_tag in ("<p>", "</p>", "<b>", "</b>", "<i>", "</i>", "<u>", "</u>"):
+        assert raw_tag not in full_text
+    assert "Hallo" in full_text
+    assert "Welt" in full_text
+    assert "kursiv" in full_text
+    assert "unterstrichen" in full_text
+
+
+def test_html_draft_export_renders_bullet_and_numbered_lists(db_session: Session) -> None:
+    draft = _seed_html_draft(
+        db_session,
+        "<ul><li>Punkt eins</li><li>Punkt zwei</li></ul>"
+        "<ol><li>Erstens</li><li>Zweitens</li></ol>",
+    )
+
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter)
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+
+    assert "<ul>" not in full_text and "<li>" not in full_text
+    assert "Punkt eins" in full_text
+    assert "Punkt zwei" in full_text
+    assert "Erstens" in full_text
+    assert "Zweitens" in full_text
+
+
+def test_html_draft_export_preserves_hard_line_breaks(db_session: Session) -> None:
+    draft = _seed_html_draft(db_session, "<p>Zeile 1<br>Zeile 2</p>")
+
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter)
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+
+    assert "<br>" not in full_text
+    assert "Zeile 1" in full_text
+    assert "Zeile 2" in full_text
+
+
+def test_text_format_draft_export_is_unaffected_by_html_export_path(
+    db_session: Session,
+) -> None:
+    """Gegenprobe: ein klassischer (content_format == 'text') Entwurf mit
+    literalen spitzen Klammern im Freitext (z. B. ein zitiertes
+    "<Aktenzeichen>"-Platzhaltermuster) exportiert UNVERAENDERT - der neue
+    HTML-Zweig wird nur fuer content_format == 'html' betreten."""
+    client = Client(name="Testmandant GmbH")
+    matter = Matter(client=client, title="Testakte")
+    db_session.add_all([client, matter])
+    db_session.commit()
+    draft = Draft(
+        matter_id=matter.id,
+        content="Bitte <Aktenzeichen> ergänzen.",
+        content_format="text",
+    )
+    db_session.add(draft)
+    db_session.commit()
+
+    buffer = DraftPdfExportService().export_draft(draft, draft.matter)
+    pdf = pymupdf.open(stream=buffer.read(), filetype="pdf")
+    full_text = "\n".join(page.get_text() for page in pdf)
+    pdf.close()
+
+    assert "Aktenzeichen" in full_text

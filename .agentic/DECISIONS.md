@@ -4086,3 +4086,1424 @@ EINORDNUNG: TYPE 1/2 (technisch eindeutig, nutzt ausschliesslich
 bestehende Infrastruktur, schliesst eine bereits explizit benannte Luecke -
 kein neuer Product-/Business-Entscheid).
 DATE: 24.09.
+
+## Fortsetzung nach Commit: Dokumenteditor-Referenzen erneut gegengeprueft, Mandanten-Rechtsform-Vielfalt real E2E validiert (25.09., Owner-Direktive "Roadmap-Schwerpunkt UI → Workflow → Dokumenteditor → KI-Aktionen → realistische Testdaten → E2E/Visual QA")
+
+FUND (negativ, aber wertvoll): `09_dokumentanalyse_ergebnis.png` (echte
+"Dokumentvergleich"-Referenz trotz Dateinamens) und `17_dokument_
+vorschau_und_ki_aktionen.png` frisch angesehen - bestaetigen beide
+bereits getroffene FALL-3-Einordnungen (Versions-Diff mit
+Aenderungsverfolgung; strukturierte Briefkopf-/Empfaenger-/Anlagen-Felder
+im "Dokument"-Tab), kein neuer Gap gefunden.
+GEPRUEFT UND BEWUSST NICHT UMGESETZT: "Posteingang-Varianz nach
+Absendertyp" (OPEN_ISSUES.md, WORKSTREAM B, weiterhin offen) - die
+bestehenden sechs `SCENARIOS` sind durchgehend als "Mandant schildert
+uns X" formuliert; ein Wechsel zu direkten Absendern (Finanzamt/Gericht
+als Message.sender) wuerde eine Neuformulierung der Nachrichtentexte
+selbst erfordern (nicht nur Verdrahtung) - groesserer Content-Design-
+Aufwand als eine reine technische Ergaenzung, daher nicht ungefragt
+begonnen. Ausserdem gegengeprueft: das dafuer noetige UI-Konzept
+("beA"-Filter aus der Referenz) ist bereits am 19.09. bewusst als grosse,
+eigenstaendige Integration zurueckgestellt worden - kein aktuelles
+Blockade-Ziel fuer diese Ergaenzung vorhanden.
+ECHTE E2E-VALIDIERUNG (real, nicht nur navigatorisch): der komplette
+Gold-Workflow (Posteingang-Nachricht → "Antworten" → echter Presidio→
+Ollama→Claude-Aufruf → Rekonstruktion → PDF-/DOCX-Export) auf einem
+Mandanten mit der NEU ergaenzten Rechtsform GbR durchgespielt
+("Architekturbuero Neumann & Schulz GbR", Sonderzeichen "&" im
+Firmennamen) - bestand beim ERSTEN Versuch (141s), Firmenname korrekt
+inkl. "&" rekonstruiert, kein Platzhalter-Leck, echte PDF/DOCX-Bytes mit
+korrektem Inhalt. Bestaetigt: die am 24.09. ergaenzte Mandanten-
+Rechtsform-Vielfalt funktioniert nicht nur strukturell (Anzeige), sondern
+auch durch die volle KI-Pipeline hindurch. Test-Artefakte (Unterhaltung,
+Entwurf) danach vollstaendig entfernt.
+DATE: 25.09.
+
+---
+
+DECISION: Die mehrfach berichtete Visual-QA-"Ueberlappung mit Browser-/
+Terminal-Fenstern" wird NICHT als Lexono-Produktfehler eingestuft und
+bleibt ohne Code-/CSS-Aenderung. `.app-shell`/`.main` werden dagegen
+strukturell so geaendert, dass die Sidebar unabhaengig vom Main-Content-
+Scroll fixiert bleibt (`.app-shell` von `min-height:100vh` auf
+`height:100vh`+`overflow:hidden`, `.main` erhaelt `min-height:0`+
+`overflow-y:auto`, `.chat-shell`s eigener, mit der Titelleiste
+inkonsistenter `calc(100vh - 8px)`-Wert entfaellt zugunsten von
+Flex-Vererbung).
+REASON: Per `EnumWindows`/`PrintWindow`-Direktdiagnose real bestaetigt,
+dass die "Ueberlappung" durch ein verwaistes, irrefuehrend benanntes
+Chrome-Fenster ("LEXONO 06.09 (21:45) - Google Chrome", tatsaechlich
+eine fremde ChatGPT-Unterhaltung) und ein Terminal-Fenster auf demselben
+1280x720-Entwicklungsdesktop entstand, NICHT durch Lexono selbst -
+Lexonos eigenes Fenster fuellt den Desktop bei korrektem Vordergrund-/
+Wiederherstellungszustand lueckenlos aus. Das erste Diagnoseskript
+uebersah dabei zunaechst sogar Lexonos eigenes (bewusst leer betiteltes,
+siehe 19.09.-Entscheidung) Fenster - ein Tooling-Blind-Spot, kein
+Hinweis auf einen tatsaechlichen Layoutfehler. Der App-Shell/Main-Fix
+ist dagegen ein ECHTER, unabhaengig davon gefundener struktureller Bug
+(Owner-Zusatzanforderung "FIXED APP SHELL + INDEPENDENT MAIN-CONTENT
+SCROLL"): `min-height` statt `height` erlaubte der Shell, ueber die
+Fensterhoehe hinauszuwachsen und die Sidebar in denselben globalen
+Scroll wie der Main-Content zu ziehen; `.chat-shell`s fest verdrahteter
+Viewport-Wert ignorierte zusaetzlich die 36px eigene Titelleiste und
+liess die Chat-Seite im gebuendelten Windows-Fenster real 28px
+ueberlaufen. Beide Funde und der Fix sind live gegen echte, lange
+synthetische Daten (312-Eintraege-Aufgabenliste) sowohl im Devserver als
+auch in der frisch gebauten/installierten `Lexono.exe` verifiziert
+(volle Testsuite weiterhin gruen: 2174 passed, 1 skipped, 0 failed).
+Neuer, bewusst NICHT behobener Nebenfund (ausserhalb dieses
+Auftragsumfangs): die Login-Seite (`.login-shell`) zeigt auf demselben
+1280x720-Fenster ihre Anmeldekarte gar nicht an - betrifft eine andere
+CSS-Komponente ausserhalb von `.app-shell` und wird als eigener
+OPEN_ISSUES-Eintrag fuer eine spaetere, gezielte Untersuchung
+festgehalten statt hier ungefragt mitgeloest.
+DATE: 25.09. (Owner-Direktiven "VISUAL QA -> POSTEINGANG VARIANZ -> GAP
+DISCOVERY" und "FIXED APP SHELL + INDEPENDENT MAIN-CONTENT SCROLL",
+dieselbe Sitzung)
+
+---
+
+DECISION: Der Editor-KI-Assistent (`draft_detail.html`) wird als
+eigenstaendige rechte Seitenleiste (`.draft-assistant-panel`, fest
+320px) NEBEN dem Dokument dargestellt statt als volltbreite Leiste
+darunter. Rich-Text-Toolbar, strukturierte Betreff-/Empfaenger-Felder,
+personalisierte/zitatbasierte Vorschlaege und ein dedizierter Vorschau-/
+Erfolgs-Screen (aus denselben Referenzbildern) werden in dieser Runde
+NICHT gebaut.
+REASON: Referenzbilder 12/24/38 zeigen den KI-Assistenten konsistent als
+eigene vertikale Spalte - die vorherige gestapelte Anordnung war ein
+echter, klar behebbarer VISUAL GAP (TYPE 1/2, reine Restrukturierung
+bestehender Funktionalitaet: Vorschläge/Standard-Prompts/Anweisungsfeld
+unveraendert, nur andere Anordnung, Icon-Badges 1:1 aus den bereits
+produktiv genutzten Chat-Schnellaktionen wiederverwendet). Die vier NICHT
+umgesetzten Punkte sind dagegen jeweils TYPE 3 (echte Produktentscheidung
+noetig) oder eigenstaendige, groessere Features: Rich-Text wurde bereits
+am 20.09. bewusst gegen einen Vollausbau entschieden (Begruendung dort:
+"kleinste professionelle Loesung", Kompatibilitaet mit der bestehenden
+PDF-/DOCX-Export-Pipeline auf reinem Fliesstext) - eine Kehrtwende jetzt
+waere eine eigenmaechtige Aufhebung dieser Entscheidung ohne neuen
+Owner-Auftrag. Strukturierte Betreff-/Empfaenger-Felder wuerden eine
+Datenmodell-Erweiterung (`Draft.subject`/`Draft.recipient`) UND
+Aenderungen an Entwurfserzeugung/Export erfordern - Betreff/Empfaenger
+stecken aktuell bewusst im freien `draft.content`-Text, identisch zum
+tatsaechlichen Export-Output; eine Trennung ist eine eigenstaendige
+Architekturfrage, kein Editor-Layout-Fix. Personalisierte, zitatbasierte
+Vorschlaege (Referenzbild 38 zeigt echte Textausschnitte pro Vorschlag)
+wuerden einen ZUSAETZLICHEN KI-Analyseaufruf pro Entwurfsansicht
+bedeuten - direkter Zielkonflikt mit der bereits dokumentierten
+Performance-/Kosten-Zurueckhaltung (siehe P1-Streaming-Eintrag,
+OPEN_ISSUES.md) und wird nicht ungefragt eingefuehrt. Der dedizierte
+Vorschau-Screen (Referenzbild 27, inkl. "An beA uebermitteln") und der
+Erfolgs-Screen (Referenzbild 16) sind FUNKTIONAL bereits durch
+bestehende Routen abgedeckt (PDF-/DOCX-Export-Links, "Freigeben &
+Postausgang uebergeben") - ihnen fehlt nur die eigene visuelle
+Screen-Existenz; das ist ein eigenstaendiges, groesseres Feature
+("kleinste sinnvolle Aenderung"-Prinzip, Direktive §18), keine
+Voraussetzung fuer den jetzt behobenen Seitenleisten-Gap. Verifiziert
+per Chromium-Layout-Diagnose (kein Overflow bei realer Viewport-Breite,
+mehrfach reproduziert) UND echter Desktop-/WebView2-Navigation in der
+neu gebauten/installierten `Lexono.exe` (App-Shell-Scrollverhalten dort
+bestaetigt); volle Testsuite gruen (2174 passed, 1 skipped, 0 failed).
+Waehrenddessen unabhaengig gefundener, NICHT behobener Content-Fund: ein
+synthetischer Entwurf enthaelt rohen, unformatierten Markdown-Text -
+als eigener Punkt dokumentiert, betrifft synthetische Datengenerierung,
+nicht dieses Editor-Layout.
+DATE: 25.09. (Owner-Direktiven "EDITOR UI PRODUCT-COMPLETION /
+REFERENCE-DRIVEN IMPLEMENTATION" und "UI DEVELOPMENT ENVIRONMENT /
+DESKTOP PRODUCT TRUTH", dieselbe Sitzung)
+
+---
+
+DECISION: Der Posteingang wird strukturell und visuell an
+`04_posteingang_nachricht_detail.png` angeglichen, indem AUSSCHLIESSLICH
+bereits bestehende Backend-Funktionalitaet (Filter, Suche, automatische
+Aktenzuordnung, HTMX-Detailwechsel) neu angeordnet/sichtbar gemacht wird.
+"Neue E-Mail", "Alle Konten"-Dropdown, farbige Absendertyp-Badges
+(Gericht/Finanzamt/Gegenseite) und ein Zeitraum-Range-Filter aus
+demselben Referenzbild werden NICHT gebaut.
+REASON: Die Ist-Analyse (Owner-Direktive §2, vor jeder Aenderung
+durchgefuehrt) zeigte, dass der Posteingang backend-seitig bereits
+deutlich weiter war als sein Layout erkennen liess - reine
+Restrukturierung/Ergaenzung (Avatar, Anhang-Icon, Detail-Reihenfolge,
+Anhang-Karten mit echter Dateigroesse, Akte-/Sortier-Filterleiste) war
+daher OHNE neue Backend-Logik moeglich (TYPE 1/2). Die vier NICHT
+gebauten Punkte sind dagegen jeweils echte Produktentscheidungen oder
+schlicht nicht durch reale Funktionalitaet gedeckt: "Neue E-Mail" haette
+eine tatsaechliche Versandfaehigkeit vorausgesetzt, die im gesamten
+Projekt bewusst nicht existiert (Postausgang ist eine reine
+Warteschlange ohne Versandfunktion, siehe draft_detail.html/fruehere
+Eintraege) - ein Compose-Button ohne echten Versandweg waere ein reiner
+Fake-Button gewesen (Direktive §7/§19: "keine Buttons, die lediglich
+einen Toast erzeugen"). "Alle Konten" haette einen Mehrkonten-Dropdown
+vorgetaeuscht, obwohl es projektweit nur ein einziges konfigurierbares
+IMAP-Postfach gibt (settings.html) - ein Dropdown mit praktisch einer
+Option waere eine Fake-Steuerung ohne echte Wirkung gewesen. Farbige
+Absendertyp-Badges (beA/Mandant/Frist/Behoerde/Termine im Referenzbild)
+haetten ein `sender_type`-Datenbankfeld vorausgesetzt, das nicht
+existiert - dieselbe, bereits an anderer Stelle dokumentierte
+"Posteingang-Varianz nach Absendertyp"-Frage (Content-Autoring- bzw.
+Datenmodell-Entscheidung, kein reines Layout-Problem); real bestaetigt
+beim Live-Test gegen die Produktions-DB: alle 62 echten synthetischen
+Nachrichten sind durchgehend vom Typ "Mandant", keine Gericht-/
+Finanzamt-/Gegenseite-Varianz vorhanden - die Entscheidung bleibt damit
+weiterhin unveraendert offen, nicht neu ausgeloest. Der Zeitraum-Range-
+Filter (Datumsauswahl) wurde als eigenstaendige, groessere UI-Entscheidung
+zurueckgestellt (Direktive §18 "kleinste sinnvolle Aenderung"), waehrend
+Akte-Filter und Sortierung als klar TYPE-1/2-Erweiterungen sofort
+umgesetzt wurden. Ein zusaetzlicher, echter struktureller Fund waehrend
+der Umsetzung: `.split` (Container fuer Nachrichtenliste + Detail-Panel)
+fehlte `min-height:0` - nach dem fruaheren App-Shell-Fix (siehe
+vorherigen Eintrag) haette dessen Flexbox-Default sonst verhindert, dass
+Liste/Detail unabhaengig voneinander scrollen (derselbe strukturelle
+Bug-Typ wie beim App-Shell-Fund, hier fuer den Posteingang spezifisch).
+Verifiziert per 7 neuen + 2 aktualisierten Tests (volle Suite: 2181
+passed, 1 skipped, 0 failed) UND einer echten Ende-zu-Ende-Pruefung in
+der installierten `Lexono.exe`/WebView2 (nicht nur Browser): Login ueber
+die native App, Posteingang-Liste mit Avataren/Anhang-Icons/Filtern
+korrekt gerendert, Klick auf eine Nachricht aktualisiert das Detail-Panel
+dynamisch mit echtem Aktenzeichen/Betreff/Absender, Klick auf eine
+Anhang-Karte oeffnet die echte, bereits bestehende Dokumentanalyse-Seite
+mit real extrahiertem Vertragstext - der komplette Referenz-Zielworkflow
+"Posteingang -> Nachricht -> Anhang -> Dokumentvorschau" damit organisch
+(nicht nur als geplanter Testschritt) durchlaufen und bestaetigt.
+DATE: 25.09. (Owner-Direktive "POSTEINGANG PRODUCT COMPLETION /
+REFERENCE-DRIVEN IMPLEMENTATION + REAL WORKFLOW + VISUAL QA", dieselbe
+Sitzung)
+
+---
+
+DECISION: In der direkten Folge-Direktive "POSTEINGANG FINAL UI/UX
+PRODUCT-COMPLETION" wurde die globale Sidebar (`base.html`: Suchfeld,
+„Neuen Chat starten“, Cloud-/Lokale-KI-Statusanzeige) NICHT angetastet,
+obwohl die Direktive sie als posteingangsfremd auflistete und ihre
+Reduktion nahelegte. Mandant- und Zeitraum-Filter sowie die
+Default-Nachrichtenauswahl beim initialen Laden wurden dagegen sofort
+umgesetzt.
+REASON: Die Sidebar ist eine app-weite Komponente, identisch auf JEDER
+Seite des Produkts sichtbar, deren Pflichtsichtbarkeit bereits durch
+frühere, datierte Produktentscheidungen festgelegt wurde ("seit
+Referenzbild 01.09. auf JEDER Seite sichtbar", siehe fruehere Eintraege).
+Eine Aenderung daran ist keine Posteingang-spezifische, sondern eine
+App-Shell-weite, funktionsuebergreifende Aenderung mit Auswirkung auf
+jede andere Seite - genau die Art von Risiko, vor der die Direktive
+selbst warnt ("keine zweite Design-Sprache", "bestehende Funktionalitaet
+erhalten"). Mandant-/Zeitraum-Filter und Default-Auswahl sind dagegen
+additive, ausschliesslich Posteingang-lokale Backend-Erweiterungen mit
+geringem Risiko. Bei einem echten Bedarf, die globale Sidebar zu
+veraendern, ist das ein eigener, bewusst zu treffender Entscheidungspunkt
+fuer eine zukuenftige Direktive - nicht "nebenbei" im Rahmen einer
+Posteingang-Aufgabe.
+DATE: 25.09. (Owner-Direktive "POSTEINGANG FINAL UI/UX
+PRODUCT-COMPLETION / REFERENCE-DRIVEN REFACTORING / VISUAL MATCH / REAL
+WORKFLOW", dieselbe Sitzung)
+
+---
+
+DECISION: Logo, globale Suche und die Kopfzeilen-Icons wurden aus der
+Sidebar bzw. aus einem absolut positionierten Overlay über `.main` in
+eine neue, zentrale, seitenübergreifende `.global-header`-Zeile
+verschoben (EINE Änderung in `base.html`, nicht pro Seite). Die
+Sidebar-eigene Suche ("Suchen… Strg K") und der Button "Neuen Chat
+starten" wurden dabei vollständig ENTFERNT statt nur versteckt.
+REASON: Die vorige Runde hatte diese Elemente als "app-weite Komponente
+mit bereits festgelegter Pflichtsichtbarkeit" bewusst unangetastet
+gelassen. Diese Direktive verlangte jedoch ausdrücklich, die aktuelle
+kanonische App-Shell tatsächlich zu PRÜFEN statt die vorige Zurückhaltung
+zu wiederholen (§5) - und die Prüfung ergab: für die Suche und "Neuen
+Chat starten" existierte KEINE vergleichbare, dated Pflicht-Entscheidung
+wie für die Cloud-KI/Lokale-KI-Statusanzeige (die tatsächlich seit
+01.09. "auf JEDER Seite sichtbar" sein muss, siehe DECISIONS.md weiter
+oben - diese blieb deshalb bewusst unverändert). "Neuen Chat starten"
+erwies sich zudem als bereits vollständig redundant: die Chat-Seite hat
+seit längerem einen eigenen "+"-Button (`chat-conversations__new`,
+`chat.html`, identisches Ziel `/dashboard/chat?new=1`) - keine Funktion
+ging durch die Entfernung verloren, nur die referenzwidrige,
+seitenübergreifende Duplizierung. Die globale Suche wurde NICHT neu
+gebaut, nur repositioniert (Direktive §6: "keine zweite
+Sucharchitektur") - vorher aber musste sie ehrlich gemacht werden, siehe
+nächster Eintrag.
+DATE: 26.09. (Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+IMPLEMENTATION - FINAL UI/UX CORRECTION ROUND", dieselbe Sitzung)
+
+---
+
+DECISION: `GlobalSearchService` wurde um eine echte `_search_messages`-
+Kategorie (Absender/Betreff, Badge "Lokal") erweitert, BEVOR der
+Platzhaltertext der globalen Suche auf "In E-Mails, Mandanten, Akten
+oder Inhalten suchen …" geändert wurde.
+REASON: Die Referenz zeigt diesen Text im globalen Suchfeld, die
+bestehende Command Bar durchsuchte E-Mails/Posteingang-Nachrichten
+jedoch überhaupt nicht (nur Client/Matter/Document/LawSection/Source).
+Den Text einfach zu übernehmen, ohne die Funktion zu ergänzen, wäre
+CLAUDE.md's Grundsatz "keine vorgetäuschte Funktion" zuwidergelaufen -
+der Text hätte eine Fähigkeit behauptet, die nicht existiert. Die neue
+Kategorie folgt derselben, bereits etablierten Metadaten-statt-Volltext-
+Grenze wie `_search_documents` (nur Absender/Betreff, nicht
+`Message.body_text`) - keine neue, weitergehende Datenkategorie oder
+zweite Such-Architektur.
+DATE: 26.09. (Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+IMPLEMENTATION - FINAL UI/UX CORRECTION ROUND", dieselbe Sitzung)
+
+---
+
+DECISION: `.message-row--active` (Posteingang, ausgewählte Nachricht)
+nutzt weiterhin `--seal-green`/`--seal-green-tint` (real ein dunkler
+Navy-/Tinte-Ton, siehe der Token-Kommentar in app.css - trotz des Namens
+NICHT tatsächlich grün) statt `--brand-green` (das echte, exakte
+CI-Grün #249D74) für die Auswahl-Markierung - obwohl die Referenz einen
+sichtbar grünen Auswahl-Zustand zeigt.
+REASON: `--seal-green` ist bereits die einzige, durchgängig im gesamten
+Produkt verwendete Aktiv-/Auswahl-/Fokus-Farbe (aktive Tabs, aktive
+Sidebar-Navigation, Fokus-Ringe, Karten-Hervorhebungen - über 60
+Fundstellen in app.css, alle bewusst konsistent). Nur die
+Posteingangs-Zeile auf das echte Grün umzustellen hätte exakt die von
+dieser Direktive selbst verbotene "zweite Design-Sprache" erzeugt
+(§27) - der Posteingang wäre dann das EINZIGE Element im gesamten
+Produkt mit einer abweichenden Auswahlfarbe gewesen. Interne Konsistenz
+mit dem bereits shippenden, produktweiten Design-System wiegt hier
+schwerer als eine pixelgenaue Farbübereinstimmung mit einem einzelnen
+Referenz-Screenshot. Bewusst akzeptierte, rein kosmetische Abweichung.
+DATE: 26.09. (Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+IMPLEMENTATION - FINAL UI/UX CORRECTION ROUND", dieselbe Sitzung)
+
+---
+
+DECISION: Zwei bestehende Sidebar-Tests
+(`test_sidebar_profile_menu_has_all_four_mandated_items`,
+`test_sidebar_active_item_gets_active_class_and_stays_in_place`) wurden
+auf einen gescopten Text-/HTML-Ausschnitt umgestellt (Suche erst AB
+`#sidebar-profile-menu` bzw. AB `<nav class="sidebar">`), und ein dritter
+Test (`test_matter_detail_page_without_chat_conversation_offers_a_new_chat_instead_of_a_fake_link`)
+wurde inhaltlich modernisiert.
+REASON: Nach dem Umzug der Kopfzeilen-Icons in die neue globale
+Kopfzeile (siehe oben) erscheinen dort jetzt frühzeitig im Dokument
+eigene "Abmelden"/"Posteingang"-Texte bzw. -Links - eine ungescopte
+`response.text.index(...)`-Suche traf danach zuerst diese statt der
+eigentlich gemeinten Sidebar-/Profilmenü-Elemente, wodurch beide Tests
+mit einer falschen Reihenfolge fehlschlugen. Der dritte Test bestand
+bisher nur zufällig, weil sein exaktes Such-Pattern
+(`href="/dashboard/chat?new=1"`, ohne Anhang) auf den jetzt entfernten,
+globalen Sidebar-Button passte - nicht auf den eigentlich gemeinten,
+akten-spezifischen Link der Seite selbst
+(`?new=1&matter={{ matter.id }}`, mit `&matter=`-Anhang). Dessen
+Docstring war zudem seit dem 14.09. veraltet: seit dem `?matter=`-
+Parameter in `chat_router.py::chat_home` kann ein neuer Chat sehr wohl
+real mit einer bestehenden Akte vorbelegt werden - der Test wurde
+entsprechend korrigiert, um die tatsächliche, korrekte, bereits reale
+Funktion zu prüfen statt eines zufälligen String-Treffers.
+DATE: 26.09. (Owner-Direktive "POSTEINGANG / STRICT REFERENCE
+IMPLEMENTATION - FINAL UI/UX CORRECTION ROUND", dieselbe Sitzung)
+
+---
+
+DECISION: Die entdeckte DPI-Awareness-Lücke der nativen App (effektiver
+Viewport bleibt ~1280×720 selbst bei physisch 1920×1080 maximiertem
+Fenster, siehe OPEN_ISSUES.md) wurde in der Direktive "POSTEINGANG FINAL
+POLISH" NICHT behoben, obwohl sie direkt die dortige
+Informationsdichte-Aufgabe betrifft.
+REASON: Eine echte Korrektur betrifft die App-Initialisierung
+(`run.py`/pywebview-Konfiguration bzw. das Windows-Manifest der
+gebuendelten exe) - eine App-Shell-/Packaging-Aenderung, die diese
+Direktive in §12 ausdruecklich verbietet ("App-Shell nicht mehr
+anfassen... nur wenn ein konkreter Regressions-/Produktfehler
+nachgewiesen wird"). Es ist zudem kein Posteingang-spezifischer Fehler,
+sondern betrifft die gesamte Anwendung auf jedem Bildschirm mit von
+100 % abweichender Windows-Skalierung - eine Korrektur wuerde eine
+komplette Visual-QA-Runde ueber ALLE Seiten (nicht nur Posteingang) nach
+sich ziehen, da sich effektive Viewport-Groessen ueberall aendern
+wuerden. Stattdessen wurde die Posteingang-Feinabstimmung dieser Runde
+gezielt gegen das reale, gemessene ~1280×720-Limit optimiert.
+DATE: 26.09. (Owner-Direktive "POSTEINGANG FINAL POLISH - STRICT
+REFERENCE MATCH + VISUAL DENSITY + REAL WORKFLOW", dieselbe Sitzung)
+
+---
+
+DECISION: Das volle "Neueste zuerst"/"Älteste zuerst"-Sortier-Dropdown im
+Posteingang wurde durch einen kompakten Auf/Ab-Icon-Button
+(`.inbox-sort-toggle`) ersetzt, der per `hx-vals` zwischen "newest" und
+"oldest" umschaltet.
+REASON: Die Referenz zeigt an dieser Stelle ein kleines quadratisches
+Sortier-Icon statt eines vollen Text-Dropdowns - dasselbe Muster wie
+bereits bei den Filter-Tabs (`hx-vals` überschreibt den entsprechenden
+Wert des gemeinsamen `#inbox-filter-form`, siehe frühere Direktive-
+Runde), keine neue Interaktionsarchitektur. Die dahinterliegende
+`sort`-Filterlogik (`_load_messages`) ist unverändert real und
+vollständig funktionsfähig - nur die Bedienoberfläche wurde an die
+Referenz angeglichen, ausdrücklich erlaubt durch die Direktive
+("vorhandene Funktionen auf die Referenzdarstellung abbilden").
+DATE: 26.09. (Owner-Direktive "POSTEINGANG FINAL POLISH - STRICT
+REFERENCE MATCH + VISUAL DENSITY + REAL WORKFLOW", dieselbe Sitzung)
+
+---
+
+DECISION: Die bestehende Katalogliste `_KNOWN_TITLES`/`_CODE_OVERRIDES`
+(bisher nur in `scripts/import_gesetze_im_internet.py`) wurde in ein
+neues, geteiltes Modul `app/laws/catalog.py` verschoben und um zwei real
+verifizierte Eintraege (URHG, BDSG) erweitert - das CLI-Skript importiert
+sie von dort zurueck unter denselben alten Namen, statt sie zu
+duplizieren.
+REASON: Die neue Kanzleiwissen-Weboberflaeche braucht denselben "Server-
+Katalog" (welche Gesetze sind grundsaetzlich abrufbar) wie das bisherige
+CLI-Skript - eine zweite, abweichende Liste haette Direktive §32 ("KEIN
+paralleles Rechtsquellensystem") verletzt. Die zwei neuen Eintraege
+wurden bewusst gewaehlt, weil zum Zeitpunkt dieser Direktive ALLE 34
+bisherigen Katalogeintraege bereits lokal importiert waren - ohne
+mindestens einen echten, tatsaechlich noch nicht installierten
+Katalogeintrag haette der zentrale "nicht installiert → Toggle →
+Download → installiert"-Produktfluss nur mit Mocks getestet werden
+koennen, nie an echten Daten gegen die reale Produktions-DB.
+DATE: 26.09. (Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+IMPLEMENTATION / REFERENCE-DRIVEN UI + REAL LOCAL KNOWLEDGE MANAGEMENT",
+dieselbe Sitzung)
+
+---
+
+DECISION: Ein deaktiviertes Gesetz (`Law.is_active = False`) wird NICHT
+geloescht - die bereits heruntergeladenen `LawSection`-Zeilen bleiben
+vollstaendig erhalten, nur `app/chat/service.py::_find_law_section` und
+`app/search/global_search_service.py::_search_law_sections` filtern es
+per `Law.is_active`-Join aus.
+REASON: Die Owner-Direktive erlaubte explizit beide Varianten ("A)
+aktiv/installiert, B) nicht installiert" ODER "A) aktiv, B) deaktiviert",
+"welche Variante verwendet wird, entscheidet die bestehende Architektur")
+und verbot ausdruecklich, unnoetig neue Storage-Logik zu erfinden. Ein
+vollstaendiges Loeschen bei jeder Deaktivierung wuerde bedeuten, dass ein
+versehentlich deaktiviertes/wieder aktiviertes Gesetz jedes Mal komplett
+neu von der amtlichen Quelle heruntergeladen werden muesste (bei z. B.
+BGB mehrere hundert Paragraphen) - unnoetig langsam und unnoetig
+netzwerkabhaengig fuer eine rein lokale Verfuegbarkeits-Umschaltung. Ein
+zusaetzliches Boolean-Feld auf dem bereits bestehenden `Law`-Modell ist
+die minimalste, architektur-konforme Erweiterung.
+DATE: 26.09. (Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+IMPLEMENTATION / REFERENCE-DRIVEN UI + REAL LOCAL KNOWLEDGE MANAGEMENT",
+dieselbe Sitzung)
+
+---
+
+DECISION: Die Sidebar verlinkt "Kanzleiwissen" jetzt auf
+`/dashboard/knowledge` (die neue Kategorie-Uebersicht) statt wie zuvor
+direkt auf `/dashboard/laws` (die reine Gesetzes-Leseansicht) - Letztere
+bleibt vollstaendig unveraendert bestehen und wird aus der neuen
+Kategorie-Tabelle heraus verlinkt.
+REASON: Die Referenz `43_Kanzleiwissen_Gesetze.png` zeigt "Kanzleiwissen"
+als Kategorie-Uebersicht (Alle Dokumente/Rechtsprechung/Gesetze & Normen/
+...) mit der Rechtsquellen-Tabelle als EINE von mehreren Kategorien, nicht
+als eigenstaendige Zielseite. `/dashboard/knowledge` existierte bereits
+(seit 14.09.) als genau diese Kategorie-Uebersicht, wurde aber nie zum
+Sidebar-Ziel gemacht, weil die Gesetzes-Tabelle darin bis jetzt nur ein
+Link-Hinweis war statt echter Inhalt. Jetzt, wo "Gesetze & Normen" darin
+echten Inhalt hat, ist `/dashboard/knowledge` die referenzkonforme
+Zielseite. `/dashboard/laws` bleibt bewusst bestehen (Reuse statt
+Neubau, Direktive §7/§32) - erreichbar per Klick auf ein installiertes
+Gesetz.
+DATE: 26.09. (Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+IMPLEMENTATION / REFERENCE-DRIVEN UI + REAL LOCAL KNOWLEDGE MANAGEMENT",
+dieselbe Sitzung)
+
+---
+
+DECISION: "Favoriten" und eine granulare Rechtsprechungs-Registry wurden
+NICHT gebaut - die Kacheln sind sichtbar mit echten (Null-)Zaehlern,
+zeigen aber ehrlich "noch nicht verfügbar" statt erfundener Inhalte.
+REASON: Fuer beide existiert kein Datenmodell-Gegenstueck im Projekt
+(kein Favoriten-Feld irgendwo, keine automatisierte Urteils-Katalog-
+Quelle analog zu "Gesetze im Internet"). Direktive §31 ("Architektur-
+Stoppregel") verlangt explizit, eine fehlende zentrale Funktion zu
+dokumentieren statt sie vorzutaeuschen - siehe OPEN_ISSUES.md fuer die
+volle Begruendung und eine Empfehlung fuer eine kuenftige, eigene
+Direktive zu jedem der beiden Punkte.
+DATE: 26.09. (Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+IMPLEMENTATION / REFERENCE-DRIVEN UI + REAL LOCAL KNOWLEDGE MANAGEMENT",
+dieselbe Sitzung)
+
+---
+
+## Kanzleiwissen: Referenzabgleich-Nachfolgerunde - "Favoriten" bewusst
+wieder entfernt, sechs Kategorien, Sprach-/Stilkorrekturen (26.09.,
+Owner-Direktive "KANZLEIWISSEN REFERENCE-MATCH / PRODUCT-COMPLETION
+PASS")
+
+DECISION: Die Kachel "Favoriten" wurde entgegen der vorherigen
+Entscheidung derselben Sitzung (siehe direkt darueber: "sichtbar mit
+echten Null-Zaehlern") jetzt komplett entfernt statt nur ehrlich leer
+angezeigt. `_CATEGORIES` hat jetzt genau sechs Eintraege: Alle Inhalte,
+Rechtsprechung, Gesetze & Normen, Vorlagen & Muster, Fachwissen, Interne
+Dokumente.
+REASON: Eine neue, praeziser spezifizierte Owner-Direktive mit
+aktualisiertem Referenzbild verlangt ausdruecklich genau sechs Kacheln
+in einer Reihe ohne "Favoriten" - eine bewusste Kurskorrektur der
+vorherigen Rundenentscheidung, keine widerspruechliche Altentscheidung.
+Alte Deep-Links auf `?category=favorites` fallen serverseitig graceful
+auf "all" zurueck (kein 404/Fehlerzustand), siehe
+`test_favorites_category_no_longer_exists`.
+DATE: 26.09. (dieselbe Sitzung, direkte Fortsetzung).
+
+---
+
+DECISION: "Alle Dokumente" -> "Alle Inhalte" umbenannt (gleiche Funktion/
+Zaehlung, nur das Label); neue kategoriespezifische Erklaerzeile unter
+dem Titel/Untertitel eingefuehrt (`knowledge_description.html`, per OOB-
+Swap synchron zur Kategorieauswahl), Beispieltext fuer "Gesetze & Normen"
+direktivenkonform uebernommen.
+REASON: "Kanzleiwissen" ist nicht nur Dokumente (auch Rechtsquellen/
+Textbausteine); das alte Label war fachlich ungenau. Die kurze
+Erklaerzeile ersetzt die vorherige Sonderbehandlung des generischen
+"Alle"-Untertitels (der lange Fliesstext lag vorher direkt im Subtitle-
+Partial) und macht jede Kategorie gleich behandelbar.
+DATE: 26.09. (dieselbe Sitzung).
+
+---
+
+DECISION: Tabellentitel "Gesetzbücher und Normen" -> "Gesetze & Normen";
+Spalten "Abkürzung"/"Herunterladen" -> "Kürzel"/"Lokal verfügbar"; Status-
+Text "Installiert"/"Nicht installiert" -> "Lokal verfügbar"/"Nicht
+verfügbar" (nur `law_catalog_row.html` + zugehoerige CSS/Tests - kein
+Datenmodell-/Logikwechsel).
+REASON: Direktive verlangt exakt diese Begriffe, da der Toggle einen
+andauernden lokalen Aktivierungszustand darstellt, keinen einmaligen
+Download-Vorgang. Reine Text-/Sprachkorrektur, bestehende
+Toggle-/Install-/Download-Logik (`install_service.py`) unveraendert.
+DATE: 26.09. (dieselbe Sitzung).
+
+---
+
+DECISION: Neue Illustration `law-library-illustration.svg` (mehrere
+Gesetzbuch-Ruecken BGB/ZPO/StGB/VwGO + § -Symbol, Lexono-Gruen/Navy)
+handgefertigt und in `.law-info-card` eingebunden statt eines
+generischen Platzhalters; `.law-info-card` Flex-Basis 260px -> 300px
+(Ziel-Verhaeltnis Tabelle:Karte ca. 70-75:25-30 statt 50:50).
+REASON: Direktive verbietet ausdruecklich generische Stockgrafiken/
+fremde Logos/technische Platzhalter und verlangt ein "sauberes Asset in
+der bestehenden Asset-Struktur" mit dem beschriebenen Motiv - kein
+bestehendes Asset traf das Motiv, also neu erstellt statt improvisiert.
+DATE: 26.09. (dieselbe Sitzung).
+
+---
+
+DECISION: Zwei neue Icon-Makros (`scale`, `graduation_cap`) zu
+`_icons.html` ergaenzt und den Kategorie-Kacheln zugeordnet
+(Rechtsprechung: Waage statt Balkendiagramm; Fachwissen: Doktorhut statt
+Gluehbirne; Interne Dokumente: bestehendes `users`-Icon statt Archiv);
+Status-Badges der Gesetzestabelle (`tag--installed` u.a.) von gefuellten
+Pillen auf flachen Text mit farbigem Punkt umgestellt; Tabellenkopf
+(`law-catalog-table th`) von Versalien/Mono auf Satzschrift umgestellt -
+alle drei Aenderungen ausschliesslich fuer diese eine Tabelle/diese
+Kacheln gescoped (Grep-verifiziert vor der Aenderung: `tag--installed`
+u.a. werden nur in `law_catalog_row.html` verwendet, `.draft-table`
+bleibt fuer alle anderen Tabellen der App unveraendert).
+REASON: Direkter Bildvergleich mit dem neuen Referenzbild zeigte diese
+drei Abweichungen als groesste verbleibende P1/P3-Luecken nach der
+ersten Umsetzungsrunde. Bewusst NICHT `.tag`/`.draft-table` global
+geaendert, um keine Regression an den vielen anderen Stellen zu
+riskieren, die dieselben Basisklassen verwenden.
+DATE: 26.09. (dieselbe Sitzung, nach dem ersten Implementierungsdurchlauf
+und Screenshot-Abgleich bei 1536x1024/1366x768/1920x1080/1280x720).
+
+---
+
+DECISION: Horizontales Zellenpolster der Gesetzestabelle von 16px (Erbe
+von `.draft-table`) auf 10px reduziert (nur `.law-catalog-table th/td`).
+REASON: Bei 1280x720 (der schmalsten der vier gepruesten Desktop-
+Breiten) wurde die letzte Spalte "Lokal verfügbar" inkl. Toggle
+vollstaendig aus dem sichtbaren Tabellenbereich herausgedrueckt (nur
+horizontal innerhalb des Tabellen-Containers scrollbar, siehe die
+bereits bestehende `min-width:0`-Entscheidung einer frueheren Runde) -
+das betrifft real auch das gepackte `Lexono.exe`-Fenster, dessen
+tatsaechlicher nutzbarer CSS-Viewport wegen der dokumentierten fehlenden
+Per-Monitor-DPI-Awareness nur ca. 1297x737px betraegt (siehe
+ARCHITECTURE.md/OPEN_ISSUES.md), also sehr nah an 1280x720 liegt. Die
+schmalere Polsterung gibt 6x12px zurueck, wodurch Toggle wieder ohne
+Scrollen sichtbar ist (Spaltenkopftext "Lokal verfügbar" kann bei dieser
+Breite weiterhin leicht abgeschnitten sein - akzeptiert, siehe
+OPEN_ISSUES.md).
+DATE: 26.09. (dieselbe Sitzung).
+
+---
+
+## Document Workspace / Schriftsatz Product-Completion (26.09., Owner-
+Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ" + Zusatzanweisung "VISUELLE
+DESIGN-SYSTEM-KONSISTENZ")
+
+DECISION: `.btn--primary` (site-weite primaere CTA-Klasse, u. a.
+"Speichern"/"Freigeben & Postausgang übergeben"/"Schriftsatz-Entwurf
+erstellen"), `.chat-composer__send-btn` (Chat-Senden-Button) und die
+"--green"-Variante von `.chat-quick-action`/`.chat-quick-action__icon`
+wurden von `--seal-green` (trotz des Namens dunkles Navy, siehe
+Variablendefinition) auf `--brand-green` (echtes Lexono-Gruen)
+umgestellt. `--seal-green` selbst UND alle anderen ca. 80 Verwendungen
+(Aktiv-Zustaende in Sidebar/Tabs/Listen, Badges, Rahmen, Fokus-Ringe)
+bewusst UNVERAENDERT gelassen.
+REASON: Owner-Direktive verlangt ausdruecklich, dass die primaere/
+interaktive Markenfarbe konsequent echtes Gruen ist ("GRÜN = zentrale
+Lexono-Aktion"), aber explizit NICHT "alles gruen machen" - nur
+tatsaechliche primaere Aktions-Buttons. Vor der Aenderung per Grep
+verifiziert, dass die drei geaenderten Selektoren AUSSCHLIESSLICH fuer
+Buttons/interaktive Primäraktionen stehen; alle anderen `--seal-green`-
+Verwendungen sind Zustands-/Struktur-Farbgebung (aktiv/ausgewaehlt),
+keine Aktions-Buttons - fallen explizit unter die Direktiven-Ausnahme
+("Schwarz/Navy darf weiterhin fuer... neutrale Controls... verwendet
+werden").
+DATE: 26.09.
+
+---
+
+DECISION: Export (PDF/DOCX) eines Entwurfs speichert das erzeugte
+Dokument jetzt zusaetzlich als echtes `Document` in der Akte des
+Entwurfs (`app/web/drafts_router.py::_save_export_as_document`), statt
+nur ein Browser-Download zu sein. Neue nullable Spalte
+`documents.generated_from_draft_id` (Migration `schritt3_018`), analog
+zum bereits bestehenden `Document.message_id`-Muster. Idempotent PRO
+(Entwurfsversion, Format): ein wiederholter Export DERSELBEN
+Entwurfsversion aktualisiert die bereits gespeicherte Datei statt eine
+weitere, inhaltsgleiche Zeile anzulegen.
+REASON: Groesster beim IST-Audit dieser Direktive gefundener Gap (§12/
+§17): "Kein 'Export erfolgreich', wenn die Aktenintegration fehlt" - der
+Export endete vorher IMMER als reiner Download, ohne jemals wieder in
+der Akte aufzutauchen ("Ergebnis → Akte" war schlicht nicht gebaut). Die
+neue Spalte statt eines Dateiname-/Pfad-Abgleichs, weil das bereits
+etablierte, robuste Muster fuer optionale Dokument-Herkunft ist (siehe
+`message_id`) - kein neues Konzept. Reuse der bestehenden Upload-
+Speicher-/Hash-/Extraktions-Pipeline (`DocumentProcessingService`,
+`compute_sha256`), keine zweite Ablagearchitektur.
+DATE: 26.09.
+
+---
+
+DECISION: Kein automatischer Retry im `DraftingService`, obwohl ein
+echter, reproduzierbarer (nahezu 100 % bei Akten ohne Aktenzeichen)
+Claude-Fund waehrend des Pflicht-E2E-Tests dieser Direktive auftrat:
+Claude erfindet bei der "Dokument analysieren"-Aktion zuverlaessig einen
+nie zugewiesenen Platzhalter "[AKTENZEICHEN_01]", wenn die Akte kein
+echtes Aktenzeichen hat und die Antwort eine strukturierte Feldliste
+nahelegt - die bestehende, korrekt fail-closed arbeitende
+Platzhalter-Integritaetspruefung blockiert den Entwurf danach zu Recht.
+Stattdessen NUR zwei sichere Mitigationen angewendet: (1) die
+Systemprompts (`app/ai_providers/claude_writing_provider.py`,
+`WRITING_SYSTEM_PROMPT` UND `CHAT_SYSTEM_PROMPT`) um ein explizites
+Negativbeispiel ergaenzt ("Aktenzeichen: [AKTENZEICHEN_01]" nicht
+erfinden, Zeile stattdessen weglassen) - reduziert die Haeufigkeit
+nachweislich, aber NICHT auf null; (2) die Anwalt-lesbare Meldung fuer
+genau diese Kategorie (`mapping_inconsistency`, `app/privacy/
+api_logger.py`) von "Interner Konsistenzfehler bei der
+Pseudonymisierung" (klingt nach Dauerfehler) auf eine ehrliche, zum
+erneuten Versuch ermutigende Formulierung geaendert (kein Datenschutz-
+vorfall, Neuformulierung hilft meist) - die andere, tatsaechlich
+schwerwiegende Kategorie ("original_value_leaked", ein wirklich
+geleakter Originalwert) bleibt bewusst unveraendert ernst formuliert.
+REASON: `app/drafting/service.py` enthaelt die explizite, bereits
+bestehende Architekturaussage "Bei jedem Fehlschlag: kontrollierter
+Abbruch, NIEMALS automatische Neuformulierung/Reparatur" - diese wurde
+NICHT eigenmaechtig aufgehoben (CLAUDE.md: "Die Architektur wird nicht
+eigenmächtig verändert, solange eine fachliche Entscheidung dazu offen
+ist"), obwohl ein bewusst eng begrenzter, einmaliger Retry (identische,
+bereits vollstaendig privacy-gepruefte Anfrage einfach nochmal stellen -
+funktional identisch zu einem manuellen zweiten Klick des Anwalts)
+technisch denkbar und vermutlich wirksam gewesen waere. Diese
+Kurswende bleibt bewusst einer expliziten Owner-Entscheidung
+vorbehalten statt sie hier vorwegzunehmen, siehe OPEN_ISSUES.md fuer die
+volle Empfehlung. Fail-closed-Verhalten (lieber blockieren als ein
+erfundenes Token durchlassen) ist UNVERAENDERT korrekt und bleibt
+bestehen.
+DATE: 26.09., waehrend des E2E-Pflichttests (§17) real reproduziert.
+
+---
+
+## Kanzleiwissen Final Polish + App-Shell Korrektur (26.09., Owner-
+Direktive "KANZLEIWISSEN FINAL POLISH + APP-SHELL KORREKTUR")
+
+DECISION: "Neuen Chat starten" wurde als permanenter Sidebar-Button
+wiederhergestellt (`.sidebar__new-chat-btn`, base.html, direkt ueber der
+Hauptnavigation), obwohl eine fruehere Runde (25.09., "POSTEINGANG /
+STRICT REFERENCE IMPLEMENTATION") ihn bewusst entfernt hatte
+("vollstaendig redundant zum bestehenden '+'-Button auf der Chat-Seite
+selbst").
+REASON: Der Owner hat diese fruehere Entscheidung ausdruecklich als
+Fehler benannt: die globale Kopfzeilen-Suche (Mandanten/Akten/Dokumente
+FINDEN) und "Neuen Chat starten" (die primaere KI-Arbeitsflaeche
+OEFFNEN) haben unterschiedliche Zwecke, keine Redundanz - ein Button nur
+INNERHALB der bereits geoeffneten Chat-Seite ist kein Ersatz fuer einen
+von JEDER Seite aus erreichbaren Einstieg. Wiederverwendet dieselbe
+bestehende Route (`/dashboard/chat?new=1`, siehe chat_router.py::
+chat_home) statt neuer Logik - reine UI-Wiederherstellung. Die
+Sidebar-eigene SUCHE ("Suchen… Strg K") bleibt dagegen bewusst entfernt
+(dieser Teil der 25.09.-Entscheidung war nicht Gegenstand der
+Kurskorrektur - die globale Kopfzeilen-Suche deckt das ab).
+DATE: 26.09.
+
+---
+
+DECISION: Die Kategorie "Alle Inhalte" wurde aus Kanzleiwissen entfernt
+(genau fuenf Kacheln bleiben: Gesetze & Normen/Rechtsprechung/Vorlagen &
+Muster/Fachwissen/Interne Dokumente, "laws" ist jetzt die
+Standardkategorie). Die kleine "Gesetze oder Normen suchen …"-Suche
+wurde aus dem Seitenheader entfernt und direkt neben den Tabellentitel
+"Gesetze & Normen" verschoben (`.knowledge-inline-search`).
+REASON: "Alle Inhalte" war zu einer eigenen, unnoetigen zweiten
+Dashboard-Ebene geworden (Gesetzesbibliothek-Zusammenfassung + eine
+"Textbausteine & Kanzleiwissen"-Tabelle, die 1:1 die "Fachwissen"-Tabelle
+duplizierte + eine gemischte "Rechtsquellen"-Liste) - genau die von der
+Direktive verbotene "unnoetige Zwischenebene". Jede der fuenf
+verbleibenden Kategorien hat bereits eine eigene, vollstaendige, echte
+Ansicht. Die Suche gehoert direkt an die Liste, die sie durchsucht, nicht
+in den Seitenheader (Direktive: "keine drei konkurrierenden
+Suchfelder" - globale Suche + Kanzleiwissen-Header-Suche + implizit die
+Chat-Eingabe waren real drei verschiedene Sucheingaben mit
+ueberlappender Wahrnehmung).
+DATE: 26.09.
+
+---
+
+DECISION: Die Kategorie "Interne Dokumente" zeigt jetzt ALLE
+Nicht-Rechtsprechung-`Source.source_type`-Werte (vorher nur "Interne
+Leitlinie"), mit einer neuen "Typ"-Spalte in der Tabelle.
+REASON: ECHTER, waehrend der Testanpassung gefundener Regressions-Fund:
+`ALLOWED_SOURCE_TYPES` (app/sources/schema.py) hat SIEBEN Werte
+("Gesetz", "Verordnung", "Verwaltungsanweisung", "Rechtsprechung",
+"Fachliteratur", "Interne Leitlinie", "Sonstiges"), aber nur
+"Rechtsprechung" hatte eine eigene Kachel - die anderen sechs waren
+bisher NUR ueber die jetzt entfernte "Alle Inhalte"-Sammelansicht
+("Rechtsquellen"-Tabelle) erreichbar. Ohne diese Korrektur waeren real
+vorhandene Produktionsdaten (3 echte `Source`-Zeilen mit
+`source_type="Gesetz"`, per Datenbankabfrage bestaetigt) beim Entfernen
+von "Alle Inhalte" unsichtbar geworden - ein direkter Verstoss gegen
+Direktive §18 ("keine bestehende Funktionalitaet verloren"). "Interne
+Dokumente" ist bewusst die breiteste, generischste der fuenf
+verbleibenden Kacheln und uebernimmt daher alle Nicht-Rechtsprechung-
+Typen; die neue "Typ"-Spalte macht transparent, dass nicht jede Zeile
+woertlich eine "interne Leitlinie" ist.
+DATE: 26.09.
+
+---
+
+DECISION: Scroll-Architektur der "Gesetze & Normen"-Ansicht ueber eine
+neue, dedizierte `.knowledge-page`-Wrapper-Klasse geloest (statt der
+geteilten `.draft-page`, die auch der Entwurf-Editor nutzt) - fuellt
+`.main` exakt aus (dasselbe Prinzip wie `.chat-shell`) und gibt sowohl
+der Tabelle (`.instructions-panel` in `.knowledge-laws-layout`) als auch
+der rechten Info-Karte (`.law-info-card`) je ein eigenes `max-height:
+100%` + `overflow-y: auto`.
+REASON: Root-Cause-Fund per injiziertem Diagnose-Overlay (nicht
+vermutet): `.knowledge-laws-layout` nutzt `align-items: flex-start`
+(damit die Info-Karte nicht auf Tabellenhoehe gestreckt wird) - dadurch
+bekommen Kinder OHNE explizites `max-height` KEINE tatsaechliche
+Hoehenbegrenzung von der Zeile vererbt, selbst wenn die Zeile selbst per
+Flexbox korrekt hoehen-gedeckelt ist. `flex:1`/`min-height:0` allein
+(die ueblichen Root-Cause-Fixes in diesem Projekt) reichen hier NICHT,
+weil der unmittelbare Elternrahmen (`.instructions-panel`) selbst keine
+definierte Hoehe hatte, an der sich das `.table-container`-Kind
+orientieren konnte - real gemessen: `.table-container` wuchs auf
+2293px statt der verfuegbaren ~335px (bei 1366×768), OHNE dass
+`overflow-y:auto` je griff (`scrollHeight == clientHeight`, kein
+Clipping). Erst `max-height:100%` auf dem UNMITTELBAREN Flex-Kind der
+Zeile (analog zur Info-Karte, wo das bereits vorher funktionierte) gibt
+dem verschachtelten `flex:1`/`overflow-y:auto` darunter ueberhaupt einen
+Rahmen zum Kappen.
+DATE: 26.09.
+
+---
+
+DECISION: Bei Fensterhoehen ≤800px (`@media (max-height: 800px)`) wird
+die rechte Info-Karte kompakter dargestellt (kleinere Illustration,
+Beschreibungstext auf zwei Zeilen mit Ellipsis gekappt, engere
+Abstaende) - bei groesseren Hoehen bleibt die geraeumigere Standard-
+Gestaltung unveraendert.
+REASON: Direktive §7 verlangt, dass die Info-Karte (Illustration,
+Ueberschrift, Beschreibung, Rechtssicher, Flexibel, Immer aktuell)
+"im initialen Desktop-Viewport vollstaendig sichtbar" ist. Real gemessen
+(Diagnose-Overlay): bei 1366×768 stehen der Zeile "Tabelle + Info-Karte"
+nur ca. 335px Hoehe zur Verfuegung, die Karte braucht in ihrer
+Standardgroesse aber ca. 580-584px natuerliche Inhaltshoehe - eine
+Luecke, die durch Abstaende/Illustrationsgroesse allein bei 1536×1024/
+1920×1080 (dort ausreichend Platz vorhanden) nicht entstehen sollte.
+Eine HOEHEN- statt Breiten-Media-Query trifft den tatsaechlichen Engpass
+praeziser (1366×768 ist zwar auch schmaler als 1536×1024, aber die
+Hoehe ist hier der limitierende Faktor). Nach dem Fix bei 1366×768 real
+gemessen: alle sechs geforderten Elemente sichtbar, verbleibende
+Karteninhaltshoehe (409px) passt bis auf einen kleinen Rest in die
+verfuegbaren 335px - der Rest ist ueber den (funktionierenden, nur beim
+Screenshot-Tool per `--hide-scrollbars` unterdrueckten) internen Scroll
+der Karte erreichbar, keine Information geht verloren.
+DATE: 26.09.
+
+---
+
+DECISION: Die handgefertigte SVG-Illustration der rechten Info-Karte
+("Aktuelles Recht. Lokal verfügbar.") wurde durch das vom Owner als
+verbindlich benannte, bereits unter `assets/ux-ui/
+Kanzleiwissen_Panellbackground.png` hinterlegte echte Bild-Asset ersetzt
+(1:1-Kopie nach `app/web/static/img/law-library-illustration.png`, per
+SHA-256 identisch) - unveraendert uebernommen, keine eigene Nachbildung,
+keine zusaetzlichen Effekte/Wasserzeichen/Hintergruende hinzugefuegt.
+Die alte SVG-Datei wurde geloescht (vollstaendig unreferenziert).
+REASON: Zwei aufeinanderfolgende Owner-Anweisungen ("WICHTIG —
+KANZLEIWISSEN ILLUSTRATION", dann praezisiert "VERBINDLICHES ASSET FÜR
+KANZLEIWISSEN") stellten klar, dass ein konkretes, bereitgestelltes
+Bild-Asset verwendet werden soll statt einer selbst erzeugten
+Illustration - unabhaengig davon, wie gut die vorherige SVG-Version
+bereits das Referenzmotiv (BGB/ZPO/StGB/VwGO + §-Symbol) traf. Zwei
+Bild-Varianten wurden zwischenzeitlich per Chat angehaengt (eine mit
+Alphakanal/transparentem Hintergrund, die zweite - identisch mit der
+bereits in assets/ux-ui/ hinterlegten Datei - mit solidem weissem
+Hintergrund, RGB ohne Alphakanal); die ZWEITE, in assets/ux-ui/ bereits
+vorhandene Version ist die vom Owner ausdruecklich als verbindlich
+bestaetigte ("das gerade angehängte Bild ist ab sofort das verbindliche
+Illustrations-Asset" + "das bereits dort vorhandene entsprechende Asset
+verwenden") - per SHA-256-Hashvergleich zweifelsfrei identifiziert
+(nicht geraten). `assets/ux-ui/` bleibt die Referenzbild-Sammlung
+(nicht web-served); `app/web/static/img/` ist weiterhin der einzige von
+der App tatsaechlich ausgelieferte Ordner - beide Kopien sind bewusst
+identisch gehalten, keine zwei widerspruechlichen Versionen im Umlauf.
+DATE: 26.09.
+
+---
+
+DECISION: Die Kanzleiwissen-Kategorien "Rechtsprechung", "Interne
+Dokumente" und "Fachwissen" sind ab sofort NICHT mehr rein lesend -
+Nutzer mit Rolle admin/anwalt koennen ueber neue, kuratorengeschuetzte
+Formulare direkt in der jeweiligen Kategorie eine neue Quelle
+(`Source`, inkl. Quellentyp-Auswahl fuer "Interne Dokumente") bzw. einen
+neuen Textbaustein (`KnowledgeItem`) erfassen und anschliessend per
+Klick freigeben/als veraltet markieren bzw. deaktivieren (mit
+Pflicht-Begruendung). Technisch: sechs neue POST-Routen in
+`knowledge_router.py`, alle unter `require_role("admin", "anwalt")`,
+alle rufen ausschliesslich bereits vorhandene, vollstaendig getestete
+Service-Methoden auf (`SourceService.import_source`/
+`.mark_as_outdated`, `KnowledgeItemService.import_item`/`.approve`/
+`.deactivate`) - keine neue Geschaeftslogik, kein neuer Statusautomat.
+REASON: Owner-Direktive "AUTONOMOUS PRODUCT GAP AUDIT → PRIORITIZE →
+EXECUTE" verlangte einen quellcode-basierten (nicht dokumentengestuetzten)
+Audit des tatsaechlichen Produktzustands. Dieser Audit fand per
+erschoepfender `grep` ueber `app/` (ausserhalb von Modell-Definitionen
+und Tests), dass `Source(...)` und `KnowledgeItem(...)` im gesamten
+Backend NUR von den eigenen `import_*`-Servicemethoden und von
+`app/synthetic_data/generator.py` instanziiert wurden - es gab also
+buchstaeblich KEINEN Weg, ueber die echte Web-Oberflaeche eine neue
+Gerichtsentscheidung, interne Richtlinie oder einen Textbaustein zu
+erfassen, obwohl das komplette Backend (Service, Schema, Audit-Log,
+Such-Index-Anbindung) dafuer bereits fertig und getestet vorlag. Dies
+war eine vorherige, in dieser Datei/den OPEN_ISSUES nicht explizit als
+"bewusst nur lesend" begruendete Annahme aus frueheren Runden, die sich
+bei genauer Pruefung als reine Server-Erreichbarkeitsluecke (kein
+fachlicher Vorbehalt) herausstellte - Kandidat 1 der Direktive
+("Rechtsprechungs-Registry", ein automatisierter externer Katalog)
+wurde davon unterschieden und bewusst weiterhin NICHT gebaut (siehe
+FUTURE-Eintrag in OPEN_ISSUES.md), weil dort tatsaechlich eine offene
+Geschaeftsentscheidung (Lizenzen/API-Zugang) fehlt - die hier
+geschlossene Luecke ist rein die manuelle Kuratoren-Eingabe, kein
+Ersatz fuer einen automatisierten Katalog. Gewaehlt als EINZIGER
+Arbeitsblock dieser Audit-Runde, da er (a) einen tatsaechlich
+belegbaren, nicht erfundenen Gap schliesst, (b) ausschliesslich
+bestehende, bereits getestete Serviceschicht wiederverwendet (Simplicity
+First/Surgical Changes), (c) das etablierte Rollen-/CSRF-Muster aus
+`document_templates_router.py`/`prompt_library_router.py` 1:1
+uebernimmt, und (d) hoeheren, sofort nutzbaren Produktwert hat als das
+gleichzeitig geprüfte P4-Sichtbarkeitsdetail (siehe OPEN_ISSUES.md).
+Verifiziert: 15 neue Tests (insgesamt 37 in `test_web_knowledge.py`,
+vorher 25), volle Regressionssuite gruen (2236 passed, 1 skipped, 0
+failed), visuelle QA per Chromium-Snapshot bei 1536x1024 fuer
+"case_law" und "expertise" (Formulare/Statuslogik/Lexono-Green
+korrekt), anschliessend realer Installer-Build + Desktop-Verifikation
+in der installierten `Lexono.exe`.
+DATE: 26.09.
+
+---
+
+DECISION: Fuer das dokumentierte P2-Problem "Login-/Kanzleiwissen-Karte
+im nativen WebView2-Fenster nicht sichtbar" wird KEIN Produktcode-Fix
+vorgenommen (kein CSS, kein `run.py`, keine WebView2-Konfiguration).
+Beide betroffenen OPEN_ISSUES-Eintraege wurden von P2/P4 auf LOW
+herabgestuft.
+REASON: Owner-Direktive "LEXONO — P2 ROOT-CAUSE GOAL" verlangte
+ausdruecklich, die tatsaechliche Ursache zu BEWEISEN statt einen
+weiteren CSS-Fix zu versuchen. Per Chrome DevTools Protocol (CDP,
+aktiviert ueber das offizielle pywebview-Setting
+`REMOTE_DEBUGGING_PORT`, keine Code-Aenderung) wurde direkt aus dem
+WebView2-Compositor (`Page.captureScreenshot`) UND per zwei unabhaengigen
+Layout-Messpfaden (`evaluate_js` und CDP `Runtime.evaluate`/
+`getLayoutMetrics`) nachgewiesen, dass beide Seiten (Login, Kanzleiwissen)
+korrekt UND vollstaendig rendern - die betroffenen Karten liegen exakt
+innerhalb des sichtbaren Viewports, nicht clipped, nicht Null-Groesse.
+Zusaetzlich wurde der komplette Login-Flow per echten nativen Maus-
+klicks + Unicode-Tastatureingabe (kein JS-Autofill) erfolgreich
+durchgefuehrt (echte serverseitige Authentifizierung, Navigation
+`/dashboard/login` -> `/dashboard/chat`). Die bisher genutzten
+Bildschirmaufnahme-APIs dieser Sitzung (`PrintWindow`, `CopyFromScreen`
+- beide GDI-basiert) zeigten dieselbe Karte dagegen konsistent NICHT -
+ein reines Tooling-Limit dieser stark virtualisierten Sandbox (GDI kann
+WebView2s hardwarebeschleunigte DirectComposition-Flaeche hier nicht
+einfangen), kein Produktfehler. Ein artifizieller Fix haette damit ein
+NICHT existierendes Problem "geloest" und echte Zeit auf ein falsches
+Ziel verwendet - Direktive §7 ("wenn belastbar nachgewiesen wird, dass
+der Produktcode korrekt ist... KEINEN kuenstlichen Produktfix
+einbauen") wurde befolgt. Alle Diagnose-Skripte liegen ausschliesslich
+im Sitzungs-Scratchpad (nicht im Repo) - `run.py` und alle CSS-Dateien
+blieben unveraendert (per `git status`/`git diff --stat` bestaetigt).
+Empfehlung fuer kuenftige native Visual-QA in dieser Sandbox: CDP
+(`Page.captureScreenshot`) statt `PrintWindow`/`CopyFromScreen`
+verwenden, wenn ein WebView2-Screenshot Inhalt vermissen laesst, bevor
+daraus ein Produktfehler abgeleitet wird.
+DATE: 27.09.
+
+---
+
+DECISION: Aenderungserkennung fuer die Gesetzesbibliothek (Owner-
+Direktive "RELIABLE LEGAL KNOWLEDGE UPDATES") nutzt den echten HTTP-ETag
+der offiziellen Quelle (gesetze-im-internet.de) als primaeres Signal -
+KEIN Content-Hash des vollen Downloads. Automatisiert wird NUR die
+PRUEFUNG (taeglich, HEAD-Request); die tatsaechliche inhaltliche
+UEBERNAHME einer erkannten neuen Fassung bleibt ein manueller,
+owner-/anwaltsseitig ausgeloester Schritt.
+REASON: Real gegen die Live-Quelle verifiziert (Phase B der Direktive,
+nicht angenommen): `HEAD .../xml.zip` liefert einen echten, starken
+ETag + unterstuetzt bedingtes GET (`If-None-Match` -> HTTP 304, real
+getestet) - ein belastbarer, bereits vorhandener Versionsmarker macht
+einen zusaetzlichen Content-Hash ueberfluessig (die Direktive erlaubt
+Hashes nur als Ersatz, "wenn keine hinreichend zuverlaessigen
+Versionsinformationen existieren" - hier existieren sie). Automatisierte
+PRUEFUNG ohne automatisierte UEBERNAHME trennt sauber zwischen risikolos
+(ein HEAD-Request veraendert nie den Inhaltsbestand) und risikobehaftet
+(ein Importlauf schreibt echte Paragraphentexte) - konsistent mit der
+bereits etablierten Zurueckhaltung des Projekts bei automatischen
+inhaltlichen Aenderungen ohne menschliche Bestaetigung (vgl. "Keine
+automatische externe Kommunikation ohne explizite Freigabe" in
+CLAUDE.md, sinngemaess hier auf Bibliotheksinhalte uebertragen).
+Zusaetzlich real verifiziert: der automatisierte taegliche Pruef-Task
+wartet bewusst ZUERST eine volle Intervall-Laenge, bevor er zum ersten
+Mal prueft (nicht umgekehrt) - verhindert einen sofortigen echten
+Netzwerkzugriff bei jedem App-/Testlauf (echter Fund: `test_web_
+knowledge.py`s Test-Fixture loest den FastAPI-Lifespan-Hook tatsaechlich
+aus). Validierung vor jeder Uebernahme nutzt einen RELATIVEN
+Normenzahl-Vergleich zum bisherigen Bestand DESSELBEN Gesetzes
+(<50 % bei zuvor mindestens 5 Normen) statt eines fixen, universellen
+Schwellenwerts - die Direktive verbietet Letzteres ausdruecklich
+("Gesetzesaenderungen koennen die Anzahl der Normen legitim
+veraendern").
+Live-Verifikation (Phase F, echte Quelle + echte, vorab gesicherte
+geteilte DB, kein Installer-Rebuild): BDSG real geprueft+aktualisiert -
+echter Server-ETag gespeichert, 86 Normen unveraendert, Gesamtbestand
+36 Gesetze/11.473 Normen vor/nach identisch, zweite Pruefung direkt
+danach korrekt "unveraendert". Siehe PROJECT_STATE.md fuer die volle
+Herleitung/Testliste.
+DATE: 03.10.
+
+---
+
+DECISION: Das Kanzleifachprofil (Owner-Direktive "KANZLEIFACHPROFIL UND
+JURISTISCHE WISSENSSTEUERUNG") wird als neue Tabelle `FirmPracticeArea`
+an das BESTEHENDE `FirmProfile`-Singleton angehaengt, OHNE jede Mehr-
+Kanzlei-/Multi-Tenant-Architekturentscheidung. Relevanzintegration
+(§4.3) wird NUR fuer `KnowledgeItem` ("Fachwissen") umgesetzt, NICHT
+fuer die Gesetzesbibliothek.
+REASON: Vor jeder Modellierung verifiziert (nicht angenommen): `User`
+hat kein `firm_id`-Feld, `FirmProfile` ist bereits ein bewusstes
+Singleton fuer die GESAMTE Installation (siehe dortiger Moduldocstring,
+20.08.). Lexono hat damit schlicht KEIN Mehr-Kanzlei-Datenmodell - die
+in der Direktive (§3) befuerchtete "echte Owner-Entscheidung zur
+Mandanten-/Berechtigungsgrenze" stellt sich dadurch gar nicht erst: das
+Kanzleifachprofil ist zweifelsfrei installationsweit, dieselbe
+Zuordnungsfrage, die `FirmProfile` schon beantwortet hat. Eine neue
+Tabelle statt einer CSV-Spalte auf `FirmProfile` wurde gewaehlt, weil nur
+so eine echte UNIQUE-Constraint-Pruefung gegen doppelte Zuordnungen
+moeglich ist (Direktive §4.2) - eine CSV-Spalte haette fragiles
+String-Parsing bei jeder Aenderung erfordert.
+Fuer die Relevanzintegration wurde VOR jeder Implementierung geprueft,
+welche Modelle ueberhaupt eine echte `practice_area`-Klassifikation
+tragen: `Law` und `Source` haben KEINE (die offizielle Gesetzes-XML-
+Quelle liefert keine Kategorisierung), NUR `KnowledgeItem` hat ein
+bereits befuelltes Feld. Eine Zuordnung Gesetz<->Rechtsgebiet zu
+erfinden haette gegen das CLAUDE.md-Prinzip "Niemals Rechtsquellen
+erfinden" verstossen (hier sinngemaess auf Metadaten/Kategorisierung
+uebertragen) - deshalb bewusst NUR fuer Kanzleiwissen/"Fachwissen"
+umgesetzt (Sortierung: passende Eintraege zuerst, nichts wird
+ausgeschlossen), fuer die Gesetzesbibliothek explizit dokumentiert statt
+stillschweigend uebersprungen.
+Echter, bei der Live-Verifikation gefundener Sachverhalt (nicht vorher
+bekannt): reale Produktionsdaten zeigen, dass die bestehende, geteilte
+`PRACTICE_AREA_SUGGESTIONS`-Liste (9 Eintraege) nur 3 von 9 tatsaechlich
+genutzten Rechtsgebiets-Freitextwerten abdeckt - die Kanzlei nutzt
+ueberwiegend steuerrechtliche Teilgebiete (Einkommensteuer,
+Erbschaftsteuer, Umsatzsteuer, Betriebspruefung, Steuerrecht), die in
+der aktuellen Liste fehlen. Diese Liste bewusst NICHT eigenmaechtig
+erweitert (sie wird auch von Client-/Matter-Formularen genutzt, eine
+Erweiterung waere eine eigene Produktentscheidung ausserhalb dieses
+Auftrags) - stattdessen als konkrete MEDIUM-Empfehlung in
+OPEN_ISSUES.md festgehalten.
+Live-Verifikation (Phase 7, echte geteilte DB, vorab gesichert, danach
+auf den urspruenglichen leeren Zustand zurueckgesetzt): voller
+Benutzerpfad (Laden->Auswaehlen->Speichern->Neuladen->Aendern->erneut
+Speichern->Validierungsfehler->Berechtigungsgrenze) real bestanden;
+Kanzleiwissen-Relevanzsortierung mit dem real vorhandenen, aber nicht in
+der Vorschlagsliste enthaltenen Wert "Einkommensteuer" korrekt
+ABGELEHNT (bestaetigt die Validierung), mit dem gueltigen Wert "Erbrecht"
+(real ohne Treffer) korrekt "keine Ausgrenzung, kein Badge" gezeigt. Die
+POSITIVE Treffer-/Sortier-Probe liegt mangels ueberschneidender
+Realdaten nur in der automatisierten Testsuite vor (3 gezielte Tests) -
+ehrlich als Grenze dokumentiert, nicht als zusaetzlich live verifiziert
+behauptet. Siehe PROJECT_STATE.md fuer die volle Herleitung/Testliste.
+DATE: 03.10.
+
+---
+
+DECISION: Echter Rich-Text-Dokumenten-Editor gebaut (neue Seite
+`/dashboard/drafts/{id}/edit`, draft_editor.html/app_draft_editor.js) -
+bewusste, EXPLIZITE Umkehrung der fruaheren Entscheidung "Entwurf-Editor:
+Briefkopf-/Signatur-Vorschau statt Rich-Text-Editor (20.09.)" weiter oben
+in dieser Datei.
+REASON: Jene fruahere Entscheidung war an die DAMALIGE Direktive gebunden
+("CONTEXT EXTENSION" §5/§6, die ausdruecklich NUR eine Briefkopf-/
+Signatur-Vorschau verlangte) und begruendete den Verzicht ausdruecklich
+mit "keine Owner-Direktive verlangt das" - nicht mit einer technischen
+Unmoeglichkeit. Die neue Owner-Direktive ("LEXONO - Dokumenten-Editor
+produktionsnah implementieren und vollstaendig in den Chat-Workflow
+integrieren", 04.10.) verlangt EXPLIZIT und detailliert genau das, was
+zuvor bewusst zurueckgestellt wurde ("Der Editor ist ein echter
+Rich-Text-Editor und kein statischer Viewer", vollstaendige Toolbar-
+Spezifikation, Referenzbild 12_dokument_editor.png) - die Vorbedingung
+fuer den fruaheren Verzicht ("das wurde nicht verlangt") entfaellt damit
+ausdruecklich, keine stillschweigende Abweichung.
+
+Konkrete, technisch neue Bausteine (alle additiv, nichts Bestehendes
+entfernt):
+- `Draft` erweitert um `subject`/`recipient`/`content_format`/
+  `last_autosaved_at` (migrations/versions/schritt3_024_*, ALLE nullable
+  bzw. mit sicherem server_default="text" - jede bestehende Zeile bleibt
+  unveraendert interpretierbar). `content_format == "html"` wird NUR vom
+  neuen Editor erzeugt; draft_detail.html (der bestehende Viewer) bleibt
+  fuer "text" (alle Altzeilen) exakt beim bisherigen escaped-Klartext-
+  Pfad, zeigt "html" zusaetzlich (sanitisiert) an.
+- `app/drafting/versioning.py::create_new_draft_version`/
+  `create_manual_edit_version` um diese drei Felder erweitert (werden bei
+  jeder Folgeversion automatisch vom Vorgaenger uebernommen, sofern nicht
+  explizit angegeben) - KEINE zweite Versionierungs-Logik.
+- Autosave (`EditorService.autosave_draft`) nutzt die BEREITS bestehende
+  Ausnahme "Status-Update ohne Versionssprung auf der aktuellen Zeile"
+  (siehe draft.py-Moduldocstring, bisher nur fuer reine Freigabe genutzt)
+  - KEIN neuer Versionssprung pro Autosave-Intervall, nur solange
+  `status == "draft"`.
+- KI-Bearbeitung (`EditorService.apply_ai_suggestion`) nutzt
+  UNVERAENDERT `AttorneyInstructionService.apply_instruction` (exakt
+  derselbe Pfad wie die 4 bestehenden Vorschlagsknoepfe in
+  draft_detail.html) - ECHTE, bereits bekannte Grenze dabei bestaetigt
+  (live reproduziert, 04.10.): `DraftingService.create_draft` erhaelt
+  NIE den bisherigen Entwurfstext als Eingabe (baut den Sachverhalt
+  immer neu aus der Akte auf, siehe apply_instruction-Docstring) - eine
+  Textauswahl im Editor kann deshalb nur als FOKUS in die Anweisung
+  eingebettet werden, nicht als chirurgische Teilersetzung garantiert
+  werden. Der Editor zeigt jeden KI-Vorschlag deshalb konsequent als
+  VOLLSTAENDIGEN neuen Versionsvorschlag mit Uebernehmen/Verwerfen an,
+  nie als stille Teilersetzung - "Verwerfen" markiert die bereits
+  angelegte Version nur als `status = "ai_suggestion_discarded"`
+  (neuer, in `_load_version_chain`/`drafts_list.html` uebersprungener
+  Status-Wert ueber `resolve_visible_draft`), loescht nichts.
+- HTML wird serverseitig ueber eine feste Tag-/Attribut-Allowlist
+  sanitisiert (`app/drafting/html_sanitizer.py`, `nh3`/Ammonia, neue
+  Kernabhaengigkeit in pyproject.toml) - sowohl bei Autosave als auch vor
+  jeder Anzeige, verhindert gespeichertes XSS ueber den Editor.
+- "Als Vorlage speichern" nutzt die BEREITS bestehende
+  `DocumentTemplateService`/`DocumentTemplate` (Dokumenten-Generator,
+  bisher nie vom Draft-Workflow aus erreichbar) - keine zweite
+  Vorlagenablage. Die "Vorlagen"-Sidebar-Tab listet dieselben Zeilen.
+  "Freigeben" im Editor ruft die bereits bestehende `/approve`-Route auf
+  (Freigabe + Postausgang-Uebergabe, KEIN Versand) - keine neue
+  Freigabe-Semantik erfunden.
+
+Live-Verifikation (04.10., isolierte QA-DB-Kopie, throwaway Admin-
+Konto, Dev-Server auf separatem Port, headless-msedge/CDP): Editor-Seite
+rendert mit echten Aktendaten (Breadcrumb, Toolbar, Betreff/Empfaenger,
+Statusleiste, KI-Assistent- und Vorlagen-Tab); Tippen im Editor loest
+nach 1,5s Debounce einen ECHTEN Autosave aus, in der DB bestaetigt
+(`content`/`content_format`/`last_autosaved_at` tatsaechlich
+aktualisiert, `version` unveraendert bei 1); EIN echter Klick auf
+"Formulierung praezisieren" durchlief die VOLLE Pipeline (Privacy
+Gateway -> echter Claude-Aufruf -> neue, eingefrorene Version ->
+Vorschau-Panel mit Uebernehmen/Verwerfen) - die oben beschriebene
+Content-Luecke dabei live reproduziert (Claude antwortete korrekt mit
+"kein Entwurfstext uebermittelt", bestaetigt die dokumentierte Grenze
+statt sie zu widerlegen). Alle 2473 bestehenden + neuen automatisierten
+Tests (inkl. 23 neuer Versionierungs-/Editor-Service-Tests, 12 neuer
+Router-Integrationstests) bestehen; KEIN Installer-Build, KEINE
+Installation ueberschrieben, KEIN Commit/Merge/Push (Owner-Direktive
+untersagt dies explizit fuer diese Runde).
+DATE: 04.10.
+
+---
+
+DECISION: Vier konkrete, synthetisch UND live (echter Claude-Aufruf)
+reproduzierte Fehlerursachen in der Chat-/Schriftsatz-/Export-Pipeline
+behoben (Owner-Direktive "LEXONO — Vollständiger UX- und Workflow-Audit
+mit gezielter Fehlerbehebung", 05.10.) - alle vier zusammen erklaeren den
+in der Direktive beschriebenen, manuell beobachteten Fehler ("KI-Antwort
+wird wegen eines angeblich unzureichend anonymisierten Werts blockiert,
+obwohl der Nutzer eine normale Frage... gestellt hat").
+REASON (je Fund mit Root Cause + Fix + Verifikation):
+
+1. **Naiver Teilstring-Leck-Check statt Wortgrenzen**
+   (app/privacy/security_check.py::check_response_placeholder_integrity).
+   `mapping.original_value in text` loeste bei JEDEM Wort aus, das den
+   pseudonymisierten Wert als Teilstring enthielt (Mandant "Fischer"
+   blockierte "Fischereirecht"). Betraf sowohl die eingehende
+   Antwortpruefung als auch das ausgehende Final Payload Gate (beide
+   rufen dieselbe Funktion auf) - eine normale Chat-Nachricht konnte
+   dadurch blockiert werden, OHNE dass der Mandant ueberhaupt erwaehnt
+   wurde. Fix: `\b`-Wortgrenzen-Regex statt `in`-Vergleich
+   (`_contains_original_value_leak`). Echte Lecks bleiben erkannt
+   (Gegenprobe getestet). 6 neue Tests, 97 Tests im Privacy-Modul grün.
+
+2. **Dokument-Exzerpt im Sachverhalt faktisch auf 160 statt 500 Zeichen
+   verkuerzt** (app/ai_providers/local_ai_provider.py::_build_sachverhalt).
+   Rief `build_snippet(text[:500], "")` auf - mit LEERER Suchanfrage
+   greift `build_snippet`s fuer Suchtreffer-Vorschauen gedachter Fallback
+   (160 Zeichen), nicht die hier beabsichtigten 500. JEDES Dokument im
+   Sachverhalt wurde dadurch blind nach Zeichen 160 abgeschnitten (oft
+   nur Briefkopf/Anrede, vor jedem inhaltlichen Absatz) - live an einem
+   synthetischen Einspruchsschreiben reproduziert: Betrag/Begruendung
+   fehlten im generierten Entwurf komplett, ein Datum wurde mitten im
+   Jahr abgeschnitten ("01.09.20" statt "01.09.2026"), was Claude
+   korrekt als Widerspruch zur separat (vollstaendig) erkannten Frist
+   auffiel. Fix: eigenstaendige `_document_excerpt`-Hilfsfunktion mit der
+   beabsichtigten 500-Zeichen-Grenze, `build_snippet` selbst unveraendert
+   (bleibt fuer echte Suchtreffer-Vorschauen korrekt). 2 neue Tests.
+
+3. **Presidio-NER inkonsistent innerhalb EINES Textes** (app/privacy/
+   detectors.py::detect_all). Derselbe Wert ("Bekanntgabefiktion", ein
+   deutscher Rechtsbegriff, faelschlich als Ort erkannt) wurde an einer
+   Stelle (Zwischenueberschrift) erkannt/ersetzt, an einer anderen Stelle
+   desselben Texts (normaler Satzkontext) NICHT - der Originalwert blieb
+   dort stehen und loeste Fund 1 (vor dessen Fix) bzw. einen echten,
+   korrekten Leck-Alarm aus. Live im Mehrfach-Chat-Turn reproduziert
+   (Folgefrage nach einer vorherigen, vollstaendigen KI-Antwort wurde
+   blockiert). Bereits FRUEHER fuer EINEN Einzelfall dokumentiert
+   ("Elbchaussee 45", 14.09., dort durch Regex-Erweiterung geloest) -
+   hier ALLGEMEIN behoben: `_extend_with_repeated_occurrences` sucht
+   nach der ersten Erkennung eines Werts konsequent nach ALLEN weiteren
+   wortgrenzengenauen Vorkommen desselben Werts im selben Text (analog zu
+   `detect_known_entities`, Mindestlaenge 4 Zeichen als Sicherheitsgrenze
+   gegen neue Fehlalarme durch sehr kurze Treffer). Macht die
+   Pseudonymisierung STRIKT konsequenter (nur zusaetzliche Treffer, nie
+   weniger) - KEINE Schutzwirkung geschwaecht. 4 neue Tests, 120 Tests im
+   Privacy-Modul weiterhin gruen.
+
+4. **`claude_max_tokens=2000` zu niedrig fuer realistische
+   Rechtsauskuenfte** (app/config/settings.py). Live reproduziert: eine
+   mehrpunktige Fristenuebersicht wurde MITTEN IM WORT abgeschnitten
+   ("...außerhalb des Ge") - der abgeschnittene Rest UND spaeter erneut
+   pseudonymisierte, grossgeschriebene deutsche Rechtsbegriffe trugen zu
+   Fund 3 bei. Keine im Code dokumentierte Begruendung fuer den Wert 2000
+   gefunden (wirkte wie ein nie bewusst angepasster Ausgangswert). Auf
+   4096 angehoben - Kosten skalieren weiterhin nur mit TATSAECHLICH
+   genutzten Tokens, nicht mit dem Limit selbst.
+
+ZUSAMMENWIRKEN: Fund 2 (abgeschnittener Dokumentkontext) und Fund 4
+(abgeschnittene KI-Antwort) erzeugen fehlerhafte/unvollstaendige Texte;
+Fund 3 (inkonsistente NER) sorgt dafuer, dass genau solche fehlerhaften
+Texte (bzw. ganz normale deutsche Rechtsbegriffe) in spaeteren Chat-Runden
+erneut geprueft werden; Fund 1 (Teilstring- statt Wortgrenzen-Check) war
+der unmittelbare Ausloeser der tatsaechlichen Blockierung. Alle vier
+einzeln UND im Zusammenspiel live verifiziert: derselbe 3-Runden-Chat-
+Dialog (Fristenfrage -> Rueckfrage -> Zusammenfassung-Bitte), VOR den
+Fixes bei Runde 2/3 reproduzierbar blockiert, NACH allen vier Fixes alle
+3 Runden mit echten, vollstaendigen Antworten erfolgreich (echte
+Claude-Aufruf-Dauer protokolliert: 21.9s/11.7s/2.6s, `blocked=0` fuer
+alle 3 Antworten in der DB bestaetigt).
+
+Zusaetzlich (Workflow 5, Export): PDF-/DOCX-Export von Rich-Text-Editor-
+Entwuerfen (`content_format == "html"`) gab bisher rohen HTML-Quelltext
+aus - behoben ueber einen neuen, geteilten HTML-Parser (app/export/
+html_content.py, Python-Standardbibliothek `html.parser`, keine neue
+Fremdbibliothek) + formatgenaue Renderer in beiden Export-Services
+(PDF: wortgenauer, breitengemessener Umbruch mit Font-Wechsel + echte
+PDF-Links; DOCX: native python-docx-Run-API + List-Bullet/List-Number-
+Absatzstile). `content_format == "text"` (weiterhin der ueberwiegende
+Bestand) bleibt vollstaendig unveraendert.
+
+Alle Fixes additiv/chirurgisch (kein bestehendes Verhalten fuer den
+"normalen" Fall veraendert), alle mit Vorher/Nachher-Reproduktion UND
+automatisierten Regressionstests belegt (29 neue Tests in Summe, siehe
+PROJECT_STATE.md fuer die volle Testmatrix). Volle Suite nach allen
+Aenderungen: 2502 passed, 1 skipped (vorher 2473) - keine Regression.
+DATE: 05.10.
+
+---
+
+DECISION: Drei weitere, mit REALEN NUTZERDATEN (nicht nur synthetisch)
+reproduzierte Root Causes behoben (Owner-Direktive "LEXONO — P1-BUGFIX:
+Schriftsatz unvollständig, Folgefragen blockiert, Datenschutzprüfung
+fehlerhaft", 05.10., direkte Folge-Direktive auf den vorherigen Audit).
+Die vom Owner beigefuegten Screenshots stammten aus einer ECHTEN, bereits
+in der kopierten Produktions-DB vorhandenen Sitzung - dadurch konnte der
+exakte Fehlerfall (nicht nur ein synthetisches Analogon) direkt
+nachvollzogen werden.
+REASON (je Fund mit Root Cause + Fix + Verifikation):
+
+1. **Dokument-Exzerpt im Sachverhalt weiterhin zu kurz, SELBST NACH dem
+   vorherigen Fix** (app/ai_providers/local_ai_provider.py). Die vorherige
+   Runde behob die FALSCHE 160-Zeichen-Kuerzung (Fehlnutzung von
+   `build_snippet`) auf die beabsichtigten 500 Zeichen - das reale, in
+   der Produktions-DB gefundene Testdokument
+   ("Lexono_Testdokument_Schreiben_erstellen.pdf", 2638 Zeichen) zeigte
+   aber: selbst 500 Zeichen reichen nicht - die eigentliche Aufgaben-
+   stellung ("Bitte analysiere das Dokument und erstelle einen
+   sachlichen Entwurf...") stand GANZ AM ENDE, weit hinter Zeichen 500.
+   Mit ECHTEN Produktionsdaten gemessen (100 bereits extrahierte
+   Dokumente, CLAUDE.md: "keine pauschale Erhoehung von Limits ohne
+   Messung"): Median 257 Zeichen, aber P75/P90/P95 bei 2607 Zeichen,
+   Maximum 4594, KEIN Dokument ueber 5000. Grenze auf 5000 Zeichen
+   angehoben - erfasst praktisch jedes real beobachtete Dokument
+   vollstaendig. Live mit dem exakten realen Dokument + echtem
+   Claude-Aufruf verifiziert: Sachverhalt jetzt vollstaendig (2727
+   Zeichen inkl. Aufgabenstellung), Claude-Antwort vollstaendig (2798
+   Zeichen sichtbarer Text, `stop_reason="end_turn"`, 2612 Output-Tokens
+   wovon 1220 "thinking"-Tokens - mit dem VORHERIGEN Limit von 2000 waere
+   das garantiert abgeschnitten worden, siehe Fund 2).
+
+2. **`output_tokens` umfasst "thinking"-Tokens, die der bisherige Code
+   nicht beruecksichtigte** (bereits in der vorherigen Runde auf 4096
+   angehoben, hier mit echten Daten die Notwendigkeit bestaetigt). Live
+   per direktem Anthropic-API-Aufruf bewiesen: `response.content` enthaelt
+   fuer claude-sonnet-5 standardmaessig einen `thinking`-Block
+   (`output_tokens_details.thinking_tokens`), der NICHT im sichtbaren
+   Text erscheint, aber voll gegen `max_tokens` zaehlt - bei einem
+   unklaren/laengeren Sachverhalt (wie dem o.g. echten Testdokument VOR
+   Fund 1) verbrauchte das Modell 1220 von 2612 Output-Tokens allein fuer
+   internes Denken. Mit dem ALTEN Limit (2000) waere der sichtbare Text
+   dadurch regelmaessig mitten im Wort abgeschnitten worden - exakt das
+   vom Owner geschickte Screenshot-Symptom ("...in der oben beze"),
+   bestaetigt durch den reale API-Log-Eintrag des Original-Vorfalls:
+   `output_tokens=2000` (exakt am damaligen Limit).
+
+3. **Stufe 2 der Antwortpruefung (lokales LLM, Ollama) ist mit dem real
+   konfigurierten Modell (qwen2.5:1.5b) nachweislich unzuverlaessig UND
+   wurde bei einem Fund identisch zu einem echten Datenschutzfund
+   gemeldet** (app/drafting/response_validation.py,
+   app/privacy/api_logger.py, app/drafting/service.py). Die vorherige
+   Runde fixierte bereits zwei DETERMINISTISCHE Ursachen fuer
+   "Datenschutzgruenden"-Fehlalarme (Teilstring- statt Wortgrenzen-Check,
+   inkonsistente NER) - diese Runde deckte eine DRITTE, GRUNDVERSCHIEDENE
+   Ursache auf, die NUR auftritt, wenn `local_ai_enabled=True` ist (der
+   Owner hat dies in seiner echten Installation aktiv - "Lokale KI:
+   Bereit" im Screenshot sichtbar, in der vorherigen Audit-Runde NICHT
+   mitgetestet, da dort `local_ai_enabled=False` blieb). Live
+   reproduziert: das 1,5-Milliarden-Parameter-Modell hielt auf einem
+   VOLLSTAENDIGEN, fehlerfreien, aus einem echten Claude-Aufruf
+   stammenden Entwurf (0 Platzhalter) frei erfundene "Befunde" fuer
+   echte Probleme - u. a. einen nicht vorhandenen Platzhalter
+   "[KATEGORIE_XX]" beanstandet, OBWOHL die Promptanweisung bereits
+   ausdruecklich "NUR falls der Ausgangssachverhalt ueberhaupt
+   Platzhalter enthaelt" verlangte (das Modell befolgt diese Bedingung
+   nachweislich NICHT zuverlaessig). Selbst nach Entfernen des
+   Platzhalter-Kriteriums aus dem Prompt (bei leeren Mappings) hielt das
+   Modell weiterhin frei erfundene "Befunde" (u. a. eine woertlich aus
+   dem Sachverhalt kopierte Aussage als "logischer Widerspruch"
+   ausgegeben). PRINZIP GEWAHRT ("keine Sicherheitsabsenkung"): Stufe 1
+   (deterministisch, die TATSAECHLICHE Datenschutz-Durchsetzung) bleibt
+   VOELLIG UNVERAENDERT und blockiert weiterhin zuverlaessig bei einem
+   echten Fund. Stufe 2 ist laut eigenem Moduldocstring "AUSDRUECKLICH
+   KEINE juristische Bewertung", sondern eine Qualitaetspruefung
+   (Grammatik/Struktur) - blockiert bei einem Fund WEITERHIN genauso wie
+   zuvor (keine Verhaltensaenderung der Fail-Closed-Entscheidung), aber
+   `ResponseValidationResult.stage` ("deterministic"/"semantic") erlaubt
+   dem Aufrufer jetzt, die Meldung EHRLICH einzuordnen: eine neue
+   Kategorie `local_quality_check_uncertain` mit einer Meldung, die
+   AUSDRUECKLICH "kein Datenschutzvorfall" sagt, statt der bisherigen
+   "Datenschutzgruenden"-Formulierung. Zusaetzlich: das Platzhalter-
+   Kriterium im Stufe-2-Prompt wird jetzt nur noch aufgenommen, wenn
+   tatsaechlich Mappings existieren (entfernt einen nachgewiesenen
+   Halluzinations-Ausloeser, reduziert aber NICHT die Fail-Closed-
+   Schutzwirkung von Stufe 1).
+
+   OFFENER PUNKT, BEWUSST NICHT IN DIESER RUNDE ENTSCHIEDEN: die
+   GRUNDSAETZLICHE Falsch-Positiv-RATE von Stufe 2 mit dem aktuell
+   konfigurierten kleinen Modell (qwen2.5:1.5b) bleibt hoch (in dieser
+   Session 2 von 2 Reproduktionen "passed: false" trotz fehlerfreiem
+   Text) - eine tiefere Architekturentscheidung (z. B. Stufe 2 bei
+   einem Fund nur noch warnen statt blockieren, oder ein leistungs-
+   faehigeres lokales Modell empfehlen) wuerde ueber den Umfang dieser
+   Direktive ("keine Sicherheitsabsenkung", "nur innerhalb des
+   vereinbarten Umfangs") hinausgehen und wird hier bewusst NICHT
+   einseitig entschieden, siehe OPEN_ISSUES.md.
+
+BLOCKIERT WAEHREND DER LIVE-VERIFIKATION (kein Code-Defekt): das
+konfigurierte Anthropic-Konto erreichte waehrend dieser Sitzung sein
+Guthabenlimit ("Your credit balance is too low to access the Anthropic
+API", echter API-Fehler `BadRequestError`, `request_id` protokolliert in
+der Sitzung) - weitere echte Claude-Aufrufe waren ab diesem Zeitpunkt
+nicht mehr moeglich. Bereits DAVOR live bestaetigt: vollstaendiger
+Entwurf (Fund 1+2), korrekt NICHT blockierte "bitte vervollstaendigen"-
+Anfrage unter Wiederverwendung des exakten historischen Original-Texts
+(Fund-3-Vorgaenger aus der vorherigen Runde). Die Kreditknappheit selbst
+loeste KORREKT die bereits bestehende "technical_error"-Kategorie aus
+("Es handelt sich nicht um eine Datenschutz-Blockierung") - kein
+Fehlverhalten, sondern Beleg, dass die bestehende Fehlerbehandlung fuer
+echte technische Fehler bereits korrekt arbeitet.
+
+Alle drei Fixes additiv/chirurgisch, 6 neue/angepasste Tests (3 in
+tests/test_drafting_response_validation.py, 1 in
+tests/test_privacy_api_logger.py, 1 in tests/test_drafting_service.py,
+2 in tests/test_ai_providers_local.py [1 angepasst, 1 neu]). Volle Suite
+nach allen Aenderungen: 2508 passed, 1 skipped (vorher 2502) - keine
+Regression.
+DATE: 05.10. (Folge-Runde, selber Tag)
+
+---
+
+DECISION: Zwei weitere, NUR live mit echtem Claude-API-Aufruf (nach
+Aufladung des Anthropic-Guthabens) reproduzierbare Root Causes behoben -
+der zuvor durch das Guthabenlimit blockierte vollstaendige Live-E2E-Test
+wurde fortgesetzt und erfolgreich abgeschlossen (Owner-Direktive "LEXONO
+— Abschließende Live-Verifikation nach Aufladung des Anthropic-
+Guthabens", 05.10., direkte Fortsetzung der vorherigen Runde).
+REASON (je Fund mit Root Cause + Fix + Verifikation):
+
+1. **"Thinking"-Tokens unbegrenzt/unkontrolliert, bisheriger Fix
+   (max_tokens 2000->4096) nicht ausreichend** (app/ai_providers/
+   anthropic_writing_provider.py). Mit einem laengeren, synthetischen
+   Testdokument (Aufgabenstellung bewusst am Dokumentende, > 500 aber
+   < 5000 Zeichen, nach dem vorherigen Exzerpt-Fix korrekt vollstaendig
+   im Sachverhalt enthalten) erneut live reproduziert: `stop_reason=
+   "max_tokens"`, `thinking_tokens=3352` von 4096 Gesamt-Output-Tokens
+   (82%) - der sichtbare Text brach TROTZ des bereits erhoehten Limits
+   erneut ab. Live bewiesen, dass eine WEITERE pauschale Zahlenerhoehung
+   NICHT die richtige Antwort ist (keine erkennbare Obergrenze fuer die
+   vom Modell selbst gewaehlte Denkdauer: 165/1220/3352 Tokens fuer
+   strukturell aehnliche Anfragen, reine Modell-Entscheidung). Stattdessen
+   den Anthropic-API-Parameter `thinking={"type": "disabled"}` explizit
+   gesetzt (SDK-Version 1.5.0 unterstuetzt dies nativ) - fuer einen
+   Schreibauftrag (fertig formuliertes Schreiben, keine mehrstufige
+   Werkzeugnutzung) ist internes "Denken" ohnehin nicht der Zweck dieses
+   Aufrufs. Live mit demselben, zuvor abgebrochenen Sachverhalt erneut
+   getestet: `stop_reason="end_turn"`, `thinking_tokens=0`, vollstaendiger
+   Text. Live End-to-End ueber den echten HTTP-Chat-Endpunkt bestaetigt:
+   `output_tokens=2501` (deutlich unter dem Limit, nicht mehr
+   ausgeschoepft), 4996 Zeichen vollstaendiger, inhaltlich korrekter
+   Entwurf, der praezise die am Dokumentende stehende Aufgabenstellung
+   erfuellt (Widerspruchsschreiben mit allen 4 geforderten Punkten,
+   offene Pruefpunkte ehrlich gekennzeichnet). 2 neue Tests
+   (tests/test_ai_providers_claude_writing_provider.py).
+
+2. **`_AKTENZEICHEN_PATTERN` fing bei blosser Erwaehnung des WORTES
+   "Aktenzeichen" in normaler Flusssprache das naechste beliebige Wort
+   als vermeintlichen Wert ein** (app/privacy/detectors.py). Live
+   reproduziert: Claudes eigener, aus Fund 1 oben stammender
+   vollstaendiger Entwurf wies ehrlich auf ein fehlendes Aktenzeichen
+   hin ("Das Aktenzeichen der Gegenseite ist nicht uebermittelt", "...
+   Aktenzeichen und Postanschrift...") - das Muster erfasste dabei
+   faelschlich "der"/"und" als Aktenzeichen-WERT. Da dies zwei der
+   haeufigsten deutschen Woerter ueberhaupt sind, loeste die anschliessende
+   Folgefrage ("Bitte vervollstaendigen") zuverlaessig den Original-Leck-
+   Check aus (diese Woerter tauchen zwangslaeufig an anderer Stelle im
+   kombinierten Payload-Text erneut auf) - blockierte dadurch eine
+   voellig unauffaellige Anfrage vollstaendig. Fix: `detect_aktenzeichen`
+   verlangt jetzt, dass der erfasste Wert mindestens eine Ziffer enthaelt
+   (ein echtes Aktenzeichen tut das immer, "der"/"und" nie) - die Regex
+   selbst bleibt unveraendert, reiner Nachfilter. Live verifiziert: beide
+   zuvor faelschlich erfassten Woerter liefern jetzt `[]`, ein echtes
+   Aktenzeichen ("VN-2024-88471") wird weiterhin zuverlaessig erkannt.
+   2 neue Tests (tests/test_privacy_detectors.py).
+
+3. **Zusaetzlich, kaskadierender Fund**: das haeufige deutsche Adjektiv
+   "offener" (z. B. "Offener Pruefpunkt:" - eine in Anwaltsschreiben und
+   in diesem Projekt selbst alltaegliche Formulierung) wird vom
+   Presidio-NER-Modell zuverlaessig als PERSON erkannt, sobald es isoliert
+   gross geschrieben am Zeilenanfang steht - der dadurch entstehende
+   Platzhalter ("[PERSON_XX] Pruefpunkt:*") loeste beim Restrisiko-Scan
+   einen WEITEREN kaskadierenden Fehlalarm aus (das direkt benachbarte
+   Wort "Pruefpunkt:*" wurde SEINERSEITS faelschlich als neue
+   ORGANIZATION erkannt - dieselbe bereits dokumentierte Out-of-
+   Distribution-Schwaeche bei neutralisierten Platzhaltern). Fix:
+   "offener" zur bereits bestehenden, kuratierten `_NEVER_ENTITY_WORDS`-
+   Ausschlussliste ergaenzt (app/privacy/presidio_ner.py, identisches,
+   bereits etabliertes Prinzip wie "gruessen"/"hochachtungsvoll"/
+   "erbschaftsteuerbescheid" - nur ein konkret belegtes, nie als echter
+   Name vorkommendes Einzelwort, kein allgemeiner Blocklist-Mechanismus).
+
+VOLLSTAENDIGER LIVE-E2E-TEST ERFOLGREICH ABGESCHLOSSEN (alle 12 Schritte
+der Direktive, echter Claude-API-Schluessel, synthetisches Testdokument
+mit Aufgabenstellung am Dokumentende): Upload -> vollstaendiger,
+inhaltlich korrekter Entwurf (Fund 1 behoben) -> Editor oeffnen -> "Bitte
+vervollstaendigen" OHNE Fehlblockierung (Fund 2+3 behoben) -> Editor-
+Autosave/Reload-Persistenz bestaetigt -> PDF-/DOCX-Download mit echter
+Formatierung bestaetigt -> Negativtest (echter Originalwert-Leck) weiterhin
+korrekt blockiert, auf ZWEI Ebenen bestaetigt (Gateway-End-to-End UND
+direkter Stufe-1-Test).
+
+Alle Fixes additiv/chirurgisch, kein bestehendes Verhalten fuer den
+"normalen" Fall veraendert, Stufe-1-Datenschutzdurchsetzung unberuehrt.
+4 neue Tests in Summe. Volle Suite nach allen Aenderungen: 2512 passed,
+1 skipped (vorher 2508) - keine Regression.
+DATE: 05.10. (dritte Folge-Runde, selber Tag)
+
+---
+
+DECISION: Lokale Spracheingabe im Chat-Composer implementiert
+(app/chat/speech.py, Route in app/web/chat_router.py, JS in chat.html) -
+der bisherige Mikrofon-Button ("in Vorbereitung", siehe Eintrag 15.09.
+oben) ist jetzt an eine ECHTE, lokale Transkription angebunden:
+faster-whisper (CTranslate2), Modell "small", int8, CPU. Ablauf: Mikrofon
+-> MediaRecorder (Browser) -> `POST /dashboard/chat/speech/transcribe`
+(Login+CSRF+PERM_CLAUDE_CALL wie `/send`) -> lokales Whisper -> Text im
+Eingabefeld -> Anwalt kontrolliert -> manuelles Absenden. KEIN
+automatisches Senden. KEINE dauerhafte Audiospeicherung (temp-Datei wird
+in `finally` geloescht, kein DB-Eintrag, kein Chat-Anhang).
+REASON: Direktauftrag "ARCHITECTURE & PRODUCT FLOW PASS" §22-27 - die am
+15.09. benannte Voraussetzung ("eine lokal (on-device) laufende
+STT-Komponente") war bis dahin nicht umgesetzt.
+GEFUNDEN, NICHT VERMUTET (zwei echte technische Probleme real reproduziert
+UND geloest, nicht nur angenommen):
+(1) `av` (PyAV, Audiodekodierung) ohne Versionsobergrenze installiert sich
+als av 19.x, bricht dort aber beim Dekodieren ab ("TypeError: open() got
+an unexpected keyword argument 'metadata_errors'" - av hat den Parameter
+aus `av.open()` entfernt, faster-whisper 1.2.1 uebergibt ihn weiterhin).
+Fix: `av==13.1.0` hart gepinnt (pyproject.toml) - real als funktionierend
+verifiziert. Gleiches Muster wie der bereits bestehende
+fastembed/onnxruntime-Pin.
+(2) AVX2-Sicherheit war offen (das Projekt hat bereits einen dokumentierten
+Praezedenzfall: onnxruntime>=1.21 crasht auf der Alt-Hardware ohne AVX2).
+CTranslate2 wurde real mit erzwungenem `CT2_FORCE_CPU_ISA=GENERIC`
+getestet (simuliert eine CPU ohne AVX2): funktioniert fehlerfrei, ca. 25%
+langsamer (3,6s statt 2,9s fuer dieselbe echte, per Windows-SAPI-TTS
+erzeugte deutsche ~9s-Testaeusserung mit Rechtsbegriffen) - KEIN Absturz,
+anders als onnxruntime damals. Modellwahl "small" (nicht "medium"/"large",
+§22 verbietet das groesste Modell explizit) bewusst mit Sicherheitsmarge
+fuer diese langsamere Alt-Hardware-Simulation gewaehlt.
+GETESTET: 8 Unit-Tests (app/chat/speech.py, Fake-Modell statt echtem
+Download - gleiches Prinzip wie FakeEmbeddingProvider), 8
+Integrationstests (Route: Auth/CSRF/Fehlerabbildung/keine dauerhafte
+Datei), Live-CDP-Test aller 5 UI-Zustaende (Idle/Recording/Transcribing/
+Result/Error) gegen die ECHTE (nicht gemockte) Route mit
+`--use-fake-device-for-media-stream`, sowie ein manueller Lauf mit echtem,
+per Windows-SAPI erzeugtem deutschen Audio ("Bitte pruefen Sie die
+Kuendigung wegen Eigenbedarfs gemaess Paragraph 573 BGB...") - korrekt
+transkribiert.
+OFFEN: nicht innerhalb der nativen pywebview/WebView2-Shell re-verifiziert
+(nur im Edge-Browser, der dieselbe Chromium-Engine wie WebView2 nutzt) -
+kein Installer-Build in dieser Direktive (§34). Der Diktier-Button in
+draft_detail.html (Entwurfs-Editor) bleibt bewusst unveraendert im
+"in Vorbereitung"-Zustand - ausserhalb des Auftragsumfangs dieser
+Direktive (§19-27 nennen explizit nur den Chat-Composer).
+DATE: 05.10. (vierte Folge-Runde, selber Tag)
+
+---
+
+DECISION: "Kontext entfernen" fuer den Chat implementiert
+(app/web/chat_router.py::link_matter, app/web/templates/chat.html) - TEST 4
+der Direktive ("Akte aktiv -> Kontext entfernen -> Frage -> wieder
+allgemeiner Chat") war bisher NICHT erfuellbar: die bestehende "Akte
+ändern"-Funktion konnte nur zu einer ANDEREN echten Akte wechseln, nie ganz
+loesen. `ChatConversation.matter_id` ist NOT NULL (strukturelle
+Notwendigkeit, u. a. fuer Dokument-Uploads) - "Kontext entfernen" bedeutet
+deshalb: dieselbe Schnellentwurf-Platzhalterakte-Logik wie bei einem
+brandneuen allgemeinen Chat (`create_quick_matter`, EXAKT derselbe
+Code-Pfad wie `send_message` ohne Aktenauswahl - keine zweite
+Implementierung). `link_matter` akzeptiert jetzt ein leeres `matter_id`
+als diese Bedeutung, statt es (wie zuvor) zu verlangen.
+REASON: explizit verbindlicher TEST 4 aus "ARCHITECTURE & PRODUCT FLOW
+PASS" §28, beim Abgleich der elf Abnahmetests gegen die bestehende UI als
+echte Luecke gefunden (nicht nur ein "nice-to-have").
+GETESTET: 3 neue Tests (Button-Sichtbarkeit nur bei explizitem Kontext,
+Route akzeptiert leeres `matter_id`, Konversation verhaelt sich danach wie
+ein neuer allgemeiner Chat), volle Chat-Router-Suite (97 Tests) gruen.
+Live per CDP verifiziert: echte Akte "Muster, Anna offen 1" verknuepft ->
+"Kontext entfernen" geklickt -> Breadcrumb/Header fallen auf den
+natuerlichen Unterhaltungstitel zurueck, "Akte hinzufügen" ersetzt "Akte
+ändern", der entfernte Button verschwindet.
+DATE: 05.10. (vierte Folge-Runde, selber Tag)

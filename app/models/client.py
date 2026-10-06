@@ -46,6 +46,23 @@ class Client(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Allgemeine CRM-Einordnung des Mandanten (siehe Moduldocstring) -
     # bewusst freier String statt DB-Enum, analog zu `Matter.practice_area`.
     practice_area: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Mandanten-Typ: Privatperson/Unternehmen (03.10., Owner-Direktive
+    # "REFERENZGETREUE MANDANTENUEBERSICHT", Referenzabgleich
+    # `29_mandanten_uebersicht.png` §"Kategorie"-Spalte) - ECHTER FUND beim
+    # Bildabgleich: die Referenz zeigt dort "Privatperson"/"Unternehmen",
+    # eine fundamental andere Unterscheidung als `practice_area`
+    # (Rechtsgebiet/Fachgebiet) - es gab bisher KEIN Feld dafuer. Bewusst
+    # freier String statt DB-Enum (gleiches Muster wie `practice_area`/
+    # `status`), siehe app/clients/service.py::CLIENT_TYPE_SUGGESTIONS fuer
+    # die vorgeschlagenen Werte.
+    client_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Ort (03.10., gleicher Fund): die Referenz zeigt eine eigene "Ort"-
+    # Spalte - es gab bisher kein Adressfeld auf `Client` (nur `FirmProfile`
+    # hatte bereits `city`, siehe dortiges Modell). Bewusst NUR die Stadt,
+    # keine vollstaendige Adresse (die Referenz zeigt ausschliesslich den
+    # Ortsnamen, keine Strasse/PLZ) - kein erfundenes Feld ueber den
+    # tatsaechlichen Referenzbedarf hinaus.
+    city: Mapped[str | None] = mapped_column(String(128), nullable=True)
     # "active" (Standard) / "archived" - siehe Moduldocstring zur
     # Loeschlogik. Bewusst freier String statt DB-Enum, gleiches Muster wie
     # `Matter.status`.

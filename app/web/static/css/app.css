@@ -74,6 +74,14 @@
   --accent-amber: #a16207;
   --accent-amber-tint: #faf0d7;
 
+  /* 04.10., Owner-Direktive "EINHEITLICHE DATEIFORMATE UND DATEISYMBOLE" -
+     eigenes, gedecktes Gruen NUR fuer Tabellendokument-Dateisymbole
+     (xls/xlsx/csv), bewusst NICHT `--brand-green` wiederverwendet (siehe
+     dessen eigener Kommentar unten: "bewusst NICHT fuer... wiederverwendet
+     - Markenfarbe bleibt eigenstaendig"). */
+  --accent-green: #3f7d52;
+  --accent-green-tint: #e8f2ec;
+
   /* Eigenstaendige Markenfarbe "Lexono Gruen" (Referenzbild, 01.09.) -
      GETRENNT von --seal-green (bleibt Navy/Tinte, weiterhin fuer die
      "Lexono"-Wortmarke und generelle dunkle UI-Akzente). Gruen ist die
@@ -168,9 +176,44 @@ a {
   text-decoration: underline;
 }
 
+.app-viewport {
+  /* Aeussere Saeule Kopfzeile+App-Shell (25.09., Owner-Direktive
+     "POSTEINGANG / STRICT REFERENCE IMPLEMENTATION" §5): `.global-header`
+     ist jetzt ein echtes Flex-Geschwisterelement VON `.app-shell`, nicht
+     mehr Teil davon - dieser Wrapper traegt deshalb die
+     Gesamt-Fensterhoehe, die vorher direkt auf `.app-shell` sass (siehe
+     Kommentar dort zum urspruenglichen Root-Cause-Fund, gilt hier
+     unveraendert weiter). */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+body.has-app-titlebar .app-viewport {
+  height: calc(100vh - 36px);
+}
+
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  /* min-height -> height (25.09., Root-Cause-Fund "ganze App scrollt
+     statt nur Main Content"): `min-height:100vh` erlaubte der Shell,
+     ueber die Fensterhoehe hinauszuwachsen, sobald der Inhalt von
+     `.main` mehr Platz brauchte als der Viewport bietet - dadurch wurde
+     `.sidebar` (als Flex-Geschwisterelement derselben Zeile) Teil
+     desselben Dokument-Scrolls und verschwand beim Runterscrollen mit,
+     obwohl sie fixiert bleiben soll. `flex:1` + `min-height:0` (25.09.,
+     zweite Anpassung: `.app-shell` ist jetzt selbst ein Flex-Kind von
+     `.app-viewport` statt der aeussersten Grenze - dieselbe
+     `min-height:auto`-Falle wie bei jedem anderen verschachtelten
+     Flex-Container in diesem Projekt, siehe `.main`/`.split`) deckelt die
+     Shell auf den nach der Kopfzeile verbleibenden Platz; `overflow:hidden`
+     ist hier bewusst KEIN Kaschieren (kein Inhalt wird abgeschnitten oder
+     unerreichbar) - es macht `.app-shell` erst zur echten aeusseren
+     Grenze, innerhalb derer `.sidebar` und `.main` je ihren EIGENEN
+     `overflow-y:auto`-Scrollbereich bekommen (siehe dort). */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* --- Eigene Titelleiste (Masterprompt V2, Task #61) ---
@@ -179,7 +222,6 @@ a {
    Browser-Modus bleibt "display:none" unveraendert bestehen, hier also
    KEINE Layoutaenderung fuer den Browser-/--no-window-Fall. */
 
-body.has-app-titlebar .app-shell,
 body.has-app-titlebar .login-shell {
   min-height: calc(100vh - 36px);
 }
@@ -280,15 +322,31 @@ body.has-app-titlebar .app-titlebar {
   border-right: 1px solid var(--paper-line);
 }
 
-.sidebar__brand {
+.global-header__brand {
+  /* Vorher .sidebar__brand, oben in der Sidebar (25.09. in die neue
+     globale Kopfzeile verschoben, siehe base.html/`.global-header`) -
+     feste Breite = Sidebar-Breite, damit Logo-Spalte und Sidebar-Spalte
+     darunter optisch fluchten (Referenzabgleich
+     `04_posteingang_nachricht_detail.png`: Logo oben links auf gleicher
+     Houhe wie die globale Suche, Sidebar direkt darunter). */
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  height: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: var(--font-display);
-  font-size: 19px;
+  /* 19px -> 22px, Innenabstand 24px -> 26px (27.09., Owner-Direktive
+     "APP-SHELL LOGO POLISH" §13) - Wortmarke gemeinsam mit dem Icon
+     (siehe `.sidebar__brand-logo`) vergroessert, etwas mehr Luft zum
+     linken Rand, `.global-header`s eigene Hoehe (64px) bewusst NICHT
+     angetastet (Direktive §14: Sidebar/Navigation darf nicht verschoben
+     werden). */
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  padding: 0 24px 4px;
+  padding: 0 26px;
   color: var(--ink-900);
 }
 
@@ -296,9 +354,16 @@ body.has-app-titlebar .app-titlebar {
   /* Neues offizielles Icon (Dokument+Schild+Kette, viewBox "0 0 180 320")
      ist schmaler/hoeher als das vorherige Schild-Icon - feste Hoehe statt
      eines erzwungenen 26x26-Quadrats, damit es nicht horizontal verzerrt
-     (gestaucht) dargestellt wird. */
+     (gestaucht) dargestellt wird.
+     28px -> 38px (27.09., Owner-Direktive "AKTEN STARTSEITE -
+     REFERENCE-DRIVEN UI RECONSTRUCTION + APP-SHELL LOGO POLISH" §13):
+     Owner-Fund "wirkt zu klein und vertikal eingeklemmt" - `.global-header`
+     ist 64px hoch (unveraendert, siehe dort), bei zentrierter Ausrichtung
+     bleiben bei 38px Logo-Hoehe noch 13px Luft oben/unten, also weiterhin
+     keine Beschneidung. NUR die Hoehe gesetzt (wie zuvor), die Breite
+     skaliert automatisch proportional mit - keine Verzerrung. */
   width: auto;
-  height: 28px;
+  height: 38px;
   flex-shrink: 0;
 }
 
@@ -348,28 +413,56 @@ html.sidebar-collapsed .sidebar {
   width: 68px;
 }
 
-html.sidebar-collapsed .sidebar__brand {
-  padding: 0 0 4px;
+/* .global-header__brand (25.09., vorher .sidebar__brand innerhalb der
+   Sidebar - siehe Umzug in die neue globale Kopfzeile, base.html) spiegelt
+   dieselbe Breite wie die kollabierte `.sidebar` daneben, damit Logo-
+   Spalte und Nav-Spalte optisch weiter fluchten. */
+html.sidebar-collapsed .global-header__brand {
+  width: 68px;
+  padding: 0;
   justify-content: center;
 }
 
 html.sidebar-collapsed .sidebar__brand-text,
 html.sidebar-collapsed .sidebar__collapse-btn,
-html.sidebar-collapsed .sidebar__search-trigger span,
 html.sidebar-collapsed .sidebar__group-label,
 html.sidebar-collapsed .sidebar__link-label,
 html.sidebar-collapsed .sidebar__status-panel,
 html.sidebar-collapsed .sidebar__footer-help span,
 html.sidebar-collapsed .sidebar__profile-info,
-html.sidebar-collapsed .sidebar__new-chat span {
+html.sidebar-collapsed .sidebar__profile-chevron,
+html.sidebar-collapsed .sidebar__new-chat-btn span {
   display: none;
+}
+
+/* Horizontaler Overflow im eingeklappten Rail (05.10., Owner-Direktive
+   "LONG-RUN PRODUCT QUALITY PASS" Phase C), per CDP-Forensik bewiesen:
+   `.sidebar__profile-chevron` (14px breites SVG) blieb beim Einklappen
+   bisher sichtbar (nur `.sidebar__profile-info` wurde oben ausgeblendet)
+   und floss im 47px schmalen Profil-Button nach dem 28px-Avatar weiter -
+   ergab ein `scrollWidth` von 60px gegenueber `clientWidth` 47px auf
+   `.sidebar__footer-account`, und in Folge auf `.sidebar` selbst (per
+   `getBoundingClientRect`/`scrollWidth` gemessen). Da `.sidebar`
+   `overflow-y:auto` gesetzt hat (erzwingt laut Spezifikation
+   `overflow-x:auto`, wenn nicht explizit anders gesetzt), erschien dadurch
+   dauerhaft eine duenne horizontale Scrollleiste am unteren Rand der
+   eingeklappten Sidebar - exakt das im Owner-Screenshot sichtbare
+   Overflow-Artefakt. Fix: Chevron im eingeklappten Zustand ausblenden
+   (derselbe, bereits bestehende Hide-Mechanismus wie fuer
+   `.sidebar__profile-info` oben) - ein einzelner Avatar-Kreis ist im
+   Icon-only-Rail ein uebliches, selbsterklaerendes Klickziel, kein
+   Chevron noetig. */
+
+html.sidebar-collapsed .sidebar__new-chat-btn {
+  margin-left: 10px;
+  margin-right: 10px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 html.sidebar-collapsed .sidebar__group-summary,
 html.sidebar-collapsed .sidebar__group-summary--flat,
 html.sidebar-collapsed .sidebar__link,
-html.sidebar-collapsed .sidebar__search-trigger,
-html.sidebar-collapsed .sidebar__new-chat,
 html.sidebar-collapsed .sidebar__footer-help,
 html.sidebar-collapsed .sidebar__footer-account {
   justify-content: center;
@@ -381,6 +474,53 @@ html.sidebar-collapsed .sidebar__group-summary::after {
   display: none;
 }
 
+/* Aufgaben-Badge im eingeklappten Zustand (04.10., Owner-Direktive
+   "UI-QUALITAETSRUNDE" P1, Referenzbild Screenshot (26)/(25)): im
+   ausgeklappten Zustand bleibt .sidebar__group-badge ein normales
+   Flex-Geschwisterelement (margin-left:auto, siehe oben) - das
+   funktioniert nur, weil dort Platz fuer Icon+Label+Badge in einer
+   Zeile ist. Im eingeklappten 68px-Rail gibt es diesen Platz nicht:
+   dasselbe Flex-Item wuerde (margin-left:auto in Kombination mit
+   justify-content:center) als eigenstaendiges Element neben/ueber dem
+   Icon herausgedrueckt statt daran zu haengen (exakt der gemeldete
+   Fehler). Fix: aus dem Flex-Fluss herausnehmen und als echtes
+   Notification-Badge oben rechts am Icon verankern - der umgebende
+   Link wird dafuer zum Positionierungskontext. Keine neue
+   Badge-Komponente, dieselbe .sidebar__group-badge wird nur im
+   eingeklappten Zustand anders positioniert/skaliert. */
+html.sidebar-collapsed .sidebar__group-summary--flat {
+  position: relative;
+}
+
+html.sidebar-collapsed .sidebar__group-badge {
+  /* `right` statt `left` verankert (05.10., Owner-Direktive "LONG-RUN
+     PRODUCT QUALITY PASS" Phase C) - ein fester `left`-Wert ergab bei
+     "99+" (breiter als "9"/"99") ein um ~2px zu breites Badge, dessen
+     rechte Kante ueber den 68px-Rail HINAUSRAGTE (per CDP-Messung
+     bewiesen: `.sidebar` scrollWidth 70px vs. clientWidth 67px - exakt
+     die im Owner-Screenshot sichtbare duenne horizontale Scrollleiste).
+     `right` haengt die Box stattdessen an einen festen Punkt relativ
+     zur eigenen Breite auf - waechst sie mit mehr Zeichen, waechst sie
+     NACH LINKS (zum Icon hin), nie nach rechts ueber den Rail hinaus. */
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  background: var(--brand-green);
+  color: var(--paper-000);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  border: 1.5px solid var(--paper-100);
+  box-shadow: var(--shadow-sm);
+}
+
+html.sidebar-collapsed .sidebar__group-summary--active .sidebar__group-badge {
+  border-color: var(--brand-green-tint);
+}
+
 html.sidebar-collapsed .sidebar__nav,
 html.sidebar-collapsed .sidebar__footer {
   padding-left: 10px;
@@ -390,17 +530,50 @@ html.sidebar-collapsed .sidebar__footer {
 /* Beim Einklappen erscheint der Klapp-Button stattdessen als Hover-Icon
    ueber dem Logo (schmaler Platz) - einfacher, robuster Kompromiss statt
    eines separat positionierten schwebenden Buttons. */
-html.sidebar-collapsed .sidebar__brand:hover .sidebar__collapse-btn {
+html.sidebar-collapsed .global-header__brand:hover .sidebar__collapse-btn {
   display: flex;
   position: absolute;
-  top: 24px;
+  top: 18px;
   left: 44px;
   background: var(--paper-000);
   box-shadow: var(--shadow-sm);
 }
 
-html.sidebar-collapsed .sidebar__brand {
+html.sidebar-collapsed .global-header__brand {
   position: relative;
+}
+
+/* "Neuen Chat starten" (26.09., "APP-SHELL KORREKTUR" - wiederhergestellt,
+   siehe base.html-Kommentar fuer die volle Begruendung). Primary-CTA-Optik
+   (echtes Lexono-Gruen, nicht nur ein weiterer flacher Nav-Link) - klare
+   visuelle Trennung von den sechs neutralen Hauptnavigationspunkten
+   darunter, konsistent mit der Farbhierarchie-Vorgabe ("primaere Aktion
+   = Gruen"). */
+.sidebar__new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px 16px 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--brand-green);
+  color: var(--paper-000);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.12s ease;
+}
+
+.sidebar__new-chat-btn:hover {
+  background: var(--brand-green-dark);
+}
+
+.sidebar__new-chat-btn .icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .sidebar__nav {
@@ -566,6 +739,19 @@ html.sidebar-collapsed .sidebar__brand {
 .main {
   flex: 1;
   min-width: 0;
+  /* min-height:0 (25.09., derselbe Root-Cause-Fund wie .app-shell):
+     ohne das erzwingt der Flexbox-Default `min-height:auto`, dass ein
+     Flex-Item nie kleiner als sein Inhalt wird - selbst ein hoehen-
+     gedeckeltes `.app-shell` haette `.main` sonst weiterhin ueber den
+     verfuegbaren Platz hinauswachsen lassen. `overflow-y:auto` macht
+     `.main` selbst zum vorgesehenen Scrollbereich fuer alle Seiten ohne
+     eigenen inneren Scroll-Container (Mandanten-/Aktenlisten,
+     Aufgaben & Fristen, Editor/Entwuerfe, lange Formulare) - Seiten mit
+     eigener innerer Scroll-Aufteilung (z. B. .chat-shell, .document-
+     viewer__main-area) fuellen `.main` exakt aus und loesen dadurch
+     hier keinen zusaetzlichen, sichtbaren Scrollbalken aus. */
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -614,13 +800,32 @@ html.sidebar-collapsed .sidebar__brand {
   height: 15px;
 }
 
-/* --- Kopfzeilen-Icon-Leiste (Prompt 48) --- */
+/* --- Globale Kopfzeile (25.09.) ---
+   Enthaelt Logo (.global-header__brand), globale Suche
+   (.global-header__search-wrap) und die Kopfzeilen-Icons (.header-icons,
+   siehe direkt darunter). Ersetzt den vorherigen absolut positionierten
+   `.header-icons`-Overlay UEBER `.main` (kollidierte sichtbar mit
+   seiten-eigenen Kopfzeilen-Buttons, z. B. Posteingangs "E-Mail-Konten
+   verwalten" - real im Referenzabgleich-Screenshot gefunden). Feste Hoehe
+   analog zur Referenz `04_posteingang_nachricht_detail.png` (dort ca.
+   90px bei 1024px Gesamthoehe). */
+.global-header {
+  flex-shrink: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px 0 0;
+  background: var(--paper-000);
+  border-bottom: 1px solid var(--paper-line);
+}
+
+/* --- Kopfzeilen-Icon-Leiste (Prompt 48) ---
+   Bis 25.09. absolut ueber `.main` positioniert, jetzt regulaeres
+   Flex-Kind von `.global-header` ganz rechts (siehe base.html). */
 
 .header-icons {
-  position: absolute;
-  top: 24px;
-  right: 32px;
-  z-index: 5;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -719,10 +924,167 @@ html.sidebar-collapsed .sidebar__brand {
   font-weight: 600;
 }
 
+/* Seitenkopf mit Icon-Badge + Untertitel + rechten Aktionen (25.09.,
+   Posteingang-Referenzabgleich) - additiv zu .topbar/.topbar__title
+   (unveraendert auf jeder anderen Seite ohne Icon-Zeile nutzbar). */
+.topbar__icon-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.topbar__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--paper-100);
+  color: var(--ink-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topbar__icon .icon {
+  width: 21px;
+  height: 21px;
+}
+
+.topbar__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar__heading .topbar__title {
+  margin: 0;
+}
+
+.topbar__subtitle {
+  font-size: 13px;
+  color: var(--ink-500);
+  margin: 3px 0 0;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: center;
+}
+
+.topbar__actions .btn {
+  white-space: nowrap;
+}
+
+/* Kompakte Topbar-Variante (25.09., Owner-Direktive "POSTEINGANG FINAL
+   UI/UX PRODUCT-COMPLETION" §10) - deutlich reduzierte vertikale Flaeche
+   gegenueber der Standard-.topbar (kleineres Icon/Titel, engere
+   Abstaende), damit der Nutzer schneller zur Nachrichtenliste gelangt.
+   Additiv/opt-in (".topbar--compact"), andere .topbar-Seiten unveraendert. */
+.topbar--compact {
+  padding-top: 12px;
+  padding-bottom: 6px;
+}
+
+.topbar__icon--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.topbar__icon--sm .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.topbar__title--sm {
+  font-size: 19px;
+}
+
+.topbar__meta--compact {
+  margin-top: 3px;
+  font-size: 11.5px;
+}
+
+/* Gemeinsames Filter-Formular (25.09.) - reiner struktureller Wrapper
+   um Tabs+Filterleiste+Suche, kein eigenes Box-Modell. */
+.inbox-filter-form {
+  margin: 0;
+  max-width: none;
+}
+
+/* Filterleiste (Mandant/Akte/Zeitraum/Sortierung + Suche) unter den
+   Filter-Tabs (25.09., seit 26.09. inkl. Suche in derselben Zeile -
+   Owner-Direktive "POSTEINGANG FINAL POLISH" §4: eine gesparte Zeile
+   vertikale Hoehe zaehlt direkt auf das dortige Dichte-Ziel ein). */
+.inbox-filter-bar {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.inbox-filter-bar select {
+  height: 32px;
+  max-width: 220px;
+  font-size: 12.5px;
+  padding: 0 10px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Kompakter Sortier-Umschalter (26.09.) - ersetzt das vorherige volle
+   "Neueste zuerst"-Dropdown, gleiche Hoehe wie die Selects daneben. */
+.inbox-sort-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-elevate), color 0.15s var(--ease-elevate);
+}
+
+.inbox-sort-toggle:hover {
+  border-color: var(--seal-green);
+  color: var(--seal-green-dark);
+}
+
+.inbox-sort-toggle .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Suche in derselben Zeile wie die Dropdowns (26.09.) - eigenes
+   `flex-basis`, damit sie bei Platzmangel als Erstes in eine neue Zeile
+   umbricht (responsiv statt eines festen Pixel-Umbruchpunkts). */
+.inbox-filter-bar__search {
+  flex: 1 1 220px;
+  min-width: 180px;
+  margin: 0;
+}
+
+.inbox-filter-bar__search input[type="text"] {
+  width: 100%;
+  height: 32px;
+}
+
 .filters {
   display: flex;
   gap: 4px;
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .filter-tab {
@@ -732,7 +1094,7 @@ html.sidebar-collapsed .sidebar__brand {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 7px 4px 9px;
+  padding: 6px 4px 7px;
   margin-right: 18px;
   color: var(--ink-500);
   cursor: pointer;
@@ -750,32 +1112,79 @@ html.sidebar-collapsed .sidebar__brand {
 /* --- Split-Pane --- */
 
 .split {
+  /* min-height:0 (25.09., Posteingang-Root-Cause-Fund): .split ist ein
+     Flex-Kind von .main (jetzt selbst hoehen-gedeckelt + overflow-y:auto,
+     siehe App-Shell-Fix) - ohne dieses min-height:0 verhindert der
+     Flexbox-Default (`min-height:auto`), dass .split unter seine
+     Content-Hoehe schrumpft. Die Folge waere GENAU der in Direktive §20
+     verbotene Fall: bei vielen Nachrichten/langem Nachrichtentext wuerde
+     .main als Ganzes scrollen (Liste UND Detail gemeinsam wegscrollen)
+     statt .message-list/.detail-pane je einen EIGENEN, unabhaengigen
+     Scrollbereich zu bekommen (deren `overflow-y:auto` greift erst,
+     wenn .split selbst korrekt auf die verfuegbare Hoehe gedeckelt ist). */
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
 .message-list {
-  width: 420px;
-  flex-shrink: 0;
+  /* Feste 420px -> Flex-Anteil (25.09., Owner-Direktive "POSTEINGANG /
+     STRICT REFERENCE IMPLEMENTATION" §3/§4/§11/§25 - GEOMETRISCHER
+     Hauptfund beim direkten Screenshot-Vergleich: die Referenz zeigt
+     Liste und Detail ungefaehr GLEICH breit (je ~50% des Hauptbereichs),
+     die feste 420px-Breite liess die Liste bei jeder groesseren
+     Fensterbreite proportional immer schmaler wirken, waehrend der
+     Detailbereich als ueberproportional grosse freie Flaeche erschien -
+     genau das von der Direktive benannte P0-Layoutproblem. `flex-basis`
+     statt `width` + identischer Wert auf `.detail-pane` daneben teilt den
+     verfuegbaren Platz je zur Haelfte auf (Direktive §25: "Proportionen
+     statt Pixel-Klon", kein `left`/`width`-Pixel-Klon der Referenz-
+     Aufloesung). min-width haelt die Liste auch bei schmalen Fenstern
+     lesbar (Direktive §11: "darf NICHT zu schmal werden"). */
+  flex: 1 1 50%;
+  min-width: 360px;
+  max-width: 640px;
   overflow-y: auto;
   border-right: 1px solid var(--paper-line);
   background: var(--paper-000);
 }
 
 .detail-pane {
-  flex: 1;
+  flex: 1 1 50%;
+  min-width: 320px;
   overflow-y: auto;
-  padding: 32px 40px;
+  /* 32/40 -> 28/36 (25.09., Direktive §17 "zu viel vertikaler Leerraum") */
+  padding: 28px 36px;
+}
+
+/* Lesbare Zeilenlaenge bei sehr breiten Fenstern (25.09., waehrend
+   1920x1080-Visual-QA gefunden): `.detail-pane{flex:1}` liess den
+   Nachrichtentext bei grossen Viewports auf > 1000px Zeilenbreite
+   auseinanderziehen, waehrend `.message-list` durch `max-width:640px`
+   gedeckelt blieb - die Referenz selbst ist nur 1536px breit und zeigt
+   dieses Problem daher gar nicht erst. Ein Max-Wert direkt auf den
+   Detail-Bloecken (kein zusaetzlicher Wrapper im Template noetig) haelt
+   den Text bei sehr breiten Fenstern lesbar, ohne die 50/50-Aufteilung
+   selbst anzutasten. */
+.detail-header,
+.detail-body,
+.attachment-list,
+.detail-actions {
+  max-width: 720px;
 }
 
 /* --- Nachrichten-Zeile --- */
 
 .message-row {
+  /* Verdichtet (25.09., Owner-Direktive "POSTEINGANG FINAL UI/UX
+     PRODUCT-COMPLETION" §15/§16, Referenzvergleich bei 1664x1024): die
+     Referenz zeigt deutlich mehr Nachrichten gleichzeitig - weniger
+     vertikales Padding statt kleinerer Schrift ("nicht einfach Schrift
+     kleiner machen", Direktive §15). */
   display: block;
   text-decoration: none;
   color: inherit;
-  padding: 14px 22px;
+  padding: 9px 18px;
   border-bottom: 1px solid var(--paper-line);
   cursor: pointer;
   transition: background-color 0.1s ease;
@@ -788,7 +1197,54 @@ html.sidebar-collapsed .sidebar__brand {
 .message-row--active {
   background: var(--seal-green-tint);
   border-left: 3px solid var(--seal-green);
-  padding-left: 19px;
+  padding-left: 15px;
+}
+
+/* Absender-Avatar (25.09., Posteingang-Referenzabgleich) - echte
+   Initialen aus dem echten Absendernamen (app/web/router.py::
+   _avatar_initials), Farbe deterministisch aus denselben vier bereits
+   bestehenden Akzenttoenen wie die Chat-Schnellaktionen
+   (.chat-quick-action__icon--*) - keine neue Farbsprache/kein Fake-Icon. */
+.message-row__layout {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.message-row__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: var(--paper-000);
+}
+
+.message-row__avatar--green { background: var(--seal-green); }
+.message-row__avatar--blue { background: var(--accent-blue); }
+.message-row__avatar--purple { background: var(--accent-purple); }
+.message-row__avatar--orange { background: var(--accent-orange); }
+
+.message-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-row__attachment-icon {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.message-row__footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .message-row__top {
@@ -796,12 +1252,12 @@ html.sidebar-collapsed .sidebar__brand {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 3px;
+  margin-bottom: 1px;
 }
 
 .message-row__sender {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 12.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -809,27 +1265,28 @@ html.sidebar-collapsed .sidebar__brand {
 
 .message-row__time {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--ink-500);
   flex-shrink: 0;
 }
 
 .message-row__subject {
   font-family: var(--font-display);
-  font-size: 14px;
-  margin-bottom: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .message-row__snippet {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--ink-500);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 /* --- Akten-Tab-Badge (Signatur-Element) --- */
@@ -867,11 +1324,178 @@ html.sidebar-collapsed .sidebar__brand {
   color: var(--ink-500);
 }
 
+/* Kanzleifachprofil-Relevanz (03.10., Owner-Direktive "KANZLEIFACHPROFIL
+   UND JURISTISCHE WISSENSSTEUERUNG" §4.3) - bewusst eine eigene Farbe
+   (Lila statt Gruen/Amber/Grau), da diese Markierung in derselben Zeile
+   wie der bestehende Freigabe-Status (`.tag--matched`/`--unmatched`/
+   `--outbound`) erscheint und nicht damit verwechselt werden darf. */
+.tag--firm-relevant {
+  background: var(--accent-purple-tint);
+  border-color: transparent;
+  color: var(--accent-purple);
+}
+
 .tag__dot {
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: currentColor;
+  /* ECHTER FUND (04.10., Owner-Direktive "PRAEZISIONSAUFTRAG MANDANTEN-
+     DETAILSEITE"), per `getComputedStyle`-Messung bestaetigt: ohne
+     `flex-shrink:0` schrumpfte dieser Punkt in einem breitenbegrenzten
+     `.tag` (siehe `.detail-card__table .tag` oben) auf 0px Breite,
+     obwohl fuer Text+Punkt rechnerisch genug Platz vorhanden war - der
+     Flexbox-Standardwert `flex-shrink:1` behandelte das 5px-Element als
+     schrumpfbar, sobald IRGENDEIN Geschwisterelement (hier der Text)
+     unter `overflow:hidden` gesetzt wurde. Globale Korrektur (nicht nur
+     seitengebunden), da ein unsichtbar werdender Status-Punkt in jedem
+     breitenbegrenzten Kontext ein Fehler waere, nicht nur hier - ohne
+     sichtbare Auswirkung ueberall dort, wo bisher genug Platz vorhanden
+     war (dort griff die Schrumpfung nie). */
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Akten-Statusanzeige (27.09., Owner-Direktive "AKTEN STARTSEITE -
+   REFERENCE-DRIVEN UI RECONSTRUCTION"; 27.09. NACHGEBESSERT per Owner-
+   Direktive "AKTEN-STARTSEITE - REFERENCE RECONSTRUCTION" §10): eigene,
+   schlanke Punkt+Text-Darstellung statt der urspruenglichen Pill-Badge
+   (`.tag`/`.tag--matched` etc., dicker Rahmen/kraeftiger Hintergrund) -
+   ABER die erste Reconstruction-Runde entfernte den Hintergrund komplett
+   (transparent), was laut Direktive §10 zu weit ging: die Referenz zeigt
+   tatsaechlich eine "sehr dezente [Farb-]Flaeche" hinter Punkt+Text, nur
+   eben keine "massiven Pills/dicken Rahmen/grossen Badges". Jetzt: sehr
+   helle Tönung (Tint) je Status, kein Rahmen. `.tag` selbst bleibt
+   unveraendert (von Posteingang/Kanzleiwissen/anderen Seiten geteilt). */
+.matter-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 3px 10px 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.matter-status--open {
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+}
+
+.matter-status--closed {
+  background: var(--paper-200);
+  color: var(--ink-500);
+}
+
+.matter-status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.matter-status__dot--open {
+  background: var(--brand-green);
+}
+
+.matter-status__dot--closed {
+  background: var(--ink-300);
+}
+
+/* ==========================================================================
+   Akten-Pagination (27.09., Owner-Direktive "AKTEN STARTSEITE -
+   REFERENCE-DRIVEN UI RECONSTRUCTION" §10): die Referenz zeigt echte
+   Seitennummerierung ("10 von 28 Akten" + Vor/Zurueck/Seitenzahlen +
+   "pro Seite"-Auswahl) statt einer einzigen, unbegrenzt langen Tabelle -
+   bei wachsendem Aktenbestand (echte Kanzleien, nicht nur Testdaten) ist
+   das auch ein reales Nutzbarkeits-/Performance-Thema, nicht nur Optik. */
+.matters-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  /* 12px -> 10px vertikal (03.10., siehe `.draft-page--tight`-Kommentar
+     fuer die volle Begruendung des Flaechennutzungs-Korrekturpakets). */
+  padding: 10px 16px;
+  /* flex-shrink:0 (02.10.) - verhindert, dass die Pagination innerhalb
+     von `.matters-table-card`s Flex-Spalte jemals selbst zusammen-
+     gestaucht/gescrollt wird (siehe `.draft-page--tight`-Kommentar fuer
+     die volle Root-Cause-Herleitung). Oberer Rahmen macht sie jetzt
+     auch visuell klar als eigener, immer sichtbarer Kartenbereich
+     erkennbar - vorher endete die Karte optisch nahtlos in der Tabelle,
+     ohne dass die Pagination als eigene Zone erkennbar war. */
+  flex-shrink: 0;
+  border-top: 1px solid var(--paper-line);
+}
+
+.matters-pagination__info {
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.matters-pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.matters-pagination__page-btn,
+.matters-pagination__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.matters-pagination__page-btn:hover,
+.matters-pagination__nav-btn:hover {
+  border-color: var(--ink-300);
+  color: var(--ink-900);
+}
+
+.matters-pagination__page-btn--active {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+  color: #fff;
+}
+
+.matters-pagination__page-btn--active:hover {
+  color: #fff;
+  border-color: var(--brand-green);
+}
+
+.matters-pagination__ellipsis {
+  padding: 0 4px;
+  color: var(--ink-300);
+  font-size: 12.5px;
+}
+
+.matters-pagination__nav-btn .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.matters-pagination__nav-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.matters-pagination__size-select {
+  width: auto;
+  min-width: 0;
+  padding: 5px 8px;
+  font-size: 12.5px;
 }
 
 /* --- Detailansicht --- */
@@ -884,8 +1508,12 @@ html.sidebar-collapsed .sidebar__brand {
 }
 
 .detail-header {
-  margin-bottom: 22px;
-  padding-bottom: 18px;
+  /* 22/18 -> 16/14 -> 12/10 (26.09., Direktive "POSTEINGANG FINAL
+     POLISH" §4/§7: bei 1280x720 - dem real gemessenen effektiven
+     Viewport der nativen App, siehe DECISIONS.md - war die Anhang-Karte
+     knapp nicht mehr sichtbar, nur noch ihre Ueberschrift). */
+  margin-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--paper-line);
 }
 
@@ -906,15 +1534,89 @@ html.sidebar-collapsed .sidebar__brand {
 
 .detail-body {
   font-size: 13.5px;
-  line-height: 1.7;
+  /* 1.7 -> 1.55 (25.09., Direktive §17: Nachrichtentext bei
+     `white-space:pre-wrap` mit doppelten Zeilenumbruechen zwischen
+     Absaetzen wirkte durch die grosse Zeilenhoehe unnoetig auseinander-
+     gezogen - Lesbarkeit bleibt bei 1.55 vollstaendig erhalten). */
+  line-height: 1.55;
   white-space: pre-wrap;
   color: var(--ink-700);
+}
+
+/* Anhang-Karten im Nachrichtendetail (25.09., Posteingang-
+   Referenzabgleich) - Typ/Groesse/Download statt reiner Inline-Chips
+   (".doc-chip" bleibt fuer die anderen Verwendungsstellen unveraendert,
+   siehe dort). */
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  background: var(--paper-000);
+}
+
+.attachment-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attachment-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.attachment-card__name:hover {
+  color: var(--seal-green-dark);
+  text-decoration: underline;
+}
+
+.attachment-card__meta {
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+
+.attachment-card__download {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-500);
+}
+
+.attachment-card__download:hover {
+  background: var(--paper-100);
+  color: var(--ink-900);
+}
+
+.attachment-card__download .icon {
+  width: 16px;
+  height: 16px;
 }
 
 /* "Automatische Zuordnung (Vorschlag)"-Karte (14.09.), gleiches
    Kartenmuster wie .chat-sources-card - siehe partials/message_detail.html. */
 .match-suggestion-card {
-  margin: 12px 0 20px;
+  margin: 10px 0 16px;
   padding: 14px 16px;
   border: 1px solid var(--paper-line);
   border-radius: var(--radius-md);
@@ -960,7 +1662,7 @@ html.sidebar-collapsed .sidebar__brand {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-500);
-  margin: 26px 0 10px;
+  margin: 14px 0 6px;
 }
 
 .doc-chip {
@@ -989,53 +1691,117 @@ html.sidebar-collapsed .sidebar__brand {
   box-shadow: var(--shadow-sm);
 }
 
-/* Dateiformat-Badges (19.09., Owner-Direktive "Dateiformat-Icons") -
-   ECHTER FUND: Dokumente wurden projektweit ausschliesslich als reiner
-   Dateiname angezeigt, ohne jede visuelle Typ-Kennzeichnung (weder in
-   der Akte-Dokumentenliste noch in den `.doc-chip`-Anhaengen im
-   Posteingang/Chat/Editor) - die Referenzbilder (u. a.
-   21_akten_dokumente_uebersicht.png, 15_akte_dokumente_und_
-   kommunikation.png) zeigen durchgaengig ein farbiges Typ-Badge
-   ("PDF" rot, "W"/"DOC" blau, Bild gruen) vor jedem Dateinamen. Die
-   Zuordnung erfolgt ausschliesslich anhand der ECHTEN Dateiendung
-   (siehe icons.file_type_badge-Makro) - kein erfundenes Icon fuer ein
-   nicht wirklich unterstuetztes Format, ein unbekanntes Format zeigt
-   ehrlich seine tatsaechliche Endung in Grau statt eines falschen
-   Formathinweises. */
-.file-type-badge {
+/* Dateiformat-Icons (19.09., ueberarbeitet 04.10., Owner-Direktive
+   "EINHEITLICHE DATEIFORMATE UND DATEISYMBOLE IN DER GESAMTEN
+   ANWENDUNG") - ECHTER FUND beim anwendungsweiten Bestandsvergleich:
+   das vorherige `.file-type-badge` (kleine farbige Text-Pille, "PDF" als
+   Buchstaben) entsprach NICHT mehr der verbindlichen Referenz
+   `04_posteingang_nachricht_detail.png` - diese zeigt ein echtes,
+   umrissenes Dokumentsymbol mit gefalteter Ecke (rot fuer PDF, blau fuer
+   XML), keinen Text-Chip. Einheitliche Grundform (identisch mit
+   `icons.document`, keine zweite Form), Farbe ausschliesslich ueber den
+   Modifier - EIN Makro (`icons.file_type_badge`), EINE CSS-Definition,
+   an allen 6 Aufrufstellen (Posteingang, Akten, Mandantendetail, Chat,
+   Entwuerfe, Dokumentenvorschau) identisch. Groesse bewusst NICHT hier
+   festgelegt (siehe Kontextregeln direkt im Anschluss) - derselbe
+   Mechanismus wie beim allgemeinen `.icon`. */
+.file-format-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
+  width: 18px;
   height: 18px;
-  padding: 0 4px;
-  border-radius: 4px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--paper-000);
+  flex-shrink: 0;
   vertical-align: middle;
-  flex: none;
 }
 
-.file-type-badge--pdf {
-  background: var(--wax-red);
+.file-format-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
-.file-type-badge--docx {
-  background: var(--accent-blue);
+.file-format-icon--pdf {
+  color: var(--wax-red);
 }
 
-.file-type-badge--image {
-  background: var(--accent-purple);
+.file-format-icon--xml {
+  color: var(--accent-blue);
 }
 
-.file-type-badge--txt {
-  background: var(--ink-500);
+.file-format-icon--word {
+  color: var(--accent-blue);
 }
 
-.file-type-badge--generic {
-  background: var(--ink-300);
+.file-format-icon--sheet {
+  color: var(--accent-green);
+}
+
+.file-format-icon--slides {
+  color: var(--accent-orange);
+}
+
+.file-format-icon--mail {
+  color: var(--accent-purple);
+}
+
+.file-format-icon--image {
+  color: var(--accent-amber);
+}
+
+.file-format-icon--text {
+  color: var(--ink-500);
+}
+
+.file-format-icon--generic,
+.file-format-icon--unknown {
+  color: var(--ink-300);
+}
+
+/* Kontextgroessen - dieselbe Grundform/Farblogik, je Ansicht die
+   referenzgerechte Groesse (04.10., siehe Makro-Kommentar in
+   _icons.html fuer die volle Begruendung):
+   - `.attachment-card` (Posteingang-Nachrichtendetail, Anhangskarte) -
+     referenzgetreu die groesste Darstellung (deckungsgleich mit
+     `04_posteingang_nachricht_detail.png`).
+   - `.detail-card__table` (Mandantendetail-Mini-Tabellen) - ersetzt das
+     vorherige `.detail-card__doc-icon` (natives Shell-Icon, siehe
+     dortige Owner-Entscheidung "einheitliches SVG-Icon auch hier") bei
+     identischer, bereits etablierter 16px-Groesse.
+   - `.doc-chip`/`.chat-attachment-chip` (Chat/Entwurf-Anhangs-Chips) -
+     kompakt, passend zur 12px-Chip-Schrift.
+   - `.document-viewer-fallback` (Dokumentvorschau ohne Renderer) -
+     groesser/prominent, da einziges visuelles Element dieses
+     Leerzustands.
+   - `.topbar__title` (Dokumentvorschau-Kopfzeile) - an die 24px-
+     Ueberschrift angepasst. */
+.attachment-card .file-format-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.detail-card__table .file-format-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.doc-chip .file-format-icon,
+.chat-attachment-chip .file-format-icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: text-bottom;
+  margin-right: 1px;
+}
+
+.document-viewer-fallback .file-format-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.topbar__title .file-format-icon {
+  width: 22px;
+  height: 22px;
+  vertical-align: -4px;
+  margin-right: 2px;
 }
 
 /* --- Leerzustand --- */
@@ -1123,6 +1889,62 @@ button:focus-visible {
   padding: 24px 32px 60px;
   overflow-y: auto;
   flex: 1;
+}
+
+/* Additiver Modifikator (27.09., Owner-Direktive "AKTEN STARTSEITE -
+   FINAL VISUAL REFERENCE MATCH") - reduziertes oberes Padding fuer Seiten
+   mit bereits kompaktem `.topbar--compact`-Kopf (aktuell nur Akten), bei
+   denen die Tabelle/Liste der klar dominante Seiteninhalt sein soll.
+   NICHT der Default von `.draft-page` selbst (von ~14 Seiten geteilt) -
+   siehe matters_list.html-Kommentar fuer die Herleitung. */
+/* ROOT CAUSE (02.10., Owner-Direktive "AKTEN-STARTSEITE FINALISIEREN -
+   PAGINATION DAUERHAFT SICHTBAR"), per echter DOM-Messung (CDP
+   getBoundingClientRect) gegen die installierte Lexono.exe bewiesen,
+   nicht vermutet: `.draft-page` selbst (geteilte Basisklasse, `display:
+   block`) gibt ihrem einzigen Kind (`.matters-table-card`) KEINE
+   Hoehenbegrenzung vor - die Karte wuchs real auf 727px natuerliche
+   Inhaltshoehe, obwohl `.draft-page` selbst nur 461.5px verfuegbare
+   Hoehe hatte. Da `.matters-table-card` selbst `overflow-y:hidden`
+   traegt (nicht scrollbar), uebernahm STATTDESSEN `.draft-page`s eigenes
+   `overflow-y:auto` den Scroll - und zog dabei die Pagination (als
+   letztes Element INNERHALB derselben ueberlangen Karte) mit aus dem
+   Viewport heraus (gemessen: Pagination-`bottom`=977px bei nur 700px
+   Viewporthoehe). `.draft-page` selbst (von ~14 Seiten geteilt) bleibt
+   unangetastet - dieser additive Modifikator macht NUR `.draft-page--
+   tight` (ausschliesslich auf der Akten-Seite genutzt) zum echten
+   Flex-Spalten-Container, der seinem Kind eine echte Hoehenbegrenzung
+   weiterreicht (`min-height:0` loest dieselbe, im Projekt mehrfach
+   dokumentierte Flexbox-Falle). Das tatsaechliche Scrollen findet jetzt
+   NICHT mehr auf `.draft-page` selbst statt (siehe `.matters-table-card`/
+   `.table-container` unten), `overflow-y:auto` hier bleibt nur als
+   harmloses Sicherheitsnetz bestehen. */
+/* WEITERE KORREKTUR (03.10., Owner-Direktive "AKTENUEBERSICHT
+   FINALISIEREN UND PRODUKTIONSREIF VERIFIZIEREN" §3): per Owner-
+   Screenshot-Abgleich bewiesen (siehe PROJECT_STATE.md fuer die volle
+   Pixel-/Formel-Herleitung), dass `.matters-table-card` bereits exakt
+   den gemaess Kopf/Filter/Pagination/Seitenabstand FORMELGERECHT
+   verfuegbaren Raum ausfuellt - der sichtbare "ungenutzte Platz
+   unterhalb der Karte" ist der geteilte `.draft-page`-Bodenabstand
+   (60px, von ~14 Seiten geteilt) PLUS mehrerer kleiner Zwischenabstaende,
+   die auf dieser Seite - anders als auf den anderen ~14 - keine
+   eigenstaendige gestalterische Funktion mehr haben, weil die Pagination
+   bereits eine eigene, klar erkennbare untere Kartenzone mit eigenem
+   oberen Rahmen bildet (siehe `.matters-pagination`). Direktive §2
+   verbietet ausdruecklich, das Produkt an die Windows-Skalierung
+   anzupassen - stattdessen wird hier der tatsaechlich einsparbare,
+   seiteneigene Leerraum reduziert (NICHT der geteilte `.draft-page`
+   selbst, NICHT die bereits einmal bewusst vergroesserte Topbar/
+   Filterleiste - das waere eine fruehere, explizite Owner-Entscheidung
+   rueckgaengig machen). `padding-bottom` ueberschreibt hier gezielt nur
+   fuer DIESE Seite den geteilten 60px-Wert von `.draft-page` (spaetere
+   Regel gewinnt bei gleicher Spezifitaet) - gewinnt dadurch zusammen mit
+   den unten reduzierten Werten ca. 56px zusaetzliche Tabellenhoehe. */
+.draft-page--tight {
+  padding-top: 8px;
+  padding-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* --- Versions-Zeitleiste --- */
@@ -1278,6 +2100,16 @@ button:focus-visible {
   margin-bottom: 20px;
 }
 
+/* Additiver Modifikator, siehe `.draft-page--tight` fuer die Begruendung -
+   dasselbe Prinzip auf die innere Karte angewandt. Genutzt auf der Akten-
+   Startseite sowie (03./04.10., Owner-Direktiven zur Mandantendetailseite)
+   auf allen fuenf Karten der Mandantendetail-Uebersicht (Stammdaten/
+   Schnellaktionen/Akten/Dokumente/Notizen) - dort ein gezielter Beitrag
+   gegen gemessenen vertikalen Platzmangel bei kleineren Viewports. */
+.instructions-panel--tight {
+  padding-top: 10px;
+}
+
 .panel-title {
   font-family: var(--font-display);
   font-size: 15px;
@@ -1378,6 +2210,24 @@ textarea:focus {
   background: var(--paper-000);
   color: var(--ink-700);
   cursor: pointer;
+  /* inline-flex + align-items:center (02.10., Owner-Direktive "AKTEN-
+     STARTSEITE FINALISIEREN - BUTTON PRAEZISE AUSRICHTEN"), per echter
+     DOM-Messung bewiesen: ein `<svg class="icon">` (Standard `vertical-
+     align:baseline`) sitzt ohne Flex-Kontext leicht ueber/unter der
+     Textzeile (gemessen am "+ Akte anlegen"-Button: Icon-Mittelpunkt
+     ca. 1.7px ueber dem Button-Mittelpunkt) - ein bekanntes, generisches
+     Inline-Layout-Verhalten, nicht spezifisch fuer diesen einen Button.
+     Globale, sichere Korrektur statt einer button-spezifischen
+     Ausnahme: `inline-flex` aendert bei EINEM Kind (reine Text-Buttons,
+     die grosse Mehrheit) das Rendering nicht sichtbar - nur bei
+     Icon+Text-Kombinationen (hier: `{{ icons.plus() }} Akte anlegen`,
+     ein Leerzeichen trennt sie im Markup bereits, deshalb bewusst KEIN
+     zusaetzliches `gap`, das die Abstaende verdoppeln wuerde) wird das
+     Icon jetzt exakt vertikal zur Textzeile zentriert statt an der
+     Font-Baseline auszurichten. Kein neuer Button, kein geaenderter
+     Click-Handler - reine Ausrichtungskorrektur. */
+  display: inline-flex;
+  align-items: center;
   transition: border-color 0.15s var(--ease-elevate), color 0.15s var(--ease-elevate),
     background-color 0.15s var(--ease-elevate), transform 0.15s var(--ease-elevate);
 }
@@ -1393,15 +2243,24 @@ textarea:focus {
   transform: scale(0.98);
 }
 
+/* Primary-CTA-Farbe (26.09., Owner-Zusatzanweisung "VISUELLE
+   DESIGN-SYSTEM-KONSISTENZ"): vorher --seal-green (trotz des Namens
+   dunkles Navy/Tinte, siehe Variablendefinition oben, keine echte
+   Gruenfarbe) - die Direktive verlangt ausdruecklich, dass die primaere/
+   interaktive Aktion konsequent das echte Lexono-Gruen (--brand-green)
+   nutzt, nicht Schwarz/Navy ohne Grund. Bewusst NUR .btn--primary
+   umgestellt, NICHT die --seal-green-Variable selbst (die an 80+ anderen
+   Stellen fuer Aktiv-Zustaende/Badges/Rahmen verwendet wird, die die
+   Direktive explizit nicht betrifft - "nicht alles gruen machen"). */
 .btn--primary {
-  background: var(--seal-green);
-  border-color: var(--seal-green);
+  background: var(--brand-green);
+  border-color: var(--brand-green);
   color: var(--paper-000);
 }
 
 .btn--primary:hover {
-  background: var(--seal-green-dark);
-  border-color: var(--seal-green-dark);
+  background: var(--brand-green-dark);
+  border-color: var(--brand-green-dark);
 }
 
 .instruction-actions {
@@ -1545,41 +2404,157 @@ textarea:focus {
   margin-top: 10px;
 }
 
-/* Standard-Prompts-Chips im Entwurf-Editor (16.09., UI/UX-Sweep,
-   Referenzbilder 12/17/24/31/38/41) - dieselbe Vorlagenbibliothek wie im
-   Chat, hier als Vorausfuell-Chips fuer die KI-Anweisung. */
-.instruction-bar__prompts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  margin-top: 10px;
+/* --- Editor-Arbeitsplatz: Dokument + KI-Assistent-Seitenleiste (25.09.,
+   Owner-Direktive "EDITOR UI PRODUCT-COMPLETION") - Referenzbilder
+   12/24/38 zeigen den KI-Assistenten durchgehend als eigenstaendige
+   vertikale Spalte NEBEN dem Dokument, nicht als volltbreite Leiste
+   darunter. Ersetzt die vorherigen ".instruction-bar__prompts"-Chips
+   (siehe Git-Historie fuer die alte, flache Variante). */
+.draft-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
 }
 
-.instruction-bar__prompts-label {
-  font-size: 11.5px;
+@media (max-width: 1200px) {
+  .draft-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.draft-workspace__main {
+  min-width: 0;
+}
+
+.draft-assistant-panel {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.draft-assistant-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.draft-assistant-panel__title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.draft-assistant-panel__intro {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  line-height: 1.5;
+  margin: 0;
+  background: var(--paper-100);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.draft-assistant-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.draft-assistant-panel__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.draft-assistant-panel__section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--ink-500);
 }
 
-.instruction-bar__prompt-chip {
-  font-size: 12px;
-  padding: 5px 10px;
+.draft-assistant-panel__manage-link {
+  font-size: 11.5px;
+}
+
+/* Vorschlaege-Zeilen - dieselben Icon-Badge-Farbklassen wie die
+   Chat-Schnellaktionen (".chat-quick-action__icon--*", siehe dort),
+   keine zweite Farbsprache fuer denselben visuellen Zweck. */
+.draft-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
   border: 1px solid var(--paper-line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--paper-000);
-  color: var(--ink-700);
   cursor: pointer;
   transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
-.instruction-bar__prompt-chip:hover {
-  border-color: var(--ink-300);
+.draft-suggestion:hover {
+  border-color: var(--seal-green);
   background: var(--paper-100);
 }
 
-.instruction-bar__prompts-manage {
-  font-size: 11.5px;
-  margin-left: auto;
+.draft-suggestion__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.draft-suggestion__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.draft-suggestion__subtitle {
+  font-size: 11px;
+  color: var(--ink-500);
+}
+
+.draft-suggestion__chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--ink-300);
+  flex-shrink: 0;
+}
+
+.draft-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+
+.draft-prompt-row:hover {
+  background: var(--paper-100);
+}
+
+.draft-assistant-panel__composer {
+  border-top: 1px solid var(--paper-line);
+  padding-top: 14px;
 }
 
 /* --- Entwürfe-Liste (Prompt 24) --- */
@@ -1621,6 +2596,44 @@ textarea:focus {
 
 .draft-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* Additiver Modifikator (27.09., Owner-Direktive "AKTEN-STARTSEITE -
+   REFERENCE RECONSTRUCTION" §9/§13) - NUR fuer die Akten-Tabelle:
+   (1) kein eigener Rahmen/Radius mehr, weil `.matters-table-card` die
+   sichtbare Umrandung uebernimmt (kein doppelter Rahmen); (2) spuerbar
+   kompaktere Zeilen (Direktive: "wirkt zu gross und zu schwer... nicht
+   grosse Tabellenzeilen + viel Leerraum") - Kopf 10px/12px -> 8px/16px,
+   Zellen 12px/16px -> 9px/16px. `.draft-table` selbst UNVERAENDERT (von
+   ~14 anderen Seiten geteilt). */
+.draft-table--compact {
+  border: none;
+  border-radius: 0;
+  /* ECHTER FUND (03.10., per isolierter Bisektion zweifelsfrei bewiesen):
+     das geteilte `.draft-table { overflow: hidden; }` (dient dort dem
+     Abrunden der eigenen Kartenecken, siehe `.draft-table`-Kommentar)
+     sitzt als Clipping-Vorfahre GENAU zwischen dem sticky `<th>` und dem
+     eigentlichen Scroll-Container (`.table-container`) - ein Chromium-
+     Verhalten, bei dem ein NICHT-scrollender `overflow`-Vorfahre
+     zwischen einem sticky-Element und seinem tatsaechlichen Scroll-
+     Container `position:sticky` vollstaendig wirkungslos macht (per
+     CDP-Scrolltest bewiesen: `<th>` wanderte 1:1 mit `scrollTop` statt zu
+     stehen; nach testweisem `overflow:visible` auf dem `<table>` allein
+     funktionierte Sticky sofort korrekt). Da `.draft-table--compact`
+     bereits Rahmen/Radius entfernt (die Karte uebernimmt beides), hat
+     das geerbte `overflow:hidden` hier ohnehin keine Rundungsecke mehr
+     zum Abschneiden - die Aufhebung gilt NUR fuer diese Variante,
+     `.draft-table` selbst (von ~14 anderen Seiten geteilt, keine mit
+     fixiertem Kopf) bleibt unveraendert. */
+  overflow: visible;
+}
+
+.draft-table--compact th {
+  padding: 8px 16px;
+}
+
+.draft-table--compact td {
+  padding: 9px 16px;
 }
 
 /* --- Original-Kontext-Panel, Quellen/Findings/Audit (Prompt 24) --- */
@@ -2671,9 +3684,30 @@ button[disabled].btn--ai-loading {
   transform: rotate(180deg);
 }
 
-/* Dropdown oeffnet NACH OBEN (die Ausloeser-Zeile sitzt ganz unten in
-   der Sidebar, ein normales Dropdown nach unten wuerde ausserhalb des
-   Fensters landen).
+/* Dropdown oeffnet bevorzugt NACH OBEN (die Ausloeser-Zeile sitzt ganz
+   unten in der Sidebar, ein normales Dropdown nach unten wuerde meist
+   ausserhalb des Fensters landen) - die genaue Richtung/Position wird
+   jedoch per JS berechnet (app_sidebar.js), nicht mehr rein per CSS.
+
+   Root Cause (04.10., Owner-Direktive "UI-QUALITAETSRUNDE" P2,
+   Referenzbild Screenshot (25)/(26)): `position:absolute; left:12px;
+   right:12px;` relativ zu `.sidebar__footer-account` ergab im
+   eingeklappten 68px-Rail (dort nur ~47px breit) eine ueber-
+   constrained Box von ~23px Breite - das Menu wurde nicht "verdeckt"
+   (kein konkurrierender z-index/Stacking-Context gefunden, siehe
+   Analyse-Notiz in app_sidebar.js), sondern schlicht zu schmal
+   gerendert und dadurch bis zur Unlesbarkeit umgebrochen. Zusaetzlich
+   haette ein ausreichend breites, weiterhin absolut in `.sidebar__
+   footer-account` verankertes Menu durch `.sidebar`s eigenes
+   `overflow-y:auto` (erzwingt `overflow-x:auto`) abgeschnitten werden
+   koennen, sobald es ueber die 68px-Rail-Breite hinausragt. Fix:
+   `position:fixed`, Breite fest statt ueber zwei Kanten erzwungen,
+   `top`/`left` werden von app_sidebar.js aus der tatsaechlichen
+   Trigger-Position berechnet und an den Viewport geklemmt (entkommt
+   damit JEDEM Overflow-Clipping eines Vorfahren, da keiner von ihnen
+   transform/filter/perspective/will-change setzt - verifiziert per
+   CDP getComputedStyle). Funktioniert dadurch identisch bei
+   ausgeklappter/eingeklappter Sidebar und bei jeder Fensterhoehe.
 
    Bewusst in zwei Regeln aufgeteilt (bekannter Fund, siehe
    .chat-dropzone-hint weiter unten fuer die volle Herleitung): eine
@@ -2685,10 +3719,8 @@ button[disabled].btn--ai-loading {
    UA-Regel. */
 .sidebar__profile-menu {
   display: none;
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: calc(100% + 6px);
+  position: fixed;
+  width: 220px;
   background: var(--paper-000);
   border: 1px solid var(--paper-line);
   border-radius: var(--radius-md);
@@ -3030,6 +4062,52 @@ button[disabled].btn--ai-loading {
   width: 100%;
   max-width: 440px;
   background: var(--paper-000);
+  /* Begrenzt die GESAMTE Dialoghoehe auf die Fensterhoehe (06.10., Owner-
+     Direktive "SETTINGS -> KANZLEI UX REFACTOR" /dialog-behavior:
+     "scrollbaren Content besitzen, falls erforderlich") - Header/Footer
+     bleiben dabei stets sichtbar, nur `.modal__body` scrollt (siehe
+     dort), nicht der gesamte Dialog samt Kopf-/Fusszeile. */
+  max-height: calc(100vh - 64px);
+}
+
+/* ECHTER FUND (06.10., per Screenshot entdeckt): `display` NICHT
+   unconditional auf `.modal` setzen - die UA-Stylesheet-Regel
+   `dialog:not([open]) { display: none; }` ist zwar spezifischer, verliert
+   aber gegen JEDE Autoren-Regel gleichen Namens (Autoren-Deklarationen
+   haben in der Kaskade immer Vorrang vor UA-Deklarationen, unabhaengig
+   von der Spezifitaet) - ein unconditionales `.modal { display: flex; }`
+   hebelt damit das "unsichtbar bis showModal()"-Verhalten ALLER Dialoge
+   auf der gesamten Seite aus (live beobachtet: Kanzlei-Dialoge UND das
+   voellig unabhaengige "Scan-Ordner hinzufuegen"-Dialog aus dem
+   "Erweitert"-Tab erschienen gleichzeitig offen, obwohl keiner davon
+   showModal() aufgerufen hatte). Die Flex-Spalten-Anordnung darf daher
+   NUR gelten, wenn der Dialog tatsaechlich offen ist (`[open]`). */
+.modal[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Breiten-Modifikatoren (06.10., Owner-Direktive "SETTINGS -> KANZLEI UX
+   REFACTOR" - "SO KLEIN WIE MOEGLICH, SO GROSS WIE NOETIG") - additiv zum
+   bestehenden `.modal` (dessen 440px-Standardbreite fuer alle bisherigen,
+   schlanken Dialoge wie "Neue Aufgabe" UNVERAENDERT bleibt), fuer Dialoge
+   mit mehrspaltigen Formularen (z. B. Kanzleiinformationen, Branding).
+   KEIN neues Dialog-System - dasselbe native <dialog>+showModal()/close()
+   wie ueberall sonst in der App, nur eine breitere Variante. */
+.modal--medium {
+  max-width: 600px;
+}
+
+.modal--large {
+  max-width: 760px;
+}
+
+@media (max-width: 700px) {
+  /* /responsive: Dialoge auf kleinen Screens nahezu Fullscreen. */
+  .modal--medium,
+  .modal--large {
+    max-width: calc(100vw - 32px);
+  }
 }
 
 .modal::backdrop {
@@ -3071,6 +4149,29 @@ button[disabled].btn--ai-loading {
 
 .modal__body {
   padding: 20px 24px 24px;
+  overflow-y: auto;
+  /* `flex: 1 1 auto` allein reicht NICHT - ein Flex-Item hat per Default
+     `min-height: auto` (= seine Inhaltshoehe), wodurch es trotz
+     `flex-shrink: 1` nie unter die Hoehe seines Inhalts schrumpft und
+     `overflow-y: auto` dadurch wirkungslos bliebe. `min-height: 0`
+     erzwingt das tatsaechliche Schrumpfen auf den verfuegbaren Platz
+     (klassisches Flexbox-Overflow-Problem). */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.modal__header,
+.modal__footer {
+  flex-shrink: 0;
+}
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--paper-line);
 }
 
 .modal__hint {
@@ -3183,6 +4284,642 @@ button[disabled].btn--ai-loading {
 
 .settings-grid .form-label--full {
   grid-column: 1 / -1;
+}
+
+/* Identischer 2-Spalten-Formularraster wie ".settings-grid" oben, nur
+   umbenannt (06.10., Owner-Direktive "LEXONO - EINSTELLUNGEN UI REBUILD") -
+   ".settings-grid" selbst wird bereits von firm_profile.html/
+   matter_detail.html/schriftsatz_generator.html fuer genau diesen
+   Formularraster-Zweck verwendet und durfte daher NICHT umgewidmet werden;
+   die neue Seiten-Layout-Klasse unten heisst deshalb bewusst
+   ".settings-page-grid", nicht ".settings-grid". */
+.settings-grid-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.settings-grid-form .form-label {
+  grid-column: span 1;
+}
+
+.settings-grid-form .form-label--full {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   Einstellungen-Seite: Referenz-getriebener Rebuild (06.10., Owner-
+   Direktive "LEXONO - EINSTELLUNGEN UI REBUILD") - Header, Tab-Navigation,
+   zweispaltiges "Allgemein"-Layout mit kompakten Settings-Rows links und
+   kompakteren Info-Karten rechts. Alle Klassen bewusst settings-spezifisch
+   (Praefix "settings-"), keine globale Komponente veraendert.
+   ========================================================================== */
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 26px 32px 18px;
+}
+
+.settings-header__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--seal-green-tint);
+  color: var(--brand-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-header__icon .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.settings-header__title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.settings-header__subtitle {
+  font-size: 13.5px;
+  color: var(--ink-500);
+  margin: 2px 0 0;
+}
+
+.settings-banner {
+  max-width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.settings-tabs {
+  display: flex;
+  /* ECHTER FUND (06.10., live per CDP reproduziert): `.main` (base.html)
+     ist selbst `display:flex; flex-direction:column` (siehe dortiger
+     Kommentar "min-height:0 ... Flexbox-Default min-height:auto"). Ein
+     Flex-Kind mit eigenem `overflow` ungleich "visible" (hier:
+     `overflow-x:auto`, wodurch der Browser `overflow-y` automatisch
+     ebenfalls auf "auto" setzt, siehe CSS-Overflow-Spezifikation) bekommt
+     dadurch selbst eine Flexbox-Mindesthoehe von 0 statt inhaltsbasiert -
+     ohne `flex-shrink:0` wurde die gesamte Tab-Leiste auf 1px
+     zusammengedrueckt (live gemessen: `getComputedStyle(...).height`
+     tatsaechlich "1px", obwohl die einzelnen Tab-Buttons selbst korrekt
+     40px hoch waren) und war dadurch optisch komplett unsichtbar, obwohl
+     im DOM vorhanden. Dasselbe bereits etablierte Fund-/Fix-Muster wie an
+     95 anderen Stellen in dieser Datei. */
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--paper-line);
+  overflow-x: auto;
+}
+
+.settings-tab {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: color 0.15s var(--ease-elevate), border-color 0.15s var(--ease-elevate);
+}
+
+.settings-tab:hover {
+  color: var(--ink-900);
+}
+
+.settings-tab--active {
+  color: var(--brand-green);
+  font-weight: 600;
+  border-bottom-color: var(--brand-green);
+}
+
+.settings-tabpanel {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 20px 32px 40px;
+}
+
+.settings-page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.settings-page-grid__main,
+.settings-page-grid__side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* Volle-Breite-Zeile innerhalb des 2-Spalten-Grids (06.10., Owner-
+   Direktive "SETTINGS -> KANZLEI FINAL UI/UX REFINEMENT") - fuer eine
+   Karte, die als dritter Grid-Eintrag (NICHT innerhalb von __main/__side)
+   beide Spalten ueberspannen soll, z. B. "Kanzlei-Integrationen" (/
+   important-layout-rule: "Die verfuegbare Desktopbreite muss genutzt
+   werden" - kein ungenutzter leerer Platz neben einer Karte ohne reales
+   Gegenstueck). */
+.settings-page-grid__full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1023px) {
+  .settings-page-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-card {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 20px 6px;
+}
+
+.settings-card__title {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-top: 1px solid var(--paper-line);
+  margin: 0;
+}
+
+.settings-row__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-100);
+  color: var(--ink-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-row__icon .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.settings-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-row__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.settings-row__desc {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.settings-row__control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.settings-row__control--path {
+  gap: 6px;
+}
+
+.settings-toggle-form {
+  margin: 0;
+  display: inline-flex;
+}
+
+.settings-select {
+  width: auto;
+  min-width: 150px;
+}
+
+.settings-path-display {
+  width: 280px;
+  max-width: 40vw;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-700);
+  background: var(--paper-100);
+  cursor: default;
+}
+
+.settings-icon-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--paper-line);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-elevate), border-color 0.15s var(--ease-elevate);
+}
+
+.settings-icon-btn:hover {
+  background: var(--paper-200);
+  border-color: var(--ink-300);
+}
+
+.settings-icon-btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Rechte, kompaktere Informationskarten (Direktive §14: "deutlich
+   kompakter... nicht dieselbe Card-Groesse wie links erzwingen"). */
+
+.settings-info-card {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+}
+
+.settings-info-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.settings-info-card__title-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--ink-500);
+}
+
+.settings-info-card__line {
+  font-size: 12.5px;
+  color: var(--ink-700);
+  margin: 0 0 2px;
+  line-height: 1.5;
+}
+
+.settings-info-card__line--strong {
+  font-weight: 600;
+  color: var(--ink-900);
+  font-size: 13.5px;
+}
+
+.settings-info-card__line--muted {
+  color: var(--ink-500);
+}
+
+.settings-info-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  text-decoration: none;
+}
+
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-profile-avatar {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  /* Bewusst "--brand-green" (das tatsaechliche Gruen, #249d74), NICHT
+     "--seal-green" (trotz des Namens dunkles Navy #101828, siehe
+     :root-Definition) - die Referenz zeigt den Profil-Avatar klar in der
+     gruenen Akzentfarbe (Direktive §2: "Lexono-Gruen als Akzent"). Der
+     bestehende kleine Sidebar-Avatar (.sidebar__profile-avatar) nutzt
+     dagegen "--seal-green"/Navy - ein bewusster Unterschied, keine
+     Inkonsistenz: dort ist es ein winziges, beilaeufiges UI-Element: hier
+     ist der Avatar selbst der visuelle Blickfang der Karte. */
+  background: var(--brand-green);
+  color: var(--paper-000);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-profile__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.settings-profile__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-profile__role {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.settings-profile__email {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.settings-status-row__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-700);
+}
+
+.settings-status-row__value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.settings-status-row__value--ok {
+  color: var(--brand-green);
+}
+
+.settings-status-dot {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--paper-200);
+  color: var(--paper-000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-status-dot .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.settings-status-dot--ok {
+  background: var(--brand-green);
+}
+
+.settings-status-dot--neutral {
+  background: var(--ink-300);
+}
+
+/* "KI & Datenschutz"-Tab, Endnutzer-Ansicht (06.10., Owner-Direktive
+   "SETTINGS -> KI & DATENSCHUTZ") - gruene Status-Pille fuer "Ihr
+   Datenschutz ist aktiv" (echte Werte, siehe settings_router.py:
+   local_ai_status/gateway_configured), Schritt-/Vorteil-Listen fuer
+   "Funktionsweise"/"Ihre Vorteile". Bewusst eigene, kleine Klassen statt
+   `.tag--matched` (dort navy/--seal-green, hier ausdruecklich das echte
+   Lexono-Gruen gefordert, /visual-language). */
+.settings-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-200);
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.settings-status-pill .icon {
+  width: 11px;
+  height: 11px;
+}
+
+.settings-status-pill--ok {
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+}
+
+.settings-howto-step {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.settings-howto-step__number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-howto-step__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 2px;
+}
+
+.settings-howto-step__desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-500);
+}
+
+.settings-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  color: var(--ink-700);
+}
+
+.settings-benefit-item .icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  color: var(--brand-green);
+}
+
+.settings-benefit-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--brand-green-tint);
+}
+
+.settings-benefit-highlight .icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--brand-green-dark);
+}
+
+.settings-benefit-highlight__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-green-dark);
+  margin-bottom: 2px;
+}
+
+.settings-benefit-highlight__desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-700);
+}
+
+/* "E-Mail"-Tab (06.10., Owner-Direktive "SETTINGS -> E-MAIL") -
+   Anbieter-Vorlagen (fuellen nur Host/Port im bestehenden IMAP-Formular
+   vor, siehe settings.html-Skript) und die aufklappbare
+   "Verbindung verwalten"-Sektion fuer ein bereits verbundenes Postfach. */
+.settings-mail-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.settings-mail-preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.settings-mail-preset:hover {
+  border-color: var(--brand-green);
+  color: var(--brand-green-dark);
+}
+
+.settings-mail-preset .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.settings-mail-manage summary.btn {
+  list-style: none;
+  cursor: pointer;
+}
+
+.settings-mail-manage summary.btn::-webkit-details-marker {
+  display: none;
+}
+
+@media (max-width: 1365px) {
+  .settings-header,
+  .settings-tabs,
+  .settings-tabpanel {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .settings-path-display {
+    width: 180px;
+  }
+}
+
+/* --- Kanzleifachprofil: fachliche Schwerpunkte (03.10., Owner-Direktive
+   "KANZLEIFACHPROFIL UND JURISTISCHE WISSENSSTEUERUNG") --- */
+
+.practice-area-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 16px;
+}
+
+@media (max-width: 700px) {
+  .practice-area-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-label--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--ink-900);
+}
+
+.form-label--checkbox input[type="checkbox"] {
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -3503,43 +5240,1139 @@ body::-webkit-scrollbar-thumb:hover,
   min-width: 150px;
 }
 
-/* --- Mandanten-Detailansicht --- */
+/* ==========================================================================
+   Akten-Filterleiste (27.09., Owner-Direktive "AKTEN-STARTSEITE -
+   REFERENCE RECONSTRUCTION" §6/§13): steht jetzt als EIGENSTAENDIGE Zeile
+   DIREKT auf der Seitenflaeche, NICHT mehr innerhalb derselben Karte wie
+   die Tabelle (vorher: eine gemeinsame `.instructions-panel`-Karte fuer
+   Filter+Tabelle - die Referenz zeigt stattdessen eine freistehende
+   Filterzeile UEBER einer eigenstaendigen Tabellen-Karte, siehe
+   `.matters-table-card`). Eigene `max-width`/Zentrierung/Seitenpolsterung
+   analog zu `.draft-page`, damit beide Zeilen (Filter + Tabellenkarte)
+   trotz der jetzt getrennten Container optisch auf derselben Breite
+   fluchten. */
+.matters-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+  max-width: var(--content-max-width);
+  /* 14px -> 10px (03.10., siehe `.draft-page--tight`-Kommentar fuer die
+     volle Begruendung des Flaechennutzungs-Korrekturpakets). */
+  margin: 10px auto 0;
+  padding: 0 32px;
+  box-sizing: border-box;
+}
 
-.client-detail-header {
+.matters-filter-bar__search {
+  flex: 1 1 260px;
+  min-width: 200px;
+  /* ECHTER FUND (27.09., live per Screenshot entdeckt): `width:100%` auf
+     dem Input zusammen mit `.clients-search-bar`s eigenem `flex-wrap:
+     wrap` zwang das Icon+Input-Paar auf zwei Zeilen (Icon oben, Input
+     darunter) statt in einer Zeile - `flex-wrap:nowrap` HIER (nur fuer
+     diese Filterleiste, `.clients-search-bar` selbst bleibt unveraendert
+     fuer Mandanten & Co.) plus `flex:1` statt `width:100%` auf dem Input
+     behebt das. */
+}
+
+.matters-filter-bar__search .clients-search-bar {
+  flex-wrap: nowrap;
+}
+
+.matters-filter-bar__search input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.matters-filter-bar select {
+  width: auto;
+  /* 150px -> 140px (27.09.): mit den zwei neu ergaenzten Dropdowns
+     (Mandant/Kategorie, siehe Direktive §6) stehen jetzt vier Selects in
+     der Zeile statt zwei - etwas schmaler, damit alle fuenf Elemente bei
+     1366px Breite noch bequem in eine Zeile passen, ohne umzubrechen. */
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+/* ROOT CAUSE (03.10., Owner-Direktive "AKTENUEBERSICHT FINALISIEREN -
+   FILTERLEISTE OPTIMIEREN"), per CDP-Messung bewiesen: natives
+   `<select width:auto>` bemisst seine Breite in Chromium/WebView2 am
+   BREITESTEN enthaltenen `<option>`-Text, nicht am aktuell gewaehlten
+   (meist kurzen) Wert - "Alle Mandanten" rendert dadurch bei 98 echten
+   Akten mit teils langen Mandantennamen auf ~290px statt der gestalteten
+   ~140-150px (gemessen), fast doppelt so breit wie die uebrigen Selects.
+   Das zehrt unvorhersehbar an der fuer die Filterzeile verfuegbaren
+   Breite - bei 1672x941 reicht es gerade noch (mit <2px Puffer), bei
+   schmaleren Fenstern oder einem noch laengeren Mandantennamen kippt die
+   Zeile um (Sortierung bricht dann als einzeln umbrechendes Element um,
+   siehe Screenshot-Beleg). `max-width` + Text-Kuerzung macht die Breite
+   UNABHAENGIG vom Options-Inhalt, nicht nur fuer die vier heutigen
+   Test-Akten, sondern generell fuer beliebig lange Mandanten-/
+   Kategorienamen. */
+.matters-filter-bar select[name="client_id"],
+.matters-filter-bar select[name="practice_area"] {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Akten-Tabellenkarte (27.09., Owner-Direktive "AKTEN-STARTSEITE -
+   REFERENCE RECONSTRUCTION" §13): ersetzt `.instructions-panel` fuer diese
+   Seite - "Das aktuelle Design wirkt wie: grauer Seitenhintergrund -> eine
+   grosse weisse Card -> Tabelle darin. Die Referenz wirkt staerker wie
+   eine zusammenhaengende Arbeitsflaeche mit einem klaren Tabellen-
+   container." Enthaelt NUR Tabelle+Pagination (die Filterzeile liegt jetzt
+   aussen, siehe `.matters-filter-bar`). `.draft-table` selbst bringt
+   bereits einen eigenen Rahmen/Radius mit (von ~14 anderen Seiten
+   geteilt) - hier bewusst per `.draft-table--compact` UEBERSCHRIEBEN
+   (kein doppelter Rahmen: Karte + Tabelle je mit eigener Umrandung
+   uebereinander waere strukturell falsch), die Karte selbst traegt die
+   sichtbare Umrandung/den Schatten. */
+.matters-table-card {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  /* Echter Scroll-Split (02.10., siehe `.draft-page--tight`-Kommentar
+     fuer die volle Root-Cause-Herleitung): die Karte selbst wird zum
+     Flex-Spalten-Container, der die von `.draft-page--tight` jetzt
+     tatsaechlich weitergereichte Hoehenbegrenzung an EIN Kind
+     (`.table-container`) durchreicht - NICHT an `.matters-pagination`,
+     die als `flex-shrink:0`-Geschwisterelement immer ihre natuerliche
+     Hoehe behaelt und nie Teil des scrollenden Bereichs wird. */
+  /* KORREKTUR (03.10., Owner-Direktive "AKTENUEBERSICHT MUSS DEN GESAMTEN
+     VERFUEGBAREN ARBEITSBEREICH AUSFUELLEN"), per CDP-Messung gegen den
+     Live-Dev-Server bewiesen: die direkt vorhergehende Runde hatte hier
+     `flex:0 1 auto` (flex-grow:0) + `max-height:100%` gesetzt, um bei
+     kurzen Listen die Leerflaeche INNERHALB der Karte zu vermeiden - das
+     verhinderte aber zugleich, dass die Karte bei kurzen Listen auf die
+     verfuegbare Resthoehe WAECHST: gemessen bei 1672x941/kurzer Liste
+     endete die Karte dadurch 114px vor der Unterkante von `.main`, statt
+     der regulaeren 60px Seitenabstand (`.draft-page`-Padding-bottom) -
+     54px zusaetzliche, vom Owner nicht gewuenschte Leerflaeche UNTERHALB
+     der gesamten Karte. Bei einer langen Liste (Inhalt > verfuegbare
+     Hoehe) betrug derselbe Restabstand bereits korrekt 60px, was die
+     Diagnose eindeutig auf `flex-grow:0` als fehlerhafte Ebene
+     eingrenzt (nicht `.draft-page--tight`, nicht `.main`, nicht
+     `.table-container` - beide waren bereits korrekt). Zurueck zu
+     `flex:1` (flex-grow:1) behebt dies: die Karte waechst wieder auf die
+     volle verfuegbare Resthoehe, UNABHAENGIG von der Zeilenzahl -
+     `min-height:0` bleibt zwingend erhalten (ohne das wuerde die Karte
+     bei LANGEN Listen wieder auf ihre natuerliche, ueberlange Inhalts-
+     hoehe wachsen statt sich auf die verfuegbare Hoehe zu begrenzen,
+     siehe `.draft-page--tight`-Kommentar oben fuer dieselbe Flexbox-
+     Falle). Bewusst OHNE zusaetzliches `max-height` (das widerspraeche
+     sich mit `flex:1`, siehe Direktive: "vermeide widerspruechliche
+     Regeln, bei denen flex:1 und max-height ... das Wachstum gegenseitig
+     verhindern") - `flex:1` mit `flex-basis:0%` reicht allein aus, um
+     die Karte exakt auf die von `.draft-page--tight` tatsaechlich
+     verfuegbare Resthoehe zu begrenzen. */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  /* min-width:0 (03.10., Owner-Direktive "AUFGABEN & FRISTEN"): bisher
+     ohne Geschwister im Flex-Container (volle Breite auf allen bisherigen
+     Seiten), deshalb unauffaellig fehlend. Auf der neuen Aufgaben-&-
+     Fristen-Seite steht diese Karte erstmals NEBEN einem Detailpanel in
+     einer Flex-ZEILE (`.tasks-layout`) - ohne `min-width:0` wuerde sie
+     sich dort auf ihre natuerliche Tabelleninhaltsbreite weigern zu
+     schrumpfen (dieselbe, im Projekt bereits mehrfach dokumentierte
+     Flexbox-min-width-Falle wie bei `.chat-panel`). Fuer die bisherigen
+     Alleinstellungs-Faelle (Mandanten/Akten) wirkungslos, da dort kein
+     Geschwister um Breite konkurriert. */
+  min-width: 0;
+}
+
+/* Fixierter Tabellenkopf (03.10., Owner-Direktive "AKTENUEBERSICHT
+   FINALISIEREN UND PRODUKTIONSREIF VERIFIZIEREN" §5) - `.table-container`
+   (direkt oberhalb) ist der tatsaechliche vertikale Scroll-Container
+   (`overflow-y:auto`), NICHT das `<table>` selbst und NICHT `.main` -
+   `position:sticky` mit `top:0` greift deshalb korrekt relativ zu genau
+   diesem Container. Nur fuer die Akten-Tabelle gescopet (`.matters-
+   table-card` voran), `.draft-table`/`.draft-table th` selbst (von ~14
+   anderen Seiten geteilt) bleiben unveraendert. Deckender Hintergrund
+   (bereits auf `.draft-table th` vorhanden, `var(--paper-100)`) + die
+   bestehende `border-bottom` verhindern, dass darunter liegende Zeilen
+   beim Scrollen durchscheinen; `z-index:1` haelt den Kopf ueber dem
+   Zeileninhalt. */
+.matters-table-card .draft-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.matters-table-card .table-container {
+  overflow-x: auto;
+  /* Hier (nicht auf `.draft-page` wie vorher) findet das tatsaechliche
+     vertikale Scrollen bei vielen Aktenzeilen statt - `.matters-
+     pagination` bleibt als Geschwisterelement AUSSERHALB dieses
+     Containers immer sichtbar. Zurueck zu `flex:1` (03.10., siehe
+     `.matters-table-card`-Kommentar): beansprucht wieder die volle
+     Resthoehe der Karte nach Abzug der Pagination - `flex-shrink:1`
+     sorgt weiterhin dafuer, dass bei LANGEN Listen (Inhalt > verfuegbare
+     Hoehe) korrekt auf die verfuegbare Hoehe begrenzt und intern
+     gescrollt wird; bei KURZEN Listen bleibt innerhalb des Containers
+     ungenutzter Raum unterhalb der letzten Zeile stehen - das ist
+     ausdruecklich gewollt (Direktive: "Kartenhoehe richtet sich nach dem
+     verfuegbaren Arbeitsbereich, nicht nach der Anzahl der sichtbaren
+     Tabellenzeilen"), nicht zu verwechseln mit der vorherigen,
+     tatsaechlich fehlerhaften Leerflaeche UNTERHALB der Karte. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Gemeinsamer Flex-Container fuer Ordner-Symbol + Aktenzeichen (03.10.,
+   Owner-Direktive "PRAEZISE KORREKTUR DER AKTENZEICHEN-AUSRICHTUNG") -
+   siehe matters_list.html-Kommentar fuer die volle Root-Cause-Herleitung
+   (Symbol und Text lagen vorher ohne gemeinsamen Container im normalen
+   Inline-Fluss, eine umgebrochene Folgezeile begann dadurch wieder am
+   linken Zellenrand statt buendig unter dem Textanfang). `align-items:
+   flex-start` richtet das Symbol an der OBERKANTE der ersten Textzeile
+   aus (nicht vertikal zentriert ueber mehrere Zeilen) - passend zum
+   Sollbild der Direktive. `gap` ersetzt das vorherige `margin-right` auf
+   `.matters-row-icon`. NUR fuer die Akten-Tabelle, keine andere Stelle
+   verwendet diese Klasse. */
+.matters-reference-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* Ordner-Icon vor dem Aktenzeichen (27.09., Direktive §8: "visuelles
+   Identifikationsmerkmal der Akte, kein unnoetiger zusaetzlicher
+   Button") - rein dekorativ, daher `color:var(--ink-300)` (dezent,
+   nicht mit echten Aktions-Icons verwechselbar). `flex-shrink:0`
+   (03.10.) - das Symbol ist jetzt ein eigenes Flex-Item neben dem Text
+   (siehe `.matters-reference-cell`) und darf nie zugunsten des Textes
+   schrumpfen. `margin-right`/`vertical-align` (reine Inline-Fluss-
+   Hacks aus der vorherigen, containerlosen Version) entfallen - die
+   Ausrichtung uebernimmt jetzt ausschliesslich der Flex-Container. */
+/* ==========================================================================
+   Mandanten-Avatare (03.10., Owner-Direktive "REFERENZGETREUE
+   MANDANTENUEBERSICHT", Referenzabgleich `29_mandanten_uebersicht.png`) -
+   rein deterministische Anzeige (Initialen aus dem echten Namen, Farbe aus
+   einem stabilen Hash der Mandanten-ID, siehe app/web/clients_router.py::
+   _client_initials/_client_avatar_color_index), KEINE zusaetzliche
+   Persistenz. Acht Farbpaare aus bereits bestehenden Tint-/Volltonfarben-
+   Tokens (keine neuen Farbwerte erfunden).
+   ========================================================================== */
+
+.client-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.client-name-cell__name {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.client-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.client-avatar--0 { background: var(--accent-blue-tint); color: var(--accent-blue); }
+.client-avatar--1 { background: var(--accent-purple-tint); color: var(--accent-purple); }
+.client-avatar--2 { background: var(--brand-green-tint); color: var(--brand-green-dark); }
+.client-avatar--3 { background: var(--wax-red-tint); color: var(--wax-red); }
+.client-avatar--4 { background: var(--accent-orange-tint); color: var(--accent-orange); }
+.client-avatar--5 { background: var(--amber-tint); color: var(--amber); }
+.client-avatar--6 { background: var(--accent-amber-tint); color: var(--accent-amber); }
+.client-avatar--7 { background: var(--seal-green-tint); color: var(--seal-green); }
+
+.client-contact-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.client-contact-cell__secondary {
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+
+/* Root-Cause-Fix (03.10., siehe clients_list.html-Kommentar an der
+   Einfuegestelle): verhindert, dass dieses `.instructions-panel` als
+   zweites Kind von `.draft-page--tight` (Flexbox-Spalte) das geerbte
+   `flex: 1` der gemeinsamen `.draft-page`-Basisklasse behaelt und sich
+   dadurch die verfuegbare Resthoehe mit `.matters-table-card` haelftig
+   teilt, statt nur seine tatsaechlich benoetigte Inhaltshoehe
+   einzunehmen. */
+.clients-import-panel {
+  flex: 0 0 auto;
+  margin-top: 16px;
+}
+
+/* ==========================================================================
+   Aufgaben & Fristen - Liste + Detailpanel (03.10., Owner-Direktive
+   "AUFGABEN & FRISTEN", Referenzabgleich `18_akte_dokumente_detail.png`)
+   ========================================================================== */
+
+/* Erste Seite im Projekt mit einer Tabelle NEBEN einem staendig sichtbaren
+   Detailpanel (siehe `.matters-table-card`-Kommentar oben zu `min-width:0`
+   fuer die dafuer noetige Korrektur an der geteilten Basisklasse). */
+.tasks-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ECHTER FUND (06.10., Owner-Direktive "AUFGABEN & FRISTEN" UI-Refinement
+   /responsive: "Mobile: Liste zuerst. Detail als Drawer oder eigener
+   Screen" - "Keine Desktop-Tabelle einfach unveraendert auf Mobile
+   quetschen"): `.tasks-layout` hatte bisher GAR KEINEN Breakpoint - die
+   feste 400px-Detailspalte (`.task-detail-panel` unten) blieb auch auf
+   Mobile Seite an Seite neben der Liste erzwungen, beide dadurch extrem
+   schmal gequetscht. Bewusst NUR das Split-View-Layout gestapelt (Liste
+   zuerst, Detail darunter in voller Breite) statt die Tabelle selbst in
+   eine andersartige Mobile-Kartenansicht umzubauen - letzteres haette
+   keine Entsprechung bei den uebrigen Lexono-Listenseiten (Mandanten/
+   Akten zeigen auf Mobile ebenfalls weiterhin ihre normale, horizontal
+   scrollbare Tabelle, kein Kartenlayout) und waere eine neue, auf dieser
+   einen Seite inkonsistente Mobile-Architektur gewesen. */
+@media (max-width: 900px) {
+  .tasks-layout {
+    flex-direction: column;
+  }
+
+  .task-detail-panel {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+.task-detail-panel {
+  flex: 0 0 400px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-y: auto;
+  padding: 18px 20px 20px;
+}
+
+.task-detail-panel__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.task-detail-panel__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-detail-panel__title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0;
+}
+
+.task-detail-panel__meta {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  margin: 4px 0 0;
+}
+
+.task-detail-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.task-detail-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.task-detail-panel__close:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.task-detail-panel__fields {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  row-gap: 12px;
+  column-gap: 10px;
+  margin: 18px 0;
+  font-size: 13.5px;
+}
+
+.task-detail-panel__field-label {
+  color: var(--ink-500);
+}
+
+.task-detail-panel__field-value {
+  color: var(--ink-900);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-detail-panel__section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 18px 0 8px;
+}
+
+.task-detail-panel__description {
+  font-size: 13.5px;
+  color: var(--ink-700);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.task-detail-panel__document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+}
+
+.task-detail-panel__document-name {
+  display: block;
+  color: var(--ink-900);
+  font-weight: 500;
+}
+
+.task-detail-panel__document-meta {
+  display: block;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+.task-detail-panel__actions-footer {
+  margin-top: auto;
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-detail-panel__secondary-actions {
+  display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-detail-panel__secondary-actions .btn {
+  flex: 1 1 auto;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+.tasks-table {
+  table-layout: fixed;
+}
+
+.tasks-table td {
+  overflow: hidden;
+}
+
+.task-cell-ellipsis {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-title-cell {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  /* 220px statt urspruenglich 360px (03.10., per Live-Screenshot mit
+     geoeffnetem Detailpanel gefunden): bei 360px ergab die Summe aller
+     Spaltenbreiten bei geoeffnetem 400px-Detailpanel mehr als die
+     verfuegbare Tabellenbreite - `.table-container`s geteiltes
+     `overflow-x:auto` (Sicherheitsnetz fuer echte Schmalbildschirm-Faelle)
+     sprang an und schnitt die STATUS-Spaltenueberschrift sichtbar ab
+     (von der Direktive ausdruecklich verbotenes "abgeschnittene Spalten"-
+     Muster). 220px laesst alle 9 Spalten bei 1366px UND bei geoeffnetem
+     Detailpanel bei 1920px ohne horizontalen Scrollbalken Platz. */
+  max-width: 220px;
+}
+
+/* Typ-Icon + Label in der Tabelle - Farbe unterscheidet Aufgabe (Navy,
+   bestehender Primaerakzent) von Frist (Rot, bestehende Warnfarbe) - die
+   Referenz unterscheidet Aufgaben-/Fristenzeilen genau so. */
+.task-type-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.task-type-cell__icon--task {
+  color: var(--accent-blue);
+}
+
+.task-type-cell__icon--deadline {
+  color: var(--wax-red);
+}
+
+.task-due-cell__relative {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-500);
+  margin-top: 1px;
+}
+
+.task-due-cell__overdue {
+  color: var(--wax-red);
+  font-weight: 600;
+}
+
+/* Prioritaet - gleiches Tint+Text-Muster wie `.matter-status`. */
+/* `max-width:100%; overflow:hidden; text-overflow:ellipsis` (03.10.,
+   Owner-Direktive "AUFGABEN & FRISTEN: REFERENZGETREUE FERTIGSTELLUNG"
+   §3.5): bei neun Spalten UND gleichzeitig geoeffnetem 400px-Detailpanel
+   bei 1366px reicht die Summe der jeweils "voll" benoetigten Breiten
+   (per isolierter Messung bewiesen: Status/Prioritaet-Badges brauchen je
+   bis zu 92px, Typ 90px, Faellig-am 108px, Titel-Umbruch mind. 108px)
+   rechnerisch NICHT fuer alle Spalten gleichzeitig - das ist eine echte,
+   gemessene Platzgrenze, keine zu grosszuegig gewaehlte Spaltenbreite.
+   Statt die Spaltenbreiten endlos nachzujustieren, erhalten die Badges
+   selbst eine Ellipsis-Sicherung: faellt die zugewiesene Spaltenbreite in
+   einem schmaleren Fenster trotzdem einmal knapper aus, schneidet das
+   Badge sich selbst sauber mit "…" ab, STATT ueber die Zellgrenze hinaus
+   in die naechste Spalte zu ueberlaufen (das von der Direktive
+   ausdruecklich verbotene Ueberlagerungs-Muster) - robuster als eine nur
+   fuer exakt eine Fenstergroesse pixelgenau austarierte Breite. */
+.priority-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.priority-tag--hoch {
+  background: var(--wax-red-tint);
+  color: var(--wax-red);
+}
+
+.priority-tag--mittel {
+  background: var(--accent-orange-tint);
+  color: var(--accent-orange);
+}
+
+.priority-tag--niedrig {
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+}
+
+/* Erledigungsstatus (`Task.status`/`Deadline.status`) - eigenes Paar statt
+   `.tag--matched`/`--outbound`, da "Offen" hier bewusst NICHT gruen
+   (das waere mit der Akten-/Mandanten-Statusfarbe verwechselbar), sondern
+   neutral-blau markiert wird (Referenzbild). */
+.task-status-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  /* Ellipsis-Sicherung - siehe `.priority-tag`-Kommentar fuer die volle
+     Begruendung (gleiche Spaltenbreiten-Platzgrenze). */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-status-tag--open {
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+}
+
+.task-status-tag--done {
+  background: var(--paper-200);
+  color: var(--ink-500);
+}
+
+.tasks-table-row--selected {
+  background: var(--accent-blue-tint);
+}
+
+/* "+ Neue Aufgabe ▾"-Dropdown im Seitenkopf - wiederverwendet die
+   bestehenden, bereits generischen `.row-menu*`-Klassen (Tabellen-
+   Aktionsmenues) statt eigener Stile, nur ein neuer, minimaler
+   Positionierungs-Wrapper (`.row-menu-cell` ist semantisch an Tabellen-
+   zellen gebunden, daher hier ein eigener, gleich einfacher Wrapper). */
+.split-button {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ==========================================================================
+   Mandanten-Detailseite - Uebersicht-Tab (03.10., Owner-Direktive
+   "INDIVIDUELLE MANDANTENDETAILSEITE", Referenzabgleich
+   `30_mandant_detail.png`)
+   ========================================================================== */
+
+.client-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 32px 0;
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.client-detail-breadcrumb a {
+  color: var(--ink-500);
+  text-decoration: none;
+}
+
+.client-detail-breadcrumb a:hover {
+  color: var(--ink-900);
+  text-decoration: underline;
+}
+
+.client-detail-breadcrumb__sep {
+  color: var(--ink-300);
+}
+
+/* Mandantenkopf: Avatar + Name/Meta links, Aktionen rechts - eigene,
+   groessere Avatar-Variante (`.client-avatar--lg`) auf derselben
+   Basisklasse wie die Mandantenuebersicht (`.client-avatar`/
+   `.client-avatar--N`, app.css weiter oben), keine zweite Farblogik. */
+.client-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  padding: 18px 32px;
+}
+
+.client-detail-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.client-avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+
+.client-detail-header__name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0;
 }
 
 .client-detail-header__meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
-  color: var(--ink-700);
+  color: var(--ink-500);
+  margin-top: 2px;
 }
 
-.client-detail-header__meta-row {
+.client-detail-header__meta-sep {
+  color: var(--ink-300);
+}
+
+.client-detail-header__actions {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.client-detail-grid {
+/* Zweispaltiges Layout des Uebersicht-Tabs - links Stammdaten+
+   Schnellaktionen (schmaler), rechts Akten/Dokumente/Notizen (breiter) -
+   Groessenverhaeltnis an der Referenz orientiert. */
+.client-overview-layout {
+  display: grid;
+  /* 04.10., Owner-Direktive "MANDANTENDETAILSEITE: VISUELLE RESTARBEITEN
+     PRAEZISE ABSCHLIESSEN" §Prioritaet 2: per Pixel-Messung in
+     `30_mandant_detail.png` (Kante-zu-Kante-Scan bei y=210) bestaetigt,
+     dass die Referenz ein Breitenverhaeltnis von ca. 40:60 zwischen
+     linker und rechter Spalte zeigt (536px:807px bei 1360px Gesamtbreite).
+     Der vorherige feste `minmax(280px, 380px)`-Deckel ergab bei breiteren
+     Viewports ein zu schmales Verhaeltnis (380:806 ≈ 32:68, gemessen bei
+     1920px), weil die gesamte zusaetzliche Breite ausschliesslich der
+     rechten Spalte zufiel. `2fr 3fr` skaliert proportional mit der
+     tatsaechlich verfuegbaren Breite statt an einem fixen Pixelwert zu
+     deckeln, `minmax(280px, ...)` bleibt als Untergrenze fuer schmale
+     Viewports erhalten. */
+  grid-template-columns: minmax(280px, 2fr) 3fr;
+  gap: 20px;
+  /* 04.10., Owner-Direktive "MANDANTENDETAIL: VERTIKALE FLAECHENNUTZUNG
+     OPTIMIEREN" - ECHTER FUND: vorher `align-items:start` (verhinderte,
+     dass die Spalten auf die Grid-Zeilenhoehe gestreckt werden) plus
+     `#tab-uebersicht` ohne eigene Hoehe (reiner Block-Fluss, siehe
+     `.tab-panel`-Kommentar - Block-Eltern reichen NIE mehr Hoehe an
+     Kinder weiter als diese selbst brauchen) ergab zusammen: das Grid
+     blieb immer genau so hoch wie sein Inhalt, jeder zusaetzliche
+     Viewport-Platz blieb als EIN grosser, ungenutzter Block unterhalb
+     liegen (per CDP gemessen: bis zu ~250px bei 1920×1080). `stretch`
+     HIER zusammen mit `flex:1` auf `#tab-uebersicht`/`.client-overview-
+     layout` (siehe dortige Regeln) gibt den Spalten die tatsaechlich
+     verfuegbare Zeilenhoehe weiter - OHNE dass einzelne Karten dadurch
+     aufgeblaeht werden: `.client-overview-layout__col`s neues
+     `justify-content:space-between` (siehe dort) verteilt nur den
+     Spalten-internen Leerraum als zusaetzlichen Kartenabstand, die
+     Karten selbst behalten ihre intrinsische Hoehe. */
+  align-items: stretch;
+}
+
+.client-overview-layout__col {
+  display: flex;
+  flex-direction: column;
+  /* 03.10., selbe Direktive wie `.client-stammdaten-grid` oben: 20px->16px,
+     seiten-eigene Klasse (nicht geteilt), zusaetzlicher kleiner Beitrag
+     gegen den gemessenen Ueberschuss unterhalb der Schnellaktionen-Karte.
+     Bleibt der MINDEST-Abstand (04.10., s. u.) - bei schmalen/niedrigen
+     Viewports ohne Ueberschuss-Hoehe ist das weiterhin der einzige
+     wirksame Abstand, identisch zum bereits verifizierten Verhalten. */
+  gap: 16px;
+  min-width: 0;
+  /* 04.10., selbe Direktive wie oben bei `.client-overview-layout`:
+     verteilt echten Hoehen-UEBERSCHUSS (Spalte per `align-items:stretch`
+     hoeher als ihr eigener Inhalt) als zusaetzlichen Abstand ZWISCHEN den
+     Karten - addiert sich zum `gap` oben, ersetzt ihn nicht (CSS-
+     Spezifikation: `gap` ist die Mindestdistanz, `justify-content`
+     verteilt zusaetzlichen freien Raum). Bei 1366×768 (keine Ueberschuss-
+     Hoehe mehr nach der Vorrunden-Korrektur) bewirkt das NICHTS - die
+     bereits gemessene, knapp bemessene Darstellung dort bleibt exakt
+     erhalten. */
+  justify-content: space-between;
+}
+
+/* 04.10., selbe Direktive: `#tab-uebersicht` (eindeutige ID, betrifft
+   AUSSCHLIESSLICH den Uebersicht-Tab dieser einen Seite - die uebrigen
+   5 Tab-Panels sowie die geteilte `.tab-panel`-Basisklasse selbst
+   bleiben unangetastet) wird zum Flex-Container, damit das Grid darin
+   die tatsaechlich NACH `.tab-nav` verbleibende Hoehe referenzieren
+   kann.
+
+   ECHTER FUND/KORREKTUR (per CDP-Messung entdeckt, nicht vermutet): der
+   erste Versuch nutzte hier `min-height:100%` - das resolved aber gegen
+   die GESAMTE Content-Box-Hoehe von `.draft-page` (jetzt per Inline-
+   Style ebenfalls Flex-Spalte, siehe client_detail.html), OHNE den vor
+   `#tab-uebersicht` liegenden Geschwister-Flex-Item `.tab-nav`
+   abzuziehen - Prozent-Hoehen kennen "verbleibender Platz nach
+   Geschwistern" grundsaetzlich nicht, nur `flex-grow` kann das. Gemessene
+   Folge des ersten Versuchs: 57px Ueberlauf bei 1920×1080 (exakt die
+   Hoehe von `.tab-nav` inkl. seines `margin-bottom`) - das geloeste
+   Scroll-Problem waere dadurch REAKTIVIERT worden. `flex:1` hier ersetzt
+   das vollstaendig: der umgebende `.draft-page`-Flex-Kontext verteilt den
+   tatsaechlich nach `.tab-nav` uebrigen Platz korrekt. */
+#tab-client-uebersicht {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+#tab-client-uebersicht .client-overview-layout {
+  flex: 1;
+}
+
+/* ECHTER FUND (04.10., Owner-Direktive "MANDANTENDETAILSEITE: VIEWPORT-
+   FIT UND REFERENZTREUE VERBINDLICH KORRIGIEREN"), per `getBoundingClient
+   Rect`-Hoehenbilanz bewiesen: `.instructions-panel` (geteilte Basis-
+   klasse, siehe Definition weiter oben) traegt bereits ein eigenes
+   `margin-bottom:20px` fuer Kontexte, in denen Karten in einfachem
+   Block-Fluss untereinander stehen. Als Flex-Kind von
+   `.client-overview-layout__col` (gap:16px, siehe oben) addierte sich
+   dieses Margin ZUSAETZLICH zum Flex-`gap` - Flexbox-`gap` kollabiert
+   NICHT mit den Margins seiner Kinder. Gemessene Folge: 20px+16px=36px
+   tatsaechlicher Abstand statt der beabsichtigten 16px zwischen
+   Stammdaten/Schnellaktionen (links) bzw. Akten/Dokumente/Notizen
+   (rechts) - der Haupttreiber dafuer, dass die Schnellaktionen bei der
+   real gemessenen WebView2-CSS-Viewportgroesse (1536x841 bei 125%-
+   Windows-Skalierung, siehe PROJECT_STATE.md) ueber den sichtbaren
+   Bereich hinausragten. `gap` bleibt die einzige Abstandsquelle
+   innerhalb dieser Spalten - die geteilte `.instructions-panel`-
+   Basisklasse selbst bleibt UNVERAENDERT (wird auf ~14 anderen Seiten in
+   normalem Block-Fluss OHNE Flex-Gap-Wrapper verwendet, dort weiterhin
+   auf ihr eigenes Margin angewiesen). */
+.client-overview-layout__col > .instructions-panel {
+  margin-bottom: 0;
+}
+
+/* Karten-Kopfzeile (Icon+Titel links, Aktion rechts) - innerhalb der
+   bereits bestehenden, generischen `.instructions-panel`-Kartenhuelle
+   (siehe deren Definition weiter oben) wiederverwendet, keine neue
+   Kartenbasis. */
+.detail-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  /* 04.10., Owner-Direktive "MANDANTENDETAILSEITE: VISUELLE RESTARBEITEN
+     PRAEZISE ABSCHLIESSEN" §4: per echter GetWindowRect/GetClientRect-
+     Messung gegen die installierte Lexono.exe bestaetigt, dass diese
+     Maschine mit 125% Windows-Skalierung laeuft - der tatsaechliche
+     WebView2-Inhaltsbereich ist dadurch in CSS-Pixeln deutlich kleiner als
+     die nominale Fenstergroesse vermuten laesst (1920x1080 physisch ->
+     ca. 1536x841 CSS-Pixel bei maximiertem Fenster). Nur in diesem
+     seiteneigenen Verhaeltnis genutzt (Stammdaten/Schnellaktionen/Akten/
+     Dokumente/Notizen-Kartenkoepfe), 14px->10px spart 4px je Karte. */
+  margin-bottom: 10px;
+}
+
+.detail-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.detail-card__title .icon {
+  color: var(--brand-green);
+  width: 18px;
+  height: 18px;
+}
+
+/* Stammdaten-Zeilenraster - identisches Muster wie das Aufgaben-&-
+   Fristen-Detailpanel (`.task-detail-panel__fields`, app.css weiter
+   oben), hier bewusst eigenstaendig benannt/dupliziert statt page-
+   uebergreifend geteilt (gleiche, im Projekt etablierte Vorsicht wie bei
+   `_build_page_numbers` - ein Fehler in einer Karte darf die andere, be-
+   reits verifizierte Seite nie beeinflussen). */
+.client-stammdaten-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  /* 03.10., Owner-Direktive "VISUELLE PRAEZISIONSKORREKTUR MANDANTENDETAIL"
+     §5.3/5.4: per CDP-Messung (getBoundingClientRect) bestaetigt, dass die
+     Schnellaktionen-Kachelreihe bei typischen Fensterhoehen nur teilweise
+     sichtbar war, weil u. a. dieses (seiten-eigene, NICHT geteilte) Zeilen-
+     raster mit 9 Stammdaten-Zeilen mehr Hoehe brauchte als noetig. 12px->8px
+     spart ca. 32px ueber die 8 Zwischenraeume, ohne Lesbarkeit/Zeilenhoehe
+     selbst zu veraendern. */
+  row-gap: 8px;
+  column-gap: 10px;
+  font-size: 13.5px;
+}
+
+.client-stammdaten-grid__label {
+  color: var(--ink-500);
+}
+
+.client-stammdaten-grid__value {
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+}
+
+.client-stammdaten-grid__value a {
+  color: var(--accent-blue);
+}
+
+.client-stammdaten-grid__notes {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: var(--paper-100);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--ink-700);
+  white-space: pre-wrap;
+}
+
+/* Schnellaktionen - 2x2 Kachelraster, vier feste Farbvarianten (an der
+   Referenz orientiert: gruen/blau/lila/orange), dieselben Tint-Token wie
+   ueberall sonst im Projekt (siehe :root-Variablen). */
+.quick-action-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 20px;
+  /* Row-/Column-Gap getrennt (04.10., selbe Direktive): die horizontale
+     Kachelbreite (column-gap) bleibt bei 10px fuer lesbaren Abstand
+     zwischen den zwei Spalten, der vertikale row-gap zwischen den beiden
+     Kachelreihen traegt bei 1366×768 nichts zur Lesbarkeit bei und wird
+     reduziert - letzter kleiner, legitimer Beitrag, kein Symptom-Hack. */
+  column-gap: 10px;
+  row-gap: 4px;
+}
+
+/* ECHTER FUND (04.10., Owner-Direktive "MANDANTENDETAILSEITE: REFERENZ-
+   GETREUES LAYOUT OHNE SCROLLBEDARF HERSTELLEN"), per Bildausschnitt-
+   Vergleich mit `30_mandant_detail.png` bestaetigt: die Referenz zeigt
+   bei allen vier Kacheln eine HORIZONTALE Anordnung (Icon links, Label
+   rechts daneben vertikal zentriert, Label darf auf zwei Zeilen
+   umbrechen) - nicht die bisherige VERTIKALE Stapelung (Icon oben,
+   Label darunter). Die Stapelung war der eigentliche Grund fuer die
+   unnoetig hohen Kacheln (Icon-Hoehe + Gap + Textzeile(n) summierten
+   sich vertikal statt nebeneinander Platz zu teilen) - keine kosmetische
+   Nebensache, sondern eine echte, messbare Abweichung von der Referenz
+   UND der Haupttreiber des verbleibenden Platzproblems bei 1366×768. */
+.quick-action-tile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  /* 5px vertikal statt urspruenglich 14px (04.10., selbe Direktive,
+     verfeinert nach genauer Hoehenbilanz-Messung): horizontales Padding
+     unveraendert bei 14px (Klickziel-Breite/Lesbarkeit unberuehrt), nur
+     das vertikale Innenpolster - bei einer durch Icon(20px)/zweizeiligen
+     Text bereits gut gefuellten Kachel - weiter reduziert, bis die
+     gemessene Luecke bei 1366×768 vollstaendig geschlossen ist (mit
+     kleiner Sicherheitsmarge gegen Sub-Pixel-Rundung, nicht nur exakt
+     auf 0px austariert). */
+  padding: 5px 14px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  /* ECHTER FUND (04.10., per `getComputedStyle`-Messung bestaetigt): ohne
+     eigene Regel erbt dieses Element das globale `body { line-height:
+     1.5 }` (app.css Kopfbereich, von praktisch jedem Textelement im
+     Projekt geteilt) - fuer eine kompakte, zweizeilige UI-Beschriftung
+     unnoetig grosszuegig (18.75px Zeilenhoehe bei 12.5px Schrift). NUR
+     hier, nicht global, auf 1.3 reduziert (weiterhin komfortabel lesbar,
+     ueblicher Wert fuer kompakte UI-Labels) - betrifft ausschliesslich
+     die zweizeiligen Kacheln, da bei einzeiligen Kacheln ohnehin die
+     20px hohe Icon-Groesse die Kachelhoehe bestimmt (18.75px bzw. selbst
+     16.25px Zeilenhoehe liegt in beiden Faellen darunter). */
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  color: var(--ink-900);
+}
+
+.quick-action-tile .icon {
+  width: 20px;
+  height: 20px;
+  /* ohne dies schrumpft das Icon in der schmaleren Kachelbreite auf 0px
+     (derselbe Flexbox-`flex-shrink:1`-Fund wie bei `.tag__dot`, siehe
+     dortiger Kommentar fuer die volle Herleitung per `getComputedStyle`). */
+  flex-shrink: 0;
+}
+
+.quick-action-tile--green {
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+}
+
+.quick-action-tile--blue {
+  background: var(--accent-blue-tint);
+  color: var(--accent-blue);
+}
+
+.quick-action-tile--purple {
+  background: var(--accent-purple-tint);
+  color: var(--accent-purple);
+}
+
+.quick-action-tile--orange {
+  background: var(--accent-orange-tint);
+  color: var(--accent-orange);
+}
+
+/* Kompakte Vorschau-Tabellen (Akten/Dokumente) innerhalb der jeweiligen
+   Karte - nutzt die bereits bestehenden `.draft-table`/`.table-container`-
+   Klassen, hier nur mit etwas engerer Zeilenhoehe fuer den Karten-
+   Kontext. */
+.detail-card__table table {
+  /* ECHTER FUND (03.10., per Live-Screenshot bei 1366x768 gefunden): ohne
+     `table-layout:fixed` wuchs die Akten-/Dokumente-Mini-Tabelle in der
+     Uebersicht-Karte bei schmalerem Viewport ueber die Kartenbreite
+     hinaus - das bereits bestehende `.table-container{overflow-x:auto}`
+     (Sicherheitsnetz) sprang an und zeigte einen horizontalen
+     Scrollbalken (von der Direktive ausdruecklich zu vermeiden). Gleiche
+     Ursache/gleicher Fix wie zuvor bei der Aufgaben-&-Fristen-Tabelle. */
+  table-layout: fixed;
+  width: 100%;
+}
+
+.detail-card__table td,
+.detail-card__table th {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  overflow: hidden;
+}
+
+/* ECHTER FUND (04.10., Owner-Direktive "PRAEZISIONSAUFTRAG: MANDANTEN-
+   DETAILSEITE ANHAND DER REFERENZ FINAL OPTIMIEREN", per Screenshot-Zoom
+   bestaetigt): der Status-Badge ("abgeschlossen") der Akten-Mini-Tabelle
+   wurde durch das `overflow:hidden` der Zelle (oben) bei schmaler Status-
+   Spalte (18% von 1366px) mitten im Wort abgeschnitten, OHNE "…" -
+   genau das von einer frueheren Direktive ("AUFGABEN & FRISTEN")
+   ausdruecklich verbotene Ueberlagerungs-/Rohabschneide-Muster. Gleicher,
+   dort bereits bewaehrter Fix (`.priority-tag`/`.task-status-tag`:
+   max-width/overflow/text-overflow), hier NUR innerhalb dieser Tabelle
+   angewendet (`.tag` selbst ist eine global geteilte Basisklasse fuer
+   viele andere Kontexte - keine Aenderung an der Basisklasse noetig). */
+.detail-card__table .tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-card__cell-ellipsis {
+  display: block;
+  /* 100% statt eines festen Pixelwerts (03.10.) - die umgebende Zelle hat
+     durch `table-layout:fixed` (siehe `.detail-card__table table` oben)
+     bereits eine an der tatsaechlichen Viewport-/Kartenbreite bemessene
+     Breite; ein zusaetzlicher fester max-width-Wert koennte dem
+     widersprechen (zu breit auf kleinen, unnoetig schmal auf grossen
+     Viewports). */
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-card__doc-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.detail-card__footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-green);
+  text-decoration: none;
+}
+
+/* 04.10., Owner-Direktive "MANDANTENDETAILSEITE: VISUELLE RESTARBEITEN
+   PRAEZISE ABSCHLIESSEN" §Prioritaet 5: die geteilte `.empty-state`-Klasse
+   (padding: 60px 24px, siehe Definition weiter oben) ist fuer eigene,
+   dedizierte Leerzustand-Seiten/-Tabs gedacht (z. B. die vollen Akten-/
+   Dokumente-/Notizen-Tab-Panels weiter unten auf dieser selben Seite) -
+   innerhalb der kompakten Uebersicht-Mini-Karten (Akten/Dokumente/Notizen
+   im Zweispalten-Layout) wirkte dasselbe Padding unverhaeltnismaessig
+   hoch (vgl. Owner-Screenshot: leere Dokumentenkarte). NUR hier ueber-
+   schrieben (Selektor auf `.client-overview-layout` beschraenkt) - die
+   geteilte Basisklasse und ihre Nutzung auf den dedizierten Tab-Panels
+   bleiben unveraendert. */
+.client-overview-layout .empty-state {
+  padding: 24px;
+}
+
+.detail-card__footer-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {
-  .client-detail-grid {
+  .client-overview-layout {
     grid-template-columns: 1fr;
   }
 }
+
+.matters-row-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-300);
+}
+
+.matters-row-icon .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Kontrolliertes Umbrechen des Aktenzeichens (03.10., Owner-Direktive
+   "AKTENUEBERSICHT FINALISIEREN UND PRODUKTIONSREIF VERIFIZIEREN" §4) -
+   `word-break:keep-all` unterdrueckt JEDEN automatisch-inferierten
+   Umbruch, laesst aber die vom Server gezielt eingefuegten `<wbr>`-
+   Elemente (siehe `_insert_soft_breaks` in matters_router.py) als
+   explizite, erlaubte Umbruchstellen unberuehrt bestehen - ohne das
+   brach der Browser bei schmalen Spalten teils mitten in der Jahres-/
+   laufenden Nummer um (ECHTER FUND: "Aktenzeichen werden teilweise
+   ungünstig umgebrochen"). `flex:1; min-width:0` (03.10.) - macht den
+   Text zu einem EIGENEN Flex-Item neben dem Symbol (siehe
+   `.matters-reference-cell`): als blockifiziertes Flex-Item bleibt der
+   gesamte `<wbr>`-gesteuerte Text-Inhalt INNERHALB dieser einen Box -
+   die fruehere Sorge "Text+`<wbr>` direkt in einem Flex-Container wird
+   in anonyme Flex-Items zerlegt" betrifft nur Text-Knoten, die OHNE
+   umschliessendes Element direkt im Flex-Container liegen, nicht ein
+   eigenes Kind-Element wie dieses. `min-width:0` ist zwingend (sonst
+   verhindert die intrinsische Breite des laengsten unzerbrochenen
+   Textstuecks das Schrumpfen des Flex-Items und damit das Umbrechen
+   ueberhaupt - derselbe Flexbox-Grundsatz wie an anderen Stellen im
+   Projekt dokumentiert). */
+.matters-reference {
+  flex: 1;
+  min-width: 0;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+/* --- Mandanten-Detailansicht ---
+   ROOT-CAUSE-FIX (03.10., Owner-Direktive "INDIVIDUELLE
+   MANDANTENDETAILSEITE"): dieser Block definierte `.client-detail-
+   header`/`.client-detail-header__meta` fuer das ALTE, inzwischen
+   vollstaendig ersetzte Seitenlayout (19.09., einspaltige Meta-Zeilen-
+   Liste) - per echtem Screenshot gefunden: die NEUEN, gleichnamigen
+   Regeln weiter oben in dieser Datei (Abschnitt "Mandanten-Detailseite -
+   Uebersicht-Tab") wurden dadurch von DIESEM, spaeter im Stylesheet
+   stehenden (und damit bei gleicher Spezifitaet gewinnenden) Block
+   ueberschrieben - `flex-direction:column` zerlegte die eigentlich
+   einzeilige Kopf-Metazeile ("Privatperson | Mandantennummer: ... |
+   Seit ...") sichtbar in mehrere Zeilen. `.client-detail-header__meta-
+   row`/`.client-detail-grid` werden von KEINEM Template mehr referenziert
+   (gegengeprueft) - komplett entfernt statt eines zusaetzlichen
+   Spezifitaets-Overrides, das den eigentlichen Namenskonflikt nur
+   verschleiert haette. */
 
 .client-ai-cta {
   display: flex;
@@ -3570,40 +6403,58 @@ body::-webkit-scrollbar-thumb:hover,
    Universal Command Bar (Strg+K/⌘K, 20.08., app/web/global_search_router.py)
    ========================================================================== */
 
-.sidebar__search-trigger {
+/* .global-header__search (25.09., vorher .sidebar__search-trigger in der
+   Sidebar - siehe Umzug in die neue globale Kopfzeile, base.html/§5/§6
+   der Owner-Direktive "POSTEINGANG / STRICT REFERENCE IMPLEMENTATION").
+   Bewusst weiterhin ein <button>, kein echtes <input> - oeffnet per Klick
+   dasselbe bestehende #command-bar-modal mit dem echten Sucheingabefeld
+   darin (keine zweite Sucharchitektur, nur Optik/Position an die Referenz
+   angeglichen: ein breites, zentriertes Suchfeld mit sichtbarem
+   Platzhaltertext statt einer schmalen Sidebar-Pille). */
+.global-header__search-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.global-header__search {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: calc(100% - 32px);
-  margin: 0 16px 16px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  width: 100%;
+  max-width: 640px;
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--paper-line);
   background: var(--paper-100);
   color: var(--ink-500);
   font-family: var(--font-body);
-  font-size: 12.5px;
+  font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s var(--ease-elevate), background-color 0.15s var(--ease-elevate);
 }
 
-.sidebar__search-trigger:hover {
+.global-header__search:hover {
   border-color: var(--ink-300);
   background: var(--paper-000);
 }
 
-.sidebar__search-trigger .icon {
-  width: 15px;
-  height: 15px;
+.global-header__search .icon {
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
 
-.sidebar__search-trigger span:nth-child(2) {
+.global-header__search span:nth-child(2) {
   flex: 1;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sidebar__search-trigger-kbd {
+.global-header__search-kbd {
   flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -3612,39 +6463,6 @@ body::-webkit-scrollbar-thumb:hover,
   border: 1px solid var(--paper-line);
   border-radius: var(--radius-sm);
   padding: 1px 6px;
-}
-
-/* "Neuen Chat starten" (Referenzbild, 01.09.) - eigenstaendiger,
-   markenfarbener CTA-Button unterhalb der Suche, fuehrt zur leeren
-   Chat-Startansicht (GET /dashboard/chat ohne conversation_id). */
-.sidebar__new-chat {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: calc(100% - 32px);
-  margin: 0 16px 16px;
-  padding: 9px 10px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: var(--brand-green);
-  color: var(--paper-000);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.15s var(--ease-elevate);
-}
-
-.sidebar__new-chat:hover {
-  background: var(--brand-green-dark);
-}
-
-.sidebar__new-chat .icon {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
 }
 
 .command-bar-modal {
@@ -3925,11 +6743,18 @@ body::-webkit-scrollbar-thumb:hover,
    ========================================================================== */
 
 .chat-shell {
+  /* height/max-height:calc(100vh - 8px) entfernt (25.09., Root-Cause-
+     Fund .app-shell/.main): dieser feste Viewport-Bezug ignorierte die
+     36px eigene Titelleiste (has-app-titlebar) und liess .chat-shell im
+     gebuendelten Windows-Fenster real 28px zu hoch werden - dadurch
+     bekam .main (bzw. vorher: die ganze Seite) genau dort einen
+     ueberfluessigen Scrollbalken. Jetzt fuellt .chat-shell als
+     flex:1-Kind von .main (das jetzt selbst korrekt hoehen-gedeckelt
+     ist, siehe dort) automatisch die tatsaechlich verfuegbare Hoehe
+     aus - unabhaengig davon, ob die Titelleiste aktiv ist. */
   flex: 1;
   display: flex;
   min-height: 0;
-  height: calc(100vh - 8px);
-  max-height: calc(100vh - 8px);
 }
 
 /* Standardzustand: eingeklappt, nimmt WEDER horizontal noch vertikal
@@ -4095,6 +6920,206 @@ body::-webkit-scrollbar-thumb:hover,
   padding: 12px;
   font-size: 12.5px;
   color: var(--ink-500);
+}
+
+/* Chat umbenennen / Mehrfachauswahl (06.10., Owner-Direktive "CHAT &
+   CHAT-HISTORY PROFESSIONAL UX PASS" §13-§21) - wiederverwendet
+   ausschliesslich bereits bestehende Bausteine (`.row-menu*`,
+   `.btn`/`.btn--primary`, bestehende Farbvariablen); hier nur das, was
+   fuer DIESE Sidebar-Zeile neu ist (Checkbox-Platz, Menue-Zelle,
+   Umbenennen-Input, Auswahlleiste). */
+.chat-conversations__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.chat-conversations__select-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.chat-conversations__select-toggle:hover,
+.chat-conversations__select-toggle--active {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.chat-conversations__select-toggle .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Checkbox bleibt bis zum Auswahlmodus unsichtbar UND ausserhalb des
+   Tab-Fokus (`width:0` statt nur `display:none`, damit sich am
+   `.chat-conversations__row`-Flex-Layout beim Ein-/Ausblenden nichts
+   ruckartig verschiebt - dieselbe Technik wie der bereits bestehende
+   dezente Papierkorb-Button, nur ueber Breite statt Opacity). */
+.chat-conversations__checkbox {
+  flex-shrink: 0;
+  width: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: width 0.12s ease, opacity 0.12s ease, margin 0.12s ease;
+}
+
+.chat-conversations--selecting .chat-conversations__checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 2px;
+  opacity: 1;
+  pointer-events: auto;
+  align-self: center;
+}
+
+/* Waehrend des Auswahlmodus uebernimmt ein Klick auf die Zeile das
+   Auswaehlen statt zu navigieren (JS faengt den Klick ab) - das
+   Drei-Punkte-Menue haette in diesem Zustand keine sinnvolle Funktion
+   (Umbenennen/Loeschen einer EINZELNEN Zeile, waehrend gerade mehrere
+   ausgewaehlt werden koennen) und wird deshalb ausgeblendet statt
+   verwirrend parallel angeboten. */
+.chat-conversations--selecting .chat-conversations__menu-cell {
+  display: none;
+}
+
+.chat-conversations__menu-cell {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.chat-conversations__menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 4px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--ink-500);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.chat-conversations__row:hover .chat-conversations__menu-trigger,
+.chat-conversations__menu-trigger:focus-visible {
+  opacity: 1;
+}
+
+.chat-conversations__menu-trigger:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.chat-conversations__menu-trigger .icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Inline-Umbenennen (§14) - ersetzt `.chat-conversations__item-title`
+   visuell 1:1 (gleiche Schriftgroesse/-staerke), kein Sprung im
+   Zeilenlayout beim Wechsel Anzeige <-> Eingabe. */
+.chat-conversations__rename-input {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-900);
+  background: var(--paper-000);
+  border: 1px solid var(--seal-green);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+  margin: -2px -4px;
+}
+
+.chat-conversations__rename-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Auswahl-Aktionsleiste (§18/§21) - am unteren Rand der Liste, nur im
+   Auswahlmodus sichtbar. ECHTER FUND (06.10., Live-CDP-Verifikation mit
+   tatsaechlich geoeffnetem Historie-Flyout): ":not([hidden])" ist hier
+   zwingend noetig, nicht nur Stil - ohne den Zusatz gewinnt diese
+   Autoren-Regel (gleiche Spezifitaet wie das UA-Attribut-Selektor
+   "[hidden]{display:none}", aber spaeter im Stylesheet) und die Leiste war
+   dadurch auch OHNE aktiven Auswahlmodus permanent sichtbar (das bereits
+   bekannte [hidden]-Spezifitaets-Bugmuster aus fruiheren Direktiven, siehe
+   z.B. .chat-composer__row in diesem File). */
+.chat-conversations__selection-bar:not([hidden]) {
+  flex-shrink: 0;
+  display: flex;
+  /* ECHTER FUND (06.10., Live-CDP-Verifikation, echte Pixel-Messung bei
+     geoeffnetem Historie-Flyout): in EINER Zeile ("0 ausgewaehlt" +
+     "Abbrechen" + "Loeschen") ragte der Loeschen-Button bei der reellen
+     Flyout-Breite (200-240px, siehe .chat-shell--history-open) ueber den
+     rechten Rand hinaus und wurde vom `overflow: hidden` der Liste
+     abgeschnitten (nur noch "L" sichtbar). Zwei Zeilen (Zaehler oben,
+     beide Aktionen darunter je hälftig breit) beheben das unabhaengig
+     von der genauen Spaltenbreite. */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--paper-line);
+  background: var(--paper-100);
+  font-size: 12.5px;
+  color: var(--ink-700);
+}
+
+.chat-conversations__selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-conversations__selection-actions .btn {
+  /* ECHTER FUND, Fortsetzung: `flex: 1` allein genuegte nicht - Flex-Items
+     schrumpfen per Spezifikation standardmaessig nicht unter ihre eigene
+     Inhaltsbreite (`min-width: auto`). Bei der schmalsten geforderten
+     Spaltenbreite (200px, 1366x768, siehe .chat-shell--history-open
+     @media max-width:1440px) ragte "Löschen" dadurch weiterhin ueber den
+     Rand. `min-width: 0` erlaubt das noetige Schrumpfen, das kompaktere
+     Padding/Font schafft dafuer genug Platz, ohne dass Text abgeschnitten
+     werden muss. */
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  padding: 7px 8px;
+  font-size: 12px;
+}
+
+.chat-conversations__selection-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--wax-red);
+  border-color: var(--wax-red);
+}
+
+.chat-conversations__selection-delete .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-conversations__selection-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--ink-500);
+  border-color: var(--paper-line);
 }
 
 /* --- Dokument-Workspace (Masterprompt V2, Task #62) ---
@@ -4451,6 +7476,43 @@ body::-webkit-scrollbar-thumb:hover,
   width: 100%;
 }
 
+.chat-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* "Kontext entfernen" (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+   FLOW PASS" §9/TEST 4). */
+.chat-matter-remove {
+  flex-shrink: 0;
+}
+
+.chat-matter-remove__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-500);
+  cursor: pointer;
+}
+
+.chat-matter-remove__btn:hover {
+  border-color: var(--wax-red);
+  color: var(--wax-red);
+}
+
+.chat-matter-remove__btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
 .chat-panel__header-title {
   display: flex;
   align-items: center;
@@ -4603,8 +7665,13 @@ body::-webkit-scrollbar-thumb:hover,
    gewinnt bei gleicher Spezifitaet die spaeter im Stylesheet stehende
    Basisregel und die Toenung blieb unsichtbar (reproduziert: Karten
    blieben trotz gesetzter Klasse weiss statt farbig getoent). */
+/* 26.09., "VISUELLE DESIGN-SYSTEM-KONSISTENZ": vorher an --seal-green-tint
+   gebunden (Navy-Tinte trotz des Klassennamens "green", siehe Kommentar
+   bei .chat-quick-action__icon--green weiter unten fuer die urspruengliche,
+   jetzt ueberholte Begruendung) - jetzt echtes Lexono-Gruen, konsistent
+   mit dem Klassennamen UND der neuen Primaerfarben-Vorgabe. */
 .chat-quick-action.chat-quick-action--tint-green {
-  background: var(--seal-green-tint);
+  background: var(--brand-green-tint);
 }
 
 .chat-quick-action.chat-quick-action--tint-blue {
@@ -4684,10 +7751,13 @@ body::-webkit-scrollbar-thumb:hover,
 
 /* Mehrfarbige Icon-Badges (01.09.) statt eines einzelnen einfarbigen
    Icons - eine kompakte, gedeckte Farbmarkierung pro Schnellaktion statt
-   vier identisch eingefaerbter Icons. "--green" bindet bewusst weiterhin
-   an --seal-green/-tint (die Primaerfarbe), die drei anderen nutzen
-   eigenstaendige, von der Primaerfarbe unabhaengige Akzenttoene - siehe
-   Variablendefinition oben im :root-Block. */
+   vier identisch eingefaerbter Icons. "--green" band frueher bewusst an
+   --seal-green/-tint (damals "die Primaerfarbe", tatsaechlich Navy) - seit
+   26.09. ("VISUELLE DESIGN-SYSTEM-KONSISTENZ") an --brand-green/-tint
+   (echtes Gruen), da die Primaerfarbe jetzt konsequent echtes Lexono-Gruen
+   ist, nicht mehr Navy. Die drei anderen nutzen weiterhin eigenstaendige,
+   von der Primaerfarbe unabhaengige Akzenttoene - siehe Variablendefinition
+   oben im :root-Block. */
 .chat-quick-action__icon {
   display: flex;
   align-items: center;
@@ -4704,8 +7774,8 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-quick-action__icon--green {
-  background: var(--seal-green-tint);
-  color: var(--seal-green);
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
 }
 
 .chat-quick-action__icon--blue {
@@ -4881,8 +7951,85 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 14.5px;
   line-height: 1.7;
   color: var(--ink-900);
-  white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+/* Markdown-Rendering (05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY
+   PASS" Phase D) - ersetzt das vorherige `white-space:pre-wrap` auf reinem
+   Text: `message.content` wird jetzt ueber den `chat_markdown`-Filter
+   (app/chat/markdown_render.py) zu echtem, sicherheitsbereinigtem HTML.
+   Eigene Abstands-/Listenregeln noetig, da das App-weite CSS keine
+   generischen p/ul/ol/h1-4-Regeln definiert (bisher nirgends im Chat
+   gebraucht). Erster/letzter Block ohne Aussenabstand, damit die
+   Sprechblasen-Polsterung (.chat-message--user .chat-message__text
+   padding) nicht durch zusaetzliche Absatz-Margins verdoppelt wird. */
+.chat-message__text--markdown > :first-child {
+  margin-top: 0;
+}
+
+.chat-message__text--markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-message__text--markdown p {
+  margin: 0 0 10px;
+}
+
+.chat-message__text--markdown ul,
+.chat-message__text--markdown ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.chat-message__text--markdown li {
+  margin-bottom: 3px;
+}
+
+.chat-message__text--markdown h1,
+.chat-message__text--markdown h2,
+.chat-message__text--markdown h3,
+.chat-message__text--markdown h4 {
+  margin: 16px 0 8px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink-900);
+}
+
+.chat-message__text--markdown h1 { font-size: 18px; }
+.chat-message__text--markdown h2 { font-size: 16px; }
+.chat-message__text--markdown h3,
+.chat-message__text--markdown h4 { font-size: 14.5px; }
+
+.chat-message__text--markdown code {
+  font-family: var(--font-mono, ui-monospace, "Cascadia Code", Consolas, monospace);
+  font-size: 0.92em;
+  background: var(--paper-200);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.chat-message__text--markdown pre {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  background: var(--paper-200);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+
+.chat-message__text--markdown pre code {
+  background: none;
+  padding: 0;
+}
+
+.chat-message__text--markdown blockquote {
+  margin: 0 0 10px;
+  padding-left: 12px;
+  border-left: 3px solid var(--paper-line);
+  color: var(--ink-700);
+}
+
+.chat-message__text--markdown a {
+  color: var(--brand-green-dark);
 }
 
 /* ECHTER NUTZERFEEDBACK-FUND (13.09.): die vorherige gerahmte/beschattete
@@ -4961,17 +8108,89 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--ink-300);
 }
 
-.chat-message__open-editor {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-500);
-  text-decoration: none;
-  margin-left: auto;
+/* Schriftsatz-Dokument-Panel (Owner-Direktive "Dokument-Upload ->
+   Schriftsatz -> Dokument-Panel -> Editor", /ux-panel//design-system):
+   macht einen echten, im Chat erzeugten Schriftsatz als eigenstaendiges,
+   erkennbares Dokument sichtbar - bewusst eine Karte MIT Rahmen/
+   Hintergrund (anders als die absichtlich kartenlose normale
+   .chat-message__text fuer gewoehnliche KI-Antworten, siehe Kommentar
+   dort), da hier tatsaechlich ein Dokument entstanden ist, keine normale
+   Unterhaltungsantwort. Gleiches Kartenmuster wie .chat-sources-card
+   (Rahmen/Radius/Hintergrund), dieselbe echte --brand-green-Akzentfarbe
+   wie jede andere primaere interaktive Flaeche im Produkt. */
+.chat-document-panel {
+  margin-top: 4px;
+  width: 100%;
+  max-width: 640px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  background: var(--paper-000);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
+  overflow: hidden;
 }
 
-.chat-message__open-editor:hover {
-  color: var(--seal-green-dark);
-  text-decoration: underline;
+.chat-document-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--paper-line);
+  background: var(--brand-green-tint);
+}
+
+.chat-document-panel__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-green-dark);
+}
+
+.chat-document-panel__label .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.chat-document-panel__copy-btn {
+  margin: 0;
+}
+
+.chat-document-panel__title {
+  padding: 12px 16px 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink-900);
+  word-wrap: break-word;
+}
+
+/* Begrenzte Vorschauhoehe mit eigenem Scrollbereich (/ux-long-content) -
+   ein sehr langer Schriftsatz darf den Chat-Verlauf nicht dominieren; der
+   vollstaendige Text bleibt dabei unveraendert im DOM (Kopieren/Editor
+   erhalten immer den vollstaendigen Inhalt), nur die SICHTBARE Hoehe ist
+   begrenzt. */
+.chat-document-panel__content {
+  padding: 10px 16px 14px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.chat-document-panel__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 14px;
+  border-top: 1px solid var(--paper-line);
+  background: var(--paper-100);
+}
+
+.chat-document-panel__editor-btn {
+  text-decoration: none;
+}
+
+.chat-document-panel__editor-btn .icon {
+  width: 13px;
+  height: 13px;
 }
 
 /* "Quellen & Verweise"-Karte (Phase 4, 13.09.) - AUSSCHLIESSLICH reale,
@@ -5059,6 +8278,35 @@ body::-webkit-scrollbar-thumb:hover,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Dokumentvorschau im Chat (05.10., Owner-Direktive "ARCHITECTURE &
+   PRODUCT FLOW PASS" §19/§20): echtes Thumbnail statt nur Icon, wo
+   verfuegbar (siehe chat.html "has_thumbnail"). */
+.chat-attachment-chip--thumb {
+  padding-left: 4px;
+}
+
+.chat-attachment-chip__thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--paper-line);
+  flex-shrink: 0;
+  background: var(--paper);
+}
+
+.chat-attachment-chip__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.chat-attachment-chip__size {
+  font-size: 11px;
+  color: var(--ink-500);
 }
 
 .chat-attachment-status {
@@ -5181,6 +8429,203 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-composer__mic-btn--active {
   background: var(--wax-red);
   color: var(--paper-000);
+  animation: chat-mic-pulse 1.4s ease-in-out infinite;
+}
+
+.chat-composer__mic-btn--busy {
+  background: var(--paper-200);
+  color: var(--ink-500);
+  cursor: default;
+}
+
+@keyframes chat-mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(183, 44, 44, 0.35); }
+  50% { box-shadow: 0 0 0 5px rgba(183, 44, 44, 0); }
+}
+
+/* Spracheingabe-Statuszeile (05.10., Owner-Direktive "ARCHITECTURE &
+   PRODUCT FLOW PASS" §25): macht Idle/Recording/Transcribing/Error jeweils
+   sichtbar erkennbar statt eines stillen Buttons. */
+.chat-composer__speech-status {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.chat-composer__speech-status--recording {
+  color: var(--wax-red);
+  font-weight: 500;
+}
+
+.chat-composer__speech-status--busy {
+  color: var(--ink-500);
+}
+
+.chat-composer__speech-status--error {
+  color: var(--wax-red);
+  font-weight: 500;
+}
+
+/* Aufnahme-UX im Chat-Composer (06.10., Owner-Direktive "SPRACHEINGABE IM
+   CHAT: VOLLSTAENDIGE RECORDING- UND SEND-UX") - ersetzt waehrend
+   RECORDING sichtbar `.chat-composer__normal-controls` INNERHALB
+   derselben `.chat-composer__row`-Huelle (keine zusaetzliche Karte, keine
+   zusaetzliche Hoehe - Direktive §13). */
+/* ECHTER FUND (live per CDP reproduziert, 06.10.): `display: flex`
+   bedingungslos auf der Klasse haette - wie bereits bei
+   `.chat-dropzone-hint` dokumentiert (siehe dort) - das `[hidden]`-
+   Attribut ueberschrieben, da eine Autoren-Regel mit gleicher Spezifitaet
+   IMMER vor der Browser-eigenen `[hidden]{display:none}`-Standardregel
+   gewinnt. Ohne `:not([hidden])` waeren bei RECORDING BEIDE Zeilen
+   (normale Steuerelemente UND Aufnahme-Zeile) gleichzeitig sichtbar
+   gewesen, uebereinandergelegt - genau das live beobachtete Symptom.
+   Gleiches Muster wie dort: `display` nur fuer den sichtbaren Fall. */
+.chat-composer__normal-controls:not([hidden]) {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-composer__recording:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  /* Gleiche Innenhoehe wie das Eingabefeld (padding 8px 0 + line-height
+     1.55 bei 15px) - die Aufnahme-Zeile darf die Composer-Hoehe nicht
+     veraendern. */
+  height: 36px;
+}
+
+.chat-composer__cancel-btn,
+.chat-composer__stop-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.1s var(--ease-elevate);
+}
+
+.chat-composer__cancel-btn {
+  background: transparent;
+  color: var(--ink-500);
+}
+
+.chat-composer__cancel-btn:hover {
+  background: var(--paper-200);
+  color: var(--wax-red);
+}
+
+.chat-composer__stop-btn {
+  background: var(--wax-red);
+  color: var(--paper-000);
+}
+
+.chat-composer__stop-btn:hover {
+  opacity: 0.88;
+}
+
+.chat-composer__cancel-btn:active,
+.chat-composer__stop-btn:active {
+  transform: scale(0.94);
+}
+
+.chat-composer__waveform {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--paper-100);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.chat-composer__waveform canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.chat-composer__recording-time {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-500);
+  min-width: 2.6em;
+  text-align: center;
+}
+
+/* TRANSCRIBING-Zeile (06.10., Owner-Direktive "SPEECH COMPOSER FINAL UX
+   PASS" §8-§11) - dritte, zur Aufnahme-Zeile analoge Alternative
+   innerhalb derselben `.chat-composer__row`-Huelle (gleiches
+   `:not([hidden])`-Muster wie `.chat-composer__normal-controls`/
+   `.chat-composer__recording` oben, aus demselben bereits dokumentierten
+   Grund: eine bedingungslose `display`-Regel wuerde das `[hidden]`-
+   Attribut ueberschreiben). */
+.chat-composer__transcribing:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+
+.chat-composer__transcribing-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--ink-500);
+}
+
+/* Bewusst NICHT `.btn--ai-loading .btn__spinner` direkt im Markup
+   wiederverwendet (dessen Button-Cursor-/Opacity-Semantik passt nicht zu
+   diesem reinen Status-Element) - stattdessen dieselbe bereits
+   bestehende Animation (`ai-loading-pulse`, siehe `app_ai_loading.js`-
+   Kommentar weiter oben in dieser Datei) auf eine eigene, gleich
+   aussehende Klasse angewendet: echte Wiederverwendung des vorhandenen
+   Lade-Stils (§11 "bevorzugt vorhandene Loading-/Spinner-Stile"), ohne
+   fremde Button-Semantik auf ein Span zu uebertragen. Gleiche Groesse wie
+   der bisherige Stop-Button (36x36) und an derselben Stelle (rechts) -
+   §10 "STOP-POSITION -> SPINNER". */
+.chat-composer__transcribing-spinner {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: var(--ink-500);
+}
+
+.chat-composer__transcribing-spinner span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+  animation: ai-loading-pulse 1.2s ease-in-out infinite;
+}
+
+.chat-composer__transcribing-spinner span:nth-child(2) { animation-delay: 0.2s; }
+.chat-composer__transcribing-spinner span:nth-child(3) { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-composer__transcribing-spinner span {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .chat-dropzone-hint {
@@ -5214,13 +8659,18 @@ body::-webkit-scrollbar-thumb:hover,
   height: 16px;
 }
 
+/* Chat-Senden-Button (26.09., "VISUELLE DESIGN-SYSTEM-KONSISTENZ" -
+   explizit als Beispiel genannt: "auch wenn Enter zum Absenden verwendet
+   wird, muss der sichtbare Send-Button eindeutig als Lexono-Primary-
+   Action erkennbar sein"). Vorher --seal-green (Navy, siehe .btn--primary
+   oben fuer die volle Begruendung). */
 .chat-composer__send-btn {
-  background: var(--seal-green);
+  background: var(--brand-green);
   color: var(--paper-000);
 }
 
 .chat-composer__send-btn:hover {
-  background: var(--seal-green-dark);
+  background: var(--brand-green-dark);
 }
 
 .chat-composer__send-btn:disabled,
@@ -5398,6 +8848,27 @@ body::-webkit-scrollbar-thumb:hover,
   font: inherit;
 }
 
+/* Gruppentrenner + destruktive Variante (27.09., Owner-Direktive "AKTEN
+   STARTSEITE - REFERENCE-DRIVEN UI RECONSTRUCTION" §9) - die Referenz
+   gruppiert das "..."-Menue visuell (Trennlinien zwischen
+   Bearbeiten-Aktionen/Chat/Archivieren) statt einer einzigen
+   ununterbrochenen Liste. */
+.row-menu__divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--paper-line);
+  border: none;
+}
+
+.row-menu__item--danger {
+  color: #b3261e;
+}
+
+.row-menu__item--danger:hover {
+  background: #fdecea;
+  color: #8c1d16;
+}
+
 /* Akte-Detail-Tabs (19.09., UI/UX-Referenzabgleich, siehe
    matter_detail.html für die volle Begründung). Bewusst KEINE eigene
    `display`-Eigenschaft auf `.tab-panel` (siehe Kommentar dort) - das
@@ -5432,6 +8903,15 @@ body::-webkit-scrollbar-thumb:hover,
 .tab-nav__item--active {
   color: var(--brand-green);
   border-bottom-color: var(--brand-green);
+}
+
+/* "Kalender"-Tab auf der Aufgaben-&-Fristen-Seite (03.10.): es gibt keine
+   Kalenderansicht dahinter - bewusst als nicht interaktives `<span>` mit
+   dieser Klasse statt eines funktionslosen Links (Direktive §3.B: "keine
+   bloßen Attrappen fuer Ansichten, die fachlich noch nicht funktionieren"). */
+.tab-nav__item--disabled {
+  cursor: not-allowed;
+  color: var(--ink-300);
 }
 
 .matter-overview-stats {
@@ -5469,4 +8949,901 @@ body::-webkit-scrollbar-thumb:hover,
 .matter-overview-stats__label {
   font-size: 12.5px;
   color: var(--ink-500);
+}
+
+/* ==========================================================================
+   Kanzleiwissen: Kategorie-Navigation + Rechtsquellen-Manager (26.09.,
+   Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION",
+   Referenzabgleich 43_Kanzleiwissen_Gesetze.png)
+   ========================================================================== */
+
+.knowledge-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.knowledge-category-card {
+  flex: 1 1 130px;
+  min-width: 120px;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--ink-900);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-elevate), box-shadow 0.15s var(--ease-elevate);
+}
+
+.knowledge-category-card:hover {
+  border-color: var(--seal-green);
+  box-shadow: var(--shadow-sm);
+}
+
+.knowledge-category-card--active {
+  border-color: var(--brand-green);
+  background: var(--brand-green-tint);
+}
+
+.knowledge-category-card__icon {
+  width: 22px;
+  height: 22px;
+  color: var(--ink-700);
+}
+
+.knowledge-category-card--active .knowledge-category-card__icon {
+  color: var(--brand-green-dark);
+}
+
+.knowledge-category-card__title {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.knowledge-category-card__count {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* --- Gesetze & Normen: Tabelle --- */
+
+.law-catalog-table th {
+  white-space: nowrap;
+  /* Referenzabgleich (26.09., P3 Typografie): Referenz zeigt Spaltentitel
+     in Satzschrift ("Kürzel", "Lokal verfügbar"), nicht in Versalien wie
+     das generische .draft-table - nur hier ueberschrieben, keine
+     Aenderung an .draft-table selbst (von vielen anderen Tabellen in der
+     App mitgenutzt, siehe knowledge_panel.html). */
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Schmaleres horizontales Zellenpolster als das generische .draft-table
+   (16px je Seite): bei sechs Spalten + rechter Infokarte reicht das bei
+   kleineren Desktop-Breiten (1280x720, Referenzabgleich §21) sonst nicht
+   fuer die letzte Spalte "Lokal verfuegbar" - nur hier ueberschrieben. */
+.law-catalog-table th,
+.law-catalog-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.law-catalog-table td {
+  vertical-align: middle;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.law-catalog-table__row-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--ink-500);
+  margin-right: 8px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Kurze, kategoriespezifische Erklaerung unter Titel/Untertitel (26.09.,
+   Referenzabgleich "REFERENCE-MATCH / PRODUCT-COMPLETION PASS" §6) -
+   eigene volle-Breite-Zeile unterhalb von `.topbar__icon-row`, damit sie
+   bei laengeren Texten nicht mit der rechts stehenden Suche kollidiert. */
+.topbar__description {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  line-height: 1.5;
+  margin: 8px 0 0;
+  max-width: 720px;
+}
+
+.law-catalog-table__title {
+  font-weight: 600;
+}
+
+/* --- Status-Badges (installiert/nicht installiert/Download/Fehler) ---
+   Referenzabgleich (26.09., "REFERENCE-MATCH / PRODUCT-COMPLETION PASS"
+   §P3): in der Referenz sind die Status-Werte flacher Text mit farbigem
+   Punkt statt einer vollflaechigen Pill-Badge - nur hier ueberschrieben,
+   da diese vier Modifier-Klassen ausschliesslich in law_catalog_row.html
+   verwendet werden (siehe Grep-Check), also keine Breitenwirkung auf
+   andere .tag-Badges (Posteingang/Akten etc.) im Rest der App. */
+.tag--installed,
+.tag--not-installed,
+.tag--downloading,
+.tag--law-error {
+  background: transparent;
+  border-color: transparent;
+  padding: 3px 0;
+}
+
+.tag--installed {
+  color: var(--brand-green-dark);
+}
+
+.tag--not-installed {
+  color: var(--ink-500);
+}
+
+.tag--downloading {
+  color: var(--accent-blue);
+}
+
+.tag--law-error {
+  color: var(--wax-red);
+}
+
+/* --- Download-Fortschritt --- */
+
+.law-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 110px;
+}
+
+.law-progress__label {
+  font-size: 11px;
+  color: var(--ink-500);
+}
+
+.law-progress__track {
+  width: 100%;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-200);
+  overflow: hidden;
+}
+
+.law-progress__fill {
+  height: 100%;
+  background: var(--accent-blue);
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+
+.law-error-retry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.law-error-retry__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--wax-red);
+  background: none;
+  border: 1px solid var(--wax-red);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.law-error-retry__btn:hover {
+  background: var(--wax-red-tint);
+}
+
+.law-error-retry__btn .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* --- Toggle-Switch (26.09., Direktive §24: "OFF: grau ... ON: Lexono-Gruen") --- */
+
+.law-toggle-form {
+  margin: 0;
+  display: inline-flex;
+}
+
+.law-toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: #cbd2d9;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s var(--ease-elevate);
+}
+
+.law-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper-000);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s var(--ease-elevate);
+}
+
+.law-toggle--on {
+  background: var(--brand-green);
+}
+
+.law-toggle--on::after {
+  transform: translateX(18px);
+}
+
+.law-toggle--busy {
+  background: var(--accent-blue);
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.law-toggle--error {
+  background: var(--wax-red);
+}
+
+.law-toggle:disabled {
+  cursor: not-allowed;
+  /* 06.10., Owner-Direktive "SETTINGS -> E-MAIL": ein deaktivierter
+     Schalter (z. B. "Automatische Synchronisation" ohne verbundenes
+     Postfach) darf nicht wie ein aktiver gruener Schalter aussehen, nur
+     weil der zugrunde liegende Wert "true" ist - sonst liesse sich leicht
+     "Synchronisation aktiv" missverstehen, obwohl mangels Verbindung
+     nichts synchronisiert werden kann. */
+  opacity: 0.5;
+}
+
+/* --- Automatisierte Aktualisierung (03.10., Owner-Direktive "RELIABLE
+   LEGAL KNOWLEDGE UPDATES") --- */
+
+.tag--update-available {
+  background: transparent;
+  border-color: transparent;
+  padding: 3px 0;
+  color: var(--accent-amber);
+}
+
+.law-update-hint {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-500);
+}
+
+.law-update-hint--muted {
+  color: var(--ink-500);
+}
+
+.law-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.law-update-btn {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent-amber);
+  background: var(--accent-amber-tint);
+  border: 1px solid var(--accent-amber);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.law-update-btn:hover {
+  background: var(--accent-amber);
+  color: var(--paper-000);
+}
+
+.law-check-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ink-500);
+  background: none;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.law-check-btn:hover {
+  color: var(--ink-900);
+  border-color: var(--ink-300);
+}
+
+.law-check-btn .icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* --- Rechte Info-Karte ("Aktuelles Recht. Lokal verfügbar.") --- */
+
+.law-info-card {
+  /* 260px -> 300px (26.09., Referenzabgleich "REFERENCE-MATCH / PRODUCT-
+     COMPLETION PASS" §9: Tabelle ca. 70-75%, Info-Karte ca. 25-30% -
+     260px ergab bei 1536px Breite nur ca. 22%, 300px trifft die
+     verlangte Bandbreite genauer, ohne die Tabelle spuerbar zu
+     verkleinern). */
+  flex: 0 0 300px;
+  padding: 20px;
+  background: var(--paper-100);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  align-self: flex-start;
+}
+
+.law-info-card__illustration {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  margin: 0 auto 16px;
+}
+
+.law-info-card__title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 8px;
+}
+
+.law-info-card__text {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.law-info-card__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.law-info-card__feature:last-child {
+  margin-bottom: 0;
+}
+
+.law-info-card__feature-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--brand-green-dark);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.law-info-card__feature-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.law-info-card__feature-text {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  line-height: 1.4;
+}
+
+/* Kompaktere Info-Karte bei niedrigeren Fensterhoehen (26.09., §7: die
+   Karte "muss im initialen Desktop-Viewport vollstaendig sichtbar sein").
+   Reale Messung (Diagnose-Overlay, siehe DECISIONS.md) ergab bei
+   1366×768 nur ca. 335px verfuegbare Zeilenhoehe fuer Tabelle+Karte
+   gegenueber ca. 580px natuerlicher Karteninhaltshoehe - eine
+   Hoehen-Media-Query (nicht Breite: 1366×768 ist schmaler UND niedriger
+   als 1536×1024, aber die Hoehe ist der eigentliche Engpass) verkleinert
+   gezielt Illustration/Abstaende, ohne die geraeumigere Gestaltung bei
+   1024px+ Hoehe zu beeintraechtigen. */
+@media (max-height: 800px) {
+  .law-info-card {
+    padding: 14px;
+  }
+
+  .law-info-card__illustration {
+    max-width: 130px;
+    margin-bottom: 10px;
+  }
+
+  .law-info-card__title {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .law-info-card__text {
+    margin-bottom: 12px;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .law-info-card__feature {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .law-info-card__feature-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.knowledge-laws-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.knowledge-laws-layout .instructions-panel {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Root-Cause-Fix (26.09., derselbe Flexbox-`min-width:auto`-Bug wie
+   bereits mehrfach in diesem Projekt bei `min-height` gefunden, siehe
+   z. B. .split/.message-list Kommentare): ohne `min-width:0` HIER auf dem
+   direkten `.table-container`-Kind selbst zwingt der Flexbox-Default den
+   Container, nie schmaler als sein Inhalt zu werden - eine breite Tabelle
+   (durch `white-space:nowrap` in den Spalten) haette dadurch die ganze
+   Seite nach rechts ueberlaufen lassen statt intern zu scrollen. */
+.knowledge-laws-layout .table-container {
+  min-width: 0;
+}
+
+/* --- Scroll-Architektur (26.09., "KANZLEIWISSEN FINAL POLISH + APP-SHELL
+   KORREKTUR" §8): NUR die Rechtsquellen-/Inhaltsliste soll scrollen, die
+   rechte Info-Karte ("Aktuelles Recht.") muss im initialen Viewport
+   vollstaendig sichtbar bleiben und darf NICHT mitscrollen. Eigene
+   `.knowledge-page`-Wrapper-Klasse (statt der geteilten `.draft-page`,
+   siehe knowledge.html) fuellt `.main` exakt aus - dasselbe bereits
+   etablierte Prinzip wie `.chat-shell` (siehe dortiger Kommentar
+   "Seiten mit eigener innerer Scroll-Aufteilung fuellen .main exakt
+   aus"). Root-Cause-Loesung ueber Flex/min-height:0, KEIN
+   pauschales overflow:hidden auf der ganzen Seite. */
+.knowledge-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.knowledge-page .knowledge-categories {
+  flex-shrink: 0;
+}
+
+.knowledge-page #knowledge-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Einspaltige Kategorien (Rechtsprechung/Vorlagen & Muster/Fachwissen/
+   Interne Dokumente): das gesamte Panel scrollt als ein Block. */
+.knowledge-page #knowledge-panel > .instructions-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* "Gesetze & Normen" (zweispaltig): die Zeile selbst waechst nicht ueber
+   den verfuegbaren Platz hinaus... */
+.knowledge-page #knowledge-panel > .knowledge-laws-layout {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ...der Tabellen-Titel + die kleine Suche bleiben oben fixiert (eigener
+   Flex-Container statt `overflow-y` direkt auf `.instructions-panel` -
+   sonst wuerde auch der Titel mitscrollen)... */
+.knowledge-page .knowledge-laws-layout .instructions-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* ECHTER FUND (26.09., per Diagnose-Messung bestaetigt statt vermutet -
+     `scrollHeight`/`clientHeight` via injiziertem Diagnose-Overlay
+     geprueft): `.knowledge-laws-layout` nutzt `align-items: flex-start`
+     (Absicht: die Info-Karte soll NICHT auf Tabellenhoehe gestreckt
+     werden) - dadurch bekommt `.instructions-panel` OHNE `max-height`
+     KEINE tatsaechliche Hoehenbegrenzung von der Zeile vererbt und waechst
+     stattdessen auf seine volle Inhaltshoehe (real gemessen: 2293px statt
+     der verfuegbaren ~335px) - `flex:1`/`min-height:0` auf dem
+     `.table-container`-Kind darunter lief dadurch ins Leere (kein
+     begrenzender Elternrahmen, an dem es sich orientieren konnte). Analog
+     zu `.law-info-card` (dieselbe Zeile, dieselbes Problem, dort bereits
+     korrekt mit `max-height:100%` geloest) gekappt - danach greift
+     `overflow-y:auto` auf `.table-container` tatsaechlich. */
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* ...NUR der eigentliche Tabellenbereich scrollt intern. */
+.knowledge-page .knowledge-laws-layout .instructions-panel > .table-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Die rechte Info-Karte waechst nicht mit der Tabelle mit und bleibt
+   fixiert an ihrer Position, solange sie in die verfuegbare Hoehe passt
+   (bei sehr niedrigen Fensterhoehen als Sicherheitsnetz weiterhin
+   scrollbar, statt Inhalt abzuschneiden). */
+.knowledge-page .knowledge-laws-layout .law-info-card {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* --- Kleine, kontextbezogene Suche direkt an der Gesetzesliste (26.09.,
+   §2) statt einer zweiten Suchleiste im Seitenheader. --- */
+.knowledge-laws-layout__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.knowledge-inline-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-pill);
+  background: var(--paper-000);
+  flex-shrink: 0;
+}
+
+.knowledge-inline-search__icon {
+  width: 13px;
+  height: 13px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.knowledge-inline-search input[type="text"] {
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  width: 150px;
+  outline: none;
+}
+
+/* --- Gesetzesnamen einzeilig mit Ellipsis (26.09., §9) statt Umbruch
+   oder verkleinerter Schrift - die Spaltenbreiten sind dafuer bereits in
+   knowledge_panel.html explizit verteilt (`table-layout:fixed` noetig,
+   damit `text-overflow:ellipsis` auf Tabellenzellen ueberhaupt wirkt). */
+.knowledge-page .law-catalog-table {
+  table-layout: fixed;
+}
+
+.knowledge-page .law-catalog-table__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.knowledge-page .law-catalog-table__title a,
+.knowledge-page .law-catalog-table__title span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__actions.clients-search-bar input[type="text"] {
+  width: 260px;
+}
+
+/* ==========================================================================
+   Rich-Text-Dokumenten-Editor (04.10., Owner-Direktive "LEXONO -
+   Dokumenten-Editor produktionsnah implementieren und vollstaendig in den
+   Chat-Workflow integrieren"). Wiederverwendet bewusst .document-page/
+   .draft-workspace/.draft-assistant-panel/.draft-suggestion/
+   .instruction-bar und .action-bar (siehe weiter oben, draft_detail.html) -
+   NUR die hier wirklich neuen Elemente (Betreff/Empfaenger-Felder,
+   Formatierungsleiste, Statusleiste, KI-Vorschau, Tabs) bekommen eigene
+   Klassen.
+   ========================================================================== */
+
+.draft-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.draft-editor-meta__field {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.draft-editor-meta__field input[type="text"] {
+  width: 100%;
+}
+
+.draft-editor-frozen-hint {
+  margin-bottom: 10px;
+}
+
+.draft-editor-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--paper-line);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--paper-100);
+}
+
+.draft-editor-toolbar + .document-page {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.draft-editor-toolbar__select {
+  font-size: 12.5px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  padding: 4px 6px;
+}
+
+.draft-editor-toolbar__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--paper-line);
+  margin: 0 4px;
+}
+
+.draft-editor-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--ink-700);
+  padding: 6px 7px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.draft-editor-toolbar__btn .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.draft-editor-toolbar__btn:hover {
+  background: var(--paper-200);
+}
+
+.draft-editor-toolbar__btn--ai {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+/* Rich-Text-Inhalt (content_format == "html") - ersetzt das
+   Klartext-"white-space: pre-wrap" von .document-page__content durch
+   echte Listen-/Absatzdarstellung. Nur Tags aus der Allowlist
+   (app/drafting/html_sanitizer.py) koennen ueberhaupt vorkommen. */
+.document-page__content--rich {
+  white-space: normal;
+  outline: none;
+}
+
+.document-page__content--rich p {
+  margin: 0 0 10px;
+}
+
+.document-page__content--rich ul,
+.document-page__content--rich ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.document-page__content--rich[contenteditable="true"]:focus {
+  box-shadow: 0 0 0 2px var(--accent-blue-tint);
+  border-radius: var(--radius-sm);
+}
+
+/* Mehrseitige DIN-A4-Darstellung im Editor (06.10., Owner-Direktive
+   "Schriftsatz-Workflow, Pseudonymisierung, lokale KI und
+   DIN-A4-Dokumentdarstellung", Phase 11). Aktiviert NUR, wenn
+   app_draft_editor.js den Inhalt tatsaechlich in mehrere `.editor-page`-
+   Bloecke aufgeteilt hat (siehe dortige `repaginate()`-Funktion) - ein
+   kurzer, einseitiger Entwurf bleibt unveraendert die bisherige einzelne
+   `.document-page__content`-Flaeche (keine Regression fuer den Regelfall).
+   `#draft-editor-surface` bleibt dabei WEITERHIN das einzige
+   `contenteditable`-Element (keine zweite Editor-Engine) - die
+   `.editor-page`-Bloecke sind nur strukturierende Kind-Elemente INNERHALB
+   desselben editierbaren Bereichs. */
+#draft-editor-surface.editor-paginated {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  counter-reset: editor-page;
+  /* Das `white-space`/Padding der einzelnen `.editor-page`-Bloecke
+     uebernimmt die Rolle von `.document-page__content` - der aeussere
+     Container selbst braucht kein eigenes Padding mehr. */
+  padding: 0;
+}
+
+/* A4-Seitenverhaeltnis (210mm x 297mm) bei einer komfortablen Bildschirm-
+   Referenzbreite von 794px (= 210mm bei 96dpi, dieselbe Konvention wie
+   gaengige Browser-Druckvorschauen) - `width: 100%` + `max-width` macht
+   dies bei schmaleren Viewports (Tablet) responsiv (/ux-responsive), die
+   tatsaechliche Pro-Seite-Inhaltshoehe wird in JS IMMER anhand der
+   tatsaechlich gerenderten Breite neu berechnet (app_draft_editor.js::
+   getPageMetrics), nie anhand einer festen Pixelzahl allein. */
+.editor-page {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 794px;
+  margin: 0 auto;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 32px 36px 44px;
+}
+
+.editor-page::after {
+  counter-increment: editor-page;
+  content: "Seite " counter(editor-page);
+  position: absolute;
+  bottom: 12px;
+  right: 18px;
+  font-size: 10.5px;
+  color: var(--ink-300);
+}
+
+.editor-page p {
+  margin: 0 0 10px;
+}
+
+.editor-page ul,
+.editor-page ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+@media print {
+  /* Druck-/PDF-Kompatibilitaet (Phase 11 "Print-/PDF-Kompatibilitaet
+     beruecksichtigen"): der tatsaechliche PDF-Export laeuft weiterhin
+     separat ueber app/export/pdf_export_service.py (eigene, bereits
+     layoutbasierte Pagination) - diese Regel betrifft nur einen direkten
+     Browser-Druck der Editor-Seite selbst, erzwingt dabei aber denselben
+     "ein Block wird nie mitten im Seitenumbruch zerschnitten"-Grundsatz
+     ueber natives CSS, als zusaetzliche Absicherung. */
+  .editor-page {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}
+
+.draft-editor-ai-preview {
+  margin-top: 16px;
+  border: 1px solid var(--accent-blue);
+  border-radius: var(--radius-md);
+  background: var(--accent-blue-tint);
+  padding: 14px 16px;
+}
+
+.draft-editor-ai-preview__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.draft-editor-ai-preview__content {
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-700);
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.draft-editor-ai-preview__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.draft-editor-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.draft-editor-statusbar__sep {
+  color: var(--ink-300);
+}
+
+.draft-editor-statusbar__state--error {
+  color: var(--wax-red);
+  font-weight: 600;
+}
+
+.draft-editor-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--paper-line);
+  margin-bottom: 4px;
+}
+
+.draft-editor-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.draft-editor-tab--active {
+  color: var(--ink-900);
+  border-bottom-color: var(--accent-blue);
+}
+
+.draft-editor-attach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--ink-500);
+}
+
+.draft-editor-attach-btn:hover {
+  background: var(--paper-200);
 }

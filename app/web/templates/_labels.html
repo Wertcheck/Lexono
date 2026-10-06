@@ -85,3 +85,21 @@
 {% macro instruction_status_text(status) -%}
   {{- {"open": "offen", "applied": "angewendet", "discarded": "verworfen"}.get(status, status) -}}
 {%- endmacro %}
+
+{# Prioritaet (Task.priority/Deadline.priority, 03.10., Owner-Direktive
+   "AUFGABEN & FRISTEN") - nullable, daher "–" statt eines erfundenen
+   Default-Werts fuer bestehende Datensaetze ohne Prioritaet. #}
+{% macro priority_tag(priority) -%}
+  {%- if not priority -%}
+    <span class="task-detail-panel__field-value">–</span>
+  {%- else -%}
+    <span class="priority-tag priority-tag--{{ priority|lower }}">{{ priority }}</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{# Erledigungsstatus (Task.status/Deadline.status, 03.10., gleiche
+   Direktive) - unabhaengig vom Fristen-Pruefstatus (siehe
+   deadline_status_tag oben). #}
+{% macro task_status_tag(status) -%}
+  <span class="task-status-tag task-status-tag--{{ status }}">{{ "Offen" if status == "open" else "Erledigt" }}</span>
+{%- endmacro %}

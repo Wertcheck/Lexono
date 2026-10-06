@@ -22,6 +22,7 @@ from io import BytesIO
 from docx import Document as DocxDocument
 from docx.shared import Pt
 
+from app.export.html_content import ContentBlock, parse_html_content
 from app.export.letterhead import add_signature_block, build_header, has_letterhead_content, has_signature_content
 from app.models import Draft, FirmProfile, Matter
 
@@ -58,12 +59,21 @@ class DraftDocxExportService:
             f"{draft.updated_at.strftime('%d.%m.%Y')}"
         ).italic = True
 
-        # Leerzeilen als Absatzgrenzen - der Entwurfstext selbst ist reiner
-        # Fließtext ohne eigene Formatierungssyntax (siehe Draft.content).
-        for block in draft.content.split("\n\n"):
-            block = block.strip()
-            if block:
-                document.add_paragraph(block)
+        if draft.content_format == "html":
+            # ECHTER FUND (05.10., siehe app/export/html_content.py-
+            # Moduldocstring): der bisherige Klartext-Pfad unten gab bei
+            # einem Editor-Entwurf den rohen HTML-Quelltext aus - hier
+            # werden Absatz-/Listenstruktur und Fett/Kursiv/Unterstrichen
+            # ueber `python-docx`s native Run-API tatsaechlich umgesetzt.
+            self._write_html_blocks(document, parse_html_content(draft.content))
+        else:
+            # Leerzeilen als Absatzgrenzen - der Entwurfstext selbst ist
+            # reiner Fließtext ohne eigene Formatierungssyntax (siehe
+            # Draft.content, UNVERAENDERT fuer jeden bestehenden Entwurf).
+            for block in draft.content.split("\n\n"):
+                block = block.strip()
+                if block:
+                    document.add_paragraph(block)
 
         if has_signature_content(firm_profile):
             add_signature_block(document, firm_profile)
@@ -72,3 +82,32 @@ class DraftDocxExportService:
         document.save(buffer)
         buffer.seek(0)
         return buffer
+
+    @staticmethod
+    def _write_html_blocks(document: DocxDocument, blocks: list[ContentBlock]) -> None:
+        """Rendert die bereits geparste Blockfolge (siehe
+        app/export/html_content.py) - `<br>` (literales "\\n" in einem
+        Run) wird als Word-Zeilenumbruch INNERHALB desselben Absatzes
+        ueber `run.add_break()` umgesetzt (kein neuer Absatz - ein
+        harter Zeilenumbruch ist in Word etwas anderes als ein neuer
+        Absatz, siehe python-docx-Doku `WD_BREAK.LINE`)."""
+        from docx.enum.text import WD_BREAK
+
+        for block in blocks:
+            if block.kind == "li_bullet":
+                paragraph = document.add_paragraph(style="List Bullet")
+            elif block.kind == "li_number":
+                paragraph = document.add_paragraph(style="List Number")
+            else:
+                paragraph = document.add_paragraph()
+            for inline_run in block.runs:
+                segments = inline_run.text.split("\n")
+                for i, segment in enumerate(segments):
+                    if i > 0:
+                        paragraph.add_run().add_break(WD_BREAK.LINE)
+                    if not segment:
+                        continue
+                    run = paragraph.add_run(segment)
+                    run.bold = inline_run.bold
+                    run.italic = inline_run.italic
+                    run.underline = inline_run.underline or bool(inline_run.href)

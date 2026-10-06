@@ -82,6 +82,187 @@ def test_matters_page_is_no_longer_a_placeholder(client: TestClient) -> None:
     assert "Akten" in response.text
 
 
+def test_matters_page_has_no_back_link_but_matter_detail_still_does(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-
+    DRIVEN UI COMPLETION"): die Akten-Startseite ist wie Chat/Posteingang/
+    Kanzleiwissen eine Top-Level-Navigationsseite und braucht deshalb
+    keinen redundanten "Zurück"-Link (spart vertikalen Raum). Die Akte-
+    Detailseite teilt sich denselben active_nav-Wert ("Akten"), hat aber
+    einen echten Vorgänger-Kontext (zurück zur Liste) und muss den Pfeil
+    deshalb weiterhin zeigen - reine `hide_back_link`-Verdrahtung in
+    matters_router.py, keine active_nav-Änderung."""
+    matter = _matter(db_session)
+
+    list_response = client.get("/dashboard/matters")
+    assert "header-back" not in list_response.text
+
+    detail_response = client.get(f"/dashboard/matters/{matter.id}")
+    assert "header-back" in detail_response.text
+
+
+def test_matters_page_header_is_compact_without_a_separate_count_line(client: TestClient) -> None:
+    """Direktive §7: keine separate große Zählzeile ("X Akten"), wenn sie
+    nur zusätzlichen vertikalen Platz verbraucht und keinen wesentlichen
+    Produktnutzen bietet - die Gesamtzahl ist über die Tabelle ohnehin
+    ersichtlich. Kompakter Kopf reuse dasselbe, bereits für Posteingang
+    etablierte .topbar--compact-Muster."""
+    response = client.get("/dashboard/matters")
+    assert "topbar--compact" in response.text
+    assert "topbar__meta" not in response.text
+
+
+def test_matters_page_pagination_splits_rows_across_pages(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-
+    DRIVEN UI RECONSTRUCTION" §10): die Referenz zeigt echte Seiten-
+    nummerierung statt einer unbegrenzt langen Tabelle - `page`/`page_size`
+    sind jetzt echte Query-Parameter mit echtem `.limit()/.offset()` in
+    matters_router.py, kein reines Optik-Element."""
+    for i in range(15):
+        _matter(db_session, title=f"Akte {i:02d}", reference_number=f"REF-{i:02d}")
+
+    page1 = client.get("/dashboard/matters?page=1&page_size=10")
+    assert page1.text.count('onclick="window.location=\'/dashboard/matters/') == 10
+    assert "15 Akten" in page1.text or "von 15 Akte" in page1.text
+
+    page2 = client.get("/dashboard/matters?page=2&page_size=10")
+    assert page2.text.count('onclick="window.location=\'/dashboard/matters/') == 5
+
+
+def test_matters_page_clamps_out_of_range_page_to_last_page(
+    client: TestClient, db_session: Session
+) -> None:
+    """Ein Seitenlink ueber die letzte Seite hinaus (z. B. nach dem
+    Loeschen/Archivieren von Akten auf einer anderen Seite, oder ein
+    manuell veraenderter Query-Parameter) darf keine leere Seite zeigen -
+    `matters_router.py` deckelt `page` auf `total_pages`."""
+    for i in range(5):
+        _matter(db_session, title=f"Akte {i:02d}", reference_number=f"CLAMP-{i:02d}")
+
+    response = client.get("/dashboard/matters?page=99&page_size=10")
+    assert response.status_code == 200
+    assert response.text.count('onclick="window.location=\'/dashboard/matters/') == 5
+
+
+def test_matters_page_pagination_hidden_when_everything_fits_one_page(
+    client: TestClient, db_session: Session
+) -> None:
+    _matter(db_session, title="Einzige Akte")
+    response = client.get("/dashboard/matters")
+    assert "matters-pagination" not in response.text
+
+
+def test_matters_page_sort_by_title(client: TestClient, db_session: Session) -> None:
+    _matter(db_session, title="Zeta Akte", reference_number="Z-1")
+    _matter(db_session, title="Alpha Akte", reference_number="A-1")
+
+    response = client.get("/dashboard/matters?sort=title")
+    alpha_pos = response.text.find("Alpha Akte")
+    zeta_pos = response.text.find("Zeta Akte")
+    assert alpha_pos != -1 and zeta_pos != -1
+    assert alpha_pos < zeta_pos
+
+
+def test_matters_page_sort_by_reference(client: TestClient, db_session: Session) -> None:
+    _matter(db_session, title="Erste", reference_number="B-1")
+    _matter(db_session, title="Zweite", reference_number="A-1")
+
+    response = client.get("/dashboard/matters?sort=reference")
+    a_pos = response.text.find("A-1")
+    b_pos = response.text.find("B-1")
+    assert a_pos != -1 and b_pos != -1
+    assert a_pos < b_pos
+
+
+def test_matters_page_defaults_to_ten_per_page(client: TestClient, db_session: Session) -> None:
+    """Direktive §15: die Referenz zeigt "10 von 28 Akten" - Standard-
+    Seitengroesse ohne expliziten `page_size`-Parameter ist jetzt 10
+    (vorher 20), 20/50 bleiben als echte Auswahl erhalten."""
+    for i in range(12):
+        _matter(db_session, title=f"Akte {i:02d}", reference_number=f"DEF-{i:02d}")
+
+    response = client.get("/dashboard/matters")
+    assert response.text.count('onclick="window.location=\'/dashboard/matters/') == 10
+    assert "10 von 12 Akte" in response.text
+
+
+def test_matters_page_filters_by_client(client: TestClient, db_session: Session) -> None:
+    """Direktive §6: "Alle Mandanten"-Dropdown ist ein ECHTER Filter auf
+    dem bereits vorhandenen `Matter.client_id`, keine Attrappe."""
+    keep = _matter(db_session, title="Zu behaltende Akte", reference_number="CID-1")
+    other = _matter(db_session, title="Andere Akte", reference_number="CID-2")
+
+    response = client.get(f"/dashboard/matters?client_id={keep.client_id}")
+    assert keep.title in response.text
+    assert other.title not in response.text
+
+
+def test_matters_page_filters_by_practice_area(client: TestClient, db_session: Session) -> None:
+    """Direktive §6: "Alle Kategorien"-Dropdown ist ein ECHTER Filter auf
+    dem bereits vorhandenen `Matter.practice_area`, keine Attrappe."""
+    matter = _matter(db_session, title="Steuerrecht-Akte", reference_number="PA-1")
+    matter.practice_area = "Steuerrecht"
+    other = _matter(db_session, title="Erbrecht-Akte", reference_number="PA-2")
+    other.practice_area = "Erbrecht"
+    db_session.commit()
+
+    response = client.get("/dashboard/matters?practice_area=Steuerrecht")
+    assert "Steuerrecht-Akte" in response.text
+    assert "Erbrecht-Akte" not in response.text
+
+
+def test_matters_page_client_and_practice_area_filters_are_preserved_in_pagination(
+    client: TestClient, db_session: Session
+) -> None:
+    """Ein echter Fund waere hier ein Filter, der beim Blaettern (naechste
+    Seite/Seitengroesse aendern) stillschweigend zurueckgesetzt wird -
+    `client_id`/`practice_area` muessen in JEDEM Pagination-Link erhalten
+    bleiben."""
+    for i in range(15):
+        m = _matter(db_session, title=f"Filtered {i:02d}", reference_number=f"PRES-{i:02d}")
+        m.practice_area = "Steuerrecht"
+    db_session.commit()
+
+    response = client.get("/dashboard/matters?practice_area=Steuerrecht&page_size=10")
+    assert "matters-pagination" in response.text
+    assert response.text.count("practice_area=Steuerrecht") >= 2
+
+
+def test_matters_page_search_is_case_insensitive_and_matches_client_name(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session, title="Vertragsprüfung")
+    matter.client.name = "Schreinerei Hoffmann"
+    db_session.commit()
+
+    response = client.get("/dashboard/matters?search=HOFFMANN")
+    assert "Vertragsprüfung" in response.text
+
+
+def test_matters_row_menu_offers_a_bearbeiten_quick_link(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §9: "Bearbeiten" gehoert wie in der Referenz ins
+    Schnellzugriffsmenue - verlinkt auf die bestehende Detailseite mit
+    "?edit=1", keine neue Route/kein neues Formular."""
+    matter = _matter(db_session)
+    response = client.get("/dashboard/matters")
+    assert f'href="/dashboard/matters/{matter.id}?edit=1"' in response.text
+
+
+def test_matter_detail_page_auto_opens_edit_modal_via_query_param(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session)
+    response = client.get(f"/dashboard/matters/{matter.id}?edit=1")
+    assert response.status_code == 200
+    assert "edit-matter-modal" in response.text
+    assert 'get("edit")' in response.text
+
+
 def test_matters_page_lists_created_matter(client: TestClient, db_session: Session) -> None:
     _matter(db_session, title="Sichtbare Akte")
     response = client.get("/dashboard/matters")
@@ -331,22 +512,27 @@ def test_matter_detail_page_shows_file_type_badges_for_documents(
 
     response = client.get(f"/dashboard/matters/{matter.id}")
 
-    assert "file-type-badge--pdf" in response.text
-    assert ">PDF</span>" in response.text
-    assert "file-type-badge--docx" in response.text
-    assert ">DOCX</span>" in response.text
+    # 04.10., Owner-Direktive "EINHEITLICHE DATEIFORMATE UND
+    # DATEISYMBOLE": `icons.file_type_badge` rendert jetzt ein echtes
+    # SVG-Dokumentsymbol (`.file-format-icon--<modifier>`) statt eines
+    # Text-Badges - Typkennzeichnung erfolgt ueber `title`, nicht mehr
+    # ueber sichtbaren Icon-Text.
+    assert "file-format-icon--pdf" in response.text
+    assert 'title="PDF-Dokument"' in response.text
+    assert "file-format-icon--word" in response.text
+    assert 'title="Word-Dokument"' in response.text
     # Unbekanntes Format zeigt ehrlich seine echte Endung statt eines
     # falschen PDF/DOCX-Icons:
-    assert "file-type-badge--generic" in response.text
-    assert ">XYZ</span>" in response.text
+    assert "file-format-icon--generic" in response.text
+    assert 'title="XYZ-Datei"' in response.text
     # Trotz irrefuehrendem Anzeigenamen ("Umbenannt ohne Endung", keine
-    # erkennbare Endung) zeigt das Badge weiterhin korrekt PDF, weil es aus
+    # erkennbare Endung) zeigt das Icon weiterhin korrekt PDF, weil es aus
     # file_path stammt statt aus dem frei umbenennbaren Anzeigenamen - ZWEI
-    # PDF-Badges (das erste echte + das umbenannte), nicht eines echtes plus
-    # ein faelschliches "?"-Badge fuer den vierten Eintrag:
+    # PDF-Icons (das erste echte + das umbenannte), nicht eines echtes plus
+    # ein faelschliches "unknown"-Icon fuer den vierten Eintrag:
     assert "Umbenannt ohne Endung" in response.text
-    assert response.text.count(">PDF</span>") == 2
-    assert ">?</span>" not in response.text
+    assert response.text.count('title="PDF-Dokument"') == 2
+    assert "file-format-icon--unknown" not in response.text
 
 
 def test_matter_detail_page_shows_tasks_and_deadlines(client: TestClient, db_session: Session) -> None:
@@ -401,14 +587,19 @@ def test_matter_detail_page_shows_linked_chat_conversations_and_offers_to_open_t
 def test_matter_detail_page_without_chat_conversation_offers_a_new_chat_instead_of_a_fake_link(
     client: TestClient, db_session: Session
 ) -> None:
-    """Es gibt (noch) keine Funktion, einen NEUEN Chat direkt an eine
-    bestehende Akte zu binden (app/web/chat_router.py::send_message legt
-    bei matter_id=None immer eine eigene neue Quick-Akte an) - die Seite
-    darf das nicht vortäuschen, sondern muss ehrlich auf einen neuen,
-    eigenständigen Chat verweisen."""
+    """ECHTER FUND (25.09., beim Beheben der Owner-Direktive "POSTEINGANG /
+    STRICT REFERENCE IMPLEMENTATION"): diese Assertion bestand bisher nur
+    zufaellig - sie traf auf den globalen "Neuen Chat starten"-Button in
+    der Sidebar zu (base.html, inzwischen entfernt, siehe DECISIONS.md),
+    nicht auf einen Link dieser Seite. Der urspruengliche Docstring war
+    zudem laengst veraltet: seit 14.09. (app/web/chat_router.py::chat_home,
+    `?matter=`-Parameter) kann ein neuer Chat sehr wohl real mit einer
+    bestehenden Akte vorbelegt werden (`ChatService.create_conversation`
+    nimmt `matter_id` entgegen) - genau das verlinkt diese Seite bereits
+    ehrlich (matter_detail.html), kein Fake-Link mehr noetig."""
     matter = _matter(db_session)
     response = client.get(f"/dashboard/matters/{matter.id}")
-    assert 'href="/dashboard/chat?new=1"' in response.text
+    assert f'href="/dashboard/chat?new=1&amp;matter={matter.id}"' in response.text
 
 
 def test_matter_detail_page_shows_drafts(client: TestClient, db_session: Session) -> None:
@@ -420,6 +611,27 @@ def test_matter_detail_page_shows_drafts(client: TestClient, db_session: Session
     response = client.get(f"/dashboard/matters/{matter.id}")
     assert "Version 1" in response.text
     assert f'href="/dashboard/drafts/{draft.id}"' in response.text
+
+
+def test_matter_detail_page_excludes_chat_reference_drafts(
+    client: TestClient, db_session: Session
+) -> None:
+    """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12 -
+    eine normale Chat-Antwort ohne Schriftsatz-Intent (status=
+    "chat_reference", siehe app/drafting/service.py::_persist_draft) soll
+    hier nicht als "Entwurf"/"Version 1" auftauchen - sie ist kein echter,
+    vom Anwalt angeforderter Schriftsatz."""
+    matter = _matter(db_session)
+    chat_draft = Draft(
+        matter_id=matter.id, content="<p>Chat-Antwort.</p>",
+        version=1, status="chat_reference", content_format="html",
+    )
+    db_session.add(chat_draft)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/matters/{matter.id}")
+    assert f'href="/dashboard/drafts/{chat_draft.id}"' not in response.text
+    assert "Entwürfe (0)" in response.text
 
 
 def test_matters_are_isolated_by_matter_id(client: TestClient, db_session: Session) -> None:
@@ -1154,6 +1366,222 @@ def test_update_matter_requires_a_valid_csrf_token(
     assert matter.title == "Bleibt erhalten"
 
 
+# --- "Akte löschen" (03.10., Owner-Direktive "AKTENUEBERSICHT FINALISIEREN
+# UND PRODUKTIONSREIF VERIFIZIEREN" §6) - SOFT-DELETE, siehe
+# matters_router.py::delete_matter_action / app/models/matter.py::deleted_at.
+
+
+def test_delete_matter_soft_deletes_and_redirects_to_list(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session, title="Zu löschende Akte")
+    csrf = _matter_csrf(client, matter.id)
+
+    response = client.post(
+        f"/dashboard/matters/{matter.id}/delete",
+        data={"csrf_token": csrf},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/dashboard/matters"
+    db_session.refresh(matter)
+    assert matter.deleted_at is not None
+
+
+def test_deleted_matter_disappears_from_the_list_page(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session, title="Verschwindet", reference_number="DEL-1")
+    csrf = _matter_csrf(client, matter.id)
+    client.post(f"/dashboard/matters/{matter.id}/delete", data={"csrf_token": csrf})
+
+    response = client.get("/dashboard/matters")
+    assert response.status_code == 200
+    assert "Verschwindet" not in response.text
+
+
+def test_deleted_matter_detail_page_returns_404(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session)
+    csrf = _matter_csrf(client, matter.id)
+    client.post(f"/dashboard/matters/{matter.id}/delete", data={"csrf_token": csrf})
+
+    response = client.get(f"/dashboard/matters/{matter.id}")
+    assert response.status_code == 404
+
+
+def test_delete_matter_requires_a_valid_csrf_token(
+    client: TestClient, db_session: Session
+) -> None:
+    matter = _matter(db_session)
+
+    response = client.post(
+        f"/dashboard/matters/{matter.id}/delete", data={"csrf_token": "invalid"}
+    )
+
+    assert response.status_code == 403
+    db_session.refresh(matter)
+    assert matter.deleted_at is None
+
+
+def test_delete_unknown_matter_id_returns_404(client: TestClient) -> None:
+    # CSRF wird vor der 404-Pruefung verifiziert (siehe require_role()) -
+    # ein echter CSRF-Token ist noetig, um ueberhaupt bis zur eigentlichen
+    # Existenzpruefung zu kommen.
+    page = client.get("/dashboard/matters")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        f"/dashboard/matters/{uuid4()}/delete", data={"csrf_token": csrf}
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_matter_is_idempotent_against_a_repeated_request(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §6.2: "Ein wiederholter Klick oder Request darf keine
+    inkonsistenten Zustände verursachen" - ein zweiter Löschen-Request
+    gegen dieselbe, bereits gelöschte Akte darf weder fehlschlagen noch
+    einen zweiten Audit-Eintrag erzeugen."""
+    matter = _matter(db_session)
+    csrf = _matter_csrf(client, matter.id)
+    first = client.post(
+        f"/dashboard/matters/{matter.id}/delete",
+        data={"csrf_token": csrf},
+        follow_redirects=False,
+    )
+    assert first.status_code == 303
+
+    # Fuer den zweiten Request wird ein frischer CSRF-Token benoetigt -
+    # ueber die Listenseite (die geloeschte Akte selbst 404t jetzt).
+    list_page = client.get("/dashboard/matters")
+    csrf2 = extract_csrf(list_page.text)
+    second = client.post(
+        f"/dashboard/matters/{matter.id}/delete",
+        data={"csrf_token": csrf2},
+        follow_redirects=False,
+    )
+    assert second.status_code == 303
+
+    events = (
+        db_session.query(AuditEvent)
+        .filter_by(
+            entity_type="Matter", entity_id=matter.id, event_type="matter_deleted"
+        )
+        .all()
+    )
+    assert len(events) == 1
+
+
+def test_delete_matter_preserves_dependent_documents_drafts_and_other_matters(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §6.3/§6.4: kein Hard-Delete, keine verwaisten/veraenderten
+    Datensaetze, andere Akten und der Mandant bleiben unberuehrt."""
+    matter = _matter(db_session, title="Wird gelöscht")
+    other_matter = _matter(db_session, title="Bleibt bestehen", reference_number="KEEP-1")
+    client_row = matter.client
+    document = Document(
+        matter_id=matter.id,
+        original_filename="vertrag.pdf",
+        file_path="/tmp/does-not-matter.pdf",
+        mime_type="application/pdf",
+    )
+    draft = Draft(matter_id=matter.id, content="Testinhalt", status="draft")
+    db_session.add_all([document, draft])
+    db_session.commit()
+
+    csrf = _matter_csrf(client, matter.id)
+    client.post(f"/dashboard/matters/{matter.id}/delete", data={"csrf_token": csrf})
+
+    db_session.refresh(document)
+    db_session.refresh(draft)
+    db_session.refresh(other_matter)
+    db_session.refresh(client_row)
+    assert document.matter_id == matter.id
+    assert draft.matter_id == matter.id
+    assert other_matter.deleted_at is None
+    assert client_row.id == matter.client_id
+
+
+def test_matters_reference_number_gets_controlled_soft_breaks(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §4: kontrolliertes Umbrechen statt zufaelliger
+    Mitten-im-Wort-Trennung - der Server fuegt `<wbr>` direkt nach "/"
+    und "-" ein, der Rohwert selbst bleibt dabei unveraendert erhalten."""
+    _matter(db_session, title="Mit Aktenzeichen", reference_number="2026/0221-GesR")
+
+    response = client.get("/dashboard/matters")
+
+    assert response.status_code == 200
+    assert "2026/<wbr>0221-<wbr>GesR" in response.text
+    # Der unveraenderte Rohwert bleibt als zusammenhaengender Text
+    # (ohne Markup) im Dokument auffindbar, z. B. fuer Suche/Kopieren.
+    assert "2026/0221-GesR" in response.text.replace("<wbr>", "")
+
+
+def test_matters_reference_icon_and_text_share_a_dedicated_flex_container(
+    client: TestClient, db_session: Session
+) -> None:
+    """Regressionstest fuer die Owner-Direktive "PRAEZISE KORREKTUR DER
+    AKTENZEICHEN-AUSRICHTUNG" (03.10.): Symbol und Aktenzeichen lagen
+    vorher OHNE gemeinsamen Container direkt im normalen Inline-Fluss der
+    Zelle - eine umgebrochene Folgezeile begann dadurch wieder am linken
+    Zellenrand statt buendig unter dem Textanfang (per CDP-Messung
+    bewiesen, siehe PROJECT_STATE.md). Dieser Test kann die tatsaechliche
+    Pixel-Ausrichtung nicht pruefen (keine Browser-Engine in der
+    Testumgebung), sichert aber die ROOT-CAUSE-Korrektur strukturell ab:
+    Symbol und Text muessen gemeinsame Kinder GENAU EINES
+    `.matters-reference-cell`-Containers sein, nicht mehr lose
+    Geschwister direkt in der `<td>`."""
+    _matter(db_session, title="Mit Aktenzeichen", reference_number="2026/0221-GesR")
+
+    response = client.get("/dashboard/matters")
+
+    assert response.status_code == 200
+    start = response.text.index('class="matters-reference-cell"')
+    end = response.text.index("</td>", start)
+    cell_markup = response.text[start:end]
+    assert "matters-row-icon" in cell_markup
+    assert 'class="matters-reference"' in cell_markup
+    # Das Symbol muss VOR dem Text stehen (Lesereihenfolge/Sollbild).
+    assert cell_markup.index("matters-row-icon") < cell_markup.index('class="matters-reference"')
+
+
+def test_matters_table_header_cells_are_marked_sticky_for_scrolling(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §5 (Tabellenkopf fixieren) - CSS-seitig ueber
+    `.matters-table-card .draft-table thead th { position: sticky; }`
+    (app.css) geloest; hier wird nur geprueft, dass das dafuer noetige
+    Markup (sechs `<th>`-Spaltenkoepfe innerhalb der erwarteten
+    Scroll-Container-Struktur) tatsaechlich vorhanden ist."""
+    _matter(db_session)
+
+    response = client.get("/dashboard/matters")
+
+    assert response.status_code == 200
+    thead = response.text.split("<thead>")[1].split("</thead>")[0]
+    # Sechs benannte Spalten + eine siebte, bewusst leere `<th>` fuer die
+    # Aktionsspalte ("..."-Menue) - siehe Template.
+    assert thead.count("<th>") == 7
+    for heading in (
+        "Aktenzeichen",
+        "Bezeichnung",
+        "Mandant",
+        "Kategorie",
+        "Status",
+        "Letzte Aktivität",
+    ):
+        assert heading in thead
+    assert '<div class="table-container">' in response.text
+
+
 def test_matter_detail_page_shows_audit_trail(client: TestClient, db_session: Session) -> None:
     """ECHTER FUND (18.09.): `AuditLogService.list_events_for_matter`
     existierte bereits vollstaendig, war auf der Akte-Detailseite selbst
@@ -1210,9 +1638,22 @@ def test_matter_detail_page_shows_tab_navigation(client: TestClient, db_session:
 
     response = client.get(f"/dashboard/matters/{matter.id}")
 
-    for tab_name in ["uebersicht", "dokumente", "kommunikation", "aufgaben", "beteiligte", "notizen", "verlauf"]:
+    # "uebersicht" -> "matter-uebersicht" (05.10., Owner-Direktive "LONG-RUN
+    # PRODUCT QUALITY PASS" Phase D): client_detail.html nutzt fuer seinen
+    # eigenen Uebersicht-Tab dieselbe generische ID "tab-uebersicht", UND
+    # app.css enthaelt eine fuer client_detail.html noetige ID-Selektor-
+    # Regel (#tab-uebersicht { display:flex }), deren ID-Spezifitaet das
+    # `[hidden]`-Attribut hier schlug - der Akten-Uebersicht-Tab blieb
+    # trotz Tab-Wechsel sichtbar und ueberlagerte andere Tab-Inhalte
+    # (live per CDP reproduziert). Eindeutiger ID-Clash zwischen zwei
+    # unabhaengigen Templates, durch eindeutigere ID hier geloest.
+    for tab_name in ["matter-uebersicht", "dokumente", "kommunikation", "aufgaben", "beteiligte", "notizen", "verlauf"]:
         assert f'data-tab="{tab_name}"' in response.text
         assert f'id="tab-{tab_name}"' in response.text
+    # Regression guard: die generische ID "tab-uebersicht" darf hier NIE
+    # wieder auftauchen - sie kollidiert mit client_detail.html (siehe
+    # Testdocstring oben).
+    assert 'id="tab-uebersicht"' not in response.text
 
 
 def test_matter_detail_page_shows_empty_notes_honestly(client: TestClient, db_session: Session) -> None:

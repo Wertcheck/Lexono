@@ -3,6 +3,20 @@
     {% for message in messages %}
       {% include "partials/message_row.html" %}
     {% endfor %}
+  {% elif total_count is defined and total_count == 0 %}
+    {# Echte "noch nie eine Nachricht erhalten"-Situation (06.10.,
+       Owner-Direktive "POSTEINGANG AUF DEN BESTEHENDEN REFERENZSTAND
+       ZURUECKFUEHREN" §5) - unterscheidet sich vom generischen
+       "aktueller Filter liefert 0 Treffer"-Fall unten: der Posteingang
+       selbst bleibt sichtbar (Tabs/Filter/Kopfzeile, siehe inbox.html),
+       nur dieser eine Hinweis innerhalb der Liste macht den leeren
+       Ausgangszustand verstaendlich. Kein neuer Onboarding-Screen, kein
+       neues CSS - derselbe `.empty-state` wie im Filter-Fall. #}
+    <div class="empty-state">
+      Noch keine Nachrichten. Verbinden Sie ein E-Mail-Postfach oder legen Sie
+      einen Scan-Ordner fest (oben: „E-Mail-Konten verwalten“), damit hier
+      automatisch Nachrichten und Dokumente erscheinen.
+    </div>
   {% else %}
     <div class="empty-state">Keine Nachrichten in dieser Ansicht.</div>
   {% endif %}

@@ -28,6 +28,7 @@ from io import BytesIO
 
 import pymupdf
 
+from app.export.html_content import ContentBlock, InlineRun, parse_html_content
 from app.export.letterhead import has_letterhead_content, has_signature_content, image_exists
 from app.export.pdf_text import sanitize_for_base14_font
 from app.models import Draft, FirmProfile, Matter
@@ -83,12 +84,19 @@ class DraftPdfExportService:
         )
         state["y"] += 14
 
-        for block in draft.content.split("\n\n"):
-            block = block.strip()
-            if not block:
-                continue
-            write_wrapped(block)
-            state["y"] += 8  # Absatzabstand
+        if draft.content_format == "html":
+            # ECHTER FUND (05.10., siehe app/export/html_content.py-
+            # Moduldocstring): der Klartext-Pfad unten gab bei einem
+            # Editor-Entwurf bisher den rohen HTML-Quelltext aus.
+            self._write_html_blocks(pdf, state, parse_html_content(draft.content), new_page=new_page)
+        else:
+            # UNVERAENDERT fuer jeden bestehenden (Klartext-)Entwurf.
+            for block in draft.content.split("\n\n"):
+                block = block.strip()
+                if not block:
+                    continue
+                write_wrapped(block)
+                state["y"] += 8  # Absatzabstand
 
         if has_signature_content(firm_profile):
             self._write_signature(pdf, state, firm_profile, new_page=new_page)
@@ -97,6 +105,113 @@ class DraftPdfExportService:
         pdf.close()
         buffer.seek(0)
         return buffer
+
+    @staticmethod
+    def _font_for(run: InlineRun) -> str:
+        if run.bold and run.italic:
+            return "hebi"
+        if run.bold:
+            return "hebo"
+        if run.italic:
+            return "heit"
+        return _FONT
+
+    def _write_html_blocks(self, pdf, state: dict, blocks: list[ContentBlock], *, new_page) -> None:
+        """Wort-fuer-Wort-Umbruch ueber tatsaechlich GEMESSENE Textbreite
+        (`pymupdf.get_text_length`, je nach Stil-Font) statt der fuer
+        reinen Klartext ausreichenden Zeichenanzahl-Heuristik
+        (`_CHARS_PER_LINE`) - noetig, weil Fett/Kursiv in diesem Font ein
+        anderes Breitenprofil als normaler Text haben und sich
+        innerhalb EINES Blocks abwechseln koennen (siehe
+        app/export/html_content.py). Unterstrichener Text bekommt eine
+        tatsaechlich gezeichnete Linie (`page.draw_line`); ein `<a href>`
+        wird zusaetzlich als klickbarer Link-Bereich hinterlegt
+        (`page.insert_link`)."""
+        max_x = _PAGE_WIDTH - _MARGIN
+
+        for block in blocks:
+            indent = 14.0 if block.kind in ("li_bullet", "li_number") else 0.0
+            prefix = ""
+            if block.kind == "li_bullet":
+                prefix = "•  "
+            elif block.kind == "li_number":
+                prefix = f"{block.number}.  "
+
+            # Tokens: (text, run) - an Leerzeichen UND an literalen "\n"
+            # (harte Zeilenumbrueche, <br>) aufgeteilt; "\n" selbst wird
+            # als eigener Tokentyp durchgereicht (erzwingt einen
+            # Zeilenumbruch beim Rendern, siehe unten).
+            tokens: list[tuple[str, InlineRun]] = []
+            if prefix:
+                tokens.append((prefix, InlineRun(text=prefix)))
+            tokens.extend(self._tokenize_runs(block.runs))
+
+            if state["y"] + _LINE_HEIGHT > _PAGE_HEIGHT - _MARGIN:
+                new_page()
+            x = _MARGIN + indent
+            line_tokens: list[tuple[str, InlineRun]] = []
+
+            def flush_line() -> None:
+                nonlocal x, line_tokens
+                if not line_tokens:
+                    return
+                if state["y"] + _LINE_HEIGHT > _PAGE_HEIGHT - _MARGIN:
+                    new_page()
+                cursor_x = _MARGIN + indent
+                for word, run in line_tokens:
+                    font = self._font_for(run)
+                    safe_word = sanitize_for_base14_font(word)
+                    width = pymupdf.get_text_length(safe_word, fontname=font, fontsize=_FONT_SIZE)
+                    state["page"].insert_text(
+                        (cursor_x, state["y"]), safe_word, fontsize=_FONT_SIZE, fontname=font
+                    )
+                    if run.underline or run.href:
+                        underline_y = state["y"] + 2
+                        state["page"].draw_line(
+                            (cursor_x, underline_y), (cursor_x + width, underline_y),
+                            color=(0, 0, 0), width=0.5,
+                        )
+                    if run.href:
+                        state["page"].insert_link({
+                            "from": pymupdf.Rect(
+                                cursor_x, state["y"] - _FONT_SIZE, cursor_x + width, state["y"] + 2
+                            ),
+                            "kind": pymupdf.LINK_URI,
+                            "uri": run.href,
+                        })
+                    cursor_x += width
+                state["y"] += _LINE_HEIGHT
+                line_tokens = []
+                x = _MARGIN + indent
+
+            for word, run in tokens:
+                if word == "\n":
+                    flush_line()
+                    continue
+                font = self._font_for(run)
+                safe_word = sanitize_for_base14_font(word)
+                width = pymupdf.get_text_length(safe_word + " ", fontname=font, fontsize=_FONT_SIZE)
+                if x + width > max_x and line_tokens:
+                    flush_line()
+                line_tokens.append((word + " ", run))
+                x += width
+            flush_line()
+            state["y"] += 8  # Absatzabstand
+
+    @staticmethod
+    def _tokenize_runs(runs: list[InlineRun]) -> list[tuple[str, InlineRun]]:
+        """Zerlegt Inline-Runs in (Wort, Stil)-Tokens, an Leerzeichen UND
+        an literalen "\\n" (harte Zeilenumbrueche) getrennt - "\\n" bleibt
+        als eigenes Token erhalten (siehe `flush_line` oben)."""
+        tokens: list[tuple[str, InlineRun]] = []
+        for run in runs:
+            segments = run.text.split("\n")
+            for i, segment in enumerate(segments):
+                if i > 0:
+                    tokens.append(("\n", run))
+                for word in segment.split():
+                    tokens.append((word, run))
+        return tokens
 
     @staticmethod
     def _write_letterhead(pdf, state: dict, firm_profile: FirmProfile, *, new_page) -> None:
@@ -130,6 +245,7 @@ class DraftPdfExportService:
         address_line = ", ".join(
             part
             for part in (
+                firm_profile.address_addition,
                 firm_profile.street,
                 " ".join(p for p in (firm_profile.postal_code, firm_profile.city) if p) or None,
             )

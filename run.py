@@ -455,11 +455,16 @@ def _apply_rounded_corners(window: object | None = None) -> None:
         pass
 
 
-#: WM_SETICON (Win32-Nachricht) + deren beide Icon-Slots - siehe
-#: _remove_title_bar_icon fuer die Begruendung.
-_WM_SETICON = 0x0080
-_ICON_SMALL = 0
-_ICON_BIG = 1
+#: GWL_EXSTYLE/WS_EX_DLGMODALFRAME/SetWindowPos-Flags - siehe
+#: _remove_title_bar_icon fuer die Begruendung des ROOT-CAUSE-FIX (03.10.,
+#: Owner-Direktive "WINDOWS-TASKLEISTEN-ICON, FENSTERIDENTITAET UND
+#: DESKTOP-VERKNUEPFUNG").
+_GWL_EXSTYLE = -20
+_WS_EX_DLGMODALFRAME = 0x00000001
+_SWP_NOMOVE = 0x0002
+_SWP_NOSIZE = 0x0001
+_SWP_NOZORDER = 0x0004
+_SWP_FRAMECHANGED = 0x0020
 
 
 def _remove_title_bar_icon(window: object | None = None) -> None:
@@ -469,41 +474,84 @@ def _remove_title_bar_icon(window: object | None = None) -> None:
     Datei-Explorer/Alt+Tab zeigen weiterhin das echte Lexono-Icon, das
     kommt direkt aus der .exe-Ressource, nicht von hier).
 
-    ECHTER FUND (real per Screenshot verifiziert, 13.09.): ein NULL-Handle
-    fuer WM_SETICON entfernt das Icon NICHT - Windows faellt stattdessen
-    auf ein generisches Platzhalter-Icon zurueck (schlechter als vorher,
-    nicht "kein Icon"). Auch das zusaetzliche Nullen des KLASSEN-Icons
-    (SetClassLongPtr GCLP_HICON/-SM) aenderte daran nichts - real getestet.
-    Ein echtes, aber VOLLSTAENDIG TRANSPARENTES Icon-Handle funktioniert
-    dagegen (real per Screenshot bestaetigt: Titelleiste zeigt danach nur
-    noch den Text "Lexono", kein Icon mehr sichtbar) - Windows hat dann
-    "ein Icon", das aber unsichtbar ist, statt auf den generischen
-    Platzhalter auszuweichen.
+    ROOT-CAUSE-FIX (03.10., Owner-Direktive "WINDOWS-TASKLEISTEN-ICON,
+    FENSTERIDENTITAET UND DESKTOP-VERKNUEPFUNG"): die bisherige, am 13.09.
+    gefundene Loesung (ein VOLLSTAENDIG TRANSPARENTES Icon-Handle per
+    WM_SETICON fuer BEIDE Slots, ICON_SMALL *und* ICON_BIG) wurde damals
+    nur gegen die TITELLEISTE verifiziert ("Titelleiste zeigt danach nur
+    noch den Text 'Lexono'") - NICHT gegen die Taskleiste. Per echter
+    Live-Fenster-Diagnose (EnumWindows/WM_GETICON gegen die tatsaechlich
+    laufende, installierte Instanz) jetzt nachgewiesen: WM_SETICON setzt
+    das ECHTE Fenster-Icon (nicht nur einen Titelleisten-Anzeigewert) -
+    ICON_BIG ist exakt der Wert, den die Windows-Taskleiste fuer die
+    Schaltflaeche des laufenden Fensters liest. Das transparente Handle
+    ersetzte dadurch unbeabsichtigt NICHT NUR das Titelleisten-Icon,
+    sondern das gesamte Taskleisten-/Alt+Tab-Icon des LAUFENDEN Fensters
+    mit einem unsichtbaren Bild - der tatsaechliche, vom Owner gemeldete
+    Fehler ("transparenter Taskleisteneintrag"). Die vorherige
+    Code-Annahme ("Taskleiste/Alt+Tab zeigen weiterhin das echte
+    Lexono-Icon") war fuer die TITELLEISTE korrekt beobachtet, aber fuer
+    die TASKLEISTE nachweislich falsch.
 
-    Nutzt `System.Drawing.Bitmap` ueber pythonnet (`clr`) statt reinem
-    ctypes/GDI32 (CreateDIBSection/CreateIconIndirect waere gleichwertig,
-    aber deutlich mehr fehleranfaelliger Low-Level-Code) - pythonnet ist
-    hier GARANTIERT bereits geladen, da pywebviews WinForms-Backend selbst
-    darauf aufbaut (keine neue Abhaengigkeit)."""
+    Echter Fix: `WS_EX_DLGMODALFRAME` ist ein dokumentierter, verbreiteter
+    Win32-Trick, der die Titelleiste anweist, GAR KEINEN Icon-Platz zu
+    reservieren (statt ein Icon zu ersetzen) - zusammen mit
+    `SetWindowPos(..., SWP_FRAMECHANGED)`, das Windows zwingt, den
+    nicht-client Fensterrahmen (inkl. Titelleiste) mit dem neuen Stil neu
+    zu zeichnen. `WM_SETICON`/`Form.Icon` werden dabei UEBERHAUPT NICHT
+    angefasst - das von pywebview beim Fenster-Erzeugen bereits korrekt
+    aus der .exe extrahierte Icon (siehe .venv/Lib/site-packages/webview/
+    platforms/winforms.py, `ExtractIconW(..., sys.executable, 0)`) bleibt
+    dadurch fuer Taskleiste/Alt+Tab/Fenster-Vorschau vollstaendig
+    unveraendert erhalten - nur der Titelleisten-Icon-Platz verschwindet.
+
+    ERGAENZUNG (04.10., Owner-Direktive "MANDANTENDETAIL: VERTIKALE
+    FLAECHENNUTZUNG OPTIMIEREN UND NATIVES MINI-LOGO ENTFERNEN"): per
+    echtem Owner-Screenshot der installierten Anwendung (Windows 11,
+    Build 10.0.26200) bestaetigt, dass das Icon trotz dieses bereits
+    bestehenden `WS_EX_DLGMODALFRAME`-Fixes WEITERHIN sichtbar ist - dies
+    ist ein reiner Win32-Stilbit-Trick aus der Windows-XP/7/10-Aera; die
+    ab Windows 11 ueberarbeitete, DWM-basierte Titelleisten-Darstellung
+    scheint dieses Bit fuer die Icon-Platzreservierung nicht mehr in
+    jedem Fall zu respektieren (nicht abschliessend geklaert, da ohne
+    neuen Installer-Build/native Pruefung nicht reproduzierbar isoliert
+    werden kann). Als robustere, von WinForms selbst offiziell
+    unterstuetzte Ergaenzung (nicht Ersatz - beide Mechanismen schliessen
+    sich nicht aus) wird zusaetzlich `Form.ShowIcon = False` gesetzt: ein
+    dokumentiertes .NET-WinForms-Property, das GEZIELT nur das Titel-
+    leisten-Icon ausblendet (MSDN: "Gets or sets a value indicating
+    whether an icon is displayed in the caption bar of the form") - die
+    Taskleisten-/Alt+Tab-Darstellung liest das Icon ueber einen
+    getrennten Mechanismus (weiterhin direkt aus der .exe-Ressource,
+    unabhaengig von `ShowIcon`) und bleibt dadurch unberuehrt, exakt wie
+    beim bereits bestehenden Win32-Fix beabsichtigt. `window.native` ist
+    bereits das echte WinForms-`Form`-Objekt (siehe `self.pywebview_
+    window.native = self` in winforms.py) - kein zusaetzlicher Import
+    noetig. UNGETESTET in der echten installierten Anwendung (kann per
+    Dev-Server/CDP nicht geprueft werden - betrifft ausschliesslich die
+    native Fenster-Chrome, nicht den HTML-Inhalt) - siehe Abschlussbericht
+    fuer die ausdrueckliche Einschraenkung."""
     try:
         import ctypes
-
-        import clr  # type: ignore[import-not-found]
-
-        clr.AddReference("System.Drawing")
-        from System.Drawing import Bitmap, Color  # type: ignore[import-not-found]
 
         hwnd = window.native.Handle.ToInt32()  # type: ignore[union-attr]
         user32 = ctypes.windll.user32  # type: ignore[attr-defined]
 
-        transparent_bitmap = Bitmap(32, 32)
-        for x in range(32):
-            for y in range(32):
-                transparent_bitmap.SetPixel(x, y, Color.FromArgb(0, 0, 0, 0))
-        hicon = transparent_bitmap.GetHicon().ToInt64()
-
-        user32.SendMessageW(hwnd, _WM_SETICON, _ICON_SMALL, hicon)
-        user32.SendMessageW(hwnd, _WM_SETICON, _ICON_BIG, hicon)
+        ex_style = user32.GetWindowLongW(hwnd, _GWL_EXSTYLE)
+        user32.SetWindowLongW(hwnd, _GWL_EXSTYLE, ex_style | _WS_EX_DLGMODALFRAME)
+        user32.SetWindowPos(
+            hwnd,
+            0,
+            0,
+            0,
+            0,
+            0,
+            _SWP_NOMOVE | _SWP_NOSIZE | _SWP_NOZORDER | _SWP_FRAMECHANGED,
+        )
+    except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
+        pass
+    try:
+        window.native.ShowIcon = False  # type: ignore[union-attr]
     except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
         pass
 
@@ -559,6 +607,25 @@ class _NativeApi:
         if not result:
             return ""
         return str(result[0])
+
+    def open_data_folder(self) -> bool:
+        """Oeffnet das tatsaechliche Lexono-Datenverzeichnis (siehe
+        app/setup/paths.py::resolve_data_dir) im Windows-Explorer (06.10.,
+        Owner-Direktive "LEXONO - EINSTELLUNGEN UI REBUILD", Karte "Daten &
+        Speicher" -> "Speicherort der Daten"). Rein lesende Komfortfunktion
+        (oeffnet nur, erstellt/veraendert nichts) - selbe Feature-Detection
+        wie `pick_folder()` oben: im reinen Browser-/--no-window-Modus
+        existiert `window.pywebview` nicht, der Button bleibt dort per
+        JS-Feature-Detection ausgeblendet (siehe settings.html)."""
+        from app.setup.paths import resolve_data_dir
+
+        data_dir = resolve_data_dir()
+        data_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            os.startfile(str(data_dir))  # type: ignore[attr-defined]
+        except OSError:
+            return False
+        return True
 
     # Frueher (Masterprompt V2, Task #61): vier JS-aufrufbare Methoden
     # (minimize_window/close_window/move_window_by/resize_window_by), die
@@ -619,6 +686,93 @@ def cmd_serve(*, open_window: bool = True) -> int:
         _release_single_instance_lock(lock_handle)
 
 
+#: Stabile, produktspezifische Windows-App-Identitaet (AppUserModelID,
+#: "AUMID") - ROOT-CAUSE-FIX (03.10., Owner-Direktive "WINDOWS-
+#: TASKLEISTEN-ICON, FENSTERIDENTITAET UND DESKTOP-VERKNUEPFUNG"): per
+#: Live-Fenster-Diagnose bestaetigt, dass PROJEKTWEIT noch nie eine
+#: explizite AppUserModelID gesetzt wurde - Windows vergibt dann pro
+#: Prozess automatisch eine implizite ID anhand des jeweiligen EXE-Pfads.
+#: Real relevant, weil der Desktop-/Startmenue-Shortcut (siehe
+#: windows/installer.iss) NICHT direkt auf Lexono.exe zeigt, sondern auf
+#: "wscript.exe ... Start.vbs" (bewusst, fuer den unsichtbaren Start-
+#: Fall, siehe Start.vbs) - ohne eine vom Launcher UNABHAENGIGE, feste
+#: Identitaet koennte Windows das spaeter tatsaechlich laufende
+#: Lexono.exe-Fenster shell-seitig inkonsistent dem Shortcut zuordnen.
+#: Format nach Microsoft-Vorgabe ("CompanyName.ProductName[.SubProduct]",
+#: jedes Segment <=64, Gesamtlaenge <=128 Zeichen) - siehe
+#: MyAppPublisher/MyAppName in windows/installer.iss fuer die Herkunft
+#: der beiden Namensteile. Bewusst eine EIGENE, stabile Kennung (keine
+#: generische/fremde Identitaet) und bewusst erst bei "serve --window"
+#: (hier) gesetzt, nicht projektweit in main() - die reinen CLI-
+#: Unterkommandos (migrate/setup/...) erzeugen nie ein Fenster und
+#: brauchen deshalb keine Shell-Taskleisten-Identitaet.
+_APP_USER_MODEL_ID = "LexonoProjekt.Lexono"
+
+
+def _set_app_user_model_id() -> None:
+    """Setzt die explizite AppUserModelID fuer den AKTUELLEN Prozess -
+    MUSS laut Microsoft-Dokumentation aufgerufen werden, BEVOR das erste
+    Fenster erzeugt wird (hier: vor `webview.create_window(...)` weiter
+    unten in `_serve_with_window`), da Windows die Taskleisten-Identitaet
+    eines Fensters beim Erzeugen seiner ersten Taskleisten-Schaltflaeche
+    einfriert. Nur unter Windows verfuegbar (`shell32.
+    SetCurrentProcessExplicitAppUserModelID`) - rein kosmetisch/
+    Shell-Integration, darf den Start deshalb nie gefaehrden."""
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(_APP_USER_MODEL_ID)
+    except Exception:  # noqa: BLE001 - Shell-Integration darf den Start nie verhindern
+        pass
+
+
+def _hide_console_window() -> None:
+    """Versteckt die Konsole DIESES Prozesses, falls noch sichtbar
+    (ROOT-CAUSE-FIX 03.10., Owner-Direktive "WINDOWS-TASKLEISTEN-ICON,
+    FENSTERIDENTITAET UND DESKTOP-VERKNUEPFUNG").
+
+    ECHTER, per Live-Fenster-Diagnose gefundener ZWEITER Beitrag zum
+    gemeldeten Fehler (zusaetzlich zum WM_SETICON-Fund bei
+    `_remove_title_bar_icon`): ein direkter Start der gebauten .exe (ohne
+    den Start.vbs-Hide-Pfad) zeigte eine ZWEITE, tatsaechlich SICHTBARE
+    Top-Level-Fensterklasse namens "PseudoConsoleWindow" (gehoert zum
+    `console=True`-Build, siehe windows/lexono.spec) - mit `WM_GETICON`
+    bestaetigt KOMPLETT OHNE eigenes Icon (weder ICON_SMALL noch
+    ICON_BIG gesetzt). Ein zusaetzlicher, leer/generisch wirkender
+    Taskleisteneintrag NEBEN dem echten Lexono-Fenster - exakt das vom
+    Owner gemeldete Symptom ("ein transparenter oder unsichtbarer
+    zusaetzlicher Taskleisteneintrag").
+
+    `Start.vbs` versteckt diese Konsole bereits separat (SW_HIDE direkt
+    beim Prozessstart ueber `objShell.Run(..., 0, False)`), aber NUR fuer
+    GENAU DEN darueber gestarteten Pfad - ein direkter Doppelklick auf
+    `Lexono.exe` (Phase-D-Testfall "Direktstart" dieser Direktive) oder
+    der in Start.vbs selbst bereits dokumentierte, seltene
+    Upgrade-Randfall ("Konsole faelschlich sichtbar gestartet, obwohl
+    kein Setup noetig ist") blieben davon unberuehrt. Deshalb zusaetzlich
+    HIER, im Python-Prozess selbst, unabhaengig vom jeweiligen externen
+    Startweg - sicher und ohne Prozessarchitektur-Aenderung (dieselbe
+    bereits vom Betriebssystem erzeugte Konsole wird nur ausgeblendet,
+    nicht entfernt/neu erzeugt; `console=True` im PyInstaller-Spec bleibt
+    unveraendert, siehe dessen Begruendung dort).
+
+    GARANTIERT sicher fuer den interaktiven Setup-Assistenten: `main()`
+    ruft `_serve_with_window` (einziger Aufrufer dieser Funktion) laut
+    seiner eigenen Ablauflogik NUR auf, NACHDEM ein etwaiger `cmd_setup()`
+    (braucht eine sichtbare Konsole fuer `input()`/`getpass()`) bereits
+    vollstaendig abgeschlossen und zurueckgekehrt ist - an dieser Stelle
+    wird garantiert keine Konsoleneingabe mehr erwartet."""
+    try:
+        import ctypes
+
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if hwnd:
+            _SW_HIDE = 0
+            ctypes.windll.user32.ShowWindow(hwnd, _SW_HIDE)
+    except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
+        pass
+
+
 def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy importierbar
     """Startet den Server in einem Hintergrund-Thread und öffnet darüber ein
     natives WebView2-Fenster im Hauptthread (Prompt 46). Der bestehende
@@ -627,6 +781,9 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
     blockierend im Hauptthread gestartet, weil `webview.start()` genau das
     für sich selbst braucht (Standard-Einschränkung nativer GUI-Event-Loops
     unter Windows)."""
+    _set_app_user_model_id()
+    _hide_console_window()
+
     import uvicorn
 
     from app.main import app

@@ -9,6 +9,8 @@ Message, Document, Task, Deadline, Draft, WorkflowRun) referenzieren
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,6 +32,17 @@ class Matter(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # (offen/geschlossen) ist unabhaengig vom Workflow-Status einzelner
     # Vorgaenge (siehe WorkflowRun / ARCHITECTURE.md §6).
     status: Mapped[str] = mapped_column(String(32), default="open", nullable=False)
+    # SOFT-DELETE (03.10., Owner-Direktive "AKTENUEBERSICHT FINALISIEREN UND
+    # PRODUKTIONSREIF VERIFIZIEREN" §6) - identisches Prinzip wie
+    # `Document.deleted_at` (app/documents/lifecycle.py): eine Akte ist eine
+    # potenziell aufbewahrungspflichtige Mandantenunterlage, ein echtes
+    # DB-Delete waere hier aus Compliance-Gruenden nicht vertretbar UND
+    # wuerde (anders als bei Document) verwaiste Zeilen in Modellen
+    # hinterlassen, die KEINE Cascade-Relationship zu Matter haben
+    # (ChatConversation/GeneratedDocument/AttorneyInstruction/OutboxEntry).
+    # NULL = aktiv/sichtbar, gesetzt = aus Anwendersicht geloescht - der
+    # Datensatz UND alle abhaengigen Zeilen bleiben vollstaendig erhalten.
+    deleted_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
 
     client: Mapped["Client"] = relationship(back_populates="matters")
     parties: Mapped[list["Party"]] = relationship(

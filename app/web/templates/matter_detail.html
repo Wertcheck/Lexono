@@ -106,7 +106,7 @@
          `display`-Eigenschaft bekommt - das native `[hidden]`-Verhalten des
          Browsers reicht aus. #}
       <div class="tab-nav" role="tablist">
-        <button type="button" class="tab-nav__item tab-nav__item--active" data-tab="uebersicht" onclick="Lexono.switchTab(this)">Übersicht</button>
+        <button type="button" class="tab-nav__item tab-nav__item--active" data-tab="matter-uebersicht" onclick="Lexono.switchTab(this)">Übersicht</button>
         <button type="button" class="tab-nav__item" data-tab="dokumente" onclick="Lexono.switchTab(this)">Dokumente ({{ documents|length }})</button>
         <button type="button" class="tab-nav__item" data-tab="kommunikation" onclick="Lexono.switchTab(this)">Kommunikation ({{ messages|length }})</button>
         <button type="button" class="tab-nav__item" data-tab="aufgaben" onclick="Lexono.switchTab(this)">Aufgaben &amp; Fristen ({{ tasks|length + deadlines|length }})</button>
@@ -115,7 +115,25 @@
         <button type="button" class="tab-nav__item" data-tab="verlauf" onclick="Lexono.switchTab(this)">Verlauf ({{ audit_events|length }})</button>
       </div>
 
-      <div class="tab-panel" id="tab-uebersicht">
+      {# ID bewusst "tab-matter-uebersicht" statt des generischen "tab-
+         uebersicht" (05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY
+         PASS" Phase D, live reproduzierter Bug): client_detail.html
+         verwendet fuer seinen eigenen Uebersicht-Tab dieselbe ID
+         "tab-uebersicht", UND app.css enthaelt eine fuer client_detail.html
+         noetige ID-Selektor-Regel "#tab-uebersicht { display:flex; ... }"
+         (siehe dortiger Kommentar - behebt dort ein Scroll-Ueberlauf-
+         Problem). Diese ID-Spezifitaet (0,1,0,0) schlug das `[hidden]`-
+         Attribut (Spezifitaet 0,0,1,0) auf DIESER Seite - der Uebersicht-
+         Tab blieb trotz Tab-Wechsel sichtbar und ueberlagerte den
+         Dokumente-/Kommunikation-/etc.-Tab-Inhalt. Eindeutiger ID-Clash
+         zwischen zwei unabhaengigen Templates, nicht absichtlich geteilt -
+         per CDP (CSS.getMatchedStylesForNode) zweifelsfrei nachgewiesen.
+         Rename statt Aenderung der CSS-Regel/client_detail.html: Mandanten-
+         detail ist ein bereits mehrfach gezielt fertiggestellter,
+         geschuetzter Bereich (keine Backend-/Template-Aenderung dort noetig,
+         die ID-Kollision loest sich bereits durch EINSEITIGES Umbenennen
+         auf dieser Seite). #}
+      <div class="tab-panel" id="tab-matter-uebersicht">
         <div class="client-ai-cta">
           <div class="client-ai-cta__text">
             <strong>Mit dieser Akte im Chat arbeiten</strong>
@@ -489,6 +507,20 @@
       var initialHash = window.location.hash.replace("#", "");
       if (initialHash) {
         Lexono.switchTabByName(initialHash);
+      }
+
+      // "?edit=1" oeffnet automatisch das bestehende Bearbeiten-Modal
+      // (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-DRIVEN UI
+      // RECONSTRUCTION" §9): ermoeglicht dem "Bearbeiten"-Schnellzugriff
+      // in der Akten-Liste (matters_list.html), direkt hierher zu
+      // verlinken UND das Modal zu oeffnen, ohne ein zweites Formular/
+      // eine zweite Route zu bauen - dasselbe Modal, derselbe bestehende
+      // POST .../update-Endpunkt.
+      if (new URLSearchParams(window.location.search).get("edit") === "1") {
+        var editModal = document.getElementById("edit-matter-modal");
+        if (editModal) {
+          editModal.showModal();
+        }
       }
     })();
   </script>

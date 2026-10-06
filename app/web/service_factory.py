@@ -29,6 +29,7 @@ from app.ai_providers.factory import (
 from app.ai_providers.local_ai_provider import RuleBasedLocalAIProvider
 from app.attorney_instructions.service import AttorneyInstructionService
 from app.config import get_settings
+from app.drafting.editor_service import EditorService
 from app.drafting.service import DraftingService
 from app.feedback.service import DraftFeedbackService
 from app.privacy.gateway import ClaudePrivacyGateway
@@ -136,3 +137,22 @@ def get_attorney_instruction_service_for_saving_only() -> AttorneyInstructionSer
     daran scheitern, dass (noch) kein Provider konfiguriert ist - das
     wird erst relevant, wenn tatsächlich neu generiert werden soll."""
     return AttorneyInstructionService(drafting_service=None)
+
+
+def get_editor_service() -> EditorService:
+    """Für Autosave/Discard/"Als Vorlage speichern" im Dokumenten-Editor
+    (04.10.) - baut BEWUSST analog zu
+    `get_attorney_instruction_service_for_saving_only` KEINEN vollen
+    `DraftingService` (kein Embedding-Modell, keine Provider-Prüfung).
+    Autosave darf nicht daran scheitern, dass (noch) kein Claude-API-Key
+    konfiguriert ist - siehe `get_editor_service_for_ai_edit` für den
+    einzigen Pfad, der tatsächlich einen Claude-Aufruf auslöst."""
+    return EditorService(AttorneyInstructionService(drafting_service=None))
+
+
+def get_editor_service_for_ai_edit() -> EditorService:
+    """Für `EditorService.apply_ai_suggestion` (löst einen
+    kostenpflichtigen Claude-Aufruf aus) - baut den vollen
+    `AttorneyInstructionService` inkl. Provider-Prüfung, identisch zu
+    `get_attorney_instruction_service`."""
+    return EditorService(get_attorney_instruction_service())

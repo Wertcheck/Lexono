@@ -270,4 +270,17 @@ def generate_schriftsatz(
         safe_message = friendly_block_message(result.blocked_reasons)
         return _redirect_with_error(f"Generierung blockiert: {safe_message}")
 
-    return RedirectResponse(url=f"/dashboard/drafts/{result.draft_id}", status_code=303)
+    # ECHTER FUND, LIVE REPRODUZIERT (05.10., Owner-Direktive "Referenz-
+    # getreuen Dokumenten-Editor umsetzen und Chat-zu-Editor-Workflow
+    # vollständig absichern"): zeigte bisher auf den reinen Viewer
+    # (draft_detail.html, "Original/Entwurf/KI-Assistent"-Spalten) statt
+    # auf den beim Dokumenten-Editor-Umbau (04.10.) neu gebauten Rich-
+    # Text-Editor (app/web/draft_editor_router.py) - dieser Router wurde
+    # beim damaligen Umbau nicht mitaktualisiert (nur chat.html's
+    # "Vollständigen Editor öffnen"-Link wurde seinerzeit korrigiert,
+    # dieser zweite, unabhängige Einstiegspunkt - die "Schreiben
+    # erstellen"-Schnellaktion auf der Mandantendetailseite - blieb
+    # unentdeckt). Der Viewer bleibt unter /dashboard/drafts/{id}
+    # weiterhin vollständig erreichbar (siehe dortiger "Im Editor
+    # öffnen"-Link für den umgekehrten Weg).
+    return RedirectResponse(url=f"/dashboard/drafts/{result.draft_id}/edit", status_code=303)

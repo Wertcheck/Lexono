@@ -57,6 +57,19 @@ _RESPONSE_CHECK_SCHEMA = {
 # technische/sprachliche Qualitätsprüfung, keine inhaltlich-rechtliche
 # Bewertung. `/no_think`-Präfix wird von OllamaLocalLLMProvider ergänzt.
 #
+# ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX", mit dem real
+# konfigurierten lokalen Modell reproduziert): das Platzhalter-Kriterium
+# unten ist bereits selbst als bedingt formuliert ("NUR falls der
+# Ausgangssachverhalt überhaupt Platzhalter enthält") - ein schwaches
+# lokales Modell befolgt diese Bedingung nachweislich NICHT zuverlässig
+# (beanstandete "[KATEGORIE_XX]"-Platzhalter, obwohl weder Sachverhalt
+# noch Text einen einzigen Platzhalter enthielten). `_build_prompt`
+# LAESST dieses Kriterium deshalb komplett WEG, wenn `mappings` leer ist
+# (keine Platzhalter existieren, die ueberhaupt geprueft werden
+# koennten) - entfernt einen nachgewiesenen Halluzinations-Ausloeser,
+# statt sich auf eine vom Modell ohnehin ignorierte Bedingung zu
+# verlassen.
+#
 # ECHTER FUND (P0 Performance-Follow-up, 13.09.): das Platzhalter-Beispiel
 # nutzte bisher ECHTE Ziffern ("[PERSON_01]", "[ADRESSE_01]") - exakt
 # dasselbe, bereits in `ollama_provider.py::_LOCAL_LLM_SYSTEM_PROMPT`
@@ -75,33 +88,46 @@ _RESPONSE_CHECK_SCHEMA = {
 # 12 Output-Tokens (~3-15s), eine ~10-20x reale Beschleunigung als
 # Nebeneffekt der Korrektheits-Korrektur, keine gezielte
 # Geschwindigkeits-Kuerzung.
-_SEMANTIC_CHECK_PROMPT_TEMPLATE = """\
-Du prüfst NUR die technische/sprachliche Qualität eines bereits \
-pseudonymisierten Textes - KEINE juristische Bewertung, KEINE Aussage über \
-rechtliche Richtigkeit oder Vollständigkeit.
+_PLACEHOLDER_CRITERION = (
+    "Werden Platzhalter konsistent verwendet (nicht vertauscht, nicht einer "
+    "falschen Person/Sache zugeordnet)?"
+)
+_BASE_CRITERIA = [
+    "Gibt es offensichtliche logische Widersprüche im Text?",
+    "Passt der Text strukturell noch zum folgenden Ausgangssachverhalt?",
+    "Gibt es offensichtliche sprachliche/grammatikalische Fehler?",
+]
 
-Platzhalter wie [KATEGORIE_XX] (Kategorie in Grossbuchstaben, gefolgt von \
-einer laufenden Nummer in eckigen Klammern) stehen für bereits \
-pseudonymisierte Daten und MÜSSEN unverändert so bleiben, WENN sie im zu \
-prüfenden Text vorkommen.
 
-Prüfe AUSSCHLIESSLICH:
-1. Werden Platzhalter konsistent verwendet (nicht vertauscht, nicht einer \
-falschen Person/Sache zugeordnet) - NUR falls der Ausgangssachverhalt \
-überhaupt Platzhalter enthält?
-2. Gibt es offensichtliche logische Widersprüche im Text?
-3. Passt der Text strukturell noch zum folgenden Ausgangssachverhalt?
-4. Gibt es offensichtliche sprachliche/grammatikalische Fehler?
+def _build_semantic_check_prompt(*, sachverhalt: str, text: str, has_mappings: bool) -> str:
+    """Siehe Moduldocstring/Kommentar oben ("ECHTER FUND, 05.10."): das
+    Platzhalter-Kriterium wird NUR aufgenommen, wenn tatsächlich Mappings
+    existieren - kein bedingtes "NUR falls..." mehr, auf dessen Befolgung
+    sich ein schwaches lokales Modell nachweislich nicht verlassen lässt."""
+    criteria = ([_PLACEHOLDER_CRITERION] if has_mappings else []) + _BASE_CRITERIA
+    numbered_criteria = "\n".join(f"{i}. {c}" for i, c in enumerate(criteria, start=1))
 
-Ausgangssachverhalt (nur zur Orientierung, NICHT inhaltlich neu bewerten):
-{sachverhalt}
+    placeholder_intro = (
+        "\n\nPlatzhalter wie [KATEGORIE_XX] (Kategorie in Grossbuchstaben, gefolgt von "
+        "einer laufenden Nummer in eckigen Klammern) stehen für bereits "
+        "pseudonymisierte Daten und MÜSSEN unverändert so bleiben, wenn sie im zu "
+        "prüfenden Text vorkommen."
+        if has_mappings
+        else ""
+    )
 
-Zu prüfender Text:
-{text}
-
-Antworte AUSSCHLIESSLICH als JSON gemäß Schema. Unsicherheit bei einer \
-juristischen Frage ist KEIN Grund für "passed": false - das ist nicht deine \
-Aufgabe."""
+    return (
+        "Du prüfst NUR die technische/sprachliche Qualität eines bereits "
+        "pseudonymisierten Textes - KEINE juristische Bewertung, KEINE Aussage über "
+        f"rechtliche Richtigkeit oder Vollständigkeit.{placeholder_intro}\n\n"
+        f"Prüfe AUSSCHLIESSLICH:\n{numbered_criteria}\n\n"
+        "Ausgangssachverhalt (nur zur Orientierung, NICHT inhaltlich neu bewerten):\n"
+        f"{sachverhalt}\n\n"
+        f"Zu prüfender Text:\n{text}\n\n"
+        'Antworte AUSSCHLIESSLICH als JSON gemäß Schema. Unsicherheit bei einer '
+        'juristischen Frage ist KEIN Grund für "passed": false - das ist nicht deine '
+        "Aufgabe."
+    )
 
 
 @dataclass(frozen=True)
@@ -111,6 +137,23 @@ class ResponseValidationResult:
     # (GatewayResult.reasons, SecurityCheckResult.reasons,
     # DraftingResult.blocked_reasons) - kein neuer Rückgabetyp nötig.
     issues: list[str] = field(default_factory=list)
+    # ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX": mit dem real
+    # konfigurierten lokalen Modell reproduziert, siehe
+    # app/privacy/api_logger.py fuer die volle Herleitung): Stufe 1
+    # (deterministisch) ist die TATSAECHLICHE Datenschutz-Durchsetzung -
+    # ein Fund dort bedeutet einen echten, nachvollziehbaren Treffer
+    # (Platzhalter-Manipulation/Originalwert-Leck). Stufe 2 (lokales LLM)
+    # ist laut Moduldocstring "AUSDRUECKLICH KEINE juristische Bewertung",
+    # sondern eine Qualitaetspruefung (Grammatik/Struktur-Konsistenz) -
+    # bei einem schwachen lokalen Modell NACHWEISLICH unzuverlässig
+    # (reproduziert: hielt frei erfundene "Befunde" fuer echte Probleme,
+    # u. a. auf einem voellig fehlerfreien, vollstaendigen Entwurf).
+    # `stage` erlaubt dem Aufrufer, diese beiden GRUNDVERSCHIEDENEN
+    # Vertrauensstufen in Logging UND Nutzermeldung zu unterscheiden,
+    # OHNE die eigentliche Fail-Closed-Entscheidung selbst zu veraendern
+    # (beide Stufen blockieren weiterhin bei einem Fund - nur die
+    # Einordnung wird ehrlicher).
+    stage: str = "deterministic"
 
 
 def validate_claude_response(
@@ -159,7 +202,9 @@ def validate_claude_response(
     if skip_semantic_check:
         return ResponseValidationResult(passed=True, issues=[])
 
-    prompt = _SEMANTIC_CHECK_PROMPT_TEMPLATE.format(sachverhalt=sachverhalt, text=text)
+    prompt = _build_semantic_check_prompt(
+        sachverhalt=sachverhalt, text=text, has_mappings=bool(mappings)
+    )
     result = local_llm_provider.generate_structured(prompt, _RESPONSE_CHECK_SCHEMA)
 
     passed = result.get("passed")
@@ -180,4 +225,4 @@ def validate_claude_response(
         if isinstance(issue, dict)
     ]
 
-    return ResponseValidationResult(passed=passed, issues=semantic_issues)
+    return ResponseValidationResult(passed=passed, issues=semantic_issues, stage="semantic")

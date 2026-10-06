@@ -78,36 +78,105 @@
       } catch (e) {}
     })();
   </script>
-  <div class="app-shell">
-    <nav class="sidebar">
-      <div class="sidebar__brand">
-        <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo" />
-        <span class="sidebar__brand-text">Lexono</span>
-        {% if current_user %}
+  <div class="app-viewport">
+    {% if current_user %}
+      {# Globale Kopfzeile (25.09., Owner-Direktive "POSTEINGANG / STRICT
+         REFERENCE IMPLEMENTATION" §5/§6 - Referenzabgleich
+         `04_posteingang_nachricht_detail.png`): Logo, globale Suche und
+         die Kopfzeilen-Icons lebten bisher verstreut in der Sidebar bzw.
+         als absolut positionierter Overlay ueber `.main` (siehe
+         `.header-icons` weiter unten - kollidierte dort sichtbar mit
+         seiten-eigenen Kopfzeilen-Buttons, z. B. Posteingangs "E-Mail-
+         Konten verwalten"). Die Referenz zeigt sie stattdessen als EINE
+         durchgehende, seitenuebergreifende Kopfzeile oberhalb von
+         Sidebar+Hauptbereich - zentrale App-Shell-Korrektur statt
+         Posteingang-spezifischem CSS-Hack (Direktive §5/§32: "die
+         zentrale App-Shell EINMAL korrekt anpassen"). Die Sidebar-Suche
+         ("Suchen… Strg K") UND "Neuen Chat starten" sind bewusst
+         ENTFERNT, nicht nur versteckt: die globale Suche unten uebernimmt
+         dieselbe bestehende Command-Bar-Funktionalitaet (nur Position/UX
+         konsolidiert, siehe app/search/global_search_service.py - jetzt
+         inkl. echter E-Mail-Kategorie, `_search_messages`, vorher fehlte
+         sie trotz des Referenztexts "In E-Mails, Mandanten, Akten oder
+         Inhalten suchen"); "Neuen Chat starten" war bereits vollstaendig
+         redundant zu dem seit laengerem bestehenden "+"-Button
+         (`chat-conversations__new`, `chat.html`) innerhalb der Chat-Seite
+         selbst - keine Funktion geht verloren, nur die falsche,
+         referenzwidrige Platzierung. #}
+      <header class="global-header">
+        <div class="global-header__brand">
+          <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo" />
+          <span class="sidebar__brand-text">Lexono</span>
           <button type="button" id="sidebar-collapse-toggle" class="sidebar__collapse-btn"
                   title="Navigation einklappen" aria-label="Navigation ein-/ausklappen">
             {{ icons.collapse(class_="icon") }}
           </button>
-        {% endif %}
-      </div>
-      {% if current_user %}
-        {# Universal Command Bar (Strg+K/⌘K, 20.08.) - Sidebar-Einstiegspunkt
-           fuer sofortige Sichtbarkeit (Aufgabenstellung), oeffnet dasselbe
-           globale Modal weiter unten im Body. Siehe app/web/
-           global_search_router.py + app/search/global_search_service.py
-           fuer die Trennung "Lokal" (Mandant/Akte/Dokument, reine SQL-
-           Abfrage) vs. "Extern" (Rechtsquellen). #}
-        <button type="button" class="sidebar__search-trigger" data-command-bar-open
-                aria-label="Suche öffnen (Tastenkürzel Strg+K bzw. ⌘K)">
-          {{ icons.search(class_="icon") }}
-          <span>Suchen…</span>
-          <span class="sidebar__search-trigger-kbd" aria-hidden="true">Strg K</span>
-        </button>
-        <a href="/dashboard/chat?new=1" class="sidebar__new-chat">
-          {{ icons.plus(class_="icon") }}
-          <span>Neuen Chat starten</span>
-        </a>
-      {% endif %}
+        </div>
+        <div class="global-header__search-wrap">
+          {# Universal Command Bar (Strg+K/⌘K, 20.08.) - oeffnet dasselbe
+             globale Modal weiter unten im Body, siehe app/web/
+             global_search_router.py + app/search/global_search_service.py
+             fuer die Trennung "Lokal" (Mandant/Akte/Dokument/E-Mail, reine
+             SQL-Abfrage) vs. "Extern" (Rechtsquellen). #}
+          {# Sichtbarer "Strg K"-Shortcut-Hinweis entfernt (04.10., Owner-
+             Direktive "UI-QUALITAETSRUNDE" P3) - das Tastenkuerzel selbst
+             (document-weiter keydown-Listener weiter unten, siehe
+             evt.ctrlKey/evt.metaKey) bleibt unveraendert funktionsfaehig,
+             ebenso der aria-label-Hinweis fuer Screenreader-Nutzer. #}
+          <button type="button" class="global-header__search" data-command-bar-open
+                  aria-label="Suche öffnen (Tastenkürzel Strg+K bzw. ⌘K)">
+            {{ icons.search(class_="icon") }}
+            <span>In E-Mails, Mandanten, Akten oder Inhalten suchen …</span>
+          </button>
+        </div>
+        {# Kopfzeilen-Icon-Leiste (Prompt 48, hierher verschoben 25.09.) -
+           jedes Icon ist ehrlich mit einer echten Funktion verknuepft,
+           keine Deko-Icons ohne Wirkung: Umschlag -> Posteingang, Glocke ->
+           Fehler-/Hinweisliste, Logout -> derselbe Abmelden-Endpunkt wie
+           das Sidebar-Profilmenue. #}
+        <div class="header-icons">
+          <span hx-get="/dashboard/monitoring/budget-badge" hx-trigger="load" hx-swap="innerHTML"></span>
+          <span hx-get="/dashboard/monitoring/update-badge" hx-trigger="load" hx-swap="innerHTML"></span>
+          <a href="/dashboard/inbox" class="header-icons__btn" title="Posteingang" aria-label="Posteingang">
+            {{ icons.envelope(class_="icon") }}
+          </a>
+          <a href="/dashboard/errors" class="header-icons__btn" title="Fehler &amp; Hinweise" aria-label="Fehler und Hinweise">
+            {{ icons.bell(class_="icon") }}
+          </a>
+          <form method="post" action="/dashboard/lock-now" id="lock-now-form" class="header-icons__form" style="display: none;">
+            <input type="hidden" name="csrf_token" id="lock-now-csrf" value="" />
+            <button type="submit" class="header-icons__btn" title="Jetzt sperren" aria-label="Jetzt sperren">
+              {{ icons.lock(class_="icon") }}
+            </button>
+          </form>
+          <form method="post" action="/dashboard/logout" class="header-icons__form">
+            <button type="submit" class="header-icons__btn" title="Abmelden" aria-label="Abmelden">
+              {{ icons.logout(class_="icon") }}
+            </button>
+          </form>
+        </div>
+      </header>
+    {% endif %}
+    <div class="app-shell">
+      <nav class="sidebar">
+      {# "Neuen Chat starten" (26.09., Owner-Direktive "KANZLEIWISSEN
+         FINAL POLISH + APP-SHELL KORREKTUR" §P0): eine fruehere Runde
+         hatte diesen Button bewusst aus der Sidebar entfernt (siehe
+         Kommentar oben bei `.global-header` - Begruendung damals: "voll
+         redundant zum '+'-Button auf der Chat-Seite selbst"). Der Owner
+         hat das ausdruecklich als Fehler korrigiert: die globale
+         Kopfzeilen-Suche (Mandanten/Akten/Dokumente FINDEN) und "Neuen
+         Chat starten" (die primaere KI-Arbeitsflaeche OEFFNEN) sind zwei
+         verschiedene Zwecke, keine Redundanz. Wiederverwendet dieselbe
+         bereits bestehende, echte Route wie der "+"-Button in
+         chat.html (`/dashboard/chat?new=1`, siehe chat_router.py::
+         chat_home fuer die volle Begruendung des `?new=1`-Parameters) -
+         keine neue Chat-Start-Logik, nur ein zweiter, permanent
+         sichtbarer Einstiegspunkt dafuer. #}
+      <a href="/dashboard/chat?new=1" class="sidebar__new-chat-btn">
+        {{ icons.plus(class_="icon") }}
+        <span>Neuen Chat starten</span>
+      </a>
       <div class="sidebar__nav">
         {% set is_admin = current_user and current_user.role and current_user.role.name.lower() == "admin" %}
         {# Flachere Navigation (Referenzbild, 01.09.): Punkte, die im
@@ -175,7 +244,13 @@
              - Postausgang/Entwuerfe zur Pruefung -> Reiter INNERHALB von
                "Posteingang" (inbox.html)
            Kein Backend-Router wurde entfernt - ausschliesslich die
-           Sidebar-Praesenz. #}
+           Sidebar-Praesenz.
+
+           "Aufgaben & Fristen" nutzt seit 03.10. (Owner-Direktive "AUFGABEN
+           & FRISTEN", Referenzabgleich `18_akte_dokumente_detail.png`) ein
+           eigenes Kalender-Icon (`icons.calendar_check`) statt der zuvor
+           genutzten generischen Checkbox (`icons.check`) - die Referenz
+           zeigt dort ein eigenes Symbol. #}
         {% set nav_groups = [
           {
             "label": "Chat",
@@ -203,14 +278,14 @@
           },
           {
             "label": "Aufgaben & Fristen",
-            "icon": icons.check,
+            "icon": icons.calendar_check,
             "href": "/dashboard/tasks",
             "flat": true,
           },
           {
             "label": "Kanzleiwissen",
             "icon": icons.bulb,
-            "href": "/dashboard/laws",
+            "href": "/dashboard/knowledge",
             "flat": true,
           },
         ] %}
@@ -344,7 +419,38 @@
       {% endif %}
     </nav>
     <div class="main">
-      {% if current_user and active_nav and active_nav not in ["Schnellstart", "Chat"] %}
+      {# "Posteingang" ergaenzt (25.09., Owner-Direktive "POSTEINGANG FINAL
+         UI/UX PRODUCT-COMPLETION" §9, Referenzabgleich
+         `04_posteingang_nachricht_detail.png`): Posteingang ist wie Chat
+         eine Hauptnavigationsebene (eigener Sidebar-Eintrag), kein
+         Unterpunkt einer anderen Seite - ein "Zurueck"-Pfeil impliziert
+         faelschlich einen sinnvollen Vorgaenger-Kontext. Bewusst NUR fuer
+         Posteingang ergaenzt, nicht fuer die uebrigen Hauptnavigations-
+         seiten (Mandanten/Akten/Aufgaben) - das waere ein eigenstaendiger,
+         hier nicht beauftragter Gap.
+         "Kanzleiwissen" ergaenzt (26.09., Owner-Direktive "KANZLEIWISSEN
+         FINAL PRODUCT IMPLEMENTATION", Referenzabgleich
+         `43_Kanzleiwissen_Gesetze.png` - die Referenz zeigt dort keinen
+         Zurueck-Pfeil): war zuvor NICHT ausgenommen, weil die Sidebar bis
+         dahin direkt auf /dashboard/laws (eine andere Seite) verlinkte,
+         nicht auf /dashboard/knowledge. Jetzt, wo die Sidebar direkt
+         hierher fuehrt, ist Kanzleiwissen wie Chat/Posteingang eine
+         Hauptnavigationsebene, kein Unterseiten-Drilldown. Mandanten/
+         Akten/Aufgaben bleiben bewusst UNVERAENDERT (nicht Teil dieser
+         Direktive).
+         "hide_back_link" ergaenzt (27.09., Owner-Direktive "AKTEN
+         STARTSEITE - REFERENCE-DRIVEN UI COMPLETION"): die Akten-
+         Startseite (`matters_list.html`) ist wie Chat/Posteingang/
+         Kanzleiwissen eine Top-Level-Navigationsseite - ABER anders als
+         dort teilt sie sich denselben `active_nav`-Wert ("Akten") mit
+         der Akte-Detailseite UND der Dokumentansicht, die beide einen
+         echten, sinnvollen Zurueck-Kontext haben (zurueck zur Liste) und
+         den Pfeil deshalb behalten sollen. Ein simples Ergaenzen von
+         "Akten" in der Liste oben wuerde ihn faelschlich auch dort
+         entfernen. Deshalb ein eigener, nur von der Listen-Route
+         gesetzter Kontext-Schalter statt eines weiteren active_nav-
+         Sonderfalls. #}
+      {% if current_user and active_nav and active_nav not in ["Schnellstart", "Chat", "Posteingang", "Kanzleiwissen"] and not hide_back_link %}
         {# Konsistenter "Zurueck"-Pfeil auf JEDER Unterseite (20.08.) - bewusst
            EINMAL hier statt in jedem einzelnen .topbar der ~16 Templates
            ergaenzt (derselbe "eine Stelle statt viele Templates"-Ansatz wie
@@ -358,43 +464,8 @@
           <span>Zurück</span>
         </a>
       {% endif %}
-      {% if current_user %}
-        {# Kopfzeilen-Icon-Leiste (Prompt 48, nach Design-Vorlage) - bewusst
-           absolut positioniert statt in jede einzelne .topbar eingebaut:
-           jede Seite hat ihre eigene .topbar mit eigenem Titel/Meta-Text
-           (siehe z. B. inbox.html), diese Leiste ergaenzt sie einheitlich
-           an EINER Stelle statt neun Templates einzeln anzufassen. Jedes
-           Icon ist ehrlich mit einer echten Funktion verknuepft, keine
-           Deko-Icons ohne Wirkung: Umschlag -> Posteingang, Glocke ->
-           Fehler-/Hinweisliste (das einzige "Dinge, die Aufmerksamkeit
-           brauchen"-Konzept, das es im System gibt), Logout -> derselbe
-           Abmelden-Endpunkt wie der Sidebar-Button. #}
-        <div class="header-icons">
-          {# Schritt 3: EUR-Softlimit-/Update-Hinweise - per HTMX nachgeladen
-             (leer, solange nichts zu melden ist), damit nicht jeder Router
-             diese Werte einzeln in seinen Kontext aufnehmen muss. #}
-          <span hx-get="/dashboard/monitoring/budget-badge" hx-trigger="load" hx-swap="innerHTML"></span>
-          <span hx-get="/dashboard/monitoring/update-badge" hx-trigger="load" hx-swap="innerHTML"></span>
-          <a href="/dashboard/inbox" class="header-icons__btn" title="Posteingang" aria-label="Posteingang">
-            {{ icons.envelope(class_="icon") }}
-          </a>
-          <a href="/dashboard/errors" class="header-icons__btn" title="Fehler &amp; Hinweise" aria-label="Fehler und Hinweise">
-            {{ icons.bell(class_="icon") }}
-          </a>
-          <form method="post" action="/dashboard/lock-now" id="lock-now-form" class="header-icons__form" style="display: none;">
-            <input type="hidden" name="csrf_token" id="lock-now-csrf" value="" />
-            <button type="submit" class="header-icons__btn" title="Jetzt sperren" aria-label="Jetzt sperren">
-              {{ icons.lock(class_="icon") }}
-            </button>
-          </form>
-          <form method="post" action="/dashboard/logout" class="header-icons__form">
-            <button type="submit" class="header-icons__btn" title="Abmelden" aria-label="Abmelden">
-              {{ icons.logout(class_="icon") }}
-            </button>
-          </form>
-        </div>
-      {% endif %}
       {% block content %}{% endblock %}
+    </div>
     </div>
   </div>
   {# Aktivierungsskript jetzt eine gemeinsame statische Datei statt
@@ -408,7 +479,7 @@
     <div class="command-bar__input-row">
       {{ icons.search(class_="icon command-bar__input-icon") }}
       <input type="search" id="command-bar-input" name="q" class="command-bar__input"
-             placeholder="Mandanten, Akten, Dokumente, Rechtsquellen durchsuchen…"
+             placeholder="In E-Mails, Mandanten, Akten oder Inhalten suchen …"
              autocomplete="off" spellcheck="false"
              hx-get="/dashboard/search/results"
              hx-trigger="input changed delay:300ms, search"

@@ -70,6 +70,7 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
+from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import create_quick_matter
 from app.drafting.response_validation import validate_claude_response
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
@@ -735,6 +736,67 @@ class DraftingService:
                     ),
                 )
                 return
+
+            # ECHTER FUND (26.09., Owner-Direktive "DOCUMENT WORKSPACE /
+            # SCHRIFTSATZ PRODUCT-COMPLETION" §17, im Pflicht-E2E-Test real
+            # reproduziert, nahezu deterministisch bei "Dokument
+            # analysieren"/"Schriftsatz-Entwurf erstellen"): die lokale
+            # Vorabanalyse (Ollama) selbst erfand einen nie zugewiesenen
+            # Platzhalter ("[AKTENZEICHEN_01]", OBWOHL der ihr uebergebene
+            # Sachverhalt keinerlei Aktenzeichen-Angabe enthielt), TROTZ der
+            # bereits bestehenden expliziten Anweisung dagegen (siehe
+            # `_LOCAL_LLM_SYSTEM_PROMPT`). Dieser erfundene Platzhalter
+            # landete bisher UNGEPRUEFT in `anonymisierte_argumentations
+            # punkte` und damit im an Claude gesendeten Payload - Claude
+            # kopierte ihn danach (korrekt gemaess SEINER eigenen Anweisung,
+            # "verwende Platzhalter, die im Sachverhalt vorkommen") in die
+            # Antwort, wo ihn `check_response_placeholder_integrity` am Ende
+            # der Kette zwar zuverlaessig als "unerwartet" erkannte und
+            # blockierte (fail-closed korrekt) - aber ERST NACH einem
+            # bereits verbrauchten, kostenpflichtigen Claude-Aufruf, mit
+            # einer fuer den Anwalt irrefuehrenden Fehlermeldung (klang nach
+            # einem Claude-Problem, war aber ein lokaler KI-Fund).
+            #
+            # Fix: dieselbe bereits bestehende, bewaehrte deterministische
+            # Pruefung jetzt ZUSAETZLICH direkt auf die lokale Zusammen-
+            # fassung angewendet, BEVOR sie ueberhaupt in den Claude-Payload
+            # uebernommen wird - faengt den Fund frueher ab (kein
+            # unnoetiger Claude-Aufruf, siehe §15 Performance) UND
+            # praeziser (die Fehlermeldung kann jetzt ehrlich auf die
+            # lokale KI verweisen). `require_full_coverage=False`, weil eine
+            # Zusammenfassung nicht JEDEN Mapping-Platzhalter erwaehnen muss
+            # (anders als der finale Brieftext) - nur neu erfundene/
+            # veraenderte Tokens oder ein geleakter Originalwert sind hier
+            # ein Fund. KEIN automatischer Retry (respektiert die bestehende
+            # "kontrollierter Abbruch, niemals automatische Neuformulierung"-
+            # Architekturentscheidung unveraendert) - derselbe fail-closed
+            # Abbruch wie beim finalen Claude-Antwort-Check, nur frueher.
+            local_summary_issues = check_response_placeholder_integrity(
+                local_result.text, gateway_result.mappings, require_full_coverage=False
+            )
+            if local_summary_issues:
+                self.api_logger.log_blocked(
+                    db,
+                    workflow_id=matter_id,
+                    model=self.model_name,
+                    purpose=purpose,
+                    reasons=local_summary_issues,
+                )
+                yield DraftStreamEvent(
+                    kind="result",
+                    result=DraftingResult(
+                        success=False,
+                        blocked_reasons=[
+                            "Die lokale KI-Vorabanalyse hat Auffälligkeiten "
+                            "festgestellt - Entwurf wurde nicht übernommen, "
+                            "bevor eine Cloud-Anfrage gestellt wurde.",
+                            *local_summary_issues,
+                        ],
+                        open_review_points=open_review_points,
+                    ),
+                )
+                return
+
             payload = payload.model_copy(
                 update={
                     "anonymisierte_argumentationspunkte": [
@@ -900,45 +962,100 @@ class DraftingService:
                     ),
                 )
                 return
-            if not validation.passed:
-                # ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion,
-                # 17.09.): bis hierhin landete JEDER Stufe-1/Stufe-2-Befund
-                # unter demselben festen `error_status=
-                # "response_validation_failed"` im Audit-Log - der
-                # sicherheitskritischste Fall (Original-PII-Leck in der
-                # Antwort) war im Log nicht von einer harmlosen
-                # Formulierungs-Inkonsistenz zu unterscheiden. Nutzt
-                # dieselbe bereits existierende, inhaltsfreie
-                # Kategorisierung wie `ApiCallLogger.log_blocked` - siehe
-                # dort und api_logger.py::_BLOCK_CATEGORIES. Fallback bleibt
-                # der bisherige Wert, falls `validation.issues` einmal
-                # leer sein sollte (sollte laut `ResponseValidationResult`
-                # bei `passed=False` nicht vorkommen, aber kein erfundener
-                # Kategorie-Code fuer einen theoretischen Leerfall).
-                self.api_logger.log_error(
-                    db,
-                    workflow_id=matter_id,
-                    model=self.model_name,
-                    purpose=purpose,
-                    payload=payload,
-                    error_status=(
-                        categorize_block_reasons(validation.issues)
-                        or "response_validation_failed"
+        else:
+            # ECHTER FUND (06.10., Owner-Direktive "Schriftsatz-Workflow,
+            # Pseudonymisierung, lokale KI und DIN-A4-Dokumentdarstellung",
+            # /local-ai-causality-test): die deterministische Platzhalter-
+            # Integritaetspruefung (Stufe 1 in `validate_claude_response`,
+            # reines Python ueber `check_response_placeholder_integrity` -
+            # KEIN LLM-Aufruf, siehe dortigen Fruehzeitig-Return bei
+            # `skip_semantic_check=True`, BEVOR `local_llm_provider`
+            # ueberhaupt angefasst wird) lief bisher NUR, wenn lokale KI
+            # ueberhaupt konfiguriert war (derselbe Schalter wie die rein
+            # OPTIONALE semantische Qualitaetspruefung/Stufe 2). Bei
+            # deaktivierter lokaler KI (Standardkonfiguration,
+            # `settings.local_ai_enabled=False`) konnte dadurch ein von
+            # Claude erfundener oder vertauschter Platzhalter unbemerkt bis
+            # ins finale Dokument durchrutschen (live reproduziert, siehe
+            # tests/test_drafting_service.py::
+            # test_unmapped_placeholder_in_claude_response_is_blocked_even_without_local_ai).
+            # `self.local_llm_provider` ist hier `None` und wird wegen
+            # `skip_semantic_check=True` NIE tatsaechlich aufgerufen (Regel
+            # "kein LLM fuer eine deterministische Pruefung, wenn nicht
+            # erforderlich") - reine Wiederverwendung derselben, bereits
+            # bestehenden Funktion, keine zweite Pruefimplementierung.
+            with trace.step("validation"):
+                validation = validate_claude_response(
+                    writing_result.text,
+                    gateway_result.mappings,
+                    payload.anonymisierter_sachverhalt,
+                    self.local_llm_provider,
+                    skip_semantic_check=True,
+                    require_full_placeholder_coverage=(
+                        purpose not in _RELAXED_COVERAGE_PURPOSES
                     ),
                 )
-                yield DraftStreamEvent(
-                    kind="result",
-                    result=DraftingResult(
-                        success=False,
-                        blocked_reasons=[
-                            "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
-                            "Entwurf wurde nicht übernommen.",
-                            *validation.issues,
-                        ],
-                        open_review_points=open_review_points,
-                    ),
+
+        if not validation.passed:
+            # ECHTER FUND (UI-Live-Validierung "Zusammenfassen"-Aktion,
+            # 17.09.): bis hierhin landete JEDER Stufe-1/Stufe-2-Befund
+            # unter demselben festen `error_status=
+            # "response_validation_failed"` im Audit-Log - der
+            # sicherheitskritischste Fall (Original-PII-Leck in der
+            # Antwort) war im Log nicht von einer harmlosen
+            # Formulierungs-Inkonsistenz zu unterscheiden.
+            #
+            # ERWEITERUNG (05.10., Owner-Direktive "P1-BUGFIX", siehe
+            # app/drafting/response_validation.py::ResponseValidationResult
+            # fuer die volle Herleitung): `validation.stage ==
+            # "semantic"` bedeutet, der Fund kommt NICHT aus der
+            # deterministischen Platzhalter-Pruefung (der tatsaechlichen
+            # Datenschutz-Durchsetzung), sondern aus der rein
+            # qualitaetsbezogenen, nachweislich unzuverlaessigen
+            # lokalen LLM-Pruefung (Stufe 2) - bekommt deshalb eine
+            # EIGENE, ehrliche Kategorie/Meldung statt der
+            # Freitext-Mustererkennung (`categorize_block_reasons`),
+            # die auf vom lokalen Modell frei erfundenen Formulierungen
+            # unzuverlaessig ist (meist "unknown_block_reason", faelschlich
+            # als "Datenschutzgruende" dargestellt). Stufe 1
+            # (`validation.stage == "deterministic"`) bleibt UNVERAENDERT
+            # ueber die bestehende Kategorisierung gemeldet - diese
+            # Aenderung betrifft ausschliesslich die MELDUNG, nicht die
+            # Fail-Closed-Entscheidung selbst (beide Stufen blockieren
+            # weiterhin bei einem Fund).
+            if validation.stage == "semantic":
+                error_status = "local_quality_check_uncertain"
+                user_message = (
+                    "Die lokale Qualitätsprüfung konnte die Antwort nicht "
+                    "eindeutig bestätigen - kein Datenschutzvorfall. "
+                    "Entwurf wurde sicherheitshalber nicht übernommen."
                 )
-                return
+            else:
+                error_status = (
+                    categorize_block_reasons(validation.issues)
+                    or "response_validation_failed"
+                )
+                user_message = (
+                    "Lokale Prüfung der Antwort hat Auffälligkeiten festgestellt - "
+                    "Entwurf wurde nicht übernommen."
+                )
+            self.api_logger.log_error(
+                db,
+                workflow_id=matter_id,
+                model=self.model_name,
+                purpose=purpose,
+                payload=payload,
+                error_status=error_status,
+            )
+            yield DraftStreamEvent(
+                kind="result",
+                result=DraftingResult(
+                    success=False,
+                    blocked_reasons=[user_message, *validation.issues],
+                    open_review_points=open_review_points,
+                ),
+            )
+            return
 
         yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["reconstruction"])
         with trace.step("reconstruction"):
@@ -1219,22 +1336,59 @@ class DraftingService:
         version`, das dieses Feld bereits unterstuetzt (inkl. automatischer
         Vererbung an Folgeversionen, falls hier nicht explizit gesetzt) -
         siehe DraftingService.create_draft für die volle Begründung.
-        """
+
+        Markdown->HTML (05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY
+        PASS" Phase D, live im Dokument-Analyse->Schriftsatz-Workflow
+        gefundener Bug): `content` ist IMMER Claudes rohe, durchgaengig
+        Markdown-formatierte Antwort (siehe app/drafting/
+        markdown_to_draft_html.py für die volle Herleitung) - wird hier zu
+        Editor-darstellbarem HTML gewandelt, `content_format` wird dabei
+        IMMER explizit auf "html" gesetzt (nicht dem Default/einer evtl.
+        geerbten "text"-Vorgaengerversion ueberlassen), damit Inhalt und
+        Format niemals auseinanderlaufen.
+
+        `status="chat_reference"` bei `purpose==_CHAT_PURPOSE` (05.10.,
+        Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS", §11/§12 - live
+        reproduziert: JEDE Chat-Nachricht, auch eine reine Analyse-/
+        Zusammenfassungs-/Rueckfrage ohne jeden Schriftsatz-Intent, erzeugte
+        bisher eine ganz normale "draft"-Zeile samt "Vollstaendigen Editor
+        oeffnen"-Link und Eintrag in jeder Entwuerfe-Liste - obwohl
+        `_looks_like_drafting_request` (app/chat/service.py) bereits
+        zuverlaessig zwischen echtem Schriftsatz-Wunsch und normaler Frage
+        unterscheidet. Root Cause war NICHT fehlende Intent-Erkennung
+        (die existierte bereits), sondern dass ihr Ergebnis (`purpose`)
+        nirgends die Draft-PERSISTENZ beeinflusste, nur den Prompt-Stil.
+        Diese Draft-Zeile bleibt bewusst bestehen (keine Architekturaenderung,
+        volle Wiederverwendung): sie ist weiterhin der einzige Ort, an dem
+        `DraftSourceLink`/`DraftKnowledgeItemLink` (Quellen & Verweise im
+        Chat, siehe chat_router.py::_gather_message_sources) haengen -
+        wird aber per neuem Status "chat_reference" NIE als echter
+        Schriftsatz gelistet (siehe Filter in drafts_router.py/
+        matters_router.py) und chat.html zeigt dafuer KEINEN Editor-Link
+        (siehe dortige Bedingung). Bei Folgeversionen (`previous_draft`
+        gesetzt) wird nie "chat_reference" erzwungen - in der Praxis ruft
+        der Chat `create_draft`/`-_stream` ohnehin nie mit `previous_draft`
+        auf (jede Chat-Antwort ist strukturell eigenstaendig, siehe
+        app/chat/service.py), ein echter Schriftsatz-Workflow (Regenerierung/
+        Instruktion) bleibt dadurch vollstaendig unberuehrt."""
         event_type = "draft_created" if previous_draft is None else "draft_version_created"
         details = (
             f"Entwurf erstellt (Zweck: {purpose})"
             if previous_draft is None
             else f"Neue Version durch Neugenerierung (Zweck: {purpose})"
         )
+        status = "chat_reference" if (purpose == _CHAT_PURPOSE and previous_draft is None) else "draft"
         return create_new_draft_version(
             db,
             matter_id=matter_id,
-            content=content,
+            content=render_ai_markdown_to_draft_html(content),
             previous_draft=previous_draft,
             message_id=message_id,
             actor=actor,
             event_type=event_type,
             details=details,
+            content_format="html",
+            status=status,
         )
 
     def _persist_reference_links(

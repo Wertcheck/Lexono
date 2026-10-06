@@ -253,3 +253,46 @@ def test_empty_writing_response_reason_gets_its_own_category_not_unknown() -> No
     message = friendly_block_message(reasons)
     assert message != "Die Anfrage wurde aus Datenschutzgründen blockiert."
     assert "Token-Limit" in message
+
+
+# --- Stufe-2 (lokale LLM-Qualitätsprüfung) Fund != Datenschutzvorfall
+# (05.10., Owner-Direktive "P1-BUGFIX: Schriftsatz unvollständig,
+# Folgefragen blockiert, Datenschutzprüfung fehlerhaft" - mit dem real
+# konfigurierten lokalen Modell reproduziert: hielt auf einem
+# vollständigen, fehlerfreien Entwurf frei erfundene "Befunde" für echte
+# Probleme). ---
+
+
+def test_local_quality_check_reason_gets_its_own_category_not_unknown() -> None:
+    """Der von app/drafting/service.py selbst kontrollierte Wortlaut (NICHT
+    die vom lokalen Modell frei erfundenen `validation.issues` - deren
+    Formulierung ist je Aufruf unterschiedlich und nicht zuverlässig genug
+    für einen Mustervergleich, siehe dortiger Kommentar) muss zuverlässig
+    erkannt werden."""
+    reasons = [
+        "Die lokale Qualitätsprüfung konnte die Antwort nicht eindeutig "
+        "bestätigen - kein Datenschutzvorfall. Entwurf wurde "
+        "sicherheitshalber nicht übernommen.",
+        # Typisches, vom lokalen Modell frei erfundenes Issue - bewusst
+        # NICHT das, was den Mustervergleich tragen soll.
+        "consistent_placeholder_usage (high): The placeholders [KATEGORIE_XX] "
+        "are not used consistently.",
+    ]
+
+    category = categorize_block_reasons(reasons)
+
+    assert category == "local_quality_check_uncertain"
+    assert category != "unknown_block_reason"
+
+
+def test_local_quality_check_friendly_message_does_not_claim_a_privacy_violation() -> None:
+    reasons = [
+        "Die lokale Qualitätsprüfung konnte die Antwort nicht eindeutig "
+        "bestätigen - kein Datenschutzvorfall. Entwurf wurde "
+        "sicherheitshalber nicht übernommen.",
+    ]
+
+    message = friendly_block_message(reasons)
+
+    assert message != "Die Anfrage wurde aus Datenschutzgründen blockiert."
+    assert "kein Datenschutzvorfall" in message or "keine Datenschutzentscheidung" in message or "unsichere automatische" in message

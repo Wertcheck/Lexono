@@ -24,11 +24,15 @@ Aktenisolation (CLAUDE.md) bleibt gewahrt: jede Abfrage ist strikt nach
 
 from __future__ import annotations
 
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_or_404
@@ -64,39 +68,130 @@ router = APIRouter(prefix="/dashboard/matters", tags=["dashboard-matters"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
+def _insert_soft_breaks(value: str) -> Markup:
+    """Fuegt kontrollierte Umbruchstellen (`<wbr>`) direkt NACH jedem "/"
+    und "-" ein (03.10., Owner-Direktive "AKTENUEBERSICHT FINALISIEREN UND
+    PRODUKTIONSREIF VERIFIZIEREN" §4) - Aktenzeichen folgen in der echten
+    Produktions-DB zuverlaessig dem Muster "JJJJ/NNNN-KUERZEL" (98/98
+    Stichprobe), aber AUCH bei einem unbekannten/manuellen Format bleibt
+    diese Technik sicher: sie veraendert NIE den Wert selbst (kein Zeichen
+    wird entfernt/ersetzt, `<wbr>` traegt keinen Text und erscheint beim
+    Kopieren/Markieren nicht), erzwingt aber auch KEINE neue visuelle
+    Mehrfach-Komponentenstruktur (Direktive: "nur bei zuverlaessig
+    erkanntem Format aufteilen, sonst nur kontrolliert umbrechen") - der
+    Browser bricht dadurch IMMER an einer bestehenden Trennstelle (Jahr/
+    Nummer/Kuerzel bleiben als Gruppen erkennbar), NIE mitten in einer
+    Ziffernfolge. `word-break:keep-all` auf `.matters-reference`
+    (app.css) verhindert zusaetzlich jeden anderen, unkontrollierten
+    Umbruch."""
+    escaped = str(escape(value))
+    return Markup(re.sub(r"([/-])", r"\1<wbr>", escaped))
+
+
+templates.env.filters["reference_break"] = _insert_soft_breaks
+
+
+_SORT_OPTIONS = {
+    "updated_desc": lambda q: q.order_by(Matter.updated_at.desc()),
+    "reference": lambda q: q.order_by(Matter.reference_number.asc()),
+    "title": lambda q: q.order_by(Matter.title.asc()),
+}
+_ALLOWED_PAGE_SIZES = (10, 20, 50)
+
+
+def _build_page_numbers(page: int, total_pages: int) -> list[int | str]:
+    """Erzeugt eine kompakte Seitenzahl-Liste mit "…"-Ellipsen fuer grosse
+    Aktenbestaende (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-
+    DRIVEN UI RECONSTRUCTION" §10) - zeigt immer erste/letzte Seite plus ein
+    kleines Fenster um die aktuelle Seite, statt bei vielen Seiten eine
+    unbrauchbar lange Zeile zu erzeugen."""
+    if total_pages <= 7:
+        return list(range(1, total_pages + 1))
+    window = {1, total_pages, page - 1, page, page + 1}
+    window = {p for p in window if 1 <= p <= total_pages}
+    result: list[int | str] = []
+    for p in range(1, total_pages + 1):
+        if p in window:
+            result.append(p)
+        elif result and result[-1] != "…":
+            result.append("…")
+    return result
+
+
 @router.get("", response_class=HTMLResponse)
 def matters_list_page(
     request: Request,
     search: str = "",
     status: str = "",
+    client_id: str = "",
+    practice_area: str = "",
+    sort: str = "updated_desc",
+    page: int = 1,
+    page_size: int = 10,
     error: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
-    rows = (
-        db.query(Matter)
-        .order_by(Matter.updated_at.desc())
-        .all()
-    )
+    """Seitengroesse-Standard 10 (27.09., Owner-Direktive "AKTEN-
+    STARTSEITE - REFERENCE RECONSTRUCTION" §15) - die Referenz zeigt
+    "10 von 28 Akten"; 20/50 bleiben als echte Auswahl im "pro Seite"-
+    Dropdown erhalten. `client_id`/`practice_area` sind ECHTE, neue
+    Filterdimensionen (Direktive §6: "Alle Mandanten"/"Alle Kategorien"
+    aus der Referenz-Filterleiste fehlten bisher komplett) - beide Felder
+    existieren bereits real auf `Matter` (`client_id`/`practice_area`),
+    keine neue Datenmodellierung noetig."""
+    if sort not in _SORT_OPTIONS:
+        sort = "updated_desc"
+    if page_size not in _ALLOWED_PAGE_SIZES:
+        page_size = 10
+    if page < 1:
+        page = 1
+
+    # Soft-geloeschte Akten (siehe app/models/matter.py::deleted_at) sind
+    # aus der Uebersicht nie sichtbar - identisches Prinzip wie Dokument-
+    # Soft-Delete (app/documents/lifecycle.py).
+    query = db.query(Matter).filter(Matter.deleted_at.is_(None))
     if search:
-        needle = search.lower()
-        rows = [
-            m
-            for m in rows
-            if needle in (m.title or "").lower()
-            or needle in (m.reference_number or "").lower()
-            or needle in (m.client.name or "").lower()
-        ]
+        needle = f"%{search.lower()}%"
+        query = query.join(Client).filter(
+            func.lower(Matter.title).like(needle)
+            | func.lower(func.coalesce(Matter.reference_number, "")).like(needle)
+            | func.lower(Client.name).like(needle)
+        )
     if status:
-        rows = [m for m in rows if m.status == status]
+        query = query.filter(Matter.status == status)
+    if client_id:
+        query = query.filter(Matter.client_id == client_id)
+    if practice_area:
+        query = query.filter(Matter.practice_area == practice_area)
+
+    total_count = query.count()
+    total_pages = max(1, (total_count + page_size - 1) // page_size)
+    page = min(page, total_pages)
+
+    query = _SORT_OPTIONS[sort](query)
+    rows = query.offset((page - 1) * page_size).limit(page_size).all()
 
     context = {
         "request": request,
         "active_nav": "Akten",
+        # Top-Level-Navigationsseite (siehe base.html-Kommentar bei
+        # "hide_back_link") - NUR hier gesetzt, nicht bei Akte-Detail/
+        # Dokumentansicht, die denselben active_nav-Wert teilen, aber
+        # einen sinnvollen Zurueck-Kontext (zur Liste) haben.
+        "hide_back_link": True,
         "current_user": current_user,
         "rows": rows,
         "search": search,
         "status": status,
+        "client_id": client_id,
+        "practice_area": practice_area,
+        "sort": sort,
+        "page": page,
+        "page_size": page_size,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "page_numbers": _build_page_numbers(page, total_pages),
         # Fuer das "Akte anlegen"-Formular (18.09.) - siehe Moduldocstring.
         "clients": db.query(Client).order_by(Client.name.asc()).all(),
         "practice_areas": PRACTICE_AREA_SUGGESTIONS,
@@ -267,6 +362,51 @@ def reopen_matter_action(
     return RedirectResponse(url=f"/dashboard/matters/{matter.id}", status_code=303)
 
 
+@router.post("/{matter_id}/delete")
+def delete_matter_action(
+    matter_id: str,
+    current_user: User = Depends(require_role()),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """"Akte löschen" (03.10., Owner-Direktive "AKTENUEBERSICHT
+    FINALISIEREN UND PRODUKTIONSREIF VERIFIZIEREN" §6) - SOFT-DELETE
+    (`Matter.deleted_at`), kein echtes DB-Delete: dieselbe, bereits
+    projektweit etablierte und begruendete Entscheidung wie
+    `app/documents/lifecycle.py::soft_delete_document` (Aufbewahrungs-
+    pflicht fuer Mandantenunterlagen, CLAUDE.md Punkt 9) - eine Akte ist
+    das aktenweite Pendant zu einem einzelnen Dokument, die Compliance-
+    Anforderung gilt hier mindestens genauso stark, siehe DECISIONS.md.
+    Der Datensatz UND alle abhaengigen Zeilen (Dokumente/Entwuerfe/
+    Nachrichten/Fristen/Aufgaben/Beteiligte/Chat-Unterhaltungen/...)
+    bleiben vollstaendig unveraendert in der DB - nur die Sichtbarkeit in
+    Liste (`matters_list_page`) und Detailansicht (`matter_detail_page`)
+    aendert sich.
+
+    Idempotent (Direktive §6.2: "Ein wiederholter Klick oder Request darf
+    keine inkonsistenten Zustaende verursachen") - ein bereits geloeschter
+    Datensatz macht einen zweiten Aufruf (Doppelklick/Doppel-Request)
+    bewusst zu einem wirkungslosen No-Op statt eines Fehlers oder eines
+    zweiten Audit-Eintrags."""
+    matter = get_or_404(db, Matter, matter_id, "Akte")
+    if matter.deleted_at is None:
+        matter.deleted_at = datetime.now(timezone.utc)
+        db.add(
+            AuditEvent(
+                entity_type="Matter",
+                entity_id=matter.id,
+                event_type="matter_deleted",
+                actor=current_user.email,
+                details=(
+                    f"Akte geloescht (Datensatz bleibt aus Aufbewahrungs- "
+                    f"gruenden vollstaendig erhalten): {matter.title} "
+                    f"(Az. {matter.reference_number or '–'})"
+                ),
+            )
+        )
+        db.commit()
+    return RedirectResponse(url="/dashboard/matters", status_code=303)
+
+
 @router.get("/{matter_id}", response_class=HTMLResponse)
 def matter_detail_page(
     matter_id: str,
@@ -277,6 +417,12 @@ def matter_detail_page(
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
     matter = get_or_404(db, Matter, matter_id, "Akte")
+    if matter.deleted_at is not None:
+        # Identisches Verhalten wie ein geloeschtes Dokument (siehe
+        # app/documents/lifecycle.py-Moduldocstring): "ueber Viewer/
+        # Download NICHT mehr erreichbar (404, identisches Verhalten wie
+        # ein tatsaechlich geloeschter Datensatz)".
+        raise HTTPException(status_code=404, detail="Akte nicht gefunden")
 
     # Geloeschte Dokumente (20.09., Workstream A) sind standardmaessig
     # ausgeblendet (Soft-Delete, siehe app/documents/lifecycle.py) - der
@@ -316,9 +462,14 @@ def matter_detail_page(
         .order_by(ChatConversation.updated_at.desc())
         .all()
     )
+    # `chat_reference`-Drafts ausgeschlossen (05.10., Owner-Direktive
+    # "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12) - siehe Kommentar in
+    # drafts_router.py::drafts_list_page fuer die volle Begruendung: eine
+    # normale Chat-Antwort ohne Schriftsatz-Intent soll in dieser
+    # Akte-Uebersicht nicht als "Entwurf"/"Version 1" auftauchen.
     drafts = (
         db.query(Draft)
-        .filter(Draft.matter_id == matter_id)
+        .filter(Draft.matter_id == matter_id, Draft.status != "chat_reference")
         .order_by(Draft.created_at.desc())
         .all()
     )

@@ -23,7 +23,7 @@ Speicherort siehe app/web/settings_router.py."""
 from __future__ import annotations
 
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -32,7 +32,20 @@ class FirmProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "firm_profiles"
 
     firm_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    # Rechtsform (06.10., Owner-Direktive "SETTINGS -> KANZLEI", z. B.
+    # "Partnerschaft mbB") - rein informatives Stammdatenfeld, bewusst
+    # NICHT automatisch an `firm_name` angehaengt oder in den Briefkopf-
+    # Export injiziert (app/export/letterhead.py) - wie genau die
+    # Rechtsform im Briefkopftext erscheinen soll, ist eine fachliche
+    # Entscheidung, die diese Direktive nicht beantwortet; der Name bleibt
+    # also genau das, was die Kanzlei selbst in `firm_name` eintraegt.
+    legal_form: Mapped[str | None] = mapped_column(String(255), nullable=True)
     street: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Adresszusatz (06.10., z. B. "c/o", Gebaeude/Etage) - anders als
+    # `legal_form` ECHT in den Briefkopf verdrahtet (siehe
+    # app/export/letterhead.py::address_and_contact_lines), da ein
+    # Adresszusatz eindeutig Teil der Postanschrift ist.
+    address_addition: Mapped[str | None] = mapped_column(String(255), nullable=True)
     postal_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     city: Mapped[str | None] = mapped_column(String(128), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -51,3 +64,10 @@ class FirmProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Muster wie PromptTemplate.updated_by_actor) - kein volles Audit-Log
     # nötig, da es sich um reine Stammdaten ohne KI-/Freigabebezug handelt.
     updated_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    # Kanzleifachprofil (03.10., Owner-Direktive "KANZLEIFACHPROFIL UND
+    # JURISTISCHE WISSENSSTEUERUNG") - siehe app/models/firm_practice_area.py
+    # fuer die volle Begruendung (eigene Tabelle statt CSV-Spalte).
+    practice_areas: Mapped[list["FirmPracticeArea"]] = relationship(
+        back_populates="firm_profile", cascade="all, delete-orphan"
+    )

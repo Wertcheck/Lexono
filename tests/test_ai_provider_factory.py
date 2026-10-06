@@ -46,6 +46,50 @@ def test_build_writing_provider_uses_configured_model_and_max_tokens() -> None:
     assert provider.max_tokens == 500
 
 
+# --- Echte Webrecherche (06.10., Owner-Direktive "LEXONO ALS VOLLWERTIGER
+# AI-ARBEITSPLATZ - ARCHITEKTUR-/REQUEST-FLOW-AUDIT" §0.6-§0.10) - der
+# direkte Anthropic-Pfad bekommt die Einstellungen durchgereicht, der
+# Lexono-Gateway-Relay-Pfad bewusst NICHT (siehe
+# app/ai_providers/gateway_writing_provider.py fuer die Begruendung). ---
+
+
+def test_build_writing_provider_passes_web_search_settings_to_direct_provider() -> None:
+    settings = _settings_with_key(web_search_enabled=True, web_search_max_uses=5)
+    provider = build_writing_provider(settings)
+    assert provider.web_search_enabled is True
+    assert provider.web_search_max_uses == 5
+
+
+def test_build_writing_provider_respects_web_search_disabled_setting() -> None:
+    settings = _settings_with_key(web_search_enabled=False)
+    provider = build_writing_provider(settings)
+    assert provider.web_search_enabled is False
+
+
+def test_web_search_enabled_by_default() -> None:
+    """Produktvorgabe §0/§0.13: ein geoeffneter Lexono-Chat soll sich wie
+    ein moderner General-Purpose-Assistent verhalten, nicht standardmaessig
+    eingeschraenkt sein."""
+    settings = _settings_with_key()
+    provider = build_writing_provider(settings)
+    assert provider.web_search_enabled is True
+
+
+def test_build_writing_provider_via_gateway_has_no_web_search_attribute() -> None:
+    """GatewayRelayWritingProvider unterstuetzt die direkte Websuche-
+    Anbindung strukturell nicht (der eigentliche Claude-Aufruf passiert auf
+    einem separaten, nicht zu diesem Repository gehoerenden Server) - hier
+    gegengeprueft, dass KEIN solches Attribut existiert, statt stillschweigend
+    ignoriert zu werden."""
+    settings = Settings(
+        lexono_gateway_url="https://gateway.lexono.internal",
+        lexono_gateway_client_id="client-1",
+        lexono_gateway_client_secret="secret-1",
+    )
+    provider = build_writing_provider(settings)
+    assert not hasattr(provider, "web_search_enabled")
+
+
 # --- Fehlende Zugangsdaten ---
 
 

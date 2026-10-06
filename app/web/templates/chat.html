@@ -11,37 +11,97 @@
      Haupt-Sidebar-Hoehe bleibt dadurch immer konstant. "viewing_document"
      wird NUR von chat_document_view (app/web/chat_router.py) gesetzt. #}
   <div class="chat-shell{% if viewing_document %} chat-shell--document-view{% endif %}">
-    <aside class="chat-conversations">
-      <div class="chat-conversations__header">
-        <span>Unterhaltungen</span>
-        <a href="/dashboard/chat?new=1" class="chat-conversations__new" title="Neue Unterhaltung" aria-label="Neue Unterhaltung">
-          {{ icons.plus(class_="icon") }}
-        </a>
+    <aside class="chat-conversations" id="chat-conversations-aside">
+      <div class="chat-conversations__header" id="chat-conversations-header">
+        <span id="chat-conversations-header-label">Unterhaltungen</span>
+        <div class="chat-conversations__header-actions" id="chat-conversations-header-actions">
+          {# Auswahlmodus (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
+             PROFESSIONAL UX PASS" §18-§20) - nur angeboten, wenn ueberhaupt
+             mehr als eine Unterhaltung existiert (bei 0-1 Eintraegen gibt es
+             nichts sinnvoll "mehrfach auszuwaehlen", §19 "nicht unnoetig
+             zusaetzliche Funktionen erfinden"). #}
+          {% if conversations|length > 1 %}
+            <button type="button" id="chat-selection-toggle" class="chat-conversations__select-toggle"
+                    title="Mehrere Unterhaltungen auswählen" aria-label="Mehrere Unterhaltungen auswählen">
+              {{ icons.check(class_="icon") }}
+            </button>
+          {% endif %}
+          <a href="/dashboard/chat?new=1" class="chat-conversations__new" title="Neue Unterhaltung" aria-label="Neue Unterhaltung">
+            {{ icons.plus(class_="icon") }}
+          </a>
+        </div>
       </div>
-      <div class="chat-conversations__list">
+      <div class="chat-conversations__list" id="chat-conversations-list">
         {% for conversation in conversations %}
           {# Loeschen (20.09., Owner-Direktive "WORKSTREAM A — CHATS
              LOESCHBAR") - eigenes Element NEBEN dem Link statt darin
              verschachtelt (ein <form>/<button> in einem <a> ist ungueltiges
-             HTML und wuerde Klick-Ereignisse ueberlagern). #}
-          <div class="chat-conversations__row">
+             HTML und wuerde Klick-Ereignisse ueberlagern). Umbenennen/
+             Mehrfachauswahl (06.10., selbe Direktive wie oben) erweitern
+             dieselbe Zeile, statt eine zweite Listendarstellung daneben
+             aufzubauen. #}
+          <div class="chat-conversations__row" data-conversation-id="{{ conversation.id }}">
+            <input type="checkbox" class="chat-conversations__checkbox"
+                   value="{{ conversation.id }}" aria-label="Unterhaltung '{{ conversation.title }}' auswählen" />
             <a href="/dashboard/chat/{{ conversation.id }}"
                class="chat-conversations__item{% if active_conversation and conversation.id == active_conversation.id %} chat-conversations__item--active{% endif %}">
-              <span class="chat-conversations__item-title">{{ conversation.title }}</span>
-              <span class="chat-conversations__item-meta">{{ conversation.matter.title }}</span>
+              <span class="chat-conversations__item-title" data-title-display>{{ conversation.title }}</span>
+              {# Platzhalter-"Schnellentwurf"-Akte (keine bewusste Aktenwahl,
+                 siehe chat_router.py::_render_chat_page/
+                 PLACEHOLDER_CLIENT_NAME) wird hier NICHT als Metazeile
+                 gezeigt (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
+                 FLOW PASS" §5-9) - derselbe String bewusst dupliziert
+                 (nicht aus app.drafting importiert), da Templates keine
+                 Python-Konstanten referenzieren koennen; identisches
+                 Vorgehen bereits etabliert bei `_CHAT_PURPOSE` in
+                 app/drafting/service.py. #}
+              {% if conversation.matter.client.name != "Ohne Mandantenzuordnung" %}
+                <span class="chat-conversations__item-meta">{{ conversation.matter.title }}</span>
+              {% endif %}
             </a>
-            <form method="post" action="/dashboard/chat/{{ conversation.id }}/delete"
-                  class="chat-conversations__delete-form"
-                  onsubmit="return confirm('Unterhaltung \'{{ conversation.title }}\' löschen? Dies kann nicht rückgängig gemacht werden (bereits erzeugte Entwürfe bleiben erhalten).');">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-              <button type="submit" class="chat-conversations__delete-btn" title="Unterhaltung löschen" aria-label="Unterhaltung löschen">
-                {{ icons.trash(class_="icon") }}
+            {# Drei-Punkte-Menue (06.10., selbe Direktive §13: "bestehendes
+               Drei-Punkte-Menue/bestehende Chat-Aktion erweitern") -
+               wiederverwendet exakt dasselbe `.row-menu`-Muster wie
+               matters_list.html/client_detail.html/tasks.html (Trigger +
+               absolut positioniertes Dropdown, Lexono.toggleRowMenu aus
+               app_sidebar.js), statt eine neue Menuekomponente zu bauen. #}
+            <div class="chat-conversations__menu-cell" onclick="event.stopPropagation();">
+              <button type="button" class="chat-conversations__menu-trigger" aria-label="Weitere Aktionen"
+                      onclick="Lexono.toggleRowMenu(this)">
+                {{ icons.dots_vertical(class_="icon") }}
               </button>
-            </form>
+              <div class="row-menu" hidden>
+                <button type="button" class="row-menu__item chat-conversations__rename-trigger">
+                  {{ icons.pencil(class_="icon") }} Umbenennen
+                </button>
+                <hr class="row-menu__divider" />
+                <form method="post" action="/dashboard/chat/{{ conversation.id }}/delete"
+                      class="row-menu__delete-form chat-conversations__delete-form"
+                      data-title="{{ conversation.title }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                  <button type="submit" class="row-menu__item row-menu__item--button row-menu__item--danger">
+                    {{ icons.trash(class_="icon") }} Löschen
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         {% else %}
           <div class="chat-conversations__empty">Noch keine Unterhaltungen.</div>
         {% endfor %}
+      </div>
+      {# Auswahl-Aktionsleiste (06.10., selbe Direktive §18/§21) - nur
+         sichtbar waehrend des Auswahlmodus (JS toggelt `hidden`, siehe
+         unten). Wiederverwendet bestehende Button-Stile (`.btn`,
+         `.btn--primary`) statt neuer Komponenten. #}
+      <div class="chat-conversations__selection-bar" id="chat-selection-bar" hidden>
+        <span id="chat-selection-count">0 ausgewählt</span>
+        <div class="chat-conversations__selection-actions">
+          <button type="button" class="btn" id="chat-selection-cancel">Abbrechen</button>
+          <button type="button" class="btn chat-conversations__selection-delete" id="chat-selection-delete" disabled>
+            {{ icons.trash(class_="icon") }} Löschen
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -58,12 +118,25 @@
            navigierend, keine neue Zustandslogik. #}
         <div class="chat-breadcrumb">
           <a href="/dashboard/chat">Chat</a>
-          <span class="chat-breadcrumb__sep">›</span>
+          {# Allgemeiner Chat vs. Chat mit Aktenkontext (05.10., Owner-
+             Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §5-9, siehe
+             chat_router.py::_render_chat_page fuer die volle Herleitung
+             von `has_explicit_matter_context`): ohne explizit gewaehlte
+             Akte zeigt die Breadcrumb bewusst NUR "Chat" - die technisch
+             weiterhin im Hintergrund angelegte Schnellentwurf-Akte
+             (Aktenisolation/Draft-Speicherort) wird NICHT als vermeintlich
+             bewusst gewaehlter Arbeitskontext dargestellt. #}
           {% if viewing_document %}
-            <a href="/dashboard/chat/{{ active_conversation.id }}">{{ active_conversation.matter.title }}</a>
+            <span class="chat-breadcrumb__sep">›</span>
+            {% if has_explicit_matter_context %}
+              <a href="/dashboard/chat/{{ active_conversation.id }}">{{ active_conversation.matter.title }}</a>
+            {% else %}
+              <a href="/dashboard/chat/{{ active_conversation.id }}">{{ active_conversation.title }}</a>
+            {% endif %}
             <span class="chat-breadcrumb__sep">›</span>
             <span>{{ viewing_document.original_filename }}</span>
-          {% else %}
+          {% elif has_explicit_matter_context %}
+            <span class="chat-breadcrumb__sep">›</span>
             {# ECHTER FUND (17.09., Owner-Direktive §5/§7 "Chat bleibt die
                zentrale Arbeitsoberflaeche... Mandant/Akte/Dokument ...
                weiterarbeiten"): reiner Text ohne Verweis auf die laengst
@@ -83,10 +156,29 @@
               </a>
               <span>{{ viewing_document.original_filename }}</span>
               <span class="tag tag--matched">Dokument analysiert</span>
-            {% else %}
+            {% elif has_explicit_matter_context %}
               {{ active_conversation.matter.title }}
+            {% else %}
+              {# Zeigt den (automatisch aus der ersten Nachricht erzeugten)
+                 Unterhaltungstitel statt des technischen Schnellentwurf-
+                 Aktentitels - natuerlicher, "ChatGPT-aehnlicher" Titel fuer
+                 einen allgemeinen Chat ohne Aktenbezug. `id` (06.10.,
+                 Owner-Direktive "CHAT & CHAT-HISTORY PROFESSIONAL UX
+                 PASS" §15): erlaubt dem Umbenennen-JS, die Kopfzeile des
+                 GERADE GEOEFFNETEN Chats ohne Seitenreload zu
+                 aktualisieren - nur in diesem Zweig vorhanden (nicht im
+                 `has_explicit_matter_context`-Zweig oben, wo ohnehin der
+                 Aktentitel statt des Konversationstitels gezeigt wird). #}
+              <span id="chat-header-title-text">{{ active_conversation.title }}</span>
             {% endif %}
           </div>
+          {# Gemeinsamer rechter Aktionsbereich (05.10., Owner-Direktive
+             "ARCHITECTURE & PRODUCT FLOW PASS" §9) - gruppiert "Akte
+             ändern/hinzufügen" und "Kontext entfernen" statt sie als
+             separate direkte Kinder von `.chat-panel__header`
+             (`justify-content: space-between`) ueber die volle Breite
+             auseinanderzuziehen. #}
+          <div class="chat-panel__header-actions">
           {# "Aktenbezug" (UI/UX-Ueberarbeitung, Phase 4, 13.09.): mehrfach
              angefragte Funktion, eine Unterhaltung einer ANDEREN
              bestehenden Akte zuzuordnen (siehe app/web/chat_router.py::
@@ -97,12 +189,18 @@
             <details class="chat-matter-link">
               <summary class="chat-matter-link__trigger">
                 {{ icons.folder(class_="icon") }}
-                <span>Akte ändern</span>
+                {# "Akte hinzufügen" statt "Akte ändern" bei fehlendem
+                   explizitem Kontext (05.10., Owner-Direktive "ARCHITECTURE
+                   & PRODUCT FLOW PASS" §7/§9) - derselbe, bereits bestehende
+                   Mechanismus (link-matter), nur ehrlicher benannt: es gibt
+                   noch keine bewusst gewaehlte Akte, die man "aendern"
+                   koennte. #}
+                <span>{{ "Akte hinzufügen" if not has_explicit_matter_context else "Akte ändern" }}</span>
               </summary>
               <form method="post" action="/dashboard/chat/{{ active_conversation.id }}/link-matter" class="chat-matter-link__form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
                 <label class="form-label">
-                  Diese Unterhaltung einer anderen Akte zuordnen
+                  Diese Unterhaltung einer Akte zuordnen
                   <select name="matter_id" required>
                     <option value="" disabled selected>— Akte wählen —</option>
                     {% for matter in other_matters %}
@@ -118,6 +216,27 @@
               </form>
             </details>
           {% endif %}
+          {# "Kontext entfernen" (05.10., Owner-Direktive "ARCHITECTURE &
+             PRODUCT FLOW PASS" §9/TEST 4): bisher liess sich eine bewusst
+             gesetzte Akte nur gegen eine ANDERE bestehende Akte tauschen
+             ("Akte ändern"), nie ganz loesen - fehlende Funktion, siehe
+             app/web/chat_router.py::link_matter (leeres `matter_id` =
+             neue Schnellentwurf-Platzhalterakte, derselbe Mechanismus wie
+             bei einem brandneuen allgemeinen Chat). Nur sichtbar, wenn
+             tatsaechlich ein bewusster Aktenkontext aktiv ist - fuer einen
+             bereits allgemeinen Chat gibt es nichts zu entfernen. #}
+          {% if not viewing_document and has_explicit_matter_context %}
+            <form method="post" action="/dashboard/chat/{{ active_conversation.id }}/link-matter"
+                  class="chat-matter-remove" title="Aktenkontext entfernen - wieder allgemeiner Chat">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <input type="hidden" name="matter_id" value="" />
+              <button type="submit" class="chat-matter-remove__btn">
+                {{ icons.close_window(class_="icon") }}
+                <span>Kontext entfernen</span>
+              </button>
+            </form>
+          {% endif %}
+          </div>
         </div>
       {% endif %}
 
@@ -202,12 +321,26 @@
                       {% set status = doc.ocr_status %}
                       {% set has_preview = status in ("done", "not_needed") and doc.extracted_text %}
                       {% set chip_tag = "a" if has_preview else "span" %}
+                      {# Kompakte Dokumentvorschau im Chat (05.10.,
+                         Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS"
+                         §19/§20): echtes Thumbnail (PDF/Bild) statt nur
+                         Format-Icon, wo chat_document_thumbnail tatsaechlich
+                         ein Bild liefern kann - sonst bleibt der bestehende
+                         reine Icon-Chip-Fallback unveraendert. #}
+                      {% set has_thumbnail = doc.file_path | document_has_thumbnail %}
                       <{{ chip_tag }}
                         {% if has_preview %}href="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}"{% endif %}
-                        class="doc-chip chat-attachment-chip{% if has_preview %} chat-attachment-chip--link{% endif %}"
+                        class="doc-chip chat-attachment-chip{% if has_preview %} chat-attachment-chip--link{% endif %}{% if has_thumbnail %} chat-attachment-chip--thumb{% endif %}"
                         {% if has_preview %}title="Dokument mit hervorgehobenen Mandantendaten öffnen"{% endif %}>
-                        {{ icons.file_type_badge(doc.file_path) }}
-                        <span class="chat-attachment-chip__name">{{ doc.original_filename }}</span>
+                        {% if has_thumbnail %}
+                          <img class="chat-attachment-chip__thumb" src="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}/thumbnail.png" alt="" loading="lazy">
+                        {% else %}
+                          {{ icons.file_type_badge(doc.file_path) }}
+                        {% endif %}
+                        <span class="chat-attachment-chip__info">
+                          <span class="chat-attachment-chip__name">{{ doc.original_filename }}</span>
+                          <span class="chat-attachment-chip__size">{{ doc.file_path | document_file_size }}</span>
+                        </span>
                         {% if status in ("done", "not_needed") %}
                           <span class="chat-attachment-status chat-attachment-status--ok" title="Dokument verarbeitet">
                             {{ icons.check(class_="icon") }} Verarbeitet
@@ -229,27 +362,78 @@
                     {% endfor %}
                   </div>
                 {% endif %}
-                <div class="chat-message__text" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
-                  {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
-                  <span>{{ message.content }}</span>
-                </div>
+                {# Schriftsatz-Dokument-Panel (Owner-Direktive "Dokument-Upload
+                   -> Schriftsatz -> Dokument-Panel -> Editor"): eine
+                   Chat-Antwort, die tatsaechlich einen echten Schriftsatz
+                   erzeugt hat (echter Draft, kein reiner interner Quellen-
+                   Traeger), erscheint als eigenstaendiges, erkennbares
+                   Dokument statt als normaler Flieszext - identische
+                   Bedingung wie vorher beim jetzt in den Panel-Footer
+                   verschobenen Editor-Link (siehe `status != "chat_reference"`
+                   Begruendung, 05.10., Owner-Direktive "ARCHITECTURE &
+                   PRODUCT FLOW PASS" §11/§12: eine normale Chat-Antwort ohne
+                   Schriftsatz-Intent persistiert zwar intern eine
+                   Draft-Zeile fuer "Quellen & Verweise", bietet dafuer aber
+                   keinen Editor/kein Dokument-Panel an - der Nutzer hat nie
+                   einen Schriftsatz angefordert). #}
+                {% set is_schriftsatz = message.role == "assistant" and not message.blocked and message.draft_id and message.draft.status != "chat_reference" %}
+                {% if is_schriftsatz %}
+                  <div class="chat-document-panel">
+                    <div class="chat-document-panel__header">
+                      <span class="chat-document-panel__label">
+                        {{ icons.document(class_="icon") }}
+                        <span>Schriftsatz</span>
+                      </span>
+                      {# Wiederverwendet exakt denselben Kopieren-Mechanismus
+                         wie eine normale Chat-Antwort (".chat-message__copy-btn"
+                         + "data-copy-target", JS weiter unten unveraendert) -
+                         kein zweiter Clipboard-Code. #}
+                      <button type="button" class="chat-message__copy-btn chat-document-panel__copy-btn"
+                              data-copy-target="chat-message-text-{{ message.id }}"
+                              title="Schriftsatz kopieren" aria-label="Schriftsatz kopieren">
+                        {{ icons.clip(class_="icon") }}
+                        <span>Kopieren</span>
+                      </button>
+                    </div>
+                    <div class="chat-document-panel__title">{{ message | draft_panel_title }}</div>
+                    {# Begrenzte Vorschauhoehe mit eigenem Scrollbereich
+                       (/ux-long-content) - der VOLLSTAENDIGE Text bleibt im
+                       DOM (keine Kuerzung des Datenmodells), nur die
+                       sichtbare Hoehe ist begrenzt; derselbe
+                       "chat-message-text-{{ message.id }}"-Container, den
+                       auch der Kopieren-Button oben referenziert. #}
+                    <div class="chat-document-panel__content chat-message__text--markdown" id="chat-message-text-{{ message.id }}">
+                      {{ message.content | chat_markdown | safe }}
+                    </div>
+                    <div class="chat-document-panel__footer">
+                      <a href="/dashboard/drafts/{{ message.draft_id }}/edit" class="btn chat-document-panel__editor-btn">
+                        {{ icons.pencil(class_="icon") }}
+                        <span>Editor öffnen</span>
+                      </a>
+                    </div>
+                  </div>
+                {% else %}
+                  <div class="chat-message__text chat-message__text--markdown" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
+                    {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
+                    {{ message.content | chat_markdown | safe }}
+                  </div>
+                {% endif %}
                 {% if message.role == "assistant" and not message.blocked %}
                   {# Feedback-/Metazeile (UI/UX-Ueberarbeitung, Phase 4,
                      13.09.): "Kopieren" ist eine ECHTE, funktionierende
                      Aktion (Clipboard-API) - kein Daumen-hoch/-runter, um
                      keine vorgetaeuschte Feedback-Speicherung zu zeigen,
-                     fuer die es noch keine Auswertung gibt. #}
+                     fuer die es noch keine Auswertung gibt. Fuer einen
+                     Schriftsatz (is_schriftsatz) lebt "Kopieren" bereits im
+                     Panel-Header oben - keine Dopplung hier. #}
                   <div class="chat-message__meta-row">
-                    <button type="button" class="chat-message__copy-btn" data-copy-target="chat-message-text-{{ message.id }}" title="Antwort kopieren" aria-label="Antwort kopieren">
-                      {{ icons.clip(class_="icon") }}
-                      <span>Kopieren</span>
-                    </button>
-                    <span class="chat-message__timestamp">{{ message.created_at.strftime("%H:%M") }} Uhr</span>
-                    {% if message.draft_id %}
-                      <a href="/dashboard/drafts/{{ message.draft_id }}" class="chat-message__open-editor">
-                        Vollständigen Editor öffnen →
-                      </a>
+                    {% if not is_schriftsatz %}
+                      <button type="button" class="chat-message__copy-btn" data-copy-target="chat-message-text-{{ message.id }}" title="Antwort kopieren" aria-label="Antwort kopieren">
+                        {{ icons.clip(class_="icon") }}
+                        <span>Kopieren</span>
+                      </button>
                     {% endif %}
+                    <span class="chat-message__timestamp">{{ message.created_at.strftime("%H:%M") }} Uhr</span>
                   </div>
                   {% if message_sources.get(message.id) %}
                     <div class="chat-sources-card">
@@ -293,24 +477,93 @@
         <div id="chat-file-list" class="chat-composer__file-list"></div>
 
         <div class="chat-composer__row">
-          <button type="button" class="chat-composer__attach-btn" id="chat-attach-btn"
-                  title="Dokument anhängen" aria-label="Dokument anhängen">
-            {{ icons.clip(class_="icon") }}
-          </button>
-          <input type="file" name="documents" id="chat-file-input" multiple
-                 accept="{{ allowed_upload_extensions | join(',') }}" style="display: none;" />
-          <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
-                    placeholder="Nachricht an Lexono …" autofocus></textarea>
-          <button type="button" class="chat-composer__mic-btn" id="chat-mic-btn"
-                  title="Spracheingabe (in Vorbereitung)" aria-label="Spracheingabe (in Vorbereitung)"
-                  aria-pressed="false">
-            {{ icons.mic(class_="icon") }}
-          </button>
-          <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
-                  title="Senden" aria-label="Senden">
-            {{ icons.send(class_="icon") }}
-          </button>
+          {# Normale Composer-Steuerelemente (06.10., Owner-Direktive
+             "SPRACHEINGABE IM CHAT: VOLLSTAENDIGE RECORDING- UND SEND-UX"
+             §4) - in einem eigenen Wrapper, damit JS beim Aufnahmestart
+             EINEN Container ein-/ausblenden kann statt vier einzelne
+             Elemente (Anhang/Eingabefeld/Mikrofon/Senden) jeweils separat
+             zu verstecken. `flex:1` + dieselben Flex-Eigenschaften wie
+             vorher direkt auf `.chat-composer__row`, damit sich am
+             sichtbaren Layout im IDLE-Zustand nichts aendert. #}
+          <div class="chat-composer__normal-controls" id="chat-normal-controls">
+            {# Plus statt Büroklammer (06.10., Owner-Direktive "CHAT / COMPOSER
+               / CHAT-HISTORY FINAL UX & STATE-CONSISTENCY PASS" §12-§13) -
+               reine Icon-/Semantik-Aenderung, dieselbe Schaltflaeche
+               (`id="chat-attach-btn"`), derselbe bestehende Klick-Handler
+               weiter unten im Script (`fileInput.click()`), dieselbe Upload-
+               Funktion. Bewusst das bereits bestehende `icons.plus()`
+               wiederverwendet (schon an mehreren Stellen im Produkt im
+               Einsatz, z. B. "Weitere Prompts"/"+ Akte anlegen") statt ein
+               neues Icon einzufuehren. Waehrend RECORDING ersetzt die
+               bestehende `#chat-recording`-Zeile (siehe unten,
+               `#chat-recording-cancel` mit `icons.close_window()` = "X")
+               diese gesamte Zeile INNERHALB derselben `.chat-composer__row`-
+               Huelle an derselben Position - das erfuellt §14 "Plus wird zu
+               X" bereits strukturell, ohne zusaetzlichen Code. #}
+            <button type="button" class="chat-composer__attach-btn" id="chat-attach-btn"
+                    title="Anhänge hinzufügen" aria-label="Anhänge hinzufügen">
+              {{ icons.plus(class_="icon") }}
+            </button>
+            <input type="file" name="documents" id="chat-file-input" multiple
+                   accept="{{ allowed_upload_extensions | join(',') }}" style="display: none;" />
+            {# `autocomplete="off"` (§8/§17, Haertung): verhindert, dass der
+               Browser bei einer Navigation/einem Reload einen zuvor vom
+               Nutzer eingegebenen Wert unabhaengig vom servergerenderten
+               HTML automatisch wieder in dieses Feld eintraegt - ein
+               bekanntes, browserabhaengiges Verhalten bei benannten
+               Formularfeldern ohne dieses Attribut. Zusaetzliche
+               Absicherung neben der eigentlichen Ursache (siehe
+               clearComposer()), kein Ersatz dafuer. #}
+            <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
+                      placeholder="Nachricht an Lexono …" autofocus autocomplete="off"></textarea>
+            <button type="button" class="chat-composer__mic-btn" id="chat-mic-btn"
+                    title="Spracheingabe (lokal, Whisper)" aria-label="Spracheingabe starten"
+                    aria-pressed="false">
+              {{ icons.mic(class_="icon") }}
+            </button>
+            <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
+                    title="Senden" aria-label="Senden">
+              {{ icons.send(class_="icon") }}
+            </button>
+          </div>
+          {# Aufnahme-UX (06.10., selbe Direktive, §4-§7): ersetzt waehrend
+             RECORDING sichtbar die normalen Steuerelemente innerhalb
+             DERSELBEN `.chat-composer__row`-Huelle (keine zusaetzliche
+             Karte, keine zusaetzliche Hoehe - §13). Links Verwerfen (X),
+             Mitte Live-Wellenform + Aufnahmezeit, rechts Diktat-beenden
+             (Rechteck). #}
+          <div class="chat-composer__recording" id="chat-recording" hidden>
+            <button type="button" class="chat-composer__cancel-btn" id="chat-recording-cancel"
+                    title="Aufnahme verwerfen" aria-label="Aufnahme verwerfen">
+              {{ icons.close_window(class_="icon") }}
+            </button>
+            <div class="chat-composer__waveform" aria-hidden="true">
+              <canvas id="chat-waveform-canvas"></canvas>
+            </div>
+            <span class="chat-composer__recording-time" id="chat-recording-time">0:00</span>
+            <button type="button" class="chat-composer__stop-btn" id="chat-recording-stop"
+                    title="Diktat beenden" aria-label="Diktat beenden">
+              {{ icons.stop_square(class_="icon") }}
+            </button>
+          </div>
+          {# TRANSCRIBING-Zustand (06.10., Owner-Direktive "SPEECH COMPOSER
+             FINAL UX PASS" §8-§11): ersetzt - wie zuvor bei RECORDING -
+             sichtbar die anderen beiden Zeilen INNERHALB derselben
+             `.chat-composer__row`-Huelle, statt wie bisher nur einen
+             Status-Text UNTERHALB des Composers zu zeigen (§9: die alte
+             separate Statuszeile `#chat-speech-status` wird fuer diesen
+             Zustand nicht mehr verwendet, siehe JS). Der bisherige
+             Stop-Button-Platz (rechts) wird zum Lade-Indikator - "an
+             derselben Stelle", nicht darunter, nicht an einer neuen
+             Position (§10). #}
+          <div class="chat-composer__transcribing" id="chat-transcribing" hidden>
+            <span class="chat-composer__transcribing-label">Transkription läuft …</span>
+            <span class="chat-composer__transcribing-spinner" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </span>
+          </div>
         </div>
+        <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
         {% if active_conversation %}
           <p class="chat-composer__hint">
             Dokumentinhalte werden vor jeder KI-Anfrage lokal pseudonymisiert -
@@ -427,6 +680,26 @@
   </div>
 
   <script>
+    // Drei-Punkte-Menue (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
+    // PROFESSIONAL UX PASS" §13) - wortgleiche Kopie des bereits in
+    // matters_list.html/client_detail.html/clients_list.html/tasks.html
+    // etablierten Musters (idempotente `||`-Zuweisung, falls eine andere
+    // bereits geladene Seite/ein anderes Skript dasselbe globale
+    // `Lexono`-Objekt schon definiert hat) - bewusst NICHT in eine
+    // gemeinsame app_sidebar.js-Funktion ausgelagert, um nicht
+    // eigenmaechtig bereits bestehende, unveraenderte Seiten anzufassen
+    // (Direktive §31/§41 "keine unnoetigen Refactorings").
+    window.Lexono = window.Lexono || {};
+    Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
+      var menu = trigger.nextElementSibling;
+      var wasOpen = !menu.hidden;
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      menu.hidden = wasOpen;
+    };
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+
     (function () {
       var hour = new Date().getHours();
       var greetingEl = document.getElementById("chat-greeting");
@@ -446,6 +719,8 @@
       var fileList = document.getElementById("chat-file-list");
       var dropzoneHint = document.getElementById("chat-dropzone-hint");
       var messages = document.getElementById("chat-messages");
+      var csrfToken = (composer && composer.querySelector('input[name="csrf_token"]')) ?
+        composer.querySelector('input[name="csrf_token"]').value : "";
 
       // Automatisch wachsende Texteingabe (bis zu einer Obergrenze) statt
       // einer festen Zeilenzahl - fuehlt sich wie eine echte
@@ -516,22 +791,652 @@
         });
       }
 
-      // Spracheingabe (Masterprompt V2, UI-Vorgabe: "vorgesehen bzw.
-      // implementiert"): bewusst NUR als vorbereitete UI, NICHT an eine
-      // echte Spracherkennung angebunden. Browser-native Speech-to-Text
-      // (z. B. das Web Speech API `SpeechRecognition`) sendet Audio bei
-      // Chromium/WebView2 an einen Cloud-Spracherkennungsdienst, BEVOR die
-      // lokale Pseudonymisierung greifen koennte - das wuerde den
-      // Kernschutz ("sensible Daten verlassen den Kanzlei-PC nie
-      // unpseudonymisiert") direkt unterlaufen. Siehe .agentic/DECISIONS.md
-      // fuer die vollstaendige Begruendung und die Voraussetzung fuer eine
-      // spaetere echte Anbindung (lokale/on-device Spracherkennung).
-      if (micBtn) {
-        micBtn.addEventListener("click", function () {
-          var active = micBtn.getAttribute("aria-pressed") === "true";
-          micBtn.setAttribute("aria-pressed", String(!active));
-          micBtn.classList.toggle("chat-composer__mic-btn--active", !active);
+      // Chat umbenennen (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
+      // PROFESSIONAL UX PASS" §13-§17): ersetzt NUR den Titel-Text der
+      // betroffenen Zeile durch ein Eingabefeld - Conversation-ID/
+      // Nachrichten/Kontext bleiben vollstaendig unberuehrt (§3/§15),
+      // kein Seitenreload (§14/§39). `fetch` statt eines klassischen
+      // Formular-Submits, weil genau das einen Reload erzwingen wuerde.
+      document.querySelectorAll(".chat-conversations__rename-trigger").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+          var row = btn.closest(".chat-conversations__row");
+          var conversationId = row.getAttribute("data-conversation-id");
+          var titleSpan = row.querySelector("[data-title-display]");
+          if (!titleSpan || row.querySelector(".chat-conversations__rename-input")) { return; }
+
+          var originalTitle = titleSpan.textContent;
+          var input = document.createElement("input");
+          input.type = "text";
+          input.className = "chat-conversations__rename-input";
+          input.value = originalTitle;
+          input.maxLength = 200;
+          input.setAttribute("aria-label", "Neuer Titel für diese Unterhaltung");
+          // Verhindert, dass ein Klick in das Eingabefeld als Navigations-
+          // klick auf `.chat-conversations__item` durchschlaegt.
+          input.addEventListener("click", function (evt) { evt.preventDefault(); evt.stopPropagation(); });
+
+          var settled = false;
+
+          function restoreDisplay(text) {
+            if (settled) { return; }
+            settled = true;
+            titleSpan.textContent = text;
+            if (input.parentNode) { input.replaceWith(titleSpan); }
+          }
+
+          function save() {
+            if (settled) { return; }
+            // §14: Leerstring/reines Whitespace wird NICHT gespeichert -
+            // stattdessen auf den bisherigen Titel zurueckgesetzt, kein
+            // Request, kein kaputter leerer Eintrag in der Liste.
+            var newTitle = input.value.trim();
+            if (!newTitle || newTitle === originalTitle) {
+              restoreDisplay(originalTitle);
+              return;
+            }
+            settled = true;
+            var formData = new FormData();
+            formData.append("csrf_token", csrfToken);
+            formData.append("title", newTitle);
+            fetch("/dashboard/chat/" + conversationId + "/rename", {
+              method: "POST", body: formData, credentials: "same-origin",
+            })
+              .then(function (resp) { return resp.json().then(function (data) { return { ok: resp.ok, data: data }; }); })
+              .then(function (result) {
+                settled = false; // restoreDisplay() darf jetzt wirken.
+                var finalTitle = (result.ok && result.data && result.data.ok) ? result.data.title : originalTitle;
+                restoreDisplay(finalTitle);
+                if (result.ok && result.data && result.data.ok) {
+                  // Kopfzeile des GERADE GEOEFFNETEN Chats live aktualisieren
+                  // (§15 "Chat bleibt geoeffnet... nur der Titel aendert
+                  // sich") - existiert nur, wenn dieser Chat aktiv UND kein
+                  // expliziter Aktenkontext gesetzt ist (siehe chat.html,
+                  // `#chat-header-title-text` wird nur in diesem Zweig
+                  // gerendert).
+                  var headerTitleEl = document.getElementById("chat-header-title-text");
+                  if (headerTitleEl && row.classList.contains("chat-conversations__row")) {
+                    var activeLink = row.querySelector(".chat-conversations__item--active");
+                    if (activeLink) { headerTitleEl.textContent = finalTitle; }
+                  }
+                }
+              })
+              .catch(function () {
+                settled = false;
+                restoreDisplay(originalTitle);
+              });
+          }
+
+          input.addEventListener("keydown", function (evt) {
+            if (evt.key === "Enter") {
+              evt.preventDefault();
+              save();
+            } else if (evt.key === "Escape") {
+              evt.preventDefault();
+              restoreDisplay(originalTitle);
+            }
+          });
+          input.addEventListener("blur", function () { save(); });
+
+          titleSpan.replaceWith(input);
+          input.focus();
+          input.select();
         });
+      });
+
+      // Mehrfachauswahl + Sammelloeschen (06.10., selbe Direktive §18-§26).
+      (function () {
+        var aside = document.getElementById("chat-conversations-aside");
+        var selectionToggle = document.getElementById("chat-selection-toggle");
+        var selectionBar = document.getElementById("chat-selection-bar");
+        var selectionCount = document.getElementById("chat-selection-count");
+        var selectionCancel = document.getElementById("chat-selection-cancel");
+        var selectionDelete = document.getElementById("chat-selection-delete");
+        var conversationsList = document.getElementById("chat-conversations-list");
+        if (!aside || !selectionToggle || !conversationsList) { return; }
+
+        function checkboxes() {
+          return Array.prototype.slice.call(
+            conversationsList.querySelectorAll(".chat-conversations__checkbox")
+          );
+        }
+
+        function selectedCheckboxes() {
+          return checkboxes().filter(function (cb) { return cb.checked; });
+        }
+
+        function updateSelectionBar() {
+          var count = selectedCheckboxes().length;
+          selectionCount.textContent = count + (count === 1 ? " ausgewählt" : " ausgewählt");
+          selectionDelete.disabled = count === 0;
+        }
+
+        function setSelectionMode(active) {
+          aside.classList.toggle("chat-conversations--selecting", active);
+          selectionBar.hidden = !active;
+          selectionToggle.classList.toggle("chat-conversations__select-toggle--active", active);
+          selectionToggle.setAttribute("aria-pressed", String(active));
+          if (!active) {
+            checkboxes().forEach(function (cb) { cb.checked = false; });
+          }
+          updateSelectionBar();
+        }
+
+        selectionToggle.addEventListener("click", function () {
+          setSelectionMode(!aside.classList.contains("chat-conversations--selecting"));
+        });
+
+        selectionCancel.addEventListener("click", function () {
+          setSelectionMode(false);
+        });
+
+        checkboxes().forEach(function (cb) {
+          cb.addEventListener("click", function (evt) { evt.stopPropagation(); });
+          cb.addEventListener("change", updateSelectionBar);
+        });
+
+        // Waehrend des Auswahlmodus toggelt ein Klick auf die Zeile die
+        // Checkbox, statt zu navigieren (§19 "einzelnen/mehrere Chats
+        // auswaehlen" ueber die GESAMTE Zeile, nicht nur den winzigen
+        // Checkbox-Hitbereich).
+        conversationsList.querySelectorAll(".chat-conversations__item").forEach(function (link) {
+          link.addEventListener("click", function (evt) {
+            if (!aside.classList.contains("chat-conversations--selecting")) { return; }
+            evt.preventDefault();
+            var row = link.closest(".chat-conversations__row");
+            var cb = row && row.querySelector(".chat-conversations__checkbox");
+            if (cb) {
+              cb.checked = !cb.checked;
+              updateSelectionBar();
+            }
+          });
+        });
+
+        selectionDelete.addEventListener("click", function () {
+          var selected = selectedCheckboxes();
+          if (!selected.length) { return; }
+          var count = selected.length;
+          var confirmed = window.confirm(
+            count + (count === 1 ? " Chat löschen?" : " Chats löschen?") +
+            "\n\nDie ausgewählten Chats und ihre Nachrichten werden gelöscht. " +
+            "Bereits erzeugte Entwürfe bleiben erhalten. Dies kann nicht rückgängig gemacht werden."
+          );
+          if (!confirmed) { return; }
+
+          var ids = selected.map(function (cb) { return cb.value; });
+          var formData = new FormData();
+          formData.append("csrf_token", csrfToken);
+          ids.forEach(function (id) { formData.append("conversation_ids", id); });
+
+          selectionDelete.disabled = true;
+          fetch("/dashboard/chat/bulk-delete", { method: "POST", body: formData, credentials: "same-origin" })
+            .then(function (resp) { return resp.json().then(function (data) { return { ok: resp.ok, data: data }; }); })
+            .then(function (result) {
+              if (!result.ok || !result.data || !result.data.ok) {
+                // §26: keine falsche Erfolgsmeldung, Auswahl bleibt
+                // bestehen, bestehende Fehlermeldung ueber den (seltenen)
+                // technischen Fehlerfall.
+                window.alert("Löschen fehlgeschlagen. Bitte erneut versuchen.");
+                updateSelectionBar();
+                return;
+              }
+              var deletedIds = result.data.deleted_ids || [];
+              var activeDeleted = false;
+              deletedIds.forEach(function (id) {
+                var row = conversationsList.querySelector('.chat-conversations__row[data-conversation-id="' + id + '"]');
+                if (row) {
+                  if (row.querySelector(".chat-conversations__item--active")) { activeDeleted = true; }
+                  row.remove();
+                }
+              });
+              setSelectionMode(false);
+              if (!conversationsList.querySelector(".chat-conversations__row")) {
+                var empty = document.createElement("div");
+                empty.className = "chat-conversations__empty";
+                empty.textContent = "Noch keine Unterhaltungen.";
+                conversationsList.appendChild(empty);
+              }
+              // §25: der aktive, gerade gelöschte Chat darf NIE als kaputte
+              // Detailansicht/404 stehen bleiben - sauberer Fallback auf
+              // einen neuen allgemeinen Chat. Ein nicht ausgewaehlter
+              // aktiver Chat bleibt dagegen unveraendert geoeffnet (reines
+              // DOM-Entfernen der GELOESCHTEN Zeilen oben, kein Reload).
+              if (activeDeleted) {
+                window.location.href = "/dashboard/chat?new=1";
+              }
+            })
+            .catch(function () {
+              window.alert("Löschen fehlgeschlagen (Verbindung zum Server). Bitte erneut versuchen.");
+            })
+            .finally(function () {
+              updateSelectionBar();
+            });
+        });
+      })();
+
+      // Spracheingabe (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW
+      // PASS" §22-27): jetzt an eine ECHTE, LOKALE Spracherkennung
+      // angebunden (app/chat/speech.py, faster-whisper/CTranslate2) statt
+      // der browser-nativen Web Speech API - deren Cloud-Versand VOR jeder
+      // lokalen Pseudonymisierung bereits in .agentic/DECISIONS.md (15.09.)
+      // als nicht vertretbar verworfen wurde (siehe dort fuer die volle
+      // Begruendung). Ablauf wie dort als Voraussetzung benannt: Mikrofon
+      // -> Browser-Audioaufnahme (MediaRecorder) -> lokale Lexono-Route
+      // `/dashboard/chat/speech/transcribe` -> lokales Whisper -> Text im
+      // Eingabefeld -> Anwalt kontrolliert -> manuelles Absenden. Es gibt
+      // HIER keinen Codepfad, der das Audio dauerhaft speichert oder an
+      // einen externen Dienst sendet (siehe app/chat/speech.py Docstring).
+      if (micBtn && textarea) {
+        var speechStatus = document.getElementById("chat-speech-status");
+        // Aufnahme-UX (06.10., Owner-Direktive "SPRACHEINGABE IM CHAT:
+        // VOLLSTAENDIGE RECORDING- UND SEND-UX") - die Transkriptions-
+        // Engine/-Route (app/chat/speech.py, /dashboard/chat/speech/
+        // transcribe) bleibt vollstaendig unveraendert (siehe Direktive
+        // §1/§8); geaendert wird NUR die Recording-UX im Composer selbst.
+        // Dieselbe State Machine wie zuvor (idle/recording/transcribing),
+        // jetzt mit einer eigenen sichtbaren Aufnahme-Zeile statt nur
+        // einem Status-Text waehrend RECORDING.
+        var normalControls = document.getElementById("chat-normal-controls");
+        var recordingRow = document.getElementById("chat-recording");
+        var transcribingRow = document.getElementById("chat-transcribing");
+        var cancelBtn = document.getElementById("chat-recording-cancel");
+        var stopBtn = document.getElementById("chat-recording-stop");
+        var waveformCanvas = document.getElementById("chat-waveform-canvas");
+        var recordingTimeEl = document.getElementById("chat-recording-time");
+
+        var mediaRecorder = null;
+        var audioChunks = [];
+        var micState = "idle"; // idle | recording | transcribing
+        // Gesetzt VOR jedem mediaRecorder.stop()-Aufruf - entscheidet im
+        // gemeinsamen "stop"-Event-Handler, ob transkribiert oder
+        // verworfen wird (§6/§7: X vs. Stop loesen denselben
+        // MediaRecorder-Zustandswechsel aus, aber mit entgegengesetzter
+        // Folgeaktion).
+        var pendingStopAction = "transcribe"; // "transcribe" | "cancel"
+
+        var audioCtx = null;
+        var analyser = null;
+        var frequencyData = null;
+        var barLevels = []; // zeitlich geglaettete 0..1-Werte, siehe drawBars()
+        var waveformAnimationId = null;
+        var recordingStartTime = null;
+        var recordingTimerId = null;
+
+        function setSpeechStatus(text, variant) {
+          if (!speechStatus) { return; }
+          speechStatus.textContent = text || "";
+          speechStatus.hidden = !text;
+          speechStatus.className = "chat-composer__speech-status" +
+            (variant ? " chat-composer__speech-status--" + variant : "");
+        }
+
+        function setMicState(state) {
+          micState = state;
+          micBtn.classList.toggle("chat-composer__mic-btn--active", state === "recording");
+          micBtn.classList.toggle("chat-composer__mic-btn--busy", state === "transcribing");
+          micBtn.setAttribute("aria-pressed", String(state === "recording"));
+          micBtn.disabled = state === "transcribing";
+          // §16: die drei sichtbaren Zustaende schliessen sich gegenseitig
+          // aus - GENAU EINE der drei Zeilen ist je Zustand sichtbar,
+          // alle innerhalb derselben `.chat-composer__row`-Huelle (keine
+          // zusaetzliche Karte, keine Hoehenaenderung). TRANSCRIBING zeigt
+          // jetzt eine EIGENE Zeile statt (wie zuvor) die normalen,
+          // lediglich gesperrten Steuerelemente - die alte separate
+          // Statuszeile unterhalb des Composers wird fuer diesen Zustand
+          // NICHT mehr benutzt (§8/§9, siehe startTranscription()).
+          if (normalControls) { normalControls.hidden = state !== "idle"; }
+          if (recordingRow) { recordingRow.hidden = state !== "recording"; }
+          if (transcribingRow) { transcribingRow.hidden = state !== "transcribing"; }
+        }
+
+        function stopTracks(stream) {
+          stream.getTracks().forEach(function (track) { track.stop(); });
+        }
+
+        // Segmentierte Audio-Visualisierung (06.10., Owner-Direktive
+        // "SPEECH COMPOSER FINAL UX PASS" §3-§6) - ersetzt die vorherige
+        // EINZELNE, durchgehend verbundene Oszilloskop-Linie
+        // (`getByteTimeDomainData()` + ein einziger `lineTo`-Pfad ueber
+        // die gesamte Breite - das Problem war exakt diese Darstellung
+        // als EIN zusammenhaengender Pfad statt getrennter Segmente,
+        // siehe Abschlussbericht §1 fuer die volle Root-Cause-Herleitung).
+        // Jetzt: `getByteFrequencyData()` (Frequenzspektrum statt reiner
+        // Zeitbereichsamplitude) - bei Sprache liefert das von Natur aus
+        // UNTERSCHIEDLICHE Energie je Frequenzband (klassische
+        // "Equalizer"-Optik mit erkennbar verschiedenen Balkenhoehen),
+        // bei Stille nahezu einheitlich niedrige Werte ueber alle Baender
+        // (§5 "STILLE: nur geringe Grundbewegung") - das war mit reiner
+        // Zeitbereichsamplitude (einem Momentan-Pegel) strukturell nicht
+        // erreichbar. Weiterhin dieselbe, bereits vom MediaRecorder
+        // genutzte Stream-Quelle - keine zweite Aufnahme, keine neue
+        // Bibliothek (§2).
+        function startWaveform(stream) {
+          try {
+            var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextCtor || !waveformCanvas) { return; }
+            audioCtx = new AudioContextCtor();
+            var source = audioCtx.createMediaStreamSource(stream);
+            analyser = audioCtx.createAnalyser();
+            // 256 Frequenz-Bins (fftSize 512) - genug Rohaufloesung, um sie
+            // unten dynamisch je nach tatsaechlicher Composer-Breite zu
+            // einer sinnvollen Balkenanzahl zu buendeln (§6), ohne bei
+            // schmalen Fenstern leere/zu viele Balken zu erzwingen.
+            analyser.fftSize = 512;
+            // Eingebautes AnalyserNode-Smoothing (§5 "zeitliche Glaettung")
+            // als erste Glaettungsstufe - zusaetzlich zur eigenen
+            // Balken-Glaettung in drawBars() unten (zwei Stufen ergeben
+            // zusammen eine ruhige, nicht hektisch springende Anzeige).
+            analyser.smoothingTimeConstant = 0.75;
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+            source.connect(analyser);
+            barLevels = [];
+            var barColor = getComputedStyle(document.documentElement)
+              .getPropertyValue("--wax-red").trim() || "#a23b2e";
+            drawBars(barColor);
+          } catch (err) {
+            // Die Visualisierung ist reine visuelle Zusatzrueckmeldung
+            // (§5 der Vorgaenger-Direktive) - ein Fehler hier darf
+            // Aufnahme/Transkription nicht beeintraechtigen, deshalb kein
+            // setSpeechStatus() hier.
+          }
+        }
+
+        // Richtwert 24-40 Segmente auf normaler Desktopbreite (§6) - aus
+        // der TATSAECHLICHEN Canvas-Breite berechnet (nicht fest codiert),
+        // damit auf schmaleren Viewports weder Clipping noch gequetschte
+        // Mini-Balken entstehen.
+        var BAR_WIDTH = 3;
+        var BAR_GAP = 2;
+        var MIN_BARS = 12;
+        var MAX_BARS = 44;
+
+        function computeBarCount(cssWidth) {
+          var count = Math.floor(cssWidth / (BAR_WIDTH + BAR_GAP));
+          return Math.max(MIN_BARS, Math.min(MAX_BARS, count));
+        }
+
+        function drawBars(barColor) {
+          if (!analyser || !waveformCanvas) { return; }
+          var ctx2d = waveformCanvas.getContext("2d");
+          var dpr = window.devicePixelRatio || 1;
+          var cssWidth = waveformCanvas.clientWidth || 1;
+          var cssHeight = waveformCanvas.clientHeight || 1;
+          if (waveformCanvas.width !== Math.round(cssWidth * dpr) ||
+              waveformCanvas.height !== Math.round(cssHeight * dpr)) {
+            waveformCanvas.width = Math.round(cssWidth * dpr);
+            waveformCanvas.height = Math.round(cssHeight * dpr);
+          }
+
+          analyser.getByteFrequencyData(frequencyData);
+
+          var barCount = computeBarCount(cssWidth);
+          if (barLevels.length !== barCount) {
+            barLevels = new Array(barCount).fill(0);
+          }
+
+          // Rohe Frequenz-Bins zu `barCount` sichtbaren Balken buendeln
+          // (Mittelwert je Bucket) - entkoppelt die sichtbare
+          // Segmentanzahl von der FFT-Aufloesung (§6 "anhand der
+          // tatsaechlichen Composer-Breite", nicht an `fftSize` gebunden).
+          // Nur der UNTERE Teil des Spektrums wird genutzt (Sprache liegt
+          // dort) statt auch die oberen, bei Sprache praktisch stummen
+          // Bins mit einzubeziehen, die die Anzeige sonst ueberwiegend
+          // flach aussehen liessen.
+          var usableBins = Math.max(barCount, Math.round(frequencyData.length * 0.65));
+          var binsPerBar = Math.max(1, Math.floor(usableBins / barCount));
+          // Geringer Rausch-Boden (§5 "Noise Floor") - Mikrofon-Eigenrauschen
+          // unterhalb dieses Werts wird ignoriert, damit RUHE wirklich ruhig
+          // aussieht statt staendig in Mini-Zuckungen zu zittern.
+          var noiseFloor = 10;
+          for (var i = 0; i < barCount; i++) {
+            var start = i * binsPerBar;
+            var end = Math.min(usableBins, start + binsPerBar);
+            var sum = 0;
+            for (var j = start; j < end; j++) { sum += frequencyData[j]; }
+            var avg = end > start ? sum / (end - start) : 0; // 0..255
+            var adjusted = Math.max(0, avg - noiseFloor);
+            var target = Math.min(1, adjusted / (255 - noiseFloor)); // 0..1, normalisiert
+            // Zweite Glaettungsstufe (exponentiell geglaetteter Mittelwert
+            // pro Balken) - schneller Anstieg bei lauter werdender Sprache,
+            // sanfteres Abklingen danach, kein Einzelsample-Springen.
+            var smoothing = target > barLevels[i] ? 0.55 : 0.82;
+            barLevels[i] = barLevels[i] * smoothing + target * (1 - smoothing);
+          }
+
+          ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx2d.clearRect(0, 0, cssWidth, cssHeight);
+          ctx2d.lineCap = "round";
+          ctx2d.lineWidth = BAR_WIDTH;
+          ctx2d.strokeStyle = barColor;
+
+          var minBarHeight = 3; // §5 "Mindesthoehe" - auch bei 0 sichtbar als Segment, nie unsichtbar/flach.
+          var maxBarHeight = Math.max(minBarHeight, cssHeight - 6); // §5 "Maximalhoehe"
+          var groupWidth = barCount * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
+          var offsetX = Math.max(0, (cssWidth - groupWidth) / 2);
+
+          ctx2d.beginPath();
+          for (var b = 0; b < barCount; b++) {
+            var barHeight = minBarHeight + barLevels[b] * (maxBarHeight - minBarHeight);
+            var x = offsetX + b * (BAR_WIDTH + BAR_GAP) + BAR_WIDTH / 2;
+            var yTop = (cssHeight - barHeight) / 2;
+            var yBottom = yTop + barHeight;
+            ctx2d.moveTo(x, yBottom);
+            ctx2d.lineTo(x, yTop);
+          }
+          ctx2d.stroke();
+
+          waveformAnimationId = requestAnimationFrame(function () { drawBars(barColor); });
+        }
+
+        function stopWaveform() {
+          if (waveformAnimationId) {
+            cancelAnimationFrame(waveformAnimationId);
+            waveformAnimationId = null;
+          }
+          if (audioCtx) {
+            try { audioCtx.close(); } catch (err) { /* bereits geschlossen */ }
+            audioCtx = null;
+          }
+          analyser = null;
+          frequencyData = null;
+          barLevels = [];
+          if (waveformCanvas) {
+            var ctx2d = waveformCanvas.getContext("2d");
+            if (ctx2d) { ctx2d.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height); }
+          }
+        }
+
+        // Aufnahmezeit (§4 "Optional: Aufnahmezeit, z. B. 00:03").
+        function updateRecordingTime() {
+          if (!recordingTimeEl || !recordingStartTime) { return; }
+          var elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+          var minutes = Math.floor(elapsed / 60);
+          var seconds = elapsed % 60;
+          recordingTimeEl.textContent = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+        }
+
+        function startRecordingTimer() {
+          recordingStartTime = Date.now();
+          updateRecordingTime();
+          recordingTimerId = setInterval(updateRecordingTime, 250);
+        }
+
+        function stopRecordingTimer() {
+          if (recordingTimerId) { clearInterval(recordingTimerId); recordingTimerId = null; }
+          recordingStartTime = null;
+          if (recordingTimeEl) { recordingTimeEl.textContent = "0:00"; }
+        }
+
+        function startTranscription(blob) {
+          // §8/§9: "Transkription läuft …" erscheint jetzt AUSSCHLIESSLICH
+          // innerhalb der Composer-Zeile selbst (`#chat-transcribing`,
+          // ueber `setMicState("transcribing")` sichtbar geschaltet) -
+          // NICHT mehr zusaetzlich in der separaten Statuszeile
+          // unterhalb des Composers (frueher: `setSpeechStatus("Transkription
+          // läuft …", "busy")` hier). `setSpeechStatus()` bleibt fuer
+          // ERROR-Faelle weiter unten in diesem Ablauf reserviert - davon
+          // gibt es waehrend TRANSCRIBING selbst keinen sichtbaren Text mehr.
+          setMicState("transcribing");
+
+          var extension = blob.type.indexOf("ogg") !== -1 ? ".ogg" : ".webm";
+          var formData = new FormData();
+          formData.append("audio", blob, "aufnahme" + extension);
+          var csrfInput = composer.querySelector('input[name="csrf_token"]');
+          formData.append("csrf_token", csrfInput ? csrfInput.value : "");
+
+          fetch("/dashboard/chat/speech/transcribe", {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+          })
+            .then(function (resp) {
+              return resp.json().then(function (data) {
+                return { ok: resp.ok, data: data };
+              });
+            })
+            .then(function (result) {
+              setMicState("idle");
+              if (!result.ok) {
+                setSpeechStatus(
+                  (result.data && result.data.message) || "Spracheingabe fehlgeschlagen.",
+                  "error"
+                );
+                return;
+              }
+              var text = ((result.data && result.data.text) || "").trim();
+              if (!text) {
+                setSpeechStatus("Kein Text erkannt.", "error");
+                return;
+              }
+              // §9/§17: der erkannte Text wird NUR in das ganz normale
+              // Composer-Textfeld eingesetzt - kein Sonderfall, kein
+              // eigener Speech-Send-Pfad. Ab hier ist der Composer wieder
+              // ein normaler Text-Composer; Senden laeuft ueber denselben
+              // `composer`-Submit-Handler (siehe runStreamingSend() unten)
+              // wie jede getippte Nachricht.
+              var current = textarea.value;
+              textarea.value = (current ? current.replace(/\s+$/, "") + " " : "") + text;
+              autoGrow();
+              textarea.focus();
+              // Cursor ans Ende, statt mitten im bereits vorhandenen Text
+              // (relevant, wenn der Anwalt zuvor schon etwas getippt hatte).
+              textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+              setSpeechStatus("");
+              // Bewusst KEIN automatisches Absenden (§8/§9) - der erkannte
+              // Text landet nur im Eingabefeld, wie jeder getippte Text.
+            })
+            .catch(function () {
+              setMicState("idle");
+              setSpeechStatus("Spracheingabe fehlgeschlagen (Verbindung zum Server).", "error");
+            });
+        }
+
+        function beginRecording(stream) {
+          audioChunks = [];
+          var options = {};
+          if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported("audio/webm")) {
+            options.mimeType = "audio/webm";
+          }
+          try {
+            mediaRecorder = new MediaRecorder(stream, options);
+          } catch (err) {
+            stopTracks(stream);
+            setSpeechStatus("Aufnahme konnte nicht gestartet werden.", "error");
+            return;
+          }
+
+          mediaRecorder.addEventListener("dataavailable", function (evt) {
+            if (evt.data && evt.data.size > 0) { audioChunks.push(evt.data); }
+          });
+
+          // Mikrofon waehrend der Aufnahme getrennt/Fehler im Capture-
+          // Pfad (§12 "Fehlerzustand" - Audioaufnahme beenden, Composer
+          // bleibt nutzbar, erneuter Versuch moeglich).
+          mediaRecorder.addEventListener("error", function () {
+            stopTracks(stream);
+            stopWaveform();
+            stopRecordingTimer();
+            setMicState("idle");
+            setSpeechStatus("Die Aufnahme wurde unterbrochen (Mikrofon getrennt?).", "error");
+          });
+
+          mediaRecorder.addEventListener("stop", function () {
+            stopTracks(stream);
+            stopWaveform();
+            stopRecordingTimer();
+            if (pendingStopAction === "cancel") {
+              // §6: Aufnahme vollstaendig verworfen - keine Transkription,
+              // kein Text im Composer, kein bestehender Composer-Text
+              // ueberschrieben (textarea.value wird hier nirgends
+              // angefasst), keine Chatnachricht.
+              audioChunks = [];
+              setMicState("idle");
+              setSpeechStatus("");
+              return;
+            }
+            var blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+            if (!blob.size) {
+              setMicState("idle");
+              setSpeechStatus("Keine Aufnahme erkannt.", "error");
+              return;
+            }
+            startTranscription(blob);
+          });
+
+          mediaRecorder.start();
+          pendingStopAction = "transcribe";
+          setMicState("recording");
+          startWaveform(stream);
+          startRecordingTimer();
+          // Die neue Aufnahme-Zeile (X/Wellenform/Stop) macht den Zustand
+          // bereits eindeutig sichtbar (§4) - kein zusaetzlicher Text-
+          // Status waehrend RECORDING noetig.
+          setSpeechStatus("");
+        }
+
+        micBtn.addEventListener("click", function () {
+          // Waehrend RECORDING ist dieser Button Teil von
+          // `normalControls` und daher unsichtbar (siehe setMicState) -
+          // waehrend TRANSCRIBING ist er `disabled`. Dieser Handler
+          // startet deshalb ausschliesslich aus IDLE heraus eine neue
+          // Aufnahme; Beenden/Verwerfen laufen jetzt ausschliesslich
+          // ueber die eigenen Stop-/X-Buttons (§7/§6).
+          if (micState !== "idle") { return; }
+
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+            setSpeechStatus("Spracheingabe wird von diesem Browser nicht unterstützt.", "error");
+            return;
+          }
+
+          navigator.mediaDevices.getUserMedia({ audio: true }).then(beginRecording).catch(function (err) {
+            setMicState("idle");
+            // §26/§12: Mikrofon fehlt/Zugriff verweigert - unterscheidbare,
+            // ehrliche Fehlermeldungen statt einer generischen Meldung.
+            if (err && err.name === "NotAllowedError") {
+              setSpeechStatus("Mikrofonzugriff wurde verweigert.", "error");
+            } else if (err && err.name === "NotFoundError") {
+              setSpeechStatus("Kein Mikrofon gefunden.", "error");
+            } else {
+              setSpeechStatus("Mikrofon konnte nicht verwendet werden.", "error");
+            }
+          });
+        });
+
+        if (cancelBtn) {
+          cancelBtn.addEventListener("click", function () {
+            if (micState !== "recording") { return; }
+            pendingStopAction = "cancel";
+            if (mediaRecorder && mediaRecorder.state !== "inactive") { mediaRecorder.stop(); }
+          });
+        }
+
+        if (stopBtn) {
+          stopBtn.addEventListener("click", function () {
+            if (micState !== "recording") { return; }
+            pendingStopAction = "transcribe";
+            if (mediaRecorder && mediaRecorder.state !== "inactive") { mediaRecorder.stop(); }
+          });
+        }
       }
 
       // "Kopieren"-Button unter KI-Antworten (UI/UX-Ueberarbeitung, Phase 4,
@@ -564,6 +1469,93 @@
           }
         });
       });
+
+      // Sofortiges User-Nachricht-Rendering (06.10., Owner-Direktive "CHAT &
+      // CHAT-HISTORY PROFESSIONAL UX PASS" §4-§12) - ROOT CAUSE (siehe
+      // Abschlussbericht fuer die volle Herleitung): `send_message_stream`
+      // (app/web/chat_router.py) persistiert die User-Nachricht bereits
+      // SYNCHRON, BEVOR die StreamingResponse ueberhaupt zurueckgegeben
+      // wird (`chat_service.record_user_message(...)` steht dort vor dem
+      // `return StreamingResponse(...)`) - das Problem war rein
+      // CLIENTSEITIG: es gab bisher keine Funktion, die die eigene
+      // Nachricht ueberhaupt in den DOM einfuegte, nur `appendThinkingBubble()`
+      // fuer die Assistant-Seite. Sichtbar wurde die eigene Nachricht bisher
+      // ausschliesslich durch den abschliessenden Seiten-Reload (`finish()`
+      // unten) NACH der vollstaendigen KI-Antwort.
+      //
+      // Bewusst "echtes" Optimistic UI VOR dem `fetch()`-Aufruf (nicht erst
+      // nach dem ersten SSE-Ereignis) - T1 so nah wie technisch moeglich an
+      // T0 (§5). Sicher gegen Duplikate (§9) OHNE Text-/ID-Abgleich noetig:
+      // der bestehende Ablauf endet IMMER mit einer vollstaendigen
+      // Seitennavigation (`finish()`), die den gesamten DOM durch die
+      // server-gerenderte, bereits persistierte Wahrheit ersetzt - die hier
+      // optimistisch eingefuegte Bubble existiert strukturell nur fuer das
+      // kurze Zeitfenster bis dahin und wird dabei nie "daneben" angezeigt,
+      // nie dupliziert. Die einzige Vorbedingung dafuer: ein leeres/
+      // ungueltiges Senden darf diese Bubble gar nicht erst erzeugen - siehe
+      // der Leer-Guard in `runStreamingSend()` unten, der denselben
+      // Validierungsfall spiegelt, den der Server sonst erst nach einem
+      // unnoetigen Roundtrip abgelehnt haette.
+      function appendUserBubble(content, files) {
+        if (!messages) { return null; }
+        var bubble = document.createElement("div");
+        bubble.className = "chat-message chat-message--user";
+        var avatarEl = document.querySelector(".sidebar__profile-avatar");
+        var initial = avatarEl ? avatarEl.textContent.trim() : "?";
+
+        var avatarDiv = document.createElement("div");
+        avatarDiv.className = "chat-message__avatar";
+        avatarDiv.textContent = initial;
+        bubble.appendChild(avatarDiv);
+
+        var bodyDiv = document.createElement("div");
+        bodyDiv.className = "chat-message__body";
+
+        var senderDiv = document.createElement("div");
+        senderDiv.className = "chat-message__sender";
+        senderDiv.textContent = "Sie";
+        bodyDiv.appendChild(senderDiv);
+
+        // Einfache Dateinamen-Chips (dieselbe Icon-Zuordnung wie die
+        // bestehende Compose-Zeit-Dateivorschau, siehe `renderFileList()`
+        // oben) - bewusst NICHT die volle Thumbnail-/Status-Darstellung
+        // von `chat-attachment-chip` nachgebaut (§29 verlangt nur, dass
+        // Anhaenge-Nachrichten SOFORT erscheinen, nicht dass diese
+        // voruebergehende Bubble bereits die endgueltige, serverseitig
+        // gerenderte Vorschau vorwegnimmt - die liefert derselbe
+        // abschliessende Seiten-Reload wie bisher).
+        if (files && files.length) {
+          var attachmentsDiv = document.createElement("div");
+          attachmentsDiv.className = "chat-message__attachments";
+          Array.prototype.forEach.call(files, function (file) {
+            var chip = document.createElement("span");
+            chip.className = "doc-chip chat-attachment-chip";
+            if (window.lexonoFileTypeBadge) { chip.appendChild(window.lexonoFileTypeBadge(file.name)); }
+            var nameSpan = document.createElement("span");
+            nameSpan.className = "chat-attachment-chip__name";
+            nameSpan.textContent = file.name;
+            chip.appendChild(nameSpan);
+            attachmentsDiv.appendChild(chip);
+          });
+          bodyDiv.appendChild(attachmentsDiv);
+        }
+
+        var textDiv = document.createElement("div");
+        textDiv.className = "chat-message__text chat-message__text--markdown";
+        // `textContent`, NICHT `innerHTML` - roher, noch ungeprueter
+        // Nutzertext darf niemals als HTML interpretiert werden (XSS).
+        // Die endgueltige, server-seitig per `chat_markdown`-Filter
+        // gerenderte Fassung kommt ohnehin ueber den abschliessenden
+        // Reload - diese Bubble ist bewusst nur eine kurzlebige,
+        // garantiert sichere Zwischenanzeige.
+        textDiv.textContent = content;
+        bodyDiv.appendChild(textDiv);
+
+        bubble.appendChild(bodyDiv);
+        messages.appendChild(bubble);
+        messages.scrollTop = messages.scrollHeight;
+        return bubble;
+      }
 
       function appendThinkingBubble() {
         if (!messages) { return null; }
@@ -600,6 +1592,96 @@
         sendBtn.classList.add("chat-composer__send-btn--loading");
       }
 
+      // Single Source of Truth fuers Leeren des Composers (06.10., Owner-
+      // Direktive "CHAT / COMPOSER / CHAT-HISTORY FINAL UX & STATE-
+      // CONSISTENCY PASS" §8/§9) - EINE Stelle statt mehrerer unabhaengiger
+      // `value = ""`-Workarounds. Der sichtbare `textarea.value` IST hier
+      // bereits der einzige Zustand, der den Composer-Inhalt haelt (kein
+      // separater Transcript-/JS-State daneben, siehe startTranscription()
+      // oben - das erkannte Transkript wird direkt und ausschliesslich in
+      // `textarea.value` geschrieben, nicht in eine zweite Variable).
+      //
+      // NUR vom Streaming-Pfad (runStreamingSend) genutzt, bewusst NICHT
+      // vom klassischen Formular-Fallback weiter unten: dort geschieht die
+      // eigentliche Formular-Uebermittlung NATIV (kein `preventDefault()`)
+      // unmittelbar NACH diesem "submit"-Listener - der Browser liest die
+      // Feldwerte zu diesem spaeteren Zeitpunkt erneut aus dem DOM. Ein
+      // `clearComposer()`-Aufruf hier wuerde den Inhalt loeschen, BEVOR der
+      // Browser ihn uebermittelt, und zu einer leer gesendeten Nachricht
+      // fuehren (derselbe Mechanismus wie beim bereits dokumentierten
+      // `disabled`-Fund oben bei `setLoadingState()`, nur ueber `value`
+      // statt `disabled`). Der Fallback-Pfad leert den Composer stattdessen
+      // auf natuerliche Weise ueber den anschliessenden vollstaendigen
+      // Seitenwechsel (serverseitig frisch gerendert, kein `value`-Attribut).
+      function clearComposer() {
+        textarea.value = "";
+        autoGrow();
+        if (fileInput) { fileInput.value = ""; }
+        if (fileList) { fileList.innerHTML = ""; }
+      }
+
+      // ECHTER FUND (06.10., Owner-Direktive "CHAT / COMPOSER / CHAT-HISTORY
+      // FINAL UX & STATE-CONSISTENCY PASS" §10, live per CDP reproduziert):
+      // `send-stream` liefert fuer eine Validierungsabweisung VOR jeder
+      // Nachrichtenerzeugung (leere Eingabe serverseitig gegengeprueft,
+      // vor allem aber: unzulaessiger Dateityp beim Anhang, siehe
+      // `_stream_error_event`/`_validate_uploads` in chat_router.py) ein
+      // "done"-Ereignis mit `message_id: null` UND einer echten
+      // Fehlermeldung in `content` - der bisherige `handleFrame()`-Code
+      // ignorierte `content` komplett und rief fuer JEDES "done" blind
+      // `finish()` auf, was bei `message_id: null` zu `window.location.
+      // reload()` fuehrte: die Fehlermeldung ging damit still verloren
+      // (Direktive §10: "darf die Eingabe nicht still verloren gehen"),
+      // die optimistische User-Bubble blieb kurz sichtbar und verschwand
+      // dann kommentarlos beim Reload, der eingegebene Text samt Anhang
+      // war weg. Datenmodell-seitig ist das ein "Nachricht konnte nicht
+      // gesendet/persistiert werden"-Fall (Direktive §10 Fall A) - im
+      // Unterschied zu Fall B (KI-Verarbeitung schlaegt NACH erfolgreichem
+      // Senden fehl), bei dem bereits vorher ein "start"-Ereignis mit
+      // echter `conversation_id` gesendet wurde und `finish()` daher immer
+      // schon korrekt auf die serverseitig persistierte, den Fehlerzustand
+      // zeigende Unterhaltung navigiert (siehe _stream_chat_reply: "start"
+      // IMMER zuerst). Behebung: kein Reload, stattdessen optimistische
+      // Bubble/Denkblase entfernen, Eingabe (Text + Dateien) zurueck in den
+      // Composer, bestehendes Fehlerbanner-Muster (".banner.banner--error
+      // .chat-panel__banner", server-seitig bereits fuer denselben Zweck
+      // verwendet, siehe die serverseitige "error"-Variable weiter oben im
+      // Template) dynamisch einblenden.
+      function showComposerError(message) {
+        var existing = document.getElementById("chat-send-error-banner");
+        if (existing) { existing.parentNode.removeChild(existing); }
+        var banner = document.createElement("div");
+        banner.id = "chat-send-error-banner";
+        banner.className = "banner banner--error chat-panel__banner";
+        banner.textContent = message;
+        messages.parentNode.insertBefore(banner, messages);
+      }
+
+      function handleSendValidationError(message, thinkingBubble, userBubble, pendingContent, pendingFiles) {
+        isSending = false;
+        if (thinkingBubble && thinkingBubble.parentNode) {
+          thinkingBubble.parentNode.removeChild(thinkingBubble);
+        }
+        if (userBubble && userBubble.parentNode) {
+          userBubble.parentNode.removeChild(userBubble);
+        }
+        textarea.readOnly = false;
+        sendBtn.disabled = false;
+        sendBtn.classList.remove("chat-composer__send-btn--loading");
+        // Eingabe zurueckgeben statt sie still zu verlieren (§10) - der
+        // Nutzer muss weder den Text noch die Dateiauswahl erneut machen,
+        // um den eigentlichen Fehler (z. B. falscher Dateityp) zu beheben.
+        textarea.value = pendingContent;
+        autoGrow();
+        if (fileInput && pendingFiles && pendingFiles.length) {
+          var dt = new DataTransfer();
+          Array.prototype.forEach.call(pendingFiles, function (file) { dt.items.add(file); });
+          fileInput.files = dt.files;
+          renderFileList();
+        }
+        showComposerError(message);
+      }
+
       // Streaming (13.09., Streaming-Architekturentscheidung, siehe
       // DECISIONS.md): bricht die "denkt nach"-Sprechblase auf, sobald das
       // erste echte Text-Delta eintrifft, statt bis zum vollstaendigen
@@ -615,14 +1697,72 @@
       var supportsStreaming = !!(
         window.fetch && window.ReadableStream && window.TextDecoder
       );
+      // §10/§11 "erneutes versehentliches Doppelsenden verhindern" - ohne
+      // diese Sperre konnte ein zweites Enter/Klick waehrend des bereits
+      // laufenden Sendevorgangs (die Textarea ist zwar `readOnly`, bleibt
+      // aber fokussier-/tastaturbedienbar) `composer.requestSubmit()`
+      // erneut ausloesen und damit zwei echte Nachrichten erzeugen - ein
+      // bereits VOR dieser Direktive bestehendes Risiko, das durch die neue
+      // sofort sichtbare Bubble jetzt aber auch sofort SICHTBAR geworden
+      // waere, statt wie bisher erst (verwirrend) nach dem Reload.
+      var isSending = false;
 
       function runStreamingSend(evt) {
         evt.preventDefault();
+        if (isSending) { return; }
+
+        // §7/§8: derselbe Leer-/Anhang-Check wie serverseitig
+        // (send_message_stream: "if not content and not any(doc.filename...)")
+        // - verhindert, dass eine leere optimistische Bubble erzeugt und
+        // sofort wieder durch einen Fehler-Reload ersetzt wird. Identisches
+        // Endergebnis wie zuvor (kein Request, keine Aktion), nur ohne den
+        // vorher unnoetigen Roundtrip samt stillem Reload.
+        var hasContent = textarea.value.trim().length > 0;
+        var hasFiles = !!(fileInput && fileInput.files && fileInput.files.length);
+        if (!hasContent && !hasFiles) { return; }
+
+        isSending = true;
+        // Zweite Fehlerunterscheidung fuer den `.catch()`-Block weiter
+        // unten (echter Netzwerk-/Verbindungsfehler statt einer
+        // Server-Validierungsabweisung): true, sobald das erste "start"-
+        // Ereignis eintraf - DANN ist die Nachricht bereits serverseitig
+        // persistiert (siehe _stream_chat_reply: "start" wird IMMER vor
+        // jeder KI-Verarbeitung gesendet), ein Abbruch danach darf die
+        // Eingabe NICHT zurueckgeben (sonst droht ein versehentliches
+        // Doppelsenden) und muss stattdessen wie gewohnt per finish()
+        // reagieren.
+        var startEventReceived = false;
+        // Composer-Inhalt VOR dem Leeren sichern - `new FormData(composer)`
+        // weiter unten liest denselben, zu diesem Zeitpunkt noch
+        // vorhandenen DOM-Zustand, daher muss die Bubble/FormData-Erfassung
+        // VOR dem Leeren erfolgen (§10 "Composer nach Senden: leeren").
+        var pendingContent = textarea.value;
+        // ECHTER FUND (06.10., live per CDP reproduziert): `fileInput.files`
+        // ist eine LIVE FileList - dieselbe Referenz, die `clearComposer()`
+        // unten ueber `fileInput.value = ""` gleich mitleert. Ohne
+        // `Array.prototype.slice` haelt `pendingFiles` daher KEINE
+        // unabhaengige Kopie, sondern dieselbe (dann leere) Liste - die
+        // Dateiwiederherstellung in handleSendValidationError() haette
+        // dadurch immer 0 Dateien gesehen. Ein echtes Array aus File-
+        // Objekten (selbst unveraenderliche Blobs) bleibt dagegen auch nach
+        // dem Leeren des Inputs gueltig.
+        var pendingFiles = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
+
+        var userBubble = appendUserBubble(pendingContent, pendingFiles);
+
         setLoadingState();
         var thinkingBubble = appendThinkingBubble();
         var textSpan = null;
         var conversationIdField = composer.querySelector("input[name=\"conversation_id\"]");
         var formData = new FormData(composer);
+
+        // §7-§9 "Composer nach Senden: Composer leeren" - SOFORT, nicht erst
+        // nach Abschluss der KI-Antwort, und erst NACHDEM `formData` oben
+        // bereits den Inhalt erfasst hat. `setLoadingState()` oben setzt
+        // bereits `readOnly`; der Wert selbst blieb bisher bis zum Reload
+        // stehen (sichtbar, nur gesperrt) - jetzt leer, wie bei jedem
+        // modernen Chat-Composer.
+        clearComposer();
 
         function revealFirstDelta() {
           if (textSpan || !thinkingBubble) { return; }
@@ -650,6 +1790,11 @@
         }
 
         function finish(conversationId) {
+          // Defensive Rueckstellung (die anschliessende Navigation/der
+          // Reload ersetzt ohnehin die gesamte Seite inkl. dieses
+          // Closures) - verhindert nur, dass ein theoretisch verzoegerter
+          // Reload die Sperre unnoetig laenger haelt als noetig.
+          isSending = false;
           if (!conversationId) {
             window.location.reload();
             return;
@@ -682,6 +1827,7 @@
               if (payload.kind === "start") {
                 conversationId = payload.conversation_id;
                 if (conversationIdField) { conversationIdField.value = conversationId; }
+                startEventReceived = true;
               } else if (payload.kind === "delta") {
                 revealFirstDelta();
                 if (textSpan) {
@@ -691,6 +1837,17 @@
               } else if (payload.kind === "status") {
                 updateThinkingStatus(payload.status);
               } else if (payload.kind === "done") {
+                if (payload.message_id === null) {
+                  // Fall A (§10): nichts wurde persistiert (Validierung vor
+                  // jeder Nachrichtenerzeugung abgewiesen, z. B. unzulaessiger
+                  // Dateityp) - siehe showComposerError()/
+                  // handleSendValidationError() oben fuer die volle
+                  // Begruendung. Kein finish()/Reload hier.
+                  handleSendValidationError(
+                    payload.content, thinkingBubble, userBubble, pendingContent, pendingFiles
+                  );
+                  return;
+                }
                 finish(conversationId);
               }
             }
@@ -709,7 +1866,23 @@
             return pump();
           })
           .catch(function () {
-            finish(null);
+            // Echter Netzwerk-/Verbindungsfehler (Fetch schlug fehl, HTTP-
+            // Fehlerstatus, oder die Verbindung brach mitten im Stream ab) -
+            // dieselbe Fall-A/Fall-B-Unterscheidung wie oben im "done"-
+            // Handler, hier aber anhand von `startEventReceived`: wurde das
+            // erste "start"-Ereignis bereits empfangen, ist die Nachricht
+            // bereits persistiert (Fall B) - dann wie gewohnt per finish()
+            // zum tatsaechlichen, serverseitigen Stand navigieren. Sonst
+            // (Fall A, noch nichts persistiert) die Eingabe zurueckgeben
+            // statt sie beim Reload still zu verlieren.
+            if (startEventReceived) {
+              finish(conversationIdField ? conversationIdField.value : null);
+              return;
+            }
+            handleSendValidationError(
+              "Senden fehlgeschlagen. Bitte erneut versuchen.",
+              thinkingBubble, userBubble, pendingContent, pendingFiles
+            );
           });
       }
 

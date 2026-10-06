@@ -33,6 +33,21 @@
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2h6"/><path d="M9.5 21h5"/><path d="M12 3.3a5.7 5.7 0 0 0-3.3 10.4c.6.5 1 1.2 1 2v.3h4.6v-.3c0-.8.4-1.5 1-2A5.7 5.7 0 0 0 12 3.3Z"/></svg>
 {% endmacro %}
 
+{% macro scale(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v17"/><path d="M5 7h14"/><path d="M7.5 20.5h9"/><path d="M6 7 3.6 12.4c0 1.4 1.1 2.4 2.4 2.4s2.4-1 2.4-2.4L6 7Z"/><path d="M18 7l-2.4 5.4c0 1.4 1.1 2.4 2.4 2.4s2.4-1 2.4-2.4L18 7Z"/></svg>
+{% endmacro %}
+
+{# Ergaenzt (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-DRIVEN
+   UI RECONSTRUCTION" §9) - fuer "Bearbeiten" im Akten-Schnellzugriffsmenue,
+   dasselbe Muster (viewBox/stroke) wie die uebrigen Icons oben. #}
+{% macro pencil(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 4.3 19.7 9.3 8.4 20.6l-5 .4.4-5Z"/><path d="M13 6l5 5"/></svg>
+{% endmacro %}
+
+{% macro graduation_cap(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 2.5 8.5 12 13l9.5-4.5Z"/><path d="M12 13v3.3"/><path d="M6.5 10.3v3.2c0 1.5 2.5 2.7 5.5 2.7s5.5-1.2 5.5-2.7v-3.2"/></svg>
+{% endmacro %}
+
 {% macro send(class_="icon") %}
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 3.5 3 10.2l7 2.8 2.8 7 7.7-16.5Z"/><path d="M20.5 3.5 10 13.9"/></svg>
 {% endmacro %}
@@ -127,6 +142,15 @@
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
 {% endmacro %}
 
+{% macro stop_square(class_="icon") %}
+{#- Eindeutiges "Aufnahme beenden"-Symbol (06.10., Owner-Direktive
+   "SPRACHEINGABE IM CHAT: VOLLSTAENDIGE RECORDING- UND SEND-UX" §4/§7) -
+   gefuelltes Rechteck, die uebliche Konvention fuer "Stop" bei
+   Aufnahme-UIs (z.B. Sprachmemo-Apps), bewusst klar unterscheidbar vom
+   "X"-Verwerfen-Symbol (close_window oben). -#}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>
+{% endmacro %}
+
 {% macro help(class_="icon") %}
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.3 9.3a2.7 2.7 0 1 1 3.7 2.5c-.7.3-1 .9-1 1.6v.3"/><path d="M12 17h.01"/></svg>
 {% endmacro %}
@@ -189,13 +213,22 @@
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M19.5 19.5 15.2 15.2"/><path d="M7.5 10.5h6M10.5 7.5v6"/></svg>
 {% endmacro %}
 
-{# Dateiformat-Badge (19.09.) - bewusst KEIN SVG-Icon wie die uebrigen
-   Makros hier, sondern ein kleines farbiges Text-Badge (siehe
-   .file-type-badge in app.css) - entspricht dem Referenzbild-Muster
-   ("PDF"/"DOC" als farbige Kurzbezeichnung, nicht als abstraktes
-   Symbol). Leitet den Typ AUSSCHLIESSLICH aus der echten Dateiendung
-   von `filename` ab - kein erfundenes Icon fuer unbekannte Formate,
-   diese zeigen ehrlich ihre tatsaechliche Endung in Grau.
+{# Dateiformat-Icon (19.09., ueberarbeitet 04.10. - Owner-Direktive
+   "EINHEITLICHE DATEIFORMATE UND DATEISYMBOLE IN DER GESAMTEN
+   ANWENDUNG"): zentrale, einzige Zuordnung von Dateiendung -> Icon-Form/
+   -Farbe fuer die GESAMTE Anwendung (Posteingang, Akten, Mandanten-
+   detail, Chat, Entwuerfe, Dokumentenvorschau - jeder Aufrufer dieses
+   einen Makros). Vorher ein reines Text-Badge ("PDF" in einer farbigen
+   Pille), jetzt ein echtes Dokument-Symbol (dieselbe Grundform wie
+   `icons.document` oben - keine zweite Form erfunden) mit Farb-Modifier
+   je Formatgruppe, referenzgetreu zu `04_posteingang_nachricht_detail.
+   png` (rotes PDF-/blaues XML-Dokumentsymbol). Deckt mindestens die
+   Direktive-geforderten Formate ab: PDF, XML, DOC/DOCX, XLS/XLSX/CSV,
+   PPT/PPTX, TXT, EML/MSG, Bilder - plus ehrlichen Fallback fuer alles
+   andere (zeigt die tatsaechliche Endung statt ein erfundenes Icon).
+   Erkennung robust gegen Gross-/Kleinschreibung (`| lower`), gegen
+   fehlende Endung (leerer `ext`) und gegen fehlenden `filename` (leere
+   Zeichenkette vorausgesetzt, siehe Aufrufer).
 
    WICHTIG fuer Aufrufer mit einem echten `Document`-Datensatz: hier
    IMMER `document.file_path` uebergeben, NICHT `document.original_
@@ -205,26 +238,166 @@
    Umbenennen einer echten .pdf-Datei zu "Notizen" ganz ohne Endung.
    `file_path` (Speicherort auf der Platte, `{uuid}_{urspruenglicher_
    Dateiname}`) traegt dagegen dauerhaft die ECHTE Endung von beim
-   Upload, unveraendert durch eine spaetere Umbenennung - das Badge
+   Upload, unveraendert durch eine spaetere Umbenennung - das Icon
    bliebe damit auch nach einem irrefuehrenden Umbenennen korrekt.
    Ausnahme: die JS-Vorschau eines noch nicht hochgeladenen Browser-
    `File`-Objekts (kein `file_path` vorhanden) nutzt zwangslaeufig
-   dessen `.name`. #}
-{% macro file_type_badge(filename, class_="file-type-badge") %}
+   dessen `.name`.
+
+   Groesse/Ausrichtung sind bewusst NICHT Teil dieses Makros (anders als
+   `class_` suggeriert, bleibt der Parametername fuer Bestandsschutz an
+   allen 6 bestehenden Aufrufstellen unveraendert) - jede Ansicht
+   bestimmt die passende Groesse ueber eine CSS-Kontextregel (siehe
+   `.file-format-icon` + z. B. `.attachment-card .file-format-icon` in
+   app.css), identisch zum bereits etablierten Muster bei `.icon`. #}
+{% macro file_type_badge(filename, class_="file-format-icon") %}
 {%- set ext = (filename.rsplit(".", 1)[-1] | lower) if (filename and "." in filename) else "" -%}
-{%- if ext == "pdf" -%}
-<span class="{{ class_ }} {{ class_ }}--pdf" title="PDF-Dokument">PDF</span>
-{%- elif ext == "docx" -%}
-<span class="{{ class_ }} {{ class_ }}--docx" title="Word-Dokument">DOCX</span>
-{%- elif ext == "doc" -%}
-<span class="{{ class_ }} {{ class_ }}--docx" title="Word-Dokument">DOC</span>
-{%- elif ext in ("png", "jpg", "jpeg", "tif", "tiff", "bmp", "gif") -%}
-<span class="{{ class_ }} {{ class_ }}--image" title="Bilddatei">{{ (ext | upper)[:4] }}</span>
-{%- elif ext == "txt" -%}
-<span class="{{ class_ }} {{ class_ }}--txt" title="Textdatei">TXT</span>
-{%- elif ext -%}
-<span class="{{ class_ }} {{ class_ }}--generic" title="{{ ext | upper }}-Datei">{{ (ext | upper)[:4] }}</span>
-{%- else -%}
-<span class="{{ class_ }} {{ class_ }}--generic" title="Unbekannter Dateityp">?</span>
-{%- endif -%}
+{%- set FORMAT_GROUPS = {
+  "pdf": "pdf", "xml": "xml",
+  "doc": "word", "docx": "word",
+  "xls": "sheet", "xlsx": "sheet", "csv": "sheet",
+  "ppt": "slides", "pptx": "slides",
+  "txt": "text",
+  "eml": "mail", "msg": "mail",
+  "png": "image", "jpg": "image", "jpeg": "image", "tif": "image",
+  "tiff": "image", "bmp": "image", "gif": "image",
+} -%}
+{%- set FORMAT_LABELS = {
+  "pdf": "PDF-Dokument", "xml": "XML-Datei",
+  "word": "Word-Dokument", "sheet": "Tabellendokument",
+  "slides": "Praesentation", "text": "Textdatei", "mail": "E-Mail",
+  "image": "Bilddatei",
+} -%}
+{%- set modifier = FORMAT_GROUPS.get(ext, "generic" if ext else "unknown") -%}
+{%- set title = FORMAT_LABELS.get(modifier, (ext | upper) + "-Datei" if ext else "Unbekannter Dateityp") -%}
+<span class="{{ class_ }} {{ class_ }}--{{ modifier }}" title="{{ title }}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h8l4 4V19a1.2 1.2 0 0 1-1.2 1.2H6.5A1.2 1.2 0 0 1 5.3 19V4.7A1.2 1.2 0 0 1 6.5 3.5Z"/><path d="M14 3.5V8h4.2"/><path d="M8.5 12.5h7M8.5 15.8h7M8.5 9.2h3"/></svg>
+</span>
+{% endmacro %}
+
+{# Sortierung (26.09., Owner-Direktive "POSTEINGANG FINAL POLISH" §10) -
+   ersetzt das vorherige volle "Neueste zuerst"/"Älteste zuerst"-Dropdown
+   durch einen kompakten Auf/Ab-Pfeil-Button (Referenzbild zeigt ein
+   kleines quadratisches Sortier-Icon statt eines Text-Dropdowns). #}
+{% macro sort(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 4 3.5 7.5M7 4l3.5 3.5"/><path d="M17 20V4m0 16 3.5-3.5M17 20l-3.5-3.5"/></svg>
+{% endmacro %}
+
+{# "Erneut versuchen" bei fehlgeschlagenem Gesetzes-Download (26.09.,
+   Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION" §15). #}
+{% macro refresh(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.66-5.66L20 8.5"/><path d="M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.66 5.66L4 15.5"/><path d="M4 20v-4.5h4.5"/></svg>
+{% endmacro %}
+
+{# Kalender mit Haken - Seiten-/Sidebar-Icon fuer "Aufgaben & Fristen"
+   (03.10., Owner-Direktive "AUFGABEN & FRISTEN", Referenzabgleich
+   `18_akte_dokumente_detail.png`): die Referenz zeigt dort ein eigenes
+   Kalender-Symbol, nicht das bisher dafuer genutzte, generische
+   `icons.check` (reine Checkbox) - ein echter, vom Referenzbild
+   verlangter Unterschied, kein neues Icon-Set. #}
+{% macro calendar_check(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8.5 14.5 11 17l4.5-5"/></svg>
+{% endmacro %}
+
+{# Kalendertag (03.10., gleiche Direktive) - Typ-Icon fuer "Frist"-Zeilen
+   in der Aufgaben-&-Fristen-Tabelle (unterscheidet sich im Referenzbild
+   bewusst farblich/von der Form her von der Aufgaben-Checkbox). #}
+{% macro calendar_day(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>
+{% endmacro %}
+
+{# "Duplizieren" (03.10., gleiche Direktive - Sekundaeraktion im
+   Aufgaben-&-Fristen-Detailpanel). #}
+{% macro duplicate(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="13" height="13" rx="1.6"/><path d="M9.5 16.5V19a1.6 1.6 0 0 0 1.6 1.6h7.4A1.6 1.6 0 0 0 20.1 19v-7.4A1.6 1.6 0 0 0 18.5 10h-2.4"/></svg>
+{% endmacro %}
+
+{# Blitz - Kopfzeile der "Schnellaktionen"-Karte auf der Mandanten-
+   Detailseite (03.10., Owner-Direktive "INDIVIDUELLE
+   MANDANTENDETAILSEITE", Referenzabgleich `30_mandant_detail.png`) - kein
+   bestehendes Icon passte semantisch ("schnell/Aktion"), alle anderen
+   Karten-Icons (Stammdaten/Akten/Dokumente/Notizen) nutzen bereits
+   vorhandene Icons (users/folder/document/pencil). #}
+{% macro bolt(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 3 5 13.5h5.5L11 21l7.5-10.5H13l-0.5-7.5Z" stroke-linejoin="round"/></svg>
+{% endmacro %}
+
+{# Rich-Text-Toolbar-Icons (04.10., Dokumenten-Editor) - bewusst im
+   selben stroke-basierten Stil wie alle bestehenden Icons oben (KEINE
+   solide Fuellung, siehe file_type_badge-Begruendung weiter unten) -
+   genutzt von draft_editor.html/app_draft_editor.js. #}
+{% macro bold(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h6a3.5 3.5 0 0 1 0 7H7V4Zm0 7h6.5a3.5 3.5 0 0 1 0 7H7v-7Z"/></svg>
+{% endmacro %}
+
+{% macro italic(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4h7M7 20h7M14 4l-4 16"/></svg>
+{% endmacro %}
+
+{% macro underline(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v7a6 6 0 0 0 12 0V4M5 20h14"/></svg>
+{% endmacro %}
+
+{% macro list_bulleted(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="6" r="0.9" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="0.9" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="0.9" fill="currentColor" stroke="none"/><path d="M9 6h11M9 12h11M9 18h11"/></svg>
+{% endmacro %}
+
+{% macro list_numbered(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><text x="2" y="8" font-size="6" fill="currentColor" stroke="none">1</text><text x="2" y="14" font-size="6" fill="currentColor" stroke="none">2</text><text x="2" y="20" font-size="6" fill="currentColor" stroke="none">3</text></svg>
+{% endmacro %}
+
+{% macro align_left(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+{% endmacro %}
+
+{% macro align_center(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M5.5 18h13"/></svg>
+{% endmacro %}
+
+{% macro align_right(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M10 12h10M6 18h14"/></svg>
+{% endmacro %}
+
+{% macro indent(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h11M10 12h11M10 18h11"/><path d="M3 9l4 3-4 3"/></svg>
+{% endmacro %}
+
+{% macro outdent(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h11M10 12h11M10 18h11"/><path d="M7 9L3 12l4 3"/></svg>
+{% endmacro %}
+
+{% macro undo(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 3 11l4 4"/><path d="M3 11h11a6 6 0 0 1 0 12h-2"/></svg>
+{% endmacro %}
+
+{% macro redo(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7l4 4-4 4"/><path d="M21 11H10a6 6 0 0 0 0 12h2"/></svg>
+{% endmacro %}
+
+{# Einstellungen-UI-Rebuild (06.10., Owner-Direktive "LEXONO - EINSTELLUNGEN
+   UI REBUILD") - 5 neue Icons fuer semantische Luecken im bestehenden
+   Icon-System, zentral hier ergaenzt statt als verstreute Inline-SVGs
+   (Direktive §21/§3: "zuerst pruefen, ob ein bestehendes Icon semantisch
+   verwendet werden kann... nur wenn wirklich notwendig neu integrieren"
+   - fuer Sprache/Design/Speicherort/Kanzlei/Lizenz existierte kein
+   passendes bestehendes Icon). #}
+
+{% macro globe(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5s-1.2 6.2-3.5 8.5c-2.3-2.3-3.5-5.2-3.5-8.5S9.7 5.8 12 3.5Z"/></svg>
+{% endmacro %}
+
+{% macro monitor(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/></svg>
+{% endmacro %}
+
+{% macro database(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5V18c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V5.5"/><path d="M4.5 11.8c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg>
+{% endmacro %}
+
+{% macro building(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="11" height="17" rx="1"/><path d="M16 9.5h3v11h-3M8.2 7.5h1.2M12.6 7.5h1.2M8.2 11h1.2M12.6 11h1.2M8.2 14.5h1.2M12.6 14.5h1.2"/><path d="M9 20.5v-3.2h3v3.2"/></svg>
+{% endmacro %}
+
+{% macro key(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15.5" r="4"/><path d="M11 12.5 19 4.5"/><path d="M15.5 8 18 10.5M18.5 5.5 21 8"/></svg>
 {% endmacro %}

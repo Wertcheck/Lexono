@@ -35,8 +35,10 @@ from __future__ import annotations
 
 import io
 import re
+import time
 import zipfile
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 
@@ -47,6 +49,13 @@ from app.laws.service import LawImportResult
 from app.models import Law, LawSection
 
 SOURCE_NAME = "Gesetze im Internet"
+
+# Pause zwischen zwei Versuchen einer HEAD-Statusabfrage (03.10., "RELIABLE
+# LEGAL KNOWLEDGE UPDATES" §4.3: "Begrenze Timeouts und
+# Wiederholungsversuche. Implementiere keine unbegrenzten Retries.") -
+# bewusst kurz UND bewusst begrenzt (siehe `fetch_source_etag`:
+# `max_attempts`, Standard 2 - also hoechstens EIN Wiederholungsversuch).
+_ETAG_RETRY_BACKOFF_SECONDS = 2.0
 
 _PARAGRAPH_NUMBER_RE = re.compile(r"§\s*(\w+)")
 # Artikel-basierte Gesetze (z. B. GG) statt Paragraphen-basierter (z. B.
@@ -231,20 +240,89 @@ def import_norm_sections(
     )
 
 
-def fetch_law_xml_zip(law_slug: str, *, timeout_seconds: float = 30.0) -> bytes:
+def fetch_law_xml_zip(
+    law_slug: str,
+    *,
+    timeout_seconds: float = 30.0,
+    on_progress: Callable[[int, int | None], None] | None = None,
+) -> bytes:
     """Lädt die echte "xml.zip" für ein Gesetzeswerk herunter (z. B.
     slug="bgb") - bewusst NICHT automatisiert Teil der Testsuite (echter
     Netzwerkzugriff), siehe scripts/import_gesetze_im_internet.py für den
-    tatsächlichen Aufrufer."""
+    tatsächlichen Aufrufer.
+
+    `on_progress` (26.09., Owner-Direktive "KANZLEIWISSEN FINAL PRODUCT
+    IMPLEMENTATION" §14: "Der Fortschritt muss aus dem realen Download
+    stammen ... Keine künstliche Animation über eine feste Zeit.") wird
+    nach jedem empfangenen Chunk mit (bereits_empfangene_bytes,
+    gesamt_bytes_oder_None) aufgerufen - `total` ist `None`, wenn der
+    Server keinen `Content-Length`-Header liefert (dann kann die Web-UI
+    nur "wird heruntergeladen…" ohne Prozentzahl anzeigen, statt eine
+    Prozentzahl zu erfinden). Optional (Standard `None`), damit bestehende
+    Aufrufer (CLI-Skript) unveraendert funktionieren."""
     url = f"https://www.gesetze-im-internet.de/{law_slug}/xml.zip"
     try:
-        response = httpx.get(url, timeout=timeout_seconds, follow_redirects=True)
-        response.raise_for_status()
+        with httpx.stream("GET", url, timeout=timeout_seconds, follow_redirects=True) as response:
+            response.raise_for_status()
+            total = response.headers.get("content-length")
+            total_bytes = int(total) if total is not None and total.isdigit() else None
+            chunks: list[bytes] = []
+            received = 0
+            for chunk in response.iter_bytes():
+                chunks.append(chunk)
+                received += len(chunk)
+                if on_progress is not None:
+                    on_progress(received, total_bytes)
     except httpx.HTTPError as exc:
         raise GesetzeImInternetError(
             f"Download von '{url}' fehlgeschlagen: {type(exc).__name__}"
         ) from exc
-    return response.content
+    return b"".join(chunks)
+
+
+def fetch_source_etag(
+    law_slug: str,
+    *,
+    timeout_seconds: float = 15.0,
+    max_attempts: int = 2,
+) -> str | None:
+    """Fragt NUR den HTTP-Header der offiziellen "xml.zip" per HEAD ab -
+    laedt NICHT den eigentlichen Gesetzesinhalt (03.10., Owner-Direktive
+    "RELIABLE LEGAL KNOWLEDGE UPDATES" §Phase B: "Kann eine Änderung
+    effizient erkannt werden, ohne jedes Mal alle Inhalte unnötig
+    herunterzuladen?").
+
+    ECHT VERIFIZIERT (03.10., real gegen die Live-Quelle getestet, nicht
+    angenommen): gesetze-im-internet.de liefert auf `HEAD .../xml.zip`
+    einen echten, starken `ETag` (z. B. `"72156-65c6835fce6bb"`) sowie
+    `Last-Modified`/`Content-Length` und unterstuetzt bedingte GET-
+    Anfragen (`If-None-Match` -> HTTP 304 bei unverändertem Inhalt, real
+    getestet). `robots.txt` der Domain erlaubt automatisierten Zugriff
+    uneingeschraenkt (`User-agent: *` / `Disallow:` leer).
+
+    Liefert `None`, wenn die Antwort KEINEN `ETag`-Header enthaelt - der
+    Aufrufer (app/laws/install_service.py::check_law_for_update) MUSS das
+    als "Aenderung nicht ueberpruefbar" behandeln, NIEMALS als
+    "unveraendert" (Direktive: "Eine fehlgeschlagene Pruefung darf niemals
+    als 'keine Aenderungen vorhanden' ausgegeben werden.").
+
+    Bewusst kleiner, begrenzter Retry (Standard: ein Wiederholungsversuch)
+    fuer kurzzeitige Netzwerkaussetzer - KEIN unbegrenzter Retry."""
+    url = f"https://www.gesetze-im-internet.de/{law_slug}/xml.zip"
+    last_exc: httpx.HTTPError | None = None
+    for attempt in range(max_attempts):
+        try:
+            with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+                response = client.head(url)
+                response.raise_for_status()
+            return response.headers.get("etag")
+        except httpx.HTTPError as exc:
+            last_exc = exc
+            if attempt + 1 < max_attempts:
+                time.sleep(_ETAG_RETRY_BACKOFF_SECONDS)
+    raise GesetzeImInternetError(
+        f"Status-Abfrage von '{url}' fehlgeschlagen: {type(last_exc).__name__}"
+    ) from last_exc
 
 
 def extract_xml_from_zip(zip_bytes: bytes) -> bytes:

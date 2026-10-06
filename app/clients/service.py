@@ -41,6 +41,17 @@ PRACTICE_AREA_SUGGESTIONS = (
     "Sonstiges",
 )
 
+# Vorschlagswerte fuer `Client.client_type` (03.10., Owner-Direktive
+# "REFERENZGETREUE MANDANTENUEBERSICHT", Referenzabgleich
+# `29_mandanten_uebersicht.png`) - bewusst nur eine Vorschlagsliste wie bei
+# `PRACTICE_AREA_SUGGESTIONS` (keine DB-Enum/harte Validierung), dieselbe
+# Begruendung: ein CSV-/Excel-Import darf nicht an abweichender
+# Schreibweise scheitern.
+CLIENT_TYPE_SUGGESTIONS = ("Privatperson", "Unternehmen")
+
+_ALLOWED_CLIENT_SORT_OPTIONS = ("updated_desc", "name_asc", "name_desc")
+_ALLOWED_CLIENT_PAGE_SIZES = (10, 20, 50)
+
 
 class ClientValidationError(Exception):
     """Pflichtfeld fehlt oder Mandantennummer bereits vergeben - wird von
@@ -94,6 +105,8 @@ def create_client(
     contact_email: str | None = None,
     contact_phone: str | None = None,
     practice_area: str | None = None,
+    client_type: str | None = None,
+    city: str | None = None,
     responsible_user_id: str | None = None,
     actor: str,
     commit: bool = True,
@@ -116,6 +129,8 @@ def create_client(
         contact_email=(contact_email or "").strip() or None,
         contact_phone=(contact_phone or "").strip() or None,
         practice_area=(practice_area or "").strip() or None,
+        client_type=(client_type or "").strip() or None,
+        city=(city or "").strip() or None,
         responsible_user_id=responsible_user_id or None,
         status="active",
     )
@@ -145,6 +160,8 @@ def update_client(
     contact_email: str | None,
     contact_phone: str | None,
     practice_area: str | None,
+    client_type: str | None = None,
+    city: str | None = None,
     responsible_user_id: str | None,
     actor: str,
 ) -> Client:
@@ -158,6 +175,8 @@ def update_client(
     client.contact_email = (contact_email or "").strip() or None
     client.contact_phone = (contact_phone or "").strip() or None
     client.practice_area = (practice_area or "").strip() or None
+    client.client_type = (client_type or "").strip() or None
+    client.city = (city or "").strip() or None
     client.responsible_user_id = responsible_user_id or None
 
     db.add(
@@ -232,20 +251,23 @@ def delete_client(db: Session, client: Client, *, actor: str) -> None:
     db.commit()
 
 
-def list_clients(
+def _build_filtered_client_query(
     db: Session,
     *,
-    search: str | None = None,
-    practice_area: str | None = None,
-    responsible_user_id: str | None = None,
-    status: str = "active",
-    limit: int = 200,
-) -> list[ClientListRow]:
+    search: str | None,
+    practice_area: str | None,
+    client_type: str | None,
+    responsible_user_id: str | None,
+    status: str,
+):
     """Eine einzige gejointe Query statt N+1 (kein separater Query pro
     Zeile fuer "letzter Kontakt") - `last_contact_subq` aggregiert das
     juengste `Message.created_at` je Client UEBER ALLE seine Akten hinweg
     (Aktenisolation ist hier unproblematisch: es wird nur der Zeitstempel
-    aggregiert, kein Inhalt vermischt)."""
+    aggregiert, kein Inhalt vermischt). Gemeinsame Grundlage fuer
+    `list_clients` (Seite holen) UND `count_clients` (Gesamtzahl fuer die
+    Pagination) - EINE Filterlogik statt zweier abweichender Kopien (03.10.,
+    Owner-Direktive "REFERENZGETREUE MANDANTENUEBERSICHT")."""
     last_contact_subq = (
         db.query(
             Matter.client_id.label("client_id"),
@@ -285,6 +307,8 @@ def list_clients(
         query = query.filter(Client.status == status)
     if practice_area:
         query = query.filter(Client.practice_area == practice_area)
+    if client_type:
+        query = query.filter(Client.client_type == client_type)
     if responsible_user_id:
         query = query.filter(Client.responsible_user_id == responsible_user_id)
     if search:
@@ -292,8 +316,85 @@ def list_clients(
         query = query.filter(
             or_(Client.name.ilike(like), Client.client_number.ilike(like))
         )
+    return query, last_contact_subq
 
-    query = query.order_by(Client.name.asc()).limit(limit)
+
+def count_clients(
+    db: Session,
+    *,
+    search: str | None = None,
+    practice_area: str | None = None,
+    client_type: str | None = None,
+    responsible_user_id: str | None = None,
+    status: str = "active",
+) -> int:
+    """Gesamtzahl der zu `list_clients` passenden Mandanten (fuer die
+    Pagination-Fusszeile, z. B. "10 von 42 Mandanten") - dieselben Filter,
+    KEIN Limit/Offset. `.count()` auf dieser Query ist unverfaelscht: beide
+    Subquery-Joins sind 1:1-Aggregate (je Client hoechstens eine Zeile je
+    Subquery), es entsteht also KEINE Zeilenvervielfachung durch die
+    Outer-Joins, die `.count()` verfaelschen koennte."""
+    query, _ = _build_filtered_client_query(
+        db,
+        search=search,
+        practice_area=practice_area,
+        client_type=client_type,
+        responsible_user_id=responsible_user_id,
+        status=status,
+    )
+    return query.count()
+
+
+def list_clients(
+    db: Session,
+    *,
+    search: str | None = None,
+    practice_area: str | None = None,
+    client_type: str | None = None,
+    responsible_user_id: str | None = None,
+    status: str = "active",
+    sort: str = "updated_desc",
+    page: int = 1,
+    page_size: int = 200,
+) -> list[ClientListRow]:
+    """Liefert GENAU EINE Seite (Standard `page_size=200` entspricht dem
+    vorherigen festen `limit=200` dieser Funktion - bestehende Aufrufer
+    ohne explizite Pagination erhalten dadurch unveraendertes Verhalten).
+
+    `sort` (03.10., Owner-Direktive "REFERENZGETREUE MANDANTENUEBERSICHT",
+    Referenzabgleich `29_mandanten_uebersicht.png"s Sortierungs-Dropdown
+    "Zuletzt aktualisiert"): einer von `_ALLOWED_CLIENT_SORT_OPTIONS`.
+    "updated_desc" (Standard) sortiert nach dem juengsten bekannten
+    Aktivitaetszeitpunkt - `last_contact_at` (letzte Nachricht ueber eine
+    Akte) falls vorhanden, sonst der eigene `Client.updated_at`
+    (Stammdaten-Aenderung) als ehrlicher Rueckfall, NIEMALS ein erfundener
+    Wert."""
+    if sort not in _ALLOWED_CLIENT_SORT_OPTIONS:
+        sort = "updated_desc"
+    if page_size not in _ALLOWED_CLIENT_PAGE_SIZES and page_size != 200:
+        page_size = 200
+    if page < 1:
+        page = 1
+
+    query, last_contact_subq = _build_filtered_client_query(
+        db,
+        search=search,
+        practice_area=practice_area,
+        client_type=client_type,
+        responsible_user_id=responsible_user_id,
+        status=status,
+    )
+
+    if sort == "name_asc":
+        query = query.order_by(Client.name.asc())
+    elif sort == "name_desc":
+        query = query.order_by(Client.name.desc())
+    else:
+        query = query.order_by(
+            func.coalesce(last_contact_subq.c.last_contact_at, Client.updated_at).desc()
+        )
+
+    rows = query.offset((page - 1) * page_size).limit(page_size).all()
     return [
         ClientListRow(
             client=row[0],
@@ -303,5 +404,5 @@ def list_clients(
             # ebenfalls eine echte 0, siehe Zeile "Schulz, Lisa").
             open_matter_count=row[2] or 0,
         )
-        for row in query.all()
+        for row in rows
     ]

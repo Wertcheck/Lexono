@@ -18,12 +18,17 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth.permissions import require_login
 from app.db.session import get_db
-from app.laws.service import get_law_by_code, get_laws, get_sections, import_all_fixtures
+from app.laws.service import (
+    get_law_by_code,
+    get_law_stats,
+    get_laws,
+    get_sections,
+    import_all_fixtures,
+)
 from app.models import Law, LawSection, User
 from app.web.template_paths import TEMPLATES_DIR
 
@@ -77,23 +82,13 @@ def _library_context(
         if selected_section is None:
             raise HTTPException(status_code=404, detail="Paragraph nicht gefunden")
 
-    # Echte Kennzahlen je Gesetz (14.09.): Anzahl Normen und tatsaechlicher
-    # Stand (juengstes `last_updated`). Eine einzige gruppierte Abfrage statt
-    # eines Zaehl-Querys pro Gesetz (kein N+1 bei 34 Gesetzen).
-    # Hintergrund: die Referenzansicht "Gesetze & Normen" zeigt je Gesetz
-    # Version/Stand und Umfang - beides laesst sich aus dem vorhandenen
-    # Datenmodell WAHRHEITSGEMAESS ableiten (Groessenangaben in MB dagegen
-    # nicht, die werden bewusst nicht erfunden).
-    stats_rows = (
-        db.query(
-            LawSection.law_code,
-            func.count(LawSection.id),
-            func.max(LawSection.last_updated),
-        )
-        .group_by(LawSection.law_code)
-        .all()
-    )
-    law_stats = {code: {"count": count, "stand": stand} for code, count, stand in stats_rows}
+    # Echte Kennzahlen je Gesetz (14.09., seit 26.09. in
+    # app/laws/service.py::get_law_stats geteilt mit der neuen
+    # Kanzleiwissen-Katalogtabelle) - Version/Stand/Umfang lassen sich aus
+    # dem vorhandenen Datenmodell WAHRHEITSGEMAESS ableiten
+    # (Groessenangaben in MB dagegen nicht, die werden bewusst nicht
+    # erfunden).
+    law_stats = get_law_stats(db)
 
     return {
         "request": request,

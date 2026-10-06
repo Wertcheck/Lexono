@@ -255,6 +255,40 @@ def check_placeholders_present(text: str, mappings: list[PseudonymMapping]) -> l
 _PLACEHOLDER_TOKEN_PATTERN = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d+\]")
 
 
+def _contains_original_value_leak(original_value: str, text: str) -> bool:
+    """Prüft, ob `original_value` als EIGENES WORT in `text` vorkommt - NICHT
+    als blosse Teilzeichenkette (siehe Docstring von
+    `check_response_placeholder_integrity` fuer den vollen Fund, 05.10.,
+    Owner-Direktive "Vollständiger UX- und Workflow-Audit").
+
+    ECHTER FUND, SYNTHETISCH REPRODUZIERT: ein naiver `original_value in
+    text`-Vergleich (die vorherige Implementierung dieser Pruefung) loeste
+    bei JEDEM Wort aus, das den pseudonymisierten Wert als Teilstring
+    enthaelt - z. B. blockierte ein Mandant namens "Fischer" jede Antwort,
+    die das voellig unabhaengige, in einem Rechtskontext ganz normale Wort
+    "Fischereirecht" enthielt ("Fischer" ist Teilstring von
+    "Fischereirecht"). Das traf sowohl die EINGEHENDE Antwortpruefung
+    (`check_response_placeholder_integrity`) als auch das AUSGEHENDE Final
+    Payload Gate (`check_payload_placeholder_integrity`, ruft dieselbe
+    Funktion auf) - eine normale Chat-Nachricht/-Antwort konnte dadurch
+    blockiert werden, OHNE dass der Mandant ueberhaupt erwaehnt wurde.
+
+    Wortgrenzen-Pruefung (`\\b...\\b`) statt Teilstring behebt das: "Fischer"
+    matcht weiterhin zuverlaessig als eigenstaendiges Wort (z. B. "Herr
+    Fischer"), nicht aber als gebundenes Praefix eines laengeren,
+    unabhaengigen Wortes. Bewusst weiterhin case-SENSITIVE (unveraendert
+    gegenueber vorher) - ein zufaelliger Gross-/Kleinschreibungs-Unterschied
+    ("fischer" als Teil eines ganz anderen Wortes) soll weiterhin NICHT
+    faelschlich treffen; ein ECHTER Leck-Fall verwendet den Originalwert
+    ohnehin unveraendert (Claude sieht ihn nie, kann ihn also nicht in
+    anderer Schreibweise "erfinden" - ein Treffer hier ist entweder ein
+    technischer Fehler an anderer Stelle oder exakt der Originalwert)."""
+    if not original_value:
+        return False
+    pattern = re.compile(r"\b" + re.escape(original_value) + r"\b")
+    return bool(pattern.search(text))
+
+
 def check_response_placeholder_integrity(
     text: str,
     mappings: list[PseudonymMapping],
@@ -275,10 +309,14 @@ def check_response_placeholder_integrity(
        exakt einem der erwarteten `mapping.placeholder`-Werte entspricht,
        ist ein Fund.
     2. Ist einer der URSPRUENGLICHEN (nicht pseudonymisierten) Werte aus dem
-       Mapping woertlich im Text wieder aufgetaucht? Claude sieht diese
-       Werte strukturell nie (siehe ClaudeRequestPayload/Gateway) - ein
-       Treffer hier waere entweder ein technischer Fehler an anderer Stelle
-       oder ein Zufallstreffer, in jedem Fall ein Grund zum kontrollierten
+       Mapping als EIGENES WORT im Text wieder aufgetaucht (siehe
+       `_contains_original_value_leak` - Wortgrenzen-Pruefung, NICHT blosser
+       Teilstring-Vergleich, seit 05.10. behobener ECHTER FUND: "Fischer"
+       als Mandantenname blockierte zuvor JEDE Antwort mit dem
+       unabhaengigen Wort "Fischereirecht")? Claude sieht diese Werte
+       strukturell nie (siehe ClaudeRequestPayload/Gateway) - ein Treffer
+       hier waere entweder ein technischer Fehler an anderer Stelle oder
+       ein Zufallstreffer, in jedem Fall ein Grund zum kontrollierten
        Abbruch statt stillschweigender Weiterverarbeitung.
 
     `require_full_coverage` (15.09., CHAT-01, Chat-Intelligence-Forensik):
@@ -314,7 +352,7 @@ def check_response_placeholder_integrity(
         )
 
     for mapping in mappings:
-        if mapping.original_value and mapping.original_value in text:
+        if _contains_original_value_leak(mapping.original_value, text):
             reasons.append(
                 f"Urspruenglicher, nicht pseudonymisierter Wert fuer "
                 f"{mapping.placeholder} im Text gefunden - moeglicher Datenschutzverstoss"

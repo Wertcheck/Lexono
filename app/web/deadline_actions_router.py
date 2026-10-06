@@ -50,6 +50,12 @@ def create_deadline(
     matter_id: str,
     source_text: str = Form(...),
     due_date: str = Form(...),
+    # Prioritaet (03.10., Owner-Direktive "AUFGABEN & FRISTEN"): optionales
+    # Formularfeld, bewusst mit Default "" statt Pflichtfeld - bestehende
+    # Aufrufer (z. B. das "Frist hinzufügen"-Modal auf der Aktenseite vor
+    # diesem Feld) duerfen dadurch unveraendert ohne Prioritaet weiter-
+    # funktionieren.
+    priority: str = Form(""),
     current_user: User = Depends(require_role()),
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
@@ -67,6 +73,7 @@ def create_deadline(
         source_text=label,
         due_date=parsed_due_date,
         review_status="confirmed",
+        priority=(priority or "").strip() or None,
     )
     db.add(deadline)
     db.flush()

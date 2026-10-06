@@ -13,10 +13,12 @@ from app.laws.service import (
     FIXTURES_DIR,
     LawFixtureError,
     get_law_by_code,
+    get_law_stats,
     get_laws,
     get_sections,
     import_all_fixtures,
     import_law_fixture_data,
+    toggle_law_active,
 )
 from app.models import Law, LawSection
 from app.models.base import Base
@@ -202,3 +204,59 @@ def test_get_laws_orders_by_code(db_session: Session) -> None:
     import_law_fixture_data(db_session, {"code": "AAA", "title": "A-Gesetz", "sections": []})
     laws = get_laws(db_session)
     assert [law.code for law in laws] == ["AAA", "ZZZ"]
+
+
+# --- toggle_law_active (26.09., Owner-Direktive "KANZLEIWISSEN FINAL
+# PRODUCT IMPLEMENTATION" §4/§5) ---
+
+
+def test_toggle_law_active_deactivates_without_deleting_sections(db_session: Session) -> None:
+    import_law_fixture_data(db_session, _SAMPLE_DATA)
+
+    law = toggle_law_active(db_session, "TESTG", active=False)
+
+    assert law is not None
+    assert law.is_active is False
+    # Deaktivieren loescht KEINE Paragraphen (kein erneuter Download beim
+    # Wiedereinschalten noetig).
+    assert len(get_sections(db_session, "TESTG")) == 2
+
+
+def test_toggle_law_active_can_reactivate(db_session: Session) -> None:
+    import_law_fixture_data(db_session, _SAMPLE_DATA)
+    toggle_law_active(db_session, "TESTG", active=False)
+
+    law = toggle_law_active(db_session, "TESTG", active=True)
+
+    assert law is not None
+    assert law.is_active is True
+
+
+def test_toggle_law_active_returns_none_for_not_installed_law(db_session: Session) -> None:
+    assert toggle_law_active(db_session, "NICHT_INSTALLIERT", active=True) is None
+
+
+def test_law_defaults_to_active_after_import(db_session: Session) -> None:
+    """Migration schritt3_017 setzt `is_active` serverseitig auf True -
+    ein frisch importiertes Gesetz ist sofort real nutzbar, keine
+    versteckte Zusatzaktivierung noetig."""
+    import_law_fixture_data(db_session, _SAMPLE_DATA)
+    law = get_law_by_code(db_session, "TESTG")
+    assert law is not None
+    assert law.is_active is True
+
+
+# --- get_law_stats ---
+
+
+def test_get_law_stats_counts_sections_and_finds_latest_stand(db_session: Session) -> None:
+    import_law_fixture_data(db_session, _SAMPLE_DATA)
+    stats = get_law_stats(db_session)
+    assert stats["TESTG"]["count"] == 2
+    assert stats["TESTG"]["stand"].isoformat() == "2026-08-20"
+
+
+def test_get_law_stats_omits_laws_without_sections(db_session: Session) -> None:
+    import_law_fixture_data(db_session, {"code": "LEER", "title": "Leeres Gesetz", "sections": []})
+    stats = get_law_stats(db_session)
+    assert "LEER" not in stats

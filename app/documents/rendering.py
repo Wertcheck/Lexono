@@ -125,3 +125,31 @@ def determine_viewer_mode(path: Path) -> ViewerMode:
         return ViewerMode(kind="text")
 
     return ViewerMode(kind="unsupported")
+
+
+# Verschoben aus app/web/clients_router.py (05.10., Owner-Direktive
+# "ARCHITECTURE & PRODUCT FLOW PASS" §19/§20) - war dort eine private,
+# einmalig genutzte Hilfsfunktion; die neue Chat-Dokumentvorschau
+# (app/web/chat_router.py) braucht dieselbe, echte Dateigroessen-
+# Formatierung ein zweites Mal. Hierher verschoben statt dupliziert - diese
+# Datei ist bereits die gemeinsame "echte Dateimetadaten lesen"-Stelle
+# (siehe get_page_count oben). Verhalten unveraendert (keine neue Logik).
+def document_file_size_label(file_path: str | None) -> str:
+    """Liefert eine menschenlesbare Dateigroesse, direkt von der
+    tatsaechlichen Datei gelesen (`os.path.getsize`) - eine verlaessliche,
+    echte Metadatenquelle, kein erfundener/geschaetzter Wert. Fehlt die
+    Datei (verschoben/geloescht) oder ist der Pfad ungueltig, wird ehrlich
+    "–" geliefert statt eines geratenen Werts."""
+    if not file_path:
+        return "–"
+    try:
+        size_bytes = Path(file_path).stat().st_size
+    except OSError:
+        return "–"
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    size_kb = size_bytes / 1024
+    if size_kb < 1024:
+        return f"{size_kb:.0f} KB"
+    size_mb = size_kb / 1024
+    return f"{size_mb:.1f}".replace(".", ",") + " MB"

@@ -24,13 +24,13 @@
       <section class="settings-hub__group">
         <h2 class="settings-hub__group-title">Kanzlei &amp; Benutzer</h2>
         <div class="account-grid">
-          <a href="/dashboard/settings/profile" class="account-card">
+          <a href="/dashboard/settings?tab=kanzlei" class="account-card">
             {{ icons.folder(class_="account-card__icon") }}
             <span class="account-card__title">Kanzlei-Profil &amp; Briefkopf</span>
             <span class="account-card__text">Kanzleiname, Anschrift, Kontaktdaten</span>
           </a>
           {% if is_admin %}
-            <a href="/dashboard/admin/users" class="account-card">
+            <a href="/dashboard/settings?tab=benutzer" class="account-card">
               {{ icons.users(class_="account-card__icon") }}
               <span class="account-card__title">Nutzerverwaltung</span>
               <span class="account-card__text">Kanzlei-Nutzerkonten anlegen/verwalten (nur Admin)</span>

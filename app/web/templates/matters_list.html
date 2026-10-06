@@ -2,51 +2,96 @@
 {% import "_icons.html" as icons %}
 {% block title %}Akten{% endblock %}
 {% block content %}
-  <div class="topbar">
-    <h1 class="topbar__title">Akten</h1>
-    <div class="topbar__meta">{{ rows|length }} Akte{{ "n" if rows|length != 1 else "" }}</div>
+  {# Seitenkopf (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-
+     DRIVEN UI RECONSTRUCTION"): die vorherige Runde nutzte die "--sm"-
+     Topbar-Varianten (32px-Icon/19px-Titel) - im direkten Vergleich mit
+     der Referenz (`13_akten_uebersicht.png`, grosses Ordner-Icon + groß/
+     fett gesetzter "Akten"-Titel) wirkte das weiterhin zu zurueckhaltend
+     ("sieht noch zu sehr wie die alte Version aus"). Jetzt die vollen
+     `.topbar__icon`/`.topbar__title`-Groessen (42px/24px, dasselbe
+     Lexono-Icon-Badge-Muster wie ueberall sonst - Direktive §2: aktuelles
+     Branding hat Prioritaet vor wortwoertlicher Referenzkopie), aber
+     WEITERHIN mit `.topbar--compact`s reduziertem Padding (12px/6px statt
+     26px/18px) - grosse Praesenz, keine Hero-Flaeche. Keine separate
+     "X Akten"-Zeile (Direktive §4/§7) - die Gesamtzahl steht jetzt in der
+     Pagination ("X von Y Akten", siehe unten). #}
+  <div class="topbar topbar--compact">
+    <div class="topbar__icon-row">
+      <span class="topbar__icon">{{ icons.folder(class_="icon") }}</span>
+      <div class="topbar__heading">
+        <h1 class="topbar__title">Akten</h1>
+        <p class="topbar__subtitle">Alle Mandatsakten dieser Kanzlei an einem Ort.</p>
+      </div>
+      <div class="topbar__actions">
+        <button type="button" class="btn btn--primary"
+                onclick="document.getElementById('create-matter-modal').showModal()">
+          {{ icons.plus(class_="icon") }} Akte anlegen
+        </button>
+      </div>
+    </div>
   </div>
 
   {% if error %}
     <div class="banner banner--error">{{ error }}</div>
   {% endif %}
 
-  <div class="draft-page">
-    <div class="instructions-panel">
-      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-        <button type="button" class="btn btn--primary"
-                onclick="document.getElementById('create-matter-modal').showModal()">
-          {{ icons.plus(class_="icon") }} Akte anlegen
-        </button>
-      </div>
+  {# Such-/Filterzeile (27.09., Owner-Direktive "AKTEN-STARTSEITE -
+     REFERENCE RECONSTRUCTION" §6/§13): liegt jetzt AUSSERHALB der
+     Tabellen-Karte direkt auf der Seitenflaeche, wie in der Referenz -
+     vorher steckten Filterzeile UND Tabelle gemeinsam in einer einzigen
+     `.instructions-panel`-Karte ("graue Seite -> eine grosse weisse Karte
+     -> Tabelle darin"); die Referenz zeigt stattdessen eine freistehende
+     Filterzeile UEBER einer eigenstaendigen Tabellen-Karte (siehe
+     `.matters-table-card` unten). Fuenf echte Elemente statt vorher drei:
+     Suche + Mandant + Kategorie + Status + Sortierung (Direktive §6:
+     "Alle Mandanten"/"Alle Kategorien" fehlten bisher komplett) - beide
+     neuen Dropdowns sind ECHTE Filter auf bereits vorhandenen Matter-
+     Feldern (`client_id`/`practice_area`, siehe matters_router.py), keine
+     Fake-Dropdowns. Der separate "Filtern"-Button entfaellt: alle
+     Dropdowns senden per `onchange` sofort ab, die Sucheingabe per
+     Enter (Standard-Formularverhalten bei einem alleinigen Textfeld). #}
+  <form method="get" action="/dashboard/matters" class="matters-filter-bar">
+    <div class="clients-search-bar matters-filter-bar__search">
+      <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+      <input type="text" name="search" value="{{ search }}" placeholder="Akten suchen …" />
+    </div>
+    <select name="client_id" onchange="this.form.submit()" aria-label="Nach Mandant filtern">
+      <option value="">Alle Mandanten</option>
+      {% for client in clients %}
+        <option value="{{ client.id }}" {% if client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="practice_area" onchange="this.form.submit()" aria-label="Nach Kategorie filtern">
+      <option value="">Alle Kategorien</option>
+      {% for area in practice_areas %}
+        <option value="{{ area }}" {% if practice_area == area %}selected{% endif %}>{{ area }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" onchange="this.form.submit()" aria-label="Nach Status filtern">
+      <option value="" {% if status == "" %}selected{% endif %}>Alle Status</option>
+      <option value="open" {% if status == "open" %}selected{% endif %}>Offen</option>
+      <option value="closed" {% if status == "closed" %}selected{% endif %}>Abgeschlossen</option>
+    </select>
+    <select name="sort" onchange="this.form.submit()" aria-label="Sortierung">
+      <option value="updated_desc" {% if sort == "updated_desc" %}selected{% endif %}>Zuletzt geändert</option>
+      <option value="reference" {% if sort == "reference" %}selected{% endif %}>Aktenzeichen</option>
+      <option value="title" {% if sort == "title" %}selected{% endif %}>Titel</option>
+    </select>
+  </form>
 
-      <div class="clients-toolbar">
-        <div class="filters" style="margin-top: 0;">
-          {% for key, label in [("", "Alle"), ("open", "Offen"), ("closed", "Abgeschlossen")] %}
-            <form method="get" action="/dashboard/matters">
-              <input type="hidden" name="search" value="{{ search }}" />
-              <input type="hidden" name="status" value="{{ key }}" />
-              <button type="submit" class="filter-tab{% if status == key %} filter-tab--active{% endif %}">{{ label }}</button>
-            </form>
-          {% endfor %}
-        </div>
-
-        <form method="get" action="/dashboard/matters" class="clients-search-bar">
-          <input type="hidden" name="status" value="{{ status }}" />
-          <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
-          <input type="text" name="search" value="{{ search }}" placeholder="Aktenzeichen, Titel oder Mandant…" />
-          <button type="submit" class="btn">Filtern</button>
-        </form>
-      </div>
-
+  <div class="draft-page draft-page--tight">
+    {# Eigenstaendige Tabellen-Karte (27.09., Direktive §13) statt der
+       vorherigen `.instructions-panel` - enthaelt NUR noch Tabelle +
+       Pagination, keine Filterzeile mehr (siehe oben). #}
+    <div class="matters-table-card">
       <div class="table-container">
-        <table class="draft-table">
+        <table class="draft-table draft-table--compact">
           <thead>
             <tr>
               <th>Aktenzeichen</th>
-              <th>Titel</th>
+              <th>Bezeichnung</th>
               <th>Mandant</th>
-              <th>Rechtsgebiet</th>
+              <th>Kategorie</th>
               <th>Status</th>
               <th>Letzte Aktivität</th>
               <th></th>
@@ -55,28 +100,79 @@
           <tbody>
             {% for matter in rows %}
               <tr onclick="window.location='/dashboard/matters/{{ matter.id }}'">
-                <td class="mono">{{ matter.reference_number or "–" }}</td>
+                <td class="mono">
+                  {# Eigener Flex-Container fuer Symbol+Text (03.10.,
+                     Owner-Direktive "PRAEZISE KORREKTUR DER AKTENZEICHEN-
+                     AUSRICHTUNG"): ECHTER FUND beim DOM-Abgleich gegen
+                     `Akten8.png` - Symbol (`.matters-row-icon`, inline-
+                     flex) und Text (`.matters-reference`) lagen bisher
+                     OHNE gemeinsamen Container direkt im normalen
+                     Inline-Fluss der `<td>`. Eine umgebrochene Folgezeile
+                     des `<wbr>`-gesteuerten Aktenzeichens begann dadurch
+                     wieder am linken Rand der Zelle (unter dem Symbol),
+                     nicht buendig unter dem Textanfang - es gab schlicht
+                     keine Einrueckung, die eine Folgezeile haette
+                     einhalten koennen. `.matters-reference-cell` macht
+                     Symbol und Text zu zwei GETRENNTEN Flex-Items: das
+                     Symbol bleibt ein eigenes, nicht schrumpfendes
+                     Element (nimmt am Textfluss nicht mehr teil), der
+                     Text bekommt eine eigene Box (`flex:1; min-width:0`)
+                     - dadurch beginnen ALLE Zeilen des umgebrochenen
+                     Textes an der Box-Kante dieser Text-Box, unabhaengig
+                     vom Symbol. Das bestehende `<wbr>`-Umbruchverhalten
+                     (siehe `.matters-reference`/`_insert_soft_breaks`)
+                     bleibt unberuehrt: die fruehere Sorge "Text+`<wbr>`
+                     in einem Flex-Container wird in anonyme Flex-Items
+                     zerlegt" betrifft nur Text-Knoten, die DIREKT im
+                     Flex-Container liegen - hier liegt der Text weiterhin
+                     vollstaendig INNERHALB des eigenen `<span class=
+                     "matters-reference">`-Elements, das selbst nur EIN
+                     (automatisch "blockifiziertes") Flex-Item ist. #}
+                  <span class="matters-reference-cell">
+                    {# Ordner-Icon vor dem Aktenzeichen (27.09., Direktive
+                       §8: "visuelles Identifikationsmerkmal der Akte") -
+                       rein dekorativ/identifizierend, kein Button, keine
+                       eigene Funktion. #}
+                    <span class="matters-row-icon">{{ icons.folder(class_="icon") }}</span>
+                    {# Kontrolliertes Umbrechen statt zufaelliger Mitten-im-
+                       Wort-Trennung (03.10., Direktive §4) - siehe
+                       `_insert_soft_breaks` in matters_router.py fuer die
+                       volle Begruendung. `.matters-reference` (app.css)
+                       erzwingt `word-break:keep-all`, damit der Browser
+                       NUR an den hier eingefuegten `<wbr>`-Stellen bricht. #}
+                    <span class="matters-reference">{{ (matter.reference_number or "–") | reference_break }}</span>
+                  </span>
+                </td>
                 <td>{{ matter.title }}</td>
                 <td>{{ matter.client.name }}</td>
                 <td>{{ matter.practice_area or "–" }}</td>
                 <td>
-                  <span class="tag {{ 'tag--matched' if matter.status == 'open' else 'tag--outbound' }}">
-                    <span class="tag__dot"></span>{{ "offen" if matter.status == "open" else "abgeschlossen" }}
+                  {# Punkt+Text mit sehr dezenter Tönungsfläche (27.09.,
+                     Direktive §10: "grüner Punkt + sehr dezente grüne
+                     Fläche", NICHT die massive Pill von vorher UND nicht
+                     komplett transparent wie in der vorherigen Runde -
+                     siehe `.matter-status` in app.css). #}
+                  <span class="matter-status matter-status--{{ 'open' if matter.status == 'open' else 'closed' }}">
+                    <span class="matter-status__dot matter-status__dot--{{ 'open' if matter.status == 'open' else 'closed' }}"></span>
+                    {{ "offen" if matter.status == "open" else "abgeschlossen" }}
                   </span>
                 </td>
                 <td>{{ matter.updated_at.strftime("%d.%m.%Y") if matter.updated_at else "–" }}</td>
                 {# Schnellzugriff-Menü (19.09., UI/UX-Referenzabgleich
-                   "13_akten_uebersicht.png"): die Referenz zeigt ein "..."-
-                   Menü pro Zeile mit direktem Zugriff auf Aktionen, ohne
-                   erst die Akte öffnen zu müssen - alle hier verlinkten
-                   Aktionen (öffnen/Chat/archivieren/wieder öffnen)
-                   existieren bereits real (matters_router.py), dieses Menü
-                   ist reine Schnellzugriffs-Verdrahtung, KEINE neue Logik.
-                   "Bearbeiten"/"Neues Dokument" (brauchen Modal/Datei-
-                   Dialog-Kontext) und "Akte löschen" (siehe TASK_MAP.md,
-                   Aktenlöschung ist eine bewusst zurückgestellte
-                   Entscheidung - Kaskadierung, Aufbewahrungspflicht) bleiben
-                   bewusst auf der Akte-Detailseite. #}
+                   "13_akten_uebersicht.png"; 27.09. um "Bearbeiten" +
+                   Gruppentrenner ergaenzt, Direktive "AKTEN STARTSEITE -
+                   REFERENCE-DRIVEN UI RECONSTRUCTION" §9): "Bearbeiten"
+                   verlinkt auf die Akte-Detailseite mit `?edit=1` - dort
+                   oeffnet ein kleines Inline-Skript automatisch das dort
+                   bereits bestehende `edit-matter-modal` (siehe
+                   matter_detail.html), KEINE neue Logik/kein zweites
+                   Formular, nur Wiederverwendung der bestehenden Route
+                   ueber einen Query-Parameter. "Akte löschen" jetzt
+                   ERGAENZT (03.10., siehe unten) - SOFT-DELETE, keine
+                   Compliance-Zurueckstellung mehr noetig. "Neues Dokument"
+                   (braucht einen Datei-Dialog-Kontext) bleibt weiterhin
+                   bewusst aussen vor - keine Fake-Aktion ohne echtes
+                   Gegenstueck. #}
                 <td class="row-menu-cell" onclick="event.stopPropagation();">
                   <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen"
                           onclick="Lexono.toggleRowMenu(this)">
@@ -86,9 +182,14 @@
                     <a href="/dashboard/matters/{{ matter.id }}" class="row-menu__item">
                       {{ icons.folder(class_="icon") }} Akte öffnen
                     </a>
+                    <a href="/dashboard/matters/{{ matter.id }}?edit=1" class="row-menu__item">
+                      {{ icons.pencil(class_="icon") }} Bearbeiten
+                    </a>
+                    <hr class="row-menu__divider" />
                     <a href="/dashboard/chat?new=1&amp;matter={{ matter.id }}" class="row-menu__item">
                       {{ icons.chat(class_="icon") }} In Chat öffnen
                     </a>
+                    <hr class="row-menu__divider" />
                     {% if matter.status == "open" %}
                       <form method="post" action="/dashboard/matters/{{ matter.id }}/archive">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
@@ -104,6 +205,28 @@
                         </button>
                       </form>
                     {% endif %}
+                    <hr class="row-menu__divider" />
+                    {# "Akte löschen" (03.10., Owner-Direktive "AKTENUEBER-
+                       SICHT FINALISIEREN UND PRODUKTIONSREIF VERIFIZIEREN"
+                       §6) - SOFT-DELETE (siehe matters_router.py::
+                       delete_matter_action), serverseitig durchgesetzt
+                       (require_role()). Bestaetigungsdialog via
+                       `data-reference`/`data-title` + dem geteilten
+                       Submit-Handler unten (kein Markup-Escaping-Risiko
+                       durch manuelles JS-String-Zusammenbauen - die Werte
+                       laufen ausschliesslich ueber per Jinja escapte
+                       HTML-Attribute und `element.dataset`). Abbruch im
+                       Dialog verhindert den Submit vollstaendig (keine
+                       Aenderung, kein Request). #}
+                    <form method="post" action="/dashboard/matters/{{ matter.id }}/delete"
+                          class="row-menu__delete-form"
+                          data-reference="{{ matter.reference_number or 'ohne Aktenzeichen' }}"
+                          data-title="{{ matter.title }}">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                      <button type="submit" class="row-menu__item row-menu__item--button row-menu__item--danger">
+                        {{ icons.trash(class_="icon") }} Akte löschen
+                      </button>
+                    </form>
                   </div>
                 </td>
               </tr>
@@ -117,6 +240,50 @@
           </tbody>
         </table>
       </div>
+
+      {# Pagination (27.09., Owner-Direktive "AKTEN STARTSEITE - REFERENCE-
+         DRIVEN UI RECONSTRUCTION" §10): echte Seitenweise-Auslieferung
+         (siehe matters_router.py - `page`/`page_size`-Query-Parameter,
+         echtes `.limit()/.offset()` in der DB-Abfrage), keine reine
+         Optik ueber einer weiterhin unbegrenzten Tabelle. Nur gezeigt,
+         wenn ueberhaupt mehr als eine Seite existiert. #}
+      {% if total_pages > 1 %}
+        <div class="matters-pagination">
+          <div class="matters-pagination__info">
+            {{ rows|length }} von {{ total_count }} Akte{{ "n" if total_count != 1 else "" }}
+          </div>
+          <div class="matters-pagination__pages">
+            <a class="matters-pagination__nav-btn"
+               {% if page <= 1 %}aria-disabled="true"{% endif %}
+               href="?search={{ search }}&status={{ status }}&client_id={{ client_id }}&practice_area={{ practice_area }}&sort={{ sort }}&page={{ page - 1 }}&page_size={{ page_size }}"
+               aria-label="Vorherige Seite">{{ icons.chevron_left(class_="icon") }}</a>
+            {% for p in page_numbers %}
+              {% if p == "…" %}
+                <span class="matters-pagination__ellipsis">…</span>
+              {% else %}
+                <a class="matters-pagination__page-btn{% if p == page %} matters-pagination__page-btn--active{% endif %}"
+                   href="?search={{ search }}&status={{ status }}&client_id={{ client_id }}&practice_area={{ practice_area }}&sort={{ sort }}&page={{ p }}&page_size={{ page_size }}">{{ p }}</a>
+              {% endif %}
+            {% endfor %}
+            <a class="matters-pagination__nav-btn"
+               {% if page >= total_pages %}aria-disabled="true"{% endif %}
+               href="?search={{ search }}&status={{ status }}&client_id={{ client_id }}&practice_area={{ practice_area }}&sort={{ sort }}&page={{ page + 1 }}&page_size={{ page_size }}"
+               aria-label="Nächste Seite">{{ icons.chevron_right(class_="icon") }}</a>
+          </div>
+          <form method="get" action="/dashboard/matters" class="matters-pagination__size-form">
+            <input type="hidden" name="search" value="{{ search }}" />
+            <input type="hidden" name="status" value="{{ status }}" />
+            <input type="hidden" name="client_id" value="{{ client_id }}" />
+            <input type="hidden" name="practice_area" value="{{ practice_area }}" />
+            <input type="hidden" name="sort" value="{{ sort }}" />
+            <select name="page_size" class="matters-pagination__size-select" onchange="this.form.submit()" aria-label="Akten pro Seite">
+              {% for size in [10, 20, 50] %}
+                <option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }} pro Seite</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -130,6 +297,27 @@
     };
     document.addEventListener("click", function () {
       document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+
+    // Bestaetigungsdialog vor "Akte löschen" (03.10., Direktive §6.2:
+    // "Vor der Löschung erscheint ein Bestätigungsdialog... nennt
+    // Aktenzeichen und Bezeichnung... Abbrechen darf keinerlei
+    // Änderungen verursachen"). `element.dataset` liefert die bereits
+    // von Jinja HTML-escapten Werte sicher zurueck - kein manuelles
+    // String-Zusammenbauen von Nutzerdaten in JS.
+    document.querySelectorAll(".row-menu__delete-form").forEach(function (form) {
+      form.addEventListener("submit", function (event) {
+        var reference = form.dataset.reference;
+        var title = form.dataset.title;
+        var confirmed = window.confirm(
+          "Akte \"" + title + "\" (Az. " + reference + ") wirklich löschen?\n\n" +
+          "Der Datensatz bleibt aus Aufbewahrungsgründen vollständig erhalten, " +
+          "ist aber in der Anwendung nicht mehr erreichbar."
+        );
+        if (!confirmed) {
+          event.preventDefault();
+        }
+      });
     });
   </script>
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.models import Law, LawSection
@@ -152,6 +152,43 @@ def sort_sections_naturally(sections: list[LawSection]) -> list[LawSection]:
 
 def get_laws(db: Session) -> list[Law]:
     return db.query(Law).order_by(Law.code).all()
+
+
+def get_law_stats(db: Session) -> dict[str, dict]:
+    """Echte Kennzahlen je Gesetz (Anzahl Normen + juengster Stand) - EINE
+    gruppierte Abfrage statt eines Zaehl-Querys pro Gesetz (kein N+1).
+    Verschoben aus app/web/laws_router.py (26.09., Owner-Direktive
+    "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION"), damit die neue
+    Kanzleiwissen-Katalogtabelle (app/web/knowledge_router.py) dieselbe
+    Berechnung nutzt statt einer zweiten, abweichenden Kopie."""
+    stats_rows = (
+        db.query(
+            LawSection.law_code,
+            func.count(LawSection.id),
+            func.max(LawSection.last_updated),
+        )
+        .group_by(LawSection.law_code)
+        .all()
+    )
+    return {code: {"count": count, "stand": stand} for code, count, stand in stats_rows}
+
+
+def toggle_law_active(db: Session, law_code: str, *, active: bool) -> Law | None:
+    """Echte Aktivierung/Deaktivierung (26.09., Owner-Direktive
+    "KANZLEIWISSEN FINAL PRODUCT IMPLEMENTATION" §4/§5) - loescht KEINE
+    bereits heruntergeladenen Paragraphen (kein erneuter Download beim
+    Wiedereinschalten noetig), blendet die Quelle aber aus den KI-
+    Funktionen aus (siehe app/chat/service.py::_find_law_section,
+    app/search/global_search_service.py::_search_law_sections). Liefert
+    `None`, wenn das Gesetz lokal (noch) gar nicht installiert ist - der
+    Aufrufer (Router) unterscheidet das von einem echten Fehler."""
+    law = get_law_by_code(db, law_code)
+    if law is None:
+        return None
+    law.is_active = active
+    db.commit()
+    db.refresh(law)
+    return law
 
 
 def get_law_by_code(db: Session, law_code: str) -> Law | None:

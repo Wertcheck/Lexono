@@ -20,7 +20,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.session import get_db
 from app.export.docx_export_service import DOCX_MEDIA_TYPE, DraftDocxExportService
 from app.main import app
-from app.models import AuditEvent, Client, Draft, FirmProfile, Matter
+from app.models import AuditEvent, Client, Document, Draft, FirmProfile, Matter
 from app.models.base import Base
 from tests.auth_test_utils import login_as_admin
 
@@ -152,6 +152,27 @@ def test_export_service_with_firm_profile_adds_header_letterhead(db_session: Ses
     # Briefkopf-Text darf NICHT im Fließtext des Dokuments auftauchen.
     body_text = "\n".join(p.text for p in document.paragraphs)
     assert "Kanzlei Mustermann Rechtsanwälte" not in body_text
+
+
+def test_export_service_header_includes_address_addition(db_session: Session) -> None:
+    """06.10., Owner-Direktive "SETTINGS -> KANZLEI": `address_addition`
+    (Adresszusatz, z. B. "c/o") ist ein neues, echtes Adressfeld - muss im
+    selben Briefkopf-Adresszeile wie Straße/PLZ/Ort erscheinen, nicht nur
+    gespeichert und nirgends angezeigt werden (/defaults)."""
+    draft = _seed_draft(db_session)
+    profile = FirmProfile(
+        firm_name="Kanzlei Mustermann Rechtsanwälte",
+        address_addition="c/o Bürogemeinschaft Musterhaus",
+        street="Musterstraße 12",
+        postal_code="10115",
+        city="Berlin",
+    )
+
+    buffer = DraftDocxExportService().export_draft(draft, draft.matter, profile)
+
+    document = DocxDocument(BytesIO(buffer.getvalue()))
+    header_text = "\n".join(p.text for p in document.sections[0].header.paragraphs)
+    assert "c/o Bürogemeinschaft Musterhaus, Musterstraße 12, 10115 Berlin" in header_text
 
 
 def test_export_service_embeds_logo_in_header(db_session: Session, tmp_path: Path) -> None:
@@ -287,3 +308,102 @@ def test_export_route_logs_audit_event(client: TestClient, db_session: Session) 
         .all()
     )
     assert len(events) == 1
+
+
+def test_export_route_saves_the_export_as_a_document_in_the_matter(
+    client: TestClient, db_session: Session
+) -> None:
+    """26.09., Owner-Direktive "DOCUMENT WORKSPACE / SCHRIFTSATZ
+    PRODUCT-COMPLETION" §12 - DOCX-Pendant zum PDF-Test in
+    tests/test_draft_pdf_export.py (identische `_save_export_as_document`-
+    Logik fuer beide Formate, hier nur eine Bestaetigung, dass die
+    Verdrahtung auch fuer die DOCX-Route tatsaechlich greift)."""
+    draft = _seed_draft(db_session)
+
+    response = client.get(f"/dashboard/drafts/{draft.id}/export.docx")
+    assert response.status_code == 200
+
+    document = (
+        db_session.query(Document)
+        .filter(Document.matter_id == draft.matter_id, Document.mime_type == DOCX_MEDIA_TYPE)
+        .one()
+    )
+    assert document.generated_from_draft_id == draft.id
+    assert document.original_filename == f"Einspruch Steuerbescheid 2025_v{draft.version}.docx"
+
+    matter_page = client.get(f"/dashboard/matters/{draft.matter_id}")
+    assert matter_page.status_code == 200
+    assert document.original_filename in matter_page.text
+
+
+# --- content_format == "html" (05.10., siehe tests/test_draft_pdf_export.py
+# fuer die volle Herleitung des Fundes - identisches Problem betraf auch
+# den DOCX-Export, denselben naiven `content.split("\n\n")`-Klartext-Pfad
+# fuer rohes HTML genutzt). ---
+
+
+def _seed_html_draft(db: Session, content: str) -> Draft:
+    client = Client(name="Testmandant GmbH")
+    matter = Matter(client=client, title="Einspruch Steuerbescheid 2025")
+    db.add_all([client, matter])
+    db.commit()
+    draft = Draft(matter_id=matter.id, content=content, content_format="html")
+    db.add(draft)
+    db.commit()
+    return draft
+
+
+def test_html_draft_docx_export_applies_real_formatting_not_raw_tags(
+    db_session: Session,
+) -> None:
+    draft = _seed_html_draft(
+        db_session,
+        "<p>Hallo <b>Welt</b>, dies ist <i>kursiv</i> und <u>unterstrichen</u>.</p>",
+    )
+
+    buffer = DraftDocxExportService().export_draft(draft, draft.matter)
+    document = DocxDocument(BytesIO(buffer.getvalue()))
+    full_text = "\n".join(p.text for p in document.paragraphs)
+
+    for raw_tag in ("<p>", "</p>", "<b>", "</b>", "<i>", "</i>", "<u>", "</u>"):
+        assert raw_tag not in full_text
+
+    content_paragraph = next(p for p in document.paragraphs if "Hallo" in p.text)
+    runs_by_text = {r.text: r for r in content_paragraph.runs if r.text}
+    assert runs_by_text["Welt"].bold is True
+    assert runs_by_text["kursiv"].italic is True
+    assert runs_by_text["unterstrichen"].underline is True
+
+
+def test_html_draft_docx_export_uses_real_list_styles(db_session: Session) -> None:
+    draft = _seed_html_draft(
+        db_session,
+        "<ul><li>Punkt eins</li></ul><ol><li>Erstens</li></ol>",
+    )
+
+    buffer = DraftDocxExportService().export_draft(draft, draft.matter)
+    document = DocxDocument(BytesIO(buffer.getvalue()))
+
+    styles_by_text = {p.text: p.style.name for p in document.paragraphs if p.text}
+    assert styles_by_text["Punkt eins"] == "List Bullet"
+    assert styles_by_text["Erstens"] == "List Number"
+
+
+def test_text_format_draft_docx_export_is_unaffected_by_html_export_path(
+    db_session: Session,
+) -> None:
+    client = Client(name="Testmandant GmbH")
+    matter = Matter(client=client, title="Testakte")
+    db_session.add_all([client, matter])
+    db_session.commit()
+    draft = Draft(
+        matter_id=matter.id, content="Bitte <Aktenzeichen> ergänzen.", content_format="text",
+    )
+    db_session.add(draft)
+    db_session.commit()
+
+    buffer = DraftDocxExportService().export_draft(draft, draft.matter)
+    document = DocxDocument(BytesIO(buffer.getvalue()))
+    full_text = "\n".join(p.text for p in document.paragraphs)
+
+    assert "<Aktenzeichen>" in full_text

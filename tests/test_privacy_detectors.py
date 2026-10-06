@@ -8,7 +8,7 @@ Daten."""
 
 import pytest
 
-from app.privacy.detectors import detect_all, detect_known_entities
+from app.privacy.detectors import DetectedSpan, detect_all, detect_known_entities
 
 
 def test_detects_email() -> None:
@@ -38,6 +38,36 @@ def test_detects_aktenzeichen() -> None:
     aktenzeichen_spans = [s for s in spans if s.category == "aktenzeichen"]
     assert len(aktenzeichen_spans) == 1
     assert aktenzeichen_spans[0].value == "123/24"
+
+
+def test_aktenzeichen_word_used_in_prose_without_a_real_value_is_not_matched() -> None:
+    """ECHTER FUND, LIVE REPRODUZIERT (05.10., Owner-Direktive
+    "Abschließende Live-Verifikation nach Aufladung des Anthropic-
+    Guthabens"): ein Claude-Entwurf, der ehrlich auf ein fehlendes
+    Aktenzeichen hinweist, verwendet das Wort "Aktenzeichen" in normaler
+    Flusssprache - das Muster fing dabei zuvor faelschlich das jeweils
+    naechste Wort ("der"/"und") als vermeintlichen Aktenzeichen-Wert ein,
+    was wegen der extremen Haeufigkeit dieser Woerter im restlichen Text
+    einen falschen "Originalwert geleakt"-Alarm beim nachgelagerten
+    Leck-Check ausloeste und eine voellig unauffaellige Folgefrage
+    blockierte."""
+    from app.privacy.detectors import detect_aktenzeichen
+
+    assert detect_aktenzeichen("Das Aktenzeichen der Gegenseite ist nicht übermittelt.") == []
+    assert (
+        detect_aktenzeichen("Vollständiges Aktenzeichen und Postanschrift der Gegenseite.")
+        == []
+    )
+
+
+def test_aktenzeichen_with_real_alphanumeric_value_is_still_detected() -> None:
+    """Gegenprobe zum Fix oben: ein echtes Aktenzeichen (enthält immer
+    mindestens eine Ziffer) darf dadurch nicht uebersehen werden."""
+    from app.privacy.detectors import detect_aktenzeichen
+
+    spans = detect_aktenzeichen("Aktenzeichen: VN-2024-88471")
+    assert len(spans) == 1
+    assert spans[0].value == "VN-2024-88471"
 
 
 def test_detects_address_street_and_postal_code() -> None:
@@ -157,4 +187,94 @@ def test_overlapping_matches_prefer_longer_span() -> None:
     # Es darf keine ueberlappenden Treffer geben (Ueberlappungsaufloesung).
     for i, span_a in enumerate(spans):
         for span_b in spans[i + 1 :]:
+            assert span_a.end <= span_b.start or span_b.end <= span_a.start
+
+
+# --- _extend_with_repeated_occurrences (05.10., Owner-Direktive
+# "Vollstaendiger UX- und Workflow-Audit") - ECHTER FUND, live reproduziert:
+# Presidios NER erkannte denselben Wert ("Bekanntgabefiktion", ein
+# deutscher Rechtsbegriff) in einem Satzkontext als vermeintlichen Ort,
+# im SELBEN Text an anderer Stelle (anderer Satzkontext) jedoch NICHT -
+# der Originalwert blieb dort woertlich stehen und loeste beim
+# nachgelagerten Leck-Check einen falschen Abbruch aus. Getestet hier mit
+# einem einfachen Fake-NER-Detector (deterministisch, unabhaengig von der
+# echten spaCy-/Presidio-Modellgenauigkeit) statt des echten Presidio-
+# Detektors, um den FIX selbst zu pruefen, nicht die Modellgenauigkeit. ---
+
+
+def _inconsistent_ner_detector(text: str) -> list[DetectedSpan]:
+    """Simuliert Presidios reales, reproduziertes Verhalten: erkennt
+    "Teststadt" nur beim ERSTEN Vorkommen (z. B. weil es dort als
+    eigenstaendiges Wort nach einer Ueberschriften-Nummerierung steht),
+    nicht bei spaeteren, im Fliesstext eingebetteten Vorkommen."""
+    spans: list[DetectedSpan] = []
+    first_index = text.find("Teststadt")
+    if first_index != -1:
+        spans.append(
+            DetectedSpan(category="ort", start=first_index, end=first_index + len("Teststadt"), value="Teststadt")
+        )
+    return spans
+
+
+def test_value_detected_once_gets_replaced_at_every_later_occurrence() -> None:
+    text = "Überschrift: Teststadt ist relevant. Im Fliesstext wird Teststadt erneut erwähnt."
+    spans = detect_all(text, ner_detector=_inconsistent_ner_detector)
+
+    matched_texts = [text[s.start : s.end] for s in spans if s.category == "ort"]
+    assert matched_texts.count("Teststadt") == 2
+
+
+def test_repeated_occurrence_extension_respects_word_boundaries() -> None:
+    """Die Wiederholungssuche darf NICHT als Teilstring in einem anderen,
+    laengeren Wort treffen (z. B. "Teststadtteil" bei der Suche nach
+    "Teststadt") - sonst wuerde dieselbe Substring-Schwaeche wie beim
+    urspruenglichen Leck-Check-Fund (siehe security_check.py) hier erneut
+    eingefuehrt."""
+    text = "Teststadt und das benachbarte Teststadtteil sind unterschiedliche Orte."
+    spans = detect_all(text, ner_detector=_inconsistent_ner_detector)
+
+    matched_texts = [text[s.start : s.end] for s in spans if s.category == "ort"]
+    assert "Teststadtteil" not in matched_texts
+    assert matched_texts.count("Teststadt") == 1  # nur das echte, eigenstaendige Wort
+
+
+def test_repeated_occurrence_extension_ignores_very_short_values() -> None:
+    """Sicherheitsgrenze: ein sehr kurzer (< 4 Zeichen) NER-Treffer wird
+    NICHT blind im gesamten Text wiederholt gesucht - zu hohes Risiko,
+    selbst neue Fehlalarme zu erzeugen (siehe Docstring von
+    `_extend_with_repeated_occurrences`)."""
+
+    def short_detector(text: str) -> list[DetectedSpan]:
+        index = text.find("An")
+        return [DetectedSpan(category="person", start=index, end=index + 2, value="An")] if index != -1 else []
+
+    text = "An dieser Stelle beginnt der Satz. Ein weiterer Satz beginnt ebenfalls mit An."
+    spans = detect_all(text, ner_detector=short_detector)
+
+    person_spans = [s for s in spans if s.category == "person"]
+    assert len(person_spans) == 1  # keine zusaetzliche Wiederholungssuche ausgeloest
+
+
+def test_repeated_occurrence_extension_does_not_duplicate_already_found_spans() -> None:
+    """Ein Wert, der bereits an ALLEN Stellen korrekt erkannt wurde, darf
+    durch die Erweiterung nicht zu doppelten/ueberlappenden Spans fuehren."""
+
+    def consistent_detector(text: str) -> list[DetectedSpan]:
+        spans = []
+        start = 0
+        while True:
+            index = text.find("Teststadt", start)
+            if index == -1:
+                break
+            spans.append(DetectedSpan(category="ort", start=index, end=index + len("Teststadt"), value="Teststadt"))
+            start = index + len("Teststadt")
+        return spans
+
+    text = "Teststadt und nochmal Teststadt im selben Text."
+    spans = detect_all(text, ner_detector=consistent_detector)
+
+    ort_spans = [s for s in spans if s.category == "ort"]
+    assert len(ort_spans) == 2
+    for i, span_a in enumerate(ort_spans):
+        for span_b in ort_spans[i + 1 :]:
             assert span_a.end <= span_b.start or span_b.end <= span_a.start

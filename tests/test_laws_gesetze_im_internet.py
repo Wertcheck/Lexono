@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from pathlib import Path
 
+import httpx
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -24,6 +25,7 @@ from app.laws.gesetze_im_internet import (
     SOURCE_NAME,
     build_source_url,
     extract_xml_from_zip,
+    fetch_source_etag,
     import_norm_sections,
     parse_law_xml,
 )
@@ -143,6 +145,92 @@ def test_import_norm_sections_handles_duplicate_non_citable_enbez_safely(
 
     assert result.sections_created == 1
     assert db_session.query(LawSection).filter_by(law_code="SGBXII").count() == 1
+
+
+_RealHttpxClient = httpx.Client
+
+
+def _mock_client_factory(handler):
+    """Baut einen echten `httpx.Client`, dessen Transport durch
+    `httpx.MockTransport` ersetzt ist - KEIN echter Netzwerkzugriff, aber
+    auch KEIN gemocktes `fetch_source_etag` selbst (die HTTP-Verarbeitung
+    wird dadurch tatsächlich durchlaufen, nur die Transportschicht ist
+    kontrolliert). `httpx.MockTransport` ist Teil von httpx selbst (bereits
+    Projektabhängigkeit), keine neue Testabhängigkeit nötig. Nutzt bewusst
+    die VOR dem Patchen gesicherte `_RealHttpxClient`-Referenz, da
+    `app.laws.gesetze_im_internet.httpx` dasselbe Modulobjekt wie das hier
+    importierte `httpx` ist - ein Aufruf von `httpx.Client(...)` INNERHALB
+    dieser Factory würde sonst die eigene Patch-Version erneut treffen
+    (Endlosrekursion)."""
+
+    def factory(*args, **kwargs):
+        return _RealHttpxClient(transport=httpx.MockTransport(handler))
+
+    return factory
+
+
+def test_fetch_source_etag_returns_the_real_header_value(monkeypatch: pytest.MonkeyPatch) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "HEAD"
+        assert request.url == "https://www.gesetze-im-internet.de/bgb/xml.zip"
+        return httpx.Response(200, headers={"ETag": '"abc123"'})
+
+    monkeypatch.setattr(
+        "app.laws.gesetze_im_internet.httpx.Client", _mock_client_factory(handler)
+    )
+
+    assert fetch_source_etag("bgb") == '"abc123"'
+
+
+def test_fetch_source_etag_returns_none_when_source_has_no_etag(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Direktive Phase B: eine Quelle ohne belastbaren Versionsmarker darf
+    NIE zu einem erfundenen "unverändert" führen - das obliegt dem
+    Aufrufer (`None` zurückgeben ist hier die korrekte, ehrliche
+    Antwort)."""
+    monkeypatch.setattr(
+        "app.laws.gesetze_im_internet.httpx.Client",
+        _mock_client_factory(lambda request: httpx.Response(200, headers={})),
+    )
+
+    assert fetch_source_etag("bgb") is None
+
+
+def test_fetch_source_etag_retries_once_before_raising(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(1)
+        raise httpx.ConnectError("boom", request=request)
+
+    monkeypatch.setattr(
+        "app.laws.gesetze_im_internet.httpx.Client", _mock_client_factory(handler)
+    )
+    monkeypatch.setattr("app.laws.gesetze_im_internet.time.sleep", lambda _: None)
+
+    with pytest.raises(GesetzeImInternetError):
+        fetch_source_etag("bgb", max_attempts=2)
+
+    assert len(attempts) == 2
+
+
+def test_fetch_source_etag_succeeds_on_second_attempt(monkeypatch: pytest.MonkeyPatch) -> None:
+    attempts = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts.append(1)
+        if len(attempts) == 1:
+            raise httpx.ConnectError("boom", request=request)
+        return httpx.Response(200, headers={"ETag": '"ok"'})
+
+    monkeypatch.setattr(
+        "app.laws.gesetze_im_internet.httpx.Client", _mock_client_factory(handler)
+    )
+    monkeypatch.setattr("app.laws.gesetze_im_internet.time.sleep", lambda _: None)
+
+    assert fetch_source_etag("bgb", max_attempts=2) == '"ok"'
+    assert len(attempts) == 2
 
 
 def test_extract_xml_from_zip_rejects_zip_without_xml() -> None:

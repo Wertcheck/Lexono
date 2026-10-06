@@ -1,112 +1,745 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
-{% block title %}Aufgaben{% endblock %}
+{% import "_labels.html" as labels %}
+{% block title %}Aufgaben & Fristen{% endblock %}
 {% block content %}
-  {# Titel "Aufgaben & Fristen" (14.09.): identisch zum Navigationspunkt.
-     Die Seite zeigt seit dem Gold-Workflow-Fund auch die real erkannten
-     Fristen - vorher fragte sie ausschliesslich `Task` ab und war dadurch
-     strukturell immer leer (siehe tasks_router.py::_open_deadlines). #}
-  <div class="topbar">
-    <h1 class="topbar__title">Aufgaben &amp; Fristen</h1>
-    <div class="topbar__meta">
-      <strong>{{ deadline_total }}</strong> offene Frist{{ "en" if deadline_total != 1 else "" }},
-      <strong>{{ tasks|length }}</strong> offene Aufgabe{{ "n" if tasks|length != 1 else "" }}
+  {# Vollstaendig neu aufgebaut (03.10., Owner-Direktive "AUFGABEN & FRISTEN",
+     Referenzabgleich `18_akte_dokumente_detail.png`) - gleiches etabliertes
+     Grundmuster wie Mandanten-/Akten-Startseite (Topbar-Icon-Zeile,
+     freistehende Filterleiste, Tabellenkarte mit Pagination), ERGAENZT um
+     ein rechtes Detailpanel (`.tasks-layout`, siehe app.css) - die erste
+     Seite im Projekt mit dieser Zweispaltenaufteilung.
+
+     ECHTE, beim Bestandsabgleich gefundene Grenzen (siehe app/tasks/
+     service.py-Moduldocstring und .agentic/OPEN_ISSUES.md fuer die volle
+     Herleitung), bewusst NICHT stillschweigend uebergangen:
+     - "Termin" (Referenzzeile "Gerichtstermin vorbereiten") hat KEIN
+       eigenes Datenmodell - nur "Aufgabe"/"Frist" sind echte, hier
+       darstellbare Typen.
+     - Der "Kalender"-Tab hat keine Ansicht dahinter - bewusst als
+       nicht-klickbarer, klar gekennzeichneter Tab belassen statt einer
+       Attrappen-Route.
+     - "In Kalender anzeigen" im Detailpanel hat keine Zielfunktion -
+       bewusst deaktiviert statt eines toten/vorgetaeuschten Links. #}
+  <div class="topbar topbar--compact">
+    <div class="topbar__icon-row">
+      <span class="topbar__icon">{{ icons.calendar_check(class_="icon") }}</span>
+      <div class="topbar__heading">
+        <h1 class="topbar__title">Aufgaben &amp; Fristen</h1>
+        <p class="topbar__subtitle">Alle offenen und erledigten Aufgaben, Fristen und Termine</p>
+      </div>
+      <div class="topbar__actions">
+        {# `onclick="event.stopPropagation()"` auf dem Wrapper (05.10.,
+           Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D, live per
+           CDP reproduziert UND zuvor faelschlich dem Formular-Validierungs-
+           Fehlverhalten zugeschrieben): ohne das oeffnete ein Klick auf
+           "Neue Aufgabe" das Dropdown per `Lexono.toggleRowMenu`, aber
+           derselbe, bis zu `document` blubbernde Klick loeste SOFORT den
+           dort registrierten "alle Menues schliessen"-Listener aus - das
+           Dropdown ging auf und sofort wieder zu, ein normaler Einzelklick
+           oeffnete es nie sichtbar. Damit war "Neue Aufgabe" uber die
+           Kopfzeile fuer einen echten Nutzer praktisch nicht erreichbar
+           (P1, Kernworkflow "Aufgabe anlegen" blockiert). #}
+        <div class="split-button" onclick="event.stopPropagation();">
+          <button type="button" class="btn btn--primary" onclick="Lexono.toggleRowMenu(this)">
+            {{ icons.plus(class_="icon") }} Neue Aufgabe {{ icons.chevron_down(class_="icon") }}
+          </button>
+          <div class="row-menu" hidden>
+            <button type="button" class="row-menu__item row-menu__item--button"
+                    onclick="document.getElementById('create-task-modal').showModal()">
+              {{ icons.calendar_check(class_="icon") }} Neue Aufgabe
+            </button>
+            <button type="button" class="row-menu__item row-menu__item--button"
+                    onclick="document.getElementById('create-deadline-modal').showModal()">
+              {{ icons.calendar_day(class_="icon") }} Neue Frist
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  {% if deadlines %}
-    <h2 class="panel-title" style="margin: 24px 32px 8px;">Fristen</h2>
-    <div class="settings-list" style="max-width: 720px; margin: 0 32px 8px;">
-      {% for deadline in deadlines %}
-        {% set overdue = deadline.due_date and deadline.due_date < today %}
-        {# 17.09., Owner-Direktive §6/§7 "Workflows verbinden": zeigt direkt
-           auf das erkennende Dokument (mit der bereits gebauten "Erkannte
-           Fristen"-Anzeige dort), statt immer nur auf die Akte-Uebersicht -
-           `Deadline.document_id` existiert bereits, war hier nur nicht
-           genutzt. Ohne Dokumentbezug (z. B. manuell/zukuenftig ohne
-           Dokument erkannte Frist) bleibt der bisherige Akte-Link. #}
-        <div class="settings-list__item" style="align-items: flex-start; justify-content: space-between;">
-          <a href="{% if deadline.document_id %}/dashboard/matters/{{ deadline.matter_id }}/document/{{ deadline.document_id }}{% else %}/dashboard/matters/{{ deadline.matter_id }}{% endif %}"
-             style="display: flex; align-items: flex-start; gap: 10px; flex: 1; min-width: 0; text-decoration: none; color: inherit;">
-            {{ icons.clock(class_="icon") }}
-            <span style="flex: 1;">
-              <span class="settings-list__item-path" style="display: block; font-weight: 500; color: var(--ink-900);">
-                {% if deadline.due_date %}Frist {{ deadline.due_date.strftime("%d.%m.%Y") }}{% else %}Frist ohne Datum{% endif %}
-                {# Ueberfaellig ist die sicherheitskritischste Information auf
-                   dieser Seite - eine versaeumte Frist ist in einer Kanzlei
-                   der folgenreichste Fehler ueberhaupt. Deshalb direkt am
-                   Datum und nicht nur farblich (Farbe allein waere fuer
-                   farbfehlsichtige Nutzer kein Signal). #}
-                {% if overdue %}<span style="color: var(--danger-red, #b42318); font-weight: 600;"> &middot; überfällig</span>{% endif %}
-              </span>
-              <span style="display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px;">
-                {{ deadline.matter.title }}
-                {% if deadline.matter.client %} &middot; {{ deadline.matter.client.name }}{% endif %}
-              </span>
-            </span>
-          </a>
-          {# ECHTER FUND (17.09., Owner-Direktive §5/§6/§10 "Missing core
-             workflow functionality"): `Deadline.review_status` (unreviewed/
-             confirmed/rejected) existierte im Datenmodell und in dieser
-             Anzeige bereits vollstaendig - der Pruefstatus ist fuer den
-             Anwalt entscheidend, eine nur VERMUTETE Frist darf optisch
-             nicht wie eine bestaetigte wirken. Es gab aber PROJEKTWEIT
-             keinen einzigen Schreibpfad, der ihn tatsaechlich AENDERT -
-             der "Anwalt prueft"-Schritt des Gold-Workflows fuer Fristen
-             war reine Anzeige ohne Aktion. Jetzt: echte Bestaetigen/
-             Verwerfen-Aktion, nur bei noch ungeprueften Fristen sichtbar. #}
-          <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 10px;">
-            <span class="tag {{ 'tag--matched' if deadline.review_status == 'confirmed' else 'tag--unmatched' }}">
-              <span class="tag__dot"></span>{{ "bestätigt" if deadline.review_status == "confirmed" else "ungeprüft" }}
-            </span>
-            {% if deadline.review_status == "unreviewed" %}
-              <form method="post" action="/dashboard/tasks/{{ deadline.id }}/review" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-                <input type="hidden" name="status" value="confirmed" />
-                <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Bestätigen</button>
-              </form>
-              <form method="post" action="/dashboard/tasks/{{ deadline.id }}/review" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-                <input type="hidden" name="status" value="rejected" />
-                <button type="submit" class="btn btn--danger" style="padding: 4px 10px; font-size: 11.5px;">Verwerfen</button>
-              </form>
-            {% endif %}
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-    {% if deadline_total > deadlines|length %}
-      {# Die Begrenzung wird offen benannt statt stillschweigend zu kappen -
-         der Anwalt muss wissen, dass er nicht alles sieht. #}
-      <p style="margin: 0 32px 24px; font-size: 12px; color: var(--ink-500);">
-        Es werden die {{ deadlines|length }} nächstfälligen von insgesamt
-        {{ deadline_total }} Fristen angezeigt. Weitere Fristen finden Sie in der
-        jeweiligen Akte.
-      </p>
-    {% endif %}
+  {% if error %}
+    <div class="banner banner--error">{{ error }}</div>
   {% endif %}
 
-  {% if tasks %}
-    <h2 class="panel-title" style="margin: 24px 32px 8px;">Aufgaben</h2>
-  {% endif %}
-  {% if tasks %}
-    <div class="settings-list" style="max-width: 720px; margin: 24px 32px;">
-      {% for task in tasks %}
-        <a href="/dashboard/matters/{{ task.matter_id }}" class="settings-list__item" style="align-items: flex-start;">
-          {{ icons.check(class_="icon") }}
-          <span style="flex: 1;">
-            <span class="settings-list__item-path" style="display: block; font-weight: 500; color: var(--ink-900);">{{ task.title }}</span>
-            <span style="display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px;">
-              {{ task.matter.title }}
-              {% if task.due_date %} &middot; Fällig {{ task.due_date.strftime("%d.%m.%Y") }}{% endif %}
-            </span>
-          </span>
-        </a>
+  {# Ansichtssteuerung (§3.B der Direktive): "Liste"/"Fristen"/"Erledigt"
+     sind echte, mit den bestehenden Daten arbeitende Filterzustaende
+     (siehe tasks_router.py::tasks_page, status/item_type). "Kalender" hat
+     KEINE Ansicht dahinter - bewusst nicht klickbar statt einer Attrappe
+     (Direktive §3.B: "Implementiere keine bloßen Attrappen"). #}
+  <div class="tab-nav" style="margin: 0 32px 16px;">
+    <a href="/dashboard/tasks?{{ qs_tab_list }}"
+       class="tab-nav__item{% if not is_tab_fristen and not is_tab_erledigt %} tab-nav__item--active{% endif %}">Liste</a>
+    <span class="tab-nav__item tab-nav__item--disabled" title="Kalenderansicht ist noch nicht verfügbar" aria-disabled="true">Kalender</span>
+    <a href="/dashboard/tasks?{{ qs_tab_fristen }}"
+       class="tab-nav__item{% if is_tab_fristen %} tab-nav__item--active{% endif %}">Fristen</a>
+    <a href="/dashboard/tasks?{{ qs_tab_erledigt }}"
+       class="tab-nav__item{% if is_tab_erledigt %} tab-nav__item--active{% endif %}">Erledigt</a>
+  </div>
+
+  <form method="get" action="/dashboard/tasks" class="matters-filter-bar">
+    <input type="hidden" name="status" value="{{ status }}" />
+    <div class="clients-search-bar matters-filter-bar__search">
+      <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+      <input type="text" name="q" value="{{ search }}" placeholder="Aufgaben und Fristen durchsuchen …" />
+    </div>
+    <select name="item_type" onchange="this.form.submit()" aria-label="Nach Typ filtern">
+      <option value="">Alle Typen</option>
+      <option value="task" {% if item_type == "task" %}selected{% endif %}>Aufgabe</option>
+      <option value="deadline" {% if item_type == "deadline" %}selected{% endif %}>Frist</option>
+    </select>
+    <select name="priority" onchange="this.form.submit()" aria-label="Nach Priorität filtern">
+      <option value="">Alle Prioritäten</option>
+      {% for priority_option in priority_suggestions %}
+        <option value="{{ priority_option }}" {% if priority == priority_option %}selected{% endif %}>{{ priority_option }}</option>
       {% endfor %}
+    </select>
+    <select name="matter_id" onchange="this.form.submit()" aria-label="Nach Akte filtern">
+      <option value="">Alle Akten</option>
+      {% for matter in matters %}
+        <option value="{{ matter.id }}" {% if matter_id == matter.id %}selected{% endif %}>{{ matter.reference_number or matter.title }}</option>
+      {% endfor %}
+    </select>
+    <select name="sort" onchange="this.form.submit()" aria-label="Sortierung">
+      <option value="due_asc" {% if sort == "due_asc" %}selected{% endif %}>Fälligkeit (aufsteigend)</option>
+      <option value="due_desc" {% if sort == "due_desc" %}selected{% endif %}>Fälligkeit (absteigend)</option>
+    </select>
+  </form>
+
+  <div class="draft-page draft-page--tight">
+    <div class="tasks-layout">
+      <div class="matters-table-card">
+        <div class="table-container">
+          <table class="draft-table draft-table--compact tasks-table">
+            {# Feste Spaltenbreiten (03.10., per Live-Screenshot mit
+               geoeffnetem Detailpanel gefunden): ohne `table-layout:fixed`
+               bestimmt der natuerliche Inhalt jeder Zelle ihre Spaltenbreite
+               (Standard-Tabellenverhalten) - bei neun Spalten UND einem
+               gleichzeitig geoeffneten 400px-Detailpanel ergab das in der
+               Summe mehr als die verfuegbare Breite, wodurch das geteilte
+               `.table-container{overflow-x:auto}` ansprang und die
+               STATUS-Spalte sichtbar abschnitt (von der Direktive
+               ausdruecklich verbotenes "abgeschnittene Spalten"-Muster).
+               Feste, an der Referenz orientierte Breitenverhaeltnisse lösen
+               das an der Wurzel, unabhaengig vom tatsaechlichen Zelleninhalt. #}
+            {# Spaltenbreiten angepasst (03.10., Owner-Direktive "AUFGABEN &
+               FRISTEN: REFERENZGETREUE FERTIGSTELLUNG" §3.5), per CDP-Messung
+               gegen die echte installierte Lexono.exe bei gleichzeitig
+               geoeffnetem 400px-Detailpanel bewiesen: Typ (vorher 9%) und
+               Faellig-am (vorher 13%) waren zu schmal fuer ihren eigenen,
+               NICHT per Ellipsis behandelten Inhalt - `getComputedStyle`
+               zeigte `overflow:hidden; text-overflow:clip` OHNE Ellipsis-
+               Markierung, wodurch z. B. "14.03.1987" sichtbar (aber nur
+               visuell, der echte Zellen-Text blieb korrekt) auf "14.03.198"
+               abgeschnitten wurde - schlimmer als die bereits dokumentierte,
+               rein kosmetische Kopfzeilen-Enge ("PRIORI" statt "PRIORITÄT"),
+               da hier ein Datenwert selbst unlesbar wurde. Datumswerte sind
+               fix-laengig - eine Ellipsis-Loesung waere hier nicht sinnvoller
+               als das Abschneiden, daher stattdessen schlicht mehr Breite
+               (Faellig-am 13%→17%). Typ (urspruenglich 9%) zusaetzlich auf
+               15% erweitert - zwar zeigten die real vorhandenen Testdaten
+               nur den kuerzeren Wert "Frist", eine isolierte Messung (gleiche
+               Klassen/Schriftart, ohne echte Daten zu beruehren) ergab aber
+               fuer den laengeren, im Typfilter ebenfalls waehlbaren Wert
+               "Aufgabe" einen tatsaechlichen Platzbedarf von 90px gegenueber
+               nur 70px bei 11% - 15% schafft hierfuer ausreichend Reserve.
+               ERSTER Versuch (Titel 24%→14%) erzeugte eine NEUE Regression:
+               bei nur noch ~83px Breite brach sogar der bereits bestehende
+               `-webkit-line-clamp:2` von `.task-title-cell` mitten im
+               Datumspraefix um ("14.03.198" + "7" auf Zeile 2 statt
+               zusammenhaengend auf Zeile 1), per CDP bewiesen (bei 141px -
+               dem urspruenglichen 24%-Wert ohne Detailpanel-Breitendruck -
+               kein Umbruchfehler). Titel braucht daher selbst ausreichend
+               Breite und ist NICHT die richtige Quelle fuer die Einsparung.
+               Stattdessen zulasten von Akte (13%→9%) und Mandant (12%→8%) -
+               beide nutzen bereits `.task-cell-ellipsis` (echtes,
+               einzeiliges `text-overflow:ellipsis`, das - anders als der
+               mehrzeilige Box-Clamp - bei jeder Breite sauber abschneidet),
+               Titel bleibt bei 22% (minimal von 24% reduziert, empirisch
+               als ausreichend bestaetigt). #}
+            {# ECHTER FUND (06.10., Owner-Direktive "AUFGABEN & FRISTEN" -
+               UI-Refinement, per CDP-Messung gegen die echte Laufzeit
+               bewiesen): Prioritaet-/Status-Spalte (bisher je 9%=70px)
+               waren zu schmal fuer IHR EIGENES, festes Wertevokabular
+               (nur 3 bzw. 2 moegliche Werte) - sogar der kuerzeste
+               Prioritaetswert "Hoch" (natuerliche Badge-Breite ~49px +
+               32px Zellenpolster = ~81px) wurde vom bereits bestehenden
+               Ellipsis-Sicherungsnetz (siehe .priority-tag-Kommentar in
+               app.css) abgeschnitten - das Netz sollte laut dortiger
+               Begruendung nur bei UNUEBLICH schmalem Fenster greifen,
+               griff hier aber schon bei Referenzbreite IMMER. Anders als
+               Akte/Mandant (offene, potenziell beliebig lange Werte -
+               Ellipsis dort bewusst und sachgerecht) gibt es fuer
+               Prioritaet/Status nur 3 bzw. 2 feste Werte, die bei
+               korrekter Breite NIE abgeschnitten werden muessen.
+               Platz dafuer aus Typ (gemessener Inhaltsbedarf nur 85px
+               von bisher 117px), Faellig-am (Inhaltsbedarf nur ~109px
+               von bisher 133px) und Titel (kleine, konservative 2-Punkt-
+               Kuerzung, NICHT die vorherige, bereits als Regression
+               dokumentierte 10-Punkt-Kuerzung) umverteilt - Summe
+               unveraendert bei 100%, keine neue Ueberbreite/kein neues
+               horizontales Scrollen. #}
+            <colgroup>
+              <col style="width: 32px;" />
+              <col style="width: 16%;" />
+              <col style="width: 15%;" />
+              <col style="width: 9%;" />
+              <col style="width: 8%;" />
+              <col style="width: 15%;" />
+              <col style="width: 13%;" />
+              <col style="width: 13%;" />
+              <col style="width: 36px;" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th><input type="checkbox" disabled title="Mehrfachauswahl ist noch nicht verfügbar" /></th>
+                <th>Titel</th>
+                <th>Typ</th>
+                <th>Akte</th>
+                <th>Mandant</th>
+                <th>Fällig am</th>
+                <th>Priorität</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                {% set is_overdue = item.due_date and item.due_date < today and item.status == "open" %}
+                <tr class="{% if selected == item.id and selected_type == item.item_type %}tasks-table-row--selected{% endif %}"
+                    onclick="window.location='/dashboard/tasks?{{ base_qs }}&selected={{ item.id }}&selected_type={{ item.item_type }}'">
+                  <td onclick="event.stopPropagation();"><input type="checkbox" disabled title="Mehrfachauswahl ist noch nicht verfügbar" /></td>
+                  <td>
+                    {# Begrenzte Zeilenhoehe (03.10., per Live-Screenshot gegen
+                       reale Produktionsdaten gefunden): `Deadline.source_text`
+                       kann bei KI-erkannten Fristen ein ganzer, mehrere Zeilen
+                       langer Rohsatz sein (echte Daten, kein Fehler) - ohne
+                       Begrenzung sprengt das die kompakte, der Referenz
+                       entsprechende Zeilenhoehe. `title`-Attribut haelt den
+                       vollen Text weiterhin zugaenglich (Tooltip), die
+                       Detailansicht zeigt ihn zusaetzlich vollstaendig. #}
+                    <span class="task-title-cell" title="{{ item.title }}">{{ item.title }}</span>
+                    {% if item.item_type == "deadline" and item.deadline.review_status == "unreviewed" %}
+                      {# Sicherheitskritischer Pruefstatus (17.09., unveraendert
+                         bestehende Regel): eine nur VERMUTETE Frist darf
+                         optisch nicht wie eine bestaetigte wirken - bleibt
+                         deshalb auch in der neu gebauten Tabelle direkt
+                         sichtbar, nicht nur im Detailpanel. #}
+                      {{ labels.deadline_status_tag("unreviewed") }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="task-type-cell">
+                      {% if item.item_type == "task" %}
+                        {{ icons.check(class_="icon task-type-cell__icon--task") }} Aufgabe
+                      {% else %}
+                        {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }} Frist
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td onclick="event.stopPropagation();">
+                    <a href="/dashboard/matters/{{ item.matter.id }}" class="task-cell-ellipsis" title="{{ item.matter.reference_number or item.matter.title }}">{{ item.matter.reference_number or item.matter.title }}</a>
+                  </td>
+                  <td><span class="task-cell-ellipsis" title="{{ item.matter.client.name if item.matter.client else '' }}">{{ item.matter.client.name if item.matter.client else "–" }}</span></td>
+                  <td class="mono">
+                    {% if item.due_date %}
+                      {{ item.due_date.strftime("%d.%m.%Y") }}
+                      <span class="task-due-cell__relative {% if is_overdue %}task-due-cell__overdue{% endif %}">{{ "überfällig" if is_overdue else due_texts[item.id] }}</span>
+                    {% else %}
+                      –
+                    {% endif %}
+                  </td>
+                  <td>{{ labels.priority_tag(item.priority) }}</td>
+                  <td>{{ labels.task_status_tag(item.status) }}</td>
+                  <td class="row-menu-cell" onclick="event.stopPropagation();">
+                    <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen"
+                            onclick="Lexono.toggleRowMenu(this)">
+                      {{ icons.dots_vertical(class_="icon") }}
+                    </button>
+                    <div class="row-menu" hidden>
+                      <a href="/dashboard/tasks?{{ base_qs }}&selected={{ item.id }}&selected_type={{ item.item_type }}" class="row-menu__item">
+                        {{ icons.eye(class_="icon") }} Details öffnen
+                      </a>
+                      {% if item.item_type == "deadline" and item.deadline.review_status == "unreviewed" %}
+                        {# Unveraendert bestehende Pruef-Route
+                           (tasks_router.py::review_deadline) - nur neu in
+                           diesem Menue verankert statt inline in der Zeile. #}
+                        <form method="post" action="/dashboard/tasks/{{ item.id }}/review">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="hidden" name="status" value="confirmed" />
+                          <button type="submit" class="row-menu__item row-menu__item--button">
+                            {{ icons.check(class_="icon") }} Bestätigen
+                          </button>
+                        </form>
+                        <form method="post" action="/dashboard/tasks/{{ item.id }}/review">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="hidden" name="status" value="rejected" />
+                          <button type="submit" class="row-menu__item row-menu__item--button">
+                            {{ icons.trash(class_="icon") }} Verwerfen
+                          </button>
+                        </form>
+                      {% endif %}
+                      {% if item.status == "open" %}
+                        <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/status">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          <input type="hidden" name="status" value="done" />
+                          <button type="submit" class="row-menu__item row-menu__item--button">
+                            {{ icons.check(class_="icon") }} Als erledigt markieren
+                          </button>
+                        </form>
+                      {% endif %}
+                      <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/duplicate"
+                            onsubmit="return confirm('„{{ item.title }}“ duplizieren?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button">
+                          {{ icons.duplicate(class_="icon") }} Duplizieren
+                        </button>
+                      </form>
+                      <hr class="row-menu__divider" />
+                      <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
+                            onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="row-menu__item row-menu__item--button row-menu__item--danger">
+                          {{ icons.trash(class_="icon") }} Löschen
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="9" class="empty-state">
+                  {% if search or item_type or priority or matter_id or status != "open" %}
+                    Keine Einträge gefunden, die zu den aktuellen Filtern passen.
+                  {% else %}
+                    Keine offenen Aufgaben oder Fristen.
+                  {% endif %}
+                </td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if total_pages > 1 %}
+          <div class="matters-pagination">
+            <div class="matters-pagination__info">
+              {{ items|length }} von {{ total_count }} Eintr{{ "ag" if total_count == 1 else "ägen" }}
+            </div>
+            <div class="matters-pagination__pages">
+              <a class="matters-pagination__nav-btn"
+                 {% if page <= 1 %}aria-disabled="true"{% endif %}
+                 href="/dashboard/tasks?{{ qs_prev_page }}"
+                 aria-label="Vorherige Seite">{{ icons.chevron_left(class_="icon") }}</a>
+              {% for p in page_numbers %}
+                {% if p == "…" %}
+                  <span class="matters-pagination__ellipsis">…</span>
+                {% else %}
+                  <a class="matters-pagination__page-btn{% if p == page %} matters-pagination__page-btn--active{% endif %}"
+                     href="/dashboard/tasks?{{ qs_for_page[p] }}">{{ p }}</a>
+                {% endif %}
+              {% endfor %}
+              <a class="matters-pagination__nav-btn"
+                 {% if page >= total_pages %}aria-disabled="true"{% endif %}
+                 href="/dashboard/tasks?{{ qs_next_page }}"
+                 aria-label="Nächste Seite">{{ icons.chevron_right(class_="icon") }}</a>
+            </div>
+            <form method="get" action="/dashboard/tasks" class="matters-pagination__size-form">
+              <input type="hidden" name="q" value="{{ search }}" />
+              <input type="hidden" name="item_type" value="{{ item_type }}" />
+              <input type="hidden" name="priority" value="{{ priority }}" />
+              <input type="hidden" name="matter_id" value="{{ matter_id }}" />
+              <input type="hidden" name="status" value="{{ status }}" />
+              <input type="hidden" name="sort" value="{{ sort }}" />
+              <select name="page_size" class="matters-pagination__size-select" onchange="this.form.submit()" aria-label="Einträge pro Seite">
+                {% for size in [10, 20, 50] %}
+                  <option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }} pro Seite</option>
+                {% endfor %}
+              </select>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if selected_item %}
+        {% set item = selected_item %}
+        <div class="task-detail-panel">
+          <div class="task-detail-panel__header">
+            <div class="task-detail-panel__title-row">
+              {% if item.item_type == "task" %}
+                {{ icons.check(class_="icon task-type-cell__icon--task") }}
+              {% else %}
+                {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }}
+              {% endif %}
+              <h2 class="task-detail-panel__title">{{ item.title }}</h2>
+            </div>
+            <div class="task-detail-panel__actions">
+              {# stopPropagation (05.10., siehe Kommentar bei "Neue Aufgabe"
+                 oben) - dieses Menu sitzt im Detailpanel, ausserhalb jeder
+                 Tabellenzeile, und hatte bisher denselben "oeffnet und
+                 schliesst sofort wieder"-Fehler. #}
+              <div class="split-button" onclick="event.stopPropagation();">
+                <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen" onclick="Lexono.toggleRowMenu(this)">
+                  {{ icons.dots_vertical(class_="icon") }}
+                </button>
+                <div class="row-menu" hidden>
+                  <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/duplicate"
+                        onsubmit="return confirm('„{{ item.title }}“ duplizieren?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                    <button type="submit" class="row-menu__item row-menu__item--button">
+                      {{ icons.duplicate(class_="icon") }} Duplizieren
+                    </button>
+                  </form>
+                  <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
+                        onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                    <button type="submit" class="row-menu__item row-menu__item--button row-menu__item--danger">
+                      {{ icons.trash(class_="icon") }} Löschen
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <a class="task-detail-panel__close" href="/dashboard/tasks?{{ base_qs }}" aria-label="Schließen">✕</a>
+            </div>
+          </div>
+          <p class="task-detail-panel__meta">
+            {{ item.matter.reference_number or item.matter.title }}
+            {% if item.matter.client %} &middot; {{ item.matter.client.name }}{% endif %}
+          </p>
+
+          {# Tabs "Details"/"Verlauf"/"Verknüpfte Dokumente" (§3.F der
+             Direktive) - gleiches `.tab-nav`/`Lexono.switchTab`-Muster wie
+             matter_detail.html, hier nur innerhalb des Detailpanels. #}
+          <div class="tab-nav" role="tablist" style="margin-top: 14px;">
+            <button type="button" class="tab-nav__item tab-nav__item--active" data-tab="task-details" onclick="Lexono.switchTab(this)">Details</button>
+            <button type="button" class="tab-nav__item" data-tab="task-verlauf" onclick="Lexono.switchTab(this)">Verlauf</button>
+            <button type="button" class="tab-nav__item" data-tab="task-dokumente" onclick="Lexono.switchTab(this)">Verknüpfte Dokumente ({{ 1 if item.document else 0 }})</button>
+          </div>
+
+          <div class="tab-panel" id="tab-task-details">
+            <div class="task-detail-panel__fields">
+              <span class="task-detail-panel__field-label">Typ</span>
+              <span class="task-detail-panel__field-value">{{ "Aufgabe" if item.item_type == "task" else "Frist" }}</span>
+
+              <span class="task-detail-panel__field-label">Fällig am</span>
+              <span class="task-detail-panel__field-value">
+                {% if item.due_date %}{{ item.due_date.strftime("%d.%m.%Y") }} ({{ item.due_text }}){% else %}–{% endif %}
+              </span>
+
+              <span class="task-detail-panel__field-label">Priorität</span>
+              <span class="task-detail-panel__field-value">{{ labels.priority_tag(item.priority) }}</span>
+
+              <span class="task-detail-panel__field-label">Status</span>
+              <span class="task-detail-panel__field-value">{{ labels.task_status_tag(item.status) }}</span>
+
+              {% if item.item_type == "deadline" %}
+                <span class="task-detail-panel__field-label">Prüfstatus</span>
+                <span class="task-detail-panel__field-value">{{ labels.deadline_status_tag(item.deadline.review_status) }}</span>
+              {% endif %}
+
+              <span class="task-detail-panel__field-label">Mandant</span>
+              <span class="task-detail-panel__field-value">{{ item.matter.client.name if item.matter.client else "–" }}</span>
+
+              <span class="task-detail-panel__field-label">Akte</span>
+              <span class="task-detail-panel__field-value">
+                <a href="/dashboard/matters/{{ item.matter.id }}">{{ item.matter.reference_number or item.matter.title }}</a>
+              </span>
+
+              <span class="task-detail-panel__field-label">Erstellt aus</span>
+              <span class="task-detail-panel__field-value">{{ item.source_label }}</span>
+
+              <span class="task-detail-panel__field-label">Erstellt am</span>
+              <span class="task-detail-panel__field-value">{{ item.created_at.strftime("%d.%m.%Y, %H:%M") }}</span>
+
+              <span class="task-detail-panel__field-label">Erstellt von</span>
+              <span class="task-detail-panel__field-value">{{ item.created_by or "–" }}</span>
+            </div>
+
+            <div class="task-detail-panel__section-title">
+              Beschreibung
+              {% if item.item_type == "task" %}
+                <button type="button" class="btn" style="padding: 4px 10px; font-size: 11.5px;"
+                        onclick="document.getElementById('edit-task-modal').showModal()">
+                  {{ icons.pencil(class_="icon") }} Bearbeiten
+                </button>
+              {% else %}
+                <button type="button" class="btn" style="padding: 4px 10px; font-size: 11.5px;"
+                        onclick="document.getElementById('edit-deadline-modal').showModal()">
+                  {{ icons.pencil(class_="icon") }} Bearbeiten
+                </button>
+              {% endif %}
+            </div>
+            <p class="task-detail-panel__description">{{ item.description or "Keine Beschreibung hinterlegt." }}</p>
+          </div>
+
+          <div class="tab-panel" id="tab-task-verlauf" hidden>
+            {% if item.audit_events %}
+              <ul class="audit-trail">
+                {% for event in item.audit_events %}
+                  <li>
+                    <span class="audit-trail__type">{{ event.event_type }} &middot; {{ event.actor }}</span>
+                    <span class="audit-trail__time">{{ event.created_at.strftime("%d.%m.%Y %H:%M") }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="task-detail-panel__description">Kein Verlauf vorhanden.</p>
+            {% endif %}
+          </div>
+
+          <div class="tab-panel" id="tab-task-dokumente" hidden>
+            {% if item.document %}
+              {# Direktlink auf das erkennende Dokument (17.09., bereits
+                 bestehende, unveraendert uebernommene Funktion - siehe
+                 Modul-Docstring tasks_router.py zur Herleitung). #}
+              <a href="/dashboard/matters/{{ item.matter.id }}/document/{{ item.document.id }}" class="task-detail-panel__document" style="text-decoration: none; color: inherit;">
+                {{ icons.document(class_="icon") }}
+                <span>
+                  <span class="task-detail-panel__document-name">{{ item.document.original_filename or "Dokument" }}</span>
+                  <span class="task-detail-panel__document-meta">{{ item.document.created_at.strftime("%d.%m.%Y, %H:%M") }}</span>
+                </span>
+              </a>
+            {% else %}
+              <p class="task-detail-panel__description">Keine verknüpften Dokumente.</p>
+            {% endif %}
+          </div>
+
+          <div class="task-detail-panel__actions-footer">
+            {% if item.status == "open" %}
+              <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/status">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="status" value="done" />
+                <button type="submit" class="btn btn--primary" style="width: 100%;">
+                  {{ icons.check(class_="icon") }} Als erledigt markieren
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/status">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="status" value="open" />
+                <button type="submit" class="btn" style="width: 100%;">
+                  Wieder öffnen
+                </button>
+              </form>
+            {% endif %}
+            <div class="task-detail-panel__secondary-actions">
+              <button type="button" class="btn"
+                      onclick="document.getElementById('{{ 'edit-task-modal' if item.item_type == 'task' else 'edit-deadline-modal' }}').showModal()">
+                {{ icons.pencil(class_="icon") }} Bearbeiten
+              </button>
+              <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/duplicate"
+                    onsubmit="return confirm('„{{ item.title }}“ duplizieren?');" style="flex: 1 1 auto;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn" style="width: 100%;">{{ icons.duplicate(class_="icon") }} Duplizieren</button>
+              </form>
+              <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
+                    onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');" style="flex: 1 1 auto;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <button type="submit" class="btn btn--danger" style="width: 100%;">{{ icons.trash(class_="icon") }} Löschen</button>
+              </form>
+              {# "In Kalender anzeigen" (§3.F der Direktive): es gibt KEINE
+                 Kalenderfunktion im Produkt (siehe Tab-Hinweis oben) - bewusst
+                 deaktiviert statt eines vorgetaeuschten Erfolgs (Direktive:
+                 "Falls sie fehlt, dokumentiere die Einschränkung, statt einen
+                 Erfolg vorzutäuschen"). #}
+              <button type="button" class="btn" disabled title="Kalenderansicht ist noch nicht verfügbar" style="flex: 1 1 auto;">
+                {{ icons.calendar_check(class_="icon") }} In Kalender anzeigen
+              </button>
+            </div>
+          </div>
+        </div>
+      {% endif %}
     </div>
-  {% elif not deadlines %}
-    <div class="empty-state" style="margin: 32px;">
-      <p>Keine offenen Aufgaben oder Fristen.</p>
+  </div>
+
+  <script>
+    window.Lexono = window.Lexono || {};
+    Lexono.toggleRowMenu = Lexono.toggleRowMenu || function (trigger) {
+      var menu = trigger.nextElementSibling;
+      var wasOpen = !menu.hidden;
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      menu.hidden = wasOpen;
+    };
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+    });
+    {# Gleiches Muster wie matter_detail.html/client_detail.html
+       (`.tab-panel`/`id="tab-<name>"`) - bewusst eigenstaendig definiert
+       (kein gemeinsames Modul), siehe dortige Begruendung: jede Seite
+       laedt nur ihr eigenes Inline-Skript, kein Namenskonflikt moeglich. #}
+    Lexono.switchTab = function (trigger) {
+      var tabName = trigger.getAttribute("data-tab");
+      var nav = trigger.closest(".tab-nav");
+      nav.querySelectorAll(".tab-nav__item").forEach(function (el) {
+        el.classList.toggle("tab-nav__item--active", el === trigger);
+      });
+      nav.parentElement.querySelectorAll(".tab-panel").forEach(function (el) {
+        el.hidden = el.id !== "tab-" + tabName;
+      });
+    };
+  </script>
+
+  {# "Neue Aufgabe"-Modal (§3.A der Direktive: Primaeraktion im Seitenkopf -
+     echte Anlegen-Route, siehe tasks_router.py::create_task_action). #}
+  <dialog id="create-task-modal" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Neue Aufgabe</h3>
+      <button type="button" class="modal__close" onclick="document.getElementById('create-task-modal').close()" aria-label="Schließen">✕</button>
     </div>
+    <div class="modal__body">
+      <form method="post" action="/dashboard/tasks/create" class="dashboard-form" style="max-width: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="form-label">
+          Akte *
+          <select name="matter_id" required>
+            <option value="">— Akte wählen —</option>
+            {% for matter in matters %}
+              <option value="{{ matter.id }}">{{ matter.reference_number or matter.title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="form-label">
+          Titel *
+          <input type="text" name="title" required autofocus />
+        </label>
+        <label class="form-label">
+          Beschreibung
+          <textarea name="description" rows="3"></textarea>
+        </label>
+        <label class="form-label">
+          Fällig am
+          <input type="date" name="due_date" />
+        </label>
+        <label class="form-label">
+          Priorität
+          <select name="priority">
+            <option value="">— Keine Angabe —</option>
+            {% for priority_option in priority_suggestions %}
+              <option value="{{ priority_option }}">{{ priority_option }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">
+          Aufgabe anlegen
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  {# "Neue Frist"-Modal - postet auf die bestehende, akten-scoped
+     Anlegen-Route (app/web/deadline_actions_router.py::create_deadline,
+     unveraendert, nur um `priority` ergaenzt) statt einer zweiten,
+     parallelen Anlegen-Logik. #}
+  <dialog id="create-deadline-modal" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Neue Frist</h3>
+      <button type="button" class="modal__close" onclick="document.getElementById('create-deadline-modal').close()" aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body">
+      <form method="post" action="/dashboard/matters/__MATTER_ID__/deadlines" class="dashboard-form" id="create-deadline-form" style="max-width: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="form-label">
+          Akte *
+          <select name="matter_id_picker" required onchange="document.getElementById('create-deadline-form').action = '/dashboard/matters/' + this.value + '/deadlines';">
+            <option value="">— Akte wählen —</option>
+            {% for matter in matters %}
+              <option value="{{ matter.id }}">{{ matter.reference_number or matter.title }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="form-label">
+          Bezeichnung *
+          <input type="text" name="source_text" required />
+        </label>
+        <label class="form-label">
+          Fällig am *
+          <input type="date" name="due_date" required />
+        </label>
+        <label class="form-label">
+          Priorität
+          <select name="priority">
+            <option value="">— Keine Angabe —</option>
+            {% for priority_option in priority_suggestions %}
+              <option value="{{ priority_option }}">{{ priority_option }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">
+          Frist anlegen
+        </button>
+      </form>
+    </div>
+  </dialog>
+
+  {% if selected_item %}
+    {% set item = selected_item %}
+    {% if item.item_type == "task" %}
+      <dialog id="edit-task-modal" class="modal">
+        <div class="modal__header">
+          <h3 class="modal__title">Aufgabe bearbeiten</h3>
+          <button type="button" class="modal__close" onclick="document.getElementById('edit-task-modal').close()" aria-label="Schließen">✕</button>
+        </div>
+        <div class="modal__body">
+          <form method="post" action="/dashboard/tasks/task/{{ item.id }}/update" class="dashboard-form" style="max-width: none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="form-label">
+              Titel *
+              <input type="text" name="title" value="{{ item.title }}" required autofocus />
+            </label>
+            <label class="form-label">
+              Beschreibung
+              <textarea name="description" rows="3">{{ item.description or "" }}</textarea>
+            </label>
+            <label class="form-label">
+              Fällig am
+              <input type="date" name="due_date" value="{{ item.due_date.isoformat() if item.due_date else '' }}" />
+            </label>
+            <label class="form-label">
+              Priorität
+              <select name="priority">
+                <option value="">— Keine Angabe —</option>
+                {% for priority_option in priority_suggestions %}
+                  <option value="{{ priority_option }}" {% if item.priority == priority_option %}selected{% endif %}>{{ priority_option }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">
+              Speichern
+            </button>
+          </form>
+        </div>
+      </dialog>
+    {% else %}
+      <dialog id="edit-deadline-modal" class="modal">
+        <div class="modal__header">
+          <h3 class="modal__title">Frist bearbeiten</h3>
+          <button type="button" class="modal__close" onclick="document.getElementById('edit-deadline-modal').close()" aria-label="Schließen">✕</button>
+        </div>
+        <div class="modal__body">
+          <form method="post" action="/dashboard/tasks/deadline/{{ item.id }}/update" class="dashboard-form" style="max-width: none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="form-label">
+              Bezeichnung *
+              <input type="text" name="source_text" value="{{ item.title }}" required autofocus />
+            </label>
+            <label class="form-label">
+              Fällig am
+              <input type="date" name="due_date" value="{{ item.due_date.isoformat() if item.due_date else '' }}" />
+            </label>
+            <label class="form-label">
+              Priorität
+              <select name="priority">
+                <option value="">— Keine Angabe —</option>
+                {% for priority_option in priority_suggestions %}
+                  <option value="{{ priority_option }}" {% if item.priority == priority_option %}selected{% endif %}>{{ priority_option }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button type="submit" class="btn btn--primary" style="align-self: flex-start; margin-top: 8px;">
+              Speichern
+            </button>
+          </form>
+        </div>
+      </dialog>
+    {% endif %}
   {% endif %}
 {% endblock %}

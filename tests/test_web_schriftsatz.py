@@ -202,7 +202,21 @@ def test_generate_without_matter_creates_matter_and_redirects_to_draft(
     assert matter is not None
     draft = db_session.query(Draft).filter_by(matter_id=matter.id).first()
     assert draft is not None
-    assert draft.content == "Formulierter Schriftsatz."
+    # ECHTER FUND, LIVE REPRODUZIERT (05.10., Owner-Direktive
+    # "Referenzgetreuen Dokumenten-Editor umsetzen und Chat-zu-Editor-
+    # Workflow vollständig absichern"): dieser Redirect zeigte bisher auf
+    # den reinen Viewer (draft_detail.html) statt auf den beim
+    # Dokumenten-Editor-Umbau (04.10.) neu gebauten Rich-Text-Editor -
+    # ein zweiter, unabhängiger Einstiegspunkt neben chat.html's bereits
+    # korrektem "Vollständigen Editor öffnen"-Link, der beim damaligen
+    # Umbau unentdeckt blieb. Muss auf GENAU diesen Entwurf im Editor
+    # zeigen, nicht nur auf irgendeine /dashboard/drafts/-Route.
+    assert response.headers["location"] == f"/dashboard/drafts/{draft.id}/edit"
+    # 05.10., Owner-Direktive "LONG-RUN PRODUCT QUALITY PASS" Phase D:
+    # KI-generierter Inhalt wird jetzt zu Editor-HTML gewandelt (siehe
+    # app/drafting/markdown_to_draft_html.py) statt roh gespeichert.
+    assert draft.content == "<p>Formulierter Schriftsatz.</p>"
+    assert draft.content_format == "html"
 
 
 def test_generate_with_new_client_id_reuses_the_existing_client_not_a_duplicate(
