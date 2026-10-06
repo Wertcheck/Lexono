@@ -661,9 +661,13 @@ def toggle_general_setting(
 #: Endpunkt nicht versehentlich einen nicht funktionierenden Sprachcode
 #: persistiert.
 _SUPPORTED_UI_LANGUAGES = {"de"}
-#: Einziges tatsaechlich unterstuetztes Erscheinungsbild (siehe
-#: Settings.ui_theme-Kommentar).
-_SUPPORTED_UI_THEMES = {"light"}
+#: Unterstuetzte Erscheinungsbilder (Owner-Direktive "DARK APPLICATION +
+#: WHITE DOCUMENT", 06.10.): Hell bleibt Standard/unveraendert, Dunkel ist
+#: jetzt ein echtes, vollstaendig eigenstaendiges zweites Theme (siehe
+#: app/web/static/css/app.css `:root[data-theme="dark"]`) - bewusst KEIN
+#: "system"-Wert, da dafuer kein eigener Mechanismus existiert (Vorgabe:
+#: "System" nicht nur einfuehren, weil es theoretisch moeglich waere).
+_SUPPORTED_UI_THEMES = {"light", "dark"}
 #: Reale Auswahloptionen fuer die Frist-Erinnerung-Vorlaufzeit.
 _SUPPORTED_DEADLINE_REMINDER_LEAD_DAYS = {1, 3, 7}
 

@@ -2,6 +2,28 @@
 {% import "_icons.html" as icons %}
 {% block title %}Einstellungen{% endblock %}
 {% block content %}
+  {# Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT", 06.10.):
+     Server-Wert -> Client-Sync bei JEDEM Laden dieser Seite, unabhaengig
+     davon, auf welchem Weg Settings.ui_theme zuletzt geaendert wurde (nicht
+     nur ueber den `onchange`-Handler am `<select>` unten, der nur den
+     interaktiven Klickpfad abdeckt). Macht die Einstellungsseite
+     selbstheilend fuer den `data-theme`/localStorage-Zustand, den
+     base.html auf JEDER ANDEREN Seite liest - die Einstellungsseite ist
+     die einzige Stelle mit dem echten Server-Wert im Render-Kontext
+     (siehe settings_router.py). #}
+  <script>
+    (function () {
+      try {
+        var serverTheme = "{{ 'dark' if ui_theme == 'dark' else 'light' }}";
+        localStorage.setItem("lexono_theme", serverTheme);
+        if (serverTheme === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.removeAttribute("data-theme");
+        }
+      } catch (e) {}
+    })();
+  </script>
   {# Referenz-getriebener Rebuild (06.10., Owner-Direktive "LEXONO -
      EINSTELLUNGEN UI REBUILD") - Header + Tab-Navigation + zweispaltiger
      Content statt der bisherigen flachen Abschnittsliste. Bestehende
@@ -68,10 +90,21 @@
               <span class="settings-row__desc">Erscheinungsbild der Anwendung</span>
             </div>
             <div class="settings-row__control">
-              {# Ebenfalls einzige real wirksame Option (kein Dark-Mode-
-                 Mechanismus vorhanden, siehe Settings.ui_theme). #}
-              <select name="ui_theme" class="settings-select" onchange="this.form.requestSubmit()">
-                <option value="light" selected>Hell (Standard)</option>
+              {# Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE
+                 DOCUMENT"): Umschalten setzt das `data-theme`-Attribut
+                 SOFORT lokal (kein Warten auf die Server-Antwort/den
+                 Seiten-Reload noetig) UND spiegelt den Wert in
+                 localStorage - genau der Mechanismus, den base.html beim
+                 naechsten Laden jeder Seite liest (siehe dortiges Inline-
+                 Skript, analog zum bestehenden `lexono_sidebar_collapsed`-
+                 Muster). `.form.requestSubmit()` persistiert den Wert
+                 danach wie gehabt serverseitig ueber Settings.ui_theme
+                 (.env), die eigentliche Quelle der Wahrheit fuer
+                 Reload/Neustart. #}
+              <select name="ui_theme" class="settings-select"
+                      onchange="document.documentElement.setAttribute('data-theme', this.value); try { localStorage.setItem('lexono_theme', this.value); } catch (e) {} this.form.requestSubmit();">
+                <option value="light" {% if ui_theme != 'dark' %}selected{% endif %}>Hell (Standard)</option>
+                <option value="dark" {% if ui_theme == 'dark' %}selected{% endif %}>Dunkel</option>
               </select>
             </div>
           </form>

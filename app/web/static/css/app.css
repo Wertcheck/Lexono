@@ -103,6 +103,21 @@
   --brand-green-dark: #1d805f;
   --brand-green-tint: #dcfce7;
 
+  /* Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT",
+     06.10.): `--paper-000` wurde bislang an 18 Stellen zweckentfremdet als
+     "reines Weiss" fuer Text AUF farbigen Flaechen verwendet (Badges,
+     Avatare, Buttons - siehe .btn--primary etc.), nicht nur als
+     Oberflaechenfarbe. Sobald `--paper-000` unter
+     `:root[data-theme="dark"]` zu einer dunklen Flaechenfarbe wird, waere
+     dieser Text unlesbar dunkel-auf-farbig geworden. `--on-brand` ist ein
+     eigenstaendiges, THEMEN-UNABHAENGIGES Token genau fuer diesen
+     Text-auf-Marken-/Status-Farbe-Fall (bleibt in beiden Themes #fff, da
+     --brand-green/--seal-green/--wax-red/--accent-amber auch im Dark Mode
+     kraeftig genug fuer weissen Text bleiben) - KEINE Umbenennung von
+     `--paper-000` selbst, nur ein zusaetzliches, praeziseres Token fuer
+     diesen einen Anwendungsfall. */
+  --on-brand: #ffffff;
+
   /* --- Typografie --- */
   /* Bewusst KEINE Serifenschrift mehr (auch nicht fuer Ueberschriften) -
      --font-display und --font-body sind seit Schritt 3 identisch. */
@@ -133,6 +148,95 @@
   --scrollbar-thumb-hover: rgba(16, 24, 40, 0.48);
   --sidebar-width: 248px;
   --content-max-width: 1280px;
+}
+
+/* ==========================================================================
+   Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT", 06.10.)
+
+   Erweitert das bestehende Token-System um ein zweites, vollstaendiges
+   Theme statt einer Parallelstruktur - jede Komponente, die bereits
+   semantische `--ink-*`/`--paper-*`/`--seal-*`/`--accent-*`-Token nutzt,
+   wird automatisch dunkel, ohne selbst angefasst zu werden. Aktiviert ueber
+   `[data-theme="dark"]` auf `<html>` (siehe base.html, synchrones
+   Inline-Skript analog zum bestehenden `sidebar-collapsed`-Muster) -
+   bewusst KEIN `prefers-color-scheme`, da kein "System"-Modus eingefuehrt
+   wird (Vorgabe: nicht nur einfuehren, weil es theoretisch moeglich waere).
+
+   `--brand-green`/`--brand-green-dark` bleiben UNVERAENDERT (Markenfarbe
+   #249D74 ist in beiden Themes identisch, Vorgabe) - nur der helle
+   Tint-Wert (Badge-/Akzentflaechen) braucht eine dunkel-taugliche
+   Entsprechung. Ebenso bleiben `--shadow-*`/`--scrollbar-thumb*` als eigene
+   Tokens erhalten, nur mit dunkel-tauglichen Werten (helle Schatten auf
+   dunklem Grund waeren unsichtbar, ein dunkler Scrollbar-Daumen auf
+   dunklem Grund ebenso). */
+:root[data-theme="dark"] {
+  --ink-900: #f1f5f9;
+  --ink-700: #cbd5e1;
+  --ink-500: #94a3b8;
+  --ink-300: #64748b;
+
+  --paper-100: #0a0a0c;
+  --paper-000: #141518;
+  --paper-line: #2a2d33;
+  --paper-200: #1d1f24;
+
+  --seal-green: #5b7fc4;
+  --seal-green-dark: #4a6aa8;
+  --seal-green-tint: #1c2636;
+
+  --wax-red: #e0796a;
+  --wax-red-tint: #3a211d;
+
+  --amber: #e0b35c;
+  --amber-tint: #3a2e16;
+
+  --accent-blue: #6f9ae0;
+  --accent-blue-tint: #1c2a3f;
+
+  --accent-purple: #a98fe0;
+  --accent-purple-tint: #2a2238;
+
+  --accent-orange: #e0935c;
+  --accent-orange-tint: #3a2615;
+
+  --accent-amber: #e0b35c;
+  --accent-amber-tint: #332714;
+
+  --accent-green: #6fbd8a;
+  --accent-green-tint: #16291e;
+
+  --brand-green-tint: #11291f;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  --scrollbar-thumb: rgba(241, 245, 249, 0.18);
+  --scrollbar-thumb-hover: rgba(241, 245, 249, 0.32);
+}
+
+/* Dokumentisolation (harte Anforderung, siehe Direktive): Dokument-/
+   Papierflaechen bleiben in BEIDEN Themes helle, feste Flaechen - KEINE
+   globale Invertierung, KEIN Ausnahme-Flag, sondern eine lokale
+   Neuverankerung derselben Token auf genau diesen Komponenten. Eine lokal
+   auf einem Element gesetzte Custom Property hat immer Vorrang vor einem
+   von `:root[data-theme="dark"]` geerbten Wert, unabhaengig von
+   Selektor-Spezifitaet (Vererbung, keine Kaskaden-Konkurrenz) - alle
+   Kind-Elemente (.document-page__content, .document-page__firm-name, ...)
+   erben automatisch die hier festgelegten hellen Werte.
+   `.document-viewer__main-area--text` deckt zusaetzlich die reine
+   Text-/Klartext-Vorschau im Dokumentviewer ab (app.css `.document-viewer`
+   weiter unten) - die Bild-/PDF-Seite selbst (`.document-viewer__page-image`)
+   ist ohnehin bereits hart auf `#fff` verdrahtet und braucht keine
+   Token-Neuverankerung. */
+.document-page,
+.document-viewer__main-area--text {
+  --paper-000: #ffffff;
+  --paper-100: #ffffff;
+  --paper-line: #e2e8f0;
+  --ink-900: #0f172a;
+  --ink-700: #334155;
+  --ink-500: #64748b;
+  --ink-300: #94a3b8;
 }
 
 * {
@@ -291,7 +395,7 @@ body.has-app-titlebar .app-titlebar {
 
 .app-titlebar__btn--close:hover {
   background: var(--wax-red);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .app-resize-handle {
@@ -365,6 +469,43 @@ body.has-app-titlebar .app-titlebar {
   width: auto;
   height: 38px;
   flex-shrink: 0;
+}
+
+/* Theme-bewusste Logo-Auswahl (Owner-Direktive "DARK APPLICATION + WHITE
+   DOCUMENT", 06.10.): reiner CSS-Umschalter zwischen zwei bereits
+   vorhandenen, unveraenderten Bild-Assets - KEIN Farbwechsel per CSS auf
+   demselben Bild. Light bleibt der unveraenderte Ist-Zustand (Icon +
+   separate Wortmarke `.sidebar__brand-text`, deren Farbe ohnehin schon
+   automatisch ueber `--ink-900` mitwechselt). Im ausgeklappten Dark Mode
+   ersetzt stattdessen die vollstaendige, bereits vorhandene dunkle
+   Logo-Datei (Icon+Wortmarke in einem Bild) beides gemeinsam - siehe
+   base.html fuer die beiden `<img>`-Elemente. Im EINGEKLAPPTEN Zustand
+   bleibt bewusst das bestehende Icon sichtbar (auch in Dark Mode): sein
+   deckendes Markengruen mit weissen Innenlinien hat bereits auf dunklem
+   Grund ausreichend Kontrast, waehrend die volle Logo-Datei (Querformat,
+   Volltext "Lexono") in die auf 68px geschrumpfte Kopfzeilen-Spalte nicht
+   mehr sinnvoll passen wuerde. */
+.sidebar__brand-logo--dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .sidebar__brand-logo--light,
+:root[data-theme="dark"] .sidebar__brand-text {
+  display: none;
+}
+
+:root[data-theme="dark"] .sidebar__brand-logo--dark {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+
+html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--light {
+  display: block;
+}
+
+html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--dark {
+  display: none;
 }
 
 .sidebar__brand-sub {
@@ -509,7 +650,7 @@ html.sidebar-collapsed .sidebar__group-badge {
   height: 15px;
   padding: 0 3px;
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
@@ -558,7 +699,7 @@ html.sidebar-collapsed .global-header__brand {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 600;
@@ -895,7 +1036,7 @@ html.sidebar-collapsed .global-header__brand {
 
 .update-badge:hover {
   background: var(--seal-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .topbar {
@@ -1221,7 +1362,7 @@ html.sidebar-collapsed .global-header__brand {
   font-size: 10.5px;
   font-weight: 700;
   flex-shrink: 0;
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .message-row__avatar--green { background: var(--seal-green); }
@@ -2255,7 +2396,7 @@ textarea:focus {
 .btn--primary {
   background: var(--brand-green);
   border-color: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .btn--primary:hover {
@@ -2693,7 +2834,14 @@ textarea:focus {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 14px;
-  background: var(--ink-900);
+  /* Dark Mode (06.10.): bewusst FEST #0f172a statt `var(--ink-900)` - diese
+     Leiste war schon vor Dark Mode als dunkle Werkzeugleiste gestaltet
+     (weisser Text fest verdrahtet direkt darunter) und soll es in BEIDEN
+     Themes bleiben (Viewer-Chrome, keine Dokumentflaeche). `--ink-900`
+     selbst wird unter `:root[data-theme="dark"]` zur HELLEN Textfarbe -
+     als Hintergrund hier wiederverwendet haette das die Leiste im Dark
+     Mode unlesbar hell mit weissem Text gemacht. */
+  background: #0f172a;
   color: #fff;
 }
 
@@ -3050,7 +3198,7 @@ button[disabled].btn--ai-loading {
 
 .btn--danger:hover {
   background: var(--wax-red);
-  color: var(--paper-000);
+  color: var(--on-brand);
   border-color: var(--wax-red);
 }
 
@@ -3514,7 +3662,7 @@ button[disabled].btn--ai-loading {
   height: 82px;
   border-radius: var(--radius-pill);
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3642,7 +3790,7 @@ button[disabled].btn--ai-loading {
   height: 28px;
   border-radius: 50%;
   background: var(--seal-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 600;
@@ -3966,7 +4114,7 @@ button[disabled].btn--ai-loading {
   border-radius: 50%;
   border: none;
   background: var(--seal-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   cursor: pointer;
   text-decoration: none;
   transition: background-color 0.15s var(--ease-elevate), transform 0.15s var(--ease-elevate);
@@ -4636,7 +4784,7 @@ button[disabled].btn--ai-loading {
      Inkonsistenz: dort ist es ein winziges, beilaeufiges UI-Element: hier
      ist der Avatar selbst der visuelle Blickfang der Karte. */
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
@@ -4707,7 +4855,7 @@ button[disabled].btn--ai-loading {
   height: 16px;
   border-radius: 50%;
   background: var(--paper-200);
-  color: var(--paper-000);
+  color: var(--on-brand);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7844,7 +7992,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-message--assistant .chat-message__avatar {
   background: var(--seal-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .chat-message--assistant .chat-message__avatar .icon {
@@ -7865,7 +8013,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-message--user .chat-message__avatar {
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .chat-message--user .chat-message__body {
@@ -8428,7 +8576,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-composer__mic-btn--active {
   background: var(--wax-red);
-  color: var(--paper-000);
+  color: var(--on-brand);
   animation: chat-mic-pulse 1.4s ease-in-out infinite;
 }
 
@@ -8526,7 +8674,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-composer__stop-btn {
   background: var(--wax-red);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .chat-composer__stop-btn:hover {
@@ -8666,7 +8814,7 @@ body::-webkit-scrollbar-thumb:hover,
    oben fuer die volle Begruendung). */
 .chat-composer__send-btn {
   background: var(--brand-green);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .chat-composer__send-btn:hover {
@@ -9261,7 +9409,7 @@ body::-webkit-scrollbar-thumb:hover,
 
 .law-update-btn:hover {
   background: var(--accent-amber);
-  color: var(--paper-000);
+  color: var(--on-brand);
 }
 
 .law-check-btn {

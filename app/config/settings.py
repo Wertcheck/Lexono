@@ -480,9 +480,18 @@ class Settings(BaseSettings):
     #   Deutsch ausgelegt, keine i18n-Infrastruktur vorhanden) - das Feld
     #   existiert fuer eine ehrliche, funktionierende Einzelauswahl, nicht
     #   als Vorgriff auf eine nicht vorhandene Mehrsprachigkeit.
-    # - ui_theme: nur "light" hat tatsaechlich eine Wirkung (die gesamte
-    #   Desktop-Oberflaeche ist aktuell hell/fest verdrahtet, kein
-    #   Dark-Mode-Mechanismus vorhanden).
+    # - ui_theme: "light" (Standard, unveraendert) und "dark" sind beide
+    #   echte, vollstaendig wirksame Werte (Owner-Direktive "DARK
+    #   APPLICATION + WHITE DOCUMENT", 06.10.) - Umsetzung ueber
+    #   `:root[data-theme="dark"]` in app/web/static/css/app.css plus ein
+    #   `data-theme`-Attribut auf `<html>`, gesetzt per synchronem
+    #   Inline-Skript in base.html (liest denselben Wert aus localStorage
+    #   wie die bestehende Sidebar-Einklapp-Logik). Dokumentoberflaechen
+    #   (.document-page, Textvorschau im Dokumentviewer) bleiben in BEIDEN
+    #   Themes bewusst helle Papierflaechen (lokale Token-Neuverankerung,
+    #   kein Ausnahme-Flag auf dieser Settings-Ebene noetig). Bewusst KEIN
+    #   "system"-Wert - dafuer existiert kein eigener Mechanismus
+    #   (prefers-color-scheme wird nirgends ausgewertet).
     # - start_with_system: der Wert wird gespeichert, aber NICHT in die
     #   Windows-Registrierung/den Autostart-Ordner eingetragen - das waere
     #   eine Installer-/OS-Integrationsaenderung, ausdruecklich nicht Teil

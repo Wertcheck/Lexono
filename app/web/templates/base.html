@@ -78,6 +78,26 @@
       } catch (e) {}
     })();
   </script>
+  {# Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT", 06.10.):
+     synchrones Inline-Skript VOR jedem sichtbaren Rendering, exakt nach dem
+     bereits bestehenden Sidebar-Einklapp-Muster direkt darueber (kein
+     Aufblitzen des hellen Themes beim Laden). localStorage ist hier bewusst
+     die ANWENDUNGSSEITIGE Lesequelle (kein SPA-State, kein gemeinsamer
+     Jinja-Kontext ueber alle ~40 Router hinweg verfuegbar) - die
+     EIGENTLICHE Quelle der Wahrheit bleibt Settings.ui_theme (.env), die
+     Einstellungsseite erhaelt ihren aktuellen Wert weiterhin serverseitig
+     (siehe settings_router.py) und schreibt ihn bei jeder Aenderung sofort
+     in denselben localStorage-Schluessel zurueck (siehe settings.html). #}
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("lexono_theme");
+        if (theme === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
   <div class="app-viewport">
     {% if current_user %}
       {# Globale Kopfzeile (25.09., Owner-Direktive "POSTEINGANG / STRICT
@@ -105,7 +125,19 @@
          referenzwidrige Platzierung. #}
       <header class="global-header">
         <div class="global-header__brand">
-          <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo" />
+          {# Theme-bewusste Logo-Auswahl (Owner-Direktive "DARK APPLICATION +
+             WHITE DOCUMENT", 06.10.): im eingeklappten Zustand bleibt in
+             BEIDEN Themes das bestehende Icon sichtbar (voller Kontrast auch
+             auf dunklem Grund, siehe app.css-Kommentar bei
+             `.sidebar__brand-logo--dark`) - erst im ausgeklappten Dark Mode
+             ersetzt das bereits vorhandene Logo-Asset
+             "assets/branding/Lexono-Logo Dark Mode.png" (unveraendert nach
+             app/web/static/img/ kopiert, damit PyInstaller/windows/
+             lexono.spec es wie jedes andere static/img-Asset mitbuendelt)
+             Icon+Wortmarke gemeinsam - NICHT neu gezeichnet, NICHT per CSS
+             eingefaerbt, NICHT das Light-Logo wiederverwendet. #}
+          <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--light" />
+          <img src="/dashboard/static/img/lexono-logo-dark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--dark" />
           <span class="sidebar__brand-text">Lexono</span>
           <button type="button" id="sidebar-collapse-toggle" class="sidebar__collapse-btn"
                   title="Navigation einklappen" aria-label="Navigation ein-/ausklappen">

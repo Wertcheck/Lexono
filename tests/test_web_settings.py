@@ -1528,14 +1528,44 @@ def test_update_ui_language_only_accepts_german(
     assert get_settings().ui_language == "de"
 
 
-def test_update_ui_theme_only_accepts_light(
+def test_update_ui_theme_accepts_light_and_dark(
     client: TestClient, db_session: Session, env_path: Path
 ) -> None:
+    """Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT",
+    06.10.): "dark" ist jetzt ein echter, persistenter Wert - vorher war
+    dieser Test (unter anderem Namen) ein Beleg dafuer, dass NUR "light"
+    etwas bewirkt."""
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+
+    to_dark = client.post(
+        "/dashboard/settings/general/theme",
+        data={"csrf_token": csrf, "ui_theme": "dark"},
+        follow_redirects=False,
+    )
+    assert "error=" not in to_dark.headers["location"]
+    assert get_settings().ui_theme == "dark"
+
+    back_to_light = client.post(
+        "/dashboard/settings/general/theme",
+        data={"csrf_token": csrf, "ui_theme": "light"},
+        follow_redirects=False,
+    )
+    assert "error=" not in back_to_light.headers["location"]
+    assert get_settings().ui_theme == "light"
+
+
+def test_update_ui_theme_rejects_unsupported_value(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    """Weiterhin eine Allowlist statt freier Texteingabe - "system" ist
+    bewusst NICHT eingefuehrt (kein `prefers-color-scheme`-Mechanismus
+    vorhanden, siehe Settings.ui_theme-Kommentar)."""
     _login_admin(client, db_session)
     csrf = _csrf(client)
     rejected = client.post(
         "/dashboard/settings/general/theme",
-        data={"csrf_token": csrf, "ui_theme": "dark"},
+        data={"csrf_token": csrf, "ui_theme": "system"},
         follow_redirects=False,
     )
     assert "error=" in rejected.headers["location"]
