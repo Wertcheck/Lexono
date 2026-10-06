@@ -3321,3 +3321,72 @@ def test_chat_history_list_hides_selection_toggle_with_a_single_conversation(
     response = client.get("/dashboard/chat")
 
     assert 'id="chat-selection-toggle"' not in response.text
+
+
+# ==========================================================================
+# Chat UI Structural + Visual Overhaul (07.10., Owner-Direktive "CHAT UI
+# STRUCTURAL + VISUAL OVERHAUL") - zentrale Chat-Content-Spalte, Message
+# Bubbles. Reine Markup-/Quellcode-Regressionstests (gleiche Philosophie wie
+# die Diktat-UX-Tests oben) - die eigentliche visuelle Pruefung (Breiten-
+# Abgleich in Pixeln, Farben) wurde live per CDP verifiziert.
+# ==========================================================================
+
+
+def test_chat_message_and_composer_share_the_same_width_token(
+    client: TestClient, db_session: Session
+) -> None:
+    """Zentrale Regel "CHAT CONTENT WIDTH = COMPOSER WIDTH": beide
+    Container muessen dieselbe CSS-Variable referenzieren, nicht nur
+    zufaellig denselben Pixelwert an zwei unabhaengigen Stellen."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/static/css/app.css")
+    assert response.status_code == 200
+    css = response.text
+    assert "--chat-content-width:" in css
+    panel_messages_start = css.index(".chat-panel__messages {")
+    panel_messages_end = css.index("}", panel_messages_start)
+    assert "var(--chat-content-width)" in css[panel_messages_start:panel_messages_end]
+    composer_start = css.index(".chat-composer {")
+    composer_end = css.index("}", composer_start)
+    assert "var(--chat-content-width)" in css[composer_start:composer_end]
+
+
+def test_chat_message_bubbles_render_for_user_and_assistant(
+    client: TestClient, db_session: Session
+) -> None:
+    """Beide Rollen muessen im Markup unterscheidbar sein (fuer
+    rollenspezifisches CSS: rechtsbuendige User-Sprechblase vs.
+    linksbuendiges Assistant-Panel)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    db_session.add_all(
+        [
+            ChatMessage(conversation_id=conversation.id, role="user", content="Eine Frage."),
+            ChatMessage(conversation_id=conversation.id, role="assistant", content="Eine Antwort."),
+        ]
+    )
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert response.status_code == 200
+    assert "chat-message--user" in response.text
+    assert "chat-message--assistant" in response.text
+
+
+def test_chat_document_panel_is_isolated_from_the_dark_theme(
+    client: TestClient, db_session: Session
+) -> None:
+    """Dokument-Schutz (/document-protection): der inline im Chat gezeigte
+    Schriftsatz-Panel muss in beiden Themes eine helle Papierflaeche
+    bleiben - lokale Token-Neuverankerung analog zu `.document-page`,
+    echter, bei dieser Direktive gefundener Vorbestand-Fund."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/static/css/app.css")
+    assert response.status_code == 200
+    css = response.text
+    panel_start = css.index(".chat-document-panel {")
+    panel_end = css.index("}", panel_start)
+    panel_block = css[panel_start:panel_end]
+    assert "--paper-000: #ffffff;" in panel_block
+    assert "--ink-900: #0f172a;" in panel_block

@@ -168,6 +168,21 @@
   --scrollbar-thumb-hover: rgba(16, 24, 40, 0.48);
   --sidebar-width: 248px;
   --content-max-width: 1280px;
+  /* Chat-spezifische Content-Breite (07.10., Owner-Direktive "CHAT UI
+     STRUCTURAL + VISUAL OVERHAUL") - bewusst ein EIGENES, schmaleres Token
+     statt `--content-max-width` (1280px) selbst zu verkleinern: letzteres
+     wird an 12 weiteren Stellen fuer normale Seiteninhalte verwendet
+     (Akten-/Mandantenlisten, Einstellungen, ...) - eine Aenderung DORT
+     waere eine ungewollte, nicht beauftragte Breitenaenderung ausserhalb
+     des Chat-Scopes. 820px ist eine uebliche, gut lesbare Chat-
+     Content-Spaltenbreite (vergleichbare Groessenordnung wie andere
+     moderne KI-Chat-Oberflaechen) - schmaler als der bisherige Zustand
+     (vorher ebenfalls an --content-max-width gebunden, siehe
+     .chat-message/.chat-composer weiter unten), aber nicht beliebig
+     gewaehlt: naeher an einer angenehmen Lesezeilenlaenge als die
+     bisherigen 1280px, die auf breiten Bildschirmen fast die gesamte
+     verbleibende Workspace-Breite ausfuellten. */
+  --chat-content-width: 820px;
 }
 
 /* ==========================================================================
@@ -7774,11 +7789,40 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-panel__messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px 0 12px;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  /* 07.10., Owner-Direktive "CHAT UI STRUCTURAL + VISUAL OVERHAUL", echter,
+     per Pixel-Messung aufgeklaerter Fund: `.chat-message` zentrierte sich
+     bisher JEWEILS EINZELN per `margin:0 auto` INNERHALB dieses scrollenden
+     Containers. `getBoundingClientRect()` zeigt zwar keine Breiten-
+     aenderung durch den Scrollbar (Overlay-Verhalten), `clientWidth` -
+     die fuer `margin:auto` tatsaechlich massgebliche Groesse - sehr wohl
+     (per Messung 10px weniger als die Aussenbreite, sobald der Verlauf
+     tatsaechlich scrollt). `.chat-composer` (eigenes, NICHT scrollendes
+     Geschwisterelement von `.chat-panel` aus) kennt dieses Problem nicht -
+     seine Zentrierung bezieht sich auf die VOLLE, nie reduzierte Breite
+     von `.chat-panel`. Zwei Versuche, dies ueber `.chat-composer` lediglich
+     NACHZUBILDEN (`scrollbar-gutter`, dann erzwungener `overflow-y:scroll`)
+     aenderten NICHTS - der Scrollbar von `.chat-composer` betrifft nur
+     SEINEN EIGENEN (nie vorhandenen) Overflow, nicht wie `.chat-panel`
+     IHN positioniert.
+     ECHTE Loesung: die Zentrierung wandert HIERHIN (auf den Container
+     selbst, siehe `max-width`/`margin` unten) - `.chat-panel__messages`
+     zentriert sich dadurch GENAUSO wie `.chat-composer` relativ zu
+     DEMSELBEN, nie verengten `.chat-panel`. Der Scrollbar wirkt danach nur
+     noch INNERHALB dieser bereits korrekt positionierten 820px-Box (siehe
+     `.chat-message` weiter unten, das jetzt nur noch `width:100%` dieser
+     Box ausfuellt, nicht mehr selbst zentriert) - seine Aussenkante bleibt
+     dadurch unabhaengig vom Scroll-/Overflow-Zustand IMMER exakt
+     deckungsgleich mit `.chat-composer`. */
+  max-width: var(--chat-content-width);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chat-empty-state {
@@ -7811,7 +7855,12 @@ body::-webkit-scrollbar-thumb:hover,
   grid-template-columns: repeat(4, minmax(150px, 220px));
   gap: 14px;
   width: 100%;
-  max-width: 940px;
+  /* An dieselbe Chat-Content-Spalte angeglichen (07.10., Owner-Direktive
+     "CHAT UI STRUCTURAL + VISUAL OVERHAUL" - /single-container: EIN
+     gemeinsamer Container fuer Chatverlauf/Leerzustand/Composer statt
+     mehrerer unabhaengiger max-width-Berechnungen). Vorher 940px, eigener,
+     von `.chat-message`/`.chat-composer` unabhaengiger Wert. */
+  max-width: var(--chat-content-width);
 }
 
 /* Aktions-Kacheln der Chat-Startansicht: vertikal zentriert (Icon oben,
@@ -8086,8 +8135,15 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   gap: 14px;
   padding: 0 32px;
-  max-width: var(--content-max-width);
-  margin: 0 auto;
+  /* 07.10., Owner-Direktive "CHAT UI STRUCTURAL + VISUAL OVERHAUL": vorher
+     zentrierte sich JEDE `.chat-message` einzeln per `max-width:
+     var(--content-max-width); margin:0 auto` INNERHALB des scrollenden
+     `.chat-panel__messages` - das fuehrte zu einem per Pixel-Messung
+     nachgewiesenen Versatz gegenueber `.chat-composer`, sobald der Verlauf
+     tatsaechlich scrollt (siehe ausfuehrliche Begruendung bei
+     `.chat-panel__messages` oben). Die Zentrierung lebt jetzt DORT, auf
+     dem gemeinsamen Container - `.chat-message` selbst fuellt nur noch
+     dessen bereits korrekt positionierte Breite. */
   width: 100%;
   box-sizing: border-box;
 }
@@ -8296,18 +8352,27 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--brand-green-dark);
 }
 
-/* ECHTER NUTZERFEEDBACK-FUND (13.09.): die vorherige gerahmte/beschattete
-   Karte um jede KI-Antwort wirkte nach der Chat/Drafting-Korrektur (jetzt
-   auch normale Antworten auf einfache Fragen, nicht mehr nur Entwuerfe)
-   wie ein "erstelltes Dokument" statt einer normalen Chat-Antwort - genau
-   das gewuenschte Gefuehl war aber "wie ein Chat mit einer normalen KI".
-   Bewusst auf reinen Fliesstext ohne Rahmen/Schatten/Kartenhintergrund
-   zurueckgebaut (kein Bubble-Hintergrund fuer KI-Antworten, aber auch
-   keine Dokumentenkarten-Optik) - die Unterscheidung zur Nutzernachricht
-   bleibt ueber Avatar + "Lexono"-Absenderzeile erhalten, keine zusaetzliche
-   Umrandung noetig. */
+/* HISTORIE (13.09., ECHTER NUTZERFEEDBACK-FUND): die damalige gerahmte/
+   beschattete Karte um jede KI-Antwort wirkte wie ein "erstelltes
+   Dokument" statt einer normalen Chat-Antwort, deshalb auf reinen
+   Fliesstext ohne Rahmen/Schatten/Kartenhintergrund zurueckgebaut.
+   GEAENDERT (07.10., Owner-Direktive "CHAT UI STRUCTURAL + VISUAL
+   OVERHAUL" - ausdruecklicher, expliziter neuer Auftrag desselben
+   Projekteigners: "Lexono-/KI-Nachrichten: eigene Sprechblase bzw.
+   eigenes Panel, andere Surface-Farbe als User"): bewusst NICHT dieselbe
+   schwere Kartenoptik wie damals verworfen (kein --shadow-elevated, keine
+   32px-Dokumentpolsterung wie .document-page) - eine deutlich
+   zurueckhaltendere Flaeche (dieselbe Oberflaechenfarbe wie sonstige
+   erhabene UI-Karten, `--paper-000`, plus ein duenner 1px-Rahmen statt
+   Schatten), die bewusst NICHT wie ein generiertes Dokument wirken soll,
+   sondern wie ein gewoehnliches Chat-Nachrichtenpanel - die damalige
+   Sorge bleibt damit beruecksichtigt, nur die konkrete Umsetzung aendert
+   sich auf expliziten neuen Wunsch. */
 .chat-message--assistant:not(.chat-message--blocked) .chat-message__text {
-  padding: 0;
+  padding: 12px 16px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
 }
 
 .chat-message--blocked .chat-message__text {
@@ -8391,6 +8456,25 @@ body::-webkit-scrollbar-thumb:hover,
   background: var(--paper-000);
   box-shadow: var(--shadow-card, 0 1px 2px rgba(16, 24, 40, 0.06));
   overflow: hidden;
+  /* Dokumentisolation (07.10., Owner-Direktive "CHAT UI STRUCTURAL +
+     VISUAL OVERHAUL" /document-protection - echter, vorbestehender Fund
+     bei der Pruefung dieses Checklistenpunkts): dieses Panel zeigt einen
+     ECHTEN Schriftsatz inline im Chat (siehe chat.html
+     `is_schriftsatz`-Zweig) - fiel bislang durch dieselbe Dark-Mode-
+     Kaskade wie normale Chat-UI (nutzte unveraendert `--paper-000`/
+     `--ink-900`/`--brand-green-tint`, wurde also im Dark Mode faelschlich
+     dunkel). Dieselbe lokale Token-Neuverankerung wie `.document-page`
+     (siehe dort) - Dokumentflaechen bleiben in BEIDEN Themes helle
+     Papierflaechen, unabhaengig vom Anwendungs-Theme. */
+  --paper-000: #ffffff;
+  --paper-100: #ffffff;
+  --paper-200: #f1f5f9;
+  --paper-line: #e2e8f0;
+  --ink-900: #0f172a;
+  --ink-700: #334155;
+  --ink-500: #64748b;
+  --ink-300: #94a3b8;
+  --brand-green-tint: #dcfce7;
 }
 
 .chat-document-panel__header {
@@ -8604,7 +8688,14 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-composer {
   border-top: 1px solid var(--paper-line);
   padding: 14px 32px 18px;
-  max-width: var(--content-max-width);
+  /* 07.10., Owner-Direktive "CHAT UI STRUCTURAL + VISUAL OVERHAUL":
+     dasselbe `--chat-content-width`-Token wie `.chat-panel__messages`
+     (siehe dort fuer die volle Begruendung des Breitenabgleichs) -
+     zentrale Regel "CHAT CONTENT WIDTH = COMPOSER WIDTH" ueber eine
+     gemeinsame Variable UND denselben, nie durch einen Scrollbar
+     verengten Elternknoten (`.chat-panel`), nicht nur zufaellig gleiche
+     Werte an zwei unabhaengig berechneten Stellen. */
+  max-width: var(--chat-content-width);
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
