@@ -521,10 +521,6 @@
                     aria-pressed="false">
               {{ icons.mic(class_="icon") }}
             </button>
-            <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
-                    title="Senden" aria-label="Senden">
-              {{ icons.send(class_="icon") }}
-            </button>
           </div>
           {# Aufnahme-UX (06.10., selbe Direktive, §4-§7): ersetzt waehrend
              RECORDING sichtbar die normalen Steuerelemente innerhalb
@@ -562,6 +558,25 @@
               <span></span><span></span><span></span>
             </span>
           </div>
+          {# "Direkt senden" (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-
+             FARBEN, DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON") - bewusst als
+             EIGENSTAENDIGES Geschwisterelement DIREKT in `.chat-composer__row`
+             platziert statt (wie zuvor) innerhalb von `#chat-normal-controls`
+             verschachtelt: `#chat-normal-controls` und `#chat-recording`
+             schliessen sich ueber `setMicState()` gegenseitig aus (siehe
+             Kommentare oben) - ein hier verschachtelter Senden-Button waere
+             waehrend RECORDING zwangslaeufig mitversteckt gewesen, genau das
+             zu behebende Verhalten. Auf dieser Ebene bleibt er in IDLE und
+             RECORDING gleichermassen sichtbar (derselbe `.chat-composer__row`-
+             Flex-Container, `align-items:flex-end`/`gap:8px` wie zuvor - keine
+             CSS-Aenderung noetig). Waehrend TRANSCRIBING wird er ueber
+             `setMicState()` gezielt ausgeblendet (kein sinnvoller
+             "aktueller Inhalt" zum Senden in diesem kurzen Zwischenzustand,
+             unveraendertes bisheriges Verhalten). #}
+          <button type="submit" class="chat-composer__send-btn" id="chat-send-btn"
+                  title="Senden" aria-label="Senden">
+            {{ icons.send_arrow(class_="icon") }}
+          </button>
         </div>
         <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
         {% if active_conversation %}
@@ -1087,6 +1102,14 @@
           if (normalControls) { normalControls.hidden = state !== "idle"; }
           if (recordingRow) { recordingRow.hidden = state !== "recording"; }
           if (transcribingRow) { transcribingRow.hidden = state !== "transcribing"; }
+          // "Direkt senden" (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-
+          // FARBEN, DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON") - jetzt ein
+          // eigenstaendiges Geschwisterelement (siehe Template-Kommentar bei
+          // `#chat-send-btn`), bleibt deshalb in IDLE und RECORDING
+          // gleichermassen sichtbar und wird NUR waehrend TRANSCRIBING
+          // ausgeblendet (unveraendertes bisheriges Verhalten fuer diesen
+          // kurzen Zwischenzustand).
+          if (sendBtn) { sendBtn.hidden = state === "transcribing"; }
         }
 
         function stopTracks(stream) {
@@ -1130,9 +1153,20 @@
             frequencyData = new Uint8Array(analyser.frequencyBinCount);
             source.connect(analyser);
             barLevels = [];
-            var barColor = getComputedStyle(document.documentElement)
-              .getPropertyValue("--wax-red").trim() || "#a23b2e";
-            drawBars(barColor);
+            // Lexono-Gruen statt der bisherigen Fehlerfarbe --wax-red
+            // (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-FARBEN,
+            // DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON") - zwei Token statt
+            // eines, da drawBars() jeden Balken einzeln je nach eigener
+            // Ausschlagsstaerke zwischen beiden interpoliert (siehe dort).
+            // Wie zuvor EINMAL je Aufnahme-Start gelesen (nicht pro Frame) -
+            // bei einem Theme-Wechsel WAEHREND einer laufenden Aufnahme
+            // wirkt die neue Farbe erst ab der naechsten Aufnahme, exakt
+            // dasselbe, bereits bestehende Verhalten wie zuvor bei
+            // --wax-red.
+            var computedStyle = getComputedStyle(document.documentElement);
+            var activeColor = computedStyle.getPropertyValue("--waveform-active").trim() || "#249d74";
+            var idleColor = computedStyle.getPropertyValue("--waveform-idle").trim() || "#8fd4b7";
+            drawBars(activeColor, idleColor);
           } catch (err) {
             // Die Visualisierung ist reine visuelle Zusatzrueckmeldung
             // (§5 der Vorgaenger-Direktive) - ein Fehler hier darf
@@ -1155,7 +1189,36 @@
           return Math.max(MIN_BARS, Math.min(MAX_BARS, count));
         }
 
-        function drawBars(barColor) {
+        // Hex (#rgb/#rrggbb) -> {r,g,b} fuer die stufenlose Balken-
+        // Interpolation unten - kein zusaetzliches Farb-/Utility-Paket
+        // (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-FARBEN,
+        // DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON"), nur fuer diese beiden,
+        // je Aufnahme-Start einmalig gelesenen Theme-Farben gebraucht.
+        function hexToRgb(hex) {
+          var normalized = (hex || "").replace("#", "");
+          if (normalized.length === 3) {
+            normalized = normalized.split("").map(function (c) { return c + c; }).join("");
+          }
+          var intVal = parseInt(normalized, 16);
+          if (isNaN(intVal)) { return { r: 36, g: 157, b: 116 }; } // Fallback: #249d74
+          return { r: (intVal >> 16) & 255, g: (intVal >> 8) & 255, b: intVal & 255 };
+        }
+
+        // Stufenlose Abstufung "ruhig -> aktiv" (§ /waveform-semantics:
+        // "geringe Aktivitaet -> helleres Gruen, mittlere Aktivitaet ->
+        // Uebergang, starke Aktivitaet -> #249D74") - nutzt direkt den
+        // bereits vorhandenen, zeitlich geglaetteten 0..1-Wert je Balken
+        // (`barLevels[b]`, siehe oben) als Mischverhaeltnis. Keine neue
+        // Audio-/Signalverarbeitung, nur eine Farbfunktion ueber bereits
+        // vorhandene Daten.
+        function waveformBarColor(idleRgb, activeRgb, t) {
+          var r = Math.round(idleRgb.r + (activeRgb.r - idleRgb.r) * t);
+          var g = Math.round(idleRgb.g + (activeRgb.g - idleRgb.g) * t);
+          var b = Math.round(idleRgb.b + (activeRgb.b - idleRgb.b) * t);
+          return "rgb(" + r + "," + g + "," + b + ")";
+        }
+
+        function drawBars(activeColor, idleColor) {
           if (!analyser || !waveformCanvas) { return; }
           var ctx2d = waveformCanvas.getContext("2d");
           var dpr = window.devicePixelRatio || 1;
@@ -1207,25 +1270,34 @@
           ctx2d.clearRect(0, 0, cssWidth, cssHeight);
           ctx2d.lineCap = "round";
           ctx2d.lineWidth = BAR_WIDTH;
-          ctx2d.strokeStyle = barColor;
 
           var minBarHeight = 3; // §5 "Mindesthoehe" - auch bei 0 sichtbar als Segment, nie unsichtbar/flach.
           var maxBarHeight = Math.max(minBarHeight, cssHeight - 6); // §5 "Maximalhoehe"
           var groupWidth = barCount * (BAR_WIDTH + BAR_GAP) - BAR_GAP;
           var offsetX = Math.max(0, (cssWidth - groupWidth) / 2);
 
-          ctx2d.beginPath();
+          // Jeder Balken einzeln gezeichnet und eingefaerbt (statt wie
+          // zuvor EIN gemeinsamer Pfad mit EINER Farbe) - Canvas 2D kann
+          // Farbe nicht pro Segment innerhalb eines einzelnen stroke()-
+          // Aufrufs variieren, das ist fuer die geforderte Ruhig/Aktiv-
+          // Abstufung je Balken unvermeidlich. Dieselbe Hoehenberechnung
+          // wie zuvor, keine Aenderung an `barLevels`/der Glaettung
+          // oberhalb dieser Zeile.
+          var idleRgb = hexToRgb(idleColor);
+          var activeRgb = hexToRgb(activeColor);
           for (var b = 0; b < barCount; b++) {
             var barHeight = minBarHeight + barLevels[b] * (maxBarHeight - minBarHeight);
             var x = offsetX + b * (BAR_WIDTH + BAR_GAP) + BAR_WIDTH / 2;
             var yTop = (cssHeight - barHeight) / 2;
             var yBottom = yTop + barHeight;
+            ctx2d.strokeStyle = waveformBarColor(idleRgb, activeRgb, barLevels[b]);
+            ctx2d.beginPath();
             ctx2d.moveTo(x, yBottom);
             ctx2d.lineTo(x, yTop);
+            ctx2d.stroke();
           }
-          ctx2d.stroke();
 
-          waveformAnimationId = requestAnimationFrame(function () { drawBars(barColor); });
+          waveformAnimationId = requestAnimationFrame(function () { drawBars(activeColor, idleColor); });
         }
 
         function stopWaveform() {

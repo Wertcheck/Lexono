@@ -1522,6 +1522,87 @@ def test_chat_composer_waveform_uses_segmented_bars_not_single_line(
 
 
 # ==========================================================================
+# Diktat-UX: Waveform-Farben, Direkt-Senden-Sichtbarkeit, Send-Icon (06.10.,
+# Owner-Direktive "DIKTAT-UX: WAVEFORM-FARBEN, DIREKT-SENDEN-SICHTBARKEIT,
+# SEND-ICON") - wie bei der vorherigen Direktive oben: reine Markup-/
+# Quellcode-Regressionstests, die eigentliche visuelle Pruefung (Farben,
+# Balken-Interpolation) wurde live per CDP verifiziert.
+# ==========================================================================
+
+
+def test_chat_composer_waveform_no_longer_uses_error_red(
+    client: TestClient, db_session: Session
+) -> None:
+    """Die Wellenform darf nicht mehr die Fehlerfarbe --wax-red nutzen -
+    stattdessen die neuen, eigenstaendigen Lexono-Gruen-Token."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert '.getPropertyValue("--wax-red")' not in response.text
+    assert '.getPropertyValue("--waveform-active")' in response.text
+    assert '.getPropertyValue("--waveform-idle")' in response.text
+
+
+def test_chat_composer_waveform_interpolates_per_bar_color(
+    client: TestClient, db_session: Session
+) -> None:
+    """Jeder Balken wird einzeln zwischen Ruhig- und Aktiv-Farbe interpoliert
+    (stufenlose Abstufung nach Ausschlagsstaerke, nicht nur ein binaerer
+    Farbwechsel)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert "function waveformBarColor(" in response.text
+    assert "function hexToRgb(" in response.text
+
+
+def test_chat_composer_send_button_is_sibling_not_nested_in_normal_controls(
+    client: TestClient, db_session: Session
+) -> None:
+    """"Direkt senden" muss ausserhalb von `#chat-normal-controls` liegen,
+    sonst wuerde es zusammen mit den anderen Idle-Steuerelementen waehrend
+    RECORDING/TRANSCRIBING versteckt (`setMicState()` toggelt `hidden` auf
+    dem gesamten Container)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    normal_controls_start = response.text.index('id="chat-normal-controls"')
+    normal_controls_end = response.text.index("</div>", normal_controls_start)
+    normal_controls_html = response.text[normal_controls_start:normal_controls_end]
+    assert 'id="chat-send-btn"' not in normal_controls_html
+
+
+def test_chat_composer_send_button_hidden_only_during_transcribing(
+    client: TestClient, db_session: Session
+) -> None:
+    """"Diktat beenden" darf "Direkt senden" nicht verdraengen: der
+    Senden-Button wird in `setMicState()` nur fuer TRANSCRIBING ausgeblendet,
+    in IDLE und RECORDING bleibt er sichtbar."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert 'sendBtn.hidden = state === "transcribing"' in response.text
+
+
+def test_chat_composer_send_button_uses_modern_arrow_icon(
+    client: TestClient, db_session: Session
+) -> None:
+    """Der Senden-Button nutzt das neue, eigenstaendige Pfeil-Icon
+    (`send_arrow`), nicht mehr das alte, an anderer Stelle weiterhin
+    genutzte Papierflieger-Icon (`send`)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    send_btn_start = response.text.index('id="chat-send-btn"')
+    send_btn_end = response.text.index("</button>", send_btn_start)
+    send_btn_html = response.text[send_btn_start:send_btn_end]
+    # Neues Icon: Schaft + Chevron-Spitze.
+    assert 'd="M12 19V6.5"' in send_btn_html
+    # Altes Icon (Papierflieger-Umriss) darf hier nicht mehr vorkommen.
+    assert "M20.5 3.5 3 10.2l7 2.8 2.8 7 7.7-16.5Z" not in send_btn_html
+
+
+# ==========================================================================
 # Lokale Spracheingabe (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
 # FLOW PASS" §22-27): die Route selbst, inkl. Auth/CSRF/Fehlerabbildung.
 # Die eigentliche Transkriptionslogik wird separat in

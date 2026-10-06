@@ -52,6 +52,22 @@
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 3.5 3 10.2l7 2.8 2.8 7 7.7-16.5Z"/><path d="M20.5 3.5 10 13.9"/></svg>
 {% endmacro %}
 
+{# Eigenstaendiges, moderneres Send-Icon NUR fuer den Chat-Composer-
+   Senden-Button (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-FARBEN,
+   DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON") - bewusst NICHT das obige
+   `send()`-Makro selbst veraendert, da dieses an 4 weiteren, von dieser
+   Direktive nicht betroffenen Stellen wiederverwendet wird (login.html
+   "Anmelden", draft_editor.html "Freigeben"/"Senden",
+   partials/message_detail.html "Antworten"). Schlichter, aufwaerts
+   zeigender Pfeil (Schaft + Chevron-Spitze) statt des bisherigen
+   Papierflieger-Umrisses - dieselbe 24x24-Outline-Konvention wie alle
+   uebrigen Icons oben, etwas kraeftigere Strichstaerke (2.2 statt 1.6,
+   analog zu close_window/minimize_window) fuer genug visuelles Gewicht
+   auf der gefuellten gruenen Rundflaeche des Buttons. #}
+{% macro send_arrow(class_="icon") %}
+<svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6.5"/><path d="M6.5 11.5 12 6l5.5 5.5"/></svg>
+{% endmacro %}
+
 {% macro settings(class_="icon") %}
 <svg class="{{ class_ }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 3.8v2M12 18.2v2M20.2 12h-2M5.8 12h-2M17.5 6.5l-1.4 1.4M7.9 16.1l-1.4 1.4M17.5 17.5l-1.4-1.4M7.9 7.9 6.5 6.5"/></svg>
 {% endmacro %}

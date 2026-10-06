@@ -118,6 +118,26 @@
      diesen einen Anwendungsfall. */
   --on-brand: #ffffff;
 
+  /* Diktat-Wellenform (06.10., Owner-Direktive "DIKTAT-UX: WAVEFORM-
+     FARBEN, DIREKT-SENDEN-SICHTBARKEIT, SEND-ICON") - vorher ungetoent
+     `--wax-red` (Fehlerfarbe, siehe app_... chat.html drawBars()), gehoerte
+     damit optisch nicht zur Lexono-CI und war mit echten Fehlerzustaenden
+     verwechselbar. `--waveform-active` ist bewusst nur ein benannter Alias
+     auf `--brand-green` selbst (kein eigener Farbwert) - starke
+     Sprachausschlaege nutzen exakt dieselbe verbindliche Markenfarbe
+     #249D74, nicht nur einen aehnlichen Gruenton. `--waveform-idle` ist ein
+     NEUES, eigenstaendiges Token (kein bereits vorhandener Tint passte:
+     `--brand-green-tint` ist als helle BADGE-/Hintergrundflaeche gedacht
+     und auf einem duennen 3px-Canvas-Strich kaum noch als Gruen erkennbar;
+     `--accent-green` ist bereits fuer Tabellendokument-Dateisymbole
+     reserviert, siehe dessen eigener Kommentar oben) - eine hellere,
+     zurueckhaltende Aufhellung desselben Gruentons fuer ruhige/
+     unausgeschlagene Balken. Beide Werte werden in chat.html per
+     getComputedStyle() gelesen und ruhige/aktive Balken stufenlos danach
+     interpoliert (siehe dortige drawBars()). */
+  --waveform-active: var(--brand-green);
+  --waveform-idle: #8fd4b7;
+
   /* --- Typografie --- */
   /* Bewusst KEINE Serifenschrift mehr (auch nicht fuer Ueberschriften) -
      --font-display und --font-body sind seit Schritt 3 identisch. */
@@ -206,6 +226,18 @@
   --accent-green-tint: #16291e;
 
   --brand-green-tint: #11291f;
+
+  /* Diktat-Wellenform im Dark Mode (06.10.): `--waveform-active` bleibt
+     bewusst unveraendert (`var(--brand-green)` selbst aendert sich zwischen
+     den Themes nicht, Vorgabe "Markenfarbe bleibt ueber beide Themes
+     unveraendert"). `--waveform-idle` braucht hier einen eigenen, etwas
+     kraeftigeren Wert als im Light Mode - der helle Light-Mode-Ton #8fd4b7
+     waere auf nahezu schwarzem Grund (`--paper-100`/`--paper-000` oben)
+     zwar nicht unlesbar, wirkte in der Vorab-Pruefung aber zu grell/nicht
+     "zurueckhaltend" (Vorgabe) im Vergleich zum aktiven #249D74 - ein
+     mittlerer, weiterhin eindeutig hellerer Gruenton haelt die gewuenschte
+     Hierarchie "ruhig vs. aktiv" auch auf dunklem Grund sichtbar ein. */
+  --waveform-idle: #53c69f;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.6);
   --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
