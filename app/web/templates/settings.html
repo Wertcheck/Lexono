@@ -1092,17 +1092,24 @@
 
   {# ===================== TAB: KANZLEI ===================== #}
   {# UX-Refactor (06.10., Owner-Direktive "SETTINGS -> KANZLEI UX
-     REFACTOR"): die Hauptseite ist jetzt eine KOMPAKTE UEBERSICHT
-     (kurze Zusammenfassungskarten), die vollstaendigen Formulare leben
-     in Bearbeiten-Dialogen (natives <dialog class="modal">, dasselbe
-     bereits bestehende Muster wie z. B. "Neue Aufgabe" in tasks.html -
-     KEIN neues Dialog-System). Alle Formulare posten weiterhin an
-     dieselben, unveraenderten Endpunkte (app/web/settings_router.py) -
-     reine UI-Umstrukturierung, KEIN Funktionsverlust (siehe Feature-
-     Inventur im Abschlussbericht). "Kanzlei-Defaults" und "Kanzlei-
-     Einstellungen" aus der Referenz werden bewusst NICHT als Karten
-     gezeigt - keine der beiden Funktionsgruppen hat eine echte
-     Grundlage im bestehenden System (/no-fake-functionality). #}
+     REFACTOR", zuletzt erweitert per "SETTINGS -> KANZLEI FINAL UI/UX"):
+     die Hauptseite ist eine KOMPAKTE UEBERSICHT (kurze Zusammenfassungs-
+     karten), die vollstaendigen Formulare leben in Bearbeiten-Dialogen
+     (natives <dialog class="modal">, dasselbe bereits bestehende Muster
+     wie z. B. "Neue Aufgabe" in tasks.html - KEIN neues Dialog-System).
+     Layout (links/rechts) folgt der vom Auftraggeber vorgegebenen
+     Struktur: links Kanzleiinformationen/Standorte/Integrationen, rechts
+     Branding/Fachliche Schwerpunkte/Defaults/Einstellungen. "Kanzlei-
+     Defaults" und "Kanzlei-Einstellungen" haben jetzt echte, neue
+     FirmProfile-Felder (siehe app/models/firm_profile.py) - bewusst NUR
+     die Werte, die tatsaechlich irgendwo ausgewertet werden (Standard-
+     Dokumentformat -> draft_detail.html Export-Link-Reihenfolge,
+     Aktenpraefix+Automatik -> matters_router.py::create_matter_action);
+     "Kanzleiwissen/Vorlagenbibliothek fuer alle Benutzer verfuegbar" aus
+     der Referenz wurden NICHT uebernommen, da das eine komplett neue
+     Sichtbarkeits-/Berechtigungsinfrastruktur fuer Kanzleiwissen/
+     Vorlagen vorausgesetzt haette (unverhaeltnismaessige Backend-
+     Erweiterung fuer diese Aufgabe, siehe Abschlussbericht). #}
   <div class="settings-tabpanel" data-tabpanel="kanzlei" hidden>
     <div class="settings-page-grid">
       <div class="settings-page-grid__main">
@@ -1150,6 +1157,33 @@
           </button>
         </div>
 
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.link(class_="settings-info-card__title-icon") }}Kanzlei-Integrationen
+          </h2>
+          <p class="settings-info-card__line settings-info-card__line--muted" style="margin-bottom: 8px;">
+            E-Mail-Postfächer werden separat im Tab „E-Mail“ verwaltet.
+          </p>
+          <div class="settings-row" style="border-top: none; padding-top: 0;">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Kalender</span>
+              <span class="settings-row__desc">Z. B. Microsoft 365, Google</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill">Nicht verbunden</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Dokumentenmanagement</span>
+              <span class="settings-row__desc">Externe DMS-Systeme</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill">Nicht verbunden</span>
+            </div>
+          </div>
+        </div>
+
       </div>
       <div class="settings-page-grid__side">
 
@@ -1187,46 +1221,43 @@
           </button>
         </div>
 
-      </div>
-
-      {# Volle Breite am unteren Rand (06.10., Owner-Direktive "SETTINGS ->
-         KANZLEI FINAL UI/UX REFINEMENT"): das Referenzbild paart
-         "Kanzlei-Integrationen" eigentlich mit einer "Kanzlei-
-         Einstellungen"-Karte - die existiert in Lexono aber nicht
-         (bestaetigt per Grep, keine echte Grundlage, siehe
-         /no-fake-functionality) und wurde bewusst NICHT fabriziert.
-         Statt die Seitenspalte in dieser Zeile ungenutzt leer zu lassen
-         (/important-layout-rule: "Die verfuegbare Desktopbreite muss
-         genutzt werden"), nutzt die echte Integrationen-Karte die volle
-         Breite und zeigt ihre zwei Status-Zeilen nebeneinander statt
-         gestapelt. #}
-      <div class="settings-info-card settings-page-grid__full">
-        <h2 class="settings-info-card__title">
-          {{ icons.link(class_="settings-info-card__title-icon") }}Kanzlei-Integrationen
-        </h2>
-        <p class="settings-info-card__line settings-info-card__line--muted" style="margin-bottom: 10px;">
-          Verbindung zu externen Diensten. E-Mail-Postfächer werden separat im Tab „E-Mail“ verwaltet.
-        </p>
-        <div style="display:flex; gap:16px; flex-wrap:wrap;">
-          <div class="settings-row" style="border-top: none; padding-top: 0; flex: 1 1 220px;">
-            <div class="settings-row__text">
-              <span class="settings-row__title">Kalender</span>
-              <span class="settings-row__desc">Z. B. Microsoft 365, Google</span>
-            </div>
-            <div class="settings-row__control">
-              <span class="settings-status-pill">Nicht verbunden</span>
-            </div>
-          </div>
-          <div class="settings-row" style="border-top: none; padding-top: 0; flex: 1 1 220px;">
-            <div class="settings-row__text">
-              <span class="settings-row__title">Dokumentenmanagement</span>
-              <span class="settings-row__desc">Externe DMS-Systeme</span>
-            </div>
-            <div class="settings-row__control">
-              <span class="settings-status-pill">Nicht verbunden</span>
-            </div>
-          </div>
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.database(class_="settings-info-card__title-icon") }}Kanzlei-Defaults
+          </h2>
+          <p class="settings-info-card__line">
+            Aktenpräfix: {{ firm_profile.matter_reference_prefix or "–" }}
+          </p>
+          <p class="settings-info-card__line">
+            Dokumentformat: {{ "DOCX" if firm_profile.default_document_format == "docx" else "PDF" }}
+          </p>
+          <p class="settings-info-card__line settings-info-card__line--muted">{{ firm_profile.timezone }}</p>
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('kanzlei-defaults-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Bearbeiten</span>
+          </button>
         </div>
+
+        <div class="settings-info-card">
+          <h2 class="settings-info-card__title">
+            {{ icons.settings(class_="settings-info-card__title-icon") }}Kanzlei-Einstellungen
+          </h2>
+          <div class="settings-row" style="border-top: none; padding-top: 0;">
+            <div class="settings-row__text">
+              <span class="settings-row__title">Akten automatisch nummerieren</span>
+            </div>
+            <div class="settings-row__control">
+              <span class="settings-status-pill{% if firm_profile.auto_number_new_matters %} settings-status-pill--ok{% endif %}">
+                {% if firm_profile.auto_number_new_matters %}{{ icons.check(class_="icon") }}Aktiv{% else %}Aus{% endif %}
+              </span>
+            </div>
+          </div>
+          <button type="button" class="btn settings-info-card__action"
+                  onclick="document.getElementById('kanzlei-einstellungen-dialog').showModal()">
+            {{ icons.pencil(class_="icon") }}<span>Bearbeiten</span>
+          </button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1504,6 +1535,110 @@
     <div class="modal__footer">
       <button type="button" class="btn" onclick="closeKanzleiDialog('fachliche-schwerpunkte-dialog')">Schließen</button>
     </div>
+  </dialog>
+
+  <dialog id="kanzlei-defaults-dialog" class="modal modal--medium">
+    <div class="modal__header">
+      <h3 class="modal__title">Kanzlei-Defaults bearbeiten</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('kanzlei-defaults-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <form method="post" action="/dashboard/settings/profile/defaults" style="display:contents;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <div class="modal__body">
+        <p class="settings-row__desc" style="margin: 0 0 14px;">
+          Kanzleiweite Vorgaben für neue Akten und Dokument-Exporte.
+        </p>
+        {% if active_dialog == "kanzlei-defaults" and error %}
+          <div class="banner banner--error" style="margin-bottom: 14px;">{{ error }}</div>
+        {% endif %}
+        <div class="settings-grid">
+          <label class="form-label">
+            Standard-Aktenpräfix
+            <input type="text" name="matter_reference_prefix" value="{{ firm_profile.matter_reference_prefix or '' }}"
+                   placeholder="z. B. MP-" maxlength="32" />
+            <span class="form-hint">Wird verwendet, wenn „Akten automatisch nummerieren“ aktiv ist.</span>
+          </label>
+          <label class="form-label">
+            Standard-Dokumentformat
+            <select name="default_document_format" class="settings-select">
+              <option value="pdf" {% if firm_profile.default_document_format != "docx" %}selected{% endif %}>PDF</option>
+              <option value="docx" {% if firm_profile.default_document_format == "docx" %}selected{% endif %}>DOCX</option>
+            </select>
+            <span class="form-hint">Bestimmt die Reihenfolge der Export-Links im Entwurf.</span>
+          </label>
+          <label class="form-label">
+            Zeitzone
+            {# Einzige tatsaechlich unterstuetzte Option (keine Mehrzeit-
+               zonen-Infrastruktur vorhanden) - identisches, ehrliches
+               Einzelauswahl-Muster wie "Sprache der Benutzeroberflaeche"
+               im Tab "Allgemein" (siehe dortigen Kommentar). #}
+            <select name="timezone" class="settings-select">
+              <option value="Europe/Berlin" selected>Europe/Berlin (UTC+1)</option>
+            </select>
+          </label>
+        </div>
+        <p class="settings-row__desc" style="margin-top: 14px;">
+          Standard-Textvorlagensprache und Standard-Signatur werden an anderer Stelle verwaltet:
+          <a href="#" onclick="document.querySelector('.settings-tab[data-tab=allgemein]').click(); closeKanzleiDialog('kanzlei-defaults-dialog'); return false;">Sprache im Tab „Allgemein“</a>
+          ·
+          <a href="#" onclick="closeKanzleiDialog('kanzlei-defaults-dialog'); document.getElementById('kanzleiinformationen-dialog').showModal(); return false;">Unterzeichnende Person in Kanzleiinformationen</a>
+        </p>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn" onclick="closeKanzleiDialog('kanzlei-defaults-dialog')">Abbrechen</button>
+        <button type="submit" class="btn btn--primary">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="kanzlei-einstellungen-dialog" class="modal">
+    <div class="modal__header">
+      <h3 class="modal__title">Kanzlei-Einstellungen bearbeiten</h3>
+      <button type="button" class="modal__close" onclick="closeKanzleiDialog('kanzlei-einstellungen-dialog')" aria-label="Schließen">✕</button>
+    </div>
+    <form method="post" action="/dashboard/settings/profile/kanzlei-settings" style="display:contents;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <div class="modal__body">
+        {% if active_dialog == "kanzlei-einstellungen" and error %}
+          <div class="banner banner--error" style="margin-bottom: 14px;">{{ error }}</div>
+        {% endif %}
+        <div class="settings-row" style="border-top: none; padding-top: 0;">
+          <div class="settings-row__text">
+            <span class="settings-row__title">Akten automatisch nummerieren</span>
+            <span class="settings-row__desc">
+              Neue Akten erhalten beim Anlegen automatisch ein Aktenzeichen aus dem
+              Standard-Aktenpräfix (siehe Kanzlei-Defaults), sofern kein eigenes
+              Aktenzeichen eingegeben wird.
+            </span>
+          </div>
+          <div class="settings-row__control">
+            {# `.law-toggle` ist fuer den bestehenden Instant-Submit-Button
+               (siehe z. B. "start_with_system" im Tab "Allgemein") CSS-
+               klassenbasiert gestylt, nicht `:checked`-reaktiv - hier als
+               <label>+Checkbox verwendet (dieser Dialog sammelt mehrere
+               Aenderungen bis zum gemeinsamen "Speichern", kein Instant-
+               Submit), daher der kleine onchange-Sync fuer dasselbe
+               visuelle Pill+Thumb-Erscheinungsbild. #}
+            <label class="law-toggle{% if firm_profile.auto_number_new_matters %} law-toggle--on{% endif %}">
+              <input type="checkbox" name="auto_number_new_matters"
+                     {% if firm_profile.auto_number_new_matters %}checked{% endif %}
+                     onchange="this.closest('label').classList.toggle('law-toggle--on', this.checked)"
+                     style="position:absolute; inset:0; opacity:0; margin:0; cursor:pointer;" />
+            </label>
+          </div>
+        </div>
+        <p class="settings-row__desc" style="margin-top: 14px;">
+          Weitere, in der Referenz gezeigte Schalter ("Kanzleiwissen"/"Vorlagenbibliothek
+          für alle Benutzer verfügbar") existieren in Lexono aktuell nicht als
+          einschränkbare Funktion - Kanzleiwissen und Vorlagen sind bereits für alle
+          angemeldeten Benutzer verfügbar und nicht pro Benutzer einschränkbar.
+        </p>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn" onclick="closeKanzleiDialog('kanzlei-einstellungen-dialog')">Abbrechen</button>
+        <button type="submit" class="btn btn--primary">Speichern</button>
+      </div>
+    </form>
   </dialog>
 
   <script>

@@ -210,7 +210,10 @@ def _cloud_ai_model_label(claude_model_name: str) -> str:
     return "Claude"
 
 
-_VALID_DIALOGS = {"kanzleiinformationen", "standorte", "branding", "fachliche-schwerpunkte"}
+_VALID_DIALOGS = {
+    "kanzleiinformationen", "standorte", "branding", "fachliche-schwerpunkte",
+    "kanzlei-defaults", "kanzlei-einstellungen",
+}
 
 
 @router.get("", response_class=HTMLResponse)
@@ -837,6 +840,65 @@ def update_firm_profile(
     db.commit()
 
     return _redirect_profile(success="Kanzlei-Profil gespeichert")
+
+
+# --- Kanzlei-Defaults/-Einstellungen (06.10., Owner-Direktive "SETTINGS ->
+# KANZLEI FINAL UI/UX") - echte, verdrahtete Werte statt der zuvor bewusst
+# ausgelassenen Fake-Panels (siehe app/models/firm_profile.py fuer die
+# jeweilige Begruendung PRO Feld: `default_document_format` bestimmt
+# tatsaechlich die Reihenfolge der PDF-/DOCX-Export-Links in
+# draft_detail.html, `auto_number_new_matters` + `matter_reference_prefix`
+# werden echt in app/web/matters_router.py::create_matter_action
+# ausgewertet, `timezone` ist - identisch zu `Settings.ui_language`/
+# `ui_theme` - aktuell ehrlich auf GENAU einen gueltigen Wert validiert.
+_ALLOWED_DOCUMENT_FORMATS = {"pdf", "docx"}
+_ALLOWED_TIMEZONES = {"Europe/Berlin"}
+
+
+@router.post("/profile/defaults")
+def update_firm_defaults(
+    matter_reference_prefix: str = Form(""),
+    default_document_format: str = Form(...),
+    timezone: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    if default_document_format not in _ALLOWED_DOCUMENT_FORMATS:
+        return _redirect_profile(
+            error="Ungültiges Standard-Dokumentformat", dialog="kanzlei-defaults"
+        )
+    if timezone not in _ALLOWED_TIMEZONES:
+        return _redirect_profile(
+            error="Diese Zeitzone wird aktuell nicht unterstützt", dialog="kanzlei-defaults"
+        )
+
+    profile = get_firm_profile(db)
+    profile.matter_reference_prefix = matter_reference_prefix.strip() or None
+    profile.default_document_format = default_document_format
+    profile.timezone = timezone
+    profile.updated_by_actor = current_user.email
+    db.commit()
+
+    return _redirect_profile(success="Kanzlei-Defaults gespeichert")
+
+
+@router.post("/profile/kanzlei-settings")
+def update_firm_settings(
+    auto_number_new_matters: str = Form(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Checkbox-Formular (18.09.-Muster wie bei anderen Toggle-Formularen
+    dieser Seite): ein abgehaktes Kaestchen sendet "on", ein nicht
+    abgehaktes ueberhaupt kein Feld - `Form("")` + Wahrheitswert-Pruefung
+    statt `Form(False)` (FastAPI kann einen fehlenden Bool-Feldwert nicht
+    direkt als `False` interpretieren)."""
+    profile = get_firm_profile(db)
+    profile.auto_number_new_matters = auto_number_new_matters == "on"
+    profile.updated_by_actor = current_user.email
+    db.commit()
+
+    return _redirect_profile(success="Kanzlei-Einstellungen gespeichert")
 
 
 # --- Kanzleifachprofil: fachliche Schwerpunkte (03.10., Owner-Direktive

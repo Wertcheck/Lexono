@@ -155,6 +155,34 @@ def test_draft_detail_shows_letterhead_preview_with_firm_name(
     assert 'class="document-page__letterhead"' in response.text
     assert "Kanzlei Musterfrau" in response.text
     assert "Beispielstraße 1, 80331 München" in response.text
+
+
+def test_draft_detail_export_links_default_to_pdf_first(
+    client: TestClient, seeded: dict
+) -> None:
+    """06.10., Owner-Direktive "SETTINGS -> KANZLEI FINAL UI/UX":
+    `FirmProfile.default_document_format` hat Server-Default "pdf" -
+    jede bestehende/neue Installation ohne explizite Aenderung muss
+    daher weiterhin exakt das bisherige Verhalten zeigen (PDF vor
+    DOCX, 18.09.-Referenzabgleich)."""
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
+    assert response.status_code == 200
+    pdf_index = response.text.index("Als PDF exportieren")
+    docx_index = response.text.index("Als DOCX exportieren")
+    assert pdf_index < docx_index
+
+
+def test_draft_detail_export_links_follow_docx_default_when_configured(
+    db_session: Session, client: TestClient, seeded: dict
+) -> None:
+    db_session.add(FirmProfile(firm_name="Kanzlei Musterfrau", default_document_format="docx"))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}")
+    assert response.status_code == 200
+    pdf_index = response.text.index("Als PDF exportieren")
+    docx_index = response.text.index("Als DOCX exportieren")
+    assert docx_index < pdf_index
     assert "Kein Kanzleiprofil hinterlegt" not in response.text
 
 

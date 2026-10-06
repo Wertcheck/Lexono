@@ -38,6 +38,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_or_404
 from app.audit.service import AuditLogService
 from app.chat.document_preview import build_document_preview
+from app.firm_profile import get_firm_profile
 from app.documents.rendering import (
     DEFAULT_PAGE_DPI,
     THUMBNAIL_DPI,
@@ -201,6 +202,22 @@ def matters_list_page(
     return templates.TemplateResponse(request, "matters_list.html", context)
 
 
+def _generate_matter_reference_number(db: Session, prefix: str | None) -> str:
+    """Echte Auto-Nummerierung (06.10., Owner-Direktive "SETTINGS -> KANZLEI
+    FINAL UI/UX") - fortlaufende, kollisionssicher geprüfte Nummer (prüft
+    gegen bereits vergebene Werte, dasselbe Prinzip wie die bestehende
+    manuelle Eindeutigkeitsprüfung unten). Bewusst einfach gehalten (keine
+    separate Zähler-Tabelle) - die Gesamtzahl bestehender Akten als
+    Startpunkt reicht für eine einzelne Kanzlei-Installation aus."""
+    prefix = (prefix or "").strip()
+    candidate_number = (db.query(func.count(Matter.id)).scalar() or 0) + 1
+    while True:
+        candidate = f"{prefix}{candidate_number:03d}"
+        if db.query(Matter).filter(Matter.reference_number == candidate).first() is None:
+            return candidate
+        candidate_number += 1
+
+
 @router.post("/create")
 def create_matter_action(
     title: str = Form(...),
@@ -228,6 +245,18 @@ def create_matter_action(
             url="/dashboard/matters?error=Bitte einen gültigen Mandanten auswählen.",
             status_code=303,
         )
+    # Auto-Nummerierung (06.10., Owner-Direktive "SETTINGS -> KANZLEI FINAL
+    # UI/UX", echte Verdrahtung des "Kanzlei-Einstellungen"-Schalters
+    # "Neue Akten automatisch nummerieren", siehe app/web/settings_router.py
+    # + app/models/firm_profile.py) - wirkt NUR, wenn der Anwalt das Feld
+    # selbst leer gelassen hat; ein manuell eingegebenes Aktenzeichen hat
+    # immer Vorrang.
+    if reference_number is None:
+        firm_profile = get_firm_profile(db)
+        if firm_profile.auto_number_new_matters:
+            reference_number = _generate_matter_reference_number(
+                db, firm_profile.matter_reference_prefix
+            )
     if reference_number:
         existing = (
             db.query(Matter).filter(Matter.reference_number == reference_number).first()

@@ -22,7 +22,7 @@ Speicherort siehe app/web/settings_router.py."""
 
 from __future__ import annotations
 
-from sqlalchemy import String
+from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -64,6 +64,34 @@ class FirmProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Muster wie PromptTemplate.updated_by_actor) - kein volles Audit-Log
     # nötig, da es sich um reine Stammdaten ohne KI-/Freigabebezug handelt.
     updated_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    # --- Kanzlei-Defaults/-Einstellungen (06.10., Owner-Direktive
+    # "SETTINGS -> KANZLEI FINAL UI/UX") ---
+    # Aktenpräfix für die Auto-Nummerierung (siehe `auto_number_new_matters`
+    # unten + app/web/matters_router.py::create_matter_action) - rein
+    # informativ/ungenutzt, solange die Auto-Nummerierung ausgeschaltet ist.
+    matter_reference_prefix: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # "pdf" / "docx" - echt verdrahtet in app/web/templates/draft_detail.html
+    # (bestimmt, welcher der beiden bereits bestehenden Export-Links zuerst
+    # erscheint) - bewusst nur EIN Anwendungsort statt vorgetäuschter
+    # Allgegenwart, siehe dortigen Kommentar.
+    default_document_format: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="pdf", server_default="pdf"
+    )
+    # Aktuell genau EIN gültiger Wert (keine Mehrzeitzonen-Infrastruktur
+    # vorhanden) - identisches, bereits etabliertes Muster wie
+    # `Settings.ui_language`/`ui_theme`: ehrlich als einzige tatsächlich
+    # unterstützte Option validiert statt einer nur optisch vollständigen
+    # Auswahlliste (siehe app/web/settings_router.py).
+    timezone: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="Europe/Berlin", server_default="Europe/Berlin"
+    )
+    # Schaltet die echte Auto-Nummerierung neuer Akten ein/aus (siehe
+    # app/web/matters_router.py::create_matter_action) - wirkt NUR, wenn
+    # das manuelle Aktenzeichen-Feld beim Anlegen leer gelassen wird.
+    auto_number_new_matters: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
 
     # Kanzleifachprofil (03.10., Owner-Direktive "KANZLEIFACHPROFIL UND
     # JURISTISCHE WISSENSSTEUERUNG") - siehe app/models/firm_practice_area.py

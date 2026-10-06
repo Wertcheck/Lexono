@@ -423,6 +423,87 @@ def test_create_matter_with_duplicate_reference_number_is_rejected(
     assert db_session.query(Matter).filter_by(title="Neue Akte").count() == 0
 
 
+# --- Auto-Nummerierung (06.10., Owner-Direktive "SETTINGS -> KANZLEI FINAL
+# UI/UX") - echte Verdrahtung von FirmProfile.auto_number_new_matters +
+# matter_reference_prefix, siehe app/web/settings_router.py/
+# app/models/firm_profile.py ---
+
+
+def test_create_matter_auto_numbers_when_enabled_and_reference_left_blank(
+    client: TestClient, db_session: Session
+) -> None:
+    from app.firm_profile import get_firm_profile
+
+    client_row = Client(name="Beispiel GmbH", client_number="K-auto-1")
+    db_session.add(client_row)
+    db_session.commit()
+
+    profile = get_firm_profile(db_session)
+    profile.auto_number_new_matters = True
+    profile.matter_reference_prefix = "MP-"
+    db_session.commit()
+
+    csrf = extract_csrf(client.get("/dashboard/matters").text)
+    response = client.post(
+        "/dashboard/matters/create",
+        data={"csrf_token": csrf, "title": "Auto-nummerierte Akte", "client_id": client_row.id},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    matter = db_session.query(Matter).filter_by(title="Auto-nummerierte Akte").first()
+    assert matter is not None
+    assert matter.reference_number is not None
+    assert matter.reference_number.startswith("MP-")
+
+
+def test_create_matter_does_not_auto_number_when_disabled(
+    client: TestClient, db_session: Session
+) -> None:
+    client_row = Client(name="Beispiel GmbH", client_number="K-auto-2")
+    db_session.add(client_row)
+    db_session.commit()
+    csrf = extract_csrf(client.get("/dashboard/matters").text)
+
+    response = client.post(
+        "/dashboard/matters/create",
+        data={"csrf_token": csrf, "title": "Ohne Automatik", "client_id": client_row.id},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    matter = db_session.query(Matter).filter_by(title="Ohne Automatik").first()
+    assert matter is not None
+    assert matter.reference_number is None
+
+
+def test_create_matter_manual_reference_number_takes_precedence_over_auto_numbering(
+    client: TestClient, db_session: Session
+) -> None:
+    from app.firm_profile import get_firm_profile
+
+    client_row = Client(name="Beispiel GmbH", client_number="K-auto-3")
+    db_session.add(client_row)
+    db_session.commit()
+    profile = get_firm_profile(db_session)
+    profile.auto_number_new_matters = True
+    profile.matter_reference_prefix = "MP-"
+    db_session.commit()
+
+    csrf = extract_csrf(client.get("/dashboard/matters").text)
+    response = client.post(
+        "/dashboard/matters/create",
+        data={
+            "csrf_token": csrf,
+            "title": "Manuelles Aktenzeichen",
+            "client_id": client_row.id,
+            "reference_number": "EIGENES-001",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    matter = db_session.query(Matter).filter_by(title="Manuelles Aktenzeichen").first()
+    assert matter.reference_number == "EIGENES-001"
+
+
 def test_create_matter_requires_a_valid_csrf_token(
     client: TestClient, db_session: Session
 ) -> None:

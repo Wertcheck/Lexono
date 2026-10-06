@@ -25,12 +25,20 @@
         ({{ draft.matter.client.name }})
       {%- endif %}
       &middot; <a href="/dashboard/drafts">zur Liste</a>
-      {# PDF vor DOCX (18.09., Referenzabgleich `31_dokumentanalyse_
-         detailansicht.png`/Entwurf-Export-Panel): die Referenz zeigt PDF
-         als PRIMÄREN, vorausgewählten Export-Format-Radiobutton - siehe
-         app/export/pdf_export_service.py-Moduldocstring. #}
-      &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.pdf">Als PDF exportieren</a>
-      &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.docx">Als DOCX exportieren</a>
+      {# Reihenfolge nach Kanzlei-Default (06.10., Owner-Direktive "SETTINGS
+         -> KANZLEI FINAL UI/UX", firm_profile.default_document_format,
+         siehe dortigen Modell-Kommentar) - urspruenglich fix "PDF vor
+         DOCX" (18.09., Referenzabgleich `31_dokumentanalyse_
+         detailansicht.png`), Server-Default des neuen Feldes bleibt "pdf"
+         und reproduziert damit fuer jede bestehende Installation exakt
+         das bisherige Verhalten. #}
+      {% if firm_profile.default_document_format == "docx" %}
+        &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.docx">Als DOCX exportieren</a>
+        &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.pdf">Als PDF exportieren</a>
+      {% else %}
+        &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.pdf">Als PDF exportieren</a>
+        &middot; <a href="/dashboard/drafts/{{ draft.id }}/export.docx">Als DOCX exportieren</a>
+      {% endif %}
       {# Rich-Text-Editor (04.10.) - diese Seite (draft_detail.html) bleibt
          der "Viewer" (Versionen/Freigabe/Export/Review/Audit), der Editor
          ist eine eigene Seite (siehe app/web/draft_editor_router.py-

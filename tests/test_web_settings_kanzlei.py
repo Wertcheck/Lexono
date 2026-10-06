@@ -434,3 +434,134 @@ def test_successful_save_does_not_auto_reopen_any_dialog(
     followed = client.get(response.headers["location"])
     assert 'var activeDialog = "";' in followed.text
     assert "Kanzlei Erfolgreich" in followed.text
+
+
+# ==========================================================================
+# Kanzlei-Defaults / Kanzlei-Einstellungen (06.10., Owner-Direktive
+# "SETTINGS -> KANZLEI FINAL UI/UX") - echte, neue FirmProfile-Felder mit
+# echten Verwendungsorten (siehe app/models/firm_profile.py).
+# ==========================================================================
+
+
+def test_kanzlei_defaults_persist_and_round_trip(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_admin(client, db_session)
+    page = client.get("/dashboard/settings?tab=kanzlei")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        "/dashboard/settings/profile/defaults",
+        data={
+            "csrf_token": csrf,
+            "matter_reference_prefix": "MP-",
+            "default_document_format": "docx",
+            "timezone": "Europe/Berlin",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "tab=kanzlei" in response.headers["location"]
+
+    profile = db_session.query(FirmProfile).one()
+    assert profile.matter_reference_prefix == "MP-"
+    assert profile.default_document_format == "docx"
+    assert profile.timezone == "Europe/Berlin"
+
+    html = client.get("/dashboard/settings?tab=kanzlei").text
+    assert "Aktenpräfix: MP-" in html
+    assert "Dokumentformat: DOCX" in html
+
+
+def test_kanzlei_defaults_rejects_invalid_document_format(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_admin(client, db_session)
+    page = client.get("/dashboard/settings?tab=kanzlei")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        "/dashboard/settings/profile/defaults",
+        data={
+            "csrf_token": csrf,
+            "matter_reference_prefix": "",
+            "default_document_format": "epub",
+            "timezone": "Europe/Berlin",
+        },
+        follow_redirects=False,
+    )
+    assert "open_dialog=kanzlei-defaults" in response.headers["location"]
+    profile = db_session.query(FirmProfile).first()
+    assert profile is None or profile.default_document_format == "pdf"
+
+
+def test_kanzlei_defaults_rejects_unsupported_timezone(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    """/no-fake-functionality: nur die eine echt unterstuetzte Zeitzone
+    darf gespeichert werden - keine vorgetaeuschte Mehrzeitzonen-
+    Unterstuetzung."""
+    _login_admin(client, db_session)
+    page = client.get("/dashboard/settings?tab=kanzlei")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        "/dashboard/settings/profile/defaults",
+        data={
+            "csrf_token": csrf,
+            "matter_reference_prefix": "",
+            "default_document_format": "pdf",
+            "timezone": "America/New_York",
+        },
+        follow_redirects=False,
+    )
+    assert "open_dialog=kanzlei-defaults" in response.headers["location"]
+
+
+def test_kanzlei_einstellungen_toggle_persists(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_admin(client, db_session)
+    page = client.get("/dashboard/settings?tab=kanzlei")
+    csrf = extract_csrf(page.text)
+
+    response = client.post(
+        "/dashboard/settings/profile/kanzlei-settings",
+        data={"csrf_token": csrf, "auto_number_new_matters": "on"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    profile = db_session.query(FirmProfile).one()
+    assert profile.auto_number_new_matters is True
+
+    html = client.get("/dashboard/settings?tab=kanzlei").text
+    assert "Akten automatisch nummerieren" in html
+
+    # Unchecked checkbox sends no field at all - must turn the toggle OFF.
+    csrf2 = extract_csrf(client.get("/dashboard/settings?tab=kanzlei").text)
+    client.post(
+        "/dashboard/settings/profile/kanzlei-settings",
+        data={"csrf_token": csrf2},
+    )
+    db_session.refresh(profile)
+    assert profile.auto_number_new_matters is False
+
+
+def test_kanzlei_defaults_and_einstellungen_panels_require_admin(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    _login_non_admin(client, db_session)
+    page = client.get("/dashboard/chat")
+    csrf = extract_csrf(page.text)
+
+    r1 = client.post(
+        "/dashboard/settings/profile/defaults",
+        data={"csrf_token": csrf, "matter_reference_prefix": "", "default_document_format": "pdf", "timezone": "Europe/Berlin"},
+    )
+    assert r1.status_code == 403
+
+    r2 = client.post(
+        "/dashboard/settings/profile/kanzlei-settings",
+        data={"csrf_token": csrf, "auto_number_new_matters": "on"},
+    )
+    assert r2.status_code == 403
