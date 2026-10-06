@@ -582,8 +582,10 @@ def test_cmd_serve_releases_lock_even_when_migration_fails(monkeypatch) -> None:
     assert released == [42]
 
 
-# --- _apply_light_title_bar (20.08., "kritischer Design-Fix": keine
-# schwarze Titelleiste mehr, siehe ARCHITECTURE.md) ---
+# --- _set_title_bar_dark_mode / _apply_title_bar_theme (20.08., "kritischer
+# Design-Fix": keine schwarze Titelleiste mehr, siehe ARCHITECTURE.md;
+# 06.10., Owner-Direktive "DARK MODE VISUAL POLISH PASS": themenbewusst
+# statt fest hell) ---
 
 
 class _FakeHandle:
@@ -599,10 +601,7 @@ class _FakeWindow:
     native = _FakeNative()
 
 
-def test_apply_light_title_bar_calls_dwm_with_correct_attributes(monkeypatch) -> None:
-    """Beweis auf Aufrufebene: DWMWA_USE_IMMERSIVE_DARK_MODE (20) wird auf 0
-    (hell) gesetzt, DWMWA_CAPTION_COLOR (35) und DWMWA_TEXT_COLOR (36) auf
-    die exakten Marken-Farbwerte aus app/web/static/css/app.css."""
+def _patch_fake_dwmapi(monkeypatch) -> list[tuple[int, int, int]]:
     calls: list[tuple[int, int, int]] = []
 
     class _FakeDwmApi:
@@ -615,9 +614,21 @@ def test_apply_light_title_bar_calls_dwm_with_correct_attributes(monkeypatch) ->
     import ctypes as ctypes_module
 
     monkeypatch.setattr(ctypes_module, "windll", type("W", (), {"dwmapi": _FakeDwmApi()})(), raising=False)
+    return calls
 
-    run._apply_light_title_bar(_FakeWindow())
 
+def test_set_title_bar_dark_mode_light_calls_dwm_with_correct_attributes(monkeypatch) -> None:
+    """Beweis auf Aufrufebene (06.10., Owner-Direktive "DARK MODE VISUAL
+    POLISH PASS" - Nachfolger von _apply_light_title_bar, jetzt
+    themenbewusst statt fest hell): is_dark=False setzt
+    DWMWA_USE_IMMERSIVE_DARK_MODE (20) auf 0 (hell), DWMWA_CAPTION_COLOR
+    (35) und DWMWA_TEXT_COLOR (36) auf die exakten HELL-Marken-Farbwerte
+    aus app/web/static/css/app.css."""
+    calls = _patch_fake_dwmapi(monkeypatch)
+
+    result = run._set_title_bar_dark_mode(_FakeWindow(), False)
+
+    assert result is True
     attributes_seen = {attr for _, attr, _ in calls}
     assert 20 in attributes_seen  # DWMWA_USE_IMMERSIVE_DARK_MODE
     assert 35 in attributes_seen  # DWMWA_CAPTION_COLOR
@@ -627,25 +638,108 @@ def test_apply_light_title_bar_calls_dwm_with_correct_attributes(monkeypatch) ->
     assert dark_mode_call == (12345, 20, 0)  # 0 = helle Titelleiste, NICHT dunkel
 
     caption_call = next(c for c in calls if c[1] == 35)
-    assert caption_call[2] == run._TITLE_BAR_CAPTION_COLORREF
+    assert caption_call[2] == run._TITLE_BAR_CAPTION_COLORREF_LIGHT
 
     text_call = next(c for c in calls if c[1] == 36)
-    assert text_call[2] == run._TITLE_BAR_TEXT_COLORREF
+    assert text_call[2] == run._TITLE_BAR_TEXT_COLORREF_LIGHT
 
 
-def test_apply_light_title_bar_never_raises_when_native_handle_missing() -> None:
+def test_set_title_bar_dark_mode_dark_calls_dwm_with_correct_attributes(monkeypatch) -> None:
+    """Gegenstueck: is_dark=True setzt DWMWA_USE_IMMERSIVE_DARK_MODE auf 1
+    (dunkel) und die DUNKEL-Marken-Farbwerte - der eigentliche, vom Owner
+    im Screenshot gefundene fehlende Fall (Anwendung dunkel, Titelleiste
+    blieb bisher IMMER hell)."""
+    calls = _patch_fake_dwmapi(monkeypatch)
+
+    result = run._set_title_bar_dark_mode(_FakeWindow(), True)
+
+    assert result is True
+    dark_mode_call = next(c for c in calls if c[1] == 20)
+    assert dark_mode_call == (12345, 20, 1)  # 1 = dunkle Titelleiste
+
+    caption_call = next(c for c in calls if c[1] == 35)
+    assert caption_call[2] == run._TITLE_BAR_CAPTION_COLORREF_DARK
+
+    text_call = next(c for c in calls if c[1] == 36)
+    assert text_call[2] == run._TITLE_BAR_TEXT_COLORREF_DARK
+
+
+def test_set_title_bar_dark_mode_never_raises_when_native_handle_missing() -> None:
     """Rein kosmetische Funktion - ein fehlendes/unerwartetes window-Objekt
     (z. B. sehr alte pywebview-Version) darf den App-Start nie gefaehrden."""
-    run._apply_light_title_bar(object())  # kein .native Attribut
-    run._apply_light_title_bar(None)
+    run._set_title_bar_dark_mode(object(), False)  # kein .native Attribut
+    run._set_title_bar_dark_mode(None, False)
+    run._set_title_bar_dark_mode(None, True)
+
+
+def test_apply_title_bar_theme_reads_persisted_ui_theme(monkeypatch) -> None:
+    """`_apply_title_bar_theme` (window.events.shown-Handler, laeuft beim
+    Programmstart) liest Settings.ui_theme und reicht den passenden
+    is_dark-Wert an `_set_title_bar_dark_mode` weiter - genau die
+    Verbindung, die zuvor fehlte (die Titelleiste wusste nichts vom
+    gewaehlten Lexono-Theme)."""
+    seen: list[tuple[object, bool]] = []
+    monkeypatch.setattr(run, "_set_title_bar_dark_mode", lambda window, is_dark: seen.append((window, is_dark)))
+
+    class _FakeSettings:
+        ui_theme = "dark"
+
+    import app.config as config_module
+
+    monkeypatch.setattr(config_module, "get_settings", lambda: _FakeSettings())
+
+    window = _FakeWindow()
+    run._apply_title_bar_theme(window)
+
+    assert seen == [(window, True)]
+
+
+def test_apply_title_bar_theme_defaults_to_light_on_error(monkeypatch) -> None:
+    """Darf den Start nie gefaehrden: schlaegt das Lesen von Settings aus
+    irgendeinem Grund fehl, faellt die Funktion auf die unveraendert
+    sichere/bestehende HELL-Darstellung zurueck statt zu crashen."""
+    seen: list[tuple[object, bool]] = []
+    monkeypatch.setattr(run, "_set_title_bar_dark_mode", lambda window, is_dark: seen.append((window, is_dark)))
+
+    import app.config as config_module
+
+    def _raise():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(config_module, "get_settings", _raise)
+
+    window = _FakeWindow()
+    run._apply_title_bar_theme(window)
+
+    assert seen == [(window, False)]
+
+
+def test_native_api_set_title_bar_dark_mode_delegates_with_own_window(monkeypatch) -> None:
+    """`_NativeApi.set_title_bar_dark_mode` (als
+    window.pywebview.api.set_title_bar_dark_mode(...) im Frontend
+    aufrufbar, siehe base.html/settings.html) - live Umschalten waehrend
+    der laufenden Sitzung, nicht nur beim Start."""
+    seen: list[tuple[object, bool]] = []
+    monkeypatch.setattr(run, "_set_title_bar_dark_mode", lambda window, is_dark: seen.append((window, is_dark)) or True)
+
+    api = run._NativeApi()
+    window = _FakeWindow()
+    api._window = window
+
+    result = api.set_title_bar_dark_mode(True)
+
+    assert result is True
+    assert seen == [(window, True)]
 
 
 def test_title_bar_colorref_constants_match_app_css_brand_colors() -> None:
     """COLORREF ist 0x00BBGGRR (umgekehrte Byte-Reihenfolge zu RGB-Hex) -
-    beweist, dass die Konstanten tatsaechlich #F8FAFC/#101828 kodieren,
-    nicht nur behauptet werden."""
-    assert run._TITLE_BAR_CAPTION_COLORREF == 0x00FCFAF8  # R=F8,G=FA,B=FC -> BB GG RR
-    assert run._TITLE_BAR_TEXT_COLORREF == 0x00281810  # R=10,G=18,B=28 -> BB GG RR
+    beweist, dass die Konstanten tatsaechlich die behaupteten Hell-/
+    Dunkel-Markenfarben aus app/web/static/css/app.css kodieren."""
+    assert run._TITLE_BAR_CAPTION_COLORREF_LIGHT == 0x00FCFAF8  # #F8FAFC
+    assert run._TITLE_BAR_TEXT_COLORREF_LIGHT == 0x00281810  # #101828
+    assert run._TITLE_BAR_CAPTION_COLORREF_DARK == 0x000C0A0A  # #0A0A0C
+    assert run._TITLE_BAR_TEXT_COLORREF_DARK == 0x00F9F5F1  # #F1F5F9
 
 
 # --- _apply_rounded_corners (native abgerundete Fensterecken, Windows 11) ---

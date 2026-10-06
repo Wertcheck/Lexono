@@ -362,43 +362,55 @@ def _release_single_instance_lock(
 
 #: COLORREF-Werte (0x00BBGGRR, umgekehrte Byte-Reihenfolge gegenueber
 #: RGB-Hex) fuer DWMWA_CAPTION_COLOR/DWMWA_TEXT_COLOR - exakt dieselben
-#: Marken-Farbwerte wie app/web/static/css/app.css: --paper-100 (#F8FAFC)
-#: und --seal-green/CI-Farbcode (#101828).
-_TITLE_BAR_CAPTION_COLORREF = 0x00FCFAF8  # #F8FAFC
-_TITLE_BAR_TEXT_COLORREF = 0x00281810  # #101828
+#: Marken-Farbwerte wie app/web/static/css/app.css: --paper-100 (#F8FAFC
+#: hell / #0A0A0C dunkel) und --seal-green/CI-Farbcode (#101828) bzw.
+#: --ink-900 dunkel (#F1F5F9) fuer den Titeltext auf dunklem Grund.
+_TITLE_BAR_CAPTION_COLORREF_LIGHT = 0x00FCFAF8  # --paper-100 hell, #F8FAFC
+_TITLE_BAR_TEXT_COLORREF_LIGHT = 0x00281810  # --seal-green, #101828
+_TITLE_BAR_CAPTION_COLORREF_DARK = 0x000C0A0A  # --paper-100 dunkel, #0A0A0C
+_TITLE_BAR_TEXT_COLORREF_DARK = 0x00F9F5F1  # --ink-900 dunkel, #F1F5F9
 
 
-def _apply_light_title_bar(window: object | None = None) -> None:
-    """Erzwingt eine HELLE native Windows-Titelleiste fuer das WebView2-
-    Fenster (20.08., "kritischer Design-Fix") - unabhaengig vom
-    System-Dark-Mode.
+def _set_title_bar_dark_mode(window: object | None, is_dark: bool) -> bool:
+    """Setzt die native Windows-Titelleiste auf hell ODER dunkel, je nach
+    `is_dark` (06.10., Owner-Direktive "DARK MODE VISUAL POLISH PASS" -
+    Nachfolger von `_apply_light_title_bar`, das die Titelleiste
+    bedingungslos IMMER hell erzwang, unabhaengig vom gewaehlten Lexono-
+    Erscheinungsbild: genau der vom Owner im Screenshot gefundene Bruch,
+    "Anwendung dunkel, Titelleiste weiterhin hell").
 
-    Hintergrund: pywebview spiegelt auf Windows automatisch den
-    System-Theme-Modus auf die Titelleiste (siehe .venv/Lib/site-packages/
-    webview/platforms/winforms.py: update_title_bar_theme/is_dark_theme,
-    per DWMWA_USE_IMMERSIVE_DARK_MODE ueber die Windows-DWM-API) - bei
-    einem Windows-Rechner im systemweiten Dunkelmodus wurde die Titelleiste
-    dadurch SCHWARZ, ein deutlicher Bruch mit dem durchgehend hellen
-    Apple-Layout der eigentlichen Anwendung. Dieselbe DWM-API (`DwmSetWindow
-    Attribute`, siehe genau dieselbe Technik im o. g. pywebview-Modul) wird
-    hier ERNEUT aufgerufen, NACHDEM pywebview seine eigene (system-
-    theme-abhaengige) Einstellung bereits gesetzt hat (`window.events.shown`
-    feuert nach der internen `update_title_bar_theme()`-Zuweisung) - das
-    ueberschreibt pywebviews Wahl bewusst und dauerhaft mit "hell".
+    Gemeinsamer Kern fuer zwei Aufrufstellen: (1) `window.events.shown`
+    beim Programmstart, mit dem zu diesem Zeitpunkt in Settings.ui_theme
+    persistierten Wert (siehe `_apply_title_bar_theme` unten), und (2)
+    `_NativeApi.set_title_bar_dark_mode`, live aus dem Frontend aufgerufen,
+    wenn der Nutzer das Theme waehrend der laufenden Sitzung umschaltet
+    (siehe base.html/settings.html) - ohne diesen zweiten Aufrufpfad bliebe
+    die Titelleiste bis zum naechsten Neustart auf dem beim Start
+    gesetzten Stand haengen.
 
-    `DWMWA_CAPTION_COLOR`/`DWMWA_TEXT_COLOR` (Attribute 35/36) setzen
-    zusaetzlich die exakte Marken-Off-White-Farbe als Titelleisten-
-    Hintergrund - nur ab Windows 11 22H2 unterstuetzt; auf aelteren
-    Windows-Versionen schlaegt der Aufruf einfach folgenlos fehl (HRESULT
-    ungleich S_OK, kein Python-Fehler), `DWMWA_USE_IMMERSIVE_DARK_MODE`
-    (Attribut 20, seit Windows 10 2004) greift als Fallback trotzdem -
-    zumindest keine schwarze Titelleiste mehr, selbst ohne exakte Farbe.
+    Dieselbe DWM-API (`DwmSetWindowAttribute`) wie zuvor, nur mit zwei
+    Wertesaetzen statt fest einem. `DWMWA_USE_IMMERSIVE_DARK_MODE`
+    (Attribut 20) ist der auf allen unterstuetzten Windows-Versionen seit
+    10 2004 wirksame Haupt-Umschalter - er laesst Windows dieselbe
+    native Hell/Dunkel-Darstellung fuer Titelleiste UND Fenster-Steuer-
+    elemente (Minimieren/Maximieren/Schliessen) anwenden, die auch andere
+    native Dark-Mode-Anwendungen (z. B. Explorer, VS Code) nutzen - die
+    Icon-Farbe der drei Buttons wird dadurch automatisch passend hell auf
+    dunklem Grund, ohne dass hier eigene Icons/Farben gesetzt werden
+    muessen (dafuer gibt es bei einem echten, nicht-frameless Fenster auch
+    keine Schnittstelle). `DWMWA_CAPTION_COLOR`/`DWMWA_TEXT_COLOR`
+    (Attribute 35/36, nur Windows 11 22H2+) setzen zusaetzlich die exakte
+    Marken-Farbe; auf aelteren Windows-Versionen schlagen nur diese beiden
+    Aufrufe folgenlos fehl (HRESULT ungleich S_OK, kein Python-Fehler),
+    Attribut 20 greift trotzdem.
 
-    Darf unter KEINEN Umstaenden den App-Start verhindern (rein kosmetisch)
-    - jeder Fehler (z. B. sehr alte Windows-Version, dwmapi fehlt) wird
-    daher verschluckt, analog zu allen anderen "darf nie hart fehlschlagen"
-    Diagnose-/Komfortfunktionen in diesem Projekt (siehe z. B.
-    app/updater/checker.py)."""
+    Darf unter KEINEN Umstaenden die Anwendung zum Absturz bringen (rein
+    kosmetisch) - jeder Fehler (kein natives Fenster, sehr alte Windows-
+    Version, dwmapi fehlt) wird daher verschluckt, genau wie zuvor bei
+    `_apply_light_title_bar`. Gibt zurueck, ob der Aufruf versucht wurde
+    (fuer die JS-Bruecke, rein informativ - niemals selbst fehlschlagend)."""
+    if window is None:
+        return False
     try:
         import ctypes
 
@@ -408,11 +420,36 @@ def _apply_light_title_bar(window: object | None = None) -> None:
         def _set(attribute: int, value: int) -> None:
             dwmapi.DwmSetWindowAttribute(hwnd, attribute, ctypes.byref(ctypes.c_int(value)), 4)
 
-        _set(20, 0)  # DWMWA_USE_IMMERSIVE_DARK_MODE = aus -> helle Titelleiste
-        _set(35, _TITLE_BAR_CAPTION_COLORREF)  # DWMWA_CAPTION_COLOR
-        _set(36, _TITLE_BAR_TEXT_COLORREF)  # DWMWA_TEXT_COLOR
+        _set(20, 1 if is_dark else 0)  # DWMWA_USE_IMMERSIVE_DARK_MODE
+        _set(
+            35,
+            _TITLE_BAR_CAPTION_COLORREF_DARK if is_dark else _TITLE_BAR_CAPTION_COLORREF_LIGHT,
+        )  # DWMWA_CAPTION_COLOR
+        _set(
+            36,
+            _TITLE_BAR_TEXT_COLORREF_DARK if is_dark else _TITLE_BAR_TEXT_COLORREF_LIGHT,
+        )  # DWMWA_TEXT_COLOR
     except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
         pass
+    return True
+
+
+def _apply_title_bar_theme(window: object | None = None) -> None:
+    """`window.events.shown`-Handler: liest das beim Programmstart bereits
+    persistierte Settings.ui_theme und setzt die native Titelleiste
+    entsprechend (siehe `_set_title_bar_dark_mode` fuer die volle
+    Begruendung). Laeuft NACH pywebviews eigener, system-theme-abhaengiger
+    Einstellung (`window.events.shown` feuert nach dessen interner
+    `update_title_bar_theme()`-Zuweisung) - ueberschreibt dessen Wahl
+    bewusst und dauerhaft mit dem tatsaechlich in Lexono gewaehlten
+    Erscheinungsbild, unabhaengig vom System-Dark-Mode des Rechners."""
+    try:
+        from app.config import get_settings
+
+        is_dark = get_settings().ui_theme == "dark"
+    except Exception:  # noqa: BLE001 - rein kosmetisch, darf den Start nie gefaehrden
+        is_dark = False
+    _set_title_bar_dark_mode(window, is_dark)
 
 
 #: DWMWA_WINDOW_CORNER_PREFERENCE (Windows 11, Build 22000+) - macht die
@@ -626,6 +663,20 @@ class _NativeApi:
         except OSError:
             return False
         return True
+
+    def set_title_bar_dark_mode(self, is_dark: bool) -> bool:
+        """Live-Umschalten der nativen Titelleiste, aufgerufen als
+        `window.pywebview.api.set_title_bar_dark_mode(...)` (06.10.,
+        Owner-Direktive "DARK MODE VISUAL POLISH PASS") - wird gebraucht,
+        weil `_apply_title_bar_theme` (siehe dort) nur EINMAL beim
+        Fensterstart laeuft: ohne diese Bruecke bliebe die Titelleiste bis
+        zum naechsten Neustart auf dem beim Start gesetzten Stand haengen,
+        selbst wenn der Nutzer waehrend der laufenden Sitzung ueber
+        Einstellungen -> Design umschaltet (siehe base.html/settings.html
+        fuer die Aufrufstellen). Rein kosmetisch, siehe
+        `_set_title_bar_dark_mode` fuer die volle Begruendung inkl.
+        Fehlerbehandlung."""
+        return _set_title_bar_dark_mode(self._window, is_dark)
 
     # Frueher (Masterprompt V2, Task #61): vier JS-aufrufbare Methoden
     # (minimize_window/close_window/move_window_by/resize_window_by), die
@@ -856,10 +907,12 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
     )
     native_api._window = window
     # Alle drei Funktionen sind rein kosmetisch und unabhaengig voneinander
-    # (siehe deren eigene try/except-Bloecke) - _apply_light_title_bar
-    # ist seit dem Rueckbau von frameless=True wieder wirksam (echte
-    # native Titelleiste vorhanden).
-    window.events.shown += _apply_light_title_bar
+    # (siehe deren eigene try/except-Bloecke) - _apply_title_bar_theme
+    # (06.10., vormals _apply_light_title_bar - siehe dessen Nachfolger-
+    # Kommentar: jetzt themenbewusst statt fest hell) ist seit dem
+    # Rueckbau von frameless=True wieder wirksam (echte native Titel-
+    # leiste vorhanden).
+    window.events.shown += _apply_title_bar_theme
     window.events.shown += _apply_rounded_corners
     window.events.shown += _remove_title_bar_icon
     # Blockiert im Hauptthread, bis der Nutzer das Fenster schließt.

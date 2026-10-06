@@ -13,8 +13,8 @@
      (siehe settings_router.py). #}
   <script>
     (function () {
+      var serverTheme = "{{ 'dark' if ui_theme == 'dark' else 'light' }}";
       try {
-        var serverTheme = "{{ 'dark' if ui_theme == 'dark' else 'light' }}";
         localStorage.setItem("lexono_theme", serverTheme);
         if (serverTheme === "dark") {
           document.documentElement.setAttribute("data-theme", "dark");
@@ -22,6 +22,13 @@
           document.documentElement.removeAttribute("data-theme");
         }
       } catch (e) {}
+      // Native Titelleiste mit demselben autoritativen Server-Wert
+      // synchron halten (06.10., Owner-Direktive "DARK MODE VISUAL POLISH
+      // PASS") - derselbe Selbstheilungs-Gedanke wie oben fuer data-theme/
+      // localStorage, nur fuer das native Fenster statt die Webseite.
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.set_title_bar_dark_mode) {
+        window.pywebview.api.set_title_bar_dark_mode(serverTheme === "dark");
+      }
     })();
   </script>
   {# Referenz-getriebener Rebuild (06.10., Owner-Direktive "LEXONO -
@@ -100,9 +107,12 @@
                  Muster). `.form.requestSubmit()` persistiert den Wert
                  danach wie gehabt serverseitig ueber Settings.ui_theme
                  (.env), die eigentliche Quelle der Wahrheit fuer
-                 Reload/Neustart. #}
+                 Reload/Neustart. Zusaetzlich (06.10., Owner-Direktive
+                 "DARK MODE VISUAL POLISH PASS") dieselbe sofortige
+                 Rueckmeldung auch fuer die native Titelleiste, mit
+                 derselben Feature-Detection wie im Seiten-Ladeskript oben. #}
               <select name="ui_theme" class="settings-select"
-                      onchange="document.documentElement.setAttribute('data-theme', this.value); try { localStorage.setItem('lexono_theme', this.value); } catch (e) {} this.form.requestSubmit();">
+                      onchange="document.documentElement.setAttribute('data-theme', this.value); try { localStorage.setItem('lexono_theme', this.value); } catch (e) {} if (window.pywebview &amp;&amp; window.pywebview.api &amp;&amp; window.pywebview.api.set_title_bar_dark_mode) { window.pywebview.api.set_title_bar_dark_mode(this.value === 'dark'); } this.form.requestSubmit();">
                 <option value="light" {% if ui_theme != 'dark' %}selected{% endif %}>Hell (Standard)</option>
                 <option value="dark" {% if ui_theme == 'dark' %}selected{% endif %}>Dunkel</option>
               </select>

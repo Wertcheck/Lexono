@@ -530,6 +530,26 @@ body.has-app-titlebar .app-titlebar {
   display: block;
   height: 32px;
   width: auto;
+  /* Dark-Mode-Politur (06.10., Owner-Direktive "DARK MODE VISUAL POLISH
+     PASS"): das vorhandene Asset selbst (assets/branding/Lexono-Logo Dark
+     Mode.png, unveraendert weiterverwendet) ist eine opake RGB-PNG OHNE
+     Alpha-Kanal (per PIL verifiziert: mode "RGB", Eckpixel exakt
+     RGB(0,0,0)) - "transparent machen" ist auf Pixel-Ebene technisch nicht
+     moeglich, ohne die Datei selbst neu zu zeichnen (ausdruecklich
+     verboten). `mix-blend-mode: screen` ist dafuer die fachlich korrekte,
+     verlustfreie Loesung genau fuer DIESEN Fall (reines Schwarz als
+     "Passepartout" vor einem dunklen, aber nicht reinschwarzen Seiten-
+     hintergrund): Screen-Blending macht jedes reine Schwarz-Pixel exakt
+     zur darunterliegenden Hintergrundfarbe (mathematisch: screen(0, bg) =
+     bg), waehrend die hellen Logo-Pixel (gruenes Icon, weisse Wortmarke)
+     sichtbar erhalten bleiben, nur geringfuegig aufgehellt - kein
+     Bildverlust, keine Farbverfaelschung, keine Verzerrung. Setzt
+     voraus, dass unmittelbar hinter dem Bild eine FLAECHIGE, unver-
+     mischte Hintergrundfarbe liegt (hier: `.global-header` mit
+     `background: var(--paper-000)`, keine Ueberlappung mit anderen
+     Elementen) - sonst koennte der Screen-Blend mit dem falschen
+     Untergrund mischen. */
+  mix-blend-mode: screen;
 }
 
 html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--light {
@@ -7866,6 +7886,70 @@ body::-webkit-scrollbar-thumb:hover,
   background: var(--accent-orange-tint);
 }
 
+/* Dezentes Hervorheben beim Hover (06.10., Owner-Direktive "DARK MODE
+   VISUAL POLISH PASS") - ersetzt NUR fuer die grossen Karten-Kacheln die
+   generische `.chat-quick-action:hover`-Randfarbe `--seal-green` (im Dark
+   Mode blaugrau, siehe Kommentar bei `.chat-composer__row:focus-within`
+   oben - auf den jetzt farbig getoenten Karten noch unpassender als
+   ohnehin schon), mit einem staerkeren Schatten statt einer zusaetzlichen
+   Randfarbe - kein Farbwechsel, kein Glow, keine Animation, gilt
+   unveraendert in beiden Themes. */
+.chat-quick-action--card:hover {
+  border-color: transparent;
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Dark-Mode-Oberflaechen der vier Start-Kacheln (06.10., Owner-Direktive
+   "DARK MODE VISUAL POLISH PASS"): die regulaeren Dark-Mode-Werte dieser
+   Tint-Token (`:root[data-theme="dark"]` oben, z. B. `--accent-blue-tint:
+   #1c2a3f`) sind bewusst GEDAECKT/dunkel - passend fuer die vielen
+   KLEINEN Verwendungen derselben Token (Mandanten-Avatare, Icon-Badges in
+   Tabellen/Listen, siehe deren jeweils eigene, unveraenderte Text-Paarung
+   mit der jeweiligen Akzentfarbe selbst statt --ink-900/-500), aber zu
+   schwer/"gedrueckt" fuer diese vier GROSSEN, prominenten Start-Kacheln.
+   Lokale Neuverankerung (exakt dasselbe Architekturmuster wie die
+   Dokumentisolation weiter oben: `.document-page { --paper-000: #fff; ... }`)
+   statt einer globalen Token-Aenderung - betrifft NUR diese Kacheln, lässt
+   Avatare/Badges/`--compact`-Variante unangetastet (Entscheidungsregel:
+   "nur eine Komponentengruppe betroffen -> keine globale Aenderung").
+   Werte sind bewusst exakt die BEREITS VORHANDENEN Light-Mode-Werte
+   derselben Token (kein neu erfundener Farbwert) - dieselbe Logik wie bei
+   den Dokumentflaechen: eine helle, einladende Flaeche bleibt in beiden
+   Themes hell, unabhaengig vom Anwendungs-Theme. Weil die Flaeche damit
+   wieder hell ist, muessen Titel/Untertitel (vererben --ink-900/--ink-500
+   von hier) ebenfalls auf die helle, dunkle Schrift zurueckfallen - sonst
+   waere der im Dark Mode helle --ink-900-Text auf hellem Grund unlesbar. */
+:root[data-theme="dark"] .chat-quick-action--card {
+  --ink-900: #0f172a;
+  --ink-500: #64748b;
+}
+
+:root[data-theme="dark"] .chat-quick-action--tint-green {
+  --brand-green-tint: #dcfce7;
+}
+
+:root[data-theme="dark"] .chat-quick-action--tint-blue {
+  --accent-blue-tint: #e8eef7;
+  /* Icon-Glyphenfarbe lokal mitgefuehrt: die allgemeine Dark-Mode-
+     Entsprechung (--accent-blue: #6f9ae0, siehe :root[data-theme="dark"]
+     oben) ist bewusst HELL gewaehlt fuer Kontrast auf DUNKLEM Grund -
+     genau umgekehrt zu dem, was auf dieser jetzt hellen Kartenflaeche
+     noetig ist. Derselbe, bereits vorhandene Light-Mode-Wert wie bei
+     --accent-blue-tint oben - konsistent kraeftiger als die Kachelflaeche,
+     aber weiterhin gut lesbar. */
+  --accent-blue: #2f5aa8;
+}
+
+:root[data-theme="dark"] .chat-quick-action--tint-purple {
+  --accent-purple-tint: #efe9f5;
+  --accent-purple: #6b4e9e;
+}
+
+:root[data-theme="dark"] .chat-quick-action--tint-orange {
+  --accent-orange-tint: #f6ebdf;
+  --accent-orange: #b5651d;
+}
+
 /* Kopfzeile der Chat-Startansicht mit "Standard-Prompts bearbeiten"
    (Referenzbild, 01.09.) - Begruessung bleibt fuer sich zentriert lesbar,
    der Button sitzt rechts daneben auf gleicher Hoehe. */
@@ -8559,6 +8643,21 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-composer__row:focus-within {
   border-color: var(--seal-green);
   box-shadow: var(--shadow-elevated);
+}
+
+/* Dark-Mode-Politur (06.10., Owner-Direktive "DARK MODE VISUAL POLISH
+   PASS"): `--seal-green` ist im Dark Mode bewusst ein sichtbares
+   Blaugrau (#5b7fc4, siehe dessen eigener Kommentar im
+   `:root[data-theme="dark"]`-Block - auf dunklem Grund sichtbar bleiben
+   muss), wirkt als Fokus-Umrandung ausgerechnet der zentralen Chat-
+   Eingabe aber wie eine dominante blaue Linie, die nicht zur Gruen-
+   Markenwelt passt. Bewusst NUR hier ueberschrieben (nicht `--seal-green`
+   selbst global geaendert - 80+ andere Stellen nutzen dieses Token
+   weiterhin unveraendert als Akzentfarbe) - ein neutraler, heller
+   Grauton, der auf dunklem Grund weiterhin klar als Fokus-Zustand
+   erkennbar bleibt, ohne eine neue, dominante Farbe einzufuehren. */
+:root[data-theme="dark"] .chat-composer__row:focus-within {
+  border-color: var(--ink-500);
 }
 
 .chat-composer__input {

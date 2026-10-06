@@ -90,12 +90,30 @@
      in denselben localStorage-Schluessel zurueck (siehe settings.html). #}
   <script>
     (function () {
+      var isDark = false;
       try {
-        var theme = localStorage.getItem("lexono_theme");
-        if (theme === "dark") {
+        isDark = localStorage.getItem("lexono_theme") === "dark";
+        if (isDark) {
           document.documentElement.setAttribute("data-theme", "dark");
         }
       } catch (e) {}
+      // Native Windows-Titelleiste synchron mitfuehren (06.10., Owner-
+      // Direktive "DARK MODE VISUAL POLISH PASS") - laeuft bei JEDER
+      // Seitennavigation, nicht nur auf der Einstellungsseite: das native
+      // Fenster hat nur EINE Titelleiste fuer die gesamte Sitzung, dieser
+      // wiederholte Aufruf ist reine Idempotenz-Absicherung (z. B. nach
+      // einem Reload), kein zusaetzlicher Zustand. Feature-Detection nach
+      // demselben, bereits etablierten Muster wie "Ordner auswaehlen"/
+      // "Speicherort oeffnen" in settings.html - im reinen Browser-/
+      // --no-window-Modus existiert window.pywebview nicht, dann passiert
+      // hier einfach nichts (keine Fehlerbehandlung noetig).
+      function syncTitleBarTheme() {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.set_title_bar_dark_mode) {
+          window.pywebview.api.set_title_bar_dark_mode(isDark);
+        }
+      }
+      syncTitleBarTheme();
+      window.addEventListener("pywebviewready", syncTitleBarTheme);
     })();
   </script>
   <div class="app-viewport">
