@@ -231,6 +231,136 @@ def test_deadline_without_document_links_to_the_matter_overview(
     assert f'href="/dashboard/matters/{matter.id}"' in response.text
 
 
+# --- ECHTER FUND (07.10., Owner-Direktive "AUFGABEN & FRISTEN -
+# REFERENZABGLEICH"): die Referenzgrafik zeigt je verknuepftem Dokument
+# Icon + Dateiname + Datum + Dateigroesse + Kontextmenue (Oeffnen/
+# Herunterladen) - bisher fehlten Dateigroesse und Kontextmenue komplett. ---
+def test_linked_document_card_shows_real_file_size_and_context_menu(
+    client: TestClient, db_session: Session, tmp_path
+) -> None:
+    """Dateigroesse wird ECHT vom Dateisystem gelesen (app/documents/
+    rendering.py::document_file_size_label, bereits anderswo etabliert -
+    siehe dortiger Kommentar in app/web/clients_router.py), kein erfundener
+    Wert. Das Kontextmenue verlinkt NUR auf bereits bestehende, echte
+    Routen (Ansicht + Download aus app/web/matters_router.py)."""
+    from datetime import date, timedelta
+
+    from app.models import Document
+
+    real_file = tmp_path / "steuerbescheid.pdf"
+    real_file.write_bytes(b"x" * 2048)  # exakt 2 KB, deterministisch pruefbar
+
+    matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    document = Document(
+        matter_id=matter.id,
+        file_path=str(real_file),
+        original_filename="steuerbescheid.pdf",
+    )
+    db_session.add(document)
+    db_session.flush()
+    deadline.document_id = document.id
+    db_session.commit()
+    login_as_admin(db_session, client)
+
+    response = client.get(
+        "/dashboard/tasks", params={"selected": deadline.id, "selected_type": "deadline"}
+    )
+
+    assert response.status_code == 200
+    assert "2 KB" in response.text
+    assert f'/dashboard/matters/{matter.id}/document/{document.id}/download' in response.text
+    assert "file-format-icon--pdf" in response.text
+
+
+def test_linked_document_card_degrades_gracefully_when_file_is_missing(
+    client: TestClient, db_session: Session
+) -> None:
+    """Fehlt die echte Datei (verschoben/geloescht), wird ehrlich '–'
+    gezeigt statt eines erfundenen/geschaetzten Werts - Seite darf dabei
+    nicht fehlschlagen."""
+    from datetime import date, timedelta
+
+    from app.models import Document
+
+    matter, deadline = _matter_with_deadline(
+        db_session, due_date=date.today() + timedelta(days=14)
+    )
+    document = Document(
+        matter_id=matter.id,
+        file_path="/nicht/vorhanden/steuerbescheid.pdf",
+        original_filename="steuerbescheid.pdf",
+    )
+    db_session.add(document)
+    db_session.flush()
+    deadline.document_id = document.id
+    db_session.commit()
+    login_as_admin(db_session, client)
+
+    response = client.get(
+        "/dashboard/tasks", params={"selected": deadline.id, "selected_type": "deadline"}
+    )
+
+    assert response.status_code == 200
+
+
+def test_page_heading_uses_the_scoped_brand_navy_modifier_class(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (07.10.): die Referenzgrafik zeigt die Seitenueberschrift
+    in einem kraeftigen Markennavy statt im App-weiten Standard-Dunkelton.
+    Nur ueber eine eigene, auf dieser Seite einzigartige Modifier-Klasse
+    umgesetzt (`.topbar__title--brand-navy`) - `.topbar__title` selbst
+    (von Mandanten/Akten/Posteingang/Schriftsatz-Editor geteilt) bleibt
+    textuell unveraendert, siehe test_other_pages_keep_the_default_dark_
+    heading_color unten fuer die Regressions-Gegenprobe."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert response.status_code == 200
+    assert 'class="topbar__title topbar__title--brand-navy"' in response.text
+
+
+def test_tasks_table_header_css_is_scoped_and_not_shouting_uppercase(
+    client: TestClient, db_session: Session
+) -> None:
+    """Referenzgrafik zeigt die Tabellenkopfzeile in normaler Gross-/
+    Kleinschreibung - nur fuer `.tasks-table th` ueberschrieben (nicht das
+    app-weit geteilte `.draft-table th`, siehe dortiger Kommentar in
+    app.css)."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/static/css/app.css")
+
+    assert response.status_code == 200
+    css = response.text
+    start = css.index(".tasks-table th {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "text-transform: none;" in block
+    # Gegenprobe: das app-weit geteilte Original bleibt unveraendert uppercase.
+    shared_start = css.index(".draft-table th {")
+    shared_end = css.index("}", shared_start)
+    assert "text-transform: uppercase;" in css[shared_start:shared_end]
+
+
+def test_other_pages_keep_the_default_dark_heading_color(
+    client: TestClient, db_session: Session
+) -> None:
+    """Regressions-Gegenprobe: Mandanten/Akten/Posteingang duerfen durch die
+    Aufgaben-&-Fristen-spezifische Markenfarbe NICHT beeinflusst werden -
+    ihr `.topbar__title` traegt weiterhin KEINE `--brand-navy`-Modifier-
+    Klasse."""
+    login_as_admin(db_session, client)
+
+    for path in ("/dashboard/matters", "/dashboard/clients"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert "topbar__title--brand-navy" not in response.text
+
+
 def test_page_lists_detected_deadlines(client: TestClient, db_session: Session) -> None:
     from datetime import date, timedelta
 

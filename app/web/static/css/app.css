@@ -5801,12 +5801,41 @@ body::-webkit-scrollbar-thumb:hover,
   gap: 8px;
 }
 
+/* ECHTE MARKENFARBE (07.10., Owner-Direktive "AUFGABEN & FRISTEN -
+   REFERENZABGLEICH"): die Referenzgrafik (assets/ux-ui/18_aufgaben und
+   fristen.png) zeigt sowohl die Seitenueberschrift als auch den
+   Detailpanel-Titel in einem kraeftigen Indigo/Navyblau statt im
+   Standard-Dunkelton. Per Pixel-Messung GEGEN DIE REFERENZGRAFIK
+   ermittelt: ~#100f9e/#191ab1 (sehr gesaettigt). Per Pixel-Messung GEGEN
+   DAS ECHTE LOGO (assets/branding/lexono-logo.png, Wortmarke-Farbe)
+   ermittelt: ~#0a2039/#0a2140 (gedeckter, weniger gesaettigt). Owner-
+   Direktive §reference_priority: "echtes Branding" steht ausdruecklich
+   VOR "Referenzbild" - deshalb die aus dem ECHTEN Logo gemessene Farbe
+   verwendet, nicht die (vermutlich kuenstlich saturierte) Mockup-Farbe.
+   Nur lokal auf dieser Seite gesetzt (siehe `.topbar__title--brand-navy`
+   unten) - `.topbar__title` selbst (von Mandanten/Akten/Posteingang/
+   Schriftsatz-Editor geteilt) bleibt unveraendert `--ink-900`. */
 .task-detail-panel__title {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
-  color: var(--ink-900);
+  color: #0a2140;
   margin: 0;
+}
+
+:root[data-theme="dark"] .task-detail-panel__title {
+  /* Dunkelmodus: das kraeftige Navy auf dunklem Grund waere kaum lesbar -
+     faellt auf denselben hellen Dunkelmodus-Ton wie ueberall sonst
+     zurueck (keine neue Dark-Mode-Farbe erfunden). */
+  color: var(--ink-900);
+}
+
+.topbar__title--brand-navy {
+  color: #0a2140;
+}
+
+:root[data-theme="dark"] .topbar__title--brand-navy {
+  color: var(--ink-900);
 }
 
 .task-detail-panel__meta {
@@ -5888,6 +5917,22 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 12.5px;
 }
 
+/* Referenzabgleich (07.10.): eigene Kontextgroesse fuer das Dateityp-Icon
+   in dieser Karte, demselben etablierten Muster folgend wie
+   `.attachment-card .file-format-icon` usw. (siehe dortiger Kommentar). */
+.task-detail-panel__document .file-format-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.task-detail-panel__document-link {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
 .task-detail-panel__document-name {
   display: block;
   color: var(--ink-900);
@@ -5922,6 +5967,22 @@ body::-webkit-scrollbar-thumb:hover,
 
 .tasks-table {
   table-layout: fixed;
+}
+
+/* ECHTE TYPOGRAFIE-ABWEICHUNG (07.10., Owner-Direktive "AUFGABEN &
+   FRISTEN - REFERENZABGLEICH"): die Referenzgrafik zeigt die
+   Tabellenkopfzeile ("Titel"/"Typ"/"Akte"/...) in normaler Groß-/
+   Kleinschreibung mit regulaerer Schrift, nicht in der App-weiten
+   GROSSBUCHSTABEN-Monospace-Optik (`.draft-table th`, von ~14 anderen
+   Seiten geteilt - siehe dortiger Kommentar, bewusst NICHT global
+   geaendert). Nur fuer die Tasks-eigene `.tasks-table` ueberschrieben,
+   jede andere Tabelle im Produkt bleibt unveraendert. */
+.tasks-table th {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .tasks-table td {

@@ -25,7 +25,7 @@
     <div class="topbar__icon-row">
       <span class="topbar__icon">{{ icons.calendar_check(class_="icon") }}</span>
       <div class="topbar__heading">
-        <h1 class="topbar__title">Aufgaben &amp; Fristen</h1>
+        <h1 class="topbar__title topbar__title--brand-navy">Aufgaben &amp; Fristen</h1>
         <p class="topbar__subtitle">Alle offenen und erledigten Aufgaben, Fristen und Termine</p>
       </div>
       <div class="topbar__actions">
@@ -488,16 +488,38 @@
 
           <div class="tab-panel" id="tab-task-dokumente" hidden>
             {% if item.document %}
-              {# Direktlink auf das erkennende Dokument (17.09., bereits
-                 bestehende, unveraendert uebernommene Funktion - siehe
-                 Modul-Docstring tasks_router.py zur Herleitung). #}
-              <a href="/dashboard/matters/{{ item.matter.id }}/document/{{ item.document.id }}" class="task-detail-panel__document" style="text-decoration: none; color: inherit;">
-                {{ icons.document(class_="icon") }}
-                <span>
+              {# Referenzabgleich (07.10., Owner-Direktive "AUFGABEN & FRISTEN
+                 - REFERENZABGLEICH"): die Referenz zeigt je Dokument Icon +
+                 Dateiname + Datum + Dateigroesse + Kontextmenue. Dateityp-Icon
+                 ueber dasselbe app-weit einzige Makro wie Posteingang/Akten/
+                 Mandantendetail (`icons.file_type_badge`, siehe _icons.html).
+                 Dateigroesse ueber denselben bestehenden Helfer wie die
+                 Mandanten-Detailseite (app/documents/rendering.py::
+                 document_file_size_label, via tasks_router.py::
+                 _selected_item_context vorberechnet - `item.document_size`).
+                 Kontextmenue mit AUSSCHLIESSLICH echten, bereits bestehenden
+                 Routen (Ansicht/Download, app/web/matters_router.py) - kein
+                 erfundener Menuepunkt. #}
+              <div class="task-detail-panel__document">
+                {{ icons.file_type_badge(item.document.file_path, class_="file-format-icon") }}
+                <a href="/dashboard/matters/{{ item.matter.id }}/document/{{ item.document.id }}" class="task-detail-panel__document-link">
                   <span class="task-detail-panel__document-name">{{ item.document.original_filename or "Dokument" }}</span>
-                  <span class="task-detail-panel__document-meta">{{ item.document.created_at.strftime("%d.%m.%Y, %H:%M") }}</span>
-                </span>
-              </a>
+                  <span class="task-detail-panel__document-meta">{{ item.document.created_at.strftime("%d.%m.%Y, %H:%M") }}{% if item.document_size %} · {{ item.document_size }}{% endif %}</span>
+                </a>
+                <div class="split-button" onclick="event.stopPropagation();">
+                  <button type="button" class="row-menu__trigger" aria-label="Weitere Aktionen" onclick="Lexono.toggleRowMenu(this)">
+                    {{ icons.dots_vertical(class_="icon") }}
+                  </button>
+                  <div class="row-menu" hidden>
+                    <a href="/dashboard/matters/{{ item.matter.id }}/document/{{ item.document.id }}" class="row-menu__item">
+                      {{ icons.eye(class_="icon") }} Öffnen
+                    </a>
+                    <a href="/dashboard/matters/{{ item.matter.id }}/document/{{ item.document.id }}/download" class="row-menu__item">
+                      {{ icons.download(class_="icon") }} Herunterladen
+                    </a>
+                  </div>
+                </div>
+              </div>
             {% else %}
               <p class="task-detail-panel__description">Keine verknüpften Dokumente.</p>
             {% endif %}

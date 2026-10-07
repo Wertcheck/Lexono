@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_or_404
 from app.auth.permissions import require_login, require_role
 from app.db.session import get_db
+from app.documents.rendering import document_file_size_label
 from app.models import AuditEvent, Deadline, Document, Matter, Task, User
 from app.tasks.service import (
     ITEM_TYPES,
@@ -154,6 +155,7 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
             "created_by": _created_by_label(created_event),
             "created_at": task.created_at,
             "document": None,
+            "document_size": None,
             "task": task,
             "deadline": None,
             "audit_events": _audit_trail(db, entity_type="Task", entity_id=task.id),
@@ -177,6 +179,13 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
             "created_by": _created_by_label(created_event),
             "created_at": deadline.created_at,
             "document": document,
+            # ECHTE DATEIGROESSE (07.10., Owner-Direktive "AUFGABEN & FRISTEN
+            # - REFERENZABGLEICH"): wiederverwendet exakt denselben, bereits
+            # bestehenden Helfer wie die Mandanten-Detailseite/Chat-
+            # Dokumentvorschau (app/documents/rendering.py::
+            # document_file_size_label) - liest die ECHTE Dateigroesse vom
+            # Dateisystem, KEIN neues Datenbankfeld/keine Migration noetig.
+            "document_size": document_file_size_label(document.file_path) if document else None,
             "task": None,
             "deadline": deadline,
             "audit_events": _audit_trail(db, entity_type="Deadline", entity_id=deadline.id),
