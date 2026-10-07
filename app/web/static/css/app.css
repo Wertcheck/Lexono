@@ -523,52 +523,24 @@ body.has-app-titlebar .app-titlebar {
   flex-shrink: 0;
 }
 
-/* Theme-bewusste Logo-Auswahl (Owner-Direktive "DARK APPLICATION + WHITE
-   DOCUMENT", 06.10.): reiner CSS-Umschalter zwischen zwei bereits
-   vorhandenen, unveraenderten Bild-Assets - KEIN Farbwechsel per CSS auf
-   demselben Bild. Light bleibt der unveraenderte Ist-Zustand (Icon +
-   separate Wortmarke `.sidebar__brand-text`, deren Farbe ohnehin schon
-   automatisch ueber `--ink-900` mitwechselt). Im ausgeklappten Dark Mode
-   ersetzt stattdessen die vollstaendige, bereits vorhandene dunkle
-   Logo-Datei (Icon+Wortmarke in einem Bild) beides gemeinsam - siehe
-   base.html fuer die beiden `<img>`-Elemente. Im EINGEKLAPPTEN Zustand
-   bleibt bewusst das bestehende Icon sichtbar (auch in Dark Mode): sein
-   deckendes Markengruen mit weissen Innenlinien hat bereits auf dunklem
-   Grund ausreichend Kontrast, waehrend die volle Logo-Datei (Querformat,
-   Volltext "Lexono") in die auf 68px geschrumpfte Kopfzeilen-Spalte nicht
-   mehr sinnvoll passen wuerde. */
-.sidebar__brand-logo--dark {
-  display: none;
-}
-
-:root[data-theme="dark"] .sidebar__brand-logo--light,
-:root[data-theme="dark"] .sidebar__brand-text {
-  display: none;
-}
-
-:root[data-theme="dark"] .sidebar__brand-logo--dark {
-  display: block;
-  height: 32px;
-  width: auto;
-  /* ECHTER FUND behoben (07.10., Owner-Direktive "TAGESABSCHLUSS" /LOGO):
-     das vorherige `mix-blend-mode: screen` (siehe Git-Historie) war ein
-     Workaround dafuer, dass assets/branding/Lexono-Logo Dark Mode.png
-     eine opake RGB-PNG OHNE Alpha-Kanal war (reines Schwarz als
-     "Passepartout"). Die Datei hat jetzt einen ECHTEN Alpha-Kanal (per
-     PIL verifiziert, deterministisch aus denselben Original-Pixeln
-     zurueckgerechnet - keine neu gezeichnete/KI-generierte Version,
-     siehe assets/branding/-Kommentar an der Quelle) - der Blend-Mode-
-     Workaround ist damit ueberfluessig und wuerde echte halbtransparente
-     Kantenpixel jetzt sogar falsch aufhellen, deshalb entfernt. */
-}
-
-html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--light {
-  display: block;
-}
-
-html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--dark {
-  display: none;
-}
+/* ECHTER FUND behoben (07.10., Owner-Direktive "LEXONO-LOGO DARK MODE
+   EXAKTE KONSTRUKTION"): Dark Mode tauschte bisher per CSS-Umschalter auf
+   eine SEPARATE, flach exportierte Logo-Datei (Icon+Wortmarke als ein
+   Bild) - live nachgemessen (getBoundingClientRect): das ergab eine
+   andere Render-Groesse (32px statt 38px Icon-Hoehe) UND eine leicht
+   andere Icon/Wortmarke-Relation als in Light Mode, da es zwei
+   UNABHAENGIG exportierte Dateien waren, keine wirklich gemeinsame
+   Konstruktion. Jetzt bleibt `.sidebar__brand-logo--light` (dasselbe
+   Icon-Asset wie Light Mode) UND `.sidebar__brand-text` (dieselbe
+   Live-Wortmarke) in BEIDEN Themes sichtbar - garantiert identische
+   Konstruktion/Groesse/Abstaende, da es buchstaeblich dieselbe Markup-/
+   CSS-Instanz ist. Nur die Textfarbe wechselt (siehe
+   `.sidebar__brand-text` Dark-Mode-Regel unten) - exakt "ausschliesslich
+   der Schriftzug wird auf Weiss geaendert". Im eingeklappten Zustand
+   bleibt wie bisher nur das Icon sichtbar (ueber die bereits bestehende,
+   themeunabhaengige `html.sidebar-collapsed .sidebar__brand-text`-
+   Ausblendregel weiter unten - hier KEINE eigene Dark-Mode-Sonderregel
+   mehr noetig). */
 
 .sidebar__brand-sub {
   padding: 0 24px 28px;
@@ -580,6 +552,19 @@ html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--dark {
 
 .sidebar__brand-text {
   flex: 1;
+}
+
+/* Ausschliesslich die Textfarbe wechselt im Dark Mode (07.10., Owner-
+   Direktive "LEXONO-LOGO DARK MODE EXAKTE KONSTRUKTION") - bewusst ein
+   expliziter, reiner Weiss-Wert statt des allgemeinen `--ink-900`-Tokens
+   (dessen Dark-Mode-Wert `#f1f5f9` ein fuer normalen Fliesstext gedachtes
+   Offwhite ist, keine bewusste Markenfarb-Entscheidung) - die Direktive
+   verlangt ausdruecklich einen WEISSEN Schriftzug, keinen "fast weissen".
+   Schriftart/-groesse/-staerke/Position/Abstaende bleiben unangetastet
+   (`.global-header__brand` bzw. `.sidebar__brand-text` selbst setzen
+   nichts davon dark-mode-abhaengig). */
+:root[data-theme="dark"] .sidebar__brand-text {
+  color: #ffffff;
 }
 
 /* Sidebar-Einklapp-Handle (07.10., Owner-Direktive "SIDEBAR-COLLAPSE-

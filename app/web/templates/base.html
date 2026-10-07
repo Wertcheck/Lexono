@@ -144,19 +144,28 @@
          referenzwidrige Platzierung. #}
       <header class="global-header">
         <div class="global-header__brand">
-          {# Theme-bewusste Logo-Auswahl (Owner-Direktive "DARK APPLICATION +
-             WHITE DOCUMENT", 06.10.): im eingeklappten Zustand bleibt in
-             BEIDEN Themes das bestehende Icon sichtbar (voller Kontrast auch
-             auf dunklem Grund, siehe app.css-Kommentar bei
-             `.sidebar__brand-logo--dark`) - erst im ausgeklappten Dark Mode
-             ersetzt das bereits vorhandene Logo-Asset
-             "assets/branding/Lexono-Logo Dark Mode.png" (unveraendert nach
-             app/web/static/img/ kopiert, damit PyInstaller/windows/
-             lexono.spec es wie jedes andere static/img-Asset mitbuendelt)
-             Icon+Wortmarke gemeinsam - NICHT neu gezeichnet, NICHT per CSS
-             eingefaerbt, NICHT das Light-Logo wiederverwendet. #}
+          {# ECHTER FUND behoben (07.10., Owner-Direktive "LEXONO-LOGO DARK
+             MODE EXAKTE KONSTRUKTION"): Dark Mode nutzte bisher eine
+             SEPARATE, flach exportierte Logo-Datei (Icon+Wortmarke in
+             einem Bild, "Lexono-Logo Dark Mode.png") statt desselben
+             Icons + derselben Live-Wortmarke wie Light Mode - live
+             nachgemessen, dass dadurch Icon-Groesse (32px statt 38px
+             Renderhoehe) UND die Icon/Wortmarke-Relation zwischen beiden
+             Themes tatsaechlich abwichen (zwei unabhaengig exportierte
+             Dateien, nicht wirklich "dasselbe Logo"). Jetzt in BEIDEN
+             Themes exakt dieselben zwei Elemente (dasselbe Icon-Asset
+             `logo-mark.png`, dieselbe Live-Text-Wortmarke) - garantiert
+             identische Konstruktion/Groesse/Abstaende, da es buchstaeblich
+             dieselbe Markup-/CSS-Instanz ist, keine zweite, separat zu
+             pflegende Datei. Nur die Textfarbe wechselt per Theme (siehe
+             app.css, `:root[data-theme="dark"] .sidebar__brand-text`) -
+             exakt die in der Direktive geforderte "ausschliesslich der
+             Schriftzug wird auf Weiss geaendert"-Regel. Die vollstaendige
+             Logo-Datei bleibt als korrektes, aus dem echten Light-Icon
+             abgeleitetes offizielles Asset in assets/branding/ erhalten
+             (fuer Verwendungen ausserhalb dieser Seite), wird hier aber
+             nicht mehr gerendert. #}
           <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--light" />
-          <img src="/dashboard/static/img/lexono-logo-dark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--dark" />
           <span class="sidebar__brand-text">Lexono</span>
         </div>
         <div class="global-header__search-wrap">

@@ -149,20 +149,117 @@ def test_full_logo_lockup_assets_have_a_real_alpha_channel() -> None:
         assert corner_alpha == 0, f"{path} Eckpixel nicht transparent (alpha={corner_alpha})"
 
 
-def test_dark_logo_css_no_longer_needs_the_mix_blend_mode_workaround() -> None:
-    """Gegenprobe zum obigen Fund: der vorherige `mix-blend-mode: screen`-
-    Workaround fuer die opake schwarze Logo-Datei ist mit echtem
-    Alpha-Kanal ueberfluessig (und wuerde halbtransparente Kantenpixel
-    jetzt sogar falsch aufhellen) - darf im CSS fuer den Dark-Logo-Selektor
-    nicht mehr vorkommen."""
-    import re
+#: Spaltenbereich der durchgehend transparenten Luecke zwischen Icon und
+#: Wortmarke im Light-Lockup (per Spalten-Alpha-Analyse ermittelt, siehe
+#: Git-Historie) - dieselben Grenzen wie beim Erzeugen der Dark-Datei
+#: verwendet, hier zur Verifikation erneut herangezogen.
+_LOGO_ICON_END_EXCLUSIVE = 498
+
+
+def test_dark_logo_icon_is_byte_identical_to_the_light_logo_icon() -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "LEXONO-LOGO DARK MODE
+    EXAKTE KONSTRUKTION"): die vorherige Dark-Datei war zwar bereits
+    transparent (siehe test_full_logo_lockup_assets_have_a_real_alpha_
+    channel oben), aber ein UNABHAENGIGER Export - per Bounding-Box-
+    Messung reproduziert, dass Icon/Wortmarke-Layout zwischen Light und
+    Dark um ca. 1-2% abwich (nicht dasselbe Asset, nur ein sehr
+    aehnliches). Die Dark-Datei wird jetzt direkt aus der Light-Datei
+    erzeugt: die Icon-Spalten (0..498) sind 1:1 (byte-identisch)
+    uebernommen, NUR die Wortmark-Spalten (ab 576) wurden auf Weiss
+    umgefaerbt (RGB only, Alpha/Buchstabenform unveraendert) - siehe
+    Git-Historie fuer das Erzeugungsskript. Dieser Test verankert die
+    Byte-Identitaet der Icon-Region dauerhaft gegen eine zukuenftige,
+    erneut unabhaengige Neuexportierung der Dark-Datei."""
+    from PIL import Image
+    import numpy as np
+
+    light = np.asarray(Image.open(_BRANDING_LIGHT_LOGO_PATH).convert("RGBA"))
+    dark = np.asarray(Image.open(_BRANDING_DARK_LOGO_PATH).convert("RGBA"))
+
+    assert light.shape == dark.shape, "Light-/Dark-Logo haben unterschiedliche Canvas-Groesse"
+
+    light_icon = light[:, :_LOGO_ICON_END_EXCLUSIVE, :]
+    dark_icon = dark[:, :_LOGO_ICON_END_EXCLUSIVE, :]
+    assert np.array_equal(light_icon, dark_icon), (
+        "Icon-Region weicht zwischen Light- und Dark-Logo ab - muss "
+        "byte-identisch sein (dasselbe originale Icon-Asset, nicht neu "
+        "exportiert/gezeichnet)."
+    )
+
+
+def test_dark_logo_has_identical_overall_geometry_to_light_logo() -> None:
+    """Gegenprobe zum Icon-Byte-Identitaets-Test oben: die GESAMTE
+    sichtbare Bounding Box (Icon + Wortmarke zusammen) muss zwischen
+    Light und Dark exakt uebereinstimmen - keine unterschiedliche
+    Skalierung, keine unterschiedlichen Abstaende/Positionen."""
+    from PIL import Image
+    import numpy as np
+
+    def bbox(path):
+        arr = np.asarray(Image.open(path).convert("RGBA"))
+        alpha = arr[:, :, 3]
+        ys, xs = np.where(alpha > 20)
+        return int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())
+
+    light_bbox = bbox(_BRANDING_LIGHT_LOGO_PATH)
+    dark_bbox = bbox(_BRANDING_DARK_LOGO_PATH)
+    assert light_bbox == dark_bbox, (
+        f"Bounding Box weicht ab: Light={light_bbox} Dark={dark_bbox} - "
+        "Gesamtproportion/Position muss zwischen beiden Modi identisch sein."
+    )
+
+
+def test_dark_logo_wordmark_is_recolored_to_white() -> None:
+    """Die Wortmark-Region (ab Spalte 576, nach der transparenten Luecke)
+    muss im Dark-Logo tatsaechlich weiss sein - die einzige erlaubte
+    Abweichung von der Light-Datei."""
+    from PIL import Image
+    import numpy as np
+
+    dark = np.asarray(Image.open(_BRANDING_DARK_LOGO_PATH).convert("RGBA"))
+    wordmark_start = 576
+    wordmark_region = dark[:, wordmark_start:, :]
+    opaque_mask = wordmark_region[:, :, 3] > 200
+    opaque_pixels = wordmark_region[opaque_mask]
+    assert opaque_pixels.size > 0, "Keine (ausreichend) deckenden Wortmark-Pixel gefunden"
+    assert (opaque_pixels[:, :3] == 255).all(), (
+        "Nicht alle deckenden Wortmark-Pixel im Dark-Logo sind reines Weiss."
+    )
+
+
+def test_sidebar_header_uses_the_same_icon_and_live_wordmark_in_both_themes() -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "LEXONO-LOGO DARK MODE
+    EXAKTE KONSTRUKTION"): Dark Mode tauschte bisher per CSS auf eine
+    SEPARATE, flach exportierte Logo-Datei (Icon+Wortmarke als ein Bild) -
+    live nachgemessen (getBoundingClientRect), dass dadurch Icon-Groesse
+    (32px statt 38px) UND die Icon/Wortmarke-Relation zwischen den Themes
+    tatsaechlich abwichen (zwei unabhaengig exportierte Dateien, keine
+    wirklich gemeinsame Konstruktion). Jetzt rendert die Kopfzeile in
+    BEIDEN Themes dieselben zwei Elemente (`logo-mark.png`-Icon +
+    `.sidebar__brand-text`-Live-Wortmarke) - kein `sidebar__brand-logo--
+    dark`-Bildwechsel mehr, keine separate Dark-Logo-Datei im Markup."""
+    html = _read_base_html()
+    assert "sidebar__brand-logo--dark" not in html
+    assert "lexono-logo-dark.png" not in html
+    assert html.count('src="/dashboard/static/img/logo-mark.png"') == 1
+    assert html.count('class="sidebar__brand-text"') == 1
 
     css = _read_css()
-    start = css.index(':root[data-theme="dark"] .sidebar__brand-logo--dark {')
+    assert ":root[data-theme=\"dark\"] .sidebar__brand-logo--dark {" not in css
+    assert "sidebar__brand-logo--dark" not in css
+
+
+def test_sidebar_wordmark_turns_pure_white_in_dark_mode_only() -> None:
+    """Gegenprobe zum obigen Fund: die EINZIGE erlaubte Abweichung zwischen
+    den Themes ist die Textfarbe der Wortmarke - ein expliziter, reiner
+    Weiss-Wert (nicht das allgemeine `--ink-900`-Offwhite-Token), wie von
+    der Direktive ausdruecklich verlangt ("Schriftzug wird auf Weiss
+    geaendert")."""
+    css = _read_css()
+    start = css.index(':root[data-theme="dark"] .sidebar__brand-text {')
     end = css.index("}", start)
     block = css[start:end]
-    block_without_comments = re.sub(r"/\*.*?\*/", "", block, flags=re.DOTALL)
-    assert "mix-blend-mode" not in block_without_comments
+    assert "color: #ffffff;" in block
 
 
 def test_sidebar_collapse_icon_is_a_plain_chevron_not_a_k_shape() -> None:
