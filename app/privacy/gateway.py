@@ -69,6 +69,17 @@ _ALL_MARKERS = (
 )
 
 
+# Spiegelt exakt app/chat/service.py::_HISTORY_ROLE_LABELS["assistant"]
+# + das dortige "{label}: "-Zeilenformat (bewusst als Literal dupliziert,
+# nicht importiert - app.chat haengt bereits von app.privacy ab, ein
+# Import in umgekehrter Richtung waere ein Zirkelimport; siehe exakt
+# denselben, bereits bestehenden Duplizierungs-Kommentar bei
+# `lawyer_authored_text` in app/drafting/service.py fuer den analogen
+# Fall mit "Anwalt: "). Nur zur Erkennung, welche Gespraechsverlauf-
+# Zeilen KI-generiert sind, siehe _build_unrecognized_name_scan_text.
+_ASSISTANT_HISTORY_LINE_PREFIX = "Assistent: "
+
+
 def _sanitize_input(text: str) -> str:
     """Entfernt zufällige/absichtliche Vorkommen der internen
     Trennmarkierungen aus Eingabetext (Verteidigung gegen einen
@@ -150,8 +161,39 @@ class ClaudePrivacyGateway:
             combined, known_entities=known_entities
         )
 
+        (
+            pseudo_sachverhalt,
+            pseudo_argumente,
+            pseudo_quellen,
+            pseudo_vorlage,
+            pseudo_anmerkungen,
+            pseudo_verlauf,
+        ) = self._split_combined_text(pseudonymized_combined)
+
+        # ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-
+        # False-Positive bei allgemeinen Fragen"): Punkt 6 im
+        # SecurityCheckService (Heuristik gegen uebersehene Namen) darf
+        # nicht auf fruehere Claude-Antworten im Gespraechsverlauf
+        # anschlagen - siehe SecurityCheckService.check Docstring zu
+        # `unrecognized_name_scan_text` fuer die volle Begruendung. Alle
+        # anderen Pruefungen (Punkt 2/3/4/5/7) bekommen weiterhin den
+        # VOLLEN `pseudonymized_combined` inkl. Assistant-Zeilen - nur
+        # Punkt 6 scannt stattdessen diesen bereinigten Text.
+        unrecognized_name_scan_text = self._build_unrecognized_name_scan_text(
+            pseudo_sachverhalt,
+            pseudo_argumente,
+            pseudo_quellen,
+            pseudo_vorlage,
+            pseudo_anmerkungen,
+            original_gespraechsverlauf=gespraechsverlauf,
+            pseudo_verlauf=pseudo_verlauf,
+        )
+
         check_result = self.security_check.check(
-            pseudonymized_combined, mappings, purpose=purpose
+            pseudonymized_combined,
+            mappings,
+            purpose=purpose,
+            unrecognized_name_scan_text=unrecognized_name_scan_text,
         )
         if not check_result.passed:
             return GatewayResult(
@@ -161,15 +203,6 @@ class ClaudePrivacyGateway:
                 mappings=mappings,
                 reasons=check_result.reasons,
             )
-
-        (
-            pseudo_sachverhalt,
-            pseudo_argumente,
-            pseudo_quellen,
-            pseudo_vorlage,
-            pseudo_anmerkungen,
-            pseudo_verlauf,
-        ) = self._split_combined_text(pseudonymized_combined)
 
         payload = ClaudeRequestPayload(
             schreibauftrag=purpose,
@@ -282,3 +315,41 @@ class ClaudePrivacyGateway:
         verlauf = verlauf_text.split(_SEP_LIST_ITEM) if verlauf_text else []
 
         return sachverhalt_text, argumente, quellen, vorlage, anmerkungen, verlauf
+
+    @staticmethod
+    def _build_unrecognized_name_scan_text(
+        pseudo_sachverhalt: str,
+        pseudo_argumente: list[str],
+        pseudo_quellen: list[str],
+        pseudo_vorlage: str | None,
+        pseudo_anmerkungen: str | None,
+        *,
+        original_gespraechsverlauf: list[str],
+        pseudo_verlauf: list[str],
+    ) -> str:
+        """Text fuer SecurityCheckService Punkt 6 (siehe dortigen
+        Docstring zu `unrecognized_name_scan_text`): identisch zum vollen
+        kombinierten Text, aber ohne die Gespraechsverlauf-Zeilen, die von
+        Claude selbst stammen ("Assistent: "-Praefix) - nur echte
+        Anwalt-Zeilen der Historie bleiben fuer diese eine Pruefung
+        erhalten. `original_gespraechsverlauf` (VOR Pseudonymisierung) und
+        `pseudo_verlauf` (danach, siehe _split_combined_text) haben
+        garantiert dieselbe Laenge/Reihenfolge - Pseudonymisierung
+        ersetzt nur Zeichen INNERHALB jedes Eintrags, nie die Anzahl
+        oder Reihenfolge der Listeneintraege."""
+        lawyer_verlauf = [
+            pseudo_entry
+            for original_entry, pseudo_entry in zip(
+                original_gespraechsverlauf, pseudo_verlauf
+            )
+            if not original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
+        ]
+        parts = [
+            pseudo_sachverhalt,
+            "\n".join(pseudo_argumente),
+            "\n".join(pseudo_quellen),
+            pseudo_vorlage or "",
+            pseudo_anmerkungen or "",
+            "\n".join(lawyer_verlauf),
+        ]
+        return "\n".join(parts)

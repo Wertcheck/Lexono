@@ -1048,7 +1048,7 @@ class _AlwaysBlockSecurityCheck:
     downstream-Verhalten bei EINEM BELIEBIGEN Block pruefen will, nicht
     einen bestimmten Heuristik-Mechanismus)."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose):
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None):
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(

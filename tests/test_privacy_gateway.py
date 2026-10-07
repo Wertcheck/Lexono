@@ -15,7 +15,7 @@ class _AlwaysBlockSecurityCheck:
     tests/test_review_engine.py) - erzwingt EINEN BELIEBIGEN Block,
     unabhaengig vom konkreten Heuristik-Mechanismus."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose):
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None):
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(
@@ -382,3 +382,96 @@ def test_final_payload_gate_passes_through_clean_payload_unaffected() -> None:
 
     assert result.allowed is True
     assert result.payload is not None
+
+
+def test_chat_history_rich_in_capitalized_phrases_does_not_block_a_clean_new_question() -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-False-
+    Positive bei allgemeinen Fragen", real vom Benutzer per Screenshot
+    gemeldet): eine voellig gewoehnliche Chat-Frage ("Wie lange dauert ein
+    Jurastudium durchschnittlich?") wurde faelschlich mit "Im Text wurden
+    moeglicherweise nicht erkannte Namen/Daten gefunden." blockiert, weil
+    eine FRUEHERE Claude-Antwort im Gespraechsverlauf voller legitimer
+    Grossschreibungs-Wortpaare war ("World Cities Report",
+    "UN-Habitat-Programm" o.ae.) - vor der Korrektur in app/privacy/
+    gateway.py/security_check.py blockierte exakt dieser Aufbau real
+    (per `git stash` gegen den unveraenderten Stand verifiziert). Bewusst
+    OHNE Security-Check-Stub - echte Presidio-/POS-Tag-Produktivkonfig
+    (ClaudePrivacyGateway()-Standardkonstruktor), damit der Test den
+    echten Vorfall nachbildet."""
+    gw = ClaudePrivacyGateway()
+
+    gespraechsverlauf = [
+        "Anwalt: Wieviele Staedte gibt es insgesamt?",
+        "Assistent: Laut dem UN-Habitat-Programm und der World Cities "
+        "Report-Reihe gibt es je nach UN-Zahl von 12.140 Staedten "
+        "weltweit (Stand 2025) unterschiedliche Definitionen, abhaengig "
+        "von den UN-Mitgliedstaaten und ihren jeweiligen "
+        "Verwaltungsgrenzen.",
+    ]
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Wie lange dauert ein Jurastudium durchschnittlich?",
+        gespraechsverlauf=gespraechsverlauf,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+    assert result.payload is not None
+
+
+def test_real_name_in_a_prior_assistant_answer_is_still_pseudonymized_not_leaked() -> None:
+    """Regressionsschutz zum vorherigen Test: die Einschraenkung auf
+    Punkt 6 darf den eigentlichen Schutz echter personenbezogener Daten
+    in fruiheren Claude-Antworten NICHT schwaechen - Presidio (Punkt
+    2/3/4, von der Korrektur unveraendert) muss einen echten Namen in
+    einer "Assistent: "-Zeile weiterhin erkennen und durch einen
+    Platzhalter ersetzen, bevor der Text (erneut) an Claude ginge."""
+    gw = ClaudePrivacyGateway()
+
+    gespraechsverlauf = [
+        "Anwalt: Was wissen Sie ueber meinen Mandanten?",
+        "Assistent: Ihr Mandant Peter Müller wohnt in der Musterstrasse 5.",
+    ]
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Wie lange dauert ein Jurastudium durchschnittlich?",
+        gespraechsverlauf=gespraechsverlauf,
+    )
+
+    assert result.allowed is True
+    assert "Peter Müller" not in result.payload.anonymisierter_gespraechsverlauf[1]
+    assert "Musterstrasse 5" not in result.payload.anonymisierter_gespraechsverlauf[1]
+    assert any(m.original_value == "Peter Müller" for m in result.mappings)
+
+
+def test_build_unrecognized_name_scan_text_excludes_only_assistant_lines() -> None:
+    """Direkter Unit-Test des neuen Hilfsbausteins: "Assistent: "-Zeilen
+    fallen raus, "Anwalt: "-Zeilen und alle anderen Felder bleiben - die
+    deterministische Grundlage fuer die beiden Tests oben."""
+    scan_text = ClaudePrivacyGateway._build_unrecognized_name_scan_text(
+        "Sachverhalt-Text",
+        ["Argument-Eins"],
+        ["Quelle-Eins"],
+        "Vorlage-Text",
+        "Anmerkung-Text",
+        original_gespraechsverlauf=[
+            "Anwalt: Anwalt-Zeile",
+            "Assistent: Assistent-Zeile",
+        ],
+        pseudo_verlauf=[
+            "Anwalt: Anwalt-Zeile",
+            "Assistent: Assistent-Zeile",
+        ],
+    )
+
+    assert "Anwalt-Zeile" in scan_text
+    assert "Assistent-Zeile" not in scan_text
+    assert "Sachverhalt-Text" in scan_text
+    assert "Argument-Eins" in scan_text
+    assert "Quelle-Eins" in scan_text
+    assert "Vorlage-Text" in scan_text
+    assert "Anmerkung-Text" in scan_text

@@ -134,6 +134,68 @@ def test_real_name_still_blocks_even_with_pos_tagger_wired() -> None:
     assert any("Peter Müller" in r for r in result.reasons)
 
 
+def test_unrecognized_name_scan_text_restricts_point_6_to_the_given_text() -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-False-
+    Positive bei allgemeinen Fragen"): eine echte Chat-Nachricht ("Wie
+    lange dauert ein Jurastudium durchschnittlich?") wurde faelschlich
+    blockiert, weil eine FRUEHERE Claude-Antwort im Gespraechsverlauf
+    ("World Cities Report", "UN-Habitat-Programm") Punkt 6 (zwei
+    aufeinanderfolgende grossgeschriebene Woerter) ausloeste - obwohl die
+    AKTUELLE Frage selbst voellig unauffaellig ist. `pseudonymized_text`
+    (das Punkt 2/3/4/5/7 weiterhin sehen) enthaelt bewusst DIESELBE
+    verdaechtige Phrase wie im realen Vorfall; `unrecognized_name_scan_text`
+    (von app/privacy/gateway.py uebergeben, ohne die Assistant-Zeilen)
+    enthaelt sie NICHT mehr - nur DANN darf Punkt 6 nicht mehr greifen."""
+    checker = SecurityCheckService()
+
+    pseudonymized_text = (
+        "Assistent: Laut dem World Cities Report und dem "
+        "UN-Habitat-Programm gibt es weltweit viele Millionenstaedte.\n"
+        "Anwalt: Wie lange dauert ein Jurastudium durchschnittlich?"
+    )
+    scan_text_without_history = "Anwalt: Wie lange dauert ein Jurastudium durchschnittlich?"
+
+    blocked_without_scoping = checker.check(
+        pseudonymized_text, [], purpose="chat_response"
+    )
+    allowed_with_scoping = checker.check(
+        pseudonymized_text,
+        [],
+        purpose="chat_response",
+        unrecognized_name_scan_text=scan_text_without_history,
+    )
+
+    assert blocked_without_scoping.passed is False
+    assert any("World Cities" in r for r in blocked_without_scoping.reasons)
+    assert allowed_with_scoping.passed is True
+    assert allowed_with_scoping.reasons == []
+
+
+def test_unrecognized_name_scan_text_still_catches_a_name_within_the_given_text() -> None:
+    """Gegenprobe zum vorherigen Test: die Einschraenkung darf Punkt 6
+    nicht generell abschalten - ein Namenskandidat, der TATSAECHLICH im
+    uebergebenen `unrecognized_name_scan_text` steht (z.B. weil er aus
+    einer "Anwalt: "-Zeile der Historie stammt, die app/privacy/gateway.py
+    bewusst NICHT herausfiltert), muss weiterhin blockieren."""
+    checker = SecurityCheckService()
+
+    pseudonymized_text = (
+        "Assistent: Allgemeine Informationen zum Thema.\n"
+        "Anwalt: Bitte informieren Sie auch Herrn Peter Müller."
+    )
+    scan_text = "Anwalt: Bitte informieren Sie auch Herrn Peter Müller."
+
+    result = checker.check(
+        pseudonymized_text,
+        [],
+        purpose="chat_response",
+        unrecognized_name_scan_text=scan_text,
+    )
+
+    assert result.passed is False
+    assert any("Peter Müller" in r for r in result.reasons)
+
+
 def test_synthetic_test_document_title_does_not_trigger_false_positive() -> None:
     """ECHTER FUND (realer Abnahme-Test, 13.09.): "Synthetisches
     Testdokument" ist ein Dokumenttitel (Adjektiv + Substantiv), keine

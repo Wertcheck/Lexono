@@ -508,7 +508,31 @@ class SecurityCheckService:
         mappings: list[PseudonymMapping],
         *,
         purpose: str,
+        unrecognized_name_scan_text: str | None = None,
     ) -> SecurityCheckResult:
+        """`unrecognized_name_scan_text` (optional, ECHTER FUND 07.10.,
+        Owner-Direktive "Chat-Pipeline Privacy-False-Positive bei
+        allgemeinen Fragen"): beschraenkt NUR Punkt 6 auf einen anderen
+        Text als `pseudonymized_text` - alle anderen Pruefungen (Punkt
+        2/3/4/5/7) laufen unveraendert auf dem VOLLEN `pseudonymized_text`.
+
+        Hintergrund: `_find_possible_unrecognized_names` ist eine
+        Heuristik gegen von Menschen VERTIPPTE/von Presidio uebersehene
+        Namen in anwaltlich verfasstem Text. Im Chat wird derselbe
+        kombinierte Text zusaetzlich aus dem Gespraechsverlauf gebaut,
+        der auch bereits erhaltene Claude-Antworten (Rolle "Assistent")
+        enthaelt (siehe app/chat/service.py::_build_history). KI-
+        generierte Fliesstext-Antworten sind voll von legitimen
+        Grossschreibungs-Wortpaaren (Organisationsnamen, Berichtstitel,
+        Fachbegriffe wie "World Cities Report") - Punkt 6 loeste darauf
+        systematisch falsch aus und blockierte dadurch eine voellig
+        unverwandte, saubere NEUE Frage einzig wegen Text in einer
+        FRUEHEREN KI-Antwort. Der Aufrufer (app/privacy/gateway.py)
+        uebergibt hier einen um "Assistent: "-Zeilen bereinigten Text,
+        damit Punkt 6 weiterhin voll auf jedem anwaltlich verfassten Teil
+        (aktuelle Nachricht, "Anwalt: "-Zeilen der Historie, alle anderen
+        Allowlist-Felder) greift, aber nicht mehr auf Claudes eigener,
+        bereits einmal durch Punkt 2/3/4 gepruefter Prosa."""
         reasons: list[str] = []
 
         # Punkt 7: Zweck zulässig?
@@ -532,8 +556,16 @@ class SecurityCheckService:
         reasons.extend(check_placeholders_present(pseudonymized_text, mappings))
 
         # Punkt 6: heuristischer Hinweis auf evtl. nicht erkannte Namen.
-        pos_tags = self.pos_tagger(pseudonymized_text) if self.pos_tagger else None
-        unclear = _find_possible_unrecognized_names(pseudonymized_text, pos_tags=pos_tags)
+        # Siehe Docstring oben zu `unrecognized_name_scan_text` - NUR diese
+        # eine Pruefung bekommt ggf. einen anderen (kleineren) Text als
+        # alle anderen Punkte hier.
+        scan_text = (
+            unrecognized_name_scan_text
+            if unrecognized_name_scan_text is not None
+            else pseudonymized_text
+        )
+        pos_tags = self.pos_tagger(scan_text) if self.pos_tagger else None
+        unclear = _find_possible_unrecognized_names(scan_text, pos_tags=pos_tags)
         if unclear:
             reasons.append(
                 f"Möglicherweise nicht erkannte Namen/Entitäten gefunden: {unclear}"
