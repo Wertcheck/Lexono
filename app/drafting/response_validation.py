@@ -164,6 +164,7 @@ def validate_claude_response(
     *,
     skip_semantic_check: bool = False,
     require_full_placeholder_coverage: bool = True,
+    lenient_leak_exempt_placeholders: frozenset[str] = frozenset(),
 ) -> ResponseValidationResult:
     """Prüft die (noch pseudonymisierte) Claude-Antwort, bevor
     `DraftingService.create_draft` sie rekonstruiert. Wirft
@@ -190,9 +191,17 @@ def validate_claude_response(
     (manipulierte/erfundene Platzhalter-Tokens, geleakter Originalwert)
     bleiben davon unberührt immer aktiv. Default `True` (unverändertes
     Verhalten). Der Aufrufer setzt `False` nur für `purpose="chat_response"`
-    - siehe dortige Begründung."""
+    - siehe dortige Begründung.
+
+    `lenient_leak_exempt_placeholders` (07.10.): durchgereicht an
+    `check_response_placeholder_integrity` - siehe dort
+    (`find_lenient_leak_exempt_placeholders`) für die volle Herleitung.
+    Default ein leeres `frozenset` (unverändertes, striktes Verhalten)."""
     deterministic_issues = check_response_placeholder_integrity(
-        text, mappings, require_full_coverage=require_full_placeholder_coverage
+        text,
+        mappings,
+        require_full_coverage=require_full_placeholder_coverage,
+        lenient_leak_exempt_placeholders=lenient_leak_exempt_placeholders,
     )
     if deterministic_issues:
         # Stufe 1 ist abschließend - Stufe 2 (LLM) wird bewusst NICHT mehr

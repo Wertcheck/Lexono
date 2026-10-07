@@ -186,6 +186,49 @@ def test_has_document_context_is_false_without_any_attached_document(
     assert result.sachverhalt == "Akte: Testakte"
 
 
+def test_sachverhalt_for_a_real_matter_still_includes_the_literal_title(
+    db_session: Session,
+) -> None:
+    """Gegenprobe zu `test_placeholder_matter_sachverhalt_omits_the_auto_
+    generated_title` unten: eine ECHTE Akte (realer Mandant) muss ihren
+    Titel weiterhin unveraendert in den Sachverhalt uebernehmen - der
+    Titel kann echte Mandantendaten enthalten und muss wie bisher durch
+    Presidio geschuetzt werden."""
+    matter = _matter(db_session, client_name="Erika Musterfrau", title="Mietsache Musterfrau")
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    assert result.sachverhalt == "Akte: Mietsache Musterfrau"
+
+
+def test_placeholder_matter_sachverhalt_omits_the_auto_generated_title(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-
+    CHAT-QUALITY", per echtem Cloud-E2E-Test reproduziert): fuer die
+    automatisch angelegte "Schnellentwurf"-Akte (matterlose allgemeine
+    Chat-Frage, gemeinsamer Sammel-Mandant `PLACEHOLDER_CLIENT_NAME`)
+    enthielt der Sachverhalt bisher woertlich den generierten Titel
+    ("Akte: Schnellentwurf 2026-10-07") - reiner Systemtext, den Presidios
+    deutsches NER-Modell teils faelschlich als Entitaet (z. B. Datum)
+    erkannte und pseudonymisierte. Eine spaetere, voellig unverdaechtige
+    Chat-Antwort, die denselben Text erneut im Klartext enthielt, wurde
+    dadurch faelschlich als "nicht ausreichend anonymisiert" blockiert.
+    Der Sachverhalt fuer diese Platzhalter-Akte muss jetzt ein fester,
+    niemals durch Presidio fehlinterpretierbarer Text sein."""
+    from app.drafting.quick_matter import create_quick_matter
+
+    matter = create_quick_matter(db_session, title=None, client_name=None, actor="test@kanzlei.test")
+    db_session.commit()
+
+    provider = RuleBasedLocalAIProvider()
+    result = provider.prepare_draft_context(matter.id, db_session)
+
+    assert "Schnellentwurf" not in result.sachverhalt
+    assert result.sachverhalt == "Akte: (kein spezifischer Fall zugeordnet)"
+
+
 def test_argumentationspunkte_include_deadlines(db_session: Session) -> None:
     matter = _matter(db_session)
     deadline = Deadline(matter=matter, source_text="Frist am 15.03.2027", confidence=0.4)

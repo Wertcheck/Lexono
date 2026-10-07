@@ -23,6 +23,31 @@ from sqlalchemy.orm import Session
 from app.models import Deadline, Document, Matter, Party
 from app.search.service import DocumentSearchService
 
+#: ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-CHAT-
+#: QUALITY", per echtem Cloud-E2E-Test mit dem real konfigurierten
+#: ANTHROPIC_API_KEY reproduziert - siehe dortigen Abschlussbericht fuer die
+#: volle Herleitung): eine zweite Chat-Nachricht in DERSELBEN automatisch
+#: angelegten "Schnellentwurf"-Akte (siehe app/drafting/quick_matter.py::
+#: create_quick_matter, matterlose allgemeine Chat-Frage) wurde faelschlich
+#: als Datenschutzverstoss blockiert ("original_value_leaked"). Root Cause:
+#: `_build_sachverhalt` unten speiste bisher IMMER den woertlichen
+#: Akten-Titel ("Akte: Schnellentwurf 2026-10-07") in Presidio ein - bei
+#: einer ECHTEN Akte ist das richtig (der Titel kann reale Mandantendaten
+#: enthalten), aber der AUTOMATISCH GENERIERTE Platzhaltertitel ist reiner
+#: Systemtext, NIE echte Mandantendaten. Presidios deutsches NER-Modell
+#: erkannte "Schnellentwurf" faelschlich als DATUM-Entitaet, dieser Wert
+#: wurde pseudonymisiert - als Claude in einer FOLGEFRAGE erneut korrekt
+#: ueber dieselbe Rechtsnorm antwortete, enthielt die Antwort denselben
+#: (voellig unverdaechtigen) Text erneut im Klartext, was die
+#: Leck-Pruefung (`check_response_placeholder_integrity`) als "Original-
+#: wert wieder aufgetaucht" wertete und die Antwort blockierte - obwohl
+#: nie echte Mandantendaten im Spiel waren. Betrifft AUSSCHLIESSLICH Akten
+#: mit dem gemeinsamen Sammel-Mandanten `PLACEHOLDER_CLIENT_NAME` (siehe
+#: app/drafting/quick_matter.py::_resolve_placeholder_client) - eine ECHTE
+#: Akte mit echtem Mandanten ist davon nicht betroffen, ihr Titel wird
+#: weiterhin unveraendert (und damit korrekt geschuetzt) uebergeben."""
+_PLACEHOLDER_MATTER_SACHVERHALT = "Akte: (kein spezifischer Fall zugeordnet)"
+
 #: ECHTER FUND, MIT REALEN PRODUKTIONSDATEN GEMESSEN (05.10., Owner-
 #: Direktive "P1-BUGFIX: Schriftsatz unvollständig..."): die vorherige
 #: Grenze von 500 Zeichen (selbst nach dem Fix der vorherigen Runde, die
@@ -150,7 +175,25 @@ class RuleBasedLocalAIProvider:
     def _build_sachverhalt(
         self, matter_id: str, matter: Matter, db: Session
     ) -> tuple[str, bool]:
-        parts = [f"Akte: {matter.title}"]
+        # Platzhalter-Akte (siehe Modul-Kommentar oben zu
+        # `_PLACEHOLDER_MATTER_SACHVERHALT`): der automatisch generierte
+        # Titel ("Schnellentwurf <Datum>") ist reiner Systemtext, keine
+        # echten Mandantendaten - NICHT unveraendert durch Presidio
+        # schicken. Eine ECHTE Akte (jeder andere Mandant) bleibt
+        # unveraendert: ihr Titel kann reale Daten enthalten und muss
+        # weiterhin wie bisher geschuetzt werden.
+        # Lokaler Import (nicht auf Modulebene): app.drafting.quick_matter
+        # haengt transitiv ueber app/drafting/__init__.py von
+        # app.drafting.service ab, welches seinerseits dieses Modul
+        # importiert - ein Import auf Modulebene erzeugt daher einen
+        # Zirkelimport (live reproduziert: "cannot import name
+        # 'LocalAIProvider' from partially initialized module ...").
+        from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME
+
+        if matter.client and matter.client.name == PLACEHOLDER_CLIENT_NAME:
+            parts = [_PLACEHOLDER_MATTER_SACHVERHALT]
+        else:
+            parts = [f"Akte: {matter.title}"]
         documents = (
             db.query(Document)
             .filter(Document.matter_id == matter_id)

@@ -12,8 +12,10 @@ from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
 from app.privacy.security_check import (
     ALLOWED_PURPOSES,
     SecurityCheckService,
+    _find_possible_unrecognized_names,
     check_payload_placeholder_integrity,
     check_response_placeholder_integrity,
+    find_lenient_leak_exempt_placeholders,
 )
 
 
@@ -359,6 +361,93 @@ def test_original_value_leak_still_fails_even_without_full_coverage() -> None:
     assert any("Datenschutzverstoss" in r for r in reasons)
 
 
+# --- ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-
+# CHAT-QUALITY", per echtem Cloud-E2E-Test reproduziert): Presidios
+# generisches NER-Modell stuft im Deutschen gelegentlich ein ganz
+# gewoehnliches Substantiv als "ort"/"organisation" ein (reproduziert:
+# "Wohnraum" aus dem woertlichen Gesetzestext von § 558 BGB als "ort").
+# Landet ein solcher Wert in der Chat-Historie (Claude erklaert in einer
+# Folgefrage erneut korrekt dieselbe Rechtsnorm), blockierte die Leck-
+# Pruefung bisher eine voellig unverdaechtige Antwort. Die eng begrenzte
+# Ausnahme (`find_lenient_leak_exempt_placeholders`) greift NUR, wenn der
+# Originalwert NACHWEISLICH nie vom Anwalt selbst getippt wurde. ---
+
+
+def test_find_lenient_leak_exempt_placeholders_exempts_ort_never_typed_by_lawyer() -> None:
+    mappings = [
+        PseudonymMapping(placeholder="[ORT_01]", category="ort", original_value="Wohnraum"),
+    ]
+
+    exempt = find_lenient_leak_exempt_placeholders(
+        mappings, lawyer_authored_text="Anwalt: Was regelt § 558 BGB?"
+    )
+
+    assert exempt == {"[ORT_01]"}
+
+
+def test_find_lenient_leak_exempt_placeholders_does_not_exempt_person_category() -> None:
+    """Namen bleiben IMMER streng geprueft, selbst wenn sie nie vom Anwalt
+    getippt wurden - die Lockerung gilt ausdruecklich NUR fuer
+    ort/organisation (NER-Kategorien mit bekannt hoeherer
+    Falsch-Positiv-Rate bei generischen Substantiven)."""
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Erika Mustermann"),
+    ]
+
+    exempt = find_lenient_leak_exempt_placeholders(
+        mappings, lawyer_authored_text="Anwalt: Was regelt § 558 BGB?"
+    )
+
+    assert exempt == set()
+
+
+def test_find_lenient_leak_exempt_placeholders_does_not_exempt_a_value_the_lawyer_typed() -> None:
+    """Tippte der Anwalt den Wert selbst (z. B. einen echten Ortsnamen im
+    Rahmen seiner eigenen Nachricht), bleibt er voll geschuetzt - die
+    Herleitung ("nie vom Anwalt getippt") greift hier nicht."""
+    mappings = [
+        PseudonymMapping(placeholder="[ORT_01]", category="ort", original_value="Musterstadt"),
+    ]
+
+    exempt = find_lenient_leak_exempt_placeholders(
+        mappings, lawyer_authored_text="Anwalt: Mein Mandant wohnt in Musterstadt."
+    )
+
+    assert exempt == set()
+
+
+def test_check_response_placeholder_integrity_skips_leak_for_exempted_placeholder_only() -> None:
+    mappings = [
+        PseudonymMapping(placeholder="[ORT_01]", category="ort", original_value="Wohnraum"),
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Erika Mustermann"),
+    ]
+    text = "Die Vorschrift gilt fuer Wohnraum und betrifft auch Erika Mustermann."
+
+    reasons = check_response_placeholder_integrity(
+        text,
+        mappings,
+        require_full_coverage=False,
+        lenient_leak_exempt_placeholders=frozenset({"[ORT_01]"}),
+    )
+
+    assert any("PERSON_01" in r for r in reasons), "Person-Leck muss weiterhin blockieren"
+    assert not any("ORT_01" in r for r in reasons), "Ort-Leck ist exempt und darf nicht mehr blockieren"
+
+
+def test_check_response_placeholder_integrity_default_stays_fully_strict() -> None:
+    """Ohne explizit uebergebene Ausnahmeliste bleibt JEDES bisherige
+    Aufrufverhalten (insbesondere das Final Payload Gate) unveraendert
+    streng - Default ist ein leeres frozenset."""
+    mappings = [
+        PseudonymMapping(placeholder="[ORT_01]", category="ort", original_value="Wohnraum"),
+    ]
+    text = "Die Vorschrift gilt fuer Wohnraum."
+
+    reasons = check_response_placeholder_integrity(text, mappings, require_full_coverage=False)
+
+    assert any("ORT_01" in r for r in reasons)
+
+
 # --- ECHTER FUND (05.10., Owner-Direktive "Vollstaendiger UX- und
 # Workflow-Audit", synthetisch reproduziert): der bisherige Originalwert-
 # Leck-Check war ein NAIVER Teilstring-Vergleich (`original_value in
@@ -568,6 +657,34 @@ def test_herr_nachname_without_first_name_blocks_the_call() -> None:
 
     assert result.passed is False
     assert any("Herr Müller" in r for r in result.reasons)
+
+
+# --- ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-
+# CHAT-QUALITY", per echtem Cloud-E2E-Test reproduziert): "BGB AT"
+# (Gesetzesabkuerzung + "Allgemeiner Teil") wurde von
+# `_find_possible_unrecognized_names` als moeglicher unerkannter Name
+# gewertet und blockierte dadurch eine voellig normale Rechtserklaerung -
+# live reproduziert in einer mehrstufigen Chat-Unterhaltung ueber
+# Willenserklaerung/Anfechtung. Ein echter Name wird in Fliesstext
+# praktisch nie vollstaendig grossgeschrieben. ---
+def test_all_caps_legal_abbreviation_pair_does_not_block_the_call() -> None:
+    checker = SecurityCheckService()
+
+    result = checker.check(
+        "Dies ist im BGB AT ausfuehrlich geregelt.", [], purpose="chat_response"
+    )
+
+    assert result.passed is True
+
+
+def test_all_caps_acronym_followed_by_a_real_name_still_only_flags_the_name() -> None:
+    """Gegenprobe: ein ALL-CAPS-Akronym direkt vor einem echten
+    Titelcase-Namen darf die Namenserkennung des NACHFOLGENDEN echten
+    Paares nicht verhindern."""
+    candidates = _find_possible_unrecognized_names("Laut ZPO sprach Peter Müller.")
+
+    assert "Peter Müller" in candidates
+    assert "ZPO Peter" not in candidates
 
 
 def test_role_word_plus_nachname_blocks_the_call() -> None:

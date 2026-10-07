@@ -196,6 +196,24 @@ def _find_possible_unrecognized_names(
             continue
         if not word2.group()[:1].isupper():
             continue
+        # ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-
+        # E2E-CHAT-QUALITY", per echtem Cloud-E2E-Test reproduziert): ein
+        # Gesetzesabkuerzungspaar wie "BGB AT" (Allgemeiner Teil) wurde als
+        # moeglicher unerkannter Name gewertet - spaCys POS-Tagger stuft
+        # komplette Grossbuchstaben-Abkuerzungen mangels typischer Nomen-/
+        # Adjektiv-Morphologie oft ebenfalls als PROPN ein (die oben bereits
+        # bestehende `pos_tags`-Verfeinerung griff hier NICHT). Ein echter
+        # deutscher Vor-/Nachname wird in Fliesstext praktisch nie
+        # vollstaendig grossgeschrieben (anders als z. B. ein formelles
+        # Briefkopf-Namensfeld) - ein mehrbuchstabiges ALL-CAPS-Wort ist
+        # strukturell ein Indiz fuer eine Abkuerzung/ein Akronym, nicht fuer
+        # einen Namen. Rein strukturelle Praezisierung der Heuristik (gilt
+        # fuer JEDEN Zweck/Purpose, keine Lockerung der eigentlichen
+        # Leck-/Entitaets-Pruefungen an anderer Stelle).
+        if len(word1.group()) > 1 and word1.group().isupper():
+            continue
+        if len(word2.group()) > 1 and word2.group().isupper():
+            continue
         word1_is_role_prefix = word1.group().lower() in _ROLE_OR_TITLE_PREFIX_WORDS
         if not word1_is_role_prefix:
             # Bisherige Regel unveraendert: OHNE ein erkanntes Anrede-/
@@ -289,11 +307,59 @@ def _contains_original_value_leak(original_value: str, text: str) -> bool:
     return bool(pattern.search(text))
 
 
+#: ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-CHAT-
+#: QUALITY", per echtem Cloud-E2E-Test mit dem real konfigurierten
+#: ANTHROPIC_API_KEY reproduziert - siehe Abschlussbericht fuer die volle
+#: Herleitung): Presidios generisches NER-Modell (Kategorien "person"/
+#: "ort"/"organisation", siehe app/privacy/pseudonymizer.py-Kommentar
+#: "rollenneutral") stuft im Deutschen gelegentlich ein ganz gewoehnliches
+#: Substantiv als Entitaet ein (reproduziert: "Wohnraum" als "ort", aus
+#: dem woertlichen Gesetzestext von § 558 BGB). Landet ein SOLCHER Wert in
+#: `gespraechsverlauf` (Claude erklaert in einer Folgefrage erneut
+#: korrekt dieselbe Rechtsnorm und verwendet denselben Fachbegriff), wertet
+#: `check_response_placeholder_integrity` das bisher als "Originalwert
+#: geleakt" und blockiert eine voellig unverdaechtige Antwort.
+#:
+#: NICHT geloest durch Entfernen/Abschwaechen der Leck-Pruefung selbst
+#: (siehe deren Docstring: "fuer JEDEN Zweck weiterhin zwingend aktiv" -
+#: bewusst nicht angetastet). Stattdessen: NUR fuer die beiden explizit als
+#: NER-basiert (nicht deterministisch/regelbasiert) dokumentierten
+#: Kategorien "ort"/"organisation" wird ein Mapping von der Leck-Pruefung
+#: ausgenommen, WENN sein Originalwert NACHWEISLICH niemals in vom Anwalt
+#: selbst verfasstem Text vorkam (aktuelle Nachricht + "Anwalt:"-Zeilen der
+#: Historie) - sondern ausschliesslich in von der KI selbst generiertem
+#: Text. Ein Wert, der NIE vom Anwalt getippt wurde, kann unmoeglich echte,
+#: vom Anwalt eingegebene Mandantendaten sein; er kann daher strukturell
+#: kein Daten-Leck sein - bestenfalls eine KI-Neuformulierung bereits
+#: oeffentlich-allgemeinen (hier: gesetzlichen) Wissens. "person" bleibt
+#: VOLLSTAENDIG ausgenommen von dieser Lockerung (Namen bleiben immer
+#: streng geprueft) - siehe `find_lenient_leak_exempt_placeholders`."""
+_LENIENT_LEAK_CATEGORIES = frozenset({"ort", "organisation"})
+
+
+def find_lenient_leak_exempt_placeholders(
+    mappings: list[PseudonymMapping], *, lawyer_authored_text: str
+) -> set[str]:
+    """Siehe Modulkommentar oben bei `_LENIENT_LEAK_CATEGORIES`.
+    `lawyer_authored_text` muss AUSSCHLIESSLICH Text enthalten, den der
+    Anwalt selbst eingegeben hat (aktuelle Nachricht + "Anwalt:"-Zeilen
+    der Historie) - NIEMALS von der KI generierten Text, sonst waere die
+    Herleitung ("nie vom Anwalt getippt") falsch."""
+    exempt: set[str] = set()
+    for mapping in mappings:
+        if mapping.category not in _LENIENT_LEAK_CATEGORIES:
+            continue
+        if not _contains_original_value_leak(mapping.original_value, lawyer_authored_text):
+            exempt.add(mapping.placeholder)
+    return exempt
+
+
 def check_response_placeholder_integrity(
     text: str,
     mappings: list[PseudonymMapping],
     *,
     require_full_coverage: bool = True,
+    lenient_leak_exempt_placeholders: frozenset[str] = frozenset(),
 ) -> list[str]:
     """Deterministische (KEIN LLM) Pruefung einer vom Claude-Aufruf
     zurueckgekommenen, noch pseudonymisierten Antwort - VOR jeder
@@ -326,6 +392,17 @@ def check_response_placeholder_integrity(
     Platzhalter-Tokens, Leck des Originalwerts) laufen davon UNBERUEHRT
     IMMER.
 
+    `lenient_leak_exempt_placeholders` (07.10., siehe Modulkommentar bei
+    `_LENIENT_LEAK_CATEGORIES`/`find_lenient_leak_exempt_placeholders` fuer
+    die volle Herleitung): eine eng begrenzte, EXPLIZIT vom Aufrufer
+    berechnete Ausnahmeliste - NICHT dasselbe wie `require_full_coverage`.
+    Default ein leeres `frozenset` (unveraendertes, striktes Verhalten fuer
+    JEDEN bisherigen Aufrufer, insbesondere das Final Payload Gate). Nur
+    ein Mapping-Platzhalter, der in dieser Menge steht, wird von der
+    Original-Wert-Leck-Pruefung ausgenommen - die Platzhalter-Token-
+    Manipulationspruefung (oben) bleibt davon UNBERUEHRT, ebenso jedes
+    Mapping, das NICHT in dieser Menge steht.
+
     ECHTER FUND: diese Vollstaendigkeitsforderung ergibt fuer einen Brief-
     /Entwurfstext Sinn (der Text IST das Schreiben ueber die Beteiligten -
     jeder referenzierte Platzhalter sollte darin vorkommen), aber nicht
@@ -352,6 +429,8 @@ def check_response_placeholder_integrity(
         )
 
     for mapping in mappings:
+        if mapping.placeholder in lenient_leak_exempt_placeholders:
+            continue
         if _contains_original_value_leak(mapping.original_value, text):
             reasons.append(
                 f"Urspruenglicher, nicht pseudonymisierter Wert fuer "

@@ -80,7 +80,10 @@ from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
 from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
-from app.privacy.security_check import check_response_placeholder_integrity
+from app.privacy.security_check import (
+    check_response_placeholder_integrity,
+    find_lenient_leak_exempt_placeholders,
+)
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
 
@@ -254,6 +257,7 @@ class _PreparedRequest:
     open_review_points: list[str]
     message_id: str | None = None
     chat_triggered: bool = False
+    lenient_leak_exempt_placeholders: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -624,11 +628,34 @@ class DraftingService:
             known_entities=preparation.known_entities,
         )
 
+        # ECHTER FUND (07.10., siehe app/privacy/security_check.py::
+        # find_lenient_leak_exempt_placeholders fuer die volle Herleitung):
+        # NUR der tatsaechlich vom Anwalt selbst verfasste Text darf als
+        # Nachweis dienen, dass ein Wert NIE vom Anwalt getippt wurde -
+        # "Anwalt: "-Praefix spiegelt exakt app/chat/service.py::
+        # _HISTORY_ROLE_LABELS["user"] (bewusst als Literal dupliziert,
+        # nicht importiert - app.chat haengt bereits von app.drafting ab,
+        # ein Import in umgekehrter Richtung waere ein Zirkelimport).
+        lawyer_authored_text = "\n".join(
+            [attorney_anmerkungen or ""]
+            + [
+                entry
+                for entry in (gespraechsverlauf or [])
+                if entry.startswith("Anwalt: ")
+            ]
+        )
+        lenient_leak_exempt_placeholders = frozenset(
+            find_lenient_leak_exempt_placeholders(
+                gateway_result.mappings, lawyer_authored_text=lawyer_authored_text
+            )
+        )
+
         return _PreparedRequest(
             matter_id=matter_id,
             payload=gateway_result.payload,
             gateway_result=gateway_result,
             skip_llm_privacy_layers=skip_llm_privacy_layers,
+            lenient_leak_exempt_placeholders=lenient_leak_exempt_placeholders,
             source_list=source_list,
             knowledge_items_used=knowledge_items_used,
             open_review_points=open_review_points,
@@ -937,9 +964,18 @@ class DraftingService:
                         # check_response_placeholder_integrity. Betrifft NICHT
                         # das separate, bewusst weiterhin strenge ausgehende
                         # Final Payload Gate (check_payload_placeholder_integrity).
+                        # `lenient_leak_exempt_placeholders` (07.10., siehe
+                        # app/privacy/security_check.py::
+                        # find_lenient_leak_exempt_placeholders) ist die
+                        # EINZIGE, eng begrenzte Ausnahme von "Originalwert-
+                        # Leck bleibt fuer JEDEN Zweck zwingend aktiv" -
+                        # betrifft nur NER-basierte ort/organisation-Werte,
+                        # die nachweislich nie vom Anwalt selbst getippt
+                        # wurden.
                         require_full_placeholder_coverage=(
                             purpose not in _RELAXED_COVERAGE_PURPOSES
                         ),
+                        lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
                     )
             except LocalLLMUnavailableError:
                 self.api_logger.log_error(
@@ -994,6 +1030,7 @@ class DraftingService:
                     require_full_placeholder_coverage=(
                         purpose not in _RELAXED_COVERAGE_PURPOSES
                     ),
+                    lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
                 )
 
         if not validation.passed:
