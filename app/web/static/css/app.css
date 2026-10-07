@@ -7823,6 +7823,20 @@ body::-webkit-scrollbar-thumb:hover,
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  /* §7 der Direktive "CHAT UI/UX + INTENT ROOT-CAUSE PASS" (07.10.):
+     sichtbare Scrollbar ausblenden, OHNE das Scrollen selbst zu
+     deaktivieren (ausdruecklich NICHT `overflow:hidden` - das wuerde die
+     Mausrad-/Trackpad-/Touch-Scrollfaehigkeit mit zerstoeren, siehe
+     `overflow-y: auto` oben, unveraendert). `scrollbar-width`/
+     `-ms-overflow-style` + die separate ::-webkit-scrollbar-Regel unten
+     (display:none) sind reine Darstellungs-Eigenschaften der Scrollbar
+     selbst - alle drei Browser-Engines bleiben weiterhin scrollbar. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chat-panel__messages::-webkit-scrollbar {
+  display: none;
 }
 
 .chat-empty-state {
@@ -8214,20 +8228,34 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-thinking-indicator {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   padding: 4px 0;
 }
 
-.chat-thinking-indicator span {
+/* ECHTER FUND (07.10., Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE
+   PASS", live per CDP reproduziert - Referenz-Screenshot 44 zeigte
+   "Lokale Vorabanalyse" Buchstabe fuer Buchstabe UNTEREINANDER): Root
+   Cause war dieser Selektor selbst - `.chat-thinking-indicator span`
+   traf per CSS-Spezifitaet (Element-Selektor) NICHT NUR die drei reinen
+   Puls-Punkt-`<span>`s, sondern AUCH `.chat-thinking-indicator__status`
+   (ebenfalls ein `<span>`, siehe chat.html::appendThinkingBubble) und
+   zwang dessen Breite/Hoehe auf 6x6px - der dort eingefuegte Status-Text
+   musste sich dadurch in eine kreisrunde 6px-Box zwaengen und brach pro
+   Zeichen um. Behoben durch eine dedizierte Klasse NUR fuer die drei
+   Puls-Punkte (`__dot`, siehe chat.html), statt eines ungezielten
+   Element-Selektors - `.chat-thinking-indicator__status` ist davon jetzt
+   strukturell unerreichbar, keine Spezifitaets-Lotterie mehr moeglich. */
+.chat-thinking-indicator__dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--ink-300);
   animation: chat-thinking-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
-.chat-thinking-indicator span:nth-child(2) { animation-delay: 0.2s; }
-.chat-thinking-indicator span:nth-child(3) { animation-delay: 0.4s; }
+.chat-thinking-indicator__dot:nth-child(2) { animation-delay: 0.2s; }
+.chat-thinking-indicator__dot:nth-child(3) { animation-delay: 0.4s; }
 
 /* P1 Performance-Feedback-Follow-up (17.09.): Fortschritts-Text neben den
    Puls-Punkten - nur befuellt/sichtbar, sobald ein "status"-SSE-Ereignis
@@ -8236,6 +8264,7 @@ body::-webkit-scrollbar-thumb:hover,
   margin-left: 4px;
   font-size: 12.5px;
   color: var(--ink-500);
+  white-space: normal;
 }
 
 .chat-thinking-indicator__status:empty {
@@ -8248,7 +8277,7 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-thinking-indicator span {
+  .chat-thinking-indicator__dot {
     animation: none;
     opacity: 0.6;
   }
@@ -8700,6 +8729,64 @@ body::-webkit-scrollbar-thumb:hover,
   width: 100%;
   box-sizing: border-box;
   flex-shrink: 0;
+  /* Anker fuer `.chat-scroll-to-bottom` (§8 der Direktive "CHAT UI/UX +
+     INTENT ROOT-CAUSE PASS", 07.10.) - der Button sitzt dadurch IMMER
+     direkt oberhalb des Composers, unabhaengig von dessen eigener Hoehe
+     (Dateiliste/Recording-Zeile koennen sie veraendern). */
+  position: relative;
+}
+
+/* Schwebender "nach unten scrollen"-Button (§8) - erscheint nur per JS
+   (`hidden`-Attribut, siehe chat.html), wenn der Nutzer nicht am unteren
+   Ende von `#chat-messages` steht. Horizontal mittig, direkt oberhalb des
+   Eingabefelds, verdeckt es nicht (eigene Zeile oberhalb dank `top`,
+   negativer Versatz aus der Composer-Flaeche heraus). */
+.chat-scroll-to-bottom {
+  position: absolute;
+  top: -44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--paper-line);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  box-shadow: var(--shadow-elevated);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, transform 0.1s var(--ease-elevate);
+}
+
+/* ECHTER FUND (07.10., Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE
+   PASS", live per CDP reproduziert): ohne diese Regel blieb der Button
+   SICHTBAR, obwohl JS das `hidden`-Attribut korrekt setzte (per
+   `element.hidden`-Eigenschaft gegengeprueft) - Autoren-CSS mit einer
+   eigenen `display`-Deklaration auf demselben Element hat IMMER Vorrang
+   vor der UA-Standardregel `[hidden]{display:none}` (Autoren-Stylesheets
+   schlagen User-Agent-Stylesheets in der Kaskade unabhaengig von der
+   Spezifitaet) - `display:flex` oben machte das `hidden`-Attribut dadurch
+   wirkungslos. Explizite Wiederherstellung noetig, sobald ein Element
+   seinen eigenen `display`-Wert setzt. */
+.chat-scroll-to-bottom[hidden] {
+  display: none;
+}
+
+.chat-scroll-to-bottom:hover {
+  background: var(--paper-200);
+  color: var(--ink-900);
+}
+
+.chat-scroll-to-bottom:active {
+  transform: translateX(-50%) scale(0.94);
+}
+
+.chat-scroll-to-bottom .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .chat-composer__file-list {
@@ -8800,6 +8887,110 @@ body::-webkit-scrollbar-thumb:hover,
   background: var(--wax-red);
   color: var(--on-brand);
   animation: chat-mic-pulse 1.4s ease-in-out infinite;
+}
+
+/* Dezentes Datenschutz-/Shield-Icon im Composer (§9/§10 der Direktive
+   "CHAT UI/UX + INTENT ROOT-CAUSE PASS", 07.10.) - ersetzt den bisher
+   permanent unter JEDER Unterhaltung sichtbaren Fliesstext
+   (`.chat-composer__hint`, siehe chat.html fuer die Entfernung dort).
+   Gleiche Groesse/Optik wie Anhang-/Mikrofon-Button (`.chat-composer__
+   attach-btn`/`.chat-composer__mic-btn`), bewusst NICHT in Warnfarben
+   (kein `--wax-red`/`--amber`) - eine Information, kein Alarm. */
+.chat-composer__privacy-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.chat-composer__privacy-btn:hover,
+.chat-composer__privacy-btn[aria-expanded="true"] {
+  background: var(--paper-200);
+  color: var(--seal-green-dark);
+}
+
+/* Kompakter Hover-Tooltip (reines CSS, kein JS noetig) - erscheint ueber
+   dem Icon, verschwindet sobald die Maus es verlaesst. Der ausfuehrliche
+   Inhalt lebt im Klick-Popover (`.chat-privacy-popover` unten), hier nur
+   eine knappe Orientierung. */
+.chat-composer__privacy-btn::after {
+  content: "Datenschutz & Pseudonymisierung";
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  white-space: nowrap;
+  background: var(--ink-900);
+  color: var(--paper-000);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: 6px;
+  box-shadow: var(--shadow-elevated);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 25;
+}
+
+.chat-composer__privacy-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Ausfuehrliches Klick-Popover - Sichtbarkeit ausschliesslich ueber das
+   `hidden`-Attribut (JS, siehe chat.html), nicht ueber `:hover` (soll
+   nach dem Klick geoeffnet BLEIBEN, bis der Nutzer es aktiv schliesst,
+   anders als der obige reine Hover-Tooltip). */
+.chat-privacy-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: -6px;
+  z-index: 25;
+  width: 300px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  padding: 14px 16px;
+  color: var(--ink-700);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.chat-privacy-popover__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin-bottom: 8px;
+}
+
+.chat-privacy-popover__title .icon {
+  width: 16px;
+  height: 16px;
+  color: var(--seal-green-dark);
+  flex-shrink: 0;
+}
+
+.chat-privacy-popover p {
+  margin: 0 0 8px;
+}
+
+.chat-privacy-popover p:last-child {
+  margin-bottom: 0;
 }
 
 .chat-composer__mic-btn--busy {

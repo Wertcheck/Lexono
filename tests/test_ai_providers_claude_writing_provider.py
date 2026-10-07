@@ -73,6 +73,38 @@ def test_build_writing_prompt_omits_empty_optional_fields() -> None:
     assert "Vorlage" not in prompt
 
 
+def test_build_writing_prompt_does_not_leak_the_raw_chat_response_purpose_code() -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE
+    PASS", per Code-Lese-Analyse gefunden): fuer purpose="chat_response"
+    schrieb `build_writing_prompt` bisher woertlich "Schreibauftrag:
+    chat_response" - ein interner Routing-Code als Prompttext, strukturell
+    identisch zu einem echten Drafting-Auftrag. Die Zeile muss jetzt eine
+    natuerliche Chat-Antwort-Anweisung sein, OHNE den rohen Bezeichner."""
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt="Akte: Schnellentwurf 2026-10-07",
+        anonymisierte_anwaltliche_anmerkungen="Was ist § 558 BGB?",
+    )
+
+    prompt = build_writing_prompt(payload)
+
+    assert "chat_response" not in prompt
+    assert "Chat-Antwort" in prompt
+
+
+def test_build_writing_prompt_keeps_the_literal_formulate_draft_purpose() -> None:
+    """Gegenprobe: der bestehende Drafting-Zweck bleibt woertlich
+    unveraendert (keine Verhaltensaenderung fuer den echten Schriftsatz-
+    Generator, siehe app/web/schriftsatz_router.py)."""
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft", anonymisierter_sachverhalt="Text"
+    )
+
+    prompt = build_writing_prompt(payload)
+
+    assert "Schreibauftrag: formulate_draft" in prompt
+
+
 class TestAnthropicClaudeWritingProvider:
     def test_requires_non_blank_api_key(self) -> None:
         from app.ai_providers.anthropic_writing_provider import (

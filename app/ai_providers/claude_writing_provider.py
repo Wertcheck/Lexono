@@ -302,12 +302,40 @@ class ClaudeWritingStreamProvider(Protocol):
         ...
 
 
+#: ECHTER FUND (07.10., Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE
+#: PASS", per Code-Lese-Analyse gefunden - siehe dortigen Abschlussbericht
+#: fuer die volle Herleitung): `build_writing_prompt`/
+#: `build_writing_prompt_cache_blocks` setzten die ERSTE Zeile des an
+#: Claude gesendeten Texts bisher IMMER woertlich auf
+#: "Schreibauftrag: {payload.schreibauftrag}" - fuer `purpose="chat_response"`
+#: landete dadurch der interne, technische Bezeichner "chat_response" SELBST
+#: als Text im Prompt ("Schreibauftrag: chat_response"), gefolgt von
+#: "Sachverhalt: Akte: ..." - strukturell ununterscheidbar von einem
+#: echten Drafting-Auftrag, obwohl `CHAT_SYSTEM_PROMPT` (oben) bereits
+#: korrekt ausgewaehlt wurde. `_PURPOSE_CHAT`/`_PURPOSE_DRAFT` in
+#: app/chat/service.py sind bewusst interne Routing-Codes, keine fuer ein
+#: Sprachmodell verstaendlichen Anweisungen - diese Funktion uebersetzt sie
+#: jetzt in eine natuerliche Zeile, NUR fuer den Chat-Zweck (der bereits
+#: bestehende Drafting-Zweck/-Test bleibt unveraendert woertlich, siehe
+#: tests/test_ai_providers_claude_writing_provider.py::
+#: test_build_writing_prompt_contains_only_allowlist_fields).
+def _schreibauftrag_line(schreibauftrag: str) -> str:
+    if schreibauftrag == "chat_response":
+        return (
+            "Schreibauftrag: Chat-Antwort - beantworte die Anfrage des Anwalts "
+            "(siehe \"Anwaltliche Anmerkungen\" unten) direkt und hilfreich. "
+            "Erstelle NUR dann ein foermliches Schreiben/einen Schriftsatz, "
+            "wenn die Anwaltlichen Anmerkungen das ausdruecklich verlangen."
+        )
+    return f"Schreibauftrag: {schreibauftrag}"
+
+
 def build_writing_prompt(payload: ClaudeRequestPayload) -> str:
     """Baut den an Claude gesendeten Text AUSSCHLIESSLICH aus den acht
     Allowlist-Feldern - structurell unmöglich, hier versehentlich weitere
     Daten (z. B. rohe Aktendaten) einzuschleusen, da `ClaudeRequestPayload`
     keine weiteren Felder besitzt."""
-    parts = [f"Schreibauftrag: {payload.schreibauftrag}"]
+    parts = [_schreibauftrag_line(payload.schreibauftrag)]
     if payload.gewuenschter_stil:
         parts.append(f"Gewünschter Stil: {payload.gewuenschter_stil}")
     # CHAT-02: Gesprächsverlauf VOR dem aktuellen Sachverhalt platziert -
@@ -367,7 +395,7 @@ def build_writing_prompt_cache_blocks(payload: ClaudeRequestPayload) -> list[dic
     if payload.schreibvorlage:
         stable_parts.append(f"Vorlage/Beispielstil:\n{payload.schreibvorlage}")
 
-    variable_parts = [f"Schreibauftrag: {payload.schreibauftrag}"]
+    variable_parts = [_schreibauftrag_line(payload.schreibauftrag)]
     if payload.gewuenschter_stil:
         variable_parts.append(f"Gewünschter Stil: {payload.gewuenschter_stil}")
     # CHAT-02: bewusst im VARIABLEN Block, nicht im stabilen/gecachten -

@@ -3390,3 +3390,102 @@ def test_chat_document_panel_is_isolated_from_the_dark_theme(
     panel_block = css[panel_start:panel_end]
     assert "--paper-000: #ffffff;" in panel_block
     assert "--ink-900: #0f172a;" in panel_block
+
+
+def test_thinking_indicator_dots_use_a_dedicated_class_not_a_bare_span_selector(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE
+    PASS", Referenz-Screenshot 44): `.chat-thinking-indicator span` traf
+    bisher per Element-Selektor AUCH `.chat-thinking-indicator__status`
+    (ebenfalls ein `<span>`) und zwang dessen Statustext in eine
+    6x6px-Box - jedes Zeichen brach dadurch in eine eigene Zeile um.
+    Regressionsschutz: die CSS-Datei darf den bare-`span`-Selektor nicht
+    mehr enthalten, UND das HTML/JS muss die neue, dedizierte
+    `__dot`-Klasse tatsaechlich verwenden."""
+    login_as_admin(db_session, client)
+    css_response = client.get("/dashboard/static/css/app.css")
+    assert css_response.status_code == 200
+    assert ".chat-thinking-indicator span {" not in css_response.text
+    assert ".chat-thinking-indicator__dot {" in css_response.text
+
+    chat_response = client.get("/dashboard/chat")
+    assert chat_response.status_code == 200
+    assert "chat-thinking-indicator__dot" in chat_response.text
+
+
+def test_permanent_privacy_hint_below_composer_is_replaced_by_an_icon_popover(
+    client: TestClient, db_session: Session
+) -> None:
+    """§9/§10 der Owner-Direktive "CHAT UI/UX + INTENT ROOT-CAUSE PASS"
+    (07.10.): der bisher dauerhaft unter JEDER Unterhaltung sichtbare
+    Fliesstext muss verschwunden sein, ersetzt durch ein dezentes
+    Datenschutz-Icon mit Popover - das Popover deckt ausdruecklich
+    allgemein personenbezogene/sensible Daten ab, nicht nur
+    Dokumentinhalte, und behauptet KEINE absolute "immer"-Garantie."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    db_session.add(ChatMessage(conversation_id=conversation.id, role="user", content="Hallo."))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert response.status_code == 200
+    assert "chat-composer__hint" not in response.text
+    assert "Dokumentinhalte werden vor jeder KI-Anfrage lokal pseudonymisiert -" not in response.text
+    assert "chat-composer__privacy-btn" in response.text
+    assert "chat-privacy-popover" in response.text
+    assert "personenbezogene" in response.text
+
+
+def test_scroll_to_bottom_button_present_in_composer(
+    client: TestClient, db_session: Session
+) -> None:
+    """§8 der Direktive: ein schwebender Scroll-Button muss im Markup
+    vorhanden sein (Sichtbarkeit selbst ist reines Laufzeitverhalten,
+    hier nur die strukturelle Voraussetzung dafuer geprueft)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/chat")
+    assert response.status_code == 200
+    assert 'id="chat-scroll-to-bottom"' in response.text
+
+
+def test_scroll_to_bottom_button_has_a_hidden_attribute_display_override(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (07.10., live per CDP reproduziert): `.chat-scroll-to-
+    bottom` deklariert sein eigenes `display: flex` - ein Autoren-Stylesheet
+    mit eigener `display`-Deklaration hat IMMER Vorrang vor der UA-
+    Standardregel `[hidden]{display:none}`, unabhaengig von Spezifitaet
+    (Autoren- schlagen User-Agent-Stylesheets in der Kaskade). Ohne eine
+    explizite `.chat-scroll-to-bottom[hidden]{display:none}`-Regel blieb
+    der Button dadurch permanent sichtbar, obwohl JS das `hidden`-Attribut
+    korrekt setzte - Regressionsschutz dafuer."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/static/css/app.css")
+    assert response.status_code == 200
+    css = response.text
+    assert ".chat-scroll-to-bottom[hidden] {" in css
+    rule_start = css.index(".chat-scroll-to-bottom[hidden] {")
+    rule_end = css.index("}", rule_start)
+    assert "display: none;" in css[rule_start:rule_end]
+
+
+def test_chat_panel_messages_scrollbar_is_hidden_but_overflow_stays_scrollable(
+    client: TestClient, db_session: Session
+) -> None:
+    """§7: nur die SICHTBARE Scrollbar darf verschwinden - `overflow-y:
+    auto` (= weiterhin scrollbar per Maus/Trackpad/Touch) muss erhalten
+    bleiben, `overflow:hidden` ist explizit verboten (wuerde das Scrollen
+    selbst deaktivieren)."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/static/css/app.css")
+    assert response.status_code == 200
+    css = response.text
+    start = css.index(".chat-panel__messages {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "overflow-y: auto;" in block
+    assert "overflow: hidden" not in block
+    assert "scrollbar-width: none;" in block
+    assert ".chat-panel__messages::-webkit-scrollbar {\n  display: none;\n}" in css

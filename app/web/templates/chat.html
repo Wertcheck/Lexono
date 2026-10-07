@@ -461,6 +461,18 @@
 
       <form method="post" action="/dashboard/chat/send" enctype="multipart/form-data"
             class="chat-composer" id="chat-composer">
+        {# Schwebender "nach unten scrollen"-Button (§8 der Owner-Direktive
+           "CHAT UI/UX + INTENT ROOT-CAUSE PASS", 07.10.) - per JS ein-/
+           ausgeblendet (`hidden`-Attribut), siehe Script weiter unten
+           (`updateScrollToBottomVisibility`/Scroll-Listener auf
+           `#chat-messages`). Als erstes Kind von `.chat-composer`
+           platziert (dieses hat jetzt `position:relative`, siehe app.css)
+           - rein visuelle Position per CSS (`top:-44px`, siehe dort),
+           Position im Markup ist fuer `position:absolute` irrelevant. #}
+        <button type="button" class="chat-scroll-to-bottom" id="chat-scroll-to-bottom"
+                hidden title="Zum Ende springen" aria-label="Zum neuesten Chatinhalt springen">
+          {{ icons.chevron_down(class_="icon") }}
+        </button>
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
         {# Vorgemerkte Akte aus dem "Mit dieser Akte im Chat arbeiten"-
@@ -521,6 +533,52 @@
                     aria-pressed="false">
               {{ icons.mic(class_="icon") }}
             </button>
+            {# Dezentes Datenschutz-Icon (§9/§10 der Owner-Direktive "CHAT
+               UI/UX + INTENT ROOT-CAUSE PASS", 07.10.) - ersetzt den
+               bisher permanent unter JEDER Unterhaltung sichtbaren
+               Fliesstext (ehem. `.chat-composer__hint`, siehe Git-
+               Historie). Hover zeigt einen knappen CSS-Tooltip
+               (`.chat-composer__privacy-btn::after`, app.css), ein Klick
+               oeffnet dieses ausfuehrlichere Popover (`hidden`-Attribut,
+               siehe Script weiter unten) - deckt NICHT nur
+               Dokumentinhalte ab, sondern allgemein personenbezogene/
+               sensible Daten, UND formuliert bewusst OHNE absolute
+               "immer"/"niemals unter allen Umstaenden"-Zusagen (die
+               tatsaechliche Verarbeitung variiert je nach Workflow -
+               siehe app/drafting/service.py::_should_skip_llm_privacy_
+               layers fuer ein reales Beispiel: eine reine Normzitat-Frage
+               ohne Aktenbezug durchlaeuft Presidio/die Cloud-KI ueberhaupt
+               nicht, sie wird lokal aus der Gesetzesbibliothek
+               beantwortet). #}
+            <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
+                    title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
+                    aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
+              {{ icons.shield(class_="icon") }}
+            </button>
+            <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
+                 aria-label="Datenschutzinformationen" hidden>
+              <div class="chat-privacy-popover__title">
+                {{ icons.shield(class_="icon") }}
+                <span>Datenschutz &amp; Pseudonymisierung</span>
+              </div>
+              <p>
+                Lexono erkennt personenbezogene und andere sensible Daten
+                (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
+                lokal auf diesem Rechner und pseudonymisiert sie vor der
+                Verarbeitung durch eine Cloud-KI.
+              </p>
+              <p>
+                Unpseudonymisierte personenbezogene Daten werden dadurch
+                nicht unnötig an die Cloud-KI übertragen. Diese lokale
+                Erkennungs- und Pseudonymisierungsschicht ist fester
+                Bestandteil der Lexono-Verarbeitung.
+              </p>
+              <p>
+                Die konkrete Verarbeitung kann je nach Workflow variieren
+                (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
+                teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
+              </p>
+            </div>
           </div>
           {# Aufnahme-UX (06.10., selbe Direktive, §4-§7): ersetzt waehrend
              RECORDING sichtbar die normalen Steuerelemente innerhalb
@@ -579,12 +637,6 @@
           </button>
         </div>
         <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
-        {% if active_conversation %}
-          <p class="chat-composer__hint">
-            Dokumentinhalte werden vor jeder KI-Anfrage lokal pseudonymisiert -
-            es werden nie unpseudonymisierte Mandantendaten an die Cloud-KI gesendet.
-          </p>
-        {% endif %}
       </form>
     </section>
 
@@ -736,6 +788,87 @@
       var messages = document.getElementById("chat-messages");
       var csrfToken = (composer && composer.querySelector('input[name="csrf_token"]')) ?
         composer.querySelector('input[name="csrf_token"]').value : "";
+
+      // Scroll-Verhalten (§8/§12 der Owner-Direktive "CHAT UI/UX + INTENT
+      // ROOT-CAUSE PASS", 07.10.): ein neu ankommender Inhalt (eigene
+      // Nachricht, "denkt nach"-Bubble, Streaming-Delta) darf einen Nutzer,
+      // der bewusst nach oben gescrollt hat, NICHT nach unten zwingen -
+      // nur wer bereits (annaehernd) am unteren Ende steht, soll
+      // automatisch "mitfolgen". `isNearBottom()` ist daher die zentrale
+      // Weiche fuer JEDEN der mehreren `scrollTop = scrollHeight`-Aufrufe
+      // weiter unten (appendUserBubble/appendThinkingBubble/Streaming-
+      // Delta/finish) - ersetzt das bisherige bedingungslose Immer-
+      // Scrollen an all diesen Stellen.
+      var SCROLL_BOTTOM_THRESHOLD = 72;
+      function isNearBottom() {
+        if (!messages) { return true; }
+        return messages.scrollHeight - messages.scrollTop - messages.clientHeight <= SCROLL_BOTTOM_THRESHOLD;
+      }
+      function scrollMessagesToBottom(smooth) {
+        if (!messages) { return; }
+        if (smooth && messages.scrollTo) {
+          messages.scrollTo({ top: messages.scrollHeight, behavior: "smooth" });
+        } else {
+          messages.scrollTop = messages.scrollHeight;
+        }
+      }
+      // Nur scrollen, WENN der Nutzer bereits unten war (vor dem Anhaengen
+      // des neuen Inhalts) - der Aufrufer muss `wasNearBottom` VOR der
+      // DOM-Aenderung selbst ermitteln (siehe Aufrufstellen unten), da
+      // `messages.scrollHeight` sich durch das Anhaengen bereits aendert.
+      function scrollToBottomIfWasNearBottom(wasNearBottom) {
+        if (wasNearBottom) { scrollMessagesToBottom(false); }
+      }
+
+      // Schwebender "nach unten"-Button (§8): sichtbar NUR wenn der Nutzer
+      // nicht (mehr) am unteren Ende steht - unabhaengig davon, OB gerade
+      // neuer Inhalt eintrifft oder der Nutzer nur manuell im Verlauf
+      // nach oben gescrollt hat.
+      var scrollToBottomBtn = document.getElementById("chat-scroll-to-bottom");
+      function updateScrollToBottomVisibility() {
+        if (!scrollToBottomBtn || !messages) { return; }
+        scrollToBottomBtn.hidden = isNearBottom();
+      }
+      if (messages) {
+        messages.addEventListener("scroll", updateScrollToBottomVisibility, { passive: true });
+      }
+      if (scrollToBottomBtn) {
+        scrollToBottomBtn.addEventListener("click", function () {
+          scrollMessagesToBottom(true);
+          scrollToBottomBtn.hidden = true;
+        });
+      }
+      window.addEventListener("resize", updateScrollToBottomVisibility);
+      updateScrollToBottomVisibility();
+
+      // Datenschutz-Popover (§9/§10): Hover zeigt bereits einen reinen
+      // CSS-Tooltip (`.chat-composer__privacy-btn::after`, app.css) - ein
+      // Klick oeffnet zusaetzlich dieses ausfuehrlichere Popover, bleibt
+      // offen bis der Nutzer es aktiv schliesst (erneuter Klick auf das
+      // Icon, Klick ausserhalb, oder Escape) - bewusst dasselbe
+      // Grundmuster wie `.chat-matter-link` (natives `<details>` waere
+      // hier nicht passend, da der Trigger ein eigenstaendiger Button
+      // bleiben soll, kein `<summary>`).
+      var privacyBtn = document.getElementById("chat-privacy-btn");
+      var privacyPopover = document.getElementById("chat-privacy-popover");
+      function closePrivacyPopover() {
+        if (!privacyPopover || privacyPopover.hidden) { return; }
+        privacyPopover.hidden = true;
+        if (privacyBtn) { privacyBtn.setAttribute("aria-expanded", "false"); }
+      }
+      if (privacyBtn && privacyPopover) {
+        privacyBtn.addEventListener("click", function (evt) {
+          evt.stopPropagation();
+          var willOpen = privacyPopover.hidden;
+          privacyPopover.hidden = !willOpen;
+          privacyBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        });
+        privacyPopover.addEventListener("click", function (evt) { evt.stopPropagation(); });
+        document.addEventListener("click", closePrivacyPopover);
+        document.addEventListener("keydown", function (evt) {
+          if (evt.key === "Escape") { closePrivacyPopover(); }
+        });
+      }
 
       // Automatisch wachsende Texteingabe (bis zu einer Obergrenze) statt
       // einer festen Zeilenzahl - fuehlt sich wie eine echte
@@ -1626,6 +1759,7 @@
         bubble.appendChild(bodyDiv);
         messages.appendChild(bubble);
         messages.scrollTop = messages.scrollHeight;
+        updateScrollToBottomVisibility();
         return bubble;
       }
 
@@ -1640,11 +1774,14 @@
           '<div class="chat-message__body">' +
           '<div class="chat-message__sender">Lexono</div>' +
           '<div class="chat-message__text chat-thinking-indicator" role="status" aria-label="Lexono antwortet …">' +
-          '<span></span><span></span><span></span>' +
+          '<span class="chat-thinking-indicator__dot"></span>' +
+          '<span class="chat-thinking-indicator__dot"></span>' +
+          '<span class="chat-thinking-indicator__dot"></span>' +
           '<span class="chat-thinking-indicator__status"></span>' +
           '</div></div>';
         messages.appendChild(thinkingBubble);
         messages.scrollTop = messages.scrollHeight;
+        updateScrollToBottomVisibility();
         return thinkingBubble;
       }
 
@@ -1903,8 +2040,16 @@
               } else if (payload.kind === "delta") {
                 revealFirstDelta();
                 if (textSpan) {
+                  // §12: VOR dem Anhaengen pruefen (scrollHeight aendert
+                  // sich sonst bereits durch den neuen Text selbst) - nur
+                  // wer schon unten war, folgt automatisch jedem weiteren
+                  // Delta; ein nach oben gescrollter Nutzer bleibt in Ruhe
+                  // dort, waehrend die Antwort im Hintergrund weiterlaeuft
+                  // (der schwebende Scroll-Button zeigt ihm das an).
+                  var wasNearBottom = isNearBottom();
                   textSpan.textContent += payload.text;
-                  messages.scrollTop = messages.scrollHeight;
+                  scrollToBottomIfWasNearBottom(wasNearBottom);
+                  updateScrollToBottomVisibility();
                 }
               } else if (payload.kind === "status") {
                 updateThinkingStatus(payload.status);
@@ -1973,6 +2118,7 @@
 
       if (messages) {
         messages.scrollTop = messages.scrollHeight;
+        updateScrollToBottomVisibility();
       }
     })();
   </script>
