@@ -8677,10 +8677,31 @@ body::-webkit-scrollbar-thumb:hover,
    vollstaendige Text bleibt dabei unveraendert im DOM (Kopieren/Editor
    erhalten immer den vollstaendigen Inhalt), nur die SICHTBARE Hoehe ist
    begrenzt. */
+/* ECHTER FUND (07.10., Owner-Direktive "SCHRIFTSATZ-/DRAFTING-BLOCK
+   DARSTELLUNGSFEHLER"): dieser Container hat bewusst NICHT die Basisklasse
+   `.chat-message__text` (anders als der normale Chat-Antwort-Zweig, siehe
+   chat.html `is_schriftsatz`-Verzweigung), weil er eine eigene, vom
+   normalen Sprechblasen-Polster/-Hintergrund unabhaengige Kartenoptik
+   braucht (.chat-document-panel). Dadurch fehlte ihm aber auch dessen
+   `color: var(--ink-900)`-Deklaration - der Textfarbe-Wert wurde also rein
+   geerbt, und zwar vom naechsten AEUSSEREN Vorfahren ausserhalb von
+   `.chat-document-panel`, wo die lokale Token-Neuverankerung (siehe
+   `.chat-document-panel` oben, `--ink-900: #0f172a`) noch nicht gilt - im
+   Dark Mode war der dort noch aktive, globale Theme-Wert von `--ink-900`
+   naemlich `#f1f5f9` (nahezu Weiss, fuer normalen dunklen Chat-Hintergrund
+   gedacht), live als berechnete Farbe reproduziert. Ueberschriften/Zitate/
+   Links blieben lesbar, weil sie weiter unten eigene, explizite
+   `var(--ink-900)`/`var(--ink-700)`/`var(--brand-green-dark)`-Deklarationen
+   haben, die den bereits lokal neu verankerten Tokenwert korrekt erneut
+   auslesen - nur normale Absaetze/Listen/Fettschrift ohne eigene
+   Farbregel nicht. Deshalb hier NICHT die Schrift pauschal/global
+   dunkler gemacht, sondern gezielt dieselbe, lokal bereits korrekt
+   neuverankerte Variable erneut referenziert. */
 .chat-document-panel__content {
   padding: 10px 16px 14px;
   max-height: 340px;
   overflow-y: auto;
+  color: var(--ink-900);
 }
 
 .chat-document-panel__footer {

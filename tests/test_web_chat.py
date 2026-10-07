@@ -3392,6 +3392,39 @@ def test_chat_document_panel_is_isolated_from_the_dark_theme(
     assert "--ink-900: #0f172a;" in panel_block
 
 
+def test_chat_document_panel_content_declares_its_own_text_color(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (07.10., Owner-Direktive "SCHRIFTSATZ-/DRAFTING-BLOCK
+    DARSTELLUNGSFEHLER"): `.chat-document-panel__content` traegt - anders
+    als der normale Chat-Antwort-Zweig - NICHT die Basisklasse
+    `.chat-message__text` (siehe chat.html `is_schriftsatz`-Verzweigung),
+    weil er eine eigene Kartenoptik statt der Sprechblasen-Polsterung
+    braucht. Dadurch fehlte ihm auch deren `color: var(--ink-900)`-
+    Deklaration: die Textfarbe wurde rein von einem Vorfahren AUSSERHALB
+    von `.chat-document-panel` geerbt, wo die lokale Token-Neuverankerung
+    (siehe `.chat-document-panel`, obiger Test) noch nicht griff - live mit
+    einem echten, ueber die Cloud-API erzeugten Schriftsatz reproduziert:
+    im Dark Mode war die berechnete Textfarbe `rgb(241, 245, 249)` (der
+    globale, fuer dunklen Chat-Hintergrund gedachte Theme-Wert von
+    `--ink-900`) auf weiterhin weisser Papierflaeche - nahezu unlesbar.
+    Ueberschriften/Zitate/Links blieben lesbar, weil sie bereits eigene,
+    explizite `var(...)`-Deklarationen haben, die den lokal neu
+    verankerten Tokenwert korrekt erneut auslesen; normale Absaetze/
+    Listen/Fettschrift ohne eigene Farbregel nicht. Regressionsschutz:
+    `.chat-document-panel__content` muss die lokal neu verankerte
+    `--ink-900`-Variable selbst erneut referenzieren, statt sich auf reine
+    Vererbung von aussen zu verlassen."""
+    login_as_admin(db_session, client)
+    response = client.get("/dashboard/static/css/app.css")
+    assert response.status_code == 200
+    css = response.text
+    content_start = css.index(".chat-document-panel__content {")
+    content_end = css.index("}", content_start)
+    content_block = css[content_start:content_end]
+    assert "color: var(--ink-900);" in content_block
+
+
 def test_thinking_indicator_dots_use_a_dedicated_class_not_a_bare_span_selector(
     client: TestClient, db_session: Session
 ) -> None:
