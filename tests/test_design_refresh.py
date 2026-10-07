@@ -192,10 +192,40 @@ def test_sidebar_collapse_icon_rotates_to_point_the_other_way_when_collapsed() -
     ist - zeigt dadurch ausgeklappt nach links ("einklappen") und
     eingeklappt nach rechts ("ausklappen")."""
     css = _read_css()
-    start = css.index("html.sidebar-collapsed .sidebar__collapse-btn .icon {")
+    start = css.index("html.sidebar-collapsed .sidebar-edge-toggle .icon {")
     end = css.index("}", start)
     block = css[start:end]
     assert "transform: rotate(180deg);" in block
+
+
+def test_sidebar_edge_toggle_sits_at_sidebar_right_edge_not_next_to_logo() -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "SIDEBAR-COLLAPSE-
+    CONTROL POSITIONIERUNG"): das Handle sass zuvor innerhalb von
+    `.global-header__brand` direkt neben dem Logo und wirkte dadurch wie
+    ein Bestandteil des Logos. Jetzt ein eigenstaendiges Geschwister-
+    element von `.sidebar`/`.main`, markup-seitig NICHT mehr innerhalb
+    von `.global-header__brand` - und seine Position ist an dieselbe
+    `--sidebar-width`-Variable gekoppelt, die `.sidebar` fuer seine
+    eigene Breite nutzt (kein fester Pixel-Abstand vom Logo), bzw. im
+    eingeklappten Zustand an denselben Wert wie `.sidebar`s eigene
+    eingeklappte Breite (68px)."""
+    html = _read_base_html()
+    brand_start = html.index('<div class="global-header__brand">')
+    brand_end = html.index("</div>", brand_start)
+    assert "sidebar-collapse-toggle" not in html[brand_start:brand_end]
+    assert 'id="sidebar-collapse-toggle" class="sidebar-edge-toggle"' in html
+
+    css = _read_css()
+    start = css.index(".sidebar-edge-toggle {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "left: var(--sidebar-width);" in block
+    assert "position: absolute;" in block
+
+    collapsed_start = css.index("html.sidebar-collapsed .sidebar-edge-toggle {")
+    collapsed_end = css.index("}", collapsed_start)
+    collapsed_block = css[collapsed_start:collapsed_end]
+    assert "left: 68px;" in collapsed_block
 
 
 def test_scrollbars_are_thin_and_use_design_tokens() -> None:

@@ -158,10 +158,6 @@
           <img src="/dashboard/static/img/logo-mark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--light" />
           <img src="/dashboard/static/img/lexono-logo-dark.png" alt="Lexono" class="sidebar__brand-logo sidebar__brand-logo--dark" />
           <span class="sidebar__brand-text">Lexono</span>
-          <button type="button" id="sidebar-collapse-toggle" class="sidebar__collapse-btn"
-                  title="Navigation einklappen" aria-label="Navigation ein-/ausklappen">
-            {{ icons.collapse(class_="icon") }}
-          </button>
         </div>
         <div class="global-header__search-wrap">
           {# Universal Command Bar (Strg+K/⌘K, 20.08.) - oeffnet dasselbe
@@ -476,6 +472,26 @@
         </div>
       {% endif %}
     </nav>
+    {# Sidebar-Einklapp-Handle (07.10., Owner-Direktive "SIDEBAR-COLLAPSE-
+       CONTROL POSITIONIERUNG"): ECHTER FUND - das Control sass bisher
+       innerhalb von `.global-header__brand` direkt neben dem Logo und
+       wirkte dadurch wie ein Bestandteil des Logos. Jetzt ein eigenstaen-
+       diges Element als direktes Geschwister von `.sidebar`/`.main`
+       innerhalb von `.app-shell` (NICHT mehr ein Kind von `.sidebar`
+       selbst - `.sidebar` hat `overflow-y:auto`, was laut Spezifikation
+       `overflow-x:auto` erzwingt und jedes ueber den rechten Rand hinaus-
+       ragende Kind abschneiden wuerde), per CSS exakt auf die rechte
+       Sidebar-Kante gesetzt (`left: var(--sidebar-width)` bzw. im
+       eingeklappten Zustand derselbe Wert wie `.sidebar`s eigene
+       eingeklappte Breite, siehe app.css) - folgt der Sidebar-Breite,
+       kein fester Abstand vom Logo. Gleiche ID/Klasse/Funktion wie zuvor,
+       NUR Markup-Position + CSS-Positionierung geaendert, die Klick-/
+       Speicherlogik in app_sidebar.js ist unveraendert (reine
+       ID-Bindung). #}
+    <button type="button" id="sidebar-collapse-toggle" class="sidebar-edge-toggle"
+            title="Navigation einklappen" aria-label="Navigation ein-/ausklappen">
+      {{ icons.collapse(class_="icon") }}
+    </button>
     <div class="main">
       {# "Posteingang" ergaenzt (25.09., Owner-Direktive "POSTEINGANG FINAL
          UI/UX PRODUCT-COMPLETION" §9, Referenzabgleich
