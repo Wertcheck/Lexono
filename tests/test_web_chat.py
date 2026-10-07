@@ -1968,6 +1968,88 @@ def test_link_matter_endpoint_updates_conversation(client: TestClient, db_sessio
     assert conversation.matter_id == other_matter.id
 
 
+def test_chat_history_row_menu_offers_akte_zuordnen(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "CHAT-HISTORY-
+    MANAGEMENT ERWEITERN" §2/§4): das Drei-Punkte-Menue einer Unterhaltung
+    in der Liste bot bisher nur "Umbenennen"/"Löschen" - eine Akte liess
+    sich nur ueber die separate Kopfzeilen-Karte der GERADE AKTIVEN
+    Konversation zuordnen, nicht pro Zeile fuer JEDE Unterhaltung in der
+    Liste. Wiederverwendet denselben bestehenden `/link-matter`-Endpunkt,
+    kein neuer Codepfad."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    other_client = Client(name="Andere Mandantin", client_number="K-ROW")
+    other_matter = Matter(client=other_client, title="Zielakte Zeile", reference_number="A-ROW")
+    db_session.add_all([other_client, other_matter])
+    db_session.commit()
+
+    response = client.get("/dashboard/chat")
+
+    assert "chat-conversations__matter-trigger" in response.text
+    assert "Akte zuordnen" in response.text
+    assert f'action="/dashboard/chat/{conversation.id}/link-matter"' in response.text
+    assert f'value="{other_matter.id}"' in response.text
+
+
+def test_chat_history_row_matter_popover_excludes_own_current_matter(
+    client: TestClient, db_session: Session
+) -> None:
+    """Dieselbe Regel wie bei der Aktenbezug-Karte der aktiven Konversation
+    (siehe `other_matters` in app/web/chat_router.py): die eigene,
+    bereits zugeordnete Akte einer Zeile darf in deren EIGENEM Popover
+    nicht nochmal als Ziel erscheinen (waere ein wirkungsloser No-Op)."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get("/dashboard/chat")
+
+    assert f'value="{conversation.matter_id}"' not in response.text
+
+
+def test_chat_history_row_matter_popover_excludes_placeholder_quick_matters(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (live beim ersten Testlauf reproduziert): automatisch
+    angelegte Schnellentwurf-Platzhalterakten (PLACEHOLDER_CLIENT_NAME)
+    tauchten zunaechst als waehlbares Zuordnungsziel auf - widerspricht
+    der an anderer Stelle im selben Template bereits etablierten Regel,
+    dass ein allgemeiner Chat/seine Platzhalterakte nicht wie echte
+    Akte-Arbeit wirken/sichtbar werden soll."""
+    login_as_admin(db_session, client)
+    placeholder_conversation = _placeholder_conversation(
+        db_session, "admin@kanzlei.test", user_message="Allgemeine Frage"
+    )
+    # Eine zweite, echte Unterhaltung mit echter Akte, damit das Popover
+    # der Platzhalter-Unterhaltung getestet werden kann, ohne dass deren
+    # EIGENE Akte (sowieso ausgeschlossen) die Aussage verwaessert.
+    _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{placeholder_conversation.id}")
+
+    assert "Schnellentwurf" not in response.text
+
+
+def test_chat_history_row_matter_popover_offers_remove_for_explicit_matter(
+    client: TestClient, db_session: Session
+) -> None:
+    """Direktive §4: "Wenn ein Chat bereits einer Akte zugeordnet ist, soll
+    das Menü außerdem eine sinnvolle Möglichkeit bieten, die Zuordnung zu
+    ändern bzw. zu entfernen." - nur sichtbar, wenn tatsaechlich ein
+    bewusster Aktenkontext aktiv ist (echte Akte, keine Platzhalterakte)."""
+    login_as_admin(db_session, client)
+    with_matter = _active_conversation(db_session, "admin@kanzlei.test")
+    placeholder_conversation = _placeholder_conversation(
+        db_session, "admin@kanzlei.test", user_message="Allgemeine Frage"
+    )
+
+    response = client.get("/dashboard/chat")
+
+    assert f'id="chat-matter-remove-{with_matter.id}"' in response.text
+    assert f'id="chat-matter-remove-{placeholder_conversation.id}"' not in response.text
+
+
 def test_link_matter_endpoint_rejects_wrong_csrf_token(
     client: TestClient, db_session: Session
 ) -> None:
@@ -2227,12 +2309,27 @@ def test_deleting_an_already_deleted_conversation_returns_404(
 def test_chat_history_list_shows_delete_button_for_each_conversation(
     client: TestClient, db_session: Session
 ) -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "CHAT-HISTORY-
+    MANAGEMENT ERWEITERN" §5): ein einzelner Chat liess sich bisher nur
+    ueber ein klassisches Formular ohne jede Bestaetigung loeschen (ein
+    Klick loeschte sofort, kein `window.confirm` o. ae.) - UND ein
+    (zufaelliger) Klick auf "Loeschen" bei einer NICHT aktiven
+    Unterhaltung riss den gerade geoeffneten aktiven Chat per vollem
+    Seiten-Redirect weg, obwohl dieser gar nicht geloescht wurde. Jetzt
+    ein JS-Button (kein `<form action=".../delete">` mehr), der denselben,
+    bereits bestehenden `/bulk-delete`-Endpunkt mit einer einzelnen ID
+    aufruft (siehe chat.html) - inkl. Bestaetigungsdialog und korrekter
+    Behandlung des aktiven Chats (siehe JS-Kommentar dort)."""
     login_as_admin(db_session, client)
     conversation = _active_conversation(db_session, "admin@kanzlei.test")
 
     response = client.get("/dashboard/chat")
 
-    assert f'action="/dashboard/chat/{conversation.id}/delete"' in response.text
+    assert "chat-conversations__delete-trigger" in response.text
+    assert f'data-title="{conversation.title}"' in response.text
+    # Kein klassisches, bestaetigungsloses Formular mehr fuer die
+    # Einzel-Loeschung.
+    assert f'action="/dashboard/chat/{conversation.id}/delete"' not in response.text
 
 
 def test_assistant_message_shows_copy_button_and_timestamp(

@@ -7821,6 +7821,72 @@ body::-webkit-scrollbar-thumb:hover,
   width: 100%;
 }
 
+/* "Akte zuordnen"-Popover pro Unterhaltungs-Zeile (07.10., Owner-
+   Direktive "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4/§7: "Das Pop-up darf
+   nicht abgeschnitten werden") - gleiches Muster wie `.chat-matter-
+   link__form` oben (selbes Formular/derselbe Route, nur pro Zeile statt
+   einmalig fuer die aktive Konversation), aber bewusst SCHMALER:
+   `.chat-conversations__list`/die Aside haben `overflow-y:auto` bzw.
+   `overflow:hidden`, was ueberstehenden Inhalt am LINKEN Rand abschneidet
+   (das Popover ist `right:0`-verankert, waechst also nach links).
+   ECHTER FUND, per CDP-Messung ZWEIMAL noetig (1400px-Fenster, erster
+   Korrekturversuch 192px reichte NOCH NICHT): die Aside ist tatsaechlich
+   nur 200px breit (`aside.left=248` bis `aside.right=448` gemessen, NICHT
+   240px wie die blosse CSS-Breitenregel vermuten liesse - Border/Rundung
+   zehren davon), der Menu-Trigger der jeweils LETZTEN/am weitesten rechts
+   sichtbaren Zeile sitzt bei `cell.right=427` - das ergibt nur ~179px
+   tatsaechlich nutzbaren Platz nach links (427-248), NICHT ~199-220px.
+   174px bleibt mit Sicherheitsabstand darunter. Die Aktionen stehen
+   deshalb UNTEREINANDER statt nebeneinander (siehe `-actions` unten) -
+   bei dieser Breite waeren zwei nebeneinander zu schmal fuer lesbaren
+   Button-Text. (Das aeltere, breitere `.row-menu` auf derselben Zeile
+   ragt bei genauer Nachmessung ebenfalls geringfuegig ueber denselben
+   linken Rand hinaus, faellt dort aber mangels sichtbaren Textes an der
+   ueberstehenden Kante kaum auf - unveraendert gelassen, da es ein
+   eigenstaendiges, auf mehreren anderen Seiten mit jeweils eigener
+   Spaltenbreite wiederverwendetes Bauteil ist, siehe dessen eigene
+   CSS-Regel weiter unten; keine eigenmaechtige, seitenuebergreifende
+   Breitenaenderung an einer dort nicht beauftragten Stelle.) */
+.chat-conversations__matter-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  margin-top: 4px;
+  width: 174px;
+  background: var(--paper-000);
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  padding: 10px;
+}
+
+.chat-conversations__matter-popover select {
+  width: 100%;
+}
+
+.chat-conversations__matter-popover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.chat-conversations__matter-popover-actions .btn {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12.5px;
+}
+
+.chat-conversations__matter-remove-btn {
+  color: #b3261e;
+  border-color: #b3261e;
+}
+
+.chat-conversations__matter-remove-btn:hover {
+  background: #fdecea;
+}
+
 .chat-panel__header-actions {
   display: flex;
   align-items: center;

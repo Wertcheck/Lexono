@@ -75,15 +75,72 @@
                 <button type="button" class="row-menu__item chat-conversations__rename-trigger">
                   {{ icons.pencil(class_="icon") }} Umbenennen
                 </button>
+                <button type="button" class="row-menu__item chat-conversations__matter-trigger">
+                  {{ icons.folder(class_="icon") }} Akte zuordnen
+                </button>
                 <hr class="row-menu__divider" />
-                <form method="post" action="/dashboard/chat/{{ conversation.id }}/delete"
-                      class="row-menu__delete-form chat-conversations__delete-form"
-                      data-title="{{ conversation.title }}">
+                <button type="button" class="row-menu__item row-menu__item--button row-menu__item--danger chat-conversations__delete-trigger"
+                        data-title="{{ conversation.title }}">
+                  {{ icons.trash(class_="icon") }} Löschen
+                </button>
+              </div>
+              {# "Akte zuordnen"-Popover (07.10., Owner-Direktive
+                 "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4) - gleiches
+                 Formular/gleicher Endpunkt wie die bestehende
+                 "Aktenbezug"-Karte fuer die AKTIVE Konversation oben
+                 (link-matter), hier pro Zeile statt nur fuer die aktive
+                 Unterhaltung. Schmaler als `.chat-matter-link__form`
+                 (dort 320px) - muss in die schmale ~240px-Unterhaltungs-
+                 spalte passen, ohne vom `overflow-y:auto` der Liste
+                 horizontal abgeschnitten zu werden (siehe app.css-
+                 Kommentar bei `.chat-conversations__matter-popover`). #}
+              <div class="chat-conversations__matter-popover" hidden>
+                <form method="post" action="/dashboard/chat/{{ conversation.id }}/link-matter"
+                      class="chat-conversations__matter-popover-form">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-                  <button type="submit" class="row-menu__item row-menu__item--button row-menu__item--danger">
-                    {{ icons.trash(class_="icon") }} Löschen
-                  </button>
+                  <label class="form-label">
+                    Akte zuordnen
+                    {# Die eigene aktuelle Akte der Zeile steht NICHT zur
+                       Auswahl (identisches Prinzip wie `other_matters`
+                       oben fuer die Aktenbezug-Karte der aktiven
+                       Konversation: eine Zuordnung auf die bereits
+                       bestehende eigene Akte waere ein wirkungsloser
+                       No-Op-Eintrag in der Liste). #}
+                    <select name="matter_id" required>
+                      <option value="" disabled selected>— Akte wählen —</option>
+                      {% for matter in all_matters %}
+                        {% if matter.id != conversation.matter_id %}
+                          <option value="{{ matter.id }}">{{ matter.reference_number or "" }} {{ matter.title }} ({{ matter.client.name }})</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <div class="chat-conversations__matter-popover-actions">
+                    <button type="submit" class="btn btn--primary">Zuordnen</button>
+                    {# Eigenes, separates Formular fuer "Entfernen" (nicht
+                       derselbe <select name="matter_id"> wie oben) -
+                       dieselbe Struktur wie die bestehende
+                       `.chat-matter-remove` fuer die AKTIVE Konversation
+                       (siehe oben im Template): ein eigenes leeres
+                       `matter_id`-Feld statt zweier Submit-Buttons mit
+                       demselben Feldnamen im selben Formular (waere
+                       mehrdeutig, welcher Wert ankommt). #}
+                    {% if conversation.matter.client.name != "Ohne Mandantenzuordnung" %}
+                      <button type="submit" form="chat-matter-remove-{{ conversation.id }}"
+                              class="btn chat-conversations__matter-remove-btn"
+                              title="Aktenzuordnung entfernen">
+                        Entfernen
+                      </button>
+                    {% endif %}
+                  </div>
                 </form>
+                {% if conversation.matter.client.name != "Ohne Mandantenzuordnung" %}
+                  <form method="post" action="/dashboard/chat/{{ conversation.id }}/link-matter"
+                        id="chat-matter-remove-{{ conversation.id }}" hidden>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                    <input type="hidden" name="matter_id" value="" />
+                  </form>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -773,6 +830,13 @@
     };
     document.addEventListener("click", function () {
       document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+      // "Akte zuordnen"-Popover (07.10., Owner-Direktive
+      // "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4) schliesst sich wie jedes
+      // andere Popover bei einem Klick ausserhalb - `.chat-conversations__
+      // menu-cell` hat bereits `onclick="event.stopPropagation()"`, ein
+      // Klick INNERHALB des Popovers (z. B. in das <select>) erreicht
+      // diesen Dokument-Listener also gar nicht erst.
+      document.querySelectorAll(".chat-conversations__matter-popover").forEach(function (p) { p.hidden = true; });
     });
 
     (function () {
@@ -1037,6 +1101,86 @@
           titleSpan.replaceWith(input);
           input.focus();
           input.select();
+        });
+      });
+
+      // "Akte zuordnen"-Popover oeffnen (07.10., Owner-Direktive
+      // "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4) - schliesst das
+      // Drei-Punkte-Menue und zeigt stattdessen das danebenliegende
+      // Popover derselben Zeile (siehe chat.html-Markup: `.row-menu` und
+      // `.chat-conversations__matter-popover` sind Geschwister innerhalb
+      // von `.chat-conversations__menu-cell`).
+      document.querySelectorAll(".chat-conversations__matter-trigger").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var cell = btn.closest(".chat-conversations__menu-cell");
+          var popover = cell && cell.querySelector(".chat-conversations__matter-popover");
+          if (!popover) { return; }
+          document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+          var wasOpen = !popover.hidden;
+          document.querySelectorAll(".chat-conversations__matter-popover").forEach(function (p) { p.hidden = true; });
+          popover.hidden = wasOpen;
+          if (!popover.hidden) {
+            var select = popover.querySelector("select");
+            if (select) { select.focus(); }
+          }
+        });
+      });
+
+      // Chat löschen ueber das Drei-Punkte-Menue (07.10., selbe Direktive
+      // §5): Bestaetigungsdialog ERGAENZT (ECHTER FUND - fehlte bisher
+      // komplett, anders als beim bereits vorhandenen Sammelloeschen-Weg
+      // unten) + Wiederverwendung desselben `/bulk-delete`-Endpunkts mit
+      // genau EINER ID statt eines eigenen, zweiten Loesch-Codepfads
+      // (server- UND clientseitig bereits fuer N IDs korrekt implementiert,
+      // inkl. Eigentuemer-Pruefung - funktioniert fuer N=1 unveraendert).
+      // Kein klassischer Formular-Submit/Seitenreload mehr: ein
+      // NICHT-aktiver geloeschter Chat darf die gerade geoeffnete aktive
+      // Unterhaltung nicht stoeren (nur die Zeile verschwindet per DOM-
+      // Entfernung) - nur beim Loeschen des AKTIVEN Chats wird
+      // weitergeleitet, identische Logik wie beim Sammelloeschen.
+      document.querySelectorAll(".chat-conversations__delete-trigger").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
+          var row = btn.closest(".chat-conversations__row");
+          if (!row) { return; }
+          var conversationId = row.getAttribute("data-conversation-id");
+          var title = btn.dataset.title || "";
+          var confirmed = window.confirm(
+            "Unterhaltung \"" + title + "\" wirklich löschen?\n\n" +
+            "Die Unterhaltung und ihre Nachrichten werden gelöscht. " +
+            "Bereits erzeugte Entwürfe bleiben erhalten. Dies kann nicht rückgängig gemacht werden."
+          );
+          if (!confirmed) { return; }
+
+          var formData = new FormData();
+          formData.append("csrf_token", csrfToken);
+          formData.append("conversation_ids", conversationId);
+
+          fetch("/dashboard/chat/bulk-delete", { method: "POST", body: formData, credentials: "same-origin" })
+            .then(function (resp) { return resp.json().then(function (data) { return { ok: resp.ok, data: data }; }); })
+            .then(function (result) {
+              if (!result.ok || !result.data || !result.data.ok) {
+                window.alert("Löschen fehlgeschlagen. Bitte erneut versuchen.");
+                return;
+              }
+              var deletedIds = result.data.deleted_ids || [];
+              if (deletedIds.indexOf(conversationId) === -1) { return; }
+              var wasActive = !!row.querySelector(".chat-conversations__item--active");
+              row.remove();
+              var list = document.getElementById("chat-conversations-list");
+              if (list && !list.querySelector(".chat-conversations__row")) {
+                var empty = document.createElement("div");
+                empty.className = "chat-conversations__empty";
+                empty.textContent = "Noch keine Unterhaltungen.";
+                list.appendChild(empty);
+              }
+              if (wasActive) {
+                window.location.href = "/dashboard/chat?new=1";
+              }
+            })
+            .catch(function () {
+              window.alert("Löschen fehlgeschlagen (Verbindung zum Server). Bitte erneut versuchen.");
+            });
         });
       });
 

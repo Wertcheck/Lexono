@@ -56,6 +56,7 @@ from app.models import (
     AuditEvent,
     ChatConversation,
     ChatMessage,
+    Client,
     Document,
     DraftKnowledgeItemLink,
     DraftSourceLink,
@@ -99,11 +100,20 @@ def _draft_panel_title(message: ChatMessage) -> str:
     Bevorzugt das echte, vom Editor gepflegte `Draft.subject`-Feld (siehe
     app/web/draft_editor_router.py) - ein frisch im Chat erzeugter Entwurf
     hat das bisher nie gesetzt (kein Feld dafuer im Chat-Pfad, siehe
-    app/chat/service.py::send_message), daher der Rueckfall auf dieselbe
-    Kuerzungsregel wie bei automatisch abgeleiteten Konversationstiteln
-    (app/chat/service.py::_derive_title) - bewusst dieselbe Regel ein
-    zweites Mal angewendet statt ein eigener neuer Titelgenerator
-    (Direktive: "Keinen unnötigen neuen Titelgenerator bauen").
+    app/chat/service.py::send_message), daher der Rueckfall auf eine
+    reine Kuerzungsregel.
+
+    NICHT MEHR identisch mit der Konversationstitel-Ableitung (07.10.,
+    Owner-Direktive "CHAT-HISTORY-MANAGEMENT ERWEITERN" §1): dort wurde
+    `_derive_title`/`generate_conversation_title` (app/chat/
+    title_generation.py) um eine semantische Mustererkennung erweitert
+    (Gesetzesverweise, Vergleiche, Zusammenfassungs-/Schreibabsicht). Das
+    ist fuer DIESEN Rueckfall absichtlich NICHT uebernommen: hier wird
+    der tatsaechliche Inhalt eines bereits ERZEUGTEN Schriftsatzes als
+    Vorschau gekuerzt (keine Nutzer-ABSICHT mehr zu erkennen, sondern
+    fertiger Text), eine Mustererkennung fuer Gesetzesverweise o. ae. waere
+    hier fachlich unpassend - weiterhin bewusst kein eigener neuer
+    Titelgenerator fuer diesen anderen Zweck.
 
     ECHTER FUND (06.10., Visual-Verification-Direktive, live im Browser mit
     einem echten KI-generierten Schriftsatz reproduziert): der Rueckfall
@@ -351,6 +361,33 @@ def _render_chat_page(
         if active_conversation
         else []
     )
+    # "Akte zuordnen" im Drei-Punkte-Menue JEDER Unterhaltung in der Liste
+    # (07.10., Owner-Direktive "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4) -
+    # anders als `other_matters` oben (nur fuer die Aktenbezug-Karte DER
+    # AKTIVEN Konversation, schliesst deren eigene Akte aus) wird hier
+    # dieselbe vollstaendige Liste fuer JEDE Zeile wiederverwendet - welche
+    # Akte fuer eine bestimmte Zeile "die eigene" ist (und deshalb in deren
+    # eigenem <select> ausgeschlossen wird), entscheidet das Template pro
+    # Zeile selbst (identisches `link-matter`-Formular wie oben, nur pro
+    # Zeile statt einmalig fuer die aktive Konversation).
+    #
+    # ECHTER FUND beim ersten Testlauf: automatisch angelegte Schnellentwurf-
+    # Platzhalterakten (PLACEHOLDER_CLIENT_NAME, siehe oben) wurden hier
+    # zunaechst NICHT ausgeschlossen - tauchten dadurch als waehlbares
+    # Zuordnungsziel in JEDEM Popover auf ("Schnellentwurf 2026-10-05 (Ohne
+    # Mandantenzuordnung)"), obwohl genau das an anderer Stelle im selben
+    # Template bewusst verborgen wird (siehe `has_explicit_matter_context`/
+    # Akte-Metazeile oben: "ein allgemeiner Chat darf nicht wirken wie
+    # Akte-Arbeit"). Ausgeschlossen wie dort ueber denselben Platzhalter-
+    # Mandantennamen - kein zweiter Mechanismus.
+    all_matters = (
+        db.query(Matter)
+        .join(Client, Matter.client_id == Client.id)
+        .filter(Client.name != PLACEHOLDER_CLIENT_NAME)
+        .order_by(Matter.updated_at.desc())
+        .limit(200)
+        .all()
+    )
     context = {
         "request": request,
         "active_nav": "Chat",
@@ -362,6 +399,7 @@ def _render_chat_page(
         "messages": messages,
         "message_sources": _gather_message_sources(db, messages),
         "other_matters": other_matters,
+        "all_matters": all_matters,
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
         "provider_configured": provider_configured,
         # Kein erfundener Zwischenzustand, solange der stille Startcheck

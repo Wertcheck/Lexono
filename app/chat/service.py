@@ -58,6 +58,7 @@ from fastapi import UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.chat.title_generation import generate_conversation_title
 from app.documents.service import DocumentProcessingService
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.service import DraftingService
@@ -430,13 +431,14 @@ _MAX_HISTORY_CHARS_TOTAL = 12_000
 _HISTORY_ROLE_LABELS = {"user": "Anwalt", "assistant": "Assistent"}
 
 
-def _derive_title(first_message: str) -> str:
-    """Kurzer, rein lokaler Anzeige-Titel aus der ersten Nutzernachricht -
-    nie an die Cloud gesendet, nur fuer die Konversationsliste."""
-    normalized = " ".join(first_message.split())
-    if len(normalized) <= 60:
-        return normalized or "Neue Unterhaltung"
-    return normalized[:57] + "…"
+#: ECHTER FUND behoben (07.10., Owner-Direktive "CHAT-HISTORY-MANAGEMENT
+#: ERWEITERN" §1): dieser Name bezeichnete bisher eine reine
+#: Whitespace-Normalisierung + 60-Zeichen-Abschneidung - die ersten Woerter
+#: der Nachricht wurden also woertlich zum Titel, unabhaengig vom Thema.
+#: Jetzt ein duenner Alias auf die neue, semantische Titel-Ableitung
+#: (app/chat/title_generation.py) - eigener Name hier beibehalten, damit
+#: der einzige Aufrufer unten unveraendert bleibt.
+_derive_title = generate_conversation_title
 
 
 class ChatService:
