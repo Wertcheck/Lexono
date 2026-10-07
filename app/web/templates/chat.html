@@ -828,7 +828,7 @@
       document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
       menu.hidden = wasOpen;
     };
-    document.addEventListener("click", function () {
+    function closeAllChatRowMenus() {
       document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
       // "Akte zuordnen"-Popover (07.10., Owner-Direktive
       // "CHAT-HISTORY-MANAGEMENT ERWEITERN" §4) schliesst sich wie jedes
@@ -837,6 +837,18 @@
       // Klick INNERHALB des Popovers (z. B. in das <select>) erreicht
       // diesen Dokument-Listener also gar nicht erst.
       document.querySelectorAll(".chat-conversations__matter-popover").forEach(function (p) { p.hidden = true; });
+    }
+    document.addEventListener("click", closeAllChatRowMenus);
+    // ECHTER FUND behoben (07.10., selbe Direktive, erneuter QA-Durchlauf
+    // "CHAT-VERWALTUNG PRODUKTIONSREIF"): Escape schloss das Drei-Punkte-
+    // Menue bzw. das "Akte zuordnen"-Popover bisher NICHT - nur der
+    // Umbenennen-Inline-Input und das Datenschutz-Popover hatten einen
+    // eigenen Escape-Handler (siehe jeweils dort), das Zeilen-Menue keinen.
+    // Live per CDP reproduziert (Escape liess das geoeffnete Menue
+    // sichtbar stehen) und hier nachgezogen - dieselbe Schliess-Funktion
+    // wie beim Outside-Click, kein zweiter Mechanismus.
+    document.addEventListener("keydown", function (evt) {
+      if (evt.key === "Escape") { closeAllChatRowMenus(); }
     });
 
     (function () {

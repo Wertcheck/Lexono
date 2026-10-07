@@ -1968,6 +1968,28 @@ def test_link_matter_endpoint_updates_conversation(client: TestClient, db_sessio
     assert conversation.matter_id == other_matter.id
 
 
+def test_chat_history_row_menu_closes_on_escape_key(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND behoben (07.10., erneuter QA-Durchlauf "CHAT-VERWALTUNG
+    PRODUKTIONSREIF"): live per CDP reproduziert, dass Escape das
+    geoeffnete Drei-Punkte-Menue bzw. "Akte zuordnen"-Popover bisher NICHT
+    schloss - nur der Umbenennen-Inline-Input und das Datenschutz-Popover
+    hatten einen eigenen Escape-Handler. Kein End-to-End-Browsertest hier
+    (reines JS-Verhalten) - prueft stattdessen, dass der global registrierte
+    `keydown`-Handler fuer "Escape" tatsaechlich im ausgelieferten Markup
+    vorhanden ist und dieselbe Schliess-Funktion wie der Outside-Click
+    verwendet (kein zweiter, abweichender Mechanismus)."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/chat")
+
+    html = response.text
+    assert "function closeAllChatRowMenus()" in html
+    assert '"click", closeAllChatRowMenus' in html
+    assert 'if (evt.key === "Escape") { closeAllChatRowMenus(); }' in html
+
+
 def test_chat_history_row_menu_offers_akte_zuordnen(
     client: TestClient, db_session: Session
 ) -> None:
