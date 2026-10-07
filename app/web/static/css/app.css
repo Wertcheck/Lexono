@@ -7189,9 +7189,18 @@ body::-webkit-scrollbar-thumb:hover,
   background: var(--paper-200);
 }
 
+/* ECHTER FUND (07.10., Polish-Direktive "CHAT-HISTORY FINAL PRODUKTSTAND"):
+   die linke Akzentlinie des aktiven Chats nutzte bisher `--seal-green` -
+   trotz des Namens KEIN Gruenton (#101828 Navy im Hellmodus, #5b7fc4
+   Blaugrau im Dunkelmodus, siehe :root), inkonsistent mit dem bereits
+   etablierten "aktiv = echtes Lexono-Gruen"-Muster der Hauptnavigation
+   (`.sidebar__group-summary--active`, identische `inset 2px 0 0`-Linie,
+   nutzt dort bereits `--brand-green`). Vereinheitlicht auf `--brand-green`
+   - dieselbe, bereits an anderer Stelle etablierte Bedeutung von "hier
+   bist du gerade", keine neue Farbe eingefuehrt. */
 .chat-conversations__item--active {
   background: var(--paper-200);
-  box-shadow: inset 2px 0 0 var(--seal-green);
+  box-shadow: inset 2px 0 0 var(--brand-green);
 }
 
 .chat-conversations__item-title {
@@ -7210,10 +7219,6 @@ body::-webkit-scrollbar-thumb:hover,
   white-space: nowrap;
 }
 
-/* Loeschen (20.09., Owner-Direktive "WORKSTREAM A — CHATS LOESCHBAR") -
-   der Papierkorb-Button bleibt dezent (opacity 0) bis die Zeile per Maus/
-   Tastatur fokussiert wird, damit die Liste im Normalzustand nicht
-   ueberladen wirkt (Direktive: "dezent, ruhig, professionell"). */
 .chat-conversations__row {
   position: relative;
   display: flex;
@@ -7223,42 +7228,6 @@ body::-webkit-scrollbar-thumb:hover,
 .chat-conversations__row .chat-conversations__item {
   flex: 1;
   min-width: 0;
-}
-
-.chat-conversations__delete-form {
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.chat-conversations__delete-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin: 0 4px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  color: var(--ink-500);
-  cursor: pointer;
-  opacity: 0;
-}
-
-.chat-conversations__row:hover .chat-conversations__delete-btn,
-.chat-conversations__delete-btn:focus-visible {
-  opacity: 1;
-}
-
-.chat-conversations__delete-btn:hover {
-  background: var(--wax-red-tint);
-  color: var(--wax-red);
-}
-
-.chat-conversations__delete-btn .icon {
-  width: 15px;
-  height: 15px;
 }
 
 .chat-conversations__empty {
@@ -7928,13 +7897,40 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Noetig, damit dieser Flex-ITEM innerhalb von `.chat-panel__header`
+     (display:flex) ueberhaupt unter seine Inhaltsbreite schrumpfen darf -
+     sonst wuerde das Ellipsing im Text-Span unten (naechster Kommentar)
+     nie zum Tragen kommen, selbst mit korrektem eigenen Span. */
+  min-width: 0;
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
   color: var(--ink-900);
+}
+
+/* ECHTER FUND (07.10., Polish-Direktive "CHAT-HISTORY FINAL
+   PRODUKTSTAND"): `text-overflow:ellipsis` direkt auf `.chat-panel__
+   header-title` (einem `display:flex`-Container mit Icon/Tag als
+   Geschwister-Flex-Items) griff live nie zuverlaessig - mit einer sehr
+   langen Aktenbezeichnung reproduziert (hart am Fensterrand
+   abgeschnitten, kein "…" sichtbar). `text-overflow` erwartet einen
+   eigenen Text-Container, keinen Flex-Layout-Container mit mehreren
+   Geschwistern. Jetzt auf einem eigenen Span pro Textzweig (siehe
+   chat.html) - Icon/Tag bleiben `flex-shrink:0` in ihrer natuerlichen
+   Breite, nur dieser Span schrumpft und ellipst. */
+.chat-panel__header-title-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* `.tag` ist ansonsten frei schrumpfbar (kein eigenes `flex-shrink`,
+   seitenuebergreifend an vielen Stellen verwendet) - hier gezielt NUR
+   innerhalb dieser Kopfzeile fixiert, statt die geteilte Basisklasse
+   global zu aendern (keine unbeabsichtigte Wirkung auf andere Seiten). */
+.chat-panel__header-title .tag {
+  flex-shrink: 0;
 }
 
 /* Phase 3 (§71): zwei Statusanzeigen (lokale KI + Cloud-KI) nebeneinander

@@ -212,10 +212,19 @@
                  title="Zurück zur Unterhaltung" aria-label="Zurück zur Unterhaltung">
                 {{ icons.back_arrow(class_="icon") }}
               </a>
-              <span>{{ viewing_document.original_filename }}</span>
+              {# ECHTER FUND behoben (07.10., Polish-Direktive "CHAT-HISTORY
+                 FINAL PRODUKTSTAND"): `text-overflow:ellipsis` auf dem
+                 `display:flex`-Container selbst (statt auf einem eigenen
+                 Text-Element) griff nie zuverlässig - live mit einer sehr
+                 langen Aktenbezeichnung reproduziert (hart am Fensterrand
+                 abgeschnitten, kein "…"). Jeder Textzweig jetzt in einem
+                 eigenen `.chat-panel__header-title-text`-Span mit eigenem
+                 `min-width:0`/`text-overflow:ellipsis` - Icon/Tag daneben
+                 behalten ihre feste Breite, nur der Text schrumpft/ellipst. #}
+              <span class="chat-panel__header-title-text">{{ viewing_document.original_filename }}</span>
               <span class="tag tag--matched">Dokument analysiert</span>
             {% elif has_explicit_matter_context %}
-              {{ active_conversation.matter.title }}
+              <span class="chat-panel__header-title-text">{{ active_conversation.matter.title }}</span>
             {% else %}
               {# Zeigt den (automatisch aus der ersten Nachricht erzeugten)
                  Unterhaltungstitel statt des technischen Schnellentwurf-
@@ -227,7 +236,7 @@
                  aktualisieren - nur in diesem Zweig vorhanden (nicht im
                  `has_explicit_matter_context`-Zweig oben, wo ohnehin der
                  Aktentitel statt des Konversationstitels gezeigt wird). #}
-              <span id="chat-header-title-text">{{ active_conversation.title }}</span>
+              <span id="chat-header-title-text" class="chat-panel__header-title-text">{{ active_conversation.title }}</span>
             {% endif %}
           </div>
           {# Gemeinsamer rechter Aktionsbereich (05.10., Owner-Direktive

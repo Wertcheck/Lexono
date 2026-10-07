@@ -738,6 +738,44 @@ def test_chat_conversations_shown_as_separate_column_next_to_sidebar(
     assert "chat-conversations__item--active" in send_response.text
 
 
+def test_active_conversation_indicator_uses_brand_green_not_seal_green(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND behoben (07.10., Polish-Direktive "CHAT-HISTORY FINAL
+    PRODUKTSTAND"): die linke Akzentlinie des aktiven Chats nutzte bisher
+    `--seal-green` - trotz des Namens kein Gruenton (#101828 Navy im
+    Hellmodus, #5b7fc4 Blaugrau im Dunkelmodus, siehe :root-Definition in
+    app.css), inkonsistent mit dem bereits etablierten "aktiv = echtes
+    Lexono-Gruen"-Muster der Hauptnavigation
+    (`.sidebar__group-summary--active`, identische `inset 2px 0 0`-Linie,
+    nutzt dort bereits `--brand-green`)."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/static/css/app.css")
+    css = response.text
+    start = css.index(".chat-conversations__item--active {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "box-shadow: inset 2px 0 0 var(--brand-green);" in block
+    assert "--seal-green" not in block
+
+
+def test_chat_history_no_longer_ships_dead_delete_button_css(
+    client: TestClient, db_session: Session
+) -> None:
+    """Aufraeum-Fund (07.10., selbe Polish-Direktive): `.chat-conversations__
+    delete-form`/`.chat-conversations__delete-btn` waren seit der Umstellung
+    auf das Drei-Punkte-Menue (06.10.) nirgendwo mehr im Markup referenziert
+    - totes CSS aus einer noch aelteren Loeschen-Variante (direkter
+    Papierkorb-Button in der Zeile, vor dem Drei-Punkte-Menue)."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/static/css/app.css")
+    css = response.text
+    assert ".chat-conversations__delete-btn {" not in css
+    assert ".chat-conversations__delete-form {" not in css
+
+
 def test_chat_history_column_is_collapsed_by_default(
     client: TestClient, db_session: Session
 ) -> None:
@@ -1790,6 +1828,51 @@ def _placeholder_conversation(db: Session, current_user_email: str, *, user_mess
     db.commit()
     db.refresh(conversation)
     return conversation
+
+
+def test_chat_header_title_truncates_long_matter_title_with_ellipsis(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND behoben (07.10., Polish-Direktive "CHAT-HISTORY FINAL
+    PRODUKTSTAND"): `text-overflow: ellipsis` direkt auf `.chat-panel__
+    header-title` (einem `display:flex`-Container mit Icon/Tag als
+    Geschwister-Flex-Items) griff live nie zuverlaessig - eine sehr lange
+    Aktenbezeichnung wurde hart am Fensterrand abgeschnitten statt sauber
+    zu ellipsen. Jeder Textzweig steht jetzt in einem eigenen
+    `.chat-panel__header-title-text`-Span (siehe chat.html) - dieser Test
+    verankert, dass der Aktentitel-Zweig tatsaechlich in diesem Span
+    steht, nicht mehr als nackter Text direkt im Flex-Container."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    title_marker = '<div class="chat-panel__header-title">'
+    start = response.text.index(title_marker) + len(title_marker)
+    end = response.text.index("</div>", start)
+    title_block = response.text[start:end]
+    assert '<span class="chat-panel__header-title-text">' in title_block
+    assert conversation.matter.title in title_block
+
+
+def test_chat_header_title_text_span_has_working_ellipsis_css(
+    client: TestClient, db_session: Session
+) -> None:
+    """Gegenprobe zum obigen Markup-Test: die eigentliche Kuerzung passiert
+    im CSS - `.chat-panel__header-title-text` braucht `min-width: 0`
+    (sonst verweigert sich der Flex-Item dem Schrumpfen unter die eigene
+    Inhaltsbreite, egal wie das Markup aussieht) UND
+    `text-overflow: ellipsis`."""
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/static/css/app.css")
+    css = response.text
+    start = css.index(".chat-panel__header-title-text {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "min-width: 0;" in block
+    assert "text-overflow: ellipsis;" in block
+    assert "white-space: nowrap;" in block
 
 
 def test_chat_without_explicit_matter_hides_akte_breadcrumb(
