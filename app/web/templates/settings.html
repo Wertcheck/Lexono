@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
+{% import "_identity.html" as identity %}
 {% block title %}Einstellungen{% endblock %}
 {% block content %}
   {# Dark Mode (Owner-Direktive "DARK APPLICATION + WHITE DOCUMENT", 06.10.):
@@ -271,7 +272,11 @@
         <div class="settings-info-card">
           <h2 class="settings-info-card__title">Ihr Profil</h2>
           <div class="settings-profile">
-            <span class="settings-profile-avatar">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
+            {# Nutzer-Identitaetsfarbe (07.10., Owner-Direktive "LEXONO/USER-
+               IDENTITAET IM UI KONSISTENT") - dieselbe Kennung (E-Mail) wie
+               Sidebar-/Chat-Avatar, damit derselbe Nutzer ueberall dieselbe
+               Farbe sieht. Siehe _identity.html::user_avatar_color. #}
+            <span class="settings-profile-avatar identity-avatar--{{ identity.user_avatar_color(current_user.email) }}">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
             <div class="settings-profile__text">
               <span class="settings-profile__name">{{ current_user.display_name or current_user.email }}</span>
               <span class="settings-profile__role">{{ current_user.role.name if current_user.role else "Ohne Rolle" }}</span>

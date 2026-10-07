@@ -1,0 +1,42 @@
+{# Zentrale Nutzer-Identitaetsfarbe (07.10., Owner-Direktive "LEXONO/
+   USER-IDENTITAET IM UI KONSISTENT").
+
+   ECHTER FUND: `app/web/router.py` registriert bereits `avatar_color`/
+   `avatar_initials` als Jinja-GLOBALS - das funktioniert aber NUR fuer
+   Seiten, die ueber GENAU DIESEN Router gerendert werden. Jeder der
+   uebrigen ~23 Dashboard-Router (chat_router.py, settings_router.py,
+   matters_router.py, ...) instanziiert eine EIGENE, unabhaengige
+   `Jinja2Templates`-Umgebung mit eigenem `env.globals`-Dict (live
+   reproduziert: `jinja2.exceptions.UndefinedError: 'avatar_color' is
+   undefined`, sobald base.html - die von JEDER Seite eingebundene
+   Sidebar - ueber einen ANDEREN Router als router.py gerendert wird -
+   z. B. /dashboard/matters). Ein Makro-Import (`{% import %}`) ist davon
+   UNBERUEHRT: Jinja loest das ueber den gemeinsamen Dateisystem-Loader
+   auf (app/web/template_paths.py::TEMPLATES_DIR), unabhaengig von der
+   jeweiligen Python-Environment-Instanz. Deshalb hier als Makro statt
+   als (nicht projektweit funktionierendes) Python-Global - exakt
+   demselben bereits etablierten Muster wie `_icons.html`/`_labels.html`
+   folgend ("eine Stelle statt viele Templates").
+
+   Verbindliche Regel (Owner-Direktive): Lexono/KI ist UEBERALL
+   ausschliesslich `--brand-green` (siehe .chat-message--assistant
+   .chat-message__avatar, app.css - dort direkt als CSS-Regel gesetzt,
+   braucht dieses Makro nicht, da es nie von einer Nutzerkennung
+   abhaengt). Der ANGEMELDETE NUTZER bekommt stattdessen ueber dieses
+   Makro eine deterministische, bewusst NICHT gruene Farbe - dieselbe
+   `seed` (z. B. `current_user.email`) liefert ueberall denselben
+   Farbnamen, die tatsaechliche Farbe kommt aus der jeweiligen
+   `.identity-avatar--<name>`-CSS-Klasse (app.css) - "gruen" ist dort
+   bewusst NICHT in der Palette, bleibt also strukturell Lexono
+   vorbehalten, unabhaengig vom Hash-Ergebnis. #}
+{% macro user_avatar_color(seed) -%}
+{%- set alphabet = "abcdefghijklmnopqrstuvwxyz0123456789" -%}
+{%- set clean = (seed or "lexono") | trim | lower -%}
+{%- set colors = ["blue", "purple", "orange", "amber"] -%}
+{%- set ns = namespace(total=0) -%}
+{%- for ch in clean -%}
+  {%- set pos = alphabet.find(ch) -%}
+  {%- set ns.total = ns.total + (pos + 1 if pos >= 0 else 1) -%}
+{%- endfor -%}
+{{- colors[ns.total % (colors | length)] -}}
+{%- endmacro %}

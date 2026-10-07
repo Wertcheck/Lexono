@@ -11,6 +11,7 @@ abschaltbar wirkenden) Schalter für die immer aktive Pseudonymisierung.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -183,7 +184,19 @@ def test_sidebar_footer_shows_display_name_once_set(admin_client: TestClient) ->
     response = admin_client.get("/dashboard/chat")
 
     assert "Rechtsanwältin Anna Muster" in response.text
-    assert '<span class="sidebar__profile-avatar">R</span>' in response.text
+    # ECHTE AKTUALISIERUNG (07.10., Owner-Direktive "LEXONO/USER-
+    # IDENTITAET IM UI KONSISTENT"): der Avatar traegt jetzt zusaetzlich
+    # eine deterministische `identity-avatar--<farbe>`-Modifier-Klasse
+    # (siehe _identity.html::user_avatar_color) - die urspruengliche,
+    # hier geprueft Kernaussage (Initiale "R" aus dem Anzeigenamen, NICHT
+    # mehr aus der rohen E-Mail) bleibt unveraendert wahr, nur als Regex
+    # statt als exaktem String-Vergleich, da die Farbklasse selbst nicht
+    # Gegenstand DIESES Tests ist (siehe test_web_... fuer die neuen,
+    # dedizierten Identitaetsfarben-Tests).
+    assert re.search(
+        r'<span class="sidebar__profile-avatar identity-avatar--\w+">R</span>',
+        response.text,
+    )
 
 
 def test_set_display_name_persists_it(admin_client: TestClient) -> None:

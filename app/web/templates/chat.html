@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
+{% import "_identity.html" as identity %}
 {% block title %}Chat{% endblock %}
 {% block content %}
   {# Nutzerkorrektur (01.09.): eine vorherige Aenderung hatte die
@@ -304,7 +305,14 @@
         {% else %}
           {% for message in messages %}
             <div class="chat-message chat-message--{{ message.role }}{% if message.blocked %} chat-message--blocked{% endif %}">
-              <div class="chat-message__avatar">
+              {# Nutzer-Identitaetsfarbe (07.10., Owner-Direktive "LEXONO/
+                 USER-IDENTITAET IM UI KONSISTENT") - NUR fuer Nutzer-
+                 Nachrichten gesetzt: Lexono bleibt immer `--brand-green`
+                 (siehe .chat-message--assistant .chat-message__avatar in
+                 app.css), unabhaengig von jeder Nutzerfarbe. Dieselbe
+                 E-Mail-Kennung wie Sidebar-/Einstellungs-Avatar, damit
+                 derselbe Nutzer ueberall dieselbe Farbe sieht. #}
+              <div class="chat-message__avatar{% if message.role == 'user' %} identity-avatar--{{ identity.user_avatar_color(current_user.email) }}{% endif %}">
                 {# Konsistent mit dem Sidebar-Avatar (base.html, 19.09.,
                    UI/UX-Referenzabgleich): dieselbe display_name-Fallback-
                    Regel statt ausschliesslich der rohen E-Mail-Adresse. #}
@@ -1707,9 +1715,20 @@
         bubble.className = "chat-message chat-message--user";
         var avatarEl = document.querySelector(".sidebar__profile-avatar");
         var initial = avatarEl ? avatarEl.textContent.trim() : "?";
+        // Nutzer-Identitaetsfarbe (07.10., Owner-Direktive "LEXONO/USER-
+        // IDENTITAET IM UI KONSISTENT"): dieselbe `identity-avatar--*`-
+        // Klasse wie der Sidebar-Avatar uebernehmen (EINE Quelle der
+        // Wahrheit, server-seitig berechnet via _identity.html::
+        // user_avatar_color()) - kein zweiter, potenziell abweichender
+        // Farb-Code in JS.
+        var identityColorClass = "";
+        if (avatarEl) {
+          var match = avatarEl.className.match(/identity-avatar--\S+/);
+          if (match) { identityColorClass = " " + match[0]; }
+        }
 
         var avatarDiv = document.createElement("div");
-        avatarDiv.className = "chat-message__avatar";
+        avatarDiv.className = "chat-message__avatar" + identityColorClass;
         avatarDiv.textContent = initial;
         bubble.appendChild(avatarDiv);
 

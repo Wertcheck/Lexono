@@ -3856,7 +3856,16 @@ button[disabled].btn--ai-loading {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--seal-green);
+  /* UEBERHOLT (07.10., Owner-Direktive "LEXONO/USER-IDENTITAET IM UI
+     KONSISTENT"): "--seal-green" ist trotz des Namens KEIN Gruenton
+     (#101828 Navy im Hellmodus, #5b7fc4 Blaugrau im Dunkelmodus, siehe
+     :root-Definition) - fuer DIESEN Nutzer-Avatar strukturell falsch
+     (sah im Dunkelmodus wie eine zufaellige blaue Lexono-Farbe aus, nicht
+     wie eine bewusste Nutzeridentitaet). Die tatsaechliche Farbe kommt
+     jetzt IMMER von einer `.identity-avatar--*`-Modifier-Klasse (siehe
+     unten, serverseitig via `_identity.html::user_avatar_color`) - dieser
+     Basis-Hintergrund ist nur ein neutraler Fallback. */
+  background: var(--ink-500);
   color: var(--on-brand);
   font-family: var(--font-display);
   font-size: 13px;
@@ -4842,15 +4851,18 @@ button[disabled].btn--ai-loading {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  /* Bewusst "--brand-green" (das tatsaechliche Gruen, #249d74), NICHT
-     "--seal-green" (trotz des Namens dunkles Navy #101828, siehe
-     :root-Definition) - die Referenz zeigt den Profil-Avatar klar in der
-     gruenen Akzentfarbe (Direktive §2: "Lexono-Gruen als Akzent"). Der
-     bestehende kleine Sidebar-Avatar (.sidebar__profile-avatar) nutzt
-     dagegen "--seal-green"/Navy - ein bewusster Unterschied, keine
-     Inkonsistenz: dort ist es ein winziges, beilaeufiges UI-Element: hier
-     ist der Avatar selbst der visuelle Blickfang der Karte. */
-  background: var(--brand-green);
+  /* UEBERHOLT (07.10., Owner-Direktive "LEXONO/USER-IDENTITAET IM UI
+     KONSISTENT" - ersetzt die fruehere Begruendung hier woertlich): "--
+     brand-green" (das echte Lexono-Gruen) war fuer DIESEN Avatar falsch,
+     nicht nur fuer den kleinen Sidebar-Avatar - beide zeigen den
+     ANGEMELDETEN NUTZER, nicht Lexono, und gruen ist jetzt exklusiv
+     Lexono vorbehalten (siehe .chat-message--assistant .chat-message__
+     avatar). Die tatsaechliche Farbe kommt jetzt IMMER von einer der
+     `.identity-avatar--*`-Modifier-Klassen unten (serverseitig via
+     `_identity.html::user_avatar_color`), dieser Basis-Hintergrund ist
+     nur ein Fallback, falls die Modifier-Klasse aus irgendeinem Grund
+     fehlen sollte. */
+  background: var(--ink-500);
   color: var(--on-brand);
   font-family: var(--font-display);
   font-size: 20px;
@@ -4858,6 +4870,46 @@ button[disabled].btn--ai-loading {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Nutzer-Identitaetsfarbe (07.10., siehe app/web/templates/_identity.html
+   fuer die volle Herleitung, insbesondere WARUM als Makro statt als
+   Jinja-Global) - EINE gemeinsame, bewusst NICHT gruene
+   Farbpalette fuer JEDEN Ort, an dem der ANGEMELDETE NUTZER (nicht
+   Lexono) als Avatar erscheint: kleiner Sidebar-Fuss-Avatar, grosser
+   Profil-Avatar in den Einstellungen, eigene Chat-Nachrichten-Avatare.
+   Compound-Selektoren (nicht alleinstehende Klassen) - die Kaskade
+   ueberschreibt dadurch zuverlaessig die jeweilige Basis-Hintergrundfarbe,
+   unabhaengig von der Regel-Reihenfolge in dieser Datei. Dieselbe Palette
+   wie `.client-avatar--*`/`.chat-quick-action__icon--*` (keine neuen
+   Farbtoene erfunden), aber OHNE die beiden gruenen Eintraege - Gruen
+   bleibt exklusiv Lexono vorbehalten. */
+.sidebar__profile-avatar.identity-avatar--blue,
+.settings-profile-avatar.identity-avatar--blue,
+.chat-message__avatar.identity-avatar--blue {
+  background: var(--accent-blue);
+  color: var(--on-brand);
+}
+
+.sidebar__profile-avatar.identity-avatar--purple,
+.settings-profile-avatar.identity-avatar--purple,
+.chat-message__avatar.identity-avatar--purple {
+  background: var(--accent-purple);
+  color: var(--on-brand);
+}
+
+.sidebar__profile-avatar.identity-avatar--orange,
+.settings-profile-avatar.identity-avatar--orange,
+.chat-message__avatar.identity-avatar--orange {
+  background: var(--accent-orange);
+  color: var(--on-brand);
+}
+
+.sidebar__profile-avatar.identity-avatar--amber,
+.settings-profile-avatar.identity-avatar--amber,
+.chat-message__avatar.identity-avatar--amber {
+  background: var(--accent-amber);
+  color: var(--on-brand);
 }
 
 .settings-profile__text {
@@ -8238,7 +8290,16 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-message--assistant .chat-message__avatar {
-  background: var(--seal-green);
+  /* UEBERHOLT (07.10., Owner-Direktive "LEXONO/USER-IDENTITAET IM UI
+     KONSISTENT"): "--seal-green" ist trotz des Namens KEIN Gruenton
+     (#101828 Navy im Hellmodus, #5b7fc4 Blaugrau im Dunkelmodus) - der
+     Lexono-KI-Avatar wirkte dadurch im Dunkelmodus "blau/schwarz" statt
+     erkennbar gruen (genau der real gemeldete Fehler). Lexono verwendet
+     jetzt UEBERALL verbindlich "--brand-green" (das echte, aus dem Logo
+     gemessene Gruen, #249d74) - unabhaengig vom Theme UND unabhaengig
+     von der Nutzer-Identitaetsfarbe (siehe `.identity-avatar--*` bei
+     `.sidebar__profile-avatar` fuer die Nutzer-Gegenseite). */
+  background: var(--brand-green);
   color: var(--on-brand);
 }
 
@@ -8259,7 +8320,15 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .chat-message--user .chat-message__avatar {
-  background: var(--brand-green);
+  /* UEBERHOLT (07.10., Owner-Direktive "LEXONO/USER-IDENTITAET IM UI
+     KONSISTENT"): "--brand-green" ist jetzt exklusiv Lexono vorbehalten
+     (siehe .chat-message--assistant .chat-message__avatar oben) - der
+     Nutzer-Avatar war dadurch von Lexonos eigenem Avatar nicht mehr
+     unterscheidbar. Die tatsaechliche Farbe kommt jetzt IMMER von einer
+     `.identity-avatar--*`-Modifier-Klasse (siehe bei `.sidebar__profile-
+     avatar`, serverseitig via `_identity.html::user_avatar_color`) -
+     dieser Basis-Hintergrund ist nur ein neutraler Fallback. */
+  background: var(--ink-500);
   color: var(--on-brand);
 }
 

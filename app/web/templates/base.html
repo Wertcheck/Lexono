@@ -25,6 +25,7 @@
    fuehrt (Admin: /dashboard/settings, sonst die Profil-Uebersicht - fuer
    Nicht-Admins gibt es keine eigene Einstellungsseite). #}
 {% import "_icons.html" as icons %}
+{% import "_identity.html" as identity %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -440,7 +441,14 @@
                  E-Mail-Adresse. Selbe Fallback-Regel wie ueberall sonst im
                  Projekt (`display_name or email`, siehe z. B.
                  account_me.html/client_detail.html/clients_list.html). #}
-              <span class="sidebar__profile-avatar">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
+              {# Nutzer-Identitaetsfarbe (07.10., Owner-Direktive "LEXONO/
+                 USER-IDENTITAET IM UI KONSISTENT") - dieselbe Kennung
+                 (E-Mail) wie beim Chat-/Einstellungs-Avatar (chat.html/
+                 settings.html), damit DERSELBE Nutzer UEBERALL dieselbe
+                 Farbe sieht. Siehe _identity.html::user_avatar_color fuer
+                 die volle Herleitung (bewusst NICHT gruen - das bleibt
+                 Lexono vorbehalten). #}
+              <span class="sidebar__profile-avatar identity-avatar--{{ identity.user_avatar_color(current_user.email) }}">{{ (current_user.display_name or current_user.email)[0]|upper }}</span>
               <span class="sidebar__profile-info">
                 <span class="sidebar__profile-email">{{ current_user.display_name or current_user.email }}</span>
                 <span class="sidebar__profile-role">{{ current_user.role.name if current_user.role else "?" }}</span>
