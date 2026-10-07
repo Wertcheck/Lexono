@@ -19,6 +19,20 @@ _BASE_HTML_PATH = (
 _LOGO_PATH = (
     Path(__file__).resolve().parent.parent / "app" / "web" / "static" / "img" / "logo-mark.png"
 )
+_DARK_LOGO_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "app"
+    / "web"
+    / "static"
+    / "img"
+    / "lexono-logo-dark.png"
+)
+_BRANDING_LIGHT_LOGO_PATH = (
+    Path(__file__).resolve().parent.parent / "assets" / "branding" / "lexono-logo.png"
+)
+_BRANDING_DARK_LOGO_PATH = (
+    Path(__file__).resolve().parent.parent / "assets" / "branding" / "Lexono-Logo Dark Mode.png"
+)
 
 
 def _read_css() -> str:
@@ -106,6 +120,49 @@ def test_logo_file_exists_and_is_valid_png() -> None:
     with _LOGO_PATH.open("rb") as f:
         signature = f.read(8)
     assert signature == b"\x89PNG\r\n\x1a\n"
+
+
+def test_full_logo_lockup_assets_have_a_real_alpha_channel() -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "TAGESABSCHLUSS" /LOGO):
+    assets/branding/lexono-logo.png (Light, weisser Hintergrund) und
+    assets/branding/Lexono-Logo Dark Mode.png (Dark, schwarzer
+    Hintergrund) waren beide opake RGB-PNGs OHNE Alpha-Kanal (per PIL
+    verifiziert) - die Dark-Version wurde bisher nur per CSS
+    `mix-blend-mode: screen`-Workaround "passend" zum dunklen Seiten-
+    hintergrund dargestellt (siehe Git-Historie app.css). Beide Dateien
+    (und die davon unveraendert nach app/web/static/img/ kopierte
+    lexono-logo-dark.png) haben jetzt einen echten Alpha-Kanal, aus den
+    ORIGINALEN Pixeln deterministisch zurueckgerechnet (kein neu
+    gezeichnetes/KI-generiertes Logo) - Eckpixel beider Dateien muessen
+    vollstaendig transparent sein (Alpha 0)."""
+    from PIL import Image
+
+    for path in (
+        _BRANDING_LIGHT_LOGO_PATH,
+        _BRANDING_DARK_LOGO_PATH,
+        _DARK_LOGO_PATH,
+    ):
+        assert path.exists(), path
+        img = Image.open(path)
+        assert img.mode == "RGBA", f"{path} hat keinen Alpha-Kanal (mode={img.mode})"
+        corner_alpha = img.getpixel((0, 0))[3]
+        assert corner_alpha == 0, f"{path} Eckpixel nicht transparent (alpha={corner_alpha})"
+
+
+def test_dark_logo_css_no_longer_needs_the_mix_blend_mode_workaround() -> None:
+    """Gegenprobe zum obigen Fund: der vorherige `mix-blend-mode: screen`-
+    Workaround fuer die opake schwarze Logo-Datei ist mit echtem
+    Alpha-Kanal ueberfluessig (und wuerde halbtransparente Kantenpixel
+    jetzt sogar falsch aufhellen) - darf im CSS fuer den Dark-Logo-Selektor
+    nicht mehr vorkommen."""
+    import re
+
+    css = _read_css()
+    start = css.index(':root[data-theme="dark"] .sidebar__brand-logo--dark {')
+    end = css.index("}", start)
+    block = css[start:end]
+    block_without_comments = re.sub(r"/\*.*?\*/", "", block, flags=re.DOTALL)
+    assert "mix-blend-mode" not in block_without_comments
 
 
 def test_scrollbars_are_thin_and_use_design_tokens() -> None:

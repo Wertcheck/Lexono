@@ -545,26 +545,16 @@ body.has-app-titlebar .app-titlebar {
   display: block;
   height: 32px;
   width: auto;
-  /* Dark-Mode-Politur (06.10., Owner-Direktive "DARK MODE VISUAL POLISH
-     PASS"): das vorhandene Asset selbst (assets/branding/Lexono-Logo Dark
-     Mode.png, unveraendert weiterverwendet) ist eine opake RGB-PNG OHNE
-     Alpha-Kanal (per PIL verifiziert: mode "RGB", Eckpixel exakt
-     RGB(0,0,0)) - "transparent machen" ist auf Pixel-Ebene technisch nicht
-     moeglich, ohne die Datei selbst neu zu zeichnen (ausdruecklich
-     verboten). `mix-blend-mode: screen` ist dafuer die fachlich korrekte,
-     verlustfreie Loesung genau fuer DIESEN Fall (reines Schwarz als
-     "Passepartout" vor einem dunklen, aber nicht reinschwarzen Seiten-
-     hintergrund): Screen-Blending macht jedes reine Schwarz-Pixel exakt
-     zur darunterliegenden Hintergrundfarbe (mathematisch: screen(0, bg) =
-     bg), waehrend die hellen Logo-Pixel (gruenes Icon, weisse Wortmarke)
-     sichtbar erhalten bleiben, nur geringfuegig aufgehellt - kein
-     Bildverlust, keine Farbverfaelschung, keine Verzerrung. Setzt
-     voraus, dass unmittelbar hinter dem Bild eine FLAECHIGE, unver-
-     mischte Hintergrundfarbe liegt (hier: `.global-header` mit
-     `background: var(--paper-000)`, keine Ueberlappung mit anderen
-     Elementen) - sonst koennte der Screen-Blend mit dem falschen
-     Untergrund mischen. */
-  mix-blend-mode: screen;
+  /* ECHTER FUND behoben (07.10., Owner-Direktive "TAGESABSCHLUSS" /LOGO):
+     das vorherige `mix-blend-mode: screen` (siehe Git-Historie) war ein
+     Workaround dafuer, dass assets/branding/Lexono-Logo Dark Mode.png
+     eine opake RGB-PNG OHNE Alpha-Kanal war (reines Schwarz als
+     "Passepartout"). Die Datei hat jetzt einen ECHTEN Alpha-Kanal (per
+     PIL verifiziert, deterministisch aus denselben Original-Pixeln
+     zurueckgerechnet - keine neu gezeichnete/KI-generierte Version,
+     siehe assets/branding/-Kommentar an der Quelle) - der Blend-Mode-
+     Workaround ist damit ueberfluessig und wuerde echte halbtransparente
+     Kantenpixel jetzt sogar falsch aufhellen, deshalb entfernt. */
 }
 
 html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--light {
