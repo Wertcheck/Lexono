@@ -165,6 +165,39 @@ def test_dark_logo_css_no_longer_needs_the_mix_blend_mode_workaround() -> None:
     assert "mix-blend-mode" not in block_without_comments
 
 
+def test_sidebar_collapse_icon_is_a_plain_chevron_not_a_k_shape() -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "SIDEBAR-COLLAPSE-
+    ICON"): das vorherige Icon kombinierte einen Rahmen-Rect, eine
+    vertikale Linie UND einen Pfeil direkt daneben - wirkte dadurch wie
+    ein Buchstabe "K" (live im Dark-Mode-Header neben dem Logo
+    reproduziert). Jetzt nur noch ein einzelner Chevron-Pfad, kein
+    `<rect>`, keine zusaetzliche vertikale Linie."""
+    import re as _re
+
+    icons_path = (
+        Path(__file__).resolve().parent.parent / "app" / "web" / "templates" / "_icons.html"
+    )
+    html = icons_path.read_text(encoding="utf-8")
+    start = html.index("{% macro collapse(")
+    end = html.index("{% endmacro %}", start)
+    block = html[start:end]
+    assert "<rect" not in block
+    assert "M9 4v16" not in block
+    assert _re.search(r"<path d=\"M15\.5 5\.5 9 12l6\.5 6\.5\"", block)
+
+
+def test_sidebar_collapse_icon_rotates_to_point_the_other_way_when_collapsed() -> None:
+    """Ein einziges SVG statt zwei Varianten: app.css dreht den Chevron per
+    `transform: rotate(180deg)`, sobald `html.sidebar-collapsed` aktiv
+    ist - zeigt dadurch ausgeklappt nach links ("einklappen") und
+    eingeklappt nach rechts ("ausklappen")."""
+    css = _read_css()
+    start = css.index("html.sidebar-collapsed .sidebar__collapse-btn .icon {")
+    end = css.index("}", start)
+    block = css[start:end]
+    assert "transform: rotate(180deg);" in block
+
+
 def test_scrollbars_are_thin_and_use_design_tokens() -> None:
     """20.08.: schlanke, "Apple-Pro"-Scrollbars global auf html/body sowie
     als Utility fuer Scroll-Container (.overflow-y-auto/.table-container) -

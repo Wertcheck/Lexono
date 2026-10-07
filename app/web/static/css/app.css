@@ -594,11 +594,21 @@ html.sidebar-collapsed[data-theme="dark"] .sidebar__brand-logo--dark {
 .sidebar__collapse-btn .icon {
   width: 16px;
   height: 16px;
+  transition: transform 0.15s ease;
 }
 
 .sidebar__collapse-btn:hover {
   background: var(--paper-200);
   color: var(--ink-900);
+}
+
+/* Chevron-Richtung folgt dem Sidebar-Zustand (07.10., Owner-Direktive
+   "SIDEBAR-COLLAPSE-ICON"): ausgeklappt zeigt der Chevron nach links
+   ("einklappen"), eingeklappt per 180°-Drehung nach rechts
+   ("ausklappen") - ein einziges SVG (siehe icons.collapse), keine
+   zweite Icon-Variante noetig. */
+html.sidebar-collapsed .sidebar__collapse-btn .icon {
+  transform: rotate(180deg);
 }
 
 /* --- Sidebar eingeklappt (Referenzbild, 01.09.) ---
