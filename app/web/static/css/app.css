@@ -9119,18 +9119,41 @@ body::-webkit-scrollbar-thumb:hover,
   animation: chat-mic-pulse 1.4s ease-in-out infinite;
 }
 
-/* Dezentes Datenschutz-/Shield-Icon im Composer (§9/§10 der Direktive
-   "CHAT UI/UX + INTENT ROOT-CAUSE PASS", 07.10.) - ersetzt den bisher
-   permanent unter JEDER Unterhaltung sichtbaren Fliesstext
-   (`.chat-composer__hint`, siehe chat.html fuer die Entfernung dort).
-   Gleiche Groesse/Optik wie Anhang-/Mikrofon-Button (`.chat-composer__
-   attach-btn`/`.chat-composer__mic-btn`), bewusst NICHT in Warnfarben
-   (kein `--wax-red`/`--amber`) - eine Information, kein Alarm. */
+/* Fusszeile UNTERHALB der eigentlichen Eingabezeile (07.10., Owner-
+   Direktive "DATENSCHUTZ-HINWEIS POSITIONIERUNG KORRIGIEREN") - ECHTER
+   FUND: das Shield-Icon sass bisher INNERHALB von `.chat-composer__row`
+   (derselben Zeile wie Anhang/Eingabefeld/Mikrofon/Senden), wirkte dadurch
+   wie eine fuenfte Eingabeaktion statt einer reinen Information. Jetzt
+   eine eigene, schmale Zeile ausserhalb des umrandeten Eingabe-"Kastens" -
+   `justify-content:flex-end` haelt das Icon rechtsbuendig (unter dem
+   Senden-Button, wo es vorher ohnehin stand), `#chat-speech-status`
+   (normalerweise `hidden`, siehe chat.html) nimmt bei Bedarf den
+   restlichen Platz links ein, ohne den Button zu verdraengen. Bewusst
+   EIGENE, flache Zeile statt `position:absolute` (einfacher, robuster
+   gegenueber wachsendem Eingabefeld bei mehrzeiligem Text - waechst die
+   Zeile mit, bleibt der Abstand zum Composer-Rand konstant). */
+.chat-composer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  min-height: 24px;
+}
+
+/* Dezentes Datenschutz-/Shield-Icon (§9/§10 der Direktive "CHAT UI/UX +
+   INTENT ROOT-CAUSE PASS", 07.10., urspruenglich im Composer selbst -
+   siehe Kommentar oben zur Verschiebung in die eigene Fusszeile) - kleiner
+   als die eigentlichen Eingabeaktionen (Anhang/Mikrofon/Senden bleiben bei
+   36px), da es jetzt als eigenstaendiger, zurueckhaltender Hinweis
+   unterhalb steht, nicht mehr als gleichwertige Aktion daneben. Bewusst
+   NICHT in Warnfarben (kein `--wax-red`/`--amber`) - eine Information,
+   kein Alarm. */
 .chat-composer__privacy-btn {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--ink-500);
@@ -9140,6 +9163,11 @@ body::-webkit-scrollbar-thumb:hover,
   cursor: pointer;
   position: relative;
   transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.chat-composer__privacy-btn .icon {
+  width: 15px;
+  height: 15px;
 }
 
 .chat-composer__privacy-btn:hover,
@@ -9236,9 +9264,17 @@ body::-webkit-scrollbar-thumb:hover,
 
 /* Spracheingabe-Statuszeile (05.10., Owner-Direktive "ARCHITECTURE &
    PRODUCT FLOW PASS" §25): macht Idle/Recording/Transcribing/Error jeweils
-   sichtbar erkennbar statt eines stillen Buttons. */
+   sichtbar erkennbar statt eines stillen Buttons. Lebt seit 07.10.
+   (Direktive "DATENSCHUTZ-HINWEIS POSITIONIERUNG KORRIGIEREN") als
+   Flex-Geschwister des Datenschutz-Icons in `.chat-composer__footer` -
+   `flex:1`/`min-width:0` lassen sie den verfuegbaren Platz LINKS vom
+   Icon einnehmen, ohne dieses nach rechts aus dem sichtbaren Bereich zu
+   draengen; `margin:0`, da der Abstand zur Eingabezeile jetzt vom
+   Footer selbst (`margin-top`) kommt, nicht mehr von diesem Element. */
 .chat-composer__speech-status {
-  margin: 4px 0 0;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 12px;
   color: var(--ink-500);
 }

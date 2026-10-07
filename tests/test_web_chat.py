@@ -3673,6 +3673,40 @@ def test_permanent_privacy_hint_below_composer_is_replaced_by_an_icon_popover(
     assert "personenbezogene" in response.text
 
 
+def test_privacy_hint_lives_outside_the_input_row_not_among_its_actions(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND behoben (07.10., Owner-Direktive "DATENSCHUTZ-HINWEIS
+    POSITIONIERUNG KORRIGIEREN"): das Shield-Icon sass bisher INNERHALB
+    von `.chat-composer__row` (derselben Zeile wie Anhang/Eingabefeld/
+    Mikrofon/Senden) - wirkte dadurch wie eine fuenfte Eingabeaktion,
+    obwohl es eine reine Information ist, keine Bedienhandlung fuer die
+    Nachricht. Prueft strukturell, dass der Ausloeser-Button jetzt
+    AUSSERHALB von `.chat-composer__row` liegt (in der eigenen
+    `.chat-composer__footer`-Zeile darunter), nicht mehr als Kind
+    zwischen Mikrofon und Senden."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    html = response.text
+    row_start = html.index('<div class="chat-composer__row">')
+    row_end = html.index("</div>\n", html.rindex('id="chat-send-btn"', row_start))
+    row_block = html[row_start:row_end]
+    assert "chat-composer__privacy-btn" not in row_block
+    assert "chat-privacy-popover" not in row_block
+
+    footer_start = html.index('<div class="chat-composer__footer">')
+    footer_end = html.index("</form>", footer_start)
+    footer_block = html[footer_start:footer_end]
+    assert "chat-composer__privacy-btn" in footer_block
+    assert "chat-privacy-popover" in footer_block
+    # Die Fusszeile selbst liegt NACH der Eingabezeile im Markup (unterhalb,
+    # nicht daneben).
+    assert footer_start > row_start
+
+
 def test_scroll_to_bottom_button_present_in_composer(
     client: TestClient, db_session: Session
 ) -> None:

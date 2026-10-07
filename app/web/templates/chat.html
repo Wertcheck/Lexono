@@ -607,52 +607,6 @@
                     aria-pressed="false">
               {{ icons.mic(class_="icon") }}
             </button>
-            {# Dezentes Datenschutz-Icon (§9/§10 der Owner-Direktive "CHAT
-               UI/UX + INTENT ROOT-CAUSE PASS", 07.10.) - ersetzt den
-               bisher permanent unter JEDER Unterhaltung sichtbaren
-               Fliesstext (ehem. `.chat-composer__hint`, siehe Git-
-               Historie). Hover zeigt einen knappen CSS-Tooltip
-               (`.chat-composer__privacy-btn::after`, app.css), ein Klick
-               oeffnet dieses ausfuehrlichere Popover (`hidden`-Attribut,
-               siehe Script weiter unten) - deckt NICHT nur
-               Dokumentinhalte ab, sondern allgemein personenbezogene/
-               sensible Daten, UND formuliert bewusst OHNE absolute
-               "immer"/"niemals unter allen Umstaenden"-Zusagen (die
-               tatsaechliche Verarbeitung variiert je nach Workflow -
-               siehe app/drafting/service.py::_should_skip_llm_privacy_
-               layers fuer ein reales Beispiel: eine reine Normzitat-Frage
-               ohne Aktenbezug durchlaeuft Presidio/die Cloud-KI ueberhaupt
-               nicht, sie wird lokal aus der Gesetzesbibliothek
-               beantwortet). #}
-            <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
-                    title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
-                    aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
-              {{ icons.shield(class_="icon") }}
-            </button>
-            <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
-                 aria-label="Datenschutzinformationen" hidden>
-              <div class="chat-privacy-popover__title">
-                {{ icons.shield(class_="icon") }}
-                <span>Datenschutz &amp; Pseudonymisierung</span>
-              </div>
-              <p>
-                Lexono erkennt personenbezogene und andere sensible Daten
-                (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
-                lokal auf diesem Rechner und pseudonymisiert sie vor der
-                Verarbeitung durch eine Cloud-KI.
-              </p>
-              <p>
-                Unpseudonymisierte personenbezogene Daten werden dadurch
-                nicht unnötig an die Cloud-KI übertragen. Diese lokale
-                Erkennungs- und Pseudonymisierungsschicht ist fester
-                Bestandteil der Lexono-Verarbeitung.
-              </p>
-              <p>
-                Die konkrete Verarbeitung kann je nach Workflow variieren
-                (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
-                teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
-              </p>
-            </div>
           </div>
           {# Aufnahme-UX (06.10., selbe Direktive, §4-§7): ersetzt waehrend
              RECORDING sichtbar die normalen Steuerelemente innerhalb
@@ -710,7 +664,57 @@
             {{ icons.send_arrow(class_="icon") }}
           </button>
         </div>
-        <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
+        {# Fusszeile UNTERHALB des eigentlichen Eingabefelds (07.10., Owner-
+           Direktive "DATENSCHUTZ-HINWEIS POSITIONIERUNG KORRIGIEREN") -
+           ECHTER FUND: das Datenschutz-/Shield-Icon sass bisher INNERHALB
+           von `#chat-normal-controls`, also in derselben Zeile wie
+           Anhang/Eingabefeld/Mikrofon/Senden (`.chat-composer__row`) -
+           wirkte dadurch wie eine fuenfte Eingabeaktion, obwohl es eine
+           reine Information ueber den Datenschutz-/Pseudonymisierungs-
+           prozess ist, keine Bedienhandlung fuer die Nachricht selbst.
+           Jetzt ausserhalb von `.chat-composer__row` (dem eigentlichen,
+           umrandeten Eingabe-"Kasten"), als eigene, dezente Fusszeile
+           direkt darunter - Hover-Tooltip/Klick-Popover (bestehende
+           `.chat-composer__privacy-btn`/`.chat-privacy-popover`-Logik,
+           CSS/JS UNVERAENDERT wiederverwendet, siehe app.css/Script
+           weiter unten) bleiben identisch erhalten, nur die Position
+           des Ausloeser-Buttons im Markup aendert sich. Der bereits
+           bestehende Status-Text waehrend der Spracheingabe
+           (`#chat-speech-status`, normalerweise `hidden`) lebt in
+           derselben Fusszeile - beide sind kurze, einzeilige Hinweise
+           unterhalb der Eingabe, keine zweite Eingabezeile. #}
+        <div class="chat-composer__footer">
+          <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
+          <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
+                  title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
+                  aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
+            {{ icons.shield(class_="icon") }}
+          </button>
+          <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
+               aria-label="Datenschutzinformationen" hidden>
+            <div class="chat-privacy-popover__title">
+              {{ icons.shield(class_="icon") }}
+              <span>Datenschutz &amp; Pseudonymisierung</span>
+            </div>
+            <p>
+              Lexono erkennt personenbezogene und andere sensible Daten
+              (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
+              lokal auf diesem Rechner und pseudonymisiert sie vor der
+              Verarbeitung durch eine Cloud-KI.
+            </p>
+            <p>
+              Unpseudonymisierte personenbezogene Daten werden dadurch
+              nicht unnötig an die Cloud-KI übertragen. Diese lokale
+              Erkennungs- und Pseudonymisierungsschicht ist fester
+              Bestandteil der Lexono-Verarbeitung.
+            </p>
+            <p>
+              Die konkrete Verarbeitung kann je nach Workflow variieren
+              (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
+              teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
+            </p>
+          </div>
+        </div>
       </form>
     </section>
 
