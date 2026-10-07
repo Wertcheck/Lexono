@@ -125,6 +125,7 @@ class ClaudePrivacyGateway:
         anwaltliche_anmerkungen: str | None = None,
         known_entities: dict[str, list[str]] | None = None,
         gespraechsverlauf: list[str] | None = None,
+        skip_organization_pseudonymization: bool = False,
     ) -> GatewayResult:
         """Baut eine sendefertige, pseudonymisierte Payload - oder
         blockiert (siehe GatewayResult.allowed). Ruft selbst KEINE Claude
@@ -145,10 +146,36 @@ class ClaudePrivacyGateway:
         hier erneut als Klartext und werden bei DIESEM Aufruf erneut vom
         Presidio-Detektor geprüft - es gibt keinen "bereits sicher"-Fast-
         Path an der Pseudonymisierung vorbei, unabhängig davon, ob der Text
-        schon einmal pseudonymisiert war."""
+        schon einmal pseudonymisiert war.
+
+        `skip_organization_pseudonymization` (optional, ECHTER FUND Owner-
+        Direktive "Architektur-Audit Privacy-/Chat-Pipeline", 07.10.):
+        siehe Pseudonymizer.pseudonymize Docstring zu `skip_categories` fuer
+        die volle Begruendung. Default `False` (unveraendertes, striktes
+        Verhalten fuer JEDEN bisherigen Aufrufer) - der Aufrufer
+        (app/drafting/service.py::_prepare_and_gate) setzt `True` NUR,
+        wenn VOR diesem Aufruf bereits feststeht, dass kein Akte-/
+        Mandanten-/Dokumentkontext existiert (kein `matter_id`, keine
+        `known_entities`). Betrifft AUSSCHLIESSLICH Presidios generische
+        "organisation"-Kategorie - "person"/"ort" und jede exakte
+        `known_entities`-Erkennung bleiben davon vollstaendig unberuehrt."""
         argumentationspunkte = argumentationspunkte or []
         quellenverweise = quellenverweise or []
         gespraechsverlauf = gespraechsverlauf or []
+
+        # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        # Pipeline", 07.10.): wird VOR der Pseudonymisierung aus den
+        # RAW-Eingaben gebaut (nicht aus dem spaeteren pseudonymisierten
+        # Text) - siehe _build_locally_sourced_raw_text und
+        # GatewayResult.locally_sourced_text fuer die volle Begruendung.
+        locally_sourced_text = self._build_locally_sourced_raw_text(
+            sachverhalt,
+            argumentationspunkte,
+            quellenverweise,
+            vorlage,
+            anwaltliche_anmerkungen,
+            gespraechsverlauf,
+        )
 
         combined = self._build_combined_text(
             sachverhalt,
@@ -159,8 +186,11 @@ class ClaudePrivacyGateway:
             gespraechsverlauf,
         )
 
+        skip_categories = (
+            frozenset({"organisation"}) if skip_organization_pseudonymization else frozenset()
+        )
         pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
-            combined, known_entities=known_entities
+            combined, known_entities=known_entities, skip_categories=skip_categories
         )
 
         (
@@ -178,8 +208,8 @@ class ClaudePrivacyGateway:
         # nicht auf fruehere Claude-Antworten im Gespraechsverlauf
         # anschlagen - siehe SecurityCheckService.check Docstring zu
         # `unrecognized_name_scan_text` fuer die volle Begruendung. Alle
-        # anderen Pruefungen (Punkt 2/3/4/5/7) bekommen weiterhin den
-        # VOLLEN `pseudonymized_combined` inkl. Assistant-Zeilen - nur
+        # anderen Pruefungen (Punkt 2/3/4/5/7) bekommen hierueber weiterhin
+        # den VOLLEN `pseudonymized_combined` inkl. Assistant-Zeilen - nur
         # Punkt 6 scannt stattdessen diesen bereinigten Text.
         unrecognized_name_scan_text = self._build_unrecognized_name_scan_text(
             pseudo_sachverhalt,
@@ -191,11 +221,29 @@ class ClaudePrivacyGateway:
             pseudo_verlauf=pseudo_verlauf,
         )
 
+        # ERWEITERT (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        # Pipeline", 07.10., per Live-QA-Fund): Punkt 2/3/4 (Presidio-
+        # Restrisiko-Scan) hat DASSELBE Problem wie Punkt 6 (schlaegt auf
+        # fruehere Claude-Antworten an), braucht aber einen ANDERS
+        # gebauten Scan-Text als `unrecognized_name_scan_text` - siehe
+        # `_build_residual_scan_text` Docstring fuer die Begruendung
+        # (reines Feld-Wiederzusammensetzen veraenderte die Text-Struktur
+        # genug, um bei ECHTER NER neue, im Original nicht vorhandene
+        # Fehlalarme zu erzeugen - real als Regression beim Test dieser
+        # Korrektur selbst aufgefallen, nicht ausgeliefert).
+        residual_scan_text = self._build_residual_scan_text(
+            pseudonymized_combined,
+            original_gespraechsverlauf=gespraechsverlauf,
+            pseudo_verlauf=pseudo_verlauf,
+        )
+
         check_result = self.security_check.check(
             pseudonymized_combined,
             mappings,
             purpose=purpose,
             unrecognized_name_scan_text=unrecognized_name_scan_text,
+            skip_residual_categories=skip_categories,
+            residual_scan_text=residual_scan_text,
         )
         if not check_result.passed:
             return GatewayResult(
@@ -204,6 +252,7 @@ class ClaudePrivacyGateway:
                 payload=None,
                 mappings=mappings,
                 reasons=check_result.reasons,
+                locally_sourced_text=locally_sourced_text,
             )
 
         payload = ClaudeRequestPayload(
@@ -231,10 +280,16 @@ class ClaudePrivacyGateway:
                 payload=None,
                 mappings=mappings,
                 reasons=payload_gate_reasons,
+                locally_sourced_text=locally_sourced_text,
             )
 
         return GatewayResult(
-            allowed=True, purpose=purpose, payload=payload, mappings=mappings, reasons=[]
+            allowed=True,
+            purpose=purpose,
+            payload=payload,
+            mappings=mappings,
+            reasons=[],
+            locally_sourced_text=locally_sourced_text,
         )
 
     def reconstruct_response(
@@ -355,3 +410,95 @@ class ClaudePrivacyGateway:
             "\n".join(lawyer_verlauf),
         ]
         return "\n".join(parts)
+
+    @staticmethod
+    def _build_locally_sourced_raw_text(
+        sachverhalt: str,
+        argumentationspunkte: list[str],
+        quellenverweise: list[str],
+        vorlage: str | None,
+        anwaltliche_anmerkungen: str | None,
+        gespraechsverlauf: list[str],
+    ) -> str:
+        """Liefert `GatewayResult.locally_sourced_text` (siehe dortigen
+        Docstring fuer die volle Begruendung): ALLES, was der Anwalt fuer
+        DIESE Anfrage plausibel selbst geliefert haben koennte - getippt
+        (Sachverhalt, Argumentationspunkte, Quellenverweise, Vorlage,
+        Anmerkungen) ODER aus einem Dokument extrahiert (ebenfalls Teil
+        von Sachverhalt/Vorlage, kommt strukturell nicht anders ins
+        System) - PLUS die "Anwalt: "-Zeilen der Historie. Bewusst OHNE
+        die "Assistent: "-Zeilen (Claudes eigene, fruehere Prosa) - exakt
+        dieselbe Rollen-Unterscheidung wie bei
+        `_build_unrecognized_name_scan_text` oben, hier aber auf den RAW
+        (noch nicht pseudonymisierten) Eingaben, da diese Funktion VOR der
+        Pseudonymisierung aufgerufen wird (siehe `prepare_request`).
+
+        ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        Pipeline", 07.10.): die vorherige, in app/drafting/service.py
+        lokal rekonstruierte `lawyer_authored_text` umfasste NUR
+        `attorney_anmerkungen` + "Anwalt: "-Historienzeilen - NICHT
+        `sachverhalt`/`vorlage`/`quellenverweise` (dokumentbasierter Fall-
+        Kontext). Das war fuer die bisher einzigen betroffenen Kategorien
+        ("ort"/"organisation") selten relevant, waere aber ein echtes
+        Schutzluecken-Risiko gewesen, sobald (wie jetzt) auch "person" die
+        gleiche Lockerung nutzen darf: ein echter, NUR aus einem
+        hochgeladenen Dokument extrahierter Personenname (nie vom Anwalt
+        selbst getippt) haette sonst faelschlich als "koennte nur von der
+        KI stammen" gewertet werden koennen. Diese Funktion schliesst die
+        Luecke, indem sie JEDES Feld einbezieht, das NICHT nachweislich
+        Claude-generiert ist."""
+        return "\n".join(
+            [
+                sachverhalt or "",
+                "\n".join(argumentationspunkte),
+                "\n".join(quellenverweise),
+                vorlage or "",
+                anwaltliche_anmerkungen or "",
+                "\n".join(
+                    entry
+                    for entry in gespraechsverlauf
+                    if not entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
+                ),
+            ]
+        )
+
+    @staticmethod
+    def _build_residual_scan_text(
+        pseudonymized_combined: str,
+        *,
+        original_gespraechsverlauf: list[str],
+        pseudo_verlauf: list[str],
+    ) -> str:
+        """Text fuer SecurityCheckService Punkt 2/3/4 (siehe dortigen
+        Docstring zu `residual_scan_text`): der VOLLE, unveraenderte
+        `pseudonymized_combined`-String, aber mit den Gespraechsverlauf-
+        Zeilen, die von Claude selbst stammen ("Assistent: "-Praefix),
+        durch gleich lange Leerzeichenfolgen UEBERSCHRIEBEN statt
+        herausgefiltert.
+
+        ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        Pipeline", 07.10., real als Regression beim eigenen Testlauf
+        dieser Korrektur aufgefallen, NICHT ausgeliefert): anders als
+        `_build_unrecognized_name_scan_text` (das die einzelnen Felder
+        neu mit "\\n" zusammensetzt) darf diese Funktion die Text-
+        STRUKTUR ausserhalb der entfernten Zeilen NICHT veraendern -
+        Punkt 2/3/4 nutzt echte Presidio-NER (anders als die rein
+        regelbasierte Heuristik in Punkt 6), die nachweislich empfindlich
+        auf genau solche Struktur-Unterschiede reagiert (bereits mehrfach
+        in app/privacy/presidio_ner.py dokumentiert, z. B. die
+        Platzhalter-Nachbarschafts-Effekte bei "Herr [PERSON_06]"). Ein
+        neu zusammengesetzter Text mit "\\n" statt der urspruenglichen
+        "@@GATEWAY_ITEM@@"-Trennmarkierungen (neutralisiert zu
+        Leerzeichen, siehe presidio_ner.py::_neutralize_internal_tokens)
+        erzeugte dadurch reale, im Original NICHT vorhandene neue NER-
+        Fehlalarme (reproduziert: ein unauffaelliger Chat ohne jede
+        Historie wurde dadurch faelschlich blockiert). Deshalb hier
+        stattdessen eine reine Zeichen-fuer-Zeichen-Neutralisierung
+        (gleiche Technik wie bei den internen Markern selbst) - jedes
+        Zeichen ausserhalb der entfernten Assistant-Zeilen bleibt exakt
+        an seiner urspruenglichen Position."""
+        result = pseudonymized_combined
+        for original_entry, pseudo_entry in zip(original_gespraechsverlauf, pseudo_verlauf):
+            if pseudo_entry and original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX):
+                result = result.replace(pseudo_entry, " " * len(pseudo_entry))
+        return result

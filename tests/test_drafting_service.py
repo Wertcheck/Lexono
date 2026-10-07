@@ -223,6 +223,60 @@ def test_successful_draft_is_persisted(db_session: Session) -> None:
     assert result.draft_text in persisted.content
 
 
+def test_unlinked_general_chat_skips_organization_pseudonymization(db_session: Session) -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10., per direktem Reproduktionsskript VOR dieser
+    Korrektur gefunden): `matter_id=None` legt ueber `create_quick_matter`
+    automatisch eine Akte mit dem Sammel-Mandanten "Ohne
+    Mandantenzuordnung" an - `known_entities["mandant"]` war dadurch
+    NIEMALS wirklich leer (siehe `_has_only_placeholder_known_entities`
+    in app/drafting/service.py), eine naive `not known_entities`-Pruefung
+    haette `skip_organization_pseudonymization` fuer JEDEN echten Chat
+    nie ausgeloest. End-to-End bewiesen: eine allgemeine Wissensfrage mit
+    einem Organisationsnamen erreicht Claude (hier: den Fake-Writing-
+    Provider) mit dem Klartextnamen, NICHT einem Platzhalter."""
+    writing_provider = FakeClaudeWritingProvider()
+    service, _ = _service(writing_provider=writing_provider)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Was ist die World Health Organization?",
+        actor="test@example.invalid",
+    )
+
+    assert result.success is True
+    assert len(writing_provider.received_payloads) == 1
+    payload = writing_provider.received_payloads[0]
+    assert payload.anonymisierte_anwaltliche_anmerkungen == "Was ist die World Health Organization?"
+
+
+def test_linked_matter_with_real_client_does_not_skip_organization_pseudonymization(
+    db_session: Session,
+) -> None:
+    """Gegenprobe zum vorherigen Test: sobald eine Akte mit einem ECHTEN,
+    benannten Mandanten verknuepft ist, bleibt das Verhalten unveraendert
+    streng - ein Organisationsname wird weiterhin pseudonymisiert, auch
+    in einer allgemeinen Wissensfrage innerhalb dieser Akte."""
+    matter = _matter(db_session, client_name="Müller GmbH", title="Testakte")
+    writing_provider = FakeClaudeWritingProvider()
+    service, _ = _service(writing_provider=writing_provider)
+
+    result = service.create_draft(
+        matter.id,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Was ist die World Health Organization?",
+        actor="test@example.invalid",
+    )
+
+    assert result.success is True
+    payload = writing_provider.received_payloads[0]
+    assert "World Health Organization" not in payload.anonymisierte_anwaltliche_anmerkungen
+    assert "[ORGANISATION_01]" in payload.anonymisierte_anwaltliche_anmerkungen
+
+
 def test_chat_response_purpose_persists_as_chat_reference_status(db_session: Session) -> None:
     """05.10., Owner-Direktive "ARCHITECTURE & PRODUCT FLOW PASS" §11/§12 -
     eine normale Chat-Antwort (purpose="chat_response", keine erkannte

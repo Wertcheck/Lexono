@@ -71,7 +71,7 @@ from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
-from app.drafting.quick_matter import create_quick_matter
+from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import validate_claude_response
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
@@ -154,6 +154,47 @@ _STEP_STATUS_LABELS: dict[str, str] = {
     "validation": "Antwort wird lokal geprüft…",
     "reconstruction": "Antwort wird zusammengesetzt…",
 }
+
+#: ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+#: Pipeline", 07.10., per direktem Reproduktionsskript VOR dem Ausliefern
+#: dieser Korrektur selbst gefunden): `create_quick_matter` (siehe dort)
+#: legt fuer JEDE Akte ohne benannten Mandanten den gemeinsamen Sammel-
+#: Mandanten "Ohne Mandantenzuordnung" an - `RuleBasedLocalAIProvider.
+#: _build_known_entities` traegt dessen Namen (UND dessen automatisch
+#: abgeleiteten "Nachnamen" "Mandantenzuordnung") IMMER in `known_entities
+#: ["mandant"]` ein, sobald ein Dokument/eine Akte ueberhaupt existiert -
+#: empirisch bestaetigt: `known_entities` ist fuer einen voellig
+#: unverknuepften Chat (matter_id=None -> Quick-Matter-Autocreate) NIEMALS
+#: wirklich leer, sondern IMMER mindestens
+#: `{"mandant": ["Ohne Mandantenzuordnung", "Mandantenzuordnung"]}`. Ohne
+#: diese Ausnahme waere die Bedingung `not known_entities` in
+#: `_prepare_and_gate` (skip_organization_pseudonymization) in der Praxis
+#: NIEMALS wahr gewesen - der gesamte Mechanismus haette fuer echte
+#: Nutzer:innen nie ausgeloest. Die Pruefung ignoriert deshalb gezielt
+#: GENAU diesen einen, strukturell bekannten Platzhalter-Namen (und seinen
+#: abgeleiteten Nachnamen) - jeder ANDERE/zusaetzliche bekannte Name
+#: (ein echter Mandant/Gegner/Anwalt/Gericht) gilt weiterhin uneingeschraenkt
+#: als "es existiert Akte-/Mandantenkontext".
+_PLACEHOLDER_ONLY_KNOWN_ENTITY_NAMES = frozenset(
+    {
+        PLACEHOLDER_CLIENT_NAME.strip().lower(),
+        PLACEHOLDER_CLIENT_NAME.strip().split()[-1].lower(),
+    }
+)
+
+
+def _has_only_placeholder_known_entities(known_entities: dict[str, list[str]] | None) -> bool:
+    """`True`, wenn `known_entities` entweder leer ist ODER ausschliesslich
+    den Sammel-Mandanten-Platzhalternamen enthaelt (siehe Konstante oben) -
+    in BEIDEN Faellen existiert strukturell KEIN echter Akte-/Mandanten-
+    kontext fuer diese Anfrage."""
+    if not known_entities:
+        return True
+    for names in known_entities.values():
+        for name in names:
+            if name and name.strip().lower() not in _PLACEHOLDER_ONLY_KNOWN_ENTITY_NAMES:
+                return False
+    return True
 
 
 def _should_skip_llm_privacy_layers(
@@ -570,6 +611,39 @@ class DraftingService:
             )
             knowledge_items_used, knowledge_texts = self._gather_knowledge_items(matter, db)
 
+        # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        # Pipeline", 07.10.): Presidios generische ORGANIZATION-Erkennung
+        # pseudonymisiert unterschiedslos auch oeffentlich bekannte
+        # Organisationen aus allgemeinen Wissensfragen ("World Health
+        # Organization") - Claude bekommt dann nur einen Platzhalter und
+        # kann die Frage nicht mehr sinnvoll beantworten (live reproduziert,
+        # siehe app/privacy/pseudonymizer.py::pseudonymize Docstring zu
+        # `skip_categories`). Diese Pseudonymisierung NUR dann ueberspringen,
+        # wenn VOR dem Gateway-Aufruf bereits ALLE drei Bedingungen
+        # zutreffen: kein expliziter Schreibauftrag (purpose ==
+        # "chat_response", exakt wie bei `_should_skip_llm_privacy_layers`
+        # unten), kein Aktendokument im Sachverhalt UND keine bekannten
+        # Aktenbeteiligten ausser dem strukturellen Sammel-Mandanten-
+        # Platzhalter (siehe `_has_only_placeholder_known_entities` oben -
+        # OHNE diese Praezisierung waere `known_entities` fuer JEDEN Chat
+        # NIEMALS leer gewesen, siehe dortiger ECHTER FUND, und dieser
+        # Mechanismus haette real nie ausgeloest). Sobald IRGENDeine
+        # dieser Bedingungen nicht zutrifft (Akte/Dokument/ECHTER Mandant
+        # im Spiel), bleibt das Verhalten 100% unveraendert (volle
+        # Pseudonymisierung wie bisher). RESTRISIKO, bewusst nicht
+        # eliminiert: tippt ein Anwalt den Namen eines brandneuen, noch
+        # NICHT mit einer Akte verknuepften Mandanten in einen voellig
+        # unverknuepften allgemeinen Chat, greift dieser Mechanismus nicht
+        # schuetzend - `known_entities`/Akte-Verknuepfung bleibt der
+        # massgebliche, zuverlaessige Schutzpfad; das ist der erwartete,
+        # vorgesehene Arbeitsablauf (Akte zuerst anlegen/verknuepfen), kein
+        # unentdeckter Bug.
+        skip_organization_pseudonymization = (
+            purpose == _CHAT_PURPOSE
+            and not preparation.has_document_context
+            and _has_only_placeholder_known_entities(preparation.known_entities)
+        )
+
         with trace.step("privacy_gateway"):
             gateway_result = self.gateway.prepare_request(
                 purpose=purpose,
@@ -581,6 +655,7 @@ class DraftingService:
                 anwaltliche_anmerkungen=attorney_anmerkungen,
                 known_entities=preparation.known_entities,
                 gespraechsverlauf=gespraechsverlauf,
+                skip_organization_pseudonymization=skip_organization_pseudonymization,
             )
 
         if not gateway_result.allowed:
@@ -628,25 +703,24 @@ class DraftingService:
             known_entities=preparation.known_entities,
         )
 
-        # ECHTER FUND (07.10., siehe app/privacy/security_check.py::
-        # find_lenient_leak_exempt_placeholders fuer die volle Herleitung):
-        # NUR der tatsaechlich vom Anwalt selbst verfasste Text darf als
-        # Nachweis dienen, dass ein Wert NIE vom Anwalt getippt wurde -
-        # "Anwalt: "-Praefix spiegelt exakt app/chat/service.py::
-        # _HISTORY_ROLE_LABELS["user"] (bewusst als Literal dupliziert,
-        # nicht importiert - app.chat haengt bereits von app.drafting ab,
-        # ein Import in umgekehrter Richtung waere ein Zirkelimport).
-        lawyer_authored_text = "\n".join(
-            [attorney_anmerkungen or ""]
-            + [
-                entry
-                for entry in (gespraechsverlauf or [])
-                if entry.startswith("Anwalt: ")
-            ]
-        )
+        # ECHTER FUND (07.10., urspruenglich; PRAEZISIERT 07.10. durch
+        # Owner-Direktive "Architektur-Audit Privacy-/Chat-Pipeline" -
+        # siehe app/privacy/security_check.py::find_lenient_leak_exempt_
+        # placeholders fuer die volle Herleitung): NUR lokal-stammender
+        # Text darf als Nachweis dienen, dass ein Wert NIE von Claude
+        # erfunden wurde. Frueher wurde das hier lokal aus nur
+        # `attorney_anmerkungen` + "Anwalt: "-Historienzeilen
+        # rekonstruiert - deckte `sachverhalt`/`vorlage`/`quellenverweise`
+        # (dokumentbasierten Kontext) NICHT ab. Jetzt EINE einzige,
+        # vollstaendige Quelle: `gateway_result.locally_sourced_text`
+        # (app/privacy/gateway.py::GatewayResult, aus denselben RAW-
+        # Eingaben wie der Gateway-Aufruf oben gebaut) - schliesst diese
+        # Luecke, wichtig seit "person" ebenfalls diese Lockerung nutzen
+        # darf (siehe dortiger Kommentar).
         lenient_leak_exempt_placeholders = frozenset(
             find_lenient_leak_exempt_placeholders(
-                gateway_result.mappings, lawyer_authored_text=lawyer_authored_text
+                gateway_result.mappings,
+                lawyer_authored_text=gateway_result.locally_sourced_text,
             )
         )
 

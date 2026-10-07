@@ -47,7 +47,7 @@ class AlwaysBlockSecurityCheck(SecurityCheckService):
     vom Inhalt - für den Test, dass eine fehlgeschlagene Neugenerierung
     die AttorneyInstruction NICHT auf 'applied' setzt."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None):  # noqa: ANN001
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_scan_text=None):  # noqa: ANN001
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(passed=False, reasons=["Testblockierung"])

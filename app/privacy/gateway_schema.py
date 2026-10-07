@@ -86,3 +86,20 @@ class GatewayResult:
     payload: ClaudeRequestPayload | None = None
     mappings: list[PseudonymMapping] = field(default_factory=list)
     reasons: list[str] = field(default_factory=list)
+    # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    # Pipeline", 07.10.): alles, was der Anwalt fuer DIESE Anfrage
+    # plausibel selbst geliefert haben koennte - getippt (Sachverhalt,
+    # Argumentationspunkte, Quellenverweise, Vorlage, Anmerkungen,
+    # "Anwalt: "-Historienzeilen) ODER aus einem Dokument extrahiert
+    # (ebenfalls Teil von Sachverhalt/Vorlage) - OHNE die "Assistent: "-
+    # Zeilen der Historie (Claudes eigene, bereits einmal generierte
+    # Prosa). Siehe app/privacy/gateway.py::_build_locally_sourced_raw_text
+    # fuer den Aufbau und app/privacy/security_check.py::
+    # find_lenient_leak_exempt_placeholders fuer die Verwendung (ersetzt
+    # dort die vorher zu eng gefasste, nur Anmerkungen+Chat-Historie
+    # umfassende lokale Rekonstruktion in app/drafting/service.py - diese
+    # Version deckt zusaetzlich `sachverhalt`/`vorlage`/`quellenverweise`
+    # ab, also auch dokumentbasierten Kontext). Immer gesetzt (auch bei
+    # `allowed=False`), da rein lokale Textkonkatenation vor jeder
+    # Pseudonymisierungs-/Security-Check-Entscheidung berechnet wird.
+    locally_sourced_text: str = ""

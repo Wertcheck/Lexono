@@ -292,6 +292,102 @@ def test_unrecognized_name_scan_text_still_catches_a_name_within_the_given_text(
     assert any("Peter Müller" in r for r in result.reasons)
 
 
+def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10., per Live-QA NACH den beiden anderen Korrekturen
+    dieser Direktive reproduziert): Presidios Restrisiko-Scan (Punkt
+    2/3/4, `detect_all` auf dem VOLLEN pseudonymisierten Text) stuft
+    gelegentlich gewoehnliche Woerter aus einer FRUEHEREN Claude-Antwort
+    faelschlich als Kategorie "ort" ein (real reproduziert: "UN-Quelle",
+    "Wiederholungsversuche" - keine Orte) - identischer Charakter zum
+    bereits geloesten Punkt-6-Fall, hier aber bei einer ANDEREN Pruefung.
+    `residual_scan_text` loest das analog zu `unrecognized_name_scan_text`.
+    Bewusst mit echtem Presidio-`ner_detector` (wie in der echten
+    Produktivkonfiguration, siehe ClaudePrivacyGateway) - die rein
+    regelbasierte Regex-Erkennung (Default ohne `ner_detector`) kennt
+    keine Kategorie "ort" fuer Fliesstext und reproduziert diesen
+    speziellen NER-Fehlalarm nicht."""
+    from app.privacy.presidio_ner import detect_presidio_entities
+
+    checker = SecurityCheckService(ner_detector=detect_presidio_entities)
+
+    pseudonymized_text = (
+        "Assistent: Laut UN-Quelle gab es mehrere Wiederholungsversuche.\n"
+        "Anwalt: Was regelt § 558 BGB?"
+    )
+    scan_text_without_history = "Anwalt: Was regelt § 558 BGB?"
+
+    blocked_without_scoping = checker.check(
+        pseudonymized_text, [], purpose="chat_response"
+    )
+    allowed_with_scoping = checker.check(
+        pseudonymized_text,
+        [],
+        purpose="chat_response",
+        residual_scan_text=scan_text_without_history,
+    )
+
+    assert blocked_without_scoping.passed is False
+    assert allowed_with_scoping.passed is True
+    assert allowed_with_scoping.reasons == []
+
+
+def test_residual_scan_text_still_catches_residual_pii_within_the_given_text() -> None:
+    """Gegenprobe zum vorherigen Test: die Einschraenkung darf Punkt
+    2/3/4 nicht generell abschalten - ein nach Pseudonymisierung
+    weiterhin erkennbares Muster, das TATSAECHLICH im uebergebenen
+    `residual_scan_text` steht (z. B. eine vom Anwalt getippte E-Mail-
+    Adresse, die die Pseudonymisierung uebersehen hat), muss weiterhin
+    blockieren."""
+    checker = SecurityCheckService()
+
+    pseudonymized_text = (
+        "Assistent: Allgemeine Informationen zum Thema.\n"
+        "Anwalt: Kontakt: max@example.test"
+    )
+    scan_text = "Anwalt: Kontakt: max@example.test"
+
+    result = checker.check(
+        pseudonymized_text,
+        [],
+        purpose="chat_response",
+        residual_scan_text=scan_text,
+    )
+
+    assert result.passed is False
+    assert any("email" in r for r in result.reasons)
+
+
+def test_residual_scan_text_does_not_affect_placeholder_presence_check() -> None:
+    """Regressionsschutz: Punkt 5 (`check_placeholders_present`) muss
+    weiterhin auf dem VOLLEN `pseudonymized_text` laufen, auch wenn
+    `residual_scan_text` gesetzt ist - ein Mapping-Eintrag, dessen
+    Platzhalter NUR in einer "Assistent: "-Zeile vorkommt (legitim, siehe
+    app/chat/service.py::_build_history), darf nicht faelschlich als
+    "fehlt" gemeldet werden, nur weil er ausserhalb von
+    `residual_scan_text` liegt."""
+    checker = SecurityCheckService()
+
+    pseudonymized_text = (
+        "Assistent: Ihr Mandant [PERSON_01] hat angerufen.\n"
+        "Anwalt: Was regelt § 558 BGB?"
+    )
+    scan_text_without_history = "Anwalt: Was regelt § 558 BGB?"
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Peter Müller"),
+    ]
+
+    result = checker.check(
+        pseudonymized_text,
+        mappings,
+        purpose="chat_response",
+        residual_scan_text=scan_text_without_history,
+    )
+
+    assert result.passed is True
+    assert result.reasons == []
+
+
 def test_synthetic_test_document_title_does_not_trigger_false_positive() -> None:
     """ECHTER FUND (realer Abnahme-Test, 13.09.): "Synthetisches
     Testdokument" ist ein Dokumenttitel (Adjektiv + Substantiv), keine
@@ -543,17 +639,74 @@ def test_find_lenient_leak_exempt_placeholders_exempts_ort_never_typed_by_lawyer
     assert exempt == {"[ORT_01]"}
 
 
-def test_find_lenient_leak_exempt_placeholders_does_not_exempt_person_category() -> None:
-    """Namen bleiben IMMER streng geprueft, selbst wenn sie nie vom Anwalt
-    getippt wurden - die Lockerung gilt ausdruecklich NUR fuer
-    ort/organisation (NER-Kategorien mit bekannt hoeherer
-    Falsch-Positiv-Rate bei generischen Substantiven)."""
+def test_find_lenient_leak_exempt_placeholders_exempts_person_never_typed_by_lawyer() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10., per echten gespeicherten Claude-Antworten einer
+    frueheren Session reproduziert): Presidios NER stuft gelegentlich ganz
+    gewoehnliche deutsche Woerter ("ortsuebliche", "Offener Pruefpunkt" -
+    keine Namen) faelschlich als Kategorie "person" ein. Bisher war
+    "person" VOLLSTAENDIG von dieser Lockerung ausgenommen ("Namen bleiben
+    immer streng geprueft") - das blockierte dadurch voellig unverdaechtige
+    Antworten, obwohl der "Name" nie ein echter, vom Anwalt eingegebener
+    Name war. Seit der Erweiterung: "person" nutzt dieselbe strikte
+    Herleitung wie "ort"/"organisation" - ein Wert, der NACHWEISLICH nie
+    lokal-stammend war (hier simuliert durch eine NER-Fehlklassifikation
+    wie "Erika Mustermann", die hypothetisch nur in einer KI-Antwort
+    vorkaeme), wird ausgenommen. Siehe den Gegenprobe-Test direkt danach
+    fuer den sicherheitskritischen Fall (ECHTER, vom Anwalt getippter
+    Name bleibt weiterhin streng geschuetzt)."""
     mappings = [
         PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Erika Mustermann"),
     ]
 
     exempt = find_lenient_leak_exempt_placeholders(
         mappings, lawyer_authored_text="Anwalt: Was regelt § 558 BGB?"
+    )
+
+    assert exempt == {"[PERSON_01]"}
+
+
+def test_find_lenient_leak_exempt_placeholders_still_protects_a_person_the_lawyer_typed() -> None:
+    """Sicherheitskritische Gegenprobe zum vorherigen Test: die
+    Erweiterung auf "person" darf ECHTE, vom Anwalt selbst eingegebene
+    Namen NICHT schwaecher schuetzen als zuvor - taucht der Originalwert
+    im lokal-stammenden Text auf (hier: in der Anwalt-Zeile selbst),
+    bleibt er UNVERAENDERT voll geschuetzt, exakt wie "ort"/"organisation"
+    das in test_find_lenient_leak_exempt_placeholders_does_not_exempt_a_
+    value_the_lawyer_typed unten bereits fuer ihre Kategorien beweisen."""
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Erika Mustermann"),
+    ]
+
+    exempt = find_lenient_leak_exempt_placeholders(
+        mappings, lawyer_authored_text="Anwalt: Bitte informieren Sie auch Erika Mustermann."
+    )
+
+    assert exempt == set()
+
+
+def test_find_lenient_leak_exempt_placeholders_person_still_protected_when_sourced_only_from_document_text() -> None:
+    """Regressionsschutz fuer die Luecke, die `GatewayResult.
+    locally_sourced_text` (app/privacy/gateway.py) gezielt schliesst: ein
+    echter Personenname, der NUR aus einem hochgeladenen Dokument
+    (Sachverhalt) stammt - NICHT aus einer vom Anwalt getippten Nachricht
+    oder "Anwalt:"-Historienzeile -, muss ebenfalls als "lokal-stammend"
+    gelten und darf NICHT faelschlich als "koennte nur von der KI stammen"
+    ausgenommen werden. `lawyer_authored_text` hier bewusst wie ein
+    `locally_sourced_text`-Wert aufgebaut, der Sachverhalt-Inhalt
+    einschliesst (siehe app/privacy/gateway.py::
+    _build_locally_sourced_raw_text) - nicht nur Anmerkungen/Chat-Zeilen,
+    wie es die urspruengliche, jetzt ersetzte lokale Rekonstruktion in
+    app/drafting/service.py tat."""
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Klaus Dokumentner"),
+    ]
+    # Simuliert GatewayResult.locally_sourced_text: Sachverhalt-Inhalt aus
+    # einem Dokument, OHNE dass der Anwalt den Namen selbst getippt hat.
+    locally_sourced_text = "Das Dokument nennt Klaus Dokumentner als Vertragspartei.\n\n\n\n\n"
+
+    exempt = find_lenient_leak_exempt_placeholders(
+        mappings, lawyer_authored_text=locally_sourced_text
     )
 
     assert exempt == set()
@@ -590,6 +743,29 @@ def test_check_response_placeholder_integrity_skips_leak_for_exempted_placeholde
 
     assert any("PERSON_01" in r for r in reasons), "Person-Leck muss weiterhin blockieren"
     assert not any("ORT_01" in r for r in reasons), "Ort-Leck ist exempt und darf nicht mehr blockieren"
+
+
+def test_check_response_placeholder_integrity_skips_leak_for_exempted_person_placeholder() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10.): seit der Erweiterung von `_LENIENT_LEAK_CATEGORIES`
+    auf "person" kann AUCH ein Person-Platzhalter in der vom Aufrufer
+    berechneten Ausnahmeliste stehen (wenn `find_lenient_leak_exempt_
+    placeholders` ihn als nie lokal-stammend identifiziert hat) - diese
+    Funktion selbst ist kategorie-agnostisch (prueft nur Mitgliedschaft in
+    der uebergebenen Menge), muss das also korrekt respektieren."""
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Offener Pruefpunkt"),
+    ]
+    text = "Es gibt noch einen Offener Pruefpunkt in diesem Fall."
+
+    reasons = check_response_placeholder_integrity(
+        text,
+        mappings,
+        require_full_coverage=False,
+        lenient_leak_exempt_placeholders=frozenset({"[PERSON_01]"}),
+    )
+
+    assert reasons == []
 
 
 def test_check_response_placeholder_integrity_default_stays_fully_strict() -> None:
@@ -775,6 +951,34 @@ def test_payload_with_original_value_leak_fails() -> None:
     payload = ClaudeRequestPayload(
         schreibauftrag="formulate_draft",
         anonymisierter_sachverhalt="Mandant [MANDANT_01], alias Erika Mustermann, bittet um Rueckmeldung.",
+    )
+
+    reasons = check_payload_placeholder_integrity(payload, mappings)
+
+    assert reasons != []
+    assert any("Datenschutzverstoss" in r for r in reasons)
+
+
+def test_outgoing_payload_gate_ignores_lenient_leak_categories_even_for_person() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10.): `_LENIENT_LEAK_CATEGORIES` wurde um "person"
+    erweitert (siehe dortiger Kommentar) - das AUSGEHENDE Final Payload
+    Gate (`check_payload_placeholder_integrity`) ruft
+    `check_response_placeholder_integrity` aber IMMER mit dem Default
+    `lenient_leak_exempt_placeholders=frozenset()` auf (siehe dortiger
+    Docstring: "dort bleibt volle Abdeckung weiterhin zwingend") - die
+    Erweiterung von `_LENIENT_LEAK_CATEGORIES` betrifft NUR, wie der
+    AUFRUFER (app/drafting/service.py) `find_lenient_leak_exempt_
+    placeholders` fuer die EINGEHENDE Antwortpruefung nutzt, nicht dieses
+    Gate. Explizit bewiesen: ein person-Leck in der ausgehenden Payload
+    blockiert weiterhin, obwohl "person" jetzt theoretisch lenient-faehig
+    waere."""
+    mappings = [
+        PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Offener Pruefpunkt")
+    ]
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft",
+        anonymisierter_sachverhalt="Es gibt noch einen Offener Pruefpunkt in diesem Fall.",
     )
 
     reasons = check_payload_placeholder_integrity(payload, mappings)

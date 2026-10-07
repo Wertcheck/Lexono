@@ -278,3 +278,60 @@ def test_repeated_occurrence_extension_does_not_duplicate_already_found_spans() 
     for i, span_a in enumerate(ort_spans):
         for span_b in ort_spans[i + 1 :]:
             assert span_a.end <= span_b.start or span_b.end <= span_a.start
+
+
+# --- `skip_categories` (07.10., Owner-Direktive "Architektur-Audit
+# Privacy-/Chat-Pipeline") - ECHTER FUND, live per Cloud-E2E-Test
+# reproduziert: "Deutschland" (Kategorie "ort") blieb im ausgehenden
+# Payload unpseudonymisiert, obwohl `skip_categories` nur "organisation"
+# betraf. Ursache: ein laengerer, ueberlappender "organisation"-Treffer
+# ("Bundeskanzler (Deutschland)") gewann zunaechst die Ueberlappungs-
+# Aufloesung gegen den kuerzeren "ort"-Treffer ("Deutschland" allein) -
+# wurde der "organisation"-Treffer ERST DANACH per Kategorie
+# herausgefiltert, blieb fuer diese Textstelle GAR KEIN Treffer mehr
+# uebrig. Behoben, indem `skip_categories` VOR statt NACH
+# `_resolve_overlaps` angewendet wird. ---
+
+
+def _overlapping_organisation_and_ort_detector(text: str) -> list[DetectedSpan]:
+    """Simuliert Presidios reales, reproduziertes Verhalten: ein laengerer
+    "organisation"-Treffer ueberlappt einen kuerzeren "ort"-Treffer an
+    derselben Textstelle."""
+    index = text.find("Deutschland")
+    assert index != -1
+    return [
+        DetectedSpan(
+            category="organisation",
+            start=index - len("Bundeskanzler ("),
+            end=index + len("Deutschland") + 1,
+            value=text[index - len("Bundeskanzler (") : index + len("Deutschland") + 1],
+        ),
+        DetectedSpan(category="ort", start=index, end=index + len("Deutschland"), value="Deutschland"),
+    ]
+
+
+def test_skip_categories_applied_before_overlap_resolution_does_not_lose_other_category() -> None:
+    """Der eigentliche Regressionstest fuer den oben beschriebenen Fund:
+    wird "organisation" uebersprungen, muss der kuerzere, NICHT
+    uebersprungene "ort"-Treffer an derselben Stelle trotzdem gewinnen -
+    nicht beide Treffer verschwinden."""
+    text = "Bundeskanzler (Deutschland) ist ein Amt."
+
+    without_skip = detect_all(text, ner_detector=_overlapping_organisation_and_ort_detector)
+    with_skip = detect_all(
+        text,
+        ner_detector=_overlapping_organisation_and_ort_detector,
+        skip_categories=frozenset({"organisation"}),
+    )
+
+    assert any(s.category == "organisation" for s in without_skip)
+    assert not any(s.category == "ort" for s in without_skip), (
+        "ohne skip_categories gewinnt der laengere organisation-Treffer wie erwartet"
+    )
+
+    assert not any(s.category == "organisation" for s in with_skip)
+    assert any(s.category == "ort" and s.value == "Deutschland" for s in with_skip), (
+        "der kuerzere ort-Treffer muss die Ueberlappung gewinnen, wenn der "
+        "laengere organisation-Treffer uebersprungen wird - dies war die "
+        "real reproduzierte Luecke (beide Treffer gingen sonst verloren)"
+    )

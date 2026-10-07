@@ -272,6 +272,7 @@ def detect_all(
     known_entities: dict[str, list[str]] | None = None,
     *,
     ner_detector: Callable[[str], list[DetectedSpan]] | None = None,
+    skip_categories: frozenset[str] = frozenset(),
 ) -> list[DetectedSpan]:
     """Führt alle Detektoren aus und löst Überlappungen auf.
 
@@ -283,6 +284,27 @@ def detect_all(
     rollenzugeordnete Entität soll einer generischen NER-Erkennung (siehe
     app/privacy/presidio_ner.py, optional per `ner_detector` injiziert)
     vorgehen.
+
+    `skip_categories` (optional, ECHTER FUND Owner-Direktive "Architektur-
+    Audit Privacy-/Chat-Pipeline", 07.10., per Live-QA real reproduziert):
+    entfernt Treffer dieser Kategorien VOR `_resolve_overlaps`, nicht erst
+    danach. Grund: `_resolve_overlaps` verwirft bei einer Ueberlappung den
+    KUERZEREN Treffer UNWIDERRUFLICH (siehe dort) - wuerde man stattdessen
+    ERST ueberlappungs-aufloesen und DANACH nach Kategorie filtern, koennte
+    ein laengerer "organisation"-Treffer einen kuerzeren, NICHT zu
+    ueberspringenden Treffer einer ANDEREN Kategorie (z. B. "ort") in der
+    Ueberlappungs-Aufloesung verdraengen - wird der "organisation"-Treffer
+    danach herausgefiltert, bleibt fuer diese Textstelle GAR KEIN Treffer
+    mehr uebrig, obwohl die andere Kategorie dort haette erkannt werden
+    muessen. Real reproduziert: "(Deutschland)" in "Bundeskanzler
+    (Deutschland)" wurde durch einen ueberlappenden, laenger reichenden
+    "organisation"-Treffer verdraengt - nach dessen nachtraeglicher
+    Filterung blieb "Deutschland" komplett unpseudonymisiert im
+    ausgehenden Payload. Mit `skip_categories` VOR der Aufloesung nimmt
+    der kuerzere "ort"-Treffer stattdessen korrekt am Wettbewerb teil und
+    gewinnt, falls kein anderer (nicht uebersprungener) Treffer dieselbe
+    Stelle beansprucht - identisches Ergebnis, als haette der
+    uebersprungene Detektor diese Stelle nie gemeldet.
 
     Abschliessend `_extend_with_repeated_occurrences` (05.10., siehe dort):
     stellt sicher, dass ein einmal irgendwo erkannter Wert konsequent an
@@ -296,6 +318,9 @@ def detect_all(
         all_spans.extend(detect_known_entities(text, known_entities))
     if ner_detector is not None:
         all_spans.extend(ner_detector(text))
+
+    if skip_categories:
+        all_spans = [span for span in all_spans if span.category not in skip_categories]
 
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)

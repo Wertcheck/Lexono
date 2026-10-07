@@ -15,7 +15,7 @@ class _AlwaysBlockSecurityCheck:
     tests/test_review_engine.py) - erzwingt EINEN BELIEBIGEN Block,
     unabhaengig vom konkreten Heuristik-Mechanismus."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None):
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_scan_text=None):
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(
@@ -518,3 +518,130 @@ def test_real_name_in_current_message_is_still_pseudonymized_after_entity_type_r
     assert result.allowed is True
     assert "Peter Müller" not in result.payload.anonymisierte_anwaltliche_anmerkungen
     assert any(m.original_value == "Peter Müller" for m in result.mappings)
+
+
+def test_skip_organization_pseudonymization_leaves_general_knowledge_org_name_readable() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10., live reproduziert): Presidio pseudonymisierte
+    "World Health Organization" unterschiedslos auch in einer voellig
+    allgemeinen Wissensfrage - Claude bekam nur einen Platzhalter und
+    konnte die Frage nicht mehr sinnvoll beantworten. Mit
+    `skip_organization_pseudonymization=True` bleibt der Begriff lesbar;
+    `allowed` bleibt `True` (die urspruengliche Fassung dieses Fixes
+    loeste faelschlich einen NEUEN Block ueber Punkt 2/3/4 aus - siehe
+    SecurityCheckService.check Docstring zu `skip_residual_categories` -
+    das ist hier mitgeprueft)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Was ist die World Health Organization?",
+        skip_organization_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+    assert "World Health Organization" in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert result.mappings == []
+
+
+def test_organization_pseudonymization_default_behavior_is_unchanged() -> None:
+    """Regressionsschutz: ohne `skip_organization_pseudonymization`
+    (Default `False`) bleibt das bisherige, strikte Verhalten fuer JEDEN
+    bestehenden Aufrufer unveraendert - derselbe Begriff wird weiterhin
+    pseudonymisiert."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Was ist die World Health Organization?",
+    )
+
+    assert result.allowed is True
+    assert "World Health Organization" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert any(m.category == "organisation" for m in result.mappings)
+
+
+def test_skip_organization_pseudonymization_does_not_weaken_known_entities_mandant_protection() -> None:
+    """Sicherheitskritische Gegenprobe: ein echter, ueber `known_entities`
+    bekannter Mandant (Kategorie "mandant", NICHT "organisation" - siehe
+    app/ai_providers/local_ai_provider.py::_build_known_entities) bleibt
+    VOLLSTAENDIG geschuetzt, selbst wenn `skip_organization_
+    pseudonymization=True` gesetzt ist (im echten Aufrufer, app/drafting/
+    service.py, koennte das ohnehin nie gleichzeitig zutreffen - diese
+    Methode selbst muss es aber unabhaengig davon korrekt behandeln, da
+    `known_entities`-Treffer strukturell nie die Presidio-Kategorie
+    "organisation" tragen)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Unser Mandant Müller GmbH hat eine Frist.",
+        known_entities={"mandant": ["Müller GmbH"]},
+        skip_organization_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert "Müller GmbH" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert any(m.category == "mandant" and m.original_value == "Müller GmbH" for m in result.mappings)
+
+
+def test_skip_organization_pseudonymization_does_not_weaken_person_protection() -> None:
+    """Weitere Gegenprobe: eine Organisation, die eine natuerliche Person
+    identifiziert (z. B. ein Einzelunternehmer-Firmenname), wird von
+    Presidio bereits heute als Kategorie "person" erkannt (empirisch
+    bestaetigt: "Max Müller e.K." -> PERSON, nicht ORGANIZATION) -
+    `skip_organization_pseudonymization` betrifft NUR die Presidio-
+    Kategorie "organisation" und darf diesen Schutz nicht beruehren."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Das Dokument stammt von der Müller GmbH, vertreten durch Max Müller.",
+        skip_organization_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert "Max Müller" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert "Müller GmbH" in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert any(m.category == "person" and m.original_value == "Max Müller" for m in result.mappings)
+
+
+def test_prior_assistant_answer_residual_pii_false_positive_does_not_block_new_question() -> None:
+    """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+    Pipeline", 07.10., real per Live-QA-Fork NACH den beiden anderen
+    Korrekturen dieser Direktive reproduziert, Text hier identisch zu
+    einer echten, gespeicherten Claude-Antwort aus jener Session):
+    Presidios Restrisiko-Scan (Punkt 2/3/4) stufte "UN-Quelle" und
+    "Wiederholungsversuche" aus einer FRUEHEREN Claude-Antwort
+    faelschlich als Kategorie "ort" ein und blockierte dadurch eine
+    voellig unverwandte, saubere Folgefrage - Live-Verifikation per
+    `git stash` am echten Repro bestaetigt: vor dieser Korrektur
+    `allowed=False` mit genau dieser Meldung, danach `allowed=True`.
+    Bewusst OHNE Security-Check-Stub - echte Presidio-Produktivkonfig."""
+    gw = ClaudePrivacyGateway()
+
+    gespraechsverlauf = [
+        "Anwalt: Was ist der World Cities Report?",
+        "Assistent: Der World Cities Report ist eine Publikation von "
+        "UN-Habitat. Laut UN-Quelle gab es trotz mehrerer "
+        "Wiederholungsversuche bei der Datenerhebung Verzoegerungen bei "
+        "der Veroeffentlichung.",
+        "Anwalt: Wie lange dauert ein Jurastudium durchschnittlich?",
+        "Assistent: Das ist eine allgemeine Frage, unabhaengig vom "
+        "bisherigen Gespraechsverlauf zum World Cities Report.",
+    ]
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="Was regelt Paragraph 558 BGB?",
+        gespraechsverlauf=gespraechsverlauf,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []

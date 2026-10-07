@@ -88,7 +88,11 @@ class Pseudonymizer:
         self.ner_detector = ner_detector
 
     def pseudonymize(
-        self, text: str, *, known_entities: dict[str, list[str]] | None = None
+        self,
+        text: str,
+        *,
+        known_entities: dict[str, list[str]] | None = None,
+        skip_categories: frozenset[str] = frozenset(),
     ) -> tuple[str, list[PseudonymMapping]]:
         """Ersetzt alle erkannten PII-Vorkommen durch Platzhalter.
 
@@ -98,8 +102,46 @@ class Pseudonymizer:
         gilt fuer einen blossen Nachnamen desselben bekannten Namens (z. B.
         "Weber" neben "Sabine Weber") - siehe `_canonicalize_alias`
         weiter unten fuer die Begruendung.
-        """
-        spans = detect_all(text, known_entities, ner_detector=self.ner_detector)
+
+        `skip_categories` (optional, ECHTER FUND Owner-Direktive
+        "Architektur-Audit Privacy-/Chat-Pipeline", 07.10.): erkannte
+        Spans, deren Kategorie in dieser Menge steht, werden VOR der
+        Platzhalter-Vergabe verworfen - bleiben also als Klartext stehen,
+        bekommen KEIN `PseudonymMapping`. Grund: Presidios generische
+        ORGANIZATION-Erkennung pseudonymisiert unterschiedslos auch
+        oeffentlich bekannte Organisationen aus allgemeinen Wissensfragen
+        ("World Health Organization", "World Trade Organization") - Claude
+        bekommt dann nur einen Platzhalter statt des Begriffs und kann die
+        Frage nicht mehr sinnvoll beantworten (live reproduziert: Claude
+        fragte nach "dem Platzhalter World Trade Organization"). Der
+        Aufrufer (app/privacy/gateway.py) uebergibt `skip_categories` NUR,
+        wenn vorab bereits feststeht, dass fuer DIESE Anfrage kein
+        Akte-/Mandanten-/Dokumentkontext existiert (kein `matter_id`, keine
+        `known_entities`, siehe dortige Herleitung) - die eigentliche
+        Mandantenschutz-Garantie bleibt strukturell der EXAKTE
+        `known_entities`-Abgleich (oben, `_canonicalize_alias`/`detect_all`),
+        der von `skip_categories` UNBERUEHRT bleibt (ein in `known_entities`
+        bekannter Mandant wird immer erkannt und pseudonymisiert,
+        unabhaengig von dieser Option). NIEMALS fuer Kategorie "person"
+        verwenden (echte Namen muessen immer streng geprueft bleiben) -
+        das erzwingt ausschliesslich der Aufrufer, diese Methode selbst
+        prueft das nicht gesondert, da sie bewusst eine generische,
+        kategorie-agnostische Mechanik bleibt.
+
+        ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        Pipeline", 07.10., per Live-QA real reproduziert): `skip_categories`
+        wird an `detect_all` durchgereicht (NICHT mehr erst nachtraeglich
+        auf dessen Ergebnis angewendet) - siehe dortigen Docstring fuer die
+        volle Begruendung (ein nachtraeglicher Filter nach bereits
+        erfolgter Ueberlappungs-Aufloesung konnte einen laengeren,
+        uebersprungenen "organisation"-Treffer einen KUERZEREN, NICHT zu
+        uebersprungenden Treffer einer anderen Kategorie an derselben
+        Textstelle verdraengen lassen - nach der Filterung blieb dann
+        GAR KEIN Treffer mehr fuer diese Stelle uebrig, real reproduziert
+        an "Deutschland" innerhalb von "Bundeskanzler (Deutschland)")."""
+        spans = detect_all(
+            text, known_entities, ner_detector=self.ner_detector, skip_categories=skip_categories
+        )
 
         value_to_placeholder: dict[tuple[str, str], str] = {}
         counters: dict[str, int] = {}

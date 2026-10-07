@@ -373,29 +373,59 @@ def _contains_original_value_leak(original_value: str, text: str) -> bool:
 #:
 #: NICHT geloest durch Entfernen/Abschwaechen der Leck-Pruefung selbst
 #: (siehe deren Docstring: "fuer JEDEN Zweck weiterhin zwingend aktiv" -
-#: bewusst nicht angetastet). Stattdessen: NUR fuer die beiden explizit als
-#: NER-basiert (nicht deterministisch/regelbasiert) dokumentierten
-#: Kategorien "ort"/"organisation" wird ein Mapping von der Leck-Pruefung
-#: ausgenommen, WENN sein Originalwert NACHWEISLICH niemals in vom Anwalt
-#: selbst verfasstem Text vorkam (aktuelle Nachricht + "Anwalt:"-Zeilen der
-#: Historie) - sondern ausschliesslich in von der KI selbst generiertem
-#: Text. Ein Wert, der NIE vom Anwalt getippt wurde, kann unmoeglich echte,
-#: vom Anwalt eingegebene Mandantendaten sein; er kann daher strukturell
-#: kein Daten-Leck sein - bestenfalls eine KI-Neuformulierung bereits
-#: oeffentlich-allgemeinen (hier: gesetzlichen) Wissens. "person" bleibt
-#: VOLLSTAENDIG ausgenommen von dieser Lockerung (Namen bleiben immer
-#: streng geprueft) - siehe `find_lenient_leak_exempt_placeholders`."""
-_LENIENT_LEAK_CATEGORIES = frozenset({"ort", "organisation"})
+#: bewusst nicht angetastet). Stattdessen: NUR fuer einen Wert, der
+#: NACHWEISLICH niemals im lokal verfuegbaren, nicht-KI-generierten
+#: Kontext dieser Anfrage vorkam ("locally sourced" - siehe
+#: `lawyer_authored_text`-Parameter unten, der aus app/privacy/
+#: gateway.py::GatewayResult.locally_sourced_text stammt und seit der
+#: untenstehenden Erweiterung NICHT nur Anmerkungen/Chat-Historie,
+#: sondern auch Sachverhalt/Vorlage/Quellenverweise - also auch
+#: dokumentbasierten Kontext - umfasst), wird ein Mapping von der Leck-
+#: Pruefung ausgenommen. Ein Wert, der NIRGENDS lokal-stammend vorkam,
+#: kann unmoeglich echte, vom Anwalt eingegebene oder aus einem Dokument
+#: extrahierte Mandantendaten sein; er kann daher strukturell kein Daten-
+#: Leck sein - bestenfalls eine KI-Neuformulierung bereits oeffentlich-
+#: allgemeinen (hier: gesetzlichen) Wissens.
+#:
+#: ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+#: Pipeline", 07.10., Live-Reproduktion ueber echte gespeicherte Claude-
+#: Antworten aus einer frueheren Session): "person" war bisher
+#: VOLLSTAENDIG von dieser Lockerung ausgenommen ("Namen bleiben immer
+#: streng geprueft"). Reproduziert wurde aber, dass Presidios NER-Modell
+#: GELEGENTLICH ganz gewoehnliche deutsche Woerter/Wortgruppen faelschlich
+#: als "person" einstuft - z. B. "ortsuebliche" und "Offener Pruefpunkt"
+#: (beides normales Juristendeutsch aus Claudes eigener Antwort zu § 558
+#: BGB, keine Namen) wurden zu [PERSON_xx]-Platzhaltern. Verwendet Claude
+#: in einer SPAETEREN, thematisch verwandten Antwort erneut ganz normal
+#: dasselbe Wort, wertete die bisherige strikte "person"-Ausnahmslosigkeit
+#: das faelschlich als geleakten Namen und blockierte eine voellig
+#: unverdaechtige Antwort - obwohl der echte Originalwert (ein
+#: Alltagswort, keine PII) NIE an Claude gesendet wurde. Deshalb jetzt:
+#: "person" nutzt DIESELBE strikte Herleitung wie "ort"/"organisation" -
+#: ein ECHTER, vom Anwalt getippter oder aus einem Dokument stammender
+#: Name bleibt dadurch GENAUSO streng geschuetzt wie zuvor (er kommt im
+#: erweiterten `locally_sourced_text` vor, ist also NICHT exempt) - nur
+#: ein Wert, der provably NIE lokal stammte, wird ausgenommen. Das ist
+#: keine Lockerung des Namensschutzes, sondern eine Korrektur eines
+#: Fehlalarms bei NER-Fehlklassifikationen, die gar keine Namen sind -
+#: siehe `find_lenient_leak_exempt_placeholders`."""
+_LENIENT_LEAK_CATEGORIES = frozenset({"ort", "organisation", "person"})
 
 
 def find_lenient_leak_exempt_placeholders(
     mappings: list[PseudonymMapping], *, lawyer_authored_text: str
 ) -> set[str]:
     """Siehe Modulkommentar oben bei `_LENIENT_LEAK_CATEGORIES`.
-    `lawyer_authored_text` muss AUSSCHLIESSLICH Text enthalten, den der
-    Anwalt selbst eingegeben hat (aktuelle Nachricht + "Anwalt:"-Zeilen
-    der Historie) - NIEMALS von der KI generierten Text, sonst waere die
-    Herleitung ("nie vom Anwalt getippt") falsch."""
+    `lawyer_authored_text` (Parametername unveraendert/kompatibel
+    beibehalten, Bedeutung seit der "person"-Erweiterung oben PRAEZISIERT):
+    muss ALLES enthalten, was lokal-stammend ist, also NICHT von Claude
+    generiert wurde - getippter Anwaltstext (aktuelle Nachricht +
+    "Anwalt:"-Zeilen der Historie) UND aus einem Dokument extrahierter
+    Sachverhalt/Vorlage/Quellenverweise. In der Praxis reicht der
+    Aufrufer hier `GatewayResult.locally_sourced_text` (siehe app/privacy/
+    gateway.py) durch, das exakt das liefert. NIEMALS von der KI
+    generierten Text (keine "Assistent:"-Zeilen) enthalten, sonst waere
+    die Herleitung ("kann nicht lokal stammen") falsch."""
     exempt: set[str] = set()
     for mapping in mappings:
         if mapping.category not in _LENIENT_LEAK_CATEGORIES:
@@ -572,8 +602,64 @@ class SecurityCheckService:
         *,
         purpose: str,
         unrecognized_name_scan_text: str | None = None,
+        skip_residual_categories: frozenset[str] = frozenset(),
+        residual_scan_text: str | None = None,
     ) -> SecurityCheckResult:
-        """`unrecognized_name_scan_text` (optional, ECHTER FUND 07.10.,
+        """`residual_scan_text` (optional, ECHTER FUND Owner-Direktive
+        "Architektur-Audit Privacy-/Chat-Pipeline", 07.10., live per
+        Mehrfachrunden-QA NACH der Korrektur von `unrecognized_name_
+        scan_text`/`_LENIENT_LEAK_CATEGORIES` reproduziert): beschraenkt
+        NUR Punkt 2/3/4 (Restrisiko-Scan) auf einen anderen Text als
+        `pseudonymized_text` - Punkt 5/6/7 bleiben unveraendert. Der
+        Docstring-Kommentar zu `unrecognized_name_scan_text` unten ging
+        urspruenglich davon aus, Punkt 2/3/4 sei fuer KI-generierte Prosa
+        bereits "sicher genug" und brauche keine eigene Einschraenkung -
+        das war UNVOLLSTAENDIG: real reproduziert wurde, dass Presidios
+        NER auch hier gelegentlich gewoehnliche Woerter aus einer
+        FRUEHEREN Claude-Antwort faelschlich als Kategorie "ort" einstuft
+        (z. B. "UN-Quelle", "Wiederholungsversuche" - kein Ort). Da die
+        Platzhalter-Ersetzung diese Woerter in der NEUEN, vom selben
+        NER-Detektor erneut gescannten `pseudonymized_text` bereits
+        ersetzt hat, liegt der tatsaechliche Fehlalarm an genau demselben,
+        bereits mehrfach in app/privacy/presidio_ner.py dokumentierten
+        Phaenomen (Platzhalter-Nachbarschaft veraendert spaCys Tokenisierung/
+        Kontext genug, um NEUE, im Originaltext nicht vorhandene Treffer zu
+        erzeugen) - blockierte dadurch eine voellig unverwandte, saubere
+        Folgefrage einzig wegen einer FRUEHEREN KI-Antwort, identisch im
+        Charakter zum bereits geloesten Punkt-6-Fall. Der Aufrufer
+        (app/privacy/gateway.py) uebergibt hier denselben, um "Assistent:
+        "-Zeilen bereinigten Text wie bei `unrecognized_name_scan_text"
+        (identischer Text, zwei semantisch getrennte Parameter) - damit
+        bleibt Punkt 2/3/4 weiterhin voll auf jedem anwaltlich verfassten
+        Teil UND auf allen Dokument-/Sachverhaltsfeldern aktiv (dort
+        bleibt die Presidio-Pruefung die primaere PII-Sicherheitsnetz-
+        Funktion), nur nicht mehr auf Claudes eigener, bereits einmal
+        gepruefter Prosa. `check_placeholders_present` (Punkt 5) bleibt
+        bewusst auf dem VOLLEN `pseudonymized_text` - ein Mapping-Eintrag
+        kann legitim NUR in einer Assistant-Zeile vorkommen und muss dort
+        weiterhin auffindbar sein, sonst wuerde Punkt 5 faelschlich
+        "Platzhalter fehlt" melden.
+
+        `skip_residual_categories` (optional, ECHTER FUND Owner-
+        Direktive "Architektur-Audit Privacy-/Chat-Pipeline", 07.10.):
+        MUSS exakt dieselbe Menge sein, die der Aufrufer bereits als
+        `skip_categories` an `Pseudonymizer.pseudonymize` uebergeben hat
+        (siehe app/privacy/gateway.py). Grund: wird eine Kategorie (aktuell
+        ausschliesslich "organisation", siehe dortige Herleitung) bewusst
+        NICHT pseudonymisiert, bleibt ihr Klartext naturgemaess im Text -
+        OHNE diesen Parameter wuerde Punkt 2/3/4 (Restrisiko-Scan,
+        eigentlich gedacht als Sicherheitsnetz fuer von der
+        Pseudonymisierung UEBERSEHENE PII) genau diesen ABSICHTLICH
+        unveraenderten Text als "weiterhin erkennbares Muster" meldaen und
+        die Anfrage blockieren - der neue `skip_categories`-Mechanismus
+        waere dadurch wirkungslos (der Block wuerde nur von Punkt 6 auf
+        Punkt 2/3/4 verlagert, real genau so beobachtet und hier behoben).
+        Default ein leeres `frozenset` (unveraendertes, striktes Verhalten
+        fuer JEDEN bisherigen Aufrufer). Betrifft NUR die Restrisiko-
+        Meldung selbst - `check_placeholders_present` (Punkt 5) und jede
+        andere Pruefung bleiben unberuehrt.
+
+        `unrecognized_name_scan_text` (optional, ECHTER FUND 07.10.,
         Owner-Direktive "Chat-Pipeline Privacy-False-Positive bei
         allgemeinen Fragen"): beschraenkt NUR Punkt 6 auf einen anderen
         Text als `pseudonymized_text` - alle anderen Pruefungen (Punkt
@@ -594,8 +680,10 @@ class SecurityCheckService:
         uebergibt hier einen um "Assistent: "-Zeilen bereinigten Text,
         damit Punkt 6 weiterhin voll auf jedem anwaltlich verfassten Teil
         (aktuelle Nachricht, "Anwalt: "-Zeilen der Historie, alle anderen
-        Allowlist-Felder) greift, aber nicht mehr auf Claudes eigener,
-        bereits einmal durch Punkt 2/3/4 gepruefter Prosa."""
+        Allowlist-Felder) greift, aber nicht mehr auf Claudes eigener
+        Prosa (die urspruengliche Annahme hier, Punkt 2/3/4 pruefe diese
+        Prosa bereits ausreichend ab, erwies sich als unvollstaendig -
+        siehe `residual_scan_text` oben fuer die Korrektur)."""
         reasons: list[str] = []
 
         # Punkt 7: Zweck zulässig?
@@ -607,8 +695,23 @@ class SecurityCheckService:
 
         # Punkt 2/3/4: erneute PII-Pruefung AUF DEM PSEUDONYMISIERTEN TEXT.
         # Bewusst ohne known_entities - genau diese sollten bereits ersetzt
-        # sein; ein Treffer hier bedeutet: etwas wurde uebersehen.
-        residual_spans = detect_all(pseudonymized_text, ner_detector=self.ner_detector)
+        # sein; ein Treffer hier bedeutet: etwas wurde uebersehen. Siehe
+        # Docstring oben zu `residual_scan_text` - NUR diese eine Pruefung
+        # bekommt ggf. einen anderen (kleineren) Text als Punkt 5/6/7.
+        residual_scan = (
+            residual_scan_text if residual_scan_text is not None else pseudonymized_text
+        )
+        # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
+        # Pipeline", 07.10., per Live-QA real reproduziert): `skip_residual_
+        # categories` wird an `detect_all` durchgereicht, NICHT erst
+        # nachtraeglich auf dessen Ergebnis angewendet - siehe dortigen
+        # Docstring sowie app/privacy/pseudonymizer.py::pseudonymize fuer
+        # dieselbe Begruendung (ein nachtraeglicher Filter nach bereits
+        # erfolgter Ueberlappungs-Aufloesung kann einen kuerzeren Treffer
+        # einer ANDEREN Kategorie an derselben Stelle verdraengen lassen).
+        residual_spans = detect_all(
+            residual_scan, ner_detector=self.ner_detector, skip_categories=skip_residual_categories
+        )
         if residual_spans:
             categories = sorted({span.category for span in residual_spans})
             reasons.append(
