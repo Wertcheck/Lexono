@@ -35,7 +35,7 @@ from __future__ import annotations
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
-from app.privacy.presidio_ner import detect_presidio_entities, get_pos_tags
+from app.privacy.presidio_ner import detect_presidio_entities, get_entity_types, get_pos_tags
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
 from app.privacy.security_check import (
     SecurityCheckService,
@@ -108,7 +108,9 @@ class ClaudePrivacyGateway:
             ner_detector=detect_presidio_entities
         )
         self.security_check = security_check or SecurityCheckService(
-            ner_detector=detect_presidio_entities, pos_tagger=get_pos_tags
+            ner_detector=detect_presidio_entities,
+            pos_tagger=get_pos_tags,
+            entity_type_tagger=get_entity_types,
         )
 
     def prepare_request(

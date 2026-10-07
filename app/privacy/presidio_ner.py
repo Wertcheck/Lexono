@@ -243,6 +243,50 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     return spans
 
 
+def get_entity_types(text: str) -> dict[tuple[int, int], str]:
+    """Liefert den von spaCys eigener NER-Komponente erkannten
+    Entitätstyp (IOB-roh, z. B. "PER"/"LOC"/"ORG"/"MISC", leerer String
+    wenn keine Entität erkannt wurde) für jedes Token in `text`, als
+    {(start, end): ent_type}.
+
+    ECHTER FUND (Owner-Direktive "Verbleibende False-Positive-Grenze der
+    Privacy-Namen-Heuristik beheben", 07.10.): security_check.py::
+    _find_possible_unrecognized_names (Punkt 6) hielt "World Cities"
+    (aus der harmlosen Wissensfrage "Was ist der World Cities Report?")
+    fälschlich für einen möglichen Personennamen, weil spaCys POS-Tagger
+    beide Wörter als PROPN taggt (unbekannte/fremdsprachige
+    grossgeschriebene Wörter werden von spaCy mangels Vokabeleintrag oft
+    default-mäßig als Eigenname eingestuft, siehe get_pos_tags) - der
+    reine POS-Tag kann also NICHT zuverlässig zwischen "ist ein
+    Personenname" und "ist ein fremdsprachiger Organisations-/
+    Berichtsname" unterscheiden. SpaCys eigene (vom selben Modell
+    mitgelieferte) NER-Komponente dagegen taggt "World Cities Report"
+    korrekt als EIN zusammenhängendes "MISC"-Entity (nicht "PER") -
+    direkt gegengeprüft: "Peter Müller"/"Max Mustermann" werden
+    zuverlässig als "PER" getaggt, "Berlin"/"Musterstrasse" als "LOC".
+    Dieser Entitätstyp ist damit ein präziseres Signal als der reine
+    POS-Tag und wird in `_find_possible_unrecognized_names` als
+    PRIMÄRES Signal verwendet, wenn vorhanden - fehlt für ein Wort jede
+    erkannte Entität (leerer String, z. B. weil NER einen echten Namen
+    schlicht übersieht), fällt die Heuristik weiterhin auf den
+    bestehenden POS-Tag-basierten PROPN-Check zurück (unverändertes
+    Defense-in-Depth-Verhalten, identisch zu get_pos_tags).
+
+    Eigene Funktion statt Erweiterung von `get_pos_tags` (dessen
+    Rückgabeform von dessen eigenen Tests/anderen Aufrufern als reine
+    {span: pos_tag}-Zuordnung erwartet wird) - nutzt aber dieselbe
+    bereits geladene Pipeline (`analyzer.nlp_engine.process_text`), kein
+    zweites Modell."""
+    if not text or not text.strip():
+        return {}
+    analyzer = _get_analyzer_engine()
+    artifacts = analyzer.nlp_engine.process_text(text, "de")
+    return {
+        (token.idx, token.idx + len(token.text)): token.ent_type_
+        for token in artifacts.tokens
+    }
+
+
 def get_pos_tags(text: str) -> dict[tuple[int, int], str]:
     """Liefert die Wortart (Universal-POS-Tag, z. B. "PROPN"/"NOUN"/"ADJ")
     fuer jedes Token in `text`, als {(start, end): pos_tag}.

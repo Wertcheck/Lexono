@@ -475,3 +475,46 @@ def test_build_unrecognized_name_scan_text_excludes_only_assistant_lines() -> No
     assert "Quelle-Eins" in scan_text
     assert "Vorlage-Text" in scan_text
     assert "Anmerkung-Text" in scan_text
+
+
+def test_general_knowledge_question_with_organization_phrase_is_allowed() -> None:
+    """ECHTER FUND (Owner-Direktive "Verbleibende False-Positive-Grenze
+    der Privacy-Namen-Heuristik beheben", 07.10., Folge-Direktive zu
+    8087ec8): eine harmlose, in der aktuellen Nachricht selbst gestellte
+    Wissensfrage ("Was ist der World Cities Report?") darf nicht als
+    moeglicher Personenname blockiert werden - unabhaengig vom
+    Gespraechsverlauf (anders als 8087ec8, das NUR History-bedingte
+    Faelle loeste). Bewusst OHNE Security-Check-Stub - echte Presidio-/
+    POS-/Entity-Type-Produktivkonfig (ClaudePrivacyGateway()-
+    Standardkonstruktor)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Was ist der World Cities Report?",
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+
+
+def test_real_name_in_current_message_is_still_pseudonymized_after_entity_type_refinement() -> None:
+    """Regressionsschutz zum vorherigen Test: die Entity-Type-
+    Verfeinerung darf echten PII-Schutz in der AKTUELLEN Nachricht nicht
+    schwaechen - Presidio (Punkt 2/3/4, unveraendert) erkennt "Peter
+    Müller" weiterhin VOR Punkt 6 und pseudonymisiert ihn (daher
+    `allowed=True` MIT Platzhalter im Payload, kein Leak - identisches
+    Verhalten/Testmuster wie test_real_name_in_a_prior_assistant_answer_
+    is_still_pseudonymized_not_leaked oben)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Bitte informieren Sie auch Herrn Peter Müller.",
+    )
+
+    assert result.allowed is True
+    assert "Peter Müller" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert any(m.original_value == "Peter Müller" for m in result.mappings)

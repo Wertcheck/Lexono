@@ -134,6 +134,102 @@ def test_real_name_still_blocks_even_with_pos_tagger_wired() -> None:
     assert any("Peter Müller" in r for r in result.reasons)
 
 
+def test_foreign_organization_phrase_does_not_trigger_false_positive_with_entity_type_tagger() -> None:
+    """ECHTER FUND (Owner-Direktive "Verbleibende False-Positive-Grenze
+    der Privacy-Namen-Heuristik beheben", 07.10.): eine harmlose
+    allgemeine Wissensfrage ("Was ist der World Cities Report?") wurde
+    faelschlich blockiert - "World"/"Cities" sind spaCy mangels
+    Vokabeleintrag UNBEKANNTE, fremdsprachige Woerter und werden daher
+    (wie real gegengeprueft) auch vom POS-Tagger als PROPN getaggt,
+    GENAU wie ein echter Name - der reine POS-Tag allein kann diesen
+    Fall also nicht loesen (siehe test_legal_heading_... oben, das war
+    ein ADJ+NOUN-Fall, hier liegt PROPN+PROPN vor). `entity_type_tagger`
+    (siehe app/privacy/presidio_ner.py::get_entity_types) nutzt spaCys
+    eigene NER-Komponente, die "World Cities Report" korrekt als EIN
+    "MISC"-Entity erkennt (nicht "PER") - nur DAMIT wird der Fall geloest."""
+    from app.privacy.presidio_ner import get_entity_types, get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags, entity_type_tagger=get_entity_types)
+
+    result = checker.check(
+        "Was ist der World Cities Report?", [], purpose="chat_response"
+    )
+
+    assert result.passed is True
+
+
+def test_pos_tagger_alone_still_false_positives_on_foreign_organization_phrase() -> None:
+    """Gegenprobe/Dokumentation der Luecke, die der vorherige Test
+    schliesst: OHNE `entity_type_tagger` (nur `pos_tagger`, der alte
+    Produktivstand vor dieser Korrektur) blockiert exakt dieselbe
+    harmlose Frage weiterhin - belegt, dass die Korrektur tatsaechlich
+    etwas behebt und nicht nur zufaellig bereits funktionierte."""
+    from app.privacy.presidio_ner import get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags)
+
+    result = checker.check(
+        "Was ist der World Cities Report?", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+    assert any("World Cities" in r for r in result.reasons)
+
+
+def test_real_name_still_blocks_with_entity_type_tagger_wired() -> None:
+    """Gegenprobe zum Hauptfix: `entity_type_tagger` darf echte Namen
+    nicht durchlassen - spaCys NER taggt "Peter Müller" zuverlaessig als
+    "PER", bleibt also weiterhin ein Fund."""
+    from app.privacy.presidio_ner import get_entity_types, get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags, entity_type_tagger=get_entity_types)
+
+    result = checker.check(
+        "Bitte informieren Sie auch Herrn Peter Müller.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+    assert any("Peter Müller" in r for r in result.reasons)
+
+
+def test_role_prefix_plus_real_surname_still_blocks_with_entity_type_tagger_wired() -> None:
+    """Weitere Gegenprobe: ein Nachname OHNE Vornamen hinter einem
+    Rollenwort ("Mandant Klaus Weber" -> "Klaus Weber" als Paar, siehe
+    _ROLE_OR_TITLE_PREFIX_WORDS) muss mit `entity_type_tagger` ebenso
+    zuverlaessig blockieren wie vorher nur mit `pos_tagger`."""
+    from app.privacy.presidio_ner import get_entity_types, get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags, entity_type_tagger=get_entity_types)
+
+    result = checker.check(
+        "Unser Mandant Klaus Weber bat um eine Fristverlängerung.",
+        [],
+        purpose="chat_response",
+    )
+
+    assert result.passed is False
+    assert any("Klaus Weber" in r for r in result.reasons)
+
+
+def test_multiple_organization_phrases_in_one_message_do_not_false_positive() -> None:
+    """Stresstest fuer die Allgemeinheit der Korrektur (nicht nur fuer
+    den einen konkret gemeldeten Begriff "World Cities Report"): mehrere
+    verschiedene englische Organisationsbezeichnungen in derselben
+    Nachricht duerfen ebenfalls nicht blockieren."""
+    from app.privacy.presidio_ner import get_entity_types, get_pos_tags
+
+    checker = SecurityCheckService(pos_tagger=get_pos_tags, entity_type_tagger=get_entity_types)
+
+    result = checker.check(
+        "Erläutern Sie bitte den World Trade Organization Bericht und "
+        "das International Monetary Fund Update.",
+        [],
+        purpose="chat_response",
+    )
+
+    assert result.passed is True
+
+
 def test_unrecognized_name_scan_text_restricts_point_6_to_the_given_text() -> None:
     """ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-False-
     Positive bei allgemeinen Fragen"): eine echte Chat-Nachricht ("Wie

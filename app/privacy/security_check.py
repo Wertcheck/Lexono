@@ -157,8 +157,40 @@ _ROLE_OR_TITLE_PREFIX_WORDS = frozenset(
 _WORD_PATTERN = re.compile(r"[A-Za-zÄÖÜäöüß]+")
 
 
+def _is_name_like_word(
+    start: int,
+    end: int,
+    *,
+    pos_tags: dict[tuple[int, int], str] | None,
+    entity_types: dict[tuple[int, int], str] | None,
+) -> bool:
+    """Entscheidet fuer EIN Wort (gegeben durch seine Textposition), ob es
+    als Namensbestandteil plausibel ist - siehe `_find_possible_
+    unrecognized_names` Docstring fuer die Gesamt-Herleitung.
+
+    `entity_types` (siehe app/privacy/presidio_ner.py::get_entity_types)
+    ist das PRIMAERE, praezisere Signal: erkennt spaCys eigene NER-
+    Komponente fuer dieses Wort einen Entitaetstyp (nicht-leerer String),
+    ist das entscheidend - "PER" => Name, jeder andere Typ ("LOC"/"ORG"/
+    "MISC") => KEIN Name (unabhaengig vom POS-Tag). Nur wenn KEINE
+    Entitaet erkannt wurde (leerer String oder `entity_types` nicht
+    uebergeben), faellt die Pruefung auf den aelteren, rein POS-Tag-
+    basierten PROPN-Check zurueck (unveraendertes Defense-in-Depth-
+    Verhalten fuer Namen, die die NER-Komponente selbst uebersieht)."""
+    if entity_types is not None:
+        ent = entity_types.get((start, end), "")
+        if ent:
+            return ent == "PER"
+    if pos_tags is not None:
+        return pos_tags.get((start, end)) == "PROPN"
+    return True
+
+
 def _find_possible_unrecognized_names(
-    text: str, *, pos_tags: dict[tuple[int, int], str] | None = None
+    text: str,
+    *,
+    pos_tags: dict[tuple[int, int], str] | None = None,
+    entity_types: dict[tuple[int, int], str] | None = None,
 ) -> list[str]:
     """Wortbasiertes Scannen statt regex-basiertem Aufeinanderfolgen-Match:
     verhindert, dass ein "verbrauchtes" Wort (z. B. "Herrn" in "Herrn
@@ -183,7 +215,24 @@ def _find_possible_unrecognized_names(
     unabhaengig von Presidio/spaCy"-Eigenschaft dieser Heuristik (siehe
     Moduldocstring), verfeinert sie aber deutlich, wenn ein Tagger
     verfuegbar ist (immer der Fall im echten Produktivbetrieb, siehe
-    ClaudePrivacyGateway)."""
+    ClaudePrivacyGateway).
+
+    `entity_types` (optional, ECHTER FUND Owner-Direktive "Verbleibende
+    False-Positive-Grenze der Privacy-Namen-Heuristik beheben", 07.10.,
+    siehe app/privacy/presidio_ner.py::get_entity_types fuer die volle
+    Herleitung): POS=PROPN allein reicht NICHT aus, um einen echten
+    Personennamen von einem fremdsprachigen/organisatorischen Begriff zu
+    unterscheiden - spaCy taggt z. B. "World"/"Cities" (aus "Was ist der
+    World Cities Report?") mangels Vokabeleintrag ebenfalls als PROPN,
+    obwohl es kein Name ist. `entity_types` liefert spaCys eigenen,
+    praeziseren NER-Entitaetstyp je Wort ("PER"/"LOC"/"ORG"/"MISC"/leer)
+    und wird - wenn fuer ein Wort vorhanden - ALS VORRANGIGES Signal vor
+    dem POS-Tag verwendet (siehe `_is_name_like_word`): nur "PER" zaehlt
+    als Name, jeder andere erkannte Typ schliesst das Wort aus, UNABHAENGIG
+    vom POS-Tag. Fehlt fuer ein Wort jede erkannte Entitaet, faellt die
+    Pruefung weiterhin auf den PROPN-Check zurueck - ein von der NER-
+    Komponente komplett uebersehener echter Name wird dadurch WEITERHIN
+    erkannt (unveraendertes Defense-in-Depth-Verhalten)."""
     words = list(_WORD_PATTERN.finditer(text))
     candidates: list[str] = []
 
@@ -231,13 +280,15 @@ def _find_possible_unrecognized_names(
         # dieses zweite Rollenwort dann seinerseits als Praefix.
         if word1_is_role_prefix and word2.group().lower() in _ROLE_OR_TITLE_PREFIX_WORDS:
             continue
-        if pos_tags is not None:
-            tag2 = pos_tags.get((word2.start(), word2.end()))
-            if tag2 != "PROPN":
+        if pos_tags is not None or entity_types is not None:
+            if not _is_name_like_word(
+                word2.start(), word2.end(), pos_tags=pos_tags, entity_types=entity_types
+            ):
                 continue
             if not word1_is_role_prefix:
-                tag1 = pos_tags.get((word1.start(), word1.end()))
-                if tag1 != "PROPN":
+                if not _is_name_like_word(
+                    word1.start(), word1.end(), pos_tags=pos_tags, entity_types=entity_types
+                ):
                     continue
         candidates.append(f"{word1.group()} {word2.group()}")
 
@@ -487,6 +538,7 @@ class SecurityCheckService:
         *,
         ner_detector: Callable[[str], list[DetectedSpan]] | None = None,
         pos_tagger: Callable[[str], dict[tuple[int, int], str]] | None = None,
+        entity_type_tagger: Callable[[str], dict[tuple[int, int], str]] | None = None,
     ) -> None:
         """`ner_detector` (optional, siehe Pseudonymizer.__init__ fuer
         dieselbe Begruendung) wird beim Restrisiko-Scan (Punkt 2/3/4)
@@ -498,9 +550,20 @@ class SecurityCheckService:
         get_pos_tags) verfeinert Punkt 6 (_find_possible_unrecognized_names)
         - ohne Tagger bleibt die alte, rein regelbasierte Grossschreibungs-
         Heuristik aktiv (funktioniert weiterhin unabhaengig von Presidio/
-        spaCy, siehe dortiger Docstring)."""
+        spaCy, siehe dortiger Docstring).
+
+        `entity_type_tagger` (optional, ECHTER FUND Owner-Direktive
+        "Verbleibende False-Positive-Grenze der Privacy-Namen-Heuristik
+        beheben", 07.10., siehe app/privacy/presidio_ner.py::
+        get_entity_types) verfeinert Punkt 6 ZUSAETZLICH zu `pos_tagger`:
+        POS=PROPN allein unterscheidet keinen fremdsprachigen/
+        organisatorischen Begriff ("World Cities Report") von einem
+        echten Personennamen - spaCys eigener NER-Entitaetstyp tut das
+        zuverlaessiger und wird, wenn vorhanden, als vorrangiges Signal
+        verwendet (siehe _is_name_like_word)."""
         self.ner_detector = ner_detector
         self.pos_tagger = pos_tagger
+        self.entity_type_tagger = entity_type_tagger
 
     def check(
         self,
@@ -565,7 +628,10 @@ class SecurityCheckService:
             else pseudonymized_text
         )
         pos_tags = self.pos_tagger(scan_text) if self.pos_tagger else None
-        unclear = _find_possible_unrecognized_names(scan_text, pos_tags=pos_tags)
+        entity_types = self.entity_type_tagger(scan_text) if self.entity_type_tagger else None
+        unclear = _find_possible_unrecognized_names(
+            scan_text, pos_tags=pos_tags, entity_types=entity_types
+        )
         if unclear:
             reasons.append(
                 f"Möglicherweise nicht erkannte Namen/Entitäten gefunden: {unclear}"

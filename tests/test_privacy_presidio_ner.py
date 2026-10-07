@@ -8,7 +8,7 @@ Integration selbst funktioniert, nicht nur der Aufrufcode drumherum.
 CLAUDE.md-Pflicht: ausschliesslich synthetische Beispielsaetze, niemals
 echte Mandantendaten."""
 
-from app.privacy.presidio_ner import detect_presidio_entities, get_pos_tags
+from app.privacy.presidio_ner import detect_presidio_entities, get_entity_types, get_pos_tags
 
 
 def test_detects_person_name_in_german_sentence() -> None:
@@ -140,3 +140,35 @@ def test_get_pos_tags_distinguishes_real_names_from_adjective_noun_headings() ->
 def test_get_pos_tags_handles_empty_text() -> None:
     assert get_pos_tags("") == {}
     assert get_pos_tags("   ") == {}
+
+
+def test_get_entity_types_distinguishes_real_names_from_foreign_organization_phrases() -> None:
+    """ECHTER FUND (Owner-Direktive "Verbleibende False-Positive-Grenze
+    der Privacy-Namen-Heuristik beheben", 07.10.): "World"/"Cities" sind
+    spaCy mangels Vokabeleintrag UNBEKANNT und werden daher (siehe
+    test_get_pos_tags_... oben fuer den Vergleichsfall) auch vom
+    POS-Tagger faelschlich als PROPN eingestuft, GENAU wie ein echter
+    Name - der POS-Tag allein kann diesen Fall also nicht loesen. SpaCys
+    eigene NER-Entitaetstyp-Erkennung (dieselbe Pipeline) unterscheidet
+    hier zuverlaessig: "World Cities Report" wird als EIN MISC-Entity
+    erkannt, "Peter Müller" dagegen als PER."""
+    text = "Was ist der World Cities Report? Peter Müller fragt das."
+
+    entity_types = get_entity_types(text)
+
+    world_start = text.index("World")
+    cities_start = text.index("Cities")
+    report_start = text.index("Report")
+    assert entity_types[(world_start, world_start + len("World"))] == "MISC"
+    assert entity_types[(cities_start, cities_start + len("Cities"))] == "MISC"
+    assert entity_types[(report_start, report_start + len("Report"))] == "MISC"
+
+    peter_start = text.index("Peter")
+    mueller_start = text.index("Müller")
+    assert entity_types[(peter_start, peter_start + len("Peter"))] == "PER"
+    assert entity_types[(mueller_start, mueller_start + len("Müller"))] == "PER"
+
+
+def test_get_entity_types_handles_empty_text() -> None:
+    assert get_entity_types("") == {}
+    assert get_entity_types("   ") == {}
