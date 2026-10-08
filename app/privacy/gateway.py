@@ -35,6 +35,7 @@ from __future__ import annotations
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
+from app.privacy.date_chronology import build_chronology_note
 from app.privacy.presidio_ner import (
     detect_presidio_entities,
     drop_common_noun_persons,
@@ -283,11 +284,18 @@ class ClaudePrivacyGateway:
                 locally_sourced_text=locally_sourced_text,
             )
 
+        # Lokal berechnete zeitliche Einordnung der Datumsplatzhalter
+        # (Reihenfolge, Abstaende in Tagen, vergangen/zukuenftig) - nur
+        # Platzhalter und Zahlen, nie ein absolutes Datum; siehe
+        # app/privacy/date_chronology.py fuer Root Cause und Abwaegung.
+        chronology = build_chronology_note(mappings)
         payload = ClaudeRequestPayload(
             schreibauftrag=purpose,
             gewuenschter_stil=stil,
             anonymisierter_sachverhalt=pseudo_sachverhalt,
-            anonymisierte_argumentationspunkte=pseudo_argumente,
+            anonymisierte_argumentationspunkte=(
+                [*pseudo_argumente, chronology] if chronology else pseudo_argumente
+            ),
             anonymisierte_quellenverweise=pseudo_quellen,
             schreibvorlage=pseudo_vorlage,
             anonymisierte_anwaltliche_anmerkungen=pseudo_anmerkungen,

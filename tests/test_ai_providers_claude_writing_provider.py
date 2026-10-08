@@ -819,3 +819,12 @@ def test_both_prompts_forbid_intro_sentence_invented_dates_and_invented_facts() 
         assert "KEIN EINLEITUNGSSATZ, AUCH BEI ÜBERARBEITUNGEN" in prompt
         assert "KEINE ERFUNDENEN DATEN UND TATSACHEN IM SCHREIBEN" in prompt
         assert "[Datum einsetzen]" in prompt
+
+
+def test_both_prompts_tell_claude_to_use_the_local_chronology() -> None:
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+    from app.privacy.date_chronology import CHRONOLOGY_MARKER
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "ZEITLICHE EINORDNUNG NUTZEN" in prompt
+        assert CHRONOLOGY_MARKER in prompt

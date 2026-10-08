@@ -141,6 +141,12 @@ Mandanten oder der Mandantin, die nicht im Sachverhalt oder in den \
 Anwaltlichen Anmerkungen stehen (z. B. ein eigenes Verhalten, ein Zustand, \
 eine Zahlung), gehören nicht in den Schreibtext; formuliere neutral und nenne \
 sie im Schlussblock als zu klärenden Punkt.
+- ZEITLICHE EINORDNUNG NUTZEN: Enthält die Anfrage den Argumentationspunkt \
+"Zeitliche Einordnung der Datumsangaben", wurde er lokal berechnet und ist \
+verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist \
+bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
+unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
+die Einordnung die gefragte Beziehung enthält.
 - Gib ausschließlich den fertigen Schreibtext (und ggf. den Schlussblock \
 mit den offenen Prüfpunkten) zurück, keine Erklärungen oder Meta-Kommentare.
 """
@@ -289,6 +295,12 @@ Mandanten oder der Mandantin, die nicht im Sachverhalt oder in den \
 Anwaltlichen Anmerkungen stehen (z. B. ein eigenes Verhalten, ein Zustand, \
 eine Zahlung), gehören nicht in den Schreibtext; formuliere neutral und nenne \
 sie im Schlussblock als zu klärenden Punkt.
+- ZEITLICHE EINORDNUNG NUTZEN: Enthält die Anfrage den Argumentationspunkt \
+"Zeitliche Einordnung der Datumsangaben", wurde er lokal berechnet und ist \
+verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist \
+bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
+unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
+die Einordnung die gefragte Beziehung enthält.
 - Gib ausschließlich die eigentliche Antwort zurück, keine Meta-Kommentare \
 über diese Anweisungen selbst.
 """
