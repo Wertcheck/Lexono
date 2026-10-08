@@ -187,6 +187,7 @@ _NO_LETTER_AFTER = r"(?![A-Za-zÄÖÜäöüß])"
 _STARTS_WITH_LEGAL_FORM = re.compile(r"^" + _LEGAL_FORM + _NO_LETTER_AFTER)
 _ENDS_WITH_LEGAL_FORM = re.compile(r"(?<![A-Za-zÄÖÜäöüß])" + _LEGAL_FORM + r"$")
 _FOLLOWED_BY_LEGAL_FORM = re.compile(r"[ \t]{1,2}" + _LEGAL_FORM + _NO_LETTER_AFTER)
+_SINGLE_INITIAL = re.compile(r"[A-ZÄÖÜ]\.")
 
 
 def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
@@ -202,21 +203,29 @@ def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[D
     Anweisung bekam fuer dieselbe Partei einen anderen Platzhalter - Claude
     meldete eine "nicht vorkommende" Partei.
 
-    Zwei deterministische Normalisierungen (nur Kategorie "organisation"):
+    Deterministische Normalisierungen (nur Kategorien "organisation"/"ort"):
     - Ein Treffer, der MIT einer Rechtsform beginnt ("KG ...", "GmbH ..."), ist
       kein Firmenname, sondern ein Bruchstueck des vorherigen Namens und wird
       verworfen (er enthaelt selbst keine Personendaten).
-    - Folgt direkt auf einen Treffer eine Rechtsform, wird der Treffer darum
-      erweitert, damit alle Vorkommen dieselbe Form (und damit denselben
-      Platzhalter) haben.
+    - Eine einzelne Initiale mit Punkt ("H." aus "z. H.") ist nie ein Ort oder
+      eine Organisation: ohne diese Regel meldete die Zweiterkennung im
+      Restrisiko-Scan "ort 'H.'" und blockierte den Auftrag, sobald das
+      Bruchstueck davor nicht mehr als Organisation ersetzt wurde.
+    - Folgt direkt auf einen Organisationstreffer eine Rechtsform, wird der
+      Treffer darum erweitert, damit alle Vorkommen dieselbe Form (und damit
+      denselben Platzhalter) haben.
     Andere Kategorien bleiben unveraendert; es werden nie Treffer entfernt,
     die selbst mehr als ein Rechtsform-Bruchstueck waeren."""
     result: list[DetectedSpan] = []
     for span in spans:
-        if span.category != "organisation":
+        if span.category not in ("organisation", "ort"):
             result.append(span)
             continue
-        if _STARTS_WITH_LEGAL_FORM.match(span.value.lstrip()):
+        stripped = span.value.strip()
+        if _STARTS_WITH_LEGAL_FORM.match(stripped) or _SINGLE_INITIAL.fullmatch(stripped):
+            continue
+        if span.category != "organisation":
+            result.append(span)
             continue
         match = _FOLLOWED_BY_LEGAL_FORM.match(text, span.end)
         if match and not _ENDS_WITH_LEGAL_FORM.search(span.value):

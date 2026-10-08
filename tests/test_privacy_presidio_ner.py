@@ -246,3 +246,32 @@ def test_normalize_organisation_spans_leaves_other_cases_untouched() -> None:
     ]
 
     assert normalize_organisation_spans(text, spans) == spans
+
+
+def test_normalize_organisation_spans_drops_a_single_initial_flagged_as_place_or_org() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): "z. H." - die Zweiterkennung meldete
+    "ort 'H.'" im Restrisiko-Scan und blockierte den Auftrag."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "An [ORGANISATION_02]  z. H. der Geschaeftsfuehrung"
+    start = text.find("H.")
+    initial_as_place = DetectedSpan(category="ort", start=start, end=start + 2, value="H.")
+    initial_as_org = DetectedSpan(category="organisation", start=start, end=start + 2, value="H.")
+    real_place = DetectedSpan(category="ort", start=0, end=2, value="An")
+
+    result = normalize_organisation_spans(text, [initial_as_place, initial_as_org, real_place])
+
+    assert result == [real_place]
+
+
+def test_normalize_organisation_spans_keeps_a_person_span_starting_with_an_initial() -> None:
+    """Personen bleiben unberuehrt - "H. Herrn Peter" darf nicht freigegeben werden."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "An Muster Bau GmbH  z. H. Herrn Peter Beispiel"
+    start = text.find("H. Herrn Peter")
+    person = DetectedSpan(category="person", start=start, end=start + 14, value="H. Herrn Peter")
+
+    assert normalize_organisation_spans(text, [person]) == [person]
