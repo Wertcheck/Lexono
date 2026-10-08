@@ -1895,3 +1895,29 @@ def test_failing_local_answer_check_is_also_reported_honestly() -> None:
 
     assert "Datenschutzgründen blockiert" not in message
     assert "nicht um eine Datenschutz-Blockierung" in message
+
+
+def test_failing_cloud_call_logs_exception_type_and_status_but_no_content(
+    db_session: Session, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Hardening (Real-E2E 08.10.): ein fehlgeschlagener Claude-Aufruf wurde ohne
+    jede Diagnoseinformation verschluckt. Jetzt: Ausnahmetyp + HTTP-Status im Log,
+    niemals die Nachricht oder Nutzdaten."""
+
+    class _ApiError(Exception):
+        status_code = 529
+
+    class _FailingWritingProvider:
+        def write(self, payload):
+            raise _ApiError("Overloaded: enthaelt hier absichtlich Max Mustermann")
+
+    matter = _matter(db_session, title="Testakte")
+    service, _ = _service(_FailingWritingProvider())
+
+    with caplog.at_level("WARNING", logger="lexono.drafting"):
+        result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    text = " ".join(rec.getMessage() for rec in caplog.records)
+    assert "_ApiError" in text and "529" in text
+    assert "Max Mustermann" not in text and "Overloaded" not in text

@@ -66,6 +66,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
+import logging
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
@@ -318,6 +319,21 @@ class DraftStreamEvent:
     text: str = ""
     status: str = ""
     result: DraftingResult | None = None
+
+
+_logger = logging.getLogger("lexono.drafting")
+
+
+def _log_provider_exception(exc: Exception) -> None:
+    """Protokolliert NUR Ausnahmetyp und HTTP-Status eines fehlgeschlagenen Cloud-Aufrufs
+    (nie Nachricht/Inhalt - die kann Nutzdaten enthalten). Vorher wurde die Ausnahme ohne
+    jede Diagnoseinformation verschluckt: zwei Ausfaelle im Real-E2E (api_call_logs:
+    writing_provider_exception) waren im Nachhinein nicht mehr zuzuordnen."""
+    _logger.warning(
+        "Claude-Aufruf fehlgeschlagen: %s (HTTP-Status: %s)",
+        type(exc).__name__,
+        getattr(exc, "status_code", None),
+    )
 
 
 class DraftingService:
@@ -949,7 +965,8 @@ class DraftingService:
         try:
             with trace.step("claude"):
                 writing_result = self.writing_provider.write(payload)
-        except Exception:
+        except Exception as exc:
+            _log_provider_exception(exc)
             self.api_logger.log_error(
                 db,
                 workflow_id=matter_id,
@@ -1291,7 +1308,8 @@ class DraftingService:
                         text_stream.close()
                         break
                     yield DraftStreamEvent(kind="delta", text=delta)
-        except Exception:
+        except Exception as exc:
+            _log_provider_exception(exc)
             self.api_logger.log_error(
                 db,
                 workflow_id=matter_id,

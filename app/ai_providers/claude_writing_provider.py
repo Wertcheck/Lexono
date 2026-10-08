@@ -147,6 +147,15 @@ verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
+- ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
+"Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
+(Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
+Herren". Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
+in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
+Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
+"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
+[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
 - Gib ausschließlich den fertigen Schreibtext (und ggf. den Schlussblock \
 mit den offenen Prüfpunkten) zurück, keine Erklärungen oder Meta-Kommentare.
 """
@@ -301,6 +310,15 @@ verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
+- ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
+"Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
+(Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
+Herren". Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
+in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
+Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
+"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
+[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
 - Gib ausschließlich die eigentliche Antwort zurück, keine Meta-Kommentare \
 über diese Anweisungen selbst.
 """

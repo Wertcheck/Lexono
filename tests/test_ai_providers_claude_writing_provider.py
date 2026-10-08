@@ -828,3 +828,13 @@ def test_both_prompts_tell_claude_to_use_the_local_chronology() -> None:
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "ZEITLICHE EINORDNUNG NUTZEN" in prompt
         assert CHRONOLOGY_MARKER in prompt
+
+
+def test_both_prompts_forbid_frau_herr_and_placeholder_name_hybrids() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Drafting Fall C): "Sehr geehrte Frau/Herr Svenja
+    Falk" und "[Adresse PERSON_02]" im kopierbaren Schreiben."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "ANREDE UND EINSETZ-HINWEISE" in prompt
+        assert "niemals eine Mischform" in prompt
