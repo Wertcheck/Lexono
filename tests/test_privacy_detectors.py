@@ -499,3 +499,34 @@ def test_longer_organisation_absorbs_a_contained_place_span() -> None:
     assert [s.value for s in spans if s.category == "organisation"] == [org, org]
     assert not [s for s in spans if s.category == "ort"]
 
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Darf ich die Rechnung RE-2026-00417 per E-Mail schicken?", "RE-2026-00417"),
+        ("Bitte die Rechnung 2026-117 prüfen", "2026-117"),
+        ("Zur Rechnung AB12345 fehlt der Beleg", "AB12345"),
+    ],
+)
+def test_invoice_id_directly_after_the_word_rechnung_is_detected(text: str, expected: str) -> None:
+    """ECHTER FUND (Real-E2E 08.10., Request-Capture im Chat-Pfad): "die Rechnung
+    RE-2026-00417" (ohne "Nr.") ging im Klartext an Anthropic."""
+    from app.privacy.detectors import detect_rechnungsnummer
+
+    assert expected in [s.value for s in detect_rechnungsnummer(text)]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Die Rechnung vom 17.09.2026 ist offen",
+        "Die Rechnung 2026 war hoch",
+        "Eine Rechnung ueber 4.711,00 EUR",
+        "Die Rechnung wurde bezahlt",
+    ],
+)
+def test_words_dates_and_plain_years_after_rechnung_are_not_invoice_numbers(text: str) -> None:
+    from app.privacy.detectors import detect_rechnungsnummer
+
+    assert detect_rechnungsnummer(text) == []

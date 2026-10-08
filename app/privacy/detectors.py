@@ -76,6 +76,16 @@ _RECHNUNGSNUMMER_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# "die Rechnung RE-2026-00417 per E-Mail" (ohne "Nr."): ein ID-foermiger Wert
+# DIREKT nach "Rechnung" - Buchstabenpraefix mit Ziffern/Bindestrich/Schraegstrich
+# oder Ziffernfolge mit Trennzeichen. Reine Jahreszahlen ("Rechnung 2026") und
+# Datumsangaben ("Rechnung 17.09.2026") passen bewusst NICHT.
+_RECHNUNG_ID_PATTERN = re.compile(
+    r"\brechnung\s*[:.]?\s*"
+    r"((?:[A-Za-z]{1,4}[-/]?\d{2,}|\d{2,})(?:[-/]\d+)+|[A-Za-z]{1,4}[-/]?\d{3,})\b",
+    re.IGNORECASE,
+)
+
 # Gerichts-Aktenzeichen im Format "12 O 345/26", "4 C 123/25", "123 Js 4567/20" -
 # das keyword-basierte Muster oben erfasst solche Werte mit Leerzeichen nicht.
 _COURT_AKTENZEICHEN_PATTERN = re.compile(r"\b\d{1,3}\s?[A-Za-z]{1,3}\s?\d{1,6}/\d{2,4}\b")
@@ -199,6 +209,7 @@ def detect_vertragsnummer(text: str) -> list[DetectedSpan]:
 
 def detect_rechnungsnummer(text: str) -> list[DetectedSpan]:
     spans = _matches_from_pattern(text, _RECHNUNGSNUMMER_PATTERN, "rechnungsnummer", group=1)
+    spans += _matches_from_pattern(text, _RECHNUNG_ID_PATTERN, "rechnungsnummer", group=1)
     # Nur echte Nummern (mit Ziffer), nicht Flusstext wie "Rechnung nr der ..."
     return [sp for sp in spans if any(ch.isdigit() for ch in sp.value)]
 
