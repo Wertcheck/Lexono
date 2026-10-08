@@ -168,7 +168,7 @@ _STEP_STATUS_LABELS: dict[str, str] = {
 #: wirklich leer, sondern IMMER mindestens
 #: `{"mandant": ["Ohne Mandantenzuordnung", "Mandantenzuordnung"]}`. Ohne
 #: diese Ausnahme waere die Bedingung `not known_entities` in
-#: `_prepare_and_gate` (skip_organization_pseudonymization) in der Praxis
+#: `_prepare_and_gate` (skip_general_knowledge_pseudonymization) in der Praxis
 #: NIEMALS wahr gewesen - der gesamte Mechanismus haette fuer echte
 #: Nutzer:innen nie ausgeloest. Die Pruefung ignoriert deshalb gezielt
 #: GENAU diesen einen, strukturell bekannten Platzhalter-Namen (und seinen
@@ -638,7 +638,7 @@ class DraftingService:
         # massgebliche, zuverlaessige Schutzpfad; das ist der erwartete,
         # vorgesehene Arbeitsablauf (Akte zuerst anlegen/verknuepfen), kein
         # unentdeckter Bug.
-        skip_organization_pseudonymization = (
+        skip_general_knowledge_pseudonymization = (
             purpose == _CHAT_PURPOSE
             and not preparation.has_document_context
             and _has_only_placeholder_known_entities(preparation.known_entities)
@@ -655,7 +655,7 @@ class DraftingService:
                 anwaltliche_anmerkungen=attorney_anmerkungen,
                 known_entities=preparation.known_entities,
                 gespraechsverlauf=gespraechsverlauf,
-                skip_organization_pseudonymization=skip_organization_pseudonymization,
+                skip_general_knowledge_pseudonymization=skip_general_knowledge_pseudonymization,
             )
 
         if not gateway_result.allowed:

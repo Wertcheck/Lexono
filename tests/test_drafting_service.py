@@ -231,7 +231,7 @@ def test_unlinked_general_chat_skips_organization_pseudonymization(db_session: S
     Mandantenzuordnung" an - `known_entities["mandant"]` war dadurch
     NIEMALS wirklich leer (siehe `_has_only_placeholder_known_entities`
     in app/drafting/service.py), eine naive `not known_entities`-Pruefung
-    haette `skip_organization_pseudonymization` fuer JEDEN echten Chat
+    haette `skip_general_knowledge_pseudonymization` fuer JEDEN echten Chat
     nie ausgeloest. End-to-End bewiesen: eine allgemeine Wissensfrage mit
     einem Organisationsnamen erreicht Claude (hier: den Fake-Writing-
     Provider) mit dem Klartextnamen, NICHT einem Platzhalter."""
@@ -252,7 +252,7 @@ def test_unlinked_general_chat_skips_organization_pseudonymization(db_session: S
     assert payload.anonymisierte_anwaltliche_anmerkungen == "Was ist die World Health Organization?"
 
 
-def test_linked_matter_with_real_client_does_not_skip_organization_pseudonymization(
+def test_linked_matter_with_real_client_does_not_skip_general_knowledge_pseudonymization(
     db_session: Session,
 ) -> None:
     """Gegenprobe zum vorherigen Test: sobald eine Akte mit einem ECHTEN,
@@ -1708,3 +1708,24 @@ def test_ollama_timeout_during_response_validation_fails_closed(db_session: Sess
     assert db_session.query(Draft).count() == 0  # aber es gibt kein fertiges Dokument
     logs = db_session.query(ApiCallLog).filter_by(result_status="error").all()
     assert any(log.error_status == "local_ai_unavailable" for log in logs)
+
+
+def test_unlinked_general_chat_keeps_place_names_readable(db_session: Session) -> None:
+    """ECHTER FUND (08.10.): "...in deutschland" erreichte Claude als
+    "[ORT_01]" - Ende-zu-Ende ueber DraftingService im Akte-losen Chat."""
+    writing_provider = FakeClaudeWritingProvider()
+    service, _ = _service(writing_provider=writing_provider)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="wieviele klempnerbetriebe gibt es ca. in deutschland",
+        actor="test@example.invalid",
+    )
+
+    assert result.success is True
+    payload = writing_provider.received_payloads[0]
+    assert payload.anonymisierte_anwaltliche_anmerkungen == (
+        "wieviele klempnerbetriebe gibt es ca. in deutschland"
+    )

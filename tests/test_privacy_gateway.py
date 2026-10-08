@@ -520,13 +520,13 @@ def test_real_name_in_current_message_is_still_pseudonymized_after_entity_type_r
     assert any(m.original_value == "Peter Müller" for m in result.mappings)
 
 
-def test_skip_organization_pseudonymization_leaves_general_knowledge_org_name_readable() -> None:
+def test_skip_general_knowledge_pseudonymization_leaves_general_knowledge_org_name_readable() -> None:
     """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
     Pipeline", 07.10., live reproduziert): Presidio pseudonymisierte
     "World Health Organization" unterschiedslos auch in einer voellig
     allgemeinen Wissensfrage - Claude bekam nur einen Platzhalter und
     konnte die Frage nicht mehr sinnvoll beantworten. Mit
-    `skip_organization_pseudonymization=True` bleibt der Begriff lesbar;
+    `skip_general_knowledge_pseudonymization=True` bleibt der Begriff lesbar;
     `allowed` bleibt `True` (die urspruengliche Fassung dieses Fixes
     loeste faelschlich einen NEUEN Block ueber Punkt 2/3/4 aus - siehe
     SecurityCheckService.check Docstring zu `skip_residual_categories` -
@@ -537,7 +537,7 @@ def test_skip_organization_pseudonymization_leaves_general_knowledge_org_name_re
         purpose="chat_response",
         sachverhalt="Chat",
         anwaltliche_anmerkungen="Was ist die World Health Organization?",
-        skip_organization_pseudonymization=True,
+        skip_general_knowledge_pseudonymization=True,
     )
 
     assert result.allowed is True
@@ -547,7 +547,7 @@ def test_skip_organization_pseudonymization_leaves_general_knowledge_org_name_re
 
 
 def test_organization_pseudonymization_default_behavior_is_unchanged() -> None:
-    """Regressionsschutz: ohne `skip_organization_pseudonymization`
+    """Regressionsschutz: ohne `skip_general_knowledge_pseudonymization`
     (Default `False`) bleibt das bisherige, strikte Verhalten fuer JEDEN
     bestehenden Aufrufer unveraendert - derselbe Begriff wird weiterhin
     pseudonymisiert."""
@@ -564,7 +564,7 @@ def test_organization_pseudonymization_default_behavior_is_unchanged() -> None:
     assert any(m.category == "organisation" for m in result.mappings)
 
 
-def test_skip_organization_pseudonymization_does_not_weaken_known_entities_mandant_protection() -> None:
+def test_skip_general_knowledge_pseudonymization_does_not_weaken_known_entities_mandant_protection() -> None:
     """Sicherheitskritische Gegenprobe: ein echter, ueber `known_entities`
     bekannter Mandant (Kategorie "mandant", NICHT "organisation" - siehe
     app/ai_providers/local_ai_provider.py::_build_known_entities) bleibt
@@ -581,7 +581,7 @@ def test_skip_organization_pseudonymization_does_not_weaken_known_entities_manda
         sachverhalt="Chat",
         anwaltliche_anmerkungen="Unser Mandant Müller GmbH hat eine Frist.",
         known_entities={"mandant": ["Müller GmbH"]},
-        skip_organization_pseudonymization=True,
+        skip_general_knowledge_pseudonymization=True,
     )
 
     assert result.allowed is True
@@ -589,12 +589,12 @@ def test_skip_organization_pseudonymization_does_not_weaken_known_entities_manda
     assert any(m.category == "mandant" and m.original_value == "Müller GmbH" for m in result.mappings)
 
 
-def test_skip_organization_pseudonymization_does_not_weaken_person_protection() -> None:
+def test_skip_general_knowledge_pseudonymization_does_not_weaken_person_protection() -> None:
     """Weitere Gegenprobe: eine Organisation, die eine natuerliche Person
     identifiziert (z. B. ein Einzelunternehmer-Firmenname), wird von
     Presidio bereits heute als Kategorie "person" erkannt (empirisch
     bestaetigt: "Max Müller e.K." -> PERSON, nicht ORGANIZATION) -
-    `skip_organization_pseudonymization` betrifft NUR die Presidio-
+    `skip_general_knowledge_pseudonymization` betrifft NUR die Presidio-
     Kategorie "organisation" und darf diesen Schutz nicht beruehren."""
     gw = ClaudePrivacyGateway()
 
@@ -602,7 +602,7 @@ def test_skip_organization_pseudonymization_does_not_weaken_person_protection() 
         purpose="chat_response",
         sachverhalt="Chat",
         anwaltliche_anmerkungen="Das Dokument stammt von der Müller GmbH, vertreten durch Max Müller.",
-        skip_organization_pseudonymization=True,
+        skip_general_knowledge_pseudonymization=True,
     )
 
     assert result.allowed is True
@@ -645,3 +645,58 @@ def test_prior_assistant_answer_residual_pii_false_positive_does_not_block_new_q
 
     assert result.allowed is True
     assert result.reasons == []
+
+
+def test_skip_general_knowledge_pseudonymization_leaves_place_names_readable() -> None:
+    """ECHTER FUND (08.10., realer Fehler im installierten Build):
+    "wieviele klempnerbetriebe gibt es ca. in deutschland" erreichte Claude
+    als "...in [ORT_01]" - Claude verlangte "den tatsaechlichen Ortsnamen".
+    Im Chat ohne Akte-/Mandanten-/Dokumentkontext bleibt "ort" lesbar."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="wieviele klempnerbetriebe gibt es ca. in deutschland",
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert result.payload.anonymisierte_anwaltliche_anmerkungen == (
+        "wieviele klempnerbetriebe gibt es ca. in deutschland"
+    )
+    assert result.mappings == []
+
+
+def test_place_name_is_still_pseudonymized_by_default() -> None:
+    """Regressionsschutz: ohne den Skip (Akte-/Mandantenkontext vorhanden)
+    bleibt "ort" strikt pseudonymisiert."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="wieviele klempnerbetriebe gibt es ca. in deutschland",
+    )
+
+    assert "deutschland" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert any(m.category == "ort" for m in result.mappings)
+
+
+def test_skip_general_knowledge_pseudonymization_keeps_person_and_address_protected() -> None:
+    """Der "ort"-Skip darf Personen und Adressen (eigene Kategorien) nicht
+    beruehren."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Herr Peter Müller wohnt in der Musterstrasse 5 in Berlin.",
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    text = result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert "Peter Müller" not in text
+    assert "Musterstrasse 5" not in text
+    assert {m.category for m in result.mappings} >= {"person", "adresse"}

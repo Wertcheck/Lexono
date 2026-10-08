@@ -79,6 +79,19 @@ _ALL_MARKERS = (
 # Zeilen KI-generiert sind, siehe _build_unrecognized_name_scan_text.
 _ASSISTANT_HISTORY_LINE_PREFIX = "Assistent: "
 
+# ECHTER FUND (08.10., realer Fehler im installierten Build): "wieviele
+# klempnerbetriebe gibt es ca. in deutschland" erreichte Claude als "...in
+# [ORT_01]" - Claude antwortete, es brauche "den tatsaechlichen Ortsnamen".
+# Presidios generische LOCATION-Erkennung ("ort") ist in einem Chat OHNE
+# Akte-/Mandanten-/Dokumentkontext reine Allgemeinwissens-Sprache (Laender,
+# Staedte, Bundeslaender) und kein Mandantenschutz - derselbe Mechanismus
+# wie bei "organisation" (siehe Pseudonymizer.pseudonymize). Bewusst NICHT
+# enthalten: "person", jede Regex-Kategorie (Adresse, PLZ, E-Mail, IBAN ...)
+# und jeder known_entities-Treffer. Verbleibendes, dokumentiertes Restrisiko:
+# ein Wohnort-/Ortsname allein in einem Akte-losen Chat geht im Klartext an
+# Claude (ohne Person/Adresse dazu kein personenbezogenes Datum).
+_GENERAL_KNOWLEDGE_SKIP_CATEGORIES = frozenset({"organisation", "ort"})
+
 
 def _sanitize_input(text: str) -> str:
     """Entfernt zufällige/absichtliche Vorkommen der internen
@@ -125,7 +138,7 @@ class ClaudePrivacyGateway:
         anwaltliche_anmerkungen: str | None = None,
         known_entities: dict[str, list[str]] | None = None,
         gespraechsverlauf: list[str] | None = None,
-        skip_organization_pseudonymization: bool = False,
+        skip_general_knowledge_pseudonymization: bool = False,
     ) -> GatewayResult:
         """Baut eine sendefertige, pseudonymisierte Payload - oder
         blockiert (siehe GatewayResult.allowed). Ruft selbst KEINE Claude
@@ -148,7 +161,7 @@ class ClaudePrivacyGateway:
         Path an der Pseudonymisierung vorbei, unabhängig davon, ob der Text
         schon einmal pseudonymisiert war.
 
-        `skip_organization_pseudonymization` (optional, ECHTER FUND Owner-
+        `skip_general_knowledge_pseudonymization` (optional, ECHTER FUND Owner-
         Direktive "Architektur-Audit Privacy-/Chat-Pipeline", 07.10.):
         siehe Pseudonymizer.pseudonymize Docstring zu `skip_categories` fuer
         die volle Begruendung. Default `False` (unveraendertes, striktes
@@ -157,7 +170,9 @@ class ClaudePrivacyGateway:
         wenn VOR diesem Aufruf bereits feststeht, dass kein Akte-/
         Mandanten-/Dokumentkontext existiert (kein `matter_id`, keine
         `known_entities`). Betrifft AUSSCHLIESSLICH Presidios generische
-        "organisation"-Kategorie - "person"/"ort" und jede exakte
+        "organisation"- und "ort"-Kategorie (ERWEITERT 08.10. um "ort",
+        siehe `_GENERAL_KNOWLEDGE_SKIP_CATEGORIES`) - "person", Adressen/
+        Kontaktdaten (Regex-Detektoren, eigene Kategorien) und jede exakte
         `known_entities`-Erkennung bleiben davon vollstaendig unberuehrt."""
         argumentationspunkte = argumentationspunkte or []
         quellenverweise = quellenverweise or []
@@ -187,7 +202,9 @@ class ClaudePrivacyGateway:
         )
 
         skip_categories = (
-            frozenset({"organisation"}) if skip_organization_pseudonymization else frozenset()
+            _GENERAL_KNOWLEDGE_SKIP_CATEGORIES
+            if skip_general_knowledge_pseudonymization
+            else frozenset()
         )
         pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
             combined, known_entities=known_entities, skip_categories=skip_categories
