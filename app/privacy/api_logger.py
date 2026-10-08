@@ -19,12 +19,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import re
 
 from sqlalchemy.orm import Session
 
 from app.cost_control.pricing import estimate_cost_usd
 from app.models import ApiCallLog
 from app.privacy.gateway_schema import ClaudeRequestPayload
+
+_logger = logging.getLogger("lexono.privacy")
+_PLACEHOLDER_NAME = re.compile(r"\[[A-Z_]+_\d{2,}\]")
 
 # Feste, inhaltsfreie Kategorien - werden anhand von Textmustern in den
 # Security-Check-Gründen erkannt, OHNE die Gründe selbst zu speichern.
@@ -289,6 +294,12 @@ class ApiCallLogger:
         purpose: str,
         reasons: list[str],
     ) -> ApiCallLog:
+        categories = categorize_block_reasons(reasons)
+        # Diagnose OHNE Nutzdaten: nur Kategorie-Codes und Platzhalternamen ("[ORGANISATION_03]"),
+        # nie die Gruende selbst. Zwei sporadische Blockaden im Real-E2E (original_value_leaked)
+        # waren nachtraeglich nicht mehr zuzuordnen, weil das Log keinen Hinweis enthielt.
+        tokens = sorted({m for reason in reasons for m in _PLACEHOLDER_NAME.findall(reason)})
+        _logger.warning("Anfrage/Antwort blockiert: %s (Platzhalter: %s)", categories, ", ".join(tokens) or "-")
         log_entry = ApiCallLog(
             workflow_id=workflow_id,
             model=model,
@@ -296,7 +307,7 @@ class ApiCallLogger:
             token_count=None,
             anonymized_prompt_id=None,  # keine Payload vorhanden - wurde blockiert
             result_status="blocked",
-            error_status=categorize_block_reasons(reasons),
+            error_status=categories,
         )
         db.add(log_entry)
         db.commit()

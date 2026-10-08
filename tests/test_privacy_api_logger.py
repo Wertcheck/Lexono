@@ -296,3 +296,51 @@ def test_local_quality_check_friendly_message_does_not_claim_a_privacy_violation
 
     assert message != "Die Anfrage wurde aus Datenschutzgründen blockiert."
     assert "kein Datenschutzvorfall" in message or "keine Datenschutzentscheidung" in message or "unsichere automatische" in message
+
+
+def test_blocked_call_logs_category_and_placeholder_names_but_never_values() -> None:
+    """Diagnose-Hardening (Real-E2E 08.10.): zwei sporadische Blockaden waren nachtraeglich
+    nicht zuzuordnen. Geloggt werden nur Kategorie und Platzhaltername, nie Werte."""
+    import logging
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from app.models.base import Base
+    from app.privacy.api_logger import ApiCallLogger
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    reasons = [
+        "Urspruenglicher, nicht pseudonymisierter Wert fuer [ORGANISATION_03] im Text gefunden - "
+        "moeglicher Datenschutzverstoss",
+        "Interne Notiz mit Max Mustermann",
+    ]
+
+    records: list[logging.LogRecord] = []
+
+    class _Collect(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    logger = logging.getLogger("lexono.privacy")
+    handler = _Collect(level=logging.WARNING)
+    previous_level, previous_disabled = logger.level, logger.disabled
+    logger.setLevel(logging.WARNING)
+    logger.disabled = False
+    logger.addHandler(handler)
+    try:
+        ApiCallLogger().log_blocked(
+            session, workflow_id=None, model="m", purpose="chat_response", reasons=reasons
+        )
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(previous_level)
+        logger.disabled = previous_disabled
+
+    text = " ".join(r.getMessage() for r in records)
+    assert "original_value_leaked" in text and "[ORGANISATION_03]" in text
+    assert "Max Mustermann" not in text and "Urspruenglicher" not in text
+    session.close()
+    engine.dispose()
