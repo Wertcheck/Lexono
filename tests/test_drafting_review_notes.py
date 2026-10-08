@@ -97,3 +97,19 @@ def test_empty_content_between_markers_never_produces_an_empty_letter() -> None:
     text = f"Nur eine Erlaeuterung.\n{LETTER_START_MARKER}\n{LETTER_END_MARKER}"
 
     assert split_review_notes(text)[0] == text
+
+
+def test_heading_directly_after_the_end_marker_is_not_repeated_inside_the_notes() -> None:
+    """Befund (Real-E2E 08.10.): die Hinweis-Ueberschrift erschien im Kasten doppelt."""
+    from app.drafting.review_notes import LETTER_END_MARKER, LETTER_START_MARKER
+
+    text = (
+        f"Vorbemerkung.\n{LETTER_START_MARKER}\n{_LETTER}\n{LETTER_END_MARKER}\n\n"
+        f"## {REVIEW_NOTES_HEADING}\n- Datum pruefen"
+    )
+
+    letter, notes = split_review_notes(text)
+
+    assert letter == _LETTER
+    assert notes == "Vorbemerkung.\n\n- Datum pruefen"
+    assert "OFFENE PR" not in notes.upper()

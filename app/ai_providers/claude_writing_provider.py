@@ -150,7 +150,7 @@ die Einordnung die gefragte Beziehung enthält.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
 "Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
 (Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
-Herren". Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+Herren". Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr" ("Sehr geehrte Svenja Falk") ist nicht zulässig. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
@@ -325,7 +325,7 @@ die Einordnung die gefragte Beziehung enthält.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
 "Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
 (Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
-Herren". Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+Herren". Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr" ("Sehr geehrte Svenja Falk") ist nicht zulässig. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \

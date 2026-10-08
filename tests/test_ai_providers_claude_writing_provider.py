@@ -848,3 +848,10 @@ def test_both_prompts_demand_letter_markers_and_a_consistent_kanzlei_perspective
         assert "SCHREIBEN-BEGRENZUNG" in prompt
         assert LETTER_START_MARKER in prompt and LETTER_END_MARKER in prompt
         assert "PERSPEKTIVE" in prompt and "Kanzlei" in prompt
+
+
+def test_both_prompts_forbid_a_salutation_with_only_first_and_last_name() -> None:
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert 'Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr"' in prompt

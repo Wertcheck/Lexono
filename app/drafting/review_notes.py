@@ -62,13 +62,27 @@ def split_review_notes(text: str | None) -> tuple[str, str]:
     else:
         body, after = remainder, ""
     body_letter, body_notes = _split_heading(body)
-    after_letter, after_notes = _split_heading(after)
+    after_letter, after_notes = _notes_after_letter(after)
     extra = [part.strip() for part in (before, after_letter) if part.strip()]
     notes_parts = [*extra, *(n for n in (body_notes, after_notes) if n)]
     letter = body_letter.strip("\n")
     if not letter.strip():
         return text, ""
     return letter, "\n\n".join(notes_parts).strip()
+
+
+def _notes_after_letter(text: str) -> tuple[str, str]:
+    """Wie `_split_heading`, aber fuer den Text NACH der Endmarkierung: beginnt er direkt mit
+    der Hinweis-Ueberschrift, ist alles danach der Hinweisblock und die Ueberschrift selbst
+    wird NICHT noch einmal als Text uebernommen (sonst erschiene sie im Kasten doppelt)."""
+    if not text.strip():
+        return "", ""
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if _HEADING_LINE.match(line):
+            before = "\n".join(lines[:index]).strip()
+            return before, "\n".join(lines[index + 1 :]).strip()
+    return text.strip(), ""
 
 
 def _split_heading(text: str) -> tuple[str, str]:
