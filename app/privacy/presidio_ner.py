@@ -188,6 +188,11 @@ _STARTS_WITH_LEGAL_FORM = re.compile(r"^" + _LEGAL_FORM + _NO_LETTER_AFTER)
 _ENDS_WITH_LEGAL_FORM = re.compile(r"(?<![A-Za-zÄÖÜäöüß])" + _LEGAL_FORM + r"$")
 _FOLLOWED_BY_LEGAL_FORM = re.compile(r"[ \t]{1,2}" + _LEGAL_FORM + _NO_LETTER_AFTER)
 _SINGLE_INITIAL = re.compile(r"[A-ZÄÖÜ]\.")
+# Ortsname gefolgt von (max. 3) grossgeschriebenen Woertern und einer Rechtsform:
+# "Ostsee Anlagenbau KG" - die NER erkennt dort oft nur "Ostsee" als Ort.
+_ORG_AFTER_PLACE = re.compile(
+    r"(?:[ \t]+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß&\-]*){0,3}?[ \t]+" + _LEGAL_FORM + _NO_LETTER_AFTER
+)
 
 
 def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
@@ -224,8 +229,23 @@ def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[D
         stripped = span.value.strip()
         if _STARTS_WITH_LEGAL_FORM.match(stripped) or _SINGLE_INITIAL.fullmatch(stripped):
             continue
-        if span.category != "organisation":
-            result.append(span)
+        if span.category == "ort":
+            # ECHTER FUND (Real-E2E 08.10., Request-Capture): "Ostsee Anlagenbau KG"
+            # erschien als "[ORT_01] Anlagenbau KG" - nur der Ortsteil wurde
+            # ersetzt, der Rest der Firma blieb lesbar. Folgen direkt
+            # Grossgeschriebenes und eine Rechtsform, ist es ein Firmenname.
+            company = _ORG_AFTER_PLACE.match(text, span.end)
+            if company:
+                result.append(
+                    DetectedSpan(
+                        category="organisation",
+                        start=span.start,
+                        end=company.end(),
+                        value=text[span.start : company.end()],
+                    )
+                )
+            else:
+                result.append(span)
             continue
         match = _FOLLOWED_BY_LEGAL_FORM.match(text, span.end)
         if match and not _ENDS_WITH_LEGAL_FORM.search(span.value):

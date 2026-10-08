@@ -275,3 +275,28 @@ def test_normalize_organisation_spans_keeps_a_person_span_starting_with_an_initi
     person = DetectedSpan(category="person", start=start, end=start + 14, value="H. Herrn Peter")
 
     assert normalize_organisation_spans(text, [person]) == [person]
+
+
+def test_normalize_turns_a_place_followed_by_a_company_name_and_legal_form_into_an_organisation() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Request-Capture der installierten .exe):
+    "Ostsee Anlagenbau KG" erschien als "[ORT_01] Anlagenbau KG"."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "An Ostsee Anlagenbau KG, Hafenkai 3"
+    place = DetectedSpan(category="ort", start=3, end=9, value="Ostsee")
+
+    result = normalize_organisation_spans(text, [place])
+
+    assert [(s.category, s.value) for s in result] == [("organisation", "Ostsee Anlagenbau KG")]
+
+
+def test_normalize_keeps_a_place_that_is_not_part_of_a_company_name() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "Der Termin findet in Hamburg statt, die Firma Muster GmbH liegt in Bremen."
+    hamburg = DetectedSpan(category="ort", start=text.find("Hamburg"), end=text.find("Hamburg") + 7, value="Hamburg")
+    bremen = DetectedSpan(category="ort", start=text.find("Bremen"), end=text.find("Bremen") + 6, value="Bremen")
+
+    assert normalize_organisation_spans(text, [hamburg, bremen]) == [hamburg, bremen]
