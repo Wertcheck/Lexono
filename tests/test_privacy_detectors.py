@@ -411,3 +411,91 @@ def test_real_phone_numbers_are_still_detected(text: str, expected: str) -> None
     from app.privacy.detectors import detect_phone
 
     assert [s.value.strip() for s in detect_phone(text)] == [expected]
+
+
+# --- Luecken, die der Request-Capture der installierten .exe sichtbar machte --------
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Rechnung Nr. RE-2026-00417 vom 17.09.2026", "RE-2026-00417"),
+        ("Rechnungsnummer: 2026-117", "2026-117"),
+        ("Re.-Nr. 88/2026 bitte angeben", "88/2026"),
+        ("Bestellnummer BE-4711", "BE-4711"),
+    ],
+)
+def test_invoice_and_order_numbers_are_detected(text: str, expected: str) -> None:
+    from app.privacy.detectors import detect_rechnungsnummer
+
+    assert [s.value for s in detect_rechnungsnummer(text)] == [expected]
+
+
+def test_invoice_number_pattern_ignores_running_text_without_digits() -> None:
+    from app.privacy.detectors import detect_rechnungsnummer
+
+    assert detect_rechnungsnummer("Die Rechnungsnummer fehlt auf dem Beleg.") == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Unser Aktenzeichen: 12 O 345/26", "12 O 345/26"),
+        ("Az. 4 C 123/25 des Amtsgerichts", "4 C 123/25"),
+        ("Verfahren 123 Js 4567/20 wurde eingestellt", "123 Js 4567/20"),
+    ],
+)
+def test_court_file_numbers_with_spaces_are_detected(text: str, expected: str) -> None:
+    from app.privacy.detectors import detect_aktenzeichen
+
+    assert expected in [s.value for s in detect_aktenzeichen(text)]
+
+
+def test_statute_citations_are_not_mistaken_for_court_file_numbers() -> None:
+    from app.privacy.detectors import detect_aktenzeichen
+
+    assert detect_aktenzeichen("Nach § 558 BGB und Art. 3 GG sowie 20 % Kappungsgrenze") == []
+
+
+def test_bic_is_detected_only_with_a_bic_keyword() -> None:
+    from app.privacy.detectors import detect_bic
+
+    assert [s.value for s in detect_bic("IBAN DE02 1203 (BIC BYLADEM1001)")] == ["BYLADEM1001"]
+    assert detect_bic("Das Wort WERFTALLEE steht allein") == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Hafenkai 3, 24103 Beispielstadt", "Hafenkai 3"),
+        ("Hauptstr. 12 in Beispielstadt", "Hauptstr. 12"),
+        ("Rathausmarkt 5", "Rathausmarkt 5"),
+        ("Parkhof 2a", "Parkhof 2a"),
+    ],
+)
+def test_more_street_forms_are_detected(text: str, expected: str) -> None:
+    from app.privacy.detectors import detect_address
+
+    assert expected in [s.value for s in detect_address(text)]
+
+
+def test_longer_organisation_absorbs_a_contained_place_span() -> None:
+    """"Ostsee" in "Ostsee Anlagenbau KG" wurde als Ort ersetzt, der Rest der Firma
+    blieb lesbar und die Anweisung bekam einen anderen Platzhalter."""
+    org = "Ostsee Anlagenbau KG"
+
+    def detector(text: str) -> list[DetectedSpan]:
+        first = text.find("Ostsee")
+        second = text.rfind(org)
+        return [
+            DetectedSpan(category="ort", start=first, end=first + 6, value="Ostsee"),
+            DetectedSpan(category="organisation", start=second, end=second + len(org), value=org),
+        ]
+
+    text = f"An Ostsee Anlagenbau KG, Hafenkai 3.\nSchreiben an die {org}."
+
+    spans = detect_all(text, ner_detector=detector)
+
+    assert [s.value for s in spans if s.category == "organisation"] == [org, org]
+    assert not [s for s in spans if s.category == "ort"]
+

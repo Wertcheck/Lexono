@@ -66,6 +66,26 @@ _VERTRAGSNUMMER_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# ECHTER FUND (Real-E2E 08.10., Request-Capture der installierten .exe): die
+# Rechnungsnummer "RE-2026-00417" ging im Klartext an Anthropic. Fruehere
+# "Schutz" war nur ein Zufall (Telefon-Fehlalarm auf Teile der Nummer).
+_RECHNUNGSNUMMER_PATTERN = re.compile(
+    r"(?:rechnungs?-?\s?(?:nummer|nr\.?)|rechnung\s+nr\.?|re\.?-?\s?nr\.?|"
+    r"beleg-?\s?(?:nummer|nr\.?)|bestell-?\s?(?:nummer|nr\.?))\s*[:.]?\s*"
+    r"([A-Za-z0-9][A-Za-z0-9/\-]{2,24})",
+    re.IGNORECASE,
+)
+
+# Gerichts-Aktenzeichen im Format "12 O 345/26", "4 C 123/25", "123 Js 4567/20" -
+# das keyword-basierte Muster oben erfasst solche Werte mit Leerzeichen nicht.
+_COURT_AKTENZEICHEN_PATTERN = re.compile(r"\b\d{1,3}\s?[A-Za-z]{1,3}\s?\d{1,6}/\d{2,4}\b")
+
+# BIC nur mit vorangestelltem "BIC"/"SWIFT" (sonst Fehlalarme auf normale Woerter).
+_BIC_PATTERN = re.compile(
+    r"(?:bic|swift)\s*[:.]?\s*([A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b",
+    re.IGNORECASE,
+)
+
 _NUMERIC_DATE_PATTERN = re.compile(r"\b\d{1,2}\s*\.\s*\d{1,2}\s*\.\s*\d{2,4}\b")
 _MONTH_NAME_DATE_PATTERN = re.compile(
     rf"\b\d{{1,2}}\.\s*(?:{_GERMAN_MONTHS})\s+\d{{4}}\b", re.IGNORECASE
@@ -95,9 +115,13 @@ _AMOUNT_PATTERN = re.compile(
 # solche Adressen bereits beim ERSTEN, deterministischen Durchlauf sicher
 # erkannt werden, statt sich allein auf die (nachweislich Kontext-
 # abhaengige) NER-Erkennung zu verlassen.
+# ECHTER FUND (Real-E2E 08.10., Request-Capture der installierten .exe):
+# "Hafenkai 3" blieb im Klartext im Cloud-Payload ("kai" fehlte), ebenso waeren
+# "Hauptstr. 12", "Rathausmarkt 5" oder "Parkhof 2" nicht erkannt worden.
 _STREET_PATTERN = re.compile(
-    r"\b[A-ZÄÖÜ][a-zäöüßA-ZÄÖÜ]+(?:straße|strasse|weg|allee|platz|gasse|ring|"
-    r"chaussee|damm|ufer|steig|promenade|wall|steg|anger)\s?\d+[a-z]?\b"
+    r"\b[A-ZÄÖÜ][a-zäöüßA-ZÄÖÜ]+(?:straße|strasse|str\.|weg|allee|platz|gasse|ring|"
+    r"chaussee|damm|ufer|steig|stieg|promenade|wall|steg|anger|kai|hof|markt|pfad|"
+    r"zeile|park|graben|kamp|tor)\s?\d+[a-z]?\b"
 )
 _POSTAL_CODE_CITY_PATTERN = re.compile(r"\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+\b")
 
@@ -159,7 +183,10 @@ def detect_aktenzeichen(text: str) -> list[DetectedSpan]:
     SCHWAECHT die Erkennung nicht: ein echtes Aktenzeichen wird weiterhin
     zuverlaessig erfasst, siehe tests/test_privacy_detectors.py."""
     spans = _matches_from_pattern(text, _AKTENZEICHEN_PATTERN, "aktenzeichen", group=1)
-    return [s for s in spans if any(ch.isdigit() for ch in s.value)]
+    spans = [s for s in spans if any(ch.isdigit() for ch in s.value)]
+    # Gerichts-Aktenzeichen mit Leerzeichen ("12 O 345/26"), siehe Muster oben.
+    spans += _matches_from_pattern(text, _COURT_AKTENZEICHEN_PATTERN, "aktenzeichen")
+    return spans
 
 
 def detect_kundennummer(text: str) -> list[DetectedSpan]:
@@ -168,6 +195,16 @@ def detect_kundennummer(text: str) -> list[DetectedSpan]:
 
 def detect_vertragsnummer(text: str) -> list[DetectedSpan]:
     return _matches_from_pattern(text, _VERTRAGSNUMMER_PATTERN, "vertrag", group=1)
+
+
+def detect_rechnungsnummer(text: str) -> list[DetectedSpan]:
+    spans = _matches_from_pattern(text, _RECHNUNGSNUMMER_PATTERN, "rechnungsnummer", group=1)
+    # Nur echte Nummern (mit Ziffer), nicht Flusstext wie "Rechnung nr der ..."
+    return [sp for sp in spans if any(ch.isdigit() for ch in sp.value)]
+
+
+def detect_bic(text: str) -> list[DetectedSpan]:
+    return _matches_from_pattern(text, _BIC_PATTERN, "bic", group=1)
 
 
 def detect_datum(text: str) -> list[DetectedSpan]:
@@ -209,6 +246,8 @@ _ALL_REGEX_DETECTORS = (
     detect_aktenzeichen,
     detect_kundennummer,
     detect_vertragsnummer,
+    detect_rechnungsnummer,
+    detect_bic,
     detect_datum,
     detect_betrag,
     detect_address,
@@ -272,11 +311,14 @@ def _extend_with_repeated_occurrences(
             # Dokument, "[ORGANISATION_03]" in der Anweisung), Claude hielt
             # sie fuer zwei Parteien und verweigerte den Entwurf. Ein Vorkommen,
             # das NUR kuerzere Treffer DERSELBEN Kategorie vollstaendig
-            # umschliesst, darf diese deshalb ablösen (`_resolve_overlaps`
+            # umschliesst (ausserdem einen darin enthaltenen "ort"-Treffer bei
+            # einer Organisation: "Ostsee" in "Ostsee Anlagenbau KG" wurde
+            # sonst als Ort ersetzt und der Rest der Firma blieb lesbar), darf
+            # diese deshalb ablösen (`_resolve_overlaps`
             # waehlt den laengeren). Teilweise Ueberlappungen, gleich lange
             # oder andersartige Treffer bleiben wie bisher unangetastet.
             if overlapping and not all(
-                c.category == span.category
+                (c.category == span.category or (c.category == "ort" and span.category == "organisation"))
                 and match.start() <= c.start
                 and c.end <= match.end()
                 and (c.end - c.start) < (match.end() - match.start())

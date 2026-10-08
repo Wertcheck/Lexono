@@ -30,6 +30,8 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "iban": "IBAN",
     "steuer_id": "STEUER_ID",
     "kundennummer": "KUNDENNUMMER",
+    "rechnungsnummer": "RECHNUNGSNUMMER",
+    "bic": "BIC",
     # Presidio-NER-Kategorien (app/privacy/presidio_ner.py) - rollenneutral,
     # da Presidio keine Mandant/Gegner/Anwalt/Gericht-Rolle kennen kann.
     "person": "PERSON",
