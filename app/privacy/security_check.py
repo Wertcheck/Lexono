@@ -603,41 +603,40 @@ class SecurityCheckService:
         purpose: str,
         unrecognized_name_scan_text: str | None = None,
         skip_residual_categories: frozenset[str] = frozenset(),
-        residual_scan_text: str | None = None,
+        residual_ignore_ranges: list[tuple[int, int]] | None = None,
     ) -> SecurityCheckResult:
-        """`residual_scan_text` (optional, ECHTER FUND Owner-Direktive
-        "Architektur-Audit Privacy-/Chat-Pipeline", 07.10., live per
-        Mehrfachrunden-QA NACH der Korrektur von `unrecognized_name_
-        scan_text`/`_LENIENT_LEAK_CATEGORIES` reproduziert): beschraenkt
-        NUR Punkt 2/3/4 (Restrisiko-Scan) auf einen anderen Text als
-        `pseudonymized_text` - Punkt 5/6/7 bleiben unveraendert. Der
-        Docstring-Kommentar zu `unrecognized_name_scan_text` unten ging
-        urspruenglich davon aus, Punkt 2/3/4 sei fuer KI-generierte Prosa
-        bereits "sicher genug" und brauche keine eigene Einschraenkung -
-        das war UNVOLLSTAENDIG: real reproduziert wurde, dass Presidios
-        NER auch hier gelegentlich gewoehnliche Woerter aus einer
-        FRUEHEREN Claude-Antwort faelschlich als Kategorie "ort" einstuft
-        (z. B. "UN-Quelle", "Wiederholungsversuche" - kein Ort). Da die
-        Platzhalter-Ersetzung diese Woerter in der NEUEN, vom selben
-        NER-Detektor erneut gescannten `pseudonymized_text` bereits
-        ersetzt hat, liegt der tatsaechliche Fehlalarm an genau demselben,
-        bereits mehrfach in app/privacy/presidio_ner.py dokumentierten
-        Phaenomen (Platzhalter-Nachbarschaft veraendert spaCys Tokenisierung/
-        Kontext genug, um NEUE, im Originaltext nicht vorhandene Treffer zu
-        erzeugen) - blockierte dadurch eine voellig unverwandte, saubere
-        Folgefrage einzig wegen einer FRUEHEREN KI-Antwort, identisch im
-        Charakter zum bereits geloesten Punkt-6-Fall. Der Aufrufer
-        (app/privacy/gateway.py) uebergibt hier denselben, um "Assistent:
-        "-Zeilen bereinigten Text wie bei `unrecognized_name_scan_text"
-        (identischer Text, zwei semantisch getrennte Parameter) - damit
-        bleibt Punkt 2/3/4 weiterhin voll auf jedem anwaltlich verfassten
-        Teil UND auf allen Dokument-/Sachverhaltsfeldern aktiv (dort
-        bleibt die Presidio-Pruefung die primaere PII-Sicherheitsnetz-
-        Funktion), nur nicht mehr auf Claudes eigener, bereits einmal
-        gepruefter Prosa. `check_placeholders_present` (Punkt 5) bleibt
-        bewusst auf dem VOLLEN `pseudonymized_text` - ein Mapping-Eintrag
-        kann legitim NUR in einer Assistant-Zeile vorkommen und muss dort
-        weiterhin auffindbar sein, sonst wuerde Punkt 5 faelschlich
+        """`residual_ignore_ranges` (optional, Owner-Direktive "Architektur-
+        Audit Privacy-/Chat-Pipeline", 07.10.; NEU DEFINIERT 08.10. nach
+        realem Fehler "was kannst du"): Zeichenbereiche (start, ende) von
+        `pseudonymized_text`, die von Claude selbst stammen ("Assistent: "-
+        Zeilen des Gespraechsverlaufs). Ein Restrisiko-Treffer (Punkt
+        2/3/4), der VOLLSTAENDIG in einem solchen Bereich liegt, wird
+        verworfen - alle anderen Treffer (aktuelle Nachricht, "Anwalt: "-
+        Zeilen, Sachverhalt/Dokumentinhalt, ...) bleiben voll wirksam.
+        Punkt 5/6/7 bleiben unveraendert.
+
+        Zweck: Presidios NER stuft gelegentlich gewoehnliche Woerter aus
+        einer FRUEHEREN Claude-Antwort faelschlich als PII ein (real: "UN-
+        Quelle" als "ort") und blockierte dadurch eine unverwandte
+        Folgefrage.
+
+        WARUM ein Positionsfilter statt eines veraenderten Scan-Texts:
+        jede Umformung des gescannten Texts (Assistent-Zeilen mit
+        Leerzeichen ueberschreiben, Felder neu zusammensetzen, Segmente
+        einzeln scannen) veraendert den NER-Kontext und erzeugte nachweislich
+        selbst Fehlalarme - real: "was kannst du" wurde blockiert, weil
+        "Anwalt: hallo wer bist du" nach dem Leerzeichen-Ueberschreiben am
+        Textende stand und das kleingeschriebene "bist du" als PERSON
+        erkannt wurde; isoliert gescannte Kurzsegmente wie "Anwalt:
+        Erstfrage" wurden ebenfalls als PERSON gewertet. Hier laeuft die NER
+        deshalb unveraendert auf dem VOLLEN, strukturgleichen Text (exakt
+        der Kontext, den auch die Pseudonymisierung sah) und nur das
+        ERGEBNIS wird nach Position gefiltert.
+
+        `check_placeholders_present` (Punkt 5) bleibt bewusst auf dem
+        VOLLEN `pseudonymized_text` - ein Mapping-Eintrag kann legitim NUR
+        in einer Assistant-Zeile vorkommen und muss dort weiterhin
+        auffindbar sein, sonst wuerde Punkt 5 faelschlich
         "Platzhalter fehlt" melden.
 
         `skip_residual_categories` (optional, ECHTER FUND Owner-
@@ -683,7 +682,7 @@ class SecurityCheckService:
         Allowlist-Felder) greift, aber nicht mehr auf Claudes eigener
         Prosa (die urspruengliche Annahme hier, Punkt 2/3/4 pruefe diese
         Prosa bereits ausreichend ab, erwies sich als unvollstaendig -
-        siehe `residual_scan_text` oben fuer die Korrektur)."""
+        siehe `residual_ignore_ranges` oben fuer die Korrektur)."""
         reasons: list[str] = []
 
         # Punkt 7: Zweck zulässig?
@@ -696,22 +695,21 @@ class SecurityCheckService:
         # Punkt 2/3/4: erneute PII-Pruefung AUF DEM PSEUDONYMISIERTEN TEXT.
         # Bewusst ohne known_entities - genau diese sollten bereits ersetzt
         # sein; ein Treffer hier bedeutet: etwas wurde uebersehen. Siehe
-        # Docstring oben zu `residual_scan_text` - NUR diese eine Pruefung
-        # bekommt ggf. einen anderen (kleineren) Text als Punkt 5/6/7.
-        residual_scan = (
-            residual_scan_text if residual_scan_text is not None else pseudonymized_text
-        )
-        # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
-        # Pipeline", 07.10., per Live-QA real reproduziert): `skip_residual_
-        # categories` wird an `detect_all` durchgereicht, NICHT erst
-        # nachtraeglich auf dessen Ergebnis angewendet - siehe dortigen
-        # Docstring sowie app/privacy/pseudonymizer.py::pseudonymize fuer
-        # dieselbe Begruendung (ein nachtraeglicher Filter nach bereits
-        # erfolgter Ueberlappungs-Aufloesung kann einen kuerzeren Treffer
-        # einer ANDEREN Kategorie an derselben Stelle verdraengen lassen).
+        # Docstring oben zu `residual_ignore_ranges` - Treffer innerhalb
+        # KI-stammender Zeilen werden verworfen, der Scan-Text bleibt unveraendert.
         residual_spans = detect_all(
-            residual_scan, ner_detector=self.ner_detector, skip_categories=skip_residual_categories
+            pseudonymized_text,
+            ner_detector=self.ner_detector,
+            skip_categories=skip_residual_categories,
         )
+        if residual_ignore_ranges:
+            residual_spans = [
+                span
+                for span in residual_spans
+                if not any(
+                    span.start >= lo and span.end <= hi for lo, hi in residual_ignore_ranges
+                )
+            ]
         if residual_spans:
             categories = sorted({span.category for span in residual_spans})
             reasons.append(

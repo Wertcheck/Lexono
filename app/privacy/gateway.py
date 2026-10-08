@@ -239,16 +239,12 @@ class ClaudePrivacyGateway:
         )
 
         # ERWEITERT (Owner-Direktive "Architektur-Audit Privacy-/Chat-
-        # Pipeline", 07.10., per Live-QA-Fund): Punkt 2/3/4 (Presidio-
-        # Restrisiko-Scan) hat DASSELBE Problem wie Punkt 6 (schlaegt auf
-        # fruehere Claude-Antworten an), braucht aber einen ANDERS
-        # gebauten Scan-Text als `unrecognized_name_scan_text` - siehe
-        # `_build_residual_scan_text` Docstring fuer die Begruendung
-        # (reines Feld-Wiederzusammensetzen veraenderte die Text-Struktur
-        # genug, um bei ECHTER NER neue, im Original nicht vorhandene
-        # Fehlalarme zu erzeugen - real als Regression beim Test dieser
-        # Korrektur selbst aufgefallen, nicht ausgeliefert).
-        residual_scan_text = self._build_residual_scan_text(
+        # Pipeline", 07.10.; NEU DEFINIERT 08.10.): Punkt 2/3/4 (Presidio-
+        # Restrisiko-Scan) soll nicht auf fruehere Claude-Antworten
+        # anschlagen. Der Scan-Text bleibt UNVERAENDERT (voller
+        # pseudonymisierter Text), nur Treffer innerhalb "Assistent: "-Zeilen
+        # werden verworfen - siehe `_build_residual_ignore_ranges`.
+        residual_ignore_ranges = self._build_residual_ignore_ranges(
             pseudonymized_combined,
             original_gespraechsverlauf=gespraechsverlauf,
             pseudo_verlauf=pseudo_verlauf,
@@ -260,7 +256,7 @@ class ClaudePrivacyGateway:
             purpose=purpose,
             unrecognized_name_scan_text=unrecognized_name_scan_text,
             skip_residual_categories=skip_categories,
-            residual_scan_text=residual_scan_text,
+            residual_ignore_ranges=residual_ignore_ranges,
         )
         if not check_result.passed:
             return GatewayResult(
@@ -480,42 +476,38 @@ class ClaudePrivacyGateway:
         )
 
     @staticmethod
-    def _build_residual_scan_text(
+    def _build_residual_ignore_ranges(
         pseudonymized_combined: str,
         *,
         original_gespraechsverlauf: list[str],
         pseudo_verlauf: list[str],
-    ) -> str:
-        """Text fuer SecurityCheckService Punkt 2/3/4 (siehe dortigen
-        Docstring zu `residual_scan_text`): der VOLLE, unveraenderte
-        `pseudonymized_combined`-String, aber mit den Gespraechsverlauf-
-        Zeilen, die von Claude selbst stammen ("Assistent: "-Praefix),
-        durch gleich lange Leerzeichenfolgen UEBERSCHRIEBEN statt
-        herausgefiltert.
-
-        ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
-        Pipeline", 07.10., real als Regression beim eigenen Testlauf
-        dieser Korrektur aufgefallen, NICHT ausgeliefert): anders als
-        `_build_unrecognized_name_scan_text` (das die einzelnen Felder
-        neu mit "\\n" zusammensetzt) darf diese Funktion die Text-
-        STRUKTUR ausserhalb der entfernten Zeilen NICHT veraendern -
-        Punkt 2/3/4 nutzt echte Presidio-NER (anders als die rein
-        regelbasierte Heuristik in Punkt 6), die nachweislich empfindlich
-        auf genau solche Struktur-Unterschiede reagiert (bereits mehrfach
-        in app/privacy/presidio_ner.py dokumentiert, z. B. die
-        Platzhalter-Nachbarschafts-Effekte bei "Herr [PERSON_06]"). Ein
-        neu zusammengesetzter Text mit "\\n" statt der urspruenglichen
-        "@@GATEWAY_ITEM@@"-Trennmarkierungen (neutralisiert zu
-        Leerzeichen, siehe presidio_ner.py::_neutralize_internal_tokens)
-        erzeugte dadurch reale, im Original NICHT vorhandene neue NER-
-        Fehlalarme (reproduziert: ein unauffaelliger Chat ohne jede
-        Historie wurde dadurch faelschlich blockiert). Deshalb hier
-        stattdessen eine reine Zeichen-fuer-Zeichen-Neutralisierung
-        (gleiche Technik wie bei den internen Markern selbst) - jedes
-        Zeichen ausserhalb der entfernten Assistant-Zeilen bleibt exakt
-        an seiner urspruenglichen Position."""
-        result = pseudonymized_combined
+    ) -> list[tuple[int, int]]:
+        """Zeichenbereiche der "Assistent: "-Zeilen innerhalb von
+        `pseudonymized_combined` (siehe SecurityCheckService.check Docstring
+        zu `residual_ignore_ranges` fuer Zweck und Begruendung). Der
+        Gespraechsverlauf steht im kombinierten Text nach
+        "@@GATEWAY_VERLAUF@@
+", Eintraege getrennt durch
+        "@@GATEWAY_ITEM@@" (siehe `_build_combined_text`). Stimmt ein
+        berechneter Bereich nicht exakt mit dem erwarteten Eintrag ueberein
+        (unerwartete Struktur), wird NICHTS ignoriert - fail-closed: der Scan
+        bleibt dann vollstaendig streng."""
+        if not any(
+            entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
+            for entry in original_gespraechsverlauf
+        ):
+            return []
+        marker = _SEP_VERLAUF + "\n"
+        marker_pos = pseudonymized_combined.find(marker)
+        if marker_pos == -1:
+            return []
+        pos = marker_pos + len(marker)
+        ranges: list[tuple[int, int]] = []
         for original_entry, pseudo_entry in zip(original_gespraechsverlauf, pseudo_verlauf):
-            if pseudo_entry and original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX):
-                result = result.replace(pseudo_entry, " " * len(pseudo_entry))
-        return result
+            end = pos + len(pseudo_entry)
+            if pseudonymized_combined[pos:end] != pseudo_entry:
+                return []
+            if original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX):
+                ranges.append((pos, end))
+            pos = end + len(_SEP_LIST_ITEM)
+        return ranges

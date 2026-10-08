@@ -292,7 +292,7 @@ def test_unrecognized_name_scan_text_still_catches_a_name_within_the_given_text(
     assert any("Peter Müller" in r for r in result.reasons)
 
 
-def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
+def test_residual_ignore_ranges_drop_findings_inside_ai_authored_lines() -> None:
     """ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
     Pipeline", 07.10., per Live-QA NACH den beiden anderen Korrekturen
     dieser Direktive reproduziert): Presidios Restrisiko-Scan (Punkt
@@ -301,7 +301,7 @@ def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
     faelschlich als Kategorie "ort" ein (real reproduziert: "UN-Quelle",
     "Wiederholungsversuche" - keine Orte) - identischer Charakter zum
     bereits geloesten Punkt-6-Fall, hier aber bei einer ANDEREN Pruefung.
-    `residual_scan_text` loest das analog zu `unrecognized_name_scan_text`.
+    `residual_ignore_ranges` verwirft Treffer innerhalb der KI-Zeile.
     Bewusst mit echtem Presidio-`ner_detector` (wie in der echten
     Produktivkonfiguration, siehe ClaudePrivacyGateway) - die rein
     regelbasierte Regex-Erkennung (Default ohne `ner_detector`) kennt
@@ -315,7 +315,7 @@ def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
         "Assistent: Laut UN-Quelle gab es mehrere Wiederholungsversuche.\n"
         "Anwalt: Was regelt § 558 BGB?"
     )
-    scan_text_without_history = "Anwalt: Was regelt § 558 BGB?"
+    ai_line_end = pseudonymized_text.index("\n")
 
     blocked_without_scoping = checker.check(
         pseudonymized_text, [], purpose="chat_response"
@@ -324,7 +324,7 @@ def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
         pseudonymized_text,
         [],
         purpose="chat_response",
-        residual_scan_text=scan_text_without_history,
+        residual_ignore_ranges=[(0, ai_line_end)],
     )
 
     assert blocked_without_scoping.passed is False
@@ -332,47 +332,47 @@ def test_residual_scan_text_restricts_point_2_3_4_to_the_given_text() -> None:
     assert allowed_with_scoping.reasons == []
 
 
-def test_residual_scan_text_still_catches_residual_pii_within_the_given_text() -> None:
+def test_residual_ignore_ranges_still_catch_residual_pii_outside_the_ranges() -> None:
     """Gegenprobe zum vorherigen Test: die Einschraenkung darf Punkt
     2/3/4 nicht generell abschalten - ein nach Pseudonymisierung
     weiterhin erkennbares Muster, das TATSAECHLICH im uebergebenen
-    `residual_scan_text` steht (z. B. eine vom Anwalt getippte E-Mail-
-    Adresse, die die Pseudonymisierung uebersehen hat), muss weiterhin
-    blockieren."""
+    AUSSERHALB der ignorierten Bereiche steht (z. B. eine vom Anwalt
+    getippte E-Mail-Adresse, die die Pseudonymisierung uebersehen hat),
+    muss weiterhin blockieren."""
     checker = SecurityCheckService()
 
     pseudonymized_text = (
         "Assistent: Allgemeine Informationen zum Thema.\n"
         "Anwalt: Kontakt: max@example.test"
     )
-    scan_text = "Anwalt: Kontakt: max@example.test"
+    ai_line_end = pseudonymized_text.index("\n")
 
     result = checker.check(
         pseudonymized_text,
         [],
         purpose="chat_response",
-        residual_scan_text=scan_text,
+        residual_ignore_ranges=[(0, ai_line_end)],
     )
 
     assert result.passed is False
     assert any("email" in r for r in result.reasons)
 
 
-def test_residual_scan_text_does_not_affect_placeholder_presence_check() -> None:
+def test_residual_ignore_ranges_do_not_affect_placeholder_presence_check() -> None:
     """Regressionsschutz: Punkt 5 (`check_placeholders_present`) muss
     weiterhin auf dem VOLLEN `pseudonymized_text` laufen, auch wenn
-    `residual_scan_text` gesetzt ist - ein Mapping-Eintrag, dessen
+    `residual_ignore_ranges` gesetzt ist - ein Mapping-Eintrag, dessen
     Platzhalter NUR in einer "Assistent: "-Zeile vorkommt (legitim, siehe
     app/chat/service.py::_build_history), darf nicht faelschlich als
-    "fehlt" gemeldet werden, nur weil er ausserhalb von
-    `residual_scan_text` liegt."""
+    "fehlt" gemeldet werden, nur weil er innerhalb eines
+    ignorierten Bereichs liegt."""
     checker = SecurityCheckService()
 
     pseudonymized_text = (
         "Assistent: Ihr Mandant [PERSON_01] hat angerufen.\n"
         "Anwalt: Was regelt § 558 BGB?"
     )
-    scan_text_without_history = "Anwalt: Was regelt § 558 BGB?"
+    ai_line_end = pseudonymized_text.index("\n")
     mappings = [
         PseudonymMapping(placeholder="[PERSON_01]", category="person", original_value="Peter Müller"),
     ]
@@ -381,7 +381,7 @@ def test_residual_scan_text_does_not_affect_placeholder_presence_check() -> None
         pseudonymized_text,
         mappings,
         purpose="chat_response",
-        residual_scan_text=scan_text_without_history,
+        residual_ignore_ranges=[(0, ai_line_end)],
     )
 
     assert result.passed is True
@@ -1133,6 +1133,21 @@ def test_title_stacking_does_not_misreport_the_title_itself_as_the_name() -> Non
 
     result = checker.check(
         "Herr Rechtsanwalt Schmidt hat sich gemeldet.", [], purpose="chat_response"
+    )
+
+    assert result.passed is False
+
+
+def test_residual_ignore_ranges_keep_findings_that_cross_the_range_boundary() -> None:
+    """Konservativ: nur Treffer, die VOLLSTAENDIG in einem ignorierten
+    Bereich liegen, werden verworfen - ein Treffer, der in den Anwalt-
+    Text hineinreicht, bleibt wirksam."""
+    checker = SecurityCheckService()
+    text = "Assistent: Info.\nAnwalt: Kontakt: max@example.test"
+    # Bereich endet MITTEN in der E-Mail-Adresse
+    mail_start = text.index("max@")
+    result = checker.check(
+        text, [], purpose="chat_response", residual_ignore_ranges=[(0, mail_start + 3)]
     )
 
     assert result.passed is False

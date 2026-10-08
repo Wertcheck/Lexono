@@ -15,7 +15,7 @@ class _AlwaysBlockSecurityCheck:
     tests/test_review_engine.py) - erzwingt EINEN BELIEBIGEN Block,
     unabhaengig vom konkreten Heuristik-Mechanismus."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_scan_text=None):
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_ignore_ranges=None):
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(
@@ -700,3 +700,175 @@ def test_skip_general_knowledge_pseudonymization_keeps_person_and_address_protec
     assert "Peter Müller" not in text
     assert "Musterstrasse 5" not in text
     assert {m.category for m in result.mappings} >= {"person", "adresse"}
+
+
+# --- ECHTER FUND (08.10., realer Fehler im installierten Build): "was kannst
+# du" wurde nach einer vorherigen Antwort mit "Es wurden nach der
+# Pseudonymisierung weiterhin erkennbare Muster gefunden" blockiert. Root
+# Cause: die fruehere Residual-Scan-Variante ueberschrieb die Assistent-
+# Zeilen im Gesamttext mit ~1000 Leerzeichen; "Anwalt: hallo wer bist du"
+# stand dadurch am Textende, und Presidio erkannte das kleingeschriebene
+# "bist du" als PERSON (im vollen pseudonymisierten Text kein Treffer). ---
+
+_CAPABILITY_ANSWER = (
+    "Ich bin der Arbeitsassistent von Lexono und unterstütze Sie bei der "
+    "täglichen Kanzleiarbeit. Ich kann allgemeine Fragen beantworten, "
+    "Dokumente analysieren und zusammenfassen, Sachverhalte strukturieren, "
+    "mögliche Fristen herausarbeiten, Texte überarbeiten und auf Wunsch "
+    "Entwürfe für Schreiben formulieren. Alle personenbezogenen Daten "
+    "werden vor dem Versand lokal pseudonymisiert. Ich treffe keine "
+    "rechtlichen Entscheidungen; die Bewertung bleibt bei Ihnen. Wenn "
+    "etwas unklar ist, markiere ich es als offenen Prüfpunkt, statt "
+    "Angaben zu erfinden. Fragen Sie mich einfach, womit ich helfen soll. "
+    "Beispiele: Erklärung einer Norm, Vergleich zweier Rechtsbegriffe, "
+    "Gliederung eines Schriftsatzes, Prüfung eines Entwurfs auf Lücken, "
+    "Zusammenfassung eines Bescheids oder Übersicht über offene Punkte "
+    "einer Akte. Für aktuelle Zahlen kann ich, sofern verfügbar, eine "
+    "Recherche nutzen und kennzeichne das dann ausdrücklich."
+)
+
+
+def test_capability_question_as_first_message_is_not_blocked() -> None:
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="was kannst du",
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+
+
+def _assistant_line_of_length(length: int) -> str:
+    """"Assistent: ..."-Zeile mit EXAKT `length` Zeichen. Die Laenge ist
+    relevant: die fruehere Residual-Scan-Variante ueberschrieb die Zeile mit
+    gleich vielen Leerzeichen, und der dadurch entstehende Artefakt-
+    Fehlalarm ("bist du" als PERSON) trat deterministisch bei bestimmten
+    Laengen auf (real: 984; synthetisch verifiziert: 200 und >= 984, nicht
+    bei 500/800) - die Tests unten verwenden bewusst solche Laengen."""
+    line = "Assistent: " + _CAPABILITY_ANSWER
+    while len(line) < length:
+        line += " " + _CAPABILITY_ANSWER
+    return line[:length]
+
+
+@pytest.mark.parametrize("assistant_length", [200, 984, 1000])
+@pytest.mark.parametrize("skip", [True, False])
+def test_capability_question_after_a_previous_assistant_answer_is_not_blocked(
+    skip: bool, assistant_length: int
+) -> None:
+    """Exakt die reale Konstellation: kleingeschriebene Vorfrage, lange
+    Assistent-Antwort, dann die Folgefrage. Faengt den Fehler
+    nachweislich (siehe Abschlussbericht: gegen die alte Residual-Logik
+    schlaegt dieser Test fehl)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="was kannst du",
+        gespraechsverlauf=[
+            "Anwalt: hallo wer bist du",
+            _assistant_line_of_length(assistant_length),
+        ],
+        skip_general_knowledge_pseudonymization=skip,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+
+
+def test_residual_ignore_ranges_are_empty_without_any_assistant_line() -> None:
+    """Ohne KI-Historie wird nichts ignoriert (exakt das bisherige
+    Verhalten)."""
+    combined = "@@GATEWAY_VERLAUF@@\nAnwalt: Vorfrage"
+
+    ranges = ClaudePrivacyGateway._build_residual_ignore_ranges(
+        combined,
+        original_gespraechsverlauf=["Anwalt: Vorfrage"],
+        pseudo_verlauf=["Anwalt: Vorfrage"],
+    )
+
+    assert ranges == []
+
+
+def test_residual_ignore_ranges_cover_exactly_the_assistant_lines() -> None:
+    gw = ClaudePrivacyGateway()
+    history = ["Anwalt: Frage eins", "Assistent: KI-Antwort", "Anwalt: Frage zwei"]
+    combined = gw._build_combined_text("Sachverhalt", [], [], None, "Aktuelle Frage", history)
+    *_, pseudo_verlauf = gw._split_combined_text(combined)
+
+    ranges = ClaudePrivacyGateway._build_residual_ignore_ranges(
+        combined, original_gespraechsverlauf=history, pseudo_verlauf=pseudo_verlauf
+    )
+
+    assert len(ranges) == 1
+    lo, hi = ranges[0]
+    assert combined[lo:hi] == "Assistent: KI-Antwort"
+
+
+def test_residual_ignore_ranges_fail_closed_on_unexpected_structure() -> None:
+    """Passt ein berechneter Bereich nicht zum erwarteten Eintrag, wird
+    NICHTS ignoriert (der Scan bleibt vollstaendig streng)."""
+    ranges = ClaudePrivacyGateway._build_residual_ignore_ranges(
+        "@@GATEWAY_VERLAUF@@\nganz anderer Text",
+        original_gespraechsverlauf=["Assistent: KI-Antwort"],
+        pseudo_verlauf=["Assistent: KI-Antwort"],
+    )
+
+    assert ranges == []
+
+
+def test_real_pii_in_a_lawyer_history_line_is_still_pseudonymized_with_assistant_history() -> None:
+    """Gegenprobe: der Segment-Scan schwaecht den PII-Schutz nicht - ein
+    Name in einer Anwalt-Zeile wird weiterhin pseudonymisiert."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="Fasse bitte zusammen.",
+        gespraechsverlauf=[
+            "Anwalt: Herr Peter Müller wohnt in der Musterstrasse 5.",
+            f"Assistent: {_CAPABILITY_ANSWER}",
+        ],
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    joined = " ".join(result.payload.anonymisierter_gespraechsverlauf)
+    assert "Peter Müller" not in joined
+    assert "Musterstrasse 5" not in joined
+    assert {m.category for m in result.mappings} >= {"person", "adresse"}
+
+
+def test_residual_pii_in_a_lawyer_segment_still_blocks_with_assistant_history() -> None:
+    """Gegenprobe zum Pre-Cloud-Gate: uebersieht die Pseudonymisierung etwas
+    in einem Anwalt-Segment (simuliert durch einen Pseudonymizer, der nichts
+    ersetzt), blockiert der Residual-Scan weiterhin - auch wenn
+    Assistent-Historie vorhanden ist."""
+    from app.privacy.presidio_ner import detect_presidio_entities
+    from app.privacy.pseudonymizer import Pseudonymizer
+    from app.privacy.security_check import SecurityCheckService
+
+    class _NoReplace(Pseudonymizer):
+        def pseudonymize(self, text, *, known_entities=None, skip_categories=frozenset()):
+            return text, []
+
+    gw = ClaudePrivacyGateway(
+        pseudonymizer=_NoReplace(),
+        security_check=SecurityCheckService(ner_detector=detect_presidio_entities),
+    )
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="Bitte schreibe an max.mustermann@example.test.",
+        gespraechsverlauf=["Anwalt: Hallo", f"Assistent: {_CAPABILITY_ANSWER}"],
+    )
+
+    assert result.allowed is False
+    assert any("weiterhin erkennbare Muster" in r for r in result.reasons)

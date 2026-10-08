@@ -1729,3 +1729,29 @@ def test_unlinked_general_chat_keeps_place_names_readable(db_session: Session) -
     assert payload.anonymisierte_anwaltliche_anmerkungen == (
         "wieviele klempnerbetriebe gibt es ca. in deutschland"
     )
+
+
+def test_unlinked_general_chat_followup_after_assistant_answer_is_not_blocked(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (08.10.): "was kannst du" nach einer vorherigen Antwort
+    wurde als Residual-PII blockiert - Ende-zu-Ende ueber DraftingService."""
+    writing_provider = FakeClaudeWritingProvider()
+    service, _ = _service(writing_provider=writing_provider)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="was kannst du",
+        gespraechsverlauf=[
+            "Anwalt: hallo wer bist du",
+            "Assistent: Ich bin der Arbeitsassistent von Lexono und helfe bei "
+            "Fragen, Dokumenten und Entwürfen. " * 12,
+        ],
+        actor="test@example.invalid",
+    )
+
+    assert result.success is True
+    assert result.blocked_reasons == []
+    assert writing_provider.received_payloads[0].anonymisierte_anwaltliche_anmerkungen == "was kannst du"
