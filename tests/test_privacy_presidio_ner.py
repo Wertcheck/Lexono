@@ -300,3 +300,36 @@ def test_normalize_keeps_a_place_that_is_not_part_of_a_company_name() -> None:
     bremen = DetectedSpan(category="ort", start=text.find("Bremen"), end=text.find("Bremen") + 6, value="Bremen")
 
     assert normalize_organisation_spans(text, [hamburg, bremen]) == [hamburg, bremen]
+
+
+def test_sentence_initial_imperative_flagged_as_person_is_dropped() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): "Ueberarbeite das Schreiben ..." blockierte die
+    Anweisung ("weiterhin erkennbare Muster: person")."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import drop_sentence_initial_imperatives
+
+    text = "Überarbeite das Schreiben an die Immobilien Westfeld KG: kürzer."
+    span = DetectedSpan(category="person", start=0, end=11, value="Überarbeite")
+
+    assert drop_sentence_initial_imperatives(text, [span]) == []
+
+
+def test_real_names_stay_protected_by_the_imperative_rule() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import (
+        detect_presidio_entities,
+        drop_sentence_initial_imperatives,
+    )
+
+    for text in ("Herr Müller schreibt an Frau Schmidt.", "Schreiben an Schmidt wegen der Miete."):
+        spans = detect_presidio_entities(text)
+        kept = drop_sentence_initial_imperatives(text, spans)
+        assert [s.value for s in kept if s.category == "person"] == [
+            s.value for s in spans if s.category == "person"
+        ]
+        assert any(s.category == "person" for s in kept)
+    # Mehrwort-Treffer und Treffer mitten im Satz bleiben unberuehrt
+    multi = DetectedSpan(category="person", start=0, end=13, value="Peter Weber")
+    mid = DetectedSpan(category="person", start=15, end=22, value="Schmidt")
+    text = "Peter Weber, und Schmidt kommen."
+    assert drop_sentence_initial_imperatives(text, [multi, mid]) == [multi, mid]

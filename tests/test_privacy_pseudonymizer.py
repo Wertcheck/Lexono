@@ -275,3 +275,37 @@ def test_known_entities_take_precedence_over_ner_detector_on_overlap() -> None:
     assert "[MANDANT_01]" in result
     assert "[PERSON_01]" not in result
     assert mappings[0].category == "mandant"
+
+
+def test_leftover_internal_token_names_never_reach_the_lawyer() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Drafting Fall C): "[Adresse PERSON_02]" stand roh im
+    Briefkopf des kopierbaren Schreibens."""
+    from app.privacy.pseudonymizer import neutralize_leftover_placeholder_tokens as clean
+
+    assert clean("[Adresse PERSON_02]\nSehr geehrte Frau Falk") == "[Adresse einsetzen]\nSehr geehrte Frau Falk"
+    assert clean("An PERSON_01 in ORT_03 wegen STEUER_ID_01") == (
+        "An [Angabe einsetzen] in [Angabe einsetzen] wegen [Angabe einsetzen]"
+    )
+
+
+def test_cleanup_leaves_normal_text_and_user_placeholders_untouched() -> None:
+    from app.privacy.pseudonymizer import neutralize_leftover_placeholder_tokens as clean
+
+    text = "Frist [Datum einsetzen], Az. 12 O 345/26, PERSONAL_DATA und RE_2026 bleiben."
+    assert clean(text) == text
+
+
+def test_gateway_reconstruct_response_cleans_leftover_tokens_after_restoring_real_values() -> None:
+    from app.privacy.gateway import ClaudePrivacyGateway
+
+    gw = ClaudePrivacyGateway()
+    result = gw.prepare_request(
+        purpose="formulate_draft",
+        sachverhalt="Kaeuferin: Svenja Falk, Birkenweg 8, 30001 Beispielstadt.",
+        anwaltliche_anmerkungen="Schreibe an Svenja Falk.",
+    )
+    person = next(m.placeholder for m in result.mappings if m.original_value == "Svenja Falk")
+
+    restored = gw.reconstruct_response(f"An {person}\n[Adresse PERSON_99]", result.mappings)
+
+    assert restored == "An Svenja Falk\n[Adresse einsetzen]"

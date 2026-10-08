@@ -949,3 +949,22 @@ def test_common_noun_person_followed_by_assistant_history_line_is_still_filtered
 
     assert result.allowed is True
     assert not any(m.original_value == "Gewerbemietverträge" for m in result.mappings)
+
+
+def test_lawyer_instruction_starting_with_an_imperative_is_not_blocked_or_corrupted() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): die Ueberarbeitungs-Anweisung eines Anwalts wurde im
+    Dokumentkontext blockiert, "Fasse das Dokument zusammen" im Verlauf zu
+    "[PERSON_04] das Dokument zusammen" verfaelscht."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Mietvertrag zwischen Lena Vogt und der Immobilien Westfeld KG, Ringstrasse 21.",
+        anwaltliche_anmerkungen="Überarbeite das Schreiben an die Immobilien Westfeld KG: kürzer.",
+        gespraechsverlauf=["Anwalt: Fasse das Dokument zusammen: Wer ist beteiligt?"],
+    )
+
+    assert result.allowed is True
+    assert not any(m.original_value in ("Überarbeite", "Fasse") for m in result.mappings)
+    assert "Fasse das Dokument zusammen" in " ".join(result.payload.anonymisierter_gespraechsverlauf)
+    assert result.payload.anonymisierte_anwaltliche_anmerkungen.startswith("Überarbeite das Schreiben")

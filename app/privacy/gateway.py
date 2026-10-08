@@ -39,10 +39,15 @@ from app.privacy.date_chronology import build_chronology_note
 from app.privacy.presidio_ner import (
     detect_presidio_entities,
     drop_common_noun_persons,
+    drop_sentence_initial_imperatives,
     get_entity_types,
     get_pos_tags,
 )
-from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
+from app.privacy.pseudonymizer import (
+    PseudonymMapping,
+    Pseudonymizer,
+    neutralize_leftover_placeholder_tokens,
+)
 from app.privacy.security_check import (
     SecurityCheckService,
     check_payload_placeholder_integrity,
@@ -215,9 +220,14 @@ class ClaudePrivacyGateway:
         # Derselbe Gate wie skip_categories (Chat ohne Akte-/Mandanten-/
         # Dokumentkontext): reine Nomen-"Personen" sind dort NER-Fehlalarme
         # auf Fachbegriffe, siehe presidio_ner.drop_common_noun_persons.
-        ner_span_filter = (
-            drop_common_noun_persons if skip_general_knowledge_pseudonymization else None
-        )
+        # Immer aktiv: Satzanfangs-Imperative der Anwalts-Anweisung sind keine Personen.
+        # Zusaetzlich im Chat ohne Akte: reine Nomen-"Personen" (Fachbegriffe).
+        def ner_span_filter(text: str, spans: list) -> list:
+            spans = drop_sentence_initial_imperatives(text, spans)
+            if skip_general_knowledge_pseudonymization:
+                spans = drop_common_noun_persons(text, spans)
+            return spans
+
         pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
             combined,
             known_entities=known_entities,
@@ -333,7 +343,10 @@ class ClaudePrivacyGateway:
     ) -> str:
         """Lokale Rückführung: Platzhalter im Claude-Antworttext werden
         durch die Originalwerte ersetzt. Rein lokal, kein Netzwerkzugriff."""
-        return self.pseudonymizer.reconstruct(claude_response_text, mappings)
+        restored = self.pseudonymizer.reconstruct(claude_response_text, mappings)
+        # Sicherheitsnetz: interne Tokennamen, die Claude als Mischform geschrieben hat
+        # ("[Adresse PERSON_02]"), duerfen nie roh beim Anwalt landen.
+        return neutralize_leftover_placeholder_tokens(restored)
 
     @staticmethod
     def _build_combined_text(

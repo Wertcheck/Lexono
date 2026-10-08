@@ -10,6 +10,7 @@ irgendwohin - reine, seiteneffektfreie Textverarbeitung.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -38,6 +39,33 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "ort": "ORT",
     "organisation": "ORGANISATION",
 }
+
+
+_LEFTOVER_PREFIXES = "|".join(
+    sorted((re.escape(v) for v in set(_PLACEHOLDER_PREFIX_BY_CATEGORY.values())), key=len, reverse=True)
+)
+_LEFTOVER_IN_BRACKETS = re.compile(
+    r"\[([^\[\]]*?)\s*(?<![A-Z0-9_])(?:" + _LEFTOVER_PREFIXES + r")_\d{2,}(?![A-Z0-9_])([^\[\]]*)\]"
+)
+_LEFTOVER_BARE = re.compile(r"(?<![A-Z0-9_])(?:" + _LEFTOVER_PREFIXES + r")_\d{2,}(?![A-Z0-9_])")
+
+
+def neutralize_leftover_placeholder_tokens(text: str) -> str:
+    """Ersetzt nach der Rueckfuehrung uebrig gebliebene INTERNE Tokennamen ("PERSON_02",
+    "[Adresse PERSON_02]") durch einen lesbaren Einsetz-Hinweis.
+
+    ECHTER FUND (Real-E2E 08.10., Drafting Fall C): Claude schrieb "[Adresse PERSON_02]"
+    in den Briefkopf - eine Mischform aus Wort und Platzhaltername, die weder als Token
+    erkannt noch zurueckgefuehrt wird und so dem Anwalt als rohes technisches Kuerzel
+    im kopierbaren Schreiben erschien. Echte Tokens sind zu diesem Zeitpunkt bereits
+    durch ihre Originalwerte ersetzt; was jetzt noch dem Muster entspricht, ist Rest."""
+
+    def _bracketed(match: re.Match[str]) -> str:
+        label = (match.group(1) + " " + match.group(2)).strip(" ,;:-")
+        return f"[{label or 'Angabe'} einsetzen]"
+
+    text = _LEFTOVER_IN_BRACKETS.sub(_bracketed, text)
+    return _LEFTOVER_BARE.sub("[Angabe einsetzen]", text)
 
 
 @dataclass

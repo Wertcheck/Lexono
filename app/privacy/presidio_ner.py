@@ -399,6 +399,44 @@ def get_pos_tags(text: str) -> dict[tuple[int, int], str]:
     return {(token.idx, token.idx + len(token.text)): token.pos_ for token in artifacts.tokens}
 
 
+_SENTENCE_START_PREFIX = re.compile(r"(?:^|\n|[.!?:]\s+)\s*$")
+
+
+def drop_sentence_initial_imperatives(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Verwirft "person"-Treffer, die ein EINZELNES Wort am Satzanfang ohne Eigennamen-Tag sind.
+
+    ECHTER FUND (Real-E2E 08.10.): die Anweisungen des Anwalts beginnen mit einem
+    grossgeschriebenen Imperativ ("Ueberarbeite das Schreiben ...", "Fasse das Dokument
+    zusammen ..."); die NER wertet ihn kontextabhaengig als Person (POS NOUN/VERB, nie
+    PROPN). Folgen: im ersten Durchlauf Verfaelschung des Verlaufs ("[PERSON_04] das
+    Dokument zusammen"), im Restrisiko-Scan eine Blockade der harmlosen Anweisung.
+
+    Eng gefasst: nur Treffer aus genau EINEM Token, direkt am Satz-/Zeilenanfang oder
+    nach "Label: ", ohne ein einziges PROPN-Token. Mehrwort-Namen, Namen mitten im Satz
+    und PROPN-getaggte Namen bleiben unberuehrt; bei fehlender POS-Analyse bleibt der
+    Treffer erhalten (fail-closed). Restrisiko (dokumentiert): ein echter Nachname, der am
+    Satzanfang ausschliesslich als Nicht-Eigenname getaggt wird."""
+    if not spans or not any(span.category == "person" for span in spans):
+        return spans
+    try:
+        pos_tags = get_pos_tags(_neutralize_internal_tokens(text))
+    except Exception:
+        return spans
+    kept: list[DetectedSpan] = []
+    for span in spans:
+        if span.category != "person" or len(span.value.split()) != 1:
+            kept.append(span)
+            continue
+        if not _SENTENCE_START_PREFIX.search(text[: span.start]):
+            kept.append(span)
+            continue
+        tags = [tag for (start, end), tag in pos_tags.items() if start >= span.start and end <= span.end]
+        if len(tags) == 1 and tags[0] != "PROPN":
+            continue
+        kept.append(span)
+    return kept
+
+
 def drop_common_noun_persons(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
     """Verwirft "person"-Treffer, die ausschliesslich aus gewoehnlichen
     Substantiven bestehen (kein einziges Token mit POS=PROPN).
