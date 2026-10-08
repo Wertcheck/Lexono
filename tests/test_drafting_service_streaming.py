@@ -436,3 +436,71 @@ def test_finish_non_streaming_sync_wrapper_result_unchanged_by_status_events(
     assert result.success is True
     assert result.draft_text == "Zusammenfassung."
     assert db_session.query(Draft).filter_by(id=result.draft_id).count() == 1
+
+
+# --- ECHTER FUND (08.10., Real-User-E2E im installierten Build a6ba839): die
+# Skip-Entscheidung (a6ba839) laesst Mappings aus der KI-Historie zu, der
+# Streaming-Pfad setzt aber GARANTIERT LEERE Mappings voraus. Folge: nach dem
+# ersten Delta fehlte "[TELEFON_01]" im akkumulierten Teiltext, die
+# Stufe-1-Pruefung (require_full_coverage) brach den Stream ab - eine harmlose
+# Folgefrage wurde mit "unerwarteten Platzhalter" blockiert. ---
+
+_HISTORY_WITH_NUMBER = [
+    "Anwalt: Was regelt die Modernisierungsumlage?",
+    "Assistent: Seit dem Jahr 024/2025 gelten neue Regeln.",
+]
+
+
+def test_followup_with_mappings_only_from_ai_history_is_not_aborted_mid_stream(
+    db_session: Session,
+) -> None:
+    writing_provider = FakeStreamingClaudeWritingProvider(
+        chunks=["§ 559 BGB ", "regelt die ", "Modernisierungsumlage."]
+    )
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    events = list(
+        service.create_draft_stream(
+            None,
+            "chat_response",
+            db_session,
+            attorney_anmerkungen="Und was regelt dann § 559 BGB?",
+            gespraechsverlauf=_HISTORY_WITH_NUMBER,
+            actor="Testnutzer",
+        )
+    )
+
+    result = [e for e in events if e.kind == "result"][0].result
+    assert result.success is True, result.blocked_reasons
+    assert result.draft_text == "§ 559 BGB regelt die Modernisierungsumlage."
+    # Die Local-AI-Schichten bleiben uebersprungen (Fix a6ba839 unveraendert).
+    assert local_llm.received_payloads == []
+    assert local_llm.structured_calls == []
+
+
+def test_ai_history_placeholder_echoed_by_claude_is_reconstructed_not_blocked(
+    db_session: Session,
+) -> None:
+    """Claude darf einen Platzhalter aus der pseudonymisierten Historie
+    wiederverwenden - er wird lokal zurueckgefuehrt statt blockiert."""
+    writing_provider = FakeStreamingClaudeWritingProvider(
+        chunks=["Wie oben genannt (", "[TELEFON_01]", ") gilt das weiter."]
+    )
+    service, _ = _service(writing_provider)
+
+    events = list(
+        service.create_draft_stream(
+            None,
+            "chat_response",
+            db_session,
+            attorney_anmerkungen="Und was regelt dann § 559 BGB?",
+            gespraechsverlauf=_HISTORY_WITH_NUMBER,
+            actor="Testnutzer",
+        )
+    )
+
+    result = [e for e in events if e.kind == "result"][0].result
+    assert result.success is True, result.blocked_reasons
+    assert "024/2025" in result.draft_text
+    assert "[TELEFON_01]" not in result.draft_text

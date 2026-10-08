@@ -534,8 +534,23 @@ class DraftingService:
             yield DraftStreamEvent(kind="result", result=prepared)
             return
 
-        streaming_eligible = prepared.skip_llm_privacy_layers and hasattr(
-            self.writing_provider, "write_stream"
+        # ECHTER FUND (08.10., Real-User-E2E im installierten Build a6ba839):
+        # der echte Streaming-Pfad setzt GARANTIERT LEERE Mappings voraus
+        # (siehe `_stream_from_writing_provider`: Stufe-1-Pruefung nach jedem
+        # Delta gegen `gateway_result.mappings`, keine Abdeckungs-Lockerung).
+        # Seit der Skip-Entscheidung auf lokal-stammende Mappings (a6ba839)
+        # kann `skip_llm_privacy_layers` auch bei NICHT-leeren Mappings
+        # (Betraege/Zahlen aus der KI-Historie, z. B. "[TELEFON_01]") True
+        # sein - dann fehlte der Platzhalter im akkumulierten Teiltext, der
+        # Stream wurde nach dem ersten Delta als "unerwarteter Platzhalter"
+        # abgebrochen. Streaming daher NUR bei tatsaechlich leeren Mappings;
+        # sonst der bestehende, voll mapping-faehige nicht-streamende Pfad
+        # (deterministische Stufe 1 mit Chat-Abdeckungs-Lockerung, lokale
+        # Rekonstruktion) - weiterhin OHNE Local AI.
+        streaming_eligible = (
+            prepared.skip_llm_privacy_layers
+            and not prepared.gateway_result.mappings
+            and hasattr(self.writing_provider, "write_stream")
         )
         if not streaming_eligible:
             # P1 Performance-Feedback-Follow-up (17.09.): `_finish_non_
