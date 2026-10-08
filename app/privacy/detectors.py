@@ -86,6 +86,29 @@ _RECHNUNG_ID_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# ECHTER FUND (Real-E2E 08.10., Spy auf den Restrisiko-Scan der echten Pipeline): die
+# NER erkennt Firmennamen kontextabhaengig - in "An Elektro Lindqvist KG  z. H. der
+# Geschaeftsfuehrung" fand der ERSTE Durchlauf die Firma nicht (sie blieb im Klartext),
+# der zweite Durchlauf auf dem pseudonymisierten Text schon: das Gate blockierte eine
+# voellig harmlose Analysefrage. Ein Firmenname mit Rechtsform ist dagegen grammatisch
+# eindeutig und wird deshalb unabhaengig vom NER-Kontext erkannt.
+_LEGAL_FORM_SUFFIX = r"(?:GmbH\s*&\s*Co\.\s*KG|KGaA|GmbH|mbH|OHG|GbR|UG|AG|KG|eG|SE)"
+_COMPANY_WORD = r"[A-ZÄÖÜ][\wäöüßÄÖÜ&\-]*"
+# Woerter eines Firmennamens sind durch GENAU EIN Leerzeichen getrennt: in der Pipeline
+# werden Zeilenumbrueche zu Doppelleerzeichen, die Zeilengrenze darf nie ueberbrueckt
+# werden ("Beispielstadt  An Elektro Lindqvist KG", "Gruessen  Nordwind ... GmbH").
+_COMPANY_PATTERN = re.compile(
+    r"\b((?:(?:" + _COMPANY_WORD + r"|&) ){0,4}" + _COMPANY_WORD + r") "
+    + _LEGAL_FORM_SUFFIX
+    + r"(?![A-Za-zÄÖÜäöüß])"
+)
+# Satzanfangs-/Funktionswoerter, die den Namen nicht beginnen ("An Elektro ... KG").
+_COMPANY_LEADING_STOPWORDS = frozenset(
+    "an die der das dem den des von vom zu zur zum bei mit für fuer im in und oder als auf aus "
+    "nach ihre ihr ihren unsere unser firma herr herrn frau sehr wir sie ein eine einer "
+    "betreff rechnung schreiben".split()
+)
+
 # Gerichts-Aktenzeichen im Format "12 O 345/26", "4 C 123/25", "123 Js 4567/20" -
 # das keyword-basierte Muster oben erfasst solche Werte mit Leerzeichen nicht.
 _COURT_AKTENZEICHEN_PATTERN = re.compile(r"\b\d{1,3}\s?[A-Za-z]{1,3}\s?\d{1,6}/\d{2,4}\b")
@@ -216,6 +239,26 @@ def detect_rechnungsnummer(text: str) -> list[DetectedSpan]:
 
 def detect_bic(text: str) -> list[DetectedSpan]:
     return _matches_from_pattern(text, _BIC_PATTERN, "bic", group=1)
+
+
+def detect_company_with_legal_form(text: str) -> list[DetectedSpan]:
+    """Firmenname + Rechtsform ("Elektro Lindqvist KG"), unabhaengig vom NER-Kontext.
+    Fuehrende Funktionswoerter ("An", "Die", "Firma", ...) gehoeren nicht zum Namen."""
+    spans: list[DetectedSpan] = []
+    for match in _COMPANY_PATTERN.finditer(text):
+        name = match.group(1)
+        start = match.start(1)
+        words = list(re.finditer(r"\S+", name))
+        skip = 0
+        while skip < len(words) - 1 and words[skip].group(0).lower().strip(",.:;") in _COMPANY_LEADING_STOPWORDS:
+            skip += 1
+        if words[skip].group(0).lower().strip(",.:;") in _COMPANY_LEADING_STOPWORDS:
+            continue
+        begin = start + words[skip].start()
+        spans.append(
+            DetectedSpan(category="organisation", start=begin, end=match.end(), value=text[begin : match.end()])
+        )
+    return spans
 
 
 def detect_datum(text: str) -> list[DetectedSpan]:
@@ -402,6 +445,11 @@ def detect_all(
         all_spans.extend(detector(text))
     if known_entities:
         all_spans.extend(detect_known_entities(text, known_entities))
+    # Generische Firmenerkennung ueber die Rechtsform: bewusst NACH den bekannten
+    # Entitaeten angehaengt (wie die NER) - bei gleich langem Treffer gewinnt der zuerst
+    # hinzugefuegte, und eine bekannte, rollenzugeordnete Entitaet (Gegner, Mandant ...)
+    # muss einer generischen "organisation" vorgehen.
+    all_spans.extend(detect_company_with_legal_form(text))
     if ner_detector is not None:
         ner_spans = ner_detector(text)
         if ner_span_filter is not None:

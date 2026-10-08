@@ -530,3 +530,40 @@ def test_words_dates_and_plain_years_after_rechnung_are_not_invoice_numbers(text
     from app.privacy.detectors import detect_rechnungsnummer
 
     assert detect_rechnungsnummer(text) == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("An Elektro Lindqvist KG  z. H. der Geschaeftsfuehrung", ["Elektro Lindqvist KG"]),
+        (
+            "Mahnschreiben der Küstenwerk Maschinenbau GmbH an die Ostsee Anlagenbau KG",
+            ["Küstenwerk Maschinenbau GmbH", "Ostsee Anlagenbau KG"],
+        ),
+        ("Mit freundlichen Grüßen\nNordwind Brandschutz-Service GmbH", ["Nordwind Brandschutz-Service GmbH"]),
+        ("Die Firma Muster & Söhne GmbH & Co. KG liefert.", ["Muster & Söhne GmbH & Co. KG"]),
+    ],
+)
+def test_company_names_with_legal_form_are_detected_independent_of_ner_context(
+    text: str, expected: list[str]
+) -> None:
+    """ECHTER FUND (Real-E2E 08.10.): die NER fand "Elektro Lindqvist KG" im ersten
+    Durchlauf nicht, im Restrisiko-Scan schon - eine harmlose Analysefrage wurde
+    als "weiterhin erkennbare Muster" blockiert."""
+    from app.privacy.detectors import detect_company_with_legal_form
+
+    assert [s.value for s in detect_company_with_legal_form(text)] == expected
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Wir bitten die AG um Stellungnahme.",
+        "Sehr geehrte Damen und Herren, die SE ist betroffen.",
+        "Das Amtsgericht entscheidet, die KG haftet.",
+    ],
+)
+def test_legal_form_alone_or_with_only_function_words_is_not_a_company(text: str) -> None:
+    from app.privacy.detectors import detect_company_with_legal_form
+
+    assert detect_company_with_legal_form(text) == []
