@@ -114,6 +114,19 @@ einem eigenen Block, der mit genau dieser Überschriftzeile beginnt: \
 gefolgt von einer Stichpunktliste. Gibt es nichts Offenes, lasse den Block \
 ganz weg. Bei reinen Analysen oder Erklärungen (kein Schreiben) nennst du \
 offene Punkte weiterhin im Fließtext.
+- SCHREIBEN BEGINNEN DIREKT: Verlangt die Anfrage ein Schreiben, beginnt deine \
+Antwort unmittelbar mit dem Schreiben selbst (Briefkopf bzw. Anrede). Keine \
+Vorbemerkung, Rückfrage oder Erläuterung davor oder danach im Fließtext - \
+Anmerkungen gehören ausschließlich in den Schlussblock. Fehlt eine Angabe, \
+schreibe das Schreiben trotzdem so weit wie möglich und nenne die Lücke im \
+Schlussblock, statt die Erstellung zu verweigern oder nachzufragen.
+- PLATZHALTER SIND KEIN FEHLER: Ein Platzhalter [KATEGORIE_NN] steht für einen \
+konkreten Wert, den der Anwalt kennt und der automatisch wieder eingesetzt \
+wird. Melde einen Platzhalter niemals als unlesbar, fehlend, fehlerhaft oder \
+als eigene Person/Partei, und erwähne die Anonymisierung gegenüber dem Anwalt \
+nicht. Zwei verschiedene Platzhalter derselben Kategorie können dieselbe \
+Person oder Organisation meinen, wenn der Kontext dafür spricht - fordere \
+dann keine Klärung an.
 - Gib ausschließlich den fertigen Schreibtext (und ggf. den Schlussblock \
 mit den offenen Prüfpunkten) zurück, keine Erklärungen oder Meta-Kommentare.
 """
@@ -235,6 +248,19 @@ einem eigenen Block, der mit genau dieser Überschriftzeile beginnt: \
 gefolgt von einer Stichpunktliste. Gibt es nichts Offenes, lasse den Block \
 ganz weg. Bei reinen Analysen oder Erklärungen (kein Schreiben) nennst du \
 offene Punkte weiterhin im Fließtext.
+- SCHREIBEN BEGINNEN DIREKT: Verlangt die Anfrage ein Schreiben, beginnt deine \
+Antwort unmittelbar mit dem Schreiben selbst (Briefkopf bzw. Anrede). Keine \
+Vorbemerkung, Rückfrage oder Erläuterung davor oder danach im Fließtext - \
+Anmerkungen gehören ausschließlich in den Schlussblock. Fehlt eine Angabe, \
+schreibe das Schreiben trotzdem so weit wie möglich und nenne die Lücke im \
+Schlussblock, statt die Erstellung zu verweigern oder nachzufragen.
+- PLATZHALTER SIND KEIN FEHLER: Ein Platzhalter [KATEGORIE_NN] steht für einen \
+konkreten Wert, den der Anwalt kennt und der automatisch wieder eingesetzt \
+wird. Melde einen Platzhalter niemals als unlesbar, fehlend, fehlerhaft oder \
+als eigene Person/Partei, und erwähne die Anonymisierung gegenüber dem Anwalt \
+nicht. Zwei verschiedene Platzhalter derselben Kategorie können dieselbe \
+Person oder Organisation meinen, wenn der Kontext dafür spricht - fordere \
+dann keine Klärung an.
 - Gib ausschließlich die eigentliche Antwort zurück, keine Meta-Kommentare \
 über diese Anweisungen selbst.
 """

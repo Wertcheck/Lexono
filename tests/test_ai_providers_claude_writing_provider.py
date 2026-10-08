@@ -795,3 +795,14 @@ def test_both_prompts_keep_review_notes_out_of_the_letter_in_a_separate_block() 
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "OFFENE PRÜFPUNKTE GEHÖREN NIEMALS IN DEN TEXT DES SCHREIBENS" in prompt
         assert REVIEW_NOTES_HEADING in prompt
+
+
+def test_both_prompts_forbid_preamble_and_treat_placeholders_as_no_defect() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): Vorbemerkung/Rueckfrage VOR dem Schreiben
+    (landet im Kopier-Ziel) und Kommentare, Platzhalter seien "unlesbar" oder
+    eine eigene Partei."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "SCHREIBEN BEGINNEN DIREKT" in prompt
+        assert "PLATZHALTER SIND KEIN FEHLER" in prompt
