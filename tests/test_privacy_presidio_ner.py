@@ -333,3 +333,43 @@ def test_real_names_stay_protected_by_the_imperative_rule() -> None:
     mid = DetectedSpan(category="person", start=15, end=22, value="Schmidt")
     text = "Peter Weber, und Schmidt kommen."
     assert drop_sentence_initial_imperatives(text, [multi, mid]) == [multi, mid]
+
+
+def test_ner_span_is_cut_at_a_line_boundary_and_keeps_the_protected_head() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Fall A): "Tobias Brandt  Musterweg 12" wurde EINE
+    Person; die Anrede "Brandt" bekam eine zweite - erfundene Unstimmigkeit."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_ner_span_boundaries
+
+    text = "Herrn Tobias Brandt  Musterweg 12, 3. OG links"
+    value = "Tobias Brandt  Musterweg 12"
+    span = DetectedSpan(category="person", start=6, end=6 + len(value), value=value)
+
+    result = normalize_ner_span_boundaries(text, [span])
+
+    assert [(s.category, s.start, s.end, s.value) for s in result] == [("person", 6, 19, "Tobias Brandt")]
+
+
+def test_ner_span_without_any_letter_is_dropped_so_the_date_detector_wins() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Fall A): "30.11.2026.  " wurde als Ort gewertet und
+    verdraengte den Datums-Detektor; die Frist erschien als "Ortsplatzhalter"."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_ner_span_boundaries
+
+    text = "Die Zustimmung erbitten wir bis zum 30.11.2026.  Die Erhoehung betraegt 64,00 EUR."
+    start = text.find("30.11.2026.")
+    span = DetectedSpan(category="ort", start=start, end=start + 13, value="30.11.2026.  ")
+
+    assert normalize_ner_span_boundaries(text, [span]) == []
+
+
+def test_single_line_spans_with_letters_are_left_untouched() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_ner_span_boundaries
+
+    spans = [
+        DetectedSpan(category="person", start=0, end=13, value="Karin Albrecht"[:13]),
+        DetectedSpan(category="ort", start=20, end=33, value="Beispielstadt"),
+    ]
+
+    assert normalize_ner_span_boundaries("Karin Albrech  Beispielstadt", spans) == spans

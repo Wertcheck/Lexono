@@ -968,3 +968,25 @@ def test_lawyer_instruction_starting_with_an_imperative_is_not_blocked_or_corrup
     assert not any(m.original_value in ("Überarbeite", "Fasse") for m in result.mappings)
     assert "Fasse das Dokument zusammen" in " ".join(result.payload.anonymisierter_gespraechsverlauf)
     assert result.payload.anonymisierte_anwaltliche_anmerkungen.startswith("Überarbeite das Schreiben")
+
+
+def test_name_and_street_on_adjacent_lines_stay_separate_and_a_date_stays_a_date() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Fall A): Name+Strasse wurden EINE Person, das Fristdatum
+    wurde als Ort ersetzt - Claude meldete erfundene Unstimmigkeiten."""
+    gw = ClaudePrivacyGateway()
+    # Zeilenumbrueche sind in der Pipeline Doppelleerzeichen
+    sachverhalt = (
+        "Herrn Tobias Brandt  Musterweg 12, 3. OG links  20099 Beispielstadt  "
+        "Sehr geehrter Herr Brandt,  Die Zustimmung erbitten wir bis zum 30.11.2026.  "
+        "Die Erhoehung betraegt 64,00 EUR."
+    )
+
+    result = gw.prepare_request(
+        purpose="chat_response", sachverhalt=sachverhalt, anwaltliche_anmerkungen="Welche Frist gilt?"
+    )
+
+    assert result.allowed is True
+    originals = {m.original_value: m.category for m in result.mappings}
+    assert originals.get("30.11.2026") == "datum"
+    assert not any("Musterweg" in v and c == "person" for v, c in originals.items())
+    assert "bis zum [DATUM_" in result.payload.anonymisierter_sachverhalt

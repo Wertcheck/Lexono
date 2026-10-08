@@ -195,6 +195,47 @@ _ORG_AFTER_PLACE = re.compile(
 )
 
 
+_LINE_BREAK_IN_SPAN = re.compile(r"\s{2,}|\n")
+_HAS_LETTER = re.compile(r"[A-Za-zÄÖÜäöüß]")
+
+
+def normalize_ner_span_boundaries(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Begrenzt NER-Treffer auf eine Zeile und verwirft Treffer ohne Buchstaben.
+
+    ECHTER FUND (Real-E2E 08.10., Fall A): in der Pipeline werden Zeilenumbrueche zu
+    Doppelleerzeichen. Folgen im echten Payload:
+    - "Tobias Brandt  Musterweg 12" wurde EINE Person ([PERSON_01]), waehrend die Anrede
+      "Brandt" eine zweite bekam - Claude meldete eine erfundene Unstimmigkeit
+      ("Tobias Brandt Musterweg 12 vs. Brandt").
+    - "30.11.2026.  " wurde als ORT gewertet ([ORT_02]); der laengere NER-Treffer verdraengte
+      den Datums-Detektor, die Frist erschien als "Ortsplatzhalter".
+    Regeln: (1) ein Treffer endet an der ersten Zeilengrenze (Zeilenumbruch oder zwei und
+    mehr Leerzeichen) - der Kopf bleibt geschuetzt, der Rest wird von den uebrigen Detektoren
+    (Strasse, Datum ...) erfasst; (2) ein Treffer ohne einen einzigen Buchstaben (Ziffern/
+    Satzzeichen) ist kein Name, Ort oder keine Organisation und wird verworfen."""
+    result: list[DetectedSpan] = []
+    for span in spans:
+        value = span.value
+        match = _LINE_BREAK_IN_SPAN.search(value)
+        if match:
+            value = value[: match.start()]
+        if not value.strip() or not _HAS_LETTER.search(value):
+            continue
+        value = value.rstrip()
+        if value == span.value:
+            result.append(span)
+        else:
+            result.append(
+                DetectedSpan(
+                    category=span.category,
+                    start=span.start,
+                    end=span.start + len(value),
+                    value=value,
+                )
+            )
+    return result
+
+
 def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
     """Vereinheitlicht die Grenzen erkannter Organisationsnamen.
 
@@ -320,7 +361,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         spans.append(
             DetectedSpan(category=category, start=result.start, end=result.end, value=value)
         )
-    return normalize_organisation_spans(text, spans)
+    return normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
 
 
 def get_entity_types(text: str) -> dict[tuple[int, int], str]:
