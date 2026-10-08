@@ -17,6 +17,7 @@ from collections.abc import Generator
 from dataclasses import dataclass
 from typing import Protocol
 
+from app.ai_providers.local_ai_provider import NO_CASE_CONTEXT_SACHVERHALT
 from app.privacy.gateway_schema import ClaudeRequestPayload
 
 # System-Anweisung für die Textproduktions-Schicht selbst. Bewusst
@@ -171,6 +172,19 @@ vorherigen Turns zu verstehen und zu beantworten.
 - Erfinde keine Fundstellen, Paragraphen, Zitate oder Fakten, die nicht \
 im Sachverhalt oder den Quellenverweisen stehen. Fehlt ein Beleg, \
 markiere die Aussage als offenen Prüfpunkt statt sie zu erfinden.
+- ALLGEMEINE FRAGEN: Enthält die Anfrage statt eines Sachverhalts den \
+Abschnitt "Kontext: Es liegt KEIN Akten-, Mandanten- oder Dokumentkontext \
+vor", ist das eine allgemeine Frage (Wissens-, Markt-, Rechts- oder \
+Alltagsfrage). Beantworte sie dann direkt und hilfreich aus deinem \
+Allgemeinwissen wie ein normaler Assistent. Verlange NIEMALS einen \
+Sachverhalt, ein Aktenzeichen, einen Ort, einen Mandanten oder ein \
+Dokument, um eine solche Frage zu beantworten, und behandle genannte \
+Länder, Städte, Organisationen oder Begriffe nicht als fehlende \
+Platzhalter. Die Regel "keine Fakten außerhalb des Sachverhalts" gilt NUR \
+für Akten- und Dokumentinhalte, nicht für Allgemeinwissen. Bei Zahlen, \
+Statistiken oder aktuellen Daten, die du nicht sicher kennst: nenne eine \
+ehrliche Größenordnung, kennzeichne die Unsicherheit und weise darauf \
+hin, wenn für einen exakten aktuellen Wert eine Recherche nötig wäre.
 - Falls nach deinem Internet-/Web-/Echtzeitzugriff gefragt wird: diese \
 Lexono-Konfiguration übergibt dir KEIN Websuche-/Browsing-Werkzeug - \
 antworte wahrheitsgemäß bezogen auf DIESE KONKRETE INSTALLATION \
@@ -330,6 +344,42 @@ def _schreibauftrag_line(schreibauftrag: str) -> str:
     return f"Schreibauftrag: {schreibauftrag}"
 
 
+#: ECHTER FUND (08.10., realer Fehler im installierten Build): "wieviele
+#: klempnerbetriebe gibt es ca. in deutschland" wurde mit "Ich habe aktuell
+#: keinen konkreten Sachverhalt oder Aktenbezug vorliegen ... benoetige den
+#: tatsaechlichen Ortsnamen" abgewiesen. Neben dem (separat behobenen)
+#: Ortsplatzhalter lag die Ursache hier: ein Chat OHNE Akten-/Mandanten-/
+#: Dokumentkontext wurde dem Modell als "Sachverhalt: Akte: (kein
+#: spezifischer Fall zugeordnet)" praesentiert - ein leerer, aber
+#: scheinbar PFLICHT-Sachverhalt, waehrend der Systemprompt Fakten nur aus
+#: dem Sachverhalt erlaubt. Das Modell verlangte folgerichtig Kontext.
+#: Strukturell erkannt (Zweck "chat_response", Sachverhalt ist exakt der
+#: Platzhalter, keine Argumentationspunkte/Quellen/Vorlage), wird der
+#: Abschnitt stattdessen als ausdrueckliche Kontextfreiheit dargestellt -
+#: generisch fuer JEDE allgemeine Frage, nicht fuer einen Beispielsatz.
+_NO_CONTEXT_SECTION = (
+    "Kontext: Es liegt KEIN Akten-, Mandanten- oder Dokumentkontext vor - "
+    "dies ist eine allgemeine Frage. Beantworte sie direkt aus deinem "
+    "Allgemeinwissen."
+)
+
+
+def _is_context_free_chat(payload: ClaudeRequestPayload) -> bool:
+    return (
+        payload.schreibauftrag == "chat_response"
+        and payload.anonymisierter_sachverhalt.strip() == NO_CASE_CONTEXT_SACHVERHALT
+        and not payload.anonymisierte_argumentationspunkte
+        and not payload.anonymisierte_quellenverweise
+        and not payload.schreibvorlage
+    )
+
+
+def _sachverhalt_section(payload: ClaudeRequestPayload) -> str:
+    if _is_context_free_chat(payload):
+        return _NO_CONTEXT_SECTION
+    return f"Sachverhalt:\n{payload.anonymisierter_sachverhalt}"
+
+
 def build_writing_prompt(payload: ClaudeRequestPayload) -> str:
     """Baut den an Claude gesendeten Text AUSSCHLIESSLICH aus den acht
     Allowlist-Feldern - structurell unmöglich, hier versehentlich weitere
@@ -345,7 +395,7 @@ def build_writing_prompt(payload: ClaudeRequestPayload) -> str:
     if payload.anonymisierter_gespraechsverlauf:
         verlauf = "\n".join(payload.anonymisierter_gespraechsverlauf)
         parts.append(f"Bisheriger Gesprächsverlauf:\n{verlauf}")
-    parts.append(f"Sachverhalt:\n{payload.anonymisierter_sachverhalt}")
+    parts.append(_sachverhalt_section(payload))
     if payload.anonymisierte_argumentationspunkte:
         punkte = "\n".join(
             f"- {punkt}" for punkt in payload.anonymisierte_argumentationspunkte
@@ -381,7 +431,7 @@ def build_writing_prompt_cache_blocks(payload: ClaudeRequestPayload) -> list[dic
     `cache_control` (Anthropic cached Prefixe; variable Inhalte müssen NACH
     dem gecachten Block stehen, siehe Anthropic-Dokumentation zu
     Prompt-Caching-Breakpoints)."""
-    stable_parts = [f"Sachverhalt:\n{payload.anonymisierter_sachverhalt}"]
+    stable_parts = [_sachverhalt_section(payload)]
     if payload.anonymisierte_argumentationspunkte:
         punkte = "\n".join(
             f"- {punkt}" for punkt in payload.anonymisierte_argumentationspunkte

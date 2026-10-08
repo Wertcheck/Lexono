@@ -685,3 +685,88 @@ class TestSelectSystemPrompt:
         assert not real_placeholder_pattern.search(CHAT_SYSTEM_PROMPT)
         assert "ERFINDE UNTER KEINEN UMSTÄNDEN" in WRITING_SYSTEM_PROMPT
         assert "ERFINDE UNTER KEINEN UMSTÄNDEN" in CHAT_SYSTEM_PROMPT
+
+
+# --- ECHTER FUND (08.10.): allgemeine Fragen ohne Akten-/Mandanten-/
+# Dokumentkontext wurden mit "Ich habe keinen konkreten Sachverhalt oder
+# Aktenbezug vorliegen" abgewiesen, weil der Prompt einen leeren Pflicht-
+# "Sachverhalt: Akte: (kein spezifischer Fall zugeordnet)" enthielt. ---
+
+from app.ai_providers.claude_writing_provider import (  # noqa: E402
+    CHAT_SYSTEM_PROMPT,
+    CHAT_SYSTEM_PROMPT_WITH_WEB_SEARCH,
+    build_writing_prompt_cache_blocks,
+)
+from app.ai_providers.local_ai_provider import NO_CASE_CONTEXT_SACHVERHALT  # noqa: E402
+
+_GENERAL_QUESTIONS = [
+    "wieviele klempnerbetriebe gibt es ca. in deutschland",
+    "Was regelt § 558 BGB?",
+    "Wie hoch sind durchschnittlich die Mietpreise in Berlin?",
+    "Was ist der Unterschied zwischen Besitz und Eigentum?",
+    "Wer ist Bundeskanzler?",
+    "Was ist die Weltgesundheitsorganisation?",
+]
+
+
+@pytest.mark.parametrize("question", _GENERAL_QUESTIONS)
+def test_context_free_chat_is_presented_as_general_question_not_empty_sachverhalt(
+    question: str,
+) -> None:
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt=NO_CASE_CONTEXT_SACHVERHALT,
+        anonymisierte_anwaltliche_anmerkungen=question,
+    )
+
+    prompt = build_writing_prompt(payload)
+    stable = build_writing_prompt_cache_blocks(payload)[0]["text"]
+
+    for text in (prompt, stable):
+        assert "KEIN Akten-, Mandanten- oder Dokumentkontext" in text
+        assert "Sachverhalt:" not in text
+        assert "kein spezifischer Fall zugeordnet" not in text
+    assert question in prompt
+
+
+def test_chat_with_real_context_keeps_the_sachverhalt_section() -> None:
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt="Akte: Testakte\n[Bescheid] Text des Bescheids",
+        anonymisierte_anwaltliche_anmerkungen="Fasse das Dokument zusammen.",
+    )
+
+    prompt = build_writing_prompt(payload)
+
+    assert "Sachverhalt:\nAkte: Testakte" in prompt
+    assert "KEIN Akten-, Mandanten- oder Dokumentkontext" not in prompt
+
+
+def test_chat_with_placeholder_sachverhalt_but_real_argumente_keeps_the_sachverhalt() -> None:
+    payload = ClaudeRequestPayload(
+        schreibauftrag="chat_response",
+        anonymisierter_sachverhalt=NO_CASE_CONTEXT_SACHVERHALT,
+        anonymisierte_argumentationspunkte=["Mögliche Frist: bis 31.12."],
+        anonymisierte_anwaltliche_anmerkungen="Welche Frist gilt?",
+    )
+
+    assert "Sachverhalt:" in build_writing_prompt(payload)
+
+
+def test_drafting_purpose_never_gets_the_context_free_section() -> None:
+    payload = ClaudeRequestPayload(
+        schreibauftrag="formulate_draft",
+        anonymisierter_sachverhalt=NO_CASE_CONTEXT_SACHVERHALT,
+        anonymisierte_anwaltliche_anmerkungen="Schreibe ein Schreiben.",
+    )
+
+    prompt = build_writing_prompt(payload)
+
+    assert "Sachverhalt:\nAkte: (kein spezifischer Fall zugeordnet)" in prompt
+    assert "KEIN Akten-, Mandanten- oder Dokumentkontext" not in prompt
+
+
+def test_chat_system_prompts_tell_the_model_to_answer_general_questions_directly() -> None:
+    for system_prompt in (CHAT_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT_WITH_WEB_SEARCH):
+        assert "ALLGEMEINE FRAGEN" in system_prompt
+        assert "Verlange NIEMALS einen Sachverhalt" in system_prompt

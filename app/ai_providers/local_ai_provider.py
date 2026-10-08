@@ -48,6 +48,12 @@ from app.search.service import DocumentSearchService
 #: weiterhin unveraendert (und damit korrekt geschuetzt) uebergeben."""
 _PLACEHOLDER_MATTER_SACHVERHALT = "Akte: (kein spezifischer Fall zugeordnet)"
 
+#: Oeffentlicher Name derselben Konstante (08.10.): app/ai_providers/
+#: claude_writing_provider.py erkennt daran einen Chat OHNE jeden Akten-/
+#: Mandanten-/Dokumentkontext und stellt ihn dem Modell als "allgemeine
+#: Frage" dar statt als leeren "Sachverhalt" (siehe dortigen ECHTER FUND).
+NO_CASE_CONTEXT_SACHVERHALT = _PLACEHOLDER_MATTER_SACHVERHALT
+
 #: ECHTER FUND, MIT REALEN PRODUKTIONSDATEN GEMESSEN (05.10., Owner-
 #: Direktive "P1-BUGFIX: Schriftsatz unvollständig..."): die vorherige
 #: Grenze von 500 Zeichen (selbst nach dem Fix der vorherigen Runde, die
