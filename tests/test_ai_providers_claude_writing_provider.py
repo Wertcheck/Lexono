@@ -806,3 +806,16 @@ def test_both_prompts_forbid_preamble_and_treat_placeholders_as_no_defect() -> N
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "SCHREIBEN BEGINNEN DIREKT" in prompt
         assert "PLATZHALTER SIND KEIN FEHLER" in prompt
+
+
+def test_both_prompts_forbid_intro_sentence_invented_dates_and_invented_facts() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Drafting-Kette): Einleitungssatz vor dem
+    Gerichtsschreiben und der Ueberarbeitung; Briefdatum 15.09.2026 mit
+    "neuer" Frist 31.08.2026 (frueheres Datum wiederverwendet); erfundene
+    Mandantenbehauptung ("ordnungsgemaesses Lueftungsverhalten liegt vor")."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "KEIN EINLEITUNGSSATZ, AUCH BEI ÜBERARBEITUNGEN" in prompt
+        assert "KEINE ERFUNDENEN DATEN UND TATSACHEN IM SCHREIBEN" in prompt
+        assert "[Datum einsetzen]" in prompt
