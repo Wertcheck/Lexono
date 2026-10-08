@@ -1864,3 +1864,34 @@ def test_review_notes_block_is_kept_out_of_the_persisted_draft_but_stays_in_draf
     assert "wir bitten um Rueckmeldung" in persisted.content
     assert "Aktenzeichen fehlt" not in persisted.content
     assert "PRÜFPUNKTE" not in persisted.content
+
+
+def test_ollama_failure_is_reported_honestly_not_as_a_privacy_block(db_session: Session) -> None:
+    """ECHTER FUND (Real-E2E 08.10.): ein Ollama-Ladefehler erschien dem Anwalt als
+    "aus Datenschutzgruenden blockiert". Ursache und Benutzertext muessen
+    uebereinstimmen; nichts darf an die Cloud gehen."""
+    from app.privacy.api_logger import friendly_block_message
+
+    matter = _matter(db_session, title="Testakte")
+    writing_provider = FakeClaudeWritingProvider()
+    service, _ = _service(writing_provider, local_llm_provider=FailingLocalLLMProvider())
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert writing_provider.received_payloads == []  # Claude wurde nie aufgerufen
+    message = friendly_block_message(result.blocked_reasons)
+    assert "Datenschutzgründen blockiert" not in message
+    assert "lokale KI" in message and "nichts an die Cloud gesendet" in message
+    assert "nicht um eine Datenschutz-Blockierung" in message
+
+
+def test_failing_local_answer_check_is_also_reported_honestly() -> None:
+    from app.privacy.api_logger import friendly_block_message
+
+    reasons = ["Lokale Prüfung der Antwort (Ollama) nicht erreichbar - Entwurf wurde nicht übernommen."]
+
+    message = friendly_block_message(reasons)
+
+    assert "Datenschutzgründen blockiert" not in message
+    assert "nicht um eine Datenschutz-Blockierung" in message

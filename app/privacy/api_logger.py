@@ -83,6 +83,14 @@ _BLOCK_CATEGORIES = (
     # erfundenen `validation.issues` - deren Wortlaut ist nicht
     # zuverlaessig genug fuer einen Mustervergleich, siehe dort).
     ("lokale Qualitätsprüfung konnte", "local_quality_check_uncertain"),
+    # ECHTER FUND (Real-E2E 08.10.): ein Ollama-Ladefehler ("failed to allocate
+    # buffer", llama-server beendet) wurde dem Anwalt als "aus Datenschutz-
+    # gruenden blockiert" gemeldet - die Gruende "Lokale KI (Ollama) nicht
+    # erreichbar" / "Lokale Pruefung der Antwort (Ollama) nicht erreichbar"
+    # (app/drafting/service.py) passten auf KEINE Kategorie und fielen in
+    # "unknown_block_reason". Ursache und Benutzertext muessen uebereinstimmen.
+    ("Lokale KI (Ollama) nicht erreichbar", "local_ai_unavailable"),
+    ("Lokale Prüfung der Antwort (Ollama) nicht erreichbar", "local_ai_unavailable"),
 )
 
 
@@ -154,6 +162,14 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
         "Es handelt sich nicht um eine Datenschutz-Blockierung. Bitte "
         "erneut versuchen, ggf. mit kürzeren Anmerkungen oder weniger "
         "Dokumenten."
+    ),
+    "local_ai_unavailable": (
+        "Die lokale KI (Ollama) ist gerade nicht verfügbar oder konnte nicht "
+        "geladen werden (z. B. zu wenig freier Arbeitsspeicher oder Ollama "
+        "läuft nicht). Aus Sicherheitsgründen wurde nichts an die Cloud "
+        "gesendet - es handelt sich nicht um eine Datenschutz-Blockierung. "
+        "Bitte Ollama prüfen bzw. andere Programme schließen und erneut "
+        "versuchen."
     ),
     "unknown_block_reason": "Die Anfrage wurde aus Datenschutzgründen blockiert.",
     # ECHTER FUND (05.10., Owner-Direktive "P1-BUGFIX: Schriftsatz
