@@ -244,7 +244,7 @@ def _extend_with_repeated_occurrences(
     KONSEQUENTER (strikt zusaetzliche Treffer, nie weniger), nicht
     schwaecher - kein bestehender, bereits erkannter Fund wird dadurch
     entfernt oder uebersprungen."""
-    covered = [(s.start, s.end) for s in spans]
+    covered: list[DetectedSpan] = list(spans)
     seen_values: set[tuple[str, str]] = set()
     extra: list[DetectedSpan] = []
     for span in spans:
@@ -254,14 +254,33 @@ def _extend_with_repeated_occurrences(
         seen_values.add(key)
         pattern = re.compile(r"\b" + re.escape(span.value) + r"\b", re.IGNORECASE)
         for match in pattern.finditer(text):
-            if any(match.start() < c_end and match.end() > c_start for c_start, c_end in covered):
+            overlapping = [c for c in covered if match.start() < c.end and match.end() > c.start]
+            # ECHTER FUND (Real-E2E 08.10., Drafting "Zahlungsaufforderung der
+            # Nordwind ... GmbH an die ... KG"): die NER erkannte im Dokument
+            # nur "Nordwind Brandschutz-Service" (ohne "GmbH"), in der
+            # Anweisung dagegen "Nordwind Brandschutz-Service GmbH". Das
+            # laengere Vorkommen wurde hier frueher uebersprungen, weil es
+            # die bereits erkannte KUERZERE Fassung ueberlappt - dieselbe
+            # Partei bekam zwei Platzhalter ("[ORGANISATION_01] GmbH" im
+            # Dokument, "[ORGANISATION_03]" in der Anweisung), Claude hielt
+            # sie fuer zwei Parteien und verweigerte den Entwurf. Ein Vorkommen,
+            # das NUR kuerzere Treffer DERSELBEN Kategorie vollstaendig
+            # umschliesst, darf diese deshalb ablösen (`_resolve_overlaps`
+            # waehlt den laengeren). Teilweise Ueberlappungen, gleich lange
+            # oder andersartige Treffer bleiben wie bisher unangetastet.
+            if overlapping and not all(
+                c.category == span.category
+                and match.start() <= c.start
+                and c.end <= match.end()
+                and (c.end - c.start) < (match.end() - match.start())
+                for c in overlapping
+            ):
                 continue
-            extra.append(
-                DetectedSpan(
-                    category=span.category, start=match.start(), end=match.end(), value=match.group(0)
-                )
+            new_span = DetectedSpan(
+                category=span.category, start=match.start(), end=match.end(), value=match.group(0)
             )
-            covered.append((match.start(), match.end()))
+            extra.append(new_span)
+            covered.append(new_span)
     if not extra:
         return spans
     return _resolve_overlaps(spans + extra)

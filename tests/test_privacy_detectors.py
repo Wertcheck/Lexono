@@ -335,3 +335,53 @@ def test_skip_categories_applied_before_overlap_resolution_does_not_lose_other_c
         "laengere organisation-Treffer uebersprungen wird - dies war die "
         "real reproduzierte Luecke (beide Treffer gingen sonst verloren)"
     )
+
+
+def _shorter_then_longer_org_detector(text: str) -> list[DetectedSpan]:
+    """Simuliert die reale NER-Inkonsistenz: im Dokumentteil nur die kuerzere
+    Fassung ohne Rechtsformzusatz, in der Anweisung die laengere."""
+    short = "Nordwind Brandschutz-Service"
+    long = "Nordwind Brandschutz-Service GmbH"
+    spans: list[DetectedSpan] = []
+    first = text.find(short)
+    spans.append(DetectedSpan(category="organisation", start=first, end=first + len(short), value=short))
+    second = text.rfind(long)
+    spans.append(DetectedSpan(category="organisation", start=second, end=second + len(long), value=long))
+    return spans
+
+
+def test_longer_form_of_an_already_detected_entity_replaces_the_shorter_one_everywhere() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): dieselbe Partei bekam zwei Platzhalter
+    ("[ORGANISATION_01] GmbH" im Dokument, "[ORGANISATION_03]" in der
+    Anweisung); Claude hielt sie fuer zwei Parteien und verweigerte den
+    Entwurf. Die laengere Form muss die kuerzere an JEDER Stelle ablösen."""
+    text = (
+        "Nordwind Brandschutz-Service GmbH\nIndustrieweg 9\n\n"
+        "Erstelle ein Schreiben der Nordwind Brandschutz-Service GmbH an die Gegenseite."
+    )
+
+    spans = detect_all(text, ner_detector=_shorter_then_longer_org_detector)
+
+    values = [s.value for s in spans if s.category == "organisation"]
+    assert values == ["Nordwind Brandschutz-Service GmbH", "Nordwind Brandschutz-Service GmbH"]
+
+
+def test_longer_occurrence_does_not_absorb_a_shorter_span_of_another_category() -> None:
+    def detector(text: str) -> list[DetectedSpan]:
+        start = text.find("Berlin")
+        return [
+            DetectedSpan(category="ort", start=start, end=start + 6, value="Berlin"),
+            DetectedSpan(
+                category="organisation",
+                start=text.rfind("Berlin Mitte Verlag"),
+                end=text.rfind("Berlin Mitte Verlag") + len("Berlin Mitte Verlag"),
+                value="Berlin Mitte Verlag",
+            ),
+        ]
+
+    text = "Berlin ist gross. Der Berlin Mitte Verlag sitzt in Berlin Mitte Verlag."
+
+    spans = detect_all(text, ner_detector=detector)
+
+    # Die "ort"-Erkennung bleibt an der ersten Stelle erhalten (andere Kategorie).
+    assert any(s.category == "ort" and s.start == 0 for s in spans)
