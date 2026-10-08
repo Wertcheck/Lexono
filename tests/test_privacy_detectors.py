@@ -385,3 +385,29 @@ def test_longer_occurrence_does_not_absorb_a_shorter_span_of_another_category() 
 
     # Die "ort"-Erkennung bleibt an der ersten Stelle erhalten (andere Kategorie).
     assert any(s.category == "ort" and s.start == 0 for s in spans)
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Rechnung Nr. 2026-117 ueber 2.380,00 EUR", "Vorgang 12026-4711 ist offen"],
+)
+def test_phone_pattern_does_not_start_inside_a_digit_sequence(text: str) -> None:
+    """ECHTER FUND (Real-E2E 08.10.): "2026-117" wurde als "2" + Telefonnummer
+    "026-117" zerrissen."""
+    from app.privacy.detectors import detect_phone
+
+    assert detect_phone(text) == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Erreichbar unter 030 1234567.", "030 1234567"),
+        ("Tel. +49 30 1234567 oder mobil", "+49 30 1234567"),
+        ("Durchwahl 0171/1234567 gilt", "0171/1234567"),
+    ],
+)
+def test_real_phone_numbers_are_still_detected(text: str, expected: str) -> None:
+    from app.privacy.detectors import detect_phone
+
+    assert [s.value.strip() for s in detect_phone(text)] == [expected]

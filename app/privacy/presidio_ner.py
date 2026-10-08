@@ -182,6 +182,57 @@ def _get_analyzer_engine():
     return AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["de"])
 
 
+_LEGAL_FORM = r"(?:GmbH\s*&\s*Co\.\s*KG|KGaA|GmbH|mbH|OHG|GbR|UG|AG|KG|eG|SE|e\.\s?V\.)"
+_NO_LETTER_AFTER = r"(?![A-Za-zÄÖÜäöüß])"
+_STARTS_WITH_LEGAL_FORM = re.compile(r"^" + _LEGAL_FORM + _NO_LETTER_AFTER)
+_ENDS_WITH_LEGAL_FORM = re.compile(r"(?<![A-Za-zÄÖÜäöüß])" + _LEGAL_FORM + r"$")
+_FOLLOWED_BY_LEGAL_FORM = re.compile(r"[ \t]{1,2}" + _LEGAL_FORM + _NO_LETTER_AFTER)
+
+
+def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Vereinheitlicht die Grenzen erkannter Organisationsnamen.
+
+    ECHTER FUND (Real-E2E 08.10., Drafting "Zahlungsaufforderung der Nordwind
+    ... GmbH an die Elektro Lindqvist KG"): die NER ist bei Organisationen
+    kontextabhaengig uneinheitlich - dieselbe Firma wurde mal MIT, mal OHNE
+    Rechtsform erkannt, und in der Zeile "An Elektro Lindqvist KG  z. H. der
+    Geschaeftsfuehrung" markierte sie nur das Bruchstueck "KG  z. H. der
+    Geschaeftsfuehrung" als Organisation, NICHT den Firmennamen davor. Folgen:
+    der Firmenname blieb im Klartext in der Anfrage an Claude stehen, und die
+    Anweisung bekam fuer dieselbe Partei einen anderen Platzhalter - Claude
+    meldete eine "nicht vorkommende" Partei.
+
+    Zwei deterministische Normalisierungen (nur Kategorie "organisation"):
+    - Ein Treffer, der MIT einer Rechtsform beginnt ("KG ...", "GmbH ..."), ist
+      kein Firmenname, sondern ein Bruchstueck des vorherigen Namens und wird
+      verworfen (er enthaelt selbst keine Personendaten).
+    - Folgt direkt auf einen Treffer eine Rechtsform, wird der Treffer darum
+      erweitert, damit alle Vorkommen dieselbe Form (und damit denselben
+      Platzhalter) haben.
+    Andere Kategorien bleiben unveraendert; es werden nie Treffer entfernt,
+    die selbst mehr als ein Rechtsform-Bruchstueck waeren."""
+    result: list[DetectedSpan] = []
+    for span in spans:
+        if span.category != "organisation":
+            result.append(span)
+            continue
+        if _STARTS_WITH_LEGAL_FORM.match(span.value.lstrip()):
+            continue
+        match = _FOLLOWED_BY_LEGAL_FORM.match(text, span.end)
+        if match and not _ENDS_WITH_LEGAL_FORM.search(span.value):
+            result.append(
+                DetectedSpan(
+                    category=span.category,
+                    start=span.start,
+                    end=match.end(),
+                    value=text[span.start : match.end()],
+                )
+            )
+        else:
+            result.append(span)
+    return result
+
+
 def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     """Erkennt Personennamen/Orte/Organisationen im übergebenen Text via
     Presidio + deutschem spaCy-Modell und liefert sie als `DetectedSpan`-
@@ -240,7 +291,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         spans.append(
             DetectedSpan(category=category, start=result.start, end=result.end, value=value)
         )
-    return spans
+    return normalize_organisation_spans(text, spans)
 
 
 def get_entity_types(text: str) -> dict[tuple[int, int], str]:

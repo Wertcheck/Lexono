@@ -32,8 +32,15 @@ _EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 
 # Bewusst nicht erschöpfend (deutsche Rufnummern haben viele Schreib-
 # weisen) - Einschränkung ist dokumentiert, siehe __init__.py.
+# ECHTER FUND (Real-E2E 08.10.): "Rechnung Nr. 2026-117" wurde als "2" + Telefon-
+# nummer "026-117" erkannt (Muster begann mitten in der Ziffernfolge, weil die
+# fuehrende "0" von "2026" als Vorwahl-Null passte) - die Rechnungsnummer wurde
+# zerrissen, Claude meldete einen "Platzhalter, der eine Telefonnummer
+# maskiert". Eine Rufnummer beginnt nie mitten in einer Ziffernfolge: davor
+# darf keine Ziffer stehen (echte Nummern mit "+49"/"0049"/"0" am Anfang eines
+# Tokens bleiben erkannt).
 _PHONE_PATTERN = re.compile(
-    r"(?:\+49|0049|0)\s?\(?\d{2,5}\)?[\s/\-]?\d{3,10}(?:[\s\-]?\d{2,6})?"
+    r"(?<!\d)(?:\+49|0049|0)\s?\(?\d{2,5}\)?[\s/\-]?\d{3,10}(?:[\s\-]?\d{2,6})?"
 )
 
 _IBAN_PATTERN = re.compile(

@@ -207,3 +207,42 @@ def test_drop_common_noun_persons_keeps_other_categories_and_fails_closed() -> N
     result = drop_common_noun_persons(text, [ort, unknown])
 
     assert ort in result and unknown in result
+
+
+def test_normalize_organisation_spans_drops_fragments_starting_with_a_legal_form() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "An Elektro Lindqvist KG  z. H. der Geschaeftsfuehrung"
+    start = text.find("KG  z. H.")
+    fragment = DetectedSpan(
+        category="organisation", start=start, end=len(text), value=text[start:]
+    )
+
+    assert normalize_organisation_spans(text, [fragment]) == []
+
+
+def test_normalize_organisation_spans_extends_a_name_by_the_following_legal_form() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "An Elektro Lindqvist KG  z. H. der Geschaeftsfuehrung"
+    name = DetectedSpan(category="organisation", start=3, end=20, value="Elektro Lindqvist")
+
+    result = normalize_organisation_spans(text, [name])
+
+    assert [(s.start, s.value) for s in result] == [(3, "Elektro Lindqvist KG")]
+
+
+def test_normalize_organisation_spans_leaves_other_cases_untouched() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import normalize_organisation_spans
+
+    text = "Die Agentur Muster und Herr Peter Seitz aus Berlin."
+    spans = [
+        DetectedSpan(category="organisation", start=4, end=19, value="Agentur Muster"),
+        DetectedSpan(category="person", start=24, end=40, value="Peter Seitz"),
+        DetectedSpan(category="ort", start=45, end=51, value="Berlin"),
+    ]
+
+    assert normalize_organisation_spans(text, spans) == spans
