@@ -696,10 +696,32 @@ class DraftingService:
         # Presidio/Pseudonymisierung (oben, gateway.prepare_request) UND die
         # deterministische Platzhalter-Integritaetspruefung (Stufe 1, siehe
         # validate_claude_response weiter unten) bleiben davon UNBERUEHRT.
+        # ECHTER FUND (08.10., Real-User-E2E im installierten Build): in einer
+        # Unterhaltung wurden General-Chat-Folgefragen ohne jedes PII
+        # ("wieviele Klempnerbetriebe ...", "was kannst du") ~60 s lang
+        # verarbeitet (Vorabanalyse 8-10 s + lokale Validierung 35-40 s)
+        # statt ~12 s - die Mappings, die den Skip verhinderten, stammten
+        # AUSSCHLIESSLICH aus frueheren Claude-Antworten der Historie (Euro-
+        # Betraege der Mietpreis-Antwort als "betrag", ein NER-Fehlalarm
+        # "Miet-Check" als "person"; nachgewiesen per Gateway-Reproduktion
+        # an der echten Unterhaltung). Ein Wert, der nirgends im lokal-
+        # stammenden Text (Anwalt-Eingabe, Akte/Dokument; siehe
+        # GatewayResult.locally_sourced_text) vorkommt, kann KEINE neue,
+        # vom Anwalt eingebrachte sensible Entitaet sein - genau die
+        # sollen die LLM-Schichten schuetzen. Konservativ: taucht ein Wert
+        # auch nur als Teilstring im lokalen Text auf, bleibt er
+        # relevant (im Zweifel volle Pipeline). Die Pseudonymisierung
+        # selbst (Pre-Cloud) ist davon unberuehrt - diese Mappings werden
+        # weiterhin ersetzt.
+        locally_sourced_mappings = [
+            m
+            for m in gateway_result.mappings
+            if (m.original_value or "") in gateway_result.locally_sourced_text
+        ]
         skip_llm_privacy_layers = _should_skip_llm_privacy_layers(
             purpose=purpose,
             has_document_context=preparation.has_document_context,
-            mappings=gateway_result.mappings,
+            mappings=locally_sourced_mappings,
             known_entities=preparation.known_entities,
         )
 

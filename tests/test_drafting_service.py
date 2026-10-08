@@ -1755,3 +1755,86 @@ def test_unlinked_general_chat_followup_after_assistant_answer_is_not_blocked(
     assert result.success is True
     assert result.blocked_reasons == []
     assert writing_provider.received_payloads[0].anonymisierte_anwaltliche_anmerkungen == "was kannst du"
+
+
+# --- ECHTER FUND (08.10., Real-User-E2E im installierten Build): Mappings,
+# die NUR aus fruehren Claude-Antworten der Historie stammen (Euro-Betraege,
+# NER-Fehlalarme), liessen die lokalen LLM-Schichten laufen (~60 s statt
+# ~12 s pro General-Chat-Folgefrage). ---
+
+_AI_HISTORY_WITH_AMOUNTS = [
+    "Anwalt: Wie hoch sind die Mietpreise?",
+    "Assistent: Die Preise liegen zwischen 7,71 € und 18,58 € pro Quadratmeter. "
+    "Der Miet-Check zeigt 12,72 € im Mittel.",
+]
+
+
+def test_general_chat_followup_with_mappings_only_from_ai_history_skips_local_llm(
+    db_session: Session,
+) -> None:
+    writing_provider = FakeClaudeWritingProvider(response_text="Eine normale Antwort.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="was kannst du",
+        gespraechsverlauf=_AI_HISTORY_WITH_AMOUNTS,
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert local_llm.received_payloads == [], "Vorabanalyse haette uebersprungen werden muessen"
+    assert local_llm.structured_calls == []
+    # Pre-Cloud-Schutz unveraendert: die Betraege der KI-Historie gehen
+    # weiterhin NUR pseudonymisiert an Claude.
+    history = " ".join(writing_provider.received_payloads[0].anonymisierter_gespraechsverlauf)
+    assert "7,71" not in history
+    assert "[BETRAG_" in history
+
+
+def test_general_chat_with_a_new_person_typed_by_the_lawyer_still_runs_local_llm_despite_ai_history(
+    db_session: Session,
+) -> None:
+    """Gegenprobe: eine NEU vom Anwalt getippte Person ist lokal-stammend -
+    die volle Pipeline bleibt Pflicht, auch wenn Assistent-Historie vorhanden
+    ist."""
+    writing_provider = FakeClaudeWritingProvider(response_text="Notiert.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Bitte notiere, dass auch Herr Klaus Andersen beteiligt ist.",
+        gespraechsverlauf=_AI_HISTORY_WITH_AMOUNTS,
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1, "volle Pipeline haette laufen muessen"
+
+
+def test_value_typed_by_the_lawyer_and_repeated_in_ai_history_stays_relevant(
+    db_session: Session,
+) -> None:
+    """Konservativ: taucht ein Wert auch in der Anwalt-Eingabe auf, bleibt
+    er relevant, selbst wenn er ebenfalls in einer KI-Zeile steht."""
+    writing_provider = FakeClaudeWritingProvider(response_text="Ok.")
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        None,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Der Betrag 7,71 € ist falsch, bitte pruefen.",
+        gespraechsverlauf=_AI_HISTORY_WITH_AMOUNTS,
+        actor="Testnutzer",
+    )
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1
