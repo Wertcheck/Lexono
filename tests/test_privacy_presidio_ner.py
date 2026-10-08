@@ -172,3 +172,38 @@ def test_get_entity_types_distinguishes_real_names_from_foreign_organization_phr
 def test_get_entity_types_handles_empty_text() -> None:
     assert get_entity_types("") == {}
     assert get_entity_types("   ") == {}
+
+
+def test_drop_common_noun_persons_drops_noun_only_person_span() -> None:
+    from app.privacy.presidio_ner import drop_common_noun_persons
+
+    text = "Und gilt das auch für Gewerbemietverträge?"
+    spans = detect_presidio_entities(text)
+    assert any(s.category == "person" for s in spans)  # Vorbedingung: NER-Fehlalarm
+
+    assert [s for s in drop_common_noun_persons(text, spans) if s.category == "person"] == []
+
+
+def test_drop_common_noun_persons_keeps_spans_with_a_proper_noun() -> None:
+    from app.privacy.presidio_ner import drop_common_noun_persons
+
+    for text in ("Schreiben an Schmidt wegen der Miete.", "Herr Müller hat Kontakt aufgenommen."):
+        spans = detect_presidio_entities(text)
+        kept = drop_common_noun_persons(text, spans)
+        assert [s.value for s in kept if s.category == "person"] == [
+            s.value for s in spans if s.category == "person"
+        ]
+        assert any(s.category == "person" for s in kept)
+
+
+def test_drop_common_noun_persons_keeps_other_categories_and_fails_closed() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import drop_common_noun_persons
+
+    text = "Hamburg und Gewerbemietverträge"
+    ort = DetectedSpan(category="ort", start=0, end=7, value="Hamburg")
+    # Span ausserhalb jeder POS-Token-Abdeckung -> unbekannt -> behalten
+    unknown = DetectedSpan(category="person", start=500, end=510, value="XxxxxXxxxx")
+    result = drop_common_noun_persons(text, [ort, unknown])
+
+    assert ort in result and unknown in result

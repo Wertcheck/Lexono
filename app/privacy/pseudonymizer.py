@@ -93,6 +93,7 @@ class Pseudonymizer:
         *,
         known_entities: dict[str, list[str]] | None = None,
         skip_categories: frozenset[str] = frozenset(),
+        ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None = None,
     ) -> tuple[str, list[PseudonymMapping]]:
         """Ersetzt alle erkannten PII-Vorkommen durch Platzhalter.
 
@@ -140,7 +141,11 @@ class Pseudonymizer:
         GAR KEIN Treffer mehr fuer diese Stelle uebrig, real reproduziert
         an "Deutschland" innerhalb von "Bundeskanzler (Deutschland)")."""
         spans = detect_all(
-            text, known_entities, ner_detector=self.ner_detector, skip_categories=skip_categories
+            text,
+            known_entities,
+            ner_detector=self.ner_detector,
+            skip_categories=skip_categories,
+            ner_span_filter=ner_span_filter,
         )
 
         value_to_placeholder: dict[tuple[str, str], str] = {}

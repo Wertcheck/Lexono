@@ -603,6 +603,7 @@ class SecurityCheckService:
         purpose: str,
         unrecognized_name_scan_text: str | None = None,
         skip_residual_categories: frozenset[str] = frozenset(),
+        residual_ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None = None,
         residual_ignore_ranges: list[tuple[int, int]] | None = None,
     ) -> SecurityCheckResult:
         """`residual_ignore_ranges` (optional, Owner-Direktive "Architektur-
@@ -701,6 +702,7 @@ class SecurityCheckService:
             pseudonymized_text,
             ner_detector=self.ner_detector,
             skip_categories=skip_residual_categories,
+            ner_span_filter=residual_ner_span_filter,
         )
         if residual_ignore_ranges:
             residual_spans = [

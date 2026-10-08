@@ -35,7 +35,12 @@ from __future__ import annotations
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
-from app.privacy.presidio_ner import detect_presidio_entities, get_entity_types, get_pos_tags
+from app.privacy.presidio_ner import (
+    detect_presidio_entities,
+    drop_common_noun_persons,
+    get_entity_types,
+    get_pos_tags,
+)
 from app.privacy.pseudonymizer import PseudonymMapping, Pseudonymizer
 from app.privacy.security_check import (
     SecurityCheckService,
@@ -206,8 +211,17 @@ class ClaudePrivacyGateway:
             if skip_general_knowledge_pseudonymization
             else frozenset()
         )
+        # Derselbe Gate wie skip_categories (Chat ohne Akte-/Mandanten-/
+        # Dokumentkontext): reine Nomen-"Personen" sind dort NER-Fehlalarme
+        # auf Fachbegriffe, siehe presidio_ner.drop_common_noun_persons.
+        ner_span_filter = (
+            drop_common_noun_persons if skip_general_knowledge_pseudonymization else None
+        )
         pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
-            combined, known_entities=known_entities, skip_categories=skip_categories
+            combined,
+            known_entities=known_entities,
+            skip_categories=skip_categories,
+            ner_span_filter=ner_span_filter,
         )
 
         (
@@ -256,6 +270,7 @@ class ClaudePrivacyGateway:
             purpose=purpose,
             unrecognized_name_scan_text=unrecognized_name_scan_text,
             skip_residual_categories=skip_categories,
+            residual_ner_span_filter=ner_span_filter,
             residual_ignore_ranges=residual_ignore_ranges,
         )
         if not check_result.passed:

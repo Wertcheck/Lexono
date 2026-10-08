@@ -273,6 +273,7 @@ def detect_all(
     *,
     ner_detector: Callable[[str], list[DetectedSpan]] | None = None,
     skip_categories: frozenset[str] = frozenset(),
+    ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None = None,
 ) -> list[DetectedSpan]:
     """Führt alle Detektoren aus und löst Überlappungen auf.
 
@@ -306,6 +307,12 @@ def detect_all(
     Stelle beansprucht - identisches Ergebnis, als haette der
     uebersprungene Detektor diese Stelle nie gemeldet.
 
+    `ner_span_filter` (optional, ECHTER FUND E2E 08.10.): wird AUSSCHLIESSLICH
+    auf die Treffer des `ner_detector` angewendet (nie auf Regex-Detektoren
+    oder `known_entities`) und erlaubt dem Aufrufer, erkennbare NER-
+    Fehlalarme zu verwerfen, siehe
+    `presidio_ner.drop_common_noun_persons`. Default `None` = unveraendert.
+
     Abschliessend `_extend_with_repeated_occurrences` (05.10., siehe dort):
     stellt sicher, dass ein einmal irgendwo erkannter Wert konsequent an
     JEDER Stelle im Text erfasst wird, nicht nur dort, wo der jeweilige
@@ -317,7 +324,10 @@ def detect_all(
     if known_entities:
         all_spans.extend(detect_known_entities(text, known_entities))
     if ner_detector is not None:
-        all_spans.extend(ner_detector(text))
+        ner_spans = ner_detector(text)
+        if ner_span_filter is not None:
+            ner_spans = ner_span_filter(text, ner_spans)
+        all_spans.extend(ner_spans)
 
     if skip_categories:
         all_spans = [span for span in all_spans if span.category not in skip_categories]

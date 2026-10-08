@@ -317,3 +317,44 @@ def get_pos_tags(text: str) -> dict[tuple[int, int], str]:
     analyzer = _get_analyzer_engine()
     artifacts = analyzer.nlp_engine.process_text(text, "de")
     return {(token.idx, token.idx + len(token.text)): token.pos_ for token in artifacts.tokens}
+
+
+def drop_common_noun_persons(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Verwirft "person"-Treffer, die ausschliesslich aus gewoehnlichen
+    Substantiven bestehen (kein einziges Token mit POS=PROPN).
+
+    ECHTER FUND (Real-E2E 08.10., installierter Build): die harmlose
+    Folgefrage "Und gilt das auch fuer Gewerbemietverträge?" erreichte Claude
+    als "[PERSON_01]" (spaCys NER taggt das Fachwort als PER); Local AI lief
+    72 s und Claude fragte nach dem "Platzhalter". Direkt gegengeprueft:
+    der Fehlalarm besteht nur aus NOUN-Tokens, echte Namen enthalten
+    mindestens ein PROPN-Token ("Herr Müller" = NOUN+PROPN, "Schmidt" =
+    PROPN).
+
+    Fail-closed: ein Treffer wird NUR verworfen, wenn fuer JEDES Token seines
+    Bereichs ein POS-Tag vorliegt und keines PROPN ist; fehlt ein Tag oder
+    schlaegt die POS-Analyse fehl, bleibt der Treffer erhalten. Andere
+    Kategorien bleiben unberuehrt. Der Aufrufer (gateway.py) wendet den
+    Filter NUR im Chat ohne Akte-/Mandanten-/Dokumentkontext an.
+    Restrisiko (dokumentiert): ein echter, ausschliesslich als NOUN getaggter
+    Nachname im Akte-losen Chat wuerde im Klartext an Claude gehen."""
+    if not spans or not any(span.category == "person" for span in spans):
+        return spans
+    try:
+        pos_tags = get_pos_tags(text)
+    except Exception:
+        return spans
+    kept: list[DetectedSpan] = []
+    for span in spans:
+        if span.category != "person":
+            kept.append(span)
+            continue
+        tags = [
+            tag for (start, end), tag in pos_tags.items() if start >= span.start and end <= span.end
+        ]
+        covered = sum(len(text[s:e]) for (s, e) in pos_tags if s >= span.start and e <= span.end)
+        fully_tagged = bool(tags) and covered >= len(span.value.replace(" ", ""))
+        if fully_tagged and "PROPN" not in tags:
+            continue
+        kept.append(span)
+    return kept

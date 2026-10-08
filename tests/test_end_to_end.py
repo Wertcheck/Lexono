@@ -140,7 +140,7 @@ class _AlwaysAllowSecurityCheck(SecurityCheckService):
     Test prueft die WORKFLOW-MASCHINERIE (Versionierung, Rollen,
     Audit-Trail, Postausgang), nicht die Heuristik-Praezision."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_ignore_ranges=None):  # noqa: ANN001
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_ignore_ranges=None, residual_ner_span_filter=None):  # noqa: ANN001
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(passed=True, reasons=[])

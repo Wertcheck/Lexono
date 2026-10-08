@@ -15,7 +15,7 @@ class _AlwaysBlockSecurityCheck:
     tests/test_review_engine.py) - erzwingt EINEN BELIEBIGEN Block,
     unabhaengig vom konkreten Heuristik-Mechanismus."""
 
-    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_ignore_ranges=None):
+    def check(self, pseudonymized_text, mappings, *, purpose, unrecognized_name_scan_text=None, skip_residual_categories=frozenset(), residual_ignore_ranges=None, residual_ner_span_filter=None):
         from app.privacy.security_check_schema import SecurityCheckResult
 
         return SecurityCheckResult(
@@ -855,7 +855,7 @@ def test_residual_pii_in_a_lawyer_segment_still_blocks_with_assistant_history() 
     from app.privacy.security_check import SecurityCheckService
 
     class _NoReplace(Pseudonymizer):
-        def pseudonymize(self, text, *, known_entities=None, skip_categories=frozenset()):
+        def pseudonymize(self, text, *, known_entities=None, skip_categories=frozenset(), ner_span_filter=None):
             return text, []
 
     gw = ClaudePrivacyGateway(
@@ -872,3 +872,56 @@ def test_residual_pii_in_a_lawyer_segment_still_blocks_with_assistant_history() 
 
     assert result.allowed is False
     assert any("weiterhin erkennbare Muster" in r for r in result.reasons)
+
+
+def test_skip_general_knowledge_leaves_common_noun_flagged_as_person_readable() -> None:
+    """ECHTER FUND (Real-E2E 08.10., installierter Build): "Und gilt das auch
+    fuer Gewerbemietverträge?" erreichte Claude als "[PERSON_01]", weil
+    spaCys NER das Fachwort als PER taggt (POS=NOUN). Im Chat ohne Akte-
+    kontext bleibt ein reiner Nomen-"Personen"-Treffer lesbar; `allowed`
+    bleibt True (auch der Restrisiko-Scan darf keinen neuen Block ausloesen)."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Und gilt das auch für Gewerbemietverträge?",
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert result.reasons == []
+    assert "Gewerbemietverträge" in result.payload.anonymisierte_anwaltliche_anmerkungen
+    assert result.mappings == []
+
+
+def test_common_noun_person_is_still_pseudonymized_without_general_knowledge_skip() -> None:
+    """Regressionsschutz: ohne den Skip (Akte-/Mandanten-/Dokumentkontext)
+    bleibt das strikte Verhalten unveraendert."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Und gilt das auch für Gewerbemietverträge?",
+    )
+
+    assert any(m.original_value == "Gewerbemietverträge" for m in result.mappings)
+
+
+def test_real_person_names_stay_pseudonymized_in_context_free_chat() -> None:
+    """Der Filter darf echte Namen (mindestens ein PROPN-Token) nicht
+    freigeben - auch nicht im Chat ohne Akte."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Schreiben an Schmidt und an Herr Müller wegen der Miete.",
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    originals = {m.original_value for m in result.mappings}
+    assert any("Schmidt" in o for o in originals)
+    assert any("Müller" in o for o in originals)
+    assert "Schmidt" not in result.payload.anonymisierte_anwaltliche_anmerkungen
