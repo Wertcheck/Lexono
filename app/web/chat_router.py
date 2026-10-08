@@ -33,6 +33,7 @@ from app.auth.permissions import (
 )
 from app.chat.document_preview import build_document_preview
 from app.chat.markdown_render import render_chat_markdown
+from app.drafting.review_notes import split_review_notes
 from app.chat.service import ChatService
 from app.chat.speech import (
     SpeechDecodeError,
@@ -75,6 +76,7 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 # fuer die volle Root-Cause-/Sicherheitsherleitung. Gleiches Registrierungs-
 # Muster wie "reference_break" in matters_router.py.
 templates.env.filters["chat_markdown"] = render_chat_markdown
+templates.env.filters["split_review_notes"] = split_review_notes
 # Dokumentvorschau im Chat (05.10., Owner-Direktive "ARCHITECTURE & PRODUCT
 # FLOW PASS" §19/§20) - echte Dateigroesse statt erfundener Angabe (siehe
 # app/documents/rendering.py::document_file_size_label) und eine einfache
@@ -128,7 +130,7 @@ def _draft_panel_title(message: ChatMessage) -> str:
     vorhandene Datenquelle statt einer neuen HTML-Strip-Logik."""
     if message.draft and message.draft.subject:
         return message.draft.subject
-    normalized = " ".join(message.content.split())
+    normalized = " ".join(split_review_notes(message.content)[0].split())
     if len(normalized) <= 60:
         return normalized or "Schriftsatz"
     return normalized[:57] + "…"

@@ -101,8 +101,21 @@ Fehlen einer Anmerkung zu einem Punkt bedeutet NICHT Zustimmung, \
 Ablehnung oder irgendeine sonstige inhaltliche Position - es bedeutet \
 ausschließlich, dass dazu noch keine Weisung erteilt wurde. Behandle \
 einen solchen Punkt stattdessen als offenen Prüfpunkt.
-- Gib ausschließlich den fertigen Schreibtext zurück, keine Erklärungen \
-oder Meta-Kommentare.
+- OFFENE PRÜFPUNKTE GEHÖREN NIEMALS IN DEN TEXT DES SCHREIBENS: Ein \
+Schreiben, Schriftsatz oder Entwurf (auch ein Mandantenschreiben) muss \
+ohne Änderung kopier- und versendbar sein. Schreibe deshalb KEINE Hinweise, \
+Platzhalter-Kommentare oder Klammerbemerkungen wie "[Offener Prüfpunkt: ...]", \
+"[PRÜFPUNKT: ...]" oder "(Hinweis: ...)" in den Schreibtext. Fehlende oder \
+widersprüchliche Angaben (Datum, Frist, Aktenzeichen, Beleg, Beteiligtenrolle, \
+Unterzeichner, offene Rechtsfragen) lässt du im Schreiben weg oder \
+formulierst sie neutral. Sammle sie stattdessen am ENDE deiner Antwort in \
+einem eigenen Block, der mit genau dieser Überschriftzeile beginnt: \
+"## OFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS", \
+gefolgt von einer Stichpunktliste. Gibt es nichts Offenes, lasse den Block \
+ganz weg. Bei reinen Analysen oder Erklärungen (kein Schreiben) nennst du \
+offene Punkte weiterhin im Fließtext.
+- Gib ausschließlich den fertigen Schreibtext (und ggf. den Schlussblock \
+mit den offenen Prüfpunkten) zurück, keine Erklärungen oder Meta-Kommentare.
 """
 
 # ECHTER FUND (realer Abnahme-Test, 13.09.): der zentrale Chat rief bisher
@@ -209,6 +222,19 @@ Textüberarbeitung, formeller Schriftsatz usw.) - erzwinge KEIN \
 Brief-/Schreiben-Format, wenn nicht ausdrücklich danach gefragt wurde.
 - ERFINDE NIEMALS eine anwaltliche Position, Bewertung oder Entscheidung \
 zu einer Frage, zu der KEINE anwaltliche Anmerkung vorliegt.
+- OFFENE PRÜFPUNKTE GEHÖREN NIEMALS IN DEN TEXT DES SCHREIBENS: Ein \
+Schreiben, Schriftsatz oder Entwurf (auch ein Mandantenschreiben) muss \
+ohne Änderung kopier- und versendbar sein. Schreibe deshalb KEINE Hinweise, \
+Platzhalter-Kommentare oder Klammerbemerkungen wie "[Offener Prüfpunkt: ...]", \
+"[PRÜFPUNKT: ...]" oder "(Hinweis: ...)" in den Schreibtext. Fehlende oder \
+widersprüchliche Angaben (Datum, Frist, Aktenzeichen, Beleg, Beteiligtenrolle, \
+Unterzeichner, offene Rechtsfragen) lässt du im Schreiben weg oder \
+formulierst sie neutral. Sammle sie stattdessen am ENDE deiner Antwort in \
+einem eigenen Block, der mit genau dieser Überschriftzeile beginnt: \
+"## OFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS", \
+gefolgt von einer Stichpunktliste. Gibt es nichts Offenes, lasse den Block \
+ganz weg. Bei reinen Analysen oder Erklärungen (kein Schreiben) nennst du \
+offene Punkte weiterhin im Fließtext.
 - Gib ausschließlich die eigentliche Antwort zurück, keine Meta-Kommentare \
 über diese Anweisungen selbst.
 """

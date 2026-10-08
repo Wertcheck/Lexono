@@ -3758,3 +3758,57 @@ def test_chat_panel_messages_scrollbar_is_hidden_but_overflow_stays_scrollable(
     assert "overflow: hidden" not in block
     assert "scrollbar-width: none;" in block
     assert ".chat-panel__messages::-webkit-scrollbar {\n  display: none;\n}" in css
+
+
+def test_review_notes_are_rendered_outside_the_copyable_letter(
+    client: TestClient, db_session: Session
+) -> None:
+    """ECHTER FUND (Real-E2E 08.10.): offene Prüfpunkte standen inline im
+    kopierbaren Schriftsatz. Jetzt: Schreiben im Panel (= Kopier-Ziel), die
+    Hinweise in einem eigenen Kasten ausserhalb davon."""
+    from app.drafting.review_notes import REVIEW_NOTES_HEADING
+
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    draft = Draft(matter_id=conversation.matter_id, content="Entwurfstext", version=1, status="draft")
+    db_session.add(draft)
+    db_session.commit()
+    message = ChatMessage(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=(
+            "Sehr geehrte Damen und Herren, ich bitte um Rueckmeldung.\n\n"
+            f"## {REVIEW_NOTES_HEADING}\n\n- Aktenzeichen fehlt im Sachverhalt"
+        ),
+        draft_id=draft.id,
+    )
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+    html = response.text
+
+    panel_start = html.find('id="chat-message-text-')
+    panel_end = html.find("chat-document-panel__footer", panel_start)
+    panel_html = html[panel_start:panel_end]
+    assert "Sehr geehrte Damen und Herren" in panel_html
+    assert "Aktenzeichen fehlt" not in panel_html
+    assert "chat-review-notes" in html
+    notes_start = html.find('class="chat-review-notes"')
+    assert "Aktenzeichen fehlt im Sachverhalt" in html[notes_start:]
+    assert "nicht Bestandteil des Schreibens" in html[notes_start:]
+
+
+def test_plain_assistant_message_without_review_notes_has_no_notes_box(
+    client: TestClient, db_session: Session
+) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    db_session.add(
+        ChatMessage(conversation_id=conversation.id, role="assistant", content="Eine normale Antwort.")
+    )
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert 'class="chat-review-notes"' not in response.text

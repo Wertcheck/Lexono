@@ -783,3 +783,15 @@ def test_chat_system_prompts_forbid_placeholder_shaped_tokens_in_explanations() 
     for system_prompt in (CHAT_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT_WITH_WEB_SEARCH):
         assert "KEINE PLATZHALTER-TOKENS IN ERKLÄRUNGEN" in system_prompt
         assert "[KATEGORIE_NN]" in system_prompt
+
+
+def test_both_prompts_keep_review_notes_out_of_the_letter_in_a_separate_block() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): "[Offener Prüfpunkt: ...]" stand mitten im
+    kopierbaren Schriftsatz. Beide Prompts verlangen den separaten
+    Schlussblock mit fester Überschrift (app/drafting/review_notes.py)."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+    from app.drafting.review_notes import REVIEW_NOTES_HEADING
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "OFFENE PRÜFPUNKTE GEHÖREN NIEMALS IN DEN TEXT DES SCHREIBENS" in prompt
+        assert REVIEW_NOTES_HEADING in prompt

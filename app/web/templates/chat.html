@@ -450,6 +450,11 @@
                    Draft-Zeile fuer "Quellen & Verweise", bietet dafuer aber
                    keinen Editor/kein Dokument-Panel an - der Nutzer hat nie
                    einen Schriftsatz angefordert). #}
+                {# Schreiben und "Offene Prüfpunkte / Hinweise" getrennt
+                   (app/drafting/review_notes.py): der Kopieren-Button und das
+                   Panel bekommen NUR das Schreiben, die Hinweise stehen in
+                   einem eigenen Kasten AUSSERHALB des Kopier-Ziels. #}
+                {% set review_parts = (message.content | split_review_notes) if (message.role == "assistant" and not message.blocked) else (message.content, "") %}
                 {% set is_schriftsatz = message.role == "assistant" and not message.blocked and message.draft_id and message.draft.status != "chat_reference" %}
                 {% if is_schriftsatz %}
                   <div class="chat-document-panel">
@@ -477,7 +482,7 @@
                        "chat-message-text-{{ message.id }}"-Container, den
                        auch der Kopieren-Button oben referenziert. #}
                     <div class="chat-document-panel__content chat-message__text--markdown" id="chat-message-text-{{ message.id }}">
-                      {{ message.content | chat_markdown | safe }}
+                      {{ review_parts[0] | chat_markdown | safe }}
                     </div>
                     <div class="chat-document-panel__footer">
                       <a href="/dashboard/drafts/{{ message.draft_id }}/edit" class="btn chat-document-panel__editor-btn">
@@ -489,7 +494,13 @@
                 {% else %}
                   <div class="chat-message__text chat-message__text--markdown" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
                     {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
-                    {{ message.content | chat_markdown | safe }}
+                    {{ review_parts[0] | chat_markdown | safe }}
+                  </div>
+                {% endif %}
+                {% if review_parts[1] %}
+                  <div class="chat-review-notes" role="note">
+                    <div class="chat-review-notes__title">{{ icons.warning(class_="icon") }}<span>Offene Prüfpunkte / Hinweise – nicht Bestandteil des Schreibens</span></div>
+                    <div class="chat-review-notes__body chat-message__text--markdown">{{ review_parts[1] | chat_markdown | safe }}</div>
                   </div>
                 {% endif %}
                 {% if message.role == "assistant" and not message.blocked %}

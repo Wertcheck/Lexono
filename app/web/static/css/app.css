@@ -10659,3 +10659,27 @@ body::-webkit-scrollbar-thumb:hover,
 .draft-editor-attach-btn:hover {
   background: var(--paper-200);
 }
+
+/* "Offene Prüfpunkte / Hinweise – nicht Bestandteil des Schreibens":
+   getrennter Kasten unter dem Schreiben, außerhalb des Kopier-Ziels. */
+.chat-review-notes {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px dashed var(--paper-line);
+  border-radius: 8px;
+  background: var(--paper-100);
+  color: var(--ink-900);
+  font-size: 13px;
+}
+
+.chat-review-notes__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.chat-review-notes__body > :last-child {
+  margin-bottom: 0;
+}

@@ -1838,3 +1838,29 @@ def test_value_typed_by_the_lawyer_and_repeated_in_ai_history_stays_relevant(
 
     assert result.success is True
     assert len(local_llm.received_payloads) == 1
+
+
+def test_review_notes_block_is_kept_out_of_the_persisted_draft_but_stays_in_draft_text(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (Real-E2E 08.10.): offene Pruefpunkte standen inline im
+    kopierbaren Schriftsatz. Draft (Editor/Export) enthaelt jetzt nur das
+    Schreiben; `draft_text` (Chat-Verlauf/Anzeige) behaelt den Hinweisblock,
+    den die UI getrennt darstellt."""
+    from app.drafting.review_notes import REVIEW_NOTES_HEADING
+
+    matter = _matter(db_session, title="Testakte")
+    response = (
+        "Sehr geehrte Damen und Herren,\n\nwir bitten um Rueckmeldung.\n\n"
+        f"## {REVIEW_NOTES_HEADING}\n\n- Aktenzeichen fehlt im Sachverhalt"
+    )
+    service, _ = _service(writing_provider=FakeClaudeWritingProvider(response_text=response))
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert REVIEW_NOTES_HEADING in result.draft_text
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert "wir bitten um Rueckmeldung" in persisted.content
+    assert "Aktenzeichen fehlt" not in persisted.content
+    assert "PRÜFPUNKTE" not in persisted.content

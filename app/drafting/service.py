@@ -73,6 +73,7 @@ from app.cost_control import CostControlService
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import validate_claude_response
+from app.drafting.review_notes import split_review_notes
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
@@ -1213,7 +1214,10 @@ class DraftingService:
 
         draft = self._persist_draft(
             matter_id,
-            reconstructed_text,
+            # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
+            # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
+            # siehe app/drafting/review_notes.py.
+            split_review_notes(reconstructed_text)[0],
             purpose,
             db,
             actor=actor,
@@ -1383,7 +1387,10 @@ class DraftingService:
 
         draft = self._persist_draft(
             matter_id,
-            reconstructed_text,
+            # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
+            # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
+            # siehe app/drafting/review_notes.py.
+            split_review_notes(reconstructed_text)[0],
             purpose,
             db,
             actor=actor,
