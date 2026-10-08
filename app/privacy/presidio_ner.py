@@ -341,7 +341,12 @@ def drop_common_noun_persons(text: str, spans: list[DetectedSpan]) -> list[Detec
     if not spans or not any(span.category == "person" for span in spans):
         return spans
     try:
-        pos_tags = get_pos_tags(text)
+        # Derselbe neutralisierte Text wie in `detect_presidio_entities`
+        # (laengengleich, Offsets bleiben gueltig): auf dem ROHEN Text
+        # verschmilzt die interne Trennmarkierung mit dem Nachbarwort zu
+        # einem Token ("Gewerbemietverträge?@@GATEWAY_ITEM@@Assistent"), die
+        # Treffer-Offsets fanden dann kein Token und der Fehlalarm blieb.
+        pos_tags = get_pos_tags(_neutralize_internal_tokens(text))
     except Exception:
         return spans
     kept: list[DetectedSpan] = []

@@ -925,3 +925,27 @@ def test_real_person_names_stay_pseudonymized_in_context_free_chat() -> None:
     assert any("Schmidt" in o for o in originals)
     assert any("Müller" in o for o in originals)
     assert "Schmidt" not in result.payload.anonymisierte_anwaltliche_anmerkungen
+
+
+def test_common_noun_person_followed_by_assistant_history_line_is_still_filtered() -> None:
+    """Regression (Real-E2E 08.10.): mit KI-Antwort DIREKT nach der Nutzerzeile
+    verschmolz die interne Trennmarkierung mit dem Nachbarwort zu einem
+    spaCy-Token; der Filter fand kein Token zum Treffer und liess den
+    Fehlalarm "Gewerbemietverträge" -> PERSON stehen (fail-closed, aber
+    unnoetig). Der Filter muss auf demselben neutralisierten Text arbeiten
+    wie die NER."""
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Chat",
+        anwaltliche_anmerkungen="Wie hoch ist die Kappungsgrenze?",
+        gespraechsverlauf=[
+            "Anwalt: Und gilt das auch für Gewerbemietverträge?",
+            "Assistent: Nein, § 558 BGB gilt nur für Wohnraum.",
+        ],
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+    assert result.allowed is True
+    assert not any(m.original_value == "Gewerbemietverträge" for m in result.mappings)
