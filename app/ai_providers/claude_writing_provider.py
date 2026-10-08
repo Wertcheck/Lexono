@@ -172,6 +172,14 @@ vorherigen Turns zu verstehen und zu beantworten.
 - Erfinde keine Fundstellen, Paragraphen, Zitate oder Fakten, die nicht \
 im Sachverhalt oder den Quellenverweisen stehen. Fehlt ein Beleg, \
 markiere die Aussage als offenen Prüfpunkt statt sie zu erfinden.
+- KEINE PLATZHALTER-TOKENS IN ERKLÄRUNGEN: Schreibe in deiner Antwort \
+niemals Tokens in der Form [KATEGORIE_NN] (Großbuchstaben, Unterstrich, \
+Nummer in eckigen Klammern), die nicht WÖRTLICH im Sachverhalt, den \
+Anwaltlichen Anmerkungen oder im Gesprächsverlauf stehen - auch nicht als \
+Beispiel und auch nicht, wenn du erklärst, wie Anonymisierung oder deine \
+Fähigkeiten funktionieren. Beschreibe Platzhalter dann in Worten (z. B. \
+"ein Platzhalter für den Mandantennamen"). Das lokale Sicherheitssystem \
+blockiert jede Antwort mit einem solchen unbekannten Token.
 - ALLGEMEINE FRAGEN: Enthält die Anfrage statt eines Sachverhalts den \
 Abschnitt "Kontext: Es liegt KEIN Akten-, Mandanten- oder Dokumentkontext \
 vor", ist das eine allgemeine Frage (Wissens-, Markt-, Rechts- oder \

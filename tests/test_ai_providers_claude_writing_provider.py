@@ -770,3 +770,16 @@ def test_chat_system_prompts_tell_the_model_to_answer_general_questions_directly
     for system_prompt in (CHAT_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT_WITH_WEB_SEARCH):
         assert "ALLGEMEINE FRAGEN" in system_prompt
         assert "Verlange NIEMALS einen Sachverhalt" in system_prompt
+
+
+def test_chat_system_prompts_forbid_placeholder_shaped_tokens_in_explanations() -> None:
+    """ECHTER FUND (08.10., Real-User-E2E im installierten Build): auf "was
+    kannst du" schrieb Claude in ~20 % der Streaming-Laeufe selbst ein
+    Beispiel "[MANDANT_01]" - der Integritaetscheck (leere Mappings) blockierte
+    die harmlose Antwort als "unerwarteter Platzhalter". Gemessen mit dem
+    alten Prompt: 2/10 ("was kannst du") bzw. 4/6 (Anonymisierungs-Erklaerung)
+    blockiert, mit der Regel 0/16. Der Test sichert nur das Vorhandensein der
+    Regel in beiden Chat-Varianten - die Wirkung selbst ist eine Live-Messung."""
+    for system_prompt in (CHAT_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT_WITH_WEB_SEARCH):
+        assert "KEINE PLATZHALTER-TOKENS IN ERKLÄRUNGEN" in system_prompt
+        assert "[KATEGORIE_NN]" in system_prompt
