@@ -29,7 +29,50 @@ _HEADING_LINE = re.compile(r"^[\s#>*_\-]*offene\s+prüfpunkte\s*/\s*hinweise\b",
 _SEPARATOR_LINE = re.compile(r"^\s*(?:-{3,}|\*{3,}|_{3,})\s*$")
 
 
+#: Markierungszeilen um den eigentlichen Schreibtext (Prompt-Regel "SCHREIBEN-BEGRENZUNG").
+#: Alles AUSSERHALB (Vorbemerkung, Erlaeuterung) ist nicht Teil des Schreibens und wird als
+#: Hinweis getrennt angezeigt - ECHTER FUND (Real-E2E 08.10.): bei einer Ueberarbeitung stand
+#: ein Einleitungsabsatz im kopierbaren Text; "bitte keinen Einleitungssatz" allein ist nicht
+#: verlaesslich genug, die strukturelle Begrenzung dagegen schon.
+LETTER_START_MARKER = "=== SCHREIBEN ==="
+LETTER_END_MARKER = "=== ENDE SCHREIBEN ==="
+_LETTER_START = re.compile(r"^[\s#>*_\-]*={2,}\s*SCHREIBEN\s*={2,}[\s*_]*$", re.IGNORECASE | re.MULTILINE)
+_LETTER_END = re.compile(r"^[\s#>*_\-]*={2,}\s*ENDE\s+SCHREIBEN\s*={2,}[\s*_]*$", re.IGNORECASE | re.MULTILINE)
+
+
 def split_review_notes(text: str | None) -> tuple[str, str]:
+    """Liefert `(schreiben, hinweise)`.
+
+    1. Ist das Schreiben mit den Markierungszeilen eingefasst, ist `schreiben` NUR der Text
+       dazwischen; Text davor und danach (Vorbemerkungen, Erlaeuterungen) wird den Hinweisen
+       vorangestellt.
+    2. Zusaetzlich (und auch ohne Markierungen) wird am Hinweisblock mit der festen
+       Ueberschrift getrennt, siehe `_split_heading`."""
+    if not text:
+        return "", ""
+    start = _LETTER_START.search(text)
+    if start is None:
+        letter, notes = _split_heading(_LETTER_END.sub("", text))
+        return letter, notes
+    before = text[: start.start()].strip()
+    remainder = text[start.end() :]
+    end = _LETTER_END.search(remainder)
+    if end is not None:
+        body, after = remainder[: end.start()], remainder[end.end() :]
+    else:
+        body, after = remainder, ""
+    body_letter, body_notes = _split_heading(body)
+    after_letter, after_notes = _split_heading(after)
+    extra = [part.strip() for part in (before, after_letter) if part.strip()]
+    notes_parts = [*extra, *(n for n in (body_notes, after_notes) if n)]
+    letter = body_letter.strip("\n")
+    if not letter.strip():
+        return text, ""
+    return letter, "\n\n".join(notes_parts).strip()
+
+
+def _split_heading(text: str) -> tuple[str, str]:
+
     """Liefert `(schreiben, hinweise)`.
 
     Getrennt wird an der ERSTEN Zeile, die mit der festen Überschrift beginnt

@@ -50,3 +50,50 @@ def test_heading_without_any_preceding_text_keeps_everything_as_letter() -> None
 def test_empty_input() -> None:
     assert split_review_notes("") == ("", "")
     assert split_review_notes(None) == ("", "")
+
+
+def test_markers_cut_a_preamble_and_trailing_remarks_out_of_the_letter() -> None:
+    """ECHTER FUND (Real-E2E 08.10.): bei einer Ueberarbeitung stand ein Einleitungsabsatz
+    im kopierbaren Text."""
+    from app.drafting.review_notes import LETTER_END_MARKER, LETTER_START_MARKER
+
+    text = (
+        "Da die Frist nur relativ angegeben wird, formuliere ich sie ohne Datum.\n\n"
+        f"{LETTER_START_MARKER}\n{_LETTER}\n{LETTER_END_MARKER}\n\n"
+        f"Ich habe die Klageandrohung entfernt.\n\n## {REVIEW_NOTES_HEADING}\n\n- Datum pruefen"
+    )
+
+    letter, notes = split_review_notes(text)
+
+    assert letter == _LETTER
+    assert "Da die Frist nur relativ" in notes
+    assert "Ich habe die Klageandrohung entfernt." in notes
+    assert "- Datum pruefen" in notes
+    assert "===" not in letter and "Datum pruefen" not in letter
+
+
+def test_markers_without_end_marker_take_everything_after_the_start_marker() -> None:
+    from app.drafting.review_notes import LETTER_START_MARKER
+
+    text = f"Vorbemerkung.\n{LETTER_START_MARKER}\n{_LETTER}\n\n## {REVIEW_NOTES_HEADING}\n- Beleg fehlt"
+
+    letter, notes = split_review_notes(text)
+
+    assert letter == _LETTER
+    assert notes.startswith("Vorbemerkung.") and "- Beleg fehlt" in notes
+
+
+def test_text_without_markers_behaves_exactly_as_before_and_strays_are_removed() -> None:
+    from app.drafting.review_notes import LETTER_END_MARKER
+
+    assert split_review_notes(_LETTER) == (_LETTER, "")
+    letter, _ = split_review_notes(f"{_LETTER}\n{LETTER_END_MARKER}")
+    assert LETTER_END_MARKER not in letter
+
+
+def test_empty_content_between_markers_never_produces_an_empty_letter() -> None:
+    from app.drafting.review_notes import LETTER_END_MARKER, LETTER_START_MARKER
+
+    text = f"Nur eine Erlaeuterung.\n{LETTER_START_MARKER}\n{LETTER_END_MARKER}"
+
+    assert split_review_notes(text)[0] == text

@@ -1921,3 +1921,23 @@ def test_failing_cloud_call_logs_exception_type_and_status_but_no_content(
     text = " ".join(rec.getMessage() for rec in caplog.records)
     assert "_ApiError" in text and "529" in text
     assert "Max Mustermann" not in text and "Overloaded" not in text
+
+
+def test_preamble_outside_the_letter_markers_is_not_persisted_in_the_draft(db_session: Session) -> None:
+    """Hardening (Real-E2E 08.10.): Einleitungsabsatz vor einer Ueberarbeitung."""
+    from app.drafting.review_notes import LETTER_END_MARKER, LETTER_START_MARKER
+
+    matter = _matter(db_session, title="Testakte")
+    response = (
+        "Da die Frist relativ angegeben wird, formuliere ich sie ohne Datum.\n\n"
+        f"{LETTER_START_MARKER}\nSehr geehrte Damen und Herren,\n\nwir bitten um Rueckmeldung.\n"
+        f"{LETTER_END_MARKER}"
+    )
+    service, _ = _service(writing_provider=FakeClaudeWritingProvider(response_text=response))
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    persisted = db_session.query(Draft).filter_by(id=result.draft_id).first()
+    assert "wir bitten um Rueckmeldung" in persisted.content
+    assert "formuliere ich sie ohne Datum" not in persisted.content
+    assert "===" not in persisted.content

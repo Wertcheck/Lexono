@@ -838,3 +838,13 @@ def test_both_prompts_forbid_frau_herr_and_placeholder_name_hybrids() -> None:
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "ANREDE UND EINSETZ-HINWEISE" in prompt
         assert "niemals eine Mischform" in prompt
+
+
+def test_both_prompts_demand_letter_markers_and_a_consistent_kanzlei_perspective() -> None:
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+    from app.drafting.review_notes import LETTER_END_MARKER, LETTER_START_MARKER
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "SCHREIBEN-BEGRENZUNG" in prompt
+        assert LETTER_START_MARKER in prompt and LETTER_END_MARKER in prompt
+        assert "PERSPEKTIVE" in prompt and "Kanzlei" in prompt

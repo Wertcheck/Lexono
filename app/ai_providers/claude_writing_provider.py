@@ -156,6 +156,18 @@ in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
 "[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
 [ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
+- SCHREIBEN-BEGRENZUNG: Gibst du ein Schreiben, einen Schriftsatz oder einen Entwurf \
+aus (auch bei Überarbeitungen und Mandantenschreiben), setze es zwischen die beiden \
+Zeilen "=== SCHREIBEN ===" und "=== ENDE SCHREIBEN ===". Das Schreiben beginnt direkt \
+nach der ersten Zeile mit dem Briefkopf. Alles außerhalb dieser Zeilen gilt als \
+Erläuterung und wird dem Anwalt getrennt vom Schreiben angezeigt.
+- PERSPEKTIVE: Der Verfasser ist die Kanzlei, die im Auftrag der Mandantschaft schreibt \
+(Briefkopf "[Kanzlei einsetzen]", Text "namens und im Auftrag unserer Mandantin/unseres \
+Mandanten", Unterschrift "[Unterzeichner einsetzen]"). Schreibt nach ausdrücklicher \
+Anweisung die Mandantschaft selbst, durchgängig in der Ich-Form ohne Mandantschafts-\
+Wendungen. Halte die gewählte Perspektive in Briefkopf, Text, Anrede und Unterschrift \
+konsistent, bei einer Überarbeitung die des bisherigen Entwurfs; nenne bei Unklarheit \
+die gewählte Perspektive im Schlussblock.
 - Gib ausschließlich den fertigen Schreibtext (und ggf. den Schlussblock \
 mit den offenen Prüfpunkten) zurück, keine Erklärungen oder Meta-Kommentare.
 """
@@ -319,6 +331,18 @@ in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
 "[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
 [ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
+- SCHREIBEN-BEGRENZUNG: Gibst du ein Schreiben, einen Schriftsatz oder einen Entwurf \
+aus (auch bei Überarbeitungen und Mandantenschreiben), setze es zwischen die beiden \
+Zeilen "=== SCHREIBEN ===" und "=== ENDE SCHREIBEN ===". Das Schreiben beginnt direkt \
+nach der ersten Zeile mit dem Briefkopf. Alles außerhalb dieser Zeilen gilt als \
+Erläuterung und wird dem Anwalt getrennt vom Schreiben angezeigt.
+- PERSPEKTIVE: Der Verfasser ist die Kanzlei, die im Auftrag der Mandantschaft schreibt \
+(Briefkopf "[Kanzlei einsetzen]", Text "namens und im Auftrag unserer Mandantin/unseres \
+Mandanten", Unterschrift "[Unterzeichner einsetzen]"). Schreibt nach ausdrücklicher \
+Anweisung die Mandantschaft selbst, durchgängig in der Ich-Form ohne Mandantschafts-\
+Wendungen. Halte die gewählte Perspektive in Briefkopf, Text, Anrede und Unterschrift \
+konsistent, bei einer Überarbeitung die des bisherigen Entwurfs; nenne bei Unklarheit \
+die gewählte Perspektive im Schlussblock.
 - Gib ausschließlich die eigentliche Antwort zurück, keine Meta-Kommentare \
 über diese Anweisungen selbst.
 """
