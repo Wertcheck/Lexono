@@ -309,3 +309,48 @@ def test_gateway_reconstruct_response_cleans_leftover_tokens_after_restoring_rea
     restored = gw.reconstruct_response(f"An {person}\n[Adresse PERSON_99]", result.mappings)
 
     assert restored == "An Svenja Falk\n[Adresse einsetzen]"
+
+
+def test_surname_alone_gets_the_placeholder_of_the_single_matching_full_name() -> None:
+    """ECHTER FUND (Real-E2E 08.10., Fall A): "Tobias Brandt" und "Herr Brandt" bekamen zwei
+    Platzhalter, Claude meldete eine erfundene Unstimmigkeit."""
+    from app.privacy.detectors import DetectedSpan
+
+    def ner(text: str) -> list[DetectedSpan]:
+        spans = []
+        for value in ("Tobias Brandt", "Brandt"):
+            start = 0
+            while (idx := text.find(value, start)) != -1:
+                spans.append(DetectedSpan(category="person", start=idx, end=idx + len(value), value=value))
+                start = idx + len(value)
+        # "Brandt" innerhalb von "Tobias Brandt" nicht doppelt zaehlen
+        full = [s for s in spans if s.value == "Tobias Brandt"]
+        return full + [s for s in spans if s.value == "Brandt" and not any(f.start <= s.start < f.end for f in full)]
+
+    p = Pseudonymizer(ner_detector=ner)
+    text = "An Herrn Tobias Brandt.  Sehr geehrter Herr Brandt, danke."
+
+    result, mappings = p.pseudonymize(text)
+
+    assert result == "An Herrn [PERSON_01].  Sehr geehrter Herr [PERSON_01], danke."
+    assert [(m.placeholder, m.original_value) for m in mappings] == [("[PERSON_01]", "Tobias Brandt")]
+
+
+def test_ambiguous_surname_is_not_merged_with_either_full_name() -> None:
+    from app.privacy.detectors import DetectedSpan
+
+    def ner(text: str) -> list[DetectedSpan]:
+        out = []
+        for value in ("Hans Mueller", "Anna Mueller"):
+            idx = text.find(value)
+            out.append(DetectedSpan(category="person", start=idx, end=idx + len(value), value=value))
+        idx = text.rfind("Mueller")
+        out.append(DetectedSpan(category="person", start=idx, end=idx + 7, value="Mueller"))
+        return sorted(out, key=lambda s: s.start)
+
+    p = Pseudonymizer(ner_detector=ner)
+    text = "Hans Mueller und Anna Mueller schreiben. Herr Mueller antwortet."
+
+    _, mappings = p.pseudonymize(text)
+
+    assert sorted(m.original_value for m in mappings) == ["Anna Mueller", "Hans Mueller", "Mueller"]

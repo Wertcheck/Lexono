@@ -1941,3 +1941,65 @@ def test_preamble_outside_the_letter_markers_is_not_persisted_in_the_draft(db_se
     assert "wir bitten um Rueckmeldung" in persisted.content
     assert "formuliere ich sie ohne Datum" not in persisted.content
     assert "===" not in persisted.content
+
+
+def test_common_word_mapped_only_from_ai_history_does_not_block_the_local_summary(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (Real-E2E 08.10., Fall A, reproduzierbar ab der zweiten Frage): das Wort
+    "Mieters" wurde von der NER in einer frueheren KI-Antwort als Organisation erkannt
+    ([ORGANISATION_03]); die lokale Zusammenfassung verwendet es normal und wurde als
+    "nicht pseudonymisierter Wert" blockiert - noch vor dem Claude-Aufruf."""
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.pseudonymizer import Pseudonymizer
+    from app.privacy.security_check import SecurityCheckService
+
+    def ner(text: str) -> list[DetectedSpan]:
+        spans, start = [], 0
+        while (idx := text.find("Mieters", start)) != -1:
+            spans.append(DetectedSpan(category="organisation", start=idx, end=idx + 7, value="Mieters"))
+            start = idx + 7
+        return spans
+
+    gateway = ClaudePrivacyGateway(
+        pseudonymizer=Pseudonymizer(ner_detector=ner), security_check=SecurityCheckService(ner_detector=ner)
+    )
+    writing_provider = FakeClaudeWritingProvider(response_text="Eine normale Antwort.")
+    local_llm = FakeLocalLLMProvider(response_text="Die Zustimmung des Mieters wird verlangt.")
+    from app.models import Document
+
+    matter = _matter(db_session, title="Testakte")
+    db_session.add(
+        Document(
+            matter=matter,
+            file_path="/tmp/x.pdf",
+            extracted_text="Ein Mieterhoehungsverlangen ohne erkennbare Namen.",
+            classified_type="Sonstiges",
+        )
+    )
+    db_session.commit()
+    service = DraftingService(
+        RuleBasedLocalAIProvider(),
+        LegalResearchService(DocumentSearchService(FakeEmbeddingProvider()), min_score_for_sufficient=0.0),
+        DocumentSearchService(FakeEmbeddingProvider()),
+        gateway,
+        writing_provider,
+        model_name="claude-sonnet-5",
+        local_llm_provider=local_llm,
+    )
+
+    result = service.create_draft(
+        matter.id,
+        "chat_response",
+        db_session,
+        attorney_anmerkungen="Ist die Erhoehung rechnerisch nachvollziehbar?",
+        gespraechsverlauf=[
+            "Anwalt: Wer sind die Beteiligten?",
+            "Assistent: Die Zustimmung des Mieters und des Mieters wird verlangt.",
+        ],
+        actor="Testnutzer",
+    )
+
+    assert result.success is True, result.blocked_reasons
+    assert len(local_llm.received_payloads) == 1  # die lokale Vorabanalyse lief tatsaechlich
+    assert len(writing_provider.received_payloads) == 1  # und Claude wurde erreicht

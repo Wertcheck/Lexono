@@ -182,8 +182,27 @@ class Pseudonymizer:
         counters: dict[str, int] = {}
         mappings: list[PseudonymMapping] = []
 
+        # Automatische Nachname-Kanonisierung fuer per NER erkannte Personen (nicht nur fuer
+        # `known_entities`): ECHTER FUND (Real-E2E 08.10., Fall A): "Tobias Brandt" im
+        # Adressfeld und "Brandt" in der Anrede bekamen zwei Platzhalter, Claude meldete
+        # eine erfundene Unstimmigkeit. Ein Einzelwort-Treffer wird NUR dann auf den Vollnamen
+        # abgebildet, wenn er das letzte Wort GENAU EINES Vollnamens im selben Text ist
+        # (bei "Hans Mueller" und "Anna Mueller" bleibt "Mueller" eigenstaendig).
+        surname_to_full: dict[str, set[str]] = {}
+        for found in spans:
+            if found.category == "person" and len(found.value.split()) >= 2:
+                surname_to_full.setdefault(found.value.split()[-1].lower(), set()).add(found.value)
+
+        def _auto_alias(span: DetectedSpan) -> str:
+            if span.category != "person" or len(span.value.split()) != 1:
+                return span.value
+            candidates = {full.lower(): full for full in surname_to_full.get(span.value.lower(), set())}
+            return next(iter(candidates.values())) if len(candidates) == 1 else span.value
+
         def _key_and_canonical(span: DetectedSpan) -> tuple[tuple[str, str], str]:
             canonical = _canonicalize_alias(span.category, span.value, known_entities)
+            if canonical == span.value:
+                canonical = _auto_alias(span)
             return (span.category, canonical.lower()), canonical
 
         for span in spans:

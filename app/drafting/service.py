@@ -926,8 +926,18 @@ class DraftingService:
             # "kontrollierter Abbruch, niemals automatische Neuformulierung"-
             # Architekturentscheidung unveraendert) - derselbe fail-closed
             # Abbruch wie beim finalen Claude-Antwort-Check, nur frueher.
+            # `lenient_leak_exempt_placeholders` wie beim spaeteren Claude-Antwort-Check:
+            # ein Wert, der PROVABLY nie lokal stammte (z. B. das Wort "Mieters", von der NER
+            # in einer frueheren KI-Antwort der Historie als Organisation erkannt), ist kein
+            # Datenleck, wenn die lokale Zusammenfassung ihn normal verwendet. Echte Namen aus
+            # Dokument/Anwaltstext stehen im `locally_sourced_text` und bleiben streng geschuetzt.
+            # ECHTER FUND (Real-E2E 08.10., Fall A, reproduzierbar ab der zweiten Frage):
+            # "nicht pseudonymisierter Wert fuer [ORGANISATION_03]" blockierte vor Claude.
             local_summary_issues = check_response_placeholder_integrity(
-                local_result.text, gateway_result.mappings, require_full_coverage=False
+                local_result.text,
+                gateway_result.mappings,
+                require_full_coverage=False,
+                lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
             )
             if local_summary_issues:
                 self.api_logger.log_blocked(
