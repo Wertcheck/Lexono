@@ -861,6 +861,7 @@ class ChatService:
         actor: str,
         current_message_id: str | None = None,
         source_message_id: str | None = None,
+        letterhead_ref: str | None = None,
     ) -> ChatMessage:
         """Erzeugt die KI-Antwort auf die zuletzt gespeicherte Nutzer-
         nachricht. `drafting_service=None` bedeutet: kein API-Schluessel
@@ -956,6 +957,7 @@ class ChatService:
                 message_id=source_message_id,
                 chat_triggered=True,
                 previous_draft=previous_draft,
+                letterhead_ref=letterhead_ref if previous_draft is None else None,
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
             # statt einer unbehandelten Ausnahme. Fail-closed bleibt
@@ -999,6 +1001,7 @@ class ChatService:
         actor: str,
         current_message_id: str | None = None,
         source_message_id: str | None = None,
+        letterhead_ref: str | None = None,
     ) -> Generator[ChatStreamEvent, None, None]:
         """Streaming-Variante von `send_message` (13.09., Streaming-
         Architekturentscheidung, siehe DECISIONS.md). Liefert echte
@@ -1080,6 +1083,7 @@ class ChatService:
                 message_id=source_message_id,
                 chat_triggered=True,
                 previous_draft=previous_draft,
+                letterhead_ref=letterhead_ref if previous_draft is None else None,
             ):
                 if event.kind == "delta":
                     yield ChatStreamEvent(kind="delta", text=event.text)

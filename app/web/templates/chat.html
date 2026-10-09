@@ -481,8 +481,17 @@
                        sichtbare Hoehe ist begrenzt; derselbe
                        "chat-message-text-{{ message.id }}"-Container, den
                        auch der Kopieren-Button oben referenziert. #}
+                    {% set editor_target = editor_targets.get(message.id) if editor_targets is defined else None %}
+                    {# Briefkopf und Unterzeichner stammen aus dem Briefkopfprofil DIESES Entwurfs (nicht aus
+                       dem Modelltext) und stehen im Kopier-Ziel - genau einmal. #}
                     <div class="chat-document-panel__content chat-message__text--markdown" id="chat-message-text-{{ message.id }}">
+                      {% if editor_target and editor_target.letterhead_lines %}
+                        <div class="chat-letterhead" data-letterhead="{{ editor_target.letterhead_name }}">{% for line in editor_target.letterhead_lines %}<div>{{ line }}</div>{% endfor %}</div>
+                      {% endif %}
                       {{ review_parts[0] | chat_markdown | safe }}
+                      {% if editor_target and editor_target.signatory %}
+                        <div class="chat-signatory">{{ editor_target.signatory }}</div>
+                      {% endif %}
                     </div>
                     {# Immer die AKTUELLE Fassung der Entwurfslinie (siehe chat_router._editor_targets) -
                        eine aeltere Chat-Fassung oeffnet nie unbemerkt einen veralteten Entwurf. #}
@@ -701,6 +710,19 @@
            derselben Fusszeile - beide sind kurze, einzeilige Hinweise
            unterhalb der Eingabe, keine zweite Eingabezeile. #}
         <div class="chat-composer__footer">
+          {# Briefkopf fuer NEUE Schriftsaetze (Standard vorausgewaehlt) - nur sichtbar, wenn die
+             Kanzlei mehr als einen Briefkopf hat. Eine Ueberarbeitung behaelt den Briefkopf ihres
+             Entwurfs; ein bewusster Wechsel passiert im Editor. #}
+          {% if letterhead_choices and letterhead_choices | length > 1 %}
+            <label class="chat-composer__letterhead" title="Briefkopf für neue Schriftsätze">
+              <span>Briefkopf</span>
+              <select name="letterhead_ref" id="chat-letterhead-select" aria-label="Briefkopf für neue Schriftsätze">
+                {% for choice in letterhead_choices %}
+                  <option value="{{ choice.ref }}" {% if choice.is_default %}selected{% endif %}>{{ choice.name }}{% if choice.is_default %} (Standard){% endif %}</option>
+                {% endfor %}
+              </select>
+            </label>
+          {% endif %}
           <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
           <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
                   title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"

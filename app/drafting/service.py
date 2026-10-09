@@ -71,14 +71,14 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
-from app.drafting.firm_placeholders import apply_firm_data, strip_firm_placeholders
+from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import validate_claude_response
 from app.drafting.review_notes import split_review_notes
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
-from app.firm_profile.service import get_firm_profile
+from app.firm_profile.letterheads import letterhead_for_draft, resolve_ref_for_new_draft
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
 from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
@@ -302,6 +302,7 @@ class _PreparedRequest:
     message_id: str | None = None
     chat_triggered: bool = False
     lenient_leak_exempt_placeholders: frozenset[str] = frozenset()
+    letterhead_ref: str | None = None
 
 
 @dataclass(frozen=True)
@@ -380,6 +381,7 @@ class DraftingService:
         gespraechsverlauf: list[str] | None = None,
         message_id: str | None = None,
         chat_triggered: bool = False,
+        letterhead_ref: str | None = None,
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
 
@@ -472,6 +474,7 @@ class DraftingService:
         )
         if isinstance(prepared, DraftingResult):
             return prepared
+        prepared.letterhead_ref = letterhead_ref
         return self._finish_non_streaming(
             prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
         )
@@ -493,6 +496,7 @@ class DraftingService:
         gespraechsverlauf: list[str] | None = None,
         message_id: str | None = None,
         chat_triggered: bool = False,
+        letterhead_ref: str | None = None,
     ) -> Generator[DraftStreamEvent, None, None]:
         """Streaming-Variante von `create_draft` (13.09., Streaming-
         Architekturentscheidung - siehe DECISIONS.md fuer die volle
@@ -551,6 +555,7 @@ class DraftingService:
         if isinstance(prepared, DraftingResult):
             yield DraftStreamEvent(kind="result", result=prepared)
             return
+        prepared.letterhead_ref = letterhead_ref
 
         # ECHTER FUND (08.10., Real-User-E2E im installierten Build a6ba839):
         # der echte Streaming-Pfad setzt GARANTIERT LEERE Mappings voraus
@@ -1242,19 +1247,20 @@ class DraftingService:
                 writing_result.text, gateway_result.mappings
             )
 
-        firm_profile = get_firm_profile(db)
         draft = self._persist_draft(
             matter_id,
-            # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
-            # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
-            # siehe app/drafting/review_notes.py.
-            strip_firm_placeholders(split_review_notes(reconstructed_text)[0], firm_profile),
+            # Nur das Schreiben in Draft/Editor/Export (ohne Briefkopf/Unterzeichner - die setzt die
+            # Anwendung aus dem Briefkopfprofil des Entwurfs); der Hinweisblock "Offene Prüfpunkte"
+            # bleibt im Chat-Verlauf (draft_text), siehe app/drafting/review_notes.py.
+            strip_firm_placeholders(split_review_notes(reconstructed_text)[0]),
             purpose,
             db,
             actor=actor,
             previous_draft=previous_draft,
             message_id=prepared.message_id,
+            letterhead_ref=prepared.letterhead_ref,
         )
+        letterhead = letterhead_for_draft(db, draft)
         self._persist_reference_links(
             draft, prepared.source_list, prepared.knowledge_items_used, db
         )
@@ -1265,7 +1271,11 @@ class DraftingService:
             result=DraftingResult(
                 success=True,
                 draft_id=draft.id,
-                draft_text=apply_firm_data(reconstructed_text, firm_profile),
+                draft_text=(
+                    reconstructed_text
+                    if draft.status == "chat_reference"
+                    else compose_letter_notes(reconstructed_text, letterhead)
+                ),
                 source_list=prepared.source_list,
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
@@ -1417,19 +1427,20 @@ class DraftingService:
                 full_text, gateway_result.mappings
             )
 
-        firm_profile = get_firm_profile(db)
         draft = self._persist_draft(
             matter_id,
-            # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
-            # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
-            # siehe app/drafting/review_notes.py.
-            strip_firm_placeholders(split_review_notes(reconstructed_text)[0], firm_profile),
+            # Nur das Schreiben in Draft/Editor/Export (ohne Briefkopf/Unterzeichner - die setzt die
+            # Anwendung aus dem Briefkopfprofil des Entwurfs); der Hinweisblock "Offene Prüfpunkte"
+            # bleibt im Chat-Verlauf (draft_text), siehe app/drafting/review_notes.py.
+            strip_firm_placeholders(split_review_notes(reconstructed_text)[0]),
             purpose,
             db,
             actor=actor,
             previous_draft=previous_draft,
             message_id=prepared.message_id,
+            letterhead_ref=prepared.letterhead_ref,
         )
+        letterhead = letterhead_for_draft(db, draft)
         self._persist_reference_links(
             draft, prepared.source_list, prepared.knowledge_items_used, db
         )
@@ -1440,7 +1451,11 @@ class DraftingService:
             result=DraftingResult(
                 success=True,
                 draft_id=draft.id,
-                draft_text=apply_firm_data(reconstructed_text, firm_profile),
+                draft_text=(
+                    reconstructed_text
+                    if draft.status == "chat_reference"
+                    else compose_letter_notes(reconstructed_text, letterhead)
+                ),
                 source_list=prepared.source_list,
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
@@ -1513,6 +1528,7 @@ class DraftingService:
         actor: str,
         previous_draft: Draft | None = None,
         message_id: str | None = None,
+        letterhead_ref: str | None = None,
     ) -> Draft:
         """Delegiert an `create_new_draft_version` (app/drafting/versioning.py) -
         siehe dort für die Begründung, warum das Anlegen neuer Draft-Zeilen
@@ -1577,6 +1593,14 @@ class DraftingService:
             details=details,
             content_format="html",
             status=status,
+            # Neuer Entwurf: ausdrueckliche Auswahl, sonst der Standard-Briefkopf; Folgeversion:
+            # None = uebernimmt den Briefkopf der Vorgaengerversion (siehe versioning.py).
+            # Reine Chat-Antworten (chat_reference) haben keinen Briefkopf.
+            letterhead_ref=(
+                letterhead_ref
+                if previous_draft is not None
+                else (None if status == "chat_reference" else resolve_ref_for_new_draft(db, letterhead_ref))
+            ),
         )
 
     def _persist_reference_links(

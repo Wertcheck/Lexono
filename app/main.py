@@ -65,6 +65,7 @@ from app.web.parties_router import router as parties_web_router
 from app.web.prompt_library_router import router as prompt_library_web_router
 from app.web.quality_router import router as quality_web_router
 from app.web.schriftsatz_router import router as schriftsatz_web_router
+from app.web.letterheads_router import router as letterheads_web_router
 from app.web.settings_router import router as settings_web_router
 from app.web.tasks_router import router as tasks_web_router
 from app.web.template_paths import STATIC_DIR
@@ -404,6 +405,7 @@ app.include_router(document_templates_web_router)
 app.include_router(document_generator_web_router)
 app.include_router(quality_web_router)
 app.include_router(account_web_router)
+app.include_router(letterheads_web_router)
 app.include_router(settings_web_router)
 app.include_router(tasks_web_router)
 app.include_router(feedback_web_router)

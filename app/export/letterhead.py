@@ -78,6 +78,15 @@ def address_and_contact_lines(firm_profile: FirmProfile) -> list[str]:
     return [line for line in (address_line, contact_line) if line]
 
 
+def letterhead_text_lines(firm_profile: FirmProfile | None) -> list[str]:
+    """Briefkopf als Textzeilen (Kanzleiname, Anschrift, Kontakt) - dieselben Zeilen wie im
+    Editor und im Export; die Chat-Anzeige und der Kopiertext setzen den Briefkopf daraus zusammen."""
+    if firm_profile is None or not has_letterhead_content(firm_profile):
+        return []
+    name = (firm_profile.firm_name or "").strip()
+    return [*([name] if name else []), *address_and_contact_lines(firm_profile)]
+
+
 def build_header(document: DocxDocument, firm_profile: FirmProfile) -> None:
     """Seiten-Kopfbereich: Logo (falls vorhanden) zentriert oben, darunter
     Kanzleiname/Anschrift/Kontakt, abgeschlossen mit einer Trennlinie.

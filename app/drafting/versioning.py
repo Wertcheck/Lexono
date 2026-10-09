@@ -51,6 +51,7 @@ def create_new_draft_version(
     subject: str | None = None,
     recipient: str | None = None,
     content_format: str | None = None,
+    letterhead_ref: str | None = None,
 ) -> Draft:
     """Legt eine neue, eigenständige Draft-Version an.
 
@@ -78,6 +79,10 @@ def create_new_draft_version(
             recipient = previous_draft.recipient
         if content_format is None:
             content_format = previous_draft.content_format
+        # Der Briefkopf gehoert zum Entwurf: jede Folgeversion (Chat-Ueberarbeitung, manuelle
+        # Bearbeitung, KI-Vorschlag) uebernimmt ihn - ein Wechsel nur durch ausdrueckliche Angabe.
+        if letterhead_ref is None:
+            letterhead_ref = previous_draft.letterhead_ref
     else:
         version = 1
         previous_version_id = None
@@ -94,6 +99,7 @@ def create_new_draft_version(
         subject=subject,
         recipient=recipient,
         content_format=content_format,
+        letterhead_ref=letterhead_ref,
     )
     db.add(draft)
     db.flush()

@@ -103,6 +103,22 @@
           </p>
         {% endif %}
 
+        {# Briefkopf dieses Entwurfs (aus dem Briefkopfprofil); Wechsel = neue, nachvollziehbare Version. #}
+        <div class="draft-editor-letterhead-bar">
+          <span class="draft-editor-letterhead-bar__label">Briefkopf: <strong>{{ letterhead_display_name }}</strong></span>
+          {% if can_manual_edit and draft.status == "draft" and not newer_version and letterhead_choices | length > 1 %}
+            <form method="post" action="/dashboard/drafts/{{ draft.id }}/letterhead" class="draft-editor-letterhead-bar__form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <select name="letterhead_ref" aria-label="Briefkopf wählen">
+                {% for choice in letterhead_choices %}
+                  <option value="{{ choice.ref }}" {% if choice.ref == letterhead_ref %}selected{% endif %}>{{ choice.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn--secondary">Briefkopf wechseln</button>
+            </form>
+          {% endif %}
+        </div>
+
         {% if draft.status != "draft" %}
           <p class="form-hint draft-editor-frozen-hint">
             Diese Version ist {{ labels.draft_status_text(draft.status) }} und eingefroren - Änderungen sind
@@ -146,10 +162,10 @@
           {% if show_letterhead %}
             <div class="document-page__letterhead">
               {% if firm_logo_exists %}
-                <img class="document-page__logo" src="/dashboard/settings/profile/logo-file" alt="Kanzlei-Logo" />
+                <img class="document-page__logo" src="{{ letterhead_logo_url }}" alt="Kanzlei-Logo" />
               {% endif %}
-              {% if firm_profile.firm_name.strip() %}
-                <div class="document-page__firm-name">{{ firm_profile.firm_name.strip() }}</div>
+              {% if letterhead.firm_name.strip() %}
+                <div class="document-page__firm-name">{{ letterhead.firm_name.strip() }}</div>
               {% endif %}
               {% for line in firm_contact_lines %}
                 <div class="document-page__contact-line">{{ line }}</div>
@@ -162,10 +178,10 @@
           {% if show_signature_block %}
             <div class="document-page__signature">
               {% if firm_signature_exists %}
-                <img class="document-page__signature-image" src="/dashboard/settings/profile/signature-file" alt="Unterschrift" />
+                <img class="document-page__signature-image" src="{{ letterhead_signature_url }}" alt="Unterschrift" />
               {% endif %}
-              {% if firm_profile.signatory_name %}
-                <div class="document-page__signatory-name">{{ firm_profile.signatory_name }}</div>
+              {% if letterhead.signatory_name %}
+                <div class="document-page__signatory-name">{{ letterhead.signatory_name }}</div>
               {% endif %}
             </div>
           {% endif %}

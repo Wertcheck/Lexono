@@ -32,6 +32,13 @@ class FirmProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "firm_profiles"
 
     firm_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    # Anzeigename des Briefkopfs, der aus den Briefkopffeldern DIESES Profils besteht (siehe
+    # app/models/letterhead.py - weitere Briefkoepfe stehen in der Tabelle `letterheads`).
+    letterhead_name: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="Kanzlei allgemein", server_default="Kanzlei allgemein"
+    )
+    # Standard-Briefkopf: `Letterhead.id` oder None = der Briefkopf dieses Profils.
+    default_letterhead_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     # Rechtsform (06.10., Owner-Direktive "SETTINGS -> KANZLEI", z. B.
     # "Partnerschaft mbB") - rein informatives Stammdatenfeld, bewusst
     # NICHT automatisch an `firm_name` angehaengt oder in den Briefkopf-

@@ -866,7 +866,10 @@ def test_both_prompts_forbid_deriving_gender_from_names_or_generic_role_words() 
         assert "NIEMALS aus ihrem Vor- oder Nachnamen ab" in prompt
         assert "Verkäufer, Käufer, Mandant" in prompt
         assert "neutrale Anrede" in prompt
-        assert "setzt Lexono lokal aus dem Kanzlei-Profil ein" in prompt
+        assert "BRIEFKOPF UND UNTERSCHRIFT" in prompt
+        assert "Schreibe NIEMALS einen Briefkopf der Kanzlei" in prompt
+        assert "Lexono setzt Briefkopf und" in prompt
+        assert "KEINE Unterschriftszeile" in prompt
 
 
 def test_both_prompts_use_an_address_placeholder_that_stands_directly_at_a_person() -> None:

@@ -53,7 +53,15 @@ from app.export.letterhead import (
     has_signature_content,
     image_exists,
 )
-from app.firm_profile import get_firm_profile
+from app.drafting.versioning import create_new_draft_version
+from app.firm_profile.letterheads import (
+    FIRM_LETTERHEAD_REF,
+    letterhead_name,
+    list_letterheads,
+    resolve_letterhead,
+)
+from app.models import AuditEvent, Letterhead
+from app.web.letterhead_context import draft_letterhead_context
 from app.models import Draft, Matter, User
 from app.prompt_library.service import PromptTemplateService
 from app.privacy.api_logger import friendly_block_message
@@ -106,8 +114,6 @@ def draft_editor_page(
     prompt_templates = PromptTemplateService().list_templates(db)
     document_templates = DocumentTemplateService().list_templates(db)
 
-    firm_profile = get_firm_profile(db)
-
     context = {
         "request": request,
         "active_nav": "Entwürfe zur Prüfung",
@@ -119,15 +125,11 @@ def draft_editor_page(
         "document_templates": document_templates,
         # Briefkopf-/Signatur-Vorschau: dieselben Helper wie draft_detail/Export
         # (das Template rendert sie nur, wenn diese Werte im Kontext stehen).
-        "firm_profile": firm_profile,
+        # Briefkopf des Entwurfs (siehe app/web/letterhead_context.py)
+        **draft_letterhead_context(db, draft),
         # Neuere Fassung (z. B. durch eine Chat-Ueberarbeitung): der Editor weist darauf hin, damit
         # nicht unbemerkt in einer veralteten Fassung weitergearbeitet wird.
         "newer_version": _newer_version(db, draft),
-        "show_letterhead": has_letterhead_content(firm_profile),
-        "show_signature_block": has_signature_content(firm_profile),
-        "firm_logo_exists": image_exists(firm_profile.logo_path),
-        "firm_signature_exists": image_exists(firm_profile.signature_path),
-        "firm_contact_lines": address_and_contact_lines(firm_profile),
         "error": error,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
@@ -262,3 +264,56 @@ def save_as_template(
         db, draft=draft, name=name.strip(), category=category.strip() or None, actor=current_user.email
     )
     return JSONResponse({"success": True, "template_id": template.id, "template_name": template.name})
+
+
+@router.post("/{draft_id}/letterhead")
+def change_letterhead(
+    draft_id: str,
+    letterhead_ref: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(permission=PERM_DRAFT_MANUAL_EDIT)),
+) -> RedirectResponse:
+    """Bewusster Briefkopfwechsel bei einem bestehenden Entwurf. Der Wechsel ist eine eigene,
+    nachvollziehbare Entwurfsversion (Text unveraendert, neuer `letterhead_ref`, Audit-Eintrag
+    "draft_letterhead_changed") - die Vorgaengerfassung bleibt mit ihrem alten Briefkopf erhalten,
+    manuelle Aenderungen/Autosave gehen nicht verloren (der aktuelle Stand wird uebernommen)."""
+    draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    edit_url = f"/dashboard/drafts/{draft.id}/edit"
+    if draft.status != "draft":
+        return RedirectResponse(url=f"{edit_url}?error=Der Briefkopf kann nur bei einem Entwurf gewechselt werden.", status_code=303)
+    if find_latest_version(db, draft).id != draft.id:
+        return RedirectResponse(url=f"{edit_url}?error=Es gibt eine neuere Fassung - bitte dort den Briefkopf wechseln.", status_code=303)
+    valid_refs = {choice.ref for choice in list_letterheads(db)}
+    if letterhead_ref not in valid_refs:
+        return RedirectResponse(url=f"{edit_url}?error=Dieser Briefkopf existiert nicht.", status_code=303)
+
+    old_target = resolve_letterhead(db, draft.letterhead_ref)
+    new_target = resolve_letterhead(db, letterhead_ref)
+    old_ref = old_target.id if isinstance(old_target, Letterhead) else FIRM_LETTERHEAD_REF
+    if old_ref == letterhead_ref:
+        return RedirectResponse(url=edit_url, status_code=303)
+
+    old_name = letterhead_name(db, draft.letterhead_ref)
+    new_name = letterhead_name(db, letterhead_ref)
+    details = f"Briefkopf gewechselt: {old_name} -> {new_name}"
+    new_version = create_new_draft_version(
+        db,
+        matter_id=draft.matter_id,
+        content=draft.content,
+        previous_draft=draft,
+        actor=current_user.email,
+        event_type="draft_version_created",
+        details=details,
+        letterhead_ref=letterhead_ref,
+    )
+    db.add(
+        AuditEvent(
+            entity_type="Draft",
+            entity_id=new_version.id,
+            event_type="draft_letterhead_changed",
+            actor=current_user.email,
+            details=details,
+        )
+    )
+    db.commit()
+    return RedirectResponse(url=f"/dashboard/drafts/{new_version.id}/edit", status_code=303)

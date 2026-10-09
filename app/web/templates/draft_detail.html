@@ -120,10 +120,10 @@
           {% if show_letterhead %}
             <div class="document-page__letterhead">
               {% if firm_logo_exists %}
-                <img class="document-page__logo" src="/dashboard/settings/profile/logo-file" alt="Kanzlei-Logo" />
+                <img class="document-page__logo" src="{{ letterhead_logo_url }}" alt="Kanzlei-Logo" />
               {% endif %}
-              {% if firm_profile.firm_name.strip() %}
-                <div class="document-page__firm-name">{{ firm_profile.firm_name.strip() }}</div>
+              {% if letterhead.firm_name.strip() %}
+                <div class="document-page__firm-name">{{ letterhead.firm_name.strip() }}</div>
               {% endif %}
               {% for line in firm_contact_lines %}
                 <div class="document-page__contact-line">{{ line }}</div>
@@ -143,10 +143,10 @@
           {% if show_signature_block %}
             <div class="document-page__signature">
               {% if firm_signature_exists %}
-                <img class="document-page__signature-image" src="/dashboard/settings/profile/signature-file" alt="Unterschrift" />
+                <img class="document-page__signature-image" src="{{ letterhead_signature_url }}" alt="Unterschrift" />
               {% endif %}
-              {% if firm_profile.signatory_name %}
-                <div class="document-page__signatory-name">{{ firm_profile.signatory_name }}</div>
+              {% if letterhead.signatory_name %}
+                <div class="document-page__signatory-name">{{ letterhead.signatory_name }}</div>
               {% endif %}
             </div>
           {% endif %}

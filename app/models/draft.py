@@ -87,6 +87,10 @@ class Draft(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     recipient: Mapped[str | None] = mapped_column(String(255), nullable=True)
     content_format: Mapped[str] = mapped_column(String(16), default="text", nullable=False)
     last_autosaved_at: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    # Briefkopf dieses Entwurfs: "firm" (Briefkopf des Kanzlei-Profils) oder `Letterhead.id`; wird
+    # beim Erstellen gesetzt und von Folgeversionen uebernommen, damit eine Ueberarbeitung nie
+    # einen anderen Briefkopf einsetzt. NULL (aeltere Entwuerfe) = "firm".
+    letterhead_ref: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
     matter: Mapped["Matter"] = relationship(back_populates="drafts")
     previous_version: Mapped["Draft | None"] = relationship(

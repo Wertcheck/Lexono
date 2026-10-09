@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Briefköpfe{% endblock %}
+{% block content %}
+  <div class="topbar">
+    <h1 class="topbar__title">Briefköpfe</h1>
+    <div class="topbar__meta">Mehrere Briefköpfe der Kanzlei verwalten und einen Standard festlegen</div>
+  </div>
+
+  <div class="draft-page letterheads-page">
+    {% if success %}<p class="form-hint letterheads-page__msg letterheads-page__msg--ok" role="status">{{ success }}</p>{% endif %}
+    {% if error %}<p class="form-hint letterheads-page__msg letterheads-page__msg--error" role="alert">{{ error }}</p>{% endif %}
+
+    <div class="instructions-panel">
+      <h2 class="panel-title">Ihre Briefköpfe</h2>
+      <p class="form-hint">
+        Beim Erstellen eines Schriftsatzes wählen Sie den Briefkopf aus (im Chat unter dem Eingabefeld,
+        sobald es mehr als einen gibt) - ohne Auswahl wird der Standard verwendet. Der Briefkopf gehört zum
+        Entwurf und bleibt bei Überarbeitungen erhalten; gewechselt wird bewusst im Editor.
+      </p>
+      <ul class="letterhead-list">
+        {% for row in rows %}
+          {% set choice = row.choice %}
+          <li class="letterhead-list__item" data-letterhead-ref="{{ choice.ref }}">
+            <div class="letterhead-list__main">
+              <strong class="letterhead-list__name">{{ choice.name }}</strong>
+              {% if choice.is_default %}<span class="letterhead-list__badge">Standard</span>{% endif %}
+              <div class="letterhead-list__summary">
+                {{ choice.letterhead.firm_name or "(kein Kanzleiname)" }}{% if choice.letterhead.street %} · {{ choice.letterhead.street }}{% endif %}{% if choice.letterhead.postal_code or choice.letterhead.city %}, {{ choice.letterhead.postal_code or "" }} {{ choice.letterhead.city or "" }}{% endif %}
+              </div>
+              <div class="letterhead-list__meta">
+                {% if choice.letterhead.signatory_name %}Unterzeichner: {{ choice.letterhead.signatory_name }} · {% endif %}{{ row.used_by }} Entwurf/Entwürfe
+              </div>
+            </div>
+            <div class="letterhead-list__actions">
+              <a class="btn" href="/dashboard/settings/letterheads?edit={{ choice.ref }}">Bearbeiten</a>
+              {% if not choice.is_default %}
+                <form method="post" action="/dashboard/settings/letterheads/{{ choice.ref }}/default">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                  <button type="submit" class="btn">Als Standard festlegen</button>
+                </form>
+              {% endif %}
+              {% if row.can_delete %}
+                <form method="post" action="/dashboard/settings/letterheads/{{ choice.ref }}/delete"
+                      onsubmit="return confirm('Briefkopf wirklich löschen?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                  <button type="submit" class="btn" {% if row.used_by %}disabled title="Wird von Entwürfen verwendet"{% endif %}>Löschen</button>
+                </form>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if editing %}
+      <div class="instructions-panel" id="letterhead-edit-panel">
+        <h2 class="panel-title">Briefkopf bearbeiten: {{ editing.name }}</h2>
+        <form method="post" action="/dashboard/settings/letterheads/{{ editing.ref }}/update" class="dashboard-form letterhead-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          {% set lh = editing.letterhead %}
+          <label>Name des Briefkopfs<input type="text" name="name" value="{{ editing.name }}" required maxlength="120" /></label>
+          <label>Kanzleiname<input type="text" name="firm_name" value="{{ lh.firm_name or '' }}" required /></label>
+          <label>Rechtsform<input type="text" name="legal_form" value="{{ lh.legal_form or '' }}" /></label>
+          <label>Straße und Hausnummer<input type="text" name="street" value="{{ lh.street or '' }}" /></label>
+          <label>Adresszusatz<input type="text" name="address_addition" value="{{ lh.address_addition or '' }}" /></label>
+          <label>PLZ<input type="text" name="postal_code" value="{{ lh.postal_code or '' }}" /></label>
+          <label>Ort<input type="text" name="city" value="{{ lh.city or '' }}" /></label>
+          <label>Telefon<input type="text" name="phone" value="{{ lh.phone or '' }}" /></label>
+          <label>E-Mail<input type="text" name="email" value="{{ lh.email or '' }}" /></label>
+          <label>Website<input type="text" name="website" value="{{ lh.website or '' }}" /></label>
+          <label>Unterzeichner (erscheint unter dem Schreiben)<input type="text" name="signatory_name" value="{{ lh.signatory_name or '' }}" /></label>
+          <button type="submit" class="btn btn--primary">Speichern</button>
+        </form>
+
+        {% if editing.ref != FIRM_LETTERHEAD_REF %}
+          <h3 class="panel-title" style="margin-top: 18px;">Logo und Unterschrift</h3>
+          <div class="letterhead-assets">
+            <div class="letterhead-assets__item">
+              <strong>Logo</strong>
+              {% if editing.letterhead.logo_path %}
+                <img class="letterhead-assets__preview" src="/dashboard/settings/letterheads/{{ editing.ref }}/logo-file" alt="Logo" />
+                <form method="post" action="/dashboard/settings/letterheads/{{ editing.ref }}/logo/remove">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                  <button type="submit" class="btn">Logo entfernen</button>
+                </form>
+              {% endif %}
+              <form method="post" action="/dashboard/settings/letterheads/{{ editing.ref }}/logo" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="file" name="logo" accept=".png,.jpg,.jpeg" required />
+                <button type="submit" class="btn">Hochladen</button>
+              </form>
+            </div>
+            <div class="letterhead-assets__item">
+              <strong>Unterschrift</strong>
+              {% if editing.letterhead.signature_path %}
+                <img class="letterhead-assets__preview" src="/dashboard/settings/letterheads/{{ editing.ref }}/signature-file" alt="Unterschrift" />
+                <form method="post" action="/dashboard/settings/letterheads/{{ editing.ref }}/signature/remove">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                  <button type="submit" class="btn">Unterschrift entfernen</button>
+                </form>
+              {% endif %}
+              <form method="post" action="/dashboard/settings/letterheads/{{ editing.ref }}/signature" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="file" name="signature" accept=".png,.jpg,.jpeg" required />
+                <button type="submit" class="btn">Hochladen</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <p class="form-hint">
+            Logo und Unterschrift dieses Briefkopfs pflegen Sie weiterhin unter
+            <a href="/dashboard/settings?tab=kanzlei">Einstellungen → Kanzlei</a> (Branding).
+          </p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="instructions-panel">
+      <h2 class="panel-title">Neuen Briefkopf anlegen</h2>
+      <form method="post" action="/dashboard/settings/letterheads/create" class="dashboard-form letterhead-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label>Name des Briefkopfs (z. B. „Kanzlei Immobilienrecht“)<input type="text" name="name" required maxlength="120" /></label>
+        <label>Kanzleiname<input type="text" name="firm_name" required /></label>
+        <label>Rechtsform<input type="text" name="legal_form" /></label>
+        <label>Straße und Hausnummer<input type="text" name="street" /></label>
+        <label>Adresszusatz<input type="text" name="address_addition" /></label>
+        <label>PLZ<input type="text" name="postal_code" /></label>
+        <label>Ort<input type="text" name="city" /></label>
+        <label>Telefon<input type="text" name="phone" /></label>
+        <label>E-Mail<input type="text" name="email" /></label>
+        <label>Website<input type="text" name="website" /></label>
+        <label>Unterzeichner (erscheint unter dem Schreiben)<input type="text" name="signatory_name" /></label>
+        <button type="submit" class="btn btn--primary">Briefkopf anlegen</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

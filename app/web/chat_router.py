@@ -35,6 +35,8 @@ from app.chat.document_preview import build_document_preview
 from app.chat.markdown_render import render_chat_markdown
 from app.drafting.review_notes import split_review_notes
 from app.drafting.versioning import find_latest_version
+from app.export.letterhead import letterhead_text_lines
+from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
 from app.chat.service import ChatService
 from app.chat.speech import (
     SpeechDecodeError,
@@ -402,6 +404,7 @@ def _render_chat_page(
         "messages": messages,
         "message_sources": _gather_message_sources(db, messages),
         "editor_targets": _editor_targets(db, messages),
+        "letterhead_choices": list_letterheads(db),
         "other_matters": other_matters,
         "all_matters": all_matters,
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
@@ -453,10 +456,16 @@ def _editor_targets(db: Session, messages: list[ChatMessage]) -> dict[str, dict]
         if draft is None or message.blocked or draft.status == "chat_reference":
             continue
         head = find_latest_version(db, draft)
+        letterhead = letterhead_for_draft(db, draft)
         targets[message.id] = {
             "draft_id": head.id,
             "version": head.version,
             "is_current": head.id == draft.id,
+            # Briefkopf und Unterzeichner dieser Fassung - aus dem Briefkopfprofil des Entwurfs,
+            # nie aus dem Modelltext (siehe app/drafting/firm_placeholders.py).
+            "letterhead_lines": letterhead_text_lines(letterhead),
+            "signatory": (letterhead.signatory_name or "").strip(),
+            "letterhead_name": letterhead_name(db, draft.letterhead_ref),
         }
     return targets
 
@@ -605,6 +614,7 @@ def send_message(
     conversation_id: str = Form(""),
     matter_id: str = Form(""),
     content: str = Form(""),
+    letterhead_ref: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -684,6 +694,7 @@ def send_message(
         drafting_service=drafting_service,
         actor=current_user.email,
         current_message_id=user_message.id,
+        letterhead_ref=letterhead_ref or None,
     )
 
     return RedirectResponse(url=f"/dashboard/chat/{conversation.id}", status_code=303)
@@ -922,6 +933,7 @@ def _stream_chat_reply(
     actor: str,
     *,
     current_message_id: str | None = None,
+    letterhead_ref: str | None = None,
 ) -> Iterator[str]:
     """Treibt `ChatService.send_message_stream` an und formt jedes
     Ereignis in ein SSE-Frame um - das abschliessende "done"-Ereignis
@@ -942,6 +954,7 @@ def _stream_chat_reply(
         drafting_service=drafting_service,
         actor=actor,
         current_message_id=current_message_id,
+        letterhead_ref=letterhead_ref,
     ):
         if event.kind == "delta":
             yield _sse_event({"kind": "delta", "text": event.text})
@@ -972,6 +985,7 @@ def send_message_stream(
     conversation_id: str = Form(""),
     matter_id: str = Form(""),
     content: str = Form(""),
+    letterhead_ref: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -1063,6 +1077,7 @@ def send_message_stream(
             drafting_service,
             current_user.email,
             current_message_id=user_message.id,
+            letterhead_ref=letterhead_ref or None,
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},

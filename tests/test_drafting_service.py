@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.ai_providers.claude_writing_provider import ClaudeWritingResult
 from app.ai_providers.local_ai_provider import RuleBasedLocalAIProvider
+from app.drafting.review_notes import split_review_notes
 from app.drafting.service import DraftingService, _should_skip_llm_privacy_layers
 from app.models import ApiCallLog, AuditEvent, Client, Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter, Source
 from app.models.base import Base
@@ -220,7 +221,7 @@ def test_successful_draft_is_persisted(db_session: Session) -> None:
     # inhaltlich enthalten, nur um HTML-Tags ergaenzt.
     assert persisted.content_format == "html"
     assert result.draft_text is not None
-    assert result.draft_text in persisted.content
+    assert split_review_notes(result.draft_text)[0] in persisted.content
 
 
 def test_unlinked_general_chat_skips_organization_pseudonymization(db_session: Session) -> None:
@@ -1277,7 +1278,7 @@ def test_formulate_draft_missing_placeholder_is_not_blocked_when_replying_to_a_m
     )
 
     assert result.success is True
-    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert split_review_notes(result.draft_text)[0] == "Vielen Dank fuer Ihre Nachricht."
     assert db_session.query(Draft).count() == 1
 
 
@@ -1310,7 +1311,7 @@ def test_formulate_draft_missing_placeholder_is_not_blocked_when_chat_triggered_
     )
 
     assert result.success is True
-    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert split_review_notes(result.draft_text)[0] == "Vielen Dank fuer Ihre Nachricht."
     assert db_session.query(Draft).count() == 1
 
 
@@ -1349,7 +1350,7 @@ def test_formulate_draft_via_schriftsatz_generator_missing_placeholder_is_not_bl
     )
 
     assert result.success is True
-    assert result.draft_text == "Vielen Dank fuer Ihre Nachricht."
+    assert split_review_notes(result.draft_text)[0] == "Vielen Dank fuer Ihre Nachricht."
     assert db_session.query(Draft).count() == 1
 
 
@@ -2007,36 +2008,57 @@ def test_common_word_mapped_only_from_ai_history_does_not_block_the_local_summar
     assert len(writing_provider.received_payloads) == 1  # und Claude wurde erreicht
 
 
-def test_firm_placeholders_in_the_letter_are_filled_from_the_firm_profile(
+def test_letter_has_no_letterhead_or_signatory_in_text_and_stores_the_chosen_letterhead(
     db_session: Session,
 ) -> None:
-    """Briefkopf/Unterzeichner kommen lokal aus dem Kanzlei-Profil, nicht vom Modell."""
-    from app.firm_profile.service import get_firm_profile
+    """Briefkopf/Unterzeichner stammen aus dem Briefkopfprofil des Entwurfs, nie aus dem Modelltext:
+    ein vom Modell geschriebener Einsetz-Hinweis wird entfernt, der gewaehlte Briefkopf steht am
+    Entwurf und gelangt nicht an die Cloud."""
+    from app.firm_profile import get_firm_profile
+    from app.firm_profile.letterheads import create_letterhead
 
     profile = get_firm_profile(db_session)
     profile.firm_name = "Kanzlei Beispiel (QA)"
     profile.signatory_name = "RA Test Beispiel"
     db_session.commit()
+    immo = create_letterhead(
+        db_session, name="Kanzlei Immobilienrecht", actor="t", firm_name="Kanzlei Immo (QA)", signatory_name="RA Immo"
+    )
     writing_provider = FakeClaudeWritingProvider(
         response_text="[Kanzlei einsetzen]\n\nSehr geehrte Damen und Herren,\n\nMit freundlichen Grüßen\n\n[Unterzeichner einsetzen]"
     )
     service, _ = _service(writing_provider, local_llm_provider=FakeLocalLLMProvider())
 
     result = service.create_draft(
-        None, "chat_response", db_session, attorney_anmerkungen="Schreibe einen kurzen Brief.", actor="Testnutzer"
+        None, "formulate_draft", db_session, attorney_anmerkungen="Schreibe einen kurzen Brief.",
+        actor="Testnutzer", letterhead_ref=immo.id,
     )
 
     assert result.success is True
-    assert "Kanzlei Beispiel (QA)" in result.draft_text
-    assert "RA Test Beispiel" in result.draft_text
-    assert "einsetzen]" not in result.draft_text
-    # Gespeicherter Entwurf: Editor/Export rendern Briefkopf und Unterzeichner selbst aus dem
-    # Profil - im Text stehen sie nicht zusaetzlich (sonst doppelt).
+    letter = split_review_notes(result.draft_text)[0]
+    assert "einsetzen]" not in letter and "Kanzlei Immo" not in letter and "RA Immo" not in letter
     saved = db_session.get(Draft, result.draft_id)
-    assert "Kanzlei Beispiel (QA)" not in saved.content
-    assert "einsetzen]" not in saved.content
-    # Kanzleidaten gehen nie an die Cloud.
-    sent = " ".join(
-        str(v) for v in vars(writing_provider.received_payloads[0]).values()
-    )
-    assert "Kanzlei Beispiel (QA)" not in sent
+    assert "einsetzen]" not in saved.content and "Kanzlei Immo" not in saved.content
+    assert saved.letterhead_ref == immo.id
+    sent = " ".join(str(v) for v in vars(writing_provider.received_payloads[0]).values())
+    assert "Kanzlei Immo" not in sent and "Kanzlei Beispiel" not in sent, "Kanzleidaten gehen nie an die Cloud"
+
+
+def test_new_draft_without_explicit_choice_uses_the_default_letterhead(db_session: Session) -> None:
+    from app.firm_profile.letterheads import FIRM_LETTERHEAD_REF, create_letterhead, set_default
+
+    immo = create_letterhead(db_session, name="Immo", actor="t", firm_name="Kanzlei Immo (QA)")
+    service, _ = _service(FakeClaudeWritingProvider(response_text="Sehr geehrte Damen und Herren,"), local_llm_provider=FakeLocalLLMProvider())
+
+    first = service.create_draft(None, "formulate_draft", db_session, attorney_anmerkungen="Brief.", actor="t")
+    set_default(db_session, immo.id)
+    second = service.create_draft(None, "formulate_draft", db_session, attorney_anmerkungen="Brief.", actor="t")
+
+    assert db_session.get(Draft, first.draft_id).letterhead_ref == FIRM_LETTERHEAD_REF
+    assert db_session.get(Draft, second.draft_id).letterhead_ref == immo.id
+
+
+def test_chat_response_drafts_carry_no_letterhead(db_session: Session) -> None:
+    service, _ = _service(FakeClaudeWritingProvider(response_text="Eine Antwort."), local_llm_provider=FakeLocalLLMProvider())
+    result = service.create_draft(None, "chat_response", db_session, attorney_anmerkungen="was kannst du", actor="t")
+    assert db_session.get(Draft, result.draft_id).letterhead_ref is None

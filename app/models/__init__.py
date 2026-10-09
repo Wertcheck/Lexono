@@ -26,6 +26,7 @@ from app.models.draft_reference_links import DraftKnowledgeItemLink, DraftSource
 from app.models.embedding import Embedding
 from app.models.firm_practice_area import FirmPracticeArea
 from app.models.firm_profile import FirmProfile
+from app.models.letterhead import Letterhead
 from app.models.generated_document import GeneratedDocument
 from app.models.knowledge_item import KnowledgeItem
 from app.models.law import Law
@@ -94,6 +95,7 @@ __all__ = [
     "VALID_REVIEW_STATUSES",
     "PromptTemplate",
     "FirmProfile",
+    "Letterhead",
     "FirmPracticeArea",
     "Law",
     "LawSection",

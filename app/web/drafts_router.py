@@ -55,6 +55,8 @@ from app.export.letterhead import (
 )
 from app.export.pdf_export_service import PDF_MEDIA_TYPE, DraftPdfExportService
 from app.firm_profile import get_firm_profile
+from app.firm_profile.letterheads import letterhead_for_draft
+from app.web.letterhead_context import draft_letterhead_context
 from app.feedback.schema import DraftFeedbackInput
 from app.feedback.service import DraftFeedbackService
 from app.ingestion.stability import compute_sha256
@@ -326,11 +328,7 @@ def draft_detail_page(
         "quality_ratings": quality_ratings,
         "quality_stats": quality_stats,
         "firm_profile": firm_profile,
-        "show_letterhead": has_letterhead_content(firm_profile),
-        "show_signature_block": has_signature_content(firm_profile),
-        "firm_logo_exists": image_exists(firm_profile.logo_path),
-        "firm_signature_exists": image_exists(firm_profile.signature_path),
-        "firm_contact_lines": address_and_contact_lines(firm_profile),
+        **draft_letterhead_context(db, draft),
         "error": error,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
@@ -460,8 +458,10 @@ def export_draft_docx(
     unverändert, die Akte zeigt das erzeugte Schreiben danach zusätzlich."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
 
-    firm_profile = get_firm_profile(db)
-    buffer = DraftDocxExportService().export_draft(draft, draft.matter, firm_profile)
+    # Briefkopf/Unterzeichner des ENTWURFS (nicht der Standard) - gleiche Quelle wie Chat und Editor.
+    buffer = DraftDocxExportService().export_draft(
+        draft, draft.matter, letterhead_for_draft(db, draft)
+    )
     file_bytes = buffer.getvalue()
 
     db.add(
@@ -515,8 +515,9 @@ def export_draft_pdf(
     inklusive der Akte-Integration (siehe dortiger Docstring)."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
 
-    firm_profile = get_firm_profile(db)
-    buffer = DraftPdfExportService().export_draft(draft, draft.matter, firm_profile)
+    buffer = DraftPdfExportService().export_draft(
+        draft, draft.matter, letterhead_for_draft(db, draft)
+    )
     file_bytes = buffer.getvalue()
 
     db.add(

@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.ai_providers.local_ai_provider import RuleBasedLocalAIProvider
 from app.chat.service import ChatService
+from app.drafting.review_notes import split_review_notes
 from app.drafting.service import DraftingService
 from app.models import ChatConversation, ChatMessage, Client, Matter, Role, User
 from app.models.base import Base
@@ -897,7 +898,7 @@ def test_send_message_stream_drafting_purpose_falls_back_to_single_chunk(
 
     delta_events = [e for e in events if e.kind == "delta"]
     assert len(delta_events) == 1
-    assert delta_events[0].text == "Sehr geehrte Damen und Herren..."
+    assert split_review_notes(delta_events[0].text)[0] == "Sehr geehrte Damen und Herren..."
     assert writer.stream_received_payloads == []
     assert len(writer.received_payloads) == 1
 
@@ -1862,3 +1863,35 @@ def test_revision_targets_the_letter_by_the_name_in_its_original_request(
     )
 
     assert db_session.get(Draft, revised.draft_id).previous_version_id == first.draft_id
+
+
+def test_selected_letterhead_belongs_to_the_draft_and_is_kept_by_chat_revisions(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    """Der beim Erstellen gewaehlte Briefkopf steht am Entwurf; eine Chat-Ueberarbeitung setzt nie
+    stillschweigend einen anderen (auch nicht, wenn der Standard inzwischen gewechselt hat)."""
+    from app.firm_profile.letterheads import FIRM_LETTERHEAD_REF, create_letterhead, set_default
+
+    immo = create_letterhead(db_session, name="Immo", actor="t", firm_name="Kanzlei Immo")
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Brief", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("Sehr geehrte Damen und Herren,\n\nErste Fassung.")
+    first = chat_service.send_message(
+        db_session,
+        conversation=conversation,
+        content="Erstelle ein Schreiben an die Gegenseite.",
+        drafting_service=drafting_service,
+        actor=user.email,
+        letterhead_ref=immo.id,
+    )
+    set_default(db_session, FIRM_LETTERHEAD_REF)
+    writer.response_text = "Sehr geehrte Damen und Herren,\n\nKuerzere Fassung."
+
+    second = _send(
+        chat_service, db_session, user, conversation, drafting_service, "Überarbeite das Schreiben: kürzer."
+    )
+
+    assert db_session.get(Draft, first.draft_id).letterhead_ref == immo.id
+    assert db_session.get(Draft, second.draft_id).letterhead_ref == immo.id
+    assert db_session.get(Draft, second.draft_id).previous_version_id == first.draft_id
