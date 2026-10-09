@@ -10776,3 +10776,5 @@ body::-webkit-scrollbar-thumb:hover,
 .letterhead-assets { display: flex; flex-wrap: wrap; gap: 24px; }
 .letterhead-assets__item { display: grid; gap: 8px; }
 .letterhead-assets__preview { max-height: 64px; max-width: 220px; object-fit: contain; background: #fff; border: 1px solid var(--paper-line); }
+
+.draft-editor-letterhead-bar__form .btn { white-space: nowrap; }
