@@ -323,3 +323,28 @@ def test_save_as_template_rejects_blank_name(client: TestClient, seeded: dict) -
     )
     assert response.status_code == 422
     assert response.json()["success"] is False
+
+
+def test_editor_page_shows_letterhead_and_signature_from_firm_profile(
+    db_session: Session, client: TestClient, seeded: dict[str, str]
+) -> None:
+    """ECHTER FUND (Real-E2E 09.10.): die Editor-Seite uebergab dem Template keinen Briefkopf-/
+    Signatur-Kontext - der Briefkopf aus dem Kanzlei-Profil erschien nie im Editor."""
+    from app.firm_profile import get_firm_profile
+
+    profile = get_firm_profile(db_session)
+    profile.firm_name = "Kanzlei Beispiel (QA)"
+    profile.street = "Beispielweg 1"
+    profile.postal_code = "00000"
+    profile.city = "Musterstadt"
+    profile.signatory_name = "RA Test Beispiel"
+    db_session.commit()
+
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}/edit")
+
+    assert response.status_code == 200
+    assert 'class="document-page__letterhead"' in response.text
+    assert "Kanzlei Beispiel (QA)" in response.text
+    assert "Beispielweg 1, 00000 Musterstadt" in response.text
+    assert 'class="document-page__signature"' in response.text
+    assert "RA Test Beispiel" in response.text

@@ -2030,6 +2030,11 @@ def test_firm_placeholders_in_the_letter_are_filled_from_the_firm_profile(
     assert "Kanzlei Beispiel (QA)" in result.draft_text
     assert "RA Test Beispiel" in result.draft_text
     assert "einsetzen]" not in result.draft_text
+    # Gespeicherter Entwurf: Editor/Export rendern Briefkopf und Unterzeichner selbst aus dem
+    # Profil - im Text stehen sie nicht zusaetzlich (sonst doppelt).
+    saved = db_session.get(Draft, result.draft_id)
+    assert "Kanzlei Beispiel (QA)" not in saved.content
+    assert "einsetzen]" not in saved.content
     # Kanzleidaten gehen nie an die Cloud.
     sent = " ".join(
         str(v) for v in vars(writing_provider.received_payloads[0]).values()

@@ -43,6 +43,13 @@ from app.db.session import get_db
 from app.document_generator.template_service import DocumentTemplateService
 from app.drafting.editor_service import AI_SUGGESTIONS, LEGAL_REVIEW_DISCLAIMER, EditorService
 from app.drafting.versioning import AI_SUGGESTION_DISCARDED_STATUS, resolve_visible_draft
+from app.export.letterhead import (
+    address_and_contact_lines,
+    has_letterhead_content,
+    has_signature_content,
+    image_exists,
+)
+from app.firm_profile import get_firm_profile
 from app.models import Draft, Matter, User
 from app.prompt_library.service import PromptTemplateService
 from app.privacy.api_logger import friendly_block_message
@@ -90,6 +97,8 @@ def draft_editor_page(
     prompt_templates = PromptTemplateService().list_templates(db)
     document_templates = DocumentTemplateService().list_templates(db)
 
+    firm_profile = get_firm_profile(db)
+
     context = {
         "request": request,
         "active_nav": "Entwürfe zur Prüfung",
@@ -99,6 +108,14 @@ def draft_editor_page(
         "legal_review_disclaimer": LEGAL_REVIEW_DISCLAIMER,
         "prompt_templates": prompt_templates,
         "document_templates": document_templates,
+        # Briefkopf-/Signatur-Vorschau: dieselben Helper wie draft_detail/Export
+        # (das Template rendert sie nur, wenn diese Werte im Kontext stehen).
+        "firm_profile": firm_profile,
+        "show_letterhead": has_letterhead_content(firm_profile),
+        "show_signature_block": has_signature_content(firm_profile),
+        "firm_logo_exists": image_exists(firm_profile.logo_path),
+        "firm_signature_exists": image_exists(firm_profile.signature_path),
+        "firm_contact_lines": address_and_contact_lines(firm_profile),
         "error": error,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),

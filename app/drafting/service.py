@@ -71,7 +71,7 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
-from app.drafting.firm_placeholders import fill_firm_placeholders
+from app.drafting.firm_placeholders import fill_firm_placeholders, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import validate_claude_response
@@ -1240,14 +1240,14 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 writing_result.text, gateway_result.mappings
             )
-            reconstructed_text = fill_firm_placeholders(reconstructed_text, get_firm_profile(db))
 
+        firm_profile = get_firm_profile(db)
         draft = self._persist_draft(
             matter_id,
             # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
             # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
             # siehe app/drafting/review_notes.py.
-            split_review_notes(reconstructed_text)[0],
+            strip_firm_placeholders(split_review_notes(reconstructed_text)[0], firm_profile),
             purpose,
             db,
             actor=actor,
@@ -1264,7 +1264,7 @@ class DraftingService:
             result=DraftingResult(
                 success=True,
                 draft_id=draft.id,
-                draft_text=reconstructed_text,
+                draft_text=fill_firm_placeholders(reconstructed_text, firm_profile),
                 source_list=prepared.source_list,
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
@@ -1415,14 +1415,14 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 full_text, gateway_result.mappings
             )
-            reconstructed_text = fill_firm_placeholders(reconstructed_text, get_firm_profile(db))
 
+        firm_profile = get_firm_profile(db)
         draft = self._persist_draft(
             matter_id,
             # Nur das Schreiben in Draft/Editor/Export; der Hinweisblock
             # "Offene Prüfpunkte" bleibt im Chat-Verlauf (draft_text),
             # siehe app/drafting/review_notes.py.
-            split_review_notes(reconstructed_text)[0],
+            strip_firm_placeholders(split_review_notes(reconstructed_text)[0], firm_profile),
             purpose,
             db,
             actor=actor,
@@ -1439,7 +1439,7 @@ class DraftingService:
             result=DraftingResult(
                 success=True,
                 draft_id=draft.id,
-                draft_text=reconstructed_text,
+                draft_text=fill_firm_placeholders(reconstructed_text, firm_profile),
                 source_list=prepared.source_list,
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
