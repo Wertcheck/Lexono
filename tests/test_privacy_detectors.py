@@ -594,3 +594,25 @@ def test_street_and_postal_city_that_are_not_adjacent_stay_separate() -> None:
     text = "Lindenallee 3 liegt weit entfernt von 30000 Beispielstadt und anderem Text"
     addresses = [s for s in detect_all(text) if s.category == "adresse"]
     assert len(addresses) == 2
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Hinweis auf eine konkrete Rechnungs- oder Vertragsnummer.\n- Die Anrede wurde neutral gewählt.",
+        "Bitte die Vertragsnummer. Danach geht es weiter.",
+        "Die Vertragsnummer: - fehlt noch.",
+    ],
+)
+def test_contract_number_keyword_followed_by_prose_or_bullet_is_not_a_contract_number(text: str) -> None:
+    """ECHTER FUND (09.10., Ursache der sporadischen original_value_leaked-Blockaden): nach dem
+    Wort "Vertragsnummer" (nur im Fliesstext erwaehnt) wurde der naechste Zeichen-Block als Nummer
+    erfasst - z. B. das "-" eines Markdown-Aufzaehlungspunkts. Der Bindestrich wurde dann als
+    "[VERTRAG_01]" pseudonymisiert und jede spaetere Claude-Antwort mit einem Bindestrich in einem
+    Wort ("Verjaehrungs-Frist") als geleakter Originalwert blockiert."""
+    assert [s for s in detect_all(text) if s.category == "vertrag"] == []
+
+
+def test_real_contract_numbers_are_still_detected() -> None:
+    spans = detect_all("Vertragsnummer: VN-2026-0815 und Vertrags-Nr. 4711/B laut Police.")
+    assert sorted(s.value for s in spans if s.category == "vertrag") == ["4711/B", "VN-2026-0815"]

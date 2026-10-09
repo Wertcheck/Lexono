@@ -1011,3 +1011,25 @@ def test_gateway_adds_the_local_party_address_assignment_as_placeholder_only_arg
     assert len(notes) == 1
     assert "Neumann" not in notes[0] and "Lindenallee" not in notes[0]
     assert "wohnt/sitzt unter [ADRESSE_01]" in notes[0]
+
+
+def test_vertragsnummer_word_in_history_does_not_turn_a_bullet_dash_into_a_pseudonym() -> None:
+    """Ursache der sporadischen original_value_leaked-Blockaden (09.10.): "Vertragsnummer.\n- Die ..."
+    in einer frueheren Antwort machte "-" zum Mapping; eine spaetere, harmlose Antwort mit "Verjaehrungs-Frist"
+    wurde als geleakter Originalwert blockiert."""
+    from app.privacy.security_check import check_response_placeholder_integrity
+
+    gw = ClaudePrivacyGateway()
+    result = gw.prepare_request(
+        purpose="chat_response",
+        sachverhalt="Akte: (kein spezifischer Fall zugeordnet)",
+        anwaltliche_anmerkungen="Was ist der Unterschied zwischen Verjährung und Verwirkung?",
+        gespraechsverlauf=[
+            "Anwalt: Erstelle ein Schreiben an die Gegenseite.",
+            "Assistent: Hinweis auf eine konkrete Rechnungs- oder Vertragsnummer.\n- Die Anrede wurde neutral gewählt.",
+        ],
+    )
+
+    assert result.allowed, result.reasons
+    assert [m for m in result.mappings if m.original_value.strip() in {"-", "Die"}] == []
+    assert check_response_placeholder_integrity("Die Verjährungs-Frist beträgt drei Jahre.", result.mappings, require_full_coverage=False) == []

@@ -226,7 +226,13 @@ def detect_kundennummer(text: str) -> list[DetectedSpan]:
 
 
 def detect_vertragsnummer(text: str) -> list[DetectedSpan]:
-    return _matches_from_pattern(text, _VERTRAGSNUMMER_PATTERN, "vertrag", group=1)
+    spans = _matches_from_pattern(text, _VERTRAGSNUMMER_PATTERN, "vertrag", group=1)
+    # Nur echte Nummern (mit Ziffer), wie bei der Rechnungsnummer. ECHTER FUND (09.10., Ursache der
+    # sporadischen original_value_leaked-Blockaden): "... Vertragsnummer.\n- Die Anrede ..." erfasste
+    # das "-" des naechsten Aufzaehlungspunkts bzw. ein Folgewort ("Danach") als Vertragsnummer; der
+    # Bindestrich wurde pseudonymisiert und jede spaetere Antwort mit einem Bindestrich in einem
+    # Wort als geleakter Originalwert blockiert.
+    return [sp for sp in spans if any(ch.isdigit() for ch in sp.value)]
 
 
 def detect_rechnungsnummer(text: str) -> list[DetectedSpan]:
