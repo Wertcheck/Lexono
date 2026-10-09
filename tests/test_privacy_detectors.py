@@ -100,9 +100,13 @@ def test_detects_additional_real_german_street_suffixes(street: str) -> None:
     assert len(address_spans) == 1, f"{street} wurde nicht erkannt: {spans}"
 
 
-def test_detects_amount() -> None:
-    spans = detect_all("Betrag: 1.234,56 € fällig.")
-    assert any(s.category == "betrag" for s in spans)
+@pytest.mark.parametrize(
+    "text",
+    ["Betrag: 1.234,56 € fällig.", "Offen: 4.711,00 EUR.", "Miete 640 EUR, Nachzahlung 704 EUR.", "Summe EUR 12.500"],
+)
+def test_money_amounts_are_not_pseudonymized(text: str) -> None:
+    """Geldbetraege sind sachverhaltsrelevant und bleiben im Klartext."""
+    assert not [s for s in detect_all(text) if s.category == "betrag"]
 
 
 def test_detects_date() -> None:

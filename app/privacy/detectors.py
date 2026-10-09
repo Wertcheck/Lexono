@@ -124,12 +124,11 @@ _MONTH_NAME_DATE_PATTERN = re.compile(
     rf"\b\d{{1,2}}\.\s*(?:{_GERMAN_MONTHS})\s+\d{{4}}\b", re.IGNORECASE
 )
 
-_AMOUNT_PATTERN = re.compile(
-    r"\b\d{1,3}(?:\.\d{3})*,\d{2}\s?€"
-    r"|€\s?\d{1,3}(?:\.\d{3})*,\d{2}\b"
-    r"|\bEUR\s?\d+(?:,\d{2})?\b",
-    re.IGNORECASE,
-)
+# Konkrete Geldbetraege (4.711,00 EUR, 640 EUR, 7,71 EUR) sind sachverhaltsrelevant
+# und werden bewusst NICHT pseudonymisiert (Owner-Entscheidung 09.10.): sie sind allein
+# nicht identifizierend, werden aber fuer Analyse, Berechnungen und Schriftsaetze gebraucht.
+# Es gibt daher keinen Betrags-Detektor; identifizierende Werte (IBAN, Rechnungsnummer ...)
+# bleiben davon unberuehrt.
 
 # Straße + Hausnummer, sowie getrennt PLZ + Ort.
 #
@@ -267,10 +266,6 @@ def detect_datum(text: str) -> list[DetectedSpan]:
     return spans
 
 
-def detect_betrag(text: str) -> list[DetectedSpan]:
-    return _matches_from_pattern(text, _AMOUNT_PATTERN, "betrag")
-
-
 def detect_address(text: str) -> list[DetectedSpan]:
     spans = _matches_from_pattern(text, _STREET_PATTERN, "adresse")
     spans += _matches_from_pattern(text, _POSTAL_CODE_CITY_PATTERN, "adresse")
@@ -303,7 +298,6 @@ _ALL_REGEX_DETECTORS = (
     detect_rechnungsnummer,
     detect_bic,
     detect_datum,
-    detect_betrag,
     detect_address,
 )
 

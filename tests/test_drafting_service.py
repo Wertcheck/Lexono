@@ -1788,11 +1788,10 @@ def test_general_chat_followup_with_mappings_only_from_ai_history_skips_local_ll
     assert result.success is True
     assert local_llm.received_payloads == [], "Vorabanalyse haette uebersprungen werden muessen"
     assert local_llm.structured_calls == []
-    # Pre-Cloud-Schutz unveraendert: die Betraege der KI-Historie gehen
-    # weiterhin NUR pseudonymisiert an Claude.
+    # Geldbetraege sind sachverhaltsrelevant und bleiben unveraendert (kein Betrags-Platzhalter).
     history = " ".join(writing_provider.received_payloads[0].anonymisierter_gespraechsverlauf)
-    assert "7,71" not in history
-    assert "[BETRAG_" in history
+    assert "7,71" in history
+    assert "[BETRAG_" not in history
 
 
 def test_general_chat_with_a_new_person_typed_by_the_lawyer_still_runs_local_llm_despite_ai_history(
@@ -1831,8 +1830,11 @@ def test_value_typed_by_the_lawyer_and_repeated_in_ai_history_stays_relevant(
         None,
         "chat_response",
         db_session,
-        attorney_anmerkungen="Der Betrag 7,71 € ist falsch, bitte pruefen.",
-        gespraechsverlauf=_AI_HISTORY_WITH_AMOUNTS,
+        attorney_anmerkungen="Die Mieterin Martina Quellfeld hat widersprochen, bitte pruefen.",
+        gespraechsverlauf=[
+            "Anwalt: Wer ist die Gegenseite?",
+            "Assistent: Das ist Martina Quellfeld, wohnhaft in Hamburg.",
+        ],
         actor="Testnutzer",
     )
 
