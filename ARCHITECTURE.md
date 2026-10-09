@@ -35,9 +35,10 @@ Basis: `Anwaltskanzlei_AI_Pipeline_Claude_Code_Konzept` (Konzeptdokument)
 > - **Natives Windows-Fenster (kein reiner Browser-Zugriff) ist zwingender
 >   Bestandteil des Produkts** (§50, seither durchgehend weiterentwickelt,
 >   zuletzt: eigene Titelleiste statt nativer OS-Chrome, 01.09.).
-> - **Produktname Lexono** (§59) - "KanzleiAI"/"Kanzlei-AI" nur noch als
->   interner technischer Bezeichner (Pfade/Modulnamen), nicht in sichtbarer
->   Produktidentität.
+> - **Produktname Lexono** (§59) - sichtbare Produktidentität und (Stand 09.10.2026, im Code
+>   geprüft) auch Programm `Lexono.exe`, Datenverzeichnis `%PROGRAMDATA%\Lexono`, Installer
+>   `Lexono_Setup.exe`, Override `LEXONO_DATA_DIR`. "KanzleiAI"/`kanzlei_ai.exe` stehen nur noch in
+>   historischen, datierten Abschnitten (Ausnahme: Logdatei `kanzlei_ai.log`).
 > - **Offen/in Klärung**: der CI-Farbcode `#101828` für Logo/primäre
 >   UI-Akzente (§61/§62) steht Stand 01.09. im Konflikt mit einem neuen
 >   Nutzerauftrag ("grünes Logo") - siehe `.agentic/OPEN_ISSUES.md` für den
@@ -3487,6 +3488,8 @@ Verknüpfungs-Ziel-Syntax angepasst), `tests/test_design_refresh.py` (11),
    Windows-Zielsystem verifiziert (siehe oben).
 
 ## 59. Markenumbenennung "Kanzlei-AI" -> "Lexono" (20.08.)
+
+> NACHTRAG 09.10.2026 (Bezeichner-Stand, im Code geprüft): Die hier beschriebene Beibehaltung der technischen Namen wurde SPÄTER überholt. Aktuell gelten: Programm `Lexono.exe` (`windows/lexono.spec`), Datenverzeichnis `%PROGRAMDATA%\Lexono` (`app/setup/paths.py`: `_APP_DIR_NAME = "Lexono"`, ein vorhandenes `KanzleiAI`-Verzeichnis wird einmalig migriert), Override `LEXONO_DATA_DIR` (alt: `KANZLEI_AI_DATA_DIR` weiterhin akzeptiert), Paketname `lexono`, Installer `Lexono_Setup.exe` nach `%LocalAppData%\Lexono`. Unverändert `kanzlei_ai.log` (Logdatei unter `<Datenverzeichnis>\logs`). Namen wie `kanzlei_ai.exe`/`KanzleiAI` in den übrigen, datierten Abschnitten sind historisch.
 
 Vierter Auftrag desselben Tages: Neuausrichtung auf den Markennamen "Lexono" inklusive
 eines vom Anwalt bereitgestellten Logo-Entwurfs (Schild-Symbol mit integriertem "L",

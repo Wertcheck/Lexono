@@ -113,6 +113,7 @@ pytest -k "quality" --cov=app --cov-report=html  # Coverage report
 - **CLAUDE.md** – Development principles (if building/extending locally)
 - **SECURITY_REVIEW.md** – Security decisions and compliance checklist
 - **PILOT_PLAYBOOK.md** – Operational runbook for 2–4 week pilot
+- **PILOT_SUPPORT.md** – Support quick guide (logs, failure handling, safe diagnostics) and clean-room install test matrix
 - **PILOT_CHECKLIST.md** – Pre-start and weekly checklist (with checkboxes)
 - **FINAL_REVIEW_REPORT.md** – Pilot results and project validation
 - **FUTURE_ROADMAP.md** – v0.2.0–v1.0 prioritized roadmap

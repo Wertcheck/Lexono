@@ -20,11 +20,11 @@ operative documents for current details.
 
 ## 1. Product Identity
 
-Lexono (internal/technical identifiers still say `KanzleiAI` — package
-name, `%ProgramData%\KanzleiAI` data directory, PyInstaller binary
-`kanzlei_ai.exe` — this is deliberate, see §59 of `ARCHITECTURE.md`:
-branding is fully renamed everywhere user-visible; technical identifiers
-are intentionally left alone) is a **Windows desktop application** for a
+Lexono (current identifiers, verified in code 2026-10-09: package `lexono`, data directory
+`%ProgramData%\Lexono` (a legacy `KanzleiAI` directory is migrated once), binary `Lexono.exe`
+(`windows/lexono.spec`), installer `Lexono_Setup.exe`; only the log file is still named
+`kanzlei_ai.log`. Older text below that mentions `KanzleiAI`/`kanzlei_ai.exe` is historical, see
+§59 of `ARCHITECTURE.md`) is a **Windows desktop application** for a
 law firm (`Anwaltskanzlei`). It is not a web app, not a SaaS multi-tenant
 product from the firm's point of view, and not a chatbot wrapper around
 Claude — it is a configurable AI-assisted workflow platform that processes
@@ -203,7 +203,7 @@ Status legend (§12 below): `NOT_STARTED / IMPLEMENTED / PARTIALLY_IMPLEMENTED /
 
 **P0-12 — Installer / Deployment**
 - Purpose: the actual delivery mechanism to a firm PC.
-- Architecture role: PyInstaller onedir build (`windows/kanzlei_ai.spec`) + Inno Setup (`windows/installer.iss`, **FROZEN** unless a proven blocker requires a change — none has this session), WebView2 bootstrapper bundled, per-user install under `%LocalAppData%\Lexono`, persistent data under `%ProgramData%\KanzleiAI` (never deleted on uninstall).
+- Architecture role: PyInstaller onedir build (`windows/lexono.spec`) + Inno Setup (`windows/installer.iss`, **FROZEN** unless a proven blocker requires a change — none has this session), WebView2 bootstrapper bundled, per-user install under `%LocalAppData%\Lexono`, persistent data under `%ProgramData%\Lexono` (never deleted on uninstall).
 - Status: **VERIFIED**, with one real, evidenced, currently-open risk: this session rebuilt the installer (new SHA-256 `9c495240...`, superseding the prior `027fcfcb...`), reinstalled it fresh, and re-ran the full clean-room→first-run→login→restart→local-AI chain successfully against the new artifact.
 - Release blocking: NO for the installer mechanics themselves; see §19 for the open antivirus/Defender risk (D-classified, not proven, not reproduced this session, with new evidence *against* Defender's standard detection pipeline as the cause).
 
@@ -242,7 +242,7 @@ Status legend (§12 below): `NOT_STARTED / IMPLEMENTED / PARTIALLY_IMPLEMENTED /
 
 - Native OS window chrome (not a custom-drawn titlebar) is the **current, confirmed** state, per an explicit user decision this session — this supersedes `ARCHITECTURE.md`'s canonical-block statement to the contrary (see §19 drift #1).
 - `windows/installer.iss` is **FROZEN** — changed only when a concrete, proven installer blocker requires it. None has, this session or the prior one.
-- Persistent firm data (`%ProgramData%\KanzleiAI`) is never deleted by the installer/uninstaller.
+- Persistent firm data (`%ProgramData%\Lexono`) is never deleted by the installer/uninstaller.
 
 ## 13. Product Definition of Done
 
