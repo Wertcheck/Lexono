@@ -107,3 +107,12 @@ def _split_heading(text: str) -> tuple[str, str]:
             notes = "\n".join(lines[index + 1 :]).strip()
             return "\n".join(body), notes
     return text, ""
+
+
+def append_review_note(text: str, note: str) -> str:
+    """Haengt einen Hinweis an den Block "Offene Pruefpunkte / Hinweise" an (legt ihn an, falls
+    es noch keinen gibt) - ausserhalb des kopierbaren Schreibens, siehe `split_review_notes`."""
+    letter, notes = split_review_notes(text)
+    if notes:
+        return f"{text.rstrip()}\n- {note}"
+    return f"{letter.rstrip()}\n\n{REVIEW_NOTES_HEADING}\n- {note}"

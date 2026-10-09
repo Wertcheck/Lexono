@@ -1690,3 +1690,169 @@ def test_get_attached_document_returns_none_for_unknown_document_id(
         db_session, conversation=conversation, document_id="does-not-exist"
     )
     assert found is None
+
+
+# --- Schriftsatz-Workflow (Real-E2E 09.10.): Erkennung, Versionskette, Editorstand ---
+
+from app.models import Draft  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "Erstelle ein Mandantenschreiben an Dirk Neumann, das ihm die Widersprüche erklärt.",
+        "Schreibe ein Mahnschreiben an die Gegenseite.",
+        "Erstelle ein Schreiben an Svenja Falk.",
+        "Verfasse eine Stellungnahme an das Gericht.",
+        "Erstelle einen Brief an den Mandanten.",
+    ],
+)
+def test_more_letter_types_are_recognised_as_drafting_requests(content: str) -> None:
+    assert _looks_like_drafting_request(content) is True
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "Erstelle eine Zusammenfassung dieses Schreibens.",
+        "Erstelle eine Liste der Fristen aus diesem Schreiben.",
+        "Welche Frist gilt für die Berufung?",
+    ],
+)
+def test_a_letter_only_as_source_is_not_a_drafting_request(content: str) -> None:
+    assert _looks_like_drafting_request(content) is False
+
+
+def _send(chat_service, db_session, user, conversation, drafting_service, content):
+    return chat_service.send_message(
+        db_session,
+        conversation=conversation,
+        content=content,
+        drafting_service=drafting_service,
+        actor=user.email,
+    )
+
+
+def test_client_letter_is_persisted_as_editable_draft_not_chat_reference(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    """Vorher: "Mandantenschreiben" wurde als Chat-Antwort behandelt (Status chat_reference,
+    eingefroren, kein Editor-Link)."""
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Brief", actor=user.email
+    )
+    drafting_service, _ = _drafting_service("Sehr geehrte Damen und Herren,\n\nText.")
+
+    message = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Mandantenschreiben an Dirk Neumann.",
+    )
+
+    draft = db_session.get(Draft, message.draft_id)
+    assert draft.status == "draft"
+
+
+def test_revision_in_chat_creates_a_new_version_in_the_same_chain(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Brief", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("Sehr geehrte Damen und Herren,\n\nErste Fassung.")
+    first = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Schreiben an Svenja Falk.",
+    )
+    writer.response_text = "Sehr geehrte Damen und Herren,\n\nKürzere Fassung."
+
+    second = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Überarbeite das Schreiben: kürzer und sachlicher.",
+    )
+
+    v1 = db_session.get(Draft, first.draft_id)
+    v2 = db_session.get(Draft, second.draft_id)
+    assert v2.id != v1.id
+    assert v2.previous_version_id == v1.id and v2.version == 2
+    assert v2.status == "draft"
+    assert "Erste Fassung" in v1.content, "Vorgaengerfassung bleibt unveraendert"
+    assert "Kürzere Fassung" in v2.content
+
+
+def test_revision_uses_the_current_editor_text_and_says_so_when_it_was_edited(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Brief", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("Sehr geehrte Damen und Herren,\n\nOriginaltext aus dem Chat.")
+    first = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Schreiben an Svenja Falk.",
+    )
+    # Manuelle Aenderung im Editor (Autosave ueberschreibt die aktuelle Zeile).
+    draft = db_session.get(Draft, first.draft_id)
+    draft.content = "<p>Sehr geehrte Damen und Herren,</p><p>Handschriftlich geaenderter Satz.</p>"
+    draft.last_autosaved_at = __import__("datetime").datetime(2026, 10, 9, 12, 0, 0)
+    db_session.commit()
+    writer.response_text = "Sehr geehrte Damen und Herren,\n\nHandschriftlich geaenderter Satz, kuerzer."
+
+    second = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Kürze das Schreiben.",
+    )
+
+    history = " ".join(writer.received_payloads[-1].anonymisierter_gespraechsverlauf)
+    assert "Handschriftlich geaenderter Satz" in history
+    assert "Originaltext aus dem Chat" not in history
+    assert "basiert auf dem aktuellen Stand im Editor" in second.content
+    # Der Hinweis steht ausserhalb des kopierbaren Schreibens.
+    from app.drafting.review_notes import split_review_notes
+
+    letter, notes = split_review_notes(second.content)
+    assert "basiert auf dem aktuellen Stand" not in letter
+    assert "basiert auf dem aktuellen Stand" in notes
+    assert "basiert auf dem aktuellen Stand" not in db_session.get(Draft, second.draft_id).content
+
+
+def test_revision_targets_the_letter_whose_recipient_is_named(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Briefe", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("Svenja Falk\nBirkenweg 8\n\nBrief an die Gegenseite.")
+    first = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Schreiben an Svenja Falk.",
+    )
+    writer.response_text = "Dirk Neumann\nLindenallee 3\n\nBrief an den Mandanten."
+    _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Mandantenschreiben an Dirk Neumann.",
+    )
+    writer.response_text = "Svenja Falk\nBirkenweg 8\n\nKuerzere Fassung."
+
+    revised = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Überarbeite das Schreiben an die Gegenseite: kürzer.",
+    )
+
+    assert db_session.get(Draft, revised.draft_id).previous_version_id == first.draft_id
+
+
+def test_revision_wording_without_an_existing_letter_stays_a_normal_chat_answer(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Frage", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("Eine normale Antwort.")
+
+    message = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Formuliere diesen Absatz verständlicher.",
+    )
+
+    assert writer.received_payloads[0].schreibauftrag == "chat_response"
+    assert db_session.get(Draft, message.draft_id).status == "chat_reference"

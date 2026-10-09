@@ -39,3 +39,36 @@ def test_strip_removes_placeholder_lines_only_when_profile_supplies_them() -> No
     assert "[Kanzlei einsetzen]" not in only_firm and "[Unterzeichner einsetzen]" in only_firm
     assert strip_firm_placeholders(_LETTER, _profile()) == _LETTER
     assert strip_firm_placeholders(_LETTER, None) == _LETTER
+
+
+from app.drafting.firm_placeholders import apply_firm_data  # noqa: E402
+from app.drafting.review_notes import REVIEW_NOTES_HEADING, split_review_notes  # noqa: E402
+
+_LETTER_WITH_NOTES = (
+    _LETTER
+    + f"\n\n{REVIEW_NOTES_HEADING}\n"
+    + "- Unterzeichner und Kanzleiname wurden als Einsetz-Hinweise belassen.\n"
+    + "- Das Datum fehlt und ist zu ergänzen."
+)
+
+
+def test_notes_do_not_report_firm_data_as_missing_when_the_profile_supplies_it() -> None:
+    profile = _profile(firm_name="Kanzlei Beispiel", signatory_name="RA Test")
+    letter, notes = split_review_notes(apply_firm_data(_LETTER_WITH_NOTES, profile))
+    assert "Kanzlei Beispiel" in letter and "RA Test" in letter
+    assert "Kanzleiname" not in notes and "Unterzeichner" not in notes
+    assert "Datum fehlt" in notes, "unrelated notes stay"
+
+
+def test_notes_name_what_is_really_missing_when_the_profile_is_empty() -> None:
+    letter, notes = split_review_notes(apply_firm_data(_LETTER_WITH_NOTES, _profile()))
+    assert "[Kanzlei einsetzen]" in letter
+    assert "Briefkopf und Unterzeichner sind noch einzusetzen" in notes
+    assert "[Kanzlei" not in notes
+
+
+def test_notes_block_is_omitted_when_nothing_is_left_to_say() -> None:
+    text = _LETTER + f"\n\n{REVIEW_NOTES_HEADING}\n- Der Unterzeichner wurde als Einsetz-Hinweis belassen."
+    profile = _profile(firm_name="Kanzlei Beispiel", signatory_name="RA Test")
+    result = apply_firm_data(text, profile)
+    assert REVIEW_NOTES_HEADING not in result

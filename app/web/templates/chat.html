@@ -484,11 +484,17 @@
                     <div class="chat-document-panel__content chat-message__text--markdown" id="chat-message-text-{{ message.id }}">
                       {{ review_parts[0] | chat_markdown | safe }}
                     </div>
+                    {# Immer die AKTUELLE Fassung der Entwurfslinie (siehe chat_router._editor_targets) -
+                       eine aeltere Chat-Fassung oeffnet nie unbemerkt einen veralteten Entwurf. #}
+                    {% set editor_target = editor_targets.get(message.id) if editor_targets is defined else None %}
                     <div class="chat-document-panel__footer">
-                      <a href="/dashboard/drafts/{{ message.draft_id }}/edit" class="btn chat-document-panel__editor-btn">
+                      <a href="/dashboard/drafts/{{ editor_target.draft_id if editor_target else message.draft_id }}/edit" class="btn chat-document-panel__editor-btn">
                         {{ icons.pencil(class_="icon") }}
-                        <span>Editor öffnen</span>
+                        <span>Im Editor öffnen</span>
                       </a>
+                      {% if editor_target and not editor_target.is_current %}
+                        <span class="chat-document-panel__version-hint">Neuere Fassung vorhanden – der Editor öffnet Version {{ editor_target.version }}.</span>
+                      {% endif %}
                     </div>
                   </div>
                 {% else %}

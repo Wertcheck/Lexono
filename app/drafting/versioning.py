@@ -215,3 +215,27 @@ def resolve_visible_draft(draft: Draft, by_id: dict[str, Draft]) -> Draft:
     ):
         current = by_id[current.previous_version_id]
     return current
+
+
+def find_latest_version(db: Session, draft: Draft) -> Draft:
+    """Aktueller Kettenkopf einer Entwurfslinie ab `draft` (folgt `previous_version_id`
+    vorwaerts; verworfene KI-Vorschlaege zaehlen nicht als Nachfolger, siehe
+    `discard_ai_suggestion`). Gibt `draft` selbst zurueck, wenn es keinen Nachfolger gibt.
+    Dient dem Chat dazu, den Editor-Link immer auf die AKTUELLE Fassung zu setzen und eine
+    Chat-Ueberarbeitung als Folgeversion an die bestehende Kette zu haengen."""
+    current = draft
+    seen = {current.id}
+    while True:
+        successor = (
+            db.query(Draft)
+            .filter(
+                Draft.previous_version_id == current.id,
+                Draft.status != AI_SUGGESTION_DISCARDED_STATUS,
+            )
+            .order_by(Draft.version.desc(), Draft.created_at.desc())
+            .first()
+        )
+        if successor is None or successor.id in seen:
+            return current
+        seen.add(successor.id)
+        current = successor

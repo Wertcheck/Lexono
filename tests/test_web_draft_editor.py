@@ -348,3 +348,24 @@ def test_editor_page_shows_letterhead_and_signature_from_firm_profile(
     assert "Beispielweg 1, 00000 Musterstadt" in response.text
     assert 'class="document-page__signature"' in response.text
     assert "RA Test Beispiel" in response.text
+
+
+def test_editor_warns_when_a_newer_version_exists(
+    db_session: Session, client: TestClient, seeded: dict[str, str]
+) -> None:
+    """Eine Chat-Ueberarbeitung legt eine neuere Fassung an - der Editor einer aelteren Fassung
+    weist darauf hin und verlinkt die aktuelle."""
+    v1 = db_session.get(Draft, seeded["draft_id"])
+    v2 = Draft(
+        matter_id=v1.matter_id, content="<p>Neu</p>", version=v1.version + 1, status="draft",
+        content_format="html", previous_version_id=v1.id,
+    )
+    db_session.add(v2)
+    db_session.commit()
+
+    old_page = client.get(f"/dashboard/drafts/{v1.id}/edit")
+    new_page = client.get(f"/dashboard/drafts/{v2.id}/edit")
+
+    assert "Es gibt eine neuere Fassung" in old_page.text
+    assert f"/dashboard/drafts/{v2.id}/edit" in old_page.text
+    assert "Es gibt eine neuere Fassung" not in new_page.text

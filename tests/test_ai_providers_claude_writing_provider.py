@@ -854,4 +854,16 @@ def test_both_prompts_forbid_a_salutation_with_only_first_and_last_name() -> Non
     from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
 
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
-        assert 'Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr"' in prompt
+        assert 'Eine Anrede nur mit Vor- und Nachname im Stil "Sehr geehrte Svenja Falk"' in prompt
+
+
+def test_both_prompts_forbid_deriving_gender_from_names_or_generic_role_words() -> None:
+    """Real-E2E 09.10.: "Sehr geehrter Herr Dirk Neumann" - das Geschlecht wurde aus der
+    Rollenbezeichnung "Verkaeufer" und dem Namen geraten."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "NIEMALS aus ihrem Vor- oder Nachnamen ab" in prompt
+        assert "Verkäufer, Käufer, Mandant" in prompt
+        assert "neutrale Anrede" in prompt
+        assert "setzt Lexono lokal aus dem Kanzlei-Profil ein" in prompt

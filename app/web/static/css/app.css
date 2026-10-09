@@ -8770,7 +8770,10 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-document-panel__footer {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
   padding: 10px 14px;
   border-top: 1px solid var(--paper-line);
   background: var(--paper-100);
@@ -8778,6 +8781,11 @@ body::-webkit-scrollbar-thumb:hover,
 
 .chat-document-panel__editor-btn {
   text-decoration: none;
+}
+
+.chat-document-panel__version-hint {
+  font-size: 12px;
+  color: var(--ink-500, var(--ink-900));
 }
 
 .chat-document-panel__editor-btn .icon {

@@ -3812,3 +3812,48 @@ def test_plain_assistant_message_without_review_notes_has_no_notes_box(
     response = client.get(f"/dashboard/chat/{conversation.id}")
 
     assert 'class="chat-review-notes"' not in response.text
+
+
+def test_editor_link_opens_the_newest_version_and_hints_at_it_on_older_chat_versions(
+    client: TestClient, db_session: Session
+) -> None:
+    """Schriftsatz-Workflow: der Link "Im Editor öffnen" zeigt immer auf die AKTUELLE Fassung der
+    Entwurfslinie; die aeltere Chat-Fassung weist auf die neuere hin."""
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    v1 = Draft(matter_id=conversation.matter_id, content="<p>Erste</p>", version=1, status="draft", content_format="html")
+    db_session.add(v1)
+    db_session.commit()
+    v2 = Draft(
+        matter_id=conversation.matter_id, content="<p>Zweite</p>", version=2, status="draft",
+        content_format="html", previous_version_id=v1.id,
+    )
+    db_session.add(v2)
+    db_session.commit()
+    db_session.add_all(
+        [
+            ChatMessage(conversation_id=conversation.id, role="assistant", content="Erste Fassung.", draft_id=v1.id),
+            ChatMessage(conversation_id=conversation.id, role="assistant", content="Zweite Fassung.", draft_id=v2.id),
+        ]
+    )
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert response.text.count("Im Editor öffnen") == 2
+    # Beide Links fuehren auf die aktuelle Fassung (v2) - nie auf die veraltete v1.
+    assert f'href="/dashboard/drafts/{v2.id}/edit"' in response.text
+    assert f'href="/dashboard/drafts/{v1.id}/edit"' not in response.text
+    assert response.text.count("Neuere Fassung vorhanden") == 1
+
+
+def test_normal_chat_answer_has_no_editor_link(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    conversation = _active_conversation(db_session, "admin@kanzlei.test")
+    db_session.add(ChatMessage(conversation_id=conversation.id, role="assistant", content="Eine normale Antwort."))
+    db_session.commit()
+
+    response = client.get(f"/dashboard/chat/{conversation.id}")
+
+    assert "Im Editor öffnen" not in response.text
+    assert "chat-document-panel" not in response.text

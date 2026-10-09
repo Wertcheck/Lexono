@@ -42,7 +42,11 @@ from app.auth.permissions import (
 from app.db.session import get_db
 from app.document_generator.template_service import DocumentTemplateService
 from app.drafting.editor_service import AI_SUGGESTIONS, LEGAL_REVIEW_DISCLAIMER, EditorService
-from app.drafting.versioning import AI_SUGGESTION_DISCARDED_STATUS, resolve_visible_draft
+from app.drafting.versioning import (
+    AI_SUGGESTION_DISCARDED_STATUS,
+    find_latest_version,
+    resolve_visible_draft,
+)
 from app.export.letterhead import (
     address_and_contact_lines,
     has_letterhead_content,
@@ -71,6 +75,11 @@ def _load_chain_by_id(draft: Draft, db: Session) -> dict[str, Draft]:
     `resolve_visible_draft`), keine vollständige, geordnete Kette."""
     all_matter_drafts = db.query(Draft).filter(Draft.matter_id == draft.matter_id).all()
     return {d.id: d for d in all_matter_drafts}
+
+
+def _newer_version(db: Session, draft: Draft) -> Draft | None:
+    head = find_latest_version(db, draft)
+    return head if head.id != draft.id else None
 
 
 @router.get("/{draft_id}/edit", response_class=HTMLResponse)
@@ -111,6 +120,9 @@ def draft_editor_page(
         # Briefkopf-/Signatur-Vorschau: dieselben Helper wie draft_detail/Export
         # (das Template rendert sie nur, wenn diese Werte im Kontext stehen).
         "firm_profile": firm_profile,
+        # Neuere Fassung (z. B. durch eine Chat-Ueberarbeitung): der Editor weist darauf hin, damit
+        # nicht unbemerkt in einer veralteten Fassung weitergearbeitet wird.
+        "newer_version": _newer_version(db, draft),
         "show_letterhead": has_letterhead_content(firm_profile),
         "show_signature_block": has_signature_content(firm_profile),
         "firm_logo_exists": image_exists(firm_profile.logo_path),

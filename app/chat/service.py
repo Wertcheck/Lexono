@@ -60,8 +60,11 @@ from sqlalchemy.orm import Session
 
 from app.chat.title_generation import generate_conversation_title
 from app.documents.service import DocumentProcessingService
+from app.drafting.draft_text import draft_plain_text
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
+from app.drafting.review_notes import append_review_note
 from app.drafting.service import DraftingService
+from app.drafting.versioning import find_latest_version
 from app.ingestion.stability import compute_sha256
 from app.models import (
     ChatConversation,
@@ -69,6 +72,7 @@ from app.models import (
     ChatMessageDocument,
     Client,
     Document,
+    Draft,
     Law,
     LawSection,
     Matter,
@@ -122,9 +126,79 @@ _DRAFTING_TRIGGER_PATTERN = re.compile(
     r"\b(schreib\w*|verfass\w*|formulier\w*|erstell\w*|entwerf\w*)\b"
     r".{0,40}?"
     r"\b(schriftsatz\w*|antwortschreiben\w*|klage\w*|entwurf\w*|einspruch\w*|"
-    r"widerspruch\w*|beschwerde\w*|antwort an|schreiben an)\b",
+    r"widerspruch\w*|beschwerde\w*|antwort an|"
+    r"schreiben\s+(?:an|f(?:ü|ue)r|zur|zum|gegen|im\s+namen)|"
+    r"\w+schreiben|brief|stellungnahme\w*|erwiderung\w*|replik\w*|mahnung\w*)\b",
     re.IGNORECASE,
 )
+
+#: ECHTER FUND (Real-E2E 09.10.): "Erstelle ein Mandantenschreiben an ..." wurde NICHT erkannt
+#: (\b vor "schreiben" greift innerhalb des Kompositums nicht) und landete als Chat-Antwort mit
+#: Status "chat_reference" - ohne Schriftsatz-Panel, ohne Editor-Link, eingefrorener Entwurf.
+#: Ergaenzt oben: Komposita auf "...schreiben" (mindestens ein Buchstabe davor - "dieses
+#: Schreibens" als blosse QUELLE trifft weiterhin NICHT), "brief", "stellungnahme",
+#: "erwiderung", "replik", "mahnung" und "schreiben fuer/zur/zum/gegen/im Namen".
+
+#: Ueberarbeitung eines BEREITS erzeugten Schriftsatzes derselben Konversation (Verb + optional
+#: Dokumentwort). Wird nur ausgewertet, wenn in der Konversation tatsaechlich ein Schriftsatz
+#: existiert (siehe ChatService._latest_schriftsatz_draft) - ohne vorhandenen Schriftsatz bleibt
+#: "Formuliere diesen Absatz verstaendlicher" eine normale Chat-Antwort.
+_REVISION_TRIGGER_PATTERN = re.compile(
+    r"\b(?:überarbeit\w*|umformulier\w*|k(?:ü|ue)rz\w*|straff\w*)\b"
+    r"|\b(?:passe|ändere|aendere|ergänze|ergaenze)\b.{0,40}?"
+    r"\b(?:schreiben|schriftsatz\w*|brief|entwurf|text|fassung)\b"
+    r"|\bformulier\w*\b.{0,40}?\bum\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_revision_request(content: str) -> bool:
+    """Siehe `_REVISION_TRIGGER_PATTERN` - nur AKTUELLER Nachrichtentext."""
+    return bool(_REVISION_TRIGGER_PATTERN.search(content))
+
+
+@dataclass(frozen=True)
+class _RevisionBasis:
+    """Grundlage einer Chat-Ueberarbeitung: Klartext des AKTUELLEN Editorstands des
+    ueberarbeiteten Schriftsatzes. `edited`: der Stand wurde nach der Chat-Fassung veraendert
+    (manuelle Bearbeitung/Autosave/neuere Version) - dann weist die Antwort darauf hin."""
+
+    message_id: str
+    text: str
+    edited: bool
+    version: int
+
+
+def _with_basis_note(text: str, basis: "_RevisionBasis | None") -> str:
+    """Wurde der Schriftsatz nach der Chat-Fassung veraendert, sagt die Ueberarbeitung das offen:
+    sie basiert auf dem aktuellen Editorstand, nicht auf dem urspruenglichen Chat-Text."""
+    if basis is None or not basis.edited or not text:
+        return text
+    return append_review_note(
+        text,
+        f"Diese Überarbeitung basiert auf dem aktuellen Stand im Editor (Fassung {basis.version}, "
+        "nach der Chat-Fassung geändert) - Ihre Änderungen im Editor wurden berücksichtigt.",
+    )
+
+
+_CAPITALIZED_WORD = re.compile(r"[A-ZÄÖÜ][a-zäöüß]{3,}")
+
+
+def _pick_revision_target(
+    candidates: list[tuple["ChatMessage", "Draft"]], content: str
+) -> tuple["ChatMessage", "Draft"]:
+    """Bei mehreren Schriftsaetzen in der Konversation: der, dessen ANFANG (Empfaengerblock)
+    die meisten grossgeschriebenen Woerter der Anfrage enthaelt ("... an Svenja Falk");
+    bei Gleichstand/ohne Treffer der zuletzt erzeugte. Rein lokaler Abgleich, nichts davon
+    verlaesst den Rechner."""
+    words = {w.lower() for w in _CAPITALIZED_WORD.findall(content)}
+    best, best_score = candidates[-1], -1
+    for candidate in candidates:  # aelteste zuerst: bei Gleichstand gewinnt der juengste
+        head = draft_plain_text(candidate[1])[:300].lower()
+        score = sum(1 for w in words if w in head)
+        if score >= best_score:
+            best, best_score = candidate, score
+    return best
 
 
 def _looks_like_drafting_request(content: str) -> bool:
@@ -595,12 +669,61 @@ class ChatService:
             db.commit()
         return message
 
+    def _schriftsatz_candidates(
+        self, db: Session, conversation: ChatConversation
+    ) -> list[tuple[ChatMessage, Draft]]:
+        """Alle echten Schriftsaetze (kein "chat_reference") dieser Konversation, aelteste zuerst -
+        je Entwurfslinie nur die zuletzt im Chat erzeugte Nachricht (strikt auf die Konversation
+        und ihre Akte begrenzt, Aktenisolation)."""
+        messages = (
+            db.query(ChatMessage)
+            .filter(
+                ChatMessage.conversation_id == conversation.id,
+                ChatMessage.role == "assistant",
+                ChatMessage.blocked.is_(False),
+                ChatMessage.draft_id.isnot(None),
+            )
+            .order_by(ChatMessage.created_at.asc())
+            .all()
+        )
+        by_line: dict[str, tuple[ChatMessage, Draft]] = {}
+        for message in messages:
+            draft = message.draft
+            if draft is None or draft.status == "chat_reference":
+                continue
+            by_line[find_latest_version(db, draft).id] = (message, draft)
+        return list(by_line.values())
+
+    def _route_request(
+        self, db: Session, conversation: ChatConversation, content: str
+    ) -> tuple[str, Draft | None, _RevisionBasis | None]:
+        """Zweck + ggf. Basis einer Ueberarbeitung. Eine Ueberarbeitung eines bereits im Chat
+        erzeugten Schriftsatzes wird als FOLGEVERSION an dessen Entwurfslinie gehaengt
+        (`previous_draft`) und basiert auf dem aktuellen Editorstand - manuelle Aenderungen
+        gehen dadurch nicht stillschweigend verloren; die Vorgaengerfassung bleibt unveraendert."""
+        if _looks_like_revision_request(content):
+            candidates = self._schriftsatz_candidates(db, conversation)
+            if candidates:
+                message, draft = _pick_revision_target(candidates, content)
+                head = find_latest_version(db, draft)
+                edited = head.last_autosaved_at is not None or head.id != draft.id
+                basis = _RevisionBasis(
+                    message_id=message.id,
+                    text=draft_plain_text(head),
+                    edited=edited,
+                    version=head.version,
+                )
+                return _PURPOSE_DRAFT, head, basis
+        purpose = _PURPOSE_DRAFT if _looks_like_drafting_request(content) else _PURPOSE_CHAT
+        return purpose, None, None
+
     def _build_history(
         self,
         db: Session,
         *,
         conversation: ChatConversation,
         exclude_message_id: str | None,
+        basis: "_RevisionBasis | None" = None,
     ) -> list[str]:
         """Baut den zu uebertragenden Gespraechsverlauf (CHAT-02, achtes
         Allowlist-Feld, siehe app/privacy/gateway_schema.py) - GEMEINSAM
@@ -691,17 +814,28 @@ class ChatService:
         # fuer die Budgetpruefung verwendet.
         selected_entries: list[str] = []
         total_chars = 0
+        basis_used = False
         for message in newest_first:
-            entry = (
-                f"{_HISTORY_ROLE_LABELS[message.role]}: "
-                f"{message.content[:_MAX_HISTORY_CHARS_PER_MESSAGE]}"
-            )
+            if basis is not None and message.id == basis.message_id:
+                # Ueberarbeitung: maßgeblich ist der AKTUELLE Editorstand dieses Schriftsatzes
+                # (inkl. manueller Aenderungen), nicht der urspruengliche Chat-Text - ungekuerzt,
+                # damit die Ueberarbeitung den ganzen Brief sieht.
+                entry = f"{_HISTORY_ROLE_LABELS[message.role]}: {basis.text}"
+                basis_used = True
+            else:
+                entry = (
+                    f"{_HISTORY_ROLE_LABELS[message.role]}: "
+                    f"{message.content[:_MAX_HISTORY_CHARS_PER_MESSAGE]}"
+                )
             if total_chars + len(entry) > _MAX_HISTORY_CHARS_TOTAL:
                 break
             selected_entries.append(entry)
             total_chars += len(entry)
 
         selected_entries.reverse()  # chronologisch (alt -> neu) fuer die Uebertragung
+        if basis is not None and not basis_used:
+            # Der Schriftsatz liegt ausserhalb des Verlaufsfensters - Basis trotzdem mitgeben.
+            selected_entries.append(f"{_HISTORY_ROLE_LABELS['assistant']}: {basis.text}")
         return selected_entries
 
     def send_message(
@@ -793,9 +927,9 @@ class ChatService:
 
         trace = PerfTrace()
         with trace.step("routing"):
-            purpose = _PURPOSE_DRAFT if _looks_like_drafting_request(content) else _PURPOSE_CHAT
+            purpose, previous_draft, basis = self._route_request(db, conversation, content)
         gespraechsverlauf = self._build_history(
-            db, conversation=conversation, exclude_message_id=current_message_id
+            db, conversation=conversation, exclude_message_id=current_message_id, basis=basis
         )
         try:
             result = drafting_service.create_draft(
@@ -808,6 +942,7 @@ class ChatService:
                 gespraechsverlauf=gespraechsverlauf,
                 message_id=source_message_id,
                 chat_triggered=True,
+                previous_draft=previous_draft,
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
             # statt einer unbehandelten Ausnahme. Fail-closed bleibt
@@ -829,7 +964,7 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=result.draft_text or "",
+                content=_with_basis_note(result.draft_text or "", basis),
                 draft_id=result.draft_id,
             )
 
@@ -914,9 +1049,9 @@ class ChatService:
 
         trace = PerfTrace()
         with trace.step("routing"):
-            purpose = _PURPOSE_DRAFT if _looks_like_drafting_request(content) else _PURPOSE_CHAT
+            purpose, previous_draft, basis = self._route_request(db, conversation, content)
         gespraechsverlauf = self._build_history(
-            db, conversation=conversation, exclude_message_id=current_message_id
+            db, conversation=conversation, exclude_message_id=current_message_id, basis=basis
         )
 
         final_result = None
@@ -931,6 +1066,7 @@ class ChatService:
                 gespraechsverlauf=gespraechsverlauf,
                 message_id=source_message_id,
                 chat_triggered=True,
+                previous_draft=previous_draft,
             ):
                 if event.kind == "delta":
                     yield ChatStreamEvent(kind="delta", text=event.text)
@@ -975,7 +1111,7 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=final_result.draft_text or "",
+                content=_with_basis_note(final_result.draft_text or "", basis),
                 draft_id=final_result.draft_id,
             )
         else:

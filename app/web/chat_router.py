@@ -34,6 +34,7 @@ from app.auth.permissions import (
 from app.chat.document_preview import build_document_preview
 from app.chat.markdown_render import render_chat_markdown
 from app.drafting.review_notes import split_review_notes
+from app.drafting.versioning import find_latest_version
 from app.chat.service import ChatService
 from app.chat.speech import (
     SpeechDecodeError,
@@ -400,6 +401,7 @@ def _render_chat_page(
         "active_conversation": active_conversation,
         "messages": messages,
         "message_sources": _gather_message_sources(db, messages),
+        "editor_targets": _editor_targets(db, messages),
         "other_matters": other_matters,
         "all_matters": all_matters,
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
@@ -439,6 +441,24 @@ def _render_chat_page(
         ),
     }
     return templates.TemplateResponse(request, "chat.html", context)
+
+
+def _editor_targets(db: Session, messages: list[ChatMessage]) -> dict[str, dict]:
+    """Je Schriftsatz-Nachricht: der AKTUELLE Kettenkopf der Entwurfslinie. Der Link "Im Editor
+    oeffnen" zeigt immer darauf - eine aeltere Chat-Fassung oeffnet nie unbemerkt einen
+    veralteten Entwurf; `is_current=False` laesst die Oberflaeche auf die neuere Fassung hinweisen."""
+    targets: dict[str, dict] = {}
+    for message in messages:
+        draft = message.draft if (message.role == "assistant" and message.draft_id) else None
+        if draft is None or message.blocked or draft.status == "chat_reference":
+            continue
+        head = find_latest_version(db, draft)
+        targets[message.id] = {
+            "draft_id": head.id,
+            "version": head.version,
+            "is_current": head.id == draft.id,
+        }
+    return targets
 
 
 def _gather_message_sources(db: Session, messages: list[ChatMessage]) -> dict[str, list[dict]]:

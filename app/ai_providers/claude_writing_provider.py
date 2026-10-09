@@ -148,9 +148,18 @@ bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
-"Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
-(Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
-Herren". Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr" ("Sehr geehrte Svenja Falk") ist nicht zulässig. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+"Herr/Frau" in einen Schreibtext. Leite das Geschlecht einer Person NIEMALS aus ihrem \
+Vor- oder Nachnamen ab und auch nicht aus einer geschlechtsneutral gemeinten \
+Rollenbezeichnung (Verkäufer, Käufer, Mandant, Mieter, Vermieter). Verwende "Sehr geehrte \
+Frau"/"Sehr geehrter Herr" nur, wenn der Sachverhalt die Person ausdrücklich so bezeichnet \
+(Anrede "Frau"/"Herr" im Dokument oder eindeutig weibliche Form wie Käuferin, Mieterin); \
+sonst wähle eine neutrale Anrede ("Guten Tag" plus vollständiger Name der Person, oder \
+"Sehr geehrte Damen und Herren") und weise im Prüfhinweis konkret darauf hin, dass die \
+Anrede mangels verlässlicher Angabe neutral gewählt wurde. Eine Anrede nur mit Vor- und \
+Nachname im Stil "Sehr geehrte Svenja Falk" ist nicht zulässig. Kanzlei-Briefkopf ("[Kanzlei \
+einsetzen]") und Unterschrift ("[Unterzeichner einsetzen]") setzt Lexono lokal aus dem \
+Kanzlei-Profil ein: schreibe die Hinweise unverändert in das Schreiben, erwähne sie aber NICHT \
+in den offenen Prüfpunkten. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
@@ -323,9 +332,18 @@ bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
-"Herr/Frau" in einen Schreibtext. Ist das Geschlecht aus dem Sachverhalt ableitbar \
-(Käuferin, Verkäufer, Frau, Herr), verwende es; sonst "Sehr geehrte Damen und \
-Herren". Eine Anrede nur mit Vor- und Nachname ohne "Frau"/"Herr" ("Sehr geehrte Svenja Falk") ist nicht zulässig. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
+"Herr/Frau" in einen Schreibtext. Leite das Geschlecht einer Person NIEMALS aus ihrem \
+Vor- oder Nachnamen ab und auch nicht aus einer geschlechtsneutral gemeinten \
+Rollenbezeichnung (Verkäufer, Käufer, Mandant, Mieter, Vermieter). Verwende "Sehr geehrte \
+Frau"/"Sehr geehrter Herr" nur, wenn der Sachverhalt die Person ausdrücklich so bezeichnet \
+(Anrede "Frau"/"Herr" im Dokument oder eindeutig weibliche Form wie Käuferin, Mieterin); \
+sonst wähle eine neutrale Anrede ("Guten Tag" plus vollständiger Name der Person, oder \
+"Sehr geehrte Damen und Herren") und weise im Prüfhinweis konkret darauf hin, dass die \
+Anrede mangels verlässlicher Angabe neutral gewählt wurde. Eine Anrede nur mit Vor- und \
+Nachname im Stil "Sehr geehrte Svenja Falk" ist nicht zulässig. Kanzlei-Briefkopf ("[Kanzlei \
+einsetzen]") und Unterschrift ("[Unterzeichner einsetzen]") setzt Lexono lokal aus dem \
+Kanzlei-Profil ein: schreibe die Hinweise unverändert in das Schreiben, erwähne sie aber NICHT \
+in den offenen Prüfpunkten. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \

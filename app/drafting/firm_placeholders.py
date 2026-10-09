@@ -10,6 +10,9 @@ statt erfundener Absender)."""
 
 from __future__ import annotations
 
+import re
+
+from app.drafting.review_notes import REVIEW_NOTES_HEADING, split_review_notes
 from app.export.letterhead import address_and_contact_lines, has_letterhead_content, has_signature_content
 from app.models import FirmProfile
 
@@ -58,3 +61,51 @@ def strip_firm_placeholders(text: str, firm_profile: FirmProfile | None) -> str:
         skip_blank = False
         kept.append(line)
     return "\n".join(kept).strip("\n")
+
+
+_FIRM_NOTE = re.compile(r"kanzlei-?briefkopf|kanzleiname|briefkopf|kanzlei einsetzen", re.IGNORECASE)
+_SIGNATORY_NOTE = re.compile(r"unterzeichner|unterschrift", re.IGNORECASE)
+_STATE_WORDS = re.compile(r"einsetz|offen|fehl|belassen|ergänz|nicht (?:angegeben|vorhanden)", re.IGNORECASE)
+
+
+def apply_firm_data(text: str, firm_profile: FirmProfile | None) -> str:
+    """Chat-Anzeige: Kanzleidaten lokal einsetzen UND die Prueffpunkte dem tatsaechlichen Zustand
+    anpassen. Was das Profil liefert, wird nicht zugleich als "offen" gemeldet (das Modell kennt
+    das Profil nicht und schreibt sonst "Kanzleiname als Einsetz-Hinweis belassen"); fehlt dagegen
+    wirklich etwas, steht ein konkreter Hinweis (statt eines nur beilaeufig erwaehnten)."""
+    filled = fill_firm_placeholders(text, firm_profile)
+    letter, notes = split_review_notes(filled)
+    if not notes and FIRM_PLACEHOLDER not in letter and SIGNATORY_PLACEHOLDER not in letter:
+        return filled
+    firm_ok = firm_profile is not None and has_letterhead_content(firm_profile)
+    signatory_ok = firm_profile is not None and has_signature_content(firm_profile)
+    kept: list[str] = []
+    for line in notes.splitlines():
+        stateful = bool(_STATE_WORDS.search(line))
+        if stateful and firm_ok and _FIRM_NOTE.search(line):
+            continue
+        if stateful and signatory_ok and _SIGNATORY_NOTE.search(line):
+            continue
+        kept.append(line)
+    pending = []
+    if FIRM_PLACEHOLDER in letter:
+        pending.append("Briefkopf")
+    if SIGNATORY_PLACEHOLDER in letter:
+        pending.append("Unterzeichner")
+    if pending:
+        kept.append(
+            f"- {' und '.join(pending)} sind noch einzusetzen - im Kanzlei-Profil (Einstellungen) "
+            "nicht hinterlegt."
+        )
+    new_notes = "\n".join(line for line in kept if line.strip())
+    if not new_notes:
+        return _without_notes(filled)
+    return _with_notes(filled, new_notes)
+
+
+def _without_notes(text: str) -> str:
+    return split_review_notes(text)[0].rstrip()
+
+
+def _with_notes(text: str, notes: str) -> str:
+    return f"{split_review_notes(text)[0].rstrip()}\n\n{REVIEW_NOTES_HEADING}\n{notes}"

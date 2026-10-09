@@ -95,6 +95,14 @@
           </label>
         </div>
 
+        {% if newer_version %}
+          <p class="form-hint draft-editor-newer-hint" role="status">
+            Es gibt eine neuere Fassung dieses Schreibens (Version {{ newer_version.version }}), z. B. durch eine
+            Überarbeitung im Chat.
+            <a href="/dashboard/drafts/{{ newer_version.id }}/edit">Zur aktuellen Fassung</a>
+          </p>
+        {% endif %}
+
         {% if draft.status != "draft" %}
           <p class="form-hint draft-editor-frozen-hint">
             Diese Version ist {{ labels.draft_status_text(draft.status) }} und eingefroren - Änderungen sind
