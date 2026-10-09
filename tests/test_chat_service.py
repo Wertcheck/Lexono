@@ -1724,12 +1724,15 @@ def test_a_letter_only_as_source_is_not_a_drafting_request(content: str) -> None
 
 
 def _send(chat_service, db_session, user, conversation, drafting_service, content):
+    # Wie der Router: die Nutzernachricht wird VOR der Antwort persistiert.
+    user_message = chat_service.record_user_message(db_session, conversation=conversation, content=content)
     return chat_service.send_message(
         db_session,
         conversation=conversation,
         content=content,
         drafting_service=drafting_service,
         actor=user.email,
+        current_message_id=user_message.id,
     )
 
 
@@ -1815,32 +1818,6 @@ def test_revision_uses_the_current_editor_text_and_says_so_when_it_was_edited(
     assert "basiert auf dem aktuellen Stand" not in db_session.get(Draft, second.draft_id).content
 
 
-def test_revision_targets_the_letter_whose_recipient_is_named(
-    db_session: Session, user: User, chat_service: ChatService
-) -> None:
-    conversation = chat_service.create_conversation(
-        db_session, user=user, matter_id=None, title="Briefe", actor=user.email
-    )
-    drafting_service, writer = _drafting_service("Svenja Falk\nBirkenweg 8\n\nBrief an die Gegenseite.")
-    first = _send(
-        chat_service, db_session, user, conversation, drafting_service,
-        "Erstelle ein Schreiben an Svenja Falk.",
-    )
-    writer.response_text = "Dirk Neumann\nLindenallee 3\n\nBrief an den Mandanten."
-    _send(
-        chat_service, db_session, user, conversation, drafting_service,
-        "Erstelle ein Mandantenschreiben an Dirk Neumann.",
-    )
-    writer.response_text = "Svenja Falk\nBirkenweg 8\n\nKuerzere Fassung."
-
-    revised = _send(
-        chat_service, db_session, user, conversation, drafting_service,
-        "Überarbeite das Schreiben an die Gegenseite: kürzer.",
-    )
-
-    assert db_session.get(Draft, revised.draft_id).previous_version_id == first.draft_id
-
-
 def test_revision_wording_without_an_existing_letter_stays_a_normal_chat_answer(
     db_session: Session, user: User, chat_service: ChatService
 ) -> None:
@@ -1856,3 +1833,32 @@ def test_revision_wording_without_an_existing_letter_stays_a_normal_chat_answer(
 
     assert writer.received_payloads[0].schreibauftrag == "chat_response"
     assert db_session.get(Draft, message.draft_id).status == "chat_reference"
+
+
+def test_revision_targets_the_letter_by_the_name_in_its_original_request(
+    db_session: Session, user: User, chat_service: ChatService
+) -> None:
+    """Real-E2E 09.10.: "Ueberarbeite das Schreiben an Svenja Falk" wurde an den juengeren
+    Mandantenbrief gehaengt, obwohl der erste Brief an Svenja Falk ging (der Empfaengerblock
+    enthaelt oft nur einen Platzhalter, der Name steht in der urspruenglichen Anfrage)."""
+    conversation = chat_service.create_conversation(
+        db_session, user=user, matter_id=None, title="Briefe", actor=user.email
+    )
+    drafting_service, writer = _drafting_service("[Anschrift einsetzen]\n\nErster Brief an die Gegenseite.")
+    first = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Schreiben an Svenja Falk.",
+    )
+    writer.response_text = "[Anschrift einsetzen]\n\nZweiter Brief an die Mandantschaft."
+    _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Erstelle ein Mandantenschreiben an Dirk Neumann.",
+    )
+    writer.response_text = "[Anschrift einsetzen]\n\nKuerzere Fassung des ersten Briefs."
+
+    revised = _send(
+        chat_service, db_session, user, conversation, drafting_service,
+        "Überarbeite das Schreiben an Svenja Falk: kürzer.",
+    )
+
+    assert db_session.get(Draft, revised.draft_id).previous_version_id == first.draft_id

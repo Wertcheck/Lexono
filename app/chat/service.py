@@ -185,19 +185,20 @@ _CAPITALIZED_WORD = re.compile(r"[A-ZÄÖÜ][a-zäöüß]{3,}")
 
 
 def _pick_revision_target(
-    candidates: list[tuple["ChatMessage", "Draft"]], content: str
+    candidates: list[tuple["ChatMessage", "Draft", str]], content: str
 ) -> tuple["ChatMessage", "Draft"]:
-    """Bei mehreren Schriftsaetzen in der Konversation: der, dessen ANFANG (Empfaengerblock)
-    die meisten grossgeschriebenen Woerter der Anfrage enthaelt ("... an Svenja Falk");
-    bei Gleichstand/ohne Treffer der zuletzt erzeugte. Rein lokaler Abgleich, nichts davon
-    verlaesst den Rechner."""
+    """Bei mehreren Schriftsaetzen in der Konversation: der, dessen urspruengliche ANFRAGE (doppelt
+    gewichtet) bzw. dessen Empfaengerblock (Textanfang) die meisten grossgeschriebenen Woerter der
+    Ueberarbeitungsanfrage enthaelt ("... an Svenja Falk"); bei Gleichstand der zuletzt erzeugte.
+    Rein lokaler Abgleich, nichts davon verlaesst den Rechner."""
     words = {w.lower() for w in _CAPITALIZED_WORD.findall(content)}
-    best, best_score = candidates[-1], -1
-    for candidate in candidates:  # aelteste zuerst: bei Gleichstand gewinnt der juengste
-        head = draft_plain_text(candidate[1])[:300].lower()
-        score = sum(1 for w in words if w in head)
+    best, best_score = (candidates[-1][0], candidates[-1][1]), -1
+    for message, draft, request in candidates:  # aelteste zuerst: bei Gleichstand gewinnt der juengste
+        request_words = {w.lower() for w in _CAPITALIZED_WORD.findall(request)}
+        head = draft_plain_text(draft)[:160].lower()
+        score = 2 * len(words & request_words) + sum(1 for w in words if w in head)
         if score >= best_score:
-            best, best_score = candidate, score
+            best, best_score = (message, draft), score
     return best
 
 
@@ -671,7 +672,7 @@ class ChatService:
 
     def _schriftsatz_candidates(
         self, db: Session, conversation: ChatConversation
-    ) -> list[tuple[ChatMessage, Draft]]:
+    ) -> list[tuple[ChatMessage, Draft, str]]:
         """Alle echten Schriftsaetze (kein "chat_reference") dieser Konversation, aelteste zuerst -
         je Entwurfslinie nur die zuletzt im Chat erzeugte Nachricht (strikt auf die Konversation
         und ihre Akte begrenzt, Aktenisolation)."""
@@ -686,12 +687,24 @@ class ChatService:
             .order_by(ChatMessage.created_at.asc())
             .all()
         )
-        by_line: dict[str, tuple[ChatMessage, Draft]] = {}
+        by_line: dict[str, tuple[ChatMessage, Draft, str]] = {}
         for message in messages:
             draft = message.draft
             if draft is None or draft.status == "chat_reference":
                 continue
-            by_line[find_latest_version(db, draft).id] = (message, draft)
+            request = (
+                db.query(ChatMessage)
+                .filter(
+                    ChatMessage.conversation_id == conversation.id,
+                    ChatMessage.role == "user",
+                    ChatMessage.created_at <= message.created_at,
+                )
+                .order_by(ChatMessage.created_at.desc())
+                .first()
+            )
+            by_line[find_latest_version(db, draft).id] = (
+                message, draft, request.content if request is not None else "",
+            )
         return list(by_line.values())
 
     def _route_request(
