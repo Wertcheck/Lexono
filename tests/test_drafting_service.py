@@ -2005,3 +2005,33 @@ def test_common_word_mapped_only_from_ai_history_does_not_block_the_local_summar
     assert result.success is True, result.blocked_reasons
     assert len(local_llm.received_payloads) == 1  # die lokale Vorabanalyse lief tatsaechlich
     assert len(writing_provider.received_payloads) == 1  # und Claude wurde erreicht
+
+
+def test_firm_placeholders_in_the_letter_are_filled_from_the_firm_profile(
+    db_session: Session,
+) -> None:
+    """Briefkopf/Unterzeichner kommen lokal aus dem Kanzlei-Profil, nicht vom Modell."""
+    from app.firm_profile.service import get_firm_profile
+
+    profile = get_firm_profile(db_session)
+    profile.firm_name = "Kanzlei Beispiel (QA)"
+    profile.signatory_name = "RA Test Beispiel"
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="[Kanzlei einsetzen]\n\nSehr geehrte Damen und Herren,\n\nMit freundlichen Grüßen\n\n[Unterzeichner einsetzen]"
+    )
+    service, _ = _service(writing_provider, local_llm_provider=FakeLocalLLMProvider())
+
+    result = service.create_draft(
+        None, "chat_response", db_session, attorney_anmerkungen="Schreibe einen kurzen Brief.", actor="Testnutzer"
+    )
+
+    assert result.success is True
+    assert "Kanzlei Beispiel (QA)" in result.draft_text
+    assert "RA Test Beispiel" in result.draft_text
+    assert "einsetzen]" not in result.draft_text
+    # Kanzleidaten gehen nie an die Cloud.
+    sent = " ".join(
+        str(v) for v in vars(writing_provider.received_payloads[0]).values()
+    )
+    assert "Kanzlei Beispiel (QA)" not in sent

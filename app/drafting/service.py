@@ -71,12 +71,14 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
+from app.drafting.firm_placeholders import fill_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import validate_claude_response
 from app.drafting.review_notes import split_review_notes
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
+from app.firm_profile.service import get_firm_profile
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
 from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
@@ -1238,6 +1240,7 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 writing_result.text, gateway_result.mappings
             )
+            reconstructed_text = fill_firm_placeholders(reconstructed_text, get_firm_profile(db))
 
         draft = self._persist_draft(
             matter_id,
@@ -1412,6 +1415,7 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 full_text, gateway_result.mappings
             )
+            reconstructed_text = fill_firm_placeholders(reconstructed_text, get_firm_profile(db))
 
         draft = self._persist_draft(
             matter_id,
