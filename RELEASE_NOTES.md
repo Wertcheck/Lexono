@@ -155,9 +155,9 @@
 # 1. Run installer
 Lexono_Setup.exe
 
-# 2. First start
+# 2. First start (Start Menu entry "Lexono", or:)
 cd "%LocalAppData%\Lexono"
-kanzlei_ai.exe serve
+.\Lexono.exe serve
 
 # 3. Setup Wizard runs (if .env doesn't exist)
 # → Enter admin email
@@ -270,8 +270,8 @@ For future versions:
 
 ### Getting Help
 
-1. **Dashboard → Settings → System Status** → Check health
-2. **Logs:** `C:\ProgramData\KanzleiAI\kanzlei_ai.log`
+1. **Status indicators** at the bottom of the sidebar (Cloud-KI, Lokale KI)
+2. **Logs:** `C:\ProgramData\Lexono\logs\kanzlei_ai.log`
 3. **Playbook:** `PILOT_PLAYBOOK.md` troubleshooting section
 4. **Contact:** Support channel (to be configured)
 

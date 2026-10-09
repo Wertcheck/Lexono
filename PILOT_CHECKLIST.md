@@ -12,39 +12,51 @@ dass alles Notwendige vorbereitet ist.
 - [ ] Speicher ≥500 MB frei? (für Datenbank + Dokumente)
 - [ ] Internet-Konnektivität stabil? (`ping api.anthropic.com` funktioniert)
 - [ ] Windows Firewall konfiguriert? (localhost:8000 nicht blockiert)
+- [ ] Microsoft Edge WebView2 Runtime vorhanden? (Windows 11 und aktuelle Windows-10-Systeme: ja;
+      der Installer richtet sie bei Bedarf ein)
 
 ---
 
 ## B. Installation & Setup (Tag -1 bis -0.5)
 
-- [ ] Lexono_Setup.exe herunterladen (von Prompt 36; %LocalAppData%-Installation Schritt 3)
+- [ ] `Lexono_Setup.exe` bereitstellen (vom Projektteam; Windows 10/11 64-Bit, keine Admin-Rechte nötig)
 - [ ] Installer ausführen:
   - [ ] Installationsordner: `%LocalAppData%\Lexono` (keine Admin-Rechte nötig)
-  - [ ] Datenverzeichnis automatisch: `C:\ProgramData\KanzleiAI`
-- [ ] Installer **nicht** die App starten lassen (wir machen First-Run manuell)
-- [ ] Admin-Desktop-Shortcut prüfen (für einfachen Start)
+  - [ ] Datenverzeichnis: `C:\ProgramData\Lexono` (entsteht erst beim ersten Start, nicht beim Installieren)
+- [ ] Am Ende des Installers „Lexono jetzt starten“ angehakt lassen **oder** später die Verknüpfung
+      „Lexono“ im Startmenü verwenden. Beim allerersten Start öffnet sich ein **Konsolenfenster mit dem
+      Setup-Assistenten** – dieses Fenster nicht schließen (siehe C).
+- [ ] Startmenü-Eintrag „Lexono“ vorhanden (Desktop-Verknüpfung nur, wenn im Installer die Option
+      „Desktop-Verknüpfung anlegen“ gewählt wurde)
 
 ---
 
 ## C. First-Run Setup-Assistent (Tag 0, Morning)
 
-- [ ] Terminal/Konsole öffnen: `cmd` oder PowerShell
-- [ ] Zu Installationsordner wechseln: `cd "%LocalAppData%\Lexono"`
-- [ ] Setup-Assistent starten: `kanzlei_ai.exe serve`
+- [ ] Lexono über das Startmenü („Lexono“) starten – ohne vorhandene Daten öffnet sich der Setup-Assistent
+      in einem Konsolenfenster. Alternativ (z. B. zur Fehlersuche) in PowerShell:
+      `cd "%LocalAppData%\Lexono"` und `.\Lexono.exe serve`
 - [ ] Assistent-Fragen beantworten:
   - [ ] Admin-E-Mail eingeben: `anwalt@kanzlei.local` (Beispiel)
-  - [ ] Admin-Passwort eingeben (oder leer lassen → Zufallspasswort generiert)
+  - [ ] Admin-Passwort eingeben (oder leer lassen → Zufallspasswort generiert und einmalig angezeigt)
+  - [ ] Frage „Lokale KI (Ollama) jetzt automatisch einrichten? [J/n]“: mit Enter bestätigen. Lexono erkennt
+        die Hardware, wählt ein passendes Modell und lädt es bei Bedarf herunter (je nach Rechner und
+        Internetverbindung von unter einer Minute bis über eine Stunde; das Fenster zeigt in Abständen
+        „Einrichtung läuft noch …“ – das ist kein Fehler). Schlägt der Schritt fehl, ist die Installation
+        trotzdem nutzbar; Wiederholung: `Lexono.exe local-ai-setup`
   - [ ] SESSION_SECRET_KEY wird automatisch generiert ✓
-  - [ ] `.env` unter `C:\ProgramData\KanzleiAI\.env` geschrieben ✓
+  - [ ] `.env` unter `C:\ProgramData\Lexono\.env` geschrieben ✓
   - [ ] Migration (alembic upgrade head) läuft durch ✓
   - [ ] Admin-Nutzer angelegt ✓
-  - [ ] Server startet unter `http://127.0.0.1:8000`
+  - [ ] Server startet unter `http://127.0.0.1:8000`; ein natives Lexono-Fenster öffnet sich mit der
+        Anmeldeseite (jeder weitere Start läuft ohne sichtbares Konsolenfenster, Protokoll in
+        `C:\ProgramData\Lexono\app.log`)
 
 ---
 
 ## D. Dashboard-Login & Passwort-Änderung (Tag 0)
 
-- [ ] Browser öffnen: `http://127.0.0.1:8000/dashboard`
+- [ ] Im Lexono-Fenster anmelden (alternativ im Browser: `http://127.0.0.1:8000/dashboard`)
 - [ ] Login mit Admin-E-Mail + (generiertem) Passwort
 - [ ] Dashboard lädt → Inbox, Akten, etc. sichtbar
 - [ ] Passwort-Änderungs-Dialog (erzwungen beim ersten Login)
@@ -57,48 +69,75 @@ dass alles Notwendige vorbereitet ist.
 
 ### E1: Scan-Ordner
 
-- [ ] Scan-Eingabe-Ordner prüfen: `C:\ProgramData\KanzleiAI\data\intake`
+- [ ] Scan-Eingabe-Ordner prüfen: `C:\ProgramData\Lexono\data\intake`
 - [ ] Testdatei (PDF) ablegen → System sollte aufnehmen
 - [ ] Prüfen: Inbox zeigt neue Einträge ✓
 
 ### E2: Claude-API-Key (kritisch!)
 
-- [ ] `.env`-Datei öffnen: `C:\ProgramData\KanzleiAI\.env`
-- [ ] `ANTHROPIC_API_KEY` prüfen (sollte gesetzt sein)
+- [ ] `.env`-Datei öffnen: `C:\ProgramData\Lexono\.env` (im Windows-Editor)
+- [ ] `ANTHROPIC_API_KEY` eintragen bzw. prüfen. Der Setup-Assistent fragt den Claude-API-Schlüssel **nicht** ab. Er wird einmalig von der betreuenden
+      Person in die Datei `C:\ProgramData\Lexono\.env` eingetragen (Zeile `ANTHROPIC_API_KEY="…"`),
+      danach Lexono beenden und neu starten. Der Schlüssel ist in der Oberfläche nicht einsehbar oder
+      änderbar und gehört nie in E-Mails, Chats oder Screenshots.
 - [ ] Falls leer oder fehlerhaft:
   - [ ] Anthropic-Dashboard öffnen (https://console.anthropic.com)
   - [ ] API-Key erzeugen/kopieren
   - [ ] In `.env` eintragen: `ANTHROPIC_API_KEY=sk_...`
-  - [ ] Server neu starten (kanzlei_ai.exe serve)
-- [ ] Test: Dashboard → Einstellungen → Systemstatus → Claude API Status prüfen
+  - [ ] Lexono beenden und über das Startmenü neu starten
+- [ ] Test: In der Seitenleiste unten die Statusanzeigen „Cloud-KI“ und „Lokale KI“ prüfen. „Cloud-KI (Gateway)“ zeigt „Bereit“
+      nur, wenn die Cloud-Adresse nachweislich erreichbar ist (Prüfung alle ca. 45 s, ohne Anfrage und ohne
+      Schlüsselnutzung); sonst „nicht konfiguriert“, „wird geprüft…“, „nicht erreichbar“ (Tooltip nennt die
+      Ursache, z. B. Zeitüberschreitung) oder „Anfrage fehlgeschlagen“ (letzte echte Anfrage endete mit einem
+      Anbieterfehler, z. B. Schlüssel/Guthaben). Ein erster
+      Chat („Was ist der Unterschied zwischen Besitz und Eigentum?“) muss eine Antwort liefern
 
 ### E3: E-Mail-Integration (Optional)
 
 - [ ] Falls E-Mail-Ingestion gewünscht:
-  - [ ] Dashboard → Einstellungen → Integrationen
+  - [ ] Dashboard → Einstellungen → Tab „E-Mail“
   - [ ] IMAP-Server, Benutzername, Passwort eingeben
   - [ ] "Test-Verbindung" klicken
 - [ ] Falls nicht gewünscht → überspringen (nicht erforderlich für Pilot-Erfolg)
 
 ### E4: Logging (Optional)
 
-- [ ] Dashboard → Einstellungen → System
-- [ ] Log-Level auf `INFO` setzen (Standard)
-- [ ] Ggf. `LOG_FILE_PATH` auf `C:\ProgramData\KanzleiAI\kanzlei_ai.log` setzen
+- [ ] Protokolle liegen unter `C:\ProgramData\Lexono\logs\kanzlei_ai.log` (vom Setup-Assistenten gesetzt,
+      `LOG_FILE_PATH` in der `.env`) und `C:\ProgramData\Lexono\app.log` (Startprotokoll)
+- [ ] Log-Level `INFO` (Standard) belassen; blockierte KI-Anfragen erscheinen als
+      „Anfrage/Antwort blockiert (Platzhalter: …)“ – nie mit Klartextwerten
 
 ---
 
 ## F. Benutzer & Rollen (Tag 0, Evening)
 
 - [ ] Ggf. zusätzliche Anwälte hinzufügen (falls mehrere im Pilot):
-  - [ ] Dashboard → Einstellungen → Nutzer
-  - [ ] "Neuer Nutzer" → E-Mail + Rolle (Attorney) → Speichern
-  - [ ] Neuer Nutzer erhält Login-Link (per E-Mail)
+  - [ ] Dashboard → Einstellungen → Tab „Benutzer“
+  - [ ] Neuen Benutzer anlegen: E-Mail + Rolle (Admin / Anwalt / Mitarbeiter) → Speichern
+  - [ ] Das initiale Passwort wird **einmalig** auf dem Bildschirm angezeigt (es wird nicht per E-Mail
+        versendet) – sicher an den Benutzer weitergeben; er muss es beim ersten Login ändern
 - [ ] Falls nur ein Anwalt: Admin-Account reicht aus
 
 ---
 
 ## G. Testlauf (Tag 0, Evening oder Tag 1 Morning)
+
+**G0. Chat-Schnelltest (zuerst, ca. 10 Minuten, nur synthetische Daten):**
+
+- [ ] Neuer Chat: „Was ist der Unterschied zwischen Besitz und Eigentum?“ → Antwort erscheint, kein
+      Schriftsatz-Panel
+- [ ] Mandant und Akte anlegen (Mandanten → Neuer Mandant; Akten → Neue Akte), „Chat zu dieser Akte
+      starten“, ein synthetisches PDF anhängen, „Fasse das Dokument zusammen.“ → Zusammenfassung; das
+      Dokument erscheint in der Akte (Dokumente)
+- [ ] „Erstelle ein Schreiben an die Gegenseite …“ → Schriftsatz-Panel mit Kanzlei-Briefkopf und Unterzeichner
+      (aus Einstellungen → Kanzlei; mehrere Briefköpfe: Einstellungen → Kanzlei → Briefköpfe verwalten),
+      Prüfpunkte stehen **außerhalb** des Schreibens
+- [ ] „Im Editor öffnen“ → Entwurf bearbeiten; Kopieren im Chat; Export DOCX/PDF aus der Entwurfsansicht
+- [ ] Lexono beenden und neu starten → Chat, Akte und Entwurf sind unverändert vorhanden
+- [ ] Hinweis: Dokumentanalyse braucht die lokale KI. Ist sie nicht erreichbar, erscheint ein klarer
+      Hinweis und es wird nichts an die Cloud gesendet.
+
+**G1. Intake-Workflow (Scan-Ordner):**
 
 - [ ] Kompletter Mini-Workflow durchspielen:
   - [ ] Test-PDF in Scan-Ordner legen
@@ -114,7 +153,7 @@ dass alles Notwendige vorbereitet ist.
 
 - [ ] Wenn alle Schritte funktionieren → **GO für Pilot-Start!**
 - [ ] Wenn Fehler auftreten:
-  - [ ] Logs prüfen (`kanzlei_ai.log`)
+  - [ ] Logs prüfen (`C:\ProgramData\Lexono\logs\kanzlei_ai.log`)
   - [ ] Typische Fehler?
     - [ ] Claude API nicht konfiguriert → Key nochmal prüfen
     - [ ] OCR schlägt fehl → Tesseract nicht installiert (Optional für Pilot)
@@ -127,8 +166,9 @@ dass alles Notwendige vorbereitet ist.
 
 - [ ] Backup des gesamten Installationsordners machen:
   - [ ] `%LocalAppData%\Lexono` → externe Festplatte kopieren
-- [ ] Backup des Datenverzeichnisses machen:
-  - [ ] `C:\ProgramData\KanzleiAI` → externe Festplatte kopieren
+- [ ] Backup des Datenverzeichnisses machen (Lexono dafür beenden oder das Dashboard-Backup nutzen):
+  - [ ] `C:\ProgramData\Lexono` → externe Festplatte kopieren
+  - [ ] Alternativ: Dashboard → Backup (vollständige Sicherung als ZIP)
 - [ ] Notfall-Kontakt festlegen (falls Fragen während Pilot):
   - [ ] Entwickler-Kontakt (E-Mail/Chat)
   - [ ] Falls nicht verfügbar → Support-Dokumentation (PILOT_PLAYBOOK.md)

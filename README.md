@@ -52,14 +52,19 @@ See **RELEASE_NOTES.md** for full feature list and known limitations.
 Lexono_Setup.exe
 
 # 2. First run (automatic setup wizard + native app window)
-#    Start via the Start Menu or Desktop shortcut, or:
+#    Start via the Start Menu entry "Lexono" (Desktop shortcut only if chosen in the installer), or:
 cd "%LocalAppData%\Lexono"
-kanzlei_ai.exe serve
+.\Lexono.exe serve
 
 # 3. Setup wizard prompts (in the console window) for:
 #    - Admin email address
 #    - (Optional) Admin password (else auto-generated)
-#    → .env generated, migration runs, database initialized, admin user created
+#    - Whether to set up the local AI (Ollama) now [Y/n] (hardware detection, automatic model
+#      choice, download - can take long; repeatable later with: Lexono.exe local-ai-setup)
+#    → .env generated (data directory: C:\ProgramData\Lexono), migration runs, database
+#      initialized, admin user created
+# 3b. The Claude API key is NOT asked by the wizard: add ANTHROPIC_API_KEY="..." to
+#    C:\ProgramData\Lexono\.env once and restart Lexono.
 
 # 4. A native app window opens automatically (Edge WebView2, no browser tab/address
 #    bar) showing the login page - no manual browser step needed.
@@ -67,7 +72,7 @@ kanzlei_ai.exe serve
 # → Forced password change on first login
 
 # Optional: run without the native window (server only, e.g. for headless/dev use)
-kanzlei_ai.exe serve --no-window
+.\Lexono.exe serve --no-window
 # → then open http://127.0.0.1:8000/dashboard/login in any browser manually
 ```
 
@@ -147,13 +152,13 @@ See **SECURITY_REVIEW.md** for full checklist.
 
 ## Support & Troubleshooting
 
-1. **Dashboard → Settings → System Status** – Check health, API quota, error rates
-2. **Logs:** `C:\ProgramData\KanzleiAI\kanzlei_ai.log`
+1. **Status indicators** at the bottom of the sidebar (Cloud-KI: not configured / checking / reachable ("Bereit") / unreachable / last request failed, based on a periodic network reachability check without any API request; Lokale KI); `GET /health` for liveness
+2. **Logs:** `C:\ProgramData\Lexono\logs\kanzlei_ai.log` (and `C:\ProgramData\Lexono\app.log` for startup output)
 3. **Native app window doesn't open / error mentions WebView2:** the Edge WebView2
    Runtime is missing on this machine. Install it from
    <https://developer.microsoft.com/en-us/microsoft-edge/webview2/> ("Evergreen
    Bootstrapper" is sufficient), then start the app again. As a workaround until then,
-   run `kanzlei_ai.exe serve --no-window` and open the dashboard in any browser.
+   run `Lexono.exe serve --no-window` (from `%LocalAppData%\Lexono`) and open the dashboard in any browser.
 4. **Help:** See **PILOT_PLAYBOOK.md** "Fehlerbehandlung" section
 5. **Report Issues:** Include error message, logs (anonymized), steps to reproduce
 
