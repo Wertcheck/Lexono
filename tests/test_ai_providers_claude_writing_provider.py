@@ -877,3 +877,11 @@ def test_both_prompts_use_an_address_placeholder_that_stands_directly_at_a_perso
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "unmittelbar bei einer Person" in prompt
         assert "niemals einer Person zu, bei der sie nicht unmittelbar steht" in prompt
+
+
+def test_both_prompts_trust_the_local_party_address_assignment() -> None:
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "Zuordnung der Beteiligten zu Anschriften laut Dokument" in prompt
+        assert "erfinde nie eine Anschrift" in prompt

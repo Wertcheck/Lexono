@@ -990,3 +990,24 @@ def test_name_and_street_on_adjacent_lines_stay_separate_and_a_date_stays_a_date
     assert originals.get("30.11.2026") == "datum"
     assert not any("Musterweg" in v and c == "person" for v, c in originals.items())
     assert "bis zum [DATUM_" in result.payload.anonymisierter_sachverhalt
+
+
+def test_gateway_adds_the_local_party_address_assignment_as_placeholder_only_argument() -> None:
+    from app.privacy.party_addresses import PARTY_ADDRESS_MARKER
+
+    gw = ClaudePrivacyGateway()
+
+    result = gw.prepare_request(
+        purpose="formulate_draft",
+        sachverhalt=(
+            "Verkaeufer: Dirk Neumann, Lindenallee 3, 30000 Beispielstadt  "
+            "Kaeuferin: Svenja Falk, Birkenweg 8, 30001 Beispielstadt"
+        ),
+        known_entities={"person": ["Dirk Neumann", "Svenja Falk"]},
+    )
+
+    assert result.allowed, result.reasons
+    notes = [n for n in result.payload.anonymisierte_argumentationspunkte if PARTY_ADDRESS_MARKER in n]
+    assert len(notes) == 1
+    assert "Neumann" not in notes[0] and "Lindenallee" not in notes[0]
+    assert "wohnt/sitzt unter [ADRESSE_01]" in notes[0]

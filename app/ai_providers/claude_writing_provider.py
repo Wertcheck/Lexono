@@ -147,6 +147,11 @@ verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
+- ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
+Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
+und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \
+genau den zugeordneten Adress-Platzhalter und schreibe dann kein "[Anschrift einsetzen]". Ohne \
+solche Zuordnung bleibt es beim Einsetz-Hinweis - erfinde nie eine Anschrift.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
 "Herr/Frau" in einen Schreibtext. Leite das Geschlecht einer Person NIEMALS aus ihrem \
 Vor- oder Nachnamen ab und auch nicht aus einer geschlechtsneutral gemeinten \
@@ -336,6 +341,11 @@ verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält.
+- ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
+Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
+und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \
+genau den zugeordneten Adress-Platzhalter und schreibe dann kein "[Anschrift einsetzen]". Ohne \
+solche Zuordnung bleibt es beim Einsetz-Hinweis - erfinde nie eine Anschrift.
 - ANREDE UND EINSETZ-HINWEISE: Schreibe nie "Frau/Herr", "Herrn/Frau" oder \
 "Herr/Frau" in einen Schreibtext. Leite das Geschlecht einer Person NIEMALS aus ihrem \
 Vor- oder Nachnamen ab und auch nicht aus einer geschlechtsneutral gemeinten \
