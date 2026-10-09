@@ -266,10 +266,44 @@ def detect_datum(text: str) -> list[DetectedSpan]:
     return spans
 
 
+#: Trenner zwischen "Strasse Nr" und "PLZ Ort" einer EINEN Anschrift: Komma/Semikolon und/oder ein
+#: Zeilenumbruch (in der Pipeline zu zwei Leerzeichen geworden), nichts sonst.
+_STREET_TO_POSTAL_SEPARATOR = re.compile(r"[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t]*")
+
+
 def detect_address(text: str) -> list[DetectedSpan]:
-    spans = _matches_from_pattern(text, _STREET_PATTERN, "adresse")
-    spans += _matches_from_pattern(text, _POSTAL_CODE_CITY_PATTERN, "adresse")
-    return spans
+    """Strasse+Hausnummer und PLZ+Ort, die DIREKT aufeinander folgen ("Lindenallee 3, 30000
+    Beispielstadt"), sind EINE Anschrift und bekommen EINEN Platzhalter. Real-E2E 09.10.: zwei
+    getrennte Platzhalter hinter dem Namen eines Beteiligten fuehrten dazu, dass das Modell keine
+    vollstaendige Anschrift erkannte und "[Anschrift einsetzen]" schrieb. Nicht benachbarte Teile
+    bleiben getrennte Treffer."""
+    streets = _matches_from_pattern(text, _STREET_PATTERN, "adresse")
+    postals = _matches_from_pattern(text, _POSTAL_CODE_CITY_PATTERN, "adresse")
+    merged: list[DetectedSpan] = []
+    used_postals: set[int] = set()
+    for street in streets:
+        partner = next(
+            (
+                (index, postal)
+                for index, postal in enumerate(postals)
+                if index not in used_postals
+                and postal.start >= street.end
+                and _STREET_TO_POSTAL_SEPARATOR.fullmatch(text[street.end : postal.start])
+            ),
+            None,
+        )
+        if partner is None:
+            merged.append(street)
+            continue
+        index, postal = partner
+        used_postals.add(index)
+        merged.append(
+            DetectedSpan(
+                category="adresse", start=street.start, end=postal.end, value=text[street.start : postal.end]
+            )
+        )
+    merged += [postal for index, postal in enumerate(postals) if index not in used_postals]
+    return merged
 
 
 def detect_known_entities(

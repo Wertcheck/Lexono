@@ -867,3 +867,13 @@ def test_both_prompts_forbid_deriving_gender_from_names_or_generic_role_words() 
         assert "Verkäufer, Käufer, Mandant" in prompt
         assert "neutrale Anrede" in prompt
         assert "setzt Lexono lokal aus dem Kanzlei-Profil ein" in prompt
+
+
+def test_both_prompts_use_an_address_placeholder_that_stands_directly_at_a_person() -> None:
+    """Real-E2E 09.10.: die Anschrift eines Beteiligten stand als Platzhalter direkt hinter dem
+    Namen, wurde aber als "[Anschrift einsetzen]" ausgegeben."""
+    from app.ai_providers.claude_writing_provider import CHAT_SYSTEM_PROMPT, WRITING_SYSTEM_PROMPT
+
+    for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
+        assert "unmittelbar bei einer Person" in prompt
+        assert "niemals einer Person zu, bei der sie nicht unmittelbar steht" in prompt

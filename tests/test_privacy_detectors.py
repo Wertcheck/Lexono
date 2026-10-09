@@ -73,7 +73,8 @@ def test_aktenzeichen_with_real_alphanumeric_value_is_still_detected() -> None:
 def test_detects_address_street_and_postal_code() -> None:
     spans = detect_all("Wohnhaft in der Musterstraße 12, 12345 Musterstadt.")
     address_spans = [s for s in spans if s.category == "adresse"]
-    assert len(address_spans) == 2
+    # Direkt aufeinanderfolgend: EINE Anschrift (siehe test_street_and_postal_city_form_one_address_span).
+    assert [s.value for s in address_spans] == ["Musterstraße 12, 12345 Musterstadt"]
 
 
 @pytest.mark.parametrize(
@@ -471,7 +472,7 @@ def test_bic_is_detected_only_with_a_bic_keyword() -> None:
 @pytest.mark.parametrize(
     "text, expected",
     [
-        ("Hafenkai 3, 24103 Beispielstadt", "Hafenkai 3"),
+        ("Hafenkai 3, 24103 Beispielstadt", "Hafenkai 3, 24103 Beispielstadt"),
         ("Hauptstr. 12 in Beispielstadt", "Hauptstr. 12"),
         ("Rathausmarkt 5", "Rathausmarkt 5"),
         ("Parkhof 2a", "Parkhof 2a"),
@@ -571,3 +572,25 @@ def test_legal_form_alone_or_with_only_function_words_is_not_a_company(text: str
     from app.privacy.detectors import detect_company_with_legal_form
 
     assert detect_company_with_legal_form(text) == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Verkaeufer: Dirk Neumann, Lindenallee 3, 30000 Beispielstadt  Kaeuferin: X", "Lindenallee 3, 30000 Beispielstadt"),
+        ("Dirk Neumann  Lindenallee 3  30000 Beispielstadt  Datum", "Lindenallee 3  30000 Beispielstadt"),
+        ("Anschrift: Birkenweg 8\n30001 Beispielstadt", "Birkenweg 8\n30001 Beispielstadt"),
+    ],
+)
+def test_street_and_postal_city_form_one_address_span(text: str, expected: str) -> None:
+    """Real-E2E 09.10.: "Lindenallee 3, 30000 Beispielstadt" wurde zu ZWEI Platzhaltern
+    ([ADRESSE_01], [ADRESSE_02]); das Modell konnte daraus keine vollstaendige Anschrift des
+    Beteiligten ableiten und schrieb "[Anschrift einsetzen]"."""
+    addresses = [s for s in detect_all(text) if s.category == "adresse"]
+    assert [s.value for s in addresses] == [expected]
+
+
+def test_street_and_postal_city_that_are_not_adjacent_stay_separate() -> None:
+    text = "Lindenallee 3 liegt weit entfernt von 30000 Beispielstadt und anderem Text"
+    addresses = [s for s in detect_all(text) if s.category == "adresse"]
+    assert len(addresses) == 2

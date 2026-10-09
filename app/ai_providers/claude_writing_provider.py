@@ -164,7 +164,12 @@ passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hin
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
 "[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
-[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
+[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf. Gilt das auch \
+für die Anschrift des Empfängers eines Mandantenschreibens: steht ein [ADRESSE_NN] im \
+Sachverhalt unmittelbar bei einer Person (Name, direkt danach die Adresse), ist \
+das deren vollständige Anschrift - übernimm den Platzhalter als Anschrift dieser Person und \
+schreibe dann kein "[Anschrift einsetzen]". Ordne eine Anschrift niemals einer Person zu, bei \
+der sie nicht unmittelbar steht.
 - SCHREIBEN-BEGRENZUNG: Gibst du ein Schreiben, einen Schriftsatz oder einen Entwurf \
 aus (auch bei Überarbeitungen und Mandantenschreiben), setze es zwischen die beiden \
 Zeilen "=== SCHREIBEN ===" und "=== ENDE SCHREIBEN ===". Das Schreiben beginnt direkt \
@@ -348,7 +353,12 @@ passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hin
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
 Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
 "[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
-[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf.
+[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf. Gilt das auch \
+für die Anschrift des Empfängers eines Mandantenschreibens: steht ein [ADRESSE_NN] im \
+Sachverhalt unmittelbar bei einer Person (Name, direkt danach die Adresse), ist \
+das deren vollständige Anschrift - übernimm den Platzhalter als Anschrift dieser Person und \
+schreibe dann kein "[Anschrift einsetzen]". Ordne eine Anschrift niemals einer Person zu, bei \
+der sie nicht unmittelbar steht.
 - SCHREIBEN-BEGRENZUNG: Gibst du ein Schreiben, einen Schriftsatz oder einen Entwurf \
 aus (auch bei Überarbeitungen und Mandantenschreiben), setze es zwischen die beiden \
 Zeilen "=== SCHREIBEN ===" und "=== ENDE SCHREIBEN ===". Das Schreiben beginnt direkt \
