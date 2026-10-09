@@ -79,13 +79,20 @@ class ModelCatalogEntry:
     recommendation_priority: int
 
 
+#: RAM, die Lexono selbst belegt (Anwendung mit Privacy-/NER-Modellen plus WebView2-Oberflaeche),
+#: real gemessen im installierten Build (~1,2 GB Prozess + ~0,8 GB WebView2). Ohne diesen
+#: Anteil wurde `qwen3:8b` auf einer 16-GB-Maschine als "empfohlen" eingestuft und liess nur
+#: ~1,4-2 GB frei (Betriebssystem + Browser + Entwicklungswerkzeuge fuehrten zu Speicherdruck).
+_APP_RESERVE_GB = 2.0
+
+
 def _ram_estimate(download_size_gb: float) -> tuple[float, float]:
     """Konservative Faustregel (siehe Moduldocstring): min = Downloadgroesse
-    + ca. 30% Overhead (Kontext/Runtime) + 2 GB OS-Reserve, empfohlen =
-    zusaetzlich 50% Sicherheitsmarge fuer fluessigeren Betrieb neben der
-    restlichen Anwendung."""
+    + ca. 30% Overhead (Kontext/Runtime) + 2 GB OS-Reserve (technisch lauffaehig),
+    empfohlen = zusaetzlich 2 GB Sicherheitsmarge UND der Eigenbedarf von Lexono
+    (`_APP_RESERVE_GB`) fuer fluessigen Betrieb neben der restlichen Anwendung."""
     minimum = round(download_size_gb * 1.3 + 2, 1)
-    recommended = round(download_size_gb * 1.3 + 4, 1)
+    recommended = round(download_size_gb * 1.3 + 4 + _APP_RESERVE_GB, 1)
     return minimum, recommended
 
 

@@ -233,3 +233,15 @@ def test_i7_3720qm_is_not_treated_as_standard_reference_hardware() -> None:
     assert result.primary is not None
     assert result.primary.status != RecommendationStatus.RECOMMENDED
     assert "langsam" in result.primary.performance_category
+
+
+def test_qwen3_8b_is_not_recommended_on_16_gb_because_lexono_needs_its_own_ram() -> None:
+    """Real gemessen (09.10.): auf 15,7 GB RAM liess `qwen3:8b` (5,9 GB) neben Lexono selbst
+    (~2 GB inkl. WebView2) nur ~1,4-2 GB frei. Es ist lauffaehig (SUPPORTED), aber nicht die
+    Empfehlung; empfohlen wird ein kleineres Modell."""
+    profile = _classified_profile(ram_total_gb=15.7, cpu_generation=11, cpu_cores=4)
+    result = RecommendationEngine().recommend(profile)
+    assert result.primary is not None
+    assert result.primary.entry.tag != "qwen3:8b"
+    eight_b = next(e for e in result.alternatives if e.entry.tag == "qwen3:8b")
+    assert eight_b.status == RecommendationStatus.SUPPORTED
