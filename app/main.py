@@ -296,6 +296,30 @@ async def _run_periodic_law_update_check(settings: Settings) -> None:
             )
 
 
+_CLOUD_HEALTH_INTERVAL_SECONDS = 45.0
+
+
+async def _run_periodic_cloud_health(app: FastAPI, settings) -> None:
+    """Haelt `app.state.cloud_health` aktuell (Sidebar-Anzeige "Cloud-KI"): netzwerkseitige
+    Erreichbarkeitspruefung mit kurzem Timeout plus Auswertung der letzten Anfrage (siehe
+    app/ai_providers/cloud_health.py). Keine API-Anfrage, kein Schluessel, kein Inhalt. Aenderungen werden
+    nur als feste Kategorie geloggt."""
+    from app.ai_providers.cloud_health import CHECKING, NOT_CONFIGURED, CloudHealth, compute_cloud_health, probe_target
+
+    app.state.cloud_health = CloudHealth(CHECKING if probe_target(settings) else NOT_CONFIGURED)
+    previous = None
+    while True:
+        try:
+            health = await asyncio.to_thread(compute_cloud_health, settings, session_factory=SessionLocal)
+            app.state.cloud_health = health
+            if previous != (health.state, health.reason):
+                logger.info("Cloud-KI-Status: %s%s", health.state, f" ({health.reason})" if health.reason else "")
+                previous = (health.state, health.reason)
+        except Exception:  # noqa: BLE001 - die Statusanzeige darf den Betrieb nie stoeren
+            logger.debug("Cloud-KI-Statuspruefung fehlgeschlagen", exc_info=True)
+        await asyncio.sleep(_CLOUD_HEALTH_INTERVAL_SECONDS)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Laedt die validierte Konfiguration beim Start und konfiguriert das
@@ -339,10 +363,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _run_silent_update_check(app, settings.update_manifest_url)
     )
     local_ai_task = asyncio.create_task(_run_silent_local_ai_check(app, settings))
+    cloud_health_task = asyncio.create_task(_run_periodic_cloud_health(app, settings))
     mail_ingestion_task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
     law_update_check_task = asyncio.create_task(_run_periodic_law_update_check(settings))
     yield
     update_task.cancel()
+    cloud_health_task.cancel()
     local_ai_task.cancel()
     mail_ingestion_task.cancel()
     law_update_check_task.cancel()

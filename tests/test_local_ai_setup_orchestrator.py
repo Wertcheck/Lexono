@@ -80,6 +80,14 @@ class _FakeOllamaInstaller:
     def detect_installed_version(self) -> str | None:
         return self.installed_version
 
+    def ensure_running(self, **kwargs) -> bool:
+        self.ensure_running_calls = getattr(self, "ensure_running_calls", 0) + 1
+        self.on_ensure_running(kwargs)
+        return True
+
+    def on_ensure_running(self, kwargs) -> None:
+        """Hook fuer Tests (Reihenfolge-Pruefung)."""
+
 
 class _FakeProvider:
     def __init__(self, *, pull_error: Exception | None = None, health: LocalAIHealthStatus | None = None) -> None:
@@ -317,3 +325,32 @@ def test_status_model_missing_when_reachable_but_model_absent(tmp_path: Path) ->
     service = _service(env_path=tmp_path / ".env", provider=provider)
     status = service.get_status(_FakeSettings())
     assert status.state == LocalAiState.MODEL_MISSING
+
+
+# --- Ollama installiert, aber nicht gestartet (Pilot-Vorbereitung, 09.10.) ---
+
+
+def test_stopped_ollama_is_started_before_the_model_download(tmp_path: Path) -> None:
+    """Real im installierten Build reproduziert: Ollama installiert, aber gestoppt -> der Modell-Download
+    scheiterte mit ConnectError, weil `ensure_installed` nur eine vorhandene Installation meldet."""
+    env_path = tmp_path / ".env"
+    env_path.write_text("APP_ENV=development\n", encoding="utf-8")
+    order: list[str] = []
+
+    class _Installer(_FakeOllamaInstaller):
+        def on_ensure_running(self, kwargs) -> None:
+            order.append("ensure_running")
+            assert callable(kwargs["is_reachable"]), "Erreichbarkeit wird ueber den Provider-Health-Check geprueft"
+
+    class _Provider(_FakeProvider):
+        def pull_model(self, model: str | None = None) -> None:
+            order.append("pull")
+            super().pull_model(model)
+
+    installer = _Installer()
+    service = _service(env_path=env_path, ollama_installer=installer, provider=_Provider())
+
+    result = service.run_setup(download_dir=tmp_path / "dl", settings=_FakeSettings())
+
+    assert result.success is True
+    assert order == ["ensure_running", "pull"]

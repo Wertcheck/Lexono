@@ -196,6 +196,18 @@ class LocalAiSetupService:
 
         provider = self._provider_factory(chosen_tag, settings)
 
+        # ECHTER FUND (Pilot-Vorbereitung, 09.10., Test im installierten Build): ist Ollama installiert,
+        # aber gerade nicht gestartet (z. B. nach einem Neustart), scheiterte der Modell-Download mit
+        # "ConnectError" - `ensure_installed` meldet eine vorhandene Installation nur als solche, startet
+        # sie aber nicht. Der Start der Anwendung nutzt dafuer bereits `ensure_running` (app/main.py);
+        # hier jetzt ebenfalls, BEVOR das Modell geladen wird. Best effort: bleibt Ollama unerreichbar,
+        # scheitert der Download wie bisher mit der bekannten Meldung.
+        self.ollama_installer.ensure_running(
+            is_reachable=lambda: provider.check_health().reachable,
+            wait_seconds=3.0,
+            max_attempts=10,
+        )
+
         try:
             provider.pull_model(chosen_tag)
         except LocalLLMUnavailableError as exc:

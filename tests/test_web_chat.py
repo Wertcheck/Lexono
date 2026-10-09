@@ -572,9 +572,15 @@ def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_
 
     previous_settings = getattr(main_app.state, "settings", None)
     main_app.state.settings = fake_settings
+    from app.ai_providers.cloud_health import REACHABLE, CloudHealth
+
+    # "Bereit" erfordert seit der Pilot-Vorbereitung eine nachgewiesene Erreichbarkeit
+    # (app.state.cloud_health, vom Lifespan-Task gepflegt).
+    main_app.state.cloud_health = CloudHealth(REACHABLE)
     try:
         response = client.get("/dashboard/chat")
     finally:
+        del main_app.state.cloud_health
         if previous_settings is not None:
             main_app.state.settings = previous_settings
         else:
@@ -584,7 +590,35 @@ def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_
     # Seit Referenzbild (01.09.) steht der Status in der globalen Sidebar
     # statt im Chat-Panel-Header (chat.html hat keine eigene Kopie mehr).
     assert "Cloud-KI (Gateway)" in response.text
-    assert 'sidebar__status-value--ok">Bereit' in response.text
+    assert 'data-cloud-state="reachable"' in response.text
+    assert 'sidebar__status-value--ok" data-cloud-state="reachable">Bereit' in response.text
+
+
+@pytest.mark.parametrize(
+    ("state", "reason", "label"),
+    [
+        ("unreachable", "Zeitüberschreitung", "nicht erreichbar"),
+        ("request_failed", "letzte Anfrage fehlgeschlagen", "Anfrage fehlgeschlagen"),
+        ("checking", "", "wird geprüft"),
+        ("not_configured", "", "nicht konfiguriert"),
+    ],
+)
+def test_sidebar_never_shows_cloud_bereit_unless_reachable(
+    client: TestClient, db_session: Session, state: str, reason: str, label: str
+) -> None:
+    from app.ai_providers.cloud_health import CloudHealth
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.cloud_health = CloudHealth(state, reason)
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.cloud_health
+
+    assert response.status_code == 200
+    assert f'data-cloud-state="{state}">{label}' in response.text
+    assert 'sidebar__status-value--ok" data-cloud-state' not in response.text
 
 
 def test_chat_page_shows_local_ai_checking_state_without_lifespan(
