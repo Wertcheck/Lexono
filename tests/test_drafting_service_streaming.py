@@ -504,3 +504,34 @@ def test_ai_history_placeholder_echoed_by_claude_is_reconstructed_not_blocked(
     assert result.success is True, result.blocked_reasons
     assert "024/2025" in result.draft_text
     assert "[TELEFON_01]" not in result.draft_text
+
+
+def test_no_local_preanalysis_status_when_local_ai_is_skipped_for_general_chat(
+    db_session: Session,
+) -> None:
+    """ECHTER FUND (09.10., Abschluss-Verifikation): der Status "Lokale Vorabanalyse laeuft..." wurde
+    VOR der Skip-Entscheidung gesendet - bei einer allgemeinen Chat-Frage ohne PII, fuer die die
+    lokale KI bewusst uebersprungen wird, zeigte die UI trotzdem eine Ladeanzeige fuer einen
+    Schritt, der nie stattfindet."""
+    writing_provider = FakeStreamingClaudeWritingProvider(chunks=["Eine allgemeine Antwort."])
+    local_llm = FakeLocalLLMProvider()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    events = list(
+        service.create_draft_stream(
+            None,
+            "chat_response",
+            db_session,
+            attorney_anmerkungen="was kannst du",
+            gespraechsverlauf=[
+                "Anwalt: Wie hoch sind die Mietpreise?",
+                "Assistent: Dazu hat sich Martina Quellfeld in einem Aufsatz geaeussert.",
+            ],
+            actor="Testnutzer",
+        )
+    )
+
+    assert local_llm.received_payloads == [], "lokale KI darf hier nicht laufen"
+    statuses = [e.status for e in events if e.kind == "status"]
+    assert "Lokale Vorabanalyse läuft…" not in statuses
+    assert events[-1].result.success is True

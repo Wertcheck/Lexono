@@ -153,7 +153,6 @@ _RELAXED_COVERAGE_PURPOSES = frozenset({_CHAT_PURPOSE, "formulate_draft"})
 # Fail-Closed-Verzweigung bleibt exakt an derselben Stelle bestehen).
 _STEP_STATUS_LABELS: dict[str, str] = {
     "local_ai_preanalysis": "Lokale Vorabanalyse läuft…",
-    "local_ai_preanalysis_skipped": "Lokale Vorabanalyse läuft…",
     "claude": "Anfrage wird an Claude gesendet…",
     "validation": "Antwort wird lokal geprüft…",
     "reconstruction": "Antwort wird zusammengesetzt…",
@@ -861,7 +860,9 @@ class DraftingService:
         # injiziert wurde (siehe app/web/service_factory.py) - schlaegt er
         # fehl, wird NIEMALS stattdessen direkt Claude aufgerufen
         # (Datenschutz vor Verfuegbarkeit, siehe Moduldocstring Schritt 5).
-        if self.local_llm_provider is not None:
+        # Ladeanzeige nur, wenn die lokale Vorabanalyse WIRKLICH laeuft - wird sie bewusst
+        # uebersprungen (allgemeine Frage ohne sensiblen Kontext), gibt es keinen solchen Schritt.
+        if self.local_llm_provider is not None and not skip_llm_privacy_layers:
             yield DraftStreamEvent(
                 kind="status", status=_STEP_STATUS_LABELS["local_ai_preanalysis"]
             )
