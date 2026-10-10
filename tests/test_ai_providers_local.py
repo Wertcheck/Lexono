@@ -209,16 +209,17 @@ def test_very_long_contract_keeps_start_end_and_key_passages_and_flags_the_cut(d
 
 
 def test_excerpt_cuts_at_word_boundaries_never_inside_a_date() -> None:
+    import re
+
     from app.ai_providers.local_ai_provider import _document_excerpt
 
-    text = ("Wort " * 4000) + " Stichtag 01.09.2026 " + ("Wort " * 4000)
-    excerpt = _document_excerpt(text, 2000)
-    assert excerpt.omitted_chars > 0
-    for token in excerpt.text.replace("[…]", " ").split():
-        assert token in {"Wort", "Stichtag", "01.09.2026"} or token.startswith("[") or token.endswith("]") or token in {
-            "Auszug:", "von", "Zeichen", "dieses", "Dokuments", "ausgelassen;", "Anfang,", "Ende", "und", "Stellen",
-            "mit", "Beträgen,", "Daten", "Fristen", "sind", "enthalten", "…]", "…",
-        } or token.isdigit()
+    pieces = [f"Wort{k} Stichtag {10 + k % 18}.0{1 + k % 9}.2026 Ende" for k in range(900)]
+    text = " ".join(pieces)
+    for limit in range(700, 2600, 53):
+        excerpt = _document_excerpt(text, limit)
+        assert excerpt.omitted_chars > 0
+        for match in re.finditer(r"\d{2}\.\d{2}\.\d+", excerpt.text):
+            assert len(match.group().split(".")[-1]) == 4, (limit, match.group())  # nie "…2" oder "…20" statt 2026
 
 
 def test_total_budget_across_many_long_documents_is_bounded_and_every_document_keeps_its_start(
@@ -474,3 +475,136 @@ def test_no_search_service_results_in_empty_quellenverweise(db_session: Session)
     result = provider.prepare_draft_context(matter.id, db_session)
 
     assert result.quellenverweise == []
+
+
+# --- Auswahl der Schluesselstellen und faire Budgetverteilung (Qualitaetslauf 11.10.2026) ----------------------
+
+
+def _prepared_sachverhalt(case_name: str):
+    from scripts.e2e_completeness import build_session, make_case
+
+    case = make_case(case_name)
+    db, matter = build_session(case)
+    return case, RuleBasedLocalAIProvider().prepare_draft_context(matter.id, db)
+
+
+@pytest.mark.parametrize("case_name", ["s45", "m3x20", "m4x35", "h45", "h3x30"])
+def test_all_test_facts_reach_the_sachverhalt_for_long_and_multi_document_files(case_name: str) -> None:
+    """Betraege, Daten, Fristen, Rechtsfolgen, beschreibende Details ohne Zahlen, Ausnahmen, widerspruechliche Angaben
+    und die Schlussanweisung stehen je Dokument am Anfang, in der Mitte und am Ende. VORHER fehlten in s45/m4x35/h45/
+    h3x30 beschreibende Mittelteil-Fakten (2/5, 3/20, 2/5, 6/15)."""
+    case, prep = _prepared_sachverhalt(case_name)
+    missing = [f.key for f in case.facts if f.probe not in prep.sachverhalt]
+    assert missing == []
+
+
+def test_context_stays_bounded_for_very_long_multi_document_files() -> None:
+    from app.ai_providers.local_ai_provider import _MAX_DOCUMENT_CHARS_TOTAL, _MIN_DOCUMENT_ALLOWANCE
+
+    case, prep = _prepared_sachverhalt("m4x35")
+    assert sum(len(d) for d in case.docs) > 100_000
+    assert len(prep.sachverhalt) < _MAX_DOCUMENT_CHARS_TOTAL + len(case.docs) * (_MIN_DOCUMENT_ALLOWANCE + 400)
+
+
+def test_budget_is_shared_fairly_so_the_oldest_document_is_not_starved() -> None:
+    from app.ai_providers.local_ai_provider import (
+        _MAX_DOCUMENT_CHARS_TOTAL,
+        _MAX_DOCUMENT_EXCERPT_CHARS,
+        _document_allowances,
+    )
+
+    four_long = _document_allowances([35_000] * 4)
+    assert max(four_long) - min(four_long) <= 1  # frueher: 30.000 / 30.000 / 30.000 / 3000
+    assert sum(four_long) <= _MAX_DOCUMENT_CHARS_TOTAL
+    mixed = _document_allowances([2_000, 100_000, 100_000, 100_000])
+    assert mixed[0] == 2_000  # kurzes Dokument bleibt vollstaendig
+    assert max(mixed) <= _MAX_DOCUMENT_EXCERPT_CHARS
+    assert sum(mixed) <= _MAX_DOCUMENT_CHARS_TOTAL
+    small = _document_allowances([3_000, 4_000])
+    assert small == [3_000, 4_000]  # alles passt -> unveraendert
+
+
+def test_repeated_boilerplate_does_not_crowd_out_unique_details() -> None:
+    from app.ai_providers.local_ai_provider import _key_passages
+
+    boiler = "Die Parteien behandeln alle Informationen vertraulich und unverzüglich. "
+    middle = (boiler * 200) + "Die Anlage steht im Kellergeschoss neben dem Heizraum. " + (boiler * 200)
+    selected = _key_passages(middle, 600)
+    assert "Kellergeschoss neben dem Heizraum" in selected
+    assert selected.count("vertraulich") <= 1  # Standardklausel hoechstens einmal
+
+
+def test_cut_marker_and_notice_are_clear_for_claude_and_for_the_lawyer(db_session: Session) -> None:
+    matter = _matter(db_session, title="Testakte")
+    db_session.add(
+        Document(
+            matter=matter, file_path="/tmp/x.pdf", original_filename="Rahmenvertrag_Anlagenbau.pdf",
+            extracted_text=("Satz mit Inhalt zum Vertrag Nummer eins. " * 3000), classified_type="Vertrag",
+        )
+    )
+    db_session.commit()
+
+    result = RuleBasedLocalAIProvider().prepare_draft_context(matter.id, db_session)
+
+    assert "Auszug:" in result.sachverhalt and "keine Aussagen treffen" in result.sachverhalt  # Claude
+    notice = result.notices[0]
+    assert "Rahmenvertrag_Anlagenbau.pdf" in notice  # welches Dokument
+    assert "%" in notice and "Zeichen" in notice  # wie viel fehlt
+    assert "Original" in notice  # was zu tun ist
+
+
+# --- PDF-Zeilenumbrueche (Qualitaetslauf 11.10.2026) ---------------------------------------------------------
+
+
+def test_soft_wrapped_lines_are_rejoined_but_paragraphs_headings_and_lists_stay_separate() -> None:
+    from app.ai_providers.local_ai_provider import _reflow_soft_wraps
+
+    text = (
+        "Die Anlage wird im Kellergeschoss neben dem Heizraum der Liegenschaft aufgestellt und\n"
+        "ordnungsgemäß angeschlossen. Der Schiedsgutachter Dr.\n"  # kurze Zeile -> bleibt (Satzende davor)
+        "§ 7 Zahlung\n"
+        "1. Der Kaufpreis ist fällig bei Übergabe der Anlage an den Käufer, spätestens jedoch binnen\n"
+        "14 Tagen nach Rechnungsstellung\n"
+        "- Skonto 2 Prozent\n"
+        "Schlussbestimmungen und weitere Hinweise zur Auslegung dieses Vertrages ohne Satzzeichen am Ende der Zeile\n"
+        "und mit Fortsetzung in der nächsten Zeile."
+    )
+    reflowed = _reflow_soft_wraps(text)
+    assert "Heizraum der Liegenschaft aufgestellt und ordnungsgemäß angeschlossen." in reflowed  # Satz wieder ganz
+    assert "\n§ 7 Zahlung\n" in reflowed  # Ueberschrift bleibt eigene Zeile
+    assert "binnen 14 Tagen nach Rechnungsstellung" in reflowed
+    assert "\n- Skonto 2 Prozent\n" in reflowed  # Listenpunkt bleibt
+    assert "Zeile und mit Fortsetzung" in reflowed
+
+
+@pytest.mark.parametrize("case_name", ["h45", "m3x20"])
+def test_all_test_facts_survive_pdf_style_line_wrapping(case_name: str, db_session: Session) -> None:
+    """Dokumente aus PDFs haben harte Zeilenumbrueche mitten im Satz. VORHER: Fragmente statt Saetze, beschreibende
+    Details wurden unvollstaendig uebernommen; NACHHER alle Testfakten (Vergleich whitespace-normalisiert)."""
+    import re
+    import textwrap
+
+    from scripts.e2e_completeness import make_case
+
+    case = make_case(case_name)
+    matter = _matter(db_session, title="Testakte")
+    for i, text in enumerate(case.docs):
+        db_session.add(
+            Document(matter=matter, file_path=f"/tmp/w{i}.pdf", extracted_text=textwrap.fill(text, 88), classified_type="Vertrag")
+        )
+    db_session.commit()
+
+    sachverhalt = RuleBasedLocalAIProvider().prepare_draft_context(matter.id, db_session).sachverhalt
+
+    norm = lambda value: re.sub(r"\s+", " ", value)  # noqa: E731
+    missing = [f.key for f in case.facts if norm(f.probe) not in norm(sachverhalt)]
+    assert missing == []
+
+
+def test_name_split_across_a_line_break_after_the_title_is_joined_before_pseudonymization() -> None:
+    from app.ai_providers.local_ai_provider import _normalize_document_text
+
+    joined = _normalize_document_text(
+        "Die Begutachtung der Lichtkuppel und der Dämmung erfolgt durch den Schiedsgutachter Dr.\nWiebe nach Abnahme."
+    )
+    assert "Dr. Wiebe" in joined

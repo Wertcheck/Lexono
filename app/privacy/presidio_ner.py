@@ -168,6 +168,21 @@ _NEVER_ENTITY_WORDS = frozenset(
         "erbschaftsteuerbescheid",
         "offener",
         "attika", "verblechung", "verblechungen", "bitumenbahn", "sicherheitseinbehalt", "prozessvollmacht",
+        # Allgemeine Rollen-/Institutionsbegriffe (11.10.2026, scripts/diagnose_common_noun_entities.py: 10 von 127
+        # gewoehnlichen Rechtsbegriffen). Ende-zu-Ende-Beleg: "Partei" wurde als ORGANISATION pseudonymisiert; sobald
+        # Claude das Wort selbst schrieb ("die andere Partei"), blockierte der Leak-Check - 4 von 10 Schriftsaetzen
+        # eines synthetischen Vertragsfalls waren allein dadurch blockiert. Gleichheit des GANZEN Treffers: ein
+        # konkreter Name ("Landgericht Hamburg", "Stadt Beispielstadt", "Verbraucherzentrale Hamburg") ist ein
+        # laengerer Treffer und bleibt geschuetzt; das nackte Gattungswort identifiziert niemanden.
+        "partei", "amt", "beklagte", "bund", "gemeinde", "kommune", "kreis", "landgericht", "stadt", "verbraucherzentrale",
+        # Transliterierte Schreibweise eines der haeufigsten Rechtswoerter (11.10.2026, scripts/diagnose_transliteration.py:
+        # 3 zusaetzliche Entitaeten in 16 Saetzen nur bei ae/oe/ue-Schreibweise: "Maengel" als PERSON, "Flachdach-
+        # flaeche" als ORT); mit Umlauten wird "Mängel" nie erkannt. Ganzwort-Gleichheit, siehe oben.
+        "maengel", "maengeln",
+        # Fall L (4 Dokumente, transliteriert): "Lichtkuppel" wurde erst im Restrisiko-Scan (anderer Kontext durch die
+        # Platzhalter) als ORT erkannt -> Gateway-Block "weiterhin erkennbare Muster: ort", 4 von 4 Laeufen. Mit dieser
+        # Ausnahme passiert dasselbe Dokument das Gateway. "Geschaeftsfuehrerin": PERSON in transliterierter Fassung.
+        "lichtkuppel", "lichtkuppeln", "geschaeftsfuehrerin",
     }
 )
 

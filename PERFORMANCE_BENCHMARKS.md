@@ -252,3 +252,81 @@ erhalten bleibt, ist NICHT VERIFIZIERT:** das Anthropic-Guthaben war während de
 „credit balance too low“), das blinde Paarurteil und die Claude-Läufe der aktuellen Variante konnten nicht
 ausgeführt werden. Daher **keine Änderung** am Standard; `LOCAL_SUMMARY_MODE` und der Auto-Modus bleiben
 unverändert. Kandidat zur späteren Prüfung: der oben genannte Kompaktprompt.
+
+## Ende-zu-Ende-Lauf Dokumentverarbeitung (11.10.2026, vierter Lauf)
+
+Reproduzierbar mit `scripts/e2e_completeness.py` (Modi `payload`, `echo`, `draft`). Synthetischer Korpus: Verträge mit
+13 Testfakten je Dokument am Anfang, in der Mitte und am Ende (Beträge, Daten, Fristen, Rechtsfolgen, beschreibende
+Details **ohne Zahlen**, Ausnahmen, Schlussanweisung, **widersprüchliche** Liefertermine/Preise). Fälle: `s5`/`s12`
+(ein Dokument 5/12 Tsd. Zeichen), `s45`, `m3x20` (3 × 20 Tsd.), `m4x35` (4 × 35 Tsd. = 121 Tsd.), `h45`/`h3x30`
+(abwechslungsreicher Fülltext, schwerer Fall). Strikt getrennt: **Cloud-Payload** (lokal, Gateway) und **fertiger
+Schriftsatz** (echtes Claude, nach Rekonstruktion).
+
+### Cloud-Payload (lokal, deterministisch)
+
+| Fall | Payload vorher (9fe7da8) Mitte / Ende | Payload nachher Mitte / Ende | Payload-Zeichen vorher → nachher |
+|---|---|---|---|
+| s5, s12 | 5/5, 5/5 | 5/5, 5/5 | unverändert |
+| s45 | 3/5, 5/5 | **5/5**, 5/5 | 27.300 → 23.800 |
+| m3x20 | 15/15, 15/15 | 15/15, 15/15 | 53.100 |
+| m4x35 | 17/20, 20/20 | **20/20**, 20/20 | 89.900 → 74.300 |
+| h45 | 3/5, 5/5 | **5/5**, 5/5 | 29.200 → 29.800 |
+| h3x30 | 9/15, 15/15 | **15/15**, 15/15 | 78.600 → 89.300 |
+
+Anfang immer vollständig. Gateway (Presidio) 1,6–6,8 s. Wiederherstellung (`echo`): ein Payload, den Claude
+unverändert zurückgäbe, wird verlustfrei rekonstruiert (kein zusätzlicher Verlust nach der Cloud).
+
+### Fertiger Schriftsatz (echtes Claude)
+
+| Fall (jeweils 2 Läufe) | vorher Mitte / Ende, Blocks | nachher Mitte / Ende, Blocks |
+|---|---|---|
+| s45 | beide Läufe **blockiert** („Partei“, siehe unten) | 4/5, 5/5 und 4/5, 4/5; 0 Blocks |
+| m4x35 | 16/20, 16/20 (ein Lauf entartet: 3,6 Tsd. Zeichen, 0/12 Anfang) | 16/20, 16/20 (stabil) |
+| h45 | 2/5, 4/5 und 3/5, 4/5 | **5/5, 4/5** und **5/5, 4/5** |
+
+Gesamtlauf mit strenger Wortprüfung (12 Läufe nachher, 10 vorher): **Blocks 5 von 10 → 1 von 12**. Widersprüche
+(zwei Liefertermine) wurden in allen nicht blockierten Entwürfen **benannt und nicht vereinheitlicht**
+(Prüfung auf beide Werte plus Widerspruchsformulierung in der Nähe).
+
+**Installierter Build, Chat mit PDF-Upload, echtes Claude** (`h45` = 1 PDF 52 Tsd. Zeichen, `m3x20` = 3 PDFs):
+`h45` Anfang 3/3, Mitte 5/5 bzw. 4/5, Ende 5/5; `m3x20` Anfang 9/9, Mitte 12/15, Ende 12/15 (beide Läufe gleich);
+0 Blocks in 4 Läufen; Widerspruchshinweis vorhanden; Kürzungshinweis im Text von `h45`. Cloud-Payload dieser PDF-Läufe
+(abgefangen): 9/9 bzw. 27/27 nicht-datumsgebundene Fakten, Datumsfakten per Mapping.
+
+**Einordnung:** Die Vollständigkeit im Schriftsatz ist **niedriger als im Payload**, weil Claude bei einer
+Aufgabe „alles wiedergeben“ gleichlautende Angaben mehrerer Dokumente zusammenfasst und beschreibende Details
+umformuliert (lockere Schlüsselwortprüfung). Das ist Verhalten des Schreibmodells, kein Informationsverlust auf dem
+Weg zur Cloud. Verbesserung am Entwurf ist daher nur dort belegt, wo sie gemessen wurde (h45, s45, Blocks).
+
+### Ursachen und Korrekturen
+
+1. **Fehlalarm-Blocks durch gewöhnliche Rechtswörter (höchste Priorität).** 10 von 127 Rechts-/Rollenbegriffen
+   werden vom spaCy-NER als Ort/Organisation/Person erkannt (`scripts/diagnose_common_noun_entities.py`: Partei, Amt,
+   Beklagte, Bund, Gemeinde, Kommune, Kreis, Landgericht, Stadt, Verbraucherzentrale). Schreibt Claude das Wort selbst
+   („die andere Partei“), meldet der Leak-Check „nicht pseudonymisierter Wert“ und blockiert. Ganzwort-Ausnahme für
+   genau diese 10 Wörter (ein konkreter Name wie „Landgericht Hamburg“ bleibt geschützt; Tests positiv/negativ).
+2. **Beschreibende Details in langen Dokumenten fehlten.** Auswahl der Schlüsselstellen jetzt nach Signalen **und
+   Neuheit** (statistisch gegenüber dem Rest des Dokuments, Dubletten zählen einmal), Anteile 40 % Anfang / 40 %
+   Schlüsselstellen / 20 % Ende; faire Aufteilung des 90.000-Zeichen-Budgets (früher bekam das älteste Dokument nur
+   noch 3000 Zeichen).
+3. **PDF-Zeilenumbrüche zerrissen Sätze und Namen.** Weiche Umbrüche (lange Zeile ohne Satzende, nicht vor Liste/
+   Überschrift, auch nach Abkürzungen wie „Dr.“) werden vor der Auswahl zusammengeführt; im installierten Build mit
+   PDF stieg `h45` im Payload von 8/9 auf 9/9. Nebeneffekt: „Dr.“ und „Wiebe“ stehen wieder in einer Zeile.
+4. **Kürzungshinweise.** Marker für Claude („… keine Aussagen über ausgelassene Abschnitte treffen …“) und
+   Prüfpunkt mit Dokumentname, Zeichen und Prozent der Auslassung und Handlungsaufforderung.
+5. **Transliterierte Texte** (`scripts/diagnose_transliteration.py`): 3 zusätzliche Treffer in 16 Sätzen
+   („Maengel“, „Flachdachflaeche“, „ruegt Maengel“); belegte Ganzwort-Ausnahmen für „maengel(n)“, „lichtkuppel(n)“
+   (deterministischer Gateway-Block im transliterierten Fall L, 4 von 4), „geschaeftsfuehrerin“. **Strukturell nicht
+   gelöst:** jedes weitere seltene Wort kann in transliterierten Dokumenten Fehlalarme erzeugen; Vorschlag (nicht
+   umgesetzt): NER-Analyse auf umlaut-wiederhergestelltem Text mit Rückabbildung der Positionen.
+6. **Titel + Name:** Detektor, Vereinigung teilüberlappender Treffer und Zeilenumbruch-Zusammenführung sind
+   getestet (Detektor, Überlappung, Gateway-Ebene inkl. Umbruch nach „Dr.“, Dokument-Ebene).
+
+### Offene Grenzen (nicht verifiziert bzw. nicht behoben)
+
+* Beschreibende Fakten **ohne Signal und ohne Neuheit** (Alltagswörter in Dokumenten über 30.000 Zeichen) können
+  fehlen; das Hinweis-System weist darauf hin, ersetzt aber keine Prüfung.
+* 1 von 12 Entwürfen blockiert, weil Claude einen **nicht vorhandenen Platzhalter erfand** (`[ADRESSE_01]`) – Verhalten
+  des Schreibmodells, Fail-Closed korrekt, nicht verändert.
+* Echte Kanzleidokumente (Längen, OCR-Qualität, Scans) wurden nicht gemessen. Ob die Anwaltschaft den Prüfpunkt zur
+  Kürzung im Alltag versteht, ist nicht erhoben (NICHT VERIFIZIERT).

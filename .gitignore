@@ -51,3 +51,4 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+e2e_drafts/

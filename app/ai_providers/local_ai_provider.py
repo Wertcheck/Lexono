@@ -15,7 +15,9 @@ und `PromptContextBuilder` (Prompt 16).
 
 from __future__ import annotations
 
+import math
 import re
+from collections import Counter
 
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -86,8 +88,8 @@ _MAX_DOCUMENT_EXCERPT_CHARS = 30_000
 #: werden (siehe `_MAX_DOCUMENTS_IN_SACHVERHALT`); jedes Dokument bekommt mindestens `_MIN_DOCUMENT_ALLOWANCE`.
 _MAX_DOCUMENT_CHARS_TOTAL = 90_000
 _MIN_DOCUMENT_ALLOWANCE = 3_000
-_EXCERPT_HEAD_SHARE = 0.55
-_EXCERPT_TAIL_SHARE = 0.25
+_EXCERPT_HEAD_SHARE = 0.40
+_EXCERPT_TAIL_SHARE = 0.20
 # Sicherheitsergänzung (Prompt 28): ohne Obergrenze könnte eine Akte mit
 # sehr vielen (z. B. absichtlich zugeschickten) kleinen Anhängen den
 # Sachverhalt und damit die Kosten/Tokenzahl jeder Claude-Anfrage
@@ -118,6 +120,54 @@ _HEADING_RE = re.compile(r"^(?:§\s*\d+|Art(?:ikel)?\.?\s*\d+|\d+(?:\.\d+)*\.?\s
 _SEGMENT_SPLIT_RE = re.compile(r"(?<=[.!?;])\s+|\s{2,}")
 
 
+_TERMINAL_PUNCTUATION = (".", ":", ";", "!", "?")
+_LIST_OR_HEADING_START_RE = re.compile(r"^(?:§|Art(?:ikel)?\.?\s*\d|\d+(?:\.\d+)*[.)]\s|[-•*–]\s|[A-ZÄÖÜ0-9 .,:/-]{4,}$)")
+
+
+# Zeile endet mit einer Abkuerzung/einem Titel: der Punkt ist KEIN Satzende (z. B. "Schiedsgutachter Dr." / "Wiebe").
+_ABBREVIATION_END_RE = re.compile(r"(?:\b(?:Dr|Prof|Nr|Abs|Art|ca|bzw|ggf|inkl|vgl|evtl|Hr|Fr|Mio|Mrd)|\b(?:z\. ?B|u\. ?a|d\. ?h|i\. ?V|i\. ?S))\.$")
+
+
+def _reflow_soft_wraps(text: str) -> str:
+    """Fuegt Zeilenumbrueche zusammen, die nur der Zeilenumbruch einer Seite/eines PDFs sind (lange Zeile ohne
+    Satzzeichen am Ende, naechste Zeile kein Listenpunkt/keine Ueberschrift). Absatz- und Ueberschriftgrenzen bleiben.
+    Qualitaetslauf 11.10.2026: PDF-Zeilen (~100 Zeichen) zerrissen Saetze ("Kellergeschoss neben dem" / "Heizraum"),
+    die Auswahl der Schluesselstellen sah nur Satzfragmente und uebernahm beschreibende Details unvollstaendig; ein
+    Name nach dem Titel ("Dr." / "Wiebe") stand auf zwei Zeilen."""
+    out: list[str] = []
+    for raw in text.split("\n"):
+        line = raw.rstrip()
+        previous = out[-1] if out else ""
+        soft = (len(previous) >= 50 and not previous.endswith(_TERMINAL_PUNCTUATION)) or bool(_ABBREVIATION_END_RE.search(previous))
+        if out and line and previous and soft and not _LIST_OR_HEADING_START_RE.match(line.lstrip()):
+            out[-1] = out[-1] + " " + line.lstrip()
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
+def _normalize_document_text(extracted_text: str) -> str:
+    return _reflow_soft_wraps(extracted_text).replace("\n", "  ").strip()
+
+
+def _document_allowances(lengths: list[int]) -> list[int]:
+    """Zeichenbudget je Dokument. Passt alles in `_MAX_DOCUMENT_CHARS_TOTAL` (jeweils hoechstens
+    `_MAX_DOCUMENT_EXCERPT_CHARS`), bekommt jedes Dokument, was es braucht. Sonst faire Aufteilung ("Wasserstand"):
+    kurze Dokumente bleiben vollstaendig, die uebrigen teilen sich den Rest gleichmaessig (mindestens
+    `_MIN_DOCUMENT_ALLOWANCE`) - frueher bekamen die AELTESTEN Dokumente nur noch den Rest (im Test 3000 Zeichen)."""
+    wants = [min(n, _MAX_DOCUMENT_EXCERPT_CHARS) for n in lengths]
+    if sum(wants) <= _MAX_DOCUMENT_CHARS_TOTAL:
+        return wants
+    low, high = 0, _MAX_DOCUMENT_EXCERPT_CHARS
+    while low < high:
+        level = (low + high + 1) // 2
+        if sum(min(w, level) for w in wants) <= _MAX_DOCUMENT_CHARS_TOTAL:
+            low = level
+        else:
+            high = level - 1
+    return [max(min(w, _MIN_DOCUMENT_ALLOWANCE), min(w, low)) for w in wants]
+
+
 @dataclass(frozen=True)
 class DocumentExcerpt:
     text: str
@@ -137,28 +187,71 @@ def _cut_at_whitespace(text: str, index: int, *, forward: bool) -> int:
     return 0 if k == -1 else k
 
 
+_WORD_RE = re.compile(r"[A-Za-zÄÖÜäöüß]{5,}")
+_MAX_KEY_SEGMENT_CHARS = 400
+
+
+def _novelty_scores(segments: list[str]) -> list[float]:
+    """Wie "neu" ist ein Satz im Vergleich zum Rest des Dokuments? Saetze aus Woertern, die sonst kaum vorkommen
+    (Sachverhaltsdetails wie Ortsangaben, Besonderheiten, Ausnahmen), bekommen hohe Werte; wiederkehrende
+    Standardklauseln niedrige. Rein statistisch innerhalb des Dokuments - keine Wortliste."""
+    token_sets = [{w.lower() for w in _WORD_RE.findall(seg)} for seg in segments]
+    frequency: Counter[str] = Counter()
+    for tokens in token_sets:
+        frequency.update(tokens)
+    n = max(1, len(segments))
+    scores: list[float] = []
+    for tokens in token_sets:
+        if not tokens:
+            scores.append(0.0)
+            continue
+        scores.append(sum(math.log(1 + n / frequency[t]) for t in tokens) / math.sqrt(len(tokens)))
+    return scores
+
+
 def _key_passages(middle: str, budget: int) -> str:
-    """Waehlt aus dem ausgelassenen Mittelteil die Saetze mit den hoechsten Rechts-/Fakten-Signalen (Betraege,
-    Daten, Fristen, Rechtsfolgen) bis `budget` Zeichen, in Originalreihenfolge. Rein lokal und deterministisch."""
-    segments = [seg.strip() for seg in _SEGMENT_SPLIT_RE.split(middle) if seg and seg.strip()]
-    scored = []
+    """Waehlt aus dem ausgelassenen Mittelteil die wichtigsten Saetze bis `budget` Zeichen, in Originalreihenfolge.
+
+    Zwei Kriterien (Qualitaetslauf 11.10.2026): (1) Rechts-/Fakten-Signale (Betraege, Daten, Fristen, Rechtsfolgen,
+    Gliederungszeilen), (2) Neuheit gegenueber dem Rest des Dokuments - damit auch beschreibende Details ohne Zahlen
+    ("Anlage im Kellergeschoss", "Zugang ueber den Hinterhof") mitkommen, die ein reines Signal-Raster uebersieht.
+    Exakt wiederholte Saetze (Standardklauseln) zaehlen nur einmal. Rein lokal und deterministisch."""
+    raw = [seg.strip() for seg in _SEGMENT_SPLIT_RE.split(middle) if seg and seg.strip()]
+    segments: list[str] = []
+    seen: set[str] = set()
+    for seg in raw:
+        key = " ".join(seg.lower().split())
+        if key in seen:
+            continue
+        seen.add(key)
+        segments.append(seg if len(seg) <= _MAX_KEY_SEGMENT_CHARS else seg[:_MAX_KEY_SEGMENT_CHARS].rsplit(" ", 1)[0] + "…")
+    if not segments:
+        return ""
+    novelty = _novelty_scores(segments)
+    signal: list[tuple[int, float, int]] = []
     for position, seg in enumerate(segments):
         score = 2 * len(_AMOUNT_RE.findall(seg)) + 2 * len(_DATE_RE.findall(seg)) + len(_TERM_RE.findall(seg))
         if _HEADING_RE.match(seg) and len(seg) < 120:
             score += 1  # Gliederung: zeigt Claude, welche Abschnitte ausgelassen wurden
-        if score:
-            scored.append((score, -position, position, seg))
-    scored.sort(reverse=True)
-    chosen: list[tuple[int, str]] = []
+        signal.append((score, novelty[position], position))
+
+    chosen: set[int] = set()
     used = 0
-    for _score, _neg, position, seg in scored:
-        cost = len(seg) + 7
-        if used + cost > budget:
-            continue
-        chosen.append((position, seg))
-        used += cost
-    chosen.sort()
-    return " […] ".join(seg for _pos, seg in chosen)
+
+    def take(candidates: list[tuple[int, float, int]], limit: int) -> None:
+        nonlocal used
+        for _score, _nov, position in candidates:
+            cost = len(segments[position]) + 7
+            if position in chosen or used + cost > limit:
+                continue
+            chosen.add(position)
+            used += cost
+
+    # Phase 1: Saetze mit Signal (hoechster Wert, dann Neuheit) bis 60 % des Budgets
+    take(sorted((t for t in signal if t[0] > 0), key=lambda t: (-t[0], -t[1], t[2])), int(budget * 0.6))
+    # Phase 2: Rest des Budgets mit den neuartigsten Saetzen (nicht schon gewaehlt)
+    take(sorted(signal, key=lambda t: (-t[1], t[2])), budget)
+    return " […] ".join(segments[position] for position in sorted(chosen))
 
 
 def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CHARS) -> DocumentExcerpt:
@@ -192,7 +285,7 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
     eigenstaendige, lokale Hilfsfunktion statt einer Wiederverwendung
     einer fuer einen anderen Zweck bestimmten Funktion."""
 
-    normalized = extracted_text.replace("\n", "  ").strip()
+    normalized = _normalize_document_text(extracted_text)
     if len(normalized) <= limit:
         return DocumentExcerpt(normalized, 0)
 
@@ -205,8 +298,8 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
     keys = _key_passages(middle, key_budget) if key_budget else ""
     omitted = max(0, len(middle) - len(keys))
     marker = (
-        f"[… Auszug: {omitted} von {len(normalized)} Zeichen dieses Dokuments ausgelassen; "
-        "Anfang, Ende und Stellen mit Beträgen, Daten und Fristen sind enthalten …]"
+        f"[… Auszug: {omitted} von {len(normalized)} Zeichen dieses Dokuments ausgelassen; enthalten sind Anfang, Ende "
+        "und ausgewählte Stellen. Über ausgelassene Abschnitte keine Aussagen treffen …]"
     )
     parts = [head.rstrip(), marker]
     if keys:
@@ -303,18 +396,20 @@ class RuleBasedLocalAIProvider:
             .all()
         )
         notices: list[str] = []
-        remaining = _MAX_DOCUMENT_CHARS_TOTAL
-        for document in documents:
-            allowance = min(_MAX_DOCUMENT_EXCERPT_CHARS, max(_MIN_DOCUMENT_ALLOWANCE, remaining))
+        allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
+        for document, allowance in zip(documents, allowances):
             excerpt = _document_excerpt(document.extracted_text, allowance)
-            remaining -= len(excerpt.text)
             type_label = document.classified_type or "unklassifiziert"
             parts.append(f"[{type_label}] {excerpt.text}")
             if excerpt.omitted_chars:
+                total = len(document.extracted_text)
+                name = getattr(document, "original_filename", None) or type_label
                 notices.append(
-                    f"Ein langes Dokument ({type_label}, {len(document.extracted_text)} Zeichen) wurde für die "
-                    "Erstellung nur auszugsweise berücksichtigt (Anfang, ausgewählte Stellen mit Beträgen/Daten/"
-                    "Fristen, Ende). Inhalte aus dem ausgelassenen Mittelteil bitte selbst prüfen."
+                    f"Dokument „{name}“ ({total} Zeichen) wurde für die Erstellung nur auszugsweise berücksichtigt: "
+                    f"{excerpt.omitted_chars} Zeichen ({round(100 * excerpt.omitted_chars / max(1, total))} %) aus dem "
+                    "Mittelteil fehlen. Enthalten sind Anfang, Ende und ausgewählte Stellen (Beträge, Daten, Fristen, "
+                    "Rechtsfolgen, auffällige Details). Aussagen zu den ausgelassenen Abschnitten bitte im Original "
+                    "prüfen."
                 )
         return "\n".join(parts), bool(documents), notices
 
