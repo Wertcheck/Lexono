@@ -330,3 +330,115 @@ Weg zur Cloud. Verbesserung am Entwurf ist daher nur dort belegt, wo sie gemesse
   des Schreibmodells, Fail-Closed korrekt, nicht verändert.
 * Echte Kanzleidokumente (Längen, OCR-Qualität, Scans) wurden nicht gemessen. Ob die Anwaltschaft den Prüfpunkt zur
   Kürzung im Alltag versteht, ist nicht erhoben (NICHT VERIFIZIERT).
+
+## Transliterierte Texte, erfundene Platzhalter, Zusammenfassungs-Prompt (12.10.2026, fünfter Lauf)
+
+### 1. Transliterierte Dokumente: normalisierte Erkennungsfassung
+
+**Verfahren.** Zusätzlich zur unveränderten Analyse läuft eine zweite auf einer Fassung, in der dem Modell unbekannte
+Wörter mit ae/oe/ue/ss durch ihre Umlautform ersetzt sind, **wenn** diese dem Modell bekannt ist („Maengel“ → „Mängel“).
+Jeder Treffer wird positionsgenau auf den **Originaltext** zurückgebildet (Wert = Originalausschnitt, Originaltext nie
+verändert); die Abbildung wird auf Konsistenz geprüft, bei Zweifel gilt allein die Originalanalyse
+(`presidio_ner._restore_for_analysis`).
+
+**Messung (`scripts/diagnose_normalized_detection.py`, 295 Namenssätze, 4 Firmen, 4 Anschriften, ohne Wort-Ausnahmen):**
+
+| Verfahren | Namen verpasst | Anschriften verpasst | Fehlalarme (Rechtswörter) |
+|---|---|---|---|
+| nur Original (früher) | 33 | 1/4 | 13 |
+| **nur wiederhergestellt** | **47** | 0/4 | 7 |
+| **Vereinigung (produktiv)** | **31** | 0/4 | 13 |
+
+Die wiederhergestellte Fassung **allein** ist **unsicher** (verliert z. B. „Herr Fuerst“ → „Herr Fürst“ als Person, 14
+Fälle weniger als das Original) und wurde verworfen. Sie wird nur **vereinigt**; es werden keine Treffer der
+Originalanalyse verworfen. Deshalb **entfallen auch keine Fehlalarme** – ein strukturelles Entfernen transliterierter
+Fehlalarme über die zweite Fassung ist **nicht belegbar sicher**; es bleibt bei den belegten Ganzwort-Ausnahmen.
+
+**Gateway-Payload (354 Sätze, ASCII-Namen, Anschrift „Hauptstrasse“):** Klartext-Lecks 59 → 54 (5 behoben), **0 neue
+Lecks**, Blocks 12 → 10. Zusätzlich: Ketten wie „Prof.⏎Dr. Name“ (Zeilenumbruch/Doppelleerzeichen zwischen den Titeln)
+werden als Titelkette erkannt (sonst blieb „Prof.“ im Restrisiko-Scan hängen und blockierte).
+
+**Neuer Befund (nicht behoben, NICHT Teil der Transliteration):** **Alleinstehende Nachnamen am Satzanfang** („Marquardt hat
+unterschrieben.“, „Mueller erklärt …“) werden vom NER im Gateway-Kontext häufig nicht erkannt – 44 von 59 Sätzen dieser
+Form (ASCII) bzw. 49 (Umlaute) mit Klartextnamen im Payload, **auch bei eindeutig namensartigen Wörtern**
+(Marquardt, Lindqvist, Wiebe). Ursache ist die NER-Recall-Schwäche ohne Kontext, **nicht** der Satzanfangs-Filter
+(mit abgeschaltetem Filter identisch). Abgemildert wird das im Alltag durch bekannte Beteiligte der Akte
+(`known_entities`), „Herr/Frau/Dr.“-Anreden und wiederholte Vorkommen; für unbekannte Dritte ohne Anrede bleibt es ein
+**offenes Datenschutzrisiko** (Fix = Recall-Heuristik mit Fehlalarm-Abwägung, Entscheidung der Verantwortlichen).
+
+### 2. Erfundene Platzhalter („[ADRESSE_01]“)
+
+**Reproduktion** (`scripts/repro_invented_placeholders.py`, echtes Claude, synthetische Akte **ohne** Adressen): Im
+Empfängerblock „An die Gegenseite / [ADRESSE_01]“ steht ein Platzhalter, der nie bereitgestellt wurde (bereitgestellt:
+nur `[DATUM_nn]`). Rate **2 von 14** im ersten Lauf, **8 von 24 (33 %)** im Vergleichslauf.
+
+**Weg und Ursache.** Dokumentaufbereitung und Mapping sind korrekt: ohne Anschrift im Dokument existiert kein
+Adress-Platzhalter, die Ausgabeprüfung meldet den erfundenen korrekt und blockiert fail-closed (kein Draft, keine
+automatische Zuordnung). Entstanden ist er im **Prompt**: die Schreibanweisung enthielt die wörtlichen Beispiele
+„[ADRESSE_NN]“ und „ADRESSE_02“ und sagte nicht, was bei fehlender Anschrift zu schreiben ist. **Beleg (A/B, je 24 gültige
+Läufe, sonst identisch):** alter Wortlaut **8/24** erfundene Adress-Platzhalter, Wortlaut ohne wörtliche Adress-Platzhalter
+**0/24** (Fisher exakt, zweiseitig p = 0,004).
+
+**Änderung (nur diese belegte Ursache).** In `WRITING_SYSTEM_PROMPT` und `CHAT_SYSTEM_PROMPT` (gleiche Passage; nur der
+erste gemessen): keine wörtlichen Adress-Platzhalter mehr, stattdessen „… steht dort keiner, schreibe im Empfängerblock
+exakt „[Anschrift einsetzen]““. Ausgabeprüfung und Leak-Check **unverändert**. Regressionstests: gültige, unbekannte
+(`[ADRESSE_01]`, `[PERSON_02]`, `[ORT_09]`, `[FIRMA_01]`), doppelt verwendete und fehlende Platzhalter, abgewandelte
+Schreibweisen, Prosa ohne Klammern, Einsetz-Hinweis; Dienstebene: erfundener Platzhalter blockiert, nichts gespeichert,
+nichts zugeordnet; Prompt-Test gegen wörtliche Adress-Platzhalter.
+
+**Bestätigung nach der Änderung (Prompt im Code, echtes Claude, gleiche Akte): 0 von 40 Läufen mit erfundenem Platzhalter, 0 Blocks** (zusammen mit den 24 Vergleichsläufen 0 von 64 gegenüber 8 von 24 vorher).
+
+### 3. Lokale Zusammenfassung: bisheriger vs. kompakter Prompt (echtes Ollama, echtes Claude)
+
+**Aufbau** (`scripts/e2e_summary_ab.py`, `e2e_summary_judge.py`, `e2e_summary_report.py`; vorab festgelegte Kriterien):
+Varianten `none` (kein Schritt, `LOCAL_SUMMARY_MODE=never`), `v0` (bisheriger Prompt, 1200 Zeichen), `v1` (kompakt: „höchstens
+4 Stichpunkte à 12 Wörter“, 500 Zeichen), erzwungen über `always`. Fälle: `k1` 1 Dokument (1,6 Tsd. Zeichen), `k2` 2
+Dokumente (3,2 Tsd.), `k3` 3 Dokumente (4,8 Tsd.), je 13 Testfakten/Dokument inkl. widersprüchlicher Preise und Liefertermine.
+**8 Läufe je Zelle (72 echte Läufe)**, Varianten abwechselnd. Bewertung: (a) objektive Metriken (Faktenabdeckung,
+Auslassungen, erfundene Beträge/Daten, benannte Widersprüche, Blocks, Laufzeit, Kontextumfang) und (b) **blindes Urteil
+eines anderen Modells** (Claude Opus; Schreiber war Sonnet), jeder Entwurf einzeln nach festen Kriterien in zufälliger
+Reihenfolge, 14 Entwürfe doppelt bewertet (Konsistenz: mittlere Abweichung 0,11 Punkte, 89 % identisch).
+
+| Fall | Var. | Fakten gesamt % | Mitte % | Zusammenfassung s | Gesamt s | Payload-Zeichen |
+|---|---|---|---|---|---|---|
+| k1 | none / v0 / v1 | 90,4 / 93,3 / 91,4 | 97,5 / 100 / 97,5 | 0 / 47,1 / 14,7 | 27,8 / 74,3 / 41,7 | 2661 / 3279 / 2935 |
+| k2 | none / v0 / v1 | 86,5 / 85,6 / 85,6 | 85,0 / 82,5 / 80,0 | 0 / 111,0 / 19,3 | 31,5 / 142,2 / 51,7 | 4520 / 5662 / 4808 |
+| k3 | none / v0 / v1 | 84,6 / 84,6 / 84,6 | 80 / 80 / 80 | 0 / 52,3 / 24,4 | 33,6 / 86,0 / 58,5 | 6349 / 6997 / 6666 |
+
+Gepoolt (n = 24 je Variante): Faktenabdeckung **87,2 % (none) / 87,8 % (v0) / 87,2 % (v1)**, Permutationstest p = 0,80
+(v0 vs none) bzw. 1,0 (v1 vs none); **0 Blocks**, erfundene Werte 0,08 (v0, ein Fall) / 0 / 0; Widersprüche in 100 % der
+Entwürfe benannt. Laufzeit **+70 s (v0)** bzw. **+20 s (v1)** gegenüber `none` (p < 0,001).
+
+Blindes Urteil (Skala 1–5, Mittelwert; none / v0 / v1): Tatsachen 4,38 / 4,42 / **4,75**; Auslassungen 4,42 / 4,33 / 4,75;
+Erfindungen 3,88 / 4,08 / 4,38; Widersprüche 4,54 / 4,79 / 4,62; Schriftsatz 3,54 / 3,62 / 3,75. **v0 unterscheidet sich in
+keinem Kriterium von `none` (alle p > 0,2).** v1 liegt bei „Tatsachen“ vorn (p = 0,03 gegen none, 0,037 gegen v0), bei
+~15 Einzelvergleichen **ohne Mehrfachtest-Korrektur nicht belastbar**; die objektiven Metriken zeigen den Vorsprung nicht.
+
+Auf Ebene der **Zusammenfassung selbst** (lokal, deterministisch, `scripts/e2e_summary_local.py`): v0 behält 78–100 % der Zahlen und
+33–67 % der beschreibenden Details, v1 nur 11–33 % bzw. 0 %; **beide** verlieren den Preiswiderspruch (0 %) – ohne
+Schaden am Schriftsatz, weil Claude den vollständigen Sachverhalt erhält.
+
+**Folgerung.** Der frühere Befund „Zusammenfassung verbessert den Entwurf“ (Paarurteil desselben Modells, 10 von 12)
+**lässt sich mit objektiven Metriken und einem anderen Beurteiler nicht bestätigen.** Es gibt keinen belastbaren
+Qualitätsvorteil, aber einen belastbaren Laufzeitnachteil. **Standardverhalten unverändert** (Änderungsbedingung „belastbarer
+Qualitäts- **und** Laufzeitvorteil“ nicht erfüllt); `LOCAL_SUMMARY_MODE=never` ist die gemessen schnellste Einstellung ohne
+nachweisbaren Qualitätsverlust und wird als Empfehlung dokumentiert. Grenzen: 8 Läufe je Zelle, synthetische Verträge ≤ 5 Tsd.
+Zeichen, ein Beurteilermodell; kleine Effekte sind nicht auszuschließen.
+
+### 4. Installierter Build (12.10.2026)
+
+Chat mit PDF-Upload, abgefangene Cloud-Anfragen (Fall L mit 4 **transliterierten** PDFs, 14-Tsd.-Zeichen-Vertrag): **keine
+Namen, Anschriften oder Firmenbezeichnungen im Klartext** (0 Originalwerte laut Prüfskript), Beträge im Klartext. Echtes
+Claude, Fall L (transliteriert, 4 Dokumente, ohne Adressen): **3 von 3 Schriftsätzen erzeugt** (vorher 0–1 von 3), Empfängeranschrift
+als „[Anschrift einsetzen]“ mit Hinweis in den Prüfpunkten statt erfundenem Platzhalter; 14-Tsd.-Vertrag erzeugt (ein Lauf
+scheiterte an einem **Claude-Zeitüberschreitungsfehler** des Anbieters, Wiederholung erfolgreich).
+
+### Offene Risiken / NICHT VERIFIZIERT (fünfter Lauf)
+
+* Alleinstehende Nachnamen ohne Anrede am Satzanfang bleiben ein offenes Erkennungsrisiko (siehe oben, nicht behoben).
+* Transliteration: weitere seltene Wörter können Fehlalarme erzeugen; nur belegte Wörter sind ausgenommen.
+* Prompt-Änderung für Adress-Platzhalter ist für den Schreib-Prompt gemessen (0/64 vs. 8/24), für den Chat-Prompt (identische
+  Passage) nur übernommen, nicht separat gemessen.
+* Zusammenfassungs-Vergleich: 8 Läufe je Zelle, ein Beurteilermodell, synthetische Verträge ≤ 5 Tsd. Zeichen.
+* Zwei getrackte Logo-Dateien (`assets/branding`) fehlten zwischenzeitlich im Arbeitsverzeichnis (Ursache nicht ermittelt, aus
+  Git wiederhergestellt, Suite danach grün).

@@ -181,6 +181,14 @@ _LOCAL_SUMMARY_MIN_CHARS = 800
 #: ~2 Token/s; gemessen ~1,35 Zeichen je Token). 3000 Zeichen (~2200 Token) ergeben nach diesen Messwerten
 #: ~110 s, also mehr als das Doppelte Sicherheit zur 240-s-Grenze. Darueber entfaellt die Zusammenfassung;
 #: Claude erhaelt den VOLLEN Sachverhalt in jedem Fall.
+#:
+#: NACHPRUEFUNG 12.10.2026 (scripts/e2e_summary_ab.py, echtes Ollama + echtes Claude, 3 Faelle x 3 Varianten x 8 Laeufe,
+#: objektive Metriken und blindes Urteil durch ein ANDERES Modell, Claude Opus): KEIN belastbarer Qualitaetsvorteil der
+#: Zusammenfassung. Faktenabdeckung 87,8 % (bisheriger Prompt) vs. 87,2 % (keine) vs. 87,2 % (kompakt), 0 Blocks, praktisch
+#: keine erfundenen Werte; Urteil des anderen Modells: bisheriger Prompt ~ keine Zusammenfassung (alle Kriterien p > 0,2).
+#: Der oben genannte Paarvergleich (10 von 12) liess sich damit NICHT bestaetigen. Laufzeit: +70 s (bisheriger Prompt) bzw.
+#: +20 s (kompakt) je Anfrage. Der Standard bleibt trotzdem unveraendert (kein belastbarer Vorteil zum Aendern nachgewiesen);
+#: `LOCAL_SUMMARY_MODE=never` ist die messbar schnellere Einstellung ohne nachweisbaren Qualitaetsverlust.
 _LOCAL_SUMMARY_AUTO_MAX_CHARS = 3000
 
 #: ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
