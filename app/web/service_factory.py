@@ -86,6 +86,7 @@ def get_drafting_service() -> DraftingService:
         writing_provider,
         model_name=settings.claude_model_name,
         local_llm_provider=local_llm_provider,
+        local_summary_mode=settings.local_summary_mode,
     )
 
 

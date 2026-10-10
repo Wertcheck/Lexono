@@ -258,6 +258,20 @@ class Settings(BaseSettings):
     # Setup-Assistenten, nicht der Laufzeitauswahl.
     ollama_model: str = "qwen2.5:1.5b"
 
+    # Lokale Zusammenfassung vor dem Claude-Aufruf (Performance-Run 10.10.): "auto" (Standard) = nach den
+    # Regeln in app/drafting/service.py (`_summary_not_worthwhile`), "always" = immer, "never" = nie.
+    # In allen Faellen bleibt die Erreichbarkeitspruefung der lokalen KI VOR Claude (Fail-Closed) und die
+    # semantische Antwortpruefung unveraendert.
+    local_summary_mode: str = "auto"
+
+    @field_validator("local_summary_mode")
+    @classmethod
+    def local_summary_mode_must_be_known(cls, value: str) -> str:
+        lower = value.strip().lower()
+        if lower not in {"auto", "always", "never"}:
+            raise ValueError(f"local_summary_mode muss auto, always oder never sein, war: {value!r}")
+        return lower
+
     @field_validator("local_ai_runtime")
     @classmethod
     def local_ai_runtime_must_be_supported(cls, value: str) -> str:

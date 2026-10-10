@@ -88,10 +88,72 @@ langen Sachverhalten nur die ersten 4000 Zeichen; die lokale Zusammenfassung lie
   wäre auf diesem Gerät langsamer. Eine schnellere Erzeugung bräuchte höhere Speicherbandbreite (aktuelle
   Plattformen mit LPDDR5x oder eine dedizierte GPU); ein Vergleichsgerät wurde **nicht** getestet.
 
-## Offene Entscheidung (fachlich, Eigentümer)
+## Lokale Zusammenfassung: A/B-Vergleich (Messung 10.10.2026, zweiter Lauf)
 
-Die lokale **Zusammenfassung** ist mit 40–80 s der größte verbleibende Posten (≈ die Hälfte der Laufzeit bei
-Dokumenten). Claude erhält den vollständigen Sachverhalt ohnehin; die Zusammenfassung ist ein zusätzlicher
-Hinweis (§65-Pflichtschritt). Optionen: (a) beibehalten, (b) nur ab einer Mindestlänge/auf Wunsch,
-(c) kleineres Modell für diesen Schritt (nur mit Qualitäts- und Datenschutztest). Ohne Entscheidung unverändert.
-Hochrechnung (Schätzung aus den Schrittzeiten): ohne Zusammenfassung ≈ 45 s (mittel) bzw. ≈ 55 s (komplex).
+**Aufbau.** Gleiche Aufträge, drei Varianten über die neue Einstellung `LOCAL_SUMMARY_MODE`: **A** `always`
+(immer zusammenfassen), **B** `never` (nie), **auto** (Standard, Regeln unten). Echte Claude-Anfragen,
+synthetische Dokumente, installierter Build. Fälle: K (kurz, ohne Dokument), M (1 Dokument), C (2 Dokumente,
+Kaufvertrag/Quittung mit Preisabweichung), L (4 Dokumente, ~6.200 Zeichen, Werkvertrag mit Einwänden, Beträgen,
+Fristen). 3–6 Läufe je Fall und Variante.
+
+**Laufzeit (Sekunden bis zum fertigen Schriftsatz, Median [Spanne]):**
+
+| Fall | A: immer | B: nie | auto (Endstand, n = 3) |
+|---|---|---|---|
+| K | 32,5 [31,5–37,4] | 19,1 [16,6–19,2] | 15,3 [15,0–17,9] |
+| M | 102 [96–115] (n = 6) | 43 [39–46] (n = 6) | 96 [89–97] |
+| C | 107 [91–122] (n = 6) | 51 [42–68] (n = 6) | 94 [92–94] |
+| L | **0 von 3 Ergebnissen** (294 s: Zeitüberschreitung der Zusammenfassung; 2 × 146 s: Block) | 1 von 3 (133 s); 2 × Block nach 42 s | **3 von 3** (127 [126–129]) |
+
+Schritte (Median): Zusammenfassung 38–50 s bei M/C, **143 s bei L (einmal 240 s = Zeitüberschreitung)**;
+semantische Prüfung 24–35 s bei M/C, 85–90 s bei L, 8–9 s bei K; Claude ≈ 15 s; Rest < 3 s.
+
+**Qualität (blindes Paarurteil durch Claude, zufällige Reihenfolge, Quelldokumente und Aufgabe als Maßstab;
+Punkte 1–5, Mittel; „A besser“ = Entwurf mit Zusammenfassung):**
+
+| Fall | Paare | A besser / B besser | Vollständigkeit A / B | Chronologie A / B | Beträge A / B | Einwände A / B | jur. Qualität A / B |
+|---|---|---|---|---|---|---|---|
+| M | 6 | 5 / 1 | 4,00 / 3,17 | 4,33 / 3,83 | 4,83 / 4,33 | 3,67 / 3,17 | 3,83 / 3,17 |
+| C | 6 | 5 / 1 | 4,00 / 3,50 | 4,17 / 3,33 | 4,83 / 3,50 | 2,67 / 2,00 | 2,83 / 2,33 |
+| K | 3 | Wertungen identisch in allen Kategorien | 4,33 / 4,33 | 4,33 / 4,33 | 3,67 / 3,67 | 3,67 / 3,67 | 4,00 / 4,00 |
+
+Deterministische Faktenabdeckung (Beträge/Daten/Sachverhaltsbegriffe, % der erwarteten Fakten im Entwurf) – kein
+einheitliches Bild: M A 67/61/54 vs. B 67/56/79; C A 100/100/100 vs. B 100/100/92. Beträge wurden in allen Entwürfen
+im Klartext und richtig übernommen.
+
+**Einordnung (keine stärkere Aussage als die Daten tragen):** Das Urteil stammt von einem Sprachmodell
+(n = 6 Paare je Fall, ein Urteil je Paar, mögliche Längen-Präferenz). 10 von 12 Paaren (M, C) fielen zugunsten der
+Zusammenfassung aus – ein **Hinweis auf einen Nutzen bei Dokumentfällen**, kein Beweis. Bei K (kein Dokument) gab es
+keinen Unterschied. Bei L ist die Zusammenfassung ein **nachgewiesener Nachteil** (Zeit, Zeitüberschreitung, eigene
+Blockaden), ein Qualitätsvergleich war dort wegen zu weniger gültiger Entwürfe nicht möglich.
+
+**Daraus abgeleitete Regeln (Modus `auto`, Standard):**
+1. Ohne Dokument und unter 800 Zeichen: keine Zusammenfassung (K: −17 s, gleiche Wertung). Bestehende Regel bleibt;
+   sie gilt nur noch **ohne** Dokument, weil C (kurz, aber mit Dokumenten) von der Zusammenfassung profitierte.
+2. Über 3000 Zeichen Sachverhalt: keine Zusammenfassung. Begründung aus den Messwerten: Kosten wachsen mit der
+   Eingabe (Prompt-Lesen ≈ 50–60 Token/s, Erzeugung bei langem Kontext ≈ 2 Token/s, ≈ 1,35 Zeichen je Token); bei
+   3000 Zeichen ≈ 110 s (Schätzung aus den Messwerten), mehr als doppelte Sicherheit zur 240-s-Grenze, bei ~6000
+   Zeichen gemessen 143–240 s.
+3. Sonst läuft sie. `LOCAL_SUMMARY_MODE=never` gibt M/C auf ≈ 43–51 s, auf Kosten des beobachteten Qualitätsvorteils;
+   `always` erzwingt sie (nicht empfohlen bei langen Sachverhalten).
+In **allen** Modi: Erreichbarkeitsprüfung der lokalen KI vor dem Claude-Aufruf (sonst Fail-Closed), semantische
+Antwortprüfung, Presidio, Leak-Check unverändert. Claude erhält den **vollen** Sachverhalt: Die 4000-Zeichen-Grenze
+gilt nur im lokalen Prüfprompt und die 6000-Zeichen-Grenze nur im lokalen Zusammenfassungsprompt (Regressionstest
+mit 8 Dokumenten, > 12.000 Zeichen, alle Schlusswörter im Cloud-Payload).
+
+**Privacy (installierter Build, abgefangene Cloud-Anfragen K/M/C/L):** 0 Originalwerte in allen vier Payloads
+(L: 11.787 Zeichen, Namen/Adressen/Daten/Rechnungsnummer geprüft), Beträge im Klartext, Chronologie enthalten.
+**Export (installierter Build, Entwurf aus L):** DOCX (40 KB) und PDF (3 Seiten) werden erzeugt; Briefkopf im
+DOCX-Header bzw. PDF-Kopf, Unterzeichner am Ende, „Entwurf Version 1“, Beträge vorhanden, keine Platzhalter im Export.
+
+## Neue Befunde (nicht Teil dieser Änderung, nicht behoben)
+
+1. **Leak-Check-Fehlalarme durch NER:** In Fall L wurden normale Wörter als Personen/Orte pseudonymisiert („Mängel“ als
+   `PERSON`, „Attika“, „Verblechungen“, „Bitumenbahn“ als `ORT`). Verwendet Claude das Wort im Entwurf, blockiert der
+   Leak-Check („nicht ausreichend anonymisierter Wert“) – in 2 von 3 Läufen ohne Zusammenfassung und in 2 von 3
+   mit Zusammenfassung (dort schon an der lokalen Zusammenfassung). Das Fail-Closed-Verhalten ist korrekt, die
+   Trefferqualität der Erkennung bei Bau-/Fachvokabular ist es nicht. Eine Änderung an Detektoren ist eine
+   Privacy-Entscheidung und wurde nicht vorgenommen.
+2. **Auszugsgrenze:** Jedes Dokument geht höchstens mit den ersten 5000 Zeichen in den Sachverhalt
+   (`local_ai_provider._MAX_DOCUMENT_EXCERPT_CHARS`, damals gemessen: größtes Dokument 4594 Zeichen). Längere
+   Dokumente erreichen Claude nur gekürzt – bei echten, längeren Verträgen/Schriftsätzen prüfen.

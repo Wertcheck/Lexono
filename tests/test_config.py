@@ -132,3 +132,15 @@ def test_require_human_approval_defaults_true_and_is_explicit_when_disabled(
 
     monkeypatch.setenv("REQUIRE_HUMAN_APPROVAL_BEFORE_SEND", "false")
     assert Settings(_env_file=None).require_human_approval_before_send is False  # type: ignore[call-arg]
+
+
+def test_local_summary_mode_default_and_validation() -> None:
+    import pytest as _pytest
+
+    from app.config.settings import Settings
+
+    assert Settings().local_summary_mode == "auto"
+    assert Settings(local_summary_mode=" NEVER ").local_summary_mode == "never"
+    assert Settings(local_summary_mode="always").local_summary_mode == "always"
+    with _pytest.raises(ValueError):
+        Settings(local_summary_mode="sometimes")

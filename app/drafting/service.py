@@ -169,6 +169,20 @@ _STEP_STATUS_LABELS: dict[str, str] = {
 #: unveraendert.
 _LOCAL_SUMMARY_MIN_CHARS = 800
 
+#: Obergrenze im Modus "auto" (Performance-Run 2, 10.10., A/B auf der CPU-Referenzmaschine, qwen3:4b):
+#: - NUTZEN (blindes Paarurteil durch Claude, n = 6 je Fall, synthetische Dokumente): bei Sachverhalten
+#:   von ca. 1-3 Tsd. Zeichen (1 bzw. 2 Dokumente) wurde der Entwurf MIT Zusammenfassung in 10 von 12
+#:   Paaren besser bewertet (Vollstaendigkeit +0,5 bis +0,8, Chronologie +0,5 bis +0,8). Die Stichprobe ist
+#:   klein, das Urteil stammt von einem Modell - ein Hinweis, kein Beweis.
+#: - KOSTEN: 40-70 s bei diesen Laengen. Bei einem Sachverhalt von ~6000 Zeichen (4 Dokumente) dagegen
+#:   143 s, einmal 240 s (Zeitueberschreitung -> Fail-Closed-Abbruch), und in 2 von 3 Laeufen blockierte
+#:   die Zusammenfassung selbst den Vorgang (Leak-Check) - dort ist sie ein Nachteil, kein Gewinn.
+#: Die Kosten wachsen mit der Eingabe (Prompt-Lesen ~50-60 Token/s, Erzeugung bei langem Kontext nur noch
+#: ~2 Token/s; gemessen ~1,35 Zeichen je Token). 3000 Zeichen (~2200 Token) ergeben nach diesen Messwerten
+#: ~110 s, also mehr als das Doppelte Sicherheit zur 240-s-Grenze. Darueber entfaellt die Zusammenfassung;
+#: Claude erhaelt den VOLLEN Sachverhalt in jedem Fall.
+_LOCAL_SUMMARY_AUTO_MAX_CHARS = 3000
+
 #: ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
 #: Pipeline", 07.10., per direktem Reproduktionsskript VOR dem Ausliefern
 #: dieser Korrektur selbst gefunden): `create_quick_matter` (siehe dort)
@@ -314,6 +328,7 @@ class _PreparedRequest:
     chat_triggered: bool = False
     lenient_leak_exempt_placeholders: frozenset[str] = frozenset()
     letterhead_ref: str | None = None
+    has_document_context: bool = False
 
 
 @dataclass(frozen=True)
@@ -362,7 +377,9 @@ class DraftingService:
         cost_control: CostControlService | None = None,
         model_name: str = "unknown",
         local_llm_provider: LocalLLMProvider | None = None,
+        local_summary_mode: str = "auto",
     ) -> None:
+        self.local_summary_mode = local_summary_mode
         self.local_ai = local_ai
         self.research_service = research_service
         self.search_service = search_service
@@ -806,7 +823,24 @@ class DraftingService:
             open_review_points=open_review_points,
             message_id=message_id,
             chat_triggered=chat_triggered,
+            has_document_context=preparation.has_document_context,
         )
+
+    def _summary_not_worthwhile(self, payload: ClaudeRequestPayload, *, has_document_context: bool = False) -> bool:
+        """Entscheidet, ob die lokale Zusammenfassung entfaellt (siehe `local_summary_mode`).
+
+        "auto": entfaellt (a) bei sehr kurzem Sachverhalt OHNE Dokument (nur Aktenzeile - nichts zu
+        verdichten; gemessen kein Qualitaetsunterschied) und (b) oberhalb der gemessenen Kostengrenze.
+        Mit Dokumenten laeuft sie auch bei kurzem Text: dort wurde der Entwurf mit Zusammenfassung in 5 von 6
+        Paaren besser bewertet (siehe `_LOCAL_SUMMARY_AUTO_MAX_CHARS`)."""
+        if self.local_summary_mode == "always":
+            return False
+        if self.local_summary_mode == "never":
+            return True
+        length = len(payload.anonymisierter_sachverhalt)
+        if length > _LOCAL_SUMMARY_AUTO_MAX_CHARS:
+            return True
+        return length < _LOCAL_SUMMARY_MIN_CHARS and not has_document_context
 
     def _prefill_semantic_check(
         self,
@@ -903,7 +937,7 @@ class DraftingService:
         summary_not_worthwhile = (
             self.local_llm_provider is not None
             and not skip_llm_privacy_layers
-            and len(payload.anonymisierter_sachverhalt) < _LOCAL_SUMMARY_MIN_CHARS
+            and self._summary_not_worthwhile(payload, has_document_context=prepared.has_document_context)
         )
         if (
             self.local_llm_provider is not None

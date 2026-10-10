@@ -2182,8 +2182,8 @@ class _HealthLocalLLM(FakeLocalLLMProvider):
 
 
 def _short_context_matter(db_session: Session):
-    # kurzer Sachverhalt MIT Personenbezug -> volle Pipeline (keine Chat-Abkuerzung), aber < 800 Zeichen
-    return _document_matter(db_session)
+    # kurzer Sachverhalt OHNE Dokument (nur Aktenzeile), aber volle Pipeline (Schreibauftrag) -> < 800 Zeichen
+    return _matter(db_session, client_name="Erika Mustermann")
 
 
 def test_short_sachverhalt_skips_local_summary_but_still_checks_local_ai_and_validates(
@@ -2192,7 +2192,7 @@ def test_short_sachverhalt_skips_local_summary_but_still_checks_local_ai_and_val
     monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
     matter = _short_context_matter(db_session)
     writing_provider = FakeClaudeWritingProvider(
-        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+        response_text="Sehr geehrte Damen und Herren, vielen Dank fuer Ihre Nachricht."
     )
     local_llm = _HealthLocalLLM()
     service, _ = _service(writing_provider, local_llm_provider=local_llm)
@@ -2240,6 +2240,156 @@ def test_long_sachverhalt_still_gets_the_local_summary(
         )
     )
     db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1
+    assert local_llm.health_calls == 0
+
+
+# --- local_summary_mode (Performance-Run 2, 10.10.): A/B-Varianten und Schutz der Schriftsatzgrundlage -------
+
+
+def _long_document_matter(db_session: Session, repeat: int = 200):
+    """Mehrere Dokumente (je < 5000 Zeichen = Auszugsgrenze von local_ai_provider._document_excerpt), zusammen
+    deutlich laenger als jede lokale Kuerzungsgrenze. Jedes Dokument traegt eine eigene Marke."""
+    from app.models import Document
+
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    parts = max(1, repeat // 25)
+    texts = []
+    for i in range(parts):
+        text = "Mandantin Erika Mustermann bittet um Rueckmeldung zur Rechnung. " * 25 + f" SCHLUSSWORT{'ABCDEFGH'[i]}"
+        db_session.add(Document(matter_id=matter.id, file_path=f"/tmp/long{i}.pdf", extracted_text=text))
+        texts.append(text)
+    db_session.commit()
+    return matter, " ".join(texts)
+
+
+def test_never_mode_skips_summary_on_long_input_but_claude_gets_the_full_sachverhalt(
+    db_session: Session,
+) -> None:
+    matter, text = _long_document_matter(db_session)
+    assert len(text) > 6000  # laenger als jede lokale Kuerzungsgrenze (6000 Zusammenfassung / 4000 Pruefung)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+    service.local_summary_mode = "never"
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert local_llm.received_payloads == []  # keine Zusammenfassung
+    assert local_llm.health_calls == 1  # Erreichbarkeit weiterhin VOR Claude
+    assert len(local_llm.structured_calls) == 1  # semantische Pruefung unveraendert
+    sent = writing_provider.received_payloads[0].anonymisierter_sachverhalt
+    for i in range(8):  # Schriftsatzgrundlage NICHT gekuerzt: jedes Dokument vollstaendig bis zur Marke
+        assert f"SCHLUSSWORT{'ABCDEFGH'[i]}" in sent
+    assert "gekürzt" not in sent
+    assert len(sent) > 6000
+    assert "Erika" not in sent and "Mustermann" not in sent  # weiterhin pseudonymisiert
+
+
+def test_always_mode_runs_summary_even_for_short_input(db_session: Session) -> None:
+    matter = _document_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+    service.local_summary_mode = "always"
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1
+    assert local_llm.health_calls == 0
+
+
+def test_never_mode_with_unavailable_local_ai_still_fails_closed_before_claude(db_session: Session) -> None:
+    matter, _ = _long_document_matter(db_session, repeat=20)
+    writing_provider = FakeClaudeWritingProvider(response_text="darf nie erzeugt werden")
+    local_llm = _HealthLocalLLM(reachable=False, model_available=False)
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+    service.local_summary_mode = "never"
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert writing_provider.received_payloads == []
+    assert db_session.query(Draft).count() == 0
+
+
+def test_never_mode_does_not_weaken_the_privacy_gate_leaked_original_still_blocks(db_session: Session) -> None:
+    matter, _ = _long_document_matter(db_session, repeat=20)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau Erika Mustermann, vielen Dank."  # Originalname statt Platzhalter
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+    service.local_summary_mode = "never"
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert db_session.query(Draft).count() == 0
+
+
+def test_auto_mode_skips_summary_above_the_measured_cost_limit_but_claude_gets_everything(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Modus "auto": oberhalb von _LOCAL_SUMMARY_AUTO_MAX_CHARS entfaellt die Zusammenfassung (gemessen: 143-240 s,
+    Zeitueberschreitung, eigene Blockaden); Claude bekommt den vollen Sachverhalt."""
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    matter, text = _long_document_matter(db_session, repeat=200)  # ~12.000 Zeichen
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)  # Standard = "auto"
+    assert service.local_summary_mode == "auto"
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert local_llm.received_payloads == []
+    assert local_llm.health_calls == 1
+    sent = writing_provider.received_payloads[0].anonymisierter_sachverhalt
+    assert all(f"SCHLUSSWORT{'ABCDEFGH'[i]}" in sent for i in range(8))
+
+
+@pytest.mark.parametrize(
+    ("length", "has_doc", "expected_skip"),
+    [(799, False, True), (799, True, False), (800, False, False), (3000, True, False), (3001, True, True), (3001, False, True)],
+)
+def test_auto_mode_boundaries(
+    monkeypatch: pytest.MonkeyPatch, length: int, has_doc: bool, expected_skip: bool
+) -> None:
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    service, _ = _service()
+    payload = ClaudeRequestPayload(schreibauftrag="x", anonymisierter_sachverhalt="a" * length)
+    assert service._summary_not_worthwhile(payload, has_document_context=has_doc) is expected_skip
+    service.local_summary_mode = "always"
+    assert service._summary_not_worthwhile(payload) is False
+    service.local_summary_mode = "never"
+    assert service._summary_not_worthwhile(payload) is True
+
+
+def test_short_sachverhalt_WITH_document_still_gets_the_summary_in_auto_mode(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Messung (A/B, n = 6): mit Dokumenten wurde der Entwurf auch bei kurzem Text mit Zusammenfassung besser
+    bewertet -> die Kurz-Regel gilt nur OHNE Dokument."""
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    matter = _document_matter(db_session)  # kurzes Dokument
     writing_provider = FakeClaudeWritingProvider(
         response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
     )
