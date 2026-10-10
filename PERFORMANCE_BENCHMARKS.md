@@ -442,3 +442,41 @@ scheiterte an einem **Claude-Zeitüberschreitungsfehler** des Anbieters, Wiederh
 * Zusammenfassungs-Vergleich: 8 Läufe je Zelle, ein Beurteilermodell, synthetische Verträge ≤ 5 Tsd. Zeichen.
 * Zwei getrackte Logo-Dateien (`assets/branding`) fehlten zwischenzeitlich im Arbeitsverzeichnis (Ursache nicht ermittelt, aus
   Git wiederhergestellt, Suite danach grün).
+
+## Sechster Lauf: Personen-/Namenserkennung (12.10.2026)
+
+Benchmark: `scripts/bench_name_detection.py` (1100 synthetische Namensfälle = 37 Nachnamen × 20 Kontexte, **echtes Gateway**, geprüft
+wird der ausgehende Payload; identische Fälle für Vorher/Nachher; Varianten über `scripts/bench_variants.py`). Tests:
+`tests/test_privacy_name_second_signal.py`.
+
+**Ursachen (getrennt).**
+1. *Modellfehler:* spaCy etikettiert häufige Nachnamen, die zugleich Gattungswörter sind (Fischer, Weber, Koch, Wolf, Lange, Braun …) und
+   viele seltene Namen ohne Anrede/Titel nicht als PER; der POS-Tagger stuft sie unabhängig davon als PROPN ein (Subjekt, „von X“-Agens).
+2. *Kontextmangel/Implementierung:* Gateway-Marker (`@@GATEWAY_*@@` + Zeilenumbruch) wurden zu Leerzeichen neutralisiert, am Feldanfang
+   (Anmerkungen, Argumente, Verlauf) fehlte der Satzkontext (nacktes „Marquardt hat unterschrieben.“ blieb im Klartext); weiche
+   PDF-Zeilenumbrüche („durch⏎Fischer“) kippten die Wortart auf NOUN. Überlappung, Positionsabbildung und Restrisiko-Scan waren nicht
+   ursächlich.
+
+**Heuristiken (identische Fälle, Klartext-Lecks im Payload).**
+
+| Variante | Lecks | Blocks |
+|---|---|---|
+| Basis (eecc4d4) | 26,9 % | 5,5 % |
+| Marker→„.“ (nur Neutralisierung, 118 Feldanfang-Fälle) | 98 → 47 Lecks | – |
+| + PROPN ohne Etikett nur als Subjekt/„von“-Agens (240-Fälle-Teilmenge) | 38,3 → 22,1 % | – |
+| + PROPN ohne Etikett in jeder Rolle | 8,0 % | 0,1 % |
+| + OOV-Substantive als weiteres Signal | 6,7 % | 0,1 % (**verworfen**: +1,3 Punkte, aber 3 zusätzliche Fachwort-Fehlalarme; widerspricht dem früheren Beschluss gegen strukturelle NOUN+OOV-Regeln) |
+| **übernommen:** Marker→„.“ + weicher Umbruch→Leerzeichen + PROPN-Zweitsignal | **7,5 %** | **0,1 %** |
+
+Fehlalarme: gewöhnliche Rechtswörter 1/132 („Partei“, bereits vorher), Fachbegriffe in sechs Kontexten (600 Fälle): zusätzlich nur
+„Räumungsfrist“ (5×) und „Grundbesitzwert“ (1×) bei der ungefilterten Variante – ohne Rollenfilter nicht in den Rechtstexten. Laufzeit: zusätzlicher spaCy-Durchlauf je Erkennung; Messungen unter Last (0,08 → 0,19 s je Fall) und im Endlauf ohne
+Parallellast (0,05–0,08 s je Fall) sind **nicht sauber vergleichbar** – Mehraufwand gering, exakter Wert NICHT VERIFIZIERT.
+Installierter Build: NICHT geprüft (nur Quellcode-Gateway und Suite: 3233 bestanden, 1 übersprungen).
+
+**Regressionen, die das Zweitsignal zunächst auslöste (alle behoben, Tests vorhanden):** Rollenpräfix „Assistent:“ im Verlauf, Gruß
+„Hallo“, Chat-Aktentitel „Schnellentwurf“, Platzhalter-Sachverhalt „Chat“ (Ganzwort-Ausnahmen bzw. Präfix-Prüfung, kein Abschwächen von
+Presidio/Leak-Check/Fail-Closed).
+
+**Restrisiko (NICHT VERIFIZIERT behoben):** 7,5 % der Testfälle bleiben im Klartext, v. a. Namen, die als reines Gattungswort getaggt
+werden („Richter“, „Fuerst“), seltene Namen in Tabellen/Überschriften und nach PDF-Umbruch (12,7 %). Vorbestehend und unverändert:
+„Gewerbemietverträge“ im aktenlosen Chat wird vom NER als Person maskiert.

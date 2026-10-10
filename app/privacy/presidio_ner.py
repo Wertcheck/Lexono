@@ -184,15 +184,36 @@ _NEVER_ENTITY_WORDS = frozenset(
         # Platzhalter) als ORT erkannt -> Gateway-Block "weiterhin erkennbare Muster: ort", 4 von 4 Laeufen. Mit dieser
         # Ausnahme passiert dasselbe Dokument das Gateway. "Geschaeftsfuehrerin": PERSON in transliterierter Fassung.
         "lichtkuppel", "lichtkuppeln", "geschaeftsfuehrerin",
+        # Grussformeln (12.10.2026): "Hallo" wird vom POS-Tagger als PROPN getaggt; das Zweitsignal
+        # (detect_unlabelled_proper_nouns) maskierte die Chat-Begruessung "Hallo" als [PERSON_01]
+        # (tests/test_drafting_service.py::test_chat_greeting_on_a_matter_titled_with_the_client_name_skips_local_llm).
+        # Ganzwort-Gleichheit: "Hallo Fischer" bleibt ueber "Fischer" geschuetzt.
+        "hallo", "hey",
+        # Anwendungsinterne Bezeichner (12.10.2026): "Schnellentwurf" ist der Titel der automatisch angelegten Chat-Akte
+        # ("Akte: Schnellentwurf 2026-..."), "Chat" der Platzhalter-Sachverhalt des aktenlosen Chats. Beide sind vom
+        # POS-Tagger PROPN; ohne Ausnahme maskierte das Zweitsignal sie in JEDEM Chat und erzwang damit die lokalen
+        # KI-Schichten (tests/test_performance_regression.py Szenario A, tests/test_privacy_gateway.py skip_general_*).
+        "schnellentwurf", "chat",
     }
 )
 
 
+_MARKER_WITH_BREAK = re.compile(r"@@[A-Z_]+@@\n?")
+_SOFT_WRAP = re.compile(r"(?<=[a-zäöüß,])\n(?=[A-ZÄÖÜ])")
+
+
 def _neutralize_internal_tokens(text: str) -> str:
     """Ersetzt gateway-/pseudonymizer-interne Marker/Platzhalter durch
-    gleich lange Leerzeichenfolgen - Laenge (und damit jede Zeichenposition
-    ausserhalb der Marker) bleibt exakt erhalten."""
-    text = _INTERNAL_MARKER_PATTERN.sub(lambda m: " " * len(m.group()), text)
+    gleich lange Zeichenfolgen - Laenge (und damit jede Zeichenposition
+    ausserhalb der Marker) bleibt exakt erhalten. NUR die Analysefassung.
+
+    Ein Marker (samt direkt folgendem Zeilenumbruch) wird zu einem Satzende-Punkt + Leerzeichen, nicht zu
+    reinen Leerzeichen (Qualitaetslauf 12.10.2026, scripts/bench_name_detection.py): Mit Leerzeichen
+    verlor das Modell am Feldanfang den Satzkontext, ein nacktes "Marquardt hat unterschrieben." (Anmerkungen,
+    Argumentationspunkte, Verlauf) blieb im Klartext. Ausserdem wird ein weicher Zeilenumbruch mitten im Satz
+    ("durch" + Umbruch + "Fischer", PDF-Spaltenumbruch) zum Leerzeichen; Anzahl/Position aller Zeichen bleiben gleich."""
+    text = _MARKER_WITH_BREAK.sub(lambda m: "." + " " * (len(m.group()) - 1), text)
+    text = _SOFT_WRAP.sub(" ", text)
     return _INTERNAL_PLACEHOLDER_PATTERN.sub(lambda m: " " * len(m.group()), text)
 
 
@@ -441,7 +462,42 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         spans.extend(
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
-    return normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+    spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+    spans.extend(
+        extra
+        for extra in detect_unlabelled_proper_nouns(text)
+        if not any(extra.start < other.end and other.start < extra.end for other in spans)
+    )
+    return spans
+
+
+_PROTOCOL_LABELS = frozenset({"Assistent", "Anwalt"})
+
+
+def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
+    """Zweitsignal: vom POS-Tagger als Eigenname (PROPN) erkannte Woerter, die die NER NICHT als Entitaet etikettiert hat.
+
+    Ursache (Qualitaetslauf 12.10.2026): das NER-Modell etikettiert haeufige Nachnamen, die zugleich Gattungswoerter
+    sind ("Fischer", "Weber", "Koch", "Wolf", "Braun", "Lange"), und viele seltene Namen ohne Anrede/Titel nicht - der
+    POS-Tagger stuft sie aber unabhaengig davon als PROPN ein. Gemessen (1100 synthetische Namensfaelle ueber das
+    echte Gateway): Klartext-Lecks 26,9 % -> 7,5 %. Konservativ: nur alphabetische, gross geschriebene Woerter ab
+    drei Buchstaben, keine Abkuerzungen in Grossbuchstaben (BGB, VOB), keine Ganzwort-Ausnahmen, nur dort, wo kein
+    anderer Treffer liegt. Ein Fehlalarm ist hier ein zusaetzlicher Platzhalter (fail-closed), nie ein Verlust."""
+    if not text or not text.strip():
+        return []
+    analyzer = _get_analyzer_engine()
+    doc = analyzer.nlp_engine.nlp["de"](_neutralize_internal_tokens(text))
+    spans: list[DetectedSpan] = []
+    for token in doc:
+        word = token.text
+        if token.pos_ != "PROPN" or len(word) < 3 or not word[0].isupper() or word.isupper():
+            continue
+        if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS:
+            continue
+        if word in _PROTOCOL_LABELS and text[token.idx + len(word) : token.idx + len(word) + 1] == ":":
+            continue  # Rollenpraefix des Gespraechsverlaufs ("Assistent: ..."), kein Name
+        spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
+    return spans
 
 
 def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | None) -> list[DetectedSpan]:
