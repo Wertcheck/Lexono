@@ -676,6 +676,9 @@ class DraftingService:
                 matter, db, actor=actor
             )
             knowledge_items_used, knowledge_texts = self._gather_knowledge_items(matter, db)
+        # Vollstaendigkeits-Lauf (10.10.): wurde ein langes Dokument nur auszugsweise uebernommen, sieht die
+        # Anwaltschaft das als Pruefpunkt (Unsicherheit explizit markieren) - nie als Teil des Schreibens.
+        open_review_points = [*open_review_points, *getattr(preparation, "notices", [])]
 
         # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
         # Pipeline", 07.10.): Presidios generische ORGANIZATION-Erkennung

@@ -373,3 +373,58 @@ def test_single_line_spans_with_letters_are_left_untouched() -> None:
     ]
 
     assert normalize_ner_span_boundaries("Karin Albrech  Beispielstadt", spans) == spans
+
+
+# --- Fachbegriffe (Qualitaetslauf 10.10.2026): Ganzwort-Ausnahme fuer belegte Fehlalarme -----------------------
+
+import pytest  # noqa: E402
+
+_PROVEN_TECHNICAL_TERMS = ["Attika", "Verblechung", "Verblechungen", "Bitumenbahn", "Sicherheitseinbehalt", "Prozessvollmacht"]
+_SENTENCES = [
+    "Die {X} ist nicht ordnungsgemäß ausgeführt worden.",
+    "An der {X} zeigt sich ein erheblicher Schaden an mehreren Stellen.",
+    "Wir verlangen die Beseitigung der {X} bis zum 30.11.2026.",
+]
+
+
+@pytest.mark.parametrize("term", _PROVEN_TECHNICAL_TERMS)
+def test_proven_technical_nouns_are_not_pseudonymized_as_person_or_place(term: str) -> None:
+    """POSITIV: reproduzierte Fehlalarme (spaCy-NER: seltenes Fachsubstantiv -> LOCATION) werden nicht mehr
+    zu Platzhaltern (sonst Over-Pseudonymisierung und Fail-Closed-Fehlblocks, siehe
+    scripts/diagnose_ner_false_positives.py)."""
+    for sentence in _SENTENCES:
+        values = [s.value for s in detect_presidio_entities(sentence.format(X=term))]
+        assert not any(term.lower() in v.lower() for v in values), (sentence, values)
+
+
+def test_real_names_and_addresses_next_to_those_terms_stay_protected() -> None:
+    """NEGATIV: echte Personen, Orte und Anschriften im selben Satz werden weiterhin erkannt."""
+    text = "Herr Olaf Thiessen, Gewerbering 6, 24105 Beispielstadt, hat die Verblechungen und die Attika geprüft."
+    values = [s.value for s in detect_presidio_entities(text)]
+    assert "Olaf Thiessen" in values
+    assert any("Gewerbering" in v for v in values)
+    assert any("Beispielstadt" in v for v in values)
+    assert not any(v.lower() in {"verblechungen", "attika"} for v in values)
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Die Bitumenbahn GmbH hat geliefert.", "Bitumenbahn GmbH"),
+        ("Bitumenbahn Meier KG liefert.", "Bitumenbahn Meier KG"),
+        ("Die Attika Bau GmbH hat geliefert.", "Attika Bau GmbH"),
+    ],
+)
+def test_company_names_containing_such_a_word_remain_protected(text: str, expected: str) -> None:
+    """NEGATIV: die Ausnahme gilt nur fuer den GANZEN Treffer (Gleichheit), nie als Teilstring - Firmennamen
+    mit einem dieser Woerter bleiben geschuetzt (Verhalten identisch zu vor der Aenderung)."""
+    values = [s.value for s in detect_presidio_entities(text)]
+    assert expected in values
+
+
+def test_exception_list_stays_small_and_documented() -> None:
+    """Schutz vor schleichender Aufweichung: jede Aufnahme braucht einen Beleg (Kommentar in presidio_ner.py)."""
+    from app.privacy.presidio_ner import _NEVER_ENTITY_WORDS
+
+    assert len(_NEVER_ENTITY_WORDS) <= 16
+    assert all(w == w.lower() and " " not in w for w in _NEVER_ENTITY_WORDS)

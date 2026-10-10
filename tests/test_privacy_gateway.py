@@ -1033,3 +1033,34 @@ def test_vertragsnummer_word_in_history_does_not_turn_a_bullet_dash_into_a_pseud
     assert result.allowed, result.reasons
     assert [m for m in result.mappings if m.original_value.strip() in {"-", "Die"}] == []
     assert check_response_placeholder_integrity("Die Verjährungs-Frist beträgt drei Jahre.", result.mappings, require_full_coverage=False) == []
+
+
+# --- Titel + Nachname im Cloud-Payload (Qualitaetslauf 10.10.2026) ----------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "sentence, name",
+    [
+        ("Gutachter Dr. Wiebe prüft die Anlage.", "Wiebe"),
+        ("Wir haben Dr. Lindqvist beauftragt, die Mängel zu begutachten.", "Lindqvist"),
+        ("Ansprechpartner ist Prof. Dr. Wiebe von der Hochschule.", "Wiebe"),
+        ("Herr Dr. Kostka hat die Abnahme erklärt.", "Kostka"),
+        ("Frau Dr. Hasenclever hat die Abnahme erklärt.", "Hasenclever"),
+        ("Gerichtsstand Beispielstadt. Schiedsgutachter Dr. Wiebe. Nachfrist bis zum 30.11.2026.", "Wiebe"),
+        # Zeilenumbruch direkt nach dem Titel (Seitenumbruch/Zeilenumbruch im Dokument, real beobachtet)
+        ("Gerichtsstand Beispielstadt. Schiedsgutachter Dr.\nWiebe. Nachfrist bis zum 30.11.2026.", "Wiebe"),
+        ("Gerichtsstand Beispielstadt.  Schiedsgutachter Dr.  Wiebe.  Nachfrist bis zum 30.11.2026.", "Wiebe"),
+    ],
+)
+def test_surname_after_academic_title_never_reaches_the_cloud_payload(sentence: str, name: str) -> None:
+    """VORHER (gemessen): bei 60 Saetzen stand der Nachname in 13 Faellen (22 %) im Klartext im Payload, das Gateway
+    erlaubte die Anfrage. NACHHER: 0. Betraege und Fristen bleiben dabei erhalten."""
+    result = ClaudePrivacyGateway().prepare_request(
+        purpose="formulate_draft", sachverhalt=sentence + " Der Betrag von 4.500,00 EUR ist offen.",
+        argumentationspunkte=[], quellenverweise=[], stil=None, vorlage=None,
+        anwaltliche_anmerkungen="Erstelle ein Schreiben.", known_entities=None, gespraechsverlauf=[],
+        skip_general_knowledge_pseudonymization=False,
+    )
+    assert result.allowed
+    assert name not in result.payload.anonymisierter_sachverhalt
+    assert "4.500,00 EUR" in result.payload.anonymisierter_sachverhalt

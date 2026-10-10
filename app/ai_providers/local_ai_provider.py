@@ -15,6 +15,8 @@ und `PromptContextBuilder` (Prompt 16).
 
 from __future__ import annotations
 
+import re
+
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -71,7 +73,21 @@ NO_CASE_CONTEXT_SACHVERHALT = _PLACEHOLDER_MATTER_SACHVERHALT
 #: Maximum 4594, KEIN einziges Dokument ueber 5000 Zeichen. 5000 Zeichen
 #: erfasst damit praktisch jedes real beobachtete Dokument vollstaendig,
 #: ohne eine willkuerlich grosse, ungemessene Zahl zu waehlen.
-_MAX_DOCUMENT_EXCERPT_CHARS = 5000
+_MAX_DOCUMENT_EXCERPT_CHARS = 30_000
+
+#: Vollstaendigkeits-Lauf (10.10.2026, scripts/bench_document_completeness.py): die frueheren 5000 Zeichen
+#: schnitten bei Vertraegen ab ~5000 Zeichen die GESAMTE Mitte und das GESAMTE Ende ab (Fakten aus Mitte/Ende
+#: 0 % im Sachverhalt, auch Vertragsstrafe, Kuendigungsfrist, Schlussanweisung) - still, nur mit "…". Die
+#: Obergrenze wurde deshalb auf 20.000 Zeichen je Dokument angehoben (Presidio ~0,1 s je 1000 Zeichen, gemessen;
+#: Claude-Eingabe bis ~10 Tsd. Token je Dokument ≈ wenige Cent). Laengere Dokumente werden NICHT mehr nur vorne abgeschnitten,
+#: sondern als Anfang + ausgewaehlte Schluesselstellen (Betraege, Daten, Fristen, Rechtsfolgen) + Ende uebergeben
+#: und KENNTLICH gekuerzt (Marker im Text fuer Claude, Hinweis in den Pruefpunkten fuer die Anwaltschaft).
+#: Gesamtbudget ueber alle Dokumente einer Akte, damit Akten mit vielen langen Dokumenten nicht unbegrenzt gross
+#: werden (siehe `_MAX_DOCUMENTS_IN_SACHVERHALT`); jedes Dokument bekommt mindestens `_MIN_DOCUMENT_ALLOWANCE`.
+_MAX_DOCUMENT_CHARS_TOTAL = 90_000
+_MIN_DOCUMENT_ALLOWANCE = 3_000
+_EXCERPT_HEAD_SHARE = 0.55
+_EXCERPT_TAIL_SHARE = 0.25
 # Sicherheitsergänzung (Prompt 28): ohne Obergrenze könnte eine Akte mit
 # sehr vielen (z. B. absichtlich zugeschickten) kleinen Anhängen den
 # Sachverhalt und damit die Kosten/Tokenzahl jeder Claude-Anfrage
@@ -90,7 +106,62 @@ _COURT_ROLE_KEYWORDS = ("gericht", "finanzamt", "behörde", "behoerde")
 _LAWYER_ROLE_KEYWORDS = ("anwalt", "anwältin", "rechtsanwalt", "prozessbevollmächtigt")
 
 
-def _document_excerpt(extracted_text: str) -> str:
+_AMOUNT_RE = re.compile(r"\d[\d.]*,\d{2}\s*(?:EUR|€|Euro)|\d+(?:[.,]\d+)?\s*(?:Prozent|%)")
+_DATE_RE = re.compile(r"\b\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}\b")
+_TERM_RE = re.compile(
+    r"\b(?:frist\w*|binnen|spätestens|bis zum|quartalsende|kündig\w*|rücktritt\w*|minderung\w*|vertragsstrafe\w*|"
+    r"schadensersatz\w*|verzug\w*|sicherheit\w*|haftung\w*|gewährleistung\w*|verjährung\w*|gerichtsstand\w*|"
+    r"schieds\w*|aufgabe\w*|anweisung\w*|nachfrist\w*|zahlung\w*|preisanpassung\w*|\d+\s+(?:tage|wochen|monate|werktage)\w*)\b|§",
+    re.IGNORECASE,
+)
+_HEADING_RE = re.compile(r"^(?:§\s*\d+|Art(?:ikel)?\.?\s*\d+|\d+(?:\.\d+)*\.?\s+[A-ZÄÖÜ])")
+_SEGMENT_SPLIT_RE = re.compile(r"(?<=[.!?;])\s+|\s{2,}")
+
+
+@dataclass(frozen=True)
+class DocumentExcerpt:
+    text: str
+    #: Anzahl ausgelassener Zeichen (0 = Dokument vollstaendig enthalten)
+    omitted_chars: int = 0
+
+
+def _cut_at_whitespace(text: str, index: int, *, forward: bool) -> int:
+    """Schnittstelle an eine Wortgrenze legen (nie mitten in einem Datum/Betrag/Namen - frueherer Fund:
+    "01.09.20" statt "01.09.2026")."""
+    if index <= 0 or index >= len(text):
+        return max(0, min(index, len(text)))
+    if forward:
+        k = text.find(" ", index)
+        return len(text) if k == -1 else k
+    k = text.rfind(" ", 0, index)
+    return 0 if k == -1 else k
+
+
+def _key_passages(middle: str, budget: int) -> str:
+    """Waehlt aus dem ausgelassenen Mittelteil die Saetze mit den hoechsten Rechts-/Fakten-Signalen (Betraege,
+    Daten, Fristen, Rechtsfolgen) bis `budget` Zeichen, in Originalreihenfolge. Rein lokal und deterministisch."""
+    segments = [seg.strip() for seg in _SEGMENT_SPLIT_RE.split(middle) if seg and seg.strip()]
+    scored = []
+    for position, seg in enumerate(segments):
+        score = 2 * len(_AMOUNT_RE.findall(seg)) + 2 * len(_DATE_RE.findall(seg)) + len(_TERM_RE.findall(seg))
+        if _HEADING_RE.match(seg) and len(seg) < 120:
+            score += 1  # Gliederung: zeigt Claude, welche Abschnitte ausgelassen wurden
+        if score:
+            scored.append((score, -position, position, seg))
+    scored.sort(reverse=True)
+    chosen: list[tuple[int, str]] = []
+    used = 0
+    for _score, _neg, position, seg in scored:
+        cost = len(seg) + 7
+        if used + cost > budget:
+            continue
+        chosen.append((position, seg))
+        used += cost
+    chosen.sort()
+    return " […] ".join(seg for _pos, seg in chosen)
+
+
+def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CHARS) -> DocumentExcerpt:
     """Baut den tatsaechlich in den Sachverhalt eingehenden Dokument-
     Ausschnitt - bis zu `_MAX_DOCUMENT_EXCERPT_CHARS` Zeichen, mit
     Zeilenumbruch->Doppel-Leerzeichen-Normalisierung (identisches Prinzip
@@ -120,10 +191,29 @@ def _document_excerpt(extracted_text: str) -> str:
     app/search/service.py/app/promptlayer/builder.py) - dies ist eine
     eigenstaendige, lokale Hilfsfunktion statt einer Wiederverwendung
     einer fuer einen anderen Zweck bestimmten Funktion."""
+
     normalized = extracted_text.replace("\n", "  ").strip()
-    truncated = normalized[:_MAX_DOCUMENT_EXCERPT_CHARS]
-    suffix = "…" if len(normalized) > _MAX_DOCUMENT_EXCERPT_CHARS else ""
-    return f"{truncated}{suffix}"
+    if len(normalized) <= limit:
+        return DocumentExcerpt(normalized, 0)
+
+    marker_reserve = 220
+    usable = max(200, limit - marker_reserve)
+    head_end = _cut_at_whitespace(normalized, int(usable * _EXCERPT_HEAD_SHARE), forward=False)
+    tail_start = _cut_at_whitespace(normalized, len(normalized) - int(usable * _EXCERPT_TAIL_SHARE), forward=True)
+    head, middle, tail = normalized[:head_end], normalized[head_end:tail_start], normalized[tail_start:]
+    key_budget = max(0, usable - len(head) - len(tail))
+    keys = _key_passages(middle, key_budget) if key_budget else ""
+    omitted = max(0, len(middle) - len(keys))
+    marker = (
+        f"[… Auszug: {omitted} von {len(normalized)} Zeichen dieses Dokuments ausgelassen; "
+        "Anfang, Ende und Stellen mit Beträgen, Daten und Fristen sind enthalten …]"
+    )
+    parts = [head.rstrip(), marker]
+    if keys:
+        parts.append(keys)
+        parts.append("[…]")
+    parts.append(tail.lstrip())
+    return DocumentExcerpt("  ".join(parts), omitted)
 
 
 @dataclass
@@ -140,6 +230,8 @@ class DraftPreparationResult:
     # tatsaechlich sensiblen Dokument-/Aktenkontext verarbeiten - siehe
     # dortigen Kommentar fuer die volle Begruendung.
     has_document_context: bool = False
+    #: Hinweise fuer die Anwaltschaft (NICHT an Claude), z. B. "Dokument wurde nur auszugsweise beruecksichtigt".
+    notices: list[str] = field(default_factory=list)
 
 
 class LocalAIProvider(Protocol):
@@ -165,7 +257,7 @@ class RuleBasedLocalAIProvider:
         if matter is None:
             raise ValueError(f"Matter {matter_id} nicht gefunden")
 
-        sachverhalt, has_document_context = self._build_sachverhalt(matter_id, matter, db)
+        sachverhalt, has_document_context, notices = self._build_sachverhalt(matter_id, matter, db)
         argumentationspunkte = self._build_argumentationspunkte(matter_id, db)
         quellenverweise = self._build_quellenverweise(matter, db)
         known_entities = self._build_known_entities(matter_id, matter, db)
@@ -176,11 +268,12 @@ class RuleBasedLocalAIProvider:
             quellenverweise=quellenverweise,
             known_entities=known_entities,
             has_document_context=has_document_context,
+            notices=notices,
         )
 
     def _build_sachverhalt(
         self, matter_id: str, matter: Matter, db: Session
-    ) -> tuple[str, bool]:
+    ) -> tuple[str, bool, list[str]]:
         # Platzhalter-Akte (siehe Modul-Kommentar oben zu
         # `_PLACEHOLDER_MATTER_SACHVERHALT`): der automatisch generierte
         # Titel ("Schnellentwurf <Datum>") ist reiner Systemtext, keine
@@ -209,11 +302,21 @@ class RuleBasedLocalAIProvider:
             .limit(_MAX_DOCUMENTS_IN_SACHVERHALT)
             .all()
         )
+        notices: list[str] = []
+        remaining = _MAX_DOCUMENT_CHARS_TOTAL
         for document in documents:
-            excerpt = _document_excerpt(document.extracted_text)
+            allowance = min(_MAX_DOCUMENT_EXCERPT_CHARS, max(_MIN_DOCUMENT_ALLOWANCE, remaining))
+            excerpt = _document_excerpt(document.extracted_text, allowance)
+            remaining -= len(excerpt.text)
             type_label = document.classified_type or "unklassifiziert"
-            parts.append(f"[{type_label}] {excerpt}")
-        return "\n".join(parts), bool(documents)
+            parts.append(f"[{type_label}] {excerpt.text}")
+            if excerpt.omitted_chars:
+                notices.append(
+                    f"Ein langes Dokument ({type_label}, {len(document.extracted_text)} Zeichen) wurde für die "
+                    "Erstellung nur auszugsweise berücksichtigt (Anfang, ausgewählte Stellen mit Beträgen/Daten/"
+                    "Fristen, Ende). Inhalte aus dem ausgelassenen Mittelteil bitte selbst prüfen."
+                )
+        return "\n".join(parts), bool(documents), notices
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()

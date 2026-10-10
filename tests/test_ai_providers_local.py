@@ -112,32 +112,154 @@ def test_sachverhalt_includes_document_content_beyond_160_characters(
     assert "Fortbildungsmassnahmen" in result.sachverhalt
 
 
-def test_document_excerpt_is_truncated_with_ellipsis_beyond_max_chars(
-    db_session: Session,
-) -> None:
-    """Gegenprobe: eine Obergrenze (`_MAX_DOCUMENT_EXCERPT_CHARS`) bleibt
-    bestehen - nur die fehlerhafte Zwischenkuerzung wurde entfernt, keine
-    Entgrenzung. Grenzwert selbst 05.10. mit echten Produktionsdaten neu
-    gemessen und auf 5000 Zeichen angehoben (siehe dortiger Kommentar) -
-    dieser Test prueft nur das PRINZIP (Kappung + Ellipse an der
-    tatsaechlich konfigurierten Grenze), nicht einen fest einprogrammierten
-    Zahlenwert."""
+def test_document_excerpt_beyond_max_chars_is_capped_and_visibly_marked(db_session: Session) -> None:
+    """Die Obergrenze bleibt (kein unbegrenzter Prompt), die Kuerzung ist aber nicht mehr still: Marker im Text
+    (fuer Claude) und Hinweis in `notices` (fuer die Anwaltschaft)."""
     from app.ai_providers.local_ai_provider import _MAX_DOCUMENT_EXCERPT_CHARS
 
     matter = _matter(db_session, title="Testakte")
     long_text = "A" * (_MAX_DOCUMENT_EXCERPT_CHARS + 100)
-    document = Document(
-        matter=matter, file_path="/tmp/x.pdf", extracted_text=long_text, classified_type="Sonstiges",
+    db_session.add(
+        Document(matter=matter, file_path="/tmp/x.pdf", extracted_text=long_text, classified_type="Sonstiges")
     )
-    db_session.add(document)
     db_session.commit()
 
-    provider = RuleBasedLocalAIProvider()
-    result = provider.prepare_draft_context(matter.id, db_session)
+    result = RuleBasedLocalAIProvider().prepare_draft_context(matter.id, db_session)
 
-    assert "A" * _MAX_DOCUMENT_EXCERPT_CHARS in result.sachverhalt
     assert "A" * (_MAX_DOCUMENT_EXCERPT_CHARS + 1) not in result.sachverhalt
-    assert "…" in result.sachverhalt
+    assert len(result.sachverhalt) < _MAX_DOCUMENT_EXCERPT_CHARS + 200
+    assert "Auszug:" in result.sachverhalt
+    assert len(result.notices) == 1 and "auszugsweise" in result.notices[0]
+
+
+# --- Dokumentvollstaendigkeit (Qualitaetslauf 10.10.): Anfang / Mitte / Ende langer Vertraege ----------------
+
+_START = ["Kaufpreis von 118.750,00 EUR", "Vertragsbeginn am 09.01.2026", "Käufer die Brandt Anlagenbau GmbH"]
+_MIDDLE_SIGNAL = [
+    "Vertragsstrafe von 0,3 Prozent je Werktag",
+    "Sicherheitseinbehalt von 45.300,00 EUR",
+    "Skonto von 2 Prozent bei Zahlung bis zum 14.04.2026",
+]
+_MIDDLE_DESCRIPTIVE = ["Die Anlage wird in Halle 3 aufgestellt", "Ansprechpartnerin ist Frau Lindqvist"]
+_END = [
+    "Kündigungsfrist von 6 Wochen zum Quartalsende",
+    "Nachfrist bis zum 30.11.2026",
+    "AUFGABE: Bitte Mängelrüge erstellen",
+]
+_FILLER = (
+    "Die Parteien sind sich darüber einig, dass die Leistung nach den anerkannten Regeln der Technik zu erbringen "
+    "ist. Änderungen und Ergänzungen bedürfen der Schriftform. Der Auftragnehmer unterrichtet den Auftraggeber "
+    "unverzüglich über erkennbare Hindernisse. "
+)
+
+
+def _contract(size: int, *, descriptive: bool = True) -> str:
+    n = max(6, size // 700)
+    sections = []
+    for k in range(n):
+        extra = ""
+        if k == 0:
+            extra = ". ".join(_START) + "."
+        elif k == n // 2:
+            extra = ". ".join(_MIDDLE_SIGNAL) + "."
+        elif k == n // 2 + 1 and descriptive:
+            extra = ". ".join(_MIDDLE_DESCRIPTIVE) + "."
+        elif k == n - 1:
+            extra = ". ".join(_END) + "."
+        sections.append(f"§ {k + 1} Abschnitt {k + 1}\n{_FILLER * 4}{extra}")
+    return "\n".join(sections)
+
+
+def _sachverhalt_for(db_session: Session, *texts: str):
+    matter = _matter(db_session, title="Testakte")
+    for idx, text in enumerate(texts):
+        db_session.add(
+            Document(matter=matter, file_path=f"/tmp/v{idx}.pdf", extracted_text=text, classified_type="Vertrag")
+        )
+    db_session.commit()
+    return RuleBasedLocalAIProvider().prepare_draft_context(matter.id, db_session)
+
+
+def test_contract_over_5000_chars_arrives_complete_start_middle_end(db_session: Session) -> None:
+    """VORHER (Grenze 5000, gemessen): Mitte und Ende solcher Vertraege 0 % im Sachverhalt."""
+    text = _contract(12_000)
+    assert len(text) > 10_000
+    result = _sachverhalt_for(db_session, text)
+
+    for fact in _START + _MIDDLE_SIGNAL + _MIDDLE_DESCRIPTIVE + _END:
+        assert fact in result.sachverhalt, fact
+    assert "Auszug:" not in result.sachverhalt  # vollstaendig enthalten -> keine Kuerzung, kein Hinweis
+    assert result.notices == []
+
+
+def test_very_long_contract_keeps_start_end_and_key_passages_and_flags_the_cut(db_session: Session) -> None:
+    from app.ai_providers.local_ai_provider import _MAX_DOCUMENT_EXCERPT_CHARS
+
+    text = _contract(120_000)
+    assert len(text) > 4 * _MAX_DOCUMENT_EXCERPT_CHARS
+    result = _sachverhalt_for(db_session, text)
+
+    for fact in _START + _END:  # Anfang und Ende (inkl. Schlussanweisung)
+        assert fact in result.sachverhalt, fact
+    for fact in _MIDDLE_SIGNAL:  # Betraege/Daten/Fristen/Rechtsfolgen aus dem ausgelassenen Mittelteil
+        assert fact in result.sachverhalt, fact
+    assert len(result.sachverhalt) < _MAX_DOCUMENT_EXCERPT_CHARS + 400  # weiterhin begrenzt
+    assert "Auszug:" in result.sachverhalt
+    assert len(result.notices) == 1
+
+
+def test_excerpt_cuts_at_word_boundaries_never_inside_a_date() -> None:
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    text = ("Wort " * 4000) + " Stichtag 01.09.2026 " + ("Wort " * 4000)
+    excerpt = _document_excerpt(text, 2000)
+    assert excerpt.omitted_chars > 0
+    for token in excerpt.text.replace("[…]", " ").split():
+        assert token in {"Wort", "Stichtag", "01.09.2026"} or token.startswith("[") or token.endswith("]") or token in {
+            "Auszug:", "von", "Zeichen", "dieses", "Dokuments", "ausgelassen;", "Anfang,", "Ende", "und", "Stellen",
+            "mit", "Beträgen,", "Daten", "Fristen", "sind", "enthalten", "…]", "…",
+        } or token.isdigit()
+
+
+def test_total_budget_across_many_long_documents_is_bounded_and_every_document_keeps_its_start(
+    db_session: Session,
+) -> None:
+    from app.ai_providers.local_ai_provider import (
+        _MAX_DOCUMENT_CHARS_TOTAL,
+        _MAX_DOCUMENT_EXCERPT_CHARS,
+        _MIN_DOCUMENT_ALLOWANCE,
+    )
+
+    texts = [f"DOKUMENT-{k}-ANFANG. " + ("Fülltext. " * 6000) for k in range(8)]
+    result = _sachverhalt_for(db_session, *texts)
+
+    for k in range(8):
+        assert f"DOKUMENT-{k}-ANFANG" in result.sachverhalt
+    # Gesamtbudget (+ je Dokument Mindestzuteilung als Untergrenze) bleibt die Obergrenze des Prompts
+    assert len(result.sachverhalt) < _MAX_DOCUMENT_CHARS_TOTAL + 8 * (_MIN_DOCUMENT_ALLOWANCE + 400)
+    assert len(result.sachverhalt) < 8 * _MAX_DOCUMENT_EXCERPT_CHARS
+
+
+def test_names_in_the_previously_cut_off_tail_are_pseudonymized_before_the_cloud() -> None:
+    """Privacy-Regression: Inhalte, die jetzt NEU im Sachverhalt ankommen (Mitte/Ende), muessen genauso geschuetzt
+    werden - echte Namen/Adressen duerfen nicht im Cloud-Payload stehen."""
+    from app.privacy.gateway import ClaudePrivacyGateway
+
+    text = _contract(40_000) + " Unterzeichnet: Herr Olaf Thiessen, wohnhaft Gewerbering 6, 24105 Beispielstadt."
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    excerpt = _document_excerpt(text).text
+    assert "Olaf Thiessen" in excerpt  # Ende ist jetzt enthalten ...
+    result = ClaudePrivacyGateway().prepare_request(
+        purpose="formulate_draft", sachverhalt=excerpt, argumentationspunkte=[], quellenverweise=[], stil=None,
+        vorlage=None, anwaltliche_anmerkungen=None, known_entities=None, gespraechsverlauf=None,
+        skip_general_knowledge_pseudonymization=False,
+    )
+    assert result.allowed
+    payload_text = result.payload.anonymisierter_sachverhalt
+    assert "Thiessen" not in payload_text  # ... aber pseudonymisiert
+    assert "Gewerbering" not in payload_text and "24105" not in payload_text
+    assert "118.750,00 EUR" in payload_text  # Geldbetraege bleiben erhalten
 
 
 def test_document_excerpt_captures_the_full_real_world_test_document(

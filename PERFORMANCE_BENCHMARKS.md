@@ -157,3 +157,98 @@ DOCX-Header bzw. PDF-Kopf, Unterzeichner am Ende, „Entwurf Version 1“, Betr�
 2. **Auszugsgrenze:** Jedes Dokument geht höchstens mit den ersten 5000 Zeichen in den Sachverhalt
    (`local_ai_provider._MAX_DOCUMENT_EXCERPT_CHARS`, damals gemessen: größtes Dokument 4594 Zeichen). Längere
    Dokumente erreichen Claude nur gekürzt – bei echten, längeren Verträgen/Schriftsätzen prüfen.
+
+## Qualitätslauf (10.10.2026, dritter Lauf): Dokumentvollständigkeit, Pseudonymisierung, Zusammenfassung
+
+### 1. Dokumentvollständigkeit
+
+**Befund (gemessen, `scripts/bench_document_completeness.py`, synthetische Verträge mit Fakten am Anfang, in der
+Mitte und am Ende).** Jede Anfrage (Schriftsatz, Chat, Review) baut den Sachverhalt in
+`RuleBasedLocalAIProvider.prepare_draft_context`: alle Dokumente der Akte (neueste zuerst, höchstens 30), jedes
+auf die **ersten 5000 Zeichen** gekürzt, nur mit „…“ markiert. Betroffen sind alle Dokumenttypen und alle
+Workflows; die Grenze war an einem Bestand gemessen worden, dessen größtes Dokument 4594 Zeichen hatte.
+
+| Dokumentlänge | Fakten Anfang | Mitte (Beträge/Fristen) | Ende (inkl. Schlussanweisung) |
+|---|---|---|---|
+| ≤ 5000 Zeichen | 100 % | 100 % | 100 % |
+| 10.000–95.000 Zeichen (vorher) | 100 % | **0 %** | **0 %** |
+
+**Änderung.** Je Dokument höchstens 30.000 Zeichen, über alle Dokumente höchstens 90.000 (jedes Dokument
+mindestens 3000). Längere Dokumente werden nicht mehr nur vorne abgeschnitten, sondern als **Anfang (55 %) +
+ausgewählte Schlüsselstellen aus dem Mittelteil (Sätze mit Beträgen, Daten, Fristen, Rechtsfolgen,
+Gliederungszeilen) + Ende (25 %)** übergeben, an Wortgrenzen geschnitten, mit Marker im Text für Claude
+(„Auszug: N von M Zeichen ausgelassen …“) und einem Hinweis in den Prüfpunkten für die Anwaltschaft.
+
+| Dokumentlänge | Sachverhalt danach (Zeichen ≈ Token/3) | Anfang | Mitte (Beträge/Fristen) | Mitte (beschreibend) | Ende |
+|---|---|---|---|---|---|
+| 10.000 | 10.214 (≈ 3,4 Tsd.) | 100 % | 100 % | 100 % | 100 % |
+| 20.000 | 20.111 (≈ 6,7 Tsd.) | 100 % | 100 % | 100 % | 100 % |
+| 47.500 | 25.178 (≈ 8,4 Tsd.) | 100 % | 100 % | **0 %** | 100 % |
+| 94.900 | 27.185 (≈ 9,1 Tsd.) | 100 % | 100 % | **0 %** | 100 % |
+
+**Kosten.** Datenschutz-Gateway (Presidio) ≈ 0,1 s je 1000 Zeichen (gemessen: 40.000 Zeichen 3,8 s, 80.000
+Zeichen 7,7 s); im installierten Build 2,3–3,4 s für 12–27 Tsd. Zeichen. Claude-Eingabe bis ≈ 9 Tsd. Token je
+Dokument. Der Prompt bleibt begrenzt (90.000 Zeichen insgesamt).
+
+**Grenze der Methode (NICHT behebbar ohne Eingabe-Vergrößerung):** Beschreibende Fakten ohne Betrag/Datum/Frist
+im ausgelassenen Mittelteil von Dokumenten **über 30.000 Zeichen** erreichen Claude nicht (0 % im Test). Die
+Anwaltschaft wird darauf per Prüfpunkt hingewiesen. Echte Dokumentlängen in Kanzleien wurden nicht gemessen
+(NICHT VERIFIZIERT).
+
+**Installierter Build (abgefangene Cloud-Anfragen, synthetische Verträge):** 14.000-Zeichen-Vertrag: Payload
+13.553 Zeichen, vollständig (Datumsangaben als Platzhalter); 60.000-Zeichen-Vertrag: 26.795 Zeichen mit
+Auszug-Marker, Schlussanweisung und Schlussfakten enthalten.
+
+### 2. Falsche Pseudonymisierungstreffer
+
+**Ursache (reproduzierbar, `scripts/diagnose_ner_false_positives.py`).** Quelle ist das **spaCy-NER-Modell
+`de_core_news_lg`**; Presidio gibt den Treffer mit konstantem Score 0,85 weiter (keine Konfidenz). Nicht die
+Typzuordnung, nicht die Nachverarbeitung. Zwei Mechanismen:
+1. **Seltene Fachsubstantive** werden auch in korrekt geschriebenem Text als `LOCATION` erkannt: 5 von 100
+   Fachbegriffen (je 3 Sätze): Attika, Verblechung(en), Bitumenbahn, Sicherheitseinbehalt, Prozessvollmacht
+   (Wortart NOUN, ohne Wortvektor; „Attika“ PROPN).
+2. **Transliterierter Text (ae/oe/ue statt ä/ö/ü)** macht gewöhnliche Wörter für das Modell unbekannt:
+   „Maengel“ wird `PERSON`/`MISC`, „Geschaeftsfuehrerin“ `PERSON`, „Flachdachflaeche“ `LOC`; mit Umlauten
+   („Mängel“) wird nichts erkannt. Die bisherigen Testdokumente des Falls L waren transliteriert.
+
+**Auswirkung.** (a) Erstdurchlauf: Over-Pseudonymisierung (Claude sieht „[ORT_04]“ statt „Attika“). (b) Der
+Restrisiko-Scan des Gateways läuft auf dem pseudonymisierten Text mit anderem Kontext; dasselbe Wort kann dort
+anders getaggt werden und löst einen Fail-Closed-Block aus („weiterhin erkennbare Muster: ort“). Gemessen im
+transliterierten Fall L: **4 von 4** Läufen blockiert („Lichtkuppel“ wird erst im Zweitdurchlauf als Ort erkannt);
+**mit Umlauten 3 von 3 Läufen erfolgreich** (echtes Claude). Der Leak-Check der Antwort ist wortgrenzenbasiert und
+schlägt nur an, wenn Claude ein Originalwort selbst schreibt.
+
+**Änderung (kleinste sichere Korrektur).** Ganzwort-Ausnahme für genau die 6 belegten Wörter
+(`_NEVER_ENTITY_WORDS`, Gleichheit des gesamten Treffers, nie Teilstring: „Bitumenbahn GmbH“ bleibt geschützt,
+Verhalten vorher/nachher identisch). Eine strukturelle Regel („NOUN und ohne Wortvektor“) wurde **bewusst nicht
+eingeführt**: sie hätte an 50 seltenen echten Namen/Orten 0 Treffer gehabt, schwächt aber die Erkennung
+grundsätzlich ab. **Nicht behoben:** transliterierte Dokumente können weiterhin zu Fehlalarmen/Blocks führen
+(Empfehlung: Pilot-Dokumente auf Umlaute prüfen; Entscheidung über eine NER-Vorverarbeitung steht aus).
+Regressionstests: positiv (6 Wörter × 3 Sätze nicht mehr pseudonymisiert), negativ (echte Namen/Adressen im
+selben Satz, Firmennamen mit dem Wort, Größe der Liste begrenzt).
+
+**NEUER, schwerwiegenderer Befund: Nachname nach „Dr.“/„Prof.“ im Klartext im Cloud-Payload (behoben).**
+Beim Prüfen der Schlussanweisung eines langen Vertrags stand „Schiedsgutachter Dr. Wiebe“ als
+„[PERSON_02]  Wiebe.“ im Payload. Reproduziert (`scripts/diagnose_titled_names.py`, 96 Sätze über das echte
+Gateway): **13 von 96 Sätzen (alle nach „Dr.“/„Prof. Dr.“) – Nachname im Klartext, Gateway erlaubt die
+Anfrage**; das NER ist dort kontextabhängig blind, und der Restrisiko-Scan fand ihn ebenfalls nicht. Zwei
+Ursachen: (1) die NER übersieht den Namen oder liefert nur „Schiedsgutachter Dr.“; (2) die
+Überlappungsauflösung verwarf einen später beginnenden, über den vorherigen hinausragenden Treffer vollständig,
+dessen Rest blieb unersetzt. Bisher blieb das oft unentdeckt, weil lange Dokumente schon nach 5000 Zeichen
+endeten. **Änderungen:** deterministischer Detektor „Titel + Name“ (`detect_titled_person`, Titel gehört in den
+Treffer, höchstens zwei Namenswörter, auch bei Zeilenumbruch nach dem Titel) und Vereinigung teilüberlappender
+Treffer **gleicher Kategorie** in der Überlappungsauflösung. **Ergebnis: 0 von 96 Sätzen, 0 Blocks; beide langen
+Testverträge ohne Klartextname im Payload.** Tests: positive/negative Detektortests (Titel ohne Namen, kleine
+Folgewörter, Zeilengrenzen), Überlappungstests (enthalten, disjunkt, andere Kategorie unverändert), Gateway-Tests
+mit Betrag-Erhalt.
+
+### 3. Lokale Zusammenfassung effizienter
+
+Gemessen (in-process, echtes Ollama, kompakter Prompt „höchstens 4 Stichpunkte à 12 Wörter“, Grenze 500 Zeichen):
+Zusammenfassung **16–20 s statt 28–46 s** (aktuell; 11 bzw. 12 Läufe, erster Lauf 31–32 s kalt), Ergebnis 210–266
+statt 430–510 Zeichen. Deterministische Faktenabdeckung der Entwürfe vergleichbar (Beträge gleich, Daten
+M 56 % vs. 39 % ohne Zusammenfassung). **Ob der im A/B beobachtete Qualitätsvorteil (Paarurteil 10 von 12)
+erhalten bleibt, ist NICHT VERIFIZIERT:** das Anthropic-Guthaben war während der Messung erschöpft (HTTP 400
+„credit balance too low“), das blinde Paarurteil und die Claude-Läufe der aktuellen Variante konnten nicht
+ausgeführt werden. Daher **keine Änderung** am Standard; `LOCAL_SUMMARY_MODE` und der Auto-Modus bleiben
+unverändert. Kandidat zur späteren Prüfung: der oben genannte Kompaktprompt.

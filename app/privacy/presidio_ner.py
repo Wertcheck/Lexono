@@ -148,12 +148,26 @@ _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN = re.compile(r"^[A-Z0-9_@\s]+$")
 #: Personen-Vorname lautet nie woertlich "offener" (es ist eine
 #: Adjektivform, kein Name) - identisches Ausschlussprinzip wie bei
 #: "gruessen"/"hochachtungsvoll" oben.
+#
+#: "attika", "verblechung(en)", "bitumenbahn", "sicherheitseinbehalt", "prozessvollmacht" (10.10.2026,
+#: Qualitaetslauf "falsche Pseudonymisierungstreffer", reproduzierbar mit scripts/diagnose_ner_false_positives.py):
+#: seltene Fachsubstantive aus Bau-/Vertragstexten werden vom spaCy-NER (`de_core_news_lg`, Presidio-
+#: `SpacyRecognizer`, konstanter Score 0.85 - die Treffer sind keine Konfidenzschaetzung) in korrekt
+#: geschriebenem Text als LOCATION erkannt (Wortart NOUN, ohne Wortvektor/OOV; "Attika" PROPN). Gemessen an
+#: 100 Fachbegriffen mit je drei Beispielsaetzen: 5 Treffer, genau diese. Folgen: Over-Pseudonymisierung
+#: ("[ORT_04] der Dachflaeche" statt "Attika" - Claude kann den Sachverhalt schlechter verwerten) und, wenn die
+#: Erkennung zwischen Erst- und Restrisiko-Scan unterschiedlich ausfaellt, ein Fail-Closed-Block. Reine
+#: Ganzwort-Ausnahme fuer genau diese Woerter (Gleichheit des gesamten Treffers, nicht Teilstring): ein
+#: Firmen-/Personenname, der ein solches Wort ENTHAELT ("Bitumenbahn GmbH"), bleibt geschuetzt. Eine
+#: strukturelle Regel (z. B. "NOUN und OOV") wurde bewusst NICHT eingefuehrt: sie haette an 50 seltenen
+#: echten Namen/Orten zwar 0 Treffer gehabt, wuerde aber die Erkennung grundsaetzlich abschwaechen.
 _NEVER_ENTITY_WORDS = frozenset(
     {
         "gruessen", "grüßen", "grussen",
         "hochachtungsvoll",
         "erbschaftsteuerbescheid",
         "offener",
+        "attika", "verblechung", "verblechungen", "bitumenbahn", "sicherheitseinbehalt", "prozessvollmacht",
     }
 )
 

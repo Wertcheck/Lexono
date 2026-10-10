@@ -266,6 +266,35 @@ def detect_company_with_legal_form(text: str) -> list[DetectedSpan]:
     return spans
 
 
+# Akademischer Titel + Name ("Dr. Wiebe", "Prof. Dr. Jonas Lindqvist", "Herr Dr. Kostka").
+# ECHTER FUND (Qualitaetslauf 10.10.2026, scripts/diagnose_titled_names.py): die NER (spaCy) uebersieht den
+# NACHNAMEN nach "Dr."/"Prof." kontextabhaengig - bei 60 Testsaetzen ging er in 13 Faellen (22 %) im Klartext in
+# den Cloud-Payload ("Gutachter Dr. Wiebe prueft ...", "Herr Dr. Kostka hat ...", "Prof. Dr. Lindqvist ..."), das
+# Gateway erlaubte die Anfrage, auch der Restrisiko-Scan fand ihn nicht. Auf dem urspruenglichen Pfad blieb das oft
+# unbemerkt, weil lange Dokumente schon nach 5000 Zeichen abgeschnitten wurden. Ein Titel "Dr."/"Prof." gefolgt von
+# einem grossgeschriebenen Wort ist im Deutschen praktisch immer ein Personenname - deterministisch und unabhaengig
+# vom NER-Kontext. Erfasst wird Titel + Name (hoechstens zwei Namenswoerter: Vor- und Nachname) - der Titel gehoert in den
+# Treffer, sonst bliebe "Prof. Dr. [PERSON_01]" im Restrisiko-Scan als "Dr" haengen und blockierte die Anfrage -,
+# Titel und erstes Namenswort duerfen durch einen Zeilenumbruch/ein Doppelleerzeichen getrennt sein (Zeilenumbruch
+# im Dokument direkt nach "Dr." - im Qualitaetslauf real so beobachtet), Vor- und Nachname nur durch EIN Leerzeichen.
+_ACADEMIC_TITLE = (
+    r"(?:Prof\.|Dr\.)(?: (?:Dr\.|Prof\.|med\.|jur\.|rer\. ?nat\.|rer\. ?pol\.|phil\.|h\. ?c\.|habil\.|mult\.|Ing\.))*"
+)
+_PERSON_NAME_WORD = r"(?:(?:von|van|vom|zu|zur|de|ter|ten) )?[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?"
+_TITLED_PERSON_PATTERN = re.compile(
+    r"(?<![A-Za-zÄÖÜäöüß])" + _ACADEMIC_TITLE + r"\s{1,2}(" + _PERSON_NAME_WORD + r"(?: " + _PERSON_NAME_WORD + r")?)"
+    r"(?![A-Za-zÄÖÜäöüß])"
+)
+
+
+def detect_titled_person(text: str) -> list[DetectedSpan]:
+    """Name hinter einem akademischen Titel ("Dr." / "Prof.") - siehe Kommentar bei `_TITLED_PERSON_PATTERN`."""
+    return [
+        DetectedSpan(category="person", start=m.start(), end=m.end(), value=m.group(0))
+        for m in _TITLED_PERSON_PATTERN.finditer(text)
+    ]
+
+
 def detect_datum(text: str) -> list[DetectedSpan]:
     spans = _matches_from_pattern(text, _NUMERIC_DATE_PATTERN, "datum")
     spans += _matches_from_pattern(text, _MONTH_NAME_DATE_PATTERN, "datum")
@@ -484,6 +513,7 @@ def detect_all(
     # hinzugefuegte, und eine bekannte, rollenzugeordnete Entitaet (Gegner, Mandant ...)
     # muss einer generischen "organisation" vorgehen.
     all_spans.extend(detect_company_with_legal_form(text))
+    all_spans.extend(detect_titled_person(text))
     if ner_detector is not None:
         ner_spans = ner_detector(text)
         if ner_span_filter is not None:
@@ -507,5 +537,21 @@ def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:
         if span.start >= last_end:
             resolved.append(span)
             last_end = span.end
-        # Ueberlappender, kuerzerer/spaeterer Treffer wird verworfen.
+        elif span.end > last_end and resolved and resolved[-1].category == span.category:
+            # ECHTER FUND (Qualitaetslauf 10.10.2026, installierter Build, 47-Tsd.-Zeichen-Vertrag): die NER lieferte
+            # "Schiedsgutachter Dr." (ohne Namen), der Titel-Detektor "Dr. Wiebe" - der spaeter beginnende, ueber das
+            # Ende hinausreichende Treffer wurde komplett verworfen, "Wiebe" blieb im Klartext im Cloud-Payload
+            # ("[PERSON_02]  Wiebe."). Ragt ein Treffer GLEICHER Kategorie ueber den vorherigen hinaus, wird der
+            # vorherige zur Vereinigung erweitert - nie bleiben Zeichen eines erkannten Treffers unersetzt.
+            # (Verschiedene Kategorien bleiben beim bisherigen Verhalten.)
+            previous = resolved[-1]
+            extension = span.value[last_end - span.start :]
+            resolved[-1] = DetectedSpan(
+                category=previous.category,
+                start=previous.start,
+                end=span.end,
+                value=previous.value + extension,
+            )
+            last_end = span.end
+        # uebrige ueberlappende, kuerzere/spaetere Treffer werden verworfen.
     return resolved

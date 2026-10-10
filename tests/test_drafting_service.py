@@ -2401,3 +2401,35 @@ def test_short_sachverhalt_WITH_document_still_gets_the_summary_in_auto_mode(
     assert result.success is True
     assert len(local_llm.received_payloads) == 1
     assert local_llm.health_calls == 0
+
+
+def test_cut_of_a_long_document_is_reported_as_open_review_point(db_session: Session) -> None:
+    """Vollstaendigkeits-Lauf (10.10.): ein nur auszugsweise uebernommenes Dokument erscheint als Pruefpunkt."""
+    from app.models import Document
+
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    db_session.add(
+        Document(matter_id=matter.id, file_path="/tmp/gross.pdf", classified_type="Vertrag",
+                 extracted_text=("Fülltext zum Vertrag ohne Besonderheiten. " * 3000))
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(response_text="Sehr geehrte Damen und Herren, vielen Dank.")
+    service, _ = _service(writing_provider, local_llm_provider=_HealthLocalLLM())
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert any("auszugsweise" in point for point in result.open_review_points)
+    assert "Auszug:" in writing_provider.received_payloads[0].anonymisierter_sachverhalt
+
+
+def test_short_documents_produce_no_cut_notice(db_session: Session) -> None:
+    matter = _document_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    service, _ = _service(writing_provider, local_llm_provider=_HealthLocalLLM())
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert not any("auszugsweise" in point for point in result.open_review_points)

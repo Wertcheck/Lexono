@@ -616,3 +616,97 @@ def test_contract_number_keyword_followed_by_prose_or_bullet_is_not_a_contract_n
 def test_real_contract_numbers_are_still_detected() -> None:
     spans = detect_all("Vertragsnummer: VN-2026-0815 und Vertrags-Nr. 4711/B laut Police.")
     assert sorted(s.value for s in spans if s.category == "vertrag") == ["4711/B", "VN-2026-0815"]
+
+
+# --- Akademischer Titel + Name (Qualitaetslauf 10.10.2026): NER-Luecke nach "Dr."/"Prof." ------------------------
+
+import pytest as _pytest  # noqa: E402
+
+from app.privacy.detectors import detect_all, detect_titled_person  # noqa: E402
+
+
+@_pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Gutachter Dr. Wiebe prüft die Anlage.", ["Dr. Wiebe"]),
+        ("Herr Dr. Kostka hat die Abnahme erklärt.", ["Dr. Kostka"]),
+        ("Ansprechpartner ist Prof. Dr. Lindqvist von der Hochschule.", ["Prof. Dr. Lindqvist"]),
+        ("Die Stellungnahme von Dr. Jonas Wiebe wurde eingereicht.", ["Dr. Jonas Wiebe"]),
+        ("Dr. med. Hasenclever untersucht den Kläger.", ["Dr. med. Hasenclever"]),
+        ("Prof. Dr. Dr. h. c. Brinkmöller referiert.", ["Prof. Dr. Dr. h. c. Brinkmöller"]),
+        ("Gutachter Dr. Müller-Lüdenscheidt prüft.", ["Dr. Müller-Lüdenscheidt"]),
+        ("Das Gutachten von Dr. von Brandt liegt vor.", ["Dr. von Brandt"]),
+        ("Schiedsgutachter Dr.  Wiebe. Nachfrist", ["Dr.  Wiebe"]),  # Zeilenumbruch nach dem Titel (Doppelleerzeichen)
+        ("Frau Dr.\nWiebe hat", ["Dr.\nWiebe"]),
+    ],
+)
+def test_titled_names_are_detected_deterministically(text: str, expected: list[str]) -> None:
+    assert [s.value for s in detect_titled_person(text)] == expected
+    assert all(s.category == "person" for s in detect_titled_person(text))
+
+
+@_pytest.mark.parametrize(
+    "text",
+    [
+        "Dr. med.",  # Titel ohne Namen
+        "Der Titel Dr. steht vor dem Namen.",  # kleingeschriebenes Folgewort
+        "Dr. wurde abgekürzt.",
+        "Er studierte zum Dr. jur. und blieb dort.",
+        "Doktor Wiebe ist ausgeschrieben.",  # kein abgekuerzter Titel (kein Treffer dieses Detektors)
+        "Prof. h. c. war ein Ehrentitel.",
+        "Der Dr.-Titel ist geschuetzt.",
+    ],
+)
+def test_titled_name_detector_has_no_false_positives_on_titles_without_names(text: str) -> None:
+    assert detect_titled_person(text) == []
+
+
+def test_name_capture_stops_at_punctuation_and_line_boundaries() -> None:
+    spans = detect_titled_person("Schiedsgutachter Dr. Wiebe. Nachfrist bis zum 30.11.2026.  Dr. Kostka  Anschrift: x")
+    assert [s.value for s in spans] == ["Dr. Wiebe", "Dr. Kostka"]
+
+
+def test_detect_all_covers_a_titled_name_even_without_any_ner() -> None:
+    spans = detect_all("Gutachter Dr. Wiebe prüft die Anlage und berichtet.", ner_detector=None)
+    assert any(s.category == "person" and s.value == "Dr. Wiebe" for s in spans)
+
+
+# --- Teilueberlappung gleicher Kategorie (Qualitaetslauf 10.10.2026) ---------------------------------------------
+
+from app.privacy.detectors import DetectedSpan, _resolve_overlaps  # noqa: E402
+
+
+def _span(category: str, start: int, value: str) -> DetectedSpan:
+    return DetectedSpan(category=category, start=start, end=start + len(value), value=value)
+
+
+def test_partially_overlapping_same_category_spans_are_merged_so_no_character_stays_uncovered() -> None:
+    text = "Schiedsgutachter Dr. Wiebe. Nachfrist"
+    a = _span("person", 0, "Schiedsgutachter Dr.")  # NER: ohne den Namen
+    b = _span("person", text.index("Dr."), "Dr. Wiebe")  # Titel-Detektor: ragt ueber a hinaus
+    merged = _resolve_overlaps([a, b])
+    assert len(merged) == 1
+    assert merged[0].value == "Schiedsgutachter Dr. Wiebe"
+    assert text[merged[0].start : merged[0].end] == merged[0].value
+
+
+def test_overlap_resolution_is_unchanged_for_contained_disjoint_and_different_category_spans() -> None:
+    outer = _span("person", 0, "Herr Dr. Wiebe")
+    inner = _span("person", 5, "Dr.")
+    assert _resolve_overlaps([outer, inner]) == [outer]  # enthaltener Treffer wird verworfen wie bisher
+    a, b = _span("person", 0, "Wiebe"), _span("person", 10, "Kostka")
+    assert _resolve_overlaps([a, b]) == [a, b]  # ueberlappungsfrei bleibt unveraendert
+    p, o = _span("person", 0, "Abc Def"), _span("ort", 4, "Def Ghi")
+    assert _resolve_overlaps([p, o]) == [p]  # andere Kategorie: bisheriges Verhalten
+
+
+def test_titled_name_after_a_partial_ner_span_is_fully_pseudonymized_end_to_end() -> None:
+    text = "Gerichtsstand Beispielstadt. Schiedsgutachter Dr. Wiebe. Nachfrist bis zum 30.11.2026."
+    start = text.index("Schiedsgutachter")
+
+    def partial_ner(_text: str) -> list[DetectedSpan]:
+        return [_span("person", start, "Schiedsgutachter Dr.")]
+
+    spans = detect_all(text, ner_detector=partial_ner)
+    person = [s for s in spans if s.category == "person"]
+    assert any("Wiebe" in s.value for s in person)
