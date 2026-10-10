@@ -638,6 +638,8 @@ from app.privacy.detectors import detect_all, detect_titled_person  # noqa: E402
         ("Das Gutachten von Dr. von Brandt liegt vor.", ["Dr. von Brandt"]),
         ("Schiedsgutachter Dr.  Wiebe. Nachfrist", ["Dr.  Wiebe"]),  # Zeilenumbruch nach dem Titel (Doppelleerzeichen)
         ("Frau Dr.\nWiebe hat", ["Dr.\nWiebe"]),
+        ("Der Gutachter Prof.\nDr. Lindqvist prüft", ["Prof.\nDr. Lindqvist"]),  # Umbruch/Doppelleerzeichen zwischen den Titeln
+        ("Der Gutachter Prof.  Dr. Lindqvist prüft", ["Prof.  Dr. Lindqvist"]),
     ],
 )
 def test_titled_names_are_detected_deterministically(text: str, expected: list[str]) -> None:

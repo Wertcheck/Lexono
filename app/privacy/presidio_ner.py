@@ -36,6 +36,7 @@ die rollenneutrale Kategorie "person", nicht "mandant"/"gegner"/etc.
 
 from __future__ import annotations
 
+import itertools
 import re
 from functools import lru_cache
 
@@ -332,6 +333,83 @@ def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[D
     return result
 
 
+# --- Zusaetzliche Erkennungsfassung mit wiederhergestellten Umlauten (11.10.2026) --------------------------------
+# Transliterierte Texte (ae/oe/ue/ss statt ä/ö/ü/ß) kennt das Modell schlechter. Zusaetzlich zur UNVERAENDERTEN Analyse
+# laeuft eine zweite auf einer Fassung, in der unbekannte Woerter mit ae/oe/ue/ss durch ihre Umlautform ersetzt sind,
+# WENN diese dem Modell bekannt ist ("Mueller" bleibt, "Kuendigung" -> "Kündigung"). Die Treffer werden positionsgenau
+# auf den ORIGINALTEXT zurueckgebildet (Wert = Originalausschnitt); der Originaltext wird nie veraendert.
+# WICHTIG (gemessen, scripts/diagnose_normalized_detection.py): die zweite Fassung wird nur VEREINIGT, nie
+# stattdessen verwendet - allein hatte sie bei 285 Namenssaetzen 14 Treffer WENIGER als die Originalanalyse
+# (z. B. "Herr Fuerst" -> "Herr Fürst" nicht mehr als Person erkannt); vereinigt: 2 Treffer MEHR, kein Verlust.
+# Es werden daher auch keine Treffer der Originalanalyse verworfen.
+_RESTORE_DIGRAPH_RE = re.compile(r"ae|oe|ue|Ae|Oe|Ue|AE|OE|UE|ss")
+_RESTORE_MAP = {"ae": "ä", "oe": "ö", "ue": "ü", "Ae": "Ä", "Oe": "Ö", "Ue": "Ü", "AE": "Ä", "OE": "Ö", "UE": "Ü", "ss": "ß"}
+_WORD_PATTERN = re.compile(r"[A-Za-zÄÖÜäöüß]{4,}")
+
+
+def _model_knows(word: str) -> bool:
+    vocab = _get_analyzer_engine().nlp_engine.nlp["de"].vocab
+    return bool(vocab.has_vector(word) or vocab.has_vector(word.lower()) or vocab.has_vector(word.capitalize()))
+
+
+@lru_cache(maxsize=50000)
+def _restore_word(word: str) -> tuple[tuple[str, int, int], ...] | None:
+    """Umlautform eines unbekannten Wortes als Folge (Zeichen, Start, Ende) im ORIGINALwort, oder None.
+
+    Nur wenn das Originalwort dem Modell unbekannt ist und die Umlautform bekannt (Vokabular mit Wortvektor) -
+    mehrdeutige/unbekannte Faelle bleiben unveraendert (dann gilt allein die Originalanalyse)."""
+    if _model_knows(word):
+        return None
+    spots = list(_RESTORE_DIGRAPH_RE.finditer(word))
+    if not spots or len(spots) > 4:
+        return None
+    for size in range(len(spots), 0, -1):
+        for combo in itertools.combinations(spots, size):
+            pieces: list[tuple[str, int, int]] = []
+            last = 0
+            for m in combo:
+                pieces.extend((word[i], i, i + 1) for i in range(last, m.start()))
+                pieces.append((_RESTORE_MAP[m.group()], m.start(), m.end()))
+                last = m.end()
+            pieces.extend((word[i], i, i + 1) for i in range(last, len(word)))
+            if _model_knows("".join(ch for ch, _a, _b in pieces)):
+                return tuple(pieces)
+    return None
+
+
+def _restore_for_analysis(text: str) -> tuple[str, list[int], list[int]] | None:
+    """(Analysetext, Start-/Ende-Index je Analysezeichen im Originaltext) oder None, wenn nichts wiederherzustellen ist
+    oder die Abbildung nicht zweifelsfrei konsistent ist (dann bleibt es bei der Originalanalyse)."""
+    out: list[str] = []
+    starts: list[int] = []
+    ends: list[int] = []
+    changed = False
+    position = 0
+    for match in _WORD_PATTERN.finditer(text):
+        for i in range(position, match.start()):
+            out.append(text[i]); starts.append(i); ends.append(i + 1)
+        restored = _restore_word(match.group()) if _RESTORE_DIGRAPH_RE.search(match.group()) else None
+        if restored is None:
+            for i in range(match.start(), match.end()):
+                out.append(text[i]); starts.append(i); ends.append(i + 1)
+        else:
+            changed = True
+            for ch, a, b in restored:
+                out.append(ch); starts.append(match.start() + a); ends.append(match.start() + b)
+        position = match.end()
+    for i in range(position, len(text)):
+        out.append(text[i]); starts.append(i); ends.append(i + 1)
+    if not changed:
+        return None
+    analysis = "".join(out)
+    consistent = (
+        len(analysis) == len(starts) == len(ends)
+        and all(0 <= a < b <= len(text) for a, b in zip(starts, ends))
+        and all(starts[i] <= starts[i + 1] and ends[i] <= ends[i + 1] for i in range(len(starts) - 1))
+    )
+    return (analysis, starts, ends) if consistent else None
+
+
 def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     """Erkennt Personennamen/Orte/Organisationen im übergebenen Text via
     Presidio + deutschem spaCy-Modell und liefert sie als `DetectedSpan`-
@@ -352,12 +430,36 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         score_threshold=_MIN_SCORE,
     )
 
+    spans = _collect_spans(results, text, None)
+    restored = _restore_for_analysis(analysis_text)
+    if restored is not None:
+        restored_text, starts, ends = restored
+        restored_results = analyzer.analyze(
+            text=restored_text, language="de", entities=list(_REQUESTED_ENTITIES), score_threshold=_MIN_SCORE
+        )
+        known = {(sp.category, sp.start, sp.end) for sp in spans}
+        spans.extend(
+            sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
+        )
+    return normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+
+
+def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | None) -> list[DetectedSpan]:
+    """Presidio-Ergebnisse -> `DetectedSpan` mit den bekannten Filtern. `mapping` bildet Treffer einer
+    Umlaut-wiederhergestellten Analysefassung auf den ORIGINALtext ab (Wert immer der Originalausschnitt)."""
     spans: list[DetectedSpan] = []
     for result in results:
         category = _ENTITY_TO_CATEGORY.get(result.entity_type)
         if category is None:
             continue
-        value = text[result.start : result.end]
+        if mapping is None:
+            start, end = result.start, result.end
+        else:
+            starts, ends = mapping
+            if not (0 <= result.start < result.end <= len(starts)):
+                continue
+            start, end = starts[result.start], ends[result.end - 1]
+        value = text[start:end]
         if "\n" in value:
             # Ein echter Personen-/Orts-/Organisationsname erstreckt sich
             # nie ueber einen Zeilenumbruch hinweg - beobachtet als
@@ -387,10 +489,8 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             # einen erkennbaren Platzhalter-Token enthaelt, ist keine neue
             # PII - der eigentliche Name wurde bereits sicher ersetzt.
             continue
-        spans.append(
-            DetectedSpan(category=category, start=result.start, end=result.end, value=value)
-        )
-    return normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+        spans.append(DetectedSpan(category=category, start=start, end=end, value=value))
+    return spans
 
 
 def get_entity_types(text: str) -> dict[tuple[int, int], str]:

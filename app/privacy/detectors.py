@@ -278,7 +278,7 @@ def detect_company_with_legal_form(text: str) -> list[DetectedSpan]:
 # Titel und erstes Namenswort duerfen durch einen Zeilenumbruch/ein Doppelleerzeichen getrennt sein (Zeilenumbruch
 # im Dokument direkt nach "Dr." - im Qualitaetslauf real so beobachtet), Vor- und Nachname nur durch EIN Leerzeichen.
 _ACADEMIC_TITLE = (
-    r"(?:Prof\.|Dr\.)(?: (?:Dr\.|Prof\.|med\.|jur\.|rer\. ?nat\.|rer\. ?pol\.|phil\.|h\. ?c\.|habil\.|mult\.|Ing\.))*"
+    r"(?:Prof\.|Dr\.)(?:\s{1,2}(?:Dr\.|Prof\.|med\.|jur\.|rer\. ?nat\.|rer\. ?pol\.|phil\.|h\. ?c\.|habil\.|mult\.|Ing\.))*"
 )
 _PERSON_NAME_WORD = r"(?:(?:von|van|vom|zu|zur|de|ter|ten) )?[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?"
 _TITLED_PERSON_PATTERN = re.compile(
