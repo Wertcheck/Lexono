@@ -58,6 +58,8 @@ from app.search.service import DocumentSearchService
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 
+pytestmark = pytest.mark.usefixtures("always_run_local_summary")
+
 class FakeClaudeWritingProvider:
     """Kein echter Claude-Aufruf noetig - diese Tests pruefen ausschliesslich
     den lokalen Vorabanalyse-Schritt, der VOR Claude laeuft. Gibt bewusst den

@@ -23,6 +23,8 @@ from app.search.service import DocumentSearchService
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 
+pytestmark = pytest.mark.usefixtures("always_run_local_summary")
+
 class FakeClaudeWritingProvider:
     def __init__(self, response_text: str = "Formulierte Antwort.") -> None:
         self.response_text = response_text
@@ -2062,3 +2064,190 @@ def test_chat_response_drafts_carry_no_letterhead(db_session: Session) -> None:
     service, _ = _service(FakeClaudeWritingProvider(response_text="Eine Antwort."), local_llm_provider=FakeLocalLLMProvider())
     result = service.create_draft(None, "chat_response", db_session, attorney_anmerkungen="was kannst du", actor="t")
     assert db_session.get(Draft, result.draft_id).letterhead_ref is None
+
+
+# --- Performance (10.10.): Vorwaermen des Pruefprompts waehrend Claude schreibt -------------------
+
+
+class _PrefillRecordingLocalLLM(FakeLocalLLMProvider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.prefills: list[str] = []
+        self.order: list[str] = []
+
+    def prefill(self, prompt_prefix: str) -> None:
+        self.prefills.append(prompt_prefix)
+        self.order.append("prefill")
+
+    def process(self, payload):
+        self.order.append("process")
+        return super().process(payload)
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        self.order.append("validate")
+        return super().generate_structured(prompt, schema)
+
+
+def _document_matter(db_session: Session):
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    from app.models import Document
+
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/x.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung.",
+        )
+    )
+    db_session.commit()
+    return matter
+
+
+def test_semantic_check_prefix_is_prefilled_and_is_a_prefix_of_the_real_prompt(
+    db_session: Session,
+) -> None:
+    """Der waehrend des Claude-Aufrufs vorgewaermte Text muss EXAKT der Anfang des spaeteren echten
+    Pruefprompts sein (sonst bringt der Prompt-Cache nichts) - die Pruefung selbst laeuft unveraendert."""
+    import time
+
+    matter = _document_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _PrefillRecordingLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    deadline = time.time() + 2
+    while not local_llm.prefills and time.time() < deadline:
+        time.sleep(0.01)
+    assert len(local_llm.prefills) == 1
+    prompt, _schema = local_llm.structured_calls[0]
+    assert prompt.startswith(local_llm.prefills[0])
+    assert "Zu prüfender Text:" not in local_llm.prefills[0]
+    assert "Sehr geehrte Frau [MANDANT_01]" not in local_llm.prefills[0]  # nie der Claude-Text
+    assert local_llm.order.index("process") < local_llm.order.index("validate")
+
+
+def test_prefill_is_not_started_when_semantic_check_is_skipped(db_session: Session) -> None:
+    matter = _matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(response_text="Eine normale Antwort ohne PII.")
+    local_llm = _PrefillRecordingLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(
+        matter.id, "chat_response", db_session, attorney_anmerkungen="Was steht in § 558 BGB?"
+    )
+
+    assert result.success is True
+    assert local_llm.prefills == []
+    assert local_llm.structured_calls == []
+
+
+def test_provider_without_prefill_support_still_validates(db_session: Session) -> None:
+    matter = _document_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = FakeLocalLLMProvider()  # kein `prefill`
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert len(local_llm.structured_calls) == 1
+
+
+# --- Performance (10.10.): kurze Sachverhalte brauchen keine lokale Zusammenfassung ------------------
+
+
+class _HealthLocalLLM(FakeLocalLLMProvider):
+    def __init__(self, *, reachable: bool = True, model_available: bool = True) -> None:
+        super().__init__()
+        self.reachable = reachable
+        self.model_available = model_available
+        self.health_calls = 0
+
+    def check_health(self):
+        from app.ai_providers.local_llm_provider import LocalAIHealthStatus
+
+        self.health_calls += 1
+        return LocalAIHealthStatus(
+            reachable=self.reachable,
+            model_available=self.model_available,
+            error=None if self.reachable and self.model_available else "simuliert",
+        )
+
+
+def _short_context_matter(db_session: Session):
+    # kurzer Sachverhalt MIT Personenbezug -> volle Pipeline (keine Chat-Abkuerzung), aber < 800 Zeichen
+    return _document_matter(db_session)
+
+
+def test_short_sachverhalt_skips_local_summary_but_still_checks_local_ai_and_validates(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    matter = _short_context_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert local_llm.received_payloads == []  # keine Zusammenfassung
+    assert local_llm.health_calls == 1  # aber Erreichbarkeit VOR Claude geprueft
+    assert len(local_llm.structured_calls) == 1  # semantische Pruefung unveraendert
+    sent = writing_provider.received_payloads[0]
+    assert not any("Lokale" in p for p in sent.anonymisierte_argumentationspunkte)
+
+
+@pytest.mark.parametrize("reachable,model_available", [(False, False), (True, False)])
+def test_short_sachverhalt_with_unavailable_local_ai_still_fails_closed_before_claude(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch, reachable: bool, model_available: bool
+) -> None:
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    matter = _short_context_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(response_text="darf nie erzeugt werden")
+    local_llm = _HealthLocalLLM(reachable=reachable, model_available=model_available)
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert any("Lokale KI" in r for r in result.blocked_reasons)
+    assert writing_provider.received_payloads == []  # NICHTS an die Cloud
+    assert db_session.query(Draft).count() == 0
+
+
+def test_long_sachverhalt_still_gets_the_local_summary(
+    db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.models import Document
+
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 800)
+    matter = _matter(db_session, client_name="Erika Mustermann")
+    db_session.add(
+        Document(
+            matter_id=matter.id,
+            file_path="/tmp/y.pdf",
+            extracted_text="Mandantin Erika Mustermann bittet um Rueckmeldung. " * 40,
+        )
+    )
+    db_session.commit()
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="Sehr geehrte Frau [MANDANT_01], vielen Dank fuer Ihre Nachricht."
+    )
+    local_llm = _HealthLocalLLM()
+    service, _ = _service(writing_provider, local_llm_provider=local_llm)
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert len(local_llm.received_payloads) == 1
+    assert local_llm.health_calls == 0

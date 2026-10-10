@@ -74,3 +74,12 @@ def use_bundled_tesseract_if_no_system_install():
         os.environ.pop("TESSDATA_PREFIX", None)
     else:
         os.environ["TESSDATA_PREFIX"] = original_tessdata_prefix
+
+
+@pytest.fixture()
+def always_run_local_summary(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Performance (10.10.): die lokale Vorabanalyse wird bei sehr kurzem Sachverhalt uebersprungen
+    (`app.drafting.service._LOCAL_SUMMARY_MIN_CHARS`). Tests, die gerade den Vorabanalyse-Pfad mit kurzen
+    Beispieltexten pruefen, schalten die Schwelle damit aus; die Ueberspringen-Logik selbst haben eigene
+    Tests (tests/test_drafting_short_summary_skip.py)."""
+    monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 0)

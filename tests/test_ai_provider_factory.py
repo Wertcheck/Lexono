@@ -125,7 +125,7 @@ def test_build_local_llm_provider_returns_ollama_provider_when_enabled() -> None
     )
     provider = build_local_llm_provider(settings)
     assert isinstance(provider, OllamaLocalLLMProvider)
-    assert provider.base_url == "http://localhost:12345"
+    assert provider.base_url == "http://127.0.0.1:12345"  # localhost -> IPv4 (siehe _prefer_ipv4_loopback)
     assert provider.model == "qwen3:8b"
 
 

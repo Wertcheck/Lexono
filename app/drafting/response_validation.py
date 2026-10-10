@@ -32,18 +32,27 @@ from app.privacy.security_check import check_response_placeholder_integrity
 # Bewusst klein gehalten (Vorgabe wörtlich: "Das Schema soll möglichst klein
 # bleiben, damit auch schwächere lokale Modelle zuverlässig damit arbeiten
 # können") - nur die zwei für einen Fail-Closed-Entscheid nötigen Felder.
+# Performance (10.10., gemessen auf der 16-GB-CPU-Referenzmaschine mit qwen3:4b): die lokale Erzeugung
+# kostet ~0,15 s je Token. Das Modell lieferte zu "passed": true regelmaessig frei erfundene,
+# ausschweifende "issues" (431 Token = 68 s) - OBWOHL nur `passed` die Fail-Closed-Entscheidung
+# bestimmt (die issues erklaeren lediglich eine Beanstandung). Grammatik-Grenzen (Ollama setzt
+# maxItems/maxLength durch; anyOf/oneOf dagegen NICHT) begrenzen die Ausgabe jetzt auf hoechstens zwei
+# kurze Eintraege; zusammen mit dem Hinweis im Prompt ("issues" leer bei "passed": true) sank die
+# Ausgabe real auf ~14 Token (12 s statt 68 s), eine echte Beanstandung (Widerspruch im Text) wird
+# unveraendert erkannt. Entscheidung (`passed`) und Fail-Closed-Verhalten sind unveraendert.
 _RESPONSE_CHECK_SCHEMA = {
     "type": "object",
     "properties": {
         "passed": {"type": "boolean"},
         "issues": {
             "type": "array",
+            "maxItems": 2,
             "items": {
                 "type": "object",
                 "properties": {
-                    "type": {"type": "string"},
-                    "severity": {"type": "string"},
-                    "description": {"type": "string"},
+                    "type": {"type": "string", "maxLength": 24},
+                    "severity": {"type": "string", "maxLength": 12},
+                    "description": {"type": "string", "maxLength": 120},
                 },
                 "required": ["type", "severity", "description"],
             },
@@ -99,11 +108,27 @@ _BASE_CRITERIA = [
 ]
 
 
-def _build_semantic_check_prompt(*, sachverhalt: str, text: str, has_mappings: bool) -> str:
-    """Siehe Moduldocstring/Kommentar oben ("ECHTER FUND, 05.10."): das
-    Platzhalter-Kriterium wird NUR aufgenommen, wenn tatsächlich Mappings
-    existieren - kein bedingtes "NUR falls..." mehr, auf dessen Befolgung
-    sich ein schwaches lokales Modell nachweislich nicht verlassen lässt."""
+#: Performance (10.10.): der Ausgangssachverhalt dient der Pruefung nur "zur Orientierung". Die
+#: Prompt-Verarbeitung kostet auf der CPU-Referenzmaschine ~20-25 ms/Token (ein 400-Woerter-Sachverhalt
+#: allein ~30 s) und ein zu langer Prompt wuerde von Ollama still in der Mitte gekuerzt. Laengere
+#: Sachverhalte werden daher KONTROLLIERT und erkennbar gekuerzt. Betrifft ausschliesslich die lokale
+#: Qualitaetspruefung (Stufe 2); die deterministische Datenschutzpruefung (Stufe 1) laeuft immer auf
+#: dem VOLLEN Text, und der Entwurfstext selbst wird nie gekuerzt.
+_SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS = 4000
+
+
+def build_semantic_check_prefix(*, sachverhalt: str, has_mappings: bool) -> str:
+    """Der Teil des Pruefprompts, der VOR dem Claude-Aufruf feststeht (Anweisung, Kriterien,
+    Ausgangssachverhalt) - Grundlage fuer das Vorwaermen des lokalen Modells waehrend der Wartezeit auf
+    Claude (siehe OllamaLocalLLMProvider.prefill). Siehe Moduldocstring/Kommentar oben ("ECHTER FUND,
+    05.10."): das Platzhalter-Kriterium wird NUR aufgenommen, wenn tatsaechlich Mappings existieren -
+    kein bedingtes "NUR falls..." mehr, auf dessen Befolgung sich ein schwaches lokales Modell
+    nachweislich nicht verlassen laesst."""
+    if len(sachverhalt) > _SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS:
+        sachverhalt = (
+            sachverhalt[:_SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS]
+            + "\n[... Ausgangssachverhalt für die Prüfung gekürzt ...]"
+        )
     criteria = ([_PLACEHOLDER_CRITERION] if has_mappings else []) + _BASE_CRITERIA
     numbered_criteria = "\n".join(f"{i}. {c}" for i, c in enumerate(criteria, start=1))
 
@@ -123,10 +148,17 @@ def _build_semantic_check_prompt(*, sachverhalt: str, text: str, has_mappings: b
         f"Prüfe AUSSCHLIESSLICH:\n{numbered_criteria}\n\n"
         "Ausgangssachverhalt (nur zur Orientierung, NICHT inhaltlich neu bewerten):\n"
         f"{sachverhalt}\n\n"
-        f"Zu prüfender Text:\n{text}\n\n"
-        'Antworte AUSSCHLIESSLICH als JSON gemäß Schema. Unsicherheit bei einer '
+    )
+
+
+def _build_semantic_check_prompt(*, sachverhalt: str, text: str, has_mappings: bool) -> str:
+    return (
+        build_semantic_check_prefix(sachverhalt=sachverhalt, has_mappings=has_mappings)
+        + f"Zu prüfender Text:\n{text}\n\n"
+        "Antworte AUSSCHLIESSLICH als JSON gemäß Schema. Unsicherheit bei einer "
         'juristischen Frage ist KEIN Grund für "passed": false - das ist nicht deine '
-        "Aufgabe."
+        'Aufgabe. Ist alles in Ordnung, antworte mit "passed": true und "issues": [] '
+        '(leeres Array); Einträge in "issues" nur bei "passed": false.'
     )
 
 

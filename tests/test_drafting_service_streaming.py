@@ -31,6 +31,8 @@ from app.privacy.gateway_schema import ClaudeRequestPayload
 from tests.test_drafting_service import FakeClaudeWritingProvider, FakeLocalLLMProvider, _matter, _service
 
 
+pytestmark = pytest.mark.usefixtures("always_run_local_summary")
+
 class FakeStreamingClaudeWritingProvider:
     """Test-Double MIT `write_stream`-Fähigkeit - liefert die konfigurierten
     `chunks` als Folge von Text-Deltas. `write()` bleibt für den

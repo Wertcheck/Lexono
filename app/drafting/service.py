@@ -61,6 +61,7 @@ vorbehalten.
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Generator
 from dataclasses import dataclass
 
@@ -74,7 +75,7 @@ from app.cost_control import CostControlService
 from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
-from app.drafting.response_validation import validate_claude_response
+from app.drafting.response_validation import build_semantic_check_prefix, validate_claude_response
 from app.drafting.review_notes import split_review_notes
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
@@ -157,6 +158,16 @@ _STEP_STATUS_LABELS: dict[str, str] = {
     "validation": "Antwort wird lokal geprüft…",
     "reconstruction": "Antwort wird zusammengesetzt…",
 }
+
+#: Performance (10.10., gemessen auf der 16-GB-CPU-Referenzmaschine mit qwen3:4b: ~40-50 s je
+#: Vorabanalyse, fast nur Token-Erzeugung): bei einem sehr kurzen Sachverhalt ist die lokale
+#: Zusammenfassung nicht kuerzer als der Text selbst (die Zusammenfassung ist begrenzt auf 1200 Zeichen,
+#: gemessen ~600 Zeichen fuer 500 Zeichen Eingabe) - sie wuerde Claude nur denselben Text ein zweites
+#: Mal liefern. Dann wird SIE uebersprungen. Die Datenschutz-Zusage bleibt: es wird trotzdem VOR dem
+#: Claude-Aufruf geprueft, dass die lokale KI erreichbar und das Modell vorhanden ist (sonst derselbe
+#: Fail-Closed-Abbruch wie bisher, nichts geht an die Cloud). Die semantische Antwortpruefung laeuft
+#: unveraendert.
+_LOCAL_SUMMARY_MIN_CHARS = 800
 
 #: ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
 #: Pipeline", 07.10., per direktem Reproduktionsskript VOR dem Ausliefern
@@ -797,6 +808,28 @@ class DraftingService:
             chat_triggered=chat_triggered,
         )
 
+    def _prefill_semantic_check(
+        self,
+        payload: ClaudeRequestPayload,
+        gateway_result: GatewayResult,
+        skip_llm_privacy_layers: bool,
+    ) -> None:
+        """Performance (10.10.): waehrend Claude schreibt (~15 s), ist die lokale KI untaetig. Der
+        Anfang des spaeteren semantischen Pruefprompts (Anweisung + Ausgangssachverhalt) steht schon
+        fest - er wird jetzt im Hintergrund vom lokalen Modell eingelesen (Prompt-Cache), die
+        eigentliche Pruefung nach Claudes Antwort liest dann nur noch den neuen Text. Kein
+        Datenrennen: nur ein lesender Hintergrundaufruf mit ohnehin lokalem Text, ohne Zugriff auf
+        Datenbank/Session. Aendert weder Pruefung noch Fail-Closed (Ergebnis wird nie ausgewertet,
+        Fehler werden verschluckt). Nur wenn die semantische Pruefung spaeter wirklich laeuft."""
+        prefill = getattr(self.local_llm_provider, "prefill", None)
+        if prefill is None or skip_llm_privacy_layers:
+            return
+        prefix = build_semantic_check_prefix(
+            sachverhalt=payload.anonymisierter_sachverhalt,
+            has_mappings=bool(gateway_result.mappings),
+        )
+        threading.Thread(target=prefill, args=(prefix,), name="lexono-prefill", daemon=True).start()
+
     def _finish_non_streaming(
         self,
         prepared: _PreparedRequest,
@@ -867,7 +900,16 @@ class DraftingService:
         # (Datenschutz vor Verfuegbarkeit, siehe Moduldocstring Schritt 5).
         # Ladeanzeige nur, wenn die lokale Vorabanalyse WIRKLICH laeuft - wird sie bewusst
         # uebersprungen (allgemeine Frage ohne sensiblen Kontext), gibt es keinen solchen Schritt.
-        if self.local_llm_provider is not None and not skip_llm_privacy_layers:
+        summary_not_worthwhile = (
+            self.local_llm_provider is not None
+            and not skip_llm_privacy_layers
+            and len(payload.anonymisierter_sachverhalt) < _LOCAL_SUMMARY_MIN_CHARS
+        )
+        if (
+            self.local_llm_provider is not None
+            and not skip_llm_privacy_layers
+            and not summary_not_worthwhile
+        ):
             yield DraftStreamEvent(
                 kind="status", status=_STEP_STATUS_LABELS["local_ai_preanalysis"]
             )
@@ -875,9 +917,16 @@ class DraftingService:
             with trace.step("local_ai_preanalysis_skipped"):
                 pass
         elif self.local_llm_provider is not None:
+            local_result = None
             try:
-                with trace.step("local_ai_preanalysis"):
-                    local_result = self.local_llm_provider.process(payload)
+                if summary_not_worthwhile:
+                    with trace.step("local_ai_preanalysis_skipped_short"):
+                        health = self.local_llm_provider.check_health()
+                        if not (health.reachable and health.model_available):
+                            raise LocalLLMUnavailableError(health.error or "lokale KI nicht bereit")
+                else:
+                    with trace.step("local_ai_preanalysis"):
+                        local_result = self.local_llm_provider.process(payload)
             except LocalLLMUnavailableError:
                 self.api_logger.log_error(
                     db,
@@ -941,11 +990,15 @@ class DraftingService:
             # Dokument/Anwaltstext stehen im `locally_sourced_text` und bleiben streng geschuetzt.
             # ECHTER FUND (Real-E2E 08.10., Fall A, reproduzierbar ab der zweiten Frage):
             # "nicht pseudonymisierter Wert fuer [ORGANISATION_03]" blockierte vor Claude.
-            local_summary_issues = check_response_placeholder_integrity(
-                local_result.text,
-                gateway_result.mappings,
-                require_full_coverage=False,
-                lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
+            local_summary_issues = (
+                []
+                if local_result is None
+                else check_response_placeholder_integrity(
+                    local_result.text,
+                    gateway_result.mappings,
+                    require_full_coverage=False,
+                    lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
+                )
             )
             if local_summary_issues:
                 self.api_logger.log_blocked(
@@ -970,16 +1023,18 @@ class DraftingService:
                 )
                 return
 
-            payload = payload.model_copy(
-                update={
-                    "anonymisierte_argumentationspunkte": [
-                        *payload.anonymisierte_argumentationspunkte,
-                        f"{_LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX}{local_result.text}",
-                    ]
-                }
-            )
+            if local_result is not None:
+                payload = payload.model_copy(
+                    update={
+                        "anonymisierte_argumentationspunkte": [
+                            *payload.anonymisierte_argumentationspunkte,
+                            f"{_LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX}{local_result.text}",
+                        ]
+                    }
+                )
 
         yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["claude"])
+        self._prefill_semantic_check(payload, gateway_result, skip_llm_privacy_layers)
         try:
             with trace.step("claude"):
                 writing_result = self.writing_provider.write(payload)

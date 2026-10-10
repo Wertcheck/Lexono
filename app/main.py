@@ -136,6 +136,12 @@ async def _run_silent_local_ai_check(app: FastAPI, settings: Settings) -> None:
     app.state.local_ai_status = status
     if status.state == LocalAiState.READY:
         logger.info("Lokale KI bereit (Modell '%s').", status.configured_model)
+        # Performance (10.10.): Modell schon jetzt laden, damit die erste Anfrage der Sitzung nicht die
+        # Ladezeit traegt. Best effort, blockiert den Start nicht (eigener Thread), bleibt wie jedes
+        # geladene Modell nur `keep_alive` lang im Speicher.
+        warm_up = getattr(build_local_llm_provider(settings), "warm_up", None)
+        if warm_up is not None:
+            await asyncio.to_thread(warm_up)
     elif status.state != LocalAiState.DISABLED:
         logger.warning(
             "Lokale KI nicht bereit (Status %s): %s", status.state.value, status.detail

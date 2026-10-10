@@ -179,7 +179,7 @@ def test_process_sends_deterministic_temperature_and_schema_constraint(
     assert captured["json"]["model"] == "qwen3:4b"
     assert captured["json"]["format"] == {
         "type": "object",
-        "properties": {"zusammenfassung": {"type": "string"}},
+        "properties": {"zusammenfassung": {"type": "string", "maxLength": 1200}},
         "required": ["zusammenfassung"],
     }
     assert captured["json"]["prompt"].startswith("/no_think")
@@ -564,3 +564,103 @@ def test_pull_model_uses_independent_download_timeout_not_inference_timeout(
     assert used_timeout is not provider.timeout_seconds
     assert isinstance(used_timeout, httpx.Timeout)
     assert used_timeout.read is None
+
+
+# --- Performance (10.10.): Prefill, Warm-up, inhaltsfreie Messwerte -------------------------------
+
+
+def test_prefill_posts_prefix_with_single_token_and_never_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict = {}
+
+    def fake_post(url, json=None, timeout=None, **kw):
+        seen.update(url=url, body=json)
+        return _FakeResponse(json_data={"response": "x"})
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    _provider().prefill("Anweisung und Sachverhalt")
+
+    assert seen["url"].endswith("/api/generate")
+    assert seen["body"]["prompt"] == "/no_think\nAnweisung und Sachverhalt"
+    assert seen["body"]["options"]["num_predict"] == 1
+    assert "format" not in seen["body"]
+
+    def boom(*a, **k):
+        raise httpx.ConnectError("down")
+
+    monkeypatch.setattr(httpx, "post", boom)
+    _provider().prefill("egal")  # darf nicht werfen
+    _provider().warm_up()  # darf nicht werfen
+
+
+def test_warm_up_loads_model_without_prompt(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict = {}
+    monkeypatch.setattr(
+        httpx, "post", lambda url, json=None, **k: seen.update(body=json) or _FakeResponse(json_data={})
+    )
+    provider = _provider()
+    provider.warm_up()
+    assert "prompt" not in seen["body"]
+    assert seen["body"]["model"] == provider.model
+    assert seen["body"]["keep_alive"]
+
+
+def test_perf_metrics_are_logged_without_content(monkeypatch: pytest.MonkeyPatch) -> None:
+    import logging
+
+    secret_prompt = "GEHEIMER PROMPTINHALT"
+    monkeypatch.setattr(
+        httpx,
+        "post",
+        lambda *a, **k: _FakeResponse(
+            json_data={
+                "response": '{"passed": true, "issues": []}',
+                "total_duration": 12_000_000_000,
+                "load_duration": 3_000_000_000,
+                "prompt_eval_count": 900,
+                "prompt_eval_duration": 5_000_000_000,
+                "eval_count": 14,
+                "eval_duration": 2_000_000_000,
+            }
+        ),
+    )
+    records: list[str] = []
+
+    class _H(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record.getMessage())
+
+    logger = logging.getLogger("lexono.perf")
+    handler = _H(level=logging.INFO)
+    old_level, old_disabled = logger.level, logger.disabled
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    logger.disabled = False
+    try:
+        _provider().generate_structured(secret_prompt, {"type": "object", "properties": {"passed": {}}})
+    finally:
+        logger.removeHandler(handler)
+        logger.setLevel(old_level)
+        logger.disabled = old_disabled
+
+    messages = " ".join(records)
+    assert "PERF_OLLAMA task=validation total_s=12.00 load_s=3.00 prompt_tokens=900" in messages
+    assert "eval_tokens=14" in messages
+    assert secret_prompt not in messages and 'passed": true' not in messages
+
+
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        ("http://localhost:11434", "http://127.0.0.1:11434"),
+        ("http://LOCALHOST:11434/", "http://127.0.0.1:11434"),
+        ("http://localhost", "http://127.0.0.1"),
+        ("http://127.0.0.1:11434", "http://127.0.0.1:11434"),
+        ("http://ollama.intern:11434", "http://ollama.intern:11434"),
+        ("http://localhost.example.com:11434", "http://localhost.example.com:11434"),
+    ],
+)
+def test_localhost_is_addressed_as_ipv4_loopback_other_hosts_unchanged(given: str, expected: str) -> None:
+    """Windows: `localhost` -> ::1 zuerst, dort lauscht Ollama nicht -> ~2 s Verlust je Anfrage."""
+    from app.ai_providers.ollama_provider import OllamaLocalLLMProvider
+
+    assert OllamaLocalLLMProvider(base_url=given, model="m").base_url == expected

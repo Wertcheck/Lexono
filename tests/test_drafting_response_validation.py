@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 
+import pytest
+
 from app.ai_providers.local_llm_provider import LocalLLMUnavailableError
 from app.drafting.response_validation import (
     _build_semantic_check_prompt,
@@ -171,3 +173,48 @@ def test_validate_claude_response_propagates_llm_unavailable() -> None:
 
     with pytest.raises(LocalLLMUnavailableError):
         validate_claude_response("Ein Text ohne Platzhalter.", [], "Sachverhalt", provider)
+
+
+# --- Performance (10.10.): begrenzte Ausgabe, Prefix des Prompts ---------------------------------
+
+
+def test_check_schema_bounds_the_output_size() -> None:
+    """Ollama setzt maxItems/maxLength per Grammatik durch (anyOf/oneOf nicht) - die Ausgabe der
+    lokalen Pruefung ist damit nach oben begrenzt (Erzeugung kostet ~0,15 s je Token)."""
+    from app.drafting.response_validation import _RESPONSE_CHECK_SCHEMA
+
+    issues = _RESPONSE_CHECK_SCHEMA["properties"]["issues"]
+    assert issues["maxItems"] == 2
+    assert set(_RESPONSE_CHECK_SCHEMA["required"]) == {"passed", "issues"}
+    for field_schema in issues["items"]["properties"].values():
+        assert field_schema["maxLength"] <= 120
+
+
+@pytest.mark.parametrize("has_mappings", [True, False])
+def test_prefix_is_the_exact_start_of_the_full_prompt(has_mappings: bool) -> None:
+    from app.drafting.response_validation import build_semantic_check_prefix
+
+    prefix = build_semantic_check_prefix(sachverhalt="Sachverhalt X", has_mappings=has_mappings)
+    full = _build_semantic_check_prompt(sachverhalt="Sachverhalt X", text="Text Y", has_mappings=has_mappings)
+    assert full.startswith(prefix)
+    assert "Text Y" not in prefix
+    assert full.index("Zu prüfender Text:") == len(prefix)
+
+
+def test_prompt_tells_the_model_to_leave_issues_empty_when_passed() -> None:
+    prompt = _build_semantic_check_prompt(sachverhalt="x", text="y", has_mappings=True)
+    assert '"issues": []' in prompt
+
+
+def test_long_sachverhalt_is_cut_visibly_in_the_semantic_check_prompt_but_text_is_not() -> None:
+    from app.drafting.response_validation import _SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS
+
+    sach = "S" * (_SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS + 300)
+    text = "T" * 9000
+    prompt = _build_semantic_check_prompt(sachverhalt=sach, text=text, has_mappings=True)
+    assert "gekürzt" in prompt
+    assert "S" * (_SEMANTIC_CHECK_SACHVERHALT_MAX_CHARS + 1) not in prompt
+    assert text in prompt  # der zu pruefende Entwurf wird nie gekuerzt
+
+    short = _build_semantic_check_prompt(sachverhalt="kurz", text="t", has_mappings=True)
+    assert "gekürzt" not in short
