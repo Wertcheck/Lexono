@@ -888,3 +888,24 @@ def test_both_prompts_trust_the_local_party_address_assignment() -> None:
     for prompt in (WRITING_SYSTEM_PROMPT, CHAT_SYSTEM_PROMPT):
         assert "Zuordnung der Beteiligten zu Anschriften laut Dokument" in prompt
         assert "erfinde nie eine Anschrift" in prompt
+
+
+# --- Erfundene Adress-Platzhalter (12.10.2026) -------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("prompt_name", ["WRITING_SYSTEM_PROMPT", "CHAT_SYSTEM_PROMPT"])
+def test_system_prompts_contain_no_literal_address_placeholder_examples(prompt_name: str) -> None:
+    """Woertliche Beispiele wie "[ADRESSE_NN]" fuehrten bei fehlender Anschrift zu einem erfundenen "[ADRESSE_01]" im
+    Empfaengerblock (gemessen 8/24 vs. 0/24). Die Anweisung nennt stattdessen den Einsetz-Hinweis."""
+    import app.ai_providers.claude_writing_provider as module
+
+    prompt = getattr(module, prompt_name)
+    assert "ADRESSE" not in prompt
+    assert '"[Anschrift einsetzen]"' in prompt
+    assert "Adress-Platzhalter" in prompt
+
+
+def test_system_prompt_still_forbids_inventing_placeholders() -> None:
+    import app.ai_providers.claude_writing_provider as module
+
+    assert "erfinde nie" in module.WRITING_SYSTEM_PROMPT.lower() or "niemals einen" in module.WRITING_SYSTEM_PROMPT

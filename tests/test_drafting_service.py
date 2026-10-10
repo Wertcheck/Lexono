@@ -2433,3 +2433,36 @@ def test_short_documents_produce_no_cut_notice(db_session: Session) -> None:
     result = service.create_draft(matter.id, "formulate_draft", db_session)
 
     assert not any("auszugsweise" in point for point in result.open_review_points)
+
+
+@pytest.mark.parametrize("invented", ["[ADRESSE_01]", "[FIRMA_02]"])
+def test_invented_placeholder_in_the_recipient_block_blocks_the_draft_and_is_never_mapped(
+    db_session: Session, invented: str
+) -> None:
+    """Claude erfand in ~14 % der Laeufe '[ADRESSE_01]' fuer die fehlende Anschrift der Gegenseite. Die Ausgabepruefung
+    blockiert (fail-closed); es wird nichts gespeichert und kein unbekannter Platzhalter automatisch zugeordnet."""
+    matter = _short_context_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text=f"=== SCHREIBEN ===\nAn die Gegenseite\n{invented}\n\n[Datum einsetzen]\nBetreff: Akte\n=== ENDE SCHREIBEN ==="
+    )
+    service, _ = _service(writing_provider, local_llm_provider=_HealthLocalLLM())
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is False
+    assert result.draft_text is None
+    assert db_session.query(Draft).count() == 0
+    assert any("Platzhalter" in reason for reason in result.blocked_reasons)
+
+
+def test_insert_hint_instead_of_an_address_placeholder_is_accepted(db_session: Session) -> None:
+    matter = _short_context_matter(db_session)
+    writing_provider = FakeClaudeWritingProvider(
+        response_text="=== SCHREIBEN ===\nAn die Gegenseite\n[Anschrift einsetzen]\n\n[Datum einsetzen]\nBetreff: Akte\n=== ENDE SCHREIBEN ==="
+    )
+    service, _ = _service(writing_provider, local_llm_provider=_HealthLocalLLM())
+
+    result = service.create_draft(matter.id, "formulate_draft", db_session)
+
+    assert result.success is True
+    assert "[Anschrift einsetzen]" in (result.draft_text or "")

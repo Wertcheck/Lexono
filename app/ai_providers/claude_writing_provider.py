@@ -44,6 +44,12 @@ from app.privacy.gateway_schema import ClaudeRequestPayload
 # Ziffern vermittelt dieselbe Syntax-Information, matcht aber nicht das
 # reale Platzhalter-Muster, und eine explizite Anweisung verbietet das
 # Erfinden generischer Platzhalter zusaetzlich.
+# ECHTER FUND (12.10.2026, scripts/repro_invented_placeholders.py, echtes Claude, synthetische Akte ohne Adresse):
+# Die woertlichen Beispiele "[ADRESSE_NN]" / "ADRESSE_02" in der Anweisung zum Empfaengerblock fuehrten dazu, dass
+# Claude bei FEHLENDER Anschrift der Gegenseite selbst "[ADRESSE_01]" schrieb - die Ausgabepruefung blockierte das
+# korrekt. Gemessen: 8 von 24 Laeufen (33 %) mit dem alten Wortlaut, 0 von 24 mit dem Wortlaut ohne woertliche
+# Adress-Platzhalter (Fisher exakt, zweiseitig p = 0,004). Die Anweisung sagt jetzt ausdruecklich, was bei fehlender Anschrift zu
+# schreiben ist. Gleiche Passage in WRITING_ und CHAT_SYSTEM_PROMPT (nur fuer WRITING gemessen).
 WRITING_SYSTEM_PROMPT = """\
 Du hilfst bei der sprachlichen Formulierung eines Antwortschreibens für \
 eine Steueranwaltskanzlei.
@@ -171,10 +177,11 @@ ende nach der Grußformel. Erwähne Briefkopf und Unterzeichner NICHT in den off
 Prüfpunkten. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
-Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
-"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
-[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf. Gilt das auch \
-für die Anschrift des Empfängers eines Mandantenschreibens: steht ein [ADRESSE_NN] im \
+Platzhalternamen in eckigen Klammern mit Nummer und niemals eine Mischform wie \
+"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Adress-Platzhalter \
+wörtlich im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf; steht dort keiner, \
+schreibe im Empfängerblock exakt "[Anschrift einsetzen]". Gilt das auch \
+für die Anschrift des Empfängers eines Mandantenschreibens: steht ein Adress-Platzhalter im \
 Sachverhalt unmittelbar bei einer Person (Name, direkt danach die Adresse), ist \
 das deren vollständige Anschrift - übernimm den Platzhalter als Anschrift dieser Person und \
 schreibe dann kein "[Anschrift einsetzen]". Ordne eine Anschrift niemals einer Person zu, bei \
@@ -368,10 +375,11 @@ ende nach der Grußformel. Erwähne Briefkopf und Unterzeichner NICHT in den off
 Prüfpunkten. Fehlt für eine Angabe (z. B. Anschrift, Datum, Unterzeichner) ein \
 passender Platzhalter im Sachverhalt, schreibe ausschließlich einen Einsetz-Hinweis \
 in klaren deutschen Worten, z. B. "[Anschrift einsetzen]" - niemals einen \
-Platzhalternamen (PERSON_01, ADRESSE_02 usw.) und niemals eine Mischform wie \
-"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Platzhalter \
-[ADRESSE_NN] im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf. Gilt das auch \
-für die Anschrift des Empfängers eines Mandantenschreibens: steht ein [ADRESSE_NN] im \
+Platzhalternamen in eckigen Klammern mit Nummer und niemals eine Mischform wie \
+"[Adresse PERSON_02]". Steht die Anschrift der Gegenseite als Adress-Platzhalter \
+wörtlich im Sachverhalt, verwende genau diesen Platzhalter im Briefkopf; steht dort keiner, \
+schreibe im Empfängerblock exakt "[Anschrift einsetzen]". Gilt das auch \
+für die Anschrift des Empfängers eines Mandantenschreibens: steht ein Adress-Platzhalter im \
 Sachverhalt unmittelbar bei einer Person (Name, direkt danach die Adresse), ist \
 das deren vollständige Anschrift - übernimm den Platzhalter als Anschrift dieser Person und \
 schreibe dann kein "[Anschrift einsetzen]". Ordne eine Anschrift niemals einer Person zu, bei \
