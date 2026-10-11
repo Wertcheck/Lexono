@@ -322,3 +322,56 @@ def test_real_plural_nouns_are_not_asked(gateway, instruction) -> None:
         purpose="formulate_draft", sachverhalt="Akte: Beispielakte", anwaltliche_anmerkungen=instruction, review_mode="ask"
     )
     assert not result.review_required
+
+
+# --- Restklassen (12.10.2026): Agens nach Umbruch, Ueberschriften, Aufzaehlungen neben ersetzten Namen -------------------
+
+RESIDUAL_CASES = [
+    ("Stuckenschneider", "Die Unterlagen wurden am 12.03.2026 durch\nStuckenschneider geprüft und dem Auftraggeber übergeben."),
+    ("Fischer", "Zeugenaussage Fischer\nDer Zeuge schildert den Ablauf."),
+    ("Grotelueschen", "Protokoll\nGrotelueschen, Zeuge\nDie Anlage wurde besichtigt."),
+    ("Fuerst", "Zeugen sind Herr Marquardt, Fuerst sowie Herr Marquardt."),
+]
+
+
+@pytest.mark.parametrize(("name", "text"), RESIDUAL_CASES)
+def test_residual_leak_classes_never_reach_the_payload_in_plaintext(gateway, name, text) -> None:
+    masked = _prepare(gateway, text, mode="mask")
+    assert masked.allowed and name not in masked.payload.anonymisierter_sachverhalt
+    asked = _prepare(gateway, text, mode="ask")
+    # Entweder automatisch erkannt (dann ohnehin ersetzt) oder als Rueckfrage - nie ungeprueft im Klartext.
+    if asked.allowed:
+        assert name not in asked.payload.anonymisierter_sachverhalt
+    else:
+        assert asked.review_required and name in [c.term for c in asked.review_candidates]
+
+
+# Dokumentierte Grenze (NOT VERIFIED geloest): "Lange" liest das Modell nach "durch" als Adjektiv-Substantiv mit Lemma
+# "lang"; "Richter" als Ueberschriftswort hat keine unabhaengige Namensevidenz. Beide bleiben im Benchmark (3/1100).
+@pytest.mark.xfail(reason="bekannte Restgrenze, siehe PRIVACY_REVIEW_ARCHITECTURE.md", strict=False)
+@pytest.mark.parametrize(
+    ("name", "text"),
+    [
+        ("Lange", "Die Unterlagen wurden am 12.03.2026 durch\nLange geprüft und dem Auftraggeber übergeben."),
+        ("Richter", "Zeugenaussage Richter\nDer Zeuge schildert den Ablauf."),
+    ],
+)
+def test_known_remaining_limits(gateway, name, text) -> None:
+    masked = _prepare(gateway, text, mode="mask")
+    assert name not in masked.payload.anonymisierter_sachverhalt
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Die Zahlungen wurden durch Überweisungen beglichen.",
+        "Wer haftet bei Mängeln der Dämmung?",
+        "Mängelanzeige Dachfläche\nDie Feuchtigkeit wurde festgestellt.",
+        "Kündigung Mietvertrag\nDer Vermieter kündigte fristgerecht.",
+        "Gewährleistung, Minderung sowie Rücktritt kommen in Betracht.",
+        "Die Prüfung erfolgte durch Sachverständige der Kammer.",
+    ],
+)
+def test_residual_rules_do_not_flag_legal_vocabulary(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="ask")
+    assert not result.review_required, [c.term for c in result.review_candidates]

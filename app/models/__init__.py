@@ -28,6 +28,7 @@ from app.models.firm_practice_area import FirmPracticeArea
 from app.models.firm_profile import FirmProfile
 from app.models.letterhead import Letterhead
 from app.models.privacy_decision import PrivacyDecision, PrivacyFeedbackStat
+from app.models.chat_message_claim import ChatMessageClaim
 from app.models.generated_document import GeneratedDocument
 from app.models.knowledge_item import KnowledgeItem
 from app.models.law import Law
@@ -99,6 +100,7 @@ __all__ = [
     "Letterhead",
     "PrivacyDecision",
     "PrivacyFeedbackStat",
+    "ChatMessageClaim",
     "FirmPracticeArea",
     "Law",
     "LawSection",

@@ -39,8 +39,20 @@ _ROLE_NOUNS = frozenset(
     }
 )
 _MODIFIER_POS = ("DET", "ADJ", "NUM", "PRON")
-_STRUCTURAL_ROLES = frozenset({"feldwert", "tabellenzelle", "nach_rollenwort"})
-_SENTENCE_ROLES = frozenset({"subjekt", "vor_finitem_verb", "feldwert", "tabellenzelle"})
+_STRUCTURAL_ROLES = frozenset(
+    {"feldwert", "tabellenzelle", "nach_rollenwort", "vor_rollenwort", "aufzaehlung_mit_person", "ueberschrift"}
+)
+_SENTENCE_ROLES = frozenset(
+    {"subjekt", "vor_finitem_verb", "feldwert", "tabellenzelle", "vor_rollenwort", "aufzaehlung_mit_person"}
+)
+# Restlecks (12.10.2026, reproduziert im Benchmark): Aufzaehlung neben einem bereits ersetzten PERSONEN-Platzhalter
+# ("[PERSON_01], Richter sowie Herr [PERSON_01]") - Glieder einer Aufzaehlung teilen ihren Typ.
+_PERSON_PLACEHOLDER = r"\[(?:PERSON|MANDANT|GEGNER|ANWALT)_\d+\]"
+_ENUM_LINK = r"\s*(?:,|und|sowie|oder|bzw\.)\s*"
+_TITLE = r"(?:(?:Herrn?|Frau|Dr\.|Prof\.)\s+)*"
+_ENUM_AFTER_PERSON = re.compile(_PERSON_PLACEHOLDER + _ENUM_LINK + _TITLE + r"$")
+_ENUM_BEFORE_PERSON = re.compile(_ENUM_LINK + _TITLE + _PERSON_PLACEHOLDER)
+_ROLE_NOUN_AFTER = re.compile(r",\s*(?:" + "|".join(sorted(_ROLE_NOUNS, key=len, reverse=True)) + r")\b", re.IGNORECASE)
 MAX_TERM_LENGTH = 80
 # Vom System selbst erzeugte Kopfzeilen (app/ai_providers/local_ai_provider.py: "Akte: <Titel>") sind keine
 # Namensrolle im Sinne einer Rueckfrage - der Aktentitel ist lokale Stammdaten-Information; Mandant/Beteiligte darin
@@ -71,7 +83,7 @@ class PrivacyDecisions:
         return not self.personal and not self.not_personal
 
 
-def _roles(doc, text: str, token) -> set[str]:
+def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     roles: set[str] = set()
     head = token.head
     # Subjekt eines nicht-infiniten Verbs - auch bei Verbzweitstellung ("Dazu erklaert Fuerst, ...").
@@ -90,6 +102,26 @@ def _roles(doc, text: str, token) -> set[str]:
     previous = doc[token.i - 1] if token.i else None
     if previous is not None and previous.lower_ in _ROLE_NOUNS:
         roles.add("nach_rollenwort")
+    # "Stuckenschneider, Zeuge" (Kopfzeile eines Protokolls): Apposition VOR einem Rollenwort.
+    if _ROLE_NOUN_AFTER.match(text, end):
+        roles.add("vor_rollenwort")
+    # Aufzaehlungsglied neben einem ersetzten Personen-Platzhalter (Rohtext, positionsgleich zur Analysefassung).
+    if raw is not None and (_ENUM_AFTER_PERSON.search(raw[: token.idx]) or _ENUM_BEFORE_PERSON.match(raw, end)):
+        roles.add("aufzaehlung_mit_person")
+    # Kurze Ueberschriftszeile "Zeugenaussage Richter": letztes Wort einer Zeile aus hoechstens vier Woertern ohne Verb
+    # und ohne Satzzeichen am Ende, direkt nach einem Substantiv.
+    line_start = text.rfind("\n", 0, token.idx) + 1
+    line_end = text.find("\n", end)
+    line = text[line_start : len(text) if line_end < 0 else line_end].strip()
+    if (
+        line.endswith(token.text)
+        and 2 <= len(line.split()) <= 4
+        and previous is not None
+        and previous.pos_ in ("NOUN", "PROPN")
+        and previous.idx >= line_start
+        and not any(t.pos_ in ("VERB", "AUX") for t in doc if line_start <= t.idx < end)
+    ):
+        roles.add("ueberschrift")
     return roles
 
 
@@ -159,10 +191,22 @@ def find_review_candidates(
             continue
         if neutral[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Feldbezeichnung ("Akte:", "Name:", "Betreff:"), kein Feldwert
-        roles = _roles(doc, neutral, token)
+        roles = _roles(doc, neutral, token, raw=scan_text)
         if not roles:
             continue
-        if "Plur" in token.morph.get("Number") and not roles & _STRUCTURAL_ROLES and not _agrees_with_singular_verb(doc, token):
+        if (
+            "Plur" in token.morph.get("Number")
+            and not roles & _STRUCTURAL_ROLES
+            and not _agrees_with_singular_verb(doc, token)
+            and not (
+                "nach_praeposition" in roles
+                and token.head.lower_ in ("von", "durch")
+                and token.lemma_ == token.text
+            )
+        ):
+            # Echter Plural ("Zahlungen", Lemma "Zahlung") bleibt ausgeschlossen; formgleiche Woerter als Agens nach
+            # "von"/"durch" ("durch Lange geprueft", Lemma == Wortform) sind mehrdeutig und werden weiter am
+            # Probing-Score gemessen. Andere Praepositionen ("bei Maengeln") bleiben ausgeschlossen.
             continue
         # Anweisungs-Imperativ am Satzanfang ("Ueberarbeite den Entwurf") ist keine Namensrolle.
         if pn._SENTENCE_START_PREFIX.search(neutral[: token.idx]) and not roles & _SENTENCE_ROLES:

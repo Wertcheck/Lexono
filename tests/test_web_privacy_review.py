@@ -136,14 +136,14 @@ def test_message_in_processing_is_never_offered_or_released_twice(client, db_ses
     login_as_admin(db_session, client)
     csrf = _csrf(client)
     review = next(e for e in _send(client, csrf) if e["kind"] == "review")
-    assert chat_router_module._claim_message(review["message_id"])  # simuliert eine laufende Verarbeitung
+    assert chat_router_module._claim_message(db_session, review["message_id"])  # simuliert eine laufende Verarbeitung
     try:
         assert client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json() == {"state": "processing"}
         events = _parse_sse_events(_review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "not_personal"}]).text)
         assert events[0]["message_id"] is None and "bereits verarbeitet" in events[0]["content"]
         assert writer.received_payloads == []
     finally:
-        chat_router_module._release_message(review["message_id"])
+        chat_router_module._release_message(db_session, review["message_id"])
 
 
 def test_pending_review_of_a_foreign_conversation_is_denied(client, db_session: Session, writer) -> None:
@@ -209,3 +209,23 @@ def test_document_preview_marks_review_terms_safely() -> None:
     assert "pii-highlight--review" not in build_document_preview(text).highlighted_html
     absent = build_document_preview(text, review_terms=frozenset({"Fuerst"})).highlighted_html
     assert "pii-highlight--review" not in absent
+
+
+def test_interrupted_processing_is_never_resumed_automatically(client, db_session: Session, writer) -> None:
+    """Abgestuerzter Prozess: Sperre bleibt liegen und ist aelter als die Frist. Unklar, ob bereits gesendet wurde -
+    weder Rueckfrage noch Fortsetzung, keine Cloud-Anfrage (fail-closed)."""
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.chat_message_claim import ChatMessageClaim
+
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    review = next(e for e in _send(client, csrf) if e["kind"] == "review")
+    db_session.add(ChatMessageClaim(
+        message_id=review["message_id"], claimed_at=datetime.now(timezone.utc) - timedelta(hours=1), owner="abgestuerzt"
+    ))
+    db_session.commit()
+    assert client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json() == {"state": "interrupted"}
+    events = _parse_sse_events(_review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "personal"}]).text)
+    assert events[0]["message_id"] is None and "unterbrochen" in events[0]["content"]
+    assert writer.received_payloads == []

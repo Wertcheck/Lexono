@@ -2546,6 +2546,17 @@
               window.setTimeout(function () { window.location.reload(); }, 4000);
               return;
             }
+            if (payload.state === "interrupted") {
+              // Unklarer Zustand nach einem Abbruch: nichts automatisch erneut senden (fail-closed), nur Hinweis.
+              var notice = appendThinkingBubble();
+              if (notice) {
+                notice.classList.remove("chat-message--thinking");
+                var noticeText = notice.querySelector(".chat-message__text");
+                noticeText.className = "chat-message__text";
+                noticeText.textContent = "Die Verarbeitung dieser Nachricht wurde unterbrochen. Es wird nichts automatisch erneut gesendet – bitte die Nachricht bei Bedarf neu senden.";
+              }
+              return;
+            }
             if (payload.state !== "review") { return; }
             var bubble = appendThinkingBubble();
             var reload = function () { window.location.reload(); };

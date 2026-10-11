@@ -16,8 +16,6 @@ from __future__ import annotations
 
 import json
 from urllib.parse import quote
-import threading
-import time
 import mimetypes
 from collections.abc import Iterator
 from pathlib import Path
@@ -41,6 +39,7 @@ from app.drafting.review_notes import split_review_notes
 from app.drafting.versioning import find_latest_version
 from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
+from app.chat import processing_claims
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
@@ -919,36 +918,15 @@ def start_conversation_from_document(
     return RedirectResponse(url=f"/dashboard/chat/{conversation.id}", status_code=303)
 
 
-# Doppelverarbeitungsschutz (12.10.2026): Nutzernachrichten, deren Verarbeitung gerade laeuft (Senden oder Fortsetzen
-# nach einer Datenschutz-Rueckfrage). Eine zweite Freigabe derselben Nachricht (zweiter Tab, Doppelklick, Neuladen
-# waehrend der Verarbeitung) wird abgewiesen, statt eine zweite Cloud-Anfrage auszuloesen. Die App laeuft als EIN
-# lokaler Prozess; eine haengengebliebene Sperre verfaellt nach `_IN_FLIGHT_TTL_SECONDS`.
-_IN_FLIGHT: dict[str, float] = {}
-_IN_FLIGHT_LOCK = threading.Lock()
-_IN_FLIGHT_TTL_SECONDS = 15 * 60
+# Doppelverarbeitungsschutz (12.10.2026): atomare, prozessuebergreifende Sperre in der Datenbank je Nutzernachricht
+# (app/chat/processing_claims.py) - Lexono verhindert einen Zweitstart nur innerhalb einer Windows-Sitzung, ein zweites
+# Konto oder ein Entwicklungsserver auf derselben Datenbank waeren sonst ein zweiter Prozess.
+def _claim_message(db: Session, message_id: str) -> bool:
+    return processing_claims.claim(db, message_id)
 
 
-def _claim_message(message_id: str) -> bool:
-    now = time.monotonic()
-    with _IN_FLIGHT_LOCK:
-        started = _IN_FLIGHT.get(message_id)
-        if started is not None and now - started < _IN_FLIGHT_TTL_SECONDS:
-            return False
-        _IN_FLIGHT[message_id] = now
-        return True
-
-
-def _release_message(message_id: str | None) -> None:
-    if message_id is None:
-        return
-    with _IN_FLIGHT_LOCK:
-        _IN_FLIGHT.pop(message_id, None)
-
-
-def _is_message_in_flight(message_id: str) -> bool:
-    with _IN_FLIGHT_LOCK:
-        started = _IN_FLIGHT.get(message_id)
-        return started is not None and time.monotonic() - started < _IN_FLIGHT_TTL_SECONDS
+def _release_message(db: Session, message_id: str | None) -> None:
+    processing_claims.release(db, message_id)
 
 
 def _review_candidate_payload(db: Session, conversation: ChatConversation, candidates) -> list[dict]:
@@ -1033,7 +1011,7 @@ def _stream_chat_reply(
             letterhead_ref=letterhead_ref,
         )
     finally:
-        _release_message(current_message_id)
+        _release_message(db, current_message_id)
 
 
 def _stream_chat_events(
@@ -1112,8 +1090,12 @@ def pending_privacy_review(
         .order_by(ChatMessage.created_at.desc())
         .first()
     )
-    if last is not None and last.role == "user" and _is_message_in_flight(last.id):
-        return JSONResponse(content={"state": "processing"})
+    if last is not None and last.role == "user":
+        claim_state = processing_claims.state(db, last.id)
+        if claim_state != "free":
+            # "processing": laeuft gerade; "interrupted": Verarbeitung abgebrochen, unklar ob bereits gesendet -
+            # keine Rueckfrage anbieten, nichts automatisch erneut senden (fail-closed).
+            return JSONResponse(content={"state": claim_state})
     try:
         drafting_service = get_drafting_service()
     except WritingProviderNotConfiguredError:
@@ -1166,12 +1148,18 @@ def submit_privacy_review(
         return StreamingResponse(
             _stream_error_event("Diese Rückfrage ist nicht mehr offen."), media_type="text/event-stream"
         )
-    if not _claim_message(message.id):
+    if not _claim_message(db, message.id):
+        interrupted = processing_claims.state(db, message.id) == "interrupted"
         return StreamingResponse(
-            _stream_error_event("Diese Anfrage wird bereits verarbeitet."), media_type="text/event-stream"
+            _stream_error_event(
+                "Die Verarbeitung dieser Nachricht wurde unterbrochen. Bitte die Nachricht erneut senden."
+                if interrupted
+                else "Diese Anfrage wird bereits verarbeitet."
+            ),
+            media_type="text/event-stream",
         )
     if not parsed or len(parsed) > 20:
-        _release_message(message.id)
+        _release_message(db, message.id)
         return StreamingResponse(
             _stream_error_event("Bitte jede Rückfrage beantworten."), media_type="text/event-stream"
         )
@@ -1189,7 +1177,7 @@ def submit_privacy_review(
         db.commit()
     except InvalidPrivacyDecisionError as exc:
         db.rollback()
-        _release_message(message.id)
+        _release_message(db, message.id)
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
 
     try:
@@ -1294,7 +1282,7 @@ def send_message_stream(
     user_message = chat_service.record_user_message(
         db, conversation=conversation, content=message_text, document_ids=document_ids
     )
-    _claim_message(user_message.id)
+    _claim_message(db, user_message.id)
 
     try:
         drafting_service = get_drafting_service()

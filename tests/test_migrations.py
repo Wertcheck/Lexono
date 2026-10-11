@@ -117,3 +117,23 @@ def test_privacy_decision_tables_upgrade_and_downgrade(tmp_path) -> None:
     tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
     con.close()
     assert "privacy_decisions" not in tables and "privacy_feedback_stats" not in tables
+
+
+def test_chat_message_claims_table_upgrade_and_downgrade(tmp_path) -> None:
+    """schritt3_029 (prozessuebergreifende Doppelversand-Sperre, 12.10.2026)."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "claims.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    pk = [row[1] for row in con.execute("pragma table_info(chat_message_claims)").fetchall() if row[5]]
+    con.close()
+    assert pk == ["message_id"]  # Primaerschluessel = atomare Eindeutigkeit je Nachricht
+    command.downgrade(cfg, "schritt3_028")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "chat_message_claims" not in tables
