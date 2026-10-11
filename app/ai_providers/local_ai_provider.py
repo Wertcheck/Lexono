@@ -325,6 +325,9 @@ class DraftPreparationResult:
     has_document_context: bool = False
     #: Hinweise fuer die Anwaltschaft (NICHT an Claude), z. B. "Dokument wurde nur auszugsweise beruecksichtigt".
     notices: list[str] = field(default_factory=list)
+    #: IDs der Dokumente, deren Text tatsaechlich in den Sachverhalt eingeflossen ist (13.10.2026). `None` = der
+    #: Provider meldet das nicht; dann prueft DraftingService nur den Verarbeitungsstand (app/documents/readiness.py).
+    included_document_ids: list[str] | None = None
 
 
 class LocalAIProvider(Protocol):
@@ -350,7 +353,7 @@ class RuleBasedLocalAIProvider:
         if matter is None:
             raise ValueError(f"Matter {matter_id} nicht gefunden")
 
-        sachverhalt, has_document_context, notices = self._build_sachverhalt(matter_id, matter, db)
+        sachverhalt, has_document_context, notices, included_ids = self._build_sachverhalt(matter_id, matter, db)
         argumentationspunkte = self._build_argumentationspunkte(matter_id, db)
         quellenverweise = self._build_quellenverweise(matter, db)
         known_entities = self._build_known_entities(matter_id, matter, db)
@@ -362,11 +365,12 @@ class RuleBasedLocalAIProvider:
             known_entities=known_entities,
             has_document_context=has_document_context,
             notices=notices,
+            included_document_ids=included_ids,
         )
 
     def _build_sachverhalt(
         self, matter_id: str, matter: Matter, db: Session
-    ) -> tuple[str, bool, list[str]]:
+    ) -> tuple[str, bool, list[str], list[str]]:
         # Platzhalter-Akte (siehe Modul-Kommentar oben zu
         # `_PLACEHOLDER_MATTER_SACHVERHALT`): der automatisch generierte
         # Titel ("Schnellentwurf <Datum>") ist reiner Systemtext, keine
@@ -395,6 +399,9 @@ class RuleBasedLocalAIProvider:
             .limit(_MAX_DOCUMENTS_IN_SACHVERHALT)
             .all()
         )
+        # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
+        # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
+        documents = [d for d in documents if d.extracted_text.strip()]
         notices: list[str] = []
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):
@@ -411,7 +418,7 @@ class RuleBasedLocalAIProvider:
                     "Rechtsfolgen, auffällige Details). Aussagen zu den ausgelassenen Abschnitten bitte im Original "
                     "prüfen."
                 )
-        return "\n".join(parts), bool(documents), notices
+        return "\n".join(parts), bool(documents), notices, [d.id for d in documents]
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()

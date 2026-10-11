@@ -59,6 +59,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.chat.title_generation import generate_conversation_title
+from app.config import get_settings
+from app.documents.readiness import (
+    DocumentReadiness,
+    assess_document,
+    assess_documents,
+    not_ready_notice,
+    unevaluated_note,
+)
 from app.documents.service import DocumentProcessingService
 from app.privacy.decisions import load_decisions
 from app.drafting.draft_text import draft_plain_text
@@ -68,6 +76,7 @@ from app.drafting.service import DraftingService
 from app.drafting.versioning import find_latest_version
 from app.ingestion.stability import compute_sha256
 from app.models import (
+    AuditEvent,
     ChatConversation,
     ChatMessage,
     ChatMessageDocument,
@@ -443,6 +452,33 @@ def _format_recent_matter_answer(matter: Matter, *, last_activity: datetime) -> 
     )
 
 
+# --- Dokumentstatus vor der Verarbeitung (13.10.2026, app/documents/readiness.py) ----------------------------------
+# ECHTER FUND (installierter Build, OCR_ENABLED=false): Scan hochgeladen, ocr_status "pending", kein Text - die Frage
+# ging trotzdem an die Cloud und wurde beantwortet, als waere das Dokument ausgewertet worden. Massgeblich sind die an
+# DIESER Nachricht angehaengten Dokumente; ohne Anhang, aber mit erkennbarem Dokumentbezug ("das Dokument", "im
+# Anhang", ...) die Anhaenge der juengsten frueheren Nachricht dieser Unterhaltung mit Anhang.
+_DOCUMENT_REFERENCE_PATTERN = re.compile(
+    r"\b(dokument\w*|anhang|anhängen|angehängt\w*|anlage\w*|datei\w*|pdf|docx|scan\w*|hochgeladen\w*|"
+    r"beigefügt\w*|upload\w*)\b",
+    re.IGNORECASE,
+)
+
+#: Wie viele Aktendokumente hoechstens auf ihren Stand geprueft werden, wenn eine Frage ohne Anhang auf "ein Dokument"
+#: der Akte verweist (entspricht dem Limit der lokalen Kontextvorbereitung).
+_MAX_MATTER_DOCUMENTS_CHECKED = 30
+
+
+def _mentions_document(content: str) -> bool:
+    return bool(_DOCUMENT_REFERENCE_PATTERN.search(content or ""))
+
+
+def _ocr_enabled() -> bool:
+    try:
+        return bool(get_settings().ocr_enabled)
+    except Exception:  # noqa: BLE001 - nur fuer die Formulierung des Hinweises, nie fuer die Freigabe
+        return False
+
+
 @dataclass(frozen=True)
 class ChatStreamEvent:
     """Ein Ereignis aus `ChatService.send_message_stream` (13.09.,
@@ -674,6 +710,101 @@ class ChatService:
             db.commit()
         return message
 
+    # --- Dokumentstatus -----------------------------------------------------
+
+    def _message_document_ids(self, db: Session, message_id: str) -> list[str]:
+        rows = (
+            db.query(ChatMessageDocument.document_id)
+            .filter(ChatMessageDocument.message_id == message_id)
+            .all()
+        )
+        return [row[0] for row in rows]
+
+    def _referenced_document_ids(
+        self, db: Session, conversation: ChatConversation, *, current_message_id: str | None, content: str
+    ) -> list[str]:
+        """Dokumente, auf die sich die aktuelle Nachricht bezieht (serverseitig aus der Datenbank, nie aus dem Client)."""
+        if current_message_id is not None:
+            attached = self._message_document_ids(db, current_message_id)
+            if attached:
+                return attached
+        if not _mentions_document(content):
+            return []
+        query = (
+            db.query(ChatMessage)
+            .join(ChatMessageDocument, ChatMessageDocument.message_id == ChatMessage.id)
+            .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role == "user")
+        )
+        if current_message_id is not None:
+            query = query.filter(ChatMessage.id != current_message_id)
+        previous = query.order_by(ChatMessage.created_at.desc()).first()
+        return self._message_document_ids(db, previous.id) if previous is not None else []
+
+    def _unready_matter_documents(
+        self, db: Session, conversation: ChatConversation, content: str, required: list[str]
+    ) -> list[DocumentReadiness]:
+        """Frage mit Dokumentbezug, aber ohne Anhang in dieser Unterhaltung: nicht verarbeitete Aktendokumente werden
+        unter der Antwort ausdruecklich als nicht ausgewertet genannt (keine stillschweigende Teilauswertung)."""
+        if required or not _mentions_document(content):
+            return []
+        documents = (
+            db.query(Document)
+            .filter(Document.matter_id == conversation.matter_id, Document.deleted_at.is_(None))
+            .order_by(Document.created_at.desc())
+            .limit(_MAX_MATTER_DOCUMENTS_CHECKED)
+            .all()
+        )
+        return [item for item in (assess_document(db, d) for d in documents) if not item.ready]
+
+    def _document_notice_message(
+        self,
+        db: Session,
+        *,
+        conversation: ChatConversation,
+        states: list[DocumentReadiness],
+        actor: str,
+        current_message_id: str | None,
+    ) -> ChatMessage:
+        """Lokale Antwort ohne Cloud-Aufruf. `blocked=True`: der Hinweis ist kein Gespraechsbeitrag und geht nicht in
+        den Verlauf kuenftiger Cloud-Anfragen ein. Audit nur mit IDs und Zustaenden, nie Dateinamen oder Inhalt."""
+        db.add(
+            AuditEvent(
+                entity_type="ChatConversation",
+                entity_id=conversation.id,
+                event_type="chat_document_not_ready",
+                actor=actor,
+                details=(
+                    f"Nachricht {current_message_id or '-'}: kein Cloud-Aufruf, Dokumentstatus "
+                    + ", ".join(f"{item.document_id}={item.state}" for item in states)
+                ),
+            )
+        )
+        db.commit()
+        return self._create_message(
+            db,
+            conversation=conversation,
+            role="assistant",
+            content=not_ready_notice(states, ocr_enabled=_ocr_enabled()),
+            blocked=True,
+        )
+
+    def _documents_gate(
+        self, db: Session, conversation: ChatConversation, *, current_message_id: str | None, content: str
+    ) -> tuple[list[str], list[DocumentReadiness] | None]:
+        """(Referenzierte Dokument-IDs, nicht bereite Zustaende oder None). Vorpruefung unmittelbar vor der Verarbeitung;
+        DraftingService prueft nach dem Lesen des Kontexts erneut (Statusaenderung waehrend der Anfrage)."""
+        required = self._referenced_document_ids(
+            db, conversation, current_message_id=current_message_id, content=content
+        )
+        if not required:
+            return [], None
+        states = assess_documents(db, required, matter_id=conversation.matter_id)
+        return required, (states if any(not item.ready for item in states) else None)
+
+    @staticmethod
+    def _with_unevaluated_note(text: str, unready: list[DocumentReadiness]) -> str:
+        return append_review_note(text, unevaluated_note(unready)) if unready else text
+
     def _schriftsatz_candidates(
         self, db: Session, conversation: ChatConversation
     ) -> list[tuple[ChatMessage, Draft, str]]:
@@ -731,6 +862,9 @@ class ChatService:
         )
         if last is None or last.role != "user" or drafting_service is None:
             return None, []
+        required, not_ready = self._documents_gate(db, conversation, current_message_id=last.id, content=last.content)
+        if not_ready:
+            return None, []
         purpose, previous_draft, basis = self._route_request(db, conversation, last.content)
         history = self._build_history(db, conversation=conversation, exclude_message_id=last.id, basis=basis)
         candidates = drafting_service.preview_privacy_review(
@@ -742,6 +876,7 @@ class ChatService:
             gespraechsverlauf=history,
             previous_draft=previous_draft,
             privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
+            required_document_ids=required,
         )
         return (last, candidates) if candidates else (None, [])
 
@@ -968,6 +1103,15 @@ class ChatService:
                     content=_format_recent_matter_answer(matter, last_activity=last_activity),
                 )
 
+        required, not_ready = self._documents_gate(
+            db, conversation, current_message_id=current_message_id, content=content
+        )
+        if not_ready:
+            return self._document_notice_message(
+                db, conversation=conversation, states=not_ready, actor=actor, current_message_id=current_message_id
+            )
+        unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
+
         if drafting_service is None:
             return self._create_message(
                 db,
@@ -999,6 +1143,7 @@ class ChatService:
                 privacy_decisions=load_decisions(
                     db, matter_id=conversation.matter_id, conversation_id=conversation.id
                 ),
+                required_document_ids=required,
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
             # statt einer unbehandelten Ausnahme. Fail-closed bleibt
@@ -1015,12 +1160,23 @@ class ChatService:
                 blocked=True,
             )
 
+        if result.documents_not_ready:
+            return self._document_notice_message(
+                db,
+                conversation=conversation,
+                states=list(result.documents_not_ready),
+                actor=actor,
+                current_message_id=current_message_id,
+            )
+
         if result.success:
             return self._create_message(
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=_with_basis_note(result.draft_text or "", basis),
+                content=self._with_unevaluated_note(
+                    _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                ),
                 draft_id=result.draft_id,
             )
 
@@ -1093,6 +1249,18 @@ class ChatService:
                 yield ChatStreamEvent(kind="done", message=message)
                 return
 
+        required, not_ready = self._documents_gate(
+            db, conversation, current_message_id=current_message_id, content=content
+        )
+        if not_ready:
+            message = self._document_notice_message(
+                db, conversation=conversation, states=not_ready, actor=actor, current_message_id=current_message_id
+            )
+            yield ChatStreamEvent(kind="delta", text=message.content)
+            yield ChatStreamEvent(kind="done", message=message)
+            return
+        unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
+
         if drafting_service is None:
             yield ChatStreamEvent(kind="delta", text=_PROVIDER_UNAVAILABLE_MESSAGE)
             message = self._create_message(
@@ -1130,6 +1298,7 @@ class ChatService:
                     db, matter_id=conversation.matter_id, conversation_id=conversation.id
                 ),
                 review_mode=review_mode,
+                required_document_ids=required,
             ):
                 if event.kind == "delta":
                     yield ChatStreamEvent(kind="delta", text=event.text)
@@ -1169,6 +1338,18 @@ class ChatService:
             yield ChatStreamEvent(kind="done", message=message)
             return
 
+        if final_result.documents_not_ready:
+            message = self._document_notice_message(
+                db,
+                conversation=conversation,
+                states=list(final_result.documents_not_ready),
+                actor=actor,
+                current_message_id=current_message_id,
+            )
+            yield ChatStreamEvent(kind="delta", text=message.content)
+            yield ChatStreamEvent(kind="done", message=message)
+            return
+
         if final_result.review_required and final_result.review_candidates:
             # Kein Cloud-Aufruf ist erfolgt; nichts wird gespeichert. Nach der Entscheidung startet der Router die
             # Verarbeitung derselben Nutzernachricht neu - mit vollstaendiger erneuter Pruefung im Gateway.
@@ -1180,7 +1361,9 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=_with_basis_note(final_result.draft_text or "", basis),
+                content=self._with_unevaluated_note(
+                    _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                ),
                 draft_id=final_result.draft_id,
             )
         else:

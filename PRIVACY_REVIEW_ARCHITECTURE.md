@@ -213,3 +213,88 @@ echten Namen; nach „Als Person“ **0 Goldwerte im Klartext**, alle Fachbegrif
 installierten `.env` ist `OCR_ENABLED=false` – ein Scan bleibt dann „pending“, die Nachricht geht OHNE Dokumentinhalt an die Cloud (kein
 Leck, aber Inhalt fehlt, ohne dass die Antwort darauf hinweist). Der Scan-Pfad wurde deshalb mit `OCR_ENABLED=true` nur für die
 QA-Instanz (Prozessvariable, Konfiguration unverändert) geprüft.
+
+## 9. Dokumentstatus und Chat-Verarbeitung (13.10.2026)
+
+**Root Cause (belegt, Abschnitt 8 „Befund Konfiguration“).** Kette Upload → Status → Routing → Gateway → Payload:
+`ChatService.attach_document` verarbeitet synchron. Ein Scan wird bei `OCR_ENABLED=false` zu `ocr_status="pending"`
+ohne `extracted_text`. `record_user_message` verknüpft ihn trotzdem mit der Nachricht. `send_message(_stream)` prüft
+den Dokumentstatus nirgends. `RuleBasedLocalAIProvider._build_sachverhalt` filtert auf `extracted_text IS NOT NULL`
+und lässt den Scan **stillschweigend weg**. Gateway und Cloud-Aufruf laufen normal mit dem Text „Bitte das angehängte
+Dokument verarbeiten.“ und ohne Dokumentinhalt, und die Antwort erweckt den Eindruck einer Auswertung. Dieselbe Lücke
+besteht in vier weiteren Fällen:
+- defektes PDF (`failed`);
+- leere DOCX bzw. leerer OCR-Text (`done`/`not_needed` ohne Text; zählte sogar als „Dokumentkontext“);
+- die Dokumentaktion „Dokument analysieren“ (Prompt mit Dateinamen, Dokument nicht verknüpft);
+- **Teil-Scans** (PDF mit Textseiten und gescannten Seiten galt mit dem Text der Textseiten als vollständig).
+
+Der bestehende Test `test_document_attachment_flows_through_ocr_pseudonymization_to_chat` schrieb genau dieses
+Verhalten fest: ein Pseudo-PDF ohne Text, die Cloud-Anfrage wurde erwartet. Er nutzt jetzt ein echtes Text-PDF.
+
+**Statusmodell** (`app/documents/readiness.py`). Es ist kein neues Datenmodell, sondern wird aus `ocr_status`,
+`extracted_text` und dem Verarbeitungs-Audit abgeleitet:
+
+| Zustand | Bedingung |
+|---|---|
+| `ready` | `not_needed`/`done` mit nicht-leerem Text |
+| `processing` | Spaltenstandard ohne Text und ohne Abschluss-Audit; unbekannter Status (fail-closed) |
+| `no_text` | verarbeitet, aber kein verwertbarer Text |
+| `ocr_disabled` | `pending`, d. h. OCR nötig, aber bei der Verarbeitung deaktiviert; der Hinweis unterscheidet, ob OCR inzwischen aktiv ist |
+| `failed` | Extraktion oder OCR fehlgeschlagen; technische Fehlerangabe aus dem Audit, per Konstruktion ohne Pfad/Inhalt |
+| `unsupported` | Dateiformat nicht verarbeitbar |
+| `deleted` | Dokument inzwischen gelöscht |
+| `other_matter` | Aktenisolation nach Umhängen der Unterhaltung |
+| `not_included` | lesbar, aber nicht im lokal gebauten Kontext |
+
+**Durchsetzung (serverseitig, zweistufig).**
+1. *Vorprüfung* in `ChatService.send_message`, `send_message_stream` und `pending_privacy_review`, nach den rein lokalen
+   Antworten (Normzitat, „aktuellste Akte“) und vor jedem Drafting.
+   - Bezugsdokumente: die Anhänge der aktuellen Nachricht.
+   - Ohne Anhang, aber mit Dokumentbezug im Text („Dokument“, „Anhang“, „Datei“, „PDF“, „Scan“ …): die Anhänge der
+     jüngsten früheren Nachricht mit Anhang.
+   - Die Dokumentaktion verknüpft das Dokument jetzt mit der Nachricht.
+   - Der Status wird frisch aus der Datenbank gelesen (`populate_existing`).
+2. *Nachprüfung* in `DraftingService._prepare_and_gate` (`required_document_ids`), **nach** dem Lesen des Kontexts und
+   **vor** dem Gateway: Jedes Bezugsdokument muss `ready` sein **und** laut `included_document_ids` tatsächlich in den
+   Sachverhalt eingeflossen sein. Eine Statusänderung während der Anfrage (Neuverarbeitung, Löschen) führt so nie zu
+   einer Antwort, die eine Auswertung vortäuscht. Wird ein Dokument vor dem Kontextaufbau fertig, wird es normal
+   verwendet (Test).
+
+Ist ein Bezugsdokument nicht `ready`, gilt:
+- kein Gateway- und kein Cloud-Aufruf;
+- lokale Antwort (`blocked=True`, nicht im Verlauf künftiger Cloud-Anfragen) mit dem Zustand je Dokument, den bereits
+  lesbaren Dokumenten (keine Teilauswertung als Vollauswertung) und dem weiteren Vorgehen: erneut senden nach der
+  Verarbeitung; bei deaktivierter OCR eine Fassung mit Textebene hochladen oder die Administration um OCR bitten und
+  dann erneut hochladen; Fragen ohne Dokumentbezug bleiben möglich;
+- Audit `chat_document_not_ready`, nur mit IDs und Zuständen, ohne Dateinamen.
+
+Fragt jemand ohne Anhang in der Unterhaltung nach „dem Dokument“ und hat die Akte nicht verarbeitete Dokumente, nennt
+die Antwort diese lokal unter „Offene Prüfpunkte“ als nicht ausgewertet. Allgemeine Fragen ohne Dokumentbezug sind
+unverändert.
+
+**Teil-Scans.** `extract_text` erkennt Seiten ohne nennenswerten Text, die zu mindestens 50 % ihrer Fläche aus einem
+Bild bestehen. Logos und Unterschriften bleiben darunter, leere Seiten zählen nicht. Ein solches PDF ist ein OCR-Fall:
+- Bei aktiver OCR wird das ganze Dokument mit der unveränderten Funktion `run_ocr` erkannt.
+- Bei deaktivierter OCR bleibt es `pending`, und der Teiltext wird nicht als Akteninhalt gespeichert.
+
+**Unverändert:**
+- Presidio, Pseudonymisierung, Restrisiko-Scan, Pre-Cloud-Gate, Payload-Siegel, Fail-Closed;
+- OCR-Konfiguration (`OCR_ENABLED=false` bleibt Standard und in der installierten `.env`);
+- OCR-/Ollama-Implementierung.
+
+Dokumentinhalt erreicht die Cloud weiterhin nur über `_prepare_and_gate` → Gateway.
+
+**Tests** (`tests/test_chat_document_readiness.py`, 32 Tests, echter Pfad bis zur Cloud-Grenze, nur synthetische
+Dokumente). Abgedeckt:
+- Scan bei OCR aus;
+- Scan bei OCR an (isolierte QA-Konfiguration, gebündeltes Tesseract): Inhalt im Payload, 0 Goldwerte im Klartext;
+- leerer Scan bei OCR an;
+- defektes PDF, leere DOCX, laufende Verarbeitung;
+- PDF/DOCX erfolgreich, mit Goldstandard;
+- gemischte Anhänge, Teil-Scan, Aktendokument ohne Anhang;
+- Statusänderung (Status → pending, Löschen; streaming und nicht-streaming) sowie die Gegenrichtung;
+- `/send`, Dokumentaktion, Datenschutz-Rückfrage;
+- Statusmodell und Aktenisolation.
+
+Gegenprobe: Auf dem Code vor der Änderung schlagen 19 der 32 Tests fehl. Die übrigen 13 (allgemeine Fragen, Erfolgsfälle,
+Statusmodell) bestehen auf beiden Ständen.

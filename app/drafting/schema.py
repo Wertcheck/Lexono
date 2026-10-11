@@ -40,3 +40,6 @@ class DraftingResult(BaseModel):
     # Begriffe entscheiden (nur lokal anzeigen, nie loggen). Kandidaten sind app.privacy.review.ReviewCandidate.
     review_required: bool = False
     review_candidates: list = Field(default_factory=list)
+    # Dokumentstatus (13.10.2026, app/documents/readiness.py): Dokumente, auf die sich die Anfrage bezieht, deren Inhalt
+    # aber nicht ausgewertet werden kann - es ist KEIN Cloud-Aufruf erfolgt. Elemente sind DocumentReadiness.
+    documents_not_ready: list = Field(default_factory=list)

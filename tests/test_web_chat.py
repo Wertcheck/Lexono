@@ -249,7 +249,13 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
     csrf = _csrf(client)
 
     marker_name = "Testfrau Mustermann"
-    pdf_bytes = b"%PDF-1.4 Ein Test-PDF ohne echten Inhalt (kein OCR-Text-Layer)."
+    # 13.10.2026: frueher ein kaputtes Pseudo-PDF ohne Text - dass dessen Anfrage trotzdem an die Cloud ging, war genau
+    # der behobene Fehler (tests/test_chat_document_readiness.py). Jetzt ein echtes synthetisches Text-PDF.
+    import pymupdf
+
+    with pymupdf.open() as pdf:
+        pdf.new_page().insert_text((72, 72), "Rechnung Nr. 4711 über Estricharbeiten, Betrag 1.200,00 EUR.")
+        pdf_bytes = pdf.tobytes()
 
     response = client.post(
         "/dashboard/chat/send",

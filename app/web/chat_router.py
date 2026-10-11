@@ -752,6 +752,7 @@ def _start_conversation_with_prompt(
     audit_event_type: str,
     audit_details: str,
     source_message_id: str | None = None,
+    document_ids: list[str] | None = None,
 ) -> ChatConversation:
     """Gemeinsamer Kern fuer alle "Aktion aus einer bestehenden Seite
     heraus startet einen Chat"-Einstiegspunkte (16.09., zuerst fuer
@@ -787,8 +788,11 @@ def _start_conversation_with_prompt(
     )
     db.commit()
 
+    # `document_ids` (13.10.2026): das Dokument, auf das sich die Aktion bezieht, wird wie ein Chat-Anhang mit der
+    # Nachricht verknuepft - damit prueft ChatService serverseitig dessen Verarbeitungsstand, bevor irgendetwas an die
+    # Cloud geht (app/documents/readiness.py), und es ist in der Unterhaltung als Bezugsdokument sichtbar.
     user_message = chat_service.record_user_message(
-        db, conversation=conversation, content=prompt
+        db, conversation=conversation, content=prompt, document_ids=document_ids
     )
 
     try:
@@ -913,6 +917,7 @@ def start_conversation_from_document(
         # direkt aus dem Posteingang. `None` fuer eigenstaendig hochgeladene
         # Dokumente ohne Nachrichtenbezug (unveraendertes Verhalten).
         source_message_id=document.message_id,
+        document_ids=[document.id],
     )
 
     return RedirectResponse(url=f"/dashboard/chat/{conversation.id}", status_code=303)

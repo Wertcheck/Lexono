@@ -62,8 +62,8 @@ vorbehalten.
 from __future__ import annotations
 
 import threading
-from collections.abc import Generator
-from dataclasses import dataclass
+from collections.abc import Generator, Sequence
+from dataclasses import dataclass, replace
 
 from sqlalchemy.orm import Session
 
@@ -72,6 +72,7 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
+from app.documents.readiness import NOT_INCLUDED, assess_documents
 from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
@@ -421,6 +422,7 @@ class DraftingService:
         letterhead_ref: str | None = None,
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
+        required_document_ids: Sequence[str] = (),
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
 
@@ -512,6 +514,7 @@ class DraftingService:
             chat_triggered=chat_triggered,
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
+            required_document_ids=required_document_ids,
         )
         if isinstance(prepared, DraftingResult):
             return prepared
@@ -540,6 +543,7 @@ class DraftingService:
         letterhead_ref: str | None = None,
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
+        required_document_ids: Sequence[str] = (),
     ) -> Generator[DraftStreamEvent, None, None]:
         """Streaming-Variante von `create_draft` (13.09., Streaming-
         Architekturentscheidung - siehe DECISIONS.md fuer die volle
@@ -596,6 +600,7 @@ class DraftingService:
             chat_triggered=chat_triggered,
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
+            required_document_ids=required_document_ids,
         )
         if isinstance(prepared, DraftingResult):
             yield DraftStreamEvent(kind="result", result=prepared)
@@ -656,6 +661,7 @@ class DraftingService:
         gespraechsverlauf: list[str] | None,
         previous_draft: Draft | None,
         privacy_decisions: PrivacyDecisions | None,
+        required_document_ids: Sequence[str] = (),
     ) -> list:
         """Offene Datenschutz-Rueckfrage einer bereits gespeicherten, unbeantworteten Nachricht neu ermitteln (z. B. nach
         dem Neuladen der Seite) - ueber EXAKT denselben Vorbereitungs-/Gateway-Pfad wie die eigentliche Verarbeitung,
@@ -678,6 +684,7 @@ class DraftingService:
             privacy_decisions=privacy_decisions,
             review_mode="ask",
             log_blocked_requests=False,
+            required_document_ids=required_document_ids,
         )
         if isinstance(prepared, DraftingResult) and prepared.review_required:
             return list(prepared.review_candidates)
@@ -703,6 +710,7 @@ class DraftingService:
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
         log_blocked_requests: bool = True,
+        required_document_ids: Sequence[str] = (),
     ) -> DraftingResult | _PreparedRequest:
         """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
         `create_draft_stream` (Aktenauflösung, Recherche, Privacy Gateway,
@@ -728,6 +736,26 @@ class DraftingService:
             )
 
         preparation = self.local_ai.prepare_draft_context(matter_id, db)
+
+        # Dokumentstatus (13.10.2026, app/documents/readiness.py): Bezieht sich die Anfrage auf bestimmte Dokumente,
+        # muss deren Inhalt erfolgreich verarbeitet UND tatsaechlich in den soeben lokal gebauten Kontext eingeflossen
+        # sein. Geprueft NACH dem Lesen des Kontexts und frisch aus der Datenbank - eine Statusaenderung zwischen der
+        # Vorpruefung im Chat und hier (Neuverarbeitung, Loeschen) fuehrt so nie zu einer Antwort, die eine Auswertung
+        # vortaeuscht. Kein Gateway-, kein Cloud-Aufruf; der Inhalt nimmt sonst unveraendert den Privacy-Pfad.
+        if required_document_ids:
+            states = assess_documents(db, required_document_ids, matter_id=matter_id)
+            included = getattr(preparation, "included_document_ids", None)
+            if included is not None:
+                states = [
+                    replace(item, state=NOT_INCLUDED) if item.ready and item.document_id not in included else item
+                    for item in states
+                ]
+            if any(not item.ready for item in states):
+                return DraftingResult(
+                    success=False,
+                    blocked_reasons=["Dokumentinhalt nicht verarbeitet"],
+                    documents_not_ready=states,
+                )
 
         with trace.step("retrieval"):
             source_list, quellen_texts, open_review_points = self._gather_legal_sources(

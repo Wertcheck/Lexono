@@ -33,12 +33,37 @@ class ExtractionResult:
     unsupported_format: bool = False
 
 
-def _extract_pdf_text(path: Path) -> str:
+#: Anteil der Seitenflaeche, ab dem ein Bild auf einer Seite ohne (nennenswerte) Textebene als gescannte Seite gilt -
+#: ein Logo oder eine Unterschrift bleibt deutlich darunter.
+_SCANNED_PAGE_IMAGE_AREA_RATIO = 0.5
+
+
+def _is_scanned_page(page, text: str, min_text_length: int) -> bool:
+    """Seite ohne nennenswerten Text, die ueberwiegend aus einem Bild besteht (Scan). Leere Seiten ohne Bild zaehlen
+    nicht - dort fehlt kein Inhalt."""
+    if len(text.strip()) >= min_text_length:
+        return False
+    page_area = abs(page.rect)
+    if not page_area:
+        return False
+    image_area = 0.0
+    for info in page.get_image_info():
+        x0, y0, x1, y1 = info.get("bbox", (0, 0, 0, 0))
+        image_area += max(0.0, x1 - x0) * max(0.0, y1 - y0)
+    return image_area / page_area >= _SCANNED_PAGE_IMAGE_AREA_RATIO
+
+
+def _extract_pdf_text(path: Path, min_text_length: int = 20) -> tuple[str, int]:
+    """Text aller Seiten und Anzahl gescannter Seiten ohne Textebene."""
     text_parts: list[str] = []
+    scanned_pages = 0
     with pymupdf.open(path) as pdf:
         for page in pdf:
-            text_parts.append(page.get_text())
-    return "\n".join(text_parts)
+            text = page.get_text()
+            text_parts.append(text)
+            if _is_scanned_page(page, text, min_text_length):
+                scanned_pages += 1
+    return "\n".join(text_parts), scanned_pages
 
 
 def _docx_block_lines(container) -> list[str]:
@@ -103,8 +128,9 @@ def extract_text(
     if suffix not in SUPPORTED_TEXT_EXTENSIONS:
         return ExtractionResult(text=None, needs_ocr=False, unsupported_format=True)
 
+    scanned_pages = 0
     if suffix == ".pdf":
-        text = _extract_pdf_text(path)
+        text, scanned_pages = _extract_pdf_text(path, min_text_length)
     elif suffix == ".docx":
         text = _extract_docx_text(path)
     else:  # .txt
@@ -116,5 +142,12 @@ def extract_text(
         # lassen sich rastern) - ein leeres .docx/.txt ist kein OCR-Fall.
         needs_ocr = suffix == ".pdf"
         return ExtractionResult(text=text or None, needs_ocr=needs_ocr)
+
+    if scanned_pages:
+        # ECHTER FUND (13.10.2026): ein PDF aus Textseiten UND gescannten Seiten galt mit dem Text der Textseiten als
+        # vollstaendig erfasst - der Inhalt der Scan-Seiten fehlte unbemerkt. Unvollstaendiger Text ist keine
+        # vollstaendige Verarbeitung: das Dokument ist ein OCR-Fall (bei aktivierter Texterkennung wird das ganze
+        # Dokument erkannt, sonst bleibt es "pending" und wird nicht als ausgewertet behandelt).
+        return ExtractionResult(text=text, needs_ocr=True)
 
     return ExtractionResult(text=text, needs_ocr=False)
