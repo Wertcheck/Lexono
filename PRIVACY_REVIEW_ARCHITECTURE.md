@@ -394,3 +394,68 @@ von Millisekunden. Sie ist nur per Test belegt: NOT VERIFIED (installiert).
   und die Blockade bei ausdrücklichem Dokumentbezug.
 - Ein Nachname direkt nach „im/am/ins …“ vor einem finiten Verb hat diese eine Rolle nicht mehr; NER und alle übrigen
   Rollen greifen weiter.
+
+## 11. Fachwort-Komposita und Nachnamen nach Artikel (13.10.2026, `25ecc05`)
+
+**Ausgangsfall.** „Die Nachbesserungsfrist endet am 30.11.2026.“ wurde im Dokumentkontext zu „Die [PERSON_01] endet …“.
+
+**Ursache.** spaCys NER (`de_core_news_lg`) etikettiert das ihm unbekannte Kompositum kontextabhängig als PER (Score
+0,85). Es handelt sich um einen Erkennungsfehler, keinen Extraktions- oder Kontrollfehler. Keines der vorhandenen
+Gegensignale trennt diesen Fall:
+- Der Rahmensatz-Test gibt 5/5.
+- POS=NOUN taugt nicht, weil auch echte Namen oft als NOUN getaggt werden.
+- `drop_common_noun_persons` ist im Dokumentpfad bewusst aus (16,4 % Namen-Lecks).
+- Die Vektor-Vokabularprüfung zerlegt auch Nachnamen („Stucke|n|Schneider“).
+
+**Verwandter, schwerwiegenderer Fehler (Leck, Priorität 1).** Die neue Gegenprobe zeigt: Nachnamen direkt nach einem
+Artikel („Nach Rücksprache hat die Pfannenstiel …“) gingen in 39 von 96 Fällen im Klartext in den Payload. Alle
+Zweitsignale (PROPN ohne NER-Label, Modell-Probe, Rückfrage-Kandidaten) verlangten ein Wort ohne Artikel davor.
+
+**Maßnahmen** (`app/privacy/presidio_ner.py`, `review.py`):
+1. `is_derivational_compound`: Präfix, dann Ableitungs-Fugenelement (-ungs-/-heits-/-keits-/-schafts-/-tions-/-täts-),
+   dann ein Kopfnomen aus einer geschlossenen Klasse von Sach- und Rechtsnomen (Frist, Urkunde, Anspruch, Beschluss,
+   Recht, …).
+   - Solche Einwort-Treffer der Kategorien Person und Organisation werden verworfen, ebenso in beiden Zweitsignalen und
+     bei den Rückfrage-Kandidaten.
+   - Die Regel sitzt im Detektor und wirkt deshalb identisch in Pseudonymisierung und Restrisiko-Scan.
+   - Bewusst nicht für ORT, weil es reale Ortsnamen dieser Bauart gibt („Hoffnungsthal“).
+2. `detect_article_names`: dieselbe Modell-Probe mit derselben Schwelle (≥4/5) auch direkt nach einem Artikel. Die
+   Funktion fügt nur Treffer hinzu (fail-closed).
+
+**Unabhängiger Review.** Ein separater Prüfer hat ausschließlich gelesen und gemessen. Befund (mittel): Die erste
+Fassung verlangte nur ein dem Modell bekanntes Kopfwort. Damit gingen namensförmige Bildungen wie „Siedlungsmann“,
+„Lichtungsberger“ oder „Stationsberg“ neu im Klartext durch, weil -mann, -berg und -hausen ebenfalls bekannte Wörter
+sind. Behoben durch die geschlossene Kopfnomen-Klasse. Die neuen Leck-Tests (bar, nach Präposition, nach Artikel,
+Tabellenzelle) schlagen gegen die erste Fassung in 17 von 18 Fällen fehl und bestehen jetzt. Die übrigen Review-Punkte
+ergaben keine neuen Blockaden und keine Inkonsistenz zwischen Pseudonymisierung und Restrisiko-Scan.
+
+**Messung** (identische Korpora vorher und nachher, nur synthetisch):
+
+| Benchmark | vorher | nachher |
+|---|---|---|
+| Namen im Klartext (1100 Fälle, mask) | 0,1 % | 0,1 % (je Gruppe identisch) |
+| Dokumentpfad: Namen-Lecks / Rückfragen | 0/990 / 64 | 0/990 / 64 |
+| Dokumentpfad: Fachwort-Fälle maskiert | 105/800 | **97/800** |
+| Fachwort-Korpus (600) | 87 | **81** (automatisch 34 → 28) |
+| Fachbegriffe mit Rückfrage | 15/153 | 15/153 |
+| Neu: Fachwort nach Artikel maskiert | 19/240 | **9/240** |
+| Neu: Nachname nach Artikel im Klartext | **39/96** | **25/96** |
+
+Installierter Build `25ecc05`, im Bündel geprüft: Upload eines synthetischen PDFs im echten Chat. Der abgefangene Payload
+enthält „Die Nachbesserungsfrist endet am [DATUM_01]. Nach Rücksprache hat die [PERSON_01] die Unterlagen übergeben. Der
+Betrag von 1.200,00 EUR ist offen; die Zustellungsurkunde liegt vor.“ (PASS, keine Rückfrage).
+
+**Offene Risiken.**
+- **Nachnamen nach Artikel (25/96 weiterhin im Klartext):** Betroffen sind Nachnamen, die zugleich Gattungswörter sind
+  („die Bergmann“, „der Zimmermann“), oder die das Modell nur schwach als Name liest („Grotelueschen“ 1/5,
+  „Stuckenschneider“ 3/5).
+  - Eine Schwelle von 3 brächte 1 Namen und kostete 1 Fachwort.
+  - Eine Rückfrage für alle unbekannten Wörter nach Artikel würde viele Fachkomposita treffen, weil sich auch
+    Nachnamen in bekannte Wörter zerlegen lassen.
+  - Als bekannte Grenze per `xfail` markiert.
+- **Neue Fehlalarme durch `detect_article_names`:** „Teilabnahme“ (Probe 5/5, ohnehin auch als ORT maskiert) und
+  „Schöffin“. Sie werden maskiert, nicht freigegeben.
+- **„Feuchtigkeitsschaden“ als ORT:** Bleibt bewusst maskiert, weil die Regel nicht für ORT gilt.
+- **Grenzen der Klassenregel:** Die Kopfnomen-Klasse ist geschlossen. Neue Fachkomposita mit anderem Kopfnomen
+  profitieren nicht davon, und ein realer Nachname dieser Bauart ist in keinem Benchmark beobachtet, aber nicht
+  ausgeschlossen.
