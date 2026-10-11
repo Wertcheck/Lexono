@@ -17,11 +17,17 @@ import pytest
 
 from app.ai_providers.gateway_relay_client import GatewayRelayError, call_gateway_messages
 from app.ai_providers.gateway_writing_provider import GatewayRelayWritingProvider
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload as _GatewayPayload, seal_payload
+
+
+def ClaudeRequestPayload(**kwargs) -> _GatewayPayload:  # noqa: N802
+    """Diese Tests pruefen den Provider, nicht den Gateway: sie simulieren eine vom Gateway freigegebene (versiegelte)
+    Payload. Unversiegelte Payloads lehnt jeder Cloud-Provider ab (tests/test_privacy_review.py)."""
+    return seal_payload(_GatewayPayload(**kwargs))
 from app.review.gateway_review_provider import GatewayRelayReviewProvider
 
 
-def _payload(**overrides) -> ClaudeRequestPayload:
+def _payload(**overrides) -> _GatewayPayload:
     defaults = {
         "schreibauftrag": "formulate_draft",
         "anonymisierter_sachverhalt": "Sachverhalt mit [MANDANT_01]",

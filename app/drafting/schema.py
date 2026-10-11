@@ -36,3 +36,7 @@ class DraftingResult(BaseModel):
     # offene Pruefungen, aber ebenfalls nicht verschwiegen.
     uncertainties: list[str] = Field(default_factory=list)
     blocked_reasons: list[str] = Field(default_factory=list)
+    # Human in the Loop (12.10.2026): `review_required` -> vor jedem Cloud-Aufruf muss der Anwalt die unsicheren
+    # Begriffe entscheiden (nur lokal anzeigen, nie loggen). Kandidaten sind app.privacy.review.ReviewCandidate.
+    review_required: bool = False
+    review_candidates: list = Field(default_factory=list)

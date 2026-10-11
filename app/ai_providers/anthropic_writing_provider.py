@@ -25,7 +25,7 @@ from app.ai_providers.claude_writing_provider import (
     build_writing_prompt_cache_blocks,
     select_system_prompt,
 )
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
 
 
 class AnthropicClaudeWritingProvider:
@@ -89,6 +89,7 @@ class AnthropicClaudeWritingProvider:
         ]
 
     def write(self, payload: ClaudeRequestPayload) -> ClaudeWritingResult:
+        require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
         # Prompt-Caching (Schritt 3): je Zweck (siehe select_system_prompt)
         # weiterhin projektweit IDENTISCH fuer jeden Aufruf mit demselben
         # Zweck - als gecachter Block markiert, spart es ab dem zweiten
@@ -186,6 +187,7 @@ class AnthropicClaudeWritingProvider:
         nur inkrementell statt am Stueck. Der Rueckgabewert (`return`, PEP
         380) traegt dieselben Token-Zaehlungen wie `write()`, aus
         `stream.get_final_message()` statt `response.usage`."""
+        require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
         stream_kwargs: dict = {}
         stream_tools = self._tools_for(payload)
         if stream_tools is not None:

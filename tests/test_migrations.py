@@ -95,3 +95,25 @@ def test_letterhead_migration_preserves_existing_firm_profile_and_drafts(tmp_pat
     assert "letterhead_ref" in draft_columns and "letterheads" in tables
 
     command.downgrade(cfg, "schritt3_026")
+
+
+def test_privacy_decision_tables_upgrade_and_downgrade(tmp_path) -> None:
+    """schritt3_028 (Human in the Loop, 12.10.2026): Tabellen entstehen beim Upgrade und verschwinden beim Downgrade."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "hitl.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    stat_columns = {row[1] for row in con.execute("pragma table_info(privacy_feedback_stats)").fetchall()}
+    con.close()
+    assert {"privacy_decisions", "privacy_feedback_stats"} <= tables
+    assert "term" not in stat_columns and "term_hmac" in stat_columns  # Statistik ohne Klartext-Spalte
+    command.downgrade(cfg, "schritt3_027")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "privacy_decisions" not in tables and "privacy_feedback_stats" not in tables

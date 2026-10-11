@@ -34,7 +34,8 @@ from __future__ import annotations
 
 import re
 
-from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
+from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult, seal_payload
+from app.privacy.review import PrivacyDecisions, ReviewCandidate, detect_decision_terms, find_review_candidates
 from app.privacy.date_chronology import build_chronology_note
 from app.privacy.party_addresses import build_party_address_note
 from app.privacy.presidio_ner import (
@@ -52,6 +53,7 @@ from app.privacy.pseudonymizer import (
 from app.privacy.security_check import (
     SecurityCheckService,
     check_payload_placeholder_integrity,
+    check_response_placeholder_integrity,
 )
 
 # Interne, kollisionsarme Trennmarkierungen - werden NIE an Claude
@@ -151,6 +153,8 @@ class ClaudePrivacyGateway:
         known_entities: dict[str, list[str]] | None = None,
         gespraechsverlauf: list[str] | None = None,
         skip_general_knowledge_pseudonymization: bool = False,
+        privacy_decisions: PrivacyDecisions | None = None,
+        review_mode: str = "mask",
     ) -> GatewayResult:
         """Baut eine sendefertige, pseudonymisierte Payload - oder
         blockiert (siehe GatewayResult.allowed). Ruft selbst KEINE Claude
@@ -185,7 +189,19 @@ class ClaudePrivacyGateway:
         "organisation"- und "ort"-Kategorie (ERWEITERT 08.10. um "ort",
         siehe `_GENERAL_KNOWLEDGE_SKIP_CATEGORIES`) - "person", Adressen/
         Kontaktdaten (Regex-Detektoren, eigene Kategorien) und jede exakte
-        `known_entities`-Erkennung bleiben davon vollstaendig unberuehrt."""
+        `known_entities`-Erkennung bleiben davon vollstaendig unberuehrt.
+
+        `privacy_decisions` / `review_mode` (Human in the Loop, 12.10.2026, siehe PRIVACY_REVIEW_ARCHITECTURE.md und
+        app/privacy/review.py): "personal"-Entscheidungen werden wie bekannte Entitaeten pseudonymisiert (Wortgrenzen,
+        exakte Schreibung). Danach sucht der Gateway im pseudonymisierten Text nach UNSICHEREN Kandidaten:
+        `review_mode="ask"` -> keine Payload, `review_required=True` mit Kandidaten (kein Cloud-Aufruf moeglich);
+        `"mask"` (Standard) -> Kandidaten werden vorsichtshalber pseudonymisiert; `"off"` nur fuer Messungen/Tests.
+        "not_personal" hebt AUSSCHLIESSLICH die Rueckfrage fuer genau diesen Begriff auf - nie eine automatische
+        Erkennung, den Restrisiko-Scan, den Leak-Check oder das Final Payload Gate. Ein Fehler bei der Kandidatensuche
+        blockiert (fail-closed)."""
+        if review_mode not in ("ask", "mask", "off"):
+            raise ValueError(f"unbekannter review_mode {review_mode!r}")
+        decisions = privacy_decisions or PrivacyDecisions()
         argumentationspunkte = argumentationspunkte or []
         quellenverweise = quellenverweise or []
         gespraechsverlauf = gespraechsverlauf or []
@@ -223,18 +239,61 @@ class ClaudePrivacyGateway:
         # auf Fachbegriffe, siehe presidio_ner.drop_common_noun_persons.
         # Immer aktiv: Satzanfangs-Imperative der Anwalts-Anweisung sind keine Personen.
         # Zusaetzlich im Chat ohne Akte: reine Nomen-"Personen" (Fachbegriffe).
+        masked_terms: set[str] = set(decisions.personal)
+
+        # Entscheidungs-Begriffe werden NACH den Filtern angehaengt: der Imperativ-/Nomen-Filter darf eine
+        # ausdrueckliche "personenbezogen"-Entscheidung des Anwalts nicht wieder verwerfen.
         def ner_span_filter(text: str, spans: list) -> list:
             spans = drop_sentence_initial_imperatives(text, spans)
             if skip_general_knowledge_pseudonymization:
                 spans = drop_common_noun_persons(text, spans)
-            return spans
+            return [*spans, *detect_decision_terms(text, masked_terms)]
 
-        pseudonymized_combined, mappings = self.pseudonymizer.pseudonymize(
-            combined,
-            known_entities=known_entities,
-            skip_categories=skip_categories,
-            ner_span_filter=ner_span_filter,
-        )
+        def _pseudonymize_and_split():
+            pseudonymized, maps = self.pseudonymizer.pseudonymize(
+                combined,
+                known_entities=known_entities,
+                skip_categories=skip_categories,
+                ner_span_filter=ner_span_filter,
+            )
+            return pseudonymized, maps, self._split_combined_text(pseudonymized)
+
+        pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
+        review_candidates: list[ReviewCandidate] = []
+        if review_mode != "off":
+            try:
+                review_candidates = find_review_candidates(
+                    self._build_unrecognized_name_scan_text(
+                        *parts[:5], original_gespraechsverlauf=gespraechsverlauf, pseudo_verlauf=parts[5]
+                    ),
+                    context_source=locally_sourced_text,
+                    decisions=decisions,
+                )
+            except Exception:  # noqa: BLE001 - fail-closed: ungepruefter Inhalt darf nie die Cloud erreichen
+                return GatewayResult(
+                    allowed=False,
+                    purpose=purpose,
+                    payload=None,
+                    mappings=mappings,
+                    reasons=["Die Datenschutzprüfung auf unsichere Begriffe konnte nicht abgeschlossen werden."],
+                    locally_sourced_text=locally_sourced_text,
+                )
+        if review_candidates and review_mode == "ask":
+            return GatewayResult(
+                allowed=False,
+                purpose=purpose,
+                payload=None,
+                mappings=mappings,
+                reasons=["Rückfrage erforderlich: unsichere Begriffe vor dem Versand prüfen."],
+                locally_sourced_text=locally_sourced_text,
+                review_required=True,
+                review_candidates=review_candidates,
+            )
+        auto_masked_terms: list[str] = []
+        if review_candidates:  # review_mode == "mask": vorsichtshalber pseudonymisieren, dann vollstaendig neu pruefen
+            auto_masked_terms = [candidate.term for candidate in review_candidates]
+            masked_terms.update(auto_masked_terms)
+            pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
 
         (
             pseudo_sachverhalt,
@@ -243,7 +302,7 @@ class ClaudePrivacyGateway:
             pseudo_vorlage,
             pseudo_anmerkungen,
             pseudo_verlauf,
-        ) = self._split_combined_text(pseudonymized_combined)
+        ) = parts
 
         # ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-
         # False-Positive bei allgemeinen Fragen"): Punkt 6 im
@@ -337,11 +396,45 @@ class ClaudePrivacyGateway:
         return GatewayResult(
             allowed=True,
             purpose=purpose,
-            payload=payload,
+            payload=seal_payload(payload),
             mappings=mappings,
             reasons=[],
             locally_sourced_text=locally_sourced_text,
+            auto_masked_terms=auto_masked_terms,
         )
+
+    def extend_with_local_note(
+        self,
+        payload: ClaudeRequestPayload,
+        note: str,
+        mappings: list[PseudonymMapping],
+        *,
+        lenient_leak_exempt_placeholders: frozenset[str] = frozenset(),
+    ) -> tuple[ClaudeRequestPayload | None, list[str]]:
+        """Haengt einen lokal erzeugten Hinweis (z. B. die Ollama-Zusammenfassung, die nur den PSEUDONYMISIERTEN Text
+        gesehen hat) an die Argumentationspunkte an - als EINZIGER erlaubter Weg, eine versiegelte Payload nach dem Gate
+        zu veraendern. Die gesamte erweiterte Payload durchlaeuft erneut das Final Payload Gate (keine unbekannten
+        Platzhalter); erst danach wird neu versiegelt. Fail-closed: (None, Gruende).
+
+        Bewusst KEIN zusaetzlicher NER-Scan des Zusatztextes: die lokale KI sieht ausschliesslich den bereits
+        pseudonymisierten Text und kann keine Originalwerte kennen; der Aufrufer prueft den Text zusaetzlich mit
+        `check_response_placeholder_integrity` gegen alle Originalwerte (Leak-Check)."""
+        extended = payload.model_copy(
+            update={"anonymisierte_argumentationspunkte": [*payload.anonymisierte_argumentationspunkte, note]}
+        )
+        # Zusatztext: Struktur (nur bekannte Platzhalter) und Originalwerte - mit derselben Ausnahme wie beim Leak-Check
+        # des Aufrufers fuer Werte, die nachweislich NIE lokal stammten (nur aus frueheren KI-Antworten, z. B. "Mieters").
+        reasons = check_response_placeholder_integrity(
+            note, mappings, require_full_coverage=False, lenient_leak_exempt_placeholders=lenient_leak_exempt_placeholders
+        )
+        if reasons:
+            return None, reasons
+        # Gesamte Payload: Platzhalter-Struktur weiterhin konsistent (Final Payload Gate ohne den Zusatztext-Anteil, der
+        # oben bereits mit der Ausnahme geprueft wurde).
+        base_reasons = check_payload_placeholder_integrity(payload, mappings)
+        if base_reasons:
+            return None, base_reasons
+        return seal_payload(extended), []
 
     def reconstruct_response(
         self, claude_response_text: str, mappings: list[PseudonymMapping]

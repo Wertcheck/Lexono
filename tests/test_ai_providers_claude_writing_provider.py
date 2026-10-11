@@ -16,7 +16,13 @@ from app.ai_providers.claude_writing_provider import (
     ClaudeWritingResult,
     build_writing_prompt,
 )
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload as _GatewayPayload, seal_payload
+
+
+def ClaudeRequestPayload(**kwargs) -> _GatewayPayload:  # noqa: N802
+    """Diese Tests pruefen den Provider, nicht den Gateway: sie simulieren eine vom Gateway freigegebene (versiegelte)
+    Payload. Unversiegelte Payloads lehnt jeder Cloud-Provider ab (tests/test_privacy_review.py)."""
+    return seal_payload(_GatewayPayload(**kwargs))
 
 
 def test_protocol_has_exactly_one_method() -> None:

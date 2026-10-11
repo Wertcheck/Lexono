@@ -60,6 +60,7 @@ from sqlalchemy.orm import Session
 
 from app.chat.title_generation import generate_conversation_title
 from app.documents.service import DocumentProcessingService
+from app.privacy.decisions import load_decisions
 from app.drafting.draft_text import draft_plain_text
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.review_notes import append_review_note
@@ -460,6 +461,9 @@ class ChatStreamEvent:
     text: str = ""
     status: str = ""
     message: ChatMessage | None = None
+    # kind="review" (Human in the Loop, 12.10.2026): unsichere Begriffe, die der Anwalt vor JEDEM Cloud-Aufruf
+    # entscheiden muss - es wird KEINE Assistenten-Nachricht gespeichert, die Nutzernachricht bleibt offen.
+    review_candidates: tuple = ()
 
 
 _PROVIDER_UNAVAILABLE_MESSAGE = (
@@ -958,6 +962,9 @@ class ChatService:
                 chat_triggered=True,
                 previous_draft=previous_draft,
                 letterhead_ref=letterhead_ref if previous_draft is None else None,
+                privacy_decisions=load_decisions(
+                    db, matter_id=conversation.matter_id, conversation_id=conversation.id
+                ),
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
             # statt einer unbehandelten Ausnahme. Fail-closed bleibt
@@ -1002,6 +1009,7 @@ class ChatService:
         current_message_id: str | None = None,
         source_message_id: str | None = None,
         letterhead_ref: str | None = None,
+        review_mode: str = "ask",
     ) -> Generator[ChatStreamEvent, None, None]:
         """Streaming-Variante von `send_message` (13.09., Streaming-
         Architekturentscheidung, siehe DECISIONS.md). Liefert echte
@@ -1084,6 +1092,10 @@ class ChatService:
                 chat_triggered=True,
                 previous_draft=previous_draft,
                 letterhead_ref=letterhead_ref if previous_draft is None else None,
+                privacy_decisions=load_decisions(
+                    db, matter_id=conversation.matter_id, conversation_id=conversation.id
+                ),
+                review_mode=review_mode,
             ):
                 if event.kind == "delta":
                     yield ChatStreamEvent(kind="delta", text=event.text)
@@ -1121,6 +1133,12 @@ class ChatService:
                 blocked=True,
             )
             yield ChatStreamEvent(kind="done", message=message)
+            return
+
+        if final_result.review_required and final_result.review_candidates:
+            # Kein Cloud-Aufruf ist erfolgt; nichts wird gespeichert. Nach der Entscheidung startet der Router die
+            # Verarbeitung derselben Nutzernachricht neu - mit vollstaendiger erneuter Pruefung im Gateway.
+            yield ChatStreamEvent(kind="review", review_candidates=tuple(final_result.review_candidates))
             return
 
         if final_result.success:

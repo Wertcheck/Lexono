@@ -86,12 +86,15 @@ def instruction_false_alarms(gateway: ClaudePrivacyGateway) -> tuple[int, int, l
         result = gateway.prepare_request(
             purpose="formulate_draft", sachverhalt="Akte: Beispielakte", argumentationspunkte=[], quellenverweise=[], stil=None,
             vorlage=None, anwaltliche_anmerkungen=text, known_entities=None, gespraechsverlauf=[],
-            skip_general_knowledge_pseudonymization=False,
+            skip_general_knowledge_pseudonymization=False, review_mode=REVIEW_MODE,
         )
         if not result.allowed or result.payload.anonymisierte_anwaltliche_anmerkungen != text:
             flagged += 1
             words.append(text if not result.allowed else result.payload.anonymisierte_anwaltliche_anmerkungen)
     return flagged, len(INSTRUCTIONS), words
+
+
+REVIEW_MODE = "mask"
 
 
 def build_cases(limit_names: int | None = None) -> list[dict]:
@@ -125,10 +128,11 @@ def run_case(gateway: ClaudePrivacyGateway, case: dict) -> dict:
     result = gateway.prepare_request(
         purpose="formulate_draft", sachverhalt=sach, argumentationspunkte=[], quellenverweise=[], stil=None, vorlage=None,
         anwaltliche_anmerkungen=anm, known_entities=None, gespraechsverlauf=[], skip_general_knowledge_pseudonymization=False,
+        review_mode=REVIEW_MODE,
     )
     seconds = time.perf_counter() - t
     if not result.allowed:
-        return {"allowed": False, "leaked": [], "seconds": seconds}
+        return {"allowed": False, "leaked": [], "seconds": seconds, "review": result.review_required}
     payload = result.payload
     haystack = payload.anonymisierter_sachverhalt + "\n" + (payload.anonymisierte_anwaltliche_anmerkungen or "")
     return {"allowed": True, "leaked": [s for s in case["secrets"] if s in haystack], "seconds": seconds, "payload": haystack}
@@ -144,7 +148,7 @@ def false_alarms(gateway: ClaudePrivacyGateway) -> tuple[int, int, list[str]]:
             result = gateway.prepare_request(
                 purpose="formulate_draft", sachverhalt=text, argumentationspunkte=[], quellenverweise=[], stil=None, vorlage=None,
                 anwaltliche_anmerkungen="Erstelle ein Schreiben.", known_entities=None, gespraechsverlauf=[],
-                skip_general_knowledge_pseudonymization=False,
+                skip_general_knowledge_pseudonymization=False, review_mode=REVIEW_MODE,
             )
             if not result.allowed:
                 flagged += 1
@@ -161,7 +165,11 @@ def main() -> None:
     ap.add_argument("--limit-names", type=int, default=None)
     ap.add_argument("--no-negatives", action="store_true")
     ap.add_argument("--json", default=None, help="Ergebnisdatei")
+    ap.add_argument("--review-mode", default="mask", choices=("off", "mask", "ask"),
+                    help="Gateway-Modus fuer unsichere Begriffe (off = Verhalten vor 12.10.2026)")
     args = ap.parse_args()
+    global REVIEW_MODE
+    REVIEW_MODE = args.review_mode
 
     import bench_variants  # noqa: PLC0415 - lokale Experimentvarianten
 
@@ -185,6 +193,8 @@ def main() -> None:
         summary[group] = {"n": n, "leaks": leak, "blocks": block, "seconds": sum(r["seconds"] for r in rows) / n}
         print(f"{group:14s} {n:4d} {100 * leak / n:7.1f} {100 * block / n:8.1f} {100 * (n - leak) / n:9.1f} {summary[group]['seconds']:7.2f}")
     print(f"{'GESAMT':14s} {total:4d} {100 * leaks / total:7.1f} {100 * blocks / total:8.1f} {100 * (total - leaks) / total:9.1f}")
+    reviews = sum(1 for rows in by_group.values() for r in rows if r.get("review"))
+    print(f"Modus {REVIEW_MODE}: davon Rueckfragen (kein Cloud-Aufruf bis zur Entscheidung) {reviews}/{total}")
     result = {"variant": args.variant, "total": total, "leaks": leaks, "blocks": blocks, "groups": summary}
     if not args.no_negatives:
         flagged, ntotal, words = false_alarms(gateway)

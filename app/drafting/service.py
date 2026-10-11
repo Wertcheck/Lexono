@@ -83,6 +83,7 @@ from app.firm_profile.letterheads import letterhead_for_draft, resolve_ref_for_n
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
 from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
+from app.privacy.review import PrivacyDecisions
 from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
 from app.privacy.security_check import (
@@ -418,6 +419,8 @@ class DraftingService:
         message_id: str | None = None,
         chat_triggered: bool = False,
         letterhead_ref: str | None = None,
+        privacy_decisions: PrivacyDecisions | None = None,
+        review_mode: str = "mask",
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
 
@@ -507,6 +510,8 @@ class DraftingService:
             gespraechsverlauf=gespraechsverlauf,
             message_id=message_id,
             chat_triggered=chat_triggered,
+            privacy_decisions=privacy_decisions,
+            review_mode=review_mode,
         )
         if isinstance(prepared, DraftingResult):
             return prepared
@@ -533,6 +538,8 @@ class DraftingService:
         message_id: str | None = None,
         chat_triggered: bool = False,
         letterhead_ref: str | None = None,
+        privacy_decisions: PrivacyDecisions | None = None,
+        review_mode: str = "mask",
     ) -> Generator[DraftStreamEvent, None, None]:
         """Streaming-Variante von `create_draft` (13.09., Streaming-
         Architekturentscheidung - siehe DECISIONS.md fuer die volle
@@ -587,6 +594,8 @@ class DraftingService:
             gespraechsverlauf=gespraechsverlauf,
             message_id=message_id,
             chat_triggered=chat_triggered,
+            privacy_decisions=privacy_decisions,
+            review_mode=review_mode,
         )
         if isinstance(prepared, DraftingResult):
             yield DraftStreamEvent(kind="result", result=prepared)
@@ -653,6 +662,8 @@ class DraftingService:
         gespraechsverlauf: list[str] | None = None,
         message_id: str | None = None,
         chat_triggered: bool = False,
+        privacy_decisions: PrivacyDecisions | None = None,
+        review_mode: str = "mask",
     ) -> DraftingResult | _PreparedRequest:
         """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
         `create_draft_stream` (Aktenauflösung, Recherche, Privacy Gateway,
@@ -733,6 +744,8 @@ class DraftingService:
                 known_entities=preparation.known_entities,
                 gespraechsverlauf=gespraechsverlauf,
                 skip_general_knowledge_pseudonymization=skip_general_knowledge_pseudonymization,
+                privacy_decisions=privacy_decisions,
+                review_mode=review_mode,
             )
 
         if not gateway_result.allowed:
@@ -747,7 +760,16 @@ class DraftingService:
                 success=False,
                 blocked_reasons=gateway_result.reasons,
                 open_review_points=open_review_points,
+                review_required=gateway_result.review_required,
+                review_candidates=list(gateway_result.review_candidates),
             )
+        if gateway_result.auto_masked_terms:
+            # Lokal sichtbar (nie an die Cloud, nie geloggt): welche unsicheren Begriffe vorsichtshalber pseudonymisiert wurden.
+            open_review_points = [
+                *open_review_points,
+                "Vorsichtshalber pseudonymisiert (möglicherweise ein Personenname): "
+                + ", ".join(gateway_result.auto_masked_terms),
+            ]
 
         # Kostenkontrolle (Prompt 33) - NACH der Datenschutzprüfung (die
         # ist immer zuerst relevant), aber VOR dem tatsächlichen,
@@ -1069,14 +1091,32 @@ class DraftingService:
                 return
 
             if local_result is not None:
-                payload = payload.model_copy(
-                    update={
-                        "anonymisierte_argumentationspunkte": [
-                            *payload.anonymisierte_argumentationspunkte,
-                            f"{_LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX}{local_result.text}",
-                        ]
-                    }
+                # Einziger erlaubter Weg, eine versiegelte Payload nach dem Gate zu erweitern: erneute Pruefung der
+                # gesamten Payload und Neuversiegelung im Gateway (PRIVACY_REVIEW_ARCHITECTURE.md M4).
+                extended, extend_issues = self.gateway.extend_with_local_note(
+                    payload,
+                    f"{_LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX}{local_result.text}",
+                    gateway_result.mappings,
+                    lenient_leak_exempt_placeholders=prepared.lenient_leak_exempt_placeholders,
                 )
+                if extended is None:
+                    self.api_logger.log_blocked(
+                        db, workflow_id=matter_id, model=self.model_name, purpose=purpose, reasons=extend_issues
+                    )
+                    yield DraftStreamEvent(
+                        kind="result",
+                        result=DraftingResult(
+                            success=False,
+                            blocked_reasons=[
+                                "Die lokale KI-Vorabanalyse hat Auffälligkeiten festgestellt - Entwurf wurde nicht "
+                                "übernommen, bevor eine Cloud-Anfrage gestellt wurde.",
+                                *extend_issues,
+                            ],
+                            open_review_points=open_review_points,
+                        ),
+                    )
+                    return
+                payload = extended
 
         yield DraftStreamEvent(kind="status", status=_STEP_STATUS_LABELS["claude"])
         self._prefill_semantic_check(payload, gateway_result, skip_llm_privacy_layers)

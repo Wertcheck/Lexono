@@ -29,11 +29,22 @@ zuvor bei sieben.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import secrets
 from dataclasses import dataclass, field
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_validator
 
 from app.privacy.pseudonymizer import PseudonymMapping
+
+# Prozesslokaler Schluessel fuer das Gateway-Siegel (12.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md M4). Nur dieses Modul
+# kennt ihn; er verlaesst den Prozess nie. Ein Siegel beweist: genau dieser Inhalt hat den Gateway passiert.
+_SEAL_KEY = secrets.token_bytes(32)
+
+
+class UnsealedPayloadError(RuntimeError):
+    """Eine Cloud-Payload ohne gueltiges Gateway-Siegel (nicht vom Gateway erzeugt oder danach veraendert)."""
 
 
 class ClaudeRequestPayload(BaseModel):
@@ -62,6 +73,8 @@ class ClaudeRequestPayload(BaseModel):
     # Nicht-Chat-Aufrufer wie der Schriftsatz-Generator/die anwaltlichen
     # Anweisungen, die dieses Feld strukturell nie befüllen).
     anonymisierter_gespraechsverlauf: list[str] = Field(default_factory=list)
+    # Gateway-Siegel (privat, nicht serialisiert, nie Teil der Cloud-Anfrage) - siehe seal_payload/require_gateway_seal.
+    _gateway_seal: str | None = PrivateAttr(default=None)
 
     @field_validator("schreibauftrag", "anonymisierter_sachverhalt")
     @classmethod
@@ -69,6 +82,32 @@ class ClaudeRequestPayload(BaseModel):
         if not value or not value.strip():
             raise ValueError("Feld darf nicht leer sein")
         return value
+
+
+def _seal_digest(payload: ClaudeRequestPayload) -> str:
+    return hmac.new(_SEAL_KEY, payload.model_dump_json().encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def seal_payload(payload: ClaudeRequestPayload) -> ClaudeRequestPayload:
+    """Versiegelt eine vom Gateway gepruefte Payload. NUR app/privacy/gateway.py ruft dies auf."""
+    payload._gateway_seal = _seal_digest(payload)
+    return payload
+
+
+def is_gateway_sealed(payload: object) -> bool:
+    if not isinstance(payload, ClaudeRequestPayload):
+        return False
+    seal = payload._gateway_seal
+    return bool(seal) and hmac.compare_digest(seal, _seal_digest(payload))
+
+
+def require_gateway_seal(payload: object) -> None:
+    """Serverseitige Erzwingung des Pre-Cloud-Gates: jeder Cloud-Provider ruft dies unmittelbar vor dem Versand auf.
+    Wirft, wenn die Payload nicht vom Gateway stammt oder nach der Pruefung veraendert wurde (fail-closed)."""
+    if not is_gateway_sealed(payload):
+        raise UnsealedPayloadError(
+            "Cloud-Versand verweigert: Die Anfrage stammt nicht unverändert aus der Datenschutzprüfung."
+        )
 
 
 @dataclass
@@ -103,3 +142,9 @@ class GatewayResult:
     # `allowed=False`), da rein lokale Textkonkatenation vor jeder
     # Pseudonymisierungs-/Security-Check-Entscheidung berechnet wird.
     locally_sourced_text: str = ""
+    # Human in the Loop (12.10.2026): `review_required` -> der Anwalt muss `review_candidates` entscheiden, bevor
+    # irgendetwas die Cloud erreicht (allowed ist dann False). `auto_masked_terms`: im Modus "mask" vorsichtshalber
+    # pseudonymisierte unsichere Begriffe (nur lokal verwenden, nie loggen).
+    review_required: bool = False
+    review_candidates: list = field(default_factory=list)
+    auto_masked_terms: list[str] = field(default_factory=list)

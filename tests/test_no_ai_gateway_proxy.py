@@ -42,7 +42,13 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload as _GatewayPayload, seal_payload
+
+
+def ClaudeRequestPayload(**kwargs) -> _GatewayPayload:  # noqa: N802
+    """Diese Tests pruefen den Provider, nicht den Gateway: sie simulieren eine vom Gateway freigegebene (versiegelte)
+    Payload. Unversiegelte Payloads lehnt jeder Cloud-Provider ab (tests/test_privacy_review.py)."""
+    return seal_payload(_GatewayPayload(**kwargs))
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _APP_DIR = _REPO_ROOT / "app"

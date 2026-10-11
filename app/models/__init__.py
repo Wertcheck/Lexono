@@ -27,6 +27,7 @@ from app.models.embedding import Embedding
 from app.models.firm_practice_area import FirmPracticeArea
 from app.models.firm_profile import FirmProfile
 from app.models.letterhead import Letterhead
+from app.models.privacy_decision import PrivacyDecision, PrivacyFeedbackStat
 from app.models.generated_document import GeneratedDocument
 from app.models.knowledge_item import KnowledgeItem
 from app.models.law import Law
@@ -96,6 +97,8 @@ __all__ = [
     "PromptTemplate",
     "FirmProfile",
     "Letterhead",
+    "PrivacyDecision",
+    "PrivacyFeedbackStat",
     "FirmPracticeArea",
     "Law",
     "LawSection",

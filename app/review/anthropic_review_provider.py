@@ -18,7 +18,7 @@ import json
 
 import anthropic
 
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
 from app.review.provider import REVIEW_SYSTEM_PROMPT, build_review_prompt_cache_blocks
 from app.review.schema import ReviewResult
 
@@ -34,6 +34,7 @@ class AnthropicClaudeReviewProvider:
         self.max_tokens = max_tokens
 
     def review(self, payload: ClaudeRequestPayload) -> ReviewResult:
+        require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
         # Prompt-Caching (Schritt 3): siehe AnthropicClaudeWritingProvider.write
         # für die Begründung - gecachtes Systemprompt + gecachter,
         # wiederkehrender Aktenkontext-Block (Quellen/Argumentationspunkte),

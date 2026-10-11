@@ -19,6 +19,7 @@ import mimetypes
 from collections.abc import Iterator
 from pathlib import Path
 
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -38,6 +39,9 @@ from app.drafting.versioning import find_latest_version
 from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
 from app.chat.service import ChatService
+from app.privacy.decisions import InvalidPrivacyDecisionError
+from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
+from app.privacy.decisions import record_decision as record_privacy_decision
 from app.chat.speech import (
     SpeechDecodeError,
     SpeechEmptyRecordingError,
@@ -965,6 +969,25 @@ def _stream_chat_reply(
             # _STEP_STATUS_LABELS) - rein informativ, kein "done"-Ersatz.
             yield _sse_event({"kind": "status", "status": event.status})
             continue
+        if event.kind == "review":
+            # Human in the Loop (12.10.2026): lokale Rueckfrage, KEIN Cloud-Aufruf erfolgt. Kontext nur fuer die lokale
+            # Anzeige; die Antwort geht an POST /dashboard/chat/{id}/privacy-review.
+            yield _sse_event(
+                {
+                    "kind": "review",
+                    "conversation_id": conversation.id,
+                    "message_id": current_message_id,
+                    "candidates": [
+                        {
+                            "term": candidate.term,
+                            "context_before": candidate.context_before,
+                            "context_after": candidate.context_after,
+                        }
+                        for candidate in event.review_candidates
+                    ],
+                }
+            )
+            return
         message = event.message
         assert message is not None
         sources = _gather_message_sources(db, [message]).get(message.id, [])
@@ -977,6 +1000,79 @@ def _stream_chat_reply(
                 "sources": sources,
             }
         )
+
+
+class _PrivacyReviewDecision(BaseModel):
+    term: str
+    decision: str
+
+
+@router.post("/{conversation_id}/privacy-review")
+def submit_privacy_review(
+    conversation_id: str,
+    message_id: str = Form(...),
+    decisions: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
+) -> StreamingResponse:
+    """Human in the Loop (12.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md): speichert die Entscheidungen des Anwalts zu
+    unsicheren Begriffen und verarbeitet DIESELBE Nutzernachricht erneut. Es gibt kein clientseitiges "freigegeben":
+    der Gateway prueft den gesamten Inhalt erneut und fragt wieder, solange ein unsicherer Begriff offen ist. Eine
+    Entscheidung "kein personenbezogenes Datum" hebt nur die Rueckfrage auf, nie eine automatische Erkennung oder den
+    Leak-Check. Nur die zuletzt gestellte, noch unbeantwortete Nutzernachricht der eigenen Unterhaltung."""
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+    try:
+        parsed = [_PrivacyReviewDecision(**item) for item in json.loads(decisions)]
+    except (ValueError, TypeError):
+        return StreamingResponse(_stream_error_event("Ungültige Auswahl."), media_type="text/event-stream")
+    message = db.query(ChatMessage).filter_by(id=message_id, conversation_id=conversation.id).first()
+    last = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc())
+        .first()
+    )
+    if message is None or message.role != "user" or last is None or last.id != message.id:
+        return StreamingResponse(
+            _stream_error_event("Diese Rückfrage ist nicht mehr offen."), media_type="text/event-stream"
+        )
+    if not parsed or len(parsed) > 20:
+        return StreamingResponse(
+            _stream_error_event("Bitte jede Rückfrage beantworten."), media_type="text/event-stream"
+        )
+    try:
+        for item in parsed:
+            record_privacy_decision(
+                db,
+                matter_id=conversation.matter_id,
+                conversation_id=conversation.id,
+                term=item.term,
+                decision=item.decision,
+                user_id=current_user.id,
+                actor=current_user.email,
+            )
+        db.commit()
+    except InvalidPrivacyDecisionError as exc:
+        db.rollback()
+        return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
+
+    try:
+        drafting_service = get_drafting_service()
+    except WritingProviderNotConfiguredError:
+        drafting_service = None
+    return StreamingResponse(
+        _stream_chat_reply(
+            _get_chat_service(),
+            db,
+            conversation,
+            message.content,
+            drafting_service,
+            current_user.email,
+            current_message_id=message.id,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/send-stream")
@@ -1254,6 +1350,7 @@ def delete_conversation(
             details=f"Unterhaltung gelöscht: {conversation.title}",
         )
     )
+    delete_privacy_decisions_for_conversation(db, conversation.id)
     db.delete(conversation)
     db.commit()
 
@@ -1308,6 +1405,7 @@ def bulk_delete_conversations(
                 details=f"Unterhaltung gelöscht (Sammellöschung): {conversation.title}",
             )
         )
+        delete_privacy_decisions_for_conversation(db, conversation.id)
         db.delete(conversation)
     db.commit()
 

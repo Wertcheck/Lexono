@@ -31,7 +31,7 @@ from app.ai_providers.claude_writing_provider import (
     select_system_prompt,
 )
 from app.ai_providers.gateway_relay_client import call_gateway_messages
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
 
 
 class GatewayRelayWritingProvider:
@@ -55,6 +55,7 @@ class GatewayRelayWritingProvider:
         self._timeout_seconds = timeout_seconds
 
     def write(self, payload: ClaudeRequestPayload) -> ClaudeWritingResult:
+        require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
         result = call_gateway_messages(
             base_url=self._base_url,
             client_id=self._client_id,

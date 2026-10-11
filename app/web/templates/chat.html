@@ -2143,6 +2143,168 @@
       // waere, statt wie bisher erst (verwirrend) nach dem Reload.
       var isSending = false;
 
+      // Human in the Loop (12.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md): kompakte Datenschutz-Rueckfrage. Bis zur
+      // Auswahl wurde NICHTS an die Cloud gesendet; nach der Auswahl prueft der Server den gesamten Inhalt erneut.
+      // Begriffe/Kontext stammen aus Dokumenten (untrusted input) - ausschliesslich per textContent einsetzen.
+      var PRIVACY_REVIEW_OPTIONS = [
+        { decision: "personal", title: "Als Person behandeln", hint: "pseudonymisieren", icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>' },
+        { decision: "not_personal", title: "Kein personenbezogenes Datum", hint: "unverändert lassen", icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>' },
+        { decision: "unsure", title: "Unsicher", hint: "vorsichtshalber pseudonymisieren", icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.3-2.5 3.8"/><path d="M12 17.2h.01"/></svg>' }
+      ];
+
+      function privacyEl(tag, className, text) {
+        var el = document.createElement(tag);
+        if (className) { el.className = className; }
+        if (text) { el.textContent = text; }
+        return el;
+      }
+
+      function renderPrivacySteps(container, hasFiles) {
+        var steps = [
+          { label: hasFiles ? "Dokument eingelesen" : "Anfrage erfasst", state: "done" },
+          { label: hasFiles ? "Text erkannt" : "Text vorbereitet", state: "done" },
+          { label: "Personenbezogene Daten werden geprüft …", state: "current" },
+          { label: "Pseudonymisierung", state: "pending" },
+          { label: "Cloud-Verarbeitung", state: "pending" }
+        ];
+        var head = privacyEl("div", "privacy-review__progress-head");
+        head.appendChild(privacyEl("span", "privacy-review__progress-title", "Datenschutzprüfung"));
+        head.appendChild(privacyEl("span", "privacy-review__progress-count", "2 von 5 Schritten abgeschlossen"));
+        container.appendChild(head);
+        var bar = privacyEl("div", "privacy-review__bar");
+        var fill = privacyEl("div", "privacy-review__bar-fill");
+        fill.style.width = "40%";
+        bar.appendChild(fill);
+        container.appendChild(bar);
+        var list = privacyEl("ol", "privacy-review__steps");
+        steps.forEach(function (step) {
+          var item = privacyEl("li", "privacy-review__step privacy-review__step--" + step.state);
+          item.appendChild(privacyEl("span", "privacy-review__step-marker"));
+          item.appendChild(privacyEl("span", "privacy-review__step-label", step.label));
+          list.appendChild(item);
+        });
+        container.appendChild(list);
+      }
+
+      function showPrivacyReview(payload, bubble, hasFiles, onSubmitted) {
+        if (!bubble || !payload.candidates || !payload.candidates.length) { onSubmitted(null); return; }
+        bubble.classList.remove("chat-message--thinking");
+        var body = bubble.querySelector(".chat-message__text");
+        body.className = "chat-message__text privacy-review";
+        body.removeAttribute("role");
+        body.removeAttribute("aria-label");
+        body.textContent = "";
+        renderPrivacySteps(body, hasFiles);
+
+        var card = privacyEl("section", "privacy-review__card");
+        card.setAttribute("aria-live", "polite");
+        var cardHead = privacyEl("div", "privacy-review__card-head");
+        cardHead.appendChild(privacyEl("span", "privacy-review__badge", "!"));
+        var headText = privacyEl("div", "");
+        headText.appendChild(privacyEl("h3", "privacy-review__title", "Kurze Rückfrage"));
+        var intro = privacyEl("p", "privacy-review__intro", "Lexono ist sich bei folgendem Begriff nicht sicher, ob es sich um eine Person handelt.");
+        headText.appendChild(intro);
+        cardHead.appendChild(headText);
+        var counter = privacyEl("span", "privacy-review__counter");
+        cardHead.appendChild(counter);
+        card.appendChild(cardHead);
+
+        var contextBox = privacyEl("div", "privacy-review__context");
+        contextBox.appendChild(privacyEl("div", "privacy-review__context-label", "Begriff im Kontext:"));
+        var quote = privacyEl("p", "privacy-review__quote");
+        contextBox.appendChild(quote);
+        card.appendChild(contextBox);
+
+        var options = privacyEl("div", "privacy-review__options");
+        card.appendChild(options);
+        var footer = privacyEl("p", "privacy-review__footer", "Bis zu Ihrer Auswahl wird nichts an die Cloud gesendet. Danach wird der gesamte Inhalt erneut geprüft.");
+        card.appendChild(footer);
+        body.appendChild(card);
+
+        var decisions = [];
+        var index = 0;
+        function renderCandidate() {
+          var candidate = payload.candidates[index];
+          counter.textContent = payload.candidates.length > 1 ? (index + 1) + " von " + payload.candidates.length : "";
+          quote.textContent = "";
+          quote.appendChild(document.createTextNode("„… " + (candidate.context_before || "")));
+          quote.appendChild(privacyEl("mark", "privacy-review__term", candidate.term));
+          quote.appendChild(document.createTextNode((candidate.context_after || "") + " …“"));
+          options.textContent = "";
+          PRIVACY_REVIEW_OPTIONS.forEach(function (option) {
+            var button = privacyEl("button", "privacy-review__option privacy-review__option--" + option.decision);
+            button.type = "button";
+            var icon = privacyEl("span", "privacy-review__option-icon");
+            icon.innerHTML = option.icon; // feste, eigene SVG-Konstante (kein Nutzer-/Dokumentinhalt)
+            button.appendChild(icon);
+            var label = privacyEl("span", "privacy-review__option-text");
+            label.appendChild(privacyEl("strong", "", option.title));
+            label.appendChild(privacyEl("small", "", option.hint));
+            button.appendChild(label);
+            button.addEventListener("click", function () {
+              decisions.push({ term: candidate.term, decision: option.decision });
+              index += 1;
+              if (index < payload.candidates.length) { renderCandidate(); return; }
+              options.querySelectorAll("button").forEach(function (b) { b.disabled = true; });
+              footer.textContent = "Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …";
+              onSubmitted(decisions);
+            });
+            options.appendChild(button);
+          });
+          var first = options.querySelector("button");
+          if (first) { first.focus({ preventScroll: true }); }
+        }
+        renderCandidate();
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      function readSseStream(response, onPayload) {
+        if (!response.ok || !response.body) { return Promise.reject(new Error("stream_failed")); }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder("utf-8");
+        var buffer = "";
+        function pump() {
+          return reader.read().then(function (result) {
+            if (result.done) { return; }
+            buffer += decoder.decode(result.value, { stream: true });
+            var frames = buffer.split("\n\n");
+            buffer = frames.pop();
+            frames.forEach(function (frame) {
+              var line = frame.trim();
+              if (line.indexOf("data: ") !== 0) { return; }
+              try { onPayload(JSON.parse(line.slice("data: ".length))); } catch (parseError) { /* ignorieren */ }
+            });
+            return pump();
+          });
+        }
+        return pump();
+      }
+
+      function submitPrivacyReview(payload, decisions, bubble, hasFiles, finish) {
+        var conversationId = payload.conversation_id;
+        var form = new FormData();
+        var csrfField = composer ? composer.querySelector("input[name=\"csrf_token\"]") : null;
+        form.append("csrf_token", csrfField ? csrfField.value : "");
+        form.append("message_id", payload.message_id);
+        form.append("decisions", JSON.stringify(decisions));
+        fetch("/dashboard/chat/" + encodeURIComponent(conversationId) + "/privacy-review", {
+          method: "POST",
+          body: form
+        })
+          .then(function (response) {
+            return readSseStream(response, function (next) {
+              if (next.kind === "review") {
+                showPrivacyReview(next, bubble, hasFiles, function (more) {
+                  if (more) { submitPrivacyReview(next, more, bubble, hasFiles, finish); }
+                });
+              } else if (next.kind === "done") {
+                finish(conversationId);
+              }
+            });
+          })
+          .catch(function () { finish(conversationId); });
+      }
+
       function runStreamingSend(evt) {
         evt.preventDefault();
         if (isSending) { return; }
@@ -2280,6 +2442,11 @@
                 }
               } else if (payload.kind === "status") {
                 updateThinkingStatus(payload.status);
+              } else if (payload.kind === "review") {
+                showPrivacyReview(payload, thinkingBubble, pendingFiles.length > 0, function (decisions) {
+                  if (!decisions) { finish(conversationId); return; }
+                  submitPrivacyReview(payload, decisions, thinkingBubble, pendingFiles.length > 0, finish);
+                });
               } else if (payload.kind === "done") {
                 if (payload.message_id === null) {
                   // Fall A (§10): nichts wurde persistiert (Validierung vor
