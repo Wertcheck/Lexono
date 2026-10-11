@@ -544,3 +544,15 @@ Laufzeit installiert (1-Seiten-PDF, lokale KI qwen3:4b, CPU): lokale Vorabanalys
 Namenserkennung in den 7 geprüften Anfragen. Grenzen: 7 Anfragen, ein synthetisches Dokument – das belegt kein „leckfrei“; der Benchmark (1100 Fälle) zeigt 4,7 % Rest-Lecks (Richter/Fuerst u. a.).
 Prüfskript-Fehler gefunden und behoben: Substring-Suche meldete „Fischer“ in „spezifischer“ (jetzt Wortgrenzen). Zwei frühere Läufe wurden von der Umgebung wegen Speichermangels beendet
 (`llama-server` 3,5 GB + Lexono 1,2 GB); der Lauf gelang bei ≈ 3,7 GB freiem RAM im Vordergrund.
+
+### Vergleich installierter Build ↔ dokumentierte Ergebnisse von 56c2c74 (12.10.2026)
+
+* **Konsistenz:** Die 7 installierten Anfragen verhalten sich wie das Quellcode-Gateway auf 56c2c74: maskierte Fälle (Dokument, „Name: X“, Umbruch, Tabelle) sind auch im Benchmark
+  maskiert (Gruppen `pdf_umbruch`/`tabelle`/`feldanfang` 4,5–8,2 % Rest-Lecks, nicht 0 %); der Leck-Fall „Wessolowski hat angerufen …“ im aktenlosen Chat ist im Quellcode mit
+  `skip_general_knowledge_pseudonymization=True` identisch reproduziert. Die 4,7 % des Benchmarks gelten für Chat **mit** Akte-Kontext; 7 Stichproben können diese Rate weder bestätigen noch widerlegen.
+* **Aktenloser Chat gemessen (neu, 330 Fälle = 55 Nachnamen × 6 Kontexte, Quellcode-Gateway):** Namen-Lecks **49/330 = 14,8 %** (deutlich höher als 4,7 % mit Akte), Fachfragen
+  verändert/blockiert 1/8. Ursache: `drop_common_noun_persons` (nur dort aktiv) verwirft NER-erkannte, als Substantiv getaggte Namen.
+* **Getestete Abhilfe (Experiment, NICHT im Repo):** Subjekte nicht-infiniter Verben im aktenlosen Chat behalten → 37/330 = 11,2 % (−3,6 Punkte), Fachfragen unverändert 1/8. Nutzen
+  gering, Rest-Lecks bleiben (nicht als Subjekt erkennbare Namen) → **keine Codeänderung**: belegter, aber vorbestehender Zielkonflikt „Fachwort-Fehlalarm ↔ Namen-Leck“ im Chat ohne Akte;
+  Entscheidung über Nachbesserung (z. B. Fehlalarm in Kauf nehmen und den Filter dort abschalten = Leck-Rate dann wie mit Akte, aber „Gewerbemietverträge“ → Platzhalter) liegt beim Inhaber.
+* Keine vollständige Leckfreiheit behauptet: Mit Akte 4,7 %, ohne Akte 14,8 % (synthetische Fälle).
