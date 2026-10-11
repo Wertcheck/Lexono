@@ -625,7 +625,34 @@ def get_pos_tags(text: str) -> dict[tuple[int, int], str]:
     return {(token.idx, token.idx + len(token.text)): token.pos_ for token in artifacts.tokens}
 
 
+def get_finite_subject_tokens(text: str) -> set[tuple[int, int]]:
+    """Token-Bereiche, die Subjekt (Abhaengigkeit "sb") eines nicht-infiniten Verbs/Hilfsverbs im selben Satz sind.
+
+    Ein Anweisungs-Imperativ am Satzanfang ("Ueberarbeite das Schreiben") ist nie Subjekt eines finiten Verbs; ein
+    Name am Satzanfang ("Wessolowski hat angerufen") dagegen schon."""
+    if not text or not text.strip():
+        return set()
+    doc = _get_analyzer_engine().nlp_engine.nlp["de"](_neutralize_internal_tokens(text))
+    return {
+        (token.idx, token.idx + len(token.text))
+        for token in doc
+        if token.dep_ == "sb"
+        and token.head.pos_ in ("VERB", "AUX")
+        and token.head.i > token.i
+        and "Inf" not in token.head.morph.get("VerbForm")
+    }
+
+
 _SENTENCE_START_PREFIX = re.compile(r"(?:^|\n|[.!?:]\s+)\s*$")
+
+
+_CELL_END = re.compile(r"(?:[ \t]{2,}|[ \t]*(?:$|\n|[|;,]|[A-ZÄÖÜ][\wÄÖÜäöüß]*:))")
+
+
+def _is_bare_cell_value(text: str, end: int) -> bool:
+    """Steht hinter dem Treffer nur noch das Zellenende ("Name: X  Funktion: ...", "X | Hamburg", Zeilenende)?
+    Dann ist es ein Feldwert, kein Satzanfang mit Imperativ (der Imperativ hat stets weitere Woerter)."""
+    return _CELL_END.match(text, end) is not None
 
 
 def drop_sentence_initial_imperatives(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
@@ -648,13 +675,26 @@ def drop_sentence_initial_imperatives(text: str, spans: list[DetectedSpan]) -> l
         pos_tags = get_pos_tags(_neutralize_internal_tokens(text))
     except Exception:
         return spans
+    # Satzanfang auf der Analysefassung beurteilen: ein weicher Umbruch mitten im Satz ("durch" + Umbruch + Name) ist kein
+    # Satzanfang (laengengleich, Offsets gelten unveraendert).
+    analysis_text = _neutralize_internal_tokens(text)
+    try:
+        finite_subjects = get_finite_subject_tokens(text)
+    except Exception:
+        finite_subjects = set()
     kept: list[DetectedSpan] = []
     for span in spans:
         if span.category != "person" or len(span.value.split()) != 1:
             kept.append(span)
             continue
-        if not _SENTENCE_START_PREFIX.search(text[: span.start]):
+        if not _SENTENCE_START_PREFIX.search(analysis_text[: span.start]):
             kept.append(span)
+            continue
+        if _is_bare_cell_value(text, span.end):
+            kept.append(span)  # Feldwert in Tabelle/Formular, kein Satzanfang
+            continue
+        if (span.start, span.end) in finite_subjects:
+            kept.append(span)  # Subjekt eines finiten Verbs: Name, kein Imperativ
             continue
         tags = [tag for (start, end), tag in pos_tags.items() if start >= span.start and end <= span.end]
         if len(tags) == 1 and tags[0] != "PROPN":

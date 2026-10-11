@@ -133,3 +133,61 @@ def test_conversation_role_label_is_not_treated_as_a_name(gateway) -> None:
     history = result.payload.anonymisierter_gespraechsverlauf
     assert history[0].startswith("Anwalt:") and history[1].startswith("Assistent:")
     assert "Andersen" not in "".join(history)
+
+
+# --- Filter-Korrektur (Folgelauf 12.10.2026): vom NER erkannte Namen duerfen nicht als "Imperativ" verworfen werden -----
+# Ursache der Restlecks: `drop_sentence_initial_imperatives` verwarf jeden EINWORT-Personentreffer am Satz-/Zeilen-/Label-Anfang,
+# der nicht als PROPN getaggt war - auch echte, vom NER als PER erkannte Namen ("Wessolowski hat angerufen.", "Name: X  Funktion:",
+# "durch" + weicher Umbruch + Name). Neu: Subjekt eines nicht-infiniten Verbs, reiner Zellenwert und weicher Umbruch sind kein
+# Imperativ-Satzanfang.
+RARE_NOUN_TAGGED = ["Wessolowski", "Brinkmoeller", "Stuckenschneider", "Eberhaerter"]
+
+
+@pytest.mark.parametrize("name", RARE_NOUN_TAGGED)
+def test_ner_person_as_subject_at_field_start_is_not_dropped_as_imperative(gateway, name) -> None:
+    result = _prepare(gateway, "Akte: Beispielakte", anmerkungen=f"{name} hat angerufen und bittet um Rückruf.")
+    assert name not in _outgoing(result)
+
+
+# Restrisiko: "Stuckenschneider" wird nach weichem Umbruch/in Zellen vom Tagger als ADJ/ADV/NOUN ohne PER-Etikett gelesen.
+@pytest.mark.parametrize("name", ["Wessolowski", "Brinkmoeller", "Eberhaerter"])
+def test_ner_person_in_form_cell_and_after_soft_wrap_is_masked(gateway, name) -> None:
+    cell = _prepare(gateway, f"Akte: Beispielakte\nName: {name}  Funktion: Zeuge  Datum: 12.03.2026")
+    wrap = _prepare(gateway, f"Akte: Beispielakte\nDie Unterlagen wurden am 12.03.2026 durch\n{name} geprüft und übergeben.")
+    assert name not in _outgoing(cell)
+    assert name not in _outgoing(wrap)
+
+
+@pytest.mark.parametrize(
+    "instruction",
+    [
+        "Überarbeite das Schreiben.", "Fasse das Dokument zusammen.", "Kürze den Entwurf.", "Ergänze den Absatz zur Verjährung.",
+        "Streiche den dritten Satz.", "Verfasse eine Klageerwiderung.", "Gewährleistung und Verjährung: bitte erläutern.",
+        "Kündigung wegen Eigenbedarf: Voraussetzungen nennen.",
+    ],
+)
+def test_imperatives_and_topic_headings_still_pass_unchanged_after_the_filter_fix(gateway, instruction) -> None:
+    result = _prepare(gateway, "Akte: Beispielakte", anmerkungen=instruction)
+    assert result.allowed
+    assert result.payload.anonymisierte_anwaltliche_anmerkungen == instruction
+
+
+def test_filter_unit_keeps_subject_but_drops_imperative() -> None:
+    from app.privacy.detectors import DetectedSpan
+    from app.privacy.presidio_ner import drop_sentence_initial_imperatives
+
+    subject = "Wessolowski hat angerufen."
+    imperative = "Überarbeite das Schreiben."
+    kept = drop_sentence_initial_imperatives(subject, [DetectedSpan(category="person", start=0, end=11, value="Wessolowski")])
+    dropped = drop_sentence_initial_imperatives(imperative, [DetectedSpan(category="person", start=0, end=11, value="Überarbeite")])
+    assert [s.value for s in kept] == ["Wessolowski"]
+    assert dropped == []
+
+
+# Dokumentierte Grenze (NICHT geloest): Namen, die als bares Gattungswort getaggt werden und vom NER nicht als PER erkannt werden.
+# Gemessen: eine Regel "bares Substantiv als Subjekt" erfasst 8/55 Namen, aber 141/153 Rechtsbegriffe -> verworfen (zu viele Fehlalarme).
+@pytest.mark.xfail(reason="Richter/Fuerst: Gattungswort ohne unabhaengiges Signal, Regel waere nicht fehlalarmarm", strict=False)
+@pytest.mark.parametrize("name", ["Richter", "Fuerst"])
+def test_known_limit_name_that_is_also_a_common_noun(gateway, name) -> None:
+    result = _prepare(gateway, f"Akte: Beispielakte\nDazu erklärt {name}, die Anlage sei mangelhaft.")
+    assert name not in _outgoing(result)

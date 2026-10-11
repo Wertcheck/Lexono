@@ -480,3 +480,43 @@ Presidio/Leak-Check/Fail-Closed).
 **Restrisiko (NICHT VERIFIZIERT behoben):** 7,5 % der Testfälle bleiben im Klartext, v. a. Namen, die als reines Gattungswort getaggt
 werden („Richter“, „Fuerst“), seltene Namen in Tabellen/Überschriften und nach PDF-Umbruch (12,7 %). Vorbestehend und unverändert:
 „Gewerbemietverträge“ im aktenlosen Chat wird vom NER als Person maskiert.
+
+## Siebter Lauf: Restlecks der Namenserkennung (12.10.2026, Folgelauf nach 1cfb1aa)
+
+Identische 1100 Fälle (`scripts/bench_name_detection.py`), Ausgangswert 7,5 % Klartext-Namen im Payload.
+
+**Ursachen der 75 Restlecks (getrennt).**
+* *Implementierungsfehler im Filter (~27 Fälle, behoben):* `drop_sentence_initial_imperatives` verwarf jeden Einwort-Personentreffer am Satz-/
+  Zeilen-/Label-Anfang ohne PROPN-Tag – auch vom NER korrekt als PER erkannte Namen. Betroffen: Subjekt am Feldanfang („Wessolowski hat
+  angerufen“), Formularwert nach „Label:“ („Name: X  Funktion:“), Name hinter weichem PDF-Umbruch („durch⏎X“; der Umbruch zählte als Zeilenanfang).
+  Korrektur (Imperative bleiben verworfen): Subjekt eines nicht-infiniten Verbs bleibt, bloßer Zellenwert bleibt, Satzanfang wird auf der
+  Analysefassung (weicher Umbruch = Leerzeichen) beurteilt.
+* *Modellfehler (27 Fälle, **nicht** behoben):* „Richter“ (13) und „Fuerst“ (14) sind Gattungswörter ohne unabhängiges Signal. Eine Regel „bares
+  Substantiv als Subjekt eines Verbs“ erfasst nur 8/55 Namen, aber 141/153 Rechtsbegriffe → **verworfen** (Fehlalarme).
+* *Rest (~21):* lange seltene Namen, die der Tagger in Tabellen/Überschriften/nach Umbruch als NOUN/ADJ/ADV ohne PER-Etikett liest.
+
+| Gruppe | 1cfb1aa | jetzt |
+|---|---|---|
+| feldanfang | 15,5 % | 4,5 % |
+| tabelle | 14,5 % | 8,2 % |
+| pdf_umbruch | 12,7 % | 4,5 % |
+| satzanfang | 8,2 % | 6,4 % |
+| **gesamt** | **7,5 %** | **4,7 %** (Blocks 0,1 %) |
+
+Fehlalarme unverändert: Rechtswörter 1/132 („Partei“), Anweisungen/Chat-Fragen 1/17. Laufzeit 0,05–0,09 s je Fall (kein Mehraufwand messbar,
+ein zusätzlicher spaCy-Aufruf im Filter nur bei Treffern am Satzanfang).
+
+**„Gewerbemietverträge“ im Akte-Kontext.** Der NER etikettiert das Wort als PER, der POS-Tagger als NOUN. Der Filter `drop_common_noun_persons` würde es
+verwerfen, wird aber bewusst nur im aktenlosen Chat angewendet: im Benchmark sind ≥ 20 echte, NER-erkannte Namen ebenfalls reine NOUN-Treffer
+(z. B. Pfannenstiel, Stuckenschneider). Ausweitung auf Akte-Kontext würde diese Namen freigeben → **nicht umgesetzt**, Fehlalarm bleibt als
+bewusste Fail-Closed-Kosten bestehen.
+
+**Speicherdiagnose der Testsuite (12.10.2026).** Zwei Läufe der vollständigen Suite wurden von der Claude-Code-Umgebung wegen „kritisch knappem Arbeitsspeichers“
+beendet. Nachmessung (16-GB-Laptop, Windows 11, keine verwaisten Python-/pytest-/Build-Prozesse, zwei kleine `ollama serve`-Prozesse mit je ≈30 MB): der
+pytest-Prozess wächst nach ≈250 s von ≈1,2 GB auf ≈3,4–3,5 GB Working Set (Spitze 3515 MB gemessen); der freie RAM sank von ≈4,4 GB auf ≥ 2203 MB (Minimum bei
+t = 325 s), freier Commit-Speicher ≥ 17,3 GB, Auslagerungsdatei 25 GB (belegt 1,4 GB, historische Spitze 24,4 GB aus früheren Läufen). Der Sprung fällt in die
+Tests, die das Embedding-Modell laden (`sentence-transformers/paraphrase-multilingual-mpnet-base-v2` via FastEmbed, `app/search/embeddings.py`; Warnung im Lauf) –
+Zuordnung zur Sprungstelle aus Ausgabe-Reihenfolge, **nicht per Einzeltest-Messung belegt**. Mit freiem RAM ≈ 4,4 GB vor Teststart läuft die Suite ohne Abbruch durch:
+3249 bestanden, 1 übersprungen, 1 erwarteter Fehlschlag, 1 unerwartet bestanden, 343 s, Exit-Code 0 (Überwachung `memwatch.ps1`, Abbruch bei < 1500 MB frei). Die früheren
+Abbrüche sind damit mit der Umgebungs-Speicherschwelle bei parallel belegtem Speicher (Browser, mehrere Claude-Prozesse, Defender) vereinbar; die genaue
+Schwelle der Umgebung ist NICHT VERIFIZIERT.
