@@ -130,3 +130,48 @@ Freigabe nach Abschluss (Antwort gespeichert oder Rückfrage ohne Cloud-Aufruf).
 keine Rückfrage, keine automatische Wiederaufnahme, Hinweis an den Anwalt (fail-closed). Belegt durch Tests mit 4 echten Prozessen und
 6 Threads auf einer Datei-Datenbank (genau ein Halter) und im installierten Build: zwei gleichzeitige Freigaben → genau eine
 Verarbeitung und genau eine Cloud-Anfrage, die zweite „Diese Anfrage wird bereits verarbeitet“.
+
+## 7. Fachwort-Fehlalarme, frühere Grenzfälle, zwei Windows-Konten (12.10.2026, `cb6858f`, `ad9ce81`)
+
+**Fachwort-Fehlalarme.** Zerlegung des 600er-Korpus (mit Akte, Modus `mask`): 34 Fälle automatische Erkennung (unverändert seit
+vor der Rückfrage-Funktion), 66 Fälle Rückfrage-Kandidaten – immer dieselben ~16 Fachwörter mit Probing-Score 1–3, in allen
+Namensrollen. Gegenüberstellung mit den synthetischen Namen: Probing-Muster und Wortvektoren überschneiden sich (z. B. „Richter“
+und „Rauchmelder“ beide nur im Rahmen „Herr X“). Übernommen: der Rahmen „Herr X hat unterschrieben“ ist für Kandidaten Pflicht
+(jeder Testname erfüllt ihn, „Bescheid“/„Flachdach“/„Zugluft“ nicht) → 100 → 87/600, Klartext-Namen unverändert. Getestet, **nicht**
+übernommen: Längengrenze 18 Zeichen (72/600 ohne Leck-Änderung, aber nur an 55 Namen belegt; seltene lange Nachnamen blieben ungeschützt).
+
+**Frühere Grenzfälle.** „Lange“ nach „durch“: Lemma „lange“ (klein, als Adverb gelesen) scheiterte am großschreibungsempfindlichen
+Formgleichheits-Abgleich. „Zeugenaussage Richter“: die Analysefassung glättete den Zeilenumbruch als weichen PDF-Umbruch.
+**Befund im installierten Build (FAIL vor `ad9ce81`):** im echten Dokumentpfad kamen beide trotzdem im Klartext an – die Dokumentaufbereitung
+(`local_ai_provider._normalize_document_text`) ersetzt Zeilenumbrüche durch zwei Leerzeichen, und „Lange geprueft“ (transliteriert)
+wurde als Adjektiv geparst; die Unit-Tests hatten `\n` verwendet. Korrekturen: Zeilengrenze = Umbruch oder ≥ 2 Leerzeichen; Agens an der
+Oberfläche („von/durch“ + Wort + partizipartiges Folgewort) bei Fehlparse; Leerraum-Token übersprungen; Tabellenzeichen „|“ (vom Tagger
+als ADJ etikettiert) zählt nicht als Artikel/Adjektiv; Tabellenzelle nur, wenn dieselbe Zeile ein Rollenwort, „Name“ oder einen
+Personen-Platzhalter enthält (Rechnungstabellen fragen nicht). Neuer Benchmark im echten Dokumentpfad (Sachverhalt durch
+`_normalize_document_text`, 990 Namensfälle, 800 Fachwortfälle).
+
+| identische Fälle | vorher (`81e78c6`) | nachher (`ad9ce81`) |
+|---|---|---|
+| Klartext-Namen mit Akte (1100, `mask`) | 0,4 % | **0,1 %** (1 Zweitname in einer Aufzählung) |
+| Klartext-Namen ohne Akte (440) | 0,7 % | **0,0 %** |
+| Klartext-Namen im Dokumentpfad (990) | 0,2 % (an `cb6858f` gemessen) | **0,0 %** |
+| Rückfragen im Chat (1100 Namensfälle) | 39 | 42 |
+| Fachwort-Fälle mit Akte (600) | 100 | **87** |
+| Fachwort-Fälle im Dokumentpfad (800) | 105 (an `cb6858f`) | 105 |
+| Fachbegriffe ohne Akte (100) / Fachfragen (14) | 24 / 1 | 23 / 1 |
+| Rechtswörter (132) / Anweisungen (17) | 1 / 1 | 1 / 1 |
+| Rückfragen in synthetischen Dokumenten | 4 (19 Dok.) | 2 (16 Fachdokumente, ohne die Namens-Testdokumente) |
+
+Installierter Build aus `ad9ce81`: Grenzfall-PDF → Rückfrage „Richter“, „Lange“; nach „Als Person“ beide maskiert; „Bescheid“,
+„Streitwert“, „Zugluft“, „Flachdach“, „Baumangel“ lesbar; Betrag erhalten; erneutes Absenden abgewiesen. Bekannte, vorbestehende
+Grenze (xfail): transliteriertes Fachwort als Agens („durch Ueberweisung“) löst eine Rückfrage aus (kein Leck).
+
+**Zwei Windows-Konten.** Geprüft: Datenbank `C:\ProgramData\Lexono\data\kanzlei_ai.db` (aus `C:\ProgramData\Lexono\.env`);
+Programm pro Benutzer unter `%LOCALAPPDATA%\Lexono` (`PrivilegesRequired=lowest`); Einzelinstanz-Mutex nur je Sitzung. ACL der
+Datenbankdatei: Eigentümer-Konto Vollzugriff, `VORDEFINIERT\Benutzer` nur Lesen/Ausführen. Ein zweites Konto kann also standardmäßig
+nicht schreiben – weder Nachrichten speichern noch die Sperre anlegen; Test `test_claim_fails_closed_on_a_read_only_database` belegt,
+dass die Sperre dann mit Fehler scheitert und nie als „erhalten“ gilt. Der echte Zwei-Konten-Lauf ist **NOT VERIFIED**: auf dem
+Testrechner existiert nur ein aktives Konto, die Sitzung hat keine Administratorrechte; ein zweites Konto anzulegen ist eine
+Systemänderung ohne Freigabe. Voraussetzungen für den Test: zweites lokales Konto, Schreibrecht beider Konten auf
+`C:\ProgramData\Lexono\data` (nur falls der Mehrkonten-Betrieb gewollt ist – derzeit nicht vorgesehen), gleichzeitiges Senden
+derselben Rückfrage aus beiden Sitzungen gegen den Fang-Server.
