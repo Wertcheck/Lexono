@@ -52,6 +52,7 @@ _ENUM_LINK = r"\s*(?:,|und|sowie|oder|bzw\.)\s*"
 _TITLE = r"(?:(?:Herrn?|Frau|Dr\.|Prof\.)\s+)*"
 _ENUM_AFTER_PERSON = re.compile(_PERSON_PLACEHOLDER + _ENUM_LINK + _TITLE + r"$")
 _ENUM_BEFORE_PERSON = re.compile(_ENUM_LINK + _TITLE + _PERSON_PLACEHOLDER)
+_LINE_BOUNDARY = re.compile(r"\n|[ \t]{2,}")
 _ROLE_NOUN_AFTER = re.compile(r",\s*(?:" + "|".join(sorted(_ROLE_NOUNS, key=len, reverse=True)) + r")\b", re.IGNORECASE)
 MAX_TERM_LENGTH = 80
 # Vom System selbst erzeugte Kopfzeilen (app/ai_providers/local_ai_provider.py: "Akte: <Titel>") sind keine
@@ -94,12 +95,26 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
         roles.add("vor_finitem_verb")
     if token.dep_ == "nk" and head.pos_ == "ADP" and head.lower_ in _ROLE_PREPOSITIONS:
         roles.add("nach_praeposition")
+    # Agens an der Oberflaeche, falls der Parser scheitert (installierter Build, 12.10.2026: "durch  Lange geprueft" -
+    # "Lange" als Adjektiv zu "geprueft" geparst): unmittelbar nach "von/durch", gefolgt von einem kleingeschriebenen Wort.
+    previous_word = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    following_word = next((t for t in doc[token.i + 1 :] if not t.is_space), None)
+    if (
+        previous_word is not None
+        and previous_word.lower_ in ("von", "durch")
+        and following_word is not None
+        and following_word.text[:1].islower()
+        and following_word.is_alpha
+        and following_word.pos_ not in ("ADP", "DET", "PRON", "CCONJ", "SCONJ", "PART")
+        and following_word.lower_.endswith(("t", "en"))  # Partizip ("geprueft", "uebergeben"), nicht "am"/"zum"
+    ):
+        roles.add("nach_praeposition")
     end = token.idx + len(token.text)
     if _LABEL_BEFORE.search(text[: token.idx]) and pn._is_bare_cell_value(text, end):
         roles.add("feldwert")
-    if pn._is_bare_cell_value(text, end) and _CELL_BEFORE.search(text[: token.idx]):
+    if pn._is_bare_cell_value(text, end) and _CELL_BEFORE.search(text[: token.idx]) and _row_mentions_a_person(raw or text, token.idx, end):
         roles.add("tabellenzelle")
-    previous = doc[token.i - 1] if token.i else None
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
     if previous is not None and previous.lower_ in _ROLE_NOUNS:
         roles.add("nach_rollenwort")
     # "Stuckenschneider, Zeuge" (Kopfzeile eines Protokolls): Apposition VOR einem Rollenwort.
@@ -112,9 +127,13 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     # und ohne Satzzeichen am Ende, direkt nach einem Substantiv.
     # Zeilengrenzen aus dem ROHtext: die Analysefassung ersetzt "Richter\nDer" als vermeintlich weichen PDF-Umbruch durch
     # ein Leerzeichen - die Ueberschrift verschmolz sonst mit dem naechsten Satz (12.10.2026, "Zeugenaussage Richter").
+    # Zeilengrenze = Umbruch ODER mindestens zwei Leerzeichen: die Dokumentaufbereitung (local_ai_provider.
+    # _normalize_document_text) ersetzt Zeilenumbrueche durch zwei Leerzeichen (Befund im installierten Build).
     lines_source = raw if raw is not None else text
-    line_start = lines_source.rfind("\n", 0, token.idx) + 1
-    line_end = lines_source.find("\n", end)
+    starts = [m.end() for m in _LINE_BOUNDARY.finditer(lines_source, 0, token.idx)]
+    line_start = starts[-1] if starts else 0
+    following_boundary = _LINE_BOUNDARY.search(lines_source, end)
+    line_end = following_boundary.start() if following_boundary else -1
     line = pn._neutralize_internal_tokens(lines_source)[line_start : len(lines_source) if line_end < 0 else line_end].strip()
     if (
         line.endswith(token.text)
@@ -129,6 +148,23 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     return roles
 
 
+_TABLE_ROW = re.compile(r"[^|\n]*(?:\|[^|\n]*)+")
+
+
+def _row_mentions_a_person(text: str, start: int, end: int) -> bool:
+    """Tabellenzelle nur dann namensverdaechtig, wenn dieselbe Tabellenzeile (durch "|" verbunden) ein Rollenwort
+    ("Zeuge"), "Name" oder einen ersetzten Personen-Platzhalter enthaelt - sonst ist es z. B. eine Rechnungsposition
+    ("Position | Menge | Preis", Befund 12.10.2026)."""
+    for match in _TABLE_ROW.finditer(text):
+        if match.start() <= start and end <= match.end():
+            row = text[match.start() : start] + " " + text[end : match.end()]
+            words = {w.lower() for w in re.findall(r"[A-Za-zÄÖÜäöüß]+", row)}
+            return bool(words & (_ROLE_NOUNS | {"name", "person", "beteiligter", "beteiligte"})) or bool(
+                re.search(_PERSON_PLACEHOLDER, row)
+            )
+    return False
+
+
 def _agrees_with_singular_verb(doc, token) -> bool:
     """Formgleiche Singular/Plural-Woerter ("Richter", "Fischer") taggt das Modell oft als Plural. Ist das Wort Subjekt
     eines finiten Verbs im SINGULAR ("Richter hat angerufen"), ist der Plural-Tag widerlegt (12.10.2026)."""
@@ -139,11 +175,16 @@ def _agrees_with_singular_verb(doc, token) -> bool:
     return verb is not None and "Fin" in verb.morph.get("VerbForm") and "Sing" in verb.morph.get("Number")
 
 
+def _is_modifier(token) -> bool:
+    # Nur echte Woerter/Zahlen zaehlen: der Tagger etikettiert z. B. das Tabellenzeichen "|" als ADJ.
+    return token.pos_ in _MODIFIER_POS and (token.is_alpha or token.like_num)
+
+
 def _is_bare(doc, token) -> bool:
-    if any(c.i < token.i and c.pos_ in _MODIFIER_POS for c in token.children):
+    if any(c.i < token.i and _is_modifier(c) for c in token.children):
         return False
-    previous = doc[token.i - 1] if token.i else None
-    return not (previous is not None and previous.pos_ in _MODIFIER_POS)
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    return not (previous is not None and _is_modifier(previous))
 
 
 def _context(source: str, term: str) -> tuple[str, str]:

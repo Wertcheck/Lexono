@@ -406,3 +406,4 @@ def test_ambiguous_surnames_still_pass_the_herr_frame(name) -> None:
 def test_residual_rules_do_not_flag_legal_vocabulary(gateway, text) -> None:
     result = _prepare(gateway, text, mode="ask")
     assert not result.review_required, [c.term for c in result.review_candidates]
+

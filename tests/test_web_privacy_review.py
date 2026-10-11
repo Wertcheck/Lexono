@@ -229,3 +229,23 @@ def test_interrupted_processing_is_never_resumed_automatically(client, db_sessio
     events = _parse_sse_events(_review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "personal"}]).text)
     assert events[0]["message_id"] is None and "unterbrochen" in events[0]["content"]
     assert writer.received_payloads == []
+
+
+
+def test_uploaded_pdf_with_heading_and_wrapped_agent_is_asked_before_any_cloud_call(client, db_session: Session, writer) -> None:
+    """Echter Upload-Pfad (Extraktion + Dokumentaufbereitung), Befund im installierten Build 12.10.2026."""
+    login_as_admin(db_session, client)
+    pdf = _pdf_bytes([
+        "Zeugenaussage Richter",
+        "Der Zeuge schildert den Ablauf der Abnahme am 12.03.2026.",
+        "Die Unterlagen wurden am 12.03.2026 durch",
+        "Lange geprueft und dem Auftraggeber uebergeben.",
+    ])
+    response = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Bitte fasse das Protokoll zusammen."},
+        files={"documents": ("protokoll.pdf", pdf, "application/pdf")},
+    )
+    review = next(e for e in _parse_sse_events(response.text) if e["kind"] == "review")
+    assert {"Richter", "Lange"} <= {c["term"] for c in review["candidates"]}
+    assert writer.received_payloads == []
