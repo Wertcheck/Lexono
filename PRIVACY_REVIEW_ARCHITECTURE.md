@@ -318,3 +318,79 @@ Statusmodell) bestehen auf beiden Ständen.
 Hinweis zu „Keller“: Das Wort ist zugleich ein häufiger Nachname, und die unveränderte Rückfrage vor dem Cloud-Aufruf ist
 gewolltes Verhalten (bis zur Entscheidung 0 Payloads). Dokumentstatus und Datenschutz-Rückfrage greifen damit
 nacheinander, ohne sich gegenseitig zu umgehen.
+
+## 10. Dokumentbezug ohne Stichwort, Sonderfälle, „Keller“ (13.10.2026, `10853c1`)
+
+**Befund 1 – Frage ohne Dokument-Stichwort (reproduziert im echten Pfad).** Nach einem nicht lesbaren Scan ging
+„Welche Einwände erhebt die Gegenseite?“ an die Cloud. Der Prompt war als „Es liegt KEIN … Dokumentkontext vor – dies
+ist eine allgemeine Frage“ gerahmt, und lokal gab es keinen Hinweis. Dokumentinhalt floss dabei nicht ab (er war nicht
+lesbar), aber die Antwort konnte eine Auswertung vortäuschen. Ob eine Frage ein Dokument braucht, lässt sich ohne
+Inhalt nicht sicher erkennen; weitere Stichwörter würden das Problem nur verschieben.
+
+Maßnahme, kontextbasiert (`ChatService._unready_matter_documents`, `DraftingService._with_unreadable_documents_note`):
+hat die Akte der Unterhaltung nicht lesbare Dokumente, dann
+1. erhält die Cloud-KI einen festen Hinweis ohne Dateiname und ohne Inhalt („Inhalt unbekannt, keine Aussagen,
+   keine Auswertung vortäuschen“). Er durchläuft wie jeder Sachverhalt den Gateway und ersetzt die irreführende
+   Rahmung „allgemeine Frage“;
+2. nennt die Antwort lokal unter „Offene Prüfpunkte“ die nicht ausgewerteten Dokumente.
+
+Ausdrücklich dokumentbezogene Fragen und Anhänge blockieren weiterhin (Abschnitt 9). Allgemeine Fragen funktionieren
+weiter; ohne nicht lesbare Dokumente bleibt die Rahmung unverändert.
+
+**Befund 2 – lokale Hinweise im Cloud-Verlauf.** Der Block „Offene Prüfpunkte / Hinweise“ früherer Antworten ging als
+Teil des Gesprächsverlaufs mit in spätere Cloud-Anfragen, zum Beispiel Dateinamen oder vorsichtshalber maskierte
+Begriffe. `_build_history` überträgt bei Assistenten-Nachrichten jetzt nur noch den Antworttext. Der Block ist ein
+lokaler Hinweis und kein Gesprächsbeitrag.
+
+**Befund 3 – Rückfrage „Keller“.** „Die Abdichtung im Keller ist mangelhaft“ löste eine Rückfrage aus. Ursache war
+allein die Rolle `vor_finitem_verb` („Keller ist“), obwohl der Parser „Keller“ als Kern der Präpositionalgruppe „im
+Keller“ erkennt; Subjekt ist „Abdichtung“. Diese eine Rolle entfällt jetzt nach Präpositionen mit verschmolzenem
+Artikel (im, ins, am, ans, aufs, ums, übers, überm, unterm, hinterm, vorm), wenn der Parser die Zuordnung bestätigt.
+Bewusst nicht ausgenommen sind beim, vom, zum und zur, weil sie umgangssprachlich auch vor Namen stehen („beim
+Huber“).
+
+Positive Tests: „im Keller“, „Im Winter“, „am Fenster“. Negative Tests, weiterhin geschützt durch Rückfrage oder
+automatische Maskierung: Subjekt, „Herr Keller“, „von Keller“, „Zeuge Keller“, „gegen Keller“, „beim Keller“, „vom
+Keller“.
+
+Benchmarks vor und nach der Änderung identisch:
+
+| Benchmark | Wert |
+|---|---|
+| Namen-Lecks gesamt | 0,1 % (1/1100); Ergebnis je Gruppe identisch, nur die Laufzeit differiert |
+| Dokumentpfad-Lecks | 0/990 |
+| Rückfragen | 64/990 |
+| Fachwort-Fälle | 105/800 |
+| Fehlalarme | 1/132 |
+| Anweisungen | 1/17 |
+| Rückfrage-Begriffe in 22 Dokumenten | 8 |
+| Fachbegriffe mit Rückfrage | 15/153 |
+
+**Installierter Build `10853c1`** (Bündel geprüft: alle drei Änderungen enthalten; QA-Datenbank, abgefangene
+Cloud-Anfragen, OCR aus, nur synthetische Dokumente):
+
+| Fall | Cloud-Payloads | Ergebnis |
+|---|---|---|
+| Scan anhängen, danach „Welche Einwände erhebt die Gegenseite?“ | 0, dann 1 | PASS: Payload mit Unlesbar-Hinweis, ohne „allgemeine Frage“, ohne Dateiname und ohne Inhalt; lokaler Hinweis unter der Antwort |
+| Danach allgemeine Frage | 1 | PASS: Verlauf ohne lokale Hinweise und ohne Dateiname |
+| Text-PDF mit „im Keller“ | 1 | PASS: keine Rückfrage, „im Keller“ lesbar im Payload |
+| Fortsetzung nach Rückfrage („durch Lange“ → „Als Person“) | 0 vor, 1 nach der Entscheidung | PASS: „Lange“ pseudonymisiert, Inhalt vorhanden |
+| Statusänderung während der pausierten Anfrage (Rückfrage offen, Dokument über die Aktenroute gelöscht, dann Entscheidung abgeschickt) | 0 | PASS: Hinweis „inzwischen gelöscht“ |
+| „Dokument analysieren“ auf der Aktenseite, Scan | 0 | PASS |
+| „Dokument analysieren“, Text-PDF | 1 | PASS: Dokumentinhalt im Payload |
+
+Zwei Prüfskript-Fehler habe ich anhand von Datenbank, Screenshot und Payload korrigiert bewertet:
+- Der lokale Hinweis steht im eigenen Block „Offene Prüfpunkte“, das Skript las nur den Antworttext.
+- Beim Prüfwort „Nachbesserungsfrist“ siehe die Risiken unten.
+
+Nicht im installierten Build prüfbar ist eine Statusänderung *zwischen* Vorprüfung und Kontextaufbau, also innerhalb
+von Millisekunden. Sie ist nur per Test belegt: NOT VERIFIED (installiert).
+
+**Offene Risiken.**
+- Die automatische NER pseudonymisiert „Nachbesserungsfrist“ im längeren Dokumentkontext als Person. Das ist
+  vorbestehend und auf `687ba3f` identisch reproduziert. Es ist kein Leck, verfälscht aber den Inhalt. Eine Korrektur
+  würde die automatische Erkennung im Dokumentpfad abschwächen; deshalb ist nichts geändert.
+- Der Unlesbar-Hinweis wirkt auf die Antwort der Cloud-KI nur als Anweisung. Deterministisch sind der lokale Hinweis
+  und die Blockade bei ausdrücklichem Dokumentbezug.
+- Ein Nachname direkt nach „im/am/ins …“ vor einem finiten Verb hat diese eine Rolle nicht mehr; NER und alle übrigen
+  Rollen greifen weiter.
