@@ -10872,3 +10872,9 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 13px; font-weight: 600; color: var(--brand-green-dark, var(--brand-green)); text-decoration: none;
 }
 .privacy-review__doc-link:hover { text-decoration: underline; }
+/* Schmale Spalte (Dokumentansicht mit Chat daneben): Optionen untereinander statt abgeschnitten (12.10.2026) */
+.privacy-review { container-type: inline-size; }
+.privacy-review__option-text { min-width: 0; }
+@container (max-width: 560px) {
+  .privacy-review__options { grid-template-columns: 1fr; }
+}
