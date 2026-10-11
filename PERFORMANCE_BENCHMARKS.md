@@ -520,3 +520,27 @@ Zuordnung zur Sprungstelle aus Ausgabe-Reihenfolge, **nicht per Einzeltest-Messu
 3249 bestanden, 1 übersprungen, 1 erwarteter Fehlschlag, 1 unerwartet bestanden, 343 s, Exit-Code 0 (Überwachung `memwatch.ps1`, Abbruch bei < 1500 MB frei). Die früheren
 Abbrüche sind damit mit der Umgebungs-Speicherschwelle bei parallel belegtem Speicher (Browser, mehrere Claude-Prozesse, Defender) vereinbar; die genaue
 Schwelle der Umgebung ist NICHT VERIFIZIERT.
+
+## Installierter Build auf 56c2c74 (12.10.2026)
+
+Build: `windows\build.ps1` auf sauberem Baum, HEAD == origin/main == `56c2c74`, Exit-Code 0, Installer `dist\installer\Lexono_Setup.exe` (556 MB), still installiert nach
+`%LOCALAPPDATA%\Lexono\Lexono.exe` (Exit 0), QA-Datenbank, abgefangene Cloud-Anfragen (`capture_server.py`), ausschließlich synthetische Daten
+(`N_Namen.pdf`: Namen am Satz-/Feldanfang, nach „Name:“, hinter Zeilenumbruch („durch⏎Name“, „Dr.⏎Name“), in Tabellenzeilen, Geldbeträge, Rechtsbegriffe).
+Der Commit im Paket ist nur indirekt belegt (sauberer Baum zur Buildzeit); ein direkter Nachweis im Bündel fehlt.
+
+| Fall (Payload) | Ergebnis |
+|---|---|
+| Chat mit `N_Namen.pdf`, 3 Fragen (4 Payloads) | **0 Namen im Klartext** (Wessolowski, Brinkmoeller, Fischer, Weber, Koch, Marquardt, Thiessen alle maskiert, auch „Name: X“, Tabellenzelle, Umbruch); „4.250,00“ und „1.180,50“, Schadensersatz, Verzugszinsen, Gewährleistung, Nacherfüllung, Räumungsfrist **unmaskiert erhalten** |
+| Aktenloser Chat, Rechtsfragen ohne Namen (Gewerbemietverträge, Nacherfüllung …) | keine Maskierung der Fachbegriffe, kein Block |
+| Aktenloser Chat, „Name: Marquardt  Funktion: Zeuge. …“ | Name maskiert |
+| Aktenloser Chat, **„Wessolowski hat angerufen und bittet um Rückruf …“** | **Name im Klartext im Payload (Leck)** |
+
+Zum Leck: ausschließlich im Chat OHNE Akte/Dokument (`skip_general_knowledge_pseudonymization=True`) wird `drop_common_noun_persons` angewendet; „Wessolowski“ ist vom NER als PER
+erkannt, vom Tagger aber als NOUN getaggt und wird dort verworfen. Im Quellcode-Gateway reproduziert (mit Akte-Kontext maskiert, ohne nicht) – also **nicht** durch die neue Erkennungsstufe
+verursacht, sondern vorbestehende, in der Docstring benannte Abwägung (Fehlalarm „Gewerbemietverträge“ gegen Namen-Leck). Mögliche Verbesserung (nicht umgesetzt, Entscheidung offen):
+Treffer, die Subjekt eines nicht-infiniten Verbs sind (`get_finite_subject_tokens`), im aktenlosen Chat behalten.
+
+Laufzeit installiert (1-Seiten-PDF, lokale KI qwen3:4b, CPU): lokale Vorabanalyse ≈ 39,6 s, Validierung ≈ 14,5 s, Antwort je Frage ≈ 57 s; ohne Dokument 2,5–7,6 s. Keine Blocks durch die
+Namenserkennung in den 7 geprüften Anfragen. Grenzen: 7 Anfragen, ein synthetisches Dokument – das belegt kein „leckfrei“; der Benchmark (1100 Fälle) zeigt 4,7 % Rest-Lecks (Richter/Fuerst u. a.).
+Prüfskript-Fehler gefunden und behoben: Substring-Suche meldete „Fischer“ in „spezifischer“ (jetzt Wortgrenzen). Zwei frühere Läufe wurden von der Umgebung wegen Speichermangels beendet
+(`llama-server` 3,5 GB + Lexono 1,2 GB); der Lauf gelang bei ≈ 3,7 GB freiem RAM im Vordergrund.
