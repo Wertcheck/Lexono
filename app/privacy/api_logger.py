@@ -96,6 +96,10 @@ _BLOCK_CATEGORIES = (
     # "unknown_block_reason". Ursache und Benutzertext muessen uebereinstimmen.
     ("Lokale KI (Ollama) nicht erreichbar", "local_ai_unavailable"),
     ("Lokale Prüfung der Antwort (Ollama) nicht erreichbar", "local_ai_unavailable"),
+    # Human in the Loop (12.10.2026, Befund im installierten Build): die Pause vor einer Datenschutz-Rueckfrage wurde als
+    # "unknown_block_reason" protokolliert - weder ein Fehler noch ein Leck, sondern eine erwartete Rueckfrage.
+    ("Rückfrage erforderlich", "privacy_review_required"),
+    ("Datenschutzprüfung auf unsichere Begriffe", "privacy_review_check_failed"),
 )
 
 
@@ -121,6 +125,13 @@ def categorize_block_reasons(reasons: list[str]) -> str | None:
 
 
 _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
+    "privacy_review_required": (
+        "Lexono ist sich bei einem Begriff nicht sicher, ob es sich um eine Person handelt. Bitte die Rückfrage "
+        "beantworten - bis dahin wird nichts an die Cloud gesendet."
+    ),
+    "privacy_review_check_failed": (
+        "Die Datenschutzprüfung konnte nicht abgeschlossen werden. Es wurde nichts an die Cloud gesendet."
+    ),
     "purpose_not_allowed": "Der angeforderte Zweck ist nicht freigegeben.",
     "residual_pii_detected": (
         "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden."

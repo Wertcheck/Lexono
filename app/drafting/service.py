@@ -645,6 +645,44 @@ class DraftingService:
             prepared, purpose, db, previous_draft=previous_draft, actor=actor, trace=trace
         )
 
+    def preview_privacy_review(
+        self,
+        matter_id: str,
+        purpose: str,
+        db: Session,
+        *,
+        attorney_anmerkungen: str,
+        actor: str,
+        gespraechsverlauf: list[str] | None,
+        previous_draft: Draft | None,
+        privacy_decisions: PrivacyDecisions | None,
+    ) -> list:
+        """Offene Datenschutz-Rueckfrage einer bereits gespeicherten, unbeantworteten Nachricht neu ermitteln (z. B. nach
+        dem Neuladen der Seite) - ueber EXAKT denselben Vorbereitungs-/Gateway-Pfad wie die eigentliche Verarbeitung,
+        aber ausschliesslich lokal: `_prepare_and_gate` ruft keinen Cloud-Provider auf. Liefert die Kandidaten oder
+        eine leere Liste (keine Rueckfrage offen). Protokolliert die Pause nicht erneut."""
+        prepared = self._prepare_and_gate(
+            matter_id,
+            purpose,
+            db,
+            stil=None,
+            vorlage=None,
+            attorney_anmerkungen=attorney_anmerkungen,
+            previous_draft=previous_draft,
+            actor=actor,
+            new_matter_title=None,
+            new_client_name=None,
+            trace=PerfTrace(),
+            gespraechsverlauf=gespraechsverlauf,
+            chat_triggered=True,
+            privacy_decisions=privacy_decisions,
+            review_mode="ask",
+            log_blocked_requests=False,
+        )
+        if isinstance(prepared, DraftingResult) and prepared.review_required:
+            return list(prepared.review_candidates)
+        return []
+
     def _prepare_and_gate(
         self,
         matter_id: str | None,
@@ -664,6 +702,7 @@ class DraftingService:
         chat_triggered: bool = False,
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
+        log_blocked_requests: bool = True,
     ) -> DraftingResult | _PreparedRequest:
         """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
         `create_draft_stream` (Aktenauflösung, Recherche, Privacy Gateway,
@@ -749,13 +788,14 @@ class DraftingService:
             )
 
         if not gateway_result.allowed:
-            self.api_logger.log_blocked(
-                db,
-                workflow_id=matter_id,
-                model=self.model_name,
-                purpose=purpose,
-                reasons=gateway_result.reasons,
-            )
+            if log_blocked_requests:
+                self.api_logger.log_blocked(
+                    db,
+                    workflow_id=matter_id,
+                    model=self.model_name,
+                    purpose=purpose,
+                    reasons=gateway_result.reasons,
+                )
             return DraftingResult(
                 success=False,
                 blocked_reasons=gateway_result.reasons,

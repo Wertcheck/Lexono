@@ -15,6 +15,9 @@ Begründung der einzelnen Bausteine, hier nicht wiederholt)."""
 from __future__ import annotations
 
 import json
+from urllib.parse import quote
+import threading
+import time
 import mimetypes
 from collections.abc import Iterator
 from pathlib import Path
@@ -40,6 +43,7 @@ from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
+from app.privacy.review import detect_decision_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
 from app.chat.speech import (
@@ -64,6 +68,7 @@ from app.models import (
     AuditEvent,
     ChatConversation,
     ChatMessage,
+    ChatMessageDocument,
     Client,
     Document,
     DraftKnowledgeItemLink,
@@ -243,6 +248,7 @@ def chat_document_view(
     conversation_id: str,
     document_id: str,
     request: Request,
+    mark: str | None = Query(default=None, max_length=80),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse | RedirectResponse:
@@ -267,7 +273,8 @@ def chat_document_view(
             active_conversation.id, "Dokument wurde in dieser Unterhaltung nicht gefunden."
         )
 
-    preview = build_document_preview(document.extracted_text)
+    review_terms = frozenset({mark.strip()}) if mark and mark.strip() and "\n" not in mark else frozenset()
+    preview = build_document_preview(document.extracted_text, review_terms=review_terms)
     return _render_chat_page(
         request,
         db,
@@ -912,6 +919,70 @@ def start_conversation_from_document(
     return RedirectResponse(url=f"/dashboard/chat/{conversation.id}", status_code=303)
 
 
+# Doppelverarbeitungsschutz (12.10.2026): Nutzernachrichten, deren Verarbeitung gerade laeuft (Senden oder Fortsetzen
+# nach einer Datenschutz-Rueckfrage). Eine zweite Freigabe derselben Nachricht (zweiter Tab, Doppelklick, Neuladen
+# waehrend der Verarbeitung) wird abgewiesen, statt eine zweite Cloud-Anfrage auszuloesen. Die App laeuft als EIN
+# lokaler Prozess; eine haengengebliebene Sperre verfaellt nach `_IN_FLIGHT_TTL_SECONDS`.
+_IN_FLIGHT: dict[str, float] = {}
+_IN_FLIGHT_LOCK = threading.Lock()
+_IN_FLIGHT_TTL_SECONDS = 15 * 60
+
+
+def _claim_message(message_id: str) -> bool:
+    now = time.monotonic()
+    with _IN_FLIGHT_LOCK:
+        started = _IN_FLIGHT.get(message_id)
+        if started is not None and now - started < _IN_FLIGHT_TTL_SECONDS:
+            return False
+        _IN_FLIGHT[message_id] = now
+        return True
+
+
+def _release_message(message_id: str | None) -> None:
+    if message_id is None:
+        return
+    with _IN_FLIGHT_LOCK:
+        _IN_FLIGHT.pop(message_id, None)
+
+
+def _is_message_in_flight(message_id: str) -> bool:
+    with _IN_FLIGHT_LOCK:
+        started = _IN_FLIGHT.get(message_id)
+        return started is not None and time.monotonic() - started < _IN_FLIGHT_TTL_SECONDS
+
+
+def _review_candidate_payload(db: Session, conversation: ChatConversation, candidates) -> list[dict]:
+    """Kandidaten fuer die lokale Rueckfrage-Anzeige. `document_url` nur bei stabiler Zuordnung: der Begriff steht als
+    ganzes Wort im extrahierten Text eines in DIESER Unterhaltung angehaengten Dokuments (juengstes zuerst)."""
+    documents = (
+        db.query(Document)
+        .join(ChatMessageDocument, ChatMessageDocument.document_id == Document.id)
+        .join(ChatMessage, ChatMessage.id == ChatMessageDocument.message_id)
+        .filter(ChatMessage.conversation_id == conversation.id, Document.deleted_at.is_(None))
+        .order_by(ChatMessage.created_at.desc())
+        .all()
+    )
+    items = []
+    for candidate in candidates:
+        url = None
+        for document in documents:
+            if document.extracted_text and detect_decision_terms(document.extracted_text, {candidate.term}):
+                url = (
+                    f"/dashboard/chat/{conversation.id}/document/{document.id}"
+                    f"?mark={quote(candidate.term)}#review-mark"
+                )
+                break
+        items.append(
+            {
+                "term": candidate.term,
+                "context_before": candidate.context_before,
+                "context_after": candidate.context_after,
+                "document_url": url,
+            }
+        )
+    return items
+
+
 def _sse_event(payload: dict) -> str:
     """Ein einzelnes Server-Sent-Event (siehe app_chat_stream.js fuer den
     Client). `ensure_ascii=False` ist unproblematisch (SSE ist UTF-8, keine
@@ -950,7 +1021,32 @@ def _stream_chat_reply(
     # wichtig, wenn der Nutzer aus der Startansicht heraus die allererste
     # Nachricht einer neuen Unterhaltung sendet.
     yield _sse_event({"kind": "start", "conversation_id": conversation.id})
+    try:
+        yield from _stream_chat_events(
+            chat_service,
+            db,
+            conversation,
+            message_text,
+            drafting_service,
+            actor,
+            current_message_id=current_message_id,
+            letterhead_ref=letterhead_ref,
+        )
+    finally:
+        _release_message(current_message_id)
 
+
+def _stream_chat_events(
+    chat_service: ChatService,
+    db: Session,
+    conversation: ChatConversation,
+    message_text: str,
+    drafting_service,
+    actor: str,
+    *,
+    current_message_id: str | None = None,
+    letterhead_ref: str | None = None,
+) -> Iterator[str]:
     for event in chat_service.send_message_stream(
         db,
         conversation=conversation,
@@ -977,14 +1073,7 @@ def _stream_chat_reply(
                     "kind": "review",
                     "conversation_id": conversation.id,
                     "message_id": current_message_id,
-                    "candidates": [
-                        {
-                            "term": candidate.term,
-                            "context_before": candidate.context_before,
-                            "context_after": candidate.context_after,
-                        }
-                        for candidate in event.review_candidates
-                    ],
+                    "candidates": _review_candidate_payload(db, conversation, event.review_candidates),
                 }
             )
             return
@@ -1005,6 +1094,47 @@ def _stream_chat_reply(
 class _PrivacyReviewDecision(BaseModel):
     term: str
     decision: str
+
+
+@router.get("/{conversation_id}/pending-review")
+def pending_privacy_review(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> JSONResponse:
+    """Offene Datenschutz-Rueckfrage nach dem Neuladen wiederherstellen (12.10.2026). Rein lokale Neuermittlung ueber
+    denselben Pruefpfad wie beim Senden - kein Cloud-Aufruf, keine gespeicherten Kandidaten. Waehrend die Nachricht
+    verarbeitet wird, wird KEINE Rueckfrage angeboten (kein Doppelversand)."""
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+    last = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc())
+        .first()
+    )
+    if last is not None and last.role == "user" and _is_message_in_flight(last.id):
+        return JSONResponse(content={"state": "processing"})
+    try:
+        drafting_service = get_drafting_service()
+    except WritingProviderNotConfiguredError:
+        drafting_service = None
+    try:
+        message, candidates = _get_chat_service().pending_privacy_review(
+            db, conversation=conversation, drafting_service=drafting_service, actor=current_user.email
+        )
+    except Exception:  # noqa: BLE001 - keine Rueckfrage anbieten; das Senden prueft ohnehin erneut (fail-closed)
+        return JSONResponse(content={"state": "none"})
+    if message is None:
+        return JSONResponse(content={"state": "none"})
+    return JSONResponse(
+        content={
+            "state": "review",
+            "kind": "review",
+            "conversation_id": conversation.id,
+            "message_id": message.id,
+            "candidates": _review_candidate_payload(db, conversation, candidates),
+        }
+    )
 
 
 @router.post("/{conversation_id}/privacy-review")
@@ -1036,7 +1166,12 @@ def submit_privacy_review(
         return StreamingResponse(
             _stream_error_event("Diese Rückfrage ist nicht mehr offen."), media_type="text/event-stream"
         )
+    if not _claim_message(message.id):
+        return StreamingResponse(
+            _stream_error_event("Diese Anfrage wird bereits verarbeitet."), media_type="text/event-stream"
+        )
     if not parsed or len(parsed) > 20:
+        _release_message(message.id)
         return StreamingResponse(
             _stream_error_event("Bitte jede Rückfrage beantworten."), media_type="text/event-stream"
         )
@@ -1054,6 +1189,7 @@ def submit_privacy_review(
         db.commit()
     except InvalidPrivacyDecisionError as exc:
         db.rollback()
+        _release_message(message.id)
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
 
     try:
@@ -1158,6 +1294,7 @@ def send_message_stream(
     user_message = chat_service.record_user_message(
         db, conversation=conversation, content=message_text, document_ids=document_ids
     )
+    _claim_message(user_message.id)
 
     try:
         drafting_service = get_drafting_service()

@@ -262,10 +262,16 @@ class ClaudePrivacyGateway:
         review_candidates: list[ReviewCandidate] = []
         if review_mode != "off":
             try:
+                # Pseudonymisierter Text MIT den internen Feldmarkern (in der Analysefassung Satzgrenzen), ohne
+                # fruehere KI-Antworten: ohne Feldgrenze verschmolz z. B. "Akte: Beispielakte" mit dem ersten Wort der
+                # Anwaltsanmerkung zu einer Nominalgruppe - "Richter hat angerufen" verlor seine Subjektrolle (12.10.2026).
+                lawyer_verlauf = [
+                    pseudo_entry
+                    for original_entry, pseudo_entry in zip(gespraechsverlauf, parts[5])
+                    if not original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
+                ]
                 review_candidates = find_review_candidates(
-                    self._build_unrecognized_name_scan_text(
-                        *parts[:5], original_gespraechsverlauf=gespraechsverlauf, pseudo_verlauf=parts[5]
-                    ),
+                    self._build_combined_text(*parts[:5], lawyer_verlauf),
                     context_source=locally_sourced_text,
                     decisions=decisions,
                 )

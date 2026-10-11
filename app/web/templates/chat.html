@@ -2213,6 +2213,8 @@
         contextBox.appendChild(privacyEl("div", "privacy-review__context-label", "Begriff im Kontext:"));
         var quote = privacyEl("p", "privacy-review__quote");
         contextBox.appendChild(quote);
+        var docLink = privacyEl("a", "privacy-review__doc-link", "Fundstelle im Dokument zeigen");
+        contextBox.appendChild(docLink);
         card.appendChild(contextBox);
 
         var options = privacyEl("div", "privacy-review__options");
@@ -2230,6 +2232,14 @@
           quote.appendChild(document.createTextNode("„… " + (candidate.context_before || "")));
           quote.appendChild(privacyEl("mark", "privacy-review__term", candidate.term));
           quote.appendChild(document.createTextNode((candidate.context_after || "") + " …“"));
+          // Nur bei stabiler Zuordnung (Server liefert eine eigene, relative URL) - sonst bleibt der Kontextausschnitt.
+          if (candidate.document_url && candidate.document_url.indexOf("/dashboard/chat/") === 0) {
+            docLink.href = candidate.document_url;
+            docLink.hidden = false;
+          } else {
+            docLink.removeAttribute("href");
+            docLink.hidden = true;
+          }
           options.textContent = "";
           PRIVACY_REVIEW_OPTIONS.forEach(function (option) {
             var button = privacyEl("button", "privacy-review__option privacy-review__option--" + option.decision);
@@ -2509,6 +2519,35 @@
           appendThinkingBubble();
         });
       }
+
+      // Offene Datenschutz-Rueckfrage nach dem Neuladen wiederherstellen (12.10.2026): Ist die letzte Nachricht eine
+      // unbeantwortete Nutzernachricht, ermittelt der Server die Rueckfrage rein lokal neu (kein Cloud-Aufruf). Laeuft
+      // die Verarbeitung noch, wird KEINE Rueckfrage angeboten, sondern nach kurzer Zeit neu geladen.
+      (function restorePendingPrivacyReview() {
+        if (!messages || !supportsStreaming) { return; }
+        var conversationField = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;
+        var conversationId = conversationField ? conversationField.value : "";
+        var all = messages.querySelectorAll(".chat-message");
+        var last = all.length ? all[all.length - 1] : null;
+        if (!conversationId || !last || !last.classList.contains("chat-message--user")) { return; }
+        fetch("/dashboard/chat/" + encodeURIComponent(conversationId) + "/pending-review", { credentials: "same-origin" })
+          .then(function (response) { return response.ok ? response.json() : null; })
+          .then(function (payload) {
+            if (!payload) { return; }
+            if (payload.state === "processing") {
+              window.setTimeout(function () { window.location.reload(); }, 4000);
+              return;
+            }
+            if (payload.state !== "review") { return; }
+            var bubble = appendThinkingBubble();
+            var reload = function () { window.location.reload(); };
+            showPrivacyReview(payload, bubble, false, function (decisions) {
+              if (!decisions) { reload(); return; }
+              submitPrivacyReview(payload, decisions, bubble, false, reload);
+            });
+          })
+          .catch(function () { /* keine Rueckfrage anzeigen; das Senden prueft ohnehin erneut */ });
+      })();
 
       if (messages) {
         messages.scrollTop = messages.scrollHeight;

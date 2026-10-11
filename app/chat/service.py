@@ -711,6 +711,40 @@ class ChatService:
             )
         return list(by_line.values())
 
+    def pending_privacy_review(
+        self,
+        db: Session,
+        *,
+        conversation: ChatConversation,
+        drafting_service: DraftingService | None,
+        actor: str,
+    ) -> tuple[ChatMessage | None, list]:
+        """Offene Datenschutz-Rueckfrage nach dem Neuladen (12.10.2026): Ist die LETZTE Nachricht der Unterhaltung eine
+        unbeantwortete Nutzernachricht, wird die Rueckfrage ueber denselben Pfad wie beim Senden neu und rein lokal
+        ermittelt (keine gespeicherten Kandidaten, die veralten koennten; kein Cloud-Aufruf). Die Freigabe erfolgt
+        weiterhin nur ueber die vollstaendige erneute Pruefung beim Absenden der Entscheidung."""
+        last = (
+            db.query(ChatMessage)
+            .filter_by(conversation_id=conversation.id)
+            .order_by(ChatMessage.created_at.desc())
+            .first()
+        )
+        if last is None or last.role != "user" or drafting_service is None:
+            return None, []
+        purpose, previous_draft, basis = self._route_request(db, conversation, last.content)
+        history = self._build_history(db, conversation=conversation, exclude_message_id=last.id, basis=basis)
+        candidates = drafting_service.preview_privacy_review(
+            conversation.matter_id,
+            purpose,
+            db,
+            attorney_anmerkungen=last.content,
+            actor=actor,
+            gespraechsverlauf=history,
+            previous_draft=previous_draft,
+            privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
+        )
+        return (last, candidates) if candidates else (None, [])
+
     def _route_request(
         self, db: Session, conversation: ChatConversation, content: str
     ) -> tuple[str, Draft | None, _RevisionBasis | None]:

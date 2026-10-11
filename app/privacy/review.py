@@ -93,6 +93,16 @@ def _roles(doc, text: str, token) -> set[str]:
     return roles
 
 
+def _agrees_with_singular_verb(doc, token) -> bool:
+    """Formgleiche Singular/Plural-Woerter ("Richter", "Fischer") taggt das Modell oft als Plural. Ist das Wort Subjekt
+    eines finiten Verbs im SINGULAR ("Richter hat angerufen"), ist der Plural-Tag widerlegt (12.10.2026)."""
+    head = token.head
+    verb = head if token.dep_ == "sb" and head.pos_ in ("VERB", "AUX") else None
+    if verb is None and token.i + 1 < len(doc) and doc[token.i + 1].pos_ in ("VERB", "AUX"):
+        verb = doc[token.i + 1]
+    return verb is not None and "Fin" in verb.morph.get("VerbForm") and "Sing" in verb.morph.get("Number")
+
+
 def _is_bare(doc, token) -> bool:
     if any(c.i < token.i and c.pos_ in _MODIFIER_POS for c in token.children):
         return False
@@ -152,7 +162,7 @@ def find_review_candidates(
         roles = _roles(doc, neutral, token)
         if not roles:
             continue
-        if "Plur" in token.morph.get("Number") and not roles & _STRUCTURAL_ROLES:
+        if "Plur" in token.morph.get("Number") and not roles & _STRUCTURAL_ROLES and not _agrees_with_singular_verb(doc, token):
             continue
         # Anweisungs-Imperativ am Satzanfang ("Ueberarbeite den Entwurf") ist keine Namensrolle.
         if pn._SENTENCE_START_PREFIX.search(neutral[: token.idx]) and not roles & _SENTENCE_ROLES:

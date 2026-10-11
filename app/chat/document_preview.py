@@ -21,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from html import escape
 
+from app.privacy.review import detect_decision_terms
 from app.privacy.detectors import detect_all
 from app.privacy.presidio_ner import detect_presidio_entities
 
@@ -61,7 +62,7 @@ class DocumentPreview:
     entities: list[DocumentPreviewEntity]
 
 
-def build_document_preview(text: str | None) -> DocumentPreview:
+def build_document_preview(text: str | None, review_terms: frozenset[str] = frozenset()) -> DocumentPreview:
     """Erkennt PII im übergebenen (bereits lokal extrahierten) Dokumenttext
     und liefert sowohl hervorgehobenes HTML als auch eine gruppierte
     Kategorienliste für die rechte Kontextleiste.
@@ -90,10 +91,31 @@ def build_document_preview(text: str | None) -> DocumentPreview:
         non_overlapping.append(span)
         last_end = span.end
 
+    # Fundstellen einer offenen Datenschutz-Rueckfrage (12.10.2026): exakte, ganze Woerter im selben lokal extrahierten
+    # Text - nur dort, wo keine automatische Erkennung liegt. Keine Fundstelle -> keine Markierung (die Rueckfrage
+    # zeigt weiterhin den Kontextausschnitt).
+    review_spans = [
+        span
+        for span in detect_decision_terms(text, review_terms)
+        if not any(other.start < span.end and span.start < other.end for other in non_overlapping)
+    ]
+    review_starts = {span.start for span in review_spans}
+    first_review = min(review_starts) if review_starts else None
+    entity_spans = list(non_overlapping)
+    non_overlapping = sorted([*non_overlapping, *review_spans], key=lambda span: span.start)
+
     html_parts: list[str] = []
     cursor = 0
     for span in non_overlapping:
         html_parts.append(escape(text[cursor : span.start]))
+        if span.start in review_starts:
+            anchor = ' id="review-mark"' if span.start == first_review else ""
+            html_parts.append(
+                f'<mark class="pii-highlight pii-highlight--review"{anchor} title="Offene Datenschutz-Rückfrage">'
+                f"{escape(text[span.start : span.end])}</mark>"
+            )
+            cursor = span.end
+            continue
         label = _CATEGORY_LABELS.get(span.category, span.category)
         html_parts.append(
             f'<mark class="pii-highlight pii-highlight--{escape(span.category)}" '
@@ -101,6 +123,7 @@ def build_document_preview(text: str | None) -> DocumentPreview:
         )
         cursor = span.end
     html_parts.append(escape(text[cursor:]))
+    non_overlapping = entity_spans
 
     entities_by_key: dict[tuple[str, str], DocumentPreviewEntity] = {}
     for span in non_overlapping:

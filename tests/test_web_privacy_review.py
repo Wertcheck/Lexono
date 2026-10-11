@@ -102,3 +102,110 @@ def test_review_is_only_accepted_for_the_open_last_message_of_an_own_conversatio
     response = _review(client, _csrf(client), review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "not_personal"}])
     assert response.status_code in (403, 404) or "nicht" in response.text.lower()
     assert writer.received_payloads == []
+
+
+# --- Neuladen (12.10.2026): offene Rueckfrage sicher wiederherstellen, kein Doppelversand -----------------------------
+
+
+def test_pending_review_is_restored_after_reload_without_any_cloud_call(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    review = next(e for e in _send(client, _csrf(client)) if e["kind"] == "review")
+    restored = client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json()
+    assert restored["state"] == "review"
+    assert restored["message_id"] == review["message_id"]
+    assert [c["term"] for c in restored["candidates"]] == ["Richter"]
+    assert writer.received_payloads == []
+
+
+def test_restored_review_resumes_and_is_then_closed(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    review = next(e for e in _send(client, csrf) if e["kind"] == "review")
+    restored = client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json()
+    response = _review(client, csrf, restored["conversation_id"], restored["message_id"], [{"term": "Richter", "decision": "personal"}])
+    assert [e["kind"] for e in _parse_sse_events(response.text) if e["kind"] in ("done", "review")] == ["done"]
+    assert len(writer.received_payloads) == 1 and "Richter" not in writer.received_payloads[0].model_dump_json()
+    assert client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json()["state"] == "none"
+    # Erneutes Absenden derselben (jetzt beantworteten) Rueckfrage loest keine zweite Cloud-Anfrage aus.
+    again = _review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "personal"}])
+    assert _parse_sse_events(again.text)[0]["message_id"] is None
+    assert len(writer.received_payloads) == 1
+
+
+def test_message_in_processing_is_never_offered_or_released_twice(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    review = next(e for e in _send(client, csrf) if e["kind"] == "review")
+    assert chat_router_module._claim_message(review["message_id"])  # simuliert eine laufende Verarbeitung
+    try:
+        assert client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review").json() == {"state": "processing"}
+        events = _parse_sse_events(_review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "not_personal"}]).text)
+        assert events[0]["message_id"] is None and "bereits verarbeitet" in events[0]["content"]
+        assert writer.received_payloads == []
+    finally:
+        chat_router_module._release_message(review["message_id"])
+
+
+def test_pending_review_of_a_foreign_conversation_is_denied(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    review = next(e for e in _send(client, _csrf(client)) if e["kind"] == "review")
+    from tests.auth_test_utils import seed_roles
+
+    other = create_test_user(db_session, seed_roles(db_session)["admin"], "fremd@kanzlei.test")
+    client.cookies.clear()
+    login(client, other.email)
+    response = client.get(f"/dashboard/chat/{review['conversation_id']}/pending-review")
+    assert response.status_code != 200 or response.json().get("state") != "review"
+
+
+# --- Fundstelle im Dokument (12.10.2026) -------------------------------------------------------------------------------
+
+
+def _pdf_bytes(lines: list[str]) -> bytes:
+    import pymupdf
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    y = 72
+    for line in lines:
+        page.insert_text((50, y), line)
+        y += 16
+    data = doc.tobytes()
+    doc.close()
+    return data
+
+
+def test_review_links_to_the_highlighted_finding_in_the_attached_document(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    pdf = _pdf_bytes(["Entwurf (synthetisch)", "Wir bestaetigen den Eingang des Schreibens von Richter vom 16.03.2024."])
+    response = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte fasse das Dokument zusammen."},
+        files={"documents": ("entwurf.pdf", pdf, "application/pdf")},
+    )
+    review = next(e for e in _parse_sse_events(response.text) if e["kind"] == "review")
+    candidate = next(c for c in review["candidates"] if c["term"] == "Richter")
+    assert candidate["document_url"].startswith(f"/dashboard/chat/{review['conversation_id']}/document/")
+    page = client.get(candidate["document_url"].split("#")[0])
+    assert page.status_code == 200
+    assert '<mark class="pii-highlight pii-highlight--review" id="review-mark"' in page.text
+    assert writer.received_payloads == []
+
+
+def test_review_without_a_document_finding_has_no_link(client, db_session: Session, writer) -> None:
+    login_as_admin(db_session, client)
+    review = next(e for e in _send(client, _csrf(client)) if e["kind"] == "review")
+    assert all(c["document_url"] is None for c in review["candidates"])
+
+
+def test_document_preview_marks_review_terms_safely() -> None:
+    from app.chat.document_preview import build_document_preview
+
+    text = "Eingang des Schreibens von Richter vom 16.03.2024. Der Schiedsrichter <b>entschied</b>."
+    html = build_document_preview(text, review_terms=frozenset({"Richter"})).highlighted_html
+    assert html.count("pii-highlight--review") == 1  # ganzes Wort, nicht "Schiedsrichter"
+    assert 'id="review-mark"' in html and "&lt;b&gt;" in html and "<b>" not in html
+    assert "pii-highlight--review" not in build_document_preview(text).highlighted_html
+    absent = build_document_preview(text, review_terms=frozenset({"Fuerst"})).highlighted_html
+    assert "pii-highlight--review" not in absent

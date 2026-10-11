@@ -289,3 +289,36 @@ def test_review_context_shows_whole_words_only() -> None:
     assert before.endswith("Schreibens von ") and not before.startswith("sterbau")
     assert after.startswith(" vom 16.03.2024.") and not after.endswith(" H")
     assert "\n" not in before + after
+
+
+# --- Restlecks (12.10.2026): Feldgrenzen und formgleiche Singular/Plural-Namen -------------------------------------------
+
+
+@pytest.mark.parametrize("instruction", ["Richter hat angerufen und bittet um Rückruf.", "Fuerst erklärt, dass die Anlage mangelhaft ist."])
+def test_ambiguous_name_at_the_start_of_the_instruction_field_is_asked(gateway, instruction) -> None:
+    """Ohne Feldgrenze verschmolz "Akte: Beispielakte" mit dem ersten Wort der Anmerkung; "Richter" wurde ausserdem
+    als Plural getaggt, obwohl das finite Verb im Singular steht."""
+    result = gateway.prepare_request(
+        purpose="formulate_draft", sachverhalt="Akte: Beispielakte", anwaltliche_anmerkungen=instruction, review_mode="ask"
+    )
+    assert result.review_required and result.payload is None
+    masked = gateway.prepare_request(
+        purpose="formulate_draft", sachverhalt="Akte: Beispielakte", anwaltliche_anmerkungen=instruction
+    )
+    assert instruction.split()[0] not in masked.payload.anonymisierte_anwaltliche_anmerkungen
+
+
+@pytest.mark.parametrize(
+    "instruction",
+    [
+        "Die Richter haben die Berufung zurückgewiesen. Fasse das Urteil zusammen.",
+        "Zahlungen erfolgten nicht fristgerecht. Erstelle eine Mahnung.",
+        "Mängel bestehen weiterhin. Formuliere eine Nachfrist.",
+        "Gilt das auch für Gewerbemietverträge?",
+    ],
+)
+def test_real_plural_nouns_are_not_asked(gateway, instruction) -> None:
+    result = gateway.prepare_request(
+        purpose="formulate_draft", sachverhalt="Akte: Beispielakte", anwaltliche_anmerkungen=instruction, review_mode="ask"
+    )
+    assert not result.review_required
