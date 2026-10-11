@@ -6,6 +6,92 @@
 
 ---
 
+## Strategisches Vorhaben: Lexono Data Privacy Framework (Priorität: hoch, release-übergreifend)
+
+**Ziel:** Den bisher schrittweise gewachsenen Datenschutz (Privacy-Gateway, Pseudonymisierung, Rückfrage, Siegel,
+Entscheidungen) zu einem geschlossenen, nachweisbaren Rahmenwerk zusammenführen – mit festen Sicherheitsgrenzen,
+messbaren Qualitätszielen und regelmäßiger Validierung. **Status: nur Planung (12.10.2026)** – dieser Abschnitt
+beschreibt Vorhaben, keine Implementierung. Referenz für den Ist-Zustand: `PRIVACY_REVIEW_ARCHITECTURE.md`,
+`PERFORMANCE_BENCHMARKS.md`, Commits bis `9d9ab9c`.
+
+**Priorität vor anderen v1.0-Themen:** Phasen P1–P3 sind Voraussetzung für einen Einsatz über den Pilot hinaus;
+P4–P6 folgen in dieser Reihenfolge. Jede Phase gilt erst als abgeschlossen, wenn ihre Abnahmekriterien mit
+synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthetischen Tests abgeleitet.
+
+#### Phase P1: Privacy by Design und Datenschutzarchitektur
+- **Ist-Zustand (belegt):** Einziger Cloud-Weg über `ClaudePrivacyGateway.prepare_request`; Allowlist-Schema mit 8 Feldern;
+  Local-First (Presidio/spaCy, Ollama lokal); Aktenisolation über `matter_id`; Architekturdoku in `PRIVACY_REVIEW_ARCHITECTURE.md`.
+- **Offene Risiken:** Keine formale Datenfluss-Inventur je Funktion (welches Feld enthält welche Datenkategorie);
+  Relay-Server (`gateway/`) prüft das Allowlist-Schema bewusst nicht selbst; Bedrohungsmodell nicht als eigenes Dokument gepflegt.
+- **Maßnahmen:** Datenfluss- und Datenkategorien-Register; Bedrohungsmodell (STRIDE o. ä.) für Gateway, Relay, lokale KI;
+  Architektur-Entscheidungen als ADRs im bestehenden `.agentic/DECISIONS.md`.
+- **Abhängigkeiten:** keine (Startphase).
+- **Abnahmekriterien:** Register deckt 100 % der Cloud-Einstiegspunkte ab (Abgleich mit Code-Suche nach Provider-Aufrufen);
+  jedes Payload-Feld hat eine dokumentierte Datenkategorie; Bedrohungsmodell vom Owner abgenommen.
+
+#### Phase P2: Pre-Cloud-Prüfung und Fail-Closed
+- **Ist-Zustand (belegt):** Pseudonymisierung mit mehrstufiger Erkennung (Regex, bekannte Entitäten, NER, PROPN-Signal,
+  Modell-Probing), Restrisiko-Scan, Final Payload Gate, Antwort-Leak-Check; versiegelte Payload – alle vier Cloud-Provider
+  lehnen unversiegelte/veränderte Payloads ab; Fehler in der Prüfung blockieren.
+  Synthetische Restlecks (Stand `9d9ab9c`, nicht-interaktiv): 0,4 % mit Akte, 0,7 % ohne Akte.
+- **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
+  gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
+  prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
+- **Maßnahmen:** Festes Benchmark-Set als Release-Gate; Modell-Upgrade-Prozess mit Vorher/Nachher-Messung;
+  Relay-seitige Signatur-/Herkunftsprüfung falls der Relay je Fremd-Clients bedient.
+- **Abhängigkeiten:** P1 (Register definiert, welche Felder zu prüfen sind).
+- **Abnahmekriterien:** Release blockiert automatisch, wenn Restlecks > 0,5 % (mit Akte) bzw. > 1,0 % (ohne Akte) oder
+  Rechtswort-Fehlalarme > 1/132 auf dem Referenz-Benchmark; Test „unversiegelte Payload wird abgelehnt“ für jeden Provider grün.
+
+#### Phase P3: Human-in-the-Loop
+- **Ist-Zustand (belegt):** Datenschutz-Rückfrage im Chat vor jedem Cloud-Aufruf (drei Optionen), erneute Gesamtprüfung nach
+  jeder Entscheidung; Wiederherstellung nach Neuladen (rein lokal); Fundstelle im Dokument; prozessübergreifende
+  Doppelversand-Sperre in der Datenbank, nach Abbruch keine automatische Wiederaufnahme.
+- **Offene Risiken:** Nicht-interaktive Pfade (Schriftsatz-Generator, Entwurfsanweisungen, Review) fragen nicht, sondern
+  maskieren vorsichtshalber; Rückfragequote in echten Akten unbekannt (nur synthetisch gemessen: 4 Rückfragen in 19 Dokumenten).
+- **Maßnahmen:** Rückfrage auch in Formular-Workflows (vor dem Absenden); Sammelansicht offener/unsicherer Entscheidungen je Akte.
+- **Abhängigkeiten:** P2 (Kandidatenerkennung), P5 (Aufbewahrung der Entscheidungen).
+- **Abnahmekriterien:** Kein Cloud-Aufruf mit offener Rückfrage (Test je Einstiegspunkt); höchstens 1 Rückfrage je
+  synthetischem Standarddokument im Median; Pilot-Rückmeldung zur Verständlichkeit dokumentiert.
+
+#### Phase P4: Datenschutzkonformes Lernen aus Feedback
+- **Ist-Zustand (belegt):** Entscheidungen aktenbezogen (`privacy_decisions`), „kein personenbezogenes Datum“ nur in der
+  Unterhaltung, Widerspruch → strengere Behandlung; globale Statistik nur als HMAC ohne Klartext (`privacy_feedback_stats`);
+  Auswertungsskript ohne automatische Regeländerung.
+- **Offene Risiken:** Kein definierter Prozess, wie aus der Statistik geprüfte Regeln oder Tests werden; keine Mindestanzahl
+  übereinstimmender Entscheidungen festgelegt.
+- **Maßnahmen:** Review-Prozess „Statistik → synthetischer Testfall → Regel → Positiv-/Negativtests → Freigabe“;
+  Schwellen für Auffälligkeit; Kennzeichnung widersprüchlicher Begriffe.
+- **Abhängigkeiten:** P2 (Benchmark-Gate), P6 (Audit der Freigaben).
+- **Abnahmekriterien:** Keine Regeländerung ohne verlinkten synthetischen Test und Owner-Freigabe; Statistik enthält
+  nachweislich keine Klartext-Begriffe (automatisierter Test); kein Modelltraining aus Einzelentscheidungen.
+
+#### Phase P5: Datenminimierung, Löschung und Mandantentrennung
+- **Ist-Zustand (belegt):** Pseudonym-Zuordnungen nur im Arbeitsspeicher; API-Log speichert nur Hash des Prompts;
+  Rückfrage-Entscheidungen werden mit der Unterhaltung gelöscht (unterhaltungsbezogene) bzw. bleiben als Aktendatum;
+  Akten werden weich gelöscht (Aufbewahrung).
+- **Offene Risiken:** Kein dokumentiertes Löschkonzept mit Fristen über alle Tabellen (Dokumente, Chats, Entscheidungen,
+  Audit); kein Mehr-Kanzlei-Modell (eine Datenbank je Kanzlei – Mandantentrennung nur über Akten).
+- **Maßnahmen:** Lösch- und Aufbewahrungskonzept je Datenkategorie (aus P1); Löschlauf mit Nachweis; Prüfung, ob
+  Entscheidungen beim endgültigen Löschen einer Akte vollständig entfernt werden.
+- **Abhängigkeiten:** P1 (Register).
+- **Abnahmekriterien:** Für jede Tabelle mit personenbezogenen Daten ist eine Löschregel definiert und per Test belegt;
+  aktenübergreifender Zugriff auf Entscheidungen ist per Test ausgeschlossen.
+
+#### Phase P6: Auditierbarkeit und kontinuierliche Sicherheitsvalidierung
+- **Ist-Zustand (belegt):** Unveränderliches Audit-Log (Entscheidungen ohne Begriff protokolliert); Blockgründe kategorisiert;
+  reproduzierbare Benchmarks (`scripts/bench_name_detection.py`, `scripts/bench_chat_without_file.py`); Payload-Prüfung
+  des installierten Builds per Fang-Server (QA-Werkzeug außerhalb des Repos).
+- **Offene Risiken:** Benchmarks laufen manuell; der Fang-Server-QA-Lauf ist nicht Teil des Repos; kein periodischer Bericht.
+- **Maßnahmen:** Benchmark- und Payload-Prüfung als fester Release-Schritt; Fang-Server als versioniertes QA-Werkzeug ins
+  Repo; Datenschutzbericht je Release (Restlecks, Fehlalarme, Rückfragen, Blocks, Laufzeit).
+- **Abhängigkeiten:** P2 (Gate-Kriterien), P4 (Freigabeprozess).
+- **Abnahmekriterien:** Jeder Release enthält einen Datenschutzbericht mit den Kennzahlen aus P2/P3; Payload-Prüfung des
+  installierten Builds mit 0 bekannten Originalwerten in den synthetischen Referenzfällen; Audit-Log deckt jede
+  Rückfrage-Entscheidung und jeden Datenschutz-Block ab.
+
+---
+
 ## Release-Planung
 
 ### v0.2.0 (Quick Wins, nächste Woche nach Pilot)
