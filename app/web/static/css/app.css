@@ -8609,6 +8609,20 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 13.5px;
 }
 
+/* Mehrabsatz-Hinweise (z. B. Dokumentstatus, 13.10.2026): Absaetze untereinander statt als Flex-Spalten. */
+.chat-message__blocked-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-message__blocked-body > :first-child {
+  margin-top: 0;
+}
+
+.chat-message__blocked-body > :last-child {
+  margin-bottom: 0;
+}
+
 .chat-message--blocked .chat-message__text .icon {
   flex-shrink: 0;
   width: 16px;

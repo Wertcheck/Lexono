@@ -519,3 +519,16 @@ def test_readiness_respects_matter_isolation(db_session) -> None:
 def test_ocr_configuration_is_not_changed_by_the_application() -> None:
     assert Settings.model_fields["ocr_enabled"].default is False
     assert ChatConversation is not None
+
+
+def test_multi_paragraph_notice_is_rendered_as_one_block(client, db_session, writer, monkeypatch, tmp_path) -> None:
+    """Befund im installierten Build: der Blockiert-Stil ist ein Flex-Container - jeder Absatz des Hinweises wurde
+    zur eigenen Spalte. Der Inhalt steht jetzt in EINEM Block neben dem Warnsymbol."""
+    login_as_admin(db_session, client)
+    _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
+    scan = _scan_of(_text_pdf(tmp_path / "q.pdf"), tmp_path / "scan.pdf")
+    conversation_id = _conversation_id(_send_stream(client, "Bitte fasse das Dokument zusammen.", [scan]))
+    html = client.get(f"/dashboard/chat/{conversation_id}").text
+    start = html.index('class="chat-message__blocked-body"')
+    block = html[start : html.index("</div>", html.index("Fragen ohne Bezug", start))]
+    assert "nicht an die Cloud-KI gesendet" in block and "Fragen ohne Bezug" in block

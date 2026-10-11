@@ -508,8 +508,8 @@
                   </div>
                 {% else %}
                   <div class="chat-message__text chat-message__text--markdown" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
-                    {% if message.blocked %}{{ icons.warning(class_="icon") }}{% endif %}
-                    {{ review_parts[0] | chat_markdown | safe }}
+                    {% if message.blocked %}{{ icons.warning(class_="icon") }}<div class="chat-message__blocked-body">{{ review_parts[0] | chat_markdown | safe }}</div>{% else %}
+                    {{ review_parts[0] | chat_markdown | safe }}{% endif %}
                   </div>
                 {% endif %}
                 {% if review_parts[1] %}
