@@ -104,11 +104,18 @@ def _context(source: str, term: str) -> tuple[str, str]:
     match = re.search(r"(?<![\wÄÖÜäöüß])" + re.escape(term) + r"(?![\wÄÖÜäöüß])", source)
     if match is None:
         return "", ""
-    before = source[max(0, match.start() - _CONTEXT_CHARS) : match.start()]
-    after = source[match.end() : match.end() + _CONTEXT_CHARS]
-    before = before.split("\n")[-1]
-    after = after.split("\n")[0]
-    return before.lstrip(), after.rstrip()
+    start = max(0, match.start() - _CONTEXT_CHARS)
+    end = match.end() + _CONTEXT_CHARS
+    before = source[start : match.start()].split("\n\n")[-1]
+    after = source[match.end() : end].split("\n\n")[0]
+    # Nur ganze Woerter zeigen (kein "...sterbau GmbH"); einfache Zeilenumbrueche (PDF) als Leerzeichen.
+    if start > 0 and len(before) == match.start() - start and " " in before.strip():
+        before = before[before.find(" ") + 1 :]
+    if end < len(source) and len(after) == end - match.end() and " " in after.strip():
+        after = after[: after.rfind(" ")]
+    lead = " " if before[-1:].isspace() else ""
+    trail = " " if after[:1].isspace() else ""
+    return " ".join(before.split()) + lead, trail + " ".join(after.split())
 
 
 def find_review_candidates(

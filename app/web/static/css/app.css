@@ -10835,7 +10835,7 @@ body::-webkit-scrollbar-thumb:hover,
   padding: 1px 5px; border-radius: 4px; color: var(--ink-900);
   background: color-mix(in srgb, var(--amber) 30%, var(--paper-000));
 }
-.privacy-review__options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.privacy-review__options { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 8px; }
 .privacy-review__option {
   display: flex; align-items: center; gap: 10px; text-align: left; cursor: pointer;
   padding: 10px 12px; border-radius: var(--radius-sm, 8px);

@@ -279,3 +279,13 @@ def test_invalid_decisions_are_rejected(db: Session, term, decision) -> None:
     with pytest.raises(InvalidPrivacyDecisionError):
         record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term=term, decision=decision, user_id=user.id, actor="a")
     assert db.query(PrivacyDecision).count() == 0
+
+
+def test_review_context_shows_whole_words_only() -> None:
+    from app.privacy.review import _context
+
+    source = "In der Sache Beispielmann ./. Musterbau GmbH bestaetigen wir\nden Eingang des Schreibens von Richter vom 16.03.2024.\nDie Klaegerin verlangt Schadensersatz in Hoehe von 12.400,00 EUR."
+    before, after = _context(source, "Richter")
+    assert before.endswith("Schreibens von ") and not before.startswith("sterbau")
+    assert after.startswith(" vom 16.03.2024.") and not after.endswith(" H")
+    assert "\n" not in before + after
