@@ -41,9 +41,45 @@ def _extract_pdf_text(path: Path) -> str:
     return "\n".join(text_parts)
 
 
+def _docx_block_lines(container) -> list[str]:
+    """Absaetze UND Tabellen in Dokumentreihenfolge. Tabellenzeilen als "Zelle | Zelle | Zelle" - dieselbe Darstellung,
+    die die Datenschutzpruefung als Tabellenzeile erkennt (app/privacy/review.py)."""
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    lines: list[str] = []
+    for child in container.element.body.iterchildren() if hasattr(container.element, "body") else container._element.iterchildren():
+        tag = child.tag.rsplit("}", 1)[-1]
+        if tag == "p":
+            lines.append(Paragraph(child, container).text)
+        elif tag == "tbl":
+            for row in Table(child, container).rows:
+                cells: list[str] = []
+                for cell in row.cells:
+                    value = " ".join(cell.text.split())
+                    if not cells or cells[-1] != value:  # verbundene Zellen nicht doppelt
+                        cells.append(value)
+                lines.append(" | ".join(cells))
+    return lines
+
+
 def _extract_docx_text(path: Path) -> str:
+    """ECHTER FUND (12.10.2026, realistische synthetische Kanzleidokumente): bisher nur `paragraphs` - Tabellen
+    (Beteiligten-/Rechnungstabellen), Kopf- und Fusszeilen fehlten vollstaendig im extrahierten Text. Jetzt: Kopfzeile(n),
+    Absaetze und Tabellen in Dokumentreihenfolge, Fusszeile(n). Der gesamte Text durchlaeuft wie jeder andere die
+    Pseudonymisierung und das Pre-Cloud-Gate."""
     docx_document = DocxDocument(str(path))
-    return "\n".join(paragraph.text for paragraph in docx_document.paragraphs)
+    header_lines: list[str] = []
+    footer_lines: list[str] = []
+    for section in docx_document.sections:
+        for part, target in ((section.header, header_lines), (section.footer, footer_lines)):
+            if part.is_linked_to_previous and target:
+                continue
+            for paragraph in part.paragraphs:
+                if paragraph.text.strip() and paragraph.text not in target:
+                    target.append(paragraph.text)
+    body_lines = _docx_block_lines(docx_document)
+    return "\n".join([*header_lines, *body_lines, *footer_lines])
 
 
 def _extract_txt_text(path: Path) -> str:

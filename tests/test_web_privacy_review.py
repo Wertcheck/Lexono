@@ -249,3 +249,19 @@ def test_uploaded_pdf_with_heading_and_wrapped_agent_is_asked_before_any_cloud_c
     review = next(e for e in _parse_sse_events(response.text) if e["kind"] == "review")
     assert {"Richter", "Lange"} <= {c["term"] for c in review["candidates"]}
     assert writer.received_payloads == []
+
+
+def test_a_decided_term_is_not_asked_again_in_the_same_conversation(client, db_session: Session, writer) -> None:
+    """Keine wiederholte Rueckfrage: "personal" gilt aktenweit, die Folgefrage mit demselben Namen laeuft ohne Rueckfrage
+    und mit pseudonymisiertem Namen."""
+    login_as_admin(db_session, client)
+    csrf = _csrf(client)
+    review = next(e for e in _send(client, csrf) if e["kind"] == "review")
+    _review(client, csrf, review["conversation_id"], review["message_id"], [{"term": "Richter", "decision": "personal"}])
+    follow_up = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": csrf, "conversation_id": review["conversation_id"], "content": "Was schreibt Richter genau?"},
+    )
+    events = _parse_sse_events(follow_up.text)
+    assert not [e for e in events if e["kind"] == "review"]
+    assert len(writer.received_payloads) == 2 and "Richter" not in writer.received_payloads[1].model_dump_json()

@@ -70,3 +70,35 @@ def test_table_pipe_is_not_treated_as_an_adjective() -> None:
     doc = pn._analysis_doc("Zeuge  |  Richter  |  Hamburg")
     token = next(t for t in doc if t.text == "Richter")
     assert _is_bare(doc, token)
+
+
+# --- Realistische Dokumente (12.10.2026): Tabellengrenzen, Listen, Satzrollen ueber Zeilengrenzen -----------------------
+
+
+def test_invoice_table_after_a_party_table_is_not_asked(gateway) -> None:
+    """Nach der Dokumentaufbereitung verschmolzen Beteiligten- und Rechnungstabelle zu EINER Zeile; "Estrich" galt als Zelle
+    neben einem Namen. Zeilengrenze ist auch ein Doppel-Leerzeichen, das nicht an einem "|" steht."""
+    text = "Zeuge | Lange | Hafenstraße 9, 24105 Kiel\n\nPosition | Menge | Betrag\nEstrich | 3 | 1.200,00 EUR"
+    result = _doc_prepare(gateway, text, "ask")
+    terms = [c.term for c in result.review_candidates]
+    assert "Estrich" not in terms and "Menge" not in terms
+    masked = _doc_prepare(gateway, text, "mask")
+    assert "Estrich" in masked.payload.anonymisierter_sachverhalt and "1.200,00 EUR" in masked.payload.anonymisierter_sachverhalt
+
+
+def test_flattened_pdf_table_cells_are_not_subjects_of_a_later_sentence(gateway) -> None:
+    text = "Position\nMenge\nBetrag\nEstrich\n3\n1.200,00 EUR\nDer Streitwert beträgt 12.400,00 EUR."
+    result = _doc_prepare(gateway, text, "ask")
+    assert not result.review_required, [c.term for c in result.review_candidates]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Als Zeugen werden benannt:\n- Herr Marquardt\n- Fuerst\n- Dr. Henrike Stuckenschneider",  # mit Aufzaehlungszeichen
+        "Als Zeugen werden benannt:\nHerr Marquardt\nFuerst\nDr. Henrike Stuckenschneider",  # DOCX-Liste ohne Zeichen
+    ],
+)
+def test_list_item_next_to_a_replaced_person_is_protected(gateway, text) -> None:
+    masked = _doc_prepare(gateway, text, "mask")
+    assert "Fuerst" not in masked.payload.anonymisierter_sachverhalt

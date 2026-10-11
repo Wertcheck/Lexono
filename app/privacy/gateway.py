@@ -274,6 +274,9 @@ class ClaudePrivacyGateway:
                     self._build_combined_text(*parts[:5], lawyer_verlauf),
                     context_source=locally_sourced_text,
                     decisions=decisions,
+                    # Rueckfrage: gebuendelt hoechstens 8 je Runde (danach fragt die naechste Runde erneut);
+                    # Maskieren: ALLE Kandidaten - sonst gingen ab dem 9. unsicheren Begriff Werte unmaskiert raus.
+                    max_candidates=None if review_mode == "mask" else 8,
                 )
             except Exception:  # noqa: BLE001 - fail-closed: ungepruefter Inhalt darf nie die Cloud erreichen
                 return GatewayResult(

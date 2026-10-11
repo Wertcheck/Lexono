@@ -66,6 +66,10 @@ def _validate(term: str, decision: str) -> str:
         raise InvalidPrivacyDecisionError("Unbekannte Entscheidung.")
     if not term or len(term) > MAX_TERM_LENGTH or "\n" in term or "@@" in term or "[" in term:
         raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
+    # Nur dieselbe Form wie Rueckfrage-Kandidaten (ein alphabetisches Wort): ein eingeschleuster Mehrwort-Begriff koennte in
+    # der Ueberlappungsaufloesung einen laengeren Treffer anderer Kategorie (z. B. E-Mail) verdraengen (Audit 12.10.2026).
+    if not term.isalpha():
+        raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
     return term
 
 

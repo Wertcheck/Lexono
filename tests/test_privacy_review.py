@@ -407,3 +407,29 @@ def test_residual_rules_do_not_flag_legal_vocabulary(gateway, text) -> None:
     result = _prepare(gateway, text, mode="ask")
     assert not result.review_required, [c.term for c in result.review_candidates]
 
+
+
+# --- Audit 12.10.2026: Masken-Modus ohne Obergrenze, Entscheidungen nur als einzelnes Wort -------------------------------
+
+
+def test_mask_mode_masks_every_uncertain_term_beyond_the_question_cap(gateway, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rueckfragen werden je Runde auf 8 gebuendelt; im Masken-Modus muessen ALLE unsicheren Begriffe maskiert werden."""
+    from app.privacy import presidio_ner as pn
+
+    words = ["Quorbel", "Wiltrak", "Fendrisch", "Morlach", "Tessin", "Gravek", "Holmbrin", "Strabek", "Jurlacke", "Pomrich"]
+    monkeypatch.setattr(pn, "_name_probe_frames", lambda word: (True, False, False, False, False))
+    monkeypatch.setattr(pn, "_name_probe_score", lambda word: 1)
+    monkeypatch.setattr(pn, "detect_probed_names", lambda text: [])
+    text = " ".join(f"Dazu erklärt {w}, die Anlage sei mangelhaft." for w in words)
+    asked = _prepare(gateway, text, mode="ask")
+    assert asked.review_required and len(asked.review_candidates) <= 8
+    masked = _prepare(gateway, text, mode="mask")
+    assert masked.allowed
+    assert [w for w in words if w in masked.payload.anonymisierter_sachverhalt] == []
+
+
+@pytest.mark.parametrize("term", ["Müller max", "Herr Richter", "Richter-Lange", "Richter@kanzlei"])
+def test_decision_terms_must_be_a_single_word(db: Session, term) -> None:
+    user, matter_a, _, conv_1, _ = _setup(db)
+    with pytest.raises(InvalidPrivacyDecisionError):
+        record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term=term, decision="personal", user_id=user.id, actor="a")

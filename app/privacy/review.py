@@ -48,7 +48,8 @@ _SENTENCE_ROLES = frozenset(
 # Restlecks (12.10.2026, reproduziert im Benchmark): Aufzaehlung neben einem bereits ersetzten PERSONEN-Platzhalter
 # ("[PERSON_01], Richter sowie Herr [PERSON_01]") - Glieder einer Aufzaehlung teilen ihren Typ.
 _PERSON_PLACEHOLDER = r"\[(?:PERSON|MANDANT|GEGNER|ANWALT)_\d+\]"
-_ENUM_LINK = r"\s*(?:,|und|sowie|oder|bzw\.)\s*"
+# Verbindungen: Komma/Konjunktion oder ein Listenpunkt ("- Fuerst" unter "- Herr [PERSON_03]" - Befund realistisches PDF).
+_ENUM_LINK = r"\s*(?:,|und|sowie|oder|bzw\.|[-–•*·])\s*"
 _TITLE = r"(?:(?:Herrn?|Frau|Dr\.|Prof\.)\s+)*"
 _ENUM_AFTER_PERSON = re.compile(_PERSON_PLACEHOLDER + _ENUM_LINK + _TITLE + r"$")
 _ENUM_BEFORE_PERSON = re.compile(_ENUM_LINK + _TITLE + _PERSON_PLACEHOLDER)
@@ -87,12 +88,28 @@ class PrivacyDecisions:
 def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     roles: set[str] = set()
     head = token.head
+    # Satzrollen gelten nur innerhalb einer Zeile: ueber eine harte Zeilengrenze (Umbruch oder >= 2 Leerzeichen aus der
+    # Dokumentaufbereitung) haengt der Parser Tabellen-/Listenzellen an Verben fremder Saetze ("Position  Menge  Betrag
+    # Estrich ... Der Streitwert betraegt" -> "Menge", "Estrich" als Subjekt; Befund realistisches PDF, 12.10.2026).
+    lines_source = raw if raw is not None else text
+
+    def same_line(other) -> bool:
+        lo, hi = sorted((other.idx, token.idx))
+        return _LINE_BOUNDARY.search(lines_source, lo, hi) is None
+
     # Subjekt eines nicht-infiniten Verbs - auch bei Verbzweitstellung ("Dazu erklaert Fuerst, ...").
-    if token.dep_ == "sb" and head.pos_ in ("VERB", "AUX") and "Inf" not in head.morph.get("VerbForm"):
+    if (
+        token.dep_ == "sb"
+        and head.pos_ in ("VERB", "AUX")
+        and "Inf" not in head.morph.get("VerbForm")
+        and same_line(head)
+    ):
         roles.add("subjekt")
     following = doc[token.i + 1] if token.i + 1 < len(doc) else None
     if following is not None and following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm"):
         roles.add("vor_finitem_verb")
+    # Praeposition + Zeilenumbruch + Name ist der gewoehnliche PDF-/OCR-Umbruch ("von" / "Richter vom ...") - hier gilt die
+    # Zeilengrenzen-Einschraenkung bewusst NICHT (Befund Scan-Variante, 12.10.2026).
     if token.dep_ == "nk" and head.pos_ == "ADP" and head.lower_ in _ROLE_PREPOSITIONS:
         roles.add("nach_praeposition")
     # Agens an der Oberflaeche, falls der Parser scheitert (installierter Build, 12.10.2026: "durch  Lange geprueft" -
@@ -123,6 +140,10 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     # Aufzaehlungsglied neben einem ersetzten Personen-Platzhalter (Rohtext, positionsgleich zur Analysefassung).
     if raw is not None and (_ENUM_AFTER_PERSON.search(raw[: token.idx]) or _ENUM_BEFORE_PERSON.match(raw, end)):
         roles.add("aufzaehlung_mit_person")
+    # Listenzeile ohne Aufzaehlungszeichen (DOCX-Liste: "Herr [PERSON_03]" / "Fuerst" / "Dr. [PERSON_05]"): das Wort steht
+    # allein auf seiner Zeile, und eine Nachbarzeile enthaelt einen ersetzten Personen-Platzhalter.
+    if raw is not None and _alone_on_line_next_to_person(raw, token.idx, end):
+        roles.add("aufzaehlung_mit_person")
     # Kurze Ueberschriftszeile "Zeugenaussage Richter": letztes Wort einer Zeile aus hoechstens vier Woertern ohne Verb
     # und ohne Satzzeichen am Ende, direkt nach einem Substantiv.
     # Zeilengrenzen aus dem ROHtext: die Analysefassung ersetzt "Richter\nDer" als vermeintlich weichen PDF-Umbruch durch
@@ -148,14 +169,35 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     return roles
 
 
+_ROW_BOUNDARY = re.compile(r"\n|(?<![|\s])[ \t]{2,}(?![ \t|])")
 _TABLE_ROW = re.compile(r"[^|\n]*(?:\|[^|\n]*)+")
+
+
+def _alone_on_line_next_to_person(raw: str, start: int, end: int) -> bool:
+    boundaries = [(m.start(), m.end()) for m in _LINE_BOUNDARY.finditer(raw)]
+    before = [b for b in boundaries if b[1] <= start]
+    after = [b for b in boundaries if b[0] >= end]
+    if not before or not after:
+        return False
+    line = raw[before[-1][1] : after[0][0]].strip(" \t-–•*·")
+    if line != raw[start:end]:
+        return False
+    previous_line = raw[before[-2][1] if len(before) > 1 else 0 : before[-1][0]]
+    next_line = raw[after[0][1] : after[1][0] if len(after) > 1 else len(raw)]
+    return bool(re.search(_PERSON_PLACEHOLDER, previous_line) or re.search(_PERSON_PLACEHOLDER, next_line))
 
 
 def _row_mentions_a_person(text: str, start: int, end: int) -> bool:
     """Tabellenzelle nur dann namensverdaechtig, wenn dieselbe Tabellenzeile (durch "|" verbunden) ein Rollenwort
     ("Zeuge"), "Name" oder einen ersetzten Personen-Platzhalter enthaelt - sonst ist es z. B. eine Rechnungsposition
     ("Position | Menge | Preis", Befund 12.10.2026)."""
-    for match in _TABLE_ROW.finditer(text):
+    # Zeilengrenze: Umbruch oder >= 2 Leerzeichen, die NICHT an einem "|" stehen ("Kiel  Position | Menge" trennt zwei
+    # Tabellen der Dokumentaufbereitung; "Zeuge  |  Richter" bleibt eine Zeile).
+    boundaries = [m.end() for m in _ROW_BOUNDARY.finditer(text, 0, start)]
+    row_start = boundaries[-1] if boundaries else 0
+    following = _ROW_BOUNDARY.search(text, end)
+    row_end = following.start() if following else len(text)
+    for match in _TABLE_ROW.finditer(text, row_start, row_end):
         if match.start() <= start and end <= match.end():
             row = text[match.start() : start] + " " + text[end : match.end()]
             words = {w.lower() for w in re.findall(r"[A-Za-zÄÖÜäöüß]+", row)}
@@ -210,6 +252,7 @@ def find_review_candidates(
     *,
     context_source: str,
     decisions: PrivacyDecisions | None = None,
+    max_candidates: int | None = _MAX_CANDIDATES,
 ) -> list[ReviewCandidate]:
     """Unsichere Kandidaten im PSEUDONYMISIERTEN `scan_text` (ohne fruehere KI-Antworten).
 
@@ -268,7 +311,7 @@ def find_review_candidates(
         found[word] = ReviewCandidate(
             term=word, context_before=before, context_after=after, roles=tuple(sorted(roles)), probe_score=score
         )
-        if len(found) >= _MAX_CANDIDATES:
+        if max_candidates is not None and len(found) >= max_candidates:
             break
     return list(found.values())
 
