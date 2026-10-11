@@ -297,6 +297,8 @@ def find_review_candidates(
             continue
         if word.lower() in pn._NEVER_ENTITY_WORDS or word in pn._PROTOCOL_LABELS:
             continue
+        if pn.is_derivational_compound(word):
+            continue  # Ableitungs-Kompositum ("Raeumungsfrist") - kein Name, siehe presidio_ner.is_derivational_compound
         if not _is_bare(doc, token):
             continue
         if _SYSTEM_LABEL_LINE.search(neutral[: token.idx]):

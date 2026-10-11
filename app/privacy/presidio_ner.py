@@ -373,6 +373,41 @@ def _model_knows(word: str) -> bool:
     return bool(vocab.has_vector(word) or vocab.has_vector(word.lower()) or vocab.has_vector(word.capitalize()))
 
 
+# Ableitungs-Komposita (13.10.2026, Befund installierter Build: "Die Nachbesserungsfrist endet am 30.11.2026." wurde im
+# Dokumentkontext zu "Die [PERSON_01] endet ..."). Das NER-Modell etikettiert seltene, ihm unbekannte Komposita
+# kontextabhaengig als PER - der Rahmensatz-Test hilft hier nicht ("Nachbesserungsfrist" 5/5), POS=NOUN auch nicht (echte
+# Namen werden ebenfalls oft als NOUN getaggt). Gegensignal ist die WORTBILDUNG: Praefix + Ableitungssuffix mit Fugen-s
+# (-ungs-, -heits-, -keits-, -schafts-, -tions-, -taets-) + ein juristisch-sachliches Kopfnomen aus einer geschlossenen
+# Klasse ("Nachbesserung|s|frist", "Zustellung|s|urkunde", "Kostenfestsetzung|s|beschluss").
+# Erste Fassung verlangte nur ein dem Modell bekanntes Kopfwort - der unabhaengige Review wies nach, dass dann auch
+# namensfoermige Bildungen ("Siedlungsmann", "Lichtungsberger", "Rodungshausen") frei wurden: Namensbestandteile (-mann,
+# -berg, -hausen) sind ebenfalls bekannte Woerter, und weder Modell-Probe noch Vokabular trennen Kopfwoerter zuverlaessig.
+# Daher die geschlossene Klasse von Sach-/Rechtsnomen (kein Namens- oder Ortsbestandteil). In 79 Benchmark-Nachnamen nicht
+# beobachtet; vollstaendige Freiheit realer Namen ist damit NICHT bewiesen. Gilt nur fuer EINWORT-Treffer (siehe Aufrufer).
+_DERIVATIONAL_LINK = re.compile(r"(?<=[a-zäöüß]{3})(?:ungs|heits|keits|schafts|tions|täts)(?=[a-zäöüß]{4,}$)")
+_LEGAL_COMPOUND_HEADS = frozenset(
+    {
+        "frist", "fristen", "urkunde", "urkunden", "schaden", "schäden", "anspruch", "ansprüche", "beschluss",
+        "beschlüsse", "erklärung", "erklärungen", "recht", "rechte", "bescheid", "bescheide", "schreiben",
+        "verzeichnis", "leistung", "leistungen", "ankündigung", "klage", "klagen", "vertrag", "verträge", "rechnung",
+        "rechnungen", "abrechnung", "protokoll", "gutachten", "antrag", "anträge", "verfahren", "forderung",
+        "forderungen", "pflicht", "pflichten", "vollmacht", "vereinbarung", "anzeige", "rüge", "vergütung", "strafe",
+        "termin", "termine", "gebühr", "gebühren", "kosten", "zinsen", "betrag", "beträge", "summe", "nachweis",
+        "verlangen", "frage", "fragen", "zeitraum", "pflichtverletzung", "mangel", "mängel", "unterlagen", "auftrag",
+        "aufträge", "verhältnis", "beginn", "ende", "datum", "ort", "stelle", "verbot", "gesetz", "vorschrift",
+    }
+)
+
+
+@lru_cache(maxsize=20000)
+def is_derivational_compound(word: str) -> bool:
+    if not word.isalpha():
+        return False
+    lower = word.lower()
+    # Jede Fugenposition pruefen ("Leistungs|verweigerungs|recht": Kopfwort ist der Rest nach dem LETZTEN Fugenelement).
+    return any(lower[match.end() :] in _LEGAL_COMPOUND_HEADS for match in _DERIVATIONAL_LINK.finditer(lower))
+
+
 @lru_cache(maxsize=50000)
 def _restore_word(word: str) -> tuple[tuple[str, int, int], ...] | None:
     """Umlautform eines unbekannten Wortes als Folge (Zeichen, Start, Ende) im ORIGINALwort, oder None.
@@ -463,7 +498,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
     spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
-    for detector in (detect_unlabelled_proper_nouns, detect_probed_names):
+    for detector in (detect_unlabelled_proper_nouns, detect_probed_names, detect_article_names):
         spans.extend(
             extra
             for extra in detector(text)
@@ -524,12 +559,42 @@ def detect_probed_names(text: str) -> list[DetectedSpan]:
         word = token.text
         if len(word) < _NAME_PROBE_MIN_LENGTH or not word.isalpha() or not word[0].isupper() or word.isupper():
             continue
-        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS:
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
             continue
         previous = doc[token.i - 1] if token.i else None
         if any(c.i < token.i and c.pos_ in _NOUN_MODIFIER_POS for c in token.children) or (
             previous is not None and previous.pos_ in _NOUN_MODIFIER_POS
         ):
+            continue
+        if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
+            spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
+    return spans
+
+
+# Bestimmter/unbestimmter Artikel direkt vor einem Wort (13.10.2026, scripts/bench_article_noun_persons.py).
+_ARTICLES = frozenset({"der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "eines"})
+
+
+def detect_article_names(text: str) -> list[DetectedSpan]:
+    """Zweitsignal fuer Nachnamen direkt nach einem Artikel ("die Bergmann hat angerufen", "Rueckruf an den Pfannenstiel").
+
+    ECHTER FUND (13.10.2026, Leck-Gegenprobe im Dokumentpfad): 39 von 96 solcher Faelle gingen im Klartext in den
+    Payload. Ursache: alle Zweitsignale (`detect_probed_names`, Rueckfrage-Kandidaten) verlangen ein BARES Wort und
+    ueberspringen alles nach einem Artikel; die NER etikettiert solche Namen oft nicht. Hier gilt dieselbe Modell-Probe mit
+    derselben Schwelle (`_NAME_PROBE_MIN_SCORE`) wie fuer bare Woerter - nur ohne den Artikel-Ausschluss. Fuegt
+    ausschliesslich Treffer hinzu (fail-closed); Ableitungs-Komposita (Fachwoerter) sind ausgenommen."""
+    if not text or not text.strip():
+        return []
+    doc = _analysis_doc(text)
+    spans: list[DetectedSpan] = []
+    for token in doc:
+        word = token.text
+        if len(word) < _NAME_PROBE_MIN_LENGTH or not word.isalpha() or not word[0].isupper() or word.isupper():
+            continue
+        previous = doc[token.i - 1] if token.i else None
+        if previous is None or previous.lower_ not in _ARTICLES or previous.pos_ != "DET":
+            continue
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
             continue
         if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
             spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
@@ -553,7 +618,7 @@ def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
         word = token.text
         if token.pos_ != "PROPN" or len(word) < 3 or not word[0].isupper() or word.isupper():
             continue
-        if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS:
+        if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS or is_derivational_compound(word):
             continue
         if word in _PROTOCOL_LABELS and text[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Rollenpraefix des Gespraechsverlaufs ("Assistent: ..."), kein Name
@@ -589,6 +654,11 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
         if _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN.match(value):
             continue
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
+            continue
+        if category in ("person", "organisation") and is_derivational_compound(value.strip()):
+            # Fachwort-Kompositum, kein Name - siehe `is_derivational_compound`. Organisation: ein EINZELNES Ableitungswort
+            # ("Zustellungsurkunde", "Versicherungskammer") identifiziert niemanden; ein echter Organisationsname ist ein
+            # Mehrworttreffer und bleibt geschuetzt. Bewusst NICHT "ort": reale Ortsnamen dieser Bauart ("Hoffnungsthal").
             continue
         if _INTERNAL_PLACEHOLDER_PATTERN.search(value):
             # ECHTER FUND (realer Abnahme-Test, 13.09.): auf dem bereits
