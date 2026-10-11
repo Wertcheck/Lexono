@@ -298,3 +298,23 @@ Dokumente). Abgedeckt:
 
 Gegenprobe: Auf dem Code vor der Änderung schlagen 19 der 32 Tests fehl. Die übrigen 13 (allgemeine Fragen, Erfolgsfälle,
 Statusmodell) bestehen auf beiden Ständen.
+
+**Installierter Build (`4594788`, 11.10.2026).**
+- Build: `windows\build.ps1`, Exit 0. Bündel geprüft: Template und CSS enthalten den Darstellungs-Fix, das Python-Archiv
+  enthält `app.documents.readiness`.
+- Umgebung: still installiert, QA-Datenbank, abgefangene Cloud-Anfragen, nur synthetische Dokumente (`Status_*`).
+- OCR aus: installierte Konfiguration. OCR an: nur Prozessvariable der QA-Instanz; die `.env` ist unverändert und hat
+  keinen OCR-Eintrag, damit gilt `false`.
+
+| Fall | Cloud-Payloads | Ergebnis |
+|---|---|---|
+| OCR aus: Scan; Folgefrage zum Dokument; Teil-Scan; defektes PDF (`FileDataError`); leere DOCX; gemischte Anhänge | je **0** | PASS. Lokaler Hinweis je Dokument, Layout gemessen: 3 Blöcke untereinander, 92 % Breite |
+| OCR aus: allgemeine Folgefrage nach dem Hinweis; allgemeine Frage im neuen Chat | je 1 | PASS. Weder Hinweistext noch Dateiname im Payload |
+| OCR aus: Text-PDF, DOCX | je 1 | PASS. „Estricharbeiten“ und „1.200,00“ im Payload, nach Datenschutz-Rückfrage „Keller“ (Kellergeschoss) mit „kein personenbezogenes Datum“ |
+| OCR an: Scan; Teil-Scan | je 1 | PASS. Inhalt per OCR im Payload, beim Teil-Scan auch die gescannte Seite 2 („Dachrinne“) |
+| OCR an: leeres OCR-Ergebnis | **0** | PASS. Hinweis „kein verwertbarer Text“, Layout wie oben |
+| OCR an: allgemeine Frage | 1 | PASS |
+
+Hinweis zu „Keller“: Das Wort ist zugleich ein häufiger Nachname, und die unveränderte Rückfrage vor dem Cloud-Aufruf ist
+gewolltes Verhalten (bis zur Entscheidung 0 Payloads). Dokumentstatus und Datenschutz-Rückfrage greifen damit
+nacheinander, ohne sich gegenseitig zu umgehen.
