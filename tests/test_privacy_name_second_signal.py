@@ -250,3 +250,74 @@ def test_name_role_tokens_unit_signals_and_plural_exclusion() -> None:
     start = plural.index("Gewerbemietverträge")
     assert (start, start + len("Gewerbemietverträge")) not in get_name_role_tokens(plural)
     assert get_name_role_tokens("") == set()
+
+
+# --- Modell-Probing (Folgelauf 12.10.2026) ---------------------------------------------------------------------------
+# Wort, das das NER-Modell in >= 4 von 5 neutralen Rahmensaetzen als PERSON etikettiert, wird maskiert. Gemessen: Klartext-Lecks
+# mit Akte 4,7 % -> 4,0 % (1100 Faelle), ohne Akte 7,7 % -> 6,8 % (440 Faelle); Fehlalarme in Benchmarks und 19 Dokumenten unveraendert.
+PROBE_POSITIVE = [
+    ("Brinkmoeller", "Zeuge  |  Brinkmoeller  |  Hamburg  |  geladen"),  # Tabellenzelle, Modell sieht LOC
+    ("Pfannenstiel", "Protokoll\nPfannenstiel, Zeuge\nDie Anlage wurde besichtigt."),  # Ueberschrift
+    ("Jaeger", "Zeuge  |  Jaeger  |  Hamburg  |  geladen"),  # Gattungswort-Name in Tabelle
+    ("Eberhaerter", "Die Anlage ist defekt. Eberhaerter hat das bestätigt."),  # vom Tagger als ADV gelesen
+]
+
+
+@pytest.mark.parametrize(("name", "text"), PROBE_POSITIVE)
+def test_probed_names_are_masked_in_the_real_payload(gateway, name, text) -> None:
+    from app.privacy.presidio_ner import detect_probed_names
+
+    assert name in [s.value for s in detect_probed_names(text)]
+    result = _prepare(gateway, "Akte: Beispielakte\n" + text)
+    assert name not in _outgoing(result)
+
+
+def test_probe_spans_point_at_the_original_text_and_never_overlap() -> None:
+    text = "Zeuge  |  Brinkmoeller  |  Hamburg  |  geladen"
+    spans = detect_presidio_entities(text)
+    assert all(text[s.start : s.end] == s.value for s in spans)
+    ordered = sorted(spans, key=lambda s: s.start)
+    assert all(a.end <= b.start for a, b in zip(ordered, ordered[1:]))
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Der Kläger macht Gewährleistungsansprüche nach § 634 BGB geltend. Die Frist lief am 30.04.2026 ab.",
+        "Nach Auffassung des Sachverständigen ist die Abdichtung mangelhaft. Der Bauleiter bestätigte die Feuchtigkeit.",
+        "Schadensersatz ist zu leisten. Verzug liegt vor. Kündigung ist wirksam. Zahlung erfolgte nicht.",
+        "Die Nebenkostenabrechnung enthält Heizkosten, Wasserkosten und eine Vorauszahlung für Hausmeisterleistungen.",
+    ],
+)
+def test_probe_does_not_flag_ordinary_legal_vocabulary_or_instructions(text) -> None:
+    from app.privacy.presidio_ner import detect_probed_names
+
+    assert detect_probed_names(text) == []
+    assert detect_probed_names("") == []
+
+
+def test_imperatives_flagged_by_the_probe_are_still_dropped_by_the_sentence_start_filter() -> None:
+    """Ein Imperativ am Satzanfang erreicht Probe-Score 4 (Grossschreibung); der Imperativ-Filter verwirft den Treffer weiterhin."""
+    from app.privacy.presidio_ner import drop_sentence_initial_imperatives
+
+    text = "Erstelle ein Schreiben an die Gegenseite. Fasse das Dokument zusammen. Überarbeite den Entwurf."
+    assert drop_sentence_initial_imperatives(text, detect_presidio_entities(text)) == []
+
+
+def test_name_directly_before_a_finite_verb_is_not_mistaken_for_an_imperative(gateway) -> None:
+    result = _prepare(gateway, "Akte: Beispielakte\nDie Anlage ist defekt. Stuckenschneider hat das bestätigt.")
+    assert "Stuckenschneider" not in _outgoing(result)
+
+
+def test_probe_respects_the_exception_words_and_protocol_labels() -> None:
+    from app.privacy.presidio_ner import detect_probed_names
+
+    assert detect_probed_names("Assistent: Hallo, Schnellentwurf und Lichtkuppel sind keine Namen.") == []
+
+
+# Dokumentierte Grenze (NICHT geloest): Schwelle 3 von 5 wuerde "Stuckenschneider" erfassen, aber auch Fachwoerter wie
+# "Nebenkostenvorauszahlung"/"Schiedsgutachter" -> verworfen. Richter/Fuerst haben kein unabhaengiges Signal.
+@pytest.mark.xfail(reason="Stuckenschneider erreicht nur Probe-Score 3 (< Schwelle 4)", strict=False)
+def test_known_limit_name_below_the_probe_threshold(gateway) -> None:
+    result = _prepare(gateway, "Akte: Beispielakte\nZeuge  |  Stuckenschneider  |  Hamburg  |  geladen")
+    assert "Stuckenschneider" not in _outgoing(result)

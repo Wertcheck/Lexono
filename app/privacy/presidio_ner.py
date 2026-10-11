@@ -463,15 +463,72 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
     spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
-    spans.extend(
-        extra
-        for extra in detect_unlabelled_proper_nouns(text)
-        if not any(extra.start < other.end and other.start < extra.end for other in spans)
-    )
+    for detector in (detect_unlabelled_proper_nouns, detect_probed_names):
+        spans.extend(
+            extra
+            for extra in detector(text)
+            if not any(extra.start < other.end and other.start < extra.end for other in spans)
+        )
     return spans
 
 
 _PROTOCOL_LABELS = frozenset({"Assistent", "Anwalt"})
+
+
+@lru_cache(maxsize=2)
+def _analysis_doc(text: str):
+    """Geparste, neutralisierte Analysefassung (laengengleich zum Original) - ein Parse fuer alle Zweitsignale."""
+    return _get_analyzer_engine().nlp_engine.nlp["de"](_neutralize_internal_tokens(text))
+
+
+# Modell-Probing (Folgelauf 12.10.2026): Ein Wort, das das NER-Modell in der Mehrzahl neutraler Rahmensaetze als PERSON
+# etikettiert, ist namensartig - unabhaengig vom Kontext im Dokument. Gemessen an 55 Nachnamen / 153 Fachwoertern:
+# >= 4 von 5 Rahmen: 36/55 Namen, 2/153 Fachwoerter (beide ohnehin als Person bekannt); in 19 synthetischen Dokumenten
+# (176 Tsd. Zeichen, 145 Kandidaten) 0 zusaetzliche Treffer. Kein Wortlisten-Ersatz fuer Gattungsworte (Richter, Fuerst).
+_NAME_PROBE_FRAMES = (
+    "Herr {X} hat unterschrieben.",
+    "Dazu erklärt {X}, es sei so.",
+    "{X} hat angerufen.",
+    "Der Zeuge {X} wurde geladen.",
+    "Name: {X}, Zeuge",
+)
+_NAME_PROBE_MIN_SCORE = 4
+_NAME_PROBE_MIN_LENGTH = 5
+
+
+@lru_cache(maxsize=20000)
+def _name_probe_score(word: str) -> int:
+    """Anzahl der Rahmensaetze (0-5), in denen das Modell das Einzelwort als PER etikettiert."""
+    texts = [frame.format(X=word) for frame in _NAME_PROBE_FRAMES]
+    score = 0
+    for text, doc in zip(texts, _get_analyzer_engine().nlp_engine.nlp["de"].pipe(texts, batch_size=8)):
+        start = text.index(word)
+        score += any(token.idx == start and token.ent_type_ == "PER" for token in doc)
+    return score
+
+
+def detect_probed_names(text: str) -> list[DetectedSpan]:
+    """Zweitsignal: bare, grossgeschriebene Woerter, die das Modell im Rahmensatz-Test mindestens `_NAME_PROBE_MIN_SCORE`-mal
+    als Person etikettiert. Kandidaten: alphabetisch, >= 5 Buchstaben, keine Abkuerzung, keine Ganzwort-Ausnahme und kein
+    Artikel/Adjektiv/Zahl/Pronomen unmittelbar davor. Fehlalarm = zusaetzlicher Platzhalter (fail-closed), nie ein Verlust."""
+    if not text or not text.strip():
+        return []
+    doc = _analysis_doc(text)
+    spans: list[DetectedSpan] = []
+    for token in doc:
+        word = token.text
+        if len(word) < _NAME_PROBE_MIN_LENGTH or not word.isalpha() or not word[0].isupper() or word.isupper():
+            continue
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS:
+            continue
+        previous = doc[token.i - 1] if token.i else None
+        if any(c.i < token.i and c.pos_ in _NOUN_MODIFIER_POS for c in token.children) or (
+            previous is not None and previous.pos_ in _NOUN_MODIFIER_POS
+        ):
+            continue
+        if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
+            spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
+    return spans
 
 
 def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
@@ -485,8 +542,7 @@ def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
     anderer Treffer liegt. Ein Fehlalarm ist hier ein zusaetzlicher Platzhalter (fail-closed), nie ein Verlust."""
     if not text or not text.strip():
         return []
-    analyzer = _get_analyzer_engine()
-    doc = analyzer.nlp_engine.nlp["de"](_neutralize_internal_tokens(text))
+    doc = _analysis_doc(text)
     spans: list[DetectedSpan] = []
     for token in doc:
         word = token.text
@@ -632,8 +688,8 @@ def get_finite_subject_tokens(text: str) -> set[tuple[int, int]]:
     Name am Satzanfang ("Wessolowski hat angerufen") dagegen schon."""
     if not text or not text.strip():
         return set()
-    doc = _get_analyzer_engine().nlp_engine.nlp["de"](_neutralize_internal_tokens(text))
-    return {
+    doc = _analysis_doc(text)
+    found = {
         (token.idx, token.idx + len(token.text))
         for token in doc
         if token.dep_ == "sb"
@@ -641,6 +697,13 @@ def get_finite_subject_tokens(text: str) -> set[tuple[int, int]]:
         and token.head.i > token.i
         and "Inf" not in token.head.morph.get("VerbForm")
     }
+    # Auch wenn der Parser das Wort nicht als Subjekt liest (seltener Name -> ADV/mo): unmittelbar gefolgt von einem FINITEN
+    # Verb/Hilfsverb ("Eberhaerter hat das bestaetigt") ist es kein Imperativ - dieser hat danach ein Objekt/Artikel.
+    for token in doc:
+        following = doc[token.i + 1] if token.i + 1 < len(doc) else None
+        if following is not None and following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm"):
+            found.add((token.idx, token.idx + len(token.text)))
+    return found
 
 
 _SENTENCE_START_PREFIX = re.compile(r"(?:^|\n|[.!?:]\s+)\s*$")

@@ -594,3 +594,38 @@ belegt (sauberer Baum zur Buildzeit).
 * **Chat mit `N_Namen.pdf`, 3 Fragen:** 0 Namen im Klartext, Beträge „4.250,00“/„1.180,50“ und Rechtsbegriffe erhalten, keine Blocks.
 * Laufzeit installiert: Fragen ohne Dokument 7,2–15 s (lokale Vorabanalyse übersprungen), mit PDF 56–91 s (Vorabanalyse 39–68 s, Validierung 14–20 s; erste Frage nach Modellstart langsamer).
 * Grenzen: 4+3 Anfragen, ein Dokument – belegt keine Leckfreiheit; Benchmark: mit Akte 4,7 %, ohne Akte 7,7 % Rest-Lecks.
+
+## Neunter Lauf: Restlecks, Modell-Probing (12.10.2026)
+
+Ausgangspunkt `fada21d`: 4,7 % (mit Akte, 1100 Fälle) / 7,7 % (ohne Akte, 440 Fälle). Identische Fälle vor/nach (`scripts/bench_name_detection.py`, `scripts/bench_chat_without_file.py`), tatsächliche Payloads.
+
+**Fehlerklassen der Restlecks (mit Akte, 44 von 1100 im Kontextsatz, reproduziert):**
+
+| Klasse | Fälle | Beleg |
+|---|---|---|
+| Gattungswort als Nachname ohne unabhängiges Signal | 27 | Fuerst 14, Richter 13: Tagger NOUN, Probe-Score 1/5 bzw. 0–1/5 |
+| Seltener Name, vom Tagger als NOUN/ADJ/ADV gelesen, in Tabelle/Überschrift/nach Umbruch | 17 | Stuckenschneider, Grotelueschen, Brinkmoeller, Pfannenstiel, Eberhaerter, Lange, Jaeger |
+
+**Verglichene Alternative:** *Modell-Probing* – das Wort wird in 5 neutralen Rahmensätzen („Herr X hat unterschrieben“, „X hat angerufen“, „Name: X, Zeuge“ …) vom NER auf PER geprüft. Trennschärfe
+(55 Namen / 153 Fachwörter): Score ≥ 4: 36/55 Namen vs. 2/153 Fachwörter (beide ohnehin bekannt: Grundbesitzwert, Verblechungen); Score ≥ 3: 37/55 vs. 6/153 (u. a. Nebenkostenvorauszahlung,
+Schiedsgutachter) → Schwelle 3 **verworfen**, 4 übernommen. Orte (Hamburg, Berlin, Deutschland …) erreichen Score 0, bleiben also lesbar.
+Zusätzlich: ein Wort direkt vor einem finiten Verb gilt im Imperativ-Filter nicht als Imperativ (behebt vom Tagger als ADV gelesene Namen am Satzanfang).
+
+| Messung (identische Fälle) | vorher | nachher |
+|---|---|---|
+| Klartext-Lecks mit Akte (1100) | 4,7 % (52) | **3,8 %** (≈42) |
+| Klartext-Lecks ohne Akte (440) | 7,7 % (34) | **6,8 %** (30) |
+| Blocks mit Akte | 0,1 % | 0,1 % |
+| Rechtswörter/Fachbegriffe verändert (132 bzw. 600 Fälle mit Akte; 14 Fachfragen + 100 Begriffe ohne Akte) | 1/132, 34/600 | **unverändert** |
+| Anweisungen/Chat-Fragen verändert | 1/17 | 1/17 |
+| Probe-Treffer in 19 synthetischen Dokumenten (176 Tsd. Zeichen) | – | nur echte Namen/Firmen/Straßen (plus der vorbestehende Treffer „Besprechungsprotokoll“) |
+
+Laufzeit: Erkennung 12-Tsd.-Zeichen-Dokument 0,37 → 0,68 s kalt (0,18 s warm), 48-Tsd.-Dokument 1,45 → 1,79 s; je Fall im Benchmark +≈10 ms (Wortcache). Speicher: Suite-Minimum frei 3743 MB bei 8,9 GB Start, kein Anstieg gegenüber
+dem vorigen Lauf (Wortcache ≤ 20 000 Wörter). Vollständige Suite: 3275 bestanden, 1 übersprungen, 2 erwartete Fehlschläge, 1 unerwartet bestanden, Exit 0.
+
+**Installierter Build** (neu gebaut, Exit 0, QA-Datenbank, abgefangene Cloud-Anfragen, nur synthetische Daten): Chat ohne Akte, 4 Fragen (Brinkmoeller am Feldanfang, Jaeger in Tabellenzelle, Stuckenschneider vor finitem
+Verb, „Name: Eberhaerter“): **0 Namen im Klartext**; „Gewerbemietverträge“, „Gewährleistung“ und die Anweisung „Überarbeite den Entwurf und fasse das Dokument zusammen“ unverändert lesbar. Chat mit `N_Namen.pdf` (3 Fragen):
+0 Namen im Klartext, Beträge und Rechtsbegriffe erhalten. Laufzeit installiert: ohne Dokument 7–15 s, mit PDF 55–86 s.
+
+**Grenzen / offen (NICHT VERIFIZIERT behoben):** Richter/Fuerst (≈ 2,5 %-Punkte) bleiben ohne Signal; Stuckenschneider (Score 3), Grotelueschen in Tabellen/Überschriften; „Besprechungsprotokoll“ und „Räumungsfrist“ bleiben vorbestehende
+Fehlalarme; Probing hängt vom NER-Modell (`de_core_news_lg`) ab, Schwellen sind an 55 synthetischen Namen kalibriert. Keine vollständige Leckfreiheit.
