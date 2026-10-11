@@ -703,6 +703,50 @@ def drop_sentence_initial_imperatives(text: str, spans: list[DetectedSpan]) -> l
     return kept
 
 
+_LABEL_BEFORE = re.compile(r"[A-ZÄÖÜ][\wÄÖÜäöüß]*:[ \t]*$")
+_NOUN_MODIFIER_POS = ("DET", "ADJ", "NUM", "PRON")
+
+
+def get_name_role_tokens(text: str) -> set[tuple[int, int]]:
+    """Token-Bereiche mit unabhaengigem GRAMMATISCHEM Namenssignal (Folgelauf 12.10.2026, Chat ohne Akte).
+
+    `drop_common_noun_persons` verwirft NER-Personentreffer, die nur aus Substantiv-Tags bestehen - das schuetzt Fachwoerter
+    ("Gewerbemietvertraege"), gab aber echte Nachnamen frei (gemessen 16,4 % Klartext-Lecks). Ein Token behaelt den
+    Personentreffer, wenn es (a) Subjekt eines nicht-infiniten Verbs ist ("X hat angerufen"), (b) bares Agens nach
+    "von"/"durch" ist, (c) ein Feldwert hinter "Label:" ist, oder (d) ein bares (ohne Artikel/Adjektiv/Zahl/Pronomen
+    davor) grossgeschriebenes SINGULAR-Wort ist. Plural-Substantive bleiben verworfen: Fachwoerter wie
+    "Gewerbemietvertraege" sind Plural, Namen Singular. Die Signale gelten nur fuer Woerter, die der NER bereits als
+    Person etikettiert hat - sie fuehren keine neuen Treffer ein."""
+    if not text or not text.strip():
+        return set()
+    neutral = _neutralize_internal_tokens(text)
+    doc = _get_analyzer_engine().nlp_engine.nlp["de"](neutral)
+    roles: set[tuple[int, int]] = set()
+    for token in doc:
+        word = token.text
+        if not word[:1].isupper():
+            continue
+        span = (token.idx, token.idx + len(word))
+        head = token.head
+        subject = (
+            token.dep_ == "sb"
+            and head.pos_ in ("VERB", "AUX")
+            and head.i > token.i
+            and "Inf" not in head.morph.get("VerbForm")
+        )
+        agent = token.dep_ == "nk" and head.pos_ == "ADP" and head.lower_ in ("von", "durch")
+        label_value = bool(_LABEL_BEFORE.search(neutral[: token.idx])) and _is_bare_cell_value(neutral, span[1])
+        previous = doc[token.i - 1] if token.i else None
+        bare = (
+            not any(c.i < token.i and c.pos_ in _NOUN_MODIFIER_POS for c in token.children)
+            and not (previous is not None and previous.pos_ in _NOUN_MODIFIER_POS)
+            and "Plur" not in token.morph.get("Number")
+        )
+        if subject or agent or label_value or bare:
+            roles.add(span)
+    return roles
+
+
 def drop_common_noun_persons(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
     """Verwirft "person"-Treffer, die ausschliesslich aus gewoehnlichen
     Substantiven bestehen (kein einziges Token mit POS=PROPN).
@@ -733,10 +777,17 @@ def drop_common_noun_persons(text: str, spans: list[DetectedSpan]) -> list[Detec
         pos_tags = get_pos_tags(_neutralize_internal_tokens(text))
     except Exception:
         return spans
+    try:
+        name_roles = get_name_role_tokens(text)
+    except Exception:
+        name_roles = set()
     kept: list[DetectedSpan] = []
     for span in spans:
         if span.category != "person":
             kept.append(span)
+            continue
+        if (span.start, span.end) in name_roles:
+            kept.append(span)  # unabhaengiges grammatisches Namenssignal, siehe get_name_role_tokens
             continue
         tags = [
             tag for (start, end), tag in pos_tags.items() if start >= span.start and end <= span.end

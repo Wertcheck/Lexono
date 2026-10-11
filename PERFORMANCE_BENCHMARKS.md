@@ -556,3 +556,29 @@ Prüfskript-Fehler gefunden und behoben: Substring-Suche meldete „Fischer“ i
   gering, Rest-Lecks bleiben (nicht als Subjekt erkennbare Namen) → **keine Codeänderung**: belegter, aber vorbestehender Zielkonflikt „Fachwort-Fehlalarm ↔ Namen-Leck“ im Chat ohne Akte;
   Entscheidung über Nachbesserung (z. B. Fehlalarm in Kauf nehmen und den Filter dort abschalten = Leck-Rate dann wie mit Akte, aber „Gewerbemietverträge“ → Platzhalter) liegt beim Inhaber.
 * Keine vollständige Leckfreiheit behauptet: Mit Akte 4,7 %, ohne Akte 14,8 % (synthetische Fälle).
+
+## Achter Lauf: Namenserkennung im Chat ohne Akte (12.10.2026)
+
+`scripts/bench_chat_without_file.py`, 440 identische synthetische Namensfälle (55 Nachnamen × 8 Kontexte) im tatsächlichen Payload, dazu 14 Fachfragen/Imperative und 100 Fachbegriffe × 4 Kontexte.
+
+**Ursache (Aufschlüsselung der 49 Lecks im 330-Fälle-Satz):** 23 NER-Person + NOUN-Tag und 12 ohne Treffer (NOUN ohne PER-Etikett) – Nomen-Filter `drop_common_noun_persons` bzw. Modellgrenze; 12 als ORT/ORGANISATION
+etikettiert (Kategorie-Ausnahme für Allgemeinwissen, bewusst), 11 PROPN+NER trotzdem verloren (gleicher Filter-/Kategoriepfad). Modellfehler und Filterfehler getrennt: Der NER erkannte die Namen
+überwiegend, der Filter verwarf sie.
+
+| Variante (identische Fälle) | Lecks | Fachfragen verändert | Fachbegriffe betroffen |
+|---|---|---|---|
+| 56c2c74 (Filter verwirft Nomen-Personen) | 16,4 % (72/440) | 1/14 | 19/100 |
+| + Subjekt eines nicht-infiniten Verbs (getrennter Versuch) | 13,6 % | 1/14 | 19/100 |
+| + bares Agens „von/durch X“ | 12,5 % | 1/14 | 19/100 |
+| + Feldwert hinter „Label:“ | 11,4 % | 1/14 | 19/100 |
+| bares Singular-Substantiv (allein) | 12,5 % | 1/14 | 19/100 |
+| bares Substantiv inkl. Plural | 8,6 % | 2/14 („Gewerbemietverträge“ wird Platzhalter) | 19/100 |
+| **übernommen: Subjekt ∪ Agens ∪ Label ∪ bares Singular, Plural bleibt verworfen** | **7,7 % (34/440)** | **1/14** (vorbestehend „Räumungsfrist“) | **19/100** |
+| Referenz: Filter komplett aus (nicht übernommen) | 7,7 % | 2/14 | 19/100 |
+
+Umsetzung: `presidio_ner.get_name_role_tokens`; `drop_common_noun_persons` behält einen NER-Personentreffer, wenn eines der Signale zutrifft (führt keine neuen Treffer ein, schwächt Presidio/Leak-Check/Fail-Closed nicht).
+Mit Akte unverändert (Benchmark 1100 Fälle: 4,7 %, Blocks 0,1 %). Laufzeit: ein zusätzlicher spaCy-Durchlauf nur im Chat ohne Akte bei Personentreffern, Gesamtlauf 440+ Fälle ≈ 45 s (kein auffälliger Mehraufwand).
+Vollständige Suite danach: 3263 bestanden, 1 übersprungen, 1 erwarteter Fehlschlag, 1 unerwartet bestanden, Exit 0.
+
+**Restrisiken / NICHT VERIFIZIERT:** 7,7 % bleiben im Klartext (v. a. Namen ohne PER-Etikett nach „durch⏎X“ und in „Name:“-Zellen, Richter/Fuerst, ORT/ORG-etikettierte Namen durch die Allgemeinwissen-Ausnahme). Eine Regel
+für unbekannte Substantive wurde nicht eingeführt (Fehlalarme bei Fachbegriffen). Installierter Build für diese Änderung NICHT neu gebaut/geprüft.

@@ -191,3 +191,62 @@ def test_filter_unit_keeps_subject_but_drops_imperative() -> None:
 def test_known_limit_name_that_is_also_a_common_noun(gateway, name) -> None:
     result = _prepare(gateway, f"Akte: Beispielakte\nDazu erklärt {name}, die Anlage sei mangelhaft.")
     assert name not in _outgoing(result)
+
+
+# --- Chat ohne Akte (Folgelauf 12.10.2026): grammatische Positivsignale gegen den Nomen-Filter ---------------------------
+# Messung (440 identische synthetische Faelle, tatsaechliche Payloads, skip_general_knowledge_pseudonymization=True):
+# Klartext-Lecks 16,4 % -> 7,7 %; "Gewerbemietvertraege" bleibt lesbar (Plural), Fachfragen unveraendert 1/14.
+def _prepare_no_file(gateway: ClaudePrivacyGateway, anmerkungen: str):
+    return gateway.prepare_request(
+        purpose="chat_response", sachverhalt="Akte: (kein spezifischer Fall zugeordnet)", argumentationspunkte=[], quellenverweise=[],
+        stil=None, vorlage=None, anwaltliche_anmerkungen=anmerkungen, known_entities=None, gespraechsverlauf=[],
+        skip_general_knowledge_pseudonymization=True,
+    )
+
+
+NO_FILE_CASES = [
+    ("Wessolowski", "Wessolowski hat angerufen und bittet um Rückruf."),  # Subjekt
+    ("Brinkmoeller", "Brinkmoeller erklärt, dass die Anlage mangelhaft ist."),  # Subjekt
+    ("Marquardt", "Dazu erklärt Marquardt, die Anlage sei mangelhaft."),  # Subjekt nach Adverb
+    ("Stuckenschneider", "Die Unterlagen wurden von Stuckenschneider geprüft und freigegeben."),  # Agens
+    ("Grotelueschen", "Name: Grotelueschen  Funktion: Zeuge  Datum: 12.03.2026"),  # Feldwert
+]
+
+
+@pytest.mark.parametrize(("name", "text"), NO_FILE_CASES)
+def test_names_with_a_grammatical_signal_are_masked_in_the_chat_without_a_file(gateway, name, text) -> None:
+    result = _prepare_no_file(gateway, text)
+    assert result.allowed
+    assert name not in result.payload.anonymisierte_anwaltliche_anmerkungen
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Gilt das auch für Gewerbemietverträge?",  # Plural-Fachwort, vom NER faelschlich als Person etikettiert
+        "Was bedeutet Nacherfüllung im Kaufrecht?",
+        "Welche Frist gilt für die Berufungsbegründung?",
+        "Wie wirkt sich Verzug auf den Schadensersatz aus?",
+        "Erstelle ein Schreiben an die Gegenseite.",
+        "Fasse das Dokument zusammen.",
+        "Überarbeite den Entwurf und kürze ihn.",
+        "Berücksichtige § 634 BGB und die VOB/B.",
+    ],
+)
+def test_legal_questions_and_imperatives_stay_readable_in_the_chat_without_a_file(gateway, question) -> None:
+    result = _prepare_no_file(gateway, question)
+    assert result.allowed
+    assert result.payload.anonymisierte_anwaltliche_anmerkungen == question
+
+
+def test_name_role_tokens_unit_signals_and_plural_exclusion() -> None:
+    from app.privacy.presidio_ner import get_name_role_tokens
+
+    subject = "Wessolowski hat angerufen."
+    assert (0, 11) in get_name_role_tokens(subject)
+    label = "Name: Marquardt  Funktion: Zeuge"
+    assert (6, 15) in get_name_role_tokens(label)
+    plural = "Gilt das auch für Gewerbemietverträge?"
+    start = plural.index("Gewerbemietverträge")
+    assert (start, start + len("Gewerbemietverträge")) not in get_name_role_tokens(plural)
+    assert get_name_role_tokens("") == set()
