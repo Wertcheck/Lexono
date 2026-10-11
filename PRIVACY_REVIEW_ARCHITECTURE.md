@@ -175,3 +175,41 @@ Testrechner existiert nur ein aktives Konto, die Sitzung hat keine Administrator
 Systemänderung ohne Freigabe. Voraussetzungen für den Test: zweites lokales Konto, Schreibrecht beider Konten auf
 `C:\ProgramData\Lexono\data` (nur falls der Mehrkonten-Betrieb gewollt ist – derzeit nicht vorgesehen), gleichzeitiges Senden
 derselben Rückfrage aus beiden Sitzungen gegen den Fang-Server.
+
+## 8. Testrealität: realistische Dokumente durch den echten Pfad (12.10.2026, `368f504`)
+
+**Architektur-Audit (unabhängige Prüfung, Code-Belege):** Eine Entscheidung „kein personenbezogenes Datum“ wirkt ausschließlich in
+`find_review_candidates`; automatische Erkennung (Regex, bekannte Entitäten, NER, Probing), Restrisiko-Scan, Final Payload Gate und
+Siegel laufen nach jeder Entscheidung unverändert; „personenbezogen/unsicher“ fügen nur Treffer hinzu; Entscheidungen sind auf
+Akte/Unterhaltung begrenzt; der Client kann nichts als „freigegeben“ markieren; alle vier Cloud-Provider prüfen das Siegel.
+Behoben aus dem Audit: Entscheidungsbegriffe nur als einzelnes alphabetisches Wort (ein eingeschleuster Mehrwort-Begriff hätte in der
+Überlappungsauflösung einen längeren Treffer anderer Kategorie verdrängen können); Masken-Modus ohne Obergrenze (bisher wurden nur die
+ersten 8 unsicheren Begriffe maskiert).
+
+**Realistische Dokumente** (`scripts/make_realistic_privacy_docs.py`, Goldstandard; `scripts/bench_realistic_documents.py`, echter Pfad
+Extraktion → Dokument in Akte → DraftingService → versiegelter Payload): derselbe Inhalt als DOCX (Kopf-/Fußzeile, Liste, Beteiligten-
+und Rechnungstabelle), PDF (echte Umbrüche, Tabellen als positionierter Text) und Scan (Bild-PDF, OCR mit gebündeltem Tesseract).
+
+| Befund (vorher, `119f9af`) | Ursache (belegt) | Klasse | Maßnahme |
+|---|---|---|---|
+| DOCX: Tabellen, Kopf-/Fußzeile fehlten im Text (u. a. Pfannenstiel, Anschriften, IBAN, Rechnungsbeträge) | `_extract_docx_text` las nur `paragraphs` | Extraktion (Inhaltsverlust, kein Leck) | Absätze und Tabellen in Dokumentreihenfolge, Zeilen als „Zelle \| Zelle“, Kopf-/Fußzeilen |
+| PDF und Scan: **Leck „Fuerst“** (Listenpunkt „- Fuerst“) | Aufzählungszeichen zählten nicht als Verbindung zum ersetzten Personen-Platzhalter; DOCX-Liste ohne Zeichen ebenso | Erkennung | Listenpunkte und Listenzeilen neben Personen-Platzhalter |
+| PDF: „Estrich“ maskiert, Rückfragen zu „Menge“, „Estrich“ | flach gelegte Tabelle; Parser machte Zellen zum Subjekt eines Verbs aus dem nächsten Absatz | Formatierung | Subjekt-Rolle nur innerhalb einer Zeile (Präposition + Umbruch bleibt erlaubt – Scan-Gegenprobe) |
+| DOCX nach Tabellen-Extraktion: Rückfragen „Menge“, „Estrich“ | Beteiligten- und Rechnungstabelle verschmolzen nach der Aufbereitung zu einer „Zeile“ | Formatierung | Tabellenzeilen-Grenze = Umbruch oder ≥ 2 Leerzeichen, die nicht an „\|“ stehen |
+
+| Format (Goldstandard: 14 personenbezogene Werte, 16 Fachbegriffe/Beträge) | Lecks | fehlende Fachbegriffe/Beträge | Rückfragen |
+|---|---|---|---|
+| DOCX vorher / nachher | 0 (Tabellen fehlten) / **0** | 0 / **0** | Richter, Lange, Fuerst / **Richter, Lange, Fuerst** |
+| PDF vorher / nachher | **1 (Fuerst)** / **0** | **1 (Estrich)** / **0** | Richter, Menge, Estrich / **Richter, Fuerst** |
+| Scan vorher / nachher | **1 (Fuerst)** / **0** | 0 / **0** | Richter, Lange / **Richter, Lange, Fuerst** |
+
+Alle übrigen Benchmarks auf identischer Basis unverändert (mit Akte 0,1 %, ohne Akte 0,0 %, Dokumentpfad 0/990; Fachwort-Fälle 87/600 bzw.
+105/800; Rechtswörter 1/132; Anweisungen 1/17). Bündelung: Rückfragen erscheinen je Runde gemeinsam in einer Karte (höchstens 8, eine
+Absendung, eine erneute Gesamtprüfung); wiederholte Rückfragen entfallen innerhalb der Unterhaltung („personenbezogen“ aktenweit,
+„kein personenbezogenes Datum“ in der Unterhaltung) – per Test belegt.
+
+**Installierter Build aus `368f504`:** Upload von DOCX, PDF und Scan im echten Chat, abgefangene Cloud-Payloads: jeweils Rückfragen nur zu
+echten Namen; nach „Als Person“ **0 Goldwerte im Klartext**, alle Fachbegriffe und Beträge vorhanden. **Befund Konfiguration:** in der
+installierten `.env` ist `OCR_ENABLED=false` – ein Scan bleibt dann „pending“, die Nachricht geht OHNE Dokumentinhalt an die Cloud (kein
+Leck, aber Inhalt fehlt, ohne dass die Antwort darauf hinweist). Der Scan-Pfad wurde deshalb mit `OCR_ENABLED=true` nur für die
+QA-Instanz (Prozessvariable, Konfiguration unverändert) geprüft.
