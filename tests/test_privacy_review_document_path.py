@@ -102,3 +102,44 @@ def test_flattened_pdf_table_cells_are_not_subjects_of_a_later_sentence(gateway)
 def test_list_item_next_to_a_replaced_person_is_protected(gateway, text) -> None:
     masked = _doc_prepare(gateway, text, "mask")
     assert "Fuerst" not in masked.payload.anonymisierter_sachverhalt
+
+
+# --- Praeposition mit verschmolzenem Artikel (13.10.2026, Befund installierter Build: Rueckfrage "Keller") -------------
+
+
+@pytest.mark.parametrize(
+    "document_text",
+    [
+        "Die Abdichtung im Keller ist mangelhaft und muss nachgebessert werden.",
+        "Im Keller steht Wasser.",
+        "Im Winter ist die Heizung ausgefallen.",
+        "Der Schaden am Fenster ist erheblich.",
+    ],
+)
+def test_noun_after_article_contraction_is_not_asked(gateway, document_text) -> None:
+    result = _doc_prepare(gateway, document_text, "ask")
+    assert not result.review_required, [c.term for c in result.review_candidates]
+    masked = _doc_prepare(gateway, document_text, "mask")
+    assert masked.payload.anonymisierter_sachverhalt.endswith(_normalize_document_text(document_text))
+
+
+@pytest.mark.parametrize(
+    "document_text",
+    [
+        "Keller ist am 12.03.2026 nicht erschienen.",  # Subjekt
+        "Herr Keller ist mangelhaft informiert worden.",  # Rollenwort
+        "Die Mail von Keller ist eingegangen.",  # "von"-Agens
+        "Der Zeuge Keller ist nicht erschienen.",
+        "Die Forderung gegen Keller ist verjährt.",  # Praeposition OHNE Artikel bleibt namensverdaechtig
+        "Der Termin beim Keller ist abgesagt.",  # umgangssprachlich vor Namen - bewusst nicht ausgenommen
+        "Das Schreiben vom Keller ist eingegangen.",
+    ],
+)
+def test_name_keller_in_person_roles_stays_protected(gateway, document_text) -> None:
+    # Geschuetzt = entweder Rueckfrage (vor jedem Cloud-Aufruf) oder bereits automatisch pseudonymisiert.
+    asked = _doc_prepare(gateway, document_text, "ask")
+    assert "Keller" in [c.term for c in asked.review_candidates] or (
+        asked.allowed and "Keller" not in asked.payload.anonymisierter_sachverhalt
+    )
+    masked = _doc_prepare(gateway, document_text, "mask")
+    assert "Keller" not in masked.payload.anonymisierter_sachverhalt

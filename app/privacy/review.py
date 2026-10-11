@@ -106,7 +106,12 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     ):
         roles.add("subjekt")
     following = doc[token.i + 1] if token.i + 1 < len(doc) else None
-    if following is not None and following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm"):
+    if (
+        following is not None
+        and following.pos_ in ("VERB", "AUX")
+        and "Fin" in following.morph.get("VerbForm")
+        and not _is_article_contraction_object(doc, token)
+    ):
         roles.add("vor_finitem_verb")
     # Praeposition + Zeilenumbruch + Name ist der gewoehnliche PDF-/OCR-Umbruch ("von" / "Richter vom ...") - hier gilt die
     # Zeilengrenzen-Einschraenkung bewusst NICHT (Befund Scan-Variante, 12.10.2026).
@@ -167,6 +172,25 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     ):
         roles.add("ueberschrift")
     return roles
+
+
+# Praeposition mit verschmolzenem bestimmtem Artikel (13.10.2026, Befund installierter Build: "Die Abdichtung im Keller
+# ist mangelhaft" -> Rueckfrage "Keller"). Die Rolle "vor_finitem_verb" griff rein ueber die Nachbarschaft "Keller ist",
+# obwohl der Parser "Keller" als Kern der Praepositionalgruppe "im Keller" erkennt (Subjekt ist "Abdichtung"). Auf diese
+# Formen folgt ein Nachname praktisch nie ("im Keller", "am Fenster", "ins Haus"). Bewusst NICHT enthalten: "beim", "vom",
+# "zum", "zur" - umgangssprachlich auch vor Namen ("beim Huber", "vom Keller"). Nur diese eine Rolle entfaellt; Subjekt,
+# Rollenwort, "von"/"durch"-Agens, Feldwert, Tabelle usw. bleiben unveraendert.
+_ARTICLE_CONTRACTIONS = frozenset({"im", "ins", "am", "ans", "aufs", "ums", "übers", "überm", "unterm", "hinterm", "vorm"})
+
+
+def _is_article_contraction_object(doc, token) -> bool:
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    return (
+        previous is not None
+        and previous.lower_ in _ARTICLE_CONTRACTIONS
+        and token.dep_ == "nk"
+        and token.head.i == previous.i
+    )
 
 
 _ROW_BOUNDARY = re.compile(r"\n|(?<![|\s])[ \t]{2,}(?![ \t|])")

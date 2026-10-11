@@ -176,7 +176,9 @@ def test_general_question_still_works_after_a_blocked_document(client, db_sessio
     conversation_id = _conversation_id(_send_stream(client, "Bitte fasse das Dokument zusammen.", [scan]))
 
     general = _done(_send_stream(client, "Was versteht man unter einer Abmahnung?", conversation_id=conversation_id))
-    assert general["blocked"] is False and general["content"] == "Antwort der Cloud-KI."
+    assert general["blocked"] is False and general["content"].startswith("Antwort der Cloud-KI.")
+    # 13.10.2026: die Akte hat ein nicht lesbares Dokument - die Antwort nennt es lokal als nicht ausgewertet.
+    assert "Nicht ausgewertet, da ohne verarbeiteten Text: „rechnung_scan.pdf“" in general["content"]
     assert len(writer.received_payloads) == 1
     # Der lokale Hinweis ist kein Gespraechsbeitrag und geht nicht in den Verlauf der Cloud-Anfrage ein.
     assert "nicht an die Cloud-KI gesendet" not in _payload_text(writer)
@@ -532,3 +534,104 @@ def test_multi_paragraph_notice_is_rendered_as_one_block(client, db_session, wri
     start = html.index('class="chat-message__blocked-body"')
     block = html[start : html.index("</div>", html.index("Fragen ohne Bezug", start))]
     assert "nicht an die Cloud-KI gesendet" in block and "Fragen ohne Bezug" in block
+
+
+# --- 9. Dokumentbezug ohne Stichwort (13.10.2026) -----------------------------------------------------------------------
+
+_UNREADABLE_NOTE = "deren Inhalt nicht gelesen werden konnte"
+
+
+def _prompts(writer: FakeClaudeWritingProvider) -> list[str]:
+    from app.ai_providers.claude_writing_provider import build_writing_prompt
+
+    return [build_writing_prompt(payload) for payload in writer.received_payloads]
+
+
+def test_question_without_keyword_after_unreadable_scan_is_not_framed_as_general(
+    client, db_session, writer, monkeypatch, tmp_path
+) -> None:
+    """Reproduziert: "Welche Einwaende erhebt die Gegenseite?" ging mit der Rahmung "kein Dokumentkontext, allgemeine
+    Frage" an die Cloud, ohne lokalen Hinweis. Jetzt: die Cloud-KI erfaehrt nur, dass ein Dokument nicht lesbar ist
+    (ohne Dateiname/Inhalt), und die Antwort nennt das Dokument lokal als nicht ausgewertet."""
+    login_as_admin(db_session, client)
+    _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
+    source = _text_pdf(tmp_path / "q.pdf", "Die Gegenseite erhebt die Einrede der Verjährung.")
+    scan = _scan_of(source, tmp_path / "schreiben_gegenseite.pdf")
+    conversation_id = _conversation_id(_send_stream(client, "Bitte prüfen.", [scan]))
+    assert writer.received_payloads == []  # Anhang nicht lesbar: blockiert wie bisher
+
+    done = _done(_send_stream(client, "Welche Einwände erhebt die Gegenseite?", conversation_id=conversation_id))
+    [prompt] = _prompts(writer)
+    assert "dies ist eine allgemeine Frage" not in prompt
+    assert _UNREADABLE_NOTE in prompt and "Triff keine Aussagen über ihren Inhalt" in prompt
+    assert "schreiben_gegenseite" not in prompt and "Verjährung" not in prompt  # weder Dateiname noch Inhalt
+    assert done["blocked"] is False
+    assert "Nicht ausgewertet, da ohne verarbeiteten Text: „schreiben_gegenseite.pdf“" in done["content"]
+
+
+def test_local_notes_are_not_sent_back_in_the_history(client, db_session, writer, monkeypatch, tmp_path) -> None:
+    login_as_admin(db_session, client)
+    _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
+    scan = _scan_of(_text_pdf(tmp_path / "q.pdf"), tmp_path / "geheimer_dateiname.pdf")
+    conversation_id = _conversation_id(_send_stream(client, "Bitte prüfen.", [scan]))
+    _send_stream(client, "Welche Einwände gibt es?", conversation_id=conversation_id)
+    _send_stream(client, "Und welche Fristen gelten?", conversation_id=conversation_id)
+    second = _prompts(writer)[1]
+    assert "Assistent: Antwort der Cloud-KI." in second  # Gespraechsbeitrag bleibt im Verlauf
+    assert "geheimer_dateiname" not in second and "OFFENE PRÜFPUNKTE" not in second
+
+
+def test_general_question_without_documents_keeps_the_context_free_framing(
+    client, db_session, writer, monkeypatch, tmp_path
+) -> None:
+    login_as_admin(db_session, client)
+    _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
+    done = _done(_send_stream(client, "Welche Einwände kann ein Mieter gegen eine Mieterhöhung erheben?"))
+    [prompt] = _prompts(writer)
+    assert "dies ist eine allgemeine Frage" in prompt and _UNREADABLE_NOTE not in prompt
+    assert done["content"] == "Antwort der Cloud-KI."  # kein lokaler Hinweis
+
+
+def test_ready_and_unready_documents_in_the_same_matter_without_keyword(db_session, tmp_path) -> None:
+    from app.models import User
+
+    user = User(email="qa@kanzlei.test", password_hash="x", display_name="QA")
+    db_session.add(user)
+    db_session.commit()
+    service = ChatService(tmp_path)
+    conversation = service.create_conversation(db_session, user=user, matter_id=None, title="T", actor="qa")
+    db_session.add_all(
+        [
+            Document(matter_id=conversation.matter_id, file_path="a", original_filename="rechnung.pdf",
+                     extracted_text=SIMPLE_TEXT, ocr_status="not_needed"),
+            Document(matter_id=conversation.matter_id, file_path="b", original_filename="erwiderung_scan.pdf",
+                     ocr_status="pending"),
+        ]
+    )
+    db_session.commit()
+    message = service.record_user_message(db_session, conversation=conversation, content="Welche Einwände bestehen?")
+    writer = FakeClaudeWritingProvider("Antwort.")
+    reply = service.send_message(
+        db_session, conversation=conversation, content=message.content,
+        drafting_service=_working_drafting_service(writer), actor="qa", current_message_id=message.id,
+    )
+    [prompt] = _prompts(writer)
+    assert "Estricharbeiten" in prompt and _UNREADABLE_NOTE in prompt  # lesbarer Inhalt + Hinweis auf den Rest
+    assert "erwiderung_scan" not in prompt
+    assert "„erwiderung_scan.pdf“" in reply.content and "rechnung.pdf" not in split_notes(reply.content)
+
+
+def split_notes(text: str) -> str:
+    from app.drafting.review_notes import split_review_notes
+
+    return split_review_notes(text)[1]
+
+
+def test_unreadable_note_does_not_trigger_a_privacy_question(client, db_session, writer, monkeypatch, tmp_path) -> None:
+    login_as_admin(db_session, client)
+    _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
+    scan = _scan_of(_text_pdf(tmp_path / "q.pdf"), tmp_path / "scan.pdf")
+    conversation_id = _conversation_id(_send_stream(client, "Bitte prüfen.", [scan]))
+    events = _send_stream(client, "Welche Einwände bestehen?", conversation_id=conversation_id)
+    assert not [event for event in events if event["kind"] == "review"]
+    assert len(writer.received_payloads) == 1

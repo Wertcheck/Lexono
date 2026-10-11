@@ -362,6 +362,21 @@ class DraftStreamEvent:
 _logger = logging.getLogger("lexono.drafting")
 
 
+def _with_unreadable_documents_note(sachverhalt: str, count: int) -> str:
+    """Akte mit nicht lesbaren Dokumenten (13.10.2026, siehe ChatService._unready_matter_documents): die Cloud-KI
+    erfaehrt NUR, dass es sie gibt - ohne Dateiname und ohne Inhalt - und darf nichts
+    ueber ihren Inhalt behaupten. Fester Systemtext ohne Personenbezug; laeuft wie jeder Sachverhalt durch den Gateway.
+    Ersetzt zugleich die Rahmung "kein Dokumentkontext, allgemeine Frage", die sonst irrefuehrend waere."""
+    if count <= 0:
+        return sachverhalt
+    return (
+        f"{sachverhalt}\n"
+        "Hinweis: Zu dieser Akte liegen Dokumente vor, deren Inhalt nicht gelesen werden konnte (kein Text "
+        "verfügbar). Ihr Inhalt ist unbekannt. Triff keine Aussagen über ihren Inhalt und gib keine Auswertung vor; "
+        "erfordert die Anfrage diesen Inhalt, sage das ausdrücklich."
+    )
+
+
 def _log_provider_exception(exc: Exception) -> None:
     """Protokolliert NUR Ausnahmetyp und HTTP-Status eines fehlgeschlagenen Cloud-Aufrufs
     (nie Nachricht/Inhalt - die kann Nutzdaten enthalten). Vorher wurde die Ausnahme ohne
@@ -423,6 +438,7 @@ class DraftingService:
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
         required_document_ids: Sequence[str] = (),
+        unreadable_document_count: int = 0,
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
 
@@ -515,6 +531,7 @@ class DraftingService:
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
             required_document_ids=required_document_ids,
+            unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult):
             return prepared
@@ -544,6 +561,7 @@ class DraftingService:
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
         required_document_ids: Sequence[str] = (),
+        unreadable_document_count: int = 0,
     ) -> Generator[DraftStreamEvent, None, None]:
         """Streaming-Variante von `create_draft` (13.09., Streaming-
         Architekturentscheidung - siehe DECISIONS.md fuer die volle
@@ -601,6 +619,7 @@ class DraftingService:
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
             required_document_ids=required_document_ids,
+            unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult):
             yield DraftStreamEvent(kind="result", result=prepared)
@@ -662,6 +681,7 @@ class DraftingService:
         previous_draft: Draft | None,
         privacy_decisions: PrivacyDecisions | None,
         required_document_ids: Sequence[str] = (),
+        unreadable_document_count: int = 0,
     ) -> list:
         """Offene Datenschutz-Rueckfrage einer bereits gespeicherten, unbeantworteten Nachricht neu ermitteln (z. B. nach
         dem Neuladen der Seite) - ueber EXAKT denselben Vorbereitungs-/Gateway-Pfad wie die eigentliche Verarbeitung,
@@ -685,6 +705,7 @@ class DraftingService:
             review_mode="ask",
             log_blocked_requests=False,
             required_document_ids=required_document_ids,
+            unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult) and prepared.review_required:
             return list(prepared.review_candidates)
@@ -711,6 +732,7 @@ class DraftingService:
         review_mode: str = "mask",
         log_blocked_requests: bool = True,
         required_document_ids: Sequence[str] = (),
+        unreadable_document_count: int = 0,
     ) -> DraftingResult | _PreparedRequest:
         """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
         `create_draft_stream` (Aktenauflösung, Recherche, Privacy Gateway,
@@ -802,7 +824,7 @@ class DraftingService:
         with trace.step("privacy_gateway"):
             gateway_result = self.gateway.prepare_request(
                 purpose=purpose,
-                sachverhalt=preparation.sachverhalt,
+                sachverhalt=_with_unreadable_documents_note(preparation.sachverhalt, unreadable_document_count),
                 argumentationspunkte=preparation.argumentationspunkte,
                 quellenverweise=quellen_texts + knowledge_texts,
                 stil=stil,

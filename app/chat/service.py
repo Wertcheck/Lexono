@@ -71,7 +71,7 @@ from app.documents.service import DocumentProcessingService
 from app.privacy.decisions import load_decisions
 from app.drafting.draft_text import draft_plain_text
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
-from app.drafting.review_notes import append_review_note
+from app.drafting.review_notes import append_review_note, split_review_notes
 from app.drafting.service import DraftingService
 from app.drafting.versioning import find_latest_version
 from app.ingestion.stability import compute_sha256
@@ -743,10 +743,17 @@ class ChatService:
     def _unready_matter_documents(
         self, db: Session, conversation: ChatConversation, content: str, required: list[str]
     ) -> list[DocumentReadiness]:
-        """Frage mit Dokumentbezug, aber ohne Anhang in dieser Unterhaltung: nicht verarbeitete Aktendokumente werden
-        unter der Antwort ausdruecklich als nicht ausgewertet genannt (keine stillschweigende Teilauswertung)."""
-        if required or not _mentions_document(content):
-            return []
+        """Nicht verarbeitete Dokumente der Akte dieser Unterhaltung (ausser den bereits blockierenden Bezugsdokumenten).
+
+        ECHTER FUND (13.10.2026, reproduziert): eine Frage OHNE Dokument-Stichwort ("Welche Einwaende erhebt die
+        Gegenseite?") nach einem nicht lesbaren Scan ging an die Cloud - mit der Rahmung "kein Dokumentkontext, dies ist
+        eine allgemeine Frage" und ohne lokalen Hinweis. Ob eine Frage ein Dokument braucht, laesst sich ohne Inhalt
+        nicht sicher erkennen; weitere Stichwoerter wuerden das nur verschieben. Massgeblich ist daher der vorhandene
+        Kontext: hat die Akte nicht lesbare Dokumente, (1) erfaehrt die Cloud-KI das ohne Dateiname und ohne Inhalt
+        (DraftingService, `unreadable_document_count`) und darf keine Aussagen zu deren Inhalt treffen, (2) nennt die
+        Antwort sie lokal als nicht ausgewertet. Allgemeine Fragen bleiben moeglich; ausdruecklich dokumentbezogene
+        Fragen und Anhaenge blockieren weiterhin (`_documents_gate`)."""
+        del content  # Stichwortunabhaengig (siehe oben); Signatur unveraendert fuer die Aufrufer.
         documents = (
             db.query(Document)
             .filter(Document.matter_id == conversation.matter_id, Document.deleted_at.is_(None))
@@ -754,7 +761,11 @@ class ChatService:
             .limit(_MAX_MATTER_DOCUMENTS_CHECKED)
             .all()
         )
-        return [item for item in (assess_document(db, d) for d in documents) if not item.ready]
+        return [
+            item
+            for item in (assess_document(db, d) for d in documents)
+            if not item.ready and item.document_id not in required
+        ]
 
     def _document_notice_message(
         self,
@@ -865,6 +876,7 @@ class ChatService:
         required, not_ready = self._documents_gate(db, conversation, current_message_id=last.id, content=last.content)
         if not_ready:
             return None, []
+        unready = self._unready_matter_documents(db, conversation, last.content, required)
         purpose, previous_draft, basis = self._route_request(db, conversation, last.content)
         history = self._build_history(db, conversation=conversation, exclude_message_id=last.id, basis=basis)
         candidates = drafting_service.preview_privacy_review(
@@ -877,6 +889,7 @@ class ChatService:
             previous_draft=previous_draft,
             privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
             required_document_ids=required,
+            unreadable_document_count=len(unready),
         )
         return (last, candidates) if candidates else (None, [])
 
@@ -1009,9 +1022,15 @@ class ChatService:
                 entry = f"{_HISTORY_ROLE_LABELS[message.role]}: {basis.text}"
                 basis_used = True
             else:
+                content = message.content
+                if message.role == "assistant":
+                    # Der Block "Offene Pruefpunkte / Hinweise" ist ein LOKALER Hinweis an die Anwaltschaft (z. B.
+                    # Dateinamen nicht ausgewerteter Dokumente, vorsichtshalber maskierte Begriffe) - kein
+                    # Gespraechsbeitrag, daher nicht Teil kuenftiger Cloud-Anfragen (13.10.2026).
+                    content = split_review_notes(content)[0]
                 entry = (
                     f"{_HISTORY_ROLE_LABELS[message.role]}: "
-                    f"{message.content[:_MAX_HISTORY_CHARS_PER_MESSAGE]}"
+                    f"{content[:_MAX_HISTORY_CHARS_PER_MESSAGE]}"
                 )
             if total_chars + len(entry) > _MAX_HISTORY_CHARS_TOTAL:
                 break
@@ -1144,6 +1163,7 @@ class ChatService:
                     db, matter_id=conversation.matter_id, conversation_id=conversation.id
                 ),
                 required_document_ids=required,
+                unreadable_document_count=len(unready_matter_documents),
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
             # statt einer unbehandelten Ausnahme. Fail-closed bleibt
@@ -1299,6 +1319,7 @@ class ChatService:
                 ),
                 review_mode=review_mode,
                 required_document_ids=required,
+                unreadable_document_count=len(unready_matter_documents),
             ):
                 if event.kind == "delta":
                     yield ChatStreamEvent(kind="delta", text=event.text)
