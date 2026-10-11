@@ -346,9 +346,9 @@ def test_residual_leak_classes_never_reach_the_payload_in_plaintext(gateway, nam
         assert asked.review_required and name in [c.term for c in asked.review_candidates]
 
 
-# Dokumentierte Grenze (NOT VERIFIED geloest): "Lange" liest das Modell nach "durch" als Adjektiv-Substantiv mit Lemma
-# "lang"; "Richter" als Ueberschriftswort hat keine unabhaengige Namensevidenz. Beide bleiben im Benchmark (3/1100).
-@pytest.mark.xfail(reason="bekannte Restgrenze, siehe PRIVACY_REVIEW_ARCHITECTURE.md", strict=False)
+# Frueher bekannte Grenzen, behoben am 12.10.2026 (xfail aufgehoben nach Verifikation im Benchmark und im Payload):
+# "Lange" - Lemma "lange" (klein, als Adverb gelesen) scheiterte am grossschreibungsempfindlichen Formgleichheits-Abgleich;
+# "Zeugenaussage Richter" - die Analysefassung glaettete den Zeilenumbruch nach der Ueberschrift als weichen PDF-Umbruch.
 @pytest.mark.parametrize(
     ("name", "text"),
     [
@@ -356,9 +356,40 @@ def test_residual_leak_classes_never_reach_the_payload_in_plaintext(gateway, nam
         ("Richter", "Zeugenaussage Richter\nDer Zeuge schildert den Ablauf."),
     ],
 )
-def test_known_remaining_limits(gateway, name, text) -> None:
+def test_former_limits_are_now_protected(gateway, name, text) -> None:
     masked = _prepare(gateway, text, mode="mask")
-    assert name not in masked.payload.anonymisierter_sachverhalt
+    assert masked.allowed and name not in masked.payload.anonymisierter_sachverhalt
+    asked = _prepare(gateway, text, mode="ask")
+    assert asked.review_required and name in [c.term for c in asked.review_candidates]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Die Anlage wurde gestern geprüft.\nDer Zeuge schildert den Ablauf.",  # echte Zeilen mit Verb: keine Ueberschrift
+        "Dachfläche Nordseite\nDie Feuchtigkeit wurde festgestellt.",
+        "Die Prüfung erfolgte durch Lange Zeiträume hindurch nicht.",  # Grossschreibung am Fehlbeispiel, kein Agens-Partizip
+    ],
+)
+def test_heading_and_case_insensitive_lemma_rules_have_no_false_alarms(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="ask")
+    assert not result.review_required, [c.term for c in result.review_candidates]
+
+
+@pytest.mark.parametrize("term", ["Bescheid", "Flachdach", "Zugluft"])
+def test_terms_not_read_as_a_person_after_herr_are_never_asked(gateway, term) -> None:
+    """Fachwort-Fehlalarme (12.10.2026): ein Wort, das selbst im staerksten Namensrahmen "Herr X hat unterschrieben"
+    nicht als Person gelesen wird, loest keine Rueckfrage und keine vorsichtshalber-Maskierung aus."""
+    for template in ("Name: {X}  Funktion: Zeuge", "Zeuge  |  {X}  |  Hamburg  |  geladen", "{X} ist erforderlich."):
+        result = _prepare(gateway, template.format(X=term), mode="ask")
+        assert term not in [c.term for c in result.review_candidates]
+
+
+@pytest.mark.parametrize("name", ["Richter", "Fischer", "Lange", "Fuerst"])
+def test_ambiguous_surnames_still_pass_the_herr_frame(name) -> None:
+    from app.privacy import presidio_ner as pn
+
+    assert pn._name_probe_frames(name)[0]
 
 
 @pytest.mark.parametrize(

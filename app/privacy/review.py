@@ -110,9 +110,12 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
         roles.add("aufzaehlung_mit_person")
     # Kurze Ueberschriftszeile "Zeugenaussage Richter": letztes Wort einer Zeile aus hoechstens vier Woertern ohne Verb
     # und ohne Satzzeichen am Ende, direkt nach einem Substantiv.
-    line_start = text.rfind("\n", 0, token.idx) + 1
-    line_end = text.find("\n", end)
-    line = text[line_start : len(text) if line_end < 0 else line_end].strip()
+    # Zeilengrenzen aus dem ROHtext: die Analysefassung ersetzt "Richter\nDer" als vermeintlich weichen PDF-Umbruch durch
+    # ein Leerzeichen - die Ueberschrift verschmolz sonst mit dem naechsten Satz (12.10.2026, "Zeugenaussage Richter").
+    lines_source = raw if raw is not None else text
+    line_start = lines_source.rfind("\n", 0, token.idx) + 1
+    line_end = lines_source.find("\n", end)
+    line = pn._neutralize_internal_tokens(lines_source)[line_start : len(lines_source) if line_end < 0 else line_end].strip()
     if (
         line.endswith(token.text)
         and 2 <= len(line.split()) <= 4
@@ -120,6 +123,7 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
         and previous.pos_ in ("NOUN", "PROPN")
         and previous.idx >= line_start
         and not any(t.pos_ in ("VERB", "AUX") for t in doc if line_start <= t.idx < end)
+        and (line_end < 0 or line_end >= end)
     ):
         roles.add("ueberschrift")
     return roles
@@ -201,7 +205,7 @@ def find_review_candidates(
             and not (
                 "nach_praeposition" in roles
                 and token.head.lower_ in ("von", "durch")
-                and token.lemma_ == token.text
+                and token.lemma_.lower() == token.text.lower()
             )
         ):
             # Echter Plural ("Zahlungen", Lemma "Zahlung") bleibt ausgeschlossen; formgleiche Woerter als Agens nach
@@ -213,6 +217,11 @@ def find_review_candidates(
             continue
         score = pn._name_probe_score(word)
         if score < REVIEW_MIN_PROBE_SCORE:
+            continue
+        # Fachwort-Fehlalarme (12.10.2026, 600er-Korpus): jeder synthetische Testname wird im staerksten Namensrahmen
+        # "Herr X hat unterschrieben" als Person gelesen; Fachwoerter wie "Bescheid", "Flachdach", "Zugluft" nicht.
+        # Gemessen: Fachwort-Faelle 100 -> 87 von 600, Klartext-Namen unveraendert 0,4 %.
+        if not pn._name_probe_frames(word)[0]:
             continue
         before, after = _context(context_source, word)
         found[word] = ReviewCandidate(

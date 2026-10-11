@@ -497,14 +497,19 @@ _NAME_PROBE_MIN_LENGTH = 5
 
 
 @lru_cache(maxsize=20000)
-def _name_probe_score(word: str) -> int:
-    """Anzahl der Rahmensaetze (0-5), in denen das Modell das Einzelwort als PER etikettiert."""
+def _name_probe_frames(word: str) -> tuple[bool, ...]:
+    """Je Rahmensatz (Reihenfolge wie `_NAME_PROBE_FRAMES`): etikettiert das Modell das Einzelwort als PER?"""
     texts = [frame.format(X=word) for frame in _NAME_PROBE_FRAMES]
-    score = 0
+    result = []
     for text, doc in zip(texts, _get_analyzer_engine().nlp_engine.nlp["de"].pipe(texts, batch_size=8)):
         start = text.index(word)
-        score += any(token.idx == start and token.ent_type_ == "PER" for token in doc)
-    return score
+        result.append(any(token.idx == start and token.ent_type_ == "PER" for token in doc))
+    return tuple(result)
+
+
+def _name_probe_score(word: str) -> int:
+    """Anzahl der Rahmensaetze (0-5), in denen das Modell das Einzelwort als PER etikettiert."""
+    return sum(_name_probe_frames(word))
 
 
 def detect_probed_names(text: str) -> list[DetectedSpan]:

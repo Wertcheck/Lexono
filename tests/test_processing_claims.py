@@ -98,3 +98,28 @@ def test_stale_claim_is_reported_as_interrupted_and_never_reclaimed(file_db) -> 
     session.commit()
     assert processing_claims.state(session, message_id) == "interrupted"
     assert processing_claims.claim(session, message_id) is False  # keine automatische Uebernahme (fail-closed)
+
+
+def test_claim_fails_closed_on_a_read_only_database(file_db, tmp_path) -> None:
+    r"""Zweites Windows-Konto (12.10.2026): Standard-ACL von C:\ProgramData\Lexono\data\kanzlei_ai.db gibt anderen
+    Benutzern nur Lesezugriff. Ein Prozess ohne Schreibrecht darf die Sperre NIE erhalten (keine Verarbeitung, kein
+    Cloud-Aufruf) - der Fehler wird nicht als "frei" oder "erhalten" umgedeutet."""
+    import os
+    import stat
+
+    from sqlalchemy.exc import OperationalError
+
+    url, session, message_id = file_db
+    session.close()
+    db_file = url.replace("sqlite:///", "")
+    os.chmod(db_file, stat.S_IREAD)
+    try:
+        engine = create_engine(url)
+        ro_session = sessionmaker(bind=engine)()
+        with pytest.raises(OperationalError):
+            processing_claims.claim(ro_session, message_id)
+        assert processing_claims.state(ro_session, message_id) == "free"  # nichts wurde beansprucht
+        ro_session.close()
+        engine.dispose()
+    finally:
+        os.chmod(db_file, stat.S_IREAD | stat.S_IWRITE)
