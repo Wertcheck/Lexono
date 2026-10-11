@@ -582,3 +582,15 @@ Vollständige Suite danach: 3263 bestanden, 1 übersprungen, 1 erwarteter Fehlsc
 
 **Restrisiken / NICHT VERIFIZIERT:** 7,7 % bleiben im Klartext (v. a. Namen ohne PER-Etikett nach „durch⏎X“ und in „Name:“-Zellen, Richter/Fuerst, ORT/ORG-etikettierte Namen durch die Allgemeinwissen-Ausnahme). Eine Regel
 für unbekannte Substantive wurde nicht eingeführt (Fehlalarme bei Fachbegriffen). Installierter Build für diese Änderung NICHT neu gebaut/geprüft.
+
+### Installierter Build auf 2ac0631 (12.10.2026, nach dem Chat-ohne-Akte-Fix)
+
+Neu gebaut (`windows\build.ps1`, Exit 0, saubere Baum, HEAD == origin/main == `2ac0631`), still installiert, QA-Datenbank, abgefangene Cloud-Anfragen, nur synthetische Daten. Der Commit im Paket ist nur indirekt
+belegt (sauberer Baum zur Buildzeit).
+
+* **Chat ohne Akte, 4 Fragen mit Namen** (Wessolowski als Subjekt am Feldanfang, Stuckenschneider nach „Dazu erklärt“, „Name: Grotelueschen  Funktion: Zeuge“, „von Brinkmoeller geprüft“): **0 Namen im Klartext**
+  in allen 4 Payloads. Der Fall, der auf 56c2c74 im Klartext ging („Wessolowski hat angerufen …“), ist nun `[PERSON_01] hat angerufen …`. „Gewerbemietverträge“ und „Gewährleistung“ blieben lesbar.
+  „Räumungsfrist“ wurde in einer Frage zu `[PERSON_02]` – vorbestehender Fehlalarm (im Benchmark 1/14 vor und nach der Änderung), keine Regression.
+* **Chat mit `N_Namen.pdf`, 3 Fragen:** 0 Namen im Klartext, Beträge „4.250,00“/„1.180,50“ und Rechtsbegriffe erhalten, keine Blocks.
+* Laufzeit installiert: Fragen ohne Dokument 7,2–15 s (lokale Vorabanalyse übersprungen), mit PDF 56–91 s (Vorabanalyse 39–68 s, Validierung 14–20 s; erste Frage nach Modellstart langsamer).
+* Grenzen: 4+3 Anfragen, ein Dokument – belegt keine Leckfreiheit; Benchmark: mit Akte 4,7 %, ohne Akte 7,7 % Rest-Lecks.
