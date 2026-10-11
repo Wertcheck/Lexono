@@ -2188,6 +2188,14 @@
 
       function showPrivacyReview(payload, bubble, hasFiles, onSubmitted) {
         if (!bubble || !payload.candidates || !payload.candidates.length) { onSubmitted(null); return; }
+        // Neue Unterhaltung: Adresse auf die Unterhaltung setzen, damit ein Neuladen die offene Rueckfrage wiederfindet
+        // (sonst laedt die leere Startansicht /dashboard/chat).
+        if (payload.conversation_id && window.history && window.history.replaceState) {
+          var reviewPath = "/dashboard/chat/" + encodeURIComponent(payload.conversation_id);
+          if (window.location.pathname === "/dashboard/chat" || window.location.pathname === "/dashboard/chat/") {
+            window.history.replaceState(null, "", reviewPath);
+          }
+        }
         bubble.classList.remove("chat-message--thinking");
         var body = bubble.querySelector(".chat-message__text");
         body.className = "chat-message__text privacy-review";
