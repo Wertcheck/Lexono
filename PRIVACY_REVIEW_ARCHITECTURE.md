@@ -656,3 +656,20 @@ demselben Build: PASS.
   aber die Lesbarkeit der KI-Antwort mindern.
 - **Attributives Partizip** („von der Zeugin Eiche vorgelegten“): Gemessen nicht trennscharf, weil der Parser Name und
   Objekt gleich analysiert; verworfen.
+
+### 15a. Offener, gemessener Befund: Versalien (vorbestehend, nicht behoben)
+
+Gemessen auf `3af2849`, Modus „mask“, alle Anfragen zugelassen, also **Leck statt Blockade**:
+- „HERRN⏎GERNOT HAHN⏎BIRKENALLEE 17⏎12345 MUSTERSTADT“ (Anschriftenblock für Fensterumschläge): **vollständig im
+  Klartext**, Name **und** Anschrift.
+- „Der Beklagte WINKELMANN hat bestritten.“: im Klartext.
+- „In Sachen HABERLAND ./. WINKELMANN“: im Klartext.
+- „Herr WINKELMANN … WINKELMANN bestätigte“: geschützt, über die NER.
+
+Ursache: NER, Zweitsignale und Adressmuster erkennen Namen und Anschriften fast nur an der Groß-/Kleinschreibung.
+
+Erprobt und **verworfen** (nicht committet): eine längengleiche zweite Analysefassung in normaler Schreibung („HAHN“ →
+„Hahn“), analog zur Umlaut-Wiederherstellung. Ergebnis war nur ein Teilerfolg: „GERNOT“ erkannt, „HAHN“, Anschrift,
+„Der Beklagte WINKELMANN“ und Rubrum weiterhin im Klartext. Eine belastbare Lösung muss auch die Adressmuster in
+`app/privacy/detectors.py` einbeziehen (Pseudonymisierung und Restrisiko-Scan gemeinsam) und braucht eine eigene
+Fehlalarm-Messung für Versal-Überschriften („BETREFF: MAHNUNG ODER KLAGE“). **Nächster Schritt mit hoher Priorität.**
