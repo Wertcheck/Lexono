@@ -9,6 +9,7 @@ kann (nicht den ganzen Satz).
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -549,8 +550,18 @@ def detect_all(
 # Erweiterung. Grund (Red-Team 4, C2): die Varianten-NER haengt vom Kontext ab, und im Restrisiko-Scan stehen Platzhalter
 # neben den Versalwoertern - als Blockadegrund erzeugte sie neue, inkonsistente Fail-Closed-Blockaden normaler Briefe. Der
 # Restrisiko-Scan wird dadurch nicht schwaecher als zuvor; die Pseudonymisierung maskiert mehr.
-_UPPERCASE_WORD = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{4,}(?:-[A-ZÄÖÜß]{2,})*(?![\wÄÖÜäöüß])")
-_VOWEL = re.compile(r"[AEIOUYÄÖÜ]")
+# Grossbuchstaben aller Schriften des BMP, nicht nur A-Z/ÄÖÜ (Red-Team 4: "ŞAHIN", "GÓMEZ", "RENÉ LEFÈVRE", "MØLLER"
+# blieben im Klartext, weil das Wort nicht als Versalwort galt). Fuer A-Z/ÄÖÜß ist das Verhalten unveraendert.
+_UPPER = "ß" + "".join(re.escape(chr(c)) for c in range(0x80, 0x10000) if chr(c).isupper() and chr(c).isalpha())
+_UC = f"[A-Z{_UPPER}]"
+_UPPERCASE_WORD = re.compile(rf"(?<![\wÄÖÜäöüß]){_UC}{{4,}}(?:-{_UC}{{2,}})*(?![\wÄÖÜäöüß])")
+_VOWEL = re.compile(r"[AEIOUYÆØŒ]")
+
+
+def _has_vowel(value: str) -> bool:
+    # Grundbuchstabe ohne diakritische Zeichen ("Ä" -> "A", "Ó" -> "O"); vokallose Abkuerzungen (STVG, GMBH) bleiben aussen vor.
+    base = "".join(ch for ch in unicodedata.normalize("NFD", value) if not unicodedata.combining(ch))
+    return _VOWEL.search(base) is not None
 
 
 # Versalfolge: aufeinanderfolgende Versalwoerter (auch kurze, z. B. "DES", "UND"), getrennt nur durch EIN Leerzeichen oder
@@ -558,23 +569,42 @@ _VOWEL = re.compile(r"[AEIOUYÄÖÜ]")
 # beenden eine Folge. Gemessen (scripts/bench_uppercase_negatives.py): ganze Versal-SAETZE in normale Schreibung gebracht
 # lassen das Modell Verben fuer Eigennamen halten ("SIND", "TELEFAX" als Person) - Namen und Anschriften stehen dagegen in
 # KURZEN Folgen (Anschriftzeile, einzelner Name im Satz, Rubrum). Daher nur Folgen aus hoechstens 4 Woertern.
-_UPPERCASE_RUN = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*(?: [A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*)*(?![\wÄÖÜäöüß])")
+_UPPERCASE_RUN = re.compile(
+    rf"(?<![\wÄÖÜäöüß]){_UC}{{2,}}(?:-{_UC}{{2,}})*(?: {_UC}{{2,}}(?:-{_UC}{{2,}})*)*(?![\wÄÖÜäöüß])"
+)
 _MAX_UPPERCASE_RUN_WORDS = 4
+# Erster Durchgang: Folgen/Woerter nur aus A-Z/ÄÖÜß, exakt wie zuvor. Der zweite Durchgang mit Grossbuchstaben aller
+# Schriften kommt nur HINZU (Red-Team 5): ein Buchstabe wie "Ş" beendete bisher eine Folge - allein mit dem erweiterten
+# Zeichenvorrat wurde "KLAGE DES HERRN EMRE ŞAHIN GEGEN DIE FIRMA" zu EINER langen Folge, und "EMRE", vorher geschuetzt,
+# blieb im Klartext; "Zeugin İPEK AYDIN" ergab in der erweiterten Fassung keinen NER-Treffer mehr, vorher "Aydin".
+_UPPERCASE_RUN_AZ = re.compile(
+    r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*(?: [A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*)*(?![\wÄÖÜäöüß])"
+)
+_UPPERCASE_WORD_AZ = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{4,}(?:-[A-ZÄÖÜß]{2,})*(?![\wÄÖÜäöüß])")
 
 
-def _uppercase_variant(text: str) -> tuple[str, list[tuple[int, int]]] | None:
+def _uppercase_variant(text: str, *, extended: bool = False) -> tuple[str, list[tuple[int, int]]] | None:
     regions: list[tuple[int, int]] = []
     chars = list(text)
-    for run in _UPPERCASE_RUN.finditer(text):
-        if len(run.group().split(" ")) > _MAX_UPPERCASE_RUN_WORDS:
-            continue
-        for word in _UPPERCASE_WORD.finditer(text, run.start(), run.end()):
-            value = word.group()
-            if not _VOWEL.search(value):
-                continue  # vokallose Abkuerzung (STVG, GMBH)
-            regions.append((word.start(), word.end()))
-            converted = "-".join(part[:1] + part[1:].lower() for part in value.split("-"))
-            chars[word.start() : word.end()] = list(converted)
+    patterns = [(_UPPERCASE_RUN_AZ, _UPPERCASE_WORD_AZ)]
+    if extended:
+        patterns.append((_UPPERCASE_RUN, _UPPERCASE_WORD))
+    words = {
+        (word.start(), word.end())
+        for run_pattern, word_pattern in patterns
+        for run in run_pattern.finditer(text)
+        if len(run.group().split(" ")) <= _MAX_UPPERCASE_RUN_WORDS
+        for word in word_pattern.finditer(text, run.start(), run.end())
+    }
+    for start, end in sorted(words):
+        value = text[start:end]
+        if not _has_vowel(value):
+            continue  # vokallose Abkuerzung (STVG, GMBH)
+        converted = "-".join(part[:1] + part[1:].lower() for part in value.split("-"))
+        if len(converted) != len(value):
+            continue  # Kleinschreibung aendert die Laenge ("İ" -> "i̇") - Offsets muessen gleich bleiben
+        regions.append((start, end))
+        chars[start:end] = list(converted)
     variant = "".join(chars)
     if not regions or len(variant) != len(text):
         return None
@@ -607,10 +637,31 @@ def _uppercase_variant_spans(
     * "PLZ Ort" ohne Strasse: nur wenn der Ort in der Analysefassung ein Eigenname (PROPN) ist ("12345 SCHLUESSEL" nicht);
     * NER-Personen/-Orte: jedes Wort PROPN, und kein einzelnes Versalwort allein auf seiner Zeile (Ueberschrift);
     * NER-Organisationen: nicht uebernommen (in Versal-Fliesstext ueberwiegend Fehlalarme).
-    Nur Treffer, die ein umgeschriebenes Versalwort beruehren und keinen urspruenglichen Treffer ueberlappen."""
-    converted = _uppercase_variant(text)
-    if converted is None:
-        return []
+    Nur Treffer, die ein umgeschriebenes Versalwort beruehren und keinen urspruenglichen Treffer ueberlappen.
+    Zwei Durchgaenge: A-Z/ÄÖÜß wie bisher, danach - nur wenn die Fassung sich unterscheidet - der erweiterte Zeichenvorrat,
+    fuer den die Treffer des ersten Durchgangs wie urspruengliche Treffer gelten (rein additiv)."""
+    options = {
+        "known_entities": known_entities, "ner_detector": ner_detector, "skip_categories": skip_categories,
+        "ner_span_filter": ner_span_filter,
+    }
+    basic = _uppercase_variant(text)
+    accepted = _uppercase_variant_pass(text, original_spans, basic, **options) if basic else []
+    extended = _uppercase_variant(text, extended=True)
+    if extended and (basic is None or extended[0] != basic[0]):
+        accepted += _uppercase_variant_pass(text, original_spans + accepted, extended, **options)
+    return accepted
+
+
+def _uppercase_variant_pass(
+    text: str,
+    original_spans: list[DetectedSpan],
+    converted: tuple[str, list[tuple[int, int]]],
+    *,
+    known_entities: dict[str, list[str]] | None,
+    ner_detector: Callable[[str], list[DetectedSpan]] | None,
+    skip_categories: frozenset[str],
+    ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None,
+) -> list[DetectedSpan]:
     variant, regions = converted
     trusted: list[DetectedSpan] = []
     for detector in _ALL_REGEX_DETECTORS:
@@ -676,28 +727,40 @@ def _uppercase_variant_spans(
     for span in validated:
         if span.category in skip_categories:
             continue
-        # An den Raendern nur Buchstaben/Ziffern (NER lieferte "Haberland ./." - das Rubrum-"./." verschwand im Platzhalter).
-        start, end = span.start, span.end
-        while start < end and not text[start].isalnum():
-            start += 1
-        while end > start and not text[end - 1].isalnum():
-            end -= 1
-        if end <= start:
-            continue
-        span = DetectedSpan(category=span.category, start=start, end=end, value=text[start:end])
-        if not any(span.start < end and start < span.end for start, end in regions):
-            continue  # nur dort, wo die Versalschreibung die Ursache sein kann
         overlapping = [other for other in original_spans if span.start < other.end and other.start < span.end]
-        # Ein urspruenglicher Treffer wird nie verdraengt oder verkuerzt. Erlaubt ist nur eine OBERMENGE gleicher Kategorie
-        # (Red-Team 4, C1: "HANS MEIER" - der Nachname war schon erkannt, der Variantentreffer wurde wegen der
-        # Ueberlappung verworfen, "HANS" blieb im Klartext und der Restrisiko-Scan blockierte den Brief).
-        if any(
-            other.category != span.category or other.start < span.start or other.end > span.end for other in overlapping
-        ):
-            continue
-        if any(span.start < other.end and other.start < span.end for other in accepted):
-            continue
-        accepted.append(DetectedSpan(category=span.category, start=span.start, end=span.end, value=text[span.start : span.end]))
+        # Ein urspruenglicher Treffer wird nie verdraengt oder verkuerzt. Erlaubt ist eine OBERMENGE gleicher Kategorie
+        # (Red-Team 4, C1: "HANS MEIER" - der Nachname war schon erkannt; "HANS" blieb sonst im Klartext und der
+        # Restrisiko-Scan blockierte den Brief). Ueberlappt der Treffer einen urspruenglichen Treffer ANDERER Kategorie
+        # oder ragt dieser hinaus, werden nur die Teile AUSSERHALB der urspruenglichen Treffer uebernommen ("AGNIESZKA
+        # LUKASIEWICZ": der Nachname war schon als Ort maskiert - der Vorname blieb sonst im Klartext). Der
+        # urspruengliche Treffer bleibt dabei unveraendert.
+        is_superset = all(
+            other.category == span.category and other.start >= span.start and other.end <= span.end for other in overlapping
+        )
+        cuts = [] if is_superset else [(other.start, other.end) for other in overlapping]
+        # Rubrum-Trenner "./." trennt zwei Parteien ("Dvorak ./. Haberland" als EIN NER-Treffer).
+        cuts += [(span.start + m.start(), span.start + m.end()) for m in re.finditer(r"\./\.", text[span.start : span.end])]
+        pieces = [(span.start, span.end)]
+        for cut_start, cut_end in sorted(cuts):
+            pieces = [
+                part
+                for piece_start, piece_end in pieces
+                for part in ((piece_start, min(piece_end, cut_start)), (max(piece_start, cut_end), piece_end))
+                if part[0] < part[1]
+            ]
+        for start, end in pieces:
+            # An den Raendern nur Buchstaben/Ziffern (NER lieferte "Haberland ./." - das "./." verschwand im Platzhalter).
+            while start < end and not text[start].isalnum():
+                start += 1
+            while end > start and not text[end - 1].isalnum():
+                end -= 1
+            if end <= start:
+                continue
+            if not any(start < region_end and region_start < end for region_start, region_end in regions):
+                continue  # nur dort, wo die Versalschreibung die Ursache sein kann
+            if any(start < other.end and other.start < end for other in accepted):
+                continue
+            accepted.append(DetectedSpan(category=span.category, start=start, end=end, value=text[start:end]))
     # Gesetzesabkuerzung direkt nach einem Normzitat ("§ 5 EFZG") ist kein Name - derselbe Filter wie in presidio_ner
     # (Red-Team 4, B1: Abkuerzungen mit Vokal wurden in der Versal-Fassung zu Personen).
     from app.privacy.presidio_ner import drop_statute_abbreviations

@@ -187,3 +187,83 @@ def test_rubrum_separator_is_kept(gateway) -> None:
     payload = _payload(gateway, text)
     assert "./." in payload and "HABERLAND" not in payload and "WINKELMANN" not in payload
     assert "1.200,00" in payload and "Beklagte" in payload
+
+
+# --- Folgezyklus: Grossbuchstaben ausserhalb A-Z/ÄÖÜ, Teiltreffer neben urspruenglichen Treffern anderer Kategorie ------
+
+
+@pytest.mark.parametrize(
+    "text, values",
+    [
+        ("HERRN\nMEHMET ŞAHIN\nBIRKENALLEE 17\n12345 MUSTERSTADT", ["MEHMET", "ŞAHIN", "BIRKENALLEE"]),
+        ("Die Zeugin GÓMEZ hat ausgesagt.", ["GÓMEZ"]),
+        ("Herrn\nRENÉ LEFÈVRE\nHAFENSTRASSE 9\n20457 HAMBURG", ["RENÉ", "LEFÈVRE", "HAFENSTRASSE"]),
+        ("Die Klägerin MØLLER verlangt Zahlung von 3.912,40 EUR.", ["MØLLER"]),
+        ("FRAU\nAGNIESZKA ŁUKASIEWICZ\nROSENWEG 2\n24103 KIEL", ["AGNIESZKA", "ŁUKASIEWICZ", "ROSENWEG"]),
+        ("In Sachen DVOŘÁK ./. HABERLAND wegen Werklohn", ["DVOŘÁK", "HABERLAND"]),
+        ("Absender: SØREN KJÆRGAARD, LINDENALLEE 4, 24103 KIEL", ["SØREN", "KJÆRGAARD", "LINDENALLEE"]),
+    ],
+)
+def test_uppercase_names_with_non_german_letters_are_protected(gateway, text, values) -> None:
+    payload = _payload(gateway, text)  # assert allowed - auch nicht blockiert
+    for value in values:
+        assert not _word(payload, value), (value, payload)
+    if "./." in text:
+        assert "./." in payload
+
+
+def test_variant_skips_words_whose_lowercase_changes_length() -> None:
+    text = "HERRN  İLKAY İNAN  STVG"
+    variant, regions = detectors._uppercase_variant(text, extended=True)
+    assert len(variant) == len(text)
+    assert all(len(text[s:e]) == len(variant[s:e]) for s, e in regions)
+
+
+def test_variant_span_is_only_added_outside_an_original_span_of_another_category() -> None:
+    """Die NER hielt "ŁUKASIEWICZ" fuer einen Ort; der Variantentreffer "Agnieszka Łukasiewicz" (Person) wurde deshalb ganz
+    verworfen und der Vorname blieb im Klartext. Jetzt: nur der Teil ausserhalb, der urspruengliche Treffer bleibt exakt."""
+    text = "FRAU  AGNIESZKA ŁUKASIEWICZ  ROSENWEG 2"
+    start = text.index("ŁUKASIEWICZ")
+    original = DetectedSpan(category="ort", start=start, end=start + len("ŁUKASIEWICZ"), value="ŁUKASIEWICZ")
+
+    def stub(analysed: str) -> list[DetectedSpan]:
+        if analysed == text:
+            return [original]
+        first = analysed.index("Agnieszka")
+        return [DetectedSpan(category="person", start=first, end=start + len("ŁUKASIEWICZ"), value="Agnieszka Łukasiewicz")]
+
+    spans = detect_all(text, ner_detector=stub)
+    assert any(s.category == "ort" and (s.start, s.end) == (original.start, original.end) for s in spans)
+    assert any(s.category == "person" and s.value == "AGNIESZKA" for s in spans)
+    assert all(s.value == text[s.start : s.end] for s in spans)
+
+
+def test_rubrum_separator_splits_a_variant_span() -> None:
+    text = "In Sachen DVOŘÁK ./. HABERLAND wegen Werklohn"
+
+    def stub(analysed: str) -> list[DetectedSpan]:
+        if "Dvořák" not in analysed:
+            return []  # Original und erster Durchgang (nur A-Z/ÄÖÜß)
+        first = analysed.index("Dvořák")
+        end = analysed.index("Haberland") + len("Haberland")
+        return [DetectedSpan(category="person", start=first, end=end, value=analysed[first:end])]
+
+    values = [s.value for s in detect_all(text, ner_detector=stub)]
+    assert "./." not in "".join(values)
+
+
+@pytest.mark.parametrize(
+    "text, values",
+    [
+        # Red-Team 5: lange Versalzeilen mit "Ş"/"Ł" - auf 58a673f geschuetzt (der Buchstabe beendete die Folge), mit nur
+        # erweitertem Zeichenvorrat wieder im Klartext. Der erste Durchgang (A-Z/ÄÖÜß) bleibt deshalb unveraendert erhalten.
+        ("KLAGE DES HERRN EMRE ŞAHIN GEGEN DIE FIRMA", ["EMRE"]),
+        ("MIETVERTRAG ZWISCHEN AGNIESZKA ŁUKASIEWICZ UND HANS MEIER", ["AGNIESZKA", "HANS", "MEIER"]),
+        ("VOLLMACHT FÜR FRAU AYŞE YILDIRIM ZUR VERTRETUNG", ["YILDIRIM"]),
+        ("Zeugin İPEK AYDIN aus Musterstadt.", ["AYDIN"]),
+    ],
+)
+def test_extended_letters_never_lose_hits_of_the_basic_pass(gateway, text, values) -> None:
+    payload = _payload(gateway, text)
+    for value in values:
+        assert not _word(payload, value), (value, payload)
