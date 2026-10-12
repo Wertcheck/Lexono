@@ -617,3 +617,42 @@ Berufsnamen ohne Einführung (siehe §12a).
 … dass der Zeuge [PERSON_02] belehrt worden ist. Gegen das Urteil hat der Beklagte Berufung eingelegt; die Zinsen von
 312,50 EUR sind offen. Die Klägerin hat den Sachverständigen [PERSON_03] abgelehnt.“ (PASS). Die Payload-Prüfungen aus
 §11–§13 wurden auf demselben Build wiederholt: alle PASS.
+
+## 15. Drittes Red-Team: Gesamtdokumente, Regression „Anschriftenblock“, unsichtbare Zeichen (Folgezyklus 13.10.2026, `76c9d1b`)
+
+Das dritte unabhängige Red-Team hat nur gelesen und gemessen: 6 realistische Gesamtdokumente mit vorab festgelegtem
+Goldstandard und neuen Namen (Klageschrift, Aktennotiz, Mahnschreiben, Protokoll, E-Mail-Verlauf, Gutachten) sowie 20
+Umgehungsformate. Ergebnis: **0 Namenslecks** in den 6 Dokumenten. Zwei Befunde:
+
+1. **Regression aus `38361af` (kritisch für die Nutzbarkeit, kein Leck):** Briefe mit Anschriftenblock wurden in 29 von
+   42 Varianten fail-closed blockiert, auf `54d73bf` waren es 2 von 42.
+   - Ursache: Im Restrisiko-Scan steht der Name bereits als Platzhalter, die Analysefassung macht daraus Leerzeichen.
+     Die Lückenprüfung der Anrede-Regel verglich nur mit dem unmittelbar vorangehenden Leerraum-Token, sodass
+     „Betreff“, „Unser“ oder „Az“ als Name galten.
+   - Meine Blockadenprüfung (§12) hatte das nicht erfasst, weil kein Benchmark-Text einen Anschriftenblock enthielt.
+   - **Behoben:** Die Lücke wird jetzt im Originaltext ab der Anrede gemessen; ein Platzhalter oder Text dazwischen
+     bricht ab, erlaubt ist höchstens ein Zeilenwechsel.
+   - Ergebnis: **2/42**, dieselben zwei vorbestehenden Fälle wie auf `54d73bf`. Neuer Test
+     `tests/test_privacy_letter_blocks.py` (29 Fälle; davon schlagen 27 auf `562bd94` fehl).
+2. **Vorbestehendes Leck (kritisch):** Ein weiches Trennzeichen U+00AD im Namen („Hab­ermehl“, typisch bei
+   PDF-Extraktion) verhinderte die Erkennung. **Behoben:** Der Gateway entfernt unsichtbare Formatzeichen (U+00AD,
+   U+200B–U+200D, U+2060, U+FEFF) aus allen Feldern vor jeder Erkennung. Kein sichtbarer Inhalt ändert sich.
+
+**Weitere Gegenprobe.** Den vom zweiten Red-Team vorbereiteten Fachsprach-Korpus (118 Texte ohne Namen) habe ich auf dem
+Endstand ausgeführt: 14 verlorene Wörter, 0 Rückfragen, 0 Blockaden. Das ist identisch mit `54d73bf`; der gesamte Zyklus
+hat dort keine Fehlalarme eingeführt.
+
+**Installierter Build `76c9d1b`** (im Bündel geprüft). Der vollständige Brief wird nicht blockiert: „Herrn [PERSON_01]
+[ADRESSE_01] Unser Zeichen: 204/26 Betreff: Mahnung … wir mahnen nach § 286 BGB die Zahlung von 1.200,00 EUR an. Herr
+[PERSON_03] hat die Rechnung geprüft … gez. [PERSON_04]“ (PASS). Alle früheren Payload-Prüfungen (§11–§14) auf
+demselben Build: PASS.
+
+**Vom dritten Red-Team gemessene, vorbestehende und offene Punkte:**
+- **Versalnamen im Rubrum** („In Sachen HABERLAND ./. WINKELMANN“): Leck, auf `54d73bf` identisch.
+- **Durchgängige Kleinschreibung** („mein vermieter herr sauer“): Leck.
+- **Fehlalarme** wie „Nachbarstreit Hecke“ → Person (mit Weitergabe), „Andernfalls“ → Person, „die MdE“ → Person,
+  „Quebec Task Force“ → Organisation.
+- **Gleicher Name, verschiedene Platzhalter** („Gernot Hahn“ / „Herr Hahn“): Das ist datenschutzseitig unkritisch, kann
+  aber die Lesbarkeit der KI-Antwort mindern.
+- **Attributives Partizip** („von der Zeugin Eiche vorgelegten“): Gemessen nicht trennscharf, weil der Parser Name und
+  Objekt gleich analysiert; verworfen.
