@@ -510,7 +510,32 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             if not any(extra.start < other.end and other.start < extra.end for other in spans)
         )
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
+    spans = drop_statute_abbreviations(text, spans)
     return propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled)
+
+
+# Gesetzesabkuerzung direkt nach einem Normzitat (Folgezyklus 13.10.2026, scripts/bench_statute_citations.py: "nach § 7 StVG"
+# -> "§ 7 [PERSON_01]"; 37 von 180 Zitaten mit StVO, StPO, BetrVG, ArbZG, ... verloren). Abkuerzungen mit Kleinbuchstaben
+# sind keine Versalwoerter und fielen daher unter die Namensdetektoren. Kontextgebunden: nur ein Einwort-Treffer in
+# Abkuerzungsform (mindestens zwei Grossbuchstaben, hoechstens 12 Zeichen), der UNMITTELBAR auf "§ n"/"§§ n, m"/"Art. n"
+# (ggf. mit Abs./Satz/Nr.) folgt. Ein Name folgt dort nicht.
+_NORM_CITATION_BEFORE = re.compile(
+    r"(?:§§?|Art\.|Artikel)[ \t]*\d+[a-z]?(?:[ \t]*(?:,|und|bis|-|–)[ \t]*\d+[a-z]?)*"
+    r"(?:[ \t]*(?:Abs\.|Absatz|S\.|Satz|Nr\.|Ziff\.|lit\.)[ \t]*\d+[a-z]?)*[ \t]+$"
+)
+_STATUTE_ABBREVIATION = re.compile(r"^(?=(?:[^A-ZÄÖÜ]*[A-ZÄÖÜ]){2})[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{1,11}$")
+
+
+def drop_statute_abbreviations(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    analysis = _neutralize_internal_tokens(text)
+    return [
+        span
+        for span in spans
+        if not (
+            _STATUTE_ABBREVIATION.match(span.value)
+            and _NORM_CITATION_BEFORE.search(analysis[max(0, span.start - 60) : span.start])
+        )
+    ]
 
 
 _PROTOCOL_LABELS = frozenset({"Assistent", "Anwalt"})
