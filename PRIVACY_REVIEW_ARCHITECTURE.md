@@ -657,7 +657,7 @@ demselben Build: PASS.
 - **Attributives Partizip** („von der Zeugin Eiche vorgelegten“): Gemessen nicht trennscharf, weil der Parser Name und
   Objekt gleich analysiert; verworfen.
 
-### 15a. Offener, gemessener Befund: Versalien (vorbestehend, nicht behoben)
+### 15a. Offener, gemessener Befund: Versalien (vorbestehend; weitgehend behoben in §16)
 
 Gemessen auf `3af2849`, Modus „mask“, alle Anfragen zugelassen, also **Leck statt Blockade**:
 - „HERRN⏎GERNOT HAHN⏎BIRKENALLEE 17⏎12345 MUSTERSTADT“ (Anschriftenblock für Fensterumschläge): **vollständig im
@@ -673,3 +673,106 @@ Erprobt und **verworfen** (nicht committet): eine längengleiche zweite Analysef
 „Der Beklagte WINKELMANN“ und Rubrum weiterhin im Klartext. Eine belastbare Lösung muss auch die Adressmuster in
 `app/privacy/detectors.py` einbeziehen (Pseudonymisierung und Restrisiko-Scan gemeinsam) und braucht eine eigene
 Fehlalarm-Messung für Versal-Überschriften („BETREFF: MAHNUNG ODER KLAGE“). **Nächster Schritt mit hoher Priorität.**
+
+## 16. Versalien: zusätzliche, validierte Treffer aus einer Analysefassung (Folgezyklus 13.10.2026, `39112b7`, `58a673f`)
+
+**Ursache** (siehe §15a). NER, Zweitsignale und Adressmuster stützen sich auf die Groß-/Kleinschreibung. Ein Name oder
+eine Anschrift in Versalien („GERNOT HAHN“, „BIRKENALLEE 17“) sieht für sie aus wie eine Überschrift.
+
+**Änderung** in `app/privacy/detectors.py` (`detect_all(..., uppercase_variant=True)`, `_uppercase_variant_spans`):
+
+1. **Längengleiche Analysefassung.** Nur *kurze* Versalfolgen werden in normale Schreibung gebracht („HAHN“ → „Hahn“):
+   - höchstens 4 Wörter;
+   - getrennt nur durch ein Leerzeichen oder einen Bindestrich;
+   - Wörter ab 4 Buchstaben mit Vokal.
+
+   Vokallose Abkürzungen wie STVG oder GMBH bleiben unverändert. Ganze Versalsätze bleiben ebenfalls unverändert: gemessen
+   hält das Modell dort Verben für Namen (34 statt 26 verlorene Wörter).
+2. **Alle Detektoren laufen auf dieser Fassung.** Ein Treffer wird nur übernommen, wenn er einen umgeschriebenen Bereich
+   berührt und validiert ist:
+   - Bekannte Entitäten, Personen mit Titel, Firmen mit Rechtsform und Regex-Detektoren außer der Anschrift gelten ohne
+     weitere Prüfung.
+   - Anschrift: Straße mit Hausnummer gilt immer; PLZ mit Ort nur, wenn der Ort als Eigenname (PROPN) erkannt wird.
+   - NER-Person/-Ort: Jedes umgeschriebene Wort muss PROPN sein. Kein einzelnes Versalwort allein auf seiner Zeile
+     (Überschrift). Kein Treffer direkt nach einem Institutionswort („LANDGERICHT KÖLN“).
+   - NER-Organisationen werden nie übernommen.
+   - Gesetzesabkürzungen nach einem Normzitat („§ 3 EFZG“) werden verworfen, mit demselben Filter wie in `presidio_ner`.
+3. **Nur zusätzliche Treffer.** Ein ursprünglicher Treffer wird nie verdrängt oder verkürzt. Erlaubt ist nur eine
+   Obermenge **gleicher** Kategorie („HANS MEIER“ ⊃ „MEIER“). Der Wert ist immer der Originalausschnitt, an den Rändern
+   auf Buchstaben/Ziffern beschnitten (`58a673f`: der Rubrum-Trenner „./.“ verschwand sonst im Platzhalter).
+4. **Restrisiko-Scan unverändert** (`security_check.py`, `uppercase_variant=False`). Grund (Red-Team 4, C2): die
+   Varianten-NER hängt vom Kontext ab. Neben Platzhaltern erzeugte sie inkonsistente Fail-Closed-Blockaden normaler
+   Briefe. Der Scan ist damit nicht schwächer als zuvor; nur die Pseudonymisierung maskiert mehr.
+
+Presidio, Pseudonymisierung, Restrisiko-Scan, Pre-Cloud-Gate, Payload-Siegel und Fail-Closed sind nicht abgeschwächt.
+
+**Messung vorher (`f843ab7`) / nachher**, jeweils synthetisch:
+
+| Messung | vorher | nachher |
+|---|---|---|
+| Versalnamen/-anschriften im Klartext (`scripts/bench_uppercase.py`, 36 Werte) | 35/36 | **0/36** |
+| Versal-Schlüsselwörter verloren (Überschriften, Fachbegriffe, Normzitate, Beträge; 59) | 3/59 | 3/59 |
+| ganze Versalabsätze, verlorene Wörter (`scripts/bench_uppercase_negatives.py`) | 26/171 | 26/171 (identisch) |
+| Blockaden, 2017 Texte × 2 Modi | 4 | 4 |
+| Briefe mit Anschriftenblock blockiert (§15) | 2/42 | 2/42 |
+
+Alle übrigen Benchmarks aus §11–§15 sind identisch zu `f843ab7`:
+- Normzitate 3/180;
+- Folgeerwähnungen A 0/1288, B 32/138, N 3/22;
+- Artikel-Bench 21/96;
+- Briefe 6/220;
+- Rollenobjekte 0;
+- Namen 0,0 %, Fehlalarme 2/132;
+- Dokumentpfad 0/990;
+- 600er-Korpus 81;
+- Fachsprache 14/0/0.
+
+Die 6 Gesamtdokumente des dritten Red-Teams ergeben weiterhin 0 Lecks.
+
+**Viertes Red-Team** (unabhängiger Agent, nur lesend/messend). Befunde und Umgang damit:
+- **C1 (kritisch):** Ein Brief mit Versal-Anschrift und „Sehr geehrter Herr Meier“ wurde in 6 von 8 Fällen blockiert. Der
+  Varianten-Treffer „HANS MEIER“ wurde wegen der Überlappung verworfen, „HANS“ blieb im Klartext. **Behoben** durch die
+  Obermengen-Regel und den Restrisiko-Scan ohne Variante.
+- **C2:** kontextabhängige Blockaden, etwa in Gerichtslisten. **Behoben** über Punkt 4.
+- **B1:** Versal-Gesetzesabkürzungen mit Vokal („EFZG“, „MUSCHG“) wurden zu Personen. **Behoben.**
+- „LANDGERICHT KÖLN“ wurde zu Person, „Herr THIELKER“ blieb im Klartext. **Behoben**, mit Tests.
+
+Neue Tests in `tests/test_privacy_uppercase.py` (54). Gegen `f843ab7` schlugen 20 der damals 33 Tests fehl; die übrigen
+prüfen, dass Negativfälle unverändert bleiben. Gesamtsuite: 3727 bestanden. Es gibt 4 Fehlschläge in `test_design_refresh`: die
+Logo-Dateien wurden im Arbeitsbaum außerhalb dieser Arbeit gelöscht, nicht von diesem Zyklus.
+
+**Installierter Build `58a673f`** (Funktionen im Bündel geprüft). Echter Chat-Upload eines PDFs, Payload am lokalen
+Capture-Endpunkt:
+- Fall 7:
+  - Eingang: „HERRN / HANS MEIER / HAUPTSTRASSE 1 / 10115 BERLIN / BETREFF: IHR SCHREIBEN … Sehr geehrter Herr Meier …
+    AMTSGERICHT HAMBURG“.
+  - Payload: „HERRN [PERSON_02] [ADRESSE_01] BETREFF: IHR SCHREIBEN VOM [DATUM_01] Sehr geehrter Herr [PERSON_02], … §
+    535 BGB. AMTSGERICHT HAMBURG“.
+  - Ergebnis: **PASS**, nicht blockiert, Überschrift und Gericht lesbar.
+- Fall 6:
+  - Eingang: Versalbrief mit Rubrum und „GEZ. FENJA RÜBSAM“.
+  - Payload: „HERRN [PERSON_01] [ADRESSE_01] BETREFF: MAHNUNG In Sachen [PERSON_02] ./. [PERSON_03] … GEZ. [PERSON_04]“.
+  - Ergebnis: **PASS**.
+- Frühere Fälle 1–5 (§11–§14): alle **PASS** (je genau ein Cloud-Aufruf, Namen geschützt, Fachbegriffe/Beträge/
+  Normzitate lesbar).
+- Sichtbare Oberfläche (Screenshot): Dokument „Verarbeitet“, Cloud-KI „Bereit“. Die Antwort zeigt die Namen nur lokal,
+  nach der Re-Personalisierung; im Payload stehen Platzhalter.
+- Ein erster Lauf scheiterte in allen 7 Fällen am QA-Aufbau: Der Ablageordner des Capture-Servers fehlte, der Endpunkt
+  lieferte deshalb einen Fehler. Nach dem Anlegen des Ordners lief derselbe Build durch; Lexono selbst wurde dafür nicht
+  geändert.
+
+Auf Build `39112b7` hatte Fall 6 noch „In Sachen [PERSON_02] [PERSON_03]“ ergeben, ohne „./.“; das führte zu `58a673f`.
+
+**Offen / nicht behoben** (überwiegend vom vierten Red-Team gemessen):
+- Versalzeilen mit mehr als 4 Wörtern;
+- Namen mit 3 Buchstaben („OTT“, „LAU“) und vokallose Namen;
+- mehrere Leerzeichen oder Tabulatoren zwischen Versalwörtern;
+- nicht-deutsche Großbuchstaben (Ş, Æ, ẞ);
+- Bindestrich-Varianten (U+2011, Halbgeviertstrich);
+- Hausnummer nach maskiertem Ort;
+- Versal-Firmennamen (NER-Organisationen werden bewusst nicht übernommen).
+
+Vorbestehend und nicht durch diesen Zyklus verursacht: „Der Beklagte WINKELMANN“ wird als `[ORGANISATION]` maskiert. Der
+Name ist geschützt, das Rollenwort geht verloren.
+
+Eine vollständige Leckfreiheit ist nicht belegt.
