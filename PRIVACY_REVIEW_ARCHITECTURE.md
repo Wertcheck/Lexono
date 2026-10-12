@@ -899,6 +899,41 @@ Detektoren; Installation Exit 0; Health 200).
 - **Fälle 1–8** auf demselben Build: alle **PASS**.
 
 **Weiterhin offen:**
-- Tabulator zwischen Versal-Vor- und Nachname: 4/33.
+- Tabulator zwischen Versal-Vor- und Nachname: 4/33. Behoben in §16c.
 - Doppelte Leerzeichen zwischen **allen** Wörtern: 17/33, auch in normaler Schreibung; vorbestehend. Doppelte Leerzeichen
   markieren in der Dokumentaufbereitung Zeilenumbrüche, eine Zusammenfassung wäre daher mehrdeutig. Nicht geändert.
+
+### 16c. Tabulator zwischen Versal-Vor- und Nachname (Folgezyklus 13.10.2026, `45172a6`)
+
+**Befund** (eigene Messung). „HERRN / KLAUS⇥BROCKHAGEN“ (Tabulator, z. B. aus DOCX/PDF) ergab 4 von 33 Werten im
+Klartext. Mit normalem Leerzeichen waren es 0.
+
+**Änderung.** Nur in der Analysefassung des **zweiten, additiven** Durchgangs (§16a) wird ein Tabulator zwischen zwei
+umgeschriebenen Versalwörtern zum Leerzeichen. Bedingung: Es ist der **einzige** Tabulator der Zeile. Der Payload-Text
+behält den Tabulator.
+
+**Erste Fassung verworfen:** Ohne die Zeilenbedingung wurden Versal-Tabellenzeilen („NACHBAR⇥LAERM⇥JA“) zu Personen;
+gemessen stieg der Verlust von 2/49 auf 5/49 Tabellenwörter.
+
+**Messung** (`58a673f` → neu):
+
+| Messung | `58a673f` | neu |
+|---|---|---|
+| Tabulator zwischen Versalnamen | 4/33 | **0/33** |
+| Versal-Tabellen mit mehreren Spalten (verlorene Wörter) | 2/49 | 2/49 |
+| zweispaltige Versal-Tabellen (verlorene Wörter) | 1/50 | 1/50 |
+
+Ebenfalls gemessen:
+- Alle Benchmarks aus §16a sind unverändert.
+- Red-Team-5-Satz: 24 Lecks (`58a673f`: 43), kein neu im Klartext stehender Wert, keine Blockade.
+- 4 neue Tests.
+- Gesamtsuite: 3760 bestanden; die 4 Logo-Fehlschläge wie zuvor.
+
+**Installierter Build `45172a6`** (Bündel geprüft, Installation Exit 0, Health 200):
+- **Fall 10, neu:** DOCX mit „KLAUS⇥BROCKHAGEN“ und einer Versal-Tabelle. Der Tabulator steht nachweislich im von der
+  Anwendung extrahierten Text.
+  - Payload: „HERRN [PERSON_01] [ADRESSE_01] BETREFF: MAHNUNG … § 286 BGB … ZEUGE⇥THEMA⇥LADUNG NACHBAR⇥LAERM⇥JA
+    HAUSMEISTER⇥SCHLUESSEL⇥NEIN“.
+  - Ergebnis: **PASS**.
+  - Screenshot: Dokument „Verarbeitet“, lokale Antwort korrekt.
+- **Fälle 1–9** auf demselben Build: alle **PASS**.
