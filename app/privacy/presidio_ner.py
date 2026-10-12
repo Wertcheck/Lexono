@@ -710,12 +710,19 @@ def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
         # Zwischen Titel und Name nur Leerraum (auch Umbruch/Mehrfach-Leerzeichen) - kein Satzzeichen, kein Zellwechsel.
         candidate = None
         previous_skipped = ""
+        previous_end = (words[index + 1] if dotted else title).idx + len((words[index + 1] if dotted else title).text)
         for following in words[index + 1 + int(dotted) : index + 7]:
-            gap = text[doc[following.i - 1].idx + len(doc[following.i - 1].text) : following.idx] if following.i else ""
-            if gap.strip():
+            # Abstand im ORIGINALtext ab Ende der Anrede bzw. des zuletzt uebersprungenen Titels. ECHTER FUND (drittes
+            # Red-Team): im Restrisiko-Scan steht der Name bereits als Platzhalter, die Analysefassung macht daraus
+            # Leerzeichen - "Herrn [PERSON_01] [ADRESSE_01] ... Betreff:" lieferte "Betreff" als Namen und blockierte jeden
+            # Brief mit Anschriftenblock. Jetzt: kein Text/Platzhalter dazwischen, hoechstens EIN Zeilenwechsel (in der
+            # Dokumentaufbereitung zwei Leerzeichen).
+            gap = text[previous_end : following.idx]
+            if gap.strip() or len(gap) > 2 or gap.count("\n") > 1:
                 break
             if lower in _ROLE_TITLES and gap != " ":
                 break  # artikelloses Rollenwort nur in derselben Zeile ("Mieter  Wohnung" ist ein Tabellenkopf)
+            previous_end = following.idx + len(following.text)
             low = following.lower_
             # "der"/"den" nur als Teil von "van der"/"von der" - sonst Artikel ("ist Mieterin der Wohnung").
             particle = low in _NAME_PARTICLES and (low not in ("der", "den") or previous_skipped in ("van", "von", "vom"))

@@ -93,6 +93,16 @@ _ALL_MARKERS = (
 # Zeilen KI-generiert sind, siehe _build_unrecognized_name_scan_text.
 _ASSISTANT_HISTORY_LINE_PREFIX = "Assistent: "
 
+# Unsichtbare Formatzeichen (Folgezyklus 13.10.2026, drittes Red-Team, vorbestehendes Leck): ein weiches Trennzeichen
+# (U+00AD, typisch aus PDF-Extraktion) mitten im Namen ("Hab\u00adermehl") verhinderte jede Erkennung - das Sprachmodell
+# liest den Namen dennoch vollstaendig. Diese Zeichen tragen keinen sichtbaren Inhalt und werden VOR jeder Erkennung aus
+# allen Feldern entfernt (verstaerkt die Erkennung, schwaecht nichts ab).
+_INVISIBLE_FORMAT_CHARS = re.compile("[\u00ad\u200b\u200c\u200d\u2060\ufeff]")
+
+
+def _strip_invisible(text: str | None) -> str | None:
+    return _INVISIBLE_FORMAT_CHARS.sub("", text) if text else text
+
 # ECHTER FUND (08.10., realer Fehler im installierten Build): "wieviele
 # klempnerbetriebe gibt es ca. in deutschland" erreichte Claude als "...in
 # [ORT_01]" - Claude antwortete, es brauche "den tatsaechlichen Ortsnamen".
@@ -202,9 +212,13 @@ class ClaudePrivacyGateway:
         if review_mode not in ("ask", "mask", "off"):
             raise ValueError(f"unbekannter review_mode {review_mode!r}")
         decisions = privacy_decisions or PrivacyDecisions()
-        argumentationspunkte = argumentationspunkte or []
-        quellenverweise = quellenverweise or []
-        gespraechsverlauf = gespraechsverlauf or []
+        sachverhalt = _strip_invisible(sachverhalt) or ""
+        stil = _strip_invisible(stil)
+        vorlage = _strip_invisible(vorlage)
+        anwaltliche_anmerkungen = _strip_invisible(anwaltliche_anmerkungen)
+        argumentationspunkte = [_strip_invisible(item) or "" for item in (argumentationspunkte or [])]
+        quellenverweise = [_strip_invisible(item) or "" for item in (quellenverweise or [])]
+        gespraechsverlauf = [_strip_invisible(item) or "" for item in (gespraechsverlauf or [])]
 
         # ECHTER FUND (Owner-Direktive "Architektur-Audit Privacy-/Chat-
         # Pipeline", 07.10.): wird VOR der Pseudonymisierung aus den
