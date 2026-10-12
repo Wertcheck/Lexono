@@ -36,6 +36,8 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     # Amtliche Kennnummern aus den offiziellen deutschen Presidio-Recognizern (presidio_ner._GERMAN_ID_RECOGNIZERS):
     # Steuernummer, USt-IdNr., Sozialversicherungs-, Ausweis-, Handelsregisternummer, Kfz-Kennzeichen ...
     "kennung": "KENNUNG",
+    # Profil-Links sozialer/beruflicher Netzwerke (presidio_ner._PROFILE_URL) - der Pfad ist der Personenname.
+    "url": "PROFIL_URL",
     # Presidio-NER-Kategorien (app/privacy/presidio_ner.py) - rollenneutral,
     # da Presidio keine Mandant/Gegner/Anwalt/Gericht-Rolle kennen kann.
     "person": "PERSON",

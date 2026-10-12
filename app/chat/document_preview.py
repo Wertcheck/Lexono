@@ -41,6 +41,7 @@ _CATEGORY_LABELS = {
     "steuer_id": "Steuernummer",
     "kundennummer": "Kundennummer",
     "kennung": "Kennnummer",
+    "url": "Profil-Link",
     "person": "Person",
     "ort": "Ort",
     "organisation": "Organisation",

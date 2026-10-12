@@ -307,13 +307,25 @@ def detect_datum(text: str) -> list[DetectedSpan]:
 _STREET_TO_POSTAL_SEPARATOR = re.compile(r"[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t]*")
 
 
+# Postfachanschrift (Folgezyklus 13.10.2026, eingefrorene Testbasis: "Postfach 10 20 30, 50667 Koeln" - die Postfachnummer
+# blieb als einziger Teil der Anschrift im Klartext; weder Presidio noch ein Lexono-Detektor kannte sie). Die Nummer
+# identifiziert den Empfaenger wie eine Hausanschrift; sie folgt immer dem Wort "Postfach" (Ziffern, gruppiert durch je
+# ein Leerzeichen oder einen Punkt; die naechste Zeile / eine 5-stellige PLZ wird nicht mitgenommen).
+# Review: "Im Postfach 3 neue Nachrichten", "Postfach 2025 vom ..." wurden maskiert, "Postfach 0221 4711" verlor die zweite
+# Gruppe. Daher: mindestens zwei Zifferngruppen (2-4 Ziffern) oder mindestens 5 Ziffern oder direkt folgende PLZ + Ort.
+_PO_BOX_PATTERN = re.compile(
+    r"\bPostfach(?:[ \t]*:)?[ \t]+(?:\d{2,4}(?:[ .]\d{2,4})+|\d{5,6}|\d{1,4}(?=[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t]*\d{5}[ \t]+[A-ZÄÖÜ]))\b"
+)
+
+
 def detect_address(text: str) -> list[DetectedSpan]:
     """Strasse+Hausnummer und PLZ+Ort, die DIREKT aufeinander folgen ("Lindenallee 3, 30000
     Beispielstadt"), sind EINE Anschrift und bekommen EINEN Platzhalter. Real-E2E 09.10.: zwei
     getrennte Platzhalter hinter dem Namen eines Beteiligten fuehrten dazu, dass das Modell keine
     vollstaendige Anschrift erkannte und "[Anschrift einsetzen]" schrieb. Nicht benachbarte Teile
-    bleiben getrennte Treffer."""
-    streets = _matches_from_pattern(text, _STREET_PATTERN, "adresse")
+    bleiben getrennte Treffer. Eine Postfachangabe gilt wie Strasse+Hausnummer."""
+    streets = _matches_from_pattern(text, _STREET_PATTERN, "adresse") + _matches_from_pattern(text, _PO_BOX_PATTERN, "adresse")
+    streets.sort(key=lambda span: span.start)
     postals = _matches_from_pattern(text, _POSTAL_CODE_CITY_PATTERN, "adresse")
     merged: list[DetectedSpan] = []
     used_postals: set[int] = set()
@@ -555,7 +567,11 @@ def detect_all(
 _UPPER = "ß" + "".join(re.escape(chr(c)) for c in range(0x80, 0x10000) if chr(c).isupper() and chr(c).isalpha())
 _UC = f"[A-Z{_UPPER}]"
 _UPPERCASE_WORD = re.compile(rf"(?<![\wÄÖÜäöüß]){_UC}{{4,}}(?:-{_UC}{{2,}})*(?![\wÄÖÜäöüß])")
-_VOWEL = re.compile(r"[AEIOUYÆØŒ]")
+# Griechische/kyrillische Vokale (Folgezyklus 13.10.2026, eingefrorene Testbasis: "ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ" - der Nachname
+# wurde nie in normale Schreibung gebracht, weil die Vokalpruefung nur lateinische Vokale kannte). Nur der zweite, rein
+# additive Durchgang bearbeitet diese Schriften.
+_VOWEL = re.compile(r"[AEIOUYÆØŒΑΕΗΙΟΥΩАЕЁИОУЫЭЮЯІЇЄ]")
+_LATIN_LETTER = re.compile(r"[A-Za-zÀ-ɏ]")
 
 
 def _has_vowel(value: str) -> bool:
@@ -710,6 +726,23 @@ def _uppercase_variant_pass(
             if s >= start and e <= end and any(rs <= s and e <= re_ for rs, re_ in regions)
         ]
 
+    def non_latin_extension(span: DetectedSpan) -> bool:
+        # Das deutsche Wortartmodell taggt griechische/kyrillische Woerter unzuverlaessig ("Γιαννης" = NOUN neben
+        # "Παπαδοπουλος" = PROPN; Folgezyklus 13.10.2026, Testbasis G03 - der Nachname blieb im Klartext). Zugelassen nur,
+        # wenn (1) jedes Nicht-PROPN-Wort ausschliesslich aus nicht-lateinischen Buchstaben besteht und (2) der Treffer einen
+        # URSPRUENGLICHEN Treffer derselben Kategorie enthaelt (das Modell hat dort bereits einen Namen erkannt).
+        failing = [
+            variant[s:e]
+            for (s, e), tag in (pos_tags or {}).items()
+            if s >= span.start and e <= span.end and tag != "PROPN" and any(rs <= s and e <= re_ for rs, re_ in regions)
+        ]
+        if not failing or any(_LATIN_LETTER.search(word) or not word.isalpha() for word in failing):
+            return False
+        return any(
+            other.category == span.category and span.start <= other.start and other.end <= span.end
+            for other in original_spans
+        )
+
     def alone_on_line(span: DetectedSpan) -> bool:
         before = variant[: span.start].rsplit("\n", 1)[-1].rsplit("  ", 1)[-1]
         before = re.sub(r"^\s*\[[^\]\n]*\]", "", before)  # Dokumentkopf "[Schreiben] " der Kontextaufbereitung
@@ -735,6 +768,8 @@ def _uppercase_variant_pass(
         if span.category == "person" and _INSTITUTION_BEFORE.search(variant[: span.start]):
             continue  # "LANDGERICHT KOELN", "FINANZAMT NORD" - Sitz/Bezeichnung einer Institution, kein Name
         if tags and all(tag == "PROPN" for tag in tags) and not alone_on_line(span):
+            validated.append(span)
+        elif tags and not alone_on_line(span) and non_latin_extension(span):
             validated.append(span)
 
     accepted: list[DetectedSpan] = []

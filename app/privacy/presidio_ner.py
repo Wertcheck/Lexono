@@ -238,6 +238,8 @@ def _get_analyzer_engine():
         # Nur Muster, deren Grundscore die Schwelle OHNE Kontextwort erreicht (siehe Kommentar unten).
         patterns = [pattern for pattern in official.patterns if pattern.score >= _MIN_SCORE]
         engine.registry.add_recognizer(getattr(predefined, name)(patterns=patterns))
+    for name in _LABELLED_ID_RECOGNIZERS:
+        engine.registry.add_recognizer(getattr(predefined, name)())  # IpRecognizer ist bereits Standard fuer "de"
     return engine
 
 
@@ -257,12 +259,77 @@ _GERMAN_ID_RECOGNIZERS = ("DeVatIdRecognizer", "DeHandelsregisterRecognizer", "D
 _ID_ENTITIES = ("DE_VAT_ID", "DE_HANDELSREGISTER", "DE_SOCIAL_SECURITY")
 
 
+# Kennnummern, deren Presidio-Muster allein zu unspezifisch sind (Folgezyklus 13.10.2026, eingefrorene Testbasis: Steuer-
+# nummer, Personalausweis, Kfz-Kennzeichen, IP-Adresse blieben im Klartext): uebernommen wird ein Presidio-Treffer NUR,
+# wenn seine Bezeichnung UNMITTELBAR davor steht ("Steuernummer 143/815/08154", "Kennzeichen HH-AB 1234",
+# "IP-Adresse 192.168.178.23") - nicht Presidios Kontextfenster (fuenf Woerter, durch Platzhalter im Restrisiko-Scan
+# veraenderlich). Damit sind Pseudonymisierung und Restrisiko-Scan konsistent: steht zwischen Bezeichnung und Wert etwas,
+# das inzwischen maskiert ist, fehlt die Nachbarschaft, und der Restrisiko-Scan kann keinen neuen Treffer erzeugen.
+# Ohne Bezeichnung bleiben "VW T 6", "DER B 51", 13-stellige Liefernummern und "Version 2.4.1.0" unberuehrt.
+_LABELLED_ID_RECOGNIZERS = (
+    "DeTaxNumberRecognizer", "DeIdCardRecognizer", "DePassportRecognizer", "DeFuehrerscheinRecognizer", "DeKfzRecognizer",
+)
+_ID_LABEL_BEFORE = {
+    "DE_TAX_NUMBER": r"steuer-?\s?(?:nummer|nr\.?)|st\.?\s?-?\s?nr\.?",
+    "DE_ID_CARD": r"(?:personal)?ausweis(?:-?\s?(?:nummer|nr\.?))?|ausweisdokument(?:-?\s?nr\.?)?",
+    "DE_PASSPORT": r"(?:reise)?pass(?:-?\s?(?:nummer|nr\.?))|reisepass",
+    "DE_FUEHRERSCHEIN": r"f(?:ü|ue)hrerschein(?:-?\s?(?:nummer|nr\.?))?",
+    "DE_KFZ": r"(?:amtl(?:iches|\.)\s+|kfz-?\s?|fahrzeug-?\s?)?kennzeichen|(?:amtl\.|kfz-)\s?kz\.",
+    "IP_ADDRESS": r"ip-?\s?adresse|ip",
+}
+_ID_LABEL_PATTERNS = {
+    entity: re.compile(r"(?<![\wÄÖÜäöüß])(?:" + label + r")\s?[:.]?[ \t]{0,2}$", re.IGNORECASE)
+    for entity, label in _ID_LABEL_BEFORE.items()
+}
+# Die Presidio-Muster laufen ohne Gross-/Kleinschreibung; ein echtes Kennzeichen enthaelt keinen Kleinbuchstaben.
+_LOWERCASE = re.compile(r"[a-zäöüß]")
+# Profil-Links sozialer/beruflicher Netzwerke (Folgezyklus 13.10.2026, Testbasis P12: "linkedin.com/in/gernot-hahn-1980"
+# im Klartext): der Pfad ist der Personenname. Presidios UrlRecognizer findet jede URL - uebernommen wird nur diese
+# Plattformart; Quellenangaben (gesetze-im-internet.de, dejure.org, Gerichtsseiten) bleiben lesbar. Allein die URL selbst
+# entscheidet, daher gleich in Pseudonymisierung und Restrisiko-Scan.
+_PROFILE_URL = re.compile(
+    # Grenze vor dem Host (Review: "dropbox.com/..." und "fedex.com/..." enthielten "x.com/"); github.com bewusst nicht -
+    # Repository-Links ("github.com/microsoft/presidio") sind Quellenangaben.
+    r"(?<![\w.-])(?:(?:www|[a-z]{2})\.)?(?:linkedin\.com/(?:in|pub)/|xing\.com/(?:profile|people)/|"
+    r"facebook\.com/(?!sharer|share|events/)|instagram\.com/|(?:twitter|x)\.com/|tiktok\.com/@)[^/\s]+",
+    re.IGNORECASE,
+)
+
+
+# Nur das nackte Wort "Kennzeichen" (nicht "amtliches"/"Kfz-"/"Fahrzeugkennzeichen"): "Kennzeichen VW T 6"/"EU A 3"/
+# "A B 1" sind Modell- bzw. Gliederungsangaben (Review). Dort gilt ein Kennzeichen nur mit mindestens zwei Ziffern.
+# Bewusst KEINE Ausnahme fuer "Ihr/Unser Kennzeichen": ein Bezugszeichen ("RA BK 26") sieht aus wie ein echtes
+# Kennzeichen ("Ihr Kennzeichen HH-AB 1234" im Versichererbrief) - im Zweifel maskieren.
+_BARE_KFZ_LABEL = re.compile(r"(?<![\w-])kennzeichen\s?[:.]?[ \t]{0,2}$", re.IGNORECASE)
+
+
+def _weak_plate(text: str, start: int, value: str) -> bool:
+    if _BARE_KFZ_LABEL.search(text[max(0, start - 40) : start]) is None:
+        return False
+    return sum(ch.isdigit() for ch in value) < 2
+
+
 def _id_spans(results, text: str) -> list[DetectedSpan]:
-    return [
-        DetectedSpan(category="kennung", start=result.start, end=result.end, value=text[result.start : result.end])
-        for result in results
-        if result.entity_type in _ID_ENTITIES
-    ]
+    spans = []
+    for result in results:
+        value = text[result.start : result.end]
+        if result.entity_type in _ID_ENTITIES:
+            if result.score < _MIN_SCORE:
+                continue
+        elif result.entity_type in _ID_LABEL_PATTERNS:
+            line_start = text.rfind("\n", 0, result.start) + 1
+            if not _ID_LABEL_PATTERNS[result.entity_type].search(text[max(line_start, result.start - 40) : result.start]):
+                continue
+            if result.entity_type == "DE_KFZ" and (_LOWERCASE.search(value) or _weak_plate(text, result.start, value)):
+                continue
+        elif result.entity_type == "URL":
+            if _PROFILE_URL.search(value):
+                spans.append(DetectedSpan(category="url", start=result.start, end=result.end, value=value))
+            continue
+        else:
+            continue
+        spans.append(DetectedSpan(category="kennung", start=result.start, end=result.end, value=value))
+    return spans
 
 
 _LEGAL_FORM = r"(?:GmbH\s*&\s*Co\.\s*KG|KGaA|GmbH|mbH|OHG|GbR|UG|AG|KG|eG|SE|e\.\s?V\.)"
@@ -514,15 +581,16 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
 
     analyzer = _get_analyzer_engine()
     analysis_text = _neutralize_internal_tokens(text)
-    results = analyzer.analyze(
+    all_results = analyzer.analyze(
         text=analysis_text,
         language="de",
-        entities=[*_REQUESTED_ENTITIES, *_ID_ENTITIES],
-        score_threshold=_MIN_SCORE,
+        entities=[*_REQUESTED_ENTITIES, *_ID_ENTITIES, *_ID_LABEL_PATTERNS, "URL"],
+        score_threshold=0.0,  # Schwelle unten je Art: Namen/Kennnummern _MIN_SCORE, bezeichnete Kennnummern Nachbarschaft
     )
     # Kennnummern (offizielle deutsche Recognizer) laufen im selben Aufruf mit (kein zweiter spaCy-Lauf), aber NICHT durch
     # die Namensfilter unten - "P0550M7M2" fiele sonst unter den Formatfilter fuer interne Tokens.
-    id_spans = _id_spans(results, text)
+    id_spans = _id_spans(all_results, text)
+    results = [r for r in all_results if r.entity_type in _REQUESTED_ENTITIES and r.score >= _MIN_SCORE]
 
     spans = _collect_spans(results, text, None)
     restored = _restore_for_analysis(analysis_text)
