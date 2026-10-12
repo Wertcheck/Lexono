@@ -1282,3 +1282,153 @@ Quellen-URL als Organisation durch die spaCy-NER). Das ist vorbestehend und auf 
 
 **Nachweisgrenzen:** Geprüft wird die vom Lexono-Client gesendete Payload, nicht der TLS-Verkehr. Screenshots belegen
 nur die Darstellung.
+
+## 19. Privacy-Hardening: Platzhalter-Integrität, weitere Kennnummer-Formate, Pilotbereitschaft (13.10.2026, `cef580c`)
+
+**Ausgangsstand:** `7cd8145`, Build `3df99a2` installiert.
+
+### 19.1 Platzhalter-Integrität
+
+**Befund** (gemessen auf `7cd8145`, Rückführung der unveränderten Payload):
+- Neun Fälle mit wörtlich im Dokument stehenden Platzhaltern: **0 von 9 exakt zurückgeführt**.
+  - Sieben Fälle setzten einen **fremden Wert** an die Stelle des Originaltexts. Beispiel: Ein wörtliches „[PERSON_01]“
+    und der Name „Karl Brenner“ bekamen denselben Platzhalter. Die Rückführung schrieb zweimal „Karl Brenner“.
+    Ebenso bei `[ADRESSE_01]`, `[KENNUNG_01]`, zwei Dokumenten und einem Lexono-Export.
+  - Zwei Fälle wurden blockiert („[PERSON_07]“ und „[PERSON_1]“ ohne Gegenstück).
+- Das unabhängige Review (104 Fälle) maß auf `7cd8145` in 76 Kollisionsfällen 12 fremde Werte und 31 Blockaden.
+- Fehlerhafte Zuordnungen wurden still „geraten“:
+  - Bei einem Duplikat mit anderem Wert wurde der erste Wert eingesetzt.
+  - Bei einer Verkettung wurde ein Wert zweimal ersetzt.
+  - Ein nacktes Token „PERSON_01“ aus dem Dokument wurde zu „[Angabe einsetzen]“.
+
+**Ursachen:**
+1. Die Nummerierung erzeugter Platzhalter berücksichtigte im Eingangstext vorhandene gleichlautende Zeichenfolgen nicht.
+2. `reconstruct` ersetzte mit aufeinanderfolgenden `str.replace`.
+3. Reste wurden nach der Rückführung neutralisiert, also auch zurückgeführter Originaltext.
+
+**Änderung** (`app/privacy/pseudonymizer.py`, `gateway.reconstruct_response`, `security_check`):
+1. **Wörtliche Platzhalter maskieren.**
+   - Jede platzhalterähnliche Zeichenfolge im Eingangstext wird selbst maskiert, Kategorie `platzhaltertext`,
+     Platzhalter `[TEXTMARKE_nn]`, Originalwert ist der exakte Text. Erfasst wird, was das Final Payload Gate als Token
+     wertet, sowie nackte Tokennamen der bekannten Präfixe.
+   - Danach stammt jeder Platzhalter der Payload aus der Erzeugung, eine Verwechslung ist ausgeschlossen.
+   - Liegt ein Detektor-Treffer innerhalb eines wörtlichen Platzhalters, hat der Platzhalter Vorrang.
+   - Ragt ein Treffer darüber hinaus (Platzhalter mitten in einer IBAN), wird die Vereinigung unter der Kategorie des
+     Treffers maskiert.
+   - Schreibvarianten werden exakt unterschieden.
+   - Die Leck-Prüfung überspringt diese Kategorie: Sie enthält keinen personenbezogenen Wert.
+   - Der Restrisiko-Scan bleibt unverändert, weil die Maskierung nur in `pseudonymize` geschieht.
+2. **Rückführung in einem Durchgang.**
+   - Bekannte Platzhalter werden zuerst durch Schutzzeichen ersetzt (Private-Use U+E000/U+E001).
+   - Danach werden nur Reste des Antworttexts zu „[Angabe einsetzen]“, dann werden die Werte eingesetzt.
+   - Keine Verkettung; zurückgeführter Originaltext wird nie neutralisiert.
+3. **Fehlerhafte Zuordnungen nicht raten.** Ein Platzhalter mit widersprüchlichen Werten, ungültiger Form oder leerem
+   Wert wird nicht zurückgeführt. Er erscheint als „[Angabe einsetzen]“ statt mit einem möglicherweise fremden Wert.
+
+**Messung:**
+- 9 Kollisionsfälle: 0/9 → **9/9 exakt**.
+- Review-Satz (76 Kollisionsfälle):
+  - fremde Werte: 12 → **0**;
+  - Blockaden: 31 → **0**;
+  - exakte Rückführung in allen Feldern (Sachverhalt, Anmerkungen, Argumente, Verlauf) und bei mehreren Dokumenten.
+- Fehlerhafte Zuordnungen: 13 Szenarien × 3 Antworten, kein fremder Wert eingesetzt.
+
+### 19.2 Weitere Kennnummer-Formate
+
+Erweiterte Leckfälle (separat, 18 Werte): **10/18 → 1/18** im Klartext, 0 Blockaden. Das Prinzip aus §18 bleibt: Treffer
+nur mit unmittelbar vorangestellter Bezeichnung, nun auch mit „ist“/„lautet“ dazwischen.
+
+Ergänzt wurde:
+- zusätzliche Presidio-`PatternRecognizer`-Formate unter denselben Entitäten (Grundscore 0,1, ohne Bezeichnung wirkungslos):
+  - Steuernummer mit 10 bis 13 Ziffern oder mit Leerzeichen;
+  - Kennzeichen „HH AB1234“;
+  - „HRB 123 456“, kontextunabhängig wie das offizielle Muster;
+- Bezeichnungen „Kennz.“, „Kfz-Kz.“, „FS-Nr.“;
+- „Postf.“;
+- Profil-Links threads.net/@ und bsky.app/profile/;
+- kleingeschriebene Kennzeichen.
+
+**Fehlalarme durch das Review gefunden und behoben:**
+- „Das Kennzeichen ist um 18 Uhr gestohlen“, „ist zu 80 Prozent“, „Fahrzeugkennzeichen und Km 45“ wurden maskiert.
+  Jetzt gilt: Ist die erste Buchstabengruppe ein gewöhnliches Wort, wird sie verworfen. Zweibuchstaben-Wörter gelten nur
+  in Kleinschreibung als gewöhnlich, weil „AB“, „UM“, „IN“ und „AM“ echte Unterscheidungszeichen sind.
+- Die erste Fassung der Vereinigungsregel machte einen wörtlichen Platzhalter zu `[PERSON_02]`, wenn die NER „Person_01“
+  darin fand. Behoben: Treffer innerhalb eines wörtlichen Platzhalters werden verworfen.
+
+### 19.3 Messwerte und Validierung
+
+**Eingefrorene Testbasis** (unverändert, Inhalts-SHA-256 `2de13db5…`):
+- FN 1/80, FP 7/104, 0 Blockaden, 1 Rückfrage — identisch zu `7cd8145`.
+- Laufzeit 0,136 s pro Fall (Parallellauf).
+
+**Erweiterte Sätze:**
+- Review-Sätze aus §17: Fehlalarm-, Blockade- und Nummernreihen unverändert; 6 Leckformate verbessert.
+- Review-Satz §18 (205 Eingaben): 22 Änderungen, alle beabsichtigt, 0 neue Blockaden.
+  - 14 zusätzlich geschützte Werte;
+  - 5 Kollisionsfälle sauber getrennt;
+  - 3 vorher blockierte Eingaben mit wörtlichen Platzhaltern werden verarbeitet.
+
+**Regressionsbenchmarks:** identisch zu `3df99a2`.
+
+**Tests:**
+- 42 neue Tests:
+  - `tests/test_privacy_placeholder_integrity.py`: 15 von 16 der ersten Fassung schlagen auf `7cd8145` fehl.
+  - `tests/test_privacy_identifier_formats.py`: 12 der ersten Fassung schlagen auf `7cd8145` fehl.
+- Gesamtsuite: 3864 bestanden; die 4 Fehlschläge in `test_design_refresh` kommen von außerhalb dieser Arbeit gelöschten
+  Logo-Dateien.
+
+**Installierter Build `cef580c`.** Bündel geprüft (`_literal_placeholder_spans`, `_merge_literal_spans`,
+`_plate_has_common_word` enthalten), Installation Exit 0, Health 200. Echter Upload, Payload am lokal umgeleiteten
+Endpunkt.
+
+- **Fall 14, neu (DOCX):** wörtliches „[PERSON_01]“ neben „Herr Karl Brenner“, Formularfeld „PERSON_01“,
+  wörtliches „[ADRESSE_01]“ neben einer Anschrift, Steuernummer ohne Schrägstrich, „Kennz.“-Kennzeichen,
+  Unfallsatz „Das Kennzeichen ist um 18 Uhr gestohlen worden“.
+  - Payload: „Muster: [TEXTMARKE_01] und Herr [PERSON_01] … Formularfeld [TEXTMARKE_02] … [TEXTMARKE_03] steht neben
+    [ADRESSE_01]. Steuernummer [KENNUNG_01] … [KENNUNG_02]. Das Kennzeichen ist um 18 Uhr gestohlen worden.“
+  - Die lokale Antwort im Screenshot zeigt die wörtlichen Platzhalter unverändert und die echten Werte an der richtigen
+    Stelle: „Muster: [PERSON_01] und Herr Karl Brenner …“.
+  - Ergebnis: **PASS**.
+- **Fälle 1–11 und 13:** PASS.
+- **Fall 12:** wie in §17 (zwei vorbestehende Lesbarkeitsbefunde, alle Schutzwerte maskiert).
+
+### 19.4 Pilotbereitschaft (Nachweise statt Pauschalurteil)
+
+**Belegt in diesem Zyklus:**
+- Keine Verwechslung wörtlicher und erzeugter Platzhalter mehr: 0 fremde Werte in 85 Kollisionsfällen.
+- Keine neuen Blockaden in allen Vergleichssätzen (Testbasis, Review-Sätze §17/§18, Review 104 Fälle).
+- Eingefrorene Testbasis 1/80 PII im Klartext bei 7/104 Fehlalarmen.
+- Installierter Build: 14 Upload-Fälle mit Payload-Prüfung.
+- P0-05 (Presidio/Pseudonymisierung) ist damit weiter gestützt.
+
+**Nicht geprüft in diesem Zyklus (NOT VERIFIED):**
+- echter Anthropic-Aufruf (P0-07; geprüft wurde nur die vom Lexono-Client gesendete Payload am lokalen Endpunkt);
+- TLS-Netzwerkverkehr;
+- OCR-Pfad (in der Installation deaktiviert);
+- Gateway-Pfad (P0-08, laut Masterdokument zurückgestellt).
+
+**Gemessene Restrisiken:**
+- **Mittel:**
+  - Kennnummern ohne unmittelbar vorangestellte Bezeichnung oder in abweichendem Format bleiben im Klartext, z. B.
+    „Kennzeichen des Gegners: D-XY 123“, „Der PKW HH-AB 1234“;
+  - Sozialversicherungsnummer mit Leerzeichen;
+  - Ausweisnummer mit ungültiger Prüfziffer;
+  - Konto- und Mitgliedsnummern ohne Bezeichnung.
+- **Niedrig:**
+  - Namen in Kleinschreibung (Modellgrenze);
+  - ein wörtlicher Platzhalter mitten in einer sonst nicht erkannten Rufnummer („030 [TELEFON_01] 1234567“; auf
+    `7cd8145` blockiert, jetzt Rest sichtbar, weil die Nummer auch ohne Platzhalter von keinem Detektor erkannt wird);
+  - Homoglyph-Platzhalter (Vollbreite, kyrillisches „Е“) werden nicht als Platzhalter erkannt. Sie gehen unverändert
+    hinaus und werden nicht zurückgeführt.
+- **Vorbestehend:**
+  - „HRB-Verfahren und Az. 12 O 345/26 …“ wird vom Restrisiko-Scan blockiert („person“);
+  - die spaCy-NER übermaskiert einzelne Fachwörter („Lkw-Flotte“, „a 7“).
+
+**Empfehlung:** Für einen begleiteten Pilotbetrieb mit synthetischen bzw. freigegebenen Testakten ist der
+Pseudonymisierungspfad nach den obigen Messungen geeignet. Vor Echtdaten sind folgende Schritte nötig:
+1. P0-07 mit echtem Aufruf erneut belegen.
+2. Die Kennnummer-Restrisiken fachlich bewerten. Dürfen unbezeichnete Kfz- und Sozialversicherungsnummern im
+   Klartext bleiben, oder ist eine Rückfrage gewünscht? Das ist eine fachliche Entscheidung.
+3. Anwender anweisen, die lokale Vorschau der erkannten Werte vor dem Senden zu nutzen.
+
+Eine vollständige Leckfreiheit ist nicht belegt.
