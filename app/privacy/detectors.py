@@ -779,7 +779,31 @@ def _uppercase_variant_pass(
     # (Red-Team 4, B1: Abkuerzungen mit Vokal wurden in der Versal-Fassung zu Personen).
     from app.privacy.presidio_ner import drop_statute_abbreviations
 
+    accepted = [
+        span
+        for span in accepted
+        if span.value.upper() not in _UPPERCASE_NON_NAMES
+        and not _LETTER_CITATION_BEFORE.search(text[max(0, span.start - 60) : span.start])
+    ]
     return drop_statute_abbreviations(text, accepted)
+
+
+# Nur fuer die ZUSAETZLICHEN Versal-Variantentreffer (urspruengliche Treffer bleiben unberuehrt): Woerter, die auf
+# f843ab7 lesbar blieben und erst durch die Versal-Fassung zu Personen/Orten wurden (Red-Team 6: "Art. 6 Abs. 1 lit. b
+# DSGVO" -> "[ORT]", "nach dem BEEG", "die STVO", "auf die angegebene IBAN"). Gesetzesabkuerzungen mit Vokal und mindestens
+# 4 Buchstaben (kuerzere/vokallose werden ohnehin nicht umgeschrieben).
+_UPPERCASE_NON_NAMES = frozenset({
+    "DSGVO", "BEEG", "STVO", "STPO", "BETRVG", "ARBZG", "EFZG", "MUSCHG", "BURLG", "ALTZG", "AUFENTHG", "ASYLG", "BAFÖG",
+    "BAFOEG", "INSO", "FAMFG", "JVEG", "BEURKG", "BIMSCHG", "BAUGB", "BAUNVO", "ENEV", "HOAI", "URHG", "PATG", "MARKENG",
+    "AKTG", "ABGB", "EGBGB", "KAGB", "BETRKV", "WOFLV", "TVÖD", "TVOED", "AGG", "IFSG", "SGB", "OWIG", "ZPO", "STGB",
+    "BGB", "IBAN", "COVID",
+})
+# Normzitat mit Buchstaben-Untergliederung ("Art. 6 Abs. 1 lit. b/f", "§ 3 Nr. 2 lit. a") direkt vor dem Treffer - der
+# gemeinsame Filter in presidio_ner kennt nach "lit." nur Ziffern.
+_LETTER_CITATION_BEFORE = re.compile(
+    r"(?:§§?|Art\.|Artikel)[ \t]*\d+[a-z]?(?:[ \t]*(?:Abs\.|Absatz|S\.|Satz|Nr\.|Ziff\.|lit\.|Buchst\.)[ \t]*(?:\d+|[a-z])"
+    r"(?:[ \t]*(?:/|,|und|oder)[ \t]*(?:\d+|[a-z]))*)*[ \t]+$"
+)
 
 
 def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:

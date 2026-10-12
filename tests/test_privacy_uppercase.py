@@ -295,3 +295,25 @@ def test_uppercase_table_rows_with_several_tabs_are_not_joined(gateway) -> None:
     for word in ("LAERM", "SCHLUESSEL", "NACHBAR", "HAUSMEISTER"):
         assert _word(payload, word), (word, payload)
     assert "\t" in payload
+
+
+@pytest.mark.parametrize(
+    "text, keep",
+    [
+        # Red-Team 6: erst durch die Versal-Fassung maskiert, auf f843ab7 lesbar
+        ("Die Verarbeitung erfolgt nach Art. 6 Abs. 1 lit. b DSGVO.", ["DSGVO"]),
+        ("Rechtsgrundlage ist Art. 6 Abs. 1 lit. b/f DSGVO.", ["DSGVO"]),
+        ("Elterngeld richtet sich nach dem BEEG.", ["BEEG"]),
+        ("Die STVO und das STVG gelten.", ["STVO"]),
+        ("Wegen COVID wurde der Termin verlegt.", ["COVID"]),
+    ],
+)
+def test_statute_abbreviations_without_paragraph_sign_stay_readable(gateway, text, keep) -> None:
+    payload = _payload(gateway, text)
+    for word in keep:
+        assert _word(payload, word), (word, payload)
+
+
+def test_names_next_to_statute_abbreviations_stay_protected(gateway) -> None:
+    payload = _payload(gateway, "Nach Art. 6 Abs. 1 lit. b DSGVO hat Frau ODETTE PASCHKE eingewilligt.")
+    assert "DSGVO" in payload and "ODETTE" not in payload and "PASCHKE" not in payload
