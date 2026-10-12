@@ -1155,3 +1155,130 @@ Exit 0; Health 200).
 
 **Nachweisgrenzen:** Geprüft wird die vom Lexono-Client an den (lokal umgeleiteten) Anthropic-Endpunkt gesendete
 Payload, nicht der TLS-Verkehr. Screenshots belegen nur die sichtbare Darstellung.
+
+## 18. Verbliebene Lecks der Testbasis: Ursachen und Behebung (13.10.2026, `49c3687`, `3df99a2`)
+
+**Ausgangsstand:** `39b4900`, Build `fc0ee62` installiert. Eingefrorene Testbasis (`scripts/presidio_audit_corpus.json`,
+Inhalts-SHA-256 `2de13db5…`): **8/80 PII im Klartext**, 7/104 Fehlalarme, 0 Blockaden, 1 Rückfrage.
+
+### 18.1 Ursachen (je Fall Stufe für Stufe verfolgt)
+
+Kein Fall wurde vom Restrisiko-Scan oder vom Pre-Cloud-Gate erfasst: Pseudonymisierung und Restrisiko-Scan übersahen
+dieselben Werte (konsistente Lecks, keine Blockaden). Extraktion und Normalisierung waren in keinem Fall die Ursache.
+
+| Fall | Leck | versagender Schritt | Art |
+|---|---|---|---|
+| L01 | „herr sauer“ (Kleinschreibung) | Presidio und Lexono erkennen nichts; „sauer“ ist zugleich ein gewöhnliches Adjektiv | Modellgrenze |
+| G03 | „ΠΑΠΑΔΟΠΟΥΛΟΣ“ | Presidio erkennt nur das erste Wort. Die Versal-Fassung übersprang griechische Wörter, weil die Vokalprüfung nur lateinische Vokale kannte. Danach verwarf die Wortart-Validierung den Treffer („Γιαννης“ = NOUN). | Integrationsfehler (Lexono) |
+| A05 | Postfachnummer „10 20 30“ | weder Presidio noch Lexono hatten einen Detektor | Erkennungslücke |
+| P05, P09, P10 | Steuernummer, Personalausweis, Kfz | Presidio **erkennt** sie (0,65–1,0). Die Recognizer waren bewusst nicht registriert: kontextabhängige Scores erzeugten Blockaden im Restrisiko-Scan (§17). | Integrationsentscheidung |
+| P13 | IP-Adresse | Presidio-IpRecognizer erkennt sie (0,95), war aber nicht angefragt (Fehlalarme bei Versionsnummern) | Integrationsentscheidung |
+| P12 | LinkedIn-Link mit Namen | UrlRecognizer erkennt ihn, war aber nicht angefragt (Quellenangaben) | Integrationsentscheidung |
+
+### 18.2 Änderungen
+
+1. **Kennnummern mit Bezeichnung** (`presidio_ner._ID_LABEL_BEFORE`):
+   - Betroffen sind die offiziellen Presidio-Recognizer DeTaxNumber, DeIdCard, DePassport, DeFuehrerschein und DeKfz
+     sowie der vorhandene IpRecognizer.
+   - Ein Treffer wird nur übernommen, wenn seine Bezeichnung **unmittelbar** davor steht, auf derselben Zeile (z. B.
+     „Steuernummer“, „St.-Nr.“, „Ausweisnummer“, „Reisepass“, „Führerschein“, „(amtliches) Kennzeichen“, „amtl. Kz.“,
+     „IP-Adresse“).
+   - Damit ersetzt eine feste Nachbarschaft Presidios veränderliches Kontextfenster. Steht zwischen Bezeichnung und Wert
+     etwas inzwischen Maskiertes, fehlt die Nachbarschaft, und der Restrisiko-Scan erzeugt keinen neuen Treffer.
+     Ergebnis: konsistent und ohne neue Blockaden.
+   - Kfz-Sonderregeln: kein Kleinbuchstabe. Nach dem bloßen Wort „Kennzeichen“ sind mindestens zwei Ziffern nötig
+     (Review: „Kennzeichen VW T 6“, „EU A 3“).
+   - Alles läuft im selben Presidio-Aufruf, ohne zweiten spaCy-Lauf.
+2. **Profil-Links** (`_PROFILE_URL`):
+   - Nur LinkedIn-/Xing-Profile, Facebook, Instagram, X/Twitter und TikTok, Platzhalter `[PROFIL_URL_nn]`.
+   - Grenze vor dem Host. Das Review fand „dropbox.com/…“ und „fedex.com/…“ als Treffer über die Teilzeichenfolge
+     „x.com/“.
+   - Bewusst kein GitHub, keine allgemeinen URLs: Quellenangaben bleiben lesbar.
+3. **Postfachanschrift** (`detectors._PO_BOX_PATTERN`): gilt wie Straße und Hausnummer. Voraussetzung sind mindestens
+   zwei Zifferngruppen, mindestens fünf Ziffern oder eine direkt folgende PLZ mit Ort. Das Review fand sonst Fehlalarme
+   wie „Im Postfach 3 neue Nachrichten“ und „Postfach 2025 vom …“ und ein freigelegtes „4711“ in
+   „Postfach 0221 4711“.
+4. **Griechische/kyrillische Versalnamen** (zweiter, rein additiver Versal-Durchgang):
+   - Griechische und kyrillische Vokale gelten in der Vokalprüfung.
+   - Ein Varianten-Treffer, dessen Nicht-PROPN-Wörter ausschließlich nicht-lateinisch sind, wird zugelassen, wenn er
+     einen ursprünglichen NER-Treffer enthält.
+   - Übernommen wird nur der Teil außerhalb dieses Treffers. Im installierten Build (Fall 13) war „ΓΙΑΝΝΗΣ“ als
+     Organisation erkannt und „ΠΑΠΑΔΟΠΟΥΛΟΣ“ blieb im Klartext; das führte zu `3df99a2`.
+
+**Bewusst nicht geändert:** L01 (Kleinschreibung). Jede Heuristik für „herr/frau + kleingeschriebenes Wort“ würde in
+kleingeschriebenen Chat-Texten gewöhnliche Wörter maskieren. „sauer“ ist auch als Wort gebräuchlich. Bleibt Modellgrenze.
+
+### 18.3 Messwerte
+
+**Eingefrorene Testbasis** (identische Fälle; die Testbasis wurde nicht verändert):
+
+| | `39b4900` | neu |
+|---|---|---|
+| PII im Klartext | 8/80 | **1/80** (L01) |
+| Fehlalarme | 7/104 | 7/104 |
+| Blockaden | 0 | 0 |
+| Rückfragen | 1 | 1 |
+| Laufzeit/Fall | 0,128 s | 0,127 s |
+
+**Erweiterte, separat ausgewiesene Tests** (nicht Teil der Testbasis):
+- Review-Sätze aus §17:
+  - 68 zahlenreiche Sätze, 10 Blockadefälle und 240 Zufallsnummern: **0 Änderungen, 0 neue Blockaden**.
+  - 43 Leckformate: 10 verbessert.
+- Neues unabhängiges Review (205 Eingaben, alt `39b4900` gegen neu):
+  - **0 neue Blockaden.**
+  - Rund 100 zusätzlich geschützte Werte: Steuernummer, Ausweis, Pass, Führerschein und Kfz mit Bezeichnung, IPv4/IPv6,
+    Postfach, Profil-Links, griechische/kyrillische Vollnamen.
+  - Die dort gefundenen Fehlalarme wurden behoben (siehe 18.2).
+- Akzeptierte Übermaskierung (gemessen):
+  - „Ihr Kennzeichen RA BK 26“: Bezugszeichen und Kennzeichen sind gleich aufgebaut, im Zweifel wird maskiert.
+  - Facebook-Firmenseite, „x.com/bundestag“.
+  - „ΕΛΛΑΔΑ“, „ДОГОВОР АРЕНДЫ“ teilweise als Person.
+  - „IP 1.2.3.4 … Kapitel 1.2.3.4“: Die vorhandene Wiederholungsersetzung maskiert auch die Kapitelnummer.
+
+**Regressionsbenchmarks:** identisch zu `39b4900`.
+- Versalien 0/36, 3/59; Versal-Absätze 26/171; Normzitate 3/180;
+- Folgeerwähnungen 0/1288, 32/138, 3/22; Artikel 9/240; Briefe 6/220; Rollenobjekte 0;
+- Blockaden 4 von 2017×2; Dokumentpfad 0/990; fremde Großbuchstaben 0/20; Briefblockaden 29/29.
+
+**Tests:**
+- 41 neue Tests in `tests/test_privacy_remaining_leaks.py`; die erste Fassung schlug auf `39b4900` in 10 Fällen fehl.
+- Gesamtsuite: 3822 bestanden; die 4 Fehlschläge in `test_design_refresh` kommen von außerhalb dieser Arbeit gelöschten
+  Logo-Dateien.
+
+### 18.4 Offene Punkte
+
+- **Bekannte Schwäche** (Review, auf `39b4900` für PERSON/ADRESSE identisch): Ein Dokument, das wörtlich einen
+  Platzhalter wie „[KENNUNG_01]“ enthält, wurde mit unbekanntem Präfix blockiert. Jetzt wird es wie bei `[PERSON_01]`
+  zugelassen. Der Platzhalter wird in der lokalen Antwort auf den echten Wert zurückgeführt. Es geht kein Klartext
+  hinaus, die lokale Rückführung kann aber irreführen.
+- **Weiterhin unerkannt** (Review gemessen):
+  - Wert nicht unmittelbar nach der Bezeichnung („Kennzeichen lautet …“, Klammern/Anführungszeichen, Bezeichnung in der
+    Tabellenkopfzeile);
+  - Bezeichnungen „Kz.“, „Kennz.“, „FS-Nr.“, „Postf.“, „PF“;
+  - Steuernummern ohne Schrägstrich (10/11 Stellen) und mit Leerzeichen;
+  - kleingeschriebene Kennzeichen;
+  - weitere Netzwerke (threads.net, bsky.app);
+  - Namen in Kleinschreibung (L01).
+
+### 18.5 Installierter Build `3df99a2`
+
+Bündel geprüft (`non_latin_extension`, `_weak_plate`, `_PROFILE_URL`, `_PO_BOX_PATTERN` enthalten), Installation
+Exit 0, Health 200. Echter Upload, Payload am lokal umgeleiteten Endpunkt.
+
+**Fall 13, neu (DOCX):** Postfach-Briefkopf, griechischer Versalname, Steuernummer, Ausweisnummer, amtliches
+Kennzeichen, IP-Adresse, LinkedIn-Profil; dazu ohne Bezeichnung „KL AB 12“, „VW T 6“, „Version 2.4.1.0“,
+13-stellige Lieferscheinnummer.
+- Auf Build `49c3687`: 7 von 8 Werten geschützt, „ΠΑΠΑΔΟΠΟΥΛΟΣ“ im Klartext; das führte zu `3df99a2`.
+- Auf `3df99a2`: **PASS**, alle 8 Werte geschützt, alle 5 lesbar zu haltenden Angaben lesbar, keine Blockade.
+- Screenshot: lokale Antwort korrekt re-personalisiert.
+- Die erste Auswertung auf `49c3687` zeigte fälschlich „kein Cloud-Aufruf“: Der neu gestartete Capture-Server
+  nummerierte ab `payload_001.json` und überschrieb eine ältere Datei. Die Payload wurde direkt geprüft; alte Payloads
+  werden seither vor jedem Neustart archiviert.
+
+**Fälle 1–11:** PASS.
+
+**Fall 12:** Alle Schutzwerte maskiert, keine Blockade. Zwei Lesbarkeitsprüfungen scheitern („Lkw-Flotte“ als Ort,
+Quellen-URL als Organisation durch die spaCy-NER). Das ist vorbestehend und auf `1c9d91c` identisch (§17).
+
+**Nachweisgrenzen:** Geprüft wird die vom Lexono-Client gesendete Payload, nicht der TLS-Verkehr. Screenshots belegen
+nur die Darstellung.
