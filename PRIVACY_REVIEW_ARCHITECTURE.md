@@ -1781,7 +1781,7 @@ Umgebung.
 | TLS und Gateway | **NICHT VERIFIZIERT** | TLS nur als Konfiguration belegt (`CERT_REQUIRED`, Hostname, ≥ TLS 1.2), keine Live-Verbindung; Lexono-Gateway (P0-08) zurückgestellt, Relay-Ziel jetzt festgelegt |
 | Unbeschriftete Kennnummern | **PASS für kennzeichenförmige Folgen, mit dokumentierten Restlücken** | Rückfrage bzw. Maskierung, Fehlalarm-Messung, installierter Build Fall 16; andere unbeschriftete Nummern offen (fachliche Entscheidung) |
 | Entfernte KI-Endpunkte | **PASS** | nur dieser Rechner ohne Freigabe, kein Proxy, Einstellungsseite lehnt ab, 0 Netzverbindungen im Test |
-| Tests und installierter Build | **PASS mit Einschränkung** | gezielt und betroffene Dateien grün; volle Suite zuletzt auf `cb8b02c` (nach dem Fix wegen Speichermangel abgebrochen, ersatzweise 58 betroffene Dateien); installierter Build 14/16 PASS, 12 und 13 beabsichtigte Änderung |
+| Tests und installierter Build | **PASS** | volle Suite auf dem Endstand `c170abb`: 3983 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle (fehlende Logos) fehlgeschlagen; installierter Build `95f837c` 14/16 PASS, Fälle 12 und 13 nur beabsichtigte Änderung |
 | Restrisiken und Pilotfähigkeit | **begrenzter, begleiteter Pilot mit synthetischen bzw. freigegebenen Testakten; keine Echtdaten** | siehe unten |
 
 **Keine Echtdatenfreigabe.** Vorher erforderlich:
@@ -1789,7 +1789,7 @@ Umgebung.
    inklusive TLS-Nachweis.
 2. Die fachlichen Entscheidungen aus 21.3 (Maskieren oder Fragen; andere unbeschriftete Nummern) und 21.4
    (Proxy/Zertifikate).
-3. Ein Volldurchlauf der Testsuite auf dem Endstand mit ausreichend Arbeitsspeicher.
-4. Eine Release-Notiz zu `LOCAL_AI_ALLOW_REMOTE_ENDPOINT` für Installationen mit Ollama auf einem anderen Rechner.
+3. (Erledigt nach Abschluss: volle Suite auf `c170abb` – 3983 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle fehlgeschlagen.)
+4. (Erledigt: Release-Notiz in RELEASE_NOTES.md, „Breaking Changes“, Nachtrag 13.10.2026.)
 
 Eine vollständige Leckfreiheit ist nicht belegt.

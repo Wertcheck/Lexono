@@ -93,6 +93,19 @@
 
 **None.** This is the first release.
 
+**Nachtrag 13.10.2026 (Datenschutz-Freigabepunkte, PRIVACY_REVIEW_ARCHITECTURE.md §21) – Verhaltensänderungen bei Updates:**
+- **Lokale KI auf einem anderen Rechner:** `OLLAMA_BASE_URL` darf ohne Freigabe nur noch auf diesen Rechner zeigen
+  (`localhost`, 127.0.0.1, `::1`). Bestehende Installationen mit Ollama auf einem anderen Rechner melden nach dem Update
+  „nicht ausdrücklich freigegeben“; Chat-Anfragen werden dann sichtbar blockiert (kein stiller Cloud-Ersatz). Freigabe
+  bewusst setzen: `LOCAL_AI_ALLOW_REMOTE_ENDPOINT=true` in `C:\ProgramData\Lexono\.env`, danach Neustart. Die Verbindung
+  zu diesem Rechner ist unverschlüsselt (HTTP) – nur im vertrauenswürdigen Kanzleinetz verwenden.
+- **Lokale KI ignoriert Proxy-Einstellungen:** Anfragen an die lokale KI gehen immer direkt, nie über einen System-Proxy.
+- **`ANTHROPIC_BASE_URL`:** Eine gesetzte Umgebungsvariable mit einem anderen Ziel als `https://api.anthropic.com` führt
+  jetzt zu „Cloud-KI nicht konfiguriert“ statt zu einer stillen Umleitung samt API-Schlüssel. Ein lokaler Prüfendpunkt
+  erfordert zusätzlich `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1` (nur für QA).
+- **Kennzeichen ohne Bezeichnung** (z. B. „D-XY 123“) lösen im Chat eine Rückfrage vor dem Versand aus; im Entwurfsmodus
+  werden sie vorsichtshalber als `[KENNUNG_nn]` pseudonymisiert.
+
 ---
 
 ## Known Limitations
