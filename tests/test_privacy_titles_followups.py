@@ -134,9 +134,10 @@ def test_masculine_person_noun_check() -> None:
     assert not pn._is_masculine_person_noun("Steuer")
 
 
-def test_masculine_article_occupational_surname_is_masked_non_interactively(gateway) -> None:
-    """Frueher bekannte Grenze: maskuliner Artikel + Berufsname ohne Einfuehrung. Seit dem Folgezyklus eine Rueckfrage
-    (review.py, `_is_masculine_occupation_after_article`); nicht-interaktiv vorsichtshalber maskiert."""
+# Bekannte, dokumentierte Grenze: maskuliner Artikel + Berufsname ohne Einfuehrung ("Der Fischer hat angerufen") ist ohne
+# weiteren Kontext nicht vom Gattungswort zu unterscheiden.
+@pytest.mark.xfail(reason="maskuliner Artikel + Berufsname ohne Einfuehrung nicht unterscheidbar", strict=False)
+def test_known_limit_masculine_article_occupational_surname(gateway) -> None:
     assert "Fischer" not in _payload(gateway, "Der Fischer hat am 12.03.2026 angerufen.")
 
 
@@ -233,38 +234,3 @@ def test_object_after_role_in_verb_final_clause_stays_readable(gateway, sentence
 @pytest.mark.xfail(reason="Parser liest Namen als Objekt des Partizips", strict=False)
 def test_known_limit_name_parsed_as_object(gateway) -> None:
     assert "Licht" not in _payload(gateway, "Nach Rücksprache hat die Mandantin Licht unterschrieben.")
-
-
-# --- Maskuliner Artikel + Berufsname: Rueckfrage statt Entscheidung (Folgezyklus 13.10.2026) ---------------------------
-
-
-def _ask(gateway, text: str):
-    return gateway.prepare_request(
-        purpose="chat_response",
-        sachverhalt="Akte: Beispielakte\n[Vertrag] " + _normalize_document_text(text),
-        anwaltliche_anmerkungen="Fasse das Dokument zusammen.",
-        review_mode="ask",
-    )
-
-
-@pytest.mark.parametrize("name", ["Fischer", "Kaufmann", "Neumann", "Koch"])
-def test_masculine_article_occupational_surname_is_asked(gateway, name) -> None:
-    result = _ask(gateway, f"Der {name} hat am 12.03.2026 angerufen.")
-    # Rueckfrage - oder bereits automatisch erkannt (dann ohne Rueckfrage pseudonymisiert, z. B. "Neumann").
-    assert (result.review_required and name in [c.term for c in result.review_candidates]) or (
-        result.allowed and name not in result.payload.anonymisierter_sachverhalt
-    )
-    assert name not in _payload(gateway, f"Der {name} hat am 12.03.2026 angerufen.")  # nicht-interaktiv: maskiert
-
-
-@pytest.mark.parametrize(
-    "sentence",
-    [
-        "Der Mieter hat angerufen.", "Der Richter hat entschieden.", "Der alte Fischer hat angerufen.",
-        "Die Fischer haben die Netze eingeholt.", "Der Kaufmann im Sinne des HGB haftet für die Verbindlichkeiten.",
-        "Der Vermieter hat die Kaution einbehalten.", "Der Sachverständige hat die Feuchtigkeit gemessen.",
-    ],
-)
-def test_masculine_occupation_rule_does_not_ask_for_roles_and_definitions(gateway, sentence) -> None:
-    result = _ask(gateway, sentence)
-    assert not result.review_required, [c.term for c in result.review_candidates]

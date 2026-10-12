@@ -253,26 +253,6 @@ def _is_bare(doc, token) -> bool:
     return not (previous is not None and _is_modifier(previous))
 
 
-_MASCULINE_ARTICLES = frozenset({"der", "dem", "den", "ein", "einem", "einen"})
-
-
-def _is_masculine_occupation_after_article(doc, token) -> bool:
-    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
-    if previous is None or previous.lower_ not in _MASCULINE_ARTICLES or previous.pos_ != "DET":
-        return False
-    # Nur der Artikel als Modifikator (kein Adjektiv/Zahl: "der alte Fischer" ist kein Namensgebrauch).
-    if any(c.i < token.i and c.i != previous.i and c.pos_ in _MODIFIER_POS for c in token.children):
-        return False
-    lower = token.text.lower()
-    if lower in pn._NOT_A_NAME or "Plur" in token.morph.get("Number") and not _agrees_with_singular_verb(doc, token):
-        return False
-    # Begriffsdefinition "der Kaufmann im Sinne des HGB" / "i. S. d." - nie eine Person.
-    following = " ".join(t.lower_ for t in doc[token.i + 1 : token.i + 4] if not t.is_space)
-    if following.startswith("im sinne") or following.startswith("i.s.d") or following.startswith("i. s. d"):
-        return False
-    return pn._is_masculine_person_noun(token.text) and pn._name_probe_score(token.text) >= 1
-
-
 def _context(source: str, term: str) -> tuple[str, str]:
     match = re.search(r"(?<![\wÄÖÜäöüß])" + re.escape(term) + r"(?![\wÄÖÜäöüß])", source)
     if match is None:
@@ -319,16 +299,8 @@ def find_review_candidates(
             continue
         if pn.is_derivational_compound(word):
             continue  # Ableitungs-Kompositum ("Raeumungsfrist") - kein Name, siehe presidio_ner.is_derivational_compound
-        masculine_occupation = False
         if not _is_bare(doc, token):
-            # Folgezyklus 13.10.2026 (scripts/bench_name_followups.py, Gruppe B): "Der Fischer hat am 12.03.2026
-            # angerufen" - Berufsname = Nachname nach maskulinem Artikel ist ECHT mehrdeutig (Beruf oder Herr Fischer); die
-            # automatische Erkennung darf das nicht entscheiden. Fuer diese enge Klasse fragt Lexono nach (Modus "ask";
-            # "mask" maskiert vorsichtshalber): maskuliner Artikel direkt davor, maskuline Personenbezeichnung (-mann oder
-            # movierbar), Modell-Probe >= 1, keine Rollen-/Amtsbezeichnung ("Mieter", "Richter").
-            masculine_occupation = _is_masculine_occupation_after_article(doc, token)
-            if not masculine_occupation:
-                continue
+            continue
         if _SYSTEM_LABEL_LINE.search(neutral[: token.idx]):
             continue
         if neutral[token.idx + len(word) : token.idx + len(word) + 1] == ":":
@@ -359,7 +331,7 @@ def find_review_candidates(
         # Fachwort-Fehlalarme (12.10.2026, 600er-Korpus): jeder synthetische Testname wird im staerksten Namensrahmen
         # "Herr X hat unterschrieben" als Person gelesen; Fachwoerter wie "Bescheid", "Flachdach", "Zugluft" nicht.
         # Gemessen: Fachwort-Faelle 100 -> 87 von 600, Klartext-Namen unveraendert 0,4 %.
-        if not pn._name_probe_frames(word)[0] and not masculine_occupation:
+        if not pn._name_probe_frames(word)[0]:
             continue
         before, after = _context(context_source, word)
         found[word] = ReviewCandidate(
