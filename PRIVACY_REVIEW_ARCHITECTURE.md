@@ -1785,10 +1785,16 @@ Umgebung.
 | Restrisiken und Pilotfähigkeit | **begrenzter, begleiteter Pilot mit synthetischen bzw. freigegebenen Testakten; keine Echtdaten** | siehe unten |
 
 **Keine Echtdatenfreigabe.** Vorher erforderlich:
-1. (Erledigt, 21.7: erfolgreicher echter Anthropic-Aufruf mit synthetischen Daten, P0-07 für den Direktpfad.) Offen:
-   Der installierte Build liest `C:\ProgramData\Lexono\.env`; dort steht noch der abgelaufene Schlüssel.
-2. Die fachlichen Entscheidungen aus 21.3 (Maskieren oder Fragen; andere unbeschriftete Nummern) und 21.4
-   (Proxy/Zertifikate).
+1. (Erledigt, 21.7: erfolgreicher echter Anthropic-Aufruf mit synthetischen Daten, P0-07 für den Direktpfad. Der neue
+   Schlüssel ist auf Wunsch des Owners in die installierte Konfiguration übernommen. Danach lieferte der installierte
+   Build eine echte Modellantwort auf eine synthetische Chat-Frage, gegen die QA-Datenbank.)
+2. Fachliche Entscheidungen des Owners (13.10.2026):
+   - Kennzeichen ohne Bezeichnung im Modus „mask“ werden weiter vorsichtshalber maskiert; im Chat wird gefragt.
+   - Anthropic-Verkehr nutzt weiterhin System-Proxy und System-Zertifikate. Ein vertrauenswürdiges Stammzertifikat bzw.
+     der Verzicht auf TLS-Inspektion für api.anthropic.com ist eine Vorgabe an die Kanzlei-IT.
+   - Unbeschriftete Konto-, Vertrags- und Kundennummern: Der Owner verlangt eine dauerhafte, kontextabhängige
+     Schutzstrategie als eigenes Arbeitspaket. Keine pauschale Maskierung, keine Übergangslösung. Bis dahin ist das eine
+     **offene wesentliche Lücke**, die eine Echtdatenfreigabe ausschließt.
 3. (Erledigt nach Abschluss: volle Suite auf `c170abb` – 3983 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle fehlgeschlagen.)
 4. (Erledigt: Release-Notiz in RELEASE_NOTES.md, „Breaking Changes“, Nachtrag 13.10.2026.)
 
@@ -1823,4 +1829,12 @@ Ausdrücklich freigegeben durch den Owner. Ausgeführt wurde `scripts/verify_ant
 
 Damit ist der echte Anthropic-Aufrufpfad (Gateway → Factory mit festgelegtem Ziel → SDK → TLS → API) mit synthetischen
 Daten **belegt**. Nicht Teil dieses Nachweises sind das Lexono-Gateway (P0-08, zurückgestellt) und der installierte
-Build: Dessen Konfiguration `C:\ProgramData\Lexono\.env` enthält noch den abgelaufenen Schlüssel.
+Build: Dessen Konfiguration `C:\ProgramData\Lexono\.env` enthielt zu diesem Zeitpunkt noch den abgelaufenen Schlüssel.
+
+**Installierter Build mit neuem Schlüssel:**
+- Der Schlüssel wurde auf Wunsch des Owners übernommen: nur die Schlüsselzeile ersetzt, die vorherige Datei gesichert, der
+  Wert nicht ausgegeben.
+- Ausgeführt gegen die QA-Datenbank und die echte API, ohne Zielumleitung.
+- Frage: „Herr Karl Brenner fragt: Was regelt § 823 Abs. 1 BGB?“
+- Ergebnis: inhaltliche Modellantwort (543 Zeichen), keine Konfigurationsmeldung, keine Platzhalter in der Antwort
+  (**PASS**).
