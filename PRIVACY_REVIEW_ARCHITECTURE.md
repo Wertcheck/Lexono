@@ -543,3 +543,46 @@ Der Zwischenlauf auf `38361af` war FAIL („hat die Zeugin König ausgesagt“ i
 - **Schwache unbekannte Namen nach Artikel:** „Grotelueschen“.
 - **Vorbestehende Fehlalarme:** „Herr Richter … Der Richter am Amtsgericht“ (wertbasierte Ersetzung) und
   Berufsbezeichnungen wie „Der Schneider hat die Hose gekürzt“.
+
+### 12a. Verworfen nach zweitem Red-Team: Rückfrage bei maskulinem Artikel + Berufsname (`c548256`, zurückgenommen in `cbf48af`)
+
+Idee: „Der Fischer hat angerufen“ ist echt mehrdeutig (Beruf oder Herr Fischer). Für die enge Klasse „maskuliner Artikel
++ maskuline Personenbezeichnung (-mann/movierbar) + Modellprobe ≥ 1, ohne Rollen-/Amtswörter“ sollte Lexono deshalb
+nachfragen; im nicht-interaktiven Modus würde vorsichtshalber maskiert.
+
+Gemessener Nutzen:
+- Gruppe B: 32 → 26/138,
+- Artikel-Benchmark: 21 → 17/96,
+- 0 zusätzliche Rückfragen in den 22 synthetischen Kanzleidokumenten.
+
+Das zweite unabhängige Red-Team hat vier realistische Schriftsatzabsätze und 38 Fachbegriffe gemessen, zusammen 118 Texte
+ohne Namen. Ergebnis: **0 → 34 Rückfragen** und **14 → 48 verlorene Fachbegriffe** im Modus „mask“. Betroffen waren
+zentrale Rechtsbegriffe wie „Der **Halter** haftet nach § 7 StVG“, „Der **Verbraucher** kann widerrufen“ und „Der
+Verkäufer ist **Kaufmann**; der Kaufmann hat die Ware nach § 377 HGB zu untersuchen“. Weil der Gateway einen Wert
+überall ersetzt, wird der Begriff im ganzen Text unlesbar.
+
+Selbst nachgeprüft und bestätigt. Der Nutzen steht dazu in keinem vertretbaren Verhältnis; die Regel ist zurückgenommen
+und war nie gepusht. Offen bleibt damit „maskuliner Artikel + Berufsname ohne Einführung“.
+
+## 13. Normzitate (Folgezyklus 13.10.2026, `a1d20c7`)
+
+**Befund (vorbestehend, auf `54d73bf` identisch).** „Der Halter haftet nach § 7 StVG.“ wurde zu „§ 7 [PERSON_01]“.
+Gesetzesabkürzungen mit Kleinbuchstaben (StVG, StVO, StPO, BetrVG, ArbZG, BauGB, …) sind keine Versalwörter und fallen
+deshalb unter die Namensdetektoren. Gemessen mit `scripts/bench_statute_citations.py`, 45 Abkürzungen × 4 Zitatformen:
+**37 von 180** gingen verloren.
+
+**Maßnahme.** `presidio_ner.drop_statute_abbreviations` verwirft Einwort-Treffer in Abkürzungsform (mindestens zwei
+Großbuchstaben, höchstens 12 Zeichen), die unmittelbar auf ein Normzitat folgen („§ 7“, „§§ 1, 2“, „§ 280 Abs. 1“,
+„Art. 3“). Die Regel ist kontextgebunden, nicht listenbasiert, und sitzt im gemeinsamen Detektor; sie gilt also identisch
+für den Restrisiko-Scan.
+
+| Messung | vorher | nachher |
+|---|---|---|
+| Normzitate: verlorene Abkürzungen | 37/180 | **3/180** (BImSchG, BeurkG in Mehrfachzitaten) |
+| Normzitate: Namen-Lecks / Blockaden | 0 / 0 | 0 / 0 |
+| Alle übrigen Benchmarks (§11, §12) und Blockaden (4) | | unverändert |
+
+**Installierter Build `a1d20c7`** (im Bündel geprüft, inklusive Revert): Der Payload enthält „Sehr geehrter Herr
+[PERSON_01], der Halter haftet nach § 7 StVG; ein Verstoß gegen § 3 StVO ist streitig. Die Ansprüche nach § 280 Abs. 1
+BGB in Höhe von 4.250,00 EUR … gez. [PERSON_02]“ (PASS). Die Payload-Prüfungen aus §11 und §12 wurden auf demselben
+Build wiederholt: PASS.
