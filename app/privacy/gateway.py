@@ -98,10 +98,15 @@ _ASSISTANT_HISTORY_LINE_PREFIX = "Assistent: "
 # liest den Namen dennoch vollstaendig. Diese Zeichen tragen keinen sichtbaren Inhalt und werden VOR jeder Erkennung aus
 # allen Feldern entfernt (verstaerkt die Erkennung, schwaecht nichts ab).
 _INVISIBLE_FORMAT_CHARS = re.compile("[\u00ad\u200b\u200c\u200d\u2060\ufeff]")
+# Ungewoehnliche Leerzeichen (Unicode-Kategorie Zs ausser dem normalen Leerzeichen; Folgezyklus Versalien, eigene Messung):
+# "HERRN / KLAUS\u00a0BROCKHAGEN" (geschuetztes, schmales oder Achtel-Geviert-Leerzeichen, typisch aus PDF-Extraktion)
+# ging im Klartext an die Cloud, mit normalem Leerzeichen nicht. Sie werden VOR jeder Erkennung zu einem normalen
+# Leerzeichen - gleiche Laenge, gleicher sichtbarer Inhalt. Tabulatoren bleiben (Tabellenstruktur).
+_UNUSUAL_SPACES = re.compile("[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]")
 
 
 def _strip_invisible(text: str | None) -> str | None:
-    return _INVISIBLE_FORMAT_CHARS.sub("", text) if text else text
+    return _UNUSUAL_SPACES.sub(" ", _INVISIBLE_FORMAT_CHARS.sub("", text)) if text else text
 
 # ECHTER FUND (08.10., realer Fehler im installierten Build): "wieviele
 # klempnerbetriebe gibt es ca. in deutschland" erreichte Claude als "...in

@@ -267,3 +267,15 @@ def test_extended_letters_never_lose_hits_of_the_basic_pass(gateway, text, value
     payload = _payload(gateway, text)
     for value in values:
         assert not _word(payload, value), (value, payload)
+
+
+@pytest.mark.parametrize("space", ["\u00a0", "\u202f", "\u2009", "\u2007", "\u3000"])
+@pytest.mark.parametrize("first, last", [("KLAUS", "BROCKHAGEN"), ("ODETTE", "PASCHKE"), ("EMRE", "ŞAHIN")])
+def test_unusual_spaces_between_uppercase_words_do_not_hide_names(gateway, space, first, last) -> None:
+    """Eigene Messung: "HERRN / KLAUS<geschuetztes Leerzeichen>BROCKHAGEN" (PDF-Extraktion) ging im Klartext an die Cloud.
+    Der Gateway macht aus Unicode-Leerzeichen (Zs) vor jeder Erkennung ein normales Leerzeichen."""
+    text = f"HERRN\n{first}{space}{last}\nBIRKENALLEE{space}17\n12345{space}MUSTERSTADT\nwir mahnen nach §{space}286 BGB."
+    payload = _payload(gateway, text)
+    for value in (first, last, "BIRKENALLEE", "MUSTERSTADT"):
+        assert not _word(payload, value), (value, payload)
+    assert "§ 286 BGB" in payload and space not in payload
