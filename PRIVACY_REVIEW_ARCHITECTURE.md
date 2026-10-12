@@ -857,3 +857,48 @@ Installation Exit 0; Health 200). Echter Chat-Upload, Payload am Capture-Endpunk
 - geschütztes Leerzeichen zwischen Versalwörtern;
 - lange Versalzeilen mit mehr als 4 Wörtern (auch rein deutsch, vorbestehend);
 - Vornamen, die je nach NER als Organisation oder Ort maskiert werden (maskiert, aber in falscher Kategorie).
+
+### 16b. Ungewöhnliche Leerzeichen zwischen Versalwörtern (Folgezyklus 13.10.2026, `a1d4203`)
+
+**Befund** (eigene Messung, danach im installierten Build `e82a84c` mit echtem Upload reproduziert).
+- In einer Versal-Anschrift mit geschütztem (U+00A0), schmalem geschütztem (U+202F) oder Achtel-Geviert-Leerzeichen
+  (U+2009) zwischen Vor- und Nachname gingen beide Namen im Klartext an die Cloud. Gemessen: **4 von 33 Werten** je
+  Leerzeichenart; mit normalem Leerzeichen 0 von 33.
+- Solche Zeichen entstehen typisch bei der PDF-Extraktion. Das Test-PDF mit Arial-Schrift enthielt sie bereits.
+- Ursache: Die Versalfolge, Teile der NER und die Adressmuster kennen nur das normale Leerzeichen als Worttrenner.
+
+**Folge im installierten Build** (`payload_044`, Fall 9 „vorher“):
+- Payload: „HERRN KLAUS BROCKHAGEN [ADRESSE_01] … FRAU ODETTE PASCHKE [ADRESSE_02]“.
+- Zusätzlich stand in der lokalen Vorabanalyse (Ollama) „Herrn Klaus Brockhagen … Frau Odette Paschke“.
+- Das ist **kein eigener Leckkanal**: Ollama sieht nur den bereits pseudonymisierten Text und hat den dort unerkannt
+  gebliebenen Namen wiedergegeben.
+- `extend_with_local_note` prüft den Zusatztext gegen alle bekannten Originalwerte, aber bewusst ohne eigenen NER-Scan.
+  Ein im Dokument unerkannter Name erscheint daher auch dort. Bewertung: Folgefehler der Erkennungslücke, kein
+  zusätzlicher Informationsabfluss; als Beobachtung offen.
+
+**Änderung** (`app/privacy/gateway.py`, neben der bestehenden Entfernung unsichtbarer Formatzeichen):
+- Vor **jeder** Erkennung werden Unicode-Leerzeichen der Kategorie Zs (außer dem normalen Leerzeichen) zu einem normalen
+  Leerzeichen: U+00A0, U+1680, U+2000–U+200A, U+202F, U+205F, U+3000.
+- Länge und sichtbarer Inhalt bleiben gleich. Pseudonymisierung und Restrisiko-Scan sehen danach denselben,
+  normalisierten Text.
+- Tabulatoren bleiben unverändert, weil sie Tabellenstruktur tragen.
+
+**Messung** (`58a673f` → neu):
+- Geschützte, schmale und Achtel-Geviert-Leerzeichen: je 4/33 → **0/33**.
+- Alle Benchmarks aus §16a sind unverändert (identische Ausgabe bis auf die Laufzeit).
+- 15 neue Tests; alle 15 schlagen auf `58a673f` fehl.
+- Gesamtsuite: 3756 bestanden, 4 Logo-Fehlschläge wie zuvor.
+
+**Installierter Build `a1d4203`** (Bündel geprüft: `_UNUSUAL_SPACES` im Gateway, `_uppercase_variant_pass` in den
+Detektoren; Installation Exit 0; Health 200).
+- **Fall 9:** Versal-Anschriften mit U+00A0/U+202F, echter Upload.
+  - Vorher, auf `e82a84c`: **FAIL**, 4 Namen im Klartext (siehe oben).
+  - Nachher: **PASS**. Payload: „HERRN [PERSON_01] [ADRESSE_01] BETREFF: MAHNUNG FRAU [PERSON_02] [ADRESSE_02] wir mahnen
+    nach § 286 BGB die Zahlung von 1.200,00 EUR an.“
+  - Screenshot: Dokument „Verarbeitet“, lokale Antwort korrekt re-personalisiert.
+- **Fälle 1–8** auf demselben Build: alle **PASS**.
+
+**Weiterhin offen:**
+- Tabulator zwischen Versal-Vor- und Nachname: 4/33.
+- Doppelte Leerzeichen zwischen **allen** Wörtern: 17/33, auch in normaler Schreibung; vorbestehend. Doppelte Leerzeichen
+  markieren in der Dokumentaufbereitung Zeilenumbrüche, eine Zusammenfassung wäre daher mehrdeutig. Nicht geändert.
