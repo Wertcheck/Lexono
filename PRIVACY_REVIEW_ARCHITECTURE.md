@@ -1793,8 +1793,8 @@ Umgebung.
    - Anthropic-Verkehr nutzt weiterhin System-Proxy und System-Zertifikate. Ein vertrauenswürdiges Stammzertifikat bzw.
      der Verzicht auf TLS-Inspektion für api.anthropic.com ist eine Vorgabe an die Kanzlei-IT.
    - Unbeschriftete Konto-, Vertrags- und Kundennummern: Der Owner verlangt eine dauerhafte, kontextabhängige
-     Schutzstrategie als eigenes Arbeitspaket. Keine pauschale Maskierung, keine Übergangslösung. Bis dahin ist das eine
-     **offene wesentliche Lücke**, die eine Echtdatenfreigabe ausschließt.
+     Schutzstrategie als eigenes Arbeitspaket. Keine pauschale Maskierung, keine Übergangslösung. **Umgesetzt in §22**
+     (Korpus: 26/32 → 0/32 im Klartext); die dort dokumentierten Restlücken und offenen Entscheidungen bleiben.
 3. (Erledigt nach Abschluss: volle Suite auf `c170abb` – 3983 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle fehlgeschlagen.)
 4. (Erledigt: Release-Notiz in RELEASE_NOTES.md, „Breaking Changes“, Nachtrag 13.10.2026.)
 
@@ -1838,3 +1838,130 @@ Build: Dessen Konfiguration `C:\ProgramData\Lexono\.env` enthielt zu diesem Zeit
 - Frage: „Herr Karl Brenner fragt: Was regelt § 823 Abs. 1 BGB?“
 - Ergebnis: inhaltliche Modellantwort (543 Zeichen), keine Konfigurationsmeldung, keine Platzhalter in der Antwort
   (**PASS**).
+
+
+## 22. Schutzstrategie für unbeschriftete Nummern (13.10.2026, `8147725`)
+
+Auftrag des Owners (Antwort auf §21.6): eine dauerhafte, kontextabhängige Strategie für Konto-, Vertrags-, Kunden- und
+andere Kennnummern ohne Bezeichnung. Keine pauschale Maskierung, keine Übergangslösung. Nur synthetische Daten.
+
+### 22.1 Policy
+
+| Klasse | Beispiele | Behandlung |
+|---|---|---|
+| **Juristische und sachliche Angaben** | § 823 Abs. 1 BGB, Art. 6 DSGVO, VO (EG) Nr. 1393/2007, BT-Drs. 19/12345, NJW 2020, 2345, BeckRS 2021, 1234567, ECLI, EuGH C-311/18, Rn., Seite, Anlage K 3, DIN EN 1504-3, ISBN, Version, Gebühr Nr. 3100 VV RVG; Beträge mit Währung oder Dezimalteil, Mengen mit Einheit, Prozent, Uhrzeiten, Jahreszahlen und -listen; Artikel-, Teile-, Serien-, EAN/GTIN-Nummern, BLZ | **lesbar**, keine Rückfrage |
+| **Personenbeziehbare Kennnummer mit Bezeichnung** (Stufe 1, deterministisch) | Versicherungsschein-, Policen-, Schaden-, Patienten-, Personal-, Zähler-, Vorgangs-, Auftrags-, Fall-, Bescheid-, Beitrags-, Lieferschein-, Sendungs-, Versichertennummer, Mandatsreferenz, Kassenzeichen, „Ihr/Unser Zeichen“, Geschäftszeichen, „Gz.“, „Ref.“, „Kd.-Nr.“; Gattungswort direkt vor einer Nummer mit mindestens fünf Ziffern („Vertrag 88231457“, „Kunde 4471123“, „Police 7781234-55“) | **maskiert** als `[KENNUNG_nn]`, ohne Rückfrage |
+| **Nie freigebbar** (Stufe 1) | Zahlungskarte (13–19 Ziffern, Luhn-Prüfung, Netzpräfix oder Gruppierung), Rest einer Rentenversicherungsnummer („120380 L 512“) | **maskiert**, auch eine Anwaltsentscheidung „nicht personenbezogen“ gibt sie nicht frei |
+| **Kennnummernförmig ohne Bezeichnung** (Stufe 2, unsicher) | ab 7 Ziffern (Gruppen mit Bindestrich, Schrägstrich, einem Leerzeichen, Gedankenstrich oder Zeilenumbruch), mit Punkten gruppiert ohne Währung, Codes aus Buchstaben und mindestens 4 Ziffern (auch klein geschrieben) | **Rückfrage** im Chat (Modus „ask“), **vorsichtshalber maskiert** im Modus „mask“; Anwaltsentscheidung wird gespeichert |
+
+**Konsistenz und Rückführung:**
+- Derselbe Wert erhält im ganzen Text denselben Platzhalter.
+- Die Rückführung ist exakt (Messung: 0 Abweichungen).
+
+**Kontext:**
+- Stufe 2 sucht im **Originaltext**. Die Regeln für „lesbar lassen“ greifen also auf die ursprüngliche Formulierung, auch
+  wenn die NER ein Nachbarwort bereits maskiert hat.
+- Gefragt wird, solange irgendein Teil der Nummer im Versandtext noch lesbar ist. Bruchstücke neben einem Platzhalter
+  zählen mit.
+- Ein maskierter Name macht eine Nummer nicht unbedenklich.
+
+### 22.2 Implementierung
+
+- `app/privacy/detectors.py`:
+  - `detect_referenznummer` (Stufe 1);
+  - `detect_zahlungskarte_und_sv_rest`;
+  - „Kd.-Nr.“ im bestehenden Kundennummer-Muster;
+  - `REFERENCE_LABEL_WORDS`: Bezeichnungen, die die NER neben einem Platzhalter nicht mehr als Person liest.
+- `app/privacy/presidio_ner.py`: Diese Bezeichnungen fließen in `_is_identifier_label` ein, jetzt auch im
+  PROPN-Zweitsignal. Vorher führte „Patientennummer [KENNUNG_01]“ zu einer Fail-Closed-Blockade.
+- `app/privacy/review.py`:
+  - `_unlabelled_identifiers` mit Ausnahmen (Stufe 2);
+  - `_trim_at_detector_spans`: Ein Kandidat, der in ein Aktenzeichen u. Ä. hineinragt, wird an dieser Grenze gekürzt;
+  - `_still_readable` zählt gegen die Vorkommen außerhalb der Nummer;
+  - `is_identifier_shaped_term`;
+  - kurze Entscheidungen greifen nicht an Fundstellen- oder Betragsstellen;
+  - Bezeichnungen werden nicht als Name erfragt.
+- `app/privacy/decisions.py`: Kennnummernförmige Entscheidungen sind speicherbar. Ohne das hätte sich die Endlos-Rückfrage
+  aus §21.3 wiederholt.
+
+### 22.3 Messung (vorher → nachher)
+
+| Messung | Vorher (`3c89181`) | Nachher |
+|---|---|---|
+| Nummern-Korpus (51 Fälle: 32 schutzbedürftige, 48 lesbar zu haltende Werte) | **26 von 32 im Klartext**, 0 Rückfragen | **0 von 32**, Rückfrage in 6 Fällen (alle echte unbeschriftete Kennnummern), 0 Blockaden, keine zusätzliche Fehlmaskierung, Rückführung exakt |
+| 916 vorhandene synthetische Texte (echtes Gateway, Modi „mask“ und „ask“) | 5 Blockaden, 9 Texte mit Rückfrage | 5 Blockaden (dieselben), 15 Texte mit Rückfrage. Die 8 neuen Rückfragen betreffen echte Kennungen: 5 bisher lecke USt-IdNr./Steuer-ID/Versichertennummer-Varianten, FIN, Packungsnummer, Dokumentcode. 0 neue Blockaden, Rückführungsabweichungen unverändert (74, vorbestehende Textnormalisierung) |
+| Review-Sätze 7 und 8 | – | 16 geänderte Fälle, alle Verbesserungen: bisher lecke Steuernummern (4×), Ausweis-/Passnummern, Schaden-Nr., „unser Zeichen“, Dokument-ID, Vorgangsnummer jetzt maskiert; Bezeichnungen „Pass-Nr.“/„FS-Nr.“ jetzt lesbar statt `[PERSON]`; 0 neue Blockaden |
+| Presidio-Audit (eingefrorener Korpus), Batterie | C = FN 1/80, FP 6/104, 0 Blockaden | unverändert |
+| Volle Testsuite (`8147725`) | – | 4061 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle fehlgeschlagen |
+
+### 22.4 Unabhängige Reviews
+
+Vier Runden mit über 300 synthetischen Fällen durch das echte Gateway. Jede Runde fand echte Befunde, alle behoben und
+als Test abgesichert:
+- Runde 1:
+  - Lecks bei Punktgruppen, kleingeschriebenen Codes, Zeilenumbruch;
+  - Bruchstücke neben Platzhaltern;
+  - Freigabe von Kartennummern per Entscheidung;
+  - zwei neue Blockaden;
+  - Fehlalarme bei EU-Verordnungen, EuGH, BeckRS, Gegenstandswert, ISBN.
+- Runde 2:
+  - weitere Trennzeichen;
+  - Luhn-Fehlalarme vor Beträgen;
+  - unnötige Rückfragen durch Teilvorkommen.
+- Runde 3: Tabulator und Doppelleerzeichen verbanden Tabellenspalten und eine Zahl mit dem Aktenzeichen davor (Leck).
+  Diese Trennzeichen sind zurückgenommen.
+- Runde 4:
+  - endlose Rückfrage bei sehr langem Kandidaten;
+  - „-123456“ nach Aktenzeichen;
+  - kurze Entscheidungen maskierten Fundstellen.
+
+**Installierter Build (`8147725`, Installer neu erstellt und installiert; Bundle enthält alle neuen Funktionen):**
+- Fall 17 (neu, Nummern):
+  - beide unbeschrifteten Nummern vor dem Versand erfragt, danach maskiert;
+  - bezeichnete Schaden-, Policen- und Patientennummer sowie die Zahlungskarte ohne Rückfrage maskiert;
+  - Paragraph, BGH-Aktenzeichen, NJW-Fundstelle, Rn., Drucksache, Beträge und Laufleistung lesbar;
+  - die wiederholte Nummer hat denselben Platzhalter;
+  - genau ein Cloud-Aufruf, Rückführung korrekt.
+  - Zwei Prüfungen fielen formal durch: Eine war ein Teilzeichenfehler im Prüfskript („2345“ in „1234567890“). Die
+    andere ist die vorbestehende NER-Übermaskierung „Artikelnummer A123456789.“ → `[PERSON]`; auf dem Vorstand
+    `3c89181` gleich.
+- Fälle 1–11 und 14–16: PASS.
+- Fälle 12 und 13: nur die beabsichtigten Änderungen. Fall 12 unverändert gegenüber §21; Fall 13 zusätzlich die jetzt
+  maskierte Lieferscheinnummer (§22.5).
+
+### 22.5 Bewusst geänderte frühere Erwartungen
+
+Lieferschein-, Vorgangs- und Patientennummer sowie eine Ausweisnummer mit ungültiger Prüfziffer galten früher als lesbar.
+Jetzt werden sie maskiert:
+- Sie sind Bezüge auf einen konkreten Vorgang mit einer Person bzw. eine Gesundheits- oder Ausweiskennung.
+- Eine ungültige Prüfziffer macht eine Ausweisnummer nicht unbedenklich.
+
+Die Tests prüfen jetzt den lesbaren Rest und tragen einen sichtbaren Vermerk. „143 815 08154 Belege“ (Steuernummer-Form
+ohne Bezeichnung) ist jetzt eine Rückfrage statt Klartext.
+
+### 22.6 Restrisiken und offene Entscheidungen
+
+**Nicht erfasst (dokumentierte Restlücken):**
+- Nummern mit 6 oder weniger Ziffern ohne Bezeichnung.
+- Durch Tabulator oder mehrere Leerzeichen getrennte Nummern. Die Trennzeichen wurden bewusst zurückgenommen, siehe
+  Runde 3.
+- „Zeichen:“ ohne „Ihr/Unser“.
+- Nummern, die nur in früheren KI-Antworten des Gesprächsverlaufs stehen.
+- „4471 80331 München“: Ob „4471“ zur Nummer gehört, ist nicht entscheidbar.
+- Nummern mit mehr als 80 Zeichen.
+
+**Vorbestehend, nicht Teil dieser Änderung:**
+- Daten werden als `[DATUM]` maskiert. Chronologie und Fristen sind dadurch für das Modell nicht berechenbar. Eine Lockerung
+  wäre eine fachliche Entscheidung, siehe unten.
+- Grundbuchangaben mit Ortsnamen und Zählpunkte werden blockiert.
+- NER-Übermaskierung einzelner Fundstellenkürzel („BGBl“, „Vgl.“, „Urt.“).
+- Zitierte OLG-Aktenzeichen mit Ziffernanfang werden maskiert.
+
+**Offene fachliche Entscheidungen:**
+1. Daten lesbar lassen, damit Fristen berechnet werden können, oder weiterhin maskieren.
+2. Grundbuchblatt und Flurstück: Sie sind über das Grundbuch eigentümerbestimmbar. Stufe 1 (immer maskieren) oder wie
+   jetzt Stufe 2.
+3. Beträge ohne Währung mit Punktgruppen („Zahlung 12.345.678“ ohne „von“) werden erfragt. Das kann akzeptiert oder als
+   Betrag gewertet werden.
+
+Eine vollständige Leckfreiheit ist nicht belegt.
