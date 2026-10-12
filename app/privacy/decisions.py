@@ -30,7 +30,7 @@ from app.models.privacy_decision import (
     PrivacyDecision,
     PrivacyFeedbackStat,
 )
-from app.privacy.review import MAX_TERM_LENGTH, PrivacyDecisions, ReviewCandidate
+from app.privacy.review import MAX_TERM_LENGTH, PrivacyDecisions, ReviewCandidate, is_plate_shaped_term
 
 
 class InvalidPrivacyDecisionError(ValueError):
@@ -68,7 +68,10 @@ def _validate(term: str, decision: str) -> str:
         raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
     # Nur dieselbe Form wie Rueckfrage-Kandidaten (ein alphabetisches Wort): ein eingeschleuster Mehrwort-Begriff koennte in
     # der Ueberlappungsaufloesung einen laengeren Treffer anderer Kategorie (z. B. E-Mail) verdraengen (Audit 12.10.2026).
-    if not term.isalpha():
+    # Ausnahme (13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §21.3): kennzeichenfoermige Rueckfrage-Kandidaten ("D-XY 123").
+    # Ohne sie wurde die Antwort des Anwalts verworfen und Lexono fragte endlos erneut (installierter Build). Die Form ist
+    # eng (Buchstaben, Bindestrich, Leerzeichen, Ziffern) und wird immer als "kennung" maskiert.
+    if not term.isalpha() and not is_plate_shaped_term(term):
         raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
     return term
 

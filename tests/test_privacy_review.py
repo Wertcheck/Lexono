@@ -428,7 +428,46 @@ def test_mask_mode_masks_every_uncertain_term_beyond_the_question_cap(gateway, m
     assert [w for w in words if w in masked.payload.anonymisierter_sachverhalt] == []
 
 
-@pytest.mark.parametrize("term", ["Müller max", "Herr Richter", "Richter-Lange", "Richter@kanzlei"])
+def test_plate_shaped_decisions_are_stored_and_end_the_question_round(db: Session, gateway) -> None:
+    """Installierter Build 13.10.2026 (§21.3): die Antwort zu "D-XY 123" wurde als Mehrwort-Begriff verworfen - Lexono fragte
+    endlos erneut. Jetzt: Speicherung ueber den echten Entscheidungsweg, naechste Runde ohne Rueckfrage, maskiert."""
+    user, matter_a, _, conv_1, _ = _setup(db)
+    text = "Kennzeichen des Gegners: D-XY 123. Der Gegner fuhr D XY 4567. Zeuge notierte D-XY\n890 am Ort."
+    first = _prepare(gateway, text, mode="ask")
+    terms = [c.term for c in first.review_candidates]
+    assert first.review_required and "D XY 4567" in terms  # die uebrigen erkennt hier bereits die NER-Stufe
+    for term in terms:
+        record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term=term, decision="personal", user_id=user.id, actor="a")
+    second = _prepare(gateway, text, mode="ask", decisions=load_decisions(db, matter_id=matter_a.id, conversation_id=conv_1.id))
+    assert second.allowed and not second.review_required, [c.term for c in second.review_candidates]
+    payload = second.payload.anonymisierter_sachverhalt
+    # Kein vollstaendiges Kennzeichen; je nach Kontext maskiert die NER-Stufe nur "D-XY" als Ort (Restbefund §21.3)
+    assert not any(p in payload for p in ("D-XY 123", "D XY 4567", "D-XY\n890", "D-XY 890")) and "[KENNUNG_" in payload
+
+
+def test_line_break_plate_decision_is_single_line_and_still_masks_the_break() -> None:
+    from app.privacy.review import detect_decision_terms, find_review_candidates
+
+    text = "Akte: X\nZeuge notierte am Unfallort das Fahrzeug D-XY\n890 des Gegners."
+    terms = [c.term for c in find_review_candidates(text, context_source=text)]
+    assert "D-XY 890" in terms
+    spans = detect_decision_terms(text, {"D-XY 890"})
+    assert [(s.value, s.category) for s in spans] == [("D-XY\n890", "kennung")]
+    # Review: Windows-Zeilenumbruch (Textfeld, DOCX) - vorher kein Kandidat, Klartext-Versand
+    crlf = text.replace("\n", "\r\n")
+    assert "D-XY 890" in [c.term for c in find_review_candidates(crlf, context_source=crlf)]
+    assert [s.value for s in detect_decision_terms(crlf, {"D-XY 890"})] == ["D-XY\r\n890"]
+
+
+@pytest.mark.parametrize("mode", ["ask", "mask"])
+def test_crlf_split_plate_never_leaves_in_plain_text(gateway, mode) -> None:
+    result = _prepare(gateway, "Kennzeichen des Gegners: D-XY\r\n123", mode=mode)
+    assert result.payload is None or "D-XY\r\n123" not in result.payload.anonymisierter_sachverhalt
+    if mode == "ask":
+        assert result.review_required
+
+
+@pytest.mark.parametrize("term", ["Müller max", "Herr Richter", "Richter-Lange", "Richter@kanzlei", "D-XY\n123", "[D-XY 123]"])
 def test_decision_terms_must_be_a_single_word(db: Session, term) -> None:
     user, matter_a, _, conv_1, _ = _setup(db)
     with pytest.raises(InvalidPrivacyDecisionError):

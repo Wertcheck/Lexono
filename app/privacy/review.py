@@ -340,7 +340,9 @@ def find_review_candidates(
         if max_candidates is not None and len(found) >= max_candidates:
             break
     for match in _PLATE_SHAPE.finditer(neutral):
-        term = match.group()
+        # Zeilenumbruch (PDF) im Begriff als Leerzeichen: Entscheidungen sind einzeilig (decisions._validate);
+        # detect_decision_terms trifft den Umbruch im Text trotzdem (_decision_term_pattern).
+        term = re.sub(r"[ \t]*\r?\n[ \t]*", " ", match.group())
         # Bewusst NICHT durch max_candidates begrenzt: sonst ginge ein Kennzeichen hinter vielen Namenskandidaten
         # ungefragt im Klartext hinaus (die Form ist selten - gemessen 8 Treffer in 916 Texten, alle echte Kennzeichen).
         if term in found or term in decisions.not_personal or term in decisions.personal:
@@ -349,7 +351,7 @@ def find_review_candidates(
             continue
         if match.group("sep") == " " and not _plausible_spaced_plate(neutral, match):
             continue
-        before, after = _context(context_source, term)
+        before, after = _context(context_source, match.group())
         found[term] = ReviewCandidate(
             term=term, context_before=before, context_after=after, roles=("kennzeichenform",), probe_score=0
         )
@@ -364,7 +366,7 @@ def find_review_candidates(
 # Review: auch die Schreibweise des Schildes selbst ("D XY 123"), Gedankenstrich aus der Autokorrektur ("D–XY 123") und
 # ein Zeilenumbruch vor den Ziffern (PDF) gingen im Klartext hinaus.
 _PLATE_SHAPE = re.compile(
-    r"(?<![\w\-–])(?P<district>[A-ZÄÖÜ]{1,3})(?P<sep>[-– ])(?P<letters>[A-Z]{1,2})(?:[ \t]?|[ \t]*\n[ \t]*)"
+    r"(?<![\w\-–])(?P<district>[A-ZÄÖÜ]{1,3})(?P<sep>[-– ])(?P<letters>[A-Z]{1,2})(?:[ \t]?|[ \t]*\r?\n[ \t]*)"
     r"(?P<digits>\d{1,4})[EH]?(?![\w\-–])"
 )
 # Die reine Leerzeichenform ist deutlich mehrdeutiger (gemessen im Fehlalarm-Satz: "VW T 5", "KIA EV 6", "DER B 51",
@@ -408,6 +410,12 @@ def _is_citation_not_plate(text: str, match: re.Match) -> bool:
     )
 
 
+def is_plate_shaped_term(term: str) -> bool:
+    """Einzeiliger kennzeichenfoermiger Begriff - die einzige mehrteilige Form, die als Entscheidung gespeichert werden darf
+    (decisions._validate). Sie enthaelt nur Buchstaben, Bindestrich/Gedankenstrich, Leerzeichen und Ziffern."""
+    return "\n" not in term and _PLATE_SHAPE.fullmatch(term) is not None
+
+
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
     nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung"."""
@@ -415,8 +423,13 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
     for term in sorted(terms, key=len, reverse=True):
         if not term or not term.strip():
             continue
-        category = "kennung" if _PLATE_SHAPE.fullmatch(term) else "person"
-        pattern = re.compile(r"(?<![\wÄÖÜäöüß])" + re.escape(term) + r"(?![\wÄÖÜäöüß])")
+        plate = is_plate_shaped_term(term)
+        category = "kennung" if plate else "person"
+        body = re.escape(term)
+        if plate:  # Kennzeichen darf im Text ueber einen Zeilenumbruch laufen (PDF), siehe find_review_candidates
+            # Leerzeichen im Begriff = Leerzeichen/Tab ODER Zeilenumbruch (auch Windows-CRLF, Review) - nie "kein Abstand"
+            body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
+        pattern = re.compile(r"(?<![\wÄÖÜäöüß])" + body + r"(?![\wÄÖÜäöüß])")
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue
