@@ -459,6 +459,7 @@ def detect_all(
     ner_detector: Callable[[str], list[DetectedSpan]] | None = None,
     skip_categories: frozenset[str] = frozenset(),
     ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None = None,
+    uppercase_variant: bool = True,
 ) -> list[DetectedSpan]:
     """Führt alle Detektoren aus und löst Überlappungen auf.
 
@@ -523,8 +524,176 @@ def detect_all(
     if skip_categories:
         all_spans = [span for span in all_spans if span.category not in skip_categories]
 
+    if uppercase_variant:
+        all_spans.extend(
+            _uppercase_variant_spans(
+                text, all_spans, known_entities=known_entities, ner_detector=ner_detector,
+                skip_categories=skip_categories, ner_span_filter=ner_span_filter,
+            )
+        )
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
+
+
+# --- Versalien (13.10.2026, scripts/bench_uppercase.py) ----------------------------------------------------------------
+# ECHTER FUND (gemessen, 35 von 36 Werten im Klartext): "HERRN / GERNOT HAHN / BIRKENALLEE 17 / 12345 MUSTERSTADT"
+# (Anschrift fuer Fensterumschlaege), "Der Beklagte WINKELMANN", Rubrum "HABERLAND ./. WINKELMANN" gingen vollstaendig an
+# die Cloud: die Adressmuster verlangen Kleinbuchstaben ("allee", Ortsname mit Kleinbuchstaben), NER und Zweitsignale
+# erkennen Namen fast nur an der Gross-/Kleinschreibung. Abhilfe: eine LAENGENGLEICHE zweite Analysefassung, in der
+# Versalwoerter (mindestens 4 Buchstaben, mit Vokal - vokallose/kurze Abkuerzungen wie STVG, GMBH, BGB, ZPO bleiben
+# unveraendert) in normale Schreibung gebracht werden ("HAHN" -> "Hahn"). Auf ihr laufen ALLE Detektoren. Uebernommen
+# wird ein Treffer NUR, wenn er ein umgeschriebenes Versalwort beruehrt UND keinen urspruenglichen Treffer ueberlappt -
+# die zusaetzliche Analyse kann bestehende Treffer weder entfernen noch verdraengen (rein additiv, fail-closed). Der Wert
+# ist immer der Originalausschnitt.
+# NUR in der Pseudonymisierung (Parameter `uppercase_variant`): der Restrisiko-Scan arbeitet unveraendert wie vor dieser
+# Erweiterung. Grund (Red-Team 4, C2): die Varianten-NER haengt vom Kontext ab, und im Restrisiko-Scan stehen Platzhalter
+# neben den Versalwoertern - als Blockadegrund erzeugte sie neue, inkonsistente Fail-Closed-Blockaden normaler Briefe. Der
+# Restrisiko-Scan wird dadurch nicht schwaecher als zuvor; die Pseudonymisierung maskiert mehr.
+_UPPERCASE_WORD = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{4,}(?:-[A-ZÄÖÜß]{2,})*(?![\wÄÖÜäöüß])")
+_VOWEL = re.compile(r"[AEIOUYÄÖÜ]")
+
+
+# Versalfolge: aufeinanderfolgende Versalwoerter (auch kurze, z. B. "DES", "UND"), getrennt nur durch EIN Leerzeichen oder
+# einen Bindestrich. Zeilenwechsel/Doppel-Leerzeichen der Dokumentaufbereitung, Komma, Punkt, Doppelpunkt, "|", "./."
+# beenden eine Folge. Gemessen (scripts/bench_uppercase_negatives.py): ganze Versal-SAETZE in normale Schreibung gebracht
+# lassen das Modell Verben fuer Eigennamen halten ("SIND", "TELEFAX" als Person) - Namen und Anschriften stehen dagegen in
+# KURZEN Folgen (Anschriftzeile, einzelner Name im Satz, Rubrum). Daher nur Folgen aus hoechstens 4 Woertern.
+_UPPERCASE_RUN = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*(?: [A-ZÄÖÜß]{2,}(?:-[A-ZÄÖÜß]{2,})*)*(?![\wÄÖÜäöüß])")
+_MAX_UPPERCASE_RUN_WORDS = 4
+
+
+def _uppercase_variant(text: str) -> tuple[str, list[tuple[int, int]]] | None:
+    regions: list[tuple[int, int]] = []
+    chars = list(text)
+    for run in _UPPERCASE_RUN.finditer(text):
+        if len(run.group().split(" ")) > _MAX_UPPERCASE_RUN_WORDS:
+            continue
+        for word in _UPPERCASE_WORD.finditer(text, run.start(), run.end()):
+            value = word.group()
+            if not _VOWEL.search(value):
+                continue  # vokallose Abkuerzung (STVG, GMBH)
+            regions.append((word.start(), word.end()))
+            converted = "-".join(part[:1] + part[1:].lower() for part in value.split("-"))
+            chars[word.start() : word.end()] = list(converted)
+    variant = "".join(chars)
+    if not regions or len(variant) != len(text):
+        return None
+    return variant, regions
+
+
+# Institutionsbezeichnung direkt vor dem Treffer (Red-Team 4: "LANDGERICHT KOELN" -> "LANDGERICHT [PERSON]",
+# "FINANZAMT NORD") - nur fuer Versal-Variantentreffer der Kategorie Person.
+_INSTITUTION_BEFORE = re.compile(
+    r"(?:gericht|gerichtshof|amt|kammer|behörde|behoerde|kasse|agentur|anstalt|verwaltung|ministerium|präsidium|"
+    r"praesidium|direktion|stelle|center|gesellschaft|genossenschaft|werk|werke|bank|versicherung)[ \t]+$",
+    re.IGNORECASE,
+)
+
+
+def _uppercase_variant_spans(
+    text: str,
+    original_spans: list[DetectedSpan],
+    *,
+    known_entities: dict[str, list[str]] | None,
+    ner_detector: Callable[[str], list[DetectedSpan]] | None,
+    skip_categories: frozenset[str],
+    ner_span_filter: Callable[[str, list[DetectedSpan]], list[DetectedSpan]] | None,
+) -> list[DetectedSpan]:
+    """Zusaetzliche, VALIDIERTE Treffer aus der Versal-Analysefassung (siehe Kommentarblock oben).
+
+    Validierung je Quelle (gemessen mit scripts/bench_uppercase_negatives.py - ohne sie hielt das Modell in Versal-Saetzen
+    Verben/Gattungswoerter fuer Namen: "WEITERLEITEN", "TELEFAX", "SAAL", "TITULIERT"):
+    * bekannte Entitaeten, Titel-Muster ("Dr. X"), Strasse+Hausnummer: ohne weitere Pruefung;
+    * "PLZ Ort" ohne Strasse: nur wenn der Ort in der Analysefassung ein Eigenname (PROPN) ist ("12345 SCHLUESSEL" nicht);
+    * NER-Personen/-Orte: jedes Wort PROPN, und kein einzelnes Versalwort allein auf seiner Zeile (Ueberschrift);
+    * NER-Organisationen: nicht uebernommen (in Versal-Fliesstext ueberwiegend Fehlalarme).
+    Nur Treffer, die ein umgeschriebenes Versalwort beruehren und keinen urspruenglichen Treffer ueberlappen."""
+    converted = _uppercase_variant(text)
+    if converted is None:
+        return []
+    variant, regions = converted
+    trusted: list[DetectedSpan] = []
+    for detector in _ALL_REGEX_DETECTORS:
+        if detector is detect_address:
+            continue
+        trusted.extend(detector(variant))
+    if known_entities:
+        trusted.extend(detect_known_entities(variant, known_entities))
+    trusted.extend(detect_company_with_legal_form(variant))
+    trusted.extend(detect_titled_person(variant))
+    to_validate: list[DetectedSpan] = list(detect_address(variant))
+    if ner_detector is not None:
+        ner_spans = ner_detector(variant)
+        if ner_span_filter is not None:
+            ner_spans = ner_span_filter(variant, ner_spans)
+        to_validate.extend(span for span in ner_spans if span.category != "organisation")
+    pos_tags: dict[tuple[int, int], str] | None = None
+    if to_validate:
+        try:
+            from app.privacy.presidio_ner import get_pos_tags
+
+            pos_tags = get_pos_tags(variant)
+        except Exception:  # noqa: BLE001 - ohne Wortarten keine Validierung moeglich -> nur vertrauenswuerdige Treffer
+            pos_tags = None
+
+    def word_tags(start: int, end: int) -> list[str]:
+        # Nur die UMGESCHRIEBENEN Versalwoerter pruefen - deren Schreibweise ist unsicher; eine normal geschriebene Anrede im
+        # selben Treffer ("Herr THIELKER" -> NER "Herr Thielker", "Herr" = NOUN) ist kein Gegenindiz.
+        return [
+            tag
+            for (s, e), tag in (pos_tags or {}).items()
+            if s >= start and e <= end and any(rs <= s and e <= re_ for rs, re_ in regions)
+        ]
+
+    def alone_on_line(span: DetectedSpan) -> bool:
+        before = variant[: span.start].rsplit("\n", 1)[-1].rsplit("  ", 1)[-1]
+        before = re.sub(r"^\s*\[[^\]\n]*\]", "", before)  # Dokumentkopf "[Schreiben] " der Kontextaufbereitung
+        after = variant[span.end :].split("\n", 1)[0].split("  ", 1)[0]
+        return not before.strip(" -–:|") and not after.strip(" .,:;!-–|") and " " not in span.value.strip()
+
+    validated: list[DetectedSpan] = list(trusted)
+    for span in to_validate:
+        if pos_tags is None:
+            break
+        value = variant[span.start : span.end]
+        if span.category == "adresse":
+            if _STREET_PATTERN.search(value):
+                validated.append(span)
+                continue
+            city = re.search(r"\d{5}\s+(\S.*)$", value)
+            if city and word_tags(span.start + city.start(1), span.end) and all(
+                tag == "PROPN" for tag in word_tags(span.start + city.start(1), span.end)
+            ):
+                validated.append(span)
+            continue
+        tags = word_tags(span.start, span.end)
+        if span.category == "person" and _INSTITUTION_BEFORE.search(variant[: span.start]):
+            continue  # "LANDGERICHT KOELN", "FINANZAMT NORD" - Sitz/Bezeichnung einer Institution, kein Name
+        if tags and all(tag == "PROPN" for tag in tags) and not alone_on_line(span):
+            validated.append(span)
+
+    accepted: list[DetectedSpan] = []
+    for span in validated:
+        if span.category in skip_categories:
+            continue
+        if not any(span.start < end and start < span.end for start, end in regions):
+            continue  # nur dort, wo die Versalschreibung die Ursache sein kann
+        overlapping = [other for other in original_spans if span.start < other.end and other.start < span.end]
+        # Ein urspruenglicher Treffer wird nie verdraengt oder verkuerzt. Erlaubt ist nur eine OBERMENGE gleicher Kategorie
+        # (Red-Team 4, C1: "HANS MEIER" - der Nachname war schon erkannt, der Variantentreffer wurde wegen der
+        # Ueberlappung verworfen, "HANS" blieb im Klartext und der Restrisiko-Scan blockierte den Brief).
+        if any(
+            other.category != span.category or other.start < span.start or other.end > span.end for other in overlapping
+        ):
+            continue
+        if any(span.start < other.end and other.start < span.end for other in accepted):
+            continue
+        accepted.append(DetectedSpan(category=span.category, start=span.start, end=span.end, value=text[span.start : span.end]))
+    # Gesetzesabkuerzung direkt nach einem Normzitat ("§ 5 EFZG") ist kein Name - derselbe Filter wie in presidio_ner
+    # (Red-Team 4, B1: Abkuerzungen mit Vokal wurden in der Versal-Fassung zu Personen).
+    from app.privacy.presidio_ner import drop_statute_abbreviations
+
+    return drop_statute_abbreviations(text, accepted)
 
 
 def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:

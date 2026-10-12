@@ -703,6 +703,9 @@ class SecurityCheckService:
             ner_detector=self.ner_detector,
             skip_categories=skip_residual_categories,
             ner_span_filter=residual_ner_span_filter,
+            # Unveraendert wie vor der Versal-Erweiterung (siehe detectors._uppercase_variant_spans): die kontext-
+            # abhaengige Zusatzanalyse wirkt nur in der Pseudonymisierung, nie als Blockadegrund.
+            uppercase_variant=False,
         )
         if residual_ignore_ranges:
             residual_spans = [
