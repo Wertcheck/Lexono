@@ -279,3 +279,19 @@ def test_unusual_spaces_between_uppercase_words_do_not_hide_names(gateway, space
     for value in (first, last, "BIRKENALLEE", "MUSTERSTADT"):
         assert not _word(payload, value), (value, payload)
     assert "§ 286 BGB" in payload and space not in payload
+
+
+@pytest.mark.parametrize("first, last", [("KLAUS", "BROCKHAGEN"), ("ODETTE", "PASCHKE"), ("EMRE", "ŞAHIN")])
+def test_tab_between_uppercase_first_and_last_name(gateway, first, last) -> None:
+    """Eigene Messung: "HERRN / KLAUS<Tab>BROCKHAGEN" ging im Klartext an die Cloud (4/33). Der Tabulator wird nur in der
+    Analysefassung des zweiten Durchgangs zum Leerzeichen - der Payload behaelt ihn."""
+    payload = _payload(gateway, f"HERRN\n{first}\t{last}\nBIRKENALLEE 17\n12345 MUSTERSTADT")
+    assert not _word(payload, first) and not _word(payload, last), payload
+
+
+def test_uppercase_table_rows_with_several_tabs_are_not_joined(gateway) -> None:
+    """Gegenprobe: Tabellenzeilen haben mehrere Tabulatoren - ohne diese Grenze wurden "LAERM"/"SCHLUESSEL" zu Personen."""
+    payload = _payload(gateway, "ZEUGE\tTHEMA\tLADUNG\nNACHBAR\tLAERM\tJA\nHAUSMEISTER\tSCHLUESSEL\tNEIN")
+    for word in ("LAERM", "SCHLUESSEL", "NACHBAR", "HAUSMEISTER"):
+        assert _word(payload, word), (word, payload)
+    assert "\t" in payload

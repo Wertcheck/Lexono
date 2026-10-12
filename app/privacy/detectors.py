@@ -605,6 +605,20 @@ def _uppercase_variant(text: str, *, extended: bool = False) -> tuple[str, list[
             continue  # Kleinschreibung aendert die Laenge ("İ" -> "i̇") - Offsets muessen gleich bleiben
         regions.append((start, end))
         chars[start:end] = list(converted)
+    if extended:
+        # Ein Tabulator ZWISCHEN zwei umgeschriebenen Versalwoertern wird in der Analysefassung zum Leerzeichen ("KLAUS<Tab>
+        # BROCKHAGEN" aus PDF-Extraktion: die NER fasste den Namen sonst nicht zusammen, 4/33 im Klartext). Nur wenn es der
+        # EINZIGE Tabulator der Zeile ist - Tabellenzeilen haben mehrere ("NACHBAR<Tab>LAERM<Tab>JA" wurde sonst zu einer
+        # Person, gemessen 2/49 -> 5/49 verlorene Tabellenwoerter). Nur im zweiten, rein additiven Durchgang; der
+        # Payload-Text bleibt unveraendert.
+        ordered = sorted(regions)
+        for (_, left_end), (right_start, _) in zip(ordered, ordered[1:]):
+            if text[left_end:right_start] != "\t":
+                continue
+            line_start = max(text.rfind("\n", 0, left_end), text.rfind("  ", 0, left_end)) + 1
+            line_ends = [pos for pos in (text.find("\n", right_start), text.find("  ", right_start)) if pos != -1]
+            if text.count("\t", line_start, min(line_ends, default=len(text))) == 1:
+                chars[left_end] = " "
     variant = "".join(chars)
     if not regions or len(variant) != len(text):
         return None
