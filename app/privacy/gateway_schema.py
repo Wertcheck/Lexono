@@ -85,7 +85,9 @@ class ClaudeRequestPayload(BaseModel):
 
 
 def _seal_digest(payload: ClaudeRequestPayload) -> str:
-    return hmac.new(_SEAL_KEY, payload.model_dump_json().encode("utf-8"), hashlib.sha256).hexdigest()
+    # Serialisierung ueber die BASISKLASSE (Review): eine Unterklasse mit ueberschriebenem `model_dump_json` und kopiertem
+    # Siegel haette sonst einen anderen Inhalt versenden koennen, als versiegelt wurde.
+    return hmac.new(_SEAL_KEY, ClaudeRequestPayload.model_dump_json(payload).encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def seal_payload(payload: ClaudeRequestPayload) -> ClaudeRequestPayload:
@@ -95,7 +97,7 @@ def seal_payload(payload: ClaudeRequestPayload) -> ClaudeRequestPayload:
 
 
 def is_gateway_sealed(payload: object) -> bool:
-    if not isinstance(payload, ClaudeRequestPayload):
+    if type(payload) is not ClaudeRequestPayload:  # exakt der Gateway-Typ, keine Unterklasse (Review)
         return False
     seal = payload._gateway_seal
     return bool(seal) and hmac.compare_digest(seal, _seal_digest(payload))

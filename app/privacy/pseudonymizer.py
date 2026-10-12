@@ -90,14 +90,52 @@ def neutralize_leftover_placeholder_tokens(text: str) -> str:
 _PLACEHOLDER_LIKE_PATTERN = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d+\]")
 
 
+# Verwechselbare Zeichen (Sicherheitspruefung 13.10.2026, gemessen): "[PЕRSON_01]" mit kyrillischem "Е" oder griechischem
+# "Ο" galt nicht als Platzhalter - "normalisierte" das Modell ihn in der Antwort zu "[PERSON_01]", setzte die Rueckfuehrung
+# einen FREMDEN Wert ein. Die Erkennung woertlicher Platzhalter laeuft deshalb auf einer laengengleichen Fassung, in der
+# solche Zeichen (kyrillische/griechische Grossbuchstaben in lateinischer Gestalt, Vollbreite) als ASCII gelten. Nur fuer
+# diese Erkennung - der Text selbst bleibt unveraendert.
+_CONFUSABLE_TO_ASCII = str.maketrans(
+    {
+        **{chr(code): chr(code - 0xFEE0) for code in range(0xFF01, 0xFF5F)},  # Vollbreite ASCII
+        **dict(zip("АВЕКМНОРСТУХІЈЅ", "ABEKMHOPCTYXIJS")),  # Kyrillisch
+        **dict(zip("ΑΒΕΖΗΙΚΜΝΟΡΤΥΧ", "ABEZHIKMNOPTYX")),  # Griechisch
+    }
+)
+# Woertlicher Platzhalter mitten in einer Ziffernfolge ("Tel. 030 [TELEFON_01] 1234567"): kein Detektor erkennt die
+# zerteilte Nummer - die angrenzenden Zifferngruppen werden mit maskiert (Rueckfuehrung bleibt exakt).
+_DIGITS_BEFORE = re.compile(r"\d[\d/\-]*(?: \d[\d/\-]*)* ?$")
+_DIGITS_AFTER = re.compile(r"^ ?[/\-]?\d[\d/\-]*(?: \d[\d/\-]*)*")  # auch "143/815/[...]/08154" (Review)
+_DIGIT_WINDOW = 200  # Review: mit 40 Zeichen blieb der Rest einer langen Ziffernfolge stehen
+# Lockere Klammerform (Review): auch Zeichen, die keine Uebersetzung in ASCII haben - Kombinationszeichen, mathematische
+# Buchstaben, "O" statt Null, kyrillische Kleinbuchstaben, Cherokee, Kapitaelchen ("[𝐏𝐄𝐑𝐒𝐎𝐍_01]", "[PERSON_O1]").
+# Eine solche Zeichenfolge kann das Modell zu einem echten Platzhalter "normalisieren"; als Textmarke ist sie geschuetzt.
+_PLACEHOLDER_LOOSE = re.compile(r"\[[^\[\]\s]{2,30}_[^\[\]\s]{1,3}\]")
+
+
 def _literal_placeholder_spans(text: str) -> list[DetectedSpan]:
-    spans = [
-        DetectedSpan(category=_LITERAL_CATEGORY, start=m.start(), end=m.end(), value=m.group())
-        for m in _PLACEHOLDER_LIKE_PATTERN.finditer(text)
-    ]
-    for match in _LEFTOVER_BARE.finditer(text):
-        if not any(span.start <= match.start() < span.end for span in spans):
-            spans.append(DetectedSpan(category=_LITERAL_CATEGORY, start=match.start(), end=match.end(), value=match.group()))
+    skeleton = text.translate(_CONFUSABLE_TO_ASCII)
+    if len(skeleton) != len(text):
+        skeleton = text
+    found: list[tuple[int, int]] = [(m.start(), m.end()) for m in _PLACEHOLDER_LIKE_PATTERN.finditer(skeleton)]
+    for match in _PLACEHOLDER_LOOSE.finditer(text):
+        if not any(start < match.end() and match.start() < end for start, end in found):
+            found.append((match.start(), match.end()))
+    for match in _LEFTOVER_BARE.finditer(skeleton):
+        if not any(start <= match.start() < end for start, end in found):
+            found.append((match.start(), match.end()))
+    found.sort()
+    spans = []
+    for start, end in found:
+        line_start = max(text.rfind("\n", 0, start) + 1, start - _DIGIT_WINDOW)
+        before = _DIGITS_BEFORE.search(text[line_start:start])
+        after = _DIGITS_AFTER.match(text[end : end + _DIGIT_WINDOW].split("\n", 1)[0])
+        if before and after:
+            start, end = line_start + before.start(), end + after.end()
+        if spans and start < spans[-1].end:  # zwei Platzhalter in derselben Ziffernfolge: ein gemeinsamer Treffer
+            start, end = min(start, spans[-1].start), max(end, spans[-1].end)
+            spans.pop()
+        spans.append(DetectedSpan(category=_LITERAL_CATEGORY, start=start, end=end, value=text[start:end]))
     return spans
 
 

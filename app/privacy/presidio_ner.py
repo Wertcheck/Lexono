@@ -194,8 +194,16 @@ _NEVER_ENTITY_WORDS = frozenset(
         # POS-Tagger PROPN; ohne Ausnahme maskierte das Zweitsignal sie in JEDEM Chat und erzwang damit die lokalen
         # KI-Schichten (tests/test_performance_regression.py Szenario A, tests/test_privacy_gateway.py skip_general_*).
         "schnellentwurf", "chat",
+        # Gattungsname einer Bank (Sicherheitspruefung 13.10.2026, Review gemessen: "Kontonummer [KENNUNG_01] bei der
+        # Sparkasse, Inhaber ..." - der Restrisiko-Scan hielt "Sparkasse" fuer eine Person und blockierte). Ganzwort-
+        # Gleichheit: "Sparkasse Hamburg" bleibt als laengerer Treffer geschuetzt.
+        "sparkasse",
     }
 )
+# Bezeichnungen von Kennnummern (Sicherheitspruefung 13.10.2026, gemessen) werden NICHT als Liste gefuehrt, sondern
+# strukturell aus `_ID_LABEL_BEFORE` abgeleitet (siehe `_is_identifier_label`): ist die Nummer dahinter maskiert, hielt
+# die NER im Restrisiko-Scan die blosse Bezeichnung fuer Ort/Person ("SV-Nr." -> ort, "Kto.-Nr." -> person,
+# "Rentenversicherungsnummer" -> person) und blockierte den Text.
 
 
 _MARKER_WITH_BREAK = re.compile(r"@@[A-Z_]+@@\n?")
@@ -261,6 +269,9 @@ _EXTRA_ID_PATTERNS = (
     ("DE_TAX_NUMBER", r"\b\d{2,3}\s\d{3,4}\s\d{4,5}\b", 0.1),  # "143 815 08154"
     ("DE_KFZ", r"\b[A-ZÄÖÜ]{1,3}[\s-][A-Z]{1,2}\d{1,4}[EH]?\b", 0.1),  # "HH AB1234"
     ("DE_HANDELSREGISTER", r"\bHR[AB]\s*\d{1,3}(?:\s\d{3})+\b", 0.5),
+    ("DE_SV_NUMMER", r"\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b", 0.1),  # "65 170839 J 003"
+    ("DE_KONTONUMMER", r"\b\d{2,4}(?:[ .]?\d{2,4}){1,4}\b", 0.1),  # "1234567890", "98 765 432"
+    ("DE_MITGLIEDSNUMMER", r"\b(?=[A-Z0-9/-]*\d)[A-Z0-9][A-Z0-9/-]{3,20}\b", 0.1),  # mindestens eine Ziffer
 )
 
 
@@ -287,6 +298,9 @@ _ID_ENTITIES = ("DE_VAT_ID", "DE_HANDELSREGISTER", "DE_SOCIAL_SECURITY")
 # veraenderlich). Damit sind Pseudonymisierung und Restrisiko-Scan konsistent: steht zwischen Bezeichnung und Wert etwas,
 # das inzwischen maskiert ist, fehlt die Nachbarschaft, und der Restrisiko-Scan kann keinen neuen Treffer erzeugen.
 # Ohne Bezeichnung bleiben "VW T 6", "DER B 51", 13-stellige Liefernummern und "Version 2.4.1.0" unberuehrt.
+# Fahrzeugwort unmittelbar vor dem Kennzeichen ("Der PKW HH-AB 1234"); gilt wie das nackte "Kennzeichen" nur mit
+# mindestens zwei Ziffern ("Pkw BMW X5", "Lkw VW T 6" bleiben Modellangaben).
+_VEHICLE_WORDS = r"pkw|lkw|kfz|fahrzeug|krad|motorrad|anhänger|anhaenger|wohnmobil"
 _LABELLED_ID_RECOGNIZERS = (
     "DeTaxNumberRecognizer", "DeIdCardRecognizer", "DePassportRecognizer", "DeFuehrerscheinRecognizer", "DeKfzRecognizer",
 )
@@ -295,7 +309,12 @@ _ID_LABEL_BEFORE = {
     "DE_ID_CARD": r"(?:personal)?ausweis(?:-?\s?(?:nummer|nr\.?))?|ausweisdokument(?:-?\s?nr\.?)?",
     "DE_PASSPORT": r"(?:reise)?pass(?:-?\s?(?:nummer|nr\.?))|reisepass",
     "DE_FUEHRERSCHEIN": r"f(?:ü|ue)hrerschein(?:-?\s?(?:nummer|nr\.?))?|fs-?\s?nr\.?",
-    "DE_KFZ": r"(?:amtl(?:iches|\.)\s+|kfz-?\s?|fahrzeug-?\s?)?kennzeichen|(?:amtl\.|kfz-)\s?kz\.|kennz\.",
+    "DE_KFZ": r"(?:amtl(?:iches|\.)\s+|kfz-?\s?|fahrzeug-?\s?)?kennzeichen|(?:amtl\.|kfz-)\s?kz\.|kennz\.|" + _VEHICLE_WORDS,
+    # Sicherheitspruefung 13.10.2026 (gemessen: im Klartext): Sozialversicherungs-/Rentenversicherungsnummer mit
+    # Leerzeichen, Kontonummer, Mitgliedsnummer - jeweils nur mit unmittelbar vorangestellter Bezeichnung.
+    "DE_SV_NUMMER": r"(?:sozial|renten)versicherungs-?\s?(?:nummer|nr\.?)|(?:sv|rv)-?\s?nr\.?|versicherungsnummer",
+    "DE_KONTONUMMER": r"konto-?\s?(?:nummer|nr\.?)|kto\.?\s?-?\s?nr\.?",
+    "DE_MITGLIEDSNUMMER": r"mitglieds-?\s?(?:nummer|nr\.?)",
     "IP_ADDRESS": r"ip-?\s?adresse|ip",
 }
 _ID_LABEL_PATTERNS = {
@@ -305,6 +324,15 @@ _ID_LABEL_PATTERNS = {
     )
     for entity, label in _ID_LABEL_BEFORE.items()
 }
+# Ein NER-Treffer, der GANZ aus einer solchen Bezeichnung besteht, ist kein Name/Ort - abgeleitet aus denselben Mustern,
+# keine eigene Wortliste (siehe Kommentar bei _NEVER_ENTITY_WORDS).
+_ID_LABEL_FULL = re.compile(r"(?:" + "|".join(_ID_LABEL_BEFORE.values()) + r")\.?", re.IGNORECASE)
+
+
+def _is_identifier_label(value: str) -> bool:
+    return _ID_LABEL_FULL.fullmatch(value.strip()) is not None
+
+
 # Die Presidio-Muster laufen ohne Gross-/Kleinschreibung: "auf der A 7" passte als Kennzeichen. Ein kleingeschriebenes
 # Kennzeichen ("unser kennzeichen ist hh-ab 1234", Chat) wird nur uebernommen, wenn die erste Buchstabengruppe kein
 # Artikel/keine Praeposition ist (Folgezyklus 13.10.2026: vorher blieb "1234" neben "[ORT_01]" im Klartext).
@@ -342,7 +370,9 @@ _PROFILE_URL = re.compile(
 # "A B 1" sind Modell- bzw. Gliederungsangaben (Review). Dort gilt ein Kennzeichen nur mit mindestens zwei Ziffern.
 # Bewusst KEINE Ausnahme fuer "Ihr/Unser Kennzeichen": ein Bezugszeichen ("RA BK 26") sieht aus wie ein echtes
 # Kennzeichen ("Ihr Kennzeichen HH-AB 1234" im Versichererbrief) - im Zweifel maskieren.
-_BARE_KFZ_LABEL = re.compile(r"(?<![\w-])kennzeichen\s?[:.]?[ \t]{0,2}$", re.IGNORECASE)
+_BARE_KFZ_LABEL = re.compile(
+    r"(?<![\w-])(?:kennzeichen|" + _VEHICLE_WORDS + r")(?:[ \t]+(?:ist|lautet))?\s?[:.]?[ \t]{0,2}$", re.IGNORECASE
+)
 
 
 def _weak_plate(text: str, start: int, value: str) -> bool:
@@ -1151,6 +1181,8 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
             continue
         if _LOOKS_LIKE_INTERNAL_TOKEN_PATTERN.match(value):
             continue
+        if _is_identifier_label(value):
+            continue  # blosse Kennnummer-Bezeichnung ("SV-Nr.", "Rentenversicherungsnummer"), siehe _ID_LABEL_BEFORE
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
         if category in ("person", "organisation") and is_derivational_compound(value.strip()):
