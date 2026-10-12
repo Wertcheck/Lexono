@@ -40,6 +40,7 @@ _CATEGORY_LABELS = {
     "iban": "IBAN",
     "steuer_id": "Steuernummer",
     "kundennummer": "Kundennummer",
+    "kennung": "Kennnummer",
     "person": "Person",
     "ort": "Ort",
     "organisation": "Organisation",

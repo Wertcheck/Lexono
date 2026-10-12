@@ -1,0 +1,747 @@
+{
+ "version": 1,
+ "cases": [
+  {
+   "id": "N01",
+   "group": "name_normal",
+   "text": "Herr Gernot Hahn hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+   "pii": [
+    "Gernot",
+    "Hahn"
+   ],
+   "keep": [
+    "Rückruf"
+   ]
+  },
+  {
+   "id": "N02",
+   "group": "name_normal",
+   "text": "Die Mandantin Odette Paschke wünscht eine Einschätzung zur Kündigung.",
+   "pii": [
+    "Odette",
+    "Paschke"
+   ],
+   "keep": [
+    "Kündigung",
+    "Mandantin"
+   ]
+  },
+  {
+   "id": "N03",
+   "group": "name_normal",
+   "text": "Zeuge Tjark Westphal bestätigte den Wasserschaden in der Küche.",
+   "pii": [
+    "Tjark",
+    "Westphal"
+   ],
+   "keep": [
+    "Wasserschaden",
+    "Zeuge"
+   ]
+  },
+  {
+   "id": "N04",
+   "group": "name_normal",
+   "text": "Rechtsanwältin Dr. Mareike Thormählen vertritt die Gegenseite.",
+   "pii": [
+    "Mareike",
+    "Thormählen"
+   ],
+   "keep": [
+    "Gegenseite"
+   ]
+  },
+  {
+   "id": "N05",
+   "group": "name_normal",
+   "text": "Brockhagen hat die Rechnung nicht bezahlt, obwohl die Frist abgelaufen ist.",
+   "pii": [
+    "Brockhagen"
+   ],
+   "keep": [
+    "Rechnung",
+    "Frist"
+   ]
+  },
+  {
+   "id": "N06",
+   "group": "name_normal",
+   "text": "Der Vermieter Kowalczyk verweigert die Rückzahlung der Kaution.",
+   "pii": [
+    "Kowalczyk"
+   ],
+   "keep": [
+    "Vermieter",
+    "Kaution"
+   ]
+  },
+  {
+   "id": "N07",
+   "group": "name_normal",
+   "text": "Laut Gutachten von Sachverständigem Holger Behrends liegt ein Mangel vor.",
+   "pii": [
+    "Holger",
+    "Behrends"
+   ],
+   "keep": [
+    "Gutachten",
+    "Mangel"
+   ]
+  },
+  {
+   "id": "N08",
+   "group": "name_normal",
+   "text": "Frau Sommer und Herr Winter haben den Vertrag gemeinsam unterzeichnet.",
+   "pii": [
+    "Sommer",
+    "Winter"
+   ],
+   "keep": [
+    "Vertrag"
+   ]
+  },
+  {
+   "id": "U01",
+   "group": "name_caps",
+   "text": "HERRN\nGERNOT HAHN\nBIRKENALLEE 17\n12345 MUSTERSTADT",
+   "pii": [
+    "GERNOT",
+    "HAHN",
+    "BIRKENALLEE",
+    "MUSTERSTADT"
+   ],
+   "keep": [
+    "HERRN"
+   ]
+  },
+  {
+   "id": "U02",
+   "group": "name_caps",
+   "text": "Der Beklagte WINKELMANN hat die Forderung bestritten.",
+   "pii": [
+    "WINKELMANN"
+   ],
+   "keep": [
+    "Beklagte",
+    "Forderung"
+   ]
+  },
+  {
+   "id": "U03",
+   "group": "name_caps",
+   "text": "In Sachen HABERLAND ./. WINKELMANN wegen Werklohn",
+   "pii": [
+    "HABERLAND",
+    "WINKELMANN"
+   ],
+   "keep": [
+    "Werklohn",
+    "./."
+   ]
+  },
+  {
+   "id": "U04",
+   "group": "name_caps",
+   "text": "Mit freundlichen Grüßen\nGEZ. FENJA RÜBSAM\nRechtsanwältin",
+   "pii": [
+    "FENJA",
+    "RÜBSAM"
+   ],
+   "keep": [
+    "Rechtsanwältin"
+   ]
+  },
+  {
+   "id": "L01",
+   "group": "name_lower",
+   "text": "mein vermieter herr sauer hat die heizung nicht repariert.",
+   "pii": [
+    "sauer"
+   ],
+   "keep": [
+    "vermieter",
+    "heizung"
+   ]
+  },
+  {
+   "id": "L02",
+   "group": "name_lower",
+   "text": "bitte rufen sie frau elfriede kaminski zurück, es geht um die kündigung.",
+   "pii": [
+    "elfriede",
+    "kaminski"
+   ],
+   "keep": [
+    "kündigung"
+   ]
+  },
+  {
+   "id": "S01",
+   "group": "name_special",
+   "text": "Herr Jürgen Schößler und Frau Ayşe Yıldırım sind Zeugen.",
+   "pii": [
+    "Schößler",
+    "Ayşe",
+    "Yıldırım"
+   ],
+   "keep": [
+    "Zeugen"
+   ]
+  },
+  {
+   "id": "S02",
+   "group": "name_special",
+   "text": "Die Klägerin Agnieszka Łukasiewicz verlangt 3.912,40 EUR.",
+   "pii": [
+    "Agnieszka",
+    "Łukasiewicz"
+   ],
+   "keep": [
+    "Klägerin",
+    "3.912,40"
+   ]
+  },
+  {
+   "id": "S03",
+   "group": "name_special",
+   "text": "Herr René Lefèvre und Frau Søren Kjærgaard haben unterschrieben.",
+   "pii": [
+    "René",
+    "Lefèvre",
+    "Kjærgaard"
+   ],
+   "keep": []
+  },
+  {
+   "id": "S04",
+   "group": "name_special",
+   "text": "Der Zeuge Jiří Dvořák wohnt in Brünn.",
+   "pii": [
+    "Jiří",
+    "Dvořák"
+   ],
+   "keep": [
+    "Zeuge"
+   ]
+  },
+  {
+   "id": "G01",
+   "group": "name_greek_cyrillic",
+   "text": "Der Mandant Γιάννης Παπαδόπουλος hat die Vollmacht unterschrieben.",
+   "pii": [
+    "Γιάννης",
+    "Παπαδόπουλος"
+   ],
+   "keep": [
+    "Vollmacht"
+   ]
+  },
+  {
+   "id": "G02",
+   "group": "name_greek_cyrillic",
+   "text": "Die Zeugin Анна Смирнова hat ausgesagt.",
+   "pii": [
+    "Анна",
+    "Смирнова"
+   ],
+   "keep": [
+    "Zeugin"
+   ]
+  },
+  {
+   "id": "G03",
+   "group": "name_greek_cyrillic",
+   "text": "ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ ist Geschäftsführer der Firma.",
+   "pii": [
+    "ΓΙΑΝΝΗΣ",
+    "ΠΑΠΑΔΟΠΟΥΛΟΣ"
+   ],
+   "keep": [
+    "Geschäftsführer"
+   ]
+  },
+  {
+   "id": "A01",
+   "group": "address",
+   "text": "Die Wohnung liegt in der Birkenallee 17, 12345 Musterstadt.",
+   "pii": [
+    "Birkenallee 17",
+    "Musterstadt"
+   ],
+   "keep": [
+    "Wohnung"
+   ]
+  },
+  {
+   "id": "A02",
+   "group": "address",
+   "text": "Herrn\nKlaus Brockhagen\nRosenweg 2a\n24103 Kiel\n\nBetreff: Mahnung",
+   "pii": [
+    "Brockhagen",
+    "Rosenweg",
+    "Kiel"
+   ],
+   "keep": [
+    "Betreff",
+    "Mahnung"
+   ]
+  },
+  {
+   "id": "A03",
+   "group": "address",
+   "text": "Lieferung an: Hafenstraße 9, 20457 Hamburg, 3. OG links",
+   "pii": [
+    "Hafenstraße 9",
+    "20457"
+   ],
+   "keep": [
+    "Lieferung"
+   ]
+  },
+  {
+   "id": "A04",
+   "group": "address",
+   "text": "Die Mieterin wohnt Am Mühlbach 3 in 79100 Freiburg.",
+   "pii": [
+    "Mühlbach 3",
+    "Freiburg"
+   ],
+   "keep": [
+    "Mieterin"
+   ]
+  },
+  {
+   "id": "A05",
+   "group": "address",
+   "text": "Postfach 10 20 30, 50667 Köln",
+   "pii": [
+    "10 20 30",
+    "Köln"
+   ],
+   "keep": []
+  },
+  {
+   "id": "R01",
+   "group": "role_followup",
+   "text": "Sehr geehrter Herr Thielker,\nwir bitten um Zahlung. Herr Thielker hat bislang nicht reagiert.",
+   "pii": [
+    "Thielker"
+   ],
+   "keep": [
+    "Zahlung"
+   ]
+  },
+  {
+   "id": "R02",
+   "group": "role_followup",
+   "text": "Die Zeugin Eiche hat ausgesagt. Eiche bestätigte den Unfallhergang.",
+   "pii": [
+    "Eiche"
+   ],
+   "keep": [
+    "Unfallhergang"
+   ]
+  },
+  {
+   "id": "R03",
+   "group": "role_followup",
+   "text": "Am 12.03.2026 erschien Frau Marlene Osthues in der Kanzlei. Osthues legte die Unterlagen vor.",
+   "pii": [
+    "Marlene",
+    "Osthues"
+   ],
+   "keep": [
+    "Kanzlei",
+    "Unterlagen"
+   ]
+  },
+  {
+   "id": "R04",
+   "group": "role_followup",
+   "text": "Die Beklagte, vertreten durch Herrn Wessolowski, beantragt Klageabweisung.",
+   "pii": [
+    "Wessolowski"
+   ],
+   "keep": [
+    "Beklagte",
+    "Klageabweisung"
+   ]
+  },
+  {
+   "id": "R05",
+   "group": "role_followup",
+   "text": "Hallo Frau Krummbiegel, anbei die Unterlagen. Viele Grüße",
+   "pii": [
+    "Krummbiegel"
+   ],
+   "keep": [
+    "Unterlagen"
+   ]
+  },
+  {
+   "id": "P01",
+   "group": "pii_structured",
+   "text": "Bitte überweisen Sie auf DE89 3704 0044 0532 0130 00 (Sparkasse).",
+   "pii": [
+    "DE89 3704 0044 0532 0130 00"
+   ],
+   "keep": [
+    "Sparkasse"
+   ]
+  },
+  {
+   "id": "P02",
+   "group": "pii_structured",
+   "text": "Erreichbar unter 0151 23456789 oder g.hahn@beispiel-mail.de.",
+   "pii": [
+    "0151 23456789",
+    "g.hahn@beispiel-mail.de"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P03",
+   "group": "pii_structured",
+   "text": "Tel.: +49 40 123456-0, Fax: 040/123456-99",
+   "pii": [
+    "+49 40 123456-0",
+    "040/123456-99"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P04",
+   "group": "pii_structured",
+   "text": "Steuer-ID: 44026319071",
+   "pii": [
+    "44026319071"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P05",
+   "group": "pii_structured",
+   "text": "Steuernummer 143/815/08154 beim Finanzamt Musterstadt",
+   "pii": [
+    "143/815/08154"
+   ],
+   "keep": [
+    "Finanzamt"
+   ]
+  },
+  {
+   "id": "P06",
+   "group": "pii_structured",
+   "text": "USt-IdNr.: DE489681509",
+   "pii": [
+    "DE489681509"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P07",
+   "group": "pii_structured",
+   "text": "Rentenversicherungsnummer: 70180849W036",
+   "pii": [
+    "70180849W036"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P08",
+   "group": "pii_structured",
+   "text": "Krankenversichertennummer G168501618, Krankenkasse AOK",
+   "pii": [
+    "G168501618"
+   ],
+   "keep": [
+    "Krankenkasse"
+   ]
+  },
+  {
+   "id": "P09",
+   "group": "pii_structured",
+   "text": "Personalausweisnummer P0550M7M2 wurde vorgelegt.",
+   "pii": [
+    "P0550M7M2"
+   ],
+   "keep": []
+  },
+  {
+   "id": "P10",
+   "group": "pii_structured",
+   "text": "Das Fahrzeug mit dem Kennzeichen HH-AB 1234 parkte vor der Einfahrt.",
+   "pii": [
+    "HH-AB 1234"
+   ],
+   "keep": [
+    "Fahrzeug",
+    "Einfahrt"
+   ]
+  },
+  {
+   "id": "P11",
+   "group": "pii_structured",
+   "text": "Eingetragen im Handelsregister des Amtsgerichts Hamburg unter HRB 123456.",
+   "pii": [
+    "HRB 123456"
+   ],
+   "keep": [
+    "Handelsregister"
+   ]
+  },
+  {
+   "id": "P12",
+   "group": "pii_structured",
+   "text": "Profil: https://www.linkedin.com/in/gernot-hahn-1980 und www.hahn-bau.de",
+   "pii": [
+    "gernot-hahn",
+    "hahn-bau"
+   ],
+   "keep": [
+    "Profil"
+   ]
+  },
+  {
+   "id": "P13",
+   "group": "pii_structured",
+   "text": "Der Zugriff erfolgte von der IP-Adresse 192.168.178.23.",
+   "pii": [
+    "192.168.178.23"
+   ],
+   "keep": [
+    "Zugriff"
+   ]
+  },
+  {
+   "id": "P14",
+   "group": "pii_structured",
+   "text": "Geburtsdatum: 14.07.1983, geboren in Bielefeld",
+   "pii": [
+    "14.07.1983",
+    "Bielefeld"
+   ],
+   "keep": [
+    "Geburtsdatum"
+   ]
+  },
+  {
+   "id": "P15",
+   "group": "pii_structured",
+   "text": "BIC: COBADEFFXXX, Kontoinhaber Gernot Hahn",
+   "pii": [
+    "COBADEFFXXX",
+    "Gernot",
+    "Hahn"
+   ],
+   "keep": [
+    "Kontoinhaber"
+   ]
+  },
+  {
+   "id": "K01",
+   "group": "legal_keep",
+   "text": "Der Anspruch folgt aus § 535 Abs. 1 BGB i. V. m. § 280 Abs. 1 BGB.",
+   "pii": [],
+   "keep": [
+    "§ 535 Abs. 1 BGB",
+    "§ 280 Abs. 1 BGB"
+   ]
+  },
+  {
+   "id": "K02",
+   "group": "legal_keep",
+   "text": "Nach Art. 6 Abs. 1 lit. b DSGVO ist die Verarbeitung rechtmäßig.",
+   "pii": [],
+   "keep": [
+    "Art. 6 Abs. 1 lit. b DSGVO",
+    "Verarbeitung"
+   ]
+  },
+  {
+   "id": "K03",
+   "group": "legal_keep",
+   "text": "Der Halter haftet nach § 7 StVG; die StVO wurde verletzt.",
+   "pii": [],
+   "keep": [
+    "§ 7 StVG",
+    "StVO",
+    "Halter"
+   ]
+  },
+  {
+   "id": "K04",
+   "group": "legal_keep",
+   "text": "Die Klage ist zulässig und begründet. Die Kosten trägt die Beklagte (§ 91 ZPO).",
+   "pii": [],
+   "keep": [
+    "Klage",
+    "Kosten",
+    "§ 91 ZPO"
+   ]
+  },
+  {
+   "id": "K05",
+   "group": "legal_keep",
+   "text": "Streitwert: 12.400,00 EUR; Gebühr 1,3 nach Nr. 3100 VV RVG.",
+   "pii": [],
+   "keep": [
+    "12.400,00",
+    "3100 VV RVG",
+    "Streitwert"
+   ]
+  },
+  {
+   "id": "K06",
+   "group": "legal_keep",
+   "text": "Mängelanzeige: Feuchtigkeit im Keller, Risse im Estrich, Nachbesserungsfrist bis 30.11.2026.",
+   "pii": [],
+   "keep": [
+    "Mängelanzeige",
+    "Feuchtigkeit",
+    "Estrich",
+    "Nachbesserungsfrist"
+   ]
+  },
+  {
+   "id": "K07",
+   "group": "legal_keep",
+   "text": "Die Berufung gegen das Urteil des Landgerichts wird zurückgewiesen.",
+   "pii": [],
+   "keep": [
+    "Berufung",
+    "Urteil",
+    "Landgerichts"
+   ]
+  },
+  {
+   "id": "K08",
+   "group": "legal_keep",
+   "text": "Der Erblasser hinterließ ein Testament; der Pflichtteil beträgt 1/4.",
+   "pii": [],
+   "keep": [
+    "Erblasser",
+    "Testament",
+    "Pflichtteil"
+   ]
+  },
+  {
+   "id": "K09",
+   "group": "legal_keep",
+   "text": "Gemäß §§ 433 ff. BGB schuldet der Verkäufer die mangelfreie Sache.",
+   "pii": [],
+   "keep": [
+    "§§ 433 ff. BGB",
+    "Verkäufer"
+   ]
+  },
+  {
+   "id": "K10",
+   "group": "legal_keep",
+   "text": "Die GmbH & Co. KG haftet nach § 128 HGB; das AG Hamburg ist zuständig.",
+   "pii": [],
+   "keep": [
+    "§ 128 HGB"
+   ]
+  },
+  {
+   "id": "H01",
+   "group": "heading_keep",
+   "text": "BETREFF: MAHNUNG ODER KLAGE\nIM NAMEN DES VOLKES\nURTEIL",
+   "pii": [],
+   "keep": [
+    "BETREFF",
+    "MAHNUNG",
+    "KLAGE",
+    "VOLKES",
+    "URTEIL"
+   ]
+  },
+  {
+   "id": "H02",
+   "group": "heading_keep",
+   "text": "TATBESTAND\nDie Parteien streiten über Mängel.\nENTSCHEIDUNGSGRÜNDE",
+   "pii": [],
+   "keep": [
+    "TATBESTAND",
+    "Parteien",
+    "ENTSCHEIDUNGSGRÜNDE"
+   ]
+  },
+  {
+   "id": "H03",
+   "group": "heading_keep",
+   "text": "WICHTIG: BITTE FRISTEN BEACHTEN UND ZAHLUNG LEISTEN",
+   "pii": [],
+   "keep": [
+    "WICHTIG",
+    "FRISTEN",
+    "ZAHLUNG"
+   ]
+  },
+  {
+   "id": "H04",
+   "group": "heading_keep",
+   "text": "Offener Prüfpunkt: Hochachtungsvoll, mit freundlichen Grüßen",
+   "pii": [],
+   "keep": [
+    "Prüfpunkt",
+    "Hochachtungsvoll"
+   ]
+  },
+  {
+   "id": "H05",
+   "group": "heading_keep",
+   "text": "Sommer, Sonne und Winterdienst: die Hausordnung regelt die Schneeräumung.",
+   "pii": [],
+   "keep": [
+    "Sommer",
+    "Sonne",
+    "Winterdienst",
+    "Hausordnung"
+   ]
+  },
+  {
+   "id": "F01",
+   "group": "foreign_keep",
+   "text": "The tenant shall pay the rent in advance on the first day of each month.",
+   "pii": [],
+   "keep": [
+    "tenant",
+    "rent",
+    "month"
+   ]
+  },
+  {
+   "id": "F02",
+   "group": "foreign_keep",
+   "text": "Le locataire doit payer le loyer avant le premier jour du mois.",
+   "pii": [],
+   "keep": [
+    "locataire",
+    "loyer",
+    "mois"
+   ]
+  },
+  {
+   "id": "F03",
+   "group": "foreign_keep",
+   "text": "CONDITIONS GÉNÉRALES DE VENTE – FORCE MAJEURE",
+   "pii": [],
+   "keep": [
+    "CONDITIONS",
+    "VENTE"
+   ]
+  },
+  {
+   "id": "F04",
+   "group": "foreign_keep",
+   "text": "Il conduttore deve pagare il canone entro il primo giorno del mese.",
+   "pii": [],
+   "keep": [
+    "conduttore",
+    "canone"
+   ]
+  }
+ ]
+}

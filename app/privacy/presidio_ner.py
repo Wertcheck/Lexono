@@ -230,7 +230,39 @@ def _get_analyzer_engine():
         "models": [{"lang_code": "de", "model_name": _SPACY_MODEL_NAME}],
     }
     nlp_engine = NlpEngineProvider(nlp_configuration=nlp_configuration).create_engine()
-    return AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["de"])
+    engine = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["de"])
+    import presidio_analyzer.predefined_recognizers as predefined
+
+    for name in _GERMAN_ID_RECOGNIZERS:
+        official = getattr(predefined, name)()
+        # Nur Muster, deren Grundscore die Schwelle OHNE Kontextwort erreicht (siehe Kommentar unten).
+        patterns = [pattern for pattern in official.patterns if pattern.score >= _MIN_SCORE]
+        engine.registry.add_recognizer(getattr(predefined, name)(patterns=patterns))
+    return engine
+
+
+# Offizielle deutsche Presidio-Recognizer (Presidio-Audit 13.10.2026, scripts/bench_presidio_audit.py): in Presidio
+# enthalten, aber standardmaessig deaktiviert (conf/default_recognizers.yaml "enabled: false"). Uebernommen wird nur, was
+# die Schwelle OHNE Kontextwort erreicht und ein unverwechselbares Format hat: USt-IdNr. ("DE" + 9 Ziffern, Pruefziffer),
+# Handelsregisternummer ("HRB 123456"), Rentenversicherungsnummer im strengen Format (Geburtsdatum + Buchstabe +
+# Pruefziffer). Grund (unabhaengiges Review): kontextabhaengige Muster (Grundscore < Schwelle) erreichten die Schwelle im
+# Restrisiko-Scan, aber nicht in der Pseudonymisierung - dort stehen Platzhalter (als Leerzeichen analysiert) zwischen
+# Kandidat und Kontextwort, das Kontextfenster reicht weiter. Ergebnis waren neue Fail-Closed-Blockaden normaler Texte
+# ("Fahrzeuge KL AB 12, KL CD 34 und KL EF 56", 6 von 78 realistischen Saetzen, vorher 0). Ausserdem verworfen nach
+# Messung: DeKfz (Fahrzeugmodelle "VW T 6", Strassen "DER B 51"), DeTaxNumber (13-stellige Liefer-/Vorgangsnummern),
+# DeLanr/DeBsnr (9-stellige Nummern, Pruefziffer/"Praxis" genuegt), DeIdCard/DePassport/DeHealthInsurance/
+# DeFuehrerschein (Teile-/Artikelnummern), DeTaxId (deckt detectors.detect_steuer_id bereits ab), IpRecognizer
+# ("Version 2.4.1.0" als IP), UrlRecognizer (Quellenangaben wie gesetze-im-internet.de), DePlz (Grundscore 0.05).
+_GERMAN_ID_RECOGNIZERS = ("DeVatIdRecognizer", "DeHandelsregisterRecognizer", "DeSocialSecurityRecognizer")
+_ID_ENTITIES = ("DE_VAT_ID", "DE_HANDELSREGISTER", "DE_SOCIAL_SECURITY")
+
+
+def _id_spans(results, text: str) -> list[DetectedSpan]:
+    return [
+        DetectedSpan(category="kennung", start=result.start, end=result.end, value=text[result.start : result.end])
+        for result in results
+        if result.entity_type in _ID_ENTITIES
+    ]
 
 
 _LEGAL_FORM = r"(?:GmbH\s*&\s*Co\.\s*KG|KGaA|GmbH|mbH|OHG|GbR|UG|AG|KG|eG|SE|e\.\s?V\.)"
@@ -247,7 +279,10 @@ _ORG_AFTER_PLACE = re.compile(
 
 
 _LINE_BREAK_IN_SPAN = re.compile(r"\s{2,}|\n")
-_HAS_LETTER = re.compile(r"[A-Za-zÄÖÜäöüß]")
+# Buchstabe JEDER Schrift (Presidio-Audit 13.10.2026, scripts/bench_presidio_audit.py): mit nur A-Z/ÄÖÜß verwarf diese
+# Regel - gedacht fuer reine Ziffern-/Satzzeichen-Treffer - jeden griechischen/kyrillischen Namen, den Presidio korrekt
+# als PERSON erkannt hatte ("Γιάννης Παπαδόπουλος" -> nur noch "Παπαδόπουλος" ueber eine Zusatzregel, "ΓΙΑΝΝΗΣ" gar nicht).
+_HAS_LETTER = re.compile(r"[^\W\d_]")
 
 
 def normalize_ner_span_boundaries(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
@@ -482,9 +517,12 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     results = analyzer.analyze(
         text=analysis_text,
         language="de",
-        entities=list(_REQUESTED_ENTITIES),
+        entities=[*_REQUESTED_ENTITIES, *_ID_ENTITIES],
         score_threshold=_MIN_SCORE,
     )
+    # Kennnummern (offizielle deutsche Recognizer) laufen im selben Aufruf mit (kein zweiter spaCy-Lauf), aber NICHT durch
+    # die Namensfilter unten - "P0550M7M2" fiele sonst unter den Formatfilter fuer interne Tokens.
+    id_spans = _id_spans(results, text)
 
     spans = _collect_spans(results, text, None)
     restored = _restore_for_analysis(analysis_text)
@@ -511,7 +549,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         )
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
     spans = drop_statute_abbreviations(text, spans)
-    return propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled)
+    return [*propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled), *id_spans]
 
 
 # Gesetzesabkuerzung direkt nach einem Normzitat (Folgezyklus 13.10.2026, scripts/bench_statute_citations.py: "nach § 7 StVG"

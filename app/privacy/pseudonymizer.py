@@ -33,6 +33,9 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "kundennummer": "KUNDENNUMMER",
     "rechnungsnummer": "RECHNUNGSNUMMER",
     "bic": "BIC",
+    # Amtliche Kennnummern aus den offiziellen deutschen Presidio-Recognizern (presidio_ner._GERMAN_ID_RECOGNIZERS):
+    # Steuernummer, USt-IdNr., Sozialversicherungs-, Ausweis-, Handelsregisternummer, Kfz-Kennzeichen ...
+    "kennung": "KENNUNG",
     # Presidio-NER-Kategorien (app/privacy/presidio_ner.py) - rollenneutral,
     # da Presidio keine Mandant/Gegner/Anwalt/Gericht-Rolle kennen kann.
     "person": "PERSON",
