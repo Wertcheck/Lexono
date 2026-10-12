@@ -776,3 +776,84 @@ Vorbestehend und nicht durch diesen Zyklus verursacht: „Der Beklagte WINKELMAN
 Name ist geschützt, das Rollenwort geht verloren.
 
 Eine vollständige Leckfreiheit ist nicht belegt.
+
+### 16a. Großbuchstaben außerhalb A–Z/ÄÖÜ, Teiltreffer, Rubrum-Trenner (Folgezyklus 13.10.2026)
+
+**Befund** (eigene Messung, synthetisch). Versalnamen mit nicht-deutschen Buchstaben gingen im Klartext an die Cloud:
+„ŞAHIN“, „GÓMEZ“, „RENÉ LEFÈVRE“, „MØLLER“; „SØREN KJÆRGAARD“ wurde blockiert. Ergebnis: **5 von 17 Werten im
+Klartext, 1 Blockade.**
+
+Ursachen:
+- Das Versalwort-Muster kannte nur A–Z/ÄÖÜ. Ein Wort mit „Ş“ oder „Ø“ wurde nie in normale Schreibung gebracht.
+- Überlappte ein Varianten-Treffer einen ursprünglichen Treffer **anderer** Kategorie, wurde er ganz verworfen. Beispiel:
+  Die NER hielt „ŁUKASIEWICZ“ für einen Ort, deshalb wurde der Variantentreffer „Agnieszka Łukasiewicz“ verworfen und der
+  Vorname blieb im Klartext.
+
+**Änderung** (`app/privacy/detectors.py`):
+1. **Zweiter, rein additiver Durchgang.**
+   - Er nutzt Großbuchstaben aller Schriften des BMP.
+   - Wörter, deren Kleinschreibung die Länge ändert (z. B. „İ“), werden übersprungen.
+   - Die Vokalprüfung arbeitet auf dem Grundbuchstaben (NFD), zusätzlich gelten Æ/Ø/Œ als Vokale.
+   - Der erste Durchgang (A–Z/ÄÖÜß) bleibt **unverändert**. Seine Treffer gelten im zweiten Durchgang wie ursprüngliche
+     Treffer.
+   - Für rein deutsche Texte sind beide Fassungen gleich; der zweite Durchgang entfällt dann.
+2. **Teiltreffer.** Statt den ganzen Varianten-Treffer zu verwerfen, werden nur die Teile **außerhalb** der ursprünglichen
+   Treffer übernommen. Der ursprüngliche Treffer bleibt exakt erhalten.
+3. **Rubrum-Trenner.** Ein Varianten-Treffer wird am Rubrum-Trenner „./.“ geteilt; die NER lieferte „Dvořák ./. Haberland“
+   als einen Treffer.
+
+**Fünftes Red-Team** (unabhängiger Agent, nur messend; 88 Texte, alter und neuer Stand identisch):
+- **Kritisch, behoben:** Allein mit dem erweiterten Zeichenvorrat wurden lange Versalzeilen wie „KLAGE DES HERRN EMRE
+  ŞAHIN GEGEN DIE FIRMA“ zu **einer** Folge mit mehr als 4 Wörtern. Auf `58a673f` hatte „Ş“ die Folge beendet, „EMRE“ war
+  geschützt; mit der Erweiterung allein blieben „EMRE“, „HANS MEIER“ und „YILDIRIM“ im Klartext. Ebenso ergab „Zeugin
+  İPEK AYDIN“ keinen Treffer mehr. Behoben durch die zwei Durchgänge.
+- **Nach der Korrektur auf denselben 88 Texten:** 25 statt 43 Lecks. Kein Fall, in dem ein vorher geschützter Wert nun im
+  Klartext steht. 0 statt 1 Blockade.
+- **Offsets:** NFD-Text, İ, ẞ, griechisches Schluss-Sigma, weiches Trennzeichen, Vollbreite und weitere Sonderzeichen:
+  kein Absturz; jeder Wert entspricht exakt dem Originalausschnitt.
+- **Neue Fehlalarme (mittel, akzeptiert):** nur in fremdsprachigem Versaltext, z. B. „ÉTAT“, „VENTE“, „PRÁCE“, „MÉNAGE“,
+  „RÈGLEMENT GÉNÉRAL“ (→ Person). Das ist eine Übermaskierung, kein Leck. In deutschem und juristischem Versaltext gibt es
+  keine neuen Fehlalarme.
+
+**Messung `58a673f` → neu** (identische Texte, nacheinander im selben Interpreter gemessen):
+
+| Messung | `58a673f` | neu |
+|---|---|---|
+| Versalnamen mit nicht-deutschen Buchstaben im Klartext (20 Werte) | 5/17 + 1 Blockade | **0/20** |
+| Versalnamen/-anschriften (`bench_uppercase`) | 0/36 | 0/36 |
+| Versal-Fachinhalt verloren | 3/59 | 3/59 |
+| Versal-Negativkorpus | 26/171 | 26/171 |
+| Blockaden, 2017 Texte × 2 Modi | 4 | 4 |
+| Dokumentpfad: Namen-Lecks / Rückfragen / Fachwörter | 0/990 / 43 / 97/800 | identisch |
+
+Ebenfalls identisch: Normzitate 3/180, Folgeerwähnungen 0/1288, 32/138, 3/22, Artikel 9/240, Briefe 6/220,
+Rollenobjekte 0, Briefblockaden-Test 29/29.
+
+Neue Tests in `tests/test_privacy_uppercase.py` (68 insgesamt). Davon schlagen 7 auf `58a673f` fehl; 4 sichern die
+Red-Team-5-Fälle ab. Gesamtsuite: 3741 bestanden; die 4 Fehlschläge in `test_design_refresh` betreffen fehlende Logo-Dateien
+im Arbeitsbaum, wie in §16.
+
+**Installierter Build `e82a84c`** (Bündel geprüft: `_uppercase_variant_pass`, `_UPPERCASE_RUN_AZ`, `_has_vowel` enthalten;
+Installation Exit 0; Health 200). Echter Chat-Upload, Payload am Capture-Endpunkt:
+- **Fall 8, neu:**
+  - Eingang: „HERRN / MEHMET ŞAHIN / BIRKENALLEE 17 / … In Sachen DVOŘÁK ./. HABERLAND / KLAGE DES HERRN EMRE ŞAHIN GEGEN
+    DIE FIRMA / Die Zeugin GÓMEZ … Die Klägerin MØLLER … § 286 BGB“.
+  - Payload: „HERRN [PERSON_01] [PERSON_02] [ADRESSE_01] BETREFF: MAHNUNG In Sachen [ORGANISATION_01] ./. [PERSON_03]
+    KLAGE DES HERRN [PERSON_04] [ORGANISATION_02] GEGEN DIE FIRMA Die Zeugin [ORT_01] … Die Klägerin [PERSON_05] verlangt
+    1.200,00 EUR nach § 286 BGB.“
+  - Ergebnis: **PASS**. Alle 8 Namen sind geschützt, nichts blockiert, Fachinhalt lesbar. Einige Namen tragen die falsche
+    Kategorie (Organisation/Ort).
+  - Sichtbare Oberfläche (Screenshot): Dokument „Verarbeitet“; die lokale Antwort zeigt die Namen mit Ş/Ř/Ó/Ø korrekt
+    re-personalisiert.
+  - Die Lesbarkeitsprüfung wertet U+00A0 als Leerzeichen: PyMuPDF schreibt mit der Arial-Schrift geschützte Leerzeichen
+    in das Test-PDF.
+- **Fälle 1–7:** alle **PASS** auf demselben Build.
+
+**Weiterhin offen** (vom fünften Red-Team gemessen):
+- griechische/kyrillische Versalnamen (Vokalprüfung nur lateinisch);
+- Vollbreite-Buchstaben;
+- „İ“ im Wortinneren („İBRAHİM“);
+- Rubrum ohne Leerzeichen („ŞAHIN./.MØLLER“);
+- geschütztes Leerzeichen zwischen Versalwörtern;
+- lange Versalzeilen mit mehr als 4 Wörtern (auch rein deutsch, vorbestehend);
+- Vornamen, die je nach NER als Organisation oder Ort maskiert werden (maskiert, aber in falscher Kategorie).
