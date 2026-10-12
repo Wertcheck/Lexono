@@ -586,3 +586,34 @@ für den Restrisiko-Scan.
 [PERSON_01], der Halter haftet nach § 7 StVG; ein Verstoß gegen § 3 StVO ist streitig. Die Ansprüche nach § 280 Abs. 1
 BGB in Höhe von 4.250,00 EUR … gez. [PERSON_02]“ (PASS). Die Payload-Prüfungen aus §11 und §12 wurden auf demselben
 Build wiederholt: PASS.
+
+## 14. Unabhängiger Fallsatz: deklinierte Rollenwörter, Verbketten (Folgezyklus 13.10.2026, `8009d7b`)
+
+Grundlage ist der vom zweiten Red-Team vorbereitete, von mir ausgeführte Fallsatz mit 34 neuen Namen und 22
+Fachbegriff-Gegenfällen in verbfinalen Sätzen.
+- **Partizip-Regel aus `91be2c3`:** 12 → 10 Lecks, ohne zusätzliche Fachwort-Verluste. Der Nutzen ist damit unabhängig
+  von den eigenen Benchmarks belegt.
+- **Weitere Ursachen:**
+  - Die Rollenliste kannte nur Grundformen („den **Zeugen** Nebel“, „den **Sachverständigen** Zorn“).
+  - Die Partizip-Regel prüfte nur ein einzelnes Verb („wird der Zeuge Krebs **aussagen müssen**“, „der Zeuge Gast
+    **belehrt worden ist**“).
+- **Maßnahmen:**
+  - deklinierte Formen schwacher Nomen;
+  - mehrteilige infinite Verbkomplexe;
+  - Apposition gleicher Satzfunktion: Name und Rollenwort sind beide Akkusativ- bzw. Dativobjekt desselben Verbs.
+    Echte Objekte haben eine andere Funktion als das Rollenwort.
+
+| Messung | vorher | nachher |
+|---|---|---|
+| Unabhängiger Fallsatz: Namen im Klartext | 12/34 | **7/34** |
+| Unabhängiger Fallsatz: verlorene Fachbegriffe / Rückfragen / Blockaden | 4 / 3 / 0 | 4 / 2 / 0 |
+| Fachsprach-Korpus Red-Team 2 (118 Texte ohne Namen): verlorene Wörter / Rückfragen / Blockaden | 14 / 0 / 0 (`54d73bf`) | 14 / 0 / 0 |
+| Alle Benchmarks aus §11–§13 und Blockadenprüfung | | unverändert |
+
+Restliche 7: „Krebs“ (Parser: Objekt), „Eiche“ (attributives Partizip „von der Zeugin Eiche vorgelegten“) und fünf
+Berufsnamen ohne Einführung (siehe §12a).
+
+**Installierter Build `8009d7b`** (Bündel geprüft): Der Payload enthält „Die Kammer hat den Zeugen [PERSON_01] geladen
+… dass der Zeuge [PERSON_02] belehrt worden ist. Gegen das Urteil hat der Beklagte Berufung eingelegt; die Zinsen von
+312,50 EUR sind offen. Die Klägerin hat den Sachverständigen [PERSON_03] abgelehnt.“ (PASS). Die Payload-Prüfungen aus
+§11–§13 wurden auf demselben Build wiederholt: alle PASS.
