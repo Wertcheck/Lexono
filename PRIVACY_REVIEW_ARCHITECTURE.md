@@ -459,3 +459,87 @@ Betrag von 1.200,00 EUR ist offen; die Zustellungsurkunde liegt vor.“ (PASS, k
 - **Grenzen der Klassenregel:** Die Kopfnomen-Klasse ist geschlossen. Neue Fachkomposita mit anderem Kopfnomen
   profitieren nicht davon, und ein realer Nachname dieser Bauart ist in keinem Benchmark beobachtet, aber nicht
   ausgeschlossen.
+
+## 12. Anrede-/Rollenkontext, Folgeerwähnungen, Briefkonventionen (Folgezyklus 13.10.2026, `38361af`, `91be2c3`)
+
+**Vorgehen.** Damit die Regeln nicht an die 12 Namen von §11 angepasst werden, habe ich drei neue, vorab festgelegte
+synthetische Benchmarks mit eigenen Namen angelegt:
+- `scripts/bench_name_followups.py`:
+  - A: förmliche Einführung mit Folgeerwähnung,
+  - B: Name nach Artikel,
+  - N: Negativfälle;
+- `scripts/bench_letter_conventions.py`: Briefkonventionen;
+- `scripts/bench_role_object_negatives.py`: Rollenwort + Objekt. Er stammt aus dem Red-Team-Review und enthält einen
+  Schriftsatz ohne Namen.
+
+Zusätzlich zählt eine eigene Prüfung über alle 2017 Benchmark-Texte × 2 Modi die Fail-Closed-Blockaden, weil die
+Benchmarks Blockaden nicht als Leck werten.
+
+**Befunde (vorher, gemessen).**
+- „Herr Sommer“, „Zeugin König“ und „Rechtsanwältin Sommer“ gingen **vollständig** im Klartext an die Cloud.
+  - Ursache: Die NER etikettiert Nachnamen, die zugleich Gattungswörter sind, nicht.
+  - Die Rückfrage-Rolle „nach Rollenwort“ verlangt zusätzlich die Modellprobe „Herr X hat unterschrieben“, an der diese
+    Namen scheitern.
+- Nach „Herr Dr. Graf“ oder „Petra Graf“ blieb die Folgeerwähnung „Graf hat …“ im Klartext: 83 von 1288 Fällen. Ersetzt
+  wurde nur der Mehrwort-Span.
+
+**Maßnahmen** (`app/privacy/presidio_ner.py`; alle im gemeinsamen Detektor, also identisch für Pseudonymisierung und
+Restrisiko-Scan):
+1. **Starke Anreden** (Herr/Herrn/Frau/Hr./Fr./Eheleute/Familie/gez. sowie artikellose Rollenwörter wie „Zeugin
+   Sommer“) → das nächste Wort ist ein Name.
+   - Das gilt auch über Zeilen- und Mehrfach-Leerzeichengrenzen hinweg.
+   - Übersprungen werden „Dr./Prof.“, Namenspartikel und Amts- bzw. Rollenbezeichnungen („Frau Rechtsanwältin
+     Weber“ → Weber; „Herr Vorsitzender“ → kein Name).
+2. **Rollenwort mit Artikel:** nur wenn der Parser das Wort an das Rollenwort hängt bzw. beide Subjekt desselben Verbs
+   sind, und danach ein Nominalgruppen-Ende oder ein satzfinales Partizip folgt.
+3. **Folgeerwähnungen:** Namensbestandteile jedes Personentreffers werden im ganzen Text mitersetzt, inklusive
+   Bindestrich-Teilen, Genitiv und Versalien. Weitergetragene Formen sind vom Imperativ-Filter ausgenommen.
+4. **Feminin-Singular-Kontext:** „die X“ als Subjekt eines Verbs im Singular bzw. „mit der X“, wenn X eine maskuline
+   Personenbezeichnung ist (-mann, movierte Form „X-in“ im Vokabular) **und** die Modellprobe ≥ 1 ergibt. Ohne die
+   Probe-Bedingung stiegen die Fehlalarme bei Rollenwörtern wie „Mieter“ und „Kläger“ von 1 auf 13 von 132.
+5. **Personenbezogene Feldbezeichnungen** („Ansprechpartner: X“) und die invertierte Namenszeile („Sommer, Klaus“).
+
+**Unabhängiges Red-Team (nur lesend, rund 700 Fallpaare, eigene neue Namen).**
+- Kritisch an meiner ersten Fassung: Rollenwort + Objekt („dass der Mieter Mängel anzeigt“) wurde als Name maskiert und
+  im ganzen Text ersetzt. Im synthetischen Schriftsatz waren es 17 falsche Platzhalter, 8 Fachbegriffe gingen verloren.
+- Dazu kamen Umgehungen: „Die Zeugin X“ am Satzanfang, „Herr⏎X“, „Hr./Fr.“, „Herr von X“, Bindestrich, Genitiv,
+  Versalien.
+- Alles ist behoben und als Regressionstest festgehalten.
+- Laut Red-Team generalisieren die Regeln auf neue Namen (52/340 → 0/340). Konsistenz zwischen Pseudonymisierung und
+  Restrisiko-Scan: kein Befund.
+
+**Verworfen, gemessen:**
+- **Rubrum-Regel** („X ./. Y“): Der Punkt in „./.“ zählt im Imperativ-Filter als Satzende, der Restrisiko-Scan fand den
+  Treffer trotzdem. Ergebnis war eine inkonsistente Fail-Closed-Blockade.
+- **Schwelle 3 bzw. Zerlegung in bekannte Wörter für unbekannte Namen nach Artikel:** Auch Nachnamen lassen sich in
+  bekannte Wörter zerlegen („Stucke|n|Schneider“).
+- **Modellprobe als Trennsignal Name ↔ Fachwort nach Rollenwort:** „Sommer“ 0, „Feuchtigkeit“ 2.
+
+| Benchmark (identische Fälle) | vorher (`54d73bf`) | nachher (`91be2c3`) |
+|---|---|---|
+| A Folgeerwähnung nach Einführung, Klartext | 83/1288 | **0/1288** |
+| B Name nach Artikel ohne Einführung | 40/138 | **32/138** |
+| Briefkonventionen, Klartext | 26/220 | **6/220** (nur Rubrum) |
+| Artikel-Benchmark §11, Klartext | 25/96 | **21/96** |
+| Namen-Benchmark (1100), Klartext | 0,1 % | **0,0 %** |
+| Dokumentpfad: Lecks / Rückfragen | 0/990 / 64 | 0/990 / **43** |
+| Fachwort-Korpora (800 / 600) | 97 / 81 | 97 / 81 |
+| Fehlalarme Namens-Benchmark | 1/132 | 2/132 (+„Verwalter“ in grammatisch falscher Schablone) |
+| Negativfälle N / Rollenwort-Objekt / Schriftsatz | 3/22 / 0/12 / 0 | 3/22 / 0/12 / 0 |
+| Fail-Closed-Blockaden (2017 Texte × 2 Modi) | 10 | **4** (alle vorbestehend) |
+
+**Installierter Build `91be2c3`** (im Bundle geprüft), echter Chat-Upload, abgefangener Payload: „Sehr geehrte Frau
+[PERSON_01], wie mit [PERSON_02] besprochen, hat die Zeugin [PERSON_03] ausgesagt. [PERSON_02] bestätigte dies … Es ist
+streitig, ob der Mieter Mängel angezeigt hat. Die Kaution von 2.550,00 EUR ist offen … gez. [PERSON_04]“ (PASS).
+
+Der Zwischenlauf auf `38361af` war FAIL („hat die Zeugin König ausgesagt“ im Klartext) und führte zur Korrektur in
+`91be2c3`.
+
+**Offene Risiken (gemessen).**
+- **Maskuliner Artikel + Berufsname ohne Einführung** („Der Fischer hat angerufen“, 17 der 32 B-Fälle): echt mehrdeutig.
+- **Feminine Rahmen bei Nicht-Personen-Wörtern:** „die Sommer hat“ und „die Winter hat“ bleiben im Klartext.
+- **Rubrum** „In Sachen X ./. Y“.
+- **Fehlparse als Objekt:** „hat die Mandantin Licht unterschrieben“ (Parser: Objekt).
+- **Schwache unbekannte Namen nach Artikel:** „Grotelueschen“.
+- **Vorbestehende Fehlalarme:** „Herr Richter … Der Richter am Amtsgericht“ (wertbasierte Ersetzung) und
+  Berufsbezeichnungen wie „Der Schneider hat die Hose gekürzt“.
