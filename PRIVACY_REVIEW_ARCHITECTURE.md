@@ -1432,3 +1432,164 @@ Pseudonymisierungspfad nach den obigen Messungen geeignet. Vor Echtdaten sind fo
 3. Anwender anweisen, die lokale Vorschau der erkannten Werte vor dem Senden zu nutzen.
 
 Eine vollständige Leckfreiheit ist nicht belegt.
+
+## 20. End-to-End-Sicherheitsprüfung der Pre-Cloud-Grenze (13.10.2026, `0f4b787`)
+
+**Ausgangsstand:** `f035b2e` = origin/main; installierter Build `cef580c`, codegleich. Ein `ROADMAP.md` existiert im
+Repository nicht; maßgeblich sind `TODO.md` und `LEXONO_MASTER_PRODUCT.md`.
+
+### 20.1 Datenfluss und ausgehende Verbindungen (Code gelesen)
+
+**Pfad:** Upload (`chat_router`) → Extraktion (`documents/extraction.py`: PyMuPDF, python-docx; OCR standardmäßig aus) →
+`_normalize_document_text` → `DraftingService` → `ClaudePrivacyGateway.prepare_request`:
+- Bereinigung;
+- Pseudonymisierung mit wörtlichen Platzhaltern als `[TEXTMARKE]`;
+- Restrisiko-Scan;
+- Final Payload Gate;
+- HMAC-Siegel.
+
+Danach folgt der Cloud-Adapter. **Jeder** der vier Cloud-Adapter ruft unmittelbar vor dem Versand `require_gateway_seal`
+auf:
+- Schreiben: Anthropic direkt und Gateway-Relay;
+- Prüfung: Anthropic direkt und Gateway-Relay.
+
+**Weitere ausgehende Verbindungen, ohne Nutzertext:**
+- Systemstatus: `models.list`;
+- gesetze-im-internet.de: nur das Gesetzeskürzel in der URL;
+- Updater: Manifest.
+
+Die lokale KI (Ollama) erhält nur die bereits pseudonymisierte Payload und die pseudonymisierte Antwort.
+
+**Konfigurationsrisiko (nicht geändert):** `OLLAMA_BASE_URL` ist in den Einstellungen frei wählbar, auch für entfernte
+Hosts. Dorthin ginge nur der bereits pseudonymisierte Text, also kein Umgehen der Grenze. Ob nicht-lokale Adressen
+zulässig sein sollen, ist eine fachliche Entscheidung.
+
+### 20.2 Nachweis mit kontrolliertem Transport (`tests/test_privacy_cloud_boundary_e2e.py`, 9 Tests)
+
+Echter Produktpfad: synthetisches PDF über `/dashboard/chat/send` → Gateway → `AnthropicClaudeWritingProvider` mit dem
+**echten Anthropic-SDK** (anthropic 1.5, Transport `httpx2.MockTransport`). Das SDK serialisiert den vollständigen
+HTTP-Request, es verlässt nichts den Rechner.
+
+Belegt:
+- Kein geschützter Wert im Request (Body, Header, Systemanweisung). Geprüft wurden 10 synthetische Werte: Name, Anschrift,
+  IBAN, E-Mail, Telefon, Steuernummer, Kennzeichen, Zeugin.
+- Nur erlaubte Felder (`model`, `max_tokens`, `thinking`, `system`, `messages`; kein `metadata`), Ziel
+  `https://api.anthropic.com/v1/messages`.
+- Fachinhalt lesbar (Betrag, Normzitat); wörtlicher Platzhalter als `[TEXTMARKE]`.
+- Lokale Rückführung korrekt: „Karl Brenner“ ist zurück, der wörtliche „[PERSON_01]“ bleibt wörtlich.
+- Fehler in der Pseudonymisierung (NER-Ausfall): **kein Request**.
+- Transportfehler (Timeout, Verbindungsfehler): genau der versiegelte Versuch, kein Ausweichpfad.
+- Unversiegelte, nach dem Siegel veränderte oder als Unterklasse gefälschte Payload: `UnsealedPayloadError` in `write`
+  und `write_stream`, **0 Requests**.
+- Streaming-Pfad: Server-Sent-Events, `stream: true`, gleiche Garantie.
+- Erfundene oder veränderte Platzhalter in der Antwort werden nie zu einem echten Wert.
+
+**Abgrenzung:** Das belegt die SDK-Payload. Ein echter Anthropic-Aufruf, die TLS-Übertragung und der Gateway-Pfad sind
+**nicht** belegt.
+
+### 20.3 Grenzfälle: Befund, Ursache, Änderung
+
+Messung auf einem erweiterten, getrennt ausgewiesenen Satz, vorher → nachher:
+
+| Fall | vorher | nachher | Ursache / Änderung |
+|---|---|---|---|
+| Lookalike-Platzhalter: kyrillisches „Е“, griechisches „Ο“, Vollbreite; im Review auch Kombinationszeichen, mathematisch fett, „O“ statt Null, Kapitälchen | **Fremdwert möglich**, wenn das Modell den Platzhalter normalisiert (2 von 4 bzw. 6 Formen) | 0 | Erkennung wörtlicher Platzhalter auf längengleicher ASCII-Fassung, dazu lockere Klammerform → `[TEXTMARKE]` |
+| „Tel. 030 [TELEFON_01] 1234567“ | Ziffern im Klartext | maskiert, exakt zurückgeführt | angrenzende Zifferngruppen in die Textmarke (Fenster 200 Zeichen, auch „/“) |
+| „Der PKW HH-AB 1234“ | Leck | maskiert | Fahrzeugwort als Bezeichnung, mit Zwei-Ziffern-Regel wie bei „Kennzeichen“ |
+| SV/RV-Nummer mit Leerzeichen, Kontonummer, Mitgliedsnummer | Leck | maskiert | bezeichnete Formate (nur mit unmittelbar vorangestellter Bezeichnung) |
+| „Kennzeichen des Gegners: D-XY 123“ | Leck | **Leck (offen)** | Bezeichnung nicht unmittelbar davor |
+
+**Gesamt:** Lecks 8 → 1, Lookalike-Kollisionen 2 → 0, Fehlalarme 0 → 0, Blockaden 0 → 0.
+
+**Vom unabhängigen Review gefunden und behoben:**
+- Neue Blockaden, weil die NER die bloße Bezeichnung neben dem neuen Platzhalter für eine Person oder einen Ort hielt
+  („SV-Nr.“, „Kto.-Nr.“, „Rentenversicherungsnummer“, „Sparkasse“). Behoben strukturell: Ein NER-Treffer, der **ganz**
+  aus einer Bezeichnung nach `_ID_LABEL_BEFORE` besteht, wird verworfen, ohne eigene Wortliste. Dazu kommt „sparkasse“
+  in `_NEVER_ENTITY_WORDS` (32 Einträge, Wächtertest ≤ 48).
+- Weitere Lookalike-Formen.
+- Abgeschnittene lange Ziffernfolgen.
+- Siegel-Fälschung per Unterklasse: Prüfung jetzt auf den exakten Typ, Digest über die Basisklasse. Vorher erforderte
+  das prozessinternen Schadcode.
+
+### 20.4 Messwerte und Validierung
+
+**Eingefrorene Testbasis** (unverändert, Inhalts-SHA-256 `2de13db5…`):
+
+| | `f035b2e` | `0f4b787` |
+|---|---|---|
+| PII im Klartext | 1/80 | 1/80 |
+| Fehlalarme | 7/104 | **6/104** („Sparkasse“ bleibt lesbar) |
+| Blockaden | 0 | 0 |
+| Rückfragen | 1 | 1 |
+| Laufzeit | ≈ 0,13 s/Fall | ≈ 0,13 s/Fall |
+
+**Erweiterter Grenzfallsatz** (separat, siehe 20.3): 8 Lecks → 1, 0 → 0 verlorene Fachinhalte, 0 → 0 Blockaden,
+2 → 0 Lookalike-Kollisionen.
+
+**Review-Satz** (105 Eingaben, unabhängiges Review alt gegen neu): 0 neue Blockaden, 0 Lecks; die Review-Befunde M1, M2,
+L1, L2 und L5 sind behoben.
+
+**Review-Sätze §17/§18:** 0 neue Blockaden; Änderungen nur in Leckformaten (geschützt) und Lesbarkeit von
+Bezeichnungen.
+
+**Regressionsbenchmarks:** identisch zu `cef580c`.
+
+**Tests:**
+- 37 neue Tests in `tests/test_privacy_cloud_boundary_e2e.py` (9) und `tests/test_privacy_boundary_edge_cases.py` (28).
+  Die 8 E2E-Tests der ersten Fassung bestehen auch auf `f035b2e`: Die Grenze hielt dort bereits. 9 Grenzfalltests
+  schlagen auf `f035b2e` fehl.
+- Gesamtsuite: **3901 bestanden**; die 4 Fehlschläge in `test_design_refresh` betreffen außerhalb dieser Arbeit
+  gelöschte Logo-Dateien.
+- Zwischenzeitlich schlug der Wächtertest `test_exception_list_stays_small_and_documented` fehl (Ausnahmeliste auf 63
+  Einträge gewachsen). Die Grenze wurde nicht angehoben; die Lösung wurde auf die strukturelle Ableitung umgestellt.
+
+**Installierter Build `0f4b787`.** Bündel geprüft (`_CONFUSABLE_TO_ASCII`, `_PLACEHOLDER_LOOSE`, `_is_identifier_label`),
+Installation Exit 0, Health 200. Die installierte Anwendung sendet über das echte Anthropic-SDK an den lokal umgeleiteten
+Endpunkt (`ANTHROPIC_BASE_URL`).
+- **Fall 15, neu (DOCX):** Lookalike-Platzhalter, Rufnummer mit eingebettetem Platzhalter, „Der PKW …“, SV-Nummer mit
+  Leerzeichen, Kontonummer bei der Sparkasse, Mitgliedsnummer.
+  - Payload: „Feld: [TEXTMARKE_01] und Herr [PERSON_01] … Tel. [TEXTMARKE_02] … Der PKW [KENNUNG_01] stand um 18 Uhr …
+    SV-Nr. [KENNUNG_02]; Kontonummer [KENNUNG_03] bei der Sparkasse; Mitgliedsnummer [KENNUNG_04]. Forderung
+    1.200,00 EUR nach § 286 BGB.“
+  - Screenshot: Die lokale Antwort zeigt den Lookalike wörtlich und Name und Rufnummer exakt zurückgeführt.
+  - Ergebnis: **PASS**.
+- **Fälle 1–11, 13, 14:** PASS.
+- **Fall 12:** wie in §17 (zwei vorbestehende Lesbarkeitsbefunde, alle Schutzwerte maskiert).
+
+### 20.5 Bewertung
+
+| Prüfpunkt | Status | Beleg |
+|---|---|---|
+| SDK-Payload und Pre-Cloud-Gate | **PASS** | E2E mit echtem SDK und kontrolliertem Transport; installierter Build mit Payload-Prüfung (15 Fälle) |
+| Fail-Closed | **PASS** | NER-Ausfall ohne Request; unversiegelt/verändert/Unterklasse ohne Request; Transportfehler ohne Ausweichpfad |
+| Anthropic-Aufrufpfad (echter API-Aufruf) | **NICHT VERIFIZIERT** | ohne ausdrückliche Autorisierung kein echter Aufruf |
+| TLS und Gateway | **NICHT VERIFIZIERT** | nur lokaler Endpunkt bzw. MockTransport; Gateway (P0-08) zurückgestellt |
+| Installierter Build | **PASS** | `0f4b787`, Health 200, 14/15 Fälle PASS (Fall 12: vorbestehende Lesbarkeit) |
+| Restlecks / Fehlalarme | **teilweise** | Testbasis 1/80 und 6/104; offene Fälle siehe unten |
+
+**Offene Risiken** (gemessen):
+- **Mittel:**
+  - Kennnummern, deren Bezeichnung nicht unmittelbar davor steht („Kennzeichen des Gegners: D-XY 123“, „Krad M-AB 77 von
+    …“ teilweise);
+  - Namen in Kleinschreibung (Modellgrenze).
+- **Niedrig:**
+  - Übermaskierung von Fahrzeugmodellen nach einem Fahrzeugwort („Lkw DAF XF 480“);
+  - Klammerformeln wie „[ΔT_2]“ und Ziffern um wörtliche Platzhalter werden als Textmarke maskiert (kosmetisch, exakte
+    Rückführung);
+  - frei wählbare `OLLAMA_BASE_URL` (nur pseudonymisierter Text).
+- **Vorbestehend:** „HRB-Verfahren und Az. …“ wird blockiert; spaCy übermaskiert einzelne Fachwörter.
+
+**Pilotentscheidung:** Geeignet für einen **begrenzten, begleiteten Pilotbetrieb** mit synthetischen bzw. ausdrücklich
+freigegebenen Testakten. Gründe:
+- Die Pre-Cloud-Grenze ist auf SDK-Ebene durchgängig belegt: kein geschützter Testwert im Request, Fail-Closed bei Fehlern
+  und Manipulation, exakte Rückführung ohne Fremdwerte.
+- Der installierte Build verhält sich gleich.
+
+**Vor Echtdaten erforderlich:**
+1. Ein autorisierter echter Anthropic-Aufruf mit synthetischen Daten (P0-07), inklusive Prüfung, dass die
+   TLS-Verbindung zu api.anthropic.com geht.
+2. Eine fachliche Entscheidung zu nicht unmittelbar bezeichneten Kennnummern und zu `OLLAMA_BASE_URL`.
+3. Eine Anwenderanweisung zur lokalen Vorschau.
+
+Eine vollständige Leckfreiheit ist nicht belegt.
+
