@@ -676,6 +676,15 @@ def _uppercase_variant_spans(
     for span in validated:
         if span.category in skip_categories:
             continue
+        # An den Raendern nur Buchstaben/Ziffern (NER lieferte "Haberland ./." - das Rubrum-"./." verschwand im Platzhalter).
+        start, end = span.start, span.end
+        while start < end and not text[start].isalnum():
+            start += 1
+        while end > start and not text[end - 1].isalnum():
+            end -= 1
+        if end <= start:
+            continue
+        span = DetectedSpan(category=span.category, start=start, end=end, value=text[start:end])
         if not any(span.start < end and start < span.end for start, end in regions):
             continue  # nur dort, wo die Versalschreibung die Ursache sein kann
         overlapping = [other for other in original_spans if span.start < other.end and other.start < span.end]

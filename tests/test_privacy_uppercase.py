@@ -177,3 +177,13 @@ def test_uppercase_name_after_mixed_case_salutation(gateway) -> None:
     """Red-Team 4: "Sehr geehrter Herr THIELKER," - die NER liefert "Herr Thielker"; geprueft wird nur das umgeschriebene
     Versalwort, nicht die normal geschriebene Anrede."""
     assert "THIELKER" not in _payload(gateway, "Sehr geehrter Herr THIELKER,\nwir bitten um Zahlung.")
+
+
+def test_rubrum_separator_is_kept(gateway) -> None:
+    """Befund installierter Build 39112b7: "In Sachen HABERLAND ./. WINKELMANN" wurde zu "[PERSON_02] [PERSON_03]" - die NER
+    lieferte "Haberland ./." samt Satzzeichen. Variantentreffer werden auf Buchstaben/Ziffern beschnitten."""
+    text = ("HERRN\nGERNOT HAHN\nBIRKENALLEE 17\n12345 MUSTERSTADT\n\nBETREFF: MAHNUNG\nIn Sachen HABERLAND ./. WINKELMANN\n\n"
+            "Der Beklagte WINKELMANN hat die Rechnung über 1.200,00 EUR nicht bezahlt.")
+    payload = _payload(gateway, text)
+    assert "./." in payload and "HABERLAND" not in payload and "WINKELMANN" not in payload
+    assert "1.200,00" in payload and "Beklagte" in payload
