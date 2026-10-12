@@ -107,9 +107,10 @@ VARIANTS = {"A": variant_a, "B": variant_b, "C": variant_c}
 
 
 def evaluate(names: list[str]) -> dict:
-    raw = CORPUS.read_bytes()
-    corpus = json.loads(raw)
-    report = {"corpus_sha256": hashlib.sha256(raw).hexdigest(), "variants": {}}
+    corpus = json.loads(CORPUS.read_text(encoding="utf-8"))
+    # Pruefsumme ueber den INHALT (nicht die Bytes): unabhaengig von Zeilenenden beim Auschecken (CRLF/LF).
+    canonical = json.dumps(corpus, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    report = {"corpus_sha256": hashlib.sha256(canonical).hexdigest(), "variants": {}}
     for name in names:
         run = VARIANTS[name]()
         run(doc_text("Aufwaermlauf ohne Wertung."))

@@ -994,3 +994,164 @@ Lesbarkeit.
   - Die im Screenshot nach „Art. 6 Abs.“ endende lokale Antwort ist ein Artefakt des QA-Stubs: Die Echo-Antwort des
     Capture-Servers nimmt die ersten drei durch „. “ getrennten Abschnitte. Das ist kein Lexono-Verhalten.
 - **Fälle 1–10** auf demselben Build: alle **PASS**.
+
+## 17. Presidio-Audit: Konfiguration, Datenfluss, Vergleich A/B/C (13.10.2026, `fc0ee62`)
+
+### 17.1 Bestandsaufnahme (gemessen; Skript `scripts/bench_presidio_audit.py`)
+
+**Versionen:** presidio-analyzer/-anonymizer 2.2.364, spaCy 3.8.16, `de_core_news_lg` 3.8.0.
+
+Das Modell ist im installierten Build enthalten (`_internal\de_core_news_lg`, `presidio_analyzer\conf`). Indirekter
+Laufzeitnachweis: NER-Platzhalter (`[ORT_01]`, `[PERSON_01]`) in echten Payloads des installierten Builds.
+
+**Konfiguration** (`presidio_ner._get_analyzer_engine`):
+- NLP-Engine `spacy` mit `de_core_news_lg`, `supported_languages=["de"]`.
+- `LemmaContextAwareEnhancer` (Presidio-Standard).
+- Für „de“ registriert: 10 Recognizer (Crypto, Date, Email, Iban, Ip, MedicalLicense, MacAddress, Phone, Url, Spacy).
+- **Lexono fragt davon nur `PERSON`, `LOCATION`, `ORGANIZATION` ab** (Schwelle `_MIN_SCORE = 0.5`). Strukturierte Daten
+  (E-Mail, Telefon, IBAN, Steuer-ID, BIC, Datum, Aktenzeichen, Kunden-/Vertrags-/Rechnungsnummern, Anschrift, Firma mit
+  Rechtsform) erkennen die eigenen Regex-Detektoren in `detectors.py`.
+
+**Beobachtungen:**
+- Der `SpacyRecognizer` vergibt einen festen Score von 0,85. Die Schwelle 0,5 wirkt daher nur auf Muster-Recognizer.
+- Die Kontextwörter der Standard-Recognizer sind englisch („phone“, „bank“) und für deutsche Texte wirkungslos.
+- Das Modell-Label `MISC` ist in Presidios Zuordnung nicht enthalten und wird ignoriert.
+- Presidio 2.2.364 enthält **13 offizielle deutsche Recognizer**, standardmäßig `enabled: false`: Steuer-ID,
+  Steuernummer, USt-IdNr., Renten-/Kranken-/Ausweis-/Pass-/Führerscheinnummer, Kfz, Handelsregister, PLZ, LANR, BSNR.
+  Lexono hat sie bisher nicht genutzt.
+
+**Datenfluss:**
+1. Upload (PDF über PyMuPDF, DOCX über python-docx, TXT; OCR nur bei `ocr_enabled`, Standard aus).
+2. Dokumenttext über `_normalize_document_text`, danach Aktenkontext.
+3. `ClaudePrivacyGateway.prepare_request`:
+   - unsichtbare Zeichen und ungewöhnliche Leerzeichen bereinigen (§15, §16b);
+   - zusammengeführter Text mit Feldmarkern;
+   - `Pseudonymizer`/`detect_all`: Regex-Detektoren, `detect_presidio_entities` (Presidio-Analyse,
+     Umlaut-Analysefassung, Lexono-Namensregeln §11–§14), Versal-Durchgänge (§16), Überlappungsauflösung,
+     Wiederholungen;
+   - im Modus „ask“ Rückfragen;
+   - Restrisiko-Scan (`SecurityCheckService`, `detect_all` ohne Versal-Fassung auf dem pseudonymisierten Text);
+   - Final Payload Gate; Siegel.
+4. Optional die lokale Ollama-Notiz (`extend_with_local_note`, Leak-Prüfung, neues Siegel).
+5. Claude-Aufruf; Antwortprüfung; lokale Rückführung.
+
+### 17.2 Vergleich auf eingefrorener Testbasis
+
+**Testbasis:**
+- `scripts/presidio_audit_corpus.json`: 65 synthetische Fälle, 80 PII-Werte, 104 lesbar zu haltende Werte.
+- Erzeugt mit `scripts/build_presidio_audit_corpus.py`; Nummern mit gültiger Prüfziffer aus festem Zufallsstartwert.
+- Inhalts-SHA-256 `2de13db5…`. Die Testbasis wurde nach dem ersten Lauf **nicht** verändert.
+
+**Varianten** (gleicher Text im Dokumentpfad):
+- **A:** Presidio wie konfiguriert.
+- **B:** alle de-Recognizer plus die 13 deutschen, alle Entitäten, gleiche Schwelle.
+- **C:** vollständige Lexono-Pipeline.
+
+| Variante | übersehene PII | fälschlich maskiert | Blockaden | Rückfragen (ask) | Laufzeit/Fall* |
+|---|---|---|---|---|---|
+| A | 24/80 | 13/104 | – | – | 0,007 s |
+| B | 15/80 | 13/104 | – | – | 0,018 s |
+| C vorher (`1c9d91c`) | 13/80 | 7/104 | 0 | 2 | 0,059 s |
+| **C nachher (`fc0ee62`)** | **8/80** | **7/104** | **0** | **1** | **0,059 s** |
+
+\*Die Laufzeit von C ist isoliert gemessen: Median aus 3 Durchgängen, alt und neu je zweimal, ±1 %. In parallelen
+Läufen schwankte sie zwischen 0,13 und 0,16 s, das ist Lastrauschen.
+
+**Einordnung (Schlussfolgerung aus den Messwerten):**
+- **Modellgrenzen, auch in B:**
+  - Namen in Versalien („HAHN“, „WINKELMANN“) und in Kleinschreibung („herr sauer“);
+  - Folgeerwähnungen ohne Anrede („Eiche bestätigte“);
+  - Fachwörter als Entität („TATBESTAND“, „Prüfpunkt“, „Landgerichts“);
+  - fremdsprachige Sätze.
+
+  Presidio allein schließt diese Lücken nicht. Die Lexono-Regeln (§11–§16) schließen sie nachweislich: name_caps 4/9 →
+  0/9, role_followup 1/6 → 0/6, Überschriften-Fehlalarme 6 → 2.
+- **Integrationsfehler (behoben, E1):**
+  - `normalize_ner_span_boundaries` verwarf jeden Treffer ohne **lateinischen** Buchstaben. Die gedachte Regel war:
+    Treffer ohne Buchstaben verwerfen.
+  - Folge: Griechische/kyrillische Namen, die Presidio korrekt erkannte, gingen im Klartext hinaus. A war hier besser
+    als C (1/6 gegenüber 3/6).
+  - Jetzt prüft die Regel Buchstaben jeder Schrift: C 3/6 → 1/6, Rückfragen 2 → 1.
+- **Ungenutzte Presidio-Funktion (übernommen, E2, eingeschränkt):** deutsche Recognizer, siehe 17.3.
+- **Weiterhin Lücken in C:**
+  - Steuernummer, Personalausweis, Kfz-Kennzeichen (Recognizer verworfen, siehe 17.3);
+  - URL mit Namen, IP-Adresse;
+  - Postfachnummer;
+  - Kleinschreibung;
+  - griechische Versalnamen.
+
+### 17.3 Übernommen und verworfen
+
+**E1 übernommen:** Buchstabenprüfung aller Schriften.
+
+**E2, erste Fassung mit 12 deutschen Recognizern, verworfen nach unabhängigem Review.** Die eigene Messung zeigte FN
+11 → 5 bei unveränderten Fehlalarmen. Die Testbasis enthielt die Nummern aber nur im kanonischen Format direkt neben dem
+Kontextwort.
+- Das Review fand in 78 realistischen Sätzen **6 neue Fail-Closed-Blockaden**, vorher 0. Ursache: Kontextabhängige
+  Muster (Grundscore < 0,5) erreichten die Schwelle im Restrisiko-Scan, weil dort Platzhalter als Leerzeichen den Abstand
+  zum Kontextwort verkürzen. Beispiel: „Fahrzeuge KL AB 12, KL CD 34 und KL EF 56“.
+- Dazu **16 Fehlalarme in 68 Sätzen:**
+  - „VW T 6“, „DER B 51“ (Kfz);
+  - 13-stellige Liefer-/Vorgangsnummern (Steuernummer ohne Prüfziffer);
+  - 9-stellige Nummern neben „Praxis“ (BSNR);
+  - Teilenummern im Ausweisformat.
+
+**E2 übernommen (eingeschränkt):** nur Recognizer, deren Muster die Schwelle **ohne Kontextwort** erreichen und ein
+unverwechselbares Format haben. Damit sind Pseudonymisierung und Restrisiko-Scan konsistent.
+- USt-IdNr. („DE“ + 9 Ziffern, Prüfziffer);
+- Handelsregister („HRA/HRB n“);
+- Rentenversicherungsnummer im strengen Format (Geburtsdatum + Buchstabe + Prüfziffer).
+
+Die Treffer laufen im selben Presidio-Aufruf (kein zweiter spaCy-Lauf) als Kategorie `kennung`, Platzhalter
+`[KENNUNG_nn]`.
+
+Gegenmessung des Reviews auf der eingeschränkten Fassung:
+- Zahlenreiche Sätze: 1 Änderung („Referenz DE202600123“, gültiges USt-IdNr.-Format, vertretbar).
+- **Blockadesätze: 0 neue Blockaden.**
+- 180 Zufallsnummern (9/11/13 Stellen, Teile-/Ausweisformate): 0 Änderungen.
+- Leckformate: 8 verbessert, darunter „de489681509“ und „hrb 1234“. „HRB 123 456“ ist nur teilweise geschützt
+  (`[KENNUNG_01] 456`).
+
+**Verworfen** (gemessen):
+- Kfz, Steuernummer, LANR/BSNR, Personalausweis, Reisepass, Krankenversicherungs-, Führerscheinnummer: Blockaden bzw.
+  Fehlalarme (siehe oben).
+- Steuer-ID: deckt `detect_steuer_id` bereits ab.
+- IP: „Version 2.4.1.0“ und „Kapitel 10.2.3.4“ würden als IP erkannt.
+- URL: Quellenangaben wie gesetze-im-internet.de würden maskiert. In einzelnen Kontexten maskiert die spaCy-NER solche
+  URLs bereits heute als Organisation (vorbestehend).
+- PLZ: Grundscore 0,05 erreicht die Schwelle nie.
+- `MISC`-Zuordnung: 3 Treffer auf bereits geschützter PII gegenüber 8 Fehlalarmen auf lesbar zu haltenden Werten
+  („StVO“, „Streitwert“, Fremdsprachensätze).
+
+**Keine Eigenregel entfernt:** Alle Lexono-Regeln schließen gemessene Lücken (siehe 17.2). Für ein Entfernen gibt es
+keinen Beleg.
+
+**Bekannte Nebenwirkung von E1 (gering, Review gemessen):** Einzelne griechische/kyrillische Gattungswörter
+(„ΠΕΡΙΛΗΨΗ“, „ООО“) werden maskiert. Das ist eine Übermaskierung, kein Leck; keine Blockaden.
+
+### 17.4 Validierung
+
+**Regressionsbenchmarks:** identisch zu `1c9d91c`.
+- Versalien 0/36, 3/59; Versal-Absätze 26/171; Normzitate 3/180;
+- Folgeerwähnungen 0/1288, 32/138, 3/22; Artikel 9/240; Briefe 6/220; Rollenobjekte 0;
+- Blockaden 4 von 2017×2; Dokumentpfad 0/990; Briefblockaden 29/29.
+
+**Tests:**
+- 20 neue Tests in `tests/test_privacy_presidio_audit.py`; davon schlagen auf `1c9d91c` 9 der ersten Fassung fehl.
+- Gesamtsuite: 3786 bestanden; die 4 Fehlschläge in `test_design_refresh` kommen von außerhalb dieser Arbeit gelöschten
+  Logo-Dateien.
+
+**Installierter Build `fc0ee62`** (Bündel geprüft: `_id_spans`, `_GERMAN_ID_RECOGNIZERS` enthalten; Installation
+Exit 0; Health 200).
+- **Fall 12, neu:** DOCX mit griechischem Namen, HRB, USt-IdNr., Rentenversicherungsnummer, Lkw-Flotte mit drei
+  Kennzeichen, „VW T 6“ und Quellen-URL; echter Upload.
+  - Payload: „Der Mandant [PERSON_01] … eingetragen unter [KENNUNG_01] beim Registergericht, USt-IdNr. [KENNUNG_02]. Die
+    Versicherungsnummer [KENNUNG_03] … Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition; Kfz: VW T 6 Transporter.“
+  - Alle 5 Schutzwerte sind maskiert, keine Blockade.
+  - Zwei Lesbarkeitsprüfungen schlagen fehl („Lkw-Flotte“ → `[ORT_01]`, Quellen-URL → `[ORGANISATION_02]`). Beides
+    ist **vorbestehend**, auf `1c9d91c` identisch. Derselbe Text liess dort 4 Kennwerte und den Vornamen im Klartext.
+  - Screenshot: Die lokale Antwort zeigt die Kennnummern und den griechischen Namen korrekt re-personalisiert.
+- **Fälle 1–11** auf demselben Build: alle **PASS**.
+
+**Nachweisgrenzen:** Geprüft wird die vom Lexono-Client an den (lokal umgeleiteten) Anthropic-Endpunkt gesendete
+Payload, nicht der TLS-Verkehr. Screenshots belegen nur die sichtbare Darstellung.
