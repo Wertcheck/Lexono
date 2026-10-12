@@ -1593,3 +1593,203 @@ freigegebenen Testakten. Gründe:
 
 Eine vollständige Leckfreiheit ist nicht belegt.
 
+
+
+## 21. Offene Freigabepunkte: Anthropic-Aufrufpfad, unbeschriftete Kennnummern, KI-Endpunkte (13.10.2026, `cb8b02c`, `95f837c`)
+
+Ausgangsstand `065b238` (§20). Nur synthetische Daten. Kein echter Anthropic-Aufruf: eine ausdrückliche Autorisierung lag
+nicht vor.
+
+### 21.1 Anthropic-Aufrufpfad und Netzwerkziel
+
+**Befund (gemessen):** Das Anthropic-SDK übernimmt ohne `base_url`-Argument still die Umgebungsvariable
+`ANTHROPIC_BASE_URL`. War sie gesetzt (IT-Skript, Schadsoftware, Testrest), gingen pseudonymisierte Anfragen **und** der
+API-Schlüssel (`x-api-key`) an diesen Host, auch unverschlüsselt über `http://`. Der Regressionstest
+`test_no_ai_gateway_proxy` prüfte nur „kein `base_url`-Argument“ und hätte diese Umleitung nicht erkannt.
+
+**Änderung (`app/ai_providers/endpoint_policy.py`):**
+- Zulässig sind nur `https://api.anthropic.com` und ein Prüfendpunkt auf diesem Rechner. Letzterer gilt nur zusammen mit
+  der ausdrücklichen QA-Freigabe `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1`.
+- Jedes andere Ziel ist ein Konfigurationsfehler: Die Factory meldet „nicht konfiguriert“, es gibt keinen Versand.
+- Das Ziel wird in Schreib-Provider, Review-Provider, Erreichbarkeitsprüfung (`system_health`) und Statusanzeige
+  (`cloud_health`, vorher sprach sie den fremden Host an und meldete „online“) ausdrücklich gesetzt.
+- Zusätzlich serverseitig im Lexono-Relay (`gateway/relay.py`).
+- `test_no_ai_gateway_proxy` wurde bewusst und sichtbar verschärft: Er prüft jetzt, dass trotz gesetzter Umgebungsvariable
+  die offizielle Adresse verwendet wird.
+
+**TLS (lokal belegt, nicht live):** Der vom SDK erzeugte Client verwendet `CERT_REQUIRED`, Hostnamenprüfung und
+mindestens TLS 1.2. Getestet ist das in `test_factory_pins_the_official_https_endpoint_with_certificate_verification`.
+Eine echte TLS-Verbindung zu api.anthropic.com wurde nicht hergestellt.
+
+**Opt-in-Nachweis:** `scripts/verify_anthropic_live.py --authorized-live-call` mit `ANTHROPIC_API_KEY`.
+- Ohne beides bricht das Skript ab; das ist geprüft.
+- Mit Freigabe sendet es nur einen eingebauten synthetischen Text über Gateway, Factory und SDK.
+- Es gibt Zertifikat, Aussteller und TLS-Version aus und prüft die Payload auf Klartextwerte.
+
+**Grenze:** Wer die Umgebung des Benutzers setzen kann, kann auch die QA-Freigabe setzen. Die Freigabe verhindert
+versehentliche und Ein-Variablen-Umleitungen, aber keinen gezielten lokalen Angreifer. Ein solcher Prozess könnte den
+Schlüssel ohnehin aus der Konfiguration lesen.
+
+### 21.2 Lokale KI-Endpunkte (Ollama)
+
+**Befund:**
+- `OLLAMA_BASE_URL` war frei auf einen fremden Rechner setzbar, unverschlüsselt.
+- Review: Unabhängig davon übernahm httpx `HTTP_PROXY`/`ALL_PROXY` und unter Windows den System-Proxy, auch für
+  127.0.0.1. Der Text für die lokale KI ging dann trotz lokaler Adresse an den Proxy-Rechner.
+
+**Änderung:**
+- Standardmäßig ist nur dieser Rechner zulässig (`localhost`, 127.0.0.0/8, `::1`).
+- Ein anderer Rechner braucht `LOCAL_AI_ALLOW_REMOTE_ENDPOINT=true`. Die Einstellungsseite lehnt eine fremde Adresse ohne
+  diese Freigabe mit einer verständlichen Meldung ab.
+- Ohne Freigabe entsteht keine Verbindung: Health-Status „nicht erreichbar“ mit Begründung, Chat blockiert nach §65,
+  kein stiller Cloud-Ersatz.
+- Alle Ollama-Aufrufe ignorieren Proxy-Einstellungen (`trust_env=False`). Der Download des Ollama-Installers aus dem
+  Internet nutzt den System-Proxy weiterhin.
+
+**Kompatibilität:** Eine bestehende Installation mit einem Ollama auf einem anderen Rechner meldet nach dem Update sichtbar
+„nicht ausdrücklich freigegeben“, bis die Freigabe gesetzt ist. Das gehört in die Release-Notiz.
+
+### 21.3 Unbeschriftete Kennnummern
+
+**Befund (§20):** „Kennzeichen des Gegners: D-XY 123“ ging im Klartext hinaus. Die Bezeichnung steht nicht unmittelbar vor
+dem Wert, und `presidio_ner` maskiert nur bezeichnete Kennnummern.
+
+**Änderung (`app/privacy/review.py`):** Eine kennzeichenförmige Zeichenfolge wird zum **unsicheren Kandidaten** der
+bestehenden Rückfrage-Stufe. Das ist keine neue globale Maskierungsregel.
+- Im Modus „ask“ (Chat-Standard) fragt Lexono vor dem Versand.
+- Im Modus „mask“ wird die Folge vorsichtshalber als `[KENNUNG_nn]` maskiert.
+- Entscheidet der Anwalt „nicht personenbezogen“, geht die Folge unverändert hinaus.
+- Die Kandidaten sind nicht durch die Höchstzahl je Runde begrenzt, sonst ginge ein Kennzeichen hinter vielen
+  Namenskandidaten ungefragt hinaus.
+
+Erfasste Formen:
+- Bindestrich- und Gedankenstrichform („D-XY 123“, „D–XY 123“);
+- mit und ohne Leerzeichen vor den Ziffern;
+- Zeilenumbruch vor den Ziffern (PDF), auch Windows-CRLF (Review: vorher Klartext);
+- Wert in eckigen Klammern.
+
+**Speicherung der Entscheidung (`app/privacy/decisions.py`, Befund des installierten Builds):**
+- Der Entscheidungsweg nahm bisher nur ein rein alphabetisches Wort an. Das ist eine Audit-Regel vom 12.10.2026 gegen
+  eingeschleuste Mehrwort-Begriffe.
+- Die Antwort zu „D-XY 123“ wurde deshalb verworfen, und Lexono fragte im Chat endlos erneut. Es ging nichts hinaus
+  (fail-closed), der Chat war für solche Dokumente aber unbenutzbar.
+- Die Unit-Tests hatten das nicht gezeigt, weil sie Entscheidungen direkt übergeben. Erst der UI-Durchlauf im
+  installierten Build deckte es auf.
+- Jetzt gilt zusätzlich genau die einzeilige Kennzeichenform. Sie enthält nur Buchstaben, Bindestriche, Leerzeichen und
+  Ziffern und wird immer als `kennung` maskiert.
+- Ein Zeilenumbruch im Kennzeichen wird im Begriff zu einem Leerzeichen und im Text trotzdem gefunden.
+- Ein Regressionstest läuft über den echten Speicherweg (`record_decision` → `load_decisions` → Gateway).
+
+Für die reine Leerzeichenform („D XY 123“) gilt: Sie zählt nur mit mindestens zwei Ziffern, Fahrzeugbezug in der Nähe,
+ohne „Zeichen:/Az./Nr.“ davor und ohne Funktionswort oder Marke als erste Gruppe. Gemessen ergab sie sonst 12 Fehlalarme
+im Fehlalarm-Satz, z. B. „VW T 5“, „DER B 51“, „Ihr Zeichen: SB KL 123“.
+
+**Ausnahmen, eng gefasst:**
+- Gesetzes- und Normenkürzel (ISO, VDE, VOB, SGB, BGB, ZPO, HGB, IEC);
+- römische Gliederungs- und Senatsnummern I–XX ohne V;
+- das Paar „DIN EN“;
+- Zeitschriften-Reporte „…-RR 2020, …“.
+
+Das Review fand zweimal echte Unterscheidungszeichen in den Ausnahmelisten: EN, GG, EU, UN, V, AM, AN, KM, RA, SB und DEM.
+Deren Kennzeichen gingen dadurch wieder im Klartext hinaus. Alle sind entfernt, und ein Test sichert sie ab.
+
+**Messung:**
+
+| Messung | Ergebnis |
+|---|---|
+| 916 vorhandene synthetische Texte | 8 Treffer, alle echte Kennzeichen; 0 Treffer im Zitat-Negativsatz (30 Fälle) |
+| Presidio-Audit (eingefrorener Korpus) | unverändert: C = FN 1/80, FP 6/104, 0 Blockaden |
+| Batterie | unverändert bis auf Laufzeiten |
+| Review-Satz 8 (Modus „mask“) | 5 vorher im Klartext gesendete Kennzeichen jetzt maskiert (Tabelle, Klammern, Anführungszeichen, Spiegelstrich); 1 vorher blockierter Fall jetzt maskiert statt blockiert, mit exakter Rückführung; 1 Übermaskierung („Kennzeichen der Gruppe ABC D 12“) |
+| Review-Satz 7 | 3 Spediteur-Kennzeichen „KL AB 12“ jetzt maskiert; „Bezug SB XY 12“ wird maskiert (mehrdeutig) |
+
+**Bekannte Restlücken, nicht maskiert:**
+- Leerzeichenform ohne Fahrzeugbezug in der Nähe („Gegner: B AB 1234“);
+- Leerzeichenform mit nur einer Ziffer;
+- „D XY-123“;
+- Zeilenumbruch zwischen den Buchstabengruppen bzw. Leerzeile vor den Ziffern;
+- Kleinschreibung.
+
+**Teilmaskierung:** Je nach Kontext erkennt die NER-Stufe schon den Ortsteil („D-XY“ → `[ORT_01]`). Dann bleiben nur
+die Ziffern lesbar („[ORT_01] 123“), und die Rückfrage entfällt. Das vollständige Kennzeichen geht nicht hinaus, die
+Maskierung ist aber nicht einheitlich `[KENNUNG]`.
+
+**Bekannte Fehlalarme**, die eine Rückfrage oder Übermaskierung kosten, aber kein Leck sind: „Anlage B AB 12“ und
+„Raum B E 12“ mit Fahrzeugbezug in der Nähe sowie Bindestrich-Codes wie „K-A 3“, „VV-RV 3100“, „IT-SA 2024“.
+
+**Fachliche Entscheidungen (offen, nicht eigenmächtig festgelegt):**
+1. Ob kennzeichenförmige Folgen im Modus „mask“ maskiert oder ob dort ebenfalls gefragt werden soll.
+2. Wie andere unbeschriftete Nummern behandelt werden: Kontonummer ohne Bezeichnung, Vertrags- und Kundennummern im
+   Fließtext. Sie werden derzeit nicht erkannt, weil eine Zifferngruppe allein nicht von Beträgen, Aktenzeichen und
+   Fundstellen unterscheidbar ist; eine globale Ziffernregel wäre die abgelehnte aggressive Regel.
+3. Ob die Leerzeichenform auch ohne Fahrzeugbezug gefragt werden soll (mehr Rückfragen).
+
+### 21.4 Weitere Review-Befunde
+
+**Offene Entscheidung:** Anthropic-Datenverkehr nutzt weiterhin System-Proxy und `SSL_CERT_FILE`/`SSL_CERT_DIR` aus der
+Umgebung.
+- Kanzleien benötigen häufig einen Unternehmens-Proxy.
+- Bei HTTPS sieht der Proxy nur einen Tunnel.
+- Ein Risiko entsteht nur durch ein untergeschobenes Stammzertifikat bzw. einen TLS-inspizierenden Proxy. Das ist eine
+  Entscheidung der Kanzlei-IT.
+- Vorschlag: aktiven Proxy und eigene Zertifikatsquelle in der Systemprüfung anzeigen.
+
+**Bekannt, nicht geändert:**
+- `scripts/e2e_summary_judge.py` (Entwicklerskript) setzt kein `base_url`.
+- Der Entscheidungsweg nimmt jeden kennzeichenförmigen Begriff an, nicht nur die angebotenen Kandidaten. Das Review fand
+  in Überlappungsversuchen kein Leck: Ein solcher Begriff maskiert, er hebt keine Maskierung auf. Eine Prüfung gegen die
+  angebotenen Kandidaten würde den Weg zusätzlich schließen.
+- Ein Ziel, das nicht zulässig ist, meldet im Chat „Die Cloud-KI ist nicht konfiguriert (kein Anthropic-API-Schlüssel
+  hinterlegt)“. Das ist fail-closed, aber irreführend für die Administration.
+- Die Rückfrage-Karte formuliert für Kennzeichen „ob es sich um eine Person handelt“ bzw. „Als Person behandeln“. Die
+  Wirkung ist richtig (pseudonymisieren), der Text passt für Kennzeichen aber nicht.
+
+### 21.5 Prüfungen
+
+**Quellcode:**
+- Gezielte Tests: Endpunkt-Politik, Kennzeichen, Entscheidungen, Ollama, Proxy, Statusanzeige, Relay.
+- Volle Suite auf `cb8b02c`: 3973 bestanden. Fehlgeschlagen sind die 4 bekannten `test_design_refresh`-Fälle (fehlende
+  Logos) und 2 Fälle, die bewusst angepasst wurden („KL AB 12“, siehe oben).
+- Nach dem Entscheidungs-Fix wurde die volle Suite von Claude Code wegen Speichermangels des Systems bei 7 % abgebrochen,
+  ohne Fehlschlag bis dahin. Ersatzweise liefen alle 58 betroffenen Testdateien (Datenschutz, Chat, Entwurf, KI-Provider,
+  Einstellungen, Systemprüfung): 2021 bestanden, 0 Fehlschläge.
+- Messkette auf eingefrorenem Code (`h8`): identisch mit `h7`.
+
+**SDK-Payload:**
+- Der Ende-zu-Ende-Nachweis aus §20 mit echtem SDK und kontrolliertem Transport ist unverändert grün.
+- Neu belegt: Das Ziel ist trotz gesetztem `ANTHROPIC_BASE_URL` die offizielle HTTPS-Adresse, mit Zertifikats- und
+  Hostnamenprüfung und mindestens TLS 1.2.
+
+**Installierter Build (`95f837c`, Installer neu erstellt und installiert; Bundle enthält alle neuen Funktionen):**
+- Loopback-Ziel ohne QA-Freigabe: 0 Anfragen am Prüfendpunkt, sichtbare Sperrmeldung.
+- Fall 16 (neu, unbeschriftete Kennzeichen):
+  - beide Kennzeichen vor jedem Versand erfragt;
+  - danach als `[KENNUNG_nn]` maskiert;
+  - genau ein Cloud-Aufruf;
+  - Fundstellen, Senatszeichen, DIN EN, Beträge und Paragraphen lesbar und nicht erfragt;
+  - Rückführung korrekt.
+- Fälle 1–11, 14, 15: PASS.
+- Fälle 12 und 13: Einziger Unterschied zum Vorbuild ist die beabsichtigte Rückfrage zu „KL AB 12“ (Spedition), danach
+  maskiert. In Fall 12 bleiben die zwei vorbestehenden Lesbarkeitsbefunde aus §20 unverändert.
+- Nebenbefund (vorbestehend): „Vgl.“ und „Urt.“ werden in einem Fall als `[PERSON]` übermaskiert.
+
+### 21.6 Bewertung
+
+| Prüfpunkt | Status | Beleg |
+|---|---|---|
+| Anthropic-Aufruf und SDK-Payload | **SDK-Payload PASS; echter API-Aufruf NICHT VERIFIZIERT** | Payload und Gate wie §20; Ziel jetzt festgelegt; keine Autorisierung für einen echten Aufruf, Opt-in-Skript liegt bereit |
+| TLS und Gateway | **NICHT VERIFIZIERT** | TLS nur als Konfiguration belegt (`CERT_REQUIRED`, Hostname, ≥ TLS 1.2), keine Live-Verbindung; Lexono-Gateway (P0-08) zurückgestellt, Relay-Ziel jetzt festgelegt |
+| Unbeschriftete Kennnummern | **PASS für kennzeichenförmige Folgen, mit dokumentierten Restlücken** | Rückfrage bzw. Maskierung, Fehlalarm-Messung, installierter Build Fall 16; andere unbeschriftete Nummern offen (fachliche Entscheidung) |
+| Entfernte KI-Endpunkte | **PASS** | nur dieser Rechner ohne Freigabe, kein Proxy, Einstellungsseite lehnt ab, 0 Netzverbindungen im Test |
+| Tests und installierter Build | **PASS mit Einschränkung** | gezielt und betroffene Dateien grün; volle Suite zuletzt auf `cb8b02c` (nach dem Fix wegen Speichermangel abgebrochen, ersatzweise 58 betroffene Dateien); installierter Build 14/16 PASS, 12 und 13 beabsichtigte Änderung |
+| Restrisiken und Pilotfähigkeit | **begrenzter, begleiteter Pilot mit synthetischen bzw. freigegebenen Testakten; keine Echtdaten** | siehe unten |
+
+**Keine Echtdatenfreigabe.** Vorher erforderlich:
+1. Ein autorisierter echter Anthropic-Aufruf mit `scripts/verify_anthropic_live.py --authorized-live-call` (P0-07),
+   inklusive TLS-Nachweis.
+2. Die fachlichen Entscheidungen aus 21.3 (Maskieren oder Fragen; andere unbeschriftete Nummern) und 21.4
+   (Proxy/Zertifikate).
+3. Ein Volldurchlauf der Testsuite auf dem Endstand mit ausreichend Arbeitsspeicher.
+4. Eine Release-Notiz zu `LOCAL_AI_ALLOW_REMOTE_ENDPOINT` für Installationen mit Ollama auf einem anderen Rechner.
+
+Eine vollständige Leckfreiheit ist nicht belegt.
