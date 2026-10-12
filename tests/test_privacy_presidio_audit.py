@@ -88,11 +88,11 @@ def test_german_identifiers_are_pseudonymized(gateway, text, value) -> None:
         # Modus "mask" vorsichtshalber maskiert (vorher Klartext) - geprueft bleibt: nicht blockiert, Text lesbar.
         ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "der Spedition"),
         ("Regulierung Kfz-Schaden, Ihr Zeichen: SB KL 123, unser Zeichen: RA BK 26.", "RA BK 26"),
-        ("Die Praxis teilte mit, dass Vorgang 260312045 erledigt ist.", "260312045"),
-        ("Praxis für Physiotherapie, Patientennummer 100200300.", "100200300"),
+        ("Die Praxis teilte mit, dass Vorgang 260312045 erledigt ist.", "erledigt ist"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
+        ("Praxis für Physiotherapie, Patientennummer 100200300.", "Physiotherapie"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
         ("Kfz: VW T 6 Transporter, Erstzulassung 2019.", "VW T 6"),
         ("DER PKW FUHR AUF DER B 51 UND DANN AUF DER A 1.", "DER B 51"),
-        ("Lieferschein 1203456789012 vom Finanzamt-Lieferanten.", "1203456789012"),
+        ("Lieferschein 1203456789012 vom Finanzamt-Lieferanten.", "Lieferschein"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
         ("Ersatzteil T12345678 wurde nachbestellt.", "T12345678"),
         # bewusst NICHT uebernommen: IP-/URL-Recognizer (Versions-/Kapitelnummern, Quellenangaben)
         ("Version 2.4.1.0 der Software; Kapitel 10.2.3.4 des Gutachtens.", "Kapitel 10.2.3.4"),

@@ -445,6 +445,22 @@ def test_plate_shaped_decisions_are_stored_and_end_the_question_round(db: Sessio
     assert not any(p in payload for p in ("D-XY 123", "D XY 4567", "D-XY\n890", "D-XY 890")) and "[KENNUNG_" in payload
 
 
+def test_identifier_decisions_are_stored_and_end_the_question_round(db: Session, gateway) -> None:
+    """Nummern-Strategie (§22): wie bei Kennzeichen muss die Antwort zu einer unbeschrifteten Nummer gespeichert werden,
+    sonst fragt Lexono endlos erneut."""
+    user, matter_a, _, conv_1, _ = _setup(db)
+    text = "Bitte überweisen Sie auf 1234567890 bei der Sparkasse; die Kundin ist unter 30018847 registriert."
+    first = _prepare(gateway, text, mode="ask")
+    terms = [c.term for c in first.review_candidates]
+    assert {"1234567890", "30018847"} <= set(terms)
+    record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term="1234567890", decision="personal", user_id=user.id, actor="a")
+    record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term="30018847", decision="not_personal", user_id=user.id, actor="a")
+    second = _prepare(gateway, text, mode="ask", decisions=load_decisions(db, matter_id=matter_a.id, conversation_id=conv_1.id))
+    assert second.allowed and not second.review_required
+    payload = second.payload.anonymisierter_sachverhalt
+    assert "1234567890" not in payload and "30018847" in payload
+
+
 def test_line_break_plate_decision_is_single_line_and_still_masks_the_break() -> None:
     from app.privacy.review import detect_decision_terms, find_review_candidates
 

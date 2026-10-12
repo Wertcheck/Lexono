@@ -54,8 +54,8 @@ def test_identifier_formats_and_labels_are_protected(gateway, text, values) -> N
     [
         # (vorbestehend und hier nicht Gegenstand: "Rechnungsnummer ..." maskiert der Rechnungsnummer-Detektor, die NER
         # haelt "a 7" fuer einen Ort, "HRB-Verfahren und Az. ..." blockierte bereits auf 7cd8145)
-        ("Vorgang 2181508150 vom Lieferanten.", "2181508150"),  # 10 Ziffern ohne Steuer-Bezeichnung
-        ("Lieferschein 1203456789012 ist eingetroffen.", "1203456789012"),
+        ("Vorgang 2181508150 vom Lieferanten.", "vom Lieferanten"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
+        ("Lieferschein 1203456789012 ist eingetroffen.", "ist eingetroffen"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
         ("Kennzeichen der A 7 ist die Ausfahrt 23.", "der A 7"),  # Artikel: kein Kennzeichen
         # Review: gewoehnliche Woerter nach "Kennzeichen" (Muster ohne Gross-/Kleinschreibung)
         ("Das Kennzeichen ist um 18 Uhr gestohlen worden.", "ist um 18 Uhr"),
@@ -73,4 +73,22 @@ def test_unlabelled_formats_stay_readable(gateway, text, keep) -> None:
 
 def test_spaced_tax_number_shape_without_label_is_no_identifier(gateway) -> None:
     # ("08154 Belege" haelt der vorbestehende PLZ+Ort-Detektor fuer eine Anschrift - nicht Gegenstand)
-    assert "[KENNUNG" not in _payload(gateway, "Der Steuerberater prüft 143 815 08154 Belege.")
+    # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): keine DETERMINISTISCHE Steuernummer ohne Bezeichnung (weiterhin
+    # so), aber als unbeschriftete Kennnummer UNSICHER - Rueckfrage statt stillem Klartext-Versand.
+    text = "Der Steuerberater prüft 143 815 08154 Belege."
+    asked = gateway.prepare_request(
+        purpose="chat_response", sachverhalt="Akte: Beispielakte\n[Schreiben] " + text,
+        anwaltliche_anmerkungen="Fasse zusammen.", review_mode="ask",
+    )
+    assert asked.review_required and any("kennnummernform" in c.roles for c in asked.review_candidates)
+    # Die Entscheidung zum (an der PLZ-Fehlerkennung gekuerzten) Rest muss speicherbar sein, sonst fragt Lexono endlos.
+    from app.privacy.review import PrivacyDecisions, is_identifier_shaped_term
+
+    terms = [c.term for c in asked.review_candidates if "kennnummernform" in c.roles]
+    assert all(is_identifier_shaped_term(t) for t in terms)
+    decided = gateway.prepare_request(
+        purpose="chat_response", sachverhalt="Akte: Beispielakte\n[Schreiben] " + text,
+        anwaltliche_anmerkungen="Fasse zusammen.", review_mode="ask",
+        privacy_decisions=PrivacyDecisions(personal=frozenset(terms)),
+    )
+    assert decided.allowed and not decided.review_required

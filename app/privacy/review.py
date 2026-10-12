@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
-from app.privacy.detectors import DetectedSpan
+from app.privacy.detectors import _ALL_REGEX_DETECTORS, DetectedSpan
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -297,6 +297,8 @@ def find_review_candidates(
             continue
         if word.lower() in pn._NEVER_ENTITY_WORDS or word in pn._PROTOCOL_LABELS:
             continue
+        if pn._is_identifier_label(word):
+            continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Schadennummer [KENNUNG_01]", §22) - kein Name
         if pn.is_derivational_compound(word):
             continue  # Ableitungs-Kompositum ("Raeumungsfrist") - kein Name, siehe presidio_ner.is_derivational_compound
         if not _is_bare(doc, token):
@@ -355,7 +357,163 @@ def find_review_candidates(
         found[term] = ReviewCandidate(
             term=term, context_before=before, context_after=after, roles=("kennzeichenform",), probe_score=0
         )
+    # Unbeschriftete Kennnummern (§22): wie die Kennzeichen nicht durch max_candidates begrenzt. Gesucht wird im lokalen
+    # ROHTEXT (Review: im pseudonymisierten Text blieben nur Bruchstuecke neben Platzhaltern - "[KUNDENNUMMER_01] 2345",
+    # "12345BG[TELEFON_01]" -, die als Begriff im Original nicht vorkommen; die Bezeichnung davor war teils schon durch die
+    # NER ersetzt). Gefragt wird, solange irgendein Teil der Nummer noch unmaskiert im Versandtext steht.
+    for raw, start in _trim_at_detector_spans(context_source, _unlabelled_identifiers(context_source)):
+        # Ein Leerzeichen fuer jede Leerraumfolge (Umbruch, Tabulator, Doppelleerzeichen): Entscheidungen sind einzeilig;
+        # detect_decision_terms trifft die urspruengliche Schreibweise trotzdem.
+        term = re.sub(r"\s+", " ", raw)
+        if term in found or term in decisions.not_personal or term in decisions.personal:
+            continue
+        if not _still_readable(neutral, raw, context_source):
+            continue  # vollstaendig durch eine andere Stufe maskiert
+        before, after = _context(context_source, raw)
+        found[term] = ReviewCandidate(
+            term=term, context_before=before, context_after=after, roles=("kennnummernform",), probe_score=0
+        )
     return list(found.values())
+
+
+def _trim_at_detector_spans(text: str, candidates: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    """Ragt ein Kandidat in einen Treffer eines deterministischen Detektors hinein, der UEBER den Kandidaten hinausreicht
+    ("Az. 12 O 345/26 1234567": Kandidat "345/26 1234567"), wird er an dieser Grenze gekuerzt und nur der Rest geprueft
+    (3. Review-Runde: sonst gewann das Aktenzeichen die Ueberlappung und "1234567" ging im Klartext hinaus). Liegt der
+    Treffer ganz INNERHALB der Nummer (Rufnummernmuster mitten in einer IBAN ohne Laenderkennung), bleibt die ganze Nummer
+    Kandidat."""
+    # Nur Treffer ohne Zeilenumbruch: im lokalen Rohtext liest der PLZ+Ort-Detektor "08154" vor der naechsten Feldzeile
+    # ("\n\n\nFasse ...") als Anschrift - im Versandtext nicht; ein Schnitt dort liesse den Rest ungeschuetzt (Messkette h9).
+    spans = [s for detector in _ALL_REGEX_DETECTORS for s in detector(text) if "\n" not in s.value]
+    result: list[tuple[str, int]] = []
+    for raw, start in candidates:
+        end = start + len(raw)
+        cut_start, cut_end = start, end
+        for span in spans:
+            if span.start < end and start < span.end and not (start <= span.start and span.end <= end):
+                if span.start <= start:
+                    cut_start = max(cut_start, span.end)
+                else:
+                    cut_end = min(cut_end, span.start)
+        if (cut_start, cut_end) == (start, end):
+            result.append((raw, start))
+        elif cut_start < cut_end:
+            # Der Rest stammt aus einer kennnummernfoermigen Folge - er bleibt ab fuenf Ziffern unsicher ("143 815" vor
+            # einem als PLZ+Ort gelesenen "08154 Belege").
+            # Trennzeichen am Rand abschneiden (4. Runde: "-123456" nach dem Aktenzeichen fand die Lookbehind-Grenze nicht).
+            while cut_start < cut_end and text[cut_start] in " \t\r\n-/–‑.,":
+                cut_start += 1
+            while cut_end > cut_start and text[cut_end - 1] in " \t\r\n-/–‑.,":
+                cut_end -= 1
+            rest = text[cut_start:cut_end]
+            result += [(value, cut_start + offset) for value, offset in _unlabelled_identifiers(rest, min_digit_run=5)]
+    return result
+
+
+def _count_word(text: str, word: str) -> int:
+    return len(re.findall(r"(?<![A-Za-z0-9])" + re.escape(word) + r"(?![A-Za-z0-9])", text))
+
+
+def _still_readable(scan_text: str, raw: str, raw_text: str) -> bool:
+    """Steht ein Teil der Nummer `raw` noch im Versandtext - ein ganzer Block mit mind. zwei Ziffern oder ein Wort ab vier
+    Zeichen mit Ziffer, das in einem Block der Nummer vorkommt ("WVWZZZ1JZXW" neben [TELEFON_01], Review)? Gezaehlt wird
+    gegen die Vorkommen AUSSERHALB der Nummer im Rohtext (Review: "§ 22 BGB", "Rn. 1884", "10:00 Uhr" machten eine bereits
+    vollstaendig maskierte Nummer sonst scheinbar lesbar - unnoetige Rueckfrage)."""
+    chunks = re.findall(r"[A-Za-z0-9]+", raw)
+    outside = raw_text.replace(raw, " ")
+    words = {c for c in chunks if sum(ch.isdigit() for ch in c) >= 2}
+    words |= {w for w in re.findall(r"[A-Za-z0-9]{4,}", scan_text) if any(ch.isdigit() for ch in w) and any(w in c for c in chunks)}
+    return any(_count_word(scan_text, w) > _count_word(outside, w) for w in words)
+
+
+# Unbeschriftete Kennnummern (Nummern-Strategie 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §22). Bezeichnete Nummern maskiert
+# bereits die deterministische Stufe (detectors.detect_referenznummer u. a.). Hier bleibt die Form OHNE Bezeichnung
+# ("auf 1234567890 bei der Sparkasse", "unter 30018847 registriert", "Ref.-frei KZ-778812"): sie ist UNSICHER - Rueckfrage
+# im Modus "ask", vorsichtshalber konsistente Maskierung als [KENNUNG_nn] im Modus "mask". Juristisch/sachlich gebrauchte
+# Zahlen bleiben lesbar: Betraege, Daten, Mengen mit Einheit, Fundstellen (§, Art., Rn., BGBl., Drucksachen, EU-Rechtsakte,
+# Zeitschriften), Normen, Versionen, Seiten/Anlagen, Artikel-/Ersatzteilnummern.
+# Zifferngruppen: getrennt durch Bindestrich, Schraegstrich, ein Leerzeichen oder einen Zeilenumbruch (PDF, Review).
+# Review: auch Gedankenstrich und geschuetzter Bindestrich (U+2011). Tabulator und mehrere Leerzeichen bewusst NICHT: sie
+# verbanden Tabellenspalten zu einer "Nummer" und eine Zahl mit einem Aktenzeichen davor (3. Review-Runde, gemessen) - eine
+# so getrennte Nummer bleibt dokumentierte Restluecke.
+_DIGIT_RUN = re.compile(
+    r"(?<![\w.,/\-–‑])\d+(?:(?:[\-/–‑]| (?=\d)|[ \t]*\r?\n[ \t]*(?=\d))\d+){0,5}(?![\w/\-–‑]|[.,]\d)"
+)
+# Mit Punkten gruppiert und OHNE Waehrung/Einheit/Dezimalteil ("unter 123.456.789 registriert", Review) - als Betrag nicht
+# erkennbar, also unsicher.
+_DOTTED_RUN = re.compile(r"(?<![\w.,/\-–])\d{1,3}(?:\.\d{3}){2,}(?![\w/\-–]|[.,]\d)")
+# Codes aus Buchstaben und Ziffern, auch klein geschrieben ("kv20391847", Review) - mindestens ein Buchstabe.
+_ALNUM_CODE = re.compile(r"(?<![\w.\-/])(?=[A-Za-z0-9\-/]*[A-Za-z])[A-Za-z0-9][A-Za-z0-9\-/]{4,30}(?![\w\-/])")
+_KEEP_BEFORE = re.compile(
+    r"(?:§§?|art\.|artikel|nr\.\s*\d*\s*vv|rn\.?|randnummer|bgbl\.?(?:\s*[iI]{1,2})?(?:\s*s\.)?|s\.|seite|bl\.|blatt|"
+    r"drs\.|drucksache|ecli:?|din(?:\s+en)?|en|iso|iec|vde|version|v\.|kapitel|"
+    # EU-Rechtsakte auch mit "Nr." ("Verordnung (EG) Nr. 1393/2007", "VO 1215/2012", Review)
+    r"(?:(?:verordnung|richtlinie|vo|rl)(?:\s*\((?:eu|eg|ewg)\))?|\((?:eu|eg|ewg)\))(?:\s*nr\.)?|"
+    r"ziff\.?|ziffer|anlage|ersatzteil|teil|artikel-?\s?nr\.?|art\.-?\s?nr\.?|modell|typ|serie|isbn(?:-1[03])?|tz\.|fn\.|"
+    # Objekt-/Warenkennungen (Garantie-/Kaufsachverhalte brauchen sie lesbar); Bankleitzahl ist keine Personenkennung
+    r"artikelnummer|teilenummer|materialnummer|modellnummer|serien-?\s?(?:nummer|nr\.?)|ean|gtin|blz|bankleitzahl|juris|"
+    r"baujahr|jahr|jahre|summe|plz|(?:betrag|zahlung|forderung|summe)(?:\s+von)?|"
+    # Festsetzung des Werts ("Gegenstandswert wird auf 2500000 festgesetzt", Review) - nur diese Verbindungswoerter, damit
+    # "den Betrag auf 1234567890" (Kontonummer) NICHT darunter faellt
+    r"(?:gegenstands|streit|geschäfts|geschaefts)wert(?:\s+(?:wird|ist|beträgt|betraegt|wurde|auf|von))*)"
+    # optional eine Buchstabengruppe dazwischen ("Teilenummer HH AB1234")
+    r"\s*[:.]?\s*(?:(?-i:[A-Z]{1,3})\s+)?$",
+    re.IGNORECASE,
+)
+# Zeitschrift/Datenbank + Jahr + Komma ("BeckRS 2021, 1234567", "GVBl. 2020, 1234567", "NJW 2019, 1234") und
+# EuGH-/EuG-Aktenzeichen ("C-311/18") - Fundstellen.
+_CITATION_BEFORE = re.compile(r"(?-i:[A-ZÄÖÜ])[\wÄÖÜäöü.\-]{1,15}\s+(?:19|20)\d{2},\s*$")
+_EU_COURT_CASE = re.compile(r"[CT]-\d{1,4}/\d{2}(?:\s?P)?", re.IGNORECASE)
+_KEEP_AFTER = re.compile(
+    # Keine Ein-Buchstaben-Einheiten: "66 120380 L 512" (Rentenversicherungsnummer) las sich sonst als "Liter".
+    r"\s*(?:eur\b|€|euro\b|%|prozent|km\b|kw\b|ps\b|m²|m2\b|qm\b|stück|stk\.?|kg\b|std\.?|tage|wochen|monate|"
+    r"jahre|uhr\b|cm\b|mm\b|liter|einwohner|personen|menschen|mitarbeiter|beschäftigte|fälle|faelle)",
+    re.IGNORECASE,
+)
+_CURRENCY_BEFORE = re.compile(r"(?:eur|€|euro|chf|usd|\$)\s*$", re.IGNORECASE)
+# Jahr, Jahresspanne, ISO-Datum - auch mit Stunde dahinter ("2025-01-01 10:00", Logauszug; Messkette h9: sonst Kandidat,
+# danach las die NER das Nachbarwort als Person und der Gateway blockierte)
+_YEAR_SHAPES = re.compile(r"(?:19|20)\d{2}(?:\s*[-/–]\s*(?:19|20)?\d{2})?|\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2})?")
+# Teil einer ECLI-Kennung (oeffentliche Gerichtsentscheidung, "ECLI:DE:BGH:2020:120520UVIZR123.19.0") - Fundstelle.
+_INSIDE_ECLI = re.compile(r"ECLI:[A-Z]{2}:\S*$")
+# Grundbuch: "Blatt" ist dort die Grundbuchblattnummer (Eigentuemer ueber das Grundbuch bestimmbar), keine Seitenangabe.
+_LAND_REGISTER_BEFORE = re.compile(r"grundbuch", re.IGNORECASE)
+
+
+def _unlabelled_identifiers(text: str, *, min_digit_run: int = 7) -> list[tuple[str, int]]:
+    """(Wert, Position) kennnummernfoermiger Folgen ohne Bezeichnung - siehe Kommentar oben."""
+    found: list[tuple[str, int]] = []
+    for pattern, min_digits in ((_DIGIT_RUN, min_digit_run), (_DOTTED_RUN, 7), (_ALNUM_CODE, 4)):
+        for match in pattern.finditer(text):
+            value = match.group().strip()
+            if sum(ch.isdigit() for ch in value) < min_digits or _YEAR_SHAPES.fullmatch(value):
+                continue
+            if all(_YEAR_SHAPES.fullmatch(group) for group in re.split(r"\s+", value)):
+                continue  # Jahresliste ("2019 2020 2021")
+            if _EU_COURT_CASE.fullmatch(value) or _INSIDE_ECLI.search(text[max(0, match.start() - 40) : match.start()]):
+                continue
+            before = text[max(0, match.start() - 40) : match.start()]
+            keep = _KEEP_BEFORE.search(before[-30:])
+            if keep and not (re.search(r"bl\.|blatt", keep.group(), re.IGNORECASE) and _LAND_REGISTER_BEFORE.search(before)):
+                continue
+            if _CITATION_BEFORE.search(before) or _CURRENCY_BEFORE.search(before):
+                continue
+            if _KEEP_AFTER.match(text, match.end()):
+                continue
+            if any(start <= match.start() < start + len(v) for v, start in found):
+                continue
+            found.append((value, match.start()))
+    return found
+
+
+def is_identifier_shaped_term(term: str) -> bool:
+    """Einzeilige kennnummernfoermige Folge (siehe _unlabelled_identifiers) - als Entscheidung speicherbar wie ein
+    Kennzeichen; enthaelt nur Buchstaben, Ziffern, Leerzeichen, Punkt, Bindestrich und Schraegstrich."""
+    # Laenge bis MAX_TERM_LENGTH (4. Runde: ein 49-stelliger Kandidat war nicht speicherbar - endlose Rueckfrage)
+    if "\n" in term or len(term) > MAX_TERM_LENGTH or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 .\-/–‑]{3,}", term):
+        return False
+    # Schwelle wie fuer den gekuerzten Rest (_trim_at_detector_spans), sonst liesse sich dessen Entscheidung nicht speichern.
+    return any(value == term for value, _ in _unlabelled_identifiers(term, min_digit_run=5))
 
 
 # Kennzeichenfoermige Zeichenfolge OHNE unmittelbar vorangestellte Bezeichnung (Sicherheitspruefung 13.10.2026, gemessen:
@@ -424,14 +582,31 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
         if not term or not term.strip():
             continue
         plate = is_plate_shaped_term(term)
-        category = "kennung" if plate else "person"
+        identifier = plate or is_identifier_shaped_term(term)
+        category = "kennung" if identifier else "person"
         body = re.escape(term)
-        if plate:  # Kennzeichen darf im Text ueber einen Zeilenumbruch laufen (PDF), siehe find_review_candidates
+        if identifier:  # Kennzeichen/Kennnummer darf im Text ueber einen Zeilenumbruch laufen (PDF), find_review_candidates
             # Leerzeichen im Begriff = Leerzeichen/Tab ODER Zeilenumbruch (auch Windows-CRLF, Review) - nie "kein Abstand"
             body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
-        pattern = re.compile(r"(?<![\wÄÖÜäöüß])" + body + r"(?![\wÄÖÜäöüß])")
+        # Kurze Kennnummer-Entscheidung (weniger als 7 Ziffern, etwa ein gekuerzter Rest): nicht an Fundstellen-, Betrags-
+        # oder Einheitsstellen und nicht als Teil einer laengeren Zahl ("19/12345", "§ 12345", "Streitwert 12345 EUR",
+        # 4. Review-Runde) - dort ist dieselbe Ziffernfolge keine Kennnummer.
+        short = identifier and not plate and sum(ch.isdigit() for ch in term) < 7
+        # Bindestrich davor bleibt erlaubt: der Rest haengt oft am Aktenzeichen ("345/26-123456").
+        boundary_before = r"(?<![\wÄÖÜäöüß/.,])" if short else r"(?<![\wÄÖÜäöüß])"
+        pattern = re.compile(boundary_before + body + r"(?![\wÄÖÜäöüß])")
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue
+            if short and _number_in_keep_context(text, match.start(), match.end()):
+                continue
             spans.append(DetectedSpan(category=category, start=match.start(), end=match.end(), value=match.group()))
     return spans
+
+
+def _number_in_keep_context(text: str, start: int, end: int) -> bool:
+    before = text[max(0, start - 40) : start]
+    return bool(
+        _KEEP_BEFORE.search(before[-30:]) or _CITATION_BEFORE.search(before) or _CURRENCY_BEFORE.search(before)
+        or _KEEP_AFTER.match(text, end) or re.match(r"/\d|[.,]\d", text[end : end + 2])
+    )

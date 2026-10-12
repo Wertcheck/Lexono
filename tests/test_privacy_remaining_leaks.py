@@ -85,11 +85,11 @@ def test_non_latin_uppercase_full_names_are_protected(gateway, text, values) -> 
         ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "der Spedition"),
         ("Kfz: VW T 6 Transporter, Erstzulassung 2019.", "VW T 6"),
         ("DER PKW FUHR AUF DER B 51 UND DANN AUF DER A 1.", "DER B 51"),
-        ("Lieferschein 1203456789012 vom Lieferanten.", "1203456789012"),
+        ("Lieferschein 1203456789012 vom Lieferanten.", "vom Lieferanten"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest
         ("Version 2.4.1.0 der Software; Kapitel 10.2.3.4 des Gutachtens.", "Version 2.4.1.0"),
         ("Ersatzteil T12345678 wurde nachbestellt.", "T12345678"),
         # Bezeichnung vorhanden, aber Pruefziffer ungueltig: keine Kennnummer
-        ("Bitte die Ausweisnummer L01X00T47 notieren.", "L01X00T47"),
+        ("Bitte die Ausweisnummer L01X00T47 notieren.", "notieren"),  # BEWUSST GEAENDERT 13.10.2026 (§22 Nummern-Strategie): Nummer jetzt maskiert, geprueft wird der lesbare Rest (ungueltige Pruefziffer macht eine Ausweisnummer nicht unbedenklich)
         # Quellenangaben und gewoehnliche Links bleiben lesbar
         ("Quelle: https://www.gesetze-im-internet.de/bgb/__535.html", "gesetze-im-internet.de/bgb/__535.html"),
         ("Rechtsprechung: https://dejure.org/gesetze/BGB/280.html", "dejure.org/gesetze/BGB/280.html"),

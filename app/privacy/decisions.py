@@ -30,7 +30,13 @@ from app.models.privacy_decision import (
     PrivacyDecision,
     PrivacyFeedbackStat,
 )
-from app.privacy.review import MAX_TERM_LENGTH, PrivacyDecisions, ReviewCandidate, is_plate_shaped_term
+from app.privacy.review import (
+    MAX_TERM_LENGTH,
+    PrivacyDecisions,
+    ReviewCandidate,
+    is_identifier_shaped_term,
+    is_plate_shaped_term,
+)
 
 
 class InvalidPrivacyDecisionError(ValueError):
@@ -71,7 +77,8 @@ def _validate(term: str, decision: str) -> str:
     # Ausnahme (13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §21.3): kennzeichenfoermige Rueckfrage-Kandidaten ("D-XY 123").
     # Ohne sie wurde die Antwort des Anwalts verworfen und Lexono fragte endlos erneut (installierter Build). Die Form ist
     # eng (Buchstaben, Bindestrich, Leerzeichen, Ziffern) und wird immer als "kennung" maskiert.
-    if not term.isalpha() and not is_plate_shaped_term(term):
+    # Ebenso kennnummernfoermige Kandidaten (§22, review.is_identifier_shaped_term).
+    if not term.isalpha() and not is_plate_shaped_term(term) and not is_identifier_shaped_term(term):
         raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
     return term
 

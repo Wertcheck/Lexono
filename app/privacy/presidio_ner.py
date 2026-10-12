@@ -40,7 +40,7 @@ import itertools
 import re
 from functools import lru_cache
 
-from app.privacy.detectors import DetectedSpan
+from app.privacy.detectors import REFERENCE_LABEL_WORDS, DetectedSpan
 
 _SPACY_MODEL_NAME = "de_core_news_lg"
 
@@ -326,7 +326,11 @@ _ID_LABEL_PATTERNS = {
 }
 # Ein NER-Treffer, der GANZ aus einer solchen Bezeichnung besteht, ist kein Name/Ort - abgeleitet aus denselben Mustern,
 # keine eigene Wortliste (siehe Kommentar bei _NEVER_ENTITY_WORDS).
-_ID_LABEL_FULL = re.compile(r"(?:" + "|".join(_ID_LABEL_BEFORE.values()) + r")\.?", re.IGNORECASE)
+# Dazu die Bezeichnungen der Bezugsnummern aus detectors (Nummern-Strategie §22: "Kd.-Nr" neben [KUNDENNUMMER_01] las die
+# NER als Person - Fail-Closed-Blockade eines gewoehnlichen Satzes).
+_ID_LABEL_FULL = re.compile(
+    r"(?:" + "|".join([*_ID_LABEL_BEFORE.values(), REFERENCE_LABEL_WORDS]) + r")\.?", re.IGNORECASE
+)
 
 
 def _is_identifier_label(value: str) -> bool:
@@ -1148,6 +1152,8 @@ def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
             continue
         if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS or is_derivational_compound(word):
             continue
+        if _is_identifier_label(word):
+            continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Patientennummer [KENNUNG_01]"), wie _collect_spans
         if word in _PROTOCOL_LABELS and text[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Rollenpraefix des Gespraechsverlaufs ("Assistent: ..."), kein Name
         spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))

@@ -58,9 +58,84 @@ _AKTENZEICHEN_PATTERN = re.compile(
 )
 
 _KUNDENNUMMER_PATTERN = re.compile(
-    r"(?:kundennummer|kd-nr\.?|mandantennummer)\s*[:.]?\s*([A-Za-z0-9\-/]+)",
+    # "Kd.-Nr." (Nummern-Strategie 13.10.2026: vorher nur "Kd-Nr." erkannt, "Kd.-Nr. 5512398" ging im Klartext hinaus)
+    r"(?:kundennummer|kd\.?-?\s?nr\.?|mandantennummer)\s*[:.]?\s*([A-Za-z0-9\-/]+)",
     re.IGNORECASE,
 )
+
+# Personenbeziehbare Bezugsnummern mit Bezeichnung (Nummern-Strategie 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §22).
+# Gemessen vorher im Klartext: Versicherungsschein-, Policen-, Schaden-, Patienten-, Personal-, Zaehler-, Vorgangs-,
+# Auftrags-, Fall-, Versichertennummer, Mandatsreferenz, "Ihr/Unser Zeichen", "Ref.". Der Wert muss unmittelbar folgen
+# und eine Ziffer enthalten; Datum und Betrag sind nie ein solcher Wert.
+_REFERENCE_LABEL = (
+    r"(?:versicherungsschein|versicherten|polic(?:e|en)|schadens?|patienten|personal|z(?:ä|ae)hler|vorgangs|auftrags|"
+    r"fall|mandats|referenz|antrags|buchungs|kassenzeichen|aktenzeichen|bescheid|beitrags|lieferschein|sendungs|"
+    r"vertragskonto|(?:ü|ue)berweisungs)-?\s?(?:nummer|nr\.?)|mandatsreferenz|kassenzeichen|ref\.|gz\.|"
+    r"(?:ihr|ihre|unser|unsere)\s+zeichen|gesch(?:ä|ae)ftszeichen|vertragskonto"
+)
+# Gattungswort UNMITTELBAR vor einer Nummer mit mindestens fuenf Ziffern ("Vertrag 88231457", "Kunde 4471123",
+# "Police 7781234-55", "Bescheid 260312045", "Sendung 1073132281718") - ein Jahr ("Vertrag 2019") oder eine kleine Zahl
+# ("Schaden 3") ist kein solcher Wert. Wie Rechnungs-/Bestellnummern (bereits deterministisch maskiert) sind Liefer-,
+# Sendungs-, Vorgangs- und Bescheidnummern Bezuege eines konkreten Vorgangs mit einer Person - ohne Rueckfrage maskiert.
+_REFERENCE_NOUN = (
+    r"vertrag|kunde|kundin|police|schaden|ausweis|konto|versicherungsschein|mitglied|lieferschein|sendung|vorgang|"
+    # "dokument" bewusst NICHT (Review: juris-Dokumentnummern sind oeffentliche Fundstellen)
+    r"bescheid|auftrag|beleg|antrag"
+)
+
+# Nie freigebbar, auch nicht per Anwaltsentscheidung (Review 13.10.2026): Zahlungskartennummer (13-19 Ziffern, Pruefziffer
+# nach Luhn) und der Rest einer Renten-/Sozialversicherungsnummer (Geburtsdatum + Buchstabe + Seriennummer, "120380 L 512";
+# gemessen blieb er lesbar, wenn die NER die Bereichsnummer davor als Ort maskierte).
+_CARD_PATTERN = re.compile(r"(?<![\w.,/\-])\d{4}(?:[ \-]?\d{3,4}){2,4}(?:[ \-]?\d{1,3})?(?![\w/\-]|[.,]\d)")
+_SV_TAIL_PATTERN = re.compile(r"(?<![\w])\d{6}\s?[A-Z]\s?\d{3}(?![\w])")
+
+
+def _luhn_valid(digits: str) -> bool:
+    total = 0
+    for index, char in enumerate(reversed(digits)):
+        value = int(char)
+        if index % 2:
+            value = value * 2 - 9 if value > 4 else value * 2
+        total += value
+    return total % 10 == 0
+
+
+# Review: etwa jede zehnte lange Zahl besteht die Luhn-Pruefung zufaellig. Ungegliedert gilt sie daher nur mit dem Praefix
+# eines Kartennetzes (Visa 4, Mastercard 51-55/22-27, Amex 34/37, Discover 6011/65) und nie vor Waehrung/Einheit oder nach
+# Seiten-, Artikel- oder ISBN-Angaben.
+_CARD_PREFIX = re.compile(r"4|5[1-5]|2[2-7]|3[47]|6011|65")
+_CARD_NOT_AFTER = re.compile(r"\s*(?:eur\b|€|euro\b|%|einwohner|stück|km\b)", re.IGNORECASE)
+_CARD_NOT_BEFORE = re.compile(r"(?:seite|s\.|isbn(?:-1[03])?|ean|gtin|artikel(?:nummer)?|art\.-?\s?nr\.?)\s*[:.]?\s*$", re.IGNORECASE)
+
+
+def detect_zahlungskarte_und_sv_rest(text: str) -> list[DetectedSpan]:
+    spans = []
+    for match in _CARD_PATTERN.finditer(text):
+        digits = re.sub(r"\D", "", match.group())
+        if not digits.isdigit() or not 13 <= len(digits) <= 19 or not _luhn_valid(digits):
+            continue
+        grouped = len(re.findall(r"\d+", match.group())) >= 3
+        if not grouped and not _CARD_PREFIX.match(digits):
+            continue
+        if _CARD_NOT_AFTER.match(text, match.end()) or _CARD_NOT_BEFORE.search(text[max(0, match.start() - 25) : match.start()]):
+            continue
+        spans.append(DetectedSpan(category="kennung", start=match.start(), end=match.end(), value=match.group()))
+    spans += _matches_from_pattern(text, _SV_TAIL_PATTERN, "kennung")
+    return spans
+
+
+_REFERENCE_VALUE = r"([A-Za-z0-9](?:[A-Za-z0-9/\-]|\.(?=[A-Za-z0-9])){1,30})(?![\w/\-])"
+# Alle Bezeichnungen bezeichneter Bezugsnummern als ein Muster: ein NER-Treffer, der GANZ aus einer solchen Bezeichnung
+# besteht ("Kd.-Nr" neben dem Platzhalter als Person), ist kein Name (presidio_ner._is_identifier_label).
+REFERENCE_LABEL_WORDS = (
+    _REFERENCE_LABEL + r"|kundennummer|kd\.?(?:-?\s?nr)?|mandantennummer|vertragsnummer|vertrags-nr|rechnungs?-?\s?(?:nummer|nr)"
+)
+_REFERENCE_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß])(?:" + _REFERENCE_LABEL + r")(?:\s+(?:ist|lautet|lauten))?\s*[:.]?\s*" + _REFERENCE_VALUE,
+    re.IGNORECASE,
+)
+_REFERENCE_NOUN_PATTERN = re.compile(r"(?<![\wÄÖÜäöüß-])(?:" + _REFERENCE_NOUN + r")\s+" + _REFERENCE_VALUE, re.IGNORECASE)
+_DATE_OR_AMOUNT_AFTER = re.compile(r"\s*(?:eur\b|€|euro\b|%|prozent\b)", re.IGNORECASE)
 
 _VERTRAGSNUMMER_PATTERN = re.compile(
     r"(?:vertragsnummer|vertrags-nr\.?)\s*[:.]?\s*([A-Za-z0-9\-/]+)",
@@ -226,6 +301,20 @@ def detect_kundennummer(text: str) -> list[DetectedSpan]:
     return _matches_from_pattern(text, _KUNDENNUMMER_PATTERN, "kundennummer", group=1)
 
 
+def detect_referenznummer(text: str) -> list[DetectedSpan]:
+    """Bezeichnete personenbeziehbare Bezugsnummern (siehe _REFERENCE_LABEL/_REFERENCE_NOUN). Kategorie "kennung"."""
+    spans = []
+    for pattern, min_digits in ((_REFERENCE_PATTERN, 1), (_REFERENCE_NOUN_PATTERN, 5)):
+        for match in pattern.finditer(text):
+            value = match.group(1)
+            if sum(ch.isdigit() for ch in value) < min_digits or _NUMERIC_DATE_PATTERN.fullmatch(value):
+                continue
+            if _DATE_OR_AMOUNT_AFTER.match(text, match.end(1)) or re.fullmatch(r"\d{1,3}(?:\.\d{3})+", value):
+                continue  # Betrag ("Schaden 12.000 EUR")
+            spans.append(DetectedSpan(category="kennung", start=match.start(1), end=match.end(1), value=value))
+    return spans
+
+
 def detect_vertragsnummer(text: str) -> list[DetectedSpan]:
     spans = _matches_from_pattern(text, _VERTRAGSNUMMER_PATTERN, "vertrag", group=1)
     # Nur echte Nummern (mit Ziffer), wie bei der Rechnungsnummer. ECHTER FUND (09.10., Ursache der
@@ -378,6 +467,8 @@ _ALL_REGEX_DETECTORS = (
     detect_kundennummer,
     detect_vertragsnummer,
     detect_rechnungsnummer,
+    detect_referenznummer,
+    detect_zahlungskarte_und_sv_rest,
     detect_bic,
     detect_datum,
     detect_address,
