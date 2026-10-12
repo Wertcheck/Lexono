@@ -1777,7 +1777,7 @@ Umgebung.
 
 | Prüfpunkt | Status | Beleg |
 |---|---|---|
-| Anthropic-Aufruf und SDK-Payload | **SDK-Payload PASS; Übertragung an Anthropic belegt; erfolgreiche Antwort NICHT VERIFIZIERT** | autorisierter Live-Aufruf (21.7): Request erreichte api.anthropic.com, Antwort 401 „invalid x-api-key“ – der hinterlegte Schlüssel ist ungültig |
+| Anthropic-Aufruf und SDK-Payload | **PASS** | autorisierter Live-Aufruf (21.7): Payload ohne Klartextwerte, Antwort des Modells erhalten, Rückführung fehlerfrei (zweiter Lauf mit neuem Schlüssel) |
 | TLS und Gateway | **TLS PASS (live); Gateway NICHT VERIFIZIERT** | TLS 1.3 zu api.anthropic.com, Zertifikat Google Trust Services, Hostname geprüft (21.7); Lexono-Gateway (P0-08) zurückgestellt, Relay-Ziel festgelegt |
 | Unbeschriftete Kennnummern | **PASS für kennzeichenförmige Folgen, mit dokumentierten Restlücken** | Rückfrage bzw. Maskierung, Fehlalarm-Messung, installierter Build Fall 16; andere unbeschriftete Nummern offen (fachliche Entscheidung) |
 | Entfernte KI-Endpunkte | **PASS** | nur dieser Rechner ohne Freigabe, kein Proxy, Einstellungsseite lehnt ab, 0 Netzverbindungen im Test |
@@ -1785,8 +1785,8 @@ Umgebung.
 | Restrisiken und Pilotfähigkeit | **begrenzter, begleiteter Pilot mit synthetischen bzw. freigegebenen Testakten; keine Echtdaten** | siehe unten |
 
 **Keine Echtdatenfreigabe.** Vorher erforderlich:
-1. Ein erfolgreicher echter Anthropic-Aufruf mit gültigem Schlüssel: `scripts/verify_anthropic_live.py
-   --authorized-live-call` (P0-07). Übertragung und TLS sind belegt (21.7), die Antwort scheiterte am ungültigen Schlüssel.
+1. (Erledigt, 21.7: erfolgreicher echter Anthropic-Aufruf mit synthetischen Daten, P0-07 für den Direktpfad.) Offen:
+   Der installierte Build liest `C:\ProgramData\Lexono\.env`; dort steht noch der abgelaufene Schlüssel.
 2. Die fachlichen Entscheidungen aus 21.3 (Maskieren oder Fragen; andere unbeschriftete Nummern) und 21.4
    (Proxy/Zertifikate).
 3. (Erledigt nach Abschluss: volle Suite auf `c170abb` – 3983 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle fehlgeschlagen.)
@@ -1810,8 +1810,17 @@ Ausdrücklich freigegeben durch den Owner. Ausgeführt wurde `scripts/verify_ant
 | Antwort | **401 `authentication_error` „invalid x-api-key“**: der hinterlegte Schlüssel (Format `sk-ant-…`) ist ungültig oder widerrufen |
 | Fehlerverhalten | Ausnahme ohne Ausweichpfad, kein zweiter Versuch über einen anderen Weg |
 
-**Folge:**
-- Übertragungsweg, Ziel und TLS sind real belegt.
-- Ein erfolgreicher Modellaufruf (Antwort, Rückführung) bleibt NICHT VERIFIZIERT, bis ein gültiger Schlüssel hinterlegt
-  ist.
-- Für den Betrieb heißt das: Der installierte Direktpfad kann mit diesem Schlüssel keine Cloud-Antworten erzeugen.
+**Erster Lauf:** Übertragungsweg, Ziel und TLS waren real belegt, die Antwort scheiterte am abgelaufenen Schlüssel.
+
+**Zweiter Lauf** mit dem neuen Schlüssel des Owners (aus der Entwicklungs-`.env`, die nicht versioniert wird):
+
+| Nachweis | Ergebnis |
+|---|---|
+| Payload vor dem Versand | kein synthetischer Klartextwert |
+| TLS live | api.anthropic.com, TLS 1.3, Google Trust Services, Hostname geprüft |
+| Antwort | Modellantwort erhalten (399 Zeichen) |
+| Rückführung | fehlerfrei |
+
+Damit ist der echte Anthropic-Aufrufpfad (Gateway → Factory mit festgelegtem Ziel → SDK → TLS → API) mit synthetischen
+Daten **belegt**. Nicht Teil dieses Nachweises sind das Lexono-Gateway (P0-08, zurückgestellt) und der installierte
+Build: Dessen Konfiguration `C:\ProgramData\Lexono\.env` enthält noch den abgelaufenen Schlüssel.
