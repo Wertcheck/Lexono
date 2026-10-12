@@ -730,7 +730,9 @@ def _uppercase_variant_pass(
         # Das deutsche Wortartmodell taggt griechische/kyrillische Woerter unzuverlaessig ("Γιαννης" = NOUN neben
         # "Παπαδοπουλος" = PROPN; Folgezyklus 13.10.2026, Testbasis G03 - der Nachname blieb im Klartext). Zugelassen nur,
         # wenn (1) jedes Nicht-PROPN-Wort ausschliesslich aus nicht-lateinischen Buchstaben besteht und (2) der Treffer einen
-        # URSPRUENGLICHEN Treffer derselben Kategorie enthaelt (das Modell hat dort bereits einen Namen erkannt).
+        # URSPRUENGLICHEN NER-Treffer enthaelt - gleich welcher Kategorie (installierter Build, Fall 13: "ΓΙΑΝΝΗΣ" als
+        # Organisation erkannt, "ΠΑΠΑΔΟΠΟΥΛΟΣ" blieb im Klartext). Der urspruengliche Treffer bleibt unveraendert; uebernommen
+        # wird nur der Teil ausserhalb (Teiltreffer-Regel unten).
         failing = [
             variant[s:e]
             for (s, e), tag in (pos_tags or {}).items()
@@ -739,7 +741,9 @@ def _uppercase_variant_pass(
         if not failing or any(_LATIN_LETTER.search(word) or not word.isalpha() for word in failing):
             return False
         return any(
-            other.category == span.category and span.start <= other.start and other.end <= span.end
+            other.category in (span.category, "person", "ort", "organisation")
+            and span.start <= other.start
+            and other.end <= span.end
             for other in original_spans
         )
 

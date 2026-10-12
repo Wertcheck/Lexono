@@ -60,9 +60,20 @@ def test_labelled_identifiers_and_profiles_are_pseudonymized(gateway, text, valu
     assert value not in payload, payload
 
 
-def test_greek_uppercase_full_name_is_protected(gateway) -> None:
-    payload = _payload(gateway, "ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ ist Geschäftsführer der Firma.")
-    assert "ΓΙΑΝΝΗΣ" not in payload and "ΠΑΠΑΔΟΠΟΥΛΟΣ" not in payload, payload
+@pytest.mark.parametrize(
+    "text, values",
+    [
+        ("ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ ist Geschäftsführer der Firma.", ["ΓΙΑΝΝΗΣ", "ΠΑΠΑΔΟΠΟΥΛΟΣ"]),
+        # Vorname von der NER als Organisation erkannt (Review, installierter Build Fall 13)
+        ("Mieter: ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ", ["ΓΙΑΝΝΗΣ", "ΠΑΠΑΔΟΠΟΥΛΟΣ"]),
+        ("KARL BRENNER ΓΙΑΝΝΗΣ ΠΑΠΑΔΟΠΟΥΛΟΣ", ["ΓΙΑΝΝΗΣ", "ΠΑΠΑΔΟΠΟΥΛΟΣ"]),
+        ("ИВАН ПЕТРОВ ist Mieter.", ["ИВАН", "ПЕТРОВ"]),
+    ],
+)
+def test_non_latin_uppercase_full_names_are_protected(gateway, text, values) -> None:
+    payload = _payload(gateway, text)
+    for value in values:
+        assert value not in payload, (value, payload)
 
 
 @pytest.mark.parametrize(
