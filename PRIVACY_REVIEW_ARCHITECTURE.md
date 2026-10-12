@@ -937,3 +937,60 @@ Ebenfalls gemessen:
   - Ergebnis: **PASS**.
   - Screenshot: Dokument „Verarbeitet“, lokale Antwort korrekt.
 - **Fälle 1–9** auf demselben Build: alle **PASS**.
+
+### 16d. Sechstes Red-Team (Endstand gegen `f843ab7`) und Gesetzesabkürzungen ohne § (`9350f40`)
+
+**Sechstes Red-Team** (unabhängiger Agent, nur messend):
+- **Umfang:** 171 neue synthetische Texte, Endstand `df84001` gegen den Ausgangsstand `f843ab7`. Modus „mask“ für alle
+  Texte, „ask“ für 11, dazu Rückführung (`reconstruct_response`) und Kontrolllauf mit normalen Leerzeichen.
+- **Regressionen: keine.** Kein auf `f843ab7` maskierter Wert steht neu im Klartext. Keine neue Blockade; 2 frühere
+  Blockaden durch Ortsreste neben U+00A0 entfallen.
+- **Lecks:** 122 → 32 bzw. 13 → 5 Werte im Klartext.
+- **Rückführung und Offsets:** Alle Werte entsprechen exakt dem Original. Kein Absturz mit U+2028/U+2029/U+0085,
+  vertikalem Tabulator, Seitenvorschub oder gemischten Tabulatoren/Leerzeichen.
+- **Rückführung kosmetisch:** In 16 Fällen ist sie nicht bytegleich, weil vorbestehend ein Anrede-Alias auf den
+  vollen Namen zurückgeführt wird.
+- **Neue Fehlalarme (mittel):**
+  - Gesetzesabkürzungen ohne § („nach dem BEEG“, „die STVO“) und „Art. 6 Abs. 1 lit. b DSGVO“ → Ort/Person;
+  - „IBAN“, „COVID“;
+  - Markennamen („AUDI A4“, „VW GOLF“), Kürzel („ADAC“);
+  - „Gerichtsstand ist BERLIN“ → Ort.
+
+**Änderung** (nur für die **zusätzlichen** Varianten-Treffer; ursprüngliche Treffer bleiben unberührt): Verworfen werden
+Variantentreffer, die
+- einer festen Liste von Gesetzesabkürzungen sowie „IBAN“ und „COVID“ entsprechen (auf `f843ab7` lesbar), oder
+- direkt auf ein Normzitat mit Buchstaben-Untergliederung folgen („lit. b/f“, „Buchst. a“).
+
+Der gemeinsame Zitatfilter in `presidio_ner` kannte nach „lit.“ nur Ziffern.
+
+**Messung** (7 Red-Team-Fehlalarme / 3 Namen in denselben Sätzen):
+- `58a673f`: 5/7 verloren.
+- neu: **0/7** verloren, Namen weiterhin geschützt, z. B. „Nach Art. 6 Abs. 1 lit. b DSGVO hat Frau [PERSON_01]
+  eingewilligt.“
+- Alle Benchmarks aus §16a sind unverändert.
+- Red-Team-5-Satz: 24 Lecks.
+- 6 neue Tests.
+- Gesamtsuite: 3766 bestanden; die 4 Logo-Fehlschläge wie zuvor.
+
+Markennamen, Kürzel wie „ADAC“ und Ortsnamen in Versalien bleiben übermaskiert. Das ist kein Leck, mindert aber die
+Lesbarkeit.
+
+**Weiterhin offen** (vom sechsten Red-Team gemessen, vorbestehend oder nicht abgedeckt):
+- doppelte Leerzeichen zwischen Versal-Vor- und Nachname;
+- mehrere Tabulatoren in einer Namenszeile („ANSPRECHPARTNER⇥FRANZISKA⇥LEHMKUHLE⇥DURCHWAHL“);
+- Straßen ohne Straßensuffix in Versalien („AM ANGER 5“);
+- Adelsprädikate („VON DER HEYDT-WALLRAF“);
+- Rubrum in normaler Schreibung nach einem Aktenzeichen („Görtzen ./. Habicht-Lindner“);
+- Namen mit „İ“/„Ş“ in einzelnen Kontexten;
+- griechische und kyrillische Versalnamen.
+
+**Installierter Build `9350f40`** (Bündel geprüft: `_UPPERCASE_NON_NAMES` enthalten; Installation Exit 0; Health 200).
+- **Fall 11, neu:** Versal-Anschrift, „BETREFF: AUSKUNFT NACH ART. 15 DSGVO“, „Art. 6 Abs. 1 lit. b DSGVO … Frau ODETTE
+  PASCHKE“, „nach dem BEEG“, „Die STVO“, „angegebene IBAN“.
+  - Payload: „FRAU [PERSON_01] [ADRESSE_01] BETREFF: AUSKUNFT NACH ART. 15 DSGVO Nach Art. 6 Abs. 1 lit. b DSGVO hat Frau
+    [PERSON_01] eingewilligt. Elterngeld richtet sich nach dem BEEG. Die STVO gilt. Bitte überweisen Sie auf die
+    angegebene IBAN.“
+  - Ergebnis: **PASS**.
+  - Die im Screenshot nach „Art. 6 Abs.“ endende lokale Antwort ist ein Artefakt des QA-Stubs: Die Echo-Antwort des
+    Capture-Servers nimmt die ersten drei durch „. “ getrennten Abschnitte. Das ist kein Lexono-Verhalten.
+- **Fälle 1–10** auf demselben Build: alle **PASS**.
