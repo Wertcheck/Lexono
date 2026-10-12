@@ -498,13 +498,19 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
     spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
-    for detector in (detect_unlabelled_proper_nouns, detect_probed_names, detect_article_names):
+    titled = _titled_name_spans(text)
+    weak_titled = {(span.start, span.end) for span, strong in titled if not strong}
+    for detector in (
+        lambda _text: [span for span, _strong in titled], detect_document_convention_names, detect_feminine_context_names,
+        detect_unlabelled_proper_nouns, detect_probed_names, detect_article_names,
+    ):
         spans.extend(
             extra
             for extra in detector(text)
             if not any(extra.start < other.end and other.start < extra.end for other in spans)
         )
-    return spans
+    # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
+    return propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled)
 
 
 _PROTOCOL_LABELS = frozenset({"Assistent", "Anwalt"})
@@ -567,6 +573,290 @@ def detect_probed_names(text: str) -> list[DetectedSpan]:
         ):
             continue
         if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
+            spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
+    return spans
+
+
+# --- Anrede-/Rollenkontext und Folgeerwaehnungen (13.10.2026, scripts/bench_name_followups.py) ------------------------
+# ECHTER FUND (getrennter Benchmark mit neuen Namen): "Herr Sommer", "Zeugin Koenig", "Rechtsanwaeltin Sommer" gingen
+# VOLLSTAENDIG im Klartext in den Payload - Nachnamen, die zugleich Gattungswoerter sind, etikettiert die NER nicht, und die
+# Rueckfrage-Rolle "nach Rollenwort" verlangt zusaetzlich die Modell-Probe "Herr X hat unterschrieben" (Fachwort-Filter),
+# an der solche Namen scheitern. Eine Anrede ist dagegen ein eindeutiges sprachliches Signal.
+# Zweite Fassung nach unabhaengigem Red-Team-Review: die erste (Regex: JEDES grossgeschriebene Wort nach einem Rollenwort)
+# maskierte in Nebensaetzen das Objekt ("dass der Mieter Maengel anzeigt" -> "Maengel" im ganzen Text) und verfehlte
+# "Die Zeugin X" am Satzanfang, "Herr<Umbruch>X", "Hr."/"Fr.", "Herr von X".
+#  * STARKE Anreden (Herr/Herrn/Frau/Hr./Hrn./Fr./Eheleute/Ehepaar/Familie/Fam./gez.): das naechste Wort ist ein Name -
+#    auch ueber Zeilen-/Mehrfach-Leerzeichengrenzen der Dokumentaufbereitung; "Dr."/"Prof.", Namenspartikel ("von") und
+#    Amts-/Rollenbezeichnungen ("Frau Rechtsanwaeltin Weber", "Herr Vorsitzender") werden uebersprungen.
+#  * ROLLENWOERTER (Zeugin, Mandant, ...): nur wenn der Parser das Wort als Teil derselben Nominalgruppe an das
+#    Rollenwort haengt ("Zeugin Licht": nk -> Zeugin; "der Mieter Maengel anzeigt": Maengel = Objekt des Verbs -> nein).
+#    Diese schwaecheren Treffer werden NICHT im Text weitergetragen (propagate_person_components).
+_STRONG_TITLES = frozenset({"herr", "herrn", "frau", "hr.", "hrn.", "fr.", "eheleute", "ehepaar", "familie", "fam.", "gez."})
+_TITLE_WORDS = frozenset({"herr", "herrn", "frau", "hr.", "hrn.", "fr."})
+_ACADEMIC_TITLES = frozenset({"dr.", "prof.", "dipl.-ing.", "dr.-ing.", "dr", "prof", "med.", "jur.", "rer.", "nat."})
+_NAME_PARTICLES = frozenset({"von", "van", "de", "zu", "vom", "zur", "ter", "ten", "den", "der"})
+_ROLE_TITLES = frozenset(
+    {
+        "zeuge", "zeugin", "rechtsanwalt", "rechtsanwältin", "mandant", "mandantin", "gutachter", "gutachterin",
+        "sachverständiger", "sachverständige", "notar", "notarin", "geschäftsführer", "geschäftsführerin",
+        "klägerin", "kläger", "beklagter", "beklagte", "richterin", "vermieterin", "vermieter", "mieterin", "mieter",
+        "antragsteller", "antragstellerin", "antragsgegner", "antragsgegnerin", "schuldner", "schuldnerin",
+        "gläubiger", "gläubigerin", "arbeitnehmer", "arbeitnehmerin", "arbeitgeber", "arbeitgeberin", "erbe", "erbin",
+        "betreuer", "betreuerin", "kollege", "kollegin",
+    }
+)
+# Amts-/Funktionsbezeichnungen: nach einer Anrede nie selbst ein Name ("Herr Vorsitzender", "Frau Kollegin"), werden
+# uebersprungen und nie weitergetragen (Red-Team-Befund: "Herr Richter" maskierte sonst "Der Richter am Amtsgericht").
+_OFFICE_TITLES = frozenset(
+    {
+        "vorsitzende", "vorsitzender", "präsident", "präsidentin", "staatsanwalt", "staatsanwältin", "verteidiger",
+        "verteidigerin", "minister", "ministerin", "doktor", "bürgermeister", "bürgermeisterin", "richter",
+        "gerichtsvollzieher", "gerichtsvollzieherin", "bundeskanzler", "bundeskanzlerin", "abgeordnete",
+        "abgeordneter", "professor", "professorin", "pfarrer", "pfarrerin", "direktor", "direktorin", "amtsrichter",
+        "amtsrichterin", "oberbürgermeister", "oberbürgermeisterin", "kanzler", "kanzlerin", "senator", "senatorin",
+    }
+)
+_NOT_A_NAME = _TITLE_WORDS | _STRONG_TITLES | _ROLE_TITLES | _OFFICE_TITLES | _ACADEMIC_TITLES
+_ARTICLE_BEFORE_COMMON_NOUN = frozenset(
+    {
+        "die", "der", "den", "dem", "des", "eine", "einer", "einen", "einem", "jede", "jeder", "diese", "dieser",
+        "seine", "seiner", "ihre", "ihrer", "deren", "dessen", "junge", "jungen", "alte", "alten", "ältere", "älteren",
+    }
+)
+_NAME_TOKEN = re.compile(r"^[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?$")
+
+
+def _ends_noun_phrase(doc, text: str, token) -> bool:
+    end = token.idx + len(token.text)
+    following = next((t for t in doc[token.i + 1 :] if not t.is_space), None)
+    if following is None or "\n" in text[end : following.idx] or "  " in text[end : following.idx]:
+        return True
+    if following.is_punct or following.lower_ in ("und", "oder", "sowie", "bzw."):
+        return True
+    return following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm")
+
+
+def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
+    """(Treffer, stark) - siehe Kommentarblock oben. Fuegt nur Treffer hinzu (fail-closed)."""
+    if not text or not text.strip():
+        return []
+    doc = _analysis_doc(text)
+    words = [t for t in doc if not t.is_space]
+    found: list[tuple[DetectedSpan, bool]] = []
+    for index, title in enumerate(words):
+        lower = title.lower_
+        # Tokenizer trennt bei manchen Abkuerzungen den Punkt ab ("gez" "." "Sommer").
+        dotted = index + 1 < len(words) and words[index + 1].text == "." and words[index + 1].idx == title.idx + len(title.text)
+        if dotted and lower + "." in _STRONG_TITLES:
+            lower = lower + "."
+        strong = lower in _STRONG_TITLES
+        role = lower in _ROLE_TITLES
+        if role and not strong:
+            # Rollenwort OHNE Artikel/Bestimmer davor ("erschien Zeugin Sommer", "Rechtsanwaeltin Sommer", Kopfzeile
+            # "Mandant Horn") ist titelartig wie "Herr"/"Frau" - Objekte folgen nur auf Rollenwoerter MIT eigenem Artikel
+            # ("der Mieter Maengel anzeigt"); dort gelten unten die strengeren Bedingungen.
+            before = words[index - 1] if index else None
+            if before is None or before.pos_ not in ("DET", "PRON", "ADJ", "NUM") and before.lower_ not in _ARTICLE_BEFORE_COMMON_NOUN:
+                strong = True
+        if not (strong or role) or not (title.text[:1].isupper() or lower == "gez."):
+            continue
+        previous = words[index - 1] if index else None
+        if lower in ("frau", "herr", "familie") and previous is not None and previous.lower_ in _ARTICLE_BEFORE_COMMON_NOUN:
+            continue  # "die Frau des Mieters", "der Herr des Verfahrens", "die Familie des Klaegers"
+        # Zwischen Titel und Name nur Leerraum (auch Umbruch/Mehrfach-Leerzeichen) - kein Satzzeichen, kein Zellwechsel.
+        candidate = None
+        previous_skipped = ""
+        for following in words[index + 1 + int(dotted) : index + 7]:
+            gap = text[doc[following.i - 1].idx + len(doc[following.i - 1].text) : following.idx] if following.i else ""
+            if gap.strip():
+                break
+            if lower in _ROLE_TITLES and gap != " ":
+                break  # artikelloses Rollenwort nur in derselben Zeile ("Mieter  Wohnung" ist ein Tabellenkopf)
+            low = following.lower_
+            # "der"/"den" nur als Teil von "van der"/"von der" - sonst Artikel ("ist Mieterin der Wohnung").
+            particle = low in _NAME_PARTICLES and (low not in ("der", "den") or previous_skipped in ("van", "von", "vom"))
+            if low in _ACADEMIC_TITLES or particle or low in _OFFICE_TITLES or low in _ROLE_TITLES or low in _TITLE_WORDS:
+                previous_skipped = low
+                continue
+            candidate = following
+            break
+        if candidate is None or not _NAME_TOKEN.match(candidate.text):
+            continue
+        if candidate.lower_ in _NOT_A_NAME or candidate.lower_ in _NEVER_ENTITY_WORDS or is_derivational_compound(candidate.text):
+            continue
+        if not strong:
+            # Rollenwort: nur Bestandteil derselben Nominalgruppe ("Zeugin Licht"), nie Objekt/Ergaenzung eines Verbs.
+            attached = candidate.head.i == title.i or title.head.i == candidate.i
+            # Parse-Variante "Die Zeugin Licht hat ...": Name als Subjekt, Rollenwort unverbunden (kein Subjekt). Beim
+            # Objekt ("der Mieter Maengel anzeigt") ist dagegen das ROLLENWORT Subjekt.
+            dangling_role = candidate.dep_ == "sb" and title.dep_ != "sb" and candidate.i == title.i + 1
+            if not (attached or dangling_role) or candidate.dep_ not in ("nk", "pnc", "app", "sb", "ROOT"):
+                continue
+            # Der Parser haengt in verbfinalen Saetzen auch Objekte an das Rollenwort ("hat der Sachverstaendige
+            # Feuchtigkeit festgestellt", Red-Team-Schriftsatz). Ein Name schliesst die Nominalgruppe ab: danach folgt ein
+            # finites Verb, ein Satzzeichen, eine Konjunktion oder eine Zeilengrenze - kein Adverb/infinites Verb.
+            if not _ends_noun_phrase(doc, text, candidate):
+                continue
+        span = DetectedSpan(category="person", start=candidate.idx, end=candidate.idx + len(candidate.text), value=text[candidate.idx : candidate.idx + len(candidate.text)])
+        found.append((span, strong))
+    return found
+
+
+# --- Kanzlei-/Briefkonventionen (Folgezyklus 13.10.2026, scripts/bench_letter_conventions.py) --------------------------
+# Personenbezogene Feldbezeichnungen ("Ansprechpartner: Sommer") und die invertierte Namenszeile ("Sommer, Klaus") gingen
+# bei Gattungswort-Nachnamen im Klartext in den Payload. Eine Rubrum-Regel ("Sommer ./. Baugesellschaft") wurde gemessen
+# und VERWORFEN: der Punkt in "./." zaehlt im Imperativ-Filter als Satzende, der Restrisiko-Scan fand den Treffer auf dem
+# pseudonymisierten Text dennoch -> inkonsistente Fail-Closed-Blockade.
+_PERSON_FIELD_LABELS = frozenset(
+    {
+        "ansprechpartner", "ansprechpartnerin", "unterschrift", "sachbearbeiter", "sachbearbeiterin", "bearbeiter",
+        "bearbeiterin", "unterzeichner", "unterzeichnerin", "zeuge", "zeugin", "mandant", "mandantin",
+    }
+)
+_FIELD_VALUE = re.compile(r"(?<![\wÄÖÜäöüß])(?P<label>[A-ZÄÖÜ][a-zäöüß]+):[ \t]+(?P<name>[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?)(?=[ \t]*(?:$|\n|[ \t]{2}|,))", re.MULTILINE)
+_INVERTED_NAME = re.compile(
+    r"(?:^|\n|[ \t]{2}|\] )(?P<last>[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?), (?P<first>[A-ZÄÖÜ][a-zäöüß]+)(?=$|\n|[ \t]{2})",
+    re.MULTILINE,
+)
+
+
+def detect_document_convention_names(text: str) -> list[DetectedSpan]:
+    """Feldwert nach personenbezogener Feldbezeichnung (Wert schliesst das Feld ab). Fuegt nur Treffer hinzu (fail-closed)."""
+    if not text or not text.strip():
+        return []
+    analysis = _neutralize_internal_tokens(text)
+    spans: list[DetectedSpan] = []
+
+    def add(start: int, value: str) -> None:
+        if value.lower() in _NOT_A_NAME or value.lower() in _NEVER_ENTITY_WORDS or is_derivational_compound(value):
+            return
+        spans.append(DetectedSpan(category="person", start=start, end=start + len(value), value=text[start : start + len(value)]))
+
+    for match in _FIELD_VALUE.finditer(analysis):
+        if match.group("label").lower() in _PERSON_FIELD_LABELS:
+            add(match.start("name"), match.group("name"))
+    return spans
+
+
+def inverted_name_lines(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """"Sommer, Klaus" als eigene Zeile/Zelle: ist der Vorname bereits als Person erkannt, ist das Wort davor der Nachname."""
+    analysis = _neutralize_internal_tokens(text)
+    result = list(spans)
+    persons = [span for span in spans if span.category == "person"]
+    for match in _INVERTED_NAME.finditer(analysis):
+        first_start, first_end = match.start("first"), match.end("first")
+        if not any(span.start <= first_start and first_end <= span.end for span in persons):
+            continue
+        start, value = match.start("last"), match.group("last")
+        if value.lower() in _NOT_A_NAME or any(start < other.end and other.start < start + len(value) for other in result):
+            continue
+        result.append(DetectedSpan(category="person", start=start, end=start + len(value), value=text[start : start + len(value)]))
+    return result
+
+
+def detect_titled_names(text: str) -> list[DetectedSpan]:
+    """Nachname nach einer Anrede oder (syntaktisch verbunden) nach einem Rollenwort - siehe Kommentarblock oben."""
+    return [span for span, _strong in _titled_name_spans(text)]
+
+
+_COMPONENT_SKIP = _NOT_A_NAME | _NAME_PARTICLES
+
+
+def _name_components(value: str) -> set[str]:
+    parts: set[str] = set()
+    for whole in re.findall(r"[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+(?:-[A-ZÄÖÜ][A-Za-zÄÖÜäöüß]+)*", value):
+        for part in {whole, *whole.split("-")}:
+            lower = part.lower()
+            if len(part) < 3 or lower in _COMPONENT_SKIP or lower in _NEVER_ENTITY_WORDS or part in _PROTOCOL_LABELS:
+                continue
+            parts.add(part)
+    return parts
+
+
+def propagate_person_components(
+    text: str, spans: list[DetectedSpan], *, exclude: set[tuple[int, int]] | None = None
+) -> list[DetectedSpan]:
+    """Folgeerwaehnungen: jeder Namensbestandteil eines erkannten Personentreffers (ohne Anrede/Titel/Amts-/Rollenwort)
+    wird an allen weiteren Stellen desselben Texts ebenfalls als Person markiert - auch als Bindestrich-Bestandteil, im
+    Genitiv ("Sommers") und in Versalien ("SOMMER"). ECHTER FUND: "Herr Dr. Graf ... Graf hat uebergeben" - ersetzt wurde
+    nur "Herr Dr. Graf", der blosse Nachname blieb im Klartext. `exclude`: Treffer aus schwaecheren Signalen (Rollenwort),
+    die nicht weitergetragen werden. Nur ganze Woerter, nur dort, wo noch kein Treffer liegt (fail-closed)."""
+    components: set[str] = set()
+    for span in spans:
+        if span.category == "person" and (exclude is None or (span.start, span.end) not in exclude):
+            components |= _name_components(span.value)
+    if not components:
+        return spans
+    variants: set[str] = set()
+    for part in components:
+        variants |= {part, part + "s", part.upper()}
+    result = list(spans)
+    for part in sorted(variants, key=len, reverse=True):
+        pattern = re.compile(r"(?<![\wÄÖÜäöüß])" + re.escape(part) + r"(?![\wÄÖÜäöüß])")
+        for match in pattern.finditer(text):
+            if any(match.start() < other.end and other.start < match.end() for other in result):
+                continue
+            result.append(DetectedSpan(category="person", start=match.start(), end=match.end(), value=match.group()))
+    return result
+
+
+# --- Feminin-Singular-Kontext + maskuline Personenbezeichnung (13.10.2026, scripts/bench_name_followups.py Gruppe B) --
+# "Nach Ruecksprache hat die Fischer ...", "mit der Kaufmann": eine maskuline Personenbezeichnung ("Fischer", "Kaufmann")
+# kann im femininen Singular nicht als Gattungswort stehen - das hiesse "die Fischerin"/"die Kauffrau". Steht sie dort,
+# ist es ein (weiblich gelesener) Nachname. Der Parser liefert Genus/Numerus des Nomens nicht verlaesslich (gemessen:
+# "hat die Fischer" als Plural); deshalb rein grammatisch: (a) "die X" als Subjekt eines finiten Verbs im SINGULAR, oder
+# (b) Dativ-Praeposition + "der X" (der Plural-Dativ hiesse "den Xn"). Maskuline Personenbezeichnung: Endung "-mann" oder
+# die movierte Form "X-in" ist dem Modell bekannt (Umlaut-Movierung nur bei Formen ohne "-er": "Koch"->"Koechin",
+# "Graf"->"Graefin"; sonst "Kammer"->"Kaemmerin" - Fehlalarm auf "die Kammer").
+_DATIVE_PREPOSITIONS = frozenset(
+    {"mit", "von", "bei", "zu", "nach", "aus", "seit", "gegenüber", "gemäß", "laut", "neben", "hinter", "vor", "an", "auf", "in", "über", "unter", "zwischen"}
+)
+_UMLAUT = {"a": "ä", "o": "ö", "u": "ü"}
+
+
+@lru_cache(maxsize=20000)
+def _is_masculine_person_noun(word: str) -> bool:
+    if len(word) > 4 and word.endswith("mann"):
+        return True
+    vocab = _get_analyzer_engine().nlp_engine.nlp["de"].vocab
+    if vocab.has_vector(word + "in"):
+        return True
+    if word.endswith("er"):
+        return False
+    for i in range(len(word) - 1, -1, -1):
+        if word[i] in _UMLAUT:
+            return bool(vocab.has_vector(word[:i] + _UMLAUT[word[i]] + word[i + 1 :] + "in"))
+    return False
+
+
+def detect_feminine_context_names(text: str) -> list[DetectedSpan]:
+    """Siehe Kommentarblock oben. Fuegt nur Treffer hinzu (fail-closed)."""
+    if not text or not text.strip():
+        return []
+    doc = _analysis_doc(text)
+    spans: list[DetectedSpan] = []
+    for token in doc:
+        word = token.text
+        if len(word) < 3 or not word.isalpha() or not word[0].isupper() or word.isupper():
+            continue
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
+            continue
+        words_before = [t for t in doc[: token.i] if not t.is_space]
+        if not words_before:
+            continue
+        article = words_before[-1]
+        feminine_singular = False
+        if article.lower_ == "die" and token.dep_ == "sb":
+            head = token.head
+            feminine_singular = (
+                head.pos_ in ("VERB", "AUX") and "Fin" in head.morph.get("VerbForm") and "Sing" in head.morph.get("Number")
+            )
+        elif article.lower_ == "der" and len(words_before) >= 2 and words_before[-2].lower_ in _DATIVE_PREPOSITIONS:
+            feminine_singular = True
+        # Zusaetzlich mindestens EIN Namensrahmen der Modell-Probe: juristische Rollenwoerter ("Mieter", "Klaeger",
+        # "Auftraggeber") haben Probe 0 und stehen in fehlerhaften/OCR-Saetzen ("Die Mieter hat ...") sonst unter
+        # Verdacht (gemessen: Fehlalarme 1 -> 13 von 132 ohne diese Bedingung, 2 von 132 mit ihr).
+        if feminine_singular and _is_masculine_person_noun(word) and _name_probe_score(word) >= 1:
             spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
     return spans
 
@@ -820,9 +1110,25 @@ def drop_sentence_initial_imperatives(text: str, spans: list[DetectedSpan]) -> l
         finite_subjects = get_finite_subject_tokens(text)
     except Exception:
         finite_subjects = set()
+    # Namensformen einer an ANDERER Stelle erkannten Person (inkl. Genitiv/Versalien, siehe propagate_person_components)
+    # sind kein Imperativ ("Herr von Sonntag ... Sonntags Schreiben ging ein": Satzanfang, Tag NOUN).
+    other_names: dict[str, set[int]] = {}
+    for span in spans:
+        if span.category == "person":
+            for part in _name_components(span.value):
+                for variant in (part, part + "s", part.upper()):
+                    other_names.setdefault(variant, set()).add(span.start)
+    # Name nach einer Anrede mit Abkuerzungspunkt ("Hr. Gast", "gez. Sommer"): der Punkt ist kein Satzende.
+    try:
+        after_title = {(span.start, span.end) for span, strong in _titled_name_spans(text) if strong}
+    except Exception:  # noqa: BLE001 - nur ein zusaetzlicher Behalte-Grund; ohne ihn gilt die bisherige Regel
+        after_title = set()
     kept: list[DetectedSpan] = []
     for span in spans:
         if span.category != "person" or len(span.value.split()) != 1:
+            kept.append(span)
+            continue
+        if (span.start, span.end) in after_title or other_names.get(span.value, set()) - {span.start}:
             kept.append(span)
             continue
         if not _SENTENCE_START_PREFIX.search(analysis_text[: span.start]):

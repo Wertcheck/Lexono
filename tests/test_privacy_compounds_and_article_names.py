@@ -98,12 +98,19 @@ def test_article_detector_does_not_flag_known_nouns(sentence) -> None:
         assert found == []
 
 
-# Bekannte Grenze (dokumentiert, NOT VERIFIED geloest): Nachnamen, die zugleich gelaeufige Gattungswoerter sind
-# ("Bergmann", "Zimmermann") oder die das Modell nur schwach als Name liest ("Grotelueschen"), bleiben nach einem Artikel
-# ungeschuetzt - ohne Kontext nicht vom Gattungswort zu unterscheiden.
-@pytest.mark.xfail(reason="Nachname = Gattungswort nach Artikel (Bergmann/Zimmermann) nicht unterscheidbar", strict=False)
-def test_known_limit_common_noun_surname_after_article(gateway) -> None:
+def test_common_noun_surname_in_feminine_singular_is_protected(gateway) -> None:
+    """Folgezyklus 13.10.2026 (presidio_ner.detect_feminine_context_names): "die Bergmann" im femininen Singular kann kein
+    Gattungswort sein ("die Bergfrau" gibt es nicht) - bisher als bekannte Grenze markiert, jetzt geschuetzt."""
     result = _payload(gateway, "Die Bergmann ist bislang nicht erschienen.")
+    assert "Bergmann" not in result.payload.anonymisierter_sachverhalt
+
+
+# Bekannte Grenze (dokumentiert, NOT VERIFIED geloest): im MASKULINEN Kontext ("der Bergmann") sind Nachnamen, die
+# zugleich Berufsbezeichnungen sind, ohne Einfuehrung nicht vom Gattungswort zu unterscheiden; ebenso schwach erkannte
+# unbekannte Namen ("Grotelueschen").
+@pytest.mark.xfail(reason="maskuliner Artikel + Nachname = Gattungswort (Bergmann/Zimmermann) nicht unterscheidbar", strict=False)
+def test_known_limit_common_noun_surname_after_article(gateway) -> None:
+    result = _payload(gateway, "Der Bergmann ist bislang nicht erschienen.")
     assert "Bergmann" not in result.payload.anonymisierter_sachverhalt
 
 
