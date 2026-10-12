@@ -83,7 +83,7 @@ def test_health_check_uses_fixed_short_timeout_not_the_inference_timeout(
     Generierungsaufruf warten - fest auf 5s statt `timeout_seconds`."""
     captured = {}
 
-    def _fake_get(url, *, timeout):
+    def _fake_get(url, *, timeout, trust_env):
         captured["timeout"] = timeout
         return _FakeResponse(json_data={"models": []})
 
@@ -164,7 +164,7 @@ def test_process_sends_deterministic_temperature_and_schema_constraint(
 
     captured = {}
 
-    def _fake_post(url, *, json, timeout):
+    def _fake_post(url, *, json, timeout, trust_env):
         captured["json"] = json
         return _FakeResponse(
             json_data={"response": json_module.dumps({"zusammenfassung": "Ok."})}
@@ -363,7 +363,7 @@ def test_generate_structured_sends_schema_and_no_think_prefix(
 ) -> None:
     captured = {}
 
-    def _fake_post(url, *, json, timeout):
+    def _fake_post(url, *, json, timeout, trust_env):
         captured["json"] = json
         return _FakeResponse(json_data={"response": '{"passed": true, "issues": []}'})
 
@@ -391,7 +391,7 @@ def test_generate_structured_sends_extended_keep_alive(monkeypatch: pytest.Monke
     die volle Herleitung + reale `/api/ps`-Verifikation)."""
     captured = {}
 
-    def _fake_post(url, *, json, timeout):
+    def _fake_post(url, *, json, timeout, trust_env):
         captured["json"] = json
         return _FakeResponse(json_data={"response": '{"passed": true, "issues": []}'})
 
@@ -499,7 +499,7 @@ def test_pull_model_success_does_not_raise(monkeypatch: pytest.MonkeyPatch) -> N
 def test_pull_model_uses_explicit_model_override(monkeypatch: pytest.MonkeyPatch) -> None:
     captured = {}
 
-    def _fake_post(url, *, json, timeout):
+    def _fake_post(url, *, json, timeout, trust_env):
         captured["json"] = json
         return _FakeResponse(json_data={"status": "success"})
 
@@ -547,7 +547,7 @@ def test_pull_model_uses_independent_download_timeout_not_inference_timeout(
     weiterhin ohne Read-Timeout aufgerufen werden."""
     captured = {}
 
-    def _fake_post(url, *, json, timeout):
+    def _fake_post(url, *, json, timeout, trust_env):
         captured["timeout"] = timeout
         return _FakeResponse(json_data={"status": "success"})
 

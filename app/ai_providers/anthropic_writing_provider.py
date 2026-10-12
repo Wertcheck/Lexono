@@ -25,6 +25,7 @@ from app.ai_providers.claude_writing_provider import (
     build_writing_prompt_cache_blocks,
     select_system_prompt,
 )
+from app.ai_providers.endpoint_policy import OFFICIAL_ANTHROPIC_BASE_URL
 from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
 
 
@@ -37,12 +38,15 @@ class AnthropicClaudeWritingProvider:
         max_tokens: int = 2000,
         web_search_enabled: bool = False,
         web_search_max_uses: int = 3,
+        base_url: str = OFFICIAL_ANTHROPIC_BASE_URL,
     ) -> None:
         if not api_key or not api_key.strip():
             raise ValueError(
                 "api_key darf nicht leer sein - ANTHROPIC_API_KEY in .env setzen"
             )
-        self._client = anthropic.Anthropic(api_key=api_key)
+        # Ziel ausdruecklich festgelegt (app/ai_providers/endpoint_policy.py) - das SDK uebernaehme sonst still die
+        # Umgebungsvariable ANTHROPIC_BASE_URL. Der Aufrufer (factory) loest sie nach der dortigen Regel auf.
+        self._client = anthropic.Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
         self.max_tokens = max_tokens
         # Echte Webrecherche (06.10., §0.6-§0.10) - NUR fuer den direkten

@@ -339,19 +339,86 @@ def find_review_candidates(
         )
         if max_candidates is not None and len(found) >= max_candidates:
             break
+    for match in _PLATE_SHAPE.finditer(neutral):
+        term = match.group()
+        # Bewusst NICHT durch max_candidates begrenzt: sonst ginge ein Kennzeichen hinter vielen Namenskandidaten
+        # ungefragt im Klartext hinaus (die Form ist selten - gemessen 8 Treffer in 916 Texten, alle echte Kennzeichen).
+        if term in found or term in decisions.not_personal or term in decisions.personal:
+            continue
+        if match.group("district") in _PLATE_SHAPE_NOT_A_DISTRICT or _is_citation_not_plate(neutral, match):
+            continue
+        if match.group("sep") == " " and not _plausible_spaced_plate(neutral, match):
+            continue
+        before, after = _context(context_source, term)
+        found[term] = ReviewCandidate(
+            term=term, context_before=before, context_after=after, roles=("kennzeichenform",), probe_score=0
+        )
     return list(found.values())
+
+
+# Kennzeichenfoermige Zeichenfolge OHNE unmittelbar vorangestellte Bezeichnung (Sicherheitspruefung 13.10.2026, gemessen:
+# "Kennzeichen des Gegners: D-XY 123" ging im Klartext hinaus). Bezeichnete Kennzeichen maskiert bereits presidio_ner;
+# hier bleibt nur die mehrdeutige Form - sie ist UNSICHER, nicht sicher personenbezogen: Rueckfrage im Modus "ask",
+# vorsichtshalber Maskierung im Modus "mask" (kein stiller Klartext-Versand, keine globale Maskierungsregel).
+# Gemessen auf 916 vorhandenen synthetischen Texten: 6 Treffer, alle echte Kennzeichen. Gross-/Kleinschreibung zaehlt.
+# Review: auch die Schreibweise des Schildes selbst ("D XY 123"), Gedankenstrich aus der Autokorrektur ("D–XY 123") und
+# ein Zeilenumbruch vor den Ziffern (PDF) gingen im Klartext hinaus.
+_PLATE_SHAPE = re.compile(
+    r"(?<![\w\-–])(?P<district>[A-ZÄÖÜ]{1,3})(?P<sep>[-– ])(?P<letters>[A-Z]{1,2})(?:[ \t]?|[ \t]*\n[ \t]*)"
+    r"(?P<digits>\d{1,4})[EH]?(?![\w\-–])"
+)
+# Die reine Leerzeichenform ist deutlich mehrdeutiger (gemessen im Fehlalarm-Satz: "VW T 5", "KIA EV 6", "DER B 51",
+# "Ihr Zeichen: SB KL 123" - 12 Fehlalarme). Sie zaehlt nur mit mindestens zwei Ziffern, Fahrzeugbezug in der Naehe,
+# ohne Zeichen-/Aktenzeichen-Bezeichnung davor und ohne Funktionswort/Marke als erste Gruppe.
+_PLATE_SPACE_CONTEXT = re.compile(
+    r"kennz|kfz|fahrzeug|pkw|lkw|auto\b|wagen|krad|motorrad|transporter|halter|zugelassen|zulassung|amtl|"
+    r"\bfuhr|gefahren|parkte|geparkt|abgestellt",
+    re.IGNORECASE,
+)
+_PLATE_SPACE_REFERENCE_PREFIX = re.compile(r"\b(?:zeichen|az|aktenzeichen|nr)\.?\s*:?\s*$", re.IGNORECASE)
+_PLATE_SPACE_NOT_A_DISTRICT = frozenset(
+    # Nur Woerter, die KEIN Unterscheidungszeichen sind (AM, AN, KM, RA, SB, DEM sind Kreise - Review 13.10.2026).
+    {"DER", "DIE", "DAS", "DEN", "DES", "BEI", "AUF", "IM", "VON", "ZUR", "ZUM", "UND", "MIT", "ZUG", "VW", "BMW",
+     "KIA", "NR", "TYP"}
+)
+
+
+def _plausible_spaced_plate(text: str, match: re.Match) -> bool:
+    if len(match.group("digits")) < 2 or match.group("district") in _PLATE_SPACE_NOT_A_DISTRICT:
+        return False
+    if _PLATE_SPACE_REFERENCE_PREFIX.search(text[max(0, match.start() - 20) : match.start()]):
+        return False
+    return bool(_PLATE_SPACE_CONTEXT.search(text[max(0, match.start() - 80) : match.end() + 40]))
+# Gesetzes-/Normenkuerzel ("SGB V 12", "VOB B 13") und roemische Gliederungs-/Senatsnummern ("II A 3", "IX ZR 123/20")
+# sind keine Unterscheidungszeichen. Review: KEIN echtes Unterscheidungszeichen in dieser Liste (EN, GG, EU, UN, V, DIN
+# ... sind Kreise - deren Kennzeichen gingen sonst wieder im Klartext hinaus). "V" fehlt deshalb bei den roemischen Zahlen.
+_ROMAN_NUMERALS = ("I II III IV VI VII VIII IX X XI XII XIII XIV XV XVI XVII XVIII XIX XX").split()
+_PLATE_SHAPE_NOT_A_DISTRICT = frozenset({"ISO", "VDE", "VOB", "SGB", "BGB", "ZPO", "HGB", "IEC", *_ROMAN_NUMERALS})
+
+
+def _is_citation_not_plate(text: str, match: re.Match) -> bool:
+    """Norm "DIN EN 1504" und Zeitschriften-Report "NJW-RR 2020, 1234" (Jahr + Komma) - eng gefasst, weil DIN und die
+    Buchstaben RR auch in echten Kennzeichen vorkommen."""
+    if match.group("district") == "DIN" and match.group("letters") == "EN":
+        return True
+    return (
+        match.group("letters") == "RR"
+        and len(match.group("digits")) == 4
+        and re.match(r"\s*,", text[match.end() :]) is not None
+    )
 
 
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
-    nicht "Schiedsrichter"). Kategorie "person"."""
+    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung"."""
     spans: list[DetectedSpan] = []
     for term in sorted(terms, key=len, reverse=True):
         if not term or not term.strip():
             continue
+        category = "kennung" if _PLATE_SHAPE.fullmatch(term) else "person"
         pattern = re.compile(r"(?<![\wÄÖÜäöüß])" + re.escape(term) + r"(?![\wÄÖÜäöüß])")
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue
-            spans.append(DetectedSpan(category="person", start=match.start(), end=match.end(), value=match.group()))
+            spans.append(DetectedSpan(category=category, start=match.start(), end=match.end(), value=match.group()))
     return spans

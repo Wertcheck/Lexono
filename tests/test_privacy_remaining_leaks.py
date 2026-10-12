@@ -80,7 +80,9 @@ def test_non_latin_uppercase_full_names_are_protected(gateway, text, values) -> 
     "text, keep",
     [
         # ohne Bezeichnung: keine Kennnummer (Fahrzeugmodelle, Strassen, Liefer-/Vorgangsnummern, Versionen)
-        ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "KL EF 56"),
+        # BEWUSST GEAENDERT 13.10.2026 (PRIVACY_REVIEW_ARCHITECTURE.md §21.3): "KL AB 12" sind echte Kennzeichen ohne
+        # Bezeichnung - jetzt vorsichtshalber maskiert (tests/test_privacy_unlabelled_identifiers.py); der Rest bleibt lesbar.
+        ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "der Spedition"),
         ("Kfz: VW T 6 Transporter, Erstzulassung 2019.", "VW T 6"),
         ("DER PKW FUHR AUF DER B 51 UND DANN AUF DER A 1.", "DER B 51"),
         ("Lieferschein 1203456789012 vom Lieferanten.", "1203456789012"),

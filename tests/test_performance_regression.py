@@ -93,7 +93,8 @@ class _RecordingFakeOllamaTransport:
     def __init__(self) -> None:
         self.requests: list[dict] = []
 
-    def __call__(self, url: str, *, json: dict, timeout: float):
+    def __call__(self, url: str, *, json: dict, timeout: float, trust_env: bool):
+        assert trust_env is False  # Proxy-Einstellungen duerfen lokalen KI-Text nicht umleiten (§21)
         self.requests.append(json)
         # Realistische Ollama-Antwort: ein JSON-Objekt im "response"-Feld,
         # passend zum jeweils uebergebenen Schema.

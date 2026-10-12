@@ -488,6 +488,16 @@ def update_local_ai_settings(
         return _redirect(error="Modell-Tag darf nicht leer sein", tab="erweitert")
     if not base_url:
         return _redirect(error="Ollama-Basis-URL darf nicht leer sein", tab="erweitert")
+    from app.ai_providers.endpoint_policy import is_loopback_url
+
+    if not is_loopback_url(base_url) and not get_settings().local_ai_allow_remote_endpoint:
+        # Sicherheitspruefung 13.10.2026: ein anderer Rechner nur mit ausdruecklicher Freigabe durch die Administration
+        # (LOCAL_AI_ALLOW_REMOTE_ENDPOINT=true in der .env) - nicht nebenbei ueber dieses Formular.
+        return _redirect(
+            error="Die lokale KI darf nur auf diesem Rechner laufen (localhost/127.0.0.1). Ein anderer Rechner erfordert "
+            "die ausdrückliche Freigabe LOCAL_AI_ALLOW_REMOTE_ENDPOINT=true in der Konfiguration.",
+            tab="erweitert",
+        )
 
     _apply({"OLLAMA_MODEL": model, "OLLAMA_BASE_URL": base_url})
     return _redirect(success="Lokale-KI-Einstellungen gespeichert", tab="erweitert")

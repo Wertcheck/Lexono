@@ -84,7 +84,9 @@ def test_german_identifiers_are_pseudonymized(gateway, text, value) -> None:
     "text, keep",
     [
         # Unabhaengiges Review: mit allen deutschen Recognizern neue Blockaden bzw. Fehlalarme
-        ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "KL EF 56"),
+        # BEWUSST GEAENDERT 13.10.2026 (PRIVACY_REVIEW_ARCHITECTURE.md §21.3): echte Kennzeichen ohne Bezeichnung werden im
+        # Modus "mask" vorsichtshalber maskiert (vorher Klartext) - geprueft bleibt: nicht blockiert, Text lesbar.
+        ("Lkw-Flotte: Fahrzeuge KL AB 12, KL CD 34 und KL EF 56 der Spedition.", "der Spedition"),
         ("Regulierung Kfz-Schaden, Ihr Zeichen: SB KL 123, unser Zeichen: RA BK 26.", "RA BK 26"),
         ("Die Praxis teilte mit, dass Vorgang 260312045 erledigt ist.", "260312045"),
         ("Praxis für Physiotherapie, Patientennummer 100200300.", "100200300"),

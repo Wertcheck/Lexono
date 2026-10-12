@@ -80,31 +80,35 @@ def test_no_ai_gateway_marker_anywhere_in_application_code() -> None:
     assert not offenders, f"KI-Gateway-Referenz im Anwendungscode gefunden: {offenders}"
 
 
-def test_writing_provider_constructs_client_without_base_url_override(
+def test_writing_provider_constructs_client_with_the_official_endpoint_only(
     monkeypatch,
 ) -> None:
-    """`anthropic.Anthropic(...)` darf ausschließlich mit `api_key` (und
-    optional `timeout`) aufgerufen werden - NIE mit `base_url`, das wäre
-    der technische Mechanismus, über den ein Gateway/Proxy untergeschoben
-    werden könnte."""
+    """`anthropic.Anthropic(...)` darf nie auf einen Gateway/Proxy umgeleitet werden.
+
+    BEWUSST GEAENDERT am 13.10.2026 (Sicherheitspruefung, PRIVACY_REVIEW_ARCHITECTURE.md §21): Vorher pruefte dieser Test
+    "kein `base_url`-Argument". Das SDK uebernimmt dann aber STILL die Umgebungsvariable ANTHROPIC_BASE_URL - eine
+    Umleitung samt API-Schluessel war so ohne jede Codeaenderung moeglich. Jetzt wird das Ziel ausdruecklich auf die
+    offizielle HTTPS-Adresse festgelegt; der Zweck des Tests (keine Umleitung) bleibt, nur strenger."""
     from app.ai_providers.anthropic_writing_provider import AnthropicClaudeWritingProvider
 
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://proxy.example.invalid")
     with patch("app.ai_providers.anthropic_writing_provider.anthropic.Anthropic") as mock_cls:
         AnthropicClaudeWritingProvider(api_key="sk-ant-test", model="claude-sonnet-5")
 
     _, kwargs = mock_cls.call_args
-    assert "base_url" not in kwargs
+    assert kwargs.get("base_url") == "https://api.anthropic.com"
     assert kwargs.get("api_key") == "sk-ant-test"
 
 
-def test_review_provider_constructs_client_without_base_url_override() -> None:
+def test_review_provider_constructs_client_with_the_official_endpoint_only(monkeypatch) -> None:
     from app.review.anthropic_review_provider import AnthropicClaudeReviewProvider
 
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://proxy.example.invalid")
     with patch("app.review.anthropic_review_provider.anthropic.Anthropic") as mock_cls:
         AnthropicClaudeReviewProvider(api_key="sk-ant-test", model="claude-sonnet-5")
 
     _, kwargs = mock_cls.call_args
-    assert "base_url" not in kwargs
+    assert kwargs.get("base_url") == "https://api.anthropic.com"
 
 
 def test_write_call_never_sends_a_portkey_style_header() -> None:

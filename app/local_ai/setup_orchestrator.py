@@ -114,7 +114,9 @@ class LocalAiSetupService:
 
     @staticmethod
     def _default_provider_factory(model: str, settings: Settings) -> OllamaLocalLLMProvider:
-        return OllamaLocalLLMProvider(base_url=settings.ollama_base_url, model=model)
+        return OllamaLocalLLMProvider(
+            base_url=settings.ollama_base_url, model=model, allow_remote=settings.local_ai_allow_remote_endpoint
+        )
 
     def get_recommendation(self) -> tuple[HardwareProfile, ModelRecommendation]:
         """Schritt 1+2 der Vorgabe: Hardware erkennen, Empfehlung

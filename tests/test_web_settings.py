@@ -574,6 +574,45 @@ def test_update_local_ai_settings_persists_model_and_base_url(
     assert get_settings().ollama_model == "mistral:7b"
 
 
+def test_update_local_ai_settings_rejects_remote_endpoint_without_release(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    """Sicherheitspruefung 13.10.2026: ein anderer Rechner nur mit LOCAL_AI_ALLOW_REMOTE_ENDPOINT=true (app/ai_providers/
+    endpoint_policy.py) - nicht nebenbei ueber das Formular."""
+    env_path.write_text(env_path.read_text(encoding="utf-8") + "\nLOCAL_AI_ENABLED=true\n", encoding="utf-8")
+    get_settings.cache_clear()
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+
+    response = client.post(
+        "/dashboard/settings/local-ai",
+        data={"csrf_token": csrf, "ollama_model": "mistral:7b", "ollama_base_url": "http://192.168.1.20:11434"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "192.168.1.20" not in env_path.read_text(encoding="utf-8")
+    assert get_settings().ollama_base_url != "http://192.168.1.20:11434"
+
+
+def test_update_local_ai_settings_accepts_remote_endpoint_with_explicit_release(
+    client: TestClient, db_session: Session, env_path: Path
+) -> None:
+    env_path.write_text(
+        env_path.read_text(encoding="utf-8") + "\nLOCAL_AI_ENABLED=true\nLOCAL_AI_ALLOW_REMOTE_ENDPOINT=true\n",
+        encoding="utf-8",
+    )
+    get_settings.cache_clear()
+    _login_admin(client, db_session)
+    csrf = _csrf(client)
+
+    client.post(
+        "/dashboard/settings/local-ai",
+        data={"csrf_token": csrf, "ollama_model": "mistral:7b", "ollama_base_url": "http://192.168.1.20:11434"},
+        follow_redirects=False,
+    )
+    assert get_settings().ollama_base_url == "http://192.168.1.20:11434"
+
+
 def test_update_local_ai_settings_rejects_blank_model(
     client: TestClient, db_session: Session, env_path: Path
 ) -> None:

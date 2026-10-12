@@ -18,7 +18,6 @@ bleiben unberuehrt."""
 from __future__ import annotations
 
 import logging
-import os
 import socket
 import ssl
 from dataclasses import dataclass
@@ -27,6 +26,8 @@ from typing import Callable
 from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
+
+from app.ai_providers.endpoint_policy import CloudEndpointNotAllowedError, resolve_anthropic_base_url
 
 logger = logging.getLogger("lexono.cloud_health")
 
@@ -59,7 +60,12 @@ def probe_target(settings) -> tuple[str, int, bool] | None:
     if gateway_url:
         url = str(gateway_url)
     elif api_key is not None:
-        url = os.environ.get("ANTHROPIC_BASE_URL") or DEFAULT_API_BASE_URL
+        # Dieselbe Zielpruefung wie die Factory (§21): ein nicht zulaessiges ANTHROPIC_BASE_URL gilt dort als "nicht
+        # konfiguriert" - hier ebenso, statt den fremden Host anzusprechen und "online" zu melden.
+        try:
+            url = resolve_anthropic_base_url()
+        except CloudEndpointNotAllowedError:
+            return None
     else:
         return None
     parsed = urlparse(url)

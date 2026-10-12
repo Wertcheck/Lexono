@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from app.ai_providers.anthropic_writing_provider import AnthropicClaudeWritingProvider
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
+from app.ai_providers.endpoint_policy import CloudEndpointNotAllowedError, resolve_anthropic_base_url
 from app.ai_providers.gateway_writing_provider import GatewayRelayWritingProvider
 from app.ai_providers.local_llm_provider import LocalLLMProvider
 from app.ai_providers.ollama_provider import OllamaLocalLLMProvider
@@ -49,6 +50,15 @@ def _require_anthropic_api_key(settings: Settings) -> str:
             "in der .env-Datei hinterlegen."
         )
     return api_key
+
+
+def _require_allowed_anthropic_base_url() -> str:
+    """Offizielle HTTPS-Adresse oder ein lokaler Pruefendpunkt (ANTHROPIC_BASE_URL) - sonst kein Provider, kein Versand
+    (app/ai_providers/endpoint_policy.py)."""
+    try:
+        return resolve_anthropic_base_url()
+    except CloudEndpointNotAllowedError as exc:
+        raise ProviderNotConfiguredError(str(exc)) from exc
 
 
 def _require_gateway_credentials(settings: Settings) -> tuple[str, str]:
@@ -101,6 +111,7 @@ def build_writing_provider(settings: Settings) -> ClaudeWritingProvider:
         max_tokens=settings.claude_max_tokens,
         web_search_enabled=settings.web_search_enabled,
         web_search_max_uses=settings.web_search_max_uses,
+        base_url=_require_allowed_anthropic_base_url(),
     )
 
 
@@ -121,6 +132,7 @@ def build_review_provider(settings: Settings) -> ClaudeReviewProvider:
         api_key=api_key,
         model=settings.claude_model_name,
         max_tokens=settings.claude_max_tokens,
+        base_url=_require_allowed_anthropic_base_url(),
     )
 
 
@@ -137,4 +149,5 @@ def build_local_llm_provider(settings: Settings) -> LocalLLMProvider | None:
     return OllamaLocalLLMProvider(
         base_url=settings.ollama_base_url,
         model=settings.ollama_model,
+        allow_remote=settings.local_ai_allow_remote_endpoint,
     )

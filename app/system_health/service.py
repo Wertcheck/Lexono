@@ -134,7 +134,10 @@ class SystemHealthService:
 
         started = time.monotonic()
         try:
-            client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
+            # Ziel nach app/ai_providers/endpoint_policy.py (sonst ginge der API-Schluessel an ANTHROPIC_BASE_URL)
+            from app.ai_providers.endpoint_policy import resolve_anthropic_base_url
+
+            client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, base_url=resolve_anthropic_base_url())
             client.models.list(limit=1)
             latency_ms = round((time.monotonic() - started) * 1000, 1)
             return ApiReachabilityResult(checked=True, reachable=True, latency_ms=latency_ms)

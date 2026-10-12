@@ -246,6 +246,10 @@ class Settings(BaseSettings):
     # kuenftige weitere Runtime nicht erneut eine Schema-Aenderung braucht.
     local_ai_runtime: str = "ollama"
     ollama_base_url: str = "http://localhost:11434"
+    # Ausdrueckliche Freigabe eines Ollama-Endpunkts auf einem ANDEREN Rechner (Sicherheitspruefung 13.10.2026, siehe
+    # app/ai_providers/endpoint_policy.py): Standard nur dieser Rechner; ohne Freigabe verweigert die lokale KI jede
+    # Uebertragung mit klarer Meldung (keine stille Weiterleitung an fremde Rechner).
+    local_ai_allow_remote_endpoint: bool = False
     # Phase 3 (§71, 01.09.): Default von "qwen3:4b" auf "qwen2.5:1.5b"
     # geaendert - datenbasierter Fund auf der Referenz-CPU-only-Maschine:
     # qwen3:4b brauchte fuer eine einfache Zusammenfassung erneut >20

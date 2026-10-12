@@ -13,6 +13,8 @@ import anthropic
 
 from gateway.schemas import RelayRequest, RelayResponse
 
+_ANTHROPIC_API_BASE_URL = "https://api.anthropic.com"
+
 
 class RelayError(Exception):
     """Anthropic-seitiger Fehler (z. B. Rate-Limit bei Anthropic selbst,
@@ -28,7 +30,9 @@ def call_anthropic(
     Punkt 1: zentrale Modellsteuerung, siehe gateway/main.py::relay_messages).
     `request.model` wird dort weiterhin gegen die Allowlist geprueft, aber
     hier nicht mehr verwendet."""
-    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds)
+    # Ziel ausdruecklich festgelegt (13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §21): ohne base_url uebernaehme das SDK
+    # still die Umgebungsvariable ANTHROPIC_BASE_URL - samt echtem Schluessel an einen beliebigen Host.
+    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, base_url=_ANTHROPIC_API_BASE_URL)
     try:
         response = client.messages.create(
             model=model,

@@ -18,18 +18,23 @@ import json
 
 import anthropic
 
+from app.ai_providers.endpoint_policy import OFFICIAL_ANTHROPIC_BASE_URL
 from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
 from app.review.provider import REVIEW_SYSTEM_PROMPT, build_review_prompt_cache_blocks
 from app.review.schema import ReviewResult
 
 
 class AnthropicClaudeReviewProvider:
-    def __init__(self, *, api_key: str, model: str, max_tokens: int = 2000) -> None:
+    def __init__(
+        self, *, api_key: str, model: str, max_tokens: int = 2000, base_url: str = OFFICIAL_ANTHROPIC_BASE_URL
+    ) -> None:
         if not api_key or not api_key.strip():
             raise ValueError(
                 "api_key darf nicht leer sein - ANTHROPIC_API_KEY in .env setzen"
             )
-        self._client = anthropic.Anthropic(api_key=api_key)
+        # Ziel ausdruecklich festgelegt (app/ai_providers/endpoint_policy.py) - das SDK uebernaehme sonst still die
+        # Umgebungsvariable ANTHROPIC_BASE_URL. Der Aufrufer (factory) loest sie nach der dortigen Regel auf.
+        self._client = anthropic.Anthropic(api_key=api_key, base_url=base_url)
         self.model = model
         self.max_tokens = max_tokens
 

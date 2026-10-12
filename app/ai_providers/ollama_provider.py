@@ -27,6 +27,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 
+from app.ai_providers.endpoint_policy import is_loopback_url
 from app.ai_providers.local_llm_provider import (
     LocalAIHealthStatus,
     LocalLLMResult,
@@ -158,6 +159,11 @@ _LOCAL_LLM_SUMMARY_SCHEMA = {
 # Ollamas 5-Minuten-Standard geladen, ohne es dauerhaft zu binden.
 _OLLAMA_KEEP_ALIVE = "30m"
 
+# Sicherheitspruefung 13.10.2026 (PRIVACY_REVIEW_ARCHITECTURE.md §21): httpx uebernimmt sonst HTTP_PROXY/ALL_PROXY und
+# unter Windows die System-Proxy-Einstellung - auch fuer 127.0.0.1. Der Text fuer die lokale KI ginge dann trotz
+# Loopback-Pruefung unverschluesselt an den Proxy-Rechner. Die lokale KI wird deshalb immer direkt angesprochen.
+_TRUST_ENV = False
+
 
 def _build_local_llm_prompt(payload: ClaudeRequestPayload) -> str:
     sachverhalt = payload.anonymisierter_sachverhalt
@@ -205,7 +211,9 @@ class OllamaLocalLLMProvider:
     # endloses Haengen, verstaendlicher Fehler statt dessen). Wer ein noch
     # groesseres/langsameres Modell konfiguriert, kann `timeout_seconds`
     # weiterhin explizit ueberschreiben.
-    def __init__(self, *, base_url: str, model: str, timeout_seconds: float = 240.0) -> None:
+    def __init__(
+        self, *, base_url: str, model: str, timeout_seconds: float = 240.0, allow_remote: bool = False
+    ) -> None:
         if not base_url or not base_url.strip():
             raise ValueError("base_url darf nicht leer sein - OLLAMA_BASE_URL in .env setzen")
         if not model or not model.strip():
@@ -213,6 +221,19 @@ class OllamaLocalLLMProvider:
         self.base_url = _prefer_ipv4_loopback(base_url.rstrip("/"))
         self.model = model
         self.timeout_seconds = timeout_seconds
+        # Endpunkt-Regel (app/ai_providers/endpoint_policy.py): ein anderer Rechner nur mit ausdruecklicher Freigabe
+        # (LOCAL_AI_ALLOW_REMOTE_ENDPOINT). Ohne Freigabe verweigert JEDE Netzwerkmethode den Aufruf mit klarer Meldung -
+        # die Chat-Verarbeitung blockiert dann sichtbar (§65, kein stiller Fallback), statt Text an einen fremden
+        # Rechner zu senden.
+        self.remote_blocked = not allow_remote and not is_loopback_url(self.base_url)
+
+    def _ensure_endpoint_allowed(self) -> None:
+        if self.remote_blocked:
+            host = urlsplit(self.base_url).hostname or self.base_url
+            raise LocalLLMUnavailableError(
+                f"Lokale KI: '{host}' ist nicht dieser Rechner und nicht ausdruecklich freigegeben "
+                "(LOCAL_AI_ALLOW_REMOTE_ENDPOINT) - keine Uebertragung."
+            )
 
     def check_health(self) -> LocalAIHealthStatus:
         """Rein lesender Check (`GET /api/tags`) - loest KEINE Inferenz
@@ -227,7 +248,11 @@ class OllamaLocalLLMProvider:
         /api/tags`), keine Inferenz, und soll deshalb niemals so lange wie
         ein tatsaechlicher Generierungsaufruf brauchen duerfen."""
         try:
-            response = httpx.get(f"{self.base_url}/api/tags", timeout=5.0)
+            self._ensure_endpoint_allowed()
+        except LocalLLMUnavailableError as exc:
+            return LocalAIHealthStatus(reachable=False, model_available=False, error=str(exc))
+        try:
+            response = httpx.get(f"{self.base_url}/api/tags", timeout=5.0, trust_env=_TRUST_ENV)
             response.raise_for_status()
             data = response.json()
         except Exception as exc:  # noqa: BLE001 - jeder Fehler bedeutet "nicht erreichbar"
@@ -312,6 +337,7 @@ class OllamaLocalLLMProvider:
         Anwendung laenger nicht genutzt wird). Real gegen die echte
         Ollama-API verifiziert (`/api/ps`, `expires_at` verlaengert sich
         entsprechend)."""
+        self._ensure_endpoint_allowed()
         try:
             response = httpx.post(
                 f"{self.base_url}/api/generate",
@@ -328,6 +354,7 @@ class OllamaLocalLLMProvider:
                     "keep_alive": _OLLAMA_KEEP_ALIVE,
                 },
                 timeout=self.timeout_seconds,
+                trust_env=_TRUST_ENV,
             )
             response.raise_for_status()
         except httpx.TimeoutException as exc:
@@ -376,6 +403,8 @@ class OllamaLocalLLMProvider:
         verarbeiteten Textes: erzeugt hoechstens EIN Token, keine Antwort wird ausgewertet, jeder
         Fehler wird bewusst verschluckt (die spaetere echte Anfrage laeuft unabhaengig und
         unveraendert, inkl. Fail-Closed)."""
+        if self.remote_blocked:
+            return
         try:
             httpx.post(
                 f"{self.base_url}/api/generate",
@@ -387,6 +416,7 @@ class OllamaLocalLLMProvider:
                     "keep_alive": _OLLAMA_KEEP_ALIVE,
                 },
                 timeout=self.timeout_seconds,
+                trust_env=_TRUST_ENV,
             )
         except Exception:  # noqa: BLE001 - reine Optimierung, nie ein Fehlerfall
             pass
@@ -394,6 +424,8 @@ class OllamaLocalLLMProvider:
     def warm_up(self) -> None:
         """Laedt das Modell in den Arbeitsspeicher (ohne Prompt/Inferenz), damit die erste echte
         Anfrage nicht die Ladezeit (~3-5 s, nach Neustart laenger) traegt. Best effort."""
+        if self.remote_blocked:
+            return
         try:
             httpx.post(
                 f"{self.base_url}/api/generate",
@@ -403,6 +435,7 @@ class OllamaLocalLLMProvider:
                     "keep_alive": _OLLAMA_KEEP_ALIVE,
                 },
                 timeout=self.timeout_seconds,
+                trust_env=_TRUST_ENV,
             )
         except Exception:  # noqa: BLE001
             pass
@@ -412,8 +445,9 @@ class OllamaLocalLLMProvider:
         nutzbarer Rueckgabewert (§68: `ModelInstaller` prueft damit, ob ein
         Modell bereits vorhanden ist, ohne eine zweite HTTP-Implementierung
         gegen `/api/tags` zu bauen)."""
+        self._ensure_endpoint_allowed()
         try:
-            response = httpx.get(f"{self.base_url}/api/tags", timeout=self.timeout_seconds)
+            response = httpx.get(f"{self.base_url}/api/tags", timeout=self.timeout_seconds, trust_env=_TRUST_ENV)
             response.raise_for_status()
             data = response.json()
         except Exception as exc:  # noqa: BLE001
@@ -458,11 +492,13 @@ class OllamaLocalLLMProvider:
         siehe Klassenkommentar oben) - ein Modell-Download kann laenger
         dauern als jede einzelne Inferenzanfrage."""
         target_model = model or self.model
+        self._ensure_endpoint_allowed()
         try:
             response = httpx.post(
                 f"{self.base_url}/api/pull",
                 json={"model": target_model, "stream": False},
                 timeout=self._DOWNLOAD_TIMEOUT,
+                trust_env=_TRUST_ENV,
             )
             response.raise_for_status()
         except httpx.HTTPError as exc:
