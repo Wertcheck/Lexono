@@ -314,7 +314,7 @@ _STREET_TO_POSTAL_SEPARATOR = re.compile(r"[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t
 # Review: "Im Postfach 3 neue Nachrichten", "Postfach 2025 vom ..." wurden maskiert, "Postfach 0221 4711" verlor die zweite
 # Gruppe. Daher: mindestens zwei Zifferngruppen (2-4 Ziffern) oder mindestens 5 Ziffern oder direkt folgende PLZ + Ort.
 _PO_BOX_PATTERN = re.compile(
-    r"\bPostfach(?:[ \t]*:)?[ \t]+(?:\d{2,4}(?:[ .]\d{2,4})+|\d{5,6}|\d{1,4}(?=[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t]*\d{5}[ \t]+[A-ZÄÖÜ]))\b"
+    r"\b(?:Postfach|Postf\.)(?:[ \t]*:)?[ \t]+(?:\d{2,4}(?:[ .]\d{2,4})+|\d{5,6}|\d{1,4}(?=[ \t]*[,;]?[ \t]*(?:\n|[ \t]{2})?[ \t]*\d{5}[ \t]+[A-ZÄÖÜ]))\b"
 )
 
 

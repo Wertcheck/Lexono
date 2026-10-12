@@ -512,6 +512,10 @@ def check_response_placeholder_integrity(
     for mapping in mappings:
         if mapping.placeholder in lenient_leak_exempt_placeholders:
             continue
+        if mapping.category == "platzhaltertext":
+            # Woertlicher Platzhaltertext aus dem Dokument (pseudonymizer._literal_placeholder_spans) ist kein
+            # personenbezogener Wert; "PERSON_01" steckt zudem in jedem erzeugten "[PERSON_01]" (sonst Fehlblockade).
+            continue
         if _contains_original_value_leak(mapping.original_value, text):
             reasons.append(
                 f"Urspruenglicher, nicht pseudonymisierter Wert fuer "

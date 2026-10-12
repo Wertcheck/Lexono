@@ -43,7 +43,12 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "person": "PERSON",
     "ort": "ORT",
     "organisation": "ORGANISATION",
+    # Woertlich im Eingangstext stehende platzhalteraehnliche Zeichenfolgen ("[PERSON_01]", "PERSON_01"), siehe
+    # `_literal_placeholder_spans` - kein personenbezogener Wert, sondern Text, der nie mit einem erzeugten
+    # Platzhalter verwechselt werden darf.
+    "platzhaltertext": "TEXTMARKE",
 }
+_LITERAL_CATEGORY = "platzhaltertext"
 
 
 _LEFTOVER_PREFIXES = "|".join(
@@ -71,6 +76,60 @@ def neutralize_leftover_placeholder_tokens(text: str) -> str:
 
     text = _LEFTOVER_IN_BRACKETS.sub(_bracketed, text)
     return _LEFTOVER_BARE.sub("[Angabe einsetzen]", text)
+
+
+# Platzhalter-Integritaet (Folgezyklus 13.10.2026, gemessen): Ein Dokument kann platzhalteraehnliche Zeichenfolgen bereits
+# woertlich enthalten (Lexono-Export, Vorlage, Formularfeld). Bisher bekam "Karl Brenner" neben einem woertlichen
+# "[PERSON_01]" ebenfalls [PERSON_01] - Claude sah fuer zwei Dinge denselben Platzhalter, und die Rueckfuehrung setzte
+# "Karl Brenner" auch an die Stelle des woertlichen Texts (ebenso [ADRESSE_01], [KENNUNG_01], zwei Dokumente). Ein
+# woertliches "[PERSON_07]" ohne Gegenstueck blockierte die Anfrage. Deshalb wird jede solche Zeichenfolge im
+# Eingangstext selbst maskiert ([TEXTMARKE_nn], Originalwert = der woertliche Text): danach stammt JEDER Platzhalter in
+# der Payload aus der Erzeugung, eine Verwechslung ist ausgeschlossen. Erfasst wird alles, was das Final Payload Gate als
+# Platzhalter-Token wertet (security_check._PLACEHOLDER_TOKEN_PATTERN, hier identisch) sowie nackte Tokennamen der
+# bekannten Praefixe ("PERSON_01"), die die Rueckfuehrung sonst als Rest neutralisiert haette.
+_PLACEHOLDER_LIKE_PATTERN = re.compile(r"\[[A-Za-zÄÖÜäöüß_]+_\d+\]")
+
+
+def _literal_placeholder_spans(text: str) -> list[DetectedSpan]:
+    spans = [
+        DetectedSpan(category=_LITERAL_CATEGORY, start=m.start(), end=m.end(), value=m.group())
+        for m in _PLACEHOLDER_LIKE_PATTERN.finditer(text)
+    ]
+    for match in _LEFTOVER_BARE.finditer(text):
+        if not any(span.start <= match.start() < span.end for span in spans):
+            spans.append(DetectedSpan(category=_LITERAL_CATEGORY, start=match.start(), end=match.end(), value=match.group()))
+    return spans
+
+
+def _merge_literal_spans(text: str, spans: list[DetectedSpan], literal_spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Woertliche Platzhalter neben den Detektor-Treffern. Ueberlappt ein Treffer einen woertlichen Platzhalter nur
+    teilweise ("Person_01" in "[Person_01]"; ein Platzhalter mitten in einer Telefonnummer/IBAN), wird die VEREINIGUNG
+    unter der Kategorie des Treffers maskiert (Review: sonst ging der Rest der Nummer im Klartext hinaus). Der Wert ist
+    immer der Originalausschnitt, die Rueckfuehrung bleibt exakt. Ein woertlicher Platzhalter ohne Treffer wird selbst
+    maskiert. Ergebnis ohne Ueberlappungen, nach Position sortiert."""
+    merged: list[DetectedSpan] = []
+    # Ein Treffer, der ganz INNERHALB eines woertlichen Platzhalters liegt ("Person_01" in "[Person_01]", Ziffern in
+    # "[PERSON_000000001]"), ist kein Wert - der woertliche Platzhalter hat Vorrang (Review: sonst wurde er zu [PERSON_02]).
+    spans = [s for s in spans if not any(lit.start <= s.start and s.end <= lit.end for lit in literal_spans)]
+    for span in sorted(spans, key=lambda s: s.start):
+        start, end = span.start, span.end
+        for lit in literal_spans:
+            if start < lit.end and lit.start < end:
+                start, end = min(start, lit.start), max(end, lit.end)
+        if merged and start < merged[-1].end:
+            previous = merged.pop()
+            start, end, category = min(start, previous.start), max(end, previous.end), previous.category
+        else:
+            category = span.category
+        merged.append(DetectedSpan(category=category, start=start, end=end, value=text[start:end]))
+    merged += [lit for lit in literal_spans if not any(s.start <= lit.start and lit.end <= s.end for s in merged)]
+    return sorted(merged, key=lambda s: s.start)
+
+
+# Gueltige erzeugte Platzhalter (Rueckfuehrung): "[PRAEFIX_nn]".
+_GENERATED_PLACEHOLDER = re.compile(r"\[[A-Z][A-Z_]*_\d{2,}\]")
+# Private-Use-Zeichen als Schutzklammer waehrend der Rueckfuehrung (siehe `Pseudonymizer.reconstruct`).
+_GUARD_OPEN, _GUARD_CLOSE = "", ""
 
 
 @dataclass
@@ -175,6 +234,7 @@ class Pseudonymizer:
         Textstelle verdraengen lassen - nach der Filterung blieb dann
         GAR KEIN Treffer mehr fuer diese Stelle uebrig, real reproduziert
         an "Deutschland" innerhalb von "Bundeskanzler (Deutschland)")."""
+        literal_spans = _literal_placeholder_spans(text)
         spans = detect_all(
             text,
             known_entities,
@@ -182,6 +242,7 @@ class Pseudonymizer:
             skip_categories=skip_categories,
             ner_span_filter=ner_span_filter,
         )
+        spans = _merge_literal_spans(text, spans, literal_spans)
 
         value_to_placeholder: dict[tuple[str, str], str] = {}
         counters: dict[str, int] = {}
@@ -205,6 +266,9 @@ class Pseudonymizer:
             return next(iter(candidates.values())) if len(candidates) == 1 else span.value
 
         def _key_and_canonical(span: DetectedSpan) -> tuple[tuple[str, str], str]:
+            if span.category == _LITERAL_CATEGORY:
+                # woertlicher Text exakt (Review: "[Person_01]" und "[PERSON_01]" wurden sonst zusammengelegt)
+                return (span.category, span.value), span.value
             canonical = _canonicalize_alias(span.category, span.value, known_entities)
             if canonical == span.value:
                 canonical = _auto_alias(span)
@@ -250,10 +314,38 @@ class Pseudonymizer:
 
         return result, mappings
 
-    def reconstruct(self, text: str, mappings: list[PseudonymMapping]) -> str:
+    def reconstruct(
+        self, text: str, mappings: list[PseudonymMapping], *, neutralize_leftovers: bool = False
+    ) -> str:
         """Ersetzt Platzhalter wieder durch die Originalwerte - rein
-        lokal, nachdem eine (pseudonymisierte) Antwort zurückgekommen ist."""
-        result = text
+        lokal, nachdem eine (pseudonymisierte) Antwort zurückgekommen ist.
+
+        Platzhalter-Integritaet (Folgezyklus 13.10.2026): EIN Durchgang statt nacheinander ausgefuehrter Ersetzungen -
+        ein Originalwert, der selbst platzhalteraehnlich ist ("[PERSON_01]" als woertlicher Text, siehe
+        `_literal_placeholder_spans`), wird nie ein zweites Mal ersetzt. Fehlerhafte Rueckfuehrungsdaten werden nicht
+        geraten: ein Platzhalter mit widerspruechlichen Werten, ungueltiger Form oder leerem Wert wird NICHT
+        zurueckgefuehrt (bleibt Rest; mit `neutralize_leftovers` als "[Angabe einsetzen]"), statt womoeglich einen
+        fremden Wert einzusetzen. `neutralize_leftovers` neutralisiert nur Reste aus dem Antworttext, nie einen
+        zurueckgefuehrten Originalwert."""
+        values: dict[str, str] = {}
+        conflicting: set[str] = set()
         for mapping in mappings:
-            result = result.replace(mapping.placeholder, mapping.original_value)
-        return result
+            placeholder = mapping.placeholder
+            if not _GENERATED_PLACEHOLDER.fullmatch(placeholder) or not mapping.original_value:
+                conflicting.add(placeholder)
+            elif values.get(placeholder, mapping.original_value) != mapping.original_value:
+                conflicting.add(placeholder)
+            else:
+                values[placeholder] = mapping.original_value
+        for placeholder in conflicting:
+            values.pop(placeholder, None)
+        text = text.replace(_GUARD_OPEN, "").replace(_GUARD_CLOSE, "")
+        ordered = sorted(values, key=len, reverse=True)
+        index = {placeholder: str(number) for number, placeholder in enumerate(ordered)}
+        if ordered:
+            pattern = re.compile("|".join(re.escape(placeholder) for placeholder in ordered))
+            text = pattern.sub(lambda m: f"{_GUARD_OPEN}{index[m.group()]}{_GUARD_CLOSE}", text)
+        if neutralize_leftovers:
+            text = neutralize_leftover_placeholder_tokens(text)
+        originals = {number: values[placeholder] for placeholder, number in index.items()}
+        return re.sub(_GUARD_OPEN + r"(\d+)" + _GUARD_CLOSE, lambda m: originals[m.group(1)], text)

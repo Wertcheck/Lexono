@@ -469,10 +469,11 @@ class ClaudePrivacyGateway:
     ) -> str:
         """Lokale Rückführung: Platzhalter im Claude-Antworttext werden
         durch die Originalwerte ersetzt. Rein lokal, kein Netzwerkzugriff."""
-        restored = self.pseudonymizer.reconstruct(claude_response_text, mappings)
         # Sicherheitsnetz: interne Tokennamen, die Claude als Mischform geschrieben hat
-        # ("[Adresse PERSON_02]"), duerfen nie roh beim Anwalt landen.
-        return neutralize_leftover_placeholder_tokens(restored)
+        # ("[Adresse PERSON_02]"), duerfen nie roh beim Anwalt landen. Neutralisiert wird nur der
+        # Antworttext, nie ein zurueckgefuehrter Originalwert (woertlicher Platzhaltertext aus dem
+        # Dokument, siehe pseudonymizer._literal_placeholder_spans).
+        return self.pseudonymizer.reconstruct(claude_response_text, mappings, neutralize_leftovers=True)
 
     @staticmethod
     def _build_combined_text(

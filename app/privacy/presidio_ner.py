@@ -240,7 +240,28 @@ def _get_analyzer_engine():
         engine.registry.add_recognizer(getattr(predefined, name)(patterns=patterns))
     for name in _LABELLED_ID_RECOGNIZERS:
         engine.registry.add_recognizer(getattr(predefined, name)())  # IpRecognizer ist bereits Standard fuer "de"
+    from presidio_analyzer import Pattern, PatternRecognizer
+
+    for entity, regex, score in _EXTRA_ID_PATTERNS:
+        engine.registry.add_recognizer(
+            PatternRecognizer(
+                supported_entity=entity, supported_language="de", name=f"Lexono{entity.title()}Format",
+                patterns=[Pattern(name=f"{entity} Zusatzformat", regex=regex, score=score)],
+            )
+        )
     return engine
+
+
+# Zusaetzliche Formate unter DENSELBEN Entitaeten (Folgezyklus 13.10.2026, erweiterte Leckfaelle; Presidios Muster decken sie
+# nicht ab). Fuer bezeichnete Entitaeten (siehe _ID_LABEL_BEFORE) gilt unveraendert: nur mit UNMITTELBAR vorangestellter
+# Bezeichnung - das Muster allein loest nie etwas aus, daher Grundscore 0.1. Die Handelsregister-Gruppierung ("HRB 123
+# 456") ist wie das offizielle Muster kontextunabhaengig (Score 0.5) und ersetzt dort nur den Rest "456" (Review).
+_EXTRA_ID_PATTERNS = (
+    ("DE_TAX_NUMBER", r"\b\d{10,13}\b", 0.1),  # Steuernummer ohne Trennzeichen (Laenderformate)
+    ("DE_TAX_NUMBER", r"\b\d{2,3}\s\d{3,4}\s\d{4,5}\b", 0.1),  # "143 815 08154"
+    ("DE_KFZ", r"\b[A-ZÄÖÜ]{1,3}[\s-][A-Z]{1,2}\d{1,4}[EH]?\b", 0.1),  # "HH AB1234"
+    ("DE_HANDELSREGISTER", r"\bHR[AB]\s*\d{1,3}(?:\s\d{3})+\b", 0.5),
+)
 
 
 # Offizielle deutsche Presidio-Recognizer (Presidio-Audit 13.10.2026, scripts/bench_presidio_audit.py): in Presidio
@@ -273,16 +294,36 @@ _ID_LABEL_BEFORE = {
     "DE_TAX_NUMBER": r"steuer-?\s?(?:nummer|nr\.?)|st\.?\s?-?\s?nr\.?",
     "DE_ID_CARD": r"(?:personal)?ausweis(?:-?\s?(?:nummer|nr\.?))?|ausweisdokument(?:-?\s?nr\.?)?",
     "DE_PASSPORT": r"(?:reise)?pass(?:-?\s?(?:nummer|nr\.?))|reisepass",
-    "DE_FUEHRERSCHEIN": r"f(?:ü|ue)hrerschein(?:-?\s?(?:nummer|nr\.?))?",
-    "DE_KFZ": r"(?:amtl(?:iches|\.)\s+|kfz-?\s?|fahrzeug-?\s?)?kennzeichen|(?:amtl\.|kfz-)\s?kz\.",
+    "DE_FUEHRERSCHEIN": r"f(?:ü|ue)hrerschein(?:-?\s?(?:nummer|nr\.?))?|fs-?\s?nr\.?",
+    "DE_KFZ": r"(?:amtl(?:iches|\.)\s+|kfz-?\s?|fahrzeug-?\s?)?kennzeichen|(?:amtl\.|kfz-)\s?kz\.|kennz\.",
     "IP_ADDRESS": r"ip-?\s?adresse|ip",
 }
 _ID_LABEL_PATTERNS = {
-    entity: re.compile(r"(?<![\wÄÖÜäöüß])(?:" + label + r")\s?[:.]?[ \t]{0,2}$", re.IGNORECASE)
+    # "Kennzeichen ist/lautet ..." (Review: Wert nicht unmittelbar nach der Bezeichnung) - nur diese zwei Verbindungswoerter.
+    entity: re.compile(
+        r"(?<![\wÄÖÜäöüß])(?:" + label + r")(?:[ \t]+(?:ist|lautet|lauten))?\s?[:.]?[ \t]{0,2}$", re.IGNORECASE
+    )
     for entity, label in _ID_LABEL_BEFORE.items()
 }
-# Die Presidio-Muster laufen ohne Gross-/Kleinschreibung; ein echtes Kennzeichen enthaelt keinen Kleinbuchstaben.
+# Die Presidio-Muster laufen ohne Gross-/Kleinschreibung: "auf der A 7" passte als Kennzeichen. Ein kleingeschriebenes
+# Kennzeichen ("unser kennzeichen ist hh-ab 1234", Chat) wird nur uebernommen, wenn die erste Buchstabengruppe kein
+# Artikel/keine Praeposition ist (Folgezyklus 13.10.2026: vorher blieb "1234" neben "[ORT_01]" im Klartext).
 _LOWERCASE = re.compile(r"[a-zäöüß]")
+_KFZ_FUNCTION_WORDS = frozenset(
+    "der die das den dem des ein eine einen auf von vom mit nach bei zur zum im am an in aus bis".split()
+)
+# Gewoehnliche Woerter, die das ohne Gross-/Kleinschreibung laufende Muster nach "Kennzeichen" als Kennzeichen las
+# (Review: "Das Kennzeichen ist um 18 Uhr gestohlen", "ist zu 80 Prozent", "Fahrzeugkennzeichen und Km 45"). Geprueft wird
+# die ERSTE Buchstabengruppe (Unterscheidungszeichen): Woerter mit 3+ Buchstaben immer; Zweibuchstaben-Woerter nur in
+# Kleinschreibung - "AB" (Aschaffenburg), "UM", "IN", "AM" sind echte Unterscheidungszeichen.
+_KFZ_NOT_A_GROUP = _KFZ_FUNCTION_WORDS | frozenset("ist um ab zu und km ca je pro bzw lautet sind war wird".split())
+
+
+def _plate_has_common_word(value: str) -> bool:
+    groups = re.findall(r"[A-Za-zÄÖÜäöüß]+", value)
+    if not groups or groups[0].lower() not in _KFZ_NOT_A_GROUP:
+        return False
+    return len(groups[0]) >= 3 or not groups[0].isupper()
 # Profil-Links sozialer/beruflicher Netzwerke (Folgezyklus 13.10.2026, Testbasis P12: "linkedin.com/in/gernot-hahn-1980"
 # im Klartext): der Pfad ist der Personenname. Presidios UrlRecognizer findet jede URL - uebernommen wird nur diese
 # Plattformart; Quellenangaben (gesetze-im-internet.de, dejure.org, Gerichtsseiten) bleiben lesbar. Allein die URL selbst
@@ -291,7 +332,8 @@ _PROFILE_URL = re.compile(
     # Grenze vor dem Host (Review: "dropbox.com/..." und "fedex.com/..." enthielten "x.com/"); github.com bewusst nicht -
     # Repository-Links ("github.com/microsoft/presidio") sind Quellenangaben.
     r"(?<![\w.-])(?:(?:www|[a-z]{2})\.)?(?:linkedin\.com/(?:in|pub)/|xing\.com/(?:profile|people)/|"
-    r"facebook\.com/(?!sharer|share|events/)|instagram\.com/|(?:twitter|x)\.com/|tiktok\.com/@)[^/\s]+",
+    r"facebook\.com/(?!sharer|share|events/)|instagram\.com/|(?:twitter|x)\.com/|tiktok\.com/@|threads\.net/@|"
+    r"bsky\.app/profile/)[^/\s]+",
     re.IGNORECASE,
 )
 
@@ -320,7 +362,7 @@ def _id_spans(results, text: str) -> list[DetectedSpan]:
             line_start = text.rfind("\n", 0, result.start) + 1
             if not _ID_LABEL_PATTERNS[result.entity_type].search(text[max(line_start, result.start - 40) : result.start]):
                 continue
-            if result.entity_type == "DE_KFZ" and (_LOWERCASE.search(value) or _weak_plate(text, result.start, value)):
+            if result.entity_type == "DE_KFZ" and (_weak_plate(text, result.start, value) or _plate_has_common_word(value)):
                 continue
         elif result.entity_type == "URL":
             if _PROFILE_URL.search(value):

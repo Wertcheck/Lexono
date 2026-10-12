@@ -42,6 +42,7 @@ _CATEGORY_LABELS = {
     "kundennummer": "Kundennummer",
     "kennung": "Kennnummer",
     "url": "Profil-Link",
+    "platzhaltertext": "Platzhaltertext",
     "person": "Person",
     "ort": "Ort",
     "organisation": "Organisation",
