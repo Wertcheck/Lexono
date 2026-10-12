@@ -636,6 +636,13 @@ def _ends_noun_phrase(doc, text: str, token) -> bool:
     return following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm")
 
 
+def _before_clause_final_verb(doc, text: str, token) -> bool:
+    words = [t for t in doc[token.i + 1 :] if not t.is_space]
+    if not words or words[0].tag_ not in ("VVPP", "VVINF", "VAPP", "VAINF", "VMPP", "VVIZU"):
+        return False
+    return len(words) == 1 or _ends_noun_phrase(doc, text, words[0])
+
+
 def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
     """(Treffer, stark) - siehe Kommentarblock oben. Fuegt nur Treffer hinzu (fail-closed)."""
     if not text or not text.strip():
@@ -686,16 +693,19 @@ def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
             continue
         if not strong:
             # Rollenwort: nur Bestandteil derselben Nominalgruppe ("Zeugin Licht"), nie Objekt/Ergaenzung eines Verbs.
-            attached = candidate.head.i == title.i or title.head.i == candidate.i
-            # Parse-Variante "Die Zeugin Licht hat ...": Name als Subjekt, Rollenwort unverbunden (kein Subjekt). Beim
-            # Objekt ("der Mieter Maengel anzeigt") ist dagegen das ROLLENWORT Subjekt.
-            dangling_role = candidate.dep_ == "sb" and title.dep_ != "sb" and candidate.i == title.i + 1
-            if not (attached or dangling_role) or candidate.dep_ not in ("nk", "pnc", "app", "sb", "ROOT"):
+            # Name haengt am Rollenwort ("der Zeuge Sommer": nk -> Zeuge) - NICHT umgekehrt (Fehlparse "der Sachverstaendige
+            # Feuchtigkeit festgestellt": Rollenwort haengt am Fachwort).
+            attached = candidate.head.i == title.i and candidate.dep_ in ("nk", "pnc", "app")
+            # Apposition als zweites Subjekt desselben Verbs ("hat die Zeugin Koenig ausgesagt": beide sb von "hat").
+            double_subject = candidate.dep_ == "sb" and title.dep_ == "sb" and candidate.head.i == title.head.i
+            # Parse-Variante "Die Zeugin Licht hat ...": Name als Subjekt, Rollenwort unverbunden (kein Subjekt).
+            dangling_role = candidate.dep_ == "sb" and title.dep_ != "sb" and candidate.i == title.i + 1 and title.head.i == title.i
+            if not (attached or double_subject or dangling_role):
                 continue
-            # Der Parser haengt in verbfinalen Saetzen auch Objekte an das Rollenwort ("hat der Sachverstaendige
-            # Feuchtigkeit festgestellt", Red-Team-Schriftsatz). Ein Name schliesst die Nominalgruppe ab: danach folgt ein
-            # finites Verb, ein Satzzeichen, eine Konjunktion oder eine Zeilengrenze - kein Adverb/infinites Verb.
-            if not _ends_noun_phrase(doc, text, candidate):
+            # Objekte haengt der Parser in verbfinalen Saetzen ebenfalls an ("der Vermieter Kaution fristgerecht
+            # abgerechnet"). Ein Name schliesst die Nominalgruppe ab (finites Verb, Satzzeichen, Konjunktion, Zeilengrenze)
+            # oder steht direkt vor dem satzschliessenden Partizip/Infinitiv ("... Sommer ausgesagt.") - kein Adverb dazwischen.
+            if not (_ends_noun_phrase(doc, text, candidate) or _before_clause_final_verb(doc, text, candidate)):
                 continue
         span = DetectedSpan(category="person", start=candidate.idx, end=candidate.idx + len(candidate.text), value=text[candidate.idx : candidate.idx + len(candidate.text)])
         found.append((span, strong))

@@ -198,3 +198,39 @@ def test_rubrum_does_not_block_fail_closed(gateway) -> None:
 @pytest.mark.parametrize("office", ["Vorsitzender", "Kollegin", "Präsident", "Staatsanwalt"])
 def test_office_titles_after_salutation_are_not_names(office) -> None:
     assert [span.value for span in pn.detect_titled_names(f"Herr {office}, bitte.")] == []
+
+
+# --- Verbfinale Saetze (Befund installierter Build 38361af: "hat die Zeugin Koenig ausgesagt" im Klartext) -------------
+
+
+@pytest.mark.parametrize(
+    "sentence, name",
+    [
+        ("Nach Rücksprache hat die Zeugin König ausgesagt.", "König"),
+        ("Nach Rücksprache hat der Zeuge Sommer ausgesagt.", "Sommer"),
+        ("Nach Rücksprache hat die Zeugin Brockhagen angerufen.", "Brockhagen"),
+    ],
+)
+def test_name_after_role_in_verb_final_clause_is_protected(gateway, sentence, name) -> None:
+    assert name not in _payload(gateway, sentence)
+
+
+@pytest.mark.parametrize(
+    "sentence, keep",
+    [
+        ("Nach Rücksprache hat der Sachverständige Feuchtigkeit festgestellt.", "Feuchtigkeit"),
+        ("Nach Rücksprache hat der Mieter Mängel angezeigt.", "Mängel"),
+        ("Nach Rücksprache hat der Vermieter Kaution abgerechnet.", "Kaution"),
+        ("Hätte der Vermieter Kaution fristgerecht abgerechnet, wäre alles gut.", "Kaution"),
+        ("Nach Rücksprache hat der Gutachter Proben entnommen.", "Proben"),
+    ],
+)
+def test_object_after_role_in_verb_final_clause_stays_readable(gateway, sentence, keep) -> None:
+    assert keep in _payload(gateway, sentence)
+
+
+# Bekannte Grenze: der Parser liest manche Namen in dieser Stellung als Objekt ("hat die Mandantin Licht unterschrieben":
+# Licht = oa) - dann nicht von einem echten Objekt zu unterscheiden.
+@pytest.mark.xfail(reason="Parser liest Namen als Objekt des Partizips", strict=False)
+def test_known_limit_name_parsed_as_object(gateway) -> None:
+    assert "Licht" not in _payload(gateway, "Nach Rücksprache hat die Mandantin Licht unterschrieben.")
