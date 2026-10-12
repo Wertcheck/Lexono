@@ -234,3 +234,35 @@ def test_object_after_role_in_verb_final_clause_stays_readable(gateway, sentence
 @pytest.mark.xfail(reason="Parser liest Namen als Objekt des Partizips", strict=False)
 def test_known_limit_name_parsed_as_object(gateway) -> None:
     assert "Licht" not in _payload(gateway, "Nach Rücksprache hat die Mandantin Licht unterschrieben.")
+
+
+# --- Unabhaengiger Fallsatz (zweites Red-Team): deklinierte Rollenwoerter, Verbketten, gleiche Satzfunktion ------------
+
+
+@pytest.mark.parametrize(
+    "sentence, name",
+    [
+        ("Die Kammer hat den Zeugen Nebel geladen.", "Nebel"),
+        ("Die Klägerin hat den Sachverständigen Zorn abgelehnt.", "Zorn"),
+        ("Im Protokoll ist vermerkt, dass der Zeuge Gast belehrt worden ist.", "Gast"),
+        ("Es ist unklar, ob der Zeuge Freund erscheinen wird.", "Freund"),
+        ("Hat der Zeuge Morgen ausgesagt?", "Morgen"),
+    ],
+)
+def test_declined_roles_and_verb_chains_are_covered(gateway, sentence, name) -> None:
+    assert not re.search(r"(?<![\wÄÖÜäöüß])" + name + r"(?![\wÄÖÜäöüß])", _payload(gateway, sentence))
+
+
+@pytest.mark.parametrize(
+    "sentence, keep",
+    [
+        ("Inzwischen hat der Gutachter Risse festgestellt.", "Risse"),
+        ("Darüber hinaus hat der Kläger Zinsen verlangt.", "Zinsen"),
+        ("Fristgerecht hat die Beklagte Widerspruch eingelegt.", "Widerspruch"),
+        ("Gegen das Urteil hat der Beklagte Berufung eingelegt.", "Berufung"),
+        ("Deshalb kann der Mieter Minderung verlangen.", "Minderung"),
+        ("Die Kammer wird den Zeugen Angaben machen lassen.", "Angaben"),
+    ],
+)
+def test_objects_after_declined_roles_stay_readable(gateway, sentence, keep) -> None:
+    assert keep in _payload(gateway, sentence)

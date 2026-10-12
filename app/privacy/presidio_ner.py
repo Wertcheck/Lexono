@@ -628,6 +628,10 @@ _ROLE_TITLES = frozenset(
         "antragsteller", "antragstellerin", "antragsgegner", "antragsgegnerin", "schuldner", "schuldnerin",
         "gläubiger", "gläubigerin", "arbeitnehmer", "arbeitnehmerin", "arbeitgeber", "arbeitgeberin", "erbe", "erbin",
         "betreuer", "betreuerin", "kollege", "kollegin",
+        # Deklinierte Formen schwacher Nomen ("den Zeugen Nebel", "dem Mandanten Hagel", "den Sachverstaendigen Zorn";
+        # unabhaengiger Fallsatz, Folgezyklus 13.10.2026).
+        "zeugen", "mandanten", "sachverständigen", "beklagten", "kollegen", "gutachters", "klägers", "mieters",
+        "vermieters",
     }
 )
 # Amts-/Funktionsbezeichnungen: nach einer Anrede nie selbst ein Name ("Herr Vorsitzender", "Frau Kollegin"), werden
@@ -661,11 +665,19 @@ def _ends_noun_phrase(doc, text: str, token) -> bool:
     return following.pos_ in ("VERB", "AUX") and "Fin" in following.morph.get("VerbForm")
 
 
+_NON_FINITE_VERB_TAGS = ("VVPP", "VVINF", "VAPP", "VAINF", "VMPP", "VMINF", "VVIZU")
+
+
 def _before_clause_final_verb(doc, text: str, token) -> bool:
+    """Direkt nach dem Wort folgt der satzschliessende Verbkomplex - auch mehrteilig ("aussagen muessen", "belehrt
+    worden ist"): nur infinite Verbformen, dann Nominalgruppen-/Satzende (finites Verb, Satzzeichen, Zeilengrenze)."""
     words = [t for t in doc[token.i + 1 :] if not t.is_space]
-    if not words or words[0].tag_ not in ("VVPP", "VVINF", "VAPP", "VAINF", "VMPP", "VVIZU"):
+    if not words or words[0].tag_ not in _NON_FINITE_VERB_TAGS:
         return False
-    return len(words) == 1 or _ends_noun_phrase(doc, text, words[0])
+    last = 0
+    while last + 1 < len(words) and words[last + 1].tag_ in _NON_FINITE_VERB_TAGS:
+        last += 1
+    return last + 1 == len(words) or _ends_noun_phrase(doc, text, words[last])
 
 
 def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
@@ -722,7 +734,13 @@ def _titled_name_spans(text: str) -> list[tuple[DetectedSpan, bool]]:
             # Feuchtigkeit festgestellt": Rollenwort haengt am Fachwort).
             attached = candidate.head.i == title.i and candidate.dep_ in ("nk", "pnc", "app")
             # Apposition als zweites Subjekt desselben Verbs ("hat die Zeugin Koenig ausgesagt": beide sb von "hat").
-            double_subject = candidate.dep_ == "sb" and title.dep_ == "sb" and candidate.head.i == title.head.i
+            # Ebenso als zweites Objekt derselben Funktion ("hat den Sachverstaendigen Zorn abgelehnt": beide oa) - ein echtes
+            # Objekt hat eine ANDERE Funktion als das Rollenwort ("der Mieter [sb] Maengel [oa]").
+            double_subject = (
+                candidate.dep_ == title.dep_
+                and candidate.dep_ in ("sb", "oa", "da", "og")
+                and candidate.head.i == title.head.i
+            )
             # Parse-Variante "Die Zeugin Licht hat ...": Name als Subjekt, Rollenwort unverbunden (kein Subjekt).
             dangling_role = candidate.dep_ == "sb" and title.dep_ != "sb" and candidate.i == title.i + 1 and title.head.i == title.i
             if not (attached or double_subject or dangling_role):
