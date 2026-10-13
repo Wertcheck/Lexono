@@ -1,0 +1,3125 @@
+{
+ "benchmark": "pseudonymization_v1",
+ "run_at": "2026-10-13T20:17:09+00:00",
+ "git_commit": "46fee47",
+ "git_dirty_files": [],
+ "cases_sha256": "0209ad2f70f8a1ae",
+ "code_fingerprint": {
+  "app/privacy/gateway.py": "0ffec999fff8bc12",
+  "app/privacy/pseudonymizer.py": "2ab976d4f786eb6b",
+  "app/privacy/detectors.py": "38bc9c39a2a20960",
+  "app/privacy/presidio_ner.py": "bcc094be2e69d8db",
+  "app/privacy/review.py": "44ed74b4dc9b64c0",
+  "app/privacy/security_check.py": "a1f792fe694a9c4a",
+  "app/privacy/gateway_schema.py": "32a8bd5efb7c3602",
+  "app/drafting/service.py": "f85591d1271a4b36",
+  "app/chat/service.py": "5f32e74f30823a8c",
+  "app/ai_providers/local_ai_provider.py": "dec0d76d7f3a0081"
+ },
+ "python": "3.13.15",
+ "packages": {
+  "presidio-analyzer": "2.2.364",
+  "spacy": "3.8.16",
+  "de-core-news-lg": "3.8.0"
+ },
+ "rules": {
+  "path": "Feldfaelle: echter ClaudePrivacyGateway.prepare_request (mask, ausser mode='ask'); der Text steht im angegebenen Feld, der Sachverhalt sonst 'Akte: Beispielakte'. E2E-Faelle (E*): echter Chat-/Drafting-Pfad, gemessen am Payload, den der Schreib-Provider unmittelbar vor dem Cloud-Aufruf erhaelt.",
+  "type_map": "Kategorie -> Typ: person/mandant/gegner/anwalt/beteiligter -> PERSON; organisation/gericht -> ORGANISATION; ort -> ORT; adresse -> ADRESSE; email -> EMAIL; telefon -> TELEFON; iban -> IBAN; bic -> BIC; kennung/steuer_id/kundennummer/vertrag/rechnungsnummer/aktenzeichen/grundbuch -> KENNUNG; geburtsdatum/geburtstag/todesdatum -> PERS_DATUM; url -> URL; textmarke wird ignoriert.",
+  "match": "Ein vorhergesagter Eintrag (Mapping-Originalwert) trifft einen Referenzwert, wenn der kuerzere im laengeren mit Wortgrenzen enthalten ist (Gross-/Kleinschreibung, unsichtbare Zeichen und Leerraum normalisiert).",
+  "recall": "Je Referenzwert (protect): geschuetzt = der Wert steht nicht im Payload (bei Blockade: geschuetzt durch Blockade). Recall = geschuetzt/Referenzwerte je Typ. Getrennt: mapping_hit = ein Mapping trifft den Wert (Erkennung im engeren Sinn).",
+  "precision": "Je vorhergesagtem Eintrag (distinkte Mapping-Originalwerte): TP, wenn er einen protect-Wert trifft; ignoriert, wenn er nur einen neutral-Wert trifft; sonst FP (inkl. Treffer auf keep). Nenner: vorhergesagte Eintraege je vorhergesagtem Typ. Typverwechslungen getrennt ausgewiesen. Hinweis: Recall je Referenztyp, Precision je vorhergesagtem Typ mit typunabhaengigem Treffer; das F1 je Typ kombiniert daher zwei Basen und ist als Orientierung zu lesen.",
+  "leak": "Klartext im Payload: der Referenzwert (normalisiert, Wortgrenzen) kommt in den Feldwerten des Payloads vor (alle Strings, wie das Final Payload Gate; nicht im JSON). Teil-Klartext getrennt. Nachgewiesene Reidentifizierbarkeit wird nur bei vollem Klartext behauptet.",
+  "facts": "keep-Werte muessen woertlich im Payload stehen (nur bei erlaubter Anfrage). Nenner: keep-Werte erlaubter Faelle.",
+  "consistency": "Alle Oberflaechenformen einer Gruppe muessen auf genau einen Platzhalter abgebildet werden (aus den Mappings).",
+  "blocks": "expect=allow und blockiert -> unnoetige Blockade; expect=block und erlaubt -> fehlende Blockade; expect=either -> beides korrekt.",
+  "known_limit": "Faelle mit bekannter, dokumentierter Grenze; sie zaehlen voll in die Kennzahlen und werden zusaetzlich getrennt ausgewiesen.",
+  "limits": "Handverfasster Korpus, ein Annotator, nicht fachlich validiert; keine Aussage ueber reale Verteilungen. Precision haengt von der Vollstaendigkeit der Annotation ab (nicht annotierte erkannte Werte zaehlen als FP). Keine Leckfreiheit ableitbar.",
+  "known_entities": "Bekannte Namen werden wie in der Produktion uebergeben: voller Name plus letztes Wort (RuleBasedLocalAIProvider._build_known_entities).",
+  "e2e": "E01 Anhang, E02 Verlauf, E03 Wissenseintrag, E04 Klarname aus lokaler Vorabanalyse, E05 NER-Ausfall in der Pseudonymisierung, E05b NER-Ausfall nur im Restrisiko-Scan, E06 Fristhinweis mit Namen (E-Mail-Pfad)."
+ },
+ "summary": {
+  "field_cases": 63,
+  "per_type": {
+   "ADRESSE": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 5,
+    "protected": 5,
+    "mapping_hit": 5,
+    "predicted": 5,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "BIC": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 1,
+    "protected": 1,
+    "mapping_hit": 1,
+    "predicted": 1,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "EMAIL": {
+    "recall": 0.667,
+    "precision": 1.0,
+    "f1": 0.8,
+    "gold": 3,
+    "protected": 2,
+    "mapping_hit": 2,
+    "predicted": 2,
+    "false_positives": 0,
+    "payload_leaks": 1,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "IBAN": {
+    "recall": 0.8,
+    "precision": 1.0,
+    "f1": 0.889,
+    "gold": 5,
+    "protected": 4,
+    "mapping_hit": 4,
+    "predicted": 4,
+    "false_positives": 0,
+    "payload_leaks": 1,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "KENNUNG": {
+    "recall": 0.955,
+    "precision": 1.0,
+    "f1": 0.977,
+    "gold": 22,
+    "protected": 21,
+    "mapping_hit": 21,
+    "predicted": 22,
+    "false_positives": 0,
+    "payload_leaks": 1,
+    "partial_leaks": 1,
+    "type_mismatch": 1
+   },
+   "ORGANISATION": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 2,
+    "protected": 2,
+    "mapping_hit": 2,
+    "predicted": 3,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "ORT": {
+    "recall": 0.667,
+    "precision": 0.571,
+    "f1": 0.615,
+    "gold": 3,
+    "protected": 2,
+    "mapping_hit": 2,
+    "predicted": 7,
+    "false_positives": 3,
+    "payload_leaks": 1,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "PERSON": {
+    "recall": 0.895,
+    "precision": 0.806,
+    "f1": 0.848,
+    "gold": 38,
+    "protected": 34,
+    "mapping_hit": 33,
+    "predicted": 36,
+    "false_positives": 7,
+    "payload_leaks": 4,
+    "partial_leaks": 0,
+    "type_mismatch": 3
+   },
+   "PERS_DATUM": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 3,
+    "protected": 3,
+    "mapping_hit": 3,
+    "predicted": 3,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   },
+   "TELEFON": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 5,
+    "protected": 5,
+    "mapping_hit": 5,
+    "predicted": 3,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 2
+   },
+   "URL": {
+    "recall": 1.0,
+    "precision": 1.0,
+    "f1": 1.0,
+    "gold": 1,
+    "protected": 1,
+    "mapping_hit": 1,
+    "predicted": 1,
+    "false_positives": 0,
+    "payload_leaks": 0,
+    "partial_leaks": 0,
+    "type_mismatch": 0
+   }
+  },
+  "overall": {
+   "gold": 88,
+   "protected": 80,
+   "payload_leaks": 8,
+   "partial_leaks": 1,
+   "false_positives": 10,
+   "false_positives_on_keep": 2,
+   "keep_preserved": "66/68",
+   "unnecessary_blocks": 0,
+   "missing_blocks": 0,
+   "blocked": 0,
+   "errors": 0,
+   "consistency": "1/2",
+   "cases_with_leak_known_limit": 8,
+   "cases_with_leak_not_known_limit": []
+  },
+  "by_doctype": {
+   "brief": {
+    "cases": 44,
+    "cases_with_leak": 5,
+    "false_positives": 8
+   },
+   "chat": {
+    "cases": 2,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "email": {
+    "cases": 4,
+    "cases_with_leak": 0,
+    "false_positives": 1
+   },
+   "formular": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "frist": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "notiz": {
+    "cases": 2,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "ocr": {
+    "cases": 5,
+    "cases_with_leak": 3,
+    "false_positives": 1
+   },
+   "tabelle": {
+    "cases": 2,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "vorlage": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "wissen": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   }
+  },
+  "by_field": {
+   "anmerkungen": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "argumentationspunkte": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "quellen": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "sachverhalt": {
+    "cases": 57,
+    "cases_with_leak": 8,
+    "false_positives": 10
+   },
+   "stil": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "verlauf": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   },
+   "vorlage": {
+    "cases": 1,
+    "cases_with_leak": 0,
+    "false_positives": 0
+   }
+  },
+  "e2e": {
+   "cases": 7,
+   "as_expected": 7,
+   "leaks": 0,
+   "protect_total": 30,
+   "keep_preserved": "4/4"
+  }
+ },
+ "field_results": [
+  {
+   "id": "P01",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "P02",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Henrike Wallbaum-Ostertag",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Dr. Henrike Wallbaum-Ostertag",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "P03",
+   "group": "name",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Jean-Baptiste Okonkwo-Lefèvre",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Jean-Baptiste Okonkwo-Lefèvre",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P04",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": [
+    {
+     "group": [
+      "Karl Brenner",
+      "Brenner"
+     ],
+     "placeholders": [
+      "[MANDANT_01]"
+     ],
+     "consistent": true
+    }
+   ]
+  },
+  {
+   "id": "P05",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Brenners",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Herrn Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Brenners",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": [
+    {
+     "group": [
+      "Brenner",
+      "Brenners"
+     ],
+     "placeholders": [
+      "[MANDANT_01]",
+      "[PERSON_01]",
+      "[PERSON_02]"
+     ],
+     "consistent": false
+    }
+   ]
+  },
+  {
+   "id": "P06",
+   "group": "name",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Sabine Kowalczyk",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "S. Kowalczyk",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Sabine Kowalczyk",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Betreff",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "P07",
+   "group": "name",
+   "doctype": "ocr",
+   "field": "sachverhalt",
+   "known_limit": "gesperrte Schreibweise (OCR) - unbekannt, ob erkannt",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "M A R T I N   S C H Ö N F E L D",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Weber",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Ö",
+     "type": "ORT",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Weber",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P08",
+   "group": "name",
+   "doctype": "ocr",
+   "field": "sachverhalt",
+   "known_limit": "OCR-Ziffern in Namen",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Kar1 Brenn3r",
+     "type": "PERSON",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P09",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "Kleinschreibung (§ bekannt, L01)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "sauer",
+     "type": "PERSON",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P10",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "Rollenwort + Nachname ohne Anrede (Inventur reproduziert)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Zweigelt",
+     "type": "PERSON",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P11",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "Nachnamen, die Substantive sind",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Richter",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Fürst",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Richter",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Fürst",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P12",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Aylin Yıldırım",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Aylin Yıldırım",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "P13",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Nguyễn Thị Lan",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Nguyễn Thị Lan",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "P14",
+   "group": "name",
+   "doctype": "tabelle",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Karl",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Sasskamp",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Brunhilde",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Karl",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Sasskamp | Brunhilde",
+     "type": "ORT",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "P15",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "bekannte Uebermaskierung ('Ihres Vaters', 'Ausschlagungsfrist')",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [
+    {
+     "value": "02.01.2026",
+     "type": "PERS_DATUM",
+     "verdict": "ignored",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "P16",
+   "group": "name",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [
+    {
+     "value": "Urt",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "VIII",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": true
+    }
+   ],
+   "keep_missing": [
+    "VIII ZR 1/21"
+   ],
+   "keep_total": 4,
+   "consistency": []
+  },
+  {
+   "id": "O01",
+   "group": "organisation",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Brezlmayr Logistik GmbH",
+     "type": "ORGANISATION",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORGANISATION"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Brezlmayr Logistik GmbH",
+     "type": "ORGANISATION",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "O02",
+   "group": "organisation",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Elektro Lindqvist KG",
+     "type": "ORGANISATION",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORGANISATION"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Elektro Lindqvist KG",
+     "type": "ORGANISATION",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "O03",
+   "group": "organisation",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [
+    {
+     "value": "Amtsgericht München",
+     "type": "ORT",
+     "verdict": "ignored",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A01",
+   "group": "adresse",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Birkenallee 17, 12345 Musterstadt",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Birkenallee 17, 12345 Musterstadt",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A02",
+   "group": "adresse",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Am Lindenhof 3a, 54321 Beispielhausen",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Lindenhof 3a, 54321 Beispielhausen",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A03",
+   "group": "adresse",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Kastanienstraße 8",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Köln",
+     "type": "ORT",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Kastanienstraße 8",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Köln",
+     "type": "ORT",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A04",
+   "group": "adresse",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Gernot Hahn",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Kleinmachnow",
+     "type": "ORT",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Gernot Hahn",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Kleinmachnow",
+     "type": "ORT",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A05",
+   "group": "adresse",
+   "doctype": "ocr",
+   "field": "sachverhalt",
+   "known_limit": "Postfachanschrift",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Postfach 12 34 56, 99999 Testdorf",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Postfach 12 34 56, 99999 Testdorf",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "A06",
+   "group": "adresse",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "Ortsname im Grundbuchtext bleibt lesbar (Inventur)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Blatt 4711",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": true
+    },
+    {
+     "value": "12/3",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Musterstadt",
+     "type": "ORT",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "4711",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "12/3",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "K01",
+   "group": "kontakt",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "karl.brenner@beispiel-mail.de",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0171 2345678",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "karl.brenner@beispiel-mail.de",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "0171 2345678",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "K02",
+   "group": "kontakt",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "+49 (0)30 123 456-78",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "030/98765432",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "info@brenner-bau.example",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "30 123 456-78",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "030/98765432",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "info@brenner-bau.example",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "K03",
+   "group": "kontakt",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "linkedin.com/in/karl-brenner-1961",
+     "type": "URL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "URL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "linkedin.com/in/karl-brenner-1961",
+     "type": "URL",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "K04",
+   "group": "kontakt",
+   "doctype": "ocr",
+   "field": "sachverhalt",
+   "known_limit": "OCR-Leerzeichen in E-Mail",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "karl . brenner @ beispiel-mail . de",
+     "type": "EMAIL",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    },
+    {
+     "value": "0171-234 56 78",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Mobil",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "0171-234 56 78",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "K05",
+   "group": "kontakt",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "192.168.178.23",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "192.168.178.23",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "B01",
+   "group": "bank",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "DE89 3704 0044 0532 0130 00",
+     "type": "IBAN",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "IBAN"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "COBADEFFXXX",
+     "type": "BIC",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "BIC"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "DE89 3704 0044 0532 0130 00",
+     "type": "IBAN",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "COBADEFFXXX",
+     "type": "BIC",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "B02",
+   "group": "bank",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "DE89370400440532013000",
+     "type": "IBAN",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "IBAN"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "DE89370400440532013000",
+     "type": "IBAN",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "B03",
+   "group": "bank",
+   "doctype": "ocr",
+   "field": "sachverhalt",
+   "known_limit": "gesperrte IBAN (OCR)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "D E 8 9 3 7 0 4 0 0 4 4 0 5 3 2 0 1 3 0 0 0",
+     "type": "IBAN",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "B04",
+   "group": "bank",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "4111 1111 1111 1111",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "4111 1111 1111 1111",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "I01",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "12 345 678 901",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "143/215/12345",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "12 345 678 901",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "143/215/12345",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "I02",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "3 O 123/26",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "KD-458812",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "V-2026-0042",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Az",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "3 O 123/26",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "KD-458812",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "V-2026-0042",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "I03",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "2026-117",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "65 170839 J 003",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "2026-117",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "65 170839 J 003",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "I04",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "M-AB 1234",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "M-AB 1234",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "I05",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "T22000129",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "C01X00T47",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORGANISATION"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "B072RRE2I55",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "T22000129",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Reisepass C01X00T47",
+     "type": "ORGANISATION",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "B072RRE2I55",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "I06",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "123456",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "4713",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "123456",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "4713",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "I07",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "kurze Nummern ohne Bezeichnung (§22.6)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "815",
+     "type": "KENNUNG",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "I08",
+   "group": "kennung",
+   "doctype": "tabelle",
+   "field": "sachverhalt",
+   "known_limit": "Wert nicht direkt hinter Bezeichnung (§18.4)",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "HH-XY 777",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "J123456789",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "HH-XY 777",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "J123456789",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "I09",
+   "group": "kennung",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "HRB 123456",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "DE123456789",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "HRB 123456",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "DE123456789",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "D01",
+   "group": "datum_person",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "12.03.1961",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "12.03.1961",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "D02",
+   "group": "datum_person",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "01.02.2026",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "01.02.2026",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Ausschlagungsfrist",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "D03",
+   "group": "datum_person",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 2,
+   "consistency": []
+  },
+  {
+   "id": "D04",
+   "group": "datum_person",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "12.03.2025",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "12.03.2025",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "F01",
+   "group": "fakten",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 4,
+   "consistency": []
+  },
+  {
+   "id": "F02",
+   "group": "fakten",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 4,
+   "consistency": []
+  },
+  {
+   "id": "F03",
+   "group": "fakten",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 5,
+   "consistency": []
+  },
+  {
+   "id": "F04",
+   "group": "fakten",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [
+    {
+     "value": "Bad",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 4,
+   "consistency": []
+  },
+  {
+   "id": "W01",
+   "group": "pfad",
+   "doctype": "chat",
+   "field": "anmerkungen",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Herrn Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "W02",
+   "group": "pfad",
+   "doctype": "chat",
+   "field": "verlauf",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Sabine Kowalczyk",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0171 2345678",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Sabine Kowalczyk",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "0171 2345678",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "W03",
+   "group": "pfad",
+   "doctype": "wissen",
+   "field": "quellen",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Zabelhuber",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "DE89 3704 0044 0532 0130 00",
+     "type": "IBAN",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "IBAN"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Zabelhuber",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "DE89 3704 0044 0532 0130 00",
+     "type": "IBAN",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "W04",
+   "group": "pfad",
+   "doctype": "frist",
+   "field": "argumentationspunkte",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "W05",
+   "group": "pfad",
+   "doctype": "formular",
+   "field": "stil",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Wiebke Sonnenfeld",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "DE89370400440532013000",
+     "type": "IBAN",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "IBAN"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Wiebke Sonnenfeld",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "DE89370400440532013000",
+     "type": "IBAN",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "W06",
+   "group": "pfad",
+   "doctype": "vorlage",
+   "field": "vorlage",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Henrike Wallbaum",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Henrike Wallbaum",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "X01",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Platzhalter-Trick",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Karl Brenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "X02",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": "gesperrter Name in Prompt-Injection",
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "K a r l  B r e n n e r",
+     "type": "PERSON",
+     "detected": false,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
+     "leak": true,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "X03",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Karl­Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Karl​Brenner",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "KarlBrenner",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Nullbreite",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  },
+  {
+   "id": "X04",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "KARL BRENNER",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "BIRKENALLEE 17, 12345 MUSTERSTADT",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "KARL BRENNER",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "BIRKENALLEE 17, 12345 MUSTERSTADT",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "X05",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [],
+   "predicted": [
+    {
+     "value": "K. B.",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Hauptbahnhof",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": true
+    }
+   ],
+   "keep_missing": [
+    "Hauptbahnhof"
+   ],
+   "keep_total": 1,
+   "consistency": []
+  },
+  {
+   "id": "X06",
+   "group": "adversarial",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Ilse von der Heydt-Brückmann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Prof. Dr. med. Ilse von der Heydt-Brückmann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 0,
+   "consistency": []
+  }
+ ],
+ "e2e_results": [
+  {
+   "id": "E01",
+   "kind": "anhang",
+   "allowed": true,
+   "cloud_calls": 1,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 7,
+   "keep_missing": [],
+   "keep_total": 2,
+   "expect": "allow",
+   "as_expected": true
+  },
+  {
+   "id": "E02",
+   "kind": "verlauf",
+   "allowed": true,
+   "cloud_calls": 1,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 2,
+   "keep_missing": [],
+   "keep_total": 0,
+   "expect": "allow",
+   "as_expected": true
+  },
+  {
+   "id": "E03",
+   "kind": "wissen",
+   "allowed": true,
+   "cloud_calls": 1,
+   "quellenverweise": 1,
+   "quellen_text": [
+    "Mietrecht Wohnraum Kaution: Mietrecht Wohnraum: Kaution 1.500,00 EUR erstattet an Herrn [PERSON_01], IBAN DE02 [KENNUNG_01]…"
+   ],
+   "leaks": [],
+   "protect_total": 2,
+   "keep_missing": [],
+   "keep_total": 1,
+   "expect": "allow",
+   "as_expected": true
+  },
+  {
+   "id": "E04",
+   "kind": "lokale_vorabanalyse",
+   "allowed": false,
+   "cloud_calls": 0,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 6,
+   "keep_missing": [],
+   "keep_total": 0,
+   "expect": "either",
+   "as_expected": true
+  },
+  {
+   "id": "E05",
+   "kind": "fail_closed_ner",
+   "allowed": false,
+   "cloud_calls": 0,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 6,
+   "keep_missing": [],
+   "keep_total": 0,
+   "expect": "block",
+   "as_expected": true
+  },
+  {
+   "id": "E05b",
+   "kind": "fail_closed_restrisiko_ner",
+   "allowed": false,
+   "cloud_calls": 0,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 6,
+   "keep_missing": [],
+   "keep_total": 0,
+   "expect": "block",
+   "as_expected": true
+  },
+  {
+   "id": "E06",
+   "kind": "frist_aus_email",
+   "allowed": true,
+   "cloud_calls": 1,
+   "quellenverweise": 0,
+   "quellen_text": [],
+   "leaks": [],
+   "protect_total": 1,
+   "keep_missing": [],
+   "keep_total": 1,
+   "expect": "allow",
+   "as_expected": true
+  }
+ ]
+}
