@@ -81,6 +81,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   B1–B7 (Stufe B), W1–W9 und O1–O6 (Stufe C) in `PRIVACY_REVIEW_ARCHITECTURE.md` §28.3; B1 (kein Browser-Cache für
   sensible Antworten) erledigt. W1 teilweise (§29): eine Chatfrage mit Anhang sendet nur den Text der angehängten
   Dokumente (Fristen aktenweit, sichtbarer Hinweis); Editor, Neugenerierung und Schriftsatz weiter ganze Akte.
+  Benchmark `benchmarks/chat_scope_v1` (§30): Informationsverfügbarkeit offline gemessen; Antwortqualität erst nach
+  freigegebenem Live-Lauf. Entscheidungsvorlage Editor/Neugenerierung (Optionen O1–O5) in §30.4, offen.
 - **Abhängigkeiten:** P1 (Register).
 - **Abnahmekriterien:** Für jede Tabelle mit personenbezogenen Daten ist eine Löschregel definiert und per Test belegt;
   aktenübergreifender Zugriff auf Entscheidungen ist per Test ausgeschlossen.

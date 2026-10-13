@@ -2968,3 +2968,176 @@ Fall 24 im Detail:
 - Fristhinweise und Verlauf bleiben aktenweit.
 - Spätere aktenbezogene Verwaltung von Dokumenten, Chats, Entwürfen und Wissen (W2, W5) ist davon unabhängig. Die Regel
   greift nur auf Dokumente derselben Akte zu.
+
+## 30. Qualitätsbenchmark der Chat-Dokumentauswahl und Entscheidungsvorlage Editor/Neugenerierung (13.10.2026, Ausgang `89b547d`)
+
+Nur synthetische Daten. Kein externer Modellaufruf: Der Live-Lauf ist vorbereitet, aber **nicht ausgeführt**, weil die
+Freigabe (ausschließlich synthetische Daten **und** festgelegtes Ausgabenlimit beim Anbieter) nicht vorliegt.
+Produktivcode ist unverändert; die Chatregel aus §29 gilt weiter. Stufe B bleibt No-Go, Stufe C No-Go.
+
+### 30.1 Benchmark (versioniert)
+
+- **Datensatz:** `benchmarks/chat_scope_v1/cases.json`
+  - Version `v1`, Fälle `C01`–`C11` mit festen IDs.
+  - Eine synthetische Akte: 5 Dokumente plus ein Duplikat, eine Frist, Mandant, Gegnerin, Adresse und IBAN.
+  - Je Fall: Frage, Anhänge, benötigte Referenzfakten, erwartete Auslassungen in B, erwarteter Hinweis.
+  - Mess- und Bewertungsregeln sind **vor** der Auswertung im Datensatz festgelegt (`rules`), mit Nennern und Grenzen.
+- **Skript:** `scripts/bench_chat_scope.py`.
+  - Läuft über den echten Produktionspfad `ChatService.send_message` → `DraftingService` → `ClaudePrivacyGateway`.
+  - Gemessen wird der Payload, den der Schreib-Provider **unmittelbar vor dem Cloud-Aufruf** erhält: nach
+    Pseudonymisierung, Rückfrage, Restrisiko-Prüfung und Siegel, einschließlich Verlauf.
+  - Ergebnis maschinenlesbar in `benchmarks/chat_scope_v1/results_offline.json`, mit Commit, abweichenden Dateien,
+    Hash des Datensatzes und Hashes der payload- und promptbestimmenden Quellen.
+- **Varianten:**
+  - **A:** aktueller Code ohne die §29-Einschränkung; der Kontext-Provider ignoriert die Auswahl. Das ist kein Nachbau
+    eines früheren Commits; die §27-Regeln bleiben aktiv.
+  - **B:** aktuelle Regel.
+- **Abgedeckt:**
+  - Einzeldokument (C01);
+  - Mehrdokumentfrage mit einem bzw. mit allen Anhängen (C02, C03);
+  - doppelter Anhang (C04);
+  - Frist aus anderem Dokument (C05);
+  - Chronologie (C06);
+  - Information nur in nicht angehängtem Dokument (C07);
+  - Folgefragen ohne Anhang, auch mit dem Wort „Dokumente“ (C08, C09);
+  - Verlauf, der Fakten anderer Dokumente trägt (C10);
+  - Namen in der Frage (C11).
+- **Tests:** `tests/test_bench_chat_scope.py` (19). Sie prüfen:
+  - die Invarianten von B;
+  - Folgefragen mit ganzer Akte;
+  - die Duplikatzählung;
+  - Lecks über die Frage;
+  - die Normalisierung von Beträgen und Daten;
+  - Zahlgrenzen und das Lesen der Hinweiszahl;
+  - die Bewertungsregeln für den Live-Lauf;
+  - die **Live-Sperre**: ohne beide Bestätigungsflags kein Provider, kein Aufruf.
+
+### 30.2 Ergebnisse offline (Informationsverfügbarkeit, nicht Antwortqualität)
+
+| Kennzahl | A ganze Akte | B Chatregel |
+|---|---|---|
+| Fälle / Fehler | 11 / 0 | 11 / 0 |
+| benötigte Fakten im Payload | 21/21 | 17/21 |
+| davon unerwartet fehlend | – | 0 |
+| fehlend ohne sichtbaren Hinweis | – | 0 |
+| Hinweis wie erwartet / Hinweiszahl korrekt | – | 11/11 / C04 korrekt (Duplikat nicht gezählt) |
+| nicht benötigte Fakten im Payload (Minimierung) | 100/100 | 47/100 |
+| sensible Klartextbegriffe im Payload | 0/66 | 0/66 |
+| Payload gesamt (Zeichen) | 12 548 | 8 295 |
+| Laufzeit lokal, Median je Fall (ms) | 260 | 162 |
+
+Die genauen Zeichenzahlen und Laufzeiten stehen in der Ergebnisdatei des jeweiligen Laufs; Laufzeiten schwanken.
+
+**Die 4 fehlenden Fakten in B** sind genau die vorab erwarteten Auslassungen, jeweils mit Hinweis:
+- C02: Vertragspreis;
+- C06: Vertragsdatum und Fertigstellungstermin;
+- C07: Kaution 2019.
+
+**Fristen:** C05 bleibt in B vollständig, da Fristhinweise aktenweit sind.
+
+**Folgefragen ohne Anhang:** C08 und C09 senden in A und B die ganze Akte, ohne Hinweis.
+
+**Verlauf:** C10 zeigt, dass frühere Antworten Fakten anderer Dokumente mitführen; in B gingen drei solcher Beträge nur
+über den Verlauf hinaus. Das ist der dokumentierte Restkanal.
+
+**Grenzen:**
+- Offline antwortet ein Fake-Provider. Daher ist nur messbar, **welche Informationen verfügbar waren**, nicht ob die
+  Antwort richtig, vollständig oder frei von unbelegten Aussagen ist. Das ist NICHT VERIFIZIERT.
+- Lokale KI ist aus, wie im Standard; Wissensbasis und Recherche sind leer.
+- Die Leckprüfung deckt Dokumenttext und Frage ab; der Verlauf enthält nur vorgefertigte Antworten.
+- Eine einzige synthetische Akte. Aus den Zahlen folgt keine allgemeine Aussage zur Antwortqualität.
+
+**Nebenbefund:** Der Aktentitel „Werklohn Estrich …“ wird als „Werklohn [PERSON_01] …“ pseudonymisiert. Das ist eine
+NER-Übermaskierung (vorbestehend), betrifft Lesbarkeit, ist kein Leck.
+
+**Unabhängiges Review:** Produktionspfad, Reproduzierbarkeit (zwei Läufe identisch bis auf Zeiten) und Live-Sperre
+bestätigt. Behoben wurden:
+- nach dem Schreibaufruf blockierte Antworten zählen als Fehler;
+- Modellname aus `claude_model_name`;
+- Herkunftsangaben ergänzt;
+- Live-Ergebnisse mit Zeitstempel, nie überschrieben, Zwischenstand nach jedem Fall;
+- Betrags- und Datumsformate normalisiert, Zahlgrenzen beachtet („14.250,00“ ≠ „4.250,00“);
+- Nenner ausgewiesen;
+- Fall mit Namen in der Frage ergänzt.
+
+### 30.3 Live-Lauf (vorbereitet, NICHT ausgeführt)
+
+**Freigabe nötig:** Der Owner bestätigt ausdrücklich, dass (1) ausschließlich synthetische Daten verwendet werden und
+(2) beim Anbieter ein Ausgabenlimit festgelegt ist. Die App-interne Budgetprüfung greift im Benchmark nicht
+(In-Memory-DB); das Anbieterlimit ist die einzige echte Grenze.
+
+**Ablauf nach Freigabe:**
+1. `python scripts/bench_chat_scope.py --live --confirm-synthetic-only --confirm-spend-limit`
+   - 22 Aufrufe: 11 Fälle × 2 Varianten, je nur der letzte Turn.
+   - Ergebnis: `results_live_<Zeitstempel>.json` mit Tokens je Aufruf als Kostengrundlage.
+2. Installierter Build:
+   - normale Instanz ohne QA-Variablen, QA-Datenbank mit der synthetischen Akte;
+   - Fall 24 ohne Fang-Server;
+   - Payload-Nachweis über das lokale API-Protokoll (nur Hash/Kennzahlen);
+   - Antwort und Hinweis prüfen.
+3. Dokumentieren:
+   - Modell (`claude_model_name`), Commit, Code-Hashes;
+   - Tokens und Kosten laut Anbieter;
+   - Fehler;
+   - die automatische Bewertung (`score_answer`). Sie ist **vorläufig**: Normalisierung von Beträgen und Daten,
+     benötigte Fakten, unbelegte Werte, kein LLM-Selbsturteil.
+4. Fachliche Prüfung der Antworten durch eine Anwältin bzw. einen Anwalt. Erst danach gelten Qualitätsaussagen als
+   validiert. Kausalaussagen sind wegen des Aufbaus (eine Akte, n = 1 je Fall) nicht belastbar.
+
+### 30.4 Entscheidungsvorlage: Dokumentauswahl für Editor, Neugenerierung, „Anmerkung übernehmen“ (nicht umgesetzt)
+
+**Ist-Zustand:** Alle drei senden die ganze Akte (unabhängig nachverfolgt):
+- **Editor-KI:** dazu nur die Markierung, nicht der übrige Entwurf.
+- **Neugenerierung:** nur die Akte, ohne Entwurfstext.
+- **Anmerkung übernehmen:** dazu der Anmerkungstext.
+
+Es gibt **keinen gespeicherten Nachweis**, welche Dokumente ein Entwurf nutzte (kein Feld, keine Verknüpfungstabelle).
+
+**Gemessen** (synthetisch, 5 Dokumente; Payload in Zeichen; die beiden eingeengten Varianten sind nur simuliert):
+
+| Umfang | Editor | Neugenerierung | Anmerkung |
+|---|---|---|---|
+| ganze Akte (heute) | 1969 | 1440 | 1497 |
+| nur Rechnung | 1081 | 552 | 609 |
+| keine Dokumente | 912 | 383 | 440 |
+
+- **Vollständige Platzhalterprüfung:** Die Editor-Zwecke und die Neugenerierung verlangen sie. Mit ganzer Akte
+  blockierten im synthetischen Versuch alle drei, weil Platzhalter aus nicht benötigten Dokumenten in der Antwort
+  fehlten. Weniger Dokumente bedeuten weniger Blockaden. Das ist nicht live reproduziert.
+- **Unbeteiligtes Dokument:** Ein unbeteiligtes Dokument mit Adresse blockierte im Versuch alle drei Aktionen vor dem
+  Cloud-Aufruf.
+
+**Optionen:**
+
+| Option | Datenschutz | Qualität / Vollständigkeit | Aufwand |
+|---|---|---|---|
+| O1 ganze Akte (heute) | keine Verbesserung | Kontext vollständig, aber häufige Blockaden | 0 |
+| O2 Stil-Aktionen (Präzisieren, Kürzen, Alternativen) ohne Aktendokumente | groß | kaum Risiko: Stilarbeit an der Markierung | klein |
+| O3 Neugenerierung/Anmerkung erben die Dokumente des Ausgangsentwurfs (neue Verknüpfungstabelle, Migration; ältere Entwürfe: Rückfall auf ganze Akte) | gut | Risiko, wenn eine Anmerkung ein anderes Dokument meint; Hinweis nötig | mittel |
+| O4 Dokumentauswahl in jeder Aktion | präzise | abhängig von der Bedienung | mittel–hoch |
+| O5 O2 + O3, dazu „ganze Akte / Dokumente ändern“ als Ausweg | groß | ausgewogen | mittel |
+
+**Empfehlung:** O5 in Stufen, zuerst O2 (kleinste Änderung, Datenschutz und Blockaden zugleich), dann O3 mit
+gespeicherter Verknüpfung, die Auswahl nur als Ausweg. Der Schriftsatz-Workflow bleibt unverändert (bewusst ganze Akte).
+
+**Offene Entscheidungen (Owner):**
+1. Welche Editor-Aktionen ohne Dokumente laufen: nur die drei Stil-Aktionen oder auch „Rechtliche Prüfung“?
+2. Gehen ohne Dokumente Aktentitel und aktenweite Fristen weiter mit?
+3. Ältere Entwürfe ohne gespeicherte Dokumentliste: Rückfall auf ganze Akte oder auf keine Dokumente?
+4. Neue Verknüpfungstabelle (Migration) oder Rekonstruktion aus dem Chat (unsicher)?
+5. Wortlaut und Platz des Hinweises bzw. des Auswegs.
+6. Soll der Editor zusätzlich den vollständigen Entwurf senden (heute nur die Markierung)?
+7. Platzhalterprüfung für Editor-Aktionen streng lassen oder allein auf weniger Dokumente setzen?
+
+### 30.5 Status
+
+| Punkt | Status |
+|---|---|
+| Benchmark versioniert, Regeln vorab, maschinenlesbar, reproduzierbar | PASS |
+| B: keine unerwarteten Auslassungen, kein Auslassen ohne Hinweis, Folgefragen mit ganzer Akte | PASS |
+| Sensible Klartextbegriffe im Payload (Dokumenttext, Frage) | PASS (0/66) |
+| Antwortqualität (Korrektheit, unbelegte Aussagen) | NICHT VERIFIZIERT: Live-Lauf ohne Freigabe nicht ausgeführt |
+| Kosten | NICHT VERIFIZIERT (kein Live-Aufruf) |
+| Volle Testsuite: 4290 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
+| Installierter Build | nicht erforderlich: kein Produktivcode geändert; Fall 24 (§29) gilt weiter |
+| Editor/Neugenerierung | Entscheidungsvorlage; nicht umgesetzt |
