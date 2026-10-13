@@ -2756,3 +2756,127 @@ K1 ist Voraussetzung für K2/K3. K1–K9 sind Voraussetzungen für Stufe C (§26
 
 Die Pilotstufen bleiben unverändert (§26.7): A nach den Kanzleibestätigungen, B No-Go bis zu den Nachweisen, C No-Go.
 
+
+## 28. Risikobasierter Plan von Stufe B Richtung Stufe C und Marktreife (13.10.2026, Ausgang `5050d59`)
+
+Nur synthetische Daten. Dieser Plan ist **keine** Freigabe. Stufe B bleibt No-Go, bis die Nachweise aus §26.5 B
+vorliegen; Stufe C bleibt No-Go, bis technische, vertragliche und organisatorische Voraussetzungen nachgewiesen und
+Freigaben dokumentiert sind. P0-08 (Gateway) bleibt zurückgestellt, die lokale Schlüsselverwaltung ist unverändert.
+Gesetzliche Fristen, verantwortliche Personen und Freigaben werden hier nicht festgelegt; Rollen sind Funktionen.
+
+### 28.1 Bestand (gegen den Code geprüft, nicht nur gegen die Doku)
+
+Unabhängige Analyse der Kandidaten mit synthetischen Skripten:
+- **Browser-/WebView2-Cache:** keine einzige Antwort mit Akten-, Dokument- oder Chatinhalt trug `Cache-Control`; der
+  Download sendete `ETag`/`Last-Modified` (gemessen: `cache-control: None` auf Aktenseite, Dokumentansicht, Seitenbild,
+  Download, Chat, Entwürfe, PDF-Export, API). Die WebView2 läuft laut pywebview-Quelltext im InPrivate-Modus mit einem
+  temporären Profil unter `%TEMP%`, das beim Schließen gelöscht wird (nicht am installierten Build verifiziert); innerhalb
+  einer Sitzung lieferte sie nach dem Löschen der Akte eine Datei aus dem Cache (§27.6).
+- **Endgültige Löschung:** nicht vorhanden; Akten nur weich gelöscht (dokumentierte Aufbewahrungsentscheidung). Betroffen
+  wären rund 25 Tabellen und die Dateien in `intake/`, `mail_attachments/`, `chat_uploads/`, `schriftsatz_uploads/`;
+  SQLite erzwingt keine Fremdschlüssel, jede Löschung müsste ausdrücklich erfolgen. Kein Code löscht Dokumentdateien.
+- **Weitere Reste für Stufe B:** Originale im überwachten Scan-Ordner (Intake kopiert nur); `chat_uploads/` nicht im Backup;
+  `*.pre-restore-*.bak` unverschlüsselt neben der DB; Export-ZIPs in `%TEMP%\lexono_dashboard_exports` bei Absturz.
+- Datenminimierung, Wissensbasis, Backups, Protokolle: Stand §27.
+
+### 28.2 Umgesetzt: keine Zwischenspeicherung sensibler Antworten
+
+**Priorität und Begründung:**
+- einziger gemessener Restpfad, der **keine offene Kanzleientscheidung** voraussetzt;
+- wirkt sofort für Stufe B: nach dem Löschen oder Sperren bleiben keine angesehenen Dokumente im Cache abrufbar;
+- klein, klar abgegrenzt, ohne Einfluss auf Cloud-Payloads, Pseudonymisierung, Gates oder Sachverhalt.
+
+Die endgültige Löschung (W2) wäre für „nach Stufe B wieder entfernbar“ wichtiger, kehrt aber eine dokumentierte
+Produktentscheidung um und hängt von K1/K7 ab – nach CLAUDE.md wird sie daher als Entscheidung vorgelegt, nicht
+eigenmächtig gebaut.
+
+**Änderung:** `app/main.py` – reine ASGI-Middleware: jede Antwort außer `/dashboard/static/` erhält
+`Cache-Control: no-store` und `Pragma: no-cache`; `ETag` und `Last-Modified` entfallen. Streams (SSE), Hintergrundaufgaben
+nach dem Senden und Range-Anfragen bleiben unverändert; statische Dateien bleiben cachebar.
+
+**Getrennt geprüft:**
+
+| Aspekt | Ergebnis |
+|---|---|
+| Leck (lokal) | behoben: kein Cache-Eintrag für sensible Antworten; installierter Build: Download nach dem Löschen 404 **ohne** `no-store` im Abruf |
+| Cloud-Payload | unverändert (keine Änderung an Gateway/Kontext) |
+| Fehlalarm/Blockade | keine: alle Seiten, Downloads, Streams funktionieren (volle Suite, Fälle 20, 23) |
+| Sachverhaltsverlust | keiner |
+| Leistung | statische Dateien unverändert cachebar; Seiten werden ohnehin dynamisch erzeugt |
+
+**Unabhängiges Review:** keine blockierenden Befunde; SSE weiterhin inkrementell, Hintergrundaufgaben laufen, Range 206,
+304 für statische Dateien, keine Pfadumgehung. Gering: unbehandelte 500-Antworten (generischer Text ohne Aktendaten)
+erhalten kein `no-store`, weil Starlettes Fehler-Middleware außen liegt.
+
+### 28.3 Roadmap (Arbeitspakete nach Risiko und Abhängigkeit)
+
+Legende Rolle: **K** Kanzleileitung, **DSB** Datenschutzbeauftragte/r (falls bestellt), **IT** Kanzlei-IT, **P**
+Produktverantwortung/Entwicklung. Status: ERLEDIGT / OFFEN / ENTSCHEIDUNG OFFEN.
+
+**Vor Stufe B (nächstes Zwischenziel)**
+
+| WP | Inhalt | Abnahmekriterium / Nachweis | Tests | Rolle | Status |
+|---|---|---|---|---|---|
+| B1 | Keine Zwischenspeicherung sensibler Antworten | `no-store` auf allen nicht-statischen Antworten; Download nach Löschen 404 im installierten Build | `test_privacy_no_store_headers.py`, Fall 23 | P | **ERLEDIGT** (§28.2) |
+| B2 | Synthetischer Live-Aufruf mit genau dem installierten Build | Protokoll nach 28.4 | Fall 20 gegen echte API | P, K (Zustimmung zum Versand synthetischer Daten) | OFFEN |
+| B3 | Umfang der Testakten | unterschriebene Liste: Akten, Herkunft, Personenbezug, Zeitraum, Beteiligte | – | K | ENTSCHEIDUNG OFFEN |
+| B4 | Einweisung §2.2a, Meldeweg Art. 33 | Teilnahmeprotokoll, benannte Funktion | – | K | OFFEN |
+| B5 | Backup-Ort zugriffsgeschützt | Ort, Zugriffsliste | – | IT | OFFEN |
+| B6 | Übermittlung an Anthropic bei Personenbezug geprüft | Vermerk | – | K, DSB | ENTSCHEIDUNG OFFEN |
+| B7 | Aufräumplan nach Stufe B | Checkliste (PILOT_CHECKLIST J) abgearbeitet und protokolliert: Akten gelöscht, Scan-Ordner-Originale, `chat_uploads/`, `schriftsatz_uploads/`, `*.pre-restore-*.bak`, Export-Reste in `%TEMP%`, Backups der Phase | manuelle Prüfung | IT, P | OFFEN (bis W2 nur manuell) |
+
+**Vor Stufe C (technisch)**
+
+| WP | Inhalt | Abnahmekriterium | Tests | Rolle | Abhängigkeit | Status |
+|---|---|---|---|---|---|---|
+| W1 | Anfragebezogene Dokumentauswahl (§27.1 M3) | angehängte Dokumente voll, übrige gekürzt; keine Verschlechterung der Antwortqualität auf synthetischen Akten (A/B-Messung, Fristen/Beträge/Chronologie vollständig) | Kontext- und Payload-Tests, Qualitätsbenchmark | P, K (Entscheidung) | – | ENTSCHEIDUNG OFFEN |
+| W2 | Endgültige Löschung einer Akte (Datensätze aller ~25 Tabellen, Dateien, Embeddings, Entscheidungen, Chats/Anhänge), inhaltsfreier Löschnachweis | nach Löschlauf keine Zeile/Datei mehr (je Tabelle getestet); Wiederherstellungshinweis | je Tabelle + Dateien | P | K1, K7 | ENTSCHEIDUNG OFFEN |
+| W3 | Löschfrist wirksam (Zeitsteuerung von W2) | Akte älter als Frist gelöscht, jüngere bleibt | zeitgesteuerter Test | P | W2, K1 | OFFEN |
+| W4 | Backups verschlüsselt, rotiert; vollständiger Inhalt (inkl. `chat_uploads/` o. bewusster Ausschluss); Wiederherstellung ohne Rest-`.bak` | Testwiederherstellung, Schlüsselverwahrung dokumentiert | Backup-/Restore-Tests | IT, P | Kanzleientscheidung Schlüssel/Aufbewahrung | ENTSCHEIDUNG OFFEN |
+| W5 | Aktenbezogenes Wissen (K8): Herkunftsakte speichern, bei Löschung deaktivieren; `/api/knowledge` nur freigegebene Einträge für Nicht-Admins | Migration + Tests | Wissens-/API-Tests | P | – | OFFEN |
+| W6 | Dateirechte `C:\ProgramData\Lexono` (DB, Dateien, Protokolle, `app.log`), Rotation `app.log` | ACL-Auszug ohne Inhalte; Rotation belegt | Installer-Test | IT, P | berührt `.env` → gemeinsam mit P0-08 entscheiden | ENTSCHEIDUNG OFFEN |
+| W7 | Prüfung ausgehender Payloads ausbauen: Wissensfilter auch für Zeugen/Dritte (Namen aus Dokumenten anderer Akten), Hinweis bei ausgelassenen Einträgen | Korpus-Messung: 0 fremde Namen, keine neue Blockade | Privacy-Korpus | P | – | OFFEN |
+| W8 | Entwürfe/Posteingang gelöschter Akten ausblenden, 500-Antworten `no-store` | Tests | Web-Tests | P | – | OFFEN |
+| W9 | P0-08 Gateway nach Servereinrichtung prüfen (Funktion, Sicherheit, Integration) | Prüfprotokoll gegen echten Server, P0-08-Abnahme | Gateway-Integrationstests | K, P, Betreiber | Server | ZURÜCKGESTELLT |
+
+**Vor Stufe C (vertraglich/organisatorisch, alle bei der Kanzlei)**
+
+| Nr. | Voraussetzung | Nachweis | Status |
+|---|---|---|---|
+| O1 | Auftragsverarbeitung/Drittlandübermittlung (Anthropic, ggf. Gateway-Betreiber) | geprüfte Verträge, Vermerk | ENTSCHEIDUNG OFFEN |
+| O2 | Aufbewahrungsfristen je Datenkategorie (K1) | schriftliche Tabelle | ENTSCHEIDUNG OFFEN |
+| O3 | Datenschutz-Folgenabschätzung bzw. Begründung, warum nicht erforderlich | Dokument | ENTSCHEIDUNG OFFEN |
+| O4 | Verzeichnis der Verarbeitungstätigkeiten ergänzt | Eintrag | OFFEN |
+| O5 | Berufsrechtliche Prüfung (Verschwiegenheit, Einbindung Dienstleister) | Vermerk | ENTSCHEIDUNG OFFEN |
+| O6 | Stufe B ohne offene Datenschutzbefunde abgeschlossen | Abschlussbericht | OFFEN |
+
+**Marktreife (nach Stufe C):** Mehr-Kanzlei-Trennung (FUTURE_ROADMAP P5), Bedrohungsmodell und Datenfluss-Register (P1),
+kontinuierliche Sicherheitsvalidierung (P6), externe Prüfung (Penetrationstest), Installer mit festen Dateirechten.
+
+### 28.4 Plan: synthetischer Live-Aufruf als Nachweis für Stufe B (B2, nicht ausgeführt)
+
+1. Voraussetzung: Zustimmung der Kanzlei zum Versand **synthetischer** Daten an Anthropic; gültiger Schlüssel (lokal,
+   unverändert); installierter Build = Commit dieses Abschnitts.
+2. Normale Instanz ohne `ANTHROPIC_BASE_URL`/QA-Variablen; synthetische Akte aus Fall 20 (Nachlassfall).
+3. Ablauf: Chatfrage mit synthetischem Dokument; Rückfrage-Karte bedienen; Antwort abwarten.
+4. Nachweise: Datum/Uhrzeit, Build-Commit, Modell, HTTP-Status, Platzhalter im Ausgang (über das lokale API-Protokoll,
+   nur Hash/Kennzahlen), Rückführung der Platzhalter in der Antwort, keine Klartextwerte aus PROTECT im Protokoll.
+5. Ergebnis in PILOT_CHECKLIST J (B) eintragen; Fehlschlag dokumentieren, nicht wiederholen ohne Ursache.
+
+### 28.5 QA und Bewertung
+
+| Punkt | Status |
+|---|---|
+| Neuer Regressionstest `tests/test_privacy_no_store_headers.py` (11): ohne Fix 10 rot, mit Fix grün | PASS |
+| Volle Testsuite: 4273 bestanden; nur die 4 bekannten `test_design_refresh`-Fehler (fehlende Logos, fremde Änderung); der bekannte zeitabhängige Test bestand | PASS |
+| Build, Installation | PASS |
+| Installierter Build, Fall 23 (neu): Download bei aktiver Akte 200 mit `no-store` ohne ETag; nach Löschen 404 ohne `no-store` im Abruf; Aktenseite 404; CSS weiter cachebar | PASS |
+| Installierter Build, Fall 20 (Regression, Chat-Stream über Fang-Server) | PASS |
+| Echter Anthropic-Aufruf mit diesem Build (B2) | NICHT VERIFIZIERT (geplant, 28.4) |
+| WebView2-Profil wird beim Schließen gelöscht | NICHT VERIFIZIERT (aus pywebview-Quelltext abgeleitet) |
+| Endgültige Löschung, Backup-Verschlüsselung, Dateirechte | FAIL / offen (W2, W4, W6) |
+| Vollständige Leckfreiheit, Rechtskonformität | NICHT VERIFIZIERT, wird nicht behauptet |
+
+Stufen unverändert: A nach den Kanzleibestätigungen; **B No-Go** bis B2–B7; **C No-Go** bis W1–W9 (soweit entschieden)
+und O1–O6 nachgewiesen und Freigaben dokumentiert sind.
+

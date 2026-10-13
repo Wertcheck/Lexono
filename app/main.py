@@ -455,3 +455,39 @@ app.mount(
     StaticFiles(directory=STATIC_DIR),
     name="dashboard-static",
 )
+
+
+_STATIC_PREFIX = "/dashboard/static/"
+
+
+class NoStoreMiddleware:
+    """Datenschutz-Pruefung §28: Antworten mit Akten-, Dokument- und Chatinhalten duerfen nicht im Browser-/WebView2-Cache
+    liegen bleiben. Ohne Cache-Control lieferte die WebView2 eine zuvor geladene Datei nach dem Loeschen der Akte weiter
+    aus dem Cache (§27.6, Download mit ETag/Last-Modified). Statische Dateien (CSS/JS/Bilder) bleiben cachebar.
+
+    Reine ASGI-Middleware (kein BaseHTTPMiddleware): Streams (SSE) und Hintergrundaufgaben nach dem Senden bleiben
+    unveraendert."""
+
+    def __init__(self, app) -> None:  # noqa: ANN001 - ASGI-Anwendung
+        self.app = app
+
+    async def __call__(self, scope, receive, send) -> None:  # noqa: ANN001 - ASGI-Signatur
+        if scope["type"] != "http" or scope["path"].startswith(_STATIC_PREFIX):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_no_store(message) -> None:  # noqa: ANN001
+            if message["type"] == "http.response.start":
+                headers = [
+                    (key, value)
+                    for key, value in message.get("headers", [])
+                    if key.lower() not in (b"cache-control", b"etag", b"last-modified", b"pragma")
+                ]
+                headers += [(b"cache-control", b"no-store"), (b"pragma", b"no-cache")]
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_no_store)
+
+
+app.add_middleware(NoStoreMiddleware)

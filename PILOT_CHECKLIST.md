@@ -219,9 +219,14 @@ dass alles Notwendige vorbereitet ist.
     - [ ] Umfang schriftlich festgelegt: Akten, Herkunft, Personenbezug ja/nein, Zeitraum, Beteiligte (unterschriebene Liste)
     - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Beteiligten durchgegangen (Teilnahmeprotokoll)
     - [ ] Meldeweg für Datenschutzauffälligkeiten und Zuständigkeit für Art. 33 DSGVO benannt (Name/Funktion: ________)
-    - [ ] Synthetischer Live-Aufruf mit genau dem installierten Build (Protokoll: Datum, Build-Commit, Ergebnis)
+    - [ ] Synthetischer Live-Aufruf mit genau dem installierten Build nach PRIVACY_REVIEW_ARCHITECTURE.md §28.4
+          (Protokoll: Datum, Build-Commit, Ergebnis; vorher Zustimmung der Kanzlei zum Versand synthetischer Daten)
     - [ ] Backup-Speicherort festgelegt und zugriffsgeschützt (Ort, Zugriffsliste)
     - [ ] Falls Personenbezug: Übermittlung an Anthropic von der Kanzlei geprüft (Vermerk)
+    - [ ] Aufräumplan für das Ende von Stufe B festgelegt (§28.3 B7) und nach Abschluss protokolliert: Testakten
+          gelöscht (derzeit nur weich – Dateien und Datensätze bleiben bis zu einer endgültigen Löschung, W2),
+          Originale im Scan-Ordner, `chat_uploads/`, `schriftsatz_uploads/`, `*.pre-restore-*.bak`, Export-Reste in
+          `%TEMP%\\lexono_dashboard_exports`, Backups der Phase
   - [ ] **Stufe C – echte Mandantendaten: derzeit NO-GO.** Erst wenn alle Punkte nachgewiesen sind:
     - [ ] **P0-08:** Lexono-Gateway nach der Servereinrichtung eingerichtet und gesondert geprüft; Anthropic-Schlüssel nur
           dort (Entscheidung 13.10.2026, §26.4; Prüfprotokoll gegen den echten Server, P0-08-Abnahme). TLS allein ist
