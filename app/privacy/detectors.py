@@ -70,6 +70,7 @@ _KUNDENNUMMER_PATTERN = re.compile(
 _REFERENCE_LABEL = (
     r"(?:versicherungsschein|versicherten|polic(?:e|en)|schadens?|patienten|personal|z(?:ä|ae)hler|vorgangs|auftrags|"
     r"fall|mandats|referenz|antrags|buchungs|kassenzeichen|aktenzeichen|bescheid|beitrags|lieferschein|sendungs|"
+    r"matrikel|sch(?:ü|ue)ler|h(?:ä|ae)ftlings|gefangenen(?:buch)?|mitarbeiter|bewohner|"
     r"vertragskonto|(?:ü|ue)berweisungs)-?\s?(?:nummer|nr\.?)|mandatsreferenz|kassenzeichen|ref\.|gz\.|"
     r"(?:ihr|ihre|unser|unsere)\s+zeichen|gesch(?:ä|ae)ftszeichen|vertragskonto"
 )
@@ -390,7 +391,9 @@ def detect_kundennummer(text: str) -> list[DetectedSpan]:
 def detect_referenznummer(text: str) -> list[DetectedSpan]:
     """Bezeichnete personenbeziehbare Bezugsnummern (siehe _REFERENCE_LABEL/_REFERENCE_NOUN). Kategorie "kennung"."""
     spans = []
-    for pattern, min_digits in ((_REFERENCE_PATTERN, 1), (_REFERENCE_NOUN_PATTERN, 5)):
+    # Bezeichnete Nummer ab 3 Ziffern (Review §25: "Mitarbeiter-Nr. 12" - die "12" stand auch anderswo im Text, die
+    # Leck-Pruefung blockierte; eine zweistellige Nummer ist fuer sich kaum identifizierend)
+    for pattern, min_digits in ((_REFERENCE_PATTERN, 3), (_REFERENCE_NOUN_PATTERN, 5)):
         for match in pattern.finditer(text):
             value = match.group(1)
             if sum(ch.isdigit() for ch in value) < min_digits or _NUMERIC_DATE_PATTERN.fullmatch(value):
@@ -504,7 +507,10 @@ _BIRTH_LABEL_LONG = (
     r"(?:(?<=,)|(?<=\())\s*\*)"
     # bis zu 25 Zeichen ohne Ziffer, Satz-/Tabellentrenner, Klammer oder Komma ("des Kindes:", "ist der"); ein Komma nur
     # direkt vor dem Datum ("am Mittwoch,") - sonst traf "geboren, Umzug am ..." ein anderes Datum (§24-Review)
-    r"[^\n\d.;,|(]{0,25},?[:.]?\s*$"
+    r"[^\n\d.;,|(]{0,25},?[:.]?\s*$|"
+    # ", dem/am" nur nach "Geburtstag" ("An seinem 45. Geburtstag, dem 12.03.2025") - nicht "geboren, am 05.03.2024
+    # kuendigte er" (Review §25: sonst Ereignisdatum als Geburtsdatum mit falscher Altersangabe)
+    r"\bgeburtstag[^\n\d.;,|(]{0,25},?\s*(?:dem|am)[:.]?\s*$"
 )
 _BIRTH_LABEL_BEFORE = re.compile(r"(?:" + _BIRTH_LABEL_SHORT + r")|(?:" + _BIRTH_LABEL_LONG + r")", re.IGNORECASE)
 _BIRTH_WORD_AFTER = re.compile(
@@ -576,6 +582,14 @@ def detect_geburtsdatum(text: str, *, current_year: int | None = None) -> list[D
             or (_OBITUARY_STAR_BEFORE.search(before) and _OBITUARY_CROSS_AFTER.match(text, span.end))
         ):
             birth = True
+            # "An seinem 45. Geburtstag, dem 12.03.2025" ist ein Jahrestag, kein Geburtsdatum (Risikoanalyse §25: sonst
+            # falsche Altersangabe "1 vollendete Jahre") - Ordinalzahl vor "Geburtstag" oder Jahr juenger als 14 Jahre
+            year = _date_year(span.value)
+            if re.search(r"\bgeburtstag", before, re.IGNORECASE) and (
+                re.search(r"\d{1,3}\.\s*geburtstag", before, re.IGNORECASE)
+                or (year is not None and year > this_year - _MINIMUM_BIRTH_AGE_YEARS)
+            ):
+                category = "geburtstag"
         elif _BIRTHDAY_AFTER.match(text, span.end):
             birth, category = True, "geburtstag"
         else:
@@ -613,8 +627,9 @@ _DEATH_LABEL_BEFORE = re.compile(
     # Zeichen ohne Ziffer, Satz-/Tabellentrenner, Klammer oder Komma; ein Komma nur direkt vor dem Datum.
     r"(?P<label>\b(?:verstorben|gestorben|verstarb|starb|verschied|verschieden|todestag|todesdatum|todeszeitpunkt|sterbedatum|"
     r"sterbetag|sterbefall|todesfall|ableben|erbfall(?:s)?)\b|\b(?:gest|verst)\.|†|"
-    r"\btod\s+(?:de[rs]\s+[\wäöüß]+\s+)?(?:ist\s+|trat\s+)?(?=am\b))"
-    r"(?P<gap>[^\n\d.;,|(]{0,45}),?[:.]?\s*$",
+    r"\btod\s+(?:(?:de[rs]|seine[rs]?|ihre[rs]?|von)\s+(?:(?:herrn?|frau)\s+)?[\wäöüß]+\s+)?(?:ist\s+|trat\s+)?(?=am\b)|"
+    r"\b(?:died|passed\s+away)\b)"
+    r"(?P<gap>[^\n\d.;,|(]{0,45}),?(?:\s*dem)?[:.]?\s*$",
     re.IGNORECASE,
 )
 # Woerter in der Luecke, die das folgende Datum zu einer Frist oder einem anderen Ereignis machen ("des Verstorbenen haben
@@ -628,11 +643,15 @@ _DEATH_WORD_AFTER = re.compile(
     # Nur feste Fuellwoerter zwischen Datum und Verb ("in Koeln", "im Krankenhaus", "nach langer Krankheit") - eine freie
     # Luecke traf Kenntnis-, Bescheid- und Schreibensdaten ("Am 05.03.2024 erfuhr die Tochter dass der Vater verstorben
     # ist", 2. Review-Runde §24); die bleiben lesbar und als Frist erkennbar.
-    r"(?:\s+in\s+[A-ZÄÖÜ][\wäöüß\-]+(?:\s+[A-ZÄÖÜ][\wäöüß\-]+)?|\s+im\s+[\wäöüß\-]+|"
+    r"(?:\s+in\s+[A-ZÄÖÜ][\wäöüß\-]+(?:\s+[A-ZÄÖÜ][\wäöüß\-]+)?|\s+im\s+alter\s+von\s+\d{1,3}\s+jahren|"
+    r"\s+im\s+[\wäöüß\-]+(?:\s+[A-ZÄÖÜ][\wäöüß\-]+)?|"
     r"\s+nach\s+(?:langer|kurzer|schwerer)\s+[\wäöüß]+|\s+zu\s+hause)?"
     # "Die am 01.02.2024 Verstorbene" (Substantiv, gross) zaehlt; "des am ... verstorbenen Vaters" (Adjektiv) ebenso nur
     # direkt nach dem Datum - "Schreiben vom ... an die Erben des verstorbenen Vaters" hat Woerter dazwischen
-    r"\s+(?:verstorben|gestorben|verschieden)\b(?!\s+(?:ist\s+)?(?:sei|war)\b)|\s+(?-i:Verstorbene[nrs]?)\b",
+    r"\s+(?:verstorben|gestorben|verschieden)\b(?!\s+(?:ist\s+)?(?:sei|war)\b)|\s+(?-i:Verstorbene[nrs]?)\b|"
+    # Traueranzeige ("ist am ... sanft entschlafen", "hat uns am ... fuer immer verlassen") und "am ... eingetretenen Tod"
+    r"(?:\s+(?:sanft|friedlich|ruhig|still))?\s+(?:entschlafen|heimgegangen)\b|\s+(?:f(?:ü|ue)r\s+immer|von\s+uns)\s+"
+    r"(?:verlassen|gegangen)\b|\s+eingetretene[nm]?\s+tod\b",
     re.IGNORECASE,
 )
 _DEATH_PERSON_BEFORE_PAREN = re.compile(r"\bverstorbene[nrs]?\s+[\wäöüß]+\s*\(\s*$", re.IGNORECASE)

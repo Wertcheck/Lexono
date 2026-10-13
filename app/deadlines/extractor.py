@@ -137,6 +137,27 @@ def trim_partial_personal_dates(snippet: str | None, full_text: str | None) -> s
     return " ".join(words).strip()
 
 
+_ANY_DATE = re.compile(r"\d{1,2}\s*\.\s*\d{1,2}\s*\.\s*\d{2,4}|\d{1,2}\.\s*[A-Za-zÄÖÜäöü]+\s+\d{4}")
+
+
+def _keyword_belongs_to(text: str, match: re.Match) -> bool:
+    """Gehoert ein Fristen-Schluesselwort zu DIESEM Datum? Nur wenn zwischen Schluesselwort und Datum kein anderes Datum
+    steht (Risikoanalyse §25: "geb. 12.03.1980, Frist bis 30.11.2026" machte sonst auch das Geburtsdatum zum Vorschlag)."""
+    before = text[max(0, match.start() - _CONTEXT_WINDOW_CHARS) : match.start()]
+    lower = before.lower()
+    last = max((lower.rfind(k) for k in _DEADLINE_KEYWORDS), default=-1)
+    if last >= 0 and not _ANY_DATE.search(before[last:]):
+        return True
+    after = text[match.end() : match.end() + _CONTEXT_WINDOW_CHARS]
+    lower_after = after.lower()
+    first = min((i for i in (lower_after.find(k) for k in _DEADLINE_KEYWORDS) if i >= 0), default=-1)
+    if first < 0 or _ANY_DATE.search(after[:first]):
+        return False
+    # Ein Schluesselwort NACH dem Datum gehoert nur dazu, wenn es nicht selbst ein eigenes Datum einleitet
+    # ("geb. 12.03.1980, Frist ... bis 30.11.2026": "Frist" gehoert zum 30.11.2026)
+    return not _ANY_DATE.search(after[first : first + 40])
+
+
 class PlaceholderDeadlineExtractor:
     def extract(self, text: str) -> list[ExtractedDeadline]:
         results: list[ExtractedDeadline] = []
@@ -147,8 +168,7 @@ class PlaceholderDeadlineExtractor:
             # Mit Fristen-Schluesselwort in der Naehe bleibt das Datum IMMER ein Vorschlag (Review §24: eine echte Frist
             # darf durch eine falsche Geburts-/Todesdatum-Erkennung nie verloren gehen; der Text laeuft ohnehin durch den
             # Gateway und wird dort maskiert, falls er ein solches Datum enthaelt).
-            following = text[match.end() : match.end() + _CONTEXT_WINDOW_CHARS].lower()
-            if self._has_nearby_keyword(text, match.start()) or any(k in following for k in _DEADLINE_KEYWORDS):
+            if _keyword_belongs_to(text, match):
                 return False  # auch ein Schluesselwort NACH dem Datum ("05.03.2024: Termin beim Nachlassgericht")
             return any(start < match.end() and match.start() < end for start, end in personal)
 

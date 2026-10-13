@@ -25,7 +25,7 @@ from typing import Protocol
 from sqlalchemy.orm import Session
 
 from app.deadlines.extractor import is_personal_date, trim_partial_personal_dates
-from app.models import Deadline, Document, Matter, Party
+from app.models import Deadline, Document, Matter, Message, Party
 from app.search.service import DocumentSearchService
 
 #: ECHTER FUND (07.10., Owner-Direktive "INSTALLER + GIT + CLOUD-E2E-CHAT-
@@ -432,12 +432,22 @@ class RuleBasedLocalAIProvider:
                 Document.id.in_([d.document_id for d in deadlines if d.document_id])
             )
         } if any(d.document_id for d in deadlines) else {}
+        # Ebenso der Text der Quell-E-Mail (Risikoanalyse §25: Tabellenzeile aus einer Nachricht ohne Kopfzeile)
+        message_ids = [d.message_id for d in deadlines if d.message_id and not d.document_id]
+        message_texts = {
+            message.id: message.body_text
+            for message in db.query(Message).filter(Message.id.in_(message_ids))
+        } if message_ids else {}
+
+        def source_text_of(deadline: Deadline) -> str | None:
+            return full_texts.get(deadline.document_id) or message_texts.get(deadline.message_id)
+
         return [
             # Rand-Bruchstuecke zerschnittener Geburts-/Todesdaten aus Altvorschlaegen entfernen (§24, Fall 19)
             f"Mögliche Frist ({deadline.review_status}): "
-            f"{trim_partial_personal_dates(deadline.source_text, full_texts.get(deadline.document_id))}"
+            f"{trim_partial_personal_dates(deadline.source_text, source_text_of(deadline))}"
             for deadline in deadlines
-            if not is_personal_date(deadline.source_text, deadline.due_date, full_texts.get(deadline.document_id))
+            if not is_personal_date(deadline.source_text, deadline.due_date, source_text_of(deadline))
         ]
 
     def _build_quellenverweise(self, matter: Matter, db: Session) -> list[str]:

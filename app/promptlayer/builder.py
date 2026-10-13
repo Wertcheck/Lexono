@@ -119,7 +119,13 @@ class PromptContextBuilder:
                 type_label = document.classified_type or "unklassifiziert"
                 parts.append(f"- [{type_label}] {excerpt}")
 
-        deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
+        # Keine Geburts-/Todesdaten als Frist (§24/§25) - derzeit ohne Produktiv-Aufrufer, Schutz fuer kuenftige Nutzung
+        from app.deadlines.extractor import is_personal_date
+
+        deadlines = [
+            d for d in db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
+            if not is_personal_date(d.source_text, d.due_date)
+        ]
         if deadlines:
             parts.append("Mögliche Fristen (unbestätigt, siehe review_status):")
             for deadline in deadlines:
