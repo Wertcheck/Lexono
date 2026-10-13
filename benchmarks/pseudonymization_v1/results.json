@@ -1,16 +1,16 @@
 {
  "benchmark": "pseudonymization_v1",
- "run_at": "2026-10-13T20:17:09+00:00",
- "git_commit": "46fee47",
+ "run_at": "2026-10-13T21:37:36+00:00",
+ "git_commit": "a40e5db",
  "git_dirty_files": [],
  "cases_sha256": "0209ad2f70f8a1ae",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
-  "app/privacy/pseudonymizer.py": "2ab976d4f786eb6b",
-  "app/privacy/detectors.py": "38bc9c39a2a20960",
+  "app/privacy/pseudonymizer.py": "41eadfa80574c12b",
+  "app/privacy/detectors.py": "8375c13c6faf3371",
   "app/privacy/presidio_ner.py": "bcc094be2e69d8db",
   "app/privacy/review.py": "44ed74b4dc9b64c0",
-  "app/privacy/security_check.py": "a1f792fe694a9c4a",
+  "app/privacy/security_check.py": "7e370817494cb56b",
   "app/privacy/gateway_schema.py": "32a8bd5efb7c3602",
   "app/drafting/service.py": "f85591d1271a4b36",
   "app/chat/service.py": "5f32e74f30823a8c",
@@ -133,12 +133,12 @@
    },
    "PERSON": {
     "recall": 0.895,
-    "precision": 0.806,
-    "f1": 0.848,
+    "precision": 0.794,
+    "f1": 0.841,
     "gold": 38,
     "protected": 34,
-    "mapping_hit": 33,
-    "predicted": 36,
+    "mapping_hit": 32,
+    "predicted": 34,
     "false_positives": 7,
     "payload_leaks": 4,
     "partial_leaks": 0,
@@ -196,7 +196,7 @@
    "missing_blocks": 0,
    "blocked": 0,
    "errors": 0,
-   "consistency": "1/2",
+   "consistency": "2/2",
    "cases_with_leak_known_limit": 8,
    "cases_with_leak_not_known_limit": []
   },
@@ -492,11 +492,9 @@
      "value": "Brenners",
      "type": "PERSON",
      "detected": true,
-     "mapping_hit": true,
-     "predicted_types": [
-      "PERSON"
-     ],
-     "type_match": true,
+     "mapping_hit": false,
+     "predicted_types": [],
+     "type_match": false,
      "leak": false,
      "partial_leak": false
     }
@@ -504,18 +502,6 @@
    "predicted": [
     {
      "value": "Karl Brenner",
-     "type": "PERSON",
-     "verdict": "TP",
-     "on_keep": false
-    },
-    {
-     "value": "Herrn Brenner",
-     "type": "PERSON",
-     "verdict": "TP",
-     "on_keep": false
-    },
-    {
-     "value": "Brenners",
      "type": "PERSON",
      "verdict": "TP",
      "on_keep": false
@@ -530,11 +516,9 @@
       "Brenners"
      ],
      "placeholders": [
-      "[MANDANT_01]",
-      "[PERSON_01]",
-      "[PERSON_02]"
+      "[MANDANT_01]"
      ],
-     "consistent": false
+     "consistent": true
     }
    ]
   },
