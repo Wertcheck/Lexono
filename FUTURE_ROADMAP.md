@@ -83,6 +83,9 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Dokumente (Fristen aktenweit, sichtbarer Hinweis); Editor, Neugenerierung und Schriftsatz weiter ganze Akte.
   Benchmark `benchmarks/chat_scope_v1` (§30): Informationsverfügbarkeit offline gemessen; Antwortqualität erst nach
   freigegebenem Live-Lauf. Entscheidungsvorlage Editor/Neugenerierung (Optionen O1–O5) in §30.4, offen.
+  Adversarialer Pseudonymisierungs-Benchmark `benchmarks/pseudonymization_v1` (§31): Recall/Precision je Typ,
+  Stilfeld-Lücke behoben; offen: Platzhalterkonsistenz bei Anrede/Genitiv (P05), Fundstellen-Übermaskierung,
+  OCR-Schreibweisen.
 - **Abhängigkeiten:** P1 (Register).
 - **Abnahmekriterien:** Für jede Tabelle mit personenbezogenen Daten ist eine Löschregel definiert und per Test belegt;
   aktenübergreifender Zugriff auf Entscheidungen ist per Test ausgeschlossen.

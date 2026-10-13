@@ -3183,3 +3183,147 @@ Logo-Fehler. Danach wurden nur Benchmark-Dateien geändert.
 
 **Live-Lauf:** weiterhin **nicht ausgeführt**, weil die Freigabe fehlt (§30.3). Die Antwortqualität bleibt NICHT
 VERIFIZIERT.
+
+## 31. Adversarialer Pseudonymisierungs-Benchmark und Stilfeld (13.10.2026, Ausgang `a1a9709`)
+
+Nur synthetische Daten. Kein externer Modellaufruf: Der Live-Lauf aus §30 wurde **nicht** freigegeben. Die Antwort auf
+die Freigabefrage war ein neuer Auftrag, keine Bestätigung von „nur synthetisch“ und „Ausgabenlimit“. Stufe B bleibt
+No-Go, Stufe C No-Go.
+
+### 31.1 Benchmark
+
+- **Datensatz:** `benchmarks/pseudonymization_v1/cases.json`, 63 Feldfälle mit festen IDs.
+  - Gruppen: Namen, Organisationen, Orte/Adressen, Kontakt, Bank, Kennungen, persönliche Daten, Fakten-Negativfälle,
+    Pfade, Adversarial.
+  - Dokumenttypen: Brief, E-Mail, OCR, Tabelle, Notiz, Chat, Wissen, Frist, Formular, Vorlage.
+  - Je Fall festgelegt: zu schützende Werte mit Typ, zu erhaltende Fakten, neutrale Werte, Konsistenzgruppen, erwartetes
+    Ergebnis (erlaubt / blockiert / beides).
+  - 13 Fälle sind als **bekannte Grenze** markiert; sie zählen voll in die Kennzahlen.
+- **Skript:** `scripts/bench_pseudonymization.py`. Die Messregeln (Recall, Precision, Treffer, Leck, Fakten, Konsistenz,
+  Blockaden, Grenzen) stehen im Datensatz, bevor ausgewertet wird.
+  - **Feldfälle:** echtes `ClaudePrivacyGateway.prepare_request`, je Payload-Feld (Sachverhalt, Anmerkungen, Verlauf,
+    Quellen, Fristhinweise, Stil, Vorlage).
+  - **End-to-End-Fälle E01–E06 (inkl. E05b):** echter Chat-/Drafting-Pfad; gemessen am Payload, den der
+    Schreib-Provider unmittelbar vor dem Cloud-Aufruf erhält.
+  - **Ergebnis:** `results.json` mit Commit, Hashes, Paketversionen (Presidio 2.2.364, spaCy 3.8.16,
+    de-core-news-lg 3.8.0).
+- **Tests:**
+  - `tests/test_bench_pseudonymization.py`: keine Lecks außerhalb dokumentierter Grenzen, Stilfeld, keine unnötigen
+    Blockaden, Faktenerhalt, Abgleichsregeln, End-to-End inklusive Fail-Closed;
+  - `tests/test_privacy_style_field.py`.
+
+### 31.2 Ergebnisse (Feldfälle; exakte, aktuelle Zahlen in `results.json`)
+
+| Typ | Referenzwerte | geschützt (Recall) | Precision | Klartext im Payload |
+|---|---|---|---|---|
+| PERSON | 37–38 | ≈0,89 | ≈0,78–0,81 | 4 |
+| KENNUNG | 22 | 0,955 | 1,0 | 1 (+1 Teil) |
+| ADRESSE | 5 | 1,0 | 1,0 | 0 |
+| IBAN | 5 | 0,8 | 1,0 | 1 |
+| TELEFON | 5 | 1,0 | 1,0 | 0 |
+| EMAIL | 3 | 0,667 | 1,0 | 1 |
+| ORT | 3 | 0,667 | 0,571 | 1 |
+| PERS_DATUM | 3 | 1,0 | 1,0 | 0 |
+| ORGANISATION | 2 | 1,0 | 1,0 | 0 |
+| BIC, URL | je 1 | 1,0 | 1,0 | 0 |
+
+Recall gilt je Referenztyp, Precision je vorhergesagtem Typ mit typunabhängigem Treffer; ein F1 je Typ steht in
+`results.json` und ist eine Orientierung.
+
+- **Klartext im Payload: 8 Werte, ausschließlich in Fällen mit dokumentierter Grenze:**
+  - OCR-Ziffern im Namen „Kar1 Brenn3r“;
+  - kleingeschriebenes „sauer“;
+  - „Der Richter Zweigelt“;
+  - Ort im Grundbuchtext;
+  - E-Mail mit OCR-Leerzeichen;
+  - gesperrte IBAN (OCR);
+  - „Startnummer 815“;
+  - gesperrter Name „K a r l  B r e n n e r“.
+
+  Außerhalb dieser Grenzen: 0.
+- **Fehlalarme: ca. 10.**
+  - „Betreff“, „Mobil“, „Bad“, „Nullbreite“, „Platzhalter-Trick“ als Person;
+  - „Az“, „Ausschlagungsfrist“, „Hauptbahnhof“ als Ort;
+  - „Urt“ und „VIII“ in einer BGH-Fundstelle.
+  - Davon kosten **Fakten**: das Aktenzeichen „VIII ZR 1/21“ und „Hauptbahnhof“ (66/68 Fakten erhalten).
+  - Beträge, Fristen und Normen blieben in allen Faktenfällen erhalten.
+- **Blockaden:** keine unnötigen und keine fehlenden. Tabellen mit Namen sind „beides zulässig“.
+- **Platzhalterkonsistenz – FAIL (P05):** In einem Text werden „Herr Brenner“ zu `[MANDANT_01]`, „Herrn Brenner“ zu
+  `[PERSON_01]` (Anrede im Platzhalter) und „Brenners“ zu `[PERSON_02]`. Die Cloud-KI sieht drei Personen statt einer;
+  Sachzusammenhänge können verfälscht werden. Ursache: Ein längerer NER-Treffer mit Anrede oder Genitiv setzt sich gegen
+  den bekannten Namen durch. **Nicht behoben:** Ein Fix ändert Span-Grenzen in der Pseudonymisierung und ist ein eigenes
+  Arbeitspaket.
+- **Nach Dokumenttyp:**
+  - OCR: 3 von 5 Fällen mit Leck, alle als Grenze bekannt;
+  - Brief: 5 von 44;
+  - E-Mail, Chat, Notiz, Tabelle, Wissen, Frist, Formular, Vorlage: 0.
+- **Nach Pfad:** Alle Felder schützen jetzt; das Stilfeld erst nach dem Fix (31.3).
+- **Reidentifizierbarkeit:** nachgewiesen nur bei vollem Klartext, das sind die 8 Werte oben. Kombinationen aus
+  Quasi-Identifikatoren wurden nicht untersucht (NICHT VERIFIZIERT).
+
+**End-to-End (7/7 wie erwartet, 0 von 30 Referenzwerten im Klartext, Fakten 4/4):**
+- **E01 Anhang:** Name, Adresse, IBAN, E-Mail, Telefon und Dateiname geschützt.
+- **E02 Verlauf:** Name und Telefon aus einer früheren Nachricht geschützt.
+- **E03 Wissenseintrag:** Name und IBAN geschützt, Betrag erhalten.
+- **E04 Klarname aus der lokalen Vorabanalyse:** blockiert, kein Cloud-Aufruf.
+- **E05/E05b NER-Ausfall** (Pseudonymisierung bzw. nur Restrisiko-Scan): blockiert, kein Cloud-Aufruf (Fail-Closed).
+- **E06 Fristhinweis mit Namen** (E-Mail-Pfad): geschützt.
+
+### 31.3 Behoben: Stilangabe lief an der Pseudonymisierung vorbei (W05)
+
+- **Befund** (Bestandsaufnahme, im Benchmark reproduziert): `gewuenschter_stil` ist Freitext aus dem
+  Schriftsatz-Formular. „Stil von RA Wiebke Sonnenfeld, IBAN DE89…“ ging im Klartext an die Cloud-KI.
+- **Fix** (`app/privacy/gateway.py`):
+  - Die Stilangabe läuft als markierter Unterabschnitt im selben Pseudonymisierungsdurchlauf, mit gleichen Platzhaltern
+    und gleichem Restrisiko-Scan.
+  - Der Marker wird aus Eingaben entfernt; eine Feldmanipulation über die Stilangabe ist ausgeschlossen (Test).
+  - Die Rückfrageprüfung behält die Feldgrenze.
+- **Folgefix nach Review** (`app/drafting/service.py`):
+  - Platzhalter, die nur in der Stilangabe stehen, werden bei der Antwortprüfung weder verlangt noch als Leck gewertet.
+    Ein Fehlalarm („Kanzleistil Hamburg“ → Personen-Platzhalter) blockierte sonst jeden Entwurf.
+  - Vor dem Fix gingen diese Werte unmaskiert hinaus; gegenüber damals ist das keine Lockerung.
+  - Platzhalter, die auch in anderen Feldern stehen, bleiben voll geprüft (Gegenprobe-Test).
+  - Die Rekonstruktion nutzt weiter alle Zuordnungen.
+- **Messung:** Vor dem Fix 10 Klartextwerte, davon 2 außerhalb bekannter Grenzen (W05); danach 8, alle innerhalb.
+  Übliche Stilangaben („förmlich, sachlich“ u. a., 14 Varianten im Review) bleiben unverändert.
+
+### 31.4 QA
+
+| Punkt | Status |
+|---|---|
+| Regressionstests Stilfeld (7) und Benchmark-Tests (11): ohne Fix rot, mit Fix grün | PASS |
+| Volle Testsuite: 4319 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
+| Zwei unabhängige Reviews, Befunde behoben (31.5) | PASS |
+| Build und Installation | PASS |
+| Installierter Build, Fall 25a (Name und IBAN im Stilfeld des Schriftsatz-Assistenten, abgefangener Payload: „Stil wie bei RA [PERSON_03], IBAN [IBAN_01]“) | PASS |
+| Installierter Build, Fall 25b (Fehlalarm „Hamburg“ ohne Blockade) und Regression Fall 20 | NICHT VERIFIZIERT: Lauf vom System wegen Speichermangels abgebrochen, nicht neu gestartet; im Unit-Test belegt |
+| Platzhalterkonsistenz (P05) | FAIL (dokumentiert, offen) |
+| Vollständige Leckfreiheit, Reidentifizierbarkeit über Kombinationen | NICHT VERIFIZIERT |
+
+Nach dem Speicherabbruch läuft die normale Lexono-Instanz nicht; der Lauf hatte sie vorab beendet. Sie ist bei Bedarf
+neu zu starten.
+
+### 31.5 Unabhängige Reviews und Grenzen
+
+**Review 1** (Bestandsaufnahme) lieferte die Grundlage und die Stilfeld-Lücke.
+
+**Review 2** (Fix und Benchmark) fand keinen blockierenden Fehler. Behoben wurden:
+- unnötige Entwurfsblockade durch Fehlalarm im Stilfeld;
+- Feldgrenze im Rückfrage-Durchlauf;
+- Leck-Prüfung auf Feldwerten statt JSON (Zeilenumbrüche hatten die Wortgrenze verfehlt);
+- Abgleich mit Wortgrenzen;
+- Fail-Closed-Test am NER-Ausfallpunkt plus Fall „nur Restrisiko-Scan fällt aus“;
+- Herkunftsangaben.
+
+**Grenzen:**
+- Handverfasster Korpus, ein Annotator, nicht fachlich validiert.
+- Precision hängt von der Vollständigkeit der Annotation ab.
+- Keine Aussage über reale Verteilungen.
+- Ein echtes Ollama-Modell und ein echter Anthropic-Aufruf sind nicht geprüft.
+
+**Offen:**
+- P05 (Platzhalterkonsistenz bei Anrede/Genitiv);
+- Fundstellen-Übermaskierung („VIII ZR“);
+- OCR-Schreibweisen;
+- Kleinschreibung;
+- Rollenwort plus Nachname.

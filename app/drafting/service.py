@@ -61,6 +61,8 @@ vorbehalten.
 
 from __future__ import annotations
 
+import json
+
 import threading
 from collections.abc import Generator, Sequence
 from dataclasses import dataclass, replace
@@ -387,6 +389,19 @@ def _log_provider_exception(exc: Exception) -> None:
         type(exc).__name__,
         getattr(exc, "status_code", None),
     )
+
+
+def _validation_mappings(mappings: list, payload) -> list:  # noqa: ANN001
+    """Datenschutz-Pruefung §31 (Review): Platzhalter, die NUR in der Stilangabe stehen, werden bei der Antwortpruefung
+    weder als fehlend verlangt noch als Leck gewertet. Die Stilangabe wird seit §31 pseudonymisiert; ein Fehlalarm darin
+    ("Kanzleistil Hamburg" -> Personen-Platzhalter) blockierte sonst jeden Entwurf. Vor §31 gingen diese Werte unmaskiert
+    hinaus - gegenueber damals keine Lockerung. Die Rekonstruktion nutzt weiterhin ALLE Zuordnungen."""
+    style = getattr(payload, "gewuenschter_stil", None) or ""
+    if not style:
+        return mappings
+    rest = json.dumps(payload.model_dump(exclude={"gewuenschter_stil"}), ensure_ascii=False)
+    style_only = {m.placeholder for m in mappings if m.placeholder in style and m.placeholder not in rest}
+    return [m for m in mappings if m.placeholder not in style_only]
 
 
 class DraftingService:
@@ -1328,7 +1343,7 @@ class DraftingService:
                 with trace.step("validation"):
                     validation = validate_claude_response(
                         writing_result.text,
-                        gateway_result.mappings,
+                        _validation_mappings(gateway_result.mappings, payload),
                         payload.anonymisierter_sachverhalt,
                         self.local_llm_provider,
                         skip_semantic_check=skip_llm_privacy_layers,
@@ -1417,7 +1432,7 @@ class DraftingService:
             with trace.step("validation"):
                 validation = validate_claude_response(
                     writing_result.text,
-                    gateway_result.mappings,
+                    _validation_mappings(gateway_result.mappings, payload),
                     payload.anonymisierter_sachverhalt,
                     self.local_llm_provider,
                     skip_semantic_check=True,

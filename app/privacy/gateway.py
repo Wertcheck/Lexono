@@ -77,6 +77,9 @@ _SEP_LIST_ITEM = "@@GATEWAY_ITEM@@"
 # sieben Marker/ihre Reihenfolge unverändert bleiben (keine Änderung an
 # etwas, das nicht Teil von CHAT-02 ist).
 _SEP_VERLAUF = "@@GATEWAY_VERLAUF@@"
+# Stilangabe (Datenschutz-Pruefung §31): Freitext aus dem Schriftsatz-Formular; lief bisher an der Pseudonymisierung
+# vorbei. Jetzt als Unterabschnitt der Anmerkungen im selben Durchlauf (gleiche Platzhalter, gleicher Restrisiko-Scan).
+_SEP_STIL = "@@GATEWAY_STIL@@"
 
 _ALL_MARKERS = (
     _SEP_SACHVERHALT,
@@ -86,6 +89,7 @@ _ALL_MARKERS = (
     _SEP_ANMERKUNGEN,
     _SEP_LIST_ITEM,
     _SEP_VERLAUF,
+    _SEP_STIL,
 )
 
 
@@ -126,6 +130,15 @@ def _strip_invisible(text: str | None) -> str | None:
 # ein Wohnort-/Ortsname allein in einem Akte-losen Chat geht im Klartext an
 # Claude (ohne Person/Adresse dazu kein personenbezogenes Datum).
 _GENERAL_KNOWLEDGE_SKIP_CATEGORIES = frozenset({"organisation", "ort"})
+
+
+def _split_style_section(anmerkungen: str | None) -> tuple[str | None, str | None]:
+    """Trennt den Stil-Unterabschnitt (§31) wieder von den pseudonymisierten Anmerkungen."""
+    marker = f"\n{_SEP_STIL}\n"
+    if not anmerkungen or marker not in anmerkungen:
+        return anmerkungen, None
+    rest, stil = anmerkungen.split(marker, 1)
+    return (rest or None), (stil or None)
 
 
 def _sanitize_input(text: str) -> str:
@@ -241,7 +254,7 @@ class ClaudePrivacyGateway:
             argumentationspunkte,
             quellenverweise,
             vorlage,
-            anwaltliche_anmerkungen,
+            "\n".join(part for part in (anwaltliche_anmerkungen, stil) if part),  # §31: Stil ist Anwaltseingabe
             gespraechsverlauf,
         )
 
@@ -252,6 +265,7 @@ class ClaudePrivacyGateway:
             vorlage,
             anwaltliche_anmerkungen,
             gespraechsverlauf,
+            stil=stil,
         )
 
         skip_categories = (
@@ -303,8 +317,10 @@ class ClaudePrivacyGateway:
                     for original_entry, pseudo_entry in zip(gespraechsverlauf, parts[5])
                     if not original_entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
                 ]
+                # Stil-Unterabschnitt (§31) mit eigener Feldgrenze statt als "[ENTFERNT]" in den Anmerkungen
+                review_anmerkungen, review_stil = _split_style_section(parts[4])
                 review_candidates = find_review_candidates(
-                    self._build_combined_text(*parts[:5], lawyer_verlauf),
+                    self._build_combined_text(*parts[:4], review_anmerkungen, lawyer_verlauf, stil=review_stil),
                     context_source=locally_sourced_text,
                     decisions=decisions,
                     # Rueckfrage: gebuendelt hoechstens 8 je Runde (danach fragt die naechste Runde erneut);
@@ -345,6 +361,7 @@ class ClaudePrivacyGateway:
             pseudo_anmerkungen,
             pseudo_verlauf,
         ) = parts
+        pseudo_anmerkungen, pseudo_stil = _split_style_section(pseudo_anmerkungen)
 
         # ECHTER FUND (07.10., Owner-Direktive "Chat-Pipeline Privacy-
         # False-Positive bei allgemeinen Fragen"): Punkt 6 im
@@ -360,7 +377,7 @@ class ClaudePrivacyGateway:
             pseudo_argumente,
             pseudo_quellen,
             pseudo_vorlage,
-            pseudo_anmerkungen,
+            "\n".join(part for part in (pseudo_anmerkungen, pseudo_stil) if part),
             original_gespraechsverlauf=gespraechsverlauf,
             pseudo_verlauf=pseudo_verlauf,
         )
@@ -409,7 +426,7 @@ class ClaudePrivacyGateway:
         party_addresses = build_party_address_note(pseudo_sachverhalt)
         payload = ClaudeRequestPayload(
             schreibauftrag=purpose,
-            gewuenschter_stil=stil,
+            gewuenschter_stil=pseudo_stil,
             anonymisierter_sachverhalt=pseudo_sachverhalt,
             anonymisierte_argumentationspunkte=[
                 *pseudo_argumente,
@@ -500,6 +517,7 @@ class ClaudePrivacyGateway:
         vorlage: str | None,
         anwaltliche_anmerkungen: str | None,
         gespraechsverlauf: list[str],
+        stil: str | None = None,
     ) -> str:
         clean_sachverhalt = _sanitize_input(sachverhalt)
         clean_argumente = [_sanitize_input(a) for a in argumentationspunkte]
@@ -512,6 +530,8 @@ class ClaudePrivacyGateway:
         # History-Eintrag (auch ein bereits rekonstruierter Assistant-Turn)
         # könnte theoretisch einen der internen Trennmarker enthalten.
         clean_verlauf = [_sanitize_input(v) for v in gespraechsverlauf]
+        if stil:
+            clean_anmerkungen = f"{clean_anmerkungen}\n{_SEP_STIL}\n{_sanitize_input(stil)}"
 
         parts = [
             _SEP_SACHVERHALT,
