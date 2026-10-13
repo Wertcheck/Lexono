@@ -1965,3 +1965,161 @@ ohne Bezeichnung) ist jetzt eine Rückfrage statt Klartext.
    Betrag gewertet werden.
 
 Eine vollständige Leckfreiheit ist nicht belegt.
+
+
+## 23. Datumspolicy, Grundbuchangaben, kurze Nummern, Verlaufskennungen; API-Schlüssel-Backup; P0-08 (13.10.2026, `953dc8d`)
+
+Owner-Entscheidungen (Auftrag 13.10.2026), umgesetzt auf `64be4f1`. Nur synthetische Daten.
+
+### 23.1 Datumspolicy
+
+**Produktentscheidung:** Sachverhalts-, Vertrags-, Frist- und Ereignisdaten werden nicht mehr pauschal maskiert.
+Chronologie, Abstände und Fristberechnung bleiben erhalten.
+
+| Datum | Behandlung | Begründung |
+|---|---|---|
+| Sachverhalts-, Vertrags-, Frist-, Ereignisdatum, auch Todesdatum, Zeiträume, ISO/Schrägstrich | **lesbar** | juristischer Kern (Fristen, Reihenfolge, Abstände). Vorher waren alle `[DATUM_nn]`, und Claude erhielt nur eine lokal berechnete Einordnung |
+| **Geburtsdatum** (am Geburtskontext erkannt) | **maskiert** `[GEBURTSDATUM_nn]`, konsistent je Wert | starkes Quasi-Merkmal: Zusammen mit Wohnort, Rolle oder Arbeitgeber ist eine Person auch bei pseudonymisiertem Namen reidentifizierbar. Selbst selten rechtserheblich; erheblich ist das Alter |
+| Geburtstag als Jahrestag („feierte am … seinen 45. Geburtstag“) | **maskiert** `[GEBURTSTAG_nn]`, ohne Altersangabe | mit dem Alter wäre das Geburtsdatum exakt ableitbar |
+
+**Erkennung des Geburtskontexts (`detectors.detect_geburtsdatum`):**
+- Bezeichnung davor: „geb.“ (direkt, allenfalls „am“ und ein Wochentag), „geboren am“, „Geburtsdatum (des Kindes):“,
+  „Geburtstag ist der“, „Geb.-Datum“, „DOB“, „date of birth“; „*“ nur als Apposition.
+- Danach „geboren“, „geborene“, „zur Welt gekommen“.
+- Datum oder Lebensdaten in Klammern bzw. zwischen Kommas direkt nach einer Personenbezeichnung, wenn das Geburtsjahr
+  plausibel ist (mindestens 14 Jahre zurück).
+  - Nicht bei „seit/ab/bis/Beginn/Eintritt/Einzug“ danach.
+  - Ein Zeitraum zählt nur bei Verstorbenen oder ab 14 Jahren Spanne als Lebensangabe.
+- In Tabellen und CSV die Spalte unter „Geburtsdatum“.
+
+**Alter (`date_chronology.build_age_note`):**
+- Je `[GEBURTSDATUM_nn]` nur die vollendeten Lebensjahre zum heutigen Tag, mit dem Hinweis volljährig/minderjährig.
+- Bewusst keine Tagesabstände zu lesbaren Daten; daraus wäre das Geburtsdatum exakt zurückrechenbar.
+- Die Notiz sagt ausdrücklich, dass sie nur gilt, sofern der Wert tatsächlich ein Geburtsdatum ist.
+- Der Prompt verbietet, ein Geburtsdatum zu errechnen.
+
+### 23.2 Grundbuch, kurze Nummern, frühere KI-Antworten
+
+**Grundbuch (`detectors.detect_grundbuch`):**
+- Deterministisch maskiert (`[GRUNDBUCH_nn]`, konsistent je Wert):
+  - Grundbuchblatt (auch „Blatt-Nr.“, „Grundbuchblatt-Nr.“, bis 60 Zeichen nach „Grundbuch“);
+  - Flurstück, Flst., Flst.-Nr., Flurstücksnummern, Listen und Tabellenspalten.
+- Eine einstellige Flurstücksnummer wird samt Bezeichnung maskiert. Sonst fände die Leck-Prüfung die „1“ überall im
+  Text, und der Gateway würde blockieren.
+- Lesbar bleiben Gemarkung, Flur, Grundbuchbezirk, Amtsgericht und „Blatt 12 der Akte“.
+- Die NER liest „Flur 3“ und „Blatt 12345“ nicht mehr als Ort (`presidio_ner._LAND_REGISTER_LABEL_HIT`). Vorher wurden
+  solche Sätze blockiert.
+
+**Kurze Nummern (`review._SHORT_LABELLED`):**
+- 5–6 Ziffern sind nur nach einer allgemeinen Nummernbezeichnung („Nummer“, „Nr.“, „ID“, „#“, „Kennung“) unsicher:
+  Rückfrage im Chat, Maskierung im Entwurf.
+- Ohne Bezeichnung bleiben sie lesbar: Postleitzahl, Seite, Stückzahl, Betrag.
+- Fundstellen bleiben lesbar („Nr. 3100 VV RVG“, „§ 2 Nr. 3“).
+
+**Frühere KI-Antworten (`review.history_only_identifiers`):**
+- Kennnummern und Kennzeichen, die nur im Gesprächsverlauf der KI stehen, werden ohne Rückfrage maskiert.
+- Vorher gingen sie unverändert hinaus.
+- „Nicht personenbezogen“ wird respektiert. Werte, die auch im Anwalts- oder Dokumenttext stehen, laufen über die normale
+  Rückfrage.
+
+### 23.3 Messung (vorher `64be4f1` → nachher)
+
+| Messung | Vorher (`64be4f1`) | Nachher |
+|---|---|---|
+| Datums-Korpus (21 Fälle: 12 Geburtsdaten, 27 Sachverhalts-/Frist-/Vertrags-/Ereignisdaten, mehrere Personen, Chronologien) | Geburtsdaten 0/12 im Klartext; **Sachverhaltsdaten 27/27 verdeckt** | Geburtsdaten **0/12** im Klartext, keine Rückrechnung über Tagesabstände; Sachverhaltsdaten **0/27 verdeckt**; 0 Blockaden; Rückführung exakt |
+| Nummern-Korpus (§22) | 0/32 im Klartext; 10 von 48 lesbar zu haltenden Werten verdeckt | 0/32 im Klartext; **2 von 48** verdeckt (nur noch vorbestehende NER-/Aktenzeichen-Fälle; die Daten sind jetzt lesbar) |
+| 916 synthetische Texte, echtes Gateway | 5 Blockaden, 15 Texte mit Rückfrage | 5 Blockaden (dieselben), 17 Texte mit Rückfrage (neu nur „HRB Nr. 12345“ aus dem Leck-Satz, 2×); 69 Payloads geändert, überwiegend jetzt lesbare Daten; 0 neue Blockaden; Rückführungsabweichungen unverändert (74, vorbestehend) |
+| Review-Sätze 7/8 | – | 13 geänderte Fälle: Daten lesbar; IP-Adressen jetzt vollständig maskiert (vorher nur zufällig teilweise durch die Datumsmaskierung); 0 neue Blockaden |
+| Batterie (2017 Texte × 2 Modi) | 4 Blockaden | **2 Blockaden** (aufgehoben: Grundbuchangabe „Flur“/„Blatt“ als Ort) |
+| Presidio-Audit (eingefrorener Korpus) | C = FN 1/80, FP 6/104, 0 Blockaden | unverändert |
+| Volle Testsuite (`953dc8d`) | – | 4141 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle (fehlende Logo-Dateien) fehlgeschlagen |
+
+**IPv4-Adressen:** Die Messkette deckte auf, dass die bisherige pauschale Datumsmaskierung „10.0.12“ in IP-Adressen nur
+zufällig verdeckt hatte. Nach der Datumspolicy ging „Zugriff von 10.0.12.77“ im Klartext hinaus. Eine eigene
+IPv4-Erkennung schließt das (`detectors.detect_ip_adresse`); Versions- und Kapitelnummern bleiben lesbar.
+
+### 23.4 Unabhängige Reviews
+
+Zwei Runden, jeweils über 100 Fälle durch das echte Gateway.
+
+**Runde 1 fand:**
+- Geburtsdatums-Lecks: Wörter zwischen Bezeichnung und Datum, ISO-Datum, DOB, Kommas statt Klammern, Lebensdaten,
+  Tabellen und CSV;
+- Grundbuch-Lecks: „Blatt-Nr.“, „Flst.-Nr.“, Plural, Tabellen;
+- eine Blockade bei einstelligen Flurstücken;
+- falsche Geburtsdaten mit falscher Altersangabe: Mietbeginn in Klammern, Fußnoten-Stern;
+- Daten mit Schrägstrich als Kennnummer.
+
+**Runde 2 fand:**
+- Geburtsnamen nach „geb.“ verdeckten Sachverhaltsdaten;
+- „Geburtstagsfeier“, Tabellentrenner und Mietzeiträume wurden als Geburtsdatum gelesen;
+- Jahrestage erzeugten eine falsche Altersangabe.
+
+Alles ist behoben und als Test abgesichert.
+
+### 23.5 API-Schlüssel-Backup
+
+`C:\ProgramData\Lexono\.env.bak_20261012_230319` wurde ohne Ausgabe von Werten geprüft:
+- Der enthaltene Schlüssel (SHA-256-Präfix `0312bb4b`) ist genau der Schlüssel, den Anthropic in beiden Live-Läufen am
+  13.10.2026 mit 401 „invalid x-api-key“ abgelehnt hat (`req_011CfxzqtbNQ7Fnoo7NAeZLA`, `req_011Cfy1FCmQM156DsKvV9dWg`,
+  §21.7). Die Datei war seit 22:12:39 unverändert.
+- Alle übrigen 34 Zeilen sind mit der aktuellen Konfiguration identisch.
+- Ein abgelaufener Schlüssel muss nicht aufbewahrt werden.
+
+Alle drei Bedingungen sind erfüllt: Das Backup wurde **gelöscht**.
+
+### 23.6 P0-08 – Lexono-Gateway
+
+P0-08 bleibt zurückgestellt und wurde weder weiterentwickelt noch aktiviert. Es ist jetzt als **verpflichtender
+Prüfpunkt vor dem späteren Pilotbetrieb** in `LEXONO_MASTER_PRODUCT.md` (§7, P0-08) eingetragen. Vor dem Pilot gilt
+eines von zwei:
+1. Gateway verifiziert und betrieben: Schlüssel nicht auf Kanzlei-PCs, Authentisierung, Begrenzung und Protokollierung
+   gegen einen echten Server getestet.
+2. Eine dokumentierte, vom Owner unterzeichnete Entscheidung für den Direct-Key-Pfad mit seinem Risiko: echter Schlüssel
+   in `C:\ProgramData\Lexono\.env` auf dem Kanzlei-PC.
+
+Der direkte Anthropic-Pfad (P0-07) ist davon getrennt und live belegt (§21.7).
+
+**Installierter Build (`953dc8d`, Installer neu erstellt und installiert; Bundle enthält alle neuen Funktionen):**
+- Fall 18 (neu):
+  - Geburtsdatum maskiert, mit Altersangabe;
+  - Mietvertrags-, Kündigungs-, Räumungsfrist- und Mängel-Chronologie lesbar;
+  - Grundbuchblatt und Flurstück maskiert, „Flur 3“ lesbar;
+  - keine Rückfrage, genau ein Cloud-Aufruf, Rückführung korrekt (**PASS**).
+- Fälle 1–11 und 14–16: PASS.
+- Fälle 12, 13, 17: unverändert gegenüber dem Vorbuild (nur die in §21/§22 dokumentierten beabsichtigten Änderungen bzw.
+  die vorbestehende NER-Übermaskierung).
+- Nebenbefund: Die lokale Fristerkennung führt das (maskierte) Geburtsdatum als „Mögliche Frist (unreviewed)“. Das ist
+  kein Leck, sondern ein Qualitätsthema der Fristerkennung.
+
+### 23.7 Bewertung, Restrisiken und Freigabebedingungen
+
+**Datenschutz und Sachverhaltstreue werden getrennt bewertet:**
+
+| Bereich | Datenschutz | Sachverhaltstreue |
+|---|---|---|
+| Daten | Geburtsdaten: 0 von 12 im Klartext (Korpus), Jahrestag und Alter ohne Rückrechnungsmöglichkeit | 0 von 27 Sachverhalts-, Frist- und Vertragsdaten verdeckt (vorher 27 von 27); Reihenfolgen und Abstände unverfälscht |
+| Grundbuch | Blatt- und Flurstücksnummern maskiert, konsistent | Lage, Gemarkung, Flur und Amtsgericht lesbar; vorher blockierte Sätze werden gesendet |
+| Kurze Nummern / Verlauf | zusätzliche Rückfragen nur hinter einer Nummernbezeichnung; Verlaufskennungen maskiert | Fundstellen, Postleitzahlen und Beträge lesbar |
+
+**Restrisiken:**
+- **Lesbare Ereignisdaten.** Zusammen mit konkreten Umständen (Unfallort, Uhrzeit) sind sie über Presseberichte
+  zuordenbar. Das ist eine bewusste Abwägung der Produktentscheidung; keine pauschale Maskierung.
+- **Todesdaten sind lesbar.** Sie sind das stärkste verbleibende Reidentifikationsmerkmal (Traueranzeigen).
+  **Offene fachliche Entscheidung:** wie Geburtsdaten schützen oder lesbar lassen.
+- **Geburtsdaten ohne erkennbaren Kontext bleiben lesbar.** Beispiel: „Herr Brenner, 01.09.1998 eingestellt“ ist bewusst
+  mehrdeutig, ebenso ein bloßes Datum in einer Liste ohne Kopfzeile.
+- **CSV-Zeilen mit Namen** werden von der NER-Stufe weiterhin blockiert. Das ist vorbestehend und fail-closed.
+- Die Restlücken aus §22.6 bleiben bestehen.
+
+**Freigabebedingungen vor Echtdaten (keine Freigabe durch diese Arbeit):**
+1. **P0-08:** verifiziert oder vom Owner unterzeichnete Direct-Key-Entscheidung (siehe 23.6).
+2. **Fachliche Entscheidung:** Todesdaten schützen oder lesbar lassen.
+3. **Organisatorisch:**
+   - Anwenderhinweis zur Rückfrage-Karte (Kennnummern, Kennzeichen);
+   - Anwenderhinweis zur Datumspolicy;
+   - Release-Notiz.
+4. **Pilot:** begleiteter Pilotbetrieb mit freigegebenen Testakten. Auswertung der Rückfragen und Fehlalarme vor
+   Echtdaten.
+
+Eine vollständige Leckfreiheit ist nicht belegt.

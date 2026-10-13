@@ -105,6 +105,14 @@
   erfordert zusätzlich `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1` (nur für QA).
 - **Kennzeichen ohne Bezeichnung** (z. B. „D-XY 123“) lösen im Chat eine Rückfrage vor dem Versand aus; im Entwurfsmodus
   werden sie vorsichtshalber als `[KENNUNG_nn]` pseudonymisiert.
+- **Nummern (§22):** bezeichnete Bezugsnummern (Policen-, Schaden-, Patienten-, Vorgangsnummer u. a.) werden ohne
+  Rückfrage maskiert; unbeschriftete Kennnummern lösen im Chat eine Rückfrage aus. Zahlungskarten werden nie freigegeben.
+- **Datumspolicy (§23):** Sachverhalts-, Vertrags-, Frist- und Ereignisdaten gehen jetzt **lesbar** an die Cloud-KI
+  (vorher `[DATUM_nn]`), damit Fristen und Chronologie korrekt berechnet werden. **Geburtsdaten** bleiben maskiert
+  (`[GEBURTSDATUM_nn]`); die KI erhält nur das Alter in vollendeten Jahren. Todesdaten sind derzeit lesbar (offene
+  fachliche Entscheidung).
+- **Grundbuch (§23):** Grundbuchblatt- und Flurstücksnummern werden maskiert (`[GRUNDBUCH_nn]`); Gemarkung, Flur und
+  Amtsgericht bleiben lesbar.
 
 ---
 
