@@ -27,23 +27,28 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tests"))
 
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 from app.ai_providers.claude_writing_provider import ClaudeWritingResult  # noqa: E402
 from app.ai_providers.local_ai_provider import RuleBasedLocalAIProvider  # noqa: E402
+from app.ai_providers.local_llm_provider import LocalAIHealthStatus, LocalLLMResult  # noqa: E402
 from app.chat.service import ChatService  # noqa: E402
 from app.drafting.review_notes import split_review_notes  # noqa: E402
-from app.drafting.service import DraftingService  # noqa: E402
+from app.drafting.service import _LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX, DraftingService  # noqa: E402
 from app.models import Client, Deadline, Document, Matter, Party, Role, User  # noqa: E402
 from app.models.base import Base  # noqa: E402
 from app.privacy.gateway import ClaudePrivacyGateway  # noqa: E402
 from app.research.service import LegalResearchService  # noqa: E402
 from app.search.service import DocumentSearchService  # noqa: E402
+from fake_embedding_provider import FakeEmbeddingProvider  # noqa: E402 - deterministisch, kein Modell-Download
 
 BENCH_DIR = ROOT / "benchmarks" / "chat_scope_v1"
 NOTE_MARKER = "wurde nicht berücksichtigt"
+# A/B ohne lokale KI (Standard); *_lokal mit lokaler Vorabanalyse als Fallback-Pfad (nur offline, Echo-Fake)
+VARIANTS = ("A", "B", "A_lokal", "B_lokal")
 # Fingerabdruck der Quellen, die Payload und Prompt bestimmen (Review §30: Prompt-/Gateway-Version festhalten)
 _FINGERPRINT_FILES = (
     "app/privacy/gateway.py", "app/privacy/gateway_schema.py", "app/ai_providers/claude_writing_provider.py",
@@ -107,6 +112,25 @@ class _CapturingWriter:
         return ClaudeWritingResult(text=self.reply, token_count=0)
 
 
+class _EchoLocalLLM:
+    """Fallback-Pfad lokale Vorabanalyse (§30): gibt den ihr uebergebenen (bereits pseudonymisierten) Sachverhalt als
+    "Zusammenfassung" zurueck - die Zusammenfassung fliesst in die Cloud-Anfrage ein. Prueft, ob ueber diesen Pfad
+    Inhalte ausgeschlossener Dokumente wieder hinzukommen. Antwortpruefung immer bestanden."""
+
+    def __init__(self) -> None:
+        self.inputs: list = []
+
+    def process(self, payload):  # noqa: ANN001
+        self.inputs.append(payload)
+        return LocalLLMResult(text=payload.anonymisierter_sachverhalt, model="bench-echo")
+
+    def check_health(self) -> LocalAIHealthStatus:
+        return LocalAIHealthStatus(reachable=True, model_available=True)
+
+    def generate_structured(self, prompt: str, schema: dict) -> dict:
+        return {"passed": True, "issues": []}
+
+
 class _LiveCapturingWriter(_CapturingWriter):
     """Live: erfasst den Payload und leitet ihn an den echten Schreib-Provider weiter."""
 
@@ -133,7 +157,7 @@ def _seed(db, spec: dict, *, with_duplicate: bool) -> tuple[Matter, dict[str, st
     db.add(User(email="bench@kanzlei.test", password_hash="x", role_id=role.id))
     m = spec["matter"]
     client = Client(name=m["client"])
-    matter = Matter(client=client, title=m["title"])
+    matter = Matter(client=client, title=m["title"], practice_area=m.get("practice_area"))
     db.add_all([client, matter])
     db.flush()
     db.add(Party(matter_id=matter.id, name=m["opponent"], role="Gegner"))
@@ -149,6 +173,15 @@ def _seed(db, spec: dict, *, with_duplicate: bool) -> tuple[Matter, dict[str, st
         db.add(row)
         db.flush()
         ids[doc["id"]] = row.id
+    if m.get("knowledge"):
+        from app.knowledge.schema import KnowledgeItemImport
+        from app.knowledge.service import KnowledgeItemService
+
+        service = KnowledgeItemService(search_service=DocumentSearchService(FakeEmbeddingProvider()))
+        for entry in m["knowledge"]:
+            item = service.import_item(KnowledgeItemImport(title=entry["title"], content=entry["content"],
+                                                           practice_area=m.get("practice_area")), db)
+            service.approve(item, db, actor="bench")
     for deadline in m["deadlines"]:
         db.add(Deadline(matter_id=matter.id, document_id=ids[deadline["document"]], source_text=deadline["source_text"],
                         due_date=date.fromisoformat(deadline["due_date"])))
@@ -156,17 +189,10 @@ def _seed(db, spec: dict, *, with_duplicate: bool) -> tuple[Matter, dict[str, st
     return matter, ids
 
 
-def _drafting(local_ai, writer) -> DraftingService:  # noqa: ANN001
-    search = DocumentSearchService(_NoEmbeddings())
+def _drafting(local_ai, writer, local_llm=None) -> DraftingService:  # noqa: ANN001
+    search = DocumentSearchService(FakeEmbeddingProvider())
     return DraftingService(local_ai(search), LegalResearchService(search, min_score_for_sufficient=0.0), search,
-                           ClaudePrivacyGateway(), writer, model_name="bench")
-
-
-class _NoEmbeddings:
-    """Keine Wissensbasis im Benchmark: Quellen kommen nur aus der lokalen Rechtsrecherche (leer) - dokumentierte Grenze."""
-
-    def embed(self, text: str) -> list[float]:
-        return [0.0] * 8
+                           ClaudePrivacyGateway(), writer, model_name="bench", local_llm_provider=local_llm)
 
 
 def _chain(cases: dict, case: dict) -> list[dict]:
@@ -186,7 +212,8 @@ def run_case(spec: dict, case: dict, variant: str, *, live_writer_factory=None) 
         user = db.query(User).first()
         chat = ChatService(Path(".") / "bench_uploads_unused")
         conversation = chat.create_conversation(db, user=user, matter_id=matter.id, title="Bench", actor=user.email)
-        local_ai = _WholeMatterProvider if variant == "A" else RuleBasedLocalAIProvider
+        local_ai = _WholeMatterProvider if variant.startswith("A") else RuleBasedLocalAIProvider
+        local_llm = _EchoLocalLLM() if variant.endswith("_lokal") else None
         chain = _chain(cases, case)
         record: dict = {}
         for position, turn in enumerate(chain):
@@ -202,13 +229,21 @@ def run_case(spec: dict, case: dict, variant: str, *, live_writer_factory=None) 
             error = None
             try:
                 reply = chat.send_message(db, conversation=conversation, content=turn["question"],
-                                          drafting_service=_drafting(local_ai, writer), actor=user.email,
+                                          drafting_service=_drafting(local_ai, writer, local_llm),
+                                          actor=user.email,
                                           current_message_id=message.id)
             except Exception as exc:  # noqa: BLE001 - Fehlerquote wird gemessen
                 reply, error = None, type(exc).__name__
             elapsed_ms = round((time.perf_counter() - started) * 1000)
             if final:
                 record = _evaluate(spec, turn, writer, reply, error, elapsed_ms, variant)
+                if local_llm is not None:
+                    record["local_llm_called"] = bool(local_llm.inputs)
+                    # Nachweis, dass die lokale Zusammenfassung tatsaechlich im Cloud-Payload steht (Review §30)
+                    points = writer.payloads[-1].anonymisierte_argumentationspunkte if writer.payloads else []
+                    record["local_summary_in_payload"] = any(
+                        p.startswith(_LOCAL_LLM_ARGUMENTATIONSPUNKT_PREFIX) for p in points
+                    )
         return record
     finally:
         db.close()
@@ -223,9 +258,12 @@ def _evaluate(spec: dict, case: dict, writer, reply, error, elapsed_ms: int, var
     without_history = (
         json.dumps({k: v for k, v in payload.items() if k != "anonymisierter_gespraechsverlauf"}, ensure_ascii=False) if payload else ""
     )
-    all_facts = sorted({f for facts in m["facts"].values() for f in facts})
+    # Dokumentfakten bestimmen die Minimierungskennzahl; Wissensfakten (Schluessel ohne "D-") gehen unabhaengig von der
+    # Dokumentauswahl in jede Anfrage und werden getrennt ausgewiesen (Review §30, v1.1)
+    document_facts = sorted({f for key, facts in m["facts"].items() if key.startswith("D-") for f in facts})
+    knowledge_facts = sorted({f for key, facts in m["facts"].items() if not key.startswith("D-") for f in facts})
     needed = case["needed_facts"]
-    unneeded = [f for f in all_facts if f not in needed]
+    unneeded = [f for f in document_facts if f not in needed]
     body, notes = split_review_notes(reply.content) if reply is not None else ("", [])
     note_present = NOTE_MARKER in str(notes)
     note_count = _note_count(str(notes))
@@ -245,14 +283,15 @@ def _evaluate(spec: dict, case: dict, writer, reply, error, elapsed_ms: int, var
         "unneeded_facts_in_history_only": [
             f for f in unneeded if _fact_in(f, history_text) and not _fact_in(f, without_history)
         ],
+        "knowledge_facts_present": [f for f in knowledge_facts if _fact_in(f, text)],
         "sensitive_terms_total": len(m["sensitive_terms"]),
         "sensitive_plaintext": [t for t in m["sensitive_terms"] if t in text],
         # Variante A ersetzt nur den Kontext-Provider; der Chat-Hinweis bezieht sich auf die Regel B und ist in A
         # gegenstandslos (A sendet alle Dokumente) - daher nicht ausgewiesen.
-        "note_present": note_present if variant == "B" else None,
-        "note_count": note_count if variant == "B" else None,
+        "note_present": note_present if variant.startswith("B") else None,
+        "note_count": note_count if variant.startswith("B") else None,
     }
-    if variant == "B":
+    if variant.startswith("B"):
         expected_missing = set(case["omission_expected_in_b"])
         result["unexpected_missing"] = [f for f in result["needed_facts_missing"] if f not in expected_missing]
         result["omission_without_note"] = bool(result["needed_facts_missing"]) and not note_present
@@ -289,7 +328,7 @@ def score_answer(spec: dict, case: dict, answer: str) -> dict:
 
 def summarise(results: list[dict]) -> dict:
     summary = {}
-    for variant in ("A", "B"):
+    for variant in VARIANTS:
         rows = [r for r in results if r["variant"] == variant]
         needed = sum(len(r["needed_facts_present"]) + len(r["needed_facts_missing"]) for r in rows)
         unneeded_total = sum(len(r["unneeded_facts_present"]) for r in rows)
@@ -304,7 +343,7 @@ def summarise(results: list[dict]) -> dict:
             "payload_chars_total": sum(r["payload_chars"] for r in rows),
             "runtime_ms_median": sorted(r["runtime_ms"] for r in rows)[len(rows) // 2] if rows else None,
         }
-        if variant == "B":
+        if variant.startswith("B"):
             summary[variant]["unexpected_missing"] = sum(len(r["unexpected_missing"]) for r in rows)
             summary[variant]["omission_without_note"] = sum(1 for r in rows if r["omission_without_note"])
             summary[variant]["note_not_as_expected"] = sum(1 for r in rows if not r["note_as_expected"])
@@ -370,7 +409,7 @@ def main() -> int:
     partial = out.with_suffix(".partial.jsonl")
     results = []
     for case in spec["cases"]:
-        for variant in ("A", "B"):
+        for variant in (VARIANTS if not args.live else ("A", "B")):
             results.append(run_case(spec, case, variant, live_writer_factory=live_factory))
             if args.live:
                 with partial.open("a", encoding="utf-8") as fh:

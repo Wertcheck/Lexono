@@ -24,7 +24,7 @@ def _case(spec: dict, case_id: str) -> dict:
 
 def test_case_ids_are_stable_and_unique(spec: dict) -> None:
     ids = [c["id"] for c in spec["cases"]]
-    assert ids == [f"C{n:02d}" for n in range(1, 12)] and spec["version"] == "v1"
+    assert ids == [f"C{n:02d}" for n in range(1, 13)] and spec["version"] == "v1.1"
 
 
 @pytest.mark.parametrize("case_id", ["C02", "C07"])
@@ -96,3 +96,21 @@ def test_answer_scoring_recognises_other_formats(spec: dict) -> None:
     case = _case(spec, "C01")
     scored = bench.score_answer(spec, case, "Fällig sind 4.250 EUR am 15. August 2026; zuzüglich 14.250,00 EUR.")
     assert scored["needed_facts_not_in_answer"] == [] and scored["unsupported_values"] == ["14250.00"]
+
+
+def test_knowledge_source_reaches_both_variants(spec: dict) -> None:
+    case = _case(spec, "C12")
+    for variant in ("A", "B"):
+        assert "30 Prozent" in bench.run_case(spec, case, variant)["needed_facts_present"]
+
+
+@pytest.mark.parametrize("case_id", ["C02", "C07"])
+def test_local_preanalysis_fallback_brings_back_no_excluded_document(spec: dict, case_id: str) -> None:
+    """Fallback-Pfad: die lokale Vorabanalyse sieht nur den bereits eingeschraenkten Payload."""
+    case = _case(spec, case_id)
+    plain = bench.run_case(spec, case, "B")
+    local = bench.run_case(spec, case, "B_lokal")
+    assert local["local_llm_called"] is True and local["local_summary_in_payload"] is True and not local["error"]
+    assert local["needed_facts_missing"] == plain["needed_facts_missing"] == case["omission_expected_in_b"]
+    assert set(local["unneeded_facts_present"]) == set(plain["unneeded_facts_present"])
+    assert not local["sensitive_plaintext"]

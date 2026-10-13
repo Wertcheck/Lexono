@@ -1,20 +1,20 @@
 {
   "benchmark": "chat_scope",
-  "version": "v1",
+  "version": "v1.1",
   "created": "2026-10-13",
   "description": "Vergleich Aktenkontext A (ganze Akte, Referenz) vs. B (aktuelle Chatregel: bei Anhaengen der aktuellen Nachricht nur deren Dokumenttext). Ausschliesslich synthetische Daten. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §30.",
   "rules": {
     "payload_scope": "Gemessen wird der ClaudeRequestPayload, den der Schreib-Provider unmittelbar vor dem Cloud-Aufruf erhaelt (nach Pseudonymisierung, Rueckfrage, Restrisiko-Pruefung, Siegel). Alle Felder einschliesslich Gespraechsverlauf.",
     "fact_present": "Ein Referenzfakt gilt als verfuegbar, wenn seine exakte Schreibweise mit Zahlgrenzen (kein Treffer innerhalb laengerer Zahlen) im serialisierten Payload vorkommt - gleich aus welchem Feld (Sachverhalt, Fristhinweis, Verlauf). Nenner: Zahl der needed_facts.",
     "expected_omission": "Ein benoetigter Fakt, der in Variante B per Regel fehlt (nur in nicht angehaengtem Dokument). Zulaessig nur, wenn die Antwort den Hinweis auf nicht beruecksichtigte Dokumente traegt (note_required).",
-    "unneeded_facts": "Fakten nicht benoetigter Dokumente im Payload; Ausweis als Treffer/Nenner (Nenner: Zahl der unneeded_facts je Fall, summiert). Mass der Datenminimierung, kein Fehler. Gesondert: nur ueber den Gespraechsverlauf gesendet.",
+    "unneeded_facts": "Fakten nicht benoetigter DOKUMENTE im Payload; Treffer/Nenner (Nenner: Dokumentfakten, die der Fall nicht braucht, summiert). Wissensfakten (KB*) getrennt als knowledge_facts_present, da sie unabhaengig von der Dokumentauswahl gesendet werden. Mass der Datenminimierung, kein Fehler. Gesondert: nur ueber den Gespraechsverlauf gesendet.",
     "sensitive_plaintext": "Synthetische Namen/Adresse/IBAN aus sensitive_terms im Klartext im Payload; Ausweis Treffer/Nenner je Begriff (voller Name und Nachname zaehlen getrennt). Abgedeckt: Dokumenttext und Frage (C11); Verlauf nur ueber vorgefertigte Antworten.",
     "errors": "Ausnahme, blockierte Antwort (auch nach dem Schreibaufruf, z. B. Antwortpruefung) oder kein Payload. Nenner: Faelle je Variante.",
     "answer_scoring_live_only": "Nur im freigegebenen Live-Lauf: Datums- und Betragsangaben werden normalisiert (z. B. '15. August 2026', '4.250 EUR'); benoetigte Fakten in der Antwort; Werte, die in keinem Aktendokument und nicht in der Frage stehen (unbelegt); vorlaeufig, fachlich nicht validiert, kein LLM-Selbsturteil.",
     "limits": "Offline beantwortet ein Fake-Provider; offline ist daher nur die Informationsverfuegbarkeit messbar, nicht die Antwortqualitaet. Kausalaussagen zur Antwortqualitaet erst nach Live-Lauf und fachlicher Pruefung.",
     "variant_a": "A = aktueller Code ohne die §29-Einschraenkung (Kontext-Provider ignoriert die Dokumentauswahl); §27-Regeln (Duplikate, Fristen geloeschter Dokumente) bleiben aktiv. Kein Nachbau eines frueheren Commits. Der Chat-Hinweis wird in A nicht ausgewiesen (gegenstandslos).",
     "chains": "Folgefragen (follow_up_of) spielen die Vorturns mit festen Antworten ab; nur der letzte Turn wird gemessen bzw. im Live-Lauf an das Modell gesendet.",
-    "environment": "Lokale KI (Ollama) aus wie im Standard; Wissensbasis und Rechtsrecherche leer. Payload-Groessen ohne lokale Vorabanalyse."
+    "environment": "Varianten A/B: lokale KI (Ollama) aus wie im Standard. Varianten A_lokal/B_lokal: lokale Vorabanalyse aktiv mit Echo-Fake (gibt den pseudonymisierten Sachverhalt zurueck, der dann in die Cloud-Anfrage einfliesst) - prueft, ob der Fallback-Pfad ausgeschlossene Dokumente zurueckbringt; kein echtes Ollama. Wissensbasis: ein freigegebener synthetischer Eintrag (K1); Rechtsrecherche leer. Live nur A/B. Abgedeckt ist nur der Zweig mit lokaler Zusammenfassung (process); der Zweig 'Zusammenfassung lohnt nicht' (nur Erreichbarkeitspruefung) wird bei diesen kurzen Sachverhalten nicht erreicht. Der Echo-Fake sieht nur den bereits eingeschraenkten Payload - dass er keine ausgeschlossenen Dokumente zurueckbringt, folgt aus dem Aufbau; geprueft wird, dass der Fallback-Pfad keinen eigenen Zugriff auf Aktendokumente hat."
   },
   "matter": {
     "id": "M1",
@@ -81,6 +81,9 @@
       "D-OLD": [
         "03.05.2019",
         "350,00"
+      ],
+      "KB1": [
+        "30 Prozent"
       ]
     },
     "sensitive_terms": [
@@ -90,6 +93,14 @@
       "Sasskamp",
       "Lindenweg 14",
       "DE89 3704 0044 0532 0130 00"
+    ],
+    "practice_area": "Werkvertragsrecht Estrich",
+    "knowledge": [
+      {
+        "id": "KB1",
+        "title": "Werkvertragsrecht Estrich Abschlag",
+        "content": "Werkvertragsrecht Estrich: Abschlagszahlungen sind üblich bis 30 Prozent der Vergütung."
+      }
     ]
   },
   "cases": [
@@ -255,6 +266,24 @@
       ],
       "omission_expected_in_b": [],
       "note_expected_in_b": true
+    },
+    {
+      "id": "C12",
+      "kind": "quellen_wissensbasis",
+      "attach": [
+        "D-INV"
+      ],
+      "question": "Ist eine Abschlagszahlung für diese Rechnung üblich?",
+      "needed_facts": [
+        "4.250,00",
+        "30 Prozent"
+      ],
+      "omission_expected_in_b": [],
+      "note_expected_in_b": true
     }
+  ],
+  "changelog": [
+    "v1 (13.10.2026): C01-C11.",
+    "v1.1 (13.10.2026): C12 Quellen (freigegebener Wissenseintrag KB1), Varianten A_lokal/B_lokal (lokale Vorabanalyse als Fallback-Pfad); bestehende IDs unveraendert. Wissensfakten zaehlen nicht zu unneeded_facts (getrennt: knowledge_facts_present); dadurch bleiben die Dokument-Nenner wie in v1 (100 bei C01-C11). sensitive_terms-Nenner steigt durch C12 von 66 auf 72."
   ]
 }

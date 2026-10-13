@@ -3141,3 +3141,45 @@ gespeicherter Verknüpfung, die Auswahl nur als Ausweg. Der Schriftsatz-Workflow
 | Volle Testsuite: 4290 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
 | Installierter Build | nicht erforderlich: kein Produktivcode geändert; Fall 24 (§29) gilt weiter |
 | Editor/Neugenerierung | Entscheidungsvorlage; nicht umgesetzt |
+
+### 30.6 Nachtrag: Benchmark v1.1 – Quellen und Fallback-Pfad (13.10.2026)
+
+Der Auftrag wurde unverändert erneut erteilt. Gegenüber v1 fehlten **Quellen** (Wissensbasis leer) und **Fallbacks**
+(lokale Vorabanalyse aus). Ergänzt, ohne Produktivcode zu ändern; bestehende Fall-IDs sind unverändert.
+
+**Neu in v1.1:**
+- **C12:** freigegebener synthetischer Wissenseintrag KB1 über den echten Pfad `search_knowledge_base`.
+- **Varianten A_lokal/B_lokal:** lokale Vorabanalyse aktiv, mit einem Echo-Fake statt Ollama. Die lokale Zusammenfassung
+  fließt über `extend_with_local_note` in die Fristhinweise der Cloud-Anfrage ein; die Antwortprüfung ist aktiv.
+- **Wissensfakten getrennt ausgewiesen:** Sie gehen unabhängig von der Dokumentauswahl in jede Anfrage.
+
+| Kennzahl | A | B | A_lokal | B_lokal |
+|---|---|---|---|---|
+| benötigte Fakten | 23/23 | 19/23 | 23/23 | 19/23 |
+| nicht benötigte Dokumentfakten | 110/110 | 50/110 | 110/110 | 50/110 |
+| sensible Klartextbegriffe | 0/72 | 0/72 | 0/72 | 0/72 |
+| Fehler | 0/12 | 0/12 | 0/12 | 0/12 |
+| Payload gesamt (Zeichen) | 15 245 | 10 506 | 24 341 | 14 863 |
+
+- **Fehlende Fakten in B:** weiterhin nur die vier erwarteten Auslassungen (C02, C06, C07), jeweils mit Hinweis.
+- **Quelle KB1:** in allen 48 Läufen im Cloud-Payload (`anonymisierte_quellenverweise`), in A und B gleich.
+- **Lokale Zusammenfassung:** stand in allen 24 lokalen Läufen nachweislich im Cloud-Payload. Mit lokaler Vorabanalyse
+  steigt die Payload, weil die Zusammenfassung den Sachverhalt wiederholt (Echo-Fake). Ausgeschlossene Dokumente kamen
+  nicht zurück.
+
+**Grenzen von v1.1:**
+- Der Echo-Fake sieht nur den bereits eingeschränkten Payload. Belegt ist damit, dass der Fallback-Pfad keinen eigenen
+  Zugriff auf Aktendokumente hat; das Verhalten eines echten Ollama-Modells ist nicht gemessen.
+- Der Zweig „Zusammenfassung lohnt nicht“ (nur Erreichbarkeitsprüfung) wird bei diesen kurzen Sachverhalten nicht erreicht.
+- Das Test-Embedding findet KB1 in jedem Fall; das ist keine Relevanzmessung.
+
+**Unabhängiges Review v1.1:** Produktionspfad für Fallback und Quelle bestätigt. Umgesetzt wurden:
+- Nachweis der Zusammenfassung im Payload statt nur „aufgerufen“;
+- Wissensfakten aus der Minimierungskennzahl herausgenommen (vorher verzerrt: 47 % → 50 %);
+- Kennung KB1 statt K1 (Kollision mit K1 aus §27.5).
+
+**Tests:** `tests/test_bench_chat_scope.py` (22). Volle Testsuite vor dieser Änderung: 4302 bestanden, nur die 4 bekannten
+Logo-Fehler. Danach wurden nur Benchmark-Dateien geändert.
+
+**Live-Lauf:** weiterhin **nicht ausgeführt**, weil die Freigabe fehlt (§30.3). Die Antwortqualität bleibt NICHT
+VERIFIZIERT.
