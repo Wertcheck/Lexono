@@ -1,13 +1,13 @@
 {
  "benchmark": "pseudonymization_v1",
- "run_at": "2026-10-13T21:37:36+00:00",
- "git_commit": "a40e5db",
+ "run_at": "2026-10-13T22:58:42+00:00",
+ "git_commit": "f9306da",
  "git_dirty_files": [],
  "cases_sha256": "0209ad2f70f8a1ae",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
   "app/privacy/pseudonymizer.py": "41eadfa80574c12b",
-  "app/privacy/detectors.py": "8375c13c6faf3371",
+  "app/privacy/detectors.py": "78b33da3b29385e4",
   "app/privacy/presidio_ner.py": "bcc094be2e69d8db",
   "app/privacy/review.py": "44ed74b4dc9b64c0",
   "app/privacy/security_check.py": "7e370817494cb56b",
@@ -120,26 +120,26 @@
    },
    "ORT": {
     "recall": 0.667,
-    "precision": 0.571,
-    "f1": 0.615,
+    "precision": 0.667,
+    "f1": 0.667,
     "gold": 3,
     "protected": 2,
     "mapping_hit": 2,
-    "predicted": 7,
-    "false_positives": 3,
+    "predicted": 6,
+    "false_positives": 2,
     "payload_leaks": 1,
     "partial_leaks": 0,
     "type_mismatch": 0
    },
    "PERSON": {
     "recall": 0.895,
-    "precision": 0.794,
-    "f1": 0.841,
+    "precision": 0.844,
+    "f1": 0.868,
     "gold": 38,
     "protected": 34,
     "mapping_hit": 32,
-    "predicted": 34,
-    "false_positives": 7,
+    "predicted": 32,
+    "false_positives": 5,
     "payload_leaks": 4,
     "partial_leaks": 0,
     "type_mismatch": 3
@@ -189,9 +189,9 @@
    "protected": 80,
    "payload_leaks": 8,
    "partial_leaks": 1,
-   "false_positives": 10,
-   "false_positives_on_keep": 2,
-   "keep_preserved": "66/68",
+   "false_positives": 7,
+   "false_positives_on_keep": 1,
+   "keep_preserved": "67/68",
    "unnecessary_blocks": 0,
    "missing_blocks": 0,
    "blocked": 0,
@@ -204,7 +204,7 @@
    "brief": {
     "cases": 44,
     "cases_with_leak": 5,
-    "false_positives": 8
+    "false_positives": 5
    },
    "chat": {
     "cases": 2,
@@ -271,7 +271,7 @@
    "sachverhalt": {
     "cases": 57,
     "cases_with_leak": 8,
-    "false_positives": 10
+    "false_positives": 7
    },
    "stil": {
     "cases": 1,
@@ -953,23 +953,8 @@
    "unnecessary_block": false,
    "missing_block": false,
    "protect": [],
-   "predicted": [
-    {
-     "value": "Urt",
-     "type": "PERSON",
-     "verdict": "FP",
-     "on_keep": false
-    },
-    {
-     "value": "VIII",
-     "type": "PERSON",
-     "verdict": "FP",
-     "on_keep": true
-    }
-   ],
-   "keep_missing": [
-    "VIII ZR 1/21"
-   ],
+   "predicted": [],
+   "keep_missing": [],
    "keep_total": 4,
    "consistency": []
   },
@@ -1890,12 +1875,6 @@
     }
    ],
    "predicted": [
-    {
-     "value": "Az",
-     "type": "ORT",
-     "verdict": "FP",
-     "on_keep": false
-    },
     {
      "value": "3 O 123/26",
      "type": "KENNUNG",

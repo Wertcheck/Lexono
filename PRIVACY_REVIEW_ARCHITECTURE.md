@@ -3598,7 +3598,7 @@ Fail-Closed-Richtung bei spaCy-Ausfall.
 
 | Prüfung | Status |
 |---|---|
-| Neue Regressionstests (`test_privacy_identity_genitive_citations.py`, 49) und P05-Tests | PASS |
+| Neue Regressionstests (`test_privacy_identity_genitive_citations.py`, 52) und P05-Tests | PASS |
 | Privacy- und Benchmark-Tests (1555) | PASS |
 | Volle Testsuite: 4400 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
 | Benchmark vorher/nachher (33.4) | PASS |
