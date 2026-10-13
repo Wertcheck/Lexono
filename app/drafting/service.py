@@ -438,6 +438,7 @@ class DraftingService:
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
         required_document_ids: Sequence[str] = (),
+        context_document_ids: Sequence[str] = (),
         unreadable_document_count: int = 0,
     ) -> DraftingResult:
         """Erstellt eine neue Draft-Version.
@@ -531,6 +532,7 @@ class DraftingService:
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
             required_document_ids=required_document_ids,
+            context_document_ids=context_document_ids,
             unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult):
@@ -561,6 +563,7 @@ class DraftingService:
         privacy_decisions: PrivacyDecisions | None = None,
         review_mode: str = "mask",
         required_document_ids: Sequence[str] = (),
+        context_document_ids: Sequence[str] = (),
         unreadable_document_count: int = 0,
     ) -> Generator[DraftStreamEvent, None, None]:
         """Streaming-Variante von `create_draft` (13.09., Streaming-
@@ -619,6 +622,7 @@ class DraftingService:
             privacy_decisions=privacy_decisions,
             review_mode=review_mode,
             required_document_ids=required_document_ids,
+            context_document_ids=context_document_ids,
             unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult):
@@ -681,6 +685,7 @@ class DraftingService:
         previous_draft: Draft | None,
         privacy_decisions: PrivacyDecisions | None,
         required_document_ids: Sequence[str] = (),
+        context_document_ids: Sequence[str] = (),
         unreadable_document_count: int = 0,
     ) -> list:
         """Offene Datenschutz-Rueckfrage einer bereits gespeicherten, unbeantworteten Nachricht neu ermitteln (z. B. nach
@@ -705,6 +710,7 @@ class DraftingService:
             review_mode="ask",
             log_blocked_requests=False,
             required_document_ids=required_document_ids,
+            context_document_ids=context_document_ids,
             unreadable_document_count=unreadable_document_count,
         )
         if isinstance(prepared, DraftingResult) and prepared.review_required:
@@ -732,6 +738,7 @@ class DraftingService:
         review_mode: str = "mask",
         log_blocked_requests: bool = True,
         required_document_ids: Sequence[str] = (),
+        context_document_ids: Sequence[str] = (),
         unreadable_document_count: int = 0,
     ) -> DraftingResult | _PreparedRequest:
         """Gemeinsamer Vorbereitungs-/Gate-Teil von `create_draft`/
@@ -757,7 +764,17 @@ class DraftingService:
                 "Versionsketten dürfen Aktengrenzen nicht überschreiten"
             )
 
-        preparation = self.local_ai.prepare_draft_context(matter_id, db)
+        # Datenminimierung (§29): `context_document_ids` setzt nur der Chat, und nur fuer die Dokumente, die der
+        # AKTUELLEN Nachricht ausdruecklich angehaengt sind (auch "Mit Dokument chatten"). Dann geht nur deren Inhalt in
+        # den Sachverhalt, nicht mehr die ganze Akte; Fristen bleiben aktenweit, der Chat weist sichtbar auf nicht
+        # uebermittelte Dokumente hin. Folgefragen ohne Anhang behalten die ganze Akte (Review §29: "Welche Dokumente
+        # der Akte ..." wurde sonst auf den frueheren Anhang eingeengt). `required_document_ids` bleibt reines Gate.
+        if context_document_ids:
+            preparation = self.local_ai.prepare_draft_context(
+                matter_id, db, document_ids=list(context_document_ids)
+            )
+        else:
+            preparation = self.local_ai.prepare_draft_context(matter_id, db)
 
         # Dokumentstatus (13.10.2026, app/documents/readiness.py): Bezieht sich die Anfrage auf bestimmte Dokumente,
         # muss deren Inhalt erfolgreich verarbeitet UND tatsaechlich in den soeben lokal gebauten Kontext eingeflossen

@@ -2829,7 +2829,7 @@ Produktverantwortung/Entwicklung. Status: ERLEDIGT / OFFEN / ENTSCHEIDUNG OFFEN.
 
 | WP | Inhalt | Abnahmekriterium | Tests | Rolle | Abhängigkeit | Status |
 |---|---|---|---|---|---|---|
-| W1 | Anfragebezogene Dokumentauswahl (§27.1 M3) | angehängte Dokumente voll, übrige gekürzt; keine Verschlechterung der Antwortqualität auf synthetischen Akten (A/B-Messung, Fristen/Beträge/Chronologie vollständig) | Kontext- und Payload-Tests, Qualitätsbenchmark | P, K (Entscheidung) | – | ENTSCHEIDUNG OFFEN |
+| W1 | Anfragebezogene Dokumentauswahl (§27.1 M3; **Chat mit Anhang umgesetzt, §29**) | angehängte Dokumente voll, übrige gekürzt; keine Verschlechterung der Antwortqualität auf synthetischen Akten (A/B-Messung, Fristen/Beträge/Chronologie vollständig) | Kontext- und Payload-Tests, Qualitätsbenchmark | P, K (Entscheidung) | – | ENTSCHEIDUNG OFFEN |
 | W2 | Endgültige Löschung einer Akte (Datensätze aller ~25 Tabellen, Dateien, Embeddings, Entscheidungen, Chats/Anhänge), inhaltsfreier Löschnachweis | nach Löschlauf keine Zeile/Datei mehr (je Tabelle getestet); Wiederherstellungshinweis | je Tabelle + Dateien | P | K1, K7 | ENTSCHEIDUNG OFFEN |
 | W3 | Löschfrist wirksam (Zeitsteuerung von W2) | Akte älter als Frist gelöscht, jüngere bleibt | zeitgesteuerter Test | P | W2, K1 | OFFEN |
 | W4 | Backups verschlüsselt, rotiert; vollständiger Inhalt (inkl. `chat_uploads/` o. bewusster Ausschluss); Wiederherstellung ohne Rest-`.bak` | Testwiederherstellung, Schlüsselverwahrung dokumentiert | Backup-/Restore-Tests | IT, P | Kanzleientscheidung Schlüssel/Aufbewahrung | ENTSCHEIDUNG OFFEN |
@@ -2880,3 +2880,91 @@ kontinuierliche Sicherheitsvalidierung (P6), externe Prüfung (Penetrationstest)
 Stufen unverändert: A nach den Kanzleibestätigungen; **B No-Go** bis B2–B7; **C No-Go** bis W1–W9 (soweit entschieden)
 und O1–O6 nachgewiesen und Freigaben dokumentiert sind.
 
+
+## 29. Datenminimierung pro KI-Anfrage: nur angehängte Dokumente (13.10.2026, Ausgang `41f7226`)
+
+Nur synthetische Daten. Umsetzung von W1 (§28.3) in der kleinsten nachvollziehbaren Form; keine Freigabe. Stufe B
+bleibt No-Go bis zu den Nachweisen, Stufe C No-Go. P0-08 und die lokale Schlüsselverwaltung sind unverändert.
+
+### 29.1 Datenfluss bis zur Cloud-Payload (unabhängig nachverfolgt)
+
+- Einziger Einstieg ist `DraftingService._prepare_and_gate` → `prepare_draft_context(matter_id)`: bisher **immer die ganze
+  Akte** (bis 30 Dokumente/90 000 Zeichen). Angehängte Dokumente dienten nur als Gate.
+- **Ausdrückliche Dokumentauswahl gibt es nur im Chat:** Anhang der aktuellen Nachricht, „Mit Dokument chatten“ (legt
+  den Anhang an die erste Nachricht). Schriftsatz-Assistent, Neugenerierung, Anmerkung übernehmen, Editor-KI und
+  Dokumentgenerator haben keine Auswahl und senden weiter die Akte (Schriftsatz-Assistent bewusst, §27.1).
+- Nebenpfade geprüft:
+  - Rückfrage-Vorschau und erneutes Senden nach der Entscheidung nutzen dieselbe Auswahl.
+  - Lokale Sofortantworten (Normen, letzte Akte) gehen nicht in die Cloud.
+  - Quellen und Wissen werden aus Aktenmetadaten gebildet, nicht aus Dokumenttext.
+  - Weiter aktenweit sind die Fristhinweise (Textstelle der Frist, auch aus anderen Dokumenten) und der bisherige
+    Gesprächsverlauf (frühere Antworten können andere Dokumente zitieren).
+
+### 29.2 Umgesetzte Regel
+
+- **Hat die aktuelle Chatnachricht Anhänge**, geht von den Aktendokumenten nur deren Text in den Sachverhalt, immer nur
+  aus dieser Akte und nur nicht gelöschte Dokumente.
+- Aktenweit bleiben: Fristhinweise, Quellen, bekannte Namen (Platzhalter bleiben konsistent) und Aktentitel.
+- Die Antwort enthält im Hinweisbereich (nicht Teil des Schreibens, nicht im späteren Verlauf):
+  „Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokuments an die Cloud-KI übermittelt;
+  der Text von N weiteren Dokumenten dieser Akte wurde nicht berücksichtigt (Fristhinweise der Akte und der bisherige
+  Gesprächsverlauf schon). …“
+  Inhaltsgleiche Duplikate des Anhangs zählen nicht mit.
+- **Ohne Anhang** in der aktuellen Nachricht, auch bei Folgefragen mit „Dokument“ oder „Anlage“: unverändert die ganze
+  Akte, kein Hinweis.
+- Pseudonymisierung, Rückfrage, Restrisiko-Scan, Siegel und Fail-Closed sind unverändert. Es entfällt nur Eingabetext
+  vor dem Gateway.
+
+**Review-Korrektur:** Die erste Fassung engte auch Folgefragen mit Dokumentwort auf den früheren Anhang ein. Dadurch
+fehlte bei „Welche Dokumente der Akte erwähnen eine Kaution?“ das betreffende Schreiben, und der Rat im Hinweis war nicht
+befolgbar. Seitdem schränken nur Anhänge der **aktuellen** Nachricht ein. Außerdem wurde der Hinweis präzisiert:
+„Fristhinweise und Gesprächsverlauf schon“ statt „nur … übermittelt“, und Duplikate zählen nicht mit.
+
+### 29.3 Messung (getrennt)
+
+| Messung | Ganze Akte (bisher) | Gezielt (neu) |
+|---|---|---|
+| Testakte (4 Dokumente, Anhang = Rechnung): lokaler Sachverhalt / Payload in Zeichen | 360 / 749 | 111 / 497 |
+| Analyse-Akte (5 Dokumente, Rechnung angehängt): Sachverhalt / Payload | 1326 / 1770 | 292 / 732 |
+| Installierter Build, QA-Akte (Abnahmeprotokoll, 3× Mahnschreiben, Anhang): Payload | 4310 | 3709 |
+| Fakten des Anhangs (Betrag, Zahlungsdatum) | vorhanden | vorhanden |
+| Frist der Akte (aus anderem Dokument) | vorhanden | vorhanden |
+| Fakten anderer Dokumente (Vertragspreis, Altschreiben, Mahnbetrag) | gesendet | nicht gesendet |
+| Rückfragen / automatische Maskierungen / Blockaden | 0 / 0 / 0 | 0 / 0 / 0 |
+
+Zum installierten Build: Der Unterschied ist dort kleiner, weil der Gesprächsverlauf dieser QA-Unterhaltung aktenweit
+mitgeht.
+
+- **Leck:** Die Pseudonymisierung ist unverändert, nur weniger Eingabetext. Ausgeschlossene Dokumente erreichen die
+  Cloud nur über Fristhinweise und den Verlauf; das steht im Hinweis.
+- **False Positives / Blockaden:** keine neuen. Weniger Text bedeutet tendenziell weniger Rückfragen. Ein angehängtes
+  Dokument außerhalb der 30 neuesten wird jetzt einbezogen statt blockiert.
+- **Sachverhaltsverlust:** gewollt bei angehängten Fragen, mit sichtbarem Hinweis. Für Fragen über mehrere Dokumente gilt
+  die Regel: ohne Anhang fragen oder alle betreffenden Dokumente anhängen.
+- **Antwortqualität:** mit echtem Modell NICHT VERIFIZIERT. Der Fang-Server antwortet nicht inhaltlich.
+
+### 29.4 QA
+
+| Punkt | Status |
+|---|---|
+| `tests/test_privacy_request_scope.py` (7 Tests): ohne Fix 4 rot (die übrigen sichern unverändertes Verhalten), mit Fix grün | PASS |
+| `tests/test_chat_document_readiness.py`: bewusst geändert, Testdouble nimmt `document_ids` an | PASS |
+| Volle Testsuite: 4280 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
+| Unabhängiges Review: Befunde zur Folgefrage, zum Hinweistext und zur Duplikatzählung behoben; keine Lücke bei Gates und Platzhaltern | PASS |
+| Build und Installation | PASS |
+| Installierter Build, Fall 24 (Anhang gezielt mit Hinweis, Folgefrage ohne Anhang mit ganzer Akte) | PASS |
+| Installierter Build, Fall 20 (Regression) | PASS |
+| Antwortqualität mit echtem Modell | NICHT VERIFIZIERT |
+| Gezielte Auswahl für Editor, Neugenerierung, Schriftsatz | NICHT UMGESETZT (keine Auswahl vorhanden; Produktentscheidung) |
+| Vollständige Leckfreiheit | NICHT VERIFIZIERT |
+
+Fall 24 im Detail:
+- **Anhang:** Rechnungsdaten gesendet, Abnahmeprotokoll und Mahnschreiben nicht im Sachverhalt, Hinweis „4 weitere
+  Dokumente“ sichtbar.
+- **Folgefrage ohne Anhang:** ganze Akte, kein Hinweis.
+
+**Grenzen:**
+- Eine automatische Relevanzauswahl ohne Anhang wurde bewusst nicht gebaut: unbelegt und mit Risiko für Fakten.
+- Fristhinweise und Verlauf bleiben aktenweit.
+- Spätere aktenbezogene Verwaltung von Dokumenten, Chats, Entwürfen und Wissen (W2, W5) ist davon unabhängig. Die Regel
+  greift nur auf Dokumente derselben Akte zu.

@@ -380,11 +380,12 @@ class _FlippingLocalAI(RuleBasedLocalAIProvider):
         super().__init__(search_service)
         self._db, self._document_id, self._change = db, document_id, change
 
-    def prepare_draft_context(self, matter_id, db):
+    # BEWUSST GEAENDERT (§29): `document_ids` wird bei Dokumentbezug durchgereicht (Datenminimierung)
+    def prepare_draft_context(self, matter_id, db, **kwargs):
         document = self._db.get(Document, self._document_id)
         self._change(document)
         self._db.commit()
-        return super().prepare_draft_context(matter_id, db)
+        return super().prepare_draft_context(matter_id, db, **kwargs)
 
 
 def _flip_service(db, document_id, change, writer):

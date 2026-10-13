@@ -816,6 +816,46 @@ class ChatService:
     def _with_unevaluated_note(text: str, unready: list[DocumentReadiness]) -> str:
         return append_review_note(text, unevaluated_note(unready)) if unready else text
 
+    @staticmethod
+    def _with_scope_note(text: str, db: Session, conversation: ChatConversation, required: list[str]) -> str:
+        """Datenminimierung §29: bei ausdruecklichem Dokumentbezug ging nur dieser Inhalt an die Cloud-KI. Der Hinweis
+        macht sichtbar, dass weitere Aktendokumente NICHT beruecksichtigt wurden - fehlender Kontext darf nicht unbemerkt
+        zu einer scheinbar vollstaendigen Antwort fuehren. Ohne Dateinamen (Hinweis landet in der Antwort)."""
+        if not required or not conversation.matter_id:
+            return text
+        others = (
+            db.query(Document)
+            .filter(
+                Document.matter_id == conversation.matter_id,
+                Document.deleted_at.is_(None),
+                Document.extracted_text.isnot(None),
+                Document.id.notin_(required),
+            )
+            .all()
+        )
+        from app.ai_providers.local_ai_provider import _normalize_document_text
+
+        sent_texts = {
+            _normalize_document_text(d.extracted_text or "")
+            for d in db.query(Document).filter(Document.id.in_(required))
+        }
+        # inhaltsgleiche Duplikate eines Anhangs zaehlen nicht als "nicht beruecksichtigt" (Review §29)
+        count = len([
+            d for d in others
+            if (d.extracted_text or "").strip() and _normalize_document_text(d.extracted_text) not in sent_texts
+        ])
+        if not count:
+            return text
+        noun = "Dokuments" if count == 1 else "Dokumenten"
+        attached = "des angehängten Dokuments" if len(required) == 1 else "der angehängten Dokumente"
+        return append_review_note(
+            text,
+            f"Für diese Anfrage wurde von den Aktendokumenten nur der Text {attached} an die Cloud-KI übermittelt; der "
+            f"Text {'eines weiteren' if count == 1 else f'von {count} weiteren'} {noun} dieser Akte wurde nicht "
+            "berücksichtigt (Fristhinweise der Akte und der bisherige Gesprächsverlauf schon). Für Fragen zu weiteren "
+            "Aktendokumenten bitte ohne Anhang fragen oder die betreffenden Dokumente mit anhängen.",
+        )
+
     def _schriftsatz_candidates(
         self, db: Session, conversation: ChatConversation
     ) -> list[tuple[ChatMessage, Draft, str]]:
@@ -889,6 +929,7 @@ class ChatService:
             previous_draft=previous_draft,
             privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
             required_document_ids=required,
+            context_document_ids=self._message_document_ids(db, last.id),
             unreadable_document_count=len(unready),
         )
         return (last, candidates) if candidates else (None, [])
@@ -1130,6 +1171,8 @@ class ChatService:
                 db, conversation=conversation, states=not_ready, actor=actor, current_message_id=current_message_id
             )
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
+        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
+        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
 
         if drafting_service is None:
             return self._create_message(
@@ -1163,6 +1206,7 @@ class ChatService:
                     db, matter_id=conversation.matter_id, conversation_id=conversation.id
                 ),
                 required_document_ids=required,
+                context_document_ids=scope,
                 unreadable_document_count=len(unready_matter_documents),
             )
         except Exception:  # noqa: BLE001 - siehe Moduldocstring: Chat-Fehlerzustand
@@ -1194,8 +1238,11 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_unevaluated_note(
-                    _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                content=self._with_scope_note(
+                    self._with_unevaluated_note(
+                        _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                    ),
+                    db, conversation, scope,
                 ),
                 draft_id=result.draft_id,
             )
@@ -1280,6 +1327,8 @@ class ChatService:
             yield ChatStreamEvent(kind="done", message=message)
             return
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
+        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
+        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
 
         if drafting_service is None:
             yield ChatStreamEvent(kind="delta", text=_PROVIDER_UNAVAILABLE_MESSAGE)
@@ -1319,6 +1368,7 @@ class ChatService:
                 ),
                 review_mode=review_mode,
                 required_document_ids=required,
+                context_document_ids=scope,
                 unreadable_document_count=len(unready_matter_documents),
             ):
                 if event.kind == "delta":
@@ -1382,8 +1432,11 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_unevaluated_note(
-                    _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                content=self._with_scope_note(
+                    self._with_unevaluated_note(
+                        _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                    ),
+                    db, conversation, scope,
                 ),
                 draft_id=final_result.draft_id,
             )

@@ -20,6 +20,7 @@ import re
 from collections import Counter
 
 from dataclasses import dataclass, field
+from collections.abc import Sequence
 from typing import Protocol
 
 from sqlalchemy.orm import Session
@@ -333,7 +334,7 @@ class DraftPreparationResult:
 
 class LocalAIProvider(Protocol):
     def prepare_draft_context(
-        self, matter_id: str, db: Session
+        self, matter_id: str, db: Session, *, document_ids: Sequence[str] | None = None
     ) -> DraftPreparationResult: ...
 
 
@@ -412,8 +413,11 @@ class RuleBasedLocalAIProvider:
         self.search_service = search_service
 
     def prepare_draft_context(
-        self, matter_id: str, db: Session
+        self, matter_id: str, db: Session, *, document_ids: Sequence[str] | None = None
     ) -> DraftPreparationResult:
+        """`document_ids` (Datenminimierung §29): nur diese Dokumente der Akte gehen in den Sachverhalt - fuer
+        ausdruecklich angehaengte/ausgewaehlte Dokumente. Fristen, Quellen und bekannte Namen bleiben aktenweit (Fristen
+        duerfen nicht verloren gehen, die Platzhalter bleiben konsistent). Ohne Angabe: unveraendert die ganze Akte."""
         if not matter_id:
             raise ValueError(
                 "matter_id ist erforderlich - Kontextvorbereitung ohne "
@@ -428,7 +432,9 @@ class RuleBasedLocalAIProvider:
         if matter.deleted_at is not None:
             raise ValueError("Die Akte wurde gelöscht - für sie werden keine KI-Anfragen mehr vorbereitet.")
 
-        sachverhalt, has_document_context, notices, included_ids = self._build_sachverhalt(matter_id, matter, db)
+        sachverhalt, has_document_context, notices, included_ids = self._build_sachverhalt(
+            matter_id, matter, db, document_ids=document_ids
+        )
         argumentationspunkte = self._build_argumentationspunkte(matter_id, db)
         quellenverweise = self._build_quellenverweise(matter, db)
         known_entities = self._build_known_entities(matter_id, matter, db)
@@ -444,7 +450,7 @@ class RuleBasedLocalAIProvider:
         )
 
     def _build_sachverhalt(
-        self, matter_id: str, matter: Matter, db: Session
+        self, matter_id: str, matter: Matter, db: Session, *, document_ids: Sequence[str] | None = None
     ) -> tuple[str, bool, list[str], list[str]]:
         # Platzhalter-Akte (siehe Modul-Kommentar oben zu
         # `_PLACEHOLDER_MATTER_SACHVERHALT`): der automatisch generierte
@@ -465,15 +471,16 @@ class RuleBasedLocalAIProvider:
             parts = [_PLACEHOLDER_MATTER_SACHVERHALT]
         else:
             parts = [f"Akte: {matter.title}"]
-        documents = (
+        query = (
             db.query(Document)
             .filter(Document.matter_id == matter_id)
             .filter(Document.extracted_text.isnot(None))
             .filter(Document.deleted_at.is_(None))
-            .order_by(Document.created_at.desc())
-            .limit(_MAX_DOCUMENTS_IN_SACHVERHALT)
-            .all()
         )
+        if document_ids is not None:
+            # Datenminimierung §29: nur die ausgewaehlten Dokumente (weiterhin nur aus DIESER Akte, nicht geloescht)
+            query = query.filter(Document.id.in_(list(document_ids)))
+        documents = query.order_by(Document.created_at.desc()).limit(_MAX_DOCUMENTS_IN_SACHVERHALT).all()
         # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
         # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
         documents = [d for d in documents if d.extracted_text.strip()]

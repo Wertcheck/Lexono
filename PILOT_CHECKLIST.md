@@ -217,7 +217,9 @@ dass alles Notwendige vorbereitet ist.
     - [ ] Ausgabenlimit für den Anthropic-Schlüssel beim Anbieter gesetzt (Nachweis: Screenshot/Vermerk ohne Schlüsselwert)
   - [ ] **Stufe B – ausdrücklich freigegebene Testakten** (zusätzlich zu A):
     - [ ] Umfang schriftlich festgelegt: Akten, Herkunft, Personenbezug ja/nein, Zeitraum, Beteiligte (unterschriebene Liste)
-    - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Beteiligten durchgegangen (Teilnahmeprotokoll)
+    - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Beteiligten durchgegangen (Teilnahmeprotokoll),
+          einschließlich: mit Anhang geht nur dieser Dokumenttext an die Cloud-KI (Hinweis in der Antwort); ohne Anhang
+          die ganze Akte (PRIVACY_REVIEW_ARCHITECTURE.md §29)
     - [ ] Meldeweg für Datenschutzauffälligkeiten und Zuständigkeit für Art. 33 DSGVO benannt (Name/Funktion: ________)
     - [ ] Synthetischer Live-Aufruf mit genau dem installierten Build nach PRIVACY_REVIEW_ARCHITECTURE.md §28.4
           (Protokoll: Datum, Build-Commit, Ergebnis; vorher Zustimmung der Kanzlei zum Versand synthetischer Daten)
