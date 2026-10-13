@@ -226,7 +226,7 @@ dass alles Notwendige vorbereitet ist.
     - [ ] Aufräumplan für das Ende von Stufe B festgelegt (§28.3 B7) und nach Abschluss protokolliert: Testakten
           gelöscht (derzeit nur weich – Dateien und Datensätze bleiben bis zu einer endgültigen Löschung, W2),
           Originale im Scan-Ordner, `chat_uploads/`, `schriftsatz_uploads/`, `*.pre-restore-*.bak`, Export-Reste in
-          `%TEMP%\\lexono_dashboard_exports`, Backups der Phase
+          `%TEMP%\lexono_dashboard_exports`, Backups der Phase
   - [ ] **Stufe C – echte Mandantendaten: derzeit NO-GO.** Erst wenn alle Punkte nachgewiesen sind:
     - [ ] **P0-08:** Lexono-Gateway nach der Servereinrichtung eingerichtet und gesondert geprüft; Anthropic-Schlüssel nur
           dort (Entscheidung 13.10.2026, §26.4; Prüfprotokoll gegen den echten Server, P0-08-Abnahme). TLS allein ist
