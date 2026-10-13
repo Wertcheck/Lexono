@@ -3327,3 +3327,137 @@ neu zu starten.
 - OCR-Schreibweisen;
 - Kleinschreibung;
 - Rollenwort plus Nachname.
+
+## 32. P05 – konsistente Pseudonymisierung grammatikalischer Namensvarianten (13.10.2026, Ausgang `1a20c1e`)
+
+Nur synthetische Daten, kein externer Modellaufruf. Stufe B und Stufe C bleiben bis zu ihren gesonderten Freigaben
+gesperrt.
+
+### 32.1 Ursache (belegt durch Rohtreffer je Detektor)
+
+Beispiel: „Herr Brenner und Herrn Brenner sind dieselbe Person; Brenners Anspruch ist verjährt.“ Bekannter Mandant „Karl
+Brenner“, von der Produktion um den Nachnamen ergänzt.
+
+| Stufe | Befund |
+|---|---|
+| Erkennung | Bekannte Namen: „Brenner“ dreimal (auch in „Brenners“). NER: „Herr Brenner“, „Herrn Brenner“, „Brenners“ |
+| Überlappung (`detectors._resolve_overlaps`) | Früherer bzw. längerer Treffer gewinnt: „Herrn Brenner“ (Anrede im Bereich) und „Brenners“ (Genitiv) verdrängen den bekannten Namen |
+| Zuordnung (`pseudonymizer._key_and_canonical`) | Die Alias-Regel greift nur für unveränderte, einwortige Nachnamen; „Herrn Brenner“ und „Brenners“ bekamen eigene Schlüssel |
+| Ergebnis | `[MANDANT_01]`, `[PERSON_01]`, `[PERSON_02]`. Dasselbe ohne bekannte Namen: „Gernot Hahn“ / „Herrn Hahn“ / „Hahns“ ergab drei Platzhalter |
+
+Die Ursache liegt also in den **Textbereichen** (Anrede und Genitiv im Treffer) und der darauf aufbauenden
+**Zuordnung**, nicht in der Ersetzungsreihenfolge.
+
+**Abgewogene Lösungen:**
+- **A – Bereiche verankern (gewählt):**
+  - vor der Überlappungsauflösung Anrede abtrennen, Genitiv auf den Kernnamen verankern, nur bei eindeutiger Verankerung;
+  - Bereiche werden nur verkleinert;
+  - Anrede und Genitiv bleiben lesbar.
+- **B – Zusammenlegen in der Zuordnung:**
+  - hätte die Kategorie überschreiben müssen;
+  - Anrede und Genitiv wären im Platzhalter verschwunden;
+  - invasiver, der Text verändert sich stärker.
+
+### 32.2 Korrektur
+
+- **`app/privacy/detectors.py` – `_anchor_person_variants`, aufgerufen in `detect_all` vor `_resolve_overlaps`:**
+  - Personentreffer verlieren eine führende Anrede (Herr/Herrn/Frau/Hr./Hrn./Fr.).
+  - Ein Genitiv (-s, -'s, -’s) wird auf den Kern verankert, beides **nur**, wenn der Kern eindeutig verankert ist:
+    - entweder bekannter Name genau einer Kategorie;
+    - oder Nachname genau eines mehrteiligen Personentreffers im selben Text.
+  - Gleiche Nachnamen verschiedener Personen sind nie verankert. Unverankerte Namen bleiben unverändert; „Klaus“ wird
+    nie zu „Klau“.
+  - Ein verankerter Treffer übernimmt die Kategorie des bekannten Namens.
+- **`app/privacy/pseudonymizer.py`:**
+  - Unveränderte Treffer behalten ihren (Kern-)Wert in `_merge_literal_spans`.
+  - Der Genitiv bleibt hinter dem Platzhalter stehen (`[MANDANT_01]s`); die Rückführung ergibt „Karl Brenners“.
+  - Die ersetzten Genitivformen werden als `PseudonymMapping.variants` festgehalten.
+- **`app/privacy/security_check.py` (nur verschärft):** Die Antwortprüfung wertet zusätzlich als Leck:
+  - „Anrede [+ Dr./Prof.] + Nachname“ bei mehrteiligen Personennamen;
+  - die tatsächlich ersetzten Genitivformen.
+
+  Damit ist sie mindestens so streng wie vor P05, als diese Formen eigene Zuordnungen hatten. Bewusst **keine**
+  allgemeine Regel „Nachname + s“, denn das Review zeigte Fehlblockaden („des Richters“, „des Kochs“).
+- **Unverändert:** Presidio, Restrisiko-Scan, Final Payload Gate, Fail-Closed und die Pseudonymisierung aller Felder.
+
+### 32.3 Tests
+
+`tests/test_privacy_name_variant_consistency.py` (29 Tests, synthetisch). Ohne Fix 7 rot; die Negativfälle waren schon
+vorher grün und sichern gegen falsche Zusammenführung. Abgedeckt:
+- „Herr/Herrn Brenner“ und „Brenners“;
+- weitere Varianten (Hr./Hrn., apostrophierter Genitiv, Anrede vor Vollnamen);
+- ohne bekannte Namen;
+- **zwei Personen gleichen Nachnamens, auch bekannte – getrennt**;
+- Vornamen auf -s;
+- unverankerte Namen;
+- Wiederholung und Reihenfolge;
+- wörtliche Platzhalter;
+- Gültigkeit je Anfrage;
+- Erhalt von Beträgen, Fristen, Normen und Aktenzeichen;
+- Rückführung mit Genitiv;
+- keine Fehlblockade normaler Genitive;
+- Leck-Prüfung der Varianten;
+- Fail-Closed bei NER-Ausfall;
+- **End-to-End über den echten Chat-Pfad** mit Payload vor dem Cloud-Aufruf.
+
+### 32.4 Benchmark vorher/nachher (unveränderte Fälle und Regeln, gleicher Datensatz-Hash)
+
+| Kennzahl | vorher (`46fee47`) | nachher |
+|---|---|---|
+| geschützte Werte | 80/88 | 80/88 |
+| Klartext im Payload | 8 (alle bekannte Grenzen) | 8 (unverändert) |
+| Fehlalarme | 10 | 10 |
+| Fakten erhalten | 66/68 | 66/68 |
+| unnötige / fehlende Blockaden, Fehler | 0 / 0 / 0 | 0 / 0 / 0 |
+| **Platzhalterkonsistenz** | **1/2** | **2/2** |
+| PERSON Recall / Precision / F1 | 0,895 / 0,806 / 0,848 | 0,895 / 0,794 / 0,841 |
+| End-to-End | 7/7, 0 Lecks | 7/7, 0 Lecks |
+
+- **Änderung:** einzig P05 (drei Zuordnungen → eine).
+- **PERSON-Precision:** Der leichte Rückgang ist ein Zähleffekt der Kennzahl. Drei korrekte, distinkte Vorhersagen
+  wurden zu einer, die Fehlalarme blieben gleich; es gibt keinen neuen Fehlalarm.
+
+### 32.5 Unabhängiges Review und Grenzen
+
+**Review:** kein Klartextleck; Bereiche werden nur am Anfang (Anrede) verkleinert, nie freigelegt.
+
+Behoben aus dem Review:
+- Fehlblockaden durch die zunächst allgemeine Genitiv-Regel der Leck-Prüfung;
+- Genitivverlust in der Rückführung;
+- Leck-Prüfung erweitert um Titel und Großschreibung.
+
+**Bekannte, nicht durch P05 entstandene Grenzen:**
+- „Frau Brenner“ (eine andere Person) wird bei einem bekannten Mandanten „Karl Brenner“ über den Nachnamen dem Mandanten
+  zugeordnet. Das ist vorbestehend durch die Nachnamen-Ergänzung der bekannten Namen.
+- NER-Fehlalarme am Satzanfang mit -s, z. B. „Langes Zögern“ bei Mandant „Peter Lange“, werden jetzt dem Mandanten
+  statt einer anonymen Person zugeordnet. Das ist kein Leck, aber die Sachverhaltsdeutung verschiebt sich; vorher
+  ebenfalls als Person maskiert.
+- „Mandant Karl Brenner teilt mit …“ wird vom Restrisiko-Scan als „Ort“ blockiert. Das ist vorbestehend, unabhängig von
+  P05.
+- Versalien-Genitiv („BRENNERS“) bleibt unverändert unvollständig zugeordnet (vorbestehend).
+
+### 32.6 QA und Abnahme
+
+| Abnahmekriterium | Status | Nachweis |
+|---|---|---|
+| 1. Sichere Namensvarianten konsistent | PASS | 29 Tests; Benchmark-Konsistenz 2/2; installierter Build Fall 26 |
+| 2. Keine spekulative Zusammenführung | PASS | Tests „gleicher Nachname“ (unbekannt und bekannt), Vornamen auf -s, unverankert; Review mit weiteren Fällen |
+| 3. Datenschutzprüfungen und Fail-Closed unverändert wirksam | PASS | 1503 Privacy-Tests; Leck-Prüfung nur verschärft; Fail-Closed-Tests; Benchmark: Lecks 8 → 8, alle bekannte Grenzen |
+| 4. Benchmark und Regressionstests ausgewertet | PASS | 32.4; volle Testsuite 4348 bestanden, nur die 4 bekannten Logo-Fehler |
+| 5. Tatsächliche Payload-Prüfung | PASS | Unit-End-to-End über den Chat-Pfad; installierter Build Fall 26 (Payload am Fang-Server) |
+
+**Fall 26** (QA-Datenbank, Akte mit Mandant „Quirin Zabelhuber“, Anhang mit „Herr Zabelhuber“, „Herrn Zabelhubers“,
+„Zabelhubers“): Payload „Herr [MANDANT_01] zahlte am 02.03.2026 die Miete von 940,00 EUR. Herrn [MANDANT_01]s
+Mieterhöhung ist strittig; [MANDANT_01]s Widerspruch folgt bis 30.04.2026.“ Kein Klarname, Fakten erhalten (**PASS**).
+
+**Negativbefund aus dem ersten Lauf:** Die Unterhaltung war versehentlich einer Schnellentwurf-Akte ohne Mandanten
+zugeordnet. Ohne bekannten Namen und ohne Vollnamen im Text wurden „Herr Zabelhuber“ und „Herrn Zabelhubers“ als zwei
+Personen maskiert. Das ist **gewollt**: Gleiche Nachnamen allein begründen keine Identität. Kein Klartext.
+
+**Weitere Prüfungen:**
+- Fall 20 (Regression): PASS.
+- Build und Installation: PASS. Vorher geprüft: 8,3 GB frei.
+- Normale Instanz wiederhergestellt.
+
+Ein erfolgreicher Test beweist weder vollständige Leckfreiheit noch rechtliche Datenschutzkonformität.
+

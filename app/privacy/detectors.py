@@ -961,8 +961,105 @@ def detect_all(
                 skip_categories=skip_categories, ner_span_filter=ner_span_filter,
             )
         )
+    all_spans = _anchor_person_variants(all_spans, known_entities)
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
+
+
+# --- Namensvarianten (P05, PRIVACY_REVIEW_ARCHITECTURE.md §32) ----------------------------------------------------------
+# ECHTER FUND (Benchmark pseudonymization_v1, Fall P05): "Herr Brenner", "Herrn Brenner" und "Brenners" erhielten im selben
+# Text drei Platzhalter. Ursache: die NER-Treffer enthielten die Anrede ("Herrn Brenner") bzw. das Genitiv-s ("Brenners"),
+# begannen dadurch frueher bzw. waren laenger als der bekannte Name "Brenner" und gewannen die Ueberlappungsaufloesung;
+# die Alias-Regel im Pseudonymizer greift nur fuer unveraenderte, einwortige Nachnamen. Abhilfe: Personentreffer werden
+# VOR der Ueberlappungsaufloesung um eine fuehrende Anrede gekuerzt und - nur wenn der Rest EINDEUTIG verankert ist - um
+# ein Genitiv-s. Verankert = bekannter Name (aus known_entities) oder Nachname GENAU EINES mehrteiligen Personentreffers
+# im selben Text. Gleiche Nachnamen verschiedener Personen sind nie verankert (keine spekulative Zusammenfuehrung).
+# Treffer werden nur VERKLEINERT, nie erweitert: die Anrede bleibt lesbar ("Herrn [MANDANT_01]"); ein Genitivtreffer behaelt
+# seinen Bereich, die Endung wird beim Ersetzen hinter den Platzhalter gestellt ("[MANDANT_01]s", Pseudonymizer).
+_VARIANT_SALUTATIONS = ("herr", "herrn", "frau", "hr.", "hrn.", "fr.")
+_GENITIVE_SUFFIXES = ("’s", "'s", "s")
+
+
+def _surname_owners(spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None) -> dict[str, set[str]]:
+    """Nachname/bekannter Name (kleingeschrieben) -> Menge der zugehoerigen Vollnamen (fuer die Eindeutigkeitspruefung)."""
+    owners: dict[str, set[str]] = {}
+    for values in (known_entities or {}).values():
+        for value in values:
+            words = (value or "").split()
+            if len(words) >= 2:
+                owners.setdefault(words[-1].lower(), set()).add(value.lower())
+    for values in (known_entities or {}).values():
+        for value in values:
+            words = (value or "").split()
+            if len(words) == 1 and words[0].lower() not in owners:
+                owners.setdefault(words[0].lower(), set()).add(words[0].lower())
+    for span in spans:
+        words = span.value.split()
+        if span.category == "person" and len(words) >= 2 and words[0].lower() not in _VARIANT_SALUTATIONS:
+            owners.setdefault(words[-1].lower(), set()).add(span.value.lower())
+    return owners
+
+
+def _anchor_person_variants(
+    spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None
+) -> list[DetectedSpan]:
+    owners = _surname_owners(spans, known_entities)
+    # bekannter Name (kleingeschrieben) -> Kategorie, nur wenn eindeutig genau EINER Kategorie zugeordnet
+    known_category: dict[str, set[str]] = {}
+    for category, values in (known_entities or {}).items():
+        for value in values:
+            if value and value.strip():
+                known_category.setdefault(value.strip().lower(), set()).add(category)
+
+    def anchored(name: str) -> bool:
+        key = name.lower()
+        if key in known_category:
+            return len(known_category[key]) == 1 and len(owners.get(name.split()[-1].lower(), ())) <= 1
+        return len(owners.get(name.split()[-1].lower(), ())) == 1
+
+    result: list[DetectedSpan] = []
+    for span in spans:
+        if span.category != "person":
+            result.append(span)
+            continue
+        start, end, value = span.start, span.end, span.value
+        words = value.split()
+        # fuehrende Anrede abtrennen, wenn der Rest eindeutig verankert ist ("Herrn Brenner", "Herrn Karl Brenner")
+        if len(words) >= 2 and words[0].lower() in _VARIANT_SALUTATIONS:
+            offset = value.index(words[1], len(words[0]))
+            rest = value[offset:]
+            core_rest = rest
+            for suffix in _GENITIVE_SUFFIXES:
+                if rest.endswith(suffix) and anchored(rest[: -len(suffix)]) and not anchored(rest):
+                    core_rest = rest[: -len(suffix)]
+                    break
+            if anchored(core_rest):
+                start, value = start + offset, rest
+        # Genitiv-s: der ersetzte Bereich behaelt das "s" (kein "[X]s"-Rest, den der Restrisiko-Scan als Ort las), die
+        # Identitaet wird ueber den verankerten Kern zugeordnet
+        core = value
+        if " " not in value:
+            for suffix in _GENITIVE_SUFFIXES:
+                if value.endswith(suffix) and len(value) - len(suffix) >= 3:
+                    candidate = value[: -len(suffix)]
+                    if anchored(candidate) and not anchored(value):
+                        core = candidate
+                    break
+        elif " " in value:
+            for suffix in _GENITIVE_SUFFIXES:
+                if value.endswith(suffix) and anchored(value[: -len(suffix)]) and not anchored(value):
+                    core = value[: -len(suffix)]
+                    break
+        if (start, core) == (span.start, span.value):
+            result.append(span)
+            continue
+        if not anchored(core):
+            result.append(span)
+            continue
+        categories = known_category.get(core.lower(), set())
+        category = next(iter(categories)) if len(categories) == 1 else span.category
+        result.append(DetectedSpan(category=category, start=start, end=end, value=core))
+    return result
 
 
 # --- Versalien (13.10.2026, scripts/bench_uppercase.py) ----------------------------------------------------------------

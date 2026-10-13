@@ -516,13 +516,37 @@ def check_response_placeholder_integrity(
             # Woertlicher Platzhaltertext aus dem Dokument (pseudonymizer._literal_placeholder_spans) ist kein
             # personenbezogener Wert; "PERSON_01" steckt zudem in jedem erzeugten "[PERSON_01]" (sonst Fehlblockade).
             continue
-        if _contains_original_value_leak(mapping.original_value, text):
+        if _contains_original_value_leak(mapping.original_value, text) or _contains_surname_variant_leak(
+            mapping, text
+        ):
             reasons.append(
                 f"Urspruenglicher, nicht pseudonymisierter Wert fuer "
                 f"{mapping.placeholder} im Text gefunden - moeglicher Datenschutzverstoss"
             )
 
     return reasons
+
+
+# P05 (§32): seit Anrede- und Genitivformen ("Herrn Brenner", "Brenners") demselben Platzhalter wie der Vollname zugeordnet
+# werden, traegt die Zuordnung den Vollnamen. Damit die Antwortpruefung nicht schwaecher wird als vorher (dort hatten diese
+# Formen eigene Zuordnungen), gelten zusaetzlich als Leck: (1) "Anrede [+ Titel] + Nachname" bei mehrteiligen Personennamen,
+# (2) die im Quelltext tatsaechlich ersetzten Genitivformen (`mapping.variants`). Bewusst KEINE allgemeine Regel
+# "Nachname + s" - Review §32: "des Richters", "des Fischers" blockierten sonst normale Antworten.
+_PERSON_LIKE_CATEGORIES = frozenset({"person", "mandant", "gegner", "anwalt", "beteiligter"})
+_SALUTATION_VARIANT_TEMPLATE = r"\b(?:[Hh]errn?|HERRN?|[Ff]rau|FRAU|Hrn?\.|Fr\.)\s+(?:(?:Dr|Prof)\.\s+)*{name}\b"
+
+
+def _contains_surname_variant_leak(mapping: PseudonymMapping, text: str) -> bool:
+    if mapping.category not in _PERSON_LIKE_CATEGORIES:
+        return False
+    if any(_contains_original_value_leak(variant, text) for variant in getattr(mapping, "variants", ()) or ()):
+        return True
+    words = (mapping.original_value or "").split()
+    if len(words) < 2 or len(words[-1]) < 3:
+        return False
+    surname = words[-1]
+    names = "|".join(re.escape(n) for n in {surname, surname.upper()})
+    return re.search(_SALUTATION_VARIANT_TEMPLATE.format(name=f"(?:{names})"), text) is not None
 
 
 def _flatten_payload_text(payload: ClaudeRequestPayload) -> str:

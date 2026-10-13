@@ -163,7 +163,10 @@ def _merge_literal_spans(text: str, spans: list[DetectedSpan], literal_spans: li
             start, end, category = min(start, previous.start), max(end, previous.end), previous.category
         else:
             category = span.category
-        merged.append(DetectedSpan(category=category, start=start, end=end, value=text[start:end]))
+        # Unveraenderter Treffer behaelt seinen Wert: bei verankerten Namensvarianten (P05, detectors._anchor_person_variants)
+        # ist das der Kernname ("Brenner" fuer den Ausschnitt "Brenners"), ueber den die Identitaet zugeordnet wird.
+        unchanged = (start, end) == (span.start, span.end)
+        merged.append(DetectedSpan(category=category, start=start, end=end, value=span.value if unchanged else text[start:end]))
     merged += [lit for lit in literal_spans if not any(s.start <= lit.start and lit.end <= s.end for s in merged)]
     return sorted(merged, key=lambda s: s.start)
 
@@ -174,11 +177,17 @@ _GENERATED_PLACEHOLDER = re.compile(r"\[[A-Z][A-Z_]*_\d{2,}\]")
 _GUARD_OPEN, _GUARD_CLOSE = "", ""
 
 
+_GENITIVE_ENDINGS = ("s", "'s", "’s")
+
+
 @dataclass
 class PseudonymMapping:
     placeholder: str
     category: str
     original_value: str
+    # P05 (§32): im Quelltext ersetzte Genitivformen ("Brenners"), die demselben Platzhalter zugeordnet wurden - fuer die
+    # Leck-Pruefung der Antwort (vor P05 hatten diese Formen eigene Zuordnungen und wurden so mitgeprueft).
+    variants: tuple[str, ...] = ()
 
 
 def _canonicalize_alias(
@@ -346,13 +355,33 @@ class Pseudonymizer:
                     )
                 )
 
+        # P05 (§32): ein verankerter Genitivtreffer ("Brenners", Wert "Brenner") behaelt die Endung hinter dem Platzhalter
+        # ("[MANDANT_01]s") - die Rueckfuehrung ergibt "Karl Brenners", die Cloud-KI sieht den Genitiv. Die Form wird als
+        # Variante der Zuordnung festgehalten (Leck-Pruefung der Antwort).
+        def _genitive_suffix(span: DetectedSpan) -> str:
+            surface = text[span.start : span.end]
+            if surface != span.value and surface.startswith(span.value) and surface[len(span.value) :] in _GENITIVE_ENDINGS:
+                return surface[len(span.value) :]
+            return ""
+
+        variants: dict[str, set[str]] = {}
+        for span in spans:
+            if _genitive_suffix(span):
+                key, _ = _key_and_canonical(span)
+                variants.setdefault(value_to_placeholder[key], set()).add(text[span.start : span.end])
+        mappings = [
+            PseudonymMapping(m.placeholder, m.category, m.original_value, tuple(sorted(variants[m.placeholder])))
+            if m.placeholder in variants else m
+            for m in mappings
+        ]
+
         # Von hinten nach vorne ersetzen, damit sich Indizes vorheriger
         # (frueherer) Treffer durch die Ersetzung nicht verschieben.
         result = text
         for span in sorted(spans, key=lambda s: s.start, reverse=True):
             key, _ = _key_and_canonical(span)
             placeholder = value_to_placeholder[key]
-            result = result[: span.start] + placeholder + result[span.end :]
+            result = result[: span.start] + placeholder + _genitive_suffix(span) + result[span.end :]
 
         return result, mappings
 
