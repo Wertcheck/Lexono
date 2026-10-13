@@ -369,3 +369,24 @@ def test_editor_warns_when_a_newer_version_exists(
     assert "Es gibt eine neuere Fassung" in old_page.text
     assert f"/dashboard/drafts/{v2.id}/edit" in old_page.text
     assert "Es gibt eine neuere Fassung" not in new_page.text
+
+
+def test_ai_edit_on_a_deleted_matter_returns_a_notice_and_saves_no_instruction(
+    db_session: Session, client: TestClient, seeded: dict
+) -> None:
+    """Datenschutz-Pruefung §26 (Review-Befund): vorher Serverfehler und verwaiste "offene" Anmerkung."""
+    from datetime import datetime, timezone
+
+    from app.models import AttorneyInstruction
+
+    csrf = _csrf(client, seeded["draft_id"])
+    db_session.get(Matter, seeded["matter_id"]).deleted_at = datetime.now(timezone.utc)
+    db_session.commit()
+    response = client.post(
+        f"/dashboard/drafts/{seeded['draft_id']}/ai-edit",
+        data={"instruction_text": "Formuliere präziser.", "purpose": "improve_clarity", "selected_text": "",
+              "csrf_token": csrf},
+    )
+    assert response.status_code == 422
+    assert "gelöscht" in response.json()["error"]
+    assert db_session.query(AttorneyInstruction).count() == 0

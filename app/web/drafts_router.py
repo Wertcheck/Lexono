@@ -602,6 +602,17 @@ def save_instruction(
     return RedirectResponse(url=f"/dashboard/drafts/{draft_id}", status_code=303)
 
 
+def _deleted_matter_redirect(draft: Draft) -> RedirectResponse | None:
+    """Datenschutz-Pruefung §26: fuer eine geloeschte Akte bereitet Lexono keine KI-Anfrage mehr vor
+    (`prepare_draft_context`) - vorher pruefen, statt mit einem Serverfehler abzubrechen."""
+    if draft.matter is not None and draft.matter.deleted_at is not None:
+        return RedirectResponse(
+            url=f"/dashboard/drafts/{draft.id}?error=Die Akte wurde gelöscht - keine KI-Aktion mehr möglich.",
+            status_code=303,
+        )
+    return None
+
+
 @router.post("/{draft_id}/instructions/apply")
 def save_and_apply_instruction(
     draft_id: str,
@@ -615,6 +626,8 @@ def save_and_apply_instruction(
     Löst einen kostenpflichtigen Claude-API-Aufruf aus - NUR Anwalt/Admin
     (siehe Rechte-Matrix, PERM_CLAUDE_CALL)."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    if (deleted := _deleted_matter_redirect(draft)) is not None:
+        return deleted
 
     try:
         service = get_attorney_instruction_service()
@@ -717,6 +730,8 @@ def regenerate_draft(
     gespeichert/verknüpft werden müsste. Kostenpflichtiger Claude-Aufruf -
     NUR Anwalt/Admin."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    if (deleted := _deleted_matter_redirect(draft)) is not None:
+        return deleted
 
     try:
         drafting_service = get_drafting_service()
@@ -755,6 +770,8 @@ def review_draft(
     leitet zurück, keine eigene Persistenzlogik hier. Kostenpflichtiger
     Claude-Aufruf - NUR Anwalt/Admin."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    if (deleted := _deleted_matter_redirect(draft)) is not None:
+        return deleted
 
     try:
         review_engine = get_review_engine()

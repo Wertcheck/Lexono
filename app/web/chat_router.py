@@ -369,7 +369,7 @@ def _render_chat_page(
     # ändern.
     other_matters = (
         db.query(Matter)
-        .filter(Matter.id != active_conversation.matter_id)
+        .filter(Matter.id != active_conversation.matter_id, Matter.deleted_at.is_(None))  # §26
         .order_by(Matter.updated_at.desc())
         .limit(200)
         .all()
@@ -398,7 +398,7 @@ def _render_chat_page(
     all_matters = (
         db.query(Matter)
         .join(Client, Matter.client_id == Client.id)
-        .filter(Client.name != PLACEHOLDER_CLIENT_NAME)
+        .filter(Client.name != PLACEHOLDER_CLIENT_NAME, Matter.deleted_at.is_(None))  # §26
         .order_by(Matter.updated_at.desc())
         .limit(200)
         .all()
@@ -1477,7 +1477,7 @@ def delete_conversation(
             entity_id=conversation.id,
             event_type="chat_conversation_deleted",
             actor=current_user.email,
-            details=f"Unterhaltung gelöscht: {conversation.title}",
+            details="Unterhaltung gelöscht",  # ohne Titel (Datenschutz-Pruefung §26: Titel stammt oft aus der Nachricht)
         )
     )
     delete_privacy_decisions_for_conversation(db, conversation.id)
@@ -1532,7 +1532,7 @@ def bulk_delete_conversations(
                 entity_id=conversation.id,
                 event_type="chat_conversation_deleted",
                 actor=current_user.email,
-                details=f"Unterhaltung gelöscht (Sammellöschung): {conversation.title}",
+                details="Unterhaltung gelöscht (Sammellöschung)",  # ohne Titel (§26)
             )
         )
         delete_privacy_decisions_for_conversation(db, conversation.id)

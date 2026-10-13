@@ -353,6 +353,10 @@ class RuleBasedLocalAIProvider:
         matter = db.query(Matter).filter_by(id=matter_id).first()
         if matter is None:
             raise ValueError(f"Matter {matter_id} nicht gefunden")
+        # Datenschutz-Pruefung §26: eine geloeschte Akte (Soft-Delete, Datensatz bleibt aus Aufbewahrungsgruenden) darf
+        # keinen Kontext mehr fuer Cloud-Anfragen liefern - vorher lieferte sie weiterhin Sachverhalt und Dokumente.
+        if matter.deleted_at is not None:
+            raise ValueError("Die Akte wurde gelöscht - für sie werden keine KI-Anfragen mehr vorbereitet.")
 
         sachverhalt, has_document_context, notices, included_ids = self._build_sachverhalt(matter_id, matter, db)
         argumentationspunkte = self._build_argumentationspunkte(matter_id, db)
@@ -447,7 +451,9 @@ class RuleBasedLocalAIProvider:
             f"Mögliche Frist ({deadline.review_status}): "
             f"{trim_partial_personal_dates(deadline.source_text, source_text_of(deadline))}"
             for deadline in deadlines
-            if not is_personal_date(deadline.source_text, deadline.due_date, source_text_of(deadline))
+            # Datenschutz-Pruefung §26: ein abgelehnter Vorschlag ist keine Frist - nicht mehr an die Cloud senden
+            if deadline.review_status != "rejected"
+            and not is_personal_date(deadline.source_text, deadline.due_date, source_text_of(deadline))
         ]
 
     def _build_quellenverweise(self, matter: Matter, db: Session) -> list[str]:

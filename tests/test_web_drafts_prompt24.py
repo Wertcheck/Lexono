@@ -449,3 +449,31 @@ def test_review_without_api_key_shows_friendly_error(
     )
     assert response.status_code == 303
     assert "error=" in response.headers["location"]
+
+
+@pytest.mark.parametrize("action", ["review", "regenerate", "instructions/apply"])
+def test_ai_actions_on_a_deleted_matter_redirect_with_a_notice(
+    client: TestClient, db_session: Session, seeded: dict, monkeypatch: pytest.MonkeyPatch, action: str
+) -> None:
+    """Datenschutz-Pruefung §26 (Review-Befund): fuer eine geloeschte Akte bereitet Lexono keinen KI-Kontext mehr vor -
+    die Entwurfsaktionen leiten mit Hinweis zurueck (vorher Serverfehler bzw. verwaiste Anmerkung)."""
+    from datetime import datetime, timezone
+
+    from app.models import AttorneyInstruction
+
+    monkeypatch.setattr(drafts_router_module, "get_review_engine", lambda: _working_review_engine())
+    monkeypatch.setattr(drafts_router_module, "get_drafting_service", _working_drafting_service)
+    csrf = extract_csrf(client.get(f"/dashboard/drafts/{seeded['draft_id']}").text)
+    db_session.get(Matter, seeded["matter_id"]).deleted_at = datetime.now(timezone.utc)
+    db_session.commit()
+
+    response = client.post(
+        f"/dashboard/drafts/{seeded['draft_id']}/{action}",
+        data={"csrf_token": csrf, "instruction_text": "Bitte kürzer."},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "gel" in response.headers["location"] and "error=" in response.headers["location"]
+    assert db_session.query(AttorneyInstruction).count() == 0
+    assert db_session.query(ReviewFinding).count() == 0

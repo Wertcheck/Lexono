@@ -198,6 +198,12 @@ def apply_ai_edit(
     Verwerfen ist ein rein clientseitiger Navigations-/Discard-Schritt,
     siehe app_draft_editor.js und `discard_ai_edit` unten)."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    # Datenschutz-Pruefung §26: fuer eine geloeschte Akte keine KI-Anfrage (vorher pruefen statt Serverfehler und
+    # verwaister Anmerkung - `prepare_draft_context` verweigert den Kontext ohnehin)
+    if draft.matter is not None and draft.matter.deleted_at is not None:
+        return JSONResponse(
+            {"success": False, "error": "Die Akte wurde gelöscht - keine KI-Aktion mehr möglich."}, status_code=422
+        )
 
     try:
         result = service.apply_ai_suggestion(

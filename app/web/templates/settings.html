@@ -1788,7 +1788,8 @@
     <div class="settings-section">
       <h2 class="settings-section__title">Aufbewahrung</h2>
       <p class="settings-section__hint">
-        Automatische Löschfrist in Tagen (RETENTION_DAYS) - 0 = keine automatische Löschung.
+        Löschfrist in Tagen (RETENTION_DAYS). <strong>Noch ohne Wirkung:</strong> eine automatische Löschung ist
+        nicht umgesetzt - der Wert wird nur gespeichert. Gelöschte Akten und Dokumente bleiben derzeit erhalten.
       </p>
       <form method="post" action="/dashboard/settings/retention" class="dashboard-form" style="max-width: none; flex-direction: row; align-items: flex-end; gap: 12px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />

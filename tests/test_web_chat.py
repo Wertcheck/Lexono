@@ -2433,6 +2433,8 @@ def test_delete_conversation_writes_an_audit_event(
         .first()
     )
     assert event is not None
+    # Datenschutz-Pruefung §26: kein Titel im Audit-Eintrag (Titel stammt oft aus der ersten Nachricht)
+    assert event.details == "Unterhaltung gelöscht"
 
 
 def test_deleting_an_already_deleted_conversation_returns_404(

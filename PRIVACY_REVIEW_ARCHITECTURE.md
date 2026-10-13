@@ -2333,6 +2333,9 @@ Eine vollständige Leckfreiheit wird ausdrücklich nicht zugesagt.
 
 Eine Empfehlung des Agents ersetzt diese Entscheidung nicht.
 
+> **Nachtrag 13.10.2026 (§26.4):** Die Kanzlei hat entschieden, den Schlüssel später im Gateway zu hinterlegen. Die
+> lokale Schlüsselverwaltung wird nicht geändert; die Gateway-Prüfung folgt nach der Servereinrichtung.
+
 ### 25.4 Pilotbewertung
 
 **Technische Nachweise:**
@@ -2382,3 +2385,178 @@ Eine Empfehlung des Agents ersetzt diese Entscheidung nicht.
 |---|---|
 | Volle Testsuite | PASS (nur bekannte bzw. unabhängige Fehler, siehe oben) |
 | Installierter Build, Fälle 1–20 | PASS |
+
+## 26. Datenschutz-Entscheidungsvorlage für den Pilotbetrieb (13.10.2026, Ausgang `02dc436`)
+
+Nur synthetische Daten. Diese Vorlage ist **keine** Freigabe echter Mandantendaten und keine rechtliche Bewertung. Sie trennt
+**technische Nachweise** (im Repository bzw. am installierten Build geprüft), **Annahmen** (nicht geprüft) und
+**organisatorische Pflichten** (bei der Kanzlei). Verantwortliche Personen sind nicht benannt; die Spalte „Rolle“ nennt nur,
+wer zu entscheiden hat. Eine `ROADMAP.md` existiert nicht; maßgeblich ist `FUTURE_ROADMAP.md` („Lexono Data Privacy
+Framework“, Phasen P1–P3).
+
+### 26.1 Bestandsaufnahme (unabhängig, Ausgangsstand geprüft)
+
+- `HEAD` = `origin/main` = `02dc436`; zwischen dem installierten Build (`44f4cb0`) und `02dc436` nur Dokumentation.
+- Volle Testsuite auf `02dc436`: 4225 bestanden, 5 fehlgeschlagen = 4 bekannte `test_design_refresh`-Fehler (fehlende
+  Logo-Dateien, fremde Änderung) und der bekannte zeitabhängige Test `test_web_knowledge.py::
+  test_apply_update_endpoint_starts_a_real_background_update` (§25.1).
+- Unabhängige Prüfung von Löschung, Datenminimierung, Mandantentrennung, Feedback-Lernen und Protokollen; jeder Befund
+  unten mit Fundstelle. Frühere Ergebnisse (§§20–25) wurden nicht ungeprüft übernommen: die Gateway-Regeln sind durch
+  die Regressionstests der vollen Suite belegt, der installierte Build durch die Fälle 1–20 (§25.4).
+
+### 26.2 Behobene Schwachstellen (reproduziert, minimal, mit Regressionstest)
+
+Tests: `tests/test_privacy_pilot_decision.py` (alle fünf vor dem Fix rot, danach grün), Ergänzung in
+`tests/test_web_chat.py`.
+
+| # | Befund (reproduziert) | Fix |
+|---|---|---|
+| 1 | Eine gelöschte Akte (Soft-Delete, Datensatz bleibt aus Aufbewahrungsgründen) lieferte weiterhin Sachverhalt und Dokumente für Cloud-Anfragen (Chat, Entwurf, Prüfung) | `RuleBasedLocalAIProvider.prepare_draft_context` verweigert die Kontextvorbereitung; der Chat zeigt fail-closed eine blockierte Antwort, die Cloud erhält nichts |
+| 2 | Abgelehnte Fristvorschläge gingen weiter als „Mögliche Frist (rejected)“ an die Cloud | `_build_argumentationspunkte` lässt `review_status == "rejected"` weg (Datenminimierung) |
+| 3 | Der Audit-Eintrag zum Löschen einer Unterhaltung enthielt deren Titel (oft aus der ersten Nachricht) | Audit-Text ohne Titel; Entität und ID bleiben nachvollziehbar |
+| 4 | Intake-Watcher protokollierte den vollen Pfad mit Dateinamen (Dateinamen enthalten oft Mandantennamen) | Pfad über die vorhandene `mask_path_like` maskiert |
+| 5 | Die Einstellung „Automatische Löschfrist“ wirkte funktionsfähig, obwohl keine Löschung umgesetzt ist (Platzhalter) | Beschriftung „Noch ohne Wirkung … der Wert wird nur gespeichert“; keine Scheinfunktion mehr |
+
+**Unabhängige Reviews (zwei Runden):**
+- **Runde 1:**
+  - Der Watcher gab den Pfad weiter im Traceback aus: der Fehlertext von `IntakeError` bzw. `OSError` enthält ihn. Der
+    Test hatte nur die Nachricht geprüft. **Behoben:** Protokoll ohne Traceback, nur maskierter Pfad und Fehlertyp; der
+    Test prüft jetzt die formatierte Ausgabe.
+  - Die neue Sperre führte bei Entwürfen einer gelöschten Akte zu Serverfehlern (500), nämlich bei Prüfung, Neu-
+    generierung und „Anmerkung übernehmen“; im letzten Fall blieb zusätzlich eine verwaiste Anmerkung zurück. Dasselbe
+    galt für den Schriftsatz-Assistenten mit einer gelöschten Akte. **Behoben:** Prüfung vorab mit Hinweis.
+  - Gelöschte Akten werden nicht mehr als Ziel angeboten, weder in den Auswahllisten von Schriftsatz,
+    Dokumentgenerator noch Chat.
+- **Runde 2:**
+  - Die KI-Bearbeitung im Editor erzeugte noch einen Serverfehler und eine verwaiste Anmerkung. **Behoben:** Hinweis
+    mit Status 422.
+  - Der Dokumentgenerator nahm eine gelöschte Akte bei manipulierter Anfrage an; das war lokal und ohne Cloud-Aufruf.
+    **Behoben.**
+  - Bestätigt: Es gibt keinen weiteren Cloud-Pfad an `prepare_draft_context` vorbei. Alle drei Aufrufer von
+    `gateway.prepare_request` laufen danach; der Chat ruft die Cloud nur über `DraftingService` auf.
+- **Bewusst nicht geändert (Restpunkte, kein Cloud-Versand):**
+  - Die Entwurfsliste zeigt weiterhin Entwürfe gelöschter Akten.
+  - Der Chat zu einer gelöschten Akte zeigt die allgemeine Fehlermeldung statt „Akte gelöscht“.
+  - Das E-Mail-Matching und „Akte zuordnen“ im Chat können eine gelöschte Akte treffen; nachfolgende KI-Aktionen
+    werden dann verweigert.
+- **Tests:** Jeder neue Test schlägt ohne den jeweiligen Fix fehl und besteht mit ihm.
+  - neue Datei `tests/test_privacy_pilot_decision.py`;
+  - Ergänzungen in `tests/test_web_drafts_prompt24.py`, `tests/test_web_draft_editor.py`, `tests/test_web_chat.py`.
+
+### 26.3 Risikomatrix
+
+Legende Art: **T** = technischer Nachweis, **A** = Annahme (nicht geprüft), **O** = organisatorische Pflicht.
+Status: PASS / FAIL / NICHT VERIFIZIERT / OFFEN (Entscheidung ausstehend). Freigabe-Auswirkung je Pilotstufe
+**A** (synthetische Daten), **B** (ausdrücklich freigegebene Testakten mit geklärtem Umfang), **C** (echte Mandantendaten).
+
+| Risiko | Auswirkung | Nachweis | Restrisiko | Maßnahme | Rolle | Status | Freigabe |
+|---|---|---|---|---|---|---|---|
+| Pseudonymisierung vor der Cloud, Fail-Closed, Siegel | Klartext an Anthropic | T: §20, volle Suite, Fälle 1–20 im installierten Build | Erkennung ist regel- und modellbasiert, nie vollständig | Vorschau vor dem Versand prüfen (§2.2a) | Anwender | PASS | A, B: ja; C: Voraussetzung erfüllt |
+| Geburts-/Todesdaten | Identifizierung über exaktes Datum | T: §§23–25, Korpus 0/10, 0/12 | Ereignisdaten (Unfall, Auffinden, Beerdigung) bewusst lesbar; indirekte Rekonstruktion möglich | Kenntnisnahme; Anwender prüfen Vorschau | Kanzleileitung | PASS mit Restrisiko | C: Kenntnisnahme nötig |
+| Kurze Nummern ohne Bezeichnung (≤ 4 Ziffern) | Wiedererkennung im Kontext | T: §22, §25.1 | „Zimmer 12“, „Personal 4711“ lesbar | Kenntnisnahme | Kanzleileitung | PASS mit Restrisiko | C: Kenntnisnahme nötig |
+| Fristvorschläge | Geburts-/Todesdatum als Frist; Leck über Ausschnitt | T: §24, §25.1, §26.2 Nr. 2 | Fristen bleiben Vorschläge, keine automatische Bestätigung | Anwender bestätigen jede Frist | Anwender | PASS | – |
+| Datenminimierung: ganze Akte je Anfrage | Mehr Daten als nötig in der Cloud (pseudonymisiert) | T: bis 30 Dokumente/je 30 000 Zeichen, zusammen max. 90 000 Zeichen (`local_ai_provider.py`) | Umfang nicht frageabhängig | Produktentscheidung: Dokumentauswahl je Anfrage | Produktverantwortung | OFFEN | C: Kenntnisnahme nötig |
+| Löschung: Akten/Dokumente nur Soft-Delete, Dateien bleiben; Chat-Löschung lässt Dokumente, Embeddings, Feedback-Statistik | Recht auf Löschung (Art. 17) technisch nicht vollständig umsetzbar | T: `matters_router.py`, `documents/lifecycle.py`, `chat_router.py` | Echte Löschung nur manuell; Audit-Einträge zu Akten/Mandanten enthalten Namen | Lösch-/Aufbewahrungskonzept der Kanzlei, danach technischer Löschpfad | Kanzleileitung, Datenschutz | OFFEN | C: **No-Go** ohne Löschkonzept |
+| Gelöschte Akte in Cloud-Anfragen | Daten einer gelöschten Akte an die Cloud | T: §26.2 Nr. 1 | – | behoben | – | PASS | – |
+| Automatische Löschfrist | Scheinfunktion | T: §26.2 Nr. 5 | Keine automatische Löschung | Konzept (Prompt 35, offen) | Produktverantwortung | PASS (ehrlich beschriftet), Funktion OFFEN | C: Teil des Löschkonzepts |
+| Backups | Unverschlüsselte ZIPs ohne Rotation (`backup/service.py`) | T | Verlust/Diebstahl des Datenträgers | Verschlüsselter Speicherort, Aufbewahrung festlegen | Kanzlei-IT | OFFEN | B: Speicherort festlegen; C: **No-Go** ohne Regel |
+| Mandantentrennung | Kontext einer Akte in einer anderen | T: Chats nutzerbezogen, Kontext aktenbezogen (Tests) | Wissensbasis: „Als Wissen übernehmen“ kopiert einen rekonstruierten Entwurf kanzleiweit (`feedback/service.py`), wird aktenübergreifend gefunden | Nur bewusst und ohne Mandantenbezug übernehmen; Produktentscheidung: Prüfung vor Übernahme | Anwender, Produktverantwortung | OFFEN | C: Anweisung nötig |
+| Feedback-Lernen | Rückschluss auf Inhalte | T: HMAC mit installationseigenem Schlüssel, nichts an die Cloud | Statistiken werden nie gelöscht | Teil des Löschkonzepts | Produktverantwortung | PASS mit Restrisiko | – |
+| Protokolle | Dateinamen/Pfade, Fehlermeldungen | T: Watcher maskiert (§26.2 Nr. 4), Download gefiltert | Rotierende Logdateien auf dem Rechner ungefiltert; `str(exc)` in Fehlerzeilen; A: Zugriffsprotokoll mit Suchparametern | Zugriff auf das Datenverzeichnis beschränken | Kanzlei-IT | PASS mit Restrisiko | C: Zugriffsschutz nötig |
+| API-Schlüssel auf dem Kanzlei-PC | Missbrauch des Kontos, Kosten | T: `.env` für alle lokalen Benutzer lesbar, keine Rotation (§25.3) | bis zur Gateway-Einrichtung bestehend | **Entscheidung 13.10.2026: Schlüssel später im Gateway; lokale Verwaltung bleibt unverändert** (26.4) | Kanzleileitung | OFFEN (zurückgestellt) | A: vertretbar mit Ausgabenlimit; B: Ausgabenlimit nötig; C: **No-Go** bis Gateway geprüft |
+| Lexono-Gateway (P0-08) | Schlüssel- und Zugriffsschutz | – | nicht eingerichtet, nicht geprüft | Prüfung nach Servereinrichtung (26.4) | Kanzleileitung, Betreiber | NICHT VERIFIZIERT | C: **No-Go** |
+| Echter Cloud-Aufruf mit genau diesem Build | Abweichung Test ↔ Betrieb | T: Live-Aufruf §21.7 auf früherem Stand, gleicher Pfad | aktueller Build nicht live geprüft | Ein synthetischer Live-Aufruf vor Stufe B | Betreuer Pilot | NICHT VERIFIZIERT | B: nachholen |
+| Auftragsverarbeitung/Drittland (Anthropic) | Rechtsgrundlage | – | – | Prüfung durch die Kanzlei | Kanzleileitung, Datenschutz | OFFEN | B: abhängig vom Umfang; C: **No-Go** ohne |
+| Einweisung (§2.2a), Meldeweg, Art. 33 | Fehler unbemerkt | O: Anleitung vorhanden (§25.2) | Einweisung nicht nachgewiesen | Einweisung durchführen und protokollieren | Kanzleileitung | OFFEN | B, C: nötig |
+| Vollständige Leckfreiheit | – | nicht belegbar | – | – | – | NICHT VERIFIZIERT | wird nicht zugesagt |
+
+### 26.4 P0-08: Entscheidung vom 13.10.2026 (ersetzt die Auswahl (A)/(B) aus §25.3)
+
+- Der Anthropic-Schlüssel soll **später im Lexono-Gateway** hinterlegt werden (Richtung (A) aus §25.3).
+- P0-08 bleibt zurückgestellt: das Gateway wird jetzt **weder implementiert noch konfiguriert noch aktiviert**.
+- Die lokale API-Schlüsselverwaltung wird **nicht geändert** (keine Änderung an `.env`, Rechten oder Rotation).
+- Gateway-Funktion, Sicherheit und Integration werden **nach der Servereinrichtung separat geprüft**. Eine solche Prüfung
+  hat **nicht** stattgefunden.
+- Offene Voraussetzung für Stufe C, Abschlussnachweis: Prüfprotokoll gegen den echten Server mit den Punkten 1–8 aus
+  §25.3 (A) und eigener P0-08-Abnahme in `LEXONO_MASTER_PRODUCT.md`.
+- Bis dahin liegt der Schlüssel im Direct-Key-Pfad auf dem Kanzlei-PC (Feststellungen §25.3). Die Voraussetzungen (B)
+  aus §25.3 gelten nur noch, falls die Kanzlei diese Entscheidung ausdrücklich ändert.
+
+### 26.5 Pilotstufen
+
+**Stufe A – synthetische Daten**
+- Voraussetzungen: installierter Build; nur synthetische Akten; Anthropic-Ausgabenlimit beim Anbieter.
+- Nachweise: volle Suite, Fälle 1–20 im installierten Build, §26.2.
+- Restrisiken: Schlüssel auf dem Rechner (Missbrauch des Kontos, keine Mandantendaten betroffen).
+- Entscheidung: Kanzleileitung bestätigt, dass nur synthetische Daten verwendet werden.
+
+**Stufe B – ausdrücklich freigegebene Testakten**
+- Voraussetzungen:
+  1. Umfang schriftlich festgelegt: welche Akten, Herkunft, ob Personenbezug enthalten ist, Zeitraum, beteiligte Personen.
+     Nachweis: unterschriebene Liste.
+  2. Einweisung §2.2a aller Beteiligten. Nachweis: Teilnahmeprotokoll.
+  3. Meldeweg benannt. Nachweis: Name/Funktion in PILOT_CHECKLIST J.
+  4. Ein synthetischer Live-Aufruf mit genau diesem Build. Nachweis: Datum, Build-Commit, Ergebnis im Protokoll.
+  5. Backups an festgelegtem, zugriffsgeschütztem Ort. Nachweis: Ort und Zugriffsliste.
+  6. Enthalten die Testakten Personenbezug: Prüfung der Übermittlung an Anthropic. Nachweis: Vermerk der Kanzlei.
+- Restrisiken: wie Stufe A, dazu §26.3 (Ereignisdaten, kurze Nummern, indirekte Rekonstruktion, ganze Akte je Anfrage).
+- Entscheidung: Kanzleileitung, gegebenenfalls mit Datenschutzbeauftragter/m.
+
+**Stufe C – echte Mandantendaten: derzeit No-Go**
+- Voraussetzungen (alle offen):
+  1. Gateway eingerichtet und geprüft (26.4).
+  2. Auftragsverarbeitung/Drittland geprüft.
+  3. Lösch- und Aufbewahrungskonzept einschließlich Backups.
+  4. Zugriffsschutz auf `C:\ProgramData\Lexono` (Logs, Datenbank, Dateien).
+  5. Anweisung zur Wissensübernahme.
+  6. Kenntnisnahme der Restrisiken.
+  7. Stufe B ohne offene Datenschutzbefunde abgeschlossen.
+- Nachweise: je Punkt ein schriftlicher Vermerk bzw. Prüfprotokoll.
+- Entscheidung: Kanzleileitung und Datenschutzbeauftragte/r. Ein Go für A oder B ist kein Go für C.
+
+### 26.6 QA und Nachweise
+
+**Tests**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neue bzw. ergänzte Regressionstests | jeder ohne Fix rot, mit Fix grün |
+| Betroffene Testdateien (Chat, Entwurf, Editor, Schriftsatz, Dokumentgenerator, Watcher, Einstellungen, Privacy) | bestanden |
+
+**Volle Testsuite.** Der Gesamtlauf wurde bei etwa 89 % wegen Speicherknappheit des Systems abgebrochen. Er ist danach
+nicht als Ganzes neu gelaufen; die Abdeckung ergibt sich so:
+- **Bis 89 %:** nur die 4 bekannten `test_design_refresh`-Fehler (fehlende Logos, fremde Änderung), dazu 2 Fehler im
+  neuen Watcher-Test.
+- **Diese 2 Fehler** kamen nicht aus dem Fix, sondern aus der Testisolation: Alembics `fileConfig`
+  (`test_migrations.py`) deaktiviert bestehende Logger. Gegenprobe: mit `test_migrations.py` davor schlug der Test
+  vorher fehl und besteht jetzt; der Test setzt den Logger nun ausdrücklich.
+- **Restliche Dateien ab `test_web_inbox.py`:** gezielt nachgeholt, 535 bestanden. Das schließt
+  `test_web_knowledge.py` ein; der dort bekannte zeitabhängige Test bestand diesmal.
+
+**Installierter Build (Stand dieser Änderungen)**
+- Installer neu erstellt und still installiert. Das Bundle enthält die neuen Funktionen (Bytecode-Prüfung, Vorlage).
+- **Fall 21 (neu), QA-Datenbank, synthetische Akte:**
+  - Gegenprobe: die Entwurfsprüfung bei aktiver Akte erzeugt einen Cloud-Aufruf.
+  - Nach dem Löschen der Akte:
+    - Prüfung → Hinweis „Die Akte wurde gelöscht …“, kein Serverfehler, kein Cloud-Aufruf;
+    - Chat → blockierte Antwort, kein Cloud-Aufruf;
+    - die Akte wird nicht mehr als Ziel angeboten.
+  - Danach wurde die Akte zurückgesetzt. **PASS**
+- **Fall 20 (Regression):** PASS.
+- **Chat bei aktiver Akte:** über die Oberfläche geprüft, Antwort über den Fang-Server. Zwei frühere Leerläufe gingen
+  auf parallele, abgebrochene Anfragen des Prüfskripts zurück; über den Rohstream und erneut über die Oberfläche war
+  das Verhalten korrekt.
+- **Normale Instanz** wiederhergestellt: nur Port 8000, Health 200.
+- **Echter Anthropic-Aufruf mit diesem Build:** NICHT VERIFIZIERT; Voraussetzung für Stufe B (26.5).
+
+### 26.7 Go/No-Go je Pilotstufe (Stand dieses Commits)
+
+| Stufe | Technisch | Organisatorisch | Ergebnis |
+|---|---|---|---|
+| **A** synthetische Daten | PASS (Suite, installierter Build, Fälle 1–21) | Bestätigung „nur synthetisch“, Ausgabenlimit: OFFEN | **Go möglich**, sobald die Kanzlei die zwei Punkte bestätigt |
+| **B** freigegebene Testakten | PASS mit Restrisiken (§26.3); Live-Aufruf mit diesem Build NICHT VERIFIZIERT | Umfang, Einweisung, Meldeweg, Backup-Ort, ggf. Übermittlungsprüfung: OFFEN | **No-Go bis zu den Nachweisen aus 26.5 B**; danach Entscheidung der Kanzlei |
+| **C** echte Mandantendaten | Gateway NICHT VERIFIZIERT; Löschpfad, Backups, Zugriffsschutz OFFEN | AVV/Drittland, Löschkonzept, Anweisung Wissensübernahme: OFFEN | **No-Go** |
+
+Diese Vorlage behauptet **keine** vollständige Leckfreiheit, **keine** Rechtskonformität und **keine**
+Echtdatenfreigabe.
+

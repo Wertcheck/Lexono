@@ -55,7 +55,8 @@ def document_generator_page(
 ) -> HTMLResponse:
     document_templates = DocumentTemplateService().list_templates(db)
     open_matters = (
-        db.query(Matter).filter(Matter.status == "open").order_by(Matter.updated_at.desc()).all()
+        db.query(Matter).filter(Matter.status == "open", Matter.deleted_at.is_(None))  # §26: keine geloeschten Akten
+        .order_by(Matter.updated_at.desc()).all()
     )
     preselected_matter_id = (
         matter_id if matter_id and any(m.id == matter_id for m in open_matters) else ""
@@ -92,6 +93,8 @@ def generate_document_action(
 ) -> RedirectResponse:
     template = db.get(DocumentTemplate, template_id)
     matter = db.get(Matter, matter_id)
+    if matter is not None and matter.deleted_at is not None:  # §26: keine geloeschten Akten
+        matter = None
     if template is None or matter is None:
         return RedirectResponse(
             url="/dashboard/tools/dokumentgenerator?error=Vorlage oder Akte nicht gefunden",

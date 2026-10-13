@@ -87,7 +87,8 @@ def schriftsatz_generator_page(
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
     open_matters = (
-        db.query(Matter).filter(Matter.status == "open").order_by(Matter.updated_at.desc()).all()
+        db.query(Matter).filter(Matter.status == "open", Matter.deleted_at.is_(None))  # §26: keine geloeschten Akten
+        .order_by(Matter.updated_at.desc()).all()
     )
     # Vorauswahl der Akte per Query-Param (20.08.) - genutzt von der
     # Mandantendatenbank ("Mit lokaler KI arbeiten", siehe
@@ -222,7 +223,7 @@ def generate_schriftsatz(
     settings = get_settings()
 
     if matter_id.strip():
-        matter = db.query(Matter).filter_by(id=matter_id.strip()).first()
+        matter = db.query(Matter).filter_by(id=matter_id.strip(), deleted_at=None).first()  # §26
         if matter is None:
             return _redirect_with_error("Gewählte Akte wurde nicht gefunden.")
     else:

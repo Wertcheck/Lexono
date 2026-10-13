@@ -194,8 +194,9 @@ dass alles Notwendige vorbereitet ist.
 ## J. Go/No-Go Entscheidung (Tag 1, Noon)
 
 - [ ] **Checkliste A–I vollständig?**
-  - [ ] JA → Alle Häkchen gesetzt? → **GO für Pilot-Start** (mit Echtdaten nur, wenn auch „Datenschutz-Freigabe“
-        unten vollständig ist – diese Entscheidung trifft die Kanzlei, nicht die Software oder ein Agent)
+  - [ ] JA → Alle Häkchen gesetzt? → **GO für Pilot-Start in der Stufe, deren „Datenschutz-Freigabe“ unten
+        vollständig ist** (Echtdaten nur in Stufe C – diese Entscheidung trifft die Kanzlei, nicht die Software oder ein
+        Agent)
   - [ ] NEIN → Fehler beheben, dann erneut prüfen
 
 - [ ] **System-Funktionalität:**
@@ -209,18 +210,29 @@ dass alles Notwendige vorbereitet ist.
   - [ ] Erste echte Aufgaben bereitet vor (3–5 Akten zum Verarbeiten)
   - [ ] Feedback-Prozess klar (tägliche Notizen, wöchentliche Reviews)
 
-- [ ] **Datenschutz-Freigabe (Stand 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §25) – ohne diese Punkte: nur
-      synthetische bzw. ausdrücklich freigegebene Testakten, KEINE Echtdaten:**
-  - [ ] **P0-08 entschieden** (LEXONO_MASTER_PRODUCT.md §7): (A) Lexono-Gateway eingerichtet und geprüft **oder**
-        (B) Direct-Key-Pfad ausdrücklich und schriftlich durch die Kanzlei freigegeben – nach Prüfung von
-        Schlüsselspeicherung, Zugriffsschutz und Rotation (§25.4). TLS allein ist kein Nachweis.
-  - [ ] Bei (B): Lesezugriff auf `C:\ProgramData\Lexono\.env` auf die Lexono nutzenden Konten beschränkt (Standard:
-        alle lokalen Benutzer lesen mit), eigener Anthropic-Schlüssel nur für Lexono, Ausgabenlimit gesetzt,
-        Rotationsverfahren und Verantwortliche benannt
-  - [ ] Auftragsverarbeitung/Übermittlung an Anthropic von der Kanzlei geprüft (AVV, Drittlandbezug)
-  - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Pilotanwendern durchgegangen
-  - [ ] Meldeweg für Datenschutzauffälligkeiten und Zuständigkeit für Art. 33 DSGVO benannt
-  - [ ] Bekannte Restrisiken (§§22–25) von der Kanzlei zur Kenntnis genommen
+- [ ] **Datenschutz-Freigabe nach Pilotstufen (Stand 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §26).** Jede Stufe
+      entscheidet die Kanzlei schriftlich (Datum, entscheidende Person); ein Go für A oder B ist **kein** Go für C.
+  - [ ] **Stufe A – nur synthetische Daten:**
+    - [ ] Kanzleileitung bestätigt: ausschließlich synthetische Akten
+    - [ ] Ausgabenlimit für den Anthropic-Schlüssel beim Anbieter gesetzt (Nachweis: Screenshot/Vermerk ohne Schlüsselwert)
+  - [ ] **Stufe B – ausdrücklich freigegebene Testakten** (zusätzlich zu A):
+    - [ ] Umfang schriftlich festgelegt: Akten, Herkunft, Personenbezug ja/nein, Zeitraum, Beteiligte (unterschriebene Liste)
+    - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Beteiligten durchgegangen (Teilnahmeprotokoll)
+    - [ ] Meldeweg für Datenschutzauffälligkeiten und Zuständigkeit für Art. 33 DSGVO benannt (Name/Funktion: ________)
+    - [ ] Synthetischer Live-Aufruf mit genau dem installierten Build (Protokoll: Datum, Build-Commit, Ergebnis)
+    - [ ] Backup-Speicherort festgelegt und zugriffsgeschützt (Ort, Zugriffsliste)
+    - [ ] Falls Personenbezug: Übermittlung an Anthropic von der Kanzlei geprüft (Vermerk)
+  - [ ] **Stufe C – echte Mandantendaten: derzeit NO-GO.** Erst wenn alle Punkte nachgewiesen sind:
+    - [ ] **P0-08:** Lexono-Gateway nach der Servereinrichtung eingerichtet und gesondert geprüft; Anthropic-Schlüssel nur
+          dort (Entscheidung 13.10.2026, §26.4; Prüfprotokoll gegen den echten Server, P0-08-Abnahme). TLS allein ist
+          kein Nachweis. Die lokale Schlüsselverwaltung wird bis dahin bewusst nicht geändert.
+    - [ ] Auftragsverarbeitung/Übermittlung an Anthropic geprüft (AVV, Drittlandbezug)
+    - [ ] Lösch- und Aufbewahrungskonzept inkl. Backups beschlossen (Lexono löscht Akten/Dokumente nur weich; die
+          Löschfrist-Einstellung hat noch keine Wirkung)
+    - [ ] Zugriff auf `C:\ProgramData\Lexono` (Datenbank, Dateien, Protokolle) auf berechtigte Konten beschränkt
+    - [ ] Anweisung zu „Als Wissen übernehmen“ (kanzleiweit sichtbar, nur ohne Mandantenbezug)
+    - [ ] Bekannte Restrisiken (§§22–26) von der Kanzlei zur Kenntnis genommen
+    - [ ] Stufe B ohne offene Datenschutzbefunde abgeschlossen
 
 ---
 

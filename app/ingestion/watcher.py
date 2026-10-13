@@ -25,7 +25,7 @@ from pathlib import Path
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from app.errors.service import RetryService
+from app.errors.service import RetryService, mask_path_like
 from app.ingestion.intake import IntakeError, IntakeService
 from app.models import Document
 
@@ -65,11 +65,12 @@ class _NewFileEventHandler(FileSystemEventHandler):
         db = self._session_factory()
         try:
             document = self._intake_service.ingest_file(path, db)  # type: ignore[arg-type]
-            logger.info("Datei erfolgreich erfasst: %s -> %s", path, document.id)
+            logger.info("Datei erfolgreich erfasst: %s -> %s", mask_path_like(str(path)), document.id)
             if self._on_ingested is not None:
                 self._on_ingested(document)
         except IntakeError as exc:
-            logger.warning("Datei konnte nicht erfasst werden: %s", path, exc_info=True)
+            # Ohne Traceback (Datenschutz-Pruefung §26): Fehlertext und Traceback enthalten den vollen Pfad mit Dateinamen
+            logger.warning("Datei konnte nicht erfasst werden: %s (%s)", mask_path_like(str(path)), type(exc).__name__)
             self._retry_service.record_failure(
                 db,  # type: ignore[arg-type]
                 entity_type="IntakeFile",
@@ -82,8 +83,8 @@ class _NewFileEventHandler(FileSystemEventHandler):
                 error_category="permanent",
                 error_message=str(exc),
             )
-        except Exception:  # noqa: BLE001 - Ueberwachung darf nicht abbrechen
-            logger.exception("Unerwarteter Fehler bei der Erfassung von %s", path)
+        except Exception as exc:  # noqa: BLE001 - Ueberwachung darf nicht abbrechen
+            logger.error("Unerwarteter Fehler bei der Erfassung von %s (%s)", mask_path_like(str(path)), type(exc).__name__)
             self._retry_service.record_failure(
                 db,  # type: ignore[arg-type]
                 entity_type="IntakeFile",
