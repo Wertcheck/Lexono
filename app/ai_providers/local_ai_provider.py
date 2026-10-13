@@ -24,7 +24,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
-from app.deadlines.extractor import is_personal_date
+from app.deadlines.extractor import is_personal_date, trim_partial_personal_dates
 from app.models import Deadline, Document, Matter, Party
 from app.search.service import DocumentSearchService
 
@@ -433,7 +433,9 @@ class RuleBasedLocalAIProvider:
             )
         } if any(d.document_id for d in deadlines) else {}
         return [
-            f"Mögliche Frist ({deadline.review_status}): {deadline.source_text}"
+            # Rand-Bruchstuecke zerschnittener Geburts-/Todesdaten aus Altvorschlaegen entfernen (§24, Fall 19)
+            f"Mögliche Frist ({deadline.review_status}): "
+            f"{trim_partial_personal_dates(deadline.source_text, full_texts.get(deadline.document_id))}"
             for deadline in deadlines
             if not is_personal_date(deadline.source_text, deadline.due_date, full_texts.get(deadline.document_id))
         ]

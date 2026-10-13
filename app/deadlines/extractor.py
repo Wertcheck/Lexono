@@ -107,6 +107,36 @@ def is_personal_date(source_text: str | None, due_date: date | None, full_text: 
     )
 
 
+def trim_partial_personal_dates(snippet: str | None, full_text: str | None) -> str | None:
+    """Gespeicherte Fristausschnitte aus der Zeit vor der Korrektur koennen mit dem Rest eines zerschnittenen Geburts-
+    oder Todesdatums beginnen oder enden ("1940, verstorben am ..."). Ein solches Rand-Bruchstueck wird entfernt, wenn es
+    Teil eines im Ausschnitt oder Quelldokument erkannten Geburts-/Todesdatums ist (§24)."""
+    if not snippet:
+        return snippet
+    from app.privacy.detectors import detect_geburtsdatum, detect_todesdatum
+
+    personal = {
+        span.value for text in (snippet, full_text) if text for span in (*detect_geburtsdatum(text), *detect_todesdatum(text))
+    }
+    words = snippet.split(" ")
+
+    def is_fragment(word: str, *, head: bool) -> bool:
+        core = word.strip(" ,;:()")
+        if not core:
+            return False
+        # Zahlen-Bruchstueck am Rand, das kein vollstaendiges Datum ist ("1940,", "03.1940") - ohne Quelldokument nicht
+        # pruefbar, ob es zu einem Geburts-/Todesdatum gehoerte; inhaltlich entbehrlich
+        if re.fullmatch(r"\d{1,4}(?:\.\d{1,4}){0,1}\.?", core) and not re.fullmatch(r"\d{1,2}\.\d{1,2}\.\d{2,4}", core):
+            return True
+        return any(core != value and (value.endswith(core) if head else value.startswith(core)) for value in personal)
+
+    while words and is_fragment(words[0], head=True):
+        words.pop(0)
+    while words and is_fragment(words[-1], head=False):
+        words.pop()
+    return " ".join(words).strip()
+
+
 class PlaceholderDeadlineExtractor:
     def extract(self, text: str) -> list[ExtractedDeadline]:
         results: list[ExtractedDeadline] = []
@@ -252,17 +282,12 @@ class PlaceholderDeadlineExtractor:
         "einrasten" (nie mitten in ein alphanumerisches Wort schneiden)."""
         window_start = max(0, start - _CONTEXT_WINDOW_CHARS)
         window_end = min(len(text), end + _CONTEXT_WINDOW_CHARS)
-        while (
-            window_start > 0
-            and text[window_start - 1].isalnum()
-            and text[window_start].isalnum()
-        ):
+        # DRITTER FUND (installierter Build 5cafe0f, Fall 19, §24): auch ein Datum darf nicht zerschnitten werden - der Punkt
+        # in "12.03.1940" ist keine Wortgrenze. Der Ausschnitt begann bei "1940," und gab das Geburtsjahr als Bruchstueck
+        # weiter, das keine Datumserkennung mehr trifft. Deshalb bis zum naechsten Leerraum einrasten.
+        while window_start > 0 and not text[window_start - 1].isspace() and not text[window_start].isspace():
             window_start -= 1
-        while (
-            window_end < len(text)
-            and text[window_end - 1].isalnum()
-            and text[window_end].isalnum()
-        ):
+        while window_end < len(text) and not text[window_end - 1].isspace() and not text[window_end].isspace():
             window_end += 1
         snippet = text[window_start:window_end].replace("\n", "  ").strip()
         return snippet

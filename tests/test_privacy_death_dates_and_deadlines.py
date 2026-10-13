@@ -195,6 +195,37 @@ def test_stored_table_row_suggestion_is_filtered_with_the_document_text() -> Non
     assert is_personal_date(snippet, date(1940, 3, 12), document)
 
 
+def test_deadline_snippet_never_cuts_a_date_in_half() -> None:
+    """Installierter Build 5cafe0f, Fall 19: der Ausschnitt begann bei "1940," - das Geburtsjahr ging als Bruchstueck
+    hinaus, das keine Datumserkennung mehr traf. Jetzt endet der Ausschnitt nur an Leerraum."""
+    doc = (
+        "Erblasser: Max Brenner, geb. 12.03.1940, verstorben am 01.02.2026 in Musterstadt.\n"
+        "Testament vom 15.06.2019; Eröffnung durch das Nachlassgericht am 20.02.2026."
+    )
+    for deadline in PlaceholderDeadlineExtractor().extract(doc):
+        first, last = deadline.source_text.split()[0], deadline.source_text.split()[-1]
+        assert first in doc.split() or first.rstrip(",.;") in doc, first
+        assert not re.fullmatch(r"\d{2,4}[,.;]?", first) or first in ("12.03.1940,",), first
+        assert last in doc.replace("\n", " ").split() or last.rstrip(",.;") in doc, last
+
+
+def test_stored_snippet_fragments_of_birth_or_death_dates_are_trimmed(gateway) -> None:
+    from app.deadlines.extractor import trim_partial_personal_dates
+
+    old = "1940, verstorben am 01.02.2026 in Musterstadt. Testament vom 15.06.2019"
+    trimmed = trim_partial_personal_dates(old, None)
+    assert not trimmed.startswith("1940") and "15.06.2019" in trimmed
+    assert trim_partial_personal_dates("Die Frist endet am 15.03.2026 laut Schreiben vom 12", None).endswith("vom")
+    # vollstaendiges Geburtsdatum im Argument wird ueber den Wert konsistent maskiert
+    sv = "Akte: Beispielakte\n[Schreiben] Erblasser: Max Brenner, geb. 12.03.1940, verstorben am 01.02.2026.\nTestament vom 15.06.2019."
+    result = gateway.prepare_request(
+        purpose="chat_response", sachverhalt=sv, anwaltliche_anmerkungen="Fasse zusammen.", review_mode="mask",
+        argumentationspunkte=["Mögliche Frist (unreviewed): 15.06.2019 :: 12.03.1940, verstorben am 01.02.2026.  Testament vom 15.06.2019"],
+    )
+    everything = json.dumps(result.payload.model_dump(), ensure_ascii=False)
+    assert "1940" not in everything and "01.02.2026" not in everything and "15.06.2019" in everything
+
+
 def test_stored_birthdate_suggestions_are_recognised_for_filtering() -> None:
     assert is_personal_date("Kläger: Karl Brenner, geb. 12.03.1980, wohnhaft in Musterstadt.", date(1980, 3, 12))
     assert is_personal_date("Der Erblasser verstarb am 01.02.2024 in Köln.", date(2024, 2, 1))
