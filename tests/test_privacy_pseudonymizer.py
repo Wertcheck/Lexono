@@ -176,18 +176,19 @@ def test_pseudonymize_handles_multiple_categories_in_one_call() -> None:
     p = Pseudonymizer()
     text = (
         "Mandant Max Mustermann, Az.: 123/24, Kontakt max@example.test, "
-        "Frist 15.03.2027."
+        "geb. 01.02.1970, Frist 15.03.2027."
     )
 
     result, mappings = p.pseudonymize(text, known_entities={"mandant": ["Max Mustermann"]})
 
     categories_found = {m.category for m in mappings}
-    assert categories_found == {"mandant", "aktenzeichen", "email", "datum"}
-    # Keine der Originalwerte darf im pseudonymisierten Text mehr vorkommen.
+    # BEWUSST GEAENDERT 13.10.2026 (Datumspolicy §23): Geburtsdatum maskiert, Fristdatum lesbar.
+    assert categories_found == {"mandant", "aktenzeichen", "email", "geburtsdatum"}
     assert "Max Mustermann" not in result
     assert "max@example.test" not in result
     assert "123/24" not in result
-    assert "15.03.2027" not in result
+    assert "01.02.1970" not in result
+    assert "15.03.2027" in result
 
 
 def test_pseudonymize_leaves_non_pii_text_unchanged() -> None:

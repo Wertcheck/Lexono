@@ -987,9 +987,11 @@ def test_name_and_street_on_adjacent_lines_stay_separate_and_a_date_stays_a_date
 
     assert result.allowed is True
     originals = {m.original_value: m.category for m in result.mappings}
-    assert originals.get("30.11.2026") == "datum"
     assert not any("Musterweg" in v and c == "person" for v, c in originals.items())
-    assert "bis zum [DATUM_" in result.payload.anonymisierter_sachverhalt
+    # BEWUSST GEAENDERT 13.10.2026 (Datumspolicy §23): das Fristdatum bleibt lesbar - und wird weiterhin nicht als Ort
+    # ersetzt (der urspruengliche Fund).
+    assert "30.11.2026" not in originals
+    assert "bis zum 30.11.2026" in result.payload.anonymisierter_sachverhalt
 
 
 def test_gateway_adds_the_local_party_address_assignment_as_placeholder_only_argument() -> None:

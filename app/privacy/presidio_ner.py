@@ -333,6 +333,13 @@ _ID_LABEL_FULL = re.compile(
 )
 
 
+# Grundbuchangabe aus Bezeichnung + Nummer ("Flur 3", "Blatt 12345", "Flurstück 12/3") - die NER las sie als Ort und der
+# Restrisiko-Scan blockierte gewoehnliche Grundstuecksangaben (vorbestehend, gemessen 13.10.2026).
+_LAND_REGISTER_LABEL_HIT = re.compile(
+    r"(?:flur|blatt|bl\.|flurst(?:ü|ue)ck\w*|flst\.?|grundbuchblatt)\s*\d[\d/]*[a-z]?", re.IGNORECASE
+)
+
+
 def _is_identifier_label(value: str) -> bool:
     return _ID_LABEL_FULL.fullmatch(value.strip()) is not None
 
@@ -1189,6 +1196,8 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
             continue
         if _is_identifier_label(value):
             continue  # blosse Kennnummer-Bezeichnung ("SV-Nr.", "Rentenversicherungsnummer"), siehe _ID_LABEL_BEFORE
+        if _LAND_REGISTER_LABEL_HIT.fullmatch(value.strip()):
+            continue  # "Flur 3", "Blatt 12345" sind Grundbuchangaben, kein Ort (§23; Blattnummer maskiert detect_grundbuch)
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
         if category in ("person", "organisation") and is_derivational_compound(value.strip()):

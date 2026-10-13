@@ -111,8 +111,10 @@ def test_money_amounts_are_not_pseudonymized(text: str) -> None:
 
 
 def test_detects_date() -> None:
-    spans = detect_all("Frist bis zum 15.03.2027.")
-    assert any(s.category == "datum" for s in spans)
+    # BEWUSST GEAENDERT 13.10.2026 (Datumspolicy §23): ein Fristdatum wird nicht mehr maskiert, ein Geburtsdatum schon.
+    assert not [s for s in detect_all("Frist bis zum 15.03.2027.") if s.category in ("datum", "geburtsdatum")]
+    spans = detect_all("Herr Brenner, geb. 12.03.1980, beantragt Rente.")
+    assert [(s.category, s.value) for s in spans if s.category == "geburtsdatum"] == [("geburtsdatum", "12.03.1980")]
 
 
 def test_known_entities_detects_names_not_covered_by_regex() -> None:

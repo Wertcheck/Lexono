@@ -90,6 +90,90 @@ _CARD_PATTERN = re.compile(r"(?<![\w.,/\-])\d{4}(?:[ \-]?\d{3,4}){2,4}(?:[ \-]?\
 _SV_TAIL_PATTERN = re.compile(r"(?<![\w])\d{6}\s?[A-Z]\s?\d{3}(?![\w])")
 
 
+# Grundbuch (Owner-Vorgabe 13.10.2026, §23): Grundbuchblatt- und Flurstuecksnummer machen den Eigentuemer ueber das
+# Grundbuch bestimmbar - nie pauschal harmlos. Deterministisch maskiert, konsistent je Wert ([GRUNDBUCH_nn]); Gemarkung,
+# Flur, Grundbuchbezirk und Amtsgericht bleiben lesbar (Zustaendigkeit, Lage - fuer sich nicht eigentuemerbestimmend).
+# Review: auch "Blatt-Nr.", "Grundbuchblatt-Nr.:", bis zu 60 Zeichen zwischen "Grundbuch" und "Blatt" ("Grundbuch des
+# Amtsgerichts X von Y Blatt 998"), "Flst.-Nr.", Plural "Flurstücksnummern", Tabellenspalten.
+_SHEET_NUMBER_LABEL = r"(?:[\s\-]*(?:nr\.?|nummer))?"
+_LAND_REGISTER_SHEET_PATTERN = re.compile(
+    r"(?:\bgrundbuch(?:es)?\b[^\n]{0,60}?\b(?:blatt|bl\.)" + _SHEET_NUMBER_LABEL + r"|\bgrundbuchblatt" + _SHEET_NUMBER_LABEL
+    + r")\s*[:.]?\s*(\d{1,6}[a-z]?)\b",
+    re.IGNORECASE,
+)
+_PARCEL_NUMBER = r"\d{1,5}(?:/\d{1,4})?"
+_PARCEL_LABEL = r"(?:flurst(?:ü|ue)ck(?:e|s|nummer|nummern|snummer|snummern)?|flst\.?(?:-?\s?nr\.?)?|flurst\.)"
+_PARCEL_PATTERN = re.compile(
+    r"\b" + _PARCEL_LABEL + r"\s*(?:nr\.?)?\s*[:.]?\s*"
+    r"(" + _PARCEL_NUMBER + r"(?:\s*(?:,|und|u\.)\s*" + _PARCEL_NUMBER + r")*)(?![\w/])",
+    re.IGNORECASE,
+)
+_LAND_REGISTER_HEADER = re.compile(r"\s*(?:" + _PARCEL_LABEL + r"|blatt|grundbuchblatt|bl\.)\s*", re.IGNORECASE)
+
+
+# IPv4-Adresse auch ohne genaue Bezeichnung ("IP-Adr. 10.0.12.77", "Zugriff von 10.0.12.77"; Messkette h11, 13.10.2026:
+# vorher verdeckte die pauschale Datumsmaskierung "10.0.12" nur zufaellig, nach der Datumspolicy ging die Adresse im
+# Klartext hinaus). Vier gueltige Oktette; ohne "IP" in der Naehe nur mit erstem Oktett ab 10 und nie nach Versions-,
+# Kapitel- oder Gliederungsangaben ("Version 2.4.1.0", "Kapitel 10.2.3.4").
+_IPV4_PATTERN = re.compile(r"(?<![\d.])(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)(?![\d.]|\.\d)")
+_IP_CONTEXT = re.compile(r"\bip\b|ip-?adr|ip-?adresse|server|zugriff|login|host", re.IGNORECASE)
+_IP_NOT_AFTER_LABEL = re.compile(
+    r"(?:version|ver\.|v\.|kapitel|abschnitt|ziff(?:er|\.)?|gliederung|nr\.|§|art\.|anlage|tz\.|rn\.)\s*$", re.IGNORECASE
+)
+
+
+def detect_ip_adresse(text: str) -> list[DetectedSpan]:
+    spans = []
+    for match in _IPV4_PATTERN.finditer(text):
+        before = text[max(0, match.start() - 30) : match.start()]
+        if _IP_NOT_AFTER_LABEL.search(before):
+            continue
+        if int(match.group().split(".")[0]) < 10 and not _IP_CONTEXT.search(before):
+            continue
+        spans.append(DetectedSpan(category="kennung", start=match.start(), end=match.end(), value=match.group()))
+    return spans
+
+
+def detect_grundbuch(text: str) -> list[DetectedSpan]:
+    spans = _matches_from_pattern(text, _LAND_REGISTER_SHEET_PATTERN, "grundbuch", group=1)
+    for match in _PARCEL_PATTERN.finditer(text):
+        numbers = list(re.finditer(_PARCEL_NUMBER, match.group(1)))
+        if any(len(n.group()) < 2 for n in numbers):
+            # Einstellige Flurstuecksnummer: als Wert waere "1" ueberall im Text "wiedergefunden" (Review: Fail-Closed-
+            # Blockade) - dann die ganze Angabe samt Bezeichnung als EIN Wert.
+            spans.append(DetectedSpan(category="grundbuch", start=match.start(), end=match.end(1), value=match.group()[: match.end(1) - match.start()]))
+            continue
+        for number in numbers:
+            start = match.start(1) + number.start()
+            spans.append(DetectedSpan(category="grundbuch", start=start, end=start + len(number.group()), value=number.group()))
+    spans += _table_column_values(text, _LAND_REGISTER_HEADER, re.compile(r"\b" + _PARCEL_NUMBER + r"[a-z]?\b"), "grundbuch")
+    return spans
+
+
+def _table_column_values(text: str, header: re.Pattern, value: re.Pattern, category: str) -> list[DetectedSpan]:
+    """Werte in der Tabellen-/CSV-Spalte (Trenner |, ; oder Tabulator), deren Kopfzelle `header` voll trifft - bis zur
+    naechsten Leerzeile (Review: "Name | Geburtsdatum", "Gemarkung | Flur | Flurstück" mit Werten in Folgezeilen)."""
+    spans: list[DetectedSpan] = []
+    offset = 0
+    column: tuple[str, int] | None = None
+    for line in text.split("\n"):
+        separator = next((sep for sep in ("|", ";", "\t") if sep in line), None)
+        if not line.strip():
+            column = None
+        elif separator:
+            cells = line.split(separator)
+            hits = [i for i, cell in enumerate(cells) if header.fullmatch(cell)]
+            if hits:
+                column = (separator, hits[0])
+            elif column and column[0] == separator and len(cells) > column[1]:
+                cell_start = offset + sum(len(c) + 1 for c in cells[: column[1]])
+                for match in value.finditer(cells[column[1]]):
+                    spans.append(DetectedSpan(category=category, start=cell_start + match.start(),
+                                              end=cell_start + match.end(), value=match.group()))
+        offset += len(line) + 1
+    return spans
+
+
 def _luhn_valid(digits: str) -> bool:
     total = 0
     for index, char in enumerate(reversed(digits)):
@@ -129,6 +213,8 @@ _REFERENCE_VALUE = r"([A-Za-z0-9](?:[A-Za-z0-9/\-]|\.(?=[A-Za-z0-9])){1,30})(?![
 # besteht ("Kd.-Nr" neben dem Platzhalter als Person), ist kein Name (presidio_ner._is_identifier_label).
 REFERENCE_LABEL_WORDS = (
     _REFERENCE_LABEL + r"|kundennummer|kd\.?(?:-?\s?nr)?|mandantennummer|vertragsnummer|vertrags-nr|rechnungs?-?\s?(?:nummer|nr)"
+    # "Flur" neben einem maskierten Flurstueck las die Rueckfrage als Name (2. Review-Runde)
+    r"|grundbuchblatt|flurst(?:ü|ue)ck(?:e|s|nummer)?|flst|flur|gemarkung"
 )
 _REFERENCE_PATTERN = re.compile(
     r"(?<![\wÄÖÜäöüß])(?:" + _REFERENCE_LABEL + r")(?:\s+(?:ist|lautet|lauten))?\s*[:.]?\s*" + _REFERENCE_VALUE,
@@ -386,8 +472,120 @@ def detect_titled_person(text: str) -> list[DetectedSpan]:
 
 
 def detect_datum(text: str) -> list[DetectedSpan]:
+    """ALLE Datumsangaben (Kategorie "datum"). Nicht mehr Teil der Pseudonymisierung (Datumspolicy 13.10.2026, siehe
+    detect_geburtsdatum); bleibt fuer lokale Auswertungen und Kompatibilitaet."""
     spans = _matches_from_pattern(text, _NUMERIC_DATE_PATTERN, "datum")
     spans += _matches_from_pattern(text, _MONTH_NAME_DATE_PATTERN, "datum")
+    return spans
+
+
+# Datumspolicy (Owner-Entscheidung 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §23): Sachverhalts-, Vertrags-, Frist- und
+# Ereignisdaten bleiben LESBAR - Chronologie, Abstaende und Fristberechnung sind juristischer Kern (vorher: alle Daten
+# [DATUM_nn], 27 von 27 Sachverhaltsdaten im Messkorpus verdeckt). Geschuetzt wird das GEBURTSDATUM: zusammen mit Wohnort,
+# Rolle oder Arbeitgeber ist es ein starkes Quasi-Merkmal (Reidentifikation auch bei pseudonymisiertem Namen), und es ist
+# selten selbst rechtserheblich - erheblich ist das Alter, das lokal berechnet wird (date_chronology.build_age_note).
+# Erkannt wird es nur am Geburtskontext (Review 13.10.2026 eingearbeitet):
+# - Bezeichnung davor, auch mit einigen Woertern dazwischen ("geb.", "geboren am", "Geburtsdatum des Kindes:",
+#   "Geburtstag ist der", "geb. am Mittwoch,", "DOB", "date of birth"); "*" nur als Apposition ("Kläger, * 24.12.1968",
+#   "(* 12.03.1980)") - nicht "Siehe *12.03.2024 Fußnote";
+# - "geboren"/"geborene"/"zur Welt gekommen" danach; ebenso ein Datum, auf das kurz darauf "Geburtstag" folgt ("feierte am
+#   12.03.2025 seinen 45. Geburtstag" - Geburtsdatum daraus exakt ableitbar);
+# - Datum allein (oder als Lebensdaten "12.03.1940 – 01.01.2026") in Klammern bzw. zwischen Kommas direkt nach einer
+#   Personenbezeichnung (Anrede/Rolle + Name), wenn das Jahr als Geburtsjahr plausibel ist (mindestens 14 Jahre zurueck)
+#   und danach nicht "seit/ab/bis/Beginn" folgt ("Herr Brenner (01.04.1995) ist seit diesem Tag Mieter" bleibt lesbar);
+# - in Tabellen/CSV jede Datumsangabe in der Spalte, deren Kopfzelle "Geburtsdatum"/"geb." lautet.
+# Datumsformate: deutsch numerisch, mit Monatsnamen, ISO ("1980-03-12") und mit Schraegstrich ("12/03/1980").
+_WEEKDAY = r"(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)"
+# "geb." ohne Luecke (nur "am" und ein Wochentag): danach kann ein Geburtsname folgen ("geb. Sommer, kuendigte am ...",
+# 2. Review-Runde) - der ist kein Geburtsdatum-Kontext fuer das naechste Datum.
+_BIRTH_LABEL_SHORT = r"\bgeb\.(?:\s+am)?(?:\s+" + _WEEKDAY + r",?)?\s*[:.]?\s*$"
+_BIRTH_LABEL_LONG = (
+    r"(?:\bgeboren|\bgeburtsdatum|\bgeb\.-?\s?datum|\bgeburtstag|\bgeburtsdat\.|\bdob\b|\bdate\s+of\s+birth|"
+    r"(?:(?<=,)|(?<=\())\s*\*)"
+    # bis zu 25 Zeichen ohne Ziffer, Satz-/Tabellentrenner oder Klammer ("des Kindes:", "ist der", "am Mittwoch,")
+    r"[^\n\d.;|(]{0,25}[:.]?\s*$"
+)
+_BIRTH_LABEL_BEFORE = re.compile(r"(?:" + _BIRTH_LABEL_SHORT + r")|(?:" + _BIRTH_LABEL_LONG + r")", re.IGNORECASE)
+_BIRTH_WORD_AFTER = re.compile(
+    r"(?:\s+in\s+[A-ZÄÖÜ][\wäöüß\-]+(?:\s+[A-ZÄÖÜ][\wäöüß\-]+)?)?\s+(?:geboren(?:e[nmrs]?)?\b|zur\s+welt\s+gekommen)",
+    re.IGNORECASE,
+)
+# Datum eines Geburtstags (Jahrestag): verraet mit dem Alter das Geburtsdatum, ist aber selbst keines -> eigene
+# Kategorie "geburtstag" (maskiert, ohne Altersangabe). Punkt nur als Ordinalzahl, nie nach einer Jahreszahl.
+_BIRTHDAY_AFTER = re.compile(r"(?:[^\n.;]|(?<=\d)(?<!\d{4})\.){0,30}\bgeburtstag\b", re.IGNORECASE)
+_PERSON_BEFORE_APPOSITION = re.compile(
+    r"(?:\b(?:herrn?|frau|kläger(?:in)?|klaeger(?:in)?|beklagte[rn]?|mandant(?:in)?|zeug(?:e|in)|kind(?:es)?|sohn|"
+    r"tochter|ehe(?:mann|frau)|antragsteller(?:in)?|antragsgegner(?:in)?|erblasser(?:in)?|schuldner(?:in)?|"
+    r"gläubiger(?:in)?|glaeubiger(?:in)?|arbeitnehmer(?:in)?|mieter(?:in)?|vermieter(?:in)?|betroffene[rn]?|"
+    r"verstorbene[rn]?)"
+    r"(?:\s+(?:Dr\.|Prof\.)?\s*[A-ZÄÖÜ][\wäöüß\-]+){0,3})\s*[(,]\s*$",
+    re.IGNORECASE,
+)
+_APPOSITION_END = re.compile(r"\s*(?:[-–]\s*(\S+?)\s*)?[),]")
+_LIFESPAN_PERSON = re.compile(r"\b(?:erblasser(?:in)?|verstorbene[rn]?)\b", re.IGNORECASE)
+_NOT_A_BIRTH_AFTER = re.compile(r"[^\n.;]{0,25}\b(?:seit|ab|bis|beginn|eintritt|einzug|mietbeginn)\b", re.IGNORECASE)
+_ISO_OR_SLASH_DATE = re.compile(r"\b(?:(?:19|20)\d{2}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/(?:19|20)?\d{2})\b")
+_MINIMUM_BIRTH_AGE_YEARS = 14
+
+
+def _date_year(value: str) -> int | None:
+    iso = re.match(r"((?:19|20)\d{2})-\d{2}-\d{2}$", value)
+    if iso:
+        return int(iso.group(1))
+    digits = re.findall(r"\d+", value)
+    if not digits:
+        return None
+    year = int(digits[-1])
+    if year < 100:
+        year += 2000 if year <= 69 else 1900
+    return year
+
+
+_BIRTH_HEADER = re.compile(r"\s*(?:geburtsdatum|geb\.(?:-?\s?datum)?|geboren|dob)\s*", re.IGNORECASE)
+_ANY_DATE_IN_CELL = re.compile(
+    r"\b\d{1,2}\s*\.\s*\d{1,2}\s*\.\s*\d{2,4}\b|\b(?:19|20)\d{2}-\d{2}-\d{2}\b|\b\d{1,2}/\d{1,2}/(?:19|20)?\d{2}\b"
+)
+
+
+def _birth_table_dates(text: str) -> list[DetectedSpan]:
+    """Datumsangaben in der Spalte "Geburtsdatum"/"geb." einer Tabelle bzw. CSV (siehe _table_column_values)."""
+    return _table_column_values(text, _BIRTH_HEADER, _ANY_DATE_IN_CELL, "geburtsdatum")
+
+
+def detect_geburtsdatum(text: str, *, current_year: int | None = None) -> list[DetectedSpan]:
+    """Geburtsdaten (Kategorie "geburtsdatum") und Geburtstags-Jahrestage ("geburtstag") - siehe Kommentar oben."""
+    from datetime import date
+
+    this_year = current_year or date.today().year
+    spans = _birth_table_dates(text)
+    candidates = [*detect_datum(text), *_matches_from_pattern(text, _ISO_OR_SLASH_DATE, "datum")]
+    for span in candidates:
+        if any(s.start < span.end and span.start < s.end for s in spans):
+            continue
+        line_start = text.rfind("\n", 0, span.start) + 1
+        before = text[max(line_start, span.start - 45) : span.start]
+        category = "geburtsdatum"
+        if _BIRTH_LABEL_BEFORE.search(before) or _BIRTH_WORD_AFTER.match(text, span.end):
+            birth = True
+        elif _BIRTHDAY_AFTER.match(text, span.end):
+            birth, category = True, "geburtstag"
+        else:
+            year = _date_year(span.value)
+            end = _APPOSITION_END.match(text, span.end)
+            person = _PERSON_BEFORE_APPOSITION.search(text[max(line_start, span.start - 80) : span.start])
+            birth = (
+                year is not None
+                and this_year - 120 <= year <= this_year - _MINIMUM_BIRTH_AGE_YEARS
+                and person is not None
+                and end is not None
+                and not _NOT_A_BIRTH_AFTER.match(text, span.end)
+            )
+            if birth and end.group(1):
+                # Zeitraum "(01.04.1995 – 31.03.2005)" ist nur bei Verstorbenen bzw. ab 14 Jahren Spanne eine Lebensangabe
+                other = _date_year(end.group(1).rstrip(".,)"))
+                birth = bool(_LIFESPAN_PERSON.search(person.group()) or (other and other - year >= _MINIMUM_BIRTH_AGE_YEARS))
+        if birth:
+            spans.append(DetectedSpan(category=category, start=span.start, end=span.end, value=span.value))
     return spans
 
 
@@ -469,8 +667,10 @@ _ALL_REGEX_DETECTORS = (
     detect_rechnungsnummer,
     detect_referenznummer,
     detect_zahlungskarte_und_sv_rest,
+    detect_grundbuch,
+    detect_ip_adresse,
     detect_bic,
-    detect_datum,
+    detect_geburtsdatum,
     detect_address,
 )
 

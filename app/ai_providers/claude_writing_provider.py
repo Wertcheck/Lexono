@@ -152,7 +152,10 @@ sie im Schlussblock als zu klärenden Punkt.
 verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist \
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
-die Einordnung die gefragte Beziehung enthält.
+die Einordnung die gefragte Beziehung enthält. Sachverhaltsdaten stehen in \
+der Regel lesbar im Text; geschützt ist nur das Geburtsdatum \
+([GEBURTSDATUM_NN]) - dessen Alter steht ggf. im Argumentationspunkt "Alter \
+laut Geburtsdatum"; errechne nie ein Geburtsdatum.
 - ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
 Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
 und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \
@@ -350,7 +353,10 @@ sie im Schlussblock als zu klärenden Punkt.
 verlässlich. Nutze ihn für Reihenfolge, Abstände und die Frage, ob eine Frist \
 bereits abgelaufen ist (die Datumsplatzhalter [DATUM_NN] bleiben dabei \
 unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
-die Einordnung die gefragte Beziehung enthält.
+die Einordnung die gefragte Beziehung enthält. Sachverhaltsdaten stehen in \
+der Regel lesbar im Text; geschützt ist nur das Geburtsdatum \
+([GEBURTSDATUM_NN]) - dessen Alter steht ggf. im Argumentationspunkt "Alter \
+laut Geburtsdatum"; errechne nie ein Geburtsdatum.
 - ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
 Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
 und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \

@@ -376,6 +376,30 @@ def find_review_candidates(
     return list(found.values())
 
 
+def history_only_identifiers(history_text: str, local_text: str, decisions: PrivacyDecisions) -> set[str]:
+    """Kennnummern und Kennzeichen, die NUR in frueheren KI-Antworten des Gespraechsverlaufs stehen (§23; vorher gingen
+    sie unveraendert hinaus, weil die Rueckfrage nur Anwalts- und Dokumenttext prueft). Sie werden ohne Rueckfrage
+    maskiert - eine Frage zum eigenen Antworttext waere fuer den Anwalt nicht sinnvoll beantwortbar. Werte, die auch im
+    Anwalts-/Dokumenttext stehen, laufen dort ueber die normale Rueckfrage; "nicht personenbezogen" wird respektiert."""
+    if not history_text.strip():
+        return set()
+    raw = [value for value, _ in _trim_at_detector_spans(history_text, _unlabelled_identifiers(history_text))]
+    raw += [
+        m.group() for m in _PLATE_SHAPE.finditer(history_text)
+        if m.group("district") not in _PLATE_SHAPE_NOT_A_DISTRICT and not _is_citation_not_plate(history_text, m)
+        and (m.group("sep") != " " or _plausible_spaced_plate(history_text, m))
+    ]
+    terms = set()
+    for value in raw:
+        term = re.sub(r"\s+", " ", value)
+        if term in decisions.not_personal or re.search(
+            r"(?<![\wÄÖÜäöüß])" + re.escape(value) + r"(?![\wÄÖÜäöüß])", local_text
+        ):
+            continue
+        terms.add(term)
+    return terms
+
+
 def _trim_at_detector_spans(text: str, candidates: list[tuple[str, int]]) -> list[tuple[str, int]]:
     """Ragt ein Kandidat in einen Treffer eines deterministischen Detektors hinein, der UEBER den Kandidaten hinausreicht
     ("Az. 12 O 345/26 1234567": Kandidat "345/26 1234567"), wird er an dieser Grenze gekuerzt und nur der Rest geprueft
@@ -473,18 +497,51 @@ _KEEP_AFTER = re.compile(
 _CURRENCY_BEFORE = re.compile(r"(?:eur|€|euro|chf|usd|\$)\s*$", re.IGNORECASE)
 # Jahr, Jahresspanne, ISO-Datum - auch mit Stunde dahinter ("2025-01-01 10:00", Logauszug; Messkette h9: sonst Kandidat,
 # danach las die NER das Nachbarwort als Person und der Gateway blockierte)
-_YEAR_SHAPES = re.compile(r"(?:19|20)\d{2}(?:\s*[-/–]\s*(?:19|20)?\d{2})?|\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2})?")
+# Datum mit Schraegstrich ("12/03/2026", Review §23) ist nach der Datumspolicy lesbar, keine Kennnummer.
+_YEAR_SHAPES = re.compile(
+    r"(?:19|20)\d{2}(?:\s*[-/–]\s*(?:19|20)?\d{2})?|\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2})?|\d{1,2}/\d{1,2}/(?:19|20)?\d{2}"
+)
 # Teil einer ECLI-Kennung (oeffentliche Gerichtsentscheidung, "ECLI:DE:BGH:2020:120520UVIZR123.19.0") - Fundstelle.
 _INSIDE_ECLI = re.compile(r"ECLI:[A-Z]{2}:\S*$")
 # Grundbuch: "Blatt" ist dort die Grundbuchblattnummer (Eigentuemer ueber das Grundbuch bestimmbar), keine Seitenangabe.
 _LAND_REGISTER_BEFORE = re.compile(r"grundbuch", re.IGNORECASE)
 
 
+# Kurze Nummer (5-6 Ziffern) nur hinter einer allgemeinen Nummernbezeichnung ("unter der Nummer 300188", "ID 48213",
+# "Nr. 77812") - ohne solche Bezeichnung bleibt eine kurze Zahl lesbar (Postleitzahl, Betrag, Seitenzahl, Stueckzahl;
+# §23: keine pauschale Maskierung von Ziffernfolgen). Fundstellen ("Nr. 3100 VV RVG", "§ 2 Nr. 3") schliessen
+# _KEEP_BEFORE/_KEEP_AFTER bzw. die Ziffernzahl aus.
+_SHORT_LABELLED = re.compile(
+    r"(?<![\w.])(?:nummer|nr\.?|#|id|kennung|kennziffer)\s*[:.]?\s*(\d{5,6})(?![\w/\-–‑]|[.,]\d|\s*(?:vv|rvg)\b)",
+    re.IGNORECASE,
+)
+
+
+class _GroupMatch:
+    """Treffer-Ansicht auf Gruppe 1 (gleiche Schnittstelle wie re.Match fuer _unlabelled_identifiers)."""
+
+    def __init__(self, match: re.Match) -> None:
+        self._match = match
+
+    def group(self) -> str:
+        return self._match.group(1)
+
+    def start(self) -> int:
+        return self._match.start(1)
+
+    def end(self) -> int:
+        return self._match.end(1)
+
+
 def _unlabelled_identifiers(text: str, *, min_digit_run: int = 7) -> list[tuple[str, int]]:
     """(Wert, Position) kennnummernfoermiger Folgen ohne Bezeichnung - siehe Kommentar oben."""
     found: list[tuple[str, int]] = []
-    for pattern, min_digits in ((_DIGIT_RUN, min_digit_run), (_DOTTED_RUN, 7), (_ALNUM_CODE, 4)):
-        for match in pattern.finditer(text):
+    short = (_GroupMatch(m) for m in _SHORT_LABELLED.finditer(text))
+    for matches, min_digits in (
+        (_DIGIT_RUN.finditer(text), min_digit_run), (_DOTTED_RUN.finditer(text), 7), (_ALNUM_CODE.finditer(text), 4),
+        (short, 5),
+    ):
+        for match in matches:
             value = match.group().strip()
             if sum(ch.isdigit() for ch in value) < min_digits or _YEAR_SHAPES.fullmatch(value):
                 continue

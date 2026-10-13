@@ -35,8 +35,14 @@ from __future__ import annotations
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult, seal_payload
-from app.privacy.review import PrivacyDecisions, ReviewCandidate, detect_decision_terms, find_review_candidates
-from app.privacy.date_chronology import build_chronology_note
+from app.privacy.review import (
+    PrivacyDecisions,
+    ReviewCandidate,
+    detect_decision_terms,
+    find_review_candidates,
+    history_only_identifiers,
+)
+from app.privacy.date_chronology import build_age_note, build_chronology_note
 from app.privacy.party_addresses import build_party_address_note
 from app.privacy.presidio_ner import (
     detect_presidio_entities,
@@ -259,6 +265,14 @@ class ClaudePrivacyGateway:
         # Immer aktiv: Satzanfangs-Imperative der Anwalts-Anweisung sind keine Personen.
         # Zusaetzlich im Chat ohne Akte: reine Nomen-"Personen" (Fachbegriffe).
         masked_terms: set[str] = set(decisions.personal)
+        # Kennnummern nur aus frueheren KI-Antworten (§23): ohne Rueckfrage maskiert, siehe review.history_only_identifiers.
+        history_text = "\n".join(
+            entry[len(_ASSISTANT_HISTORY_LINE_PREFIX) :]
+            for entry in gespraechsverlauf
+            if entry.startswith(_ASSISTANT_HISTORY_LINE_PREFIX)
+        )
+        if review_mode != "off":
+            masked_terms.update(history_only_identifiers(history_text, locally_sourced_text, decisions))
 
         # Entscheidungs-Begriffe werden NACH den Filtern angehaengt: der Imperativ-/Nomen-Filter darf eine
         # ausdrueckliche "personenbezogen"-Entscheidung des Anwalts nicht wieder verwerfen.
@@ -387,6 +401,8 @@ class ClaudePrivacyGateway:
         # Platzhalter und Zahlen, nie ein absolutes Datum; siehe
         # app/privacy/date_chronology.py fuer Root Cause und Abwaegung.
         chronology = build_chronology_note(mappings)
+        # Datumspolicy (§23): Sachverhaltsdaten sind lesbar; maskiert bleibt nur das Geburtsdatum - dessen Alter lokal.
+        age = build_age_note(mappings)
         # Ebenfalls lokal und nur als Platzhalter: welche Anschrift im Dokument direkt bei welchem
         # Beteiligten steht (siehe app/privacy/party_addresses.py).
         party_addresses = build_party_address_note(pseudo_sachverhalt)
@@ -396,7 +412,7 @@ class ClaudePrivacyGateway:
             anonymisierter_sachverhalt=pseudo_sachverhalt,
             anonymisierte_argumentationspunkte=[
                 *pseudo_argumente,
-                *(note for note in (chronology, party_addresses) if note),
+                *(note for note in (chronology, age, party_addresses) if note),
             ],
             anonymisierte_quellenverweise=pseudo_quellen,
             schreibvorlage=pseudo_vorlage,

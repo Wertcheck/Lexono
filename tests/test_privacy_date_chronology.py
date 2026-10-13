@@ -87,9 +87,11 @@ def test_gateway_payload_contains_chronology_but_no_original_date() -> None:
         anwaltliche_anmerkungen="Welche Frist laeuft zuletzt ab?",
     )
 
+    # BEWUSST GEAENDERT 13.10.2026 (Datumspolicy, PRIVACY_REVIEW_ARCHITECTURE.md §23): Sachverhalts- und Fristdaten sind
+    # jetzt LESBAR - Claude rechnet direkt mit ihnen; die Einordnung ueber Platzhalter entfaellt dafuer.
     assert result.allowed is True
     notes = [a for a in result.payload.anonymisierte_argumentationspunkte if a.startswith(CHRONOLOGY_MARKER)]
-    assert len(notes) == 1
-    payload_text = result.payload.model_dump_json()
+    assert notes == []
+    payload_text = result.payload.anonymisierter_sachverhalt
     for original in ("11.08.2026", "31.08.2026", "24.08.2026", "15.09.2026"):
-        assert original not in payload_text
+        assert original in payload_text

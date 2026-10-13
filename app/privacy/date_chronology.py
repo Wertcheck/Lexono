@@ -39,8 +39,15 @@ CHRONOLOGY_MARKER = "Zeitliche Einordnung der Datumsangaben"
 
 
 def parse_german_date(value: str) -> date | None:
-    """Parst "02.10.2026", "2.10.26" und "2. Oktober 2026"; sonst `None`."""
+    """Parst "02.10.2026", "2.10.26", "2. Oktober 2026", ISO "2026-10-02" und "02/10/2026"; sonst `None`."""
     text = value.strip()
+    iso = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", text)
+    if iso:
+        try:
+            return date(int(iso.group(1)), int(iso.group(2)), int(iso.group(3)))
+        except ValueError:
+            return None
+    text = re.sub(r"(?<=\d)/(?=\d)", ".", text)
     match = _NUMERIC.fullmatch(text)
     if match:
         day, month, year = (int(g) for g in match.groups())
@@ -56,6 +63,36 @@ def parse_german_date(value: str) -> date | None:
         return date(year, month, day)
     except ValueError:
         return None
+
+
+AGE_MARKER = "Alter laut Geburtsdatum"
+
+
+def build_age_note(mappings: list[PseudonymMapping], *, today: date | None = None) -> str | None:
+    """Datumspolicy (13.10.2026, §23): Geburtsdaten bleiben maskiert, ihr juristisch erheblicher Gehalt ist das ALTER.
+    Uebergeben werden je [GEBURTSDATUM_nn] nur die vollendeten Lebensjahre zum heutigen Tag (und volljaehrig/minderjaehrig)
+    - bewusst KEINE Tagesabstaende zu den lesbaren Sachverhaltsdaten: daraus liesse sich das Geburtsdatum exakt
+    zurueckrechnen. Das Alter zu einem anderen Stichtag (z. B. Unfalltag) berechnet der Anwalt bzw. die lokale Fristenlogik."""
+    today = today or date.today()
+    parts: list[str] = []
+    seen: set[str] = set()
+    for mapping in mappings:
+        if mapping.category != "geburtsdatum" or mapping.placeholder in seen:
+            continue
+        born = parse_german_date(mapping.original_value)
+        if born is None or born > today:
+            continue
+        seen.add(mapping.placeholder)
+        years = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        parts.append(f"{mapping.placeholder}: {years} vollendete Jahre ({'volljährig' if years >= 18 else 'minderjährig'})")
+    if not parts:
+        return None
+    # Review: der Geburtskontext ist eine Heuristik ("feierte am ... Geburtstag" ist ein Jahrestag, kein Geburtsdatum) -
+    # die Notiz sagt das, statt ein Alter als Tatsache zu behaupten.
+    return (
+        f"{AGE_MARKER} (lokal berechnet zum heutigen Tag, sofern der maskierte Wert tatsächlich ein Geburtsdatum ist - "
+        "im Zweifel beim Anwalt nachfragen; das Datum selbst ist geschützt): " + "; ".join(parts) + "."
+    )
 
 
 def build_chronology_note(
