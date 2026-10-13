@@ -1,0 +1,705 @@
+{
+ "benchmark": "chat_scope_v1",
+ "run_at": "2026-10-13T16:19:52+00:00",
+ "git_commit": "a2fadd8",
+ "git_dirty_files": [],
+ "cases_sha256": "63ca36c5dde9f8ad",
+ "code_fingerprint": {
+  "app/privacy/gateway.py": "8ecbdd14bbf5ab44",
+  "app/privacy/gateway_schema.py": "32a8bd5efb7c3602",
+  "app/ai_providers/claude_writing_provider.py": "eceb8cd77bfc2b91",
+  "app/ai_providers/anthropic_writing_provider.py": "29177948ad316658",
+  "app/ai_providers/local_ai_provider.py": "dec0d76d7f3a0081",
+  "app/chat/service.py": "5f32e74f30823a8c",
+  "app/drafting/service.py": "e4ef9781bef1722e"
+ },
+ "python": "3.13.15",
+ "mode": "offline",
+ "model": "offline (Fake-Provider, feste Antwort)",
+ "rules": {
+  "payload_scope": "Gemessen wird der ClaudeRequestPayload, den der Schreib-Provider unmittelbar vor dem Cloud-Aufruf erhaelt (nach Pseudonymisierung, Rueckfrage, Restrisiko-Pruefung, Siegel). Alle Felder einschliesslich Gespraechsverlauf.",
+  "fact_present": "Ein Referenzfakt gilt als verfuegbar, wenn seine exakte Schreibweise mit Zahlgrenzen (kein Treffer innerhalb laengerer Zahlen) im serialisierten Payload vorkommt - gleich aus welchem Feld (Sachverhalt, Fristhinweis, Verlauf). Nenner: Zahl der needed_facts.",
+  "expected_omission": "Ein benoetigter Fakt, der in Variante B per Regel fehlt (nur in nicht angehaengtem Dokument). Zulaessig nur, wenn die Antwort den Hinweis auf nicht beruecksichtigte Dokumente traegt (note_required).",
+  "unneeded_facts": "Fakten nicht benoetigter Dokumente im Payload; Ausweis als Treffer/Nenner (Nenner: Zahl der unneeded_facts je Fall, summiert). Mass der Datenminimierung, kein Fehler. Gesondert: nur ueber den Gespraechsverlauf gesendet.",
+  "sensitive_plaintext": "Synthetische Namen/Adresse/IBAN aus sensitive_terms im Klartext im Payload; Ausweis Treffer/Nenner je Begriff (voller Name und Nachname zaehlen getrennt). Abgedeckt: Dokumenttext und Frage (C11); Verlauf nur ueber vorgefertigte Antworten.",
+  "errors": "Ausnahme, blockierte Antwort (auch nach dem Schreibaufruf, z. B. Antwortpruefung) oder kein Payload. Nenner: Faelle je Variante.",
+  "answer_scoring_live_only": "Nur im freigegebenen Live-Lauf: Datums- und Betragsangaben werden normalisiert (z. B. '15. August 2026', '4.250 EUR'); benoetigte Fakten in der Antwort; Werte, die in keinem Aktendokument und nicht in der Frage stehen (unbelegt); vorlaeufig, fachlich nicht validiert, kein LLM-Selbsturteil.",
+  "limits": "Offline beantwortet ein Fake-Provider; offline ist daher nur die Informationsverfuegbarkeit messbar, nicht die Antwortqualitaet. Kausalaussagen zur Antwortqualitaet erst nach Live-Lauf und fachlicher Pruefung.",
+  "variant_a": "A = aktueller Code ohne die §29-Einschraenkung (Kontext-Provider ignoriert die Dokumentauswahl); §27-Regeln (Duplikate, Fristen geloeschter Dokumente) bleiben aktiv. Kein Nachbau eines frueheren Commits. Der Chat-Hinweis wird in A nicht ausgewiesen (gegenstandslos).",
+  "chains": "Folgefragen (follow_up_of) spielen die Vorturns mit festen Antworten ab; nur der letzte Turn wird gemessen bzw. im Live-Lauf an das Modell gesendet.",
+  "environment": "Lokale KI (Ollama) aus wie im Standard; Wissensbasis und Rechtsrecherche leer. Payload-Groessen ohne lokale Vorabanalyse."
+ },
+ "summary": {
+  "A": {
+   "cases": 11,
+   "errors": 0,
+   "needed_facts_present": "21/21",
+   "unneeded_facts_present": "100/100",
+   "sensitive_plaintext": "0/66",
+   "payload_chars_total": 12548,
+   "runtime_ms_median": 262
+  },
+  "B": {
+   "cases": 11,
+   "errors": 0,
+   "needed_facts_present": "17/21",
+   "unneeded_facts_present": "47/100",
+   "sensitive_plaintext": "0/66",
+   "payload_chars_total": 8295,
+   "runtime_ms_median": 158,
+   "unexpected_missing": 0,
+   "omission_without_note": 0,
+   "note_not_as_expected": 0,
+   "note_count_wrong": 0
+  }
+ },
+ "results": [
+  {
+   "case": "C01",
+   "kind": "einzeldokument",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1112,
+   "runtime_ms": 2921,
+   "needed_facts_present": [
+    "4.250,00",
+    "15.08.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C01",
+   "kind": "einzeldokument",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 626,
+   "runtime_ms": 239,
+   "needed_facts_present": [
+    "4.250,00",
+    "15.08.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "2.100,00",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C02",
+   "kind": "mehrdokument_ein_anhang",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1115,
+   "runtime_ms": 256,
+   "needed_facts_present": [
+    "4.250,00",
+    "18.500,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C02",
+   "kind": "mehrdokument_ein_anhang",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 629,
+   "runtime_ms": 156,
+   "needed_facts_present": [
+    "4.250,00"
+   ],
+   "needed_facts_missing": [
+    "18.500,00"
+   ],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "15.08.2026",
+    "2.100,00",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C03",
+   "kind": "mehrdokument_alle_anhaenge",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1115,
+   "runtime_ms": 244,
+   "needed_facts_present": [
+    "4.250,00",
+    "18.500,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C03",
+   "kind": "mehrdokument_alle_anhaenge",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 787,
+   "runtime_ms": 173,
+   "needed_facts_present": [
+    "4.250,00",
+    "18.500,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "15.08.2026",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 3,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C04",
+   "kind": "doppelter_anhang",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1088,
+   "runtime_ms": 237,
+   "needed_facts_present": [
+    "4.250,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C04",
+   "kind": "doppelter_anhang",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 602,
+   "runtime_ms": 158,
+   "needed_facts_present": [
+    "4.250,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "15.08.2026",
+    "2.100,00",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true,
+   "note_count_as_expected": true
+  },
+  {
+   "case": "C05",
+   "kind": "frist_aus_anderem_dokument",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1095,
+   "runtime_ms": 262,
+   "needed_facts_present": [
+    "15.08.2026",
+    "30.10.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "350,00",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C05",
+   "kind": "frist_aus_anderem_dokument",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 609,
+   "runtime_ms": 149,
+   "needed_facts_present": [
+    "15.08.2026",
+    "30.10.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 9,
+   "unneeded_facts_present": [
+    "2.100,00",
+    "4.250,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C06",
+   "kind": "chronologie",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1106,
+   "runtime_ms": 257,
+   "needed_facts_present": [
+    "01.03.2026",
+    "30.06.2026",
+    "12.07.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 8,
+   "unneeded_facts_present": [
+    "03.05.2019",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.10.2026",
+    "350,00",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C06",
+   "kind": "chronologie",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 583,
+   "runtime_ms": 92,
+   "needed_facts_present": [
+    "12.07.2026"
+   ],
+   "needed_facts_missing": [
+    "01.03.2026",
+    "30.06.2026"
+   ],
+   "unneeded_facts_total": 8,
+   "unneeded_facts_present": [
+    "2.100,00",
+    "30.10.2026",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C07",
+   "kind": "nur_in_nicht_angehaengtem_dokument",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1091,
+   "runtime_ms": 262,
+   "needed_facts_present": [
+    "350,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C07",
+   "kind": "nur_in_nicht_angehaengtem_dokument",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 605,
+   "runtime_ms": 150,
+   "needed_facts_present": [],
+   "needed_facts_missing": [
+    "350,00"
+   ],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "15.08.2026",
+    "2.100,00",
+    "30.10.2026",
+    "4.250,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C08",
+   "kind": "folgefrage_ohne_anhang",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1185,
+   "runtime_ms": 257,
+   "needed_facts_present": [
+    "4.250,00",
+    "18.500,00",
+    "2.100,00",
+    "900,00",
+    "350,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 6,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "30.06.2026",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C08",
+   "kind": "folgefrage_ohne_anhang",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 1185,
+   "runtime_ms": 288,
+   "needed_facts_present": [
+    "4.250,00",
+    "18.500,00",
+    "2.100,00",
+    "900,00",
+    "350,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 6,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "30.06.2026",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": false,
+   "note_count": null,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C09",
+   "kind": "folgefrage_mit_wort_dokument",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1194,
+   "runtime_ms": 275,
+   "needed_facts_present": [
+    "350,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C09",
+   "kind": "folgefrage_mit_wort_dokument",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 1194,
+   "runtime_ms": 291,
+   "needed_facts_present": [
+    "350,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": false,
+   "note_count": null,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C10",
+   "kind": "verlauf_traegt_andere_dokumente",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1326,
+   "runtime_ms": 300,
+   "needed_facts_present": [
+    "15.08.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C10",
+   "kind": "verlauf_traegt_andere_dokumente",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 840,
+   "runtime_ms": 187,
+   "needed_facts_present": [
+    "15.08.2026"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "18.500,00",
+    "2.100,00",
+    "30.10.2026",
+    "350,00",
+    "4.250,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [
+    "18.500,00",
+    "350,00",
+    "900,00"
+   ],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  },
+  {
+   "case": "C11",
+   "kind": "name_in_frage",
+   "variant": "A",
+   "error": null,
+   "payload_chars": 1121,
+   "runtime_ms": 263,
+   "needed_facts_present": [
+    "4.250,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "01.03.2026",
+    "03.05.2019",
+    "12.07.2026",
+    "15.08.2026",
+    "18.500,00",
+    "2.100,00",
+    "30.06.2026",
+    "30.10.2026",
+    "350,00",
+    "900,00"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": null,
+   "note_count": null
+  },
+  {
+   "case": "C11",
+   "kind": "name_in_frage",
+   "variant": "B",
+   "error": null,
+   "payload_chars": 635,
+   "runtime_ms": 155,
+   "needed_facts_present": [
+    "4.250,00"
+   ],
+   "needed_facts_missing": [],
+   "unneeded_facts_total": 10,
+   "unneeded_facts_present": [
+    "15.08.2026",
+    "2.100,00",
+    "30.10.2026"
+   ],
+   "unneeded_facts_in_history_only": [],
+   "sensitive_terms_total": 6,
+   "sensitive_plaintext": [],
+   "note_present": true,
+   "note_count": 4,
+   "unexpected_missing": [],
+   "omission_without_note": false,
+   "note_as_expected": true
+  }
+ ]
+}
