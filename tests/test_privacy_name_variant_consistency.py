@@ -50,7 +50,9 @@ def test_salutation_and_genitive_variants_of_a_known_person_share_one_placeholde
     [
         # ("Mandant Karl Brenner teilt mit ..." blockiert vorbestehend im Restrisiko-Scan als "ort" - unabhaengig von P05, §32)
         "Karl Brenner schreibt, dass Herr Brenner zahlte. Herrn Brenners Quittung fehlt.",
-        "Frau Brenner? Nein: Herrn Karl Brenner gehört das Haus; Brenners Tochter wohnt dort.",
+        # BEWUSST GEAENDERT (§33): vorher "Frau Brenner? Nein: Herrn Karl Brenner gehört das Haus ..." - der Satz sagt, dass
+        # Frau Brenner NICHT die Eigentuemerin ist; seit §33 bleibt sie eine eigene Person (eigener Test dort)
+        "Herrn Karl Brenner gehört das Haus; Brenners Tochter wohnt dort; Herr Brenner vermietet.",
         "Brenner's Anspruch und Hr. Brenner sowie Hrn. Brenner werden geprüft.",
     ],
 )

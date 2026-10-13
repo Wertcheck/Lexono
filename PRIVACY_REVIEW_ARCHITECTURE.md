@@ -3461,3 +3461,160 @@ Personen maskiert. Das ist **gewollt**: Gleiche Nachnamen allein begründen kein
 
 Ein erfolgreicher Test beweist weder vollständige Leckfreiheit noch rechtliche Datenschutzkonformität.
 
+
+## 33. Nach P05: gleicher Nachname, Genitiv gewöhnlicher Wörter, juristische Fundstellen (14.10.2026, Ausgang `6dac5c5`)
+
+Nur synthetische Daten, kein externer Modellaufruf. Stufe B und Stufe C bleiben gesperrt. Eine `AGENTS.md` existiert
+nicht; maßgeblich sind `CLAUDE.md` und `.agentic/`.
+
+### 33.1 Ausgangslage (über das echte Gateway reproduziert)
+
+| Risiko | Befund | Ursache | neu durch P05? |
+|---|---|---|---|
+| A gleicher Nachname | Mandant „Karl Brenner“: „Seine Nachbarin Frau Brenner ist nicht verwandt“ → `Frau [MANDANT_01]` | Nachnamen-Ergänzung bekannter Namen („Brenner“) ordnet jede Anrede + Nachname dem Mandanten zu, unabhängig vom Geschlecht | nein, vorbestehend |
+| B Genitiv | Mandant „Peter Lange“: „Langes Zögern“ → `[MANDANT_01]s Zögern`; zusätzlich „Peter Langes Anspruch“ → `[PERSON_01]` statt `[MANDANT_01]` | NER-Fehltreffer „Langes“ + P05-Verankerung; im P05-Code zählte der Treffer sich selbst als Namensträger | ja (beides P05) |
+| B' Adjektiv | Mandantin „Ute Groß“: „Großes Interesse“ → `[MANDANT_01]es Interesse` | bekannte Namen werden ohne Wortgrenze gesucht (für Genitiv und Komposita gewollt) | nein |
+| C Fundstellen | „BGH, Urt. v. … – VIII ZR 1/21“ → `BGH, [PERSON_01]. v. … – [PERSON_02] ZR 1/21`; „BVerfG“ als Ort | NER-Fehltreffer auf Abkürzungen und römische Senatsnummern | nein |
+
+### 33.2 Korrektur (`app/privacy/detectors.py`, alles vor der Überlappungsauflösung in `detect_all`)
+
+**A – gleicher Nachname, andere Person:**
+- Steht vor dem bloßen Nachnamen eine Anrede, deren Geschlecht dem bekannten Vollnamen **widerspricht**, wird der
+  Treffer eine eigene Person: eigener Platzhalter, weiterhin maskiert.
+- Belege für das Geschlecht des Vollnamens: Anrede oder Rollenwort direkt davor im Text, dazu eine kleine Liste
+  eindeutiger Vornamen.
+- Mehrdeutige Vornamen (Andrea, Simone) sind nicht enthalten. Widersprechen sich die Belege, gilt das Geschlecht als
+  unbekannt.
+- Ohne eindeutigen Beleg bleibt die bisherige Zuordnung. Es wird nie eine Identität **erzeugt**, nur eine unbelegte
+  aufgehoben.
+
+**B – Genitiv:**
+- Ein Genitiv ohne Anrede wird nur verankert, wenn spaCy das Wort als Eigenname (PROPN) taggt: „Brenners“, „Hahns“ ja;
+  „Langes“ (ADJ) nein. Ein nicht verankerter Treffer bleibt eine eigene, maskierte Person.
+- Mehrteilige Genitive („Peter Langes“) werden nur verankert, wenn der Kern **exakt** ein bekannter oder im Text
+  vorhandener Vollname ist. Der Selbstbezug-Fehler ist behoben.
+- Führende Zahlen- und Datumstoken werden von Personentreffern abgeschnitten. Aus „01.03.2026. Langes“ wurde vorher eine
+  Person; das Datum ging verloren, und seit P05 wurde der Rest einer anderen Person zugeordnet.
+- Ein bekannter Name, der Wortanfang eines **Adjektivs** mit reiner Adjektivendung ist („Großes“, „Kurzes“; spaCy ADJ),
+  wird verworfen.
+- Gegenproben: „Brennersche Erbengemeinschaft“, „Brennerhaus“ und „Groß' Anspruch“ bleiben maskiert.
+
+**C – Fundstellen:**
+- Nie als Person, Ort oder Organisation maskiert werden:
+  - eine römische Senatsnummer unmittelbar vor Registerzeichen und Nummer;
+  - Abkürzungen mit Punkt (Urt., Beschl., Vgl., Rn., Az.);
+  - Kürzel der Bundesgerichte.
+- Aktenzeichen im Format der Bundesgerichte (römisch oder arabisch + ZR/ZB/AZR/BvR/StR …) werden jetzt als
+  `AKTENZEICHEN` **erkannt**. Vorher deckte bei römischen Nummern nur der zufällige Personentreffer einen Teil ab.
+- Lesbar bleiben sie nur in diesen Zitierformen:
+  - „<Bundesgericht>, Urt./Beschl. v. <Datum> – <Az>“;
+  - „<Bundesgericht>[,] <römisches Az>“ (Stand §22: „Vgl. BGH VI ZR 123/19“).
+- Auch dann bleiben sie maskiert, wenn in den 120 Zeichen davor oder 80 danach ein Hinweis auf das eigene Verfahren
+  steht: unser, eigene, Mandant, Revision, Beschwerde, eingelegt, anhängig, Az., Zeichen, Verfahren.
+- Aktenzeichen unterer Instanzen, eigene Aktenzeichen, arabische Kurzformen und Reporter-Formen („BGH NJW …
+  (I ZR 23/20)“) bleiben maskiert.
+
+**Leistung:** Die Wortarten werden höchstens einmal je Text ermittelt, das Geschlecht je Vollname zwischengespeichert.
+Das Review hatte gemessen, dass die erste Fassung spaCy einmal je Treffer aufrief: über 100 s bei 20.000 Zeichen ohne
+Satzzeichen. Danach entsprach die Laufzeit HEAD (15,7 s gegenüber 16,0 s). Fällt spaCy aus, wird nichts verworfen und
+nichts verankert; das ist die sichere Richtung.
+
+### 33.3 Tests
+
+`tests/test_privacy_identity_genitive_citations.py` (synthetisch; vor dem Fix 13 von 32 rot, die Gegenproben schon
+vorher grün):
+- A positiv/negativ: andere Person mit gleichem Nachnamen, gleiche Anrede, Gegner-Kategorie, unbekanntes Geschlecht,
+  mehrdeutiger Vorname, widersprüchliche Belege.
+- B: Adjektive („Langes Zögern“, „Langes Warten“, „Großes Interesse“, „Kurzes Zögern“), echte Genitive, Ableitungen und
+  Komposita, Datum im Namenstreffer.
+- C: lesbare Bundes-Fundstellen; Namen neben Fundstellen maskiert; eigene, unterinstanzliche und Kurzform-Aktenzeichen
+  maskiert; alle Review-Reproduktionen.
+- Wortarten höchstens einmal je Text.
+- Leck-Prüfung der Antwort bei getrennter Person.
+- **End-to-End über den echten Chat-Pfad** mit Payload vor dem Cloud-Aufruf.
+
+Bewusst geändert ist ein P05-Test: „Frau Brenner? Nein: Herrn Karl Brenner gehört das Haus“ erwartete die Zuordnung zum
+Mandanten, obwohl der Satz das Gegenteil sagt.
+
+### 33.4 Benchmark vorher/nachher (unveränderte Fälle und Regeln, gleicher Datensatz-Hash)
+
+| Kennzahl | vorher (`6dac5c5`) | nachher |
+|---|---|---|
+| geschützte Werte | 80/88 | 80/88 |
+| Klartext im Payload | 8 (alle bekannte Grenzen) | 8 (unverändert) |
+| **Fehlalarme** | **10** | **7** |
+| **Fakten erhalten** | **66/68** | **67/68** („VIII ZR 1/21“) |
+| Platzhalterkonsistenz | 2/2 | 2/2 |
+| unnötige / fehlende Blockaden, Fehler | 0 / 0 / 0 | 0 / 0 / 0 |
+| PERSON Recall / Precision / F1 | 0,895 / 0,794 / 0,841 | 0,895 / 0,844 / 0,868 |
+| ORT Recall / Precision / F1 | 0,667 / 0,571 / 0,615 | 0,667 / 0,667 / 0,667 |
+| End-to-End | 7/7, 0 Lecks | 7/7, 0 Lecks |
+
+Geändert haben sich nur P16 (Fundstelle) und I02 („Az.“). Auf den Probesätzen beider Reviews ist kein Fall schlechter als
+HEAD. Zwölf Fälle, die auf HEAD Aktenzeichen im Klartext sendeten, sind jetzt maskiert.
+
+### 33.5 Unabhängige Reviews
+
+**Review 1** fand drei Schwächen der ersten Fassung, alle behoben und als Regressionstests abgesichert:
+- zwei neue Lecks (eigene Bundesverfahrens-Aktenzeichen, römische Aktenzeichen nach „Az.“);
+- quadratische Laufzeit;
+- Geschlechtsfehler bei mehrdeutigen Vornamen.
+
+**Review 2** fand zwei weitere Punkte, ebenfalls behoben und getestet:
+- ein neues Leck: arabische Kurzform „BAG 2 AZR 55/25“;
+- ein durch Abkürzungen abgeschnittenes Hinweisfenster.
+
+Ohne neue Exposition geprüft wurden das Abschneiden von Zahlen-Token (IDs, Geburtsdaten), Namen und Adjektive sowie die
+Fail-Closed-Richtung bei spaCy-Ausfall.
+
+### 33.6 Bewertung und Grenzen
+
+**Datenschutz – verbessert:**
+- Kein neues Klartextleck auf Benchmark und Review-Probesätzen.
+- Mehrere vorbestehende Aktenzeichen-Lecks sind geschlossen.
+- Eine unbelegte Identitätsgleichsetzung („Frau Brenner“ = Mandant) wird bei widersprechendem Geschlecht aufgehoben.
+- Leck-Prüfung, Restrisiko-Scan und Fail-Closed sind unverändert.
+
+**Juristische Inhaltsqualität – verbessert:**
+- Bundes-Fundstellen bleiben lesbar.
+- „Großes Interesse“ und „Langes Zögern“ werden nicht mehr dem Mandanten zugeordnet.
+- Fristdaten in Namenstreffern bleiben lesbar.
+- Fehlalarme 10 → 7, Fakten 66 → 67 von 68.
+
+**Bewusste Grenzen bzw. vorbestehend:**
+- **Zitierform ohne Hinweiswort bleibt lesbar** (z. B. „Termin BGH VIII ZR 99/25“, wie schon vor §33). Eigene
+  Bundesverfahren in reiner Zitierform sind damit nicht sicher erkennbar.
+- Reporter-Formen sind konservativ maskiert.
+- „Langes“ bleibt als NER-Fehltreffer eine eigene, maskierte Person (`[PERSON_01] Zögern`), statt lesbar zu sein.
+- Ohne Geschlechtsbeleg bleibt „Frau Brenner“ dem Mandanten zugeordnet.
+- **Vorbestehende Fehlblockaden** im Restrisiko-Scan:
+  - „Herr Peter Lange rügt Feuchtigkeit seit …“ blockiert („person“);
+  - „Mandant Karl Brenner teilt mit …“ blockiert („ort“, §32).
+- **Vorbestehender Absturz (Review):** Ein bekannter Name, der Teil eines internen Markers ist (z. B. Mandant „Alt“),
+  lässt `prepare_request` fail-closed abbrechen. Kein Leck, aber jede Anfrage dieses Mandanten wird abgelehnt.
+- Kein Beweis vollständiger Leckfreiheit und keine rechtliche Konformität.
+
+### 33.7 QA
+
+| Prüfung | Status |
+|---|---|
+| Neue Regressionstests (`test_privacy_identity_genitive_citations.py`, 49) und P05-Tests | PASS |
+| Privacy- und Benchmark-Tests (1555) | PASS |
+| Volle Testsuite: 4400 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
+| Benchmark vorher/nachher (33.4) | PASS |
+| Zwei unabhängige Reviews, alle Befunde behoben | PASS |
+| Build und Installation (vorher geprüft: 8,2 GB frei) | PASS |
+| Installierter Build, Fall 27 (Akte mit Mandant „Quirin Zabelhuber“, Anhang mit „Frau Zabelhuber … nicht verwandt“, „Großes Interesse“, „BGH, Urt. v. … – VIII ZR 1/21“) | PASS |
+| Installierter Build, Fall 20 (Regression) | PASS |
+| Normale Instanz wiederhergestellt | PASS |
+| Vollständige Leckfreiheit, rechtliche Konformität | NICHT VERIFIZIERT |
+
+**Fall 27, abgefangene Payload:** „Herr [MANDANT_01] klagt seit 02.03.2026 auf Minderung von 940,00 EUR. Seine
+Nachbarin Frau [PERSON_01] ist nicht verwandt und Zeugin. [PERSON_02] Interesse an einer Einigung besteht. Vgl. BGH, Urt.
+v. 12.10.2022 – VIII ZR 1/21; Widerspruch bis 30.04.2026.“
+
+**Negativbefund aus dem ersten Lauf (Prüfskript):** Die erste Fassung erwartete „Großes“ lesbar. In dieser Akte heißt
+aber niemand „Groß“; die Maskierung als eigene Person ist ein vorbestehender NER-Fehltreffer. Die §33-Regel betrifft nur
+Kollisionen mit bekannten Namen. Die Prüfung wurde auf das eigentliche Kriterium („nicht dem Mandanten zugeordnet“)
+korrigiert.
+

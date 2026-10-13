@@ -84,8 +84,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Benchmark `benchmarks/chat_scope_v1` (§30): Informationsverfügbarkeit offline gemessen; Antwortqualität erst nach
   freigegebenem Live-Lauf. Entscheidungsvorlage Editor/Neugenerierung (Optionen O1–O5) in §30.4, offen.
   Adversarialer Pseudonymisierungs-Benchmark `benchmarks/pseudonymization_v1` (§31): Recall/Precision je Typ,
-  Stilfeld-Lücke behoben; P05 (Platzhalterkonsistenz bei Anrede/Genitiv) behoben (§32, Konsistenz 2/2); offen:
-  Fundstellen-Übermaskierung, OCR-Schreibweisen, Nachnamen-Zuordnung anderer Familienmitglieder (vorbestehend).
+  Stilfeld-Lücke behoben; P05 (Platzhalterkonsistenz bei Anrede/Genitiv) behoben (§32, Konsistenz 2/2);
+  §33: andere Person mit gleichem Nachnamen bei widersprechendem Geschlecht getrennt, Adjektive nicht mehr dem Mandanten
+  zugeordnet, Bundes-Fundstellen lesbar und Bundes-Aktenzeichen sonst erkannt (Fehlalarme 10 -> 7). Offen:
+  OCR-Schreibweisen, eigene Bundesverfahren in reiner Zitierform, vorbestehende Restrisiko-Fehlblockaden,
+  Absturz bei Mandantennamen, die Teil eines internen Markers sind (z. B. "Alt").
 - **Abhängigkeiten:** P1 (Register).
 - **Abnahmekriterien:** Für jede Tabelle mit personenbezogenen Daten ist eine Löschregel definiert und per Test belegt;
   aktenübergreifender Zugriff auf Entscheidungen ist per Test ausgeschlossen.

@@ -961,7 +961,11 @@ def detect_all(
                 skip_categories=skip_categories, ner_span_filter=ner_span_filter,
             )
         )
-    all_spans = _anchor_person_variants(all_spans, known_entities)
+    analysis = _TextAnalysis(text)  # §33: Wortarten hoechstens einmal je Text
+    all_spans = _drop_known_name_in_ordinary_adjective(analysis, all_spans, known_entities)
+    all_spans = _separate_conflicting_surname_aliases(analysis, all_spans, known_entities)
+    all_spans = _anchor_person_variants(all_spans, known_entities, analysis=analysis)
+    all_spans = _handle_citations(text, all_spans)
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
 
@@ -1001,8 +1005,9 @@ def _surname_owners(spans: list[DetectedSpan], known_entities: dict[str, list[st
 
 
 def _anchor_person_variants(
-    spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None
+    spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None, *, analysis: "_TextAnalysis | None" = None
 ) -> list[DetectedSpan]:
+    analysis = analysis or _TextAnalysis("")
     owners = _surname_owners(spans, known_entities)
     # bekannter Name (kleingeschrieben) -> Kategorie, nur wenn eindeutig genau EINER Kategorie zugeordnet
     known_category: dict[str, set[str]] = {}
@@ -1017,12 +1022,28 @@ def _anchor_person_variants(
             return len(known_category[key]) == 1 and len(owners.get(name.split()[-1].lower(), ())) <= 1
         return len(owners.get(name.split()[-1].lower(), ())) == 1
 
+    def is_own_name(value: str) -> bool:
+        """Ist die (Genitiv-)Form selbst ein Name? - ohne den Treffer selbst als Namenstraeger zu zaehlen (§33: "Peter
+        Langes" stand sonst als eigener Vollname in `owners` und verhinderte die Verankerung auf "Peter Lange")."""
+        if value.lower() in known_category:
+            return True
+        return bool(owners.get(value.split()[-1].lower(), set()) - {value.lower()})
+
     result: list[DetectedSpan] = []
     for span in spans:
         if span.category != "person":
             result.append(span)
             continue
         start, end, value = span.start, span.end, span.value
+        # §33: fuehrende Zahlen-/Datumstoken gehoeren nicht zum Namen ("01.03.2026. Langes" - die NER zog das Datum davor
+        # in den Personentreffer; Frist ging verloren, und der Rest wurde einer anderen Person zugeordnet). Nur Verkleinerung.
+        while True:
+            lead = re.match(r"[\d.,:/-]+\s+", value)
+            if not lead or not value[lead.end():].strip():
+                break
+            start, value = start + lead.end(), value[lead.end():]
+        if (start, value) != (span.start, span.value):
+            span = DetectedSpan(category=span.category, start=start, end=end, value=value)
         words = value.split()
         # fuehrende Anrede abtrennen, wenn der Rest eindeutig verankert ist ("Herrn Brenner", "Herrn Karl Brenner")
         if len(words) >= 2 and words[0].lower() in _VARIANT_SALUTATIONS:
@@ -1030,7 +1051,7 @@ def _anchor_person_variants(
             rest = value[offset:]
             core_rest = rest
             for suffix in _GENITIVE_SUFFIXES:
-                if rest.endswith(suffix) and anchored(rest[: -len(suffix)]) and not anchored(rest):
+                if rest.endswith(suffix) and anchored(rest[: -len(suffix)]) and not is_own_name(rest):
                     core_rest = rest[: -len(suffix)]
                     break
             if anchored(core_rest):
@@ -1038,17 +1059,24 @@ def _anchor_person_variants(
         # Genitiv-s: der ersetzte Bereich behaelt das "s" (kein "[X]s"-Rest, den der Restrisiko-Scan als Ort las), die
         # Identitaet wird ueber den verankerten Kern zugeordnet
         core = value
+        salutation_cut = start != span.start
         if " " not in value:
             for suffix in _GENITIVE_SUFFIXES:
                 if value.endswith(suffix) and len(value) - len(suffix) >= 3:
                     candidate = value[: -len(suffix)]
-                    if anchored(candidate) and not anchored(value):
+                    # §33: ohne Anrede nur ein Eigenname ("Brenners Anspruch": PROPN), kein Adjektiv ("Langes Zoegern": ADJ)
+                    if (anchored(candidate) and not is_own_name(value)
+                            and (salutation_cut or analysis.tag_at(span.start + span.value.rfind(value)) == "PROPN")):
                         core = candidate
                     break
         elif " " in value:
             for suffix in _GENITIVE_SUFFIXES:
-                if value.endswith(suffix) and anchored(value[: -len(suffix)]) and not anchored(value):
-                    core = value[: -len(suffix)]
+                candidate = value[: -len(suffix)]
+                # §33: mehrteiliger Kern nur, wenn er EXAKT ein bekannter oder im Text vorhandener Vollname ist ("Peter Langes" ->
+                # "Peter Lange"); ein Nachname allein genuegt nicht ("01.03.2026. Langes" wurde sonst verankert)
+                exact = candidate.lower() in known_category or candidate.lower() in owners.get(candidate.split()[-1].lower(), set())
+                if value.endswith(suffix) and exact and anchored(candidate) and not is_own_name(value):
+                    core = candidate
                     break
         if (start, core) == (span.start, span.value):
             result.append(span)
@@ -1058,7 +1086,220 @@ def _anchor_person_variants(
             continue
         categories = known_category.get(core.lower(), set())
         category = next(iter(categories)) if len(categories) == 1 else span.category
+        # §33: Anrede, deren Geschlecht dem bekannten Vollnamen widerspricht ("Frau Brenner" bei "Karl Brenner") -> eigene
+        # Person, nicht der bekannte Name (weiterhin maskiert)
+        if category != span.category and _salutation_conflicts(analysis, span.start, core, category, known_entities):
+            category = span.category
         result.append(DetectedSpan(category=category, start=start, end=end, value=core))
+    return result
+
+
+# --- Gleicher Nachname, andere Person (§33) -------------------------------------------------------------------------------
+# ECHTER FUND: die Nachnamen-Ergaenzung der bekannten Namen (RuleBasedLocalAIProvider._build_known_entities: "Karl Brenner"
+# -> zusaetzlich "Brenner") ordnete JEDE Anrede+Nachname dem Mandanten zu - auch "Frau Brenner", ausdruecklich eine andere
+# Person. Abhilfe: steht vor dem blossen Nachnamen eine Anrede, deren Geschlecht dem bekannten Vollnamen WIDERSPRICHT, wird
+# der Treffer eine eigene Person (bleibt maskiert, eigener Platzhalter). Geschlecht des Vollnamens: Anrede/Rollenwort
+# unmittelbar vor dem Vollnamen im Text und eine kleine Liste eindeutiger Vornamen; widersprechen sich die Belege, gilt das
+# Geschlecht als unbekannt. Ohne eindeutigen Beleg bleibt die bisherige Zuordnung (dokumentierte Grenze) - es wird nie eine
+# Identitaet ERZEUGT, nur eine unbelegte aufgehoben.
+_SALUTATION_GENDER = {"herr": "m", "herrn": "m", "hr.": "m", "hrn.": "m", "frau": "f", "fr.": "f"}
+_ROLE_GENDER_BEFORE_NAME = {
+    "mandant": "m", "mandantin": "f", "kläger": "m", "klägerin": "f", "beklagter": "m", "beklagte": "f",
+    "zeuge": "m", "zeugin": "f", "mieter": "m", "mieterin": "f", "vermieter": "m", "vermieterin": "f",
+}
+# Nur eindeutige Vornamen (Review §33: "Andrea", "Simone" sind je nach Sprache maennlich oder weiblich - nicht enthalten)
+_MALE_FIRST_NAMES = frozenset(
+    "karl peter hans klaus michael thomas andreas stefan stephan markus frank uwe jürgen günter gerhard wolfgang dieter "
+    "horst bernd werner heinz manfred rolf jan jens lars tobias florian sebastian alexander christian daniel martin "
+    "matthias max moritz paul felix lukas leon jonas tim tom david simon philipp benjamin johannes georg friedrich "
+    "wilhelm heinrich otto ernst walter kurt gernot quirin dietmar ralf olaf sven björn holger detlef helmut".split()
+)
+_FEMALE_FIRST_NAMES = frozenset(
+    "anna maria petra sabine claudia susanne monika ursula renate brigitte ilse ute eva julia laura lena lea sarah "
+    "sophie katharina christina stefanie nicole anja kerstin silke heike birgit karin gabriele ingrid helga gertrud "
+    "elisabeth margarete henrike wiebke brunhilde theda erika hannah emma mia lina marie johanna franziska miriam "
+    "carina tanja sandra melanie jessica nina lisa kathrin martina barbara christine angelika doris".split()
+)
+_SALUTATION_BEFORE = re.compile(r"(?:^|[\s(\[,;:])(Herrn?|Hrn?\.|Frau|Fr\.)\s+(?:(?:Dr|Prof)\.\s+)*$", re.IGNORECASE)
+_WORD_BEFORE = re.compile(r"(\w+)\s+$")
+
+
+class _TextAnalysis:
+    """Einmalige, lazy Analyse eines Textes fuer die §33-Regeln (Review: spaCy lief vorher einmal JE Treffer - bei einem
+    20k-Zeichen-Dokument ohne Satzzeichen ueber 100 s). Wortarten werden hoechstens einmal je Text ermittelt, das Geschlecht
+    je Vollname zwischengespeichert. Faellt spaCy aus, liefert `tag_at` None (sichere Richtung: nichts wird verworfen oder
+    verankert)."""
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self._tags: list[tuple[int, int, str]] | None = None
+        self._failed = False
+        self._gender: dict[str, str | None] = {}
+
+    def tag_at(self, offset: int) -> str | None:
+        if self._tags is None and not self._failed:
+            try:
+                from app.privacy.presidio_ner import get_pos_tags  # lokal: presidio_ner importiert dieses Modul
+
+                self._tags = sorted((s, e, tag) for (s, e), tag in get_pos_tags(self.text).items())
+            except Exception:  # noqa: BLE001 - sichere Richtung, siehe Docstring
+                self._failed = True
+        for start, end, tag in self._tags or ():
+            if start <= offset < end:
+                return tag
+            if start > offset:
+                break
+        return None
+
+    def salutation_gender(self, start: int) -> str | None:
+        match = _SALUTATION_BEFORE.search(self.text[max(0, start - 40) : start])
+        return _SALUTATION_GENDER.get(match.group(1).lower()) if match else None
+
+    def full_name_gender(self, full_name: str) -> str | None:
+        key = full_name.lower()
+        if key not in self._gender:
+            self._gender[key] = self._compute_gender(full_name)
+        return self._gender[key]
+
+    def _compute_gender(self, full_name: str) -> str | None:
+        genders: set[str] = set()
+        for match in re.finditer(re.escape(full_name), self.text, re.IGNORECASE):
+            gender = self.salutation_gender(match.start())
+            if gender is None:
+                word = _WORD_BEFORE.search(self.text[max(0, match.start() - 30) : match.start()])
+                gender = _ROLE_GENDER_BEFORE_NAME.get(word.group(1).lower()) if word else None
+            if gender:
+                genders.add(gender)
+        first = full_name.split()[0].lower()
+        if first in _MALE_FIRST_NAMES:
+            genders.add("m")
+        elif first in _FEMALE_FIRST_NAMES:
+            genders.add("f")
+        return next(iter(genders)) if len(genders) == 1 else None
+
+
+def _salutation_conflicts(
+    analysis: _TextAnalysis, span_start: int, surname: str, category: str, known_entities: dict[str, list[str]] | None
+) -> bool:
+    text = analysis.text
+    if not text:
+        return False
+    gender = analysis.salutation_gender(span_start)
+    if gender is None:
+        # Anrede innerhalb des (ungekuerzten) Treffers selbst ("Frau Brenner")
+        head = text[span_start : span_start + 8].split()
+        gender = _SALUTATION_GENDER.get(head[0].lower()) if head else None
+    if gender is None:
+        return False
+    owners = [v for v in (known_entities or {}).get(category, []) if len(v.split()) >= 2
+              and v.split()[-1].lower() == surname.lower()]
+    if len(owners) != 1:
+        return False
+    owner_gender = analysis.full_name_gender(owners[0])
+    return owner_gender is not None and owner_gender != gender
+
+
+def _separate_conflicting_surname_aliases(
+    analysis: _TextAnalysis, spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None
+) -> list[DetectedSpan]:
+    if not known_entities:
+        return spans
+    result: list[DetectedSpan] = []
+    for span in spans:
+        if (span.category in known_entities and len(span.value.split()) == 1
+                and analysis.salutation_gender(span.start) is not None
+                and _salutation_conflicts(analysis, span.start, span.value, span.category, known_entities)):
+            result.append(DetectedSpan(category="person", start=span.start, end=span.end, value=span.value))
+        else:
+            result.append(span)
+    return result
+
+
+# §33: bekannte Namen werden bewusst OHNE Wortgrenze gesucht (Genitiv "Brenners", Komposita "Brennerhaus" bleiben so
+# maskiert). Ein Nachname, der zugleich ein Adjektiv ist ("Groß", "Kurz", "Lange"), traf dadurch gewoehnliche Woerter:
+# "Großes Interesse" -> "[MANDANT_01]es Interesse". Verworfen wird ein solcher Treffer NUR, wenn er Anfang eines laengeren
+# Wortes mit reiner Adjektivendung ist UND spaCy dieses Wort als Adjektiv taggt. Ableitungen vom Namen ("Brennersche Erben"),
+# Genitive und Komposita bleiben maskiert.
+_ADJECTIVE_ENDINGS = ("e", "es", "er", "en", "em")
+
+
+def _drop_known_name_in_ordinary_adjective(
+    analysis: _TextAnalysis, spans: list[DetectedSpan], known_entities: dict[str, list[str]] | None
+) -> list[DetectedSpan]:
+    if not known_entities:
+        return spans
+    result: list[DetectedSpan] = []
+    for span in spans:
+        if span.category in known_entities and len(span.value.split()) == 1:
+            tail = re.match(r"[\wÄÖÜäöüß]+", analysis.text[span.end :])
+            suffix = tail.group(0) if tail else ""
+            if suffix.lower() in _ADJECTIVE_ENDINGS and analysis.tag_at(span.start) == "ADJ":
+                continue
+        result.append(span)
+    return result
+
+
+# --- Juristische Fundstellen (§33) ----------------------------------------------------------------------------------------
+# ECHTER FUND (Benchmark pseudonymization_v1, P16): "BGH, Urt. v. 12.10.2022 - VIII ZR 1/21" wurde zu "BGH, [PERSON_01]. v.
+# ... - [PERSON_02] ZR 1/21"; "BVerfG" als Ort maskiert.
+# (a) Nie als Person/Ort/Organisation: roemische Senatsnummer UNMITTELBAR vor Registerzeichen und Nummer, Abkuerzungen mit
+#     Punkt ("Urt.", "Beschl.", "Vgl.", "Rn.", "Az."), Kuerzel der Bundesgerichte.
+# (b) Aktenzeichen im Format der Bundesgerichte - auch mit roemischer Senatsnummer ("VIII ZR 99/25") - werden als
+#     Aktenzeichen ERKANNT und maskiert (vorher deckte nur der zufaellige Personentreffer auf "VIII" einen Teil ab). Lesbar
+#     bleiben sie NUR in der kanonischen Zitierform "<Bundesgericht>, Urt./Beschl. v. <Datum> - <Az>" und nie, wenn im Satz
+#     davor ein Hinweis auf das eigene Verfahren steht (Review §33: "Unsere Verfassungsbeschwerde beim BVerfG, 1 BvR 77/25"
+#     ging sonst im Klartext hinaus). Aktenzeichen unterer Instanzen und eigene Aktenzeichen bleiben immer maskiert.
+_FEDERAL_COURTS = frozenset({"BGH", "BVerfG", "BAG", "BFH", "BSG", "BVerwG", "BPatG", "EuGH", "EGMR", "BGHZ", "BGHSt"})
+_LEGAL_ABBREVIATIONS = frozenset({"urt", "beschl", "vgl", "rn", "az", "hs", "abs", "bgbl", "anm"})
+_FEDERAL_REGISTER = r"(?:ZR|ZB|ZA|AZR|ABR|AZB|BvR|BvL|BvF|BvE|StR|KZR|KVR)"
+_ROMAN_SENATE_AFTER = re.compile(r"\s+" + _FEDERAL_REGISTER + r"\s+\d{1,5}/\d{2,4}\b")
+_FEDERAL_FILE_NUMBER = re.compile(r"(?<![\w/])(?:[IVXL]{1,6}|\d{1,2})\s+" + _FEDERAL_REGISTER + r"\s+\d{1,5}/\d{2,4}\b")
+# Zitierformen: "<Bundesgericht>, Urt./Beschl. v. <Datum> - <Az>" und "<Bundesgericht>[,] <Az>" (unmittelbar; frueherer
+# Stand §22: "Vgl. BGH VI ZR 123/19, NJW 2020, 2345" bleibt lesbar). Reporter-Formen ("BGH NJW 2023, 123 (I ZR 23/20)")
+# bleiben konservativ maskiert.
+_COURT_ALTERNATIVES = r"\b(?:" + "|".join(sorted(_FEDERAL_COURTS)) + r")"
+_CITATION_WITH_DATE_BEFORE = re.compile(
+    _COURT_ALTERNATIVES + r",?\s+(?:Teil-|Versäumnis-|End-)?(?:Urt|Beschl|Urteil|Beschluss)\.?"
+    r"\s+v(?:om|\.)\s+\d{1,2}\.\s?\d{1,2}\.\s?\d{4}\s*[-–—,]\s*$"
+)
+# Kurzform "<Bundesgericht>[,] <Az>" nur mit roemischer Senatsnummer (Stand vor §33, §22: "Vgl. BGH VI ZR 123/19");
+# arabische Kurzformen ("BAG 2 AZR 55/25") blieben vorher maskiert und bleiben es (Review §33)
+_CITATION_SHORT_BEFORE = re.compile(_COURT_ALTERNATIVES + r",?\s*$")
+_OWN_PROCEEDING_HINT = re.compile(
+    r"\b(?:unser\w*|eigene\w*|Mandant\w*|Revision|Beschwerde|Verfassungsbeschwerde|eingelegt|anhängig|anhaengig|"
+    r"Az|Aktenzeichen|Zeichen|Gz|Geschäftszeichen|Verfahren)\b",
+    re.IGNORECASE,
+)
+
+
+def _handle_citations(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    # (b) Bundes-Aktenzeichen erkennen (zusaetzlich zu bestehenden Treffern; Ueberlappungen loest _resolve_overlaps)
+    added = [DetectedSpan(category="aktenzeichen", start=m.start(), end=m.end(), value=m.group(0))
+             for m in _FEDERAL_FILE_NUMBER.finditer(text)]
+    result: list[DetectedSpan] = []
+    for span in [*spans, *added]:
+        value = span.value.strip()
+        if span.category in ("person", "ort", "organisation"):
+            if re.fullmatch(r"[IVXL]{1,6}", value) and _ROMAN_SENATE_AFTER.match(text, span.end):
+                continue
+            if value.lower() in _LEGAL_ABBREVIATIONS and text[span.end : span.end + 1] == ".":
+                continue
+            if value in _FEDERAL_COURTS:
+                continue
+        if span.category in ("aktenzeichen", "kennung") and _FEDERAL_FILE_NUMBER.fullmatch(value):
+            window_start = max(0, span.start - 80)
+            before = text[window_start : span.start]
+            citation = _CITATION_WITH_DATE_BEFORE.search(before)
+            if citation is None and re.match(r"[IVXL]", value):
+                citation = _CITATION_SHORT_BEFORE.search(before)
+            if citation:
+                court_pos = window_start + citation.start()
+                # Hinweis auf das eigene Verfahren in den 120 Zeichen davor oder 80 danach - bewusst OHNE Schnitt an Punkt,
+                # Zeilenumbruch oder Semikolon (Review §33: "vgl.", "z. B.", "Az." schnitten das Fenster sonst ab)
+                context = text[max(0, court_pos - 120) : court_pos] + " " + text[span.end : span.end + 80]
+                if not _OWN_PROCEEDING_HINT.search(context):
+                    continue
+        result.append(span)
     return result
 
 
