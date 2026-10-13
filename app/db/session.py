@@ -41,7 +41,9 @@ _connect_args = (
     else {}
 )
 
-engine = create_engine(_settings.database_url, connect_args=_connect_args)
+# hide_parameters (Datenschutz-Pruefung §27): ein Datenbankfehler schrieb die gespeicherten Werte (Namen, E-Mail-
+# Adressen) als "[parameters: ...]" in Fehlermeldung und Log; die SQL-Anweisung selbst bleibt sichtbar.
+engine = create_engine(_settings.database_url, connect_args=_connect_args, hide_parameters=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

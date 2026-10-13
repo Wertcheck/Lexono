@@ -451,7 +451,7 @@ def test_review_without_api_key_shows_friendly_error(
     assert "error=" in response.headers["location"]
 
 
-@pytest.mark.parametrize("action", ["review", "regenerate", "instructions/apply"])
+@pytest.mark.parametrize("action", ["review", "regenerate", "instructions/apply", "approve"])
 def test_ai_actions_on_a_deleted_matter_redirect_with_a_notice(
     client: TestClient, db_session: Session, seeded: dict, monkeypatch: pytest.MonkeyPatch, action: str
 ) -> None:

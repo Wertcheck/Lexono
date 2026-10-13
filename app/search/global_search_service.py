@@ -115,11 +115,13 @@ class GlobalSearchService:
         results.extend(self._search_law_sections(query, db, limit_per_category))
         try:
             results.extend(self._search_sources(query, db, limit_per_category))
-        except Exception:  # noqa: BLE001 - siehe Kommentar oben
+        except Exception as exc:  # noqa: BLE001 - siehe Kommentar oben
+            # Datenschutz-Pruefung §27: nur der Fehlertyp, kein exc_info -
+            # Fehlertext/Traceback koennte den Suchbegriff enthalten.
             logger.warning(
-                "Rechtsquellen-Suche (Command Bar) fehlgeschlagen, "
+                "Rechtsquellen-Suche (Command Bar) fehlgeschlagen (%s), "
                 "liefere nur lokale Treffer weiter",
-                exc_info=True,
+                type(exc).__name__,
             )
         return results
 
@@ -196,6 +198,8 @@ class GlobalSearchService:
             .filter(
                 Document.original_filename.ilike(like),
                 Document.deleted_at.is_(None),
+                # Datenschutz-Pruefung §27: keine Treffer aus geloeschten Akten.
+                Matter.deleted_at.is_(None),
             )
             .order_by(Document.created_at.desc())
             .limit(limit)
@@ -236,7 +240,13 @@ class GlobalSearchService:
         like = f"%{query}%"
         rows = (
             db.query(Message)
-            .filter(or_(Message.sender.ilike(like), Message.subject.ilike(like)))
+            .outerjoin(Matter, Message.matter_id == Matter.id)
+            .filter(
+                or_(Message.sender.ilike(like), Message.subject.ilike(like)),
+                # Datenschutz-Pruefung §27: Nachrichten geloeschter Akten
+                # ausblenden, noch nicht zugeordnete (matter_id NULL) behalten.
+                or_(Message.matter_id.is_(None), Matter.deleted_at.is_(None)),
+            )
             .order_by(Message.created_at.desc())
             .limit(limit)
             .all()

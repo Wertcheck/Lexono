@@ -69,7 +69,7 @@ from sqlalchemy.orm import Session
 
 import logging
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
-from app.ai_providers.local_ai_provider import LocalAIProvider
+from app.ai_providers.local_ai_provider import LocalAIProvider, foreign_matter_names, mentions_any_name
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
 from app.documents.readiness import NOT_INCLUDED, assess_documents
@@ -1737,10 +1737,14 @@ class DraftingService:
 
         knowledge_items_used: list[KnowledgeItemReference] = []
         knowledge_texts: list[str] = []
+        foreign = foreign_matter_names(matter, db)
         for result in results:
             item = db.query(KnowledgeItem).filter_by(id=result.entity_id).first()
             if item is None:
                 continue  # verwaister Embedding-Eintrag - ueberspringen
+            # Aktenisolation (§27): kein Wissenseintrag mit Namen aus einer anderen Akte in diese Cloud-Anfrage
+            if mentions_any_name(f"{item.title} {result.snippet}", foreign):
+                continue
             knowledge_items_used.append(
                 KnowledgeItemReference(knowledge_item_id=item.id, title=item.title)
             )

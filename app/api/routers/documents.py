@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.api.deps import LimitParam, OffsetParam, get_or_404
 from app.api.schemas import DocumentOut
 from app.db.session import get_db
-from app.models import Document
+from app.models import Document, Matter
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -24,7 +25,12 @@ def list_documents(
     # Geloeschte Dokumente (20.09., Soft-Delete, siehe
     # app/documents/lifecycle.py) sind auch ueber die REST-API nicht mehr
     # sichtbar - identisches Verhalten wie ueberall sonst im Produkt.
-    query = db.query(Document).filter(Document.deleted_at.is_(None))
+    # Datenschutz-Pruefung §27: ebenso Dokumente geloeschter Akten
+    # (Dokumente ohne Akte bleiben sichtbar).
+    query = db.query(Document).filter(
+        Document.deleted_at.is_(None),
+        or_(Document.matter_id.is_(None), Document.matter.has(Matter.deleted_at.is_(None))),
+    )
     if matter_id is not None:
         query = query.filter(Document.matter_id == matter_id)
     if classified_type is not None:
@@ -37,6 +43,9 @@ def list_documents(
 @router.get("/{document_id}", response_model=DocumentOut)
 def get_document(document_id: str, db: Session = Depends(get_db)) -> Document:
     document = get_or_404(db, Document, document_id, "Dokument")
-    if document.deleted_at is not None:
+    # Datenschutz-Pruefung §27: Dokument einer geloeschten Akte ebenfalls 404.
+    if document.deleted_at is not None or (
+        document.matter is not None and document.matter.deleted_at is not None
+    ):
         raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
     return document

@@ -69,11 +69,15 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 #### Phase P5: Datenminimierung, Löschung und Mandantentrennung
 - **Ist-Zustand (belegt):** Pseudonym-Zuordnungen nur im Arbeitsspeicher; API-Log speichert nur Hash des Prompts;
   Rückfrage-Entscheidungen werden mit der Unterhaltung gelöscht (unterhaltungsbezogene) bzw. bleiben als Aktendatum;
-  Akten werden weich gelöscht (Aufbewahrung).
+  Akten werden weich gelöscht (Aufbewahrung). Seit 13.10.2026 (`PRIVACY_REVIEW_ARCHITECTURE.md` §27): gelöschte Akten
+  liefern keinen KI-Kontext und sind über Dokumentansicht, Suche und API nicht mehr erreichbar; doppelte Dokumente und
+  Fristen gelöschter Dokumente werden nicht gesendet; Wissenseinträge mit Namen anderer Akten werden nicht gesendet;
+  Lebenszyklus je Datenart in §27.2 dokumentiert.
 - **Offene Risiken:** Kein dokumentiertes Löschkonzept mit Fristen über alle Tabellen (Dokumente, Chats, Entscheidungen,
   Audit); kein Mehr-Kanzlei-Modell (eine Datenbank je Kanzlei – Mandantentrennung nur über Akten).
-- **Maßnahmen:** Lösch- und Aufbewahrungskonzept je Datenkategorie (aus P1); Löschlauf mit Nachweis; Prüfung, ob
-  Entscheidungen beim endgültigen Löschen einer Akte vollständig entfernt werden.
+- **Maßnahmen:** Lösch- und Aufbewahrungskonzept je Datenkategorie (aus P1; Vorschlag K1–K9 in §27.5); Löschlauf mit
+  Nachweis; Prüfung, ob Entscheidungen beim endgültigen Löschen einer Akte vollständig entfernt werden; anfragebezogene
+  Dokumentauswahl statt ganzer Akte (Optionen M3–M6 in §27.1, nur mit Qualitätsmessung).
 - **Abhängigkeiten:** P1 (Register).
 - **Abnahmekriterien:** Für jede Tabelle mit personenbezogenen Daten ist eine Löschregel definiert und per Test belegt;
   aktenübergreifender Zugriff auf Entscheidungen ist per Test ausgeschlossen.

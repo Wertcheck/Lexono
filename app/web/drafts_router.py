@@ -679,6 +679,12 @@ def approve_draft(
     Kein automatischer Versand, Grundregel unverändert eingehalten.
     NUR Anwalt/Admin (siehe Rechte-Matrix)."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    # Review §27: auch die Freigabe (-> Postausgang) fuer einen Entwurf einer geloeschten Akte verweigern
+    if draft.matter is not None and draft.matter.deleted_at is not None:
+        return RedirectResponse(
+            url=f"/dashboard/drafts/{draft.id}?error=Die Akte wurde gelöscht - keine Freigabe mehr möglich.",
+            status_code=303,
+        )
     service.record_feedback(
         draft,
         DraftFeedbackInput(approval_status="approved"),

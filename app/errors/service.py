@@ -196,7 +196,7 @@ class RetryService:
                 entity_id=existing.id,
                 event_type="processing_recovered",
                 actor=actor,
-                details=f"{operation} für {entity_type} {entity_id} nach Wiederholung erfolgreich",
+                details=f"{operation} für {entity_type} {mask_path_like(entity_id)} nach Wiederholung erfolgreich",  # §27
             )
         )
         db.commit()

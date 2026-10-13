@@ -44,6 +44,7 @@ def configure_logging(*, log_level: str = "INFO", log_file_path: str | None = No
       unbegrenztes Wachstum ohne manuelle Pflege.
     """
     global _configured
+    install_access_log_query_filter()
     if _configured:
         return
 
@@ -72,6 +73,26 @@ def configure_logging(*, log_level: str = "INFO", log_file_path: str | None = No
         logging.getLogger(noisy_logger_name).setLevel(logging.WARNING)
 
     _configured = True
+
+
+class StripQueryStringFilter(logging.Filter):
+    """Entfernt die Query-Parameter aus Zeilen des uvicorn-Zugriffsprotokolls (Datenschutz-Pruefung §27).
+
+    Suchbegriffe (`?q=`, `?search=`) enthalten oft Namen; sie landeten bisher im Klartext in `app.log`. Pfad, Methode und
+    Status bleiben fuer den Betrieb erhalten."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) >= 3 and isinstance(args[2], str) and "?" in args[2]:
+            record.args = (*args[:2], args[2].split("?", 1)[0] + "?[entfernt]", *args[3:])
+        return True
+
+
+def install_access_log_query_filter() -> None:
+    """Idempotent; aufgerufen beim Anwendungsstart (lifespan), also nach der Logging-Konfiguration durch uvicorn."""
+    access_logger = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, StripQueryStringFilter) for f in access_logger.filters):
+        access_logger.addFilter(StripQueryStringFilter())
 
 
 def reset_logging_configuration_for_tests() -> None:

@@ -227,10 +227,12 @@ dass alles Notwendige vorbereitet ist.
           dort (Entscheidung 13.10.2026, §26.4; Prüfprotokoll gegen den echten Server, P0-08-Abnahme). TLS allein ist
           kein Nachweis. Die lokale Schlüsselverwaltung wird bis dahin bewusst nicht geändert.
     - [ ] Auftragsverarbeitung/Übermittlung an Anthropic geprüft (AVV, Drittlandbezug)
-    - [ ] Lösch- und Aufbewahrungskonzept inkl. Backups beschlossen (Lexono löscht Akten/Dokumente nur weich; die
-          Löschfrist-Einstellung hat noch keine Wirkung)
+    - [ ] Lösch- und Aufbewahrungskonzept inkl. Backups beschlossen und umgesetzt (PRIVACY_REVIEW_ARCHITECTURE.md
+          §27.5 K1–K9; Lexono löscht Akten/Dokumente nur weich; die Löschfrist-Einstellung hat noch keine Wirkung)
     - [ ] Zugriff auf `C:\ProgramData\Lexono` (Datenbank, Dateien, Protokolle) auf berechtigte Konten beschränkt
-    - [ ] Anweisung zu „Als Wissen übernehmen“ (kanzleiweit sichtbar, nur ohne Mandantenbezug)
+    - [ ] Anweisung zur Wissensbasis (Wissen → Import; eine Schaltfläche „Als Wissen übernehmen“ gibt es nicht):
+          Einträge sind kanzleiweit sichtbar und nur ohne Mandanten-/Personenbezug anzulegen. Einträge mit Namen
+          anderer Akten werden nicht mitgesendet (§27.4), andere Merkmale nicht gefiltert
     - [ ] Bekannte Restrisiken (§§22–26) von der Kanzlei zur Kenntnis genommen
     - [ ] Stufe B ohne offene Datenschutzbefunde abgeschlossen
 

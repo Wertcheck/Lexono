@@ -588,6 +588,9 @@ def matter_document_view(
             Document.id == document_id,
             Document.matter_id == matter_id,
             Document.deleted_at.is_(None),
+            # Datenschutz-Pruefung §27: Dokument einer geloeschten Akte
+            # verhaelt sich wie ein geloeschtes Dokument (404).
+            Document.matter.has(Matter.deleted_at.is_(None)),
         )
         .first()
     )
@@ -664,6 +667,9 @@ def matter_document_page_image(
             Document.id == document_id,
             Document.matter_id == matter_id,
             Document.deleted_at.is_(None),
+            # Datenschutz-Pruefung §27: Dokument einer geloeschten Akte
+            # verhaelt sich wie ein geloeschtes Dokument (404).
+            Document.matter.has(Matter.deleted_at.is_(None)),
         )
         .first()
     )
@@ -699,6 +705,9 @@ def matter_document_download(
             Document.id == document_id,
             Document.matter_id == matter_id,
             Document.deleted_at.is_(None),
+            # Datenschutz-Pruefung §27: Dokument einer geloeschten Akte
+            # verhaelt sich wie ein geloeschtes Dokument (404).
+            Document.matter.has(Matter.deleted_at.is_(None)),
         )
         .first()
     )

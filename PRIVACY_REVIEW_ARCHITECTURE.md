@@ -2460,7 +2460,7 @@ Status: PASS / FAIL / NICHT VERIFIZIERT / OFFEN (Entscheidung ausstehend). Freig
 | Gelöschte Akte in Cloud-Anfragen | Daten einer gelöschten Akte an die Cloud | T: §26.2 Nr. 1 | – | behoben | – | PASS | – |
 | Automatische Löschfrist | Scheinfunktion | T: §26.2 Nr. 5 | Keine automatische Löschung | Konzept (Prompt 35, offen) | Produktverantwortung | PASS (ehrlich beschriftet), Funktion OFFEN | C: Teil des Löschkonzepts |
 | Backups | Unverschlüsselte ZIPs ohne Rotation (`backup/service.py`) | T | Verlust/Diebstahl des Datenträgers | Verschlüsselter Speicherort, Aufbewahrung festlegen | Kanzlei-IT | OFFEN | B: Speicherort festlegen; C: **No-Go** ohne Regel |
-| Mandantentrennung | Kontext einer Akte in einer anderen | T: Chats nutzerbezogen, Kontext aktenbezogen (Tests) | Wissensbasis: „Als Wissen übernehmen“ kopiert einen rekonstruierten Entwurf kanzleiweit (`feedback/service.py`), wird aktenübergreifend gefunden | Nur bewusst und ohne Mandantenbezug übernehmen; Produktentscheidung: Prüfung vor Übernahme | Anwender, Produktverantwortung | OFFEN | C: Anweisung nötig |
+| Mandantentrennung | Kontext einer Akte in einer anderen | T: Chats nutzerbezogen, Kontext aktenbezogen (Tests) | Wissensbasis (Korrektur §27.4: keine Schaltfläche, tatsächlicher Weg ist der manuelle Import; Namen anderer Akten werden seit §27 nicht mehr gesendet): „Als Wissen übernehmen“ kopiert einen rekonstruierten Entwurf kanzleiweit (`feedback/service.py`), wird aktenübergreifend gefunden | Nur bewusst und ohne Mandantenbezug übernehmen; Produktentscheidung: Prüfung vor Übernahme | Anwender, Produktverantwortung | OFFEN | C: Anweisung nötig |
 | Feedback-Lernen | Rückschluss auf Inhalte | T: HMAC mit installationseigenem Schlüssel, nichts an die Cloud | Statistiken werden nie gelöscht | Teil des Löschkonzepts | Produktverantwortung | PASS mit Restrisiko | – |
 | Protokolle | Dateinamen/Pfade, Fehlermeldungen | T: Watcher maskiert (§26.2 Nr. 4), Download gefiltert | Rotierende Logdateien auf dem Rechner ungefiltert; `str(exc)` in Fehlerzeilen; A: Zugriffsprotokoll mit Suchparametern | Zugriff auf das Datenverzeichnis beschränken | Kanzlei-IT | PASS mit Restrisiko | C: Zugriffsschutz nötig |
 | API-Schlüssel auf dem Kanzlei-PC | Missbrauch des Kontos, Kosten | T: `.env` für alle lokalen Benutzer lesbar, keine Rotation (§25.3) | bis zur Gateway-Einrichtung bestehend | **Entscheidung 13.10.2026: Schlüssel später im Gateway; lokale Verwaltung bleibt unverändert** (26.4) | Kanzleileitung | OFFEN (zurückgestellt) | A: vertretbar mit Ausgabenlimit; B: Ausgabenlimit nötig; C: **No-Go** bis Gateway geprüft |
@@ -2559,4 +2559,200 @@ nicht als Ganzes neu gelaufen; die Abdeckung ergibt sich so:
 
 Diese Vorlage behauptet **keine** vollständige Leckfreiheit, **keine** Rechtskonformität und **keine**
 Echtdatenfreigabe.
+
+
+## 27. Datenminimierung, Löschung, Protokolle und Wissensbasis (13.10.2026, Ausgang `47ef827`)
+
+Nur synthetische Daten. Diese Prüfung ist **keine** Freigabe echter Mandantendaten und keine rechtliche Bewertung. Es gelten
+weiter die Pilotstufen aus §26.5: A nur synthetisch nach den Kanzleibestätigungen, B No-Go bis zu den Nachweisen, C No-Go.
+P0-08 (Gateway) bleibt zurückgestellt; die lokale Schlüsselverwaltung ist unverändert.
+
+Drei unabhängige Bestandsanalysen (Cloud-Inhalte je Funktion, Löschlebenszyklus, Protokolle/Wissensbasis) wurden mit
+synthetischen Skripten gegen den echten Code reproduziert; die Befunde unten sind dort belegt.
+
+### 27.1 Datenminimierung: was je KI-Funktion an die Cloud geht
+
+**Ursache für „ganze Akte je Anfrage“:** `LocalAIProvider.prepare_draft_context(matter_id, db)` kennt nur die Akte, nicht
+die Dokumente einer Anfrage. `_build_sachverhalt` nimmt bis zu 30 nicht gelöschte Dokumente mit Text, neueste zuerst, je
+Dokument bis 30 000 Zeichen, zusammen höchstens 90 000. Angehängte Dokumente (`required_document_ids`) dienen nur als Gate
+(blockiert, wenn nicht lesbar), nicht zur Auswahl. Das ist im Code ausdrücklich so beschrieben (`drafting/service.py`).
+
+| Funktion | Sachverhalt | Fristhinweise | Quellen | Weiteres |
+|---|---|---|---|---|
+| Chat (Antwort/Entwurf) | „Akte: Titel“ + alle Aktendokumente als `[Dokumenttyp] Auszug` | alle Fristen außer abgelehnten und Geburts-/Todesdaten | Rechtsrecherche + bis zu 10 freigegebene Wissenseinträge | Nachricht; Verlauf bis 10 Nachrichten/12 000 Zeichen |
+| Dokumentgenerator, Neugenerierung, Anmerkung übernehmen | ganze Akte | wie oben | wie oben | Anweisung; der bisherige Entwurf wird nicht gesendet |
+| Editor-KI-Bearbeitung | ganze Akte | wie oben | wie oben | Anweisung + markierter Text (nicht der übrige Entwurf) |
+| Entwurfsprüfung | nur der Entwurf | keine | nur Quellentitel | Aktendaten nur lokal für die Platzhalter |
+
+Nicht gesendet werden Dateinamen, Upload- und Dokumentdaten sowie das Fälligkeitsdatum einer Frist (nur deren Textstelle);
+der Dokumenttyp wird gesendet. Inhalte anderer Akten wurden im Aktenkontext nicht gefunden (Tests
+`test_context_never_contains_data_from_other_matter`, `test_review_never_touches_other_matter`) – **aber** über die
+Wissensbasis (27.4).
+
+**Behoben (sicher, ohne Sachverhaltsverlust, mit Test):**
+
+| # | Befund (reproduziert) | Fix |
+|---|---|---|
+| M1 | Doppelt hochgeladenes Dokument (gleicher Text) ging zweimal hinaus und nahm anderen Dokumenten Budget | nur das neueste Exemplar senden; alle IDs gelten weiter als einbezogen (keine neue Blockade bei angehängtem Duplikat) |
+| M2 | Frist aus einem gelöschten Dokument ging weiter an die Cloud, obwohl dessen Text nicht mehr gesendet wird | weglassen (wie gelöschtes Dokument, §26-Regel für gelöschte Akten und abgelehnte Fristen) |
+
+**Nicht geändert – Produktentscheidung nötig (Optionen, kein pauschales Kürzen):**
+
+| # | Befund | Option | Risiko |
+|---|---|---|---|
+| M3 | Frage zu einem angehängten Dokument sendet auch alle anderen Aktendokumente | angehängte Dokumente vollständig, übrige nur gekürzt oder nur mit Typ | Fragen, die Dokumente verknüpfen („passt die Rechnung zum Vertrag?“), werden schlechter; Chronologie über Dokumente geht verloren |
+| M4 | Editor-Bearbeitung einer Markierung sendet die ganze Akte | Akte gekürzt, dafür Entwurfsumfeld | schlechtere Formulierung ohne Aktenbezug |
+| M5 | allgemeine Frage in einer Akten-Unterhaltung sendet die Akte | Akte nur bei Aktenbezug | der Aktenbezug ist ohne Inhalt nicht sicher erkennbar (Fund 13.10.2026, `chat/service.py`) – falsche Antworten möglich |
+| M6 | erledigte/stornierte Fristen werden gesendet; Fälligkeitsdatum nicht | Status mitsenden bzw. erledigte weglassen | Verlust der Fristhistorie |
+
+Empfehlung: M3 als erste Stufe (angehängte Dokumente voll, übrige mit Anfang/Ende und markierten Stellen wie Beträge,
+Daten, Fristen), mit A/B-Messung der Antwortqualität auf synthetischen Akten vor einer Umstellung.
+
+### 27.2 Löschung: Lebenszyklus je Datenart (Stand nach diesem Commit)
+
+| Datenart | Löschung | Bleibt physisch | Danach noch erreichbar | Backup/Wiederherstellung | Zugriff |
+|---|---|---|---|---|---|
+| Akte | weich (`deleted_at`) | Datensatz und alle Kinddaten | **jetzt nicht mehr:** Dokumentansicht/-download, globale Suche, REST-API, KI-Kontext (§26). Weiter: Entwürfe (Liste/Detail/Export), Posteingang | im DB-Backup; Wiederherstellung setzt alten Stand zurück | angemeldete Nutzer, CSRF |
+| Mandant | endgültig, nur ohne Akten (auch gelöschte zählen) | Audit-Eintrag mit Name | – | Wiederherstellung bringt ihn zurück | `PERM_CLIENT_DELETE` |
+| Dokument | weich, wiederherstellbar | Datensatz, Datei, Embedding | nicht über Ansicht/Download/Suche/KI | Dateien nur aus `intake`/`mail_attachments` gesichert | angemeldete Nutzer |
+| Unterhaltung | endgültig mit Nachrichten und Rückfrage-Entscheidungen | Anhänge (Dokument + Datei) bleiben in der Akte | Anhänge über Akte, Suche, Download (gewollt, Test) | `chat_uploads/` **nicht** im Backup | nur eigene Unterhaltungen |
+| Entwurf | kein Löschen (nur Ablehnen/Verwerfen) | alles | Listen, Detail, Exporte, API (außer gelöschter Akten) | im DB-Backup | angemeldete Nutzer |
+| Embedding | nie | Vektor | nicht abrufbar (gelöschte Dokumente gefiltert) | im DB-Backup | – |
+| Rückfrage-Entscheidung | mit der Unterhaltung | aktenbezogene bleiben | – | im DB-Backup | – |
+| Feedback-Statistik | nie | HMAC des Begriffs | – | im DB-Backup | – |
+| Wissenseintrag | nur deaktivieren | kopierter Text ohne Aktenbezug | kanzleiweit (27.4) | im DB-Backup | Lesen: alle Angemeldeten (`/api/knowledge`) |
+| Audit-Eintrag | nie | Titel, Az., Mandantenname bei Akten-/Mandantenlöschung | Audit-Ansicht | im DB-Backup | – |
+| Fehlerzeile, E-Mail, Postausgang | kein Löschpfad | alles | Fehlerseite (maskiert), Posteingang | im DB-Backup | – |
+| Protokolle | Rotation 5 × 5 MB; `app.log` ohne Rotation | lokal ungefiltert | Download gefiltert (nur aktive Datei) | nicht gesichert | Dateisystem |
+| Backup | ZIP unverschlüsselt, keine Rotation | DB, `intake`, `mail_attachments`, Einstellungen | – | Wiederherstellung überschreibt die DB, Verzeichnisse nur additiv; `*.pre-restore-*.bak` bleibt unverschlüsselt | Admin; Wiederherstellung nur per Kommandozeile |
+| „Löschfrist“ (`retention_days`) | **keine Wirkung**: wird nur gespeichert und angezeigt, kein Löschlauf liest sie | – | – | – | Admin |
+
+**Behoben (reproduziert, mit Test `tests/test_privacy_deletion_access.py`):**
+- L1: Dokumente einer gelöschten Akte waren ansehbar und herunterladbar (Ansicht, Seitenbild, Download) → 404.
+- L2: Die globale Suche fand Dokumente und E-Mails gelöschter Akten (mit Aktentitel) → gefiltert; nicht zugeordnete
+  E-Mails bleiben auffindbar.
+- L3: REST-API listete gelöschte Akten, deren Dokumente und Entwürfe → gefiltert bzw. 404.
+
+### 27.3 Protokolle
+
+**Behoben (mit Test):**
+- P1: Datenbankfehler schrieben die gespeicherten Werte (`[parameters: ('…', 'erika.beispiel@…')]`) ins Log →
+  `hide_parameters=True`; die SQL-Anweisung bleibt für die Fehlersuche sichtbar.
+- P2: Das Zugriffsprotokoll schrieb Suchbegriffe (`?q=Erika%20Beispiel`) in `app.log` → Query-Teil wird durch
+  `?[entfernt]` ersetzt.
+- P3: Der Audit-Eintrag eines wiederhergestellten Intake-Fehlers enthielt den vollen Pfad → maskiert wie beim Fehler.
+- P4: Die Warnung einer fehlgeschlagenen Rechtsquellensuche enthielt den Traceback samt Suchbegriff → nur Fehlertyp.
+
+**Offen:** rotierte Logdateien und `app.log` sind lokal ungefiltert; `app.log` rotiert nicht; Daten- und Logpfade enthalten
+den Windows-Benutzernamen; bereits geschriebene alte Zeilen sind nicht bereinigt.
+
+### 27.4 Wissensbasis („Als Wissen übernehmen“)
+
+- Die Schaltfläche „Als Wissen übernehmen“ existiert in der Oberfläche **nicht**; `promote_to_knowledge` hat keinen Aufrufer
+  außer Tests. Tatsächlicher Weg: manueller Import unter Wissen (Admin/Anwalt) mit frei eingefügtem Text, Freigabe durch
+  dieselben Rollen. Frühere Hinweise (§26.3, PILOT_CHECKLIST.md J, Stufe C) sind entsprechend korrigiert.
+- Ein freigegebener Eintrag wird bei **jeder** Akte desselben Rechtsgebiets in die Cloud-Anfrage übernommen. Der Gateway kennt
+  nur die Namen der eigenen Akte. **Reproduziert:** „Im Fall Zabelhuber …“ (Mandant einer anderen Akte) ging im Klartext
+  hinaus. **Behoben:** Einträge, die Mandanten- oder Beteiligtennamen einer anderen Akte (voller Name oder Nachname bei
+  Personen; Rechtsformen ausgenommen) enthalten, werden für diese Anfrage nicht verwendet (fail-closed, es entfällt nur der
+  Eintrag). In der eigenen Akte bleibt der Eintrag nutzbar; dort maskiert der Gateway den eigenen Namen.
+- **Grenzen:** Namen, die in keiner Akte als Mandant oder Beteiligter erfasst sind (z. B. Zeugen, Dritte im Text), Adressen
+  und andere Merkmale fallen nicht unter diesen Filter; dort greifen weiter Erkennung und Restrisiko-Scan des Gateways.
+- **Offen:** Einträge haben keinen Aktenbezug und überdauern die Löschung der Ausgangsakte; `/api/knowledge` zeigt allen
+  Angemeldeten auch nicht freigegebene Einträge.
+
+**Unabhängiges Review**
+
+Keine Regressionen gefunden. Behoben wurden danach:
+- **Wissensfilter umgehbar:** „Zabelhubers“ (Genitiv) und „ZABELHUBER“ wurden nicht erkannt. Jetzt werden auch
+  Großschreibung und Genitiv erkannt. Beliebige Kleinschreibung bewusst nicht, sonst schlösse ein Nachname wie „Lange“
+  jedes „lange“ aus.
+- **Zu viel ausgeschlossen:** Bei „Amtsgericht München“, „Stadt Köln“ oder „Bundesagentur für Arbeit“ wurde das letzte
+  Wort als Nachname behandelt. Für Organisationen, Gerichte, Behörden und als Anwalt erfasste Beteiligte zählt jetzt nur
+  der volle Name. „Nachname, Vorname“ wird richtig gelesen.
+- **Freigabe:** Ein Entwurf einer gelöschten Akte konnte noch freigegeben und in den Postausgang übergeben werden. Das
+  wird jetzt verweigert.
+- **Bewusst offen (lokal, kein Cloud-Versand):**
+  - Entwurfsliste, -detail und Export gelöschter Akten.
+  - Posteingang-Detail für E-Mails gelöschter Akten.
+  - Das Duplikat zählt weiter gegen die Grenze von 30 Dokumenten; es wird aber nur einmal gesendet.
+  - Wissenseinträge werden ohne Hinweis an die Anwender ausgelassen.
+  - Kleingeschriebene Namen werden nicht erkannt.
+  - Namen, die zugleich häufige Wörter sind („Kraft“ als Gegner), schließen einen Eintrag aus, der dieses Wort
+    großgeschrieben enthält. Es entfällt dann nur der Eintrag (fail-safe).
+  - Die Datenbank des Gateway-Codes (`gateway/`, P0-08, zurückgestellt) ist nicht geändert.
+
+### 27.5 Lösch- und Aufbewahrungskonzept (Vorschlag; Fristen legt die Kanzlei fest)
+
+Gesetzliche Aufbewahrungsfristen werden hier **nicht** festgelegt. Rollen sind Funktionen, keine benannten Personen.
+
+| Nr. | Maßnahme | Entscheidung/Rolle | Abschlussnachweis |
+|---|---|---|---|
+| K1 | Aufbewahrungsfrist je Datenkategorie (Akte, Dokument, Unterhaltung, Entwurf, E-Mail, Audit, Protokoll, Backup) festlegen | Kanzleileitung mit Datenschutzbeauftragter/m | schriftliche Tabelle mit Frist und Rechtsgrundlage je Kategorie |
+| K2 | Endgültiger Löschpfad für Akten nach Fristablauf (Datensätze, Dateien, Embeddings, Entscheidungen, Entwürfe, Anhänge, Wissenseinträge mit Bezug), mit inhaltsfreiem Löschnachweis | Produktverantwortung | Test je Tabelle: nach Löschlauf keine Zeile/Datei mehr; Prüfprotokoll mit synthetischer Akte |
+| K3 | „Löschfrist“-Einstellung erst dann als wirksam darstellen, wenn K2 mit Zeitsteuerung umgesetzt und getestet ist | Produktverantwortung | Test: Akte älter als Frist wird gelöscht, jüngere bleibt |
+| K4 | Backups verschlüsseln, Speicherort und Rotation festlegen; Löschung wirkt auf Backups erst mit deren Ablauf (dokumentieren) | Kanzlei-IT | Ort, Verschlüsselung, Aufbewahrungsdauer schriftlich; Testwiederherstellung |
+| K5 | Wiederherstellung: Hinweis, dass gelöschte Daten zurückkehren; danach erneuter Löschlauf; `pre-restore`-Kopie entfernen | Kanzlei-IT, Produktverantwortung | Ablaufbeschreibung + Test |
+| K6 | Unterhaltungsanhänge, Schriftsatz-Uploads, Kanzleiprofil-Dateien ins Backup oder bewusst ausschließen | Produktverantwortung | Backup-Inhaltsliste |
+| K7 | Audit-Einträge ohne Namen (nur IDs) oder Frist für Audit festlegen | Kanzleileitung, Produktverantwortung | Test/Stichprobe |
+| K8 | Wissenseinträge: Aktenbezug speichern, bei Aktenlöschung deaktivieren; Lesen nicht freigegebener Einträge beschränken | Produktverantwortung | Migration + Test |
+| K9 | Zugriff auf `C:\ProgramData\Lexono` (DB, Dateien, Protokolle, `app.log`) auf berechtigte Konten beschränken; `app.log` rotieren | Kanzlei-IT | ACL-Auszug ohne Inhalte; Rotation belegt |
+
+K1 ist Voraussetzung für K2/K3. K1–K9 sind Voraussetzungen für Stufe C (§26.5 C 3–4).
+
+### 27.6 QA und Nachweise
+
+**Tests**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neue Regressionstests | rot ohne Fix, grün mit Fix |
+| Betroffene Testdateien | bestanden |
+| Volle Testsuite | **4261 bestanden**, 1 übersprungen, 6 xfailed, 1 xpassed |
+
+- Neue Regressionstests:
+  - `tests/test_privacy_minimisation_and_logs.py`: 16 Tests;
+  - `tests/test_privacy_deletion_access.py`: 9 Tests;
+  - Freigabe-Sperre in `tests/test_web_drafts_prompt24.py`.
+- Fehlgeschlagene Tests in der vollen Suite (5):
+  - 4 bekannte `test_design_refresh`-Fehler (fehlende Logos, fremde Änderung);
+  - 1 neuer Test, der nur im Gesamtlauf fehlschlug: `test_migrations.py` (Alembic) deaktiviert bestehende Logger,
+    derselbe Effekt wie in §26.6. Gegenprobe mit `test_migrations.py` davor: vorher rot, jetzt grün.
+- Der bekannte zeitabhängige Test bestand.
+
+**Installierter Build (Stand dieser Änderungen)**
+- Installer neu erstellt und installiert. Das Bundle enthält die neuen Funktionen (Bytecode- und Konstantenprüfung).
+- **Fall 22 (neu)**, QA-Datenbank, synthetische Akten und Wissenseinträge, Fang-Server statt Anthropic: **PASS**.
+  - Ein freigegebener Eintrag „Im Fall Zabelhuber …“ (Mandant einer anderen QA-Akte) ging nicht in die Anfrage.
+  - Der neutrale Eintrag ging hinaus (Gegenprobe).
+  - Das dreifach vorhandene Mahnschreiben ging einmal hinaus: 2 statt 4 Dokumenteinträge.
+  - Nach dem Löschen der Akte:
+    - Download → 404;
+    - nicht in globaler Suche und REST-API;
+    - Gegenprobe bei aktiver Akte: 200 bzw. gefunden.
+  - Zustand danach zurückgesetzt; Einträge deaktiviert.
+- **Negativbefund aus einem Zwischenlauf:** Der Download lieferte 200, weil die WebView2 eine zuvor geladene Datei aus dem
+  HTTP-Cache bediente (mit `cache: no-store`: 404). Das ist ein Restrisiko, kein Serverfehler: einmal angesehene Dateien
+  können lokal im WebView2-Cache liegen.
+- **Fall 20 (Regression):** PASS.
+- **Normale Instanz** wiederhergestellt: nur Port 8000, Health 200.
+- **Echter Anthropic-Aufruf mit diesem Build:** NICHT VERIFIZIERT; das ist weiterhin eine Voraussetzung für Stufe B.
+
+### 27.7 Bewertung
+
+| Punkt | Status |
+|---|---|
+| Ursache „ganze Akte je Anfrage“ ermittelt, Inhalte je Funktion dokumentiert | PASS |
+| Sichere Minimierung: Duplikate, Fristen gelöschter Dokumente | PASS |
+| Anfragebezogene Dokumentauswahl (M3–M6) | NICHT UMGESETZT, Produktentscheidung |
+| Pseudonymisierung, Fail-Closed und Gates unverändert (volle Suite, Fälle 20, 22) | PASS |
+| Gelöschte Akten: Dokumente, Suche, API, KI-Kontext, Freigabe | PASS |
+| Endgültige Löschung, wirksame Löschfrist | FAIL (nicht vorhanden; Konzept 27.5) |
+| Protokolle: SQL-Werte, Suchbegriffe, Pfade, Tracebacks | PASS für die gefundenen Stellen |
+| Lokale Logdateien gefiltert bzw. zugriffsgeschützt | FAIL / offen (K9) |
+| Wissensbasis: Namen anderer Akten | PASS mit Grenzen (27.4) |
+| Wissensbasis: Aktenbezug, Löschung | FAIL / offen (K8) |
+| Vollständige Leckfreiheit | NICHT VERIFIZIERT |
+
+Die Pilotstufen bleiben unverändert (§26.7): A nach den Kanzleibestätigungen, B No-Go bis zu den Nachweisen, C No-Go.
 

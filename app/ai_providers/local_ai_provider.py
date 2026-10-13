@@ -337,6 +337,76 @@ class LocalAIProvider(Protocol):
     ) -> DraftPreparationResult: ...
 
 
+# Organisationen: das letzte Wort ist kein Nachname ("Muster Bau GmbH" -> nicht "GmbH", "Amtsgericht München" -> nicht
+# "München", "Bundesagentur für Arbeit" -> nicht "Arbeit"); fuer sie zaehlt nur der volle Name (Review §27)
+_ORGANISATION_WORDS = frozenset(
+    {"gmbh", "ag", "kg", "ohg", "ug", "eg", "e.v.", "ev", "mbh", "co.", "co", "se", "kgaa", "ltd", "ltd.", "inc",
+     "inc.", "partner", "partnerschaft", "gbr", "stiftung", "verein", "llp", "plc", "stadt", "gemeinde", "landkreis",
+     "kreis", "bund", "land", "freistaat", "republik", "für", "fuer", "der", "des", "und", "&"}
+)
+_ORGANISATION_PARTS = ("gericht", "amt", "behörde", "behoerde", "agentur", "versicherung", "kasse", "bank", "center",
+                       "verwaltung", "kanzlei", "ministerium", "kammer", "senat", "polizei", "staatsanwaltschaft")
+
+
+def _name_variants(name: str, *, person: bool = True) -> set[str]:
+    """Voller Name und - bei mehrteiligen Personennamen - der Nachname (wie `_build_known_entities`). "Nachname, Vorname"
+    liefert den Teil vor dem Komma."""
+    name = (name or "").strip()
+    if len(name) < 3:
+        return set()
+    variants = {name}
+    words = name.replace(",", " , ").split()
+    lowered = [word.lower() for word in words]
+    organisation = any(w in _ORGANISATION_WORDS for w in lowered) or any(
+        part in w for w in lowered for part in _ORGANISATION_PARTS
+    )
+    if person and not organisation and len([w for w in words if w != ","]) > 1:
+        surname = (name.split(",")[0].split()[-1] if "," in name else words[-1]).strip(".")
+        if len(surname) >= 3 and surname[0].isupper():
+            variants.add(surname)
+    return variants
+
+
+def foreign_matter_names(matter: Matter, db: Session) -> set[str]:
+    """Mandanten- und Beteiligtennamen ANDERER Akten (Datenschutz-Pruefung §27, Aktenisolation).
+
+    Die kanzleiweite Wissensbasis wird in die Cloud-Anfrage jeder Akte desselben Rechtsgebiets uebernommen. Der Gateway
+    kennt aber nur die Namen DIESER Akte; ein Name aus einer anderen Akte wurde nur maskiert, wenn die Namenserkennung
+    ihn zufaellig fand (reproduziert: "Im Fall Zabelhuber ..." ging im Klartext hinaus). Eintraege, die einen dieser
+    Namen enthalten, werden daher nicht gesendet (fail-closed: es entfaellt nur ein Wissenseintrag). Gerichte, Behoerden
+    und Anwaelte (Rolle) zaehlen nur mit vollem Namen."""
+    from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME
+    from app.models import Client
+
+    def party_variants(party_name: str, role: str | None) -> set[str]:
+        role = (role or "").lower()
+        institutional = any(k in role for k in _COURT_ROLE_KEYWORDS + _LAWYER_ROLE_KEYWORDS)
+        return _name_variants(party_name, person=not institutional)
+
+    own: set[str] = set()
+    if matter.client and matter.client.name:
+        own |= _name_variants(matter.client.name)
+    for party_name, role in db.query(Party.name, Party.role).filter(Party.matter_id == matter.id):
+        own |= party_variants(party_name, role)
+    names: set[str] = set()
+    for (client_name,) in db.query(Client.name).filter(Client.id != matter.client_id):
+        if client_name and client_name != PLACEHOLDER_CLIENT_NAME:
+            names |= _name_variants(client_name)
+    for party_name, role in db.query(Party.name, Party.role).filter(Party.matter_id != matter.id):
+        names |= party_variants(party_name, role)
+    return names - own
+
+
+def mentions_any_name(text: str, names: set[str]) -> bool:
+    """Wortgenau, auch in Grossbuchstaben und im Genitiv ("Zabelhubers", "ZABELHUBER"; Review §27). Bewusst nicht
+    beliebig klein geschrieben - sonst schloesse ein Nachname wie "Lange" jedes "lange" aus."""
+    if not text or not names:
+        return False
+    alternatives = sorted({re.escape(v) for name in names for v in (name, name.upper())}, key=len, reverse=True)
+    pattern = re.compile(rf"(?<![\w-])(?:{'|'.join(alternatives)})(?:s|'s|’s)?(?![\w-])")
+    return pattern.search(text) is not None
+
+
 class RuleBasedLocalAIProvider:
     def __init__(self, search_service: DocumentSearchService | None = None) -> None:
         self.search_service = search_service
@@ -407,6 +477,18 @@ class RuleBasedLocalAIProvider:
         # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
         # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
         documents = [d for d in documents if d.extracted_text.strip()]
+        # Datenminimierung (§27): ein doppelt hochgeladenes Dokument (gleicher Text) ging bisher zweimal hinaus und nahm
+        # anderen Dokumenten Budget weg. Nur das neueste Exemplar senden; alle IDs gelten weiter als einbezogen, damit
+        # ein angehaengtes Duplikat die Dokument-Gates nicht blockiert. Es geht keine Information verloren.
+        all_ids = [d.id for d in documents]
+        seen_texts: set[str] = set()
+        unique_documents = []
+        for document in documents:
+            key = _normalize_document_text(document.extracted_text)
+            if key not in seen_texts:
+                seen_texts.add(key)
+                unique_documents.append(document)
+        documents = unique_documents
         notices: list[str] = []
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):
@@ -423,10 +505,20 @@ class RuleBasedLocalAIProvider:
                     "Rechtsfolgen, auffällige Details). Aussagen zu den ausgelassenen Abschnitten bitte im Original "
                     "prüfen."
                 )
-        return "\n".join(parts), bool(documents), notices, [d.id for d in documents]
+        return "\n".join(parts), bool(documents), notices, all_ids
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
+        # Datenminimierung (§27): eine Frist aus einem geloeschten Dokument ging weiter an die Cloud, obwohl der
+        # Dokumenttext selbst nicht mehr gesendet wird - wie beim geloeschten Dokument weglassen.
+        deleted_document_ids = {
+            document_id
+            for (document_id,) in db.query(Document.id).filter(
+                Document.id.in_([d.document_id for d in deadlines if d.document_id]),
+                Document.deleted_at.isnot(None),
+            )
+        } if any(d.document_id for d in deadlines) else set()
+        deadlines = [d for d in deadlines if d.document_id not in deleted_document_ids]
         # Vor der Korrektur gespeicherte Vorschlaege zu Geburts-/Todesdaten (§24) nicht mehr als Frist anbieten - geprueft
         # am Ausschnitt und am Volltext des Quelldokuments (Tabellen). Der Text laeuft weiterhin vollstaendig durch den
         # Gateway (Pseudonymisierung, Restrisiko-Scan) - kein Schutz entfaellt.
@@ -461,7 +553,8 @@ class RuleBasedLocalAIProvider:
             return []
         query = matter.practice_area or matter.title
         results = self.search_service.search_knowledge_base(query, db)
-        return [result.snippet for result in results]
+        foreign = foreign_matter_names(matter, db)
+        return [result.snippet for result in results if not mentions_any_name(result.snippet, foreign)]
 
     def _build_known_entities(
         self, matter_id: str, matter: Matter, db: Session
