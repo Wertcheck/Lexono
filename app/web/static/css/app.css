@@ -7651,6 +7651,7 @@ body::-webkit-scrollbar-thumb:hover,
 .pii-highlight--datum { background: #d9f99d; }
 .pii-highlight--geburtsdatum { background: #d9f99d; }
 .pii-highlight--geburtstag { background: #d9f99d; }
+.pii-highlight--todesdatum { background: #d9f99d; }
 .pii-highlight--email,
 .pii-highlight--telefon { background: #e9d5ff; }
 .pii-highlight--iban,

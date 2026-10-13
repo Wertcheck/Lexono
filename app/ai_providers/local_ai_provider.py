@@ -24,6 +24,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
+from app.deadlines.extractor import is_personal_date
 from app.models import Deadline, Document, Matter, Party
 from app.search.service import DocumentSearchService
 
@@ -422,9 +423,19 @@ class RuleBasedLocalAIProvider:
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
+        # Vor der Korrektur gespeicherte Vorschlaege zu Geburts-/Todesdaten (§24) nicht mehr als Frist anbieten - geprueft
+        # am Ausschnitt und am Volltext des Quelldokuments (Tabellen). Der Text laeuft weiterhin vollstaendig durch den
+        # Gateway (Pseudonymisierung, Restrisiko-Scan) - kein Schutz entfaellt.
+        full_texts = {
+            document.id: document.extracted_text
+            for document in db.query(Document).filter(
+                Document.id.in_([d.document_id for d in deadlines if d.document_id])
+            )
+        } if any(d.document_id for d in deadlines) else {}
         return [
             f"Mögliche Frist ({deadline.review_status}): {deadline.source_text}"
             for deadline in deadlines
+            if not is_personal_date(deadline.source_text, deadline.due_date, full_texts.get(deadline.document_id))
         ]
 
     def _build_quellenverweise(self, matter: Matter, db: Session) -> list[str]:

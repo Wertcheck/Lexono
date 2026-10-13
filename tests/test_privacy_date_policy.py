@@ -88,7 +88,8 @@ FACT_DATES = [
     ("Herr Brenner (12.03.2026) widersprach.", ["12.03.2026"]),
     ("Der Arbeitsvertrag (01.09.1998) sieht drei Monate Kündigungsfrist vor.", ["01.09.1998"]),
     ("Herr Brenner (seit 01.09.1998 beschäftigt) erhielt die Kündigung.", ["01.09.1998"]),
-    ("Der Erblasser verstarb am 01.02.2024; das Testament datiert vom 15.06.2019.", ["01.02.2024", "15.06.2019"]),
+    # BEWUSST GEAENDERT 13.10.2026 (§24): das Todesdatum ist jetzt geschuetzt, das Testamentsdatum bleibt lesbar
+    ("Der Erblasser verstarb am 01.02.2024; das Testament datiert vom 15.06.2019.", ["15.06.2019"]),
     ("Zahlungen am 1.2.26 und 15.2.26 blieben aus.", ["1.2.26", "15.2.26"]),
     ("Gebäude geb. Baujahr? Nein: Errichtet am 01.01.1985, saniert am 01.06.2010.", ["01.06.2010"]),
     # Review 13.10.2026: Mietbeginn in Klammern, Fussnoten-Stern, Datum mit Schraegstrich, Satzende vor "Geburtstag"

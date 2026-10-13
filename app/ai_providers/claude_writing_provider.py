@@ -155,7 +155,8 @@ unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält. Sachverhaltsdaten stehen in \
 der Regel lesbar im Text; geschützt ist nur das Geburtsdatum \
 ([GEBURTSDATUM_NN]) - dessen Alter steht ggf. im Argumentationspunkt "Alter \
-laut Geburtsdatum"; errechne nie ein Geburtsdatum.
+laut Geburtsdatum"; errechne nie ein Geburtsdatum. Ebenso geschützt ist das \
+Todesdatum ([TODESDATUM_NN]); errechne oder vermute es nie.
 - ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
 Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
 und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \
@@ -356,7 +357,8 @@ unverändert stehen). Behaupte nie, ein Datum sei "nicht ablesbar", solange \
 die Einordnung die gefragte Beziehung enthält. Sachverhaltsdaten stehen in \
 der Regel lesbar im Text; geschützt ist nur das Geburtsdatum \
 ([GEBURTSDATUM_NN]) - dessen Alter steht ggf. im Argumentationspunkt "Alter \
-laut Geburtsdatum"; errechne nie ein Geburtsdatum.
+laut Geburtsdatum"; errechne nie ein Geburtsdatum. Ebenso geschützt ist das \
+Todesdatum ([TODESDATUM_NN]); errechne oder vermute es nie.
 - ANSCHRIFTEN DER BETEILIGTEN: Enthält die Anfrage den Argumentationspunkt "Zuordnung der \
 Beteiligten zu Anschriften laut Dokument", wurde er lokal aus der Dokumentstruktur ermittelt \
 und ist verlässlich. Verwende für den Empfänger- bzw. Absenderblock einer dort genannten Person \

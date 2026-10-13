@@ -42,7 +42,7 @@ from app.privacy.review import (
     find_review_candidates,
     history_only_identifiers,
 )
-from app.privacy.date_chronology import build_age_note, build_chronology_note
+from app.privacy.date_chronology import build_age_note, build_chronology_note, build_death_note
 from app.privacy.party_addresses import build_party_address_note
 from app.privacy.presidio_ner import (
     detect_presidio_entities,
@@ -403,6 +403,7 @@ class ClaudePrivacyGateway:
         chronology = build_chronology_note(mappings)
         # Datumspolicy (§23): Sachverhaltsdaten sind lesbar; maskiert bleibt nur das Geburtsdatum - dessen Alter lokal.
         age = build_age_note(mappings)
+        death = build_death_note(mappings)  # §24: nur volle Jahre seit dem Tod
         # Ebenfalls lokal und nur als Platzhalter: welche Anschrift im Dokument direkt bei welchem
         # Beteiligten steht (siehe app/privacy/party_addresses.py).
         party_addresses = build_party_address_note(pseudo_sachverhalt)
@@ -412,7 +413,7 @@ class ClaudePrivacyGateway:
             anonymisierter_sachverhalt=pseudo_sachverhalt,
             anonymisierte_argumentationspunkte=[
                 *pseudo_argumente,
-                *(note for note in (chronology, age, party_addresses) if note),
+                *(note for note in (chronology, age, death, party_addresses) if note),
             ],
             anonymisierte_quellenverweise=pseudo_quellen,
             schreibvorlage=pseudo_vorlage,

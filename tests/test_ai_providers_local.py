@@ -34,6 +34,22 @@ def _matter(db: Session, client_name: str = "Max Mustermann", title: str = "Test
     return matter
 
 
+def test_stored_birth_and_death_date_suggestions_are_not_offered_as_deadlines(db_session: Session) -> None:
+    """§24: vor der Korrektur gespeicherte Fristvorschlaege zu Geburts-/Todesdaten erscheinen nicht mehr als
+    "Mögliche Frist" (installierter Build 953dc8d zeigte "Mögliche Frist: [GEBURTSDATUM_01]"); echte bleiben."""
+    from datetime import date
+
+    matter = _matter(db_session)
+    db_session.add_all([
+        Deadline(matter_id=matter.id, source_text="Kläger: Karl Brenner, geb. 12.03.1980, wohnhaft", due_date=date(1980, 3, 12)),
+        Deadline(matter_id=matter.id, source_text="Der Erblasser verstarb am 01.02.2024 in Köln.", due_date=date(2024, 2, 1)),
+        Deadline(matter_id=matter.id, source_text="Die Räumungsfrist endet am 31.12.2026.", due_date=date(2026, 12, 31)),
+    ])
+    db_session.commit()
+    points = RuleBasedLocalAIProvider()._build_argumentationspunkte(matter.id, db_session)
+    assert len(points) == 1 and "31.12.2026" in points[0]
+
+
 def test_requires_matter_id() -> None:
     provider = RuleBasedLocalAIProvider()
     with pytest.raises(ValueError):

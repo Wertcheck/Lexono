@@ -91,7 +91,36 @@ def build_age_note(mappings: list[PseudonymMapping], *, today: date | None = Non
     # die Notiz sagt das, statt ein Alter als Tatsache zu behaupten.
     return (
         f"{AGE_MARKER} (lokal berechnet zum heutigen Tag, sofern der maskierte Wert tatsächlich ein Geburtsdatum ist - "
-        "im Zweifel beim Anwalt nachfragen; das Datum selbst ist geschützt): " + "; ".join(parts) + "."
+        "im Zweifel beim Anwalt nachfragen; bei Verstorbenen ist das nicht das Sterbealter; das Datum selbst ist "
+        "geschützt): " + "; ".join(parts) + "."
+    )
+
+
+DEATH_MARKER = "Zeit seit dem Todesdatum"
+
+
+def build_death_note(mappings: list[PseudonymMapping], *, today: date | None = None) -> str | None:
+    """Todesdaten (§24) bleiben maskiert. Uebergeben werden je [TODESDATUM_nn] nur die vollen Jahre seit dem Tod - keine
+    Tagesabstaende und keine Lage relativ zu lesbaren Daten: beides grenzte das Datum ein (zwei lesbare Daten im Abstand
+    weniger Tage um den Todestag legten ihn praktisch offen). Erbrechtliche Fristen ab dem Erbfall berechnet der Anwalt
+    bzw. die lokale Fristenlogik mit dem echten Datum."""
+    today = today or date.today()
+    parts: list[str] = []
+    seen: set[str] = set()
+    for mapping in mappings:
+        if mapping.category != "todesdatum" or mapping.placeholder in seen:
+            continue
+        died = parse_german_date(mapping.original_value)
+        if died is None or died > today:
+            continue
+        seen.add(mapping.placeholder)
+        years = today.year - died.year - ((today.month, today.day) < (died.month, died.day))
+        parts.append(f"{mapping.placeholder}: vor {years} vollen Jahren" if years else f"{mapping.placeholder}: vor weniger als einem Jahr")
+    if not parts:
+        return None
+    return (
+        f"{DEATH_MARKER} (lokal berechnet zum heutigen Tag; das Datum selbst ist geschützt, Fristen ab dem Erbfall "
+        "berechnet der Anwalt): " + "; ".join(parts) + "."
     )
 
 

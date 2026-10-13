@@ -79,19 +79,59 @@ class DeadlineExtractor(Protocol):
     def extract(self, text: str) -> list[ExtractedDeadline]: ...
 
 
+def _personal_date_spans(text: str) -> list[tuple[int, int]]:
+    """Geburts- und Todesdaten im Text (Datumspolicy §23/§24): sie sind keine Frist. Vorher schlug die Fristerkennung jedes
+    Datum vor - ein (maskiertes) Geburtsdatum erschien als "Mögliche Frist" im Argumentationspunkt (installierter Build
+    953dc8d, Fall 18). Erkannt mit denselben Regeln wie in der Pseudonymisierung (app/privacy/detectors.py)."""
+    from app.privacy.detectors import detect_geburtsdatum, detect_todesdatum
+
+    return [(s.start, s.end) for s in (*detect_geburtsdatum(text), *detect_todesdatum(text))]
+
+
+def is_personal_date(source_text: str | None, due_date: date | None, full_text: str | None = None) -> bool:
+    """True, wenn `due_date` als Geburts-/Todesdatum steht - fuer bereits gespeicherte Fristvorschlaege aus der Zeit vor
+    der Korrektur (sie sollen nicht mehr als "Mögliche Frist" erscheinen). `full_text` (Volltext des Quelldokuments)
+    erkennt auch Tabellenzeilen, deren Kopfzeile im gespeicherten Ausschnitt fehlt (Review §24). Ein Ausschnitt mit
+    Fristen-Schluesselwort gilt nie als Geburts-/Todesdatum - eine echte Frist geht nicht verloren."""
+    if not source_text or due_date is None:
+        return False
+    if any(keyword in source_text.lower() for keyword in _DEADLINE_KEYWORDS):
+        return False
+    from app.privacy.date_chronology import parse_german_date
+    from app.privacy.detectors import detect_geburtsdatum, detect_todesdatum
+
+    return any(
+        parse_german_date(span.value) == due_date
+        for text in (source_text, full_text) if text
+        for span in (*detect_geburtsdatum(text), *detect_todesdatum(text))
+    )
+
+
 class PlaceholderDeadlineExtractor:
     def extract(self, text: str) -> list[ExtractedDeadline]:
         results: list[ExtractedDeadline] = []
         seen_spans: set[tuple[int, int]] = set()
+        personal = _personal_date_spans(text)
+
+        def is_personal(match: re.Match) -> bool:
+            # Mit Fristen-Schluesselwort in der Naehe bleibt das Datum IMMER ein Vorschlag (Review §24: eine echte Frist
+            # darf durch eine falsche Geburts-/Todesdatum-Erkennung nie verloren gehen; der Text laeuft ohnehin durch den
+            # Gateway und wird dort maskiert, falls er ein solches Datum enthaelt).
+            following = text[match.end() : match.end() + _CONTEXT_WINDOW_CHARS].lower()
+            if self._has_nearby_keyword(text, match.start()) or any(k in following for k in _DEADLINE_KEYWORDS):
+                return False  # auch ein Schluesselwort NACH dem Datum ("05.03.2024: Termin beim Nachlassgericht")
+            return any(start < match.end() and match.start() < end for start, end in personal)
 
         for match in _NUMERIC_DATE_PATTERN.finditer(text):
+            if is_personal(match):
+                continue  # Geburts-/Todesdatum ist keine Frist
             result = self._handle_numeric_date(text, match)
             if result:
                 results.append(result)
                 seen_spans.add(match.span())
 
         for match in _MONTH_NAME_PATTERN.finditer(text):
-            if match.span() in seen_spans:
+            if match.span() in seen_spans or is_personal(match):
                 continue
             result = self._handle_month_name_date(text, match)
             if result:

@@ -502,8 +502,9 @@ _BIRTH_LABEL_SHORT = r"\bgeb\.(?:\s+am)?(?:\s+" + _WEEKDAY + r",?)?\s*[:.]?\s*$"
 _BIRTH_LABEL_LONG = (
     r"(?:\bgeboren|\bgeburtsdatum|\bgeb\.-?\s?datum|\bgeburtstag|\bgeburtsdat\.|\bdob\b|\bdate\s+of\s+birth|"
     r"(?:(?<=,)|(?<=\())\s*\*)"
-    # bis zu 25 Zeichen ohne Ziffer, Satz-/Tabellentrenner oder Klammer ("des Kindes:", "ist der", "am Mittwoch,")
-    r"[^\n\d.;|(]{0,25}[:.]?\s*$"
+    # bis zu 25 Zeichen ohne Ziffer, Satz-/Tabellentrenner, Klammer oder Komma ("des Kindes:", "ist der"); ein Komma nur
+    # direkt vor dem Datum ("am Mittwoch,") - sonst traf "geboren, Umzug am ..." ein anderes Datum (§24-Review)
+    r"[^\n\d.;,|(]{0,25},?[:.]?\s*$"
 )
 _BIRTH_LABEL_BEFORE = re.compile(r"(?:" + _BIRTH_LABEL_SHORT + r")|(?:" + _BIRTH_LABEL_LONG + r")", re.IGNORECASE)
 _BIRTH_WORD_AFTER = re.compile(
@@ -521,7 +522,11 @@ _PERSON_BEFORE_APPOSITION = re.compile(
     r"(?:\s+(?:Dr\.|Prof\.)?\s*[A-ZÄÖÜ][\wäöüß\-]+){0,3})\s*[(,]\s*$",
     re.IGNORECASE,
 )
-_APPOSITION_END = re.compile(r"\s*(?:[-–]\s*(\S+?)\s*)?[),]")
+# Lebensdaten auch mit Monatsnamen ("12. März 1940 - 1. Februar 2024", Review §24)
+_APPOSITION_END = re.compile(r"\s*(?:[-–]\s*([^),\n]{1,25}?)\s*)?[),]")
+# Traueranzeige "* 12.03.1940 † 01.02.2024": der Stern gilt hier auch ohne Komma/Klammer davor (vorher Geburtsdatum lesbar)
+_OBITUARY_STAR_BEFORE = re.compile(r"(?<![\w*])\*\s*$")
+_OBITUARY_CROSS_AFTER = re.compile(r"\s*[,;]?\s*†")
 _LIFESPAN_PERSON = re.compile(r"\b(?:erblasser(?:in)?|verstorbene[rn]?)\b", re.IGNORECASE)
 _NOT_A_BIRTH_AFTER = re.compile(r"[^\n.;]{0,25}\b(?:seit|ab|bis|beginn|eintritt|einzug|mietbeginn)\b", re.IGNORECASE)
 _ISO_OR_SLASH_DATE = re.compile(r"\b(?:(?:19|20)\d{2}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/(?:19|20)?\d{2})\b")
@@ -565,7 +570,11 @@ def detect_geburtsdatum(text: str, *, current_year: int | None = None) -> list[D
         line_start = text.rfind("\n", 0, span.start) + 1
         before = text[max(line_start, span.start - 45) : span.start]
         category = "geburtsdatum"
-        if _BIRTH_LABEL_BEFORE.search(before) or _BIRTH_WORD_AFTER.match(text, span.end):
+        if (
+            _BIRTH_LABEL_BEFORE.search(before)
+            or _BIRTH_WORD_AFTER.match(text, span.end)
+            or (_OBITUARY_STAR_BEFORE.search(before) and _OBITUARY_CROSS_AFTER.match(text, span.end))
+        ):
             birth = True
         elif _BIRTHDAY_AFTER.match(text, span.end):
             birth, category = True, "geburtstag"
@@ -586,6 +595,103 @@ def detect_geburtsdatum(text: str, *, current_year: int | None = None) -> list[D
                 birth = bool(_LIFESPAN_PERSON.search(person.group()) or (other and other - year >= _MINIMUM_BIRTH_AGE_YEARS))
         if birth:
             spans.append(DetectedSpan(category=category, start=span.start, end=span.end, value=span.value))
+    return spans
+
+
+# Todesdaten (Owner-Vorgabe 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §24) - nach demselben Prinzip wie Geburtsdaten:
+# zusammen mit Ort/Rolle ueber Traueranzeigen und Nachrufe reidentifizierend. Maskiert als [TODESDATUM_nn] (konsistent je
+# Wert), lokal nur die vollen Jahre seit dem Tod (date_chronology.build_death_note). Erkannt am Todeskontext:
+# - Bezeichnung davor ("verstorben am", "gestorben am", "verstarb am", "Todestag", "Todesdatum", "Sterbedatum",
+#   "gest.", "verst.", "†", "der Tod (des Vaters) trat am ... ein", "Erbfall am/vom" - der Erbfall IST der Todestag);
+# - "verstorben"/"gestorben"/"verschieden" danach ("ist am 01.02.2024 in Koeln verstorben");
+# - zweites Datum von Lebensdaten nach einer Personenbezeichnung ("(12.03.1940 - 01.01.2026)");
+# - in Tabellen/CSV die Spalte "Sterbedatum"/"Todesdatum"/"verstorben"/"gest.".
+# NICHT: Woerter, die "Tod" nur enthalten ("Unfall mit Todesfolge am", "Todesanzeige erschien am") - dort ist das Datum
+# ein gewoehnliches, lesbares Ereignisdatum.
+_DEATH_LABEL_BEFORE = re.compile(
+    # Bezeichnung (mit Wortgrenze: "Verstorbenen" ist keine Bezeichnung, Review §24), dann eine Luecke von bis zu 45
+    # Zeichen ohne Ziffer, Satz-/Tabellentrenner, Klammer oder Komma; ein Komma nur direkt vor dem Datum.
+    r"(?P<label>\b(?:verstorben|gestorben|verstarb|starb|verschied|verschieden|todestag|todesdatum|todeszeitpunkt|sterbedatum|"
+    r"sterbetag|sterbefall|todesfall|ableben|erbfall(?:s)?)\b|\b(?:gest|verst)\.|†|"
+    r"\btod\s+(?:de[rs]\s+[\wäöüß]+\s+)?(?:ist\s+|trat\s+)?(?=am\b))"
+    r"(?P<gap>[^\n\d.;,|(]{0,45}),?[:.]?\s*$",
+    re.IGNORECASE,
+)
+# Woerter in der Luecke, die das folgende Datum zu einer Frist oder einem anderen Ereignis machen ("des Verstorbenen haben
+# Frist bis", "verstorben und wurde am ... beigesetzt", "Erbfall wurde Frist bis zum ...").
+_DEATH_GAP_STOP = re.compile(
+    r"\b(?:frist|bis|spätestens|spaetestens|termin|wurde|wurden|und|oder|beigesetzt|bestattet|beerdigt|beerdigung|"
+    r"eröffnet|eroeffnet|antrag|zahlung|schreiben|vertrag)\b",
+    re.IGNORECASE,
+)
+_DEATH_WORD_AFTER = re.compile(
+    # Nur feste Fuellwoerter zwischen Datum und Verb ("in Koeln", "im Krankenhaus", "nach langer Krankheit") - eine freie
+    # Luecke traf Kenntnis-, Bescheid- und Schreibensdaten ("Am 05.03.2024 erfuhr die Tochter dass der Vater verstorben
+    # ist", 2. Review-Runde §24); die bleiben lesbar und als Frist erkennbar.
+    r"(?:\s+in\s+[A-ZÄÖÜ][\wäöüß\-]+(?:\s+[A-ZÄÖÜ][\wäöüß\-]+)?|\s+im\s+[\wäöüß\-]+|"
+    r"\s+nach\s+(?:langer|kurzer|schwerer)\s+[\wäöüß]+|\s+zu\s+hause)?"
+    # "Die am 01.02.2024 Verstorbene" (Substantiv, gross) zaehlt; "des am ... verstorbenen Vaters" (Adjektiv) ebenso nur
+    # direkt nach dem Datum - "Schreiben vom ... an die Erben des verstorbenen Vaters" hat Woerter dazwischen
+    r"\s+(?:verstorben|gestorben|verschieden)\b(?!\s+(?:ist\s+)?(?:sei|war)\b)|\s+(?-i:Verstorbene[nrs]?)\b",
+    re.IGNORECASE,
+)
+_DEATH_PERSON_BEFORE_PAREN = re.compile(r"\bverstorbene[nrs]?\s+[\wäöüß]+\s*\(\s*$", re.IGNORECASE)
+_DEATH_HEADER = re.compile(
+    r"\s*(?:sterbedatum|todesdatum|todestag|todeszeitpunkt|verstorben(?:\s+am)?|gest\.|gestorben)\s*", re.IGNORECASE
+)
+_LIFESPAN_DASH = re.compile(r"\s*[-–]\s*")
+
+
+_LINE_LABELS = re.compile(
+    r"verstorben|gestorben|todestag|todesdatum|todeszeitpunkt|sterbedatum|sterbetag|gest\.|verst\.|†", re.IGNORECASE
+)
+
+
+def _label_window(text: str, start: int, width: int) -> str:
+    """Text vor `start` innerhalb der Zeile. Steht das Datum allein am Zeilenanfang und besteht die Zeile davor NUR aus
+    einer Todesdatum-Bezeichnung ("Todesdatum:\n01.02.2024"), zaehlt diese Bezeichnung mit - nicht aber eine beliebige
+    Vorzeile ("Todesfall gemeldet\n05.03.2024: Termin ...", 2. Review-Runde §24)."""
+    line_start = text.rfind("\n", 0, start) + 1
+    if not text[line_start:start].strip() and line_start > 0:
+        previous_start = text.rfind("\n", 0, line_start - 1) + 1
+        previous = text[previous_start : line_start - 1].strip()
+        label = _DEATH_LABEL_BEFORE.search(previous)  # Bezeichnung am ENDE der Vorzeile (Praefixe wie "[Schreiben] ")
+        # nur ausdrueckliche Datumsbezeichnungen, nicht "Erbfall"/"Todesfall" als Ueberschrift vor einem Termin
+        if (
+            label is not None
+            and not label.group("gap").strip(" \t:.")
+            and _LINE_LABELS.fullmatch(label.group("label").strip())
+        ):
+            return previous + " "
+    return text[max(line_start, start - width) : start]
+
+
+def _death_label_matches(before: str) -> bool:
+    match = _DEATH_LABEL_BEFORE.search(before)
+    return match is not None and not _DEATH_GAP_STOP.search(match.group("gap"))
+
+
+def detect_todesdatum(text: str, *, current_year: int | None = None) -> list[DetectedSpan]:
+    """Todesdaten (Kategorie "todesdatum") - siehe Kommentar oben."""
+    spans = _table_column_values(text, _DEATH_HEADER, _ANY_DATE_IN_CELL, "todesdatum")
+    candidates = [*detect_datum(text), *_matches_from_pattern(text, _ISO_OR_SLASH_DATE, "datum")]
+    # Lebensdaten: das Datum direkt nach "Geburtsdatum – " (alle Datumsformate, Review §24)
+    for birth in detect_geburtsdatum(text, current_year=current_year):
+        dash = _LIFESPAN_DASH.match(text, birth.end)
+        if dash and dash.end() > birth.end:
+            second = next((c for c in candidates if c.start == dash.end()), None)
+            if second is not None:
+                spans.append(DetectedSpan(category="todesdatum", start=second.start, end=second.end, value=second.value))
+    for span in candidates:
+        if any(s.start < span.end and span.start < s.end for s in spans):
+            continue
+        before = _label_window(text, span.start, 70)
+        if (
+            _death_label_matches(before)
+            or _DEATH_WORD_AFTER.match(text, span.end)
+            or (_DEATH_PERSON_BEFORE_PAREN.search(before) and re.match(r"\s*\)", text[span.end : span.end + 3]))
+        ):
+            spans.append(DetectedSpan(category="todesdatum", start=span.start, end=span.end, value=span.value))
     return spans
 
 
@@ -671,6 +777,7 @@ _ALL_REGEX_DETECTORS = (
     detect_ip_adresse,
     detect_bic,
     detect_geburtsdatum,
+    detect_todesdatum,
     detect_address,
 )
 

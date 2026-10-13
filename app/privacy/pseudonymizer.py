@@ -26,6 +26,7 @@ _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "datum": "DATUM",
     "geburtsdatum": "GEBURTSDATUM",
     "geburtstag": "GEBURTSTAG",
+    "todesdatum": "TODESDATUM",
     "grundbuch": "GRUNDBUCH",
     "betrag": "BETRAG",
     "vertrag": "VERTRAG",

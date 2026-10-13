@@ -35,6 +35,7 @@ _CATEGORY_LABELS = {
     "datum": "Datum",
     "geburtsdatum": "Geburtsdatum",
     "geburtstag": "Geburtstag",
+    "todesdatum": "Todesdatum",
     "grundbuch": "Grundbuchangabe",
     "betrag": "Betrag",
     "vertrag": "Vertrag",
