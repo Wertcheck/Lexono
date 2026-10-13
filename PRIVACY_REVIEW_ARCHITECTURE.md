@@ -2123,3 +2123,130 @@ Der direkte Anthropic-Pfad (P0-07) ist davon getrennt und live belegt (§21.7).
    Echtdaten.
 
 Eine vollständige Leckfreiheit ist nicht belegt.
+
+
+## 24. Todesdaten und Fristerkennung ohne Geburts-/Todesdaten (13.10.2026, `5cafe0f`, `58c1a1e`)
+
+Owner-Auftrag nach §23 (offene Entscheidung „Todesdaten“), Ausgangsstand `ed0035e`. Nur synthetische Daten.
+
+### 24.1 Todesdaten
+
+Policy nach dem Geburtsdatum-Prinzip (§23):
+- Ein am Todeskontext erkanntes Datum wird vor dem Cloud-Versand als `[TODESDATUM_nn]` maskiert, konsistent je Wert über
+  Text, Dokumente, Gesprächsverlauf und Argumente.
+- Lokal geht nur die **Zahl der vollen Jahre seit dem Tod** hinaus (`date_chronology.build_death_note`).
+- Bewusst nicht übergeben werden Tagesabstände und die Lage relativ zu lesbaren Daten. Zwei lesbare Daten wenige Tage um
+  den Todestag würden ihn sonst praktisch offenlegen.
+- Erbrechtliche Fristen ab dem Erbfall berechnet der Anwalt mit dem echten Datum. Der Prompt verbietet, das Datum zu
+  errechnen oder zu vermuten.
+
+**Erkannt (`detectors.detect_todesdatum`):**
+- **Bezeichnung davor** (mit Wortgrenze):
+  - Wörter: „verstorben“, „gestorben“, „verstarb“, „starb“, „verschied/verschieden“, „Todestag“, „Todesdatum“,
+    „Todeszeitpunkt“, „Sterbedatum/-tag“, „Sterbefall“, „Todesfall“, „Ableben“, „Erbfall“;
+  - Kürzel: „gest. (am)“, „verst. (am)“, „†“;
+  - Wendung: „der Tod (des Vaters) (ist/trat) am“.
+  - Zwischen Bezeichnung und Datum stehen höchstens 45 Zeichen ohne Ziffer, Satz-/Tabellentrenner, Klammer oder Komma.
+    Ein Komma ist nur direkt vor dem Datum erlaubt.
+  - Stoppwörter in dieser Lücke beenden den Todeskontext: Frist, bis, spätestens, Termin, wurde, und, oder, beigesetzt,
+    beerdigt, eröffnet, Antrag, Zahlung, Schreiben, Vertrag.
+- **Danach** nur mit festen Füllwörtern: „in Köln“, „im Krankenhaus“, „nach langer Krankheit“, dann „verstorben“,
+  „gestorben“ oder „verschieden“; außerdem „die am … Verstorbene“.
+- **Zeilenumbruch** zwischen Bezeichnung und Datum nur, wenn die Vorzeile mit einer ausdrücklichen Datumsbezeichnung
+  endet („Todesdatum:“). Nicht nach „Todesfall gemeldet“ oder der Überschrift „Erbfall“.
+- **Lebensdaten** nach einer Personenbezeichnung, in allen Datumsformaten (ISO, Monatsname, Klammer oder Komma).
+- **Traueranzeige** „* 12.03.1940 † 01.02.2024“: Geburts- und Todesdatum.
+- **„verstorbene Mutter (Datum)“.**
+- **Tabellen und CSV:** die Spalte „Sterbedatum/Todesdatum/verstorben/gest.“.
+
+**Lesbar bleiben:**
+- „Unfall mit Todesfolge am“, „Todesanzeige erschien am“, „Beerdigung am“, „Testament vom“, „Todesfallleistung“;
+- „Erbfall eingetreten; Antrag vom“, „verstorben, Beerdigung am“, „verstorben und wurde am … beigesetzt“;
+- Kenntnis-, Bescheid- und Schreibensdaten, die nur ein Todes-Wort im Satz haben, etwa „Am 05.03.2024 erfuhr die Tochter,
+  dass der Vater verstorben ist“. Das ist die Kenntnis, mit der die Ausschlagungsfrist beginnt.
+
+### 24.2 Fristerkennung
+
+**Befund (installierter Build `953dc8d`, Fall 18):** Die lokale Fristerkennung schlug jedes Datum vor. Das maskierte
+Geburtsdatum erschien als „Mögliche Frist (unreviewed): [GEBURTSDATUM_01]“.
+
+**Korrektur (`deadlines/extractor.py`):**
+- Geburts- und Todesdaten erzeugen keinen Fristvorschlag. Erkannt werden sie mit denselben Regeln wie in der
+  Pseudonymisierung.
+- Steht ein Fristen-Schlüsselwort vor oder nach dem Datum, bleibt es **immer** ein Vorschlag. Eine echte Frist geht durch
+  eine Fehlerkennung nie verloren.
+- Bereits gespeicherte Altvorschläge filtert `local_ai_provider._build_argumentationspunkte`. Geprüft wird am Ausschnitt
+  und am Volltext des Quelldokuments (Tabellenzeilen ohne Kopf); Ausschnitte mit Schlüsselwort nie.
+- Kein Schutz entfällt: Die Argumente laufen weiterhin vollständig durch den Gateway.
+
+### 24.3 Messung (vorher `ed0035e` → nachher)
+
+| Messung | Vorher | Nachher |
+|---|---|---|
+| Todesdaten-Korpus (13 Fälle: 10 Todes-/Lebensdaten, 11 lesbar zu haltende Daten inkl. „Todesfolge“/„Todesanzeige“/„Beerdigung“) | **9 von 10 Todesdaten im Klartext** | **0 von 10**, 0 von 11 lesbaren Daten verdeckt, 0 Blockaden, Rückführung exakt |
+| Datums-Korpus (§23) | 0/12 Geburtsdaten im Klartext | unverändert; „verstarb am“ (K07) jetzt bewusst maskiert |
+| Nummern-Korpus (§22) | 0/32 | unverändert |
+| 916 synthetische Texte, Review-Sätze, Presidio-Audit, Batterie | – | **0 Änderungen** (keine neue Blockade, Rückfrage oder Maskierung) |
+| Fristvorschlag Geburts-/Todesdatum | ja | nein; echte Fristen, Vertrags-, Kenntnis- und Termindaten weiterhin vorgeschlagen |
+| Volle Testsuite (`5cafe0f`) | – | 4201 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle (fehlende Logo-Dateien) fehlgeschlagen |
+
+### 24.4 Unabhängige Reviews
+
+**Runde 1 fand:**
+- „Verstorbenen“ ohne Wortgrenze. Dadurch wurde eine echte Frist („Erben des Verstorbenen haben Frist bis …“) als
+  Todesdatum maskiert und ging als Frist verloren.
+- Weitere Lecks: „verst./gest. am“, „starb“, „Todeszeitpunkt“, „Sterbefall“, Zeilenumbruch, Lebensdaten in ISO- und
+  Monatsform, Traueranzeige.
+- Gespeicherte Tabellen-Altvorschläge wurden nicht gefiltert.
+
+**Runde 2 fand Übergriffe der Korrekturen:**
+- Die freie Lücke nach dem Datum traf Kenntnis- und Bescheiddaten.
+- Die Zeilenumbruch-Erweiterung traf einen Termin.
+- „verschieden am“ fehlte.
+
+Alles ist behoben und als Test abgesichert.
+
+**Installierter Build (`58c1a1e`; Installer zweimal neu erstellt und installiert, Bundle enthält alle neuen Funktionen):**
+- **Fall 19 (neu):**
+  - Geburts- und Todesdatum maskiert;
+  - Testament-, Eröffnungs-, Frist-, Termin- und „Todesfolge“-Datum lesbar;
+  - die Fristvorschläge enthalten weder Geburts- noch Todesdatum, die echte Ausschlagungsfrist ist enthalten;
+  - genau ein Cloud-Aufruf, Rückführung korrekt (**PASS**).
+- **Dritter Fund aus Fall 19 im ersten Build (`5cafe0f`):**
+  - Der Fristausschnitt schnitt das Geburtsdatum „12.03.1940“ in der Mitte. Das Bruchstück „1940“ ging hinaus, weil keine
+    Datumserkennung es mehr traf; das war vorbestehend.
+  - Behoben (`58c1a1e`): Der Ausschnitt endet nur an Leerraum. Gespeicherte Altausschnitte werden um Rand-Bruchstücke
+    gekürzt. Ein vollständiges Datum wird über den Wert konsistent maskiert.
+  - Nach dem Neubau gab es kein Bruchstück mehr (Prüfung „kein Geburtsjahr-Bruchstück“, auch mit Altvorschlägen früherer
+    QA-Läufe).
+- **Fall 18:** PASS.
+- **Fälle 1–11 und 14–16:** PASS.
+- **Fälle 12, 13, 17:** unverändert gegenüber den Vorbuilds; nur die in §21 und §22 dokumentierten beabsichtigten
+  Änderungen bzw. die vorbestehende NER-Übermaskierung.
+- Die volle Testsuite auf `58c1a1e` ergab 4203 bestanden, nur die 4 bekannten `test_design_refresh`-Fälle schlugen fehl.
+
+### 24.5 Bewertung und Restrisiken
+
+| Punkt | Status |
+|---|---|
+| Todesdaten vor dem Cloud-Versand maskiert (Korpus, Gateway, Verlauf, Argumente) | **PASS** |
+| Ereignisdaten mit „Tod“ nur als Wortteil lesbar, keine pauschale Maskierung von Nachbardaten | **PASS** |
+| Keine indirekte Wiederherstellung (keine Tagesabstände, kein Bezug zu lesbaren Daten in den Notizen) | **PASS** |
+| Geburts-/Todesdatum löst keine Frist aus; echte Fristen bleiben erhalten | **PASS** |
+| Installierter Build (Fälle 1–19) | **PASS** (12, 13, 17 nur dokumentierte beabsichtigte Unterschiede) |
+| Echter Cloud-Aufruf mit Todesdatum | **NICHT VERIFIZIERT** (Pfad identisch mit dem live belegten, §21.7) |
+
+**Restrisiken:**
+- **Datum ohne erkennbaren Todeskontext bleibt lesbar.** Beispiele: „tödlicher Unfall am …“, eine bloße Liste ohne
+  Kopfzeile, „Todestag“ als Jahrestag.
+- **Ein lesbares Beerdigungs- oder Eröffnungsdatum grenzt das Todesdatum ein.** Das ist der Preis lesbarer Ereignisdaten
+  (Owner-Entscheidung §23).
+- **Ein Geburtsdatum in Fristnähe** wird wieder als Fristvorschlag gelistet. Im Versand ist es maskiert; das ist ein
+  Produkt-, kein Datenschutzthema.
+- **Ein echtes Schreibensdatum mit gleichem Wert** wie ein Todesdatum wird mitmaskiert, weil die Maskierung je Wert
+  konsistent ist. Das ist sicher, kostet aber Lesbarkeit.
+- **CSV-Zeilen mit Namen** werden weiter blockiert (vorbestehend, fail-closed).
+
+Eine vollständige Leckfreiheit ist nicht belegt. Keine Echtdatenfreigabe; die Freigabebedingungen aus §23.7 (P0-08,
+Anwenderhinweise, begleiteter Pilot) gelten unverändert. Die offene Entscheidung „Todesdaten“ aus §23.7 ist hiermit
+umgesetzt.

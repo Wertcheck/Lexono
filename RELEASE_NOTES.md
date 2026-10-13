@@ -109,8 +109,9 @@
   Rückfrage maskiert; unbeschriftete Kennnummern lösen im Chat eine Rückfrage aus. Zahlungskarten werden nie freigegeben.
 - **Datumspolicy (§23):** Sachverhalts-, Vertrags-, Frist- und Ereignisdaten gehen jetzt **lesbar** an die Cloud-KI
   (vorher `[DATUM_nn]`), damit Fristen und Chronologie korrekt berechnet werden. **Geburtsdaten** bleiben maskiert
-  (`[GEBURTSDATUM_nn]`); die KI erhält nur das Alter in vollendeten Jahren. Todesdaten sind derzeit lesbar (offene
-  fachliche Entscheidung).
+  (`[GEBURTSDATUM_nn]`); die KI erhält nur das Alter in vollendeten Jahren. **Todesdaten (§24)** werden
+  ebenfalls maskiert (`[TODESDATUM_nn]`, die KI erhält nur die vollen Jahre seit dem Tod); Geburts- und Todesdaten
+  erscheinen nicht mehr als „Mögliche Frist“.
 - **Grundbuch (§23):** Grundbuchblatt- und Flurstücksnummern werden maskiert (`[GRUNDBUCH_nn]`); Gemarkung, Flur und
   Amtsgericht bleiben lesbar.
 
