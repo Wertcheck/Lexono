@@ -183,6 +183,8 @@ dass alles Notwendige vorbereitet ist.
   - [ ] Scan-Ordner (wohin Dokumente legen)
   - [ ] Entwurf-Workflow (Klassifikation → Entwurf → Review → Freigabe)
   - [ ] Feedback-Sammlung (wie Erfahrungen notieren)
+  - [ ] **Datenschutz-Kurzanleitung** (PILOT_PLAYBOOK.md §2.2a) gemeinsam durchgehen: Vorschau der erkannten
+        Angaben, Rückfrage-Karte, Blockaden, fehlerhafte Maskierung melden, Grenzen der Pseudonymisierung
   - [ ] Notfall-Kontakt (wen anrufen bei Problemen)
 - [ ] Anwalt testet einen echten Workflow alleine
 - [ ] Fragen klären
@@ -192,7 +194,8 @@ dass alles Notwendige vorbereitet ist.
 ## J. Go/No-Go Entscheidung (Tag 1, Noon)
 
 - [ ] **Checkliste A–I vollständig?**
-  - [ ] JA → Alle Häkchen gesetzt? → **GO für Pilot-Start**
+  - [ ] JA → Alle Häkchen gesetzt? → **GO für Pilot-Start** (mit Echtdaten nur, wenn auch „Datenschutz-Freigabe“
+        unten vollständig ist – diese Entscheidung trifft die Kanzlei, nicht die Software oder ein Agent)
   - [ ] NEIN → Fehler beheben, dann erneut prüfen
 
 - [ ] **System-Funktionalität:**
@@ -205,6 +208,19 @@ dass alles Notwendige vorbereitet ist.
   - [ ] Einweisung erhalten + verstanden
   - [ ] Erste echte Aufgaben bereitet vor (3–5 Akten zum Verarbeiten)
   - [ ] Feedback-Prozess klar (tägliche Notizen, wöchentliche Reviews)
+
+- [ ] **Datenschutz-Freigabe (Stand 13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §25) – ohne diese Punkte: nur
+      synthetische bzw. ausdrücklich freigegebene Testakten, KEINE Echtdaten:**
+  - [ ] **P0-08 entschieden** (LEXONO_MASTER_PRODUCT.md §7): (A) Lexono-Gateway eingerichtet und geprüft **oder**
+        (B) Direct-Key-Pfad ausdrücklich und schriftlich durch die Kanzlei freigegeben – nach Prüfung von
+        Schlüsselspeicherung, Zugriffsschutz und Rotation (§25.4). TLS allein ist kein Nachweis.
+  - [ ] Bei (B): Lesezugriff auf `C:\ProgramData\Lexono\.env` auf die Lexono nutzenden Konten beschränkt (Standard:
+        alle lokalen Benutzer lesen mit), eigener Anthropic-Schlüssel nur für Lexono, Ausgabenlimit gesetzt,
+        Rotationsverfahren und Verantwortliche benannt
+  - [ ] Auftragsverarbeitung/Übermittlung an Anthropic von der Kanzlei geprüft (AVV, Drittlandbezug)
+  - [ ] Datenschutz-Kurzanleitung (PILOT_PLAYBOOK.md §2.2a) mit allen Pilotanwendern durchgegangen
+  - [ ] Meldeweg für Datenschutzauffälligkeiten und Zuständigkeit für Art. 33 DSGVO benannt
+  - [ ] Bekannte Restrisiken (§§22–25) von der Kanzlei zur Kenntnis genommen
 
 ---
 

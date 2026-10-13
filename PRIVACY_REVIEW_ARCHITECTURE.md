@@ -2250,3 +2250,135 @@ Alles ist behoben und als Test abgesichert.
 Eine vollständige Leckfreiheit ist nicht belegt. Keine Echtdatenfreigabe; die Freigabebedingungen aus §23.7 (P0-08,
 Anwenderhinweise, begleiteter Pilot) gelten unverändert. Die offene Entscheidung „Todesdaten“ aus §23.7 ist hiermit
 umgesetzt.
+
+
+## 25. Pilotvorbereitung: Restrisiken, Anwenderanweisung, P0-08-Voraussetzungen, Pilotbewertung (13.10.2026, `44f4cb0`)
+
+Ausgangsstand `eebd8b5`. Nur synthetische Daten. Diese Bewertung ist **keine** Echtdatenfreigabe. Die Entscheidung trifft
+die Kanzlei (PILOT_CHECKLIST.md J „Datenschutz-Freigabe“).
+
+### 25.1 Restrisiko-Analyse (unabhängig, über das echte Gateway reproduziert)
+
+| Bereich | Befund | Art | Maßnahme |
+|---|---|---|---|
+| Zusammengesetzte Nummernbezeichnungen | „Matrikelnummer 123456“, „Schülernummer“, „Häftlingsnummer“, „Mitarbeiter-Nr.“, „Bewohner-Nr.“: Wert im Klartext, die NER maskierte stattdessen die Bezeichnung | **Leck** | behoben (Stufe 1, §22) |
+| Ausdrückliche Todesformulierungen | „Tod seines Vaters am“, „Tod von Frau X am“, „im Alter von 82 Jahren verstorben“, „im Hospiz Sonnenhof verstorben“, „verstarb am Sonntag, dem“, „am … eingetretenen Tod“, „died“, Traueranzeige „sanft entschlafen“, „für immer verlassen“; zusätzlich als „Mögliche Frist“ | **Leck** | behoben (§24-Regeln erweitert) |
+| Geburtstag als Jahrestag | „An seinem 45. Geburtstag, dem 12.03.2025“ lesbar, das Geburtsdatum damit exakt ableitbar; die Variante mit „am“ wurde als Geburtsdatum mit falscher Altersangabe („1 vollendete Jahre“) gewertet | **Leck** und **Sachverhaltsfehler** | behoben (Kategorie „geburtstag“ ohne Altersangabe) |
+| Fristvorschläge | Geburts- oder Todesdatum neben einem Fristwort als „Mögliche Frist“ (im Versand maskiert); Altvorschläge aus E-Mails ohne Abgleich mit dem Nachrichtentext (Tabellenzeile ohne Kopf, Geburtsdatum im Klartext) | Fehlvorschlag bzw. **Leck** | behoben (Schlüsselwort zählt nur ohne Datum dazwischen; Volltext der E-Mail) |
+| `PromptContextBuilder` | gibt `due_date` als ISO aus; derzeit ohne Produktiv-Aufrufer | kein aktuelles Leck | vorsorglich gefiltert |
+| Frühere KI-Antworten | Namen, Kontakt-, Konto-, Kennzeichen-, Geburts-/Todesdaten, die nur im Verlauf stehen, werden maskiert; bei Bezug im Anwaltstext derselbe Platzhalter | **kein Leck gefunden** | – |
+| „tödlicher Unfall am“, „kam … ums Leben“, „verunglückte … tödlich“, „tot aufgefunden“ | Datum lesbar | Restrisiko | **bewusst nicht geändert**: das Unfall- bzw. Auffindedatum ist das juristisch zentrale Ereignisdatum (Haftung, § 844 BGB, Verjährung) |
+| Kurze Nummern bis 4 Ziffern ohne Bezeichnung | „Zimmer 12“, „Spind 27“, „Personal 4711“, „Startnummer 815“ lesbar | Restrisiko | keine zuverlässige Regel ohne Beträge, Seiten, Paragraphen und Postleitzahlen zu treffen |
+| Indirekte Rekonstruktion | Altersangabe plus „am Unfalltag genau 45“ oder „an seinem Geburtstag“; „eine Woche nach dem Erbfall, am …“; Beerdigungsdatum. Zeitfenster für das Geburts-/Todesdatum bis auf einen Tag eingrenzbar | Restrisiko | relative Fristfakten sind juristisch nötig (§ 1944 BGB); eine Maskierung wäre unzuverlässig und sachverhaltszerstörend |
+| NER-Übermaskierung | „Ihres Vaters“, „Grün-Weiß“, „Ausschlagungsfrist“, „Haus 14“ als Person/Ort | Lesbarkeit, kein Leck | vorbestehend, dokumentiert |
+
+**Messung (vorher `eebd8b5` → nachher), getrennt nach Leck, Fehlalarm, Blockade, Sachverhaltsverlust:**
+
+| Messung | Ergebnis |
+|---|---|
+| Neue Regressionstests (`tests/test_privacy_pilot_residual_risks.py`) | alle reproduzierten Lecks behoben; Unfall-, Auffinde- und Kenntnisdaten lesbar (kein Sachverhaltsverlust); keine Altersangabe für Jahrestage |
+| Todesdaten-, Datums-, Nummern-Korpus | 0/10, 0/12, 0/32 Klartext; unverändert 0, 1, 2 verdeckte lesbar zu haltende Werte (bewusst bzw. vorbestehend); 0 Blockaden |
+| 916 synthetische Texte, Review-Sätze, Presidio-Audit, Batterie | **0 Änderungen**: keine neue Blockade, Rückfrage oder Maskierung |
+| Review-Runde zu den Fixes | zwei Regressionen gefunden und behoben: „geboren, am …“ als Geburtsdatum; Blockade bei zweistelliger bezeichneter Nummer (jetzt ab 3 Ziffern) |
+| Volle Testsuite (`44f4cb0`) | 4225 bestanden; 4 bekannte `test_design_refresh`-Fehler (fehlende Logo-Dateien, fremde Änderung); 1 zeitabhängiger Test `test_web_knowledge.py::test_apply_update_endpoint_starts_a_real_background_update` (fester `sleep(0.3)` auf einen Hintergrund-Thread, unter Last), einzeln 3×/3 und mit der ganzen Datei 45/45 bestanden, ohne Bezug zu dieser Änderung (dort seit `eebd8b5` keine Änderung) - **unabhängiges bestehendes Problem** |
+
+### 25.2 Anwenderanweisung
+
+Die Anweisung steht in `PILOT_PLAYBOOK.md` **§2.2a** („Datenschutz-Kurzanleitung“) und ist Pflichtpunkt der
+Anwalt-Einweisung (`PILOT_CHECKLIST.md` I). Sie behandelt:
+- Prüfung der erkannten Angaben in der Dokumentvorschau vor dem Versand;
+- Rückfrage-Karte und ihre Optionen;
+- Blockaden und Warnungen;
+- zu viel bzw. zu wenig Maskiertes;
+- Meldeweg (ohne Mandantendaten, Art. 33 DSGVO);
+- Grenzen der Pseudonymisierung und Verantwortung der Anwender.
+
+Eine vollständige Leckfreiheit wird ausdrücklich nicht zugesagt.
+
+### 25.3 P0-08: offene Architekturentscheidung (weder implementiert noch aktiviert)
+
+**Technische Feststellungen zum heutigen Direct-Key-Pfad (geprüft, ohne Schlüsselwerte auszugeben):**
+- Der Schlüssel liegt im Klartext in `C:\ProgramData\Lexono\.env`. Die Datei ist für **alle lokalen Windows-Benutzer
+  lesbar** (`VORDEFINIERT\Benutzer: Lesen`, vom Ordner geerbt); der Installer setzt keine engeren Rechte.
+- Er ist in der Anwendung als `SecretStr` geführt, nicht in Protokollen, Backups (bewusst ausgeschlossen),
+  Einstellungsseiten oder der Diagnose enthalten.
+- Er wird nur an `https://api.anthropic.com` gesendet (Zielbindung §21, TLS 1.3 belegt §21.7).
+- Rotation: keine Funktion in Lexono; Austausch durch Bearbeiten der `.env` und Neustart.
+- Ein Kanzlei-PC mit diesem Schlüssel kann beliebige Anfragen auf das Konto der Kanzlei stellen. TLS schützt den
+  Transport, **nicht** den Schlüssel auf dem Rechner.
+
+**Voraussetzungen für (A), Lexono-Gateway:**
+1. Gateway auf einem von Lexono bzw. der Kanzlei betriebenen Server.
+2. Anthropic-Schlüssel nur dort.
+3. Mandanten-Zugangsdaten (Argon2id) je Kanzlei, Widerruf getestet.
+4. Ratenbegrenzung und inhaltsfreie Protokolle gegen einen echten Server geprüft.
+5. TLS mit gültigem Zertifikat; Ziel-URL in der Kanzlei-Konfiguration fest.
+6. Auftragsverarbeitung zwischen Kanzlei, Gateway-Betreiber und Anthropic geklärt.
+7. Ausfall- und Notfallweg dokumentiert.
+8. Eigene P0-Abnahme (LEXONO_MASTER_PRODUCT.md P0-08).
+
+**Voraussetzungen für (B), ausdrückliche, dokumentierte Freigabe des Direct-Key-Pfads:**
+1. Eigener Anthropic-Schlüssel nur für Lexono, mit Ausgabenlimit bzw. Workspace-Limit beim Anbieter.
+2. **Zugriffsschutz:** Leserecht auf `C:\ProgramData\Lexono\.env` auf Administratoren, SYSTEM und die
+   Lexono-Nutzerkonten beschränkt (heute: alle lokalen Benutzer); Rechner mit Festplattenverschlüsselung,
+   gesperrtem Bildschirm und ohne fremde lokale Konten.
+3. **Speicherung:** Schlüssel nicht in E-Mails, Tickets, Backups oder Kopien der `.env`; Backups der `.env` (falls
+   vorhanden) mit gleichem Schutz.
+4. **Rotation:** festgelegtes Intervall und Anlass (Personalwechsel, Verdacht), benannte verantwortliche Person,
+   Vorgehen dokumentiert (neuen Schlüssel erzeugen, `.env` ersetzen, Lexono neu starten, alten Schlüssel beim Anbieter
+   widerrufen, Funktionsprüfung).
+5. **Überwachung:** Nutzung und Kosten beim Anbieter regelmäßig prüfen.
+6. Auftragsverarbeitung/Drittlandübermittlung an Anthropic geprüft.
+7. Schriftliche Entscheidung der Kanzlei mit Datum und Verantwortlichem, bezogen auf diesen Stand.
+
+Eine Empfehlung des Agents ersetzt diese Entscheidung nicht.
+
+### 25.4 Pilotbewertung
+
+**Technische Nachweise:**
+
+| Prüfpunkt | Status |
+|---|---|
+| Pre-Cloud-Grenze, Siegel, Fail-Closed (§20) | PASS |
+| Echter Anthropic-Aufruf, TLS 1.3, Zielbindung (§21) | PASS |
+| Lokale KI nur auf diesem Rechner (§21) | PASS |
+| Kennzeichen und Nummern (§§21–22, §25.1) | PASS, mit dokumentierten Restlücken |
+| Daten: Sachverhaltsdaten lesbar, Geburts- und Todesdaten geschützt (§§23–24, §25.1) | PASS, mit dokumentierten Restlücken |
+| Grundbuch, IP-Adressen, Verlaufskennungen (§23) | PASS |
+| Fristvorschläge ohne Geburts-/Todesdaten (§24, §25.1) | PASS |
+| Lexono-Gateway (P0-08) | **NICHT VERIFIZIERT** (zurückgestellt) |
+| Schlüsselverwaltung des Direct-Key-Pfads | **FAIL** gegenüber den Voraussetzungen (B): Datei für alle lokalen Benutzer lesbar, keine Rotation |
+| Vollständige Leckfreiheit | **NICHT VERIFIZIERT**, und nicht belegbar |
+
+**Fachliche und organisatorische Entscheidungen (offen, bei der Kanzlei):**
+1. P0-08: (A) oder (B) mit den Voraussetzungen aus 25.3.
+2. Auftragsverarbeitung/Übermittlung an Anthropic.
+3. Meldeweg und Zuständigkeit für Datenschutzvorfälle (Art. 33 DSGVO).
+4. Kenntnisnahme der Restrisiken (§§22–25), insbesondere der lesbaren Ereignisdaten (Unfall-, Auffinde-,
+   Beerdigungsdatum) und der Möglichkeit indirekter Rekonstruktion.
+5. Einweisung aller Pilotanwender (PILOT_PLAYBOOK.md §2.2a).
+
+**Was weiterhin gegen Echtdaten spricht (Stand heute):**
+- P0-08 ist nicht entschieden.
+- Der Schlüssel ist für alle lokalen Benutzer lesbar; es gibt kein Rotationsverfahren.
+- Die organisatorischen Punkte 2–5 sind nicht nachgewiesen.
+- Die Restlecks aus §§22–25 sind dokumentiert, aber nicht beseitigt.
+
+**Begleiteter Pilot mit synthetischen bzw. ausdrücklich freigegebenen Testakten: technisch vorbereitet.**
+
+**Installierter Build (`44f4cb0`, Installer neu erstellt und installiert; Bundle enthält die neuen Funktionen):**
+- **Fall 20 (neu):**
+  - „Tod seines Vaters am …“ maskiert;
+  - Matrikel- und Mitarbeiter-Nr. maskiert;
+  - „45. Geburtstag, dem …“ als `[GEBURTSTAG]` ohne Altersangabe;
+  - Antrags-, Frist- und Termindaten lesbar;
+  - keine Geburts-/Todesdaten unter den Fristvorschlägen, echte Frist enthalten (**PASS**).
+- **Fälle 18 und 19:** PASS.
+- **Fälle 1–11 und 14–16:** PASS.
+- **Fälle 12, 13, 17:** unverändert (dokumentierte beabsichtigte Unterschiede bzw. vorbestehende NER-Übermaskierung).
+- **Echter Cloud-Aufruf mit diesem Stand:** NICHT VERIFIZIERT. Es ist derselbe Pfad wie der live belegte (§21.7).
+
+| Prüfpunkt | Status |
+|---|---|
+| Volle Testsuite | PASS (nur bekannte bzw. unabhängige Fehler, siehe oben) |
+| Installierter Build, Fälle 1–20 | PASS |

@@ -184,6 +184,60 @@ Der Chat ist die zentrale Arbeitsfläche:
    ausdrücklich im Chat; Meldungen zu lokaler KI bzw. Cloud nennen die tatsächliche Ursache (und ob
    etwas an die Cloud gesendet wurde). Es wird nie automatisch versendet.
 
+### 2.2a Datenschutz-Kurzanleitung für Anwenderinnen und Anwender (Stand 13.10.2026)
+
+Lexono ersetzt personenbezogene Angaben **auf diesem Rechner** durch Platzhalter (z. B. `[PERSON_01]`,
+`[KENNUNG_02]`, `[GEBURTSDATUM_01]`), bevor Text an die Cloud-KI geht, und setzt die echten Werte in der Antwort
+wieder ein. Das senkt das Risiko erheblich, **schließt es aber nicht aus**: Die Erkennung ist automatisch und kann
+Angaben übersehen oder zu viel verdecken. Die Verantwortung für die Freigabe eines Inhalts an die Cloud bleibt bei
+Ihnen.
+
+**Vor dem Versand prüfen**
+- Angehängtes Dokument im Chat anklicken: Lexono zeigt es mit **hervorgehobenen** erkannten Angaben, rechts die Liste
+  der erkannten Kategorien. Nicht hervorgehobene Namen, Anschriften, Kennnummern oder Gesundheitsangaben würden im
+  Klartext versendet. Die Vorschau ist eine Hilfe, keine Garantie, dass genau so versendet wird.
+- Lesbar bleiben bewusst: Fristen, Vertrags- und Ereignisdaten, Geldbeträge, Gesetzes- und Rechtsprechungsfundstellen.
+  Verdeckt werden u. a. Namen, Anschriften, Kontaktdaten, Konto-/Kunden-/Vertrags-/Policen-/Patientennummern,
+  Kennzeichen, Geburts- und Todesdaten (die KI erhält nur das Alter bzw. die Jahre seit dem Tod),
+  Grundbuchblatt- und Flurstücksnummern.
+- Besonders sensible Inhalte (Gesundheit, Strafsachen, Kinder) nur senden, wenn es für die Aufgabe nötig ist.
+
+**Rückfragen („Kurze Rückfrage“)**
+- Lexono fragt **vor** dem Versand, wenn ein Begriff oder eine Nummer möglicherweise personenbezogen ist. Bis zu
+  Ihrer Auswahl wird **nichts** gesendet.
+- „Als Person behandeln“ / „Unsicher“: der Wert wird verdeckt. „Kein personenbezogenes Datum“: er geht im Klartext
+  hinaus – nur wählen, wenn Sie sicher sind. Die Karte nennt bei Nummern und Kennzeichen „Person“; gemeint ist
+  „personenbezogen“.
+- „Fundstelle im Dokument zeigen“ hilft bei der Einordnung. Ihre Entscheidung gilt für diese Akte bzw. Unterhaltung.
+
+**Warnungen und Blockaden**
+- „… aus Datenschutzgründen blockiert“: Lexono hat **nichts** gesendet, weil nach der Pseudonymisierung noch ein
+  verdächtiger Wert übrig war. Das ist gewollt. Text kürzen oder umformulieren und erneut senden; Schutz nie
+  umgehen (z. B. durch Abschreiben in ein anderes Werkzeug).
+- „Platzhalter … nicht übernommen“: die KI hat einen Platzhalter verändert; erneut senden genügt meist.
+
+**Fehlerhafte Maskierung**
+- **Zu viel verdeckt** (z. B. ein Fachbegriff als `[PERSON_01]`): Ergebnis prüfen, im Schreiben korrigieren; fachlich
+  unkritisch, aber bitte melden.
+- **Zu wenig verdeckt** (personenbezogener Wert in der Vorschau nicht hervorgehoben, oder in der Antwort erkennbar,
+  dass die KI ihn kannte): nicht erneut senden, sondern sofort melden (siehe unten).
+- Antworten immer vollständig prüfen; Lexono versendet nichts selbst.
+
+**Melden und dokumentieren**
+- Datenschutzauffälligkeiten sofort der Pilotbetreuung melden: Datum/Uhrzeit, Art der Anfrage (Chat/Schriftsatz/
+  Dokument), Meldungstext, betroffene Kategorie (z. B. „Kontonummer ohne Bezeichnung“). **Keine** Mandantendaten,
+  Dokumentinhalte oder Screenshots mit Klartext in die Meldung kopieren.
+- Die Pilotbetreuung prüft, ob eine meldepflichtige Datenschutzverletzung vorliegt (Art. 33 DSGVO, 72 Stunden) und
+  stellt den Fall mit synthetischen Daten nach (PILOT_SUPPORT.md §3.4).
+
+**Grenzen**
+- Keine Garantie vollständiger Leckfreiheit. Bekannte Grenzen: Angaben in ungewöhnlicher Schreibweise, sehr kurze
+  Nummern ohne Bezeichnung, Daten ohne erkennbaren Geburts-/Todeskontext, Namen in Kleinschreibung
+  (PRIVACY_REVIEW_ARCHITECTURE.md §§22–24).
+- Pseudonymisierung ist keine Anonymisierung: Aus Zusammenhängen (Ort, Datum, Ereignis) kann eine Person
+  erkennbar bleiben.
+- Echte Mandatsdaten nur nach ausdrücklicher Freigabe durch die Kanzlei (Go/No-Go, PILOT_CHECKLIST.md J).
+
 ### 2.3 Fehlerbehandlung während Pilotbetrieb
 
 **Häufige Fehler:**
