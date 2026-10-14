@@ -3883,5 +3883,6 @@ Lauf (6 Fälle, Dev-Werte):
 | Schriftsatz | ≈ 3,6 s | ≈ 23 s (langer Vertrag) |
 | Payload Chat | ≈ 4.100 Zeichen | ≈ 32.500 Zeichen |
 
-Gesamtlauf ≈ 110 s. Die Maxima entstehen beim langen Vertrag: Die einmalige Erkennung persönlicher Daten im
-vollständigen Quelltext (§34.2) und der Dokumentauszug kosten dort spürbar Zeit.
+Gesamtlauf ≈ 110 s. Die Maxima entstehen beim langen Vertrag (Payload ≈ 32.500 Zeichen). Die Ursache ist nicht
+einzeln gemessen. Mögliche Anteile sind die Namenserkennung über den großen Payload, der Dokumentauszug und die
+Erkennung persönlicher Daten im Quelltext (§34.2); das ist NICHT VERIFIZIERT.
