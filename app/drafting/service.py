@@ -79,6 +79,7 @@ from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_plac
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
 from app.drafting.response_validation import build_semantic_check_prefix, validate_claude_response
+from app.drafting.citation_check import annotate_citations
 from app.drafting.review_notes import split_review_notes
 from app.drafting.schema import DraftingResult, KnowledgeItemReference, SourceReference
 from app.drafting.versioning import create_new_draft_version
@@ -1508,6 +1509,8 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 writing_result.text, gateway_result.mappings
             )
+        # Lokale Fundstellenpruefung (§36): Hinweise nur im Block "Offene Pruefpunkte", nie im Schreiben selbst
+        reconstructed_text = annotate_citations(reconstructed_text, matter_id, db)
 
         draft = self._persist_draft(
             matter_id,
@@ -1688,6 +1691,8 @@ class DraftingService:
             reconstructed_text = self.gateway.reconstruct_response(
                 full_text, gateway_result.mappings
             )
+        # Lokale Fundstellenpruefung (§36), wie im nicht-streamenden Pfad
+        reconstructed_text = annotate_citations(reconstructed_text, matter_id, db)
 
         draft = self._persist_draft(
             matter_id,

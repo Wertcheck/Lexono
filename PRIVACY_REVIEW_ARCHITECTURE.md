@@ -4214,3 +4214,79 @@ hätte mehr Fehlalarme beseitigt, aber Namen freigegeben.
 | Zwei unabhängige Red-Team-Reviews; alle bestätigten Lecks vor dem Commit behoben | PASS |
 | LE-T003 entblockt | **offen (35.4)** |
 | Installierter Build | NICHT VERIFIZIERT |
+
+## 36. P0-Arbeitspaket Q: erfundene oder ungeprüfte Fundstellen (14.10.2026)
+
+Nur synthetische Daten, kein externer Modellaufruf. Bezug: Befund und Optionen Q1–Q3 in §34.8.
+
+### 36.1 Ursache und Korrektur der Messmethode
+
+- **Ursache:** Lexono prüft Fundstellen einer Modellantwort lokal nicht. Der Schutz bestand nur aus der Anweisung an
+  das Modell und der Recherchebewertung vor dem Aufruf. Die optionale Cloud-Prüfung „Entwurf prüfen“ ist
+  modellbasiert und muss bewusst gestartet werden.
+- **Messlücke im eigenen Benchmark:** Die Probe aus §34.8 las nur `draft.content`. Das enthält bewusst nur das
+  Schreiben (`review_notes.py`); die „Offenen Prüfpunkte“ stehen in `draft_text` (Chat-Verlauf). Die Probe hätte eine
+  Markierung also nie gefunden.
+- **Korrektur:** Die Probe liest jetzt `draft_text`. Mit korrigierter Probe und ohne neue Prüfung: 0/8 (Dev) und
+  0/4 (Test). Der Befund bleibt also bestätigt.
+
+### 36.2 Optionen und Entscheidung
+
+| Option | Bewertung | Entscheidung |
+|---|---|---|
+| Q1 Normen gegen die Gesetzesbibliothek | deterministisch, lokal; nur aussagekräftig, wo das Gesetz amtlich vollständig importiert ist | umgesetzt, mit Unterscheidung amtlich/kuratiert/nicht installiert |
+| Q2 Rechtsprechung gegen Akte und freigegebene Quellen | lokal und deterministisch; überschneidet sich mit „Entwurf prüfen“, ohne Cloud-Aufruf | umgesetzt, als Sammelhinweis |
+| Q3 Blockieren | unpraktikabel; nicht verifizierbar heißt nicht falsch | verworfen |
+
+**Umsetzung (`app/drafting/citation_check.py`, Haken in `DraftingService` nach der Rückführung, Streaming und Nicht-Streaming):**
+- **Erkennung:**
+  - Normen: §/§§/Art. mit Abs./Satz/Nr./lit./römischen Absätzen/ff., Aufzählungen.
+  - Aktenzeichen: auch vierstellige Jahre und EuGH „C-…“, nur nach einer Gerichtsbezeichnung; „AG“/„KG“ nur mit Ort.
+  - Zeitschriftenfundstellen („NJW 2020, 123“).
+- **Existenz/Beleg, je Fundstelle genau eine Stufe:**
+  - `norm_amtlich_vorhanden` (amtlicher Import, `doknr`);
+  - `norm_kuratiert_vorhanden`;
+  - `norm_amtlich_nicht_gefunden`: nur, wenn das Gesetz amtlich importiert ist; in einer kuratierten Auswahl beweist
+    ein Fehlen nichts;
+  - `norm_nicht_pruefbar`;
+  - `freigegebene_quelle` (Source „freigegeben“ oder Kanzleiwissen „approved“);
+  - `aktenbelegt`: steht wörtlich in einem Aktendokument; wird als „nur in Aktendokumenten gefunden, keine
+    unabhängige Bestätigung“ ausgewiesen, weil Akteninhalt ungeprüfter Input ist;
+  - `nicht_verifiziert`.
+- **Stützung der Aussage:** Wird nie automatisch geprüft und ist in jedem Hinweis ausdrücklich als „nicht geprüft“
+  gekennzeichnet. Ebenso: „nicht erkannte Zitierformen wurden nicht geprüft“.
+- **Keine Selbstbestätigung:** kein Modellaufruf, nur lokale Daten.
+- **Ausgabe:** nur im Block „Offene Prüfpunkte“. `draft.content` (Editor, Export) bleibt das reine Schreiben; der
+  Chat-Verlauf, der an die Cloud geht, entfernt die Hinweise (`split_review_notes`).
+
+**Unabhängiges Review – bestätigte Befunde, alle vor dem Commit behoben und als Tests gesichert:**
+- Aktenbeleg zu locker: „§ 4 … Satzung … KSchG“ zählte als Beleg.
+- Aktenzeichen als Teilstring: „I ZR 1/21“ in „VIII ZR 1/21“.
+- Wortwahl „belegt“.
+- Fehlende Zitierformen.
+- „Muster AG, … 2 K 33/24“ als Gericht erkannt.
+- § und Art. nicht unterschieden.
+- Groß-/Kleinschreibung der Gesetzeskürzel; „SGB 5“ nicht erkannt.
+
+### 36.3 Messung
+
+| Messung | vorher | nachher |
+|---|---|---|
+| Legal-E2E, erfundene Norm + Entscheidung in simulierter Modellantwort, markiert (korrigierte Probe) | Dev 0/8, Test 0/4 | Dev 8/8, Test 4/4; Stützung jeweils als „nicht geprüft“ markiert |
+| Unit-Tests `test_citation_check.py` | – | 13 bestanden (Stufen, Grenzen, Formen, Wortwahl) |
+| Streaming-Tests | – | angepasst: Schreiben weiterhin exakt gleich dem Stream, Hinweis im Prüfpunkte-Block |
+
+Im Benchmark erscheint „§ 9999 BGB“ korrekt als „Existenz lokal nicht prüfbar“: In der Benchmark-Datenbank ist kein
+Gesetz installiert. Mit amtlich importiertem BGB lautet die Stufe „im amtlichen Gesetzestext NICHT gefunden“ (Unit-Test).
+
+### 36.4 Restrisiken
+
+- **Hinweisdichte:** Jede Antwort mit erkannter Fundstelle erhält mindestens die Sammelzeile, auch Chat-Antworten mit
+  korrekten Normen (bewusste Entscheidung für Q1/Q2; Lärm möglich).
+- **Grenzen der Erkennung:** Nicht erkannte Zitierformen bleiben ungeprüft; der Hinweis sagt das ausdrücklich.
+  Aufgehobene Paragraphen ohne Text können als „nicht gefunden“ erscheinen.
+- **Existenz ist nicht Richtigkeit:** Eine existierende Norm kann falsch angewendet sein. Die Stützung bleibt
+  NICHT VERIFIZIERT, bis eine freigegebene externe Quelle oder die Prüfung durch die Kanzlei sie bestätigt.
+- **Installierter Build:** NICHT VERIFIZIERT.
+- QA: `test_citation_check.py` 13, Streaming-/Benchmark-Tests grün; volle Suite 4541 bestanden, nur die 4 bekannten
+  Logo-Fehler. Unabhängiges Review mit 7 bestätigten Befunden, alle behoben.

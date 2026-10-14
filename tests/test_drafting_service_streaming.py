@@ -96,7 +96,13 @@ def test_eligible_chat_message_streams_real_incremental_deltas(db_session: Sessi
     assert len(result_events) == 1
     result = result_events[0].result
     assert result.success is True
-    assert result.draft_text == "§ 558 BGB regelt die Mieterhöhung."
+    # §36: die lokale Fundstellenpruefung haengt einen Hinweis an den Block "Offene Pruefpunkte" an - das Schreiben
+    # selbst entspricht weiterhin exakt den gestreamten Teilen.
+    from app.drafting.review_notes import split_review_notes
+
+    letter, notes = split_review_notes(result.draft_text)
+    assert letter == "§ 558 BGB regelt die Mieterhöhung."
+    assert "Fundstellenprüfung" in notes and "nicht geprüft" in notes
     assert result.draft_id is not None
     # Der eigentliche Anthropic-Aufruf ging ueber write_stream, NICHT write().
     assert len(writing_provider.stream_received_payloads) == 1
@@ -475,7 +481,13 @@ def test_followup_with_mappings_only_from_ai_history_is_not_aborted_mid_stream(
 
     result = [e for e in events if e.kind == "result"][0].result
     assert result.success is True, result.blocked_reasons
-    assert result.draft_text == "§ 559 BGB regelt die Modernisierungsumlage."
+    # §36: die lokale Fundstellenpruefung haengt einen Hinweis an den Block "Offene Pruefpunkte" an - das Schreiben
+    # selbst entspricht weiterhin exakt den gestreamten Teilen.
+    from app.drafting.review_notes import split_review_notes
+
+    letter, notes = split_review_notes(result.draft_text)
+    assert letter == "§ 559 BGB regelt die Modernisierungsumlage."
+    assert "Fundstellenprüfung" in notes and "nicht geprüft" in notes
     # Die Local-AI-Schichten bleiben uebersprungen (Fix a6ba839 unveraendert).
     assert local_llm.received_payloads == []
     assert local_llm.structured_calls == []

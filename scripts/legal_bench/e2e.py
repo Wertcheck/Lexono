@@ -546,8 +546,10 @@ class InventingWriter(CapturingWriter):
 
 
 def _probe_source_integrity(db, user, matter, drafting, Draft) -> dict:  # noqa: ANN001, N803
-    """Werden erfundene Fundstellen einer Modellantwort im gespeicherten Entwurf als ungeprueft markiert (Abschnitt
-    "Offene Pruefpunkte")? Misst Lexonos lokale Absicherung, nicht das Modell."""
+    """Werden erfundene Fundstellen einer Modellantwort als ungeprueft markiert? Gemessen im Block "Offene Pruefpunkte"
+    der Antwort (`draft_text`, Chat-Verlauf) - `draft.content` enthaelt bewusst NUR das Schreiben (review_notes.py).
+    Korrektur §36: die erste Fassung (§34.8) las nur `draft.content` und haette eine Markierung nie gefunden.
+    Misst Lexonos lokale Absicherung, nicht das Modell."""
     from app.drafting.review_notes import split_review_notes
 
     outcome = drafting(InventingWriter()).create_draft(matter.id, "formulate_draft", db,
@@ -555,9 +557,12 @@ def _probe_source_integrity(db, user, matter, drafting, Draft) -> dict:  # noqa:
     if not outcome.success or not outcome.draft_id:
         return {"status": "blockiert"}
     draft = db.get(Draft, outcome.draft_id)
-    letter, notes = split_review_notes(draft.content or "")
-    return {"status": "ok", "im_entwurf": [c for c in INVENTED_CITATIONS if _contains(c, letter)],
-            "als_pruefpunkt_markiert": [c for c in INVENTED_CITATIONS if _contains(c, notes)]}
+    _letter, notes = split_review_notes(outcome.draft_text or "")
+    flagged = [c for c in INVENTED_CITATIONS if _contains(c, notes)
+               or _contains(c.split(" - ")[-1], notes)]  # Entscheidung: Aktenzeichen genuegt
+    return {"status": "ok", "im_entwurf": [c for c in INVENTED_CITATIONS if _contains(c, draft.content or "")],
+            "als_pruefpunkt_markiert": flagged,
+            "stuetzung_als_ungeprueft_markiert": "nicht geprüft" in notes.lower()}
 
 
 def _run_chat(db, user, matter, documents, task, drafting) -> dict:  # noqa: ANN001

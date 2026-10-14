@@ -106,13 +106,16 @@ def test_unreferenced_masks_exclude_protected_values() -> None:
     assert [m["original"] for m in e2e._unreferenced_masks(case, mappings)] == ["Schichtleiters"]
 
 
-def test_source_integrity_probe_is_measured(outcome: dict) -> None:
-    """Quellenintegritaet (§34.8): erfundene Fundstellen einer simulierten Modellantwort werden gezaehlt - derzeit
-    markiert Lexono sie nicht (Befund, Owner-Entscheidung Q1-Q3). Der Test sichert die Messung, nicht ein Soll-Ergebnis."""
-    for split in ("dev", "test"):
-        assert re.fullmatch(r"\d+/\d+", outcome["summary"][split]["erfundene_fundstellen_markiert"])
+def test_invented_citations_are_flagged_and_support_is_marked_unchecked(outcome: dict) -> None:
+    """Quellenintegritaet (§34.8 -> §36): jede erfundene Fundstelle einer simulierten Modellantwort, die im Entwurf
+    steht, ist im Block "Offene Pruefpunkte" gekennzeichnet; die inhaltliche Stuetzung ist ausdruecklich als ungeprueft
+    markiert (keine vorgetaeuschte Verifikation). Vor §36: 0 von 12."""
     probes = [t["quellenintegritaet"] for r in outcome["results"] for t in r["tasks"] if "quellenintegritaet" in t]
-    assert probes and all(p["status"] in ("ok", "blockiert") for p in probes)
+    done = [p for p in probes if p["status"] == "ok"]
+    assert done
+    for probe in done:
+        assert probe["im_entwurf"] and sorted(probe["als_pruefpunkt_markiert"]) == sorted(probe["im_entwurf"])
+        assert probe["stuetzung_als_ungeprueft_markiert"] is True
 
 
 def test_runtime_and_payload_size_are_reported_without_cost_estimate(outcome: dict) -> None:
