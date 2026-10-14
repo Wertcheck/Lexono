@@ -1,13 +1,13 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T00:56:56+00:00",
- "git_commit": "1911716",
+ "run_at": "2026-10-14T01:34:05+00:00",
+ "git_commit": "711077d",
  "git_dirty_files": [],
- "corpus_sha256": "d4848676b7687109",
+ "corpus_sha256": "cc41845b9ab62d9b",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
   "app/privacy/detectors.py": "78b33da3b29385e4",
-  "app/privacy/pseudonymizer.py": "41eadfa80574c12b",
+  "app/privacy/pseudonymizer.py": "d168dbacc0eaa82e",
   "app/documents/service.py": "297259ba3ae32985",
   "app/documents/extraction.py": "ff83b06dca8cfefb",
   "app/deadlines/extractor.py": "c8163327fba85186",
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 44.9,
+ "seconds_total": 93.7,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -33,33 +33,33 @@
  ],
  "summary": {
   "dev": {
-   "cases": 2,
+   "cases": 3,
    "kritisch": [],
-   "extraktion_werte": "68/68",
-   "ocr_dokumente": 2,
-   "ocr_werte": "9/9",
+   "extraktion_werte": "95/95",
+   "ocr_dokumente": 3,
+   "ocr_werte": "12/12",
    "dokumentfehler": 0,
-   "fristen_datum_recall": "5/5",
-   "fristen_nicht_in_referenz": 15,
-   "davon_bekannte_falldaten": 15,
+   "fristen_datum_recall": "8/8",
+   "fristen_nicht_in_referenz": 22,
+   "davon_bekannte_falldaten": 22,
    "davon_ungeklaert": [],
-   "klassifiziert_nicht_unbekannt": "8/10",
-   "payload_aufgaben": 7,
+   "klassifiziert_nicht_unbekannt": "10/15",
+   "payload_aufgaben": 11,
    "pii_leaks": 0,
    "fremde_akte_im_payload": 0,
-   "benoetigte_werte_im_payload": "15/15",
+   "benoetigte_werte_im_payload": "23/23",
    "aufgaben_ohne_payload": [],
-   "suche_top1": "1/2",
-   "suche_top5": "2/2",
-   "schriftsatz_ok": "2/2",
-   "export_mit_bearbeitung": "2/2",
-   "erhalt_keep": "13/13",
+   "suche_top1": "2/3",
+   "suche_top5": "3/3",
+   "schriftsatz_ok": "3/3",
+   "export_mit_bearbeitung": "3/3",
+   "erhalt_keep": "19/19",
    "erhalt_keep_fehlend": [],
-   "erhalt_chronologie": "13/13",
+   "erhalt_chronologie": "18/18",
    "erhalt_chronologie_fehlend": [],
-   "erhalt_normen": "6/6",
+   "erhalt_normen": "9/9",
    "erhalt_normen_fehlend": [],
-   "widersprueche_beide_seiten": "3/4",
+   "widersprueche_beide_seiten": "4/5",
    "maskiert_ohne_referenz": [
     "LE-D001:adresse:12345 Musterstadt",
     "LE-D001:organisation:Malerbetrieb Schöllhorn GmbH",
@@ -73,31 +73,53 @@
     "LE-D002:person:Beispielhafen",
     "LE-D002:person:Bruttomonatsvergütung",
     "LE-D002:person:Gesprächsnotiz",
-    "LE-D002:person:Schichtleiters"
+    "LE-D002:person:Schichtleiters",
+    "LE-D003:adresse:50222 Zeichen",
+    "LE-D003:kennung:25/0911-HB",
+    "LE-D003:kennung:PG-2025-118",
+    "LE-D003:ort:Bauwasser",
+    "LE-D003:ort:Behinderungsanzeigen",
+    "LE-D003:ort:Beispielheide",
+    "LE-D003:ort:Fensteranschlüsse",
+    "LE-D003:ort:Gerüststellung",
+    "LE-D003:ort:Revisionsunterlagen",
+    "LE-D003:ort:Schlechtwetterzeiten",
+    "LE-D003:ort:Wartungshinweise",
+    "LE-D003:person:Baumängel",
+    "LE-D003:person:Bauwasser",
+    "LE-D003:person:Beispielheide",
+    "LE-D003:person:Holzrahmenbaus",
+    "LE-D003:person:Subunternehmer"
    ],
    "aufgabenfehler": []
   },
   "test": {
-   "cases": 2,
+   "cases": 3,
    "kritisch": [],
-   "extraktion_werte": "53/53",
-   "ocr_dokumente": 2,
-   "ocr_werte": "13/13",
+   "extraktion_werte": "82/82",
+   "ocr_dokumente": 3,
+   "ocr_werte": "27/27",
    "dokumentfehler": 0,
-   "fristen_datum_recall": "2/2",
-   "fristen_nicht_in_referenz": 12,
-   "davon_bekannte_falldaten": 12,
-   "davon_ungeklaert": [],
-   "klassifiziert_nicht_unbekannt": "0/9",
+   "fristen_datum_recall": "3/3",
+   "fristen_nicht_in_referenz": 18,
+   "davon_bekannte_falldaten": 17,
+   "davon_ungeklaert": [
+    "LE-T003:31.12.2025"
+   ],
+   "klassifiziert_nicht_unbekannt": "2/13",
    "payload_aufgaben": 6,
    "pii_leaks": 0,
    "fremde_akte_im_payload": 0,
    "benoetigte_werte_im_payload": "14/14",
-   "aufgaben_ohne_payload": [],
-   "suche_top1": "2/2",
-   "suche_top5": "2/2",
-   "schriftsatz_ok": "2/2",
-   "export_mit_bearbeitung": "2/2",
+   "aufgaben_ohne_payload": [
+    "LE-T003/Q1:blockiert",
+    "LE-T003/Q2:blockiert",
+    "LE-T003/Q3:blockiert"
+   ],
+   "suche_top1": "3/3",
+   "suche_top5": "3/3",
+   "schriftsatz_ok": "2/3",
+   "export_mit_bearbeitung": "2/3",
    "erhalt_keep": "13/13",
    "erhalt_keep_fehlend": [],
    "erhalt_chronologie": "11/11",
@@ -153,7 +175,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.19
     },
     "D2": {
      "format": "txt",
@@ -174,7 +196,7 @@
       "henrike.osterkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.11
     },
     "D3": {
      "format": "pdf",
@@ -210,7 +232,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.5
+     "seconds": 1.49
     },
     "D5": {
      "format": "docx",
@@ -230,7 +252,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -294,7 +316,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.93
+     "seconds": 4.67
     },
     {
      "id": "Q2",
@@ -340,7 +362,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.52
+     "seconds": 0.49
     },
     {
      "id": "Q3",
@@ -404,7 +426,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.81
+     "seconds": 1.8
     },
     {
      "id": "Q4",
@@ -511,7 +533,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.88
+     "seconds": 1.84
     },
     {
      "id": "Q5",
@@ -600,7 +622,7 @@
       "Kerkhoff Logistik GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.09
     },
     "D2": {
      "format": "scan",
@@ -634,7 +656,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -674,7 +696,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.15
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -683,7 +705,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 4686,
+     "payload_chars": 4677,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -695,32 +717,32 @@
       {
        "original": "Beispielhafen",
        "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
+       "platzhalter": "[PERSON_02]"
       },
       {
        "original": "Bruttomonatsvergütung",
        "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
+       "platzhalter": "[PERSON_03]"
       },
       {
        "original": "Gesprächsnotiz",
        "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
+       "platzhalter": "[PERSON_04]"
       },
       {
        "original": "Schichtleiters",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.13
+     "seconds": 1.11
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 2887,
+     "payload_chars": 2878,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -732,15 +754,15 @@
       {
        "original": "Beispielhafen",
        "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
+       "platzhalter": "[PERSON_02]"
       },
       {
        "original": "Schichtleiters",
        "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
+       "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.54
+     "seconds": 0.53
     },
     {
      "id": "Q3",
@@ -754,7 +776,7 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
-     "payload_chars": 4708,
+     "payload_chars": 4699,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -805,22 +827,22 @@
       {
        "original": "Beispielhafen",
        "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
+       "platzhalter": "[PERSON_02]"
       },
       {
        "original": "Bruttomonatsvergütung",
        "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
+       "platzhalter": "[PERSON_03]"
       },
       {
        "original": "Gesprächsnotiz",
        "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
+       "platzhalter": "[PERSON_04]"
       },
       {
        "original": "Schichtleiters",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_05]"
       }
      ],
      "seconds": 0.78
@@ -891,6 +913,538 @@
    }
   },
   {
+   "case": "LE-D003",
+   "split": "dev",
+   "documents": {
+    "D1": {
+     "format": "pdf",
+     "type_reference": "vertrag",
+     "status": "not_needed",
+     "classified": "Vertrag",
+     "chars": 50085,
+     "values_total": 11,
+     "values_found": [
+      "0,2 Prozent",
+      "0152 7788990",
+      "12.03.2025",
+      "184.500,00 EUR",
+      "3. März 1975",
+      "30.09.2025",
+      "Corinna Haselhorst",
+      "Holzbau Wendeburg GmbH",
+      "Torsten Wendeburg",
+      "Weidenkamp 4, 49999 Beispielheide",
+      "§ 634a Abs. 1 Nr. 2 BGB"
+     ],
+     "values_missing": [],
+     "seconds": 1.59
+    },
+    "D2": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 282,
+     "values_total": 4,
+     "values_found": [
+      "14.11.2025",
+      "Corinna Haselhorst",
+      "Petra Lindqvist",
+      "c.haselhorst@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.09
+    },
+    "D3": {
+     "format": "scan",
+     "type_reference": "gutachten",
+     "status": "done",
+     "classified": "Unbekannt",
+     "chars": 243,
+     "values_total": 3,
+     "values_found": [
+      "02.12.2025",
+      "12.840,00 EUR",
+      "Ralf Ebbinghaus"
+     ],
+     "values_missing": [],
+     "seconds": 1.5
+    },
+    "D4": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Rechnung",
+     "chars": 246,
+     "values_total": 5,
+     "values_found": [
+      "08.01.2026",
+      "17.12.2025",
+      "23.600,00 EUR",
+      "Holzbau Wendeburg GmbH",
+      "Torsten Wendeburg"
+     ],
+     "values_missing": [],
+     "seconds": 1.09
+    },
+    "D5": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 360,
+     "values_total": 4,
+     "values_found": [
+      "15.01.2026",
+      "22.12.2025",
+      "§ 637 Abs. 1 BGB",
+      "§ 641 Abs. 3 BGB"
+     ],
+     "values_missing": [],
+     "seconds": 1.16
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 32492,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "14.11.2025",
+      "31.10.2025"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Baumängel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "25/0911-HB",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "PG-2025-118",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      },
+      {
+       "original": "Holzrahmenbaus",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Gerüststellung",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Behinderungsanzeigen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_05]"
+      },
+      {
+       "original": "Schlechtwetterzeiten",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_06]"
+      },
+      {
+       "original": "Subunternehmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Revisionsunterlagen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_07]"
+      },
+      {
+       "original": "Wartungshinweise",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_08]"
+      },
+      {
+       "original": "50222 Zeichen",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Fensteranschlüsse",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_09]"
+      }
+     ],
+     "seconds": 12.7
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 2021,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "12.840,00 EUR"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Baumängel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "PG-2025-118",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "25/0911-HB",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      }
+     ],
+     "seconds": 0.52
+    },
+    {
+     "id": "Q3",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 31372,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "30.09.2025",
+      "0,2 Prozent",
+      "184.500,00 EUR"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Baumängel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Holzrahmenbaus",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Gerüststellung",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Behinderungsanzeigen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Schlechtwetterzeiten",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_05]"
+      },
+      {
+       "original": "Subunternehmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Revisionsunterlagen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_06]"
+      },
+      {
+       "original": "Wartungshinweise",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_07]"
+      },
+      {
+       "original": "50222 Zeichen",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Fensteranschlüsse",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_08]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "PG-2025-118",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_09]"
+      },
+      {
+       "original": "25/0911-HB",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      }
+     ],
+     "seconds": 10.9
+    },
+    {
+     "id": "Q4",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "payload_chars": 32497,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "12.840,00 EUR",
+      "15.01.2026"
+     ],
+     "needed_missing": [],
+     "erhalt": {
+      "keep": {
+       "present": [
+        "12.840,00 EUR",
+        "15.01.2026",
+        "184.500,00 EUR",
+        "23.600,00 EUR",
+        "§ 637 Abs. 1 BGB",
+        "§ 641 Abs. 3 BGB"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "02.12.2025",
+        "12.03.2025",
+        "14.11.2025",
+        "17.12.2025",
+        "22.12.2025"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 634a Abs. 1 Nr. 2 BGB",
+        "§ 637 Abs. 1 BGB",
+        "§ 641 Abs. 3 BGB"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1"
+      ],
+      "widersprueche_unvollstaendig": []
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Baumängel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "25/0911-HB",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Beispielheide",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "PG-2025-118",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      },
+      {
+       "original": "Holzrahmenbaus",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Gerüststellung",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Bauwasser",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Behinderungsanzeigen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_05]"
+      },
+      {
+       "original": "Schlechtwetterzeiten",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_06]"
+      },
+      {
+       "original": "Subunternehmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Revisionsunterlagen",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_07]"
+      },
+      {
+       "original": "Wartungshinweise",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_08]"
+      },
+      {
+       "original": "50222 Zeichen",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Fensteranschlüsse",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_09]"
+      }
+     ],
+     "seconds": 11.73
+    },
+    {
+     "id": "Q5",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.03
+    },
+    {
+     "id": "Q6",
+     "kind": "fristen",
+     "expected": [
+      "15.01.2026"
+     ],
+     "found": [
+      "15.01.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "08.01.2026",
+     "15.01.2026",
+     "30.09.2025"
+    ],
+    "found": [
+     "02.12.2025",
+     "08.01.2026",
+     "12.03.2025",
+     "14.11.2025",
+     "15.01.2026",
+     "17.12.2025",
+     "20.11.2025",
+     "22.12.2025",
+     "30.09.2025",
+     "31.10.2025"
+    ],
+    "recall": "3/3",
+    "missing": [],
+    "not_in_reference": [
+     "02.12.2025",
+     "12.03.2025",
+     "14.11.2025",
+     "17.12.2025",
+     "20.11.2025",
+     "22.12.2025",
+     "31.10.2025"
+    ],
+    "known_dates_as_deadline": [
+     "02.12.2025",
+     "12.03.2025",
+     "14.11.2025",
+     "17.12.2025",
+     "20.11.2025",
+     "22.12.2025",
+     "31.10.2025"
+    ],
+    "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
    "case": "LE-T001",
    "split": "test",
    "documents": {
@@ -912,7 +1466,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.61
+     "seconds": 1.59
     },
     "D2": {
      "format": "pdf",
@@ -931,7 +1485,7 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.1
     },
     "D3": {
      "format": "docx",
@@ -968,7 +1522,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.11
     }
    },
    "tasks": [
@@ -1050,7 +1604,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.93
+     "seconds": 0.94
     },
     {
      "id": "Q2",
@@ -1101,7 +1655,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.3
+     "seconds": 0.33
     },
     {
      "id": "Q3",
@@ -1216,7 +1770,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.62
+     "seconds": 0.61
     },
     {
      "id": "Q4",
@@ -1288,7 +1842,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.52
+     "seconds": 1.53
     },
     "D2": {
      "format": "pdf",
@@ -1321,7 +1875,7 @@
       "k.wehrhahn@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     "D4": {
      "format": "docx",
@@ -1337,7 +1891,7 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.11
     },
     "D5": {
      "format": "docx",
@@ -1356,7 +1910,7 @@
       "§ 2325 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.13
     }
    },
    "tasks": [
@@ -1426,7 +1980,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.13
+     "seconds": 1.1
     },
     {
      "id": "Q2",
@@ -1487,7 +2041,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.47
+     "seconds": 0.46
     },
     {
      "id": "Q3",
@@ -1598,7 +2152,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 0.77
+     "seconds": 0.78
     },
     {
      "id": "Q4",
@@ -1660,6 +2214,170 @@
      "25.03.2026"
     ],
     "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
+   "case": "LE-T003",
+   "split": "test",
+   "documents": {
+    "D1": {
+     "format": "scan",
+     "type_reference": "bescheid",
+     "status": "done",
+     "classified": "Einspruch",
+     "chars": 550,
+     "values_total": 14,
+     "values_found": [
+      "03.08.2026",
+      "1 Monat",
+      "14.06.2026",
+      "17:42 Uhr",
+      "180,00 EUR",
+      "21.01.1990",
+      "27 km/h",
+      "812.33.104577.6",
+      "BL-LQ 77",
+      "Leonhard Quast",
+      "Talweg 9, 77777 Beispielland",
+      "§ 24 StVG",
+      "§ 25 StVG",
+      "§ 67 Abs. 1 OWiG"
+     ],
+     "values_missing": [],
+     "seconds": 1.71
+    },
+    "D2": {
+     "format": "pdf",
+     "type_reference": "protokoll",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 262,
+     "values_total": 4,
+     "values_found": [
+      "17:24 Uhr",
+      "31.12.2025",
+      "77 km/h",
+      "Jannik Brettschneider"
+     ],
+     "values_missing": [],
+     "seconds": 1.09
+    },
+    "D3": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 326,
+     "values_total": 6,
+     "values_found": [
+      "0157 3344221",
+      "06.08.2026",
+      "07.08.2026",
+      "Leonhard Quast",
+      "Mareike Tönnies",
+      "l.quast@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    },
+    "D4": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Einspruch",
+     "chars": 306,
+     "values_total": 5,
+     "values_found": [
+      "03.08.2026",
+      "10.08.2026",
+      "20.08.2026",
+      "§ 49 Abs. 1 OWiG",
+      "§ 67 Abs. 1 OWiG"
+     ],
+     "values_missing": [],
+     "seconds": 1.11
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "blockiert",
+     "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
+     "seconds": 1.17
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "blockiert",
+     "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
+     "seconds": 0.5
+    },
+    {
+     "id": "Q3",
+     "kind": "schriftsatz",
+     "status": "blockiert",
+     "blocked_reasons": [
+      "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+     ],
+     "seconds": 0.76
+    },
+    {
+     "id": "Q4",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.02
+    },
+    {
+     "id": "Q5",
+     "kind": "fristen",
+     "expected": [
+      "20.08.2026"
+     ],
+     "found": [
+      "20.08.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "20.08.2026"
+    ],
+    "found": [
+     "03.08.2026",
+     "06.08.2026",
+     "07.08.2026",
+     "10.08.2026",
+     "14.06.2026",
+     "20.08.2026",
+     "31.12.2025"
+    ],
+    "recall": "1/1",
+    "missing": [],
+    "not_in_reference": [
+     "03.08.2026",
+     "06.08.2026",
+     "07.08.2026",
+     "10.08.2026",
+     "14.06.2026",
+     "31.12.2025"
+    ],
+    "known_dates_as_deadline": [
+     "03.08.2026",
+     "06.08.2026",
+     "07.08.2026",
+     "10.08.2026",
+     "14.06.2026"
+    ],
+    "unexplained": [
+     "31.12.2025"
+    ],
     "personal_dates_as_deadline": []
    }
   }
