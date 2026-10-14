@@ -8,6 +8,7 @@ geforderten Szenarien TEST A-E ab."""
 
 from __future__ import annotations
 
+import re
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -3935,3 +3936,75 @@ def test_docx_with_birthdate_table_attachment_is_sent_without_birthdates(
     assert len(writer.received_payloads) == 1
     payload_json = writer.received_payloads[0].model_dump_json()
     assert "1962" not in payload_json and "1965" not in payload_json and "1/3" in payload_json
+
+
+def _birthdate_table_docx_bytes() -> bytes:
+    import io
+
+    import docx
+
+    document = docx.Document()
+    document.add_paragraph("Erbschein (Auszug). Die Erblasserin wird beerbt zu je einem Drittel:")
+    rows = [("Erbe", "Geburtsdatum", "Erbquote"), ("Anna Beispiel", "03.04.1962", "1/3"),
+            ("Bernd Beispiel", "17.09.1965", "1/3"), ("Clara Beispiel", "28.11.1970", "1/3")]
+    table = document.add_table(rows=len(rows), cols=3)
+    for r, row in enumerate(rows):
+        for col, value in enumerate(row):
+            table.cell(r, col).text = value
+    document.add_paragraph("Verkehrswert des Hauses: 312.000,00 EUR.")
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def test_table_docx_via_send_stream_keeps_structure_and_order_without_birthdates(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """P1.1: die Desktop-Oberflaeche sendet ueber `/dashboard/chat/send-stream` (nicht `/send`, siehe Test oben).
+    Tabelle als Chat-Anhang: Versand gelingt, Kopfzeile und Zeilenreihenfolge bleiben erhalten, Quoten und Wert
+    unveraendert, kein Geburtsdatum und kein Name im Klartext."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
+    monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
+
+    response = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
+        files={"documents": ("erbentabelle.docx", _birthdate_table_docx_bytes(),
+                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+
+    assert response.status_code == 200
+    done = [e for e in _parse_sse_events(response.text) if e["kind"] == "done"]
+    assert len(done) == 1 and done[0]["blocked"] is False
+    assert len(writer.received_payloads) == 1
+    payload_json = writer.received_payloads[0].model_dump_json()
+    for secret in ("1962", "1965", "1970", "03.04.", "17.09.", "28.11.", "Beispiel"):
+        assert secret not in payload_json
+    header = payload_json.index("Erbe | Geburtsdatum | Erbquote")
+    rows = [m.start() for m in re.finditer(r"\| \(Datum entfernt\) \| 1/3", payload_json)]
+    assert len(rows) == 3 and header < rows[0] < rows[1] < rows[2]
+    assert "312.000,00 EUR" in payload_json
+
+
+def test_empty_docx_attachment_via_send_stream_is_never_sent_to_the_cloud(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """P1.1 Gegenfall: eine leere (0-Byte-)Datei - wie sie der Browser bei einem nicht mehr lesbaren Anhang meldet -
+    fuehrt zu einem sichtbaren Hinweis, nie zu einem Cloud-Aufruf und nie zu einem Serverfehler (fail-closed)."""
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
+    monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
+
+    response = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
+        files={"documents": ("leer.docx", b"",
+                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+
+    assert response.status_code == 200
+    done = [e for e in _parse_sse_events(response.text) if e["kind"] == "done"]
+    assert len(done) == 1 and done[0]["blocked"] is True
+    assert "nicht an die Cloud-KI gesendet" in done[0]["content"]
+    assert writer.received_payloads == []

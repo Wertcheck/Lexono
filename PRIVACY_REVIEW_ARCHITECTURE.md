@@ -4090,6 +4090,7 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
 
 **NICHT VERIFIZIERT:**
 - Installierter Build für Leck 7 (Tabellen, Fall 31: Versand in der QA-Oberfläche fehlgeschlagen, im Prozess bestanden).
+  → Geklärt und im installierten Build bestanden, siehe §38 (P1.1).
 - Antwortqualität und Kosten eines echten Modells (kein Live-Lauf ohne Freigabe).
 - Widerspruchserkennung durch „Entwurf prüfen“ (cloudbasiert).
 - Handschrift, Tabellen, mehrspaltige Scans.
@@ -4104,7 +4105,8 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
 4. Mehr Testfälle: Tabellen, Handschrift, E-Mail-Verläufe.
 5. Benchmark als festen Release-Schritt aufnehmen (P6).
 - QA Etappe 12: Datenschutz-Datums-Tests 74 grün; volle Suite 4473 bestanden, nur die 4 bekannten Logo-Fehler.
-- **Installierter Build `f1c2000`, Fall 31 (Erbentabelle als Chat-Anhang): NICHT VERIFIZIERT.**
+- **Installierter Build `f1c2000`, Fall 31 (Erbentabelle als Chat-Anhang): NICHT VERIFIZIERT.** → Ursache geklärt
+  (Fehler im Prüfskript, kein Produktfehler), im installierten Build bestanden; siehe §38 (P1.1).
   - In der QA-Oberfläche meldete der Versand zweimal „Senden fehlgeschlagen“. Es gab keinen Cloud-Aufruf und damit
     auch kein Leck.
   - Der Kontrollfall 27 (gleicher UI-Ablauf, ohne Tabelle) bestand im selben Lauf.
@@ -4525,3 +4527,103 @@ wurden. HEAD entspricht `origin/main`.
 - Im Artikel-Benchmark lecken 21 von 96 Namen nach Artikeln (§37.3).
 - „Messbeamter“ wird in einer eigenen DOCX-Zeile maskiert (§37.3).
 - Die 4 Logo-Tests bleiben rot, bis über die fremden Logo-Änderungen entschieden ist.
+
+## 38. P1.1: Senden von Tabellendaten im installierten Windows-Build (14.10.2026, Ausgang `85ccef3`)
+
+Nur synthetische Daten, isolierte QA-Datenbank, Fang-Server per Loopback: kein Aufruf eines echten Modells, keine
+Schlüssel ausgegeben.
+
+**Ausgangsbefund (§34.13/§34.14, Fall 31):**
+- Eine Word-Erbentabelle als Chat-Anhang meldete in der installierten Oberfläche zweimal „Senden fehlgeschlagen“.
+- Im Prozess und über `/dashboard/chat/send` (TestClient) lief derselbe Fall fehlerfrei.
+- Ursache war offen.
+
+### 38.1 Ursache: Fehler im Prüfskript, kein Produktfehler
+
+- **Im Prüfskript:** `pii_qa31.py`, ein QA-Werkzeug außerhalb des Repos, wurde von `make_table_qa31.py` aus einer
+  Vorlage erzeugt. Der Blockersatz schnitt dabei `document.save(path)` mit ab: Das Tabellendokument wurde erzeugt,
+  aber nie gespeichert.
+- **Im Browser:** CDP `DOM.setFileInputFiles` setzte den nicht existierenden Pfad. Der Browser zeigte eine Datei mit
+  0 Byte. Der `fetch` auf `/dashboard/chat/send-stream` scheiterte mit „Failed to fetch“, bevor der Server erreicht
+  wurde.
+- **In der Oberfläche:** `chat.html` meldet genau diesen Fall (`fetch` abgelehnt vor dem ersten Stream-Ereignis) als
+  „Senden fehlgeschlagen“. Es gab keinen Payload und keinen Cloud-Aufruf.
+- **Belegt durch Reproduktion im installierten Build** (Fetch-Protokoll im Seitenkontext):
+
+  | Variante | Beobachtung |
+  |---|---|
+  | Datei nicht gespeichert (wie Originallauf) | Anhang im Eingabefeld 0 Byte; `POST /dashboard/chat/send-stream` → „Failed to fetch“; kein Payload |
+  | Datei gespeichert | Anhang 36.913 Byte; Versand erreicht den Server, Nachricht und Anhang („Verarbeitet“) werden gespeichert |
+
+- **Web- vs. Desktop-Pfad:** Die Desktop-Oberfläche sendet über `send-stream`. Der bisherige Regressionstest deckte
+  nur `/send` ab. Serverseitig verhalten sich beide gleich (siehe Tests unten).
+- **Tabellenextraktion, Dokumentaufbereitung, Payload und Serialisierung:** ohne Befund. Zellen werden als
+  `Spalte | Spalte | Spalte` übergeben, in der Reihenfolge der Zeilen.
+
+**Kein Produktcode geändert.** Korrigiert wurden nur die beiden QA-Skripte außerhalb des Repos (`document.save(path)`
+ergänzt).
+
+### 38.2 Nebenbefund in der alten QA-Akte (kein Tabellenfehler, sichere Richtung)
+
+- Mit gespeicherter Datei wurde der Versand in der QA-Akte „QA-SYNTH Zabelhuber Mietsache“ fail-closed blockiert
+  („weiterhin erkennbare Muster“, Kategorie `aktenzeichen`).
+- **Ursache, im Prozess auf einer Kopie der QA-DB reproduziert:** Alle Rest-Treffer sind „I ZR 999/19“. Das Zeichen
+  stammt aus den §37-Testdaten derselben Akte: exportierte Entwürfe mit der erfundenen Fundstelle und daraus abgeleitete
+  Fristausschnitte.
+- **Kontrolle:** Dieselbe Konversation ohne Tabellendokument wird identisch blockiert, die Tabelle ist also nicht
+  ursächlich.
+- **Isoliert:** Derselbe Satz wird weder maskiert noch gemeldet. Der Effekt entsteht nur im Kontext dieser QA-Akte.
+- **Bewertung:** Blockade in sicherer Richtung, ausgelöst durch QA-Testdaten. Nicht gelockert, nicht weiter verfolgt
+  (außerhalb von P1.1). **Offener Punkt:** In einer Akte mit erfundenen Rechtsprechungszitaten aus exportierten
+  Entwürfen kann der Chat fail-closed blockieren. Ob das außerhalb der QA-Akte auftritt, ist NICHT VERIFIZIERT.
+- Die QA-Rückfrage betraf dabei wieder „Klagefrist“ (§37.6); das Prüfskript beantwortet Rückfragen automatisch mit
+  „personenbezogen“.
+
+### 38.3 Ergebnis im installierten Build (neue, saubere synthetische Akte)
+
+- **Build:** installierter Build vom 14.10.2026, 12:29 (Stand cc71f99, gleicher Code wie `85ccef3`; §37.6:
+  `bundlecheck_fq.py`). Neu gebaut wurde nicht, da kein Produktcode geändert wurde.
+- **Akte:** neu angelegt, „QA-SYNTH P11 Erbsache Tabelle“, Mandant „Quirin Zabelhuber“ (synthetisch).
+
+| Prüfung | Ergebnis |
+|---|---|
+| Versand Erbentabelle (DOCX, 3 Zeilen + Kopfzeile, Verkehrswert) über die Oberfläche | **PASS**: genau ein Cloud-Aufruf (Fang-Server), keine Rückfrage, Status `success` |
+| Tabellenstruktur und Reihenfolge im Payload | **PASS**: „Erbe \| Geburtsdatum \| Erbquote“, danach `[MANDANT_01]`, `[PERSON_01]`, `[PERSON_02]` je mit „(Datum entfernt) \| 1/3“ in Originalreihenfolge |
+| Juristisch relevante Werte | **PASS**: „1/3“ dreimal, „312.000,00 EUR“ erhalten |
+| Payload-Prüfung vor der Cloud-Grenze | **PASS**: kein Name, kein Geburtsdatum oder -jahr, kein Schlüssel |
+
+**Nebenbeobachtung, sichere Richtung:** Das Wort „Erbsache“ im Aktentitel wird als `[ORGANISATION_01]` maskiert. Das
+ist eine Übermaskierung im Titel, kein Leck. Nicht behoben.
+
+### 38.4 Regressionstests (`tests/test_web_chat.py`, Desktop-Pfad `send-stream`)
+
+- `test_table_docx_via_send_stream_keeps_structure_and_order_without_birthdates`:
+  - Versand gelingt;
+  - Kopfzeile und drei Zeilen stehen in Reihenfolge;
+  - Quoten und Wert sind erhalten;
+  - kein Geburtsdatum und kein Name.
+- `test_empty_docx_attachment_via_send_stream_is_never_sent_to_the_cloud` (Gegenfall 0-Byte-Datei): sichtbarer Hinweis
+  „nicht an die Cloud-KI gesendet“, kein Cloud-Aufruf, kein Serverfehler.
+- **Vorher/Nachher:** Beide Tests bestehen schon auf dem unveränderten Produktcode. Sie halten das nachgewiesene
+  Verhalten fest; es gab keinen roten Zustand, weil kein Produktfehler vorlag. Der bestehende `/send`-Test bleibt
+  grün.
+
+### 38.5 Regression und offene Punkte
+
+| Prüfung | Ergebnis |
+|---|---|
+| Relevante Testgruppen: Web-Chat, Datenschutz-Rückfrage, Dokumentbereitschaft, Extraktion, Datums-Chronologie, Fristen, Gateway, Leck-Prüfung, Chat-Service, Legal-Benchmark-Tests, Pseudonymisierungs-Benchmark, Komposita, Fundstellenprüfung | **PASS**: 600 bestanden, 0 fehlgeschlagen |
+| Legal-E2E auf diesem Stand | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers gestoppt und nicht erneut gestartet. Der Produktcode ist identisch mit `cc71f99`, wo der Benchmark am selben Tag bestand (§37.6). |
+| Volle Suite | auf diesem Stand nicht erneut ausgeführt; letzter voller Lauf auf `cc71f99`: 4551 bestanden, 4 fehlgeschlagen (nur die bekannten Logo-Tests), §37.6 |
+| Installierter Build | **PASS**, siehe §38.3 (kein Neubau nötig, kein Produktcode geändert) |
+| Normale Instanz danach | Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server |
+
+**Offene Punkte:**
+- Mögliche Chat-Blockade durch erfundene Rechtsprechungszitate aus exportierten Entwürfen im Aktenkontext (§38.2):
+  sichere Richtung, außerhalb der QA-Akte NICHT VERIFIZIERT.
+- „Erbsache“ wird im Aktentitel als Organisation maskiert (Übermaskierung, sichere Richtung).
+- Die Fehlermeldung „Senden fehlgeschlagen“ unterscheidet nicht, ob ein Anhang unlesbar ist oder das Netz fehlt.
+  Echte Nutzer wählen Dateien über den Dateidialog; ein danach verschobener oder gelöschter Anhang würde dieselbe
+  Meldung zeigen. Kein Produktfehler nachgewiesen, keine Änderung vorgenommen.
+- Unverändert aus §37.6: „Klagefrist“-Fehlmaskierung (korrekte Fail-Closed-Blockade), 21/96 Namen nach Artikeln im
+  Benchmark, „Messbeamter“ in einer eigenen DOCX-Zeile, die 4 Logo-Tests.
