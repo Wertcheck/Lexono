@@ -3997,5 +3997,12 @@ gescannten Schriftsätzen und Bescheiden waren damit für Suche, Fristen- und Zi
 **Grenzen:**
 - Nur eine Verschlechterungsstufe ist gemessen.
 - Handschrift, Stempel, Tabellen und mehrspaltige Layouts fehlen im Korpus (NICHT VERIFIZIERT).
-- QA: OCR-Tests 25 grün; volle Suite 4462 bestanden, nur die 4 bekannten Logo-Fehler. Ein erster Suite-Lauf wurde vom
+- QA: OCR-Tests 34 grün (nach Review-Korrektur); volle Suite 4471 bestanden, nur die 4 bekannten Logo-Fehler. Ein erster Suite-Lauf wurde vom
   eigenen Speicherwächter wegen paralleler Benchmark-Last abgebrochen; der Lauf wurde ohne Parallel-Last wiederholt.
+- **Review (unabhängig):** Laufzeit unkritisch (500k Zeichen in ≤ 0,11 s, linear). Gefunden und behoben:
+  - Falschtreffer vor großgeschriebenen Wörtern („$ 50 PayPal“, „$ 2 AG“, „$ 5 GmbH“, „$ 10 CAD“, „$ 10 EURO“).
+  - **Datenschutzrisiko (PLAUSIBLE):** Ein falsches „§“ vor einem Namen („$ 500 DeLuca“) hätte den Namen über
+    `drop_statute_abbreviations` als Gesetzesabkürzung lesbar gelassen.
+  - Korrektur: Die Abkürzung muss wie ein Gesetz enden (G/O/B/V); Rechtsformen und Währungswörter sind ausgeschlossen.
+  - Weiterhin nicht erfasst (Grenze): römische Absätze („$ 823 I BGB“), „lit. a“-Ketten, „ff.“, „$§“ und andere
+    Fehllesungen des Zeichens („S 24“, „8 24“; Häufigkeit nicht gemessen).

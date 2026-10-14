@@ -31,7 +31,10 @@ def test_dollar_before_a_statute_citation_becomes_paragraph_sign(ocr: str, expec
 @pytest.mark.parametrize(
     "text",
     ["Preis $ 500", "USD $ 20 Gebühr", "Kosten $ 20 pro Monat", "$ 20 EUR Aufschlag", "US$ 30 BGB-Kommentar",
-     "Variable $HOME", "§ 24 StVG"],
+     "Variable $HOME", "§ 24 StVG",
+     # Review §34.12: kein "§" vor Namen/Firmen/Waehrungen (ein falsches "§" liesse einen Namen als Gesetz durchgehen)
+     "$ 500 DeLuca", "$ 10 IBM-Aktien", "$ 50 PayPal", "$ 2 AG", "$ 5 GmbH", "$ 10 CAD", "$ 10 EURO", "$ 3 TV",
+     "$ 500 US-Dollar"],
 )
 def test_dollar_amounts_and_existing_signs_stay_unchanged(text: str) -> None:
     assert normalize_paragraph_signs(text) == text

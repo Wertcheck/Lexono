@@ -43,5 +43,15 @@ Schreib-Provider erfasst den Payload unmittelbar vor der Cloud-Grenze. Kritische
 anderer Akten, Suchtreffer fremder Akten, Platzhalterreste im Export, persönliche Daten als Frist) stehen einzeln unter
 `kritisch` und gehen in keinen Durchschnitt ein. Zusätzlich gemessen: Erhalt von `keep`-Werten, Chronologie, Normen
 und beiden Seiten jedes Widerspruchs im Schriftsatz-Payload sowie maskierte Originale, die kein Referenz-Schutzwert
-sind (Fehlalarm-Kandidaten, aus den Gateway-Zuordnungen). Antwortqualität eines echten Modells, Kosten und der installierte
+sind (Fehlalarm-Kandidaten, aus den Gateway-Zuordnungen).
+
+Weitere Proben (je Lauf, getrennt ausgewiesen):
+
+| Probe | misst | kritisch, wenn |
+|---|---|---|
+| Quellenintegrität (`InventingWriter`) | ob erfundene Fundstellen einer simulierten Modellantwort im Entwurf als ungeprüft markiert werden | – (Befund §34.8, Owner-Entscheidung) |
+| Aktenzuordnung (`MatterAssignmentService`, Produktionsschwellen) | Korpus-E-Mails, „Az.“/„Ihr Zeichen“, Konflikt Absender A ↔ Aktenzeichen B | eine Nachricht automatisch einer fremden Akte zugeordnet wird |
+| fremder Chat-Anhang | Dokument der Akte B im Chat der Akte A | ein Wert der Akte B im Payload steht |
+| schlechter Scan (`render_degraded_scan`) | Referenzwerte im OCR-Text bei 110 dpi, Schräglage, Rauschen, JPEG | – (Qualitätsmaß) |
+| Laufzeit / Payload-Größe | Median/Maximum je Stufe, Zeichen je Aufgabenart | – (Kosten NICHT VERIFIZIERT) | Antwortqualität eines echten Modells, Kosten und der installierte
 Build werden hier **nicht** gemessen (NICHT VERIFIZIERT).

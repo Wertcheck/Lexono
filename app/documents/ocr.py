@@ -121,15 +121,24 @@ def tesseract_health_check() -> tuple[bool, str]:
 
 # Tesseract liest das Paragraphenzeichen bei schlechten Scans als "$" ("($ 24 StVG)", Legal-E2E-Benchmark §34.12). Ersetzt
 # wird nur vor einer Paragraphennummer mit nachfolgender Gesetzesabkuerzung (optional Abs./S./Satz/Nr. dazwischen) -
-# Dollarbetraege ("$ 500", "USD $ 20") bleiben unveraendert.
+# Dollarbetraege ("$ 500", "USD $ 20") bleiben unveraendert. Die Abkuerzung muss wie ein Gesetz enden (G/O/B/V: Gesetz,
+# Ordnung, Buch, Verordnung - BGB, ZPO, StVG, InsO, FeV, DSGVO): ein falsches "§" vor einem Namen ("$ 500 DeLuca") liesse
+# die Pseudonymisierung den Namen als Gesetzesabkuerzung behandeln (presidio_ner.drop_statute_abbreviations; Review §34.12).
 _DOLLAR_AS_PARAGRAPH = re.compile(
     r"(?<![\w$])\$(\$?)(?=\s?\d+\s?[a-z]?(?:\s?,\s?\d+\s?[a-z]?)*\s+(?:(?:Abs|S|Satz|Nr|Ziff|lit)\.?\s*\d+\s*[a-z]?\s+)*"
-    r"(?!(?:EUR|USD|CHF|GBP)\b)[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{0,8}[A-Z][A-Za-z]{0,3}\b)"
+    r"(?P<law>[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{0,8}[A-Z][A-Za-z]{0,3})\b)"
 )
+_NOT_A_STATUTE = frozenset({"AG", "KG", "SE", "UG", "EG", "GBP", "EURO", "TV", "OHG", "PKW", "LKW"})
 
 
 def normalize_paragraph_signs(text: str) -> str:
-    return _DOLLAR_AS_PARAGRAPH.sub(lambda m: "§§" if m.group(1) else "§", text)
+    def replace(match: re.Match) -> str:
+        law = match.group("law")
+        if law in _NOT_A_STATUTE or law[-1] not in "GOBV":
+            return match.group(0)
+        return "§§" if match.group(1) else "§"
+
+    return _DOLLAR_AS_PARAGRAPH.sub(replace, text)
 
 
 def run_ocr(path: Path, *, languages: str = "deu+eng", dpi: int = 200) -> str:

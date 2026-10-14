@@ -31,6 +31,8 @@ Kein eigener Agent - Teil dieser Rolle. Verantwortung:
   `python -m scripts.legal_bench.e2e` laufen lassen; jeder Eintrag unter `kritisch` blockiert den Abschluss.
 - Ergebnisse nur mit Herkunft (Commit, Korpus-Hash) berichten; Nicht-Gemessenes als NICHT VERIFIZIERT kennzeichnen.
 - Unabhängiges Review vor Commit: Datenschutz-Regressionen und unbelegte Qualitätsaussagen.
+- Jeder Eintrag in `aktenzuordnung.kritisch_fremdzuordnung` oder ein `fremder_anhang` mit `kritisch: true` blockiert
+  ebenfalls; Testfälle nicht zur Regelabstimmung verwenden (gilt auch für Wortlisten, siehe §34.6).
 
 ## Werkzeuge
 
