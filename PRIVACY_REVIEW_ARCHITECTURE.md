@@ -4337,3 +4337,88 @@ Maskierungen waren vorher hinter der Blockade unsichtbar. Fünf Kandidaten in T0
 kann der Restrisiko-Scan weiter fail-closed blockieren. Das ist die sichere Richtung.
 - QA Nachtrag 35.6: volle Suite 4545 bestanden, nur die 4 bekannten Logo-Fehler; Benchmarks gegen die Ausgangsbasis
   ohne neue Lecks.
+
+## 37. Verifikation F und Q im installierten Windows-Build (14.10.2026)
+
+Nur synthetische Daten, isolierte QA-Datenbank, Fang-Server (`ANTHROPIC_BASE_URL` Loopback): kein Aufruf eines echten
+Modells, keine Schlüssel ausgegeben.
+
+### 37.1 Build-Nachweis
+
+- **Vorher:** Der installierte `Lexono.exe` (06:24) enthielt F/Q **nicht** (Archivprüfung `bundlecheck_fq.py`):
+  `citation_check` fehlte, `is_common_compound`, `_FIELD_LINE_RE` und `POSSESSIVE_KINSHIP` waren nicht vorhanden.
+  Der Abschlussbericht §35/§36 („installierter Build NICHT VERIFIZIERT“) war also zutreffend.
+- **Neu gebaut** aus dem sauberen Arbeitsbaum auf `0245788` (abgesehen von fremden Asset-Änderungen) und installiert
+  (10:54).
+- Die Archivprüfung findet alle 9 Merkmale aus F und Q im Bundle.
+
+### 37.2 Testaufbau
+
+- **QA-Akte:** „QA-SYNTH Zabelhuber Mietsache“.
+- **Testdokumente:** LE-T003-Messprotokoll (PDF), Fachbegriffe (DOCX), Namen (DOCX), Aktenunterlage mit Fundstellen
+  (DOCX).
+- **Fang-Server:** ergänzt die Echo-Antwort für Q um eine simulierte Modellantwort mit je einer Fundstelle pro
+  Evidenzstufe.
+- **Gesetzesdaten (nur QA-DB, danach wieder entfernt):**
+  - kuratierte Auswahl BGB/StGB über die Produktfunktion `import_all_fixtures`;
+  - ein klar synthetisches Testgesetz „QASynthG“ mit `doknr` „QA-SYNTH-…“, das einen amtlichen Import simuliert.
+    Das echte Gesetz herunterzuladen wäre ein externer Abruf gewesen.
+
+### 37.3 F – Ergebnisse (installierter Build)
+
+| Fall | Ergebnis |
+|---|---|
+| **LE-T003** (Messprotokoll als PDF, Feldzeile „Messbeamter: Polizeiobermeister …“) | **PASS**: nicht blockiert, Payload vorhanden; PDF-Feldgrenze erhalten („Messbeamter: [PERSON_03] [PERSON_04]“, danach Doppel-Leerzeichen); kein Name im Klartext (Brettschneider, Jannik, Quast, Tönnies) |
+| „Reparaturdauer“, „Alleinerbin“, „Mein Sohn“, „[Unbekannt]“ | **PASS**: im Payload lesbar |
+| „Messbeamter“ (eigene Zeile im DOCX) | **FAIL gegenüber der Erwartung „nicht maskiert“**: maskiert als Person. Das entspricht dem dokumentierten Design (Namensprobe 4, §35.4: gilt in der sicheren Richtung, gelöst ist nur die Blockade). Im LE-T003-PDF ist „Messbeamter“ dagegen lesbar. |
+| Namen: blosse Red-Team-Formen (Hochleiter, Lindenvertrag, Steinerbin, Rotherbin), mit Titel (Herr Bergmann, Zeugin Hausmann, Herr Waldleiter), nach Artikel („Die Pfannenstiel“, „an den Sommerkorn“) | **PASS**: alle maskiert, kein Klartext. „Sommerkorn“ wird als Ort statt als Person kategorisiert (geschützt, Kategorie falsch). |
+| Bekannte Fehlalarme bleiben | „Lasermessung“, „Talweg“, „Eichschein“, „Polizeiobermeister“ maskiert (dokumentierte Grenzen) |
+
+**Restrisiko (unverändert dokumentiert):** Im Artikel-Benchmark lecken 21 von 96 Namen nach Artikel; das ist
+vorbestehend und war vor F gleich. Im installierten Build waren die geprüften Artikel-Fälle geschützt; die
+vorbestehende Lücke ist damit nicht widerlegt.
+
+### 37.4 Q – Ergebnisse (installierter Build)
+
+| Fall | Ergebnis |
+|---|---|
+| Chat: Evidenzstufen | **PASS**: § 99 QASynthG „im amtlichen Gesetzestext NICHT gefunden“; I ZR 999/19 „nicht verifiziert“; § 9999 BGB und § 12 StVG „Existenz lokal nicht prüfbar“; § 4 KSchG und 2 AZR 111/19 „nur in Aktendokumenten gefunden (keine unabhängige Bestätigung)“; § 823 BGB (kuratiert) und § 2 QASynthG (amtlich) als „gefunden“ gezählt (2 von 8) |
+| Nicht erkannte Zitierform („§ 535 Rn. 12“) | **PASS**: nicht einzeln geprüft; der Sammelhinweis nennt „nicht erkannte Zitierformen wurden nicht geprüft“ |
+| Hinweis „Stützung nicht geprüft“ | **PASS**: im Chat sichtbar; keine Fundstelle erscheint als inhaltlich verifiziert |
+| Payload | **PASS**: Folgefrage ohne den Hinweisblock (nur der Antworttext steht im Verlauf) |
+| **Entwurf (Schriftsatz-Werkzeug → Editor)** | **FAIL**: Der Entwurf enthält die erfundenen Fundstellen, der Fundstellenhinweis erscheint aber **weder im Editor noch in der Entwurfsansicht**. |
+| Export DOCX/PDF | **PASS**: enthält nur das Schreiben, keinen Hinweisblock |
+| Export als Ganzes | **FAIL**: Wegen der Entwurfs-Lücke kann eine ungeprüfte Fundstelle unmarkiert in den Export gelangen. |
+
+**Ursache der Entwurfs-Lücke:**
+- Die Route `/dashboard/tools/schriftsatz/generate` leitet nach `create_draft` direkt in den Editor. Der Editor zeigt
+  nur `draft.content`, also das Schreiben.
+- `DraftingResult.draft_text` mit den „Offenen Prüfpunkten“ wird verworfen.
+- Das Modell `Draft` hat kein Feld für Prüfhinweise.
+- Das betrifft alle Hinweise dieses Blocks, nicht nur Q.
+- **Folge für die Messung:** Der Benchmark-Wert „erfundene Fundstellen markiert 8/8 bzw. 6/6“ misst `draft_text` und
+  **überschätzt** damit für den Entwurfspfad, was der Anwalt sieht.
+
+**Nicht behoben:**
+- Eine Behebung (Hinweise im Editor anzeigen: bei der Darstellung aus `draft.content` neu berechnen oder speichern) ist
+  eine UI- bzw. Datenmodell-Entscheidung. Neue Features waren in dieser Verifikation ausgeschlossen.
+- **Offener Punkt:**
+  - Option 1: Fundstellenprüfung bei jeder Editor-Darstellung lokal aus `draft.content` neu berechnen und im Editor
+    anzeigen (kein Schema-Eingriff; berücksichtigt auch Bearbeitungen).
+  - Option 2: Prüfhinweise am Entwurf speichern.
+
+### 37.5 Regression
+
+| Prüfung | Ergebnis |
+|---|---|
+| Relevante Testgruppen (F/Q-Tests, Privacy, Gateway, Pseudonymisierung, Drafting-Streaming, Chat, Posteingang, Matching, Benchmarks) | 611 bestanden |
+| Volle Suite | Lauf vom eigenen Speicherwächter wegen paralleler normaler Instanz abgebrochen (Rest-RAM < 1,5 GB). Kein Code geändert seit dem letzten vollen Lauf auf diesem Stand (4545 bestanden, nur die 4 bekannten Logo-Fehler, §35.6). |
+| Legal-E2E auf `0245788` | keine kritischen Befunde, 0 Klartext, 0 fremde Akte, 0 blockierte Aufgaben, benötigte Werte 29/29 und 20/20, erfundene Fundstellen markiert 8/8 und 6/6 (siehe Einschränkung oben), keine Fremdzuordnung, fremder Anhang 7/7 blockiert |
+| Neue Fehler neben den 4 bekannten Logo-Tests | keine |
+
+**QA-Umgebung wiederhergestellt:**
+- Testgesetze aus der QA-DB entfernt (vorher waren keine installiert).
+- Fang-Server beendet.
+- Normale Instanz läuft (Health 200, kein Debug-Port).
+- Der Fang-Server (QA-Werkzeug außerhalb des Repos) hat eine optionale Zusatzdatei-Antwort
+  (`LEXONO_CAPTURE_APPEND_FILE`).
