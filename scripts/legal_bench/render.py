@@ -14,15 +14,17 @@ def _pdf(paragraphs: list[str], path: Path) -> None:
 
     doc = fitz.open()
     page = doc.new_page(width=595, height=842)
-    y = 60.0
+    y, bottom = 60.0, 790.0
     for paragraph in paragraphs:
-        rect = fitz.Rect(60, y, 535, y + 300)
-        rest = page.insert_textbox(rect, paragraph, fontsize=11, fontname="helv")
-        used = 300 - rest if rest >= 0 else 300
-        y += used + 8
-        if y > 760:
+        # passt der Absatz nicht mehr auf die Seite, schreibt insert_textbox nichts (Rueckgabe < 0): neue Seite
+        rest = page.insert_textbox(fitz.Rect(60, y, 535, bottom), paragraph, fontsize=11, fontname="helv")
+        if rest < 0:
             page = doc.new_page(width=595, height=842)
             y = 60.0
+            rest = page.insert_textbox(fitz.Rect(60, y, 535, bottom), paragraph, fontsize=11, fontname="helv")
+            if rest < 0:
+                raise ValueError("Absatz laenger als eine Seite")
+        y = bottom - rest + 8
     doc.save(str(path))
 
 

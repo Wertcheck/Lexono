@@ -25,6 +25,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
+from app.privacy.pseudonymizer import strip_legal_form
 from app.deadlines.extractor import (
     is_personal_date,
     protect_personal_dates_in,
@@ -629,7 +630,16 @@ class RuleBasedLocalAIProvider:
                 # Mandant "Mandant A" -> "A" als Nachname haette jedes "a"
                 # im Fliesstext getroffen). Echte deutsche Nachnamen sind
                 # praktisch nie kuerzer als 3 Zeichen.
-                if len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
+                stripped = strip_legal_form(name)
+                if stripped != name.strip():
+                    # Firmenname ohne Rechtsform ("Holzbau Wendeburg GmbH" -> "Holzbau Wendeburg"): im Aktentitel und
+                    # in Schreiben steht der Name oft ohne "GmbH"; vorher wurde nur das Wort maskiert, das zufaellig
+                    # Nachname eines Beteiligten war ("Holzbau [BETEILIGTER_01]", Legal-E2E-Benchmark §34, LE-D003).
+                    # Nur mehrteilig (ein Einzelwort wie "Sparkasse" traefe als Teilstring zu viel). Kein "Nachname":
+                    # das letzte Wort ist die Rechtsform - vorher wurde jedes "GmbH" (auch in "GmbHG") zur Partei.
+                    if len(stripped.split()) >= 2 and stripped not in names:
+                        surnames.append(stripped)
+                elif len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
                     surnames.append(parts[-1])
             known[category] = names + [s for s in surnames if s not in names]
 

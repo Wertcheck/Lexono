@@ -190,6 +190,19 @@ class PseudonymMapping:
     variants: tuple[str, ...] = ()
 
 
+#: Rechtsform am Ende eines Firmennamens ("Holzbau Wendeburg GmbH" -> "Holzbau Wendeburg"; Legal-E2E-Benchmark §34)
+LEGAL_FORM_END_RE = re.compile(
+    r"[\s,]+(?:(?:GmbH|SE|AG)\s*&\s*Co\.?\s*(?:KGaA|KG)|KGaA|gGmbH|GmbH|mbH|OHG|GbR|"
+    r"UG(?:\s*\(haftungsbeschr(?:ä|ae)nkt\))?|AG|KG|eG|SE|e\.\s?V\.|PartG(?:\s*mbB)?|Ltd\.?|i\.\s?L\.|"
+    r"Aktiengesellschaft)$"
+)
+
+
+def strip_legal_form(name: str) -> str:
+    """Name ohne Rechtsform am Ende (unveraendert, wenn keine)."""
+    return LEGAL_FORM_END_RE.sub("", name.strip()).strip(" ,")
+
+
 def _canonicalize_alias(
     category: str, value: str, known_entities: dict[str, list[str]] | None
 ) -> str:
@@ -217,6 +230,11 @@ def _canonicalize_alias(
             continue
         candidate_parts = candidate.split()
         if len(candidate_parts) >= 2 and candidate_parts[-1].lower() == value.lower():
+            return candidate
+        # Firmenname ohne Rechtsform (§34): dieselbe Partei, derselbe Platzhalter wie der volle Name - spiegelt
+        # `_build_known_entities` (sonst zwei Platzhalter und Ablehnung des Entwurfs mangels voller Abdeckung)
+        stripped = strip_legal_form(candidate)
+        if stripped != candidate.strip() and stripped.lower() == value.lower():
             return candidate
     return value
 

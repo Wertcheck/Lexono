@@ -3766,3 +3766,54 @@ Abnahmekriterium wie in §31–§33: keine neuen Lecks, Konsistenz unverändert.
   - Risiko von F2 und F4 ehrlicher eingestuft;
   - Testfall-Beispiele für eine künftige Wortliste ausgeschlossen;
   - Platzhalternummern entfernt.
+
+### 34.7 Etappe 6: langer Vertrag (LE-D003), neuer unabhängiger Testfall (LE-T003), Firmenname ohne Rechtsform
+
+**Korpus:**
+- LE-D003 (Dev, Baurecht): Bauvertrag mit rund 50.000 Zeichen. Damit greift im E2E der Dokumentauszug mit
+  Schlüsselstellen. Das Geburtsdatum steht mit Leerzeichen („geb. 3. März 1975“) in einer Anlage mitten im Vertrag.
+- LE-T003 (Test, Bußgeldverfahren): neu angelegt, nachdem die Testfälle LE-T001/T002 für die Fehlalarm-Frage nicht mehr
+  unabhängig waren (§34.6). Er enthält einen gescannten Bescheid, einen Tatzeit-Widerspruch und einen abgelaufenen
+  Eichschein.
+- Der PDF-Renderer setzt einen Absatz, der nicht mehr auf die Seite passt, jetzt auf eine neue Seite. Vorher hätte
+  `insert_textbox` ihn stillschweigend nicht geschrieben.
+- Die Leckprüfung des Runners bildet Datumsvarianten jetzt für jede Schreibweise des Schutzwerts.
+
+**Befunde:**
+
+| Befund | Einordnung | Maßnahme |
+|---|---|---|
+| **Leck 4 (LE-D003, kritisch):** Aktentitel „Haselhorst ./. Holzbau Wendeburg“ → „… Holzbau [BETEILIGTER_01] …“. Die Partei hieß „Holzbau Wendeburg GmbH“; bekannt war nur der volle Name, maskiert wurde nur „Wendeburg“ (zufällig auch Nachname eines Beteiligten). | Teil eines Firmennamens im Klartext | `_build_known_entities` indiziert bekannte Namen zusätzlich ohne Rechtsform (mindestens zwei Wörter oder ein großgeschriebenes Wort ab 4 Zeichen; „Bau AG“ → nicht „Bau“). Tests in `test_privacy_organisation_without_legal_form.py`. Danach keine kritischen Befunde. |
+| Langer Vertrag: die Fakten aus der Vertragsmitte (Vergütung, Fertigstellung, Vertragsstrafe) kommen im Auszug an (Q3: 3/3); das Geburtsdatum mit Leerzeichen erscheint nicht im Klartext | bestätigt §34.2 im E2E | – |
+| **LE-T003: alle drei Cloud-Anfragen blockiert** („Nach Pseudonymisierung weiterhin erkennbare Muster: person“). Der Restrisiko-Scan erkennt „Messbeamter“ als Person; im ersten Lauf wurde schon „Polizeiobermeister“ als Person maskiert. | Fail-Closed wirkt, kein Leck. Für die Nutzung ist die Akte aber unbrauchbar (Fehlblockade). Gleiche Ursache wie §34.6 (NER bei Funktions-/Berufsbezeichnungen). | Nicht geändert: Privacy-Gates dürfen nicht abgeschwächt werden, und es ist ein Testfall. Teil der Owner-Entscheidung F1–F4. |
+| Interner Auszugsmarker „… von 50222 Zeichen …“ wird als Adresse maskiert („[ADRESSE_nn] dieses Dokuments“) | Fehlalarm an einem Systemtext, kein Leck | dokumentiert |
+| Klassifikation: Test-Split 2 von 13 Dokumenten mit Typ (Gutachten, Protokoll, E-Mail, Testament, Bescheid ohne Typ; Bußgeldbescheid als „Einspruch“) | Qualität | dokumentiert |
+
+**Lauf auf finalem Stand (6 Fälle):**
+
+| Kennzahl | Dev (3) | Test (3) |
+|---|---|---|
+| kritisch | keine | keine |
+| Klartext im Payload / fremde Akte | 0 / 0 | 0 / 0 |
+| Aufgaben ohne Cloud-Anfrage (blockiert) | 0 | 3 (alle LE-T003) |
+| Extraktion / OCR | 95/95 / 12/12 | 82/82 / 27/27 |
+| benötigte Werte im Payload | 23/23 | 14/14 (nur T001/T002; T003 blockiert) |
+| Fristen (Datum) | 8/8 | 3/3 |
+| Suche Top-1 / Top-5 | 2/3 / 3/3 | 3/3 / 3/3 |
+| Schriftsatz und Export mit Bearbeitung | 3/3 | 2/3 (LE-T003 blockiert) |
+
+**QA:**
+- Volle Suite nach allen Korrekturen: 4439 bestanden, nur die 4 bekannten Logo-Fehler.
+- Unabhängiges Review der Änderung „Firmenname ohne Rechtsform“. Bestätigt: es kommt nur Maskierung hinzu.
+  Gefunden und behoben:
+  - **neu, CONFIRMED:** Beide Namensformen bekamen verschiedene Platzhalter. Ein Entwurf mit nur einem davon wäre mangels
+    voller Abdeckung abgelehnt worden. Jetzt ordnet `_canonicalize_alias` die Form ohne Rechtsform dem vollen Namen zu,
+    über das gemeinsame `strip_legal_form` in `app/privacy/pseudonymizer.py`.
+  - **vorbestehend, CONFIRMED:** Das letzte Wort „GmbH“ wurde als Nachname indiziert. Dadurch wurde jedes „GmbH“, auch
+    in „§ 13 GmbHG“, zum Gegner-Platzhalter, also ein Bedeutungsfehler und kein Leck. Namen mit Rechtsform bekommen
+    jetzt keine Nachnamen-Variante mehr.
+  - Einzelwort-Reste („Sparkasse AG“ → „Sparkasse“) werden nicht indiziert; sie träfen als Teilstring zu viel.
+  - Weitere Rechtsformen: „GmbH & Co KG“ ohne Punkt, „… & Co. KGaA“, „Ltd.“, „i. L.“, „Aktiengesellschaft“,
+    „haftungsbeschraenkt“.
+  - Tests: 12 in `test_privacy_organisation_without_legal_form.py`; mit den angrenzenden Pseudonymisierungs- und
+    Gateway-Tests zusammen 125 grün.

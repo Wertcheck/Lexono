@@ -69,12 +69,16 @@ def leak_variants(entry: dict) -> list[str]:
         variants.append(words[-1])
     if kind == "ORGANISATION" and len(words) >= 2 and len(words[0]) >= 5:
         variants.append(words[0])
-    match = re.fullmatch(r"(\d{2})\.(\d{2})\.(\d{4})", value)
-    if kind == "PERS_DATUM" and match:
-        day, month, year = match.groups()
-        variants += [f"{day}.{month}.{year[2:]}", f"{int(day)}.{int(month)}.{year}", f"{int(day)}.{int(month)}.{year[2:]}",
-                     f"{day}. {month}. {year}", f"{int(day)}. {_MONTHS[int(month) - 1]} {year}"]
-    return variants
+    if kind == "PERS_DATUM":
+        from app.privacy.date_chronology import parse_german_date
+
+        parsed = parse_german_date(value)
+        if parsed is not None:
+            day, month, year = f"{parsed.day:02d}", f"{parsed.month:02d}", str(parsed.year)
+            variants += [f"{day}.{month}.{year}", f"{day}.{month}.{year[2:]}", f"{int(day)}.{int(month)}.{year}",
+                         f"{int(day)}.{int(month)}.{year[2:]}", f"{day}. {month}. {year}",
+                         f"{int(day)}. {_MONTHS[int(month) - 1]} {year}"]
+    return list(dict.fromkeys(variants))
 
 
 def _leaked(variant: str, text: str) -> bool:

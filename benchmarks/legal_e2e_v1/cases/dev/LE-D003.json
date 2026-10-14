@@ -1,0 +1,500 @@
+{
+ "id": "LE-D003",
+ "split": "dev",
+ "version": 2,
+ "title": "Bauvertrag: Mängel, Abnahme und Vertragsstrafe (langer Vertrag)",
+ "rechtsgebiet": "Werkvertragsrecht / Baurecht",
+ "synthetic": true,
+ "source_refs": [],
+ "notes": "Vollständig synthetisch, Normen real (BGB). Langer Vertrag (> 30.000 Zeichen): der Dokumentauszug mit Schlüsselstellen greift; das Geburtsdatum steht mit Leerzeichen in einer Anlage mitten im Vertrag (§34).",
+ "parties": [
+  {
+   "id": "P1",
+   "name": "Corinna Haselhorst",
+   "role": "mandant",
+   "gender": "f"
+  },
+  {
+   "id": "P2",
+   "name": "Holzbau Wendeburg GmbH",
+   "role": "gegner",
+   "gender": null
+  },
+  {
+   "id": "P3",
+   "name": "Torsten Wendeburg",
+   "role": "dritter",
+   "gender": "m"
+  },
+  {
+   "id": "P4",
+   "name": "Ralf Ebbinghaus",
+   "role": "dritter",
+   "gender": "m"
+  },
+  {
+   "id": "P5",
+   "name": "Petra Lindqvist",
+   "role": "zeuge",
+   "gender": "f"
+  }
+ ],
+ "matter": {
+  "title": "Haselhorst ./. Holzbau Wendeburg - Baumängel",
+  "client_party": "P1"
+ },
+ "documents": [
+  {
+   "id": "D1",
+   "type": "vertrag",
+   "format": "pdf",
+   "filename": "Bauvertrag.pdf",
+   "date": "12.03.2025",
+   "paragraphs": [
+    "Bauvertrag über die Errichtung eines Holzrahmenbaus",
+    "Zwischen Frau Corinna Haselhorst, Weidenkamp 4, 49999 Beispielheide (Bauherrin), und der Holzbau Wendeburg GmbH, vertreten durch den Geschäftsführer Torsten Wendeburg (Auftragnehmer), wird folgender Vertrag geschlossen:",
+    "§ 1 Gerüststellung (Abschnitt 1). Der Auftragnehmer koordiniert im Bereich Gerüststellung die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 1 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 2 Abfallentsorgung (Abschnitt 2). Der Auftragnehmer überwacht im Bereich Abfallentsorgung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 2 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 3 Bauwasser (Abschnitt 3). Der Auftragnehmer verantwortet im Bereich Bauwasser die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 3 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 4 Baustrom (Abschnitt 4). Der Auftragnehmer prüft im Bereich Baustrom die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 4 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 5 Lärmschutz (Abschnitt 5). Der Auftragnehmer organisiert im Bereich Lärmschutz die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 5 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 6 Arbeitsschutz (Abschnitt 6). Der Auftragnehmer dokumentiert im Bereich Arbeitsschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 6 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 7 Bautagebuch (Abschnitt 7). Der Auftragnehmer stellt sicher im Bereich Bautagebuch die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 7 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 8 Aufmaß (Abschnitt 8). Der Auftragnehmer regelt im Bereich Aufmaß die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 8 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 9 Abschlagszahlungen (Abschnitt 9). Der Auftragnehmer koordiniert im Bereich Abschlagszahlungen die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 9 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 10 Nachträge (Abschnitt 10). Der Auftragnehmer überwacht im Bereich Nachträge die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 10 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 11 Behinderungsanzeigen (Abschnitt 11). Der Auftragnehmer verantwortet im Bereich Behinderungsanzeigen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 11 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 12 Witterung (Abschnitt 12). Der Auftragnehmer prüft im Bereich Witterung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 12 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 13 Schlechtwetterzeiten (Abschnitt 13). Der Auftragnehmer organisiert im Bereich Schlechtwetterzeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 13 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 14 Versicherungen (Abschnitt 14). Der Auftragnehmer dokumentiert im Bereich Versicherungen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 14 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 15 Sicherheitsleistungen (Abschnitt 15). Der Auftragnehmer stellt sicher im Bereich Sicherheitsleistungen die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 15 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 16 Bürgschaften (Abschnitt 16). Der Auftragnehmer regelt im Bereich Bürgschaften die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 16 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 17 Subunternehmer (Abschnitt 17). Der Auftragnehmer koordiniert im Bereich Subunternehmer die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 17 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 18 Materialprüfung (Abschnitt 18). Der Auftragnehmer überwacht im Bereich Materialprüfung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 18 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 19 Lieferscheine (Abschnitt 19). Der Auftragnehmer verantwortet im Bereich Lieferscheine die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 19 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 20 Prüfzeugnisse (Abschnitt 20). Der Auftragnehmer prüft im Bereich Prüfzeugnisse die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 20 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 21 Dokumentation (Abschnitt 21). Der Auftragnehmer organisiert im Bereich Dokumentation die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 21 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 22 Revisionsunterlagen (Abschnitt 22). Der Auftragnehmer dokumentiert im Bereich Revisionsunterlagen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 22 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 23 Wartungshinweise (Abschnitt 23). Der Auftragnehmer stellt sicher im Bereich Wartungshinweise die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 23 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 24 Einweisung (Abschnitt 24). Der Auftragnehmer regelt im Bereich Einweisung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 24 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 25 Schlüsselübergabe (Abschnitt 25). Der Auftragnehmer koordiniert im Bereich Schlüsselübergabe die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 25 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 26 Zufahrt (Abschnitt 26). Der Auftragnehmer überwacht im Bereich Zufahrt die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 26 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 27 Lagerflächen (Abschnitt 27). Der Auftragnehmer verantwortet im Bereich Lagerflächen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 27 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 28 Nachbarschutz (Abschnitt 28). Der Auftragnehmer prüft im Bereich Nachbarschutz die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 28 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 29 Erschütterungen (Abschnitt 29). Der Auftragnehmer organisiert im Bereich Erschütterungen die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 29 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 30 Staubschutz (Abschnitt 30). Der Auftragnehmer dokumentiert im Bereich Staubschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 30 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 31 Brandschutz (Abschnitt 31). Der Auftragnehmer stellt sicher im Bereich Brandschutz die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 31 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 32 Schallschutz (Abschnitt 32). Der Auftragnehmer regelt im Bereich Schallschutz die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 32 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 33 Wärmeschutz (Abschnitt 33). Der Auftragnehmer koordiniert im Bereich Wärmeschutz die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 33 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 34 Feuchteschutz (Abschnitt 34). Der Auftragnehmer überwacht im Bereich Feuchteschutz die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 34 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 35 Holzschutz (Abschnitt 35). Der Auftragnehmer verantwortet im Bereich Holzschutz die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 35 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 36 Dachentwässerung (Abschnitt 36). Der Auftragnehmer prüft im Bereich Dachentwässerung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 36 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 37 Fassadenarbeiten (Abschnitt 37). Der Auftragnehmer organisiert im Bereich Fassadenarbeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 37 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 38 Fensteranschlüsse (Abschnitt 38). Der Auftragnehmer dokumentiert im Bereich Fensteranschlüsse die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 38 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 39 Innenausbau (Abschnitt 39). Der Auftragnehmer stellt sicher im Bereich Innenausbau die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 39 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 40 Baustelleneinrichtung (Abschnitt 40). Der Auftragnehmer regelt im Bereich Baustelleneinrichtung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 40 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 41 Gerüststellung (Abschnitt 41). Der Auftragnehmer koordiniert im Bereich Gerüststellung die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 41 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 42 Abfallentsorgung (Abschnitt 42). Der Auftragnehmer überwacht im Bereich Abfallentsorgung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 42 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 43 Bauwasser (Abschnitt 43). Der Auftragnehmer verantwortet im Bereich Bauwasser die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 43 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 44 Baustrom (Abschnitt 44). Der Auftragnehmer prüft im Bereich Baustrom die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 44 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 45 Lärmschutz (Abschnitt 45). Der Auftragnehmer organisiert im Bereich Lärmschutz die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 45 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 46 Arbeitsschutz (Abschnitt 46). Der Auftragnehmer dokumentiert im Bereich Arbeitsschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 46 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 47 Bautagebuch (Abschnitt 47). Der Auftragnehmer stellt sicher im Bereich Bautagebuch die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 47 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 48 Aufmaß (Abschnitt 48). Der Auftragnehmer regelt im Bereich Aufmaß die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 48 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 49 Abschlagszahlungen (Abschnitt 49). Der Auftragnehmer koordiniert im Bereich Abschlagszahlungen die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 49 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 50 Nachträge (Abschnitt 50). Der Auftragnehmer überwacht im Bereich Nachträge die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 50 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 51 Behinderungsanzeigen (Abschnitt 51). Der Auftragnehmer verantwortet im Bereich Behinderungsanzeigen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 51 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 52 Witterung (Abschnitt 52). Der Auftragnehmer prüft im Bereich Witterung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 52 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 53 Schlechtwetterzeiten (Abschnitt 53). Der Auftragnehmer organisiert im Bereich Schlechtwetterzeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 53 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 54 Versicherungen (Abschnitt 54). Der Auftragnehmer dokumentiert im Bereich Versicherungen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 54 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 55 Sicherheitsleistungen (Abschnitt 55). Der Auftragnehmer stellt sicher im Bereich Sicherheitsleistungen die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 55 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 56 Bürgschaften (Abschnitt 56). Der Auftragnehmer regelt im Bereich Bürgschaften die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 56 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 57 Subunternehmer (Abschnitt 57). Der Auftragnehmer koordiniert im Bereich Subunternehmer die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 57 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 58 Materialprüfung (Abschnitt 58). Der Auftragnehmer überwacht im Bereich Materialprüfung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 58 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 59 Lieferscheine (Abschnitt 59). Der Auftragnehmer verantwortet im Bereich Lieferscheine die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 59 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 60 Prüfzeugnisse (Abschnitt 60). Der Auftragnehmer prüft im Bereich Prüfzeugnisse die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 60 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 61 Vergütung und Fertigstellung. Die Pauschalvergütung beträgt 184.500,00 EUR. Die Fertigstellung ist bis zum 30.09.2025 geschuldet. Bei Überschreitung wird eine Vertragsstrafe von 0,2 Prozent der Vergütung je Werktag fällig.",
+    "Anlage 3 zu § 61 - Ansprechpartner der Bauherrin: Corinna Haselhorst, geb. 3. März 1975, erreichbar unter 0152 7788990.",
+    "§ 62 Revisionsunterlagen (Abschnitt 62). Der Auftragnehmer dokumentiert im Bereich Revisionsunterlagen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 62 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 63 Wartungshinweise (Abschnitt 63). Der Auftragnehmer stellt sicher im Bereich Wartungshinweise die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 63 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 64 Einweisung (Abschnitt 64). Der Auftragnehmer regelt im Bereich Einweisung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 64 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 65 Schlüsselübergabe (Abschnitt 65). Der Auftragnehmer koordiniert im Bereich Schlüsselübergabe die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 65 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 66 Zufahrt (Abschnitt 66). Der Auftragnehmer überwacht im Bereich Zufahrt die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 66 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 67 Lagerflächen (Abschnitt 67). Der Auftragnehmer verantwortet im Bereich Lagerflächen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 67 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 68 Nachbarschutz (Abschnitt 68). Der Auftragnehmer prüft im Bereich Nachbarschutz die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 68 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 69 Erschütterungen (Abschnitt 69). Der Auftragnehmer organisiert im Bereich Erschütterungen die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 69 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 70 Staubschutz (Abschnitt 70). Der Auftragnehmer dokumentiert im Bereich Staubschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 70 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 71 Brandschutz (Abschnitt 71). Der Auftragnehmer stellt sicher im Bereich Brandschutz die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 71 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 72 Schallschutz (Abschnitt 72). Der Auftragnehmer regelt im Bereich Schallschutz die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 72 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 73 Wärmeschutz (Abschnitt 73). Der Auftragnehmer koordiniert im Bereich Wärmeschutz die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 73 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 74 Feuchteschutz (Abschnitt 74). Der Auftragnehmer überwacht im Bereich Feuchteschutz die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 74 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 75 Holzschutz (Abschnitt 75). Der Auftragnehmer verantwortet im Bereich Holzschutz die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 75 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 76 Dachentwässerung (Abschnitt 76). Der Auftragnehmer prüft im Bereich Dachentwässerung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 76 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 77 Fassadenarbeiten (Abschnitt 77). Der Auftragnehmer organisiert im Bereich Fassadenarbeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 77 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 78 Fensteranschlüsse (Abschnitt 78). Der Auftragnehmer dokumentiert im Bereich Fensteranschlüsse die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 78 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 79 Innenausbau (Abschnitt 79). Der Auftragnehmer stellt sicher im Bereich Innenausbau die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 79 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 80 Baustelleneinrichtung (Abschnitt 80). Der Auftragnehmer regelt im Bereich Baustelleneinrichtung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 80 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 81 Gerüststellung (Abschnitt 81). Der Auftragnehmer koordiniert im Bereich Gerüststellung die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 81 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 82 Abfallentsorgung (Abschnitt 82). Der Auftragnehmer überwacht im Bereich Abfallentsorgung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 82 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 83 Bauwasser (Abschnitt 83). Der Auftragnehmer verantwortet im Bereich Bauwasser die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 83 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 84 Baustrom (Abschnitt 84). Der Auftragnehmer prüft im Bereich Baustrom die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 84 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 85 Lärmschutz (Abschnitt 85). Der Auftragnehmer organisiert im Bereich Lärmschutz die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 85 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 86 Arbeitsschutz (Abschnitt 86). Der Auftragnehmer dokumentiert im Bereich Arbeitsschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 86 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 87 Bautagebuch (Abschnitt 87). Der Auftragnehmer stellt sicher im Bereich Bautagebuch die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 87 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 88 Aufmaß (Abschnitt 88). Der Auftragnehmer regelt im Bereich Aufmaß die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 88 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 89 Abschlagszahlungen (Abschnitt 89). Der Auftragnehmer koordiniert im Bereich Abschlagszahlungen die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 89 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 90 Nachträge (Abschnitt 90). Der Auftragnehmer überwacht im Bereich Nachträge die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 90 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 91 Behinderungsanzeigen (Abschnitt 91). Der Auftragnehmer verantwortet im Bereich Behinderungsanzeigen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 91 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 92 Witterung (Abschnitt 92). Der Auftragnehmer prüft im Bereich Witterung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 92 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 93 Schlechtwetterzeiten (Abschnitt 93). Der Auftragnehmer organisiert im Bereich Schlechtwetterzeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 93 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 94 Versicherungen (Abschnitt 94). Der Auftragnehmer dokumentiert im Bereich Versicherungen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 94 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 95 Sicherheitsleistungen (Abschnitt 95). Der Auftragnehmer stellt sicher im Bereich Sicherheitsleistungen die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 95 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 96 Bürgschaften (Abschnitt 96). Der Auftragnehmer regelt im Bereich Bürgschaften die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 96 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 97 Subunternehmer (Abschnitt 97). Der Auftragnehmer koordiniert im Bereich Subunternehmer die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 97 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 98 Materialprüfung (Abschnitt 98). Der Auftragnehmer überwacht im Bereich Materialprüfung die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 98 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 99 Lieferscheine (Abschnitt 99). Der Auftragnehmer verantwortet im Bereich Lieferscheine die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 99 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 100 Prüfzeugnisse (Abschnitt 100). Der Auftragnehmer prüft im Bereich Prüfzeugnisse die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 100 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 101 Dokumentation (Abschnitt 101). Der Auftragnehmer organisiert im Bereich Dokumentation die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 101 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 102 Revisionsunterlagen (Abschnitt 102). Der Auftragnehmer dokumentiert im Bereich Revisionsunterlagen die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 102 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 103 Wartungshinweise (Abschnitt 103). Der Auftragnehmer stellt sicher im Bereich Wartungshinweise die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 103 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 104 Einweisung (Abschnitt 104). Der Auftragnehmer regelt im Bereich Einweisung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 104 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 105 Schlüsselübergabe (Abschnitt 105). Der Auftragnehmer koordiniert im Bereich Schlüsselübergabe die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 105 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 106 Zufahrt (Abschnitt 106). Der Auftragnehmer überwacht im Bereich Zufahrt die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 106 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 107 Lagerflächen (Abschnitt 107). Der Auftragnehmer verantwortet im Bereich Lagerflächen die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 107 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 108 Nachbarschutz (Abschnitt 108). Der Auftragnehmer prüft im Bereich Nachbarschutz die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 108 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 109 Erschütterungen (Abschnitt 109). Der Auftragnehmer organisiert im Bereich Erschütterungen die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 109 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 110 Staubschutz (Abschnitt 110). Der Auftragnehmer dokumentiert im Bereich Staubschutz die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 110 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 111 Brandschutz (Abschnitt 111). Der Auftragnehmer stellt sicher im Bereich Brandschutz die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 111 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 112 Schallschutz (Abschnitt 112). Der Auftragnehmer regelt im Bereich Schallschutz die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 7 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 112 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 113 Wärmeschutz (Abschnitt 113). Der Auftragnehmer koordiniert im Bereich Wärmeschutz die fristgerechte Mitteilung von Bedenken. Mitteilungen hierzu erfolgen schriftlich innerhalb von 8 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 113 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 114 Feuchteschutz (Abschnitt 114). Der Auftragnehmer überwacht im Bereich Feuchteschutz die Abstimmung mit der Bauleitung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 9 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 114 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 115 Holzschutz (Abschnitt 115). Der Auftragnehmer verantwortet im Bereich Holzschutz die Abstimmung der Gewerke. Mitteilungen hierzu erfolgen schriftlich innerhalb von 10 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 115 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 116 Dachentwässerung (Abschnitt 116). Der Auftragnehmer prüft im Bereich Dachentwässerung die Vollständigkeit der Unterlagen. Mitteilungen hierzu erfolgen schriftlich innerhalb von 11 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 116 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 117 Fassadenarbeiten (Abschnitt 117). Der Auftragnehmer organisiert im Bereich Fassadenarbeiten die rechtzeitige Information der Bauherrin. Mitteilungen hierzu erfolgen schriftlich innerhalb von 3 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 117 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 118 Fensteranschlüsse (Abschnitt 118). Der Auftragnehmer dokumentiert im Bereich Fensteranschlüsse die Sauberkeit der Baustelle. Mitteilungen hierzu erfolgen schriftlich innerhalb von 4 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 118 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 119 Innenausbau (Abschnitt 119). Der Auftragnehmer stellt sicher im Bereich Innenausbau die Einhaltung der anerkannten Regeln der Technik. Mitteilungen hierzu erfolgen schriftlich innerhalb von 5 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 119 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 120 Baustelleneinrichtung (Abschnitt 120). Der Auftragnehmer regelt im Bereich Baustelleneinrichtung die ordnungsgemäße Ausführung. Mitteilungen hierzu erfolgen schriftlich innerhalb von 6 Werktagen nach Kenntnis. Kosten aus diesem Abschnitt 120 sind in der Vergütung enthalten, soweit nicht ausdrücklich anders vereinbart. Abweichungen bedürfen einer gesonderten Vereinbarung in Textform zwischen den Vertragsparteien.",
+    "§ 121 Gewährleistung. Die Verjährungsfrist für Mängelansprüche beträgt fünf Jahre (§ 634a Abs. 1 Nr. 2 BGB).",
+    "Beispielheide, den 12.03.2025"
+   ]
+  },
+  {
+   "id": "D2",
+   "type": "email",
+   "format": "txt",
+   "filename": "Email_Mandantin.txt",
+   "date": "20.11.2025",
+   "paragraphs": [
+    "Von: c.haselhorst@beispielpost.example",
+    "Datum: 20.11.2025",
+    "Betreff: Abnahme und Feuchtigkeit",
+    "Die Abnahme war am 14.11.2025, und zwar nur unter Vorbehalt wegen der Feuchtigkeit im Dachgeschoss.",
+    "Meine Nachbarin Petra Lindqvist war dabei und hat den Vorbehalt gehört.",
+    "Corinna Haselhorst"
+   ]
+  },
+  {
+   "id": "D3",
+   "type": "gutachten",
+   "format": "scan",
+   "filename": "Gutachten_Dampfsperre_Scan.pdf",
+   "date": "09.12.2025",
+   "paragraphs": [
+    "Privatgutachten Nr. PG-2025-118",
+    "Sachverständiger: Ralf Ebbinghaus",
+    "Ortstermin am 02.12.2025 im Dachgeschoss.",
+    "Ursache der Feuchtigkeit ist eine fehlerhaft verklebte Dampfsperre.",
+    "Die Kosten der Mängelbeseitigung betragen 12.840,00 EUR netto."
+   ]
+  },
+  {
+   "id": "D4",
+   "type": "schreiben",
+   "format": "docx",
+   "filename": "Schreiben_Holzbau_Wendeburg.docx",
+   "date": "17.12.2025",
+   "paragraphs": [
+    "Holzbau Wendeburg GmbH",
+    "Beispielheide, 17.12.2025",
+    "Die Abnahme erfolgte bereits am 31.10.2025 vorbehaltlos.",
+    "Aus der Schlussrechnung ist noch ein Betrag von 23.600,00 EUR offen, den wir bis zum 08.01.2026 erwarten.",
+    "Torsten Wendeburg, Geschäftsführer"
+   ]
+  },
+  {
+   "id": "D5",
+   "type": "schreiben",
+   "format": "docx",
+   "filename": "Fristsetzung_Entwurf.docx",
+   "date": "22.12.2025",
+   "paragraphs": [
+    "Unser Zeichen: 25/0911-HB",
+    "Beispielheide, 22.12.2025",
+    "Wir setzen Ihnen zur Beseitigung der Mängel an der Dampfsperre eine Frist bis zum 15.01.2026.",
+    "Nach fruchtlosem Fristablauf wird unsere Mandantin die Mängel selbst beseitigen lassen (§ 637 Abs. 1 BGB).",
+    "Bis dahin verweigert sie die Zahlung in Höhe des Doppelten der Mängelbeseitigungskosten (§ 641 Abs. 3 BGB)."
+   ]
+  }
+ ],
+ "reference": {
+  "facts": [
+   {
+    "id": "F1",
+    "statement": "Pauschalvergütung",
+    "values": [
+     "184.500,00 EUR"
+    ],
+    "docs": [
+     "D1"
+    ]
+   },
+   {
+    "id": "F2",
+    "statement": "Fertigstellungstermin und Vertragsstrafe",
+    "values": [
+     "30.09.2025",
+     "0,2 Prozent"
+    ],
+    "docs": [
+     "D1"
+    ]
+   },
+   {
+    "id": "F3",
+    "statement": "Abnahme unter Vorbehalt laut Mandantin",
+    "values": [
+     "14.11.2025"
+    ],
+    "docs": [
+     "D2"
+    ]
+   },
+   {
+    "id": "F4",
+    "statement": "Mängelbeseitigungskosten laut Gutachten",
+    "values": [
+     "12.840,00 EUR"
+    ],
+    "docs": [
+     "D3"
+    ]
+   },
+   {
+    "id": "F5",
+    "statement": "Offene Schlussrechnung",
+    "values": [
+     "23.600,00 EUR"
+    ],
+    "docs": [
+     "D4"
+    ]
+   }
+  ],
+  "chronology": [
+   {
+    "date": "12.03.2025",
+    "event": "Bauvertrag",
+    "doc": "D1"
+   },
+   {
+    "date": "14.11.2025",
+    "event": "Abnahme laut Mandantin",
+    "doc": "D2"
+   },
+   {
+    "date": "02.12.2025",
+    "event": "Ortstermin Gutachter",
+    "doc": "D3"
+   },
+   {
+    "date": "17.12.2025",
+    "event": "Schreiben des Auftragnehmers",
+    "doc": "D4"
+   },
+   {
+    "date": "22.12.2025",
+    "event": "Fristsetzung",
+    "doc": "D5"
+   }
+  ],
+  "deadlines": [
+   {
+    "date": "15.01.2026",
+    "kind": "Frist zur Mängelbeseitigung",
+    "doc": "D5"
+   },
+   {
+    "date": "08.01.2026",
+    "kind": "Zahlungsforderung Gegenseite",
+    "doc": "D4"
+   },
+   {
+    "date": "30.09.2025",
+    "kind": "Fertigstellung laut Vertrag",
+    "doc": "D1"
+   }
+  ],
+  "citations": [
+   {
+    "text": "§ 634a Abs. 1 Nr. 2 BGB",
+    "kind": "norm",
+    "doc": "D1"
+   },
+   {
+    "text": "§ 637 Abs. 1 BGB",
+    "kind": "norm",
+    "doc": "D5"
+   },
+   {
+    "text": "§ 641 Abs. 3 BGB",
+    "kind": "norm",
+    "doc": "D5"
+   }
+  ],
+  "contradictions": [
+   {
+    "id": "W1",
+    "topic": "Datum und Art der Abnahme",
+    "values": [
+     {
+      "doc": "D2",
+      "value": "14.11.2025"
+     },
+     {
+      "doc": "D4",
+      "value": "31.10.2025"
+     }
+    ]
+   }
+  ],
+  "privacy": {
+   "protect": [
+    {
+     "value": "Corinna Haselhorst",
+     "type": "PERSON"
+    },
+    {
+     "value": "Holzbau Wendeburg GmbH",
+     "type": "ORGANISATION"
+    },
+    {
+     "value": "Torsten Wendeburg",
+     "type": "PERSON"
+    },
+    {
+     "value": "Ralf Ebbinghaus",
+     "type": "PERSON"
+    },
+    {
+     "value": "Petra Lindqvist",
+     "type": "PERSON"
+    },
+    {
+     "value": "3. März 1975",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "Weidenkamp 4, 49999 Beispielheide",
+     "type": "ADRESSE"
+    },
+    {
+     "value": "0152 7788990",
+     "type": "TELEFON"
+    },
+    {
+     "value": "c.haselhorst@beispielpost.example",
+     "type": "EMAIL"
+    }
+   ],
+   "keep": [
+    "184.500,00 EUR",
+    "12.840,00 EUR",
+    "23.600,00 EUR",
+    "15.01.2026",
+    "§ 637 Abs. 1 BGB",
+    "§ 641 Abs. 3 BGB"
+   ]
+  },
+  "tasks": [
+   {
+    "id": "Q1",
+    "kind": "chat",
+    "question": "Wann war die Abnahme, und unter welchen Bedingungen?",
+    "attach": [],
+    "needed_facts": [
+     "F3"
+    ],
+    "needed_values": [
+     "14.11.2025",
+     "31.10.2025"
+    ]
+   },
+   {
+    "id": "Q2",
+    "kind": "chat",
+    "question": "Was kostet die Mängelbeseitigung laut diesem Gutachten?",
+    "attach": [
+     "D3"
+    ],
+    "needed_facts": [
+     "F4"
+    ],
+    "needed_values": [
+     "12.840,00 EUR"
+    ]
+   },
+   {
+    "id": "Q3",
+    "kind": "chat",
+    "question": "Welche Vertragsstrafe und welcher Fertigstellungstermin sind in diesem Vertrag vereinbart?",
+    "attach": [
+     "D1"
+    ],
+    "needed_facts": [
+     "F2"
+    ],
+    "needed_values": [
+     "30.09.2025",
+     "0,2 Prozent",
+     "184.500,00 EUR"
+    ]
+   },
+   {
+    "id": "Q4",
+    "kind": "schriftsatz",
+    "question": "Fristsetzung zur Mängelbeseitigung mit Zurückbehaltung.",
+    "attach": [],
+    "needed_facts": [
+     "F3",
+     "F4"
+    ],
+    "needed_values": [
+     "12.840,00 EUR",
+     "15.01.2026"
+    ]
+   },
+   {
+    "id": "Q5",
+    "kind": "suche",
+    "question": "Gutachten Dampfsperre Mängelbeseitigungskosten",
+    "attach": [],
+    "needed_facts": [
+     "F4"
+    ],
+    "expected_documents": [
+     "D3"
+    ]
+   },
+   {
+    "id": "Q6",
+    "kind": "fristen",
+    "question": "Fristen aus den Akten",
+    "attach": [],
+    "needed_facts": [],
+    "expected_deadlines": [
+     "15.01.2026"
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,114 @@
+{
+  "id": "LE-T003",
+  "split": "test",
+  "version": 2,
+  "title": "Bußgeldverfahren: Geschwindigkeitsverstoß mit Fahrverbot",
+  "rechtsgebiet": "Ordnungswidrigkeitenrecht / Verkehrsrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Unabhängiger Testfall (neu nach §34.6, nicht zur Regelabstimmung und nicht für die Fehlalarm-Wortliste verwenden). Vollständig synthetisch; Normen real (StVG, OWiG). Gescannter Bußgeldbescheid, Widerspruch zur Tatzeit, abgelaufener Eichschein.",
+  "parties": [
+    {"id": "P1", "name": "Leonhard Quast", "role": "mandant", "gender": "m"},
+    {"id": "P2", "name": "Mareike Tönnies", "role": "zeuge", "gender": "f"},
+    {"id": "P3", "name": "Jannik Brettschneider", "role": "dritter", "gender": "m"}
+  ],
+  "matter": {"title": "Quast - Bußgeldverfahren Geschwindigkeit", "client_party": "P1"},
+  "documents": [
+    {
+      "id": "D1", "type": "bescheid", "format": "scan", "filename": "Bussgeldbescheid_Scan.pdf", "date": "03.08.2026",
+      "paragraphs": [
+        "Landkreis Beispielland - Bußgeldstelle",
+        "Bußgeldbescheid vom 03.08.2026, Aktenzeichen 812.33.104577.6",
+        "Betroffener: Leonhard Quast, geb. 21.01.1990, Talweg 9, 77777 Beispielland",
+        "Ihnen wird vorgeworfen, am 14.06.2026 um 17:42 Uhr mit dem Kraftfahrzeug BL-LQ 77 die zulässige Höchstgeschwindigkeit innerhalb geschlossener Ortschaften um 27 km/h überschritten zu haben (§ 24 StVG).",
+        "Geldbuße: 180,00 EUR. Fahrverbot: 1 Monat (§ 25 StVG).",
+        "Gegen diesen Bescheid kann innerhalb von zwei Wochen nach Zustellung Einspruch eingelegt werden (§ 67 Abs. 1 OWiG)."
+      ]
+    },
+    {
+      "id": "D2", "type": "protokoll", "format": "pdf", "filename": "Messprotokoll.pdf", "date": "14.06.2026",
+      "paragraphs": [
+        "Messprotokoll Lasermessung",
+        "Messort: Talweg, Höhe Hausnummer 30, Beispielland",
+        "Messung Nr. 37 um 17:24 Uhr, gemessene Geschwindigkeit 77 km/h, zulässig 50 km/h.",
+        "Messbeamter: Polizeiobermeister Jannik Brettschneider",
+        "Eichschein des Messgeräts gültig bis 31.12.2025."
+      ]
+    },
+    {
+      "id": "D3", "type": "email", "format": "txt", "filename": "Email_Mandant.txt", "date": "07.08.2026",
+      "paragraphs": [
+        "Von: l.quast@beispielpost.example",
+        "Datum: 07.08.2026",
+        "Betreff: Bußgeldbescheid",
+        "Der Bescheid wurde mir am 06.08.2026 zugestellt. Das Fahrverbot wäre für mich als Außendienstler existenzbedrohend.",
+        "Meine Lebensgefährtin Mareike Tönnies saß neben mir und meint, wir seien höchstens 60 gefahren. Telefon 0157 3344221.",
+        "Leonhard Quast"
+      ]
+    },
+    {
+      "id": "D4", "type": "schreiben", "format": "docx", "filename": "Einspruch_Entwurf.docx", "date": "10.08.2026",
+      "paragraphs": [
+        "Unser Zeichen: 26/0802-LQ",
+        "Beispielland, 10.08.2026",
+        "Gegen den Bußgeldbescheid vom 03.08.2026 legen wir namens unseres Mandanten Einspruch ein.",
+        "Die Einspruchsfrist nach § 67 Abs. 1 OWiG endet am 20.08.2026.",
+        "Wir beantragen Akteneinsicht nach § 49 Abs. 1 OWiG, insbesondere in die Messreihe und den Eichschein."
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Tatvorwurf laut Bescheid", "values": ["14.06.2026", "17:42 Uhr", "27 km/h"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Rechtsfolgen", "values": ["180,00 EUR", "1 Monat"], "docs": ["D1"]},
+      {"id": "F3", "statement": "Messung laut Protokoll", "values": ["17:24 Uhr", "77 km/h"], "docs": ["D2"]},
+      {"id": "F4", "statement": "Eichschein abgelaufen", "values": ["31.12.2025"], "docs": ["D2"]},
+      {"id": "F5", "statement": "Zustellung des Bescheids", "values": ["06.08.2026"], "docs": ["D3"]}
+    ],
+    "chronology": [
+      {"date": "14.06.2026", "event": "Tattag laut Bescheid", "doc": "D1"},
+      {"date": "03.08.2026", "event": "Bußgeldbescheid", "doc": "D1"},
+      {"date": "06.08.2026", "event": "Zustellung", "doc": "D3"},
+      {"date": "07.08.2026", "event": "E-Mail des Mandanten", "doc": "D3"},
+      {"date": "10.08.2026", "event": "Einspruchsentwurf", "doc": "D4"}
+    ],
+    "deadlines": [
+      {"date": "20.08.2026", "kind": "Einspruchsfrist § 67 Abs. 1 OWiG", "doc": "D4"}
+    ],
+    "citations": [
+      {"text": "§ 24 StVG", "kind": "norm", "doc": "D1"},
+      {"text": "§ 25 StVG", "kind": "norm", "doc": "D1"},
+      {"text": "§ 67 Abs. 1 OWiG", "kind": "norm", "doc": "D4"},
+      {"text": "§ 49 Abs. 1 OWiG", "kind": "norm", "doc": "D4"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Tatzeit", "values": [{"doc": "D1", "value": "17:42 Uhr"}, {"doc": "D2", "value": "17:24 Uhr"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Leonhard Quast", "type": "PERSON"},
+        {"value": "Mareike Tönnies", "type": "PERSON"},
+        {"value": "Jannik Brettschneider", "type": "PERSON"},
+        {"value": "21.01.1990", "type": "PERS_DATUM"},
+        {"value": "Talweg 9, 77777 Beispielland", "type": "ADRESSE"},
+        {"value": "BL-LQ 77", "type": "KENNUNG"},
+        {"value": "812.33.104577.6", "type": "KENNUNG"},
+        {"value": "l.quast@beispielpost.example", "type": "EMAIL"},
+        {"value": "0157 3344221", "type": "TELEFON"}
+      ],
+      "keep": ["180,00 EUR", "20.08.2026", "17:24 Uhr", "17:42 Uhr", "31.12.2025", "§ 67 Abs. 1 OWiG"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Bis wann muss Einspruch eingelegt werden, und ab wann läuft die Frist?", "attach": [],
+       "needed_facts": ["F5"], "needed_values": ["20.08.2026", "06.08.2026"]},
+      {"id": "Q2", "kind": "chat", "question": "Welche Uhrzeit nennt dieses Messprotokoll, und ist das Gerät geeicht?", "attach": ["D2"],
+       "needed_facts": ["F3", "F4"], "needed_values": ["17:24 Uhr", "31.12.2025"]},
+      {"id": "Q3", "kind": "schriftsatz", "question": "Einspruch mit Antrag auf Akteneinsicht; Tatzeit-Widerspruch und Eichung rügen.",
+       "attach": [], "needed_facts": ["F1", "F3", "F4"], "needed_values": ["03.08.2026", "180,00 EUR"]},
+      {"id": "Q4", "kind": "suche", "question": "Messprotokoll Lasermessung Eichschein", "attach": [], "needed_facts": ["F4"],
+       "expected_documents": ["D2"]},
+      {"id": "Q5", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["20.08.2026"]}
+    ]
+  }
+}
