@@ -467,6 +467,24 @@ def _preservation_summary(items: list[dict]) -> dict:
     return out
 
 
+def _stats(values: list[float]) -> dict:
+    if not values:
+        return {"n": 0}
+    ordered = sorted(values)
+    return {"n": len(ordered), "median": ordered[len(ordered) // 2], "max": ordered[-1]}
+
+
+def _runtime_and_size(docs: list[dict], tasks: list[dict]) -> dict:
+    """Laufzeit je Stufe (Sekunden, lokal gemessen) und Payload-Groesse (Zeichen) je Aufgabenart. Kosten werden NICHT
+    geschaetzt: offline gibt es keine Tokenzahlen des Anbieters (eine Zeichen-pro-Token-Annahme waere erfunden)."""
+    out = {"laufzeit_dokument_s": _stats([d["seconds"] for d in docs if "seconds" in d])}
+    for kind in ("chat", "schriftsatz", "suche"):
+        out[f"laufzeit_{kind}_s"] = _stats([t["seconds"] for t in tasks if t["kind"] == kind and "seconds" in t])
+        if kind != "suche":
+            out[f"payload_zeichen_{kind}"] = _stats([t["payload_chars"] for t in tasks if t["kind"] == kind and "payload_chars" in t])
+    return out
+
+
 def summarise(results: list[dict]) -> dict:
     def per_split(split: str) -> dict:
         rows = [r for r in results if r["split"] == split]
@@ -507,6 +525,7 @@ def summarise(results: list[dict]) -> dict:
             # Fehlalarm-Kandidaten der Maskierung je Akte (dedupliziert ueber die Aufgaben), mit Kategorie
             "maskiert_ohne_referenz": sorted({f"{r['case']}:{m['kategorie']}:{m['original']}" for r in rows for t in r["tasks"]
                                               for m in t.get("maskiert_ohne_referenz", [])}),
+            **_runtime_and_size(docs, tasks),
             # erfundene Fundstellen einer (simulierten) Modellantwort: markiert / im Entwurf enthalten
             "erfundene_fundstellen_markiert": f"{sum(len(t['quellenintegritaet'].get('als_pruefpunkt_markiert', [])) for t in drafts if 'quellenintegritaet' in t)}/"
                                               f"{sum(len(t['quellenintegritaet'].get('im_entwurf', [])) for t in drafts if 'quellenintegritaet' in t)}",
@@ -554,7 +573,7 @@ def main() -> int:
         shutil.rmtree(workdir, ignore_errors=True)
     output = {"benchmark": "legal_e2e_v1", "run_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               **provenance(), "environment": outcome["environment"], "seconds_total": round(time.perf_counter() - started, 1),
-              "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
+              "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
               "summary": summarise(outcome["results"]), "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"

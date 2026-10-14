@@ -3862,3 +3862,26 @@ unverändert im Entwurf. Ursache:
 **Empfehlung:** Q1 sofort nach Freigabe (deterministisch, geringe Hinweisdichte), dazu Q2 als zusammengefasster
 Einzelhinweis („n Rechtsprechungs-Fundstellen nicht lokal verifiziert“). Der Benchmark misst die Wirkung direkt
 (`erfundene_fundstellen_markiert`).
+
+### 34.9 Etappe 8: Laufzeit und Payload-Größe
+
+Der Runner fasst jetzt je Split zusammen:
+- Laufzeit je Stufe (Dokument-Import/-Verarbeitung, Chat, Schriftsatz, Suche): Median und Maximum, lokal gemessen,
+  **ohne Modell-Latenz**. Der Schriftsatz enthält Export und Quellenintegritäts-Probe.
+- Payload-Größe in Zeichen je Aufgabenart.
+
+Kosten werden bewusst **nicht geschätzt**. Lexonos Preisschätzung (`app/cost_control/pricing.py`) braucht Tokenzahlen
+des Anbieters, und eine Zeichen-pro-Token-Annahme wäre ein erfundener Wert. Kosten bleiben NICHT VERIFIZIERT bis zu
+einem freigegebenen Live-Lauf.
+
+Lauf (6 Fälle, Dev-Werte):
+
+| Kennzahl | Median | Maximum |
+|---|---|---|
+| Dokument (Import + Verarbeitung) | ≈ 1,2 s | ≈ 1,6 s |
+| Chat | ≈ 1,8 s | ≈ 13 s (langer Vertrag) |
+| Schriftsatz | ≈ 3,6 s | ≈ 23 s (langer Vertrag) |
+| Payload Chat | ≈ 4.100 Zeichen | ≈ 32.500 Zeichen |
+
+Gesamtlauf ≈ 110 s. Die Maxima entstehen beim langen Vertrag: Die einmalige Erkennung persönlicher Daten im
+vollständigen Quelltext (§34.2) und der Dokumentauszug kosten dort spürbar Zeit.

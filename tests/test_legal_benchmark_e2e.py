@@ -111,3 +111,10 @@ def test_source_integrity_probe_is_measured(outcome: dict) -> None:
         assert re.fullmatch(r"\d+/\d+", outcome["summary"][split]["erfundene_fundstellen_markiert"])
     probes = [t["quellenintegritaet"] for r in outcome["results"] for t in r["tasks"] if "quellenintegritaet" in t]
     assert probes and all(p["status"] in ("ok", "blockiert") for p in probes)
+
+
+def test_runtime_and_payload_size_are_reported_without_cost_estimate(outcome: dict) -> None:
+    summary = outcome["summary"]["dev"]
+    assert summary["laufzeit_dokument_s"]["n"] > 0 and summary["payload_zeichen_chat"]["n"] > 0
+    assert not any("usd" in key or "token" in key for key in summary)  # keine erfundene Kostenschaetzung
+    assert e2e._stats([3.0, 1.0, 2.0]) == {"n": 3, "median": 2.0, "max": 3.0} and e2e._stats([]) == {"n": 0}
