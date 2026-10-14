@@ -25,7 +25,13 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
-from app.deadlines.extractor import is_personal_date, trim_partial_personal_dates
+from app.deadlines.extractor import (
+    is_personal_date,
+    protect_personal_dates_in,
+    remove_unlabelled_personal_dates,
+    restore_personal_dates,
+    trim_partial_personal_dates,
+)
 from app.models import Deadline, Document, Matter, Message, Party
 from app.search.service import DocumentSearchService
 
@@ -119,7 +125,9 @@ _TERM_RE = re.compile(
     re.IGNORECASE,
 )
 _HEADING_RE = re.compile(r"^(?:§\s*\d+|Art(?:ikel)?\.?\s*\d+|\d+(?:\.\d+)*\.?\s+[A-ZÄÖÜ])")
-_SEGMENT_SPLIT_RE = re.compile(r"(?<=[.!?;])\s+|\s{2,}")
+# Kein Schnitt nach "geb."/"gest.": die Bezeichnung muss bei ihrem Datum bleiben, sonst entfernt der Datenschutzschritt
+# das (dann unbezeichnete) Datum statt es maskieren zu lassen (Review §34)
+_SEGMENT_SPLIT_RE = re.compile(r"(?<=[.!?;])(?<!\bgeb\.)(?<!\bgest\.)\s+|(?<!\bgeb\.)(?<!\bgest\.)\s{2,}")
 
 
 _TERMINAL_PUNCTUATION = (".", ":", ";", "!", "?")
@@ -290,6 +298,9 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
     normalized = _normalize_document_text(extracted_text)
     if len(normalized) <= limit:
         return DocumentExcerpt(normalized, 0)
+    original = normalized
+    # Geburts-/Todesdaten als ein Token: weder Segmentierung noch Schnitt duerfen ein Datum zerteilen (Review §34)
+    normalized, date_tokens = protect_personal_dates_in(normalized)
 
     marker_reserve = 220
     usable = max(200, limit - marker_reserve)
@@ -308,7 +319,10 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
         parts.append(keys)
         parts.append("[…]")
     parts.append(tail.lstrip())
-    return DocumentExcerpt("  ".join(parts), omitted)
+    # Kopf, Schluesselstellen und Ende koennen eine Bezeichnung ("geb.") von ihrem Datum trennen - ohne Bezeichnung
+    # erkennt die Pseudonymisierung das Geburts-/Todesdatum nicht mehr (unabhaengiges Review §34)
+    excerpt = restore_personal_dates("  ".join(parts), date_tokens)
+    return DocumentExcerpt(remove_unlabelled_personal_dates(excerpt, original), omitted)
 
 
 @dataclass

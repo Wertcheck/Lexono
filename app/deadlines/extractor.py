@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from functools import lru_cache
 from typing import Protocol
 
 from app.deadlines.schema import ExtractedDeadline
@@ -107,17 +108,116 @@ def is_personal_date(source_text: str | None, due_date: date | None, full_text: 
     )
 
 
+@lru_cache(maxsize=64)
+def _personal_date_spans_cached(text: str) -> tuple[tuple[int, int, str], ...]:
+    """Geburts-/Todesdaten eines Textes (Position, Wert) - zwischengespeichert, weil derselbe Volltext fuer jeden
+    Fristvorschlag eines Dokuments erneut gebraucht wird (Review §34: 30 Vorschlaege x 200k Zeichen ~ 3 s)."""
+    from app.privacy.detectors import detect_geburtsdatum, detect_todesdatum
+
+    return tuple(sorted((s.start, s.end, s.value) for s in (*detect_geburtsdatum(text), *detect_todesdatum(text))))
+
+
+def _personal_date_values(*texts: str | None) -> set[str]:
+    return {value for text in texts if text for _start, _end, value in _personal_date_spans_cached(text)}
+
+
+def _any_spelling(value: str) -> re.Pattern[str] | None:
+    """Alle Schreibweisen desselben Datums: "14.07.1988", "14.7.88", "14. 07. 1988", "14. Juli 1988" (Review §34: die
+    wertgleiche Maskierung im Gateway erkennt nur die exakte Schreibweise)."""
+    from app.privacy.date_chronology import parse_german_date
+
+    parsed = parse_german_date(value)
+    if parsed is None:
+        return None
+    day = rf"0?{parsed.day}\s*\.\s*"
+    names = [name for name, number in _GERMAN_MONTHS.items() if number == parsed.month]
+    words = "|".join([*names, re.escape(names[0][:3]) + r"\.?"])
+    month = rf"(?:0?{parsed.month}\s*\.\s*|(?:{words})\s+)"
+    year = rf"(?:{parsed.year}|{parsed.year % 100:02d})"
+    return re.compile(rf"(?<![\d.]){day}{month}{year}(?!\d)", re.IGNORECASE)
+
+
+def remove_unlabelled_personal_dates(excerpt: str, source_text: str | None) -> str:
+    """Entfernt aus einem AUSSCHNITT jedes Geburts-/Todesdatum (in jeder Schreibweise), das laut Quelltext eines ist, im
+    Ausschnitt aber ohne seine Bezeichnung steht - und Rand-Bruchstuecke davon ("Juli 1988, ..." aus "14. Juli 1988").
+
+    Ohne Bezeichnung ("geb.", "verstorben am") erkennt die Pseudonymisierung ein solches Datum nicht mehr; es ging im
+    Klartext hinaus, wenn der Ausschnitt die Bezeichnung abschnitt und der Quelltext nicht selbst im Sachverhalt stand
+    (§34: Fristausschnitt; Schluesselstellen langer Dokumente). Im Ausschnitt BEZEICHNETE Vorkommen bleiben fuer den
+    Gateway stehen (dort maskiert, lokal mit Altersangabe). Nur ganze Daten (Ziffergrenzen), nie Teile laengerer Nummern."""
+    if not excerpt or not source_text:
+        return excerpt
+    personal = _personal_date_values(excerpt, source_text)
+    if not personal:
+        return excerpt
+    labelled = [(start, end) for start, end, _value in _personal_date_spans_cached(excerpt)]
+    removals: list[tuple[int, int]] = []
+    for value in personal:
+        pattern = _any_spelling(value)
+        matches = pattern.finditer(excerpt) if pattern else re.finditer(r"(?<!\d)" + re.escape(value) + r"(?!\d)", excerpt)
+        for match in matches:
+            if not any(match.start() < end and start < match.end() for start, end in labelled):
+                removals.append((match.start(), match.end()))
+    for start, end in sorted(set(removals), reverse=True):
+        excerpt = excerpt[:start] + "…" + excerpt[end:]
+    return _strip_edge_fragments(excerpt, personal)
+
+
+def _strip_edge_fragments(excerpt: str, personal: set[str]) -> str:
+    """Ausschnitt beginnt mit dem Ende / endet mit dem Anfang eines persoenlichen Datums (ab einer Wortgrenze im
+    Datum, mindestens vier Zeichen, danach bzw. davor kein Wortzeichen). Hoechstens einmal je Seite (Review §34)."""
+    head = excerpt.lstrip()
+    for value in personal:
+        suffixes = [value[i:] for i in range(1, len(value) - 3) if value[i - 1] in " ." and value[i] != " "]
+        hit = next((s for s in suffixes if head.startswith(s) and not head[len(s):len(s) + 1].isalnum()), None)
+        if hit:
+            excerpt = head[len(hit):].lstrip(" ,;")
+            break
+    tail = excerpt.rstrip()
+    for value in personal:
+        prefixes = [value[:j + (1 if value[j] == "." else 0)] for j in range(4, len(value) - 1) if value[j] in " ."]
+        hit = next((p for p in prefixes if len(p) >= 4 and tail.endswith(p) and not tail[:-len(p)][-1:].isalnum()), None)
+        if hit:
+            excerpt = tail[: -len(hit)].rstrip(" ,;")
+            break
+    return excerpt
+
+
+def protect_personal_dates_in(text: str) -> tuple[str, dict[str, str]]:
+    """Ersetzt jedes Geburts-/Todesdatum im Text durch ein Zeichen-Token ohne Leerraum/Satzzeichen, damit eine
+    nachfolgende Segmentierung oder ein Schnitt an Leerraum das Datum nie zerteilt ("geb. 14. Juli 1988" wurde an den
+    Punkten in "14." / "Juli 1988" zerlegt, Review §34). `restore_personal_dates` setzt die Werte wieder ein."""
+    tokens: dict[str, str] = {}
+    out = text
+    taken_until = len(text) + 1
+    for index, (start, end, _value) in enumerate(reversed(_personal_date_spans_cached(text))):
+        if end > taken_until:  # ueberlappt ein bereits ersetztes Datum
+            continue
+        taken_until = start
+        token = f"⟦PD{index}⟧"
+        tokens[token] = text[start:end]
+        out = out[:start] + token + out[end:]
+    return out, tokens
+
+
+def restore_personal_dates(text: str, tokens: dict[str, str]) -> str:
+    for token, original in tokens.items():
+        text = text.replace(token, original)
+    return text
+
+
 def trim_partial_personal_dates(snippet: str | None, full_text: str | None) -> str | None:
     """Gespeicherte Fristausschnitte aus der Zeit vor der Korrektur koennen mit dem Rest eines zerschnittenen Geburts-
     oder Todesdatums beginnen oder enden ("1940, verstorben am ..."). Ein solches Rand-Bruchstueck wird entfernt, wenn es
-    Teil eines im Ausschnitt oder Quelldokument erkannten Geburts-/Todesdatums ist (§24)."""
+    Teil eines im Ausschnitt oder Quelldokument erkannten Geburts-/Todesdatums ist (§24).
+
+    Ebenso ein VOLLSTAENDIGES Geburts-/Todesdatum, das laut Quelldokument eines ist, im Ausschnitt aber ohne seine
+    Bezeichnung steht (§34, `remove_unlabelled_personal_dates`) - auch wenn es zugleich das Datum des Vorschlags ist:
+    im Payload hat der Schutz Vorrang; der Vorschlag bleibt lokal vollstaendig erhalten."""
     if not snippet:
         return snippet
-    from app.privacy.detectors import detect_geburtsdatum, detect_todesdatum
-
-    personal = {
-        span.value for text in (snippet, full_text) if text for span in (*detect_geburtsdatum(text), *detect_todesdatum(text))
-    }
+    snippet = remove_unlabelled_personal_dates(snippet, full_text)
+    personal = _personal_date_values(snippet, full_text)
     words = snippet.split(" ")
 
     def is_fragment(word: str, *, head: bool) -> bool:

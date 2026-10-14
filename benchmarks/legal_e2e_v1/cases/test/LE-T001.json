@@ -1,0 +1,115 @@
+{
+  "id": "LE-T001",
+  "split": "test",
+  "version": 1,
+  "title": "Verkehrsunfall: Schadensersatz nach Auffahrunfall",
+  "rechtsgebiet": "Verkehrsrecht / Schadensersatz",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Unabhaengiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollstaendig synthetisch; Normen real (StVG, BGB, VVG).",
+  "parties": [
+    {"id": "P1", "name": "Ilka Voskuhl", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Bernd Tiefenthaler", "role": "gegner", "gender": "m"},
+    {"id": "P3", "name": "Ostwind Versicherung AG", "role": "gegner", "gender": null},
+    {"id": "P4", "name": "Lorenz Haberkamp", "role": "zeuge", "gender": "m"},
+    {"id": "P5", "name": "Theresa Kalkbrenner", "role": "dritter", "gender": "f"}
+  ],
+  "matter": {"title": "Voskuhl ./. Tiefenthaler - Verkehrsunfall", "client_party": "P1"},
+  "documents": [
+    {
+      "id": "D1", "type": "protokoll", "format": "scan", "filename": "Unfallmitteilung_Scan.pdf", "date": "07.05.2026",
+      "paragraphs": [
+        "Unfallmitteilung (Polizei Beispielstadt)",
+        "Unfallzeit: 07.05.2026, 08:15 Uhr, Kreuzung Gartenstrasse / Ringallee, Beispielstadt",
+        "Beteiligte: Ilka Voskuhl, amtl. Kennzeichen BS-IV 2207; Bernd Tiefenthaler, amtl. Kennzeichen BS-BT 418",
+        "Hergang laut Zeuge Lorenz Haberkamp: Fahrzeug 2 fuhr bei Rot auf das stehende Fahrzeug 1 auf.",
+        "Tagebuchnummer 2026-04711"
+      ]
+    },
+    {
+      "id": "D2", "type": "gutachten", "format": "pdf", "filename": "Schadensgutachten.pdf", "date": "14.05.2026",
+      "paragraphs": [
+        "Kfz-Schadensgutachten Nr. G-26-0533 vom 14.05.2026",
+        "Sachverstaendige: Dipl.-Ing. Theresa Kalkbrenner",
+        "Auftraggeberin: Ilka Voskuhl, Ringallee 5, 38100 Beispielstadt",
+        "Reparaturkosten netto: 6.412,80 EUR. Wertminderung: 650,00 EUR. Reparaturdauer: 9 Arbeitstage.",
+        "Gutachterkosten: 812,40 EUR."
+      ]
+    },
+    {
+      "id": "D3", "type": "schreiben", "format": "docx", "filename": "Schreiben_Ostwind_Versicherung.docx", "date": "02.06.2026",
+      "paragraphs": [
+        "Ostwind Versicherung AG, Schadenabteilung",
+        "Schadennummer OV-26-889214",
+        "Beispielstadt, 02.06.2026",
+        "Unser Versicherungsnehmer Bernd Tiefenthaler gibt an, Ihre Mandantin sei bei Gruen unvermittelt stehen geblieben.",
+        "Wir regulieren daher zunaechst nur 50 Prozent der Reparaturkosten, also 3.206,40 EUR.",
+        "Eine Wertminderung erstatten wir nicht. Weitere Unterlagen erbitten wir bis zum 30.06.2026."
+      ]
+    },
+    {
+      "id": "D4", "type": "email", "format": "txt", "filename": "Email_Mandantin.txt", "date": "05.06.2026",
+      "paragraphs": [
+        "Von: ilka.voskuhl@beispielpost.example",
+        "Datum: 05.06.2026",
+        "Betreff: Unfall vom 07.05.2026",
+        "Die Ampel war rot, ich stand bereits. Der Zeuge Herr Haberkamp hat das gesehen, Telefon 0151 2233445.",
+        "Mein Mietwagen kostete fuer 9 Tage 738,00 EUR. Bitte fordern Sie den vollen Schaden.",
+        "Ilka Voskuhl"
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Unfallzeit und -ort", "values": ["07.05.2026", "08:15 Uhr"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Reparaturkosten netto", "values": ["6.412,80 EUR"], "docs": ["D2"]},
+      {"id": "F3", "statement": "Wertminderung", "values": ["650,00 EUR"], "docs": ["D2"]},
+      {"id": "F4", "statement": "Gutachterkosten", "values": ["812,40 EUR"], "docs": ["D2"]},
+      {"id": "F5", "statement": "Mietwagenkosten", "values": ["738,00 EUR"], "docs": ["D4"]},
+      {"id": "F6", "statement": "Teilregulierung der Versicherung", "values": ["3.206,40 EUR", "50 Prozent"], "docs": ["D3"]}
+    ],
+    "chronology": [
+      {"date": "07.05.2026", "event": "Unfall", "doc": "D1"},
+      {"date": "14.05.2026", "event": "Schadensgutachten", "doc": "D2"},
+      {"date": "02.06.2026", "event": "Schreiben der Versicherung", "doc": "D3"},
+      {"date": "05.06.2026", "event": "E-Mail der Mandantin", "doc": "D4"}
+    ],
+    "deadlines": [
+      {"date": "30.06.2026", "kind": "Unterlagen an Versicherung", "doc": "D3"}
+    ],
+    "citations": [],
+    "contradictions": [
+      {"id": "W1", "topic": "Ampelphase beim Unfall",
+       "values": [{"doc": "D1", "value": "bei Rot"}, {"doc": "D3", "value": "bei Gruen"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Ilka Voskuhl", "type": "PERSON"},
+        {"value": "Bernd Tiefenthaler", "type": "PERSON"},
+        {"value": "Ostwind Versicherung AG", "type": "ORGANISATION"},
+        {"value": "Lorenz Haberkamp", "type": "PERSON"},
+        {"value": "Theresa Kalkbrenner", "type": "PERSON"},
+        {"value": "BS-IV 2207", "type": "KENNUNG"},
+        {"value": "BS-BT 418", "type": "KENNUNG"},
+        {"value": "Ringallee 5, 38100 Beispielstadt", "type": "ADRESSE"},
+        {"value": "ilka.voskuhl@beispielpost.example", "type": "EMAIL"},
+        {"value": "0151 2233445", "type": "TELEFON"},
+        {"value": "OV-26-889214", "type": "KENNUNG"},
+        {"value": "2026-04711", "type": "KENNUNG"}
+      ],
+      "keep": ["6.412,80 EUR", "650,00 EUR", "812,40 EUR", "738,00 EUR", "3.206,40 EUR", "30.06.2026", "07.05.2026"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Welche Schadenspositionen sind belegt, und was hat die Versicherung reguliert?", "attach": [],
+       "needed_facts": ["F2", "F3", "F4", "F5", "F6"], "needed_values": ["6.412,80 EUR", "650,00 EUR", "812,40 EUR", "738,00 EUR", "3.206,40 EUR"]},
+      {"id": "Q2", "kind": "chat", "question": "Was sagt das Gutachten zur Wertminderung?", "attach": ["D2"],
+       "needed_facts": ["F3"], "needed_values": ["650,00 EUR"]},
+      {"id": "Q3", "kind": "schriftsatz", "question": "Anspruchsschreiben an die Versicherung: volle Haftung, alle Positionen.",
+       "attach": [], "needed_facts": ["F1", "F2", "F3", "F4", "F5"], "needed_values": ["07.05.2026", "6.412,80 EUR"]},
+      {"id": "Q4", "kind": "suche", "question": "Gutachten Reparaturkosten Wertminderung", "attach": [], "needed_facts": ["F2"],
+       "expected_documents": ["D2"]},
+      {"id": "Q5", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["30.06.2026"]}
+    ]
+  }
+}

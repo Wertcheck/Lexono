@@ -1,0 +1,149 @@
+{
+  "id": "LE-D001",
+  "split": "dev",
+  "version": 1,
+  "title": "Mietmaengel Schimmel, Minderung und Zahlungsrueckstand",
+  "rechtsgebiet": "Mietrecht (Wohnraum)",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Vollstaendig synthetisch. Namen, Anschriften, Kennungen frei erfunden. Normen real (BGB).",
+  "parties": [
+    {"id": "P1", "name": "Henrike Osterkamp", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Gudrun Pfeilsticker", "role": "gegner", "gender": "f"},
+    {"id": "P3", "name": "Detlef Rautenberg", "role": "dritter", "gender": "m"},
+    {"id": "P4", "name": "Yusuf Demirtas", "role": "zeuge", "gender": "m"},
+    {"id": "P5", "name": "Rechtsanwalt Konrad Brehmhaus", "role": "anwalt_gegner", "gender": "m"}
+  ],
+  "matter": {"title": "Osterkamp ./. Pfeilsticker - Mietminderung", "client_party": "P1"},
+  "documents": [
+    {
+      "id": "D1", "type": "vertrag", "format": "docx", "filename": "Mietvertrag_Auszug.docx", "date": "01.09.2021",
+      "paragraphs": [
+        "Mietvertrag ueber Wohnraum (Auszug)",
+        "Zwischen Gudrun Pfeilsticker, Vermieterin, und Henrike Osterkamp, Mieterin, wird folgender Vertrag geschlossen.",
+        "§ 1 Mietsache: Wohnung im 2. Obergeschoss, Erlenweg 12, 12345 Musterstadt, 3 Zimmer, ca. 74 m².",
+        "§ 2 Mietbeginn: 01.09.2021.",
+        "§ 3 Miete: Die monatliche Gesamtmiete betraegt 1.150,00 EUR einschliesslich Vorauszahlungen.",
+        "Zahlung bis zum dritten Werktag auf das Konto der Vermieterin, IBAN DE21 3704 0044 0812 3456 78."
+      ]
+    },
+    {
+      "id": "D2", "type": "email", "format": "txt", "filename": "Maengelanzeige_Email.txt", "date": "03.02.2026",
+      "paragraphs": [
+        "Von: henrike.osterkamp@beispielpost.example",
+        "An: Hausverwaltung Detlef Rautenberg",
+        "Datum: 03.02.2026",
+        "Betreff: Schimmel im Schlafzimmer",
+        "Sehr geehrter Herr Rautenberg,",
+        "hiermit zeige ich an, dass sich seit Januar 2026 im Schlafzimmer an der Aussenwand Schimmel bildet.",
+        "Mein Nachbar Herr Yusuf Demirtas hat die Stelle am 02.02.2026 ebenfalls gesehen.",
+        "Ich bitte um Beseitigung bis zum 20.02.2026. Erreichbar bin ich unter 0171 4455667.",
+        "Mit freundlichen Gruessen",
+        "Henrike Osterkamp"
+      ]
+    },
+    {
+      "id": "D3", "type": "schreiben", "format": "pdf", "filename": "Schreiben_Vermieterin_Rueckstand.pdf", "date": "10.03.2026",
+      "paragraphs": [
+        "Gudrun Pfeilsticker, Am Muehlbach 3, 12345 Musterstadt",
+        "Frau Henrike Osterkamp, Erlenweg 12, 12345 Musterstadt",
+        "Musterstadt, den 10.03.2026",
+        "Mietrueckstand Februar und Maerz 2026",
+        "Sehr geehrte Frau Osterkamp,",
+        "Sie haben die Miete fuer Februar und Maerz 2026 eigenmaechtig gekuerzt. Der Rueckstand betraegt 460,00 EUR.",
+        "Einen Schimmelbefall haben Sie mir erstmals am 17.02.2026 gemeldet; eine fruehere Anzeige ist mir nicht bekannt.",
+        "Die vereinbarte Miete betraegt im Uebrigen 1.250,00 EUR monatlich.",
+        "Ich fordere Sie auf, den Rueckstand bis zum 31.03.2026 auszugleichen. Andernfalls behalte ich mir die Kuendigung vor.",
+        "Gudrun Pfeilsticker"
+      ]
+    },
+    {
+      "id": "D4", "type": "rechnung", "format": "scan", "filename": "Rechnung_Maler_Scan.pdf", "date": "05.03.2026",
+      "paragraphs": [
+        "Malerbetrieb Schoellhorn GmbH",
+        "Rechnung Nr. R-2026-0311",
+        "Datum: 05.03.2026",
+        "Objekt: Erlenweg 12, 12345 Musterstadt, Schlafzimmer",
+        "Schimmelbehandlung Aussenwand, Material und Arbeitszeit",
+        "Gesamtbetrag: 486,50 EUR",
+        "Auftraggeberin: Henrike Osterkamp"
+      ]
+    },
+    {
+      "id": "D5", "type": "schreiben", "format": "docx", "filename": "Schreiben_RA_Brehmhaus.docx", "date": "01.04.2026",
+      "paragraphs": [
+        "Rechtsanwalt Konrad Brehmhaus",
+        "Musterstadt, den 01.04.2026",
+        "In der Mietsache Pfeilsticker ./. Osterkamp, Az. 26/0417-KB",
+        "Namens und in Vollmacht unserer Mandantin Gudrun Pfeilsticker fordern wir Sie auf, den Mietrueckstand von nunmehr 690,00 EUR zu zahlen.",
+        "Eine Minderung nach § 536 BGB scheidet aus, weil der Mangel nicht rechtzeitig nach § 536c BGB angezeigt wurde.",
+        "Bei weiterem Rueckstand kommt eine fristlose Kuendigung nach § 543 Abs. 2 Satz 1 Nr. 3 BGB in Betracht.",
+        "Wir erwarten Ihre Stellungnahme bis zum 15.04.2026."
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Vertragliche Gesamtmiete laut Mietvertrag", "values": ["1.150,00 EUR"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Mietbeginn", "values": ["01.09.2021"], "docs": ["D1"]},
+      {"id": "F3", "statement": "Schimmel im Schlafzimmer seit Januar 2026", "values": ["Januar 2026"], "docs": ["D2"]},
+      {"id": "F4", "statement": "Rechnung Malerbetrieb fuer Schimmelbehandlung", "values": ["486,50 EUR", "R-2026-0311"], "docs": ["D4"]},
+      {"id": "F5", "statement": "Rueckstand laut Vermieterin am 10.03.2026", "values": ["460,00 EUR"], "docs": ["D3"]},
+      {"id": "F6", "statement": "Rueckstand laut Gegenanwalt am 01.04.2026", "values": ["690,00 EUR"], "docs": ["D5"]},
+      {"id": "F7", "statement": "Maengelanzeige per E-Mail", "values": ["03.02.2026"], "docs": ["D2"]}
+    ],
+    "chronology": [
+      {"date": "01.09.2021", "event": "Mietbeginn", "doc": "D1"},
+      {"date": "02.02.2026", "event": "Zeuge sieht Schimmel", "doc": "D2"},
+      {"date": "03.02.2026", "event": "Maengelanzeige der Mieterin", "doc": "D2"},
+      {"date": "05.03.2026", "event": "Rechnung Malerbetrieb", "doc": "D4"},
+      {"date": "10.03.2026", "event": "Schreiben der Vermieterin zum Rueckstand", "doc": "D3"},
+      {"date": "01.04.2026", "event": "Schreiben des Gegenanwalts", "doc": "D5"}
+    ],
+    "deadlines": [
+      {"date": "20.02.2026", "kind": "Frist der Mieterin zur Maengelbeseitigung", "doc": "D2"},
+      {"date": "31.03.2026", "kind": "Zahlungsfrist der Vermieterin", "doc": "D3"},
+      {"date": "15.04.2026", "kind": "Frist zur Stellungnahme (Gegenanwalt)", "doc": "D5"}
+    ],
+    "citations": [
+      {"text": "§ 536 BGB", "kind": "norm", "doc": "D5"},
+      {"text": "§ 536c BGB", "kind": "norm", "doc": "D5"},
+      {"text": "§ 543 Abs. 2 Satz 1 Nr. 3 BGB", "kind": "norm", "doc": "D5"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Zeitpunkt der Maengelanzeige",
+       "values": [{"doc": "D2", "value": "03.02.2026"}, {"doc": "D3", "value": "17.02.2026"}]},
+      {"id": "W2", "topic": "Hoehe der vereinbarten Miete",
+       "values": [{"doc": "D1", "value": "1.150,00 EUR"}, {"doc": "D3", "value": "1.250,00 EUR"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Henrike Osterkamp", "type": "PERSON"},
+        {"value": "Gudrun Pfeilsticker", "type": "PERSON"},
+        {"value": "Detlef Rautenberg", "type": "PERSON"},
+        {"value": "Yusuf Demirtas", "type": "PERSON"},
+        {"value": "Erlenweg 12, 12345 Musterstadt", "type": "ADRESSE"},
+        {"value": "Am Muehlbach 3, 12345 Musterstadt", "type": "ADRESSE"},
+        {"value": "DE21 3704 0044 0812 3456 78", "type": "IBAN"},
+        {"value": "henrike.osterkamp@beispielpost.example", "type": "EMAIL"},
+        {"value": "0171 4455667", "type": "TELEFON"},
+        {"value": "26/0417-KB", "type": "KENNUNG"}
+      ],
+      "keep": ["1.150,00 EUR", "486,50 EUR", "460,00 EUR", "690,00 EUR", "15.04.2026", "31.03.2026", "§ 536c BGB"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Welche Fristen setzt die Gegenseite in ihren Schreiben?", "attach": [],
+       "needed_facts": ["F5", "F6"], "needed_values": ["31.03.2026", "15.04.2026"]},
+      {"id": "Q2", "kind": "chat", "question": "Ist diese Rechnung fuer die Schimmelbehandlung plausibel?", "attach": ["D4"],
+       "needed_facts": ["F4"], "needed_values": ["486,50 EUR"]},
+      {"id": "Q3", "kind": "chat", "question": "Wann wurde der Mangel angezeigt, und welche Angaben widersprechen sich?", "attach": [],
+       "needed_facts": ["F7"], "needed_values": ["03.02.2026", "17.02.2026", "1.150,00 EUR", "1.250,00 EUR"]},
+      {"id": "Q4", "kind": "schriftsatz", "question": "Erwiderung auf das Schreiben von Rechtsanwalt Brehmhaus: Minderung wegen Schimmel, rechtzeitige Anzeige.",
+       "attach": [], "needed_facts": ["F1", "F3", "F7"], "needed_values": ["03.02.2026", "1.150,00 EUR"]},
+      {"id": "Q5", "kind": "suche", "question": "Rechnung Malerbetrieb Schimmelbehandlung", "attach": [], "needed_facts": ["F4"],
+       "expected_documents": ["D4"]},
+      {"id": "Q6", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["31.03.2026", "15.04.2026"]}
+    ]
+  }
+}

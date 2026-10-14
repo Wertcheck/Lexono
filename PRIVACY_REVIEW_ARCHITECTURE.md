@@ -3618,3 +3618,78 @@ aber niemand „Groß“; die Maskierung als eigene Person ist ein vorbestehende
 Kollisionen mit bekannten Namen. Die Prüfung wurde auf das eigentliche Kriterium („nicht dem Mandanten zugeordnet“)
 korrigiert.
 
+
+## 34. Realistic Legal Benchmark & E2E (`benchmarks/legal_e2e_v1`) und drei Geburtsdatum-Lecks (14.10.2026, Ausgang `0b8ad4e`)
+
+Nur synthetische Daten, kein externer Modellaufruf, keine API-Kosten. Keine Änderung an Gateway, Privacy Gates,
+Fail-Closed oder API-Key-Verwaltung. Kein neuer Agent: die Verantwortung liegt bei Agent I (`agents/qa/AGENT.md`).
+
+### 34.1 Aufbau
+
+| Baustein | Inhalt |
+|---|---|
+| A Quellenregister (`source_register.json`) | 7 öffentliche Quellen (Gesetze/Rechtsprechung im Internet, BVerfG, openJur, ZJS-Übungsfälle, Vis Moot, Soldan Moot) mit Herkunft, URL, Art, Umfang. **BLOCKIERT:** Nutzungsrechte und URLs nicht geprüft (externer Abruf; die Einstufung nach § 5 UrhG/Lizenz trifft eine verantwortliche Person). Kein Eintrag wird verwendet. |
+| B Korpus (`cases/`) | 4 vollständig synthetische Akten: Mietrecht (LE-D001), Arbeitsrecht (LE-D002), Verkehrsunfall (LE-T001), Erbrecht (LE-T002); 20 Dokumente als TXT/DOCX/PDF und 4 reine Bild-Scans; Widersprüche, Aktenzeichen, Fristen, reale Normen. |
+| C Referenzdaten | Fakten, Chronologie, Fristen, Normen, Widersprüche, `protect`/`keep`, Aufgaben. Dev (`LE-D`) und Test (`LE-T`) getrennt; Testfälle nicht zur Regelabstimmung. Der Validator (`scripts/legal_bench/corpus.py`) weist erfundene Werte, unbelegte Zitate, fehlende Schutzwerte, ungeprüfte Quellen und Split-Fehler zurück (Negativtests). |
+| D E2E (`scripts/legal_bench/e2e.py`) | echte Pfade in einer gemeinsamen DB: `IntakeService` → `DocumentProcessingService` (Extraktion, OCR mit vendored Tesseract, Klassifikation, Fristen) → `DocumentSearchService` (Produktions-Embedding offline) → `ChatService.send_message` → `DraftingService.create_draft` → `EditorService.autosave_draft` → DOCX/PDF-Export. Der Schreib-Provider erfasst den Payload unmittelbar vor der Cloud-Grenze und sendet nichts. |
+| E Auswertung | getrennte Kennzahlen je Split; kritische Befunde einzeln (Klartext im Payload, Daten fremder Akten, Suchtreffer fremder Akten, Platzhalterreste im Export, persönliches Datum als Frist), nie gemittelt; Herkunft (Commit, Korpus-Hash, Code-Fingerabdrücke). Regressionstest `tests/test_legal_benchmark_e2e.py`. |
+
+### 34.2 Befunde und Korrekturen
+
+| Befund | Ursache | Korrektur |
+|---|---|---|
+| OCR 0/17 Werte im ersten Lauf | Runner: Tesseract ohne `TESSDATA_PREFIX` (das Installer-Bundle setzt ihn, der Dev-Lauf nicht) | Runner wie das Bundle konfiguriert; kein Produktfehler |
+| **Leck 1 (Benchmark, LE-D002 Q2):** Geburtsdatum aus dem Arbeitsvertrag im Klartext im Payload eines Chats mit nur der Abmahnung als Anhang | Fristausschnitt zur Frist „Beginn 15.01.2019“ begann mit „14.07.1988, …“; „geb.“ lag außerhalb des Ausschnitts, der Vertrag stand nicht im Sachverhalt | `remove_unlabelled_personal_dates` (`app/deadlines/extractor.py`): ein laut Quelltext persönliches Datum, das im Ausschnitt ohne Bezeichnung steht, wird entfernt (Ziffergrenzen, auch Rand-Bruchstücke wie „Juli 1988“); gilt auch, wenn es zugleich das Datum des Vorschlags ist |
+| **Leck 2 (unabhängiges Review, CONFIRMED):** lange Dokumente: Schlüsselstellen-Auswahl trennte „geb.“ vom Datum („geb. […] 14.07.1988“), Namen maskiert, Datum im Klartext | Segmentierung nach „geb.“ bzw. Zeilenumbruch, Kopf/Ende-Schnitt | dieselbe Funktion auf den gekürzten Dokumentauszug (`_document_excerpt`); bezeichnete Daten bleiben für die Maskierung im Gateway |
+| **Leck 3 (Re-Review, CONFIRMED):** Daten mit Leerzeichen („geb. 14. Juli 1988“, „14. 07. 1988“, „3. März 2024 … verstorben“) wurden von der Segmentierung zerteilt („14. […] Juli 1988“); andere Schreibweisen desselben Datums („14.7.88“ neben „geb. 14.07.1988“) blieben stehen, weil die wertgleiche Maskierung nur die exakte Schreibweise kennt | Segmentierung an Satzpunkten; Entfernung nur des ganzen Wertes | `_document_excerpt` ersetzt Geburts-/Todesdaten vor Segmentierung und Schnitt durch ein Token ohne Leerraum und setzt sie danach wieder ein; die Entfernung erfasst jede Schreibweise (numerisch, Kurzjahr, mit Leerzeichen, Monatsname/-abkürzung); Rand-Bruchstücke nur einmal je Seite und nicht vor Wortzeichen („1990er“ bleibt); Erkennung je Quelltext zwischengespeichert (vorher ≈ 95 ms je Fristvorschlag bei 200k Zeichen) |
+| Bezeichnetes Geburtsdatum im Mittelteil langer Dokumente wurde nach der Korrektur sicher entfernt statt maskiert (drittes Review, kein Leck) | Segmentierung schnitt nach „geb.“ | kein Schnitt nach „geb.“/„gest.“; Datum bleibt bezeichnet und wird im Gateway als `[GEBURTSDATUM_nn]` maskiert |
+| Leckprüfung des Runners nur auf volle Werte (Review) | — | zusätzlich Nachname (auch Genitiv), erstes Wort von Organisationen, Datumsvarianten (Kurzjahr, ohne Nullen, Monatsname), wortgrenzengenau |
+| Suche: nicht importiertes erwartetes Dokument fiel still weg (Review) | — | zählt als Fehltreffer |
+
+### 34.3 Ergebnis (Lauf auf finalem Code; Datei `benchmarks/legal_e2e_v1/results.json` mit Herkunft)
+
+| Kennzahl | Dev (2 Fälle) | Test (2 Fälle) |
+|---|---|---|
+| **kritisch** | **keine** | **keine** |
+| Klartext eigener Schutzwerte im Payload / Daten fremder Akten | 0 / 0 | 0 / 0 |
+| benötigte Werte im Payload | 15/15 | 14/14 |
+| Extraktion (Referenzwerte im Text) / davon OCR | 68/68 / 9/9 | 53/53 / 13/13 |
+| Fristen (nur Datumsgleichheit) | 5/5 | 2/2 |
+| zusätzliche Fristvorschläge (alle bekannte Falldaten: Ereignis-/Dokumentdaten) | 15 | 12 |
+| Suche Top-1 | 2/2 | 2/2 |
+| Schriftsatz gespeichert, Bearbeitung in DOCX und PDF | 2/2 | 2/2 |
+| Dokumenttyp vergeben (nicht „Unbekannt“; Korrektheit nicht bewertet) | 8/10 | 0/9 |
+
+Vor der Korrektur: 1 kritischer Befund (Leck 1) im Dev-Split. Laufzeit ≈ 55 s für 4 Fälle.
+
+### 34.4 Bewertung und Grenzen
+
+- **Datenschutz – verbessert:** drei Wege, auf denen ein Geburts-/Todesdatum seine Bezeichnung verlor oder zerteilt wurde und im Klartext
+  hinausging, sind geschlossen und per Test belegt. Gateway, Restrisiko-Scan und Fail-Closed unverändert.
+- **Qualitätsbefunde (nicht behoben, nicht auf Testfällen abgestimmt):** viele Fristvorschläge sind bloße
+  Ereignisdaten (27 bei 7 echten Fristen); die Klassifikation vergibt für Gutachten, Protokoll, E-Mail, Testament und
+  Bescheid keinen Typ.
+- **Grenzen:** 4 kleine Fälle, kurze Dokumente (der lange Fall steht nur im Unit-Test); Fristen nur nach Datum, nicht
+  nach Art/Quelle; Widersprüche und Chronologie werden noch nicht gegen Modellantworten geprüft (offline gibt es keine
+  Antwort); Personennamen-Konsistenz (z. B. Mutter und Sohn „Wehrhahn“ in LE-T002) wird nicht gemessen. Telefonnummern
+  liegen in vergebenen Mobilfunkbereichen und die Testfirmennamen könnten realen Firmen ähneln (Review, PLAUSIBLE) –
+  bei der nächsten Korpusversion durch eindeutig fiktive Werte ersetzen.
+- **Bekannte Nebenwirkungen der Korrektur (Review, kein Leck):** Zahlen, die wie eine andere Schreibweise eines
+  persönlichen Datums aussehen („Version 4.7.88“ bei Geburtsdatum 04.07.1988), werden im Auszug ebenfalls entfernt;
+  die Zeichenangaben im Auszugsmarker zählen die Datumstoken statt der Originalzeichen (Abweichung wenige Zeichen).
+  Erste Erkennung je langem Quelltext ≈ 1 s (danach zwischengespeichert).
+- **NICHT VERIFIZIERT:** Antwortqualität und Kosten eines echten Modells (Live-Lauf nur nach Freigabe), vollständige
+  Leckfreiheit, rechtliche Konformität.
+
+### 34.5 QA
+
+| Prüfung | Status |
+|---|---|
+| Korpus-Validator inkl. Negativtests (`test_legal_benchmark_corpus.py`) | PASS |
+| E2E-Regressionstest (`test_legal_benchmark_e2e.py`, 2 Fälle, Test-Embedding) | PASS |
+| Neue Datenschutz-Regressionstests (`test_privacy_death_dates_and_deadlines.py`); Leck 2 und 3 ohne Korrektur reproduziert | PASS |
+| Volle Testsuite: 4425 bestanden, nur die 4 bekannten Logo-Fehler (fremde Löschung der Logo-Dateien) | PASS |
+| Benchmark-Lauf alle 4 Fälle: keine kritischen Befunde | PASS |
+| Drei unabhängige Reviews; alle bestätigten Lecks behoben, verbleibende Punkte ohne Leck in 34.4 | PASS |
+| Installierter Build | siehe Nachtrag bzw. NICHT VERIFIZIERT |
+| Vollständige Leckfreiheit, rechtliche Konformität, Antwortqualität echter Modelle | NICHT VERIFIZIERT |

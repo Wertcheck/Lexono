@@ -98,6 +98,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   reproduzierbare Benchmarks (`scripts/bench_name_detection.py`, `scripts/bench_chat_without_file.py`); Payload-Prüfung
   des installierten Builds per Fang-Server (QA-Werkzeug außerhalb des Repos).
 - **Offene Risiken:** Benchmarks laufen manuell; der Fang-Server-QA-Lauf ist nicht Teil des Repos; kein periodischer Bericht.
+- **Fortschritt (14.10.2026, §34):** Realistic Legal Benchmark `benchmarks/legal_e2e_v1` – versionierter Korpus
+  synthetischer Akten (Dev/Test getrennt, Validator gegen erfundene Referenzwerte), Quellenregister (Nutzungsrechte
+  BLOCKIERT bis zur Prüfung durch eine verantwortliche Person) und E2E-Runner über Import/OCR, Verarbeitung, Suche, Chat,
+  Schriftsatz, Bearbeitung und Export mit Payload-Erfassung vor der Cloud-Grenze; Regressionstest in der Suite. Erste
+  Befunde behoben: drei Wege, auf denen ein Geburtsdatum ohne Bezeichnung oder zerteilt (Fristausschnitt, Auszug langer Dokumente, Schreibweisen) im Klartext hinausging. Offen: mehr Testfälle, Lauf gegen den
+  installierten Build, Klassifikationskorrektheit, Antwortqualität eines echten Modells (nach Freigabe).
 - **Maßnahmen:** Benchmark- und Payload-Prüfung als fester Release-Schritt; Fang-Server als versioniertes QA-Werkzeug ins
   Repo; Datenschutzbericht je Release (Restlecks, Fehlalarme, Rückfragen, Blocks, Laufzeit).
 - **Abhängigkeiten:** P2 (Gate-Kriterien), P4 (Freigabeprozess).

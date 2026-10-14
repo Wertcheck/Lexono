@@ -232,3 +232,125 @@ def test_stored_birthdate_suggestions_are_recognised_for_filtering() -> None:
     assert not is_personal_date("Die Räumungsfrist endet am 31.12.2026.", date(2026, 12, 31))
     assert not is_personal_date(None, date(2026, 12, 31))
 
+
+
+
+_CONTRACT = (
+    "Zwischen der Beispiel Logistik GmbH, Hafenstrasse 1, 54321 Beispielhafen, und Herrn Max Beispiel, geb. 14.07.1988, "
+    "wird vereinbart:\nBeginn des Arbeitsverhaeltnisses: 15.01.2019. Taetigkeit: Disponent."
+)
+
+
+def _payload_text(gateway, argument: str | None = None, sachverhalt: str = "Abmahnung vom 12.02.2026.") -> str:
+    result = gateway.prepare_request(
+        purpose="chat_response", sachverhalt="Akte: Beispielakte\n[Schreiben] " + sachverhalt,
+        anwaltliche_anmerkungen="Fasse zusammen.", review_mode="mask",
+        argumentationspunkte=[argument] if argument else [],
+    )
+    return json.dumps(result.payload.model_dump(), ensure_ascii=False)
+
+
+def test_unlabelled_full_birthdate_in_deadline_snippet_is_removed(gateway) -> None:
+    """Legal-E2E-Benchmark §34 (LE-D002, Chat mit nur der Abmahnung als Anhang): der Ausschnitt zur Frist "Beginn
+    15.01.2019" begann mit dem vollstaendigen Geburtsdatum, "geb." lag ausserhalb - der Arbeitsvertrag stand nicht im
+    Sachverhalt, das Datum ging im Klartext in den Payload. Jetzt entfernt, wenn das Quelldokument es als Geburtsdatum
+    ausweist."""
+    from app.deadlines.extractor import trim_partial_personal_dates
+
+    start = next(d for d in PlaceholderDeadlineExtractor().extract(_CONTRACT) if d.due_date == date(2019, 1, 15))
+    stored = "14.07.1988, wird vereinbart: Beginn des Arbeitsverhaeltnisses: 15.01.2019. Taetigkeit: Disponent."
+    for snippet in (start.source_text, stored):
+        trimmed = trim_partial_personal_dates(snippet, _CONTRACT)
+        assert "14.07.1988" not in trimmed and "15.01.2019" in trimmed
+        assert "1988" not in _payload_text(gateway, f"Mögliche Frist (unreviewed): {trimmed}")
+    # ohne Quelldokument bleibt ein unbezeichnetes Datum unveraendert (keine Annahme ohne Beleg)
+    assert "14.07.1988" in trim_partial_personal_dates(stored, None)
+    # Review §34: auch ein Altvorschlag mit Fristwort, dessen Datum das Geburtsdatum ist, gibt es nicht preis
+    assert "1988" not in trim_partial_personal_dates("14.07.1988, Frist zur Stellungnahme läuft.", _CONTRACT)
+
+
+def test_personal_date_removal_respects_digit_boundaries_and_edge_fragments() -> None:
+    from app.deadlines.extractor import remove_unlabelled_personal_dates
+
+    source = "Erblasser Max Beispiel, geb. 1.2.1988, und Anna Beispiel, geboren am 14. Juli 1990."
+    assert remove_unlabelled_personal_dates("Vorgang Nr. 11.2.19880 und 1.2.1988 offen", source) == "Vorgang Nr. 11.2.19880 und … offen"
+    assert remove_unlabelled_personal_dates("Juli 1990, Beginn am 01.03.2020", source) == "Beginn am 01.03.2020"
+    assert remove_unlabelled_personal_dates("Beginn am 01.03.2020, Anna am 14. Juli", source) == "Beginn am 01.03.2020, Anna am"
+    # bezeichnete Daten bleiben fuer die Maskierung im Gateway stehen
+    labelled = "Max Beispiel, geb. 1.2.1988, Beginn 01.03.2020"
+    assert remove_unlabelled_personal_dates(labelled, source) == labelled
+
+
+def test_long_document_key_passages_never_separate_birth_label_from_date(gateway) -> None:
+    """Unabhaengiges Review §34 (CONFIRMED): bei langen Dokumenten trennte die Auswahl der Schluesselstellen "geb." vom
+    Datum ("geb. […] 14.07.1988") - Namen maskiert, Geburtsdatum im Klartext."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    filler = " ".join(f"Klausel {i}: Die Parteien vereinbaren die Regelung Nummer {i} zur Durchfuehrung." for i in range(1200))
+    text = filler + " Arbeitnehmer ist Herr Max Beispiel, geb.\n14.07.1988, wohnhaft in Beispielhafen; Frist bis 30.06.2026. " + filler
+    excerpt = _document_excerpt(text)
+    assert excerpt.omitted_chars > 0
+    assert "14.07.1988" not in excerpt.text or "geb. 14.07.1988" in " ".join(excerpt.text.split())
+    assert "1988" not in _payload_text(gateway, sachverhalt=excerpt.text)
+
+
+@pytest.mark.parametrize(
+    "written",
+    ["geb. 14. Juli 1988", "geb. 14. 07. 1988", "geb. 14.07.1988", "geboren am 14.7.88"],
+)
+def test_long_document_excerpt_never_splits_a_spaced_birthdate(gateway, written: str) -> None:
+    """Re-Review §34 (CONFIRMED): die Segmentierung teilte "geb. 14. Juli 1988" an den Punkten ("14. […] Juli 1988"),
+    Tag, Monat und Jahr gingen einzeln im Klartext hinaus."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    filler = " ".join(f"Klausel {i}: Die Parteien vereinbaren die Regelung Nummer {i} zur Durchfuehrung." for i in range(1200))
+    text = filler + f" Arbeitnehmer ist Herr Max Beispiel, {written}, wohnhaft in Beispielhafen; Kuendigung zum 30.06.2026. " + filler
+    excerpt = _document_excerpt(text)
+    assert excerpt.omitted_chars > 0 and "\u27e6" not in excerpt.text
+    payload = _payload_text(gateway, sachverhalt=excerpt.text)
+    assert "1988" not in payload and "Juli" not in payload and "14.7.88" not in payload
+
+
+def test_other_spellings_of_a_personal_date_are_removed_but_labelled_ones_stay() -> None:
+    from app.deadlines.extractor import remove_unlabelled_personal_dates
+
+    source = "Max Beispiel, geb. 14.07.1988, Disponent."
+    for other in ("14.7.1988", "14.07.88", "14. 07. 1988", "14. Juli 1988", "14. Jul. 1988"):
+        assert remove_unlabelled_personal_dates(f"Am {other} unterschrieben.", source) == "Am … unterschrieben.", other
+    assert remove_unlabelled_personal_dates("Herr Beispiel, geb. 14. Juli 1988, ist Disponent.", source) == (
+        "Herr Beispiel, geb. 14. Juli 1988, ist Disponent."
+    )
+
+
+def test_edge_fragment_stripping_keeps_ordinary_words_and_strips_once() -> None:
+    from app.deadlines.extractor import remove_unlabelled_personal_dates
+
+    source = "Anna Beispiel, geboren am 14. Juli 1990, Ziffer 12.03. gilt."
+    assert remove_unlabelled_personal_dates("1990er Jahrgang", source) == "1990er Jahrgang"
+    assert remove_unlabelled_personal_dates("Juli 1990, 1990 Mitarbeiter", source) == "1990 Mitarbeiter"
+
+
+def test_personal_date_detection_of_a_source_text_is_cached() -> None:
+    import time
+
+    from app.deadlines.extractor import trim_partial_personal_dates
+
+    text = ("Herr Max Beispiel, geb. 14.07.1988, Disponent. " + "Die Parteien vereinbaren die Regelung zur Durchfuehrung. " * 3000)
+    trim_partial_personal_dates("Beginn 15.01.2019", text)
+    started = time.perf_counter()
+    for _ in range(30):
+        trim_partial_personal_dates("Beginn 15.01.2019, Disponent", text)
+    assert time.perf_counter() - started < 1.0
+
+
+def test_labelled_birthdate_in_long_document_middle_is_masked_not_dropped(gateway) -> None:
+    """Review §34: die Segmentierung trennte "geb." vom Datum; das Datum wurde dann sicher entfernt, aber auch nicht
+    mehr maskiert uebergeben. Jetzt bleibt die Bezeichnung beim Datum und der Gateway maskiert es."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    filler = " ".join(f"Klausel {i}: Die Parteien vereinbaren die Regelung Nummer {i} zur Durchfuehrung." for i in range(1200))
+    text = filler + " Die Klaegerin Anna Beispiel, geb. 14.07.1988, verlangt Zahlung von 4.250,00 EUR bis 30.06.2026. " + filler
+    excerpt = _document_excerpt(text).text
+    assert "geb. 14.07.1988" in excerpt
+    payload = _payload_text(gateway, sachverhalt=excerpt)
+    assert "1988" not in payload and "GEBURTSDATUM" in payload

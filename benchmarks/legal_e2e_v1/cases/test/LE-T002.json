@@ -1,0 +1,126 @@
+{
+  "id": "LE-T002",
+  "split": "test",
+  "version": 1,
+  "title": "Pflichtteil und Pflichtteilsergaenzung nach Testament zugunsten einer Nachbarin",
+  "rechtsgebiet": "Erbrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Unabhaengiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollstaendig synthetisch; Normen real (BGB). Enthaelt Geburts- und Todesdatum der Erblasserin, ein gescanntes Testament und einen Widerspruch zum Schenkungsdatum.",
+  "parties": [
+    {"id": "P1", "name": "Konstantin Wehrhahn", "role": "mandant", "gender": "m"},
+    {"id": "P2", "name": "Annegret Brüninghoff", "role": "gegner", "gender": "f"},
+    {"id": "P3", "name": "Waltraud Wehrhahn", "role": "dritter", "gender": "f"},
+    {"id": "P4", "name": "Ingrid Pohlschmidt", "role": "anwalt_gegner", "gender": "f"}
+  ],
+  "matter": {"title": "Wehrhahn ./. Brüninghoff - Pflichtteil", "client_party": "P1"},
+  "documents": [
+    {
+      "id": "D1", "type": "anlage", "format": "scan", "filename": "Testament_Abschrift_Scan.pdf", "date": "15.06.2019",
+      "paragraphs": [
+        "Abschrift - Testament",
+        "Mein letzter Wille.",
+        "Ich, Waltraud Wehrhahn, geb. 11.11.1941, wohnhaft Lindenstrasse 7, 33333 Beispieldorf, setze meine Nachbarin Annegret Brüninghoff zur Alleinerbin ein.",
+        "Mein Sohn soll nichts erhalten.",
+        "Beispieldorf, den 15.06.2019"
+      ]
+    },
+    {
+      "id": "D2", "type": "bescheid", "format": "pdf", "filename": "Sterbeurkunde_Auszug.pdf", "date": "05.01.2026",
+      "paragraphs": [
+        "Standesamt Beispieldorf - Auszug aus dem Sterberegister",
+        "Registernummer S 14/2026",
+        "Waltraud Wehrhahn ist am 02.01.2026 in Beispieldorf verstorben.",
+        "Ausgestellt am 05.01.2026"
+      ]
+    },
+    {
+      "id": "D3", "type": "email", "format": "txt", "filename": "Email_Mandant.txt", "date": "20.02.2026",
+      "paragraphs": [
+        "Von: k.wehrhahn@beispielpost.example",
+        "Datum: 20.02.2026",
+        "Betreff: Erbschaft meiner Mutter",
+        "Meine Mutter hat das Haus Lindenstrasse 7 am 03.03.2022 an Frau Brüninghoff verschenkt. Der Verkehrswert lag bei etwa 240.000,00 EUR.",
+        "Vom Testament habe ich erst am 10.02.2026 erfahren. Bitte rufen Sie mich an: 0170 5566778.",
+        "Konstantin Wehrhahn"
+      ]
+    },
+    {
+      "id": "D4", "type": "schreiben", "format": "docx", "filename": "Schreiben_RAin_Pohlschmidt.docx", "date": "16.03.2026",
+      "paragraphs": [
+        "Rechtsanwaeltin Ingrid Pohlschmidt",
+        "Beispieldorf, 16.03.2026",
+        "In der Nachlasssache Wehrhahn vertreten wir Frau Annegret Brüninghoff.",
+        "Das Hausgrundstueck wurde unserer Mandantin bereits im Jahr 2016 zugewendet; ein Ergaenzungsanspruch scheidet daher aus.",
+        "Der Nachlass besteht lediglich aus einem Kontoguthaben von 18.420,55 EUR."
+      ]
+    },
+    {
+      "id": "D5", "type": "schreiben", "format": "docx", "filename": "Anspruchsschreiben_Entwurf.docx", "date": "25.03.2026",
+      "paragraphs": [
+        "Unser Zeichen: 26/0533-EW",
+        "Beispieldorf, 25.03.2026",
+        "Namens unseres Mandanten machen wir den Pflichtteilsanspruch nach § 2303 Abs. 1 BGB geltend.",
+        "Wir fordern Auskunft ueber den Bestand des Nachlasses nach § 2314 BGB bis zum 31.07.2026.",
+        "Wegen der Schenkung des Hausgrundstuecks vom 03.03.2022 besteht zudem ein Anspruch auf Pflichtteilsergaenzung nach § 2325 BGB.",
+        "Laut Grundbuch wurde die Eigentumsumschreibung am 21.04.2022 eingetragen."
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Testament zugunsten der Nachbarin", "values": ["15.06.2019"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Schenkung des Hauses laut Mandant", "values": ["03.03.2022", "240.000,00 EUR"], "docs": ["D3"]},
+      {"id": "F3", "statement": "Nachlass laut Gegenseite", "values": ["18.420,55 EUR"], "docs": ["D4"]},
+      {"id": "F4", "statement": "Kenntnis vom Testament", "values": ["10.02.2026"], "docs": ["D3"]},
+      {"id": "F5", "statement": "Eintragung im Grundbuch", "values": ["21.04.2022"], "docs": ["D5"]}
+    ],
+    "chronology": [
+      {"date": "15.06.2019", "event": "Testament", "doc": "D1"},
+      {"date": "03.03.2022", "event": "Schenkung laut Mandant", "doc": "D3"},
+      {"date": "21.04.2022", "event": "Eigentumsumschreibung", "doc": "D5"},
+      {"date": "05.01.2026", "event": "Sterbeurkunde ausgestellt", "doc": "D2"},
+      {"date": "10.02.2026", "event": "Kenntnis vom Testament", "doc": "D3"},
+      {"date": "16.03.2026", "event": "Schreiben der Gegenseite", "doc": "D4"},
+      {"date": "25.03.2026", "event": "Anspruchsschreiben", "doc": "D5"}
+    ],
+    "deadlines": [
+      {"date": "31.07.2026", "kind": "Auskunft nach § 2314 BGB", "doc": "D5"}
+    ],
+    "citations": [
+      {"text": "§ 2303 Abs. 1 BGB", "kind": "norm", "doc": "D5"},
+      {"text": "§ 2314 BGB", "kind": "norm", "doc": "D5"},
+      {"text": "§ 2325 BGB", "kind": "norm", "doc": "D5"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Zeitpunkt der Schenkung des Hauses",
+       "values": [{"doc": "D3", "value": "03.03.2022"}, {"doc": "D4", "value": "im Jahr 2016"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Konstantin Wehrhahn", "type": "PERSON"},
+        {"value": "Annegret Brüninghoff", "type": "PERSON"},
+        {"value": "Waltraud Wehrhahn", "type": "PERSON"},
+        {"value": "Ingrid Pohlschmidt", "type": "PERSON"},
+        {"value": "11.11.1941", "type": "PERS_DATUM"},
+        {"value": "02.01.2026", "type": "PERS_DATUM"},
+        {"value": "Lindenstrasse 7, 33333 Beispieldorf", "type": "ADRESSE"},
+        {"value": "k.wehrhahn@beispielpost.example", "type": "EMAIL"},
+        {"value": "0170 5566778", "type": "TELEFON"}
+      ],
+      "keep": ["03.03.2022", "240.000,00 EUR", "18.420,55 EUR", "31.07.2026", "§ 2303 Abs. 1 BGB", "§ 2325 BGB"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Welche Daten und Werte sind fuer die Pflichtteilsergaenzung entscheidend?", "attach": [],
+       "needed_facts": ["F2", "F5"], "needed_values": ["03.03.2022", "240.000,00 EUR", "21.04.2022"]},
+      {"id": "Q2", "kind": "chat", "question": "Von wann ist dieses Testament?", "attach": ["D1"],
+       "needed_facts": ["F1"], "needed_values": ["15.06.2019"]},
+      {"id": "Q3", "kind": "schriftsatz", "question": "Anspruchsschreiben: Auskunft, Pflichtteil und Pflichtteilsergaenzung.",
+       "attach": [], "needed_facts": ["F2", "F3"], "needed_values": ["03.03.2022", "18.420,55 EUR"]},
+      {"id": "Q4", "kind": "suche", "question": "Testament Alleinerbin Nachbarin", "attach": [], "needed_facts": ["F1"],
+       "expected_documents": ["D1"]},
+      {"id": "Q5", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["31.07.2026"]}
+    ]
+  }
+}

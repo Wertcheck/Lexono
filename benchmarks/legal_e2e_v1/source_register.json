@@ -1,0 +1,97 @@
+{
+  "register": "legal_e2e_v1_quellenregister",
+  "version": "v1",
+  "created": "2026-10-14",
+  "description": "Register moeglicher oeffentlicher Quellen fuer realistische Faelle (Gesetze, Entscheidungen, Moot Courts, Uebungsfaelle). Ein Eintrag darf erst in den Korpus einfliessen, wenn nutzungsrechte.status = 'nutzbar' mit Pruefdatum und Begruendung gesetzt ist. Bis dahin werden ausschliesslich synthetische Faelle verwendet.",
+  "pruefregeln": [
+    "Nutzungsbedingungen der Quelle (Impressum, Lizenz, AGB) im Original lesen und mit Datum dokumentieren.",
+    "Amtliche Werke (z. B. Gesetze, Gerichtsentscheidungen) koennen nach § 5 UrhG gemeinfrei sein; redaktionelle Aufbereitung (Leitsaetze von Verlagen, Datenbankstruktur, Anmerkungen) kann geschuetzt sein. Die Einordnung trifft eine verantwortliche Person, nicht der Agent.",
+    "Personenbezug pruefen: auch veroeffentlichte Entscheidungen koennen trotz Anonymisierung reidentifizierbar sein; in automatisierten Tests nur synthetische Daten.",
+    "Kein Massenabruf, keine Umgehung technischer Schutzmassnahmen; robots.txt und Nutzungsbedingungen beachten."
+  ],
+  "sources": [
+    {
+      "id": "Q-GESETZE-IM-INTERNET",
+      "name": "Gesetze im Internet (Bundesrecht)",
+      "url": "https://www.gesetze-im-internet.de",
+      "url_verified": false,
+      "type": "gesetze",
+      "herkunft": "Bundesministerium der Justiz / juris (amtliches Bundesrecht)",
+      "umfang": "Bundesgesetze und -verordnungen; in Lexono bereits als Normenquelle angebunden (app/laws/gesetze_im_internet.py)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Vorlaeufige, ungepruefte Einschaetzung: Gesetzestexte als amtliche Werke voraussichtlich gemeinfrei (§ 5 UrhG). Pruefung der Nutzungsbedingungen ausstehend."},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-RECHTSPRECHUNG-IM-INTERNET",
+      "name": "Rechtsprechung im Internet (Bundesgerichte)",
+      "url": "https://www.rechtsprechung-im-internet.de",
+      "url_verified": false,
+      "type": "entscheidungen",
+      "herkunft": "Bundesministerium der Justiz (Entscheidungen der obersten Bundesgerichte)",
+      "umfang": "Entscheidungen von BVerfG, BGH, BVerwG, BFH, BAG, BSG, BPatG (Umfang nicht geprueft)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Entscheidungen als amtliche Werke voraussichtlich gemeinfrei; Leitsaetze und Aufbereitung pruefen."},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-BVERFG",
+      "name": "Entscheidungen des Bundesverfassungsgerichts",
+      "url": "https://www.bundesverfassungsgericht.de",
+      "url_verified": false,
+      "type": "entscheidungen",
+      "herkunft": "Bundesverfassungsgericht",
+      "umfang": "veroeffentlichte Entscheidungen (Umfang nicht geprueft)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null, "hinweis": null},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-OPENJUR",
+      "name": "openJur (freie Rechtsprechungsdatenbank)",
+      "url": "https://openjur.de",
+      "url_verified": false,
+      "type": "entscheidungen",
+      "herkunft": "privater Betreiber (Entscheidungen verschiedener Gerichte)",
+      "umfang": "Entscheidungen aller Instanzen (Umfang nicht geprueft)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Nutzungsbedingungen des Betreibers und Datenbankschutz pruefen."},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-ZJS-UEBUNGSFAELLE",
+      "name": "Zeitschrift fuer das Juristische Studium (ZJS) - Uebungsfaelle",
+      "url": "https://www.zjs-online.com",
+      "url_verified": false,
+      "type": "uebungsfaelle",
+      "herkunft": "Online-Ausbildungszeitschrift",
+      "umfang": "Klausur- und Hausarbeitsfaelle mit Loesung (Umfang nicht geprueft)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Urheberrecht der Autorinnen und Autoren; Lizenz pruefen."},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-VIS-MOOT",
+      "name": "Willem C. Vis International Commercial Arbitration Moot - Problemsachverhalte",
+      "url": "https://www.vismoot.org",
+      "url_verified": false,
+      "type": "moot_court",
+      "herkunft": "Veranstalter des Vis Moot",
+      "umfang": "jaehrliche Problemsachverhalte (Schiedsverfahren, englisch)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Urheberrecht des Veranstalters; englischsprachig, deutsches Verfahrensrecht nicht abgebildet."},
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-SOLDAN-MOOT",
+      "name": "Soldan Moot Court zur anwaltlichen Berufspraxis - Faelle",
+      "url": "https://www.soldanmoot.de",
+      "url_verified": false,
+      "type": "moot_court",
+      "herkunft": "Veranstalter des Soldan Moot Court",
+      "umfang": "jaehrlicher Zivilrechtsfall mit Schriftsatzphase (deutsch)",
+      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
+                          "hinweis": "Urheberrecht des Veranstalters; inhaltlich naechstes Vorbild fuer Schriftsatz-Faelle."},
+      "verwendet_in": []
+    }
+  ]
+}

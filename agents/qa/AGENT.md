@@ -21,6 +21,17 @@ isoliert – siehe dokumentierter Testisolationsvorfall in TEST_STATE.md).
 - Nach neuen Sicherheits-/Architekturmechanismen: permanente Tests
   ergänzen, nicht nur manuell verifizieren.
 
+## Legal Benchmark & E2E (`benchmarks/legal_e2e_v1`, seit 14.10.2026)
+
+Kein eigener Agent - Teil dieser Rolle. Verantwortung:
+- Korpus pflegen: nur synthetische Fälle; jeder neue Fall muss `python -m scripts.legal_bench.corpus` bestehen.
+  Testfälle (`cases/test`) nie zur Regelabstimmung verwenden; öffentliche Quellen erst nach dokumentierter
+  Rechteprüfung durch eine verantwortliche Person (Register-Status `nutzbar`).
+- Nach Änderungen an Privacy, Dokumentverarbeitung, Suche, Chat, Entwurf oder Export
+  `python -m scripts.legal_bench.e2e` laufen lassen; jeder Eintrag unter `kritisch` blockiert den Abschluss.
+- Ergebnisse nur mit Herkunft (Commit, Korpus-Hash) berichten; Nicht-Gemessenes als NICHT VERIFIZIERT kennzeichnen.
+- Unabhängiges Review vor Commit: Datenschutz-Regressionen und unbelegte Qualitätsaussagen.
+
 ## Werkzeuge
 
 `pytest` (volle Suite), `scripts/local_ai_smoke_test.py` (manueller

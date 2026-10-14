@@ -757,6 +757,14 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   Liste - als LOW/kosmetisch eingestuft, nicht gebaut. "Mandant anlegen"
   real als vollstaendiges Formular bestaetigt. Voller Regressionslauf:
   1910 passed, 1 skipped, 0 failed.
+- Realistic Legal Benchmark & E2E (`benchmarks/legal_e2e_v1`, 14.10.2026,
+  `PRIVACY_REVIEW_ARCHITECTURE.md` §34): **TEILWEISE**. Korpus (4
+  synthetische Akten, Dev/Test getrennt), Validator, E2E-Runner ueber
+  echte Pfade mit Payload-Erfassung vor der Cloud-Grenze, Regressionstest;
+  drei Geburtsdatum-Lecks gefunden und behoben. BLOCKIERT:
+  Nutzungsrechte oeffentlicher Quellen (Pruefung durch verantwortliche
+  Person). Offen: mehr/laengere Testfaelle, Lauf gegen installierten
+  Build, Antwortqualitaet eines echten Modells (nur nach Freigabe).
 
 ## J – Dokumentation / Repository-Hygiene
 
