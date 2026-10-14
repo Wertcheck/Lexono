@@ -25,11 +25,15 @@ Antwortformat ist neu, nicht die Absicherung.
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
+from app.drafting.citation_check import check_citations, citation_review_notes
+from app.drafting.draft_text import draft_plain_text
 from app.api.deps import get_or_404
 from app.auth.permissions import (
     PERM_CLAUDE_CALL,
@@ -72,6 +76,7 @@ from app.web.service_factory import (
 )
 from app.web.template_paths import TEMPLATES_DIR
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboard/drafts", tags=["dashboard-draft-editor"])
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -88,6 +93,16 @@ def _load_chain_by_id(draft: Draft, db: Session) -> dict[str, Draft]:
 def _newer_version(db: Session, draft: Draft) -> Draft | None:
     head = find_latest_version(db, draft)
     return head if head.id != draft.id else None
+
+
+def _citation_notes(draft: Draft, db: Session) -> list[str]:
+    """Fail-safe: ein Fehler der Fundstellenpruefung darf den Editor nicht unbenutzbar machen - stattdessen ein
+    ausdruecklicher Hinweis, dass die Fundstellen ungeprueft sind (keine vorgetaeuschte Pruefung)."""
+    try:
+        return citation_review_notes(check_citations(draft_plain_text(draft), draft.matter_id, db))
+    except Exception:  # noqa: BLE001
+        logger.exception("Fundstellenpruefung im Editor fehlgeschlagen (Entwurf %s)", draft.id)
+        return ["Fundstellenprüfung konnte nicht ausgeführt werden - alle Fundstellen dieses Schreibens sind ungeprüft."]
 
 
 @router.get("/{draft_id}/edit", response_class=HTMLResponse)
@@ -130,6 +145,10 @@ def draft_editor_page(
         # Neuere Fassung (z. B. durch eine Chat-Ueberarbeitung): der Editor weist darauf hin, damit
         # nicht unbemerkt in einer veralteten Fassung weitergearbeitet wird.
         "newer_version": _newer_version(db, draft),
+        # Fundstellenpruefung (§36/§37): lokal aus dem AKTUELLEN Schreiben berechnet - der Hinweisblock der Antwort wird
+        # beim Speichern des Entwurfs verworfen (draft.content = nur das Schreiben); ohne diese Anzeige sah der Anwalt im
+        # Entwurfspfad keinen Hinweis (Verifikation installierter Build, §37). Kein Modellaufruf, keine Speicherung.
+        "citation_notes": _citation_notes(draft, db),
         "error": error,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),

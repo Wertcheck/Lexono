@@ -123,9 +123,11 @@ def _matter_texts(matter_id: str | None, db: Session) -> list[str]:
         return []
     from app.models import Document
 
+    # Von Lexono aus einem Entwurf erzeugte Dokumente (Export, `generated_from_draft_id`) sind KEIN Beleg: sie enthalten
+    # die fruehere Modellantwort selbst - sonst bestaetigte sich das Modell selbst (Verifikation installierter Build §37).
     return [
         text for (text,) in db.query(Document.extracted_text).filter(
-            Document.matter_id == matter_id, Document.deleted_at.is_(None)
+            Document.matter_id == matter_id, Document.deleted_at.is_(None), Document.generated_from_draft_id.is_(None)
         ) if text
     ]
 
@@ -178,7 +180,13 @@ def _norm_status(citation: Citation, db: Session) -> str:
     return "norm_amtlich_nicht_gefunden" if official else "norm_nicht_pruefbar"
 
 
+#: Herkunftsvermerk von Kanzleiwissen, das aus einem Entwurf uebernommen wurde (app/feedback/service.py)
+PROMOTED_FROM_DRAFT_SOURCE_PREFIX = "Übernommen aus Entwurfs-Feedback"
+
+
 def _approved_source_texts(db: Session) -> list[str]:
+    from sqlalchemy import or_
+
     from app.models import KnowledgeItem, Source
 
     texts = [
@@ -187,9 +195,12 @@ def _approved_source_texts(db: Session) -> list[str]:
             Source.approval_level == "freigegeben"
         )
     ]
+    # Aus einem Entwurf uebernommenes Kanzleiwissen (FeedbackService.promote_to_knowledge) enthaelt die fruehere
+    # Modellantwort selbst - auch freigegeben ist es kein unabhaengiger Beleg (Review §37, Selbstbestaetigung).
     texts += [
         f"{title} {content}" for title, content in db.query(KnowledgeItem.title, KnowledgeItem.content).filter(
-            KnowledgeItem.approval_status == "approved"
+            KnowledgeItem.approval_status == "approved",
+            or_(KnowledgeItem.source.is_(None), ~KnowledgeItem.source.like(f"{PROMOTED_FROM_DRAFT_SOURCE_PREFIX}%")),
         )
     ]
     return [_normalized(text) for text in texts]

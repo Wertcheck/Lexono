@@ -4386,9 +4386,9 @@ vorbestehende Lücke ist damit nicht widerlegt.
 | Nicht erkannte Zitierform („§ 535 Rn. 12“) | **PASS**: nicht einzeln geprüft; der Sammelhinweis nennt „nicht erkannte Zitierformen wurden nicht geprüft“ |
 | Hinweis „Stützung nicht geprüft“ | **PASS**: im Chat sichtbar; keine Fundstelle erscheint als inhaltlich verifiziert |
 | Payload | **PASS**: Folgefrage ohne den Hinweisblock (nur der Antworttext steht im Verlauf) |
-| **Entwurf (Schriftsatz-Werkzeug → Editor)** | **FAIL**: Der Entwurf enthält die erfundenen Fundstellen, der Fundstellenhinweis erscheint aber **weder im Editor noch in der Entwurfsansicht**. |
+| **Entwurf (Schriftsatz-Werkzeug → Editor)** | **FAIL (Stand Build 0245788)**: Der Entwurf enthält die erfundenen Fundstellen, der Fundstellenhinweis erscheint aber **weder im Editor noch in der Entwurfsansicht**. → behoben, siehe §37.6 |
 | Export DOCX/PDF | **PASS**: enthält nur das Schreiben, keinen Hinweisblock |
-| Export als Ganzes | **FAIL**: Wegen der Entwurfs-Lücke kann eine ungeprüfte Fundstelle unmarkiert in den Export gelangen. |
+| Export als Ganzes | **FAIL (Stand Build 0245788)**: Wegen der Entwurfs-Lücke kann eine ungeprüfte Fundstelle unmarkiert in den Export gelangen. → behoben, siehe §37.6 |
 
 **Ursache der Entwurfs-Lücke:**
 - Die Route `/dashboard/tools/schriftsatz/generate` leitet nach `create_draft` direkt in den Editor. Der Editor zeigt
@@ -4399,13 +4399,10 @@ vorbestehende Lücke ist damit nicht widerlegt.
 - **Folge für die Messung:** Der Benchmark-Wert „erfundene Fundstellen markiert 8/8 bzw. 6/6“ misst `draft_text` und
   **überschätzt** damit für den Entwurfspfad, was der Anwalt sieht.
 
-**Nicht behoben:**
-- Eine Behebung (Hinweise im Editor anzeigen: bei der Darstellung aus `draft.content` neu berechnen oder speichern) ist
-  eine UI- bzw. Datenmodell-Entscheidung. Neue Features waren in dieser Verifikation ausgeschlossen.
-- **Offener Punkt:**
-  - Option 1: Fundstellenprüfung bei jeder Editor-Darstellung lokal aus `draft.content` neu berechnen und im Editor
-    anzeigen (kein Schema-Eingriff; berücksichtigt auch Bearbeitungen).
-  - Option 2: Prüfhinweise am Entwurf speichern.
+**Optionen (Stand 95c12fc, inzwischen entschieden – siehe §37.6):**
+- Option 1: Fundstellenprüfung bei jeder Editor-Darstellung lokal aus `draft.content` neu berechnen und im Editor
+  anzeigen (kein Schema-Eingriff; berücksichtigt auch Bearbeitungen). **Umgesetzt.**
+- Option 2: Prüfhinweise am Entwurf speichern. Nicht umgesetzt (Schema-Eingriff, veraltet nach Bearbeitung).
 
 ### 37.5 Regression
 
@@ -4422,3 +4419,81 @@ vorbestehende Lücke ist damit nicht widerlegt.
 - Normale Instanz läuft (Health 200, kein Debug-Port).
 - Der Fang-Server (QA-Werkzeug außerhalb des Repos) hat eine optionale Zusatzdatei-Antwort
   (`LEXONO_CAPTURE_APPEND_FILE`).
+
+### 37.6 Behebung der Entwurfs-Lücke und zweier Selbstbestätigungswege (14.10.2026)
+
+Kein neues Feature, sondern die Behebung des FAIL aus §37.4. Gewählt wurde Option 1 (ohne Schema-Eingriff).
+
+**Editor-Anzeige (`app/web/draft_editor_router.py`, `draft_editor.html`):**
+- Bei jeder Darstellung des Editors wird die Fundstellenprüfung lokal aus dem aktuellen Schreiben
+  (`draft_plain_text(draft)`) neu berechnet.
+- Sie erscheint als Block „Offene Prüfpunkte – Fundstellen (nicht Bestandteil des Schreibens)“ mit dem Hinweis
+  „Stand beim Öffnen des Editors; nach Änderungen Seite neu laden“.
+- Der Block ist nie Teil von `draft.content`. Export und Versand enthalten ihn deshalb nicht.
+- Ausgabe über Jinja-Autoescape.
+- **Fehlerverhalten:** Ein Fehler der Prüfung führt nicht zu einem 500-Fehler. Stattdessen erscheint der ausdrückliche
+  Hinweis „Fundstellenprüfung konnte nicht ausgeführt werden – alle Fundstellen dieses Schreibens sind ungeprüft“.
+  Es wird also keine Prüfung vorgetäuscht.
+
+**Selbstbestätigung 1 – exportierte Entwürfe (`citation_check._matter_texts`):**
+- **Fund im installierten Build:** Jeder Export legt das Schreiben als Aktendokument ab (`generated_from_draft_id`).
+  Danach galten die erfundenen Fundstellen der früheren Modellantwort als „aktenbelegt“.
+- Beobachtet in der QA-Akte mit 14 Exporten: „I ZR 999/19“ und „§ 9999 BGB“ wurden als Aktenbeleg angezeigt.
+- **Behebung:** Von Lexono erzeugte Dokumente zählen nie als Beleg.
+
+**Selbstbestätigung 2 – Kanzleiwissen aus Entwürfen (`citation_check._approved_source_texts`):**
+- **Fund aus dem Review:** Ein über das Entwurfs-Feedback übernommener Eintrag enthält die frühere Modellantwort selbst
+  (Herkunft „Übernommen aus Entwurfs-Feedback …“, `app/feedback/service.py`). Nach seiner Freigabe hätte er deren
+  Rechtsprechungszitate als „freigegebene Quelle“ bestätigt.
+- **Behebung:** Solche Einträge zählen nicht als Beleg. Manuell gepflegtes, freigegebenes Kanzleiwissen zählt
+  unverändert.
+
+**Tests:**
+- `test_exported_draft_documents_never_count_as_file_evidence` war vor der Behebung rot und ist danach grün.
+- `test_knowledge_promoted_from_a_draft_is_not_evidence`
+- `test_editor_shows_local_citation_check_for_the_current_letter`
+- `test_editor_without_citations_shows_no_citation_block`
+- `test_editor_citation_block_escapes_content`
+- `test_editor_stays_usable_when_citation_check_fails`
+
+**Installierter Build:**
+- Neu gebaut und installiert (12:29). `bundlecheck_fq.py`: alle 17 Merkmale vorhanden, einschließlich der beiden
+  Selbstbestätigungs-Korrekturen, des Fehlerverhaltens, des Templates und des CSS.
+- Gleiche QA-Umgebung wie in §37.2: QA-DB, Fang-Server per Loopback, keine echten Modellaufrufe.
+
+| Fall (installierter Build) | Ergebnis |
+|---|---|
+| Editor bestehender QA-Entwürfe (14 Exporte in der Akte) | **PASS**: I ZR 999/19 „nicht verifiziert (weder in der Akte noch in freigegebenen Quellen)“; § 9999 BGB, § 12 StVG, § 823 BGB, § 2 und § 99 QASynthG „Existenz lokal nicht prüfbar“ (ohne Gesetzesdaten); § 4 KSchG „nur in Aktendokumenten“ (zu Recht: hochgeladene Aktenunterlage) |
+| Editor mit QA-Gesetzesdaten (danach wieder entfernt) | **PASS**: § 99 QASynthG „im amtlichen Gesetzestext NICHT gefunden“; § 9999 BGB „nicht prüfbar“; § 4 KSchG „nur Akte“; § 823 BGB (kuratiert) und § 2 QASynthG (amtlich) gefunden (2 von 5); Hinweis „Stützung nicht geprüft“ stets vorhanden |
+| Kanzleiwissen „Übernommen aus Entwurfs-Feedback …“, freigegeben, mit I ZR 999/19 | **PASS**: bleibt „nicht verifiziert“. Positivkontrolle: derselbe Text als manuell gepflegter, freigegebener Eintrag zählt (1 von 3 gefunden). Beide Einträge danach gelöscht. |
+| Frisch erzeugte Entwürfe im Schriftsatz-Pfad dieses Builds | **PASS**: Editor zeigt die Hinweise (§ 823/§ 9999 BGB nicht prüfbar; I ZR 999/19 nicht verifiziert; § 12 StVG nicht prüfbar; „§ 535 Rn. 12“ nicht einzeln geprüft, im Sammelhinweis genannt) |
+| Export DOCX/PDF (5 Entwürfe) | **PASS**: nur das Schreiben, kein Hinweisblock |
+| Payload am Fang-Server (6 Anfragen) | **PASS**: kein Originalwert der synthetischen Personen im Klartext, kein Prüfhinweis, kein Schlüssel |
+
+**Beobachtung (vorbestehend, kein F-/Q-Fehler) – Fail-Closed-Block bei „Klagefrist“:**
+- Eine synthetische Antwort mit dem Satz „Die Klagefrist nach § 4 KSchG ist zu beachten.“ wird im Schriftsatz-Pfad
+  blockiert („nicht ausreichend anonymisierter Wert“). Ohne diesen Satz entsteht der Entwurf.
+- **Ursache:** Im Gesamt-Sachverhalt der QA-Akte maskiert die NER „Klagefrist“ (Satzanfang nach „Die“) als Person
+  (`[PERSON_03]`). Die Leck-Prüfung der Antwort erkennt den Originalwert dann zu Recht.
+- „Mietsache“ wird über den Aktentitel „QA-SYNTH Zabelhuber Mietsache“ ebenfalls als Person maskiert.
+- **Herkunft:** Im Prozess auf einer Kopie der QA-DB reproduziert, ohne Netz, Abbruch vor dem Versand. Identisch auf
+  `d0b1c74` (vor F) und auf HEAD, also weder durch F noch durch Q verursacht.
+- **Isoliert geprüft:** Der Satz allein, mit Review-Kandidaten oder im Gesamtkontext aller QA-Dokumente wird nicht
+  maskiert. Die Fehlmaskierung entsteht erst im vollständigen Sachverhalt.
+- **Bewertung:** sichere Richtung (Übermaskierung, Fail-Closed), keine Lockerung. Gleiche Klasse wie die dokumentierten
+  Fehlalarme in §37.3.
+- **Restrisiko Nutzbarkeit:** Eine echte Modellantwort, die einen solchen fälschlich maskierten Fachbegriff wörtlich
+  wiederholt, wird blockiert. Offener Punkt für eine künftige F-Fortsetzung, mit konkretem Reproduktionsfall.
+
+**Regression (Stand nach §37.6):**
+
+| Prüfung | Ergebnis |
+|---|---|
+| Relevante Testgruppen: Fundstellenprüfung, Editor, Drafting, Entwurf-Export/Versionierung, Feedback/Kanzleiwissen, Legal-Benchmark-Tests, Web-Entwürfe/Schriftsatz, Exporte, Normzitate-Privacy | 485 bestanden, 0 fehlgeschlagen |
+| Volle Suite | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers gestoppt. Bis dahin (ca. 11 %, 519 Tests) 0 Fehler. Nicht erneut gestartet. |
+| Legal-E2E (Arbeitsbaum 95c12fc + §37.6) | keine kritischen Befunde, 0 Klartext, 0 fremde Akte, 0 blockierte Aufgaben, benötigte Werte 29/29 und 20/20, Schriftsatz 4/4 und 3/3, erfundene Fundstellen markiert 8/8 und 6/6, keine Fremdzuordnung, fremder Anhang 7/7 blockiert |
+| Neue Fehler neben den 4 bekannten Logo-Tests | keine beobachtet (volle Suite siehe oben) |
+
+**QA-Umgebung:**
+- Testgesetze und Testeinträge im Kanzleiwissen entfernt.
+- Fang-Server und QA-Instanz beendet.

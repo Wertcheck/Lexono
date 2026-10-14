@@ -169,3 +169,31 @@ def test_notes_say_found_not_proven_and_list_file_only_hits(db, matter) -> None:
     assert "nur in Aktendokumenten gefunden" in notes and "§ 4 KSchG" in notes
     assert "belegt" not in notes
     assert "nicht erkannte Zitierformen wurden nicht geprüft" in notes
+
+
+
+def test_exported_draft_documents_never_count_as_file_evidence(db, matter) -> None:
+    """§37 (Verifikation installierter Build): jeder Export legt das Schreiben als Aktendokument ab
+    (`generated_from_draft_id`). Die erfundenen Fundstellen einer frueheren Modellantwort galten danach als
+    "aktenbelegt" - das Modell haette sich selbst bestaetigt. Von Lexono erzeugte Dokumente zaehlen nie als Beleg."""
+    from app.models import Draft
+
+    draft = Draft(matter_id=matter.id, content="Anspruch aus § 9999 BGB; vgl. BGH - I ZR 999/19.")
+    db.add(draft)
+    db.flush()
+    db.add(Document(matter_id=matter.id, original_filename="Entwurf_v1.docx", file_path="x", generated_from_draft_id=draft.id,
+                    extracted_text="Anspruch aus § 9999 BGB; vgl. BGH - I ZR 999/19."))
+    db.commit()
+    status = {c.display: c.status for c in check_citations("§ 9999 BGB; BGH - I ZR 999/19", matter.id, db)}
+    assert status["§ 9999 BGB"] != "aktenbelegt" and status["I ZR 999/19"] == "nicht_verifiziert"
+
+
+
+def test_knowledge_promoted_from_a_draft_is_not_evidence(db, matter) -> None:
+    """Review §37: ein aus einem Entwurf uebernommener und freigegebener Kanzleiwissen-Eintrag bestaetigte sonst die
+    erfundenen Rechtsprechungszitate der frueheren Modellantwort."""
+    db.add(KnowledgeItem(title="Aus Entwurf", content="Vgl. BGH - I ZR 999/19.", approval_status="approved",
+                         source="Übernommen aus Entwurfs-Feedback (draft_feedback_id=x)"))
+    db.commit()
+    status = {c.display: c.status for c in check_citations("BGH - I ZR 999/19", matter.id, db)}
+    assert status["I ZR 999/19"] == "nicht_verifiziert"

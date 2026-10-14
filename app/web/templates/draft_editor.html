@@ -103,6 +103,17 @@
           </p>
         {% endif %}
 
+        {% if citation_notes %}
+          {# Fundstellenpruefung (lokal, automatisch) - nie Teil des Schreibens/Exports, siehe app/drafting/citation_check.py #}
+          <div class="form-hint draft-editor-citation-check" role="note">
+            <strong>Offene Prüfpunkte – Fundstellen (nicht Bestandteil des Schreibens)</strong>
+            <ul>
+              {% for note in citation_notes %}<li>{{ note }}</li>{% endfor %}
+            </ul>
+            <span class="draft-editor-citation-check__hint">Stand beim Öffnen des Editors; nach Änderungen Seite neu laden.</span>
+          </div>
+        {% endif %}
+
         {# Briefkopf dieses Entwurfs (aus dem Briefkopfprofil); Wechsel = neue, nachvollziehbare Version. #}
         <div class="draft-editor-letterhead-bar">
           <span class="draft-editor-letterhead-bar__label">Briefkopf: <strong>{{ letterhead_display_name }}</strong></span>

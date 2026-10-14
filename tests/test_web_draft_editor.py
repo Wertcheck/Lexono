@@ -390,3 +390,48 @@ def test_ai_edit_on_a_deleted_matter_returns_a_notice_and_saves_no_instruction(
     assert response.status_code == 422
     assert "gelöscht" in response.json()["error"]
     assert db_session.query(AttorneyInstruction).count() == 0
+
+
+
+def test_editor_shows_local_citation_check_for_the_current_letter(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """§37 (Verifikation installierter Build): im Entwurfspfad war der Fundstellenhinweis nirgends sichtbar. Der Editor
+    zeigt ihn jetzt - lokal aus dem aktuellen Schreiben berechnet, ausserhalb des Schreibens."""
+    draft = db_session.get(Draft, seeded["draft_id"])
+    draft.content = "Der Anspruch folgt aus § 9999 BGB; vgl. BGH, Urt. v. 01.01.2020 - I ZR 999/19."
+    db_session.commit()
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}/edit")
+    assert response.status_code == 200
+    assert "draft-editor-citation-check" in response.text
+    assert "I ZR 999/19" in response.text and "nicht verifiziert" in response.text
+    assert "wurde nicht geprüft" in response.text
+
+
+def test_editor_without_citations_shows_no_citation_block(client: TestClient, seeded: dict) -> None:
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}/edit")
+    assert "draft-editor-citation-check" not in response.text
+
+
+
+def test_editor_citation_block_escapes_content(client: TestClient, db_session: Session, seeded: dict) -> None:
+    draft = db_session.get(Draft, seeded["draft_id"])
+    draft.content = "Vgl. BGH <script>alert(1)</script> - I ZR 999/19."
+    db_session.commit()
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}/edit")
+    block = response.text.split("draft-editor-citation-check", 1)[1].split("</div>", 1)[0]
+    assert "<script>" not in block
+
+
+def test_editor_stays_usable_when_citation_check_fails(
+    client: TestClient, seeded: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import app.web.draft_editor_router as router_module
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("synthetischer Fehler")
+
+    monkeypatch.setattr(router_module, "check_citations", boom)
+    response = client.get(f"/dashboard/drafts/{seeded['draft_id']}/edit")
+    assert response.status_code == 200
+    assert "Fundstellenprüfung konnte nicht ausgeführt werden" in response.text
