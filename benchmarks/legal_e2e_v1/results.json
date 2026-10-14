@@ -1,12 +1,12 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T04:22:35+00:00",
- "git_commit": "057886f",
+ "run_at": "2026-10-14T06:47:16+00:00",
+ "git_commit": "433bd86",
  "git_dirty_files": [],
  "corpus_sha256": "7972da07d87a2967",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
-  "app/privacy/detectors.py": "78b33da3b29385e4",
+  "app/privacy/detectors.py": "27b66adb3636e04d",
   "app/privacy/pseudonymizer.py": "d168dbacc0eaa82e",
   "app/documents/service.py": "297259ba3ae32985",
   "app/documents/extraction.py": "ff83b06dca8cfefb",
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 131.5,
+ "seconds_total": 130.4,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -103,13 +103,13 @@
    ],
    "laufzeit_dokument_s": {
     "n": 20,
-    "median": 1.14,
-    "max": 1.62
+    "median": 1.13,
+    "max": 1.61
    },
    "laufzeit_chat_s": {
     "n": 10,
-    "median": 1.15,
-    "max": 13.07
+    "median": 1.13,
+    "max": 12.58
    },
    "payload_zeichen_chat": {
     "n": 10,
@@ -118,8 +118,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 4,
-    "median": 4.07,
-    "max": 23.25
+    "median": 3.94,
+    "max": 23.35
    },
    "payload_zeichen_schriftsatz": {
     "n": 4,
@@ -128,7 +128,7 @@
    },
    "laufzeit_suche_s": {
     "n": 4,
-    "median": 0.03,
+    "median": 0.02,
     "max": 0.03
    },
    "erfundene_fundstellen_markiert": "0/8",
@@ -177,7 +177,6 @@
     "LE-T001:ort:Rot",
     "LE-T001:person:Beispielstadt",
     "LE-T001:person:Grün",
-    "LE-T001:person:Reparaturdauer",
     "LE-T001:person:Schadenabteilung",
     "LE-T001:person:Tagebuchnummer",
     "LE-T001:person:Unfallmitteilung",
@@ -185,42 +184,38 @@
     "LE-T002:ort:Beispieldorf",
     "LE-T002:ort:Haus Lindenstraße",
     "LE-T002:ort:Hausgrundstücks",
-    "LE-T002:person:Alleinerbin",
     "LE-T002:person:Beispieldorf",
-    "LE-T002:person:Mein",
-    "LE-T002:person:Mein Sohn",
-    "LE-T002:person:Testament",
-    "LE-T002:person:Unbekannt"
+    "LE-T002:person:Testament"
    ],
    "laufzeit_dokument_s": {
     "n": 13,
     "median": 1.11,
-    "max": 1.73
+    "max": 1.72
    },
    "laufzeit_chat_s": {
     "n": 6,
-    "median": 0.91,
-    "max": 1.16
+    "median": 0.93,
+    "max": 1.13
    },
    "payload_zeichen_chat": {
     "n": 4,
-    "median": 2335,
-    "max": 3623
+    "median": 2324,
+    "max": 3602
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 1.51,
-    "max": 1.55
+    "median": 1.47,
+    "max": 1.52
    },
    "payload_zeichen_schriftsatz": {
     "n": 2,
-    "median": 3622,
-    "max": 3622
+    "median": 3601,
+    "max": 3601
    },
    "laufzeit_suche_s": {
     "n": 3,
-    "median": 0.02,
-    "max": 0.02
+    "median": 0.03,
+    "max": 0.03
    },
    "erfundene_fundstellen_markiert": "0/4",
    "aufgabenfehler": []
@@ -517,7 +512,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.21
     },
     "D2": {
      "format": "txt",
@@ -538,7 +533,7 @@
       "henrike.osterkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.13
     },
     "D3": {
      "format": "pdf",
@@ -557,7 +552,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.17
     },
     "D4": {
      "format": "scan",
@@ -574,7 +569,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.52
     },
     "D5": {
      "format": "docx",
@@ -594,7 +589,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -658,7 +653,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 5.18
+     "seconds": 4.78
     },
     {
      "id": "Q2",
@@ -704,7 +699,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.51
+     "seconds": 0.53
     },
     {
      "id": "Q3",
@@ -768,7 +763,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.82
+     "seconds": 1.81
     },
     {
      "id": "Q4",
@@ -883,7 +878,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.07
+     "seconds": 3.94
     },
     {
      "id": "Q5",
@@ -892,7 +887,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.03
+     "seconds": 0.02
     },
     {
      "id": "Q6",
@@ -972,7 +967,7 @@
       "Kerkhoff Logistik GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     "D2": {
      "format": "scan",
@@ -988,7 +983,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.55
+     "seconds": 1.53
     },
     "D3": {
      "format": "docx",
@@ -1006,7 +1001,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -1046,7 +1041,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -1085,7 +1080,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.15
+     "seconds": 1.13
     },
     {
      "id": "Q2",
@@ -1112,7 +1107,7 @@
        "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.53
+     "seconds": 0.55
     },
     {
      "id": "Q3",
@@ -1203,7 +1198,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.5
+     "seconds": 1.46
     },
     {
      "id": "Q4",
@@ -1295,7 +1290,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.61
     },
     "D2": {
      "format": "txt",
@@ -1326,7 +1321,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.5
+     "seconds": 1.49
     },
     "D4": {
      "format": "docx",
@@ -1359,7 +1354,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.13
     }
    },
    "tasks": [
@@ -1458,7 +1453,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 13.07
+     "seconds": 12.58
     },
     {
      "id": "Q2",
@@ -1499,7 +1494,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 0.53
+     "seconds": 0.48
     },
     {
      "id": "Q3",
@@ -1597,7 +1592,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.99
+     "seconds": 11.0
     },
     {
      "id": "Q4",
@@ -1744,7 +1739,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 23.25
+     "seconds": 23.35
     },
     {
      "id": "Q5",
@@ -1834,7 +1829,7 @@
       "Oskar Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.2
     },
     "D2": {
      "format": "txt",
@@ -1852,7 +1847,7 @@
       "f.lammersdorf@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D3": {
      "format": "pdf",
@@ -1867,7 +1862,7 @@
       "312.000,00 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.06
     },
     "D4": {
      "format": "docx",
@@ -1953,7 +1948,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.97
+     "seconds": 0.93
     },
     {
      "id": "Q2",
@@ -2004,7 +1999,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 0.33
+     "seconds": 0.31
     },
     {
      "id": "Q3",
@@ -2105,7 +2100,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 1.31
+     "seconds": 1.27
     },
     {
      "id": "Q4",
@@ -2114,7 +2109,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.03
+     "seconds": 0.02
     },
     {
      "id": "Q5",
@@ -2225,7 +2220,7 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.13
     },
     "D4": {
      "format": "txt",
@@ -2252,7 +2247,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 2290,
+     "payload_chars": 2293,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2285,19 +2280,14 @@
        "platzhalter": "[KENNUNG_02]"
       },
       {
-       "original": "Reparaturdauer",
+       "original": "Unfallmitteilung",
        "kategorie": "person",
        "platzhalter": "[PERSON_04]"
       },
       {
-       "original": "Unfallmitteilung",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
-      },
-      {
        "original": "Beispielstadt",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_05]"
       },
       {
        "original": "Gartenstraße",
@@ -2317,7 +2307,7 @@
       {
        "original": "Tagebuchnummer",
        "kategorie": "person",
-       "platzhalter": "[PERSON_07]"
+       "platzhalter": "[PERSON_06]"
       },
       {
        "original": "Kfz-Schadensgutachten Nr. G-26",
@@ -2325,14 +2315,14 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.91
+     "seconds": 0.93
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 1208,
+     "payload_chars": 1211,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2346,19 +2336,14 @@
        "platzhalter": "[ORT_01]"
       },
       {
-       "original": "Reparaturdauer",
+       "original": "Unfallmitteilung",
        "kategorie": "person",
        "platzhalter": "[PERSON_02]"
       },
       {
-       "original": "Unfallmitteilung",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
-      },
-      {
        "original": "Beispielstadt",
        "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
+       "platzhalter": "[PERSON_03]"
       },
       {
        "original": "Gartenstraße",
@@ -2376,7 +2361,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.33
+     "seconds": 0.31
     },
     {
      "id": "Q3",
@@ -2398,7 +2383,7 @@
       ],
       "als_pruefpunkt_markiert": []
      },
-     "payload_chars": 2285,
+     "payload_chars": 2288,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2459,19 +2444,14 @@
        "platzhalter": "[KENNUNG_02]"
       },
       {
-       "original": "Reparaturdauer",
+       "original": "Unfallmitteilung",
        "kategorie": "person",
        "platzhalter": "[PERSON_04]"
       },
       {
-       "original": "Unfallmitteilung",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
-      },
-      {
        "original": "Beispielstadt",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_05]"
       },
       {
        "original": "Gartenstraße",
@@ -2491,7 +2471,7 @@
       {
        "original": "Tagebuchnummer",
        "kategorie": "person",
-       "platzhalter": "[PERSON_07]"
+       "platzhalter": "[PERSON_06]"
       },
       {
        "original": "Kfz-Schadensgutachten Nr. G-26",
@@ -2508,7 +2488,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -2571,7 +2551,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.53
+     "seconds": 1.48
     },
     "D2": {
      "format": "pdf",
@@ -2586,7 +2566,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.06
     },
     "D3": {
      "format": "txt",
@@ -2604,7 +2584,7 @@
       "k.wehrhahn@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D4": {
      "format": "docx",
@@ -2620,7 +2600,7 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.11
     },
     "D5": {
      "format": "docx",
@@ -2639,7 +2619,7 @@
       "§ 2325 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.15
     }
    },
    "tasks": [
@@ -2648,7 +2628,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 3623,
+     "payload_chars": 3602,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2658,11 +2638,6 @@
      ],
      "needed_missing": [],
      "maskiert_ohne_referenz": [
-      {
-       "original": "Unbekannt",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_01]"
-      },
       {
        "original": "26/0533-EW",
        "kategorie": "kennung",
@@ -2686,37 +2661,22 @@
       {
        "original": "Testament",
        "kategorie": "person",
-       "platzhalter": "[PERSON_02]"
-      },
-      {
-       "original": "Mein",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
-      },
-      {
-       "original": "Alleinerbin",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
-      },
-      {
-       "original": "Mein Sohn",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
+       "platzhalter": "[PERSON_01]"
       },
       {
        "original": "Beispieldorf",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 1.11
+     "seconds": 1.06
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 2335,
+     "payload_chars": 2324,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2730,24 +2690,9 @@
        "platzhalter": "[PERSON_01]"
       },
       {
-       "original": "Mein",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_02]"
-      },
-      {
-       "original": "Alleinerbin",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
-      },
-      {
-       "original": "Mein Sohn",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
-      },
-      {
        "original": "Beispieldorf",
        "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
+       "platzhalter": "[PERSON_02]"
       },
       {
        "original": "Beispieldorf",
@@ -2770,7 +2715,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.48
+     "seconds": 0.5
     },
     {
      "id": "Q3",
@@ -2792,7 +2737,7 @@
       ],
       "als_pruefpunkt_markiert": []
      },
-     "payload_chars": 3622,
+     "payload_chars": 3601,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -2839,11 +2784,6 @@
      },
      "maskiert_ohne_referenz": [
       {
-       "original": "Unbekannt",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_01]"
-      },
-      {
        "original": "26/0533-EW",
        "kategorie": "kennung",
        "platzhalter": "[KENNUNG_01]"
@@ -2866,30 +2806,15 @@
       {
        "original": "Testament",
        "kategorie": "person",
-       "platzhalter": "[PERSON_02]"
-      },
-      {
-       "original": "Mein",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_03]"
-      },
-      {
-       "original": "Alleinerbin",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_04]"
-      },
-      {
-       "original": "Mein Sohn",
-       "kategorie": "person",
-       "platzhalter": "[PERSON_05]"
+       "platzhalter": "[PERSON_01]"
       },
       {
        "original": "Beispieldorf",
        "kategorie": "person",
-       "platzhalter": "[PERSON_06]"
+       "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 1.51
+     "seconds": 1.47
     },
     {
      "id": "Q4",
@@ -2898,7 +2823,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -2982,7 +2907,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.73
+     "seconds": 1.72
     },
     "D2": {
      "format": "pdf",
@@ -3016,7 +2941,7 @@
       "l.quast@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D4": {
      "format": "docx",
@@ -3033,7 +2958,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.15
+     "seconds": 1.13
     }
    },
    "tasks": [
@@ -3042,14 +2967,14 @@
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.16
+     "seconds": 1.13
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.52
+     "seconds": 0.53
     },
     {
      "id": "Q3",
@@ -3061,7 +2986,7 @@
      "quellenintegritaet": {
       "status": "blockiert"
      },
-     "seconds": 1.55
+     "seconds": 1.52
     },
     {
      "id": "Q4",
