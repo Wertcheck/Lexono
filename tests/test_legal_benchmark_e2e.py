@@ -28,6 +28,7 @@ def outcome(tmp_path_factory: pytest.TempPathFactory) -> dict:
     result = e2e.run(cases, tmp_path_factory.mktemp("legal_e2e"), embedding=(FakeEmbeddingProvider(), "fake"))
     result["summary"] = e2e.summarise(result["results"])
     result["aktenzuordnung"] = result.pop("matching")
+    result["fremder_anhang"] = result.pop("foreign_attachment")
     return result
 
 
@@ -128,3 +129,10 @@ def test_no_message_is_auto_assigned_to_a_foreign_matter(outcome: dict) -> None:
     assert matching["kritisch_fremdzuordnung"] == []
     assert matching["konflikt_entscheidungen"] and all(d.endswith("needs_review") for d in matching["konflikt_entscheidungen"])
     assert matching["aktenzeichen_korrekt_zugeordnet"] == "1/1"
+
+
+def test_document_of_another_matter_attached_to_a_chat_never_reaches_the_payload(outcome: dict) -> None:
+    """§34.11: Chat in Akte A mit Dokument der Akte B als Anhang (manipulierte ID) - kein Wert von B im Payload."""
+    probes = outcome["fremder_anhang"]
+    assert probes and all(not p.get("kritisch") for p in probes)
+    assert all(p["status"] in ("blockiert", "ohne_cloud_aufruf", "payload") for p in probes)

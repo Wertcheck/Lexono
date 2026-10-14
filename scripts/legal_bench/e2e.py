@@ -324,10 +324,11 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
         results.append(record)
 
     matching = _matching_probes(db, cases, {cid: st["matter"].id for cid, st in state.items()})
+    foreign_attachment = _foreign_attachment_probes(db, user, cases, state, all_protect, drafting)
 
     db.close()
     engine.dispose()
-    return {"results": results, "matching": matching, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
+    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
 
 
@@ -380,6 +381,31 @@ def _reference_values_for(case: dict, doc_id: str) -> list[str]:
         [d["date"] for d in ref["deadlines"]] + [c["text"] for c in ref["citations"]] + \
         [p["value"] for p in ref["privacy"]["protect"]] + list(ref["privacy"]["keep"])
     return sorted({v for v in candidates if v in text})
+
+
+def _foreign_attachment_probes(db, user, cases, state, all_protect, drafting) -> list[dict]:  # noqa: ANN001
+    """Mandantentrennung: ein Chat in Akte A haengt ein Dokument der Akte B an (z. B. manipulierte Dokument-ID). Kritisch,
+    wenn ein Schutzwert von B im Payload steht. Erwartet: Anhang wird nicht verwendet oder die Anfrage blockiert."""
+    rows = []
+    ids = [c["id"] for c in cases]
+    for index, case in enumerate(cases):
+        other_id = ids[(index + 1) % len(ids)]
+        if other_id == case["id"] or not state[other_id]["documents"]:
+            continue
+        foreign_doc = next(iter(state[other_id]["documents"].values()))
+        task = {"id": "FA", "question": "Was steht in diesem Dokument?", "attach": []}
+        documents = {"X": foreign_doc}
+        task["attach"] = ["X"]
+        try:
+            result = _run_chat(db, user, state[case["id"]]["matter"], documents, task, drafting)
+        except Exception as exc:  # noqa: BLE001
+            rows.append({"case": case["id"], "fremde_akte": other_id, "status": "error", "error": type(exc).__name__})
+            continue
+        sent = result.pop("_payload_text", None)
+        foreign_values = [v for v in all_protect[other_id] if sent and _leaked(v, sent) and v not in all_protect[case["id"]]]
+        rows.append({"case": case["id"], "fremde_akte": other_id, "status": result["status"],
+                     "werte_fremder_akte_im_payload": foreign_values, "kritisch": bool(foreign_values)})
+    return rows
 
 
 def _email_message(document: dict) -> tuple[str | None, str | None, str]:
@@ -668,6 +694,7 @@ def main() -> int:
               "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
               "summary": summarise(outcome["results"]), "aktenzuordnung": outcome["matching"],
+              "fremder_anhang": outcome["foreign_attachment"],
               "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"
     out.write_text(json.dumps(output, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")

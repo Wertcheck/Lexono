@@ -3956,3 +3956,12 @@ Konfliktfall jetzt als kritisch.
 - Ergebnis **PASS**: Die Nachricht ist nicht zugeordnet. Die Vorschlagskarte zeigt Nordlicht mit 90 % und darunter die
   gut lesbare Warnung, die die Akte des Absenders nennt; „Übernehmen“ bleibt möglich (Screenshot im QA-Ordner).
 - Normale Instanz wiederhergestellt (Health 200, kein Debug-Port).
+
+### 34.11 Etappe 10: Dokument einer fremden Akte als Chat-Anhang
+
+**Probe:** Je Fall fragt ein Chat in Akte A nach einem Dokument der Akte B, das per Dokument-ID angehängt ist. Das
+simuliert eine manipulierte oder vertauschte ID; `ChatService.record_user_message` selbst prüft die Akte nicht.
+
+**Ergebnis:** In 6/6 Fällen wurde die Anfrage **blockiert**, ohne Cloud-Aufruf. Kein Wert der fremden Akte stand im
+Payload. Fail-Closed greift, weil der Anhang nicht zu den Dokumenten der Akte gehört. Der Benchmark zählt einen Wert
+der fremden Akte im Payload als kritisch; dazu gibt es einen Regressionstest. Keine Produktänderung.
