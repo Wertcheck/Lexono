@@ -294,6 +294,7 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
                 elif task["kind"] == "schriftsatz":
                     item.update(_run_draft(db, user, matter, task, drafting, case, Draft, EditorService,
                                            AttorneyInstructionService, DraftDocxExportService, DraftPdfExportService))
+                    item["quellenintegritaet"] = _probe_source_integrity(db, user, matter, drafting, Draft)
             except Exception as exc:  # noqa: BLE001
                 item.update(status="error", error=f"{type(exc).__name__}: {str(exc)[:120]}")
             sent = item.pop("_payload_text", None)
@@ -371,6 +372,37 @@ def _reference_values_for(case: dict, doc_id: str) -> list[str]:
         [d["date"] for d in ref["deadlines"]] + [c["text"] for c in ref["citations"]] + \
         [p["value"] for p in ref["privacy"]["protect"]] + list(ref["privacy"]["keep"])
     return sorted({v for v in candidates if v in text})
+
+
+#: Erfundene Fundstellen fuer die Quellenintegritaets-Probe (es gibt weder § 9999 BGB noch dieses Aktenzeichen)
+INVENTED_CITATIONS = ("§ 9999 BGB", "BGH, Urt. v. 01.01.2020 - I ZR 999/19")
+
+
+class InventingWriter(CapturingWriter):
+    """Simuliert ein Modell, das Fundstellen erfindet (adversariale Probe); sendet nichts."""
+
+    def write(self, payload):  # noqa: ANN001
+        from app.ai_providers.claude_writing_provider import ClaudeWritingResult
+
+        self.payloads.append(payload)
+        return ClaudeWritingResult(text="Sehr geehrte Damen und Herren,\n\nDer Anspruch folgt aus "
+                                   f"{INVENTED_CITATIONS[0]}; vgl. {INVENTED_CITATIONS[1]}.\n\nMit freundlichen Grüßen",
+                                   token_count=0)
+
+
+def _probe_source_integrity(db, user, matter, drafting, Draft) -> dict:  # noqa: ANN001, N803
+    """Werden erfundene Fundstellen einer Modellantwort im gespeicherten Entwurf als ungeprueft markiert (Abschnitt
+    "Offene Pruefpunkte")? Misst Lexonos lokale Absicherung, nicht das Modell."""
+    from app.drafting.review_notes import split_review_notes
+
+    outcome = drafting(InventingWriter()).create_draft(matter.id, "formulate_draft", db,
+                                                       attorney_anmerkungen="Anspruchsschreiben.", actor=user.email)
+    if not outcome.success or not outcome.draft_id:
+        return {"status": "blockiert"}
+    draft = db.get(Draft, outcome.draft_id)
+    letter, notes = split_review_notes(draft.content or "")
+    return {"status": "ok", "im_entwurf": [c for c in INVENTED_CITATIONS if _contains(c, letter)],
+            "als_pruefpunkt_markiert": [c for c in INVENTED_CITATIONS if _contains(c, notes)]}
 
 
 def _run_chat(db, user, matter, documents, task, drafting) -> dict:  # noqa: ANN001
@@ -475,6 +507,9 @@ def summarise(results: list[dict]) -> dict:
             # Fehlalarm-Kandidaten der Maskierung je Akte (dedupliziert ueber die Aufgaben), mit Kategorie
             "maskiert_ohne_referenz": sorted({f"{r['case']}:{m['kategorie']}:{m['original']}" for r in rows for t in r["tasks"]
                                               for m in t.get("maskiert_ohne_referenz", [])}),
+            # erfundene Fundstellen einer (simulierten) Modellantwort: markiert / im Entwurf enthalten
+            "erfundene_fundstellen_markiert": f"{sum(len(t['quellenintegritaet'].get('als_pruefpunkt_markiert', [])) for t in drafts if 'quellenintegritaet' in t)}/"
+                                              f"{sum(len(t['quellenintegritaet'].get('im_entwurf', [])) for t in drafts if 'quellenintegritaet' in t)}",
             "aufgabenfehler": [f"{r['case']}/{t['id']}" for r in rows for t in r["tasks"] if t.get("status") == "error"],
         }
 

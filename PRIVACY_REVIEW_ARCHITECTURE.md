@@ -3832,3 +3832,33 @@ Abnahmekriterium wie in §31–§33: keine neuen Lecks, Konsistenz unverändert.
     Aktentitel als Person maskiert (Fehlalarm, §34.6).
 - **Regression Fall 28:** PASS.
 - Normale Instanz wiederhergestellt: nur Port 8000, Health 200, kein Debug-Port, Fang-Server beendet.
+
+### 34.8 Etappe 7: Quellenintegrität der Modellantwort (Messung, Befund, Entscheidungsvorlage)
+
+**Messung:**
+- Für jeden Schriftsatz-Fall erzeugt der Runner zusätzlich einen Entwurf mit einer simulierten Modellantwort. Diese
+  enthält eine erfundene Norm („§ 9999 BGB“) und eine erfundene Entscheidung („BGH, Urt. v. 01.01.2020 - I ZR 999/19“).
+- Gezählt wird, ob Lexono die Fundstellen im gespeicherten Entwurf als ungeprüft markiert (Abschnitt „Offene
+  Prüfpunkte“). Die Probe läuft offline, es wird nichts gesendet.
+- Gemessen wird Lexonos lokale Absicherung, nicht das Modell.
+
+**Ergebnis: 0 von 10 erfundenen Fundstellen markiert** (5 Fälle; LE-T003 blockiert wie bekannt). Beide stehen
+unverändert im Entwurf. Ursache:
+- Lexono prüft Fundstellen einer Modellantwort lokal nicht.
+- Der Schutz beruht auf der Anweisung an das Modell und auf der Recherchebewertung („nicht ausreichend belegt“) vor
+  dem Aufruf.
+- Die Gesetzesbibliothek (`app/laws`) könnte Normen prüfen, Entscheidungen dagegen nur gegen freigegebene Quellen.
+- Das berührt die Grundregeln „Niemals Rechtsquellen, Fundstellen oder Zitate erfinden“ und „Unsicherheit explizit
+  markieren“. Die Kanzlei sieht eine erfundene Fundstelle heute nur bei eigener Prüfung.
+
+**Entscheidungsvorlage (nicht umgesetzt; betrifft die Hinweisdichte jedes Entwurfs):**
+
+| Option | Inhalt | Nutzen | Kosten/Risiko |
+|---|---|---|---|
+| Q1 | Normen gegen die installierte Gesetzesbibliothek prüfen. Nicht gefundene Normen werden als offener Prüfpunkt gelistet („§ 9999 BGB nicht in der Gesetzesbibliothek gefunden“). Nicht installierte Gesetze werden als „nicht lokal prüfbar“ geführt. | erkennt erfundene oder falsch nummerierte Normen deterministisch | Paragraphen mit Buchstaben, Absätze und Gesetzesabkürzungen sauber zuordnen; Bibliothek muss gepflegt sein |
+| Q2 | zusätzlich jede Entscheidungs-Fundstelle (Gericht + Aktenzeichen), die nicht in freigegebenen Quellen oder im Kanzleiwissen steht, als „nicht verifiziert“ listen | macht erfundene Rechtsprechung sichtbar | Hinweis bei nahezu jeder Rechtsprechungs-Fundstelle (Lärm), bis eine Entscheidungsdatenbank angebunden ist |
+| Q3 | Entwurf mit nicht verifizierbaren Fundstellen blockieren | strengste Absicherung | unpraktikabel; widerspricht dem Entwurfscharakter |
+
+**Empfehlung:** Q1 sofort nach Freigabe (deterministisch, geringe Hinweisdichte), dazu Q2 als zusammengefasster
+Einzelhinweis („n Rechtsprechungs-Fundstellen nicht lokal verifiziert“). Der Benchmark misst die Wirkung direkt
+(`erfundene_fundstellen_markiert`).

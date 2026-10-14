@@ -102,3 +102,12 @@ def test_unreferenced_masks_exclude_protected_values() -> None:
                 SimpleNamespace(original_value="14.07.1988", category="geburtsdatum", placeholder="[GEBURTSDATUM_01]"),
                 SimpleNamespace(original_value="Schichtleiters", category="person", placeholder="[PERSON_01]")]
     assert [m["original"] for m in e2e._unreferenced_masks(case, mappings)] == ["Schichtleiters"]
+
+
+def test_source_integrity_probe_is_measured(outcome: dict) -> None:
+    """Quellenintegritaet (§34.8): erfundene Fundstellen einer simulierten Modellantwort werden gezaehlt - derzeit
+    markiert Lexono sie nicht (Befund, Owner-Entscheidung Q1-Q3). Der Test sichert die Messung, nicht ein Soll-Ergebnis."""
+    for split in ("dev", "test"):
+        assert re.fullmatch(r"\d+/\d+", outcome["summary"][split]["erfundene_fundstellen_markiert"])
+    probes = [t["quellenintegritaet"] for r in outcome["results"] for t in r["tasks"] if "quellenintegritaet" in t]
+    assert probes and all(p["status"] in ("ok", "blockiert") for p in probes)
