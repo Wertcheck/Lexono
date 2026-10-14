@@ -1,7 +1,7 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T07:19:36+00:00",
- "git_commit": "70b50d4",
+ "run_at": "2026-10-14T07:52:01+00:00",
+ "git_commit": "e13bffe",
  "git_dirty_files": [],
  "corpus_sha256": "7972da07d87a2967",
  "code_fingerprint": {
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 131.0,
+ "seconds_total": 130.4,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -103,13 +103,13 @@
    ],
    "laufzeit_dokument_s": {
     "n": 20,
-    "median": 1.14,
+    "median": 1.13,
     "max": 1.6
    },
    "laufzeit_chat_s": {
     "n": 10,
-    "median": 1.12,
-    "max": 12.97
+    "median": 1.15,
+    "max": 12.66
    },
    "payload_zeichen_chat": {
     "n": 10,
@@ -118,8 +118,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 4,
-    "median": 3.64,
-    "max": 23.57
+    "median": 3.67,
+    "max": 23.54
    },
    "payload_zeichen_schriftsatz": {
     "n": 4,
@@ -148,26 +148,22 @@
     "LE-T003:31.12.2025"
    ],
    "klassifiziert_nicht_unbekannt": "2/13",
-   "payload_aufgaben": 6,
+   "payload_aufgaben": 9,
    "pii_leaks": 0,
    "fremde_akte_im_payload": 0,
-   "benoetigte_werte_im_payload": "14/14",
-   "aufgaben_ohne_payload": [
-    "LE-T003/Q1:blockiert",
-    "LE-T003/Q2:blockiert",
-    "LE-T003/Q3:blockiert"
-   ],
+   "benoetigte_werte_im_payload": "20/20",
+   "aufgaben_ohne_payload": [],
    "suche_top1": "3/3",
    "suche_top5": "3/3",
-   "schriftsatz_ok": "2/3",
-   "export_mit_bearbeitung": "2/3",
-   "erhalt_keep": "13/13",
+   "schriftsatz_ok": "3/3",
+   "export_mit_bearbeitung": "3/3",
+   "erhalt_keep": "19/19",
    "erhalt_keep_fehlend": [],
-   "erhalt_chronologie": "11/11",
+   "erhalt_chronologie": "16/16",
    "erhalt_chronologie_fehlend": [],
-   "erhalt_normen": "3/3",
+   "erhalt_normen": "7/7",
    "erhalt_normen_fehlend": [],
-   "widersprueche_beide_seiten": "1/2",
+   "widersprueche_beide_seiten": "2/3",
    "maskiert_ohne_referenz": [
     "LE-T001:kennung:G-26-0533",
     "LE-T001:ort:Beispielstadt",
@@ -185,39 +181,48 @@
     "LE-T002:ort:Haus Lindenstraße",
     "LE-T002:ort:Hausgrundstücks",
     "LE-T002:person:Beispieldorf",
-    "LE-T002:person:Testament"
+    "LE-T002:person:Testament",
+    "LE-T003:aktenzeichen:812",
+    "LE-T003:kennung:26/0802-LQ",
+    "LE-T003:ort:Beispielland",
+    "LE-T003:ort:Eichschein",
+    "LE-T003:ort:Landkreis Beispielland",
+    "LE-T003:person:Bußgeldbescheid",
+    "LE-T003:person:Lasermessung",
+    "LE-T003:person:Polizeiobermeister",
+    "LE-T003:person:Talweg"
    ],
    "laufzeit_dokument_s": {
     "n": 13,
     "median": 1.11,
-    "max": 1.71
+    "max": 1.74
    },
    "laufzeit_chat_s": {
     "n": 6,
-    "median": 0.93,
-    "max": 1.27
+    "median": 0.91,
+    "max": 1.09
    },
    "payload_zeichen_chat": {
-    "n": 4,
+    "n": 6,
     "median": 2324,
     "max": 3602
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 1.46,
-    "max": 1.53
+    "median": 1.48,
+    "max": 1.51
    },
    "payload_zeichen_schriftsatz": {
-    "n": 2,
-    "median": 3601,
+    "n": 3,
+    "median": 3424,
     "max": 3601
    },
    "laufzeit_suche_s": {
     "n": 3,
     "median": 0.02,
-    "max": 0.03
+    "max": 0.02
    },
-   "erfundene_fundstellen_markiert": "4/4",
+   "erfundene_fundstellen_markiert": "6/6",
    "aufgabenfehler": []
   }
  },
@@ -512,7 +517,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.18
     },
     "D2": {
      "format": "txt",
@@ -552,7 +557,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.16
     },
     "D4": {
      "format": "scan",
@@ -569,7 +574,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.52
+     "seconds": 1.51
     },
     "D5": {
      "format": "docx",
@@ -589,7 +594,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.15
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -653,7 +658,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.73
+     "seconds": 4.83
     },
     {
      "id": "Q2",
@@ -699,7 +704,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.51
+     "seconds": 0.5
     },
     {
      "id": "Q3",
@@ -763,7 +768,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.79
+     "seconds": 1.84
     },
     {
      "id": "Q4",
@@ -882,7 +887,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 3.64
+     "seconds": 3.67
     },
     {
      "id": "Q5",
@@ -987,7 +992,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.58
+     "seconds": 1.54
     },
     "D3": {
      "format": "docx",
@@ -1005,7 +1010,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.11
     },
     "D4": {
      "format": "txt",
@@ -1024,7 +1029,7 @@
       "j.wiegelmann@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
@@ -1045,7 +1050,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.15
     }
    },
    "tasks": [
@@ -1084,7 +1089,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.12
+     "seconds": 1.15
     },
     {
      "id": "Q2",
@@ -1111,7 +1116,7 @@
        "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.54
+     "seconds": 0.55
     },
     {
      "id": "Q3",
@@ -1206,7 +1211,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.45
+     "seconds": 1.46
     },
     {
      "id": "Q4",
@@ -1346,7 +1351,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
@@ -1362,7 +1367,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.13
     }
    },
    "tasks": [
@@ -1461,7 +1466,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.97
+     "seconds": 12.66
     },
     {
      "id": "Q2",
@@ -1600,7 +1605,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.99
+     "seconds": 10.94
     },
     {
      "id": "Q4",
@@ -1751,7 +1756,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 23.57
+     "seconds": 23.54
     },
     {
      "id": "Q5",
@@ -1859,7 +1864,7 @@
       "f.lammersdorf@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D3": {
      "format": "pdf",
@@ -1874,7 +1879,7 @@
       "312.000,00 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.05
     },
     "D4": {
      "format": "docx",
@@ -1889,7 +1894,7 @@
       "Gerold Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.07
     },
     "D5": {
      "format": "docx",
@@ -1905,7 +1910,7 @@
       "§ 753 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.1
     }
    },
    "tasks": [
@@ -1960,7 +1965,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.91
+     "seconds": 0.92
     },
     {
      "id": "Q2",
@@ -2011,7 +2016,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 0.34
+     "seconds": 0.3
     },
     {
      "id": "Q3",
@@ -2116,7 +2121,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 1.26
+     "seconds": 1.31
     },
     {
      "id": "Q4",
@@ -2125,7 +2130,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -2198,7 +2203,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.58
     },
     "D2": {
      "format": "pdf",
@@ -2217,7 +2222,7 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D3": {
      "format": "docx",
@@ -2236,7 +2241,7 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -2254,7 +2259,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     }
    },
    "tasks": [
@@ -2331,7 +2336,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.93
+     "seconds": 0.91
     },
     {
      "id": "Q2",
@@ -2377,7 +2382,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.3
+     "seconds": 0.35
     },
     {
      "id": "Q3",
@@ -2499,7 +2504,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 1.2
+     "seconds": 1.23
     },
     {
      "id": "Q4",
@@ -2508,7 +2513,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.03
+     "seconds": 0.02
     },
     {
      "id": "Q5",
@@ -2586,7 +2591,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.06
     },
     "D3": {
      "format": "txt",
@@ -2689,7 +2694,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 1.27
+     "seconds": 1.09
     },
     {
      "id": "Q2",
@@ -2735,7 +2740,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.47
+     "seconds": 0.46
     },
     {
      "id": "Q3",
@@ -2838,7 +2843,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 1.46
+     "seconds": 1.51
     },
     {
      "id": "Q4",
@@ -2931,7 +2936,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.71
+     "seconds": 1.74
     },
     "D2": {
      "format": "pdf",
@@ -2965,7 +2970,7 @@
       "l.quast@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D4": {
      "format": "docx",
@@ -2982,35 +2987,245 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.15
+     "seconds": 1.14
     }
    },
    "tasks": [
     {
      "id": "Q1",
      "kind": "chat",
-     "status": "blockiert",
-     "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.13
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 3414,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "20.08.2026",
+      "06.08.2026"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "26/0802-LQ",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Bußgeldbescheid",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Eichschein",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Lasermessung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Talweg",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Polizeiobermeister",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Landkreis Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "812",
+       "kategorie": "aktenzeichen",
+       "platzhalter": "[AKTENZEICHEN_01]"
+      }
+     ],
+     "seconds": 1.08
     },
     {
      "id": "Q2",
      "kind": "chat",
-     "status": "blockiert",
-     "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.52
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 1935,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "17:24 Uhr",
+      "31.12.2025"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Lasermessung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Talweg",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Polizeiobermeister",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Landkreis Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Bußgeldbescheid",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "812",
+       "kategorie": "aktenzeichen",
+       "platzhalter": "[AKTENZEICHEN_01]"
+      },
+      {
+       "original": "26/0802-LQ",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      }
+     ],
+     "seconds": 0.47
     },
     {
      "id": "Q3",
      "kind": "schriftsatz",
-     "status": "blockiert",
-     "blocked_reasons": [
-      "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
-     ],
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
      "quellenintegritaet": {
-      "status": "blockiert"
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "stuetzung_als_ungeprueft_markiert": true
      },
-     "seconds": 1.53
+     "payload_chars": 3424,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "03.08.2026",
+      "180,00 EUR"
+     ],
+     "needed_missing": [],
+     "erhalt": {
+      "keep": {
+       "present": [
+        "17:24 Uhr",
+        "17:42 Uhr",
+        "180,00 EUR",
+        "20.08.2026",
+        "31.12.2025",
+        "§ 67 Abs. 1 OWiG"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "03.08.2026",
+        "06.08.2026",
+        "07.08.2026",
+        "10.08.2026",
+        "14.06.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 24 StVG",
+        "§ 25 StVG",
+        "§ 49 Abs. 1 OWiG",
+        "§ 67 Abs. 1 OWiG"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1"
+      ],
+      "widersprueche_unvollstaendig": []
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "26/0802-LQ",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Bußgeldbescheid",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Eichschein",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Lasermessung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Talweg",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Polizeiobermeister",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Landkreis Beispielland",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "812",
+       "kategorie": "aktenzeichen",
+       "platzhalter": "[AKTENZEICHEN_01]"
+      }
+     ],
+     "seconds": 1.48
     },
     {
      "id": "Q4",
