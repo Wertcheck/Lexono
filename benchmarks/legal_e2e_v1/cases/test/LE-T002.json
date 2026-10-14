@@ -1,12 +1,12 @@
 {
   "id": "LE-T002",
   "split": "test",
-  "version": 1,
-  "title": "Pflichtteil und Pflichtteilsergaenzung nach Testament zugunsten einer Nachbarin",
+  "version": 2,
+  "title": "Pflichtteil und Pflichtteilsergänzung nach Testament zugunsten einer Nachbarin",
   "rechtsgebiet": "Erbrecht",
   "synthetic": true,
   "source_refs": [],
-  "notes": "Unabhaengiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollstaendig synthetisch; Normen real (BGB). Enthaelt Geburts- und Todesdatum der Erblasserin, ein gescanntes Testament und einen Widerspruch zum Schenkungsdatum.",
+  "notes": "v2: Umlaute statt ae/oe/ue/ss (realistischere Schreibweise; v1 erhöhte Fehlalarme der Erkennung). Unabhängiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollständig synthetisch; Normen real (BGB). Enthält Geburts- und Todesdatum der Erblasserin, ein gescanntes Testament und einen Widerspruch zum Schenkungsdatum.",
   "parties": [
     {"id": "P1", "name": "Konstantin Wehrhahn", "role": "mandant", "gender": "m"},
     {"id": "P2", "name": "Annegret Brüninghoff", "role": "gegner", "gender": "f"},
@@ -20,7 +20,7 @@
       "paragraphs": [
         "Abschrift - Testament",
         "Mein letzter Wille.",
-        "Ich, Waltraud Wehrhahn, geb. 11.11.1941, wohnhaft Lindenstrasse 7, 33333 Beispieldorf, setze meine Nachbarin Annegret Brüninghoff zur Alleinerbin ein.",
+        "Ich, Waltraud Wehrhahn, geb. 11.11.1941, wohnhaft Lindenstraße 7, 33333 Beispieldorf, setze meine Nachbarin Annegret Brüninghoff zur Alleinerbin ein.",
         "Mein Sohn soll nichts erhalten.",
         "Beispieldorf, den 15.06.2019"
       ]
@@ -40,7 +40,7 @@
         "Von: k.wehrhahn@beispielpost.example",
         "Datum: 20.02.2026",
         "Betreff: Erbschaft meiner Mutter",
-        "Meine Mutter hat das Haus Lindenstrasse 7 am 03.03.2022 an Frau Brüninghoff verschenkt. Der Verkehrswert lag bei etwa 240.000,00 EUR.",
+        "Meine Mutter hat das Haus Lindenstraße 7 am 03.03.2022 an Frau Brüninghoff verschenkt. Der Verkehrswert lag bei etwa 240.000,00 EUR.",
         "Vom Testament habe ich erst am 10.02.2026 erfahren. Bitte rufen Sie mich an: 0170 5566778.",
         "Konstantin Wehrhahn"
       ]
@@ -48,10 +48,10 @@
     {
       "id": "D4", "type": "schreiben", "format": "docx", "filename": "Schreiben_RAin_Pohlschmidt.docx", "date": "16.03.2026",
       "paragraphs": [
-        "Rechtsanwaeltin Ingrid Pohlschmidt",
+        "Rechtsanwältin Ingrid Pohlschmidt",
         "Beispieldorf, 16.03.2026",
         "In der Nachlasssache Wehrhahn vertreten wir Frau Annegret Brüninghoff.",
-        "Das Hausgrundstueck wurde unserer Mandantin bereits im Jahr 2016 zugewendet; ein Ergaenzungsanspruch scheidet daher aus.",
+        "Das Hausgrundstück wurde unserer Mandantin bereits im Jahr 2016 zugewendet; ein Ergänzungsanspruch scheidet daher aus.",
         "Der Nachlass besteht lediglich aus einem Kontoguthaben von 18.420,55 EUR."
       ]
     },
@@ -61,8 +61,8 @@
         "Unser Zeichen: 26/0533-EW",
         "Beispieldorf, 25.03.2026",
         "Namens unseres Mandanten machen wir den Pflichtteilsanspruch nach § 2303 Abs. 1 BGB geltend.",
-        "Wir fordern Auskunft ueber den Bestand des Nachlasses nach § 2314 BGB bis zum 31.07.2026.",
-        "Wegen der Schenkung des Hausgrundstuecks vom 03.03.2022 besteht zudem ein Anspruch auf Pflichtteilsergaenzung nach § 2325 BGB.",
+        "Wir fordern Auskunft über den Bestand des Nachlasses nach § 2314 BGB bis zum 31.07.2026.",
+        "Wegen der Schenkung des Hausgrundstücks vom 03.03.2022 besteht zudem ein Anspruch auf Pflichtteilsergänzung nach § 2325 BGB.",
         "Laut Grundbuch wurde die Eigentumsumschreibung am 21.04.2022 eingetragen."
       ]
     }
@@ -104,18 +104,18 @@
         {"value": "Ingrid Pohlschmidt", "type": "PERSON"},
         {"value": "11.11.1941", "type": "PERS_DATUM"},
         {"value": "02.01.2026", "type": "PERS_DATUM"},
-        {"value": "Lindenstrasse 7, 33333 Beispieldorf", "type": "ADRESSE"},
+        {"value": "Lindenstraße 7, 33333 Beispieldorf", "type": "ADRESSE"},
         {"value": "k.wehrhahn@beispielpost.example", "type": "EMAIL"},
         {"value": "0170 5566778", "type": "TELEFON"}
       ],
       "keep": ["03.03.2022", "240.000,00 EUR", "18.420,55 EUR", "31.07.2026", "§ 2303 Abs. 1 BGB", "§ 2325 BGB"]
     },
     "tasks": [
-      {"id": "Q1", "kind": "chat", "question": "Welche Daten und Werte sind fuer die Pflichtteilsergaenzung entscheidend?", "attach": [],
+      {"id": "Q1", "kind": "chat", "question": "Welche Daten und Werte sind für die Pflichtteilsergänzung entscheidend?", "attach": [],
        "needed_facts": ["F2", "F5"], "needed_values": ["03.03.2022", "240.000,00 EUR", "21.04.2022"]},
       {"id": "Q2", "kind": "chat", "question": "Von wann ist dieses Testament?", "attach": ["D1"],
        "needed_facts": ["F1"], "needed_values": ["15.06.2019"]},
-      {"id": "Q3", "kind": "schriftsatz", "question": "Anspruchsschreiben: Auskunft, Pflichtteil und Pflichtteilsergaenzung.",
+      {"id": "Q3", "kind": "schriftsatz", "question": "Anspruchsschreiben: Auskunft, Pflichtteil und Pflichtteilsergänzung.",
        "attach": [], "needed_facts": ["F2", "F3"], "needed_values": ["03.03.2022", "18.420,55 EUR"]},
       {"id": "Q4", "kind": "suche", "question": "Testament Alleinerbin Nachbarin", "attach": [], "needed_facts": ["F1"],
        "expected_documents": ["D1"]},

@@ -765,6 +765,8 @@ aber nicht `OPEN_ISSUES.md` (dort stehen die Details/Begründungen).
   Nutzungsrechte oeffentlicher Quellen (Pruefung durch verantwortliche
   Person). Offen: mehr/laengere Testfaelle, Lauf gegen installierten
   Build, Antwortqualitaet eines echten Modells (nur nach Freigabe).
+  Fehlalarme der Maskierung (gewoehnliche Woerter als Person/Ort, z. B.
+  "bei Grün") gemessen, Owner-Entscheidung F1-F4 offen (§34.6).
 
 ## J – Dokumentation / Repository-Hygiene
 

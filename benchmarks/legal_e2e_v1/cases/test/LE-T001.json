@@ -1,12 +1,12 @@
 {
   "id": "LE-T001",
   "split": "test",
-  "version": 1,
+  "version": 2,
   "title": "Verkehrsunfall: Schadensersatz nach Auffahrunfall",
   "rechtsgebiet": "Verkehrsrecht / Schadensersatz",
   "synthetic": true,
   "source_refs": [],
-  "notes": "Unabhaengiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollstaendig synthetisch; Normen real (StVG, BGB, VVG).",
+  "notes": "v2: Umlaute statt ae/oe/ue/ss (realistischere Schreibweise; v1 erhöhte Fehlalarme der Erkennung). Unabhängiger Testfall: nicht zur Abstimmung von Regeln verwenden. Vollständig synthetisch; Normen real (StVG, BGB, VVG).",
   "parties": [
     {"id": "P1", "name": "Ilka Voskuhl", "role": "mandant", "gender": "f"},
     {"id": "P2", "name": "Bernd Tiefenthaler", "role": "gegner", "gender": "m"},
@@ -20,7 +20,7 @@
       "id": "D1", "type": "protokoll", "format": "scan", "filename": "Unfallmitteilung_Scan.pdf", "date": "07.05.2026",
       "paragraphs": [
         "Unfallmitteilung (Polizei Beispielstadt)",
-        "Unfallzeit: 07.05.2026, 08:15 Uhr, Kreuzung Gartenstrasse / Ringallee, Beispielstadt",
+        "Unfallzeit: 07.05.2026, 08:15 Uhr, Kreuzung Gartenstraße / Ringallee, Beispielstadt",
         "Beteiligte: Ilka Voskuhl, amtl. Kennzeichen BS-IV 2207; Bernd Tiefenthaler, amtl. Kennzeichen BS-BT 418",
         "Hergang laut Zeuge Lorenz Haberkamp: Fahrzeug 2 fuhr bei Rot auf das stehende Fahrzeug 1 auf.",
         "Tagebuchnummer 2026-04711"
@@ -30,7 +30,7 @@
       "id": "D2", "type": "gutachten", "format": "pdf", "filename": "Schadensgutachten.pdf", "date": "14.05.2026",
       "paragraphs": [
         "Kfz-Schadensgutachten Nr. G-26-0533 vom 14.05.2026",
-        "Sachverstaendige: Dipl.-Ing. Theresa Kalkbrenner",
+        "Sachverständige: Dipl.-Ing. Theresa Kalkbrenner",
         "Auftraggeberin: Ilka Voskuhl, Ringallee 5, 38100 Beispielstadt",
         "Reparaturkosten netto: 6.412,80 EUR. Wertminderung: 650,00 EUR. Reparaturdauer: 9 Arbeitstage.",
         "Gutachterkosten: 812,40 EUR."
@@ -42,8 +42,8 @@
         "Ostwind Versicherung AG, Schadenabteilung",
         "Schadennummer OV-26-889214",
         "Beispielstadt, 02.06.2026",
-        "Unser Versicherungsnehmer Bernd Tiefenthaler gibt an, Ihre Mandantin sei bei Gruen unvermittelt stehen geblieben.",
-        "Wir regulieren daher zunaechst nur 50 Prozent der Reparaturkosten, also 3.206,40 EUR.",
+        "Unser Versicherungsnehmer Bernd Tiefenthaler gibt an, Ihre Mandantin sei bei Grün unvermittelt stehen geblieben.",
+        "Wir regulieren daher zunächst nur 50 Prozent der Reparaturkosten, also 3.206,40 EUR.",
         "Eine Wertminderung erstatten wir nicht. Weitere Unterlagen erbitten wir bis zum 30.06.2026."
       ]
     },
@@ -54,7 +54,7 @@
         "Datum: 05.06.2026",
         "Betreff: Unfall vom 07.05.2026",
         "Die Ampel war rot, ich stand bereits. Der Zeuge Herr Haberkamp hat das gesehen, Telefon 0151 2233445.",
-        "Mein Mietwagen kostete fuer 9 Tage 738,00 EUR. Bitte fordern Sie den vollen Schaden.",
+        "Mein Mietwagen kostete für 9 Tage 738,00 EUR. Bitte fordern Sie den vollen Schaden.",
         "Ilka Voskuhl"
       ]
     }
@@ -80,7 +80,7 @@
     "citations": [],
     "contradictions": [
       {"id": "W1", "topic": "Ampelphase beim Unfall",
-       "values": [{"doc": "D1", "value": "bei Rot"}, {"doc": "D3", "value": "bei Gruen"}]}
+       "values": [{"doc": "D1", "value": "bei Rot"}, {"doc": "D3", "value": "bei Grün"}]}
     ],
     "privacy": {
       "protect": [

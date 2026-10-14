@@ -102,7 +102,7 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   synthetischer Akten (Dev/Test getrennt, Validator gegen erfundene Referenzwerte), Quellenregister (Nutzungsrechte
   BLOCKIERT bis zur Prüfung durch eine verantwortliche Person) und E2E-Runner über Import/OCR, Verarbeitung, Suche, Chat,
   Schriftsatz, Bearbeitung und Export mit Payload-Erfassung vor der Cloud-Grenze; Regressionstest in der Suite. Erste
-  Befunde behoben: drei Wege, auf denen ein Geburtsdatum ohne Bezeichnung oder zerteilt (Fristausschnitt, Auszug langer Dokumente, Schreibweisen) im Klartext hinausging. Offen: mehr Testfälle, Lauf gegen den
+  Befunde behoben: drei Wege, auf denen ein Geburtsdatum ohne Bezeichnung oder zerteilt (Fristausschnitt, Auszug langer Dokumente, Schreibweisen) im Klartext hinausging. Gemessen (§34.6): Fehlalarme der Maskierung zerstören Kernfakten ("bei Grün" -> [PERSON], "Testament"); Entscheidung F1–F4 offen (Empfehlung F3+F2). Offen: mehr Testfälle, Lauf gegen den
   installierten Build, Klassifikationskorrektheit, Antwortqualität eines echten Modells (nach Freigabe).
 - **Maßnahmen:** Benchmark- und Payload-Prüfung als fester Release-Schritt; Fang-Server als versioniertes QA-Werkzeug ins
   Repo; Datenschutzbericht je Release (Restlecks, Fehlalarme, Rückfragen, Blocks, Laufzeit).

@@ -3703,3 +3703,66 @@ verlangt Antwort bis 30.04.2026.“ Das bezeichnete Datum bleibt bei „geb.“ 
 Kurzform wird entfernt, Beträge und Fristen bleiben lesbar. Hinweis zum QA-Werkzeug: der Fang-Server zählt nach einem
 Neustart wieder ab `payload_001`; das Prüfskript erkannte die überschriebene Datei deshalb nicht als neu und meldete
 zunächst „kein Cloud-Aufruf“ – die Payload wurde direkt ausgewertet, ältere Payloads vor Fall 27 archiviert.
+
+### 34.6 Etappe 4/5: Informationserhalt, Fehlalarme der Maskierung, Korpus v2
+
+**Neue Messungen (Runner):** Für jeden Schriftsatz (ganze Akte als Kontext) prüft der Runner, ob nach der
+Pseudonymisierung die zu erhaltenden Werte, die Chronologiedaten, die Normen und beide Seiten jedes Widerspruchs im
+Payload stehen. Außerdem liest er die Zuordnungen des Gateway-Ergebnisses (Platzhalter → Original; der Gateway selbst
+bleibt unverändert) und listet jedes maskierte Original, das kein geschützter Referenzwert ist, als
+Fehlalarm-Kandidaten mit Kategorie. Das misst die Verfügbarkeit der Information für das Modell, nicht die
+Antwortqualität.
+
+**Korpus v2:** v1 schrieb Umlaute als „ae/oe/ue/ss“. Das ist unrealistisch und erhöhte die Fehlalarme der
+NER-Erkennung (Gateway-Probe: „Kündigungsschutz“ bleibt lesbar, „Kuendigungsschutz“ wird `[PERSON_01]`). Alle vier Fälle
+haben deshalb jetzt echte Umlaute (kuratierte Wortliste, nur ganze Wörter; Fallversion 2). Nur die Eingaben ändern sich,
+nicht die Regeln.
+
+| Kennzahl (Lauf auf Korpus v2) | Dev | Test |
+|---|---|---|
+| kritisch / Klartext im Payload | keine / 0 | keine / 0 |
+| erhaltene Werte `keep` / Chronologie / Normen | 13/13 / 13/13 / 6/6 | 13/13 / 11/11 / 3/3 |
+| Widersprüche mit beiden Seiten im Payload | 3/4 | 1/2 |
+| Fehlalarm-Kandidaten (v1 → v2; Zählung vor der strengeren Zuordnung) | 14 → 9 | 20 → 17 |
+| Kandidaten mit strengerer Zuordnung (allein maskierte Orts-/Adressteile sichtbar), manuell eingeordnet | 13: 6 plausibel richtig bzw. Ort-Policy (Orte, Firma, Rechnungsnummer), **7 gewöhnliche Wörter** | 22: 10 plausibel richtig bzw. Ort-Policy (Orte, Straßen, Gutachten-/Aktenzeichen), **12 gewöhnliche Wörter** |
+| Suche Top-1 (v1 → v2) | 2/2 → 1/2 (LE-D002: Kündigung vor der gescannten Abmahnung, Top-5 weiter getroffen) | 2/2 |
+
+**Befund – Fehlalarme zerstören Kernfakten (nicht behoben, Owner-Entscheidung):**
+
+- **Gewöhnliche Wörter werden als Person/Ort maskiert.** Die Ampelphase in LE-T001 wird zu „bei [PERSON_nn]“ und
+  „bei [ORT_nn]“, und damit verschwindet der Kernwiderspruch des Falls (die Nummern der Platzhalter variieren je
+  Aufgabe). Ebenso betroffen:
+  - LE-D002: „des Schichtleiters“ wird `[PERSON_nn]`, sodass die zweite Widerspruchsseite fehlt.
+  - LE-T002: „Testament“ und „Alleinerbin“.
+  - LE-D001: „Schimmel“ und „Schlafzimmer“.
+  - Weitere: „Unfallmitteilung“, „Tagebuchnummer“, „Reparaturdauer“, „Schadenabteilung“, „Mein Sohn“,
+    „Gesprächsnotiz“, „Bruttomonatsvergütung“.
+  - Kontextabhängig: „Schimmel“ und „Schlafzimmer“ bleiben in einem Einzelsatz lesbar und werden nur im ganzen Dokument
+    maskiert.
+- **Plausibel richtig maskiert:** Firmenname, Rechnungs-/Gutachtennummer, Straße und das eigene Aktenzeichen. Teilweise
+  zerlegt wird das Aktenzeichen „Kfz-Schadensgutachten Nr. G-26“ → `[ORT_nn]-0533`.
+- **Zielkonflikt:** Eine Person kann tatsächlich „Grün“, „Rot“ oder „Schimmel“ heißen. Jede Lockerung kann ein Leck
+  erzeugen. Deshalb gibt es hier keine eigenmächtige Regeländerung (CLAUDE.md: bei fachlicher Unklarheit Optionen
+  vorlegen).
+
+| Option | Inhalt | Datenschutzrisiko | Nutzen |
+|---|---|---|---|
+| F1 | unverändert lassen, Befund dokumentieren | keins | keiner; Kernfakten gehen weiter verloren |
+| F2 | NER-Treffer nach Artikel/Präposition nicht als Person werten, außer mit Anrede/Titel, Vorname oder bekanntem Namen | **mittel**: Nachnamen ohne Anrede nach Präposition sind in Notizen üblich („Gespräch mit Becker“, „laut Schneider“) | hoch für die gemessenen Fälle |
+| F3 | Liste juristischer und alltäglicher Fachbegriffe (Testament, Alleinerbin, Kündigungsschutz, Unfallmitteilung, …), die nie allein Person/Ort sind | gering (nur Begriffe, die als Name praktisch nicht vorkommen) | mittel; Liste muss gepflegt werden |
+| F4 | statt automatischer Maskierung eine Rückfrage für unsichere NER-Einzeltreffer | gering: eine falsch beantwortete oder aus Ermüdung weggeklickte Rückfrage kann einen echten Namen freigeben | hoch, aber mehr Rückfragen im Alltag |
+
+**Empfehlung:** F3 + F2, erst nach Freigabe. Die Wortliste und die Regeln dürfen nur aus den Dev-Fällen und
+`pseudonymization_v1` entstehen. Die hier genannten Testfall-Beispiele (LE-T001 „Grün“/„Rot“, LE-T002 „Testament“/
+„Alleinerbin“) sind für diese Frage nicht mehr unabhängig. Die Abschlussmessung braucht deshalb **neue** Testfälle.
+Abnahmekriterium wie in §31–§33: keine neuen Lecks, Konsistenz unverändert.
+
+**QA Etappe 4/5:**
+- Benchmark-Tests: 16 bestanden. Es wurde kein App-Code geändert, daher keine volle Suite.
+- Ein unabhängiges Review hat die Zahlen 14→9, 20→17, 3/4, 1/2 und die Such-Verschiebung reproduziert. Es hat
+  bestätigt, dass der Runner den Gateway nur beobachtet und die Umlaut-Umstellung keine Referenzwerte verändert hat.
+- Umgesetzte Korrekturen aus dem Review:
+  - strengere Zuordnung der Kandidaten;
+  - Risiko von F2 und F4 ehrlicher eingestuft;
+  - Testfall-Beispiele für eine künftige Wortliste ausgeschlossen;
+  - Platzhalternummern entfernt.

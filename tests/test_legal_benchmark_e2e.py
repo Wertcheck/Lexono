@@ -7,6 +7,7 @@ Produktionsmodell (Retrieval-Qualitaet misst nur der Benchmark-Lauf selbst). Nur
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -77,3 +78,27 @@ def test_leak_check_covers_surname_and_date_variants() -> None:
     assert e2e._leaked("Wiegelmann", "Herrn Wiegelmanns Kuendigung")  # Genitiv zaehlt mit
     assert not e2e._leaked("Wiegelmann", "Wiegelmannstrasse")
     assert e2e._leaked("14. Juli 1988", "am 14.  Juli 1988")
+
+
+def test_preservation_and_unreferenced_masks_are_measured(outcome: dict) -> None:
+    """Fakten-/Chronologie-/Normenerhalt, Widersprueche und Fehlalarm-Kandidaten der Maskierung werden je Split
+    ausgewiesen (Werte selbst sind Messergebnis, keine Schwelle - ausser: Normen und Chronologie gehen nicht verloren)."""
+    for split in ("dev", "test"):
+        summary = outcome["summary"][split]
+        for key in ("erhalt_keep", "erhalt_chronologie", "erhalt_normen", "widersprueche_beide_seiten"):
+            assert re.fullmatch(r"\d+/\d+", summary[key]), key
+        assert isinstance(summary["maskiert_ohne_referenz"], list)
+        present, total = map(int, summary["erhalt_chronologie"].split("/"))
+        assert present == total
+
+
+def test_unreferenced_masks_exclude_protected_values() -> None:
+    from types import SimpleNamespace
+
+    case = {"parties": [{"name": "Jonas Wiegelmann"}],
+            "reference": {"privacy": {"protect": [{"value": "Jonas Wiegelmann", "type": "PERSON"},
+                                                  {"value": "14.07.1988", "type": "PERS_DATUM"}]}}}
+    mappings = [SimpleNamespace(original_value="Herrn Wiegelmann", category="person", placeholder="[MANDANT_01]"),
+                SimpleNamespace(original_value="14.07.1988", category="geburtsdatum", placeholder="[GEBURTSDATUM_01]"),
+                SimpleNamespace(original_value="Schichtleiters", category="person", placeholder="[PERSON_01]")]
+    assert [m["original"] for m in e2e._unreferenced_masks(case, mappings)] == ["Schichtleiters"]

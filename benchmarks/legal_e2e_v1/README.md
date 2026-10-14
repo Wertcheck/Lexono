@@ -17,6 +17,9 @@ Dateien werden zur Laufzeit gerendert, Scans als reine Bild-PDFs) und Referenzda
 Zitate, Widersprüche, Datenschutzanforderungen (`protect`/`keep`) und Aufgaben (`chat`, `schriftsatz`, `suche`,
 `fristen`).
 
+Fallversion 2 (14.10.2026): echte Umlaute statt „ae/oe/ue/ss“ – realistischer, und v1 erhöhte die Fehlalarme der
+Namenserkennung (§34.6).
+
 ## Regeln (vom Validator erzwungen)
 
 - Nur synthetische Fälle (`synthetic: true`, keine `source_refs`). Ein Fall aus einer öffentlichen Quelle braucht einen
@@ -38,5 +41,7 @@ python -m scripts.legal_bench.e2e [--split dev|test] [--out PFAD]
 Der Runner arbeitet offline (`HF_HUB_OFFLINE=1`, lokales Embedding-Modell, vendored Tesseract) und sendet nichts: der
 Schreib-Provider erfasst den Payload unmittelbar vor der Cloud-Grenze. Kritische Befunde (Klartext im Payload, Daten
 anderer Akten, Suchtreffer fremder Akten, Platzhalterreste im Export, persönliche Daten als Frist) stehen einzeln unter
-`kritisch` und gehen in keinen Durchschnitt ein. Antwortqualität eines echten Modells, Kosten und der installierte
+`kritisch` und gehen in keinen Durchschnitt ein. Zusätzlich gemessen: Erhalt von `keep`-Werten, Chronologie, Normen
+und beiden Seiten jedes Widerspruchs im Schriftsatz-Payload sowie maskierte Originale, die kein Referenz-Schutzwert
+sind (Fehlalarm-Kandidaten, aus den Gateway-Zuordnungen). Antwortqualität eines echten Modells, Kosten und der installierte
 Build werden hier **nicht** gemessen (NICHT VERIFIZIERT).

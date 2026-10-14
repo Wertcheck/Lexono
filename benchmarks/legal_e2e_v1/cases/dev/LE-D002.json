@@ -1,27 +1,27 @@
 {
   "id": "LE-D002",
   "split": "dev",
-  "version": 1,
-  "title": "Kuendigungsschutzklage nach verhaltensbedingter Kuendigung",
+  "version": 2,
+  "title": "Kündigungsschutzklage nach verhaltensbedingter Kündigung",
   "rechtsgebiet": "Arbeitsrecht",
   "synthetic": true,
   "source_refs": [],
-  "notes": "Vollstaendig synthetisch. Normen real (KSchG, BGB). Enthaelt eine Abmahnung als Scan und widerspruechliche Daten.",
+  "notes": "v2: Umlaute statt ae/oe/ue/ss (realistischere Schreibweise; v1 erhöhte Fehlalarme der Erkennung). Vollständig synthetisch. Normen real (KSchG, BGB). Enthält eine Abmahnung als Scan und widersprüchliche Daten.",
   "parties": [
     {"id": "P1", "name": "Jonas Wiegelmann", "role": "mandant", "gender": "m"},
     {"id": "P2", "name": "Kerkhoff Logistik GmbH", "role": "gegner", "gender": null},
     {"id": "P3", "name": "Sabine Uhlenbrock", "role": "dritter", "gender": "f"},
     {"id": "P4", "name": "Milan Novakovic", "role": "zeuge", "gender": "m"}
   ],
-  "matter": {"title": "Wiegelmann ./. Kerkhoff Logistik - Kuendigungsschutz", "client_party": "P1"},
+  "matter": {"title": "Wiegelmann ./. Kerkhoff Logistik - Kündigungsschutz", "client_party": "P1"},
   "documents": [
     {
       "id": "D1", "type": "vertrag", "format": "pdf", "filename": "Arbeitsvertrag_Auszug.pdf", "date": "15.01.2019",
       "paragraphs": [
         "Arbeitsvertrag (Auszug)",
-        "Zwischen der Kerkhoff Logistik GmbH, Hafenstrasse 88, 54321 Beispielhafen, und Herrn Jonas Wiegelmann, geb. 14.07.1988, wird vereinbart:",
-        "Beginn des Arbeitsverhaeltnisses: 15.01.2019. Taetigkeit: Disponent.",
-        "Bruttomonatsverguetung: 3.480,00 EUR.",
+        "Zwischen der Kerkhoff Logistik GmbH, Hafenstraße 88, 54321 Beispielhafen, und Herrn Jonas Wiegelmann, geb. 14.07.1988, wird vereinbart:",
+        "Beginn des Arbeitsverhältnisses: 15.01.2019. Tätigkeit: Disponent.",
+        "Bruttomonatsvergütung: 3.480,00 EUR.",
         "Personalnummer 70321."
       ]
     },
@@ -32,29 +32,29 @@
         "Abmahnung",
         "Beispielhafen, 12.02.2026",
         "Herr Wiegelmann, am 09.02.2026 haben Sie die Disposition ohne Abmeldung um 14:30 Uhr verlassen.",
-        "Wir mahnen dieses Verhalten ab. Im Wiederholungsfall muessen Sie mit einer Kuendigung rechnen.",
+        "Wir mahnen dieses Verhalten ab. Im Wiederholungsfall müssen Sie mit einer Kündigung rechnen.",
         "Sabine Uhlenbrock, Personalleitung"
       ]
     },
     {
-      "id": "D3", "type": "schreiben", "format": "docx", "filename": "Kuendigung.docx", "date": "20.03.2026",
+      "id": "D3", "type": "schreiben", "format": "docx", "filename": "Kündigung.docx", "date": "20.03.2026",
       "paragraphs": [
         "Kerkhoff Logistik GmbH",
         "Beispielhafen, 20.03.2026",
-        "Kuendigung des Arbeitsverhaeltnisses",
+        "Kündigung des Arbeitsverhältnisses",
         "Sehr geehrter Herr Wiegelmann,",
-        "hiermit kuendigen wir das Arbeitsverhaeltnis ordentlich zum 30.06.2026.",
+        "hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.",
         "Grund ist das wiederholte unentschuldigte Verlassen des Arbeitsplatzes, zuletzt am 16.03.2026.",
-        "Der Betriebsrat wurde am 18.03.2026 angehoert.",
+        "Der Betriebsrat wurde am 18.03.2026 angehört.",
         "Sabine Uhlenbrock, Personalleitung"
       ]
     },
     {
-      "id": "D4", "type": "notiz", "format": "txt", "filename": "Gespraechsnotiz_Mandant.txt", "date": "24.03.2026",
+      "id": "D4", "type": "notiz", "format": "txt", "filename": "Gesprächsnotiz_Mandant.txt", "date": "24.03.2026",
       "paragraphs": [
-        "Gespraechsnotiz vom 24.03.2026 (Kanzlei)",
-        "Mandant Jonas Wiegelmann: Kuendigung am 23.03.2026 im Briefkasten vorgefunden.",
-        "Am 16.03.2026 sei er mit Zustimmung des Schichtleiters Milan Novakovic frueher gegangen (Arzttermin).",
+        "Gesprächsnotiz vom 24.03.2026 (Kanzlei)",
+        "Mandant Jonas Wiegelmann: Kündigung am 23.03.2026 im Briefkasten vorgefunden.",
+        "Am 16.03.2026 sei er mit Zustimmung des Schichtleiters Milan Novakovic früher gegangen (Arzttermin).",
         "Die Abmahnung vom 12.02.2026 habe er nie erhalten.",
         "Erreichbar unter 0160 9081726, E-Mail j.wiegelmann@beispielpost.example."
       ]
@@ -63,35 +63,35 @@
       "id": "D5", "type": "klageschrift", "format": "docx", "filename": "Klageschrift_Entwurf.docx", "date": "27.03.2026",
       "paragraphs": [
         "An das Arbeitsgericht Beispielhafen",
-        "Klage des Herrn Jonas Wiegelmann gegen die Kerkhoff Logistik GmbH wegen Kuendigungsschutz",
-        "Es wird beantragt festzustellen, dass das Arbeitsverhaeltnis durch die Kuendigung vom 20.03.2026 nicht aufgeloest wird.",
-        "Die Klagefrist nach § 4 KSchG endet drei Wochen nach Zugang der Kuendigung am 23.03.2026, also am 13.04.2026.",
-        "Die Kuendigung ist sozial ungerechtfertigt (§ 1 Abs. 2 KSchG); eine wirksame Abmahnung liegt nicht vor.",
-        "Bruttomonatsverguetung 3.480,00 EUR; Streitwert nach § 42 Abs. 2 GKG drei Bruttomonatsgehaelter."
+        "Klage des Herrn Jonas Wiegelmann gegen die Kerkhoff Logistik GmbH wegen Kündigungsschutz",
+        "Es wird beantragt festzustellen, dass das Arbeitsverhältnis durch die Kündigung vom 20.03.2026 nicht aufgelöst wird.",
+        "Die Klagefrist nach § 4 KSchG endet drei Wochen nach Zugang der Kündigung am 23.03.2026, also am 13.04.2026.",
+        "Die Kündigung ist sozial ungerechtfertigt (§ 1 Abs. 2 KSchG); eine wirksame Abmahnung liegt nicht vor.",
+        "Bruttomonatsvergütung 3.480,00 EUR; Streitwert nach § 42 Abs. 2 GKG drei Bruttomonatsgehälter."
       ]
     }
   ],
   "reference": {
     "facts": [
-      {"id": "F1", "statement": "Beginn Arbeitsverhaeltnis", "values": ["15.01.2019"], "docs": ["D1"]},
-      {"id": "F2", "statement": "Bruttomonatsverguetung", "values": ["3.480,00 EUR"], "docs": ["D1", "D5"]},
-      {"id": "F3", "statement": "Ordentliche Kuendigung zum 30.06.2026", "values": ["30.06.2026", "20.03.2026"], "docs": ["D3"]},
-      {"id": "F4", "statement": "Zugang der Kuendigung laut Mandant", "values": ["23.03.2026"], "docs": ["D4"]},
-      {"id": "F5", "statement": "Fruehes Gehen am 16.03.2026 mit Zustimmung des Schichtleiters", "values": ["16.03.2026"], "docs": ["D4"]},
+      {"id": "F1", "statement": "Beginn Arbeitsverhältnis", "values": ["15.01.2019"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Bruttomonatsvergütung", "values": ["3.480,00 EUR"], "docs": ["D1", "D5"]},
+      {"id": "F3", "statement": "Ordentliche Kündigung zum 30.06.2026", "values": ["30.06.2026", "20.03.2026"], "docs": ["D3"]},
+      {"id": "F4", "statement": "Zugang der Kündigung laut Mandant", "values": ["23.03.2026"], "docs": ["D4"]},
+      {"id": "F5", "statement": "Frühes Gehen am 16.03.2026 mit Zustimmung des Schichtleiters", "values": ["16.03.2026"], "docs": ["D4"]},
       {"id": "F6", "statement": "Abmahnung wegen Vorfall am 09.02.2026", "values": ["09.02.2026", "12.02.2026"], "docs": ["D2"]}
     ],
     "chronology": [
-      {"date": "15.01.2019", "event": "Beginn Arbeitsverhaeltnis", "doc": "D1"},
+      {"date": "15.01.2019", "event": "Beginn Arbeitsverhältnis", "doc": "D1"},
       {"date": "09.02.2026", "event": "Vorfall laut Abmahnung", "doc": "D2"},
       {"date": "12.02.2026", "event": "Abmahnung", "doc": "D2"},
-      {"date": "16.03.2026", "event": "Vorfall laut Kuendigung", "doc": "D3"},
-      {"date": "18.03.2026", "event": "Anhoerung Betriebsrat", "doc": "D3"},
-      {"date": "20.03.2026", "event": "Kuendigungsschreiben", "doc": "D3"},
-      {"date": "23.03.2026", "event": "Zugang der Kuendigung", "doc": "D4"}
+      {"date": "16.03.2026", "event": "Vorfall laut Kündigung", "doc": "D3"},
+      {"date": "18.03.2026", "event": "Anhörung Betriebsrat", "doc": "D3"},
+      {"date": "20.03.2026", "event": "Kündigungsschreiben", "doc": "D3"},
+      {"date": "23.03.2026", "event": "Zugang der Kündigung", "doc": "D4"}
     ],
     "deadlines": [
       {"date": "13.04.2026", "kind": "Klagefrist § 4 KSchG", "doc": "D5"},
-      {"date": "30.06.2026", "kind": "Ende Arbeitsverhaeltnis laut Kuendigung", "doc": "D3"}
+      {"date": "30.06.2026", "kind": "Ende Arbeitsverhältnis laut Kündigung", "doc": "D3"}
     ],
     "citations": [
       {"text": "§ 4 KSchG", "kind": "norm", "doc": "D5"},
@@ -101,7 +101,7 @@
     "contradictions": [
       {"id": "W1", "topic": "Abmahnung erhalten?",
        "values": [{"doc": "D2", "value": "Wir mahnen dieses Verhalten ab"}, {"doc": "D4", "value": "habe er nie erhalten"}]},
-      {"id": "W2", "topic": "Fruehes Gehen am 16.03.2026 unentschuldigt oder genehmigt",
+      {"id": "W2", "topic": "Frühes Gehen am 16.03.2026 unentschuldigt oder genehmigt",
        "values": [{"doc": "D3", "value": "wiederholte unentschuldigte Verlassen"}, {"doc": "D4", "value": "mit Zustimmung des Schichtleiters"}]}
     ],
     "privacy": {
@@ -110,7 +110,7 @@
         {"value": "Kerkhoff Logistik GmbH", "type": "ORGANISATION"},
         {"value": "Sabine Uhlenbrock", "type": "PERSON"},
         {"value": "Milan Novakovic", "type": "PERSON"},
-        {"value": "Hafenstrasse 88, 54321 Beispielhafen", "type": "ADRESSE"},
+        {"value": "Hafenstraße 88, 54321 Beispielhafen", "type": "ADRESSE"},
         {"value": "14.07.1988", "type": "PERS_DATUM"},
         {"value": "70321", "type": "KENNUNG"},
         {"value": "0160 9081726", "type": "TELEFON"},
@@ -119,11 +119,11 @@
       "keep": ["3.480,00 EUR", "30.06.2026", "13.04.2026", "23.03.2026", "§ 4 KSchG", "§ 1 Abs. 2 KSchG"]
     },
     "tasks": [
-      {"id": "Q1", "kind": "chat", "question": "Wann endet die Klagefrist, und ab wann laeuft sie?", "attach": [],
+      {"id": "Q1", "kind": "chat", "question": "Wann endet die Klagefrist, und ab wann läuft sie?", "attach": [],
        "needed_facts": ["F4"], "needed_values": ["23.03.2026", "13.04.2026"]},
       {"id": "Q2", "kind": "chat", "question": "Was steht in dieser Abmahnung?", "attach": ["D2"],
        "needed_facts": ["F6"], "needed_values": ["09.02.2026", "12.02.2026"]},
-      {"id": "Q3", "kind": "schriftsatz", "question": "Kuendigungsschutzklage: Antrag und Begruendung mit fehlender Abmahnung.",
+      {"id": "Q3", "kind": "schriftsatz", "question": "Kündigungsschutzklage: Antrag und Begründung mit fehlender Abmahnung.",
        "attach": [], "needed_facts": ["F2", "F3", "F4"], "needed_values": ["20.03.2026", "3.480,00 EUR"]},
       {"id": "Q4", "kind": "suche", "question": "Abmahnung Verlassen der Disposition", "attach": [], "needed_facts": ["F6"],
        "expected_documents": ["D2"]},

@@ -182,6 +182,17 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
     provider, embedding_label = embedding or _embedding_provider()
     search = DocumentSearchService(provider)
     gateway = ClaudePrivacyGateway()
+    # Zuordnungen (Platzhalter -> Original) des jeweils letzten Gateway-Laufs mitlesen, um Fehlalarme der Maskierung zu
+    # messen. Der Gateway selbst bleibt unveraendert; es wird nur sein Ergebnis beobachtet.
+    seen_mappings: list = []
+    _prepare = gateway.prepare_request
+
+    def observed_prepare(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+        result = _prepare(*args, **kwargs)
+        seen_mappings[:] = list(getattr(result, "mappings", None) or [])
+        return result
+
+    gateway.prepare_request = observed_prepare  # type: ignore[method-assign]
     all_protect = {c["id"]: sorted({v for p in c["reference"]["privacy"]["protect"] for v in leak_variants(p)}) for c in cases}
 
     def drafting(writer: CapturingWriter) -> DraftingService:
@@ -260,6 +271,7 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
 
         for task in case["reference"]["tasks"]:
             t0 = time.perf_counter()
+            seen_mappings.clear()
             item: dict = {"id": task["id"], "kind": task["kind"]}
             try:
                 if task["kind"] == "suche":
@@ -291,6 +303,9 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
                     record["critical"].append({"kind": "klartext_im_payload", "task": task["id"], "values": leaks})
                 if cross:
                     record["critical"].append({"kind": "daten_anderer_akte_im_payload", "task": task["id"], "values": cross})
+                if task["kind"] == "schriftsatz":
+                    item["erhalt"] = _preservation(case, sent)
+                item["maskiert_ohne_referenz"] = _unreferenced_masks(case, seen_mappings)
             for leftover in item.get("export_placeholders", []):
                 record["critical"].append({"kind": "platzhalterrest_im_export", "task": task["id"], "value": leftover})
             item["seconds"] = round(time.perf_counter() - t0, 2)
@@ -301,6 +316,47 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
     engine.dispose()
     return {"results": results, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
+
+
+_INTENDED_CATEGORIES = {"geburtsdatum", "todesdatum", "geburtstag"}
+
+
+def _unreferenced_masks(case: dict, mappings: list) -> list[dict]:
+    """Maskierte Originalwerte, die NICHT zu den geschuetzten Werten der Referenz gehoeren (Fehlalarm-Kandidaten, z. B.
+    "Gruen" -> [PERSON_02]). Ein Original gilt als referenziert, wenn es einen geschuetzten Wert (inkl. Nachname,
+    Datumsvarianten, Parteinamen) enthaelt oder Teil davon ist. Ortsnamen ausserhalb von Adressen sind eine bewusste
+    Policy-Frage und werden mit Kategorie ausgewiesen, nicht stillschweigend als Fehler gezaehlt."""
+    protected = {v for p in case["reference"]["privacy"]["protect"] for v in leak_variants(p)}
+    protected |= {p["name"] for p in case["parties"]} | {w for p in case["parties"] for w in p["name"].split() if len(w) >= 4}
+    out = []
+    for mapping in mappings:
+        original = (mapping.original_value or "").strip()
+        if not original or mapping.category in _INTENDED_CATEGORIES:
+            continue
+        # nur "Original enthaelt einen Schutzwert" (z. B. "Herrn Wiegelmann") - ein allein maskierter Teil einer
+        # geschuetzten Adresse (Ortsname, "Haus Lindenstraße") bleibt sichtbar (Review §34.6: sonst verdeckt)
+        if any(v in original for v in protected if len(v) >= 3):
+            continue
+        out.append({"original": original, "kategorie": mapping.category, "platzhalter": mapping.placeholder})
+    return out
+
+
+def _preservation(case: dict, sent: str) -> dict:
+    """Informationserhalt im Payload eines Schriftsatzes (ganze Akte als Kontext): kommen nach Pseudonymisierung die
+    zu erhaltenden Werte (Fehlalarme der Maskierung), Chronologiedaten, Normen und BEIDE Seiten jedes Widerspruchs beim
+    Modell an? Misst Verfuegbarkeit, nicht die Antwortqualitaet (offline gibt es keine echte Antwort)."""
+    ref = case["reference"]
+    personal = {p["value"] for p in ref["privacy"]["protect"]}
+
+    def split(values: list[str]) -> dict:
+        values = sorted(set(values) - personal)
+        return {"present": [v for v in values if _contains(v, sent)], "missing": [v for v in values if not _contains(v, sent)]}
+
+    contradictions = {w["id"]: [v["value"] for v in w["values"]] for w in ref["contradictions"]}
+    return {"keep": split(ref["privacy"]["keep"]), "chronologie": split([c["date"] for c in ref["chronology"]]),
+            "normen": split([c["text"] for c in ref["citations"]]),
+            "widersprueche_beide_seiten": sorted(w for w, vals in contradictions.items() if all(_contains(v, sent) for v in vals)),
+            "widersprueche_unvollstaendig": sorted(w for w, vals in contradictions.items() if not all(_contains(v, sent) for v in vals))}
 
 
 def _reference_values_for(case: dict, doc_id: str) -> list[str]:
@@ -362,6 +418,19 @@ def _run_draft(db, user, matter, task, drafting, case, Draft, EditorService, Att
     return result
 
 
+def _preservation_summary(items: list[dict]) -> dict:
+    """Erhalt im Schriftsatz-Payload je Kategorie als "vorhanden/gesamt" plus fehlende Werte (nicht gemittelt)."""
+    out: dict = {}
+    for key in ("keep", "chronologie", "normen"):
+        present = sum(len(i[key]["present"]) for i in items)
+        total = present + sum(len(i[key]["missing"]) for i in items)
+        out[f"erhalt_{key}"] = f"{present}/{total}"
+        out[f"erhalt_{key}_fehlend"] = sorted({v for i in items for v in i[key]["missing"]})
+    both = sum(len(i["widersprueche_beide_seiten"]) for i in items)
+    out["widersprueche_beide_seiten"] = f"{both}/{both + sum(len(i['widersprueche_unvollstaendig']) for i in items)}"
+    return out
+
+
 def summarise(results: list[dict]) -> dict:
     def per_split(split: str) -> dict:
         rows = [r for r in results if r["split"] == split]
@@ -398,6 +467,10 @@ def summarise(results: list[dict]) -> dict:
             "suche_top5": f"{sum(1 for t in searches if t.get('rank') and all(t['rank']))}/{len(searches)}",
             "schriftsatz_ok": f"{sum(1 for t in drafts if t.get('status') == 'ok')}/{len(drafts)}",
             "export_mit_bearbeitung": f"{sum(1 for t in drafts if t.get('export_docx_has_edit') and t.get('export_pdf_has_edit'))}/{len(drafts)}",
+            **_preservation_summary([t["erhalt"] for t in drafts if "erhalt" in t]),
+            # Fehlalarm-Kandidaten der Maskierung je Akte (dedupliziert ueber die Aufgaben), mit Kategorie
+            "maskiert_ohne_referenz": sorted({f"{r['case']}:{m['kategorie']}:{m['original']}" for r in rows for t in r["tasks"]
+                                              for m in t.get("maskiert_ohne_referenz", [])}),
             "aufgabenfehler": [f"{r['case']}/{t['id']}" for r in rows for t in r["tasks"] if t.get("status") == "error"],
         }
 
