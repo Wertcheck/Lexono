@@ -16,11 +16,11 @@ def test_extracts_numeric_date_with_deadline_keyword() -> None:
     assert results[0].confidence >= 0.4
 
 
-def test_bare_date_without_keyword_gets_low_confidence() -> None:
-    results = extractor.extract("Wir beziehen uns auf unser Schreiben vom 15.03.2027.")
-    assert len(results) == 1
-    assert results[0].due_date == date(2027, 3, 15)
-    assert results[0].confidence <= 0.2
+def test_bare_date_without_keyword_is_no_deadline_suggestion() -> None:
+    """P2.1 (§40): vorher wurde ein blosses Referenzdatum mit Konfidenz 0,15 trotzdem als Fristvorschlag gespeichert -
+    im Legal-E2E-Korpus waren so rund zwei Drittel aller Vorschlaege blosse Ereignisdaten. Ein Datum allein begruendet
+    keine Frist mehr (siehe tests/test_deadlines_kinds.py)."""
+    assert extractor.extract("Wir beziehen uns auf unser Schreiben vom 15.03.2027.") == []
 
 
 def test_extracts_date_with_german_month_name() -> None:
@@ -84,7 +84,9 @@ def test_context_window_snaps_outward_to_word_boundaries_not_mid_word() -> None:
     prefix_len = _CONTEXT_WINDOW_CHARS
     word = "Beschäftigungsmonat"
     gap = "y" * 49 + " "
-    text = ("x" * prefix_len) + word + gap + "15.03.2027 danach."
+    # P2.1 (§40): "bis zum" macht das Datum zum Fristvorschlag (ein blosses Datum ist keiner mehr); die Fenstergrenze
+    # (60 Zeichen vor dem Datum) liegt weiterhin mitten im Wort
+    text = ("x" * prefix_len) + word + gap + "bis zum 15.03.2027 danach."
 
     results = extractor.extract(text)
 
@@ -100,12 +102,13 @@ def test_source_text_preserves_paragraph_boundary_around_heading() -> None:
     wertete app/privacy/security_check.py::_find_possible_unrecognized_names
     faelschlich als moeglichen unerkannten Namen und blockierte dauerhaft
     jede Chat-Nachricht der betroffenen Unterhaltung, real reproduziert."""
-    text = "1. Vorbemerkung\n2. Schriftverkehr\nMit Schreiben vom 12.08.2026 forderte die Mieterin den Vermieter auf."
+    # P2.1 (§40): Fristhinweis noetig, ein blosses Datum ist kein Fristvorschlag mehr
+    text = "1. Vorbemerkung\n2. Schriftverkehr\nMit Frist bis zum 12.08.2026 forderte die Mieterin den Vermieter auf."
     results = extractor.extract(text)
     assert len(results) == 1
     assert "Schriftverkehr Mit" not in results[0].source_text
     assert "Schriftverkehr" in results[0].source_text
-    assert "Mit Schreiben" in results[0].source_text
+    assert "Mit Frist" in results[0].source_text
 
 
 def test_source_text_paragraph_boundary_does_not_trigger_unrecognized_name_heuristic() -> None:
@@ -115,7 +118,7 @@ def test_source_text_paragraph_boundary_does_not_trigger_unrecognized_name_heuri
     Namens-Kandidaten."""
     from app.privacy.security_check import _find_possible_unrecognized_names
 
-    text = "1. Vorbemerkung\n2. Schriftverkehr\nMit Schreiben vom 12.08.2026 forderte die Mieterin den Vermieter auf."
+    text = "1. Vorbemerkung\n2. Schriftverkehr\nMit Frist bis zum 12.08.2026 forderte die Mieterin den Vermieter auf."
     results = extractor.extract(text)
     candidates = _find_possible_unrecognized_names(results[0].source_text)
     assert "Schriftverkehr Mit" not in candidates

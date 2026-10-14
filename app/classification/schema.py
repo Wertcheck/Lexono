@@ -35,6 +35,13 @@ ALLOWED_DOCUMENT_TYPES = frozenset(
         "Einspruch",
         "Prüfungsanordnung",
         "Steuererklärung",
+        # P2.1 (§40): im Legal-E2E-Korpus ohne eigenen Typ und deshalb "Unbekannt" (Gutachten, Protokoll, Bescheid)
+        # bzw. vom Auftrag ausdruecklich verlangt (Urteil/Beschluss, Anlage)
+        "Urteil/Beschluss",
+        "Bescheid",
+        "Gutachten",
+        "Protokoll",
+        "Anlage",
         "Sonstiges",
         "Unbekannt",
     }

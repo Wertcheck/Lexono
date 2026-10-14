@@ -13,6 +13,7 @@ automatische Aktenzuordnung" gilt.
 
 from __future__ import annotations
 
+import difflib
 import re
 from typing import Protocol
 
@@ -28,6 +29,14 @@ _PLACEHOLDER_MAX_CONFIDENCE = 0.4
 # regelmaessig auch Woerter wie "Rechnung"/"Frist", soll aber als
 # Steuerbescheid gelten (Pilotkanzlei = Steuerfachanwaltskanzlei).
 _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    # P2.1 (§40): nicht-steuerliche Bescheide - NUR die ausdrueckliche Bescheidart (kein blosses "Bescheid"; ein
+    # Steuerbescheid heisst "Bescheid fuer 2025 ueber Einkommensteuer"). Steht VOR "Steuerbescheid", weil dessen
+    # allgemeine Merkmale ("Rechtsbehelfsbelehrung", "Festsetzung") auch auf jedem Bussgeldbescheid stehen.
+    "Bescheid": (
+        "bußgeldbescheid", "bussgeldbescheid", "widerspruchsbescheid", "kostenbescheid", "gebührenbescheid",
+        "gebuehrenbescheid", "leistungsbescheid", "bewilligungsbescheid", "ablehnungsbescheid", "beitragsbescheid",
+        "zuwendungsbescheid", "rentenbescheid",
+    ),
     # --- Steuerrecht (14.09., echter Fund beim Durchspielen der
     # synthetischen Kanzlei-Datenbasis: ein Steuerbescheid wurde als
     # "Unbekannt"/0.1 eingestuft, da es KEINEN steuerrechtlichen Typ gab) ---
@@ -63,6 +72,9 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
         "einnahmenueberschussrechnung",
     ),
     # --- allgemeine Typen ---
+    # P2.1 (§40): Urteil/Beschluss nur ueber eindeutige Merkmale (siehe _JUDGMENT_HEADING) - "BGH, Urteil vom ..." in
+    # einem Schriftsatz macht ihn nicht zum Urteil. Die Woerter hier dienen nur der Begruendung.
+    "Urteil/Beschluss": ("im namen des volkes", "für recht erkannt", "fuer recht erkannt"),
     "Rechnung": ("rechnung", "invoice", "rechnungsnummer"),
     "Vollmacht": ("vollmacht",),
     # ECHTER FUND (14.09., gleiche Fehlerklasse wie bei der
@@ -83,10 +95,44 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
         "kündigung des", "kuendigung des",
     ),
     "Mahnung": ("mahnung", "zahlungserinnerung"),
-    "Klage/Schriftsatz": ("klage", "klageschrift", "schriftsatz"),
+    "Klage/Schriftsatz": ("klage", "klageschrift", "schriftsatz", "klageerwiderung", "replik"),
+    "Gutachten": ("gutachten", "sachverständiger", "sachverstaendiger", "sachverständige", "sachverstaendige"),
+    "Protokoll": ("protokoll", "niederschrift"),
     "Gerichtliches Schreiben": ("gericht", "amtsgericht", "landgericht", "aktenzeichen des gerichts"),
     "Vertrag": ("vertrag", "vereinbarung"),
 }
+
+# P2.1 (§40): Typen, deren Merkmale selbstbeschreibende Wendungen sind ("festgesetzte Einkommensteuer", "legen wir
+# Einspruch ein", "kuendigen wir") - sie zaehlen auch im Fliesstext. Alle anderen Typwoerter ("Rechnung", "Vertrag",
+# "Vollmacht", "Gericht" ...) zaehlen nur im Kopf des Dokuments: im Fliesstext sind sie meist nur ERWAEHNT ("aus der
+# Schlussrechnung", "laut Mietvertrag") und machten Korrespondenz zur Rechnung bzw. zum Vertrag.
+_BODY_TYPES = ("Steuerbescheid", "Einspruch", "Prüfungsanordnung", "Steuererklärung", "Kündigungsschreiben")
+# Kopf des Dokuments: Briefkopf, Betreff/Titel und erste Saetze
+_HEAD_CHARS = 600
+# Wendungen, die ein Typwort enthalten, aber etwas anderes bedeuten (im Legal-E2E-Korpus real beobachtet)
+_EXCLUDED_PHRASES = {
+    "Mahnung": ("abmahnung",),  # Abmahnung (Arbeitsrecht) ist keine Zahlungsmahnung
+    "Vollmacht": ("in vollmacht",),  # "Namens und in Vollmacht unserer Mandantin" - Anwaltsschreiben, keine Vollmacht
+}
+# Verweis auf einen Bescheid ("Einspruch gegen den Bussgeldbescheid", "Betreff: Bussgeldbescheid") ist kein Bescheid -
+# im Legal-E2E-Testsplit als Regression der Erstfassung beobachtet (Einspruch und E-Mail wurden zum "Bescheid")
+_BESCHEID_REFERENCE = re.compile(
+    r"\b(?:gegen|betreff\s*:?|betrifft|zum|zu\s+dem|wegen|bezüglich|bezueglich)\s+(?:[\wäöüß]+\s+){0,2}?[\wäöüß]*bescheid\w*",
+    re.IGNORECASE,
+)
+# Urteil/Beschluss: Ueberschriftzeile oder Tenor-/Eingangsformel
+_JUDGMENT_HEADING = re.compile(
+    r"^\s*(?:(?:end|teil|schluss|versäumnis|versaeumnis|anerkenntnis)?urteil|beschluss)\b(?!\s+(?:vom|des|der)\b)",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Anlage: ausdrueckliche Kennzeichnung in der ersten Zeile ("Anlage K1") oder im Dateinamen
+_EXHIBIT_MARKER = re.compile(r"^\s*anlage\s*[a-z]{0,3}\s*[-.]?\s*\d+\b", re.IGNORECASE)
+# OCR: unscharfer Abgleich nur fuer Ueberschriftwoerter am Zeilenanfang im Kopf (Titel), nur echte Abweichungen
+_OCR_TITLE_WORDS = {
+    "rechnung": "Rechnung", "gutachten": "Gutachten", "bescheid": "Bescheid", "protokoll": "Protokoll",
+    "vertrag": "Vertrag", "klageschrift": "Klage/Schriftsatz",
+}
+_OCR_MIN_RATIO = 0.85
 
 _ACTION_REQUIRED_KEYWORDS = (
     "frist",
@@ -118,13 +164,13 @@ class PlaceholderDocumentClassifier:
     ) -> ClassificationResult:
         normalized = text.lower()
 
-        document_type, matched_keywords = self._detect_document_type(normalized)
+        document_type, matched_keywords, location = self._detect_document_type(text, filename)
         matter_reference = self._detect_matter_reference(text)
         action_required = any(kw in normalized for kw in _ACTION_REQUIRED_KEYWORDS)
 
         confidence = self._compute_confidence(matched_keywords)
         reasoning = self._build_reasoning(
-            document_type, matched_keywords, matter_reference, action_required
+            document_type, matched_keywords, matter_reference, action_required, location
         )
 
         return ClassificationResult(
@@ -137,12 +183,63 @@ class PlaceholderDocumentClassifier:
             reasoning=reasoning,
         )
 
-    def _detect_document_type(self, normalized_text: str) -> tuple[str, list[str]]:
-        for document_type, keywords in _DOCUMENT_TYPE_KEYWORDS.items():
-            matched = [kw for kw in keywords if kw in normalized_text]
+    def _detect_document_type(self, text: str, filename: str | None = None) -> tuple[str, list[str], str]:
+        """(Typ, Merkmale, Fundort). P2.1 (§40): zuerst der Kopf des Dokuments, dann nur selbstbeschreibende Wendungen
+        im Fliesstext; Unbekannt, wenn nichts davon traegt (begruendete Unsicherheit statt erzwungener Einordnung)."""
+        head = text[:_HEAD_CHARS]
+        exhibit = bool(_EXHIBIT_MARKER.match(text.lstrip()[:40])) or bool(
+            filename and filename.lower().lstrip().startswith("anlage"))
+        found = self._match_types(head.lower(), _DOCUMENT_TYPE_KEYWORDS, judgment_text=head)
+        if found and not (exhibit and found[0] == "Gerichtliches Schreiben"):
+            return found[0], found[1], "im Kopf des Dokuments" + (", als Anlage gekennzeichnet" if exhibit else "")
+        fuzzy = self._fuzzy_heading_type(head)
+        if fuzzy:
+            return fuzzy[0], fuzzy[1], "im Kopf des Dokuments, unscharf (mögliche OCR-Abweichung)"
+        if exhibit:
+            return "Anlage", ["anlage"], "ausdrücklich als Anlage gekennzeichnet (erste Zeile oder Dateiname)"
+        body_keywords = {t: _DOCUMENT_TYPE_KEYWORDS[t] for t in _BODY_TYPES}
+        found = self._match_types(text.lower(), body_keywords)
+        if found:
+            return found[0], found[1], "im Text (selbstbeschreibende Wendung)"
+        return "Unbekannt", [], ""
+
+    @staticmethod
+    def _match_types(
+        normalized: str, table: dict[str, tuple[str, ...]], *, judgment_text: str | None = None
+    ) -> tuple[str, list[str]] | None:
+        for document_type, keywords in table.items():
+            if document_type == "Urteil/Beschluss":
+                if judgment_text is None:
+                    continue
+                heading = _JUDGMENT_HEADING.search(judgment_text)
+                matched = [kw for kw in keywords if kw in normalized] + ([heading.group(0).strip()] if heading else [])
+            else:
+                scope = normalized
+                for phrase in _EXCLUDED_PHRASES.get(document_type, ()):
+                    scope = scope.replace(phrase, " ")
+                if document_type == "Bescheid":
+                    scope = _BESCHEID_REFERENCE.sub(" ", scope)
+                matched = [kw for kw in keywords if kw in scope]
             if matched:
                 return document_type, matched
-        return "Unbekannt", []
+        return None
+
+    @staticmethod
+    def _fuzzy_heading_type(head: str) -> tuple[str, list[str]] | None:
+        """Ueberschriftwort am Zeilenanfang mit OCR-Fehler ("Rechnunq", "Privatgutachlen", "Bussgeldbescheld")."""
+        for line in head.splitlines():
+            first = re.match(r"\s*([A-Za-zÄÖÜäöüß]{6,})", line)
+            if not first:
+                continue
+            token = first.group(1).lower()
+            for word, document_type in _OCR_TITLE_WORDS.items():
+                tail = token[-len(word):] if len(token) >= len(word) else token
+                ratio = difflib.SequenceMatcher(None, tail, word).ratio()
+                if _OCR_MIN_RATIO <= ratio < 1.0:
+                    if document_type == "Bescheid" and token.startswith("steuer"):
+                        document_type = "Steuerbescheid"
+                    return document_type, [first.group(1)]
+        return None
 
     def _detect_matter_reference(self, text: str) -> str | None:
         match = _MATTER_REFERENCE_PATTERN.search(text)
@@ -168,12 +265,14 @@ class PlaceholderDocumentClassifier:
         matched_keywords: list[str],
         matter_reference: str | None,
         action_required: bool,
+        location: str = "",
     ) -> str:
         parts = [
             "Platzhalter-Klassifikation (regelbasiert, kein LLM).",
             f"Dokumenttyp '{document_type}' "
             + (
-                f"aufgrund der Schlüsselwörter {matched_keywords} vermutet."
+                f"aufgrund der Schlüsselwörter {matched_keywords} vermutet"
+                + (f" ({location})." if location else ".")
                 if matched_keywords
                 else "konnte nicht anhand bekannter Schlüsselwörter erkannt werden."
             ),

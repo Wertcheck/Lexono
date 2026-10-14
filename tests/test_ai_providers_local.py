@@ -380,6 +380,29 @@ def test_argumentationspunkte_include_deadlines(db_session: Session) -> None:
     assert any("Frist am 15.03.2027" in a for a in result.argumentationspunkte)
 
 
+def test_argumentationspunkte_name_appointments_and_open_deadline_parts_correctly(db_session: Session) -> None:
+    """P2.1 (§40): Termine, moegliche Fristbeginne und Fristdauern sind keine Fristen - nicht als "Mögliche Frist"
+    bezeichnen. Altvorschlaege ohne Art-Angabe bleiben "Mögliche Frist"."""
+    matter = _matter(db_session)
+    db_session.add_all([
+        Deadline(matter=matter, source_text="25.08.2026 :: Termin zur Anhörung am 25.08.2026", confidence=0.35,
+                 reasoning="Platzhalter-Fristerkennung. Art: Termin (kein Fristablauf)"),
+        Deadline(matter=matter, source_text="06.08.2026 :: am 06.08.2026 zugestellt", confidence=0.3,
+                 reasoning="Platzhalter-Fristerkennung. Art: Fristbeginn (Ereignis 'zugestellt')"),
+        Deadline(matter=matter, source_text="binnen zwei Wochen :: Stellungnahme binnen zwei Wochen", confidence=0.35,
+                 reasoning="Platzhalter-Fristerkennung. Art: Fristdauer ('zwei Wochen')"),
+        Deadline(matter=matter, source_text="15.03.2027 :: bis zum 15.03.2027", confidence=0.5, reasoning="alt"),
+    ])
+    db_session.commit()
+
+    points = RuleBasedLocalAIProvider()._build_argumentationspunkte(matter.id, db_session)
+
+    assert any(p.startswith("Möglicher Termin") and "25.08.2026" in p for p in points)
+    assert any(p.startswith("Möglicher Fristbeginn (Fristende offen)") and "06.08.2026" in p for p in points)
+    assert any(p.startswith("Mögliche Fristdauer (Fristende offen)") and "binnen zwei Wochen" in p for p in points)
+    assert any(p.startswith("Mögliche Frist (") and "15.03.2027" in p for p in points)
+
+
 def test_known_entities_include_client_as_mandant(db_session: Session) -> None:
     matter = _matter(db_session, client_name="Max Mustermann")
     provider = RuleBasedLocalAIProvider()

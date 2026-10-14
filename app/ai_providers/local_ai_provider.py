@@ -582,9 +582,20 @@ class RuleBasedLocalAIProvider:
         def source_text_of(deadline: Deadline) -> str | None:
             return full_texts.get(deadline.document_id) or message_texts.get(deadline.message_id)
 
+        def label_of(deadline: Deadline) -> str:
+            # P2.1 (§40): Termine und moegliche Fristbeginne sind keine Fristen - nicht als solche bezeichnen
+            reasoning = deadline.reasoning or ""
+            if "Art: Termin" in reasoning:
+                return "Möglicher Termin"
+            if "Art: Fristbeginn" in reasoning:
+                return "Möglicher Fristbeginn (Fristende offen)"
+            if "Art: Fristdauer" in reasoning:
+                return "Mögliche Fristdauer (Fristende offen)"
+            return "Mögliche Frist"
+
         return [
             # Rand-Bruchstuecke zerschnittener Geburts-/Todesdaten aus Altvorschlaegen entfernen (§24, Fall 19)
-            f"Mögliche Frist ({deadline.review_status}): "
+            f"{label_of(deadline)} ({deadline.review_status}): "
             f"{trim_partial_personal_dates(deadline.source_text, source_text_of(deadline))}"
             for deadline in deadlines
             # Datenschutz-Pruefung §26: ein abgelehnter Vorschlag ist keine Frist - nicht mehr an die Cloud senden

@@ -65,13 +65,60 @@ _MONTH_NAME_PATTERN = re.compile(
     + r")\s+(\d{4})\b",
     re.IGNORECASE,
 )
-# "binnen zwei Wochen", "innerhalb von 14 Tagen" o. ä.
+# "binnen zwei Wochen", "innerhalb von 14 Tagen", "drei Wochen nach Zugang" o. ä. (P2.1 §40: auch die Dauer ab einem
+# genannten Ereignis - Gruppe "event" -, ohne Fristende im Text wird daraus KEIN Datum berechnet)
 _RELATIVE_PERIOD_PATTERN = re.compile(
-    r"\b(binnen|innerhalb\s+von)\s+"
-    r"(\w+)\s*"
-    r"(tag|tage|tagen|woche|wochen|monat|monate|monaten)\b",
+    r"\b(?:(?P<prefix>binnen|innerhalb\s+von)\s+)?"
+    r"(?P<amount>\w+)\s*"
+    r"(?P<unit>tag|tage|tagen|woche|wochen|monat|monate|monaten)\b"
+    r"(?:\s+nach\s+(?:dem\s+|der\s+|den\s+)?(?P<event>zugang|zustellung|erhalt|bekanntgabe|eingang|kenntnis(?:nahme)?|"
+    r"abnahme|verkündung|verkuendung|ablauf)\w*)?",
     re.IGNORECASE,
 )
+
+# --- P2.1 (§40): Rolle eines Datums im Satz ------------------------------------------------------------------------
+# Vorher wurde JEDES Datum ein Fristvorschlag (ohne Schluesselwort mit Konfidenz 0,15); "termin" traf als Teilwort auch
+# "Arzttermin" im Vorsatz. Jetzt zaehlt nur, was im SELBEN Satz unmittelbar am Datum steht.
+_SENTENCE_BREAK = re.compile(r"[.!?;](?=\s+[A-ZÄÖÜ(])|\n|\s{3,}")
+# Fristende ausdruecklich: Hinweiswort unmittelbar vor dem Datum
+_EXPLICIT_DEADLINE_BEFORE = re.compile(
+    r"(?:\bbis(?:\s+(?:zum|spätestens|spaetestens|einschließlich|einschliesslich))?(?:\s+zum)?"
+    r"|\bspätestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?|\bspaetestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?"
+    r"|\bfällig(?:\s+(?:am|zum|bis))?|\bfaellig(?:\s+(?:am|zum|bis))?|\bzahlbar(?:\s+(?:bis|am))?(?:\s+zum)?"
+    r"|\bzahlungsziel\s*:?|\bwiedervorlage\s*:?|\bfristablauf\s*:?|\bablauf\s+(?:am|zum)|\balso\s+am|\bendet\s+am"
+    r"|\b\w*frist\w*\s*:)\s*$",
+    re.IGNORECASE,
+)
+# "zum <Datum>" ist nur mit Beendigungs-/Ablaufbezug im Satz ein Fristende ("kuendigen ... ordentlich zum 30.06.2026")
+_ZUM_BEFORE = re.compile(r"\bzum\s*$", re.IGNORECASE)
+_TERMINATION_WORDS = re.compile(r"kündig|kuendig|beend|aufheb|ausscheid|wirksam\b|\bendet\b|ablauf|\w*frist", re.IGNORECASE)
+# Fristwort NACH dem Datum ("Am 15.05.2026 läuft die Frist ab")
+_DEADLINE_WORD_AFTER = re.compile(r"\w*frist\w*|läuft\s+\w+(?:\s+\w+)?\s+ab\b|laeuft\s+\w+(?:\s+\w+)?\s+ab\b", re.IGNORECASE)
+# Termin: Terminwort unmittelbar vor dem Datum (hoechstens kurze Ergaenzung dazwischen, kein anderes Datum)
+_APPOINTMENT_BEFORE = re.compile(
+    r"\b\w*(?:termin|verhandlung|anhörung|anhoerung|sitzung|besprechung)\w*\b[^\d.;!?]{0,45}?(?:\bam|\bvom|:)?\s*$",
+    re.IGNORECASE,
+)
+# Ereignis als Fristbeginn: "nach Zugang der Kündigung am <Datum>"
+_START_EVENT_BEFORE = re.compile(r"\bnach\s+(?P<event>[^.\d;]{3,60}?)\s+(?:am|vom)\s*$", re.IGNORECASE)
+# Termin NACH dem Datum ("06.03.2024: Termin beim Nachlassgericht")
+_APPOINTMENT_AFTER = re.compile(r"^\s*[:,-]?\s*\w*(?:termin|verhandlung|anhörung|anhoerung|sitzung|besprechung)\w*\b",
+                                re.IGNORECASE)
+# Fristausloesendes Ereignis am Datum (Kenntnis, Zugang, Zustellung, Bekanntgabe): moeglicher Fristbeginn - kein
+# Fristende, aber rechtlich relevant (z. B. Ausschlagungsfrist ab Kenntnis); nie stillschweigend verwerfen
+_TRIGGER_EVENT = re.compile(
+    r"\b(?:kenntnis\w*|erfuhr|erfahren|zugang|zugegangen|zustellung|zugestellt|bekanntgabe|bekanntgegeben)\b",
+    re.IGNORECASE,
+)
+# Zeitraum "vom <Datum> bis <Datum>": das zweite Datum ist kein Fristende
+_RANGE_BEFORE = re.compile(r"\d\s*(?:bis|-|–)\s*$", re.IGNORECASE)
+
+_NUMBER_WORDS = frozenset({
+    "ein", "eine", "einem", "einer", "einen", "zwei", "drei", "vier", "fünf", "fuenf", "sechs", "sieben", "acht", "neun",
+    "zehn", "elf", "zwölf", "zwoelf", "vierzehn", "einundzwanzig", "dreißig", "dreissig",
+})
+
+_NOT_VERIFIED = "Konfidenz bewusst niedrig - diese Frist gilt NICHT als verbindlich bestätigt, manuelle Prüfung erforderlich."
 
 _CONTEXT_WINDOW_CHARS = 60
 
@@ -276,71 +323,171 @@ class PlaceholderDeadlineExtractor:
                 return False  # auch ein Schluesselwort NACH dem Datum ("05.03.2024: Termin beim Nachlassgericht")
             return any(start < match.end() and match.start() < end for start, end in personal)
 
+        dated_deadline_sentences: set[tuple[int, int]] = set()
         for match in _NUMERIC_DATE_PATTERN.finditer(text):
             if is_personal(match):
                 continue  # Geburts-/Todesdatum ist keine Frist
-            result = self._handle_numeric_date(text, match)
+            parsed = self._try_parse_date(*match.groups())
+            result = self._candidate(text, match, parsed) if parsed else None
+            seen_spans.add(match.span())
             if result:
                 results.append(result)
-                seen_spans.add(match.span())
+                if "Art: Frist" in result.reasoning:
+                    dated_deadline_sentences.add(self._sentence_bounds(text, match.start(), match.end()))
 
         for match in _MONTH_NAME_PATTERN.finditer(text):
             if match.span() in seen_spans or is_personal(match):
                 continue
-            result = self._handle_month_name_date(text, match)
+            day_str, month_name, year_str = match.groups()
+            month = _GERMAN_MONTHS.get(month_name.lower())
+            parsed = self._try_parse_date(day_str, str(month), year_str) if month else None
+            result = self._candidate(text, match, parsed) if parsed else None
             if result:
                 results.append(result)
+                if "Art: Frist" in result.reasoning:
+                    dated_deadline_sentences.add(self._sentence_bounds(text, match.start(), match.end()))
 
         for match in _RELATIVE_PERIOD_PATTERN.finditer(text):
+            if not self._is_period(match):
+                continue
+            # Dauer im Satz eines ausdruecklichen Fristendes: steht dort bereits in dessen Begruendung
+            if self._sentence_bounds(text, match.start(), match.end()) in dated_deadline_sentences:
+                continue
             results.append(self._handle_relative_period(text, match))
 
         return results
 
-    def _handle_numeric_date(self, text: str, match: re.Match) -> ExtractedDeadline | None:
-        day_str, month_str, year_str = match.groups()
-        parsed = self._try_parse_date(day_str, month_str, year_str)
-        if parsed is None:
-            return None
-        context = self._context_window(text, match.start(), match.end())
-        has_keyword = self._has_nearby_keyword(text, match.start())
-        confidence = 0.5 if has_keyword else 0.15
-        reasoning = self._build_reasoning(has_keyword, is_relative=False)
-        return ExtractedDeadline(
-            source_text=context,
-            raw_date_text=match.group(0).strip(),
-            due_date=parsed,
-            confidence=confidence,
-            reasoning=reasoning,
-        )
+    # --- P2.1 (§40): Rolle des Datums im Satz -----------------------------------------------------------------------
 
-    def _handle_month_name_date(self, text: str, match: re.Match) -> ExtractedDeadline | None:
-        day_str, month_name, year_str = match.groups()
-        month = _GERMAN_MONTHS.get(month_name.lower())
-        if month is None:
-            return None
-        parsed = self._try_parse_date(day_str, str(month), year_str)
-        if parsed is None:
+    @staticmethod
+    def _sentence_bounds(text: str, start: int, end: int) -> tuple[int, int]:
+        left = max(0, start - 200)
+        for brk in _SENTENCE_BREAK.finditer(text, left):
+            if brk.end() > start:
+                break
+            left = brk.end()
+        right = min(len(text), end + 200)
+        for brk in _SENTENCE_BREAK.finditer(text, end):
+            right = min(right, brk.start())
+            break
+        return left, right
+
+    def _role(self, text: str, match: re.Match) -> tuple[str, str]:
+        """("frist" | "termin" | "ereignis" | "datum", Hinweis) - nur was im selben Satz unmittelbar am Datum steht."""
+        left, right = self._sentence_bounds(text, match.start(), match.end())
+        before = text[left:match.start()]
+        after = text[match.end():right]
+        if _RANGE_BEFORE.search(before):
+            return "datum", ""  # Ende eines Zeitraums "vom ... bis ..."
+        event = _START_EVENT_BEFORE.search(before)
+        if event:
+            return "ereignis", event.group("event").strip()
+        explicit = _EXPLICIT_DEADLINE_BEFORE.search(before)
+        if explicit:
+            return "frist", explicit.group(0).strip()
+        if _ZUM_BEFORE.search(before) and _TERMINATION_WORDS.search(before):
+            return "frist", "zum (Beendigung/Ablauf)"
+        word_after = _DEADLINE_WORD_AFTER.search(after)
+        if (word_after and word_after.start() <= 30 and not _ANY_DATE.search(after[: word_after.start()])
+                and not _ANY_DATE.search(after[word_after.start(): word_after.start() + 40])):
+            return "frist", word_after.group(0).strip()
+        appointment = _APPOINTMENT_BEFORE.search(before)
+        if appointment and not _ANY_DATE.search(appointment.group(0)):
+            return "termin", appointment.group(0).strip()
+        appointment_after = _APPOINTMENT_AFTER.search(after)
+        if appointment_after:
+            return "termin", appointment_after.group(0).strip(" :,-")
+        trigger = self._trigger_near(before, after)
+        if trigger:
+            return "fristbeginn", trigger
+        return "datum", ""
+
+    @staticmethod
+    def _trigger_near(before: str, after: str) -> str | None:
+        """Fristausloesendes Ereignis unmittelbar am Datum: hoechstens 40 Zeichen davor/danach, kein anderes Datum dazwischen."""
+        near_before = before[-40:]
+        hit = None
+        for hit in _TRIGGER_EVENT.finditer(near_before):
+            pass
+        if hit and not _ANY_DATE.search(near_before[hit.end():]):
+            return hit.group(0)
+        hit_after = _TRIGGER_EVENT.search(after[:40])
+        if hit_after and not _ANY_DATE.search(after[: hit_after.start()]):
+            return hit_after.group(0)
+        return None
+
+    def _candidate(self, text: str, match: re.Match, parsed: date) -> ExtractedDeadline | None:
+        role, hint = self._role(text, match)
+        if role in ("datum", "ereignis"):
+            # Blosses Datum oder Ereignisdatum (Fristbeginn) begruendet keinen eigenen Vorschlag - ein Ereignis wird in
+            # der Begruendung der zugehoerigen Frist genannt.
             return None
         context = self._context_window(text, match.start(), match.end())
-        has_keyword = self._has_nearby_keyword(text, match.start())
-        confidence = 0.5 if has_keyword else 0.15
-        reasoning = self._build_reasoning(has_keyword, is_relative=False)
-        return ExtractedDeadline(
-            source_text=context,
-            raw_date_text=match.group(0).strip(),
-            due_date=parsed,
-            confidence=confidence,
-            reasoning=reasoning,
+        base = "Platzhalter-Fristerkennung (regelbasiert, kein LLM)."
+        if role == "fristbeginn":
+            # Bewusst OHNE due_date: das Datum ist ein moeglicher Fristbeginn, kein Fristende - es steht in der Textstelle
+            reasoning = (
+                f"{base} Art: Fristbeginn (Ereignis '{hint}' am {match.group(0).strip()}) - vermutete Frist, "
+                "Voraussetzungen unvollständig: welche Frist ab diesem Ereignis läuft und wie lang sie ist, steht nicht "
+                "im Text. Das Fristende wurde nicht berechnet - anwaltliche Prüfung erforderlich, diese Frist gilt NICHT "
+                "als verbindlich bestätigt."
+            )
+            return ExtractedDeadline(source_text=context, raw_date_text=match.group(0).strip(), due_date=None,
+                                     confidence=0.3, reasoning=reasoning)
+        if role == "termin":
+            reasoning = (
+                f"{base} Art: Termin (kein Fristablauf) - Terminhinweis unmittelbar vor dem Datum ('{hint}'). Ob der "
+                f"Termin bevorsteht oder bereits vergangen ist, wurde nicht geprüft. {_NOT_VERIFIED}"
+            )
+            return ExtractedDeadline(source_text=context, raw_date_text=match.group(0).strip(), due_date=parsed,
+                                     confidence=0.35, reasoning=reasoning)
+        reasoning = (
+            f"{base} Art: Frist - Fristende ausdrücklich im Text genannt ('{hint}')."
+            f"{self._basis_in_sentence(text, match)} {_NOT_VERIFIED}"
         )
+        return ExtractedDeadline(source_text=context, raw_date_text=match.group(0).strip(), due_date=parsed,
+                                 confidence=0.5, reasoning=reasoning)
+
+    def _basis_in_sentence(self, text: str, match: re.Match) -> str:
+        """Dauer und Ereignis (Fristbeginn) im selben Satz - als Berechnungsgrundlage genannt, nicht nachgerechnet."""
+        left, right = self._sentence_bounds(text, match.start(), match.end())
+        sentence = text[left:right]
+        parts = []
+        period = next((p for p in _RELATIVE_PERIOD_PATTERN.finditer(sentence) if self._is_period(p)), None)
+        if period:
+            parts.append(f"Dauer '{period.group('amount')} {period.group('unit')}'")
+        for date_match in _NUMERIC_DATE_PATTERN.finditer(sentence):
+            if left + date_match.start() == match.start():
+                continue
+            event = _START_EVENT_BEFORE.search(sentence[: date_match.start()])
+            if event:
+                parts.append(f"Ereignis/Fristbeginn '{event.group('event').strip()}' am {date_match.group(0).strip()}")
+                break
+        if not parts:
+            return ""
+        return (f" Im selben Satz: {'; '.join(parts)} - das Fristende wurde nicht nachgerechnet "
+                "(keine geprüfte Fristberechnung, z. B. Zustellfiktion, Wochenende/Feiertag).")
+
+    @staticmethod
+    def _is_period(match: re.Match) -> bool:
+        """Nur echte Fristdauern: "binnen/innerhalb von N ..." oder "N ... nach <Ereignis>", N als Zahl/Zahlwort."""
+        if not (match.group("prefix") or match.group("event")):
+            return False
+        amount = match.group("amount").lower()
+        return amount.isdigit() or amount in _NUMBER_WORDS
 
     def _handle_relative_period(self, text: str, match: re.Match) -> ExtractedDeadline:
         context = self._context_window(text, match.start(), match.end())
+        event = match.group("event")
+        start = (
+            f"Ereignis/Fristbeginn '{event}' genannt, ein Fristende steht nicht im Text"
+            if event else "Fristbeginn fehlt (kein Ereignis/Bezugsdatum, z. B. Zugang, genannt)"
+        )
         reasoning = (
-            "Platzhalter-Fristerkennung (regelbasiert, kein LLM). Relative "
-            "Fristangabe erkannt, aber ohne Bezugsdatum (z. B. Zugangsdatum) "
-            "konnte kein konkretes Fälligkeitsdatum berechnet werden. "
-            "Konfidenz bewusst niedrig - manuelle Prüfung erforderlich, "
-            "diese Frist gilt NICHT als verbindlich bestätigt."
+            "Platzhalter-Fristerkennung (regelbasiert, kein LLM). Art: Fristdauer "
+            f"('{match.group('amount')} {match.group('unit')}') - vermutete Frist, Voraussetzungen unvollständig: {start}. "
+            "Das Fristende wurde nicht berechnet (keine geprüfte Fristberechnung, z. B. Zustellfiktion, "
+            "Wochenende/Feiertag) - anwaltliche Prüfung erforderlich, diese Frist gilt NICHT als verbindlich bestätigt."
         )
         return ExtractedDeadline(
             source_text=context,

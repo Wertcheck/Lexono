@@ -171,7 +171,8 @@ def test_deadline_extractor_ignores_birth_and_death_dates_but_keeps_real_deadlin
     found = {d.raw_date_text: d.confidence for d in PlaceholderDeadlineExtractor().extract(text)}
     assert "12.03.1980" not in found and "01.02.2024" not in found
     assert found["31.12.2026"] == 0.5 and found["15.03.2024"] == 0.5  # echte Fristen mit Schluesselwort
-    assert "01.04.2019" in found and "30.09.2026" in found  # Vertrags-/Ereignisdaten weiterhin als Vorschlag
+    # P2.1 (§40): Vertrags-/Ereignisdaten sind keine Fristvorschlaege mehr (vorher: "weiterhin als Vorschlag")
+    assert "01.04.2019" not in found and "30.09.2026" not in found
 
 
 def test_real_deadline_is_never_lost_to_a_birth_or_death_misreading() -> None:
@@ -257,9 +258,11 @@ def test_unlabelled_full_birthdate_in_deadline_snippet_is_removed(gateway) -> No
     ausweist."""
     from app.deadlines.extractor import trim_partial_personal_dates
 
-    start = next(d for d in PlaceholderDeadlineExtractor().extract(_CONTRACT) if d.due_date == date(2019, 1, 15))
+    # P2.1 (§40): der Vertragsbeginn ist ein Ereignisdatum und erzeugt keinen neuen Fristvorschlag mehr - die Leckquelle
+    # entsteht so gar nicht erst. Bereits GESPEICHERTE Altvorschlaege bleiben unveraendert und werden weiter bereinigt.
+    assert not any(d.due_date == date(2019, 1, 15) for d in PlaceholderDeadlineExtractor().extract(_CONTRACT))
     stored = "14.07.1988, wird vereinbart: Beginn des Arbeitsverhaeltnisses: 15.01.2019. Taetigkeit: Disponent."
-    for snippet in (start.source_text, stored):
+    for snippet in (stored,):
         trimmed = trim_partial_personal_dates(snippet, _CONTRACT)
         assert "14.07.1988" not in trimmed and "15.01.2019" in trimmed
         assert "1988" not in _payload_text(gateway, f"Mögliche Frist (unreviewed): {trimmed}")

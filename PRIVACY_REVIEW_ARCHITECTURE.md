@@ -4845,3 +4845,216 @@ den Vorschlag nur für die Aktenzeichen-Proben. Dass ein bekannter Absender sein
 ist durch die Tests in §39.4 und durch den installierten Build (§39.5) belegt.
 
 **Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
+
+## 40. P2.1: Fristenerkennung und Dokumentklassifizierung (14.10.2026, Ausgang `4d7981c`)
+
+Nur synthetische Daten, rein lokal (regelbasiert, kein Modellaufruf, keine API-Kosten). Pseudonymisierung, Privacy
+Gates, Leck-Prüfungen, Fail-Closed und Mandantentrennung sind unverändert. Der Konfidenzdeckel der Klassifikation (0,4)
+liegt weiter unter der Sperrschwelle der Aktenzuordnung (0,6).
+
+### 40.1 Messverfahren
+
+- **Skript `scripts/legal_bench/p21_measure.py`:** Es nutzt den echten Verarbeitungspfad (`IntakeService` → Text/OCR →
+  `ClassificationService` → `DeadlineAnalysisService`) über den Korpus `legal_e2e_v1` (33 Dokumente, davon 6 Scans).
+  Dev und Test werden getrennt ausgewiesen.
+- **Entwickelt wurde nur an Dev und an neuen synthetischen Unit-Fällen.** Die Korpusdateien blieben unverändert.
+- **Klassifikation**, zweistufig:
+  - Kerntypen mit eindeutiger Entsprechung: vertrag, rechnung, klageschrift, bescheid, gutachten, protokoll.
+    Präzision und Recall je Lexono-Typ.
+  - Rollentypen (schreiben, email, notiz, anlage) haben keinen einzig richtigen Typ. Ein Kerntyp darauf zählt als
+    Fehler, alles andere wird zur Sichtprüfung ausgegeben.
+- **Fristen**, je Fall, verglichen mit Referenzfristen, Chronologie und Dokumentdaten:
+  - richtig, übersehen, Quellenbezug (richtiges Quelldokument);
+  - Ereignisdatum als Frist;
+  - ungeklärt;
+  - persönliches Datum als Frist (kritisch).
+- **Baseline:** auf `4d7981c` mit OCR. Ein Kontrolllauf in einem Git-Worktree hatte kein OCR (Tesseract liegt
+  unversioniert unter `windows/vendor`) und ist deshalb nicht vergleichbar. Er wurde verworfen.
+
+### 40.2 Ursachen (Code)
+
+**Fristen (`app/deadlines/extractor.py`):**
+- **Jedes Datum wurde ein Fristvorschlag.** Ohne Schlüsselwort bekam es nur weniger Konfidenz (0,15), wurde aber
+  trotzdem gespeichert: Briefdatum, „Datum:“-Zeile, vergangene Ereignisse.
+- **„termin“ war ein Teilwort-Treffer im 60-Zeichen-Fenster.** „(Arzttermin). Die Abmahnung vom 12.02.2026“ wurde so
+  zur Frist mit 0,5.
+- **Echte Fristen ohne „bis zum“ erhielten nur 0,15:** „ordentlich zum 30.06.2026“; „Klagefrist … endet … am
+  23.03.2026, also am 13.04.2026“ (Schlüsselwort mehr als 60 Zeichen entfernt).
+- **Keine Unterscheidung** zwischen Frist, Termin und Ereignis; Fristbeginn und Dauer wurden nicht festgehalten.
+
+**Klassifikation (`app/classification/classifier.py`):**
+- **Teilwort-Treffer im gesamten Text, der erste Typ der Tabelle gewinnt:**
+  - „Abmahnung“ → Mahnung, dadurch wurde die Klageschrift zur Mahnung;
+  - „Schlussrechnung“ im Fliesstext → Rechnung;
+  - „Namens und in Vollmacht“ → Vollmacht.
+- **Kein Typ** für Gutachten, Protokoll, nicht-steuerlichen Bescheid, Urteil/Beschluss oder Anlage → „Unbekannt“.
+
+### 40.3 Änderungen
+
+**Fristen:**
+- **Rolle jedes Datums im selben Satz:**
+  - *Frist (ausdrücklich):* Fristwort unmittelbar davor („bis (zum)“, „spätestens“, „fällig“, „zahlbar“, „also am“,
+    „…frist:“; „zum“ nur mit Beendigungs- oder Ablaufbezug) oder Fristwort danach („läuft die Frist ab“).
+  - *Termin:* Terminwort unmittelbar davor oder danach.
+  - *Fristbeginn:* auslösendes Ereignis am Datum (Kenntnis, Zugang, Zustellung, Bekanntgabe). Das ergibt einen
+    Vorschlag **ohne** Fälligkeitsdatum mit dem Vermerk „Fristende nicht berechnet“; ein solches Datum wird nie
+    stillschweigend verworfen.
+  - *Ereignis/blosses Datum:* **kein** Vorschlag.
+  - *Zeitraumende* („vom … bis …“): keine Frist.
+- **Die Begründung nennt Art, Grundlage und Beleg.** Bei „N Wochen nach Zugang … am X, also am Y“ werden Dauer und
+  Ereignis/Fristbeginn genannt. Das Fristende wird **nicht nachgerechnet**, weil es keine geprüfte
+  Fristberechnungslogik gibt (Zustellfiktion, Wochenende, Feiertag).
+- **Relative Fristen** („binnen …“, „innerhalb von …“, „N Wochen nach <Ereignis>“) werden als „Fristdauer – vermutete
+  Frist, Voraussetzungen unvollständig“ ausgewiesen, ohne Datum und mit „Fristbeginn fehlt“ bzw. dem genannten
+  Ereignis.
+- **Matter-Kontext (`local_ai_provider`):** „Möglicher Termin“, „Möglicher Fristbeginn (Fristende offen)“ bzw.
+  „Mögliche Fristdauer (Fristende offen)“ statt pauschal „Mögliche Frist“. Altvorschläge ohne Art-Angabe bleiben
+  „Mögliche Frist“.
+- **Bestehende Fristen bleiben unverändert.** Die Analyse ist idempotent: bereits analysierte Dokumente werden nicht
+  neu bewertet, gespeicherte Vorschläge werden weder gelöscht noch umgeschrieben.
+
+**Klassifikation:**
+- **Kopf des Dokuments zuerst** (600 Zeichen). Im Fliesstext zählen nur selbstbeschreibende Wendungen: Steuerbescheid,
+  Einspruch, Prüfungsanordnung, Steuererklärung, Kündigung.
+- **Ausschlüsse:** „Abmahnung“ ≠ Mahnung, „in Vollmacht“ ≠ Vollmacht, ein Verweis auf einen Bescheid („gegen den …“,
+  „Betreff: …“) ≠ Bescheid.
+- **Neue Typen:**
+  - „Urteil/Beschluss“: nur bei Überschriftzeile oder „Im Namen des Volkes“/„für Recht erkannt“, nicht bei
+    „BGH, Urteil vom …“;
+  - „Bescheid“: nur ausdrückliche Bescheidarten, vor dem Steuerbescheid geprüft;
+  - „Gutachten“, „Protokoll“;
+  - „Anlage“: nur mit Kennzeichnung „Anlage K1“ oder Dateiname; ein erkannter Inhaltstyp hat Vorrang.
+- **OCR:** unscharfer Abgleich (≥ 0,85) nur für Überschriftwörter am Zeilenanfang im Kopf; die Begründung nennt die
+  mögliche OCR-Abweichung.
+- **„Unbekannt“ bleibt der Normalfall** ohne belastbare Merkmale.
+
+**Datenschutz-Gegenprobe:**
+- Alle neuen Typ- und Vorschlagsbezeichnungen liefen durch den echten Gateway: nichts maskiert, keine Rückfrage, keine
+  Blockade.
+- Persönliche Daten (Geburt, Tod) werden weiterhin ausgeschlossen. Die Bereinigung gespeicherter Altvorschläge
+  (`trim_partial_personal_dates`) ist unverändert.
+
+### 40.4 Ergebnis (echter Verarbeitungspfad, OCR aktiv)
+
+**Klassifikation:**
+
+| Kennzahl | Dev vorher → nachher | Test vorher → nachher |
+|---|---|---|
+| Kerntypen richtig | 4/7 → **7/7** | 0/5 → **3/5** |
+| Vertrag (P / R) | 3/3, 3/3 → 3/3, 3/3 | – |
+| Rechnung (P / R) | 1/2, 1/1 → 1/2, 1/1 | – |
+| Klage/Schriftsatz (P / R) | 0/0, 0/1 → **1/1, 1/1** | – |
+| Gutachten (P / R) | 0/0, 0/2 → **2/2, 2/2** | 0/0, 0/1 → **1/1, 1/1** |
+| Bescheid (P / R) | – | 0/0, 0/2 → **1/1, 1/2** |
+| Protokoll (P / R) | – | 0/0, 0/2 → **1/1, 1/2** |
+| „Unbekannt“ insgesamt | 9/20 → 9/20 | 11/13 → 9/13 |
+| Fehler (einzeln) | 4 → 1 | 5 → 2 (beide „Unbekannt“, kein falscher Kerntyp) |
+
+- **Je Dokument gegenüber der Baseline:** 6 besser, **0 schlechter**.
+- **Dev:** Gleich viele „Unbekannt“, weil zwei vorher falsch als „Mahnung“ eingestufte Rollendokumente (Abmahnung,
+  Gesprächsnotiz) jetzt begründet „Unbekannt“ sind.
+- **Regression der Erstfassung, im Testsplit gefunden und behoben:** Ein Einspruch gegen einen Bußgeldbescheid
+  (vorher richtig „Einspruch“) und eine E-Mail mit Betreff „Bußgeldbescheid“ (vorher „Unbekannt“) wurden zum
+  „Bescheid“.
+  - Die Behebung ist eine allgemeine Regel (Verweis auf einen Bescheid zählt nicht) mit eigenen synthetischen Tests.
+  - Für diese Fehlerklasse ist der Testsplit damit **nicht mehr vollständig unabhängig**.
+  - Die Testwerte vor dieser Korrektur: Kerntypen 3/5, Bescheid P 1/3.
+
+**Fristen:**
+
+| Kennzahl | Dev vorher → nachher | Test vorher → nachher |
+|---|---|---|
+| Referenzfristen gefunden | 9/9 → 9/9 | 3/3 → 3/3 |
+| davon im richtigen Quelldokument | 9/9 → 9/9 | 3/3 → 3/3 |
+| Vorschläge insgesamt | 41 → **10** (9 Frist, 1 Termin) | 25 → **7** (4 Frist, 2 Fristbeginn ohne Datum, 1 Fristdauer ohne Datum) |
+| **Ereignisdatum als Frist** | **27 → 0** | **17 → 0** |
+| ungeklärt | 1 → 0 | 1 → 1 |
+| persönliches Datum als Frist (kritisch) | 0 → 0 | 0 → 0 |
+| übersehene Referenzfristen (kritisch) | 0 → 0 | 0 → 0 |
+
+- **Laufzeit:** Verarbeitung inkl. OCR dev 22,1 s → 22,2 s, test 14,9 s → 14,9 s. Keine messbare Änderung.
+- **Kritische Fehler einzeln:** keine falsche Frist aus einem persönlichen Datum, keine übersehene Referenzfrist, kein
+  falscher Kerntyp im Testsplit.
+
+### 40.5 Tests
+
+**Neu, synthetische Entwicklungsfälle getrennt vom Korpus:**
+- `tests/test_deadlines_kinds.py`: blosses Datum, Ereignis und Zeitraum (kein Vorschlag); ausdrückliche Frist; Fristende
+  mit Ereignis und Dauer; Termin (vor oder nach dem Datum); Fristbeginn ohne Datum; Fristdauer ohne bzw. mit Ereignis;
+  Geburtsdatum neben einer Frist; Textstelle erhalten.
+- `tests/test_classification_types.py`: Urteil/Beschluss, Schriftsatz mit Urteilszitat, Klage mit Abmahnung,
+  Bußgeld- und Widerspruchsbescheid, Gutachten, Protokoll, Vertrag, Rechnung, Mahnung; Gegenfälle (Erwähnung im Text,
+  „in Vollmacht“, Abmahnung, Urteilszitat); Anlage nur mit Kennzeichnung; OCR-Fehler in der Überschrift; Verweis auf
+  einen Bescheid; Unbekannt.
+- `tests/test_ai_providers_local.py`: Bezeichnung von Termin, Fristbeginn und Fristdauer im Matter-Kontext.
+
+**Vorher (erste Testfassung, auf dem unveränderten Code):** 21 von 22 Fristtests und 21 von 27 Klassifikationstests
+schlugen fehl. Die übrigen sechs Klassifikationsfälle sind Gegenfälle, die schon vorher richtig waren. Die später
+ergänzten Tests (Termin nach dem Datum, Fristbeginn, Verweis auf einen Bescheid) liefen nicht auf dem alten Code.
+
+**Angepasst, weil sie das alte Verhalten festhielten:**
+- `test_bare_date_without_keyword_gets_low_confidence` → kein Vorschlag;
+- drei Ausschnitt-Tests: Eingabe mit „bis zum“, die Prüfung der Fenster- und Absatzgrenze ist unverändert;
+- zwei Datenschutz-Tests: Ereignisdaten sind keine Vorschläge mehr. Die Prüfung, dass Geburts- und Todesdaten
+  ausgeschlossen bleiben und gespeicherte Altvorschläge bereinigt werden, ist unverändert.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Betroffene Testgruppen (Fristen, Klassifikation, Dokumente, Chat, Drafting, Export, Suche, Aufgaben, Posteingang, Akten, Datenschutz, Benchmark-Tests) | **1334 bestanden**, 0 fehlgeschlagen, 1 xfailed (bekannte Grenze) |
+| Nach der Bezeichnungs-Korrektur (Matter-Kontext, Datenschutz-Datums-Tests) | 114 bestanden |
+| Volle Suite (`memwatch.ps1`, einmal, vor der kleinen Bezeichnungs-Korrektur) | 4633 bestanden, **4 fehlgeschlagen = nur die bekannten Logo-Tests** (`test_design_refresh.py`), 1 übersprungen, 6 xfailed, 1 xpassed; mindestens 4,6 GB frei, kein Abbruch |
+
+### 40.6 Installierter Build (Neubau 14.10.2026, 23:35)
+
+- **Archivprüfung `bundlecheck_p21.py`:** alle Merkmale vorhanden (Extraktor, Klassifikator, Schema, Matter-Kontext).
+- **Echter Upload-Pfad** (Chat-Anhang in der sauberen synthetischen QA-Akte, Fang-Server, kein echtes Modell):
+
+| Dokument | Ergebnis |
+|---|---|
+| Bußgeldbescheid (DOCX) | **PASS**: Typ „Bescheid“. Vorschläge: Fristbeginn „zugestellt am 06.08.2026“ (ohne Fälligkeitsdatum), Fristdauer „innerhalb von zwei Wochen nach Zustellung“ (ohne Datum), Termin 25.08.2026 (Anhörung), Frist 31.08.2026 („zahlbar bis zum“). Briefdatum 03.08.2026 und Tattag 14.06.2026: kein Vorschlag. |
+| Malerrechnung (DOCX) | **PASS**: Typ „Rechnung“, nur die Frist 04.04.2026 („fällig am“). Rechnungsdatum und Leistungszeitraum: kein Vorschlag. |
+| Payload vor der Cloud-Grenze | **PASS**: „Möglicher Fristbeginn (Fristende offen)“, „Möglicher Termin“, „Mögliche Fristdauer (Fristende offen)“, „Mögliche Frist“ jeweils korrekt; kein Schlüssel |
+
+### 40.7 Restrisiken und Grenzen
+
+**Datenlage:**
+- Der Korpus ist klein: 33 Dokumente und 12 Referenzfristen.
+- Urteil/Beschluss und eine gekennzeichnete Anlage kommen im Korpus nicht vor. Für diese Typen gibt es nur
+  Unit-Belege und **keine belastbare Präzisionsaussage**.
+- Die Testwerte für „Bescheid“ sind wegen der dort gefundenen Regression nicht mehr vollständig unabhängig (§40.4).
+
+**Bekannte Fehlklassifikationen** (keine Regression, vorher ebenfalls falsch):
+- LE-D003/D4: Ein Schreiben mit „Schlussrechnung“ im einzigen Satz wird als „Rechnung“ eingestuft.
+- LE-D001/D5: Ein Anwaltsschreiben, das eine fristlose Kündigung nur androht, wird als „Kündigungsschreiben“ eingestuft
+  (vorher „Vollmacht“).
+- **Grund für beide:** Kurze Dokumente bestehen nur aus dem Kopf, und Erwähnungen sind dort nicht sicher von Titeln zu
+  trennen.
+
+**Verbleibende „Unbekannt“** (begründete Unsicherheit, kein falscher Typ): Testsplit LE-T001/D1 (Protokoll) und
+LE-T002/D2 (Bescheid).
+
+**Fristen:**
+- **Bekannter Fehlalarm, vorbestehend:** „Eichschein … gültig bis 31.12.2025“ (LE-T003) wird als Frist vorgeschlagen.
+  Es ist ein Gültigkeitsdatum, keine Frist.
+- **Mögliche Lücke:** Fristen in nicht erfassten Formulierungen (ohne „bis“, „spätestens“, „fällig“, „Frist“, „zum“
+  mit Beendigungsbezug) werden nicht mehr als blosses Datum vorgeschlagen. Das ist bewusst so (keine Frist aus einem
+  blossen Datum), kann aber eine echte Frist übersehen. Im Korpus wurde keine Referenzfrist übersehen (12/12).
+- **Termine:** Ob ein Termin vergangen ist oder bevorsteht, wird nicht geprüft.
+- **Keine Fristberechnung:** Fristenden werden nie aus Dauer und Ereignis berechnet. Steht das Ende nicht im Text,
+  bleibt es offen und verlangt eine anwaltliche Prüfung.
+- **Altvorschläge:** Vorschläge aus der Zeit vor dieser Änderung bleiben unverändert gespeichert, auch blosse
+  Ereignisdaten. Sie werden weder gelöscht noch umgedeutet und sind über die bestehende Prüfung (bestätigen oder
+  ablehnen) zu bereinigen.
+
+### 40.8 Legal-E2E-Benchmark (Arbeitsbaum `4d7981c` + §40, einmal ausgeführt, Ollama-Modell vorher entladen)
+
+| Kennzahl | zuletzt committetes Ergebnis (`e13bffe`) | jetzt |
+|---|---|---|
+| Fristen: Referenzdaten gefunden | dev 9/9, test 3/3 | dev 9/9, test 3/3 |
+| Vorschläge außerhalb der Referenz (alle mit Datum, Termine eingeschlossen) | dev 28 (davon 27 bekannte Falldaten), test 18 (17) | **dev 1** (Ortstermin, jetzt als Termin ausgewiesen), **test 1** (Eichschein „gültig bis“, bekannter Fehlalarm) |
+| Kritische Befunde, Klartext-Lecks, fremde Akte im Payload, blockierte Aufgaben | keine, 0, 0, keine | keine, 0, 0, keine |
+| Benötigte Werte, Schriftsätze, erfundene Fundstellen markiert | 29/29 und 20/20; 4/4 und 3/3; 8/8 und 6/6 | unverändert |
+| Aktenzuordnung | keine Fremdzuordnung | keine Fremdzuordnung; Aktenzeichen bzw. „Ihr Zeichen“ 5/5 |
+| Fremder Anhang | 7/7 blockiert | 7/7 blockiert |
+
+**Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
