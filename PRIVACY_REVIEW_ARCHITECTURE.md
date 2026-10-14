@@ -3942,8 +3942,10 @@ Konfliktfall jetzt als kritisch.
 
 **Offen (Owner-Entscheidung, nicht geändert, weil das die Automatik ausweiten würde):**
 - „Ihr Zeichen“/„Unser Zeichen“ werden nicht als Aktenzeichen erkannt; erkannt werden nur „Az.“ und „Aktenzeichen“.
+  → Entschieden und umgesetzt in §39 (P1.2): „Ihr Zeichen“ wird erkannt, „Unser Zeichen“ bewusst nicht.
 - Eine E-Mail von der bekannten Mandantenadresse erreicht allein 0,3 Punkte, also nicht einmal die Prüfschwelle von
-  0,4. Sie erscheint deshalb ohne Zuordnungsvorschlag.
+  0,4. Sie erscheint deshalb ohne Zuordnungsvorschlag. → §39: jetzt immer ein Vorschlag zur Prüfung, nie eine
+  Automatik.
 
 **QA Etappe 9:**
 - Matching-, Inbox- und Benchmark-Tests grün.
@@ -4686,5 +4688,160 @@ Akte; Fang-Server):**
   TestClient und führt das geänderte Browser-JavaScript nicht aus; der serverseitige Produktcode ist unverändert
   gegenüber `cc71f99` (bestanden, §37.6).
 - **Volle Suite:** auf diesem Stand nicht erneut ausgeführt.
+
+**Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
+
+## 39. P1.2: Aktenzuordnung – „Ihr Zeichen“, bekannte Absender, Mehrdeutigkeit (14.10.2026, Ausgang `ff879b8`)
+
+Nur synthetische Daten. Kein Modellaufruf: Die Zuordnung ist rein lokal (`app/matching`).
+
+### 39.1 Befund (reproduziert mit dem echten Matcher und der echten Vorschlagskarte, synthetische In-Memory-DB)
+
+| Fall | vorher |
+|---|---|
+| „Ihr Zeichen: \<eigenes Az.\>“ (unbekannter Absender) | kein Signal, kein Vorschlag (§34.10: 0/4) |
+| Gerichts-Az. vor „Ihr Zeichen“ | nur das **erste** Aktenzeichen wurde gelesen; das eigene war verdeckt |
+| **zwei Aktenzeichen verschiedener Akten** in einer Nachricht | **automatisch der zuerst genannten Akte zugeordnet, samt Anhängen**; das zweite wurde ignoriert |
+| bekannte Mandantenadresse allein | 0,3 < Prüfschwelle 0,4 → Entscheidung `no_match`; die Karte zeigte trotzdem einen Kandidaten |
+| bekannte Adresse, Mandantin mit **zwei** Akten | Karte zeigte eine Akte (30 %) mit Ein-Klick-„Übernehmen“; die gleich gut passende zweite Akte war unsichtbar |
+| Adresse von A + „Ihr Zeichen“ von B | Karte schlug die Akte von A vor; der Widerspruch wurde nicht erkannt |
+| **gelöschte Akte** (Soft-Delete) | vom Matcher weiter bewertet: Aktenzeichen und bekannter Absender → **automatisch in die gelöschte Akte**. Die manuelle Auswahl bot gelöschte Akten an, „Übernehmen“ nahm sie an. |
+
+**Ursachen im Code:**
+- `_MATTER_REFERENCE_PATTERN` kannte nur „Az.“ und „Aktenzeichen“.
+- Gelesen wurde nur der erste Treffer (`search`).
+- `email_match` allein lag unter der Prüfschwelle.
+- Die Karte zeigte nur `candidates[0]`.
+- `_score_all_matters`, `_load_assignable_matters` und `accept_matter_suggestion` ignorierten `deleted_at`; überall
+  sonst (API, Suche, lokale KI) wird danach gefiltert.
+
+### 39.2 Owner-Entscheidung
+
+Die Frage war, ob ein einzelnes „Az.: \<eigenes Az.\>“ von einem unbekannten Absender künftig nur noch ein
+Vorschlag mit Bestätigung sein soll (vorher automatisch, §34.10 4/4). Entscheidung: **ja.**
+
+Automatisch zugeordnet wird nur noch bei **zwei unabhängigen Signalen derselben Akte**: genanntes Aktenzeichen
+**und** bekannter Absender. Hinzu kommen wie bisher: keine Mehrdeutigkeit, kein Absender-Konflikt, ausreichende
+Klassifikation.
+
+### 39.3 Änderungen
+
+- **`app/matching/matcher.py`**
+  - **Aktenzeichen-Erkennung:** Erkannt werden „Ihr Zeichen“/„Ihre Zeichen“ („Ihr Az.“ und „Ihr Aktenzeichen“ waren
+    schon abgedeckt). „Unser Zeichen“ bleibt bewusst außen vor, weil es das Zeichen des Absenders ist.
+  - **Alle Aktenzeichen statt nur des ersten:** Treffen zwei Akten, sind beide gleich bewertet. Das ergibt die
+    bestehende Ambiguität und damit eine Prüfung.
+  - **Automatik nur bei Bestätigung durch zwei Signale** (`corroborated`); die Begründung nennt „Nur ein
+    Zuordnungssignal …“.
+  - **Bekannte Adresse allein:** immer `needs_review` (Vorschlag), nie `no_match` und nie eine Automatik.
+  - **Gelöschte Akten:** werden nicht bewertet.
+- **`app/web/router.py`**
+  - Die Vorschlagskarte nennt gleich gut passende weitere Akten (`alternative_titles`, gleiche Marge wie die
+    Ambiguität).
+  - Die manuelle Auswahl blendet gelöschte Akten aus.
+  - „Übernehmen“ beantwortet eine gelöschte Akte mit 404, wie die API.
+- **`app/web/templates/partials/message_detail.html`:** Hinweis „Mehrdeutig: Ebenso gut passt …“.
+- **`scripts/legal_bench/e2e.py`:** „korrekt“ heißt jetzt: richtige Akte zugeordnet **oder** zur Prüfung
+  vorgeschlagen. Neu gezählt werden `aktenzeichen_allein_automatisch` und `ihr_zeichen_allein_automatisch`.
+  Fremdzuordnung bleibt kritisch.
+
+**Unverändert und nicht gelockert:**
+- Prüfschwelle und Auto-Schwelle, Gewichte und Ambiguitätsmarge;
+- Konfliktregel (§34.10) und Klassifikationssperre;
+- die Vorschlagskarte wendet nichts an. Nur „Übernehmen“ oder die manuelle Auswahl ordnen zu.
+
+### 39.4 Tests
+
+**Neu:**
+- `test_matching_matcher.py`:
+  - „Ihr Zeichen“ in sechs Schreibweisen;
+  - mit bekanntem Absender automatisch;
+  - „Unser Zeichen“ nie;
+  - Gerichts-Az. davor;
+  - zwei Aktenzeichen → mehrdeutig;
+  - bekannte Adresse mit zwei Akten → mehrdeutig;
+  - Konflikt;
+  - unbekanntes Zeichen → `no_match`;
+  - zweite eigene Akte → genau diese;
+  - gelöschte Akte nie Kandidat.
+- `test_matching_service.py`:
+  - Aktenzeichen allein verschiebt keinen Anhang;
+  - zwei Aktenzeichen verschiedener Mandanten verschieben keinen Anhang.
+- `test_web_inbox.py`:
+  - Karte mit Mehrdeutigkeitshinweis bzw. ohne;
+  - gelöschte Akte weder in der Auswahl noch per „Übernehmen“.
+- `test_main_mail_ingestion.py`: Im echten Abrufpfad bleibt eine Nachricht mit Aktenzeichen von unbekanntem Absender
+  unzugeordnet (`matter_match_needs_review`).
+
+**Angepasst (sie hielten das alte Verhalten fest):**
+- Aktenzeichen allein → automatisch;
+- bekannte Adresse allein → `no_match`;
+- Service-, Audit- und Abruf-Tests mit Aktenzeichen allein: jetzt mit bekanntem Absender, ihr Zweck (Anhänge
+  verschieben, Audit) bleibt erhalten;
+- Benchmark-Test: zusätzlich „Ihr Zeichen“ 1/1 erkannt, Aktenzeichen allein 0/1 automatisch.
+
+**Vorher/Nachher:**
+- **Vorher:** Die neuen Tests liefen auf dem unveränderten Code (`ff879b8`, temporärer Worktree): 18 fehlgeschlagen.
+  Der Test zur gelöschten Akte, später ergänzt, schlug vor der Korrektur mit `auto_assigned` statt `no_match` fehl.
+- **Nachher:** alle grün.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Relevante Testgruppen (API, Audit, End-to-End, Mail-Abruf, Matching, Posteingang, Akten, Mandanten, Benchmark-Tests, Suche, Klassifikation), Endstand | **PASS**: 384 bestanden, 0 fehlgeschlagen |
+| Volle Suite (`memwatch.ps1`, einmal; Start vor der Korrektur der gelöschten Akten) | 4574 bestanden, **4 fehlgeschlagen = nur die bekannten Logo-Tests** (`test_design_refresh.py`), 1 übersprungen, 6 xfailed, 1 xpassed; mindestens 4,9 GB frei, kein Abbruch |
+
+### 39.5 Installierter Build (Neubau 14.10.2026, 20:34)
+
+- **Archivprüfung `bundlecheck_p12.py`:** alle 9 Merkmale vorhanden (Matcher, Router, Template).
+- **Testdaten:** synthetisch in der QA-Datenbank; nach der Prüfung vollständig entfernt (5 Nachrichten, 4 Akten,
+  2 Mandanten).
+- **Fang-Server:** 0 Anfragen. Die Zuordnung ist lokal.
+
+| Fall | Ergebnis (echte Vorschlagskarte im Posteingang) |
+|---|---|
+| „Ihr Zeichen“, unbekannter Absender | **PASS**: richtige Akte vorgeschlagen, keine Warnung |
+| zwei Aktenzeichen | **PASS**: Hinweis „Mehrdeutig: Ebenso gut passt …“ mit der zweiten Akte |
+| bekannte Adresse, Mandantin mit zwei Akten | **PASS**: Hinweis „Mehrdeutig“ mit der zweiten Akte |
+| Konflikt: Adresse A, „Ihr Zeichen“ B | **PASS**: B vorgeschlagen, Warnung nennt die Akte des Absenders |
+| Aktenzeichen einer gelöschten Akte, bekannter Absender | **PASS**: gelöschte Akte weder vorgeschlagen noch in der Auswahl; nur die aktive Akte des Absenders als Vorschlag (34 %) |
+| Ansehen der Karten | **PASS**: keine Nachricht zugeordnet |
+
+Nicht im installierten Build geprüft, durch Tests abgedeckt:
+- der echte Postfach-Abruf, mangels Testpostfach; abgedeckt durch `test_main_mail_ingestion.py` über die echte
+  Abrufschleife;
+- „Übernehmen“ einer gelöschten Akte per manipuliertem Formularwert; abgedeckt durch `test_web_inbox.py`.
+
+### 39.6 Restrisiken
+
+- **Mehr manuelle Bestätigungen:** Jede Nachricht mit Aktenzeichen von einem unbekannten Absender (Gericht,
+  Gegenseite, Versicherer) braucht jetzt eine Bestätigung im Posteingang. Das ist die gewollte Folge der
+  Owner-Entscheidung.
+- **Absender in mehreren Akten:** Eine bekannte Adresse, die in vielen Akten steht (z. B. ein Gegenanwalt als
+  Beteiligter), erzeugt Vorschläge mit Mehrdeutigkeitshinweis. Kein Risiko für Fehlzuordnung, aber mehr Hinweise.
+- **Abweichende Schreibweisen:** Aktenzeichen mit Leerzeichen oder anderer Schreibweise als `reference_number` werden
+  weiterhin nicht erkannt (exakter Abgleich, unverändert).
+- **Themen-Ähnlichkeit:** Sie erzeugt kleine Rauschkandidaten (Score ≈ 0,04). Sie bleiben unter der Prüfschwelle
+  und ohne Wirkung, wie bisher.
+
+### 39.7 Legal-E2E auf diesem Stand (Arbeitsbaum `ff879b8` + §39, einmal ausgeführt)
+
+Der Lauf startete erst, nachdem das lokale Ollama-Modell des Nutzers von selbst entladen war (8,7 GB frei). Zwei
+frühere Läufe (§38) waren mit geladenem Modell wegen Systemspeichers gestoppt worden.
+
+| Kennzahl | Ergebnis |
+|---|---|
+| Kritische Befunde, Klartext-Lecks, fremde Akte im Payload, blockierte Aufgaben | keine, 0, 0, keine |
+| Benötigte Werte, Schriftsätze, erfundene Fundstellen markiert | 29/29 und 20/20; 4/4 und 3/3; 8/8 und 6/6 |
+| Fremder Anhang | 7/7 blockiert |
+| Fremdzuordnung (kritisch) | **0** |
+| „Az.“ → richtige Akte zugeordnet oder vorgeschlagen | 5/5 |
+| „Ihr Zeichen“ → richtige Akte zugeordnet oder vorgeschlagen | **5/5** (vorher 0/4) |
+| Aktenzeichen allein automatisch zugeordnet („Az.“ / „Ihr Zeichen“) | **0/5 / 0/5** (Owner-Entscheidung) |
+| Konflikt (Adresse A, Aktenzeichen B) | 7/7 `needs_review` |
+| Korpus-E-Mails bekannter Mandantenadressen | 6/6 `needs_review`, also Vorschlag statt wie bisher `no_match`; keine automatische Zuordnung |
+
+**NICHT VERIFIZIERT im Benchmark:** welche Akte bei den Korpus-E-Mails vorgeschlagen wird. Der Runner protokolliert
+den Vorschlag nur für die Aktenzeichen-Proben. Dass ein bekannter Absender seine eigene Akte vorgeschlagen bekommt,
+ist durch die Tests in §39.4 und durch den installierten Build (§39.5) belegt.
 
 **Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.

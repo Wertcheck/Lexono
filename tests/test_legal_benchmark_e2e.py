@@ -132,6 +132,9 @@ def test_no_message_is_auto_assigned_to_a_foreign_matter(outcome: dict) -> None:
     assert matching["kritisch_fremdzuordnung"] == []
     assert matching["konflikt_entscheidungen"] and all(d.endswith("needs_review") for d in matching["konflikt_entscheidungen"])
     assert matching["aktenzeichen_korrekt_zugeordnet"] == "1/1"
+    # P1.2 (§39): "Ihr Zeichen" wird erkannt (vorher 0/n); ein Aktenzeichen allein ordnet nie automatisch zu
+    assert matching["ihr_zeichen_korrekt_zugeordnet"] == "1/1"
+    assert matching["aktenzeichen_allein_automatisch"] == "0/1" and matching["ihr_zeichen_allein_automatisch"] == "0/1"
 
 
 def test_document_of_another_matter_attached_to_a_chat_never_reaches_the_payload(outcome: dict) -> None:

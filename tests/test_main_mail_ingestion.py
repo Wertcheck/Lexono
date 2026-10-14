@@ -30,7 +30,7 @@ from sqlalchemy.pool import StaticPool
 import app.main as main_module
 from app.mail.base import FetchedMessage
 from app.main import _run_periodic_mail_ingestion
-from app.models import Client, Matter, Message
+from app.models import AuditEvent, Client, Matter, Message
 from app.models.base import Base
 
 
@@ -148,8 +148,9 @@ def test_configured_mailbox_ingests_and_auto_assigns_matching_message(
     eindeutigem Aktenzeichen-Treffer automatische Zuordnung, GENAU wie
     beim manuellen Aufruf (siehe tests/test_matching_*.py) - hier zum
     ERSTEN MAL tatsächlich automatisch ausgelöst statt nur isoliert
-    aufrufbar."""
-    client = Client(name="Beispiel Mandant")
+    aufrufbar. Seit P1.2 (§39, Owner-Entscheidung) nur bei Aktenzeichen UND
+    bekanntem Absender derselben Akte."""
+    client = Client(name="Beispiel Mandant", contact_email="max.mustermann@example.test")
     matter = Matter(client=client, title="Bestandsakte", reference_number="MUSTER-001")
     db_session.add_all([client, matter])
     db_session.commit()
@@ -168,6 +169,31 @@ def test_configured_mailbox_ingests_and_auto_assigns_matching_message(
     ).first()
     assert message is not None
     assert message.matter_id == matter.id
+
+
+def test_mailbox_message_with_reference_from_unknown_sender_stays_unassigned(
+    monkeypatch, db_session: Session
+) -> None:
+    """P1.2 (§39): im echten Abrufpfad legt ein Aktenzeichen allein (unbekannter Absender) die Nachricht nicht mehr
+    automatisch in die Akte - sie bleibt unzugeordnet mit Vorschlag im Posteingang (Bestaetigung durch die Kanzlei)."""
+    client = Client(name="Beispiel Mandant", contact_email="mandant@example.test")
+    matter = Matter(client=client, title="Bestandsakte", reference_number="MUSTER-001")
+    db_session.add_all([client, matter])
+    db_session.commit()
+
+    provider = FakeMailProvider([_synthetic_message(sender="unbekannt@example.test")])
+    monkeypatch.setattr(main_module, "build_mail_provider", lambda settings: provider)
+    session_factory = sessionmaker(bind=db_session.get_bind())
+
+    settings = _settings_with_mail(mail_attachment_storage_dir="data/mail_attachments_test")
+    asyncio.run(_run_one_iteration(settings, monkeypatch, session_factory=session_factory))
+
+    message = db_session.query(Message).filter_by(external_message_id="<synthetisch-14092026@example.test>").first()
+    assert message is not None
+    assert message.matter_id is None
+    match_events = [e.event_type for e in db_session.query(AuditEvent).filter_by(entity_id=message.id)
+                    if e.event_type.startswith("matter_match_")]
+    assert match_events == ["matter_match_needs_review"]
 
 
 def test_configured_mailbox_extracts_text_from_attachments(

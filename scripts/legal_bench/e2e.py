@@ -477,7 +477,10 @@ def _matching_probes(db, cases: list[dict], matter_ids: dict[str, str]) -> dict:
         db.add(message)
         db.commit()
         result = service.assign_matter(message, db)
-        return {"decision": result.decision, "matter_id": result.matter_id}
+        # P1.2 (§39, Owner-Entscheidung): ein Aktenzeichen allein ergibt einen Vorschlag zur Bestaetigung statt einer
+        # Automatik - "korrekt" heisst daher: richtige Akte zugeordnet ODER zur Pruefung vorgeschlagen
+        suggested = result.candidates[0].matter_id if result.decision == "needs_review" and result.candidates else None
+        return {"decision": result.decision, "matter_id": result.matter_id, "vorschlag": suggested}
 
     owner = {mid: cid for cid, mid in matter_ids.items()}
     rows: list[dict] = []
@@ -492,14 +495,13 @@ def _matching_probes(db, cases: list[dict], matter_ids: dict[str, str]) -> dict:
                          "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
         ref = case["matter"].get("reference_number")
         if ref:
-            outcome = assign("unbekannt@extern.example", f"Ihr Schreiben, Az. {ref}", "Bitte um Rückruf.")
-            rows.append({"probe": "aktenzeichen", "case": case["id"], "decision": outcome["decision"],
-                         "zugeordnet": owner.get(outcome["matter_id"]), "korrekt": outcome["matter_id"] == own,
-                         "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
-            outcome = assign("unbekannt@extern.example", f"Ihr Zeichen: {ref}", "Bitte um Rückruf.")
-            rows.append({"probe": "ihr_zeichen", "case": case["id"], "decision": outcome["decision"],
-                         "zugeordnet": owner.get(outcome["matter_id"]), "korrekt": outcome["matter_id"] == own,
-                         "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
+            for probe, subject in (("aktenzeichen", f"Ihr Schreiben, Az. {ref}"), ("ihr_zeichen", f"Ihr Zeichen: {ref}")):
+                outcome = assign("unbekannt@extern.example", subject, "Bitte um Rückruf.")
+                rows.append({"probe": probe, "case": case["id"], "decision": outcome["decision"],
+                             "zugeordnet": owner.get(outcome["matter_id"]), "vorgeschlagen": owner.get(outcome["vorschlag"]),
+                             "korrekt": own in (outcome["matter_id"], outcome["vorschlag"]),
+                             "automatisch": outcome["decision"] == "auto_assigned",
+                             "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
     # Konflikt: Mandant A (bekannte Adresse) nennt das Aktenzeichen der naechsten Akte B mit Aktenzeichen
     with_ref = [c for c in cases if c["matter"].get("reference_number")]
     for case in cases:
@@ -520,8 +522,11 @@ def _matching_probes(db, cases: list[dict], matter_ids: dict[str, str]) -> dict:
     return {
         "kritisch_fremdzuordnung": [r for r in rows if r.get("fremd")],
         "korpus_email_entscheidungen": sorted({f"{r['case']}/{r['doc']}:{r['decision']}" for r in rows if r["probe"] == "korpus_email"}),
+        # "korrekt": richtige Akte zugeordnet oder (seit P1.2, §39) zur Pruefung vorgeschlagen; "automatisch": ohne Pruefung
         "aktenzeichen_korrekt_zugeordnet": count("aktenzeichen", "korrekt"),
         "ihr_zeichen_korrekt_zugeordnet": count("ihr_zeichen", "korrekt"),
+        "aktenzeichen_allein_automatisch": count("aktenzeichen", "automatisch"),
+        "ihr_zeichen_allein_automatisch": count("ihr_zeichen", "automatisch"),
         "konflikt_automatisch_zur_fremden_akte": [f"{r['case']}->{r['zugeordnet']}" for r in rows
                                                   if r["probe"] == "konflikt" and r["decision"] == "auto_assigned"],
         "konflikt_entscheidungen": [f"{r['case']}:{r['decision']}" for r in rows if r["probe"] == "konflikt"],

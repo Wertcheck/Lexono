@@ -163,6 +163,13 @@
           Vorschlag beruht nur auf dem genannten Aktenzeichen. Bitte prüfen, ob die Nachricht wirklich zu dieser Akte gehört.
         </p>
       {% endif %}
+      {% if match_suggestion.alternative_titles %}
+        {# P1.2 (§39): gleich gut passende weitere Akten sichtbar machen - Mehrdeutigkeit nicht hinter einem Klick verstecken #}
+        <p class="match-suggestion-card__warning match-suggestion-card__warning--ambiguous" role="alert">
+          Mehrdeutig: Ebenso gut passt {% for title in match_suggestion.alternative_titles %}„{{ title }}“{% if not loop.last %}, {% endif %}{% endfor %}.
+          Bitte die richtige Akte prüfen – bei Bedarf unten manuell zuordnen.
+        </p>
+      {% endif %}
       <form method="post" action="/dashboard/inbox/{{ message.id }}/assign-matter" class="match-suggestion-card__form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="matter_id" value="{{ match_suggestion.matter_id }}" />

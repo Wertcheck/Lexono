@@ -2,13 +2,14 @@
 
 Signale (mit Gewichtung):
 1. **Aktenzeichen-Treffer** (0.9): exakter Treffer eines im Text gefundenen
-   Aktenzeichens gegen `Matter.reference_number`. Bewusst hoch gewichtet:
-   ein eindeutiges, exaktes Aktenzeichen ist das stärkste verfügbare
-   deterministische Signal und soll allein (bei fehlender Ambiguität und
-   ausreichender Dokumentklassifikation) für eine automatische Zuordnung
-   genügen können.
+   Aktenzeichens ("Az.", "Aktenzeichen", "Ihr Zeichen"; alle genannten, nicht
+   nur das erste) gegen `Matter.reference_number`. Das stärkste
+   deterministische Signal - seit P1.2 (§39, Owner-Entscheidung) genügt es
+   allein aber NICHT mehr für eine automatische Zuordnung, sondern nur
+   zusammen mit Signal 2 derselben Akte.
 2. **E-Mail-Treffer** (0.3): Absender-E-Mail entspricht einer bekannten
-   `Party.email` oder `Client.contact_email` der Akte.
+   `Party.email` oder `Client.contact_email` der Akte. Allein ergibt sie
+   seit P1.2 immer einen Vorschlag zur Prüfung (nie eine Automatik).
 3. **Beteiligten-Namens-Treffer** (0.2): Absendername ähnelt einem
    bekannten `Party.name` der Akte (unscharfer String-Vergleich).
 4. **Themen-Ähnlichkeit** (0.1): grobe Textähnlichkeit zwischen
@@ -39,8 +40,11 @@ from sqlalchemy.orm import Session
 from app.matching.schema import MatchCandidate, MatchResult
 from app.models import Matter, Message
 
+# P1.2 (§39): "Ihr Zeichen"/"Ihre Zeichen" nennt aus Sicht des Absenders das Zeichen der Kanzlei und damit das eigene
+# Aktenzeichen ("Ihr Az."/"Ihr Aktenzeichen" deckte "az"/"aktenzeichen" bereits ab). "Unser Zeichen" ist das Zeichen
+# des Absenders (Versicherer, Gegenseite) und bewusst KEIN Aktenzeichen der Kanzlei.
 _MATTER_REFERENCE_PATTERN = re.compile(
-    r"(?:az\.?|aktenzeichen)\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9/\-]{2,20})",
+    r"(?:az\.?|aktenzeichen|\bihre?\s+zeichen)\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9/\-]{2,20})",
     re.IGNORECASE,
 )
 _EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
@@ -117,7 +121,10 @@ class MatterMatchingService:
             and (best.score - candidates[1].score) < _AMBIGUITY_MARGIN
         )
 
-        if best.score < self.review_threshold:
+        # P1.2 (§39): die bekannte Adresse eines Mandanten/Beteiligten ist ein echtes Zuordnungssignal - allein (0,3)
+        # lag sie unter der Pruefschwelle und blieb ohne Entscheidung. Jetzt immer ein Vorschlag zur Pruefung, nie mehr.
+        known_sender_only = "email_match" in best.matched_signals
+        if best.score < self.review_threshold and not known_sender_only:
             return MatchResult(
                 decision="no_match",
                 confidence=best.score,
@@ -135,8 +142,14 @@ class MatterMatchingService:
             "email_match" in other.matched_signals for other in candidates[1:]
         )
 
+        # P1.2 (§39, Owner-Entscheidung): automatisch nur bei zwei unabhaengigen Signalen derselben Akte - genanntes
+        # Aktenzeichen UND bekannter Absender. Ein Aktenzeichen allein (Tippfehler, fremde Sache, Weiterleitung) oder
+        # eine bekannte Adresse allein ergibt einen Vorschlag; die Zuordnung samt Anhaengen bestaetigt die Kanzlei.
+        corroborated = "aktenzeichen_match" in best.matched_signals and "email_match" in best.matched_signals
+
         if (
             best.score >= self.auto_assign_threshold
+            and corroborated
             and not ambiguous
             and not sender_conflict
             and classification_ok
@@ -170,6 +183,11 @@ class MatterMatchingService:
                 f"Score liegt unter der Auto-Zuordnungs-Schwelle "
                 f"({self.auto_assign_threshold})."
             )
+        if not corroborated:
+            reason_parts.append(
+                "Nur ein Zuordnungssignal (Aktenzeichen ohne bekannten Absender dieser Akte bzw. bekannter Absender "
+                "ohne Aktenzeichen) - automatische Zuordnung erst bei beiden."
+            )
         reason_parts.append("Manuelle Prüfung erforderlich.")
 
         return MatchResult(
@@ -187,15 +205,20 @@ class MatterMatchingService:
         sender_email: str | None,
         sender_name: str | None,
     ) -> list[_ScoredMatter]:
-        found_reference = self._extract_matter_reference(text)
+        # P1.2 (§39): ALLE genannten Aktenzeichen, nicht nur das erste - sonst verdeckte ein Gerichts-Az. das eigene
+        # ("Az.: 7 O 123/24 ... Ihr Zeichen: ..."), und bei zwei Aktenzeichen verschiedener Akten wurde die Nachricht
+        # samt Anhaengen automatisch der zuerst genannten Akte zugeordnet. Mehrere getroffene Akten -> Ambiguitaet.
+        found_references = self._extract_matter_references(text)
         results: list[_ScoredMatter] = []
 
-        for matter in db.query(Matter).all():
+        # P1.2 (§39): geloeschte Akten (Soft-Delete) nie bewerten - wie in API, Suche und lokaler KI ueberall sonst;
+        # vorher konnte eine Nachricht samt Anhaengen automatisch in einer geloeschten Akte landen.
+        for matter in db.query(Matter).filter(Matter.deleted_at.is_(None)).all():
             score = 0.0
             signals: list[str] = []
 
-            if found_reference and matter.reference_number:
-                if found_reference.strip().lower() == matter.reference_number.strip().lower():
+            if found_references and matter.reference_number:
+                if matter.reference_number.strip().lower() in found_references:
                     score += 0.9
                     signals.append("aktenzeichen_match")
 
@@ -243,9 +266,8 @@ class MatterMatchingService:
         return results
 
     @staticmethod
-    def _extract_matter_reference(text: str) -> str | None:
-        match = _MATTER_REFERENCE_PATTERN.search(text)
-        return match.group(1) if match else None
+    def _extract_matter_references(text: str) -> set[str]:
+        return {match.group(1).strip().lower() for match in _MATTER_REFERENCE_PATTERN.finditer(text)}
 
     @staticmethod
     def _extract_email(sender: str | None) -> str | None:

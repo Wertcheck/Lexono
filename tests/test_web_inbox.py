@@ -1609,3 +1609,72 @@ def test_suggestion_card_has_no_warning_without_sender_conflict(
     response = client.get(f"/dashboard/inbox/{message.id}")
     assert "Automatische Zuordnung (Vorschlag)" in response.text
     assert "match-suggestion-card__warning" not in response.text
+
+
+def test_suggestion_card_shows_ambiguity_when_two_references_are_named(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """P1.2 (§39): nennt eine Nachricht die Aktenzeichen zweier Akten, zeigte die Karte bisher nur die erste mit
+    Ein-Klick-"Übernehmen" (und die Nachricht wurde sogar automatisch zugeordnet). Jetzt: Mehrdeutigkeit sichtbar."""
+    other_client = Client(name="Synthetischer Mandant Zwei", contact_email="zwei@example-testdomain.invalid")
+    other_matter = Matter(client=other_client, title="Werkvertrag Mandant Zwei", reference_number="LX-ZWEI-01")
+    db_session.add_all([other_client, other_matter])
+    message = Message(matter_id=None, direction="inbound", sender="unbekannt@example-testdomain.invalid",
+                      subject="Rückfrage", body_text="Aktenzeichen: 2025/0142-ESt. Ihr Zeichen: LX-ZWEI-01.")
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/inbox/{message.id}")
+
+    assert response.status_code == 200
+    assert "match-suggestion-card__warning--ambiguous" in response.text
+    assert "Einspruch Steuerbescheid 2025" in response.text and "Werkvertrag Mandant Zwei" in response.text
+    db_session.refresh(message)
+    assert message.matter_id is None  # Ansehen ordnet nie zu
+
+
+def test_suggestion_card_shows_ihr_zeichen_suggestion_without_ambiguity_note(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    message = Message(matter_id=None, direction="inbound", sender="unbekannt@example-testdomain.invalid",
+                      subject="Rückfrage", body_text="Ihr Zeichen: 2025/0142-ESt")
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/inbox/{message.id}")
+
+    assert "Automatische Zuordnung (Vorschlag)" in response.text
+    assert "Einspruch Steuerbescheid 2025" in response.text
+    assert "match-suggestion-card__warning--ambiguous" not in response.text
+
+
+def test_deleted_matter_is_neither_offered_nor_accepted(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """P1.2 (§39): die manuelle Auswahl bot geloeschte Akten an, und "Übernehmen" legte Nachricht samt Anhaengen in
+    eine geloeschte Akte. Jetzt: nicht in der Auswahl, ein manipulierter Formularwert ergibt 404 - nichts verschoben."""
+    from datetime import datetime, timezone
+
+    other_client = Client(name="Synthetischer Altmandant")
+    deleted_matter = Matter(client=other_client, title="Geloeschte Altakte", reference_number="DEL-7777",
+                            deleted_at=datetime.now(timezone.utc))
+    message = Message(matter_id=None, direction="inbound", sender="unbekannt@example-testdomain.invalid",
+                      subject="Rückfrage", body_text="Kein Aktenzeichen enthalten.")
+    document = Document(file_path="/tmp/anhang.pdf")
+    message.documents.append(document)
+    db_session.add_all([other_client, deleted_matter, message])
+    db_session.commit()
+
+    page = client.get(f"/dashboard/inbox/{message.id}")
+    assert "Geloeschte Altakte" not in page.text
+
+    response = client.post(
+        f"/dashboard/inbox/{message.id}/assign-matter",
+        data={"csrf_token": extract_csrf(page.text), "matter_id": deleted_matter.id},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 404
+    db_session.refresh(message)
+    db_session.refresh(document)
+    assert message.matter_id is None and document.matter_id is None

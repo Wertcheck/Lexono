@@ -33,7 +33,9 @@ def _matcher(auto=0.85, review=0.4) -> MatterMatchingService:
     return MatterMatchingService(auto_assign_threshold=auto, review_threshold=review)
 
 
-def test_exact_aktenzeichen_match_leads_to_auto_assignment(db_session: Session) -> None:
+def test_exact_aktenzeichen_match_alone_is_a_suggestion_not_an_assignment(db_session: Session) -> None:
+    """P1.2 (§39, Owner-Entscheidung): ein Aktenzeichen allein von einem unbekannten Absender ordnet nicht mehr
+    automatisch zu (vorher: "auto_assigned"), sondern schlaegt die richtige Akte zur Bestaetigung vor."""
     client = Client(name="Testmandant")
     matter = Matter(client=client, title="Testakte", reference_number="A-1001")
     db_session.add_all([client, matter])
@@ -50,14 +52,29 @@ def test_exact_aktenzeichen_match_leads_to_auto_assignment(db_session: Session) 
 
     result = _matcher().match_message(message, db_session)
 
+    assert result.decision == "needs_review"
+    assert result.matter_id is None
+    assert result.candidates[0].matter_id == matter.id
+    assert "aktenzeichen_match" in result.candidates[0].matched_signals
+    assert "Nur ein Zuordnungssignal" in result.reasoning
+
+
+def test_aktenzeichen_with_known_sender_of_the_same_matter_is_auto_assigned(db_session: Session) -> None:
+    client = Client(name="Testmandant", contact_email="mandant@example.test")
+    matter = Matter(client=client, title="Testakte", reference_number="A-1001")
+    db_session.add_all([client, matter])
+    db_session.commit()
+
+    message = Message(direction="inbound", sender="mandant@example.test", body_text="Az.: A-1001")
+    result = _matcher().match_message(message, db_session)
+
     assert result.decision == "auto_assigned"
     assert result.matter_id == matter.id
-    assert "aktenzeichen_match" in result.candidates[0].matched_signals
 
 
-def test_email_match_alone_is_below_default_review_threshold(db_session: Session) -> None:
-    """E-Mail-Treffer allein (Gewicht 0.3) liegt unter der Standard-
-    Review-Schwelle (0.4) - mit den Standardwerten also "no_match"."""
+def test_email_match_alone_is_a_suggestion_never_an_assignment(db_session: Session) -> None:
+    """P1.2 (§39): E-Mail-Treffer allein (Gewicht 0.3) lag unter der Standard-Review-Schwelle (0.4) und blieb ohne
+    Entscheidung ("no_match"). Jetzt: immer ein Vorschlag zur Pruefung - nie eine automatische Zuordnung."""
     client = Client(name="Testmandant")
     matter = Matter(client=client, title="Immobilienrecht Akte")
     party = Party(matter=matter, name="Max Mustermann", email="max@example.test")
@@ -70,8 +87,9 @@ def test_email_match_alone_is_below_default_review_threshold(db_session: Session
 
     result = _matcher().match_message(message, db_session)
 
-    assert result.decision == "no_match"
+    assert result.decision == "needs_review"
     assert result.matter_id is None
+    assert result.candidates[0].matter_id == matter.id
 
 
 def test_email_match_alone_triggers_review_with_lower_threshold(
@@ -274,4 +292,121 @@ def test_reference_with_matching_sender_is_still_auto_assigned(db_session: Sessi
     own = Message(direction="inbound", sender="a@beispielpost.example", subject="Rückfrage Az. A-2001", body_text="Frage.")
     unknown = Message(direction="inbound", sender="extern@beispielpost.example", subject="Az. B-3002", body_text="Frage.")
     assert _matcher().match_message(own, db_session).matter_id == matter_a.id
-    assert _matcher().match_message(unknown, db_session).matter_id == matter_b.id
+    # P1.2 (§39): unbekannter Absender mit Aktenzeichen -> nur noch Vorschlag der richtigen Akte
+    unknown_result = _matcher().match_message(unknown, db_session)
+    assert unknown_result.decision == "needs_review" and unknown_result.candidates[0].matter_id == matter_b.id
+
+
+# --- P1.2 (§39): "Ihr Zeichen", alle Aktenzeichen, bekannte Absender, Mehrdeutigkeit, Widersprueche -------------------
+
+
+def _two_clients(db_session: Session) -> tuple[Matter, Matter, Matter]:
+    """Mandantin A mit ZWEI Akten (gleiche Kontaktadresse), Mandant B mit einer Akte - synthetisch."""
+    client_a = Client(name="Mandantin A", contact_email="a@beispielpost.example")
+    client_b = Client(name="Mandant B", contact_email="b@beispielpost.example")
+    a1 = Matter(client=client_a, title="Mietsache A", reference_number="LX-0101")
+    a2 = Matter(client=client_a, title="Erbsache A", reference_number="LX-0102")
+    b1 = Matter(client=client_b, title="Kaufvertrag B", reference_number="LX-0201")
+    db_session.add_all([client_a, client_b, a1, a2, b1])
+    db_session.commit()
+    return a1, a2, b1
+
+
+@pytest.mark.parametrize("label", ["Ihr Zeichen:", "Ihre Zeichen:", "IHR ZEICHEN", "Ihr Zeichen.", "Ihr Az.:", "Ihr Aktenzeichen:"])
+def test_ihr_zeichen_is_recognised_as_own_reference(db_session: Session, label: str) -> None:
+    """Vorher 0/4 im Legal-E2E-Benchmark (§34.10): "Ihr Zeichen" wurde nicht als Aktenzeichen erkannt."""
+    _, _, b1 = _two_clients(db_session)
+    message = Message(direction="inbound", sender="extern@versicherung.example", body_text=f"{label} LX-0201")
+    result = _matcher().match_message(message, db_session)
+    assert result.candidates[0].matter_id == b1.id
+    assert "aktenzeichen_match" in result.candidates[0].matched_signals
+    assert result.decision == "needs_review"  # unbekannter Absender: nur Vorschlag
+
+
+def test_ihr_zeichen_with_known_sender_of_the_same_matter_is_auto_assigned(db_session: Session) -> None:
+    _, _, b1 = _two_clients(db_session)
+    message = Message(direction="inbound", sender="b@beispielpost.example", body_text="Ihr Zeichen: LX-0201")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "auto_assigned" and result.matter_id == b1.id
+
+
+def test_unser_zeichen_is_the_senders_reference_and_never_matches(db_session: Session) -> None:
+    """ "Unser Zeichen" ist das Zeichen des Absenders (z. B. Versicherer) - kein Aktenzeichen der Kanzlei."""
+    _two_clients(db_session)
+    message = Message(direction="inbound", sender="extern@versicherung.example", body_text="Unser Zeichen: LX-0201")
+    assert _matcher().match_message(message, db_session).decision == "no_match"
+
+
+def test_court_reference_before_own_reference_does_not_hide_it(db_session: Session) -> None:
+    """Vorher wurde nur das ERSTE Aktenzeichen gelesen - ein Gerichtsaktenzeichen davor verdeckte das eigene."""
+    _, _, b1 = _two_clients(db_session)
+    message = Message(direction="inbound", sender="extern@gericht.example",
+                      body_text="Az.: 7-O-123/24\nIhr Zeichen: LX-0201")
+    result = _matcher().match_message(message, db_session)
+    assert result.candidates[0].matter_id == b1.id and result.decision == "needs_review"
+
+
+def test_two_references_of_different_matters_are_ambiguous_never_auto(db_session: Session) -> None:
+    a1, _, b1 = _two_clients(db_session)
+    message = Message(direction="inbound", sender="extern@beispielpost.example",
+                      body_text="Az.: LX-0101, siehe auch Az.: LX-0201")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "needs_review" and result.matter_id is None
+    assert "Ambiguität" in result.reasoning
+    assert {c.matter_id for c in result.candidates[:2]} == {a1.id, b1.id}
+
+
+def test_known_sender_with_two_matters_is_ambiguous(db_session: Session) -> None:
+    """Bekannte Adresse von Mandantin A, die zwei Akten hat, ohne Aktenzeichen: Vorschlag, aber erkennbar mehrdeutig."""
+    a1, a2, _ = _two_clients(db_session)
+    message = Message(direction="inbound", sender="a@beispielpost.example", subject="Kurze Frage")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "needs_review" and result.matter_id is None
+    assert "Ambiguität" in result.reasoning
+    assert {c.matter_id for c in result.candidates[:2]} == {a1.id, a2.id}
+
+
+def test_known_sender_with_reference_of_another_client_is_a_conflict(db_session: Session) -> None:
+    """Widerspruechliche Signale: Adresse von Mandantin A, "Ihr Zeichen" der Akte von Mandant B."""
+    _, _, b1 = _two_clients(db_session)
+    message = Message(direction="inbound", sender="a@beispielpost.example", body_text="Ihr Zeichen: LX-0201")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "needs_review" and result.matter_id is None
+    assert result.candidates[0].matter_id == b1.id
+    assert "anderen Akte" in result.reasoning
+
+
+def test_unknown_reference_and_unknown_sender_is_no_match(db_session: Session) -> None:
+    _two_clients(db_session)
+    message = Message(direction="inbound", sender="extern@beispielpost.example", body_text="Ihr Zeichen: LX-9999")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "no_match" and result.matter_id is None
+    assert not any("aktenzeichen_match" in c.matched_signals for c in result.candidates)
+
+
+def test_known_sender_naming_her_second_matter_is_auto_assigned_to_exactly_that_matter(db_session: Session) -> None:
+    """Mandantin A nennt das Aktenzeichen ihrer ZWEITEN Akte: Aktenzeichen und bekannte Adresse passen zur selben Akte
+    (A2) - automatisch A2, nicht A1 (beide kennen die Adresse, nur A2 hat das Aktenzeichen)."""
+    _, a2, _ = _two_clients(db_session)
+    message = Message(direction="inbound", sender="a@beispielpost.example", body_text="Ihr Zeichen: LX-0102")
+    result = _matcher().match_message(message, db_session)
+    assert result.decision == "auto_assigned" and result.matter_id == a2.id
+
+
+def test_deleted_matter_is_never_a_candidate(db_session: Session) -> None:
+    """P1.2 (§39): geloeschte Akten (Soft-Delete) sind ueberall sonst ausgeblendet (API, Suche, lokale KI) - der Matcher
+    bewertete sie aber weiter. Eine Nachricht mit Aktenzeichen UND bekanntem Absender einer geloeschten Akte wurde samt
+    Anhaengen automatisch dorthin gelegt."""
+    from datetime import datetime, timezone
+
+    client = Client(name="Testmandant", contact_email="mandant@example.test")
+    deleted = Matter(client=client, title="Geloeschte Akte", reference_number="DEL-0001",
+                     deleted_at=datetime.now(timezone.utc))
+    db_session.add_all([client, deleted])
+    db_session.commit()
+
+    message = Message(direction="inbound", sender="mandant@example.test", body_text="Ihr Zeichen: DEL-0001")
+    result = _matcher().match_message(message, db_session)
+
+    assert result.decision == "no_match" and result.matter_id is None
+    assert all(c.matter_id != deleted.id for c in result.candidates)

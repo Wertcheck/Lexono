@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
@@ -30,7 +30,7 @@ from app.db.session import get_db
 from app.deadlines.extractor import PlaceholderDeadlineExtractor
 from app.deadlines.service import DeadlineAnalysisService
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME
-from app.matching.matcher import MatterMatchingService
+from app.matching.matcher import _AMBIGUITY_MARGIN, MatterMatchingService
 from app.matching.service import MatterAssignmentService
 from app.models import AuditEvent, Client, Document, Matter, Message, User
 from app.web.template_paths import TEMPLATES_DIR
@@ -244,6 +244,7 @@ def _load_assignable_matters(db: Session) -> list[Matter]:
         db.query(Matter)
         .join(Client, Matter.client_id == Client.id)
         .filter(Client.name != PLACEHOLDER_CLIENT_NAME)
+        .filter(Matter.deleted_at.is_(None))  # P1.2 (§39): geloeschte Akten nie zur Zuordnung anbieten
         .order_by(Client.name, Matter.title)
         .all()
     )
@@ -332,6 +333,15 @@ def _build_match_suggestion(db: Session, message: Message) -> dict | None:
         other = next((c for c in result.candidates[1:] if "email_match" in c.matched_signals), None)
         if other is not None:
             sender_matter = db.query(Matter).filter_by(id=other.matter_id).first()
+    # P1.2 (§39): gleich gut passende weitere Akten (z. B. Mandantin mit zwei Akten, zwei genannte Aktenzeichen) - die
+    # Karte zeigte bisher nur die erste mit Ein-Klick-"Übernehmen"; die Mehrdeutigkeit war nicht erkennbar.
+    alternative_titles = []
+    for other in result.candidates[1:]:
+        if best.score - other.score >= _AMBIGUITY_MARGIN:
+            break
+        other_matter = db.query(Matter).filter_by(id=other.matter_id).first()
+        if other_matter is not None:
+            alternative_titles.append(other_matter.title)
     return {
         "matter_id": matter.id,
         "matter_title": matter.title,
@@ -340,6 +350,7 @@ def _build_match_suggestion(db: Session, message: Message) -> dict | None:
         "matched_signals": best.matched_signals,
         "decision": result.decision,
         "sender_matter_title": sender_matter.title if sender_matter else None,
+        "alternative_titles": alternative_titles,
     }
 
 
@@ -550,6 +561,10 @@ def accept_matter_suggestion(
     Duplikat, falls schon einmal erfolgreich analysiert)."""
     message = get_or_404(db, Message, message_id, "Nachricht")
     target_matter = get_or_404(db, Matter, matter_id, "Akte")
+    if target_matter.deleted_at is not None:
+        # P1.2 (§39): wie in der API (app/api/routers/matters.py) - eine geloeschte Akte nimmt keine Nachricht samt
+        # Anhaengen mehr auf, auch nicht ueber einen manipulierten Formularwert
+        raise HTTPException(status_code=404, detail="Akte nicht gefunden")
 
     previous_matter_id = message.matter_id
     message.matter_id = target_matter.id
