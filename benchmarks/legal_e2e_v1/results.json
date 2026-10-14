@@ -1,7 +1,7 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T03:00:05+00:00",
- "git_commit": "eaf4654",
+ "run_at": "2026-10-14T03:20:55+00:00",
+ "git_commit": "ab869fe",
  "git_dirty_files": [],
  "corpus_sha256": "58e9bca109c6772c",
  "code_fingerprint": {
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 110.7,
+ "seconds_total": 122.6,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -93,13 +93,13 @@
    ],
    "laufzeit_dokument_s": {
     "n": 15,
-    "median": 1.16,
-    "max": 1.59
+    "median": 1.15,
+    "max": 1.63
    },
    "laufzeit_chat_s": {
     "n": 8,
-    "median": 1.79,
-    "max": 12.77
+    "median": 1.83,
+    "max": 12.85
    },
    "payload_zeichen_chat": {
     "n": 8,
@@ -108,8 +108,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 3.63,
-    "max": 23.34
+    "median": 3.66,
+    "max": 23.81
    },
    "payload_zeichen_schriftsatz": {
     "n": 3,
@@ -185,12 +185,12 @@
    "laufzeit_dokument_s": {
     "n": 13,
     "median": 1.11,
-    "max": 1.72
+    "max": 1.69
    },
    "laufzeit_chat_s": {
     "n": 6,
-    "median": 0.93,
-    "max": 1.13
+    "median": 0.94,
+    "max": 1.12
    },
    "payload_zeichen_chat": {
     "n": 4,
@@ -199,8 +199,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 1.47,
-    "max": 1.55
+    "median": 1.49,
+    "max": 1.51
    },
    "payload_zeichen_schriftsatz": {
     "n": 2,
@@ -210,7 +210,7 @@
    "laufzeit_suche_s": {
     "n": 3,
     "median": 0.02,
-    "max": 0.02
+    "max": 0.03
    },
    "erfundene_fundstellen_markiert": "0/4",
    "aufgabenfehler": []
@@ -435,6 +435,16 @@
    "kritisch": false
   }
  ],
+ "ocr_schlechter_scan": {
+  "dev": {
+   "ocr_werte_schlechter_scan": "12/12",
+   "fehlend": []
+  },
+  "test": {
+   "ocr_werte_schlechter_scan": "27/27",
+   "fehlend": []
+  }
+ },
  "results": [
   {
    "case": "LE-D001",
@@ -456,7 +466,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.19
     },
     "D2": {
      "format": "txt",
@@ -477,7 +487,7 @@
       "henrike.osterkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.11
     },
     "D3": {
      "format": "pdf",
@@ -513,7 +523,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.63
     },
     "D5": {
      "format": "docx",
@@ -533,7 +543,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.15
     }
    },
    "tasks": [
@@ -597,7 +607,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 5.04
+     "seconds": 4.77
     },
     {
      "id": "Q2",
@@ -643,7 +653,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.51
+     "seconds": 0.5
     },
     {
      "id": "Q3",
@@ -707,7 +717,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.79
+     "seconds": 1.83
     },
     {
      "id": "Q4",
@@ -822,7 +832,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 3.63
+     "seconds": 3.66
     },
     {
      "id": "Q5",
@@ -927,7 +937,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.55
     },
     "D3": {
      "format": "docx",
@@ -945,7 +955,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -1142,7 +1152,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.48
+     "seconds": 1.47
     },
     {
      "id": "Q4",
@@ -1234,7 +1244,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.61
     },
     "D2": {
      "format": "txt",
@@ -1250,7 +1260,7 @@
       "c.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D3": {
      "format": "scan",
@@ -1265,7 +1275,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.5
+     "seconds": 1.48
     },
     "D4": {
      "format": "docx",
@@ -1282,7 +1292,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
@@ -1397,7 +1407,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.77
+     "seconds": 12.85
     },
     {
      "id": "Q2",
@@ -1438,7 +1448,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 0.48
+     "seconds": 0.52
     },
     {
      "id": "Q3",
@@ -1536,7 +1546,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.87
+     "seconds": 10.94
     },
     {
      "id": "Q4",
@@ -1683,7 +1693,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 23.34
+     "seconds": 23.81
     },
     {
      "id": "Q5",
@@ -1771,7 +1781,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.61
+     "seconds": 1.59
     },
     "D2": {
      "format": "pdf",
@@ -1790,7 +1800,7 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D3": {
      "format": "docx",
@@ -1809,7 +1819,7 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -1909,7 +1919,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.93
+     "seconds": 0.94
     },
     {
      "id": "Q2",
@@ -1960,7 +1970,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.31
+     "seconds": 0.3
     },
     {
      "id": "Q3",
@@ -2083,7 +2093,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 1.18
+     "seconds": 1.13
     },
     {
      "id": "Q4",
@@ -2155,7 +2165,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.5
     },
     "D2": {
      "format": "pdf",
@@ -2170,7 +2180,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.06
     },
     "D3": {
      "format": "txt",
@@ -2473,7 +2483,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.47
+     "seconds": 1.49
     },
     {
      "id": "Q4",
@@ -2566,7 +2576,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.72
+     "seconds": 1.69
     },
     "D2": {
      "format": "pdf",
@@ -2626,14 +2636,14 @@
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.13
+     "seconds": 1.12
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.49
+     "seconds": 0.53
     },
     {
      "id": "Q3",
@@ -2645,7 +2655,7 @@
      "quellenintegritaet": {
       "status": "blockiert"
      },
-     "seconds": 1.55
+     "seconds": 1.51
     },
     {
      "id": "Q4",
@@ -2654,7 +2664,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
