@@ -1,7 +1,7 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T01:34:05+00:00",
- "git_commit": "711077d",
+ "run_at": "2026-10-14T02:04:34+00:00",
+ "git_commit": "bb6800c",
  "git_dirty_files": [],
  "corpus_sha256": "cc41845b9ab62d9b",
  "code_fingerprint": {
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 93.7,
+ "seconds_total": 110.7,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -91,6 +91,7 @@
     "LE-D003:person:Holzrahmenbaus",
     "LE-D003:person:Subunternehmer"
    ],
+   "erfundene_fundstellen_markiert": "0/6",
    "aufgabenfehler": []
   },
   "test": {
@@ -151,6 +152,7 @@
     "LE-T002:person:Testament",
     "LE-T002:person:Unbekannt"
    ],
+   "erfundene_fundstellen_markiert": "0/4",
    "aufgabenfehler": []
   }
  },
@@ -215,7 +217,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.2
     },
     "D4": {
      "format": "scan",
@@ -232,7 +234,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.49
+     "seconds": 1.51
     },
     "D5": {
      "format": "docx",
@@ -316,7 +318,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.67
+     "seconds": 4.97
     },
     {
      "id": "Q2",
@@ -362,7 +364,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.49
+     "seconds": 0.5
     },
     {
      "id": "Q3",
@@ -426,7 +428,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.8
+     "seconds": 1.82
     },
     {
      "id": "Q4",
@@ -440,6 +442,14 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": []
+     },
      "payload_chars": 4103,
      "pii_leaks": [],
      "cross_matter_values": [],
@@ -533,7 +543,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.84
+     "seconds": 3.67
     },
     {
      "id": "Q5",
@@ -542,7 +552,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q6",
@@ -622,7 +632,7 @@
       "Kerkhoff Logistik GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D2": {
      "format": "scan",
@@ -656,7 +666,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.11
     },
     "D4": {
      "format": "txt",
@@ -735,7 +745,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.11
+     "seconds": 1.13
     },
     {
      "id": "Q2",
@@ -762,7 +772,7 @@
        "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.53
+     "seconds": 0.55
     },
     {
      "id": "Q3",
@@ -776,6 +786,14 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": []
+     },
      "payload_chars": 4699,
      "pii_leaks": [],
      "cross_matter_values": [],
@@ -845,7 +863,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 0.78
+     "seconds": 1.48
     },
     {
      "id": "Q4",
@@ -937,7 +955,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.58
     },
     "D2": {
      "format": "txt",
@@ -953,7 +971,7 @@
       "c.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D3": {
      "format": "scan",
@@ -968,7 +986,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.5
+     "seconds": 1.51
     },
     "D4": {
      "format": "docx",
@@ -1001,7 +1019,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -1100,7 +1118,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.7
+     "seconds": 12.8
     },
     {
      "id": "Q2",
@@ -1141,7 +1159,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 0.52
+     "seconds": 0.5
     },
     {
      "id": "Q3",
@@ -1239,7 +1257,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.9
+     "seconds": 10.86
     },
     {
      "id": "Q4",
@@ -1253,6 +1271,14 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": []
+     },
      "payload_chars": 32497,
      "pii_leaks": [],
      "cross_matter_values": [],
@@ -1378,7 +1404,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 11.73
+     "seconds": 23.41
     },
     {
      "id": "Q5",
@@ -1466,7 +1492,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.61
     },
     "D2": {
      "format": "pdf",
@@ -1604,7 +1630,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.94
+     "seconds": 0.92
     },
     {
      "id": "Q2",
@@ -1655,7 +1681,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.33
+     "seconds": 0.31
     },
     {
      "id": "Q3",
@@ -1669,6 +1695,14 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": []
+     },
      "payload_chars": 2285,
      "pii_leaks": [],
      "cross_matter_values": [],
@@ -1770,7 +1804,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.61
+     "seconds": 1.11
     },
     {
      "id": "Q4",
@@ -1857,7 +1891,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.06
+     "seconds": 1.07
     },
     "D3": {
      "format": "txt",
@@ -1910,7 +1944,7 @@
       "§ 2325 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -1980,7 +2014,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.1
+     "seconds": 1.12
     },
     {
      "id": "Q2",
@@ -2041,7 +2075,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.46
+     "seconds": 0.47
     },
     {
      "id": "Q3",
@@ -2055,6 +2089,14 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": []
+     },
      "payload_chars": 3622,
      "pii_leaks": [],
      "cross_matter_values": [],
@@ -2152,7 +2194,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 0.78
+     "seconds": 1.49
     },
     {
      "id": "Q4",
@@ -2245,7 +2287,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.71
+     "seconds": 1.72
     },
     "D2": {
      "format": "pdf",
@@ -2261,7 +2303,7 @@
       "Jannik Brettschneider"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D3": {
      "format": "txt",
@@ -2296,7 +2338,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     }
    },
    "tasks": [
@@ -2305,14 +2347,14 @@
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.17
+     "seconds": 1.14
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.5
+     "seconds": 0.54
     },
     {
      "id": "Q3",
@@ -2321,7 +2363,10 @@
      "blocked_reasons": [
       "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
      ],
-     "seconds": 0.76
+     "quellenintegritaet": {
+      "status": "blockiert"
+     },
+     "seconds": 1.53
     },
     {
      "id": "Q4",
