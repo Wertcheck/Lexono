@@ -4006,3 +4006,60 @@ gescannten Schriftsätzen und Bescheiden waren damit für Suche, Fristen- und Zi
   - Korrektur: Die Abkürzung muss wie ein Gesetz enden (G/O/B/V); Rechtsformen und Währungswörter sind ausgeschlossen.
   - Weiterhin nicht erfasst (Grenze): römische Absätze („$ 823 I BGB“), „lit. a“-Ketten, „ff.“, „$§“ und andere
     Fehllesungen des Zeichens („S 24“, „8 24“; Häufigkeit nicht gemessen).
+
+**Nachtrag installierter Build `61509ab` (Fall 30):**
+- Ablauf: Ein schlechter Scan (`render_degraded_scan`, synthetischer Bußgeldbescheid) wurde als Chat-Anhang in der
+  QA-Instanz mit OCR verarbeitet und der Payload am Fang-Server ausgewertet.
+- „§ 24 StVG“ und „§ 25 StVG“ kommen korrekt an, kein „$“ im Payload.
+- Das Prüfskript meldet FAIL, aber nur wegen eines Buchstabenfehlers der OCR: „OWiG“ wurde als „OWIG“ gelesen. Das
+  Paragraphenzeichen davor ist korrekt.
+- Bewertung: PASS für die Korrektur, verbleibender OCR-Buchstabenfehler dokumentiert.
+- Normale Instanz wiederhergestellt (Health 200, kein Debug-Port, Fang-Server beendet).
+
+### 34.13 Zusammenfassung (Stand 14.10.2026, morgens)
+
+**Aufgebaut:**
+- Quellenregister (BLOCKIERT, siehe unten).
+- Korpus `legal_e2e_v1`: 6 synthetische Akten (3 Dev, 3 Test), 30 Dokumente, darunter 6 Scans und ein Vertrag mit
+  rund 50.000 Zeichen.
+- Validator mit Negativtests.
+- E2E-Runner über die echten Pfade: Import/OCR, Verarbeitung, Suche, Chat, Schriftsatz, Bearbeitung, Export,
+  Aktenzuordnung.
+- Proben: Quellenintegrität, fremder Anhang, schlechter Scan, Erhalt, Fehlalarm-Kandidaten, Laufzeit.
+- Regressionstests in der Suite.
+- Agent I (`agents/qa/AGENT.md`) übernimmt die Verantwortung; es gibt keinen neuen Agenten.
+
+**Gefunden und behoben (je mit Tests, Reviews und, wo App-Code betroffen war, installiertem Build):**
+
+| # | Befund | Art |
+|---|---|---|
+| 1–3 | Geburtsdatum ohne Bezeichnung bzw. zerteilt im Klartext (Fristausschnitt; Auszug langer Dokumente; Schreibweisen) | Leck |
+| 4 | Firmenname ohne Rechtsform teilweise im Klartext; vorbestehend: jedes „GmbH“ wurde zur Partei | Leck / Bedeutungsfehler |
+| 5 | Nachricht von Mandant A automatisch in die Akte von Mandant B (Absender ↔ Aktenzeichen im Konflikt), Karte ohne Warnung | Mandantentrennung |
+| 6 | OCR liest „§“ als „$“, Normzitate in Scans verloren | Quellenintegrität |
+
+**Gemessen, nicht behoben (Owner-Entscheidung):**
+- Fehlalarme der Maskierung zerstören Kernfakten; im Testfall LE-T003 führt das zur Fehlblockade aller Anfragen
+  (F1–F4, §34.6/§34.7).
+- Erfundene Fundstellen in Modellantworten werden nicht markiert, 0/10 (Q1–Q3, §34.8).
+- „Ihr Zeichen“ wird nicht erkannt; eine Mandanten-E-Mail allein liegt unter der Prüfschwelle (§34.10).
+- Fristvorschläge sind überwiegend Ereignisdaten.
+- Klassifikation „Unbekannt“ bei vielen Dokumenttypen.
+
+**BLOCKIERT:** Nutzungsrechte und URLs der 7 Registerquellen sind ungeprüft. Ein externer Abruf ist nicht erlaubt, und
+die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wird verwendet.
+
+**NICHT VERIFIZIERT:**
+- Antwortqualität und Kosten eines echten Modells (kein Live-Lauf ohne Freigabe).
+- Widerspruchserkennung durch „Entwurf prüfen“ (cloudbasiert).
+- Handschrift, Tabellen, mehrspaltige Scans.
+- Laufzeit mit Modell-Latenz.
+- Vollständige Leckfreiheit und rechtliche Konformität: ausdrücklich keine solche Aussage.
+
+**Nächste Schritte (Vorschlag):**
+1. Entscheidungen F (Fehlalarme) und Q (Fundstellenprüfung) treffen. Danach Umsetzung nur auf Dev-Fällen und mit neuen
+   Testfällen messen.
+2. Rechteprüfung der Registerquellen durch eine verantwortliche Person.
+3. Freigegebener Live-Lauf, nur mit synthetischen Daten und gesetztem Anbieter-Ausgabenlimit.
+4. Mehr Testfälle: Tabellen, Handschrift, E-Mail-Verläufe.
+5. Benchmark als festen Release-Schritt aufnehmen (P6).
