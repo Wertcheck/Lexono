@@ -4089,6 +4089,7 @@ entfernt (`remove_unlabelled_personal_dates`). Bezeichnete Daten bleiben für di
 die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wird verwendet.
 
 **NICHT VERIFIZIERT:**
+- Installierter Build für Leck 7 (Tabellen, Fall 31: Versand in der QA-Oberfläche fehlgeschlagen, im Prozess bestanden).
 - Antwortqualität und Kosten eines echten Modells (kein Live-Lauf ohne Freigabe).
 - Widerspruchserkennung durch „Entwurf prüfen“ (cloudbasiert).
 - Handschrift, Tabellen, mehrspaltige Scans.
@@ -4103,3 +4104,13 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
 4. Mehr Testfälle: Tabellen, Handschrift, E-Mail-Verläufe.
 5. Benchmark als festen Release-Schritt aufnehmen (P6).
 - QA Etappe 12: Datenschutz-Datums-Tests 74 grün; volle Suite 4473 bestanden, nur die 4 bekannten Logo-Fehler.
+- **Installierter Build `f1c2000`, Fall 31 (Erbentabelle als Chat-Anhang): NICHT VERIFIZIERT.**
+  - In der QA-Oberfläche meldete der Versand zweimal „Senden fehlgeschlagen“. Es gab keinen Cloud-Aufruf und damit
+    auch kein Leck.
+  - Der Kontrollfall 27 (gleicher UI-Ablauf, ohne Tabelle) bestand im selben Lauf.
+  - Dasselbe Tabellendokument lief im Prozess über den echten Chat-Pfad fehlerfrei: Payload vorhanden, kein
+    Geburtsdatum, „1/3“ und Verkehrswert erhalten.
+  - Ursache offen. Möglich ist ein Fehler im Upload/Versand bei Word-Tabellen im installierten Build oder ein
+    Zeitproblem des Prüfskripts.
+  - **Offener Punkt:** im installierten Build reproduzieren, mit Netzwerkantwort des Versands.
+  - Normale Instanz wiederhergestellt.
