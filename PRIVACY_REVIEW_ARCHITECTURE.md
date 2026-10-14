@@ -4113,4 +4113,8 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
   - Ursache offen. Möglich ist ein Fehler im Upload/Versand bei Word-Tabellen im installierten Build oder ein
     Zeitproblem des Prüfskripts.
   - **Offener Punkt:** im installierten Build reproduzieren, mit Netzwerkantwort des Versands.
+  - **Nachtrag:** Die echte Web-Upload-Route `/dashboard/chat/send` nimmt dasselbe Tabellen-DOCX im TestClient an:
+    HTTP 303, ein Payload, kein Geburtsdatum, „1/3“ erhalten (neuer Test in `test_web_chat.py`). Die serverseitige
+    Korrektur ist damit über die Web-Route belegt. Der UI-Fehler liegt wahrscheinlich clientseitig oder im
+    Prüfskript; das ist nicht geklärt.
   - Normale Instanz wiederhergestellt.

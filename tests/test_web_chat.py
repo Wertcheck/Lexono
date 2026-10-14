@@ -3899,3 +3899,39 @@ def test_normal_chat_answer_has_no_editor_link(client: TestClient, db_session: S
 
     assert "Im Editor öffnen" not in response.text
     assert "chat-document-panel" not in response.text
+
+
+def test_docx_with_birthdate_table_attachment_is_sent_without_birthdates(
+    client: TestClient, db_session: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """§34.14: Word-Dokument mit Erbentabelle (Spalte "Geburtsdatum") als Chat-Anhang ueber die echte Upload-Route -
+    der Versand gelingt und kein Geburtsdatum steht im Payload."""
+    import io
+
+    import docx
+
+    login_as_admin(db_session, client)
+    writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
+    monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
+    csrf = _csrf(client)
+    document = docx.Document()
+    document.add_paragraph("Erbschein (Auszug). Die Erblasserin wird beerbt zu je einem Drittel:")
+    rows = [("Erbe", "Geburtsdatum", "Erbquote"), ("Anna Beispiel", "03.04.1962", "1/3"), ("Bernd Beispiel", "17.09.1965", "1/3")]
+    table = document.add_table(rows=len(rows), cols=3)
+    for r, row in enumerate(rows):
+        for col, value in enumerate(row):
+            table.cell(r, col).text = value
+    buffer = io.BytesIO()
+    document.save(buffer)
+
+    response = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": csrf, "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
+        files={"documents": ("erbentabelle.docx", buffer.getvalue(),
+                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert len(writer.received_payloads) == 1
+    payload_json = writer.received_payloads[0].model_dump_json()
+    assert "1962" not in payload_json and "1965" not in payload_json and "1/3" in payload_json
