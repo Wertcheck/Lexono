@@ -4490,10 +4490,38 @@ Kein neues Feature, sondern die Behebung des FAIL aus §37.4. Gewählt wurde Opt
 | Prüfung | Ergebnis |
 |---|---|
 | Relevante Testgruppen: Fundstellenprüfung, Editor, Drafting, Entwurf-Export/Versionierung, Feedback/Kanzleiwissen, Legal-Benchmark-Tests, Web-Entwürfe/Schriftsatz, Exporte, Normzitate-Privacy | 485 bestanden, 0 fehlgeschlagen |
-| Volle Suite | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers gestoppt. Bis dahin (ca. 11 %, 519 Tests) 0 Fehler. Nicht erneut gestartet. |
+| Volle Suite (erster Lauf vor dem Commit) | Abgebrochen: Claude Code hat den Lauf wegen knappen Systemspeichers gestoppt. Bis dahin (ca. 11 %, 519 Tests) 0 Fehler. Ersetzt durch den Gesamt-QA-Lauf auf cc71f99 (unten). |
 | Legal-E2E (Arbeitsbaum 95c12fc + §37.6) | keine kritischen Befunde, 0 Klartext, 0 fremde Akte, 0 blockierte Aufgaben, benötigte Werte 29/29 und 20/20, Schriftsatz 4/4 und 3/3, erfundene Fundstellen markiert 8/8 und 6/6, keine Fremdzuordnung, fremder Anhang 7/7 blockiert |
-| Neue Fehler neben den 4 bekannten Logo-Tests | keine beobachtet (volle Suite siehe oben) |
+| Neue Fehler neben den 4 bekannten Logo-Tests | keine (Gesamt-QA-Lauf auf cc71f99, unten) |
 
 **QA-Umgebung:**
 - Testgesetze und Testeinträge im Kanzleiwissen entfernt.
 - Fang-Server und QA-Instanz beendet.
+
+**Gesamt-QA-Abschluss auf `cc71f99` (14.10.2026):**
+
+Sauberer Arbeitsbaum, abgesehen von den fremden Logo- und Asset-Änderungen, die nicht verändert oder wiederhergestellt
+wurden. HEAD entspricht `origin/main`.
+
+| Prüfung | Status | Ergebnis |
+|---|---|---|
+| Volle Suite (`memwatch.ps1`, `tests -q`, 9:15 min) | **PASS bis auf die bekannten Logo-Fehler** | 4551 bestanden, **4 fehlgeschlagen**, 1 übersprungen, 6 xfailed, 1 xpassed. Die Suite ist **nicht** fehlerfrei. |
+| Die 4 Fehler | bekannte Logo-Tests, keine neuen Fehler | `test_design_refresh.py`: `test_full_logo_lockup_assets_have_a_real_alpha_channel`, `test_dark_logo_icon_is_byte_identical_to_the_light_logo_icon`, `test_dark_logo_has_identical_overall_geometry_to_light_logo`, `test_dark_logo_wordmark_is_recolored_to_white`. Ursache: Die Logo-Dateien unter `assets/branding/` sind durch fremde Änderungen gelöscht. |
+| xpassed | kein neuer Befund | `test_known_limit_name_that_is_also_a_common_noun[Richter]` (nicht-striktes xfail, dokumentierte Grenze); identisch in allen früheren vollen Läufen |
+| F/Q-Tests: Komposita und Feldzeilen, Namen mit zweitem Signal, Pseudonymisierungs-Benchmark, Fundstellenprüfung, Editor, Drafting-Streaming, Legal-Benchmark-Tests, Normzitate | **PASS** | 305 bestanden, 0 fehlgeschlagen (2 xfailed und 1 xpassed sind dokumentierte Grenzen) |
+| Legal-E2E auf `cc71f99` ohne lokale Änderungen | **PASS** | keine kritischen Befunde, 0 Klartext-Lecks, 0 fremde Akte im Payload, keine blockierten Aufgaben, benötigte Werte 29/29 und 20/20, Schriftsätze 4/4 und 3/3, erfundene Fundstellen markiert 8/8 und 6/6, keine falsche Aktenzuordnung, fremder Anhang 7/7 blockiert |
+| Normale Instanz danach | **PASS** | Health 200, nur Port 8000 offen; Debug-Port 9333 geschlossen; kein Fang-Server (18080) |
+
+**Ressourcen:**
+- Vor dem Lauf wurde die normale Instanz regulär über das Fenster beendet. **Ein erzwungenes Beenden war nicht nötig.**
+- Freier Arbeitsspeicher: 7,9 GB vor dem Beenden der Instanz, 8,5 GB beim Start der Suite, mindestens 5,0 GB
+  während der Suite (Abbruchschwelle von `memwatch.ps1`: 1,5 GB, nicht erreicht), 4,8 GB nach dem Neustart der
+  Instanz.
+- Kein Abbruch, keine Wiederholung.
+
+**Offene Risiken (unverändert):**
+- „Klagefrist“ wird im Gesamt-Sachverhalt als Person fehlmaskiert. Eine Antwort mit diesem Wort wird korrekt
+  fail-closed blockiert (Beobachtung oben).
+- Im Artikel-Benchmark lecken 21 von 96 Namen nach Artikeln (§37.3).
+- „Messbeamter“ wird in einer eigenen DOCX-Zeile maskiert (§37.3).
+- Die 4 Logo-Tests bleiben rot, bis über die fremden Logo-Änderungen entschieden ist.
