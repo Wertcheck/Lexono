@@ -40,7 +40,7 @@ import itertools
 import re
 from functools import lru_cache
 
-from app.privacy.detectors import REFERENCE_LABEL_WORDS, DetectedSpan
+from app.privacy.detectors import POSSESSIVE_KINSHIP, REFERENCE_LABEL_WORDS, DetectedSpan
 
 _SPACY_MODEL_NAME = "de_core_news_lg"
 
@@ -198,6 +198,9 @@ _NEVER_ENTITY_WORDS = frozenset(
         # Sparkasse, Inhaber ..." - der Restrisiko-Scan hielt "Sparkasse" fuer eine Person und blockierte). Ganzwort-
         # Gleichheit: "Sparkasse Hamburg" bleibt als laengerer Treffer geschuetzt.
         "sparkasse",
+        # Systemlabel (§34.15): Lexono schreibt nicht klassifizierte Dokumente als "[Unbekannt] ..." in den Sachverhalt
+        # (local_ai_provider); das Zweitsignal hielt das Adjektiv fuer einen Eigennamen (Legal-E2E-Benchmark, 6 Akten).
+        "unbekannt",
     }
 )
 # Bezeichnungen von Kennnummern (Sicherheitspruefung 13.10.2026, gemessen) werden NICHT als Liste gefuehrt, sondern
@@ -593,6 +596,118 @@ def is_derivational_compound(word: str) -> bool:
     return any(lower[match.end() :] in _LEGAL_COMPOUND_HEADS for match in _DERIVATIONAL_LINK.finditer(lower))
 
 
+# Sach-/Rollen-Komposita OHNE Ableitungsfuge (§34.15, Legal-E2E-Benchmark §34.6: "Reparatur|dauer", "Tagebuch|nummer",
+# "Schlaf|zimmer", "Schicht|leiters", "Haus|grundstücks", "Allein|erbin" wurden als Person/Ort maskiert; im Testfall
+# LE-T003 erkannte der Restrisiko-Scan "Mess|beamter" in anderem Kontext erneut und blockierte jede Anfrage).
+# Gleiches Prinzip wie oben (geschlossene Klasse von Kopfnomen, kein Namens- oder Ortsbestandteil): bewusst NICHT
+# -mann, -meister, -berg, -hof, -stein, -schein, -recht, -ort, -ende, -haus, -feld, -bach, -burg, -dorf. Zusaetzlich muss
+# der Vorderteil (ggf. ohne Fugen-s/-es/-n/-en) ein dem Modell bekanntes Wort mit mindestens vier Buchstaben sein
+# ("Albrecht": Vorderteil "Alb" zu kurz, Kopf "recht" ohnehin nicht in der Klasse). Gilt NICHT nach Anrede oder
+# Rollenwort (siehe `_titled_name_spans`, `detect_document_convention_names`): "Herr Waldleiter" bleibt geschuetzt.
+# Unabhaengiges Red-Team-Review (§34.15): Kopfnomen, die auch NACHNAMEN bilden (-leiter: "Hochleiter", "Sonnleiter";
+# -zimmer, -kosten, -schaden, -frist, -dauer, ...), liessen blosse Nachnamen ohne Anrede im Klartext durch (11 von 13
+# Saetzen). Daher zwei Klassen: SICHERE Kopfnomen (abstrakte Dokument-/Verwaltungsbegriffe, bilden keine Nachnamen) und
+# NAMENSNAHE Kopfnomen - letztere nur, wenn das GANZE Wort dem Modell als Wort bekannt ist UND die Modell-Probe 0 ergibt
+# ("Reparaturdauer", "Zahlungsfrist"); "Holzleiter" (Wort und Nachname, Probe 3) und "Schlafzimmer" (Probe 2) bleiben maskiert.
+_COMMON_COMPOUND_HEADS = frozenset(
+    {
+        "nummer", "nummern", "notiz", "notizen", "mitteilung", "mitteilungen", "vergütung", "vergütungen",
+        "grundstück", "grundstücks", "grundstücke", "geschoss", "geschosses", "abteilung", "abteilungen", "beamter",
+        "beamten", "beamtin", "erbin", "bescheid", "bescheids", "protokoll", "protokolls", "bericht", "berichts",
+        "unterlagen", "vertrag", "vertrags", "rechnung", "gutachten", "antrag", "erklärung", "urkunde", "vollmacht",
+        "anzeige", "forderung", "zahlung", "zahlungen",
+    }
+)
+_NAME_PRONE_COMPOUND_HEADS = frozenset(
+    {
+        "leiter", "leiters", "leiterin", "zimmer", "zimmers", "dauer", "kosten", "frist", "fristen", "termin", "betrag",
+        "summe", "schaden", "schadens", "wohnung", "fläche",
+    }
+)
+_MIN_COMPOUND_MODIFIER = 4
+# Erbrechtliche Rollen ("Vor|erbin", "Mit|erbe", "Allein|erbin"): der Vorderteil ist ein Praefix - geschlossene Menge.
+_INHERITANCE_HEADS = frozenset({"erbin", "erbe", "erben"})
+_INHERITANCE_PREFIXES = frozenset({"vor", "nach", "mit", "allein", "ersatz", "schluss", "haupt"})
+
+
+def _known_modifier(modifier: str) -> bool:
+    """Vorderteil (ggf. ohne Fugenelement) ist ein bekanntes Wort - oder selbst aus zwei bekannten Woertern zusammengesetzt
+    ("Brutto|monat|s|vergütung")."""
+    forms = [modifier]
+    for joint in ("es", "en", "s", "n"):
+        if modifier.endswith(joint):
+            forms.append(modifier[: -len(joint)])
+    for form in forms:
+        if len(form) >= _MIN_COMPOUND_MODIFIER and _model_knows(form):
+            return True
+        for split in range(_MIN_COMPOUND_MODIFIER, len(form) - _MIN_COMPOUND_MODIFIER + 1):
+            if _model_knows(form[:split]) and _model_knows(form[split:]):
+                return True
+    return False
+
+
+@lru_cache(maxsize=20000)
+def is_common_compound(word: str) -> bool:
+    if not word.isalpha() or len(word) < 7:
+        return False
+    lower = word.lower()
+    for split in range(3, len(lower) - 3):
+        head = lower[split:]
+        if head in _INHERITANCE_HEADS and lower[:split] in _INHERITANCE_PREFIXES:
+            return True
+        if split < _MIN_COMPOUND_MODIFIER:
+            continue
+        safe = head in _COMMON_COMPOUND_HEADS and _known_modifier(word[:split])
+        name_prone = head in _NAME_PRONE_COMPOUND_HEADS and _model_knows(word)
+        # In BEIDEN Klassen zusaetzlich: das Modell erkennt das Wort in KEINEM neutralen Namensrahmen als Person.
+        # Red-Team Runde 2: ohne diese Bedingung gingen erfundene Namen mit "sicherem" Kopfnomen ("Waldnotiz",
+        # "Kirchbericht", "Steinerbin", Probe 5) im Klartext hinaus; Fachwoerter wie "Mietvertrag", "Aktennotiz" haben 0.
+        if (safe or name_prone) and _name_probe_score(word) == 0:
+            return True
+    return False
+
+
+@lru_cache(maxsize=20000)
+def is_safe_head_compound(word: str) -> bool:
+    """Nur sichere Kopfnomen (fuer die Kategorie "ort": namensnahe Kopfnomen bilden auch Ortsnamen, "Rosenzimmer")."""
+    if not word.isalpha() or len(word) < 7:
+        return False
+    lower = word.lower()
+    return _name_probe_score(word) == 0 and any(
+        lower[split:] in _COMMON_COMPOUND_HEADS and _known_modifier(word[:split])
+        for split in range(_MIN_COMPOUND_MODIFIER, len(lower) - 3)
+    )
+
+
+# Feldbezeichnung, deren Wert NUR aus Titeln/Personenplatzhaltern bzw. einem Namen besteht und dann endet ("Messbeamter:
+# Polizeiobermeister Jannik Brettschneider" -> im Restrisiko-Scan "Messbeamter: [PERSON_04] [BETEILIGTER_02]"). Die
+# Bezeichnung ist eine Rolle, kein Name (Legal-E2E LE-T003: die Modell-Probe hielt "Messbeamter" fuer einen Namen und der
+# Restrisiko-Scan blockierte JEDE Anfrage der Akte). Bewusst eng: der Feldwert muss bis zum Feldende (Zeilenende,
+# Doppel-Leerzeichen, Satzende, Komma) ausschliesslich aus Platzhaltern, Titeln oder grossgeschriebenen Namenswoertern
+# bestehen - eine Sprecherzeile im Protokoll ("Hochleiter: Ich war dort") geht mit Fliesstext weiter und bleibt geprueft.
+_PERSON_VALUE_TOKEN = (
+    r"(?:\[(?:PERSON|BETEILIGTER|MANDANT|GEGNER|ANWALT)_\d+\]|Herrn?|Frau|Dr\.|Prof\.|Dipl\.-Ing\.|"
+    r"[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?)"
+)
+_ROLE_LABEL_AFTER = re.compile(
+    r":[ \t]*" + _PERSON_VALUE_TOKEN + r"(?:[ \t]+" + _PERSON_VALUE_TOKEN + r"){0,3}(?=[ \t]*(?:$|\n|[ \t]{2}|[.,;]))"
+)
+_HAS_PERSON_PLACEHOLDER = re.compile(r"\[(?:PERSON|BETEILIGTER|MANDANT|GEGNER|ANWALT)_\d+\]")
+
+
+def is_role_label_before_person(text: str, end: int) -> bool:
+    """True, wenn das Wort, das bei `end` endet, eine Feldbezeichnung ist, deren Wert nur eine (bereits ersetzte) Person
+    ist. Verlangt mindestens einen Personenplatzhalter im Feldwert - im ersten Durchlauf (noch keine Platzhalter) greift
+    die Regel daher nicht; sie wirkt nur im Restrisiko-Scan, wo die Person bereits sicher ersetzt ist."""
+    match = _ROLE_LABEL_AFTER.match(text, end)
+    return bool(match and _HAS_PERSON_PLACEHOLDER.search(match.group()))
+
+
+def is_technical_compound(word: str) -> bool:
+    """Fachwort-Kompositum (mit oder ohne Ableitungsfuge) - kein Name. Nur fuer Treffer OHNE Anrede/Rollenwort."""
+    return is_derivational_compound(word) or is_common_compound(word)
+
+
 @lru_cache(maxsize=50000)
 def _restore_word(word: str) -> tuple[tuple[str, int, int], ...] | None:
     """Umlautform eines unbekannten Wortes als Folge (Zeichen, Start, Ende) im ORIGINALwort, oder None.
@@ -699,8 +814,15 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             if not any(extra.start < other.end and other.start < extra.end for other in spans)
         )
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
-    spans = drop_statute_abbreviations(text, spans)
+    spans = drop_possessive_kinship(drop_statute_abbreviations(text, spans))
     return [*propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled), *id_spans]
+
+
+# Possessiv + Verwandtschaftswort (§34.15, Legal-E2E-Benchmark: "Mein Sohn soll nichts erhalten." -> "[PERSON_nn] soll
+# nichts erhalten", das Weitertragen maskierte zusaetzlich jedes "Mein"). Nur wenn der GANZE Treffer genau aus diesen zwei
+# Woertern besteht: "Mein Sohn Lukas Brandhuber" ist ein laengerer Treffer und bleibt geschuetzt.
+def drop_possessive_kinship(spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    return [s for s in spans if not (s.category == "person" and POSSESSIVE_KINSHIP.fullmatch(s.value.strip()))]
 
 
 # Gesetzesabkuerzung direkt nach einem Normzitat (Folgezyklus 13.10.2026, scripts/bench_statute_citations.py: "nach § 7 StVG"
@@ -779,7 +901,9 @@ def detect_probed_names(text: str) -> list[DetectedSpan]:
         word = token.text
         if len(word) < _NAME_PROBE_MIN_LENGTH or not word.isalpha() or not word[0].isupper() or word.isupper():
             continue
-        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_technical_compound(word):
+            continue
+        if is_role_label_before_person(text, token.idx + len(word)):
             continue
         previous = doc[token.i - 1] if token.i else None
         if any(c.i < token.i and c.pos_ in _NOUN_MODIFIER_POS for c in token.children) or (
@@ -1088,7 +1212,7 @@ def detect_feminine_context_names(text: str) -> list[DetectedSpan]:
         word = token.text
         if len(word) < 3 or not word.isalpha() or not word[0].isupper() or word.isupper():
             continue
-        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_technical_compound(word):
             continue
         words_before = [t for t in doc[: token.i] if not t.is_space]
         if not words_before:
@@ -1133,7 +1257,7 @@ def detect_article_names(text: str) -> list[DetectedSpan]:
         previous = doc[token.i - 1] if token.i else None
         if previous is None or previous.lower_ not in _ARTICLES or previous.pos_ != "DET":
             continue
-        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_derivational_compound(word):
+        if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_technical_compound(word):
             continue
         if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
             spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
@@ -1157,10 +1281,12 @@ def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
         word = token.text
         if token.pos_ != "PROPN" or len(word) < 3 or not word[0].isupper() or word.isupper():
             continue
-        if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS or is_derivational_compound(word):
+        if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS or is_technical_compound(word):
             continue
         if _is_identifier_label(word):
             continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Patientennummer [KENNUNG_01]"), wie _collect_spans
+        if is_role_label_before_person(text, token.idx + len(word)):
+            continue  # Rollenbezeichnung vor bereits ersetzter Person ("Messbeamter: [PERSON_04]"), siehe oben
         if word in _PROTOCOL_LABELS and text[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Rollenpraefix des Gespraechsverlaufs ("Assistent: ..."), kein Name
         spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
@@ -1200,6 +1326,12 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
             continue  # "Flur 3", "Blatt 12345" sind Grundbuchangaben, kein Ort (§23; Blattnummer maskiert detect_grundbuch)
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
+        if category == "person" and is_role_label_before_person(text, end):
+            continue  # Rollenbezeichnung vor bereits ersetzter Person ("Messbeamter: [PERSON_04]"), siehe is_role_label_before_person
+        if category in ("person", "organisation") and is_common_compound(value.strip()):
+            continue  # Sach-/Rollen-Kompositum ohne Ableitungsfuge, siehe `is_common_compound`
+        if category == "ort" and is_safe_head_compound(value.strip()):
+            continue  # nur sichere (Dokument-)Kopfnomen - kein Ortsnamenbestandteil
         if category in ("person", "organisation") and is_derivational_compound(value.strip()):
             # Fachwort-Kompositum, kein Name - siehe `is_derivational_compound`. Organisation: ein EINZELNES Ableitungswort
             # ("Zustellungsurkunde", "Versicherungskammer") identifiziert niemanden; ein echter Organisationsname ist ein

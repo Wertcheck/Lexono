@@ -299,8 +299,8 @@ def find_review_candidates(
             continue
         if pn._is_identifier_label(word):
             continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Schadennummer [KENNUNG_01]", §22) - kein Name
-        if pn.is_derivational_compound(word):
-            continue  # Ableitungs-Kompositum ("Raeumungsfrist") - kein Name, siehe presidio_ner.is_derivational_compound
+        if pn.is_technical_compound(word):
+            continue  # Fachwort-Kompositum ("Raeumungsfrist", "Reparaturdauer") - kein Name, siehe presidio_ner
         if not _is_bare(doc, token):
             continue
         if _SYSTEM_LABEL_LINE.search(neutral[: token.idx]):

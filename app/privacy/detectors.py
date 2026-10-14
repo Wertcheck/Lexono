@@ -19,6 +19,17 @@ _GERMAN_MONTHS = (
 )
 
 
+# Possessiv + Verwandtschaftswort (§34.15): "Mein Sohn" ist kein Name. Gemeinsame Definition fuer die NER-Nachfilterung
+# (presidio_ner.drop_possessive_kinship) und die regelbasierte Namensheuristik des Gateways (security_check).
+POSSESSIVE_KINSHIP = re.compile(
+    r"(?:[Mm]ein|[Dd]ein|[Ss]ein|[Ii]hr|[Uu]nser|[Ee]uer)(?:e|er|en|em|es)?\s+"
+    r"(?:Sohn|Sohnes|Söhne|Tochter|Töchter|Vater|Vaters|Mutter|Eltern|Bruder|Bruders|Brüder|Schwester|Schwestern|Kind|"
+    r"Kinder|Kindes|Enkel|Enkelin|Enkelkinder|Onkel|Tante|Neffe|Nichte|Cousin|Cousine|Großvater|Großmutter|Opa|Oma|"
+    r"Ehemann|Ehefrau|Mann|Frau|Partner|Partnerin|Lebensgefährte|Lebensgefährtin|Schwiegersohn|Schwiegertochter|"
+    r"Stiefsohn|Stieftochter|Stiefvater|Stiefmutter)"
+)
+
+
 @dataclass
 class DetectedSpan:
     category: str

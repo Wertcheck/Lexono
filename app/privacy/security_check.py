@@ -30,7 +30,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
-from app.privacy.detectors import DetectedSpan, detect_all
+from app.privacy.detectors import POSSESSIVE_KINSHIP, DetectedSpan, detect_all
 from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.privacy.pseudonymizer import PseudonymMapping
 from app.privacy.security_check_schema import SecurityCheckResult
@@ -279,6 +279,10 @@ def _find_possible_unrecognized_names(
         # selbst noch kein Nachname - die naechste Schleifeniteration prueft
         # dieses zweite Rollenwort dann seinerseits als Praefix.
         if word1_is_role_prefix and word2.group().lower() in _ROLE_OR_TITLE_PREFIX_WORDS:
+            continue
+        # Possessiv + Verwandtschaftswort ("Mein Sohn", "Unsere Tochter") ist kein Vor-/Nachname (§34.15) - dieselbe
+        # geschlossene Definition wie in der NER-Nachfilterung; ein folgender Name bildet ein eigenes Paar und bleibt geprueft.
+        if POSSESSIVE_KINSHIP.fullmatch(f"{word1.group()} {word2.group()}"):
             continue
         if pos_tags is not None or entity_types is not None:
             if not _is_name_like_word(

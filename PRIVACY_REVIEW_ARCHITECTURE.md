@@ -4118,3 +4118,99 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
     Korrektur ist damit über die Web-Route belegt. Der UI-Fehler liegt wahrscheinlich clientseitig oder im
     Prüfskript; das ist nicht geklärt.
   - Normale Instanz wiederhergestellt.
+
+## 35. P0-Arbeitspaket F: Fehlmaskierungen juristischer Begriffe (14.10.2026, Ausgang `d0b1c74`)
+
+Nur synthetische Daten, kein externer Modellaufruf. Bezug: Befund und Optionen F1–F4 in §34.6/§34.7.
+
+### 35.1 Ursachenanalyse (Diagnose je Fehlalarm, welcher Detektor ihn erzeugt)
+
+| Klasse | Stufe | Beispiele (Legal-E2E-Benchmark) | Ursache |
+|---|---|---|---|
+| A | „sicher“, automatisch maskiert | Reparaturdauer, Tagebuchnummer, Unfallmitteilung, Schlafzimmer, Schichtleiters, Alleinerbin, Hausgrundstücks, Messbeamter, „Mein Sohn“, „[Unbekannt]“ | NER (`de_core_news_lg`) und Zweitsignale (`detect_unlabelled_proper_nouns`, `detect_probed_names`, `detect_article_names`) auf Komposita ohne Ableitungsfuge, Possessiv + Verwandtschaftswort, Systemlabel |
+| B | „unsicher“ (Rückfragestufe, `review.py`) | „bei Grün“, Schimmel, Testament, Andernfalls | im Chat (`ask`) wird der Anwalt gefragt, im Entwurf (`mask`) vorsichtshalber maskiert |
+| C | Fehlblockade LE-T003 | „Messbeamter“ | Klasse-A-Wort, das erst der Restrisiko-Scan im pseudonymisierten Kontext meldet (fail-closed) |
+
+### 35.2 Bewertete Optionen und Entscheidung
+
+| Option | Datenschutz | Inhaltsqualität | Entscheidung |
+|---|---|---|---|
+| F1 nichts tun | unverändert | Kernfakten gehen verloren | verworfen |
+| F2 Präposition-/Artikelregel | mittleres Leckrisiko („laut Schneider“, Artikel-Benchmark: 21/96 Namen nach Artikel lecken bereits) | hoch | verworfen |
+| F3 freie Wortliste | „Grün“, „Schimmel“ sind echte Nachnamen; pauschal | mittel | verworfen |
+| F4 Rückfrage | keins | – | besteht bereits für Klasse B im Chat; keine Änderung, Lockerung von `mask` wäre pauschal |
+| **Gewählt: strukturelle Ursachenbehebung für Klasse A** | siehe Messung | gezielt | umgesetzt, in zwei Red-Team-Runden verschärft |
+
+**Umsetzung (`app/privacy/presidio_ner.py`, `detectors.py`, `security_check.py`, `review.py`):**
+- **Komposita (`is_common_compound`):** Erweitert den geprüften Präzedenzfall `is_derivational_compound` auf Komposita
+  ohne Ableitungsfuge. Bedingungen:
+  - Kopfnomen aus einer **geschlossenen** Klasse;
+  - bekannter Vorderteil mit mindestens 4 Buchstaben (oder aus zwei bekannten Wörtern);
+  - Modell-Namensprobe = 0 (das Modell erkennt das Wort in keinem neutralen Namensrahmen als Person);
+  - namensnahe Kopfnomen (-leiter, -zimmer, -dauer, -kosten, -frist, …) nur, wenn das ganze Wort im Modellvokabular steht;
+  - erbrechtliche Rollen mit geschlossenem Präfix (Vor-/Mit-/Allein- + -erbin/-erbe).
+- **Geltungsbereich:** Basis-NER, Zweitsignale und Rückfrage-Kandidaten. **Nicht** nach Anrede oder Rollenwort („Herr
+  Waldleiter“ bleibt geschützt). Für Orte nur mit sicheren Kopfnomen.
+- **Possessiv + Verwandtschaftswort (`POSSESSIVE_KINSHIP`):** Der Treffer muss genau „Mein Sohn“ o. ä. sein. Dieselbe
+  Definition gilt in der Regelheuristik des Gateways; dort wird genau dieses Wortpaar übersprungen, das Folgepaar mit
+  einem Namen bleibt geprüft.
+- **Feldbezeichnung vor ersetzter Person (`is_role_label_before_person`):** Gilt nur, wenn der Feldwert bis zum
+  Feldende ausschließlich aus Personenplatzhaltern oder Titeln besteht. Wirkt also nur im Restrisiko-Scan; eine
+  Sprecherzeile mit Fließtext bleibt geprüft.
+- **`unbekannt`:** Systemlabel „[Unbekannt]“ der Dokumenttypen, als Ganzwort-Ausnahme.
+
+**Red-Team-Reviews (unabhängig):**
+- **Runde 1:** Die erste Fassung ließ blosse, kompositaartige Nachnamen ohne Anrede durch („Hochleiter“,
+  „Rosenzimmer“, „Steinkosten“: 11 von 13 Sätzen im Klartext, Baseline 0). Daraufhin wurden die Kopfnomen geteilt
+  (namensnahe nur mit Vokabular).
+- **Runde 2:** Auch „sichere“ Kopfnomen ließen erfundene Namen durch („Waldnotiz“, „Kirchbericht“, „Steinerbin“:
+  11 von 14). Daraufhin wurde die Namensprobe = 0 für alle Klassen verlangt. Die gemessenen Probewerte überlappen sonst
+  (Fachwörter 0–5, Namensformen 1–5); nur 0 trennt.
+- Alle Red-Team-Sätze sind dauerhafte Negativtests in `tests/test_privacy_compound_terms.py`. Kein Satz geht im Klartext
+  hinaus.
+
+### 35.3 Messung vorher/nachher (identische Benchmarks, Ausgang `d0b1c74` vs. finale Fassung)
+
+| Benchmark | vorher | nachher |
+|---|---|---|
+| `bench_name_detection` (1100 Namensfälle): Lecks / Blocks | 0 / 0 | 0 / 0 |
+| `bench_article_noun_persons`: Namenslecks / maskierte Fachwörter | 21/96 / 8/240 | 21/96 / 8/240 |
+| `bench_name_followups`: Folgeerwähnung / Artikel-Lecks / Fehlalarme | 0 / 32/138 / 3/22 | unverändert |
+| `pseudonymization_v1`: Lecks (bekannte Grenzen) / Fehlalarme | 8 / 7 | 8 / 7 |
+| Legal-E2E: kritische Befunde | keine | keine |
+| Legal-E2E Test: Fehlalarm-Kandidaten | 22 | 17 (Reparaturdauer, Alleinerbin, „Mein“, „Mein Sohn“, „Unbekannt“ entfallen) |
+| Legal-E2E Dev: Fehlalarm-Kandidaten | 37 | 37 |
+| LE-T003 blockiert | 3/3 | **3/3 (offen, siehe 35.4)** |
+
+Keine neuen Lecks in irgendeinem Benchmark. Die Wirkung der finalen Fassung ist **bewusst klein**; die erste Fassung
+hätte mehr Fehlalarme beseitigt, aber Namen freigegeben.
+
+### 35.4 Restrisiken und offene Punkte
+
+- **LE-T003 bleibt fail-closed blockiert (kein Leck).**
+  - Ursache 1: Im echten Dokument verbindet die PDF-Umbruchlogik (`_reflow_soft_wraps`) die Zeile „Messbeamter:
+    Polizeiobermeister …“ mit der Folgezeile; das Feldende geht verloren.
+  - Ursache 2: Das Modell hält „Messbeamter“ für einen Namen (Probe 4), in derselben Form wie die erfundenen Namen
+    der Red-Team-Runde 2.
+  - Eine Freigabe würde entweder Rollen-Komposita mit hoher Namensprobe freigeben (nachweislich leckgefährlich) oder
+    den Restrisiko-Scan lockern. Beides ist ausgeschlossen. Der Klartext ist im sauberen Feldfall belegt behoben (Test).
+  - **Offen:** Feldgrenzen bei der PDF-Aufbereitung erhalten; das ist eine eigene Änderung der Dokumentaufbereitung.
+- **Klasse B unverändert:** „bei Grün“, „Testament“, „Schimmel“ werden im Entwurf (`mask`) weiter maskiert und im Chat
+  erfragt. Auflösung nur über die Rückfrage-Entscheidung des Anwalts (F4).
+- **Konservative Grenzen:** „Schlafzimmer“ (Probe 2), „Tagebuchnummer“ (4), „Hausgrundstücks“ (5),
+  „Wiederherstellungsdauer“ (nicht im Vokabular) bleiben maskiert. Inhaltsverlust in der sicheren Richtung.
+- **Restrisiko der Freigabe:** Ein realer, seltener Nachname, der wie ein Fachkompositum mit Namensprobe 0 aufgebaut
+  ist und ohne Anrede steht, würde nicht mehr maskiert. In beiden Red-Team-Runden und allen Namensbenchmarks wurde kein
+  solcher Fall gefunden; vollständige Freiheit ist NICHT bewiesen.
+
+### 35.5 QA
+
+| Prüfung | Status |
+|---|---|
+| Neue Tests `test_privacy_compound_terms.py` (54): Fachwörter lesbar, Komposita-Nachnamen mit Titel, blosse Namensformen beider Red-Team-Runden, Possessiv, Feldbezeichnung | PASS |
+| Privacy-, Security- und Benchmark-Tests (1651) | PASS |
+| Volle Suite: 4528 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
+| Benchmarks vorher/nachher (35.3), ohne neue Lecks | PASS |
+| Zwei unabhängige Red-Team-Reviews; alle bestätigten Lecks vor dem Commit behoben | PASS |
+| LE-T003 entblockt | **offen (35.4)** |
+| Installierter Build | NICHT VERIFIZIERT |
