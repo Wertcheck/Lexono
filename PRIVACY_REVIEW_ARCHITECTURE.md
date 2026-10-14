@@ -4180,14 +4180,14 @@ Nur synthetische Daten, kein externer Modellaufruf. Bezug: Befund und Optionen F
 | Legal-E2E: kritische Befunde | keine | keine |
 | Legal-E2E Test: Fehlalarm-Kandidaten | 22 | 17 (Reparaturdauer, Alleinerbin, „Mein“, „Mein Sohn“, „Unbekannt“ entfallen) |
 | Legal-E2E Dev: Fehlalarm-Kandidaten | 37 | 37 |
-| LE-T003 blockiert | 3/3 | **3/3 (offen, siehe 35.4)** |
+| LE-T003 blockiert | 3/3 | 3/3 vor, **0/3 nach** dem Nachtrag 35.6 |
 
 Keine neuen Lecks in irgendeinem Benchmark. Die Wirkung der finalen Fassung ist **bewusst klein**; die erste Fassung
 hätte mehr Fehlalarme beseitigt, aber Namen freigegeben.
 
 ### 35.4 Restrisiken und offene Punkte
 
-- **LE-T003 bleibt fail-closed blockiert (kein Leck).**
+- **LE-T003 – inzwischen behoben, siehe 35.6.** Stand vor dem Nachtrag: fail-closed blockiert (kein Leck).
   - Ursache 1: Im echten Dokument verbindet die PDF-Umbruchlogik (`_reflow_soft_wraps`) die Zeile „Messbeamter:
     Polizeiobermeister …“ mit der Folgezeile; das Feldende geht verloren.
   - Ursache 2: Das Modell hält „Messbeamter“ für einen Namen (Probe 4), in derselben Form wie die erfundenen Namen
@@ -4212,7 +4212,7 @@ hätte mehr Fehlalarme beseitigt, aber Namen freigegeben.
 | Volle Suite: 4528 bestanden, nur die 4 bekannten Logo-Fehler | PASS |
 | Benchmarks vorher/nachher (35.3), ohne neue Lecks | PASS |
 | Zwei unabhängige Red-Team-Reviews; alle bestätigten Lecks vor dem Commit behoben | PASS |
-| LE-T003 entblockt | **offen (35.4)** |
+| LE-T003 entblockt | PASS (Nachtrag 35.6) |
 | Installierter Build | NICHT VERIFIZIERT |
 
 ## 36. P0-Arbeitspaket Q: erfundene oder ungeprüfte Fundstellen (14.10.2026)
@@ -4290,3 +4290,50 @@ Gesetz installiert. Mit amtlich importiertem BGB lautet die Stufe „im amtliche
 - **Installierter Build:** NICHT VERIFIZIERT.
 - QA: `test_citation_check.py` 13, Streaming-/Benchmark-Tests grün; volle Suite 4541 bestanden, nur die 4 bekannten
   Logo-Fehler. Unabhängiges Review mit 7 bestätigten Befunden, alle behoben.
+
+### 35.6 Nachtrag: LE-T003 entblockt – Feldgrenze bei der Dokumentaufbereitung (Ursachenbehebung)
+
+**Ursache der verbliebenen Blockade (§35.4):** Die PDF-Umbruchlogik `_reflow_soft_wraps` verband die Feldzeile
+„Messbeamter: Polizeiobermeister Jannik Brettschneider“ (mindestens 50 Zeichen, ohne Satzzeichen am Ende) mit der
+Folgezeile „Eichschein des Messgeräts …“. Das Feldende ging verloren. Der Restrisiko-Scan hielt „Messbeamter“ deshalb
+für einen weiteren Namen und blockierte jede Anfrage der Akte.
+
+**Korrektur (`app/ai_providers/local_ai_provider.py`):**
+- Eine **namensartige** Feldzeile wird nicht mehr mit einer groß beginnenden Folgezeile verbunden. Namensartig heißt:
+  Bezeichnung aus 1–3 Wörtern, „:“, dann ausschließlich 1–5 Titel- oder Namenswörter bis zum Zeilenende.
+- Sätze mit Doppelpunkt und umbrochene Namen werden weiter normal verbunden.
+- Damit greift die enge Regel `is_role_label_before_person` (nur Kategorie Person).
+- **Kein Privacy-Gate, kein Fail-Closed und keine Pseudonymisierungsregel wurde gelockert.**
+
+**Unabhängiges Review in zwei Runden:**
+- **Runde 1:** Die erste Fassung erfasste jede Zeile mit Doppelpunkt und zerteilte Sätze sowie umbrochene Namen
+  (Qualität, kein Leck). Daraufhin wurde die Regel auf namensartige Feldwerte verschärft.
+- **Runde 1, zweiter Befund:** Die NER etikettiert die Bezeichnung kontextabhängig als Ort. Die zunächst ergänzte
+  Ausnahme für „ort“ gab im Restrisiko-Scan echte Ortsnamen vor einem Personenplatzhalter frei. Sie war für LE-T003
+  **nicht nötig** und wurde wieder entfernt.
+- **Runde 2:** keine neuen Lecks; Satz- und Namensumbrüche korrekt.
+
+**Ergebnis (identische Benchmarks gegen die Ausgangsbasis `d0b1c74`):**
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| LE-T003: Anfragen ohne Cloud-Anfrage (blockiert) | 3/3 | **0/3** |
+| Test-Split: Schriftsatz und Export | 2/3 | 3/3 |
+| Test-Split: benötigte Werte im Payload | 14/14 | 20/20 |
+| Test-Split: `keep` | 13/13 | 19/19 |
+| Klartext im Payload / kritische Befunde | 0 / keine | 0 / keine |
+| Namens-, Artikel-, Folgeerwähnungs- und Pseudonymisierungs-Benchmarks | siehe 35.3 | unverändert, keine neuen Lecks |
+
+Die Fehlalarm-Kandidaten im Test-Split steigen von 22 auf 26, weil LE-T003 jetzt überhaupt Payloads erzeugt; seine
+Maskierungen waren vorher hinter der Blockade unsichtbar. Fünf Kandidaten in T001/T002 entfallen.
+
+**Tests:**
+- `test_field_lines_are_not_joined_with_the_next_field_or_sentence`
+- `test_sentence_with_colon_and_wrapped_names_are_still_joined`
+- `test_protocol_field_line_through_document_preparation_does_not_block` (mit und ohne Nachbarsatz, über die echte
+  Dokumentaufbereitung und das Gateway)
+
+**Restrisiko:** Bleibt eine Feldbezeichnung in anderer Aufbereitung (z. B. OCR mit anderer Zeilenstruktur) unbezeichnet,
+kann der Restrisiko-Scan weiter fail-closed blockieren. Das ist die sichere Richtung.
+- QA Nachtrag 35.6: volle Suite 4545 bestanden, nur die 4 bekannten Logo-Fehler; Benchmarks gegen die Ausgangsbasis
+  ohne neue Lecks.

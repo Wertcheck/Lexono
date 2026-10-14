@@ -1327,6 +1327,8 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
         if value.strip().lower() in _NEVER_ENTITY_WORDS:
             continue
         if category == "person" and is_role_label_before_person(text, end):
+            # Bewusst NICHT "ort" (Review §35.6: haette echte Ortsnamen vor einem Personenplatzhalter im Restrisiko-Scan
+            # freigegeben; fuer LE-T003 nicht noetig - die erhaltene Feldgrenze genuegt)
             continue  # Rollenbezeichnung vor bereits ersetzter Person ("Messbeamter: [PERSON_04]"), siehe is_role_label_before_person
         if category in ("person", "organisation") and is_common_compound(value.strip()):
             continue  # Sach-/Rollen-Kompositum ohne Ableitungsfuge, siehe `is_common_compound`

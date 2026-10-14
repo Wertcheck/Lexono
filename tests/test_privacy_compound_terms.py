@@ -176,3 +176,21 @@ def test_speaker_label_with_free_text_is_still_checked() -> None:
     assert not is_role_label_before_person("Hochleiter: Ich war dort.", len("Hochleiter"))
     assert not is_role_label_before_person("Hochleiter: [PERSON_01] war dort.", len("Hochleiter"))
     assert is_role_label_before_person("Messbeamter: [PERSON_04] [BETEILIGTER_02]  Eichschein", len("Messbeamter"))
+
+
+
+@pytest.mark.parametrize("prefix", ["", "Messung Nr. 37 um 17:24 Uhr, gemessen 77 km/h.\n"])
+def test_protocol_field_line_through_document_preparation_does_not_block(prefix: str) -> None:
+    """Review §35.6: LE-T003-Muster (neue Namen) ueber die echte Dokumentaufbereitung - mit und ohne Nachbarsatz. Die
+    Feldgrenze bleibt erhalten, die Bezeichnung blockiert weder als Person noch als Ort; der Name bleibt maskiert."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    raw = (prefix + "Messprotokoll Lasermessung\nMessbeamter: Polizeiobermeister Ole Sandbrinker-Wendelstein\n"
+           "Eichschein des Messgeräts gültig bis 31.12.2025.")
+    result = ClaudePrivacyGateway().prepare_request(
+        purpose="chat_response", sachverhalt="Akte: Beispielakte\n[Protokoll] " + _document_excerpt(raw).text,
+        anwaltliche_anmerkungen="Fasse zusammen.", review_mode="mask",
+    )
+    assert result.allowed, result.reasons
+    payload = json.dumps(result.payload.model_dump(), ensure_ascii=False)
+    assert "Sandbrinker" not in payload and "31.12.2025" in payload

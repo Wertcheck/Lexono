@@ -624,3 +624,30 @@ def test_name_split_across_a_line_break_after_the_title_is_joined_before_pseudon
         "Die Begutachtung der Lichtkuppel und der Dämmung erfolgt durch den Schiedsgutachter Dr.\nWiebe nach Abnahme."
     )
     assert "Dr. Wiebe" in joined
+
+
+
+def test_field_lines_are_not_joined_with_the_next_field_or_sentence() -> None:
+    """§35.6 (Legal-E2E LE-T003): eine lange Feldzeile "Messbeamter: Polizeiobermeister Ole Sandbrinker" wurde mit der
+    Folgezeile verbunden; das Feldende ging verloren. Feldzeilen bleiben getrennt, ausser die Folgezeile setzt klein fort."""
+    from app.ai_providers.local_ai_provider import _reflow_soft_wraps
+
+    text = (
+        "Messbeamter: Polizeiobermeister Ole Sandbrinker-Wendelstein\n"
+        "Eichschein des Messgeräts gültig bis 31.12.2025.\n"
+        "Betreff: Ihre Anfrage zur Mieterhöhung und zur Betriebskostenabrechnung des Jahres\n"
+        "2025 und der Vorjahre"
+    )
+    reflowed = _reflow_soft_wraps(text)
+    assert "Sandbrinker-Wendelstein\nEichschein" in reflowed
+    assert "des Jahres 2025 und der Vorjahre" in reflowed  # Fortsetzung ohne Grossbuchstaben wird weiter verbunden
+
+
+
+def test_sentence_with_colon_and_wrapped_names_are_still_joined() -> None:
+    """Review §35.6: nur namensartige Feldzeilen bleiben getrennt - Saetze mit Doppelpunkt werden weiter verbunden."""
+    from app.ai_providers.local_ai_provider import _reflow_soft_wraps
+
+    text = ("Am 12.03.2026 erklärte er gegenüber der Kanzlei schriftlich: Die Zahlung von 4.000 Euro\n"
+            "Erfolgt nicht mehr in diesem Jahr.")
+    assert "4.000 Euro Erfolgt" in _reflow_soft_wraps(text)

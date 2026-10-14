@@ -139,6 +139,18 @@ _LIST_OR_HEADING_START_RE = re.compile(r"^(?:§|Art(?:ikel)?\.?\s*\d|\d+(?:\.\d+
 _ABBREVIATION_END_RE = re.compile(r"(?:\b(?:Dr|Prof|Nr|Abs|Art|ca|bzw|ggf|inkl|vgl|evtl|Hr|Fr|Mio|Mrd)|\b(?:z\. ?B|u\. ?a|d\. ?h|i\. ?V|i\. ?S))\.$")
 
 
+# Feldzeile "Bezeichnung: Wert" (Briefkopf, Protokoll, Bescheid). Sie ist in sich abgeschlossen; folgt eine Zeile mit
+# Grossbuchstaben, beginnt ein neues Feld oder ein neuer Satz (§35.6: "Messbeamter: Polizeiobermeister ... Brettschneider"
+# wurde mit "Eichschein des Messgeraets ..." verbunden, das Feldende ging verloren und der Restrisiko-Scan blockierte).
+# Review §35.6: nur Feldzeilen, deren Wert ausschliesslich aus Titeln/Namenswoertern besteht ("Messbeamter:
+# Polizeiobermeister Ole Sandbrinker") - eine Satzzeile mit Doppelpunkt ("Am 12.03.2026 erklaerte er: Die Zahlung ...")
+# wird weiter normal verbunden.
+_FIELD_LINE_RE = re.compile(
+    r"^[A-ZÄÖÜ][\wÄÖÜäöüß.\-/]*(?: [\wÄÖÜäöüß.\-/]+){0,2}:[ \t]+"
+    r"(?:(?:Herrn?|Frau|Dr\.|Prof\.|Dipl\.-Ing\.|[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?)[ \t]*){1,5}$"
+)
+
+
 def _reflow_soft_wraps(text: str) -> str:
     """Fuegt Zeilenumbrueche zusammen, die nur der Zeilenumbruch einer Seite/eines PDFs sind (lange Zeile ohne
     Satzzeichen am Ende, naechste Zeile kein Listenpunkt/keine Ueberschrift). Absatz- und Ueberschriftgrenzen bleiben.
@@ -150,7 +162,8 @@ def _reflow_soft_wraps(text: str) -> str:
         line = raw.rstrip()
         previous = out[-1] if out else ""
         soft = (len(previous) >= 50 and not previous.endswith(_TERMINAL_PUNCTUATION)) or bool(_ABBREVIATION_END_RE.search(previous))
-        if out and line and previous and soft and not _LIST_OR_HEADING_START_RE.match(line.lstrip()):
+        field_end = bool(_FIELD_LINE_RE.match(previous.lstrip())) and line.lstrip()[:1].isupper()
+        if out and line and previous and soft and not field_end and not _LIST_OR_HEADING_START_RE.match(line.lstrip()):
             out[-1] = out[-1] + " " + line.lstrip()
         else:
             out.append(line)
