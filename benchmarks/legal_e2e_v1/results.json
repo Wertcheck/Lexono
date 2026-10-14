@@ -1,9 +1,9 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T00:17:51+00:00",
- "git_commit": "20e0521",
+ "run_at": "2026-10-14T00:56:56+00:00",
+ "git_commit": "1911716",
  "git_dirty_files": [],
- "corpus_sha256": "e7db732c4775ae2e",
+ "corpus_sha256": "d4848676b7687109",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
   "app/privacy/detectors.py": "78b33da3b29385e4",
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 46.1,
+ "seconds_total": 44.9,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -49,10 +49,32 @@
    "fremde_akte_im_payload": 0,
    "benoetigte_werte_im_payload": "15/15",
    "aufgaben_ohne_payload": [],
-   "suche_top1": "2/2",
+   "suche_top1": "1/2",
    "suche_top5": "2/2",
    "schriftsatz_ok": "2/2",
    "export_mit_bearbeitung": "2/2",
+   "erhalt_keep": "13/13",
+   "erhalt_keep_fehlend": [],
+   "erhalt_chronologie": "13/13",
+   "erhalt_chronologie_fehlend": [],
+   "erhalt_normen": "6/6",
+   "erhalt_normen_fehlend": [],
+   "widersprueche_beide_seiten": "3/4",
+   "maskiert_ohne_referenz": [
+    "LE-D001:adresse:12345 Musterstadt",
+    "LE-D001:organisation:Malerbetrieb Schöllhorn GmbH",
+    "LE-D001:ort:2. Obergeschoss",
+    "LE-D001:ort:Musterstadt",
+    "LE-D001:ort:Mühlbach",
+    "LE-D001:person:Andernfalls",
+    "LE-D001:person:Schimmel",
+    "LE-D001:person:Schlafzimmer",
+    "LE-D001:rechnungsnummer:R-2026-0311",
+    "LE-D002:person:Beispielhafen",
+    "LE-D002:person:Bruttomonatsvergütung",
+    "LE-D002:person:Gesprächsnotiz",
+    "LE-D002:person:Schichtleiters"
+   ],
    "aufgabenfehler": []
   },
   "test": {
@@ -76,6 +98,37 @@
    "suche_top5": "2/2",
    "schriftsatz_ok": "2/2",
    "export_mit_bearbeitung": "2/2",
+   "erhalt_keep": "13/13",
+   "erhalt_keep_fehlend": [],
+   "erhalt_chronologie": "11/11",
+   "erhalt_chronologie_fehlend": [],
+   "erhalt_normen": "3/3",
+   "erhalt_normen_fehlend": [],
+   "widersprueche_beide_seiten": "1/2",
+   "maskiert_ohne_referenz": [
+    "LE-T001:kennung:G-26-0533",
+    "LE-T001:ort:Beispielstadt",
+    "LE-T001:ort:Gartenstraße",
+    "LE-T001:ort:Kfz-Schadensgutachten Nr. G-26",
+    "LE-T001:ort:Ringallee",
+    "LE-T001:ort:Rot",
+    "LE-T001:person:Beispielstadt",
+    "LE-T001:person:Grün",
+    "LE-T001:person:Reparaturdauer",
+    "LE-T001:person:Schadenabteilung",
+    "LE-T001:person:Tagebuchnummer",
+    "LE-T001:person:Unfallmitteilung",
+    "LE-T002:kennung:26/0533-EW",
+    "LE-T002:ort:Beispieldorf",
+    "LE-T002:ort:Haus Lindenstraße",
+    "LE-T002:ort:Hausgrundstücks",
+    "LE-T002:person:Alleinerbin",
+    "LE-T002:person:Beispieldorf",
+    "LE-T002:person:Mein",
+    "LE-T002:person:Mein Sohn",
+    "LE-T002:person:Testament",
+    "LE-T002:person:Unbekannt"
+   ],
    "aufgabenfehler": []
   }
  },
@@ -89,7 +142,7 @@
      "type_reference": "vertrag",
      "status": "not_needed",
      "classified": "Vertrag",
-     "chars": 461,
+     "chars": 458,
      "values_total": 6,
      "values_found": [
       "01.09.2021",
@@ -100,14 +153,14 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.18
     },
     "D2": {
      "format": "txt",
      "type_reference": "email",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 473,
+     "chars": 470,
      "values_total": 9,
      "values_found": [
       "0171 4455667",
@@ -128,26 +181,26 @@
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 631,
+     "chars": 617,
      "values_total": 7,
      "values_found": [
       "10.03.2026",
       "31.03.2026",
       "460,00 EUR",
-      "Am Muehlbach 3, 12345 Musterstadt",
+      "Am Mühlbach 3, 12345 Musterstadt",
       "Erlenweg 12, 12345 Musterstadt",
       "Gudrun Pfeilsticker",
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.16
     },
     "D4": {
      "format": "scan",
      "type_reference": "rechnung",
      "status": "done",
      "classified": "Rechnung",
-     "chars": 245,
+     "chars": 243,
      "values_total": 5,
      "values_found": [
       "05.03.2026",
@@ -157,14 +210,14 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.5
     },
     "D5": {
      "format": "docx",
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Vollmacht",
-     "chars": 520,
+     "chars": 517,
      "values_total": 8,
      "values_found": [
       "01.04.2026",
@@ -177,7 +230,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.17
     }
    },
    "tasks": [
@@ -186,7 +239,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 4057,
+     "payload_chars": 4047,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -194,28 +247,107 @@
       "15.04.2026"
      ],
      "needed_missing": [],
-     "seconds": 5.17
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Musterstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Malerbetrieb Schöllhorn GmbH",
+       "kategorie": "organisation",
+       "platzhalter": "[ORGANISATION_01]"
+      },
+      {
+       "original": "R-2026-0311",
+       "kategorie": "rechnungsnummer",
+       "platzhalter": "[RECHNUNGSNUMMER_01]"
+      },
+      {
+       "original": "Schlafzimmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Mühlbach",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "12345 Musterstadt",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Andernfalls",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Schimmel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "2. Obergeschoss",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      }
+     ],
+     "seconds": 4.93
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 2043,
+     "payload_chars": 2053,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
       "486,50 EUR"
      ],
      "needed_missing": [],
-     "seconds": 0.61
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Malerbetrieb Schöllhorn GmbH",
+       "kategorie": "organisation",
+       "platzhalter": "[ORGANISATION_01]"
+      },
+      {
+       "original": "R-2026-0311",
+       "kategorie": "rechnungsnummer",
+       "platzhalter": "[RECHNUNGSNUMMER_01]"
+      },
+      {
+       "original": "Schlafzimmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "12345 Musterstadt",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Musterstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Andernfalls",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      }
+     ],
+     "seconds": 0.52
     },
     {
      "id": "Q3",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 4073,
+     "payload_chars": 4063,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -225,7 +357,54 @@
       "1.250,00 EUR"
      ],
      "needed_missing": [],
-     "seconds": 2.17
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Musterstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Malerbetrieb Schöllhorn GmbH",
+       "kategorie": "organisation",
+       "platzhalter": "[ORGANISATION_01]"
+      },
+      {
+       "original": "R-2026-0311",
+       "kategorie": "rechnungsnummer",
+       "platzhalter": "[RECHNUNGSNUMMER_01]"
+      },
+      {
+       "original": "Schlafzimmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Mühlbach",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "12345 Musterstadt",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Andernfalls",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Schimmel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "2. Obergeschoss",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      }
+     ],
+     "seconds": 1.81
     },
     {
      "id": "Q4",
@@ -239,7 +418,7 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
-     "payload_chars": 4113,
+     "payload_chars": 4103,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -247,7 +426,92 @@
       "1.150,00 EUR"
      ],
      "needed_missing": [],
-     "seconds": 2.31
+     "erhalt": {
+      "keep": {
+       "present": [
+        "1.150,00 EUR",
+        "15.04.2026",
+        "31.03.2026",
+        "460,00 EUR",
+        "486,50 EUR",
+        "690,00 EUR",
+        "§ 536c BGB"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "01.04.2026",
+        "01.09.2021",
+        "02.02.2026",
+        "03.02.2026",
+        "05.03.2026",
+        "10.03.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 536 BGB",
+        "§ 536c BGB",
+        "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1",
+       "W2"
+      ],
+      "widersprueche_unvollstaendig": []
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Musterstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Malerbetrieb Schöllhorn GmbH",
+       "kategorie": "organisation",
+       "platzhalter": "[ORGANISATION_01]"
+      },
+      {
+       "original": "R-2026-0311",
+       "kategorie": "rechnungsnummer",
+       "platzhalter": "[RECHNUNGSNUMMER_01]"
+      },
+      {
+       "original": "Schlafzimmer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Mühlbach",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "12345 Musterstadt",
+       "kategorie": "adresse",
+       "platzhalter": "[ADRESSE_02]"
+      },
+      {
+       "original": "Andernfalls",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Schimmel",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "2. Obergeschoss",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      }
+     ],
+     "seconds": 1.88
     },
     {
      "id": "Q5",
@@ -324,26 +588,26 @@
      "type_reference": "vertrag",
      "status": "not_needed",
      "classified": "Vertrag",
-     "chars": 290,
+     "chars": 286,
      "values_total": 7,
      "values_found": [
       "14.07.1988",
       "15.01.2019",
       "3.480,00 EUR",
       "70321",
-      "Hafenstrasse 88, 54321 Beispielhafen",
+      "Hafenstraße 88, 54321 Beispielhafen",
       "Jonas Wiegelmann",
       "Kerkhoff Logistik GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.08
     },
     "D2": {
      "format": "scan",
      "type_reference": "schreiben",
      "status": "done",
      "classified": "Mahnung",
-     "chars": 308,
+     "chars": 306,
      "values_total": 4,
      "values_found": [
       "09.02.2026",
@@ -352,14 +616,14 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.54
+     "seconds": 1.52
     },
     "D3": {
      "format": "docx",
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Kündigungsschreiben",
-     "chars": 365,
+     "chars": 360,
      "values_total": 6,
      "values_found": [
       "16.03.2026",
@@ -370,14 +634,14 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.14
     },
     "D4": {
      "format": "txt",
      "type_reference": "notiz",
      "status": "not_needed",
      "classified": "Mahnung",
-     "chars": 346,
+     "chars": 343,
      "values_total": 7,
      "values_found": [
       "0160 9081726",
@@ -389,14 +653,14 @@
       "j.wiegelmann@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
      "type_reference": "klageschrift",
      "status": "not_needed",
      "classified": "Mahnung",
-     "chars": 556,
+     "chars": 548,
      "values_total": 9,
      "values_found": [
       "13.04.2026",
@@ -410,7 +674,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.15
     }
    },
    "tasks": [
@@ -419,7 +683,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 4654,
+     "payload_chars": 4686,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -427,14 +691,36 @@
       "13.04.2026"
      ],
      "needed_missing": [],
-     "seconds": 1.27
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Beispielhafen",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Bruttomonatsvergütung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Gesprächsnotiz",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Schichtleiters",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      }
+     ],
+     "seconds": 1.13
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 2861,
+     "payload_chars": 2887,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -442,7 +728,19 @@
       "12.02.2026"
      ],
      "needed_missing": [],
-     "seconds": 0.62
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Beispielhafen",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Schichtleiters",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      }
+     ],
+     "seconds": 0.54
     },
     {
      "id": "Q3",
@@ -456,7 +754,7 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
-     "payload_chars": 4677,
+     "payload_chars": 4708,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -464,13 +762,74 @@
       "3.480,00 EUR"
      ],
      "needed_missing": [],
-     "seconds": 0.93
+     "erhalt": {
+      "keep": {
+       "present": [
+        "13.04.2026",
+        "23.03.2026",
+        "3.480,00 EUR",
+        "30.06.2026",
+        "§ 1 Abs. 2 KSchG",
+        "§ 4 KSchG"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "09.02.2026",
+        "12.02.2026",
+        "15.01.2019",
+        "16.03.2026",
+        "18.03.2026",
+        "20.03.2026",
+        "23.03.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 1 Abs. 2 KSchG",
+        "§ 4 KSchG",
+        "§ 42 Abs. 2 GKG"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1"
+      ],
+      "widersprueche_unvollstaendig": [
+       "W2"
+      ]
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Beispielhafen",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Bruttomonatsvergütung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Gesprächsnotiz",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Schichtleiters",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      }
+     ],
+     "seconds": 0.78
     },
     {
      "id": "Q4",
      "kind": "suche",
      "rank": [
-      1
+      2
      ],
      "foreign_hits": 0,
      "seconds": 0.02
@@ -540,7 +899,7 @@
      "type_reference": "protokoll",
      "status": "done",
      "classified": "Unbekannt",
-     "chars": 353,
+     "chars": 352,
      "values_total": 8,
      "values_found": [
       "07.05.2026",
@@ -553,14 +912,14 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.61
     },
     "D2": {
      "format": "pdf",
      "type_reference": "gutachten",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 287,
+     "chars": 286,
      "values_total": 7,
      "values_found": [
       "14.05.2026",
@@ -572,14 +931,14 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D3": {
      "format": "docx",
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 386,
+     "chars": 384,
      "values_total": 7,
      "values_found": [
       "02.06.2026",
@@ -591,14 +950,14 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
      "type_reference": "email",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 288,
+     "chars": 287,
      "values_total": 6,
      "values_found": [
       "0151 2233445",
@@ -609,7 +968,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.06
+     "seconds": 1.09
     }
    },
    "tasks": [
@@ -618,7 +977,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 2278,
+     "payload_chars": 2290,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -629,21 +988,120 @@
       "3.206,40 EUR"
      ],
      "needed_missing": [],
-     "seconds": 1.03
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Schadenabteilung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Grün",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "G-26-0533",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      },
+      {
+       "original": "Reparaturdauer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Unfallmitteilung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      },
+      {
+       "original": "Gartenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Ringallee",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Rot",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Tagebuchnummer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_07]"
+      },
+      {
+       "original": "Kfz-Schadensgutachten Nr. G-26",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_05]"
+      }
+     ],
+     "seconds": 0.93
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 1194,
+     "payload_chars": 1208,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
       "650,00 EUR"
      ],
      "needed_missing": [],
-     "seconds": 0.37
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Kfz-Schadensgutachten Nr. G-26",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Reparaturdauer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Unfallmitteilung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Gartenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Ringallee",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      }
+     ],
+     "seconds": 0.3
     },
     {
      "id": "Q3",
@@ -657,7 +1115,7 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
-     "payload_chars": 2273,
+     "payload_chars": 2285,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -665,7 +1123,100 @@
       "6.412,80 EUR"
      ],
      "needed_missing": [],
-     "seconds": 0.7
+     "erhalt": {
+      "keep": {
+       "present": [
+        "07.05.2026",
+        "3.206,40 EUR",
+        "30.06.2026",
+        "6.412,80 EUR",
+        "650,00 EUR",
+        "738,00 EUR",
+        "812,40 EUR"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "02.06.2026",
+        "05.06.2026",
+        "07.05.2026",
+        "14.05.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [],
+      "widersprueche_unvollstaendig": [
+       "W1"
+      ]
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Schadenabteilung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Grün",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "G-26-0533",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_02]"
+      },
+      {
+       "original": "Reparaturdauer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Unfallmitteilung",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Beispielstadt",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      },
+      {
+       "original": "Gartenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Ringallee",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_03]"
+      },
+      {
+       "original": "Rot",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Tagebuchnummer",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_07]"
+      },
+      {
+       "original": "Kfz-Schadensgutachten Nr. G-26",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_05]"
+      }
+     ],
+     "seconds": 0.62
     },
     {
      "id": "Q4",
@@ -727,17 +1278,17 @@
      "type_reference": "anlage",
      "status": "done",
      "classified": "Unbekannt",
-     "chars": 257,
+     "chars": 256,
      "values_total": 5,
      "values_found": [
       "11.11.1941",
       "15.06.2019",
       "Annegret Brüninghoff",
-      "Lindenstrasse 7, 33333 Beispieldorf",
+      "Lindenstraße 7, 33333 Beispieldorf",
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.48
+     "seconds": 1.52
     },
     "D2": {
      "format": "pdf",
@@ -752,14 +1303,14 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.06
     },
     "D3": {
      "format": "txt",
      "type_reference": "email",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 333,
+     "chars": 332,
      "values_total": 6,
      "values_found": [
       "0170 5566778",
@@ -777,7 +1328,7 @@
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 325,
+     "chars": 322,
      "values_total": 4,
      "values_found": [
       "16.03.2026",
@@ -786,14 +1337,14 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.13
     },
     "D5": {
      "format": "docx",
      "type_reference": "schreiben",
      "status": "not_needed",
      "classified": "Unbekannt",
-     "chars": 434,
+     "chars": 431,
      "values_total": 7,
      "values_found": [
       "03.03.2022",
@@ -814,7 +1365,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 3602,
+     "payload_chars": 3623,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -823,21 +1374,120 @@
       "21.04.2022"
      ],
      "needed_missing": [],
-     "seconds": 1.23
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Unbekannt",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "26/0533-EW",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Hausgrundstücks",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Haus Lindenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Testament",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Mein",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Alleinerbin",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Mein Sohn",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      }
+     ],
+     "seconds": 1.13
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
-     "payload_chars": 2314,
+     "payload_chars": 2335,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
       "15.06.2019"
      ],
      "needed_missing": [],
-     "seconds": 0.55
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Testament",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Mein",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Alleinerbin",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Mein Sohn",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Haus Lindenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "26/0533-EW",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Hausgrundstücks",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      }
+     ],
+     "seconds": 0.47
     },
     {
      "id": "Q3",
@@ -851,7 +1501,7 @@
      "export_docx_has_edit": true,
      "export_pdf_has_edit": true,
      "export_placeholders": [],
-     "payload_chars": 3600,
+     "payload_chars": 3622,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -859,7 +1509,96 @@
       "18.420,55 EUR"
      ],
      "needed_missing": [],
-     "seconds": 0.89
+     "erhalt": {
+      "keep": {
+       "present": [
+        "03.03.2022",
+        "18.420,55 EUR",
+        "240.000,00 EUR",
+        "31.07.2026",
+        "§ 2303 Abs. 1 BGB",
+        "§ 2325 BGB"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "03.03.2022",
+        "05.01.2026",
+        "10.02.2026",
+        "15.06.2019",
+        "16.03.2026",
+        "21.04.2022",
+        "25.03.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 2303 Abs. 1 BGB",
+        "§ 2314 BGB",
+        "§ 2325 BGB"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1"
+      ],
+      "widersprueche_unvollstaendig": []
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "Unbekannt",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "26/0533-EW",
+       "kategorie": "kennung",
+       "platzhalter": "[KENNUNG_01]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      },
+      {
+       "original": "Hausgrundstücks",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_02]"
+      },
+      {
+       "original": "Haus Lindenstraße",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_04]"
+      },
+      {
+       "original": "Testament",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_02]"
+      },
+      {
+       "original": "Mein",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_03]"
+      },
+      {
+       "original": "Alleinerbin",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_04]"
+      },
+      {
+       "original": "Mein Sohn",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_05]"
+      },
+      {
+       "original": "Beispieldorf",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_06]"
+      }
+     ],
+     "seconds": 0.77
     },
     {
      "id": "Q4",
