@@ -1,7 +1,7 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T02:04:34+00:00",
- "git_commit": "bb6800c",
+ "run_at": "2026-10-14T02:13:12+00:00",
+ "git_commit": "60927b4",
  "git_dirty_files": [],
  "corpus_sha256": "cc41845b9ab62d9b",
  "code_fingerprint": {
@@ -24,8 +24,8 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 110.7,
- "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
+ "seconds_total": 111.1,
+ "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
   "Kosten",
@@ -91,6 +91,36 @@
     "LE-D003:person:Holzrahmenbaus",
     "LE-D003:person:Subunternehmer"
    ],
+   "laufzeit_dokument_s": {
+    "n": 15,
+    "median": 1.16,
+    "max": 1.62
+   },
+   "laufzeit_chat_s": {
+    "n": 8,
+    "median": 1.84,
+    "max": 12.92
+   },
+   "payload_zeichen_chat": {
+    "n": 8,
+    "median": 4063,
+    "max": 32492
+   },
+   "laufzeit_schriftsatz_s": {
+    "n": 3,
+    "median": 3.7,
+    "max": 23.39
+   },
+   "payload_zeichen_schriftsatz": {
+    "n": 3,
+    "median": 4699,
+    "max": 32497
+   },
+   "laufzeit_suche_s": {
+    "n": 3,
+    "median": 0.03,
+    "max": 0.03
+   },
    "erfundene_fundstellen_markiert": "0/6",
    "aufgabenfehler": []
   },
@@ -152,6 +182,36 @@
     "LE-T002:person:Testament",
     "LE-T002:person:Unbekannt"
    ],
+   "laufzeit_dokument_s": {
+    "n": 13,
+    "median": 1.12,
+    "max": 1.73
+   },
+   "laufzeit_chat_s": {
+    "n": 6,
+    "median": 0.92,
+    "max": 1.17
+   },
+   "payload_zeichen_chat": {
+    "n": 4,
+    "median": 2335,
+    "max": 3623
+   },
+   "laufzeit_schriftsatz_s": {
+    "n": 3,
+    "median": 1.51,
+    "max": 1.56
+   },
+   "payload_zeichen_schriftsatz": {
+    "n": 2,
+    "median": 3622,
+    "max": 3622
+   },
+   "laufzeit_suche_s": {
+    "n": 3,
+    "median": 0.02,
+    "max": 0.02
+   },
    "erfundene_fundstellen_markiert": "0/4",
    "aufgabenfehler": []
   }
@@ -177,7 +237,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.19
+     "seconds": 1.18
     },
     "D2": {
      "format": "txt",
@@ -217,7 +277,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.17
     },
     "D4": {
      "format": "scan",
@@ -234,7 +294,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.62
     },
     "D5": {
      "format": "docx",
@@ -364,7 +424,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.5
+     "seconds": 0.51
     },
     {
      "id": "Q3",
@@ -428,7 +488,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.82
+     "seconds": 1.84
     },
     {
      "id": "Q4",
@@ -543,7 +603,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 3.67
+     "seconds": 3.7
     },
     {
      "id": "Q5",
@@ -632,7 +692,7 @@
       "Kerkhoff Logistik GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.09
     },
     "D2": {
      "format": "scan",
@@ -745,7 +805,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.13
+     "seconds": 1.15
     },
     {
      "id": "Q2",
@@ -772,7 +832,7 @@
        "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.55
+     "seconds": 0.54
     },
     {
      "id": "Q3",
@@ -863,7 +923,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.48
+     "seconds": 1.5
     },
     {
      "id": "Q4",
@@ -955,7 +1015,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.58
+     "seconds": 1.59
     },
     "D2": {
      "format": "txt",
@@ -1003,7 +1063,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
@@ -1019,7 +1079,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.12
     }
    },
    "tasks": [
@@ -1118,7 +1178,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.8
+     "seconds": 12.92
     },
     {
      "id": "Q2",
@@ -1257,7 +1317,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.86
+     "seconds": 10.97
     },
     {
      "id": "Q4",
@@ -1404,7 +1464,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 23.41
+     "seconds": 23.39
     },
     {
      "id": "Q5",
@@ -1492,7 +1552,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.61
+     "seconds": 1.6
     },
     "D2": {
      "format": "pdf",
@@ -1681,7 +1741,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.31
+     "seconds": 0.34
     },
     {
      "id": "Q3",
@@ -1804,7 +1864,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 1.11
+     "seconds": 1.14
     },
     {
      "id": "Q4",
@@ -1876,7 +1936,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.53
+     "seconds": 1.5
     },
     "D2": {
      "format": "pdf",
@@ -1891,7 +1951,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.06
     },
     "D3": {
      "format": "txt",
@@ -1909,7 +1969,7 @@
       "k.wehrhahn@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D4": {
      "format": "docx",
@@ -1925,7 +1985,7 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D5": {
      "format": "docx",
@@ -2194,7 +2254,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.49
+     "seconds": 1.51
     },
     {
      "id": "Q4",
@@ -2287,7 +2347,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.72
+     "seconds": 1.73
     },
     "D2": {
      "format": "pdf",
@@ -2347,14 +2407,14 @@
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.14
+     "seconds": 1.17
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.54
+     "seconds": 0.51
     },
     {
      "id": "Q3",
@@ -2366,7 +2426,7 @@
      "quellenintegritaet": {
       "status": "blockiert"
      },
-     "seconds": 1.53
+     "seconds": 1.56
     },
     {
      "id": "Q4",
