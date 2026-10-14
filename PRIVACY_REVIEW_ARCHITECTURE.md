@@ -3963,5 +3963,5 @@ Konfliktfall jetzt als kritisch.
 simuliert eine manipulierte oder vertauschte ID; `ChatService.record_user_message` selbst prüft die Akte nicht.
 
 **Ergebnis:** In 6/6 Fällen wurde die Anfrage **blockiert**, ohne Cloud-Aufruf. Kein Wert der fremden Akte stand im
-Payload. Fail-Closed greift, weil der Anhang nicht zu den Dokumenten der Akte gehört. Der Benchmark zählt einen Wert
+Payload. Fail-Closed greift, weil `assess_documents` (`app/documents/readiness.py`) den Anhang als `OTHER_MATTER` einstuft und das Dokument-Gate des Chats dann sperrt (im Code geprüft). Der Benchmark zählt einen Wert
 der fremden Akte im Payload als kritisch; dazu gibt es einen Regressionstest. Keine Produktänderung.
