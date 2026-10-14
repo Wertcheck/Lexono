@@ -208,8 +208,11 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
     for case in cases:
         t0 = time.perf_counter()
         parties = {p["id"]: p for p in case["parties"]}
-        client = Client(name=parties[case["matter"]["client_party"]]["name"])
-        matter = Matter(client=client, title=case["matter"]["title"])
+        client_emails = [p["value"] for p in case["reference"]["privacy"]["protect"] if p["type"] == "EMAIL"]
+        client = Client(name=parties[case["matter"]["client_party"]]["name"],
+                        contact_email=client_emails[0] if client_emails else None)
+        matter = Matter(client=client, title=case["matter"]["title"],
+                        reference_number=case["matter"].get("reference_number"))
         db.add_all([client, matter])
         db.flush()
         for party in case["parties"]:
@@ -320,9 +323,11 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
             record["tasks"].append(item)
         results.append(record)
 
+    matching = _matching_probes(db, cases, {cid: st["matter"].id for cid, st in state.items()})
+
     db.close()
     engine.dispose()
-    return {"results": results, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
+    return {"results": results, "matching": matching, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
 
 
@@ -375,6 +380,90 @@ def _reference_values_for(case: dict, doc_id: str) -> list[str]:
         [d["date"] for d in ref["deadlines"]] + [c["text"] for c in ref["citations"]] + \
         [p["value"] for p in ref["privacy"]["protect"]] + list(ref["privacy"]["keep"])
     return sorted({v for v in candidates if v in text})
+
+
+def _email_message(document: dict) -> tuple[str | None, str | None, str]:
+    """Absender ("Von:"), Betreff ("Betreff:") und Text einer E-Mail des Korpus."""
+    sender = subject = None
+    for line in document["paragraphs"]:
+        if line.startswith("Von:"):
+            sender = line[4:].strip()
+        elif line.startswith("Betreff:"):
+            subject = line[8:].strip()
+    return sender, subject, doc_text(document)
+
+
+def _matching_probes(db, cases: list[dict], matter_ids: dict[str, str]) -> dict:  # noqa: ANN001
+    """Automatische Aktenzuordnung eingehender Nachrichten (MatterAssignmentService, Produktionsschwellen) gegen ALLE
+    Akten der Benchmark-Datenbank. Kritisch: eine automatische Zuordnung zu einer FREMDEN Akte ohne widerspruechliche
+    Signale - und (seit §34.10) auch im Konfliktfall: bekannte Absenderadresse von Mandant A nennt das Aktenzeichen von
+    Akte B; Lexono verlangt dann eine Pruefung durch die Kanzlei."""
+    from app.config import get_settings
+    from app.matching.matcher import MatterMatchingService
+    from app.matching.service import MatterAssignmentService
+    from app.models import Message
+
+    settings = get_settings()
+    service = MatterAssignmentService(
+        MatterMatchingService(auto_assign_threshold=settings.matching_auto_assign_threshold,
+                              review_threshold=settings.matching_review_threshold),
+        classification_low_confidence_threshold=settings.classification_low_confidence_threshold)
+
+    def assign(sender: str | None, subject: str | None, body: str) -> dict:
+        message = Message(direction="inbound", sender=sender, subject=subject, body_text=body)
+        db.add(message)
+        db.commit()
+        result = service.assign_matter(message, db)
+        return {"decision": result.decision, "matter_id": result.matter_id}
+
+    owner = {mid: cid for cid, mid in matter_ids.items()}
+    rows: list[dict] = []
+    for case in cases:
+        own = matter_ids[case["id"]]
+        for document in case["documents"]:
+            if document["type"] != "email":
+                continue
+            outcome = assign(*_email_message(document))
+            rows.append({"probe": "korpus_email", "case": case["id"], "doc": document["id"], "decision": outcome["decision"],
+                         "zugeordnet": owner.get(outcome["matter_id"]),
+                         "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
+        ref = case["matter"].get("reference_number")
+        if ref:
+            outcome = assign("unbekannt@extern.example", f"Ihr Schreiben, Az. {ref}", "Bitte um Rückruf.")
+            rows.append({"probe": "aktenzeichen", "case": case["id"], "decision": outcome["decision"],
+                         "zugeordnet": owner.get(outcome["matter_id"]), "korrekt": outcome["matter_id"] == own,
+                         "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
+            outcome = assign("unbekannt@extern.example", f"Ihr Zeichen: {ref}", "Bitte um Rückruf.")
+            rows.append({"probe": "ihr_zeichen", "case": case["id"], "decision": outcome["decision"],
+                         "zugeordnet": owner.get(outcome["matter_id"]), "korrekt": outcome["matter_id"] == own,
+                         "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != own})
+    # Konflikt: Mandant A (bekannte Adresse) nennt das Aktenzeichen der naechsten Akte B mit Aktenzeichen
+    with_ref = [c for c in cases if c["matter"].get("reference_number")]
+    for case in cases:
+        emails = [p["value"] for p in case["reference"]["privacy"]["protect"] if p["type"] == "EMAIL"]
+        other = next((c for c in with_ref if c["id"] != case["id"]), None)
+        if not emails or other is None:
+            continue
+        outcome = assign(emails[0], f"Rückfrage Az. {other['matter']['reference_number']}", "Ich habe noch eine Frage.")
+        rows.append({"probe": "konflikt", "case": case["id"], "aktenzeichen_von": other["id"], "decision": outcome["decision"],
+                     "zugeordnet": owner.get(outcome["matter_id"]),
+                     # seit §34.10 entscheidet Lexono hier "needs_review"; eine automatische Fremdzuordnung ist Regression
+                     "fremd": outcome["decision"] == "auto_assigned" and outcome["matter_id"] != matter_ids[case["id"]]})
+
+    def count(probe: str, key: str) -> str:
+        sel = [r for r in rows if r["probe"] == probe]
+        return f"{sum(1 for r in sel if r.get(key))}/{len(sel)}"
+
+    return {
+        "kritisch_fremdzuordnung": [r for r in rows if r.get("fremd")],
+        "korpus_email_entscheidungen": sorted({f"{r['case']}/{r['doc']}:{r['decision']}" for r in rows if r["probe"] == "korpus_email"}),
+        "aktenzeichen_korrekt_zugeordnet": count("aktenzeichen", "korrekt"),
+        "ihr_zeichen_korrekt_zugeordnet": count("ihr_zeichen", "korrekt"),
+        "konflikt_automatisch_zur_fremden_akte": [f"{r['case']}->{r['zugeordnet']}" for r in rows
+                                                  if r["probe"] == "konflikt" and r["decision"] == "auto_assigned"],
+        "konflikt_entscheidungen": [f"{r['case']}:{r['decision']}" for r in rows if r["probe"] == "konflikt"],
+        "details": rows,
+    }
 
 
 #: Erfundene Fundstellen fuer die Quellenintegritaets-Probe (es gibt weder § 9999 BGB noch dieses Aktenzeichen)
@@ -578,7 +667,8 @@ def main() -> int:
               **provenance(), "environment": outcome["environment"], "seconds_total": round(time.perf_counter() - started, 1),
               "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
-              "summary": summarise(outcome["results"]), "results": outcome["results"]}
+              "summary": summarise(outcome["results"]), "aktenzuordnung": outcome["matching"],
+              "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"
     out.write_text(json.dumps(output, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(output["summary"], ensure_ascii=False, indent=1))

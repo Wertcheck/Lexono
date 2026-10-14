@@ -3900,3 +3900,51 @@ Erkennung persönlicher Daten im Quelltext (§34.2); das ist NICHT VERIFIZIERT.
   - Die Probe beeinflusst keine anderen Messungen.
   - Die Laufzeitwerte wurden reproduziert.
 - Umgesetzt: „Entwurf prüfen“ in §34.8 genannt, Überschneidung mit Q2 ergänzt, Probe mit eigener Fehlerbehandlung.
+
+### 34.10 Etappe 9: automatische Aktenzuordnung eingehender Nachrichten (Mandantentrennung)
+
+**Messung (Runner):**
+- Eingehende Nachrichten laufen durch den echten `MatterAssignmentService` mit den Produktionsschwellen (automatisch ab
+  0,85, Prüfung ab 0,4), und zwar gegen alle Akten der Benchmark-Datenbank.
+- Dafür bekommen die Akten zwei optionale Angaben: das Kanzlei-Aktenzeichen (`matter.reference_number`; der Validator
+  prüft, dass es in einem Dokument steht) und die Mandanten-E-Mail.
+- Proben:
+  1. jede E-Mail des Korpus;
+  2. „Az. <eigenes Aktenzeichen>“ von unbekanntem Absender;
+  3. „Ihr Zeichen: <eigenes Aktenzeichen>“;
+  4. **Konflikt:** die bekannte Adresse von Mandant A nennt das Aktenzeichen von Akte B.
+- Kritisch ist jede automatische Zuordnung zu einer fremden Akte.
+
+| Probe | vorher | nachher |
+|---|---|---|
+| **Konflikt: automatisch zur fremden Akte** | **6/6** (Nachricht von Mandant A ohne Prüfung in der Akte von Mandant B) | **0/6**, jeweils „needs_review“ mit Begründung |
+| Az. → richtige Akte | 4/4 | 4/4 |
+| „Ihr Zeichen:“ → erkannt | 0/4 | 0/4 (unverändert, siehe unten) |
+| Korpus-E-Mails von bekannten Mandantenadressen | 5/5 „no_match“ | unverändert |
+| automatische Fremdzuordnung ohne Konflikt | 0 | 0 |
+
+**Korrektur (`app/matching/matcher.py`):** Keine automatische Zuordnung, wenn der beste Kandidat kein
+Absender-Signal hat, der Absender aber als Kontakt einer anderen Akte bekannt ist. Die Entscheidung ist dann
+„needs_review“; der Vorschlag bleibt sichtbar. Die Regel verringert nur die Automatik und lockert keine bestehende
+Prüfung (Ambiguität, Klassifikation). Tests in `test_matching_matcher.py`; der Benchmark zählt eine Fremdzuordnung im
+Konfliktfall jetzt als kritisch.
+
+**Review (unabhängig):**
+- Bestätigt:
+  - Die Regel verringert nur die Automatik.
+  - Ein Absender, der in beiden Akten bekannt ist, und Gegenanwälte, die in beiden Akten stehen, werden nicht blockiert.
+  - `needs_review` landet korrekt bei Zuordnung, Mail-Abruf und Vorschlagskarte.
+- Mehr Prüfungen entstehen in einem häufigen Fall: Ein Kontakt, der nur in Akte B gespeichert ist, schreibt mit dem
+  Aktenzeichen von Akte A (Gegenanwalt, Versicherer). Das ist die sichere Richtung.
+- **Gefunden und behoben – UI-Lücke:** Die Vorschlagskarte im Posteingang zeigte trotz Konflikt die fremde Akte mit
+  „Übereinstimmung: 90 %“ und Ein-Klick-„Übernehmen“, ohne Warnung. Jetzt nennt sie die Akte des Absenders und bittet
+  um Prüfung (`_build_match_suggestion`, `message_detail.html`; Tests in `test_web_inbox.py`).
+
+**Offen (Owner-Entscheidung, nicht geändert, weil das die Automatik ausweiten würde):**
+- „Ihr Zeichen“/„Unser Zeichen“ werden nicht als Aktenzeichen erkannt; erkannt werden nur „Az.“ und „Aktenzeichen“.
+- Eine E-Mail von der bekannten Mandantenadresse erreicht allein 0,3 Punkte, also nicht einmal die Prüfschwelle von
+  0,4. Sie erscheint deshalb ohne Zuordnungsvorschlag.
+
+**QA Etappe 9:**
+- Matching-, Inbox- und Benchmark-Tests grün.
+- Volle Suite: 4446 bestanden, nur die 4 bekannten Logo-Fehler.

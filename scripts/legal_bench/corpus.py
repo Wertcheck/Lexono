@@ -124,6 +124,10 @@ def validate_case(case: dict, register: dict[str, dict], report: ValidationRepor
         _require(report, bool(doc_text(document).strip()), f"{prefix}/{did}: kein Text")
         docs[did] = document
     all_text = "\n".join(doc_text(d) for d in docs.values())
+    # optionales Kanzlei-Aktenzeichen der Akte (Matter.reference_number) - muss in einem Dokument stehen
+    reference_number = case["matter"].get("reference_number")
+    if reference_number is not None:
+        _require(report, reference_number in all_text, f"{prefix}: matter.reference_number {reference_number!r} steht in keinem Dokument")
 
     def in_doc(value: str, did: str | None, where: str) -> None:
         if did is not None:

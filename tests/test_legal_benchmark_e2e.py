@@ -24,9 +24,10 @@ from fake_embedding_provider import FakeEmbeddingProvider  # noqa: E402
 def outcome(tmp_path_factory: pytest.TempPathFactory) -> dict:
     if e2e._tesseract() is None:
         pytest.skip("Tesseract nicht verfuegbar - Scans waeren nicht auswertbar")
-    cases = [c for c in load_cases() if c["id"] in ("LE-D002", "LE-T001")]
+    cases = [c for c in load_cases() if c["id"] in ("LE-D002", "LE-T001", "LE-T002")]
     result = e2e.run(cases, tmp_path_factory.mktemp("legal_e2e"), embedding=(FakeEmbeddingProvider(), "fake"))
     result["summary"] = e2e.summarise(result["results"])
+    result["aktenzuordnung"] = result.pop("matching")
     return result
 
 
@@ -118,3 +119,12 @@ def test_runtime_and_payload_size_are_reported_without_cost_estimate(outcome: di
     assert summary["laufzeit_dokument_s"]["n"] > 0 and summary["payload_zeichen_chat"]["n"] > 0
     assert not any("usd" in key or "token" in key for key in summary)  # keine erfundene Kostenschaetzung
     assert e2e._stats([3.0, 1.0, 2.0]) == {"n": 3, "median": 2.0, "max": 3.0} and e2e._stats([]) == {"n": 0}
+
+
+def test_no_message_is_auto_assigned_to_a_foreign_matter(outcome: dict) -> None:
+    """§34.10: weder Korpus-E-Mails noch der Konfliktfall (Absender von Akte A nennt das Aktenzeichen von Akte B) werden
+    automatisch einer fremden Akte zugeordnet; das eigene Aktenzeichen wird weiter erkannt."""
+    matching = outcome["aktenzuordnung"]
+    assert matching["kritisch_fremdzuordnung"] == []
+    assert matching["konflikt_entscheidungen"] and all(d.endswith("needs_review") for d in matching["konflikt_entscheidungen"])
+    assert matching["aktenzeichen_korrekt_zugeordnet"] == "1/1"

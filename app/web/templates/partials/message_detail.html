@@ -157,6 +157,12 @@
       <p class="match-suggestion-card__meta">
         Übereinstimmung: {{ (match_suggestion.score * 100) | round | int }} %
       </p>
+      {% if match_suggestion.sender_matter_title %}
+        <p class="match-suggestion-card__warning" role="alert">
+          Achtung: Der Absender ist als Kontakt der Akte „{{ match_suggestion.sender_matter_title }}“ bekannt; der
+          Vorschlag beruht nur auf dem genannten Aktenzeichen. Bitte prüfen, ob die Nachricht wirklich zu dieser Akte gehört.
+        </p>
+      {% endif %}
       <form method="post" action="/dashboard/inbox/{{ message.id }}/assign-matter" class="match-suggestion-card__form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="matter_id" value="{{ match_suggestion.matter_id }}" />

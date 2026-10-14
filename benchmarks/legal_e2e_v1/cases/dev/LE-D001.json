@@ -14,7 +14,7 @@
     {"id": "P4", "name": "Yusuf Demirtas", "role": "zeuge", "gender": "m"},
     {"id": "P5", "name": "Rechtsanwalt Konrad Brehmhaus", "role": "anwalt_gegner", "gender": "m"}
   ],
-  "matter": {"title": "Osterkamp ./. Pfeilsticker - Mietminderung", "client_party": "P1"},
+  "matter": {"title": "Osterkamp ./. Pfeilsticker - Mietminderung", "client_party": "P1", "reference_number": "26/0417-KB"},
   "documents": [
     {
       "id": "D1", "type": "vertrag", "format": "docx", "filename": "Mietvertrag_Auszug.docx", "date": "01.09.2021",

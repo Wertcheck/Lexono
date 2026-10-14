@@ -13,7 +13,7 @@
     {"id": "P3", "name": "Waltraud Wehrhahn", "role": "dritter", "gender": "f"},
     {"id": "P4", "name": "Ingrid Pohlschmidt", "role": "anwalt_gegner", "gender": "f"}
   ],
-  "matter": {"title": "Wehrhahn ./. Brüninghoff - Pflichtteil", "client_party": "P1"},
+  "matter": {"title": "Wehrhahn ./. Brüninghoff - Pflichtteil", "client_party": "P1", "reference_number": "26/0533-EW"},
   "documents": [
     {
       "id": "D1", "type": "anlage", "format": "scan", "filename": "Testament_Abschrift_Scan.pdf", "date": "15.06.2019",

@@ -1862,6 +1862,16 @@ a.attachment-card__name:hover {
   margin: 0 0 12px;
 }
 
+.match-suggestion-card__warning {
+  font-size: 12px;
+  color: var(--ink-900);
+  background: color-mix(in srgb, #d97706 14%, transparent);
+  border-left: 3px solid #d97706;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0 0 12px;
+}
+
 .match-suggestion-card__form {
   margin: 0;
 }

@@ -325,6 +325,13 @@ def _build_match_suggestion(db: Session, message: Message) -> dict | None:
     matter = db.query(Matter).filter_by(id=best.matter_id).first()
     if matter is None:
         return None
+    # Absender als Kontakt einer ANDEREN Akte bekannt als der vorgeschlagenen (Legal-E2E-Benchmark §34.10): der
+    # Vorschlag stammt dann nur aus dem Aktenzeichen - sichtbar warnen, statt die Pruefung zum Abnicken zu machen
+    sender_matter = None
+    if "email_match" not in best.matched_signals:
+        other = next((c for c in result.candidates[1:] if "email_match" in c.matched_signals), None)
+        if other is not None:
+            sender_matter = db.query(Matter).filter_by(id=other.matter_id).first()
     return {
         "matter_id": matter.id,
         "matter_title": matter.title,
@@ -332,6 +339,7 @@ def _build_match_suggestion(db: Session, message: Message) -> dict | None:
         "score": best.score,
         "matched_signals": best.matched_signals,
         "decision": result.decision,
+        "sender_matter_title": sender_matter.title if sender_matter else None,
     }
 
 

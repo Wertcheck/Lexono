@@ -1575,3 +1575,37 @@ def test_inbox_filter_tab_click_overrides_filter_param_via_htmx(
     assert response.status_code == 200
     assert "Betriebspruefung angekuendigt" in response.text
     assert "Steuerbescheid 2025 - Einspruchsfrist" not in response.text
+
+
+def test_suggestion_card_warns_when_sender_belongs_to_another_matter(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    """Legal-E2E-Benchmark §34.10 (Review): nennt eine bekannte Adresse von Akte A das Aktenzeichen von Akte B, wird
+    nicht mehr automatisch zugeordnet - die Vorschlagskarte zeigt aber B mit hoher Uebereinstimmung. Ohne Warnung wird
+    die Pruefung zum Abnicken; jetzt nennt die Karte die Akte des Absenders."""
+    other_client = Client(name="Synthetische Mandantin A", contact_email="mandantin-a@example-testdomain.invalid")
+    other_matter = Matter(client=other_client, title="Mietsache Mandantin A")
+    db_session.add_all([other_client, other_matter])
+    message = Message(matter_id=None, direction="inbound", sender="mandantin-a@example-testdomain.invalid",
+                      subject="Rückfrage", body_text="Aktenzeichen: 2025/0142-ESt. Bitte um Rückmeldung.")
+    db_session.add(message)
+    db_session.commit()
+
+    response = client.get(f"/dashboard/inbox/{message.id}")
+
+    assert response.status_code == 200
+    assert "Einspruch Steuerbescheid 2025" in response.text
+    assert "match-suggestion-card__warning" in response.text
+    assert "Mietsache Mandantin A" in response.text
+
+
+def test_suggestion_card_has_no_warning_without_sender_conflict(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    message = Message(matter_id=None, direction="inbound", sender="unbekannt@example-testdomain.invalid",
+                      subject="Rückfrage", body_text="Aktenzeichen: 2025/0142-ESt.")
+    db_session.add(message)
+    db_session.commit()
+    response = client.get(f"/dashboard/inbox/{message.id}")
+    assert "Automatische Zuordnung (Vorschlag)" in response.text
+    assert "match-suggestion-card__warning" not in response.text

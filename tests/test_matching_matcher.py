@@ -242,3 +242,36 @@ def test_bare_address_is_not_treated_as_a_display_name(db_session: Session) -> N
     assert matcher._extract_display_name("sabine.schmidt@example.test") is None
     assert matcher._extract_display_name("Sabine Schmidt <s@example.test>") == "Sabine Schmidt"
     assert matcher._extract_display_name("") is None
+
+
+def test_sender_of_another_matter_citing_a_reference_is_not_auto_assigned(db_session: Session) -> None:
+    """Legal-E2E-Benchmark §34.10: Mandantin A schreibt von ihrer bekannten Adresse und nennt das Aktenzeichen der
+    Akte B (Tippfehler/Weiterleitung). Vorher: automatisch Akte B (Nachricht von A in fremder Akte), 6 von 6 Proben.
+    Jetzt: Pruefung durch die Kanzlei."""
+    client_a = Client(name="Mandantin A", contact_email="a@beispielpost.example")
+    client_b = Client(name="Mandant B", contact_email="b@beispielpost.example")
+    matter_a = Matter(client=client_a, title="Akte A", reference_number="A-2001")
+    matter_b = Matter(client=client_b, title="Akte B", reference_number="B-3002")
+    db_session.add_all([client_a, client_b, matter_a, matter_b])
+    db_session.commit()
+
+    message = Message(direction="inbound", sender="a@beispielpost.example", subject="Rückfrage Az. B-3002", body_text="Frage.")
+    result = _matcher().match_message(message, db_session)
+
+    assert result.decision == "needs_review" and result.matter_id is None
+    assert "anderen Akte" in result.reasoning
+    assert result.candidates[0].matter_id == matter_b.id  # Vorschlag bleibt sichtbar
+
+
+def test_reference_with_matching_sender_is_still_auto_assigned(db_session: Session) -> None:
+    client_a = Client(name="Mandantin A", contact_email="a@beispielpost.example")
+    client_b = Client(name="Mandant B", contact_email="b@beispielpost.example")
+    matter_a = Matter(client=client_a, title="Akte A", reference_number="A-2001")
+    matter_b = Matter(client=client_b, title="Akte B", reference_number="B-3002")
+    db_session.add_all([client_a, client_b, matter_a, matter_b])
+    db_session.commit()
+
+    own = Message(direction="inbound", sender="a@beispielpost.example", subject="Rückfrage Az. A-2001", body_text="Frage.")
+    unknown = Message(direction="inbound", sender="extern@beispielpost.example", subject="Az. B-3002", body_text="Frage.")
+    assert _matcher().match_message(own, db_session).matter_id == matter_a.id
+    assert _matcher().match_message(unknown, db_session).matter_id == matter_b.id

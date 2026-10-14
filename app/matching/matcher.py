@@ -128,9 +128,17 @@ class MatterMatchingService:
                 candidates=candidates,
             )
 
+        # Widerspruechliche Signale (Legal-E2E-Benchmark §34.10): der Absender ist als Kontakt einer ANDEREN Akte
+        # bekannt als der, deren Aktenzeichen genannt wird (Tippfehler, Weiterleitung, Bezug auf fremde Sache). Eine
+        # automatische Zuordnung legte die Nachricht von Mandant A ohne Pruefung in die Akte von Mandant B.
+        sender_conflict = "email_match" not in best.matched_signals and any(
+            "email_match" in other.matched_signals for other in candidates[1:]
+        )
+
         if (
             best.score >= self.auto_assign_threshold
             and not ambiguous
+            and not sender_conflict
             and classification_ok
         ):
             return MatchResult(
@@ -147,6 +155,11 @@ class MatterMatchingService:
         reason_parts = [f"Bester Kandidat: Score {best.score:.2f}."]
         if ambiguous:
             reason_parts.append("Mehrere Akten mit ähnlichem Score gefunden (Ambiguität).")
+        if sender_conflict:
+            reason_parts.append(
+                "Der Absender ist als Kontakt einer anderen Akte bekannt als der, deren Aktenzeichen genannt wird - "
+                "automatische Zuordnung deshalb ausgeschlossen."
+            )
         if not classification_ok:
             reason_parts.append(
                 "Dokumentklassifikation mit niedriger/fehlender Konfidenz - "

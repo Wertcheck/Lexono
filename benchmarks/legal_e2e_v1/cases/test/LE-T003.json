@@ -12,7 +12,7 @@
     {"id": "P2", "name": "Mareike Tönnies", "role": "zeuge", "gender": "f"},
     {"id": "P3", "name": "Jannik Brettschneider", "role": "dritter", "gender": "m"}
   ],
-  "matter": {"title": "Quast - Bußgeldverfahren Geschwindigkeit", "client_party": "P1"},
+  "matter": {"title": "Quast - Bußgeldverfahren Geschwindigkeit", "client_party": "P1", "reference_number": "26/0802-LQ"},
   "documents": [
     {
       "id": "D1", "type": "bescheid", "format": "scan", "filename": "Bussgeldbescheid_Scan.pdf", "date": "03.08.2026",
