@@ -45,6 +45,40 @@ def _scan(paragraphs: list[str], path: Path, dpi: int = SCAN_DPI) -> None:
     source.unlink()
 
 
+def render_degraded_scan(document: dict, path: Path, *, dpi: int = 110, angle: float = 1.2, noise: int = 28,
+                         jpeg_quality: int = 35, seed: int = 7) -> Path:
+    """Wie ein schlechter Buero-Scan: geringe Aufloesung, leichte Schraeglage, Rauschen, starke JPEG-Kompression.
+    Deterministisch (fester Seed). Nur fuer die OCR-Robustheitsprobe; der Korpus bleibt unveraendert."""
+    import io
+    import random
+
+    import pymupdf as fitz
+    from PIL import Image
+
+    source = path.with_suffix(".source.pdf")
+    _pdf(document["paragraphs"], source)
+    src = fitz.open(str(source))
+    out = fitz.open()
+    rng = random.Random(seed)
+    for page in src:
+        pix = page.get_pixmap(dpi=dpi)
+        image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples).convert("L")
+        image = image.rotate(angle, expand=True, fillcolor=255)
+        pixels = image.load()
+        width, height = image.size
+        for _ in range(width * height // 12):
+            x, y = rng.randrange(width), rng.randrange(height)
+            pixels[x, y] = max(0, min(255, pixels[x, y] + rng.randint(-noise * 3, noise * 3)))
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=jpeg_quality)
+        target = out.new_page(width=page.rect.width, height=page.rect.height)
+        target.insert_image(target.rect, stream=buffer.getvalue())
+    out.save(str(path))
+    src.close()
+    source.unlink()
+    return path
+
+
 def _docx(paragraphs: list[str], path: Path) -> None:
     import docx
 

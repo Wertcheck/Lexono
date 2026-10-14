@@ -20,6 +20,7 @@ Instanz (PATH oder `TESSERACT_CMD`) nötig.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -118,6 +119,19 @@ def tesseract_health_check() -> tuple[bool, str]:
     return True, f"Tesseract OCR verfügbar (Version {version})."
 
 
+# Tesseract liest das Paragraphenzeichen bei schlechten Scans als "$" ("($ 24 StVG)", Legal-E2E-Benchmark §34.12). Ersetzt
+# wird nur vor einer Paragraphennummer mit nachfolgender Gesetzesabkuerzung (optional Abs./S./Satz/Nr. dazwischen) -
+# Dollarbetraege ("$ 500", "USD $ 20") bleiben unveraendert.
+_DOLLAR_AS_PARAGRAPH = re.compile(
+    r"(?<![\w$])\$(\$?)(?=\s?\d+\s?[a-z]?(?:\s?,\s?\d+\s?[a-z]?)*\s+(?:(?:Abs|S|Satz|Nr|Ziff|lit)\.?\s*\d+\s*[a-z]?\s+)*"
+    r"(?!(?:EUR|USD|CHF|GBP)\b)[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{0,8}[A-Z][A-Za-z]{0,3}\b)"
+)
+
+
+def normalize_paragraph_signs(text: str) -> str:
+    return _DOLLAR_AS_PARAGRAPH.sub(lambda m: "§§" if m.group(1) else "§", text)
+
+
 def run_ocr(path: Path, *, languages: str = "deu+eng", dpi: int = 200) -> str:
     """Führt OCR auf einer Datei aus und gibt den erkannten Text zurück.
 
@@ -128,9 +142,9 @@ def run_ocr(path: Path, *, languages: str = "deu+eng", dpi: int = 200) -> str:
 
     try:
         if suffix == ".pdf":
-            return _run_ocr_on_pdf(path, languages=languages, dpi=dpi)
+            return normalize_paragraph_signs(_run_ocr_on_pdf(path, languages=languages, dpi=dpi))
         if suffix in IMAGE_EXTENSIONS:
-            return _run_ocr_on_image(path, languages=languages)
+            return normalize_paragraph_signs(_run_ocr_on_image(path, languages=languages))
     except Exception as exc:  # noqa: BLE001 - in OcrError kapseln
         # SICHERHEITSKRITISCH (Prompt 31, gefunden bei der Absicherung des
         # neuen Fehler-/Retry-Systems): weder der volle Dateipfad NOCH die

@@ -3965,3 +3965,37 @@ simuliert eine manipulierte oder vertauschte ID; `ChatService.record_user_messag
 **Ergebnis:** In 6/6 Fällen wurde die Anfrage **blockiert**, ohne Cloud-Aufruf. Kein Wert der fremden Akte stand im
 Payload. Fail-Closed greift, weil `assess_documents` (`app/documents/readiness.py`) den Anhang als `OTHER_MATTER` einstuft und das Dokument-Gate des Chats dann sperrt (im Code geprüft). Der Benchmark zählt einen Wert
 der fremden Akte im Payload als kritisch; dazu gibt es einen Regressionstest. Keine Produktänderung.
+
+### 34.12 Etappe 11: OCR bei schlechten Scans, Paragraphenzeichen
+
+**Probe:**
+- Jedes Scan-Dokument des Korpus wird zusätzlich als schlechter Büro-Scan erzeugt (`render_degraded_scan`). Die
+  Verschlechterung ist deterministisch (fester Seed): 110 dpi, 1,2° Schräglage, Rauschen, JPEG-Qualität 35.
+- Die Scans laufen durch den echten Import- und Verarbeitungspfad in einer eigenen Probe-Akte, nach allen anderen
+  Messungen.
+- Gezählt werden die Referenzwerte im OCR-Text. Dev und Test werden getrennt ausgewiesen; die Werte werden nicht mit
+  den sauberen Scans gemittelt.
+
+**Befund:** Dev 12/12, Test 25/27. Die beiden fehlenden Werte waren **beide Normzitate** des gescannten Bußgeldbescheids
+(LE-T003: „§ 24 StVG“, „§ 25 StVG“). Tesseract liest das Paragraphenzeichen bei schlechter Vorlage als „$“
+(„($ 24 StVG)“). Ein Dev-Gegenstück zeigt dasselbe für „§ 626 Abs. 1 BGB“, „§ 622 BGB“ und „§ 91 ZPO“. Normzitate in
+gescannten Schriftsätzen und Bescheiden waren damit für Suche, Fristen- und Zitaterkennung unbrauchbar.
+
+**Korrektur (`app/documents/ocr.py`, `normalize_paragraph_signs`):**
+- „$“ bzw. „$$“ wird nur dann zu „§“ bzw. „§§“, wenn eine Paragraphennummer mit Gesetzesabkürzung folgt. Dazwischen
+  sind Abs./S./Satz/Nr./Ziff./lit. und Aufzählungen wie „535, 536“ erlaubt.
+- Dollarbeträge („Preis $ 500“, „USD $ 20 Gebühr“), Währungscodes („$ 20 EUR“), „US$“ und vorhandene „§“ bleiben
+  unverändert.
+- Entwickelt an allgemeinen Zitierformen und dem Dev-Gegenstück, nicht am Testfall. Tests in
+  `test_ocr_paragraph_sign.py` (echte OCR auf schlechtem Scan; ohne Korrektur reproduziert „$ 626“, „$ 622“, „$ 91“).
+
+**Ergebnis:**
+- Abschlussmessung schlechte Scans: Dev 12/12, **Test 27/27**.
+- Saubere Scans unverändert: 12/12 und 27/27.
+- Keine kritischen Befunde.
+
+**Grenzen:**
+- Nur eine Verschlechterungsstufe ist gemessen.
+- Handschrift, Stempel, Tabellen und mehrspaltige Layouts fehlen im Korpus (NICHT VERIFIZIERT).
+- QA: OCR-Tests 25 grün; volle Suite 4462 bestanden, nur die 4 bekannten Logo-Fehler. Ein erster Suite-Lauf wurde vom
+  eigenen Speicherwächter wegen paralleler Benchmark-Last abgebrochen; der Lauf wurde ohne Parallel-Last wiederholt.

@@ -325,10 +325,12 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
 
     matching = _matching_probes(db, cases, {cid: st["matter"].id for cid, st in state.items()})
     foreign_attachment = _foreign_attachment_probes(db, user, cases, state, all_protect, drafting)
+    ocr_degraded = _ocr_degraded_probe(db, cases, workdir, intake, processing)
 
     db.close()
     engine.dispose()
-    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
+    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment,
+            "ocr_degraded": ocr_degraded, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
 
 
@@ -381,6 +383,41 @@ def _reference_values_for(case: dict, doc_id: str) -> list[str]:
         [d["date"] for d in ref["deadlines"]] + [c["text"] for c in ref["citations"]] + \
         [p["value"] for p in ref["privacy"]["protect"]] + list(ref["privacy"]["keep"])
     return sorted({v for v in candidates if v in text})
+
+
+def _ocr_degraded_probe(db, cases, workdir: Path, intake, processing) -> dict:  # noqa: ANN001
+    """OCR-Robustheit: jedes Scan-Dokument zusaetzlich als schlechter Scan (render_degraded_scan) durch den echten
+    Import- und Verarbeitungspfad, in einer eigenen Probe-Akte (laeuft nach allen anderen Messungen). Gezaehlt werden die
+    Referenzwerte des Dokuments im OCR-Text - getrennt nach Split, ohne Mittelung mit den sauberen Scans."""
+    from app.models import Client, Matter
+
+    from scripts.legal_bench.render import render_degraded_scan
+
+    client = Client(name="OCR-Probe (synthetisch)")
+    matter = Matter(client=client, title="OCR-Robustheitsprobe")
+    db.add_all([client, matter])
+    db.commit()
+    out: dict = {"dev": {"found": 0, "total": 0, "fehlend": []}, "test": {"found": 0, "total": 0, "fehlend": []}}
+    for case in cases:
+        for spec in case["documents"]:
+            if spec["format"] != "scan":
+                continue
+            target_dir = workdir / "degraded" / case["id"]
+            target_dir.mkdir(parents=True, exist_ok=True)
+            path = render_degraded_scan(spec, target_dir / Path(spec["filename"]).name)
+            document = intake.ingest_file(path, db, stability_timeout_seconds=5.0)
+            document.matter_id = matter.id
+            db.commit()
+            processing.process_document(document, db, actor="benchmark")
+            db.refresh(document)
+            text = document.extracted_text or ""
+            values = _reference_values_for(case, spec["id"])
+            bucket = out[case["split"]]
+            bucket["total"] += len(values)
+            bucket["found"] += sum(1 for v in values if _contains(v, text))
+            bucket["fehlend"] += [f"{case['id']}/{spec['id']}:{v}" for v in values if not _contains(v, text)]
+    return {split: {"ocr_werte_schlechter_scan": f"{b['found']}/{b['total']}", "fehlend": b["fehlend"]}
+            for split, b in out.items()}
 
 
 def _foreign_attachment_probes(db, user, cases, state, all_protect, drafting) -> list[dict]:  # noqa: ANN001
@@ -694,7 +731,7 @@ def main() -> int:
               "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
               "summary": summarise(outcome["results"]), "aktenzuordnung": outcome["matching"],
-              "fremder_anhang": outcome["foreign_attachment"],
+              "fremder_anhang": outcome["foreign_attachment"], "ocr_schlechter_scan": outcome["ocr_degraded"],
               "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"
     out.write_text(json.dumps(output, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
