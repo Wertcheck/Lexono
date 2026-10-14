@@ -3691,5 +3691,15 @@ Vor der Korrektur: 1 kritischer Befund (Leck 1) im Dev-Split. Laufzeit ≈ 55 s 
 | Volle Testsuite: 4425 bestanden, nur die 4 bekannten Logo-Fehler (fremde Löschung der Logo-Dateien) | PASS |
 | Benchmark-Lauf alle 4 Fälle: keine kritischen Befunde | PASS |
 | Drei unabhängige Reviews; alle bestätigten Lecks behoben, verbleibende Punkte ohne Leck in 34.4 | PASS |
-| Installierter Build | siehe Nachtrag bzw. NICHT VERIFIZIERT |
+| Build und Installation von `8f2a804` (Bundle enthält beide Korrekturen, per Archivprüfung) | PASS |
+| Installierter Build, Fall 28: langes DOCX (Auszug mit Schlüsselstellen), Mandant „Quirin Zabelhuber“, „geb. 14. Juli 1961“ mitten im Text und „(14.7.61)“ an anderer Stelle | PASS |
+| Installierter Build, Fall 27 (Regression §33) | PASS |
+| Normale Instanz wiederhergestellt (nur Port 8000, Health 200, kein Debug-Port, Fang-Server beendet) | PASS |
 | Vollständige Leckfreiheit, rechtliche Konformität, Antwortqualität echter Modelle | NICHT VERIFIZIERT |
+
+**Fall 28, abgefangene Payload (Auszug):** „[…] Mieter ist Herr [MANDANT_01], geb. [GEBURTSDATUM_01], wohnhaft in
+[ORT_01]; […] er mindert um 940,00 EUR. […] Die Vermieterin bestaetigt den Eingang am 3.4.2026; […] der Mieter (…)
+verlangt Antwort bis 30.04.2026.“ Das bezeichnete Datum bleibt bei „geb.“ und wird maskiert, die unbezeichnete
+Kurzform wird entfernt, Beträge und Fristen bleiben lesbar. Hinweis zum QA-Werkzeug: der Fang-Server zählt nach einem
+Neustart wieder ab `payload_001`; das Prüfskript erkannte die überschriebene Datei deshalb nicht als neu und meldete
+zunächst „kein Cloud-Aufruf“ – die Payload wurde direkt ausgewertet, ältere Payloads vor Fall 27 archiviert.
