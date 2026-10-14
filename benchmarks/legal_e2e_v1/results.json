@@ -1,0 +1,928 @@
+{
+ "benchmark": "legal_e2e_v1",
+ "run_at": "2026-10-14T00:17:51+00:00",
+ "git_commit": "20e0521",
+ "git_dirty_files": [],
+ "corpus_sha256": "e7db732c4775ae2e",
+ "code_fingerprint": {
+  "app/privacy/gateway.py": "0ffec999fff8bc12",
+  "app/privacy/detectors.py": "78b33da3b29385e4",
+  "app/privacy/pseudonymizer.py": "41eadfa80574c12b",
+  "app/documents/service.py": "297259ba3ae32985",
+  "app/documents/extraction.py": "ff83b06dca8cfefb",
+  "app/deadlines/extractor.py": "c8163327fba85186",
+  "app/search/service.py": "bc812b0e3d85dee9",
+  "app/chat/service.py": "5f32e74f30823a8c",
+  "app/drafting/service.py": "f85591d1271a4b36",
+  "app/drafting/editor_service.py": "dbab751abc7138ed",
+  "app/export/docx_export_service.py": "fbfa221def1dd7e9",
+  "app/export/pdf_export_service.py": "bb8ffb4cfe8dd96d"
+ },
+ "python": "3.13.15",
+ "environment": {
+  "embedding": "fastembed:sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+  "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
+  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
+ },
+ "seconds_total": 46.1,
+ "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT",
+ "nicht_verifiziert": [
+  "Antwortqualitaet eines echten Modells",
+  "Kosten",
+  "installierter Build (eigener Lauf)"
+ ],
+ "summary": {
+  "dev": {
+   "cases": 2,
+   "kritisch": [],
+   "extraktion_werte": "68/68",
+   "ocr_dokumente": 2,
+   "ocr_werte": "9/9",
+   "dokumentfehler": 0,
+   "fristen_datum_recall": "5/5",
+   "fristen_nicht_in_referenz": 15,
+   "davon_bekannte_falldaten": 15,
+   "davon_ungeklaert": [],
+   "klassifiziert_nicht_unbekannt": "8/10",
+   "payload_aufgaben": 7,
+   "pii_leaks": 0,
+   "fremde_akte_im_payload": 0,
+   "benoetigte_werte_im_payload": "15/15",
+   "aufgaben_ohne_payload": [],
+   "suche_top1": "2/2",
+   "suche_top5": "2/2",
+   "schriftsatz_ok": "2/2",
+   "export_mit_bearbeitung": "2/2",
+   "aufgabenfehler": []
+  },
+  "test": {
+   "cases": 2,
+   "kritisch": [],
+   "extraktion_werte": "53/53",
+   "ocr_dokumente": 2,
+   "ocr_werte": "13/13",
+   "dokumentfehler": 0,
+   "fristen_datum_recall": "2/2",
+   "fristen_nicht_in_referenz": 12,
+   "davon_bekannte_falldaten": 12,
+   "davon_ungeklaert": [],
+   "klassifiziert_nicht_unbekannt": "0/9",
+   "payload_aufgaben": 6,
+   "pii_leaks": 0,
+   "fremde_akte_im_payload": 0,
+   "benoetigte_werte_im_payload": "14/14",
+   "aufgaben_ohne_payload": [],
+   "suche_top1": "2/2",
+   "suche_top5": "2/2",
+   "schriftsatz_ok": "2/2",
+   "export_mit_bearbeitung": "2/2",
+   "aufgabenfehler": []
+  }
+ },
+ "results": [
+  {
+   "case": "LE-D001",
+   "split": "dev",
+   "documents": {
+    "D1": {
+     "format": "docx",
+     "type_reference": "vertrag",
+     "status": "not_needed",
+     "classified": "Vertrag",
+     "chars": 461,
+     "values_total": 6,
+     "values_found": [
+      "01.09.2021",
+      "1.150,00 EUR",
+      "DE21 3704 0044 0812 3456 78",
+      "Erlenweg 12, 12345 Musterstadt",
+      "Gudrun Pfeilsticker",
+      "Henrike Osterkamp"
+     ],
+     "values_missing": [],
+     "seconds": 1.2
+    },
+    "D2": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 473,
+     "values_total": 9,
+     "values_found": [
+      "0171 4455667",
+      "02.02.2026",
+      "03.02.2026",
+      "20.02.2026",
+      "Detlef Rautenberg",
+      "Henrike Osterkamp",
+      "Januar 2026",
+      "Yusuf Demirtas",
+      "henrike.osterkamp@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.12
+    },
+    "D3": {
+     "format": "pdf",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 631,
+     "values_total": 7,
+     "values_found": [
+      "10.03.2026",
+      "31.03.2026",
+      "460,00 EUR",
+      "Am Muehlbach 3, 12345 Musterstadt",
+      "Erlenweg 12, 12345 Musterstadt",
+      "Gudrun Pfeilsticker",
+      "Henrike Osterkamp"
+     ],
+     "values_missing": [],
+     "seconds": 1.18
+    },
+    "D4": {
+     "format": "scan",
+     "type_reference": "rechnung",
+     "status": "done",
+     "classified": "Rechnung",
+     "chars": 245,
+     "values_total": 5,
+     "values_found": [
+      "05.03.2026",
+      "486,50 EUR",
+      "Erlenweg 12, 12345 Musterstadt",
+      "Henrike Osterkamp",
+      "R-2026-0311"
+     ],
+     "values_missing": [],
+     "seconds": 1.51
+    },
+    "D5": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Vollmacht",
+     "chars": 520,
+     "values_total": 8,
+     "values_found": [
+      "01.04.2026",
+      "15.04.2026",
+      "26/0417-KB",
+      "690,00 EUR",
+      "Gudrun Pfeilsticker",
+      "§ 536 BGB",
+      "§ 536c BGB",
+      "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
+     ],
+     "values_missing": [],
+     "seconds": 1.16
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 4057,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "31.03.2026",
+      "15.04.2026"
+     ],
+     "needed_missing": [],
+     "seconds": 5.17
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 2043,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "486,50 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 0.61
+    },
+    {
+     "id": "Q3",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 4073,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "03.02.2026",
+      "17.02.2026",
+      "1.150,00 EUR",
+      "1.250,00 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 2.17
+    },
+    {
+     "id": "Q4",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "payload_chars": 4113,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "03.02.2026",
+      "1.150,00 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 2.31
+    },
+    {
+     "id": "Q5",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.02
+    },
+    {
+     "id": "Q6",
+     "kind": "fristen",
+     "expected": [
+      "31.03.2026",
+      "15.04.2026"
+     ],
+     "found": [
+      "31.03.2026",
+      "15.04.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "15.04.2026",
+     "20.02.2026",
+     "31.03.2026"
+    ],
+    "found": [
+     "01.04.2026",
+     "01.09.2021",
+     "02.02.2026",
+     "03.02.2026",
+     "05.03.2026",
+     "10.03.2026",
+     "15.04.2026",
+     "17.02.2026",
+     "20.02.2026",
+     "31.03.2026"
+    ],
+    "recall": "3/3",
+    "missing": [],
+    "not_in_reference": [
+     "01.04.2026",
+     "01.09.2021",
+     "02.02.2026",
+     "03.02.2026",
+     "05.03.2026",
+     "10.03.2026",
+     "17.02.2026"
+    ],
+    "known_dates_as_deadline": [
+     "01.04.2026",
+     "01.09.2021",
+     "02.02.2026",
+     "03.02.2026",
+     "05.03.2026",
+     "10.03.2026",
+     "17.02.2026"
+    ],
+    "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
+   "case": "LE-D002",
+   "split": "dev",
+   "documents": {
+    "D1": {
+     "format": "pdf",
+     "type_reference": "vertrag",
+     "status": "not_needed",
+     "classified": "Vertrag",
+     "chars": 290,
+     "values_total": 7,
+     "values_found": [
+      "14.07.1988",
+      "15.01.2019",
+      "3.480,00 EUR",
+      "70321",
+      "Hafenstrasse 88, 54321 Beispielhafen",
+      "Jonas Wiegelmann",
+      "Kerkhoff Logistik GmbH"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    },
+    "D2": {
+     "format": "scan",
+     "type_reference": "schreiben",
+     "status": "done",
+     "classified": "Mahnung",
+     "chars": 308,
+     "values_total": 4,
+     "values_found": [
+      "09.02.2026",
+      "12.02.2026",
+      "Kerkhoff Logistik GmbH",
+      "Sabine Uhlenbrock"
+     ],
+     "values_missing": [],
+     "seconds": 1.54
+    },
+    "D3": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Kündigungsschreiben",
+     "chars": 365,
+     "values_total": 6,
+     "values_found": [
+      "16.03.2026",
+      "18.03.2026",
+      "20.03.2026",
+      "30.06.2026",
+      "Kerkhoff Logistik GmbH",
+      "Sabine Uhlenbrock"
+     ],
+     "values_missing": [],
+     "seconds": 1.12
+    },
+    "D4": {
+     "format": "txt",
+     "type_reference": "notiz",
+     "status": "not_needed",
+     "classified": "Mahnung",
+     "chars": 346,
+     "values_total": 7,
+     "values_found": [
+      "0160 9081726",
+      "12.02.2026",
+      "16.03.2026",
+      "23.03.2026",
+      "Jonas Wiegelmann",
+      "Milan Novakovic",
+      "j.wiegelmann@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.11
+    },
+    "D5": {
+     "format": "docx",
+     "type_reference": "klageschrift",
+     "status": "not_needed",
+     "classified": "Mahnung",
+     "chars": 556,
+     "values_total": 9,
+     "values_found": [
+      "13.04.2026",
+      "20.03.2026",
+      "23.03.2026",
+      "3.480,00 EUR",
+      "Jonas Wiegelmann",
+      "Kerkhoff Logistik GmbH",
+      "§ 1 Abs. 2 KSchG",
+      "§ 4 KSchG",
+      "§ 42 Abs. 2 GKG"
+     ],
+     "values_missing": [],
+     "seconds": 1.16
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 4654,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "23.03.2026",
+      "13.04.2026"
+     ],
+     "needed_missing": [],
+     "seconds": 1.27
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 2861,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "09.02.2026",
+      "12.02.2026"
+     ],
+     "needed_missing": [],
+     "seconds": 0.62
+    },
+    {
+     "id": "Q3",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "payload_chars": 4677,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "20.03.2026",
+      "3.480,00 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 0.93
+    },
+    {
+     "id": "Q4",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.02
+    },
+    {
+     "id": "Q5",
+     "kind": "fristen",
+     "expected": [
+      "13.04.2026"
+     ],
+     "found": [
+      "13.04.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "13.04.2026",
+     "30.06.2026"
+    ],
+    "found": [
+     "09.02.2026",
+     "12.02.2026",
+     "13.04.2026",
+     "15.01.2019",
+     "16.03.2026",
+     "18.03.2026",
+     "20.03.2026",
+     "23.03.2026",
+     "24.03.2026",
+     "30.06.2026"
+    ],
+    "recall": "2/2",
+    "missing": [],
+    "not_in_reference": [
+     "09.02.2026",
+     "12.02.2026",
+     "15.01.2019",
+     "16.03.2026",
+     "18.03.2026",
+     "20.03.2026",
+     "23.03.2026",
+     "24.03.2026"
+    ],
+    "known_dates_as_deadline": [
+     "09.02.2026",
+     "12.02.2026",
+     "15.01.2019",
+     "16.03.2026",
+     "18.03.2026",
+     "20.03.2026",
+     "23.03.2026",
+     "24.03.2026"
+    ],
+    "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
+   "case": "LE-T001",
+   "split": "test",
+   "documents": {
+    "D1": {
+     "format": "scan",
+     "type_reference": "protokoll",
+     "status": "done",
+     "classified": "Unbekannt",
+     "chars": 353,
+     "values_total": 8,
+     "values_found": [
+      "07.05.2026",
+      "08:15 Uhr",
+      "2026-04711",
+      "BS-BT 418",
+      "BS-IV 2207",
+      "Bernd Tiefenthaler",
+      "Ilka Voskuhl",
+      "Lorenz Haberkamp"
+     ],
+     "values_missing": [],
+     "seconds": 1.59
+    },
+    "D2": {
+     "format": "pdf",
+     "type_reference": "gutachten",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 287,
+     "values_total": 7,
+     "values_found": [
+      "14.05.2026",
+      "6.412,80 EUR",
+      "650,00 EUR",
+      "812,40 EUR",
+      "Ilka Voskuhl",
+      "Ringallee 5, 38100 Beispielstadt",
+      "Theresa Kalkbrenner"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    },
+    "D3": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 386,
+     "values_total": 7,
+     "values_found": [
+      "02.06.2026",
+      "3.206,40 EUR",
+      "30.06.2026",
+      "50 Prozent",
+      "Bernd Tiefenthaler",
+      "OV-26-889214",
+      "Ostwind Versicherung AG"
+     ],
+     "values_missing": [],
+     "seconds": 1.13
+    },
+    "D4": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 288,
+     "values_total": 6,
+     "values_found": [
+      "0151 2233445",
+      "05.06.2026",
+      "07.05.2026",
+      "738,00 EUR",
+      "Ilka Voskuhl",
+      "ilka.voskuhl@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.06
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 2278,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "6.412,80 EUR",
+      "650,00 EUR",
+      "812,40 EUR",
+      "738,00 EUR",
+      "3.206,40 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 1.03
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 1194,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "650,00 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 0.37
+    },
+    {
+     "id": "Q3",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "payload_chars": 2273,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "07.05.2026",
+      "6.412,80 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 0.7
+    },
+    {
+     "id": "Q4",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.02
+    },
+    {
+     "id": "Q5",
+     "kind": "fristen",
+     "expected": [
+      "30.06.2026"
+     ],
+     "found": [
+      "30.06.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "30.06.2026"
+    ],
+    "found": [
+     "02.06.2026",
+     "05.06.2026",
+     "07.05.2026",
+     "14.05.2026",
+     "30.06.2026"
+    ],
+    "recall": "1/1",
+    "missing": [],
+    "not_in_reference": [
+     "02.06.2026",
+     "05.06.2026",
+     "07.05.2026",
+     "14.05.2026"
+    ],
+    "known_dates_as_deadline": [
+     "02.06.2026",
+     "05.06.2026",
+     "07.05.2026",
+     "14.05.2026"
+    ],
+    "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
+   "case": "LE-T002",
+   "split": "test",
+   "documents": {
+    "D1": {
+     "format": "scan",
+     "type_reference": "anlage",
+     "status": "done",
+     "classified": "Unbekannt",
+     "chars": 257,
+     "values_total": 5,
+     "values_found": [
+      "11.11.1941",
+      "15.06.2019",
+      "Annegret Brüninghoff",
+      "Lindenstrasse 7, 33333 Beispieldorf",
+      "Waltraud Wehrhahn"
+     ],
+     "values_missing": [],
+     "seconds": 1.48
+    },
+    "D2": {
+     "format": "pdf",
+     "type_reference": "bescheid",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 171,
+     "values_total": 3,
+     "values_found": [
+      "02.01.2026",
+      "05.01.2026",
+      "Waltraud Wehrhahn"
+     ],
+     "values_missing": [],
+     "seconds": 1.07
+    },
+    "D3": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 333,
+     "values_total": 6,
+     "values_found": [
+      "0170 5566778",
+      "03.03.2022",
+      "10.02.2026",
+      "240.000,00 EUR",
+      "Konstantin Wehrhahn",
+      "k.wehrhahn@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    },
+    "D4": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 325,
+     "values_total": 4,
+     "values_found": [
+      "16.03.2026",
+      "18.420,55 EUR",
+      "Annegret Brüninghoff",
+      "Ingrid Pohlschmidt"
+     ],
+     "values_missing": [],
+     "seconds": 1.11
+    },
+    "D5": {
+     "format": "docx",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 434,
+     "values_total": 7,
+     "values_found": [
+      "03.03.2022",
+      "21.04.2022",
+      "25.03.2026",
+      "31.07.2026",
+      "§ 2303 Abs. 1 BGB",
+      "§ 2314 BGB",
+      "§ 2325 BGB"
+     ],
+     "values_missing": [],
+     "seconds": 1.16
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 3602,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "03.03.2022",
+      "240.000,00 EUR",
+      "21.04.2022"
+     ],
+     "needed_missing": [],
+     "seconds": 1.23
+    },
+    {
+     "id": "Q2",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Für diese Anfrage wurde von den Aktendokumenten nur der Text des angehängten Dokumen",
+     "payload_chars": 2314,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "15.06.2019"
+     ],
+     "needed_missing": [],
+     "seconds": 0.55
+    },
+    {
+     "id": "Q3",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "payload_chars": 3600,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "03.03.2022",
+      "18.420,55 EUR"
+     ],
+     "needed_missing": [],
+     "seconds": 0.89
+    },
+    {
+     "id": "Q4",
+     "kind": "suche",
+     "rank": [
+      1
+     ],
+     "foreign_hits": 0,
+     "seconds": 0.02
+    },
+    {
+     "id": "Q5",
+     "kind": "fristen",
+     "expected": [
+      "31.07.2026"
+     ],
+     "found": [
+      "31.07.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "31.07.2026"
+    ],
+    "found": [
+     "03.03.2022",
+     "05.01.2026",
+     "10.02.2026",
+     "15.06.2019",
+     "16.03.2026",
+     "20.02.2026",
+     "21.04.2022",
+     "25.03.2026",
+     "31.07.2026"
+    ],
+    "recall": "1/1",
+    "missing": [],
+    "not_in_reference": [
+     "03.03.2022",
+     "05.01.2026",
+     "10.02.2026",
+     "15.06.2019",
+     "16.03.2026",
+     "20.02.2026",
+     "21.04.2022",
+     "25.03.2026"
+    ],
+    "known_dates_as_deadline": [
+     "03.03.2022",
+     "05.01.2026",
+     "10.02.2026",
+     "15.06.2019",
+     "16.03.2026",
+     "20.02.2026",
+     "21.04.2022",
+     "25.03.2026"
+    ],
+    "unexplained": [],
+    "personal_dates_as_deadline": []
+   }
+  }
+ ]
+}
