@@ -45,8 +45,17 @@ class ValidationReport:
         return not self.errors
 
 
+def table_lines(document: dict) -> list[str]:
+    """Optionale Tabelle eines Dokuments ({"header": [...], "rows": [[...]]}) als "Zelle | Zelle" - dieselbe Darstellung,
+    die die DOCX-Extraktion liefert (app/documents/extraction.py::_docx_block_lines)."""
+    table = document.get("table")
+    if not table:
+        return []
+    return [" | ".join(row) for row in [table["header"], *table["rows"]]]
+
+
 def doc_text(document: dict) -> str:
-    return "\n".join(document.get("paragraphs", []))
+    return "\n".join([*document.get("paragraphs", []), *table_lines(document)])
 
 
 def load_register(corpus_dir: Path = CORPUS_DIR) -> dict:

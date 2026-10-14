@@ -55,8 +55,10 @@ def render_degraded_scan(document: dict, path: Path, *, dpi: int = 110, angle: f
     import pymupdf as fitz
     from PIL import Image
 
+    from scripts.legal_bench.corpus import table_lines
+
     source = path.with_suffix(".source.pdf")
-    _pdf(document["paragraphs"], source)
+    _pdf([*document["paragraphs"], *table_lines(document)], source)
     src = fitz.open(str(source))
     out = fitz.open()
     rng = random.Random(seed)
@@ -79,26 +81,34 @@ def render_degraded_scan(document: dict, path: Path, *, dpi: int = 110, angle: f
     return path
 
 
-def _docx(paragraphs: list[str], path: Path) -> None:
+def _docx(paragraphs: list[str], path: Path, table: dict | None = None) -> None:
     import docx
 
     document = docx.Document()
     for paragraph in paragraphs:
         document.add_paragraph(paragraph)
+    if table:  # echte Word-Tabelle (Kopfzeile + Zeilen)
+        grid = document.add_table(rows=1 + len(table["rows"]), cols=len(table["header"]))
+        for r, row in enumerate([table["header"], *table["rows"]]):
+            for c, value in enumerate(row):
+                grid.cell(r, c).text = value
     document.save(str(path))
 
 
 def render_document(document: dict, outdir: Path) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
-    paragraphs = document["paragraphs"]
+    from scripts.legal_bench.corpus import table_lines
+
     fmt = document["format"]
+    # Tabelle: in DOCX als echte Tabelle, sonst als Tabellenzeilen "Zelle | Zelle" (wie ein Textexport)
+    paragraphs = document["paragraphs"] if fmt == "docx" else [*document["paragraphs"], *table_lines(document)]
     name = Path(document["filename"]).stem
     if fmt == "txt":
         path = outdir / f"{name}.txt"
         path.write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
     elif fmt == "docx":
         path = outdir / f"{name}.docx"
-        _docx(paragraphs, path)
+        _docx(paragraphs, path, document.get("table"))
     elif fmt == "pdf":
         path = outdir / f"{name}.pdf"
         _pdf(paragraphs, path)

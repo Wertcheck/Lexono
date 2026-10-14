@@ -137,6 +137,10 @@ def _any_spelling(value: str) -> re.Pattern[str] | None:
     return re.compile(rf"(?<![\d.]){day}{month}{year}(?!\d)", re.IGNORECASE)
 
 
+#: Sichtbarer Ersatz statt stiller Auslassung (CLAUDE.md: Unsicherheit markieren; Review §34.14)
+REMOVED_PERSONAL_DATE = "(Datum entfernt)"
+
+
 def remove_unlabelled_personal_dates(excerpt: str, source_text: str | None) -> str:
     """Entfernt aus einem AUSSCHNITT jedes Geburts-/Todesdatum (in jeder Schreibweise), das laut Quelltext eines ist, im
     Ausschnitt aber ohne seine Bezeichnung steht - und Rand-Bruchstuecke davon ("Juli 1988, ..." aus "14. Juli 1988").
@@ -159,7 +163,7 @@ def remove_unlabelled_personal_dates(excerpt: str, source_text: str | None) -> s
             if not any(match.start() < end and start < match.end() for start, end in labelled):
                 removals.append((match.start(), match.end()))
     for start, end in sorted(set(removals), reverse=True):
-        excerpt = excerpt[:start] + "…" + excerpt[end:]
+        excerpt = excerpt[:start] + REMOVED_PERSONAL_DATE + excerpt[end:]
     return _strip_edge_fragments(excerpt, personal)
 
 

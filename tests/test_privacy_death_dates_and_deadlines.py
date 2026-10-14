@@ -273,7 +273,7 @@ def test_personal_date_removal_respects_digit_boundaries_and_edge_fragments() ->
     from app.deadlines.extractor import remove_unlabelled_personal_dates
 
     source = "Erblasser Max Beispiel, geb. 1.2.1988, und Anna Beispiel, geboren am 14. Juli 1990."
-    assert remove_unlabelled_personal_dates("Vorgang Nr. 11.2.19880 und 1.2.1988 offen", source) == "Vorgang Nr. 11.2.19880 und … offen"
+    assert remove_unlabelled_personal_dates("Vorgang Nr. 11.2.19880 und 1.2.1988 offen", source) == "Vorgang Nr. 11.2.19880 und (Datum entfernt) offen"
     assert remove_unlabelled_personal_dates("Juli 1990, Beginn am 01.03.2020", source) == "Beginn am 01.03.2020"
     assert remove_unlabelled_personal_dates("Beginn am 01.03.2020, Anna am 14. Juli", source) == "Beginn am 01.03.2020, Anna am"
     # bezeichnete Daten bleiben fuer die Maskierung im Gateway stehen
@@ -316,7 +316,7 @@ def test_other_spellings_of_a_personal_date_are_removed_but_labelled_ones_stay()
 
     source = "Max Beispiel, geb. 14.07.1988, Disponent."
     for other in ("14.7.1988", "14.07.88", "14. 07. 1988", "14. Juli 1988", "14. Jul. 1988"):
-        assert remove_unlabelled_personal_dates(f"Am {other} unterschrieben.", source) == "Am … unterschrieben.", other
+        assert remove_unlabelled_personal_dates(f"Am {other} unterschrieben.", source) == "Am (Datum entfernt) unterschrieben.", other
     assert remove_unlabelled_personal_dates("Herr Beispiel, geb. 14. Juli 1988, ist Disponent.", source) == (
         "Herr Beispiel, geb. 14. Juli 1988, ist Disponent."
     )
@@ -354,3 +354,29 @@ def test_labelled_birthdate_in_long_document_middle_is_masked_not_dropped(gatewa
     assert "geb. 14.07.1988" in excerpt
     payload = _payload_text(gateway, sachverhalt=excerpt)
     assert "1988" not in payload and "GEBURTSDATUM" in payload
+
+
+def test_birthdates_from_a_table_column_never_reach_the_payload(gateway) -> None:
+    """Legal-E2E-Benchmark §34.14 (LE-D004): Erbentabelle "Erbe | Geburtsdatum | Erbquote" - die Normalisierung des
+    Dokumentauszugs (Zeilen -> Doppel-Leerzeichen) machte die Tabellenspalte unkenntlich; alle drei Geburtsdaten gingen
+    im Klartext hinaus. Massgeblich ist jetzt der rohe Text."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    raw = ("Sie wird beerbt von ihren Kindern zu je einem Drittel:\nErbe | Geburtsdatum | Erbquote\n"
+           "Anna Beispiel | 03.04.1962 | 1/3\nBernd Beispiel | 17.09.1965 | 1/3\nCarla Beispiel | 28.11.1970 | 1/3")
+    for text in (raw, raw + " " + "Weitere Regelung zur Durchfuehrung des Nachlasses. " * 900):
+        excerpt = _document_excerpt(text).text
+        payload = _payload_text(gateway, sachverhalt=excerpt)
+        assert not any(year in payload for year in ("1962", "1965", "1970")), text[:40]
+        assert "1/3" in payload
+
+
+def test_label_and_date_on_separate_lines_in_long_document(gateway) -> None:
+    """Review §34.14: der rohe Text erkennt "geboren am" / "14.07.1988" auf getrennten Zeilen nicht, der normalisierte
+    schon - beide Quellen zaehlen. Entfernte Daten sind sichtbar markiert."""
+    from app.ai_providers.local_ai_provider import _document_excerpt
+
+    filler = " ".join(f"Klausel {i}: Die Parteien vereinbaren die Regelung Nummer {i} zur Durchfuehrung." for i in range(1200))
+    text = filler + " Arbeitnehmer Max Beispiel, geboren am\n14.07.1988, wohnhaft in Beispielhafen. Frist bis 30.06.2026. " + filler
+    excerpt = _document_excerpt(text).text
+    assert "1988" not in _payload_text(gateway, sachverhalt=excerpt)

@@ -1,0 +1,126 @@
+{
+  "id": "LE-D004",
+  "split": "dev",
+  "version": 2,
+  "title": "Erbengemeinschaft: Auseinandersetzung und Teilungsversteigerung",
+  "rechtsgebiet": "Erbrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Vollständig synthetisch, Normen real (BGB). Erbentabelle mit Geburtsdatum-Spalte (Word-Tabelle), drei Personen mit gleichem Nachnamen, Todesdatum, Widerspruch zum Verkehrswert.",
+  "parties": [
+    {"id": "P1", "name": "Friederike Lammersdorf", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Gerold Lammersdorf", "role": "gegner", "gender": "m"},
+    {"id": "P3", "name": "Oskar Lammersdorf", "role": "dritter", "gender": "m"},
+    {"id": "P4", "name": "Hedwig Lammersdorf", "role": "dritter", "gender": "f"}
+  ],
+  "matter": {"title": "Erbengemeinschaft Lammersdorf - Auseinandersetzung", "client_party": "P1", "reference_number": "26/0612-LA"},
+  "documents": [
+    {
+      "id": "D1", "type": "anlage", "format": "docx", "filename": "Erbschein_Erbentabelle.docx", "date": "20.02.2026",
+      "paragraphs": [
+        "Erbschein (Auszug) - Amtsgericht Beispielheim, Nachlassgericht, erteilt am 20.02.2026",
+        "Die Erblasserin Hedwig Lammersdorf ist am 09.01.2026 in Beispielheim verstorben.",
+        "Sie wird beerbt von ihren Kindern zu je einem Drittel:"
+      ],
+      "table": {
+        "header": ["Erbe", "Geburtsdatum", "Erbquote"],
+        "rows": [
+          ["Friederike Lammersdorf", "03.04.1962", "1/3"],
+          ["Gerold Lammersdorf", "17.09.1965", "1/3"],
+          ["Oskar Lammersdorf", "28.11.1970", "1/3"]
+        ]
+      }
+    },
+    {
+      "id": "D2", "type": "email", "format": "txt", "filename": "Email_Mandantin.txt", "date": "02.03.2026",
+      "paragraphs": [
+        "Von: f.lammersdorf@beispielpost.example",
+        "Datum: 02.03.2026",
+        "Betreff: Haus der Mutter",
+        "Mein Bruder Gerold blockiert den Verkauf des Hauses Kastanienweg 3, 44444 Beispielheim. Oskar und ich wollen verkaufen.",
+        "Ein Makler schätzt den Wert auf 285.000,00 EUR. Erreichbar bin ich unter 0176 2211009.",
+        "Friederike Lammersdorf"
+      ]
+    },
+    {
+      "id": "D3", "type": "gutachten", "format": "pdf", "filename": "Wertgutachten.pdf", "date": "10.03.2026",
+      "paragraphs": [
+        "Wertgutachten zum Grundstück Kastanienweg 3 vom 10.03.2026",
+        "Wertermittlungsstichtag: 01.03.2026",
+        "Der Verkehrswert wird auf 312.000,00 EUR festgestellt."
+      ]
+    },
+    {
+      "id": "D4", "type": "schreiben", "format": "docx", "filename": "Schreiben_Gerold.docx", "date": "18.03.2026",
+      "paragraphs": [
+        "Gerold Lammersdorf",
+        "Beispielheim, 18.03.2026",
+        "Einem Verkauf stimme ich nicht zu. Das Haus ist höchstens 260.000,00 EUR wert.",
+        "Ich möchte das Haus selbst übernehmen."
+      ]
+    },
+    {
+      "id": "D5", "type": "schreiben", "format": "docx", "filename": "Aufforderung_Entwurf.docx", "date": "25.03.2026",
+      "paragraphs": [
+        "Unser Zeichen: 26/0612-LA",
+        "Beispielheim, 25.03.2026",
+        "Namens unserer Mandantin fordern wir Sie auf, bis zum 15.05.2026 an der Auseinandersetzung des Nachlasses mitzuwirken (§ 2042 Abs. 1 BGB).",
+        "Andernfalls wird unsere Mandantin die Teilungsversteigerung des Grundstücks beantragen (§ 753 BGB)."
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Erbquoten zu je einem Drittel", "values": ["1/3"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Verkehrswert laut Gutachten", "values": ["312.000,00 EUR", "01.03.2026"], "docs": ["D3"]},
+      {"id": "F3", "statement": "Wertangabe des Bruders", "values": ["260.000,00 EUR"], "docs": ["D4"]},
+      {"id": "F4", "statement": "Maklerschätzung laut Mandantin", "values": ["285.000,00 EUR"], "docs": ["D2"]}
+    ],
+    "chronology": [
+      {"date": "20.02.2026", "event": "Erbschein", "doc": "D1"},
+      {"date": "02.03.2026", "event": "E-Mail der Mandantin", "doc": "D2"},
+      {"date": "10.03.2026", "event": "Wertgutachten", "doc": "D3"},
+      {"date": "18.03.2026", "event": "Schreiben des Bruders", "doc": "D4"},
+      {"date": "25.03.2026", "event": "Aufforderung", "doc": "D5"}
+    ],
+    "deadlines": [
+      {"date": "15.05.2026", "kind": "Mitwirkung an der Auseinandersetzung", "doc": "D5"}
+    ],
+    "citations": [
+      {"text": "§ 2042 Abs. 1 BGB", "kind": "norm", "doc": "D5"},
+      {"text": "§ 753 BGB", "kind": "norm", "doc": "D5"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Verkehrswert des Hauses",
+       "values": [{"doc": "D3", "value": "312.000,00 EUR"}, {"doc": "D4", "value": "260.000,00 EUR"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Friederike Lammersdorf", "type": "PERSON"},
+        {"value": "Gerold Lammersdorf", "type": "PERSON"},
+        {"value": "Oskar Lammersdorf", "type": "PERSON"},
+        {"value": "Hedwig Lammersdorf", "type": "PERSON"},
+        {"value": "03.04.1962", "type": "PERS_DATUM"},
+        {"value": "17.09.1965", "type": "PERS_DATUM"},
+        {"value": "28.11.1970", "type": "PERS_DATUM"},
+        {"value": "09.01.2026", "type": "PERS_DATUM"},
+        {"value": "Kastanienweg 3, 44444 Beispielheim", "type": "ADRESSE"},
+        {"value": "f.lammersdorf@beispielpost.example", "type": "EMAIL"},
+        {"value": "0176 2211009", "type": "TELEFON"}
+      ],
+      "keep": ["312.000,00 EUR", "260.000,00 EUR", "1/3", "15.05.2026", "§ 2042 Abs. 1 BGB", "§ 753 BGB"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Wer erbt zu welcher Quote, und welche Werte werden für das Haus genannt?", "attach": [],
+       "needed_facts": ["F1", "F2", "F3"], "needed_values": ["1/3", "312.000,00 EUR", "260.000,00 EUR"]},
+      {"id": "Q2", "kind": "chat", "question": "Was steht in der Erbentabelle dieses Erbscheins?", "attach": ["D1"],
+       "needed_facts": ["F1"], "needed_values": ["1/3"]},
+      {"id": "Q3", "kind": "schriftsatz", "question": "Aufforderung zur Mitwirkung mit Hinweis auf Teilungsversteigerung.",
+       "attach": [], "needed_facts": ["F2"], "needed_values": ["312.000,00 EUR", "15.05.2026"]},
+      {"id": "Q4", "kind": "suche", "question": "Wertgutachten Verkehrswert Grundstück", "attach": [], "needed_facts": ["F2"],
+       "expected_documents": ["D3"]},
+      {"id": "Q5", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["15.05.2026"]}
+    ]
+  }
+}

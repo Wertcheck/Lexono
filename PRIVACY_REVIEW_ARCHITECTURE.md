@@ -4016,12 +4016,50 @@ gescannten Schriftsätzen und Bescheiden waren damit für Suche, Fristen- und Zi
 - Bewertung: PASS für die Korrektur, verbleibender OCR-Buchstabenfehler dokumentiert.
 - Normale Instanz wiederhergestellt (Health 200, kein Debug-Port, Fang-Server beendet).
 
+### 34.14 Etappe 12: Tabellen im Korpus, Geburtsdaten aus einer Tabellenspalte (Leck 7)
+
+**Korpus:**
+- Dokumente können eine Tabelle haben (`table`). In DOCX wird sie als echte Word-Tabelle gerendert, sonst als
+  Tabellenzeilen „Zelle | Zelle“ (gleiche Darstellung wie die DOCX-Extraktion).
+- Neuer Dev-Fall LE-D004 (Erbengemeinschaft): Erbentabelle „Erbe | Geburtsdatum | Erbquote“, vier Personen mit gleichem
+  Nachnamen, Todesdatum, Widerspruch zum Verkehrswert.
+
+**Leck 7 (kritisch, reproduziert):**
+- Die drei Geburtsdaten der Tabelle standen in **jedem** Payload der Akte im Klartext (Chat, Chat mit Anhang,
+  Schriftsatz).
+- Ursache: Die Pseudonymisierung erkennt die Spalte „Geburtsdatum“ nur zeilenweise (§24). `_normalize_document_text`
+  macht für den Sachverhalt aus Zeilenumbrüchen Doppel-Leerzeichen, wodurch die Tabelle unkenntlich wird.
+- Roher Text: 3/3 erkannt; normalisierter Text: 0/3.
+
+**Korrektur (`_document_excerpt`):** Für kurze und lange Dokumente gilt jetzt der **rohe** extrahierte Text als
+Quelle. Dort erkannte Geburts- und Todesdaten, die im Auszug ohne Bezeichnung stehen, werden in jeder Schreibweise
+entfernt (`remove_unlabelled_personal_dates`). Bezeichnete Daten bleiben für die Maskierung im Gateway.
+
+**Ergebnis:**
+- Dev-Split ohne kritische Befunde; benötigte Werte 29/29, `keep` 25/25.
+- Regressionstest `test_birthdates_from_a_table_column_never_reach_the_payload` deckt kurze und lange Dokumente ab.
+- Die Lücke betraf jede Akte mit einer Tabelle mit Geburtsdatum-Spalte, auch vor diesem Benchmark.
+
+**Review (unabhängig), gefunden und behoben:**
+- **Regression (CONFIRMED):** Zunächst galt nur der rohe Text als Quelle. Der erkennt Bezeichnung und Datum auf
+  getrennten Zeilen nicht („geboren am“ / „14.07.1988“), der normalisierte schon; im langen Dokument wäre ein solches
+  Datum ohne seine Bezeichnung im Klartext geblieben. Jetzt zählen beide Quellen (`_without_unlabelled_personal_dates`),
+  mit eigenem Test.
+- **Stille Auslassung (CONFIRMED):** Entfernte Daten wurden zu „…“. Jetzt erscheint sichtbar „(Datum entfernt)“
+  (CLAUDE.md: Unsicherheit markieren).
+- **Bekannte Nebenwirkung, sichere Richtung:** Ein anderer Termin am selben Tag wie ein Todes- oder Geburtsdatum wird
+  ebenfalls entfernt (z. B. „Termin am 9. Januar 2026“ bei Todestag 09.01.2026). Der Fristvorschlag bleibt lokal
+  erhalten.
+- **Andere Pfade:** Keine weitere Stelle sendet normalisierten Dokumenttext. `promptlayer/builder.py` hat laut Code
+  keinen Produktiv-Aufrufer (nicht erneut geprüft). Wissensbasis-Ausschnitte haben keine eigene
+  Geburtsdatum-Behandlung (keine Aktendokumente).
+
 ### 34.13 Zusammenfassung (Stand 14.10.2026, morgens)
 
 **Aufgebaut:**
 - Quellenregister (BLOCKIERT, siehe unten).
-- Korpus `legal_e2e_v1`: 6 synthetische Akten (3 Dev, 3 Test), 30 Dokumente, darunter 6 Scans und ein Vertrag mit
-  rund 50.000 Zeichen.
+- Korpus `legal_e2e_v1`: 7 synthetische Akten (4 Dev, 3 Test), 35 Dokumente, darunter 6 Scans, ein Vertrag mit
+  rund 50.000 Zeichen und eine Word-Tabelle.
 - Validator mit Negativtests.
 - E2E-Runner über die echten Pfade: Import/OCR, Verarbeitung, Suche, Chat, Schriftsatz, Bearbeitung, Export,
   Aktenzuordnung.
@@ -4034,6 +4072,7 @@ gescannten Schriftsätzen und Bescheiden waren damit für Suche, Fristen- und Zi
 | # | Befund | Art |
 |---|---|---|
 | 1–3 | Geburtsdatum ohne Bezeichnung bzw. zerteilt im Klartext (Fristausschnitt; Auszug langer Dokumente; Schreibweisen) | Leck |
+| 7 | Geburtsdaten aus einer Tabellenspalte im Klartext (Normalisierung des Auszugs, §34.14) | Leck |
 | 4 | Firmenname ohne Rechtsform teilweise im Klartext; vorbestehend: jedes „GmbH“ wurde zur Partei | Leck / Bedeutungsfehler |
 | 5 | Nachricht von Mandant A automatisch in die Akte von Mandant B (Absender ↔ Aktenzeichen im Konflikt), Karte ohne Warnung | Mandantentrennung |
 | 6 | OCR liest „§“ als „$“, Normzitate in Scans verloren | Quellenintegrität |
@@ -4063,3 +4102,4 @@ die Einstufung trifft eine verantwortliche Person. Keine öffentliche Quelle wir
 3. Freigegebener Live-Lauf, nur mit synthetischen Daten und gesetztem Anbieter-Ausgabenlimit.
 4. Mehr Testfälle: Tabellen, Handschrift, E-Mail-Verläufe.
 5. Benchmark als festen Release-Schritt aufnehmen (P6).
+- QA Etappe 12: Datenschutz-Datums-Tests 74 grün; volle Suite 4473 bestanden, nur die 4 bekannten Logo-Fehler.

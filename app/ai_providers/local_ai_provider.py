@@ -265,6 +265,12 @@ def _key_passages(middle: str, budget: int) -> str:
     return " […] ".join(segments[position] for position in sorted(chosen))
 
 
+def _without_unlabelled_personal_dates(excerpt: str, raw: str, normalized: str) -> str:
+    """Beide Quellen zaehlen: der ROHE Text erkennt Tabellenspalten (zeilenweise), der NORMALISIERTE Text Bezeichnung
+    und Datum auf getrennten Zeilen ("geboren am" / "14.07.1988") - Review §34.14."""
+    return remove_unlabelled_personal_dates(remove_unlabelled_personal_dates(excerpt, raw), normalized)
+
+
 def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CHARS) -> DocumentExcerpt:
     """Baut den tatsaechlich in den Sachverhalt eingehenden Dokument-
     Ausschnitt - bis zu `_MAX_DOCUMENT_EXCERPT_CHARS` Zeichen, mit
@@ -297,9 +303,12 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
     einer fuer einen anderen Zweck bestimmten Funktion."""
 
     normalized = _normalize_document_text(extracted_text)
-    if len(normalized) <= limit:
-        return DocumentExcerpt(normalized, 0)
     original = normalized
+    if len(normalized) <= limit:
+        # Tabellen (Spalte "Geburtsdatum") erkennt die Pseudonymisierung nur zeilenweise; die Normalisierung macht aus
+        # Zeilen Doppel-Leerzeichen - Geburtsdaten aus Tabellen gingen im Klartext hinaus (Legal-E2E-Benchmark §34.14).
+        # Massgeblich ist daher der ROHE Text: dort erkannte, im Auszug unbezeichnete Daten werden entfernt.
+        return DocumentExcerpt(_without_unlabelled_personal_dates(normalized, extracted_text, normalized), 0)
     # Geburts-/Todesdaten als ein Token: weder Segmentierung noch Schnitt duerfen ein Datum zerteilen (Review §34)
     normalized, date_tokens = protect_personal_dates_in(normalized)
 
@@ -323,7 +332,7 @@ def _document_excerpt(extracted_text: str, limit: int = _MAX_DOCUMENT_EXCERPT_CH
     # Kopf, Schluesselstellen und Ende koennen eine Bezeichnung ("geb.") von ihrem Datum trennen - ohne Bezeichnung
     # erkennt die Pseudonymisierung das Geburts-/Todesdatum nicht mehr (unabhaengiges Review §34)
     excerpt = restore_personal_dates("  ".join(parts), date_tokens)
-    return DocumentExcerpt(remove_unlabelled_personal_dates(excerpt, original), omitted)
+    return DocumentExcerpt(_without_unlabelled_personal_dates(excerpt, extracted_text, original), omitted)
 
 
 @dataclass
