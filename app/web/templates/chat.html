@@ -2093,6 +2093,20 @@
         messages.parentNode.insertBefore(banner, messages);
       }
 
+      // P1.1 (§38): liefert die Anhaenge, deren Inhalt der Browser nicht (mehr) lesen kann. Ein nicht mehr
+      // vorhandener Anhang meldet im WebView2 Groesse 0 - ein 1-Byte-Ausschnitt davon wird nie gelesen und "gelingt"
+      // (im installierten Build gemessen). Deshalb: Groesse 0 vollstaendig lesen (kostet nichts), sonst ein Byte.
+      function findUnreadableFiles(files) {
+        return Promise.all((files || []).map(function (file) {
+          return (file.size > 0 ? file.slice(0, 1) : file).arrayBuffer().then(
+            function () { return null; },
+            function () { return file; }
+          );
+        })).then(function (results) {
+          return results.filter(function (file) { return file !== null; });
+        });
+      }
+
       function handleSendValidationError(message, thinkingBubble, userBubble, pendingContent, pendingFiles) {
         isSending = false;
         if (thinkingBubble && thinkingBubble.parentNode) {
@@ -2508,10 +2522,26 @@
               finish(conversationIdField ? conversationIdField.value : null);
               return;
             }
-            handleSendValidationError(
-              "Senden fehlgeschlagen. Bitte erneut versuchen.",
-              thinkingBubble, userBubble, pendingContent, pendingFiles
-            );
+            // P1.1 (§38): Ein Anhang, der nach der Auswahl nicht mehr lesbar ist (verschoben/geloescht), laesst
+            // fetch() scheitern, bevor der Server erreicht wird. "Bitte erneut versuchen" half dann nie, weil der
+            // Anhang unveraendert zurueckgegeben wurde. Nur in diesem Fehlerfall: jeden Anhang lokal anlesen,
+            // unlesbare benennen und NICHT zurueckgeben; lesbare Anhaenge und der Text bleiben erhalten.
+            findUnreadableFiles(pendingFiles).then(function (unreadable) {
+              if (!unreadable.length) {
+                handleSendValidationError(
+                  "Senden fehlgeschlagen. Bitte erneut versuchen.",
+                  thinkingBubble, userBubble, pendingContent, pendingFiles
+                );
+                return;
+              }
+              handleSendValidationError(
+                "Senden fehlgeschlagen: Der Anhang " +
+                  unreadable.map(function (file) { return "„" + file.name + "“"; }).join(", ") +
+                  " kann nicht mehr gelesen werden (verschoben oder gelöscht?). Bitte die Datei neu auswählen.",
+                thinkingBubble, userBubble, pendingContent,
+                pendingFiles.filter(function (file) { return unreadable.indexOf(file) === -1; })
+              );
+            });
           });
       }
 

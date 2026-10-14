@@ -998,6 +998,27 @@ def test_clear_composer_is_not_called_in_the_native_fallback_submit_handler(
     assert "clearComposer()" not in submit_handler
 
 
+def test_network_failure_names_unreadable_attachments_and_does_not_restore_them() -> None:
+    """P1.1 (§38): scheitert fetch() vor dem ersten Stream-Ereignis, weil ein Anhang nach der Auswahl nicht mehr lesbar
+    ist, half "Bitte erneut versuchen" nie - der Anhang kam unveraendert zurueck. Jetzt wird jeder Anhang lokal
+    angelesen; unlesbare werden benannt und NICHT zurueckgegeben, lesbare bleiben. Verhalten selbst im installierten
+    Build per CDP geprueft (siehe §38)."""
+    content = (Path(__file__).resolve().parent.parent / "app" / "web" / "templates" / "chat.html").read_text(
+        encoding="utf-8"
+    )
+    helper = content[content.index("function findUnreadableFiles(") : content.index("function handleSendValidationError(")]
+    # Ein nicht mehr vorhandener Anhang meldet Groesse 0; ein 1-Byte-Ausschnitt davon wuerde nie gelesen (gemessen).
+    assert "(file.size > 0 ? file.slice(0, 1) : file).arrayBuffer()" in helper
+
+    catch_start = content.index('fetch("/dashboard/chat/send-stream"')
+    catch_block = content[content.index(".catch(function () {", catch_start) : content.index('if (composer) {', catch_start)]
+    # Reihenfolge: bereits persistierte Nachricht (Fall B) geht weiterhin per finish() - erst danach die Pruefung.
+    assert catch_block.index("if (startEventReceived)") < catch_block.index("findUnreadableFiles(pendingFiles)")
+    assert "kann nicht mehr gelesen werden" in catch_block
+    assert "unreadable.indexOf(file) === -1" in catch_block
+    assert "Senden fehlgeschlagen. Bitte erneut versuchen." in catch_block
+
+
 # ==========================================================================
 # Phase 2 (visuelle/UX-Fertigstellung): mehrere Nachrichten,
 # Konversationswechsel, Dokumentstatus-Anzeige, Kopfbereich

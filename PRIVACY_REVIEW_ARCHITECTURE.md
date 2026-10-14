@@ -4560,8 +4560,9 @@ Schlüssel ausgegeben.
 - **Tabellenextraktion, Dokumentaufbereitung, Payload und Serialisierung:** ohne Befund. Zellen werden als
   `Spalte | Spalte | Spalte` übergeben, in der Reihenfolge der Zeilen.
 
-**Kein Produktcode geändert.** Korrigiert wurden nur die beiden QA-Skripte außerhalb des Repos (`document.save(path)`
-ergänzt).
+**Stand `0e53ede`: kein Produktcode geändert.** Korrigiert wurden nur die beiden QA-Skripte außerhalb des Repos
+(`document.save(path)` ergänzt). Die anschließende Produktkorrektur der Fehlermeldung (Owner-Entscheidung) steht in
+§38.6.
 
 ### 38.2 Nebenbefund in der alten QA-Akte (kein Tabellenfehler, sichere Richtung)
 
@@ -4613,9 +4614,9 @@ ist eine Übermaskierung im Titel, kein Leck. Nicht behoben.
 | Prüfung | Ergebnis |
 |---|---|
 | Relevante Testgruppen: Web-Chat, Datenschutz-Rückfrage, Dokumentbereitschaft, Extraktion, Datums-Chronologie, Fristen, Gateway, Leck-Prüfung, Chat-Service, Legal-Benchmark-Tests, Pseudonymisierungs-Benchmark, Komposita, Fundstellenprüfung | **PASS**: 600 bestanden, 0 fehlgeschlagen |
-| Legal-E2E auf diesem Stand | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers gestoppt und nicht erneut gestartet. Der Produktcode ist identisch mit `cc71f99`, wo der Benchmark am selben Tag bestand (§37.6). |
+| Legal-E2E auf Stand `0e53ede` | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers gestoppt. Der Produktcode war identisch mit `cc71f99`, wo der Benchmark am selben Tag bestand (§37.6). Neuer Lauf nach der Produktkorrektur: §38.6. |
 | Volle Suite | auf diesem Stand nicht erneut ausgeführt; letzter voller Lauf auf `cc71f99`: 4551 bestanden, 4 fehlgeschlagen (nur die bekannten Logo-Tests), §37.6 |
-| Installierter Build | **PASS**, siehe §38.3 (kein Neubau nötig, kein Produktcode geändert) |
+| Installierter Build (Stand `0e53ede`) | **PASS**, siehe §38.3 (kein Neubau nötig, kein Produktcode geändert) |
 | Normale Instanz danach | Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server |
 
 **Offene Punkte:**
@@ -4624,6 +4625,66 @@ ist eine Übermaskierung im Titel, kein Leck. Nicht behoben.
 - „Erbsache“ wird im Aktentitel als Organisation maskiert (Übermaskierung, sichere Richtung).
 - Die Fehlermeldung „Senden fehlgeschlagen“ unterscheidet nicht, ob ein Anhang unlesbar ist oder das Netz fehlt.
   Echte Nutzer wählen Dateien über den Dateidialog; ein danach verschobener oder gelöschter Anhang würde dieselbe
-  Meldung zeigen. Kein Produktfehler nachgewiesen, keine Änderung vorgenommen.
+  Meldung zeigen. → Behoben in §38.6.
 - Unverändert aus §37.6: „Klagefrist“-Fehlmaskierung (korrekte Fail-Closed-Blockade), 21/96 Namen nach Artikeln im
   Benchmark, „Messbeamter“ in einer eigenen DOCX-Zeile, die 4 Logo-Tests.
+
+### 38.6 Produktkorrektur: klare Meldung bei unlesbarem Anhang (Owner-Entscheidung, 14.10.2026)
+
+**Anlass:**
+- Das in §38.1 reproduzierte Symptom kann auch echten Nutzern begegnen: Ein Anhang wird nach der Auswahl verschoben
+  oder gelöscht, etwa eine temporäre Outlook-Datei.
+- Bisher meldete der Chat dann „Senden fehlgeschlagen. Bitte erneut versuchen.“ und gab den Anhang unverändert zurück.
+  Ein erneuter Versuch scheiterte deshalb immer gleich.
+- Die Owner-Entscheidung lautete, die Meldung zu präzisieren.
+
+**Änderung (nur `app/web/templates/chat.html`, nur im Fehlerpfad):**
+- Der Fehlerpfad ist der `.catch`-Zweig von `fetch("/dashboard/chat/send-stream")`, und zwar nur dann, wenn noch kein
+  „start“-Ereignis kam.
+- In diesem Fall liest `findUnreadableFiles` jeden Anhang lokal an. Unlesbare Anhänge werden in der Meldung benannt
+  („Der Anhang „…“ kann nicht mehr gelesen werden (verschoben oder gelöscht?). Bitte die Datei neu auswählen.“) und
+  **nicht** zurückgegeben.
+- Lesbare Anhänge und der Text bleiben im Composer. Ohne unlesbaren Anhang bleibt die bisherige Meldung.
+- Ein erfolgreicher Versand und der Fall einer bereits gespeicherten Nachricht (Fall B, `finish()`) sind unverändert.
+- Kein Einfluss auf Server, Pseudonymisierung, Privacy Gates, Fail-Closed oder Mandantentrennung.
+
+**Erster Versuch im installierten Build durchgefallen (Ursache belegt, korrigiert):**
+- Zunächst wurde nur ein 1-Byte-Ausschnitt gelesen (`file.slice(0, 1)`).
+- Im WebView2 meldet ein nicht mehr vorhandener Anhang aber Größe 0. Der Ausschnitt eines 0-Byte-Blobs wird nie von der
+  Platte gelesen und „gelingt“. Die Messung im installierten Build ergab: `slice1` = 0 ohne Fehler, `arrayBuffer()` des
+  ganzen Anhangs → `NotFoundError`.
+- **Korrektur:** Anhänge mit Größe 0 werden vollständig gelesen (das kostet nichts), sonst ein Byte. Ein großer Anhang
+  wird also nie ganz geladen.
+- Vor dem Neubau im laufenden WebView2 geprüft: Der nie gespeicherte und der nach der Auswahl gelöschte Anhang gelten als
+  unlesbar. Der lesbare Anhang und eine tatsächlich vorhandene leere Datei gelten als lesbar; die leere Datei behandelt
+  der Server wie bisher (Test in §38.4).
+
+**Ergebnis im installierten Build (Neubau 14.10.2026, 19:05; Template enthält die Korrektur; saubere synthetische
+Akte; Fang-Server):**
+
+| Fall | Ergebnis |
+|---|---|
+| A: Anhang existierte nie (wie im Originallauf) | **PASS**: Meldung nennt die Datei; Composer ohne die Datei, Text erhalten; kein Payload |
+| B: Anhang nach der Auswahl gelöscht | **PASS**: dieselbe Meldung; Datei nicht zurückgegeben, Text erhalten; kein Payload |
+| C: ein lesbarer und ein gelöschter Anhang | **PASS**: nur der gelöschte wird benannt; der lesbare bleibt im Composer |
+| C: erneuter Versand ohne weitere Eingabe | **PASS**: genau ein Payload; Tabellenstruktur und Reihenfolge erhalten, „1/3“ dreimal, „312.000,00 EUR“; kein Name, kein Geburtsdatum; nur ein Anhang im Payload |
+| Payload-Prüfung (alle Läufe) | **PASS**: ein Payload, kein Klartext, kein Schlüssel |
+
+**Tests:**
+- Neu: `test_network_failure_names_unreadable_attachments_and_does_not_restore_them` (Struktur des Fehlerpfads,
+  wie die übrigen Template-Tests). Das Verhalten selbst ist im installierten Build geprüft (oben).
+- **Vorher:** Den neuen Test gab es nicht; das Verhalten wurde im installierten Build vor der Korrektur gemessen (Fälle
+  A–C alle mit der alten Meldung und zurückgegebenem Anhang).
+- **Nachher:**
+  - Web-Chat: 166 von 166 bestanden.
+  - Chat-Gruppen inkl. Design-Tests: 370 bestanden, 4 fehlgeschlagen. Die 4 sind nur die bekannten Logo-Tests
+    (`test_design_refresh.py`, gelöschte Logo-Dateien).
+
+**NICHT VERIFIZIERT:**
+- **Legal-E2E auf diesem Stand:** Der Lauf wurde erneut von Claude Code wegen knappen Systemspeichers gestoppt und nicht
+  wiederholt. Das lokale Ollama-Modell des Nutzers belegt rund 2,8 GB. Der Benchmark treibt die Serverpfade über den
+  TestClient und führt das geänderte Browser-JavaScript nicht aus; der serverseitige Produktcode ist unverändert
+  gegenüber `cc71f99` (bestanden, §37.6).
+- **Volle Suite:** auf diesem Stand nicht erneut ausgeführt.
+
+**Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
