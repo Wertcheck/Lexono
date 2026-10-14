@@ -3948,3 +3948,11 @@ Konfliktfall jetzt als kritisch.
 **QA Etappe 9:**
 - Matching-, Inbox- und Benchmark-Tests grün.
 - Volle Suite: 4446 bestanden, nur die 4 bekannten Logo-Fehler.
+
+**Nachtrag installierter Build `200cdd6`:**
+- Ablauf: eine synthetische Nachricht wurde in die QA-Datenbank eingefügt und danach wieder entfernt. Absender war die
+  bekannte Mandantenadresse der Akte „Kaufpreisdifferenz Pilot (QA)“, im Text stand das Aktenzeichen der Akte
+  „QA-SYNTH Mietstreit Nordlicht“.
+- Ergebnis **PASS**: Die Nachricht ist nicht zugeordnet. Die Vorschlagskarte zeigt Nordlicht mit 90 % und darunter die
+  gut lesbare Warnung, die die Akte des Absenders nennt; „Übernehmen“ bleibt möglich (Screenshot im QA-Ordner).
+- Normale Instanz wiederhergestellt (Health 200, kein Debug-Port).
