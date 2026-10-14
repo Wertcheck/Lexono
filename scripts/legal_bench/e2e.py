@@ -294,7 +294,10 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
                 elif task["kind"] == "schriftsatz":
                     item.update(_run_draft(db, user, matter, task, drafting, case, Draft, EditorService,
                                            AttorneyInstructionService, DraftDocxExportService, DraftPdfExportService))
-                    item["quellenintegritaet"] = _probe_source_integrity(db, user, matter, drafting, Draft)
+                    try:  # eigene Fehlerbehandlung: die Probe darf das Schriftsatz-Ergebnis nicht verfaelschen
+                        item["quellenintegritaet"] = _probe_source_integrity(db, user, matter, drafting, Draft)
+                    except Exception as exc:  # noqa: BLE001
+                        item["quellenintegritaet"] = {"status": "error", "error": type(exc).__name__}
             except Exception as exc:  # noqa: BLE001
                 item.update(status="error", error=f"{type(exc).__name__}: {str(exc)[:120]}")
             sent = item.pop("_payload_text", None)

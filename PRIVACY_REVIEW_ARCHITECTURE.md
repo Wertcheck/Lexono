@@ -3849,14 +3849,18 @@ unverändert im Entwurf. Ursache:
   dem Aufruf.
 - Die Gesetzesbibliothek (`app/laws`) könnte Normen prüfen, Entscheidungen dagegen nur gegen freigegebene Quellen.
 - Das berührt die Grundregeln „Niemals Rechtsquellen, Fundstellen oder Zitate erfinden“ und „Unsicherheit explizit
-  markieren“. Die Kanzlei sieht eine erfundene Fundstelle heute nur bei eigener Prüfung.
+  markieren“. Eine erfundene Fundstelle fällt heute nur auf zwei Wegen auf:
+  - durch eigene Prüfung der Kanzlei;
+  - über die optionale Cloud-Prüfung „Entwurf prüfen“ (`ReviewEngine`). Diese sucht modellbasiert nach
+    `unbelegte_rechtsbehauptung` und `fehlende_quelle` gegen freigegebene Quellen. Sie muss bewusst gestartet werden,
+    hängt vom Modell ab und ist hier nicht gemessen (NICHT VERIFIZIERT).
 
 **Entscheidungsvorlage (nicht umgesetzt; betrifft die Hinweisdichte jedes Entwurfs):**
 
 | Option | Inhalt | Nutzen | Kosten/Risiko |
 |---|---|---|---|
 | Q1 | Normen gegen die installierte Gesetzesbibliothek prüfen. Nicht gefundene Normen werden als offener Prüfpunkt gelistet („§ 9999 BGB nicht in der Gesetzesbibliothek gefunden“). Nicht installierte Gesetze werden als „nicht lokal prüfbar“ geführt. | erkennt erfundene oder falsch nummerierte Normen deterministisch | Paragraphen mit Buchstaben, Absätze und Gesetzesabkürzungen sauber zuordnen; Bibliothek muss gepflegt sein |
-| Q2 | zusätzlich jede Entscheidungs-Fundstelle (Gericht + Aktenzeichen), die nicht in freigegebenen Quellen oder im Kanzleiwissen steht, als „nicht verifiziert“ listen | macht erfundene Rechtsprechung sichtbar | Hinweis bei nahezu jeder Rechtsprechungs-Fundstelle (Lärm), bis eine Entscheidungsdatenbank angebunden ist |
+| Q2 | zusätzlich jede Entscheidungs-Fundstelle (Gericht + Aktenzeichen), die nicht in freigegebenen Quellen oder im Kanzleiwissen steht, als „nicht verifiziert“ listen (lokal und deterministisch; überschneidet sich mit der modellbasierten, optionalen Prüfung „Entwurf prüfen“) | macht erfundene Rechtsprechung ohne zusätzlichen Cloud-Aufruf sichtbar | Hinweis bei nahezu jeder Rechtsprechungs-Fundstelle (Lärm), bis eine Entscheidungsdatenbank angebunden ist |
 | Q3 | Entwurf mit nicht verifizierbaren Fundstellen blockieren | strengste Absicherung | unpraktikabel; widerspricht dem Entwurfscharakter |
 
 **Empfehlung:** Q1 sofort nach Freigabe (deterministisch, geringe Hinweisdichte), dazu Q2 als zusammengefasster
@@ -3883,6 +3887,16 @@ Lauf (6 Fälle, Dev-Werte):
 | Schriftsatz | ≈ 3,6 s | ≈ 23 s (langer Vertrag) |
 | Payload Chat | ≈ 4.100 Zeichen | ≈ 32.500 Zeichen |
 
+Test-Split: Chat-Median ≈ 0,9 s. Der Schriftsatz-Wert (n = 3) enthält den blockierten LE-T003. Die Payload-Größe der Schriftsätze steht in `results.json`.
+
 Gesamtlauf ≈ 110 s. Die Maxima entstehen beim langen Vertrag (Payload ≈ 32.500 Zeichen). Die Ursache ist nicht
 einzeln gemessen. Mögliche Anteile sind die Namenserkennung über den großen Payload, der Dokumentauszug und die
 Erkennung persönlicher Daten im Quelltext (§34.2); das ist NICHT VERIFIZIERT.
+
+**QA Etappe 7/8:**
+- Benchmark-Tests: 9 bestanden.
+- Unabhängiges Review bestätigt:
+  - Es gibt keine lokale Fundstellenprüfung von Modellantworten. Die 0/10 wurden reproduziert.
+  - Die Probe beeinflusst keine anderen Messungen.
+  - Die Laufzeitwerte wurden reproduziert.
+- Umgesetzt: „Entwurf prüfen“ in §34.8 genannt, Überschneidung mit Q2 ergänzt, Probe mit eigener Fehlerbehandlung.

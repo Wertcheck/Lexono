@@ -3,6 +3,19 @@
 ## Aktuelle Baseline (verbindlich, darf sich nicht verschlechtern)
 
 ```
+4439 passed, 1 skipped, 6 xfailed, 1 xpassed; 4 failed (voller Lauf via
+pytest, 14.10.2026, Stand 711077d, PRIVACY_REVIEW_ARCHITECTURE.md §34).
+Die 4 Fehler sind ausschliesslich tests/test_design_refresh.py (Logo-
+Dateien assets/branding/*.png im Arbeitsverzeichnis geloescht - fremde,
+nicht committete Aenderung, bewusst nicht angefasst). Zusaetzlich:
+Realistic Legal Benchmark (benchmarks/legal_e2e_v1) ohne kritische
+Befunde - nach Aenderungen an Privacy/Dokumenten/Suche/Chat/Entwurf/
+Export `python -m scripts.legal_bench.e2e` laufen lassen (agents/qa).
+```
+
+Vorherige, in dieser Datei gepflegte Baseline:
+
+```
 2558 passed, 1 skipped, 0 failed  (voller Lauf via pytest, 05.10., Owner-
 Direktive "ARCHITECTURE & PRODUCT FLOW PASS": Chat/Kontext/Intent/Artefakt-
 Trennung (chat_reference-Draftstatus, Schnellentwurf-UI-Tarnung entfernt),
