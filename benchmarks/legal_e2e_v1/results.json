@@ -1,9 +1,9 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-14T02:13:12+00:00",
- "git_commit": "60927b4",
+ "run_at": "2026-10-14T02:46:32+00:00",
+ "git_commit": "f17e95c",
  "git_dirty_files": [],
- "corpus_sha256": "cc41845b9ab62d9b",
+ "corpus_sha256": "58e9bca109c6772c",
  "code_fingerprint": {
   "app/privacy/gateway.py": "0ffec999fff8bc12",
   "app/privacy/detectors.py": "78b33da3b29385e4",
@@ -24,7 +24,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 111.1,
+ "seconds_total": 135.2,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -94,12 +94,12 @@
    "laufzeit_dokument_s": {
     "n": 15,
     "median": 1.16,
-    "max": 1.62
+    "max": 1.63
    },
    "laufzeit_chat_s": {
     "n": 8,
-    "median": 1.84,
-    "max": 12.92
+    "median": 2.5,
+    "max": 17.31
    },
    "payload_zeichen_chat": {
     "n": 8,
@@ -108,8 +108,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 3.7,
-    "max": 23.39
+    "median": 4.77,
+    "max": 31.19
    },
    "payload_zeichen_schriftsatz": {
     "n": 3,
@@ -185,12 +185,12 @@
    "laufzeit_dokument_s": {
     "n": 13,
     "median": 1.12,
-    "max": 1.73
+    "max": 1.78
    },
    "laufzeit_chat_s": {
     "n": 6,
-    "median": 0.92,
-    "max": 1.17
+    "median": 1.25,
+    "max": 1.62
    },
    "payload_zeichen_chat": {
     "n": 4,
@@ -199,8 +199,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 3,
-    "median": 1.51,
-    "max": 1.56
+    "median": 1.89,
+    "max": 2.19
    },
    "payload_zeichen_schriftsatz": {
     "n": 2,
@@ -209,12 +209,187 @@
    },
    "laufzeit_suche_s": {
     "n": 3,
-    "median": 0.02,
-    "max": 0.02
+    "median": 0.03,
+    "max": 0.03
    },
    "erfundene_fundstellen_markiert": "0/4",
    "aufgabenfehler": []
   }
+ },
+ "aktenzuordnung": {
+  "kritisch_fremdzuordnung": [],
+  "korpus_email_entscheidungen": [
+   "LE-D001/D2:no_match",
+   "LE-D003/D2:no_match",
+   "LE-T001/D4:no_match",
+   "LE-T002/D3:no_match",
+   "LE-T003/D3:no_match"
+  ],
+  "aktenzeichen_korrekt_zugeordnet": "4/4",
+  "ihr_zeichen_korrekt_zugeordnet": "0/4",
+  "konflikt_automatisch_zur_fremden_akte": [],
+  "konflikt_entscheidungen": [
+   "LE-D001:needs_review",
+   "LE-D002:needs_review",
+   "LE-D003:needs_review",
+   "LE-T001:needs_review",
+   "LE-T002:needs_review",
+   "LE-T003:needs_review"
+  ],
+  "details": [
+   {
+    "probe": "korpus_email",
+    "case": "LE-D001",
+    "doc": "D2",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "aktenzeichen",
+    "case": "LE-D001",
+    "decision": "auto_assigned",
+    "zugeordnet": "LE-D001",
+    "korrekt": true,
+    "fremd": false
+   },
+   {
+    "probe": "ihr_zeichen",
+    "case": "LE-D001",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "korrekt": false,
+    "fremd": false
+   },
+   {
+    "probe": "korpus_email",
+    "case": "LE-D003",
+    "doc": "D2",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "aktenzeichen",
+    "case": "LE-D003",
+    "decision": "auto_assigned",
+    "zugeordnet": "LE-D003",
+    "korrekt": true,
+    "fremd": false
+   },
+   {
+    "probe": "ihr_zeichen",
+    "case": "LE-D003",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "korrekt": false,
+    "fremd": false
+   },
+   {
+    "probe": "korpus_email",
+    "case": "LE-T001",
+    "doc": "D4",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "korpus_email",
+    "case": "LE-T002",
+    "doc": "D3",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "aktenzeichen",
+    "case": "LE-T002",
+    "decision": "auto_assigned",
+    "zugeordnet": "LE-T002",
+    "korrekt": true,
+    "fremd": false
+   },
+   {
+    "probe": "ihr_zeichen",
+    "case": "LE-T002",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "korrekt": false,
+    "fremd": false
+   },
+   {
+    "probe": "korpus_email",
+    "case": "LE-T003",
+    "doc": "D3",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "aktenzeichen",
+    "case": "LE-T003",
+    "decision": "auto_assigned",
+    "zugeordnet": "LE-T003",
+    "korrekt": true,
+    "fremd": false
+   },
+   {
+    "probe": "ihr_zeichen",
+    "case": "LE-T003",
+    "decision": "no_match",
+    "zugeordnet": null,
+    "korrekt": false,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-D001",
+    "aktenzeichen_von": "LE-D003",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-D002",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-D003",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-T001",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-T002",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
+    "case": "LE-T003",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   }
+  ]
  },
  "results": [
   {
@@ -237,7 +412,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.22
     },
     "D2": {
      "format": "txt",
@@ -258,7 +433,7 @@
       "henrike.osterkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.13
     },
     "D3": {
      "format": "pdf",
@@ -294,7 +469,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.55
     },
     "D5": {
      "format": "docx",
@@ -378,7 +553,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.97
+     "seconds": 6.31
     },
     {
      "id": "Q2",
@@ -424,7 +599,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.51
+     "seconds": 0.71
     },
     {
      "id": "Q3",
@@ -488,7 +663,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.84
+     "seconds": 2.5
     },
     {
      "id": "Q4",
@@ -603,7 +778,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 3.7
+     "seconds": 4.77
     },
     {
      "id": "Q5",
@@ -708,7 +883,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.52
+     "seconds": 1.59
     },
     "D3": {
      "format": "docx",
@@ -726,7 +901,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -805,7 +980,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.15
+     "seconds": 1.51
     },
     {
      "id": "Q2",
@@ -832,7 +1007,7 @@
        "platzhalter": "[PERSON_03]"
       }
      ],
-     "seconds": 0.54
+     "seconds": 0.69
     },
     {
      "id": "Q3",
@@ -923,7 +1098,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 1.5
+     "seconds": 2.0
     },
     {
      "id": "Q4",
@@ -932,7 +1107,7 @@
       2
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -1015,7 +1190,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.63
     },
     "D2": {
      "format": "txt",
@@ -1031,7 +1206,7 @@
       "c.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.07
     },
     "D3": {
      "format": "scan",
@@ -1046,7 +1221,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.53
     },
     "D4": {
      "format": "docx",
@@ -1063,7 +1238,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     "D5": {
      "format": "docx",
@@ -1079,7 +1254,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -1178,7 +1353,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.92
+     "seconds": 17.31
     },
     {
      "id": "Q2",
@@ -1219,7 +1394,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 0.5
+     "seconds": 0.69
     },
     {
      "id": "Q3",
@@ -1317,7 +1492,7 @@
        "platzhalter": "[KENNUNG_02]"
       }
      ],
-     "seconds": 10.97
+     "seconds": 14.75
     },
     {
      "id": "Q4",
@@ -1464,7 +1639,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 23.39
+     "seconds": 31.19
     },
     {
      "id": "Q5",
@@ -1552,7 +1727,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.6
+     "seconds": 1.65
     },
     "D2": {
      "format": "pdf",
@@ -1608,7 +1783,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     }
    },
    "tasks": [
@@ -1690,7 +1865,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 0.92
+     "seconds": 1.25
     },
     {
      "id": "Q2",
@@ -1741,7 +1916,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.34
+     "seconds": 0.39
     },
     {
      "id": "Q3",
@@ -1864,7 +2039,7 @@
        "platzhalter": "[ORT_05]"
       }
      ],
-     "seconds": 1.14
+     "seconds": 1.36
     },
     {
      "id": "Q4",
@@ -1936,7 +2111,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.5
+     "seconds": 1.55
     },
     "D2": {
      "format": "pdf",
@@ -1985,7 +2160,7 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.13
     },
     "D5": {
      "format": "docx",
@@ -2074,7 +2249,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.12
+     "seconds": 1.26
     },
     {
      "id": "Q2",
@@ -2135,7 +2310,7 @@
        "platzhalter": "[ORT_04]"
       }
      ],
-     "seconds": 0.47
+     "seconds": 0.56
     },
     {
      "id": "Q3",
@@ -2254,7 +2429,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 1.51
+     "seconds": 2.19
     },
     {
      "id": "Q4",
@@ -2263,7 +2438,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -2347,7 +2522,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.73
+     "seconds": 1.78
     },
     "D2": {
      "format": "pdf",
@@ -2363,7 +2538,7 @@
       "Jannik Brettschneider"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.09
     },
     "D3": {
      "format": "txt",
@@ -2407,14 +2582,14 @@
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 1.17
+     "seconds": 1.62
     },
     {
      "id": "Q2",
      "kind": "chat",
      "status": "blockiert",
      "reply_excerpt": "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden.",
-     "seconds": 0.51
+     "seconds": 0.58
     },
     {
      "id": "Q3",
@@ -2426,7 +2601,7 @@
      "quellenintegritaet": {
       "status": "blockiert"
      },
-     "seconds": 1.56
+     "seconds": 1.89
     },
     {
      "id": "Q4",
@@ -2435,7 +2610,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
