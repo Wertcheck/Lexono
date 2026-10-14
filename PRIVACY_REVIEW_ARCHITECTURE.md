@@ -3817,3 +3817,18 @@ Abnahmekriterium wie in §31–§33: keine neuen Lecks, Konsistenz unverändert.
     „haftungsbeschraenkt“.
   - Tests: 12 in `test_privacy_organisation_without_legal_form.py`; mit den angrenzenden Pseudonymisierungs- und
     Gateway-Tests zusammen 125 grün.
+
+**Nachtrag installierter Build `6b27b48`:**
+- Bundle enthält `strip_legal_form` (Archivprüfung).
+- **Fall 29:** Akte „QA-SYNTH Zabelhuber Mietsache“ mit synthetischer Gegnerin „Holzbau Wendeburg GmbH“, nur für den
+  Lauf in die QA-Datenbank eingefügt und danach wieder entfernt. Das Anhang-DOCX enthält „… ./. Holzbau Wendeburg“,
+  „Die Holzbau Wendeburg GmbH verlangt 23.600,00 EUR bis zum 30.04.2026“ und „§ 13 GmbHG“. Ergebnis **PASS**:
+  - kein Teil des Firmennamens im Klartext;
+  - genau ein `[GEGNER_nn]`;
+  - „§ 13 GmbHG“ bleibt lesbar;
+  - Fakten erhalten.
+  - Nebenbefund ohne Leck: Die NER fasst „… ./. Holzbau Wendeburg“ über den Zeilenumbruch mit dem Folgesatz zu einem
+    eigenen `[ORGANISATION_nn]` zusammen, der getrennt von `[GEGNER_nn]` geführt wird. Außerdem wird „Mietsache“ im
+    Aktentitel als Person maskiert (Fehlalarm, §34.6).
+- **Regression Fall 28:** PASS.
+- Normale Instanz wiederhergestellt: nur Port 8000, Health 200, kein Debug-Port, Fang-Server beendet.
