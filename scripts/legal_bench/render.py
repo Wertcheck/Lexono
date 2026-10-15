@@ -16,6 +16,11 @@ def _pdf(paragraphs: list[str], path: Path) -> None:
     page = doc.new_page(width=595, height=842)
     y, bottom = 60.0, 790.0
     for paragraph in paragraphs:
+        # §43.10: endete der vorige Absatz genau am unteren Rand, laege das naechste Feld ausserhalb der Seite (PyMuPDF:
+        # "text box must be finite and not empty") - dann gleich eine neue Seite; sonst unveraendert
+        if y >= bottom - 1:
+            page = doc.new_page(width=595, height=842)
+            y = 60.0
         # passt der Absatz nicht mehr auf die Seite, schreibt insert_textbox nichts (Rueckgabe < 0): neue Seite
         rest = page.insert_textbox(fitz.Rect(60, y, 535, bottom), paragraph, fontsize=11, fontname="helv")
         if rest < 0:

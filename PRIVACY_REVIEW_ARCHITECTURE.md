@@ -6033,3 +6033,182 @@ Lokale Ergebnisse sind als echte ORM-Zeilen nachgewiesen: Dokument mit `classifi
    Pfad auf synthetischen Korpora (Stufe 4), dann installierter Build (Stufe 5).
 5. Mindestens eine Messung zur Pseudonymisierung ganzer Dokumente auf realitätsnäheren synthetischen Texten
    (Rubrum, Einwort-Parteien, Signaturen, Kopf- und Fußzeilen).
+
+### 43.10 Vollständige Dokumente, Relay-Analyse, Pilot-Voraussetzungen (15.10.2026, Feature-Branch)
+
+**Branch:** `feature/cloud-second-opinion-stage2`, gepusht; `main`/`origin/main` unverändert auf `757e638`. Kein Merge,
+keine produktive Freigabe, kein echter Cloud-Aufruf, nur synthetische Daten.
+
+#### Phase 1 – Pseudonymisierung vollständiger synthetischer Dokumente
+
+**Korpus:** `benchmarks/pii_full_documents_v1`.
+- SHA-256 `176d6f2c…7594e1a`; 24 Dokumente von zwei getrennten, blinden Agenten.
+- 572 PII-Stellen vor der Messung festgelegt; 164 `keep`-Werte, die lesbar bleiben müssen.
+- 8 Scans (4 davon schlecht), 9 Tabellen, 5 mehrseitige Dokumente.
+- Abgedeckt: Kurzrubrum, Briefköpfe, Fußzeilen, Unterschriften, Namen ohne Anrede, Namensvarianten.
+- Details: Korpus-README.
+
+**Messung:** `scripts/legal_bench/pii_measure.py`.
+- Echter Pfad: Rendern, Import, Text/OCR (Tesseract, 147 s für 24 Dokumente), dann das bestehende
+  `ClaudePrivacyGateway` mit Zweck `second_opinion_document`.
+- Die extrahierten Texte sind abgelegt (`extracted_texts_ocr.json`). Vorher und nachher wurde auf **denselben** Texten
+  gemessen.
+
+**Ergebnis „Versand“** (`review_mode="ask"`, wie die Zweitmeinung; ohne und mit Akten-Entitäten gleich):
+
+| | Baseline `5608ee6` | nach §43.10 |
+|---|---|---|
+| gesendet / Rückfrage / blockiert (von 24) | 3 / 17 / 4 | **1 / 19 / 4** |
+| PII-Werte im Klartext in **tatsächlich sendefertigen** Payloads | **5** (in 3 Dokumenten) | **0** |
+
+Die 5 gesendeten Lecks der Baseline:
+- „Weiß“: Einwort-Nachname vor „Justizhauptsekretärin“, Scan;
+- „Wohnung 3. OG links“: Adresszusatz;
+- „AR 26/0571“: hinter „Unser Zeichen:“;
+- zwei Rechnungsnummern „MW-26-0881x“ in einer Tabellenspalte „Rechnungs-Nr.“ eines Scans.
+
+**Ergebnis „Erkennung“** (Klartext nach der Pseudonymisierung, alle Dokumente, erkannte von vorhandenen Vorkommen):
+
+| Kategorie | Baseline | nach §43.10 |
+|---|---|---|
+| person | 383/386 | **385/386** |
+| organisation (ohne / mit Akten-Entitäten) | 95/96 / 96/96 | 95/96 / 96/96 |
+| aktenzeichen | 20/24 | **21/24** |
+| rechnungsnummer | 7/11 | **9/11** |
+| adresse | 79/82 | 79/82 |
+| sonstige_kennung | 38/45 | 38/45 |
+| kundennummer | 8/10 | 8/10 |
+| telefon | 38/40 | 38/40 |
+| kfz_kennzeichen | 5/6 | 5/6 |
+| plz_ort, email, iban, steuernummer, geburtsdatum | 75/75, 30/30, 13/13, 13/13, 8/8 | unverändert vollständig |
+
+- **Teil-Lecks** (Namensbestandteil als eigenes Wort): 0 in den gesendeten Payloads.
+- **Akten-Entitäten** (Mandant aus der Akte) ändern nur eine Organisation; die übrige Erkennung ist gleich.
+
+**Einwort-Parteiname, untersucht:**
+- Reproduziert: „In dem Rechtsstreit Beispiel ./. Muster“ blieb vollständig im Klartext, ebenso „Winter“ in
+  „Vogel ./. Winter“. „Vogel“ und „Kranich“ dagegen wurden erkannt.
+- Ursache: Die NER wertet Nachnamen, die zugleich gewöhnliche Wörter sind, nicht als Namen.
+- Im Korpus selbst (A03) war das Kurzrubrum zufällig geschützt: Die Vollnamen stehen weiter oben, und die bestehende
+  Wiederholungserkennung maskiert dann jedes weitere Vorkommen. Bei einem Dokument ohne Vollnamen hilft das nicht.
+
+**Behebungen** (minimal, reproduzierbar, je mit Regressionstest in `tests/test_privacy_full_document_findings.py`; keine
+bestehende Regel abgeschwächt):
+1. `detect_rubrum_party`: Namen direkt links und rechts von „./.“ (Kurzrubrum) gelten als Person.
+   - Ausgenommen sind Artikel sowie Rollen- und Verfahrenswörter („In dem Rechtsstreit“, „Kläger“).
+   - Firmen mit Rechtsform erkennt weiterhin der bestehende Detektor.
+2. Ebenda: ein Name vor einer Amtsbezeichnung des Gerichtspersonals („Weiß, Justizhauptsekretärin“, „Rechtspflegerin“
+   …) gilt als Person.
+3. `detect_aktenzeichen`: ein Zeichen mit Buchstabenpräfix und Leerzeichen hinter „Unser/Ihr Zeichen“,
+   „Geschäftszeichen“, „Aktenzeichen“ oder „Az.“ („AR 26/0571“).
+   - Nach dem Kennwort muss ein Wortende folgen. Die bestehende Testsuite hat sonst die BAG-Fundstelle „2 AZR 123/20“
+     erfasst – gefunden und behoben, öffentliche Fundstellen bleiben lesbar.
+4. `detect_rechnungsnummer`: Werte einer Tabellenspalte „Rechnungs-Nr.“ über den vorhandenen `_table_column_values`.
+   - Dieser bekam den optionalen Parameter `across_blank_lines` (OCR setzt Leerzeilen zwischen Tabellenzeilen).
+   - Standardverhalten für die bisherigen Aufrufer unverändert, per Test belegt.
+5. Werkzeug: `scripts/legal_bench/render.py` legte bei einem Absatz, der eine Seite genau füllt, ein leeres Textfeld an
+   (PyMuPDF-Fehler). Jetzt wird vorher eine neue Seite begonnen; für alle bisherigen Fälle ist das Ergebnis gleich.
+
+**Bewusst nicht behoben** (offene Risiken; in diesem Korpus in **keinem gesendeten** Payload, weil diese Dokumente in
+die Rückfrage oder Blockade gehen):
+- freie Kennungen ohne Kennwort („BV-2025-118“, „GA-26-1093“, „SN-26-883104“, „GW-3318-011“, „BG-2021-44817“,
+  „K-88310“, „SR-2026-0219“, „2026/0388-BA“);
+- Partnerschaftsregister „PR 2291“, Fahrgestellnummer, ein Kennzeichen „FH-SW 913“, zwei Telefonnummern in seltener
+  Gruppierung;
+- Straßen ohne Straßenwort („Am Weiher 11“, „Auf der Höhe 15“), „Wohnung 3. OG links“;
+- Geburtsname „geb. Sommer“, „Café Lindenblüte e. K.“ (ohne Akten-Entität);
+- ein OCR-verändertes Aktenzeichen („3 © 211/26“).
+
+Eine breite Regel für beliebige Nummernmuster würde viele Fehlalarme (Beträge, Normen, Daten) und damit Blockaden
+erzeugen. Das ist eine eigene Abwägung, keine Minimalkorrektur.
+
+**Übermaskierung** (`keep` verloren: 11 → 12 von 164):
+- Gerichtsnamen mit fiktivem Ortsnamen, bestehendes Verhalten der Ortserkennung;
+- neu „Kündigungsschutzklage“: wird neben einem neuen Platzhalter von der Rückfrage-Heuristik vorsorglich maskiert.
+
+Durch die bestehende Wiederholungserkennung werden außerdem gewöhnliche Wörter maskiert, die einem erkannten Namen
+gleichen („zum Beispiel“, „weiß“). Das schützt, beeinträchtigt aber die Lesbarkeit.
+
+**Wichtigster Befund für die Zweitmeinung:** Im Modus `ask` (ohne Dokument-Rückfrage-UI fail-closed) wäre nur **1 von
+24** vollständigen Dokumenten ohne Rückfrage sendbar.
+- Hauptursache sind unsichere Begriffe neben Platzhaltern (z. B. Fachwörter wie „Justizhauptsekretärin“).
+- Die Zweitmeinung ist damit ohne eine Rückfrage-Oberfläche für Dokumente praktisch nicht nutzbar.
+- Ein Wechsel auf `mask` wäre eine eigene Datenschutz-Entscheidung. Er würde unsichere Begriffe ohne Rückfrage
+  maskieren, was den Klartext weiter reduziert, aber auch die Übermaskierung erhöht.
+
+**Regressionen:**
+- `benchmarks/pseudonymization_v1` (`scripts/bench_pseudonymization.py`): alle 192 Kennzahlen identisch mit dem
+  versionierten Stand; die Datei blieb unverändert.
+- Legal-E2E (`scripts.legal_bench.e2e`, im Vordergrund, Ollama-Modell nicht geladen), identisch mit §42.10:
+  - keine kritischen Befunde, 0 Lecks, keine fremde Akte im Payload;
+  - fremder Anhang 7/7 blockiert;
+  - Aktenzeichen allein automatisch 0/5.
+
+#### Phase 2 – Lexono-Relay (`gateway/`, ARCHITECTURE.md §70)
+
+Befunde, belegt durch `tests/test_second_opinion_relay_characterization.py` (5 Tests; SDK gepatcht, Relay unverändert):
+
+| Prüfpunkt | Ist-Zustand |
+|---|---|
+| Zweckbindung | **Keine.** `RelayRequest` hat kein Zweckfeld; ein zusätzliches Feld `purpose` wird still ignoriert. Das Relay lehnt den neuen Zweck also **nicht** ab und prüft ihn **nicht** – es kennt keine Zwecke. |
+| Pseudonymisierung / Siegel | **Nicht prüfbar.** Das Siegel ist ein prozesslokales HMAC des Kanzlei-Clients und erreicht das Relay nicht. Klartext würde ebenso weitergeleitet. Die Vertrauensgrenze ist allein der Kanzlei-Client (Privacy-Gateway, Final Payload Gate, Siegel im Provider). |
+| Modellfreigabe | `allowed_models`; das tatsächliche Modell ist zentral `default_model`. |
+| Grenzen | Größe 200.000 Byte (413), `max_tokens` ≤ 4000 (400), Rate-Limit 30/min je Kanzlei (429) – alle vor dem Anthropic-Aufruf. |
+| `thinking` | **Wird nicht gesetzt**, das Modell-Standardverhalten gilt. Die Direkt-Provider setzen `thinking: disabled`, weil sonst Text abgeschnitten wurde (§ anthropic_writing_provider, 05.10.). **Das betrifft auch den bestehenden produktiven Schreibpfad über das Relay** – eigener Befund, hier nicht geändert. |
+| Fehler / Timeout | Upstream-Fehler werden zu einem generischen 502 ohne Inhalt. Serverseitig 60 s Timeout, SDK-Standard **2 Wiederholungen**; clientseitig 60 s (`lexono_gateway_timeout_seconds`). |
+| Logs | Inhaltsfrei (Request-ID, Tenant, Dauer, Status, Kategorie, Token), auch für eine Zweitmeinungs-Anfrage belegt. |
+
+**Vorschlag für eine spätere, gesonderte Freigabe** (nicht umgesetzt):
+
+1. **Client:** `GatewayRelaySecondOpinionProvider`, analog zum bestehenden `GatewayRelayWritingProvider`, über
+   `call_gateway_messages`.
+   - Siegel und Zweckprüfung;
+   - sendet nur `anonymisierter_sachverhalt` und den festen Systemprompt;
+   - Client-Timeout ≤ 20 s, keine Wiederholung;
+   - Auswahl über `build_…_provider`, wenn `lexono_gateway_url` gesetzt ist;
+   - der Direkt-Provider bleibt Dev/QA.
+2. **Relay:** optionales Feld `zweck` mit Allowlist {Textproduktion, `second_opinion_document`}.
+   - Unbekannter Zweck → 400.
+   - Je Zweck eigene Grenzen: Zweitmeinung `max_tokens` ≤ 600, Größe z. B. ≤ 60 KB, eigenes Rate-Limit.
+   - Je Kanzlei ein Schalter `second_opinion_enabled`, Standard aus → 403.
+   - Für die Zweitmeinung `thinking: disabled` und `max_retries=0`.
+   - Log zusätzlich die Zweck-**Kategorie**, kein Inhalt.
+   - Der Zweck ist eine Selbstauskunft des Clients. Er dient Grenzen, Abschaltbarkeit und Abrechnung, **nicht** als
+     Vertrauensnachweis.
+3. **Tests:**
+   - Die Charakterisierungstests oben werden bewusst rot und angepasst.
+   - Neu: unbekannter Zweck 400, abgeschaltete Kanzlei 403, Grenzen je Zweck, `thinking`/Retries, inhaltsfreie Logs
+     mit Zweck.
+   - Client-Provider gegen den Relay-`TestClient` mit gepatchtem SDK.
+   - Fang-Server-Gesamtpfad wie §43.9, aber über das Relay.
+4. **Gesondert zu entscheiden:** ob `thinking: disabled` auch für den bestehenden Schreibpfad über das Relay gesetzt
+   wird (Befund oben).
+
+#### Phase 3 – Offene Voraussetzungen für einen Pilotbetrieb
+
+Legende: **F** = technische Tatsache (belegt), **A** = Annahme (nicht gemessen), **R** = rechtlich zu prüfen (keine
+Rechtsberatung; Prüfung durch Datenschutzbeauftragte bzw. Berufsrecht nötig).
+
+| Thema | Stand / offene Entscheidung |
+|---|---|
+| Maximale Dokumentlänge | **F:** `check_length` verweigert zu lange Texte ohne Kürzung; Korpus bis 7.657 Zeichen; Relay-Grenze 200 KB. **A:** echte Schriftsätze und Verträge sind oft deutlich länger. **Entscheidung:** Grenze (z. B. 12.000 Zeichen) und Umgang mit längeren Dokumenten – ablehnen (Stand) oder später abschnittsweise mit sichtbarem Hinweis. |
+| Budget | **F:** `monthly_budget_usd` ist global und standardmäßig **nicht gesetzt** (keine Sperre); Zweitmeinung synthetisch ≈ 0,004 USD je Dokument (§42.5). **Entscheidung:** eigenes Monats- und Kanzleilimit für die Zweitmeinung; Verhalten bei Erreichen (Stand: blockiert). |
+| Rückfrage / Sendbarkeit | **F:** Im Modus `ask` ist nur 1/24 Dokumenten sendbar. **Entscheidung:** Rückfrage-Oberfläche für Dokumente (wie im Chat) oder bewusst `mask` – beides datenschutzrelevant. |
+| Speicherung / Audit | **F:** keine Tabelle; Audit-Rückruf inhaltsfrei; `ApiCallLog` vorhanden. **Entscheidung:** was gespeichert wird (nur Typ, Daten, Status, Hash), Aufbewahrung und Löschung mit der Akte, Einsicht. |
+| UI-Kennzeichnung | **F:** Hinweise tragen `review_state="ungeprueft"`, Quelle „cloud“. **Entscheidung:** Wortlaut und Gestaltung („Cloud-Zweitmeinung – ungeprüft, kann irren“), klar abgesetzt von bestätigten Fristen. |
+| Ausdrückliche Übernahme | **F:** `adopt_hint` nur bei Status ok, nur für „nur Cloud“-Daten, nur mit benanntem Nutzer; Ergebnis ist ein neuer unbestätigter Vorschlag. **Entscheidung:** Rollen, die übernehmen dürfen; Audit der Übernahme. |
+| Aktenausschlüsse | **F:** gibt es nicht. **Entscheidung:** Ausschluss je Akte oder Mandant; Standard für besonders sensible Mandate (z. B. Strafrecht, Gesundheit). **R:** besondere Kategorien nach Art. 9 DSGVO. |
+| Relay | **F:** siehe Phase 2. **Entscheidung:** Freigabe des Relay-Vorschlags. |
+| Pseudonymisierung | **F:** 0 Lecks in gesendeten Payloads auf diesem Korpus; offene Lücken bei freien Kennungen (oben). **A:** echte Dokumente enthalten weitere Formate. **Entscheidung:** frischer blinder Korpus und Messung vor jedem Pilot. |
+| Datenschutz-Folgenabschätzung | **R:** Art. 35 DSGVO (neue Verarbeitung ganzer Dokumente in einer Cloud). |
+| Auftragsverarbeitung | **R:** Art. 28 DSGVO mit dem Modellanbieter und für den Relay-Betrieb; Drittlandübermittlung (Art. 44 ff.). |
+| Berufsgeheimnis | **R:** § 203 StGB, § 43e BRAO (Einbeziehung von Dienstleistern). Pseudonymisierte Daten bleiben personenbezogen (ErwG 26). |
+| Mandanteninformation | **R:** Art. 13/14 DSGVO; ob und wie Mandanten informiert werden oder widersprechen können. |
+| Fristenverantwortung | **F:** Cloud-Hinweise ändern oder bestätigen nie Fristen. **R:** anwaltliche Fristenkontrolle bleibt beim Menschen; Haftungsfragen bei ungenutzten Hinweisen. |
+
+**Empfohlener nächster Schritt:**
+1. Owner-Entscheidung zur Rückfrage-Frage. Ohne Dokument-Rückfrage-Oberfläche ist die Zweitmeinung praktisch nicht
+   sendbar.
+2. Danach gesondert freigegeben der Relay-Vorschlag (Client-Provider, Zweck, Grenzen und Schalter im Relay) mit den
+   genannten Tests.
+3. Parallel ein frischer blinder Korpus v2 für die offenen Kennungsklassen.

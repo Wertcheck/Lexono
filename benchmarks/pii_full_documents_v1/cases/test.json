@@ -1,0 +1,4049 @@
+{
+ "korpus": "pii_full_documents_v1",
+ "version": 1,
+ "erstellt": "2026-10-15",
+ "verfasser": "zwei blinde Agenten (A Gericht/Rubrum/Schriftsaetze, B Korrespondenz/Rechnungen/Vertraege)",
+ "teile": {
+  "A": {
+   "author": "blind-agent-pii-A",
+   "dokumente": 12
+  },
+  "B": {
+   "author": "blind-agent-pii-B",
+   "dokumente": 12
+  }
+ },
+ "documents": [
+  {
+   "id": "PII-A01",
+   "format": "docx",
+   "filename": "2026-03-12_Klage_Kranich_FiktivBau.docx",
+   "paragraphs": [
+    "Fuchs & Engel Rechtsanwälte PartG mbB · Lindenallee 12 · 12345 Musterstadt",
+    "Dr. Anna Fuchs, Fachanwältin für Bau- und Architektenrecht · Martin Engel, Rechtsanwalt · Sophie Brenner, Rechtsanwältin",
+    "Telefon 0123 456789-0 · Telefax 0123 456789-99 · E-Mail kanzlei@fuchs-engel.example",
+    "Landgericht Musterstadt, Zivilkammer – per beA –",
+    "Musterstadt, den 12.03.2026 · Unser Zeichen: 2026/0815 · Sachbearbeitung: Dr. Anna Fuchs, Durchwahl 0123 456789-14",
+    "Klage",
+    "In dem Rechtsstreit",
+    "des Herrn Jonas Kranich, geboren am 14.06.1981, Am Eichenhang 7, 12347 Musterstadt,",
+    "– Kläger –",
+    "Prozessbevollmächtigte: Fuchs & Engel Rechtsanwälte PartG mbB, Lindenallee 12, 12345 Musterstadt,",
+    "gegen",
+    "die Fiktiv-Bau GmbH, vertreten durch den Geschäftsführer Holger Brandmeier, Gewerbering 44, 23456 Beispielheim, eingetragen im Handelsregister unter HRB 70412,",
+    "– Beklagte –",
+    "wegen Schadensersatzes aus Bauvertrag (Kranich ./. Fiktiv-Bau GmbH)",
+    "Vorläufiger Streitwert: 18.640,00 EUR",
+    "Namens und in Vollmacht des Klägers erheben wir Klage und werden in der mündlichen Verhandlung beantragen:",
+    "1. Die Beklagte wird verurteilt, an den Kläger 18.640,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem jeweiligen Basiszinssatz seit dem 01.12.2025 zu zahlen.",
+    "2. Die Beklagte trägt die Kosten des Rechtsstreits. 3. Das Urteil ist, gegebenenfalls gegen Sicherheitsleistung, vorläufig vollstreckbar.",
+    "Für den Fall der Anordnung des schriftlichen Vorverfahrens beantragen wir bereits jetzt den Erlass eines Versäumnisurteils nach § 331 Abs. 3 ZPO. Einer Übertragung des Rechtsstreits auf den Einzelrichter stehen keine Gründe entgegen.",
+    "Begründung:",
+    "I. Sachverhalt",
+    "1. Der Kläger ist Eigentümer des mit einem Einfamilienhaus bebauten Grundstücks Am Eichenhang 7 in 12347 Musterstadt. Mit Bauvertrag vom 03.04.2025 beauftragte er die Beklagte mit der Erneuerung der Dachabdichtung sowie der Errichtung einer Dachgaube auf der Gartenseite des Hauses. Die Beklagte führte das Vorhaben intern unter der Bauvorhaben-Nr. BV-2025-118. Vereinbart war ein Pauschalfestpreis von 42.500,00 EUR.",
+    "Beweis: Bauvertrag vom 03.04.2025 in Kopie, Anlage K1",
+    "2. Auf Seiten der Beklagten war deren Bauleiter, Herr Uwe Pohlmann, für das Bauvorhaben verantwortlich. Die Arbeiten wurden im August 2025 ausgeführt. Am 15.09.2025 fand eine gemeinsame Begehung statt, bei der der Kläger Kranich die Leistung im Beisein von Herrn Pohlmann abnahm. Das Abnahmeprotokoll enthält keine Vorbehalte. Der Pauschalpreis wurde vollständig gezahlt.",
+    "Beweis: Abnahmeprotokoll vom 15.09.2025, Anlage K2; Zeugnis des Herrn Uwe Pohlmann, zu laden über die Beklagte",
+    "3. Bereits nach den ersten stärkeren Regenfällen Anfang Oktober 2025 trat im Bereich der neuen Gaube Wasser in das darunterliegende Kinderzimmer ein. Die Deckenverkleidung durchfeuchtete, an der Innenwand bildeten sich Wasserflecken. Die Ehefrau des Klägers, Frau Sabine Kranich, dokumentierte die Schäden fotografisch und stellte Auffangbehälter auf.",
+    "Beweis: Lichtbilder vom 06.10.2025 bis 12.10.2025, Anlagenkonvolut K2a; Zeugnis der Frau Sabine Kranich, Am Eichenhang 7, 12347 Musterstadt",
+    "4. Mit Schreiben vom 21.10.2025 zeigte Herr Kranich der Beklagten die Undichtigkeit an und forderte sie unter Fristsetzung bis zum 10.11.2025 zur Mängelbeseitigung auf. Das Schreiben ist von dem Kläger mit J. Kranich unterzeichnet und wurde der Beklagten per Einschreiben sowie vorab per E-Mail übermittelt.",
+    "Beweis: Mängelanzeige vom 21.10.2025, Anlage K3",
+    "5. Die Beklagte reagierte innerhalb der Frist nicht. Erst am 12.11.2025 meldete sich Herr Pohlmann telefonisch und erklärte, die Undichtigkeit beruhe auf einer verstopften Dachrinne und falle daher nicht in den Verantwortungsbereich der Beklagten. Eine Besichtigung lehnte er ab. Das Gespräch wurde über den Lautsprecher geführt und von Frau Sabine Kranich mitgehört.",
+    "6. Der Kläger beauftragte daraufhin die öffentlich bestellte und vereidigte Sachverständige Dipl.-Ing. Petra Lindqvist mit der Ursachenfeststellung. In ihrem Gutachten vom 18.11.2025 kommt die Sachverständige zu dem Ergebnis, dass die Abdichtungsbahn im Anschlussbereich zwischen Gaubenwange und Hauptdach nicht fachgerecht verklebt und die Kehlrinne falsch dimensioniert wurde.",
+    "Eine verstopfte Dachrinne lag nach den Feststellungen von Frau Lindqvist nicht vor. Die Sachverständige hat die Rinne bei ihrem Ortstermin besichtigt und frei von Laub und Ablagerungen vorgefunden.",
+    "Beweis: Gutachten der Sachverständigen Petra Lindqvist vom 18.11.2025, Anlage K4; Sachverständigengutachten",
+    "7. Da die Beklagte jede Nachbesserung verweigert hatte, ließ der Kläger die Mängel durch die Dachdeckerei Wendland & Söhne GmbH beseitigen. Diese stellte für ihre Leistungen mit Rechnung Nr. RE-2025-4471 vom 28.11.2025 einen Betrag von 12.380,00 EUR brutto in Rechnung, den der Kläger beglichen hat. Für die Trocknung und die Wiederherstellung der Innenräume fielen weitere Kosten an.",
+    "Beweis: Rechnung vom 28.11.2025, Anlage K5; Rechnung Malerbetrieb, Anlage K6",
+    "8. Die dem Kläger entstandenen Schäden setzen sich wie folgt zusammen:",
+    "9. Mit anwaltlichem Schreiben vom 20.11.2025 forderte der Kläger die Beklagte zur Zahlung bis zum 30.11.2025 auf. Eine Zahlung erfolgte nicht. Der Geschäftsführer der Beklagten, Herr Brandmeier, ließ lediglich mitteilen, man sehe keine Veranlassung, sich zu der Angelegenheit zu äußern.",
+    "II. Rechtliche Würdigung",
+    "1. Dem Kläger steht gegen die Beklagte ein Anspruch auf Ersatz der Selbstvornahmekosten aus §§ 634 Nr. 2, 637 Abs. 1 BGB zu. Das Werk der Beklagten ist mangelhaft im Sinne des § 633 Abs. 2 BGB, weil die Dachabdichtung nicht den allgemein anerkannten Regeln der Technik entspricht und die vertraglich vorausgesetzte Funktion, das Gebäude vor Niederschlagswasser zu schützen, nicht erfüllt.",
+    "2. Die dem Kläger durch den Wassereintritt entstandenen Folgeschäden, insbesondere die Kosten für das Gutachten sowie für Trocknung und Malerarbeiten, sind nach § 634 Nr. 4 BGB in Verbindung mit § 280 Abs. 1 BGB zu ersetzen. Die Beklagte hat die Pflichtverletzung zu vertreten; ihr Verschulden wird gemäß § 280 Abs. 1 Satz 2 BGB vermutet.",
+    "3. Die vorgerichtlichen Rechtsanwaltskosten sind als Verzugsschaden nach §§ 280 Abs. 2, 286 BGB erstattungsfähig. Der Zinsanspruch folgt aus §§ 286, 288 Abs. 1 BGB. Spätestens mit Ablauf der im Schreiben vom 20.11.2025 gesetzten Frist befand sich die Beklagte in Verzug.",
+    "4. Das Landgericht Musterstadt ist sachlich nach §§ 23 Nr. 1, 71 Abs. 1 GVG und örtlich nach § 29 Abs. 1 ZPO zuständig, da Erfüllungsort für die Bauleistung der Ort des Bauwerks ist.",
+    "III. Prozessuales",
+    "Der Kläger ist an einer gütlichen Einigung grundsätzlich interessiert; ein außergerichtlicher Einigungsversuch ist jedoch an der Verweigerungshaltung der Beklagten gescheitert. Den Gerichtskostenvorschuss überweisen wir nach Erhalt der Kostenrechnung. Beglaubigte und einfache Abschriften für die Gegenseite sind beigefügt.",
+    "Anlagenverzeichnis: K1 Bauvertrag · K2 Abnahmeprotokoll · K2a Lichtbilder · K3 Mängelanzeige J. Kranich · K4 Gutachten Lindqvist · K5 Rechnung Wendland & Söhne GmbH · K6 Rechnung Malerbetrieb · K7 Kostennote",
+    "Dr. Anna Fuchs",
+    "Rechtsanwältin",
+    "Fuchs & Engel Rechtsanwälte PartG mbB · Sitz Musterstadt · Partnerschaftsregister Amtsgericht Musterstadt PR 2291 · Steuernummer 12/345/67890 · Bankverbindung: IBAN DE12 3456 7890 1234 5678 90"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Bezeichnung",
+     "Beleg",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "1",
+      "Ersatzvornahme Dachabdichtung Wendland & Söhne GmbH",
+      "Anlage K5",
+      "12.380,00 EUR"
+     ],
+     [
+      "2",
+      "Sachverständigengutachten Petra Lindqvist",
+      "Anlage K4",
+      "2.140,00 EUR"
+     ],
+     [
+      "3",
+      "Trocknung und Malerarbeiten Innenräume",
+      "Anlage K6",
+      "3.620,00 EUR"
+     ],
+     [
+      "4",
+      "Vorgerichtliche Anwaltskosten (nicht anrechenbarer Teil)",
+      "Anlage K7",
+      "500,00 EUR"
+     ],
+     [
+      "",
+      "Summe",
+      "",
+      "18.640,00 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Jonas Kranich"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Anna Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Martin Engel",
+     "category": "person"
+    },
+    {
+     "value": "Sophie Brenner",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "J. Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Holger Brandmeier",
+     "category": "person"
+    },
+    {
+     "value": "Brandmeier",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Petra Lindqvist",
+     "category": "person"
+    },
+    {
+     "value": "Lindqvist",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Fiktiv-Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Wendland & Söhne GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Lindenallee 12",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Eichenhang 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Gewerbering 44",
+     "category": "adresse"
+    },
+    {
+     "value": "12345 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12347 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0123 456789-0",
+     "category": "telefon"
+    },
+    {
+     "value": "0123 456789-99",
+     "category": "telefon"
+    },
+    {
+     "value": "0123 456789-14",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@fuchs-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "2026/0815",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "14.06.1981",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "HRB 70412",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "BV-2025-118",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "PR 2291",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "RE-2025-4471",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "12/345/67890",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE12 3456 7890 1234 5678 90",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "Klage",
+    "18.640,00 EUR",
+    "01.12.2025",
+    "10.11.2025",
+    "15.09.2025",
+    "§ 331 Abs. 3 ZPO",
+    "§ 634 Nr. 4 BGB",
+    "§ 280 Abs. 1 BGB",
+    "§ 633 Abs. 2 BGB",
+    "12.380,00 EUR",
+    "42.500,00 EUR",
+    "Anlage K3"
+   ],
+   "tags": [
+    "klage",
+    "baurecht",
+    "rubrum",
+    "briefkopf",
+    "kostenaufstellung",
+    "tabelle",
+    "lang",
+    "namensvarianten"
+   ]
+  },
+  {
+   "id": "PII-A02",
+   "format": "pdf",
+   "filename": "2026-04-28_Klageerwiderung_3O211-26.pdf",
+   "paragraphs": [
+    "Bach & Roth Rechtsanwälte mbB · Hafenstraße 3 · 23456 Beispielheim",
+    "Dr. Felix Bach · Miriam Roth, Fachanwältin für Bau- und Architektenrecht",
+    "Tel. 04567 89012-0 · Fax 04567 89012-29 · f.bach@bach-roth.invalid",
+    "Landgericht Musterstadt, 3. Zivilkammer",
+    "Beispielheim, 28.04.2026 · Az. des Gerichts: 3 O 211/26 · Unser Az.: BR-26-0342",
+    "Klageerwiderung",
+    "In dem Rechtsstreit Kranich ./. Fiktiv-Bau GmbH",
+    "Jonas Kranich, Am Eichenhang 7, 12347 Musterstadt, – Kläger – Prozessbevollmächtigte: Fuchs & Engel Rechtsanwälte PartG mbB, Musterstadt",
+    "gegen Fiktiv-Bau GmbH, vertreten durch den Geschäftsführer Holger Brandmeier, Gewerbering 44, 23456 Beispielheim, – Beklagte – Prozessbevollmächtigte: Bach & Roth Rechtsanwälte mbB, Beispielheim",
+    "zeigen wir an, dass wir die Beklagte vertreten. Innerhalb der bis zum 30.04.2026 gesetzten Frist zur Klageerwiderung beantragen wir, die Klage abzuweisen.",
+    "Hilfsweise beantragen wir, der Beklagten nachzulassen, die Zwangsvollstreckung durch Sicherheitsleistung abzuwenden. Einer Entscheidung durch den Einzelrichter wird zugestimmt.",
+    "Begründung:",
+    "I. Vorbemerkung",
+    "Die Klage ist unbegründet. Der Kläger verlangt Ersatz von Kosten, die er ohne berechtigten Anlass und ohne der Beklagten eine ausreichende Gelegenheit zur Nacherfüllung zu geben, selbst veranlasst hat. Der Vortrag des Klägers ist in wesentlichen Punkten unvollständig und wird, soweit nicht ausdrücklich zugestanden, bestritten.",
+    "II. Zum Sachverhalt",
+    "1. Zutreffend ist, dass die Parteien am 03.04.2025 einen Bauvertrag über die Erneuerung der Dachabdichtung und die Errichtung einer Dachgaube am Objekt Am Eichenhang 7 geschlossen haben. Ebenfalls zutreffend ist, dass die Leistung am 15.09.2025 vorbehaltlos abgenommen wurde. Die Abnahme erfolgte nach einer gründlichen Begehung, an der Herr Kranich und für die Beklagte deren Bauleiter Uwe Pohlmann teilnahmen.",
+    "2. Die Arbeiten im Bereich der Gaube wurden nicht von eigenen Mitarbeitern der Beklagten, sondern von deren Nachunternehmerin, der Dachbau Kessler GmbH, ausgeführt. Deren Vorarbeiter, Herr Ralf Timmermann, hat die Abdichtung nach den Herstellerrichtlinien verlegt und die Anschlüsse vor der Abnahme gemeinsam mit Herrn Pohlmann kontrolliert. Mängel waren nicht erkennbar.",
+    "Beweis: Zeugnis des Herrn Ralf Timmermann, zu laden über die Dachbau Kessler GmbH, Ziegeleiweg 3, 23458 Beispielheim; Zeugnis des Herrn Uwe Pohlmann, zu laden über die Beklagte",
+    "3. Bestritten wird, dass bereits Anfang Oktober 2025 Wasser in das Kinderzimmer eingedrungen ist. Die vorgelegten Lichtbilder lassen weder Datum noch Ort zweifelsfrei erkennen. Soweit Feuchtigkeitsflecken sichtbar sind, kommen hierfür zahlreiche andere Ursachen in Betracht, etwa Kondensat infolge unzureichender Lüftung oder eine schadhafte Altdämmung, die nicht Gegenstand des Auftrags war.",
+    "4. Die Mängelanzeige vom 21.10.2025 ist der Beklagten zwar zugegangen. Die dort gesetzte Frist bis zum 10.11.2025 war jedoch angesichts der Witterung und der Auftragslage im Herbst unangemessen kurz. Der Bauleiter Pohlmann hat sich am 12.11.2025 bei dem Kläger gemeldet und eine Besichtigung für die 47. Kalenderwoche angeboten. Der Kläger hat dieses Angebot abgelehnt und erklärt, er habe bereits einen anderen Betrieb beauftragt.",
+    "Beweis: Zeugnis des Herrn Uwe Pohlmann, b. b.; Gesprächsnotiz vom 12.11.2025, Anlage B1",
+    "Soweit der Kläger behauptet, Herr Pohlmann habe eine Besichtigung abgelehnt, wird dies ausdrücklich bestritten. Die Ehefrau des Klägers, die als Zeugin benannt ist, ist an dem Ausgang des Rechtsstreits wirtschaftlich interessiert; ihre Angaben werden mit der gebotenen Zurückhaltung zu würdigen sein.",
+    "5. Das von dem Kläger vorgelegte Privatgutachten der Sachverständigen Lindqvist ist ohne Beteiligung der Beklagten erstellt worden. Es stellt substantiierten Parteivortrag dar, nicht aber einen Beweis. Inhaltlich wird bestritten, dass die Abdichtungsbahn nicht fachgerecht verklebt war. Frau Lindqvist hat ausweislich ihres Gutachtens keine Bauteilöffnung vorgenommen, sondern lediglich eine Sichtprüfung vom Dachfenster aus durchgeführt.",
+    "6. Die Höhe der geltend gemachten Kosten wird bestritten. Die Rechnung der Wendland & Söhne GmbH enthält Positionen, insbesondere ein vollständiges Gerüst, die für eine punktuelle Nachbesserung im Anschlussbereich nicht erforderlich gewesen wären. Auch die Kosten für Trocknung und Malerarbeiten werden der Höhe nach bestritten; ein Zusammenhang mit dem behaupteten Wassereintritt ist nicht dargetan.",
+    "III. Rechtliche Würdigung",
+    "1. Ein Anspruch aus §§ 634 Nr. 2, 637 Abs. 1 BGB scheitert bereits daran, dass der Kläger der Beklagten keine angemessene Frist zur Nacherfüllung gesetzt hat. Eine zu kurz bemessene Frist setzt zwar grundsätzlich eine angemessene Frist in Lauf; der Kläger hat jedoch noch vor deren Ablauf einen Drittunternehmer beauftragt und das Angebot der Beklagten zur Besichtigung zurückgewiesen.",
+    "Eine ernsthafte und endgültige Erfüllungsverweigerung, die eine Fristsetzung entbehrlich gemacht hätte, liegt nicht vor. Die Äußerung des Bauleiters zur möglichen Ursache war eine erste Einschätzung und keine abschließende Ablehnung.",
+    "2. Auch Schadensersatz nach § 634 Nr. 4 BGB in Verbindung mit § 280 Abs. 1 BGB scheidet aus. Ein Mangel ist nicht nachgewiesen; die Beweislast trägt nach der vorbehaltlosen Abnahme gemäß § 640 Abs. 1 BGB der Kläger. Jedenfalls muss sich der Kläger ein erhebliches Mitverschulden nach § 254 Abs. 2 BGB entgegenhalten lassen, weil er die von der Beklagten angebotene kostengünstigere Nachbesserung vereitelt hat.",
+    "3. Vorgerichtliche Rechtsanwaltskosten sind mangels Verzugs nicht erstattungsfähig. Hinsichtlich der behaupteten Folgeschäden, insbesondere der Trocknungs- und Malerarbeiten, erklärt sich die Beklagte gemäß § 138 Abs. 4 ZPO mit Nichtwissen.",
+    "IV. Streitverkündung",
+    "Wir kündigen an, der Dachbau Kessler GmbH, vertreten durch ihren Geschäftsführer Norbert Kessler, Ziegeleiweg 3, 23458 Beispielheim, mit gesondertem Schriftsatz den Streit zu verkünden, da der Beklagten für den Fall des Unterliegens Regressansprüche gegen die Nachunternehmerin zustehen.",
+    "V. Beweisanträge und Termin",
+    "Für den Fall, dass das Gericht eine Beweisaufnahme für erforderlich hält, regen wir die Einholung eines gerichtlichen Sachverständigengutachtens unter Einbeziehung einer Bauteilöffnung an. Die Beklagte ist zu einer gütlichen Beilegung nur auf der Grundlage eines solchen Gutachtens bereit. Einem frühen ersten Termin stehen keine Bedenken entgegen.",
+    "Beglaubigte und einfache Abschrift anbei.",
+    "Dr. Felix Bach",
+    "Rechtsanwalt",
+    "Bach & Roth Rechtsanwälte mbB · Partnerschaftsregister Amtsgericht Beispielheim PR 488 · Steuer-Nr. 23/456/78901 · IBAN DE89 2345 6789 0123 4567 89"
+   ],
+   "known_entities": {
+    "person": [],
+    "organisation": [
+     "Fiktiv-Bau GmbH"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Felix Bach",
+     "category": "person"
+    },
+    {
+     "value": "Miriam Roth",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Holger Brandmeier",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Timmermann",
+     "category": "person"
+    },
+    {
+     "value": "Lindqvist",
+     "category": "person"
+    },
+    {
+     "value": "Norbert Kessler",
+     "category": "person"
+    },
+    {
+     "value": "Bach & Roth Rechtsanwälte mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Fiktiv-Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Dachbau Kessler GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Wendland & Söhne GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Hafenstraße 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Eichenhang 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Gewerbering 44",
+     "category": "adresse"
+    },
+    {
+     "value": "Ziegeleiweg 3",
+     "category": "adresse"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12347 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23458 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04567 89012-0",
+     "category": "telefon"
+    },
+    {
+     "value": "04567 89012-29",
+     "category": "telefon"
+    },
+    {
+     "value": "f.bach@bach-roth.invalid",
+     "category": "email"
+    },
+    {
+     "value": "3 O 211/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "BR-26-0342",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "PR 488",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "23/456/78901",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE89 2345 6789 0123 4567 89",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "Klageerwiderung",
+    "30.04.2026",
+    "§ 640 Abs. 1 BGB",
+    "§ 254 Abs. 2 BGB",
+    "§ 138 Abs. 4 ZPO",
+    "§ 634 Nr. 4 BGB",
+    "Anlage B1",
+    "21.10.2025"
+   ],
+   "tags": [
+    "klageerwiderung",
+    "baurecht",
+    "rubrum",
+    "kurzrubrum",
+    "briefkopf",
+    "lang",
+    "streitverkuendung"
+   ]
+  },
+  {
+   "id": "PII-A03",
+   "format": "txt",
+   "filename": "Berufungsbegruendung_Beispiel_Muster_7U143-26.txt",
+   "paragraphs": [
+    "Winter & Partner Rechtsanwälte · Marktplatz 9 · 34567 Fiktivhausen",
+    "Lea Winter, Rechtsanwältin · Dr. Konstantin Ebeling, Rechtsanwalt · Telefon 0345 678 90 12 · E-Mail l.winter@winter-partner.example",
+    "Oberlandesgericht Fiktivhausen, 7. Zivilsenat",
+    "Fiktivhausen, 15.09.2026 · Az.: 7 U 143/26 · Vorinstanz: Landgericht Neuhain, 2 O 88/26 · Unser Zeichen: W-2026-0193",
+    "Berufungsbegründung",
+    "In dem Rechtsstreit",
+    "Thomas Beispiel, Birkenweg 21, 34567 Fiktivhausen, – Kläger und Berufungskläger – Prozessbevollmächtigte: Winter & Partner Rechtsanwälte, Marktplatz 9, 34567 Fiktivhausen",
+    "gegen",
+    "Renate Muster, Talstraße 5, 34569 Fiktivhausen, – Beklagte und Berufungsbeklagte – Prozessbevollmächtigter: Rechtsanwalt Dr. Otto Kranz, Kranz Rechtsanwälte, Schlossallee 2, 34560 Neuhain",
+    "Kurzrubrum: Beispiel ./. Muster",
+    "begründen wir die mit Schriftsatz vom 12.08.2026 eingelegte Berufung des Klägers gegen das am 10.07.2026 verkündete und am 17.07.2026 zugestellte Urteil des Landgerichts Neuhain innerhalb der bis zum 17.09.2026 laufenden Frist des § 520 Abs. 2 ZPO wie folgt.",
+    "Wir beantragen, unter Abänderung des am 10.07.2026 verkündeten Urteils des Landgerichts Neuhain, Az. 2 O 88/26, die Beklagte zu verurteilen, an den Kläger 8.900,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 05.03.2026 zu zahlen,",
+    "Zug um Zug gegen Rückübereignung des Pkw mit dem amtlichen Kennzeichen FH-TB 482 und der Fahrzeug-Identifizierungsnummer WF0XXXGCDX7Y12345, sowie festzustellen, dass sich die Beklagte mit der Rücknahme des Fahrzeugs in Annahmeverzug befindet.",
+    "Begründung:",
+    "I. Gegenstand des Rechtsstreits",
+    "Der Kläger erwarb von der Beklagten mit privatschriftlichem Kaufvertrag vom 14.02.2026 einen gebrauchten Pkw zum Preis von 8.900,00 EUR. Der Vertrag enthält einen formularmäßigen Gewährleistungsausschluss. Auf ausdrückliche Nachfrage des Klägers, ob das Fahrzeug Unfallschäden aufweise, erklärte Frau Muster, das Fahrzeug sei „unfallfrei, nur ein kleiner Parkrempler hinten links“.",
+    "Wenige Wochen nach der Übergabe stellte die Autohaus Grünwald GmbH im Rahmen einer Inspektion fest, dass der rechte Längsträger nach einem erheblichen Frontalschaden instandgesetzt worden war. Der vom Kläger beauftragte Kfz-Sachverständige Bernd Hohlfeld bestätigte einen reparierten Unfallschaden mit einem damaligen Reparaturaufwand von über 6.000,00 EUR.",
+    "Der Kläger erklärte mit Schreiben vom 26.02.2026 die Anfechtung wegen arglistiger Täuschung sowie hilfsweise den Rücktritt vom Kaufvertrag und forderte die Beklagte zur Rückzahlung bis zum 04.03.2026 auf. Die Beklagte lehnte ab.",
+    "Das Landgericht hat die Klage abgewiesen. Es hat angenommen, der Kläger habe nicht bewiesen, dass die Beklagte den Unfallschaden kannte. Die Aussage der Zeugin Kerstin Beispiel, der Ehefrau des Klägers, die das Verkaufsgespräch mitangehört hatte, hat das Landgericht als „nicht hinreichend ergiebig“ bewertet, weil sie sich an den genauen Wortlaut nicht erinnert habe.",
+    "II. Berufungsgründe",
+    "1. Fehlerhafte Beweiswürdigung (§ 513 Abs. 1, § 546 ZPO)",
+    "Das Landgericht hat die Aussage der Zeugin Kerstin Beispiel nur unvollständig gewürdigt. Die Zeugin hat ausweislich des Protokolls vom 19.06.2026 bekundet, Frau Muster habe auf die Frage nach Unfällen gesagt, „da war nie was Größeres“. Dass die Zeugin den exakten Wortlaut nicht wiedergeben konnte, ist nach mehreren Monaten lebensnah und mindert ihre Glaubhaftigkeit nicht.",
+    "Das Landgericht hätte sich zudem mit dem Umstand auseinandersetzen müssen, dass die Beklagte den Inhalt dieser Äußerung in ihrer Parteianhörung im Kern bestätigt hat. Die Beklagte hat lediglich in Abrede gestellt, von einem größeren Schaden gewusst zu haben.",
+    "2. Übergehen eines Beweisantrags",
+    "Der Kläger hat mit Schriftsatz vom 02.06.2026 beantragt, den früheren Halter des Fahrzeugs, Herrn Marco Feldhaus, als Zeugen dafür zu vernehmen, dass er der Beklagten beim Verkauf im Jahr 2024 den Frontalschaden ausdrücklich offenbart und ihr die Reparaturrechnung übergeben hat. Diesem Beweisantrag ist das Landgericht ohne Begründung nicht nachgegangen.",
+    "Darin liegt eine Verletzung des Anspruchs auf rechtliches Gehör nach Art. 103 Abs. 1 GG. Der Beweisantrag war erheblich, weil die Kenntnis der Beklagten vom Unfallschaden die zentrale Streitfrage des Rechtsstreits bildet.",
+    "Beweis: Zeugnis des Herrn Marco Feldhaus, Am Weiher 11, 34571 Fiktivhausen",
+    "Hätte das Landgericht den Zeugen Feldhaus vernommen, hätte dieser bekundet, dass er die Beklagte bei der Übergabe des Fahrzeugs auf den Unfall hingewiesen hat. Damit wäre die Kenntnis der Beklagten bewiesen gewesen.",
+    "3. Rechtsfehler bei der Anwendung des § 444 BGB",
+    "Der vereinbarte Gewährleistungsausschluss ist nach § 444 BGB unbeachtlich, soweit die Beklagte den Mangel arglistig verschwiegen hat. Arglist setzt keine Schädigungsabsicht voraus; es genügt, dass der Verkäufer den Mangel kennt oder ihn zumindest für möglich hält und billigend in Kauf nimmt, dass der Käufer ihn nicht kennt. Wer auf ausdrückliche Nachfrage ins Blaue hinein Unfallfreiheit zusichert, handelt ebenfalls arglistig.",
+    "Darüber hinaus stellt ein erheblicher, nicht offenbarter Unfallschaden einen Sachmangel im Sinne des § 434 BGB dar. Die Angabe „unfallfrei“ ist als Beschaffenheitsvereinbarung zu verstehen. Unabhängig von der Anfechtung nach § 123 Abs. 1 BGB ist der Kläger daher jedenfalls wirksam vom Kaufvertrag zurückgetreten.",
+    "4. Annahmeverzug",
+    "Der Kläger hat der Beklagten die Rückgabe des Fahrzeugs mit dem Kennzeichen FH-TB 482 mehrfach, zuletzt mit Schreiben vom 26.02.2026, angeboten. Die Beklagte hat die Rücknahme verweigert. Die Feststellung des Annahmeverzugs ist für die Zwangsvollstreckung erforderlich.",
+    "III. Ergebnis",
+    "Das angefochtene Urteil beruht auf den dargelegten Rechtsfehlern. Bei zutreffender Würdigung der Beweisaufnahme und nach Vernehmung des Zeugen Feldhaus wäre der Klage stattzugeben gewesen. Hilfsweise wird angeregt, die Sache nach § 538 Abs. 2 Satz 1 Nr. 1 ZPO an das Landgericht Neuhain zurückzuverweisen.",
+    "Der Kläger ist mit einer Entscheidung durch den Einzelrichter einverstanden. Einer Güteverhandlung steht er offen gegenüber, sofern die Beklagte zu einer Rückabwicklung bereit ist. Herr T. Beispiel kann zur Anhörung persönlich erscheinen.",
+    "Beglaubigte und einfache Abschrift anbei.",
+    "Lea Winter",
+    "Rechtsanwältin"
+   ],
+   "known_entities": {
+    "person": [
+     "Thomas Beispiel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Lea Winter",
+     "category": "person"
+    },
+    {
+     "value": "Konstantin Ebeling",
+     "category": "person"
+    },
+    {
+     "value": "Thomas Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "T. Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "Kerstin Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "Renate Muster",
+     "category": "person"
+    },
+    {
+     "value": "Muster",
+     "category": "person"
+    },
+    {
+     "value": "Otto Kranz",
+     "category": "person"
+    },
+    {
+     "value": "Bernd Hohlfeld",
+     "category": "person"
+    },
+    {
+     "value": "Marco Feldhaus",
+     "category": "person"
+    },
+    {
+     "value": "Feldhaus",
+     "category": "person"
+    },
+    {
+     "value": "Winter & Partner Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Kranz Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Autohaus Grünwald GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 9",
+     "category": "adresse"
+    },
+    {
+     "value": "Birkenweg 21",
+     "category": "adresse"
+    },
+    {
+     "value": "Talstraße 5",
+     "category": "adresse"
+    },
+    {
+     "value": "Schlossallee 2",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Weiher 11",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34569 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34560 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34571 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0345 678 90 12",
+     "category": "telefon"
+    },
+    {
+     "value": "l.winter@winter-partner.example",
+     "category": "email"
+    },
+    {
+     "value": "7 U 143/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2 O 88/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "W-2026-0193",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "FH-TB 482",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "WF0XXXGCDX7Y12345",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Oberlandesgericht Fiktivhausen",
+    "Landgericht Neuhain",
+    "17.09.2026",
+    "§ 520 Abs. 2 ZPO",
+    "§ 444 BGB",
+    "§ 434 BGB",
+    "§ 123 Abs. 1 BGB",
+    "8.900,00 EUR",
+    "Berufungsbegründung",
+    "Art. 103 Abs. 1 GG"
+   ],
+   "tags": [
+    "berufungsbegruendung",
+    "kaufrecht",
+    "rubrum",
+    "kurzrubrum",
+    "kurze_nachnamen",
+    "lang",
+    "namensvarianten"
+   ]
+  },
+  {
+   "id": "PII-A04",
+   "format": "scan",
+   "filename": "Urteil_AG_Beispielheim_4C123-26_scan.pdf",
+   "paragraphs": [
+    "Amtsgericht Beispielheim",
+    "Az.: 4 C 123/26",
+    "Verkündet am 21.08.2026 · Weiß, Justizhauptsekretärin als Urkundsbeamtin der Geschäftsstelle",
+    "Im Namen des Volkes",
+    "Urteil",
+    "In dem Rechtsstreit",
+    "Gerda Hollstein, Kastanienweg 8, 23457 Beispielheim, – Klägerin – Prozessbevollmächtigter: Rechtsanwalt Jan Hollmann, Ulmenstraße 30, 23456 Beispielheim",
+    "gegen",
+    "Paul Fink, Kastanienweg 10, Wohnung 3. OG links, 23457 Beispielheim, – Beklagter – Prozessbevollmächtigte: Fuchs & Engel Rechtsanwälte PartG mbB, Lindenallee 12, 12345 Musterstadt",
+    "hat das Amtsgericht Beispielheim auf die mündliche Verhandlung vom 31.07.2026 durch die Richterin am Amtsgericht Dr. Claudia Sperber für Recht erkannt:",
+    "1. Die Klage wird abgewiesen. 2. Die Klägerin trägt die Kosten des Rechtsstreits. 3. Das Urteil ist vorläufig vollstreckbar. Die Klägerin kann die Vollstreckung durch Sicherheitsleistung in Höhe von 110 % des aufgrund des Urteils vollstreckbaren Betrages abwenden, wenn nicht der Beklagte vor der Vollstreckung Sicherheit in Höhe von 110 % des jeweils zu vollstreckenden Betrages leistet.",
+    "Tatbestand",
+    "Die Klägerin ist Vermieterin, der Beklagte Mieter einer Dreizimmerwohnung im Haus Kastanienweg 10. Die monatliche Bruttomiete beträgt 965,00 EUR. Seit Dezember 2025 tritt im Schlafzimmer und im Bad der Wohnung Schimmelbefall auf. Der Beklagte zeigte den Mangel mit Schreiben vom 08.12.2025 an und minderte ab Januar 2026 die Miete um 20 %, insgesamt um 1.158,00 EUR für die Monate Januar bis Juni 2026.",
+    "Die Klägerin behauptet, der Schimmel beruhe auf unzureichendem Heiz- und Lüftungsverhalten des Beklagten. Herr Fink trockne regelmäßig Wäsche in der Wohnung. Sie beantragt, den Beklagten zu verurteilen, an sie 1.158,00 EUR nebst Zinsen zu zahlen. Der Beklagte beantragt, die Klage abzuweisen. Er behauptet, die Ursache liege in einer Wärmebrücke an der Außenwand.",
+    "Das Gericht hat Beweis erhoben durch Einholung eines schriftlichen Sachverständigengutachtens des Sachverständigen Dipl.-Ing. Rüdiger Asmus vom 02.07.2026 und durch Vernehmung der Zeugin Elif Yıldırım, Nachbarin des Beklagten. Wegen des Ergebnisses wird auf das Gutachten und das Sitzungsprotokoll vom 31.07.2026 verwiesen.",
+    "Entscheidungsgründe",
+    "Die zulässige Klage ist unbegründet. Der Klägerin steht kein Anspruch auf Zahlung restlicher Miete aus § 535 Abs. 2 BGB zu, denn die Miete war nach § 536 Abs. 1 BGB in dem geltend gemachten Umfang gemindert.",
+    "Der Schimmelbefall stellt einen Mangel der Mietsache dar, der die Tauglichkeit zum vertragsgemäßen Gebrauch erheblich mindert. Nach den überzeugenden Ausführungen des Sachverständigen Asmus beruht die Feuchtigkeit auf einer konstruktiven Wärmebrücke im Bereich der Deckenauflage. Ein übliches Heiz- und Lüftungsverhalten reicht nach seinen Berechnungen nicht aus, um eine Schimmelbildung an dieser Stelle zu verhindern.",
+    "Die Zeugin Yıldırım hat glaubhaft bekundet, dass in ihrer baugleichen Wohnung dieselben Erscheinungen auftreten, obwohl sie täglich mehrmals stoßlüfte. Das Gericht hat keinen Anlass, an der Glaubwürdigkeit der Zeugin zu zweifeln.",
+    "Eine Minderung um 20 % ist angesichts des Befalls von zwei Räumen angemessen. Die Anzeigepflicht nach § 536c BGB hat der Beklagte erfüllt.",
+    "Die Kostenentscheidung folgt aus § 91 Abs. 1 ZPO, die Entscheidung über die vorläufige Vollstreckbarkeit aus §§ 708 Nr. 11, 711 ZPO.",
+    "Rechtsbehelfsbelehrung: Gegen dieses Urteil kann Berufung eingelegt werden, wenn der Wert des Beschwerdegegenstandes 600,00 EUR übersteigt. Die Berufung ist binnen einer Notfrist von einem Monat bei dem Landgericht Musterstadt einzulegen. Die Frist beginnt mit der Zustellung des in vollständiger Form abgefassten Urteils.",
+    "Dr. Sperber",
+    "Richterin am Amtsgericht",
+    "Ausgefertigt: Beispielheim, 24.08.2026 · Weiß, Justizhauptsekretärin"
+   ],
+   "known_entities": {
+    "person": [
+     "Paul Fink"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Weiß",
+     "category": "person"
+    },
+    {
+     "value": "Gerda Hollstein",
+     "category": "person"
+    },
+    {
+     "value": "Jan Hollmann",
+     "category": "person"
+    },
+    {
+     "value": "Paul Fink",
+     "category": "person"
+    },
+    {
+     "value": "Fink",
+     "category": "person"
+    },
+    {
+     "value": "Claudia Sperber",
+     "category": "person"
+    },
+    {
+     "value": "Sperber",
+     "category": "person"
+    },
+    {
+     "value": "Rüdiger Asmus",
+     "category": "person"
+    },
+    {
+     "value": "Asmus",
+     "category": "person"
+    },
+    {
+     "value": "Elif Yıldırım",
+     "category": "person"
+    },
+    {
+     "value": "Yıldırım",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Kastanienweg 8",
+     "category": "adresse"
+    },
+    {
+     "value": "Ulmenstraße 30",
+     "category": "adresse"
+    },
+    {
+     "value": "Kastanienweg 10",
+     "category": "adresse"
+    },
+    {
+     "value": "Wohnung 3. OG links",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenallee 12",
+     "category": "adresse"
+    },
+    {
+     "value": "23457 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12345 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "4 C 123/26",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Beispielheim",
+    "Landgericht Musterstadt",
+    "Urteil",
+    "§ 536 Abs. 1 BGB",
+    "§ 91 Abs. 1 ZPO",
+    "1.158,00 EUR",
+    "965,00 EUR",
+    "31.07.2026",
+    "21.08.2026"
+   ],
+   "tags": [
+    "urteil",
+    "mietrecht",
+    "rubrum",
+    "richterunterschrift",
+    "scan"
+   ]
+  },
+  {
+   "id": "PII-A05",
+   "format": "scan_degraded",
+   "filename": "Beweisbeschluss_LG_Musterstadt_3O211-26.pdf",
+   "paragraphs": [
+    "Landgericht Musterstadt",
+    "3. Zivilkammer · Geschäfts-Nr.: 3 O 211/26",
+    "Beschluss",
+    "In dem Rechtsstreit Kranich ./. Fiktiv-Bau GmbH",
+    "Jonas Kranich, Am Eichenhang 7, 12347 Musterstadt, – Kläger – Prozessbevollmächtigte: Fuchs & Engel Rechtsanwälte PartG mbB, Lindenallee 12, 12345 Musterstadt",
+    "gegen Fiktiv-Bau GmbH, vertreten durch den Geschäftsführer Holger Brandmeier, Gewerbering 44, 23456 Beispielheim, – Beklagte – Prozessbevollmächtigte: Bach & Roth Rechtsanwälte mbB, Hafenstraße 3, 23456 Beispielheim",
+    "Streitverkündete: Dachbau Kessler GmbH, Ziegeleiweg 3, 23458 Beispielheim",
+    "hat die 3. Zivilkammer des Landgerichts Musterstadt durch den Vorsitzenden Richter am Landgericht Dr. Matthias Grell, die Richterin am Landgericht Nadine Ostrowski und den Richter Kai Benthin am 22.09.2026 beschlossen:",
+    "I. Es soll Beweis erhoben werden über die Behauptungen des Klägers, 1. die Abdichtung im Anschlussbereich zwischen Gaubenwange und Hauptdach des Hauses Am Eichenhang 7 sei nicht fachgerecht verklebt und die Kehlrinne unterdimensioniert, 2. hierauf beruhe der Wassereintritt im Oktober 2025, 3. die Kosten der Mängelbeseitigung von 12.380,00 EUR seien angemessen und erforderlich gewesen,",
+    "durch Einholung eines schriftlichen Sachverständigengutachtens. Zum Sachverständigen wird Dipl.-Ing. Henrik Saalfeld, Auf der Höhe 15, 23459 Beispielheim, bestimmt. Der Sachverständige ist befugt, eine Bauteilöffnung vorzunehmen; die Parteien haben diese zu dulden.",
+    "II. Es soll ferner Beweis erhoben werden über den Inhalt des Telefonats vom 12.11.2025 zwischen dem Kläger und dem Bauleiter Pohlmann sowie über die Behauptung der Beklagten, sie habe eine Besichtigung angeboten, durch Vernehmung der nachfolgend aufgeführten Zeugen:",
+    "III. Die Ladung der Zeugen erfolgt nach Eingang des Gutachtens. Der Kläger hat für den Sachverständigen einen Auslagenvorschuss von 3.000,00 EUR, die Beklagte für die Zeugen einen Vorschuss von je 150,00 EUR binnen drei Wochen nach Zustellung dieses Beschlusses einzuzahlen (§§ 379, 402 ZPO). Die Begutachtung wird von der Einzahlung abhängig gemacht.",
+    "IV. Dem Sachverständigen wird aufgegeben, das Gutachten bis zum 15.01.2027 zu erstatten. Die Ortsbesichtigung ist den Parteien rechtzeitig, mindestens zwei Wochen vorher, anzukündigen.",
+    "Dr. Grell · Ostrowski · Benthin",
+    "Vorsitzender Richter am Landgericht · Richterin am Landgericht · Richter",
+    "Ausgefertigt, Musterstadt, 23.09.2026 · Lehnert, Justizbeschäftigte als Urkundsbeamtin der Geschäftsstelle"
+   ],
+   "table": {
+    "header": [
+     "Nr.",
+     "Zeuge/Zeugin",
+     "ladungsfähige Anschrift",
+     "Beweisthema",
+     "benannt von"
+    ],
+    "rows": [
+     [
+      "1",
+      "Sabine Kranich",
+      "Am Eichenhang 7, 12347 Musterstadt",
+      "Telefonat vom 12.11.2025",
+      "Kläger"
+     ],
+     [
+      "2",
+      "Uwe Pohlmann",
+      "c/o Fiktiv-Bau GmbH, Gewerbering 44, 23456 Beispielheim",
+      "Telefonat vom 12.11.2025, Angebot einer Besichtigung",
+      "Kläger und Beklagte"
+     ],
+     [
+      "3",
+      "Ralf Timmermann",
+      "c/o Dachbau Kessler GmbH, Ziegeleiweg 3, 23458 Beispielheim",
+      "Ausführung der Abdichtungsarbeiten",
+      "Beklagte"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Jonas Kranich"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Holger Brandmeier",
+     "category": "person"
+    },
+    {
+     "value": "Matthias Grell",
+     "category": "person"
+    },
+    {
+     "value": "Grell",
+     "category": "person"
+    },
+    {
+     "value": "Nadine Ostrowski",
+     "category": "person"
+    },
+    {
+     "value": "Ostrowski",
+     "category": "person"
+    },
+    {
+     "value": "Kai Benthin",
+     "category": "person"
+    },
+    {
+     "value": "Benthin",
+     "category": "person"
+    },
+    {
+     "value": "Henrik Saalfeld",
+     "category": "person"
+    },
+    {
+     "value": "Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Timmermann",
+     "category": "person"
+    },
+    {
+     "value": "Lehnert",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiv-Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Bach & Roth Rechtsanwälte mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Dachbau Kessler GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Eichenhang 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenallee 12",
+     "category": "adresse"
+    },
+    {
+     "value": "Gewerbering 44",
+     "category": "adresse"
+    },
+    {
+     "value": "Hafenstraße 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Ziegeleiweg 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Auf der Höhe 15",
+     "category": "adresse"
+    },
+    {
+     "value": "12347 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12345 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23458 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23459 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "3 O 211/26",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "Beschluss",
+    "3.000,00 EUR",
+    "15.01.2027",
+    "12.380,00 EUR",
+    "§§ 379, 402 ZPO"
+   ],
+   "tags": [
+    "beweisbeschluss",
+    "baurecht",
+    "rubrum",
+    "zeugenliste",
+    "tabelle",
+    "richterunterschrift",
+    "scan"
+   ]
+  },
+  {
+   "id": "PII-A06",
+   "format": "pdf",
+   "filename": "Ladung_Zeuge_Pohlmann_3O211-26.pdf",
+   "paragraphs": [
+    "Landgericht Musterstadt – Geschäftsstelle der 3. Zivilkammer",
+    "Herrn Uwe Pohlmann, c/o Fiktiv-Bau GmbH, Gewerbering 44, 23456 Beispielheim",
+    "Geschäfts-Nr.: 3 O 211/26 · Bitte bei allen Schreiben angeben · Musterstadt, 02.11.2026",
+    "Ladung zum Termin zur Beweisaufnahme und mündlichen Verhandlung",
+    "In dem Rechtsstreit Kranich ./. Fiktiv-Bau GmbH werden Sie auf Anordnung des Vorsitzenden als Zeuge geladen zu dem Termin am Dienstag, 24.11.2026, 10:30 Uhr, Saal 2.17, Landgericht Musterstadt, Hauptgebäude, 2. Obergeschoss.",
+    "Gegenstand Ihrer Vernehmung ist der Inhalt eines Telefonats vom 12.11.2025 mit dem Kläger, Herrn Jonas Kranich, sowie die Frage, ob Sie ihm eine Besichtigung des Daches angeboten haben (Beweisbeschluss vom 22.09.2026, Ziffer II).",
+    "Bitte bringen Sie zum Termin einen gültigen Lichtbildausweis sowie diese Ladung mit. Etwaige Aufzeichnungen, Gesprächsnotizen oder E-Mails zu dem Bauvorhaben BV-2025-118 sollten Sie zur Einsicht mitbringen, um Ihr Gedächtnis zu unterstützen (§ 378 Abs. 1 ZPO).",
+    "Hinweise: Als Zeuge sind Sie verpflichtet, zu erscheinen und wahrheitsgemäß auszusagen. Bleiben Sie ohne genügende Entschuldigung aus, können Ihnen die durch Ihr Ausbleiben verursachten Kosten auferlegt und ein Ordnungsgeld bis zu 1.000,00 EUR, ersatzweise Ordnungshaft, gegen Sie festgesetzt werden (§ 380 ZPO).",
+    "Sind Sie am Erscheinen verhindert, teilen Sie dies bitte unverzüglich unter Angabe der Gründe mit. Sie erhalten eine Entschädigung nach dem Justizvergütungs- und -entschädigungsgesetz (JVEG). Der Antrag ist binnen drei Monaten nach Beendigung der Vernehmung zu stellen.",
+    "Weitere geladene Personen: Zeugin Sabine Kranich, Zeuge Ralf Timmermann. Die Parteien sind zum persönlichen Erscheinen angeordnet; für die Beklagte hat ein zur Aufklärung des Sachverhalts informierter Vertreter zu erscheinen (§ 141 ZPO).",
+    "Auf Anordnung: Lehnert, Justizbeschäftigte",
+    "Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.",
+    "Abschrift zur Kenntnisnahme an: Fuchs & Engel Rechtsanwälte PartG mbB (Az. 2026/0815) · Bach & Roth Rechtsanwälte mbB (Az. BR-26-0342)"
+   ],
+   "known_entities": {
+    "person": [
+     "Jonas Kranich"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Uwe Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Timmermann",
+     "category": "person"
+    },
+    {
+     "value": "Lehnert",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiv-Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Bach & Roth Rechtsanwälte mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Gewerbering 44",
+     "category": "adresse"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "3 O 211/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2026/0815",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "BR-26-0342",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "BV-2025-118",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "24.11.2026",
+    "10:30 Uhr",
+    "Saal 2.17",
+    "§ 380 ZPO",
+    "1.000,00 EUR",
+    "§ 141 ZPO",
+    "Ladung"
+   ],
+   "tags": [
+    "ladung",
+    "zeuge",
+    "termin",
+    "kurzrubrum"
+   ]
+  },
+  {
+   "id": "PII-A07",
+   "format": "scan",
+   "filename": "Protokoll_AG_Fiktivhausen_12C457-26.pdf",
+   "paragraphs": [
+    "Amtsgericht Fiktivhausen",
+    "Geschäftsnummer: 12 C 457/26",
+    "Protokoll der öffentlichen Sitzung vom 12.11.2026",
+    "Gegenwärtig: Richter am Amtsgericht Kehr als Vorsitzender; Justizangestellte Möller als Urkundsbeamtin der Geschäftsstelle",
+    "In dem Rechtsstreit Vogel ./. Habicht u. a.",
+    "Ingo Vogel, Kleiststraße 27, 34568 Fiktivhausen, – Kläger – Prozessbevollmächtigte: Rechtsanwältin Dr. Anna Fuchs, Fuchs & Engel Rechtsanwälte PartG mbB, Musterstadt",
+    "gegen 1. Lisa Habicht, Brunnenweg 4, 34572 Fiktivhausen, – Beklagte zu 1) – 2. Fiktiva Versicherung AG, vertreten durch den Vorstand, Versicherungsallee 1, 45670 Neuhain, – Beklagte zu 2) – Prozessbevollmächtigter beider Beklagten: Rechtsanwalt Lorenz Pieper",
+    "wegen Schadensersatzes aus Verkehrsunfall vom 14.05.2026 (Schaden-Nr. der Beklagten zu 2): SN-26-883104)",
+    "Bei Aufruf der Sache erschienen:",
+    "anwesend: Vogel, Winter (Zeuge)",
+    "für den Kläger: Rechtsanwältin Fuchs; für die Beklagten: Rechtsanwalt Pieper. Die Beklagte zu 1) ist trotz Anordnung des persönlichen Erscheinens nicht erschienen; Rechtsanwalt Pieper legt ein ärztliches Attest vor. Das Gericht sieht von Ordnungsmitteln ab.",
+    "Die Sach- und Rechtslage wurde erörtert. Das Gericht weist darauf hin, dass nach vorläufiger Würdigung eine Haftungsquote von 70 zu 30 zulasten der Beklagten in Betracht kommt, da Frau Habicht beim Fahrstreifenwechsel den nachfolgenden Verkehr nicht ausreichend beachtet haben dürfte, der Kläger jedoch möglicherweise die zulässige Höchstgeschwindigkeit überschritten hat (§ 7 Abs. 1 StVG, § 17 Abs. 1 StVG, § 115 VVG).",
+    "Eine gütliche Einigung kommt nicht zustande.",
+    "Der Zeuge wird zur Wahrheit ermahnt und auf die Möglichkeit der Beeidigung sowie die Strafbarkeit einer falschen uneidlichen Aussage hingewiesen.",
+    "Zur Person: Stefan Winter, 46 Jahre alt, Elektriker, wohnhaft Mühlgasse 3, 34570 Fiktivhausen, mit den Parteien nicht verwandt und nicht verschwägert.",
+    "Zur Sache: „Ich bin am 14.05.2026 gegen 17:15 Uhr mit meinem Transporter, Kennzeichen FH-SW 913, hinter dem Wagen von Herrn Vogel auf der Ringstraße gefahren. Der Kläger fuhr auf der linken Spur, ich etwa zwei Wagenlängen dahinter. Das Fahrzeug der Beklagten, ein grauer Kombi mit dem Kennzeichen NH-LH 77, zog ohne zu blinken von rechts nach links herüber.“",
+    "„Herr Vogel hat noch gebremst, aber es hat trotzdem gekracht. Wie schnell er gefahren ist, kann ich nicht genau sagen, schneller als 50 war er aber meiner Einschätzung nach nicht. Nach dem Unfall hat die Fahrerin gesagt, sie habe ihn im Spiegel nicht gesehen. Ich habe Herrn Vogel dann meine Telefonnummer gegeben, 0171 2345678.“",
+    "Auf Frage von Rechtsanwalt Pieper: „Ich kenne Herrn Vogel nicht näher. Wir haben uns nach dem Unfall nur einmal getroffen, als er mich wegen der Zeugenaussage angerufen hat.“",
+    "Laut diktiert und genehmigt. Der Zeuge bleibt auf allseitigen Verzicht unvereidigt und wird um 11:05 Uhr entlassen.",
+    "Die Prozessbevollmächtigten verhandeln zur Sache. Rechtsanwältin Fuchs stellt den Antrag aus der Klageschrift vom 04.07.2026. Rechtsanwalt Pieper stellt den Antrag aus der Klageerwiderung vom 08.08.2026.",
+    "Beschlossen und verkündet: Eine Entscheidung wird verkündet am 03.12.2026, 9:00 Uhr, Saal 104. Den Parteien wird nachgelassen, zum Ergebnis der Beweisaufnahme bis zum 26.11.2026 Stellung zu nehmen.",
+    "Kehr, Richter am Amtsgericht · Möller, Justizangestellte",
+    "Für die Richtigkeit der Übertragung vom Tonträger: Möller"
+   ],
+   "known_entities": {
+    "person": [
+     "Ingo Vogel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Kehr",
+     "category": "person"
+    },
+    {
+     "value": "Möller",
+     "category": "person"
+    },
+    {
+     "value": "Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Habicht",
+     "category": "person"
+    },
+    {
+     "value": "Ingo Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Anna Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Lisa Habicht",
+     "category": "person"
+    },
+    {
+     "value": "Lorenz Pieper",
+     "category": "person"
+    },
+    {
+     "value": "Pieper",
+     "category": "person"
+    },
+    {
+     "value": "Winter",
+     "category": "person"
+    },
+    {
+     "value": "Stefan Winter",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Fiktiva Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Kleiststraße 27",
+     "category": "adresse"
+    },
+    {
+     "value": "Brunnenweg 4",
+     "category": "adresse"
+    },
+    {
+     "value": "Versicherungsallee 1",
+     "category": "adresse"
+    },
+    {
+     "value": "Mühlgasse 3",
+     "category": "adresse"
+    },
+    {
+     "value": "34568 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34572 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "45670 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34570 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12 C 457/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "SN-26-883104",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "FH-SW 913",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "NH-LH 77",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "0171 2345678",
+     "category": "telefon"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Fiktivhausen",
+    "03.12.2026",
+    "26.11.2026",
+    "§ 7 Abs. 1 StVG",
+    "§ 115 VVG",
+    "14.05.2026",
+    "12.11.2026"
+   ],
+   "tags": [
+    "sitzungsprotokoll",
+    "verkehrsunfall",
+    "zeugenaussage",
+    "namen_ohne_anrede",
+    "kfz",
+    "scan"
+   ]
+  },
+  {
+   "id": "PII-A08",
+   "format": "scan_degraded",
+   "filename": "Anlage_K3_Maengelanzeige_Kranich.pdf",
+   "paragraphs": [
+    "Anlage K3",
+    "Jonas Kranich · Am Eichenhang 7 · 12347 Musterstadt · Tel. 0151 23456789 · jonas.kranich@mailbox.example",
+    "Fiktiv-Bau GmbH, z. Hd. Herrn Uwe Pohlmann, Gewerbering 44, 23456 Beispielheim",
+    "Musterstadt, 21.10.2025",
+    "Ihr Bauvorhaben BV-2025-118 · Ihre Kundennummer: KD-30871 · Mängelanzeige und Aufforderung zur Nacherfüllung",
+    "Sehr geehrter Herr Pohlmann, sehr geehrte Damen und Herren,",
+    "die von Ihnen im August 2025 ausgeführten Arbeiten an der Dachgaube unseres Hauses sind undicht. Seit dem 06.10.2025 dringt bei jedem stärkeren Regen Wasser im Kinderzimmer im Dachgeschoss ein. Die Deckenverkleidung ist bereits durchfeuchtet, an der Wand zur Gaube haben sich großflächige Flecken gebildet. Meine Frau hat die Schäden fotografiert; Kopien der Bilder füge ich bei.",
+    "Ich fordere Sie hiermit auf, den Mangel fachgerecht zu beseitigen und mir bis spätestens 10.11.2025 schriftlich zu bestätigen, wann die Arbeiten durchgeführt werden. Bitte stimmen Sie einen Termin mit mir oder meiner Frau, Sabine Kranich, unter der oben genannten Telefonnummer ab.",
+    "Sollten Sie die Frist ungenutzt verstreichen lassen, werde ich ein anderes Unternehmen mit der Beseitigung beauftragen und Ihnen die Kosten in Rechnung stellen. Weitere Ansprüche, insbesondere auf Ersatz der Folgeschäden, behalte ich mir ausdrücklich vor.",
+    "Mit freundlichen Grüßen",
+    "J. Kranich",
+    "Vorab per E-Mail an: bauleitung@fiktiv-bau.example · per Einschreiben, Einlieferungsbeleg RR 4471 0832 5DE"
+   ],
+   "known_entities": {
+    "person": [
+     "Jonas Kranich"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "J. Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Pohlmann",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiv-Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Eichenhang 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Gewerbering 44",
+     "category": "adresse"
+    },
+    {
+     "value": "12347 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "23456 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0151 23456789",
+     "category": "telefon"
+    },
+    {
+     "value": "jonas.kranich@mailbox.example",
+     "category": "email"
+    },
+    {
+     "value": "bauleitung@fiktiv-bau.example",
+     "category": "email"
+    },
+    {
+     "value": "KD-30871",
+     "category": "kundennummer"
+    },
+    {
+     "value": "BV-2025-118",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "RR 4471 0832 5DE",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Anlage K3",
+    "10.11.2025",
+    "Mängelanzeige",
+    "21.10.2025"
+   ],
+   "tags": [
+    "anlage",
+    "maengelanzeige",
+    "privatschreiben",
+    "signatur_initial",
+    "scan"
+   ]
+  },
+  {
+   "id": "PII-A09",
+   "format": "pdf",
+   "filename": "Anlage_K5_Rechnung_RE-2025-4471.pdf",
+   "paragraphs": [
+    "Anlage K5",
+    "Wendland & Söhne GmbH · Dachdeckerei und Bauklempnerei · Schieferweg 18 · 12349 Musterstadt",
+    "Telefon 0123 98765-0 · rechnung@wendland-dach.example",
+    "Herrn Jonas Kranich, Am Eichenhang 7, 12347 Musterstadt",
+    "Rechnung Nr. RE-2025-4471 · Rechnungsdatum: 28.11.2025 · Kundennummer: K-10552 · Leistungszeitraum: 17.11.2025 bis 26.11.2025",
+    "Bauvorhaben: Abdichtung Dachgaube, Am Eichenhang 7. Sehr geehrter Herr Kranich, für die in Ihrem Auftrag ausgeführten Arbeiten erlauben wir uns, wie folgt abzurechnen:",
+    "Zwischensumme netto: 10.403,36 EUR · zzgl. 19 % USt: 1.976,64 EUR · Rechnungsbetrag: 12.380,00 EUR",
+    "Zahlbar ohne Abzug innerhalb von 14 Tagen bis zum 12.12.2025. Bauleitung: Klaus Wendland, Dachdeckermeister. Gemäß § 14 Abs. 4 Satz 1 Nr. 9 UStG weisen wir darauf hin, dass Sie als Leistungsempfänger zur Aufbewahrung dieser Rechnung für zwei Jahre verpflichtet sind.",
+    "Geschäftsführer: Klaus Wendland · Amtsgericht Musterstadt HRB 31207 · Steuernummer 34/567/89012 · USt-IdNr. DE298765432 · IBAN DE45 1234 0000 5678 9012 34",
+    "Bezahlt am 03.12.2025 per Überweisung – J. Kranich"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Leistung",
+     "Menge",
+     "Einheit",
+     "Betrag netto"
+    ],
+    "rows": [
+     [
+      "1",
+      "Gerüst stellen, vorhalten und abbauen, Gartenseite",
+      "1",
+      "pauschal",
+      "1.450,00 EUR"
+     ],
+     [
+      "2",
+      "Rückbau der vorhandenen Abdichtung im Gaubenanschluss",
+      "14",
+      "m²",
+      "2.180,00 EUR"
+     ],
+     [
+      "3",
+      "Neue Abdichtung Gaubenwange und Anschluss Hauptdach inkl. Material",
+      "14",
+      "m²",
+      "4.873,36 EUR"
+     ],
+     [
+      "4",
+      "Kehlrinne und Anschlussbleche Titanzink, neu dimensioniert",
+      "6",
+      "lfm",
+      "1.420,00 EUR"
+     ],
+     [
+      "5",
+      "Entsorgung Altmaterial",
+      "1",
+      "pauschal",
+      "480,00 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Jonas Kranich"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Jonas Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "J. Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Klaus Wendland",
+     "category": "person"
+    },
+    {
+     "value": "Wendland & Söhne GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Schieferweg 18",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Eichenhang 7",
+     "category": "adresse"
+    },
+    {
+     "value": "12349 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12347 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0123 98765-0",
+     "category": "telefon"
+    },
+    {
+     "value": "rechnung@wendland-dach.example",
+     "category": "email"
+    },
+    {
+     "value": "RE-2025-4471",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "K-10552",
+     "category": "kundennummer"
+    },
+    {
+     "value": "HRB 31207",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "34/567/89012",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE298765432",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE45 1234 0000 5678 9012 34",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "Anlage K5",
+    "12.380,00 EUR",
+    "12.12.2025",
+    "§ 14 Abs. 4 Satz 1 Nr. 9 UStG",
+    "10.403,36 EUR",
+    "1.976,64 EUR"
+   ],
+   "tags": [
+    "anlage",
+    "rechnung",
+    "tabelle",
+    "handwerker",
+    "bankverbindung"
+   ]
+  },
+  {
+   "id": "PII-A10",
+   "format": "pdf",
+   "filename": "KFB_AG_Beispielheim_4C123-26.pdf",
+   "paragraphs": [
+    "Amtsgericht Beispielheim",
+    "Az.: 4 C 123/26 · Beispielheim, 06.10.2026",
+    "Kostenfestsetzungsbeschluss",
+    "In dem Rechtsstreit Hollstein ./. Fink",
+    "Gerda Hollstein, Kastanienweg 8, 23457 Beispielheim, – Klägerin und Kostenschuldnerin – Prozessbevollmächtigter: Rechtsanwalt Jan Hollmann, Beispielheim",
+    "gegen Paul Fink, Kastanienweg 10, 23457 Beispielheim, – Beklagter und Kostengläubiger – Prozessbevollmächtigte: Fuchs & Engel Rechtsanwälte PartG mbB, Musterstadt, Az. 2026/0347",
+    "Aufgrund des rechtskräftigen Urteils des Amtsgerichts Beispielheim vom 21.08.2026 werden die von der Klägerin an den Beklagten nach § 104 ZPO zu erstattenden Kosten auf 544,76 EUR (in Worten: fünfhundertvierundvierzig 76/100 Euro) nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 03.09.2026 festgesetzt.",
+    "Gründe: Der Kostenfestsetzungsantrag des Beklagten ist am 02.09.2026 eingegangen. Die Kosten sind wie folgt berechnet worden (Gegenstandswert: 1.158,00 EUR):",
+    "Die Klägerin hatte Gelegenheit zur Stellungnahme; Einwendungen hat sie nicht erhoben. Die angemeldeten Kosten sind entstanden und zur zweckentsprechenden Rechtsverfolgung notwendig gewesen (§ 91 Abs. 1 ZPO). Die Umsatzsteuer ist zu berücksichtigen, da der Beklagte erklärt hat, nicht zum Vorsteuerabzug berechtigt zu sein (§ 104 Abs. 2 Satz 3 ZPO).",
+    "Rechtsbehelfsbelehrung: Gegen diesen Beschluss ist die sofortige Beschwerde statthaft, wenn der Wert des Beschwerdegegenstandes 200,00 EUR übersteigt. Sie ist binnen einer Notfrist von zwei Wochen nach Zustellung beim Amtsgericht Beispielheim oder beim Landgericht Musterstadt einzulegen. Im Übrigen findet die Erinnerung statt.",
+    "Jana Wiechert, Rechtspflegerin"
+   ],
+   "table": {
+    "header": [
+     "Position",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "Verfahrensgebühr Nr. 3100 VV RVG (1,3)",
+      "193,70 EUR"
+     ],
+     [
+      "Terminsgebühr Nr. 3104 VV RVG (1,2)",
+      "178,80 EUR"
+     ],
+     [
+      "Post- und Telekommunikationspauschale Nr. 7002 VV RVG",
+      "20,00 EUR"
+     ],
+     [
+      "Fahrtkosten Nr. 7003 VV RVG, 84 km x 0,42 EUR",
+      "35,28 EUR"
+     ],
+     [
+      "Tage- und Abwesenheitsgeld Nr. 7005 VV RVG",
+      "30,00 EUR"
+     ],
+     [
+      "Zwischensumme netto",
+      "457,78 EUR"
+     ],
+     [
+      "19 % Umsatzsteuer Nr. 7008 VV RVG",
+      "86,98 EUR"
+     ],
+     [
+      "Festzusetzender Betrag",
+      "544,76 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Paul Fink"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hollstein",
+     "category": "person"
+    },
+    {
+     "value": "Fink",
+     "category": "person"
+    },
+    {
+     "value": "Gerda Hollstein",
+     "category": "person"
+    },
+    {
+     "value": "Jan Hollmann",
+     "category": "person"
+    },
+    {
+     "value": "Paul Fink",
+     "category": "person"
+    },
+    {
+     "value": "Jana Wiechert",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Kastanienweg 8",
+     "category": "adresse"
+    },
+    {
+     "value": "Kastanienweg 10",
+     "category": "adresse"
+    },
+    {
+     "value": "23457 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "4 C 123/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2026/0347",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Beispielheim",
+    "Kostenfestsetzungsbeschluss",
+    "544,76 EUR",
+    "§ 104 ZPO",
+    "§ 91 Abs. 1 ZPO",
+    "Landgericht Musterstadt",
+    "1.158,00 EUR"
+   ],
+   "tags": [
+    "kostenfestsetzungsbeschluss",
+    "mietrecht",
+    "kurzrubrum",
+    "kostenaufstellung",
+    "tabelle"
+   ]
+  },
+  {
+   "id": "PII-A11",
+   "format": "txt",
+   "filename": "2026-10-20_Terminsverlegung_Vogel_12C457-26.txt",
+   "paragraphs": [
+    "Fuchs & Engel Rechtsanwälte PartG mbB · Lindenallee 12 · 12345 Musterstadt · Tel. 0123 456789-0 · kanzlei@fuchs-engel.example",
+    "Amtsgericht Fiktivhausen – Abteilung 12 – vorab per beA",
+    "Musterstadt, 20.10.2026 · Unser Zeichen: 2026/1102 · Ihr Zeichen: 12 C 457/26",
+    "In dem Rechtsstreit Vogel ./. Habicht u. a.",
+    "beantragen wir namens des Klägers, Herrn Ingo Vogel, den auf den 05.11.2026, 9:30 Uhr, anberaumten Termin zur mündlichen Verhandlung und Beweisaufnahme aufzuheben und neu zu bestimmen (§ 227 Abs. 1 ZPO).",
+    "Begründung: Die sachbearbeitende Unterzeichnerin ist zu demselben Zeitpunkt in einem bereits am 02.09.2026 anberaumten Termin vor dem Landgericht Musterstadt in der Sache 5 O 77/26 geladen. Eine Terminsvertretung innerhalb der Sozietät ist nicht möglich, da Rechtsanwalt Martin Engel sich in dieser Woche im Urlaub befindet und das Mandat besondere Kenntnisse des Unfallhergangs erfordert. Eine Kopie der Ladung fügen wir bei.",
+    "Der Zeuge Stefan Winter hat uns zudem mitgeteilt, dass er am 05.11.2026 beruflich auf Montage ist. Als Ausweichtermine schlagen wir den 12.11.2026 oder den 19.11.2026 vor. Die Gegenseite, Rechtsanwalt Pieper, hat auf telefonische Nachfrage signalisiert, einer Verlegung nicht entgegenzutreten.",
+    "Dr. Anna Fuchs",
+    "Rechtsanwältin"
+   ],
+   "known_entities": {
+    "person": [
+     "Ingo Vogel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Ingo Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Habicht",
+     "category": "person"
+    },
+    {
+     "value": "Martin Engel",
+     "category": "person"
+    },
+    {
+     "value": "Stefan Winter",
+     "category": "person"
+    },
+    {
+     "value": "Pieper",
+     "category": "person"
+    },
+    {
+     "value": "Anna Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs & Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Lindenallee 12",
+     "category": "adresse"
+    },
+    {
+     "value": "12345 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0123 456789-0",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@fuchs-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "2026/1102",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "12 C 457/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "5 O 77/26",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Fiktivhausen",
+    "05.11.2026",
+    "§ 227 Abs. 1 ZPO",
+    "12.11.2026",
+    "19.11.2026",
+    "Landgericht Musterstadt"
+   ],
+   "tags": [
+    "schriftsatz",
+    "terminsverlegung",
+    "kurzrubrum",
+    "briefkopf",
+    "kurz"
+   ]
+  },
+  {
+   "id": "PII-A12",
+   "format": "docx",
+   "filename": "Kuendigungsschutzklage_Engel_Winterhaus.docx",
+   "paragraphs": [
+    "Seidel Arbeitsrecht Rechtsanwälte · Domplatz 6 · 45678 Neuhain",
+    "Tobias Seidel, Fachanwalt für Arbeitsrecht · Telefon 05678 4321-0 · Mobil 0160 9876543 · t.seidel@seidel-arbeitsrecht.invalid",
+    "An das Arbeitsgericht Musterstadt",
+    "Neuhain, 14.10.2026 · Unser Zeichen: AR 26/0571",
+    "Kündigungsschutzklage",
+    "der Frau Petra Engel, geboren am 02.02.1979, Rosenstraße 14, 45679 Neuhain, – Klägerin – Prozessbevollmächtigte: Seidel Arbeitsrecht Rechtsanwälte, Domplatz 6, 45678 Neuhain",
+    "gegen die Winterhaus Logistik GmbH, vertreten durch die Geschäftsführerin Daniela Roloff, Speicherstraße 40, 12350 Musterstadt, – Beklagte –",
+    "Kurzbezeichnung: Engel ./. Winterhaus Logistik GmbH",
+    "Wir erheben Klage und beantragen: 1. Es wird festgestellt, dass das Arbeitsverhältnis der Parteien durch die Kündigung der Beklagten vom 28.09.2026 nicht aufgelöst worden ist. 2. Die Beklagte wird verurteilt, die Klägerin bis zum rechtskräftigen Abschluss des Rechtsstreits zu unveränderten Bedingungen als Disponentin weiterzubeschäftigen.",
+    "Begründung: Die am 02.02.1979 geborene, verheiratete und einem Kind zum Unterhalt verpflichtete Klägerin ist seit dem 01.03.2014 bei der Beklagten als Disponentin in der Niederlassung Musterstadt beschäftigt (Personalnummer P-004417). Ihr Bruttomonatsgehalt beträgt zuletzt 3.450,00 EUR. Die Beklagte beschäftigt regelmäßig mehr als zehn Arbeitnehmer; ein Betriebsrat ist gebildet.",
+    "Mit Schreiben vom 28.09.2026, der Klägerin am 30.09.2026 zugegangen, kündigte die Beklagte das Arbeitsverhältnis ordentlich zum 31.01.2027 unter Berufung auf betriebsbedingte Gründe. Das Kündigungsschreiben ist von der Geschäftsführerin Roloff unterzeichnet.",
+    "Die Kündigung ist sozial ungerechtfertigt im Sinne des § 1 Abs. 2 KSchG. Dringende betriebliche Erfordernisse liegen nicht vor; die Disposition wurde nicht eingestellt, sondern auf einen neu eingestellten Mitarbeiter, Herrn Florian Mertes, übertragen. Zudem ist die Sozialauswahl fehlerhaft. Der vergleichbare Kollege Mertes ist erst seit 2025 beschäftigt, ledig und ohne Unterhaltspflichten.",
+    "Die ordnungsgemäße Anhörung des Betriebsrats nach § 102 BetrVG wird mit Nichtwissen bestritten. Der Betriebsratsvorsitzende Gerd Albers hat der Klägerin gegenüber erklärt, der Betriebsrat sei über die Sozialdaten der Frau Engel nicht unterrichtet worden.",
+    "Die Klage ist innerhalb der Dreiwochenfrist des § 4 KSchG erhoben; die Frist endet am 21.10.2026.",
+    "Den Streitwert bitten wir auf 10.350,00 EUR (drei Bruttomonatsgehälter) festzusetzen. Wir regen an, kurzfristig einen Gütetermin anzuberaumen.",
+    "Tobias Seidel",
+    "Rechtsanwalt"
+   ],
+   "known_entities": {
+    "person": [
+     "Petra Engel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Tobias Seidel",
+     "category": "person"
+    },
+    {
+     "value": "Petra Engel",
+     "category": "person"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Daniela Roloff",
+     "category": "person"
+    },
+    {
+     "value": "Roloff",
+     "category": "person"
+    },
+    {
+     "value": "Florian Mertes",
+     "category": "person"
+    },
+    {
+     "value": "Mertes",
+     "category": "person"
+    },
+    {
+     "value": "Gerd Albers",
+     "category": "person"
+    },
+    {
+     "value": "Seidel Arbeitsrecht Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Winterhaus Logistik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Domplatz 6",
+     "category": "adresse"
+    },
+    {
+     "value": "Rosenstraße 14",
+     "category": "adresse"
+    },
+    {
+     "value": "Speicherstraße 40",
+     "category": "adresse"
+    },
+    {
+     "value": "45678 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "45679 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "12350 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05678 4321-0",
+     "category": "telefon"
+    },
+    {
+     "value": "0160 9876543",
+     "category": "telefon"
+    },
+    {
+     "value": "t.seidel@seidel-arbeitsrecht.invalid",
+     "category": "email"
+    },
+    {
+     "value": "AR 26/0571",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "02.02.1979",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "P-004417",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Arbeitsgericht Musterstadt",
+    "Kündigungsschutzklage",
+    "§ 1 Abs. 2 KSchG",
+    "§ 102 BetrVG",
+    "§ 4 KSchG",
+    "21.10.2026",
+    "3.450,00 EUR",
+    "30.09.2026",
+    "28.09.2026"
+   ],
+   "tags": [
+    "kuendigungsschutzklage",
+    "arbeitsrecht",
+    "rubrum",
+    "kurzrubrum",
+    "briefkopf",
+    "geburtsdatum"
+   ]
+  },
+  {
+   "id": "PII-B01",
+   "format": "pdf",
+   "filename": "2026-09-14_Vogel_Logistik_Zahlungserinnerung.pdf",
+   "paragraphs": [
+    "Vogel Logistik GmbH",
+    "Spedition · Lagerhaltung · Kontraktlogistik",
+    "Hafenstraße 41 · 23456 Fiktivhausen",
+    "Telefon 04521 98765-0 · Telefax 04521 98765-99 · E-Mail info@vogel-logistik.example",
+    "Vogel Logistik GmbH · Hafenstraße 41 · 23456 Fiktivhausen",
+    "Kranich Feinkost GmbH",
+    "z. Hd. Frau Lena Kranich",
+    "Gartenweg 7",
+    "34567 Beispielheim",
+    "Kundennummer: KD-40817",
+    "Unser Zeichen: VL-FO-2026-118",
+    "Datum: 14.09.2026",
+    "Offene Forderung aus Rechnung Nr. VL-2026-03311 vom 03.08.2026 – Zahlungserinnerung",
+    "Sehr geehrte Frau Kranich,",
+    "für die von uns im Juli 2026 durchgeführten Kühltransporte von unserem Zentrallager zu Ihren Filialen haben wir Ihnen mit Rechnung Nr. VL-2026-03311 vom 03.08.2026 insgesamt 4.318,20 EUR berechnet. Das Zahlungsziel von 30 Tagen ist am 02.09.2026 abgelaufen, ohne dass ein Zahlungseingang zu verzeichnen ist.",
+    "Ihr Mitarbeiter, Herr Tobias Fink, hatte unserem Disponenten Herrn Jens Vogel am 21.08.2026 telefonisch mitgeteilt, dass die Rechnung geprüft werde und ein Teilbetrag wegen einer angeblich unterbrochenen Kühlkette einbehalten werden solle. Eine schriftliche Mängelanzeige liegt uns bis heute nicht vor. Herr Vogel hat die Temperaturprotokolle aller Touren nochmals ausgewertet;",
+    "Abweichungen sind nicht dokumentiert.",
+    "Wir bitten Sie daher, den offenen Betrag von 4.318,20 EUR bis spätestens 30.09.2026 auf das unten angegebene Konto zu überweisen. Sollten Sie Einwendungen gegen einzelne Positionen haben, teilen Sie uns diese bitte bis zu diesem Datum schriftlich unter Angabe der Kundennummer KD-40817 mit.",
+    "Wir weisen vorsorglich darauf hin, dass Sie sich nach § 286 Abs. 3 BGB spätestens 30 Tage nach Zugang der Rechnung in Verzug befinden und wir berechtigt sind, Verzugszinsen gemäß § 288 Abs. 2 BGB sowie die Verzugspauschale von 40,00 EUR nach § 288 Abs. 5 BGB geltend zu machen.",
+    "Für Rückfragen steht Ihnen Frau Sabine Ahrens aus unserer Debitorenbuchhaltung unter der Durchwahl 04521 98765-14 oder per E-Mail an s.ahrens@vogel-logistik.example gerne zur Verfügung.",
+    "Mit freundlichen Grüßen",
+    "Vogel Logistik GmbH",
+    "i. A. Sabine Ahrens",
+    "Debitorenbuchhaltung",
+    "Geschäftsführer: Dr. Konrad Vogel, Ute Brandt · Amtsgericht Fiktivhausen HRB 7731",
+    "USt-IdNr.: DE287415963 · Steuernummer: 21/294/17730",
+    "Bankverbindung: Nordfiktiv Bank AG · IBAN DE50 5260 1815 9083 0166 13"
+   ],
+   "known_entities": {
+    "person": [
+     "Lena Kranich"
+    ],
+    "organisation": [
+     "Kranich Feinkost GmbH"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Vogel Logistik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Hafenstraße 41",
+     "category": "adresse"
+    },
+    {
+     "value": "23456 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04521 98765-0",
+     "category": "telefon"
+    },
+    {
+     "value": "04521 98765-99",
+     "category": "telefon"
+    },
+    {
+     "value": "info@vogel-logistik.example",
+     "category": "email"
+    },
+    {
+     "value": "Kranich Feinkost GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Lena Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Gartenweg 7",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "KD-40817",
+     "category": "kundennummer"
+    },
+    {
+     "value": "VL-FO-2026-118",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "VL-2026-03311",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Tobias Fink",
+     "category": "person"
+    },
+    {
+     "value": "Jens Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Ahrens",
+     "category": "person"
+    },
+    {
+     "value": "04521 98765-14",
+     "category": "telefon"
+    },
+    {
+     "value": "s.ahrens@vogel-logistik.example",
+     "category": "email"
+    },
+    {
+     "value": "Konrad Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Ute Brandt",
+     "category": "person"
+    },
+    {
+     "value": "HRB 7731",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE287415963",
+     "category": "steuernummer"
+    },
+    {
+     "value": "21/294/17730",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Nordfiktiv Bank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE50 5260 1815 9083 0166 13",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "4.318,20 EUR",
+    "30.09.2026",
+    "02.09.2026",
+    "§ 286 Abs. 3 BGB",
+    "§ 288 Abs. 2 BGB",
+    "40,00 EUR",
+    "Zahlungserinnerung"
+   ],
+   "tags": [
+    "geschaeftsbrief",
+    "briefkopf",
+    "zahlungserinnerung",
+    "aehnliche_namen"
+   ]
+  },
+  {
+   "id": "PII-B02",
+   "format": "pdf",
+   "filename": "Rechnung_FH-R-2026-1187_Weber.pdf",
+   "paragraphs": [
+    "Fuchs Haustechnik GmbH & Co. KG",
+    "Heizung · Sanitär · Solar",
+    "Am Mühlbach 3 · 45678 Musterstadt",
+    "Tel. 06221 445 12-0 · Fax 06221 445 12-29 · rechnung@fuchs-haustechnik.example",
+    "Herrn",
+    "Paul Weber",
+    "Eichenring 22",
+    "45679 Musterstadt-Nord",
+    "RECHNUNG",
+    "Rechnungsnummer: FH-R-2026-1187",
+    "Kundennummer: 10-55821",
+    "Auftragsnummer: AU-2026-0634",
+    "Rechnungsdatum: 11.06.2026",
+    "Leistungszeitraum: 26.05.2026 bis 29.05.2026",
+    "Objekt: Einfamilienhaus Eichenring 22, 45679 Musterstadt-Nord",
+    "Sehr geehrter Herr Weber,",
+    "für die in Ihrem Auftrag ausgeführten Arbeiten (Austausch der Gas-Brennwerttherme und Erneuerung der Heizkreisverteilung) berechnen wir Ihnen die nachstehend aufgeführten Leistungen. Die Arbeiten wurden von unserem Monteur Herrn Stefan Koch und dem Auszubildenden Herrn Niklas Brehm ausgeführt; die Abnahme erfolgte am 29.05.2026 durch Sie persönlich.",
+    "Nettobetrag: 9.840,00 EUR",
+    "zzgl. 19 % USt.: 1.869,60 EUR",
+    "Rechnungsbetrag: 11.709,60 EUR",
+    "Lohnanteil gemäß § 35a EStG (Arbeitskosten inkl. USt.): 2.465,68 EUR",
+    "Bitte überweisen Sie den Rechnungsbetrag ohne Abzug bis zum 25.06.2026 unter Angabe der Rechnungsnummer FH-R-2026-1187 auf eines unserer Konten.",
+    "Gewährleistungsfragen richten Sie bitte an unseren Kundendienst, Ansprechpartnerin Frau Julia Fuchs, Tel. 06221 445 12-17.",
+    "Fuchs Haustechnik GmbH & Co. KG · Amtsgericht Musterstadt HRA 2290",
+    "Persönlich haftende Gesellschafterin: Fuchs Verwaltungs-GmbH, Amtsgericht Musterstadt HRB 5518 · Geschäftsführer: Martin Fuchs",
+    "USt-IdNr.: DE314258796",
+    "Volksfiktiv Bank eG · IBAN DE85 1860 9139 0996 0308 24",
+    "Fiktiva Privatbank AG · IBAN DE97628194821993518190"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Bezeichnung",
+     "Menge",
+     "Einheit",
+     "Einzelpreis",
+     "Gesamt"
+    ],
+    "rows": [
+     [
+      "1",
+      "Gas-Brennwerttherme 24 kW inkl. Zubehör",
+      "1",
+      "Stk",
+      "6.250,00 EUR",
+      "6.250,00 EUR"
+     ],
+     [
+      "2",
+      "Heizkreisverteiler 3-fach",
+      "1",
+      "Stk",
+      "890,00 EUR",
+      "890,00 EUR"
+     ],
+     [
+      "3",
+      "Abgasleitung DN 80",
+      "6",
+      "m",
+      "85,00 EUR",
+      "510,00 EUR"
+     ],
+     [
+      "4",
+      "Monteurstunden (Koch)",
+      "22",
+      "Std",
+      "68,00 EUR",
+      "1.496,00 EUR"
+     ],
+     [
+      "5",
+      "Azubi-Stunden (Brehm)",
+      "18",
+      "Std",
+      "32,00 EUR",
+      "576,00 EUR"
+     ],
+     [
+      "6",
+      "Entsorgung Altgerät",
+      "1",
+      "pausch.",
+      "118,00 EUR",
+      "118,00 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Paul Weber"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Fuchs Haustechnik GmbH & Co. KG",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Mühlbach 3",
+     "category": "adresse"
+    },
+    {
+     "value": "45678 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "06221 445 12-0",
+     "category": "telefon"
+    },
+    {
+     "value": "06221 445 12-29",
+     "category": "telefon"
+    },
+    {
+     "value": "rechnung@fuchs-haustechnik.example",
+     "category": "email"
+    },
+    {
+     "value": "Paul Weber",
+     "category": "person"
+    },
+    {
+     "value": "Eichenring 22",
+     "category": "adresse"
+    },
+    {
+     "value": "45679 Musterstadt-Nord",
+     "category": "plz_ort"
+    },
+    {
+     "value": "FH-R-2026-1187",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "10-55821",
+     "category": "kundennummer"
+    },
+    {
+     "value": "AU-2026-0634",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Weber",
+     "category": "person"
+    },
+    {
+     "value": "Stefan Koch",
+     "category": "person"
+    },
+    {
+     "value": "Niklas Brehm",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Brehm",
+     "category": "person"
+    },
+    {
+     "value": "Julia Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "06221 445 12-17",
+     "category": "telefon"
+    },
+    {
+     "value": "HRA 2290",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Fuchs Verwaltungs-GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "HRB 5518",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Martin Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "DE314258796",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Volksfiktiv Bank eG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE85 1860 9139 0996 0308 24",
+     "category": "iban"
+    },
+    {
+     "value": "Fiktiva Privatbank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE97628194821993518190",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "RECHNUNG",
+    "11.709,60 EUR",
+    "9.840,00 EUR",
+    "2.465,68 EUR",
+    "25.06.2026",
+    "§ 35a EStG"
+   ],
+   "tags": [
+    "rechnung",
+    "tabelle",
+    "briefkopf",
+    "handwerker"
+   ]
+  },
+  {
+   "id": "PII-B03",
+   "format": "scan",
+   "filename": "Scan_2_Mahnung_Moebelhaus_Winter.pdf",
+   "paragraphs": [
+    "Möbelhaus Winter GmbH",
+    "Industriestraße 88 · 67890 Beispielstadt",
+    "Telefon 0721 330 77-0 · forderungen@moebel-winter.example",
+    "Frau",
+    "Gerda Bach",
+    "Birkenstraße 15a",
+    "56781 Neufiktiv",
+    "2. MAHNUNG",
+    "Kundennummer: 7700-3194",
+    "Datum: 20.10.2026",
+    "Sehr geehrte Frau Bach,",
+    "trotz unserer Zahlungserinnerung vom 29.09.2026 konnten wir bis heute keinen Zahlungseingang für die nachfolgend aufgeführten Rechnungen feststellen. Die Ware (Wohnwand „Lugano“ sowie Polstergarnitur) wurde Ihnen am 18.08.2026 geliefert und von Ihrem Ehemann, Herrn Rüdiger Bach, ohne Beanstandung quittiert.",
+    "Wir fordern Sie hiermit letztmalig auf, den Gesamtbetrag von 3.402,50 EUR bis spätestens 03.11.2026 auf unser Konto bei der Südfiktiv Bank AG, IBAN DE56 9378 6579 7543 2319 48, zu überweisen. Bei Ratenzahlungswunsch wenden Sie sich bitte an unseren Sachbearbeiter Herrn Kevin Lorenz.",
+    "Sollte die Zahlung nicht fristgerecht eingehen, werden wir die Forderung ohne weitere Ankündigung an die Inkasso Fiktiv GmbH abgeben bzw. gerichtliche Schritte einleiten. Die dadurch entstehenden Kosten gehen gemäß §§ 280, 286 BGB zu Ihren Lasten.",
+    "Gesamtforderung: 3.402,50 EUR",
+    "Mit freundlichen Grüßen",
+    "Kevin Lorenz",
+    "Forderungsmanagement",
+    "Möbelhaus Winter GmbH · Geschäftsführer: Klaus Winter · Amtsgericht Beispielstadt HRB 30412 · Steuernummer 35/118/42209"
+   ],
+   "table": {
+    "header": [
+     "Rechnungs-Nr.",
+     "Rechnungsdatum",
+     "fällig am",
+     "Betrag",
+     "Mahngebühr",
+     "offen"
+    ],
+    "rows": [
+     [
+      "MW-26-08812",
+      "18.08.2026",
+      "17.09.2026",
+      "2.890,00 EUR",
+      "5,00 EUR",
+      "2.895,00 EUR"
+     ],
+     [
+      "MW-26-08813",
+      "18.08.2026",
+      "17.09.2026",
+      "495,00 EUR",
+      "5,00 EUR",
+      "500,00 EUR"
+     ],
+     [
+      "–",
+      "–",
+      "–",
+      "Verzugszinsen",
+      "",
+      "7,50 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Gerda Bach"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Möbelhaus Winter GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Industriestraße 88",
+     "category": "adresse"
+    },
+    {
+     "value": "67890 Beispielstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0721 330 77-0",
+     "category": "telefon"
+    },
+    {
+     "value": "forderungen@moebel-winter.example",
+     "category": "email"
+    },
+    {
+     "value": "Gerda Bach",
+     "category": "person"
+    },
+    {
+     "value": "Birkenstraße 15a",
+     "category": "adresse"
+    },
+    {
+     "value": "56781 Neufiktiv",
+     "category": "plz_ort"
+    },
+    {
+     "value": "7700-3194",
+     "category": "kundennummer"
+    },
+    {
+     "value": "Bach",
+     "category": "person"
+    },
+    {
+     "value": "Rüdiger Bach",
+     "category": "person"
+    },
+    {
+     "value": "Südfiktiv Bank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE56 9378 6579 7543 2319 48",
+     "category": "iban"
+    },
+    {
+     "value": "Kevin Lorenz",
+     "category": "person"
+    },
+    {
+     "value": "Inkasso Fiktiv GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "MW-26-08812",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "MW-26-08813",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "Klaus Winter",
+     "category": "person"
+    },
+    {
+     "value": "HRB 30412",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "35/118/42209",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "2. MAHNUNG",
+    "3.402,50 EUR",
+    "03.11.2026",
+    "§§ 280, 286 BGB",
+    "29.09.2026"
+   ],
+   "tags": [
+    "mahnung",
+    "tabelle",
+    "scan",
+    "verbraucher"
+   ]
+  },
+  {
+   "id": "PII-B04",
+   "format": "txt",
+   "filename": "WG_AW_Schlussrechnung_BV_Uferpark.txt",
+   "paragraphs": [
+    "Von: Thomas Hofmann <t.hofmann@hofmann-geruestbau.example>",
+    "Gesendet: Montag, 05.10.2026 08:47",
+    "An: Anna Lindner <lindner@kanzlei-lindner.example>",
+    "Cc: Buchhaltung Hofmann <buchhaltung@hofmann-geruestbau.example>",
+    "Betreff: WG: AW: Schlussrechnung BV Uferpark – Kürzung um 18 %",
+    "Ihr Aktenzeichen: LP-2026/0471",
+    "Hallo Frau Dr. Lindner,",
+    "wie telefonisch besprochen leite ich Ihnen den Schriftverkehr mit Stahl & Kern weiter. Herr Kern hat jetzt endgültig mitgeteilt, dass sie nur 82 % der Schlussrechnung zahlen. Die Abnahme war am 14.08.2026, das Protokoll hat unser Polier Herr Dragan Petrović unterschrieben, für die Gegenseite die Bauleiterin Frau Kerstin Maas. Mängel stehen da keine drin.",
+    "Die Schlussrechnung hat die Nummer SR-2026-0219 über 64.260,00 EUR brutto. Gezahlt wurden bisher 52.693,20 EUR. Offen sind also 11.566,80 EUR. Ich hätte gern, dass Sie das bis Ende Oktober durchsetzen, bevor die Gegenseite mit Gegenforderungen kommt.",
+    "Unsere Kundennummer bei denen ist übrigens K-88310, falls Sie das brauchen.",
+    "Viele Grüße",
+    "Thomas Hofmann",
+    "Geschäftsführer",
+    "Hofmann Gerüstbau GmbH",
+    "Werkstraße 19 · 78901 Fiktivhausen-Süd",
+    "Mobil 0171 4482917 · Telefon 07031 66 41-0",
+    "-----Ursprüngliche Nachricht-----",
+    "Von: Ralf Kern <r.kern@stahl-kern-bau.example>",
+    "Gesendet: Freitag, 02.10.2026 16:12",
+    "An: Thomas Hofmann <t.hofmann@hofmann-geruestbau.example>",
+    "Betreff: AW: Schlussrechnung BV Uferpark – Kürzung um 18 %",
+    "Sehr geehrter Herr Hofmann,",
+    "wir bleiben bei unserer Position. Die Gerüststandzeit wurde ohne unsere Zustimmung um drei Wochen verlängert, die zusätzlichen Vorhaltekosten erkennen wir nicht an. Außerdem hat Frau Maas mehrfach fehlende Bordbretter im 4. OG beanstandet, zuletzt am 22.07.2026. Wir verrechnen daher pauschal 18 % und betrachten die Angelegenheit als erledigt.",
+    "Weitere Rückfragen bitte an unsere Rechtsabteilung, Herrn Benedikt Sauer, Tel. 0711 902 35-60.",
+    "Mit freundlichen Grüßen",
+    "Ralf Kern",
+    "Stahl & Kern Bauprojekte GmbH",
+    "Geschäftsführer: Ralf Kern, Dr. Ingrid Stahl",
+    "Königsallee 140 · 89012 Musterstadt",
+    "HRB 66217 · USt-IdNr. DE301874455",
+    "-----Ursprüngliche Nachricht-----",
+    "Von: Thomas Hofmann",
+    "Gesendet: Mittwoch, 30.09.2026 09:05",
+    "An: Ralf Kern",
+    "Betreff: Schlussrechnung BV Uferpark – Kürzung um 18 %",
+    "Sehr geehrter Herr Kern,",
+    "Ihre Zahlung vom 28.09.2026 auf unsere Schlussrechnung SR-2026-0219 weist eine Kürzung um 11.566,80 EUR auf. Eine Begründung haben wir nicht erhalten. Die Standzeitverlängerung wurde von Frau Maas am 01.07.2026 per E-Mail angeordnet, die E-Mail liegt uns vor. Die Bordbretter wurden am Tag der Beanstandung durch Herrn Petrović nachgerüstet.",
+    "Wir fordern Sie auf, den Restbetrag bis zum 09.10.2026 zu zahlen.",
+    "Mit freundlichen Grüßen",
+    "Thomas Hofmann"
+   ],
+   "known_entities": {
+    "person": [
+     "Thomas Hofmann"
+    ],
+    "organisation": [
+     "Hofmann Gerüstbau GmbH"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Thomas Hofmann",
+     "category": "person"
+    },
+    {
+     "value": "t.hofmann@hofmann-geruestbau.example",
+     "category": "email"
+    },
+    {
+     "value": "Anna Lindner",
+     "category": "person"
+    },
+    {
+     "value": "lindner@kanzlei-lindner.example",
+     "category": "email"
+    },
+    {
+     "value": "Hofmann",
+     "category": "person"
+    },
+    {
+     "value": "buchhaltung@hofmann-geruestbau.example",
+     "category": "email"
+    },
+    {
+     "value": "LP-2026/0471",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Lindner",
+     "category": "person"
+    },
+    {
+     "value": "Stahl & Kern",
+     "category": "organisation"
+    },
+    {
+     "value": "Kern",
+     "category": "person"
+    },
+    {
+     "value": "Dragan Petrović",
+     "category": "person"
+    },
+    {
+     "value": "Kerstin Maas",
+     "category": "person"
+    },
+    {
+     "value": "SR-2026-0219",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "K-88310",
+     "category": "kundennummer"
+    },
+    {
+     "value": "Hofmann Gerüstbau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Werkstraße 19",
+     "category": "adresse"
+    },
+    {
+     "value": "78901 Fiktivhausen-Süd",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0171 4482917",
+     "category": "telefon"
+    },
+    {
+     "value": "07031 66 41-0",
+     "category": "telefon"
+    },
+    {
+     "value": "Ralf Kern",
+     "category": "person"
+    },
+    {
+     "value": "r.kern@stahl-kern-bau.example",
+     "category": "email"
+    },
+    {
+     "value": "Maas",
+     "category": "person"
+    },
+    {
+     "value": "Benedikt Sauer",
+     "category": "person"
+    },
+    {
+     "value": "0711 902 35-60",
+     "category": "telefon"
+    },
+    {
+     "value": "Stahl & Kern Bauprojekte GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Ingrid Stahl",
+     "category": "person"
+    },
+    {
+     "value": "Königsallee 140",
+     "category": "adresse"
+    },
+    {
+     "value": "89012 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "HRB 66217",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE301874455",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Petrović",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "64.260,00 EUR",
+    "52.693,20 EUR",
+    "11.566,80 EUR",
+    "09.10.2026",
+    "Schlussrechnung"
+   ],
+   "tags": [
+    "email",
+    "antwortkette",
+    "signatur",
+    "bau",
+    "aehnliche_namen"
+   ]
+  },
+  {
+   "id": "PII-B05",
+   "format": "docx",
+   "filename": "Mietvertrag_Lindenallee12_Falk.docx",
+   "paragraphs": [
+    "WOHNRAUMMIETVERTRAG",
+    "Mietvertrags-Nr.: MV-2026-0817-W",
+    "§ 1 Vertragsparteien",
+    "Vermieterin: Erika Beispiel, geboren am 04.02.1958, wohnhaft Rosenhang 3, 12347 Beispielheim, vertreten durch die Hausverwaltung Beispiel & Söhne GmbH, Marktplatz 9, 12345 Beispielheim, Geschäftsführer: Henning Beispiel, Amtsgericht Beispielheim HRB 1209, Telefon 05121 70 33-0, E-Mail verwaltung@hv-beispiel.example – nachfolgend „Vermieterin“ –",
+    "Mieter: 1. Jonas Falk, geboren am 17.11.1991, und 2. Mira Falk, geb. Sommer, geboren am 23.06.1993, beide derzeit wohnhaft Am Stadtgraben 27, 12349 Beispielheim, Telefon 0160 99 31 742, E-Mail jonas.falk@post.example – nachfolgend gemeinsam „Mieter“ –",
+    "§ 2 Mietgegenstand",
+    "(1) Vermietet wird die Wohnung im 2. Obergeschoss rechts des Hauses Lindenallee 12, 12345 Beispielheim, bestehend aus drei Zimmern, Küche, Bad mit Fenster, Gäste-WC, Diele, Abstellraum und Balkon. Die Wohnfläche beträgt ca. 86,4 m². Die Wohnfläche dient nicht zur Festlegung des Mietgegenstandes; maßgeblich ist der Zustand bei Übergabe.",
+    "(2) Mitvermietet werden der Kellerraum Nr. 7 sowie der Tiefgaragenstellplatz Nr. 14. Die Objektnummer der Wohnung im Verwaltungssystem lautet OBJ-1204-2R.",
+    "(3) Den Mietern werden bei Übergabe folgende Schlüssel ausgehändigt: 3 Haus-/Wohnungsschlüssel, 2 Briefkastenschlüssel, 1 Kellerschlüssel, 1 Garagentoröffner. Die Übergabe wird in einem gesonderten Übergabeprotokoll festgehalten, das Bestandteil dieses Vertrages ist.",
+    "§ 3 Mietzeit",
+    "(1) Das Mietverhältnis beginnt am 01.12.2026 und läuft auf unbestimmte Zeit. (2) Die Kündigung richtet sich nach den gesetzlichen Vorschriften, insbesondere nach § 573c BGB. Die Kündigung bedarf der Schriftform (§ 568 Abs. 1 BGB). (3) Eine stillschweigende Verlängerung des Mietverhältnisses nach § 545 BGB wird ausgeschlossen.",
+    "§ 4 Miete und Nebenkosten",
+    "(1) Die monatliche Grundmiete beträgt 1.036,80 EUR (12,00 EUR/m²). Für den Tiefgaragenstellplatz wird eine Miete von 75,00 EUR monatlich vereinbart. (2) Neben der Grundmiete tragen die Mieter die Betriebskosten im Sinne des § 2 BetrKV. Hierauf ist eine monatliche Vorauszahlung von 230,00 EUR zu leisten. Über die Vorauszahlungen wird jährlich abgerechnet.",
+    "Für Heizung und Warmwasser wird eine gesonderte Vorauszahlung von 115,00 EUR erhoben.",
+    "Die monatlich zu zahlende Gesamtmiete setzt sich danach wie folgt zusammen (siehe Übersicht). Die Gesamtmiete beträgt somit 1.456,80 EUR.",
+    "(3) Die Gesamtmiete ist monatlich im Voraus, spätestens am dritten Werktag des Monats, kostenfrei auf das Konto der Vermieterin zu zahlen: Kontoinhaberin Erika Beispiel, Fiktivbank Nord AG, IBAN DE65 7574 9118 6252 7601 89, Verwendungszweck: MV-2026-0817-W.",
+    "(4) Die Mieter erteilen der Vermieterin ein SEPA-Lastschriftmandat für das Konto des Mieters Jonas Falk, IBAN DE83 5559 7971 1471 0497 46. Die Mandatsreferenz lautet HVB-SEPA-004417. Die Mieter können das Mandat jederzeit mit Wirkung für die Zukunft widerrufen.",
+    "§ 5 Mietsicherheit",
+    "(1) Die Mieter leisten eine Kaution in Höhe von 3.110,40 EUR (drei Nettokaltmieten). Sie sind berechtigt, die Kaution in drei gleichen monatlichen Teilzahlungen zu erbringen; die erste Teilzahlung ist zu Beginn des Mietverhältnisses fällig (§ 551 Abs. 2 BGB).",
+    "(2) Die Vermieterin legt die Kaution getrennt von ihrem Vermögen auf einem Mietkautionskonto bei der Fiktivbank Nord AG an (Kautionskonto-Nr. 4400 1182 07). Die Zinsen stehen den Mietern zu und erhöhen die Sicherheit.",
+    "§ 6 Schönheitsreparaturen und Kleinreparaturen",
+    "(1) Die Wohnung wird renoviert übergeben. Die Mieter übernehmen die Schönheitsreparaturen während der Mietzeit, soweit diese durch ihre Abnutzung erforderlich werden. Starre Fristen werden nicht vereinbart.",
+    "(2) Die Kosten kleiner Instandhaltungen an Gegenständen, die dem häufigen Zugriff der Mieter ausgesetzt sind, tragen die Mieter bis zu einem Betrag von 100,00 EUR im Einzelfall, höchstens jedoch 8 % der Jahresgrundmiete pro Kalenderjahr.",
+    "§ 7 Tierhaltung, Untervermietung",
+    "(1) Die Haltung von Kleintieren ist ohne Zustimmung zulässig. Die Haltung von Hunden und Katzen bedarf der vorherigen Zustimmung der Vermieterin, die nur aus wichtigem Grund verweigert werden darf. (2) Eine Untervermietung oder sonstige Gebrauchsüberlassung an Dritte ist nur mit schriftlicher Erlaubnis der Vermieterin zulässig (§ 540 BGB).",
+    "§ 8 Zählerstände bei Übergabe",
+    "Bei Übergabe am 01.12.2026 werden folgende Zähler abgelesen und im Übergabeprotokoll festgehalten: Stromzähler Nr. 1EBZ0104471882, Kaltwasserzähler Nr. KW-77120-3, Warmwasserzähler Nr. WW-77121-9. Der Stromliefervertrag ist von den Mietern selbst abzuschließen.",
+    "§ 9 Hausordnung, Ansprechpartner",
+    "Die Hausordnung (Anlage 2) ist Bestandteil dieses Vertrages. Ansprechpartner der Hausverwaltung für das Objekt ist Herr Marco Stein, Durchwahl 05121 70 33-21, E-Mail m.stein@hv-beispiel.example. Hausmeister vor Ort ist Herr Ömer Yıldız, erreichbar unter 0152 288 104 66. Notfälle außerhalb der Geschäftszeiten sind dem Hausmeister zu melden.",
+    "§ 10 Sonstige Vereinbarungen",
+    "(1) Die Mieter sind berechtigt, auf dem Balkon Pflanzkästen anzubringen. (2) Die Vermieterin verpflichtet sich, die defekte Dichtung des Badfensters bis zum 15.12.2026 instand zu setzen. (3) Änderungen und Ergänzungen dieses Vertrages bedürfen der Schriftform. Sollte eine Bestimmung unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.",
+    "(4) Die Mieterin Mira Falk wird die Wohnung voraussichtlich ab Februar 2027 teilweise für eine freiberufliche Übersetzertätigkeit nutzen. Die Vermieterin stimmt dieser Nutzung zu, soweit kein Publikumsverkehr entsteht und keine baulichen Veränderungen vorgenommen werden.",
+    "Anlagen: 1. Übergabeprotokoll, 2. Hausordnung, 3. Energieausweis, 4. Datenschutzhinweise der Hausverwaltung",
+    "Ort, Datum: ____________________",
+    "Unterschrift Vermieterin, vertreten durch Hausverwaltung Beispiel & Söhne GmbH: ____________________ (Henning Beispiel)",
+    "Ort, Datum: ____________________",
+    "Unterschrift Mieter: ____________________ (Jonas Falk)",
+    "Unterschrift Mieterin: ____________________ (Mira Falk)"
+   ],
+   "table": {
+    "header": [
+     "Position",
+     "monatlich"
+    ],
+    "rows": [
+     [
+      "Grundmiete Wohnung",
+      "1.036,80 EUR"
+     ],
+     [
+      "Tiefgaragenstellplatz Nr. 14",
+      "75,00 EUR"
+     ],
+     [
+      "Betriebskostenvorauszahlung",
+      "230,00 EUR"
+     ],
+     [
+      "Heizkostenvorauszahlung",
+      "115,00 EUR"
+     ],
+     [
+      "Gesamtmiete",
+      "1.456,80 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Jonas Falk"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "MV-2026-0817-W",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Erika Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "04.02.1958",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Rosenhang 3",
+     "category": "adresse"
+    },
+    {
+     "value": "12347 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Hausverwaltung Beispiel & Söhne GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 9",
+     "category": "adresse"
+    },
+    {
+     "value": "12345 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Henning Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "HRB 1209",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "05121 70 33-0",
+     "category": "telefon"
+    },
+    {
+     "value": "verwaltung@hv-beispiel.example",
+     "category": "email"
+    },
+    {
+     "value": "Jonas Falk",
+     "category": "person"
+    },
+    {
+     "value": "17.11.1991",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Mira Falk",
+     "category": "person"
+    },
+    {
+     "value": "Sommer",
+     "category": "person"
+    },
+    {
+     "value": "23.06.1993",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Am Stadtgraben 27",
+     "category": "adresse"
+    },
+    {
+     "value": "12349 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0160 99 31 742",
+     "category": "telefon"
+    },
+    {
+     "value": "jonas.falk@post.example",
+     "category": "email"
+    },
+    {
+     "value": "Lindenallee 12",
+     "category": "adresse"
+    },
+    {
+     "value": "OBJ-1204-2R",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Fiktivbank Nord AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE65 7574 9118 6252 7601 89",
+     "category": "iban"
+    },
+    {
+     "value": "DE83 5559 7971 1471 0497 46",
+     "category": "iban"
+    },
+    {
+     "value": "HVB-SEPA-004417",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "4400 1182 07",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "1EBZ0104471882",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KW-77120-3",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WW-77121-9",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Marco Stein",
+     "category": "person"
+    },
+    {
+     "value": "05121 70 33-21",
+     "category": "telefon"
+    },
+    {
+     "value": "m.stein@hv-beispiel.example",
+     "category": "email"
+    },
+    {
+     "value": "Ömer Yıldız",
+     "category": "person"
+    },
+    {
+     "value": "0152 288 104 66",
+     "category": "telefon"
+    }
+   ],
+   "keep": [
+    "WOHNRAUMMIETVERTRAG",
+    "01.12.2026",
+    "1.456,80 EUR",
+    "3.110,40 EUR",
+    "§ 573c BGB",
+    "§ 551 Abs. 2 BGB",
+    "§ 2 BetrKV",
+    "15.12.2026"
+   ],
+   "tags": [
+    "mietvertrag",
+    "vertrag",
+    "lang",
+    "geburtsdatum",
+    "tabelle",
+    "unterschriftszeilen"
+   ]
+  },
+  {
+   "id": "PII-B06",
+   "format": "docx",
+   "filename": "Arbeitsvertrag_Brandner_Lichtwerk.docx",
+   "paragraphs": [
+    "ARBEITSVERTRAG",
+    "(unbefristet, Vollzeit)",
+    "zwischen",
+    "der Lichtwerk Systeme GmbH, Technologiepark 4, 90120 Fiktivhausen, eingetragen im Handelsregister des Amtsgerichts Fiktivhausen unter HRB 41877, vertreten durch den Geschäftsführer Dr. Henrik Lichtenberg – nachfolgend „Arbeitgeberin“ –",
+    "und",
+    "Frau Laura Brandner, geboren am 09.03.1994, wohnhaft Ahornweg 5, 90123 Fiktivhausen – nachfolgend „Arbeitnehmerin“ –",
+    "Personalnummer: P-20488",
+    "§ 1 Beginn des Arbeitsverhältnisses, Probezeit",
+    "(1) Das Arbeitsverhältnis beginnt am 01.01.2027. Es wird auf unbestimmte Zeit geschlossen. (2) Die ersten sechs Monate gelten als Probezeit. Während der Probezeit kann das Arbeitsverhältnis von beiden Seiten mit einer Frist von zwei Wochen gekündigt werden (§ 622 Abs. 3 BGB). (3) Vor Beginn des Arbeitsverhältnisses ist die ordentliche Kündigung ausgeschlossen.",
+    "§ 2 Tätigkeit, Arbeitsort",
+    "(1) Die Arbeitnehmerin wird als Senior-Softwareentwicklerin im Bereich Embedded Systems eingestellt. Sie berichtet an den Teamleiter Embedded, derzeit Herrn Florian Weber. (2) Die Arbeitgeberin behält sich vor, der Arbeitnehmerin im Rahmen des Direktionsrechts (§ 106 GewO) auch andere zumutbare, ihrer Qualifikation entsprechende Tätigkeiten zu übertragen, ohne dass sich die Vergütung mindert.",
+    "(3) Arbeitsort ist der Betriebssitz Technologiepark 4, 90120 Fiktivhausen. Nach Absprache mit Herrn Weber kann die Arbeitnehmerin an bis zu zwei Tagen pro Woche mobil arbeiten; Einzelheiten regelt die Betriebsvereinbarung „Mobiles Arbeiten“ vom 01.03.2025.",
+    "§ 3 Arbeitszeit",
+    "(1) Die regelmäßige wöchentliche Arbeitszeit beträgt 40 Stunden. Die Verteilung richtet sich nach den betrieblichen Regelungen zur Gleitzeit (Kernzeit 10:00 bis 15:00 Uhr). (2) Die Arbeitnehmerin ist verpflichtet, im gesetzlich zulässigen Rahmen Überstunden zu leisten, soweit dies betrieblich erforderlich ist. Mit der Vergütung nach § 4 sind bis zu 8 Überstunden im Monat abgegolten.",
+    "Darüber hinausgehende Überstunden werden durch Freizeit ausgeglichen.",
+    "§ 4 Vergütung",
+    "(1) Die Arbeitnehmerin erhält ein festes Bruttojahresgehalt von 72.000,00 EUR, zahlbar in zwölf gleichen Monatsraten jeweils zum Monatsletzten. (2) Zusätzlich wird eine variable Vergütung von bis zu 6.000,00 EUR brutto jährlich gewährt, deren Höhe sich nach der jährlichen Zielvereinbarung richtet.",
+    "Ein Rechtsanspruch auf eine variable Vergütung in bestimmter Höhe besteht nur nach Maßgabe der Zielvereinbarung.",
+    "(3) Die Vergütung wird bargeldlos auf folgendes Konto der Arbeitnehmerin überwiesen: Kontoinhaberin Laura Brandner, Westfiktiv Bank AG, IBAN DE78 5075 2917 0342 3667 12.",
+    "(4) Für die Lohnabrechnung teilt die Arbeitnehmerin folgende Daten mit: Steuer-Identifikationsnummer 57 284 091 336, Steuerklasse I, Sozialversicherungsnummer 65 090394 B 512. Änderungen sind der Personalabteilung unverzüglich mitzuteilen.",
+    "§ 5 Urlaub",
+    "(1) Die Arbeitnehmerin hat Anspruch auf einen jährlichen Erholungsurlaub von 30 Arbeitstagen bei einer Fünf-Tage-Woche. Der gesetzliche Mindesturlaub nach § 3 BUrlG ist darin enthalten. (2) Der Urlaub ist rechtzeitig über das Personalportal zu beantragen und mit dem Vorgesetzten abzustimmen.",
+    "Nicht genommener Urlaub verfällt nach Maßgabe der gesetzlichen Bestimmungen, sofern die Arbeitgeberin ihren Hinweisobliegenheiten nachgekommen ist.",
+    "§ 6 Arbeitsverhinderung, Krankheit",
+    "(1) Die Arbeitnehmerin ist verpflichtet, der Arbeitgeberin jede Arbeitsverhinderung und deren voraussichtliche Dauer unverzüglich mitzuteilen. (2) Im Falle der Arbeitsunfähigkeit infolge Krankheit gilt das Entgeltfortzahlungsgesetz.",
+    "Dauert die Arbeitsunfähigkeit länger als drei Kalendertage, ist spätestens am darauffolgenden Arbeitstag das Vorliegen einer ärztlich festgestellten Arbeitsunfähigkeit nachzuweisen (§ 5 Abs. 1 EFZG).",
+    "§ 7 Verschwiegenheit, Datenschutz",
+    "(1) Die Arbeitnehmerin verpflichtet sich, über alle Betriebs- und Geschäftsgeheimnisse sowie über alle vertraulichen Angelegenheiten der Arbeitgeberin und ihrer Kunden, insbesondere der Hauptkundin Vogel Fahrzeugelektronik AG, Stillschweigen zu bewahren. Diese Verpflichtung besteht auch nach Beendigung des Arbeitsverhältnisses fort.",
+    "(2) Die Arbeitnehmerin wird auf die Vertraulichkeit personenbezogener Daten nach Art. 5 Abs. 1 lit. f und Art. 32 Abs. 4 DSGVO verpflichtet. Die gesonderte Verpflichtungserklärung ist diesem Vertrag als Anlage beigefügt.",
+    "§ 8 Nebentätigkeit",
+    "Jede entgeltliche Nebentätigkeit bedarf der vorherigen schriftlichen Zustimmung der Arbeitgeberin. Die Zustimmung ist zu erteilen, wenn berechtigte Interessen der Arbeitgeberin nicht beeinträchtigt werden. Die bereits ausgeübte Lehrtätigkeit der Arbeitnehmerin an der privaten Fiktiv Akademie gGmbH im Umfang von vier Stunden monatlich wird hiermit genehmigt.",
+    "§ 9 Kündigung",
+    "(1) Nach Ablauf der Probezeit gelten für beide Seiten die gesetzlichen Kündigungsfristen des § 622 BGB. Eine Verlängerung der Kündigungsfrist zugunsten der Arbeitnehmerin gilt auch zugunsten der Arbeitgeberin. (2) Die Kündigung bedarf der Schriftform (§ 623 BGB).",
+    "(3) Das Arbeitsverhältnis endet, ohne dass es einer Kündigung bedarf, mit Ablauf des Monats, in dem die Arbeitnehmerin die Regelaltersgrenze erreicht.",
+    "§ 10 Ausschlussfristen",
+    "(1) Alle beiderseitigen Ansprüche aus dem Arbeitsverhältnis und solche, die mit dem Arbeitsverhältnis in Verbindung stehen, verfallen, wenn sie nicht innerhalb von drei Monaten nach Fälligkeit gegenüber der anderen Vertragspartei in Textform geltend gemacht werden.",
+    "(2) Dies gilt nicht für Ansprüche auf den gesetzlichen Mindestlohn, für Ansprüche wegen Verletzung des Lebens, des Körpers oder der Gesundheit sowie für Ansprüche aus vorsätzlichen Pflichtverletzungen.",
+    "§ 11 Schlussbestimmungen",
+    "(1) Änderungen und Ergänzungen dieses Vertrages bedürfen zu ihrer Wirksamkeit der Textform. (2) Sollte eine Bestimmung unwirksam sein, wird die Wirksamkeit der übrigen Bestimmungen nicht berührt. (3) Ansprechpartnerin in der Personalabteilung ist Frau Carina Bach, Telefon 0911 5520 18-30, E-Mail personal@lichtwerk-systeme.example.",
+    "Die Arbeitnehmerin bestätigt, ein Exemplar dieses Vertrages erhalten zu haben.",
+    "Ort, Datum: ____________________",
+    "Unterschrift Arbeitgeberin: ____________________ (Dr. Henrik Lichtenberg, Geschäftsführer)",
+    "Ort, Datum: ____________________",
+    "Unterschrift Arbeitnehmerin: ____________________ (L. Brandner)"
+   ],
+   "known_entities": {
+    "person": [
+     "Laura Brandner"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Lichtwerk Systeme GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Technologiepark 4",
+     "category": "adresse"
+    },
+    {
+     "value": "90120 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "HRB 41877",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Henrik Lichtenberg",
+     "category": "person"
+    },
+    {
+     "value": "Laura Brandner",
+     "category": "person"
+    },
+    {
+     "value": "09.03.1994",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Ahornweg 5",
+     "category": "adresse"
+    },
+    {
+     "value": "90123 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "P-20488",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Florian Weber",
+     "category": "person"
+    },
+    {
+     "value": "Weber",
+     "category": "person"
+    },
+    {
+     "value": "Westfiktiv Bank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE78 5075 2917 0342 3667 12",
+     "category": "iban"
+    },
+    {
+     "value": "57 284 091 336",
+     "category": "steuernummer"
+    },
+    {
+     "value": "65 090394 B 512",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Vogel Fahrzeugelektronik AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Fiktiv Akademie gGmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Carina Bach",
+     "category": "person"
+    },
+    {
+     "value": "0911 5520 18-30",
+     "category": "telefon"
+    },
+    {
+     "value": "personal@lichtwerk-systeme.example",
+     "category": "email"
+    },
+    {
+     "value": "L. Brandner",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "ARBEITSVERTRAG",
+    "01.01.2027",
+    "72.000,00 EUR",
+    "§ 622 Abs. 3 BGB",
+    "§ 623 BGB",
+    "§ 106 GewO",
+    "§ 5 Abs. 1 EFZG"
+   ],
+   "tags": [
+    "arbeitsvertrag",
+    "vertrag",
+    "lang",
+    "geburtsdatum",
+    "sozialversicherung",
+    "unterschriftszeilen"
+   ]
+  },
+  {
+   "id": "PII-B07",
+   "format": "scan_degraded",
+   "filename": "Scan_Gutachten_GA-26-1093_Schulte.pdf",
+   "paragraphs": [
+    "Ingenieurbüro Krüger",
+    "Kfz-Sachverständigenbüro · Unfallgutachten · Fahrzeugbewertung",
+    "Dipl.-Ing. (FH) Oliver Krüger, Sachverständiger für Kraftfahrzeugschäden und -bewertung",
+    "Gewerbering 12 · 23458 Fiktivhausen · Telefon 04521 77 08 90 · gutachten@ib-krueger.example",
+    "HAFTPFLICHTSCHADENGUTACHTEN Nr. GA-26-1093",
+    "Auftraggeberin: Hannah Schulte, Weidenstraße 31, 23460 Fiktivhausen, Telefon 0176 220 418 93",
+    "Auftragsdatum: 07.09.2026 · Besichtigung: 08.09.2026 · Fertigstellung: 10.09.2026",
+    "1. Angaben zum Schadenereignis",
+    "Unfalltag: 05.09.2026, ca. 17:40 Uhr. Unfallort: Kreuzung Bahnhofstraße / Mühlenweg (innerorts). Witterung: trocken, Tageslicht.",
+    "Nach Angaben der Auftraggeberin befuhr sie mit ihrem Pkw, amtliches Kennzeichen FH-HS 2207, die Bahnhofstraße stadtauswärts, als der Unfallgegner, Herr Bernd Hase, mit dem Pkw, amtliches Kennzeichen BW-KH 718, aus dem Mühlenweg kommend unter Missachtung der Vorfahrt in die Kreuzung einfuhr. Es kam zu einem Anstoß im Bereich der vorderen rechten Fahrzeugseite des Fahrzeugs der Auftraggeberin.",
+    "Der Unfall wurde polizeilich aufgenommen (Vorgangsnummer VU 2026/118842). Als Zeugin hat sich Frau Jasmin Kaya, Lerchenweg 4, 23461 Fiktivhausen, zur Verfügung gestellt; sie bestätigte gegenüber den Beamten, dass Herr Hase das Stoppschild überfahren habe.",
+    "Haftpflichtversicherer des Unfallgegners: Fiktiva Allgemeine Versicherung AG, Versicherungsschein-Nr. KH-4471-208813, Schadennummer SN-2026-0094471. Halterin des gegnerischen Fahrzeugs ist nach den Angaben am Unfallort die Hase Getränkehandel e. K., Inhaber Bernd Hase.",
+    "2. Fahrzeugdaten",
+    "Fahrzeugart: Pkw, Kompaktklasse, Schrägheck, 5-türig, Hybridantrieb, 110 kW. Fahrzeug-Identifizierungsnummer: WFZ1K2E04N1234567. Erstzulassung: 14.04.2022. Laufleistung: 41.380 km (abgelesen). Farbe: Mondsteingrau metallic. Bereifung: Sommerreifen, Profiltiefe vorne 5 mm, hinten 6 mm.",
+    "Halterin: Hannah Schulte. Kfz-Haftpflicht- und Vollkaskoversicherung der Auftraggeberin: Beispiel Direkt Versicherung AG, Versicherungsschein-Nr. VK-2209-55104. Die Vollkaskoversicherung wurde nach Angaben der Auftraggeberin bislang nicht in Anspruch genommen.",
+    "Allgemeinzustand: Das Fahrzeug befindet sich in einem gepflegten, dem Alter und der Laufleistung entsprechenden Zustand. Die Serviceintervalle wurden ausweislich des Serviceheftes eingehalten; die letzte Inspektion erfolgte bei 38.900 km.",
+    "3. Beschädigungen",
+    "Das Fahrzeug weist im Bereich der Front rechts erhebliche Verformungen auf. Betroffen sind der Stoßfänger vorne mit Halterungen, der Kotflügel vorne rechts, die Motorhaube, der Scheinwerfer rechts (LED, Hauptscheinwerfer komplett), die Vorderradaufhängung rechts (Querlenker, Spurstange) sowie die Felge vorne rechts.",
+    "Die Tür vorne rechts zeigt eine Eindellung im vorderen Kantenbereich mit Lackschaden.",
+    "Eine Vermessung der Achsgeometrie in der Werkstatt Autohaus Reinhardt GmbH, Ringstraße 70, 23458 Fiktivhausen, ergab eine deutliche Abweichung der Spur vorne rechts (Ist 1°12', Soll 0°10' ± 0°10'). Vorschäden wurden nicht festgestellt; nach Auskunft der Auftraggeberin ist das Fahrzeug unfallfrei.",
+    "4. Reparaturkosten-Kalkulation",
+    "Die Reparaturkosten wurden auf Basis der Stundenverrechnungssätze einer markengebundenen Fachwerkstatt im Einzugsbereich der Auftraggeberin kalkuliert. Die Kalkulation ist im Einzelnen der nachstehenden Übersicht zu entnehmen; der vollständige Kalkulationsausdruck liegt als Anlage bei.",
+    "5. Wertermittlung",
+    "Wiederbeschaffungswert (differenzbesteuert): 21.400,00 EUR. Restwert (drei Angebote des regionalen Marktes, höchstes Angebot der Fiktiv Autoverwertung GmbH): 9.850,00 EUR. Die Reparaturkosten liegen unterhalb des Wiederbeschaffungswertes; es handelt sich um einen wirtschaftlichen Reparaturschaden. Die merkantile Wertminderung wird mit 850,00 EUR bemessen.",
+    "6. Reparaturdauer und Nutzungsausfall",
+    "Die voraussichtliche Reparaturdauer beträgt 6 Arbeitstage. Das Fahrzeug ist der Nutzungsausfallgruppe D zuzuordnen; die Entschädigung für entgangene Nutzung beträgt 59,00 EUR pro Tag. Bei Ersatzteilverzögerungen kann sich die Reparaturdauer verlängern; dies ist gegebenenfalls durch eine Bestätigung der Werkstatt nachzuweisen.",
+    "7. Zusammenfassung",
+    "Reparaturkosten netto: 7.215,90 EUR; Reparaturkosten brutto: 8.586,92 EUR; Wertminderung: 850,00 EUR; Nutzungsausfall (6 Tage): 354,00 EUR; Gutachterkosten gemäß Rechnung Nr. IBK-R-26-0711: 1.124,55 EUR. Der Schaden ist dem Haftpflichtversicherer des Unfallgegners unter Angabe der Schadennummer SN-2026-0094471 zur Regulierung vorzulegen.",
+    "Die Auftraggeberin wurde darauf hingewiesen, dass die Reparatur in einer Fachwerkstatt ihrer Wahl durchgeführt werden kann. Eine Reparaturbestätigung nach Abschluss der Arbeiten kann beim Sachverständigenbüro gesondert beauftragt werden.",
+    "8. Hinweise",
+    "Dieses Gutachten wurde ausschließlich für die Auftraggeberin zum Zwecke der Schadensregulierung erstellt. Die Weitergabe an Dritte ist nur im Rahmen der Regulierung zulässig. Die im Gutachten getroffenen Feststellungen beruhen auf einer Sichtprüfung am 08.09.2026 im Beisein des Ehemanns der Auftraggeberin, Herrn Lukas Schulte, sowie auf den Angaben der Auftraggeberin zum Unfallhergang.",
+    "Eine Unfallrekonstruktion war nicht Gegenstand des Auftrags. Verdeckte Schäden, die erst bei Demontage sichtbar werden, konnten nicht berücksichtigt werden; sie sind gegebenenfalls in einem Nachtrag zu erfassen.",
+    "Der Sachverständige versichert, das Gutachten unparteiisch und nach bestem Wissen und Gewissen erstellt zu haben. Er steht in keinem verwandtschaftlichen oder wirtschaftlichen Verhältnis zu den Beteiligten. Die Lichtbilddokumentation (32 Aufnahmen) sowie der Kalkulationsausdruck sind als Anlagen beigefügt.",
+    "Ort, Datum: ____________________",
+    "Unterschrift Sachverständiger: ____________________ (O. Krüger)",
+    "Ingenieurbüro Krüger · Inhaber Oliver Krüger · Steuernummer 22/507/11843 · Hanse Fiktiv Bank AG · IBAN DE84 7684 2684 6563 2122 33"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Leistung",
+     "Betrag netto"
+    ],
+    "rows": [
+     [
+      "1",
+      "Ersatzteile (Stoßfänger, Kotflügel, Scheinwerfer, Querlenker, Spurstange, Felge)",
+      "3.912,40 EUR"
+     ],
+     [
+      "2",
+      "Lohn Karosserie/Mechanik",
+      "1.684,00 EUR"
+     ],
+     [
+      "3",
+      "Lackierung (Material und Lohn)",
+      "1.276,50 EUR"
+     ],
+     [
+      "4",
+      "Achsvermessung",
+      "145,00 EUR"
+     ],
+     [
+      "5",
+      "Verbringung/Nebenkosten",
+      "198,00 EUR"
+     ],
+     [
+      "",
+      "Summe Reparaturkosten netto",
+      "7.215,90 EUR"
+     ],
+     [
+      "",
+      "zzgl. 19 % MwSt.",
+      "1.371,02 EUR"
+     ],
+     [
+      "",
+      "Reparaturkosten brutto",
+      "8.586,92 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Hannah Schulte"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Ingenieurbüro Krüger",
+     "category": "organisation"
+    },
+    {
+     "value": "Oliver Krüger",
+     "category": "person"
+    },
+    {
+     "value": "Gewerbering 12",
+     "category": "adresse"
+    },
+    {
+     "value": "23458 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04521 77 08 90",
+     "category": "telefon"
+    },
+    {
+     "value": "gutachten@ib-krueger.example",
+     "category": "email"
+    },
+    {
+     "value": "GA-26-1093",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Hannah Schulte",
+     "category": "person"
+    },
+    {
+     "value": "Weidenstraße 31",
+     "category": "adresse"
+    },
+    {
+     "value": "23460 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0176 220 418 93",
+     "category": "telefon"
+    },
+    {
+     "value": "FH-HS 2207",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "Bernd Hase",
+     "category": "person"
+    },
+    {
+     "value": "BW-KH 718",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "VU 2026/118842",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Jasmin Kaya",
+     "category": "person"
+    },
+    {
+     "value": "Lerchenweg 4",
+     "category": "adresse"
+    },
+    {
+     "value": "23461 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Hase",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiva Allgemeine Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "KH-4471-208813",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "SN-2026-0094471",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Hase Getränkehandel e. K.",
+     "category": "organisation"
+    },
+    {
+     "value": "WFZ1K2E04N1234567",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Beispiel Direkt Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "VK-2209-55104",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Autohaus Reinhardt GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Ringstraße 70",
+     "category": "adresse"
+    },
+    {
+     "value": "Fiktiv Autoverwertung GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "IBK-R-26-0711",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "Lukas Schulte",
+     "category": "person"
+    },
+    {
+     "value": "O. Krüger",
+     "category": "person"
+    },
+    {
+     "value": "22/507/11843",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Hanse Fiktiv Bank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE84 7684 2684 6563 2122 33",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "HAFTPFLICHTSCHADENGUTACHTEN",
+    "05.09.2026",
+    "7.215,90 EUR",
+    "8.586,92 EUR",
+    "21.400,00 EUR",
+    "9.850,00 EUR",
+    "1.124,55 EUR"
+   ],
+   "tags": [
+    "kfz",
+    "schadensgutachten",
+    "kennzeichen",
+    "versicherung",
+    "lang",
+    "tabelle",
+    "scan_degraded"
+   ]
+  },
+  {
+   "id": "PII-B08",
+   "format": "scan",
+   "filename": "Scan_Vollmacht_Vogel.pdf",
+   "paragraphs": [
+    "VOLLMACHT",
+    "Den Rechtsanwälten",
+    "Dr. Felix Bergmann, Nora Albers",
+    "Bergmann Albers Rechtsanwälte PartG mbB",
+    "Schlossplatz 2 · 34560 Beispielheim · Telefon 0561 480 22-0 · Telefax 0561 480 22-11",
+    "wird hiermit in Sachen",
+    "Ingrid Vogel ./. Vogel Logistik GmbH",
+    "wegen Kündigungsschutz und Vergütungsansprüchen aus dem Arbeitsverhältnis",
+    "Aktenzeichen der Kanzlei: 2026/0388-BA",
+    "Vollmacht erteilt",
+    "1. zur Prozessführung (u. a. nach §§ 81 ff. ZPO) einschließlich der Befugnis zur Erhebung und Zurücknahme von Widerklagen; 2. zur Antragstellung in Kündigungsschutzverfahren; 3. zur Vertretung in sonstigen Verfahren und bei außergerichtlichen Verhandlungen aller Art; 4. zur Begründung und Aufhebung von Vertragsverhältnissen und zur Abgabe und Entgegennahme von einseitigen Willenserklärungen (z.",
+    "B. Kündigungen) im Zusammenhang mit der oben genannten Angelegenheit.",
+    "Die Vollmacht gilt für alle Instanzen und erstreckt sich auf Neben- und Folgeverfahren aller Art. Sie umfasst insbesondere die Befugnis, Zustellungen zu bewirken und entgegenzunehmen, die Vollmacht ganz oder teilweise auf andere zu übertragen (Untervollmacht), Rechtsmittel einzulegen, zurückzunehmen oder auf sie zu verzichten.",
+    "Sie umfasst ferner die Befugnis, den Rechtsstreit oder außergerichtliche Verhandlungen durch Vergleich, Verzicht oder Anerkenntnis zu erledigen, Geld, Wertsachen und Urkunden, insbesondere auch den Streitgegenstand und die vom Gegner, von der Justizkasse oder von sonstigen Stellen zu erstattenden Beträge entgegenzunehmen sowie Akteneinsicht zu nehmen.",
+    "Vollmachtgeberin: Ingrid Vogel, geboren am 30.07.1979, Kastanienallee 18, 34562 Beispielheim",
+    "Hinweis der Kanzlei: Die Kündigung der Vollmachtgeberin durch die Vogel Logistik GmbH ist am 02.10.2026 zugegangen. Die Klagefrist nach § 4 Satz 1 KSchG endet am 23.10.2026.",
+    "Ort, Datum: ____________________",
+    "Unterschrift Vollmachtgeberin: ____________________ (I. Vogel)"
+   ],
+   "known_entities": {
+    "person": [
+     "Ingrid Vogel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Felix Bergmann",
+     "category": "person"
+    },
+    {
+     "value": "Nora Albers",
+     "category": "person"
+    },
+    {
+     "value": "Bergmann Albers Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Schlossplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34560 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0561 480 22-0",
+     "category": "telefon"
+    },
+    {
+     "value": "0561 480 22-11",
+     "category": "telefon"
+    },
+    {
+     "value": "Ingrid Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Vogel Logistik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "2026/0388-BA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "30.07.1979",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Kastanienallee 18",
+     "category": "adresse"
+    },
+    {
+     "value": "34562 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "I. Vogel",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "VOLLMACHT",
+    "§§ 81 ff. ZPO",
+    "§ 4 Satz 1 KSchG",
+    "23.10.2026",
+    "02.10.2026"
+   ],
+   "tags": [
+    "vollmacht",
+    "scan",
+    "unterschriftszeilen",
+    "aehnliche_namen",
+    "geburtsdatum"
+   ]
+  },
+  {
+   "id": "PII-B09",
+   "format": "txt",
+   "filename": "Telefonnotiz_2026-10-13_Weber.txt",
+   "paragraphs": [
+    "TELEFONNOTIZ",
+    "Datum/Uhrzeit: 13.10.2026, 11:20 Uhr",
+    "Aufgenommen von: Melanie Rausch (Sekretariat)",
+    "Für: RA Dr. Bergmann",
+    "Anrufer: Weber, Fiktiva Rechtsschutz AG, Schadenabteilung",
+    "Rückruf Weber wegen Koch-Sache – Deckungszusage",
+    "Weber ruft an wegen der Deckungsanfrage im Fall Koch ./. Engel Immobilien GmbH (unser Az. 2026/0412-BE). Schadennummer bei der Rechtsschutz: RS-26-778104. Die Deckung für die erste Instanz wird erteilt, Selbstbeteiligung 250,00 EUR. Für die außergerichtliche Tätigkeit braucht Weber noch die Kopie des Mietvertrags und das Kündigungsschreiben von Engel vom 28.09.2026.",
+    "Koch selbst hat heute früh auch schon angerufen (Mandantin Petra Koch, mobil 0157 330 921 48), fragt nach dem Stand und ob sie die Miete für November mindern darf. Bitte Rückruf heute noch, sie ist ab 16 Uhr erreichbar.",
+    "Weber erreichbar unter 0800 330 4411, Durchwahl 237, oder per Mail an d.weber@fiktiva-rs.example. Versicherungsnummer der Mandantin: RS-VN 4410-882-71.",
+    "To do: Unterlagen an Weber schicken (Frist laut Weber: 27.10.2026), Rückruf Koch, Wiedervorlage 28.10.2026.",
+    "gez. Rausch"
+   ],
+   "known_entities": {
+    "person": [
+     "Petra Koch"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Melanie Rausch",
+     "category": "person"
+    },
+    {
+     "value": "Bergmann",
+     "category": "person"
+    },
+    {
+     "value": "Weber",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiva Rechtsschutz AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Engel Immobilien GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "2026/0412-BE",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "RS-26-778104",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Petra Koch",
+     "category": "person"
+    },
+    {
+     "value": "0157 330 921 48",
+     "category": "telefon"
+    },
+    {
+     "value": "0800 330 4411",
+     "category": "telefon"
+    },
+    {
+     "value": "d.weber@fiktiva-rs.example",
+     "category": "email"
+    },
+    {
+     "value": "RS-VN 4410-882-71",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Rausch",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "TELEFONNOTIZ",
+    "250,00 EUR",
+    "27.10.2026",
+    "28.10.2026",
+    "Deckungszusage"
+   ],
+   "tags": [
+    "telefonnotiz",
+    "namen_ohne_anrede",
+    "kurz",
+    "rechtsschutz"
+   ]
+  },
+  {
+   "id": "PII-B10",
+   "format": "txt",
+   "filename": "WG_Arbeitszeugnis_Korrektur_Engel.txt",
+   "paragraphs": [
+    "Notiz Sekretariat: Neue Mandatsanfrage Engel, bitte Konflikt-Check gegen Kranich Pflegedienste GmbH durchführen.",
+    "Von: Marie Engel <marie.engel@mail.example>",
+    "Gesendet: Dienstag, 06.10.2026 21:14",
+    "An: kanzlei@bergmann-albers.example",
+    "Betreff: WG: Ihr Arbeitszeugnis – Bitte um Korrektur",
+    "Sehr geehrter Herr Dr. Bergmann,",
+    "anbei der Mailverlauf mit der Personalabteilung der Kranich Pflegedienste GmbH. Ich habe dort bis zum 31.08.2026 als Pflegedienstleitung gearbeitet (Personalnummer 004-1187). Mein Zeugnis enthält mehrere Formulierungen, die ich als versteckt negativ empfinde, und mein Nachfolger Herr Yusuf Demir hat mir bestätigt, dass mein Abschnitt zur Teamführung gegenüber dem Entwurf gekürzt wurde.",
+    "Meine Rechtsschutzversicherung (Beispiel Rechtsschutz AG, Vers.-Nr. BRS-55-0193372) habe ich schon informiert. Sie erreichen mich tagsüber unter 0172 584 30 19. Meine neue Anschrift ab 01.11.2026: Hollerweg 9, 45670 Fiktivdorf.",
+    "Viele Grüße",
+    "M. Engel",
+    "---------- Weitergeleitete Nachricht ----------",
+    "Von: Claudia Reuter <c.reuter@kranich-pflege.example>",
+    "Gesendet: Montag, 05.10.2026 10:02",
+    "An: Marie Engel <marie.engel@mail.example>",
+    "Cc: Bernhard Kranich <b.kranich@kranich-pflege.example>",
+    "Betreff: AW: Ihr Arbeitszeugnis – Bitte um Korrektur",
+    "Sehr geehrte Frau Engel,",
+    "wir haben Ihre Änderungswünsche mit unserem Geschäftsführer, Herrn Kranich, besprochen. Die Formulierung „zu unserer vollen Zufriedenheit“ bleibt bestehen, da sie nach unserer Einschätzung Ihrer Leistung entspricht. Den Absatz zur Mitarbeiterführung haben wir bewusst gestrafft. Eine weitere Änderung ist nicht vorgesehen.",
+    "Mit freundlichen Grüßen",
+    "Claudia Reuter",
+    "Personalreferentin",
+    "Kranich Pflegedienste GmbH · Am Kurpark 6 · 45671 Fiktivdorf",
+    "Telefon 02304 81 92-40 · Geschäftsführer: Bernhard Kranich · Amtsgericht Fiktivdorf HRB 2741",
+    "---------- Ursprüngliche Nachricht ----------",
+    "Von: Marie Engel",
+    "Gesendet: Donnerstag, 24.09.2026 18:37",
+    "An: Claudia Reuter",
+    "Betreff: Ihr Arbeitszeugnis – Bitte um Korrektur",
+    "Sehr geehrte Frau Reuter,",
+    "vielen Dank für die Übersendung meines Arbeitszeugnisses. Ich bitte um folgende Korrekturen: 1. Die Note „vollen Zufriedenheit“ sollte auf „stets vollsten Zufriedenheit“ angehoben werden, wie es in meiner letzten Beurteilung durch Frau Dr. Svenja Holt festgehalten ist. 2. Der Absatz zur Teamführung soll wieder in der ursprünglichen Fassung aufgenommen werden. 3.",
+    "Es fehlt die Schlussformel mit Dank und guten Wünschen.",
+    "Ich bitte um Rückmeldung bis zum 05.10.2026.",
+    "Mit freundlichen Grüßen",
+    "Marie Engel"
+   ],
+   "known_entities": {
+    "person": [
+     "Marie Engel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Kranich Pflegedienste GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Marie Engel",
+     "category": "person"
+    },
+    {
+     "value": "marie.engel@mail.example",
+     "category": "email"
+    },
+    {
+     "value": "kanzlei@bergmann-albers.example",
+     "category": "email"
+    },
+    {
+     "value": "Bergmann",
+     "category": "person"
+    },
+    {
+     "value": "004-1187",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Yusuf Demir",
+     "category": "person"
+    },
+    {
+     "value": "Beispiel Rechtsschutz AG",
+     "category": "organisation"
+    },
+    {
+     "value": "BRS-55-0193372",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "0172 584 30 19",
+     "category": "telefon"
+    },
+    {
+     "value": "Hollerweg 9",
+     "category": "adresse"
+    },
+    {
+     "value": "45670 Fiktivdorf",
+     "category": "plz_ort"
+    },
+    {
+     "value": "M. Engel",
+     "category": "person"
+    },
+    {
+     "value": "Claudia Reuter",
+     "category": "person"
+    },
+    {
+     "value": "c.reuter@kranich-pflege.example",
+     "category": "email"
+    },
+    {
+     "value": "Bernhard Kranich",
+     "category": "person"
+    },
+    {
+     "value": "b.kranich@kranich-pflege.example",
+     "category": "email"
+    },
+    {
+     "value": "Kranich",
+     "category": "person"
+    },
+    {
+     "value": "Am Kurpark 6",
+     "category": "adresse"
+    },
+    {
+     "value": "45671 Fiktivdorf",
+     "category": "plz_ort"
+    },
+    {
+     "value": "02304 81 92-40",
+     "category": "telefon"
+    },
+    {
+     "value": "HRB 2741",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Reuter",
+     "category": "person"
+    },
+    {
+     "value": "Svenja Holt",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "31.08.2026",
+    "05.10.2026",
+    "Arbeitszeugnis"
+   ],
+   "tags": [
+    "email",
+    "antwortkette",
+    "namensvarianten",
+    "arbeitsrecht"
+   ]
+  },
+  {
+   "id": "PII-B11",
+   "format": "pdf",
+   "filename": "2026-09-29_Kuendigung_Gewerbemiete_Marktgasse11.pdf",
+   "paragraphs": [
+    "Weber Grundbesitz GmbH & Co. KG",
+    "Domplatz 5 · 67891 Beispielstadt · Telefon 0621 909 55-0 · Telefax 0621 909 55-55 · E-Mail mietverwaltung@weber-grundbesitz.example",
+    "Einschreiben mit Rückschein",
+    "Café Lindenblüte e. K.",
+    "Inhaberin Frau Selin Arslan",
+    "Marktgasse 11",
+    "67893 Beispielstadt",
+    "Mietobjekt: Gewerbeeinheit EG, Marktgasse 11 · Mietvertrag vom 15.03.2021 · Mieternummer: GW-3318-011",
+    "Datum: 29.09.2026",
+    "Außerordentliche fristlose Kündigung des Gewerbemietverhältnisses, hilfsweise ordentliche Kündigung",
+    "Sehr geehrte Frau Arslan,",
+    "Sie befinden sich mit der Zahlung der Miete für die Monate Juli, August und September 2026 in Höhe von jeweils 2.380,00 EUR, insgesamt 7.140,00 EUR, in Rückstand. Unsere Mahnungen vom 12.08.2026 und 09.09.2026, unterzeichnet von unserem Mitarbeiter Herrn Philipp Weber, blieben unbeantwortet.",
+    "Wir kündigen daher das mit Ihnen bestehende Mietverhältnis über die Gewerbeeinheit im Erdgeschoss des Anwesens Marktgasse 11 gemäß § 543 Abs. 2 Satz 1 Nr. 3 BGB außerordentlich und fristlos. Hilfsweise kündigen wir das Mietverhältnis ordentlich zum nächstzulässigen Termin, das ist nach § 580a Abs. 2 BGB der 31.03.2027.",
+    "Wir fordern Sie auf, die Mieträume bis spätestens 31.10.2026 geräumt und besenrein an uns herauszugeben. Einer stillschweigenden Fortsetzung des Mietverhältnisses nach § 545 BGB widersprechen wir bereits jetzt ausdrücklich.",
+    "Weiter weisen wir darauf hin, dass Ihr Lebensgefährte, Herr Can Öztürk, nach unseren Feststellungen in den Räumen ohne unsere Zustimmung einen Lieferdienst unter der Firma Öztürk Food Delivery UG (haftungsbeschränkt) betreibt. Dies stellt eine unerlaubte Gebrauchsüberlassung an Dritte dar, die wir ebenfalls zum Anlass der Kündigung nehmen.",
+    "Die Mietsicherheit (Bürgschaft der Fiktivbank Süd AG, Bürgschafts-Nr. BG-2021-44817) werden wir nach Räumung und Abrechnung in Anspruch nehmen, soweit unsere Forderungen nicht ausgeglichen werden. Den Rückstand von 7.140,00 EUR bitten wir unabhängig davon auf unser Konto IBAN DE67 0792 4402 6859 9528 90 zu überweisen.",
+    "Für die Übergabe der Räume wenden Sie sich bitte an unseren Objektbetreuer, Herrn Weber, Durchwahl 0621 909 55-31.",
+    "Mit freundlichen Grüßen",
+    "Weber Grundbesitz GmbH & Co. KG",
+    "ppa. Philipp Weber",
+    "Komplementärin: Weber Verwaltungs GmbH, Amtsgericht Beispielstadt HRB 21904 · Geschäftsführerin: Dr. Annette Weber-Hollmann · Kommanditgesellschaft: Amtsgericht Beispielstadt HRA 8821 · USt-IdNr. DE276604118"
+   ],
+   "known_entities": {
+    "person": [
+     "Selin Arslan"
+    ],
+    "organisation": [
+     "Café Lindenblüte e. K."
+    ]
+   },
+   "pii": [
+    {
+     "value": "Weber Grundbesitz GmbH & Co. KG",
+     "category": "organisation"
+    },
+    {
+     "value": "Domplatz 5",
+     "category": "adresse"
+    },
+    {
+     "value": "67891 Beispielstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0621 909 55-0",
+     "category": "telefon"
+    },
+    {
+     "value": "0621 909 55-55",
+     "category": "telefon"
+    },
+    {
+     "value": "mietverwaltung@weber-grundbesitz.example",
+     "category": "email"
+    },
+    {
+     "value": "Café Lindenblüte e. K.",
+     "category": "organisation"
+    },
+    {
+     "value": "Selin Arslan",
+     "category": "person"
+    },
+    {
+     "value": "Marktgasse 11",
+     "category": "adresse"
+    },
+    {
+     "value": "67893 Beispielstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "GW-3318-011",
+     "category": "kundennummer"
+    },
+    {
+     "value": "Arslan",
+     "category": "person"
+    },
+    {
+     "value": "Philipp Weber",
+     "category": "person"
+    },
+    {
+     "value": "Can Öztürk",
+     "category": "person"
+    },
+    {
+     "value": "Öztürk Food Delivery UG (haftungsbeschränkt)",
+     "category": "organisation"
+    },
+    {
+     "value": "Fiktivbank Süd AG",
+     "category": "organisation"
+    },
+    {
+     "value": "BG-2021-44817",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE67 0792 4402 6859 9528 90",
+     "category": "iban"
+    },
+    {
+     "value": "Weber",
+     "category": "person"
+    },
+    {
+     "value": "0621 909 55-31",
+     "category": "telefon"
+    },
+    {
+     "value": "Weber Verwaltungs GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "HRB 21904",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Annette Weber-Hollmann",
+     "category": "person"
+    },
+    {
+     "value": "HRA 8821",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE276604118",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "7.140,00 EUR",
+    "2.380,00 EUR",
+    "§ 543 Abs. 2 Satz 1 Nr. 3 BGB",
+    "§ 580a Abs. 2 BGB",
+    "31.03.2027",
+    "31.10.2026"
+   ],
+   "tags": [
+    "kuendigung",
+    "gewerbemiete",
+    "briefkopf",
+    "aehnliche_namen"
+   ]
+  },
+  {
+   "id": "PII-B12",
+   "format": "scan_degraded",
+   "filename": "Scan_Betriebskostenabrechnung_2025_Winter.pdf",
+   "paragraphs": [
+    "Hausverwaltung Sonnenhof GmbH",
+    "Bergstraße 2 · 98765 Fiktivhausen · Tel. 03641 22 87-0 · abrechnung@hv-sonnenhof.example",
+    "Herrn und Frau",
+    "Dieter Winter",
+    "Waltraud Winter",
+    "Tulpenweg 14, Whg. 3",
+    "98767 Fiktivhausen",
+    "Abrechnungseinheit: Tulpenweg 14 · Mieternummer: 0314-03-W",
+    "Datum: 28.08.2026",
+    "Betriebskostenabrechnung für den Zeitraum 01.01.2025 bis 31.12.2025",
+    "Sehr geehrte Frau Winter, sehr geehrter Herr Winter,",
+    "nachstehend erhalten Sie die Abrechnung der Betriebskosten gemäß § 556 Abs. 3 BGB für das Kalenderjahr 2025. Ihr Anteil an der Gesamtwohnfläche beträgt 74,0 m² von 512,0 m² (14,45 %). Die Heiz- und Warmwasserkosten wurden durch die Fiktiv Messdienst GmbH verbrauchsabhängig ermittelt (Nutzernummer 88-140-0314-3).",
+    "Es ergibt sich eine Nachzahlung zu Ihren Lasten in Höhe von 235,45 EUR. Bitte überweisen Sie diesen Betrag bis zum 30.09.2026 auf unser Treuhandkonto bei der Mittelfiktiv Bank AG, IBAN DE74 7866 6617 6031 3721 59, Verwendungszweck: 0314-03-W BK2025.",
+    "Die monatliche Vorauszahlung wird ab dem 01.10.2026 gemäß § 560 Abs. 4 BGB auf 290,00 EUR angepasst.",
+    "Belege können nach vorheriger Terminvereinbarung mit Frau Johanna Specht (Durchwahl 03641 22 87-15) in unseren Geschäftsräumen eingesehen werden. Einwendungen gegen die Abrechnung sind spätestens bis zum Ablauf des zwölften Monats nach Zugang mitzuteilen (§ 556 Abs. 3 Satz 5 BGB).",
+    "Hinweis: Der Hausmeister, Herr Gregor Bauer, hat uns mitgeteilt, dass im Kellerabteil Ihrer Wohnung ein Wasserschaden aufgetreten ist. Bitte vereinbaren Sie mit Herrn Bauer kurzfristig einen Besichtigungstermin.",
+    "Mit freundlichen Grüßen",
+    "J. Specht",
+    "Hausverwaltung Sonnenhof GmbH · Geschäftsführer: Torsten Engel · Amtsgericht Fiktivhausen HRB 50317 · Steuernummer 161/112/05587"
+   ],
+   "table": {
+    "header": [
+     "Kostenart",
+     "Gesamtkosten",
+     "Verteilerschlüssel",
+     "Ihr Anteil"
+    ],
+    "rows": [
+     [
+      "Grundsteuer",
+      "3.840,00 EUR",
+      "Wohnfläche",
+      "554,88 EUR"
+     ],
+     [
+      "Wasser/Abwasser",
+      "4.210,00 EUR",
+      "Personen (2 von 14)",
+      "601,43 EUR"
+     ],
+     [
+      "Müllabfuhr",
+      "1.932,00 EUR",
+      "Wohnfläche",
+      "279,17 EUR"
+     ],
+     [
+      "Gebäudeversicherung",
+      "2.460,00 EUR",
+      "Wohnfläche",
+      "355,47 EUR"
+     ],
+     [
+      "Hausmeister",
+      "3.600,00 EUR",
+      "Wohnfläche",
+      "520,20 EUR"
+     ],
+     [
+      "Heizung/Warmwasser",
+      "9.880,00 EUR",
+      "Verbrauch lt. Messdienst",
+      "1.164,30 EUR"
+     ],
+     [
+      "Summe",
+      "",
+      "",
+      "3.475,45 EUR"
+     ],
+     [
+      "abzgl. Vorauszahlungen (12 × 270,00 EUR)",
+      "",
+      "",
+      "3.240,00 EUR"
+     ],
+     [
+      "Nachzahlung",
+      "",
+      "",
+      "235,45 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Dieter Winter"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hausverwaltung Sonnenhof GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Bergstraße 2",
+     "category": "adresse"
+    },
+    {
+     "value": "98765 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "03641 22 87-0",
+     "category": "telefon"
+    },
+    {
+     "value": "abrechnung@hv-sonnenhof.example",
+     "category": "email"
+    },
+    {
+     "value": "Dieter Winter",
+     "category": "person"
+    },
+    {
+     "value": "Waltraud Winter",
+     "category": "person"
+    },
+    {
+     "value": "Tulpenweg 14",
+     "category": "adresse"
+    },
+    {
+     "value": "98767 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0314-03-W",
+     "category": "kundennummer"
+    },
+    {
+     "value": "Winter",
+     "category": "person"
+    },
+    {
+     "value": "Fiktiv Messdienst GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "88-140-0314-3",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Mittelfiktiv Bank AG",
+     "category": "organisation"
+    },
+    {
+     "value": "DE74 7866 6617 6031 3721 59",
+     "category": "iban"
+    },
+    {
+     "value": "Johanna Specht",
+     "category": "person"
+    },
+    {
+     "value": "03641 22 87-15",
+     "category": "telefon"
+    },
+    {
+     "value": "Gregor Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "J. Specht",
+     "category": "person"
+    },
+    {
+     "value": "Torsten Engel",
+     "category": "person"
+    },
+    {
+     "value": "HRB 50317",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "161/112/05587",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "Betriebskostenabrechnung",
+    "235,45 EUR",
+    "30.09.2026",
+    "§ 556 Abs. 3 BGB",
+    "290,00 EUR",
+    "§ 560 Abs. 4 BGB"
+   ],
+   "tags": [
+    "betriebskostenabrechnung",
+    "tabelle",
+    "scan_degraded",
+    "mietrecht"
+   ]
+  }
+ ]
+}

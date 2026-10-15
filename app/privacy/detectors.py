@@ -67,6 +67,14 @@ _AKTENZEICHEN_PATTERN = re.compile(
     r"(?:az\.?|aktenzeichen)\s*[:.]?\s*([A-Za-z0-9][A-Za-z0-9/\-]{2,20})",
     re.IGNORECASE,
 )
+# §43.10 (Korpus pii_full_documents_v1, PII-A12): "Unser Zeichen: AR 26/0571" - das bestehende Referenzmuster nimmt nur
+# einen Wert OHNE Leerzeichen ("AR", zu wenige Ziffern, verworfen); die Nummer ging im Klartext hinaus. Nur hinter einem
+# Zeichen-/Aktenzeichen-Kennwort, Praefix aus 1-4 Grossbuchstaben, danach Nummer mit / oder -.
+_PREFIXED_LABELLED_REFERENCE_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß])(?i:(?:ihr|ihre|unser|unsere)\s+zeichen|gesch(?:ä|ae)ftszeichen|aktenzeichen|az\.?)"
+    # Wortende nach dem Kennwort: "2 AZR 123/20" (BAG-Fundstelle) ist kein "Az." + "R 123/20"
+    r"(?![A-Za-zÄÖÜäöüß])\s*[:.]?\s*([A-ZÄÖÜ]{1,4}\s\d{1,6}(?:[/\-]\d{1,6})+)(?![\w/\-])"
+)
 
 _KUNDENNUMMER_PATTERN = re.compile(
     # "Kd.-Nr." (Nummern-Strategie 13.10.2026: vorher nur "Kd-Nr." erkannt, "Kd.-Nr. 5512398" ging im Klartext hinaus)
@@ -162,15 +170,21 @@ def detect_grundbuch(text: str) -> list[DetectedSpan]:
     return spans
 
 
-def _table_column_values(text: str, header: re.Pattern, value: re.Pattern, category: str) -> list[DetectedSpan]:
+def _table_column_values(text: str, header: re.Pattern, value: re.Pattern, category: str, *,
+                         across_blank_lines: bool = False) -> list[DetectedSpan]:
     """Werte in der Tabellen-/CSV-Spalte (Trenner |, ; oder Tabulator), deren Kopfzelle `header` voll trifft - bis zur
-    naechsten Leerzeile (Review: "Name | Geburtsdatum", "Gemarkung | Flur | Flurstück" mit Werten in Folgezeilen)."""
+    naechsten Leerzeile (Review: "Name | Geburtsdatum", "Gemarkung | Flur | Flurstück" mit Werten in Folgezeilen).
+    `across_blank_lines` (§43.10): Leerzeilen zwischen Tabellenzeilen (OCR) beenden die Spalte nicht, erst eine Zeile
+    ohne Trenner."""
     spans: list[DetectedSpan] = []
     offset = 0
     column: tuple[str, int] | None = None
     for line in text.split("\n"):
         separator = next((sep for sep in ("|", ";", "\t") if sep in line), None)
         if not line.strip():
+            if not across_blank_lines:
+                column = None
+        elif not separator and across_blank_lines:
             column = None
         elif separator:
             cells = line.split(separator)
@@ -254,6 +268,9 @@ _RECHNUNGSNUMMER_PATTERN = re.compile(
 # DIREKT nach "Rechnung" - Buchstabenpraefix mit Ziffern/Bindestrich/Schraegstrich
 # oder Ziffernfolge mit Trennzeichen. Reine Jahreszahlen ("Rechnung 2026") und
 # Datumsangaben ("Rechnung 17.09.2026") passen bewusst NICHT.
+_INVOICE_NUMBER_HEADER = re.compile(r"\s*(?:rechnungs?-?\s?(?:nummer|nr\.?)|re\.?-?\s?nr\.?)\s*", re.IGNORECASE)
+_INVOICE_NUMBER_CELL = re.compile(r"(?<![\w/\-])[A-Za-z0-9][A-Za-z0-9/\-]{2,24}(?![\w/\-])")
+
 _RECHNUNG_ID_PATTERN = re.compile(
     r"\brechnung\s*[:.]?\s*"
     r"((?:[A-Za-z]{1,4}[-/]?\d{2,}|\d{2,})(?:[-/]\d+)+|[A-Za-z]{1,4}[-/]?\d{3,})\b",
@@ -392,6 +409,8 @@ def detect_aktenzeichen(text: str) -> list[DetectedSpan]:
     spans = [s for s in spans if any(ch.isdigit() for ch in s.value)]
     # Gerichts-Aktenzeichen mit Leerzeichen ("12 O 345/26"), siehe Muster oben.
     spans += _matches_from_pattern(text, _COURT_AKTENZEICHEN_PATTERN, "aktenzeichen")
+    # §43.10: bezeichnetes Zeichen mit Buchstabenpraefix und Leerzeichen ("Unser Zeichen: AR 26/0571")
+    spans += _matches_from_pattern(text, _PREFIXED_LABELLED_REFERENCE_PATTERN, "aktenzeichen", group=1)
     return spans
 
 
@@ -428,6 +447,9 @@ def detect_vertragsnummer(text: str) -> list[DetectedSpan]:
 def detect_rechnungsnummer(text: str) -> list[DetectedSpan]:
     spans = _matches_from_pattern(text, _RECHNUNGSNUMMER_PATTERN, "rechnungsnummer", group=1)
     spans += _matches_from_pattern(text, _RECHNUNG_ID_PATTERN, "rechnungsnummer", group=1)
+    # §43.10 (Korpus pii_full_documents_v1, PII-B03): Rechnungsnummern als Werte einer Tabellenspalte "Rechnungs-Nr."
+    spans += _table_column_values(text, _INVOICE_NUMBER_HEADER, _INVOICE_NUMBER_CELL, "rechnungsnummer",
+                                  across_blank_lines=True)
     # Nur echte Nummern (mit Ziffer), nicht Flusstext wie "Rechnung nr der ..."
     return [sp for sp in spans if any(ch.isdigit() for ch in sp.value)]
 
@@ -483,6 +505,49 @@ def detect_titled_person(text: str) -> list[DetectedSpan]:
         DetectedSpan(category="person", start=m.start(), end=m.end(), value=m.group(0))
         for m in _TITLED_PERSON_PATTERN.finditer(text)
     ]
+
+
+# §43.10 (Korpus pii_full_documents_v1): Personennamen, die die NER als gewoehnliche Woerter nicht erkennt, an zwei
+# eindeutigen Stellen eines Schriftstuecks:
+# 1. Kurzrubrum "Beispiel ./. Muster" - links und rechts des Trenners "./." stehen per Definition die Parteien (vorher
+#    blieben Einwort-Nachnamen wie "Beispiel", "Muster", "Winter" im Klartext). Rollen-/Verfahrenswoerter davor zaehlen
+#    nicht ("In dem Rechtsstreit Beispiel ./. Muster" -> nur "Beispiel"); eine Firma mit Rechtsform erkennt weiterhin
+#    detect_company_with_legal_form (laengerer Treffer gewinnt).
+# 2. Name vor einer Amtsbezeichnung des Gerichtspersonals ("- Weiß, Justizhauptsekretärin als Urkundsbeamtin", PII-A04).
+_RUBRUM_STOP_WORDS = re.compile(
+    r"(?:In|Der|Die|Das|Den|Dem|Des|Ein|Eine|Einen|Einem|Einer|"
+    r"Az|Betreff|Betr|Re|Aktenzeichen|Kurzrubrum|Rubrum|Rechtsstreit|Rechtssache|Sache|Sachen|Verfahren|"
+    r"Streitsache|Kläger\w*|Beklagt\w*|Antrag\w*|Berufung\w*|Revision\w*|Gläubiger\w*|Schuldner\w*)"
+)
+_RUBRUM_NAME = r"[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?(?![\wÄÖÜäöüß])"
+_RUBRUM_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß\[])((?:" + _RUBRUM_NAME + r"[ \t]+)?" + _RUBRUM_NAME + r")[ \t]*\./\.[ \t]*"
+    r"(" + _RUBRUM_NAME + r"(?:[ \t]+" + _RUBRUM_NAME + r")?)"
+)
+_COURT_STAFF_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß\[])(" + _RUBRUM_NAME + r"),[ \t]+(?:Justiz\w*sekret(?:ä|ae)r(?:in)?|Urkundsbeamt\w*|"
+    r"Rechtspfleger(?:in)?|Justizangestellte[rn]?|Justizbesch(?:ä|ae)ftigte[rn]?|Gerichtsvollzieher(?:in)?)\b"
+)
+
+
+def _rubrum_party_words(text: str, start: int, end: int) -> list[DetectedSpan]:
+    words = [(m.start(), m.end()) for m in re.finditer(r"\S+", text[start:end])]
+    kept = [(start + s, start + e) for s, e in words if not _RUBRUM_STOP_WORDS.fullmatch(text[start + s:start + e])]
+    if not kept:
+        return []
+    return [DetectedSpan(category="person", start=kept[0][0], end=kept[-1][1], value=text[kept[0][0]:kept[-1][1]])]
+
+
+def detect_rubrum_party(text: str) -> list[DetectedSpan]:
+    """Parteien eines Kurzrubrums und Namen vor Amtsbezeichnungen des Gerichtspersonals (siehe Kommentar oben)."""
+    spans: list[DetectedSpan] = []
+    for match in _RUBRUM_PATTERN.finditer(text):
+        for group in (1, 2):
+            spans += _rubrum_party_words(text, match.start(group), match.end(group))
+    for match in _COURT_STAFF_PATTERN.finditer(text):
+        if not _RUBRUM_STOP_WORDS.fullmatch(match.group(1)):
+            spans.append(DetectedSpan(category="person", start=match.start(1), end=match.end(1), value=match.group(1)))
+    return spans
 
 
 def detect_datum(text: str) -> list[DetectedSpan]:
@@ -956,6 +1021,7 @@ def detect_all(
     # muss einer generischen "organisation" vorgehen.
     all_spans.extend(detect_company_with_legal_form(text))
     all_spans.extend(detect_titled_person(text))
+    all_spans.extend(detect_rubrum_party(text))  # §43.10
     if ner_detector is not None:
         ner_spans = ner_detector(text)
         if ner_span_filter is not None:
@@ -1468,6 +1534,7 @@ def _uppercase_variant_pass(
         trusted.extend(detect_known_entities(variant, known_entities))
     trusted.extend(detect_company_with_legal_form(variant))
     trusted.extend(detect_titled_person(variant))
+    trusted.extend(detect_rubrum_party(variant))  # §43.10
     to_validate: list[DetectedSpan] = list(detect_address(variant))
     if ner_detector is not None:
         ner_spans = ner_detector(variant)

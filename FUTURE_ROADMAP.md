@@ -152,8 +152,13 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
    - **Stufe 2 im Feature-Branch `feature/cloud-second-opinion-stage2` erledigt** (nicht in main): Zweck
      `second_opinion_document` mit Zweckbindung, Provider und Service über den bestehenden Gateway-Pfad,
      Fang-Server-Tests inklusive gesendeter Payload und Fail-closed; §43.9.
-   - **Offen vor einem Pilot:** Relay-Provider (Produktivpfad §70), Persistenz/Audit/UI, `max_chars`,
-     Messung über den echten Pfad, DSFA und eigene Owner-Freigabe.
+   - **§43.10 (Feature-Branch):** vollständige synthetische Dokumente (`pii_full_documents_v1`, 24 Dok., 572
+     PII-Stellen). Gesendete Klartext-Lecks 5 → 0 durch vier minimale Detektor-Regeln (Kurzrubrum,
+     Gerichtspersonal, bezeichnetes Zeichen mit Präfix, Rechnungsnummern-Spalte). Im Rückfrage-Modus nur 1/24
+     sendbar. Relay prüft weder Zweck noch Pseudonymisierung und setzt kein `thinking` (auch Schreibpfad).
+   - **Offen vor einem Pilot:** Entscheidung Rückfrage-Oberfläche für Dokumente; Relay-Vorschlag §43.10
+     (gesondert freizugeben); Persistenz/Audit/UI, `max_chars`, Budget; DSFA, AVV, Berufsgeheimnis,
+     Mandanteninformation; frischer blinder Korpus für freie Kennungen.
 
 ## Release-Planung
 
