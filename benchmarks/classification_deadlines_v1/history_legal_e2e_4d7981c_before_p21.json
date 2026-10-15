@@ -1,0 +1,1048 @@
+{
+ "ocr": true,
+ "splits": {
+  "dev": {
+   "klassifikation": {
+    "je_typ": {
+     "Gutachten": {
+      "praezision": "0/0",
+      "recall": "0/2"
+     },
+     "Klage/Schriftsatz": {
+      "praezision": "0/0",
+      "recall": "0/1"
+     },
+     "Rechnung": {
+      "praezision": "1/2",
+      "recall": "1/1"
+     },
+     "Vertrag": {
+      "praezision": "3/3",
+      "recall": "3/3"
+     }
+    },
+    "kerntyp_dokumente": 7,
+    "kerntyp_richtig": 4,
+    "unbekannt_gesamt": "9/20",
+    "fehler": [
+     {
+      "doc": "LE-D002/D5",
+      "referenz": "klageschrift",
+      "lexono": "Mahnung",
+      "kind": "falsch"
+     },
+     {
+      "doc": "LE-D003/D3",
+      "referenz": "gutachten",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     },
+     {
+      "doc": "LE-D003/D4",
+      "referenz": "schreiben",
+      "lexono": "Rechnung",
+      "kind": "kerntyp_auf_rollendokument"
+     },
+     {
+      "doc": "LE-D004/D3",
+      "referenz": "gutachten",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     }
+    ],
+    "rollendokumente_zur_sichtpruefung": [
+     {
+      "doc": "LE-D001/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D001/D3",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D001/D5",
+      "referenz": "schreiben",
+      "lexono": "Vollmacht"
+     },
+     {
+      "doc": "LE-D002/D2",
+      "referenz": "schreiben",
+      "lexono": "Mahnung"
+     },
+     {
+      "doc": "LE-D002/D3",
+      "referenz": "schreiben",
+      "lexono": "Kündigungsschreiben"
+     },
+     {
+      "doc": "LE-D002/D4",
+      "referenz": "notiz",
+      "lexono": "Mahnung"
+     },
+     {
+      "doc": "LE-D003/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D003/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D1",
+      "referenz": "anlage",
+      "lexono": "Gerichtliches Schreiben"
+     },
+     {
+      "doc": "LE-D004/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D4",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     }
+    ]
+   },
+   "fristen": {
+    "referenzfristen": 9,
+    "richtig": 9,
+    "uebersehen": 0,
+    "quellenbezug_richtig": 9,
+    "vorschlaege_gesamt": 41,
+    "ereignisdatum_als_frist": 27,
+    "persoenliches_datum_als_frist_KRITISCH": 0,
+    "ungeklaert": 1,
+    "je_fall": [
+     {
+      "case": "LE-D001",
+      "vorschlaege": 10,
+      "ohne_datum": 0,
+      "richtig": [
+       "15.04.2026",
+       "20.02.2026",
+       "31.03.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "15.04.2026",
+       "20.02.2026",
+       "31.03.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "01.04.2026",
+       "01.09.2021",
+       "02.02.2026",
+       "03.02.2026",
+       "05.03.2026",
+       "10.03.2026",
+       "17.02.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "01.09.2021",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "01.09.2021 :: 12, 12345 Musterstadt, 3 Zimmer, ca. 74 m².  § 2 Mietbeginn: 01.09.2021.  § 3 Miete: Die monatliche Gesamt"
+       },
+       {
+        "datum": "02.02.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "02.02.2026 :: bildet.  Mein Nachbar Herr Yusuf Demirtas hat die Stelle am 02.02.2026 ebenfalls gesehen.  Ich bitte um Be"
+       },
+       {
+        "datum": "03.02.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "03.02.2026 :: henrike.osterkamp@beispielpost.example  An: Hausverwaltung Detlef Rautenberg  Datum: 03.02.2026  Betreff: "
+       },
+       {
+        "datum": "20.02.2026",
+        "doc": "D2",
+        "konfidenz": 0.5,
+        "stelle": "20.02.2026 :: 02.02.2026 ebenfalls gesehen.  Ich bitte um Beseitigung bis zum 20.02.2026. Erreichbar bin ich unter 0171 "
+       },
+       {
+        "datum": "10.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "10.03.2026 :: Osterkamp, Erlenweg 12, 12345 Musterstadt  Musterstadt, den 10.03.2026  Mietrückstand Februar und März 202"
+       },
+       {
+        "datum": "17.02.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "17.02.2026 :: 460,00 EUR.  Einen Schimmelbefall haben Sie mir erstmals am 17.02.2026 gemeldet; eine frühere Anzeige ist "
+       },
+       {
+        "datum": "31.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.5,
+        "stelle": "31.03.2026 :: 1.250,00 EUR monatlich.  Ich fordere Sie auf, den Rückstand bis zum 31.03.2026 auszugleichen. Andernfalls "
+       },
+       {
+        "datum": "05.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "05.03.2026 :: Malerbetrieb Schöllhorn GmbH    Rechnung Nr. R-2026-0311    Datum: 05.03.2026    Objekt: Erlenweg 12, 1234"
+       },
+       {
+        "datum": "01.04.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "01.04.2026 :: Rechtsanwalt Konrad Brehmhaus  Musterstadt, den 01.04.2026  In der Mietsache Pfeilsticker ./. Osterkamp, A"
+       },
+       {
+        "datum": "15.04.2026",
+        "doc": "D5",
+        "konfidenz": 0.5,
+        "stelle": "15.04.2026 :: 3 BGB in Betracht.  Wir erwarten Ihre Stellungnahme bis zum 15.04.2026."
+       }
+      ]
+     },
+     {
+      "case": "LE-D002",
+      "vorschlaege": 14,
+      "ohne_datum": 0,
+      "richtig": [
+       "13.04.2026",
+       "30.06.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "13.04.2026",
+       "30.06.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "09.02.2026",
+       "12.02.2026",
+       "15.01.2019",
+       "16.03.2026",
+       "18.03.2026",
+       "20.03.2026",
+       "23.03.2026",
+       "24.03.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "15.01.2019",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "15.01.2019 :: 14.07.1988, wird vereinbart:  Beginn des Arbeitsverhältnisses: 15.01.2019. Tätigkeit: Disponent.  Bruttomo"
+       },
+       {
+        "datum": "09.02.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "09.02.2026 :: Personalabteilung  Abmahnung  Beispielhafen, 12.02.2026    Herr Wiegelmann, am 09.02.2026 haben Sie die Di"
+       },
+       {
+        "datum": "12.02.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "12.02.2026 :: Logistik GmbH - Personalabteilung  Abmahnung  Beispielhafen, 12.02.2026    Herr Wiegelmann, am 09.02.2026 "
+       },
+       {
+        "datum": "16.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "16.03.2026 :: wiederholte unentschuldigte Verlassen des Arbeitsplatzes, zuletzt am 16.03.2026.  Der Betriebsrat wurde am"
+       },
+       {
+        "datum": "18.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "18.03.2026 :: Arbeitsplatzes, zuletzt am 16.03.2026.  Der Betriebsrat wurde am 18.03.2026 angehört.  Sabine Uhlenbrock, "
+       },
+       {
+        "datum": "20.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "20.03.2026 :: Kerkhoff Logistik GmbH  Beispielhafen, 20.03.2026  Kündigung des Arbeitsverhältnisses  Sehr geehrter Herr "
+       },
+       {
+        "datum": "30.06.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "30.06.2026 :: Wiegelmann,  hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.  Grund ist das wiederho"
+       },
+       {
+        "datum": "12.02.2026",
+        "doc": "D4",
+        "konfidenz": 0.5,
+        "stelle": "12.02.2026 :: Milan Novakovic früher gegangen (Arzttermin).  Die Abmahnung vom 12.02.2026 habe er nie erhalten.  Erreich"
+       },
+       {
+        "datum": "16.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "16.03.2026 :: Wiegelmann: Kündigung am 23.03.2026 im Briefkasten vorgefunden.  Am 16.03.2026 sei er mit Zustimmung des S"
+       },
+       {
+        "datum": "23.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "23.03.2026 :: 24.03.2026 (Kanzlei)  Mandant Jonas Wiegelmann: Kündigung am 23.03.2026 im Briefkasten vorgefunden.  Am 16"
+       },
+       {
+        "datum": "24.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "24.03.2026 :: Gesprächsnotiz vom 24.03.2026 (Kanzlei)  Mandant Jonas Wiegelmann: Kündigung am 23.03.2026"
+       },
+       {
+        "datum": "13.04.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "13.04.2026 :: drei Wochen nach Zugang der Kündigung am 23.03.2026, also am 13.04.2026.  Die Kündigung ist sozial ungerec"
+       },
+       {
+        "datum": "20.03.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "20.03.2026 :: festzustellen, dass das Arbeitsverhältnis durch die Kündigung vom 20.03.2026 nicht aufgelöst wird.  Die Kl"
+       },
+       {
+        "datum": "23.03.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "23.03.2026 :: nach § 4 KSchG endet drei Wochen nach Zugang der Kündigung am 23.03.2026, also am 13.04.2026.  Die Kündigu"
+       }
+      ]
+     },
+     {
+      "case": "LE-D003",
+      "vorschlaege": 10,
+      "ohne_datum": 0,
+      "richtig": [
+       "08.01.2026",
+       "15.01.2026",
+       "30.09.2025"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "08.01.2026",
+       "15.01.2026",
+       "30.09.2025"
+      ],
+      "ereignisdatum_als_frist": [
+       "02.12.2025",
+       "12.03.2025",
+       "14.11.2025",
+       "17.12.2025",
+       "20.11.2025",
+       "22.12.2025",
+       "31.10.2025"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "12.03.2025",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "12.03.2025 :: beträgt fünf Jahre (§ 634a Abs.  1 Nr. 2 BGB).  Beispielheide, den 12.03.2025"
+       },
+       {
+        "datum": "30.09.2025",
+        "doc": "D1",
+        "konfidenz": 0.5,
+        "stelle": "30.09.2025 :: Pauschalvergütung beträgt 184.500,00 EUR. Die  Fertigstellung ist bis zum 30.09.2025 geschuldet. Bei Übers"
+       },
+       {
+        "datum": "14.11.2025",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "14.11.2025 :: 20.11.2025  Betreff: Abnahme und Feuchtigkeit  Die Abnahme war am 14.11.2025, und zwar nur unter Vorbehalt"
+       },
+       {
+        "datum": "20.11.2025",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "20.11.2025 :: Von: c.haselhorst@beispielpost.example  Datum: 20.11.2025  Betreff: Abnahme und Feuchtigkeit  Die Abnahme "
+       },
+       {
+        "datum": "02.12.2025",
+        "doc": "D3",
+        "konfidenz": 0.5,
+        "stelle": "02.12.2025 :: PG-2025-118    Sachverständiger: Ralf Ebbinghaus    Ortstermin am 02.12.2025 im Dachgeschoss.    Ursache d"
+       },
+       {
+        "datum": "08.01.2026",
+        "doc": "D4",
+        "konfidenz": 0.5,
+        "stelle": "08.01.2026 :: ist noch ein Betrag von 23.600,00 EUR offen, den wir bis zum 08.01.2026 erwarten.  Torsten Wendeburg, Gesc"
+       },
+       {
+        "datum": "17.12.2025",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "17.12.2025 :: Holzbau Wendeburg GmbH  Beispielheide, 17.12.2025  Die Abnahme erfolgte bereits am 31.10.2025 vorbehaltlos"
+       },
+       {
+        "datum": "31.10.2025",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "31.10.2025 :: GmbH  Beispielheide, 17.12.2025  Die Abnahme erfolgte bereits am 31.10.2025 vorbehaltlos.  Aus der Schluss"
+       },
+       {
+        "datum": "15.01.2026",
+        "doc": "D5",
+        "konfidenz": 0.5,
+        "stelle": "15.01.2026 :: Beseitigung der Mängel an der Dampfsperre eine Frist bis zum 15.01.2026.  Nach fruchtlosem Fristablauf wir"
+       },
+       {
+        "datum": "22.12.2025",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "22.12.2025 :: Unser Zeichen: 25/0911-HB  Beispielheide, 22.12.2025  Wir setzen Ihnen zur Beseitigung der Mängel an der D"
+       }
+      ]
+     },
+     {
+      "case": "LE-D004",
+      "vorschlaege": 7,
+      "ohne_datum": 0,
+      "richtig": [
+       "15.05.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "15.05.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "02.03.2026",
+       "10.03.2026",
+       "18.03.2026",
+       "20.02.2026",
+       "25.03.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [
+       "01.03.2026"
+      ],
+      "einzeln": [
+       {
+        "datum": "20.02.2026",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "20.02.2026 :: (Auszug) - Amtsgericht Beispielheim, Nachlassgericht, erteilt am 20.02.2026  Die Erblasserin Hedwig Lammer"
+       },
+       {
+        "datum": "02.03.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "02.03.2026 :: Von: f.lammersdorf@beispielpost.example  Datum: 02.03.2026  Betreff: Haus der Mutter  Mein Bruder Gerold b"
+       },
+       {
+        "datum": "01.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "01.03.2026 :: Grundstück Kastanienweg 3 vom 10.03.2026  Wertermittlungsstichtag: 01.03.2026  Der Verkehrswert wird auf 3"
+       },
+       {
+        "datum": "10.03.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "10.03.2026 :: Wertgutachten zum Grundstück Kastanienweg 3 vom 10.03.2026  Wertermittlungsstichtag: 01.03.2026  Der Verke"
+       },
+       {
+        "datum": "18.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "18.03.2026 :: Gerold Lammersdorf  Beispielheim, 18.03.2026  Einem Verkauf stimme ich nicht zu. Das Haus ist höchstens 26"
+       },
+       {
+        "datum": "15.05.2026",
+        "doc": "D5",
+        "konfidenz": 0.5,
+        "stelle": "15.05.2026 :: 25.03.2026  Namens unserer Mandantin fordern wir Sie auf, bis zum 15.05.2026 an der Auseinandersetzung des"
+       },
+       {
+        "datum": "25.03.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "25.03.2026 :: Unser Zeichen: 26/0612-LA  Beispielheim, 25.03.2026  Namens unserer Mandantin fordern wir Sie auf, bis zum"
+       }
+      ]
+     }
+    ]
+   },
+   "laufzeit_sekunden": 22.08,
+   "dokumente": [
+    {
+     "case": "LE-D001",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D4",
+     "type_reference": "rechnung",
+     "classified": "Rechnung",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Vollmacht",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D2",
+     "type_reference": "schreiben",
+     "classified": "Mahnung",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Kündigungsschreiben",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D4",
+     "type_reference": "notiz",
+     "classified": "Mahnung",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D5",
+     "type_reference": "klageschrift",
+     "classified": "Mahnung",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D3",
+     "type_reference": "gutachten",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Rechnung",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D1",
+     "type_reference": "anlage",
+     "classified": "Gerichtliches Schreiben",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D3",
+     "type_reference": "gutachten",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    }
+   ]
+  },
+  "test": {
+   "klassifikation": {
+    "je_typ": {
+     "Bescheid": {
+      "praezision": "0/0",
+      "recall": "0/2"
+     },
+     "Gutachten": {
+      "praezision": "0/0",
+      "recall": "0/1"
+     },
+     "Protokoll": {
+      "praezision": "0/0",
+      "recall": "0/2"
+     }
+    },
+    "kerntyp_dokumente": 5,
+    "kerntyp_richtig": 0,
+    "unbekannt_gesamt": "11/13",
+    "fehler": [
+     {
+      "doc": "LE-T001/D1",
+      "referenz": "protokoll",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     },
+     {
+      "doc": "LE-T001/D2",
+      "referenz": "gutachten",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     },
+     {
+      "doc": "LE-T002/D2",
+      "referenz": "bescheid",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     },
+     {
+      "doc": "LE-T003/D1",
+      "referenz": "bescheid",
+      "lexono": "Einspruch",
+      "kind": "falsch"
+     },
+     {
+      "doc": "LE-T003/D2",
+      "referenz": "protokoll",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     }
+    ],
+    "rollendokumente_zur_sichtpruefung": [
+     {
+      "doc": "LE-T001/D3",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T001/D4",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D1",
+      "referenz": "anlage",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D3",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D4",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T003/D3",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T003/D4",
+      "referenz": "schreiben",
+      "lexono": "Einspruch"
+     }
+    ]
+   },
+   "fristen": {
+    "referenzfristen": 3,
+    "richtig": 3,
+    "uebersehen": 0,
+    "quellenbezug_richtig": 3,
+    "vorschlaege_gesamt": 25,
+    "ereignisdatum_als_frist": 17,
+    "persoenliches_datum_als_frist_KRITISCH": 0,
+    "ungeklaert": 1,
+    "je_fall": [
+     {
+      "case": "LE-T001",
+      "vorschlaege": 6,
+      "ohne_datum": 0,
+      "richtig": [
+       "30.06.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "30.06.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "02.06.2026",
+       "05.06.2026",
+       "07.05.2026",
+       "14.05.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "07.05.2026",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "07.05.2026 :: Unfallmitteilung (Polizei Beispielstadt)  Unfallzeit: 07.05.2026, 08:15 Uhr, Kreuzung Gartenstraße / Ringa"
+       },
+       {
+        "datum": "14.05.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "14.05.2026 :: Kfz-Schadensgutachten Nr. G-26-0533 vom 14.05.2026  Sachverständige: Dipl.-Ing. Theresa Kalkbrenner  Auftr"
+       },
+       {
+        "datum": "02.06.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "02.06.2026 :: Schadenabteilung  Schadennummer OV-26-889214  Beispielstadt, 02.06.2026  Unser Versicherungsnehmer Bernd T"
+       },
+       {
+        "datum": "30.06.2026",
+        "doc": "D3",
+        "konfidenz": 0.5,
+        "stelle": "30.06.2026 :: erstatten wir nicht. Weitere Unterlagen erbitten wir bis zum 30.06.2026."
+       },
+       {
+        "datum": "05.06.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "05.06.2026 :: Von: ilka.voskuhl@beispielpost.example  Datum: 05.06.2026  Betreff: Unfall vom 07.05.2026  Die Ampel war r"
+       },
+       {
+        "datum": "07.05.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "07.05.2026 :: ilka.voskuhl@beispielpost.example  Datum: 05.06.2026  Betreff: Unfall vom 07.05.2026  Die Ampel war rot, i"
+       }
+      ]
+     },
+     {
+      "case": "LE-T002",
+      "vorschlaege": 10,
+      "ohne_datum": 0,
+      "richtig": [
+       "31.07.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "31.07.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "03.03.2022",
+       "05.01.2026",
+       "10.02.2026",
+       "15.06.2019",
+       "16.03.2026",
+       "20.02.2026",
+       "21.04.2022",
+       "25.03.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "15.06.2019",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "15.06.2019 :: Alleinerbin ein.    Mein Sohn soll nichts erhalten.    Beispieldorf, den 15.06.2019"
+       },
+       {
+        "datum": "05.01.2026",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "05.01.2026 :: ist am 02.01.2026 in Beispieldorf verstorben.  Ausgestellt am 05.01.2026"
+       },
+       {
+        "datum": "03.03.2022",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "03.03.2022 :: Erbschaft meiner Mutter  Meine Mutter hat das Haus Lindenstraße 7 am 03.03.2022 an Frau Brüninghoff versch"
+       },
+       {
+        "datum": "10.02.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "10.02.2026 :: lag bei etwa 240.000,00 EUR.  Vom Testament habe ich erst am 10.02.2026 erfahren. Bitte rufen Sie mich an:"
+       },
+       {
+        "datum": "20.02.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "20.02.2026 :: Von: k.wehrhahn@beispielpost.example  Datum: 20.02.2026  Betreff: Erbschaft meiner Mutter  Meine Mutter ha"
+       },
+       {
+        "datum": "16.03.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "16.03.2026 :: Rechtsanwältin Ingrid Pohlschmidt  Beispieldorf, 16.03.2026  In der Nachlasssache Wehrhahn vertreten wir F"
+       },
+       {
+        "datum": "03.03.2022",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "03.03.2022 :: zum 31.07.2026.  Wegen der Schenkung des Hausgrundstücks vom 03.03.2022 besteht zudem ein Anspruch auf Pfl"
+       },
+       {
+        "datum": "21.04.2022",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "21.04.2022 :: 2325 BGB.  Laut Grundbuch wurde die Eigentumsumschreibung am 21.04.2022 eingetragen."
+       },
+       {
+        "datum": "25.03.2026",
+        "doc": "D5",
+        "konfidenz": 0.15,
+        "stelle": "25.03.2026 :: Unser Zeichen: 26/0533-EW  Beispieldorf, 25.03.2026  Namens unseres Mandanten machen wir den Pflichtteilsa"
+       },
+       {
+        "datum": "31.07.2026",
+        "doc": "D5",
+        "konfidenz": 0.5,
+        "stelle": "31.07.2026 :: Auskunft über den Bestand des Nachlasses nach § 2314 BGB bis zum 31.07.2026.  Wegen der Schenkung des Haus"
+       }
+      ]
+     },
+     {
+      "case": "LE-T003",
+      "vorschlaege": 9,
+      "ohne_datum": 1,
+      "richtig": [
+       "20.08.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "20.08.2026"
+      ],
+      "ereignisdatum_als_frist": [
+       "03.08.2026",
+       "06.08.2026",
+       "07.08.2026",
+       "10.08.2026",
+       "14.06.2026"
+      ],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [
+       "31.12.2025"
+      ],
+      "einzeln": [
+       {
+        "datum": "03.08.2026",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "03.08.2026 :: Landkreis Beispielland - Bußgeldstelle  Bußgeldbescheid vom 03.08.2026, Aktenzeichen 812.33.104577.6  Betr"
+       },
+       {
+        "datum": "14.06.2026",
+        "doc": "D1",
+        "konfidenz": 0.15,
+        "stelle": "14.06.2026 :: 21.01.1990, Talweg 9, 77777 Beispielland    Ihnen wird vorgeworfen, am 14.06.2026 um 17:42 Uhr mit dem Kra"
+       },
+       {
+        "datum": "31.12.2025",
+        "doc": "D2",
+        "konfidenz": 0.15,
+        "stelle": "31.12.2025 :: Jannik Brettschneider  Eichschein des Messgeräts gültig bis 31.12.2025."
+       },
+       {
+        "datum": "06.08.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "06.08.2026 :: 07.08.2026  Betreff: Bußgeldbescheid  Der Bescheid wurde mir am 06.08.2026 zugestellt. Das Fahrverbot wäre"
+       },
+       {
+        "datum": "07.08.2026",
+        "doc": "D3",
+        "konfidenz": 0.15,
+        "stelle": "07.08.2026 :: Von: l.quast@beispielpost.example  Datum: 07.08.2026  Betreff: Bußgeldbescheid  Der Bescheid wurde mir am "
+       },
+       {
+        "datum": "03.08.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "03.08.2026 :: 26/0802-LQ  Beispielland, 10.08.2026  Gegen den Bußgeldbescheid vom 03.08.2026 legen wir namens unseres Ma"
+       },
+       {
+        "datum": "10.08.2026",
+        "doc": "D4",
+        "konfidenz": 0.15,
+        "stelle": "10.08.2026 :: Unser Zeichen: 26/0802-LQ  Beispielland, 10.08.2026  Gegen den Bußgeldbescheid vom 03.08.2026 legen wir na"
+       },
+       {
+        "datum": "20.08.2026",
+        "doc": "D4",
+        "konfidenz": 0.5,
+        "stelle": "20.08.2026 :: Einspruch ein.  Die Einspruchsfrist nach § 67 Abs. 1 OWiG endet am 20.08.2026.  Wir beantragen Akteneinsic"
+       }
+      ]
+     }
+    ]
+   },
+   "laufzeit_sekunden": 14.86,
+   "dokumente": [
+    {
+     "case": "LE-T001",
+     "doc": "D1",
+     "type_reference": "protokoll",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D2",
+     "type_reference": "gutachten",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D4",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D1",
+     "type_reference": "anlage",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D2",
+     "type_reference": "bescheid",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D3",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D1",
+     "type_reference": "bescheid",
+     "classified": "Einspruch",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D2",
+     "type_reference": "protokoll",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D3",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Einspruch",
+     "format": "docx"
+    }
+   ]
+  }
+ }
+}

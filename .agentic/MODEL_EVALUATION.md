@@ -250,3 +250,19 @@ in diesem Lauf umgesetzt (Scope-Grenze: "keine Architekturänderung ohne
 explizite Freigabe").
 
 DATE: 13.09.
+
+## Cloud-Modellvergleich Klassifikation/Fristen (P2.2, 15.10.2026)
+
+Nur synthetische Daten (`benchmarks/classification_deadlines_v1`), lokal pseudonymisiert. Fail-closed: Dokumente mit
+Rest-Treffern wurden nicht gesendet. Vollständige Methode und Grenzen: `PRIVACY_REVIEW_ARCHITECTURE.md` §41.
+
+| Modell | Parameter | Test (n=28 gesendet): Typ / Fristen / kritisch | Kosten Test |
+|---|---|---|---|
+| Lexono-Regeln (lokal) | – | 20/28 / 11/17 / 6 | 0 |
+| `claude-sonnet-5` | Thinking aus, max_tokens 1200 | 28/28 / 17/17 / 0 | ≈ 0,098 USD (28 Aufrufe) |
+| `gpt-5.5-2026-04-23` | reasoning_effort none, max_completion_tokens 1200 | 27/28 / 17/17 / 0 | ≈ 0,137 USD (28 Aufrufe) |
+
+- **Ergebnis:** Beide Cloud-Modelle sind deutlich besser als die Regeln. Zwischen Claude und OpenAI gibt es bei dieser
+  Fallzahl keinen belastbaren Unterschied (ein Lauf, keine Wiederholungsmessung).
+- **Kein Modellwechsel umgesetzt.**
+- **Reproduzierbar mit:** `scripts/legal_bench/cloud_compare.py`, `cd_compare_report.py`.

@@ -29,6 +29,10 @@ _PLACEHOLDER_MAX_CONFIDENCE = 0.4
 # regelmaessig auch Woerter wie "Rechnung"/"Frist", soll aber als
 # Steuerbescheid gelten (Pilotkanzlei = Steuerfachanwaltskanzlei).
 _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
+    # P2.1 (§40): Urteil/Beschluss nur ueber eindeutige Merkmale (siehe _JUDGMENT_HEADING) - "BGH, Urteil vom ..." in
+    # einem Schriftsatz macht ihn nicht zum Urteil. Die Woerter hier dienen nur der Begruendung. P2.2 (§41): ganz vorn,
+    # weil jedes Urteil eine "Rechtsbehelfsbelehrung" enthaelt, die sonst als Steuerbescheid-Merkmal gewann.
+    "Urteil/Beschluss": ("im namen des volkes", "für recht erkannt", "fuer recht erkannt"),
     # P2.1 (§40): nicht-steuerliche Bescheide - NUR die ausdrueckliche Bescheidart (kein blosses "Bescheid"; ein
     # Steuerbescheid heisst "Bescheid fuer 2025 ueber Einkommensteuer"). Steht VOR "Steuerbescheid", weil dessen
     # allgemeine Merkmale ("Rechtsbehelfsbelehrung", "Festsetzung") auch auf jedem Bussgeldbescheid stehen.
@@ -72,10 +76,9 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
         "einnahmenueberschussrechnung",
     ),
     # --- allgemeine Typen ---
-    # P2.1 (§40): Urteil/Beschluss nur ueber eindeutige Merkmale (siehe _JUDGMENT_HEADING) - "BGH, Urteil vom ..." in
-    # einem Schriftsatz macht ihn nicht zum Urteil. Die Woerter hier dienen nur der Begruendung.
-    "Urteil/Beschluss": ("im namen des volkes", "für recht erkannt", "fuer recht erkannt"),
-    "Rechnung": ("rechnung", "invoice", "rechnungsnummer"),
+    # P2.2 (§41): nur Rechnungsmerkmale bzw. "...rechnung" als Ueberschrift (siehe _INVOICE_HEADING) - "die
+    # Schlussrechnung vom ..." / "zu unserer Rechnung vom ..." in einem Satz macht keine Rechnung
+    "Rechnung": ("rechnungsnummer", "rechnung nr", "rechnungs-nr", "rechnungsdatum", "invoice"),
     "Vollmacht": ("vollmacht",),
     # ECHTER FUND (14.09., gleiche Fehlerklasse wie bei der
     # Rechtsbehelfsbelehrung): das blosse Fragment "kündig" traf auch die
@@ -97,7 +100,7 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "Mahnung": ("mahnung", "zahlungserinnerung"),
     "Klage/Schriftsatz": ("klage", "klageschrift", "schriftsatz", "klageerwiderung", "replik"),
     "Gutachten": ("gutachten", "sachverständiger", "sachverstaendiger", "sachverständige", "sachverstaendige"),
-    "Protokoll": ("protokoll", "niederschrift"),
+    "Protokoll": ("protokoll", "niederschrift", "unfallmitteilung", "unfallanzeige", "unfallaufnahme"),
     "Gerichtliches Schreiben": ("gericht", "amtsgericht", "landgericht", "aktenzeichen des gerichts"),
     "Vertrag": ("vertrag", "vereinbarung"),
 }
@@ -113,12 +116,28 @@ _HEAD_CHARS = 600
 _EXCLUDED_PHRASES = {
     "Mahnung": ("abmahnung",),  # Abmahnung (Arbeitsrecht) ist keine Zahlungsmahnung
     "Vollmacht": ("in vollmacht",),  # "Namens und in Vollmacht unserer Mandantin" - Anwaltsschreiben, keine Vollmacht
+    # P2.2 (§41): Rechtsbehelfsbelehrung "kann Einspruch eingelegt werden" / "Einspruch einlegen/einzulegen" beschreibt die
+    # MOEGLICHKEIT, kein eingelegter Einspruch (aktiv bleibt: "legen wir Einspruch ein", "Einspruch eingelegt.")
+    "Einspruch": ("einspruch eingelegt werden", "einspruch einlegen", "einspruch einzulegen"),
 }
 # Verweis auf einen Bescheid ("Einspruch gegen den Bussgeldbescheid", "Betreff: Bussgeldbescheid") ist kein Bescheid -
 # im Legal-E2E-Testsplit als Regression der Erstfassung beobachtet (Einspruch und E-Mail wurden zum "Bescheid")
 _BESCHEID_REFERENCE = re.compile(
     r"\b(?:gegen|betreff\s*:?|betrifft|zum|zu\s+dem|wegen|bezüglich|bezueglich)\s+(?:[\wäöüß]+\s+){0,2}?[\wäöüß]*bescheid\w*",
     re.IGNORECASE,
+)
+# P2.2 (§41): Rechnung als Ueberschrift ("Rechnung Nr. ...", "Schlussrechnung", "Abschlagsrechnung 3")
+_INVOICE_HEADING = re.compile(r"^\s*[\wäöüß-]*rechnung\b", re.IGNORECASE | re.MULTILINE)
+# P2.2 (§41): Gutachten/Protokoll nur in Titelstellung (erste zwei Woerter einer Zeile) - "Stellungnahme Gutachten |
+# 12.06.2026" in einer Fristentabelle ist kein Gutachten
+_TITLE_POSITION_TYPES = ("Gutachten", "Protokoll")
+# P2.2 (§41): angedrohte Kuendigung ("kommt eine fristlose Kündigung in Betracht", "behält sich die Kündigung vor") ist
+# kein Kuendigungsschreiben - solche Saetze zaehlen fuer diesen Typ nicht
+# Satzgrenze nur bei Punkt + Grossbuchstabe - Abkuerzungen wie "§ 543 Abs. 2 Satz 1 Nr. 3 BGB" trennen keinen Satz
+# (auf den ORIGINALTEXT angewandt - die Satzgrenze braucht die Grossschreibung; nur die Merkmale ignorieren Gross/klein)
+_THREAT_SENTENCE = re.compile(
+    r"(?:[^.;!?\n]|\.(?!\s+[A-ZÄÖÜ]))*(?i:in betracht|vorbehalt|behält sich|behaelt sich|behalten uns|androh|"
+    r"andernfalls|anderenfalls|sehen uns gezwungen|gezwungen sein)(?:[^.;!?\n]|\.(?!\s+[A-ZÄÖÜ]))*[.;!?]?",
 )
 # Urteil/Beschluss: Ueberschriftzeile oder Tenor-/Eingangsformel
 _JUDGMENT_HEADING = re.compile(
@@ -189,7 +208,7 @@ class PlaceholderDocumentClassifier:
         head = text[:_HEAD_CHARS]
         exhibit = bool(_EXHIBIT_MARKER.match(text.lstrip()[:40])) or bool(
             filename and filename.lower().lstrip().startswith("anlage"))
-        found = self._match_types(head.lower(), _DOCUMENT_TYPE_KEYWORDS, judgment_text=head)
+        found = self._match_types(head.lower(), _DOCUMENT_TYPE_KEYWORDS, judgment_text=head, original=head)
         if found and not (exhibit and found[0] == "Gerichtliches Schreiben"):
             return found[0], found[1], "im Kopf des Dokuments" + (", als Anlage gekennzeichnet" if exhibit else "")
         fuzzy = self._fuzzy_heading_type(head)
@@ -198,28 +217,43 @@ class PlaceholderDocumentClassifier:
         if exhibit:
             return "Anlage", ["anlage"], "ausdrücklich als Anlage gekennzeichnet (erste Zeile oder Dateiname)"
         body_keywords = {t: _DOCUMENT_TYPE_KEYWORDS[t] for t in _BODY_TYPES}
-        found = self._match_types(text.lower(), body_keywords)
+        found = self._match_types(text.lower(), body_keywords, original=text)
         if found:
             return found[0], found[1], "im Text (selbstbeschreibende Wendung)"
         return "Unbekannt", [], ""
 
     @staticmethod
     def _match_types(
-        normalized: str, table: dict[str, tuple[str, ...]], *, judgment_text: str | None = None
+        normalized: str, table: dict[str, tuple[str, ...]], *, judgment_text: str | None = None,
+        original: str | None = None,
     ) -> tuple[str, list[str]] | None:
+        # P2.2 (§41): Zeilenumbrueche/Mehrfach-Leerraum (PDF-Umbruch "Einspruch\nein.") wie ein Leerzeichen behandeln
+        normalized = re.sub(r"\s+", " ", normalized)
         for document_type, keywords in table.items():
             if document_type == "Urteil/Beschluss":
                 if judgment_text is None:
                     continue
                 heading = _JUDGMENT_HEADING.search(judgment_text)
                 matched = [kw for kw in keywords if kw in normalized] + ([heading.group(0).strip()] if heading else [])
+            elif document_type in _TITLE_POSITION_TYPES:
+                if judgment_text is None:
+                    continue
+                # Titel: die ersten zwei Woerter einer Zeile, keine Tabellenzeilen ("Zelle | Zelle")
+                titles = " / ".join(" ".join(line.split()[:2]).lower() for line in judgment_text.splitlines()
+                                    if "|" not in line)
+                matched = [kw for kw in keywords if kw in titles]
             else:
                 scope = normalized
                 for phrase in _EXCLUDED_PHRASES.get(document_type, ()):
                     scope = scope.replace(phrase, " ")
                 if document_type == "Bescheid":
                     scope = _BESCHEID_REFERENCE.sub(" ", scope)
+                if document_type == "Kündigungsschreiben" and original is not None:
+                    scope = re.sub(r"\s+", " ", _THREAT_SENTENCE.sub(" ", original).lower())
                 matched = [kw for kw in keywords if kw in scope]
+                if document_type == "Rechnung" and judgment_text is not None:
+                    heading = _INVOICE_HEADING.search(judgment_text)
+                    matched += [heading.group(0).strip()] if heading else []
             if matched:
                 return document_type, matched
         return None

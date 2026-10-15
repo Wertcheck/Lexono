@@ -1,0 +1,1275 @@
+{
+ "split": "dev",
+ "version": 1,
+ "documents": [
+  {
+   "id": "CD-D001",
+   "format": "docx",
+   "filename": "Endurteil_AG_Beispielstadt.docx",
+   "paragraphs": [
+    "Amtsgericht Beispielstadt",
+    "Az. 4 C 118/25",
+    "Im Namen des Volkes",
+    "Endurteil",
+    "In dem Rechtsstreit Beispiel ./. Muster GmbH hat das Amtsgericht Beispielstadt auf die mündliche Verhandlung vom 03.03.2026 für Recht erkannt:",
+    "1. Die Beklagte wird verurteilt, an die Klägerin 2.480,00 EUR zu zahlen.",
+    "2. Die Kosten des Rechtsstreits trägt die Beklagte.",
+    "Rechtsbehelfsbelehrung: Gegen dieses Urteil ist die Berufung statthaft. Sie ist binnen eines Monats nach Zustellung einzulegen.",
+    "Verkündet am 17.03.2026"
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "03.03.2026",
+     "17.03.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "urteil"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D002",
+   "format": "pdf",
+   "filename": "Beschluss_LG_Musterstadt.pdf",
+   "paragraphs": [
+    "Landgericht Musterstadt",
+    "Beschluss",
+    "In dem Rechtsstreit Beispielbau GmbH ./. Anna Muster",
+    "1. Der Beklagten wird aufgegeben, bis zum 30.04.2026 zu dem Schriftsatz vom 02.04.2026 Stellung zu nehmen.",
+    "2. Termin zur mündlichen Verhandlung wird bestimmt auf den 21.05.2026, 10:30 Uhr, Saal 112."
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "30.04.2026"
+    ],
+    "termin": [
+     "21.05.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "beschluss",
+    "ungewoehnliche_frist"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D003",
+   "format": "scan",
+   "filename": "Urteil_Scan.pdf",
+   "paragraphs": [
+    "Landgericht Beispielheim",
+    "Im Namen des Volkes",
+    "Urteil",
+    "In dem Rechtsstreit Muster ./. Beispiel wird die Klage abgewiesen.",
+    "Die Klägerin trägt die Kosten des Rechtsstreits."
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "urteil",
+    "ocr"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D004",
+   "format": "docx",
+   "filename": "Klage_Werklohn.docx",
+   "paragraphs": [
+    "An das Landgericht Musterstadt",
+    "Klage",
+    "der Beispielbau GmbH, Industriestraße 4, 12345 Musterstadt - Klägerin -",
+    "gegen Frau Anna Muster, Lindenweg 2, 12345 Musterstadt - Beklagte -",
+    "wegen Werklohn. Wir beantragen, die Beklagte zu verurteilen, an die Klägerin 18.400,00 EUR zu zahlen.",
+    "Begründung: Die Beklagte hat die Schlussrechnung vom 12.12.2025 trotz Fälligkeit nicht beglichen. Vgl. BGH, Urteil vom 08.06.2023."
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "12.12.2025",
+     "08.06.2023"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "schriftsatz",
+    "urteilszitat"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D005",
+   "format": "pdf",
+   "filename": "Schriftsatz_lang_Fristverlaengerung.pdf",
+   "paragraphs": [
+    "Rechtsanwälte Beispiel & Partner",
+    "An das Landgericht Beispielheim",
+    "Az. 2 O 77/26",
+    "Schriftsatz",
+    "In dem Rechtsstreit Muster ./. Beispielfassaden GmbH nehmen wir zur Klageerwiderung wie folgt Stellung:",
+    "1. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 1 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "2. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 2 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "3. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 3 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "4. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 4 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "5. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 5 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "6. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 6 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "7. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 7 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "8. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 8 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "9. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 9 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "10. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 10 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "11. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 11 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "12. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 12 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "13. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 13 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "14. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 14 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "15. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 15 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "16. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 16 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "17. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 17 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "18. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 18 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "19. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 19 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "20. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 20 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "21. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 21 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "22. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 22 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "23. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 23 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "24. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 24 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "25. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 25 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "26. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 26 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "27. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 27 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "28. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 28 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "29. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 29 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "30. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 30 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "31. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 31 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "32. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 32 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "33. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 33 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "34. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 34 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "35. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 35 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "36. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 36 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "37. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 37 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "38. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 38 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "39. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 39 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "40. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 40 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "41. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 41 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "42. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 42 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "43. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 43 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "44. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 44 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "45. Zur Sache wird ergänzend vorgetragen: Die Beklagte hat die Arbeiten an der Fassade nicht fachgerecht ausgeführt; die Feuchtigkeitsschäden im Bereich der Achse 45 sind auf die fehlerhafte Abdichtung zurückzuführen, wie sich aus dem Ortstermin und den vorgelegten Lichtbildern ergibt. Weitere Einzelheiten werden im Rahmen der Beweisaufnahme dargelegt.",
+    "Wir beantragen, die Frist zur Stellungnahme auf das Gutachten bis zum 30.06.2026 zu verlängern."
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "30.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "schriftsatz",
+    "lang"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D006",
+   "format": "scan_degraded",
+   "filename": "Rechnung_Sanitaer_Scan.pdf",
+   "paragraphs": [
+    "Sanitär Beispiel GmbH",
+    "Rechnung Nr. 2026-0417",
+    "Rechnungsdatum: 22.04.2026",
+    "Reparatur Wasserleitung Küche, Material und Arbeitszeit",
+    "Gesamtbetrag: 862,40 EUR",
+    "Zahlbar innerhalb von 14 Tagen ohne Abzug."
+   ],
+   "label": {
+    "typ": "Rechnung",
+    "zulaessig": [
+     "Rechnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "22.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ocr",
+    "rechnung"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D007",
+   "format": "docx",
+   "filename": "Rechnung_Tabelle.docx",
+   "paragraphs": [
+    "Malerbetrieb Muster",
+    "Rechnung Nr. R-2026-0612",
+    "Datum: 02.06.2026",
+    "Positionen siehe Tabelle.",
+    "Der Gesamtbetrag ist fällig am 16.06.2026."
+   ],
+   "label": {
+    "typ": "Rechnung",
+    "zulaessig": [
+     "Rechnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "16.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "tabelle",
+    "rechnung"
+   ],
+   "herkunft": "neu",
+   "table": {
+    "header": [
+     "Pos.",
+     "Leistung",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "1",
+      "Wände streichen",
+      "1.120,00 EUR"
+     ],
+     [
+      "2",
+      "Decke streichen",
+      "480,00 EUR"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "CD-D008",
+   "format": "txt",
+   "filename": "Schreiben_Restforderung.txt",
+   "paragraphs": [
+    "Holzbau Muster GmbH",
+    "Beispielstadt, 05.05.2026",
+    "Aus unserer Schlussrechnung ist noch ein Betrag von 4.200,00 EUR offen. Wir bitten um Ausgleich bis zum 20.05.2026."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Mahnung",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "20.05.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "05.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bekannter_fehler",
+    "erwaehnung"
+   ],
+   "herkunft": "Reproduktion LE-D003/D4 (Schlussrechnung im Satz)"
+  },
+  {
+   "id": "CD-D009",
+   "format": "docx",
+   "filename": "Schreiben_Mietrueckstand_Androhung.docx",
+   "paragraphs": [
+    "Rechtsanwältin Erika Beispiel",
+    "Musterstadt, den 04.05.2026",
+    "In der Mietsache Muster ./. Beispiel fordern wir Sie namens unserer Mandantin auf, den Rückstand von 1.380,00 EUR bis zum 18.05.2026 auszugleichen.",
+    "Sollte der Rückstand nicht ausgeglichen werden, kommt eine fristlose Kündigung des Mietverhältnisses in Betracht; die Kündigung behält sich unsere Mandantin ausdrücklich vor."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "18.05.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "04.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bekannter_fehler",
+    "kuendigungsandrohung"
+   ],
+   "herkunft": "Reproduktion LE-D001/D5 (Kündigung nur angedroht)"
+  },
+  {
+   "id": "CD-D010",
+   "format": "docx",
+   "filename": "Kuendigung_Mietvertrag.docx",
+   "paragraphs": [
+    "Anna Muster, Lindenweg 2, 12345 Musterstadt",
+    "Musterstadt, 28.04.2026",
+    "Kündigung des Mietvertrags",
+    "Hiermit kündige ich den Mietvertrag über die Wohnung Lindenweg 2 ordentlich zum 31.07.2026."
+   ],
+   "label": {
+    "typ": "Kündigungsschreiben",
+    "zulaessig": [
+     "Kündigungsschreiben"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "31.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "28.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "kuendigung"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D011",
+   "format": "docx",
+   "filename": "Gewerbemietvertrag.docx",
+   "paragraphs": [
+    "Gewerbemietvertrag",
+    "zwischen der Beispiel Immobilien GmbH (Vermieterin) und der Muster Café UG (Mieterin)",
+    "§ 1 Mietobjekt: Ladenlokal Marktplatz 7, 12345 Musterstadt.",
+    "§ 2 Mietbeginn: 01.03.2026.",
+    "§ 3 Miete: 2.100,00 EUR monatlich, zahlbar jeweils im Voraus bis zum dritten Werktag eines Monats.",
+    "§ 4 Laufzeit: fünf Jahre; Kündigungsfrist sechs Monate zum Quartalsende.",
+    "§ 5 Weitere Regelung Nr. 5: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 6 Weitere Regelung Nr. 6: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 7 Weitere Regelung Nr. 7: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 8 Weitere Regelung Nr. 8: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 9 Weitere Regelung Nr. 9: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 10 Weitere Regelung Nr. 10: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 11 Weitere Regelung Nr. 11: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 12 Weitere Regelung Nr. 12: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 13 Weitere Regelung Nr. 13: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 14 Weitere Regelung Nr. 14: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 15 Weitere Regelung Nr. 15: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 16 Weitere Regelung Nr. 16: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 17 Weitere Regelung Nr. 17: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 18 Weitere Regelung Nr. 18: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 19 Weitere Regelung Nr. 19: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 20 Weitere Regelung Nr. 20: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 21 Weitere Regelung Nr. 21: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 22 Weitere Regelung Nr. 22: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 23 Weitere Regelung Nr. 23: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "§ 24 Weitere Regelung Nr. 24: Die Parteien vereinbaren die übliche Instandhaltung und Pflege des Mietobjekts nach Maßgabe der gesetzlichen Bestimmungen.",
+    "Musterstadt, den 15.02.2026"
+   ],
+   "label": {
+    "typ": "Vertrag",
+    "zulaessig": [
+     "Vertrag"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.03.2026",
+     "15.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "vertrag",
+    "lang"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D012",
+   "format": "pdf",
+   "filename": "Kostenbescheid.pdf",
+   "paragraphs": [
+    "Stadt Musterstadt - Bauordnungsamt",
+    "Musterstadt, 08.05.2026",
+    "Kostenbescheid",
+    "Für die Bearbeitung Ihres Bauantrags vom 10.02.2026 werden Gebühren in Höhe von 640,00 EUR festgesetzt.",
+    "Der Betrag ist zahlbar bis 10.06.2026.",
+    "Rechtsbehelfsbelehrung: Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Widerspruch erhoben werden."
+   ],
+   "label": {
+    "typ": "Bescheid",
+    "zulaessig": [
+     "Bescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "10.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "08.05.2026",
+     "10.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D013",
+   "format": "scan",
+   "filename": "Widerspruchsbescheid_Scan.pdf",
+   "paragraphs": [
+    "Landkreis Beispielkreis",
+    "Widerspruchsbescheid",
+    "Der Widerspruch vom 12.01.2026 gegen den Bescheid vom 03.12.2025 wird zurückgewiesen.",
+    "Gegen diesen Bescheid kann innerhalb eines Monats nach Zustellung Klage erhoben werden."
+   ],
+   "label": {
+    "typ": "Bescheid",
+    "zulaessig": [
+     "Bescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "12.01.2026",
+     "03.12.2025"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid",
+    "ocr"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D014",
+   "format": "pdf",
+   "filename": "Einkommensteuerbescheid_2025.pdf",
+   "paragraphs": [
+    "Finanzamt Musterstadt",
+    "Bescheid für 2025 über Einkommensteuer und Solidaritätszuschlag",
+    "Festgesetzte Einkommensteuer: 11.240,00 EUR",
+    "Die Abschlusszahlung ist fällig am 12.05.2026.",
+    "Rechtsbehelfsbelehrung: Einspruch innerhalb eines Monats nach Bekanntgabe."
+   ],
+   "label": {
+    "typ": "Steuerbescheid",
+    "zulaessig": [
+     "Bescheid",
+     "Steuerbescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "12.05.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid",
+    "steuer"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D015",
+   "format": "pdf",
+   "filename": "Kfz_Schadensgutachten.pdf",
+   "paragraphs": [
+    "Kfz-Sachverständigenbüro Beispiel",
+    "Schadensgutachten Nr. 26-0815",
+    "Besichtigung des Fahrzeugs am 11.05.2026.",
+    "Reparaturkosten netto: 3.940,00 EUR; Wertminderung: 400,00 EUR."
+   ],
+   "label": {
+    "typ": "Gutachten",
+    "zulaessig": [
+     "Gutachten"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "11.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "gutachten"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D016",
+   "format": "docx",
+   "filename": "Sitzungsprotokoll.docx",
+   "paragraphs": [
+    "Amtsgericht Musterstadt",
+    "Protokoll der öffentlichen Sitzung vom 07.05.2026",
+    "Die Parteien verhandeln zur Sache. Ein Vergleich kommt nicht zustande.",
+    "Termin zur Verkündung einer Entscheidung wird anberaumt auf den 18.06.2026."
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "18.06.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "07.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "protokoll"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D017",
+   "format": "scan",
+   "filename": "Unfallmitteilung_Polizei.pdf",
+   "paragraphs": [
+    "Unfallmitteilung (Polizeiinspektion Beispielstadt)",
+    "Unfallzeit: 14.04.2026, 17:40 Uhr, Einmündung Bahnhofstraße / Ringweg",
+    "Beteiligte: Fahrzeug 1 (Kennzeichen BS-AB 123), Fahrzeug 2 (Kennzeichen BS-CD 456)",
+    "Hergang: Fahrzeug 2 missachtete die Vorfahrt.",
+    "Vorgangsnummer 2026-118833"
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "14.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bekannter_fehler",
+    "ocr",
+    "protokoll"
+   ],
+   "herkunft": "Reproduktion LE-T001/D1 (Unfallmitteilung als Unbekannt)"
+  },
+  {
+   "id": "CD-D018",
+   "format": "pdf",
+   "filename": "Messprotokoll_Radar.pdf",
+   "paragraphs": [
+    "Messprotokoll Geschwindigkeitsmessung",
+    "Messort: Kreisstraße 12, Höhe Kilometer 3,4",
+    "Messung am 02.05.2026 um 09:12 Uhr, gemessen 74 km/h, zulässig 50 km/h.",
+    "Messgerät: Typ Beispielmess 3000, Eichschein gültig bis 31.12.2026."
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.05.2026",
+     "31.12.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bekannter_fehler",
+    "eichschein",
+    "protokoll"
+   ],
+   "herkunft": "Reproduktion LE-T003/D2 (Eichschein gültig bis)"
+  },
+  {
+   "id": "CD-D019",
+   "format": "docx",
+   "filename": "Anlage_K3.docx",
+   "paragraphs": [
+    "Anlage K3",
+    "Übergabeprotokoll Wohnung Lindenweg 2",
+    "Übergabe am 01.03.2026; Zählerstände notiert.",
+    "Mängel: keine."
+   ],
+   "label": {
+    "typ": "Anlage",
+    "zulaessig": [
+     "Anlage",
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.03.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D020",
+   "format": "pdf",
+   "filename": "Anlage_B2_Fotodokumentation.pdf",
+   "paragraphs": [
+    "Fotodokumentation Wasserschaden",
+    "Aufnahmen vom 20.04.2026, Badezimmer Erdgeschoss",
+    "Bild 1: Wasserfleck an der Decke. Bild 2: Durchfeuchtete Wand."
+   ],
+   "label": {
+    "typ": "Anlage",
+    "zulaessig": [
+     "Anlage"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "20.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage",
+    "dateiname"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D021",
+   "format": "docx",
+   "filename": "Anlage_K1_Mietvertrag.docx",
+   "paragraphs": [
+    "Anlage K1",
+    "Mietvertrag über Wohnraum",
+    "Zwischen Max Beispiel (Vermieter) und Anna Muster (Mieterin) wird folgender Vertrag geschlossen.",
+    "Mietbeginn: 01.10.2024."
+   ],
+   "label": {
+    "typ": "Vertrag",
+    "zulaessig": [
+     "Anlage",
+     "Vertrag"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.10.2024"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage",
+    "vertrag"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D022",
+   "format": "pdf",
+   "filename": "Sterbeurkunde_Auszug.pdf",
+   "paragraphs": [
+    "Standesamt Musterdorf - Auszug aus dem Sterberegister",
+    "Registernummer S 31/2026",
+    "Erika Beispiel ist am 09.02.2026 in Musterdorf verstorben.",
+    "Ausgestellt am 12.02.2026"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "09.02.2026",
+     "12.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "urkunde",
+    "label_hinweis"
+   ],
+   "herkunft": "Reproduktion LE-T002/D2 (Urkunde; dort als 'bescheid' gelabelt - fachlich keine Bescheid-Art)"
+  },
+  {
+   "id": "CD-D023",
+   "format": "txt",
+   "filename": "Email_Bussgeld.txt",
+   "paragraphs": [
+    "Von: mandant@beispielpost.example",
+    "Datum: 08.07.2026",
+    "Betreff: Bußgeldbescheid",
+    "Der Bescheid wurde mir am 06.07.2026 zugestellt. Was soll ich tun?"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [
+     "06.07.2026"
+    ],
+    "fristdauern": 0,
+    "keine_frist": [
+     "08.07.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "email"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D024",
+   "format": "txt",
+   "filename": "Email_Termin_Rueckmeldung.txt",
+   "paragraphs": [
+    "Von: kanzlei@beispiel.example",
+    "Betreff: Unterlagen",
+    "Bitte senden Sie uns die Unterlagen bis Freitag, 05.06.2026.",
+    "Für die Besprechung schlagen wir Dienstag, 09.06.2026, 14 Uhr vor."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "05.06.2026"
+    ],
+    "termin": [
+     "09.06.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "email",
+    "ungewoehnliche_frist"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D025",
+   "format": "docx",
+   "filename": "Fristsetzung_ab_Zugang.docx",
+   "paragraphs": [
+    "Muster Hausverwaltung GmbH",
+    "Musterstadt, 12.05.2026",
+    "Wir setzen Ihnen hiermit eine Frist von zwei Wochen ab Zugang dieses Schreibens zur Beseitigung der Feuchtigkeitsschäden."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "12.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ungewoehnliche_frist"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D026",
+   "format": "pdf",
+   "filename": "Hinweis_Einspruchsfrist.pdf",
+   "paragraphs": [
+    "Rechtsanwalt Max Beispiel",
+    "Musterstadt, 08.07.2026",
+    "Die Einspruchsfrist läuft am 20.07.2026 ab. Bitte teilen Sie uns bis dahin mit, ob Einspruch eingelegt werden soll."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Einspruch",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "20.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "08.07.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ungewoehnliche_frist"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D027",
+   "format": "docx",
+   "filename": "Schreiben_widerspruechliche_Frist.docx",
+   "paragraphs": [
+    "Beispiel Versicherung AG",
+    "Musterstadt, 02.05.2026",
+    "Für die Einreichung der Unterlagen gilt eine Frist bis zum 15.05.2026.",
+    "Abweichend davon bitten wir um Eingang der Rechnungskopien spätestens am 18.05.2026."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "15.05.2026",
+     "18.05.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "widerspruch"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D028",
+   "format": "docx",
+   "filename": "Fristenuebersicht_Tabelle.docx",
+   "paragraphs": [
+    "Fristenübersicht Akte Muster ./. Beispiel",
+    "Stand: 01.06.2026"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "12.06.2026",
+     "26.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "tabelle",
+    "ungewoehnliche_frist"
+   ],
+   "herkunft": "neu",
+   "table": {
+    "header": [
+     "Vorgang",
+     "Frist"
+    ],
+    "rows": [
+     [
+      "Stellungnahme Gutachten",
+      "12.06.2026"
+     ],
+     [
+      "Berufungsbegründung",
+      "26.06.2026"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "CD-D029",
+   "format": "scan",
+   "filename": "Mahnung_Scan.pdf",
+   "paragraphs": [
+    "Beispiel Energie GmbH",
+    "Mahnung",
+    "Kundennummer 778899",
+    "Leider haben wir zu unserer Rechnung vom 03.04.2026 noch keinen Zahlungseingang festgestellt.",
+    "Bitte überweisen Sie den Betrag bis spätestens 15.06.2026."
+   ],
+   "label": {
+    "typ": "Mahnung",
+    "zulaessig": [
+     "Mahnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "15.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "03.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ocr",
+    "mahnung"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D030",
+   "format": "docx",
+   "filename": "Vollmacht.docx",
+   "paragraphs": [
+    "Vollmacht",
+    "Hiermit erteile ich, Anna Muster, geb. 01.02.1975, Rechtsanwältin Erika Beispiel Vollmacht zur Vertretung in der Mietsache Muster ./. Beispiel.",
+    "Musterstadt, den 10.04.2026"
+   ],
+   "label": {
+    "typ": "Vollmacht",
+    "zulaessig": [
+     "Vollmacht"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.02.1975",
+     "10.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "vollmacht",
+    "persoenliches_datum"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D031",
+   "format": "pdf",
+   "filename": "Einspruch_Bussgeld.pdf",
+   "paragraphs": [
+    "Rechtsanwalt Max Beispiel",
+    "An die Bußgeldstelle Beispielkreis",
+    "Gegen den Bußgeldbescheid vom 30.06.2026 legen wir namens unseres Mandanten Einspruch ein.",
+    "Die Begründung reichen wir bis zum 15.08.2026 nach."
+   ],
+   "label": {
+    "typ": "Einspruch",
+    "zulaessig": [
+     "Einspruch"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "15.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "30.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "einspruch"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D032",
+   "format": "pdf",
+   "filename": "Ladung_Amtsgericht.pdf",
+   "paragraphs": [
+    "Amtsgericht Beispielstadt",
+    "Ladung",
+    "In Sachen Muster ./. Beispiel werden Sie zum Termin am 14.07.2026, 11:00 Uhr, Saal 3 geladen."
+   ],
+   "label": {
+    "typ": "Gerichtliches Schreiben",
+    "zulaessig": [
+     "Gerichtliches Schreiben"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "14.07.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "gericht",
+    "termin"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D033",
+   "format": "txt",
+   "filename": "Aktenvermerk.txt",
+   "paragraphs": [
+    "Aktenvermerk",
+    "Mandantin rief am 03.06.2026 an und kündigte Unterlagen an.",
+    "Wiedervorlage: 10.06.2026"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "10.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "03.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "notiz"
+   ],
+   "herkunft": "neu"
+  },
+  {
+   "id": "CD-D034",
+   "format": "docx",
+   "filename": "Pruefungsanordnung.docx",
+   "paragraphs": [
+    "Finanzamt Beispielstadt",
+    "Prüfungsanordnung",
+    "Bei Ihnen wird eine Außenprüfung nach § 193 AO durchgeführt.",
+    "Beginn der Prüfung: 01.07.2026."
+   ],
+   "label": {
+    "typ": "Prüfungsanordnung",
+    "zulaessig": [
+     "Prüfungsanordnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": [
+     "01.07.2026"
+    ]
+   },
+   "tags": [
+    "steuer"
+   ],
+   "herkunft": "neu"
+  }
+ ]
+}

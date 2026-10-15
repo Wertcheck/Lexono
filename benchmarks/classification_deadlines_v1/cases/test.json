@@ -1,0 +1,1541 @@
+{
+ "split": "test",
+ "version": 1,
+ "author": "blind-agent",
+ "documents": [
+  {
+   "id": "CD-T001",
+   "format": "pdf",
+   "filename": "AG_Musterstadt_Urteil_12C_418-25.pdf",
+   "paragraphs": [
+    "Amtsgericht Musterstadt",
+    "Az.: 12 C 418/25",
+    "Verkündet am 12.03.2026",
+    "Hinz, Justizbeschäftigte als Urkundsbeamtin der Geschäftsstelle",
+    "IM NAMEN DES VOLKES",
+    "URTEIL",
+    "In dem Rechtsstreit der Beispiel Haustechnik GmbH, vertreten durch den Geschäftsführer Konrad Beispiel, Werkstraße 4, 12345 Musterstadt – Klägerin – gegen Frau Elke Musterfrau, Lindenallee 17, 12345 Musterstadt – Beklagte –",
+    "hat das Amtsgericht Musterstadt durch die Richterin am Amtsgericht Probe auf die mündliche Verhandlung vom 19.02.2026 für Recht erkannt:",
+    "1. Die Beklagte wird verurteilt, an die Klägerin 2.384,60 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit Rechtshängigkeit zu zahlen.",
+    "2. Im Übrigen wird die Klage abgewiesen.",
+    "3. Von den Kosten des Rechtsstreits tragen die Klägerin 20 % und die Beklagte 80 %.",
+    "4. Das Urteil ist vorläufig vollstreckbar. Die Beklagte kann die Vollstreckung durch Sicherheitsleistung in Höhe von 110 % des aufgrund des Urteils vollstreckbaren Betrags abwenden, wenn nicht die Klägerin vor der Vollstreckung Sicherheit in gleicher Höhe leistet.",
+    "Tatbestand",
+    "Die Parteien streiten um restlichen Werklohn für den Austausch einer Gastherme im Einfamilienhaus der Beklagten. Die Beklagte rügt eine fehlerhafte Einstellung der Anlage und hat einen Teil der Rechnung einbehalten.",
+    "Entscheidungsgründe",
+    "Die zulässige Klage ist überwiegend begründet. Der Werklohnanspruch ist mit der Abnahme fällig geworden. Ein Zurückbehaltungsrecht steht der Beklagten nur in Höhe der vom Sachverständigen festgestellten Nachbesserungskosten zu.",
+    "Rechtsbehelfsbelehrung:",
+    "Gegen dieses Urteil ist das Rechtsmittel der Berufung für jede Partei zulässig, die durch dieses Urteil in ihren Rechten benachteiligt ist, wenn der Wert des Beschwerdegegenstandes 600,00 EUR übersteigt. Die Berufung ist binnen einer Notfrist von einem Monat bei dem Landgericht Beispielheim einzulegen. Die Frist beginnt mit der Zustellung der vollständigen Entscheidung.",
+    "Die Berufung ist, sofern nicht bereits in der Berufungsschrift erfolgt, binnen zwei Monaten nach Zustellung dieses Urteils schriftlich gegenüber dem Landgericht Beispielheim zu begründen.",
+    "Probe",
+    "Richterin am Amtsgericht"
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 2,
+    "keine_frist": [
+     "12.03.2026",
+     "19.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "urteil",
+    "rechtsmittelbelehrung"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T002",
+   "format": "scan",
+   "filename": "LG_Beispielheim_Hinweisbeschluss.pdf",
+   "paragraphs": [
+    "Landgericht Beispielheim",
+    "3. Zivilkammer",
+    "Geschäftsnummer: 3 O 77/26",
+    "Beschluss",
+    "In Sachen Musterbau Projekt KG ./. Tobias Exempel",
+    "wegen Forderung aus Bauvertrag",
+    "1. Die Kammer weist darauf hin, dass sie nach vorläufiger Würdigung die Abnahmefiktion für nicht eingetreten hält, weil die Klägerin dem Beklagten keine angemessene Frist zur Abnahme gesetzt hat.",
+    "2. Der Klägerin wird aufgegeben, zu der behaupteten Übergabe des Abnahmeprotokolls vorzutragen und Beweis anzutreten.",
+    "3. Beiden Parteien wird Gelegenheit gegeben, zu den vorstehenden Hinweisen bis einschließlich 30.06.2026 schriftsätzlich Stellung zu nehmen.",
+    "4. Nach Ablauf der Stellungnahmefrist wird die Kammer über die Bestimmung eines Termins entscheiden.",
+    "Beispielheim, 02.06.2026",
+    "Landgericht – 3. Zivilkammer",
+    "Dr. Vorbild, Vorsitzender Richter am Landgericht",
+    "Ausgefertigt: Kraus, Justizsekretärin"
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Gerichtliches Schreiben",
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "30.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "beschluss",
+    "ocr",
+    "bis_einschliesslich"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T003",
+   "format": "docx",
+   "filename": "Klage_Sonnfeld_gegen_Exempel.docx",
+   "paragraphs": [
+    "Kanzlei Musterrecht & Partner – Rechtsanwälte",
+    "Am Beispielplatz 2, 12345 Musterstadt",
+    "An das Amtsgericht Musterstadt",
+    "Musterstadt, 20.01.2026",
+    "Klage",
+    "der Frau Greta Sonnfeld, Kirschweg 8, 12346 Beispielheim – Klägerin –",
+    "Prozessbevollmächtigte: Kanzlei Musterrecht & Partner",
+    "gegen",
+    "Herrn Tobias Exempel, Ahornring 21, 12345 Musterstadt – Beklagter –",
+    "wegen Kaufpreisforderung",
+    "Streitwert: 4.750,00 EUR",
+    "Namens und in Vollmacht der Klägerin erheben wir Klage und werden beantragen:",
+    "1. Der Beklagte wird verurteilt, an die Klägerin 4.750,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 16.12.2025 zu zahlen.",
+    "2. Der Beklagte trägt die Kosten des Rechtsstreits.",
+    "Für den Fall der Fristversäumnis oder des Anerkenntnisses beantragen wir bereits jetzt den Erlass eines Versäumnis- bzw. Anerkenntnisurteils im schriftlichen Vorverfahren.",
+    "Begründung:",
+    "Die Klägerin verkaufte dem Beklagten mit schriftlichem Vertrag vom 04.11.2025 eine gebrauchte Küchenzeile einschließlich Elektrogeräten zum Preis von 4.750,00 EUR. Beweis: Kaufvertrag, Anlage K1.",
+    "Die Küche wurde vereinbarungsgemäß ausgebaut und dem Beklagten übergeben. Die Kaufpreisrechnung war am 15.12.2025 fällig. Zahlungen sind bis heute nicht eingegangen. Beweis: Rechnung, Anlage K2.",
+    "Mängel hat der Beklagte zu keinem Zeitpunkt angezeigt; er beruft sich vielmehr auf angebliche Liquiditätsprobleme.",
+    "Beglaubigte und einfache Abschrift anbei.",
+    "Musterrecht, Rechtsanwältin"
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "20.01.2026",
+     "16.12.2025",
+     "04.11.2025"
+    ],
+    "nicht_bewertet": [
+     "15.12.2025"
+    ]
+   },
+   "tags": [
+    "klage"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T004",
+   "format": "pdf",
+   "filename": "Klageerwiderung_3O77-26.pdf",
+   "paragraphs": [
+    "RAe Vorlage & Kollegen",
+    "Postfach 11 22, 12347 Exempelhausen",
+    "Landgericht Beispielheim – 3. Zivilkammer –",
+    "Exempelhausen, 10.04.2026",
+    "In dem Rechtsstreit Musterbau Projekt KG ./. Exempel – 3 O 77/26 –",
+    "zeigen wir an, dass wir den Beklagten vertreten, und erwidern auf die Klage unter Bezugnahme auf die Verfügung vom 05.03.2026 wie folgt.",
+    "Wir beantragen, die Klage abzuweisen.",
+    "I. Die Klägerin hat die Leistungen nicht vertragsgemäß erbracht. Die Abdichtung der Kellerwand ist an mehreren Stellen undicht; bereits nach dem ersten Starkregen drang Wasser ein. Beweis: Sachverständigengutachten.",
+    "II. Eine Abnahme ist weder ausdrücklich noch konkludent erfolgt. Der Beklagte hat die Abnahme unter Hinweis auf die Feuchtigkeitsschäden ausdrücklich verweigert. Beweis: Schreiben des Beklagten, Anlage B1.",
+    "III. Hilfsweise erklärt der Beklagte die Aufrechnung mit einem Anspruch auf Ersatz der Mangelbeseitigungskosten in Höhe von 6.210,00 EUR.",
+    "Zum bereits anberaumten Termin zur mündlichen Verhandlung am 28.05.2026 wird der Beklagte persönlich erscheinen.",
+    "Vorlage, Rechtsanwalt"
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "28.05.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "10.04.2026",
+     "05.03.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "klageerwiderung",
+    "schriftsatz"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T005",
+   "format": "txt",
+   "filename": "Fristverlaengerungsantrag_Berufungsbegruendung.txt",
+   "paragraphs": [
+    "Oberlandesgericht Musterhausen",
+    "– 7. Zivilsenat –",
+    "Az. 7 U 52/26",
+    "08.09.2026",
+    "In der Berufungssache Kranich ./. Beispiel Versicherung AG",
+    "beantragen wir namens des Berufungsklägers, die Frist zur Begründung der Berufung, die am 21.09.2026 abläuft, um einen Monat bis zum 21.10.2026 zu verlängern.",
+    "Begründung: Der Unterzeichner ist durch mehrere umfangreiche Hauptverhandlungen in Strafsachen gebunden. Zudem steht die Einsicht in die beigezogene Ermittlungsakte noch aus; diese ist für die Berufungsbegründung erforderlich.",
+    "Der Rechtsstreit wird durch die Verlängerung nicht verzögert. Eine Einwilligung des Gegners ist nicht erforderlich, da erstmals Verlängerung beantragt wird.",
+    "Dr. Musterjurist, Rechtsanwalt"
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "21.09.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "08.09.2026"
+    ],
+    "nicht_bewertet": [
+     "21.10.2026"
+    ]
+   },
+   "tags": [
+    "schriftsatz",
+    "laeuft_ab"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T006",
+   "format": "docx",
+   "filename": "Stellplatzmietvertrag_Musterweg.docx",
+   "paragraphs": [
+    "Mietvertrag über einen Kfz-Stellplatz",
+    "zwischen Herrn Holger Beispiel, Musterweg 10, 12345 Musterstadt (Vermieter)",
+    "und Frau Petra Exempel, Musterweg 12, 12345 Musterstadt (Mieterin)",
+    "§ 1 Mietgegenstand: Vermietet wird der Tiefgaragenstellplatz Nr. 14 in der Anlage Musterweg 10. Die Mieterin erhält einen Funkhandsender gegen Pfand von 50,00 EUR.",
+    "§ 2 Mietzeit: Das Mietverhältnis beginnt am 01.02.2026 und läuft auf unbestimmte Zeit. Für die Kündigung gelten die gesetzlichen Vorschriften.",
+    "§ 3 Miete: Die Miete beträgt monatlich 75,00 EUR einschließlich Nebenkosten und ist monatlich im Voraus auf das Konto des Vermieters zu zahlen.",
+    "§ 4 Nutzung: Der Stellplatz darf nur zum Abstellen eines zugelassenen Pkw genutzt werden. Die Lagerung von Reifen, Kanistern oder sonstigen Gegenständen ist untersagt.",
+    "§ 5 Schlussbestimmungen: Änderungen bedürfen der Textform.",
+    "Musterstadt, den 15.01.2026",
+    "Holger Beispiel                Petra Exempel"
+   ],
+   "label": {
+    "typ": "Vertrag",
+    "zulaessig": [
+     "Vertrag"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.02.2026",
+     "15.01.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "vertrag",
+    "kurz"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T007",
+   "format": "pdf",
+   "filename": "Bauvertrag_Umbau_Praxisraeume_Beispielheim.pdf",
+   "paragraphs": [
+    "Bauvertrag über den Umbau von Praxisräumen",
+    "zwischen der Zahnarztpraxis Dr. Mira Musterfrau, Bahnhofstraße 30, 12346 Beispielheim – nachfolgend „Auftraggeberin“ –",
+    "und der Exempel Innenausbau GmbH, Handwerkerhof 5, 12347 Exempelhausen, vertreten durch den Geschäftsführer Jonas Exempel – nachfolgend „Auftragnehmerin“ –",
+    "Präambel: Die Auftraggeberin betreibt in dem Gebäude Bahnhofstraße 30 eine Zahnarztpraxis im ersten Obergeschoss. Sie beabsichtigt, die bisher als Büro genutzten Räume im Erdgeschoss zu einem zusätzlichen Behandlungsbereich mit zwei Behandlungszimmern, einem Steriraum und einem barrierefreien WC umzubauen. Die Auftragnehmerin ist ein Fachbetrieb für Trockenbau, Bodenbeläge und Innenausbau und hat die Leistungen auf Grundlage einer Ortsbesichtigung angeboten.",
+    "§ 1 Vertragsgegenstand. (1) Die Auftragnehmerin übernimmt die schlüsselfertige Herstellung des Umbaus nach Maßgabe der Leistungsbeschreibung vom Architekturbüro Muster, der Entwurfs- und Ausführungspläne sowie des Angebots der Auftragnehmerin. (2) Nicht zum Leistungsumfang gehören die medizintechnischen Einrichtungen, insbesondere Behandlungseinheiten, Röntgengeräte und Druckluftversorgung; diese werden von der Auftraggeberin gesondert beauftragt. (3) Die Auftragnehmerin hat die Schnittstellen zu den medizintechnischen Gewerken zu koordinieren und die erforderlichen Leerrohre, Bodendurchführungen und Revisionsöffnungen nach Angaben der Fachfirmen herzustellen.",
+    "§ 2 Vertragsbestandteile. Bestandteile dieses Vertrages sind in folgender Rangfolge: a) dieser Vertrag, b) das Verhandlungsprotokoll, c) die Leistungsbeschreibung mit Plänen, d) das Angebot der Auftragnehmerin, e) die Vorschriften des Bürgerlichen Gesetzbuchs über den Bauvertrag. Allgemeine Geschäftsbedingungen der Auftragnehmerin finden keine Anwendung, auch wenn ihnen nicht ausdrücklich widersprochen wird. Widersprüche zwischen den Vertragsbestandteilen sind der Auftraggeberin unverzüglich schriftlich anzuzeigen.",
+    "§ 3 Vergütung. (1) Die Vergütung wird als Pauschalfestpreis vereinbart und beträgt 148.500,00 EUR netto zuzüglich der gesetzlichen Umsatzsteuer. (2) Mit dem Pauschalpreis sind sämtliche Leistungen abgegolten, die zur vollständigen und funktionsfähigen Herstellung des Umbaus erforderlich sind, auch wenn sie in der Leistungsbeschreibung nicht ausdrücklich aufgeführt sind. (3) Zusätzliche oder geänderte Leistungen werden nur vergütet, wenn sie vor Ausführung von der Auftraggeberin schriftlich beauftragt wurden. Die Mehrkosten sind auf Grundlage der Urkalkulation nachzuweisen.",
+    "§ 4 Zahlungen. Die Vergütung wird in drei Abschlagszahlungen fällig: erste Rate in Höhe von 30 % am 30.04.2026, zweite Rate in Höhe von 40 % am 30.06.2026 und die Schlusszahlung in Höhe von 30 % am 15.10.2026, jeweils unter der Voraussetzung, dass der zugehörige Leistungsstand erreicht und durch die Bauleitung bestätigt ist. Die Auftraggeberin ist berechtigt, von jeder Abschlagszahlung einen Sicherheitseinbehalt von 5 % vorzunehmen; der Einbehalt kann durch Bürgschaft eines in der Europäischen Union zugelassenen Kreditinstituts abgelöst werden.",
+    "§ 5 Ausführungszeit. (1) Mit den Arbeiten wird am 13.04.2026 begonnen. Die Auftragnehmerin stellt die Baustelleneinrichtung so ein, dass der Praxisbetrieb im Obergeschoss während der Sprechzeiten nicht unzumutbar beeinträchtigt wird; lärmintensive Arbeiten sind auf die Zeiten außerhalb der Sprechstunden zu legen. (2) Die Leistungen sind bis spätestens 30.09.2026 vollständig und abnahmereif fertigzustellen. (3) Behinderungen sind unverzüglich schriftlich anzuzeigen; unterbleibt die Anzeige, kann sich die Auftragnehmerin auf die Behinderung nicht berufen.",
+    "§ 6 Vertragsstrafe. Überschreitet die Auftragnehmerin den Fertigstellungstermin schuldhaft, hat sie für jeden Werktag des Verzugs eine Vertragsstrafe in Höhe von 0,2 % der Netto-Auftragssumme zu zahlen, insgesamt jedoch höchstens 5 % der Netto-Auftragssumme. Die Geltendmachung eines darüber hinausgehenden Schadens bleibt vorbehalten; die Vertragsstrafe wird auf einen solchen Schaden angerechnet. Der Vorbehalt der Vertragsstrafe kann noch bis zur Schlusszahlung erklärt werden.",
+    "§ 7 Abnahme. (1) Die Parteien vereinbaren eine förmliche Abnahme. Die gemeinsame Abnahmebegehung findet am 07.10.2026 in den Praxisräumen statt. (2) Über die Abnahme ist ein Protokoll zu fertigen, in dem festgestellte Mängel und Vorbehalte aufgenommen werden. (3) Eine fiktive Abnahme durch Ingebrauchnahme ist ausgeschlossen; die Auftraggeberin darf die Räume bereits vor der Abnahme für Einrichtungsarbeiten nutzen, ohne dass hierin eine Abnahme liegt.",
+    "§ 8 Mängelansprüche. Die Rechte der Auftraggeberin bei Mängeln richten sich nach den gesetzlichen Vorschriften. Die Verjährungsfrist für Mängelansprüche beträgt für alle Bauleistungen einheitlich fünf Jahre. Die Auftragnehmerin tritt der Auftraggeberin bereits jetzt ihre Mängelansprüche gegen Nachunternehmer und Lieferanten sicherungshalber ab; die Auftraggeberin nimmt die Abtretung an.",
+    "§ 9 Versicherung. Die Auftragnehmerin unterhält eine Betriebshaftpflichtversicherung mit einer Deckungssumme von mindestens 3.000.000,00 EUR für Personen- und Sachschäden. Der Versicherungsnachweis ist vor Arbeitsbeginn vorzulegen. Die Auftraggeberin ist berechtigt, Zahlungen zurückzuhalten, solange der Nachweis nicht erbracht ist.",
+    "§ 10 Nachunternehmer. Der Einsatz von Nachunternehmern bedarf der vorherigen schriftlichen Zustimmung der Auftraggeberin. Die Auftragnehmerin stellt sicher, dass ihre Nachunternehmer die Vorschriften über den Mindestlohn sowie die Arbeitsschutzvorschriften einhalten, und stellt die Auftraggeberin von Ansprüchen Dritter aus Verstößen frei.",
+    "§ 11 Hygiene und Datenschutz. Die Auftragnehmerin verpflichtet ihre Mitarbeiter, Patientenunterlagen, Bildschirme und Akten, die während der Arbeiten zugänglich werden könnten, weder einzusehen noch zu fotografieren. Staubschutzwände sind so zu errichten, dass der Hygienebereich der Praxis nicht beeinträchtigt wird. Die Reinigung der Baustelle erfolgt täglich nach Arbeitsende.",
+    "§ 12 Kündigung. Die Kündigung des Vertrages richtet sich nach den gesetzlichen Vorschriften. Sie bedarf der Schriftform. Im Fall einer Kündigung aus wichtigem Grund ist der erreichte Leistungsstand gemeinsam festzustellen und zu dokumentieren.",
+    "§ 13 Streitbeilegung. Die Parteien verpflichten sich, vor Anrufung der staatlichen Gerichte eine gütliche Einigung unter Hinzuziehung eines öffentlich bestellten und vereidigten Sachverständigen als Schlichter zu versuchen. Das Recht, ein selbständiges Beweisverfahren einzuleiten, bleibt unberührt. Gerichtsstand ist, soweit gesetzlich zulässig, Beispielheim.",
+    "§ 14 Schlussbestimmungen. Änderungen und Ergänzungen dieses Vertrages bedürfen der Schriftform; dies gilt auch für die Aufhebung des Schriftformerfordernisses. Sollte eine Bestimmung unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt. An die Stelle der unwirksamen Bestimmung tritt die gesetzliche Regelung.",
+    "Beispielheim, den 03.03.2026",
+    "Dr. Mira Musterfrau (Auftraggeberin)          Jonas Exempel für die Exempel Innenausbau GmbH (Auftragnehmerin)"
+   ],
+   "label": {
+    "typ": "Vertrag",
+    "zulaessig": [
+     "Vertrag"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "30.04.2026",
+     "30.06.2026",
+     "15.10.2026",
+     "30.09.2026"
+    ],
+    "termin": [
+     "07.10.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "13.04.2026",
+     "03.03.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "vertrag",
+    "lang"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T008",
+   "format": "pdf",
+   "filename": "Rechnung_2026-0712_Beispiel_Gebaeudeservice.pdf",
+   "paragraphs": [
+    "Beispiel Gebäudeservice GmbH · Industriestraße 9 · 12345 Musterstadt",
+    "Kanzlei Musterrecht & Partner, Am Beispielplatz 2, 12345 Musterstadt",
+    "Rechnung Nr. 2026-0712",
+    "Rechnungsdatum: 02.07.2026",
+    "Kundennummer: 40518",
+    "Leistungszeitraum: 01.06.2026 bis 30.06.2026",
+    "Für die im Leistungszeitraum erbrachten Leistungen berechnen wir Ihnen wie folgt:",
+    "Zahlbar ohne Abzug bis 16.07.2026 auf das unten genannte Konto. Bitte geben Sie die Rechnungsnummer als Verwendungszweck an.",
+    "USt-IdNr. DE000000000 (Beispielwert) · Bankverbindung: Beispielbank Musterstadt, IBAN DE00 0000 0000 0000 0000 00"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Leistung",
+     "Menge",
+     "Einzelpreis",
+     "Gesamt"
+    ],
+    "rows": [
+     [
+      "1",
+      "Unterhaltsreinigung Büroflächen",
+      "21 Tage",
+      "38,00 EUR",
+      "798,00 EUR"
+     ],
+     [
+      "2",
+      "Glasreinigung Fensterfront",
+      "1 pauschal",
+      "160,00 EUR",
+      "160,00 EUR"
+     ],
+     [
+      "3",
+      "Verbrauchsmaterial Sanitär",
+      "1 pauschal",
+      "42,50 EUR",
+      "42,50 EUR"
+     ],
+     [
+      "",
+      "Summe netto",
+      "",
+      "",
+      "1.000,50 EUR"
+     ],
+     [
+      "",
+      "zzgl. 19 % USt",
+      "",
+      "",
+      "190,10 EUR"
+     ],
+     [
+      "",
+      "Rechnungsbetrag",
+      "",
+      "",
+      "1.190,60 EUR"
+     ]
+    ]
+   },
+   "label": {
+    "typ": "Rechnung",
+    "zulaessig": [
+     "Rechnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "16.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "02.07.2026",
+     "01.06.2026",
+     "30.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "rechnung",
+    "tabelle"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T009",
+   "format": "docx",
+   "filename": "Sachstandsbericht_Mandantin_Sonnfeld.docx",
+   "paragraphs": [
+    "Kanzlei Musterrecht & Partner",
+    "Frau Greta Sonnfeld, Kirschweg 8, 12346 Beispielheim",
+    "Musterstadt, 22.07.2026",
+    "Ihre Angelegenheit gegen Tobias Exempel – unser Zeichen 118/26",
+    "Sehr geehrte Frau Sonnfeld,",
+    "wir möchten Sie über den aktuellen Stand des Verfahrens informieren. Der Beklagte hat sich inzwischen anwaltlich vertreten lassen und die Forderung lediglich der Höhe nach bestritten. Er meint, einzelne Elektrogeräte seien bei Übergabe defekt gewesen.",
+    "Das Gericht hat Termin zur Güteverhandlung auf den 03.09.2026, 11:00 Uhr, bestimmt. Ihr persönliches Erscheinen ist angeordnet. Bitte bringen Sie die Fotos der Küche, die Sie vor dem Ausbau angefertigt haben, mit.",
+    "Nach unserer Einschätzung bestehen gute Aussichten, zumindest einen erheblichen Teil der Forderung durchzusetzen. Ein Vergleich in Höhe von etwa 85 % der Hauptforderung könnte wirtschaftlich sinnvoll sein; wir besprechen dies gern vor dem Termin mit Ihnen.",
+    "Zu den Kosten: Die bisher angefallenen Gerichtskosten sind durch Ihren Vorschuss gedeckt. Unsere Schlussrechnung werden wir Ihnen nach Abschluss des Verfahrens gesondert übersenden.",
+    "Mit freundlichen Grüßen",
+    "Musterrecht, Rechtsanwältin"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "03.09.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "22.07.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "brief",
+    "schlussrechnung_erwaehnt"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T010",
+   "format": "scan_degraded",
+   "filename": "SV_Kostenrechnung_Exempel.pdf",
+   "paragraphs": [
+    "Ingenieurbüro Exempel – Sachverständige für Bauschäden",
+    "Sachverständiger Dipl.-Ing. Ralf Exempel",
+    "Herrn Tobias Exempel, Ahornring 21, 12345 Musterstadt",
+    "Rechnung Nr. SV-26-0193 vom 11.05.2026",
+    "Betreff: Feuchtigkeitsschäden Kellerwand, Ahornring 21",
+    "Für die Ortsbesichtigung am 28.04.2026 sowie die Erstellung des Kurzgutachtens erlaube ich mir zu berechnen:",
+    "Ortsbesichtigung einschließlich Feuchtemessungen, 3,5 Std. à 115,00 EUR: 402,50 EUR",
+    "Ausarbeitung Kurzgutachten, 4 Std. à 115,00 EUR: 460,00 EUR",
+    "Fahrtkosten, 46 km à 0,42 EUR: 19,32 EUR",
+    "Nettobetrag: 881,82 EUR – Umsatzsteuer 19 %: 167,55 EUR – Gesamtbetrag: 1.049,37 EUR",
+    "Der Rechnungsbetrag ist sofort ohne Abzug fällig.",
+    "Steuernummer 000/000/00000 (Beispiel)"
+   ],
+   "label": {
+    "typ": "Rechnung",
+    "zulaessig": [
+     "Rechnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "11.05.2026",
+     "28.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "rechnung",
+    "ocr",
+    "ocr_stark"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T011",
+   "format": "scan",
+   "filename": "Bussgeldbescheid_Kreis_Musterland.pdf",
+   "paragraphs": [
+    "Kreis Musterland – Zentrale Bußgeldstelle",
+    "Postfach 4711, 12348 Musterland-Mitte",
+    "Bußgeldbescheid",
+    "Aktenzeichen: 75.1-26-008817",
+    "Datum: 09.03.2026",
+    "Herrn Lukas Musterfahrer, geb. 17.08.1985, Fichtenweg 3, 12346 Beispielheim",
+    "Ihnen wird vorgeworfen, am 14.02.2026 um 07:52 Uhr in Beispielheim, Landstraße L 999, Höhe Ortsausgang, als Führer des Pkw mit dem Kennzeichen MU-XX 000 die zulässige Höchstgeschwindigkeit außerhalb geschlossener Ortschaften um 31 km/h überschritten zu haben. Zulässige Geschwindigkeit: 70 km/h. Festgestellte Geschwindigkeit nach Toleranzabzug: 101 km/h.",
+    "Beweismittel: Messprotokoll, Lichtbild, Eichschein.",
+    "Wegen dieser Ordnungswidrigkeit wird gegen Sie eine Geldbuße in Höhe von 150,00 EUR festgesetzt. Zudem haben Sie die Kosten des Verfahrens zu tragen (Gebühr 28,50 EUR, Auslagen 3,50 EUR).",
+    "Der Bußgeldbescheid wird rechtskräftig und vollstreckbar, wenn Sie nicht innerhalb von zwei Wochen nach Zustellung schriftlich oder zur Niederschrift bei der oben genannten Behörde Einspruch einlegen.",
+    "Im Fahreignungsregister wird die Zuwiderhandlung mit einem Punkt bewertet."
+   ],
+   "label": {
+    "typ": "Bescheid",
+    "zulaessig": [
+     "Bescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "09.03.2026",
+     "17.08.1985",
+     "14.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid",
+    "bussgeld",
+    "ocr",
+    "geburtsdatum"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T012",
+   "format": "pdf",
+   "filename": "Kostenbescheid_Abschleppmassnahme.pdf",
+   "paragraphs": [
+    "Stadt Musterstadt – Ordnungsamt",
+    "Kostenbescheid",
+    "Musterstadt, 18.06.2026",
+    "Ihr Fahrzeug, Kennzeichen MU-YY 000 – Abschleppmaßnahme",
+    "Sehr geehrte Frau Exempel,",
+    "Ihr Fahrzeug wurde am 30.05.2026 gegen 14:10 Uhr in der Feuerwehrzufahrt Marktgasse 6 abgestellt vorgefunden. Da eine Halterin nicht erreichbar war und die Zufahrt für Rettungsfahrzeuge freigehalten werden musste, wurde das Fahrzeug im Wege der Ersatzvornahme abgeschleppt.",
+    "Für diese Maßnahme setze ich gegen Sie Kosten in Höhe von insgesamt 289,40 EUR fest (Abschleppunternehmen 236,90 EUR, Verwaltungsgebühr 52,50 EUR).",
+    "Der Betrag ist bis zum 20.07.2026 unter Angabe des Kassenzeichens 5100-26-3381 an die Stadtkasse Musterstadt zu überweisen.",
+    "Rechtsbehelfsbelehrung: Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Widerspruch erhoben werden. Der Widerspruch ist schriftlich oder zur Niederschrift bei der Stadt Musterstadt, Ordnungsamt, einzulegen.",
+    "Im Auftrag – Beispielmann"
+   ],
+   "label": {
+    "typ": "Bescheid",
+    "zulaessig": [
+     "Bescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "20.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "18.06.2026",
+     "30.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid",
+    "kostenbescheid"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T013",
+   "format": "txt",
+   "filename": "Leistungsbescheid_Rueckforderung_Bezuege.txt",
+   "paragraphs": [
+    "Landesamt für Besoldung und Versorgung Musterland",
+    "Personalnummer 0000815 – Leistungsbescheid",
+    "06.08.2026",
+    "Sehr geehrter Herr Beispielmann,",
+    "aufgrund der rückwirkenden Änderung Ihres Familienzuschlags wurden Ihnen für den Zeitraum vom 01.01.2026 bis 30.04.2026 Bezüge in Höhe von insgesamt 1.137,84 EUR ohne Rechtsgrund gezahlt.",
+    "Nach Abwägung der Umstände wird von einer Billigkeitsentscheidung abgesehen, weil die Überzahlung für Sie bei Beachtung der übersandten Mitteilungen erkennbar war.",
+    "Ich fordere Sie daher auf, den Betrag innerhalb von drei Wochen ab Erhalt dieses Bescheides zu erstatten. Auf Antrag kann eine Ratenzahlung bewilligt werden.",
+    "Rechtsbehelfsbelehrung: Gegen diesen Leistungsbescheid kann innerhalb eines Monats nach Bekanntgabe Widerspruch beim Landesamt für Besoldung und Versorgung Musterland erhoben werden.",
+    "Mit freundlichen Grüßen – Sachgebiet 23"
+   ],
+   "label": {
+    "typ": "Bescheid",
+    "zulaessig": [
+     "Bescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 2,
+    "keine_frist": [
+     "06.08.2026",
+     "01.01.2026",
+     "30.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "bescheid",
+    "leistungsbescheid",
+    "ab_erhalt"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T014",
+   "format": "pdf",
+   "filename": "Finanzamt_Musterstadt_USt_2026.pdf",
+   "paragraphs": [
+    "Finanzamt Musterstadt",
+    "Steuernummer 000/111/22222 (Beispiel)",
+    "Datum: 12.03.2027",
+    "Beispiel Haustechnik GmbH, Werkstraße 4, 12345 Musterstadt",
+    "Bescheid für 2026 über Umsatzsteuer",
+    "Der Bescheid ergeht abweichend von der eingereichten Steuererklärung; die Abweichungen sind in den Erläuterungen dargestellt. Er ist nach § 164 Abs. 1 AO nicht mehr unter dem Vorbehalt der Nachprüfung festgesetzt.",
+    "Berechnung der Umsatzsteuer:",
+    "Die Abschlusszahlung in Höhe von 3.912,00 EUR ist bis zum 15.04.2027 zu entrichten.",
+    "Erläuterungen: Die Vorsteuer aus der Rechnung über den Firmen-Pkw wurde nur zu 50 % anerkannt, da die private Nutzung nicht durch ein Fahrtenbuch widerlegt wurde.",
+    "Rechtsbehelfsbelehrung: Der Bescheid kann mit dem Einspruch angefochten werden. Der Einspruch ist beim Finanzamt Musterstadt schriftlich einzureichen, diesem elektronisch zu übermitteln oder dort zur Niederschrift zu erklären. Die Frist für die Einlegung des Einspruchs beträgt einen Monat. Sie beginnt mit Ablauf des Tages, an dem Ihnen dieser Bescheid bekannt gegeben worden ist."
+   ],
+   "table": {
+    "header": [
+     "Bezeichnung",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "Steuerpflichtige Umsätze 19 %",
+      "412.300,00 EUR"
+     ],
+     [
+      "Umsatzsteuer",
+      "78.337,00 EUR"
+     ],
+     [
+      "abziehbare Vorsteuer",
+      "51.225,00 EUR"
+     ],
+     [
+      "festgesetzte Umsatzsteuer",
+      "27.112,00 EUR"
+     ],
+     [
+      "bereits entrichtete Vorauszahlungen",
+      "23.200,00 EUR"
+     ],
+     [
+      "Abschlusszahlung",
+      "3.912,00 EUR"
+     ]
+    ]
+   },
+   "label": {
+    "typ": "Steuerbescheid",
+    "zulaessig": [
+     "Steuerbescheid"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "15.04.2027"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "12.03.2027"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "steuerbescheid",
+    "tabelle"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T015",
+   "format": "pdf",
+   "filename": "Kfz-Schadensgutachten_MU-ZZ000.pdf",
+   "paragraphs": [
+    "Kfz-Sachverständigenbüro Muster",
+    "Haftpflichtschadengutachten Nr. G-26-0211",
+    "Gutachtendatum: 09.02.2026",
+    "Auftraggeber: Herr Lukas Musterfahrer, vertreten durch Kanzlei Musterrecht & Partner",
+    "Fahrzeug: Pkw Kombi, amtliches Kennzeichen MU-ZZ 000, Erstzulassung 15.05.2025, Laufleistung 18.430 km",
+    "Hauptuntersuchung: HU gültig bis 30.11.2027",
+    "Schadenstag: 03.02.2026; Besichtigung des Fahrzeugs am 06.02.2026 in der Werkstatt Beispiel-Autohaus.",
+    "Schadenbeschreibung: Anstoß hinten links. Stoßfänger hinten, Seitenwand links und Heckklappe verformt; Rückleuchte links gebrochen. Die Achsvermessung ergab keine Abweichungen.",
+    "Reparaturkosten laut Kalkulation: 6.842,15 EUR netto. Merkantile Wertminderung: 900,00 EUR. Wiederbeschaffungswert: 31.500,00 EUR. Ein wirtschaftlicher Totalschaden liegt nicht vor.",
+    "Reparaturdauer: 5 Arbeitstage; Nutzungsausfall Gruppe F.",
+    "Ich versichere, das Gutachten unparteiisch und nach bestem Wissen erstellt zu haben. – Dipl.-Ing. (FH) Sven Muster"
+   ],
+   "label": {
+    "typ": "Gutachten",
+    "zulaessig": [
+     "Gutachten"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "09.02.2026",
+     "15.05.2025",
+     "30.11.2027",
+     "03.02.2026",
+     "06.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "gutachten",
+    "gueltig_bis"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T016",
+   "format": "docx",
+   "filename": "Gutachten_Beweisverfahren_4OH3-26.docx",
+   "paragraphs": [
+    "Dr.-Ing. Hanna Beispiel, öffentlich bestellte und vereidigte Sachverständige für Schäden an Gebäuden",
+    "Gutachten im selbständigen Beweisverfahren",
+    "Landgericht Beispielheim, Az. 4 OH 3/26",
+    "Antragsteller: Tobias Exempel – Antragsgegnerin: Musterbau Projekt KG",
+    "1. Auftrag: Gemäß Beweisbeschluss ist zu klären, ob die Abdichtung der Kelleraußenwand im Bereich der Hausanschlüsse fachgerecht ausgeführt wurde und welche Kosten eine Mangelbeseitigung verursacht.",
+    "2. Ortstermin: Der Ortstermin fand am 21.04.2026 in Anwesenheit beider Parteien und ihrer Prozessbevollmächtigten statt. Es wurden Bauteilöffnungen an zwei Stellen vorgenommen.",
+    "3. Feststellungen: An der Rohrdurchführung der Wasserleitung fehlt eine Ringraumdichtung. Die Bitumendickbeschichtung weist dort eine Schichtdicke von lediglich 1,5 mm auf; erforderlich sind nach den anerkannten Regeln der Technik mindestens 3 mm Trockenschichtdicke.",
+    "4. Beantwortung der Beweisfragen: Die Abdichtung ist nicht fachgerecht ausgeführt. Die Feuchtigkeit im Kellerraum ist mit an Sicherheit grenzender Wahrscheinlichkeit auf diesen Mangel zurückzuführen. Die Kosten der Mangelbeseitigung schätze ich auf 5.900,00 EUR bis 6.400,00 EUR brutto.",
+    "Das Gutachten wurde am 19.05.2026 abgeschlossen.",
+    "Dr.-Ing. Hanna Beispiel"
+   ],
+   "label": {
+    "typ": "Gutachten",
+    "zulaessig": [
+     "Gutachten"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "19.05.2026"
+    ],
+    "nicht_bewertet": [
+     "21.04.2026"
+    ]
+   },
+   "tags": [
+    "gutachten",
+    "beweisverfahren"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T017",
+   "format": "pdf",
+   "filename": "Sitzungsprotokoll_12C_233-26.pdf",
+   "paragraphs": [
+    "Amtsgericht Musterstadt – 12 C 233/26",
+    "Protokoll aufgenommen in der öffentlichen Sitzung des Amtsgerichts Musterstadt am 17.06.2026",
+    "Gegenwärtig: Richter am Amtsgericht Vorbild; von der Hinzuziehung eines Urkundsbeamten wurde abgesehen.",
+    "In dem Rechtsstreit Kranich ./. Exempel erscheinen bei Aufruf der Sache: für den Kläger Rechtsanwältin Musterrecht, der Beklagte persönlich mit Rechtsanwalt Vorlage.",
+    "Die Güteverhandlung bleibt erfolglos. Die Parteien verhandeln streitig zur Sache.",
+    "Auf Vorschlag des Gerichts schließen die Parteien folgenden Vergleich: Der Beklagte zahlt an den Kläger zur Abgeltung der Klageforderung 1.800,00 EUR. Die Kosten werden gegeneinander aufgehoben. Der Beklagte behält sich den Widerruf des Vergleichs durch Schriftsatz an das Gericht bis zum 01.07.2026 vor.",
+    "Laut diktiert und genehmigt.",
+    "Beschlossen und verkündet: Für den Fall des Widerrufs wird dem Kläger nachgelassen, auf den Schriftsatz des Beklagten bis zum 08.07.2026 zu erwidern. Termin zur Verkündung einer Entscheidung wird bestimmt auf Donnerstag, 23.07.2026, 9:00 Uhr, Saal 104.",
+    "Vorbild, Richter am Amtsgericht – für die Richtigkeit der Übertragung vom Tonträger: Hinz, Justizbeschäftigte"
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Gerichtliches Schreiben",
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "01.07.2026",
+     "08.07.2026"
+    ],
+    "termin": [
+     "23.07.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "17.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "protokoll",
+    "sitzungsprotokoll"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T018",
+   "format": "docx",
+   "filename": "Niederschrift_Eigentuemerversammlung_2026.docx",
+   "paragraphs": [
+    "Niederschrift über die ordentliche Eigentümerversammlung der Gemeinschaft der Wohnungseigentümer Lindenallee 15–17, 12345 Musterstadt",
+    "Datum der Versammlung: 24.04.2026, Beginn 18:30 Uhr, Ende 21:05 Uhr, Ort: Gemeindesaal Musterstadt",
+    "Versammlungsleiter: Verwalter Bernd Muster, Muster Hausverwaltung",
+    "TOP 1 Feststellung der Beschlussfähigkeit: Anwesend oder vertreten sind 612/1000 Miteigentumsanteile. Die Versammlung ist beschlussfähig.",
+    "TOP 2 Jahresabrechnung 2025: Die Abrechnungsspitzen werden mit 14 Ja-Stimmen, 2 Nein-Stimmen und 1 Enthaltung genehmigt.",
+    "TOP 3 Dachsanierung: Die Gemeinschaft beschließt die Sanierung der Dachfläche des Hauses 17 nach dem Angebot der Firma Beispiel Bedachungen. Zur Finanzierung wird eine Sonderumlage von 48.000,00 EUR erhoben, die nach Miteigentumsanteilen verteilt wird und zum 01.07.2026 fällig ist.",
+    "TOP 4 Verschiedenes: Frau Musterfrau weist auf wiederholte Ruhestörungen im Hinterhof hin. Der Verwalter wird eine Hausmitteilung aushängen.",
+    "Hinweis des Verwalters: Beschlüsse können nur innerhalb eines Monats nach der Beschlussfassung durch Klage beim zuständigen Amtsgericht angefochten werden.",
+    "Musterstadt, 28.04.2026 – Bernd Muster (Versammlungsleiter), Elke Musterfrau (Wohnungseigentümerin), Rolf Exempel (Beiratsvorsitzender)"
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Protokoll"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "01.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "24.04.2026",
+     "28.04.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "protokoll",
+    "niederschrift"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T019",
+   "format": "scan_degraded",
+   "filename": "Verkehrsunfallanzeige_Polizei_Beispielheim.pdf",
+   "paragraphs": [
+    "Polizeiinspektion Beispielheim",
+    "Verkehrsunfallanzeige – Vorgangsnummer 000815/26",
+    "Unfallzeit: 19.01.2026, ca. 17:40 Uhr – Unfallort: Beispielheim, Kreuzung Bahnhofstraße / Gartenweg",
+    "Beteiligter 1: Herr Malte Kranich, geb. 02.12.1990, wohnhaft Gartenweg 2, 12346 Beispielheim; ausgewiesen durch Personalausweis, gültig bis 22.10.2027; Fahrzeug Pkw, Kennzeichen BH-AA 000",
+    "Beteiligte 2: Frau Petra Exempel, wohnhaft Musterweg 12, 12345 Musterstadt; Fahrzeug Kleintransporter, Kennzeichen MU-BB 000",
+    "Unfallhergang nach Angaben der Beteiligten: Am 18.01.2026 gegen 17:40 Uhr befuhr Beteiligter 1 die Bahnhofstraße in Richtung Ortsmitte. Beteiligte 2 bog aus dem Gartenweg nach links ab und missachtete nach Angaben des Beteiligten 1 dessen Vorfahrt. Beteiligte 2 gibt an, Beteiligter 1 sei deutlich zu schnell gefahren.",
+    "Sachschaden an beiden Fahrzeugen, geschätzt insgesamt 9.000,00 EUR. Keine Verletzten. Beide Fahrzeuge waren fahrbereit.",
+    "Zeugen: Herr Ole Beispiel, Gartenweg 5, 12346 Beispielheim.",
+    "Aufgenommen: POK Muster, PK Vorbild"
+   ],
+   "label": {
+    "typ": "Protokoll",
+    "zulaessig": [
+     "Protokoll",
+     "Sonstiges"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "19.01.2026",
+     "02.12.1990",
+     "22.10.2027",
+     "18.01.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "protokoll",
+    "unfallbericht",
+    "ocr",
+    "ocr_stark",
+    "widerspruch",
+    "gueltig_bis",
+    "geburtsdatum"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T020",
+   "format": "pdf",
+   "filename": "Kaufvertrag_Gebrauchtwagen_Kranich.pdf",
+   "paragraphs": [
+    "Anlage K3",
+    "Kaufvertrag über ein gebrauchtes Kraftfahrzeug (privat an privat)",
+    "Verkäufer: Herr Rolf Exempel, Ulmenstraße 4, 12347 Exempelhausen",
+    "Käufer: Herr Malte Kranich, Gartenweg 2, 12346 Beispielheim",
+    "Fahrzeug: Kleinwagen, Fahrzeug-Ident-Nr. XXX0000000000000 (Beispiel), Kilometerstand laut Tacho 64.200 km",
+    "Kaufpreis: 7.900,00 EUR, in bar bei Übergabe gezahlt.",
+    "Das Fahrzeug wird unter Ausschluss jeglicher Sachmängelhaftung verkauft, soweit nicht nachstehend eine Garantie übernommen wird. Der Verkäufer garantiert, dass das Fahrzeug keinen Unfallschaden erlitten hat, solange es in seinem Eigentum stand.",
+    "Kaufdatum: 12.09.2025; Übergabe des Fahrzeugs nebst zwei Schlüsseln und Zulassungsbescheinigung Teil I und II am 15.09.2025.",
+    "Unterschriften: Rolf Exempel (Verkäufer), Malte Kranich (Käufer)"
+   ],
+   "label": {
+    "typ": "Vertrag",
+    "zulaessig": [
+     "Anlage",
+     "Vertrag"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "12.09.2025",
+     "15.09.2025"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage",
+    "vertrag"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T021",
+   "format": "pdf",
+   "filename": "Anlage_B2_Fotodokumentation_Keller.pdf",
+   "paragraphs": [
+    "Fotodokumentation Kellerraum Ahornring 21",
+    "Bild 1: Nordwand, Ansicht von innen, sichtbare Feuchteränder bis ca. 40 cm Höhe.",
+    "Bild 2: Rohrdurchführung Wasserleitung, Ausblühungen am Putz.",
+    "Bild 3: Detailaufnahme mit Zollstock, abgelöste Farbschicht.",
+    "Bild 4: Messgerät Anzeige 4,8 % Materialfeuchte.",
+    "Die Aufnahmen wurden am 27.03.2026 durch den Beklagten selbst gefertigt."
+   ],
+   "label": {
+    "typ": "Anlage",
+    "zulaessig": [
+     "Anlage",
+     "Sonstiges"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "27.03.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage",
+    "anlage_dateiname"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T022",
+   "format": "scan",
+   "filename": "Anlage_K1_Rechnung_Beispiel_Haustechnik.pdf",
+   "paragraphs": [
+    "Beispiel Haustechnik GmbH – Heizung · Sanitär · Solar",
+    "Frau Elke Musterfrau, Lindenallee 17, 12345 Musterstadt",
+    "Rechnung Nr. 25-1187",
+    "Rechnungsdatum: 30.10.2025",
+    "Bauvorhaben: Austausch Gastherme, Lindenallee 17",
+    "Gas-Brennwerttherme inkl. Abgasanlage, Montage und Inbetriebnahme gemäß Auftrag: 9.640,00 EUR netto",
+    "Entsorgung Altgerät: 180,00 EUR netto",
+    "Rechnungsbetrag inkl. 19 % USt: 11.685,80 EUR – abzüglich Abschlag: 8.000,00 EUR – noch zu zahlen: 3.685,80 EUR",
+    "Bitte überweisen Sie den offenen Betrag bis zum 13.11.2025."
+   ],
+   "label": {
+    "typ": "Rechnung",
+    "zulaessig": [
+     "Anlage",
+     "Rechnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "13.11.2025"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "30.10.2025"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "anlage",
+    "anlage_dateiname",
+    "rechnung",
+    "ocr"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T023",
+   "format": "docx",
+   "filename": "Schreiben_Vermieter_Mietrueckstand.docx",
+   "paragraphs": [
+    "Muster Hausverwaltung – im Auftrag der Eigentümerin",
+    "Frau Johanna Beispiel, Lindenallee 15, Whg. 3, 12345 Musterstadt",
+    "Musterstadt, 20.05.2026",
+    "Mietverhältnis Lindenallee 15, Wohnung 3 – Mietvertrag vom 01.03.2025",
+    "Sehr geehrte Frau Beispiel,",
+    "trotz unserer Erinnerung sind die Mieten für die Monate April und Mai 2026 in Höhe von jeweils 840,00 EUR weiterhin offen. Der Rückstand beläuft sich derzeit auf 1.680,00 EUR.",
+    "Wir fordern Sie auf, den Rückstand bis spätestens Ende der 23. KW, also bis zum 05.06.2026 (Freitag), auf das bekannte Konto zu überweisen.",
+    "Sollte der Betrag bis dahin nicht vollständig eingegangen sein, sehen wir uns gezwungen, das Mietverhältnis fristlos, hilfsweise ordentlich zu kündigen. Diese Ankündigung ist noch keine Kündigung; wir möchten Ihnen ausdrücklich Gelegenheit geben, die Angelegenheit zu bereinigen.",
+    "Sollten Sie sich in einer finanziellen Notlage befinden, sprechen Sie uns bitte an.",
+    "Mit freundlichen Grüßen – Bernd Muster"
+   ],
+   "label": {
+    "typ": "Mahnung",
+    "zulaessig": [
+     "Mahnung",
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "05.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "20.05.2026",
+     "01.03.2025"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "kuendigungsandrohung",
+    "kw_frist"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T024",
+   "format": "txt",
+   "filename": "Abmahnung_Lager_Exempel.txt",
+   "paragraphs": [
+    "Beispiel Logistik GmbH – Personalabteilung",
+    "Herrn Kevin Exempel, Personalnummer 3317",
+    "Musterstadt, 14.08.2026",
+    "Abmahnung",
+    "Sehr geehrter Herr Exempel,",
+    "am 11.08.2026 haben Sie Ihre Schicht im Lager ohne Abmeldung beim Schichtleiter um 13:15 Uhr verlassen, obwohl Ihre Arbeitszeit bis 16:00 Uhr festgelegt war. Bereits zuvor waren Sie auf die Pflicht zur Abmeldung hingewiesen worden.",
+    "Durch Ihr Verhalten am 12.08.2026 mussten die Kommissionierungsaufträge eines Großkunden auf die verbliebenen Kollegen verteilt werden; es kam zu Lieferverzögerungen.",
+    "Wir mahnen Sie hiermit wegen dieses Verhaltens ab und fordern Sie auf, Ihre arbeitsvertraglichen Pflichten künftig einzuhalten.",
+    "Im Wiederholungsfall müssen Sie mit arbeitsrechtlichen Konsequenzen bis hin zur Kündigung Ihres Arbeitsverhältnisses rechnen.",
+    "Sie haben Gelegenheit, eine Gegendarstellung zur Personalakte zu reichen. Frist: 28.08.2026.",
+    "Mit freundlichen Grüßen – Sabine Muster, Personalleiterin"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "28.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "14.08.2026",
+     "11.08.2026",
+     "12.08.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "kuendigungsandrohung",
+    "abmahnung",
+    "widerspruch"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T025",
+   "format": "pdf",
+   "filename": "Kuendigung_Arbeitsverhaeltnis_Kranich.pdf",
+   "paragraphs": [
+    "Beispiel Logistik GmbH · Hafenstraße 1 · 12345 Musterstadt",
+    "Persönlich / per Boten",
+    "Herrn Malte Kranich, Gartenweg 2, 12346 Beispielheim",
+    "Musterstadt, 25.09.2026",
+    "Kündigung Ihres Arbeitsverhältnisses",
+    "Sehr geehrter Herr Kranich,",
+    "hiermit kündigen wir das zwischen uns bestehende Arbeitsverhältnis ordentlich und fristgerecht zum 31.12.2026, hilfsweise zum nächstzulässigen Termin.",
+    "Der Betriebsrat wurde vor Ausspruch der Kündigung ordnungsgemäß angehört.",
+    "Wir weisen Sie darauf hin, dass Sie verpflichtet sind, sich unverzüglich, spätestens innerhalb von drei Tagen nach Kenntnis des Beendigungszeitpunktes, persönlich bei der Agentur für Arbeit arbeitsuchend zu melden. Eine verspätete Meldung kann zu einer Sperrzeit führen.",
+    "Ihren restlichen Urlaub gewähren wir Ihnen innerhalb der Kündigungsfrist. Arbeitsmittel wie Schlüssel und Firmenhandy geben Sie bitte am letzten Arbeitstag an Ihren Vorgesetzten zurück.",
+    "Mit freundlichen Grüßen – Geschäftsführung, Bernd Vorbild",
+    "Empfang bestätigt: ______________________"
+   ],
+   "label": {
+    "typ": "Kündigungsschreiben",
+    "zulaessig": [
+     "Kündigungsschreiben"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 1,
+    "keine_frist": [
+     "25.09.2026"
+    ],
+    "nicht_bewertet": [
+     "31.12.2026"
+    ]
+   },
+   "tags": [
+    "kuendigung"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T026",
+   "format": "scan",
+   "filename": "Prozessvollmacht_Musterfahrer.pdf",
+   "paragraphs": [
+    "Vollmacht",
+    "Den Rechtsanwälten der Kanzlei Musterrecht & Partner, Am Beispielplatz 2, 12345 Musterstadt,",
+    "wird hiermit in Sachen Lukas Musterfahrer, geb. 17.08.1985, wegen Verkehrsordnungswidrigkeit vom 14.02.2026 Vollmacht erteilt",
+    "1. zur Prozessführung, Verteidigung und Vertretung in Bußgeldsachen in allen Instanzen, einschließlich der Einlegung und Rücknahme von Rechtsmitteln,",
+    "2. zur Akteneinsicht und zur Entgegennahme von Zustellungen,",
+    "3. zur Begründung und Aufhebung von Vertragsverhältnissen und zur Abgabe einseitiger Willenserklärungen im Zusammenhang mit der vorgenannten Angelegenheit,",
+    "4. zur Bestellung von Vertretern und Unterbevollmächtigten.",
+    "Identität geprüft anhand Personalausweis, gültig bis 18.07.2027 (Vermerk der Kanzlei).",
+    "Beispielheim, 03.02.2026",
+    "Unterschrift: Lukas Musterfahrer"
+   ],
+   "label": {
+    "typ": "Vollmacht",
+    "zulaessig": [
+     "Vollmacht"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "17.08.1985",
+     "14.02.2026",
+     "18.07.2027",
+     "03.02.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "vollmacht",
+    "ocr",
+    "gueltig_bis",
+    "geburtsdatum"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T027",
+   "format": "txt",
+   "filename": "Email_Mandant_Fristunklarheit.txt",
+   "paragraphs": [
+    "Von: rolf.exempel@mail.example",
+    "An: sekretariat@musterrecht.example",
+    "Gesendet: Montag, 03.08.2026 09:14",
+    "Betreff: Schreiben der Gegenseite – welche Frist gilt?",
+    "Guten Morgen Frau Musterrecht,",
+    "gestern lag ein Brief vom Anwalt meines Nachbarn im Briefkasten. Darin steht oben, ich solle die Hecke bis zum 12.08.2026 auf die zulässige Höhe zurückschneiden.",
+    "Weiter unten im selben Brief heißt es dann aber, man erwarte die Beseitigung bis 19.08.2026, andernfalls werde Klage erhoben. Ich weiß jetzt nicht, welches Datum gilt.",
+    "Ich scanne Ihnen den Brief heute Abend ein. Können Sie mir kurz sagen, ob ich vorher etwas unternehmen muss?",
+    "Viele Grüße",
+    "Rolf Exempel"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "03.08.2026"
+    ],
+    "nicht_bewertet": [
+     "12.08.2026",
+     "19.08.2026"
+    ]
+   },
+   "tags": [
+    "email",
+    "widerspruch"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T028",
+   "format": "pdf",
+   "filename": "Angebot_Aktenvernichtung_2026.pdf",
+   "paragraphs": [
+    "Beispiel Datenentsorgung GmbH · Recyclingweg 7 · 12347 Exempelhausen",
+    "Kanzlei Musterrecht & Partner, Am Beispielplatz 2, 12345 Musterstadt",
+    "Angebot Nr. A-26-554 vom 05.10.2026",
+    "Sehr geehrte Damen und Herren,",
+    "vielen Dank für Ihre Anfrage. Gern bieten wir Ihnen die datenschutzkonforme Vernichtung von Akten und Datenträgern an:",
+    "Bereitstellung von vier verschließbaren Sicherheitsbehältern (240 l), Abholung im vierwöchentlichen Turnus, Vernichtung nach Sicherheitsstufe P-4 mit Vernichtungsnachweis: monatlich 96,00 EUR netto.",
+    "Einmalige Räumung des Archivs (ca. 3 m³) nach Terminabsprache: 420,00 EUR netto.",
+    "Dieses Angebot ist gültig bis 30.11.2026. Es gelten unsere beigefügten Allgemeinen Geschäftsbedingungen.",
+    "Mit freundlichen Grüßen – Vertrieb, Nina Beispiel",
+    "E-Mail: vertrieb@datenentsorgung.example"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "05.10.2026",
+     "30.11.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "angebot",
+    "gueltig_bis"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T029",
+   "format": "docx",
+   "filename": "Aktennotiz_Telefonat_Beispielmann.docx",
+   "paragraphs": [
+    "Aktennotiz",
+    "Akte 207/26 – Beispielmann ./. Landesamt für Besoldung und Versorgung Musterland",
+    "Telefonat am 14.09.2026, 10:20 Uhr bis 10:45 Uhr, RAin Musterrecht mit dem Mandanten Herrn Gerd Beispielmann, geb. 23.05.1968",
+    "Der Mandant teilt mit, er habe die Mitteilungen über die Änderung des Familienzuschlags nie erhalten; die Post sei seinerzeit an die alte Anschrift gegangen. Er legt Wert darauf, dass eine Ratenzahlung nur hilfsweise beantragt wird.",
+    "Der Mandant bringt die Umzugsbestätigung und die Kontoauszüge zum Besprechungstermin mit. Besprechungstermin in der Kanzlei am 01.10.2026 um 14:00 Uhr vereinbart.",
+    "Wiedervorlage: 28.09.2026 (Unterlagen eingegangen?)",
+    "gez. Musterrecht"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "01.10.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "14.09.2026",
+     "23.05.1968"
+    ],
+    "nicht_bewertet": [
+     "28.09.2026"
+    ]
+   },
+   "tags": [
+    "aktennotiz",
+    "geburtsdatum"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T030",
+   "format": "pdf",
+   "filename": "Zweite_Mahnung_Kd40518.pdf",
+   "paragraphs": [
+    "Beispiel Gebäudeservice GmbH · Industriestraße 9 · 12345 Musterstadt",
+    "Kanzlei Musterrecht & Partner, Am Beispielplatz 2, 12345 Musterstadt",
+    "Musterstadt, 17.07.2026",
+    "2. Mahnung – Kundennummer 40518",
+    "Sehr geehrte Damen und Herren,",
+    "unsere Rechnung Nr. 2026-0611 vom 10.06.2026 über 1.142,40 EUR war am 24.06.2026 fällig. Trotz unserer Zahlungserinnerung konnten wir bislang keinen Zahlungseingang feststellen.",
+    "Wir bitten Sie, den offenen Betrag zuzüglich einer Mahngebühr von 5,00 EUR letztmalig bis zum 31.07.2026 zu überweisen.",
+    "Sollte die Zahlung bereits erfolgt sein, betrachten Sie dieses Schreiben bitte als gegenstandslos. Nach fruchtlosem Fristablauf werden wir die Forderung ohne weitere Ankündigung an ein Inkassounternehmen abgeben.",
+    "Mit freundlichen Grüßen – Buchhaltung"
+   ],
+   "label": {
+    "typ": "Mahnung",
+    "zulaessig": [
+     "Mahnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "31.07.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "17.07.2026",
+     "10.06.2026"
+    ],
+    "nicht_bewertet": [
+     "24.06.2026"
+    ]
+   },
+   "tags": [
+    "mahnung"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T031",
+   "format": "docx",
+   "filename": "Einspruch_ESt-Bescheid_2025_Kranich.docx",
+   "paragraphs": [
+    "Kanzlei Musterrecht & Partner – Steuerrecht",
+    "Finanzamt Beispielheim, Postfach 1000, 12346 Beispielheim",
+    "Musterstadt, 01.06.2026",
+    "Steuerpflichtiger: Malte Kranich, Steuernummer 000/222/33333 (Beispiel)",
+    "Einspruch gegen den Bescheid für 2025 über Einkommensteuer vom 04.05.2026",
+    "Sehr geehrte Damen und Herren,",
+    "namens und in Vollmacht unseres Mandanten legen wir gegen den oben bezeichneten Bescheid Einspruch ein. Der Bescheid ist unserem Mandanten am 07.05.2026 zugegangen.",
+    "Das Finanzamt hat die Aufwendungen für das häusliche Arbeitszimmer nicht berücksichtigt. Unserem Mandanten steht für die Erstellung der Gutachten, die den Mittelpunkt seiner Tätigkeit bilden, kein anderer Arbeitsplatz zur Verfügung.",
+    "Eine ausführliche Begründung nebst Nachweisen reichen wir bis zum 15.07.2026 nach.",
+    "Zugleich beantragen wir, die Vollziehung des Bescheides in Höhe von 2.310,00 EUR auszusetzen.",
+    "Mit freundlichen Grüßen – Dr. Musterjurist, Rechtsanwalt und Fachanwalt für Steuerrecht"
+   ],
+   "label": {
+    "typ": "Einspruch",
+    "zulaessig": [
+     "Einspruch"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [
+     "07.05.2026"
+    ],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.06.2026",
+     "04.05.2026"
+    ],
+    "nicht_bewertet": [
+     "15.07.2026"
+    ]
+   },
+   "tags": [
+    "einspruch",
+    "fristbeginn"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T032",
+   "format": "pdf",
+   "filename": "Ladung_Gueteverhandlung_5C_610-26.pdf",
+   "paragraphs": [
+    "Amtsgericht Beispielheim",
+    "Geschäftsnummer: 5 C 610/26",
+    "Beispielheim, 06.10.2026",
+    "Herrn Rolf Exempel, Ulmenstraße 4, 12347 Exempelhausen",
+    "In dem Rechtsstreit Ole Beispiel ./. Rolf Exempel",
+    "Ladung",
+    "Sehr geehrter Herr Exempel,",
+    "die Klageschrift wurde Ihnen am 22.09.2026 zugestellt. Termin zur Güteverhandlung und sich unmittelbar anschließenden mündlichen Verhandlung wird bestimmt auf",
+    "Mittwoch, 18.11.2026, 10:30 Uhr, Sitzungssaal 2, Erdgeschoss, Gerichtsstraße 1, 12346 Beispielheim.",
+    "Ihr persönliches Erscheinen wird zur Aufklärung des Sachverhalts angeordnet. Bei unentschuldigtem Ausbleiben kann gegen Sie ein Ordnungsgeld festgesetzt werden.",
+    "Ihnen wird aufgegeben, auf die Klage innerhalb von drei Wochen ab Erhalt dieses Schreibens schriftlich zu erwidern.",
+    "Auf Anordnung – Kraus, Justizsekretärin als Urkundsbeamtin der Geschäftsstelle",
+    "Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig."
+   ],
+   "label": {
+    "typ": "Gerichtliches Schreiben",
+    "zulaessig": [
+     "Gerichtliches Schreiben"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "18.11.2026"
+    ],
+    "fristbeginn": [
+     "22.09.2026"
+    ],
+    "fristdauern": 1,
+    "keine_frist": [
+     "06.10.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ladung",
+    "fristbeginn",
+    "ab_erhalt"
+   ],
+   "herkunft": "neu (blind)"
+  },
+  {
+   "id": "CD-T033",
+   "format": "txt",
+   "filename": "Mandantenschreiben_Berufungsfrist_Kranich.txt",
+   "paragraphs": [
+    "Kanzlei Musterrecht & Partner",
+    "Herrn Malte Kranich – per E-Mail an m.kranich@post.invalid",
+    "Musterstadt, 20.07.2026",
+    "Ihr Rechtsstreit gegen die Beispiel Versicherung AG – Urteil des Landgerichts Beispielheim",
+    "Sehr geehrter Herr Kranich,",
+    "das Urteil des Landgerichts, mit dem Ihre Klage überwiegend abgewiesen wurde, ist uns am 15.07.2026 zugestellt worden. Eine Kopie fügen wir bei.",
+    "Die Frist zur Einlegung der Berufung läuft am 17.08.2026 ab. Bis dahin müsste die Berufung beim Oberlandesgericht eingelegt sein; die Begründung kann später folgen.",
+    "Nach unserer Einschätzung hat eine Berufung hinsichtlich der Höhe des Verdienstausfalls Aussicht auf Erfolg, hinsichtlich des Schmerzensgeldes dagegen kaum. Bitte prüfen Sie auch, ob Ihre Rechtsschutzversicherung die Kosten der Berufung übernimmt.",
+    "Damit wir rechtzeitig handeln können, benötigen wir Ihre Entscheidung. Frist: 14.08.2026.",
+    "Mit freundlichen Grüßen",
+    "Dr. Musterjurist, Rechtsanwalt"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Sonstiges",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "17.08.2026",
+     "14.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [
+     "15.07.2026"
+    ],
+    "fristdauern": 0,
+    "keine_frist": [
+     "20.07.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "brief",
+    "fristbeginn",
+    "laeuft_ab"
+   ],
+   "herkunft": "neu (blind)"
+  }
+ ]
+}

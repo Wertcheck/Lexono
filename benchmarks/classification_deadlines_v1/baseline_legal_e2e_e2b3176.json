@@ -1,0 +1,736 @@
+{
+ "ocr": true,
+ "splits": {
+  "dev": {
+   "klassifikation": {
+    "je_typ": {
+     "Gutachten": {
+      "praezision": "2/2",
+      "recall": "2/2"
+     },
+     "Klage/Schriftsatz": {
+      "praezision": "1/1",
+      "recall": "1/1"
+     },
+     "Rechnung": {
+      "praezision": "1/2",
+      "recall": "1/1"
+     },
+     "Vertrag": {
+      "praezision": "3/3",
+      "recall": "3/3"
+     }
+    },
+    "kerntyp_dokumente": 7,
+    "kerntyp_richtig": 7,
+    "unbekannt_gesamt": "9/20",
+    "fehler": [
+     {
+      "doc": "LE-D003/D4",
+      "referenz": "schreiben",
+      "lexono": "Rechnung",
+      "kind": "kerntyp_auf_rollendokument"
+     }
+    ],
+    "rollendokumente_zur_sichtpruefung": [
+     {
+      "doc": "LE-D001/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D001/D3",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D001/D5",
+      "referenz": "schreiben",
+      "lexono": "Kündigungsschreiben"
+     },
+     {
+      "doc": "LE-D002/D2",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D002/D3",
+      "referenz": "schreiben",
+      "lexono": "Kündigungsschreiben"
+     },
+     {
+      "doc": "LE-D002/D4",
+      "referenz": "notiz",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D003/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D003/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D1",
+      "referenz": "anlage",
+      "lexono": "Gerichtliches Schreiben"
+     },
+     {
+      "doc": "LE-D004/D2",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D4",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-D004/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     }
+    ]
+   },
+   "fristen": {
+    "referenzfristen": 9,
+    "richtig": 9,
+    "uebersehen": 0,
+    "quellenbezug_richtig": 9,
+    "vorschlaege_gesamt": 10,
+    "vorschlaege_je_art": {
+     "Frist": 9,
+     "Termin": 1
+    },
+    "als_termin_ausgewiesen": 1,
+    "ereignisdatum_als_frist": 0,
+    "persoenliches_datum_als_frist_KRITISCH": 0,
+    "ungeklaert": 0,
+    "je_fall": [
+     {
+      "case": "LE-D001",
+      "vorschlaege": 3,
+      "ohne_datum": 0,
+      "je_art": {
+       "Frist": 3
+      },
+      "termine": [],
+      "richtig": [
+       "15.04.2026",
+       "20.02.2026",
+       "31.03.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "15.04.2026",
+       "20.02.2026",
+       "31.03.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "20.02.2026",
+        "doc": "D2",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "20.02.2026 :: 02.02.2026 ebenfalls gesehen.  Ich bitte um Beseitigung bis zum 20.02.2026. Erreichbar bin ich unter 0171 "
+       },
+       {
+        "datum": "31.03.2026",
+        "doc": "D3",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "31.03.2026 :: 1.250,00 EUR monatlich.  Ich fordere Sie auf, den Rückstand bis zum 31.03.2026 auszugleichen. Andernfalls "
+       },
+       {
+        "datum": "15.04.2026",
+        "doc": "D5",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "15.04.2026 :: 3 BGB in Betracht.  Wir erwarten Ihre Stellungnahme bis zum 15.04.2026."
+       }
+      ],
+      "ohne_datum_einzeln": []
+     },
+     {
+      "case": "LE-D002",
+      "vorschlaege": 2,
+      "ohne_datum": 0,
+      "je_art": {
+       "Frist": 2
+      },
+      "termine": [],
+      "richtig": [
+       "13.04.2026",
+       "30.06.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "13.04.2026",
+       "30.06.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "30.06.2026",
+        "doc": "D3",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "30.06.2026 :: Wiegelmann,  hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.  Grund ist das wiederho"
+       },
+       {
+        "datum": "13.04.2026",
+        "doc": "D5",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "13.04.2026 :: drei Wochen nach Zugang der Kündigung am 23.03.2026, also am 13.04.2026.  Die Kündigung ist sozial ungerec"
+       }
+      ],
+      "ohne_datum_einzeln": []
+     },
+     {
+      "case": "LE-D003",
+      "vorschlaege": 4,
+      "ohne_datum": 0,
+      "je_art": {
+       "Frist": 3,
+       "Termin": 1
+      },
+      "termine": [
+       "02.12.2025"
+      ],
+      "richtig": [
+       "08.01.2026",
+       "15.01.2026",
+       "30.09.2025"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "08.01.2026",
+       "15.01.2026",
+       "30.09.2025"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "30.09.2025",
+        "doc": "D1",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "30.09.2025 :: Pauschalvergütung beträgt 184.500,00 EUR. Die  Fertigstellung ist bis zum 30.09.2025 geschuldet. Bei Übers"
+       },
+       {
+        "datum": "02.12.2025",
+        "doc": "D3",
+        "art": "Termin",
+        "konfidenz": 0.35,
+        "stelle": "02.12.2025 :: PG-2025-118    Sachverständiger: Ralf Ebbinghaus    Ortstermin am 02.12.2025 im Dachgeschoss.    Ursache d"
+       },
+       {
+        "datum": "08.01.2026",
+        "doc": "D4",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "08.01.2026 :: ist noch ein Betrag von 23.600,00 EUR offen, den wir bis zum 08.01.2026 erwarten.  Torsten Wendeburg, Gesc"
+       },
+       {
+        "datum": "15.01.2026",
+        "doc": "D5",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "15.01.2026 :: Beseitigung der Mängel an der Dampfsperre eine Frist bis zum 15.01.2026.  Nach fruchtlosem Fristablauf wir"
+       }
+      ],
+      "ohne_datum_einzeln": []
+     },
+     {
+      "case": "LE-D004",
+      "vorschlaege": 1,
+      "ohne_datum": 0,
+      "je_art": {
+       "Frist": 1
+      },
+      "termine": [],
+      "richtig": [
+       "15.05.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "15.05.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "15.05.2026",
+        "doc": "D5",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "15.05.2026 :: 25.03.2026  Namens unserer Mandantin fordern wir Sie auf, bis zum 15.05.2026 an der Auseinandersetzung des"
+       }
+      ],
+      "ohne_datum_einzeln": []
+     }
+    ]
+   },
+   "laufzeit_sekunden": 22.14,
+   "dokumente": [
+    {
+     "case": "LE-D001",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D4",
+     "type_reference": "rechnung",
+     "classified": "Rechnung",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D001",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Kündigungsschreiben",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D2",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Kündigungsschreiben",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D4",
+     "type_reference": "notiz",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D002",
+     "doc": "D5",
+     "type_reference": "klageschrift",
+     "classified": "Klage/Schriftsatz",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D1",
+     "type_reference": "vertrag",
+     "classified": "Vertrag",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D3",
+     "type_reference": "gutachten",
+     "classified": "Gutachten",
+     "format": "scan"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Rechnung",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D003",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D1",
+     "type_reference": "anlage",
+     "classified": "Gerichtliches Schreiben",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D2",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D3",
+     "type_reference": "gutachten",
+     "classified": "Gutachten",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-D004",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    }
+   ]
+  },
+  "test": {
+   "klassifikation": {
+    "je_typ": {
+     "Bescheid": {
+      "praezision": "1/1",
+      "recall": "1/2"
+     },
+     "Gutachten": {
+      "praezision": "1/1",
+      "recall": "1/1"
+     },
+     "Protokoll": {
+      "praezision": "1/1",
+      "recall": "1/2"
+     }
+    },
+    "kerntyp_dokumente": 5,
+    "kerntyp_richtig": 3,
+    "unbekannt_gesamt": "9/13",
+    "fehler": [
+     {
+      "doc": "LE-T001/D1",
+      "referenz": "protokoll",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     },
+     {
+      "doc": "LE-T002/D2",
+      "referenz": "bescheid",
+      "lexono": "Unbekannt",
+      "kind": "unbekannt"
+     }
+    ],
+    "rollendokumente_zur_sichtpruefung": [
+     {
+      "doc": "LE-T001/D3",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T001/D4",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D1",
+      "referenz": "anlage",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D3",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D4",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T002/D5",
+      "referenz": "schreiben",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T003/D3",
+      "referenz": "email",
+      "lexono": "Unbekannt"
+     },
+     {
+      "doc": "LE-T003/D4",
+      "referenz": "schreiben",
+      "lexono": "Einspruch"
+     }
+    ]
+   },
+   "fristen": {
+    "referenzfristen": 3,
+    "richtig": 3,
+    "uebersehen": 0,
+    "quellenbezug_richtig": 3,
+    "vorschlaege_gesamt": 7,
+    "vorschlaege_je_art": {
+     "Frist": 4,
+     "Fristbeginn": 2,
+     "Fristdauer": 1
+    },
+    "als_termin_ausgewiesen": 0,
+    "ereignisdatum_als_frist": 0,
+    "persoenliches_datum_als_frist_KRITISCH": 0,
+    "ungeklaert": 1,
+    "je_fall": [
+     {
+      "case": "LE-T001",
+      "vorschlaege": 1,
+      "ohne_datum": 0,
+      "je_art": {
+       "Frist": 1
+      },
+      "termine": [],
+      "richtig": [
+       "30.06.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "30.06.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "30.06.2026",
+        "doc": "D3",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "30.06.2026 :: erstatten wir nicht. Weitere Unterlagen erbitten wir bis zum 30.06.2026."
+       }
+      ],
+      "ohne_datum_einzeln": []
+     },
+     {
+      "case": "LE-T002",
+      "vorschlaege": 2,
+      "ohne_datum": 1,
+      "je_art": {
+       "Fristbeginn": 1,
+       "Frist": 1
+      },
+      "termine": [],
+      "richtig": [
+       "31.07.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "31.07.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [],
+      "einzeln": [
+       {
+        "datum": "31.07.2026",
+        "doc": "D5",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "31.07.2026 :: Auskunft über den Bestand des Nachlasses nach § 2314 BGB bis zum 31.07.2026.  Wegen der Schenkung des Haus"
+       }
+      ],
+      "ohne_datum_einzeln": [
+       {
+        "doc": "D3",
+        "art": "Fristbeginn",
+        "angabe": "10.02.2026 :: lag bei etwa 240.000,00 EUR.  Vom Testament habe ich erst am 10.02.2026 erfahren. Bitt"
+       }
+      ]
+     },
+     {
+      "case": "LE-T003",
+      "vorschlaege": 4,
+      "ohne_datum": 2,
+      "je_art": {
+       "Fristdauer": 1,
+       "Frist": 2,
+       "Fristbeginn": 1
+      },
+      "termine": [],
+      "richtig": [
+       "20.08.2026"
+      ],
+      "uebersehen": [],
+      "quellenbezug_richtig": [
+       "20.08.2026"
+      ],
+      "ereignisdatum_als_frist": [],
+      "persoenliches_datum_als_frist": [],
+      "ungeklaert": [
+       "31.12.2025"
+      ],
+      "einzeln": [
+       {
+        "datum": "31.12.2025",
+        "doc": "D2",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "31.12.2025 :: Jannik Brettschneider  Eichschein des Messgeräts gültig bis 31.12.2025."
+       },
+       {
+        "datum": "20.08.2026",
+        "doc": "D4",
+        "art": "Frist",
+        "konfidenz": 0.5,
+        "stelle": "20.08.2026 :: Einspruch ein.  Die Einspruchsfrist nach § 67 Abs. 1 OWiG endet am 20.08.2026.  Wir beantragen Akteneinsic"
+       }
+      ],
+      "ohne_datum_einzeln": [
+       {
+        "doc": "D1",
+        "art": "Fristdauer",
+        "angabe": "innerhalb von zwei Wochen nach Zustellung :: Fahrverbot: 1 Monat (§ 25 StVG).    Gegen diesen Besche"
+       },
+       {
+        "doc": "D3",
+        "art": "Fristbeginn",
+        "angabe": "06.08.2026 :: 07.08.2026  Betreff: Bußgeldbescheid  Der Bescheid wurde mir am 06.08.2026 zugestellt."
+       }
+      ]
+     }
+    ]
+   },
+   "laufzeit_sekunden": 14.83,
+   "dokumente": [
+    {
+     "case": "LE-T001",
+     "doc": "D1",
+     "type_reference": "protokoll",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D2",
+     "type_reference": "gutachten",
+     "classified": "Gutachten",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D3",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T001",
+     "doc": "D4",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D1",
+     "type_reference": "anlage",
+     "classified": "Unbekannt",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D2",
+     "type_reference": "bescheid",
+     "classified": "Unbekannt",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D3",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T002",
+     "doc": "D5",
+     "type_reference": "schreiben",
+     "classified": "Unbekannt",
+     "format": "docx"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D1",
+     "type_reference": "bescheid",
+     "classified": "Bescheid",
+     "format": "scan"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D2",
+     "type_reference": "protokoll",
+     "classified": "Protokoll",
+     "format": "pdf"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D3",
+     "type_reference": "email",
+     "classified": "Unbekannt",
+     "format": "txt"
+    },
+    {
+     "case": "LE-T003",
+     "doc": "D4",
+     "type_reference": "schreiben",
+     "classified": "Einspruch",
+     "format": "docx"
+    }
+   ]
+  }
+ }
+}

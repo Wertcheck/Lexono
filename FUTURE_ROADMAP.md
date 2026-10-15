@@ -113,6 +113,26 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 
 ---
 
+## Stand Qualitätspunkte P1/P2 (15.10.2026, belegt)
+
+Es gibt keine eigene `ROADMAP.md`; diese Datei ist die Planungsgrundlage. Der Stand ist nur, was mit synthetischen Daten
+gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
+
+| Punkt | Stand | Beleg |
+|---|---|---|
+| P1.1 Tabellenversand im installierten Build | erledigt: Ursache Prüfskript; klare Meldung bei unlesbarem Anhang; installierter Build PASS | §38 |
+| P1.2 Aktenzuordnung („Ihr Zeichen“, bekannte Absender, Mehrdeutigkeit) | erledigt: automatisch nur bei Aktenzeichen und bekanntem Absender; installierter Build PASS | §39 |
+| P2.1 Fristen/Klassifikation (Ereignisdaten, Unbekannt) | erledigt: Ereignisdaten als Frist 27 → 0 bzw. 17 → 0 (Legal-E2E) | §40 |
+| P2.2 Testkorpus + Modellvergleich | erledigt: Korpus `benchmarks/classification_deadlines_v1` (Dev 34, Test 33, blind, eingefroren); Regeln im Test: kritische Fehler 12 → 6; Claude und OpenAI im Test ohne belastbaren Unterschied, beide deutlich besser als die Regeln | §41 |
+
+**Nächste Schritte (Vorschlag, nicht umgesetzt):**
+1. **Restfehlerklassen** aus dem P2.2-Testsplit als neue Dev-Fälle nachbauen: Teilwörter „klage“/„gericht“ in Briefen,
+   Mahnung, Einspruch, Ladung. Danach einen **neuen** blinden Testsplit (v2) mit mindestens 100 Dokumenten messen.
+2. **Owner-Entscheidung:** Soll eine cloudgestützte Klassifikation/Fristerkennung als **Vorschlag** (nie automatisch)
+   über den Privacy-Gateway geprüft werden? Das braucht einen neuen Allowlist-Zweck, also eine Architekturentscheidung.
+   Etwa 15 % der Dokumente wären durch fail-closed ausgeschlossen. Voraussetzung ist ein größerer blinder Vergleich mit
+   Wiederholungsläufen.
+
 ## Release-Planung
 
 ### v0.2.0 (Quick Wins, nächste Woche nach Pilot)

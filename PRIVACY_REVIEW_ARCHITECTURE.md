@@ -5058,3 +5058,239 @@ LE-T002/D2 (Bescheid).
 | Fremder Anhang | 7/7 blockiert | 7/7 blockiert |
 
 **Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
+
+## 41. P2.2: Testkorpus Klassifikation/Fristen und Modellvergleich Claude ↔ OpenAI (15.10.2026, Ausgang `e2b3176`)
+
+Nur synthetische Daten. Lexono-Messungen rein lokal. Im Modellvergleich gingen nur pseudonymisierte synthetische Texte
+an die Cloud. Die Schlüssel stammen aus der lokalen `.env` (`ANTHROPIC_API_KEY`, `OpenAI_API_KEY`); sie wurden nie
+ausgegeben oder protokolliert, die `.env` blieb unverändert und uncommittet. Es gibt keinen automatischen Modellwechsel,
+keine neue Fristberechnung und keine neue automatische Zuordnung.
+
+### 41.1 Korpus
+
+`benchmarks/classification_deadlines_v1` (Details und Labels: README dort):
+- **Dev, 34 Dokumente:** von der Entwicklungssitzung erstellt. Enthält die Reproduktionen bekannter Fehler (Eichschein
+  „gültig bis“, „Schlussrechnung“ im Satz, Kündigungsandrohung, Unfallmitteilung, Urkunde) sowie Urteile und Beschlüsse,
+  gekennzeichnete Anlagen, OCR-Scans, lange Dokumente, Tabellen, Widersprüche und ungewöhnliche Fristformulierungen.
+- **Test, 33 Dokumente:** **blind** von einem eigenen Agenten verfasst. Vor jeder Codeänderung eingefroren
+  (SHA-256 `a2cb8015…54fe9f2`, per Test geprüft).
+- **Ablauf:** Messung zuerst auf dem unveränderten Code, Entwicklung nur an Dev, danach eine einzige Schlussmessung.
+- **Bewertung:** gemeinsam für alle Quellen (`cd_measure.score`).
+- **Baselines gesichert:** Legal-E2E auf `e2b3176`; Dev und Test auf `e2b3176`; historische §40-Messungen kopiert.
+
+### 41.2 Ursachen (Dev, belegt mit `tests/test_p22_dev_regressions.py`, vorher 21 rot)
+
+**Fristen:**
+- **Regression aus P2.1:** „binnen **eines** Monats nach Zustellung“ wurde nicht mehr als Dauer erkannt, weil „eines“
+  als Zahlwort fehlte. „innerhalb eines Monats“ (ohne „von“) und „Frist von zwei Wochen ab Zugang“ wurden nie erkannt.
+- **Gültigkeitsdatum als Frist:** „Eichschein gültig bis …“ wurde zur Frist.
+- **Nicht erkannte Fristformulierungen:** „bis Freitag, 05.06.2026“; „Einspruchsfrist läuft am … ab“; eine
+  Fristentabelle mit der Spalte „Frist“ (die Zeilen selbst tragen kein Fristwort).
+- **Termine:** „Verhandlung/Sitzung **vom** …“ (Verweis auf eine vergangene Sitzung) wurde zum Termin; lange
+  Terminformeln („wird anberaumt auf den …“) wurden nicht erkannt.
+
+**Klassifikation:**
+- Urteil wurde zum Steuerbescheid, weil die „Rechtsbehelfsbelehrung“ als Steuermerkmal vorrangig war.
+- Klage, Mahnung und Briefe wurden zur Rechnung, weil „Schlussrechnung vom …“ bzw. „zu unserer Rechnung vom …“ im Satz
+  zählte.
+- Kündigungsandrohung wurde zum Kündigungsschreiben. Zusätzlich trennten Abkürzungspunkte („§ 543 Abs. 2 … Nr. 3“) den
+  Satz.
+- „Stellungnahme Gutachten“ in einer Tabellenzelle wurde zum Gutachten.
+- Bei „Einspruch“ über einen PDF-Zeilenumbruch („Einspruch\nein.“) wurde der Einspruch nicht erkannt.
+- „Unfallmitteilung“ blieb ohne Typ.
+
+### 41.3 Änderungen (eng begrenzt, Produktivcode)
+
+**`app/deadlines/extractor.py`:**
+- Dauer-Muster erweitert („innerhalb (von)“, „Frist von“, „ab/seit“ + Ereignis, „eines“ als Zahlwort). Ein Ende wird
+  weiterhin nie berechnet.
+- „gültig bis“ ist ein Datum, keine Frist.
+- Wochentag zwischen Hinweiswort und Datum wird übersprungen.
+- Fristwort früher im Satzteil + „am/bis/zum“ ergibt eine Frist, außer der Satz nennt einen Beginn („begann“).
+- Tabellen: Der Spaltenkopf „Frist/Fällig…/Termin“ entscheidet.
+- „vom“ ergibt keinen Termin; Terminformeln bis 70 Zeichen.
+- **Zurückgenommen:** „Werktage“ als Einheit. Die Legal-E2E-Regressionsprüfung zeigte 119 Dauer-Vorschläge aus den
+  Vertragsklauseln eines 50.000-Zeichen-Bauvertrags.
+
+**`app/classification/classifier.py`:**
+- Urteil/Beschluss wird zuerst geprüft.
+- Rechnung nur mit Rechnungsmerkmal („Rechnung Nr./-nummer/-datum“) oder „…rechnung“ als Überschrift.
+- Gutachten/Protokoll nur in Titelstellung (erste zwei Wörter einer Zeile, keine Tabellenzeilen).
+- Androhungssätze zählen nicht für „Kündigungsschreiben“. Sie werden am Originaltext erkannt; eine Satzgrenze ist nur
+  Punkt + Großbuchstabe, Gegentest: eine echte Kündigung neben einem Vorbehaltssatz bleibt eine Kündigung.
+- Leerraum wird normalisiert (PDF-Umbruch).
+- „Unfallmitteilung/-anzeige/-aufnahme“ gilt als Protokoll.
+- **Rechtsbehelfsbelehrung ist kein Einspruch:** „kann … Einspruch eingelegt werden“, „Einspruch einlegen/einzulegen“
+  zählen nicht. Gefunden beim Vorbereiten der Prüfung im installierten Build, eigener Dev-Test; aktive Formen bleiben.
+  Die Schlussmessung lief erneut auf diesem Endstand: Test unverändert, Dev nur CD-D026 „Einspruch“ → „Unbekannt“
+  (beides zulässig).
+
+**Unverändert:** Konfidenzdeckel 0,4, Pseudonymisierung, Gates, Fail-Closed, idempotente Fristenanalyse (bestehende
+Fristen werden nie geändert).
+
+### 41.4 Ergebnis Lexono (echter Verarbeitungspfad, OCR aktiv)
+
+| Kennzahl | Dev (n=34) vorher → nachher | **Test (n=33, unabhängig)** vorher → nachher |
+|---|---|---|
+| Typ richtig | 25 → 34 | **23 → 24** |
+| Kerntypen richtig | 19/24 → 24/24 | **19/26 → 20/26** |
+| „Unbekannt“ | 8/34 → 10/34 | 4/33 → 4/33 |
+| Fristen gefunden | 13/17 → 17/17 | **10/18 → 12/18** |
+| Nicht-Frist als Frist (kritisch) | 1 → 0 | **4 → 0** |
+| Termine (falsch) | 3/4 (2) → 4/4 (0) | 3/6 (2) → 3/6 (1) |
+| Fristbeginn | 1/1 → 1/1 | 3/3 → 3/3 |
+| Fristdauern | 1/6 → 6/6 | **5/10 → 8/10** |
+| kritische Fehler | 5 → 0 | **12 → 6** |
+| Laufzeit gesamt | 39 s → 39 s | 41 s → 40 s |
+
+**Präzision/Recall je Klasse, Test nachher** (Fallzahlen 1–6 je Klasse):
+
+| Klasse | Präzision | Recall |
+|---|---|---|
+| Bescheid, Gutachten, Urteil/Beschluss, Anlage, Vollmacht, Kündigungsschreiben | voll (je 1–3 Fälle) | voll (je 1–3 Fälle) |
+| Rechnung | 3/4 | 3/3 |
+| Vertrag | 3/4 | 3/3 |
+| Protokoll | 2/2 | 2/3 |
+| Steuerbescheid | 1/2 | 1/1 |
+| Klage/Schriftsatz | **2/5** | 2/3 |
+| Gerichtliches Schreiben | **0/2** | 0/1 |
+| Mahnung | – | **0/2** |
+| Einspruch | – | 0/1 |
+
+**Verwechslungen (Test):**
+- Briefe und E-Mails → Klage/Schriftsatz (2);
+- Brief → Gerichtliches Schreiben;
+- Mahnung → Vertrag und Rechnung;
+- Einspruch → Steuerbescheid;
+- Ladung → Klage/Schriftsatz.
+
+**Bewertung:**
+- Dev ist nach der Entwicklung fehlerfrei; der unabhängige Test verbessert sich deutlich weniger. Das ist ein klares
+  Zeichen für **Überanpassung**: Die Regeln verallgemeinern nur teilweise.
+- Belastbar verbessert (Test): **keine Nicht-Frist mehr als Frist (4 → 0)**, Dauern (5 → 8), Fristen (10 → 12),
+  kritische Fehler (12 → 6).
+- Die Klassifikation bleibt im Test nahezu unverändert.
+
+**Legal-E2E-Korpus (`p21_measure`):**
+- Keine Verschlechterung je Dokument.
+- LE-D003/D4 („Schlussrechnung“-Brief) jetzt „Unbekannt“; LE-T001/D1 (Unfallmitteilung) jetzt „Protokoll“; LE-D001/D5
+  (Androhung) jetzt „Unbekannt“.
+- Der Eichschein-Fehlalarm ist weg. Die Vorschläge bleiben: dev 10, test 6.
+
+### 41.5 Modellvergleich Claude ↔ OpenAI (Phase 2)
+
+**Methode:**
+- **Fälle:** dieselben, Dev und Test.
+- **Eingabe:** dieselbe, nämlich der von Lexono extrahierte Text inkl. OCR-Fehlern, vor dem Versand mit Lexonos
+  Pseudonymisierung (Presidio/NER) bearbeitet.
+- **Fail-closed:** Danach lief der Restrisiko-Scan (`detect_all`). Bei einem Rest-Treffer wurde **nicht** gesendet:
+  Dev 1/34, Test 5/33.
+- **Aufgabe und Bewertung:** dieselbe Aufgabe (ein JSON-Prompt mit Typliste und Fristarten), dieselbe Bewertung.
+- **Harness:** `scripts/legal_bench/cloud_compare.py`; Zugangsprüfung ohne Kosten über `cloud_access_check.py`.
+- **Modelle und Parameter:**
+  - `claude-sonnet-5`, das Lexono-Produktivmodell: Thinking aus, `max_tokens` 1200, kein `temperature`, wie im
+    Produktiv-Provider.
+  - `gpt-5.5-2026-04-23`, fester Snapshot: `reasoning_effort` none, `max_completion_tokens` 1200, JSON-Antwortformat;
+    `temperature` wird von gpt-5.x nicht unterstützt.
+- **Kostengrenze, vorab festgelegt:** ein Aufruf je Dokument und Modell, höchstens 80 Aufrufe und 5 USD je Modell,
+  10 USD gesamt.
+
+**Ergebnis, identische Teilmenge der gesendeten Dokumente:**
+
+| Kennzahl | Lexono P2.2 (Regeln) | Claude Sonnet 5 | OpenAI GPT-5.5 |
+|---|---|---|---|
+| **Test (n=28)**: Typ richtig | 20 | **28** | **27** |
+| Test: Fristen gefunden | 11/17 | **17/17** | **17/17** |
+| Test: Nicht-Frist als Frist | 0 | 0 | 0 |
+| Test: Termine (falsch) | 2/5 (1) | 5/5 (**2**) | 5/5 (0) |
+| Test: Fristbeginn (falsch) | 3/3 (0) | 3/3 (1) | 3/3 (0) |
+| Test: Dauern | 7/9 | 9/9 | 9/9 (+1) |
+| Test: kritische Fehler | 6 | 0 | 0 |
+| **Dev (n=33)**: Typ richtig | 33 (auf Dev entwickelt) | 29 | 30 |
+| Dev: Fristen gefunden | 17/17 | 16/17 | 16/17 |
+
+**Kosten und Laufzeit:**
+
+| | Claude | OpenAI |
+|---|---|---|
+| Test (28 Aufrufe) | 41.016 Ein- / 1.640 Aus-Token, ≈ 0,098 USD, 35 s | 21.114 / 1.062, ≈ 0,137 USD, 57 s |
+| Dev (33 Aufrufe) | 40.024 / 1.818, ≈ 0,098 USD, 52 s | 20.209 / 1.155, ≈ 0,136 USD, 54 s |
+
+- Gesamt einschließlich Probeläufe ≈ 0,51 USD.
+- Die Kosten sind aus den gemeldeten Token und öffentlichen Preisangaben geschätzt (Sonnet 5: 2/10 USD, GPT-5.5:
+  5/30 USD je 1 Mio. Token, Stand 10/2026) und **nicht** mit dem Anbieter-Dashboard abgeglichen.
+- Die Tokenizer unterscheiden sich: Derselbe Text ergibt bei Claude rund doppelt so viele Eingabe-Token.
+
+**Einzelfehler der Modelle:**
+- **Claude, Test:** 2× ein vergangenes Datum als Termin, 1× ein Datum als Fristbeginn, das keiner ist.
+- **OpenAI, Test:** eine nur über den **Dateinamen** gekennzeichnete Anlage wurde zu „Unbekannt“. Der Harness gibt den
+  Modellen nur den Text, nicht den Dateinamen; das benachteiligt beide Modelle bei 1 Test- und 1 Dev-Dokument.
+- **Dev, beide:** Abweichungen bei strittigen Rollen-Labels (Zahlungsaufforderung mit Kündigungsandrohung →
+  „Mahnung“, Unfallmitteilung → „Unbekannt“, Wiedervorlage nicht als Frist). Die Dev-Labels wurden **nicht**
+  nachträglich an die Modelle angepasst.
+
+**Bewertung (Phase 3):**
+- Auf dem unabhängigen Test sind **beide Modelle deutlich besser als die Regeln**: Typ 27–28 von 28 gegenüber 20,
+  Fristen 17/17 gegenüber 11/17, keine kritischen Fehler.
+- **Zwischen Claude und OpenAI gibt es bei n=28 keinen belastbaren Unterschied:** ein Typfehler gegenüber drei
+  Datumsart-Fehlern bei gleichen Fristtreffern. Kein Sieger.
+- Claude war günstiger (≈ 0,0035 gegenüber ≈ 0,005 USD je Dokument) und im Test schneller. Auch das liegt bei diesen
+  Fallzahlen im Bereich einer Einzelmessung.
+
+### 41.6 Datenschutz
+
+- Alle Texte waren synthetisch und wurden vor dem Versand lokal pseudonymisiert. Danach lief der Restrisiko-Scan mit
+  fail-closed: 6 von 67 Dokumenten wurden **nicht** gesendet (Rest-Treffer „person“/„ort“).
+- Der Modellvergleich nutzt die Gateway-**Bausteine**, nicht den Produktiv-Gateway. Dessen Allowlist kennt keinen Zweck
+  „Klassifikation“, und ein neuer Zweck wäre eine Architekturentscheidung.
+- Das Siegel und die Antwort-Leck-Prüfung des Produktivpfads sind im Harness nicht nachgebildet. Für synthetische Daten
+  ist das vertretbar; **für echte Daten ist dieser Harness nicht zugelassen**.
+- **Folge für ein Produkt:** Rund 15 % der Testdokumente (5/33) würden von einer cloudbasierten Klassifikation
+  fail-closed ausgeschlossen und müssten lokal bewertet werden.
+- Fristdaten gingen durch die Pseudonymisierung nicht verloren (lokal geprüft). Geburtsdaten werden maskiert.
+
+### 41.7 Tests und QA
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neue Tests (`test_p22_dev_regressions.py`, `test_classification_deadlines_corpus.py` inkl. Hash-Prüfung) | PASS; vorher 21 Dev-Regressionsfälle rot |
+| Betroffene Testgruppen (Fristen, Klassifikation, Dokumente, Chat, Drafting, Export, Suche, Aufgaben, Posteingang, Matching, Datenschutz, Benchmarks, Mail-Abruf), Endstand | **1381 bestanden**, 0 fehlgeschlagen, 1 xfailed |
+| Volle Suite | **NICHT VERIFIZIERT**: Der Lauf wurde von Claude Code wegen knappen Systemspeichers bei etwa 15 % gestoppt und nicht wiederholt. Bis dahin 707 bestanden, fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`). |
+| Legal-E2E-Korpus (`p21_measure`) | keine Verschlechterung je Dokument (siehe 41.4) |
+
+### 41.8 Offene Risiken
+
+- **Überanpassung der Regeln:** Dev 34/34 gegenüber Test 24/33. Die Restfehler im Test sind Klassen, die erst neu als
+  Dev-Fälle nachzubauen sind (Teilwort „klage“/„gericht“ in Briefen, Mahnung, Einspruch gegen Steuerbescheid, Ladung)
+  und dann gegen einen **neuen** blinden Testsplit (v2) zu messen.
+- **Kleine Fallzahlen** (Klassen mit 1–6 Fällen). Synthetische Texte derselben Modellfamilie.
+- **Dauer-Klauseln in Verträgen** („innerhalb von N Tagen nach …“) erzeugen weiterhin Dauer-Vorschläge. Bewusst
+  unverändert; Werktage sind zurückgenommen.
+- **Modellvergleich:**
+  - nur ein Lauf je Modell, keine Wiederholungsmessung (Streuung unbekannt);
+  - Dateiname nicht übergeben;
+  - Preise nicht vom Anbieter bestätigt.
+
+### 41.9 Installierter Build (Neubau 15.10.2026, 01:31)
+
+- **Archivprüfung `bundlecheck_p22.py`:** alle P2.2-Merkmale vorhanden (Extraktor, Klassifikator, Matter-Kontext).
+- **Echter Upload-Pfad:** Chat-Anhang in der sauberen synthetischen QA-Akte, Fang-Server, kein echtes Modell.
+
+| Dokument | Ergebnis |
+|---|---|
+| Schreiben mit „Schlussrechnung“-Erwähnung und „bis Freitag, 05.06.2026“ | **PASS**: Typ „Unbekannt“ (vorher „Rechnung“), Frist 05.06.2026 |
+| Messprotokoll mit „Eichschein gültig bis 31.12.2026“ und „binnen eines Monats nach Zustellung … Einspruch eingelegt werden“ | **PASS**: Typ „Protokoll“; keine Frist aus dem Gültigkeitsdatum; eine Fristdauer ohne Datum |
+| Endurteil mit Rechtsbehelfsbelehrung und „Verhandlung vom 03.03.2026“ | **PASS**: Typ „Urteil/Beschluss“; kein Termin aus dem Verweis |
+| Payload vor der Cloud-Grenze | **PASS**: Bezeichnungen „Mögliche Frist/Termin/Fristbeginn“ korrekt, kein Schlüssel |
+
+### 41.10 Legal-E2E-Benchmark (Arbeitsbaum `e2b3176` + §41, einmal, Ollama-Modell vorher entladen)
+
+| Kennzahl | Ergebnis |
+|---|---|
+| Kritische Befunde, Klartext-Lecks, fremde Akte im Payload, blockierte Aufgaben | keine, 0, 0, keine |
+| Benötigte Werte, Schriftsätze, erfundene Fundstellen markiert | 29/29 und 20/20; 4/4 und 3/3; 8/8 und 6/6 |
+| Fristen: Referenzdaten / außerhalb der Referenz | dev 9/9 / 1 (Ortstermin als Termin); test 3/3 / **0** (vorher 1: Eichschein) |
+| Aktenzuordnung | keine Fremdzuordnung; „Az.“ bzw. „Ihr Zeichen“ 5/5; Aktenzeichen allein automatisch 0/5 |
+| Fremder Anhang | 7/7 blockiert |
+
+**Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.

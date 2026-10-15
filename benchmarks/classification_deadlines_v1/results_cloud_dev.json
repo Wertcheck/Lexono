@@ -1,0 +1,1374 @@
+{
+ "split": "dev",
+ "sha256": "92d6ec799bcd372d3a13a290527e420317d525016c60e90b8659c0a2f06138b0",
+ "dokumente": 34,
+ "modelle": {
+  "claude": {
+   "modell": "claude-sonnet-5",
+   "parameter": {
+    "max_tokens": 1200,
+    "thinking": {
+     "type": "disabled"
+    }
+   },
+   "aufrufe": 33,
+   "token_ein": 40024,
+   "token_aus": 1818,
+   "kosten_usd_geschaetzt": 0.0982,
+   "abbruch": null,
+   "laufzeit_sekunden": 51.7,
+   "bewertung": {
+    "dokumente": 34,
+    "klassifikation": {
+     "richtig": "29/34",
+     "kerntypen_richtig": "21/24",
+     "unbekannt_quote": "10/34",
+     "unbekannt_bei_kerntypen": "2/24",
+     "je_klasse": {
+      "Anlage": {
+       "praezision": "3/3",
+       "recall": "2/2"
+      },
+      "Bescheid": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Einspruch": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Gerichtliches Schreiben": {
+       "praezision": "1/2",
+       "recall": "1/1"
+      },
+      "Gutachten": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Klage/Schriftsatz": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Kündigungsschreiben": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Mahnung": {
+       "praezision": "1/2",
+       "recall": "1/1"
+      },
+      "Protokoll": {
+       "praezision": "2/2",
+       "recall": "2/3"
+      },
+      "Prüfungsanordnung": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Rechnung": {
+       "praezision": "2/3",
+       "recall": "2/2"
+      },
+      "Steuerbescheid": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Unbekannt": {
+       "praezision": "8/10",
+       "recall": "8/10"
+      },
+      "Urteil/Beschluss": {
+       "praezision": "2/2",
+       "recall": "2/3"
+      },
+      "Vertrag": {
+       "praezision": "-",
+       "recall": "1/2"
+      },
+      "Vollmacht": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      }
+     },
+     "verwechslungen": {
+      "Protokoll": {
+       "Protokoll": 2,
+       "Unbekannt": 1
+      },
+      "Unbekannt": {
+       "Rechnung": 1,
+       "Mahnung": 1,
+       "Unbekannt": 8
+      },
+      "Urteil/Beschluss": {
+       "Urteil/Beschluss": 2,
+       "Gerichtliches Schreiben": 1
+      },
+      "Vertrag": {
+       "Unbekannt": 1,
+       "Anlage": 1
+      }
+     },
+     "fehler": [
+      {
+       "doc": "CD-D002",
+       "gold": "Urteil/Beschluss",
+       "zulaessig": [
+        "Urteil/Beschluss"
+       ],
+       "vorhersage": "Gerichtliches Schreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "beschluss",
+        "ungewoehnliche_frist"
+       ]
+      },
+      {
+       "doc": "CD-D008",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Mahnung",
+        "Unbekannt"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "bekannter_fehler",
+        "erwaehnung"
+       ]
+      },
+      {
+       "doc": "CD-D009",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Unbekannt"
+       ],
+       "vorhersage": "Mahnung",
+       "art": "falscher_typ",
+       "tags": [
+        "bekannter_fehler",
+        "kuendigungsandrohung"
+       ]
+      },
+      {
+       "doc": "CD-D011",
+       "gold": "Vertrag",
+       "zulaessig": [
+        "Vertrag"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "vertrag",
+        "lang"
+       ]
+      },
+      {
+       "doc": "CD-D017",
+       "gold": "Protokoll",
+       "zulaessig": [
+        "Protokoll"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "bekannter_fehler",
+        "ocr",
+        "protokoll"
+       ]
+      }
+     ]
+    },
+    "fristen": {
+     "frist": {
+      "erwartet": 17,
+      "richtig": 16,
+      "uebersehen": 1,
+      "falsch": 0
+     },
+     "termin": {
+      "erwartet": 4,
+      "richtig": 4,
+      "uebersehen": 0,
+      "falsch": 1,
+      "falsch_keine_frist_als_termin": 1
+     },
+     "fristbeginn": {
+      "erwartet": 1,
+      "richtig": 1,
+      "uebersehen": 0,
+      "falsch": 0
+     }
+    },
+    "fristdauern": {
+     "erwartet": 6,
+     "erkannt": 6,
+     "zusaetzlich": 0
+    },
+    "kritisch": [
+     {
+      "doc": "CD-D033",
+      "art": "frist_uebersehen",
+      "datum": "10.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "notiz"
+      ]
+     }
+    ],
+    "fristfehler": [
+     {
+      "doc": "CD-D001",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "03.03.2026",
+      "tags": [
+       "urteil"
+      ]
+     },
+     {
+      "doc": "CD-D033",
+      "art": "frist_uebersehen",
+      "datum": "10.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "notiz"
+      ]
+     }
+    ]
+   },
+   "vorhersagen": {
+    "CD-D001": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [
+      "03.03.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D002": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "30.04.2026"
+     ],
+     "termin": [
+      "21.05.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D003": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D004": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D005": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "30.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D006": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D007": {
+     "typ": "Rechnung",
+     "frist": [
+      "16.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D008": {
+     "typ": "Rechnung",
+     "frist": [
+      "20.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D009": {
+     "typ": "Mahnung",
+     "frist": [
+      "18.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D010": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "31.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D012": {
+     "typ": "Bescheid",
+     "frist": [
+      "10.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D013": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D014": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "12.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D015": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D016": {
+     "typ": "Protokoll",
+     "frist": [],
+     "termin": [
+      "18.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D017": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D018": {
+     "typ": "Protokoll",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D019": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D020": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D021": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D022": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D023": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "06.07.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-D024": {
+     "typ": "Unbekannt",
+     "frist": [
+      "05.06.2026"
+     ],
+     "termin": [
+      "09.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D025": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D026": {
+     "typ": "Unbekannt",
+     "frist": [
+      "20.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D027": {
+     "typ": "Unbekannt",
+     "frist": [
+      "15.05.2026",
+      "18.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D028": {
+     "typ": "Unbekannt",
+     "frist": [
+      "12.06.2026",
+      "26.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D029": {
+     "typ": "Mahnung",
+     "frist": [
+      "15.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D030": {
+     "typ": "Vollmacht",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D031": {
+     "typ": "Einspruch",
+     "frist": [
+      "15.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D032": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [
+      "14.07.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D033": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D034": {
+     "typ": "Prüfungsanordnung",
+     "frist": [],
+     "termin": [
+      "01.07.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    }
+   },
+   "details": {
+    "CD-D001": {
+     "sekunden": 2.36,
+     "token_ein": 1112,
+     "token_aus": 64
+    },
+    "CD-D002": {
+     "sekunden": 6.59,
+     "token_ein": 1001,
+     "token_aus": 69
+    },
+    "CD-D003": {
+     "sekunden": 1.13,
+     "token_ein": 930,
+     "token_aus": 56
+    },
+    "CD-D004": {
+     "sekunden": 1.18,
+     "token_ein": 1045,
+     "token_aus": 57
+    },
+    "CD-D005": {
+     "sekunden": 6.75,
+     "token_ein": 9331,
+     "token_aus": 65
+    },
+    "CD-D006": {
+     "sekunden": 1.09,
+     "token_ein": 970,
+     "token_aus": 46
+    },
+    "CD-D007": {
+     "sekunden": 1.2,
+     "token_ein": 988,
+     "token_aus": 59
+    },
+    "CD-D008": {
+     "sekunden": 1.22,
+     "token_ein": 929,
+     "token_aus": 54
+    },
+    "CD-D009": {
+     "sekunden": 1.38,
+     "token_ein": 1041,
+     "token_aus": 59
+    },
+    "CD-D010": {
+     "sekunden": 1.14,
+     "token_ein": 937,
+     "token_aus": 59
+    },
+    "CD-D011": {
+     "fehler": "Rest-Treffer nach Pseudonymisierung: ['person'] - nicht gesendet"
+    },
+    "CD-D012": {
+     "sekunden": 1.37,
+     "token_ein": 1032,
+     "token_aus": 59
+    },
+    "CD-D013": {
+     "sekunden": 1.11,
+     "token_ein": 949,
+     "token_aus": 46
+    },
+    "CD-D014": {
+     "sekunden": 1.28,
+     "token_ein": 979,
+     "token_aus": 62
+    },
+    "CD-D015": {
+     "sekunden": 1.04,
+     "token_ein": 941,
+     "token_aus": 46
+    },
+    "CD-D016": {
+     "sekunden": 1.11,
+     "token_ein": 946,
+     "token_aus": 54
+    },
+    "CD-D017": {
+     "sekunden": 1.17,
+     "token_ein": 1028,
+     "token_aus": 52
+    },
+    "CD-D018": {
+     "sekunden": 1.18,
+     "token_ein": 975,
+     "token_aus": 46
+    },
+    "CD-D019": {
+     "sekunden": 1.2,
+     "token_ein": 905,
+     "token_aus": 50
+    },
+    "CD-D020": {
+     "sekunden": 1.07,
+     "token_ein": 919,
+     "token_aus": 45
+    },
+    "CD-D021": {
+     "sekunden": 1.1,
+     "token_ein": 935,
+     "token_aus": 45
+    },
+    "CD-D022": {
+     "sekunden": 1.1,
+     "token_ein": 935,
+     "token_aus": 47
+    },
+    "CD-D023": {
+     "sekunden": 1.12,
+     "token_ein": 916,
+     "token_aus": 55
+    },
+    "CD-D024": {
+     "sekunden": 1.71,
+     "token_ein": 936,
+     "token_aus": 68
+    },
+    "CD-D025": {
+     "sekunden": 1.13,
+     "token_ein": 931,
+     "token_aus": 47
+    },
+    "CD-D026": {
+     "sekunden": 1.18,
+     "token_ein": 944,
+     "token_aus": 55
+    },
+    "CD-D027": {
+     "sekunden": 1.21,
+     "token_ein": 941,
+     "token_aus": 63
+    },
+    "CD-D028": {
+     "sekunden": 1.19,
+     "token_ein": 922,
+     "token_aus": 63
+    },
+    "CD-D029": {
+     "sekunden": 1.21,
+     "token_ein": 956,
+     "token_aus": 54
+    },
+    "CD-D030": {
+     "sekunden": 1.12,
+     "token_ein": 962,
+     "token_aus": 47
+    },
+    "CD-D031": {
+     "sekunden": 1.49,
+     "token_ein": 960,
+     "token_aus": 59
+    },
+    "CD-D032": {
+     "sekunden": 1.3,
+     "token_ein": 915,
+     "token_aus": 61
+    },
+    "CD-D033": {
+     "sekunden": 1.16,
+     "token_ein": 895,
+     "token_aus": 47
+    },
+    "CD-D034": {
+     "sekunden": 1.2,
+     "token_ein": 918,
+     "token_aus": 59
+    }
+   }
+  },
+  "openai": {
+   "modell": "gpt-5.5-2026-04-23",
+   "parameter": {
+    "reasoning_effort": "none",
+    "max_completion_tokens": 1200
+   },
+   "aufrufe": 33,
+   "token_ein": 20209,
+   "token_aus": 1155,
+   "kosten_usd_geschaetzt": 0.1357,
+   "abbruch": null,
+   "laufzeit_sekunden": 53.5,
+   "bewertung": {
+    "dokumente": 34,
+    "klassifikation": {
+     "richtig": "30/34",
+     "kerntypen_richtig": "21/24",
+     "unbekannt_quote": "11/34",
+     "unbekannt_bei_kerntypen": "3/24",
+     "je_klasse": {
+      "Anlage": {
+       "praezision": "2/2",
+       "recall": "1/2"
+      },
+      "Bescheid": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Einspruch": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Gerichtliches Schreiben": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Gutachten": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Klage/Schriftsatz": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Kündigungsschreiben": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Mahnung": {
+       "praezision": "2/3",
+       "recall": "1/1"
+      },
+      "Protokoll": {
+       "praezision": "2/2",
+       "recall": "2/3"
+      },
+      "Prüfungsanordnung": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Rechnung": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Steuerbescheid": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Unbekannt": {
+       "praezision": "8/11",
+       "recall": "9/10"
+      },
+      "Urteil/Beschluss": {
+       "praezision": "3/3",
+       "recall": "3/3"
+      },
+      "Vertrag": {
+       "praezision": "-",
+       "recall": "1/2"
+      },
+      "Vollmacht": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      }
+     },
+     "verwechslungen": {
+      "Anlage": {
+       "Anlage": 1,
+       "Unbekannt": 1
+      },
+      "Protokoll": {
+       "Protokoll": 2,
+       "Unbekannt": 1
+      },
+      "Vertrag": {
+       "Unbekannt": 1,
+       "Anlage": 1
+      }
+     },
+     "fehler": [
+      {
+       "doc": "CD-D009",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Unbekannt"
+       ],
+       "vorhersage": "Mahnung",
+       "art": "falscher_typ",
+       "tags": [
+        "bekannter_fehler",
+        "kuendigungsandrohung"
+       ]
+      },
+      {
+       "doc": "CD-D011",
+       "gold": "Vertrag",
+       "zulaessig": [
+        "Vertrag"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "vertrag",
+        "lang"
+       ]
+      },
+      {
+       "doc": "CD-D017",
+       "gold": "Protokoll",
+       "zulaessig": [
+        "Protokoll"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "bekannter_fehler",
+        "ocr",
+        "protokoll"
+       ]
+      },
+      {
+       "doc": "CD-D020",
+       "gold": "Anlage",
+       "zulaessig": [
+        "Anlage"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "anlage",
+        "dateiname"
+       ]
+      }
+     ]
+    },
+    "fristen": {
+     "frist": {
+      "erwartet": 17,
+      "richtig": 16,
+      "uebersehen": 1,
+      "falsch": 0
+     },
+     "termin": {
+      "erwartet": 4,
+      "richtig": 4,
+      "uebersehen": 0,
+      "falsch": 0
+     },
+     "fristbeginn": {
+      "erwartet": 1,
+      "richtig": 1,
+      "uebersehen": 0,
+      "falsch": 0
+     }
+    },
+    "fristdauern": {
+     "erwartet": 6,
+     "erkannt": 6,
+     "zusaetzlich": 0
+    },
+    "kritisch": [
+     {
+      "doc": "CD-D033",
+      "art": "frist_uebersehen",
+      "datum": "10.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "notiz"
+      ]
+     }
+    ],
+    "fristfehler": [
+     {
+      "doc": "CD-D033",
+      "art": "frist_uebersehen",
+      "datum": "10.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "notiz"
+      ]
+     }
+    ]
+   },
+   "vorhersagen": {
+    "CD-D001": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D002": {
+     "typ": "Urteil/Beschluss",
+     "frist": [
+      "30.04.2026"
+     ],
+     "termin": [
+      "21.05.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D003": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D004": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D005": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "30.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D006": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D007": {
+     "typ": "Rechnung",
+     "frist": [
+      "16.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D008": {
+     "typ": "Mahnung",
+     "frist": [
+      "20.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D009": {
+     "typ": "Mahnung",
+     "frist": [
+      "18.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D010": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "31.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D012": {
+     "typ": "Bescheid",
+     "frist": [
+      "10.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D013": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D014": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "12.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D015": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D016": {
+     "typ": "Protokoll",
+     "frist": [],
+     "termin": [
+      "18.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D017": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D018": {
+     "typ": "Protokoll",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D019": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D020": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D021": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D022": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D023": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "06.07.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-D024": {
+     "typ": "Unbekannt",
+     "frist": [
+      "05.06.2026"
+     ],
+     "termin": [
+      "09.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D025": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-D026": {
+     "typ": "Unbekannt",
+     "frist": [
+      "20.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D027": {
+     "typ": "Unbekannt",
+     "frist": [
+      "15.05.2026",
+      "18.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D028": {
+     "typ": "Unbekannt",
+     "frist": [
+      "12.06.2026",
+      "26.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D029": {
+     "typ": "Mahnung",
+     "frist": [
+      "15.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D030": {
+     "typ": "Vollmacht",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D031": {
+     "typ": "Einspruch",
+     "frist": [
+      "15.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D032": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [
+      "14.07.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D033": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-D034": {
+     "typ": "Prüfungsanordnung",
+     "frist": [],
+     "termin": [
+      "01.07.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    }
+   },
+   "details": {
+    "CD-D001": {
+     "sekunden": 1.55,
+     "token_ein": 579,
+     "token_aus": 32
+    },
+    "CD-D002": {
+     "sekunden": 1.57,
+     "token_ein": 525,
+     "token_aus": 46
+    },
+    "CD-D003": {
+     "sekunden": 1.64,
+     "token_ein": 471,
+     "token_aus": 32
+    },
+    "CD-D004": {
+     "sekunden": 1.45,
+     "token_ein": 552,
+     "token_aus": 34
+    },
+    "CD-D005": {
+     "sekunden": 1.59,
+     "token_ein": 4337,
+     "token_aus": 41
+    },
+    "CD-D006": {
+     "sekunden": 1.7,
+     "token_ein": 497,
+     "token_aus": 29
+    },
+    "CD-D007": {
+     "sekunden": 1.75,
+     "token_ein": 514,
+     "token_aus": 36
+    },
+    "CD-D008": {
+     "sekunden": 1.58,
+     "token_ein": 481,
+     "token_aus": 36
+    },
+    "CD-D009": {
+     "sekunden": 1.63,
+     "token_ein": 541,
+     "token_aus": 36
+    },
+    "CD-D010": {
+     "sekunden": 1.89,
+     "token_ein": 488,
+     "token_aus": 39
+    },
+    "CD-D011": {
+     "fehler": "Rest-Treffer nach Pseudonymisierung: ['person'] - nicht gesendet"
+    },
+    "CD-D012": {
+     "sekunden": 1.69,
+     "token_ein": 530,
+     "token_aus": 36
+    },
+    "CD-D013": {
+     "sekunden": 1.43,
+     "token_ein": 486,
+     "token_aus": 29
+    },
+    "CD-D014": {
+     "sekunden": 1.66,
+     "token_ein": 496,
+     "token_aus": 38
+    },
+    "CD-D015": {
+     "sekunden": 1.58,
+     "token_ein": 489,
+     "token_aus": 29
+    },
+    "CD-D016": {
+     "sekunden": 1.83,
+     "token_ein": 482,
+     "token_aus": 37
+    },
+    "CD-D017": {
+     "sekunden": 1.56,
+     "token_ein": 526,
+     "token_aus": 30
+    },
+    "CD-D018": {
+     "sekunden": 1.73,
+     "token_ein": 514,
+     "token_aus": 30
+    },
+    "CD-D019": {
+     "sekunden": 1.48,
+     "token_ein": 470,
+     "token_aus": 29
+    },
+    "CD-D020": {
+     "sekunden": 1.41,
+     "token_ein": 473,
+     "token_aus": 30
+    },
+    "CD-D021": {
+     "sekunden": 1.56,
+     "token_ein": 481,
+     "token_aus": 29
+    },
+    "CD-D022": {
+     "sekunden": 1.49,
+     "token_ein": 491,
+     "token_aus": 30
+    },
+    "CD-D023": {
+     "sekunden": 1.7,
+     "token_ein": 474,
+     "token_aus": 37
+    },
+    "CD-D024": {
+     "sekunden": 1.74,
+     "token_ein": 480,
+     "token_aus": 44
+    },
+    "CD-D025": {
+     "sekunden": 1.61,
+     "token_ein": 474,
+     "token_aus": 30
+    },
+    "CD-D026": {
+     "sekunden": 1.65,
+     "token_ein": 487,
+     "token_aus": 37
+    },
+    "CD-D027": {
+     "sekunden": 1.72,
+     "token_ein": 492,
+     "token_aus": 44
+    },
+    "CD-D028": {
+     "sekunden": 1.71,
+     "token_ein": 484,
+     "token_aus": 44
+    },
+    "CD-D029": {
+     "sekunden": 1.67,
+     "token_ein": 491,
+     "token_aus": 36
+    },
+    "CD-D030": {
+     "sekunden": 1.51,
+     "token_ein": 504,
+     "token_aus": 30
+    },
+    "CD-D031": {
+     "sekunden": 1.8,
+     "token_ein": 496,
+     "token_aus": 37
+    },
+    "CD-D032": {
+     "sekunden": 1.62,
+     "token_ein": 470,
+     "token_aus": 38
+    },
+    "CD-D033": {
+     "sekunden": 1.36,
+     "token_ein": 466,
+     "token_aus": 30
+    },
+    "CD-D034": {
+     "sekunden": 1.62,
+     "token_ein": 468,
+     "token_aus": 40
+    }
+   }
+  }
+ },
+ "versand": {
+  "CD-D001": "ok",
+  "CD-D002": "ok",
+  "CD-D003": "ok",
+  "CD-D004": "ok",
+  "CD-D005": "ok",
+  "CD-D006": "ok",
+  "CD-D007": "ok",
+  "CD-D008": "ok",
+  "CD-D009": "ok",
+  "CD-D010": "ok",
+  "CD-D011": "Rest-Treffer nach Pseudonymisierung: ['person'] - nicht gesendet",
+  "CD-D012": "ok",
+  "CD-D013": "ok",
+  "CD-D014": "ok",
+  "CD-D015": "ok",
+  "CD-D016": "ok",
+  "CD-D017": "ok",
+  "CD-D018": "ok",
+  "CD-D019": "ok",
+  "CD-D020": "ok",
+  "CD-D021": "ok",
+  "CD-D022": "ok",
+  "CD-D023": "ok",
+  "CD-D024": "ok",
+  "CD-D025": "ok",
+  "CD-D026": "ok",
+  "CD-D027": "ok",
+  "CD-D028": "ok",
+  "CD-D029": "ok",
+  "CD-D030": "ok",
+  "CD-D031": "ok",
+  "CD-D032": "ok",
+  "CD-D033": "ok",
+  "CD-D034": "ok"
+ }
+}

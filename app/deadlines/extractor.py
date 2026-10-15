@@ -67,12 +67,14 @@ _MONTH_NAME_PATTERN = re.compile(
 )
 # "binnen zwei Wochen", "innerhalb von 14 Tagen", "drei Wochen nach Zugang" o. ä. (P2.1 §40: auch die Dauer ab einem
 # genannten Ereignis - Gruppe "event" -, ohne Fristende im Text wird daraus KEIN Datum berechnet)
+# P2.2 (§41): auch "innerhalb eines Monats" (ohne "von"), "Frist von zwei Wochen ab Zugang" - die Standardformeln der
+# Rechtsbehelfsbelehrung wurden sonst nicht erkannt ("eines" fehlte zudem als Zahlwort, Regression aus P2.1)
 _RELATIVE_PERIOD_PATTERN = re.compile(
-    r"\b(?:(?P<prefix>binnen|innerhalb\s+von)\s+)?"
+    r"\b(?:(?P<prefix>binnen|innerhalb(?:\s+von)?|frist\s+von)\s+)?"
     r"(?P<amount>\w+)\s*"
-    r"(?P<unit>tag|tage|tagen|woche|wochen|monat|monate|monaten)\b"
-    r"(?:\s+nach\s+(?:dem\s+|der\s+|den\s+)?(?P<event>zugang|zustellung|erhalt|bekanntgabe|eingang|kenntnis(?:nahme)?|"
-    r"abnahme|verkündung|verkuendung|ablauf)\w*)?",
+    r"(?P<unit>tag|tage|tagen|woche|wochen|monat|monate|monaten|monats)\b"
+    r"(?:\s+(?:nach|ab|seit)\s+(?:dem\s+|der\s+|den\s+|des\s+)?(?P<event>zugang|zustellung|erhalt|bekanntgabe|eingang|"
+    r"kenntnis(?:nahme)?|abnahme|verkündung|verkuendung|ablauf)\w*)?",
     re.IGNORECASE,
 )
 
@@ -95,10 +97,26 @@ _TERMINATION_WORDS = re.compile(r"kündig|kuendig|beend|aufheb|ausscheid|wirksam
 # Fristwort NACH dem Datum ("Am 15.05.2026 läuft die Frist ab")
 _DEADLINE_WORD_AFTER = re.compile(r"\w*frist\w*|läuft\s+\w+(?:\s+\w+)?\s+ab\b|laeuft\s+\w+(?:\s+\w+)?\s+ab\b", re.IGNORECASE)
 # Termin: Terminwort unmittelbar vor dem Datum (hoechstens kurze Ergaenzung dazwischen, kein anderes Datum)
+# P2.2 (§41): "vom" verweist auf eine VERGANGENE Sitzung ("auf die mündliche Verhandlung vom ...") - kein Termin;
+# laengere Terminformeln ("Termin zur Verkündung einer Entscheidung wird anberaumt auf den ...") bis 70 Zeichen
 _APPOINTMENT_BEFORE = re.compile(
-    r"\b\w*(?:termin|verhandlung|anhörung|anhoerung|sitzung|besprechung)\w*\b[^\d.;!?]{0,45}?(?:\bam|\bvom|:)?\s*$",
+    r"\b\w*(?:termin|verhandlung|anhörung|anhoerung|sitzung|besprechung)\w*\b[^\d.;!?]{0,70}?(?:\bam|:)?\s*$",
     re.IGNORECASE,
 )
+_PAST_REFERENCE_BEFORE = re.compile(r"\bvom\s*$", re.IGNORECASE)
+# Gueltigkeitsdatum ("Eichschein gültig bis", "TÜV gültig bis") ist keine anwaltliche Frist
+_VALIDITY_BEFORE = re.compile(r"\b(?:gültig|gueltig|gilt)\s+bis(?:\s+(?:zum|einschließlich|einschliesslich))?\s*$",
+                              re.IGNORECASE)
+# "bis Freitag, 05.06.2026": Wochentag zwischen Hinweiswort und Datum
+_TRAILING_WEEKDAY = re.compile(
+    r"\s*\b(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag),?\s*(?:den\s*)?$", re.IGNORECASE)
+# Fristwort im selben Satzteil vor dem Datum ("Die Einspruchsfrist läuft am 20.07.2026 ab", "Die Frist ... endet am")
+_DEADLINE_WORD = re.compile(r"\w*frist\w*", re.IGNORECASE)
+_DEADLINE_CONNECTOR_BEFORE = re.compile(r"\b(?:am|bis|zum)\s*$", re.IGNORECASE)
+_DEADLINE_START_WORDS = re.compile(r"\b(?:begann|beginnt|begonnen|beginn|lief\s+seit)\b", re.IGNORECASE)
+# Tabelle: Spaltenkopf entscheidet ("Vorgang | Frist")
+_TABLE_HEADER_DEADLINE = re.compile(r"frist|fällig|faellig|ablauf|zahlungsziel", re.IGNORECASE)
+_TABLE_HEADER_APPOINTMENT = re.compile(r"termin", re.IGNORECASE)
 # Ereignis als Fristbeginn: "nach Zugang der Kündigung am <Datum>"
 _START_EVENT_BEFORE = re.compile(r"\bnach\s+(?P<event>[^.\d;]{3,60}?)\s+(?:am|vom)\s*$", re.IGNORECASE)
 # Termin NACH dem Datum ("06.03.2024: Termin beim Nachlassgericht")
@@ -114,7 +132,7 @@ _TRIGGER_EVENT = re.compile(
 _RANGE_BEFORE = re.compile(r"\d\s*(?:bis|-|–)\s*$", re.IGNORECASE)
 
 _NUMBER_WORDS = frozenset({
-    "ein", "eine", "einem", "einer", "einen", "zwei", "drei", "vier", "fünf", "fuenf", "sechs", "sieben", "acht", "neun",
+    "ein", "eine", "einem", "einer", "einen", "eines", "zwei", "drei", "vier", "fünf", "fuenf", "sechs", "sieben", "acht", "neun",
     "zehn", "elf", "zwölf", "zwoelf", "vierzehn", "einundzwanzig", "dreißig", "dreissig",
 })
 
@@ -374,15 +392,21 @@ class PlaceholderDeadlineExtractor:
 
     def _role(self, text: str, match: re.Match) -> tuple[str, str]:
         """("frist" | "termin" | "ereignis" | "datum", Hinweis) - nur was im selben Satz unmittelbar am Datum steht."""
+        table_role = self._table_role(text, match)
+        if table_role:
+            return table_role
         left, right = self._sentence_bounds(text, match.start(), match.end())
         before = text[left:match.start()]
         after = text[match.end():right]
         if _RANGE_BEFORE.search(before):
             return "datum", ""  # Ende eines Zeitraums "vom ... bis ..."
+        if _VALIDITY_BEFORE.search(before):
+            return "datum", ""  # Gueltigkeitsdatum, keine Frist (P2.2 §41)
         event = _START_EVENT_BEFORE.search(before)
         if event:
             return "ereignis", event.group("event").strip()
-        explicit = _EXPLICIT_DEADLINE_BEFORE.search(before)
+        cue = _TRAILING_WEEKDAY.sub("", before)  # "bis Freitag, 05.06.2026"
+        explicit = _EXPLICIT_DEADLINE_BEFORE.search(cue)
         if explicit:
             return "frist", explicit.group(0).strip()
         if _ZUM_BEFORE.search(before) and _TERMINATION_WORDS.search(before):
@@ -391,8 +415,16 @@ class PlaceholderDeadlineExtractor:
         if (word_after and word_after.start() <= 30 and not _ANY_DATE.search(after[: word_after.start()])
                 and not _ANY_DATE.search(after[word_after.start(): word_after.start() + 40])):
             return "frist", word_after.group(0).strip()
+        # Fristwort frueher im selben Satzteil, Datum mit "am/bis/zum" angeschlossen, kein anderes Datum dazwischen und
+        # kein Fristbeginn ("Die Einspruchsfrist läuft am 20.07.2026 ab"; nicht: "Die Frist begann am ...")
+        word = None
+        for word in _DEADLINE_WORD.finditer(before):
+            pass
+        if (word and _DEADLINE_CONNECTOR_BEFORE.search(before) and not _ANY_DATE.search(before[word.end():])
+                and not _DEADLINE_START_WORDS.search(before[word.start():])):
+            return "frist", word.group(0)
         appointment = _APPOINTMENT_BEFORE.search(before)
-        if appointment and not _ANY_DATE.search(appointment.group(0)):
+        if appointment and not _ANY_DATE.search(appointment.group(0)) and not _PAST_REFERENCE_BEFORE.search(before):
             return "termin", appointment.group(0).strip()
         appointment_after = _APPOINTMENT_AFTER.search(after)
         if appointment_after:
@@ -401,6 +433,31 @@ class PlaceholderDeadlineExtractor:
         if trigger:
             return "fristbeginn", trigger
         return "datum", ""
+
+    @staticmethod
+    def _table_role(text: str, match: re.Match) -> tuple[str, str] | None:
+        """Datum in einer Tabellenzeile ("Zelle | Zelle"): der Spaltenkopf der Tabelle entscheidet, sofern er eindeutig
+        "Frist"/"Fällig..." bzw. "Termin" lautet (P2.2 §41: "Vorgang | Frist" - die Zeilen tragen selbst kein Fristwort)."""
+        line_start = text.rfind("\n", 0, match.start()) + 1
+        line_end = text.find("\n", match.end())
+        line = text[line_start: len(text) if line_end < 0 else line_end]
+        if "|" not in line:
+            return None
+        lines = text[:line_start].split("\n")[:-1]
+        header = line
+        while lines and "|" in lines[-1]:
+            header = lines.pop()
+        if header is line:
+            return None
+        column = text[line_start:match.start()].count("|")
+        cells = [c.strip() for c in header.split("|")]
+        if column >= len(cells):
+            return None
+        if _TABLE_HEADER_DEADLINE.search(cells[column]):
+            return "frist", f"Tabellenspalte '{cells[column]}'"
+        if _TABLE_HEADER_APPOINTMENT.search(cells[column]):
+            return "termin", f"Tabellenspalte '{cells[column]}'"
+        return None
 
     @staticmethod
     def _trigger_near(before: str, after: str) -> str | None:

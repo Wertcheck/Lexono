@@ -1,0 +1,911 @@
+{
+ "quelle": "lexono",
+ "splits": {
+  "test": {
+   "sha256": "a2cb80158685d1db22d34a4ed0706e99da4bcd83de1e114dfdcd863ed54fe9f2",
+   "ocr": true,
+   "laufzeit_sekunden": 40.97,
+   "sekunden_je_dokument": {
+    "CD-T001": 1.17,
+    "CD-T002": 1.96,
+    "CD-T003": 1.08,
+    "CD-T004": 1.05,
+    "CD-T005": 1.02,
+    "CD-T006": 1.08,
+    "CD-T007": 1.06,
+    "CD-T008": 1.04,
+    "CD-T009": 1.06,
+    "CD-T010": 2.13,
+    "CD-T011": 1.86,
+    "CD-T012": 1.04,
+    "CD-T013": 1.02,
+    "CD-T014": 1.03,
+    "CD-T015": 1.04,
+    "CD-T016": 1.07,
+    "CD-T017": 1.04,
+    "CD-T018": 1.07,
+    "CD-T019": 2.31,
+    "CD-T020": 1.04,
+    "CD-T021": 1.03,
+    "CD-T022": 1.68,
+    "CD-T023": 1.06,
+    "CD-T024": 1.02,
+    "CD-T025": 1.05,
+    "CD-T026": 1.86,
+    "CD-T027": 1.02,
+    "CD-T028": 1.05,
+    "CD-T029": 1.07,
+    "CD-T030": 1.05,
+    "CD-T031": 1.06,
+    "CD-T032": 1.04,
+    "CD-T033": 1.03
+   },
+   "bewertung": {
+    "dokumente": 33,
+    "klassifikation": {
+     "richtig": "23/33",
+     "kerntypen_richtig": "19/26",
+     "unbekannt_quote": "4/33",
+     "unbekannt_bei_kerntypen": "1/26",
+     "je_klasse": {
+      "Anlage": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Bescheid": {
+       "praezision": "3/3",
+       "recall": "3/3"
+      },
+      "Einspruch": {
+       "praezision": "-",
+       "recall": "0/1"
+      },
+      "Gerichtliches Schreiben": {
+       "praezision": "0/2",
+       "recall": "0/1"
+      },
+      "Gutachten": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Klage/Schriftsatz": {
+       "praezision": "2/5",
+       "recall": "2/3"
+      },
+      "Kündigungsschreiben": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Mahnung": {
+       "praezision": "-",
+       "recall": "0/2"
+      },
+      "Protokoll": {
+       "praezision": "1/1",
+       "recall": "1/3"
+      },
+      "Rechnung": {
+       "praezision": "3/5",
+       "recall": "3/3"
+      },
+      "Steuerbescheid": {
+       "praezision": "1/2",
+       "recall": "1/1"
+      },
+      "Unbekannt": {
+       "praezision": "3/4",
+       "recall": "3/6"
+      },
+      "Urteil/Beschluss": {
+       "praezision": "2/2",
+       "recall": "2/2"
+      },
+      "Vertrag": {
+       "praezision": "3/4",
+       "recall": "3/3"
+      },
+      "Vollmacht": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      }
+     },
+     "verwechslungen": {
+      "Einspruch": {
+       "Steuerbescheid": 1
+      },
+      "Gerichtliches Schreiben": {
+       "Klage/Schriftsatz": 1
+      },
+      "Klage/Schriftsatz": {
+       "Klage/Schriftsatz": 2,
+       "Gerichtliches Schreiben": 1
+      },
+      "Mahnung": {
+       "Vertrag": 1,
+       "Rechnung": 1
+      },
+      "Protokoll": {
+       "Protokoll": 1,
+       "Rechnung": 1,
+       "Unbekannt": 1
+      },
+      "Unbekannt": {
+       "Gerichtliches Schreiben": 1,
+       "Unbekannt": 3,
+       "Klage/Schriftsatz": 2
+      }
+     },
+     "fehler": [
+      {
+       "doc": "CD-T005",
+       "gold": "Klage/Schriftsatz",
+       "zulaessig": [
+        "Klage/Schriftsatz"
+       ],
+       "vorhersage": "Gerichtliches Schreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "schriftsatz",
+        "laeuft_ab"
+       ]
+      },
+      {
+       "doc": "CD-T009",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Gerichtliches Schreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "brief",
+        "schlussrechnung_erwaehnt"
+       ]
+      },
+      {
+       "doc": "CD-T018",
+       "gold": "Protokoll",
+       "zulaessig": [
+        "Protokoll"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "protokoll",
+        "niederschrift"
+       ]
+      },
+      {
+       "doc": "CD-T019",
+       "gold": "Protokoll",
+       "zulaessig": [
+        "Protokoll",
+        "Sonstiges"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "protokoll",
+        "unfallbericht",
+        "ocr",
+        "ocr_stark",
+        "widerspruch",
+        "gueltig_bis",
+        "geburtsdatum"
+       ]
+      },
+      {
+       "doc": "CD-T023",
+       "gold": "Mahnung",
+       "zulaessig": [
+        "Mahnung",
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Vertrag",
+       "art": "falscher_typ",
+       "tags": [
+        "kuendigungsandrohung",
+        "kw_frist"
+       ]
+      },
+      {
+       "doc": "CD-T027",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Klage/Schriftsatz",
+       "art": "falscher_typ",
+       "tags": [
+        "email",
+        "widerspruch"
+       ]
+      },
+      {
+       "doc": "CD-T030",
+       "gold": "Mahnung",
+       "zulaessig": [
+        "Mahnung"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "mahnung"
+       ]
+      },
+      {
+       "doc": "CD-T031",
+       "gold": "Einspruch",
+       "zulaessig": [
+        "Einspruch"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "einspruch",
+        "fristbeginn"
+       ]
+      },
+      {
+       "doc": "CD-T032",
+       "gold": "Gerichtliches Schreiben",
+       "zulaessig": [
+        "Gerichtliches Schreiben"
+       ],
+       "vorhersage": "Klage/Schriftsatz",
+       "art": "falscher_typ",
+       "tags": [
+        "ladung",
+        "fristbeginn",
+        "ab_erhalt"
+       ]
+      },
+      {
+       "doc": "CD-T033",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Klage/Schriftsatz",
+       "art": "falscher_typ",
+       "tags": [
+        "brief",
+        "fristbeginn",
+        "laeuft_ab"
+       ]
+      }
+     ]
+    },
+    "fristen": {
+     "frist": {
+      "erwartet": 18,
+      "richtig": 10,
+      "uebersehen": 8,
+      "falsch": 4,
+      "falsch_keine_frist_als_frist": 4
+     },
+     "termin": {
+      "erwartet": 6,
+      "richtig": 3,
+      "uebersehen": 3,
+      "falsch": 2,
+      "falsch_keine_frist_als_termin": 2
+     },
+     "fristbeginn": {
+      "erwartet": 3,
+      "richtig": 3,
+      "uebersehen": 0,
+      "falsch": 0
+     }
+    },
+    "fristdauern": {
+     "erwartet": 10,
+     "erkannt": 5,
+     "zusaetzlich": 0
+    },
+    "kritisch": [
+     {
+      "doc": "CD-T002",
+      "art": "frist_uebersehen",
+      "datum": "30.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "beschluss",
+       "ocr",
+       "bis_einschliesslich"
+      ]
+     },
+     {
+      "doc": "CD-T005",
+      "art": "frist_uebersehen",
+      "datum": "21.09.2026",
+      "stattdessen": null,
+      "tags": [
+       "schriftsatz",
+       "laeuft_ab"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "15.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "30.04.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "30.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T015",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2027",
+      "tags": [
+       "gutachten",
+       "gueltig_bis"
+      ]
+     },
+     {
+      "doc": "CD-T018",
+      "art": "frist_uebersehen",
+      "datum": "01.07.2026",
+      "stattdessen": null,
+      "tags": [
+       "protokoll",
+       "niederschrift"
+      ]
+     },
+     {
+      "doc": "CD-T019",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "22.10.2027",
+      "tags": [
+       "protokoll",
+       "unfallbericht",
+       "ocr",
+       "ocr_stark",
+       "widerspruch",
+       "gueltig_bis",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-T026",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "18.07.2027",
+      "tags": [
+       "vollmacht",
+       "ocr",
+       "gueltig_bis",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-T028",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2026",
+      "tags": [
+       "angebot",
+       "gueltig_bis"
+      ]
+     },
+     {
+      "doc": "CD-T030",
+      "art": "frist_uebersehen",
+      "datum": "31.07.2026",
+      "stattdessen": null,
+      "tags": [
+       "mahnung"
+      ]
+     },
+     {
+      "doc": "CD-T033",
+      "art": "frist_uebersehen",
+      "datum": "17.08.2026",
+      "stattdessen": null,
+      "tags": [
+       "brief",
+       "fristbeginn",
+       "laeuft_ab"
+      ]
+     }
+    ],
+    "fristfehler": [
+     {
+      "doc": "CD-T001",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "19.02.2026",
+      "tags": [
+       "urteil",
+       "rechtsmittelbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-T002",
+      "art": "frist_uebersehen",
+      "datum": "30.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "beschluss",
+       "ocr",
+       "bis_einschliesslich"
+      ]
+     },
+     {
+      "doc": "CD-T005",
+      "art": "frist_uebersehen",
+      "datum": "21.09.2026",
+      "stattdessen": null,
+      "tags": [
+       "schriftsatz",
+       "laeuft_ab"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "15.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "30.04.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "frist_uebersehen",
+      "datum": "30.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T007",
+      "art": "termin_uebersehen",
+      "datum": "07.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "vertrag",
+       "lang"
+      ]
+     },
+     {
+      "doc": "CD-T015",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2027",
+      "tags": [
+       "gutachten",
+       "gueltig_bis"
+      ]
+     },
+     {
+      "doc": "CD-T017",
+      "art": "termin_uebersehen",
+      "datum": "23.07.2026",
+      "stattdessen": null,
+      "tags": [
+       "protokoll",
+       "sitzungsprotokoll"
+      ]
+     },
+     {
+      "doc": "CD-T017",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "17.06.2026",
+      "tags": [
+       "protokoll",
+       "sitzungsprotokoll"
+      ]
+     },
+     {
+      "doc": "CD-T018",
+      "art": "frist_uebersehen",
+      "datum": "01.07.2026",
+      "stattdessen": null,
+      "tags": [
+       "protokoll",
+       "niederschrift"
+      ]
+     },
+     {
+      "doc": "CD-T019",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "22.10.2027",
+      "tags": [
+       "protokoll",
+       "unfallbericht",
+       "ocr",
+       "ocr_stark",
+       "widerspruch",
+       "gueltig_bis",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-T026",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "18.07.2027",
+      "tags": [
+       "vollmacht",
+       "ocr",
+       "gueltig_bis",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-T028",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2026",
+      "tags": [
+       "angebot",
+       "gueltig_bis"
+      ]
+     },
+     {
+      "doc": "CD-T030",
+      "art": "frist_uebersehen",
+      "datum": "31.07.2026",
+      "stattdessen": null,
+      "tags": [
+       "mahnung"
+      ]
+     },
+     {
+      "doc": "CD-T032",
+      "art": "termin_uebersehen",
+      "datum": "18.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "ladung",
+       "fristbeginn",
+       "ab_erhalt"
+      ]
+     },
+     {
+      "doc": "CD-T033",
+      "art": "frist_uebersehen",
+      "datum": "17.08.2026",
+      "stattdessen": null,
+      "tags": [
+       "brief",
+       "fristbeginn",
+       "laeuft_ab"
+      ]
+     }
+    ]
+   },
+   "vorhersagen": {
+    "CD-T001": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [
+      "19.02.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-T002": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T003": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T004": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [
+      "28.05.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T005": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "21.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T006": {
+     "typ": "Vertrag",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T007": {
+     "typ": "Vertrag",
+     "frist": [
+      "30.09.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T008": {
+     "typ": "Rechnung",
+     "frist": [
+      "16.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T009": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [
+      "03.09.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T010": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T011": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-T012": {
+     "typ": "Bescheid",
+     "frist": [
+      "20.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T013": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-T014": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "15.04.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T015": {
+     "typ": "Gutachten",
+     "frist": [
+      "30.11.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T016": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [
+      "21.04.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T017": {
+     "typ": "Protokoll",
+     "frist": [
+      "01.07.2026",
+      "08.07.2026"
+     ],
+     "termin": [
+      "17.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T018": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T019": {
+     "typ": "Unbekannt",
+     "frist": [
+      "22.10.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T020": {
+     "typ": "Vertrag",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T021": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T022": {
+     "typ": "Rechnung",
+     "frist": [
+      "13.11.2025"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T023": {
+     "typ": "Vertrag",
+     "frist": [
+      "05.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T024": {
+     "typ": "Unbekannt",
+     "frist": [
+      "28.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T025": {
+     "typ": "Kündigungsschreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-T026": {
+     "typ": "Vollmacht",
+     "frist": [
+      "18.07.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T027": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "12.08.2026",
+      "19.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T028": {
+     "typ": "Unbekannt",
+     "frist": [
+      "30.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T029": {
+     "typ": "Unbekannt",
+     "frist": [
+      "28.09.2026"
+     ],
+     "termin": [
+      "01.10.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T030": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-T031": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "15.07.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "07.05.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-T032": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "22.09.2026"
+     ],
+     "fristdauern": 1
+    },
+    "CD-T033": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "14.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "15.07.2026"
+     ],
+     "fristdauern": 0
+    }
+   }
+  }
+ }
+}
