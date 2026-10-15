@@ -6460,3 +6460,49 @@ wird.
 3. Gesondert freizugeben: Relay-Endpunkt `second-opinion` mit Inhaltsprüfung und Attestierung.
 4. Unabhängig von der Zweitmeinung und dringlich, weil der produktive Schreibpfad betroffen ist:
    `max_tokens`-Konflikt und Denkmodus im Relay-Schreibpfad.
+
+### 43.12 Zweitmeinung bleibt gesperrt – Plan für Dev-Split und blinden Korpus v3 (15.10.2026)
+
+**Status:**
+- Keine Änderung an Pseudonymisierung, Detektoren, Restscan, Rückfrage-Modus oder Sendefreigabe.
+- Keine Relay-Zweitmeinungsintegration.
+- Grund: Auf dem blinden Test v2 gingen bei jeder Sendestrategie noch 36 Klartextwerte in 13 von 16 Dokumenten
+  hinaus (§43.11). Der Status quo `ask` (0 gesendet) bleibt der einzige freigegebene Zustand.
+- Der Relay-Schreibpfad ist unabhängig davon im Branch `fix/relay-schreibpfad` korrigiert (dort §44).
+
+**Rolle der vorhandenen Korpora:**
+- `pii_full_documents_v1` und v2-**Dev**: Entwicklungsmaterial, dürfen weiter genutzt werden.
+- v2-**Test** (`1498fe06…`): **verbraucht**. Er wurde einmal als Baseline und einmal am Ende gemessen, und die
+  Restlecks wurden analysiert. Er dient künftig nur als Regressionsmessung, **nie** zur Entwicklung oder als
+  Freigabebeleg.
+
+**Nächster Entwicklungs-Split (Dev v3):**
+- Neue synthetische Dokumente (blinder Agent ohne Code-Zugriff) **nur** für die Fehlerklassen aus §43.11. Diese
+  Klassen sind aus der Analyse bekannt; ihre Texte werden neu geschrieben, nicht aus v2-Test übernommen:
+  1. Straßen ohne PLZ-Anker (Betreff, Fließtext) und mit weiteren Präfixen („Am Markt“, „Am Hang“, „Hoher Weg“);
+  2. Kennungen ohne Kennwort in Betreff und Klammer, Behörden- und Gerichtsformate mit Buchstabenpräfix, mit
+     OCR-Verwechslungen (0/O, 1/l, 8/B);
+  3. Kunden- und Rechnungsnummern in Tabellen ohne oder mit abgekürztem Kopfwort;
+  4. Rechtsform-Reste teilmaskierter Firmen und Gerichtsnamen (Konsistenz zwischen Pseudonymizer und Restscan);
+  5. Übermaskierung gewöhnlicher Wörter durch die Wiederholungserkennung (eigene Abwägung: Schutz vs. Lesbarkeit).
+- Jede Regel minimal, mit Regressionstest und Gegenproben. Dabei gilt: `pseudonymization_v1` muss identisch bleiben,
+  Legal-E2E ohne Verschlechterung.
+
+**Blinder Korpus v3** (Freigabebeleg):
+- **Umfang:** mindestens 36 vollständige Dokumente von mindestens zwei getrennten, blinden Agenten, mit Rubrum,
+  Tabellen, Kopf- und Fußzeilen, Scans und OCR-Fehlern.
+- **Ablauf:**
+  - Soll-Markierungen inkl. `keep_gewoehnlich` vor jeder Messung festlegen.
+  - Hash einfrieren, Baseline ungesehen speichern.
+  - Erst nach Abschluss der Dev-Arbeit **einmal** messen.
+- **Freigabekriterium** für eine spätere Rückfrage-Oberfläche (Empfehlung H, §43.11):
+  - **0 Klartextwerte in gesendeten Payloads** bei H (sorgfältig und Fehlbedienung);
+  - keine Verschlechterung der Erkennung gegenüber v2-Test;
+  - Übermaskierung gewöhnlicher Wörter ausgewiesen und vom Owner bewertet.
+- Wird das Kriterium verfehlt: v3 ist ebenfalls verbraucht; es folgen ein neuer Dev-Zyklus und ein neuer blinder
+  Korpus.
+
+**Danach** – jeweils mit eigener Owner-Freigabe:
+1. Gateway-Modus „hybrid“ und Dokument-Rückfrage-Oberfläche;
+2. Relay-Endpunkt `second-opinion` (Entwurf §43.11);
+3. DSFA, AVV und Mandanteninformation (§43.10, Phase 3).

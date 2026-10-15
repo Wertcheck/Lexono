@@ -168,6 +168,9 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
    - **Dringend, unabhängig von der Zweitmeinung (produktiver Schreibpfad über das Relay):**
      `claude_max_tokens` 4096 > Relay-Obergrenze 4000 (400 ohne `.env`-Wert); Relay setzt kein
      `thinking`; Timeouts/Wiederholungen doppelt. §43.11 Phase 3, nur analysiert.
+   - **§43.12:** Zweitmeinung bleibt gesperrt. Relay-Schreibpfad separat korrigiert (Branch
+     `fix/relay-schreibpfad`, §44). v2-Test ist verbraucht (nur Regression); nächster Schritt Dev v3 für die
+     Restfehlerklassen, dann frischer blinder Korpus v3 mit Kriterium 0 gesendete Lecks bei H.
 
 ## Release-Planung
 
