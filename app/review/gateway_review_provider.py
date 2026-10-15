@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 
 from app.ai_providers.gateway_relay_client import call_gateway_messages
-from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
+from app.privacy.gateway_schema import ClaudeRequestPayload, reject_second_opinion_payload, require_gateway_seal
 from app.review.provider import REVIEW_SYSTEM_PROMPT, build_review_prompt_cache_blocks
 from app.review.schema import ReviewResult
 
@@ -35,6 +35,7 @@ class GatewayRelayReviewProvider:
 
     def review(self, payload: ClaudeRequestPayload) -> ReviewResult:
         require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
+        reject_second_opinion_payload(payload)  # Zweckbindung §43: Zweitmeinung nie ueber diesen Pfad
         result = call_gateway_messages(
             base_url=self._base_url,
             client_id=self._client_id,

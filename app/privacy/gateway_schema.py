@@ -112,6 +112,24 @@ def require_gateway_seal(payload: object) -> None:
         )
 
 
+#: Einziger Zweck der Cloud-Zweitmeinung (§43, Owner-Freigabe Stufe 2 nur im Feature-Branch): manuell angeforderte,
+#: ungepruefte Hinweise zu Dokumenttyp und Fristen - KEINE Textproduktion. Zweckbindung in beide Richtungen: die
+#: Schreib-/Review-Provider lehnen diesen Zweck ab, der Zweitmeinungs-Provider jeden anderen.
+SECOND_OPINION_PURPOSE = "second_opinion_document"
+
+
+class PurposeNotAllowedForProviderError(RuntimeError):
+    """Eine versiegelte Payload erreicht einen Provider, der fuer ihren Zweck nicht vorgesehen ist (fail-closed)."""
+
+
+def reject_second_opinion_payload(payload: ClaudeRequestPayload) -> None:
+    """Fuer Schreib-/Review-Provider: eine Zweitmeinungs-Payload darf nie ueber den Textproduktionspfad gehen."""
+    if payload.schreibauftrag == SECOND_OPINION_PURPOSE:
+        raise PurposeNotAllowedForProviderError(
+            "Cloud-Versand verweigert: Zweitmeinungs-Anfragen laufen nicht über den Schreibpfad."
+        )
+
+
 @dataclass
 class GatewayResult:
     """Ergebnis eines `ClaudePrivacyGateway.prepare_request`-Aufrufs.

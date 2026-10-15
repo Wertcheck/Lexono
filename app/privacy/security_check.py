@@ -31,7 +31,7 @@ import re
 from collections.abc import Callable
 
 from app.privacy.detectors import POSSESSIVE_KINSHIP, DetectedSpan, detect_all
-from app.privacy.gateway_schema import ClaudeRequestPayload
+from app.privacy.gateway_schema import SECOND_OPINION_PURPOSE, ClaudeRequestPayload
 from app.privacy.pseudonymizer import PseudonymMapping
 from app.privacy.security_check_schema import SecurityCheckResult
 
@@ -65,6 +65,11 @@ ALLOWED_PURPOSES = frozenset(
         # Sinne dieser Allowlist, nur ein anderer SYSTEMPROMPT (siehe
         # app/ai_providers/claude_writing_provider.py::select_system_prompt).
         "chat_response",
+        # Cloud-Zweitmeinung (§43, nur Feature-Branch Stufe 2): KEINE Fristenbestimmung - nur manuell angeforderte,
+        # ungepruefte, ergaenzende Hinweise; lokale Ergebnisse werden nie entfernt, ueberschrieben oder bestaetigt
+        # (ARCHITECTURE.md, Grundprinzip). Zweckgebunden: nur app/second_opinion/provider.py sendet ihn, die
+        # Schreib-/Review-Provider und DraftingService lehnen ihn ab (gateway_schema.reject_second_opinion_payload).
+        SECOND_OPINION_PURPOSE,
     }
 )
 

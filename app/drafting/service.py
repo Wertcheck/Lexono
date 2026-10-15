@@ -89,7 +89,7 @@ from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
 from app.privacy.review import PrivacyDecisions
 from app.privacy.gateway import ClaudePrivacyGateway
-from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
+from app.privacy.gateway_schema import SECOND_OPINION_PURPOSE, ClaudeRequestPayload, GatewayResult
 from app.privacy.security_check import (
     check_response_placeholder_integrity,
     find_lenient_leak_exempt_placeholders,
@@ -765,6 +765,14 @@ class DraftingService:
         Stelle blockiert (Datenschutz-Gate oder Budget) - der Aufrufer
         gibt es unveraendert zurueck bzw. als einziges Stream-Ereignis
         weiter."""
+        # Zweckbindung (§43): die Cloud-Zweitmeinung ist keine Textproduktion und laeuft nie ueber diesen Pfad - auch
+        # nicht, wenn ein Aufrufer (z. B. der Editor mit Formularfeld `purpose`) ihn hereinreicht. Vor jeder
+        # Nebenwirkung (keine Schnellakte, kein Gateway, kein Versand).
+        if purpose == SECOND_OPINION_PURPOSE:
+            return DraftingResult(
+                success=False,
+                blocked_reasons=["Dieser Zweck ist für die Texterstellung nicht zulässig."],
+            )
         if not matter_id:
             matter = create_quick_matter(
                 db, title=new_matter_title, client_name=new_client_name, actor=actor

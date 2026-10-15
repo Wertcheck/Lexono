@@ -65,6 +65,10 @@ _FORBIDDEN_GATEWAY_MARKERS = ("portkey", "openrouter", "litellm")
 _ALLOWED_ANTHROPIC_CLIENT_CONSTRUCTION_FILES = {
     "app/ai_providers/anthropic_writing_provider.py",
     "app/review/anthropic_review_provider.py",
+    # §43 Stufe 2 (NUR Feature-Branch, bewusst sichtbar ergaenzt): Dev-/QA-Direkt-Provider der Cloud-Zweitmeinung,
+    # ausschliesslich gegen den lokalen Fang-Server getestet - versiegelt, zweckgebunden, Ziel nur ueber
+    # endpoint_policy. Ein Produktivpfad braeuchte einen Relay-Provider (ARCHITECTURE.md §70) - offene Voraussetzung.
+    "app/second_opinion/provider.py",
     "app/system_health/service.py",
     "gateway/relay.py",
 }

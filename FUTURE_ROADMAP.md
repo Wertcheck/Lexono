@@ -149,8 +149,11 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
      evaluiert, nur Claude. **Stufe 1 erledigt:** netzfreie Grundlage `app/second_opinion/`
      (Antwortvalidierung, Längengrenze ohne Kürzung, Vergleich, Übernahme nur als unbestätigter
      Vorschlag), nicht eingebunden; §43.8.
-   - **Nächster Schritt:** Stufe 2 mit Fang-Server im Feature-Branch. Vorher Owner-Freigabe für den
-     neuen Gateway-Zweck dort.
+   - **Stufe 2 im Feature-Branch `feature/cloud-second-opinion-stage2` erledigt** (nicht in main): Zweck
+     `second_opinion_document` mit Zweckbindung, Provider und Service über den bestehenden Gateway-Pfad,
+     Fang-Server-Tests inklusive gesendeter Payload und Fail-closed; §43.9.
+   - **Offen vor einem Pilot:** Relay-Provider (Produktivpfad §70), Persistenz/Audit/UI, `max_chars`,
+     Messung über den echten Pfad, DSFA und eigene Owner-Freigabe.
 
 ## Release-Planung
 

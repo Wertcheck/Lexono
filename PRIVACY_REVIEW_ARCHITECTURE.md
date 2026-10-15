@@ -5900,3 +5900,136 @@ Jede Stufe nur synthetisch; eine Stufe beginnt erst, wenn die vorige PASS ist.
 - Payload-Inspektion auf synthetischen Korpora.
 
 Vorher braucht es die ausdrückliche Owner-Freigabe für die Änderung von `ALLOWED_PURPOSES` in diesem Branch.
+
+### 43.9 Stufe 2 im Feature-Branch `feature/cloud-second-opinion-stage2` (15.10.2026; NICHT in main)
+
+**Freigabe (Owner):**
+- Stufe 2 ausschließlich in diesem isolierten Feature-Branch, mit synthetischen Daten und Fang-Server.
+- Keine produktiven Cloud-Aufrufe, keine echten Mandantendaten, kein Merge nach main.
+
+**Architekturänderung:**
+- `ARCHITECTURE.md`, Grundprinzip: Präzisierung „Fristenbestimmung“.
+  - Das Verbot bleibt.
+  - Einzige Ausnahme ist die manuell je Dokument angeforderte Zweitmeinung (`second_opinion_document`) mit
+    ungeprüften, ergänzenden Hinweisen.
+  - Nie entfernen, überschreiben oder bestätigen.
+  - Übernahme nur als neuer, unbestätigter Vorschlag nach ausdrücklicher Nutzerhandlung.
+  - Keine allgemeine Freigabe.
+- `ALLOWED_PURPOSES`: genau ein Zweck mehr. Der bestehende Allowlist-Test (keine Analyse-, Zuordnungs-, Recherche-
+  oder Versand-Schlüsselwörter) bleibt unverändert grün.
+- **Zweckbindung in beide Richtungen** (neu, `gateway_schema.py`):
+  - `reject_second_opinion_payload` in allen vier Schreib- und Review-Providern (direkt und Relay).
+  - `DraftingService._prepare_and_gate` blockiert den Zweck vor jeder Nebenwirkung. Anlass: Der Editor
+    (`POST /{draft_id}/ai-edit`) übernimmt `purpose` aus einem Formularfeld und hätte den neuen Zweck sonst in den
+    Schreibpfad gebracht.
+  - Der neue Provider akzeptiert nur diesen Zweck.
+
+**Komponenten** (nicht eingebunden; keine UI, keine Migration, keine Datenbank):
+- `app/second_opinion/provider.py` – `AnthropicSecondOpinionProvider`:
+  - `require_gateway_seal` und Zweckprüfung;
+  - sendet **nur** `anonymisierter_sachverhalt`: keine Argumentationspunkte (z. B. Anschriftzuordnung, Alter), kein
+    Dateiname, kein Verlauf;
+  - Timeout 20 s, `max_retries=0`, Thinking aus, `max_tokens` 600, kein Tool;
+  - ohne ausdrückliches Ziel fest die offizielle Adresse, sonst nur über `endpoint_policy`.
+- `app/second_opinion/service.py` – `SecondOpinionService.request`, in dieser Reihenfolge:
+  1. Länge, ohne Kürzung;
+  2. Budget; eine unbekannte Budgetlage blockiert;
+  3. bestehendes `ClaudePrivacyGateway.prepare_request(review_mode="ask")`;
+  4. Provider;
+  5. Leck-Prüfung des Gateways (`check_response_placeholder_integrity`);
+  6. `validate_response` gegen den gesendeten Text;
+  7. `compare`.
+- Audit nur über einen Rückruf: Status, Zweck, inhaltsfreie Kategorien (`categorize_block_reasons`), Payload-Hash,
+  Token – nie Inhalt.
+- `tests/test_no_ai_gateway_proxy.py`: Der Provider steht – wie dort für jeden neuen Pfad verlangt – sichtbar
+  begründet in der Liste der Dateien, die einen Anthropic-Client bauen dürfen (Dev/QA-Direktprovider).
+
+**Fail-closed, per Test belegt:** In keinem dieser Fälle gibt es Hinweise oder eine Übernahme, und die lokalen
+Ergebnisse sind unverändert.
+
+| Fall | Ergebnis | HTTP-Anfragen |
+|---|---|---|
+| Rest-Treffer (Pseudonymisierung ohne NER simuliert, Restscan mit Presidio) | `datenschutz_blockiert` | 0 |
+| Rückfrage-Kandidat („Dazu erklärt Fuerst …“) | `rueckfrage_erforderlich` | 0 |
+| Unversiegelte oder nachträglich veränderte Payload | `UnsealedPayloadError` | 0 |
+| Falscher Zweck an Provider (beide Richtungen), Zweck im `DraftingService` | abgewiesen; keine Schnellakte | 0 |
+| Zu langes Dokument | `zu_lang`, nicht gekürzt | 0 |
+| Budget erschöpft oder Budgetprüfung wirft | `budget_erschoepft` | 0 |
+| Endpoint ohne QA-Freigabe oder fremder Host | `CloudEndpointNotAllowedError` | 0 |
+| Timeout (Fang-Server 2 s, Provider 0,5 s) | `zeitueberschreitung`, keine Wiederholung | 1 |
+| HTTP 400/401/429/500/529 | `fehler`, keine Wiederholung | je 1 |
+| Ungültige Antworten (leer, Prosa, erfundenes Datum, widersprüchlich, unbekannter Typ, Zusatzfeld, Platzhalter) | `ungueltig`, mit Grund | je 1 |
+| Antwort mit Originalwert (voller Name, „Herr Nachname“, E-Mail) | `ungueltig` über die Leck-Prüfung des Gateways | je 1 |
+
+Lokale Ergebnisse sind als echte ORM-Zeilen nachgewiesen: Dokument mit `classified_type` und zwei Fristen
+(unbestätigt und bestätigt) in SQLite, Zustand vor und nach jedem Lauf identisch.
+
+**Tatsächlich gesendete Payload** (Fang-Server, `DOC_A`, 1 Anfrage, `POST /v1/messages`, 1.494 Byte):
+- JSON-Felder: nur `model`, `max_tokens`, `thinking`, `system`, `messages`.
+- Nutzertext:
+
+  ```
+  [ORGANISATION_01]
+  Herrn [PERSON_01]
+  [ADRESSE_01]
+  E-Mail: [EMAIL_01]
+  IBAN [IBAN_01]
+  Az. [AKTENZEICHEN_01]
+  2. Mahnung
+  Sehr geehrter Herr [PERSON_01],
+  bitte zahlen Sie den offenen Betrag aus unserer Rechnung Nr. [RECHNUNGSNUMMER_01] bis zum 31.07.2026.
+  Der Termin zur Besprechung ist am 18.11.2026.
+  Mit freundlichen Grüßen
+  ```
+
+- Per Test geprüft: Keiner der Klartextwerte (Name, Vorname, Straße, PLZ, E-Mail, IBAN-Teile, Aktenzeichen,
+  Rechnungsnummer, Firmenname), kein Dateiname und kein Anschrift-Hinweis stehen im **gesamten** Request.
+- Fremde Akte: Ein zweites Dokument einer anderen Akte nach einer ersten Anfrage enthält keinen Wert und keinen
+  Inhalt der ersten. Das Geburtsdatum ist maskiert.
+
+**Was der Fang-Server belegt:**
+- Anzahl, Ziel und Inhalt der HTTP-Anfragen, die das installierte Anthropic-SDK aus diesem Code abschickt.
+- Das Verhalten bei definierten Antworten, HTTP-Fehlern und Verzögerungen.
+- Dass bei jeder Blockade **keine** Anfrage entsteht.
+
+**Was er nicht belegt:**
+- Das Verhalten und die Antwortqualität des echten Dienstes.
+- Echte Latenz und Kosten.
+- TLS und Zertifikatsprüfung (der Fang-Server spricht HTTP).
+- Speicherung und Verarbeitung beim Anbieter.
+- Den Produktivpfad über das Lexono-Relay (§70), der hier nicht verwendet wird.
+- Die Vollständigkeit der Pseudonymisierung bei echten, vielfältigeren Texten. Getestet sind wenige synthetische
+  Dokumente; das ist kein Beweis der Leckfreiheit.
+
+**Tests und QA:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| `tests/test_second_opinion_gateway_stage2.py` (31) und `test_second_opinion_foundation.py` (71, angepasst: genau ein neuer Zweck, Netz nur im Provider, Paket weiter von keinem App-Modul importiert) | PASS |
+| Mutationsprobe Stufe 2: 11 Schutzregeln einzeln ausgeschaltet (ask-Modus, Budget, Länge, Leck-Prüfung, Validierung, Zweck- und Siegelprüfung im Provider, `max_retries`, Datenminimierung, Zweckbindung im Schreib-Provider und im `DraftingService`) | 11/11 gefangen |
+| Gezielte Gruppen (86 Dateien: Datenschutz, Gateway, Drafting, Editor, Review, Chat, Provider, Kosten, Endpoint) | 2687 bestanden. 1 Fehlschlag: der Guard `test_anthropic_client_is_constructed_only_in_allowed_files` – wie vorgesehen durch die sichtbare, begründete Ergänzung behoben, danach grün |
+| Volle Suite in sechs Teilen im Vordergrund (Ollama-Modell entladen) | **4792 bestanden**; fehlgeschlagen nur die 4 bekannten Logo-Tests (fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
+| Echte Cloud-Aufrufe, installierter Build, UI | **nicht ausgeführt** (Freigabe schließt sie aus bzw. nicht eingebunden) |
+| Lint | **NICHT VERIFIZIERT**: kein Linter konfiguriert; Import und `py_compile` PASS |
+
+**Risiken und Beobachtungen:**
+- **Einwort-Parteinamen:** Im Rubrum „Beispiel ./. Muster“ blieb bei einer Probe die Einwort-Partei „Beispiel“ im
+  Klartext. Das ist bestehendes Gateway-Verhalten bei Wörtern, die wie Gattungswörter aussehen; es wurde nicht
+  geändert und wird für die Zweitmeinung relevanter, weil ganze Dokumente gesendet werden.
+- **Nackter Nachname:** Die Leck-Prüfung erkennt einen nackten Nachnamen ohne Anrede in einer Antwort nicht
+  (bestehendes Verhalten). Für die Zweitmeinung unkritisch, weil die strenge Validierung jeden Freitext verwirft.
+- **Technische Metadaten:** Das SDK sendet wie bei den bestehenden Providern `x-stainless-*`-Kopfzeilen
+  (Betriebssystem, Architektur, Python- und SDK-Version) – keine Inhalte.
+- **Rückfrage-Modus:** `review_mode="ask"` ohne Dokument-Rückfrage-UI erhöht die Blockadequote. Das ist bewusst
+  fail-closed; die Quote ist bei echten Texten nicht gemessen.
+
+**Offene Voraussetzungen für einen späteren Pilotbetrieb:**
+1. Eigene Owner-Freigabe, Datenschutz-Folgenabschätzung, Information der Mandanten und Auftragsverarbeitung.
+2. **Produktivpfad über das Lexono-Relay** (`GatewayRelay…`-Provider für die Zweitmeinung). Das Relay prüft heute
+   keine Zwecke, nur Modelle (`gateway/main.py`); eine relayseitige Zweck- oder Größengrenze ist zu entscheiden.
+3. Persistenz (Migration `document_second_opinions`), Audit in `ApiCallLog`/`AuditEvent`, UI mit Kennzeichnung
+   „ungeprüft“ und Übernahme-Dialog, Berechtigung `PERM_CLAUDE_CALL`, Akten-Ausschlüsse.
+4. Festlegung von `max_chars` (Owner-Frage 43.6/4) und Messung von Blockadequote, Kosten und Latenz über den echten
+   Pfad auf synthetischen Korpora (Stufe 4), dann installierter Build (Stufe 5).
+5. Mindestens eine Messung zur Pseudonymisierung ganzer Dokumente auf realitätsnäheren synthetischen Texten
+   (Rubrum, Einwort-Parteien, Signaturen, Kopf- und Fußzeilen).

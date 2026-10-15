@@ -256,20 +256,37 @@ def test_hint_from_another_comparison_is_refused() -> None:
 PACKAGE = Path(__file__).resolve().parents[1] / "app" / "second_opinion"
 
 
-def test_package_has_no_network_db_or_provider_imports() -> None:
+def _imports(path: Path) -> list[str]:
+    names: list[str] = []
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            names += [a.name for a in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            names.append(node.module or "")
+    return names
+
+
+def test_pure_modules_have_no_network_db_or_provider_imports() -> None:
+    """Validierung und Vergleich bleiben rein lokal; Netz nur im Provider (Stufe 2), DB/Web nirgends im Paket."""
     forbidden = ("httpx", "requests", "socket", "urllib", "anthropic", "openai", "sqlalchemy", "app.ai_providers",
                  "app.privacy.gateway", "app.db", "app.models", "fastapi")
+    for name in ("validation.py", "comparison.py"):
+        for imported in _imports(PACKAGE / name):
+            assert not imported.startswith(forbidden), f"{name}: {imported}"
     for path in PACKAGE.glob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
-                     else [node.module or ""] if isinstance(node, ast.ImportFrom) else [])
-            for name in names:
-                assert not name.startswith(forbidden), f"{path.name}: {name}"
+        for imported in _imports(path):
+            assert not imported.startswith(("sqlalchemy", "app.db", "app.models", "fastapi", "app.web", "openai",
+                                            "httpx", "requests")), f"{path.name}: {imported}"
+    assert "anthropic" in _imports(PACKAGE / "provider.py")
+    assert "anthropic" not in _imports(PACKAGE / "service.py")  # Netz nur ueber den Provider
 
 
-def test_no_new_gateway_purpose_and_not_wired_into_the_app() -> None:
-    assert not any("second" in p or "zweit" in p or "frist" in p for p in ALLOWED_PURPOSES)
+def test_exactly_one_new_gateway_purpose_and_package_not_wired_into_the_app() -> None:
+    """Stufe 2 (Feature-Branch): genau ein zusaetzlicher Zweck; das Paket bleibt von keinem App-Modul importiert
+    (keine UI, kein automatischer Aufruf)."""
+    assert {p for p in ALLOWED_PURPOSES if "second" in p or "zweit" in p or "frist" in p} == {
+        "second_opinion_document"}
     app_dir = PACKAGE.parent
     users = [p for p in app_dir.rglob("*.py")
-             if PACKAGE not in p.parents and "second_opinion" in p.read_text(encoding="utf-8", errors="ignore")]
+             if PACKAGE not in p.parents and any(i.startswith("app.second_opinion") for i in _imports(p))]
     assert users == []

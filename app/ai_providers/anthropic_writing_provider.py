@@ -26,7 +26,7 @@ from app.ai_providers.claude_writing_provider import (
     select_system_prompt,
 )
 from app.ai_providers.endpoint_policy import OFFICIAL_ANTHROPIC_BASE_URL
-from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
+from app.privacy.gateway_schema import ClaudeRequestPayload, reject_second_opinion_payload, require_gateway_seal
 
 
 class AnthropicClaudeWritingProvider:
@@ -94,6 +94,7 @@ class AnthropicClaudeWritingProvider:
 
     def write(self, payload: ClaudeRequestPayload) -> ClaudeWritingResult:
         require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
+        reject_second_opinion_payload(payload)  # Zweckbindung §43: Zweitmeinung nie ueber diesen Pfad
         # Prompt-Caching (Schritt 3): je Zweck (siehe select_system_prompt)
         # weiterhin projektweit IDENTISCH fuer jeden Aufruf mit demselben
         # Zweck - als gecachter Block markiert, spart es ab dem zweiten
@@ -192,6 +193,7 @@ class AnthropicClaudeWritingProvider:
         380) traegt dieselben Token-Zaehlungen wie `write()`, aus
         `stream.get_final_message()` statt `response.usage`."""
         require_gateway_seal(payload)  # Pre-Cloud-Gate serverseitig erzwungen (PRIVACY_REVIEW_ARCHITECTURE.md M4)
+        reject_second_opinion_payload(payload)  # Zweckbindung §43: Zweitmeinung nie ueber diesen Pfad
         stream_kwargs: dict = {}
         stream_tools = self._tools_for(payload)
         if stream_tools is not None:

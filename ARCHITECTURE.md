@@ -679,6 +679,22 @@ verwendet werden (Formulierung/Verbesserung/Korrektur eines bereits lokal inhalt
 bestimmten Antwortschreibens) – niemals für Aktenanalyse, Aktenzuordnung, Rechtsrecherche,
 Fristenbestimmung, Strategieentscheidungen oder Versand.
 
+**Präzisierung Fristenbestimmung (Owner-Freigabe 15.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §43; Stufe 2 nur im
+Feature-Branch `feature/cloud-second-opinion-stage2`, nur synthetische Daten und Fang-Server, nicht für echte Daten
+freigegeben):** Das Verbot gilt unverändert. Die **einzige** Ausnahme ist eine **manuell je Dokument angeforderte
+Zweitmeinung** (Zweck `second_opinion_document`), die ausschließlich **ungeprüfte, ergänzende Hinweise** zu
+Dokumenttyp und Fristdaten liefert:
+
+- Cloud-Ergebnisse dürfen lokale Klassifikationen und Fristvorschläge **weder entfernen noch überschreiben noch
+  bestätigen**. Die lokale Verarbeitung bleibt unverändert und läuft immer zuerst.
+- Eine Übernahme erzeugt nur einen **neuen, unbestätigten** Fristvorschlag (`review_status="unreviewed"`). Sie
+  erfordert eine ausdrückliche Handlung eines benannten Nutzers und danach dessen gewöhnliche Bestätigung.
+- **Keine** automatische Ausführung, Fristberechnung, Friständerung oder Aktenzuordnung.
+- Der Versand läuft ausschließlich über `ClaudePrivacyGateway` (Pseudonymisierung, Rückfrage-Kandidaten blockieren,
+  Restrisiko-Scan, Final Payload Gate, Siegel) und nur zu Anthropic. Ein Dateiname wird nicht übertragen.
+- Zweckgebunden: Die Schreib- und Review-Provider lehnen diesen Zweck ab, der Zweitmeinungs-Provider jeden anderen.
+- Eine allgemeine Freigabe automatischer Fristenbestimmung durch Claude ist damit **nicht** verbunden.
+
 ### Was bereits lokal ist (Bestandsaufnahme vor dieser Erweiterung)
 
 Praktisch die gesamte bisher gebaute Pipeline erfüllt das Prinzip bereits, weil durchgehend
