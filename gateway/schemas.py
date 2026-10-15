@@ -9,7 +9,7 @@ der Gateway muss das Allowlist-Schema selbst nicht kennen."""
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SystemBlock(BaseModel):
@@ -28,9 +28,22 @@ class RelayRequest(BaseModel):
     max_tokens: int = Field(gt=0)
     system: list[SystemBlock]
     messages: list[MessageBlock]
+    # §44: optional und NUR {"type": "disabled"} - der Schreibpfad schaltet den Denkmodus wie im direkten Pfad ab
+    # (Fund 05.10.: Denken verbrauchte max_tokens, Texte brachen ab). Andere Werte (z. B. ein Denkbudget) werden
+    # abgelehnt, damit ueber das Relay kein kostenintensiver Denkmodus angefordert werden kann. Ohne Feld: wie bisher.
+    thinking: dict | None = None
+
+    @field_validator("thinking")
+    @classmethod
+    def only_disabled_thinking(cls, value: dict | None) -> dict | None:
+        if value is not None and value != {"type": "disabled"}:
+            raise ValueError('thinking: nur {"type": "disabled"} zulaessig')
+        return value
 
 
 class RelayResponse(BaseModel):
     text: str
     input_tokens: int | None = None
     output_tokens: int | None = None
+    # §44: "max_tokens" = abgeschnitten; vorher verworfen, ein Abbruch war fuer den Client unsichtbar
+    stop_reason: str | None = None

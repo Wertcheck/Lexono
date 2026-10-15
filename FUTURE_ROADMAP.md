@@ -126,6 +126,7 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
 | P2.2 Testkorpus + Modellvergleich | erledigt: Korpus `benchmarks/classification_deadlines_v1` (Dev 34, Test 33, blind, eingefroren); Regeln im Test: kritische Fehler 12 → 6; Claude und OpenAI im Test ohne belastbaren Unterschied, beide deutlich besser als die Regeln | §41 |
 | P2.3 Blinder Testkorpus v2 + Dev-Korrekturen | erledigt: `test_v2` (104 Dokumente, vier blinde Agenten, eingefroren). Regeln blind: Typ 64 → 84/104, Fristen 63 → 66/76, kritische Fehler 18 → 16 (3 neue Fristfehler dokumentiert, nicht am Test optimiert) | §42 |
 | P2.4 Modellvergleich mit Dateiname und 3 Läufen | erledigt: Claude Typ 95, Fristen 75/76, kritisch ≈ 2; OpenAI Typ ≈ 92, Fristen 76/76, kritisch ≈ 0; kaum Streuung; kein belastbarer Sieger; ≈ 2,71 USD | §42 |
+| Relay-Schreibpfad (Produktivpfad §70) | Branch `fix/relay-schreibpfad`, nicht in main: Client-Standard `max_tokens` 4096 → 4000 (Relay lehnte jede Schreibanfrage mit 400 ab), `thinking: disabled` wie im direkten Schreibpfad, `stop_reason` sichtbar, Relay ohne Wiederholungen mit 55 s < Client 60 s; echter Relay-Betrieb NICHT VERIFIZIERT | §44 |
 
 **Nächste Schritte (Vorschlag, nicht umgesetzt):**
 1. **Fristen-Restfehler** aus `test_v2` als **neue** Dev-Fälle nachbauen:

@@ -51,6 +51,12 @@ class GatewaySettings(BaseSettings):
     # pseudonymisierten Text-Prompt (keine Anhaenge, keine Bilder) grosszuegig
     # bemessen.
     max_request_bytes: int = 200_000
+    # §44 (15.10.2026): Upstream-Timeout und KEINE automatischen SDK-Wiederholungen (vorher SDK-Standard: 60 s und
+    # 2 Wiederholungen, also bis ~180 s und drei kostenpflichtige Versuche). Der Client gibt nach
+    # LEXONO_GATEWAY_TIMEOUT_SECONDS (Standard 60 s) auf - danach weiterlaufende Versuche haetten keinen Abnehmer.
+    # Regel: (anthropic_max_retries + 1) * anthropic_timeout_seconds < Client-Timeout.
+    anthropic_timeout_seconds: float = Field(default=55.0, gt=0)
+    anthropic_max_retries: int = Field(default=0, ge=0, le=2)
 
     database_url: str = "sqlite:///./gateway_data/gateway.db"
 

@@ -23,7 +23,7 @@ class RelayError(Exception):
 
 
 def call_anthropic(
-    *, api_key: str, model: str, request: RelayRequest, timeout_seconds: float = 60.0
+    *, api_key: str, model: str, request: RelayRequest, timeout_seconds: float = 55.0, max_retries: int = 0
 ) -> RelayResponse:
     """`model` ist das zentral in `GatewaySettings.default_model`
     konfigurierte Modell - bewusst NICHT `request.model` (Umsetzungsplan
@@ -32,13 +32,18 @@ def call_anthropic(
     hier nicht mehr verwendet."""
     # Ziel ausdruecklich festgelegt (13.10.2026, PRIVACY_REVIEW_ARCHITECTURE.md §21): ohne base_url uebernaehme das SDK
     # still die Umgebungsvariable ANTHROPIC_BASE_URL - samt echtem Schluessel an einen beliebigen Host.
-    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, base_url=_ANTHROPIC_API_BASE_URL)
+    # §44: ausdrueckliche Wiederholungszahl (Standard 0) statt SDK-Standard 2 - siehe GatewaySettings.
+    client = anthropic.Anthropic(api_key=api_key, timeout=timeout_seconds, max_retries=max_retries,
+                                 base_url=_ANTHROPIC_API_BASE_URL)
+    # `thinking` nur, wenn der Client es setzt (Schema laesst nur {"type": "disabled"} zu) - Review-Pfad unveraendert
+    extra = {"thinking": request.thinking} if request.thinking is not None else {}
     try:
         response = client.messages.create(
             model=model,
             max_tokens=request.max_tokens,
             system=[block.model_dump(exclude_none=True) for block in request.system],
             messages=[block.model_dump(exclude_none=True) for block in request.messages],
+            **extra,
         )
     except anthropic.APIError as exc:
         raise RelayError(str(exc)) from exc
@@ -51,4 +56,6 @@ def call_anthropic(
         input_tokens = response.usage.input_tokens
         output_tokens = response.usage.output_tokens
 
-    return RelayResponse(text=text, input_tokens=input_tokens, output_tokens=output_tokens)
+    stop_reason = getattr(response, "stop_reason", None)
+    return RelayResponse(text=text, input_tokens=input_tokens, output_tokens=output_tokens,
+                         stop_reason=stop_reason if isinstance(stop_reason, str) else None)

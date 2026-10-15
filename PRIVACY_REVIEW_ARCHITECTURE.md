@@ -5900,3 +5900,77 @@ Jede Stufe nur synthetisch; eine Stufe beginnt erst, wenn die vorige PASS ist.
 - Payload-Inspektion auf synthetischen Korpora.
 
 Vorher braucht es die ausdrückliche Owner-Freigabe für die Änderung von `ALLOWED_PURPOSES` in diesem Branch.
+
+## §44 Produktiver Schreibpfad über das Lexono-Relay: Token-Grenze, Denkmodus, Abschneiden, Timeout (15.10.2026)
+
+**Branch:** `fix/relay-schreibpfad`, von `origin/main` (`757e638`). Er ist unabhängig vom gesperrten
+Zweitmeinungs-Branch, damit die Korrektur gesondert geprüft und übernommen werden kann. `main` ist unverändert.
+
+**Reproduziert** (synthetische Daten, echter Pfad: Factory → `GatewayRelayWritingProvider` → `call_gateway_messages` →
+Relay-Endpunkt `/v1/relay/messages`; nur das Anthropic-SDK gefälscht):
+- Standard-Settings ohne `CLAUDE_MAX_TOKENS` in der `.env`: Der Client sendet `max_tokens=4096`.
+- Das Relay (`max_tokens_ceiling = 4000`) antwortet mit **400**, Anthropic wird nicht aufgerufen.
+- Der Client wirft `GatewayRelayError("… Status 400")`. Der Nutzer sieht „Interner Fehler bei der Textproduktion“; das
+  Protokoll zeigte keinen HTTP-Status, weil der Fehler keinen `status_code` trug.
+- **Betroffen** ist jede Relay-Bereitstellung (Produktivpfad §70) ohne eigenen Wert. Die lokale Installation dieser
+  Maschine nutzt den direkten Pfad (`LEXONO_GATEWAY_URL` nicht gesetzt).
+- `.env.example` setzte 2000. Genau dieser Wert schnitt laut dokumentiertem Fund vom 05.10. längere Antworten ab.
+
+**Ursache:** Zwei unabhängig gesetzte Standardwerte:
+- Client 4096: am 05.10. von 2000 angehoben;
+- Relay-Kostenschranke 4000: §70, 31.08.
+
+Keine Prüfung hielt beide konsistent, und der Pilot-Szenariotest nutzte 2000 statt des Factory-Standards.
+
+**Änderungen und Begründung:**
+
+| Bereich | Vorher | Nachher | Begründung |
+|---|---|---|---|
+| `Settings.claude_max_tokens` | 4096 | **4000** | Das Relay ist die maßgebliche Kostenschranke; der Client folgt ihr. Kein Limit erhöht. |
+| `.env.example` `CLAUDE_MAX_TOKENS` | 2000 | **4000** | 2000 schnitt nachweislich ab; Kommentar verweist auf die Relay-Obergrenze. |
+| Relay-Schreibpfad: Denkmodus | nicht übertragbar (`RelayRequest` ohne Feld) | Client sendet `thinking: {"type": "disabled"}`; Relay reicht genau diesen Wert durch und lehnt jeden anderen mit 422 ab | Gleichstand mit `AnthropicClaudeWritingProvider` (Fund 05.10., `test_write_explicitly_disables_thinking`). Siehe „Denkmodus“ unten. |
+| Review-Pfad über das Relay | ohne `thinking` | **unverändert** ohne | Auch der direkte Review-Provider setzt kein `thinking`; ohne belegten Fehler keine Änderung. |
+| Abschneiden | `stop_reason` verworfen, Abbruch unsichtbar | Relay gibt `stop_reason` zurück; der Client protokolliert `max_tokens` inhaltsfrei | Sichtbarkeit; der Text bleibt wie im direkten Pfad beim Aufrufer. |
+| Relay-Upstream | 60 s Timeout, SDK-Standard **2 Wiederholungen** | **55 s, 0 Wiederholungen** (`ANTHROPIC_TIMEOUT_SECONDS`, `ANTHROPIC_MAX_RETRIES`, Bereich 0–2) | Der Client gibt nach 60 s auf. Vorher konnten bis zu zwei weitere kostenpflichtige Versuche ohne Abnehmer laufen. Regel: `(Wiederholungen + 1) × Upstream-Timeout < Client-Timeout`. |
+| `GatewayRelayError` | ohne Status | `status_code` (None bei Netzwerkfehler/Timeout) | `_log_provider_exception` protokolliert den Status inhaltsfrei (z. B. 400, 502). |
+
+- Ein älteres Relay ignoriert das neue Feld `thinking`; die neue `RelayResponse` ist nur additiv.
+- Datenschutz- und Zweckprüfungen sind unverändert: Siegel-Pflicht im Provider, keine Inhalte in Fehlermeldungen
+  und Logs.
+
+**Denkmodus – Prüfung:**
+- **Belegt:** Live-Messung vom 05.10. im direkten Pfad (Kommentar und Test in `anthropic_writing_provider.py`): Ohne
+  Abschalten verbrauchte das Modell bis zu 82 % von `max_tokens` für unsichtbares Denken, und Texte brachen mitten im
+  Satz ab. Der direkte Schreibpfad schaltet ihn deshalb ab.
+- Der Relay-Schreibpfad konnte das bisher nicht: kein Feld, kein Parameter im SDK-Aufruf. Er wich damit von einer
+  bereits getroffenen, belegten Entscheidung ab.
+- Gegen das echte Modell über das Relay wurde **nicht** gemessen, weil keine Cloud-Aufrufe erlaubt sind.
+- Die Änderung ist auf den Schreibpfad begrenzt und clientgesteuert. Das Relay lässt nur das Abschalten zu, nie ein
+  Denkbudget (Kostenkontrolle).
+
+**Offene Punkte und Annahmen:**
+- **Lange Entwürfe:** Bei einer Ausgaberate von rund 60–80 Token/s (Annahme, nicht gemessen) dauern 4000 Token etwa
+  50–65 s. Sehr lange Entwürfe können den Upstream-Timeout von 55 s erreichen und werden dann als Fehler (502)
+  gemeldet, ohne Wiederholung.
+  - Abhilfe wäre ein größeres Paar aus Client- und Relay-Timeout (z. B. 120/110 s) oder Streaming über das Relay.
+  - Beides ist eine eigene Entscheidung.
+- **Abrechnung abgebrochener Anfragen:** Ob Anthropic bei einem vom Relay abgebrochenen Aufruf bereits erzeugte Token
+  berechnet, ist nicht geprüft (Annahme: ja, bis zum Abbruch).
+- **Bestehende Bereitstellungen:** Eine `.env.gateway` mit kleinerem `MAX_TOKENS_CEILING` oder eine `.env` mit
+  größerem `CLAUDE_MAX_TOKENS` erzeugt weiterhin 400. Die Konsistenzregel ist jetzt in beiden Vorlagen und einem Test
+  festgehalten, wird zur Laufzeit aber nicht zwischen den getrennten Prozessen abgeglichen.
+- **Abgeschnittene Antworten** werden protokolliert, aber (wie im direkten Pfad) nicht in der Oberfläche markiert.
+- **Relay als allgemeiner Proxy** (beliebige System- und Nutzertexte) und fehlende Inhaltsprüfung im Relay bleiben
+  bestehen, siehe Zweitmeinungs-Branch §43.11.
+
+**Tests und QA:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| `tests/test_relay_write_path.py` (11): Erfolg mit Standard-Settings bis `DraftingService`, Konsistenz der Grenzen in Code und Vorlagen, Token-Grenze mit Statusprotokoll, nur `thinking: disabled`, Review-Pfad unverändert, Abschneiden sichtbar, Upstream-Timeout genau 1 Versuch, Client-Timeout ohne Wiederholung, unversiegelte Payload erreicht das Relay nicht | PASS |
+| Mutationsprobe: 10 Rücknahmen (Token-Standard, Denkmodus Client/Relay, Wiederholungen, Timeout, Durchreichen der Wiederholungen, `thinking`-Validator, `stop_reason`, Statuscode, `.env.example`) | 10/10 gefangen |
+| Gezielte Gruppen (57 Dateien: Gateway, Relay-Client, Provider, Factory, Settings, Drafting, Review, Chat, E2E-Pilot, Kosten, Proxy-Guard) | **1406 bestanden**, 0 fehlgeschlagen |
+| Volle Suite, in sechs Teilen im Vordergrund | **4772 bestanden**; fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`, fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
+| Legal-E2E (Datenschutz-Regression) | identisch mit `295f591`: 0 Lecks, keine fremde Akte, fremder Anhang 7/7 |
+| Echter Anthropic-Aufruf über das Relay, installierter Build, Relay-Deployment | **NICHT VERIFIZIERT** (keine Cloud-Aufrufe erlaubt bzw. nicht Teil der Aufgabe) |
+| Lint | **NICHT VERIFIZIERT** (kein Linter konfiguriert) |

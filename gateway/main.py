@@ -220,7 +220,9 @@ def relay_messages(
         # es bestimmt aber nicht mehr die tatsaechliche Modellwahl - ein
         # Modellwechsel ist damit ausschliesslich eine `.env.gateway`-
         # Aenderung + Neustart, kein Client-Rebuild noetig.
-        result = call_anthropic(api_key=api_key, model=settings.default_model, request=request)
+        result = call_anthropic(api_key=api_key, model=settings.default_model, request=request,
+                                timeout_seconds=settings.anthropic_timeout_seconds,
+                                max_retries=settings.anthropic_max_retries)
     except RelayError:
         log_relay_request(
             request_id=request_id,

@@ -20,7 +20,15 @@ class GatewayRelayError(Exception):
     Authentifizierung, Rate-Limit, serverseitiger Anthropic-Fehler) - wird
     vom Aufrufer wie jeder andere Provider-Fehler behandelt (siehe
     DraftingService: kontrolliert abbrechen, niemals stillschweigend einen
-    alternativen direkten Cloud-Pfad versuchen)."""
+    alternativen direkten Cloud-Pfad versuchen).
+
+    `status_code` (§44): HTTP-Status der Relay-Antwort (None bei Netzwerkfehler/Timeout) - damit
+    `drafting.service._log_provider_exception` ihn inhaltsfrei protokolliert (z. B. 400 bei ueberschrittener
+    Token-Obergrenze statt eines nicht zuordenbaren "Interner Fehler")."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 @dataclass
@@ -28,6 +36,8 @@ class GatewayRelayResult:
     text: str
     input_tokens: int | None
     output_tokens: int | None
+    # §44: vom Relay durchgereicht ("max_tokens" = Antwort abgeschnitten); None bei aelterem Relay
+    stop_reason: str | None = None
 
 
 def call_gateway_messages(
@@ -40,7 +50,11 @@ def call_gateway_messages(
     system_blocks: list[dict],
     message_blocks: list[dict],
     timeout_seconds: float = 60.0,
+    thinking: dict | None = None,
 ) -> GatewayRelayResult:
+    """`thinking` (§44): optional, nur `{"type": "disabled"}` - wird nur mitgeschickt, wenn gesetzt (der
+    Schreibpfad setzt es wie `AnthropicClaudeWritingProvider`; der Review-Pfad bleibt unveraendert ohne). Ein aelteres
+    Relay ignoriert das Feld. KEINE Wiederholung hier: ein Fehler oder Timeout bricht kontrolliert ab."""
     url = base_url.rstrip("/") + "/v1/relay/messages"
     headers = {"Authorization": f"Bearer {client_id}:{client_secret}"}
     body = {
@@ -49,6 +63,8 @@ def call_gateway_messages(
         "system": system_blocks,
         "messages": [{"role": "user", "content": message_blocks}],
     }
+    if thinking is not None:
+        body["thinking"] = thinking
     try:
         response = httpx.post(url, json=body, headers=headers, timeout=timeout_seconds)
     except httpx.HTTPError as exc:
@@ -58,11 +74,14 @@ def call_gateway_messages(
         # Bewusst KEINE Weitergabe von response.text an den Aufrufer -
         # koennte (theoretisch) interne Gateway-Details enthalten. Nur der
         # Statuscode wird in der Fehlermeldung genannt.
-        raise GatewayRelayError(f"Gateway antwortete mit Status {response.status_code}")
+        raise GatewayRelayError(
+            f"Gateway antwortete mit Status {response.status_code}", status_code=response.status_code
+        )
 
     data = response.json()
     return GatewayRelayResult(
         text=data["text"],
         input_tokens=data.get("input_tokens"),
         output_tokens=data.get("output_tokens"),
+        stop_reason=data.get("stop_reason"),
     )

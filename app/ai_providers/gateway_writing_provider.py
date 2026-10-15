@@ -25,6 +25,8 @@ entsprechend erweitert werden - ausserhalb des Umfangs dieses Repositories."""
 
 from __future__ import annotations
 
+import logging
+
 from app.ai_providers.claude_writing_provider import (
     ClaudeWritingResult,
     build_writing_prompt_cache_blocks,
@@ -32,6 +34,8 @@ from app.ai_providers.claude_writing_provider import (
 )
 from app.ai_providers.gateway_relay_client import call_gateway_messages
 from app.privacy.gateway_schema import ClaudeRequestPayload, require_gateway_seal
+
+_logger = logging.getLogger(__name__)
 
 
 class GatewayRelayWritingProvider:
@@ -71,7 +75,15 @@ class GatewayRelayWritingProvider:
             ],
             message_blocks=build_writing_prompt_cache_blocks(payload),
             timeout_seconds=self._timeout_seconds,
+            # §44: wie AnthropicClaudeWritingProvider.write (live reproduzierter Fund 05.10.: das Modell denkt
+            # sonst standardmaessig, verbraucht bis zu 82 % von max_tokens unsichtbar, Texte brachen ab). Bisher erreichte
+            # diese Einstellung den Relay-Pfad nicht.
+            thinking={"type": "disabled"},
         )
+        if result.stop_reason == "max_tokens":
+            # inhaltsfrei: nur Tatsache und Zahlen - der Text bleibt beim Aufrufer (gleiches Verhalten wie der direkte Pfad)
+            _logger.warning("Relay-Antwort an max_tokens abgeschnitten (max_tokens=%s, output_tokens=%s)",
+                            self.max_tokens, result.output_tokens)
 
         token_count = None
         if result.input_tokens is not None and result.output_tokens is not None:

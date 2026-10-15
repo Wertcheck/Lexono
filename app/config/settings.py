@@ -190,7 +190,12 @@ class Settings(BaseSettings):
     # 4096 angehoben (keine im Code dokumentierte Begruendung fuer den
     # bisherigen Wert 2000 gefunden - wirkte wie ein unveraendert
     # gebliebener Ausgangswert, keine bewusste, belegte Entscheidung).
-    claude_max_tokens: int = 4096
+    # §44 (15.10.2026, reproduziert): 4096 lag ueber der Relay-Obergrenze (gateway/config.py
+    # `max_tokens_ceiling` = 4000, Kostenkontrolle) - im Produktivpfad ueber das Lexono-Relay (§70) lehnte das
+    # Relay JEDE Schreibanfrage mit 400 ab, wenn die .env keinen eigenen Wert setzt. Das Relay ist die
+    # massgebliche Kostenschranke; der Client-Standard folgt ihr (4000 statt 4096, kein Limit erhoeht).
+    # tests/test_relay_write_path.py prueft die Konsistenz.
+    claude_max_tokens: int = 4000
 
     # --- Echte Webrecherche fuer den Chat (06.10., Owner-Direktive "LEXONO
     # ALS VOLLWERTIGER AI-ARBEITSPLATZ - ARCHITEKTUR-/REQUEST-FLOW-AUDIT"
