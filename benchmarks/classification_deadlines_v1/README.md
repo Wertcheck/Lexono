@@ -7,7 +7,7 @@ Ausschließlich **synthetische** Dokumente: erfundene Namen, Behörden und Akten
 
 | Split | Datei | Dokumente | Verfasst von | SHA-256 (Version 1) |
 |---|---|---|---|---|
-| Entwicklung | `cases/dev.json` | 34 | Entwicklungssitzung; enthält die Reproduktionen bekannter Fehler | `92d6ec799bcd372d3a13a290527e420317d525016c60e90b8659c0a2f06138b0` |
+| Entwicklung | `cases/dev.json` | 34 | Entwicklungssitzung; enthält die Reproduktionen bekannter Fehler | `5ffd1c3afd8b69e8d574c157c0bc1ed64c4740195a9ca966afdbe7827021bf0f` |
 | Unabhängiger Test | `cases/test.json` | 33 | eigener Agent, **blind**: ohne Einblick in Klassifikator, Extraktor, deren Tests, Dev-Split oder Architektur-Doku | `a2cb80158685d1db22d34a4ed0706e99da4bcd83de1e114dfdcd863ed54fe9f2` |
 
 - **Testsplit eingefroren:** Er wurde vor jeder Codeänderung eingefroren und auf dem unveränderten Code `e2b3176`
