@@ -11,8 +11,11 @@ dieser Test unabhaengig von lokalem Zustand ist.
 
 from pathlib import Path
 
+import pytest
 from alembic import command
 from alembic.config import Config
+
+pytestmark = pytest.mark.usefixtures("restore_logging_after_alembic")
 
 
 def _alembic_config_for(db_path: Path) -> Config:

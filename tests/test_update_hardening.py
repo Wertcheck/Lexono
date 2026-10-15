@@ -22,6 +22,9 @@ from app.backup.restore_service import RestoreService
 ROOT = Path(__file__).resolve().parents[1]
 
 
+pytestmark = pytest.mark.usefixtures("restore_logging_after_alembic")
+
+
 def _cfg(db_path: Path) -> Config:
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "migrations"))

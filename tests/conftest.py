@@ -83,3 +83,23 @@ def always_run_local_summary(monkeypatch: pytest.MonkeyPatch) -> None:
     Beispieltexten pruefen, schalten die Schwelle damit aus; die Ueberspringen-Logik selbst haben eigene
     Tests (tests/test_drafting_short_summary_skip.py)."""
     monkeypatch.setattr("app.drafting.service._LOCAL_SUMMARY_MIN_CHARS", 0)
+
+
+@pytest.fixture()
+def restore_logging_after_alembic():
+    """Testisolation fuer Tests, die Alembic im Testprozess ausfuehren: migrations/env.py ruft
+    logging.config.fileConfig auf, das alle bereits existierenden Logger deaktiviert. Ohne Wiederherstellung fangen
+    spaeter laufende Tests (z. B. test_drafting_service mit caplog) keine Logzeilen mehr - reproduziert (§74.1), sobald
+    eine Migrations-Testdatei vor ihnen laeuft. Bewusst NICHT in env.py geaendert: dort wuerde es im echten
+    Startprozess SQLAlchemy-/Drittanbieter-Logger reaktivieren (Logging-Verhalten der Produktion). Per
+    `pytestmark = pytest.mark.usefixtures(...)` einzubinden."""
+    import logging
+
+    loggers = [lg for lg in logging.root.manager.loggerDict.values() if isinstance(lg, logging.Logger)]
+    states = {lg: (lg.disabled, lg.level, list(lg.handlers), lg.propagate) for lg in loggers}
+    root_state = (logging.root.level, list(logging.root.handlers))
+    yield
+    for lg, (disabled, level, handlers, propagate) in states.items():
+        lg.disabled, lg.level, lg.handlers, lg.propagate = disabled, level, handlers, propagate
+    logging.root.setLevel(root_state[0])
+    logging.root.handlers = root_state[1]
