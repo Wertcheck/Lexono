@@ -81,10 +81,15 @@ _RELATIVE_PERIOD_PATTERN = re.compile(
 # --- P2.1 (§40): Rolle eines Datums im Satz ------------------------------------------------------------------------
 # Vorher wurde JEDES Datum ein Fristvorschlag (ohne Schluesselwort mit Konfidenz 0,15); "termin" traf als Teilwort auch
 # "Arzttermin" im Vorsatz. Jetzt zaehlt nur, was im SELBEN Satz unmittelbar am Datum steht.
-_SENTENCE_BREAK = re.compile(r"[.!?;](?=\s+[A-ZÄÖÜ(])|\n|\s{3,}")
+# P2.3 (§42): ein Zeilenumbruch ist nur nach Satzzeichen, an einer Leerzeile oder in Tabellenzeilen eine Satzgrenze
+# (siehe _is_hard_newline) - die PDF-Extraktion bricht Zeilen weich um ("letztmalig bis zum\n31.07.2026"), vorher ging
+# so der Hinweis vor dem Datum verloren
+_SENTENCE_BREAK = re.compile(r"[.!?;](?=\s+[A-ZÄÖÜ(])|[ \t]{3,}")
+_NEWLINE = re.compile(r"\n")
 # Fristende ausdruecklich: Hinweiswort unmittelbar vor dem Datum
 _EXPLICIT_DEADLINE_BEFORE = re.compile(
-    r"(?:\bbis(?:\s+(?:zum|spätestens|spaetestens|einschließlich|einschliesslich))?(?:\s+zum)?"
+    # "einschlie\S*": auch OCR-Varianten ("einschlieBlich", P2.3 §42)
+    r"(?:\bbis(?:\s+(?:zum|spätestens|spaetestens|einschlie\S*))?(?:\s+zum)?"
     r"|\bspätestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?|\bspaetestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?"
     r"|\bfällig(?:\s+(?:am|zum|bis))?|\bfaellig(?:\s+(?:am|zum|bis))?|\bzahlbar(?:\s+(?:bis|am))?(?:\s+zum)?"
     r"|\bzahlungsziel\s*:?|\bwiedervorlage\s*:?|\bfristablauf\s*:?|\bablauf\s+(?:am|zum)|\balso\s+am|\bendet\s+am"
@@ -379,16 +384,37 @@ class PlaceholderDeadlineExtractor:
 
     @staticmethod
     def _sentence_bounds(text: str, start: int, end: int) -> tuple[int, int]:
+        def breaks(lo: int, hi: int) -> list[tuple[int, int]]:
+            found = [(b.start(), b.end()) for b in _SENTENCE_BREAK.finditer(text, lo, hi)]
+            found += [(n.start(), n.end()) for n in _NEWLINE.finditer(text, lo, hi)
+                      if PlaceholderDeadlineExtractor._is_hard_newline(text, n.start())]
+            return sorted(found)
+
         left = max(0, start - 200)
-        for brk in _SENTENCE_BREAK.finditer(text, left):
-            if brk.end() > start:
+        for brk_start, brk_end in breaks(left, start):
+            if brk_end > start:
                 break
-            left = brk.end()
+            left = brk_end
         right = min(len(text), end + 200)
-        for brk in _SENTENCE_BREAK.finditer(text, end):
-            right = min(right, brk.start())
-            break
+        following = breaks(end, right)
+        if following:
+            right = following[0][0]
         return left, right
+
+    @staticmethod
+    def _is_hard_newline(text: str, pos: int) -> bool:
+        """Harte Grenze: nach Satzzeichen (.!?;), an einer Leerzeile oder wenn eine der beiden Zeilen eine Tabellenzeile
+        ("Zelle | Zelle") ist. Sonst weicher Umbruch (PDF-Zeilenumbruch mitten im Satz)."""
+        line_start = text.rfind("\n", 0, pos) + 1
+        next_end = text.find("\n", pos + 1)
+        line_before = text[line_start:pos]
+        line_after = text[pos + 1: len(text) if next_end < 0 else next_end]
+        stripped = line_before.rstrip()
+        if not stripped or not line_after.strip():
+            return True
+        if stripped[-1] in ".!?;":
+            return True
+        return "|" in line_before or "|" in line_after
 
     def _role(self, text: str, match: re.Match) -> tuple[str, str]:
         """("frist" | "termin" | "ereignis" | "datum", Hinweis) - nur was im selben Satz unmittelbar am Datum steht."""

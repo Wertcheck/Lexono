@@ -5294,3 +5294,286 @@ Fristen werden nie geändert).
 | Fremder Anhang | 7/7 blockiert |
 
 **Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
+
+## §42 P2.3/P2.4: Blinder Testkorpus v2 (104 Dokumente) und Modellvergleich mit Wiederholungsläufen (15.10.2026)
+
+**Ziel:**
+- Die Verallgemeinerung der Regeln aus §40/§41 auf einem **neuen, größeren, blinden** Testsplit messen.
+- Die in §41.8 benannten Restfehlerklassen nur über **neue Dev-Fälle** angehen.
+- Claude und OpenAI auf identischen Fällen mit Dateiname und mehreren Läufen vergleichen.
+
+**Ausgangsstand:** `07c919d` (= origin/main). Der P2.2-Split `test.json` (`a2cb8015…`) blieb unverändert.
+Nur synthetische Daten.
+
+### 42.1 Korpus v2
+
+| Split | Datei | Dokumente | SHA-256 |
+|---|---|---|---|
+| Entwicklung v2 | `cases/dev_v2.json` | 8 | `e75d8bc00c33ea88cf366450d4220366bdad327959d53d0efa4e0f5c10ad294a` |
+| Blinder Test v2 | `cases/test_v2.json` | 104 | `eb84225cc2b8bcb18de59a62f78658c8c43061298e5f160b0e44d2eca4933981` |
+
+- **Erzeugung `test_v2`:** vier getrennte Agenten (A Gericht, B Korrespondenz, C Behörden/Steuer/Finanzen,
+  D Verträge/Gutachten/Protokolle/Grenzfälle), je 26 Dokumente.
+- **Blindheit:** Die Agenten hatten keinen Zugriff auf `app/`, `tests/`, `scripts/`, den Korpusordner, diese Datei,
+  `.agentic/` und `FUTURE_ROADMAP.md`. Sie sahen auch nicht die Teildateien der anderen Agenten.
+- **Labels:** Sie wurden **vor** jeder Messung fachlich vergeben („erfahrene Kanzleikraft“) und nicht aus Vorhersagen
+  abgeleitet.
+- **Zusammenführung:** Die Teile wurden mechanisch zusammengeführt (Skript ohne Inhaltsausgabe), validiert, mit
+  LF-Zeilenenden geschrieben und **vor** der ersten Messung eingefroren.
+- **Hash-Prüfung:** `tests/test_classification_deadlines_corpus.py` prüft den Hash und die Disjunktheit zu allen
+  anderen Splits.
+- **Einschränkung der Blindheit:** Die Fallgruppen hat die Entwicklungssitzung im Auftrag vorgegeben, z. B. „gültig
+  bis“, Erwähnungen, KW-Fristen, generische Dateinamen. Text und Labels verfassten die Agenten allein.
+- **Zusammensetzung `test_v2`:**
+  - 75 Kerntyp- und 29 Rollendokumente; 18 Typen von Anlage bis Vollmacht, 24 × „Unbekannt“.
+  - Formate: 42 PDF, 24 DOCX, 17 TXT, 12 Scan, 9 schlechter Scan.
+  - Daten: 76 Fristen, 21 Termine, 10 Fristbeginne, 36 Dauern ohne Enddatum, 261 Nicht-Fristen, 25 nicht bewertet.
+  - Fallgruppen: 17 Tabellen; Geburtsdaten; vergangene Verhandlungen; „gültig bis“; Abmahnung ≠ Mahnung;
+    Kündigungsandrohung; widersprüchliche Daten/Beträge; irreführende oder generische Dateinamen; E-Mail-Ketten;
+    lange Verträge mit abstrakten Fristen.
+- **`dev_v2`:** acht neue Texte. Sie bilden die Fehlerklassen des **P2.2-Testsplits** nach: Teilwort „klage“/„gericht“
+  in Briefen, Ladung, 2. Mahnung, Einspruch gegen Steuerbescheid, Zeilenumbruch im PDF, „bis einschließlich“ mit
+  OCR-Fehler. Sie wurden erstellt, ohne `test_v2` einzusehen.
+- **Folge:** Der P2.2-Testsplit `test.json` ist **nicht mehr unabhängig**, weil seine Fehlerklassen in die Entwicklung
+  eingeflossen sind. Er bleibt als Regressionsmessung erhalten.
+
+### 42.2 Messreihenfolge (Lexono, echter Pfad inkl. OCR)
+
+1. **Baseline:** `test_v2` auf dem unveränderten Stand `07c919d` gemessen
+   (`results_lexono_test_v2_07c919d.json`). Vom Ergebnis wurden nur Gesamtzahlen gelesen, keine Einzeldokumente.
+2. **Entwicklung** ausschließlich gegen `dev`, `dev_v2` und Unit-Tests (`tests/test_p23_dev_regressions.py`: vorher
+   10 rot, danach grün).
+3. **Eine Schlussmessung** von `test_v2` (`results_lexono_test_v2_p23.json`). Danach gab es **keine** weiteren
+   Regeländerungen. Die dort neu sichtbaren Fehler sind unten nur dokumentiert.
+
+### 42.3 Änderungen (Produktivcode, minimal)
+
+**`app/deadlines/extractor.py`:**
+- **Weicher Zeilenumbruch:** Ein Zeilenumbruch beendet einen Satz nur noch, wenn er „hart“ ist: nach `.!?;`, an
+  einer Leerzeile oder in Tabellenzeilen (`|`). Vorher trennte jeder Umbruch eines PDF-Fließtexts das Hinweiswort
+  („bis zum“, „bestimmt auf“) vom Datum in der Folgezeile.
+- **OCR-Variante:** Die Formel „bis einschließlich“ erkennt auch OCR-Varianten („einschlieBlich“, „einschliesslich“).
+
+**`app/classification/classifier.py`:**
+- „Mahnung“ wird vor „Rechnung“ geprüft („2. Mahnung … unsere Rechnung Nr. …“).
+- **Gericht und Klage/Schriftsatz** zählen nur noch, wenn das Schlüsselwort im **ersten Wort einer Zeile** steht
+  (Briefkopf/Überschrift). Für Klage/Schriftsatz gelten zusätzlich Antragsformeln („beantragen wir“, „an das …gericht“).
+  Bloße Erwähnungen in Briefen und E-Mails ergeben den Typ nicht mehr.
+- **Einspruch gegen Steuerbescheid:** Die Bescheid-Referenz zählt im Steuerbescheid-Bereich nicht als
+  Steuerbescheid. Rechtsbehelfsformeln wie „Einspruch einlegen“ sind kein Einspruch.
+
+**Unverändert:**
+- Schnittstellen, Schwellen (Klassifikation höchstens 0,4, Sperre 0,6) und Fristberechnung. Fristen werden nur
+  vorgeschlagen und nie automatisch übernommen.
+- Aktenzuordnung, Privacy-Gateway, Pseudonymisierung, Leak-Detection.
+
+### 42.4 Ergebnis Lexono auf `test_v2` (n=104, echter Pfad inkl. OCR, rein lokal)
+
+| Kennzahl | vorher `07c919d` | nach P2.3 |
+|---|---|---|
+| Typ richtig | 64/104 | **84/104** |
+| Kerntypen richtig | 52/75 | 63/75 |
+| „Unbekannt“ vorhergesagt (Gold „Unbekannt“: 24) | 10 | 19 (davon 17 richtig) |
+| Fristen gefunden / übersehen | 63/76 / 13 | 66/76 / 10 |
+| Nicht-Frist als Frist | 5 | 6 |
+| Termine richtig (falsch) | 9/21 (2) | 12/21 (3) |
+| Fristbeginn richtig (falsch) | 9/10 (2) | 9/10 (2) |
+| Dauern erkannt (zusätzlich) | 27/36 (+15) | 27/36 (+15) |
+| **Kritische Fehler** (übersehene Frist + Nicht-Frist als Frist) | 18 | **16** |
+| Laufzeit (104 Dokumente inkl. Rendern, OCR, Import) | 130 s | 130 s (≈ 1,25 s/Dokument) |
+
+**Je Dokument:**
+- Klassifikation: 20 besser, **0 schlechter**.
+- Fristen: 7 Dokumente besser, **3 neue Fehler**.
+
+**Neue Fristfehler durch den weichen Zeilenumbruch, nicht behoben:**
+- Eine vergangene Kündigung („kündigte das ↵ Mietverhältnis … zum …“) wird als Frist erkannt.
+- „Datum: … ↵ Anhörung im Bußgeldverfahren“ wird als Termin erkannt.
+- „innerhalb eines Monats nach ↵ Bekanntgabe, spätestens am …“: Die Frist wird übersehen, weil die Fristbeginn-Regel
+  über das Komma greift.
+
+Diese Fehler sind auf `test_v2` sichtbar geworden. Eine Korrektur jetzt wäre Optimierung am Testsplit. Sie werden als
+Fehlerklasse für den nächsten Zyklus mit neuen Dev-Fällen und einem frischen blinden Split (v3) geführt.
+
+**Je Klasse, Präzision/Recall nach P2.3 (kleine Klassen, Werte nur als Hinweis):**
+- **Schwach:**
+  - Kündigungsschreiben P 3/7: 3 Briefe mit Androhung → Kündigung, dazu je 1 Gericht und 1 Mahnung.
+  - Rechnung P 6/9.
+  - Steuerbescheid P 5/9: Bescheid, Urteil und Briefe → Steuerbescheid.
+  - Urteil/Beschluss R 5/7.
+  - Vertrag R 7/9.
+- **Gut:**
+  - Klage/Schriftsatz 6/6 (vorher P 4/11).
+  - Gerichtliches Schreiben P 6/8 (vorher 2/11).
+  - Mahnung R 4/5 (vorher 1/5).
+- Formate: PDF 34/42, DOCX 19/24, TXT 12/17, Scan 11/12, schlechter Scan 8/9. Die OCR ist **nicht** der Engpass.
+- **Kleine Untergruppen:** Prüfungsanordnung (1), Sonstiges (1), Steuererklärung (2), Einspruch/Vollmacht (je 3).
+  Hier sind keine Aussagen möglich.
+
+**Regression auf den älteren Splits:**
+- `dev` 34/34 mit allen Fristen; `dev_v2` 8/8.
+- P2.2-`test` (nicht mehr unabhängig): Typ 24 → 30/33, Fristen 12 → 14/18, kritisch 6 → 4.
+- Legal-E2E-Korpus (`p21_measure`): unverändert bis auf ein Dokument, das von „Gericht“ zu „Unbekannt“ wechselt
+  (neutral).
+
+### 42.5 Modellvergleich (P2.4)
+
+**Gleich wie in §41.5:**
+- Harness `cloud_compare.py`.
+- Lokale Pseudonymisierung und fail-closed-Restscan.
+- Dieselbe Aufgabe und dieselbe Bewertung (`cd_measure.score`).
+- Eingabe ist der von Lexono extrahierte Text inkl. OCR-Fehlern aus der Schlussmessung.
+
+**Abweichungen von P2.2 (bewusst):**
+- **Dateiname:** Er wird als erste Zeile mitgegeben („Dateiname: …“, wird mit pseudonymisiert). Der Prompt erwähnt
+  diese Zeile. Lexono sieht den Dateinamen ebenfalls.
+- **Wiederholungen:** drei Läufe je Modell auf allen gesendeten Dokumenten.
+- **Kostengrenze vorab:** je Modell höchstens 330 Aufrufe und 3 USD über alle Läufe.
+
+**Modelle und Parameter (unverändert):**
+- `claude-sonnet-5`: Thinking aus, `max_tokens` 1200, kein `temperature`.
+- `gpt-5.5-2026-04-23`: `reasoning_effort` none, `max_completion_tokens` 1200, JSON-Antwortformat.
+
+**Versand:**
+- 99/104 gesendet; **5 fail-closed** (Rest-Treffer person/organisation), in allen Läufen dieselben.
+- Fehlende Vorhersagen zählen wie in §41 als „Unbekannt“ ohne Daten.
+- **0 API-Fehler.**
+
+**Ergebnis auf allen 104 Dokumenten** (Cloud: Mittelwert [Min–Max] über 3 Läufe):
+
+| Kennzahl | Lexono P2.3 | Claude Sonnet 5 | OpenAI GPT-5.5 |
+|---|---|---|---|
+| Typ richtig | 84 | **95 [95–95]** | 92,3 [92–93] |
+| Kerntypen richtig (75) | 63 | 69 | 69 |
+| Fristen gefunden (76) / übersehen | 66 / 10 | 75 / 1 | **76 / 0** |
+| Nicht-Frist als Frist | 6 | 1,3 [1–2] | **0,3 [0–1]** |
+| Termine richtig (21) / falsch | 12 / 3 | 20 / 5,3 [5–6] | 20 / **1,7 [0–3]** |
+| Fristbeginn richtig (10) / falsch | 9 / 2 | 10 / 1 | 10 / **0** |
+| Dauern erkannt (36) / zusätzlich | 27 / 15 | 30 / 30 [29–31] | 30 / 34,7 [34–36] |
+| **Kritische Fehler** | 16 | 2,3 [2–3] | **0,3 [0–1]** |
+
+- Auf der gesendeten Teilmenge (n=99; erwartet 76 Fristen, 20 Termine, 10 Fristbeginne, 31 Dauern) sind die
+  Cloud-Werte identisch.
+- Lexono auf derselben Teilmenge: Typ 81, Kerntypen 60, Fristen 66, kritisch 16.
+- Die fünf nicht gesendeten Dokumente enthalten keine Frist, aber 1 Termin und 5 Dauern. Diese fehlen den
+  Cloud-Modellen zwangsläufig.
+
+**Kosten und Laufzeit je Lauf** (99 Aufrufe; Schätzung aus gemeldeten Token und öffentlichen Preisen, **nicht** mit
+dem Anbieter-Dashboard abgeglichen):
+
+| | Claude | OpenAI |
+|---|---|---|
+| Token je Lauf (Ein / Aus) | 156.832 / ≈ 5.890 | 81.400 / ≈ 3.870 |
+| Kosten je Lauf | ≈ 0,373 USD (≈ 0,0038 USD/Dokument) | ≈ 0,523 USD (≈ 0,0053 USD/Dokument) |
+| Laufzeit je Lauf (sequenziell) | 159 / 147 / 142 s | 183 / 157 / 173 s |
+| Summe 3 Läufe | 297 Aufrufe, ≈ 1,12 USD | 297 Aufrufe, ≈ 1,57 USD |
+
+- Dazu kamen Probeläufe ≈ 0,02 USD, insgesamt also ≈ 2,71 USD (P2.2: ≈ 0,51 USD).
+- Die Eingabe-Token sind höher als in P2.2, weil die Dokumente länger sind und der Dateiname mitgegeben wird.
+
+**Streuung:**
+- Die drei Läufe sind sehr stabil.
+- Claude hat in allen drei Läufen 95 Typtreffer. Die Läufe unterscheiden sich nur um je ±1 bei falschen Terminen,
+  Nicht-Fristen und zusätzlichen Dauern.
+- OpenAI streut um ±1 Typ und bei den Terminen (0–3 falsch).
+- Wiederholungsläufe zeigen also kaum Zufallsrauschen. Das bedeutet **nicht**, dass das Ergebnis auf andere Texte
+  übertragbar ist.
+
+**Fehlerbilder:**
+- **Claude:** häufiger vergangene oder bloß erwähnte Daten als Termin (≈ 5 je Lauf); 1–2 Nicht-Fristen als Frist.
+- **OpenAI:** etwas mehr Typfehler, u. a. Anlage-Überschätzung (P 9/11) und Rechnung; mehr zusätzliche Dauern.
+- **Beide:** Präzision der zusätzlichen Dauern schlecht (+30 bzw. +35). Die Label-Konvention „abstrakte
+  Vertragsklauseln zählen nicht“ wird von beiden nicht übernommen. Das ist teils eine Definitionsfrage und **kein**
+  kritischer Fehler.
+
+### 42.6 Bewertung (Phase 3)
+
+**Generalisierung der Regeln:**
+- Auf dem neuen blinden Split verbessert P2.3 die Klassifikation deutlich: 64 → 84, 20 Dokumente besser, keines
+  schlechter.
+- Die Fristen verbessern sich kaum: kritische Fehler 18 → 16, drei neue Fehler aus derselben Änderung.
+- Der Abstand zu Dev (34/34, 8/8) bleibt groß. Die Regeln verallgemeinern also **teilweise**.
+- Die verbleibenden 16 kritischen Fristfehler sind das eigentliche Produktrisiko des lokalen Pfads. Fristen bleiben
+  Vorschläge mit menschlicher Prüfung.
+
+**Cloud gegenüber Regeln:**
+- Beide Modelle sind auf identischen Fällen klar besser.
+- Fristen: 75–76/76 gegenüber 66/76.
+- Kritische Fehler: ≈ 0–3 gegenüber 16.
+- Typ: 92–95 gegenüber 84.
+
+**Claude gegenüber OpenAI:**
+- **Kein belastbarer Sieger.**
+- Claude hat 2–3 Typtreffer mehr und ist ≈ 30 % günstiger.
+- OpenAI hat weniger Datumsart-Fehler (Termin falsch 1,7 gegenüber 5,3) und weniger kritische Fehler (0,3 gegenüber
+  2,3).
+- Die Unterschiede betreffen wenige Dokumente einer einzigen synthetischen Quelle. Über die Wiederholungen sind sie
+  stabil, aber nicht auf echte Kanzleitexte übertragbar.
+- Für Fristen, das sicherheitsrelevantere Kriterium, liegt OpenAI auf diesem Korpus leicht vorn; für die
+  Klassifikation Claude.
+
+**Kein Modellwechsel umgesetzt.**
+- Die produktive Klassifikation und Fristerkennung bleibt lokal.
+- Eine cloudgestützte Variante wäre ein neuer Gateway-Zweck und damit eine Architektur- bzw. Owner-Entscheidung.
+
+### 42.7 Datenschutz
+
+- Nur synthetische Texte.
+- Vor dem Versand lokal pseudonymisiert und mit Restscan geprüft, fail-closed: 5/104 (≈ 5 %) nicht gesendet; in
+  P2.2 waren es 5/33.
+- Schlüssel kamen aus der lokalen `.env`. Sie wurden weder ausgegeben noch protokolliert noch in Ergebnisdateien
+  geschrieben; `.env` wurde nicht geändert.
+- Die Ergebnisdateien enthalten nur pseudonymisierte Vorhersagen und Token-Zählungen.
+- **Unverändert:** Privacy-Gateway, Allowlist, Pseudonymisierung, Leak-Detection.
+- Der Harness bleibt für echte Daten **nicht zugelassen** (siehe §41.6).
+
+### 42.8 Offene Risiken und nächster Schritt
+
+**Offene Risiken:**
+- **Restfehler der Regeln (blind v2):**
+  - Kündigungsandrohung → Kündigungsschreiben (3);
+  - Bescheid/Urteil/Brief → Steuerbescheid (4);
+  - Mahnung → Vollmacht/Kündigung;
+  - Beschlüsse → Gericht/Steuerbescheid;
+  - Termine 12/21;
+  - Dauern-Präzision (+15);
+  - die drei Zeilenumbruch-Fehler aus 42.4.
+- **Gleiche Urheberschaft:** Alle Texte stammen von Sprachmodellen; echte Kanzleidokumente sind vielfältiger.
+  Kleine Klassen mit 1–3 Fällen.
+- **Preise** nicht vom Anbieter bestätigt.
+
+**Empfohlener nächster Schritt:**
+1. Die Restfehlerklassen aus `test_v2` als **neue** Dev-Fälle nachbauen. Schwerpunkt Fristen: Zeilenumbruch mit
+   vergangenem Ereignis, „Datum:“-Kopfzeile, Fristbeginn über Komma, Termine. Danach einen frischen blinden Split
+   **v3** einmal messen.
+2. **Owner-Entscheidung**, ob eine cloudgestützte Fristen-/Typ-**Zweitmeinung** nur als Vorschlag über einen neuen
+   Gateway-Zweck geprüft werden soll. Der Abstand bei den kritischen Fristfehlern (16 gegenüber 0–3) ist der
+   stärkste Befund dieser Messung. Fail-closed-Dokumente (≈ 5 %) blieben lokal.
+
+**Reproduzierbar:**
+- `python -m scripts.legal_bench.cd_measure --split test_v2 --out … --texts-out …`
+- `python -m scripts.legal_bench.cloud_compare --split test_v2 --texts … --out … --runs 3 --max-calls 330 --budget-usd 3`
+- `python -m scripts.legal_bench.cd_compare_v2 --out …`
+
+### 42.9 Tests und QA
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neue/angepasste Tests (`test_p23_dev_regressions.py`; `test_classification_deadlines_corpus.py` mit Hash- und Disjunktheitsprüfung für `test_v2`) | PASS; vorher 10 Dev-Regressionsfälle rot |
+| Betroffene Testgruppen (116 Dateien: Fristen, Klassifikation, Dokumente, Chat, Drafting, Export, Suche, Aufgaben, Posteingang, Matching, Datenschutz/Pseudonymisierung/Leak, Benchmarks, Mail, OCR) | **2984 bestanden**, 0 fehlgeschlagen, 6 xfailed, 1 xpassed |
+| Volle Suite, in sechs Teilen im Vordergrund nacheinander (nach Entladen des Ollama-Modells) | **4690 bestanden**, fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`, fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
+| Neubau und Installation (`windows\build.ps1`, stille Installation) | PASS |
+| Archivprüfung `bundlecheck_p23.py` | PASS: alle P2.3-Merkmale in Extraktor und Klassifikator vorhanden |
+| Legal-E2E-Benchmark (`scripts.legal_bench.e2e`) | **NICHT VERIFIZIERT**: Claude Code hat den Lauf wegen knappen Systemspeichers gestoppt (das Ollama-Modell war erneut geladen). Er wurde nicht neu gestartet. Die Legal-E2E-Klassifikation und -Fristen über `p21_measure` sind gemessen (42.4). |
+
+**Installierter Build, echter Upload-Pfad:** Chat-Anhang in der sauberen synthetischen QA-Akte, QA-Datenbank,
+Fang-Server, kein echtes Modell.
+
+| Dokument | Ergebnis |
+|---|---|
+| PDF „2. Mahnung … Rechnung Nr. …“, „letztmalig bis zum ↵ 31.07.2026“ (Umbruch im extrahierten Text nachgewiesen) | **PASS**: Typ „Mahnung“, Frist 31.07.2026 |
+| DOCX „Amtsgericht … Ladung … Termin … bestimmt auf den 22.10.2026“ | **PASS**: Typ „Gerichtliches Schreiben“, Termin 22.10.2026, Zustellung als Fristbeginn ohne Fristende |
+| DOCX Mandantenbrief, der Gericht und Klage nur erwähnt; „bis einschließlich 15.09.2026“ | **PASS**: Typ „Unbekannt“ (nicht Gericht/Klage), Frist 15.09.2026 |
+| Payload vor der Cloud-Grenze | **PASS**: Bezeichnungen „Mögliche Frist“/„Möglicher Termin“, kein Schlüssel |
+
+**Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.

@@ -124,14 +124,24 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
 | P1.2 Aktenzuordnung („Ihr Zeichen“, bekannte Absender, Mehrdeutigkeit) | erledigt: automatisch nur bei Aktenzeichen und bekanntem Absender; installierter Build PASS | §39 |
 | P2.1 Fristen/Klassifikation (Ereignisdaten, Unbekannt) | erledigt: Ereignisdaten als Frist 27 → 0 bzw. 17 → 0 (Legal-E2E) | §40 |
 | P2.2 Testkorpus + Modellvergleich | erledigt: Korpus `benchmarks/classification_deadlines_v1` (Dev 34, Test 33, blind, eingefroren); Regeln im Test: kritische Fehler 12 → 6; Claude und OpenAI im Test ohne belastbaren Unterschied, beide deutlich besser als die Regeln | §41 |
+| P2.3 Blinder Testkorpus v2 + Dev-Korrekturen | erledigt: `test_v2` (104 Dokumente, vier blinde Agenten, eingefroren). Regeln blind: Typ 64 → 84/104, Fristen 63 → 66/76, kritische Fehler 18 → 16 (3 neue Fristfehler dokumentiert, nicht am Test optimiert) | §42 |
+| P2.4 Modellvergleich mit Dateiname und 3 Läufen | erledigt: Claude Typ 95, Fristen 75/76, kritisch ≈ 2; OpenAI Typ ≈ 92, Fristen 76/76, kritisch ≈ 0; kaum Streuung; kein belastbarer Sieger; ≈ 2,71 USD | §42 |
 
 **Nächste Schritte (Vorschlag, nicht umgesetzt):**
-1. **Restfehlerklassen** aus dem P2.2-Testsplit als neue Dev-Fälle nachbauen: Teilwörter „klage“/„gericht“ in Briefen,
-   Mahnung, Einspruch, Ladung. Danach einen **neuen** blinden Testsplit (v2) mit mindestens 100 Dokumenten messen.
-2. **Owner-Entscheidung:** Soll eine cloudgestützte Klassifikation/Fristerkennung als **Vorschlag** (nie automatisch)
-   über den Privacy-Gateway geprüft werden? Das braucht einen neuen Allowlist-Zweck, also eine Architekturentscheidung.
-   Etwa 15 % der Dokumente wären durch fail-closed ausgeschlossen. Voraussetzung ist ein größerer blinder Vergleich mit
-   Wiederholungsläufen.
+1. **Fristen-Restfehler** aus `test_v2` als **neue** Dev-Fälle nachbauen:
+   - Zeilenumbruch mit vergangenem Ereignis;
+   - „Datum:“-Kopfzeile;
+   - Fristbeginn über ein Komma hinweg;
+   - Termine (12/21);
+   - Kündigungsandrohung, Steuerbescheid-Überschätzung.
+
+   Danach einen frischen blinden Split **v3** einmal messen. Der P2.2-Split ist nicht mehr unabhängig.
+2. **Owner-Entscheidung:** Soll eine cloudgestützte Fristen-/Typ-**Zweitmeinung** als **Vorschlag** (nie automatisch)
+   über einen neuen Gateway-Zweck geprüft werden? Das ist eine Architekturentscheidung.
+   - **Belegt:** 16 gegenüber 0–3 kritischen Fristfehlern auf 104 blinden synthetischen Dokumenten.
+   - Etwa 5 % der Dokumente (5/104) wären fail-closed ausgeschlossen.
+   - Vor einer Entscheidung fehlen eine Messung auf realitätsnäheren, nicht modellgenerierten Texten und eine
+     Datenschutz-Folgenabschätzung.
 
 ## Release-Planung
 

@@ -19,6 +19,21 @@ def test_independent_test_split_is_frozen() -> None:
     assert sha256("test") == TEST_SPLIT_SHA256, "Testsplit geaendert - nur versioniert und begruendet zulaessig"
 
 
+TEST_V2_SPLIT_SHA256 = "eb84225cc2b8bcb18de59a62f78658c8c43061298e5f160b0e44d2eca4933981"
+
+
+def test_v2_splits_are_valid_disjoint_and_frozen() -> None:
+    """P2.3 (§42): neuer blinder Split `test_v2` (104 Dokumente) eingefroren; `dev_v2` nur Entwicklungsfaelle."""
+    dev_v2, test_v2 = load("dev_v2"), load("test_v2")
+    assert validate(dev_v2) == [] and validate(test_v2) == []
+    assert len(test_v2["documents"]) >= 100
+    ids = {split: {d["id"] for d in load(split)["documents"]} for split in ("dev", "test", "dev_v2", "test_v2")}
+    assert len(ids["test_v2"]) == len(test_v2["documents"])
+    for other in ("dev", "test", "dev_v2"):
+        assert not ids["test_v2"] & ids[other], other
+    assert sha256("test_v2") == TEST_V2_SPLIT_SHA256, "Testsplit v2 geaendert - nur versioniert und begruendet zulaessig"
+
+
 def test_corpus_covers_the_required_case_groups() -> None:
     tags = {tag for split in ("dev", "test") for d in load(split)["documents"] for tag in d["tags"]}
     for required in ("urteil", "anlage", "ocr", "tabelle", "lang", "widerspruch", "kuendigungsandrohung"):

@@ -266,3 +266,21 @@ Rest-Treffern wurden nicht gesendet. Vollständige Methode und Grenzen: `PRIVACY
   Fallzahl keinen belastbaren Unterschied (ein Lauf, keine Wiederholungsmessung).
 - **Kein Modellwechsel umgesetzt.**
 - **Reproduzierbar mit:** `scripts/legal_bench/cloud_compare.py`, `cd_compare_report.py`.
+
+## Cloud-Modellvergleich Klassifikation/Fristen v2 (P2.4, 15.10.2026)
+
+Blinder Split `test_v2` (104 synthetische Dokumente, 99 gesendet, 5 fail-closed). Der Dateiname wurde mitgegeben.
+Drei Läufe je Modell, Parameter wie P2.2. Vollständige Methode: `PRIVACY_REVIEW_ARCHITECTURE.md` §42.
+
+| Quelle | Typ (104) | Fristen (76) / kritisch | Termine falsch | Kosten je Lauf |
+|---|---|---|---|---|
+| Lexono-Regeln P2.3 (lokal) | 84 | 66 / 16 | 3 | 0 |
+| `claude-sonnet-5` | 95 [95–95] | 75 / 2,3 [2–3] | 5,3 [5–6] | ≈ 0,37 USD |
+| `gpt-5.5-2026-04-23` | 92,3 [92–93] | 76 / 0,3 [0–1] | 1,7 [0–3] | ≈ 0,52 USD |
+
+- **Ergebnis:** Beide Modelle sind deutlich besser als die Regeln, vor allem bei Fristen.
+- **Unterschiede:** Claude ist bei der Klassifikation leicht besser und günstiger, OpenAI bei Datumsarten und
+  kritischen Fehlern. Die Wiederholungsläufe streuen kaum.
+- **Kein belastbarer Sieger:** eine synthetische Quelle, kleine Klassen.
+- **Kein Modellwechsel und keine produktive Cloud-Klassifikation umgesetzt** (Architekturentscheidung offen).
+- Gesamtkosten ≈ 2,71 USD (geschätzt, nicht mit dem Dashboard abgeglichen).

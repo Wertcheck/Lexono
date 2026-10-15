@@ -1,0 +1,2071 @@
+{
+ "quelle": "lexono",
+ "splits": {
+  "test_v2": {
+   "sha256": "eb84225cc2b8bcb18de59a62f78658c8c43061298e5f160b0e44d2eca4933981",
+   "ocr": true,
+   "laufzeit_sekunden": 129.77,
+   "sekunden_je_dokument": {
+    "CD-V2A001": 1.15,
+    "CD-V2A002": 2.13,
+    "CD-V2A003": 1.07,
+    "CD-V2A004": 1.05,
+    "CD-V2A005": 1.04,
+    "CD-V2A006": 2.15,
+    "CD-V2A007": 1.02,
+    "CD-V2A008": 1.07,
+    "CD-V2A009": 1.05,
+    "CD-V2A010": 1.07,
+    "CD-V2A011": 1.03,
+    "CD-V2A012": 1.73,
+    "CD-V2A013": 1.05,
+    "CD-V2A014": 1.04,
+    "CD-V2A015": 1.05,
+    "CD-V2A016": 2.4,
+    "CD-V2A017": 1.03,
+    "CD-V2A018": 1.04,
+    "CD-V2A019": 1.08,
+    "CD-V2A020": 2.24,
+    "CD-V2A021": 1.09,
+    "CD-V2A022": 1.07,
+    "CD-V2A023": 1.02,
+    "CD-V2A024": 1.88,
+    "CD-V2A025": 1.99,
+    "CD-V2A026": 1.02,
+    "CD-V2B001": 1.07,
+    "CD-V2B002": 1.05,
+    "CD-V2B003": 1.93,
+    "CD-V2B004": 1.06,
+    "CD-V2B005": 1.05,
+    "CD-V2B006": 1.03,
+    "CD-V2B007": 1.09,
+    "CD-V2B008": 1.02,
+    "CD-V2B009": 1.07,
+    "CD-V2B010": 1.02,
+    "CD-V2B011": 1.05,
+    "CD-V2B012": 2.11,
+    "CD-V2B013": 1.05,
+    "CD-V2B014": 1.07,
+    "CD-V2B015": 1.03,
+    "CD-V2B016": 1.02,
+    "CD-V2B017": 1.09,
+    "CD-V2B018": 1.76,
+    "CD-V2B019": 1.04,
+    "CD-V2B020": 1.02,
+    "CD-V2B021": 1.06,
+    "CD-V2B022": 1.07,
+    "CD-V2B023": 1.01,
+    "CD-V2B024": 1.03,
+    "CD-V2B025": 1.07,
+    "CD-V2B026": 1.55,
+    "CD-V2C001": 1.06,
+    "CD-V2C002": 1.75,
+    "CD-V2C003": 1.04,
+    "CD-V2C004": 1.07,
+    "CD-V2C005": 2.18,
+    "CD-V2C006": 1.01,
+    "CD-V2C007": 1.06,
+    "CD-V2C008": 1.05,
+    "CD-V2C009": 1.06,
+    "CD-V2C010": 1.06,
+    "CD-V2C011": 1.94,
+    "CD-V2C012": 1.03,
+    "CD-V2C013": 1.02,
+    "CD-V2C014": 2.09,
+    "CD-V2C015": 1.04,
+    "CD-V2C016": 1.05,
+    "CD-V2C017": 1.06,
+    "CD-V2C018": 1.04,
+    "CD-V2C019": 1.06,
+    "CD-V2C020": 1.04,
+    "CD-V2C021": 1.04,
+    "CD-V2C022": 1.68,
+    "CD-V2C023": 1.08,
+    "CD-V2C024": 1.04,
+    "CD-V2C025": 1.01,
+    "CD-V2C026": 2.25,
+    "CD-V2D001": 1.08,
+    "CD-V2D002": 1.06,
+    "CD-V2D003": 1.02,
+    "CD-V2D004": 1.09,
+    "CD-V2D005": 1.04,
+    "CD-V2D006": 1.06,
+    "CD-V2D007": 1.09,
+    "CD-V2D008": 1.07,
+    "CD-V2D009": 1.05,
+    "CD-V2D010": 2.0,
+    "CD-V2D011": 1.03,
+    "CD-V2D012": 1.08,
+    "CD-V2D013": 2.32,
+    "CD-V2D014": 1.03,
+    "CD-V2D015": 1.03,
+    "CD-V2D016": 1.07,
+    "CD-V2D017": 1.02,
+    "CD-V2D018": 1.05,
+    "CD-V2D019": 1.07,
+    "CD-V2D020": 1.07,
+    "CD-V2D021": 1.69,
+    "CD-V2D022": 1.02,
+    "CD-V2D023": 1.04,
+    "CD-V2D024": 1.04,
+    "CD-V2D025": 1.08,
+    "CD-V2D026": 1.92
+   },
+   "bewertung": {
+    "dokumente": 104,
+    "klassifikation": {
+     "richtig": "84/104",
+     "kerntypen_richtig": "63/75",
+     "unbekannt_quote": "19/104",
+     "unbekannt_bei_kerntypen": "1/75",
+     "je_klasse": {
+      "Anlage": {
+       "praezision": "4/4",
+       "recall": "4/4"
+      },
+      "Bescheid": {
+       "praezision": "3/4",
+       "recall": "4/6"
+      },
+      "Einspruch": {
+       "praezision": "2/2",
+       "recall": "2/3"
+      },
+      "Gerichtliches Schreiben": {
+       "praezision": "7/9",
+       "recall": "7/8"
+      },
+      "Gutachten": {
+       "praezision": "4/4",
+       "recall": "4/4"
+      },
+      "Klage/Schriftsatz": {
+       "praezision": "6/6",
+       "recall": "6/6"
+      },
+      "Kündigungsschreiben": {
+       "praezision": "4/9",
+       "recall": "4/4"
+      },
+      "Mahnung": {
+       "praezision": "4/4",
+       "recall": "4/6"
+      },
+      "Protokoll": {
+       "praezision": "5/5",
+       "recall": "5/6"
+      },
+      "Prüfungsanordnung": {
+       "praezision": "1/1",
+       "recall": "1/1"
+      },
+      "Rechnung": {
+       "praezision": "6/9",
+       "recall": "6/6"
+      },
+      "Sonstiges": {
+       "praezision": "-",
+       "recall": "0/1"
+      },
+      "Steuerbescheid": {
+       "praezision": "5/10",
+       "recall": "4/4"
+      },
+      "Steuererklärung": {
+       "praezision": "2/3",
+       "recall": "2/2"
+      },
+      "Unbekannt": {
+       "praezision": "17/19",
+       "recall": "17/24"
+      },
+      "Urteil/Beschluss": {
+       "praezision": "5/5",
+       "recall": "5/7"
+      },
+      "Vertrag": {
+       "praezision": "7/7",
+       "recall": "7/9"
+      },
+      "Vollmacht": {
+       "praezision": "2/3",
+       "recall": "2/3"
+      }
+     },
+     "verwechslungen": {
+      "Einspruch": {
+       "Einspruch": 2,
+       "Bescheid": 1
+      },
+      "Gerichtliches Schreiben": {
+       "Gerichtliches Schreiben": 7,
+       "Kündigungsschreiben": 1
+      },
+      "Mahnung": {
+       "Vollmacht": 1,
+       "Mahnung": 4,
+       "Kündigungsschreiben": 1
+      },
+      "Protokoll": {
+       "Protokoll": 5,
+       "Unbekannt": 1
+      },
+      "Sonstiges": {
+       "Unbekannt": 1
+      },
+      "Unbekannt": {
+       "Unbekannt": 17,
+       "Kündigungsschreiben": 3,
+       "Rechnung": 2,
+       "Steuerbescheid": 2
+      },
+      "Urteil/Beschluss": {
+       "Urteil/Beschluss": 5,
+       "Steuerbescheid": 1,
+       "Gerichtliches Schreiben": 1
+      },
+      "Vertrag": {
+       "Vertrag": 7,
+       "Rechnung": 1,
+       "Gerichtliches Schreiben": 1
+      },
+      "Vollmacht": {
+       "Vollmacht": 2,
+       "Steuererklärung": 1
+      }
+     },
+     "fehler": [
+      {
+       "doc": "CD-V2A002",
+       "gold": "Urteil/Beschluss",
+       "zulaessig": [
+        "Urteil/Beschluss"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "kostenfestsetzungsbeschluss",
+        "tabelle",
+        "generischer-dateiname",
+        "notfrist",
+        "urteil-erwaehnt"
+       ]
+      },
+      {
+       "doc": "CD-V2A004",
+       "gold": "Urteil/Beschluss",
+       "zulaessig": [
+        "Urteil/Beschluss"
+       ],
+       "vorhersage": "Gerichtliches Schreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "beweisbeschluss",
+        "vergangene-verhandlung",
+        "vorschuss",
+        "relative-frist"
+       ]
+      },
+      {
+       "doc": "CD-V2A018",
+       "gold": "Gerichtliches Schreiben",
+       "zulaessig": [
+        "Gerichtliches Schreiben"
+       ],
+       "vorhersage": "Kündigungsschreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "gerichtlicher-hinweis",
+        "vergleichsvorschlag",
+        "kalenderwoche"
+       ]
+      },
+      {
+       "doc": "CD-V2B001",
+       "gold": "Mahnung",
+       "zulaessig": [
+        "Mahnung"
+       ],
+       "vorhersage": "Vollmacht",
+       "art": "falscher_typ",
+       "tags": [
+        "anwaltliche_zahlungsaufforderung",
+        "tabelle",
+        "erwaehnt_mietvertrag",
+        "wochentag_frist"
+       ]
+      },
+      {
+       "doc": "CD-V2B004",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Kündigungsschreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "kuendigungsandrohung",
+        "keine_kuendigung",
+        "mietrecht",
+        "abmahnung_nicht_mahnung"
+       ]
+      },
+      {
+       "doc": "CD-V2B007",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Kündigungsschreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "abmahnung_nicht_mahnung",
+        "arbeitsrecht",
+        "kuendigungsandrohung",
+        "relative_frist"
+       ]
+      },
+      {
+       "doc": "CD-V2B009",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Protokoll",
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "aktennotiz",
+        "generischer_dateiname",
+        "geburtsdatum",
+        "folgetermin"
+       ]
+      },
+      {
+       "doc": "CD-V2B013",
+       "gold": "Mahnung",
+       "zulaessig": [
+        "Mahnung"
+       ],
+       "vorhersage": "Kündigungsschreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "versicherer",
+        "qualifizierte_mahnung",
+        "kuendigungsandrohung",
+        "relative_frist_ab_zugang"
+       ]
+      },
+      {
+       "doc": "CD-V2B016",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Kündigungsschreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "email",
+        "kuendigungsandrohung",
+        "keine_kuendigung",
+        "nachfrist"
+       ]
+      },
+      {
+       "doc": "CD-V2C012",
+       "gold": "Bescheid",
+       "zulaessig": [
+        "Bescheid"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "ablehnungsbescheid",
+        "gueltig_bis",
+        "klagefrist_relativ"
+       ]
+      },
+      {
+       "doc": "CD-V2C013",
+       "gold": "Einspruch",
+       "zulaessig": [
+        "Einspruch",
+        "Unbekannt"
+       ],
+       "vorhersage": "Bescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "widerspruch",
+        "beitragsbescheid",
+        "privatperson"
+       ]
+      },
+      {
+       "doc": "CD-V2C014",
+       "gold": "Bescheid",
+       "zulaessig": [
+        "Bescheid"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "beitragsbescheid",
+        "scan_degraded",
+        "relative_faelligkeit"
+       ]
+      },
+      {
+       "doc": "CD-V2C020",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "erwaehnt_rechnung",
+        "irrefuehrender_dateiname",
+        "pruefbarkeit"
+       ]
+      },
+      {
+       "doc": "CD-V2C021",
+       "gold": "Vollmacht",
+       "zulaessig": [
+        "Vollmacht"
+       ],
+       "vorhersage": "Steuererklärung",
+       "art": "falscher_typ",
+       "tags": [
+        "vollmacht",
+        "steuersachen",
+        "gueltig_bis"
+       ]
+      },
+      {
+       "doc": "CD-V2C023",
+       "gold": "Vertrag",
+       "zulaessig": [
+        "Sonstiges",
+        "Vertrag"
+       ],
+       "vorhersage": "Rechnung",
+       "art": "falscher_typ",
+       "tags": [
+        "zahlungsplan",
+        "ratenzahlung",
+        "tabelle",
+        "verfallklausel"
+       ]
+      },
+      {
+       "doc": "CD-V2C025",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "erinnerung",
+        "abgabefrist",
+        "irrefuehrender_dateiname"
+       ]
+      },
+      {
+       "doc": "CD-V2D008",
+       "gold": "Vertrag",
+       "zulaessig": [
+        "Vertrag"
+       ],
+       "vorhersage": "Gerichtliches Schreiben",
+       "art": "falscher_typ",
+       "tags": [
+        "vergleichsvertrag",
+        "zahlungsfrist",
+        "widerrufsfrist"
+       ]
+      },
+      {
+       "doc": "CD-V2D014",
+       "gold": "Protokoll",
+       "zulaessig": [
+        "Protokoll",
+        "Sonstiges"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "unfallprotokoll",
+        "geburtsdaten",
+        "versicherung_gueltig_bis"
+       ]
+      },
+      {
+       "doc": "CD-V2D017",
+       "gold": "Unbekannt",
+       "zulaessig": [
+        "Sonstiges",
+        "Unbekannt"
+       ],
+       "vorhersage": "Steuerbescheid",
+       "art": "falscher_typ",
+       "tags": [
+        "fristenuebersicht",
+        "tabelle",
+        "vorfristen",
+        "mehrere_akten"
+       ]
+      },
+      {
+       "doc": "CD-V2D020",
+       "gold": "Sonstiges",
+       "zulaessig": [
+        "Bescheid",
+        "Sonstiges"
+       ],
+       "vorhersage": "Unbekannt",
+       "art": "unbekannt_statt_typ",
+       "tags": [
+        "anhoerung",
+        "bis_zum_ablauf_des",
+        "behoerde"
+       ]
+      }
+     ]
+    },
+    "fristen": {
+     "frist": {
+      "erwartet": 76,
+      "richtig": 66,
+      "uebersehen": 10,
+      "falsch": 7,
+      "falsch_keine_frist_als_frist": 6,
+      "falsch_andere_art": 1
+     },
+     "termin": {
+      "erwartet": 21,
+      "richtig": 12,
+      "uebersehen": 9,
+      "falsch": 3,
+      "falsch_keine_frist_als_termin": 3
+     },
+     "fristbeginn": {
+      "erwartet": 10,
+      "richtig": 9,
+      "uebersehen": 1,
+      "falsch": 2,
+      "falsch_keine_frist_als_fristbeginn": 2
+     }
+    },
+    "fristdauern": {
+     "erwartet": 36,
+     "erkannt": 27,
+     "zusaetzlich": 15
+    },
+    "kritisch": [
+     {
+      "doc": "CD-V2A016",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2025",
+      "tags": [
+       "raeumungsurteil",
+       "raeumungsfrist",
+       "widerspruechliche-daten",
+       "generischer-dateiname"
+      ]
+     },
+     {
+      "doc": "CD-V2A018",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "gerichtlicher-hinweis",
+       "vergleichsvorschlag",
+       "kalenderwoche"
+      ]
+     },
+     {
+      "doc": "CD-V2B010",
+      "art": "frist_uebersehen",
+      "datum": "19.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "email_kette",
+       "zitierte_email",
+       "generischer_dateiname",
+       "alte_frist_im_zitat"
+      ]
+     },
+     {
+      "doc": "CD-V2B012",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "versicherer",
+       "kalenderwoche",
+       "erwaehnt_gutachten",
+       "scan_degraded"
+      ]
+     },
+     {
+      "doc": "CD-V2C003",
+      "art": "frist_uebersehen",
+      "datum": "15.02.2027",
+      "stattdessen": null,
+      "tags": [
+       "gewerbesteuer",
+       "kommunal",
+       "widerspruechliche_betraege",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2C010",
+      "art": "frist_uebersehen",
+      "datum": "30.04.2027",
+      "stattdessen": null,
+      "tags": [
+       "einkommensteuererklaerung",
+       "generischer_dateiname",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-V2C011",
+      "art": "frist_uebersehen",
+      "datum": "18.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "kostenbescheid",
+       "leistungsbescheid",
+       "tabelle",
+       "spaetestens_formulierung"
+      ]
+     },
+     {
+      "doc": "CD-V2C018",
+      "art": "frist_uebersehen",
+      "datum": "20.05.2026",
+      "stattdessen": null,
+      "tags": [
+       "abschlagsrechnung",
+       "widerspruechliche_daten",
+       "widerspruechliche_betraege"
+      ]
+     },
+     {
+      "doc": "CD-V2C024",
+      "art": "frist_uebersehen",
+      "datum": "10.05.2027",
+      "stattdessen": null,
+      "tags": [
+       "stundung",
+       "ratenplan",
+       "finanzamt",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2C024",
+      "art": "frist_uebersehen",
+      "datum": "10.12.2026",
+      "stattdessen": null,
+      "tags": [
+       "stundung",
+       "ratenplan",
+       "finanzamt",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2D002",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2027",
+      "tags": [
+       "arbeitsvertrag",
+       "lang",
+       "befristet_bis",
+       "ausschlussfristen_abstrakt",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-V2D016",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2029",
+      "tags": [
+       "niederschrift",
+       "weg",
+       "sonderumlage_faellig",
+       "voraussichtlicher_termin"
+      ]
+     },
+     {
+      "doc": "CD-V2D017",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "15.10.2026",
+      "tags": [
+       "fristenuebersicht",
+       "tabelle",
+       "vorfristen",
+       "mehrere_akten"
+      ]
+     },
+     {
+      "doc": "CD-V2D020",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "anhoerung",
+       "bis_zum_ablauf_des",
+       "behoerde"
+      ]
+     },
+     {
+      "doc": "CD-V2D024",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2032",
+      "tags": [
+       "angebot_gueltig_bis",
+       "garantie_bis",
+       "keine_fallfrist"
+      ]
+     },
+     {
+      "doc": "CD-V2D025",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.03.2027",
+      "tags": [
+       "nachlassverzeichnis",
+       "tabelle",
+       "geburts_und_sterbedatum",
+       "ausschlagungsfrist_relativ",
+       "kenntnis"
+      ]
+     }
+    ],
+    "fristfehler": [
+     {
+      "doc": "CD-V2A011",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "24.09.2026",
+      "tags": [
+       "sitzungsprotokoll",
+       "widerrufsvergleich",
+       "bis-einschliesslich",
+       "verkuendungstermin"
+      ]
+     },
+     {
+      "doc": "CD-V2A016",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "30.11.2025",
+      "tags": [
+       "raeumungsurteil",
+       "raeumungsfrist",
+       "widerspruechliche-daten",
+       "generischer-dateiname"
+      ]
+     },
+     {
+      "doc": "CD-V2A018",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "gerichtlicher-hinweis",
+       "vergleichsvorschlag",
+       "kalenderwoche"
+      ]
+     },
+     {
+      "doc": "CD-V2A020",
+      "art": "termin_uebersehen",
+      "datum": "25.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "zeugenladung",
+       "geburtsdatum",
+       "generischer-dateiname"
+      ]
+     },
+     {
+      "doc": "CD-V2A022",
+      "art": "termin_uebersehen",
+      "datum": "29.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "mandantenschreiben",
+       "vergangene-verhandlung",
+       "interne-frist"
+      ]
+     },
+     {
+      "doc": "CD-V2B004",
+      "art": "termin_uebersehen",
+      "datum": "05.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "kuendigungsandrohung",
+       "keine_kuendigung",
+       "mietrecht",
+       "abmahnung_nicht_mahnung"
+      ]
+     },
+     {
+      "doc": "CD-V2B006",
+      "art": "termin_uebersehen",
+      "datum": "26.02.2027",
+      "stattdessen": null,
+      "tags": [
+       "mieterkuendigung",
+       "email",
+       "beendigungszeitpunkt"
+      ]
+     },
+     {
+      "doc": "CD-V2B010",
+      "art": "frist_uebersehen",
+      "datum": "19.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "email_kette",
+       "zitierte_email",
+       "generischer_dateiname",
+       "alte_frist_im_zitat"
+      ]
+     },
+     {
+      "doc": "CD-V2B012",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "versicherer",
+       "kalenderwoche",
+       "erwaehnt_gutachten",
+       "scan_degraded"
+      ]
+     },
+     {
+      "doc": "CD-V2B018",
+      "art": "termin_uebersehen",
+      "datum": "22.10.2026",
+      "stattdessen": null,
+      "tags": [
+       "kurztext",
+       "handnotiz",
+       "generischer_dateiname",
+       "scan_degraded"
+      ]
+     },
+     {
+      "doc": "CD-V2C003",
+      "art": "frist_uebersehen",
+      "datum": "15.02.2027",
+      "stattdessen": null,
+      "tags": [
+       "gewerbesteuer",
+       "kommunal",
+       "widerspruechliche_betraege",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2C004",
+      "art": "fristbeginn_falsch",
+      "grund": "keine_frist_als_fristbeginn",
+      "datum": "12.03.2026",
+      "tags": [
+       "einspruch",
+       "steuer",
+       "aussetzung_der_vollziehung",
+       "selbstgesetzte_frist"
+      ]
+     },
+     {
+      "doc": "CD-V2C006",
+      "art": "fristbeginn_falsch",
+      "grund": "keine_frist_als_fristbeginn",
+      "datum": "02.09.2026",
+      "tags": [
+       "einspruch",
+       "bussgeld",
+       "akteneinsicht"
+      ]
+     },
+     {
+      "doc": "CD-V2C007",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "29.07.2026",
+      "tags": [
+       "anhoerungsbogen",
+       "irrefuehrender_dateiname",
+       "owi"
+      ]
+     },
+     {
+      "doc": "CD-V2C008",
+      "art": "termin_uebersehen",
+      "datum": "14.09.2026",
+      "stattdessen": null,
+      "tags": [
+       "betriebspruefung",
+       "pruefungsbeginn",
+       "pruefungszeitraum"
+      ]
+     },
+     {
+      "doc": "CD-V2C010",
+      "art": "frist_uebersehen",
+      "datum": "30.04.2027",
+      "stattdessen": null,
+      "tags": [
+       "einkommensteuererklaerung",
+       "generischer_dateiname",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-V2C011",
+      "art": "frist_uebersehen",
+      "datum": "18.06.2026",
+      "stattdessen": null,
+      "tags": [
+       "kostenbescheid",
+       "leistungsbescheid",
+       "tabelle",
+       "spaetestens_formulierung"
+      ]
+     },
+     {
+      "doc": "CD-V2C018",
+      "art": "frist_uebersehen",
+      "datum": "20.05.2026",
+      "stattdessen": null,
+      "tags": [
+       "abschlagsrechnung",
+       "widerspruechliche_daten",
+       "widerspruechliche_betraege"
+      ]
+     },
+     {
+      "doc": "CD-V2C024",
+      "art": "frist_uebersehen",
+      "datum": "10.05.2027",
+      "stattdessen": null,
+      "tags": [
+       "stundung",
+       "ratenplan",
+       "finanzamt",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2C024",
+      "art": "frist_uebersehen",
+      "datum": "10.12.2026",
+      "stattdessen": null,
+      "tags": [
+       "stundung",
+       "ratenplan",
+       "finanzamt",
+       "rechtsbehelfsbelehrung"
+      ]
+     },
+     {
+      "doc": "CD-V2D002",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2027",
+      "tags": [
+       "arbeitsvertrag",
+       "lang",
+       "befristet_bis",
+       "ausschlussfristen_abstrakt",
+       "geburtsdatum"
+      ]
+     },
+     {
+      "doc": "CD-V2D009",
+      "art": "termin_falsch",
+      "grund": "keine_frist_als_termin",
+      "datum": "18.06.2026",
+      "tags": [
+       "baugutachten",
+       "gerichtsgutachten",
+       "lang",
+       "vergangener_ortstermin"
+      ]
+     },
+     {
+      "doc": "CD-V2D015",
+      "art": "termin_uebersehen",
+      "datum": "27.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "abnahmeprotokoll",
+       "tabelle",
+       "maengelfristen",
+       "gewaehrleistungsende"
+      ]
+     },
+     {
+      "doc": "CD-V2D016",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2029",
+      "tags": [
+       "niederschrift",
+       "weg",
+       "sonderumlage_faellig",
+       "voraussichtlicher_termin"
+      ]
+     },
+     {
+      "doc": "CD-V2D017",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "15.10.2026",
+      "tags": [
+       "fristenuebersicht",
+       "tabelle",
+       "vorfristen",
+       "mehrere_akten"
+      ]
+     },
+     {
+      "doc": "CD-V2D017",
+      "art": "frist_falsch",
+      "grund": "andere_art",
+      "datum": "19.11.2026",
+      "tags": [
+       "fristenuebersicht",
+       "tabelle",
+       "vorfristen",
+       "mehrere_akten"
+      ]
+     },
+     {
+      "doc": "CD-V2D017",
+      "art": "termin_uebersehen",
+      "datum": "19.11.2026",
+      "stattdessen": "frist",
+      "tags": [
+       "fristenuebersicht",
+       "tabelle",
+       "vorfristen",
+       "mehrere_akten"
+      ]
+     },
+     {
+      "doc": "CD-V2D018",
+      "art": "termin_uebersehen",
+      "datum": "21.01.2027",
+      "stattdessen": null,
+      "tags": [
+       "verfuegung",
+       "fristen_tabelle",
+       "zustellung"
+      ]
+     },
+     {
+      "doc": "CD-V2D020",
+      "art": "frist_uebersehen",
+      "datum": "13.11.2026",
+      "stattdessen": null,
+      "tags": [
+       "anhoerung",
+       "bis_zum_ablauf_des",
+       "behoerde"
+      ]
+     },
+     {
+      "doc": "CD-V2D024",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.12.2032",
+      "tags": [
+       "angebot_gueltig_bis",
+       "garantie_bis",
+       "keine_fallfrist"
+      ]
+     },
+     {
+      "doc": "CD-V2D025",
+      "art": "frist_falsch",
+      "grund": "keine_frist_als_frist",
+      "datum": "31.03.2027",
+      "tags": [
+       "nachlassverzeichnis",
+       "tabelle",
+       "geburts_und_sterbedatum",
+       "ausschlagungsfrist_relativ",
+       "kenntnis"
+      ]
+     },
+     {
+      "doc": "CD-V2D025",
+      "art": "fristbeginn_uebersehen",
+      "datum": "03.09.2026",
+      "stattdessen": null,
+      "tags": [
+       "nachlassverzeichnis",
+       "tabelle",
+       "geburts_und_sterbedatum",
+       "ausschlagungsfrist_relativ",
+       "kenntnis"
+      ]
+     }
+    ]
+   },
+   "vorhersagen": {
+    "CD-V2A001": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A002": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A003": {
+     "typ": "Urteil/Beschluss",
+     "frist": [
+      "28.08.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A004": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A005": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "27.10.2026"
+     ],
+     "termin": [
+      "17.11.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A006": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [
+      "21.01.2027"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A007": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "18.09.2026"
+     ],
+     "fristdauern": 1
+    },
+    "CD-V2A008": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "28.02.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A009": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [
+      "17.11.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A010": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [
+      "05.11.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A011": {
+     "typ": "Protokoll",
+     "frist": [
+      "31.10.2026",
+      "08.10.2026",
+      "15.10.2026"
+     ],
+     "termin": [
+      "24.09.2026",
+      "29.10.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A012": {
+     "typ": "Anlage",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A013": {
+     "typ": "Vertrag",
+     "frist": [
+      "30.11.2025"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A014": {
+     "typ": "Rechnung",
+     "frist": [
+      "28.02.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A015": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A016": {
+     "typ": "Urteil/Beschluss",
+     "frist": [
+      "31.12.2026",
+      "30.11.2025"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A017": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [
+      "02.11.2026",
+      "02.12.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "02.09.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2A018": {
+     "typ": "Kündigungsschreiben",
+     "frist": [],
+     "termin": [
+      "26.11.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A019": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "29.07.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2A020": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A021": {
+     "typ": "Anlage",
+     "frist": [
+      "20.01.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A022": {
+     "typ": "Unbekannt",
+     "frist": [
+      "08.10.2026",
+      "02.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A023": {
+     "typ": "Urteil/Beschluss",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2A024": {
+     "typ": "Klage/Schriftsatz",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "14.09.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2A025": {
+     "typ": "Vollmacht",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2A026": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "19.11.2026"
+     ],
+     "termin": [
+      "10.12.2026",
+      "12.10.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B001": {
+     "typ": "Vollmacht",
+     "frist": [
+      "18.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B002": {
+     "typ": "Mahnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2B003": {
+     "typ": "Mahnung",
+     "frist": [
+      "30.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B004": {
+     "typ": "Kündigungsschreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B005": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "31.01.2027",
+      "05.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2B006": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "28.02.2027",
+      "04.12.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B007": {
+     "typ": "Kündigungsschreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2B008": {
+     "typ": "Unbekannt",
+     "frist": [
+      "16.10.2026",
+      "30.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B009": {
+     "typ": "Rechnung",
+     "frist": [
+      "14.10.2026"
+     ],
+     "termin": [
+      "21.10.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B010": {
+     "typ": "Unbekannt",
+     "frist": [
+      "02.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B011": {
+     "typ": "Unbekannt",
+     "frist": [
+      "02.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "01.10.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2B012": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B013": {
+     "typ": "Kündigungsschreiben",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2B014": {
+     "typ": "Unbekannt",
+     "frist": [
+      "26.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B015": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B016": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "30.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B017": {
+     "typ": "Unbekannt",
+     "frist": [
+      "06.11.2026",
+      "13.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B018": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B019": {
+     "typ": "Anlage",
+     "frist": [
+      "31.03.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B020": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [
+      "09.11.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B021": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B022": {
+     "typ": "Unbekannt",
+     "frist": [
+      "28.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B023": {
+     "typ": "Mahnung",
+     "frist": [
+      "23.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B024": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "01.01.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2B025": {
+     "typ": "Unbekannt",
+     "frist": [
+      "06.11.2026"
+     ],
+     "termin": [
+      "10.12.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2B026": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C001": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "15.04.2026",
+      "10.06.2026",
+      "10.09.2026",
+      "10.12.2026",
+      "10.03.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C002": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "08.12.2025"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C003": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C004": {
+     "typ": "Einspruch",
+     "frist": [
+      "30.04.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "12.03.2026",
+      "16.03.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2C005": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C006": {
+     "typ": "Einspruch",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "02.09.2026",
+      "05.09.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2C007": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [
+      "29.07.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C008": {
+     "typ": "Prüfungsanordnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C009": {
+     "typ": "Steuererklärung",
+     "frist": [
+      "10.06.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C010": {
+     "typ": "Steuererklärung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C011": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 2
+    },
+    "CD-V2C012": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C013": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [
+      "25.06.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2C014": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 2
+    },
+    "CD-V2C015": {
+     "typ": "Bescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C016": {
+     "typ": "Rechnung",
+     "frist": [
+      "10.02.2026",
+      "17.02.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C017": {
+     "typ": "Rechnung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C018": {
+     "typ": "Rechnung",
+     "frist": [
+      "22.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C019": {
+     "typ": "Rechnung",
+     "frist": [
+      "30.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C020": {
+     "typ": "Rechnung",
+     "frist": [
+      "30.09.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C021": {
+     "typ": "Steuererklärung",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C022": {
+     "typ": "Vollmacht",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C023": {
+     "typ": "Rechnung",
+     "frist": [
+      "15.11.2026",
+      "15.12.2026",
+      "15.01.2027",
+      "15.02.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C024": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2C025": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "15.01.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2C026": {
+     "typ": "Steuerbescheid",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2D001": {
+     "typ": "Vertrag",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 2
+    },
+    "CD-V2D002": {
+     "typ": "Vertrag",
+     "frist": [
+      "31.12.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 6
+    },
+    "CD-V2D003": {
+     "typ": "Vertrag",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2D004": {
+     "typ": "Vertrag",
+     "frist": [
+      "30.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 2
+    },
+    "CD-V2D005": {
+     "typ": "Vertrag",
+     "frist": [
+      "30.11.2029"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2D006": {
+     "typ": "Anlage",
+     "frist": [
+      "01.11.2026",
+      "01.12.2026",
+      "04.01.2027",
+      "01.02.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D007": {
+     "typ": "Vertrag",
+     "frist": [
+      "06.11.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2D008": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "15.12.2026",
+      "30.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D009": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [
+      "18.06.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D010": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D011": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D012": {
+     "typ": "Gutachten",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D013": {
+     "typ": "Protokoll",
+     "frist": [
+      "31.05.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D014": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D015": {
+     "typ": "Protokoll",
+     "frist": [
+      "09.10.2031",
+      "06.11.2026",
+      "06.11.2026",
+      "20.11.2026",
+      "15.01.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D016": {
+     "typ": "Protokoll",
+     "frist": [
+      "01.09.2026",
+      "31.12.2029"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D017": {
+     "typ": "Steuerbescheid",
+     "frist": [
+      "15.10.2026",
+      "26.10.2026",
+      "02.11.2026",
+      "03.11.2026",
+      "10.11.2026",
+      "16.10.2026",
+      "23.10.2026",
+      "19.11.2026",
+      "20.10.2026",
+      "27.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D018": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [
+      "12.11.2026",
+      "10.12.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [
+      "01.10.2026"
+     ],
+     "fristdauern": 0
+    },
+    "CD-V2D019": {
+     "typ": "Mahnung",
+     "frist": [
+      "13.08.2026",
+      "23.10.2026",
+      "30.10.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D020": {
+     "typ": "Unbekannt",
+     "frist": [],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D021": {
+     "typ": "Gerichtliches Schreiben",
+     "frist": [],
+     "termin": [
+      "14.01.2027",
+      "14.01.2027"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D022": {
+     "typ": "Kündigungsschreiben",
+     "frist": [
+      "30.06.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D023": {
+     "typ": "Rechnung",
+     "frist": [
+      "04.03.2026"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D024": {
+     "typ": "Unbekannt",
+     "frist": [
+      "31.12.2032"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 1
+    },
+    "CD-V2D025": {
+     "typ": "Unbekannt",
+     "frist": [
+      "31.03.2027"
+     ],
+     "termin": [],
+     "fristbeginn": [],
+     "fristdauern": 0
+    },
+    "CD-V2D026": {
+     "typ": "Protokoll",
+     "frist": [
+      "30.11.2026",
+      "27.10.2026"
+     ],
+     "termin": [
+      "17.12.2026"
+     ],
+     "fristbeginn": [],
+     "fristdauern": 0
+    }
+   }
+  }
+ }
+}

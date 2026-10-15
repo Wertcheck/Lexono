@@ -1,0 +1,295 @@
+{
+ "split": "dev_v2",
+ "version": 1,
+ "documents": [
+  {
+   "id": "CD-D2-001",
+   "format": "pdf",
+   "filename": "Antrag_Fristverlaengerung_OLG.pdf",
+   "paragraphs": [
+    "Oberlandesgericht Beispielstadt",
+    "– 4. Zivilsenat –",
+    "Az. 4 U 19/26",
+    "03.08.2026",
+    "In der Berufungssache Muster ./. Beispiel GmbH beantragen wir namens der Berufungsklägerin, die Frist zur Begründung der Berufung, die am 17.08.2026 abläuft, um einen Monat zu verlängern.",
+    "Begründung: Die Unterzeichnerin ist durch mehrere Termine gebunden."
+   ],
+   "label": {
+    "typ": "Klage/Schriftsatz",
+    "zulaessig": [
+     "Klage/Schriftsatz"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "17.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "03.08.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "schriftsatz",
+    "ohne_klagewort"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T005 (Schriftsatz ohne 'Klage' wurde 'Gerichtliches Schreiben')"
+  },
+  {
+   "id": "CD-D2-002",
+   "format": "docx",
+   "filename": "Sachstand_Mandant.docx",
+   "paragraphs": [
+    "Kanzlei Beispiel & Partner",
+    "Herrn Max Muster",
+    "Musterstadt, 10.07.2026",
+    "Ihre Angelegenheit gegen die Muster Bau GmbH",
+    "Sehr geehrter Herr Muster,",
+    "das Gericht hat Termin zur mündlichen Verhandlung auf den 02.09.2026 bestimmt. Die Gegenseite hat auf die Klage erwidert und die Abweisung beantragt.",
+    "Mit freundlichen Grüßen"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "02.09.2026"
+    ],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "10.07.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "brief",
+    "erwaehnung"
+   ],
+   "herkunft": "Fehlerklassen P2.2-Test CD-T009/CD-T033 (Mandantenbrief wurde Gericht/Klage)"
+  },
+  {
+   "id": "CD-D2-003",
+   "format": "txt",
+   "filename": "Mail_Nachbar_Hecke.txt",
+   "paragraphs": [
+    "Von: mandant@beispielpost.example",
+    "Betreff: Brief vom Anwalt des Nachbarn",
+    "Guten Tag, der Anwalt meines Nachbarn verlangt den Rückschnitt bis zum 20.08.2026, andernfalls werde Klage erhoben. Was soll ich tun?"
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "20.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "email",
+    "erwaehnung"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T027 (E-Mail mit Klageandrohung wurde Klage/Schriftsatz)"
+  },
+  {
+   "id": "CD-D2-004",
+   "format": "pdf",
+   "filename": "Ladung_AG.pdf",
+   "paragraphs": [
+    "Amtsgericht Musterstadt",
+    "Geschäftsnummer: 8 C 120/26",
+    "Musterstadt, 01.09.2026",
+    "Ladung",
+    "Sehr geehrter Herr Beispiel, die Klageschrift wurde Ihnen am 18.08.2026 zugestellt. Termin zur mündlichen Verhandlung wird bestimmt auf Donnerstag, 22.10.2026, 09:30 Uhr, Saal 4."
+   ],
+   "label": {
+    "typ": "Gerichtliches Schreiben",
+    "zulaessig": [
+     "Gerichtliches Schreiben"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [
+     "22.10.2026"
+    ],
+    "fristbeginn": [
+     "18.08.2026"
+    ],
+    "fristdauern": 0,
+    "keine_frist": [
+     "01.09.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "ladung",
+    "zeilenumbruch"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T032 (Ladung wurde Klage; Termin über Zeilenumbruch)"
+  },
+  {
+   "id": "CD-D2-005",
+   "format": "docx",
+   "filename": "Mietrueckstand_Hausverwaltung.docx",
+   "paragraphs": [
+    "Beispiel Hausverwaltung GmbH",
+    "Frau Erika Muster",
+    "Musterstadt, 12.06.2026",
+    "Mietverhältnis Ahornweg 3 – Mietvertrag vom 01.02.2024",
+    "Sehr geehrte Frau Muster, die Mieten für Mai und Juni 2026 sind weiterhin offen. Wir fordern Sie auf, den Rückstand bis zum 26.06.2026 zu überweisen."
+   ],
+   "label": {
+    "typ": "Unbekannt",
+    "zulaessig": [
+     "Mahnung",
+     "Unbekannt"
+    ],
+    "art": "rolle"
+   },
+   "fristen": {
+    "frist": [
+     "26.06.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "12.06.2026",
+     "01.02.2024"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "erwaehnung",
+    "vertrag_im_betreff"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T023 (Mietvertrag im Betreff wurde Vertrag)"
+  },
+  {
+   "id": "CD-D2-006",
+   "format": "pdf",
+   "filename": "2_Mahnung_Kunde.pdf",
+   "paragraphs": [
+    "Beispiel Reinigung GmbH",
+    "Musterstadt, 20.07.2026",
+    "2. Mahnung – Kundennummer 7788",
+    "unsere Rechnung Nr. 2026-0420 vom 02.06.2026 ist seit dem 16.06.2026 fällig.",
+    "Wir bitten Sie, den offenen Gesamtbetrag zuzüglich der angefallenen Verzugszinsen und einer pauschalen Bearbeitungsgebühr in Höhe von 5,00 EUR nunmehr letztmalig bis zum 14.08.2026 auf das unten genannte Geschäftskonto zu überweisen."
+   ],
+   "label": {
+    "typ": "Mahnung",
+    "zulaessig": [
+     "Mahnung"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "14.08.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "20.07.2026",
+     "02.06.2026",
+     "16.06.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "mahnung",
+    "zeilenumbruch"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T030 (Mahnung wurde Rechnung; Frist über PDF-Umbruch)"
+  },
+  {
+   "id": "CD-D2-007",
+   "format": "docx",
+   "filename": "Einspruch_ESt_2025.docx",
+   "paragraphs": [
+    "Kanzlei Beispiel – Steuerrecht",
+    "Finanzamt Musterstadt",
+    "Musterstadt, 05.06.2026",
+    "Einspruch gegen den Bescheid für 2025 über Einkommensteuer vom 06.05.2026",
+    "namens unserer Mandantin legen wir gegen den oben bezeichneten Bescheid Einspruch ein."
+   ],
+   "label": {
+    "typ": "Einspruch",
+    "zulaessig": [
+     "Einspruch"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [
+     "05.06.2026",
+     "06.05.2026"
+    ],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "einspruch",
+    "steuer"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T031 (Einspruch wurde Steuerbescheid)"
+  },
+  {
+   "id": "CD-D2-008",
+   "format": "scan",
+   "filename": "Hinweisbeschluss_Scan.pdf",
+   "paragraphs": [
+    "Landgericht Musterstadt",
+    "Beschluss",
+    "Den Parteien wird Gelegenheit gegeben, zu den Hinweisen bis einschließlich 15.09.2026 Stellung zu nehmen."
+   ],
+   "label": {
+    "typ": "Urteil/Beschluss",
+    "zulaessig": [
+     "Urteil/Beschluss"
+    ],
+    "art": "kern"
+   },
+   "fristen": {
+    "frist": [
+     "15.09.2026"
+    ],
+    "termin": [],
+    "fristbeginn": [],
+    "fristdauern": 0,
+    "keine_frist": [],
+    "nicht_bewertet": []
+   },
+   "tags": [
+    "beschluss",
+    "ocr",
+    "bis_einschliesslich"
+   ],
+   "herkunft": "Fehlerklasse P2.2-Test CD-T002 ('bis einschließlich' im Scan übersehen)"
+  }
+ ]
+}

@@ -221,12 +221,12 @@ def lexono_predictions(data: dict, workdir: Path) -> tuple[dict, dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split", default="alle", choices=["dev", "test", "alle"])
+    parser.add_argument("--split", default="alle", choices=["dev", "dev_v2", "test", "test_v2", "alle"])
     parser.add_argument("--out", required=True)
     parser.add_argument("--texts-out", help="extrahierte Texte je Dokument (Eingabe fuer den Modellvergleich)")
     args = parser.parse_args()
     texts: dict = {}
-    splits = ["dev", "test"] if args.split == "alle" else [args.split]
+    splits = ["dev", "dev_v2", "test", "test_v2"] if args.split == "alle" else [args.split]
     result: dict = {"quelle": "lexono", "splits": {}}
     for split in splits:
         if not split_file(split).exists():

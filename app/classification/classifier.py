@@ -78,6 +78,8 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
     # --- allgemeine Typen ---
     # P2.2 (§41): nur Rechnungsmerkmale bzw. "...rechnung" als Ueberschrift (siehe _INVOICE_HEADING) - "die
     # Schlussrechnung vom ..." / "zu unserer Rechnung vom ..." in einem Satz macht keine Rechnung
+    # P2.3 (§42): Mahnung VOR Rechnung - eine Mahnung nennt regelmaessig "unsere Rechnung Nr. ..."
+    "Mahnung": ("mahnung", "zahlungserinnerung"),
     "Rechnung": ("rechnungsnummer", "rechnung nr", "rechnungs-nr", "rechnungsdatum", "invoice"),
     "Vollmacht": ("vollmacht",),
     # ECHTER FUND (14.09., gleiche Fehlerklasse wie bei der
@@ -97,7 +99,6 @@ _DOCUMENT_TYPE_KEYWORDS: dict[str, tuple[str, ...]] = {
         "ordentliche kündigung", "ordentliche kuendigung",
         "kündigung des", "kuendigung des",
     ),
-    "Mahnung": ("mahnung", "zahlungserinnerung"),
     "Klage/Schriftsatz": ("klage", "klageschrift", "schriftsatz", "klageerwiderung", "replik"),
     "Gutachten": ("gutachten", "sachverständiger", "sachverstaendiger", "sachverständige", "sachverstaendige"),
     "Protokoll": ("protokoll", "niederschrift", "unfallmitteilung", "unfallanzeige", "unfallaufnahme"),
@@ -130,7 +131,16 @@ _BESCHEID_REFERENCE = re.compile(
 _INVOICE_HEADING = re.compile(r"^\s*[\wäöüß-]*rechnung\b", re.IGNORECASE | re.MULTILINE)
 # P2.2 (§41): Gutachten/Protokoll nur in Titelstellung (erste zwei Woerter einer Zeile) - "Stellungnahme Gutachten |
 # 12.06.2026" in einer Fristentabelle ist kein Gutachten
-_TITLE_POSITION_TYPES = ("Gutachten", "Protokoll")
+_TITLE_POSITION_TYPES = ("Gutachten", "Protokoll", "Vertrag")  # Vertrag: P2.3 (§42), "– Mietvertrag vom ..." im Betreff
+# P2.3 (§42): Klage/Schriftsatz und Gerichtliches Schreiben nur, wenn das Typwort das ERSTE Wort einer Zeile ist
+# ("Klage des ...", "Klageerwiderung", "Amtsgericht Musterstadt") - "das Gericht hat Termin bestimmt", "andernfalls
+# werde Klage erhoben", "die Klageschrift wurde Ihnen zugestellt" sind Erwaehnungen in Briefen, Mails und Ladungen
+_FIRST_WORD_TYPES = ("Klage/Schriftsatz", "Gerichtliches Schreiben")
+# Schriftsatz-Merkmale ohne das Wort "Klage": Antrag an das Gericht bzw. Adressierung "An das ...gericht"
+_FILING_MARKERS = re.compile(
+    r"beantragen wir|wird beantragt|beantrage ich|erheben wir (?:namens [^.]{0,60})?klage|^\s*an das \w*gericht",
+    re.IGNORECASE | re.MULTILINE,
+)
 # P2.2 (§41): angedrohte Kuendigung ("kommt eine fristlose Kündigung in Betracht", "behält sich die Kündigung vor") ist
 # kein Kuendigungsschreiben - solche Saetze zaehlen fuer diesen Typ nicht
 # Satzgrenze nur bei Punkt + Grossbuchstabe - Abkuerzungen wie "§ 543 Abs. 2 Satz 1 Nr. 3 BGB" trennen keinen Satz
@@ -235,6 +245,14 @@ class PlaceholderDocumentClassifier:
                     continue
                 heading = _JUDGMENT_HEADING.search(judgment_text)
                 matched = [kw for kw in keywords if kw in normalized] + ([heading.group(0).strip()] if heading else [])
+            elif document_type in _FIRST_WORD_TYPES:
+                if judgment_text is None:
+                    continue
+                first_words = [line.split()[0].lower() for line in judgment_text.splitlines()
+                               if line.split() and "|" not in line]
+                matched = [kw for kw in keywords if any(kw in word for word in first_words)]
+                if document_type == "Klage/Schriftsatz":
+                    matched += [m.group(0).strip() for m in _FILING_MARKERS.finditer(judgment_text)]
             elif document_type in _TITLE_POSITION_TYPES:
                 if judgment_text is None:
                     continue
@@ -246,7 +264,8 @@ class PlaceholderDocumentClassifier:
                 scope = normalized
                 for phrase in _EXCLUDED_PHRASES.get(document_type, ()):
                     scope = scope.replace(phrase, " ")
-                if document_type == "Bescheid":
+                if document_type in ("Bescheid", "Steuerbescheid"):
+                    # P2.3 (§42): auch beim Steuerbescheid - "Einspruch gegen den Bescheid für 2025 über Einkommensteuer"
                     scope = _BESCHEID_REFERENCE.sub(" ", scope)
                 if document_type == "Kündigungsschreiben" and original is not None:
                     scope = re.sub(r"\s+", " ", _THREAT_SENTENCE.sub(" ", original).lower())

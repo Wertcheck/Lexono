@@ -1,0 +1,454 @@
+{
+ "n": 104,
+ "n_gesendet": 99,
+ "laeufe": 3,
+ "mit_dateiname": true,
+ "kosten": {
+  "claude": {
+   "aufrufe": 297,
+   "kosten_usd_geschaetzt": 1.1177
+  },
+  "openai": {
+   "aufrufe": 297,
+   "kosten_usd_geschaetzt": 1.5691
+  }
+ },
+ "teilmengen": {
+  "alle": {
+   "Lexono vorher (07c919d)": {
+    "typ_richtig": "64",
+    "kerntypen_richtig": "52",
+    "unbekannt": "10",
+    "frist_richtig": "63",
+    "frist_uebersehen": "13",
+    "frist_keine_frist_als_frist": "5",
+    "termin_richtig": "9",
+    "termin_falsch": "2",
+    "fristbeginn_richtig": "9",
+    "fristbeginn_falsch": "2",
+    "dauern_erkannt": "27",
+    "dauern_zusaetzlich": "15",
+    "kritisch": "18",
+    "laeufe": 1
+   },
+   "Lexono P2.3": {
+    "typ_richtig": "84",
+    "kerntypen_richtig": "63",
+    "unbekannt": "19",
+    "frist_richtig": "66",
+    "frist_uebersehen": "10",
+    "frist_keine_frist_als_frist": "6",
+    "termin_richtig": "12",
+    "termin_falsch": "3",
+    "fristbeginn_richtig": "9",
+    "fristbeginn_falsch": "2",
+    "dauern_erkannt": "27",
+    "dauern_zusaetzlich": "15",
+    "kritisch": "16",
+    "laeufe": 1
+   },
+   "Claude (claude-sonnet-5)": {
+    "typ_richtig": "95.0 [95–95]",
+    "kerntypen_richtig": "69.0 [69–69]",
+    "unbekannt": "28.0 [28–28]",
+    "frist_richtig": "75.0 [75–75]",
+    "frist_uebersehen": "1.0 [1–1]",
+    "frist_keine_frist_als_frist": "1.3 [1–2]",
+    "termin_richtig": "20.0 [20–20]",
+    "termin_falsch": "5.3 [5–6]",
+    "fristbeginn_richtig": "10.0 [10–10]",
+    "fristbeginn_falsch": "1.0 [1–1]",
+    "dauern_erkannt": "30.0 [30–30]",
+    "dauern_zusaetzlich": "30.0 [29–31]",
+    "kritisch": "2.3 [2–3]",
+    "laeufe": 3
+   },
+   "OpenAI (gpt-5.5-2026-04-23)": {
+    "typ_richtig": "92.3 [92–93]",
+    "kerntypen_richtig": "69.0 [69–69]",
+    "unbekannt": "25.7 [25–27]",
+    "frist_richtig": "76.0 [76–76]",
+    "frist_uebersehen": "0.0 [0–0]",
+    "frist_keine_frist_als_frist": "0.3 [0–1]",
+    "termin_richtig": "20.0 [20–20]",
+    "termin_falsch": "1.7 [0–3]",
+    "fristbeginn_richtig": "10.0 [10–10]",
+    "fristbeginn_falsch": "0.0 [0–0]",
+    "dauern_erkannt": "30.0 [30–30]",
+    "dauern_zusaetzlich": "34.7 [34–36]",
+    "kritisch": "0.3 [0–1]",
+    "laeufe": 3
+   }
+  },
+  "gesendet": {
+   "Lexono vorher (07c919d)": {
+    "typ_richtig": "61",
+    "kerntypen_richtig": "49",
+    "unbekannt": "10",
+    "frist_richtig": "63",
+    "frist_uebersehen": "13",
+    "frist_keine_frist_als_frist": "5",
+    "termin_richtig": "9",
+    "termin_falsch": "2",
+    "fristbeginn_richtig": "9",
+    "fristbeginn_falsch": "2",
+    "dauern_erkannt": "23",
+    "dauern_zusaetzlich": "15",
+    "kritisch": "18",
+    "laeufe": 1
+   },
+   "Lexono P2.3": {
+    "typ_richtig": "81",
+    "kerntypen_richtig": "60",
+    "unbekannt": "19",
+    "frist_richtig": "66",
+    "frist_uebersehen": "10",
+    "frist_keine_frist_als_frist": "6",
+    "termin_richtig": "12",
+    "termin_falsch": "3",
+    "fristbeginn_richtig": "9",
+    "fristbeginn_falsch": "2",
+    "dauern_erkannt": "23",
+    "dauern_zusaetzlich": "15",
+    "kritisch": "16",
+    "laeufe": 1
+   },
+   "Claude (claude-sonnet-5)": {
+    "typ_richtig": "95.0 [95–95]",
+    "kerntypen_richtig": "69.0 [69–69]",
+    "unbekannt": "23.0 [23–23]",
+    "frist_richtig": "75.0 [75–75]",
+    "frist_uebersehen": "1.0 [1–1]",
+    "frist_keine_frist_als_frist": "1.3 [1–2]",
+    "termin_richtig": "20.0 [20–20]",
+    "termin_falsch": "5.3 [5–6]",
+    "fristbeginn_richtig": "10.0 [10–10]",
+    "fristbeginn_falsch": "1.0 [1–1]",
+    "dauern_erkannt": "30.0 [30–30]",
+    "dauern_zusaetzlich": "30.0 [29–31]",
+    "kritisch": "2.3 [2–3]",
+    "laeufe": 3
+   },
+   "OpenAI (gpt-5.5-2026-04-23)": {
+    "typ_richtig": "92.3 [92–93]",
+    "kerntypen_richtig": "69.0 [69–69]",
+    "unbekannt": "20.7 [20–22]",
+    "frist_richtig": "76.0 [76–76]",
+    "frist_uebersehen": "0.0 [0–0]",
+    "frist_keine_frist_als_frist": "0.3 [0–1]",
+    "termin_richtig": "20.0 [20–20]",
+    "termin_falsch": "1.7 [0–3]",
+    "fristbeginn_richtig": "10.0 [10–10]",
+    "fristbeginn_falsch": "0.0 [0–0]",
+    "dauern_erkannt": "30.0 [30–30]",
+    "dauern_zusaetzlich": "34.7 [34–36]",
+    "kritisch": "0.3 [0–1]",
+    "laeufe": 3
+   }
+  }
+ },
+ "je_klasse_gesendet": {
+  "Lexono vorher (07c919d)": {
+   "Anlage": {
+    "praezision": "4/4",
+    "recall": "4/4"
+   },
+   "Bescheid": {
+    "praezision": "3/4",
+    "recall": "4/5"
+   },
+   "Einspruch": {
+    "praezision": "1/1",
+    "recall": "1/3"
+   },
+   "Gerichtliches Schreiben": {
+    "praezision": "2/11",
+    "recall": "2/7"
+   },
+   "Gutachten": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Klage/Schriftsatz": {
+    "praezision": "4/11",
+    "recall": "4/6"
+   },
+   "Kündigungsschreiben": {
+    "praezision": "3/4",
+    "recall": "3/3"
+   },
+   "Mahnung": {
+    "praezision": "1/1",
+    "recall": "1/5"
+   },
+   "Protokoll": {
+    "praezision": "4/4",
+    "recall": "4/6"
+   },
+   "Prüfungsanordnung": {
+    "praezision": "1/1",
+    "recall": "1/1"
+   },
+   "Rechnung": {
+    "praezision": "6/12",
+    "recall": "6/6"
+   },
+   "Sonstiges": {
+    "praezision": "-",
+    "recall": "0/1"
+   },
+   "Steuerbescheid": {
+    "praezision": "5/10",
+    "recall": "4/4"
+   },
+   "Steuererklärung": {
+    "praezision": "2/3",
+    "recall": "2/2"
+   },
+   "Unbekannt": {
+    "praezision": "8/10",
+    "recall": "8/24"
+   },
+   "Urteil/Beschluss": {
+    "praezision": "5/5",
+    "recall": "5/7"
+   },
+   "Vertrag": {
+    "praezision": "7/12",
+    "recall": "7/9"
+   },
+   "Vollmacht": {
+    "praezision": "2/3",
+    "recall": "2/3"
+   }
+  },
+  "Lexono P2.3": {
+   "Anlage": {
+    "praezision": "4/4",
+    "recall": "4/4"
+   },
+   "Bescheid": {
+    "praezision": "3/4",
+    "recall": "4/5"
+   },
+   "Einspruch": {
+    "praezision": "2/2",
+    "recall": "2/3"
+   },
+   "Gerichtliches Schreiben": {
+    "praezision": "6/8",
+    "recall": "6/7"
+   },
+   "Gutachten": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Klage/Schriftsatz": {
+    "praezision": "6/6",
+    "recall": "6/6"
+   },
+   "Kündigungsschreiben": {
+    "praezision": "3/7",
+    "recall": "3/3"
+   },
+   "Mahnung": {
+    "praezision": "4/4",
+    "recall": "4/5"
+   },
+   "Protokoll": {
+    "praezision": "5/5",
+    "recall": "5/6"
+   },
+   "Prüfungsanordnung": {
+    "praezision": "1/1",
+    "recall": "1/1"
+   },
+   "Rechnung": {
+    "praezision": "6/9",
+    "recall": "6/6"
+   },
+   "Sonstiges": {
+    "praezision": "-",
+    "recall": "0/1"
+   },
+   "Steuerbescheid": {
+    "praezision": "5/9",
+    "recall": "4/4"
+   },
+   "Steuererklärung": {
+    "praezision": "2/3",
+    "recall": "2/2"
+   },
+   "Unbekannt": {
+    "praezision": "17/19",
+    "recall": "17/24"
+   },
+   "Urteil/Beschluss": {
+    "praezision": "5/5",
+    "recall": "5/7"
+   },
+   "Vertrag": {
+    "praezision": "7/7",
+    "recall": "7/9"
+   },
+   "Vollmacht": {
+    "praezision": "2/3",
+    "recall": "2/3"
+   }
+  },
+  "Claude (claude-sonnet-5)": {
+   "Anlage": {
+    "praezision": "6/6",
+    "recall": "4/4"
+   },
+   "Bescheid": {
+    "praezision": "5/6",
+    "recall": "5/5"
+   },
+   "Einspruch": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Gerichtliches Schreiben": {
+    "praezision": "8/8",
+    "recall": "7/7"
+   },
+   "Gutachten": {
+    "praezision": "2/2",
+    "recall": "3/3"
+   },
+   "Klage/Schriftsatz": {
+    "praezision": "6/6",
+    "recall": "6/6"
+   },
+   "Kündigungsschreiben": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Mahnung": {
+    "praezision": "5/6",
+    "recall": "5/5"
+   },
+   "Protokoll": {
+    "praezision": "6/6",
+    "recall": "5/6"
+   },
+   "Prüfungsanordnung": {
+    "praezision": "1/1",
+    "recall": "1/1"
+   },
+   "Rechnung": {
+    "praezision": "6/6",
+    "recall": "6/6"
+   },
+   "Sonstiges": {
+    "praezision": "-",
+    "recall": "0/1"
+   },
+   "Steuerbescheid": {
+    "praezision": "4/4",
+    "recall": "4/4"
+   },
+   "Steuererklärung": {
+    "praezision": "2/2",
+    "recall": "2/2"
+   },
+   "Unbekannt": {
+    "praezision": "21/23",
+    "recall": "22/24"
+   },
+   "Urteil/Beschluss": {
+    "praezision": "6/6",
+    "recall": "7/7"
+   },
+   "Vertrag": {
+    "praezision": "8/8",
+    "recall": "9/9"
+   },
+   "Vollmacht": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   }
+  },
+  "OpenAI (gpt-5.5-2026-04-23)": {
+   "Anlage": {
+    "praezision": "9/11",
+    "recall": "4/4"
+   },
+   "Bescheid": {
+    "praezision": "5/6",
+    "recall": "5/5"
+   },
+   "Einspruch": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Gerichtliches Schreiben": {
+    "praezision": "7/7",
+    "recall": "7/7"
+   },
+   "Gutachten": {
+    "praezision": "2/2",
+    "recall": "3/3"
+   },
+   "Klage/Schriftsatz": {
+    "praezision": "6/6",
+    "recall": "6/6"
+   },
+   "Kündigungsschreiben": {
+    "praezision": "3/3",
+    "recall": "3/3"
+   },
+   "Mahnung": {
+    "praezision": "5/6",
+    "recall": "5/5"
+   },
+   "Protokoll": {
+    "praezision": "6/6",
+    "recall": "5/6"
+   },
+   "Prüfungsanordnung": {
+    "praezision": "1/1",
+    "recall": "1/1"
+   },
+   "Rechnung": {
+    "praezision": "4/5",
+    "recall": "6/6"
+   },
+   "Sonstiges": {
+    "praezision": "-",
+    "recall": "0/1"
+   },
+   "Steuerbescheid": {
+    "praezision": "4/4",
+    "recall": "4/4"
+   },
+   "Steuererklärung": {
+    "praezision": "2/2",
+    "recall": "2/2"
+   },
+   "Unbekannt": {
+    "praezision": "18/20",
+    "recall": "19/24"
+   },
+   "Urteil/Beschluss": {
+    "praezision": "7/7",
+    "recall": "7/7"
+   },
+   "Vertrag": {
+    "praezision": "8/8",
+    "recall": "9/9"
+   },
+   "Vollmacht": {
+    "praezision": "2/2",
+    "recall": "3/3"
+   }
+  }
+ },
+ "erwartet_gesendet": {
+  "frist": 76,
+  "termin": 20,
+  "fristbeginn": 10,
+  "dauern": 31
+ }
+}
