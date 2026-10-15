@@ -21,13 +21,26 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_or_404
-from app.auth.permissions import require_login, require_role
+from app.auth.permissions import PERM_DEADLINE_CONFIRM, has_permission, require_login, require_role
+from app.deadlines.review import (
+    ReviewDecisionError,
+    decide,
+    deferred_notes,
+    has_conflict,
+    kind_label,
+    next_unreviewed,
+    review_hint,
+    short_review_hint,
+    split_source_text,
+    unreviewed_query,
+)
 from app.db.session import get_db
 from app.documents.rendering import document_file_size_label
 from app.models import AuditEvent, Deadline, Document, Matter, Task, User
 from app.tasks.service import (
     ITEM_TYPES,
     PRIORITY_SUGGESTIONS,
+    DeadlinePermissionError,
     TaskListItem,
     TaskValidationError,
     count_task_items,
@@ -107,10 +120,20 @@ def _deadline_source_label(deadline: Deadline) -> str:
     return "Manuell"
 
 
+#: Audit-Ereignisse, die eine Anlage belegen. ARCHITECTURE.md §73: vorher galt das ERSTE Ereignis der Zeile als
+#: Anlage - bei einem KI-Vorschlag (kein eigenes Anlage-Ereignis, die Analyse protokolliert am Dokument) erschien so
+#: die Person, die ihn zurueckgestellt oder bestaetigt hatte, als "Erstellt von".
+_CREATION_EVENT_TYPES = ("task_created", "deadline_added_manually")
+
+
 def _creation_audit_event(db: Session, *, entity_type: str, entity_id: str) -> AuditEvent | None:
     return (
         db.query(AuditEvent)
-        .filter(AuditEvent.entity_type == entity_type, AuditEvent.entity_id == entity_id)
+        .filter(
+            AuditEvent.entity_type == entity_type,
+            AuditEvent.entity_id == entity_id,
+            AuditEvent.event_type.in_(_CREATION_EVENT_TYPES),
+        )
         .order_by(AuditEvent.created_at.asc())
         .first()
     )
@@ -165,6 +188,7 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
         if deadline is None:
             return None
         created_event = _creation_audit_event(db, entity_type="Deadline", entity_id=deadline.id)
+        from_analysis = bool(deadline.document_id or deadline.message_id)
         document = db.get(Document, deadline.document_id) if deadline.document_id else None
         return {
             "item_type": "deadline",
@@ -176,7 +200,7 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
             "matter": deadline.matter,
             "description": deadline.reasoning,
             "source_label": _deadline_source_label(deadline),
-            "created_by": _created_by_label(created_event),
+            "created_by": "System (automatische Erkennung)" if from_analysis else _created_by_label(created_event),
             "created_at": deadline.created_at,
             "document": document,
             # ECHTE DATEIGROESSE (07.10., Owner-Direktive "AUFGABEN & FRISTEN
@@ -189,8 +213,39 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
             "task": None,
             "deadline": deadline,
             "audit_events": _audit_trail(db, entity_type="Deadline", entity_id=deadline.id),
+            "review": _review_info(deadline, deferred_notes(db, [deadline.id]), date.today()),
         }
     return None
+
+
+def _review_info(deadline: Deadline, deferred: dict[str, str], today: date) -> dict:
+    """Pruefangaben einer Frist fuer Liste und Detailpanel (ARCHITECTURE.md §73) - nur Darstellung vorhandener Felder."""
+    raw_date, context = split_source_text(deadline.source_text)
+    return {
+        "kind_label": kind_label(deadline),
+        "raw_date": raw_date,
+        "context": context,
+        "confidence": deadline.confidence,
+        "hint": review_hint(deadline, today),
+        "short_hint": short_review_hint(deadline, today),
+        "conflict": has_conflict(deadline),
+        "deferred": deadline.id in deferred,
+        "deferred_note": deferred.get(deadline.id) or None,
+    }
+
+
+def _review_redirect(*, return_to: str, review_matter_id: str, current_id: str, db: Session) -> RedirectResponse:
+    """Nach einer Einzelentscheidung: aus der Pruefliste direkt zum naechsten offenen Vorschlag (keine
+    Sammelbestaetigung - jeder Vorschlag wird einzeln geoeffnet und entschieden); sonst wie bisher zur Liste."""
+    if return_to != "review":
+        return RedirectResponse(url="/dashboard/tasks", status_code=303)
+    params = {"review": "1"}
+    if review_matter_id:
+        params["matter_id"] = review_matter_id
+    upcoming = next_unreviewed(db, matter_id=review_matter_id or None, exclude_id=current_id)
+    if upcoming is not None:
+        params.update(selected=upcoming.id, selected_type="deadline")
+    return RedirectResponse(url=f"/dashboard/tasks?{urlencode(params)}", status_code=303)
 
 
 def _build_page_numbers(page: int, total_pages: int) -> list[int | str]:
@@ -237,10 +292,14 @@ def tasks_page(
     page_size: int = 10,
     selected: str = "",
     selected_type: str = "",
+    review: str = "",
     error: str | None = None,
     current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
+    review_only = review == "1"
+    if review_only:
+        item_type = "deadline"
     item_type_value = item_type if item_type in ITEM_TYPES else None
     priority_value = priority or None
     matter_id_value = matter_id or None
@@ -254,6 +313,7 @@ def tasks_page(
         priority=priority_value,
         matter_id=matter_id_value,
         status=status,
+        review_only=review_only,
     )
     total_pages = max(1, (total_count + page_size - 1) // page_size)
     page = min(max(page, 1), total_pages)
@@ -268,10 +328,16 @@ def tasks_page(
         sort=sort,
         page=page,
         page_size=page_size,
+        review_only=review_only,
     )
 
     today = date.today()
     due_texts = {item.id: _relative_due_text(item.due_date, today) for item in items}
+    page_deferred = deferred_notes(db, [item.id for item in items if item.deadline is not None])
+    review_infos = {
+        item.id: _review_info(item.deadline, page_deferred, today) for item in items if item.deadline is not None
+    }
+    unreviewed_count = unreviewed_query(db, matter_id=matter_id_value).count()
 
     selected_item = None
     if selected and selected_type:
@@ -294,6 +360,7 @@ def tasks_page(
             "sort": sort,
             "page_size": page_size,
             "page": page,
+            "review": "1" if review_only else "",
         }
         params.update(overrides)
         return urlencode({k: v for k, v in params.items() if v not in (None, "")})
@@ -335,15 +402,20 @@ def tasks_page(
         "csrf_token": getattr(request.state, "csrf_token", ""),
         "error": error,
         "base_qs": _qs(),
-        "qs_tab_list": _qs(status="open", item_type="", page=1),
-        "qs_tab_fristen": _qs(status="open", item_type="deadline", page=1),
-        "qs_tab_erledigt": _qs(status="done", page=1),
+        "qs_tab_list": _qs(status="open", item_type="", page=1, review=""),
+        "qs_tab_fristen": _qs(status="open", item_type="deadline", page=1, review=""),
+        "qs_tab_erledigt": _qs(status="done", page=1, review=""),
+        "qs_tab_review": _qs(status="open", item_type="deadline", page=1, review="1"),
         "qs_prev_page": _qs(page=page - 1),
         "qs_next_page": _qs(page=page + 1),
         "page_numbers": _build_page_numbers(page, total_pages),
         "qs_for_page": {p: _qs(page=p) for p in _build_page_numbers(page, total_pages) if isinstance(p, int)},
-        "is_tab_fristen": status != "done" and item_type == "deadline",
-        "is_tab_erledigt": status == "done",
+        "is_tab_fristen": status != "done" and item_type == "deadline" and not review_only,
+        "is_tab_erledigt": status == "done" and not review_only,
+        "is_tab_review": review_only,
+        "review_infos": review_infos,
+        "unreviewed_count": unreviewed_count,
+        "can_confirm_deadlines": has_permission(current_user, PERM_DEADLINE_CONFIRM),
     }
     return templates.TemplateResponse(request, "tasks.html", context)
 
@@ -464,7 +536,10 @@ def update_deadline_action(
             due_date=_parse_due_date(due_date),
             priority=priority,
             actor=current_user.email,
+            may_change_confirmed=has_permission(current_user, PERM_DEADLINE_CONFIRM),
         )
+    except DeadlinePermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     except TaskValidationError as exc:
         return RedirectResponse(url=f"/dashboard/tasks?error={exc}", status_code=303)
     return RedirectResponse(
@@ -496,7 +571,9 @@ def duplicate_deadline_action(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     deadline = get_or_404(db, Deadline, deadline_id, "Frist")
-    duplicate = duplicate_deadline(db, deadline, actor=current_user.email)
+    duplicate = duplicate_deadline(
+        db, deadline, actor=current_user.email, may_confirm=has_permission(current_user, PERM_DEADLINE_CONFIRM)
+    )
     return RedirectResponse(
         url=f"/dashboard/tasks?selected={duplicate.id}&selected_type=deadline", status_code=303
     )
@@ -509,7 +586,12 @@ def delete_deadline_action(
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     deadline = get_or_404(db, Deadline, deadline_id, "Frist")
-    delete_deadline(db, deadline, actor=current_user.email)
+    try:
+        delete_deadline(
+            db, deadline, actor=current_user.email, may_delete=has_permission(current_user, PERM_DEADLINE_CONFIRM)
+        )
+    except DeadlinePermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     return RedirectResponse(url="/dashboard/tasks", status_code=303)
 
 
@@ -517,31 +599,52 @@ def delete_deadline_action(
 def review_deadline(
     deadline_id: str,
     status: str = Form(...),
-    current_user: User = Depends(require_role()),
+    note: str = Form(""),
+    return_to: str = Form(""),
+    review_matter_id: str = Form(""),
+    current_user: User = Depends(require_role(permission=PERM_DEADLINE_CONFIRM)),
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
-    """Bestaetigt oder verwirft eine erkannte Frist (17.09., Owner-Direktive
-    §5/§6/§10 "Missing core workflow functionality"). UNVERAENDERT aus der
-    vorherigen Fassung dieser Datei - siehe dortigen Docstring-Verlauf in
-    der Git-Historie fuer die volle Herleitung."""
+    """Bestaetigt oder verwirft GENAU EINE erkannte Frist (17.09., Owner-Direktive §5/§6/§10).
+
+    ARCHITECTURE.md §73: nur mit PERM_DEADLINE_CONFIRM (Anwalt/Admin) - vorher konnte jede angemeldete Rolle bestaetigen. Optionale
+    Notiz und Weiterleitung zum naechsten Vorschlag der Pruefliste (`return_to=review`); Ziel "unreviewed" bleibt
+    unzulaessig (Fail-Closed)."""
     if status not in _ALLOWED_REVIEW_TARGETS:
         raise HTTPException(status_code=400, detail="Ungueltiger Pruefstatus.")
 
     deadline = get_or_404(db, Deadline, deadline_id, "Frist")
-    previous_status = deadline.review_status
-    deadline.review_status = status
-    db.add(
-        AuditEvent(
-            entity_type="Deadline",
-            entity_id=deadline.id,
-            event_type="deadline_review_status_changed",
-            actor=current_user.email,
-            details=f"Pruefstatus geaendert: {previous_status} -> {status}",
-        )
+    decide(
+        db,
+        deadline,
+        decision="confirm" if status == "confirmed" else "reject",
+        actor=current_user.email,
+        note=note,
     )
-    db.commit()
+    return _review_redirect(
+        return_to=return_to, review_matter_id=review_matter_id, current_id=deadline.id, db=db
+    )
 
-    return RedirectResponse(url="/dashboard/tasks", status_code=303)
+
+@router.post("/{deadline_id}/defer")
+def defer_deadline_review(
+    deadline_id: str,
+    note: str = Form(""),
+    return_to: str = Form(""),
+    review_matter_id: str = Form(""),
+    current_user: User = Depends(require_role()),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """Stellt die Pruefung eines ungeprueften Vorschlags zurueck (ARCHITECTURE.md §73): der Vorschlag bleibt ungeprueft und
+    auffindbar, rueckt in der Pruefliste nur ans Ende. Jede Rolle darf zurueckstellen - es entscheidet nichts."""
+    deadline = get_or_404(db, Deadline, deadline_id, "Frist")
+    try:
+        decide(db, deadline, decision="defer", actor=current_user.email, note=note)
+    except ReviewDecisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _review_redirect(
+        return_to=return_to, review_matter_id=review_matter_id, current_id=deadline.id, db=db
+    )
 
 
 @router.get("/badge", response_class=HTMLResponse)

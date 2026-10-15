@@ -5056,3 +5056,54 @@ Latenz-/Betriebsanforderungen ab, die erst beim tatsächlichen Aufsetzen
 sinnvoll bewertet werden können. Keine Entscheidung über Monetarisierung/
 Zugriffskontrolle der Registry selbst (vermutlich dieselbe
 Tenant-Credential wie beim AI-Relay, aber nicht verbindlich festgelegt).
+
+## 73. Fristen: Human-in-the-Loop-Prüfung (15.10.2026, Branch `feature/fristen-hitl`)
+
+**Ziel:** Erkannte Fristen sind Vorschläge. Erst die ausdrückliche Einzelentscheidung einer Anwältin oder eines
+Anwalts macht daraus eine bestätigte Frist. Manuelle Erfassung und Korrektur bleiben jederzeit möglich.
+
+**Bestand (vorher vorhanden):** automatische Speicherung als `review_status="unreviewed"`
+(`DeadlineAnalysisService`, idempotent), Bestätigen/Verwerfen mit Audit, manuelle Anlage, Bearbeiten, Erledigt,
+Duplizieren, Löschen, Quellenkennzeichnung.
+
+**Nachgewiesene Lücken und Umsetzung:**
+
+| Lücke | Umsetzung |
+|---|---|
+| Jede angemeldete Rolle (auch Mitarbeiter) konnte bestätigen/verwerfen | Neue Berechtigung `deadline:confirm` (`PERM_DEADLINE_CONFIRM`) für Admin und Anwalt. Pflicht für Bestätigen, Verwerfen, Löschen und Ändern einer bestätigten Frist (serverseitig, 403). |
+| Mitarbeiter-Erfassung galt sofort als bestätigt | Manuelle Anlage ist nur mit `deadline:confirm` bestätigt, sonst ungeprüft. |
+| Duplizieren eines ungeprüften Vorschlags erzeugte eine **bestätigte** Kopie | Kopie ist nur bestätigt, wenn die Vorlage bestätigt war und eine berechtigte Person kopiert. |
+| Korrektur überschrieb den ursprünglichen Fund ohne Spur | Audit `deadline_updated` enthält alte → neue Werte (Bezeichnung/Fund, Datum, Priorität) und den unveränderten Prüfstatus. Eine Korrektur ist keine Bestätigung. |
+| Kein Zurückstellen | `POST /dashboard/tasks/{id}/defer` (jede Rolle, optionale Notiz). Bleibt `unreviewed`; Zustand steht nur im Audit (`deadline_review_deferred`). |
+| Keine Prüfliste | Reiter „Zu prüfen (n)“ (`?review=1`), aktenübergreifend oder über den Aktenfilter je Akte. Enthält auch versehentlich als erledigt markierte Vorschläge. Reihenfolge: nicht zurückgestellt vor zurückgestellt, dann Datum. Nach einer Einzelentscheidung öffnet sich der nächste Vorschlag. **Keine Sammelbestätigung.** |
+| „überfällig“ auch bei ungeprüften Vorschlägen | Für Vorschläge stattdessen Prüfhinweis „Datum verstrichen – bitte umgehend prüfen“ bzw. „Dringend prüfen – Datum in Kürze“ (≤ 7 Tage). In der Listenspalte gekürzt („verstrichen – prüfen“, „bald – prüfen“). Kein Fristversäumnis wird behauptet. „überfällig“ bleibt für bestätigte Fristen und Aufgaben. |
+| Art, Originalangabe, Fundstelle, Sicherheit nicht sichtbar | Detailpanel und Dokumentansicht zeigen Art (Frist/Termin/Fristbeginn/Fristdauer/manuell), Originalangabe, Fundstelle, regelbasierte Sicherheit und die Begründung. |
+| „Erstellt von“ zeigte bei KI-Vorschlägen die Person, die zuerst geprüft/zurückgestellt hatte (erstes Audit-Ereignis der Zeile galt als Anlage) | Nur echte Anlage-Ereignisse zählen; Vorschläge aus Dokument/E-Mail zeigen „System (automatische Erkennung)“. |
+| Keine erneute Analyse (Idempotenz übersprang jede Wiederholung) | `DeadlineAnalysisService.reanalyze_document` und `POST /dashboard/matters/{m}/document/{d}/reanalyze-deadlines` (Button in der Dokumentansicht). Siehe unten. |
+
+**Erneute Analyse – Regeln:**
+- Nur auf ausdrückliche Anforderung. Lokal und regelbasiert, ohne Cloud. Die automatische Verarbeitung bleibt idempotent.
+- Bestehende Fristen (ungeprüft, bestätigt, verworfen, korrigiert) werden **nie** geändert, gelöscht oder
+  zurückgesetzt.
+- Abgleich je Dokument über Art + Datum, ohne Datum über Art + Originalangabe. Bekannte Funde, auch verworfene, entstehen
+  nicht neu. Neue Funde entstehen als ungeprüfte Vorschläge, Akte und Dokument wie das Quelldokument.
+- Weicht ein neuer Fund von einer bestätigten Frist gleicher Art im selben Dokument ab, beginnt seine Begründung mit
+  `KONFLIKT bei erneuter Analyse:`. Er wird als „Konflikt“ markiert; nichts wird automatisch entschieden.
+- Bestätigte Fristen, die im neuen Text nicht mehr gefunden werden, bleiben unverändert und werden nur gezählt (Audit
+  `deadline_reanalysis_completed`, Hinweis in der Dokumentansicht).
+
+**Migration:** keine. Es gibt keine neue Spalte und keinen neuen Statuswert: Zurückstellung und Korrekturverlauf stehen
+im Audit-Log. Altdaten werden nicht verändert. Vorschläge ohne Art-Angabe aus einem Dokument erscheinen weiter als
+„Mögliche Frist“.
+
+**Bekannte Grenzen (nicht verifiziert/offen):**
+- Ein korrigierter Vorschlag hat seine ursprünglichen Werte nur im Audit. Die erneute Analyse vergleicht mit den
+  korrigierten Werten und kann den ursprünglichen Fund deshalb erneut als Vorschlag (ggf. mit Konflikt) anlegen. Das
+  ist sichtbar, wird aber nicht automatisch unterdrückt.
+- Ein Konflikt wird nur innerhalb desselben Dokuments erkannt, nicht akten- oder dokumentübergreifend.
+- E-Mail-Texte haben keine erneute Analyse; ihr Text ändert sich nicht.
+- Aufgaben-/Fristenrechte sind rollen-, nicht aktenbezogen (wie im übrigen System). Eine Aktenzugriffsbeschränkung
+  pro Person gibt es nicht.
+- „Als erledigt markieren“ bleibt für ungeprüfte Vorschläge möglich. Der Vorschlag bleibt dann in der Prüfliste.
+- Die Fristenerkennung selbst ist unverändert und **nicht vollständig** (Messwerte §42 in
+  PRIVACY_REVIEW_ARCHITECTURE.md). Dieser Abschnitt sichert den Prüfablauf ab, nicht die Erkennungsqualität.

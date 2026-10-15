@@ -38,7 +38,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_or_404
-from app.auth.permissions import require_role
+from app.auth.permissions import PERM_DEADLINE_CONFIRM, has_permission, require_role
 from app.db.session import get_db
 from app.models import AuditEvent, Deadline, Matter, User
 
@@ -68,11 +68,14 @@ def create_deadline(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Ungültiges Datum.") from exc
 
+    # ARCHITECTURE.md §73: manuell erfasst = bestaetigt nur bei anwaltlicher Berechtigung; die Erfassung eines Mitarbeiters ist ein
+    # Vorschlag, der wie ein KI-Vorschlag die ausdrueckliche Bestaetigung eines Anwalts braucht.
+    review_status = "confirmed" if has_permission(current_user, PERM_DEADLINE_CONFIRM) else "unreviewed"
     deadline = Deadline(
         matter_id=matter.id,
         source_text=label,
         due_date=parsed_due_date,
-        review_status="confirmed",
+        review_status=review_status,
         priority=(priority or "").strip() or None,
     )
     db.add(deadline)
@@ -83,7 +86,7 @@ def create_deadline(
             entity_id=deadline.id,
             event_type="deadline_added_manually",
             actor=current_user.email,
-            details=f"Frist manuell angelegt: {label} ({parsed_due_date.isoformat()})",
+            details=f"Frist manuell angelegt: {label} ({parsed_due_date.isoformat()}), Pruefstatus: {review_status}",
         )
     )
     db.commit()

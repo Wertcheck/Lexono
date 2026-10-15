@@ -231,6 +231,9 @@
           Erkannte Fristen
           <span class="chat-context-pane__count">{{ document_deadlines | length }}</span>
         </h2>
+        {% if reanalysis_summary %}
+          <div class="banner">{{ reanalysis_summary }}</div>
+        {% endif %}
         {% if document_deadlines %}
           <ul class="instruction-list">
             {% for deadline in document_deadlines %}
@@ -240,6 +243,13 @@
                   <span class="message-row__time">{{ deadline.due_date.strftime("%d.%m.%Y") if deadline.due_date else "–" }}</span>
                 </div>
                 {{ labels.deadline_status_tag(deadline.review_status) }}
+                {% set review = deadline_review[deadline.id] %}
+                <span class="form-hint">{{ review.kind_label }}</span>
+                {% if review.conflict %}<span class="tag tag--outbound"><span class="tag__dot"></span>Konflikt</span>{% endif %}
+                {% if review.hint %}<span class="form-hint task-due-cell__overdue">{{ review.hint }}</span>{% endif %}
+                {% if deadline.review_status == "unreviewed" %}
+                  <a href="/dashboard/tasks?review=1&amp;matter_id={{ matter.id }}&amp;selected={{ deadline.id }}&amp;selected_type=deadline" class="form-hint">Prüfen</a>
+                {% endif %}
               </li>
             {% endfor %}
           </ul>
@@ -250,6 +260,13 @@
         {% else %}
           <div class="empty-state">Keine Fristen in diesem Dokument erkannt.</div>
         {% endif %}
+        {# ARCHITECTURE.md §73: erneute Analyse nur auf ausdrueckliche Anforderung - erzeugt ausschliesslich neue, ungepruefte
+           Vorschlaege, veraendert keine bestehende Frist (app/deadlines/service.py::reanalyze_document). #}
+        <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/reanalyze-deadlines" style="margin-top: 8px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Fristen erneut analysieren</button>
+          <span class="form-hint">Lokal, regelbasiert. Bestehende und bestätigte Fristen bleiben unverändert.</span>
+        </form>
       </div>
     </div>
   </div>

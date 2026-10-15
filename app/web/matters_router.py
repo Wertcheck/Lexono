@@ -25,7 +25,7 @@ Aktenisolation (CLAUDE.md) bleibt gewahrt: jede Abfrage ist strikt nach
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
@@ -48,6 +48,7 @@ from app.documents.rendering import (
 )
 from app.auth.permissions import require_login, require_role
 from app.clients.service import PRACTICE_AREA_SUGGESTIONS
+from app.deadlines.review import has_conflict, kind_label, review_hint
 from app.db.session import get_db
 from app.models import (
     AuditEvent,
@@ -552,11 +553,28 @@ def matter_detail_page(
     return templates.TemplateResponse(request, "matter_detail.html", context)
 
 
+def _reanalysis_summary(value: str) -> str | None:
+    """Ergebnis der erneuten Fristenanalyse (ARCHITECTURE.md §73) aus der Weiterleitung - nur Zahlen, kein freier Text."""
+    if value == "uebersprungen":
+        return "Erneute Fristenanalyse nicht möglich: kein Text oder keine Aktenzuordnung."
+    parts = value.split("-")
+    if len(parts) != 4 or not all(part.isdigit() for part in parts):
+        return None
+    created, known, conflicts, missing = (int(part) for part in parts)
+    text = f"Erneute Fristenanalyse: {created} neue Vorschläge (ungeprüft), {known} bereits bekannt"
+    if conflicts:
+        text += f", {conflicts} mit Konflikt zu einer bestätigten Frist – bitte prüfen"
+    if missing:
+        text += f", {missing} bestätigte Frist(en) im aktuellen Text nicht mehr gefunden (unverändert)"
+    return text + ". Bestehende Fristen wurden nicht verändert."
+
+
 @router.get("/{matter_id}/document/{document_id}", response_class=HTMLResponse)
 def matter_document_view(
     matter_id: str,
     document_id: str,
     request: Request,
+    reanalysis: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
@@ -632,6 +650,12 @@ def matter_document_view(
         "document": document,
         "preview": build_document_preview(document.extracted_text),
         "document_deadlines": document_deadlines,
+        # ARCHITECTURE.md §73: Art, Konflikt und Pruefhinweis je Frist - reine Darstellung (app/deadlines/review.py).
+        "deadline_review": {
+            d.id: {"kind_label": kind_label(d), "conflict": has_conflict(d), "hint": review_hint(d, date.today())}
+            for d in document_deadlines
+        },
+        "reanalysis_summary": _reanalysis_summary(reanalysis),
         "viewer_mode": viewer_mode,
         "viewer_page_dpi": DEFAULT_PAGE_DPI,
         "viewer_thumbnail_dpi": THUMBNAIL_DPI,

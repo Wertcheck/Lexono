@@ -72,6 +72,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_or_404
 from app.auth.permissions import require_role
 from app.config import get_settings
+from app.deadlines.extractor import PlaceholderDeadlineExtractor
+from app.deadlines.service import DeadlineAnalysisService
 from app.db.session import get_db
 from app.documents.lifecycle import restore_document, soft_delete_document
 from app.documents.service import DocumentProcessingService
@@ -156,6 +158,43 @@ def delete_document(
     soft_delete_document(db, document, actor=current_user.email)
 
     return RedirectResponse(url=f"/dashboard/matters/{matter.id}", status_code=303)
+
+
+@router.post("/{matter_id}/document/{document_id}/reanalyze-deadlines")
+def reanalyze_document_deadlines(
+    matter_id: str,
+    document_id: str,
+    current_user: User = Depends(require_role()),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """Erneute Fristenanalyse auf ausdrueckliche Anforderung (ARCHITECTURE.md §73) - lokal, regelbasiert, ohne Cloud. Erzeugt nur
+    ungepruefte Vorschlaege und aendert keine bestehende Frist (app/deadlines/service.py::reanalyze_document), daher
+    fuer jede Rolle zulaessig. Aktenisolation wie `rename_document`."""
+    matter = get_or_404(db, Matter, matter_id, "Akte")
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.matter_id == matter.id,
+            Document.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if document is None:
+        raise HTTPException(status_code=404, detail="Dokument nicht in dieser Akte")
+
+    result = DeadlineAnalysisService(PlaceholderDeadlineExtractor()).reanalyze_document(
+        document, db, actor=current_user.email
+    )
+    summary = (
+        "uebersprungen"
+        if result.skipped_reason
+        else f"{len(result.created)}-{result.already_known}-{result.conflicts}-{result.confirmed_not_found}"
+    )
+    return RedirectResponse(
+        url=f"/dashboard/matters/{matter.id}/document/{document.id}?reanalysis={summary}",
+        status_code=303,
+    )
 
 
 @router.post("/{matter_id}/document/{document_id}/restore")

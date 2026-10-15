@@ -76,10 +76,21 @@
        class="tab-nav__item{% if is_tab_fristen %} tab-nav__item--active{% endif %}">Fristen</a>
     <a href="/dashboard/tasks?{{ qs_tab_erledigt }}"
        class="tab-nav__item{% if is_tab_erledigt %} tab-nav__item--active{% endif %}">Erledigt</a>
+    {# Pruefliste (ARCHITECTURE.md §73): alle ungeprueften Fristvorschlaege (auch versehentlich als erledigt markierte), optional je
+       Akte ueber den Aktenfilter. Jeder Vorschlag wird einzeln geoeffnet und entschieden - keine Sammelbestaetigung. #}
+    <a href="/dashboard/tasks?{{ qs_tab_review }}"
+       class="tab-nav__item{% if is_tab_review %} tab-nav__item--active{% endif %}">Zu prüfen ({{ unreviewed_count }})</a>
   </div>
+  {% if is_tab_review %}
+    <p class="form-hint" style="margin: -8px 32px 12px;">
+      Ungeprüfte Fristvorschläge – automatisch erkannt, nicht rechtsverbindlich. Erst die ausdrückliche Entscheidung
+      einer Anwältin oder eines Anwalts macht daraus eine bestätigte Frist. Daten werden nicht berechnet.
+    </p>
+  {% endif %}
 
   <form method="get" action="/dashboard/tasks" class="matters-filter-bar">
     <input type="hidden" name="status" value="{{ status }}" />
+    {% if is_tab_review %}<input type="hidden" name="review" value="1" />{% endif %}
     <div class="clients-search-bar matters-filter-bar__search">
       <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
       <input type="text" name="q" value="{{ search }}" placeholder="Aufgaben und Fristen durchsuchen …" />
@@ -206,7 +217,10 @@
             </thead>
             <tbody>
               {% for item in items %}
-                {% set is_overdue = item.due_date and item.due_date < today and item.status == "open" %}
+                {% set info = review_infos.get(item.id) %}
+                {# ARCHITECTURE.md §73: bei einem ungeprueften Vorschlag kein "überfällig" - ob ueberhaupt eine Frist ablaeuft, ist
+                   offen; stattdessen ein Pruefhinweis (info.hint), der kein Fristversaeumnis behauptet. #}
+                {% set is_overdue = item.due_date and item.due_date < today and item.status == "open" and not (info and info.hint) %}
                 <tr class="{% if selected == item.id and selected_type == item.item_type %}tasks-table-row--selected{% endif %}"
                     onclick="window.location='/dashboard/tasks?{{ base_qs }}&selected={{ item.id }}&selected_type={{ item.item_type }}'">
                   <td onclick="event.stopPropagation();"><input type="checkbox" disabled title="Mehrfachauswahl ist noch nicht verfügbar" /></td>
@@ -228,6 +242,11 @@
                          sichtbar, nicht nur im Detailpanel. #}
                       {{ labels.deadline_status_tag("unreviewed") }}
                     {% endif %}
+                    {% if info %}
+                      <span class="task-cell-ellipsis form-hint" title="{{ info.kind_label }}">{{ info.kind_label }}</span>
+                      {% if info.conflict %}<span class="tag tag--outbound"><span class="tag__dot"></span>Konflikt</span>{% endif %}
+                      {% if info.deferred %}<span class="tag"><span class="tag__dot"></span>zurückgestellt</span>{% endif %}
+                    {% endif %}
                   </td>
                   <td>
                     <div class="task-type-cell">
@@ -245,7 +264,7 @@
                   <td class="mono">
                     {% if item.due_date %}
                       {{ item.due_date.strftime("%d.%m.%Y") }}
-                      <span class="task-due-cell__relative {% if is_overdue %}task-due-cell__overdue{% endif %}">{{ "überfällig" if is_overdue else due_texts[item.id] }}</span>
+                      <span class="task-due-cell__relative {% if is_overdue or (info and info.hint) %}task-due-cell__overdue{% endif %}">{{ "überfällig" if is_overdue else (info.short_hint if info and info.hint else due_texts[item.id]) }}</span>
                     {% else %}
                       –
                     {% endif %}
@@ -262,11 +281,12 @@
                         {{ icons.eye(class_="icon") }} Details öffnen
                       </a>
                       {% if item.item_type == "deadline" and item.deadline.review_status == "unreviewed" %}
-                        {# Unveraendert bestehende Pruef-Route
-                           (tasks_router.py::review_deadline) - nur neu in
-                           diesem Menue verankert statt inline in der Zeile. #}
+                        {# Pruef-Route tasks_router.py::review_deadline - je Vorschlag einzeln. Bestaetigen/Verwerfen
+                           nur mit PERM_DEADLINE_CONFIRM (serverseitig erzwungen, hier nur ausgeblendet). #}
+                        {% if can_confirm_deadlines %}
                         <form method="post" action="/dashboard/tasks/{{ item.id }}/review">
                           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          {% if is_tab_review %}<input type="hidden" name="return_to" value="review" /><input type="hidden" name="review_matter_id" value="{{ matter_id }}" />{% endif %}
                           <input type="hidden" name="status" value="confirmed" />
                           <button type="submit" class="row-menu__item row-menu__item--button">
                             {{ icons.check(class_="icon") }} Bestätigen
@@ -274,9 +294,18 @@
                         </form>
                         <form method="post" action="/dashboard/tasks/{{ item.id }}/review">
                           <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          {% if is_tab_review %}<input type="hidden" name="return_to" value="review" /><input type="hidden" name="review_matter_id" value="{{ matter_id }}" />{% endif %}
                           <input type="hidden" name="status" value="rejected" />
                           <button type="submit" class="row-menu__item row-menu__item--button">
                             {{ icons.trash(class_="icon") }} Verwerfen
+                          </button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="/dashboard/tasks/{{ item.id }}/defer">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          {% if is_tab_review %}<input type="hidden" name="return_to" value="review" /><input type="hidden" name="review_matter_id" value="{{ matter_id }}" />{% endif %}
+                          <button type="submit" class="row-menu__item row-menu__item--button">
+                            {{ icons.calendar_day(class_="icon") }} Zurückstellen
                           </button>
                         </form>
                       {% endif %}
@@ -309,7 +338,9 @@
                 </tr>
               {% else %}
                 <tr><td colspan="9" class="empty-state">
-                  {% if search or item_type or priority or matter_id or status != "open" %}
+                  {% if is_tab_review %}
+                    Keine ungeprüften Fristvorschläge{% if matter_id %} in dieser Akte{% endif %}.
+                  {% elif search or item_type or priority or matter_id or status != "open" %}
                     Keine Einträge gefunden, die zu den aktuellen Filtern passen.
                   {% else %}
                     Keine offenen Aufgaben oder Fristen.
@@ -350,6 +381,7 @@
               <input type="hidden" name="matter_id" value="{{ matter_id }}" />
               <input type="hidden" name="status" value="{{ status }}" />
               <input type="hidden" name="sort" value="{{ sort }}" />
+              {% if is_tab_review %}<input type="hidden" name="review" value="1" />{% endif %}
               <select name="page_size" class="matters-pagination__size-select" onchange="this.form.submit()" aria-label="Einträge pro Seite">
                 {% for size in [10, 20, 50] %}
                   <option value="{{ size }}" {% if page_size == size %}selected{% endif %}>{{ size }} pro Seite</option>
@@ -433,7 +465,34 @@
 
               {% if item.item_type == "deadline" %}
                 <span class="task-detail-panel__field-label">Prüfstatus</span>
-                <span class="task-detail-panel__field-value">{{ labels.deadline_status_tag(item.deadline.review_status) }}</span>
+                <span class="task-detail-panel__field-value">
+                  {{ labels.deadline_status_tag(item.deadline.review_status) }}
+                  {% if item.review.deferred %}<span class="tag"><span class="tag__dot"></span>zurückgestellt</span>{% endif %}
+                </span>
+
+                {# ARCHITECTURE.md §73: was genau gefunden wurde - Art, Originalangabe, Fundstelle, Sicherheit. Keine Berechnung. #}
+                <span class="task-detail-panel__field-label">Art</span>
+                <span class="task-detail-panel__field-value">{{ item.review.kind_label }}</span>
+
+                {% if item.review.raw_date %}
+                  <span class="task-detail-panel__field-label">Angabe im Text</span>
+                  <span class="task-detail-panel__field-value">{{ item.review.raw_date }}</span>
+                {% endif %}
+
+                {% if item.review.confidence is not none %}
+                  <span class="task-detail-panel__field-label">Sicherheit</span>
+                  <span class="task-detail-panel__field-value">{{ (item.review.confidence * 100) | round | int }} % (regelbasierte Schätzung, ungeprüft)</span>
+                {% endif %}
+
+                {% if item.review.hint %}
+                  <span class="task-detail-panel__field-label">Hinweis</span>
+                  <span class="task-detail-panel__field-value task-due-cell__overdue">{{ item.review.hint }}</span>
+                {% endif %}
+
+                {% if item.review.deferred_note %}
+                  <span class="task-detail-panel__field-label">Notiz (zurückgestellt)</span>
+                  <span class="task-detail-panel__field-value">{{ item.review.deferred_note }}</span>
+                {% endif %}
               {% endif %}
 
               <span class="task-detail-panel__field-label">Mandant</span>
@@ -468,7 +527,40 @@
                 </button>
               {% endif %}
             </div>
+            {% if item.item_type == "deadline" and item.review.context %}
+              <div class="task-detail-panel__section-title">Fundstelle</div>
+              <p class="task-detail-panel__description">{{ item.review.context }}</p>
+            {% endif %}
+            {% if item.item_type == "deadline" and item.review.conflict %}
+              <div class="banner banner--error">Konflikt bei erneuter Analyse – weicht von einer bestätigten Frist ab. Keine automatische Entscheidung; bitte prüfen.</div>
+            {% endif %}
             <p class="task-detail-panel__description">{{ item.description or "Keine Beschreibung hinterlegt." }}</p>
+
+            {% if item.item_type == "deadline" and item.deadline.review_status == "unreviewed" %}
+              {# Einzelentscheidung zu GENAU diesem Vorschlag (ARCHITECTURE.md §73). Notiz optional, landet im Audit. #}
+              <div class="task-detail-panel__section-title">Prüfung</div>
+              <form method="post" class="task-review-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                          {% if is_tab_review %}<input type="hidden" name="return_to" value="review" /><input type="hidden" name="review_matter_id" value="{{ matter_id }}" />{% endif %}
+                <textarea name="note" rows="2" maxlength="500" placeholder="Notiz zur Entscheidung (optional)" style="width: 100%;"></textarea>
+                <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                  {% if can_confirm_deadlines %}
+                    <button type="submit" class="btn btn--primary" formaction="/dashboard/tasks/{{ item.id }}/review" name="status" value="confirmed">
+                      {{ icons.check(class_="icon") }} Als Frist bestätigen
+                    </button>
+                    <button type="submit" class="btn" formaction="/dashboard/tasks/{{ item.id }}/review" name="status" value="rejected">
+                      {{ icons.trash(class_="icon") }} Vorschlag verwerfen
+                    </button>
+                  {% endif %}
+                  <button type="submit" class="btn" formaction="/dashboard/tasks/{{ item.id }}/defer">
+                    {{ icons.calendar_day(class_="icon") }} Zurückstellen
+                  </button>
+                </div>
+                {% if not can_confirm_deadlines %}
+                  <p class="form-hint">Bestätigen oder Verwerfen ist einer Anwältin oder einem Anwalt vorbehalten.</p>
+                {% endif %}
+              </form>
+            {% endif %}
           </div>
 
           <div class="tab-panel" id="tab-task-verlauf" hidden>

@@ -66,6 +66,11 @@ PERM_CLIENT_MANAGE = "client:manage"
 # exklusive Berechtigung als PERM_CLIENT_MANAGE: irreversibel, anders als
 # die Archivierung.
 PERM_CLIENT_DELETE = "client:delete"
+# Fristen-Pruefung (ARCHITECTURE.md §73, Human-in-the-Loop): erst die ausdrueckliche Entscheidung eines Anwalts macht aus einem
+# KI-Vorschlag eine bestaetigte Frist. Bestaetigen, Verwerfen, Loeschen sowie das Aendern einer bereits bestaetigten
+# Frist - NICHT fuer Mitarbeiter (die koennen Vorschlaege korrigieren, zurueckstellen und manuell erfassen; ihre
+# Erfassungen bleiben ungeprueft bis zur anwaltlichen Bestaetigung).
+PERM_DEADLINE_CONFIRM = "deadline:confirm"
 
 _ALL_PERMISSIONS = frozenset(
     {
@@ -79,6 +84,7 @@ _ALL_PERMISSIONS = frozenset(
         PERM_USER_MANAGE,
         PERM_CLIENT_MANAGE,
         PERM_CLIENT_DELETE,
+        PERM_DEADLINE_CONFIRM,
     }
 )
 
@@ -94,6 +100,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_DRAFT_REJECT,
             PERM_OUTBOX_MARK_SENT,
             PERM_CLIENT_MANAGE,
+            PERM_DEADLINE_CONFIRM,
         }
     ),
     "mitarbeiter": frozenset(

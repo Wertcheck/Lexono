@@ -34,6 +34,7 @@ from datetime import date
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
+from app.deadlines.review import deferred_notes, review_order
 from app.models import AuditEvent, Deadline, Matter, Task
 
 # Vorschlagswerte fuer die Prioritaet (Task.priority/Deadline.priority) -
@@ -60,6 +61,11 @@ _ALLOWED_STATUS_FILTERS = ("open", "done", "all")
 class TaskValidationError(Exception):
     """Pflichtfeld fehlt oder ungueltiger Wert - von create_task/
     update_task/create geworfen."""
+
+
+class DeadlinePermissionError(Exception):
+    """Aenderung oder Loeschung einer Frist, die eine anwaltliche Entscheidung voraussetzt (ARCHITECTURE.md §73,
+    PERM_DEADLINE_CONFIRM), durch eine Person ohne diese Berechtigung."""
 
 
 @dataclass(frozen=True)
@@ -101,7 +107,13 @@ def _build_task_query(
 
 
 def _build_deadline_query(
-    db: Session, *, search: str | None, priority: str | None, matter_id: str | None, status: str
+    db: Session,
+    *,
+    search: str | None,
+    priority: str | None,
+    matter_id: str | None,
+    status: str,
+    review_only: bool = False,
 ):
     # Eine vom Anwalt ausdruecklich verworfene Frist (`review_status ==
     # "rejected"`) bleibt wie bisher (siehe tasks_router.py::_open_deadlines,
@@ -112,6 +124,11 @@ def _build_deadline_query(
         .options(joinedload(Deadline.matter).joinedload(Matter.client))
         .filter(Deadline.review_status != "rejected")
     )
+    if review_only:
+        # Pruefliste (ARCHITECTURE.md §73): jeder ungepruefte Vorschlag, UNABHAENGIG vom Erledigt-Status - ein versehentlich als
+        # erledigt markierter Vorschlag darf nicht aus der Pruefung verschwinden.
+        query = query.filter(Deadline.review_status == "unreviewed")
+        status = "all"
     if search:
         query = query.filter(
             or_(
@@ -150,8 +167,11 @@ def _fetch_items(
     priority: str | None,
     matter_id: str | None,
     status: str,
+    review_only: bool = False,
 ) -> list[TaskListItem]:
     items: list[TaskListItem] = []
+    if review_only:
+        item_type = "deadline"
     if item_type in (None, "task"):
         for task in _build_task_query(
             db, search=search, priority=priority, matter_id=matter_id, status=status
@@ -170,7 +190,7 @@ def _fetch_items(
             )
     if item_type in (None, "deadline"):
         for deadline in _build_deadline_query(
-            db, search=search, priority=priority, matter_id=matter_id, status=status
+            db, search=search, priority=priority, matter_id=matter_id, status=status, review_only=review_only
         ).all():
             items.append(
                 TaskListItem(
@@ -198,6 +218,7 @@ def list_task_items(
     sort: str = "due_asc",
     page: int = 1,
     page_size: int = 10,
+    review_only: bool = False,
 ) -> list[TaskListItem]:
     if status not in _ALLOWED_STATUS_FILTERS:
         status = "open"
@@ -209,8 +230,22 @@ def list_task_items(
         page = 1
 
     items = _fetch_items(
-        db, search=search, item_type=item_type, priority=priority, matter_id=matter_id, status=status
+        db,
+        search=search,
+        item_type=item_type,
+        priority=priority,
+        matter_id=matter_id,
+        status=status,
+        review_only=review_only,
     )
+    if review_only:
+        # Pruefreihenfolge statt Datumssortierung: Zurueckgestellte ans Ende (app/deadlines/review.py).
+        by_id = {item.id: item for item in items}
+        deadlines = [item.deadline for item in items if item.deadline is not None]
+        deferred = set(deferred_notes(db, list(by_id)))
+        items = [by_id[d.id] for d in review_order(deadlines, deferred)]
+        start = (page - 1) * page_size
+        return items[start : start + page_size]
     # Faellig-ohne-Datum ans Ende, unabhaengig von der Sortierrichtung - ein
     # fehlendes Datum ist weder "am frühesten" noch "am spätesten faellig",
     # es fehlt schlicht die Information (gleiches Prinzip wie bereits in
@@ -243,12 +278,19 @@ def count_task_items(
     priority: str | None = None,
     matter_id: str | None = None,
     status: str = "open",
+    review_only: bool = False,
 ) -> int:
     if status not in _ALLOWED_STATUS_FILTERS:
         status = "open"
     return len(
         _fetch_items(
-            db, search=search, item_type=item_type, priority=priority, matter_id=matter_id, status=status
+            db,
+            search=search,
+            item_type=item_type,
+            priority=priority,
+            matter_id=matter_id,
+            status=status,
+            review_only=review_only,
         )
     )
 
@@ -402,21 +444,40 @@ def update_deadline(
     due_date: date | None,
     priority: str | None,
     actor: str,
+    may_change_confirmed: bool = True,
 ) -> Deadline:
+    """Korrektur einer Frist. Der Pruefstatus bleibt unveraendert - eine Korrektur ist keine Bestaetigung. Das Audit
+    haelt alte und neue Werte fest (ARCHITECTURE.md §73): bei einem KI-Vorschlag bleibt so der urspruengliche Fund nachvollziehbar."""
     label = source_text.strip()
     if not label:
         raise TaskValidationError("Bezeichnung ist ein Pflichtfeld.")
+    if deadline.review_status == "confirmed" and not may_change_confirmed:
+        raise DeadlinePermissionError("Eine bestätigte Frist kann nur ein Anwalt ändern.")
 
+    new_priority = _normalize_priority(priority)
+    changes = [
+        f"{name}: {old!r} -> {new!r}"
+        for name, old, new in (
+            ("Bezeichnung", deadline.source_text, label),
+            ("Datum", deadline.due_date.isoformat() if deadline.due_date else None,
+             due_date.isoformat() if due_date else None),
+            ("Prioritaet", deadline.priority, new_priority),
+        )
+        if old != new
+    ]
     deadline.source_text = label
     deadline.due_date = due_date
-    deadline.priority = _normalize_priority(priority)
+    deadline.priority = new_priority
     _log_audit(
         db,
         entity_type="Deadline",
         entity_id=deadline.id,
         event_type="deadline_updated",
         actor=actor,
-        details=f"Frist bearbeitet: {label}",
+        details=(
+            f"Frist bearbeitet ({'; '.join(changes) or 'keine Aenderung'}); "
+            f"Pruefstatus unveraendert: {deadline.review_status}"
+        ),
     )
     db.commit()
     return deadline
@@ -439,16 +500,17 @@ def set_deadline_status(db: Session, deadline: Deadline, *, status: str, actor: 
     return deadline
 
 
-def duplicate_deadline(db: Session, deadline: Deadline, *, actor: str) -> Deadline:
+def duplicate_deadline(db: Session, deadline: Deadline, *, actor: str, may_confirm: bool = True) -> Deadline:
+    # ARCHITECTURE.md §73: Die Kopie ist nur bestaetigt, wenn die Vorlage bestaetigt war UND eine berechtigte Person kopiert. Vorher
+    # wurde jede Kopie "confirmed" - auch die eines ungeprueften KI-Vorschlags (Umgehung der Pruefung).
+    review_status = "confirmed" if deadline.review_status == "confirmed" and may_confirm else "unreviewed"
     duplicate = Deadline(
         matter_id=deadline.matter_id,
         source_text=f"{_deadline_title(deadline)} (Kopie)",
         due_date=deadline.due_date,
         priority=deadline.priority,
-        # Dieselbe Begruendung wie beim manuellen Anlegen
-        # (deadline_actions_router.py): eine vom Anwalt selbst erzeugte
-        # Kopie ist bereits die menschliche Pruefung, nicht "unreviewed".
-        review_status="confirmed",
+        reasoning=deadline.reasoning,
+        review_status=review_status,
         status="open",
     )
     db.add(duplicate)
@@ -459,20 +521,28 @@ def duplicate_deadline(db: Session, deadline: Deadline, *, actor: str) -> Deadli
         entity_id=duplicate.id,
         event_type="deadline_added_manually",
         actor=actor,
-        details=f"Dupliziert von Frist {deadline.id}",
+        details=f"Dupliziert von Frist {deadline.id} (Pruefstatus der Vorlage: {deadline.review_status}, "
+        f"Kopie: {review_status})",
     )
     db.commit()
     return duplicate
 
 
-def delete_deadline(db: Session, deadline: Deadline, *, actor: str) -> None:
+def delete_deadline(db: Session, deadline: Deadline, *, actor: str, may_delete: bool = True) -> None:
+    # ARCHITECTURE.md §73: Loeschen ist endgueltiger als Verwerfen - nur mit anwaltlicher Berechtigung (sonst waere es eine Umgehung
+    # der Pruefung fuer Vorschlaege und bestaetigte Fristen).
+    if not may_delete:
+        raise DeadlinePermissionError("Fristen kann nur ein Anwalt löschen.")
     _log_audit(
         db,
         entity_type="Deadline",
         entity_id=deadline.id,
         event_type="deadline_deleted",
         actor=actor,
-        details=f"Frist geloescht: {_deadline_title(deadline)}",
+        details=(
+            f"Frist geloescht: {_deadline_title(deadline)} (Datum: {deadline.due_date}, "
+            f"Pruefstatus: {deadline.review_status})"
+        ),
     )
     db.delete(deadline)
     db.commit()

@@ -35,10 +35,35 @@ ebenfalls idempotent (ueber `Deadline.message_id`).
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 from sqlalchemy.orm import Session
 
-from app.deadlines.extractor import DeadlineExtractor
+from app.deadlines.extractor import DeadlineExtractor, ExtractedDeadline
+from app.deadlines.review import CONFLICT_MARKER, deadline_kind, kind_from_reasoning, split_source_text
 from app.models import AuditEvent, Deadline, Document, Message
+
+
+@dataclass
+class ReanalysisResult:
+    """Ergebnis einer ausdruecklich ausgeloesten erneuten Analyse (ARCHITECTURE.md §73). Bestehende Fristen werden nie veraendert."""
+
+    skipped_reason: str | None = None
+    created: list[Deadline] = field(default_factory=list)
+    already_known: int = 0
+    conflicts: int = 0
+    confirmed_not_found: int = 0
+
+
+def _candidate_kind(candidate: ExtractedDeadline) -> str:
+    return kind_from_reasoning(candidate.reasoning, from_analysis=True)
+
+
+def _key(kind: str, due_date, raw_date: str | None) -> tuple:
+    # Mit Datum: Art + Datum; ohne Datum (Fristdauer): Art + Originalangabe.
+    if due_date is not None:
+        return (kind, due_date)
+    return (kind, " ".join((raw_date or "").split()).lower())
 
 
 class DeadlineAnalysisService:
@@ -218,3 +243,83 @@ class DeadlineAnalysisService:
         for deadline in created_deadlines:
             db.refresh(deadline)
         return created_deadlines
+
+    def reanalyze_document(self, document: Document, db: Session, *, actor: str) -> ReanalysisResult:
+        """Erneute Analyse auf ausdrueckliche Anforderung (ARCHITECTURE.md §73) - z. B. nach neuer Texterkennung.
+
+        Bestehende Fristen werden NIE geaendert, geloescht oder zurueckgesetzt - auch keine verworfenen oder
+        korrigierten. Neue Funde (andere Art/Datum als jede bestehende Frist des Dokuments) entstehen als ungepruefte
+        Vorschlaege. Weicht ein neuer Fund von einer bestaetigten Frist gleicher Art ab, traegt er einen sichtbaren
+        Konflikthinweis; entschieden wird nichts. Bestaetigte Fristen, die nicht mehr gefunden werden, bleiben
+        unveraendert und werden nur gezaehlt (Audit)."""
+        result = ReanalysisResult()
+        if not document.extracted_text or not document.extracted_text.strip():
+            result.skipped_reason = "Kein extrahierter Text vorhanden"
+        elif not document.matter_id:
+            result.skipped_reason = "Dokument noch keiner Akte zugeordnet"
+        if result.skipped_reason:
+            db.add(AuditEvent(entity_type="Document", entity_id=document.id, event_type="deadline_reanalysis_skipped",
+                              actor=actor, details=result.skipped_reason))
+            db.commit()
+            return result
+
+        existing = db.query(Deadline).filter(Deadline.document_id == document.id).all()
+        known = {_key(deadline_kind(d), d.due_date, split_source_text(d.source_text)[0]) for d in existing}
+        confirmed = [d for d in existing if d.review_status == "confirmed"]
+
+        seen: set[tuple] = set()
+        for candidate in self.extractor.extract(document.extracted_text):
+            kind = _candidate_kind(candidate)
+            key = _key(kind, candidate.due_date, candidate.raw_date_text)
+            if key in seen:
+                continue
+            seen.add(key)
+            if key in known:
+                result.already_known += 1
+                continue
+            reasoning = candidate.reasoning
+            differing = sorted(
+                d.due_date.strftime("%d.%m.%Y") for d in confirmed
+                if candidate.due_date is not None and d.due_date is not None
+                and deadline_kind(d) == kind and d.due_date != candidate.due_date
+            )
+            if differing:
+                result.conflicts += 1
+                reasoning = (
+                    f"{CONFLICT_MARKER} In diesem Dokument ist bereits eine Frist gleicher Art bestätigt "
+                    f"({', '.join(differing)}); neuer Fund: {candidate.raw_date_text}. Ob es eine Änderung oder eine "
+                    f"weitere Frist ist, muss geprüft werden - keine automatische Entscheidung. {reasoning}"
+                )
+            # review_status bewusst nicht gesetzt - Modell-Default "unreviewed".
+            deadline = Deadline(
+                matter_id=document.matter_id,
+                document_id=document.id,
+                source_text=f"{candidate.raw_date_text} :: {candidate.source_text}",
+                due_date=candidate.due_date,
+                confidence=candidate.confidence,
+                reasoning=reasoning,
+            )
+            db.add(deadline)
+            result.created.append(deadline)
+
+        result.confirmed_not_found = sum(
+            1 for d in confirmed if _key(deadline_kind(d), d.due_date, split_source_text(d.source_text)[0]) not in seen
+        )
+        db.add(
+            AuditEvent(
+                entity_type="Document",
+                entity_id=document.id,
+                event_type="deadline_reanalysis_completed",
+                actor=actor,
+                details=(
+                    f"Erneute Fristenanalyse: {len(result.created)} neue(r) Vorschlag/Vorschlaege (ungeprueft), "
+                    f"{result.already_known} bereits bekannt, {result.conflicts} Konflikt(e) mit bestaetigten "
+                    f"Fristen, {result.confirmed_not_found} bestaetigte Frist(en) nicht mehr gefunden "
+                    "(unveraendert). Bestehende Fristen wurden nicht veraendert."
+                ),
+            )
+        )
+        db.commit()
+        for deadline in result.created:
+            db.refresh(deadline)
+        return result

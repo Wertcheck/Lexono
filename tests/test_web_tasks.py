@@ -438,7 +438,26 @@ def test_overdue_deadline_is_marked_as_overdue(
 ) -> None:
     """Eine versaeumte Frist ist in einer Kanzlei der folgenreichste Fehler
     ueberhaupt - "ueberfaellig" muss als Text erscheinen, nicht nur als
-    Farbe (Farbe allein waere fuer farbfehlsichtige Nutzer kein Signal)."""
+    Farbe (Farbe allein waere fuer farbfehlsichtige Nutzer kein Signal).
+
+    ARCHITECTURE.md §73: gilt fuer die BESTAETIGTE Frist. Ein ungepruefter Vorschlag mit
+    vergangenem Datum bekommt stattdessen einen Pruefhinweis, der kein
+    Fristversaeumnis behauptet (test_unreviewed_past_suggestion_...)."""
+    from datetime import date, timedelta
+
+    _matter_with_deadline(
+        db_session, due_date=date.today() - timedelta(days=3), review_status="confirmed"
+    )
+    login_as_admin(db_session, client)
+
+    response = client.get("/dashboard/tasks")
+
+    assert "überfällig" in response.text
+
+
+def test_unreviewed_past_suggestion_gets_review_hint_not_overdue_claim(
+    client: TestClient, db_session: Session
+) -> None:
     from datetime import date, timedelta
 
     _matter_with_deadline(db_session, due_date=date.today() - timedelta(days=3))
@@ -446,7 +465,8 @@ def test_overdue_deadline_is_marked_as_overdue(
 
     response = client.get("/dashboard/tasks")
 
-    assert "überfällig" in response.text
+    assert "verstrichen – prüfen" in response.text
+    assert "überfällig" not in response.text
 
 
 def test_future_deadline_is_not_marked_overdue(
