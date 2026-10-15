@@ -5154,3 +5154,52 @@ Zurückstellen mit Notiz, Weiterleitung zum nächsten Vorschlag, Bestätigen und
 Mitarbeiter-Sperre (403 bei direktem POST), erneute Analyse aus der Dokumentansicht, Audit mit Urheber.
 **NICHT VERIFIZIERT:** installierte Desktop-App (WebView2) – der installierte Build enthält diesen Branch nicht, und
 die installierte App arbeitet auf der echten Datenbank.
+
+## 74. Windows-Update: Prüfung und Härtung (16.10.2026, Stand `e69af6e` + Härtung)
+
+**Tatsächliche Pfade:** Programm je Benutzer unter `%LOCALAPPDATA%\Lexono` (Inno Setup, feste AppId
+`{9F4B9E7A-…}`, `PrivilegesRequired=lowest`, Update am vorherigen Ort), Daten getrennt unter `%PROGRAMDATA%\Lexono`
+(bzw. `LEXONO_DATA_DIR`): `.env`, `data\kanzlei_ai.db`, Dokumente. Start über `Start.vbs` (versteckt, Ausgabe nach
+`app.log`) → `Lexono.exe serve` → `cmd_migrate` (Alembic `upgrade head`) → Server + WebView2-Fenster. Der Installer
+fasst das Datenverzeichnis nicht an; der Deinstaller löscht es bewusst nicht.
+
+**Reproduzierte Fehler und Härtung:**
+
+| # | Befund | Härtung |
+|---|---|---|
+| 1 | **Release-Blocker:** Migrationen liefen auf SQLite nicht atomar (pysqlite beginnt keine Transaktion vor DDL). Abbruch von `schritt3_030` nach der ersten Spalte → Spalte bleibt, Version bleibt `schritt3_029` → jeder weitere Start scheitert dauerhaft an „duplicate column name“. | `migrations/env.py`: dokumentiertes SQLAlchemy-Rezept (Treiber-Automatik aus, eigenes `BEGIN`) – alle ausstehenden Migrationen in **einer** echten SQLite-Transaktion, Fehler/Abbruch rollt vollständig zurück. |
+| 2 | Keine automatische Sicherung vor Migrationen (nur manuell: Dashboard/Skript). | `app/backup/pre_migration.py`: vor ausstehenden Migrationen konsistente DB-Kopie (SQLite-Backup-API) als ZIP mit `database.db` unter `data\backups\` – direkt mit `Lexono.exe restore --archive` einspielbar. Fail-closed: ohne Sicherung keine Migration. |
+| 3 | Fehlgeschlagene Migration endete mit Python-Traceback in `app.log`; bei verstecktem Start sah der Nutzer nichts. | `run.py::cmd_migrate`: verständliche Meldung mit Ursache, Sicherungspfad und Wiederherstellungsbefehl, Exit 1; im Fenstermodus zusätzlich ein Fehlerdialog. Lexono startet dann nicht. |
+
+**Getestet mit echtem Installer-Pfad (isoliert):** Die echte Installation teilt sich die AppId – ein Lauf des
+Original-Installers hätte ihre Registrierung und Verknüpfungen überschrieben (keine Windows-Sandbox verfügbar). Deshalb
+Testvariante aus **demselben** `installer.iss` und denselben Programmdateien, nur mit eigener AppId, eigenem Namen und
+Zielordner, ohne Desktop-Verknüpfung und ohne WebView2-Bootstrapper-Lauf (Laufzeit vorhanden). Alte Version =
+`12200fb` (Kopf `schritt3_029`), neu = `e69af6e` + Härtung. Bestandsdaten mit dem alten Programmcode erzeugt.
+Echte Installation vorher/nachher per Schnappschuss verglichen: unverändert.
+
+| Schritt | Ergebnis |
+|---|---|
+| Installation alt, Start, Bestandsdaten sichtbar | PASS |
+| Update-Installer über alt (Programm ersetzt, DB durch Installer unverändert) | PASS |
+| Fehlgeschlagene Migration (Schreibsperre auf DB) in der installierten neuen Version | PASS: Exit 1, Fehlerdialog, Meldung ohne Traceback, DB unverändert (Hash, `schritt3_029`), Sicherung angelegt, kein Server |
+| Normaler Start: Sicherung + Migration 029 → 030 | PASS: alle Zeilen aller Tabellen unverändert, neue Spalten leer (keine Nachberechnung) |
+| Erneuter Start | PASS: keine Migration, keine weitere Sicherung |
+| WebView2-Klicktests mit Bestandsdaten (Prüfliste, Mitarbeiter-Sperre/403, Korrektur, Zurückstellen, Bestätigen, erneute Analyse ohne Duplikate, Verlauf) | PASS 10/10 |
+| `Lexono.exe restore` aus der Sicherung vor dem Update | PASS: Inhalt identisch zum Stand vor dem Update; ersetzte DB als `.pre-restore-…bak` behalten |
+| Start nach Wiederherstellung | PASS: migriert erneut |
+| Deinstallation | PASS: Programm, Registrierung, Startmenü entfernt; Datenverzeichnis inkl. DB und Sicherungen unverändert |
+| Rückkehr zur alten Version: deinstallieren, alt installieren, Sicherung einspielen | PASS: DB = Stand vor dem Update, alte Version läuft |
+
+**Grenzen / nicht verifiziert:**
+- Ohne Wiederherstellung startet die alte Version auf einer migrierten DB **nicht** („Can't locate revision“ – alte
+  Fehlerausgabe mit Traceback). Ein Downgrade per Installer über die neue Version hinweg lässt außerdem die neue
+  Migrationsdatei im Programmordner liegen (Inno Setup löscht Dateien, die im neuen Paket fehlen, nicht); dadurch
+  „läuft“ die alte Version zufällig weiter. Unterstützter Rückweg: siehe PILOT_SUPPORT.md §3.1 Punkt 6.
+- Änderungen nach dem Update gehen bei einer Rückkehr verloren; ein echtes Schema-Downgrade gibt es nicht.
+- Die Sicherung vor dem Update enthält nur die Datenbank (Migrationen ändern keine Dokumente) und liegt im selben
+  geschützten Datenverzeichnis; keine automatische Bereinigung.
+- Ein Stromausfall während der Migration ist nicht real getestet; die Atomarität folgt aus der SQLite-Transaktion
+  (Journal) und ist per simuliertem Abbruch belegt.
+- Nicht getestet: der Original-Installer mit echter AppId (nur Testvariante, s. o.), der WebView2-Bootstrapper-Schritt,
+  Installationen unter `Program Files` (Altpfad), PostgreSQL.

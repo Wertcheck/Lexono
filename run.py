@@ -148,12 +148,65 @@ def _self_command(*extra_args: str) -> list[str]:
 
 
 def cmd_migrate() -> int:
+    """Wendet ausstehende Migrationen an (Update-Haertung, ARCHITECTURE.md §74).
+
+    1. Stehen Migrationen aus, wird VORHER die Datenbank gesichert (app/backup/pre_migration.py). Schlaegt das fehl,
+       laeuft keine Migration (fail-closed).
+    2. Die Migrationen selbst laufen auf SQLite in einer echten Transaktion (migrations/env.py) - ein Fehler rollt
+       alle Aenderungen dieses Laufs zurueck.
+    3. Jeder Fehler endet mit einer verstaendlichen Meldung auf stderr (bei verstecktem Start: app.log) und Exit-Code 1
+       statt eines Python-Tracebacks; die Anwendung startet dann nicht."""
     from alembic import command
     from alembic.config import Config
 
+    from app.backup.pre_migration import create_pre_migration_backup, pending_revisions
+    from app.config import get_settings
+
     cfg = Config(str(_bundle_base_dir() / "alembic.ini"))
-    command.upgrade(cfg, "head")
+    database_url = get_settings().database_url
+    backup_path = None
+    try:
+        pending = pending_revisions(cfg, database_url)
+        if pending is not None:
+            backup_path = create_pre_migration_backup(database_url, *pending)
+            print(f"Datenbank vor dem Update gesichert ({pending[0]} -> {pending[1]}): {backup_path}")
+    except Exception as exc:  # noqa: BLE001 - fail-closed, siehe Docstring
+        print(
+            "FEHLER: Die Datenbank konnte vor dem Update nicht gesichert werden - das Update der Datenbank wurde "
+            f"deshalb NICHT ausgefuehrt, die Daten sind unveraendert.\nUrsache: {exc}\n"
+            "Bitte freien Speicherplatz und Schreibrechte im Datenverzeichnis pruefen und Lexono erneut starten.",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        command.upgrade(cfg, "head")
+    except Exception as exc:  # noqa: BLE001 - verstaendliche Meldung statt Traceback, siehe Docstring
+        restore_hint = (
+            f"\nSicherung vor dem Update: {backup_path}\nWiederherstellung (nur bei Bedarf, Lexono vorher beenden): "
+            f'Lexono.exe restore --archive "{backup_path}"'
+            if backup_path
+            else ""
+        )
+        print(
+            "FEHLER: Das Update der Datenbank ist fehlgeschlagen. Die Aenderungen dieses Update-Laufs wurden "
+            "zurueckgerollt; Lexono startet nicht, bis die Ursache behoben ist.\n"
+            f"Ursache: {type(exc).__name__}: {exc}{restore_hint}",
+            file=sys.stderr,
+        )
+        return 1
     return 0
+
+
+def _show_startup_error(message: str) -> None:
+    """Sichtbare Fehlermeldung beim Fensterstart (ARCHITECTURE.md §74): Start.vbs startet Lexono unsichtbar, eine
+    reine stderr-/app.log-Meldung bliebe sonst unbemerkt - der Nutzer saehe nur, dass "nichts passiert". Best effort,
+    darf selbst nie scheitern."""
+    try:
+        import ctypes
+
+        ctypes.windll.user32.MessageBoxW(None, message, "Lexono", 0x10)  # type: ignore[attr-defined]  # MB_ICONERROR
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def cmd_create_admin() -> int:
@@ -717,6 +770,12 @@ def cmd_serve(*, open_window: bool = True) -> int:
         # Upgrades sind idempotent (kein Effekt, wenn bereits auf "head").
         migrate_exit_code = cmd_migrate()
         if migrate_exit_code != 0:
+            if open_window:
+                _show_startup_error(
+                    "Lexono konnte die Datenbank beim Start nicht aktualisieren und wurde nicht gestartet. "
+                    "Ihre Daten wurden nicht veraendert.\n\nDetails und Hinweise zur Wiederherstellung stehen in "
+                    "der Datei app.log im Lexono-Datenverzeichnis."
+                )
             return migrate_exit_code
 
         if not open_window:

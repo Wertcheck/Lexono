@@ -68,6 +68,27 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _make_sqlite_ddl_transactional(engine) -> None:
+    """Update-Haertung (15.10.2026, ARCHITECTURE.md §74): der pysqlite-Treiber beginnt eine Transaktion erst vor
+    INSERT/UPDATE/DELETE - DDL (ALTER/CREATE/DROP) lief dadurch AUSSERHALB von `begin_transaction()` und wurde sofort
+    festgeschrieben. Reproduziert: bricht schritt3_030 nach der ersten von zwei Spalten ab, bleibt die Spalte stehen,
+    die Version aber auf schritt3_029 - jeder weitere Start scheitert dann dauerhaft an "duplicate column name".
+
+    Dokumentiertes SQLAlchemy-Rezept ("Serializable isolation / Savepoints / Transactional DDL" fuer pysqlite): die
+    Treiber-Automatik abschalten und BEGIN selbst senden. Damit laufen alle ausstehenden Migrationen in EINER echten
+    SQLite-Transaktion und werden bei einem Fehler (oder Abbruch, ueber das SQLite-Journal) vollstaendig
+    zurueckgerollt."""
+    from sqlalchemy import event
+
+    @event.listens_for(engine, "connect")
+    def _disable_pysqlite_autobegin(dbapi_connection, connection_record):  # noqa: ARG001
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def _emit_begin(connection):
+        connection.exec_driver_sql("BEGIN")
+
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -80,6 +101,9 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    if connectable.dialect.name == "sqlite":
+        _make_sqlite_ddl_transactional(connectable)
 
     with connectable.connect() as connection:
         context.configure(

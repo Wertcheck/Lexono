@@ -39,9 +39,18 @@ Fehlerantworten der Cloud, sondern nur feste Kategorien (z. B. `AuthenticationEr
 2. Mit `Lexono.exe serve --no-window` in einer Konsole starten und die Ausgabe lesen; dazu
    `app.log` und das Ende von `kanzlei_ai.log`.
 3. Fenster bleibt leer / WebView2-Meldung: Edge-WebView2-Runtime fehlt oder ist defekt (siehe README).
-4. Datenbankmigrationen laufen beim Start automatisch; manuell: `Lexono.exe migrate`.
+4. Datenbankmigrationen laufen beim Start automatisch; manuell: `Lexono.exe migrate`. Stehen Migrationen
+   aus, legt Lexono **vorher** eine Datenbanksicherung an: `<Datenverzeichnis>\data\backups\vor-update_<alt>_auf_<neu>_<UTC-Zeit>.zip`
+   (nur die Datenbank, keine Dokumente). Ohne Sicherung keine Migration. Schlägt das Update fehl, erscheint ein
+   Fehlerdialog, Lexono startet nicht, die Datenbank bleibt unverändert; Details und Wiederherstellungsbefehl in `app.log`.
+   Alte Sicherungen werden nicht automatisch gelöscht.
 5. Nichts löschen. Bei defekten Daten: Backup einspielen mit `Lexono.exe restore --archive <Datei>`
    (Lexono vorher beenden).
+6. **Zurück auf die vorherige Version** (getestet, ARCHITECTURE.md §74): Lexono beenden, Lexono deinstallieren
+   (Daten bleiben erhalten), die vorherige Version installieren, dann
+   `Lexono.exe restore --archive "<Datenverzeichnis>\data\backups\vor-update_…zip"`. Alles, was nach dem Update
+   erfasst wurde, geht dabei verloren. Die vorherige Version allein (ohne Wiederherstellung) startet mit einer bereits
+   aktualisierten Datenbank **nicht** („Can't locate revision“).
 
 ### 3.2 Lokale KI / Ollama
 - Sidebar „Lokale KI“ und Logzeile `Lokale KI bereit (Modell '…')` bzw. die Fehlermeldung im Chat:
