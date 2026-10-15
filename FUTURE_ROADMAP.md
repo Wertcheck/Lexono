@@ -142,6 +142,9 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
    - Etwa 5 % der Dokumente (5/104) wären fail-closed ausgeschlossen.
    - Vor einer Entscheidung fehlen eine Messung auf realitätsnäheren, nicht modellgenerierten Texten und eine
      Datenschutz-Folgenabschätzung.
+   - **Machbarkeitsentwurf** (nicht umgesetzt): `PRIVACY_REVIEW_ARCHITECTURE.md` §43. Die Cloud darf nur
+     ergänzen und markieren, nie entfernen, überschreiben oder bestätigen. Er setzt eine Änderung des
+     Grundprinzips „keine Fristenbestimmung in der Cloud“ voraus.
 
 ## Release-Planung
 

@@ -5564,7 +5564,7 @@ dem Anbieter-Dashboard abgeglichen):
 | Volle Suite, in sechs Teilen im Vordergrund nacheinander (nach Entladen des Ollama-Modells) | **4690 bestanden**, fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`, fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
 | Neubau und Installation (`windows\build.ps1`, stille Installation) | PASS |
 | Archivprüfung `bundlecheck_p23.py` | PASS: alle P2.3-Merkmale in Extraktor und Klassifikator vorhanden |
-| Legal-E2E-Benchmark (`scripts.legal_bench.e2e`) | **NICHT VERIFIZIERT**: Claude Code hat den Lauf wegen knappen Systemspeichers gestoppt (das Ollama-Modell war erneut geladen). Er wurde nicht neu gestartet. Die Legal-E2E-Klassifikation und -Fristen über `p21_measure` sind gemessen (42.4). |
+| Legal-E2E-Benchmark (`scripts.legal_bench.e2e`) | Erster Lauf: von Claude Code wegen knappen Systemspeichers gestoppt (Ollama-Modell durch Instanzstart vorgeladen). **Wiederholung: PASS**, siehe 42.10. |
 
 **Installierter Build, echter Upload-Pfad:** Chat-Anhang in der sauberen synthetischen QA-Akte, QA-Datenbank,
 Fang-Server, kein echtes Modell.
@@ -5577,3 +5577,261 @@ Fang-Server, kein echtes Modell.
 | Payload vor der Cloud-Grenze | **PASS**: Bezeichnungen „Mögliche Frist“/„Möglicher Termin“, kein Schlüssel |
 
 **Normale Instanz danach:** Health 200, nur Port 8000, Debug-Port 9333 geschlossen, kein Fang-Server.
+
+### 42.10 Legal-E2E-Wiederholung (15.10.2026, 09:48–09:50, Stand `295f591`, sauberer Arbeitsbaum)
+
+**Ursache des Abbruchs um ≈ 08:55:**
+- Jeder Start der Lexono-Instanz lädt das lokale Ollama-Modell vor (`app/main.py:139-144` → `OllamaProvider.warm_up`,
+  `keep_alive` „30m“, `ollama_provider.py:160,424`).
+- Für die QA-Prüfung des installierten Builds wurde die Instanz zweimal kurz hintereinander gestartet (QA-Instanz,
+  danach die normale Instanz). Dadurch blieb `llama-server` mit 3,4–3,8 GB im Speicher.
+- Freier Speicher lag dabei bei 3,95 von 15,7 GB; dazu kamen die Claude-Code-Prozesse (≈ 1,5 GB).
+- Der Benchmark selbst nutzt **kein** Ollama (`RuleBasedLocalAIProvider`, `e2e.py:158`). Er braucht aber für
+  Einbettungsmodell, OCR und Verarbeitung bis zu ≈ 3,0 GB (gemessen, siehe unten).
+- Claude Code beendete den im Hintergrund laufenden Befehl wegen knappen Systemspeichers. Ein Fehler des Benchmarks
+  lag nicht vor.
+
+**Wiederholung, ressourcenschonend:**
+- Gewartet, bis `llama-server` entladen war; die Instanz während des Laufs **nicht** neu gestartet.
+- Lauf im **Vordergrund**, mit Speicherprotokoll alle 5 s.
+- Zuerst die Splits einzeln (dev 93 s, test 37 s), dann der kanonische Gesamtlauf (122 s).
+- Messwerte: mindestens 5,1 GB frei; größter Python-Prozess 2,96 GB; `llama-server` während des Laufs nicht geladen.
+- Datenschutz-Gates unverändert.
+
+| Kennzahl | dev (4 Fälle) | test (3 Fälle) |
+|---|---|---|
+| Kritische Befunde / Aufgabenfehler / Dokumentfehler | keine / keine / 0 | keine / keine / 0 |
+| Klartext-Lecks, fremde Akte im Payload | 0, 0 | 0, 0 |
+| Benötigte Werte im Payload | 29/29 | 20/20 |
+| Extraktion / OCR-Werte (schlechter Scan) | 121/121 / 12/12 (12/12) | 82/82 / 27/27 (27/27) |
+| Fristen: Referenzdaten / außerhalb der Referenz | 9/9 / 1 (bekanntes Falldatum) | 3/3 / 0 |
+| Schriftsätze, Export mit Bearbeitung, erfundene Fundstellen markiert | 4/4, 4/4, 8/8 | 3/3, 3/3, 6/6 |
+| Erhalt Keep / Chronologie / Normen | 25/25 / 23/23 / 11/11 | 19/19 / 16/16 / 7/7 |
+| Suche Top-1 / Top-5 | 3/4 / 4/4 | 3/3 / 3/3 |
+
+- **Aktenzuordnung:** keine Fremdzuordnung. „Az.“ und „Ihr Zeichen“ werden je 5/5 richtig zugeordnet; allein
+  automatisch 0/5.
+- **Fremder Anhang:** 7/7 blockiert.
+- **Ergebnis: PASS.** Die Werte sind identisch mit §41.10, also keine Regression durch P2.3. Damit ist der in 42.9
+  als NICHT VERIFIZIERT geführte Punkt erledigt.
+
+**Betriebshinweis, nicht geändert:** Die Vorwärmung ist ein bewusstes Produktverhalten (§68 Performance). Für
+speicherintensive QA auf dieser 16-GB-Maschine gilt: erst laufen lassen, wenn das Modell entladen ist, oder die
+Instanz erst nach dem Lauf starten.
+
+## §43 Entwurf: optionale Cloud-Zweitmeinung für Dokumenttyp und Fristen (15.10.2026, NICHT umgesetzt)
+
+**Status:**
+- Reine Machbarkeitsanalyse auf Basis von §42 (Commit `295f591`). Es wurde **kein** Produktivcode, kein
+  Gateway-Zweck und keine Schnittstelle geändert.
+- Eine Umsetzung setzt eine ausdrückliche Änderung des Grundprinzips durch den Owner voraus (43.1).
+- „Belegt“ heißt: im Code oder in Messungen nachgewiesen (mit Fundstelle). „Annahme“ heißt: nicht gemessen.
+
+### 43.1 Ausgangslage (belegt)
+
+**Architekturgrenze:**
+- `ARCHITECTURE.md`, „Grundprinzip“ (verbindliche Anwaltsvorgabe): Claude ausschließlich für sprachliche
+  Textproduktion, „niemals für Aktenanalyse, Aktenzuordnung, Rechtsrecherche, **Fristenbestimmung**“.
+- Gleichlautend der Kommentar zu `ALLOWED_PURPOSES` (`app/privacy/security_check.py:38-40`).
+- Eine Zweitmeinung zu Fristen und Typ ist damit **heute unzulässig** und keine bloße technische Erweiterung.
+
+**Gateway:** `ClaudePrivacyGateway.prepare_request` (`app/privacy/gateway.py:177`) durchläuft in dieser Reihenfolge:
+- Unsichtbare Zeichen entfernen.
+- Pseudonymisierung (Presidio/NER).
+- Kandidatenprüfung (`review_mode` ask/mask).
+- Restrisiko-Scan (`SecurityCheckService.check` → `detect_all`).
+- Prüfung der Platzhalter-Integrität.
+- HMAC-Siegel (`seal_payload`, geprüft von `require_gateway_seal` in jedem Provider).
+
+Nach der Antwort folgen die Leck-Prüfung (`check_response_placeholder_integrity`) und die Rückübersetzung.
+
+**Payload und Zugang:**
+- Payload `ClaudeRequestPayload`: genau acht Felder (Owner-Grenze, `gateway_schema.py`).
+- Zulässige Zwecke: nur Textproduktion plus `review_draft` und `chat_response`.
+- Kein globaler Cloud-Schalter, keine Cloud-Einstellung je Akte.
+- Kostenbremse `CostControlService.check_before_call`; Berechtigung `PERM_CLAUDE_CALL`.
+- Protokoll `ApiCallLog`: Zweck, Token, Kosten, Prompt-Hash, Status – **ohne Inhalt**.
+
+**Lokaler Pfad heute:**
+- Klassifikation läuft synchron in `DocumentProcessingService.process_document` (`documents/service.py:230`),
+  Konfidenz höchstens 0,4. Unter 0,6 gibt es keine automatische Aktenzuordnung (`matching/service.py:67-80`).
+- Fristen sind `Deadline` mit `review_status` „unreviewed“/„confirmed“/„rejected“ (`models/deadline.py:51`).
+- Eine Bestätigung erfolgt nur manuell (`POST /dashboard/tasks/{id}/review`). Erkannte Fristen werden nie
+  automatisch bestätigt.
+
+**Provider:**
+- `AnthropicClaudeWritingProvider`: Thinking aus, **kein eigenes Timeout**. SDK-Standard sind 600 s Lesezeit und
+  2 Wiederholungen (installiertes SDK geprüft).
+- Kein OpenAI-Provider in `app/`; OpenAI existiert nur im Benchmark-Harness.
+
+**Nutzen auf `test_v2`** (§42; synthetisch, 104 Dokumente, 99 gesendet). Gemessen als **Ergänzung** der lokalen
+Vorschläge, nicht als Ersatz, je Lauf:
+
+| Kennzahl | Claude (3 Läufe) | OpenAI (3 Läufe) |
+|---|---|---|
+| Lokal übersehene Fristen, von der Cloud gefunden | **10/10** (alle Läufe) | **10/10** |
+| Zusätzliche Cloud-Fristhinweise / davon gelabelte Nicht-Frist | 11–13 / 0–1 | 11–12 / 0 |
+| Lokale Nicht-Frist-als-Frist, von der Cloud nicht bestätigt | 5/6 | 5–6/6 |
+| Richtige lokale Fristen, von der Cloud nicht bestätigt | **1** | 0 |
+| Typ abweichend / dabei Cloud richtig / lokal richtig | 21 / 19 / 5 | 23–24 / 20 / 8–9 |
+
+**Latenz und Kosten (gemessen):**
+- Lokale Pseudonymisierung und Restscan auf denselben 104 Texten mit Dateiname: Median 0,22 s, p90 0,45 s,
+  max 1,64 s. Blockiert: 5, reproduzierbar.
+- API-Zeit je Aufruf: Claude Median 1,31 s, p90 1,61 s, max 8,85 s; OpenAI 1,69 / 2,00 / 3,48 s.
+- Lokale Verarbeitung je Dokument: 1,0–2,4 s.
+- Eingabe-Token Claude: Median 1.360, max 4.550; ≈ 0,0038 USD je Dokument (Preisannahme 2/10 USD je 1 Mio. Token,
+  nicht vom Anbieter bestätigt).
+
+**Folgerungen:**
+- Als Ergänzung liefert die Zweitmeinung genau die fehlenden Fristen, mit wenigen falschen Zusatzhinweisen.
+- Als Ersatz oder Filter wäre sie **gefährlich**: Eine richtige lokale Frist wäre unterdrückt worden.
+- Daraus folgt die Kernregel des Entwurfs: **Die Cloud darf nur hinzufügen und markieren, nie entfernen,
+  überschreiben oder bestätigen.**
+
+### 43.2 Vorgeschlagene Architektur
+
+**Datenfluss:**
+
+```
+Upload/Mail → [lokal, unverändert] Text/OCR → Klassifikation → Fristvorschläge (unreviewed)
+                     │
+                     └─ nur wenn: Owner-Schalter an + Akte nicht ausgeschlossen + Berechtigung + Budget
+                        + Nutzer klickt „Zweitmeinung anfordern“ (Stufe 1, kein Automatismus)
+                              ▼
+        SecondOpinionService (neu, außerhalb des Upload-Pfads, eigener Thread wie bestehende Lifespan-Tasks)
+                              ▼
+        ClaudePrivacyGateway.prepare_request(purpose="second_opinion_document", review_mode="ask")
+           · anonymisierter_sachverhalt = extrahierter Text (gekürzt, z. B. ≤ 12.000 Zeichen)
+           · schreibauftrag = fester Auftragstext; Dateiname als Teil des Textes → mit pseudonymisiert
+           · review_required ODER Rest-Treffer ODER Fehler → BLOCKIERT (kein Versand)
+                              ▼ (versiegelte Payload)
+        SecondOpinionProvider (neu): require_gateway_seal, Timeout ≤ 20 s, max_retries 0–1,
+           Thinking aus, max_tokens ≈ 600, kein Web-Search, JSON-only
+                              ▼
+        Antwortprüfung: JSON-Schema; typ ∈ ALLOWED_DOCUMENT_TYPES; Daten TT.MM.JJJJ und wörtlich im
+           gesendeten Text enthalten; Art ∈ {frist, termin, fristbeginn}; kein Freitext;
+           check_response_placeholder_integrity → sonst UNGÜLTIG (verworfen)
+                              ▼
+        Speicherung getrennt: document_second_opinions (neu) – nie documents.classified_type, nie deadlines
+                              ▼
+        Vergleich lokal ↔ Cloud → Anzeige als Hinweis; Übernahme nur per Klick als NEUER Fristvorschlag (unreviewed)
+```
+
+**Komponenten** (alles neu, nichts am bestehenden Pfad ersetzt):
+
+1. **Zweck `second_opinion_document`** in `ALLOWED_PURPOSES`.
+   - Voraussetzung ist die Owner-Änderung des Grundprinzips (43.1) und eine Ergänzung in `ARCHITECTURE.md`.
+   - Die bestehende 8-Felder-Payload reicht. Ein neues Feld ist **nicht** nötig: Der Text geht in
+     `anonymisierter_sachverhalt`, der Auftrag in `schreibauftrag`.
+2. **`SecondOpinionProvider`**, getrennt vom Schreib-Provider:
+   - eigener, kurzer Systemprompt (wie Harness §41/§42);
+   - explizites Timeout und keine Retry-Kaskade;
+   - prüft das Siegel;
+   - Modell zunächst nur Claude (`claude-sonnet-5`), weil Anthropic der einzige angebundene Anbieter ist. Ein
+     zweiter Anbieter wäre ein neuer Auftragsverarbeiter und braucht eine eigene Entscheidung.
+3. **`SecondOpinionService`**:
+   - prüft Schalter, Berechtigung (`PERM_CLAUDE_CALL`) und Budget (`check_before_call`);
+   - ruft Gateway und Provider auf, validiert, speichert und protokolliert (`ApiCallLog`, `AuditEvent`
+     `second_opinion_requested/completed/blocked/invalid`, `cloud_hint_adopted` mit Akteur).
+4. **Tabelle `document_second_opinions`** (Migration nötig):
+   - Felder: `document_id`, `matter_id`, `model`, `status` (ok/blocked/review_required/timeout/error/invalid/
+     budget), `typ`, `daten` (JSON mit Art), Prompt-Hash, Zeitstempel.
+   - **Kein** Dokumenttext, keine Pseudonymzuordnung.
+5. **Vergleichslogik**, rein lokal und deterministisch. Je Datum: „übereinstimmend“, „nur lokal“, „nur Cloud“,
+   „andere Art“. Beim Typ: „übereinstimmend“ oder „abweichend“.
+6. **UI** in Dokument- und Fristansicht:
+   - Kennzeichnung „Cloud-Zweitmeinung – ungeprüft, kann irren“.
+   - „Nur Cloud“: Hinweis mit Fundstelle und Button „als Fristvorschlag übernehmen“. Der Button legt eine **neue**
+     `Deadline` mit `review_status="unreviewed"` an, die wie jede andere bestätigt werden muss.
+   - „Nur lokal“: Markierung „Cloud hat diese Frist nicht gefunden – bitte prüfen“. Der lokale Vorschlag bleibt
+     **unverändert sichtbar**.
+   - Typ abweichend: Hinweis ohne Änderung von `classified_type`.
+
+**Ausdrücklich ausgeschlossen:**
+- automatische Übernahme, Bestätigung, Änderung von `due_date`;
+- Fristberechnung;
+- Änderung von `classified_type` oder Aktenzuordnung;
+- Versand an andere Stellen als das Gateway;
+- Speicherung des Cloud-Rohtexts.
+
+### 43.3 Fail-Closed-Matrix
+
+In allen Fällen bleiben die lokalen Vorschläge unverändert, und es gibt keinen automatischen erneuten Versand.
+
+| Situation | Verhalten |
+|---|---|
+| Schalter aus, Akte ausgeschlossen, keine Berechtigung, Budget erschöpft, Endpoint nicht erlaubt | kein Aufruf; Status mit Grund |
+| Rest-Treffer, Review-Kandidaten (`review_mode="ask"` ohne Dokument-Review-UI), Prüfung wirft Fehler | **blockiert, nicht gesendet**; Hinweis „Zweitmeinung aus Datenschutzgründen nicht möglich“ |
+| Dateiname enthält personenbezogene Rest-Treffer | ganze Anfrage blockiert; kein Versand ohne Dateinamen, damit es keinen stillen Umweg gibt |
+| Timeout, HTTP- oder SDK-Fehler | Status timeout/error; keine Wiederholung ohne Nutzeraktion |
+| Antwort kein gültiges JSON, unbekannter Typ, Datum nicht im gesendeten Text, Platzhalter-Auffälligkeit | Status ungültig; Antwort verworfen, nichts angezeigt |
+| Text länger als die Grenze | Status zu_lang oder nur der Kopfteil; Annahme, Entscheidung offen |
+
+### 43.4 Datenschutz- und Fehlerrisiken
+
+- **Prinzipbruch:** Fristenbestimmung in der Cloud widerspricht der verbindlichen Vorgabe. Ohne ausdrückliche,
+  dokumentierte Owner-Entscheidung keine Umsetzung.
+- **Mehr Daten in der Cloud:** ganze Dokumenttexte statt kurzer Schreibaufträge. Die Pseudonymisierung ist auf
+  synthetischen Daten geprüft; vollständige Leckfreiheit ist damit **nicht** bewiesen. Eine
+  Datenschutz-Folgenabschätzung und Mandanteninformation (Auftragsverarbeitung) sind nötig.
+- **Keine Dokument-Review-UI:** Mit `review_mode="mask"` würden unsichere Begriffe ohne Rückfrage maskiert.
+  Der Entwurf wählt deshalb „ask“ und behandelt jede Rückfrage als blockiert. Der Preis ist eine höhere
+  Blockadequote; Annahme: über 5 % bei echten Texten.
+- **Automatisierungsneigung:** Nutzer könnten Cloud-Hinweise als geprüft wahrnehmen. Gegenmaßnahmen sind
+  Kennzeichnung, Pflichtklick und unreviewed-Status sowie Audit der Übernahme.
+- **Falsche Beruhigung:** Fehlt eine Frist auch in der Cloud, entsteht keine Warnung. Die menschliche Prüfung
+  bleibt Pflicht.
+- **Falsche Zweifel:** Gemessen wurde 1 richtige lokale Frist von Claude nicht bestätigt. Deshalb nie ausblenden.
+- **Modellabhängigkeit:** Snapshot-Wechsel ändern das Verhalten. Modell-ID protokollieren und Regressionsmessung
+  auf `test_v2` vor jedem Wechsel.
+- **Synthetische Evidenz:** Alle Nutzenzahlen stammen von modellgenerierten Texten; echte Kanzleitexte sind
+  länger und vielfältiger.
+
+### 43.5 Kosten- und Latenzannahmen
+
+Gemessen auf synthetischen Texten mit median 917 und max 7.221 Zeichen:
+- ≈ 0,22–0,45 s lokal und ≈ 1,3–1,6 s API;
+- zusammen ≈ 2 s je Dokument zusätzlich, asynchron und daher ohne Wirkung auf den Upload.
+
+**Annahmen (nicht gemessen):**
+- Echte Schriftsätze und Verträge sind 10- bis 50-mal länger: bei 12.000 Zeichen etwa 4.000–5.000 Eingabe-Token,
+  rund 0,01 USD je Dokument.
+- Bei 50 angeforderten Zweitmeinungen pro Tag ergäbe das etwa 0,5 USD pro Tag.
+- Pseudonymisierungszeit und Blockadequote steigen mit der Textlänge.
+- Preise sind nicht vom Anbieter bestätigt.
+
+### 43.6 Offene Fragen (Owner)
+
+1. Wird das Grundprinzip (keine Fristenbestimmung in der Cloud) für eine **nur hinweisende** Zweitmeinung
+   geändert? Falls nein, endet der Entwurf hier.
+2. Auslösung: nur manuell je Dokument (empfohlen für Stufe 1) oder automatisch für bestimmte Akten oder
+   Dokumentarten?
+3. Mitgabe des Dateinamens (Nutzen in §42: nur bei Anlagen, die allein über den Dateinamen erkennbar sind).
+4. Textgrenze und Umgang mit langen Dokumenten (Kopfteil, Abschnitte, gar nicht).
+5. Akten- oder mandantenbezogene Ausschlüsse und Einwilligung bzw. Information der Mandanten.
+6. Nur Anthropic oder später zusätzlich ein zweiter Anbieter (eigene Auftragsverarbeitung).
+
+### 43.7 Stufenweiser Testplan
+
+Jede Stufe nur synthetisch; eine Stufe beginnt erst, wenn die vorige PASS ist.
+
+1. **Offline-Vertrag:**
+   - Unit-Tests für Antwortvalidierung (Schema, Typliste, Datum muss im Text stehen, Platzhalter) und für die
+     Vergleichslogik.
+   - Kein Netz, kein Gateway-Zweck.
+   - Darf vor der Owner-Entscheidung gebaut werden, wenn der Owner das ausdrücklich freigibt.
+2. **Gateway-Integration mit Fang-Server** (`LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT`):
+   - neuer Zweck nur in einem Feature-Branch;
+   - Siegel-Pflicht, Blockade bei Rest-Treffer und Review, Leck-Prüfung;
+   - Payload-Inspektion auf `legal_e2e_v1` und `test_v2`.
+3. **Fail-Closed-Tests:** Timeout, 5xx, ungültiges JSON, erfundenes Datum, Budget, Endpoint, Berechtigung. Jeweils
+   lokale Vorschläge unverändert und kein Versand.
+4. **Benchmark über den echten Gateway-Pfad** (statt Harness): Wiederholung von §42 mit Zielen „übersehene
+   Fristen ergänzt“, „falsche Zusatzhinweise“, „Blockadequote“, „Kosten“.
+5. **Installierter Build mit QA-Instanz:**
+   - UI-Kennzeichnung, Übernahme als unreviewed, Audit-Einträge;
+   - keine Änderung bestehender Fristen;
+   - Legal-E2E ohne Regression.
+6. **Erst danach** wird über einen Pilotbetrieb mit echten Daten entschieden. Voraussetzungen: DSFA und eine
+   eigene Owner-Freigabe.
