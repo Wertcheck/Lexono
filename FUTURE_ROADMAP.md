@@ -145,6 +145,12 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
    - **Machbarkeitsentwurf** (nicht umgesetzt): `PRIVACY_REVIEW_ARCHITECTURE.md` §43. Die Cloud darf nur
      ergänzen und markieren, nie entfernen, überschreiben oder bestätigen. Er setzt eine Änderung des
      Grundprinzips „keine Fristenbestimmung in der Cloud“ voraus.
+   - **Owner-Entscheidung 15.10.2026:** Die Zweitmeinung wird als manuelle, ergänzende Funktion weiter
+     evaluiert, nur Claude. **Stufe 1 erledigt:** netzfreie Grundlage `app/second_opinion/`
+     (Antwortvalidierung, Längengrenze ohne Kürzung, Vergleich, Übernahme nur als unbestätigter
+     Vorschlag), nicht eingebunden; §43.8.
+   - **Nächster Schritt:** Stufe 2 mit Fang-Server im Feature-Branch. Vorher Owner-Freigabe für den
+     neuen Gateway-Zweck dort.
 
 ## Release-Planung
 

@@ -5835,3 +5835,68 @@ Jede Stufe nur synthetisch; eine Stufe beginnt erst, wenn die vorige PASS ist.
    - Legal-E2E ohne Regression.
 6. **Erst danach** wird über einen Pilotbetrieb mit echten Daten entschieden. Voraussetzungen: DSFA und eine
    eigene Owner-Freigabe.
+
+### 43.8 Owner-Entscheidung und Stufe 1 umgesetzt (15.10.2026)
+
+**Entscheidung:**
+- Die Cloud-Zweitmeinung wird als **ergänzende, manuell je Dokument angeforderte** Funktion weiter evaluiert,
+  zunächst nur mit Anthropic/Claude.
+- Lokale Ergebnisse werden nie entfernt, überschrieben oder bestätigt; die lokale Verarbeitung bleibt unverändert.
+- In dieser Phase gibt es keine automatische Ausführung und keine produktive Gateway-Integration.
+- Das Grundprinzip in `ARCHITECTURE.md` und `ALLOWED_PURPOSES` bleiben deshalb **unverändert**.
+
+**Umgesetzt** wurde nur Stufe 1 aus 43.7: die isolierte, netzfreie Grundlage in `app/second_opinion/`.
+
+`validation.py`:
+- `validate_response(raw, sent_text)` nimmt nur das kleine JSON-Schema an:
+  - Pflichtfelder `typ`/`frist`/`termin`/`fristbeginn`, optional `fristdauern`;
+  - kein Freitext, keine unbekannten Felder, `typ` aus `ALLOWED_DOCUMENT_TYPES`;
+  - Daten streng als gültiges `TT.MM.JJJJ`.
+- **Jedes Datum muss im tatsächlich gesendeten Text vorkommen.** Erkannt werden auch die Schreibweisen
+  1.7.2026, 01.07.26 und 1. Juli 2026.
+- Abgelehnt werden außerdem: Platzhalter-Tokens, dasselbe Datum in zwei Arten (widersprüchlich) und Überschreitung
+  der Größengrenzen.
+- Bei jedem Verstoß wird die **ganze** Antwort verworfen; es gibt keine Teilübernahme.
+- `check_length(text, max_chars)`: Ein zu langer Text wird **nicht gekürzt**, sondern nicht gesendet (`zu_lang`).
+  Das Modul enthält bewusst keine Kürzungsfunktion.
+
+`comparison.py`:
+- Lokale Ergebnisse gehen nur als unveränderliche Schnappschüsse ein (`LocalSnapshot`, `snapshot_from` liest nur).
+- `compare` liefert eigene `CloudHint`-Objekte: Quelle „cloud“, Status „ungeprüft“, Kategorien übereinstimmend /
+  nur lokal / nur Cloud / andere Art. Ein „nur lokal“-Datum bleibt sichtbar und wird nur markiert.
+- Diese Status ergeben **keine** Hinweise: deaktiviert, Datenschutzblock, Rückfrage, zu lang, Budget,
+  Zeitüberschreitung, Fehler, ungültig.
+- `adopt_hint` nur bei Status `ok`, nur für „nur Cloud“-Daten, nur mit `user_confirmed=True` und benanntem
+  Akteur. Ergebnis ist ein **neuer** `DeadlineProposal` mit `review_status="unreviewed"`; der Hinweis selbst bleibt
+  ungeprüft.
+
+**Isolation, per Test erzwungen:**
+- keine Netz-, Provider-, Gateway-, Datenbank- oder Web-Importe im Paket;
+- kein Zweck mit „second“, „zweit“ oder „frist“ in `ALLOWED_PURPOSES`;
+- kein anderes Modul unter `app/` bindet das Paket ein;
+- keine Migration, keine UI.
+
+**Tests und QA:**
+
+| Prüfung | Ergebnis |
+|---|---|
+| `tests/test_second_opinion_foundation.py` (71 Fälle) | PASS |
+| Mutationsprobe: 8 Mutationen an den Schutzregeln (Datumsabgleich, Widerspruch, Platzhalter, Längengrenze, unreviewed, nur Cloud, Statusprüfung, nur-lokal-Markierung) | 8/8 gefangen |
+| Volle Suite, in sechs Teilen im Vordergrund (Ollama-Modell entladen) | **4761 bestanden**; fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`, fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
+| Lint | **NICHT VERIFIZIERT**: Im Repo ist kein Linter konfiguriert. `py_compile` PASS; Zeilenlänge an die Repo-Konvention angepasst. |
+| Installierter Build, UI, echte Cloud-Aufrufe | nicht betroffen bzw. bewusst nicht ausgeführt (Stufe 1 ist nirgends eingebunden) |
+
+**Grenzen und Risiken von Stufe 1:**
+- **Kein Leckschutz:** Die Validierung ersetzt **nicht** die Leck-Prüfung des Gateways
+  (`check_response_placeholder_integrity` mit den Pseudonym-Zuordnungen). Sie kommt in Stufe 2 zusätzlich davor.
+- **Grenzen des Datumsabgleichs:** Er erkennt nur Ziffern- und Monatsnamen-Daten. Ein Datum, das der Text nur
+  relativ nennt („in zwei Wochen“), wird abgelehnt. Das ist gewollt: Es gibt keine Fristberechnung.
+- **Zweistellige Jahre** werden als 20JJ gelesen.
+- **Zeichengrenze offen:** `max_chars` ist noch nicht festgelegt (Owner-Frage 43.6/4).
+
+**Nächster sicherer Schritt (Stufe 2):** Integration mit dem Fang-Server in einem Feature-Branch.
+- neuer Zweck nur dort;
+- Siegel-Pflicht, Blockade bei Rest-Treffer und Rückfrage, Leck-Prüfung;
+- Payload-Inspektion auf synthetischen Korpora.
+
+Vorher braucht es die ausdrückliche Owner-Freigabe für die Änderung von `ALLOWED_PURPOSES` in diesem Branch.
