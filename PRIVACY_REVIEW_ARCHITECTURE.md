@@ -5974,3 +5974,102 @@ Keine Prüfung hielt beide konsistent, und der Pilot-Szenariotest nutzte 2000 st
 | Legal-E2E (Datenschutz-Regression) | identisch mit `295f591`: 0 Lecks, keine fremde Akte, fremder Anhang 7/7 |
 | Echter Anthropic-Aufruf über das Relay, installierter Build, Relay-Deployment | **NICHT VERIFIZIERT** (keine Cloud-Aufrufe erlaubt bzw. nicht Teil der Aufgabe) |
 | Lint | **NICHT VERIFIZIERT** (kein Linter konfiguriert) |
+
+### 44.1 Laufzeit- und Wiederholungsbudget des Relay-Schreibpfads (15.10.2026, lokaler Branch `fix/relay-retry-budget`, nicht committet)
+
+**Nachgewiesenes Verhalten** (echtes Anthropic-SDK 1.5.0 über `gateway.relay.call_anthropic` gegen einen lokalen
+Fake; kein externer Netzverkehr):
+
+| Fall | Ergebnis |
+|---|---|
+| 0 Wiederholungen bei 500, 529, 429 mit `retry-after`, 400 mit `x-should-retry: true`, Timeout | je genau 1 Upstream-Versuch |
+| 1 Wiederholung, 429 mit `retry-after: 3` | 2 Versuche, Abstand 3,02 s – das SDK befolgt `retry-after` (bis 60 s) statt des kurzen Backoffs |
+| 2 Wiederholungen, 429 ohne `retry-after` | 3 Versuche, Abstände 0,5 s und 0,88 s (Backoff 0,5 s / 1 s mit Jitter, höchstens 8 s) |
+| 1 Wiederholung, Timeout 2 s, Fake 3 s | 2 Versuche, 4,47 s gesamt |
+| 0 Wiederholungen, Timeout 2 s, Antwort in 4 Stücken je 1,5 s | **6,02 s** – der Timeout gilt je Lesevorgang, nicht als Gesamtfrist |
+
+**Lücke:** Mit `ANTHROPIC_MAX_RETRIES` 1 oder 2 waren Relay-Laufzeiten weit über dem Client-Timeout konfigurierbar:
+- 1 Wiederholung: 2 × 55 s + 60 s = 170 s;
+- 2 Wiederholungen: 285 s.
+
+Weitere kostenpflichtige Versuche liefen nach dem Client-Abbruch ohne Abnehmer weiter, und das Relay startete trotzdem.
+
+**Korrektur** (minimal):
+- `GatewaySettings.client_timeout_seconds` (Standard 60, spiegelt `LEXONO_GATEWAY_TIMEOUT_SECONDS`).
+- Startprüfung `retry_budget_fits_client_timeout`:
+  `(Wiederholungen + 1) × Timeout + Wiederholungen × 60 s < Client-Timeout`. Sonst bricht der Relay-Start mit klarer
+  Meldung ab. Das ist im echten Prozessstart belegt: Exit-Code 1, kein offener Port, keine Datenbank.
+- Kein Timeout erhöht, kein Streaming, keine Architekturänderung. Die Standardwerte (55 s, 0 Wiederholungen, 60 s)
+  bleiben gültig.
+
+**Laufzeitaussagen:**
+- **Garantiert:**
+  - Mit `ANTHROPIC_MAX_RETRIES=0` (Standard) gibt es **genau einen** Upstream-Versuch. SDK-Schleife
+    `for retries_taken in range(max_retries + 1)`; bei `remaining_retries <= 0` wird nicht wiederholt
+    (`anthropic/_base_client.py` Z. 1130, 1161, 1177). Gemessen für 500, 529, 429 mit `retry-after`,
+    400 mit `x-should-retry`, Timeout und Verbindungsfehler.
+  - Die Startprüfung weist jede Konfiguration ab, deren Regelfall-Budget das Client-Timeout erreicht:
+    `(Wiederholungen + 1) × Timeout + Wiederholungen × 60 s ≥ Client-Timeout`. Das ist eine **notwendige
+    Bedingung**, **keine Höchstdauer**.
+- **Nicht garantiert:**
+  - Eine harte Gesamtfrist je Versuch: Der Timeout gilt je Verbindungs-, Schreib- und Lesevorgang; eine stückweise
+    Antwort verlängert ihn (gemessen 6,02 s bei 2 s Timeout).
+  - Dass der Client-Timeout eingehalten wird: Auch er ist pro Phase und wird zur Laufzeit nicht mit dem Relay
+    abgeglichen.
+  - Der sofortige Abbruch eines laufenden Relay-Versuchs beim Client-Abbruch (Stufe B, T7: Er läuft bis zum eigenen
+    Timeout weiter).
+- **Schätzung:** Die Messages-API ohne Streaming sendet die Antwort typischerweise am Ende. Ein einzelner Versuch dürfte
+  daher etwa beim Timeout enden. Nicht mit der echten API geprüft (Stufe C).
+
+**Kritische Nachprüfung (SDK 1.5.0, `httpx2` 2.12.0, Quelltext gelesen):**
+
+| Thema | Beleg im installierten Code | Folge |
+|---|---|---|
+| Timeout-Semantik | Das Relay übergibt `timeout=55.0`; `httpx2.Timeout(55.0)` setzt **connect, read, write, pool je 55 s** (`httpx2/_config.py` Z. 97–130). Die 10-Minuten-Logik ohne Streaming greift nur bei Standard-Timeout (`resources/messages/messages.py` Z. 950); beim Relay ist sie nicht aktiv (geprüft: `client.timeout != DEFAULT_TIMEOUT`). | Ein Versuch ist **nicht** auf 55 s begrenzt: Phasen addieren sich, und der Lese-Timeout gilt je Lesevorgang. Gemessen: Antwort in 4 Stücken → 6,02 s bei 2 s Timeout. |
+| Retry-Wartezeit | `retry-after-ms`, dann `retry-after` (Sekunden oder HTTP-Datum) (Z. 777–809). Befolgt wird `0 < Wert ≤ 60`, sonst Backoff `min(0,5 × 2^n, 8)` × Jitter 0,75–1 (Z. 811–833); `time.sleep` (Z. 1329). | Maximal 60 s je Wiederholung. Gemessen: 3,02 s bei `retry-after: 3`. |
+| Was wiederholt wird | Statusantworten: `x-should-retry` true/false hat Vorrang, sonst 408, 409, 429, ≥ 500 (Z. 835–868). Ausnahmen: `APIConnectionError` und `APITimeoutError` (Z. 870–893); Timeout → `APITimeoutError` (Z. 1293–1295). | 400 nur mit `x-should-retry: true`, aber nur wenn Wiederholungen erlaubt sind (gemessen: 0 → 1 Versuch). |
+| Abbruch durch den Client | Der Relay-Endpunkt ist synchron (`def relay_messages`) und läuft in einem Thread. Es gibt keinen Abbruchpfad zum SDK-Aufruf. | Bricht der Kanzlei-Client ab, läuft der Upstream-Versuch bis zu seinem eigenen Timeout weiter (Stufe B, T7). |
+| Lexono-Client | `httpx.post(..., timeout=60.0)` mit derselben Phasen-Semantik | Auch die Wartezeit des Clients ist keine harte Gesamtfrist (NICHT VERIFIZIERT durch Messung, aus httpx-Semantik abgeleitet). |
+
+**Kopplung an den tatsächlichen Client-Timeout (geprüft):**
+- **Wirksamer Client-Timeout:** `Settings.lexono_gateway_timeout_seconds` (Umgebungsvariable bzw. `.env`
+  `LEXONO_GATEWAY_TIMEOUT_SECONDS`, Standard 60, ohne Wertebereichsprüfung). Die Factory gibt ihn an den Relay-Schreib-
+  und den Relay-Review-Provider weiter (`factory.py` Z. 105, 128); wirksam wird er in
+  `httpx.post(timeout=…)` (`gateway_relay_client.py`).
+- **Relay-Seite:** `CLIENT_TIMEOUT_SECONDS` ist eine **eigene** Einstellung des Relays (`.env.gateway`, getrennter
+  Prozess und Server). Sie wird nur **von Hand gespiegelt**; es gibt keinen Abgleich, und jede Kanzlei-Installation hat
+  ihre eigene `.env`.
+- **Folge, per Test belegt** (`test_relay_cannot_see_a_shorter_client_timeout`): Setzt eine Kanzlei z. B. 30 s,
+  verwendet ihr Client 30 s. Die Startprüfung des Relays besteht mit den Standardwerten trotzdem; der Relay-Versuch kann
+  bis 55 s weiterlaufen, ohne Abnehmer. Das betrifft Kosten, nicht den Datenschutz.
+- **Konsistent und per Test gesichert:** Standardwerte und Vorlagen (60 = 60).
+- **Sicherer Abgleich** wäre nur über eine Protokollerweiterung möglich: Der Client übermittelt seinen Timeout pro
+  Anfrage, und das Relay kürzt seinen Upstream-Timeout darauf. Das ist eine Schnittstellenänderung und hier nicht
+  umgesetzt. Bis dahin: `CLIENT_TIMEOUT_SECONDS` auf den **kürzesten** Client-Timeout aller angebundenen Kanzleien
+  setzen und den Client-Timeout dort nicht unter diesen Wert senken.
+
+**Harte Gesamtfrist – geprüfte Optionen, keine umgesetzt:**
+- **Thread mit `future.result(timeout)`:** gibt dem Client früher eine Antwort, beendet den Upstream-Aufruf aber
+  **nicht**. Kosten liefen weiter – das wäre eine vorgetäuschte Sicherheit.
+- **Wächter, der den HTTP-Client nach Fristablauf schließt:** würde die Verbindung trennen. Die Thread-Sicherheit von
+  `httpx2.Client.close()` während eines laufenden `send` ist nicht dokumentiert – unsicher, ohne eigene Tests nicht
+  vertretbar.
+- **Asynchroner Endpunkt mit `AsyncAnthropic` und Frist per Abbruch:** trennt die Verbindung sauber, ist aber eine
+  Architekturänderung (Endpunkt und Relay-Aufruf).
+- **Streaming mit Zeitprüfung:** ausgeschlossen (kein Streaming).
+- Ob Anthropic einen vom Relay getrennten Aufruf abbricht oder trotzdem berechnet, ist **NICHT VERIFIZIERT**.
+
+**Bewertung:** Die Startprüfung ist korrekt und schließt die nachgewiesene Lücke (Wiederholungen mit 55 s). Sie ist
+aber nur eine notwendige Bedingung. Die Formulierungen in Docstring und Fehlermeldung wurden entsprechend
+präzisiert.
+
+**Rückwärtskompatibilität:**
+- Deployments ohne die neuen Variablen sind unverändert gültig.
+- `ANTHROPIC_MAX_RETRIES` und `ANTHROPIC_TIMEOUT_SECONDS` gibt es erst seit `58343e1`.
+- Wer Timeout oder Wiederholungen anhebt, muss `CLIENT_TIMEOUT_SECONDS` – und in den Kanzlei-Installationen
+  `LEXONO_GATEWAY_TIMEOUT_SECONDS` – gemeinsam anheben. Die Meldung nennt das.
+
+**Tests:**
+- `tests/test_relay_retry_budget.py` (16): Startprüfung mit Gegenproben, Relay-Start, SDK-Charakterisierung.
+- Mutationsprobe 3/3.
+- Alle Relay-Testdateien: 108 bestanden.

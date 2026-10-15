@@ -57,6 +57,10 @@ class GatewaySettings(BaseSettings):
     # Regel: (anthropic_max_retries + 1) * anthropic_timeout_seconds < Client-Timeout.
     anthropic_timeout_seconds: float = Field(default=55.0, gt=0)
     anthropic_max_retries: int = Field(default=0, ge=0, le=2)
+    # §44.1: Timeout des Kanzlei-Clients (dort LEXONO_GATEWAY_TIMEOUT_SECONDS, Standard 60 s). Das Relay kann ihn nicht
+    # erfragen - er wird hier von Hand gespiegelt (kein Abgleich; kuerzester Wert aller angebundenen Kanzleien), damit
+    # die Startpruefung `retry_budget_fits_client_timeout` greift. Ein kuerzerer echter Client-Timeout bleibt unbemerkt.
+    client_timeout_seconds: float = Field(default=60.0, gt=0)
 
     database_url: str = "sqlite:///./gateway_data/gateway.db"
 
@@ -81,6 +85,32 @@ class GatewaySettings(BaseSettings):
             raise ValueError(
                 "GATEWAY_DEFAULT_MODEL muss in ALLOWED_MODELS enthalten sein "
                 f"(default_model={self.default_model!r}, allowed_models={self.allowed_models!r})"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def retry_budget_fits_client_timeout(self) -> "GatewaySettings":
+        """§44.1 (15.10.2026, mit dem echten Anthropic-SDK 1.5.0 gegen einen lokalen Fake nachgewiesen): das SDK
+        wiederholt bei 408/409/429/5xx, Verbindungsfehlern und Timeouts und wartet dazwischen so lange, wie ein
+        `retry-after`/`retry-after-ms`-Header verlangt - bis zu 60 s (sonst Backoff 0,5 s, 1 s, ... hoechstens 8 s). Mit
+        Wiederholungen liefen weitere kostenpflichtige Versuche nach dem Client-Abbruch ohne Abnehmer.
+
+        Startpruefung als NOTWENDIGE Bedingung, nicht als Obergrenze: (Wiederholungen + 1) x Timeout + Wiederholungen x
+        60 s muss UNTER dem Client-Timeout liegen. Sie weist Konfigurationen ab, die schon im Regelfall (jeder Versuch
+        endet mit einem Lese-Timeout, jede Wartezeit ist ein maximales retry-after) laenger laufen als der Client wartet.
+        Sie GARANTIERT KEINE Hoechstdauer: der Timeout gilt je Verbindungs-, Schreib-, Lese- und Pool-Vorgang (httpx2),
+        ein einzelner Versuch kann daher laenger dauern - eine stueckweise Antwort wurde mit 6,02 s bei 2 s Timeout
+        gemessen. Eine harte Gesamtfrist gibt es im Relay nicht (PRIVACY_REVIEW_ARCHITECTURE.md §44.1)."""
+        retry_after_max = 60.0  # hoechste vom SDK befolgte retry-after-Wartezeit (anthropic/_base_client.py)
+        planned = (self.anthropic_max_retries + 1) * self.anthropic_timeout_seconds + (
+            self.anthropic_max_retries * retry_after_max)
+        if planned >= self.client_timeout_seconds:
+            raise ValueError(
+                "Relay-Laufzeit passt schon im Regelfall nicht in den Client-Timeout: (ANTHROPIC_MAX_RETRIES + 1) x "
+                "ANTHROPIC_TIMEOUT_SECONDS + ANTHROPIC_MAX_RETRIES x 60 s (retry-after) = "
+                f"{planned:.0f} s, CLIENT_TIMEOUT_SECONDS = {self.client_timeout_seconds:.0f} s. "
+                "Wiederholungen oder Timeout senken - oder Client- und Relay-Timeout gemeinsam erhoehen. "
+                "(Notwendige Bedingung, keine Hoechstdauer - siehe PRIVACY_REVIEW_ARCHITECTURE.md §44.1.)"
             )
         return self
 
