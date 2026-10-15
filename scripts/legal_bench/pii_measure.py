@@ -32,12 +32,12 @@ CORPUS = Path(__file__).resolve().parents[2] / "benchmarks" / "pii_full_document
 SPLIT_FILE = CORPUS / "cases" / "test.json"
 
 
-def load() -> dict:
-    return json.loads(SPLIT_FILE.read_text(encoding="utf-8"))
+def load(path: Path = SPLIT_FILE) -> dict:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-def sha256() -> str:
-    return hashlib.sha256(SPLIT_FILE.read_bytes()).hexdigest()
+def sha256(path: Path = SPLIT_FILE) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def _occurrences(value: str, text: str) -> int:
@@ -93,7 +93,10 @@ def leaks(document: dict, extracted: str, output: str) -> dict:
         per_value.append({"value": value, "category": category, "im_text": present, "verbleibend": remaining,
                           "ocr_form": form if form != value else None, "teil_leck": partial})
     keep_lost = [k for k in document.get("keep", []) if _occurrences(k, extracted) and not _occurrences(k, output)]
-    return {"werte": per_value, "keep_verloren": keep_lost}
+    # §43.11: gewoehnliche Verwendung eines Wortes, das zugleich ein Name ist ("im Winter 2025") - Uebermaskierung
+    ordinary_lost = [k for k in document.get("keep_gewoehnlich", [])
+                     if _occurrences(k, extracted) and not _occurrences(k, output)]
+    return {"werte": per_value, "keep_verloren": keep_lost, "gewoehnlich_verloren": ordinary_lost}
 
 
 def _summarise(results: dict, view: str) -> dict:
@@ -140,7 +143,8 @@ def run(data: dict, texts: dict[str, str]) -> dict:
             entry[label] = {
                 "versand_status": status,
                 "rueckfrage_begriffe": len(ask.review_candidates),
-                "versand": leaks(document, text, sent) if sent else {"werte": [], "keep_verloren": []},
+                "versand": (leaks(document, text, sent) if sent
+                            else {"werte": [], "keep_verloren": [], "gewoehnlich_verloren": []}),
                 "erkennung_status": "frei" if mask.allowed else "blockiert",
                 "erkennung": leaks(document, text, masked),
             }
@@ -151,10 +155,11 @@ def run(data: dict, texts: dict[str, str]) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
+    parser.add_argument("--cases", default=str(SPLIT_FILE), help="Korpusdatei (Standard: v1 test.json)")
     parser.add_argument("--texts", help="bereits extrahierte Texte wiederverwenden (JSON id -> Text)")
     parser.add_argument("--texts-out", help="extrahierte Texte zusaetzlich speichern")
     args = parser.parse_args()
-    data = load()
+    data = load(Path(args.cases))
     started = time.perf_counter()
     if args.texts:
         raw = Path(args.texts).read_bytes()
@@ -166,8 +171,9 @@ def main() -> None:
         if args.texts_out:
             Path(args.texts_out).write_text(json.dumps(texts, ensure_ascii=False, indent=1), encoding="utf-8")
     results = run(data, texts)
-    report = {"korpus_sha256": sha256(), "dokumente": len(data["documents"]), "ocr": ocr,
-              "sekunden": round(time.perf_counter() - started, 1), "zusammenfassung": {}, "dokumente_ergebnis": results}
+    corpus_name = Path(args.cases).as_posix().split("benchmarks/")[-1]
+    report = {"korpus": corpus_name, "korpus_sha256": sha256(Path(args.cases)), "dokumente": len(data["documents"]),
+              "ocr": ocr, "sekunden": round(time.perf_counter() - started, 1), "zusammenfassung": {}, "dokumente_ergebnis": results}
     for label in ("ohne_akte", "mit_akte"):
         flat = {k: v[label] for k, v in results.items()}
         report["zusammenfassung"][label] = {
@@ -179,6 +185,8 @@ def main() -> None:
                                                    if any(w["verbleibend"] for w in v["erkennung"]["werte"])),
             "keep_verloren": {k: v["erkennung"]["keep_verloren"] for k, v in flat.items()
                               if v["erkennung"]["keep_verloren"]},
+            "gewoehnlich_verloren": {k: v["erkennung"].get("gewoehnlich_verloren", []) for k, v in flat.items()
+                                     if v["erkennung"].get("gewoehnlich_verloren")},
         }
     Path(args.out).write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8",
                               newline="\n")

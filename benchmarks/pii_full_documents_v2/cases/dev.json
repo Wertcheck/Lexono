@@ -1,0 +1,1983 @@
+{
+ "korpus": "pii_full_documents_v2",
+ "split": "dev",
+ "version": 1,
+ "erstellt": "2026-10-15",
+ "verfasser": "blinde Agenten ohne Zugriff auf Code/Tests/Benchmarks",
+ "teile": {
+  "dev.json": {
+   "author": "blind-agent-pii2-dev",
+   "dokumente": 12
+  }
+ },
+ "documents": [
+  {
+   "id": "PII2-D01",
+   "format": "pdf",
+   "filename": "2026-03-02_Klageschrift_LG_Musterstadt.pdf",
+   "paragraphs": [
+    "Hartmann Engel Rechtsanwälte PartG mbB · Marktplatz 2 · 34567 Musterstadt",
+    "Vorab per beA",
+    "An das Landgericht Musterstadt – Zivilkammer –",
+    "Unser Zeichen: 2026/0388-BA · Bearbeiterin: Dr. Miriam Engel · Musterstadt, 02.03.2026",
+    "Klage",
+    "der Frau Hanna Sommer geb. Winter, geboren am 14.03.1988, Am Weiher 11, Wohnung 3. OG links, 34567 Musterstadt,",
+    "– Klägerin –",
+    "Prozessbevollmächtigte: Hartmann Engel Rechtsanwälte PartG mbB, Marktplatz 2, 34567 Musterstadt (2026/0388-BA)",
+    "gegen",
+    "Herrn Bernd Koch, Auf der Höhe 15, Hinterhaus, 34612 Beispielheim,",
+    "– Beklagter –",
+    "wegen Schadensersatzes aus einem Verkehrsunfall vom 18.12.2025. Vorläufiger Streitwert: 8.420,00 EUR.",
+    "Namens und in Vollmacht der Klägerin erheben wir Klage und werden in der mündlichen Verhandlung beantragen:",
+    "1. Der Beklagte wird verurteilt, an die Klägerin 8.420,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem jeweiligen Basiszinssatz seit dem 16.01.2026 zu zahlen.",
+    "2. Der Beklagte wird verurteilt, die Klägerin von vorgerichtlichen Rechtsanwaltskosten in Höhe von 887,03 EUR freizustellen.",
+    "3. Der Beklagte trägt die Kosten des Rechtsstreits.",
+    "Für den Fall, dass der Beklagte nicht rechtzeitig seine Verteidigungsbereitschaft anzeigt, beantragen wir bereits jetzt den Erlass eines Versäumnisurteils im schriftlichen Vorverfahren gemäß § 331 Abs. 3 ZPO. Einer Übertragung des Rechtsstreits auf den Einzelrichter stimmen wir zu.",
+    "Begründung",
+    "I. Sachverhalt",
+    "Die Klägerin ist Halterin und war zum Unfallzeitpunkt Fahrerin des Pkw VW Polo mit dem amtlichen Kennzeichen MS-HS 2817. Der Beklagte steuerte am 18.12.2025 gegen 17:40 Uhr einen Lieferwagen mit dem Kennzeichen FH-SW 913, dessen Halter er ist und der bei der Fiktiva Versicherung AG haftpflichtversichert ist.",
+    "Der Unfall ereignete sich im Winter 2025 bei Dunkelheit und leichtem Schneefall auf einer gleichrangigen Kreuzung im Ortskern von Beispielheim. Die Klägerin befand sich auf dem Heimweg von ihrer Arbeitsstelle in der Gaststätte Zum Goldenen Hirsch, in der sie als Servicekraft beschäftigt ist.",
+    "Unmittelbar hinter ihr fuhr der Koch des Restaurants, Herr Paul Fischer, der den Unfallhergang aus nächster Nähe beobachtet hat. Die Klägerin näherte sich der Kreuzung mit angepasster Geschwindigkeit von etwa 30 km/h. Der Beklagte kam von links und hätte der Klägerin nach der Grundregel rechts vor links (§ 8 Abs. 1 StVO) die Vorfahrt gewähren müssen.",
+    "Stattdessen fuhr der Beklagte ohne abzubremsen in die Kreuzung ein und stieß mit der Front seines Fahrzeugs gegen die linke Fahrzeugseite des klägerischen Pkw. Die Klägerin konnte trotz sofortiger Vollbremsung eine Kollision nicht mehr vermeiden. Der Beklagte äußerte an der Unfallstelle gegenüber dem Zeugen, er habe die Klägerin wegen des Schneefalls schlicht übersehen.",
+    "Beweis: Zeugnis des Herrn Paul Fischer, Zur Linde 4, 34612 Beispielheim; Lichtbilder der Unfallstelle als Anlage K 1; Skizze als Anlage K 2.",
+    "Die herbeigerufene Polizei hat den Unfall aufgenommen. Wir regen an, die Ermittlungsakte 312 Js 4471/26 der Staatsanwaltschaft beizuziehen, aus der sich insbesondere die Endstellung der Fahrzeuge und die Spurenlage ergeben.",
+    "Der klägerische Pkw wurde erheblich beschädigt. Die Klägerin beauftragte das Sachverständigenbüro Lang Kfz-Technik mit der Schadensfeststellung; das Gutachten vom 22.12.2025 (Bezug: GA-25-2207) liegt als Anlage K 3 bei. Der Schaden setzt sich wie folgt zusammen:",
+    "Reparaturkosten netto 6.912,40 EUR; merkantile Wertminderung 650,00 EUR; Sachverständigenkosten 783,60 EUR; Nutzungsausfall für zwei Tage à 22,00 EUR, mithin 44,00 EUR; allgemeine Kostenpauschale 30,00 EUR; insgesamt 8.420,00 EUR.",
+    "Mit Schreiben vom 05.01.2026 forderte die Klägerin den Beklagten und dessen Haftpflichtversicherer zur Zahlung bis zum 15.01.2026 auf (Anlage K 4). Die Fiktiva Versicherung AG lehnte mit Schreiben vom 09.02.2026 – betreffend SN-26-883104, Versicherungsschein KH-4471-0093-22 – jede Regulierung ab und behauptete ohne nähere Begründung ein Mitverschulden der Klägerin (Anlage K 5).",
+    "Erst kurz vor Fristablauf meldete sich der Beklagte persönlich telefonisch in unserer Kanzlei und erklärte, er werde nichts zahlen, da die Klägerin zu schnell gefahren sei. Diese Behauptung ist unzutreffend und wird durch den Zeugen widerlegt werden.",
+    "II. Rechtliche Würdigung",
+    "Der Beklagte haftet als Halter gemäß § 7 Abs. 1 StVG sowie als Fahrer gemäß § 18 Abs. 1 StVG und aus § 823 Abs. 1 BGB. Er hat die Vorfahrt der Klägerin verletzt. Ein Verstoß gegen das Vorfahrtsrecht begründet nach ständiger Rechtsprechung den Anscheinsbeweis eines Verschuldens des Wartepflichtigen.",
+    "Im Rahmen der Abwägung nach § 17 Abs. 1 und 2 StVG tritt die einfache Betriebsgefahr des klägerischen Fahrzeugs hinter dem groben Vorfahrtsverstoß des Beklagten vollständig zurück. Ein unabwendbares Ereignis für den Beklagten liegt offensichtlich nicht vor.",
+    "Die Höhe des Schadens ergibt sich aus § 249 Abs. 2 BGB. Die Klägerin darf auf Gutachtenbasis abrechnen. Die Wertminderung ist nach den Feststellungen des Sachverständigen angemessen; die Kostenpauschale von 30,00 EUR ist üblich.",
+    "Der Zinsanspruch folgt aus §§ 286, 288 Abs. 1 BGB. Der Beklagte befindet sich seit dem 16.01.2026 in Verzug. Die vorgerichtlichen Rechtsanwaltskosten sind als Teil des Schadens zu ersetzen; sie berechnen sich aus einer 1,3-Geschäftsgebühr aus dem Gegenstandswert zuzüglich Auslagenpauschale und Umsatzsteuer.",
+    "III. Zuständigkeit",
+    "Das Landgericht Musterstadt ist sachlich und örtlich zuständig. Der Beklagte hat seinen Wohnsitz im Gerichtsbezirk; zudem liegt der Unfallort im Bezirk des angerufenen Gerichts (§ 20 StVG, § 32 ZPO).",
+    "Die Gerichtskosten werden gesondert eingezahlt. Wir bitten, Anfragen unter Angabe von 2026/0388-BA an die Unterzeichnerin zu richten.",
+    "Anlagen: K 1 bis K 5 in Kopie (Anlagenkonvolut Sommer ./. Koch)",
+    "Beglaubigte und einfache Abschrift anbei.",
+    "Dr. Miriam Engel",
+    "Rechtsanwältin",
+    "Engel",
+    "Hartmann Engel Rechtsanwälte PartG mbB · Partnerschaftsregister Amtsgericht Musterstadt PR 2291 · Tel. 0561 447123-0 · Fax 0561 447123-99 · kanzlei@hartmann-engel.example",
+    "Bankverbindung: IBAN DE21 5205 0353 0012 3456 78 · Steuernummer 026/123/45678"
+   ],
+   "known_entities": {
+    "person": [
+     "Hanna Sommer"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "2026/0388-BA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Miriam Engel",
+     "category": "person"
+    },
+    {
+     "value": "Hanna Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Winter",
+     "category": "geburtsname"
+    },
+    {
+     "value": "14.03.1988",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Am Weiher 11",
+     "category": "adresse"
+    },
+    {
+     "value": "Wohnung 3. OG links",
+     "category": "adresse"
+    },
+    {
+     "value": "Bernd Koch",
+     "category": "person"
+    },
+    {
+     "value": "Auf der Höhe 15",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinterhaus",
+     "category": "adresse"
+    },
+    {
+     "value": "34612 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "MS-HS 2817",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "FH-SW 913",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "Fiktiva Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Gaststätte Zum Goldenen Hirsch",
+     "category": "organisation"
+    },
+    {
+     "value": "Paul Fischer",
+     "category": "person"
+    },
+    {
+     "value": "Zur Linde 4",
+     "category": "adresse"
+    },
+    {
+     "value": "312 Js 4471/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Sachverständigenbüro Lang Kfz-Technik",
+     "category": "organisation"
+    },
+    {
+     "value": "GA-25-2207",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "SN-26-883104",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KH-4471-0093-22",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "PR 2291",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "0561 447123-0",
+     "category": "telefon"
+    },
+    {
+     "value": "0561 447123-99",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "DE21 5205 0353 0012 3456 78",
+     "category": "iban"
+    },
+    {
+     "value": "026/123/45678",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "8.420,00 EUR",
+    "887,03 EUR",
+    "16.01.2026",
+    "15.01.2026",
+    "18.12.2025",
+    "§ 331 Abs. 3 ZPO",
+    "§ 8 Abs. 1 StVO",
+    "§ 7 Abs. 1 StVG",
+    "§ 823 Abs. 1 BGB",
+    "§ 249 Abs. 2 BGB",
+    "§ 32 ZPO"
+   ],
+   "keep_gewoehnlich": [
+    "im Winter 2025",
+    "der Koch des Restaurants",
+    "kurz vor Fristablauf"
+   ],
+   "tags": [
+    "klageschrift",
+    "rubrum",
+    "lang",
+    "briefkopf",
+    "fusszeile",
+    "geburtsname",
+    "nackte_kennungen",
+    "wortnamen"
+   ]
+  },
+  {
+   "id": "PII2-D02",
+   "format": "scan",
+   "filename": "Scan_Sitzungsprotokoll_7O88-26.pdf",
+   "paragraphs": [
+    "Landgericht Musterstadt",
+    "7 O 88/26",
+    "Protokoll der öffentlichen Sitzung der 7. Zivilkammer",
+    "Musterstadt, 21.07.2026",
+    "Gegenwärtig: Vorsitzende Richterin am Landgericht Dr. Braun als Einzelrichterin; Justizbeschäftigte Lang als Urkundsbeamtin der Geschäftsstelle",
+    "In dem Rechtsstreit Sommer ./. Koch erscheinen bei Aufruf der Sache um 10:15 Uhr:",
+    "anwesend: Sommer, Engel; für den Beklagten: Koch persönlich sowie Rechtsanwalt Wolf",
+    "Ferner erscheint der geladene Zeuge Fischer.",
+    "Die Sach- und Rechtslage wird erörtert. Eine gütliche Einigung kommt zunächst nicht zustande. Die Klägervertreterin stellt den Antrag aus der Klageschrift vom 02.03.2026. Der Beklagtenvertreter beantragt, die Klage abzuweisen.",
+    "Der Zeuge wird gemäß § 395 ZPO belehrt und sodann vernommen:",
+    "Zur Person: Fischer, Paul, 41 Jahre, Koch, wohnhaft Zur Linde 4, 34612 Beispielheim, mit den Parteien nicht verwandt und nicht verschwägert.",
+    "Zur Sache: Ich arbeite als Koch in derselben Gaststätte wie die Klägerin. Am Unfalltag bin ich hinter ihr hergefahren, mit vielleicht zwanzig Metern Abstand. Es hat leicht geschneit, die Straße war aber nur feucht. Kurz vor der Kreuzung hat Frau Sommer abgebremst, sie ist bestimmt nicht schneller als dreißig gefahren.",
+    "Der Lieferwagen von Herrn Koch kam von links und ist einfach in die Kreuzung eingefahren. Ich habe noch gesehen, dass er auf sein Telefon geschaut hat, sicher bin ich mir da aber nicht. Ein Bauer aus der Gegend stand mit seinem Traktor auf der gegenüberliegenden Seite; den Namen kenne ich nicht.",
+    "Auf Frage des Rechtsanwalts Wolf: Die Klägerin kenne ich seit etwa drei Jahren von der Arbeit, privat haben wir keinen Kontakt.",
+    "Laut diktiert, vorgespielt und genehmigt. Der Zeuge bleibt unvereidigt und wird um 10:55 Uhr entlassen.",
+    "Die Vorsitzende weist darauf hin, dass nach dem Ergebnis der Beweisaufnahme eine überwiegende Haftung des Beklagten naheliegt. Der Beklagtenvertreter rügt, der Hinweis auf die Ladungsfrist sei in der Ladung nur klein gedruckt gewesen; die Rüge wird nicht weiter verfolgt.",
+    "Auf Vorschlag des Gerichts schließen die Parteien folgenden Vergleich:",
+    "1. Der Beklagte zahlt an die Klägerin zur Abgeltung sämtlicher Ansprüche aus dem Verkehrsunfall vom 18.12.2025 einen Betrag von 6.300,00 EUR bis zum 31.08.2026.",
+    "2. Die Zahlung erfolgt durch die Fiktiva Versicherung AG unter Angabe von SN-26-883104 auf das Konto der Prozessbevollmächtigten der Klägerin.",
+    "3. Von den Kosten des Rechtsstreits und des Vergleichs tragen die Klägerin 25 % und der Beklagte 75 %.",
+    "4. Beiden Parteien bleibt vorbehalten, den Vergleich durch einen bei Gericht bis zum 04.08.2026 eingehenden Schriftsatz zu widerrufen.",
+    "Vorgelesen und genehmigt.",
+    "Beschlossen und verkündet: Für den Fall des Widerrufs wird Termin zur Verkündung einer Entscheidung bestimmt auf den 25.08.2026, 9:00 Uhr, Saal 214.",
+    "Der Streitwert wird auf 8.420,00 EUR festgesetzt.",
+    "Braun",
+    "Vorsitzende Richterin am Landgericht",
+    "Für die Richtigkeit der Übertragung vom Tonträger: Lang, Justizbeschäftigte"
+   ],
+   "known_entities": {
+    "person": [
+     "Hanna Sommer"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "7 O 88/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Braun",
+     "category": "person"
+    },
+    {
+     "value": "Lang",
+     "category": "person"
+    },
+    {
+     "value": "Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Fischer",
+     "category": "person"
+    },
+    {
+     "value": "Fischer, Paul",
+     "category": "person"
+    },
+    {
+     "value": "Zur Linde 4",
+     "category": "adresse"
+    },
+    {
+     "value": "34612 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Fiktiva Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "SN-26-883104",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "§ 395 ZPO",
+    "6.300,00 EUR",
+    "31.08.2026",
+    "04.08.2026",
+    "25.08.2026",
+    "8.420,00 EUR",
+    "Saal 214"
+   ],
+   "keep_gewoehnlich": [
+    "41 Jahre, Koch, wohnhaft",
+    "Ich arbeite als Koch",
+    "Kurz vor der Kreuzung",
+    "Ein Bauer aus der Gegend",
+    "nur klein gedruckt gewesen"
+   ],
+   "tags": [
+    "protokoll",
+    "anwesenheitsliste",
+    "rubrum",
+    "scan",
+    "wortnamen",
+    "nacktes_aktenzeichen"
+   ]
+  },
+  {
+   "id": "PII2-D03",
+   "format": "pdf",
+   "filename": "Rechnung_RE-2026-00417.pdf",
+   "paragraphs": [
+    "Hartmann Engel Rechtsanwälte PartG mbB",
+    "Marktplatz 2 · 34567 Musterstadt · Tel. 0561 447123-0 · kanzlei@hartmann-engel.example",
+    "Herrn Jonas Schäfer",
+    "Hohe Leuchte 7",
+    "34590 Fiktivhausen",
+    "Musterstadt, 30.06.2026",
+    "Rechnung Nr. RE-2026-00417",
+    "Ihre Angelegenheit: Schäfer ./. Stein & Berg Logistik GmbH – Kündigungsschutz (2026/0412-SC)",
+    "Sehr geehrter Herr Schäfer,",
+    "für unsere außergerichtliche Tätigkeit in der oben genannten Angelegenheit erlauben wir uns, nach dem Rechtsanwaltsvergütungsgesetz wie folgt abzurechnen. Der Gegenstandswert beträgt 12.600,00 EUR (drei Bruttomonatsgehälter).",
+    "Bitte überweisen Sie den Rechnungsbetrag von 1.258,31 EUR bis zum 14.07.2026 unter Angabe von RE-2026-00417 und K-10388 auf das unten genannte Konto.",
+    "Ihre Rechtsschutzversicherung hat Deckung unter VS-RS 7720-118 zugesagt; wir haben ihr eine Kopie dieser Rechnung übermittelt. Etwaige Erstattungen leiten wir unverzüglich an Sie weiter.",
+    "Mit freundlichen Grüßen",
+    "Thomas Hartmann",
+    "Rechtsanwalt",
+    "Partnerschaftsregister Amtsgericht Musterstadt PR 2291 · USt-IdNr. DE318774512 · Steuernummer 026/123/45678",
+    "Bankverbindung: IBAN DE21 5205 0353 0012 3456 78"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Datum",
+     "Leistung",
+     "",
+     "Betrag EUR"
+    ],
+    "rows": [
+     [
+      "1",
+      "14.04.2026",
+      "Geschäftsgebühr Nr. 2300 VV RVG, 1,3 aus 12.600,00 EUR",
+      "K-10388",
+      "1.037,40"
+     ],
+     [
+      "2",
+      "14.04.2026",
+      "Pauschale für Post und Telekommunikation Nr. 7002 VV RVG",
+      "K-10388",
+      "20,00"
+     ],
+     [
+      "3",
+      "",
+      "Zwischensumme netto",
+      "",
+      "1.057,40"
+     ],
+     [
+      "4",
+      "",
+      "Umsatzsteuer 19 % Nr. 7008 VV RVG",
+      "",
+      "200,91"
+     ],
+     [
+      "5",
+      "",
+      "Rechnungsbetrag",
+      "RE-2026-00417",
+      "1.258,31"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Jonas Schäfer"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0561 447123-0",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "Jonas Schäfer",
+     "category": "person"
+    },
+    {
+     "value": "Schäfer",
+     "category": "person"
+    },
+    {
+     "value": "Hohe Leuchte 7",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "RE-2026-00417",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "Stein & Berg Logistik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "2026/0412-SC",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "K-10388",
+     "category": "kundennummer"
+    },
+    {
+     "value": "VS-RS 7720-118",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Thomas Hartmann",
+     "category": "person"
+    },
+    {
+     "value": "PR 2291",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE318774512",
+     "category": "steuernummer"
+    },
+    {
+     "value": "026/123/45678",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE21 5205 0353 0012 3456 78",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "12.600,00 EUR",
+    "1.258,31 EUR",
+    "14.07.2026",
+    "Nr. 2300 VV RVG",
+    "Nr. 7002 VV RVG",
+    "Nr. 7008 VV RVG",
+    "1.037,40",
+    "1.057,40",
+    "200,91"
+   ],
+   "keep_gewoehnlich": [],
+   "tags": [
+    "rechnung",
+    "tabelle",
+    "kundennummer_ohne_kopfwort",
+    "briefkopf",
+    "fusszeile"
+   ]
+  },
+  {
+   "id": "PII2-D04",
+   "format": "txt",
+   "filename": "OCR_Schreiben_Versicherung_2026-08-12.txt",
+   "paragraphs": [
+    "Fiktiva Versicherung AG · Schadenservice Kraftfahrt · Am Ring 4O · 3457l Musterstadt",
+    "Hartmann Engel Rechtsanwälte PartG mbB",
+    "Marktp1atz 2",
+    "34567 Musterstadt",
+    "Ihr Zeichen: 2O26/O388-BA",
+    "Unser Zeichen: SN-26-8831O4 / KH-4471-OO93-22",
+    "Sachbearbeiter: Ralf Kurz · Tel. O611 99884-417 · ralf.kurz@fiktiva-versicherung.example",
+    "Musterstadt, l2.O8.2O26",
+    "Rechtsstreit Sommer ./. Koch, Landgericht Musterstadt, 7 O 8B/26",
+    "Versicherungsnehmer: Bernd Koch, Auf der Hohe l5",
+    "Sehr geehrte Frau Dr. Enge1,",
+    "bezugnehmend auf den in der Sitzung vom 21.O7.2O26 geschlossenen Vergleich nehmen wir kurz Stellung. Der Vergleich wurde von uns nicht widerrufen. Wir werden den Vergleichsbetrag fristgerecht anweisen.",
+    "Bitte bestätigen Sie uns die Kontoverbindung der Kanzlei. Uns liegt folgende Angabe vor: IBAN DE21 52O5 O353 OO12 3456 78. Sollte die Zahlung auf ein Anderkonto erfolgen, bitten wir um gesonderte Mitteilung.",
+    "Die Kostenquote von 75 % übernehmen wir für unseren Versicherungsnehmer. Ihre Kostennote reichen Sie bitte unter Angabe des Vorgangs 8V-2O26-ll8 ein; die Abrechnung erfolgt über unser Regulierungszentrum.",
+    "Für Rückfragen steht Ihnen Herr Kurz gern zur Verfügung.",
+    "Unsere eigene Bankverbindung für etwaige Rückzahlungen: IBAN DE47 5OO1 O517 O648 2213 95.",
+    "Mit freundlichen Grüßen",
+    "Fiktiva Versicherung AG",
+    "i. A. R. Kurz",
+    "Sitz Musterstadt · Registergericht Amtsgericht Musterstadt HRB 3l9O4 · Vorstand: Dr. Helga Sch warz (Vors.) · USt-IdNr. DE 2l4 553 O19"
+   ],
+   "known_entities": {
+    "person": [
+     "Hanna Sommer"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Fiktiva Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Ring 4O",
+     "category": "adresse"
+    },
+    {
+     "value": "3457l Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktp1atz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "2O26/O388-BA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "SN-26-8831O4",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KH-4471-OO93-22",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Ralf Kurz",
+     "category": "person"
+    },
+    {
+     "value": "O611 99884-417",
+     "category": "telefon"
+    },
+    {
+     "value": "ralf.kurz@fiktiva-versicherung.example",
+     "category": "email"
+    },
+    {
+     "value": "Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "7 O 8B/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Bernd Koch",
+     "category": "person"
+    },
+    {
+     "value": "Auf der Hohe l5",
+     "category": "adresse"
+    },
+    {
+     "value": "Enge1",
+     "category": "person"
+    },
+    {
+     "value": "DE21 52O5 O353 OO12 3456 78",
+     "category": "iban"
+    },
+    {
+     "value": "8V-2O26-ll8",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Kurz",
+     "category": "person"
+    },
+    {
+     "value": "DE47 5OO1 O517 O648 2213 95",
+     "category": "iban"
+    },
+    {
+     "value": "R. Kurz",
+     "category": "person"
+    },
+    {
+     "value": "HRB 3l9O4",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Helga Sch warz",
+     "category": "person"
+    },
+    {
+     "value": "DE 2l4 553 O19",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "Landgericht Musterstadt",
+    "75 %"
+   ],
+   "keep_gewoehnlich": [
+    "nehmen wir kurz Stellung"
+   ],
+   "tags": [
+    "ocr_verwechslungen",
+    "versicherung",
+    "brief",
+    "fusszeile",
+    "iban"
+   ]
+  },
+  {
+   "id": "PII2-D05",
+   "format": "txt",
+   "filename": "Mail_Mietminderung_2026-11-03.txt",
+   "paragraphs": [
+    "Von: Lena Fuchs <lena.fuchs@postfach.example>",
+    "Gesendet: Dienstag, 03.11.2026 08:12",
+    "An: Thomas Hartmann <t.hartmann@hartmann-engel.example>",
+    "Betreff: AW: Mietminderung Im Winkel 9 – Bezug 2026/0517-TH",
+    "Sehr geehrter Herr Hartmann,",
+    "vielen Dank für das Gespräch gestern. Wie besprochen schicke ich Ihnen die Infos zur Wohnung Im Winkel 9, 2. OG rechts, 34590 Fiktivhausen, die ich zusammen mit meinem Mann Stefan Fuchs seit März 2024 bewohne.",
+    "Im Mietvertrag (MV-0388-17) stehe ich noch unter meinem alten Namen, ich bin Lena Fuchs geborene Weiß. Vermieterin ist die Beispiel Wohnbau GmbH, eingetragen beim Amtsgericht Neuhain unter HRB 4471. Die Hausverwaltung macht Herr Uwe Beispiel persönlich, er ist der Sohn des Geschäftsführers.",
+    "Seit dem Winter 2025 bildet sich im Schlafzimmer an der Außenwand Schimmel, zum Beispiel hinter dem Kleiderschrank und in der Fensterlaibung. Herr Beispiel war im Januar da, hat sich das angesehen und gemeint, das liege an unserem Lüftungsverhalten. Das habe ich jetzt schwarz auf weiß in seiner E-Mail vom 19.01.2026.",
+    "Außerdem sind die Stein-Platten auf dem Balkon seit dem Frost locker, zwei sind gebrochen. Unsere Nachbarin Frau Klein aus dem 1. OG hat das gleiche Problem und hat schon einen Gutachter beauftragt. Sie wäre bereit, als Zeugin auszusagen; ihre Nummer ist 0172 5550193.",
+    "Die Miete beträgt 860,00 EUR kalt zuzüglich 190,00 EUR Nebenkosten. Wir zahlen seit August 2026 nur noch unter Vorbehalt. Kann ich die Miete nach § 536 Abs. 1 BGB mindern, und wenn ja, um wie viel? Ich will nichts falsch machen, im Vertrag ist das alles sehr klein gedruckt.",
+    "Die Fotos schicke ich in einer zweiten Mail, die Dateien sind zu groß. Am besten erreichen Sie mich nachmittags unter 0151 2398771.",
+    "Viele Grüße",
+    "Lena Fuchs",
+    "Im Winkel 9 · 34590 Fiktivhausen",
+    "-----Ursprüngliche Nachricht-----",
+    "Von: Thomas Hartmann",
+    "Gesendet: Montag, 02.11.2026 17:45",
+    "> Sehr geehrte Frau Fuchs, bitte übersenden Sie uns die Unterlagen zur Mietminderung, insbesondere den Mietvertrag und Ihre Korrespondenz mit der Hausverwaltung. Bitte beachten Sie, dass wir die Frage einer Minderungsquote erst nach Prüfung der Unterlagen beurteilen können.",
+    "> Thomas Hartmann | Rechtsanwalt | Hartmann Engel Rechtsanwälte PartG mbB | Marktplatz 2 | 34567 Musterstadt | Tel. 0561 447123-21"
+   ],
+   "known_entities": {
+    "person": [
+     "Lena Fuchs"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Lena Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "lena.fuchs@postfach.example",
+     "category": "email"
+    },
+    {
+     "value": "Thomas Hartmann",
+     "category": "person"
+    },
+    {
+     "value": "t.hartmann@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "Im Winkel 9",
+     "category": "adresse"
+    },
+    {
+     "value": "2026/0517-TH",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Hartmann",
+     "category": "person"
+    },
+    {
+     "value": "2. OG rechts",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Stefan Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "MV-0388-17",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Weiß",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Beispiel Wohnbau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "HRB 4471",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Uwe Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "Beispiel",
+     "category": "person"
+    },
+    {
+     "value": "Klein",
+     "category": "person"
+    },
+    {
+     "value": "0172 5550193",
+     "category": "telefon"
+    },
+    {
+     "value": "0151 2398771",
+     "category": "telefon"
+    },
+    {
+     "value": "Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0561 447123-21",
+     "category": "telefon"
+    }
+   ],
+   "keep": [
+    "860,00 EUR",
+    "190,00 EUR",
+    "§ 536 Abs. 1 BGB",
+    "Amtsgericht Neuhain"
+   ],
+   "keep_gewoehnlich": [
+    "Seit dem Winter 2025",
+    "zum Beispiel hinter dem Kleiderschrank",
+    "schwarz auf weiß",
+    "die Stein-Platten auf dem Balkon",
+    "sehr klein gedruckt"
+   ],
+   "tags": [
+    "email",
+    "mietrecht",
+    "geburtsname",
+    "wortnamen",
+    "strasse_ohne_strassenwort",
+    "zitierte_mail"
+   ]
+  },
+  {
+   "id": "PII2-D06",
+   "format": "docx",
+   "filename": "Bauvertrag_Anbau_Entwurf_geprueft.docx",
+   "paragraphs": [
+    "Entwurf – geprüft durch Hartmann Engel Rechtsanwälte PartG mbB (2026/0144-HA), Stand 12.02.2026",
+    "Bauvertrag",
+    "über die Errichtung eines Anbaus mit Terrasse (Werkvertrag nach §§ 650a ff. BGB) · Projekt P-7731 · Ihr Vorgang BV-2026-231",
+    "zwischen",
+    "Herrn Klaus Neumann, geboren am 07.06.1975, und Frau Sabine Neumann geb. Lang, geboren am 30.11.1977, beide wohnhaft An der Alten Mühle 3, 34623 Neuhain,",
+    "– nachfolgend „Bauherren“ genannt –",
+    "und",
+    "der Berg Bau GmbH, Am Gewerbepark 12, 34623 Neuhain, eingetragen im Handelsregister des Amtsgerichts Neuhain unter HRB 7720, vertreten durch den alleinvertretungsberechtigten Geschäftsführer Tobias Berg,",
+    "– nachfolgend „Auftragnehmerin“ genannt –",
+    "§ 1 Vertragsgegenstand",
+    "(1) Die Auftragnehmerin übernimmt die schlüsselfertige Errichtung eines eingeschossigen Anbaus mit einer Wohnfläche von etwa 38 m² sowie einer angrenzenden Terrasse an das bestehende Einfamilienhaus der Bauherren. Das Baugrundstück ist im Grundbuch von Neuhain Blatt 2318 als Gemarkung Neuhain, Flur 4, Flurstück 112/7 verzeichnet.",
+    "(2) Vertragsbestandteile sind in nachstehender Rangfolge: dieser Vertrag; die Baubeschreibung vom 20.01.2026 (Anlage 1); die Entwurfs- und Genehmigungsplanung von Architekturbüro Fuchs & Winter (Anlage 2); das Angebot AN-26-0412 der Auftragnehmerin (Anlage 3) sowie das Bemusterungsprotokoll (Anlage 4). Bei Widersprüchen geht die jeweils vorrangige Unterlage vor.",
+    "(3) Die Terrasse wird mit Stein-Platten aus Basalt im Format 60 x 40 cm auf Splittbett verlegt. Fugenbild, Randabschluss und Gefälle werden nach Muster der Anlage 4 ausgeführt, das die Bauherren vor Beginn der Arbeiten schriftlich freigeben. Abweichungen bedürfen der vorherigen Zustimmung der Bauherren.",
+    "(4) Die Einholung der Baugenehmigung obliegt den Bauherren; die Genehmigung des Landkreises liegt unter dem Zeichen 63-BG-2025-0918 vor und ist diesem Vertrag in Kopie beigefügt.",
+    "§ 2 Vergütung und Zahlungsplan",
+    "(1) Die Bauherren zahlen für die vertragsgemäße Leistung einen Pauschalfestpreis von 148.500,00 EUR einschließlich der gesetzlichen Umsatzsteuer. Mit dem Pauschalpreis sind sämtliche in der Baubeschreibung genannten Leistungen einschließlich Baustelleneinrichtung, Entsorgung und Endreinigung abgegolten.",
+    "(2) Abschlagszahlungen werden nach Baufortschritt gemäß dem nachstehenden Zahlungsplan fällig, jeweils 14 Tage nach Zugang einer prüffähigen Abschlagsrechnung und Feststellung des Bautenstands durch die Bauherren oder einen von ihnen beauftragten Sachverständigen.",
+    "(3) Zahlungen erfolgen ausschließlich auf das Konto der Auftragnehmerin, IBAN DE63 5205 0353 0098 7654 32. Die Auftragnehmerin wird beim Finanzamt Neuhain unter der Steuernummer 031/245/60917 geführt.",
+    "(4) Zahlungen an Dritte, insbesondere an Subunternehmer, haben keine schuldbefreiende Wirkung, es sei denn, die Bauherren haben ihnen schriftlich zugestimmt.",
+    "(5) Nachträge werden nur vergütet, wenn sie vor Ausführung schriftlich beauftragt wurden. Die Auftragnehmerin hat Mehrkosten unverzüglich und vor Beginn der betreffenden Arbeiten schriftlich anzuzeigen.",
+    "§ 3 Ausführungsfristen",
+    "(1) Die Auftragnehmerin beginnt mit den Arbeiten spätestens am 01.04.2026 und stellt die Leistung bis zum 30.09.2026 abnahmereif fertig. Die Rohbauarbeiten sollen im Sommer 2026 im Wesentlichen abgeschlossen sein; Außenarbeiten im Winter sind ausdrücklich nicht vorgesehen.",
+    "(2) Behinderungen hat die Auftragnehmerin den Bauherren unverzüglich schriftlich anzuzeigen. Witterungsbedingte Verzögerungen verlängern die Ausführungsfrist nur, soweit sie über das für die Jahreszeit übliche Maß hinausgehen.",
+    "§ 4 Vertragsstrafe",
+    "Überschreitet die Auftragnehmerin den Fertigstellungstermin schuldhaft, zahlt sie für jeden Werktag der Überschreitung eine Vertragsstrafe von 0,2 % des Pauschalfestpreises, insgesamt höchstens 5 % des Pauschalfestpreises. Die Geltendmachung eines weitergehenden Schadens bleibt unberührt; die Vertragsstrafe wird hierauf angerechnet.",
+    "Der Vorbehalt der Vertragsstrafe kann noch bis zur Schlusszahlung erklärt werden.",
+    "§ 5 Abnahme",
+    "(1) Nach Fertigstellung findet eine förmliche Abnahme statt, über die ein von beiden Seiten zu unterzeichnendes Protokoll gefertigt wird. Es gilt § 640 BGB. Eine Abnahme durch bloße Ingebrauchnahme ist ausgeschlossen.",
+    "(2) Die Bauherren können zur Abnahme einen Sachverständigen hinzuziehen. Erkennbare Mängel werden im Abnahmeprotokoll festgehalten; die Auftragnehmerin beseitigt sie innerhalb einer angemessenen, im Protokoll festzulegenden Frist.",
+    "§ 6 Mängelansprüche und Sicherheiten",
+    "(1) Die Verjährungsfrist für Mängelansprüche beträgt fünf Jahre ab Abnahme (§ 634a Abs. 1 Nr. 2 BGB). Für die Terrassenbeläge gilt dieselbe Frist.",
+    "(2) Als Sicherheit für die rechtzeitige und mangelfreie Herstellung behalten die Bauherren von der ersten Abschlagszahlung 5 % des Pauschalfestpreises ein. Die Auftragnehmerin kann den Einbehalt durch eine selbstschuldnerische Bürgschaft eines in der Europäischen Union zugelassenen Kreditinstituts ablösen.",
+    "§ 7 Bauleitung und Kommunikation",
+    "(1) Bauleiter der Auftragnehmerin ist Herr Marco Stein, erreichbar unter Tel. 0160 4471882 oder per E-Mail an m.stein@bergbau-neuhain.example. Ein Wechsel der Bauleitung ist den Bauherren rechtzeitig anzukündigen.",
+    "(2) Ansprechpartner der Bauherren ist Herr Neumann. Erklärungen, die den Vertragsinhalt ändern, bedürfen der Unterschrift beider Bauherren. Mitteilungen des Geschäftsführers oder des Bauleiters per Messenger genügen nicht der Schriftform.",
+    "§ 8 Kündigung",
+    "Das Recht der Bauherren zur freien Kündigung nach § 648 BGB bleibt unberührt. Das Recht beider Parteien zur Kündigung aus wichtigem Grund bleibt ebenfalls unberührt. Jede Kündigung bedarf der schriftlichen Form (§ 650h BGB).",
+    "§ 9 Schlussbestimmungen",
+    "(1) Allgemeine Geschäftsbedingungen der Auftragnehmerin, insbesondere klein gedruckte Hinweise auf Lieferscheinen, Rechnungen oder Aufmaßblättern, werden nicht Vertragsbestandteil. Mündliche Nebenabreden bestehen nicht.",
+    "(2) Sollte eine Bestimmung dieses Vertrags unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt. Gerichtsstand für Streitigkeiten ist, soweit gesetzlich zulässig, der Sitz der Auftragnehmerin.",
+    "Neuhain, den 12.02.2026",
+    "Klaus Neumann · Sabine Neumann",
+    "für die Berg Bau GmbH: Tobias Berg, Geschäftsführer",
+    "Berg",
+    "Prüfvermerk der Kanzlei: Die Gerichtsstandsklausel in § 9 Abs. 2 dürfte gegenüber Verbrauchern keine Wirkung entfalten; dies ist noch nicht abschließend geprüft. Rücksprache mit Herrn Neumann am 13.02.2026 vorgesehen. Bearbeiter: Thomas Hartmann."
+   ],
+   "table": {
+    "header": [
+     "Rate",
+     "Bautenstand",
+     "Anteil",
+     "Betrag EUR"
+    ],
+    "rows": [
+     [
+      "1",
+      "Baustelleneinrichtung und Erdarbeiten",
+      "10 %",
+      "14.850,00"
+     ],
+     [
+      "2",
+      "Fertigstellung Rohbau",
+      "30 %",
+      "44.550,00"
+     ],
+     [
+      "3",
+      "Dach und Fenster",
+      "20 %",
+      "29.700,00"
+     ],
+     [
+      "4",
+      "Innenausbau",
+      "20 %",
+      "29.700,00"
+     ],
+     [
+      "5",
+      "Terrasse und Außenanlagen",
+      "15 %",
+      "22.275,00"
+     ],
+     [
+      "6",
+      "Abnahme",
+      "5 %",
+      "7.425,00"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Klaus Neumann"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "2026/0144-HA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "P-7731",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "BV-2026-231",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Klaus Neumann",
+     "category": "person"
+    },
+    {
+     "value": "07.06.1975",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Sabine Neumann",
+     "category": "person"
+    },
+    {
+     "value": "Lang",
+     "category": "geburtsname"
+    },
+    {
+     "value": "30.11.1977",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "An der Alten Mühle 3",
+     "category": "adresse"
+    },
+    {
+     "value": "34623 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Berg Bau GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Gewerbepark 12",
+     "category": "adresse"
+    },
+    {
+     "value": "HRB 7720",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Tobias Berg",
+     "category": "person"
+    },
+    {
+     "value": "Blatt 2318",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Flurstück 112/7",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Architekturbüro Fuchs & Winter",
+     "category": "organisation"
+    },
+    {
+     "value": "AN-26-0412",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "63-BG-2025-0918",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "DE63 5205 0353 0098 7654 32",
+     "category": "iban"
+    },
+    {
+     "value": "031/245/60917",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Marco Stein",
+     "category": "person"
+    },
+    {
+     "value": "0160 4471882",
+     "category": "telefon"
+    },
+    {
+     "value": "m.stein@bergbau-neuhain.example",
+     "category": "email"
+    },
+    {
+     "value": "Neumann",
+     "category": "person"
+    },
+    {
+     "value": "Berg",
+     "category": "person"
+    },
+    {
+     "value": "Thomas Hartmann",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "148.500,00 EUR",
+    "01.04.2026",
+    "30.09.2026",
+    "§ 640 BGB",
+    "§ 634a Abs. 1 Nr. 2 BGB",
+    "§ 648 BGB",
+    "§ 650h BGB",
+    "Amtsgerichts Neuhain",
+    "Finanzamt Neuhain",
+    "0,2 % des Pauschalfestpreises"
+   ],
+   "keep_gewoehnlich": [
+    "mit Stein-Platten aus Basalt",
+    "nach Muster der Anlage 4",
+    "im Sommer 2026",
+    "Außenarbeiten im Winter",
+    "klein gedruckte Hinweise"
+   ],
+   "tags": [
+    "vertrag",
+    "lang",
+    "tabelle",
+    "geburtsname",
+    "strasse_ohne_strassenwort",
+    "handelsregister",
+    "wortnamen"
+   ]
+  },
+  {
+   "id": "PII2-D07",
+   "format": "scan_degraded",
+   "filename": "Scan_Hinweisbeschluss_AG_Neuhain.pdf",
+   "paragraphs": [
+    "Amtsgericht Neuhain",
+    "Schwarz ./. Kurz – 4 C 123/26 –",
+    "Neuhain, 02.09.2026",
+    "Beschluss",
+    "In dem Rechtsstreit",
+    "Elke Schwarz, Unter den Eichen 21, 34623 Neuhain,",
+    "– Klägerin –",
+    "Prozessbevollmächtigte: Hartmann Engel Rechtsanwälte PartG mbB, Marktplatz 2, 34567 Musterstadt, Geschäftszeichen 2026/0291-EN",
+    "gegen",
+    "Dieter Kurz, Hinter der Kirche 5, Hinterhaus, 2. Etage, 34623 Neuhain,",
+    "– Beklagter –",
+    "Prozessbevollmächtigter: Rechtsanwalt Jan Wolf, Am Bahndamm 2a, 34567 Musterstadt",
+    "wegen Rückzahlung einer Mietkaution",
+    "hat das Amtsgericht Neuhain durch die Richterin am Amtsgericht Weiß am 02.09.2026 beschlossen:",
+    "1. Das Gericht weist gemäß § 139 ZPO auf Folgendes hin:",
+    "Die Klägerin verlangt nach Beendigung des Mietverhältnisses über die Erdgeschosswohnung im Anwesen des Beklagten die Rückzahlung der Mietkaution in Höhe von 2.250,00 EUR nebst Zinsen. Der Beklagte rechnet mit Gegenforderungen wegen behaupteter Schäden an den Wänden auf, die nach seinem Vortrag beim Auszug schwarz verfärbt gewesen seien.",
+    "Nach vorläufiger Einschätzung des Gerichts dürfte die Aufrechnung nicht durchgreifen. Der Beklagte hat die behaupteten Schäden bislang nur kurz und pauschal beschrieben. Es fehlt an einer nachvollziehbaren Darstellung, welche Veränderungen über die vertragsgemäße Abnutzung im Sinne des § 538 BGB hinausgehen.",
+    "Soweit der Beklagte sich auf das Übergabeprotokoll vom 31.01.2026 bezieht, ist dort schwarz auf weiß festgehalten, dass die Wohnung besenrein und ohne erkennbare Schäden übergeben wurde. Das Protokoll ist von beiden Parteien unterzeichnet (Anlage K 2).",
+    "Das Gericht weist ferner auf § 548 Abs. 1 BGB hin; die Parteien mögen zum Zeitpunkt der Rückgabe der Mietsache ergänzend vortragen.",
+    "2. Den Parteien wird Gelegenheit zur Stellungnahme bis zum 30.09.2026 gegeben. Es wird angeregt zu prüfen, ob eine gütliche Einigung möglich ist.",
+    "3. Termin zur mündlichen Verhandlung wird bestimmt auf Donnerstag, 12.11.2026, 09:30 Uhr, Saal 104.",
+    "Weiß",
+    "Richterin am Amtsgericht",
+    "Ausgefertigt: Neuhain, 03.09.2026, Vogt, Justizsekretärin als Urkundsbeamtin der Geschäftsstelle"
+   ],
+   "known_entities": {
+    "person": [
+     "Elke Schwarz"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Kurz",
+     "category": "person"
+    },
+    {
+     "value": "4 C 123/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Elke Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Unter den Eichen 21",
+     "category": "adresse"
+    },
+    {
+     "value": "34623 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "2026/0291-EN",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Dieter Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Hinter der Kirche 5",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinterhaus, 2. Etage",
+     "category": "adresse"
+    },
+    {
+     "value": "Jan Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Am Bahndamm 2a",
+     "category": "adresse"
+    },
+    {
+     "value": "Weiß",
+     "category": "person"
+    },
+    {
+     "value": "Vogt",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Neuhain",
+    "§ 139 ZPO",
+    "2.250,00 EUR",
+    "§ 538 BGB",
+    "§ 548 Abs. 1 BGB",
+    "30.09.2026",
+    "12.11.2026",
+    "31.01.2026"
+   ],
+   "keep_gewoehnlich": [
+    "schwarz verfärbt gewesen",
+    "nur kurz und pauschal",
+    "schwarz auf weiß festgehalten"
+   ],
+   "tags": [
+    "beschluss",
+    "rubrum",
+    "scan_degraded",
+    "wortnamen",
+    "strasse_ohne_strassenwort"
+   ]
+  },
+  {
+   "id": "PII2-D08",
+   "format": "docx",
+   "filename": "Aktenvermerk_Besprechung_2026-09-14.docx",
+   "paragraphs": [
+    "Hartmann Engel Rechtsanwälte PartG mbB – Aktenvermerk",
+    "Besprechung vom 14.09.2026, 15:00 bis 16:20 Uhr, Besprechungsraum 2",
+    "Akte: 2026/0655-EN · Bauer ./. Braun – Landpacht",
+    "anwesend: Bauer, Engel; Protokoll: Winter",
+    "Mandant: Martin Bauer, geb. 02.05.1971, Landwirt, Auf dem Kamp 3, 34612 Beispielheim, Tel. 05673 99120, mobil 0170 3318842",
+    "1. Sachverhalt",
+    "Herr Bauer bewirtschaftet seit 2019 die Fläche Flurstück 88/3 (ca. 4,2 ha) auf Grundlage des Pachtvertrags PV-2019-044 mit dem Verpächter Gerhard Braun, Hof Lindenau, 34612 Beispielheim.",
+    "Herr Bauer ist selbst Landwirt; ein Bauer aus der Gegend, nämlich der Verpächter Herr Braun, will die Fläche nach dem Vortrag des Mandanten nun selbst nutzen und hat mit Schreiben vom 28.08.2026 zum 30.09.2026 gekündigt.",
+    "Daneben schildert der Mandant einen Vorfall vom Frühjahr: Ein Wolf hat zwei Schafe gerissen, die auf der Pachtfläche weideten. Der Schäfer des Nachbarn, Herr Ludger Fischer, hat dies beobachtet. Die Tierhalterversicherung führt den Vorgang unter VS 55-201-7734; eine Regulierung steht aus.",
+    "Der Mandant fragt, ob er zum Beispiel die Pacht mindern kann, solange Herr Braun die Zufahrt mit Stein-Blöcken versperrt.",
+    "2. Bewertung (vorläufig, ungeprüft)",
+    "Die Kündigung zum 30.09.2026 erscheint verfrüht. Die gesetzlichen Kündigungsfristen nach § 594a Abs. 1 BGB und die vertraglichen Regelungen sind noch im Einzelnen zu prüfen.",
+    "Unsicher ist, ob die vereinbarte Sonderkündigungsklausel wirksam ist; sie ist sehr klein gedruckt am Ende der Vertragsurkunde angefügt und nicht gesondert unterschrieben. Eine abschließende Bewertung erfolgt erst nach Einsicht in den vollständigen Vertrag.",
+    "3. Vereinbarte Aufgaben",
+    "Die Mandatsbedingungen wurden erläutert. Der Mandant ist mit einer Abrechnung nach RVG einverstanden.",
+    "gez. Engel",
+    "Diktatzeichen EN/wi"
+   ],
+   "table": {
+    "header": [
+     "Nr.",
+     "Aufgabe",
+     "zuständig",
+     "bis"
+    ],
+    "rows": [
+     [
+      "1",
+      "Pachtvertrag PV-2019-044 und Kündigungsschreiben im Original übersenden",
+      "Bauer",
+      "21.09.2026"
+     ],
+     [
+      "2",
+      "Zurückweisung der Kündigung an Braun, Hof Lindenau",
+      "Engel",
+      "25.09.2026"
+     ],
+     [
+      "3",
+      "Schadensmeldung VS 55-201-7734 nachfassen",
+      "Winter",
+      "30.09.2026"
+     ],
+     [
+      "4",
+      "Zeugenkontakt Ludger Fischer, Tel. 05673 4410",
+      "Engel",
+      "02.10.2026"
+     ],
+     [
+      "5",
+      "Rückruf Mandant unter 0170 3318842",
+      "Winter",
+      "nach Eingang"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Martin Bauer"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "2026/0655-EN",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Braun",
+     "category": "person"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Winter",
+     "category": "person"
+    },
+    {
+     "value": "Martin Bauer",
+     "category": "person"
+    },
+    {
+     "value": "02.05.1971",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Auf dem Kamp 3",
+     "category": "adresse"
+    },
+    {
+     "value": "34612 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05673 99120",
+     "category": "telefon"
+    },
+    {
+     "value": "0170 3318842",
+     "category": "telefon"
+    },
+    {
+     "value": "Flurstück 88/3",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "PV-2019-044",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Gerhard Braun",
+     "category": "person"
+    },
+    {
+     "value": "Hof Lindenau",
+     "category": "adresse"
+    },
+    {
+     "value": "Ludger Fischer",
+     "category": "person"
+    },
+    {
+     "value": "VS 55-201-7734",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "05673 4410",
+     "category": "telefon"
+    }
+   ],
+   "keep": [
+    "§ 594a Abs. 1 BGB",
+    "30.09.2026",
+    "28.08.2026",
+    "21.09.2026",
+    "25.09.2026"
+   ],
+   "keep_gewoehnlich": [
+    "ein Bauer aus der Gegend",
+    "Ein Wolf hat zwei Schafe",
+    "Der Schäfer des Nachbarn",
+    "zum Beispiel die Pacht",
+    "mit Stein-Blöcken versperrt",
+    "sehr klein gedruckt"
+   ],
+   "tags": [
+    "protokoll",
+    "aktenvermerk",
+    "anwesenheitsliste",
+    "tabelle",
+    "wortnamen",
+    "kennung_in_tabelle"
+   ]
+  },
+  {
+   "id": "PII2-D09",
+   "format": "scan",
+   "filename": "Scan_Einspruch_ESt-Bescheid_2025.pdf",
+   "paragraphs": [
+    "Hartmann Engel Rechtsanwälte PartG mbB · Marktplatz 2 · 34567 Musterstadt",
+    "Finanzamt Fiktivhausen",
+    "Steuernummer: 045/220/71839",
+    "Steuerpflichtige: Petra Wolf geb. Klein, geb. 23.09.1979, Hinter den Gärten 8, 34590 Fiktivhausen, und Ehemann Rainer Wolf",
+    "Identifikationsnummern 47 112 509 833 und 61 804 377 205",
+    "Einkommensteuerbescheid 2025 vom 18.08.2026",
+    "(2026/0702-HA) – bitte stets angeben",
+    "Musterstadt, 08.09.2026",
+    "Einspruch",
+    "Sehr geehrte Damen und Herren,",
+    "namens und in Vollmacht der Eheleute Wolf, deren Vollmacht wir beifügen, legen wir gegen den oben bezeichneten Bescheid Einspruch ein. Die Einspruchsfrist von einem Monat nach § 355 Abs. 1 AO ist gewahrt.",
+    "Begründung:",
+    "1. Fahrtkosten: Frau Wolf ist bei der Muster Logistik GmbH in Neuhain beschäftigt (Personalnummer 004417). Das Finanzamt hat die Entfernungspauschale nur für 180 statt der erklärten 220 Arbeitstage berücksichtigt. Die Arbeitstage werden durch eine Arbeitgeberbescheinigung nach Muster der Anlage E 1 belegt.",
+    "2. Häusliches Arbeiten: Herr Wolf ist freiberuflicher Übersetzer und hat an 210 Tagen überwiegend zu Hause gearbeitet. Die Tagespauschale nach § 4 Abs. 5 Satz 1 Nr. 6c EStG ist bislang nicht berücksichtigt worden.",
+    "3. Der Erläuterungstext im Bescheid ist zudem nur klein gedruckt und inhaltlich nicht nachvollziehbar; eine Begründung der Abweichung von der Erklärung nach § 121 Abs. 1 AO fehlt.",
+    "Wir beantragen, die Vollziehung in Höhe von 1.184,00 EUR gemäß § 361 Abs. 2 AO auszusetzen.",
+    "Die Belege für die Kinderbetreuungskosten der Tochter Mia Wolf, geb. 11.04.2019, reichen wir bis zum 15.10.2026 nach.",
+    "Mit freundlichen Grüßen",
+    "Thomas Hartmann",
+    "Rechtsanwalt",
+    "Tel. 0561 447123-0 · kanzlei@hartmann-engel.example · IBAN DE21 5205 0353 0012 3456 78 · Steuernummer 026/123/45678 · PR 2291"
+   ],
+   "known_entities": {
+    "person": [
+     "Petra Wolf"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "045/220/71839",
+     "category": "steuernummer"
+    },
+    {
+     "value": "Petra Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Klein",
+     "category": "geburtsname"
+    },
+    {
+     "value": "23.09.1979",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Hinter den Gärten 8",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Rainer Wolf",
+     "category": "person"
+    },
+    {
+     "value": "47 112 509 833",
+     "category": "steuernummer"
+    },
+    {
+     "value": "61 804 377 205",
+     "category": "steuernummer"
+    },
+    {
+     "value": "2026/0702-HA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Muster Logistik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "004417",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Mia Wolf",
+     "category": "person"
+    },
+    {
+     "value": "11.04.2019",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Thomas Hartmann",
+     "category": "person"
+    },
+    {
+     "value": "0561 447123-0",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "DE21 5205 0353 0012 3456 78",
+     "category": "iban"
+    },
+    {
+     "value": "026/123/45678",
+     "category": "steuernummer"
+    },
+    {
+     "value": "PR 2291",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Finanzamt Fiktivhausen",
+    "18.08.2026",
+    "§ 355 Abs. 1 AO",
+    "§ 4 Abs. 5 Satz 1 Nr. 6c EStG",
+    "§ 121 Abs. 1 AO",
+    "§ 361 Abs. 2 AO",
+    "1.184,00 EUR",
+    "15.10.2026"
+   ],
+   "keep_gewoehnlich": [
+    "nach Muster der Anlage E 1",
+    "nur klein gedruckt"
+   ],
+   "tags": [
+    "steuer",
+    "einspruch",
+    "scan",
+    "geburtsname",
+    "geburtsdatum_mit_geb",
+    "nackte_kennungen"
+   ]
+  },
+  {
+   "id": "PII2-D10",
+   "format": "pdf",
+   "filename": "Mail_Gutachten_Sachverstaendiger_2026-10-06.pdf",
+   "paragraphs": [
+    "Von: Holger Lang <h.lang@sv-lang.example>",
+    "An: Dr. Miriam Engel <m.engel@hartmann-engel.example>",
+    "Datum: 06.10.2026 11:37",
+    "Betreff: Bezug: GA-26-1093 / Unfall FH-KR 318 – Ihr Mandant Klein – Ihr Zeichen 2026/0731-EN",
+    "Sehr geehrte Frau Dr. Engel,",
+    "anbei erhalten Sie das Gutachten zum Fahrzeug Ihres Mandanten, Herrn Moritz Klein, Am Lindenhof 6, 34590 Fiktivhausen. Es handelt sich um einen BMW 320d mit der Fahrzeug-Identifizierungsnummer WBA8E31090K471203, amtliches Kennzeichen NH-MK 1907.",
+    "Die Besichtigung fand am 29.09.2026 auf dem Gelände der Autohaus Braun KG statt. Ermittelt wurden Reparaturkosten von 4.318,22 EUR netto sowie eine merkantile Wertminderung von 400,00 EUR. Da die erforderlichen Ersatzteile derzeit nicht vorrätig sind, wird die Reparatur voraussichtlich drei Wochen lang dauern; ich habe den Nutzungsausfall entsprechend angesetzt.",
+    "Ein Vorschaden an der Hinterachse wurde bereits im Sommer 2025 fachgerecht instand gesetzt und ist für den aktuellen Schaden ohne Bedeutung.",
+    "Der Unfallgegner, Herr Kevin Sommer, ist nach Mitteilung Ihres Mandanten bei der Beispiel Assekuranz AG versichert; dort wird der Schaden unter 77-26-004311 geführt.",
+    "Meine Rechnung RG-SV-26-0815 über 812,35 EUR liegt bei. Ich bitte um Weiterleitung an den gegnerischen Versicherer.",
+    "Mit freundlichen Grüßen",
+    "gez. Lang",
+    "Holger Lang",
+    "Kfz-Sachverständiger",
+    "Sachverständigenbüro Lang Kfz-Technik · Zur Alten Schmiede 6 · 34612 Beispielheim · Tel. 05673 88120 · USt-IdNr. DE287661043 · IBAN DE09 5205 0353 0055 4433 21"
+   ],
+   "known_entities": {
+    "person": [
+     "Moritz Klein"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Holger Lang",
+     "category": "person"
+    },
+    {
+     "value": "h.lang@sv-lang.example",
+     "category": "email"
+    },
+    {
+     "value": "Miriam Engel",
+     "category": "person"
+    },
+    {
+     "value": "m.engel@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "GA-26-1093",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "FH-KR 318",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "Klein",
+     "category": "person"
+    },
+    {
+     "value": "2026/0731-EN",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Engel",
+     "category": "person"
+    },
+    {
+     "value": "Moritz Klein",
+     "category": "person"
+    },
+    {
+     "value": "Am Lindenhof 6",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "WBA8E31090K471203",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "NH-MK 1907",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "Autohaus Braun KG",
+     "category": "organisation"
+    },
+    {
+     "value": "Kevin Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Beispiel Assekuranz AG",
+     "category": "organisation"
+    },
+    {
+     "value": "77-26-004311",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "RG-SV-26-0815",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "Lang",
+     "category": "person"
+    },
+    {
+     "value": "Sachverständigenbüro Lang Kfz-Technik",
+     "category": "organisation"
+    },
+    {
+     "value": "Zur Alten Schmiede 6",
+     "category": "adresse"
+    },
+    {
+     "value": "34612 Beispielheim",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05673 88120",
+     "category": "telefon"
+    },
+    {
+     "value": "DE287661043",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE09 5205 0353 0055 4433 21",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "4.318,22 EUR",
+    "400,00 EUR",
+    "812,35 EUR",
+    "29.09.2026"
+   ],
+   "keep_gewoehnlich": [
+    "drei Wochen lang dauern",
+    "im Sommer 2025"
+   ],
+   "tags": [
+    "email",
+    "gutachten",
+    "nackte_kennungen",
+    "fin",
+    "kfz",
+    "betreffzeile"
+   ]
+  },
+  {
+   "id": "PII2-D11",
+   "format": "scan_degraded",
+   "filename": "Scan_Forderungsschreiben_2026-10-08.pdf",
+   "paragraphs": [
+    "Hartmann Engel Rechtsanwälte PartG mbB · Marktplatz 2 · 34567 Musterstadt",
+    "Einschreiben mit Rückschein",
+    "Frau Ute Muster",
+    "Am Anger 14, Wohnung 1. OG rechts",
+    "34590 Fiktivhausen",
+    "(2026/0602-HA)",
+    "08.10.2026",
+    "Fischer Haustechnik GmbH ./. Muster – offene Forderungen",
+    "Sehr geehrte Frau Muster,",
+    "wir zeigen an, dass uns die Fischer Haustechnik GmbH (HRB 5120, Geschäftsführer Werner Fischer) mit der Wahrnehmung ihrer rechtlichen Interessen beauftragt hat. Eine auf uns lautende Vollmacht liegt bei.",
+    "Unsere Mandantin hat in Ihrem Haus Am Anger 14 im Winter 2025/2026 die Heizungsanlage erneuert und die Badinstallation ausgeführt. Trotz Rechnungsstellung und zweier Zahlungserinnerungen sind folgende Beträge offen:",
+    "Wir fordern Sie auf, den Gesamtbetrag von 6.030,80 EUR bis spätestens 22.10.2026 auf das Konto unserer Mandantin, IBAN DE58 5205 0353 0077 1188 46, zu überweisen. Geht der Betrag nicht fristgerecht ein, werden wir unserer Mandantin empfehlen, ohne weitere Ankündigung gerichtliche Hilfe in Anspruch zu nehmen.",
+    "Ihre Einwände wegen des angeblich zu klein dimensionierten Heizkessels hat unsere Mandantin geprüft; der Kessel entspricht der Heizlastberechnung, die nach Muster der Herstellerunterlagen erstellt wurde. Der von Ihnen benannte Gutachter, Herr Stefan Koch, hat die Anlage nach unseren Informationen nie besichtigt.",
+    "Mit freundlichen Grüßen",
+    "Thomas Hartmann",
+    "Rechtsanwalt",
+    "PR 2291 · Tel. 0561 447123-0 · kanzlei@hartmann-engel.example · Steuernummer 026/123/45678"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Datum",
+     "Beleg",
+     "",
+     "Betrag EUR"
+    ],
+    "rows": [
+     [
+      "1",
+      "12.01.2026",
+      "RE-H-26-0031",
+      "KD-55812",
+      "1.480,00"
+     ],
+     [
+      "2",
+      "26.02.2026",
+      "RE-H-26-0119",
+      "KD-55812",
+      "3.920,50"
+     ],
+     [
+      "3",
+      "02.04.2026",
+      "RE-H-26-0207",
+      "KD-55812",
+      "615,30"
+     ],
+     [
+      "4",
+      "",
+      "Mahnkosten",
+      "",
+      "15,00"
+     ],
+     [
+      "5",
+      "",
+      "Summe",
+      "",
+      "6.030,80"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [],
+    "organisation": [
+     "Fischer Haustechnik GmbH"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz 2",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Ute Muster",
+     "category": "person"
+    },
+    {
+     "value": "Am Anger 14",
+     "category": "adresse"
+    },
+    {
+     "value": "Wohnung 1. OG rechts",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Fiktivhausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "2026/0602-HA",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Fischer Haustechnik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Muster",
+     "category": "person"
+    },
+    {
+     "value": "HRB 5120",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Werner Fischer",
+     "category": "person"
+    },
+    {
+     "value": "DE58 5205 0353 0077 1188 46",
+     "category": "iban"
+    },
+    {
+     "value": "Stefan Koch",
+     "category": "person"
+    },
+    {
+     "value": "Thomas Hartmann",
+     "category": "person"
+    },
+    {
+     "value": "PR 2291",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "0561 447123-0",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@hartmann-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "026/123/45678",
+     "category": "steuernummer"
+    },
+    {
+     "value": "RE-H-26-0031",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "RE-H-26-0119",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "RE-H-26-0207",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "KD-55812",
+     "category": "kundennummer"
+    }
+   ],
+   "keep": [
+    "6.030,80 EUR",
+    "22.10.2026",
+    "1.480,00",
+    "3.920,50",
+    "615,30"
+   ],
+   "keep_gewoehnlich": [
+    "im Winter 2025/2026",
+    "zu klein dimensionierten Heizkessels",
+    "nach Muster der Herstellerunterlagen"
+   ],
+   "tags": [
+    "forderungsschreiben",
+    "tabelle",
+    "kundennummer_ohne_kopfwort",
+    "scan_degraded",
+    "wortnamen",
+    "nacktes_aktenzeichen"
+   ]
+  },
+  {
+   "id": "PII2-D12",
+   "format": "txt",
+   "filename": "OCR_Terminsladung_AG_Neuhain.txt",
+   "paragraphs": [
+    "Amtsgericht Neuhain",
+    "Geschäftsnummer: 4 C l23/26",
+    "Bitte bei allen Schreiben angeben",
+    "Hartmann Engel Rechtsanwälte PartG mbB, Marktplatz Z, 34567 Musterstadt",
+    "Ihr Zeichen: 2O26/O291-EN",
+    "Neuhain, O4.O9.2O26",
+    "In dem Rechtsstreit Schvvarz ./. Kurz",
+    "Elke Schvvarz, Unter den Eichen 2l, 34623 Neuhain",
+    "gegen",
+    "Dieter Kurz, Hinter der Kirche S, 34623 Neuhain",
+    "Ladung zum Termin",
+    "Sehr geehrte Damen und Herren, in vorbezeichneter Sache ist Termin zur mündlichen Verhandlung bestimmt auf Donnerstag, 12.11.2026, O9:3O Uhr, Saal 1O4, Erdgeschoss.",
+    "Das persönliche Erscheinen der Klägerin und des Beklagten wird angeordnet (§ 141 ZPO). Bitte teilen Sie kurz mit, ob Ihre Partei den Termin wahrnehmen kann.",
+    "Der Gerichtskostenvorschuss ist unter dem Kassenzeichen 71O 4471 2O26 3l bei der Landesjustizkasse einzuzahlen.",
+    "Richterin am Amtsgericht VVeiß",
+    "Auf Anordnung: V0gt, Justizsekretärin",
+    "Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig."
+   ],
+   "known_entities": {
+    "person": [
+     "Elke Schwarz"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "4 C l23/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Marktplatz Z",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Musterstadt",
+     "category": "plz_ort"
+    },
+    {
+     "value": "2O26/O291-EN",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Schvvarz",
+     "category": "person"
+    },
+    {
+     "value": "Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Elke Schvvarz",
+     "category": "person"
+    },
+    {
+     "value": "Unter den Eichen 2l",
+     "category": "adresse"
+    },
+    {
+     "value": "34623 Neuhain",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Dieter Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Hinter der Kirche S",
+     "category": "adresse"
+    },
+    {
+     "value": "71O 4471 2O26 3l",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "VVeiß",
+     "category": "person"
+    },
+    {
+     "value": "V0gt",
+     "category": "person"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Neuhain",
+    "12.11.2026",
+    "§ 141 ZPO"
+   ],
+   "keep_gewoehnlich": [
+    "Bitte teilen Sie kurz mit"
+   ],
+   "tags": [
+    "ocr_verwechslungen",
+    "ladung",
+    "rubrum",
+    "wortnamen"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1323 @@
+{
+ "cases": "dev.json",
+ "texts": "extracted_texts_ocr_dev.json",
+ "zusammenfassung": {
+  "ask": {
+   "status": {
+    "rueckfrage": 12
+   },
+   "leck_werte": 0,
+   "dokumente_mit_leck": 0,
+   "teil_leck_werte": 0,
+   "keep_verloren": 0,
+   "gewoehnlich_verloren": 0
+  },
+  "A_sorgfalt": {
+   "status": {
+    "gesendet": 8,
+    "blockiert": 4
+   },
+   "leck_werte": 6,
+   "dokumente_mit_leck": 4,
+   "teil_leck_werte": 0,
+   "keep_verloren": 9,
+   "gewoehnlich_verloren": 12,
+   "fragen_gesamt": 41,
+   "fragen_davon_pii": 30,
+   "runden_max": 2
+  },
+  "A_fehler": {
+   "status": {
+    "gesendet": 8,
+    "blockiert": 4
+   },
+   "leck_werte": 19,
+   "dokumente_mit_leck": 8,
+   "teil_leck_werte": 0,
+   "keep_verloren": 9,
+   "gewoehnlich_verloren": 12,
+   "fragen_gesamt": 40,
+   "fragen_davon_pii": 30,
+   "runden_max": 1
+  },
+  "H_sorgfalt": {
+   "status": {
+    "gesendet": 8,
+    "blockiert": 4
+   },
+   "leck_werte": 6,
+   "dokumente_mit_leck": 4,
+   "teil_leck_werte": 0,
+   "keep_verloren": 9,
+   "gewoehnlich_verloren": 12,
+   "fragen_gesamt": 12,
+   "fragen_davon_pii": 1,
+   "runden_max": 2
+  },
+  "H_fehler": {
+   "status": {
+    "gesendet": 8,
+    "blockiert": 4
+   },
+   "leck_werte": 6,
+   "dokumente_mit_leck": 4,
+   "teil_leck_werte": 0,
+   "keep_verloren": 9,
+   "gewoehnlich_verloren": 12,
+   "fragen_gesamt": 12,
+   "fragen_davon_pii": 1,
+   "runden_max": 2
+  },
+  "B_mask": {
+   "status": {
+    "gesendet": 7,
+    "blockiert": 5
+   },
+   "leck_werte": 5,
+   "dokumente_mit_leck": 3,
+   "teil_leck_werte": 0,
+   "keep_verloren": 5,
+   "gewoehnlich_verloren": 11,
+   "auto_maskiert": 18,
+   "auto_maskiert_nicht_pii": 4
+  },
+  "kandidaten": {
+   "gesamt": 40,
+   "davon_pii": 30,
+   "rollen": {
+    "kennnummernform": 28,
+    "nach_praeposition": 5,
+    "vor_finitem_verb": 3,
+    "subjekt": 1,
+    "aufzaehlung_mit_person": 1,
+    "feldwert": 1,
+    "tabellenzelle": 1,
+    "kennzeichenform": 1
+   },
+   "haeufigste_nicht_pii": [
+    [
+     "Dunkelheit",
+     1
+    ],
+    [
+     "Gericht",
+     1
+    ],
+    [
+     "Post",
+     1
+    ],
+    [
+     "Widersprüchen",
+     1
+    ],
+    [
+     "Fugenbild",
+     1
+    ],
+    [
+     "Messenger",
+     1
+    ],
+    [
+     "Justizsekretärin",
+     1
+    ],
+    [
+     "Unsicher",
+     1
+    ],
+    [
+     "Zeugenkontakt",
+     1
+    ],
+    [
+     "Rückschein",
+     1
+    ]
+   ]
+  }
+ },
+ "dokumente": {
+  "PII2-D01": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Dunkelheit",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "GA-25-2207",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "SN-26-883104",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "gewoehnlich_verloren": [
+     "im Winter 2025",
+     "der Koch des Restaurants"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "GA-25-2207",
+     "SN-26-883104"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "gewoehnlich_verloren": [
+     "im Winter 2025",
+     "der Koch des Restaurants"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "gewoehnlich_verloren": [
+     "im Winter 2025",
+     "der Koch des Restaurants"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "gewoehnlich_verloren": [
+     "im Winter 2025",
+     "der Koch des Restaurants"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "gewoehnlich_verloren": [
+     "im Winter 2025",
+     "der Koch des Restaurants"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Dunkelheit"
+    ]
+   }
+  },
+  "PII2-D02": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Gericht",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "SN-26-883104",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "7 O 88/26"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "7 O 88/26",
+     "SN-26-883104"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "7 O 88/26"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "7 O 88/26"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "7 O 88/26"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": [
+     "Gericht"
+    ]
+   }
+  },
+  "PII2-D03": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Post",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "7720-118",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2026/0412-SC",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "K-10388",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0412-SC",
+     "K-10388"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 4,
+    "auto_maskiert_nicht_pii": [
+     "Post"
+    ]
+   }
+  },
+  "PII2-D04": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "99884-417",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "3457l",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "KH-4471-OO93-22",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D05": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "2026/0517-TH",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "MV-0388-17",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "schwarz auf weiß",
+     "sehr klein gedruckt"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0517-TH",
+     "MV-0388-17"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "schwarz auf weiß",
+     "sehr klein gedruckt"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "schwarz auf weiß",
+     "sehr klein gedruckt"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "schwarz auf weiß",
+     "sehr klein gedruckt"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "schwarz auf weiß",
+     "sehr klein gedruckt"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D06": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Widersprüchen",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition",
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Fugenbild",
+      "pii": false,
+      "rollen": [
+       "subjekt"
+      ]
+     },
+     {
+      "begriff": "Messenger",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "P-7731",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "AN-26-0412",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "63-BG-2025-0918"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "gewoehnlich_verloren": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "P-7731",
+     "AN-26-0412",
+     "63-BG-2025-0918"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "gewoehnlich_verloren": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "63-BG-2025-0918"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "gewoehnlich_verloren": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "63-BG-2025-0918"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "gewoehnlich_verloren": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D07": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Justizsekretärin",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Weiß"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "nur kurz und pauschal"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Weiß"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "nur kurz und pauschal"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Weiß"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "nur kurz und pauschal"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Weiß"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "nur kurz und pauschal"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Weiß"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "nur kurz und pauschal"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Justizsekretärin"
+    ]
+   }
+  },
+  "PII2-D08": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Winter",
+      "pii": true,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "Unsicher",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Zeugenkontakt",
+      "pii": false,
+      "rollen": [
+       "tabellenzelle"
+      ]
+     },
+     {
+      "begriff": "55-201-7734",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2026/0655-EN",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "PV-2019-044",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 7,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 6,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 4,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 4,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D09": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "2026/0702-HA",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D10": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "FH-KR 318",
+      "pii": true,
+      "rollen": [
+       "kennzeichenform"
+      ]
+     },
+     {
+      "begriff": "77-26-004311",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "GA-26-1093",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "WBA8E31090K471203",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "RG-SV-26-0815",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 5,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "GA-26-1093",
+     "FH-KR 318",
+     "WBA8E31090K471203",
+     "RG-SV-26-0815"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 5,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "auto_maskiert": 5,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D11": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Rückschein",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "5205 0353 0077 1188 46",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2026/0602-HA",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "RE-H-26-0031",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "KD-55812",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "RE-H-26-0119",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "RE-H-26-0207",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 7,
+    "fragen_pii": 6,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 7,
+    "fragen_pii": 6,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-D12": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "l23/26",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "71O 4471 2O26 3l",
+     "VVeiß",
+     "V0gt"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "Bitte teilen Sie kurz mit"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "71O 4471 2O26 3l",
+     "VVeiß",
+     "V0gt"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "Bitte teilen Sie kurz mit"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "71O 4471 2O26 3l",
+     "VVeiß",
+     "V0gt"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "Bitte teilen Sie kurz mit"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "71O 4471 2O26 3l",
+     "VVeiß",
+     "V0gt"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "Bitte teilen Sie kurz mit"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "71O 4471 2O26 3l",
+     "VVeiß",
+     "V0gt"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [
+     "Bitte teilen Sie kurz mit"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": []
+   }
+  }
+ }
+}

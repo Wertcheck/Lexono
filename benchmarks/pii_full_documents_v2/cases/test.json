@@ -1,0 +1,4369 @@
+{
+ "korpus": "pii_full_documents_v2",
+ "split": "test",
+ "version": 1,
+ "erstellt": "2026-10-15",
+ "verfasser": "blinde Agenten ohne Zugriff auf Code/Tests/Benchmarks",
+ "teile": {
+  "test_A.json": {
+   "author": "blind-agent-pii2-test-A",
+   "dokumente": 12
+  },
+  "test_B.json": {
+   "author": "blind-agent-pii2-test-B",
+   "dokumente": 12
+  }
+ },
+ "documents": [
+  {
+   "id": "PII2-TA01",
+   "format": "docx",
+   "filename": "Klage_Kaiser_Graf_LG_Altheide.docx",
+   "paragraphs": [
+    "HERZOG & PARTNER Rechtsanwälte · Kirchplatz 3 · 34567 Waldbrunnen",
+    "Dr. Clara Herzog · Fachanwältin für Bau- und Architektenrecht | Tel. 05631 448812-0 | Fax 05631 448812-99 | c.herzog@herzog-partner.example",
+    "An das Landgericht Altheide – Zivilkammer –",
+    "Waldbrunnen, 12.02.2026 | Unser Zeichen: 2026/0517-KR",
+    "Kaiser ./. Graf – Schadensersatz",
+    "KLAGE",
+    "des Herrn Jonas Kaiser, Am Brunnen 4, 2. OG rechts, 34567 Waldbrunnen,",
+    "– Kläger –",
+    "Prozessbevollmächtigte: Herzog & Partner Rechtsanwälte, Kirchplatz 3, 34567 Waldbrunnen,",
+    "gegen",
+    "Herrn Matthias Graf, Unter den Eichen 12, 34571 Altheide,",
+    "– Beklagter –",
+    "wegen Schadensersatz aus Grundstücksnachbarschaft und Eigentumsverletzung",
+    "Streitwert (vorläufig): 14.860,00 EUR",
+    "Namens und in Vollmacht des Klägers erheben wir Klage und werden in der mündlichen Verhandlung beantragen:",
+    "1. Der Beklagte wird verurteilt, an den Kläger 14.860,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 05.12.2025 zu zahlen.",
+    "2. Der Beklagte wird verurteilt, den Kläger von vorgerichtlichen Rechtsanwaltskosten in Höhe von 1.054,10 EUR freizustellen.",
+    "3. Der Beklagte trägt die Kosten des Rechtsstreits.",
+    "Für den Fall der Säumnis beantragen wir den Erlass eines Versäumnisurteils nach § 331 Abs. 3 ZPO. Einer Übertragung auf den Einzelrichter wird zugestimmt.",
+    "BEGRÜNDUNG",
+    "I. Sachverhalt",
+    "Der Kläger ist Eigentümer des Hausgrundstücks Am Brunnen 4 in Waldbrunnen. Der Beklagte ist Eigentümer des östlich angrenzenden Grundstücks, auf dem er seit dem Frühjahr 2025 eine Natursteinmauer errichtet. Die Mauer verläuft unmittelbar entlang der Grundstücksgrenze und ist an ihrer höchsten Stelle etwa 2,10 m hoch.",
+    "Am 04.11.2025 gegen 17:30 Uhr löste sich während der Arbeiten des Beklagten ein loser Stein aus der Mauerkrone und fiel auf den im Hof des Klägers abgestellten Pkw mit dem amtlichen Kennzeichen WBN-JK 412. Der Stein durchschlug die Heckscheibe und beschädigte die Heckklappe sowie den Dachholm.",
+    "Beweis: Zeugnis der Frau Petra Stein, Zum Sportplatz 1, 34567 Waldbrunnen; Lichtbilder vom 04.11.2025 als Anlage K 1",
+    "Die Zeugin Stein wohnt im Nachbarhaus und beobachtete den Vorfall von ihrem Balkon aus. Sie hat dem Kläger noch am selben Abend geschildert, dass der Beklagte die Mauersteine ohne jede Sicherung auf der Mauerkrone gelagert habe. Ein Stein im Garten des Klägers, der bereits Wochen zuvor herabgefallen war, liegt dort bis heute.",
+    "Der Kläger forderte den Beklagten mit Schreiben vom 18.11.2025 unter Fristsetzung bis zum 04.12.2025 zur Zahlung auf. Der Beklagte reagierte kurz vor Ablauf der Frist mit einem Schreiben, in dem er jede Verantwortung bestritt und behauptete, die Mauersteine seien durch einen Sturm gelöst worden.",
+    "Ein Sturm herrschte am 04.11.2025 nicht. Nach den Aufzeichnungen der Wetterstation Waldbrunnen-Nord lag die Spitzenböe an diesem Tag bei 31 km/h. Das ist schwacher bis mäßiger Wind.",
+    "Beweis: Auskunft der Wetterstation, Anlage K 2; Sachverständigengutachten",
+    "Der Schaden wurde von dem Kfz-Sachverständigen Bernd Koch, Ingenieurbüro Koch & Söhne, Hoher Weg 8, 34569 Erlenrode, begutachtet. Das Gutachten vom 10.11.2025 (Gutachten-Nr. SV-2025-1184) weist Reparaturkosten von 12.940,00 EUR netto aus.",
+    "Beweis: Gutachten des Sachverständigen Koch, Anlage K 3; Zeugnis des Sachverständigen Bernd Koch, b. b.",
+    "Der Schaden setzt sich wie folgt zusammen: Reparaturkosten netto 12.940,00 EUR, Gutachterkosten 1.320,00 EUR, Nutzungsausfall für 19 Tage zu je 30,00 EUR = 570,00 EUR, Kostenpauschale 30,00 EUR, insgesamt 14.860,00 EUR.",
+    "Der Kläger hatte das Fahrzeug in dieser Zeit nicht zur Verfügung. Er ist als Servicekraft in der Gaststätte „Alte Mühle“ beschäftigt und an jenem Abend früher heimgekommen, weil der Koch des Lokals erkrankt war und die Küche geschlossen blieb. Für den Arbeitsweg nutzte er während der Reparatur ein Fahrrad.",
+    "Die Haftpflichtversicherung des Beklagten, die Sonnenfelder Hausrat- und Haftpflicht AG, hat die Regulierung mit Schreiben ihres Sachbearbeiters Ernst vom 02.01.2026 zu Schadennummer HV-26-008841 abgelehnt. Eine Begründung enthält das Schreiben nicht; es verweist lediglich auf die Angaben des Versicherungsnehmers.",
+    "II. Rechtliche Würdigung",
+    "Der Anspruch folgt aus § 823 Abs. 1 BGB. Der Beklagte hat durch die ungesicherte Lagerung von Mauersteinen auf der Mauerkrone eine Gefahrenquelle geschaffen und die ihm obliegende Verkehrssicherungspflicht verletzt. Er hätte die Steine sichern oder auf seinem eigenen Grundstück ablegen müssen.",
+    "Daneben besteht ein Anspruch aus § 836 Abs. 1 BGB, weil sich ein Teil eines mit dem Grundstück verbundenen Werkes abgelöst hat. Die Vermutung des Verschuldens hat der Beklagte nicht widerlegt; der Hinweis auf einen Sturm ist nach dem oben Gesagten unzutreffend. Im Ernst kann der Beklagte nicht behaupten, ein laues Herbstlüftchen habe einen Mauerstein von über vier Kilogramm bewegt.",
+    "Die Zinsforderung beruht auf §§ 286, 288 Abs. 1 BGB. Der Beklagte befindet sich seit Ablauf der gesetzten Frist am 04.12.2025 in Verzug.",
+    "Die vorgerichtlichen Rechtsanwaltskosten sind als Teil des Schadens nach § 249 BGB zu ersetzen. Sie berechnen sich aus einem Gegenstandswert von 14.860,00 EUR mit einer 1,3-Geschäftsgebühr nach Nr. 2300 VV RVG zuzüglich Auslagenpauschale und Umsatzsteuer.",
+    "III. Zuständigkeit und Verfahren",
+    "Das Landgericht Altheide ist sachlich nach §§ 23, 71 GVG und örtlich nach § 32 ZPO zuständig, da sich die schädigende Handlung im Bezirk des Gerichts ereignet hat.",
+    "Eine außergerichtliche Einigung ist gescheitert, weil der Beklagte jedes Gespräch abgelehnt hat. Auf das in der Sache 2026/0517-KR geführte vorgerichtliche Schreiben vom 18.11.2025 wird Bezug genommen.",
+    "Hinsichtlich des beim Amtsgericht Waldbrunnen anhängigen selbständigen Beweisverfahrens 7 H 3/26 regen wir die Beiziehung der Akte an. Dort ist die Standsicherheit der übrigen Mauer Gegenstand der Begutachtung.",
+    "Der Gerichtskostenvorschuss wird nach Anforderung unverzüglich eingezahlt. Beglaubigte und einfache Abschrift anbei.",
+    "Dr. Clara Herzog",
+    "Rechtsanwältin",
+    "Herzog & Partner Rechtsanwälte PartG mbB · PR 3307 Amtsgericht Sonnenfeld · USt-IdNr. DE 318 774 205 · Steuernummer 27/815/40917",
+    "Volksbank Waldbrunnen eG · IBAN DE41 5206 0410 0004 8812 07"
+   ],
+   "known_entities": {
+    "person": [
+     "Jonas Kaiser"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "HERZOG & PARTNER Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Herzog & Partner Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Herzog & Partner Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Ingenieurbüro Koch & Söhne",
+     "category": "organisation"
+    },
+    {
+     "value": "Sonnenfelder Hausrat- und Haftpflicht AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Gaststätte „Alte Mühle“",
+     "category": "organisation"
+    },
+    {
+     "value": "Clara Herzog",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Kaiser",
+     "category": "person"
+    },
+    {
+     "value": "Kaiser",
+     "category": "person"
+    },
+    {
+     "value": "Matthias Graf",
+     "category": "person"
+    },
+    {
+     "value": "Graf",
+     "category": "person"
+    },
+    {
+     "value": "Petra Stein",
+     "category": "person"
+    },
+    {
+     "value": "Stein",
+     "category": "person"
+    },
+    {
+     "value": "Bernd Koch",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Kirchplatz 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Brunnen 4, 2. OG rechts",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Brunnen 4",
+     "category": "adresse"
+    },
+    {
+     "value": "Unter den Eichen 12",
+     "category": "adresse"
+    },
+    {
+     "value": "Zum Sportplatz 1",
+     "category": "adresse"
+    },
+    {
+     "value": "Hoher Weg 8",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Waldbrunnen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34571 Altheide",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34569 Erlenrode",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05631 448812-0",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 448812-99",
+     "category": "telefon"
+    },
+    {
+     "value": "c.herzog@herzog-partner.example",
+     "category": "email"
+    },
+    {
+     "value": "2026/0517-KR",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "7 H 3/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "WBN-JK 412",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "SV-2025-1184",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HV-26-008841",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "PR 3307",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE 318 774 205",
+     "category": "steuernummer"
+    },
+    {
+     "value": "27/815/40917",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE41 5206 0410 0004 8812 07",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "Landgericht Altheide",
+    "Amtsgericht Waldbrunnen",
+    "14.860,00 EUR",
+    "1.054,10 EUR",
+    "12.940,00 EUR",
+    "04.12.2025",
+    "§ 823 Abs. 1 BGB",
+    "§ 836 Abs. 1 BGB",
+    "§ 331 Abs. 3 ZPO",
+    "§ 249 BGB",
+    "Nr. 2300 VV RVG",
+    "§ 32 ZPO"
+   ],
+   "keep_gewoehnlich": [
+    "ein loser Stein aus der Mauerkrone",
+    "Der Stein durchschlug die Heckscheibe",
+    "Ein Stein im Garten",
+    "der Koch des Lokals",
+    "Im Ernst kann der Beklagte"
+   ],
+   "tags": [
+    "klage",
+    "lang",
+    "briefkopf",
+    "fusszeile",
+    "aktenzeichen_ohne_label",
+    "strasse_ohne_strassenwort",
+    "adresszusatz",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA02",
+   "format": "pdf",
+   "filename": "Klageerwiderung_4_O_212-26_Wolf_Haustechnik.pdf",
+   "paragraphs": [
+    "KURZ & KOLLEGEN · Rechtsanwälte · Am Markt 7 · 34590 Sonnenfeld",
+    "Tel. 0561 7730-41 · Fax 0561 7730-49 · kurz@kurz-kollegen.invalid",
+    "Landgericht Sonnenfeld · 4. Zivilkammer",
+    "4 O 212/26 · Lang ./. Wolf Haustechnik GmbH",
+    "Sonnenfeld, 23.03.2026 · unser Zeichen KK-26-0388",
+    "KLAGEERWIDERUNG",
+    "In dem Rechtsstreit Sabine Lang geb. Fischer, Im Grund 6, 34590 Sonnenfeld – Klägerin –, Prozessbevollmächtigte: Rechtsanwältin Miriam Schwarz, Hoher Weg 21, 34590 Sonnenfeld,",
+    "gegen die Wolf Haustechnik GmbH, vertreten durch den Geschäftsführer Thomas Wolf, An der Ziegelei 14, 34593 Grünhagen, eingetragen im Handelsregister des Amtsgerichts Sonnenfeld unter HRB 8812 – Beklagte –,",
+    "zeigen wir an, dass wir die Beklagte vertreten. Wir beantragen, die Klage abzuweisen.",
+    "Die Klage ist unbegründet. Der Klägerin stehen die geltend gemachten Ansprüche auf Minderung und Schadensersatz in Höhe von insgesamt 9.870,00 EUR nicht zu.",
+    "I. Zum Sachverhalt",
+    "Richtig ist, dass die Parteien am 14.05.2025 einen Werkvertrag über den Austausch der Gasheizung gegen eine Luft-Wasser-Wärmepumpe im Einfamilienhaus der Klägerin geschlossen haben (Auftrag A-2025-11407). Der vereinbarte Werklohn betrug 28.450,00 EUR brutto. Die Klägerin wird bei der Beklagten unter KD-40317 geführt.",
+    "Die Anlage wurde am 29.08.2025 fertiggestellt und am selben Tag in Anwesenheit der Klägerin und ihres Ehemannes Uwe Lang abgenommen. Das Abnahmeprotokoll enthält keinen Vorbehalt. Die Schlussrechnung RE-2025-08812 vom 01.09.2025 hat die Klägerin bis auf einen Einbehalt von 2.000,00 EUR beglichen.",
+    "Beweis: Abnahmeprotokoll vom 29.08.2025, Anlage B 1; Schlussrechnung, Anlage B 2",
+    "Bestritten wird, dass die Anlage seit Oktober 2025 wiederholt ausgefallen sei. Die Klägerin hat ihren Vortrag zu den angeblichen Ausfällen auf drei Seiten lang und breit ausgeführt, ohne auch nur einen konkreten Tag, eine Uhrzeit oder eine Raumtemperatur zu nennen. Ein solcher Vortrag ist nicht einlassungsfähig.",
+    "Tatsächlich ist die Beklagte am 12.11.2025 einmal zu einem Kundendienstbesuch bestellt worden. Der Monteur Tobias Hahn stellte fest, dass jemand den Hahn am Heizkreisverteiler für das Obergeschoss vollständig geschlossen hatte. Nachdem er ihn geöffnet hatte, arbeitete die Anlage einwandfrei. Ein Mangel lag nicht vor.",
+    "Beweis: Zeugnis des Herrn Tobias Hahn, zu laden über die Beklagte; Servicebericht Nr. SB-25-3391, Anlage B 3",
+    "Der Zeuge Hahn hat die Klägerin bei diesem Termin auch darauf hingewiesen, dass die Ventile nicht verstellt werden dürfen. Die Klägerin hat dies mit ihrer Unterschrift auf dem Servicebericht bestätigt.",
+    "Soweit sich die Klägerin auf ein Privatgutachten des Sachverständigen Oskar Brenner vom 15.01.2026 stützt, ist dieses unbrauchbar. Der Sachverständige Brenner hat die Anlage im ausgeschalteten Zustand besichtigt und seine Schlussfolgerungen allein aus Angaben der Klägerin gezogen. Messwerte enthält das Gutachten nicht.",
+    "Auch der Hinweis des Gutachters, die neue Anlage sei lauter als der Brenner der alten Gasheizung, begründet keinen Mangel. Die gemessenen Schallwerte liegen nach dem Datenblatt des Herstellers unter den Richtwerten der TA Lärm.",
+    "Die geltend gemachten Hotelkosten von 1.240,00 EUR sind nicht ersatzfähig. Die Klägerin hat das Haus zu keinem Zeitpunkt verlassen müssen; nach eigenen Angaben verbrachte sie die Weihnachtstage 2025 bei ihrer Schwester Ilse Brandt in Altheide.",
+    "Die Position „Heizlüfter und Mehrverbrauch Strom“ in Höhe von 630,00 EUR wird auch der Höhe nach bestritten. Belege hat die Klägerin nicht vorgelegt. Ein nennenswerter Mehrverbrauch ist bei ordnungsgemäß geöffnetem Ventil nicht zu erwarten.",
+    "II. Rechtliche Würdigung",
+    "Ein Anspruch auf Minderung nach §§ 634 Nr. 3, 638 BGB setzt einen Sachmangel im Sinne des § 633 Abs. 2 BGB voraus. Einen solchen hat die Klägerin nicht schlüssig dargelegt. Die Beweislast für Mängel trägt nach der Abnahme die Klägerin.",
+    "Ein Schadensersatzanspruch nach §§ 634 Nr. 4, 280, 281 BGB scheitert zudem an der fehlenden Fristsetzung zur Nacherfüllung. Die Klägerin hat der Beklagten keine Frist gesetzt, sondern mit Anwaltsschreiben vom 08.12.2025 sogleich Zahlung verlangt.",
+    "Die Klägerin meldete sich erstmals kurz vor Ablauf der Zahlungsfrist aus der Schlussrechnung mit Beanstandungen, offensichtlich um den Einbehalt zu rechtfertigen. Auch das spricht gegen einen fortdauernden Mangel.",
+    "Soweit die Klägerin in ihrem Schreiben vom 08.12.2025 die Beklagte als „ein Wolf im Schafspelz“ bezeichnet und dem Geschäftsführer Wolf persönlich Täuschung vorwirft, wird dies als ehrverletzend zurückgewiesen. Für die Entscheidung ist es ohne Belang.",
+    "III. Widerklage wird vorbehalten",
+    "Die Beklagte behält sich vor, den einbehaltenen Restwerklohn von 2.000,00 EUR im Wege der Widerklage geltend zu machen. Sie ist zu einer gütlichen Einigung grundsätzlich bereit, sofern die Klägerin den Einbehalt freigibt.",
+    "Mit einer Entscheidung durch den Einzelrichter nach § 348a ZPO besteht Einverständnis.",
+    "Abschriften für die Gegenseite liegen bei. Die Prozessbevollmächtigte der Klägerin, Rechtsanwältin Schwarz, erhält eine Abschrift vorab über das besondere elektronische Anwaltspostfach.",
+    "Dr. Felix Kurz",
+    "Rechtsanwalt",
+    "Kurz & Kollegen Rechtsanwälte · Sparkasse Sonnenfeld · IBAN DE72 5235 0005 0207 4415 19 · Steuernummer 26/233/51408"
+   ],
+   "known_entities": {
+    "person": [],
+    "organisation": [
+     "Wolf Haustechnik GmbH"
+    ]
+   },
+   "pii": [
+    {
+     "value": "KURZ & KOLLEGEN",
+     "category": "organisation"
+    },
+    {
+     "value": "Kurz & Kollegen Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Wolf Haustechnik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Sabine Lang",
+     "category": "person"
+    },
+    {
+     "value": "Lang",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Lang",
+     "category": "person"
+    },
+    {
+     "value": "Fischer",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Miriam Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Thomas Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Tobias Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Oskar Brenner",
+     "category": "person"
+    },
+    {
+     "value": "Brenner",
+     "category": "person"
+    },
+    {
+     "value": "Ilse Brandt",
+     "category": "person"
+    },
+    {
+     "value": "Felix Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Am Markt 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Im Grund 6",
+     "category": "adresse"
+    },
+    {
+     "value": "Hoher Weg 21",
+     "category": "adresse"
+    },
+    {
+     "value": "An der Ziegelei 14",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Sonnenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34593 Grünhagen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "0561 7730-41",
+     "category": "telefon"
+    },
+    {
+     "value": "0561 7730-49",
+     "category": "telefon"
+    },
+    {
+     "value": "kurz@kurz-kollegen.invalid",
+     "category": "email"
+    },
+    {
+     "value": "4 O 212/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "KK-26-0388",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "HRB 8812",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "A-2025-11407",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "SB-25-3391",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KD-40317",
+     "category": "kundennummer"
+    },
+    {
+     "value": "RE-2025-08812",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "DE72 5235 0005 0207 4415 19",
+     "category": "iban"
+    },
+    {
+     "value": "26/233/51408",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "Landgericht Sonnenfeld",
+    "9.870,00 EUR",
+    "28.450,00 EUR",
+    "2.000,00 EUR",
+    "1.240,00 EUR",
+    "§ 633 Abs. 2 BGB",
+    "§ 348a ZPO",
+    "TA Lärm",
+    "08.12.2025"
+   ],
+   "keep_gewoehnlich": [
+    "lang und breit ausgeführt",
+    "den Hahn am Heizkreisverteiler",
+    "der Brenner der alten Gasheizung",
+    "kurz vor Ablauf der Zahlungsfrist",
+    "ein Wolf im Schafspelz"
+   ],
+   "tags": [
+    "klageerwiderung",
+    "lang",
+    "briefkopf",
+    "fusszeile",
+    "registernummer",
+    "geburtsname",
+    "gewoehnliche_woerter_als_namen",
+    "aktenzeichen_ohne_label"
+   ]
+  },
+  {
+   "id": "PII2-TA03",
+   "format": "scan",
+   "filename": "Urteil_AG_Waldbrunnen_3C118-26_Scan.pdf",
+   "paragraphs": [
+    "Amtsgericht Waldbrunnen",
+    "3 C 118/26",
+    "Verkündet am 17.07.2026 – Justizbeschäftigte als Urkundsbeamtin der Geschäftsstelle",
+    "IM NAMEN DES VOLKES",
+    "URTEIL",
+    "In dem Rechtsstreit",
+    "Heinrich Bauer, Am Anger 2, 34567 Waldbrunnen,",
+    "Kläger,",
+    "Prozessbevollmächtigter: Rechtsanwalt Peter Hartung, Lindenhof 5, 34567 Waldbrunnen,",
+    "gegen",
+    "Marie Klein geb. Sommer, Hoher Weg 8, Seitenflügel, 34567 Waldbrunnen,",
+    "Beklagte,",
+    "Prozessbevollmächtigte: Rechtsanwältin Dr. Lea Fuchs, Kanzlei Fuchs Mietrecht, Hinter der Mühle 11, 34571 Altheide,",
+    "hat das Amtsgericht Waldbrunnen durch die Richterin am Amtsgericht Winter auf die mündliche Verhandlung vom 26.06.2026 für Recht erkannt:",
+    "1. Die Beklagte wird verurteilt, an den Kläger 1.404,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 04.03.2026 zu zahlen. Im Übrigen wird die Klage abgewiesen.",
+    "2. Von den Kosten des Rechtsstreits tragen der Kläger 55 % und die Beklagte 45 %.",
+    "3. Das Urteil ist vorläufig vollstreckbar. Die Parteien dürfen die Vollstreckung durch Sicherheitsleistung in Höhe von 110 % des aufgrund des Urteils vollstreckbaren Betrages abwenden, wenn nicht der jeweilige Gegner vor der Vollstreckung Sicherheit in gleicher Höhe leistet.",
+    "Tatbestand",
+    "Die Beklagte ist seit dem 01.04.2021 Mieterin einer Dreizimmerwohnung im Seitenflügel des Anwesens Hoher Weg 8 in Waldbrunnen, dessen Eigentümer und Vermieter der Kläger ist. Die monatliche Bruttomiete beträgt 780,00 EUR.",
+    "Im Sommer 2025 zeigte die Beklagte dem Kläger Schimmelbildung im Schlafzimmer und im Bad an. Sie minderte die Miete ab September 2025 um 50 % und zahlte für die Monate September 2025 bis Februar 2026 jeweils nur 390,00 EUR. Der Kläger verlangt die Differenz von insgesamt 2.340,00 EUR sowie 780,00 EUR Nebenkostennachzahlung aus der Abrechnung für 2024, insgesamt 3.120,00 EUR.",
+    "Der Kläger behauptet, die Feuchtigkeit beruhe auf unzureichendem Heiz- und Lüftungsverhalten der Beklagten. Diese trockne regelmäßig Wäsche in der Wohnung. Die Nebenkostenabrechnung sei der Beklagten am 28.11.2025 zugegangen.",
+    "Der Kläger beantragt, die Beklagte zu verurteilen, an ihn 3.120,00 EUR nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit Rechtshängigkeit zu zahlen.",
+    "Die Beklagte beantragt, die Klage abzuweisen.",
+    "Sie behauptet, die Feuchtigkeit dringe durch die schadhafte Außenwand des Seitenflügels ein. Die Dachrinne sei seit Jahren undicht. Die Nebenkostenabrechnung habe sie nie erhalten. Ihr Nachbar, der Zeuge Gerd Bauer, ein Bruder des Klägers, habe die Wohnung im Winter 2025/2026 mehrfach gesehen und könne den Zustand bestätigen.",
+    "Das Gericht hat Beweis erhoben durch Vernehmung des Zeugen Gerd Bauer und durch Einholung eines schriftlichen Gutachtens des Sachverständigen Dipl.-Ing. Rainer Lorenz. Wegen des Ergebnisses der Beweisaufnahme wird auf das Protokoll vom 26.06.2026 und das Gutachten vom 02.06.2026 Bezug genommen.",
+    "Entscheidungsgründe",
+    "Die zulässige Klage ist nur teilweise begründet.",
+    "I. Dem Kläger steht gegen die Beklagte ein Anspruch auf Zahlung restlicher Miete für die Monate September 2025 bis Februar 2026 in Höhe von 1.404,00 EUR aus § 535 Abs. 2 BGB zu. Die Miete war in diesem Zeitraum nach § 536 Abs. 1 BGB nicht um 50 %, sondern nur um 20 % gemindert.",
+    "Nach dem überzeugenden Gutachten des Sachverständigen Lorenz beruht die Schimmelbildung überwiegend auf einer Wärmebrücke im Bereich der Außenecke des Schlafzimmers sowie auf einem Feuchteeintrag über die schadhafte Dachrinne. Ein Fehlverhalten der Beklagten hat der Sachverständige nicht festgestellt.",
+    "Allerdings ist das Wohnzimmer als größter Raum der Wohnung nicht betroffen, sodass die Gebrauchstauglichkeit nicht in einem Umfang aufgehoben ist, der eine Minderung um die Hälfte rechtfertigen würde.",
+    "Das Gericht hält eine Minderung von 20 % für angemessen. Die Schimmelflecken sind nach den Lichtbildern des Sachverständigen deutlich sichtbar und für Groß und Klein in der Wohnung gesundheitlich bedenklich, betreffen aber nur zwei von fünf Räumen.",
+    "Die Differenz zwischen der geminderten Miete von 624,00 EUR und der gezahlten Miete von 390,00 EUR beläuft sich auf 234,00 EUR monatlich, für sechs Monate mithin auf 1.404,00 EUR.",
+    "Der Zeuge Bauer hat glaubhaft bekundet, dass die Wand im Schlafzimmer bereits im Herbst 2025 großflächig verfärbt gewesen sei. Er hat ferner angegeben, dass der Bauer vom Nachbarhof bei Starkregen regelmäßig Wasser vom Hof auf den Weg hinter dem Seitenflügel leite. Ob dies zur Durchfeuchtung beiträgt, kann offenbleiben, da es sich jedenfalls nicht um ein Verhalten der Beklagten handelt.",
+    "II. Ein Anspruch auf die Nebenkostennachzahlung von 780,00 EUR besteht nicht. Der Kläger hat den Zugang der Abrechnung für 2024 nicht bewiesen. Die Abrechnungsfrist lief am 31.12.2025 ab; eine Nachforderung ist nach § 556 Abs. 3 Satz 3 BGB ausgeschlossen.",
+    "Der Kläger hat lediglich vorgetragen, er habe die Abrechnung in den Briefkasten der Beklagten eingeworfen. Den Einwurf hat er nicht unter Beweis gestellt. Seine Ehefrau, die Zeugin Hedwig Bauer geb. Kaiser, war ausweislich ihrer eigenen Angaben bei dem Einwurf nicht zugegen.",
+    "III. Der Zinsanspruch folgt aus §§ 286, 288 Abs. 1 BGB. Die Kostenentscheidung beruht auf § 92 Abs. 1 ZPO, die Entscheidung über die vorläufige Vollstreckbarkeit auf §§ 708 Nr. 11, 711 ZPO.",
+    "IV. Der Streitwert wird auf 3.120,00 EUR festgesetzt.",
+    "Rechtsbehelfsbelehrung",
+    "Gegen dieses Urteil ist das Rechtsmittel der Berufung für jeden zulässig, der durch dieses Urteil in seinen Rechten benachteiligt ist, wenn der Wert des Beschwerdegegenstandes 600,00 EUR übersteigt oder das Gericht die Berufung zugelassen hat.",
+    "Die Berufung ist binnen einer Notfrist von einem Monat bei dem Landgericht Altheide einzulegen. Die Frist beginnt mit der Zustellung der vollständigen Entscheidung, spätestens mit Ablauf von fünf Monaten nach der Verkündung.",
+    "Winter",
+    "Richterin am Amtsgericht",
+    "Ausgefertigt, Waldbrunnen, 21.07.2026 – Urkundsbeamtin der Geschäftsstelle",
+    "In Sachen Bauer ./. Klein wird die Ausfertigung den Prozessbevollmächtigten gegen Empfangsbekenntnis zugestellt."
+   ],
+   "known_entities": {
+    "person": [
+     "Marie Klein"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Heinrich Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Gerd Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Hedwig Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Marie Klein",
+     "category": "person"
+    },
+    {
+     "value": "Klein",
+     "category": "person"
+    },
+    {
+     "value": "Peter Hartung",
+     "category": "person"
+    },
+    {
+     "value": "Lea Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Winter",
+     "category": "person"
+    },
+    {
+     "value": "Rainer Lorenz",
+     "category": "person"
+    },
+    {
+     "value": "Lorenz",
+     "category": "person"
+    },
+    {
+     "value": "Sommer",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Kaiser",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Kanzlei Fuchs Mietrecht",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Anger 2",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenhof 5",
+     "category": "adresse"
+    },
+    {
+     "value": "Hoher Weg 8, Seitenflügel",
+     "category": "adresse"
+    },
+    {
+     "value": "Hoher Weg 8",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinter der Mühle 11",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Waldbrunnen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34571 Altheide",
+     "category": "plz_ort"
+    },
+    {
+     "value": "3 C 118/26",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Waldbrunnen",
+    "Landgericht Altheide",
+    "1.404,00 EUR",
+    "3.120,00 EUR",
+    "780,00 EUR",
+    "§ 535 Abs. 2 BGB",
+    "§ 536 Abs. 1 BGB",
+    "§ 556 Abs. 3 Satz 3 BGB",
+    "§ 92 Abs. 1 ZPO",
+    "31.12.2025",
+    "binnen einer Notfrist von einem Monat"
+   ],
+   "keep_gewoehnlich": [
+    "Im Sommer 2025",
+    "im Winter 2025/2026",
+    "für Groß und Klein",
+    "der Bauer vom Nachbarhof"
+   ],
+   "tags": [
+    "urteil",
+    "lang",
+    "scan",
+    "rubrum",
+    "geburtsname",
+    "adresszusatz",
+    "aktenzeichen_ohne_label",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA04",
+   "format": "txt",
+   "filename": "Beschluss_LG_Altheide_9S41-26.txt",
+   "paragraphs": [
+    "Landgericht Altheide",
+    "9. Zivilkammer",
+    "9 S 4l/26",
+    "2 C 5O9/25 Amtsgericht Sonnenfeld",
+    "Beschluss",
+    "In dem Rechtsstreit Vogt ./. Hahn",
+    "Konrad Vogt, Unter den Eichen 3, 34590 Sonnenfeld, – Kläger und Berufungskläger –",
+    "Prozessbevollmächtigte: Herzog & Partner Rechtsanwälte, Waldbrunnen, Gz. 2O26/0733-KR",
+    "gegen",
+    "Dieter Hahn, Unter den Eichen 3, 1. OG links, 34590 Sonnenfeld, – Beklagter und Berufungsbeklagter –",
+    "Prozessbevollmächtigter: Rechtsanwalt Jan Ernst, Am Brunnen 19, 34590 Sonnenfeld",
+    "Streitverkündete: Brunnenhof Hausverwaltung GmbH, HR8 552O, vertreten durch die Geschäftsführerin Ute Frei",
+    "hat die 9. Zivilkammer des Landgerichts Altheide durch den Vorsitzenden Richter am Landgericht Schmied, die Richterin am Landgericht Lang und den Richter am Landgericht Dr. Koch am 08.09.2026 beschlossen:",
+    "1. Die Kammer beabsichtigt, die Berufung des Klägers gegen das Urteil des Amtsgerichts Sonnenfeld vom 19.05.2026, 2 C 509/25, gemäß § 522 Abs. 2 ZPO durch einstimmigen Beschluss zurückzuweisen.",
+    "2. Der Kläger erhält Gelegenheit zur Stellungnahme binnen drei Wochen ab Zustellung dieses Beschlusses.",
+    "Gründe",
+    "Der Kläger, Eigentümer der Erdgeschosswohnung, verlangt von dem Beklagten, dem Eigentümer der darüberliegenden Wohnung, Ersatz eines Wasserschadens in Höhe von 6.215,40 EUR. Am 21.02.2025 trat in der Wohnung des Beklagten Wasser aus, weil sich der Schlauch der Waschmaschine vom Hahn gelöst hatte. Der Hahn selbst war nach den Feststellungen des Amtsgerichts intakt.",
+    "Das Amtsgericht hat die Klage abgewiesen, weil der Kläger nicht bewiesen habe, dass die geltend gemachten Feuchtigkeitsschäden an Decke und Parkett auf den Wasseraustritt vom 21.02.2025 zurückgehen. Nach dem Gutachten bestanden an derselben Stelle bereits ältere Wasserränder.",
+    "Die Berufung hat offensichtlich keine Aussicht auf Erfolg. Die Beweiswürdigung des Amtsgerichts ist nach § 529 Abs. 1 Nr. 1 ZPO für die Kammer bindend. Konkrete Anhaltspunkte, die Zweifel an der Richtigkeit oder Vollständigkeit der Feststellungen begründen, zeigt die Berufung nicht auf.",
+    "Der Kläger wiederholt lediglich, der Schaden sei „im Ernst nicht zu übersehen“ gewesen. Das stellt niemand in Abrede. Entscheidend ist allein, ob der Schaden auf das Ereignis vom 21.02.2025 zurückgeht. Hierzu hat der Sachverständige nachvollziehbar ausgeführt, dass die Verfärbungen im Bereich der Deckenleuchte älter als ein Jahr sind.",
+    "Auch die Rüge, das Amtsgericht habe die Zeugin Ute Frei, die Geschäftsführerin der Streitverkündeten, nicht vernommen, greift nicht durch. Der Kläger hat die Zeugin erstinstanzlich nur zu der Frage benannt, wann der Schaden gemeldet wurde. Darauf kam es nicht an.",
+    "Die Sache hat keine grundsätzliche Bedeutung. Eine Entscheidung des Berufungsgerichts ist auch nicht zur Fortbildung des Rechts oder zur Sicherung einer einheitlichen Rechtsprechung erforderlich. Eine mündliche Verhandlung ist nicht geboten.",
+    "Die Kammer weist darauf hin, dass sich im Falle einer Rücknahme der Berufung die Gerichtsgebühren nach Nr. 1222 KV GKG ermäßigen.",
+    "Schmied   Lang   Dr. Koch",
+    "Abschrift an: RAe Herzog & Partner zu 2O26/0733-KR; RA Ernst; Streitverkündete Brunnenhof Hausverwaltung GmbH (HR8 552O)",
+    "Beglaubigt: Justizangestellte – 9 S 41/26"
+   ],
+   "known_entities": {
+    "person": [
+     "Konrad Vogt"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "9 S 4l/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "9 S 41/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2 C 5O9/25",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2 C 509/25",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2O26/0733-KR",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "HR8 552O",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Konrad Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Dieter Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Jan Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Ute Frei",
+     "category": "person"
+    },
+    {
+     "value": "Schmied",
+     "category": "person"
+    },
+    {
+     "value": "Lang",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Herzog & Partner Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Herzog & Partner",
+     "category": "organisation"
+    },
+    {
+     "value": "Brunnenhof Hausverwaltung GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Unter den Eichen 3, 1. OG links",
+     "category": "adresse"
+    },
+    {
+     "value": "Unter den Eichen 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Brunnen 19",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Sonnenfeld",
+     "category": "plz_ort"
+    }
+   ],
+   "keep": [
+    "Landgericht Altheide",
+    "Amtsgericht Sonnenfeld",
+    "§ 522 Abs. 2 ZPO",
+    "§ 529 Abs. 1 Nr. 1 ZPO",
+    "binnen drei Wochen ab Zustellung",
+    "6.215,40 EUR",
+    "Nr. 1222 KV GKG",
+    "08.09.2026"
+   ],
+   "keep_gewoehnlich": [
+    "vom Hahn gelöst hatte",
+    "Der Hahn selbst war",
+    "im Ernst nicht zu übersehen"
+   ],
+   "tags": [
+    "beschluss",
+    "ocr_verwechslung_im_text",
+    "rubrum",
+    "aktenzeichen_ohne_label",
+    "registernummer",
+    "adresszusatz",
+    "unterschriftenzeile",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA05",
+   "format": "scan_degraded",
+   "filename": "Ladung_AG_Sonnenfeld_5C77-26.pdf",
+   "paragraphs": [
+    "Amtsgericht Sonnenfeld",
+    "Herrn Frieder Ernst, Zum Sportplatz 1, Hinterhaus, 34590 Sonnenfeld",
+    "Bitte bei allen Schreiben angeben: 5 C 77/26",
+    "Sonnenfeld, 02.10.2026",
+    "Ladung zum Termin zur Beweisaufnahme",
+    "5 C 77/26 – Schmied ./. Frei",
+    "Sehr geehrter Herr Ernst,",
+    "in dem Rechtsstreit Ralf Schmied gegen Anja Frei werden Sie hiermit als Zeuge zu dem Termin zur mündlichen Verhandlung und Beweisaufnahme geladen auf",
+    "Donnerstag, 12.11.2026, 10:30 Uhr, Sitzungssaal 2.14, Erdgeschoss",
+    "Gegenstand Ihrer Vernehmung: Die Lieferung und Montage eines schmiedeeisernen Hoftors am Anwesen Kirchplatz 9 in Sonnenfeld im März 2026 sowie die bei der Abnahme festgestellten Mängel.",
+    "Bitte bringen Sie diese Ladung und einen gültigen Lichtbildausweis mit. Unterlagen, die Ihnen zu dem Beweisthema vorliegen, insbesondere Notizen, Lichtbilder oder Lieferscheine, sollten Sie zum Termin mitbringen und Ihr Gedächtnis vorher anhand dieser Unterlagen auffrischen (§ 378 ZPO).",
+    "Als Zeuge sind Sie verpflichtet, zu erscheinen und wahrheitsgemäß auszusagen. Bleiben Sie ohne genügende Entschuldigung aus, können Ihnen die durch Ihr Ausbleiben verursachten Kosten auferlegt und gegen Sie ein Ordnungsgeld, ersatzweise Ordnungshaft, festgesetzt werden (§ 380 ZPO).",
+    "Sollten Sie verhindert sein, teilen Sie dies bitte unverzüglich, spätestens bis zum 05.11.2026, unter Angabe der Gründe mit. Nehmen Sie diese Ladung bitte ernst; eine Absage erst kurz vor dem Termin kann nicht immer berücksichtigt werden.",
+    "Sie haben Anspruch auf Entschädigung nach dem Justizvergütungs- und -entschädigungsgesetz (JVEG). Den Antrag stellen Sie bitte innerhalb von drei Monaten nach dem Termin bei der Geschäftsstelle.",
+    "Rückfragen: Geschäftsstelle Abteilung 5, Frau Berg, Tel. 0561 9930-215, Fax 0561 9930-299",
+    "Mit freundlichen Grüßen",
+    "Hahn, Justizobersekretärin",
+    "Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig."
+   ],
+   "known_entities": {
+    "person": [
+     "Ralf Schmied"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Frieder Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Schmied",
+     "category": "person"
+    },
+    {
+     "value": "Schmied",
+     "category": "person"
+    },
+    {
+     "value": "Anja Frei",
+     "category": "person"
+    },
+    {
+     "value": "Frei",
+     "category": "person"
+    },
+    {
+     "value": "Berg",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Zum Sportplatz 1, Hinterhaus",
+     "category": "adresse"
+    },
+    {
+     "value": "Kirchplatz 9",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Sonnenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "5 C 77/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "0561 9930-215",
+     "category": "telefon"
+    },
+    {
+     "value": "0561 9930-299",
+     "category": "telefon"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Sonnenfeld",
+    "12.11.2026, 10:30 Uhr",
+    "05.11.2026",
+    "§ 378 ZPO",
+    "§ 380 ZPO",
+    "innerhalb von drei Monaten nach dem Termin"
+   ],
+   "keep_gewoehnlich": [
+    "Nehmen Sie diese Ladung bitte ernst"
+   ],
+   "tags": [
+    "ladung",
+    "scan_degraded",
+    "adresszusatz",
+    "aktenzeichen_ohne_label",
+    "gewoehnliche_woerter_als_namen",
+    "kurz"
+   ]
+  },
+  {
+   "id": "PII2-TA06",
+   "format": "pdf",
+   "filename": "Protokoll_5C77-26_Sitzung_12-11-2026.pdf",
+   "paragraphs": [
+    "Amtsgericht Sonnenfeld",
+    "5 C 77/26",
+    "Öffentliche Sitzung vom 12.11.2026",
+    "Gegenwärtig: Richter am Amtsgericht Vogt; ohne Hinzuziehung eines Urkundsbeamten, vorläufig aufgezeichnet auf Tonträger",
+    "In dem Rechtsstreit Ralf Schmied ./. Anja Frei",
+    "erscheinen bei Aufruf der Sache um 10:34 Uhr:",
+    "anwesend: Schmied, RA Dr. Kaiser für den Kläger; Frei, RAin König für die Beklagte",
+    "Als Zeugen erschienen: Ernst, Graf",
+    "Die Sach- und Rechtslage wird mit den Parteien erörtert. Das Gericht weist darauf hin, dass es nach vorläufiger Würdigung darauf ankommen dürfte, ob das Tor bei der Abnahme am 18.03.2026 bereits Rost an den Schweißnähten aufwies.",
+    "Ein Vergleich kommt nicht zustande.",
+    "Die Zeugen werden gemäß § 395 ZPO belehrt und verlassen den Sitzungssaal.",
+    "Der Zeuge Ernst wird hereingerufen. Zur Person: Frieder Ernst, 58 Jahre, Metallbaumeister i. R., wohnhaft in Sonnenfeld, mit den Parteien nicht verwandt und nicht verschwägert.",
+    "Zur Sache: Ich habe das Tor im Auftrag des Klägers mit aufgebaut. Der Kläger hat das Tor selbst in seiner Werkstatt gefertigt; er ist ein guter Schmied, das sage ich im Ernst und nicht, weil ich ihn kenne. Bei der Montage war die Oberfläche einwandfrei. Rost habe ich nicht gesehen.",
+    "Auf Frage der Beklagtenvertreterin: An den genauen Tag erinnere ich mich nicht mehr. Es war kurz vor Ostern. Die Beklagte war dabei und hat nichts beanstandet. Sie hat uns sogar Kaffee gebracht.",
+    "Auf Frage des Gerichts: Feuerverzinkt war das Tor nicht, es war grundiert und zweimal lackiert. Das Tor wurde frei Haus geliefert. So war es auch mit der Beklagten besprochen, das hat der Kläger mir gesagt.",
+    "laut diktiert und genehmigt",
+    "Der Zeuge wird im allseitigen Einverständnis unvereidigt entlassen.",
+    "Die Zeugin Graf wird hereingerufen. Zur Person: Lena Graf, 34 Jahre, Architektin, Hoher Weg 2, 34590 Sonnenfeld, mit der Beklagten befreundet, mit den Parteien nicht verwandt.",
+    "Zur Sache: Ich war Anfang April 2026 bei Frau Frei. Da waren an mehreren Stellen braune Flecken an den Schweißnähten zu sehen, vor allem unten am Torflügel, wo das Regenwasser steht. Ich habe Fotos gemacht, die ich der Beklagten geschickt habe.",
+    "Auf Frage des Klägervertreters: Ob die Flecken schon im März da waren, kann ich nicht sagen. Ich war vorher nicht dort.",
+    "laut diktiert und genehmigt; die Zeugin wird unvereidigt entlassen.",
+    "Die Prozessbevollmächtigte der Beklagten überreicht einen Ausdruck der Lichtbilder, der zur Akte genommen wird (Bl. 87 d. A.).",
+    "Die Parteivertreter verhandeln mit den Anträgen aus der Klageschrift vom 14.05.2026 und der Klageerwiderung vom 09.06.2026.",
+    "Der Kläger beantragt, die Beklagte zu verurteilen, an ihn 4.380,00 EUR nebst Zinsen seit dem 20.04.2026 zu zahlen.",
+    "Die Beklagte beantragt, die Klage abzuweisen.",
+    "Beschlossen und verkündet: Den Parteien wird nachgelassen, zum Ergebnis der Beweisaufnahme bis zum 03.12.2026 schriftsätzlich Stellung zu nehmen. Termin zur Verkündung einer Entscheidung wird bestimmt auf Donnerstag, 17.12.2026, 9:00 Uhr, Saal 2.14.",
+    "Ende der Sitzung: 11:52 Uhr",
+    "Vogt, Richter am Amtsgericht",
+    "Für die Richtigkeit der Übertragung vom Tonträger: Berg, Justizbeschäftigte",
+    "Verteiler: RA Dr. Paul Kaiser, Kaiser Rechtsanwälte, Im Winkel 4, 34590 Sonnenfeld, Az. 112/26-PK; RAin Sophie König, Zum Sportplatz 7, 34590 Sonnenfeld, Az. KÖ-26-041"
+   ],
+   "known_entities": {
+    "person": [
+     "Ralf Schmied"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Schmied",
+     "category": "person"
+    },
+    {
+     "value": "Schmied",
+     "category": "person"
+    },
+    {
+     "value": "Anja Frei",
+     "category": "person"
+    },
+    {
+     "value": "Frei",
+     "category": "person"
+    },
+    {
+     "value": "Kaiser",
+     "category": "person"
+    },
+    {
+     "value": "Paul Kaiser",
+     "category": "person"
+    },
+    {
+     "value": "König",
+     "category": "person"
+    },
+    {
+     "value": "Sophie König",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Frieder Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Graf",
+     "category": "person"
+    },
+    {
+     "value": "Lena Graf",
+     "category": "person"
+    },
+    {
+     "value": "Berg",
+     "category": "person"
+    },
+    {
+     "value": "Kaiser Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Hoher Weg 2",
+     "category": "adresse"
+    },
+    {
+     "value": "Im Winkel 4",
+     "category": "adresse"
+    },
+    {
+     "value": "Zum Sportplatz 7",
+     "category": "adresse"
+    },
+    {
+     "value": "34590 Sonnenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "5 C 77/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "112/26-PK",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "KÖ-26-041",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Sonnenfeld",
+    "4.380,00 EUR",
+    "03.12.2026",
+    "17.12.2026, 9:00 Uhr",
+    "§ 395 ZPO"
+   ],
+   "keep_gewoehnlich": [
+    "ein guter Schmied",
+    "das sage ich im Ernst",
+    "frei Haus geliefert"
+   ],
+   "tags": [
+    "sitzungsprotokoll",
+    "anwesenheitsliste_ohne_anrede",
+    "aktenzeichen_ohne_label",
+    "gewoehnliche_woerter_als_namen",
+    "kurz"
+   ]
+  },
+  {
+   "id": "PII2-TA07",
+   "format": "docx",
+   "filename": "KFB_6C233-25_AG_Altheide.docx",
+   "paragraphs": [
+    "Amtsgericht Altheide",
+    "6 C 233/25",
+    "Kostenfestsetzungsbeschluss",
+    "In der Sache Braun ./. Schwarz",
+    "Elke Braun, Am Steinbruch 7, 34571 Altheide, – Klägerin und Antragstellerin –",
+    "Verfahrensbevollmächtigte: Rechtsanwälte Klein & Vogt, Kirchplatz 1, 34571 Altheide, Az. KV-2025-0412",
+    "gegen Stefan Schwarz, Im Grund 15, Dachgeschoss, 34573 Kranichsee",
+    "– Beklagter und Antragsgegner –",
+    "Aufgrund des vollstreckbaren Urteils des Amtsgerichts Altheide vom 03.03.2026 und des Beschlusses des Landgerichts Altheide vom 22.05.2026 werden die von dem Beklagten an die Klägerin zu erstattenden Kosten festgesetzt auf",
+    "2.163,56 EUR (in Worten: zweitausendeinhundertdreiundsechzig 56/100 Euro)",
+    "nebst Zinsen in Höhe von fünf Prozentpunkten über dem Basiszinssatz seit dem 11.06.2026 (§ 104 Abs. 1 Satz 2 ZPO).",
+    "Die Kosten wurden wie folgt berechnet:",
+    "Die Klägerin hat die Berechnung mit Antrag vom 10.06.2026 eingereicht; der Beklagte hatte Gelegenheit zur Stellungnahme. Seine Einwendung, die Terminsgebühr sei nicht angefallen, greift nicht durch, da der Termin vom 19.02.2026 tatsächlich stattgefunden hat und beide Parteien vertreten waren.",
+    "Der Einwand des Beklagten, er habe die Kosten bereits durch Aufrechnung mit einer Gegenforderung aus dem Verfahren 2 C 61/26 getilgt, ist im Kostenfestsetzungsverfahren nicht zu berücksichtigen. Belege, die eine Zahlung schwarz auf weiß nachweisen, hat er ohnehin nicht vorgelegt. Materiell-rechtliche Einwendungen sind gegebenenfalls mit der Vollstreckungsgegenklage geltend zu machen.",
+    "Rechtsbehelfsbelehrung: Gegen diesen Beschluss ist die sofortige Beschwerde statthaft, wenn der Wert des Beschwerdegegenstandes 200,00 EUR übersteigt. Sie ist binnen einer Notfrist von zwei Wochen ab Zustellung beim Amtsgericht Altheide einzulegen. Andernfalls ist die Erinnerung binnen derselben Frist statthaft.",
+    "Altheide, 24.06.2026",
+    "Wolf, Rechtspflegerin",
+    "Ausgefertigt: Urkundsbeamtin der Geschäftsstelle"
+   ],
+   "table": {
+    "header": [
+     "Verfahren",
+     "Gegenstand",
+     "Position",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "6 C 233/25",
+      "Hauptsache",
+      "1,3 Verfahrensgebühr Nr. 3100 VV RVG",
+      "434,20 EUR"
+     ],
+     [
+      "6 C 233/25",
+      "Hauptsache",
+      "1,2 Terminsgebühr Nr. 3104 VV RVG",
+      "400,80 EUR"
+     ],
+     [
+      "6 C 233/25",
+      "Hauptsache",
+      "Auslagenpauschale Nr. 7002 VV RVG",
+      "20,00 EUR"
+     ],
+     [
+      "4 T 18/26",
+      "Beschwerde",
+      "0,5 Verfahrensgebühr Nr. 3500 VV RVG",
+      "167,00 EUR"
+     ],
+     [
+      "4 T 18/26",
+      "Beschwerde",
+      "Auslagenpauschale Nr. 7002 VV RVG",
+      "20,00 EUR"
+     ],
+     [
+      "",
+      "",
+      "19 % Umsatzsteuer Nr. 7008 VV RVG",
+      "197,98 EUR"
+     ],
+     [
+      "6 C 233/25",
+      "Hauptsache",
+      "verauslagte Gerichtskosten",
+      "714,00 EUR"
+     ],
+     [
+      "6 C 233/25",
+      "Hauptsache",
+      "Fahrtkosten und Verdienstausfall Klägerin Braun",
+      "209,58 EUR"
+     ],
+     [
+      "",
+      "",
+      "Summe",
+      "2.163,56 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Elke Braun"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Elke Braun",
+     "category": "person"
+    },
+    {
+     "value": "Braun",
+     "category": "person"
+    },
+    {
+     "value": "Stefan Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Rechtsanwälte Klein & Vogt",
+     "category": "organisation"
+    },
+    {
+     "value": "Am Steinbruch 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Kirchplatz 1",
+     "category": "adresse"
+    },
+    {
+     "value": "Im Grund 15, Dachgeschoss",
+     "category": "adresse"
+    },
+    {
+     "value": "34571 Altheide",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34573 Kranichsee",
+     "category": "plz_ort"
+    },
+    {
+     "value": "6 C 233/25",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "4 T 18/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "KV-2025-0412",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2 C 61/26",
+     "category": "aktenzeichen"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Altheide",
+    "Landgerichts Altheide",
+    "2.163,56 EUR",
+    "§ 104 Abs. 1 Satz 2 ZPO",
+    "Nr. 3100 VV RVG",
+    "binnen einer Notfrist von zwei Wochen",
+    "200,00 EUR",
+    "714,00 EUR"
+   ],
+   "keep_gewoehnlich": [
+    "schwarz auf weiß nachweisen"
+   ],
+   "tags": [
+    "kostenfestsetzung",
+    "tabelle",
+    "aktenzeichen_in_tabelle_ohne_label",
+    "aktenzeichen_ohne_label",
+    "adresszusatz",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA08",
+   "format": "scan",
+   "filename": "Bussgeldbescheid_Scan_Koenig.pdf",
+   "paragraphs": [
+    "Landkreis Altheide – Der Landrat – Zentrale Bußgeldstelle",
+    "Herrn Michael König, Hinter den Gärten 9, 34580 Mooshausen",
+    "Sachbearbeitung: Herr Kaiser · Zimmer 114 · Tel. 05631 702-4418 · k.kaiser@landkreis-altheide.example",
+    "Datum: 14.09.2026",
+    "OWi 2026-044718 · Kassenzeichen 5.1104.287731.6",
+    "Bußgeldbescheid",
+    "Betroffener: Michael König, geboren am 14.03.1979",
+    "Ihnen wird vorgeworfen, am 22.07.2026 um 07:48 Uhr in Altheide auf der L 3127 als Führer des Pkw ALH-MK 228 die zulässige Höchstgeschwindigkeit außerhalb geschlossener Ortschaften um 27 km/h überschritten zu haben. Zulässige Geschwindigkeit: 70 km/h. Festgestellte Geschwindigkeit nach Toleranzabzug: 97 km/h.",
+    "Ordnungswidrigkeit nach § 41 Abs. 1 i. V. m. Anlage 2, § 49 StVO, § 24 StVG.",
+    "Wegen dieser Ordnungswidrigkeit wird gegen Sie eine Geldbuße festgesetzt in Höhe von 150,00 EUR.",
+    "Kosten des Verfahrens: Gebühr 28,50 EUR, Auslagen (Zustellung) 3,50 EUR. Gesamtbetrag: 182,00 EUR.",
+    "Die Eintragung im Fahreignungsregister wird mit einem Punkt bewertet.",
+    "Ihr Verteidiger, Rechtsanwalt Henrik Stein, Kanzlei Stein & Graf, hat mit Schreiben vom 01.09.2026 Akteneinsicht erhalten (Aktenzeichen dort ST-0915/26). Seine Einlassung, nicht Herr König, sondern ein anderer Fahrer habe das Fahrzeug geführt, ist durch das Messfoto widerlegt. Der Hinweis, ein Stein auf der Fahrbahn habe zu einem Ausweichmanöver gezwungen, ist durch die Videoaufzeichnung nicht belegt.",
+    "Zahlung: Der Gesamtbetrag ist spätestens zwei Wochen nach Rechtskraft an die Kreiskasse Altheide zu zahlen, unter Angabe des Kassenzeichens 5.1104.287731.6; die Bankverbindung ist auf der Rückseite angegeben.",
+    "Rechtsbehelfsbelehrung: Dieser Bußgeldbescheid wird rechtskräftig und vollstreckbar, wenn Sie nicht innerhalb von zwei Wochen nach Zustellung schriftlich oder zur Niederschrift bei der Bußgeldstelle des Landkreises Altheide Einspruch einlegen.",
+    "Bei einem Einspruch kann das Amtsgericht Altheide auch zu Ihrem Nachteil von diesem Bescheid abweichen.",
+    "Im Auftrag",
+    "Kaiser"
+   ],
+   "table": {
+    "header": [
+     "Merkmal",
+     "Angabe"
+    ],
+    "rows": [
+     [
+      "Tatzeit",
+      "22.07.2026, 07:48 Uhr"
+     ],
+     [
+      "Tatort",
+      "Altheide, L 3127, Höhe Abzweig Mühlengrund"
+     ],
+     [
+      "Fahrzeug",
+      "Pkw, ALH-MK 228"
+     ],
+     [
+      "Halterin",
+      "Johanna König geb. Lang, Hinter den Gärten 9"
+     ],
+     [
+      "Messung",
+      "stationär, Lichtschranke"
+     ],
+     [
+      "Vorgang",
+      "OWi 2026-044718"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Michael König"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Michael König",
+     "category": "person"
+    },
+    {
+     "value": "König",
+     "category": "person"
+    },
+    {
+     "value": "Johanna König",
+     "category": "person"
+    },
+    {
+     "value": "Kaiser",
+     "category": "person"
+    },
+    {
+     "value": "Henrik Stein",
+     "category": "person"
+    },
+    {
+     "value": "Kanzlei Stein & Graf",
+     "category": "organisation"
+    },
+    {
+     "value": "Lang",
+     "category": "geburtsname"
+    },
+    {
+     "value": "14.03.1979",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Hinter den Gärten 9",
+     "category": "adresse"
+    },
+    {
+     "value": "34580 Mooshausen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05631 702-4418",
+     "category": "telefon"
+    },
+    {
+     "value": "k.kaiser@landkreis-altheide.example",
+     "category": "email"
+    },
+    {
+     "value": "ALH-MK 228",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "OWi 2026-044718",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "ST-0915/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "5.1104.287731.6",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Landkreis Altheide",
+    "Amtsgericht Altheide",
+    "150,00 EUR",
+    "182,00 EUR",
+    "§ 24 StVG",
+    "70 km/h",
+    "innerhalb von zwei Wochen nach Zustellung"
+   ],
+   "keep_gewoehnlich": [
+    "ein Stein auf der Fahrbahn"
+   ],
+   "tags": [
+    "bussgeldbescheid",
+    "scan",
+    "tabelle",
+    "geburtsdatum",
+    "geburtsname",
+    "kfz_kennzeichen",
+    "aktenzeichen_ohne_label"
+   ]
+  },
+  {
+   "id": "PII2-TA09",
+   "format": "txt",
+   "filename": "Ablehnungsbescheid_Bauantrag_Berg_OCR.txt",
+   "paragraphs": [
+    "Stadt Sonnenfeld – Fachbereich Bauen und Umwelt – Untere Bauaufsichtsbehörde",
+    "Bauakte B-2O26-0093",
+    "Bezug: Ihr Antrag vom 12.03.2026, Eingang 16.03.2026",
+    "Eheleute Lukas Berg und Hanna Berg geb. Kurz, Am Hang 3, 3459O Sonnenfeld",
+    "Sonnenfeld, 29.06.2026",
+    "Ablehnung des Bauantrags – Errichtung eines Carports mit Geräteraum, Gemarkung Sonnenfeld, Flur 7, Flurstück 112/4",
+    "Sehr geehrte Frau Berg, sehr geehrter Herr Berg,",
+    "Ihren Antrag auf Erteilung einer Baugenehmigung für die Errichtung eines Carports mit angebautem Geräteraum auf dem Grundstück Am Hang 3 (Bauakte B-2026-0093) lehnen wir hiermit ab.",
+    "Begründung:",
+    "Das Grundstück liegt im Geltungsbereich des Bebauungsplans Nr. 41 „Am Sonnenhang“. Der Bebauungsplan setzt für den rückwärtigen Grundstücksteil eine private Grünfläche fest. Garagen und Carports sind nach den textlichen Festsetzungen nur innerhalb der überbaubaren Grundstücksfläche zulässig.",
+    "Das Vorhaben soll nach den eingereichten Plänen mit einem Abstand von nur 1,20 m zur Grundstücksgrenze und vollständig innerhalb der Grünfläche errichtet werden. Es widerspricht damit den Festsetzungen des Bebauungsplans und ist nach § 30 Abs. 1 BauGB unzulässig.",
+    "Eine Befreiung nach § 31 Abs. 2 BauGB kommt nicht in Betracht. Die Grundzüge der Planung wären berührt, weil die Grünfläche gerade den Übergang vom Wohngebiet zum Waldrand sichern soll. Der Hang am Berg hinter Ihrem Grundstück ist zudem als Wanderweg ausgewiesen.",
+    "Ihr Hinweis, auf dem Nachbargrundstück Am Hang 5 (Eigentümer: Walter Hirsch) sei ein vergleichbarer Carport genehmigt worden, trifft nicht zu. Der dortige Carport ist ohne Genehmigung errichtet worden; insoweit ist unter B-2026-0141 ein gesondertes Verfahren anhängig.",
+    "Die Anhörung ist mit Schreiben vom 18.05.2026 erfolgt. Ihre Stellungnahme haben Sie kurz vor Ablauf der gesetzten Frist am 08.06.2026 abgegeben; sie enthält keine neuen Gesichtspunkte.",
+    "Gebühren: Für die Ablehnung wird eine Verwaltungsgebühr in Höhe von 245,00 EUR erhoben. Bitte überweisen Sie den Betrag unter Angabe des Kassenzeichens 6.2O1.4471O.3 binnen eines Monats.",
+    "Rechtsbehelfsbelehrung: Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Klage beim Verwaltungsgericht Sonnenfeld erhoben werden.",
+    "Hinweis: Ihr Bevollmächtigter, Herr Rechtsanwalt Oliver Kurz, erhält eine Abschrift zu seinem Zeichen 2026/0281-OK.",
+    "Im Auftrag",
+    "Vogt",
+    "Stadt Sonnenfeld · Bauaufsicht · Tel. 0561 4410-372 (Durchwahl Frau Vogt) · s.vogt@sonnenfeld-stadt.example"
+   ],
+   "known_entities": {
+    "person": [
+     "Lukas Berg",
+     "Hanna Berg"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "B-2O26-0093",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "B-2026-0093",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "B-2026-0141",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "2026/0281-OK",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "Lukas Berg",
+     "category": "person"
+    },
+    {
+     "value": "Hanna Berg",
+     "category": "person"
+    },
+    {
+     "value": "Berg",
+     "category": "person"
+    },
+    {
+     "value": "Kurz",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Oliver Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Walter Hirsch",
+     "category": "person"
+    },
+    {
+     "value": "Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Am Hang 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Hang 5",
+     "category": "adresse"
+    },
+    {
+     "value": "3459O Sonnenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "Flurstück 112/4",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "6.2O1.4471O.3",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "0561 4410-372",
+     "category": "telefon"
+    },
+    {
+     "value": "s.vogt@sonnenfeld-stadt.example",
+     "category": "email"
+    }
+   ],
+   "keep": [
+    "Stadt Sonnenfeld",
+    "Verwaltungsgericht Sonnenfeld",
+    "§ 30 Abs. 1 BauGB",
+    "§ 31 Abs. 2 BauGB",
+    "245,00 EUR",
+    "innerhalb eines Monats nach Bekanntgabe",
+    "Bebauungsplans Nr. 41"
+   ],
+   "keep_gewoehnlich": [
+    "Der Hang am Berg",
+    "kurz vor Ablauf der gesetzten Frist"
+   ],
+   "tags": [
+    "verwaltungsbescheid",
+    "ocr_verwechslung_im_text",
+    "geburtsname",
+    "aktenzeichen_ohne_label",
+    "strasse_ohne_strassenwort",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA10",
+   "format": "pdf",
+   "filename": "Anlagenverzeichnis_und_Verfahrensuebersicht_Koch.pdf",
+   "paragraphs": [
+    "Rechtsanwaltskanzlei Ernst & Braun · Zum Anger 12 · 34571 Altheide",
+    "Tel. 05632 91170 · info@ernst-braun.invalid · Unser Zeichen 26-0412/AE",
+    "Verwaltungsgericht Sonnenfeld",
+    "Bezug: VG-26-3307",
+    "Altheide, 06.08.2026",
+    "In der Verwaltungsrechtssache Koch ./. Stadt Altheide wegen Widerrufs der Gaststättenerlaubnis überreichen wir nachstehend die Anlagen zur Klagebegründung sowie eine Übersicht der Verfahren, die mit dem streitgegenständlichen Widerruf im Zusammenhang stehen.",
+    "Der Kläger Anton Koch betreibt seit 2014 die Gaststätte „Zum Grünen Eck“, Im Grund 6, 34571 Altheide, und steht dort bis heute selbst als Koch in der Küche. Der Betrieb wird über die Koch Gastro UG (haftungsbeschränkt), HRB 3391, geführt.",
+    "Anlagen:",
+    "K 1 – Widerrufsbescheid der Stadt Altheide vom 02.04.2026 zu 32.1-GE-0217",
+    "K 2 – Widerspruchsbescheid vom 30.06.2026, 32.1-W-2026-018",
+    "K 3 – Lebensmittelkontrollbericht vom 11.02.2026 (Betriebsnummer 06-534-0098)",
+    "K 4 – Erklärung der Servicekraft Svenja Kurz vom 21.07.2026",
+    "K 5 – Auszug aus dem Gewerbezentralregister vom 15.07.2026",
+    "Übersicht der zusammenhängenden Verfahren:",
+    "Die Einstellung des Ermittlungsverfahrens 312 Js 4471/26 zeigt, dass der Vorwurf der Unzuverlässigkeit auf einer unzutreffenden Tatsachengrundlage beruht. Die Stadt hat ihren Widerruf maßgeblich auf diesen Vorwurf gestützt.",
+    "Die Erklärung der Zeugin Kurz (Anlage K 4) belegt, dass die angeblich nicht angemeldeten Aushilfen ordnungsgemäß gemeldet waren. Die Zeugin hat die Lohnabrechnungen selbst vorbereitet, und zwar jeweils kurz vor dem Monatsende.",
+    "Die übrigen Anlagen werden in einfacher Abschrift beigefügt. Die Originale können im Termin vorgelegt werden.",
+    "Ernst",
+    "Rechtsanwalt",
+    "Kanzlei Ernst & Braun · Zum Anger 12 · 34571 Altheide · IBAN DE09 5205 0353 0001 2277 04 · Steuernummer 25/147/33092 · Amtsgericht Sonnenfeld PR 512"
+   ],
+   "table": {
+    "header": [
+     "",
+     "Stelle",
+     "Gegenstand",
+     "Stand"
+    ],
+    "rows": [
+     [
+      "312 Js 4471/26",
+      "Staatsanwaltschaft Altheide",
+      "Ermittlungsverfahren wegen Vorenthaltens von Arbeitsentgelt, Beschuldigter: Koch",
+      "eingestellt nach § 170 Abs. 2 StPO am 12.06.2026"
+     ],
+     [
+      "32.1-GE-0217",
+      "Stadt Altheide, Ordnungsamt",
+      "Widerruf Gaststättenerlaubnis",
+      "Widerspruch zurückgewiesen"
+     ],
+     [
+      "4 OWi 88/26",
+      "Amtsgericht Altheide",
+      "Bußgeld Hygieneverstoß, Betroffener: Anton Koch",
+      "Termin am 24.09.2026"
+     ],
+     [
+      "VG-26-3307",
+      "Verwaltungsgericht Sonnenfeld",
+      "Anfechtungsklage",
+      "anhängig"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Anton Koch"
+    ],
+    "organisation": [
+     "Koch Gastro UG (haftungsbeschränkt)"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Rechtsanwaltskanzlei Ernst & Braun",
+     "category": "organisation"
+    },
+    {
+     "value": "Kanzlei Ernst & Braun",
+     "category": "organisation"
+    },
+    {
+     "value": "Koch Gastro UG (haftungsbeschränkt)",
+     "category": "organisation"
+    },
+    {
+     "value": "Zum Grünen Eck",
+     "category": "organisation"
+    },
+    {
+     "value": "Anton Koch",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Svenja Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Kurz",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "person"
+    },
+    {
+     "value": "Zum Anger 12",
+     "category": "adresse"
+    },
+    {
+     "value": "Im Grund 6",
+     "category": "adresse"
+    },
+    {
+     "value": "34571 Altheide",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05632 91170",
+     "category": "telefon"
+    },
+    {
+     "value": "info@ernst-braun.invalid",
+     "category": "email"
+    },
+    {
+     "value": "26-0412/AE",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "VG-26-3307",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "32.1-GE-0217",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "32.1-W-2026-018",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "312 Js 4471/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "4 OWi 88/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "HRB 3391",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "06-534-0098",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "PR 512",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE09 5205 0353 0001 2277 04",
+     "category": "iban"
+    },
+    {
+     "value": "25/147/33092",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "Verwaltungsgericht Sonnenfeld",
+    "Staatsanwaltschaft Altheide",
+    "Amtsgericht Altheide",
+    "Stadt Altheide",
+    "§ 170 Abs. 2 StPO",
+    "24.09.2026"
+   ],
+   "keep_gewoehnlich": [
+    "selbst als Koch in der Küche",
+    "jeweils kurz vor dem Monatsende"
+   ],
+   "tags": [
+    "anlagenverzeichnis",
+    "tabelle",
+    "aktenzeichen_in_tabelle_ohne_label",
+    "aktenzeichen_ohne_label",
+    "registernummer",
+    "briefkopf",
+    "fusszeile",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA11",
+   "format": "docx",
+   "filename": "Mandantenschreiben_Vogt_Ermittlungsverfahren.docx",
+   "paragraphs": [
+    "Kanzlei Schwarz Strafverteidigung · Hoher Weg 30 · 34567 Waldbrunnen",
+    "Rechtsanwältin Nora Schwarz · Fachanwältin für Strafrecht · Tel. 05631 66 0 21 · Mobil 0171 5550 1923 · schwarz@strafverteidigung-schwarz.example",
+    "Persönlich/Vertraulich",
+    "Frau Greta Vogt, Unter den Eichen 27, Seitenflügel, 3. OG, 34567 Waldbrunnen",
+    "Waldbrunnen, 30.09.2026",
+    "Verfahren 401 Js 2218/26 – Ihre Akte bei uns: S-26-117",
+    "Sehr geehrte Frau Vogt,",
+    "die Staatsanwaltschaft Waldbrunnen hat uns am 25.09.2026 Akteneinsicht gewährt. Ich möchte Sie heute kurz über den Inhalt der Ermittlungsakte und das weitere Vorgehen informieren. In der Akte werden Sie als „Greta Vogt, geborene Ernst, geb. 09.05.1994“ geführt.",
+    "Der Vorwurf lautet auf Betrug nach § 263 StGB. Ihnen wird zur Last gelegt, im Februar 2026 über eine Kleinanzeigenplattform ein Lastenfahrrad für 2.350,00 EUR verkauft und nach Erhalt des Kaufpreises nicht geliefert zu haben. Anzeigeerstatter ist Herr Maximilian Fuchs aus Altheide.",
+    "Die Ermittlungen stützen sich im Wesentlichen auf zwei Umstände: Der Kaufpreis wurde auf ein Konto mit der IBAN DE27 5005 0201 0870 3344 61 überwiesen, das auf Ihren Namen lautet. Außerdem wurde das Inserat unter dem Nutzernamen „greta_v_27“ eingestellt.",
+    "Sie haben mir im Gespräch am 22.09.2026 erklärt, dass Sie das Konto im Januar 2026 Ihrer früheren Mitbewohnerin, Frau Jana Wolf, zur Verfügung gestellt hatten, weil deren eigenes Konto gepfändet war. Frau Wolf ist nach Ihren Angaben inzwischen unbekannt verzogen.",
+    "Für die Verteidigung ist entscheidend, ob sich nachweisen lässt, dass Frau Wolf das Konto genutzt hat. Bitte suchen Sie alle Nachrichten heraus, die Sie mit ihr ausgetauscht haben, insbesondere über die Rufnummer 0176 5550 8812, die sie damals verwendet hat.",
+    "Ich beabsichtige, für Sie eine schriftliche Einlassung abzugeben und die Einstellung des Verfahrens nach § 170 Abs. 2 StPO anzuregen. Hilfsweise käme eine Einstellung nach § 153a StPO gegen eine Geldauflage in Betracht; das würde ich aber nur mit Ihrer ausdrücklichen Zustimmung vorschlagen.",
+    "Bitte melden Sie sich bis zum 14.10.2026 bei mir, damit wir einen Besprechungstermin vereinbaren. Die Staatsanwaltschaft hat eine Frist zur Stellungnahme bis zum 30.10.2026 gesetzt.",
+    "Ich nehme die Sache sehr ernst, halte die Ausgangslage nach meiner vorläufigen Einschätzung aber für vertretbar gut. Ich sage das im Ernst und nicht zur Beruhigung: Wie die Staatsanwaltschaft das Kontoargument gewichtet, lässt sich derzeit nicht sicher vorhersagen; eine plausible Darlegung der Nutzung durch eine Dritte ist aber ein gewichtiger Gesichtspunkt.",
+    "Meine Vorschussrechnung Nr. 2026-0388 über 1.190,00 EUR liegt bei.",
+    "Mit freundlichen Grüßen",
+    "Nora Schwarz",
+    "Rechtsanwältin",
+    "Kanzlei Schwarz Strafverteidigung · Kreissparkasse Waldbrunnen · IBAN DE65 5205 1373 0040 1188 20 · Steuernummer 27/208/61145"
+   ],
+   "known_entities": {
+    "person": [
+     "Greta Vogt"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Kanzlei Schwarz Strafverteidigung",
+     "category": "organisation"
+    },
+    {
+     "value": "Nora Schwarz",
+     "category": "person"
+    },
+    {
+     "value": "Greta Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Vogt",
+     "category": "person"
+    },
+    {
+     "value": "Maximilian Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Jana Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Ernst",
+     "category": "geburtsname"
+    },
+    {
+     "value": "09.05.1994",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Hoher Weg 30",
+     "category": "adresse"
+    },
+    {
+     "value": "Unter den Eichen 27, Seitenflügel, 3. OG",
+     "category": "adresse"
+    },
+    {
+     "value": "34567 Waldbrunnen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05631 66 0 21",
+     "category": "telefon"
+    },
+    {
+     "value": "0171 5550 1923",
+     "category": "telefon"
+    },
+    {
+     "value": "0176 5550 8812",
+     "category": "telefon"
+    },
+    {
+     "value": "schwarz@strafverteidigung-schwarz.example",
+     "category": "email"
+    },
+    {
+     "value": "401 Js 2218/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "S-26-117",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "DE27 5005 0201 0870 3344 61",
+     "category": "iban"
+    },
+    {
+     "value": "DE65 5205 1373 0040 1188 20",
+     "category": "iban"
+    },
+    {
+     "value": "27/208/61145",
+     "category": "steuernummer"
+    },
+    {
+     "value": "2026-0388",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "greta_v_27",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Staatsanwaltschaft Waldbrunnen",
+    "§ 263 StGB",
+    "§ 170 Abs. 2 StPO",
+    "§ 153a StPO",
+    "14.10.2026",
+    "30.10.2026",
+    "2.350,00 EUR",
+    "1.190,00 EUR"
+   ],
+   "keep_gewoehnlich": [
+    "Ich nehme die Sache sehr ernst",
+    "im Ernst und nicht zur Beruhigung"
+   ],
+   "tags": [
+    "kanzleischreiben",
+    "mandantenbrief",
+    "briefkopf",
+    "fusszeile",
+    "geburtsname",
+    "geburtsdatum",
+    "adresszusatz",
+    "aktenzeichen_ohne_label",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TA12",
+   "format": "scan_degraded",
+   "filename": "Beschluss_VG_Sonnenfeld_Eilverfahren_Scan.pdf",
+   "paragraphs": [
+    "Verwaltungsgericht Sonnenfeld",
+    "1 L 512/26",
+    "Beschluss",
+    "In der Verwaltungsrechtssache",
+    "des Herrn Bernhard Wolf, Im Grund 2, Nebengebäude, 34585 Kiefernwalde,",
+    "– Antragsteller –",
+    "Prozessbevollmächtigte: Rechtsanwältin Judith Klein, Am Brunnen 40, 34567 Waldbrunnen, Az. 26/207-JK",
+    "gegen den Landkreis Altheide, vertreten durch den Landrat, Az. 39.2-HG-2026-0071,",
+    "– Antragsgegner –",
+    "wegen Hundehaltungsverbot; hier: Antrag nach § 80 Abs. 5 VwGO",
+    "hat die 1. Kammer des Verwaltungsgerichts Sonnenfeld am 21.08.2026 durch den Richter am Verwaltungsgericht Herzog als Einzelrichter beschlossen:",
+    "Der Antrag wird abgelehnt. Der Antragsteller trägt die Kosten des Verfahrens. Der Streitwert wird auf 2.500,00 EUR festgesetzt.",
+    "Gründe",
+    "Der Antragsteller hält auf seinem Grundstück seit 2024 einen Hund der Rasse Tschechoslowakischer Wolfhund, Chipnummer 276 0981 0045 2318. Am 03.05.2026 biss der Hund auf dem Feldweg hinter dem Grundstück die Spaziergängerin Ingrid Bauer in den Unterarm. Frau Bauer musste ambulant behandelt werden.",
+    "Mit Bescheid vom 18.06.2026 untersagte der Antragsgegner dem Antragsteller die Haltung des Hundes, ordnete die Abgabe innerhalb von vier Wochen sowie die sofortige Vollziehung an. Über den Widerspruch des Antragstellers vom 25.06.2026 ist noch nicht entschieden.",
+    "Der zulässige Antrag auf Wiederherstellung der aufschiebenden Wirkung des Widerspruchs ist unbegründet. Die Anordnung der sofortigen Vollziehung ist formell ordnungsgemäß begründet. Das öffentliche Interesse an der sofortigen Vollziehung überwiegt das Aussetzungsinteresse des Antragstellers Wolf.",
+    "Nach summarischer Prüfung ist das Haltungsverbot voraussichtlich rechtmäßig. Der Hund ist nach dem Vorfall vom 03.05.2026 nach dem einschlägigen Landesrecht als gefährlich einzustufen. Hinzu kommt ein weiterer Vorfall vom 14.02.2026, bei dem der Hund den Nachbarn Erwin Stein am Gartenzaun angesprungen und dessen Jacke zerrissen hat; dieser Vorfall ist unter 39.2-HG-2026-0019 aktenkundig.",
+    "Der Einwand des Antragstellers, sein Hund verhalte sich nicht anders als ein Wolf im Wald, der Menschen grundsätzlich meide, verfängt nicht. Gerade das Verhalten am 03.05.2026 zeigt, dass der Hund Menschen nicht meidet, sondern sie angreift.",
+    "Auch das Vorbringen, die Geschädigte habe mit einem Stein nach dem Hund geworfen und ihn dadurch provoziert, ist nicht glaubhaft gemacht. Die eidesstattliche Versicherung der Lebensgefährtin des Antragstellers, Frau Doris Lang geb. Stein, beschreibt den Vorfall aus einer Entfernung von etwa 80 Metern. Sie hat das Geschehen nach eigenen Angaben nur lang genug beobachtet, um den Schrei zu hören.",
+    "Die Abgabefrist von vier Wochen ist angemessen. Dem Antragsteller bleibt es unbenommen, den Hund an eine geeignete Person oder eine Tierschutzorganisation abzugeben.",
+    "Die Kostenentscheidung beruht auf § 154 Abs. 1 VwGO. Die Streitwertfestsetzung folgt aus §§ 53 Abs. 2 Nr. 2, 52 Abs. 2 GKG.",
+    "Rechtsmittelbelehrung: Gegen diesen Beschluss steht den Beteiligten die Beschwerde an das Oberverwaltungsgericht zu. Die Beschwerde ist innerhalb von zwei Wochen nach Bekanntgabe beim Verwaltungsgericht Sonnenfeld einzulegen und innerhalb eines Monats nach Bekanntgabe zu begründen.",
+    "Herzog",
+    "Beglaubigt – Urkundsbeamter der Geschäftsstelle"
+   ],
+   "known_entities": {
+    "person": [
+     "Bernhard Wolf"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Bernhard Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Judith Klein",
+     "category": "person"
+    },
+    {
+     "value": "Herzog",
+     "category": "person"
+    },
+    {
+     "value": "Ingrid Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Erwin Stein",
+     "category": "person"
+    },
+    {
+     "value": "Doris Lang",
+     "category": "person"
+    },
+    {
+     "value": "Stein",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Im Grund 2, Nebengebäude",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Brunnen 40",
+     "category": "adresse"
+    },
+    {
+     "value": "34585 Kiefernwalde",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34567 Waldbrunnen",
+     "category": "plz_ort"
+    },
+    {
+     "value": "1 L 512/26",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "26/207-JK",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "39.2-HG-2026-0071",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "39.2-HG-2026-0019",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "276 0981 0045 2318",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "Verwaltungsgericht Sonnenfeld",
+    "Landkreis Altheide",
+    "§ 80 Abs. 5 VwGO",
+    "§ 154 Abs. 1 VwGO",
+    "2.500,00 EUR",
+    "innerhalb von zwei Wochen nach Bekanntgabe",
+    "Oberverwaltungsgericht"
+   ],
+   "keep_gewoehnlich": [
+    "ein Wolf im Wald",
+    "mit einem Stein nach dem Hund",
+    "nur lang genug beobachtet"
+   ],
+   "tags": [
+    "beschluss",
+    "verwaltungsgericht",
+    "scan_degraded",
+    "geburtsname",
+    "adresszusatz",
+    "aktenzeichen_ohne_label",
+    "gewoehnliche_woerter_als_namen"
+   ]
+  },
+  {
+   "id": "PII2-TB01",
+   "format": "txt",
+   "filename": "2026-09-14_HV_Engel_Wasserschaden_WE17.txt",
+   "paragraphs": [
+    "Hausverwaltung Engel & Partner GmbH",
+    "Am Kanal 5 · 34517 Lindenau",
+    "Telefon 05631 448210 · Telefax 05631 448219 · objekte@hv-engel.example",
+    "Hausverwaltung Engel & Partner GmbH · Am Kanal 5 · 34517 Lindenau",
+    "Frau",
+    "Petra Hahn",
+    "Hinter der Kirche 2, 1. OG rechts",
+    "34517 Lindenau",
+    "Ihre Ansprechpartnerin: Jana Sommer · Durchwahl 05631 448214 · j.sommer@hv-engel.example",
+    "Lindenau, 14.09.2026",
+    "Betreff: Wasserschaden WE-17 / Hinter der Kirche 2 – unser Zeichen HV-17/2026-0388",
+    "Sehr geehrte Frau Hahn,",
+    "vielen Dank für Ihre Meldung vom 08.09.2026. Sie teilten uns mit, dass der Hahn in der Küche seit Anfang des Monats tropft und sich unter der Spüle Feuchtigkeit gebildet hat. Zusätzlich haben Sie einen Wasserfleck an der Decke im Flur festgestellt, der nach Ihrer Beobachtung in den letzten Tagen größer geworden ist.",
+    "Wir haben die Angelegenheit noch am selben Tag an unseren Hausmeisterdienst weitergegeben. Herr Stein hat die Wohnung am 10.09.2026 in Ihrer Anwesenheit besichtigt. Nach seinem Bericht ist die Ursache nicht allein der tropfende Hahn, sondern vermutlich eine undichte Verbindung der Zuleitung in der Wand zwischen Küche und Bad.",
+    "Der Fleck an der Flurdecke könnte zudem aus der darüberliegenden Wohnung WE-21 stammen, die derzeit von Familie Bauer bewohnt wird.",
+    "Wir haben daher den Installationsbetrieb Sanitär Fuchs GmbH, Obere Mühle 3, 34519 Lindenau-Hainrode, mit der Leckortung beauftragt. Der Auftrag läuft dort unter 77-3301/B. Herr Martin Fuchs wird sich zur Terminabstimmung direkt bei Ihnen melden; bitte halten Sie für den Termin den Zugang zur Küche und zum Bad frei und räumen Sie den Unterschrank der Spüle aus.",
+    "Da nicht ausgeschlossen werden kann, dass Leitungswasser in die Bausubstanz eingedrungen ist, haben wir den Schaden vorsorglich der Gebäudeversicherung gemeldet. Versicherer ist die Kesselbacher Feuer- und Leitungswasser Versicherung AG, Police 4471-0099-23, Schaden SV-2026-44120. Bitte geben Sie bei Rückfragen an den Versicherer ausschließlich diese Schadennummer an und nicht Ihre Mieternummer.",
+    "Für Ihren Hausrat ist die Gebäudeversicherung nicht zuständig. Sollten Möbel, Teppiche oder sonstige Gegenstände beschädigt worden sein, wenden Sie sich bitte an Ihre eigene Hausratversicherung. Nach Ihren Angaben im Mieterfragebogen besteht diese bei der Ostmoor Hausrat VVaG unter HR 0815-662-04.",
+    "Zu Ihrer Frage nach einer Mietminderung: Nach § 536 BGB ist die Miete kraft Gesetzes gemindert, solange die Tauglichkeit der Mietsache zum vertragsgemäßen Gebrauch erheblich beeinträchtigt ist. Ob und in welcher Höhe dies hier der Fall ist, können wir erst nach Abschluss der Leckortung beurteilen.",
+    "Wir bitten Sie, bis dahin die Miete in bisheriger Höhe von 742,00 EUR zuzüglich Vorauszahlungen von 215,00 EUR weiter zu zahlen.",
+    "Eine etwaige Minderung wird nach Abschluss der Arbeiten rückwirkend mit der nächsten Mietzahlung verrechnet. Eine Zahlung unter Vorbehalt ist selbstverständlich möglich; bitte teilen Sie uns dies dann schriftlich mit, damit unsere Buchhaltung den Vorbehalt vermerken kann.",
+    "Bitte beachten Sie Ihre Anzeigepflicht nach § 536c BGB: Weitere Veränderungen, insbesondere wenn der Fleck an der Decke wächst oder sich Schimmel bildet, teilen Sie uns bitte unverzüglich mit. Lüften Sie die betroffenen Räume regelmäßig, stellen Sie aber keine Heizlüfter direkt vor die feuchte Wand, weil dadurch Risse im Putz entstehen können.",
+    "Das Treppenhaus wird während der Arbeiten nicht gesperrt. Die Stein-Treppe im Hof zum Fahrradkeller ist jedoch wegen der Materialanlieferung am 22.09.2026 von 7:00 bis 12:00 Uhr nicht nutzbar. Die Garage 4, die Sie zusätzlich angemietet haben, ist von den Arbeiten nicht betroffen und bleibt durchgehend zugänglich.",
+    "Im Übrigen weisen wir darauf hin, dass im Sommer 2026 die Fassade auf der Hofseite neu gestrichen wurde. Etwaige Wasserflecken an der Außenwand bitten wir daher fotografisch zu dokumentieren, damit eine Abgrenzung zu Gewährleistungsansprüchen gegen den Malerbetrieb möglich ist. Das Holz für die neue Gartenpforte liefert wie im Vorjahr ein Bauer aus Kesselbach.",
+    "Herr Bauer aus der Wohnung WE-21 hat uns gegenüber angegeben, in seiner Wohnung keine Auffälligkeiten bemerkt zu haben. Wir haben ihn gebeten, Herrn Fuchs dennoch Zutritt zu gewähren. Sollte sich herausstellen, dass der Schaden aus der Wohnung WE-21 stammt, werden wir dies gegenüber dem Versicherer gesondert angeben.",
+    "Sollte sich bei der Leckortung ergeben, dass Wände geöffnet und anschließend technisch getrocknet werden müssen, stellen wir Ihnen die Trocknungsgeräte zur Verfügung. Der dafür anfallende Strom wird über einen separaten Zwischenzähler erfasst und Ihnen von uns pauschal mit 3,50 EUR pro Gerät und Tag erstattet.",
+    "Für Ihre Unterlagen fassen wir die Daten zusammen: Mieterin laut Vertrag Petra Hahn geb. Schneider, Objekt WE-17, Garage 4, Mieterkonto 20417-HA, Schaden SV-2026-44120, Auftrag 77-3301/B. Ihr Mietvertrag vom 01.03.2019 läuft unverändert weiter.",
+    "Wir bitten Sie, uns bis zum 30.09.2026 schriftlich mitzuteilen, an welchen Tagen in der 40. Kalenderwoche die Wohnung für die Handwerker zugänglich ist. Falls Sie verhindert sind, können Sie auch Ihre Schwester, Frau Ilse Koch, bevollmächtigen; bitte senden Sie uns dazu eine kurze schriftliche Vollmacht mit Kopie ihres Ausweises.",
+    "Mit freundlichen Grüßen",
+    "Jana Sommer",
+    "Objektbetreuung",
+    "Hausverwaltung Engel & Partner GmbH",
+    "Anlage: Kopie Besichtigungsprotokoll Stein vom 10.09.2026",
+    "Geschäftsführer: Klaus Engel, Regine Wolf · Amtsgericht Lindenau HRB 4471 · USt-IdNr. DE287140553 · Steuernummer 026/118/40217",
+    "Bankverbindung: Volksbank Lindenau-Kesselbach eG · IBAN DE12 5001 0517 0648 3392 10 · BIC GENODEF1LKB",
+    "Mietkautionskonto: IBAN DE47 2709 3364 0011 8820 55 (Treuhandkonto Petra Hahn)"
+   ],
+   "known_entities": {
+    "person": [
+     "Petra Hahn"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hausverwaltung Engel & Partner GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Sanitär Fuchs GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Kesselbacher Feuer- und Leitungswasser Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Ostmoor Hausrat VVaG",
+     "category": "organisation"
+    },
+    {
+     "value": "Volksbank Lindenau-Kesselbach eG",
+     "category": "organisation"
+    },
+    {
+     "value": "Petra Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Jana Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Stein",
+     "category": "person"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Martin Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Ilse Koch",
+     "category": "person"
+    },
+    {
+     "value": "Klaus Engel",
+     "category": "person"
+    },
+    {
+     "value": "Regine Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Schneider",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Am Kanal 5",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinter der Kirche 2, 1. OG rechts",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinter der Kirche 2",
+     "category": "adresse"
+    },
+    {
+     "value": "Obere Mühle 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Garage 4",
+     "category": "adresse"
+    },
+    {
+     "value": "34517 Lindenau",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34519 Lindenau-Hainrode",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05631 448210",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 448219",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 448214",
+     "category": "telefon"
+    },
+    {
+     "value": "objekte@hv-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "j.sommer@hv-engel.example",
+     "category": "email"
+    },
+    {
+     "value": "DE12 5001 0517 0648 3392 10",
+     "category": "iban"
+    },
+    {
+     "value": "DE47 2709 3364 0011 8820 55",
+     "category": "iban"
+    },
+    {
+     "value": "HV-17/2026-0388",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "WE-17",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WE-21",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "77-3301/B",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "4471-0099-23",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "SV-2026-44120",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HR 0815-662-04",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRB 4471",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "20417-HA",
+     "category": "kundennummer"
+    },
+    {
+     "value": "DE287140553",
+     "category": "steuernummer"
+    },
+    {
+     "value": "026/118/40217",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "§ 536 BGB",
+    "§ 536c BGB",
+    "742,00 EUR",
+    "215,00 EUR",
+    "3,50 EUR pro Gerät und Tag",
+    "30.09.2026",
+    "22.09.2026"
+   ],
+   "keep_gewoehnlich": [
+    "der Hahn in der Küche",
+    "der tropfende Hahn",
+    "im Sommer 2026",
+    "Die Stein-Treppe im Hof",
+    "ein Bauer aus Kesselbach"
+   ],
+   "tags": [
+    "hausverwaltung",
+    "geschaeftsbrief",
+    "lang",
+    "briefkopf",
+    "fusszeile",
+    "kennung_ohne_label",
+    "strasse_ohne_strassenwort",
+    "geburtsname",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB02",
+   "format": "scan",
+   "filename": "Rechnung_2026-11873_Elektro_Winter.pdf",
+   "paragraphs": [
+    "Elektro Winter & Söhne KG",
+    "Meisterbetrieb · Zur Alten Ziegelei 14 · 27841 Kesselbach",
+    "Tel. 04283 92017-0 · Fax 04283 92017-99 · rechnung@elektro-winter.example",
+    "Elektro Winter & Söhne KG · Zur Alten Ziegelei 14 · 27841 Kesselbach",
+    "Herrn",
+    "Gerhard Becker",
+    "Lindenhof 7",
+    "27843 Kesselbach-Ahlum",
+    "Rechnung 2026-11873",
+    "Kesselbach, 06.10.2026",
+    "Kd. 40-1187 · Auftrag vom 15.09.2026 · Leistungszeitraum 22.09.2026 bis 24.09.2026",
+    "Sehr geehrter Herr Becker,",
+    "für die Erneuerung der Unterverteilung und die Installation der Wallbox in der Garage Ihres Hauses Lindenhof 7 berechnen wir Ihnen wie folgt:",
+    "Zwischensumme netto 2.486,00 EUR · zzgl. 19 % USt. 472,34 EUR · Rechnungsbetrag 2.958,34 EUR",
+    "Bitte überweisen Sie den Rechnungsbetrag bis zum 20.10.2026 ohne Abzug unter Angabe von 2026-11873. Die Arbeitskosten sind nach § 35a EStG begünstigt; der darin enthaltene Lohn- und Fahrtkostenanteil beträgt 1.054,34 EUR brutto.",
+    "Der Anschluss der Wallbox wurde dem Netzbetreiber unter dem Zähler 1ESY1160447752 gemeldet. Der alte Zähler 7EMH0093321 wurde ausgebaut und dem Messstellenbetreiber übergeben.",
+    "Ausführender Monteur: Sven Klein. Hinweis unseres Monteurs: Im Winter sollte die Wallbox nicht dauerhaft bei Frost unter -20 °C betrieben werden. Der Kabelkanal an der Stein-Mauer zur Einfahrt ist klein ausgefallen und sollte bei einer späteren Erweiterung ersetzt werden.",
+    "Mit freundlichen Grüßen",
+    "Elektro Winter & Söhne KG",
+    "i. A. Bernd Winter",
+    "Persönlich haftender Gesellschafter: Bernd Winter · Amtsgericht Kesselbach HRA 2207 · USt-IdNr. DE314552870",
+    "Sparkasse Kesselbach-Moor · IBAN DE61 2415 0001 0040 7731 88"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Art.-Nr.",
+     "Bezeichnung",
+     "Menge",
+     "Einzelpreis",
+     "Gesamt"
+    ],
+    "rows": [
+     [
+      "1",
+      "UV-4R-48",
+      "Unterverteilung 4-reihig, 48 TE, Aufputz",
+      "1 Stk.",
+      "412,00 EUR",
+      "412,00 EUR"
+     ],
+     [
+      "2",
+      "WB-11K",
+      "Wallbox 11 kW inkl. Montageset",
+      "1 Stk.",
+      "799,00 EUR",
+      "799,00 EUR"
+     ],
+     [
+      "3",
+      "NYM-5x6",
+      "Mantelleitung NYM-J 5x6 mm²",
+      "18 m",
+      "7,50 EUR",
+      "135,00 EUR"
+     ],
+     [
+      "4",
+      "LS-B16",
+      "Leitungsschutzschalter B16",
+      "6 Stk.",
+      "9,00 EUR",
+      "54,00 EUR"
+     ],
+     [
+      "5",
+      "—",
+      "Montage Elektromeister",
+      "12 Std.",
+      "68,00 EUR",
+      "816,00 EUR"
+     ],
+     [
+      "6",
+      "—",
+      "Anfahrt Lindenhof 7",
+      "2 x",
+      "35,00 EUR",
+      "70,00 EUR"
+     ],
+     [
+      "7",
+      "—",
+      "Entsorgung Altmaterial",
+      "1 psch.",
+      "200,00 EUR",
+      "200,00 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Gerhard Becker"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Elektro Winter & Söhne KG",
+     "category": "organisation"
+    },
+    {
+     "value": "Sparkasse Kesselbach-Moor",
+     "category": "organisation"
+    },
+    {
+     "value": "Gerhard Becker",
+     "category": "person"
+    },
+    {
+     "value": "Becker",
+     "category": "person"
+    },
+    {
+     "value": "Sven Klein",
+     "category": "person"
+    },
+    {
+     "value": "Bernd Winter",
+     "category": "person"
+    },
+    {
+     "value": "Zur Alten Ziegelei 14",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenhof 7",
+     "category": "adresse"
+    },
+    {
+     "value": "27841 Kesselbach",
+     "category": "plz_ort"
+    },
+    {
+     "value": "27843 Kesselbach-Ahlum",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04283 92017-0",
+     "category": "telefon"
+    },
+    {
+     "value": "04283 92017-99",
+     "category": "telefon"
+    },
+    {
+     "value": "rechnung@elektro-winter.example",
+     "category": "email"
+    },
+    {
+     "value": "2026-11873",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "40-1187",
+     "category": "kundennummer"
+    },
+    {
+     "value": "1ESY1160447752",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "7EMH0093321",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRA 2207",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE314552870",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE61 2415 0001 0040 7731 88",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "2.958,34 EUR",
+    "472,34 EUR",
+    "2.486,00 EUR",
+    "§ 35a EStG",
+    "20.10.2026",
+    "1.054,34 EUR"
+   ],
+   "keep_gewoehnlich": [
+    "Im Winter sollte die Wallbox",
+    "ist klein ausgefallen",
+    "an der Stein-Mauer"
+   ],
+   "tags": [
+    "rechnung",
+    "tabelle",
+    "scan",
+    "briefkopf",
+    "fusszeile",
+    "kennung_ohne_label",
+    "zaehlernummer",
+    "registernummer",
+    "strasse_ohne_strassenwort",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB03",
+   "format": "scan_degraded",
+   "filename": "2026-10-12_2_Mahnung_Blumenhaus.pdf",
+   "paragraphs": [
+    "Fischer & Groß Bürotechnik GmbH",
+    "An der Bleiche 9 · 26693 Ostermoor",
+    "Telefon 04471 30588-0 · Telefax 04471 30588-30 · forderungen@fg-buerotechnik.example",
+    "Blumenhaus Weiß e.K.",
+    "Inh. Tanja Weiß",
+    "Am Brunnen 11",
+    "26695 Ostermoor-Siel",
+    "2. Mahnung",
+    "Ostermoor, 12.10.2026",
+    "Kd. 10288 · Vertrag LV-2025-0731",
+    "Sehr geehrte Frau Weiß,",
+    "trotz unserer Zahlungserinnerung vom 15.09.2026 konnten wir bis heute keinen Zahlungseingang zu den nachstehenden Belegen feststellen:",
+    "Die Belege betreffen die monatliche Leasingrate für das Multifunktionsgerät MFG C3520, Seriennummer X7K-55021-CN, sowie den Toner-Mehrverbrauch im August für Ihre Plakataktion „Rosen in Weiß“.",
+    "Unser Techniker Herr Fischer hat das Gerät am 28.08.2026 gewartet. Er weist darauf hin, dass der Aufstellort im Verkaufsraum zwar groß und hell, für den Toner aber zu warm ist; wir empfehlen einen Standort ohne direkte Sonneneinstrahlung.",
+    "Wir fordern Sie auf, den Gesamtbetrag von 621,76 EUR bis spätestens 26.10.2026 auf unser Konto zu überweisen. Nach fruchtlosem Ablauf dieser Frist werden wir die Forderung ohne weitere Ankündigung an die Moorland Inkasso GmbH abgeben und den Leasingvertrag gemäß Ziffer 14 unserer AGB außerordentlich kündigen. Verzugszinsen nach § 288 Abs. 2 BGB behalten wir uns vor.",
+    "Sollten Sie die Zahlung zwischenzeitlich geleistet haben, betrachten Sie dieses Schreiben bitte als gegenstandslos. Bei Fragen erreichen Sie Frau Groß in unserer Buchhaltung unter der Durchwahl 04471 30588-17.",
+    "Mit freundlichen Grüßen",
+    "Fischer & Groß Bürotechnik GmbH",
+    "Henrike Groß",
+    "Forderungsmanagement",
+    "Geschäftsführer: Ole Fischer, Henrike Groß · Registergericht Ostermoor HRB 11604 · USt-IdNr. DE298803146",
+    "Bankverbindung: Raiffeisenbank Ostermoor eG · IBAN DE89 2806 9956 0102 4471 00"
+   ],
+   "table": {
+    "header": [
+     "Beleg",
+     "Kd.",
+     "Datum",
+     "fällig",
+     "Betrag"
+    ],
+    "rows": [
+     [
+      "RE-26-04410",
+      "10288",
+      "03.07.2026",
+      "17.07.2026",
+      "186,83 EUR"
+     ],
+     [
+      "RE-26-05127",
+      "10288",
+      "04.08.2026",
+      "18.08.2026",
+      "186,83 EUR"
+     ],
+     [
+      "RE-26-05890",
+      "10288",
+      "03.09.2026",
+      "17.09.2026",
+      "243,10 EUR"
+     ],
+     [
+      "Mahngebühr",
+      "",
+      "15.09.2026",
+      "",
+      "5,00 EUR"
+     ],
+     [
+      "Summe",
+      "",
+      "",
+      "",
+      "621,76 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Tanja Weiß"
+    ],
+    "organisation": [
+     "Blumenhaus Weiß e.K."
+    ]
+   },
+   "pii": [
+    {
+     "value": "Fischer & Groß Bürotechnik GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Blumenhaus Weiß e.K.",
+     "category": "organisation"
+    },
+    {
+     "value": "Moorland Inkasso GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Raiffeisenbank Ostermoor eG",
+     "category": "organisation"
+    },
+    {
+     "value": "Tanja Weiß",
+     "category": "person"
+    },
+    {
+     "value": "Weiß",
+     "category": "person"
+    },
+    {
+     "value": "Fischer",
+     "category": "person"
+    },
+    {
+     "value": "Groß",
+     "category": "person"
+    },
+    {
+     "value": "Henrike Groß",
+     "category": "person"
+    },
+    {
+     "value": "Ole Fischer",
+     "category": "person"
+    },
+    {
+     "value": "An der Bleiche 9",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Brunnen 11",
+     "category": "adresse"
+    },
+    {
+     "value": "26693 Ostermoor",
+     "category": "plz_ort"
+    },
+    {
+     "value": "26695 Ostermoor-Siel",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04471 30588-0",
+     "category": "telefon"
+    },
+    {
+     "value": "04471 30588-30",
+     "category": "telefon"
+    },
+    {
+     "value": "04471 30588-17",
+     "category": "telefon"
+    },
+    {
+     "value": "forderungen@fg-buerotechnik.example",
+     "category": "email"
+    },
+    {
+     "value": "10288",
+     "category": "kundennummer"
+    },
+    {
+     "value": "LV-2025-0731",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "X7K-55021-CN",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRB 11604",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "RE-26-04410",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "RE-26-05127",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "RE-26-05890",
+     "category": "rechnungsnummer"
+    },
+    {
+     "value": "DE298803146",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE89 2806 9956 0102 4471 00",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "621,76 EUR",
+    "26.10.2026",
+    "§ 288 Abs. 2 BGB",
+    "186,83 EUR",
+    "243,10 EUR"
+   ],
+   "keep_gewoehnlich": [
+    "Rosen in Weiß",
+    "groß und hell"
+   ],
+   "tags": [
+    "mahnung",
+    "tabelle",
+    "scan_degraded",
+    "briefkopf",
+    "fusszeile",
+    "kundennummer_tabelle",
+    "kennung_ohne_label",
+    "strasse_ohne_strassenwort",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB04",
+   "format": "txt",
+   "filename": "Mailverlauf_Hoffmann_Kfz-Schaden.txt",
+   "paragraphs": [
+    "Von: Miriam Altenkamp <m.altenkamp@altenkamp-recht.example>",
+    "Gesendet: Montag, 05.10.2026 11:52",
+    "An: Dirk Hoffmann <d.hoffmann@posteo-mail.example>",
+    "Betreff: AW: WG: Ihr Schaden KS-2026-008871 – LDN-DH 418",
+    "Sehr geehrter Herr Hoffmann,",
+    "vielen Dank für die Weiterleitung. Wir haben die Sache unter unserem Zeichen 214/26 AL06 angelegt. Die Kürzung auf eine Quote von 60 % halten wir nach erster Durchsicht nicht für überzeugend. Bitte senden Sie uns die Reparaturrechnung des Autohauses und, falls vorhanden, Fotos der Unfallstelle. Wir werden die Versicherung zur Zahlung des Restbetrags bis zum 23.10.2026 auffordern.",
+    "Mit freundlichen Grüßen",
+    "Miriam Altenkamp",
+    "Rechtsanwältin",
+    "Altenkamp Rechtsanwälte · Am Markt 4 · 34517 Lindenau · Tel. 05631 9081-0 · Fax 05631 9081-20",
+    "-----Ursprüngliche Nachricht-----",
+    "Von: Dirk Hoffmann <d.hoffmann@posteo-mail.example>",
+    "Gesendet: Montag, 05.10.2026 08:14",
+    "An: kanzlei@altenkamp-recht.example",
+    "Betreff: WG: Ihr Schaden KS-2026-008871 – LDN-DH 418",
+    "Sehr geehrte Frau Altenkamp,",
+    "anbei leite ich Ihnen die letzte Nachricht der Versicherung weiter. Ich verstehe nicht, warum man mir nur 60 % erstatten will. Der Unfall war am 17.08.2026 an der Kreuzung beim Lindenauer Bahnhof, der andere Fahrer (OSM-K 2210) hat mir die Vorfahrt genommen.",
+    "PS: Hier noch der Text aus dem eingescannten Abrechnungsschreiben, so wie mein Scanprogramm ihn erkannt hat: „Schaden-Nr. KS-2O26-OO8871 · Ihr Kennz. LDN-DH 4I8 · Zahlung an DE27 5OO1 0517 OO91 4483 62“",
+    "Mit freundlichen Grüßen",
+    "Dirk Hoffmann",
+    "Mobil 0171 5523094",
+    "-----Ursprüngliche Nachricht-----",
+    "Von: Lea Frank <schaden.kfz@brackenfelder-kv.example>",
+    "Gesendet: Freitag, 02.10.2026 15:41",
+    "An: Dirk Hoffmann <d.hoffmann@posteo-mail.example>",
+    "Betreff: Ihr Schaden KS-2026-008871",
+    "Sehr geehrter Herr Hoffmann,",
+    "zu dem Schadenereignis vom 17.08.2026 mit unserem Versicherungsnehmer Herrn Wagner haben wir die Ermittlungsakte ausgewertet. Nach Aktenlage ist von einer Mithaftung Ihrerseits auszugehen, da Sie die zulässige Geschwindigkeit überschritten haben sollen. Wir regulieren daher auf Basis einer Haftungsquote von 60 zu 40.",
+    "Das Gutachten des Sachverständigenbüros Roth (G-0926/118) weist Reparaturkosten von 6.840,20 EUR netto und eine Wertminderung von 450,00 EUR aus. Wir überweisen Ihnen 4.374,12 EUR auf das von Ihnen angegebene Konto DE27 5001 0517 0091 4483 62.",
+    "Weitergehende Ansprüche, insbesondere Nutzungsausfall für 9 Tage, lehnen wir derzeit ab, solange kein Reparaturnachweis vorliegt.",
+    "Mit freundlichen Grüßen",
+    "Lea Frank",
+    "Kraftfahrt-Schaden Team 3",
+    "Brackenfelder Kraftfahrt-Versicherung AG · Postfach 4410 · 49218 Brackenfeld",
+    "Telefon 05402 771-3318 · Telefax 05402 771-3300",
+    "Vorstand: Dr. Konrad Weidlich (Vors.), Silke Engel · Aufsichtsratsvorsitzender: Frank Becker · Amtsgericht Brackenfeld HRB 2091",
+    "> -----Ursprüngliche Nachricht-----",
+    "> Von: Dirk Hoffmann",
+    "> Gesendet: Mittwoch, 16.09.2026 19:02",
+    "> Betreff: Unfall vom 17.08.2026, Ihr VN Wagner",
+    "> Sehr geehrte Frau Frank,",
+    "> mein Fahrzeug (VW Golf, FIN WVWZZZ1KZ9W386615, Kennzeichen LDN-DH 418) steht seit dem Unfall in der Werkstatt Autohaus Sommer in Lindenau. Die Werkstatt hat mir mitgeteilt, dass die Reparatur erst nach Ihrer Freigabe beginnt. Den Nutzungsausfall mache ich ab dem 18.08.2026 geltend.",
+    "> Seit dem Unfall im Sommer bin ich auf ein Leihfahrrad angewiesen. Ich sage Ihnen frank und frei, dass ich die lange Bearbeitungszeit nicht nachvollziehen kann.",
+    "> Meine Bankverbindung: IBAN DE27 5001 0517 0091 4483 62, Kontoinhaber Dirk Hoffmann.",
+    "> Mit freundlichen Grüßen",
+    "> Dirk Hoffmann",
+    "> Hinter den Gärten 6, 34521 Lindenau-Ost",
+    "> Tel. 05631 70442"
+   ],
+   "known_entities": {
+    "person": [
+     "Dirk Hoffmann"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Dirk Hoffmann",
+     "category": "person"
+    },
+    {
+     "value": "Hoffmann",
+     "category": "person"
+    },
+    {
+     "value": "Miriam Altenkamp",
+     "category": "person"
+    },
+    {
+     "value": "Altenkamp",
+     "category": "person"
+    },
+    {
+     "value": "Lea Frank",
+     "category": "person"
+    },
+    {
+     "value": "Frank",
+     "category": "person"
+    },
+    {
+     "value": "Wagner",
+     "category": "person"
+    },
+    {
+     "value": "Konrad Weidlich",
+     "category": "person"
+    },
+    {
+     "value": "Silke Engel",
+     "category": "person"
+    },
+    {
+     "value": "Frank Becker",
+     "category": "person"
+    },
+    {
+     "value": "Altenkamp Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Brackenfelder Kraftfahrt-Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Sachverständigenbüros Roth",
+     "category": "organisation"
+    },
+    {
+     "value": "Autohaus Sommer",
+     "category": "organisation"
+    },
+    {
+     "value": "m.altenkamp@altenkamp-recht.example",
+     "category": "email"
+    },
+    {
+     "value": "d.hoffmann@posteo-mail.example",
+     "category": "email"
+    },
+    {
+     "value": "kanzlei@altenkamp-recht.example",
+     "category": "email"
+    },
+    {
+     "value": "schaden.kfz@brackenfelder-kv.example",
+     "category": "email"
+    },
+    {
+     "value": "05631 9081-0",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 9081-20",
+     "category": "telefon"
+    },
+    {
+     "value": "0171 5523094",
+     "category": "telefon"
+    },
+    {
+     "value": "05402 771-3318",
+     "category": "telefon"
+    },
+    {
+     "value": "05402 771-3300",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 70442",
+     "category": "telefon"
+    },
+    {
+     "value": "Am Markt 4",
+     "category": "adresse"
+    },
+    {
+     "value": "Postfach 4410",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinter den Gärten 6",
+     "category": "adresse"
+    },
+    {
+     "value": "34517 Lindenau",
+     "category": "plz_ort"
+    },
+    {
+     "value": "49218 Brackenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34521 Lindenau-Ost",
+     "category": "plz_ort"
+    },
+    {
+     "value": "214/26 AL06",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "G-0926/118",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "KS-2026-008871",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KS-2O26-OO8871",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WVWZZZ1KZ9W386615",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRB 2091",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "LDN-DH 418",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "LDN-DH 4I8",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "OSM-K 2210",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "DE27 5001 0517 0091 4483 62",
+     "category": "iban"
+    },
+    {
+     "value": "DE27 5OO1 0517 OO91 4483 62",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "4.374,12 EUR",
+    "6.840,20 EUR",
+    "450,00 EUR",
+    "23.10.2026"
+   ],
+   "keep_gewoehnlich": [
+    "frank und frei",
+    "im Sommer bin ich"
+   ],
+   "tags": [
+    "email_kette",
+    "zitierte_signatur",
+    "kfz_schaden",
+    "ocr_verwechslung",
+    "kennzeichen",
+    "fin",
+    "kennung_ohne_label",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB05",
+   "format": "docx",
+   "filename": "Mietvertrag_WE-03_Braun.docx",
+   "paragraphs": [
+    "Wohnraummietvertrag",
+    "Zwischen",
+    "Frau Hannelore Winter geb. Hahn, Am Mühlengraben 1, 37154 Haselroda, Telefon 05532 40918, E-Mail h.winter@haselnet.example",
+    "– nachfolgend „Vermieterin“ genannt –",
+    "und",
+    "Herrn Lukas Braun, geboren am 14.03.1991, und Frau Sophie Braun geborene Klein, geboren am 29.07.1993, beide derzeit wohnhaft Lindenhof 12, 49218 Brackenfeld",
+    "– nachfolgend gemeinsam „Mieter“ genannt –",
+    "wird folgender Mietvertrag geschlossen:",
+    "§ 1 Mietsache",
+    "(1) Vermietet wird die Wohnung im Haus Am Mühlengraben 3a, EG links, 37154 Haselroda, bestehend aus drei Zimmern, Küche, Bad mit Fenster, Diele und Terrasse. Die Wohnfläche beträgt ca. 78 m². Die Wohnung wird in der Objektverwaltung der Vermieterin unter der Bezeichnung WE-03 geführt.",
+    "(2) Mitvermietet werden der Kellerraum Nr. 5 sowie die Garage 2 auf dem Hof. Die Garage ist abschließbar; die Mieter erhalten zwei Garagenschlüssel. Ein gesondertes Nutzungsentgelt für die Garage wird nicht erhoben, es ist in der Grundmiete enthalten.",
+    "(3) Die Wohnung wird mit Einbauküche übergeben. Die Arbeitsplatte ist hell, die Fronten sind in Braun gehalten; die Geräte (Herd, Backofen, Kühlschrank, Geschirrspüler) sind funktionsfähig. Für Schäden an der Einbauküche, die über die gewöhnliche Abnutzung hinausgehen, haften die Mieter.",
+    "(4) Zum Zeitpunkt der Übergabe werden folgende Zählerstände protokolliert: Stromzähler 1APX0571203, Gaszähler G4-2281944, Wasserzähler WZ 30448712. Die Ablesung erfolgt gemeinsam durch die Vertragsparteien.",
+    "§ 2 Mietzeit",
+    "(1) Das Mietverhältnis beginnt am 01.12.2026 und läuft auf unbestimmte Zeit. (2) Die Kündigungsfristen richten sich nach § 573c BGB. Die Kündigung bedarf der Schriftform. (3) Eine stillschweigende Verlängerung des Mietverhältnisses nach § 545 BGB wird ausgeschlossen.",
+    "§ 3 Miete und Betriebskosten",
+    "(1) Die monatliche Grundmiete beträgt 890,00 EUR. (2) Daneben zahlen die Mieter monatliche Vorauszahlungen auf die Betriebskosten im Sinne der Betriebskostenverordnung in Höhe von 190,00 EUR sowie auf die Heizkosten in Höhe von 95,00 EUR. (3) Die monatliche Gesamtzahlung beträgt somit 1.175,00 EUR.",
+    "(4) Die Miete ist monatlich im Voraus, spätestens bis zum dritten Werktag eines Monats, auf das Konto der Vermieterin bei der Kreissparkasse Haselroda, IBAN DE53 2605 0001 0056 2290 41, zu zahlen. Als Verwendungszweck ist „Miete WE-03 Braun“ anzugeben.",
+    "(5) Über die Vorauszahlungen wird jährlich abgerechnet. Abrechnungszeitraum ist das Kalenderjahr. Die Heizkosten werden zu 70 % nach Verbrauch und zu 30 % nach Wohnfläche verteilt. Die übrigen Betriebskosten werden nach Wohnfläche umgelegt, soweit sie nicht verbrauchsabhängig erfasst werden.",
+    "§ 4 Mietsicherheit",
+    "(1) Die Mieter leisten eine Kaution in Höhe von 2.670,00 EUR. Sie sind berechtigt, die Kaution in drei gleichen monatlichen Teilzahlungen zu erbringen; die erste Teilzahlung ist zu Beginn des Mietverhältnisses fällig (§ 551 BGB). (2) Die Vermieterin legt die Kaution getrennt von ihrem Vermögen bei einem Kreditinstitut zu dem für Spareinlagen mit dreimonatiger Kündigungsfrist üblichen Zinssatz an.",
+    "§ 5 Schönheitsreparaturen",
+    "Die Wohnung wird unrenoviert übergeben. Die Vermieterin gewährt den Mietern als Ausgleich einen einmaligen Nachlass von 450,00 EUR auf die erste Monatsmiete. Schönheitsreparaturen während der Mietzeit führen die Mieter nach Bedarf aus; eine Pflicht zur Endrenovierung besteht nicht.",
+    "§ 6 Kleinreparaturen",
+    "Die Mieter tragen die Kosten für Kleinreparaturen an Gegenständen, die ihrem häufigen Zugriff ausgesetzt sind (z. B. Installationsgegenstände für Elektrizität, Wasser und Gas, Heiz- und Kocheinrichtungen, Fenster- und Türverschlüsse), bis zu einem Betrag von 110,00 EUR im Einzelfall, höchstens jedoch 8 % der jährlichen Grundmiete.",
+    "§ 7 Tierhaltung",
+    "Die Haltung von Kleintieren (z. B. Zierfische, Hamster) ist ohne Zustimmung zulässig. Die Haltung eines Hundes oder einer Katze bedarf der vorherigen schriftlichen Zustimmung der Vermieterin, die nur aus wichtigem Grund verweigert werden darf.",
+    "Den Mietern ist bekannt, dass auf dem Nachbargrundstück eine kleine Landwirtschaft betrieben und dort ein Hahn gehalten wird; hieraus können keine Minderungsansprüche hergeleitet werden.",
+    "§ 8 Winterdienst und Hausordnung",
+    "(1) Im Winter obliegt den Mietern der Erdgeschosswohnung im wöchentlichen Wechsel mit den Mietern der Wohnung WE-04 die Räum- und Streupflicht für den Zugang zum Haus und den Gehweg vor dem Grundstück. (2) Die Hausordnung ist Bestandteil dieses Vertrages. Ruhezeiten gelten von 13:00 bis 15:00 Uhr und von 22:00 bis 6:00 Uhr.",
+    "§ 9 Untervermietung",
+    "Eine Untervermietung oder sonstige Gebrauchsüberlassung an Dritte bedarf der Zustimmung der Vermieterin. Für die Aufnahme naher Angehöriger und die Untervermietung eines Teils der Wohnung gilt § 553 BGB.",
+    "§ 10 Ansprechpartner und Mitteilungen",
+    "(1) Die Vermieterin wird bei der laufenden Betreuung des Objekts durch Herrn Tobias Stein, Mobil 0160 4471902, t.stein@haselnet.example, unterstützt. Herr Stein ist nicht berechtigt, Erklärungen mit Wirkung für die Vermieterin abzugeben, die den Vertragsinhalt ändern. (2) Mängel sind der Vermieterin oder Herrn Stein unverzüglich anzuzeigen.",
+    "(3) Die Mieter teilen der Vermieterin eine Notfall-Telefonnummer mit. Angegeben wurde: Lukas Braun, Mobil 0157 33820146, E-Mail lukas.braun@mailbox.invalid.",
+    "§ 11 Übergabe",
+    "Die Übergabe erfolgt am 30.11.2026 um 16:00 Uhr. Über die Übergabe wird ein Protokoll erstellt, das die Zählerstände, die Anzahl der Schlüssel und etwaige Mängel festhält. Die Treppe zum Keller besteht aus Naturstein; die Stufen sind teilweise abgetreten, was die Mieter zur Kenntnis nehmen.",
+    "§ 12 Sonstige Vereinbarungen",
+    "(1) Die Mieter Braun haben vor Abschluss dieses Vertrages ihre Identität durch Vorlage der Personalausweise L01X4K7Z9 und L7TN83R2C nachgewiesen. Eine Kopie wird nicht angefertigt. (2) Mündliche Nebenabreden bestehen nicht. Änderungen und Ergänzungen bedürfen der Textform. (3) Sollte eine Bestimmung dieses Vertrages unwirksam sein, bleibt der Vertrag im Übrigen wirksam.",
+    "Haselroda, den 21.10.2026",
+    "Vermieterin: Hannelore Winter",
+    "Mieter: Lukas Braun · Sophie Braun",
+    "Anlagen: Hausordnung, Übergabeprotokoll (wird bei Übergabe erstellt), Energieausweis HR-2024-0098317"
+   ],
+   "known_entities": {
+    "person": [
+     "Lukas Braun"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Hannelore Winter",
+     "category": "person"
+    },
+    {
+     "value": "Lukas Braun",
+     "category": "person"
+    },
+    {
+     "value": "Sophie Braun",
+     "category": "person"
+    },
+    {
+     "value": "Braun",
+     "category": "person"
+    },
+    {
+     "value": "Tobias Stein",
+     "category": "person"
+    },
+    {
+     "value": "Stein",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Klein",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Am Mühlengraben 1",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Mühlengraben 3a, EG links",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenhof 12",
+     "category": "adresse"
+    },
+    {
+     "value": "Garage 2",
+     "category": "adresse"
+    },
+    {
+     "value": "37154 Haselroda",
+     "category": "plz_ort"
+    },
+    {
+     "value": "49218 Brackenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05532 40918",
+     "category": "telefon"
+    },
+    {
+     "value": "0160 4471902",
+     "category": "telefon"
+    },
+    {
+     "value": "0157 33820146",
+     "category": "telefon"
+    },
+    {
+     "value": "h.winter@haselnet.example",
+     "category": "email"
+    },
+    {
+     "value": "t.stein@haselnet.example",
+     "category": "email"
+    },
+    {
+     "value": "lukas.braun@mailbox.invalid",
+     "category": "email"
+    },
+    {
+     "value": "14.03.1991",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "29.07.1993",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Kreissparkasse Haselroda",
+     "category": "organisation"
+    },
+    {
+     "value": "DE53 2605 0001 0056 2290 41",
+     "category": "iban"
+    },
+    {
+     "value": "WE-03",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WE-04",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "1APX0571203",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "G4-2281944",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WZ 30448712",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "L01X4K7Z9",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "L7TN83R2C",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HR-2024-0098317",
+     "category": "sonstige_kennung"
+    }
+   ],
+   "keep": [
+    "890,00 EUR",
+    "1.175,00 EUR",
+    "2.670,00 EUR",
+    "§ 551 BGB",
+    "§ 573c BGB",
+    "§ 553 BGB",
+    "110,00 EUR",
+    "01.12.2026",
+    "30.11.2026"
+   ],
+   "keep_gewoehnlich": [
+    "dort ein Hahn gehalten wird",
+    "Im Winter obliegt den Mietern",
+    "die Fronten sind in Braun gehalten",
+    "besteht aus Naturstein"
+   ],
+   "tags": [
+    "mietvertrag",
+    "lang",
+    "geburtsname",
+    "geburtsdatum",
+    "zaehlernummer",
+    "ausweisnummer",
+    "strasse_ohne_strassenwort",
+    "adresszusatz",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB06",
+   "format": "pdf",
+   "filename": "Gutachten_G-2026-0412_Vogel.pdf",
+   "paragraphs": [
+    "Ingenieurbüro Roth & Partner",
+    "Kfz-Sachverständige · Unfallgutachten · Wertgutachten",
+    "Hinter der Mühle 4 · 37154 Haselroda",
+    "Tel. 05532 66120 · Fax 05532 66129 · gutachten@ib-roth.example",
+    "Gutachten G-2026-0412",
+    "Haftpflichtschaden vom 29.09.2026 – Schaden 26-KH-301877",
+    "Auftraggeberin: Carina Vogel, Obere Mühle 3, 34517 Lindenau, Telefon 05631 228190",
+    "Rechtsanwälte der Auftraggeberin: Altenkamp Rechtsanwälte, Az. 233/26 AL06",
+    "Anspruchsgegner: Andreas Fuchs, Halter des Fahrzeugs BRF-AF 316, versichert bei der Brackenfelder Kraftfahrt-Versicherung AG",
+    "1. Fahrzeugdaten",
+    "Hersteller/Typ: Opel Astra 1.2 Turbo · Erstzulassung 03/2021 · Amtliches Kennzeichen LDN-CV 77 · FIN W0L0AHL3575014289 · Laufleistung abgelesen 48.316 km · Farbe Perlmutt-Grau",
+    "2. Besichtigung",
+    "Die Besichtigung erfolgte am 01.10.2026 um 9:30 Uhr in der Werkstatt der Autohaus Sommer GmbH, Am Kanal 21, 34517 Lindenau, in Anwesenheit der Auftraggeberin und des Werkstattmeisters Herrn Ralf Becker. Das Fahrzeug war nicht fahrbereit und stand auf der Hebebühne.",
+    "3. Schadenhergang (nach Angaben der Auftraggeberin)",
+    "Die Auftraggeberin befuhr die Landstraße zwischen Lindenau und Kesselbach. Kurz vor der Einmündung zum Gewerbegebiet bremste sie ab, weil ein Fuchs die Fahrbahn querte. Das nachfolgende Fahrzeug des Anspruchsgegners fuhr auf. Herr Fuchs hat gegenüber der Polizei eingeräumt, zu dicht aufgefahren zu sein.",
+    "Die Polizei hat den Unfall unter VU-2026-118734 aufgenommen. Frau Vogel hat das Fahrzeug anschließend abschleppen lassen.",
+    "4. Schadenbeschreibung und Reparaturweg",
+    "Die Schäden konzentrieren sich auf das Heck. Die Instandsetzung erfolgt nach Herstellervorgaben; die nachfolgende Aufstellung gibt die kalkulierten Kosten wieder.",
+    "5. Ergebnis",
+    "Reparaturkosten netto: 3.142,00 EUR · Wertminderung (merkantil): 350,00 EUR · Wiederbeschaffungswert: 14.900,00 EUR · Restwert: 9.100,00 EUR · Reparaturdauer: 5 Arbeitstage · Nutzungsausfall Gruppe D: 50,00 EUR pro Tag",
+    "Es liegt kein wirtschaftlicher Totalschaden vor. Die Reparatur ist technisch und wirtschaftlich sinnvoll. Vorschäden: Steinschlag in der Frontscheibe (Altschaden, nicht unfallbedingt) sowie eine kleine Delle an der Motorhaube, die nach Angaben der Auftraggeberin von einem Vogel her rührt, der im Juli gegen das Fahrzeug flog.",
+    "Die Lichtbilder 1 bis 24 sind als Anlage beigefügt. Die Kalkulation erfolgte auf Basis der Stundenverrechnungssätze der Autohaus Sommer GmbH.",
+    "Haselroda, 02.10.2026",
+    "Dipl.-Ing. Matthias Roth",
+    "öffentlich bestellter und vereidigter Sachverständiger für Kraftfahrzeugschäden und -bewertung",
+    "Ingenieurbüro Roth & Partner · Partner: Matthias Roth, Leonie Brandt · USt-IdNr. DE301229876 · Volksbank Haselroda eG · IBAN DE72 2625 0001 0014 5590 33"
+   ],
+   "table": {
+    "header": [
+     "Pos.",
+     "Bauteil",
+     "Schaden",
+     "Maßnahme",
+     "Kosten netto"
+    ],
+    "rows": [
+     [
+      "1",
+      "Stoßfänger hinten",
+      "gerissen, Halter gebrochen",
+      "erneuern, lackieren",
+      "812,40 EUR"
+     ],
+     [
+      "2",
+      "Heckklappe",
+      "eingedrückt",
+      "instand setzen, lackieren",
+      "1.146,00 EUR"
+     ],
+     [
+      "3",
+      "Rückleuchte links",
+      "Gehäuse gebrochen",
+      "erneuern",
+      "289,90 EUR"
+     ],
+     [
+      "4",
+      "Abschlussblech",
+      "verformt",
+      "richten",
+      "418,50 EUR"
+     ],
+     [
+      "5",
+      "Einparksensoren hinten",
+      "2 Sensoren defekt",
+      "erneuern, kalibrieren",
+      "356,20 EUR"
+     ],
+     [
+      "6",
+      "Vermessung",
+      "—",
+      "Achsvermessung",
+      "119,00 EUR"
+     ],
+     [
+      "Summe",
+      "",
+      "",
+      "",
+      "3.142,00 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Carina Vogel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Ingenieurbüro Roth & Partner",
+     "category": "organisation"
+    },
+    {
+     "value": "Altenkamp Rechtsanwälte",
+     "category": "organisation"
+    },
+    {
+     "value": "Brackenfelder Kraftfahrt-Versicherung AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Autohaus Sommer GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Volksbank Haselroda eG",
+     "category": "organisation"
+    },
+    {
+     "value": "Carina Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Vogel",
+     "category": "person"
+    },
+    {
+     "value": "Andreas Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Fuchs",
+     "category": "person"
+    },
+    {
+     "value": "Ralf Becker",
+     "category": "person"
+    },
+    {
+     "value": "Matthias Roth",
+     "category": "person"
+    },
+    {
+     "value": "Leonie Brandt",
+     "category": "person"
+    },
+    {
+     "value": "Hinter der Mühle 4",
+     "category": "adresse"
+    },
+    {
+     "value": "Obere Mühle 3",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Kanal 21",
+     "category": "adresse"
+    },
+    {
+     "value": "37154 Haselroda",
+     "category": "plz_ort"
+    },
+    {
+     "value": "34517 Lindenau",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05532 66120",
+     "category": "telefon"
+    },
+    {
+     "value": "05532 66129",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 228190",
+     "category": "telefon"
+    },
+    {
+     "value": "gutachten@ib-roth.example",
+     "category": "email"
+    },
+    {
+     "value": "G-2026-0412",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "233/26 AL06",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "VU-2026-118734",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "26-KH-301877",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "W0L0AHL3575014289",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "BRF-AF 316",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "LDN-CV 77",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "DE301229876",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE72 2625 0001 0014 5590 33",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "3.142,00 EUR",
+    "350,00 EUR",
+    "14.900,00 EUR",
+    "9.100,00 EUR",
+    "50,00 EUR pro Tag"
+   ],
+   "keep_gewoehnlich": [
+    "weil ein Fuchs die Fahrbahn querte",
+    "von einem Vogel her"
+   ],
+   "tags": [
+    "kfz_gutachten",
+    "tabelle",
+    "fin",
+    "kennzeichen",
+    "kennung_ohne_label",
+    "strasse_ohne_strassenwort",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB07",
+   "format": "scan",
+   "filename": "Schadenmeldung_Einbruch_Engel.pdf",
+   "paragraphs": [
+    "Margarete Engel",
+    "Zur Alten Ziegelei 2, DG",
+    "27841 Kesselbach",
+    "Tel. 04283 5517 · margarete.engel@kesselnetz.example",
+    "Ostmoor Hausrat VVaG",
+    "Schadenabteilung",
+    "Am Deich 40",
+    "26693 Ostermoor",
+    "Kesselbach, 28.09.2026",
+    "Betreff: Schaden SV-2026-51877 / Police 3310-4471-08",
+    "Einbruchdiebstahl in meiner Wohnung am 24.09.2026",
+    "Sehr geehrte Damen und Herren,",
+    "wie bereits telefonisch am 25.09.2026 gegenüber Ihrem Mitarbeiter Herrn Klein angekündigt, reiche ich hiermit die schriftliche Schadenmeldung ein. In der Nacht vom 23. auf den 24.09.2026 wurde in meine Wohnung eingebrochen, während ich bei meinem Sohn Jonas Engel in Ostermoor übernachtet habe.",
+    "Die Täter haben die Balkontür aufgehebelt. Die Polizei hat den Tatort am Morgen des 24.09.2026 aufgenommen; die Anzeige wird bei der Polizeiinspektion Kesselbach unter ST/0571283/2026 geführt. Eine Kopie der Anzeigenbestätigung liegt bei.",
+    "Entwendet bzw. beschädigt wurden nach meiner bisherigen Feststellung:",
+    "– ein Ölbild „Ein Fischer am See“ (Erbstück meines Vaters, Wert nach Gutachten von 2019 ca. 2.800,00 EUR)",
+    "– eine Porzellanfigur, ein Engel aus Porzellan mit Goldrand, ca. 420,00 EUR",
+    "– Schmuck aus dem Schlafzimmer (Ring, zwei Ketten), Kaufbelege teilweise vorhanden, zusammen ca. 1.650,00 EUR",
+    "– ein Laptop, Seriennummer 5CD2381KQW, ca. 900,00 EUR",
+    "– Reparatur der Balkontür laut Kostenvoranschlag der Tischlerei Wolf vom 26.09.2026: 1.184,50 EUR",
+    "Vermieter der Wohnung ist Herr Harald Brenner; er ist über den Schaden an der Balkontür informiert und hat der Reparatur zugestimmt.",
+    "Ich bin bei Ihnen seit 2011 versichert, zunächst noch unter dem Namen Margarete Fischer; nach meiner Heirat wurde der Vertrag auf Margarete Engel geb. Fischer umgeschrieben.",
+    "Bitte überweisen Sie die Entschädigung auf mein Konto bei der Sparkasse Kesselbach-Moor, IBAN DE35 2415 0001 0007 3318 26.",
+    "Den Fragebogen zur Stehlgutliste habe ich ausgefüllt beigefügt. Für Rückfragen bin ich tagsüber unter 0172 8840351 erreichbar. Ihren Regulierungsvorschlag erbitte ich bis zum 30.10.2026.",
+    "Mit freundlichen Grüßen",
+    "Margarete Engel",
+    "Anlagen: Anzeigenbestätigung, Stehlgutliste, Kostenvoranschlag Wolf, Fotos"
+   ],
+   "known_entities": {
+    "person": [
+     "Margarete Engel"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Margarete Engel",
+     "category": "person"
+    },
+    {
+     "value": "Jonas Engel",
+     "category": "person"
+    },
+    {
+     "value": "Klein",
+     "category": "person"
+    },
+    {
+     "value": "Margarete Fischer",
+     "category": "person"
+    },
+    {
+     "value": "Harald Brenner",
+     "category": "person"
+    },
+    {
+     "value": "Fischer",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Ostmoor Hausrat VVaG",
+     "category": "organisation"
+    },
+    {
+     "value": "Tischlerei Wolf",
+     "category": "organisation"
+    },
+    {
+     "value": "Wolf",
+     "category": "organisation"
+    },
+    {
+     "value": "Sparkasse Kesselbach-Moor",
+     "category": "organisation"
+    },
+    {
+     "value": "Zur Alten Ziegelei 2, DG",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Deich 40",
+     "category": "adresse"
+    },
+    {
+     "value": "27841 Kesselbach",
+     "category": "plz_ort"
+    },
+    {
+     "value": "26693 Ostermoor",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04283 5517",
+     "category": "telefon"
+    },
+    {
+     "value": "0172 8840351",
+     "category": "telefon"
+    },
+    {
+     "value": "margarete.engel@kesselnetz.example",
+     "category": "email"
+    },
+    {
+     "value": "SV-2026-51877",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "3310-4471-08",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "5CD2381KQW",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "ST/0571283/2026",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "DE35 2415 0001 0007 3318 26",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "2.800,00 EUR",
+    "420,00 EUR",
+    "1.650,00 EUR",
+    "900,00 EUR",
+    "1.184,50 EUR",
+    "30.10.2026"
+   ],
+   "keep_gewoehnlich": [
+    "Ein Fischer am See",
+    "ein Engel aus Porzellan"
+   ],
+   "tags": [
+    "versicherung",
+    "schadenmeldung",
+    "scan",
+    "geburtsname",
+    "kennung_ohne_label",
+    "strasse_ohne_strassenwort",
+    "adresszusatz",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB08",
+   "format": "txt",
+   "filename": "Telefonnotiz_2026-10-07_Stein.txt",
+   "paragraphs": [
+    "TELEFONNOTIZ",
+    "Datum: 07.10.2026 · 10:40 Uhr · aufgenommen von: Kerstin Wolf (Sekretariat RA Brandauer)",
+    "Akte: 118/26 BR03 – Claudia Hahn ./. Groß & Partner Bauträger GmbH",
+    "Anrufer: Hr. Stein, Stein Immobilien e.K., Rückruf erbeten unter 05631 87 03 31 oder mobil 0151 22904418",
+    "Rückruf Stein wegen Becker-Angebot!",
+    "Inhalt: Hr. Stein vermarktet für unsere Mandantin Fr. Hahn das Haus Hinter der Kirche 9 in Lindenau. Es liegt ein schriftliches Kaufangebot von Hr. Becker (Kaufinteressent, wohnt laut Stein in Kesselbach, Zur Alten Ziegelei 14) über 318.000 EUR vor. Stein möchte wissen, ob Fr. Hahn wegen des laufenden Rechtsstreits mit dem Bauträger überhaupt verkaufen darf (Auflassungsvormerkung?).",
+    "Stein hat das Exposé und das Angebot vorab gefaxt, Fax ist schlecht lesbar. Folgende Angaben von mir vom Fax abgetippt, ohne Gewähr:",
+    "Objekt-Nr. WO-22O1 · Grundbuch von Lindenau Blatt 44O7 · Flur 3, Flurstück 118/4 · Stein Immobilien e.K., HRA 22O7, USt-IdNr. DE2O4417765 · Anderkonto Notar: DE12 5OO1 0517 0O48 2210 77",
+    "Notarin laut Fax: Dr. Ute Sommerfeld, Lindenau",
+    "Sonstiges: Hr. Stein sagt, das Haus sei groß und hell, die Stein-Treppe zum Garten müsse aber saniert werden; Fr. Hahn habe im Sommer 2026 bereits einen Kostenvoranschlag eingeholt. Der Hahn im Gäste-WC tropft – sagt er nur, damit wir es wissen, falls der Käufer mindern will.",
+    "Hr. Becker selbst hat sich nicht gemeldet. E-Mail von Stein angekündigt an kanzlei@brandauer-wolf.example, Absender vermutlich info@stein-immobilien.example.",
+    "Bitte an RA Dr. Brandauer: Rückruf bis heute 16:00 Uhr, Stein ist ab morgen im Urlaub bis 19.10.2026. Fristnotiz: keine Frist betroffen. – K. Wolf"
+   ],
+   "known_entities": {
+    "person": [
+     "Claudia Hahn"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Kerstin Wolf",
+     "category": "person"
+    },
+    {
+     "value": "K. Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Brandauer",
+     "category": "person"
+    },
+    {
+     "value": "Claudia Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Stein",
+     "category": "person"
+    },
+    {
+     "value": "Becker",
+     "category": "person"
+    },
+    {
+     "value": "Ute Sommerfeld",
+     "category": "person"
+    },
+    {
+     "value": "Groß & Partner Bauträger GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Stein Immobilien e.K.",
+     "category": "organisation"
+    },
+    {
+     "value": "118/26 BR03",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "05631 87 03 31",
+     "category": "telefon"
+    },
+    {
+     "value": "0151 22904418",
+     "category": "telefon"
+    },
+    {
+     "value": "Hinter der Kirche 9",
+     "category": "adresse"
+    },
+    {
+     "value": "Zur Alten Ziegelei 14",
+     "category": "adresse"
+    },
+    {
+     "value": "WO-22O1",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Blatt 44O7",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "Flurstück 118/4",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRA 22O7",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "DE2O4417765",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE12 5OO1 0517 0O48 2210 77",
+     "category": "iban"
+    },
+    {
+     "value": "kanzlei@brandauer-wolf.example",
+     "category": "email"
+    },
+    {
+     "value": "info@stein-immobilien.example",
+     "category": "email"
+    }
+   ],
+   "keep": [
+    "318.000 EUR",
+    "19.10.2026"
+   ],
+   "keep_gewoehnlich": [
+    "groß und hell",
+    "die Stein-Treppe zum Garten",
+    "im Sommer 2026",
+    "Der Hahn im Gäste-WC tropft"
+   ],
+   "tags": [
+    "telefonnotiz",
+    "ohne_anrede",
+    "ocr_verwechslung",
+    "kennung_ohne_label",
+    "registernummer",
+    "strasse_ohne_strassenwort",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB09",
+   "format": "docx",
+   "filename": "Arbeitsvertrag_Bauer_Baeckerei_Sommer.docx",
+   "paragraphs": [
+    "Arbeitsvertrag",
+    "zwischen der Bäckerei Sommer GmbH & Co. KG, Am Markt 2, 26693 Ostermoor, vertreten durch die Geschäftsführerin Anke Sommer (nachfolgend „Arbeitgeberin“)",
+    "und Herrn Jannik Bauer, geboren am 02.11.1998 in Ostermoor, wohnhaft Hinter der Kirche 5, Hinterhaus, 26695 Ostermoor-Siel (nachfolgend „Arbeitnehmer“)",
+    "wird folgender Arbeitsvertrag geschlossen:",
+    "§ 1 Beginn des Arbeitsverhältnisses, Probezeit",
+    "(1) Das Arbeitsverhältnis beginnt am 01.01.2027. (2) Die ersten sechs Monate gelten als Probezeit. Während der Probezeit kann das Arbeitsverhältnis von beiden Seiten mit einer Frist von zwei Wochen gekündigt werden (§ 622 Abs. 3 BGB).",
+    "§ 2 Tätigkeit und Arbeitsort",
+    "(1) Der Arbeitnehmer wird als Bäckergeselle eingestellt. Er ist in erster Linie in der Backstube der Filiale Lindenhof 3, 26693 Ostermoor, tätig. (2) Die Arbeitgeberin kann dem Arbeitnehmer im Rahmen des Direktionsrechts (§ 106 GewO) auch eine andere zumutbare Tätigkeit oder einen Einsatz in einer anderen Filiale im Umkreis von 25 km zuweisen.",
+    "(3) Fachlicher Vorgesetzter ist der Backstubenleiter Herr Uwe Koch. Der Arbeitnehmer unterstützt bei Bedarf auch den Koch des Bistrobereichs bei der Zubereitung belegter Backwaren; eine Tätigkeit im Verkauf ist nur in Ausnahmefällen vorgesehen.",
+    "(4) Das Mehl bezieht die Arbeitgeberin überwiegend direkt von einem Bauern aus der Region. Der Arbeitnehmer ist verpflichtet, bei der Warenannahme die Lieferscheine auf Vollständigkeit zu prüfen und Abweichungen Herrn Koch zu melden.",
+    "§ 3 Arbeitszeit",
+    "(1) Die regelmäßige wöchentliche Arbeitszeit beträgt 40 Stunden an fünf Tagen. Die Schicht beginnt in der Regel um 3:00 Uhr. (2) Im Sommer (Juni bis August) beginnt die Frühschicht wegen der Hitze in der Backstube bereits um 2:30 Uhr; die Schicht endet entsprechend früher.",
+    "(3) Für die Nachtarbeit im Sinne des § 2 Abs. 4 ArbZG erhält der Arbeitnehmer einen Zuschlag nach § 4 Abs. 2 dieses Vertrages; der Ausgleich nach § 6 Abs. 5 ArbZG ist damit abgegolten. (4) Der Arbeitnehmer ist verpflichtet, im betrieblich notwendigen Umfang Überstunden zu leisten. Überstunden werden vorrangig durch Freizeit ausgeglichen.",
+    "§ 4 Vergütung",
+    "(1) Der Arbeitnehmer erhält ein Bruttomonatsgehalt von 2.950,00 EUR. (2) Für Arbeitsstunden zwischen 23:00 Uhr und 6:00 Uhr wird ein Nachtzuschlag von 25 % des Stundenlohns gezahlt. (3) Die Vergütung ist jeweils am letzten Werktag des Monats fällig und wird auf das Konto des Arbeitnehmers IBAN DE19 2806 9956 0045 1182 07 bei der Raiffeisenbank Ostermoor eG überwiesen.",
+    "(4) Die Arbeitgeberin zahlt ein Weihnachtsgeld in Höhe von 50 % eines Bruttomonatsgehalts mit der Novembervergütung. Die Zahlung erfolgt freiwillig und begründet auch bei wiederholter Gewährung keinen Rechtsanspruch für die Zukunft.",
+    "§ 5 Urlaub",
+    "Der Arbeitnehmer hat Anspruch auf einen jährlichen Erholungsurlaub von 28 Arbeitstagen. Der Urlaub ist rechtzeitig zu beantragen; in der Vorweihnachtszeit vom 01.12. bis 24.12. eines jeden Jahres wird Urlaub nur in begründeten Ausnahmefällen gewährt.",
+    "§ 6 Arbeitsverhinderung und Arbeitsunfähigkeit",
+    "(1) Der Arbeitnehmer ist verpflichtet, jede Arbeitsverhinderung und ihre voraussichtliche Dauer unverzüglich, möglichst vor Schichtbeginn, Herrn Koch oder der Personalabteilung anzuzeigen. Ansprechpartnerin in der Personalabteilung ist Frau Lisa Winter, Telefon 04471 6620-14, personal@baeckerei-sommer.example.",
+    "(2) Dauert die Arbeitsunfähigkeit länger als drei Kalendertage, ist sie ärztlich festzustellen; die Arbeitsunfähigkeitsdaten werden von der Arbeitgeberin elektronisch bei der Krankenkasse abgerufen. Die Entgeltfortzahlung richtet sich nach dem Entgeltfortzahlungsgesetz.",
+    "§ 7 Verschwiegenheit",
+    "Der Arbeitnehmer verpflichtet sich, über alle Betriebs- und Geschäftsgeheimnisse, insbesondere Rezepturen, Lieferantenkonditionen und Kalkulationen, während und nach Beendigung des Arbeitsverhältnisses Stillschweigen zu bewahren.",
+    "§ 8 Nebentätigkeit",
+    "Eine entgeltliche Nebentätigkeit ist der Arbeitgeberin vorher schriftlich anzuzeigen. Sie kann untersagt werden, wenn sie die Arbeitsleistung beeinträchtigt, insbesondere die gesetzlichen Ruhezeiten vor Schichtbeginn gefährdet, oder wenn sie für einen Wettbewerber erfolgt.",
+    "§ 9 Beendigung",
+    "(1) Nach Ablauf der Probezeit gelten die gesetzlichen Kündigungsfristen nach § 622 BGB. Eine Verlängerung der Kündigungsfrist zugunsten des Arbeitnehmers gilt auch für die Arbeitgeberin. (2) Die Kündigung bedarf der Schriftform (§ 623 BGB). (3) Das Arbeitsverhältnis endet ohne Kündigung mit Ablauf des Monats, in dem der Arbeitnehmer die Regelaltersgrenze erreicht.",
+    "§ 10 Ausschlussfristen",
+    "Ansprüche aus dem Arbeitsverhältnis verfallen, wenn sie nicht innerhalb von drei Monaten nach Fälligkeit in Textform gegenüber der anderen Vertragspartei geltend gemacht werden. Dies gilt nicht für Ansprüche auf den gesetzlichen Mindestlohn sowie für Ansprüche aus vorsätzlicher Pflichtverletzung.",
+    "§ 11 Personaldaten",
+    "Der Arbeitnehmer hat für die Lohnabrechnung folgende Angaben gemacht: Sozialversicherungsnummer 65 021198 B 512; Steuer-Identifikationsnummer 47 118 290 563; Krankenkasse Moorland BKK, Versichertennummer K418027763; Personalnummer P-0471. Herr Bauer versichert, dass diese Angaben vollständig sind, und teilt Änderungen unverzüglich mit.",
+    "§ 12 Schlussbestimmungen",
+    "Änderungen und Ergänzungen dieses Vertrages bedürfen der Schriftform. Mündliche Nebenabreden bestehen nicht. Sollte eine Bestimmung unwirksam sein, wird die Wirksamkeit der übrigen Bestimmungen hiervon nicht berührt.",
+    "Ostermoor, den 05.11.2026",
+    "Für die Arbeitgeberin: Anke Sommer, Geschäftsführerin",
+    "Arbeitnehmer: Jannik Bauer",
+    "Bäckerei Sommer GmbH & Co. KG · Sitz Ostermoor · Amtsgericht Ostermoor HRA 3318 · persönlich haftende Gesellschafterin: Sommer Verwaltungs-GmbH, Amtsgericht Ostermoor HRB 9902 · Geschäftsführerin: Anke Sommer · USt-IdNr. DE277540118"
+   ],
+   "known_entities": {
+    "person": [
+     "Anke Sommer"
+    ],
+    "organisation": [
+     "Bäckerei Sommer GmbH & Co. KG"
+    ]
+   },
+   "pii": [
+    {
+     "value": "Bäckerei Sommer GmbH & Co. KG",
+     "category": "organisation"
+    },
+    {
+     "value": "Raiffeisenbank Ostermoor eG",
+     "category": "organisation"
+    },
+    {
+     "value": "Moorland BKK",
+     "category": "organisation"
+    },
+    {
+     "value": "Sommer Verwaltungs-GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Anke Sommer",
+     "category": "person"
+    },
+    {
+     "value": "Jannik Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Bauer",
+     "category": "person"
+    },
+    {
+     "value": "Uwe Koch",
+     "category": "person"
+    },
+    {
+     "value": "Koch",
+     "category": "person"
+    },
+    {
+     "value": "Lisa Winter",
+     "category": "person"
+    },
+    {
+     "value": "02.11.1998",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Am Markt 2",
+     "category": "adresse"
+    },
+    {
+     "value": "Hinter der Kirche 5, Hinterhaus",
+     "category": "adresse"
+    },
+    {
+     "value": "Lindenhof 3",
+     "category": "adresse"
+    },
+    {
+     "value": "26693 Ostermoor",
+     "category": "plz_ort"
+    },
+    {
+     "value": "26695 Ostermoor-Siel",
+     "category": "plz_ort"
+    },
+    {
+     "value": "04471 6620-14",
+     "category": "telefon"
+    },
+    {
+     "value": "personal@baeckerei-sommer.example",
+     "category": "email"
+    },
+    {
+     "value": "DE19 2806 9956 0045 1182 07",
+     "category": "iban"
+    },
+    {
+     "value": "65 021198 B 512",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "K418027763",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "P-0471",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRA 3318",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRB 9902",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "47 118 290 563",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE277540118",
+     "category": "steuernummer"
+    }
+   ],
+   "keep": [
+    "2.950,00 EUR",
+    "§ 622 Abs. 3 BGB",
+    "§ 622 BGB",
+    "§ 623 BGB",
+    "§ 106 GewO",
+    "§ 6 Abs. 5 ArbZG",
+    "01.01.2027",
+    "28 Arbeitstagen"
+   ],
+   "keep_gewoehnlich": [
+    "Im Sommer (Juni bis August)",
+    "von einem Bauern aus der Region",
+    "den Koch des Bistrobereichs"
+   ],
+   "tags": [
+    "arbeitsvertrag",
+    "lang",
+    "geburtsdatum",
+    "sozialversicherungsnummer",
+    "steuer_id",
+    "registernummer",
+    "strasse_ohne_strassenwort",
+    "adresszusatz",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB10",
+   "format": "pdf",
+   "filename": "Vollmacht_Klein_57-26.pdf",
+   "paragraphs": [
+    "Brandauer & Wolf Rechtsanwälte PartG mbB",
+    "Dr. Felix Brandauer · Nina Wolf · Rechtsanwälte",
+    "Am Markt 7 · 34517 Lindenau · Telefon 05631 9077-0 · Telefax 05631 9077-50 · kanzlei@brandauer-wolf.example",
+    "VOLLMACHT",
+    "Hiermit erteile ich, Rainer Klein geb. Lindemann, geboren am 07.05.1972, wohnhaft Zur Alten Ziegelei 14, OG rechts, 27841 Kesselbach,",
+    "den Rechtsanwälten Dr. Felix Brandauer und Nina Wolf, Brandauer & Wolf Rechtsanwälte PartG mbB, Am Markt 7, 34517 Lindenau,",
+    "in Sachen Klein ./. Hausverwaltung Engel & Partner GmbH wegen Mietminderung und Rückforderung von Betriebskosten, Objekt WE-08, Az. der Kanzlei 57/26 BR02,",
+    "Vollmacht",
+    "1. zur Prozessführung (u. a. nach §§ 81 ff. ZPO) einschließlich der Befugnis zur Erhebung und Zurücknahme von Widerklagen;",
+    "2. zur Vertretung in sonstigen Verfahren und bei außergerichtlichen Verhandlungen aller Art;",
+    "3. zur Begründung und Aufhebung von Vertragsverhältnissen und zur Abgabe und Entgegennahme von einseitigen Willenserklärungen (z. B. Kündigungen) im Zusammenhang mit der oben genannten Angelegenheit;",
+    "4. zur Entgegennahme und Bewirkung von Zahlungen, insbesondere zur Entgegennahme der Kaution aus dem Mietkonto 20417-KL sowie etwaiger Guthaben aus Betriebskostenabrechnungen;",
+    "5. zur Übertragung der Vollmacht ganz oder teilweise auf andere (Untervollmacht);",
+    "6. zur Akteneinsicht.",
+    "Die Vollmacht gilt für alle Instanzen und erstreckt sich auch auf Neben- und Folgeverfahren aller Art. Die Wohnung ist mit 41 m² eher klein; Gegenstand der Minderung ist der seit Monaten defekte Heizkörper im Wohnzimmer.",
+    "Ich bin damit einverstanden, dass die Kanzlei mit mir per unverschlüsselter E-Mail an r.klein@kesselnetz.example und telefonisch unter 0176 40221873 kommuniziert. Mein Rechtsschutzversicherer ist die Ostmoor Rechtsschutz AG, Versicherungsschein RS-88-4417201, Schaden 2026-RS-07731.",
+    "Kesselbach, den 09.10.2026",
+    "Unterschrift: Rainer Klein",
+    "Partnerschaftsregister Amtsgericht Lindenau PR 118 · USt-IdNr. DE319900452 · Anderkonto: Sparkasse Lindenau, IBAN DE44 5205 0353 0001 2297 64"
+   ],
+   "known_entities": {
+    "person": [
+     "Rainer Klein"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Brandauer & Wolf Rechtsanwälte PartG mbB",
+     "category": "organisation"
+    },
+    {
+     "value": "Hausverwaltung Engel & Partner GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Ostmoor Rechtsschutz AG",
+     "category": "organisation"
+    },
+    {
+     "value": "Sparkasse Lindenau",
+     "category": "organisation"
+    },
+    {
+     "value": "Felix Brandauer",
+     "category": "person"
+    },
+    {
+     "value": "Nina Wolf",
+     "category": "person"
+    },
+    {
+     "value": "Rainer Klein",
+     "category": "person"
+    },
+    {
+     "value": "Klein",
+     "category": "person"
+    },
+    {
+     "value": "Lindemann",
+     "category": "geburtsname"
+    },
+    {
+     "value": "07.05.1972",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "Am Markt 7",
+     "category": "adresse"
+    },
+    {
+     "value": "Zur Alten Ziegelei 14, OG rechts",
+     "category": "adresse"
+    },
+    {
+     "value": "34517 Lindenau",
+     "category": "plz_ort"
+    },
+    {
+     "value": "27841 Kesselbach",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05631 9077-0",
+     "category": "telefon"
+    },
+    {
+     "value": "05631 9077-50",
+     "category": "telefon"
+    },
+    {
+     "value": "0176 40221873",
+     "category": "telefon"
+    },
+    {
+     "value": "kanzlei@brandauer-wolf.example",
+     "category": "email"
+    },
+    {
+     "value": "r.klein@kesselnetz.example",
+     "category": "email"
+    },
+    {
+     "value": "57/26 BR02",
+     "category": "aktenzeichen"
+    },
+    {
+     "value": "WE-08",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "RS-88-4417201",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "2026-RS-07731",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "PR 118",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "20417-KL",
+     "category": "kundennummer"
+    },
+    {
+     "value": "DE319900452",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE44 5205 0353 0001 2297 64",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "§§ 81 ff. ZPO"
+   ],
+   "keep_gewoehnlich": [
+    "mit 41 m² eher klein"
+   ],
+   "tags": [
+    "vollmacht",
+    "briefkopf",
+    "fusszeile",
+    "geburtsname",
+    "geburtsdatum",
+    "adresszusatz",
+    "registernummer",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB11",
+   "format": "scan_degraded",
+   "filename": "Kaufvertrag_Gebrauchtwagen_Polo.pdf",
+   "paragraphs": [
+    "Kaufvertrag über ein gebrauchtes Kraftfahrzeug (privat)",
+    "Verkäuferin: Heike Schneider geb. Roth, Obere Mühle 9, 34519 Lindenau-Hainrode, geboren am 18.01.1984, Personalausweis T22K91LP4, Telefon 05631 61177",
+    "Käufer: Tim Wagner, Am Deich 3, 26693 Ostermoor, geboren am 25.06.1990, Personalausweis LZ6RW0C18, Telefon 0162 9033815",
+    "Fahrzeug: VW Polo 1.0 TSI · Fahrzeug-Identifizierungsnummer WVWZZZAWZLU042217 · Amtliches Kennzeichen OSM-HS 512 · Zulassungsbescheinigung Teil II AH 4417290 · Erstzulassung 05/2020 · Kilometerstand laut Tacho 61.480 km",
+    "Nächste Hauptuntersuchung: 05/2027. Zubehör: 4 Winterreifen auf Stahlfelgen, 2 Schlüssel, Serviceheft.",
+    "Kaufpreis: 9.450,00 EUR (in Worten: neuntausendvierhundertfünfzig Euro). Der Kaufpreis wird bei Übergabe am 17.10.2026 durch Überweisung auf das Konto der Verkäuferin IBAN DE08 2415 0001 0020 7764 39 gezahlt; die Übergabe der Fahrzeugpapiere erfolgt nach Zahlungseingang.",
+    "Das Fahrzeug wird unter Ausschluss der Sachmängelhaftung verkauft, soweit nicht nachstehend eine Garantie übernommen wird. Der Ausschluss gilt nicht für Schadensersatzansprüche aus der Verletzung von Leben, Körper oder Gesundheit sowie bei Vorsatz oder grober Fahrlässigkeit (Rechtsgedanke des § 309 Nr. 7 BGB).",
+    "Die Verkäuferin erklärt: Das Fahrzeug hat, soweit ihr bekannt, keinen Unfallschaden erlitten. Bekannte Mängel: Kratzer an der Stoßstange hinten rechts; der Sitzbezug vorne links wurde von einem Schneider geflickt; die Klimaanlage kühlt nur schwach. Herr Wagner hat das Fahrzeug am 15.10.2026 probegefahren und besichtigt.",
+    "Der Käufer meldet das Fahrzeug innerhalb von drei Tagen nach Übergabe um. Bis zur Ummeldung trägt er die Kosten der Haftpflichtversicherung anteilig. Die Kfz-Haftpflichtversicherung von Frau Schneider besteht bei der Brackenfelder Kraftfahrt-Versicherung AG, Vertrag KH 77-2031-9.",
+    "Ostermoor, 17.10.2026",
+    "Unterschrift Verkäuferin: H. Schneider · Unterschrift Käufer: T. Wagner",
+    "Übergabe-Uhrzeit: 15:20 Uhr · Kilometerstand bei Übergabe: 61.493 km · Zeuge bei Übergabe: Kai Roth, Bruder der Verkäuferin"
+   ],
+   "known_entities": {
+    "person": [
+     "Tim Wagner"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Heike Schneider",
+     "category": "person"
+    },
+    {
+     "value": "Schneider",
+     "category": "person"
+    },
+    {
+     "value": "H. Schneider",
+     "category": "person"
+    },
+    {
+     "value": "Tim Wagner",
+     "category": "person"
+    },
+    {
+     "value": "Wagner",
+     "category": "person"
+    },
+    {
+     "value": "T. Wagner",
+     "category": "person"
+    },
+    {
+     "value": "Kai Roth",
+     "category": "person"
+    },
+    {
+     "value": "Roth",
+     "category": "geburtsname"
+    },
+    {
+     "value": "Obere Mühle 9",
+     "category": "adresse"
+    },
+    {
+     "value": "Am Deich 3",
+     "category": "adresse"
+    },
+    {
+     "value": "34519 Lindenau-Hainrode",
+     "category": "plz_ort"
+    },
+    {
+     "value": "26693 Ostermoor",
+     "category": "plz_ort"
+    },
+    {
+     "value": "18.01.1984",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "25.06.1990",
+     "category": "geburtsdatum"
+    },
+    {
+     "value": "T22K91LP4",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "LZ6RW0C18",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WVWZZZAWZLU042217",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "AH 4417290",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "KH 77-2031-9",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "OSM-HS 512",
+     "category": "kfz_kennzeichen"
+    },
+    {
+     "value": "05631 61177",
+     "category": "telefon"
+    },
+    {
+     "value": "0162 9033815",
+     "category": "telefon"
+    },
+    {
+     "value": "DE08 2415 0001 0020 7764 39",
+     "category": "iban"
+    },
+    {
+     "value": "Brackenfelder Kraftfahrt-Versicherung AG",
+     "category": "organisation"
+    }
+   ],
+   "keep": [
+    "9.450,00 EUR",
+    "§ 309 Nr. 7 BGB",
+    "17.10.2026"
+   ],
+   "keep_gewoehnlich": [
+    "von einem Schneider geflickt"
+   ],
+   "tags": [
+    "kaufvertrag",
+    "kfz",
+    "scan_degraded",
+    "fin",
+    "kennzeichen",
+    "ausweisnummer",
+    "geburtsname",
+    "geburtsdatum",
+    "strasse_ohne_strassenwort",
+    "nachname_als_wort"
+   ]
+  },
+  {
+   "id": "PII2-TB12",
+   "format": "docx",
+   "filename": "Betriebskostenabrechnung_2025_WE-11.docx",
+   "paragraphs": [
+    "Immobilienverwaltung Koch & Hahn GmbH",
+    "Lindenhof 20 · 49218 Brackenfeld · Telefon 05402 31880 · Fax 05402 31889 · abrechnung@koch-hahn-iv.example",
+    "Herrn",
+    "Erik Groß",
+    "Zum Steinbruch 11, 2. OG Mitte",
+    "49219 Brackenfeld-Dorn",
+    "Betriebskostenabrechnung 2025",
+    "Objekt WE-11 · Mieter 33-0912",
+    "Brackenfeld, 30.09.2026",
+    "Sehr geehrter Herr Groß,",
+    "anbei erhalten Sie die Abrechnung der Betriebs- und Heizkosten für den Zeitraum 01.01.2025 bis 31.12.2025 für Ihre Wohnung WE-11 im Haus Zum Steinbruch 11. Der Unterschied zum Vorjahr ist groß, was vor allem an den gestiegenen Energiepreisen liegt.",
+    "Ihre Vorauszahlungen 2025 betrugen 12 x 265,00 EUR = 3.180,00 EUR. Es ergibt sich eine Nachzahlung von 219,68 EUR.",
+    "Bitte überweisen Sie den Betrag bis zum 31.10.2026 auf unser Konto IBAN DE66 2659 0025 0000 8813 40 unter Angabe von „WE-11 Groß BK25“. Einwendungen gegen die Abrechnung müssen Sie uns spätestens bis zum 30.09.2027 mitteilen (§ 556 Abs. 3 BGB).",
+    "Zur Position Hausmeister: Die Kosten für den Austausch eines Ventils (Rechnung Sanitär Fuchs vom 12.05.2025) wurden als Instandhaltung nicht umgelegt. Der Hahn im Waschkeller war im Frühjahr undicht und ist inzwischen ersetzt.",
+    "Ihre monatliche Vorauszahlung erhöhen wir ab dem 01.12.2026 auf 285,00 EUR.",
+    "Belegeinsicht ist nach Terminvereinbarung mit Frau Sabine Hahn (Durchwahl 05402 31880-22) in unseren Geschäftsräumen möglich.",
+    "Mit freundlichen Grüßen",
+    "Sabine Hahn",
+    "Immobilienverwaltung Koch & Hahn GmbH",
+    "Geschäftsführer: Werner Koch, Sabine Hahn · AG Brackenfeld HRB 6630 · USt-IdNr. DE288013579"
+   ],
+   "table": {
+    "header": [
+     "Kostenart",
+     "Zähler / Beleg",
+     "Schlüssel",
+     "Gesamt Haus",
+     "Ihr Anteil"
+    ],
+    "rows": [
+     [
+      "Grundsteuer",
+      "049/221/30187",
+      "Wohnfläche 71/612 m²",
+      "3.672,00 EUR",
+      "426,00 EUR"
+     ],
+     [
+      "Wasser/Abwasser",
+      "WZ 70028815",
+      "Verbrauch 48 m³",
+      "6.120,00 EUR",
+      "312,48 EUR"
+     ],
+     [
+      "Müllabfuhr",
+      "4418-BRF",
+      "Personen 2/14",
+      "2.380,00 EUR",
+      "340,00 EUR"
+     ],
+     [
+      "Hausmeister",
+      "HM-2023-07",
+      "Wohnfläche 71/612 m²",
+      "4.896,00 EUR",
+      "568,00 EUR"
+     ],
+     [
+      "Gartenpflege",
+      "—",
+      "Wohnfläche 71/612 m²",
+      "1.224,00 EUR",
+      "142,00 EUR"
+     ],
+     [
+      "Heizung (Gas)",
+      "G4-7710342",
+      "70 % Verbrauch / 30 % Fläche",
+      "18.360,00 EUR",
+      "1.611,20 EUR"
+     ],
+     [
+      "Summe",
+      "",
+      "",
+      "",
+      "3.399,68 EUR"
+     ]
+    ]
+   },
+   "known_entities": {
+    "person": [
+     "Erik Groß"
+    ],
+    "organisation": []
+   },
+   "pii": [
+    {
+     "value": "Immobilienverwaltung Koch & Hahn GmbH",
+     "category": "organisation"
+    },
+    {
+     "value": "Sanitär Fuchs",
+     "category": "organisation"
+    },
+    {
+     "value": "Erik Groß",
+     "category": "person"
+    },
+    {
+     "value": "Groß",
+     "category": "person"
+    },
+    {
+     "value": "Sabine Hahn",
+     "category": "person"
+    },
+    {
+     "value": "Werner Koch",
+     "category": "person"
+    },
+    {
+     "value": "Lindenhof 20",
+     "category": "adresse"
+    },
+    {
+     "value": "Zum Steinbruch 11, 2. OG Mitte",
+     "category": "adresse"
+    },
+    {
+     "value": "Zum Steinbruch 11",
+     "category": "adresse"
+    },
+    {
+     "value": "49218 Brackenfeld",
+     "category": "plz_ort"
+    },
+    {
+     "value": "49219 Brackenfeld-Dorn",
+     "category": "plz_ort"
+    },
+    {
+     "value": "05402 31880",
+     "category": "telefon"
+    },
+    {
+     "value": "05402 31889",
+     "category": "telefon"
+    },
+    {
+     "value": "05402 31880-22",
+     "category": "telefon"
+    },
+    {
+     "value": "abrechnung@koch-hahn-iv.example",
+     "category": "email"
+    },
+    {
+     "value": "WE-11",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "WZ 70028815",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HM-2023-07",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "G4-7710342",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "HRB 6630",
+     "category": "sonstige_kennung"
+    },
+    {
+     "value": "33-0912",
+     "category": "kundennummer"
+    },
+    {
+     "value": "4418-BRF",
+     "category": "kundennummer"
+    },
+    {
+     "value": "049/221/30187",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE288013579",
+     "category": "steuernummer"
+    },
+    {
+     "value": "DE66 2659 0025 0000 8813 40",
+     "category": "iban"
+    }
+   ],
+   "keep": [
+    "219,68 EUR",
+    "3.399,68 EUR",
+    "3.180,00 EUR",
+    "285,00 EUR",
+    "§ 556 Abs. 3 BGB",
+    "31.10.2026",
+    "30.09.2027"
+   ],
+   "keep_gewoehnlich": [
+    "Der Unterschied zum Vorjahr ist groß",
+    "Der Hahn im Waschkeller"
+   ],
+   "tags": [
+    "hausverwaltung",
+    "betriebskostenabrechnung",
+    "tabelle",
+    "zaehlernummer",
+    "kundennummer_tabelle",
+    "kennung_ohne_label",
+    "adresszusatz",
+    "nachname_als_wort"
+   ]
+  }
+ ]
+}

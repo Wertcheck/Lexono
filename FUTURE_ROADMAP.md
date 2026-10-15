@@ -159,6 +159,15 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
    - **Offen vor einem Pilot:** Entscheidung Rückfrage-Oberfläche für Dokumente; Relay-Vorschlag §43.10
      (gesondert freizugeben); Persistenz/Audit/UI, `max_chars`, Budget; DSFA, AVV, Berufsgeheimnis,
      Mandanteninformation; frischer blinder Korpus für freie Kennungen.
+   - **§43.11 (Feature-Branch):** blinder Korpus v2 (Dev 12 / Test 24, 874 PII-Stellen). Drei Dev-Regeln
+     (Straße ohne Straßenwort mit PLZ-Anker, Geburtsname, Registernummer): blind Adressen 35 → 61/83.
+     Wird ein Dokument sendbar (Rückfrage beantwortet oder automatisch maskiert), gehen auf dem blinden
+     Test noch 36 Werte in 13/16 Dokumenten hinaus – Status quo (0 gesendet) bleibt der einzige sichere
+     Zustand. Empfehlung Hybrid H (Kennungen immer maskieren, nur Wörter fragen), erst nach 0 Lecks auf
+     frischem blinden Korpus. Relay-Entwurf: eigener Endpunkt, Inhaltsprüfung, Attestierung.
+   - **Dringend, unabhängig von der Zweitmeinung (produktiver Schreibpfad über das Relay):**
+     `claude_max_tokens` 4096 > Relay-Obergrenze 4000 (400 ohne `.env`-Wert); Relay setzt kein
+     `thinking`; Timeouts/Wiederholungen doppelt. §43.11 Phase 3, nur analysiert.
 
 ## Release-Planung
 

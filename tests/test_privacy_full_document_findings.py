@@ -115,3 +115,78 @@ def test_full_document_corpus_is_frozen_and_valid() -> None:
             " | ".join(map(str, row)) for row in [table.get("header", []), *table.get("rows", [])])
         assert all(item["value"] in text for item in document["pii"]), document["id"]
         assert all(keep in text for keep in document.get("keep", [])), document["id"]
+
+
+# --- §43.11: Korpus v2 (Dev zur Entwicklung, blinder Test nur einmal gemessen) eingefroren ------------------------
+
+V2 = Path(__file__).resolve().parents[1] / "benchmarks" / "pii_full_documents_v2" / "cases"
+V2_SHA256 = {"dev.json": "ded5418f34c034b3d753d2ed49b27f35d56306e367ce0fce3e4d73e77fd4866d",
+             "test.json": "1498fe064e6a9f9042d70ed4ed12f7f248b21f0858cef4dc965ab861f39d581c"}
+
+
+def test_v2_splits_are_frozen_disjoint_and_valid() -> None:
+    ids: dict[str, set[str]] = {}
+    for name, digest in V2_SHA256.items():
+        path = V2 / name
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, f"{name} nur versioniert aendern"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        ids[name] = {d["id"] for d in data["documents"]}
+        for document in data["documents"]:
+            table = document.get("table") or {}
+            text = "\n".join(document["paragraphs"]) + "\n" + "\n".join(
+                " | ".join(map(str, row)) for row in [table.get("header", []), *table.get("rows", [])])
+            for key in ("keep", "keep_gewoehnlich"):
+                assert all(value in text for value in document.get(key, [])), (document["id"], key)
+            assert all(item["value"] in text for item in document["pii"]), document["id"]
+    assert (len(ids["dev.json"]), len(ids["test.json"])) == (12, 24)
+    assert not ids["dev.json"] & ids["test.json"]
+
+
+# --- §43.11: Regeln aus dem Dev-Split von pii_full_documents_v2 --------------------------------------------------
+
+@pytest.mark.parametrize("text, expected", [
+    ("Am Weiher 11, Wohnung 3. OG\nlinks, 34567 Musterstadt", ["Am Weiher 11", "Wohnung 3. OG\nlinks"]),
+    ("Herrn Jonas Schäfer\nHohe Leuchte 7\n34590 Fiktivhausen", ["Hohe Leuchte 7"]),
+    ("Auf der Höhe 15, Hinterhaus, 34612 Beispielheim", ["Auf der Höhe 15", "Hinterhaus"]),
+    ("Hinter den Gärten 8, 34590\nFiktivhausen", ["Hinter den Gärten 8"]),
+    ("Im Winkel 9, 2. OG rechts, 34590 Fiktivhausen", ["Im Winkel 9", "2. OG rechts"]),
+])
+def test_streets_without_street_word_are_found_before_a_postcode(text: str, expected: list[str]) -> None:
+    values = [s.value for s in detect_all(text)]
+    assert all(value in values for value in expected), values
+
+
+@pytest.mark.parametrize("text", [
+    "Im Jahr 2025, 34590 Fiktivhausen",            # Jahreszahl, keine Hausnummer
+    "Am 12.03.2026 ging die Klage ein.",          # kein PLZ-Anker
+    "Mietminderung Im Winkel 9 wegen Schimmel",   # Strasse ohne PLZ: nur ueber Wiederholung erfasst, nicht hier
+])
+def test_prefixed_street_rule_needs_a_postcode_anchor(text: str) -> None:
+    from app.privacy.detectors import detect_address
+
+    assert not [s for s in detect_address(text) if s.value.startswith(("Im ", "Am "))]
+
+
+def test_birth_names_after_geb_and_geborene() -> None:
+    from app.privacy.detectors import detect_birth_name
+
+    text = "Hanna Sommer geb. Winter; Lena Fuchs geborene Weiß; Petra Wolf geb. Klein, geb. 23.09.1979"
+    assert [s.value for s in detect_birth_name(text)] == ["Winter", "Weiß", "Klein"]
+    assert {"Winter", "Weiß", "Klein"} <= {s.value for s in detect_all(text)}
+
+
+@pytest.mark.parametrize("text, value", [
+    ("Partnerschaftsregister Amtsgericht Musterstadt PR\n2291 · Tel.", "PR\n2291"),
+    ("Registergericht Fiktivhausen HRB 4471", "HRB 4471"),
+    ("Vereinsregister VR 1234", "VR 1234"),
+])
+def test_register_numbers(text: str, value: str) -> None:
+    from app.privacy.detectors import detect_referenznummer
+
+    assert value in [s.value for s in detect_referenznummer(text)]
+
+
+def test_register_rule_ignores_words_and_amounts() -> None:
+    from app.privacy.detectors import detect_referenznummer
+
+    assert detect_referenznummer("Die PR-Agentur verlangte 2.291,00 EUR.") == []

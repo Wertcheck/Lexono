@@ -6212,3 +6212,251 @@ Rechtsberatung; Prüfung durch Datenschutzbeauftragte bzw. Berufsrecht nötig).
 2. Danach gesondert freigegeben der Relay-Vorschlag (Client-Provider, Zweck, Grenzen und Schalter im Relay) mit den
    genannten Tests.
 3. Parallel ein frischer blinder Korpus v2 für die offenen Kennungsklassen.
+
+### 43.11 Blinder PII-Korpus v2, Rückfrage- und Maskierungsstrategie, Relay-Spezifikation (15.10.2026, Feature-Branch)
+
+**Rahmen:**
+- Feature-Branch `feature/cloud-second-opinion-stage2`, Ausgangsstand `ffe22a6`; `main`/`origin/main` unverändert
+  (`757e638`).
+- Nur synthetische Daten. Keine Cloud-Aufrufe, keine UI, keine Migration, keine Relay-Änderung.
+
+#### Phase 1 – Korpus `benchmarks/pii_full_documents_v2`
+
+**Korpus:**
+- Drei getrennte, blinde Agenten: **Dev** 12 Dokumente / 268 PII-Stellen (`ded5418f…`), **Test** 24 Dokumente / 606
+  PII-Stellen (`1498fe06…`).
+- Soll-Markierungen vor der Messung festgelegt; 63 bzw. 36 `keep_gewoehnlich`-Wendungen zur Messung der
+  Übermaskierung.
+- Abgedeckt: Kennungen ohne Kennwort, OCR-veränderte Kennungen, Straßen ohne Straßenwort, Geburtsnamen,
+  Einwort-Nachnamen, die gewöhnliche Wörter sind; Rubrum, Tabellen, Kopf- und Fußzeilen, 8 Scans.
+
+**Ablauf:**
+1. Texte über den echten Pfad inkl. OCR extrahiert und abgelegt.
+2. **Baseline auf Test einmal ungesehen gespeichert**.
+3. Regeln ausschließlich am Dev-Split entwickelt.
+4. Test am Ende **einmal** gemessen.
+
+**Neue Regeln** (minimal, je mit Regressionstest; Entwicklung nur an Dev):
+1. `_PREFIXED_STREET_PATTERN` in `detect_address`: Straße ohne Straßenwort.
+   - Nur mit typischem Präfix („Am“, „Auf der“, „Hinter den“, „Unter den“, „Hohe“ …) **und** unmittelbar folgender
+     PLZ mit Ort.
+   - Keine Jahreszahl als Hausnummer.
+   - Ein Zusatz („Hinterhaus“, „2. OG rechts“, „Wohnung 3. OG links“) ist ein eigener Adress-Treffer.
+2. `detect_birth_name`: Name nach „geb.“ oder „geborene“, nicht vor einem Datum.
+3. `_REGISTER_NUMBER_PATTERN` in `detect_referenznummer`: HRB/HRA/PR/GnR/VR/PartR mit Nummer, auch über einen
+   Zeilenumbruch („PR\n2291“).
+
+**Erkennung** (vorhandene Vorkommen, die nach der Pseudonymisierung fehlen; ohne und mit Akten-Entitäten gleich):
+
+| Kategorie | v2 Test (blind) vorher → nachher | v2 Dev vorher → nachher | v1 (§43.10) → nachher |
+|---|---|---|---|
+| adresse | 35/83 → **61/83** | 25/39 → 36/39 | 79/82 → 81/82 |
+| geburtsname | 20/22 → **22/22** | 2/5 → 5/5 | – |
+| sonstige_kennung | 52/80 → 53/80 | 19/32 → 22/32 | 38/45 → 39/45 |
+| person | 382/384 → 382/384 | 160/166 → 160/166 | 385/386 → 386/386 |
+| aktenzeichen | 44/56 → 44/56 | 13/19 → 13/19 | 21/24 → 21/24 |
+| kundennummer / rechnungsnummer | 4/10, 4/7 → unverändert | 3/6, 4/7 → unverändert | unverändert |
+| organisation | 71/74 → 71/74 | 29/29 | 95/96 |
+| steuernummer | 16/16 → 15/16 (Messartefakt, s. u.) | 10/11 | 13/13 |
+| email, iban, telefon, plz_ort | vollständig bzw. unverändert | unverändert | unverändert |
+
+**Übermaskierung** (Erkennungssicht, alle Dokumente):
+- `keep_gewoehnlich` verloren: Test 50 → 51 von 63, Dev 14 → 16 von 36.
+  - Ursache ist die **bestehende** Wiederholungserkennung: Ein einmal erkannter Name (z. B. „Koch“, „Klein“, „Winter“)
+    wird an jeder Stelle maskiert, auch in „der Koch des Restaurants“ oder „klein gedruckt“.
+  - Die neuen Regeln tragen nur 1 bzw. 2 Fälle bei (vor allem „Winter“ als Geburtsname).
+- `keep` verloren: Test 23 → 23 von 157 (meist Gerichtsnamen mit fiktivem Ort).
+
+**Versand im Status quo** (`ask`): v2 Test 0/24 sendbar (23 Rückfrage, 1 blockiert), Dev 0/12, v1 1/24 – jeweils
+**0 Klartext gesendet**.
+
+**Messartefakt PII2-TA01 (geprüft):**
+- Vor §43.11 wäre das Dokument nach Antwort bzw. Maskierung mit 4 Lecks gesendet worden (zwei Anschriften,
+  „Unter den Eichen 12“, „PR 3307“).
+- Jetzt blockiert der Restscan es (Rest „organisation“) – nichts wird gesendet.
+- Die Erkennungssicht misst bei Blockade nur den Pseudonymizer ohne Rückfrage-Maskierung. Deshalb erscheinen dort zwei
+  Kennungen („SV-2025-1184“, USt-IdNr.), die vorher die Rückfrage-Maskierung erfasst hat. Das ist keine
+  Verschlechterung des Versands.
+
+**Regressionen:**
+- `pseudonymization_v1`: 192/192 Kennzahlen identisch.
+- Legal-E2E: 0 Lecks, keine fremde Akte, fremder Anhang 7/7 blockiert, keine automatische Zuordnung. Einziger
+  Unterschied: „Am Mühlbach 3“ wird jetzt maskiert (vorher nur „Mühlbach“).
+- Die Rubrum-, Fundstellen- und Tabellentests aus §43.10 bleiben grün.
+
+#### Phase 2 – Warum Rückfragen, und welche Strategie
+
+`scripts/legal_bench/review_strategy.py` misst je Dokument über den bestehenden Gateway:
+- `ask`: Status quo.
+- `A_sorgfalt`: dokumentbezogene Rückfrage; simulierter Nutzer antwortet nach den Soll-Markierungen.
+- `A_fehler`: Nutzer gibt alles als „nicht personenbezogen“ frei.
+- `H`: Hybrid – kennungsförmige Begriffe werden **ohne Frage maskiert**, nur Wortbegriffe gehen an den Nutzer;
+  sorgfältig bzw. fehlbedienend.
+- `B_mask`: automatisch maskieren, bestehender `review_mode="mask"`.
+
+Keine Strategie gibt einen Begriff automatisch frei; bei H und B wird nur zusätzlich maskiert.
+
+**Ursachen der Rückfragen:**
+
+| | v1 (24) | v2 Dev (12) | v2 Test (24, blind) |
+|---|---|---|---|
+| Dokumente mit Rückfrage im Status quo | 19 | 12 | 23 |
+| Rückfrage-Begriffe / davon echte PII | 65 / 43 | 40 / 30 | 65 / 42 |
+| davon kennungsförmig (Rolle `kennnummernform`/`kennzeichenform`) | 43 | 29 | 43 |
+| übrige (Wörter neben Platzhaltern: Subjekt, Aufzählung, Präposition, Feldwert) | 22, keine PII | 11, davon 1 PII | 22, davon 2 PII |
+
+1. **Unmarkierte Kennungen** (rund zwei Drittel der Rückfrage-Begriffe) sind fast immer echte PII. Die Rückfrage ist
+   dort richtig.
+2. **Gewöhnliche Wörter neben Platzhaltern** („Justizhauptsekretärin“, „Fenster“, „Gerüst“) – Fehlalarme der
+   Satzrollen-Heuristik.
+3. Nach der Beantwortung blockiert der **Restscan** weitere 7–10 von 24 Dokumenten an Bruchstücken: Rechtsform-Reste
+   teilmaskierter Kanzleinamen („PartG mbB“), Gerichtsnamen als „Ort“, Kopfwörter („Cc“), Straßen in
+   Gerichtsanschriften. Das ist fail-closed und richtig, zeigt aber eine Inkonsistenz zwischen Pseudonymizer und
+   Restscan.
+
+**Vergleich auf dem blinden Test** (Code nach §43.11; in Klammern vor §43.11):
+
+| Strategie | gesendet | Klartext-PII gesendet (Dokumente) | Fragen | Nicht-PII ohne Zustimmung maskiert | `keep` / gewöhnlich verloren |
+|---|---|---|---|---|---|
+| Status quo `ask` | 0/24 | 0 | – | 0 | 0 / 0 |
+| A sorgfältig | 16 | **36** (13) (vorher 54) | 66 (42 Kennungen) | 0 | 17 / 35 |
+| A Fehlbedienung | 16 | **56** (14) (vorher 72) | 65 | 0 | 17 / 35 |
+| H sorgfältig | 16 | **36** (13) (vorher 54) | **23** (2 PII) | 0 | 17 / 35 |
+| H Fehlbedienung | 16 | **37** (13) (vorher 52) | 23 | 0 | 17 / 35 |
+| B automatisch | 16 | **36** (13) (vorher 54) | 0 | **12** | 17 / 35 |
+
+Auf v1 und v2 Dev ergibt sich dasselbe Bild:
+- v1: H/A/B je 14/24 gesendet, Lecks 5 → 2; A mit Fehlbedienung 13 Lecks.
+- v2 Dev: 7–8/12 gesendet, Lecks 18 → 6 (H, A) bzw. 17 → 5 (B); A mit Fehlbedienung 19.
+
+**Restlecks** bei H auf dem blinden Test (36):
+- Adressen 13: Straßen ohne PLZ in der Nähe oder ohne Präfix aus der Liste – „Am Markt 7“, „Hoher Weg 2“, „Am Hang 3“
+  im Fließtext oder Betreff.
+- Sonstige Kennungen 8 (u. a. OCR-verfremdet: „HR8 552O“, „WO-22O1“, „HRA 22O7“, „WE-17“).
+- Aktenzeichen 7 („KÖ-26-041“, „2026/0281-OK“, „32.1-GE-0217“, OCR „9 S 4l/26“).
+- Kunden- und Rechnungsnummern je 3.
+- Je 1 Person („Winter“) und Organisation („Zum Grünen Eck“).
+
+Diese Werte werden weder erkannt **noch erfragt**. Sie gingen bei jeder Strategie hinaus, sobald ein Dokument sendbar
+wird.
+
+**Bewertung:**
+- **Sicherheit:**
+  - A, H und B sind bei sorgfältiger Bedienung gleich. Ihre Lecks stammen aus der Erkennung, nicht aus der Rückfrage.
+  - A ist **fehlbedienungsanfällig**: +20 Lecks auf dem blinden Test, weil Kennungen dort freigegeben werden können.
+  - H und B sind praktisch fehlbedienungsfest: Kennungen werden immer maskiert.
+- **Informationsverlust:** B maskiert Wörter ohne Zustimmung (12 auf Test, 14 auf v1); A und H lassen den Nutzer
+  entscheiden. Der große Verlust bei gewöhnlichen Wörtern (35 von 63 in gesendeten Dokumenten) entsteht unabhängig von
+  der Strategie durch die Wiederholungserkennung.
+- **Nutzbarkeit:** A ≈ 2,75 Fragen je Dokument, davon zwei Drittel Kennungen, die der Nutzer richtig beantworten muss;
+  H ≈ 1 Frage je Dokument, fast nie PII; B keine Frage.
+- **Aufwand:**
+  - A: Dokument-Rückfrage-Oberfläche (Bausteine des Chats wiederverwendbar), Speicherung der Entscheidungen je Akte.
+  - H: wie A plus eine kleine Gateway-Erweiterung (Rückfrage-Modus, der kennungsförmige Kandidaten maskiert und nur den
+    Rest fragt).
+  - B: vorhanden, aber eine Datenschutz- und Fachentscheidung (stillschweigende Maskierung von Fachwörtern).
+
+**Empfehlung:**
+- **H (Hybrid)**: Kennungen nie zur Freigabe anbieten, sondern immer maskieren; nur Wortbegriffe mit ausdrücklicher
+  Nutzerentscheidung. Nie eine automatische Freigabe.
+- **Aber noch nicht freischalten.** Auf dem blinden Test würden bei jeder Strategie 36 Klartextwerte in 13 von 16
+  gesendeten Dokumenten hinausgehen. Der heutige Status quo (`ask`, 0 gesendet) ist bis dahin der einzige sichere
+  Zustand.
+- **Voraussetzung vor jeder Rückfrage-Oberfläche:** 0 gesendete Lecks auf einem frischen blinden Korpus. Prioritäten:
+  1. Straßen ohne PLZ-Anker bzw. mit weiteren Präfixen;
+  2. Kennungen in Betreff und Klammer ohne Kennwort, inkl. OCR-Toleranz;
+  3. Kunden- und Rechnungsnummern in Tabellen ohne Kopfwort;
+  4. Konsistenz Pseudonymizer ↔ Restscan bei Rechtsform-Resten und Gerichtsnamen;
+  5. Übermaskierung gewöhnlicher Wörter durch die Wiederholungserkennung, eigene Abwägung.
+
+#### Phase 3 – Relay-Absicherung (Entwurf, nicht umgesetzt)
+
+**Ist-Zustand:** §43.10 Phase 2 und `tests/test_second_opinion_relay_characterization.py` (6 Tests).
+- Kein Zweck; Pseudonymisierung und Siegel nicht prüfbar.
+- Kein `thinking`; 60 s und SDK-Wiederholungen.
+- Inhaltsfreie Logs.
+
+**Sicherheitsvertrag für `second_opinion_document`** (Vorschlag zur gesonderten Freigabe):
+1. **Eigener Endpunkt statt Zweckfeld:** `POST /v1/relay/second-opinion` mit festem Schema `{vertrag_version, modell,
+   dokumenttext, attestierung}`.
+   - Kein `system`, kein `messages`, keine `max_tokens` vom Client.
+   - Systemprompt (versioniert), `max_tokens` (≤ 600), `thinking: disabled`, `max_retries=0` und Timeout (≤ 20 s)
+     setzt **das Relay**. So ist die Zweckbindung über den Endpunkt erzwungen und nicht über eine Selbstauskunft.
+   - Der Schreibpfad `POST /v1/relay/messages` nimmt Zweitmeinungen nicht an. Das Relay erkennt den festen
+     Zweitmeinungs-Prompt und lehnt ab.
+2. **Freigaben:**
+   - eigene Modell-Allowlist je Endpunkt;
+   - eigenes Größenlimit (z. B. ≤ 40.000 Zeichen und unterhalb des allgemeinen Limits von 200 KB);
+   - eigenes Rate-Limit;
+   - je Kanzlei `second_opinion_enabled` (Standard **aus**, 403).
+3. **Inhaltsprüfung als zweite Schicht im Relay** (unabhängig vom Client):
+   - Regex-Detektoren für eindeutige Formate (E-Mail, IBAN, Telefon, Steuer-ID, Kennzeichen, Geburtsdatum mit Label,
+     Straße mit PLZ) auf `dokumenttext`;
+   - nur bekannte Platzhalterform `[KATEGORIE_NN]`;
+   - Treffer → 422, fail-closed, nichts geht an Anthropic.
+   - NER im Relay ist optional (Ressourcen) und später zu entscheiden.
+4. **Antwortprüfung im Relay:** Nur ein JSON-Objekt nach `validate_response`-Schema wird zurückgegeben (Typ aus der
+   Liste, Daten `TT.MM.JJJJ`, keine Zusatzfelder, kein Freitext); sonst 502 ohne Inhalt. Der Client prüft zusätzlich
+   wie bisher.
+5. **Logs:** zusätzlich `endpoint=second_opinion` und Ablehnungskategorie (`content_rejected`, `disabled`,
+   `too_large`); nie Inhalt.
+
+**Siegel und Zweckbindung über das Relay** – was wirklich absicherbar ist:
+- Das heutige Siegel ist ein **prozesslokales** HMAC und kann das Relay nicht erreichen.
+- **Attestierung:** je Kanzlei ein eigener Signaturschlüssel, getrennt vom `client_secret`, weil das Relay nur dessen
+  Argon2-Hash speichert. Signiert wird `kanonisch(vertrag_version, endpoint, sha256(dokumenttext), zeitstempel,
+  nonce)`; das Relay prüft Signatur, Zeitfenster und Einmal-Nonce.
+- **Was das belegt:** Herkunft und Unversehrtheit sowie Zweckbindung der Anfrage – nicht, dass die Pseudonymisierung
+  korrekt war. Ein kompromittierter Client kann beliebigen Text signieren.
+- **Vertrauen in den Inhalt** entsteht daher nur aus (a) dem Client-Gateway (unverändert maßgeblich) und (b) der
+  unabhängigen Inhaltsprüfung im Relay (Punkt 3).
+- Eine echte kryptografische „Beweisbarkeit der Pseudonymisierung“ gibt es nicht.
+
+**Tests für die spätere Umsetzung:**
+- Charakterisierungstests werden bewusst rot und angepasst.
+- Neuer Endpunkt:
+  - unbekannte Version 400; abgeschaltete Kanzlei 403; zu groß 413;
+  - Klartext-Treffer 422; falsche oder abgelaufene Signatur bzw. wiederholte Nonce 401;
+  - ungültige Modellantwort 502;
+  - `thinking`/`max_retries`/Timeout im SDK-Aufruf;
+  - inhaltsfreie Logs.
+- Der Schreibpfad lehnt Zweitmeinungen ab.
+- Client-Provider gegen `TestClient`; Fang-Server-Gesamtpfad über das Relay.
+
+**Risiken des bestehenden Schreibpfads** (nur analysiert, nicht geändert):
+1. **`max_tokens`:** Code-Standard `claude_max_tokens = 4096` > Relay-Obergrenze 4000 → **400** für jede
+   Schreibanfrage über das Relay, wenn die `.env` den Wert nicht setzt. `.env.example` setzt 2000; die lokale `.env`
+   dieser Maschine setzt ihn nicht. Per Test belegt.
+2. **Denkmodus:** Das Relay setzt kein `thinking`.
+   - Die Direkt-Provider deaktivieren ihn, weil das Modell (`claude-sonnet-5`) sonst nach eigener Messung (05.10.) bis
+     zu 82 % von `max_tokens` für unsichtbares Denken verbrauchte und Texte abgeschnitten wurden.
+   - Über das Relay sind daher abgeschnittene Entwürfe und höhere Kosten und Latenzen zu erwarten.
+   - Eine Korrektur würde das Relay ändern und braucht eine eigene Freigabe.
+3. **Timeouts und Wiederholungen:** Relay 60 s plus SDK-Standard 2 Wiederholungen, Client ebenfalls 60 s.
+   - Der Client kann aufgeben, während das Relay noch wiederholt.
+   - Folge: doppelte Kosten, und eine verspätete Antwort ohne Abnehmer.
+4. **Allgemeiner Proxy:** `/v1/relay/messages` reicht beliebige System- und Nutzertexte weiter. Eine kompromittierte
+   Kanzlei-Credential kann das Relay im Rahmen von Modell-Allowlist, `max_tokens` und Rate-Limit als allgemeinen
+   Claude-Zugang nutzen.
+5. **Keine serverseitige Inhaltsprüfung:** Ein fehlerhafter oder manipulierter Client könnte Klartext senden. Der
+   Schutz liegt allein im Client.
+
+#### Tests und QA (§43.11)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neue/erweiterte Tests: `test_privacy_full_document_findings.py` (34, inkl. Hash-Pins v2), `test_second_opinion_relay_characterization.py` (6) | PASS |
+| Gezielte Gruppen (71 Dateien: Datenschutz, Pseudonymisierung, Detektoren, Gateway, Zweitmeinung, Benchmarks, Chat, Drafting, Relay) | **2395 bestanden**, 0 fehlgeschlagen |
+| Volle Suite, in sechs Teilen im Vordergrund (Ollama-Modell nicht geladen) | **4831 bestanden**; fehlgeschlagen nur die 4 bekannten Logo-Tests (`test_design_refresh.py`, fremde Asset-Änderungen); 1 übersprungen, 6 xfailed, 1 xpassed |
+| `pseudonymization_v1` | 192/192 Kennzahlen identisch |
+| Legal-E2E | unverändert (s. o.) |
+| Lint | **NICHT VERIFIZIERT** (kein Linter konfiguriert; `py_compile` PASS, Steuerzeichen-Prüfung PASS) |
+| UI, Relay-Änderung, echte Cloud, installierter Build | nicht Teil dieser Phase |
+
+**Nächster Schritt (priorisiert):**
+1. Erkennungslücken aus Phase 2 an einem neuen Dev-Split schließen. Danach einen **frischen** blinden Korpus v3 mit dem
+   Ziel „0 gesendete Lecks bei H“ messen.
+2. Owner-Entscheidung zu H; danach Gateway-Modus „hybrid“ und Dokument-Rückfrage-Oberfläche.
+3. Gesondert freizugeben: Relay-Endpunkt `second-opinion` mit Inhaltsprüfung und Attestierung.
+4. Unabhängig von der Zweitmeinung und dringlich, weil der produktive Schreibpfad betroffen ist:
+   `max_tokens`-Konflikt und Denkmodus im Relay-Schreibpfad.

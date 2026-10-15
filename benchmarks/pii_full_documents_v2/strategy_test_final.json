@@ -1,0 +1,2663 @@
+{
+ "cases": "test.json",
+ "texts": "extracted_texts_ocr_test.json",
+ "zusammenfassung": {
+  "ask": {
+   "status": {
+    "rueckfrage": 23,
+    "blockiert": 1
+   },
+   "leck_werte": 0,
+   "dokumente_mit_leck": 0,
+   "teil_leck_werte": 0,
+   "keep_verloren": 0,
+   "gewoehnlich_verloren": 0
+  },
+  "A_sorgfalt": {
+   "status": {
+    "blockiert": 8,
+    "gesendet": 16
+   },
+   "leck_werte": 36,
+   "dokumente_mit_leck": 13,
+   "teil_leck_werte": 0,
+   "keep_verloren": 17,
+   "gewoehnlich_verloren": 35,
+   "fragen_gesamt": 66,
+   "fragen_davon_pii": 42,
+   "runden_max": 2
+  },
+  "A_fehler": {
+   "status": {
+    "blockiert": 8,
+    "gesendet": 16
+   },
+   "leck_werte": 56,
+   "dokumente_mit_leck": 14,
+   "teil_leck_werte": 0,
+   "keep_verloren": 17,
+   "gewoehnlich_verloren": 35,
+   "fragen_gesamt": 65,
+   "fragen_davon_pii": 42,
+   "runden_max": 1
+  },
+  "H_sorgfalt": {
+   "status": {
+    "blockiert": 8,
+    "gesendet": 16
+   },
+   "leck_werte": 36,
+   "dokumente_mit_leck": 13,
+   "teil_leck_werte": 0,
+   "keep_verloren": 17,
+   "gewoehnlich_verloren": 35,
+   "fragen_gesamt": 23,
+   "fragen_davon_pii": 2,
+   "runden_max": 2
+  },
+  "H_fehler": {
+   "status": {
+    "blockiert": 8,
+    "gesendet": 16
+   },
+   "leck_werte": 37,
+   "dokumente_mit_leck": 13,
+   "teil_leck_werte": 0,
+   "keep_verloren": 17,
+   "gewoehnlich_verloren": 35,
+   "fragen_gesamt": 23,
+   "fragen_davon_pii": 2,
+   "runden_max": 2
+  },
+  "B_mask": {
+   "status": {
+    "blockiert": 8,
+    "gesendet": 16
+   },
+   "leck_werte": 36,
+   "dokumente_mit_leck": 13,
+   "teil_leck_werte": 0,
+   "keep_verloren": 17,
+   "gewoehnlich_verloren": 35,
+   "auto_maskiert": 39,
+   "auto_maskiert_nicht_pii": 12
+  },
+  "kandidaten": {
+   "gesamt": 65,
+   "davon_pii": 42,
+   "rollen": {
+    "kennnummernform": 40,
+    "vor_finitem_verb": 6,
+    "aufzaehlung_mit_person": 6,
+    "nach_praeposition": 4,
+    "subjekt": 3,
+    "kennzeichenform": 3,
+    "feldwert": 3,
+    "tabellenzelle": 1
+   },
+   "haeufigste_nicht_pii": [
+    [
+     "Fax",
+     2
+    ],
+    [
+     "Streitwert",
+     1
+    ],
+    [
+     "Täuschung",
+     1
+    ],
+    [
+     "Starkregen",
+     1
+    ],
+    [
+     "Justizobersekretarin",
+     1
+    ],
+    [
+     "Richter",
+     1
+    ],
+    [
+     "Andernfalls",
+     1
+    ],
+    [
+     "11512/26",
+     1
+    ],
+    [
+     "LS-B16",
+     1
+    ],
+    [
+     "Registergericht",
+     1
+    ],
+    [
+     "C3520",
+     1
+    ],
+    [
+     "Mittwoch",
+     1
+    ],
+    [
+     "Fenster",
+     1
+    ],
+    [
+     "Einbauküche",
+     1
+    ],
+    [
+     "Keller",
+     1
+    ],
+    [
+     "Schaden",
+     1
+    ],
+    [
+     "Stehlgutliste",
+     1
+    ],
+    [
+     "Anzeigenbestätigung",
+     1
+    ],
+    [
+     "Garten",
+     1
+    ],
+    [
+     "Urlaub",
+     1
+    ],
+    [
+     "Schichtbeginn",
+     1
+    ],
+    [
+     "Telefon",
+     1
+    ]
+   ]
+  }
+ },
+ "dokumente": {
+  "PII2-TA01": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Fax",
+      "pii": false,
+      "rollen": [
+       "tabellenzelle"
+      ]
+     },
+     {
+      "begriff": "Streitwert",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "318 774 205",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "SV-2025-1184",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA02": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Täuschung",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "RE-2025-08812",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "SB-25-3391",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Markt 7",
+     "An der Ziegelei 14"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Sonnenfeld",
+     "TA Lärm"
+    ],
+    "gewoehnlich_verloren": [
+     "lang und breit ausgeführt",
+     "den Hahn am Heizkreisverteiler",
+     "kurz vor Ablauf der Zahlungsfrist"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Markt 7",
+     "An der Ziegelei 14",
+     "SB-25-3391"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Sonnenfeld",
+     "TA Lärm"
+    ],
+    "gewoehnlich_verloren": [
+     "lang und breit ausgeführt",
+     "den Hahn am Heizkreisverteiler",
+     "kurz vor Ablauf der Zahlungsfrist"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Markt 7",
+     "An der Ziegelei 14"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Sonnenfeld",
+     "TA Lärm"
+    ],
+    "gewoehnlich_verloren": [
+     "lang und breit ausgeführt",
+     "den Hahn am Heizkreisverteiler",
+     "kurz vor Ablauf der Zahlungsfrist"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Markt 7",
+     "An der Ziegelei 14"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Sonnenfeld",
+     "TA Lärm"
+    ],
+    "gewoehnlich_verloren": [
+     "lang und breit ausgeführt",
+     "den Hahn am Heizkreisverteiler",
+     "kurz vor Ablauf der Zahlungsfrist"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Markt 7",
+     "An der Ziegelei 14"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Sonnenfeld",
+     "TA Lärm"
+    ],
+    "gewoehnlich_verloren": [
+     "lang und breit ausgeführt",
+     "den Hahn am Heizkreisverteiler",
+     "kurz vor Ablauf der Zahlungsfrist"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Täuschung"
+    ]
+   }
+  },
+  "PII2-TA03": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Starkregen",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Winter",
+     "Hinter der Mühle 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Waldbrunnen",
+     "Landgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "Im Sommer 2025",
+     "für Groß und Klein"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Winter",
+     "Hinter der Mühle 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Waldbrunnen",
+     "Landgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "Im Sommer 2025",
+     "für Groß und Klein"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Winter",
+     "Hinter der Mühle 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Waldbrunnen",
+     "Landgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "Im Sommer 2025",
+     "für Groß und Klein"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Winter",
+     "Hinter der Mühle 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Waldbrunnen",
+     "Landgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "Im Sommer 2025",
+     "für Groß und Klein"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Winter",
+     "Hinter der Mühle 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Waldbrunnen",
+     "Landgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "Im Sommer 2025",
+     "für Groß und Klein"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Starkregen"
+    ]
+   }
+  },
+  "PII2-TA04": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Schmied",
+      "pii": true,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "9 S 4l/26",
+     "HR8 552O"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Altheide",
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "vom Hahn gelöst hatte",
+     "Der Hahn selbst war",
+     "im Ernst nicht zu übersehen"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "9 S 4l/26",
+     "HR8 552O",
+     "Schmied"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Altheide",
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "vom Hahn gelöst hatte",
+     "Der Hahn selbst war",
+     "im Ernst nicht zu übersehen"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "9 S 4l/26",
+     "HR8 552O"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Altheide",
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "vom Hahn gelöst hatte",
+     "Der Hahn selbst war",
+     "im Ernst nicht zu übersehen"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "9 S 4l/26",
+     "HR8 552O",
+     "Schmied"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Altheide",
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "vom Hahn gelöst hatte",
+     "Der Hahn selbst war",
+     "im Ernst nicht zu übersehen"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "9 S 4l/26",
+     "HR8 552O"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Altheide",
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "vom Hahn gelöst hatte",
+     "Der Hahn selbst war",
+     "im Ernst nicht zu übersehen"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA05": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Justizobersekretarin",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Nehmen Sie diese Ladung bitte ernst"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Nehmen Sie diese Ladung bitte ernst"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Nehmen Sie diese Ladung bitte ernst"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Nehmen Sie diese Ladung bitte ernst"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Nehmen Sie diese Ladung bitte ernst"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Justizobersekretarin"
+    ]
+   }
+  },
+  "PII2-TA06": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Richter",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 2",
+     "KÖ-26-041"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "ein guter Schmied",
+     "das sage ich im Ernst",
+     "frei Haus geliefert"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 2",
+     "KÖ-26-041"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "ein guter Schmied",
+     "das sage ich im Ernst",
+     "frei Haus geliefert"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 2",
+     "KÖ-26-041"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "ein guter Schmied",
+     "das sage ich im Ernst",
+     "frei Haus geliefert"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 2",
+     "KÖ-26-041"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "ein guter Schmied",
+     "das sage ich im Ernst",
+     "frei Haus geliefert"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 2",
+     "KÖ-26-041"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "ein guter Schmied",
+     "das sage ich im Ernst",
+     "frei Haus geliefert"
+    ],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Richter"
+    ]
+   }
+  },
+  "PII2-TA07": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Andernfalls",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA08": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "2026-044718",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "ST-0915/26",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landkreis Altheide",
+     "Amtsgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "ein Stein auf der Fahrbahn"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "ST-0915/26"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landkreis Altheide",
+     "Amtsgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "ein Stein auf der Fahrbahn"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landkreis Altheide",
+     "Amtsgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "ein Stein auf der Fahrbahn"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landkreis Altheide",
+     "Amtsgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "ein Stein auf der Fahrbahn"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landkreis Altheide",
+     "Amtsgericht Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "ein Stein auf der Fahrbahn"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA09": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "B-2O26-0093",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "3459O",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "B-2026-0093",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "B-2026-0141",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0281-OK",
+     "Am Hang 3",
+     "Am Hang 5",
+     "6.2O1.4471O.3"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Stadt Sonnenfeld",
+     "Verwaltungsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Der Hang am Berg",
+     "kurz vor Ablauf der gesetzten Frist"
+    ],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 4,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "B-2026-0093",
+     "B-2026-0141",
+     "2026/0281-OK",
+     "Am Hang 3",
+     "Am Hang 5",
+     "6.2O1.4471O.3"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Stadt Sonnenfeld",
+     "Verwaltungsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Der Hang am Berg",
+     "kurz vor Ablauf der gesetzten Frist"
+    ],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 4,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0281-OK",
+     "Am Hang 3",
+     "Am Hang 5",
+     "6.2O1.4471O.3"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Stadt Sonnenfeld",
+     "Verwaltungsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Der Hang am Berg",
+     "kurz vor Ablauf der gesetzten Frist"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0281-OK",
+     "Am Hang 3",
+     "Am Hang 5",
+     "6.2O1.4471O.3"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Stadt Sonnenfeld",
+     "Verwaltungsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Der Hang am Berg",
+     "kurz vor Ablauf der gesetzten Frist"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "2026/0281-OK",
+     "Am Hang 3",
+     "Am Hang 5",
+     "6.2O1.4471O.3"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Stadt Sonnenfeld",
+     "Verwaltungsgericht Sonnenfeld"
+    ],
+    "gewoehnlich_verloren": [
+     "Der Hang am Berg",
+     "kurz vor Ablauf der gesetzten Frist"
+    ],
+    "auto_maskiert": 4,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA10": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "06-534-0098",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "VG-26-3307",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Zum Grünen Eck",
+     "32.1-GE-0217",
+     "32.1-W-2026-018"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Verwaltungsgericht Sonnenfeld",
+     "Staatsanwaltschaft Altheide",
+     "Amtsgericht Altheide",
+     "Stadt Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "selbst als Koch in der Küche",
+     "jeweils kurz vor dem Monatsende"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Zum Grünen Eck",
+     "VG-26-3307",
+     "32.1-GE-0217",
+     "32.1-W-2026-018",
+     "06-534-0098"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Verwaltungsgericht Sonnenfeld",
+     "Staatsanwaltschaft Altheide",
+     "Amtsgericht Altheide",
+     "Stadt Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "selbst als Koch in der Küche",
+     "jeweils kurz vor dem Monatsende"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Zum Grünen Eck",
+     "32.1-GE-0217",
+     "32.1-W-2026-018"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Verwaltungsgericht Sonnenfeld",
+     "Staatsanwaltschaft Altheide",
+     "Amtsgericht Altheide",
+     "Stadt Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "selbst als Koch in der Küche",
+     "jeweils kurz vor dem Monatsende"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Zum Grünen Eck",
+     "32.1-GE-0217",
+     "32.1-W-2026-018"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Verwaltungsgericht Sonnenfeld",
+     "Staatsanwaltschaft Altheide",
+     "Amtsgericht Altheide",
+     "Stadt Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "selbst als Koch in der Küche",
+     "jeweils kurz vor dem Monatsende"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Zum Grünen Eck",
+     "32.1-GE-0217",
+     "32.1-W-2026-018"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Verwaltungsgericht Sonnenfeld",
+     "Staatsanwaltschaft Altheide",
+     "Amtsgericht Altheide",
+     "Stadt Altheide"
+    ],
+    "gewoehnlich_verloren": [
+     "selbst als Koch in der Küche",
+     "jeweils kurz vor dem Monatsende"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA11": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "05631 66 0 21",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "S-26-117",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 30",
+     "Unter den Eichen 27, Seitenflügel, 3. OG"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Staatsanwaltschaft Waldbrunnen"
+    ],
+    "gewoehnlich_verloren": [
+     "Ich nehme die Sache sehr ernst",
+     "im Ernst und nicht zur Beruhigung"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 30",
+     "Unter den Eichen 27, Seitenflügel, 3. OG",
+     "05631 66 0 21",
+     "S-26-117"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Staatsanwaltschaft Waldbrunnen"
+    ],
+    "gewoehnlich_verloren": [
+     "Ich nehme die Sache sehr ernst",
+     "im Ernst und nicht zur Beruhigung"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 30",
+     "Unter den Eichen 27, Seitenflügel, 3. OG"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Staatsanwaltschaft Waldbrunnen"
+    ],
+    "gewoehnlich_verloren": [
+     "Ich nehme die Sache sehr ernst",
+     "im Ernst und nicht zur Beruhigung"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 30",
+     "Unter den Eichen 27, Seitenflügel, 3. OG"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Staatsanwaltschaft Waldbrunnen"
+    ],
+    "gewoehnlich_verloren": [
+     "Ich nehme die Sache sehr ernst",
+     "im Ernst und nicht zur Beruhigung"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hoher Weg 30",
+     "Unter den Eichen 27, Seitenflügel, 3. OG"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Staatsanwaltschaft Waldbrunnen"
+    ],
+    "gewoehnlich_verloren": [
+     "Ich nehme die Sache sehr ernst",
+     "im Ernst und nicht zur Beruhigung"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TA12": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "11512/26",
+      "pii": false,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "276 0981 0045 2318",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 1,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB01": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Leitungswasser",
+      "pii": true,
+      "rollen": [
+       "subjekt"
+      ]
+     },
+     {
+      "begriff": "20417-HA",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Kanal 5",
+     "Garage 4",
+     "WE-17"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "der Hahn in der Küche",
+     "der tropfende Hahn",
+     "im Sommer 2026",
+     "Die Stein-Treppe im Hof",
+     "ein Bauer aus Kesselbach"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Kanal 5",
+     "Garage 4",
+     "WE-17",
+     "20417-HA"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "der Hahn in der Küche",
+     "der tropfende Hahn",
+     "im Sommer 2026",
+     "Die Stein-Treppe im Hof",
+     "ein Bauer aus Kesselbach"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Kanal 5",
+     "Garage 4",
+     "WE-17"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "der Hahn in der Küche",
+     "der tropfende Hahn",
+     "im Sommer 2026",
+     "Die Stein-Treppe im Hof",
+     "ein Bauer aus Kesselbach"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Kanal 5",
+     "Garage 4",
+     "WE-17"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "der Hahn in der Küche",
+     "der tropfende Hahn",
+     "im Sommer 2026",
+     "Die Stein-Treppe im Hof",
+     "ein Bauer aus Kesselbach"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Kanal 5",
+     "Garage 4",
+     "WE-17"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "der Hahn in der Küche",
+     "der tropfende Hahn",
+     "im Sommer 2026",
+     "Die Stein-Treppe im Hof",
+     "ein Bauer aus Kesselbach"
+    ],
+    "auto_maskiert": 2,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB02": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "LS-B16",
+      "pii": false,
+      "rollen": [
+       "kennzeichenform"
+      ]
+     },
+     {
+      "begriff": "1ESY1160447752",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "7EMH0093321",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "40-1187"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Winter sollte die Wallbox",
+     "an der Stein-Mauer"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "40-1187",
+     "1ESY1160447752"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Winter sollte die Wallbox",
+     "an der Stein-Mauer"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "40-1187"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Winter sollte die Wallbox",
+     "an der Stein-Mauer"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "40-1187"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Winter sollte die Wallbox",
+     "an der Stein-Mauer"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "40-1187"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Winter sollte die Wallbox",
+     "an der Stein-Mauer"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "LS-B16"
+    ]
+   }
+  },
+  "PII2-TB03": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Registergericht",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     },
+     {
+      "begriff": "C3520",
+      "pii": false,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "DE2988031",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "An der Bleiche 9",
+     "Am Brunnen 11",
+     "10288",
+     "X7K-55021-CN",
+     "RE-26-04410",
+     "RE-26-05127",
+     "RE-26-05890"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "groß und hell"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "An der Bleiche 9",
+     "Am Brunnen 11",
+     "10288",
+     "X7K-55021-CN",
+     "RE-26-04410",
+     "RE-26-05127",
+     "RE-26-05890",
+     "DE298803146"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "groß und hell"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "An der Bleiche 9",
+     "Am Brunnen 11",
+     "10288",
+     "X7K-55021-CN",
+     "RE-26-04410",
+     "RE-26-05127",
+     "RE-26-05890"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "groß und hell"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "An der Bleiche 9",
+     "Am Brunnen 11",
+     "10288",
+     "X7K-55021-CN",
+     "RE-26-04410",
+     "RE-26-05127",
+     "RE-26-05890"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "groß und hell"
+    ],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "An der Bleiche 9",
+     "Am Brunnen 11",
+     "10288",
+     "X7K-55021-CN",
+     "RE-26-04410",
+     "RE-26-05127",
+     "RE-26-05890"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "groß und hell"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "C3520",
+     "Registergericht"
+    ]
+   }
+  },
+  "PII2-TB04": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Mittwoch",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "OSM-K 2210",
+      "pii": true,
+      "rollen": [
+       "kennzeichenform"
+      ]
+     },
+     {
+      "begriff": "WVWZZZ1KZ9W386615",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB05": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Fenster",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "Einbauküche",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "Keller",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "30448712",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "1APX0571203",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "G4-2281944",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "L01X4K7Z9",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "L7TN83R2C",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "HR-2024-0098317",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 10,
+    "fragen_pii": 6,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 9,
+    "fragen_pii": 6,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 4,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 2,
+    "fragen": 4,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB06": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "BRF-AF 316",
+      "pii": true,
+      "rollen": [
+       "kennzeichenform"
+      ]
+     },
+     {
+      "begriff": "W0L0AHL3575014289",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "VU-2026-118734",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hinter der Mühle 4",
+     "G-2026-0412"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "weil ein Fuchs die Fahrbahn querte",
+     "von einem Vogel her"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hinter der Mühle 4",
+     "G-2026-0412",
+     "VU-2026-118734",
+     "W0L0AHL3575014289",
+     "BRF-AF 316"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "weil ein Fuchs die Fahrbahn querte",
+     "von einem Vogel her"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hinter der Mühle 4",
+     "G-2026-0412"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "weil ein Fuchs die Fahrbahn querte",
+     "von einem Vogel her"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hinter der Mühle 4",
+     "G-2026-0412"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "weil ein Fuchs die Fahrbahn querte",
+     "von einem Vogel her"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Hinter der Mühle 4",
+     "G-2026-0412"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "weil ein Fuchs die Fahrbahn querte",
+     "von einem Vogel her"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB07": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Schaden",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "Stehlgutliste",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Anzeigenbestätigung",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB08": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Fax",
+      "pii": false,
+      "rollen": [
+       "subjekt",
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Garten",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "05631 87 03 31",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "118/26 BR03",
+     "WO-22O1",
+     "Blatt 44O7",
+     "HRA 22O7"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "die Stein-Treppe zum Garten",
+     "Der Hahn im Gäste-WC tropft"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "118/26 BR03",
+     "05631 87 03 31",
+     "WO-22O1",
+     "Blatt 44O7",
+     "HRA 22O7"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "die Stein-Treppe zum Garten",
+     "Der Hahn im Gäste-WC tropft"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "118/26 BR03",
+     "WO-22O1",
+     "Blatt 44O7",
+     "HRA 22O7"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "die Stein-Treppe zum Garten",
+     "Der Hahn im Gäste-WC tropft"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "118/26 BR03",
+     "WO-22O1",
+     "Blatt 44O7",
+     "HRA 22O7"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "die Stein-Treppe zum Garten",
+     "Der Hahn im Gäste-WC tropft"
+    ],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "118/26 BR03",
+     "WO-22O1",
+     "Blatt 44O7",
+     "HRA 22O7"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "die Stein-Treppe zum Garten",
+     "Der Hahn im Gäste-WC tropft"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Fax",
+     "Garten"
+    ]
+   }
+  },
+  "PII2-TB09": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Urlaub",
+      "pii": false,
+      "rollen": [
+       "subjekt"
+      ]
+     },
+     {
+      "begriff": "Schichtbeginn",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     },
+     {
+      "begriff": "Telefon",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Sommer (Juni bis August)",
+     "den Koch des Bistrobereichs"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Sommer (Juni bis August)",
+     "den Koch des Bistrobereichs"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Sommer (Juni bis August)",
+     "den Koch des Bistrobereichs"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Sommer (Juni bis August)",
+     "den Koch des Bistrobereichs"
+    ],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Im Sommer (Juni bis August)",
+     "den Koch des Bistrobereichs"
+    ],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Schichtbeginn",
+     "Telefon",
+     "Urlaub"
+    ]
+   }
+  },
+  "PII2-TB10": {
+   "ask": {
+    "status": "blockiert",
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB11": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "4417290",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2415 0001 0020 7764 39",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "77-2031-9",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "T22K91LP4",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII2-TB12": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "049/221/30187",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "70028815",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "4418-BRF",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "HM-2023-07",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "G4-7710342",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "WE-11",
+     "33-0912"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Der Unterschied zum Vorjahr ist groß",
+     "Der Hahn im Waschkeller"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 5,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "WE-11",
+     "WZ 70028815",
+     "HM-2023-07",
+     "G4-7710342",
+     "33-0912",
+     "4418-BRF"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Der Unterschied zum Vorjahr ist groß",
+     "Der Hahn im Waschkeller"
+    ],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 5,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "WE-11",
+     "33-0912"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Der Unterschied zum Vorjahr ist groß",
+     "Der Hahn im Waschkeller"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "WE-11",
+     "33-0912"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Der Unterschied zum Vorjahr ist groß",
+     "Der Hahn im Waschkeller"
+    ],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "WE-11",
+     "33-0912"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [
+     "Der Unterschied zum Vorjahr ist groß",
+     "Der Hahn im Waschkeller"
+    ],
+    "auto_maskiert": 5,
+    "auto_maskiert_nicht_pii": []
+   }
+  }
+ }
+}

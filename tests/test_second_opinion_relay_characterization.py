@@ -126,3 +126,20 @@ def test_upstream_error_is_a_generic_502_without_content(relay) -> None:
         anthropic_cls.return_value.messages.create.side_effect = anthropic.APIConnectionError(request=MagicMock())
         response = client.post("/v1/relay/messages", json=_body(PSEUDONYMIZED), headers=headers)
     assert response.status_code == 502 and "PERSON" not in response.text
+
+
+def test_writing_path_default_max_tokens_exceeds_the_relay_ceiling(relay) -> None:
+    """§43.11 Phase 3, Befund am BESTEHENDEN Schreibpfad (nur festgehalten, nicht geaendert): Code-Standard
+    `claude_max_tokens` (4096) liegt ueber der Relay-Obergrenze `max_tokens_ceiling` (4000). Ohne CLAUDE_MAX_TOKENS in
+    der .env (die .env.example setzt 2000) lehnt das Relay jede Schreibanfrage mit 400 ab."""
+    from app.config.settings import Settings
+
+    client_default = Settings.model_fields["claude_max_tokens"].default
+    relay_ceiling = GatewaySettings.model_fields["max_tokens_ceiling"].default
+    assert (client_default, relay_ceiling) == (4096, 4000)
+    client, headers = relay
+    with patch("gateway.relay.anthropic.Anthropic") as anthropic_cls:
+        response = client.post("/v1/relay/messages", json={**_body(PSEUDONYMIZED), "max_tokens": client_default},
+                               headers=headers)
+    assert response.status_code == 400
+    anthropic_cls.assert_not_called()

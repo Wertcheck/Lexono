@@ -1,0 +1,5219 @@
+{
+ "korpus": "pii_full_documents_v2/cases/dev.json",
+ "korpus_sha256": "ded5418f34c034b3d753d2ed49b27f35d56306e367ce0fce3e4d73e77fd4866d",
+ "dokumente": 12,
+ "ocr": "aus gespeicherten Texten extracted_texts_ocr_dev.json (sha256 1c0fe60e5a6d67ff)",
+ "sekunden": 48.9,
+ "zusammenfassung": {
+  "ohne_akte": {
+   "versand_status": {
+    "rueckfrage": 12
+   },
+   "versand_leck_werte": 0,
+   "versand_teil_leck_werte": 0,
+   "erkennung_je_kategorie": {
+    "adresse": {
+     "im_text": 39,
+     "verbleibend": 14,
+     "werte_mit_leck": 12,
+     "werte_mit_teil_leck": 0,
+     "werte": 34,
+     "erkannt_quote": "25/39"
+    },
+    "aktenzeichen": {
+     "im_text": 19,
+     "verbleibend": 6,
+     "werte_mit_leck": 6,
+     "werte_mit_teil_leck": 0,
+     "werte": 17,
+     "erkannt_quote": "13/19"
+    },
+    "email": {
+     "im_text": 10,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 10,
+     "erkannt_quote": "10/10"
+    },
+    "geburtsdatum": {
+     "im_text": 6,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 6,
+     "erkannt_quote": "6/6"
+    },
+    "geburtsname": {
+     "im_text": 5,
+     "verbleibend": 3,
+     "werte_mit_leck": 2,
+     "werte_mit_teil_leck": 0,
+     "werte": 4,
+     "erkannt_quote": "2/5"
+    },
+    "iban": {
+     "im_text": 8,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 8,
+     "erkannt_quote": "8/8"
+    },
+    "kfz_kennzeichen": {
+     "im_text": 4,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 4,
+     "erkannt_quote": "4/4"
+    },
+    "kundennummer": {
+     "im_text": 6,
+     "verbleibend": 3,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 2,
+     "erkannt_quote": "3/6"
+    },
+    "organisation": {
+     "im_text": 29,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 24,
+     "erkannt_quote": "29/29"
+    },
+    "person": {
+     "im_text": 166,
+     "verbleibend": 6,
+     "werte_mit_leck": 4,
+     "werte_mit_teil_leck": 0,
+     "werte": 78,
+     "erkannt_quote": "160/166"
+    },
+    "plz_ort": {
+     "im_text": 28,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 21,
+     "erkannt_quote": "27/28"
+    },
+    "rechnungsnummer": {
+     "im_text": 7,
+     "verbleibend": 3,
+     "werte_mit_leck": 3,
+     "werte_mit_teil_leck": 0,
+     "werte": 5,
+     "erkannt_quote": "4/7"
+    },
+    "sonstige_kennung": {
+     "im_text": 32,
+     "verbleibend": 13,
+     "werte_mit_leck": 11,
+     "werte_mit_teil_leck": 0,
+     "werte": 30,
+     "erkannt_quote": "19/32"
+    },
+    "steuernummer": {
+     "im_text": 11,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 11,
+     "erkannt_quote": "10/11"
+    },
+    "telefon": {
+     "im_text": 15,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 14,
+     "erkannt_quote": "14/15"
+    }
+   },
+   "erkennung_dokumente_mit_leck": [
+    "PII2-D01",
+    "PII2-D02",
+    "PII2-D03",
+    "PII2-D04",
+    "PII2-D05",
+    "PII2-D06",
+    "PII2-D07",
+    "PII2-D08",
+    "PII2-D09",
+    "PII2-D11",
+    "PII2-D12"
+   ],
+   "keep_verloren": {
+    "PII2-D01": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "PII2-D04": [
+     "Landgericht Musterstadt"
+    ],
+    "PII2-D05": [
+     "Amtsgericht Neuhain"
+    ],
+    "PII2-D06": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "PII2-D07": [
+     "Amtsgericht Neuhain"
+    ],
+    "PII2-D09": [
+     "Finanzamt Fiktivhausen"
+    ],
+    "PII2-D12": [
+     "Amtsgericht Neuhain"
+    ]
+   },
+   "gewoehnlich_verloren": {
+    "PII2-D01": [
+     "der Koch des Restaurants"
+    ],
+    "PII2-D02": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "PII2-D04": [
+     "nehmen wir kurz Stellung"
+    ],
+    "PII2-D05": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "sehr klein gedruckt"
+    ],
+    "PII2-D06": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "PII2-D07": [
+     "nur kurz und pauschal"
+    ],
+    "PII2-D08": [
+     "ein Bauer aus der Gegend"
+    ],
+    "PII2-D09": [
+     "nur klein gedruckt"
+    ],
+    "PII2-D10": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "PII2-D11": [
+     "nach Muster der Herstellerunterlagen"
+    ],
+    "PII2-D12": [
+     "Bitte teilen Sie kurz mit"
+    ]
+   }
+  },
+  "mit_akte": {
+   "versand_status": {
+    "rueckfrage": 12
+   },
+   "versand_leck_werte": 0,
+   "versand_teil_leck_werte": 0,
+   "erkennung_je_kategorie": {
+    "adresse": {
+     "im_text": 39,
+     "verbleibend": 14,
+     "werte_mit_leck": 12,
+     "werte_mit_teil_leck": 0,
+     "werte": 34,
+     "erkannt_quote": "25/39"
+    },
+    "aktenzeichen": {
+     "im_text": 19,
+     "verbleibend": 6,
+     "werte_mit_leck": 6,
+     "werte_mit_teil_leck": 0,
+     "werte": 17,
+     "erkannt_quote": "13/19"
+    },
+    "email": {
+     "im_text": 10,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 10,
+     "erkannt_quote": "10/10"
+    },
+    "geburtsdatum": {
+     "im_text": 6,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 6,
+     "erkannt_quote": "6/6"
+    },
+    "geburtsname": {
+     "im_text": 5,
+     "verbleibend": 3,
+     "werte_mit_leck": 2,
+     "werte_mit_teil_leck": 0,
+     "werte": 4,
+     "erkannt_quote": "2/5"
+    },
+    "iban": {
+     "im_text": 8,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 8,
+     "erkannt_quote": "8/8"
+    },
+    "kfz_kennzeichen": {
+     "im_text": 4,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 4,
+     "erkannt_quote": "4/4"
+    },
+    "kundennummer": {
+     "im_text": 6,
+     "verbleibend": 3,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 2,
+     "erkannt_quote": "3/6"
+    },
+    "organisation": {
+     "im_text": 29,
+     "verbleibend": 0,
+     "werte_mit_leck": 0,
+     "werte_mit_teil_leck": 0,
+     "werte": 24,
+     "erkannt_quote": "29/29"
+    },
+    "person": {
+     "im_text": 166,
+     "verbleibend": 6,
+     "werte_mit_leck": 4,
+     "werte_mit_teil_leck": 0,
+     "werte": 78,
+     "erkannt_quote": "160/166"
+    },
+    "plz_ort": {
+     "im_text": 28,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 21,
+     "erkannt_quote": "27/28"
+    },
+    "rechnungsnummer": {
+     "im_text": 7,
+     "verbleibend": 3,
+     "werte_mit_leck": 3,
+     "werte_mit_teil_leck": 0,
+     "werte": 5,
+     "erkannt_quote": "4/7"
+    },
+    "sonstige_kennung": {
+     "im_text": 32,
+     "verbleibend": 13,
+     "werte_mit_leck": 11,
+     "werte_mit_teil_leck": 0,
+     "werte": 30,
+     "erkannt_quote": "19/32"
+    },
+    "steuernummer": {
+     "im_text": 11,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 11,
+     "erkannt_quote": "10/11"
+    },
+    "telefon": {
+     "im_text": 15,
+     "verbleibend": 1,
+     "werte_mit_leck": 1,
+     "werte_mit_teil_leck": 0,
+     "werte": 14,
+     "erkannt_quote": "14/15"
+    }
+   },
+   "erkennung_dokumente_mit_leck": [
+    "PII2-D01",
+    "PII2-D02",
+    "PII2-D03",
+    "PII2-D04",
+    "PII2-D05",
+    "PII2-D06",
+    "PII2-D07",
+    "PII2-D08",
+    "PII2-D09",
+    "PII2-D11",
+    "PII2-D12"
+   ],
+   "keep_verloren": {
+    "PII2-D01": [
+     "Landgericht Musterstadt",
+     "§ 7 Abs. 1 StVG"
+    ],
+    "PII2-D04": [
+     "Landgericht Musterstadt"
+    ],
+    "PII2-D05": [
+     "Amtsgericht Neuhain"
+    ],
+    "PII2-D06": [
+     "30.09.2026",
+     "Amtsgerichts Neuhain",
+     "Finanzamt Neuhain",
+     "0,2 % des Pauschalfestpreises"
+    ],
+    "PII2-D07": [
+     "Amtsgericht Neuhain"
+    ],
+    "PII2-D09": [
+     "Finanzamt Fiktivhausen"
+    ],
+    "PII2-D12": [
+     "Amtsgericht Neuhain"
+    ]
+   },
+   "gewoehnlich_verloren": {
+    "PII2-D01": [
+     "der Koch des Restaurants"
+    ],
+    "PII2-D02": [
+     "41 Jahre, Koch, wohnhaft",
+     "Ich arbeite als Koch"
+    ],
+    "PII2-D04": [
+     "nehmen wir kurz Stellung"
+    ],
+    "PII2-D05": [
+     "zum Beispiel hinter dem Kleiderschrank",
+     "sehr klein gedruckt"
+    ],
+    "PII2-D06": [
+     "mit Stein-Platten aus Basalt"
+    ],
+    "PII2-D07": [
+     "nur kurz und pauschal"
+    ],
+    "PII2-D08": [
+     "ein Bauer aus der Gegend"
+    ],
+    "PII2-D09": [
+     "nur klein gedruckt"
+    ],
+    "PII2-D10": [
+     "drei Wochen lang dauern",
+     "im Sommer 2025"
+    ],
+    "PII2-D11": [
+     "nach Muster der Herstellerunterlagen"
+    ],
+    "PII2-D12": [
+     "Bitte teilen Sie kurz mit"
+    ]
+   }
+  }
+ },
+ "dokumente_ergebnis": {
+  "PII2-D01": {
+   "zeichen": 6108,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 3,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0388-BA",
+       "category": "aktenzeichen",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Miriam Engel",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hanna Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Winter",
+       "category": "geburtsname",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "14.03.1988",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Weiher 11",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wohnung 3. OG links",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "Wohnung 3. OG\nlinks",
+       "teil_leck": []
+      },
+      {
+       "value": "Bernd Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf der Höhe 15",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinterhaus",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "MS-HS 2817",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "FH-SW 913",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Fiktiva\nVersicherung AG",
+       "teil_leck": []
+      },
+      {
+       "value": "Gaststätte Zum Goldenen Hirsch",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Paul Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Linde 4",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "312 Js 4471/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "312\nJs 4471/26",
+       "teil_leck": []
+      },
+      {
+       "value": "Sachverständigenbüro Lang Kfz-Technik",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "GA-25-2207",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-883104",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KH-4471-0093-22",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "PR\n2291",
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-99",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Landgericht Musterstadt",
+      "§ 7 Abs. 1 StVG"
+     ],
+     "gewoehnlich_verloren": [
+      "der Koch des Restaurants"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 3,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0388-BA",
+       "category": "aktenzeichen",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Miriam Engel",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hanna Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Winter",
+       "category": "geburtsname",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "14.03.1988",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Weiher 11",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wohnung 3. OG links",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "Wohnung 3. OG\nlinks",
+       "teil_leck": []
+      },
+      {
+       "value": "Bernd Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf der Höhe 15",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinterhaus",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "MS-HS 2817",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "FH-SW 913",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Fiktiva\nVersicherung AG",
+       "teil_leck": []
+      },
+      {
+       "value": "Gaststätte Zum Goldenen Hirsch",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Paul Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Linde 4",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "312 Js 4471/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "312\nJs 4471/26",
+       "teil_leck": []
+      },
+      {
+       "value": "Sachverständigenbüro Lang Kfz-Technik",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "GA-25-2207",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-883104",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KH-4471-0093-22",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "PR\n2291",
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-99",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Landgericht Musterstadt",
+      "§ 7 Abs. 1 StVG"
+     ],
+     "gewoehnlich_verloren": [
+      "der Koch des Restaurants"
+     ]
+    }
+   }
+  },
+  "PII2-D02": {
+   "zeichen": 2994,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 2,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "7 O 88/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "70 88/26",
+       "teil_leck": []
+      },
+      {
+       "value": "Braun",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wolf",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer, Paul",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Linde 4",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-883104",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "41 Jahre, Koch, wohnhaft",
+      "Ich arbeite als Koch"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 2,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "7 O 88/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": "70 88/26",
+       "teil_leck": []
+      },
+      {
+       "value": "Braun",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wolf",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer, Paul",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Linde 4",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-883104",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "41 Jahre, Koch, wohnhaft",
+      "Ich arbeite als Koch"
+     ]
+    }
+   }
+  },
+  "PII2-D03": {
+   "zeichen": 1494,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 4,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Jonas Schäfer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Schäfer",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hohe Leuchte 7",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-2026-00417",
+       "category": "rechnungsnummer",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Stein & Berg Logistik GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0412-SC",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "K-10388",
+       "category": "kundennummer",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VS-RS 7720-118",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE318774512",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 4,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Jonas Schäfer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Schäfer",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hohe Leuchte 7",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-2026-00417",
+       "category": "rechnungsnummer",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Stein & Berg Logistik GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0412-SC",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "K-10388",
+       "category": "kundennummer",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VS-RS 7720-118",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE318774512",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    }
+   }
+  },
+  "PII2-D04": {
+   "zeichen": 1442,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 3,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Ring 4O",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "3457l Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktp1atz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2O26/O388-BA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-8831O4",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KH-4471-OO93-22",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ralf Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "O611 99884-417",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "ralf.kurz@fiktiva-versicherung.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "7 O 8B/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Bernd Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf der Hohe l5",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Enge1",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 52O5 O353 OO12 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "8V-2O26-ll8",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE47 5OO1 O517 O648 2213 95",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "R. Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 3l9O4",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Helga Sch warz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE 2l4 553 O19",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Landgericht Musterstadt"
+     ],
+     "gewoehnlich_verloren": [
+      "nehmen wir kurz Stellung"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 3,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Fiktiva Versicherung AG",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Ring 4O",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "3457l Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktp1atz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2O26/O388-BA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "SN-26-8831O4",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KH-4471-OO93-22",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ralf Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "O611 99884-417",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "ralf.kurz@fiktiva-versicherung.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Koch",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "7 O 8B/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Bernd Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf der Hohe l5",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Enge1",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 52O5 O353 OO12 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "8V-2O26-ll8",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE47 5OO1 O517 O648 2213 95",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "R. Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 3l9O4",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Helga Sch warz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE 2l4 553 O19",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Landgericht Musterstadt"
+     ],
+     "gewoehnlich_verloren": [
+      "nehmen wir kurz Stellung"
+     ]
+    }
+   }
+  },
+  "PII2-D05": {
+   "zeichen": 2277,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 2,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Lena Fuchs",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "lena.fuchs@postfach.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "t.hartmann@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Im Winkel 9",
+       "category": "adresse",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0517-TH",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2. OG rechts",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Stefan Fuchs",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "MV-0388-17",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Weiß",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel Wohnbau GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 4471",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Uwe Beispiel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0172 5550193",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0151 2398771",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fuchs",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-21",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "zum Beispiel hinter dem Kleiderschrank",
+      "sehr klein gedruckt"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 2,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Lena Fuchs",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "lena.fuchs@postfach.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "t.hartmann@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Im Winkel 9",
+       "category": "adresse",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0517-TH",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2. OG rechts",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Stefan Fuchs",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "MV-0388-17",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Weiß",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel Wohnbau GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 4471",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Uwe Beispiel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0172 5550193",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0151 2398771",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fuchs",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-21",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "zum Beispiel hinter dem Kleiderschrank",
+      "sehr klein gedruckt"
+     ]
+    }
+   }
+  },
+  "PII2-D06": {
+   "zeichen": 6801,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 5,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0144-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "P-7731",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "BV-2026-231",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klaus Neumann",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "07.06.1975",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sabine Neumann",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "30.11.1977",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "An der Alten Mühle 3",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Berg Bau GmbH",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Gewerbepark 12",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 7720",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Tobias Berg",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Blatt 2318",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Flurstück 112/7",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Architekturbüro Fuchs & Winter",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "AN-26-0412",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "63-BG-2025-0918",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE63 5205 0353 0098 7654 32",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "031/245/60917",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marco Stein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0160 4471882",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "m.stein@bergbau-neuhain.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Neumann",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Berg",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "30.09.2026",
+      "Amtsgerichts Neuhain",
+      "Finanzamt Neuhain",
+      "0,2 % des Pauschalfestpreises"
+     ],
+     "gewoehnlich_verloren": [
+      "mit Stein-Platten aus Basalt"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 5,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0144-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "P-7731",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "BV-2026-231",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klaus Neumann",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "07.06.1975",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sabine Neumann",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "30.11.1977",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "An der Alten Mühle 3",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Berg Bau GmbH",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Gewerbepark 12",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 7720",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Tobias Berg",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Blatt 2318",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Flurstück 112/7",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Architekturbüro Fuchs & Winter",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "AN-26-0412",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "63-BG-2025-0918",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE63 5205 0353 0098 7654 32",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "031/245/60917",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marco Stein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0160 4471882",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "m.stein@bergbau-neuhain.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Neumann",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Berg",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "30.09.2026",
+      "Amtsgerichts Neuhain",
+      "Finanzamt Neuhain",
+      "0,2 % des Pauschalfestpreises"
+     ],
+     "gewoehnlich_verloren": [
+      "mit Stein-Platten aus Basalt"
+     ]
+    }
+   }
+  },
+  "PII2-D07": {
+   "zeichen": 2081,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Schwarz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "4 C 123/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Elke Schwarz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Unter den Eichen 21",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0291-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Dieter Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter der Kirche 5",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinterhaus, 2. Etage",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Jan Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Bahndamm 2a",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Weiß",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Vogt",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "nur kurz und pauschal"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Schwarz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "4 C 123/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Elke Schwarz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Unter den Eichen 21",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0291-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Dieter Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter der Kirche 5",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinterhaus, 2. Etage",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Jan Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Bahndamm 2a",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Weiß",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Vogt",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "nur kurz und pauschal"
+     ]
+    }
+   }
+  },
+  "PII2-D08": {
+   "zeichen": 2201,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 6,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0655-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Bauer",
+       "category": "person",
+       "im_text": 7,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Braun",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Winter",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Martin Bauer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "02.05.1971",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf dem Kamp 3",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 99120",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0170 3318842",
+       "category": "telefon",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Flurstück 88/3",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PV-2019-044",
+       "category": "sonstige_kennung",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Gerhard Braun",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hof Lindenau",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ludger Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VS 55-201-7734",
+       "category": "sonstige_kennung",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 4410",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "ein Bauer aus der Gegend"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 6,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0655-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Bauer",
+       "category": "person",
+       "im_text": 7,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Braun",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 5,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Winter",
+       "category": "person",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Martin Bauer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "02.05.1971",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Auf dem Kamp 3",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 99120",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0170 3318842",
+       "category": "telefon",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Flurstück 88/3",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PV-2019-044",
+       "category": "sonstige_kennung",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Gerhard Braun",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hof Lindenau",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ludger Fischer",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VS 55-201-7734",
+       "category": "sonstige_kennung",
+       "im_text": 2,
+       "verbleibend": 2,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 4410",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "ein Bauer aus der Gegend"
+     ]
+    }
+   }
+  },
+  "PII2-D09": {
+   "zeichen": 1774,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "045/220/71839",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Petra Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "23.09.1979",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter den Gärten 8",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "34590\nFiktivhausen",
+       "teil_leck": []
+      },
+      {
+       "value": "Rainer Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "47 112 509 833",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "61 804 377 205",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0702-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wolf",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Muster Logistik GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "004417",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Mia Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "11.04.2019",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Finanzamt Fiktivhausen"
+     ],
+     "gewoehnlich_verloren": [
+      "nur klein gedruckt"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "045/220/71839",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Petra Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "geburtsname",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "23.09.1979",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter den Gärten 8",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "34590\nFiktivhausen",
+       "teil_leck": []
+      },
+      {
+       "value": "Rainer Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "47 112 509 833",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "61 804 377 205",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0702-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wolf",
+       "category": "person",
+       "im_text": 6,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Muster Logistik GmbH",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "004417",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Mia Wolf",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "11.04.2019",
+       "category": "geburtsdatum",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE21 5205 0353 0012 3456 78",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Finanzamt Fiktivhausen"
+     ],
+     "gewoehnlich_verloren": [
+      "nur klein gedruckt"
+     ]
+    }
+   }
+  },
+  "PII2-D10": {
+   "zeichen": 1503,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 5,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Holger Lang",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "h.lang@sv-lang.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Miriam Engel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "m.engel@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "GA-26-1093",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "FH-KR 318",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0731-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Moritz Klein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Lindenhof 6",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Am\nLindenhof 6",
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "WBA8E31090K471203",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "NH-MK 1907",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Autohaus Braun KG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kevin Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel Assekuranz AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Beispiel\nAssekuranz AG",
+       "teil_leck": []
+      },
+      {
+       "value": "77-26-004311",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RG-SV-26-0815",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sachverständigenbüro Lang Kfz-Technik",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Alten Schmiede 6",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 88120",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE287661043",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE09 5205 0353 0055 4433 21",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "drei Wochen lang dauern",
+      "im Sommer 2025"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 5,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Holger Lang",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "h.lang@sv-lang.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Miriam Engel",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "m.engel@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "GA-26-1093",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "FH-KR 318",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Klein",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0731-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Engel",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Moritz Klein",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Lindenhof 6",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Am\nLindenhof 6",
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "WBA8E31090K471203",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "NH-MK 1907",
+       "category": "kfz_kennzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Autohaus Braun KG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kevin Sommer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Beispiel Assekuranz AG",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Beispiel\nAssekuranz AG",
+       "teil_leck": []
+      },
+      {
+       "value": "77-26-004311",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RG-SV-26-0815",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Lang",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Sachverständigenbüro Lang Kfz-Technik",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Zur Alten Schmiede 6",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34612 Beispielheim",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "05673 88120",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE287661043",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "DE09 5205 0353 0055 4433 21",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "drei Wochen lang dauern",
+      "im Sommer 2025"
+     ]
+    }
+   }
+  },
+  "PII2-D11": {
+   "zeichen": 1725,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 7,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ute Muster",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Anger 14",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wohnung 1. OG rechts",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0602-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer Haustechnik GmbH",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Muster",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 5120",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Werner Fischer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Werner\nFischer",
+       "teil_leck": []
+      },
+      {
+       "value": "DE58 5205 0353 0077 1188 46",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "DES8 5205 0353 0077 1188 46",
+       "teil_leck": []
+      },
+      {
+       "value": "Stefan Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0031",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0119",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0207",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KD-55812",
+       "category": "kundennummer",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "nach Muster der Herstellerunterlagen"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 7,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "blockiert",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz 2",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Ute Muster",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Am Anger 14",
+       "category": "adresse",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Wohnung 1. OG rechts",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34590 Fiktivhausen",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2026/0602-HA",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Fischer Haustechnik GmbH",
+       "category": "organisation",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Muster",
+       "category": "person",
+       "im_text": 4,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "HRB 5120",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Werner Fischer",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "Werner\nFischer",
+       "teil_leck": []
+      },
+      {
+       "value": "DE58 5205 0353 0077 1188 46",
+       "category": "iban",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": "DES8 5205 0353 0077 1188 46",
+       "teil_leck": []
+      },
+      {
+       "value": "Stefan Koch",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Thomas Hartmann",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "PR 2291",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "0561 447123-0",
+       "category": "telefon",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "kanzlei@hartmann-engel.example",
+       "category": "email",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "026/123/45678",
+       "category": "steuernummer",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0031",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0119",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "RE-H-26-0207",
+       "category": "rechnungsnummer",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "KD-55812",
+       "category": "kundennummer",
+       "im_text": 3,
+       "verbleibend": 3,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": [
+      "nach Muster der Herstellerunterlagen"
+     ]
+    }
+   }
+  },
+  "PII2-D12": {
+   "zeichen": 940,
+   "ohne_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "4 C l23/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz Z",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2O26/O291-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Schvvarz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Elke Schvvarz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Unter den Eichen 2l",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Dieter Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter der Kirche S",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "71O 4471 2O26 3l",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VVeiß",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "V0gt",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "Bitte teilen Sie kurz mit"
+     ]
+    }
+   },
+   "mit_akte": {
+    "versand_status": "rueckfrage",
+    "rueckfrage_begriffe": 1,
+    "versand": {
+     "werte": [],
+     "keep_verloren": [],
+     "gewoehnlich_verloren": []
+    },
+    "erkennung_status": "frei",
+    "erkennung": {
+     "werte": [
+      {
+       "value": "4 C l23/26",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hartmann Engel Rechtsanwälte PartG mbB",
+       "category": "organisation",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Marktplatz Z",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34567 Musterstadt",
+       "category": "plz_ort",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "2O26/O291-EN",
+       "category": "aktenzeichen",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Schvvarz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Kurz",
+       "category": "person",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Elke Schvvarz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Unter den Eichen 2l",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "34623 Neuhain",
+       "category": "plz_ort",
+       "im_text": 2,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Dieter Kurz",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "Hinter der Kirche S",
+       "category": "adresse",
+       "im_text": 1,
+       "verbleibend": 0,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "71O 4471 2O26 3l",
+       "category": "sonstige_kennung",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "VVeiß",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      },
+      {
+       "value": "V0gt",
+       "category": "person",
+       "im_text": 1,
+       "verbleibend": 1,
+       "ocr_form": null,
+       "teil_leck": []
+      }
+     ],
+     "keep_verloren": [
+      "Amtsgericht Neuhain"
+     ],
+     "gewoehnlich_verloren": [
+      "Bitte teilen Sie kurz mit"
+     ]
+    }
+   }
+  }
+ }
+}

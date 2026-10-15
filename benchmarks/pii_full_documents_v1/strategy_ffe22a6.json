@@ -1,0 +1,2110 @@
+{
+ "cases": "test.json",
+ "texts": "extracted_texts_ocr.json",
+ "zusammenfassung": {
+  "ask": {
+   "status": {
+    "rueckfrage": 19,
+    "blockiert": 4,
+    "gesendet": 1
+   },
+   "leck_werte": 0,
+   "dokumente_mit_leck": 0,
+   "teil_leck_werte": 0,
+   "keep_verloren": 0,
+   "gewoehnlich_verloren": 0
+  },
+  "A_sorgfalt": {
+   "status": {
+    "gesendet": 14,
+    "blockiert": 10
+   },
+   "leck_werte": 5,
+   "dokumente_mit_leck": 5,
+   "teil_leck_werte": 0,
+   "keep_verloren": 7,
+   "gewoehnlich_verloren": 0,
+   "fragen_gesamt": 65,
+   "fragen_davon_pii": 43,
+   "runden_max": 1
+  },
+  "A_fehler": {
+   "status": {
+    "gesendet": 13,
+    "blockiert": 11
+   },
+   "leck_werte": 15,
+   "dokumente_mit_leck": 8,
+   "teil_leck_werte": 0,
+   "keep_verloren": 7,
+   "gewoehnlich_verloren": 0,
+   "fragen_gesamt": 65,
+   "fragen_davon_pii": 43,
+   "runden_max": 1
+  },
+  "H_sorgfalt": {
+   "status": {
+    "gesendet": 14,
+    "blockiert": 10
+   },
+   "leck_werte": 5,
+   "dokumente_mit_leck": 5,
+   "teil_leck_werte": 0,
+   "keep_verloren": 7,
+   "gewoehnlich_verloren": 0,
+   "fragen_gesamt": 21,
+   "fragen_davon_pii": 0,
+   "runden_max": 1
+  },
+  "H_fehler": {
+   "status": {
+    "gesendet": 14,
+    "blockiert": 10
+   },
+   "leck_werte": 5,
+   "dokumente_mit_leck": 5,
+   "teil_leck_werte": 0,
+   "keep_verloren": 7,
+   "gewoehnlich_verloren": 0,
+   "fragen_gesamt": 21,
+   "fragen_davon_pii": 0,
+   "runden_max": 1
+  },
+  "B_mask": {
+   "status": {
+    "gesendet": 14,
+    "blockiert": 10
+   },
+   "leck_werte": 5,
+   "dokumente_mit_leck": 5,
+   "teil_leck_werte": 0,
+   "keep_verloren": 8,
+   "gewoehnlich_verloren": 0,
+   "auto_maskiert": 41,
+   "auto_maskiert_nicht_pii": 14
+  },
+  "kandidaten": {
+   "gesamt": 65,
+   "davon_pii": 43,
+   "rollen": {
+    "kennnummernform": 43,
+    "vor_finitem_verb": 7,
+    "nach_praeposition": 4,
+    "aufzaehlung_mit_person": 4,
+    "feldwert": 4,
+    "subjekt": 2,
+    "kennzeichenform": 1,
+    "tabellenzelle": 1
+   },
+   "haeufigste_nicht_pii": [
+    [
+     "Vereinbart",
+     1
+    ],
+    [
+     "Laub",
+     1
+    ],
+    [
+     "Feuchtigkeitsflecken",
+     1
+    ],
+    [
+     "Jedenfalls",
+     1
+    ],
+    [
+     "Unfallfreiheit",
+     1
+    ],
+    [
+     "Justizhauptsekretärin",
+     1
+    ],
+    [
+     "Richter",
+     1
+    ],
+    [
+     "Menge",
+     1
+    ],
+    [
+     "Gerüst",
+     1
+    ],
+    [
+     "Ausweichtermine",
+     1
+    ],
+    [
+     "Kündigungsschutzklage",
+     1
+    ],
+    [
+     "Einfamilienhaus",
+     1
+    ],
+    [
+     "Mittwoch",
+     1
+    ],
+    [
+     "Fenster",
+     1
+    ],
+    [
+     "Warmwasser",
+     1
+    ],
+    [
+     "Stromzähler",
+     1
+    ],
+    [
+     "Mondsteingrau",
+     1
+    ],
+    [
+     "Sommerreifen",
+     1
+    ],
+    [
+     "Lackschaden",
+     1
+    ],
+    [
+     "Wiedervorlage",
+     1
+    ],
+    [
+     "Rückschein",
+     1
+    ],
+    [
+     "BK2025",
+     1
+    ]
+   ]
+  }
+ },
+ "dokumente": {
+  "PII-A01": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Vereinbart",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Laub",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "BV-2025-118",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "PR 2291"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118",
+     "PR 2291"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "PR 2291"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "PR 2291"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "PR 2291"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Laub",
+     "Vereinbart"
+    ]
+   }
+  },
+  "PII-A02": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Feuchtigkeitsflecken",
+      "pii": false,
+      "rollen": [
+       "subjekt"
+      ]
+     },
+     {
+      "begriff": "Jedenfalls",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A03": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Unfallfreiheit",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "0345 678 90 12",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "WF0XXXGCDX7Y12345",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Weiher 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Oberlandesgericht Fiktivhausen",
+     "Landgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Weiher 11",
+     "WF0XXXGCDX7Y12345"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Oberlandesgericht Fiktivhausen",
+     "Landgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Weiher 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Oberlandesgericht Fiktivhausen",
+     "Landgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Weiher 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Oberlandesgericht Fiktivhausen",
+     "Landgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Am Weiher 11"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Oberlandesgericht Fiktivhausen",
+     "Landgericht Neuhain"
+    ],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Unfallfreiheit"
+    ]
+   }
+  },
+  "PII-A04": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Justizhauptsekretärin",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Wohnung 3. OG links"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Beispielheim",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Wohnung 3. OG links"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Beispielheim",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Wohnung 3. OG links"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Beispielheim",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Wohnung 3. OG links"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Beispielheim",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Wohnung 3. OG links"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Beispielheim",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Justizhauptsekretärin"
+    ]
+   }
+  },
+  "PII-A05": {
+   "ask": {
+    "status": "blockiert",
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A06": {
+   "ask": {
+    "status": "blockiert",
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A07": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Richter",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     },
+     {
+      "begriff": "FH-SW 913",
+      "pii": true,
+      "rollen": [
+       "kennzeichenform"
+      ]
+     },
+     {
+      "begriff": "SN-26-883104",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A08": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "4471 0832",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118",
+     "RR 4471 0832 5DE"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "BV-2025-118"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A09": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Menge",
+      "pii": false,
+      "rollen": [
+       "tabellenzelle"
+      ]
+     },
+     {
+      "begriff": "Gerüst",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "34/567/89012",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "34/567/89012"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Gerüst",
+     "Menge"
+    ]
+   }
+  },
+  "PII-A10": {
+   "ask": {
+    "status": "blockiert",
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-A11": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Ausweichtermine",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Fiktivhausen",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Fiktivhausen",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Fiktivhausen",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Fiktivhausen",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Amtsgericht Fiktivhausen",
+     "Landgericht Musterstadt"
+    ],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Ausweichtermine"
+    ]
+   }
+  },
+  "PII-A12": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Kündigungsschutzklage",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person",
+       "feldwert"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [
+     "Kündigungsschutzklage"
+    ],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": [
+     "Kündigungsschutzklage"
+    ]
+   }
+  },
+  "PII-B01": {
+   "ask": {
+    "status": "blockiert",
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Urspruenglicher, nicht pseudonymisierter Wert fuer [ORGANISATION_03] im Text gefunden - moeglicher Datenschutzverstoss"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Urspruenglicher, nicht pseudonymisierter Wert fuer [ORGANISATION_03] im Text gefunden - moeglicher Datenschutzverstoss"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Urspruenglicher, nicht pseudonymisierter Wert fuer [ORGANISATION_03] im Text gefunden - moeglicher Datenschutzverstoss"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Urspruenglicher, nicht pseudonymisierter Wert fuer [ORGANISATION_03] im Text gefunden - moeglicher Datenschutzverstoss"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B02": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Einfamilienhaus",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "06221 445 12-29",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "06221 445 12-17",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 2,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": [
+     "Einfamilienhaus"
+    ]
+   }
+  },
+  "PII-B03": {
+   "ask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "kandidaten": []
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 0,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B04": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Mittwoch",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "07031 66 41-0",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "0711 902 35-60",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "SR-2026-0219",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "K-88310",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 4,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B05": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Fenster",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "Warmwasser",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Stromzähler",
+      "pii": false,
+      "rollen": [
+       "subjekt"
+      ]
+     },
+     {
+      "begriff": "05121 70 33-0",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "0160 99 31 742",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "4400 1182 07",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "05121 70 33-21",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "0152 288 104 66",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "OBJ-1204-2R",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "1EBZ0104471882",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "KW-77120-3",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "WW-77121-9",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Sommer"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 12,
+    "fragen_pii": 9,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 12,
+    "fragen_pii": 9,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Sommer"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Sommer"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [
+     "Sommer"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 12,
+    "auto_maskiert_nicht_pii": [
+     "Fenster",
+     "Stromzähler",
+     "Warmwasser"
+    ]
+   }
+  },
+  "PII-B06": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "0911 5520 18-30",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 1,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 1,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B07": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Mondsteingrau",
+      "pii": false,
+      "rollen": [
+       "vor_finitem_verb"
+      ]
+     },
+     {
+      "begriff": "Sommerreifen",
+      "pii": false,
+      "rollen": [
+       "feldwert"
+      ]
+     },
+     {
+      "begriff": "Lackschaden",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "04521 77 08 90",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "0176 220 418 93",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2026/118842",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "GA-26-1093",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "WFZ1K2E04N1",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 8,
+    "fragen_pii": 5,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 8,
+    "fragen_pii": 5,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['ort', 'person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B08": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "0561 480 22-11",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "2026/0388-BA",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 2,
+    "fragen_pii": 2,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B09": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Wiedervorlage",
+      "pii": false,
+      "rollen": [
+       "aufzaehlung_mit_person"
+      ]
+     },
+     {
+      "begriff": "0157 330 921 48",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "4410-882-71",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "RS-26-778104",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "RS-26-778104",
+     "RS-VN 4410-882-71"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 4,
+    "auto_maskiert_nicht_pii": [
+     "Wiedervorlage"
+    ]
+   }
+  },
+  "PII-B10": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "0172 584 30 19",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "02304 81 92-40",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "BRS-55-0193372",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "02304 81 92-40"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 3,
+    "fragen_pii": 3,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 3,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B11": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "Rückschein",
+      "pii": false,
+      "rollen": [
+       "nach_praeposition"
+      ]
+     },
+     {
+      "begriff": "0621 909 55-31",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "GW-3318-011",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "BG-2021-44817",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "A_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 4,
+    "fragen_pii": 3,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_sorgfalt": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "H_fehler": {
+    "status": "blockiert",
+    "runden": 1,
+    "fragen": 1,
+    "fragen_pii": 0,
+    "blockgruende": [
+     "Nach Pseudonymisierung weiterhin erkennbare Muster: ['organisation']"
+    ]
+   },
+   "B_mask": {
+    "status": "blockiert",
+    "auto_maskiert": 0,
+    "auto_maskiert_nicht_pii": []
+   }
+  },
+  "PII-B12": {
+   "ask": {
+    "status": "rueckfrage",
+    "kandidaten": [
+     {
+      "begriff": "03641 22 87-0",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "88-140-0314-3",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "03641 22 87-15",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "0314-03-W",
+      "pii": true,
+      "rollen": [
+       "kennnummernform"
+      ]
+     },
+     {
+      "begriff": "BK2025",
+      "pii": false,
+      "rollen": [
+       "kennnummernform"
+      ]
+     }
+    ]
+   },
+   "A_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 4,
+    "blockgruende": []
+   },
+   "A_fehler": {
+    "status": "gesendet",
+    "leck_werte": [
+     "03641 22 87-0",
+     "0314-03-W",
+     "88-140-0314-3",
+     "03641 22 87-15"
+    ],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 5,
+    "fragen_pii": 4,
+    "blockgruende": []
+   },
+   "H_sorgfalt": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "H_fehler": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "runden": 1,
+    "fragen": 0,
+    "fragen_pii": 0,
+    "blockgruende": []
+   },
+   "B_mask": {
+    "status": "gesendet",
+    "leck_werte": [],
+    "teil_leck": [],
+    "keep_verloren": [],
+    "gewoehnlich_verloren": [],
+    "auto_maskiert": 5,
+    "auto_maskiert_nicht_pii": [
+     "BK2025"
+    ]
+   }
+  }
+ }
+}

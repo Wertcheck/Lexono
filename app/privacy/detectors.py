@@ -418,6 +418,12 @@ def detect_kundennummer(text: str) -> list[DetectedSpan]:
     return _matches_from_pattern(text, _KUNDENNUMMER_PATTERN, "kundennummer", group=1)
 
 
+# §43.11 (Dev-Split): Register-Nummern ohne weiteres Kennwort ("Partnerschaftsregister ... PR 2291", "HRB 4471").
+_REGISTER_NUMBER_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß])(?:HRB|HRA|PR|GnR|VR|PartR)\s?\d{2,6}(?:[ \t]?[A-Z]\b)?(?![\w/])"  # auch Umbruch: "PR\n2291"
+)
+
+
 def detect_referenznummer(text: str) -> list[DetectedSpan]:
     """Bezeichnete personenbeziehbare Bezugsnummern (siehe _REFERENCE_LABEL/_REFERENCE_NOUN). Kategorie "kennung"."""
     spans = []
@@ -431,6 +437,7 @@ def detect_referenznummer(text: str) -> list[DetectedSpan]:
             if _DATE_OR_AMOUNT_AFTER.match(text, match.end(1)) or re.fullmatch(r"\d{1,3}(?:\.\d{3})+", value):
                 continue  # Betrag ("Schaden 12.000 EUR")
             spans.append(DetectedSpan(category="kennung", start=match.start(1), end=match.end(1), value=value))
+    spans += _matches_from_pattern(text, _REGISTER_NUMBER_PATTERN, "kennung")  # §43.11
     return spans
 
 
@@ -536,6 +543,16 @@ def _rubrum_party_words(text: str, start: int, end: int) -> list[DetectedSpan]:
     if not kept:
         return []
     return [DetectedSpan(category="person", start=kept[0][0], end=kept[-1][1], value=text[kept[0][0]:kept[-1][1]])]
+
+
+# §43.11 (Dev-Split): Geburtsname hinter "geb."/"geborene" ("Hanna Sommer geb. Winter", "Lena Fuchs geborene Weiß") -
+# als Nachname ein gewoehnliches Wort, von der NER nicht erkannt. Nicht vor einem Datum ("geb. 23.09.1979").
+_BIRTH_NAME_PATTERN = re.compile(r"(?<![\wÄÖÜäöüß])(?:geb\.|geborene[rn]?)[ \t]+(" + _RUBRUM_NAME + r")")
+
+
+def detect_birth_name(text: str) -> list[DetectedSpan]:
+    return [DetectedSpan(category="person", start=m.start(1), end=m.end(1), value=m.group(1))
+            for m in _BIRTH_NAME_PATTERN.finditer(text)]
 
 
 def detect_rubrum_party(text: str) -> list[DetectedSpan]:
@@ -806,6 +823,36 @@ _PO_BOX_PATTERN = re.compile(
 )
 
 
+# §43.11 (Korpus pii_full_documents_v2, nur Dev-Split): Strassen OHNE Strassenwort ("Am Weiher 11", "Auf der Höhe 15",
+# "Hinter den Gärten 8", "Hohe Leuchte 7") blieben im Klartext. Nur mit typischem Praefix UND unmittelbar folgender
+# PLZ + Ort (sonst zu viele Fehlalarme); ein Adresszusatz dazwischen ("Hinterhaus", "Wohnung 3. OG links") ist ein
+# eigener Treffer.
+_STREET_PREFIX = (
+    r"(?:Am|An der|An den|An dem|Auf der|Auf dem|Auf den|Im|In der|In den|Hinter der|Hinter den|Hinter dem|"
+    r"Unter den|Unter der|Unter dem|Über der|Über den|Vor dem|Vor der|Vor den|Zum|Zur|Beim|Bei der|"
+    r"Hohe|Hoher|Hohen|Obere|Oberer|Untere|Unterer|Alte|Alter|Alten|Neue|Neuer|Lange|Große|Kleine)"
+)
+_ADDRESS_EXTRA = (
+    r"(?:(?:Wohnung[ \t]+)?\d{1,2}\.[ \t]?(?:OG|UG|Etage|Obergeschoss)(?:\s+(?:links|rechts|Mitte|mitte))?|"
+    r"Hinterhaus|Vorderhaus|Seitenflügel|Gartenhaus|(?:EG|DG)(?:[ \t]+(?:links|rechts))?)"
+)
+_PREFIXED_STREET_PATTERN = re.compile(
+    r"(?<![\wÄÖÜäöüß])(" + _STREET_PREFIX + r"(?:[ \t]+[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)?){1,2}"
+    r"[ \t]+(?!(?:19|20)\d{2}\b)\d{1,4}[a-zA-Z]?)(?![\w/])(?:,[ \t]*(" + _ADDRESS_EXTRA + r"))?"  # keine Jahreszahl
+    r"(?=[ \t]*(?:,[ \t]*|\n[ \t]*)\d{5}\s+[A-ZÄÖÜ])"
+)
+
+
+def _prefixed_streets(text: str) -> list[DetectedSpan]:
+    spans: list[DetectedSpan] = []
+    for match in _PREFIXED_STREET_PATTERN.finditer(text):
+        for group in (1, 2):
+            if match.group(group):
+                spans.append(DetectedSpan(category="adresse", start=match.start(group), end=match.end(group),
+                                          value=match.group(group)))
+    return spans
+
+
 def detect_address(text: str) -> list[DetectedSpan]:
     """Strasse+Hausnummer und PLZ+Ort, die DIREKT aufeinander folgen ("Lindenallee 3, 30000
     Beispielstadt"), sind EINE Anschrift und bekommen EINEN Platzhalter. Real-E2E 09.10.: zwei
@@ -839,7 +886,7 @@ def detect_address(text: str) -> list[DetectedSpan]:
             )
         )
     merged += [postal for index, postal in enumerate(postals) if index not in used_postals]
-    return merged
+    return merged + _prefixed_streets(text)  # §43.11, siehe _PREFIXED_STREET_PATTERN
 
 
 def detect_known_entities(
@@ -1022,6 +1069,7 @@ def detect_all(
     all_spans.extend(detect_company_with_legal_form(text))
     all_spans.extend(detect_titled_person(text))
     all_spans.extend(detect_rubrum_party(text))  # §43.10
+    all_spans.extend(detect_birth_name(text))  # §43.11
     if ner_detector is not None:
         ner_spans = ner_detector(text)
         if ner_span_filter is not None:
@@ -1535,6 +1583,7 @@ def _uppercase_variant_pass(
     trusted.extend(detect_company_with_legal_form(variant))
     trusted.extend(detect_titled_person(variant))
     trusted.extend(detect_rubrum_party(variant))  # §43.10
+    trusted.extend(detect_birth_name(variant))  # §43.11
     to_validate: list[DetectedSpan] = list(detect_address(variant))
     if ner_detector is not None:
         ner_spans = ner_detector(variant)
