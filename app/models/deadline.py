@@ -68,5 +68,11 @@ class Deadline(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default="open", nullable=False)
     # Prioritaet - identische Begruendung wie `Task.priority`.
     priority: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Stabile Zuordnung Fund -> Vorschlag (ARCHITECTURE.md §73.1, Migration schritt3_030): Art, Originalangabe und
+    # Vorkommen des Extraktor-Funds im Text. Nur bei der Analyse gesetzt, von Korrekturen nie veraendert - so erkennt
+    # die erneute Analyse einen korrigierten Vorschlag wieder. NULL bei manuellen Fristen und Altdaten.
+    finding_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Urspruengliche Fundstelle ("Angabe :: Kontext") bei der Analyse - bleibt nach einer Korrektur erhalten.
+    original_source_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     matter: Mapped["Matter"] = relationship(back_populates="deadlines")

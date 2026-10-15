@@ -137,3 +137,35 @@ def test_chat_message_claims_table_upgrade_and_downgrade(tmp_path) -> None:
     tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
     con.close()
     assert "chat_message_claims" not in tables
+
+
+def test_deadline_finding_key_migration_preserves_existing_deadlines(tmp_path: Path) -> None:
+    """schritt3_030 (ARCHITECTURE.md §73.1): bestehende Fristen bleiben unveraendert, die neuen Spalten sind NULL -
+    keine stillschweigende Nachberechnung fuer Altdaten; Rueckrollen entfernt nur die neuen Spalten."""
+    import sqlite3
+
+    db_path = tmp_path / "deadline_finding_key.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "schritt3_029")
+    con = sqlite3.connect(str(db_path))
+    con.execute(
+        "insert into deadlines (id, created_at, updated_at, matter_id, source_text, due_date, review_status, status)"
+        " values ('d1', '2026-01-01', '2026-01-01', 'm1', '15.03.2027 :: synthetisch', '2027-03-15', 'confirmed', 'open')"
+    )
+    con.commit()
+    con.close()
+
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    row = con.execute(
+        "select source_text, due_date, review_status, finding_key, original_source_text from deadlines where id='d1'"
+    ).fetchone()
+    con.close()
+    assert row == ("15.03.2027 :: synthetisch", "2027-03-15", "confirmed", None, None)
+
+    command.downgrade(cfg, "schritt3_029")
+    con = sqlite3.connect(str(db_path))
+    columns = {r[1] for r in con.execute("pragma table_info(deadlines)").fetchall()}
+    kept = con.execute("select review_status from deadlines where id='d1'").fetchone()
+    con.close()
+    assert "finding_key" not in columns and kept == ("confirmed",)

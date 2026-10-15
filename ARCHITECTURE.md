@@ -5085,25 +5085,72 @@ Duplizieren, Löschen, Quellenkennzeichnung.
 - Nur auf ausdrückliche Anforderung. Lokal und regelbasiert, ohne Cloud. Die automatische Verarbeitung bleibt idempotent.
 - Bestehende Fristen (ungeprüft, bestätigt, verworfen, korrigiert) werden **nie** geändert, gelöscht oder
   zurückgesetzt.
-- Abgleich je Dokument über Art + Datum, ohne Datum über Art + Originalangabe. Bekannte Funde, auch verworfene, entstehen
-  nicht neu. Neue Funde entstehen als ungeprüfte Vorschläge, Akte und Dokument wie das Quelldokument.
+- Abgleich je Dokument über den stabilen Fund-Schlüssel (§73.1), nicht über das Datum. Bekannte Funde, auch verworfene
+  und korrigierte, entstehen nicht neu. Neue Funde entstehen als ungeprüfte Vorschläge, Akte und Dokument wie das
+  Quelldokument.
 - Weicht ein neuer Fund von einer bestätigten Frist gleicher Art im selben Dokument ab, beginnt seine Begründung mit
   `KONFLIKT bei erneuter Analyse:`. Er wird als „Konflikt“ markiert; nichts wird automatisch entschieden.
 - Bestätigte Fristen, die im neuen Text nicht mehr gefunden werden, bleiben unverändert und werden nur gezählt (Audit
   `deadline_reanalysis_completed`, Hinweis in der Dokumentansicht).
 
-**Migration:** keine. Es gibt keine neue Spalte und keinen neuen Statuswert: Zurückstellung und Korrekturverlauf stehen
-im Audit-Log. Altdaten werden nicht verändert. Vorschläge ohne Art-Angabe aus einem Dokument erscheinen weiter als
-„Mögliche Frist“.
+**Migration:** `schritt3_030` (§73.1, zwei nullable Spalten). Kein neuer Statuswert: Zurückstellung und
+Korrekturverlauf stehen im Audit-Log. Altdaten werden nicht verändert. Vorschläge ohne Art-Angabe aus einem Dokument
+erscheinen weiter als „Mögliche Frist“.
 
 **Bekannte Grenzen (nicht verifiziert/offen):**
-- Ein korrigierter Vorschlag hat seine ursprünglichen Werte nur im Audit. Die erneute Analyse vergleicht mit den
-  korrigierten Werten und kann den ursprünglichen Fund deshalb erneut als Vorschlag (ggf. mit Konflikt) anlegen. Das
-  ist sichtbar, wird aber nicht automatisch unterdrückt.
-- Ein Konflikt wird nur innerhalb desselben Dokuments erkannt, nicht akten- oder dokumentübergreifend.
-- E-Mail-Texte haben keine erneute Analyse; ihr Text ändert sich nicht.
+- ~~Korrigierter Vorschlag wurde bei erneuter Analyse neu angelegt~~ – behoben in §73.1.
+- **Nicht erkannte Konflikte** (keine Warnung, kein Hinweis):
+  - zwischen verschiedenen Dokumenten derselben Akte (z. B. Schreiben 1 nennt den 15.03., Schreiben 2 den 22.03.);
+  - zwischen Dokument und E-Mail-Text derselben Akte;
+  - zwischen E-Mail-Texten untereinander: E-Mail-Texte haben keine erneute Analyse (ihr Text ändert sich nicht), die
+    Erstanalyse prüft keine Konflikte;
+  - aktenübergreifend (gewollt: strikte Aktenisolation);
+  - gegenüber manuell erfassten Fristen (sie haben kein Quelldokument);
+  - innerhalb eines Dokuments nur gegenüber **bestätigten** Fristen gleicher Art, nicht gegenüber ungeprüften.
+- Vorschläge aus gelöschten (soft-deleted) Akten oder Dokumenten bleiben in der Prüfliste und im Zähler (wie in der
+  übrigen Fristenliste); sie werden nicht automatisch ausgeblendet.
 - Aufgaben-/Fristenrechte sind rollen-, nicht aktenbezogen (wie im übrigen System). Eine Aktenzugriffsbeschränkung
   pro Person gibt es nicht.
 - „Als erledigt markieren“ bleibt für ungeprüfte Vorschläge möglich. Der Vorschlag bleibt dann in der Prüfliste.
 - Die Fristenerkennung selbst ist unverändert und **nicht vollständig** (Messwerte §42 in
   PRIVACY_REVIEW_ARCHITECTURE.md). Dieser Abschnitt sichert den Prüfablauf ab, nicht die Erkennungsqualität.
+
+## 73.1 Fristen-HITL: QA-Abschluss und stabile Fund-Zuordnung (15.10.2026, Branch `feature/fristen-hitl`)
+
+**Reproduzierte Fehler (vor der Korrektur):**
+
+| # | Befund | Ursache |
+|---|---|---|
+| 1 | Ein korrigierter (z. B. OCR-Fehler 15.03. → 22.03.) und bestätigter KI-Fund wurde bei erneuter Analyse erneut als Konflikt-Vorschlag angelegt. | Abgleich über Art + (korrigierbares) Datum. |
+| 2 | Eine zweite, eigenständige Frist mit gleichem Datum im selben Dokument wurde bei erneuter Analyse verschluckt. | Dieselbe Deduplizierung allein über Art + Datum. |
+| 3 | Nach einer reinen Datumskorrektur zeigte die Detailansicht den ursprünglichen Fund nicht (echter Klickablauf). | Anzeige nur bei geändertem Text. |
+| 4 | Mitarbeiter sahen „Löschen“ bei Fristen und „Bearbeiten“ bei bestätigten Fristen; der Klick endete in 403 (echter Klickablauf). | Serverseitig korrekt gesperrt, Knöpfe nicht ausgeblendet. |
+
+**Korrektur:**
+- `deadlines.finding_key` (stabiler Fund-Schlüssel) und `deadlines.original_source_text` (Migration `schritt3_030`,
+  nullable, keine Nachberechnung für Altdaten). Beide werden nur bei der Analyse gesetzt, nie bei einer Korrektur.
+- Schlüssel = `Art|Originalangabe|n` (n = n-tes Vorkommen derselben Art und Angabe im Text). Bewusst **nicht** das
+  korrigierbare Datum und **nicht** der Kontext: zwei Fristen mit gleichem Datum bleiben zwei Funde; eine geänderte
+  Umgebung (neue Texterkennung) macht aus demselben Fund keinen neuen.
+- Altdaten ohne Schlüssel: Abgleich zur Laufzeit aus dem aktuellen `source_text` („Angabe :: Kontext“), nichts wird
+  zurückgeschrieben. Altdaten, deren Fund vor diesem Stand überschrieben wurde, sind nicht wiedererkennbar.
+- Detailansicht zeigt „Ursprünglicher Fund“, sobald eine Korrektur im Audit steht. Löschen (Fristen) und Bearbeiten
+  (bestätigte Fristen) nur noch mit `deadline:confirm` sichtbar.
+
+**Grenze des Schlüssels:** Kommt dieselbe Angabe später zusätzlich **vor** einem bekannten Vorkommen in den Text,
+verschiebt sich die Zählung; dann entsteht ein zusätzlicher ungeprüfter Vorschlag (sichtbar, nichts geht verloren).
+
+**Geprüfte Schreibpfade (serverseitig, mit Rollenwechsel und CSRF):** Bestätigen/Verwerfen
+(`POST /dashboard/tasks/{id}/review`, `deadline:confirm`), Zurückstellen (`/defer`, jede Rolle), Korrigieren
+(`/deadline/{id}/update`, bestätigte nur mit `deadline:confirm`), Erledigt (`/deadline/{id}/status`, ändert den
+Prüfstatus nie), Kopieren (`/deadline/{id}/duplicate`), Löschen (`/deadline/{id}/delete`, `deadline:confirm`),
+manuelle Erfassung (`POST /dashboard/matters/{m}/deadlines`), erneute Analyse (`/reanalyze-deadlines`). Die REST-API
+(`app/api`) hat keine Schreibpfade. Die Rolle wird bei jeder Anfrage aus der Datenbank gelesen – eine Herabstufung
+wirkt sofort. Untergeschobene Formularfelder (`review_status=confirmed`) werden ignoriert.
+
+**Echte Klickabläufe (headless Edge über CDP, echte Mausereignisse, isolierter Server mit synthetischer QA-Datenbank,
+ohne `.env`, Cloud „nicht konfiguriert“, lokale KI deaktiviert):** 21/21 PASS – Prüfliste, Aktenfilter, Korrektur,
+Zurückstellen mit Notiz, Weiterleitung zum nächsten Vorschlag, Bestätigen und Verwerfen als Einzelentscheidung,
+Mitarbeiter-Sperre (403 bei direktem POST), erneute Analyse aus der Dokumentansicht, Audit mit Urheber.
+**NICHT VERIFIZIERT:** installierte Desktop-App (WebView2) – der installierte Build enthält diesen Branch nicht, und
+die installierte App arbeitet auf der echten Datenbank.

@@ -493,3 +493,190 @@ def test_creator_of_a_suggestion_is_the_system_not_the_reviewer(client: TestClie
     page = client.get(f"/dashboard/tasks?selected={suggestion.id}&selected_type=deadline").text
     created_by = page.split("Erstellt von</span>")[1][:200]
     assert "System (automatische Erkennung)" in created_by and "pruefer@" not in created_by
+
+
+# --- §73.1 QA: stabile Fund-Zuordnung, Rechte, Audit ------------------------------------------------------------------
+
+
+def test_corrected_finding_is_recognised_on_reanalysis_and_original_is_kept(db_session: Session) -> None:
+    """Reproduziert (QA §73.1): Korrektur 15.03. -> 22.03. (z. B. OCR-Fehler) und Bestaetigung; die erneute Analyse
+    legte den urspruenglichen Fund vorher erneut als Konflikt-Vorschlag an."""
+    matter = _matter(db_session)
+    document = _document(db_session, matter)
+    (finding,) = _service().analyze_document(document, db_session)
+    original = finding.source_text
+    update_deadline(db_session, finding, source_text="Antwort an Gegenseite", due_date=date(2027, 3, 22),
+                    priority=None, actor="anwalt@kanzlei.test")
+    decide(db_session, finding, decision="confirm", actor="anwalt@kanzlei.test")
+
+    result = _service().reanalyze_document(document, db_session, actor="anwalt@kanzlei.test")
+
+    assert result.created == [] and result.already_known == 1 and result.conflicts == 0
+    assert result.confirmed_not_found == 0
+    db_session.refresh(finding)
+    assert (finding.source_text, finding.due_date, finding.review_status) == (
+        "Antwort an Gegenseite", date(2027, 3, 22), "confirmed")
+    assert finding.original_source_text == original and finding.finding_key == "frist|15.03.2027|1"
+    (event,) = _events(db_session, finding.id, "deadline_updated")
+    assert "'2027-03-15' -> '2027-03-22'" in event.details
+
+
+def test_two_findings_with_the_same_date_stay_two_on_reanalysis(db_session: Session) -> None:
+    """Reproduziert (QA §73.1): der Abgleich ueber Art + Datum verschluckte eine zweite Frist mit gleichem Datum."""
+    matter = _matter(db_session)
+    document = _document(db_session, matter)
+    _service().analyze_document(document, db_session)
+    document.extracted_text += " Die Kaution ist bis zum 15.03.2027 zu zahlen."
+    db_session.commit()
+
+    result = _service().reanalyze_document(document, db_session, actor="x@kanzlei.test")
+
+    assert len(result.created) == 1 and result.already_known == 1
+    assert result.created[0].finding_key == "frist|15.03.2027|2"
+    assert db_session.query(Deadline).filter_by(document_id=document.id).count() == 2
+    assert _service().reanalyze_document(document, db_session, actor="x@kanzlei.test").created == []
+
+
+def test_reanalysis_matches_legacy_rows_without_finding_key_without_writing(db_session: Session) -> None:
+    """Altdaten (vor schritt3_030) ohne Schluessel: Abgleich zur Laufzeit aus `source_text`, kein Zurueckschreiben."""
+    matter = _matter(db_session)
+    document = _document(db_session, matter)
+    legacy = _suggestion(db_session, matter, document_id=document.id, due_date=date(2027, 3, 15))
+    assert legacy.finding_key is None
+
+    result = _service().reanalyze_document(document, db_session, actor="x@kanzlei.test")
+
+    assert result.created == [] and result.already_known == 1
+    db_session.refresh(legacy)
+    assert legacy.finding_key is None and legacy.original_source_text is None
+
+
+def test_corrected_finding_is_shown_with_its_original(client: TestClient, db_session: Session) -> None:
+    matter = _matter(db_session)
+    document = _document(db_session, matter)
+    (finding,) = _service().analyze_document(document, db_session)
+    update_deadline(db_session, finding, source_text="Antwort an Gegenseite", due_date=date(2027, 3, 22),
+                    priority=None, actor="ma@kanzlei.test")
+    _login_role(db_session, client, "anwalt")
+
+    page = client.get(f"/dashboard/tasks?selected={finding.id}&selected_type=deadline").text
+    assert "Ursprünglicher Fund" in page and "15.03.2027 :: Bitte antworten Sie" in page
+
+
+def test_role_change_takes_effect_on_the_next_request(client: TestClient, db_session: Session) -> None:
+    from app.models import User
+
+    deadline = _suggestion(db_session, _matter(db_session))
+    csrf = _login_role(db_session, client, "anwalt")
+    user = db_session.query(User).filter_by(email="anwalt@kanzlei.test").one()
+    user.role_id = seed_roles(db_session)["mitarbeiter"].id  # Herabstufung waehrend der laufenden Sitzung
+    db_session.commit()
+
+    response = client.post(f"/dashboard/tasks/{deadline.id}/review",
+                           data={"csrf_token": csrf, "status": "confirmed"}, follow_redirects=False)
+    assert response.status_code == 403
+    db_session.refresh(deadline)
+    assert deadline.review_status == "unreviewed"
+
+
+@pytest.mark.parametrize("path,data", [
+    ("/dashboard/tasks/{id}/review", {"status": "confirmed"}),
+    ("/dashboard/tasks/{id}/review", {"status": "rejected"}),
+    ("/dashboard/tasks/{id}/defer", {}),
+    ("/dashboard/tasks/deadline/{id}/update", {"source_text": "x", "due_date": "2027-01-01"}),
+    ("/dashboard/tasks/deadline/{id}/status", {"status": "done"}),
+    ("/dashboard/tasks/deadline/{id}/duplicate", {}),
+    ("/dashboard/tasks/deadline/{id}/delete", {}),
+])
+def test_every_deadline_write_path_requires_csrf(client: TestClient, db_session: Session, path, data) -> None:
+    deadline = _suggestion(db_session, _matter(db_session))
+    _login_role(db_session, client, "anwalt")
+    before = db_session.query(AuditEvent).count()
+
+    for token in (None, "gefaelscht"):
+        payload = dict(data) if token is None else {**data, "csrf_token": token}
+        response = client.post(path.format(id=deadline.id), data=payload, follow_redirects=False)
+        assert response.status_code in (400, 403, 422)
+
+    db_session.refresh(deadline)
+    assert (deadline.review_status, deadline.status) == ("unreviewed", "open")
+    assert db_session.query(Deadline).count() == 1 and db_session.query(AuditEvent).count() == before
+
+
+def test_manual_create_requires_csrf_and_login(client: TestClient, db_session: Session) -> None:
+    matter = _matter(db_session)
+    anonymous = client.post(f"/dashboard/matters/{matter.id}/deadlines",
+                            data={"csrf_token": "x", "source_text": "X", "due_date": "2027-05-01"},
+                            follow_redirects=False)
+    assert anonymous.status_code in (303, 401, 403) and db_session.query(Deadline).count() == 0
+    _login_role(db_session, client, "anwalt")
+    forged = client.post(f"/dashboard/matters/{matter.id}/deadlines",
+                         data={"csrf_token": "gefaelscht", "source_text": "X", "due_date": "2027-05-01"},
+                         follow_redirects=False)
+    assert forged.status_code in (400, 403) and db_session.query(Deadline).count() == 0
+
+
+def test_extra_form_fields_cannot_set_review_status(client: TestClient, db_session: Session) -> None:
+    """Direkter Aufruf mit untergeschobenem Feld: Korrektur, Anlage und Kopie eines Mitarbeiters bleiben ungeprueft."""
+    matter = _matter(db_session)
+    deadline = _suggestion(db_session, matter)
+    csrf = _login_role(db_session, client, "mitarbeiter")
+
+    client.post(f"/dashboard/tasks/deadline/{deadline.id}/update",
+                data={"csrf_token": csrf, "source_text": "korrigiert", "due_date": "2027-04-01",
+                      "review_status": "confirmed"}, follow_redirects=False)
+    client.post(f"/dashboard/matters/{matter.id}/deadlines",
+                data={"csrf_token": csrf, "source_text": "neu", "due_date": "2027-04-02",
+                      "review_status": "confirmed"}, follow_redirects=False)
+    client.post(f"/dashboard/tasks/deadline/{deadline.id}/duplicate",
+                data={"csrf_token": csrf, "review_status": "confirmed"}, follow_redirects=False)
+    client.post(f"/dashboard/tasks/deadline/{deadline.id}/status",
+                data={"csrf_token": csrf, "status": "confirmed"}, follow_redirects=False)
+
+    assert {d.review_status for d in db_session.query(Deadline).all()} == {"unreviewed"}
+    assert db_session.query(Deadline).count() == 3
+
+
+def test_done_suggestion_is_still_unreviewed_everywhere(client: TestClient, db_session: Session) -> None:
+    """"erledigt" ist nie "bestaetigt": nach dem Erledigt-Markieren weiter in der Pruefliste und im
+    Erledigt-Reiter als ungeprueft gekennzeichnet."""
+    matter = _matter(db_session)
+    deadline = _suggestion(db_session, matter)
+    csrf = _login_role(db_session, client, "mitarbeiter")
+    client.post(f"/dashboard/tasks/deadline/{deadline.id}/status", data={"csrf_token": csrf, "status": "done"},
+                follow_redirects=False)
+
+    db_session.refresh(deadline)
+    assert (deadline.status, deadline.review_status) == ("done", "unreviewed")
+    review = client.get("/dashboard/tasks?review=1").text
+    assert "Zu prüfen (1)" in review and deadline.id in review
+    done_tab = client.get("/dashboard/tasks?status=done").text
+    assert deadline.id in done_tab and "ungeprüft" in done_tab
+
+
+
+def test_date_only_correction_shows_original_finding(client: TestClient, db_session: Session) -> None:
+    """Gefunden im echten Klickablauf (QA §73.1): nach einer reinen Datumskorrektur fehlte der urspruengliche Fund."""
+    matter = _matter(db_session)
+    document = _document(db_session, matter)
+    (finding,) = _service().analyze_document(document, db_session)
+    update_deadline(db_session, finding, source_text=finding.source_text, due_date=date(2027, 3, 22),
+                    priority=None, actor="ma@kanzlei.test")
+    _login_role(db_session, client, "anwalt")
+
+    page = client.get(f"/dashboard/tasks?selected={finding.id}&selected_type=deadline").text
+    assert "Ursprünglicher Fund" in page and "(seither korrigiert, siehe Verlauf)" in page
+
+
+def test_staff_sees_no_dead_delete_or_edit_buttons(client: TestClient, db_session: Session) -> None:
+    """Gefunden im echten Klickablauf (QA §73.1): Mitarbeiter sahen "Löschen" (und bei bestaetigten Fristen
+    "Bearbeiten"), der Klick endete in 403. Korrigieren eines ungeprueften Vorschlags bleibt sichtbar."""
+    matter = _matter(db_session)
+    suggestion = _suggestion(db_session, matter)
+    confirmed = _suggestion(db_session, matter, review_status="confirmed")
+    _login_role(db_session, client, "mitarbeiter")
+
+    for deadline, editable in ((suggestion, True), (confirmed, False)):
+        page = client.get(f"/dashboard/tasks?selected={deadline.id}&selected_type=deadline").text
+        assert f"/dashboard/tasks/deadline/{deadline.id}/delete" not in page
+        assert ("edit-deadline-modal').showModal()" in page) is editable

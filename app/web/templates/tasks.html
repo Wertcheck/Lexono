@@ -325,6 +325,7 @@
                           {{ icons.duplicate(class_="icon") }} Duplizieren
                         </button>
                       </form>
+                      {% if item.item_type == 'task' or can_confirm_deadlines %}
                       <hr class="row-menu__divider" />
                       <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
                             onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
@@ -333,6 +334,7 @@
                           {{ icons.trash(class_="icon") }} Löschen
                         </button>
                       </form>
+                      {% endif %}
                     </div>
                   </td>
                 </tr>
@@ -421,6 +423,7 @@
                       {{ icons.duplicate(class_="icon") }} Duplizieren
                     </button>
                   </form>
+                  {% if item.item_type == 'task' or can_confirm_deadlines %}
                   <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
                         onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
@@ -428,6 +431,7 @@
                       {{ icons.trash(class_="icon") }} Löschen
                     </button>
                   </form>
+                  {% endif %}
                 </div>
               </div>
               <a class="task-detail-panel__close" href="/dashboard/tasks?{{ base_qs }}" aria-label="Schließen">✕</a>
@@ -473,6 +477,11 @@
                 {# ARCHITECTURE.md §73: was genau gefunden wurde - Art, Originalangabe, Fundstelle, Sicherheit. Keine Berechnung. #}
                 <span class="task-detail-panel__field-label">Art</span>
                 <span class="task-detail-panel__field-value">{{ item.review.kind_label }}</span>
+
+                {% if item.review.original %}
+                  <span class="task-detail-panel__field-label">Ursprünglicher Fund</span>
+                  <span class="task-detail-panel__field-value">{{ item.review.original }} (seither korrigiert, siehe Verlauf)</span>
+                {% endif %}
 
                 {% if item.review.raw_date %}
                   <span class="task-detail-panel__field-label">Angabe im Text</span>
@@ -520,7 +529,7 @@
                         onclick="document.getElementById('edit-task-modal').showModal()">
                   {{ icons.pencil(class_="icon") }} Bearbeiten
                 </button>
-              {% else %}
+              {% elif can_confirm_deadlines or item.deadline.review_status != 'confirmed' %}
                 <button type="button" class="btn" style="padding: 4px 10px; font-size: 11.5px;"
                         onclick="document.getElementById('edit-deadline-modal').showModal()">
                   {{ icons.pencil(class_="icon") }} Bearbeiten
@@ -636,20 +645,24 @@
               </form>
             {% endif %}
             <div class="task-detail-panel__secondary-actions">
+              {% if item.item_type == 'task' or can_confirm_deadlines or item.deadline.review_status != 'confirmed' %}
               <button type="button" class="btn"
                       onclick="document.getElementById('{{ 'edit-task-modal' if item.item_type == 'task' else 'edit-deadline-modal' }}').showModal()">
                 {{ icons.pencil(class_="icon") }} Bearbeiten
               </button>
+              {% endif %}
               <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/duplicate"
                     onsubmit="return confirm('„{{ item.title }}“ duplizieren?');" style="flex: 1 1 auto;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
                 <button type="submit" class="btn" style="width: 100%;">{{ icons.duplicate(class_="icon") }} Duplizieren</button>
               </form>
+              {% if item.item_type == 'task' or can_confirm_deadlines %}
               <form method="post" action="/dashboard/tasks/{{ 'task' if item.item_type == 'task' else 'deadline' }}/{{ item.id }}/delete"
                     onsubmit="return confirm('„{{ item.title }}“ endgültig löschen? Dies kann nicht rückgängig gemacht werden.');" style="flex: 1 1 auto;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
                 <button type="submit" class="btn btn--danger" style="width: 100%;">{{ icons.trash(class_="icon") }} Löschen</button>
               </form>
+              {% endif %}
               {# "In Kalender anzeigen" (§3.F der Direktive): es gibt KEINE
                  Kalenderfunktion im Produkt (siehe Tab-Hinweis oben) - bewusst
                  deaktiviert statt eines vorgetaeuschten Erfolgs (Direktive:

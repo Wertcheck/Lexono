@@ -212,13 +212,18 @@ def _selected_item_context(db: Session, *, selected: str, selected_type: str) ->
             "document_size": document_file_size_label(document.file_path) if document else None,
             "task": None,
             "deadline": deadline,
-            "audit_events": _audit_trail(db, entity_type="Deadline", entity_id=deadline.id),
-            "review": _review_info(deadline, deferred_notes(db, [deadline.id]), date.today()),
+            "audit_events": (audit_events := _audit_trail(db, entity_type="Deadline", entity_id=deadline.id)),
+            "review": _review_info(
+                deadline,
+                deferred_notes(db, [deadline.id]),
+                date.today(),
+                corrected=any(event.event_type == "deadline_updated" for event in audit_events),
+            ),
         }
     return None
 
 
-def _review_info(deadline: Deadline, deferred: dict[str, str], today: date) -> dict:
+def _review_info(deadline: Deadline, deferred: dict[str, str], today: date, *, corrected: bool = False) -> dict:
     """Pruefangaben einer Frist fuer Liste und Detailpanel (ARCHITECTURE.md §73) - nur Darstellung vorhandener Felder."""
     raw_date, context = split_source_text(deadline.source_text)
     return {
@@ -231,6 +236,14 @@ def _review_info(deadline: Deadline, deferred: dict[str, str], today: date) -> d
         "conflict": has_conflict(deadline),
         "deferred": deadline.id in deferred,
         "deferred_note": deferred.get(deadline.id) or None,
+        # §73.1: urspruenglicher Fund, sobald korrigiert wurde - auch bei reiner Datumskorrektur (dann ist der
+        # Text gleich, das Datum aber nicht mehr das gefundene; QA 15.10.2026 im echten Klickablauf gefunden).
+        "original": (
+            deadline.original_source_text
+            if deadline.original_source_text
+            and (corrected or deadline.original_source_text != deadline.source_text)
+            else None
+        ),
     }
 
 

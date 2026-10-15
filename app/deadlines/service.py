@@ -59,11 +59,32 @@ def _candidate_kind(candidate: ExtractedDeadline) -> str:
     return kind_from_reasoning(candidate.reasoning, from_analysis=True)
 
 
-def _key(kind: str, due_date, raw_date: str | None) -> tuple:
-    # Mit Datum: Art + Datum; ohne Datum (Fristdauer): Art + Originalangabe.
-    if due_date is not None:
-        return (kind, due_date)
-    return (kind, " ".join((raw_date or "").split()).lower())
+def finding_keys(findings: list[tuple[str, str | None]]) -> list[str]:
+    """Stabile Fund-Schluessel (ARCHITECTURE.md §73.1) fuer (Art, Originalangabe) in Textreihenfolge:
+    "art|angabe|n" mit n = n-tes Vorkommen derselben Art und Angabe. Bewusst NICHT das (korrigierbare) Datum und
+    nicht der Kontext: zwei Fristen mit gleichem Datum bleiben zwei Funde, und eine geaenderte Umgebung (neue
+    Texterkennung) macht aus demselben Fund keinen neuen."""
+    counts: dict[str, int] = {}
+    keys: list[str] = []
+    for kind, raw in findings:
+        base = f"{kind}|{' '.join((raw or '').split()).lower()}"[:240]
+        counts[base] = counts.get(base, 0) + 1
+        keys.append(f"{base}|{counts[base]}")
+    return keys
+
+
+def _candidate_keys(candidates: list[ExtractedDeadline]) -> list[str]:
+    return finding_keys([(_candidate_kind(c), c.raw_date_text) for c in candidates])
+
+
+def _existing_keys(existing: list[Deadline]) -> dict[str, str]:
+    """Deadline-ID -> Fund-Schluessel. Gespeicherter Schluessel, sonst (Altdaten) zur Laufzeit aus dem aktuellen
+    `source_text` abgeleitet - nichts wird zurueckgeschrieben. Altdaten ohne Originalangabe bleiben ohne Schluessel."""
+    keys = {d.id: d.finding_key for d in existing if d.finding_key}
+    legacy = [d for d in existing if not d.finding_key and split_source_text(d.source_text)[0]]
+    derived = finding_keys([(deadline_kind(d), split_source_text(d.source_text)[0]) for d in legacy])
+    keys.update({d.id: key for d, key in zip(legacy, derived)})
+    return keys
 
 
 class DeadlineAnalysisService:
@@ -126,16 +147,19 @@ class DeadlineAnalysisService:
         extracted = self.extractor.extract(document.extracted_text)
         created_deadlines: list[Deadline] = []
 
-        for candidate in extracted:
+        for candidate, key in zip(extracted, _candidate_keys(extracted)):
             # review_status wird bewusst NICHT gesetzt - Modell-Default
             # "unreviewed" greift, siehe Moduldocstring.
+            source_text = f"{candidate.raw_date_text} :: {candidate.source_text}"
             deadline = Deadline(
                 matter_id=document.matter_id,
                 document_id=document.id,
-                source_text=f"{candidate.raw_date_text} :: {candidate.source_text}",
+                source_text=source_text,
                 due_date=candidate.due_date,
                 confidence=candidate.confidence,
                 reasoning=candidate.reasoning,
+                finding_key=key,
+                original_source_text=source_text,
             )
             db.add(deadline)
             created_deadlines.append(deadline)
@@ -213,16 +237,19 @@ class DeadlineAnalysisService:
         extracted = self.extractor.extract(message.body_text)
         created_deadlines: list[Deadline] = []
 
-        for candidate in extracted:
+        for candidate, key in zip(extracted, _candidate_keys(extracted)):
             # review_status wird bewusst NICHT gesetzt - Modell-Default
             # "unreviewed" greift, siehe Moduldocstring.
+            source_text = f"{candidate.raw_date_text} :: {candidate.source_text}"
             deadline = Deadline(
                 matter_id=message.matter_id,
                 message_id=message.id,
-                source_text=f"{candidate.raw_date_text} :: {candidate.source_text}",
+                source_text=source_text,
                 due_date=candidate.due_date,
                 confidence=candidate.confidence,
                 reasoning=candidate.reasoning,
+                finding_key=key,
+                original_source_text=source_text,
             )
             db.add(deadline)
             created_deadlines.append(deadline)
@@ -248,8 +275,9 @@ class DeadlineAnalysisService:
         """Erneute Analyse auf ausdrueckliche Anforderung (ARCHITECTURE.md §73) - z. B. nach neuer Texterkennung.
 
         Bestehende Fristen werden NIE geaendert, geloescht oder zurueckgesetzt - auch keine verworfenen oder
-        korrigierten. Neue Funde (andere Art/Datum als jede bestehende Frist des Dokuments) entstehen als ungepruefte
-        Vorschlaege. Weicht ein neuer Fund von einer bestaetigten Frist gleicher Art ab, traegt er einen sichtbaren
+        korrigierten. Abgleich ueber den stabilen Fund-Schluessel (`finding_keys`, §73.1), nicht ueber das Datum: ein
+        korrigierter Vorschlag wird wiedererkannt, zwei Funde mit gleichem Datum bleiben zwei. Neue Funde entstehen als
+        ungepruefte Vorschlaege. Weicht ein neuer Fund von einer bestaetigten Frist gleicher Art ab, traegt er einen sichtbaren
         Konflikthinweis; entschieden wird nichts. Bestaetigte Fristen, die nicht mehr gefunden werden, bleiben
         unveraendert und werden nur gezaehlt (Audit)."""
         result = ReanalysisResult()
@@ -263,17 +291,20 @@ class DeadlineAnalysisService:
             db.commit()
             return result
 
-        existing = db.query(Deadline).filter(Deadline.document_id == document.id).all()
-        known = {_key(deadline_kind(d), d.due_date, split_source_text(d.source_text)[0]) for d in existing}
+        existing = (
+            db.query(Deadline)
+            .filter(Deadline.document_id == document.id)
+            .order_by(Deadline.created_at.asc())
+            .all()
+        )
+        existing_keys = _existing_keys(existing)
+        known = set(existing_keys.values())
         confirmed = [d for d in existing if d.review_status == "confirmed"]
 
-        seen: set[tuple] = set()
-        for candidate in self.extractor.extract(document.extracted_text):
+        candidates = self.extractor.extract(document.extracted_text)
+        candidate_keys = _candidate_keys(candidates)
+        for candidate, key in zip(candidates, candidate_keys):
             kind = _candidate_kind(candidate)
-            key = _key(kind, candidate.due_date, candidate.raw_date_text)
-            if key in seen:
-                continue
-            seen.add(key)
             if key in known:
                 result.already_known += 1
                 continue
@@ -291,19 +322,24 @@ class DeadlineAnalysisService:
                     f"weitere Frist ist, muss geprüft werden - keine automatische Entscheidung. {reasoning}"
                 )
             # review_status bewusst nicht gesetzt - Modell-Default "unreviewed".
+            source_text = f"{candidate.raw_date_text} :: {candidate.source_text}"
             deadline = Deadline(
                 matter_id=document.matter_id,
                 document_id=document.id,
-                source_text=f"{candidate.raw_date_text} :: {candidate.source_text}",
+                source_text=source_text,
                 due_date=candidate.due_date,
                 confidence=candidate.confidence,
                 reasoning=reasoning,
+                finding_key=key,
+                original_source_text=source_text,
             )
             db.add(deadline)
             result.created.append(deadline)
 
+        # Nur Fristen mit Fund-Schluessel sind vergleichbar; bestaetigte Altdaten ohne Originalangabe zaehlen nicht.
+        found = set(candidate_keys)
         result.confirmed_not_found = sum(
-            1 for d in confirmed if _key(deadline_kind(d), d.due_date, split_source_text(d.source_text)[0]) not in seen
+            1 for d in confirmed if d.id in existing_keys and existing_keys[d.id] not in found
         )
         db.add(
             AuditEvent(
