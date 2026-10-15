@@ -5203,3 +5203,24 @@ Echte Installation vorher/nachher per Schnappschuss verglichen: unverändert.
   (Journal) und ist per simuliertem Abbruch belegt.
 - Nicht getestet: der Original-Installer mit echter AppId (nur Testvariante, s. o.), der WebView2-Bootstrapper-Schritt,
   Installationen unter `Program Files` (Altpfad), PostgreSQL.
+
+## 74.1 Downgrade-Schutz (16.10.2026, Review von `bf3e0a4`)
+
+**Reproduziert:**
+1. Datenbank einer **neueren** Version (unbekannte Revision) trifft diese Version: sicher (nichts verändert, kein
+   Start), aber irreführend – Meldung „Update fehlgeschlagen“, eine „Sicherung vor dem Update“ in Gegenrichtung
+   (`vor-update_<neu>_auf_<alt>`) und ein Hinweis, genau diese einzuspielen.
+2. Downgrade per Installer über eine neuere Installation (im echten Installer-Lauf, §74): Inno Setup lässt die
+   neueren Migrationsdateien im Programmordner liegen; die ältere Version hält die Datenbank dadurch für bekannt und
+   läuft **scheinbar erfolgreich** auf einer ihr unbekannten Struktur weiter.
+
+**Behebung:**
+1. `pending_revisions` erkennt eine dem Programm unbekannte Datenbankrevision (`DatabaseNewerThanProgramError`);
+   `cmd_migrate` sichert und migriert dann nicht und meldet klar „von einer NEUEREN Lexono-Version aktualisiert“ –
+   Start abgewiesen, nichts verändert.
+2. `windows/installer.iss` `[InstallDelete]`: `{app}\_internal\migrations\versions` wird vor dem Kopieren geleert;
+   danach liegen nur die Migrationen des installierten Pakets vor. Damit greift (1) auch nach einem Downgrade per
+   Installer – **ab dieser Version**. Ältere, bereits ausgelieferte Installer haben diesen Schutz nicht (Rückweg
+   deshalb: erst deinstallieren, PILOT_SUPPORT.md §3.1 Punkt 6).
+
+**Sicherungsarten** (Datenbank vs. Dokumente) sind in PILOT_SUPPORT.md §3.1 Punkt 5 gegenübergestellt.

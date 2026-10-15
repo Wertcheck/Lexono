@@ -176,8 +176,52 @@ def test_cmd_migrate_fails_closed_without_backup(tmp_path, monkeypatch, capsys) 
         from app.config import get_settings
         get_settings.cache_clear()
     assert _version(db_path) == "schritt3_029"  # Migration NICHT ausgefuehrt
+    con = sqlite3.connect(db_path)
+    columns = {r[1] for r in con.execute("pragma table_info(deadlines)")}
+    assert "finding_key" not in columns  # nicht einmal begonnen
+    assert con.execute("select review_status, due_date from deadlines where id='d1'").fetchone() == (
+        "confirmed", "2027-03-15")
+    assert con.execute("select count(*) from audit_events").fetchone() == (1,)
+    con.close()
     err = capsys.readouterr().err
     assert "nicht gesichert" in err and "NICHT ausgefuehrt" in err and "Traceback" not in err
+
+
+def test_database_from_a_newer_version_is_rejected_without_backup_or_change(tmp_path, monkeypatch, capsys) -> None:
+    """Downgrade-Schutz (§74.1, reproduziert): vorher "Update fehlgeschlagen" plus Sicherung in Gegenrichtung."""
+    from app.backup.pre_migration import DatabaseNewerThanProgramError
+
+    db_path = _old_db_with_data(tmp_path)
+    command.upgrade(_cfg(db_path), "head")
+    con = sqlite3.connect(db_path)
+    con.execute("update alembic_version set version_num='schritt3_999_zukunft'")
+    con.commit()
+    con.close()
+    before = db_path.read_bytes()
+    with pytest.raises(DatabaseNewerThanProgramError):
+        pending_revisions(_cfg(db_path), f"sqlite:///{db_path.as_posix()}")
+
+    _patch_settings(monkeypatch, db_path)
+    try:
+        assert run.cmd_migrate() == 1
+    finally:
+        from app.config import get_settings
+        get_settings.cache_clear()
+    assert db_path.read_bytes() == before
+    assert not (db_path.parent / "backups").exists()
+    err = capsys.readouterr().err
+    assert "NEUEREN Lexono-Version" in err and "schritt3_999_zukunft" in err and "nichts veraendert" in err
+    assert "Update der Datenbank ist fehlgeschlagen" not in err
+
+
+def test_installer_clears_shipped_migrations_before_copying() -> None:
+    """Downgrade-Schutz (§74.1, im echten Installer-Lauf reproduziert): ohne [InstallDelete] blieben Migrationen einer
+    neueren Version liegen und die aeltere Version lief scheinbar erfolgreich weiter."""
+    iss = (ROOT / "windows" / "installer.iss").read_text(encoding="utf-8")
+    section = iss.split("[InstallDelete]", 1)[1].split("\n[", 1)[0]
+    assert 'Type: filesandordirs; Name: "{app}\\_internal\\migrations\\versions"' in section
+    assert iss.index("\n[InstallDelete]") < iss.index("\n[Files]")  # Inno fuehrt InstallDelete vor dem Kopieren aus
+    assert "PROGRAMDATA" not in section.upper() and "{commonappdata}" not in section  # nie das Datenverzeichnis
 
 
 def test_cmd_migrate_reports_failed_migration_with_restore_hint(tmp_path, monkeypatch, capsys) -> None:

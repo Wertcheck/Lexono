@@ -30,6 +30,15 @@ class PreMigrationBackupError(Exception):
     pass
 
 
+class DatabaseNewerThanProgramError(Exception):
+    """Die Datenbank traegt eine Revision, die dieses Programm nicht kennt - sie wurde von einer NEUEREN Lexono-Version
+    aktualisiert (Downgrade-Schutz, ARCHITECTURE.md §74.1). Dann weder sichern noch migrieren noch starten."""
+
+    def __init__(self, revision: str) -> None:
+        super().__init__(revision)
+        self.revision = revision
+
+
 def sqlite_path(database_url: str) -> Path | None:
     if not database_url.startswith("sqlite:///"):
         return None
@@ -37,8 +46,10 @@ def sqlite_path(database_url: str) -> Path | None:
 
 
 def pending_revisions(cfg: Config, database_url: str) -> tuple[str | None, str] | None:
-    """(aktuelle Revision, Ziel-Revision), wenn Migrationen ausstehen; sonst None. Liest nur, aendert nichts."""
-    head = ScriptDirectory.from_config(cfg).get_current_head()
+    """(aktuelle Revision, Ziel-Revision), wenn Migrationen ausstehen; sonst None. Liest nur, aendert nichts.
+    Wirft DatabaseNewerThanProgramError, wenn die Datenbank von einer neueren Programmversion stammt."""
+    script = ScriptDirectory.from_config(cfg)
+    head = script.get_current_head()
     path = sqlite_path(database_url)
     if path is not None and not path.exists():
         return None  # neue Installation: es gibt nichts zu sichern
@@ -50,6 +61,12 @@ def pending_revisions(cfg: Config, database_url: str) -> tuple[str | None, str] 
         engine.dispose()
     if current is None or current == head:
         return None
+    try:
+        known = script.get_revision(current) is not None
+    except Exception:  # noqa: BLE001 - Alembic meldet unbekannte Revisionen per Ausnahme
+        known = False
+    if not known:
+        raise DatabaseNewerThanProgramError(current)
     return current, head
 
 

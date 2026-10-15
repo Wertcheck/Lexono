@@ -159,7 +159,11 @@ def cmd_migrate() -> int:
     from alembic import command
     from alembic.config import Config
 
-    from app.backup.pre_migration import create_pre_migration_backup, pending_revisions
+    from app.backup.pre_migration import (
+        DatabaseNewerThanProgramError,
+        create_pre_migration_backup,
+        pending_revisions,
+    )
     from app.config import get_settings
 
     cfg = Config(str(_bundle_base_dir() / "alembic.ini"))
@@ -170,6 +174,18 @@ def cmd_migrate() -> int:
         if pending is not None:
             backup_path = create_pre_migration_backup(database_url, *pending)
             print(f"Datenbank vor dem Update gesichert ({pending[0]} -> {pending[1]}): {backup_path}")
+    except DatabaseNewerThanProgramError as exc:
+        # Downgrade-Schutz (ARCHITECTURE.md §74.1): keine Sicherung, keine Migration, kein Start - nichts veraendert.
+        print(
+            "FEHLER: Die Datenbank wurde bereits von einer NEUEREN Lexono-Version aktualisiert "
+            f"(Datenbankstand {exc.revision}). Diese aeltere Programmversion kann sie nicht sicher verwenden und "
+            "startet deshalb nicht; es wurde nichts veraendert.\n"
+            "Bitte die neuere Lexono-Version installieren. Soll bewusst zur aelteren Version zurueckgekehrt werden: "
+            "die passende Sicherung 'vor-update_...zip' aus dem Ordner data\\backups einspielen "
+            "(siehe PILOT_SUPPORT.md, Abschnitt 3.1).",
+            file=sys.stderr,
+        )
+        return 1
     except Exception as exc:  # noqa: BLE001 - fail-closed, siehe Docstring
         print(
             "FEHLER: Die Datenbank konnte vor dem Update nicht gesichert werden - das Update der Datenbank wurde "

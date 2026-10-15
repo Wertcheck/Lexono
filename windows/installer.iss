@@ -136,6 +136,13 @@ Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 ; .exe als Altlast im Installationsverzeichnis liegen.
 [InstallDelete]
 Type: files; Name: "{app}\kanzlei_ai.exe"
+; Downgrade-Schutz (ARCHITECTURE.md §74.1, im echten Installer-Lauf reproduziert): Inno Setup entfernt Dateien, die
+; im neuen Paket fehlen, NICHT. Nach der Installation einer AELTEREN Version ueber eine neuere blieben deren
+; Migrationsskripte im Programmordner liegen - Alembic hielt sie fuer bekannt, die aeltere Version lief mit einer fuer
+; sie unbekannten Datenbankstruktur scheinbar erfolgreich weiter. Deshalb den Migrationsordner vor dem Kopieren
+; leeren: danach liegen genau die Migrationen DIESES Pakets dort, eine neuere Datenbank wird beim Start erkannt und
+; abgewiesen (run.py::cmd_migrate). Betrifft nur den Programmordner, nie das Datenverzeichnis.
+Type: filesandordirs; Name: "{app}\_internal\migrations\versions"
 
 [Files]
 Source: "..\dist\Lexono\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

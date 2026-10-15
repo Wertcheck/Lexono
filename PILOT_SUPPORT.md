@@ -45,12 +45,26 @@ Fehlerantworten der Cloud, sondern nur feste Kategorien (z. B. `AuthenticationEr
    Fehlerdialog, Lexono startet nicht, die Datenbank bleibt unverändert; Details und Wiederherstellungsbefehl in `app.log`.
    Alte Sicherungen werden nicht automatisch gelöscht.
 5. Nichts löschen. Bei defekten Daten: Backup einspielen mit `Lexono.exe restore --archive <Datei>`
-   (Lexono vorher beenden).
-6. **Zurück auf die vorherige Version** (getestet, ARCHITECTURE.md §74): Lexono beenden, Lexono deinstallieren
+   (Lexono vorher beenden). **Zwei Arten von Sicherungen – Datenbank und Dokumente unterscheiden:**
+
+   | Sicherung | Entsteht | Enthält | Enthält NICHT |
+   |---|---|---|---|
+   | Vollsicherung (Dashboard → Backup, `scripts/create_backup.py`) | manuell | Datenbank **und** Dokumente (Eingangs- und Mail-Anhangsordner), Einstellungen ohne Geheimnisse | `.env`, Schlüssel |
+   | Update-Sicherung `data\backups\vor-update_….zip` | automatisch vor jeder Datenbankmigration | **nur die Datenbank** | Dokumente, `.env` |
+
+   `restore` ersetzt die Datenbank vollständig (die bisherige bleibt als `kanzlei_ai.db.pre-restore-….bak` liegen).
+   Dokumente werden nur aus einer Vollsicherung zurückkopiert, und zwar ergänzend: vorhandene Dateien gleichen Namens
+   werden überschrieben, neuere werden **nicht** gelöscht. Nach dem Einspielen einer Update-Sicherung bleiben Dokumente,
+   die nach dem Update abgelegt wurden, als Dateien erhalten, sind in Lexono aber nicht mehr verknüpft.
+6. **Zurück auf die vorherige Version** (getestet, ARCHITECTURE.md §74): Lexono beenden, Lexono **deinstallieren**
    (Daten bleiben erhalten), die vorherige Version installieren, dann
    `Lexono.exe restore --archive "<Datenverzeichnis>\data\backups\vor-update_…zip"`. Alles, was nach dem Update
-   erfasst wurde, geht dabei verloren. Die vorherige Version allein (ohne Wiederherstellung) startet mit einer bereits
-   aktualisierten Datenbank **nicht** („Can't locate revision“).
+   erfasst wurde, geht dabei verloren. Ohne Wiederherstellung startet eine ältere Version mit einer bereits
+   aktualisierten Datenbank nicht (ab dieser Version mit klarer Meldung „Datenbank wurde bereits von einer NEUEREN
+   Lexono-Version aktualisiert“, bei älteren Versionen „Can't locate revision“). Nicht einfach die ältere Version über
+   die neuere installieren, ohne vorher zu deinstallieren: Installer vor dieser Version lassen dabei die neueren
+   Migrationsdateien liegen, und die ältere Version läuft dann scheinbar normal auf einer ihr unbekannten
+   Datenbankstruktur (§74.1).
 
 ### 3.2 Lokale KI / Ollama
 - Sidebar „Lokale KI“ und Logzeile `Lokale KI bereit (Modell '…')` bzw. die Fehlermeldung im Chat:
