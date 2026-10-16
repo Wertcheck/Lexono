@@ -701,7 +701,9 @@ def test_overlap_resolution_is_unchanged_for_contained_disjoint_and_different_ca
     a, b = _span("person", 0, "Wiebe"), _span("person", 10, "Kostka")
     assert _resolve_overlaps([a, b]) == [a, b]  # ueberlappungsfrei bleibt unveraendert
     p, o = _span("person", 0, "Abc Def"), _span("ort", 4, "Def Ghi")
-    assert _resolve_overlaps([p, o]) == [p]  # andere Kategorie: bisheriges Verhalten
+    # §50 (bewusst geaendert): auch bei anderer Kategorie bleibt kein Zeichen unersetzt - vorher fiel "Ghi" heraus
+    # (real: Rest "1234567" einer Rufnummer im Cloud-Payload, seed-009/010)
+    assert _resolve_overlaps([p, o]) == [p, _span("ort", 8, "Ghi")]
 
 
 def test_titled_name_after_a_partial_ner_span_is_fully_pseudonymized_end_to_end() -> None:

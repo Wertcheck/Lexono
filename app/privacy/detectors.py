@@ -1037,6 +1037,7 @@ def detect_all(
     all_spans = _separate_conflicting_surname_aliases(analysis, all_spans, known_entities)
     all_spans = _anchor_person_variants(all_spans, known_entities, analysis=analysis)
     all_spans = _handle_citations(text, all_spans)
+    all_spans = _drop_contact_labels(text, all_spans)
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
 
@@ -1671,6 +1672,49 @@ _LETTER_CITATION_BEFORE = re.compile(
 )
 
 
+# §50 (16.10.2026, Qualitaetsmeldung seed-009 "Herrn Gustav Wendelin, Mobil 0170 1234567"): die NER las "Mobil" (im
+# Gateway-Text sogar "Mobil 0170") als Person. Kontaktbezeichnungen sind keine Namen, wenn UNMITTELBAR dahinter eine
+# erkannte Telefonnummer/E-Mail-Adresse beginnt (dieselbe Wortliste wie die Rueckfrage, review.py §75.2). Nur NER-artige
+# Kategorien; ein Name an derselben Stelle ("Lehmann 0170 1234567") bleibt geschuetzt.
+CONTACT_LABEL_WORDS = frozenset({
+    "telefon", "tel", "telefonnummer", "rufnummer", "durchwahl", "festnetz", "mobil", "mobilnummer", "mobiltelefon",
+    "handy", "handynummer", "telefax", "fax", "faxnummer", "mail", "email", "emailadresse", "kontakt",
+})
+_CONTACT_LABEL_HEAD = re.compile(r"[A-Za-zÄÖÜäöüß-]+")
+_CONTACT_LABEL_GAP = re.compile(r"\.?[ \t]*:?[ \t]*")
+_NER_LIKE_CATEGORIES = frozenset({"person", "ort", "organisation"})
+_CONTACT_CATEGORIES = frozenset({"telefon", "email"})
+# Restrisiko-Scan (security_check) prueft den bereits pseudonymisierten Text - dort steht die Nummer als Platzhalter.
+# KENNUNG: eine Rufnummer, die die Kennnummern-Erkennung laenger erfasst als die Telefon-Regex (pseudonymization_v1 K04
+# "Mobil 0171-234 56 78" -> "Mobil [KENNUNG_01]"), sonst las der Scan "Mobil" erneut als Person und blockierte.
+_CONTACT_PLACEHOLDER = re.compile(r"\[(?:TELEFON|EMAIL|KENNUNG)_\d+\]")
+
+
+def _drop_contact_labels(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    contact_end: dict[int, int] = {}
+    for span in spans:
+        if span.category in _CONTACT_CATEGORIES:
+            contact_end[span.start] = max(contact_end.get(span.start, span.end), span.end)
+    for match in _CONTACT_PLACEHOLDER.finditer(text):
+        contact_end[match.start()] = max(contact_end.get(match.start(), match.end()), match.end())
+    if not contact_end:
+        return spans
+    kept: list[DetectedSpan] = []
+    for span in spans:
+        if span.category in _NER_LIKE_CATEGORIES:
+            head = _CONTACT_LABEL_HEAD.match(span.value)
+            if head and head.group().lower().replace("-", "") in CONTACT_LABEL_WORDS:
+                gap = _CONTACT_LABEL_GAP.match(text, span.start + head.end())
+                if gap.end() in contact_end and span.end <= contact_end[gap.end()]:
+                    continue  # Bezeichnung (ggf. mit Anfang der Nummer) - die Nummer selbst bleibt als eigener Treffer
+        kept.append(span)
+    return kept
+
+
+# §50: strukturierte, formatgepruefte Treffer gehen bei einer Ueberlappung einem NER-Treffer vor, der sie nur anschneidet.
+_STRUCTURED_CATEGORIES = frozenset({"telefon", "email", "iban", "bic", "url"})
+
+
 def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:
     # Sortiere nach Startposition, bei Gleichstand nach Länge absteigend
     # (längerer/spezifischerer Treffer zuerst).
@@ -1696,6 +1740,24 @@ def _resolve_overlaps(spans: list[DetectedSpan]) -> list[DetectedSpan]:
                 end=span.end,
                 value=previous.value + extension,
             )
+            last_end = span.end
+        elif span.end > last_end and resolved:
+            # §50 (seed-009: "Mobil 0170" Person + "0170 1234567" Telefon -> "[PERSON_02] 1234567", der Rest der Nummer ging
+            # im Klartext hinaus): auch bei VERSCHIEDENEN Kategorien bleibt kein Zeichen eines erkannten Treffers unersetzt.
+            previous = resolved[-1]
+            head = previous.value[: max(0, span.start - previous.start)].rstrip()
+            if (previous.category in _NER_LIKE_CATEGORIES and span.category in _STRUCTURED_CATEGORIES
+                    and previous.start < span.start and head.strip()):
+                # NER-Treffer endet vor der Nummer/Adresse; die strukturierte Angabe bleibt vollstaendig ein Treffer
+                resolved[-1] = DetectedSpan(category=previous.category, start=previous.start,
+                                            end=previous.start + len(head), value=head)
+                resolved.append(span)
+            else:
+                rest = span.value[last_end - span.start :]
+                lead = len(rest) - len(rest.lstrip())
+                if rest.strip():
+                    resolved.append(DetectedSpan(category=span.category, start=last_end + lead, end=span.end,
+                                                 value=rest[lead:]))
             last_end = span.end
         # uebrige ueberlappende, kuerzere/spaetere Treffer werden verworfen.
     return resolved

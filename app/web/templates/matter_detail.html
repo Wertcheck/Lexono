@@ -368,7 +368,9 @@
         <p class="settings-section__hint" style="margin-top: -4px;">
           Gegner, gegnerische Anwälte, Gerichte/Behörden oder sonstige Beteiligte dieser Akte -
           werden bei jeder KI-Anfrage automatisch als bereits bekannte Namen erkannt und
-          pseudonymisiert, statt als unbekannte neue Entität zu gelten.
+          pseudonymisiert, statt als unbekannte neue Entität zu gelten. Bitte auch Richter:innen,
+          Sachverständige und weitere Gerichtspersonen mit ihrer Rolle erfassen: seltene Nachnamen
+          („Richter Zweigelt“) erkennt die automatische Namenserkennung sonst nicht zuverlässig.
         </p>
         {% if parties %}
           <ul class="instruction-list">
@@ -400,7 +402,7 @@
           </label>
           <label class="form-label">
             Rolle
-            <input type="text" name="role" placeholder="z. B. Gegner, gegnerischer Anwalt, Gericht" />
+            <input type="text" name="role" placeholder="z. B. Gegner, gegnerischer Anwalt, Richterin am Amtsgericht, Sachverständiger" />
           </label>
           <label class="form-label">
             E-Mail (optional)

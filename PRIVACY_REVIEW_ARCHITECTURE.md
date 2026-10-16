@@ -6207,7 +6207,7 @@ Leckfreiheit und **keine** Datenschutzfreigabe.
 | Pseudonymisierung/Erkennung | Pseudonymisierungs-/Erkennungs-Tests (6 Dateien); `bench_pseudonymization`; `bench_name_detection` (1100); `bench_chat_without_file` (440) | 244 bestanden; 7 Klartext-Werte, alle als bekannte Grenze markiert; Namen 0,0 %; Chat 0/440. **Nachtrag §49:** 3 Klartext-Werte (B03, K04, P08, X02 behoben) | §46, §49 | P10 Rollenwort+Name ohne Anrede; Ortsname im Grundbuchtext (A06); kurze unbeschriftete Nummern (I07, §22.6); gesperrte IBAN mit OCR-Ziffernfehler (§49.5) |
 | Pre-Cloud, Siegel, Fail-closed | Gateway-/Siegel-/Prüfungs-Tests (28 Dateien) | 1214 bestanden, 5 xfail (dokumentierte Grenzen) | Testsuite | – |
 | Request-Manipulation, Platzhalterkollision | Platzhalter-Integritäts-Tests (3 Dateien); veränderte Payload auf Netzwerkebene | 39 bestanden; veränderte/unversiegelte Payload: 0 HTTP-Anfragen | §47 | X02 (gesperrte Schreibweise) |
-| Unberechtigte Blockaden / False Positives | `bench_pseudonymization` (0 Blocks, 1 verlorener Behalte-Wert X05); `bench_name_detection` (Fehlalarme 2/132, Anweisungen 1/17); `bench_role_object_negatives` 0/12 | unverändert gegenüber vorher | §45.1, §46 | „bei Rot“ → Ort, „Mobil“+Nummer → Person (`known_open`) |
+| Unberechtigte Blockaden / False Positives | `bench_pseudonymization` (0 Blocks, 1 verlorener Behalte-Wert X05); `bench_name_detection` (Fehlalarme 2/132, Anweisungen 1/17); `bench_role_object_negatives` 0/12 | unverändert gegenüber vorher | §45.1, §46, §50 | „bei Rot“ ohne direkt folgenden Fahrvorgang → Ort (`known_open`); „Mobil“ behoben (§50) |
 | Netzwerkebene direkter Pfad | `test_privacy_wire_payload.py` + Endpunkt-Politik | 30 bestanden (gemeinsam mit Endpunkt-Tests) | §47 | TLS/echter Endpunkt, Relay realer Server NICHT VERIFIZIERT |
 | Rückfrage (HITL) | `test_privacy_review.py` | 97 bestanden | §45, §46 | Rückfragequote in echten Akten unbekannt |
 | Feedback/Diagnose, Minimierung, Löschung | `test_quality_reports.py`, Regressionsfälle | 47 bestanden, 2 xfail (`known_open`) | ARCHITECTURE.md §75 | Meldung nur aus der Dokumentansicht; Frist 90 Tage = Vorschlag |
@@ -6319,5 +6319,106 @@ geprüft); er ist vorbestehend und wurde nicht verändert.
 - **Namen mit OCR-Buchstaben-Verwechslungen** (rn↔m, cl↔d) und mit mehr als 2 Ziffern sind nicht abgedeckt. Die
   Varianten erkennen nur Personen und nur das, was das NER-Modell nach dem Ersetzen erkennt.
 - **„bei Rot“ → Ort, „Mobil“+Nummer → Person** (`known_open`, §75) wurden nicht angefasst; die Ursache in der
-  vorgelagerten NER-Stufe ist nicht abschließend geklärt.
+  vorgelagerten NER-Stufe ist nicht abschließend geklärt. *(Nachtrag: in §50 geklärt und teilweise behoben.)*
+- Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.
+
+## §50 Gerichtspersonen als Aktenbeteiligte (P10), „Mobil“ und „bei Rot“ (16.10.2026, Branch `feature/feedback-diagnose`, Basis `febd5e2`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 50.1 Reproduktion und Ursachen (belegt, roh im Modell und Stufe für Stufe)
+
+| Fall | Reproduziert (Maskier-Modus) | Ursache |
+|---|---|---|
+| P10 „Der Richter Zweigelt …“ | Klartext; auch im Rückfrage-Modus keine Rückfrage | spaCy/Presidio: keine Entität; keine Folgestufe greift (vgl. §49.1) |
+| seed-008 „… überquerte die Fahrbahn bei Rot.“ | `bei [ORT_01]` | spaCy `de_core_news_lg` setzt „Rot“ **selbst** als `LOC` (es gibt Orte dieses Namens); Presidio übernimmt es. Die Ampelregel aus §45.1 galt nur für Rückfrage-Kandidaten, nicht für NER-Treffer. Auch die eindeutige Form „bei Rot in die Kreuzung“ wurde maskiert. |
+| seed-009 „Herrn Gustav Wendelin, Mobil 0170 1234567.“ | `[PERSON_02] 1234567` – **Teil-Leck**, nicht nur Übermaskierung | (1) spaCy setzt „Mobil“ als `PER`; im zusammengesetzten Gateway-Text (Feldmarker danach) sogar „Mobil 0170“. (2) `_resolve_overlaps` verwarf bei Überlappung **verschiedener** Kategorien den später beginnenden Treffer vollständig (Telefon „0170 1234567“), dessen Rest blieb im Klartext. Die Beschreibung des Regressionsfalls („Nummer geschützt“) war falsch und ist korrigiert; die Gegenprobe seed-010 prüfte nur die ganze Nummer und übersah den Rest. |
+
+**Erfassung von Gerichtspersonen (Ist-Zustand):** Beteiligte werden je Akte als `Party` mit freier Rolle erfasst
+(Reiter „Beteiligte“). `_build_known_entities` ordnet sie per Stichwort zu und speist voller Name + Nachname in die
+Pseudonymisierung ein. **Mit erfasster Partei ist P10 geschützt** (jede getestete Rolle). Gefundene Schwächen:
+(a) „Richter am Amtsgericht“, „Gerichtsvollzieher“, „Gerichtssachverständiger“ fielen über „gericht“ in `gericht`,
+„Staatsanwalt“ über „anwalt“ in `anwalt` – Platzhalter `[GERICHT_01]` für eine Person, und die Aktenisolation (§27,
+`foreign_matter_names`) zählte bei diesen Rollen nur den **vollen** Namen: „Richter Zweigelt“ in einem Wissenseintrag
+einer fremden Akte wäre nicht zurückgehalten worden (die NER erkennt den Namen nicht). (b) „Zweigelt, Hans“ ergab als
+„Nachnamen“ den Vornamen „Hans“. (c) „Richter Dr. Zweigelt“ erhält neben `[BETEILIGTER_01]` einen zweiten Platzhalter
+(Titel-Treffer länger als der bekannte Name) – kein Leck. **Ohne Akte** (Chat ohne Akte) gibt es keine Beteiligten
+und damit kein Signal.
+
+### 50.2 Änderungen
+
+1. **Gerichtspersonen** (`app/ai_providers/local_ai_provider.py`): `_COURT_PERSON_ROLE` (ganze Wörter: Richter:in,
+   Rechtspfleger:in, Sachverständige:r, Gutachter:in, Gerichtsvollzieher:in, (Ober-)Staatsanwält:in, Urkundsbeamt:in,
+   Protokollführer:in, Schöff:in, Dolmetscher:in) geht der Institutionszuordnung vor, **sofern der Name nicht nach
+   Institution aussieht** (dieselbe Prüfung wie bisher in `_name_variants`). Ergebnis: Kategorie `beteiligter`
+   (Person) mit Nachname, auch in der Aktenisolation. „Amtsgericht …“, „Staatsanwaltschaft …“, „Finanzamt …“ und
+   Kanzleien bleiben unverändert. Keine Regel für Wörter nach Rollenbezeichnungen im Text.
+2. **„Nachname, Vorname“** in `_build_known_entities` wie in `_name_variants`: Nachname vor dem Komma.
+3. **Kontaktbezeichnung** (`app/privacy/detectors.py`, `_drop_contact_labels`): ein NER-Treffer (Person/Ort/
+   Organisation), dessen erstes Wort eine Kontaktbezeichnung ist (dieselbe Liste wie die Rückfrage §75.2, jetzt
+   gemeinsam genutzt), entfällt nur, wenn **unmittelbar** dahinter eine erkannte Rufnummer/E-Mail bzw. – im
+   Restrisiko-Scan – ein `[TELEFON_…]`/`[EMAIL_…]`/`[KENNUNG_…]`-Platzhalter beginnt und der Treffer nicht über sie
+   hinausreicht. Die Nummer bleibt eigener Treffer.
+4. **Überlappung ohne Zeichenverlust** (`_resolve_overlaps`): ragt ein Treffer einer **anderen** Kategorie über den
+   vorherigen hinaus, wird er nicht mehr verworfen. Schneidet ein NER-Treffer eine strukturierte Angabe (Telefon,
+   E-Mail, IBAN, BIC, URL) an, endet der NER-Treffer davor und die Angabe bleibt vollständig; sonst wird der
+   überstehende Rest als eigener Treffer seiner Kategorie maskiert. Das bestehende Testbeispiel für „andere Kategorie:
+   bisheriges Verhalten“ wurde **bewusst** auf das neue Verhalten umgestellt (begründet im Test).
+5. **Ampelfarbe** (`app/privacy/presidio_ner.py`, `is_traffic_light_colour_at`): die gegengeprüfte §45.1-Bedingung
+   („bei“ + Farbe + **unmittelbar** Fahr-/Querungsvorgang) gilt jetzt auch für NER-Treffer; `review.py` nutzt dieselbe
+   Regel statt einer Kopie.
+6. **Hinweis im Beteiligten-Formular** (`matter_detail.html`): Gerichtspersonen mit Rolle erfassen; Beispielrollen.
+
+**Verworfen (in der QA gefunden, nicht übernommen):** akademische Titel („Dr.“, „Prof.“) wie eine Anrede abtrennen,
+damit „Dr. Zweigelt“ den bekannten Platzhalter erhält. Der stehen gebliebene Titel ließ den Restrisiko-Scan anschlagen –
+**neue Blockaden** („Herr Prof. Dr. Zweigelt …“, „Prof. Dr. Erika Wiebe …“) und geändertes Verhalten ohne bekannte
+Namen. Vollständig zurückgenommen; (c) bleibt offen. Ebenfalls in der QA gefunden und behoben: die erste Fassung von 3.
+blockierte, weil der Restrisiko-Scan „Mobil“ vor dem Platzhalter erneut als Person las (Platzhalter als Anker
+ergänzt), und K04 („Mobil 0171-234 56 78“, als Kennnummer länger erfasst) blockierte, bis `KENNUNG` als Anker galt.
+
+### 50.3 Tests
+
+Neu `tests/test_privacy_court_persons_and_labels.py` (Rollen je Schreibweise, Institutionen unverändert,
+Komma-Nachname, bekannte Gerichtsperson in vier Schreibweisen inkl. Genitiv und Versalien, Fachwörter mit erfasster
+Gerichtsperson wörtlich unverändert, Aktenisolation fremd/eigen, unbekannte Gerichtsperson ohne Akte als **strikter
+xfail**, Kontaktbezeichnungen samt vollständiger Nummernmaskierung, Namen neben Nummern weiter maskiert,
+Überlappungs-Einheitstests, Ampel positiv/negativ inkl. „übernachtete bei Rot“, „Herr Rot“, „Rot am See“, „Herr Grün“).
+Regressionsfälle: seed-009 behoben (`known_open` entfernt, `must_mask` „1234567“), seed-010 um den Nummernrest
+ergänzt, neu seed-011 (eindeutiger Fahrsatz), seed-008 bleibt `known_open` mit präziser Ursache. Gegenprobe: auf
+`febd5e2` schlagen 19 der neuen Prüfungen fehl, alle Negativproben bestehen dort wie hier.
+
+### 50.4 Vorher/Nachher (gleiche Korpora, heute ausgeführt; vorher = Stand nach §49)
+
+| Prüfung | vorher | nachher |
+|---|---|---|
+| `pseudonymization_v1` Klartext-Lecks | 3 (A06, I07, P10) | 3 (unverändert; P10 ohne Beteiligte im Korpus) |
+| ‒ Fehlalarme | 7 | **6** (K04 „Mobil“ als Person entfällt) |
+| ‒ Blocks / Behalte-Werte / Konsistenz | 0 / 67/68 / 2/2 | 0 / 67/68 / 2/2 |
+| ‒ E2E-Fälle | – | identisch |
+| `bench_name_detection` (1100), `bench_chat_without_file` (440), Rollenobjekte (12) | – | identisch |
+| Legal-E2E dev | pii_leaks 0 | 0, keine abweichende Kennzahl |
+| Legal-E2E test | pii_leaks 0 | 0; **zwei zusätzlich maskierte Reste** (`-0533` einer Gutachten-Nummer, `7` einer Hausnummer), Schriftsatz-Payload Median 2476 → 2487 Zeichen; Fristen/Fakten unverändert |
+
+Die beiden Legal-E2E-Reste sind die beabsichtigte Wirkung von Änderung 4: isoliert nachgestellt sendete `febd5e2`
+„Laut [ORT_01]-0533 …“, jetzt „[ORT_01][KENNUNG_01]“. (Die Ortsmaske für „Kfz-Schadensgutachten Nr. G-26“ ist ein
+vorbestehender Fehlalarm.) Gesamtsuite (6 Teile nacheinander): **4990 bestanden**, 9 xfail, 1 xpass (vorbestehend,
+§49.4), 1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 50.5 Offene Grenzen und erforderliches UX-Verhalten
+
+- **P10 ohne erfasste Partei** – auch im **Chat ohne Akte** – nicht sicher lösbar: kein unabhängiges Signal, eine
+  Rollenwort-Regel würde Fachwörter maskieren. Erforderliches Verhalten: Gerichtspersonen im Reiter „Beteiligte“ mit
+  Rolle erfassen (Hinweis ergänzt); für den Chat ohne Akte empfohlen (nicht umgesetzt): bei Nennung eines
+  Rollenworts mit Großwort eine **freiwillige** Möglichkeit „als Namen schützen“ statt automatischer Maskierung, oder
+  den Chat einer Akte zuordnen. Owner-Entscheidung.
+- **„Dr. Zweigelt“ neben bekanntem „Zweigelt“:** zweiter Platzhalter (kein Leck); Lösung über Titel-Abtrennung
+  verworfen (Blockaden), anderer Ansatz offen.
+- **seed-008 „überquerte die Fahrbahn bei Rot.“** bleibt maskiert (Ortslesart möglich); ebenso „Die Ampel zeigte
+  Rot“, „Er überfuhr die Ampel bei Rot“, „Bei Rot darf nicht gefahren werden“ (Inhaltsverlust im Verkehrsrecht).
+  Eine breitere Regel bräuchte ein Verkehrskontext-Signal, das §45.1 bereits als unzuverlässig verworfen hat.
+- „Richter“ am Satzanfang wird teils als Person maskiert (bekannte Grenze „Richter/Fürst“, §46).
+- Diagnosepfad der Qualitätsmeldungen (`matter_known_entities`) ordnet weiterhin alle Beteiligten als `beteiligter`
+  ein und kennt die Komma-Regel nicht (nur lokale Diagnose, kein Cloud-Pfad).
+- Rollen bleiben Freitext; Namen mit Institutions-Teilwort (z. B. „…amt…“ in einem Nachnamen) fallen bei
+  Gerichtsrollen weiter in die alte Zuordnung (vorbestehende Prüfung, geschützt bleibt der Name).
 - Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.

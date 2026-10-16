@@ -115,6 +115,22 @@ _MAX_DOCUMENTS_IN_SACHVERHALT = 30
 _OPPONENT_ROLE_KEYWORDS = ("gegner", "gegenseite", "beklagte", "beklagter")
 _COURT_ROLE_KEYWORDS = ("gericht", "finanzamt", "behörde", "behoerde")
 _LAWYER_ROLE_KEYWORDS = ("anwalt", "anwältin", "rechtsanwalt", "prozessbevollmächtigt")
+# §50 (16.10.2026, pseudonymization_v1 P10 "Der Richter Zweigelt"): natuerliche Personen am Gericht. Ihre Rolle enthaelt oft
+# ein Institutionswort ("Richter am Amtsgericht", "Gerichtsvollzieher", "Staatsanwalt") und fiel dadurch in "gericht" bzw.
+# "anwalt": Platzhalter [GERICHT_01] fuer eine Person, und die Aktenisolation (`foreign_matter_names`) zaehlte nur den
+# vollen Namen - "Richter Zweigelt" im Wissenseintrag einer fremden Akte wurde nicht zurueckgehalten, die NER erkennt
+# den Namen nicht. Ganze Woerter: "Staatsanwaltschaft", "Gerichtskasse" sind keine Personenrollen.
+_COURT_PERSON_ROLE = re.compile(
+    r"\b(?:\w*richter(?:in)?|rechtspfleger(?:in)?|\w*sachverständige[rn]?|sachverstaendige[rn]?|gutachter(?:in)?"
+    r"|gerichtsvollzieher(?:in)?|(?:ober)?staatsanwält(?:in)?|(?:ober)?staatsanwalt|urkundsbeamt(?:er|e|in)"
+    r"|protokollführer(?:in)?|schöff(?:e|in)|dolmetscher(?:in)?)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_court_person(name: str, role: str) -> bool:
+    """Rolle einer natuerlichen Person am Gericht UND ein Name, der nicht nach Institution aussieht."""
+    return bool(_COURT_PERSON_ROLE.search(role or "")) and not _is_organisation_name(name)
 
 
 _AMOUNT_RE = re.compile(r"\d[\d.]*,\d{2}\s*(?:EUR|€|Euro)|\d+(?:[.,]\d+)?\s*(?:Prozent|%)")
@@ -386,6 +402,13 @@ _ORGANISATION_PARTS = ("gericht", "amt", "behörde", "behoerde", "agentur", "ver
                        "verwaltung", "kanzlei", "ministerium", "kammer", "senat", "polizei", "staatsanwaltschaft")
 
 
+def _is_organisation_name(name: str) -> bool:
+    lowered = [word.lower() for word in (name or "").replace(",", " , ").split()]
+    return any(w in _ORGANISATION_WORDS for w in lowered) or any(
+        part in w for w in lowered for part in _ORGANISATION_PARTS
+    )
+
+
 def _name_variants(name: str, *, person: bool = True) -> set[str]:
     """Voller Name und - bei mehrteiligen Personennamen - der Nachname (wie `_build_known_entities`). "Nachname, Vorname"
     liefert den Teil vor dem Komma."""
@@ -394,11 +417,7 @@ def _name_variants(name: str, *, person: bool = True) -> set[str]:
         return set()
     variants = {name}
     words = name.replace(",", " , ").split()
-    lowered = [word.lower() for word in words]
-    organisation = any(w in _ORGANISATION_WORDS for w in lowered) or any(
-        part in w for w in lowered for part in _ORGANISATION_PARTS
-    )
-    if person and not organisation and len([w for w in words if w != ","]) > 1:
+    if person and not _is_organisation_name(name) and len([w for w in words if w != ","]) > 1:
         surname = (name.split(",")[0].split()[-1] if "," in name else words[-1]).strip(".")
         if len(surname) >= 3 and surname[0].isupper():
             variants.add(surname)
@@ -419,7 +438,7 @@ def foreign_matter_names(matter: Matter, db: Session) -> set[str]:
     def party_variants(party_name: str, role: str | None) -> set[str]:
         role = (role or "").lower()
         institutional = any(k in role for k in _COURT_ROLE_KEYWORDS + _LAWYER_ROLE_KEYWORDS)
-        return _name_variants(party_name, person=not institutional)
+        return _name_variants(party_name, person=not institutional or _is_court_person(party_name, role))
 
     own: set[str] = set()
     if matter.client and matter.client.name:
@@ -623,6 +642,8 @@ class RuleBasedLocalAIProvider:
             role = (party.role or "").lower()
             if any(keyword in role for keyword in _OPPONENT_ROLE_KEYWORDS):
                 known["gegner"].append(party.name)
+            elif _is_court_person(party.name, role):
+                known.setdefault("beteiligter", []).append(party.name)  # §50: Person, nicht Institution
             elif any(keyword in role for keyword in _COURT_ROLE_KEYWORDS):
                 known["gericht"].append(party.name)
             elif any(keyword in role for keyword in _LAWYER_ROLE_KEYWORDS):
@@ -672,6 +693,13 @@ class RuleBasedLocalAIProvider:
                     # das letzte Wort ist die Rechtsform - vorher wurde jedes "GmbH" (auch in "GmbHG") zur Partei.
                     if len(stripped.split()) >= 2 and stripped not in names:
                         surnames.append(stripped)
+                elif "," in name and not _is_organisation_name(name):
+                    # §50: "Zweigelt, Hans" (Gerichtslisten, Aktendeckel) - Nachname steht VOR dem Komma, wie in
+                    # `_name_variants`. Vorher wurde der Vorname "Hans" zur bekannten Entitaet.
+                    before = name.split(",")[0].split()
+                    surname = before[-1].strip(".") if before else ""
+                    if len(name.replace(",", " ").split()) >= 2 and len(surname) >= 3 and surname not in names:
+                        surnames.append(surname)
                 elif len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
                     surnames.append(parts[-1])
             known[category] = names + [s for s in surnames if s not in names]

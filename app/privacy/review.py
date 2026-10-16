@@ -22,7 +22,7 @@ import re
 from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
-from app.privacy.detectors import _ALL_REGEX_DETECTORS, DetectedSpan
+from app.privacy.detectors import _ALL_REGEX_DETECTORS, CONTACT_LABEL_WORDS, DetectedSpan
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -198,10 +198,7 @@ _ARTICLE_CONTRACTIONS = frozenset({"im", "ins", "am", "ans", "aufs", "ums", "üb
 # "Herrn [PERSON_01], Telefon [TELEFON_01]" -> "Telefon" galt als Aufzaehlungsglied neben einer Person und wurde zu
 # [PERSON_02]). Beide Bedingungen muessen gelten: das Wort ist eine Kontaktbezeichnung UND direkt dahinter steht ein
 # Kontakt-Platzhalter. Ein Name an derselben Stelle ("Lehmann [TELEFON_01]") bleibt Kandidat.
-_CONTACT_LABEL_WORDS = frozenset({
-    "telefon", "tel", "telefonnummer", "rufnummer", "durchwahl", "festnetz", "mobil", "mobilnummer", "mobiltelefon",
-    "handy", "handynummer", "telefax", "fax", "faxnummer", "mail", "email", "emailadresse", "kontakt",
-})
+_CONTACT_LABEL_WORDS = CONTACT_LABEL_WORDS  # §50: dieselbe Liste wie die NER-Nachbearbeitung (detectors.py)
 _CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\d+\]")
 
 # Ampelfarbe nach "bei" (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" -> [PERSON_01]; zuvor
@@ -210,14 +207,8 @@ _CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\
 # Kreuzung") - in Unfallakten steht fast ueberall ein Verkehrswort. Jetzt nur, wenn UNMITTELBAR nach der Farbe ein
 # Fahr-/Querungsvorgang folgt, bei dem eine Personenlesart sprachlich ausscheidet: "bei Grün über die Kreuzung",
 # "bei Rot in die Kreuzung", "bei Gelb gefahren/abgebogen". Alles andere bleibt Kandidat (vorsichtig maskiert).
-_TRAFFIC_LIGHT_COLOURS = frozenset({"Grün", "Rot", "Gelb"})
-_TRAFFIC_MANOEUVRE_AFTER = re.compile(
-    r"[ \t]+(?:"
-    r"(?:über|in)[ \t]+(?:die|den)[ \t]+(?:\w*[Kk]reuzung|Ampel|Fahrbahn|Einmündung|Haltelinie|Fußgängerfurt|"
-    r"Fussgängerfurt)"
-    r"|(?:los|weiter|durch)?gefahren|überquert"
-    r")\b"
-)
+_TRAFFIC_LIGHT_COLOURS = pn.TRAFFIC_LIGHT_COLOURS  # §50: dieselbe Regel gilt nun auch fuer NER-Treffer (presidio_ner)
+_TRAFFIC_MANOEUVRE_AFTER = pn.TRAFFIC_MANOEUVRE_AFTER
 
 
 def _is_contact_label(scan_text: str, token) -> bool:

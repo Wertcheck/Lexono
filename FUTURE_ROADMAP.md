@@ -43,6 +43,13 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   mit OCR-Ziffern (zweite NER-Fassung, nur Personen an veränderten Stellen). `pseudonymization_v1`: 7 → 3
   Klartext-Werte. Fehlalarme, Behalte-Werte, Blocks und alle übrigen Benchmarks sind unverändert. Offen:
   P10/A06/I07 sowie die gesperrte IBAN mit OCR-Ziffernfehler (§49.5).
+  **Fortschritt 16.10.2026 (§50):** Gerichtspersonen (Richter:in, Sachverständige, Gerichtsvollzieher, Staatsanwält:in …)
+  werden als Personen-Beteiligte samt Nachnamen erfasst, auch in der Aktenisolation; „Nachname, Vorname“ korrigiert.
+  Ursachen „Mobil“ und „bei Rot“ belegt (spaCy selbst). Dabei gefundenes **Teil-Leck** behoben: Rest einer Rufnummer
+  ging bei Überlappung verschiedener Kategorien im Klartext hinaus. „Mobil“ vor einer Nummer bleibt lesbar, „bei Rot“
+  nur im eindeutigen Fahrsatz. Fehlalarme 7 → 6, keine neuen Blocks; Legal-E2E maskiert zwei zuvor sichtbare Reste.
+  **Offen:** P10 ohne erfasste Partei bzw. im Chat ohne Akte (UX-Entscheidung: freiwilliges „als Namen schützen“);
+  „Dr. Zweigelt“ erhält einen zweiten Platzhalter; „bei Rot“ ohne direkt folgenden Fahrvorgang.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -79,7 +86,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Ursache → synthetischer Regressionsfall (fail-closed Leck-Prüfung) → Freigabe → Export → `tests/regression_cases/`“
   umgesetzt und getestet. „bei Grün“/„Telefon“ behoben (PRIVACY_REVIEW_ARCHITECTURE.md §45, Benchmarks unverändert);
   Aufbewahrung offener Meldungen umgesetzt (§75.1). Regressionsfälle: 8 bestehen, 2 neue offene Befunde als
-  `known_open` („bei Rot“ → Ort, „Mobil“+Nummer → Person). **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für
+  `known_open` („bei Rot“ → Ort, „Mobil“+Nummer → Person). *Nachtrag §50: „Mobil“ behoben (samt Teil-Leck der
+  Nummer), „bei Rot“ nur im eindeutigen Fahrsatz; seed-008 bleibt offen.* **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für
   Auffälligkeit aus der HMAC-Statistik; die zwei neuen Befunde (vorgelagerte NER-Stufe).
 
 #### Phase P5: Datenminimierung, Löschung und Mandantentrennung

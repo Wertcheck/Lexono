@@ -822,6 +822,30 @@ def _ocr_variant_for_analysis(text: str) -> tuple[str, list[int], list[int], lis
     return "".join(out), starts, ends, [(a, b) for a, b, _ in changes]
 
 
+# §50 (Qualitaetsmeldung seed-008, "bei Rot" -> [ORT_01]): das Sprachmodell selbst setzt "Rot" als Ort (es gibt Orte
+# dieses Namens). Die gegengepruefte Regel aus §45.1 (review.py) galt nur fuer Rueckfrage-Kandidaten, nicht fuer
+# NER-Treffer. Gleiche, enge Bedingung: "bei" + Farbe + UNMITTELBAR ein Fahr-/Querungsvorgang ("bei Rot in die
+# Kreuzung", "bei Grün über die Kreuzung", "bei Gelb gefahren"). "überquerte die Fahrbahn bei Rot." bleibt maskiert
+# (Ortslesart "bei Rot" sprachlich moeglich), ebenso "übernachtete bei Rot, direkt an der Kreuzung".
+TRAFFIC_LIGHT_COLOURS = frozenset({"Grün", "Rot", "Gelb"})
+TRAFFIC_MANOEUVRE_AFTER = re.compile(
+    r"[ \t]+(?:"
+    r"(?:über|in)[ \t]+(?:die|den)[ \t]+(?:\w*[Kk]reuzung|Ampel|Fahrbahn|Einmündung|Haltelinie|Fußgängerfurt|"
+    r"Fussgängerfurt)"
+    r"|(?:los|weiter|durch)?gefahren|überquert"
+    r")\b"
+)
+_BEI_BEFORE = re.compile(r"(?:^|[^\w])[Bb]ei[ \t]+$")
+
+
+def is_traffic_light_colour_at(text: str, start: int, end: int) -> bool:
+    return (
+        text[start:end] in TRAFFIC_LIGHT_COLOURS
+        and bool(_BEI_BEFORE.search(text[max(0, start - 8) : start]))
+        and bool(TRAFFIC_MANOEUVRE_AFTER.match(text, end))
+    )
+
+
 def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     """Erkennt Personennamen/Orte/Organisationen im übergebenen Text via
     Presidio + deutschem spaCy-Modell und liefert sie als `DetectedSpan`-
@@ -888,6 +912,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         )
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
     spans = drop_possessive_kinship(drop_statute_abbreviations(text, spans))
+    spans = [s for s in spans if not is_traffic_light_colour_at(text, s.start, s.end)]  # §50
     return [*propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled), *id_spans]
 
 

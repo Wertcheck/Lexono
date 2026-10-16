@@ -105,7 +105,7 @@
       "id": "seed-008",
       "category": "over_pseudonymization",
       "title": "Ampelfarbe 'bei Rot' ist kein Ort",
-      "source": "Neuer Befund 16.10.2026: Presidio-NER liest 'Rot' als Ort ('bei [ORT_01]') - vorgelagerte NER-Stufe, nicht die Rueckfrage-Kandidaten; offen",
+      "source": "Neuer Befund 16.10.2026: Presidio-NER liest 'Rot' als Ort ('bei [ORT_01]') - vorgelagerte NER-Stufe, nicht die Rueckfrage-Kandidaten. Ursache belegt (PRIVACY_REVIEW_ARCHITECTURE.md §50): spaCy de_core_news_lg setzt 'Rot' selbst als LOC. Bewusst offen: ohne Fahrvorgang DIREKT nach der Farbe ist die Ortslesart ('bei Rot' = beim Ort Rot) sprachlich moeglich; behoben ist nur die eindeutige Form (seed-011)",
       "known_open": true,
       "text": "Die Fußgängerin überquerte die Fahrbahn bei Rot.",
       "expected": {
@@ -120,11 +120,13 @@
       "id": "seed-009",
       "category": "over_pseudonymization",
       "title": "Bezeichnung 'Mobil' vor einer Mobilnummer bleibt lesbar",
-      "source": "Neuer Befund 16.10.2026: 'Mobil 0170 1234567' wird als Ganzes zu [PERSON_02] (Nummer geschuetzt, Bezeichnung verloren); offen",
-      "known_open": true,
+      "source": "Neuer Befund 16.10.2026: 'Mobil 0170' wurde zu [PERSON_02]. KORREKTUR der Beschreibung (§50): die Nummer war NICHT geschuetzt - der Rest '1234567' ging im Klartext hinaus (Ueberlappung Person/Telefon verwarf den Telefon-Treffer). Behoben 16.10.2026 (§50, app/privacy/detectors.py)",
       "text": "Bitte melden Sie sich bei Herrn Gustav Wendelin, Mobil 0170 1234567.",
       "expected": {
-        "must_mask": [],
+        "must_mask": [
+          "Gustav Wendelin",
+          "1234567"
+        ],
         "must_keep": [
           "Mobil"
         ],
@@ -140,9 +142,26 @@
       "expected": {
         "must_mask": [
           "Gustav Wendelin",
-          "0170 1234567"
+          "0170 1234567",
+          "1234567"
         ],
         "must_keep": [],
+        "expected_due_dates": []
+      }
+    },
+    {
+      "id": "seed-011",
+      "category": "over_pseudonymization",
+      "title": "Ampelfarbe im eindeutigen Fahrsatz bleibt lesbar",
+      "source": "§50 (16.10.2026): Regel aus §45.1 auch fuer NER-Treffer; Fahrvorgang unmittelbar nach der Farbe",
+      "text": "Der Fahrer fuhr bei Rot in die Kreuzung ein; Herr Gustav Wendelin sah es.",
+      "expected": {
+        "must_mask": [
+          "Gustav Wendelin"
+        ],
+        "must_keep": [
+          "bei Rot in die Kreuzung"
+        ],
         "expected_due_dates": []
       }
     }
