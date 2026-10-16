@@ -348,16 +348,76 @@ def _matches_from_pattern(
     return spans
 
 
+# §49 (16.10.2026, pseudonymization_v1 K04 "karl . brenner @ beispiel-mail . de" im Klartext): OCR setzt um "." und
+# "@" Leerzeichen. Erkannt wird nur die Form mit "@" UND einer Domain mit mindestens einem Punkt und alphabetischer
+# Endung - ohne "@" ist es keine E-Mail-Adresse (kein Fehlalarm bei "z . B .", Aufzaehlungen, Paragrafen). Leerraum
+# NACH einem Punkt zaehlt nur, wenn auch davor Leerraum steht (OCR-Form " . "): "a@b.de. Erneut" ist ein Satzende,
+# sonst wuerde das Folgewort als Domain-Endung mitmaskiert.
+_SPACED_DOT = r"(?:\.|[ \t]+\.[ \t]*)"
+_SPACED_EMAIL_PATTERN = re.compile(
+    rf"(?<![\w.@-])[\w+-]+(?:{_SPACED_DOT}[\w+-]+){{0,5}}[ \t]*@[ \t]*[\w-]+(?:{_SPACED_DOT}[\w-]+){{0,4}}"
+    rf"{_SPACED_DOT}[A-Za-z]{{2,24}}(?![\w@])"
+)
+
+
 def detect_email(text: str) -> list[DetectedSpan]:
-    return _matches_from_pattern(text, _EMAIL_PATTERN, "email")
+    spans = _matches_from_pattern(text, _EMAIL_PATTERN, "email")
+    covered = [(s.start, s.end) for s in spans]
+    for match in _SPACED_EMAIL_PATTERN.finditer(text):
+        if " " not in match.group() and "\t" not in match.group():
+            continue  # kompakte Form deckt _EMAIL_PATTERN ab
+        if any(start <= match.start() and match.end() <= end for start, end in covered):
+            continue
+        spans.append(DetectedSpan(category="email", start=match.start(), end=match.end(), value=match.group()))
+    return spans
 
 
 def detect_phone(text: str) -> list[DetectedSpan]:
     return _matches_from_pattern(text, _PHONE_PATTERN, "telefon")
 
 
+# §49 (pseudonymization_v1 B03 "I B A N  D E 8 9 3 7 ..." im Klartext): gesperrt gesetzte bzw. per OCR zerlegte IBAN -
+# einzelne Zeichen mit Leerraum dazwischen. Bestaetigt wird nur, was nach dem Zusammenziehen die amtliche
+# IBAN-Pruefziffer (ISO 13616, mod 97 == 1) besteht; zufaellige Buchstaben-/Ziffernfolgen fallen dadurch heraus.
+_SPACED_CHAR_RUN = re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z0-9][ \t]{1,3}){14,40}[A-Za-z0-9](?![A-Za-z0-9])")
+
+
+def _iban_checksum_ok(candidate: str) -> bool:
+    if not (15 <= len(candidate) <= 34 and candidate[:2].isalpha() and candidate[2:4].isdigit()):
+        return False
+    rearranged = candidate[4:] + candidate[:4]
+    digits = "".join(str(int(ch, 36)) for ch in rearranged)
+    return int(digits) % 97 == 1
+
+
+def _spaced_ibans(text: str) -> list[DetectedSpan]:
+    spans: list[DetectedSpan] = []
+    for run in _SPACED_CHAR_RUN.finditer(text):
+        chars = [(i, ch.upper()) for i, ch in enumerate(run.group(), run.start()) if ch.isalnum()]
+        compact = "".join(ch for _, ch in chars)
+        best = None
+        for begin in range(len(compact) - 14):
+            if not (compact[begin : begin + 2].isalpha() and compact[begin + 2 : begin + 4].isdigit()):
+                continue
+            for length in range(min(34, len(compact) - begin), 14, -1):
+                if _iban_checksum_ok(compact[begin : begin + length]):
+                    best = (begin, length)
+                    break
+            if best:
+                break
+        if best:
+            begin, length = best
+            start, end = chars[begin][0], chars[begin + length - 1][0] + 1
+            spans.append(DetectedSpan(category="iban", start=start, end=end, value=text[start:end]))
+    return spans
+
+
 def detect_iban(text: str) -> list[DetectedSpan]:
-    return _matches_from_pattern(text, _IBAN_PATTERN, "iban")
+    spans = _matches_from_pattern(text, _IBAN_PATTERN, "iban")
+    for span in _spaced_ibans(text):
+        if not any(s.start <= span.start and span.end <= s.end for s in spans):
+            spans.append(span)
+    return spans
 
 
 def detect_steuer_id(text: str) -> list[DetectedSpan]:

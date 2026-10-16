@@ -6204,7 +6204,7 @@ Leckfreiheit und **keine** Datenschutzfreigabe.
 
 | Anforderung | Test/Benchmark (heute ausgeführt) | Ergebnis | Beleg | Offenes Risiko |
 |---|---|---|---|---|
-| Pseudonymisierung/Erkennung | Pseudonymisierungs-/Erkennungs-Tests (6 Dateien); `bench_pseudonymization`; `bench_name_detection` (1100); `bench_chat_without_file` (440) | 244 bestanden; 7 Klartext-Werte, alle als bekannte Grenze markiert; Namen 0,0 %; Chat 0/440 | §46 | P10 Rollenwort+Name ohne Anrede; OCR-Ziffern/-Leerzeichen (P08, K04, B03); gesperrter Name in Prompt-Injection (X02); Ortsname im Grundbuchtext (A06); kurze unbeschriftete Nummern (I07, §22.6) |
+| Pseudonymisierung/Erkennung | Pseudonymisierungs-/Erkennungs-Tests (6 Dateien); `bench_pseudonymization`; `bench_name_detection` (1100); `bench_chat_without_file` (440) | 244 bestanden; 7 Klartext-Werte, alle als bekannte Grenze markiert; Namen 0,0 %; Chat 0/440. **Nachtrag §49:** 3 Klartext-Werte (B03, K04, P08, X02 behoben) | §46, §49 | P10 Rollenwort+Name ohne Anrede; Ortsname im Grundbuchtext (A06); kurze unbeschriftete Nummern (I07, §22.6); gesperrte IBAN mit OCR-Ziffernfehler (§49.5) |
 | Pre-Cloud, Siegel, Fail-closed | Gateway-/Siegel-/Prüfungs-Tests (28 Dateien) | 1214 bestanden, 5 xfail (dokumentierte Grenzen) | Testsuite | – |
 | Request-Manipulation, Platzhalterkollision | Platzhalter-Integritäts-Tests (3 Dateien); veränderte Payload auf Netzwerkebene | 39 bestanden; veränderte/unversiegelte Payload: 0 HTTP-Anfragen | §47 | X02 (gesperrte Schreibweise) |
 | Unberechtigte Blockaden / False Positives | `bench_pseudonymization` (0 Blocks, 1 verlorener Behalte-Wert X05); `bench_name_detection` (Fehlalarme 2/132, Anweisungen 1/17); `bench_role_object_negatives` 0/12 | unverändert gegenüber vorher | §45.1, §46 | „bei Rot“ → Ort, „Mobil“+Nummer → Person (`known_open`) |
@@ -6218,3 +6218,106 @@ Authentifizierung der Kanzlei-Clients, Schlüsselverwaltung nur auf dem Server, 
 ohne Inhalte; Integrationstests Client ↔ Gateway ↔ Anthropic über HTTPS (inkl. Zertifikatsprüfung, Fehler-/Timeout-
 Pfade, Payload-Mitschnitt vor dem Upstream); erst danach Stufe B. Der Gateway existiert bisher nur als lokal getesteter
 Code; Cloud-Aufrufe laufen aktuell über den direkten Pfad mit lokalem Schlüssel.
+
+## §49 Offene Datenschutzgrenzen priorisiert: OCR-/Sperrsatz-Varianten (16.10.2026, Branch `feature/feedback-diagnose`, Basis `971ad7f`)
+
+**Ziel:** vermeidbare Klartext-Lecks aus §48 verringern, ohne juristische Inhalte zu verändern und ohne einen
+Schutzmechanismus abzuschwächen. Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe.
+
+### 49.1 Reproduktion und Priorisierung (qualitativ, keine Messwerte erfunden)
+
+Alle sieben Fälle aus `benchmarks/pseudonymization_v1/cases.json` wurden über den echten Gateway (Maskier-Modus)
+reproduziert. Bei allen stand der Wert vor dieser Änderung im Klartext im Payload. Alle sind echte Lecks, kein Fall
+war ein Fehlalarm.
+
+| Rang | Fall | Muster | Schaden | Wahrscheinlichkeit | Sichtbar für Anwender | Gefahr der Übermaskierung | Sicher behebbar? |
+|---|---|---|---|---|---|---|---|
+| 1 | B03 | gesperrte IBAN `I B A N  D E 8 9 …` | hoch (Konto direkt zuordenbar) | mittel (OCR, Formulare) | gering | gering: die Prüfziffer filtert Zufallsfolgen | **ja**, über die ISO-13616-Prüfziffer |
+| 2 | K04 | E-Mail mit OCR-Leerzeichen `… @ beispiel-mail . de` | hoch (direkt identifizierend) | mittel (OCR) | gering | gering, wenn `@` und eine Domain mit Endung Pflicht sind | **ja** |
+| 3 | P10 | „Der Richter Zweigelt“ (Rollenwort + seltener Nachname, ohne Anrede) | mittel (Person aus dem Gericht, nicht der Mandant) | mittel | mittel | **hoch** | **nein** (s. u.) |
+| 4 | X02 | Name in gesperrter Schreibweise in einer Prompt-Injection | mittel bis hoch (gezielte Umgehung) | gering bis mittel | gering | gering: nur Personen-Treffer an veränderten Stellen | **ja** |
+| 5 | P08 | OCR-Ziffern im Namen `Kar1 Brenn3r` | mittel | mittel (OCR) | mittel | mittel: Kennungen wie „B3-Formular“ müssen bleiben | **ja**, mit Negativtests |
+| 6 | A06 | Ortsname im Grundbuchtext („Grundbuch von Musterstadt“) | gering (Gemarkung; Blatt und Flurstück sind maskiert) | hoch | hoch | hoch (Ortsnamen sind oft Fachinhalt) | nein, Grenze dokumentiert |
+| 7 | I07 | kurze unbeschriftete Nummer („Startnummer 815“) | gering | gering | hoch | sehr hoch (Mengen, Beträge, Paragrafen) | nein, Designgrenze §22.6 |
+
+**Warum P10 nicht behoben wird:** spaCy (`de_core_news_lg`) markiert „Zweigelt“ in diesem Satz genau wie
+„Termin“/„Recht“: NOUN, Abhängigkeit `nk`, Nominativ Singular. Es gibt kein unabhängiges Signal. Eine Regel
+„Rollenwort + großgeschriebenes Wort“ würde „der Richter Termin …“ und „der Verwalter Bericht …“ ebenso maskieren.
+Das entspricht der dokumentierten Grenze „Richter/Fürst“ (§46, xfail). **Schutzmaßnahme:** Gerichtspersonen als
+Beteiligte der Akte erfassen; dann greifen die bekannten Entitäten (voller Name und Nachname).
+
+### 49.2 Änderungen
+
+1. **Gesperrte IBAN** (`app/privacy/detectors.py`, `_spaced_ibans`): eine Folge einzelner Buchstaben/Ziffern mit
+   1–3 Leerzeichen dazwischen wird zusammengezogen. Treffer ist nur ein Teilstück, das mit Ländercode + 2 Ziffern
+   beginnt und die Prüfziffer mod 97 = 1 besteht. Dieser Bereich wird auf den Originaltext zurückgeführt. Kompakte
+   Treffer bleiben unverändert.
+2. **E-Mail mit Leerzeichen** (`_SPACED_EMAIL_PATTERN`): Leerraum um `.` und `@` ist erlaubt. Pflicht sind ein `@` und
+   eine Domain mit mindestens einem Punkt und einer alphabetischen Endung. Zusätzlich gemeldet wird nur, was Leerraum
+   enthält und nicht schon von der kompakten Erkennung abgedeckt ist. Leerraum **nach** einem Punkt zählt nur, wenn
+   auch **davor** Leerraum steht (OCR-Form „ . “). **In der QA gefunden und behoben:** In der ersten Fassung wurde aus
+   „info@beispielkanzlei.de. Erneut“ die Adresse samt Folgewort („Erneut“ als vermeintliche Endung). Das hätte
+   Inhalt nach jedem Satzende hinter einer E-Mail-Adresse mitmaskiert. Die Benchmarks zeigten es nicht, erst
+   `tests/test_document_preview.py` in der Gesamtsuite. Der Fall ist jetzt als eigener Negativtest abgedeckt.
+   Verbleibende Grenze: „Wort @ Wort . Wort“ mit Leerzeichen vor dem Punkt würde in Fließtext als E-Mail gelesen; in
+   normaler Schreibweise kommt das kaum vor.
+3. **Zweite NER-Analysefassung für Personen** (`app/privacy/presidio_ner.py`, `_ocr_variant_for_analysis`):
+   gesperrte Wörter (Einzelbuchstaben mit Leerzeichen) werden zusammengezogen; die Lücke zwischen zwei gesperrten
+   Wörtern wird zu einem Leerzeichen. In Wörtern mit 1–2 OCR-typischen Ziffern (0→o, 1→l, 3→e, 4→a, 5→s, 8→b) und
+   mindestens 3 Buchstaben werden die Ziffern 1:1 ersetzt. Die Positionen werden wie bei `_restore_for_analysis` auf
+   das Original zurückgeführt. Übernommen werden **nur Personen-Treffer, die eine veränderte Stelle berühren**. An
+   unveränderten Stellen erzeugt die Fassung also keine neuen Treffer. Der Block läuft **nach** der
+   Grenzennormalisierung, weil diese „K a r l  B r e n n e r“ sonst beim Doppelleerzeichen abschnitt. Schließt ein
+   Varianten-Treffer bestehende Treffer vollständig ein, ersetzt er sie. Beispiel: „Gu5tav Wende1in“ – vorher war nur
+   „Wende1“ als Organisation erkannt, „Gu5tav“ und „in“ blieben lesbar. Das kann den Schutz nur erweitern, nie
+   verringern.
+
+Unverändert: Fail-Closed, Siegel, Platzhalter-Integrität, Restrisiko-Scan, Final Payload Gate, Rückfrage-Logik.
+Keine Ausnahme für bestimmte Wörter.
+
+### 49.3 Tests
+
+Neu `tests/test_privacy_ocr_variants.py` (21 bestanden, 1 strikter xfail; darunter „Satzende nach kompakter
+E-Mail verschluckt kein Folgewort“). Die Positivfälle nutzen **andere**
+synthetische Werte als der Benchmark: gesperrte IBAN (GB/DE, auch in Vierergruppen), E-Mail mit OCR-Leerzeichen,
+gesperrter Name in einer Prompt-Injection, Namen mit OCR-Ziffern. Negativfälle bleiben wörtlich unverändert:
+gesperrte Überschriften („U R T E I L  I M  N A M E N …“), Aufzählungen ohne gültige Prüfziffer, „z . B . § 280 Abs . 1
+BGB“, „Treffen @ 10 Uhr“, „Raum1“, „B3-Formular, Typ A4, Kd1-Kennung, COVID19-Verordnung, Abschnitt 1a“, Beträge,
+Daten und Paragrafen.
+
+### 49.4 Vorher/Nachher (heute ausgeführt, gleiche Korpora)
+
+| Benchmark | vorher (`971ad7f`) | nachher | Bemerkung |
+|---|---|---|---|
+| `pseudonymization_v1` Klartext-Lecks | 7 (A06, B03, I07, K04, P08, P10, X02) | 3 (A06, I07, P10) | geschützt 81 → 85 von 88 |
+| ‒ Fehlalarme (FP) | 7 | 7, identische Menge | keine neuen, keine weggefallenen |
+| ‒ Behalte-Werte / Blocks | 67/68 (X05 „Hauptbahnhof“) / 0 | 67/68 / 0 | unverändert |
+| ‒ Teil-Klartext | 1 | 2 | neu K04: **Artefakt der Messung** (s. u.), kein Leck |
+| ‒ E2E-Fälle (7) | wie erwartet | identisch | |
+| `bench_name_detection` (1100) | 0,0 %; Fehlalarme 2/132; Anweisungen 1/17 | identisch | |
+| `bench_chat_without_file` | 0/440; Fachfragen 0/14 | identisch | |
+| `bench_role_object_negatives` | 0/12 | identisch | |
+| Legal-E2E dev/test | pii_leaks 0/0 | 0/0, keine abweichende Kennzahl | |
+
+**K04 Teil-Klartext:** Der Benchmark zerlegt Werte an `[\s,.-]` in Teile ab 4 Zeichen. Der Domainteil „mail“ trifft
+das Wort „E-Mail“ im Etikett. Der Payload lautet vollständig `E-Mail: [EMAIL_01], …`.
+
+Datenschutz-Testdateien (Privacy, Platzhalter, Regression, Benchmark-Tests; vor der E-Mail-Korrektur): 1804
+bestanden, 9 xfail, 1 xpass. **Gesamtsuite nach der Korrektur** (6 Teile nacheinander): 4948 bestanden, 9 xfail,
+1 xpass, 1 übersprungen, 4 fehlgeschlagen. Die vier Fehlschläge sind die `test_design_refresh`-Logo-Tests; sie
+hängen an fremden, nicht angefassten Logo-Dateien im Arbeitsbaum. Alle Benchmarks oben wurden nach der Korrektur
+erneut ausgeführt und sind identisch.
+Der xpass `…common_noun[Richter]` tritt auch auf `971ad7f` ohne diese Änderung auf (in einem eigenen Arbeitsbaum
+geprüft); er ist vorbestehend und wurde nicht verändert.
+
+### 49.5 Offene Grenzen (Status: teilweise nachgewiesen)
+
+- **P10** Rollenwort + seltener Nachname ohne Anrede (s. o.). Schutz: Beteiligte erfassen.
+- **A06** Gemarkung/Ortsname im Grundbuchtext; **I07** kurze unbeschriftete Nummern (§22.6).
+- **Gesperrte IBAN mit OCR-Ziffernfehler:** besteht die Prüfziffer nicht und bleibt erkennbar (strikter xfail). Eine
+  Lockerung ohne Prüfziffer würde Aufzählungen und Messreihen treffen. Deshalb bleibt es bewusst so.
+- **Namen mit OCR-Buchstaben-Verwechslungen** (rn↔m, cl↔d) und mit mehr als 2 Ziffern sind nicht abgedeckt. Die
+  Varianten erkennen nur Personen und nur das, was das NER-Modell nach dem Ersetzen erkennt.
+- **„bei Rot“ → Ort, „Mobil“+Nummer → Person** (`known_open`, §75) wurden nicht angefasst; die Ursache in der
+  vorgelagerten NER-Stufe ist nicht abschließend geklärt.
+- Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.

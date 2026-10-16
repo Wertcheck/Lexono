@@ -38,6 +38,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   `bench_chat_without_file` 0/440, `pseudonymization_v1` 7 Klartext-Werte (alle als bekannte Grenze markiert; P09
   Kleinschreibung nach Anrede behoben, §46); Netzwerkebene des direkten Pfads belegt (§47). Endliche Korpora –
   keine Aussage über vollständige Leckfreiheit.
+  **Fortschritt 16.10.2026 (§49):** Die sieben offenen Fälle wurden priorisiert (Rangfolge B03, K04, P10, X02, P08, A06,
+  I07). Behoben: gesperrte IBAN (über die Prüfziffer), E-Mail mit OCR-Leerzeichen, gesperrte Namen und Namen
+  mit OCR-Ziffern (zweite NER-Fassung, nur Personen an veränderten Stellen). `pseudonymization_v1`: 7 → 3
+  Klartext-Werte. Fehlalarme, Behalte-Werte, Blocks und alle übrigen Benchmarks sind unverändert. Offen:
+  P10/A06/I07 sowie die gesperrte IBAN mit OCR-Ziffernfehler (§49.5).
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
