@@ -42,7 +42,7 @@ from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, 
 from app.chat import processing_claims
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
-from app.privacy.review import detect_decision_terms
+from app.privacy.review import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES, detect_decision_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
 from app.privacy.decisions import validate_manual_terms
@@ -84,6 +84,9 @@ from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/chat", tags=["dashboard-chat"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# §52 "Namen schützen": dieselben Listen wie die Serverpruefung (eine Quelle, kein Nachbau im JavaScript)
+templates.env.globals["manual_name_prefix_words"] = sorted(MANUAL_NAME_PREFIX_WORDS)
+templates.env.globals["manual_name_particles"] = sorted(NAME_PARTICLES)
 # Markdown-Rendering fuer Chat-Nachrichten (05.10., Owner-Direktive
 # "LONG-RUN PRODUCT QUALITY PASS" Phase D) - siehe app/chat/markdown_render.py
 # fuer die volle Root-Cause-/Sicherheitsherleitung. Gleiches Registrierungs-

@@ -63,6 +63,7 @@ from app.web.note_actions_router import (
     matters_router as note_actions_web_router,
 )
 from app.web.parties_router import router as parties_web_router
+from app.web.privacy_decisions_router import router as privacy_decisions_web_router
 from app.web.prompt_library_router import router as prompt_library_web_router
 from app.web.quality_router import router as quality_web_router
 from app.web.schriftsatz_router import router as schriftsatz_web_router
@@ -474,6 +475,7 @@ app.include_router(lock_web_router)
 app.include_router(prompt_library_web_router)
 app.include_router(matters_web_router)
 app.include_router(parties_web_router)
+app.include_router(privacy_decisions_web_router)
 app.include_router(document_actions_web_router)
 app.include_router(deadline_actions_web_router)
 app.include_router(note_actions_web_router)

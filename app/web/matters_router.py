@@ -46,7 +46,8 @@ from app.documents.rendering import (
     determine_viewer_mode,
     render_page_png,
 )
-from app.auth.permissions import require_login, require_role
+from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission, require_login, require_role
+from app.privacy.decisions import list_for_matter as list_privacy_decisions
 from app.clients.service import PRACTICE_AREA_SUGGESTIONS
 from app.deadlines.review import has_conflict, kind_label, review_hint
 from app.db.session import get_db
@@ -544,6 +545,10 @@ def matter_detail_page(
         "conversations": conversations,
         "drafts": drafts,
         "parties": parties,
+        # §52: gespeicherte Datenschutz-Entscheidungen dieser Akte (Rueckfrage und "Namen schützen") - sichtbar und
+        # gezielt aufhebbar, siehe app/web/privacy_decisions_router.py
+        "privacy_decisions": list_privacy_decisions(db, matter_id),
+        "can_manage_privacy_decisions": has_permission(current_user, PERM_PRIVACY_DECISION_MANAGE),
         "audit_events": audit_events,
         "notes": notes,
         "csrf_token": getattr(request.state, "csrf_token", ""),

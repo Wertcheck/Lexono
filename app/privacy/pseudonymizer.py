@@ -14,7 +14,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from app.privacy.detectors import DetectedSpan, detect_all
+from app.privacy.detectors import DetectedSpan, detect_all, strip_name_prefix
 
 _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "mandant": "MANDANT",
@@ -323,15 +323,30 @@ class Pseudonymizer:
         # eine erfundene Unstimmigkeit. Ein Einzelwort-Treffer wird NUR dann auf den Vollnamen
         # abgebildet, wenn er das letzte Wort GENAU EINES Vollnamens im selben Text ist
         # (bei "Hans Mueller" und "Anna Mueller" bleibt "Mueller" eigenstaendig).
+        # §52: Anrede/Titel/Rolle vor dem Namen gehoeren nicht zur Identitaet - "Dr. Hans-Peter Müller" und "Hans-Peter
+        # Müller" (manuell markiert bzw. NER) sind EINE Person und EIN Vollname (sonst war "Herr Müller" mehrdeutig und
+        # erhielt einen eigenen Platzhalter). Nur der Schluessel, Erkennung und ersetzter Bereich bleiben unveraendert.
+        def _identity(span: DetectedSpan, value: str) -> str:
+            return strip_name_prefix(value) if span.category == "person" else value
+
         surname_to_full: dict[str, set[str]] = {}
         for found in spans:
-            if found.category == "person" and len(found.value.split()) >= 2:
-                surname_to_full.setdefault(found.value.split()[-1].lower(), set()).add(found.value)
+            name = _identity(found, found.value)
+            if found.category == "person" and len(name.split()) >= 2:
+                surname_to_full.setdefault(name.split()[-1].lower(), set()).add(found.value)
 
         def _auto_alias(span: DetectedSpan) -> str:
-            if span.category != "person" or len(span.value.split()) != 1:
+            words = _identity(span, span.value).split()
+            if span.category != "person" or not words:
                 return span.value
-            candidates = {full.lower(): full for full in surname_to_full.get(span.value.lower(), set())}
+            if len(words) > 1 and not words[0][0].islower():
+                return span.value  # mehrteilig nur als Kurzform mit Namenszusatz ("von Berg"), §52
+            candidates = {
+                _identity(span, full).lower(): full
+                for full in surname_to_full.get(words[-1].lower(), set())
+                if len(_identity(span, full).split()) > len(words)
+                and [w.lower() for w in _identity(span, full).split()[-len(words):]] == [w.lower() for w in words]
+            }
             return next(iter(candidates.values())) if len(candidates) == 1 else span.value
 
         def _key_and_canonical(span: DetectedSpan) -> tuple[tuple[str, str], str]:
@@ -341,7 +356,7 @@ class Pseudonymizer:
             canonical = _canonicalize_alias(span.category, span.value, known_entities)
             if canonical == span.value:
                 canonical = _auto_alias(span)
-            return (span.category, canonical.lower()), canonical
+            return (span.category, _identity(span, canonical).lower()), canonical
 
         for span in spans:
             key, canonical = _key_and_canonical(span)

@@ -133,7 +133,8 @@ def test_lowercase_homograph_is_not_masked(client, db_session: Session, writer) 
 
 @pytest.mark.parametrize("terms,content,expected", [
     (["Zweigelt"], "Der Richter hat den Termin verlegt.", "kommt in der Nachricht nicht mehr vor"),  # Text geaendert
-    (["Hans Zweigelt"], P10, "Ungültiger Begriff"),
+    (["Richter Zweigelt"], P10, "ohne Anrede, Titel oder Rolle"),  # §52: Rolle gehoert nicht in den Platzhalter
+    (["von"], P10, "Bitte nur Namen markieren"),  # §52: Namenszusatz allein ist kein Name
     (["Zweig"], P10, "kommt in der Nachricht nicht mehr vor"),  # nur Teil eines Wortes
     (["0170"], P10, "Ungültiger Begriff"),
     ([f"Name{chr(97 + i)}" for i in range(21)], P10, "Ungültige Namensmarkierung"),

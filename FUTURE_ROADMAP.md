@@ -56,6 +56,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Orchestrator-Pfade wendeten aktenweite Entscheidungen bisher **nicht** an. HTTP-Nachweis über den lokalen
   Aufzeichnungsserver. **Offen:** Verwaltung/Aufheben von Markierungen, Markier-UI in Formular-Workflows,
   Bindestrich- und Mehrwortnamen, kleingeschriebenes Homograph wird mitmaskiert (vorbestehend).
+  **Fortschritt 16.10.2026 (§52):** Mehrwort-, Bindestrich- und Zusatznamen („Hans-Peter Müller“, „Anna von Berg“)
+  markierbar, ein Platzhalter je Person über Titel, Nachname, Genitiv und Zeilenumbruch. Gespeicherte Entscheidungen
+  sind auf der Aktenseite sichtbar und aufhebbar bzw. bestätigbar (nur Admin/Anwalt, Aktenisolation, Wirkung ab
+  der nächsten Anfrage in allen Pfaden). Kleinschreibung untersucht: nicht sicher unterscheidbar, keine Änderung.
+  Benchmarks unverändert, eine neu gefundene Blockade (Genitiv am Platzhalter) behoben. **Offen:** Markier-UI in
+  Formular-Workflows, Apostroph-Namen, Titel im Platzhalter.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -74,6 +80,7 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Maßnahmen:** Rückfrage auch in Formular-Workflows (vor dem Absenden); Sammelansicht offener/unsicherer Entscheidungen je Akte.
 - **Fortschritt (16.10.2026, §51):** manuelle Namensmarkierung im Chat („Namen schützen“) speist dieselbe Entscheidung
   wie die Rückfrage; aktenweite Entscheidungen gelten jetzt auch in Entwurfsprüfung und Schriftsatz-Pfaden.
+  §52: Sammelansicht der Entscheidungen je Akte umgesetzt (Aufheben/Bestätigen, nur Admin/Anwalt).
 - **Abhängigkeiten:** P2 (Kandidatenerkennung), P5 (Aufbewahrung der Entscheidungen).
 - **Abnahmekriterien:** Kein Cloud-Aufruf mit offener Rückfrage (Test je Einstiegspunkt); höchstens 1 Rückfrage je
   synthetischem Standarddokument im Median; Pilot-Rückmeldung zur Verständlichkeit dokumentiert.

@@ -6519,3 +6519,131 @@ bestanden. **Gesamtsuite** (6 Teile nacheinander): **5011 bestanden**, 10 xfail,
 - Markierungen fließen in die HMAC-Lernstatistik ein wie Rückfrage-Entscheidungen (kein Klartext).
 - Nur im Chat-Eingabefeld; Formular-Workflows (Schriftsatz, E-Mail) haben keine eigene Markier-UI, wenden aber
   vorhandene Entscheidungen der Akte jetzt an.
+- *Nachtrag §52:* Mehrwort- und Bindestrichnamen sowie Verwaltung/Aufheben umgesetzt; Kleinschreibung untersucht.
+
+## §52 Namensschutz: Mehrwort-/Bindestrichnamen, Verwaltung der Entscheidungen, Kleinschreibung (16.10.2026, Branch `feature/feedback-diagnose`, Basis `f59e3e0`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 52.1 Mehrwort- und Bindestrichnamen
+
+**Ist-Zustand (reproduziert):**
+
+- „Hans-Peter Müller“ und „Anna von Berg“ ließen sich nicht als Entscheidung speichern. Die Oberfläche zerlegte die
+  Auswahl in Einzelwörter; „von“ allein wäre gültig gewesen und hätte jedes „von“ maskiert.
+- Rohe Mehrwort-Entscheidungen hätten die Konsistenz **verschlechtert**. Der Titel-Detektor (`detect_titled_person`)
+  liefert „Dr. Hans-Peter Müller“, die Entscheidung „Hans-Peter Müller“. Zwei Vollnamen-Formen machten die
+  Nachnamen-Zuordnung mehrdeutig, und „Herr Müller“ erhielt einen eigenen Platzhalter.
+
+**Änderungen:**
+
+1. `review.is_name_shaped_term`: Teile aus Buchstaben mit inneren Bindestrichen, durch Leerzeichen getrennt, 1–5
+   Teile. Kleingeschrieben sind nur Namenszusätze erlaubt (`NAME_PARTICLES`: von, van, de, der, zu …). Der letzte
+   Teil beginnt groß, ein Zusatz allein ist kein Name. Ziffern, Punkte und Apostrophe sind ausgeschlossen, damit
+   kann ein solcher Begriff keine Rufnummer, E-Mail, IBAN oder Fundstelle anschneiden.
+   - Zulässig **nur für die manuelle Markierung**; Rückfrage-Antworten bleiben Einzelwörter (Audit 12.10.2026,
+     bestehender Test unverändert).
+   - Beginnt der Begriff mit Anrede, Titel oder Rolle (`MANUAL_NAME_PREFIX_WORDS`), lehnt der Server ihn ab,
+     damit z. B. „Richter“ nicht im Platzhalter verschwindet. Der Browser entfernt diese Wörter schon beim Markieren;
+     beide nutzen dieselbe Liste, an die Seite übergeben über Jinja-Globals von `chat_router`.
+2. `detect_decision_terms`: Ein mehrteiliger Name trifft auch über Leerraum oder Zeilenumbruch (Adressblock, PDF),
+   dazu wie bisher Versalien und Genitiv.
+3. Gateway-Filter: Ein NER-Treffer, der nur Anrede/Titel/Rolle plus den markierten Namen enthält („Richter
+   Brummelbeck“), weicht der Entscheidung. Die Rolle bleibt lesbar.
+4. Pseudonymizer, nur die Platzhalter-Zuordnung, nicht die Erkennung:
+   - Führende Anrede/Titel/Rolle gehören nicht zur Identität. „Dr. Hans-Peter Müller“ und „Hans-Peter Müller“ sind
+     ein Vollname. Dadurch ist auch „Herr Müller“ wieder eindeutig zugeordnet.
+   - Eine Kurzform mit Namenszusatz („von Berg“) wird wie ein Nachname dem einzigen passenden Vollnamen zugeordnet.
+     Zwei verschiedene Personen („Anna von Berg“, „Bernd von Berg“) werden nie zusammengelegt.
+5. Restrisiko-Scan: In der Analysefassung wird die Genitiv-Endung direkt am Platzhalter mit neutralisiert. Vorher las
+   die NER in „[PERSON_02]s Zeugin“ die Folge „s Zeugin“ als Person und **blockierte** (in der QA dieser Runde
+   gefunden). Der gesendete Text ändert sich dadurch nicht.
+
+Eine Markierung zeigt nie auf eine falsche Stelle: Sie wirkt auf jede exakte Fundstelle desselben Namens. Fehlt der
+Name nach einer Textänderung (z. B. Bindestrich entfernt), sendet weder der Browser noch der Server etwas.
+
+### 52.2 Verwaltung gespeicherter Entscheidungen
+
+**Ist-Zustand:** Entscheidungen waren nirgends sichtbar und nur über eine neue Rückfrage-Entscheidung „überstimmbar“,
+wobei „personal“ immer gewinnt. Ein fälschlich geschützter Begriff blieb für die Akte dauerhaft maskiert.
+
+**Änderung:**
+
+- **Ort:** Reiter „Beteiligte“ der Akte, Abschnitt „Geschützte Namen & Datenschutz-Entscheidungen“; im Chat führt
+  „verwalten“ zur Akte bzw. Schnellakte (`matter_detail.html`, `app/web/privacy_decisions_router.py`).
+- **Anzeige:** Begriff, Entscheidung, Geltung (ganze Akte / eine Unterhaltung), Datum.
+- **Aktionen:**
+  - „Schutz aufheben“ bzw. für „Kein personenbezogenes Datum“: „Rückfrage wieder aktivieren“ (Zeile löschen).
+  - „Als Person bestätigen“ (Unsicher → Als Person behandeln).
+- **Berechtigung:** neue `PERM_PRIVACY_DECISION_MANAGE`, nur Admin und Anwalt, weil das Aufheben den Schutz abschwächt.
+  Mitarbeiter sehen die Liste ohne Schaltflächen.
+- **Aktenisolation:** Die Entscheidung muss zur Akte der URL gehören. Fehlermeldungen und Audit enthalten keinen
+  Begriff.
+- **Wirkung und Fehlerverhalten:**
+  - Entscheidungen werden bei jeder Anfrage frisch geladen (`load_decisions`, kein Zwischenspeicher). Ein
+    aufgehobener Schutz wirkt ab der nächsten Prüfung in Chat, Entwurfsprüfung, Schriftsatz und Orchestrator nicht
+    mehr; die automatische Erkennung bleibt aktiv.
+  - Scheitert das Speichern, wird zurückgerollt und der Schutz bleibt bestehen (Test simuliert den Fehler nach dem
+    Löschen, vor dem Commit).
+
+### 52.3 Kleinschreibung („Herr Lange wartete lange“)
+
+**Ursache (belegt):** nicht die Entscheidung, sondern `detectors._extend_with_repeated_occurrences`. Ein einmal
+erkannter Wert wird ohne Rücksicht auf Groß-/Kleinschreibung auf jedes weitere Vorkommen übertragen, auch ohne jede
+Entscheidung, sobald die NER „Herr Lange“ erkennt. Bei bekannten Namen kommt die ebenfalls schreibungsunabhängige
+Suche (`detect_known_entities`) hinzu.
+
+**Keine Änderung, weil nicht sicher unterscheidbar (gemessen):** spaCy taggt kleingeschriebene **Namen** genauso wie
+gewöhnliche Wörter. Beispiele: „ich habe mit lange telefoniert“ → ADV, „dass weiß die Kaution zurückfordert“ → VERB,
+„groß will vergleichen“ → ADV; die gewöhnlichen Wörter tragen dieselben Tags. Eine Regel, die kleingeschriebene
+Wiederholungen freigibt, würde schlampig getippte Namen im Chat offenlegen. Die Grenze bleibt als strikter xfail
+festgehalten; zwei Gegenproben belegen, dass solche Namen maskiert bleiben.
+
+### 52.4 Tests und Vorher/Nachher
+
+`tests/test_privacy_manual_names_v2.py` (33 Tests):
+
+- Namensform positiv und negativ (Zusatz allein, Titel, Rolle, Doppel-Bindestrich, Ziffern, zu viele Teile).
+- Die Rückfrage bleibt bei Einzelwörtern.
+- Ein Platzhalter je Person über Titel, Nachname, Genitiv und „Frau von Berg“; zwei Personen mit gleichem
+  Familiennamen getrennt; markierter Nachname neben markiertem Vollnamen.
+- Zeilenumbruch und Versalien; Rolle vor markiertem Namen bleibt lesbar; Beträge, Daten, § 535 BGB und Aktenzeichen
+  bleiben korrekt.
+- Veränderte Schreibweise sendet nichts.
+- **HTTP-Nachweis** über den echten Anthropic-Provider und den lokalen Aufzeichnungsserver.
+- Wortlisten aus einer Quelle (Seite = Server).
+- Verwaltung: Liste, Aufheben mit Wirkung auf die nächste Chat-Anfrage und auf `create_draft`; Mitarbeiter ohne
+  Recht; fremde Akte; Bestätigen; Rückfrage reaktivieren; Fehler beim Aufheben lässt den Schutz bestehen.
+- Kleinschreibung als Gegenprobe.
+
+Ein bestehender §51-Test („Hans Zweigelt“ ungültig) wurde auf das neue, gewollte Verhalten umgestellt (Rolle bzw.
+Zusatz allein ungültig).
+
+**Browser-QA** (Edge headless, eigener Server auf temporärer SQLite-DB, kein Schlüssel, `fetch` im Chat durch eine
+Attrappe ersetzt): Bei der Auswahl „Dr. Hans-Peter Müller“ und „Richter Brummelbeck“ entfallen Titel bzw. Rolle;
+„Anna von Berg“ wird über den Zeilenumbruch erkannt; ein Zusatz allein wird abgewiesen; ein veränderter Bindestrich
+blockiert ohne Anfrage. Auf der Aktenseite funktionieren Bestätigen und Aufheben gegen die temporäre DB, mit
+Rückkehr zu `#beteiligte`. Screenshots geprüft.
+
+**Vorher/Nachher** (gleiche Korpora, Vergleich mit §51), getrennt nach Art:
+
+- **Lecks:** `pseudonymization_v1` 3 (unverändert, kein Feldfall geändert); Namen 0,0 % (1100); Chat ohne Akte
+  0/440; Legal-E2E dev/test pii_leaks 0.
+- **Fehlalarme:** 6 (unverändert); Namen-Benchmark 2/132; Rollenobjekte 0/12.
+- **Blockaden:** 0 (unverändert); eine in dieser Runde gefundene Blockade (Genitiv am Platzhalter) wurde vor dem
+  Commit behoben.
+- **Juristische Inhalte:** Behalte-Werte 67/68 (unverändert); Legal-E2E ohne abweichende Kennzahl.
+- **Gesamtsuite** (6 Teile nacheinander, Vordergrund): **5045 bestanden**, 10 xfail, 1 xpass (vorbestehend),
+  1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 52.5 Offene Grenzen
+
+- Kleinschreibung: ein als Name erkannter oder entschiedener Begriff maskiert auch das kleingeschriebene Homograph
+  (vorbestehend, nicht sicher lösbar, s. 52.3).
+- Apostroph-Namen („O'Brien“) und Namen mit mehr als 5 Teilen sind nicht markierbar.
+- Erkennt der Titel-Detektor „Dr. Hans-Peter Müller“, verschwindet der Titel weiterhin im Platzhalter
+  (vorbestehend). Die Rückführung stellt ihn wieder her.
+- Bei „Frau von [PERSON_02]“ (NER erkennt nur „Berg“) bleibt „von“ lesbar, und die Rückführung ergibt „von Anna von
+  Berg“ (vorbestehend).
+- Die Verwaltung gibt es nur auf der Aktenseite; Massenaktionen und Suche fehlen.
+- Die Markierung ist eine zusätzliche Schutzmaßnahme, kein Nachweis vollständiger Erkennung.

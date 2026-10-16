@@ -414,6 +414,50 @@
           </label>
           <button type="submit" class="btn" style="align-self: end;">Beteiligte:n hinzufügen</button>
         </form>
+
+        {# §52 (16.10.2026): gespeicherte Datenschutz-Entscheidungen dieser Akte - aus der Chat-Rueckfrage und "Namen
+           schützen". Bisher unsichtbar und nicht aufhebbar. Aufheben wirkt ab der naechsten Pruefung in allen Pfaden
+           (Chat, Entwurfspruefung, Schriftsatz); die automatische Erkennung bleibt aktiv. Aufheben/Bestaetigen nur Admin
+           und Anwalt (app/web/privacy_decisions_router.py). #}
+        <h2 class="panel-title" id="privacy-decisions" style="margin-top: 24px;">Geschützte Namen &amp; Datenschutz-Entscheidungen ({{ privacy_decisions|length }})</h2>
+        <p class="settings-section__hint" style="margin-top: -4px;">
+          Entscheidungen aus der Datenschutz-Rückfrage und über „Namen schützen“ im Chat. „Als Person behandeln“ und
+          „Unsicher“ gelten für die ganze Akte und werden vor jeder Cloud-Übergabe pseudonymisiert. Wird ein Schutz
+          aufgehoben, gilt das ab der nächsten Anfrage; die automatische Erkennung bleibt unabhängig davon aktiv.
+        </p>
+        {% if privacy_decisions %}
+          <ul class="instruction-list">
+            {% for decision in privacy_decisions %}
+              <li class="instruction-item privacy-decision" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <div>
+                  <span class="instruction-text" style="display: block;">{{ decision.term }}</span>
+                  <span style="font-size: 12px; color: var(--ink-500);">
+                    {% if decision.decision == "personal" %}Als Person behandeln{% elif decision.decision == "unsure" %}Unsicher (wird pseudonymisiert){% else %}Kein personenbezogenes Datum{% endif %}
+                    &middot; {% if decision.conversation_id %}nur in einer Unterhaltung{% else %}ganze Akte{% endif %}
+                    {% if decision.updated_at %}&middot; {{ decision.updated_at.strftime("%d.%m.%Y") }}{% endif %}
+                  </span>
+                </div>
+                {% if can_manage_privacy_decisions %}
+                  <div style="display: flex; gap: 6px;">
+                    {% if decision.decision == "unsure" %}
+                      <form method="post" action="/dashboard/matters/{{ matter.id }}/privacy-decisions/{{ decision.id }}/confirm" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                        <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Als Person bestätigen</button>
+                      </form>
+                    {% endif %}
+                    <form method="post" action="/dashboard/matters/{{ matter.id }}/privacy-decisions/{{ decision.id }}/revoke" style="display: inline;"
+                          onsubmit="return window.confirm({{ ('Rückfrage zu diesem Begriff wieder aktivieren?' if decision.decision == 'not_personal' else 'Schutz für diesen Namen aufheben? Er wird dann nur noch durch die automatische Erkennung geschützt.')|tojson }});">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                      <button type="submit" class="btn btn--danger" style="padding: 4px 10px; font-size: 11.5px;">{% if decision.decision == "not_personal" %}Rückfrage wieder aktivieren{% else %}Schutz aufheben{% endif %}</button>
+                    </form>
+                  </div>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty-state">Noch keine Datenschutz-Entscheidungen gespeichert.</div>
+        {% endif %}
       </div>
 
       <div class="tab-panel" id="tab-notizen" hidden>

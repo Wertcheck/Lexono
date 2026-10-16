@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
 from app.privacy.detectors import _ALL_REGEX_DETECTORS, CONTACT_LABEL_WORDS, DetectedSpan
+from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PREFIX_RUN  # noqa: F401 - §52, weiterexportiert
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -702,6 +703,27 @@ def is_plate_shaped_term(term: str) -> bool:
 
 _GENITIVE_AFTER = r"(?=(?:s|'s|’s)?(?![\wÄÖÜäöüß]))"
 
+# §52 (16.10.2026): Namen aus mehreren Teilen ("Hans-Peter Müller", "Anna von Berg") als EINE Entscheidung. Teile aus
+# Buchstaben mit inneren Bindestrichen, durch einzelne Leerzeichen getrennt; kleingeschrieben nur Namenszusaetze. Ein
+# Zusatz allein ist kein Name ("von" maskierte sonst jedes "von"), mindestens ein Teil beginnt gross.
+NAME_PARTICLES = frozenset({
+    "von", "vom", "van", "de", "der", "den", "del", "della", "di", "da", "du", "dos", "das", "zu", "zum", "zur",
+    "ten", "ter", "le", "la", "y", "bin", "al", "el", "und",
+})
+_NAME_PART = re.compile(r"[^\W\d_]+(?:-[^\W\d_]+)*")
+MAX_NAME_PARTS = 5
+
+
+def is_name_shaped_term(term: str) -> bool:
+    """Ein- oder mehrteiliger Personenname (siehe oben). Ziffern, Punkte, Klammern, Zeilenumbrueche sind ausgeschlossen -
+    ein solcher Begriff kann damit keine Rufnummer, E-Mail, IBAN oder Fundstelle anschneiden (Audit 12.10.2026)."""
+    parts = term.split(" ")
+    if not 1 <= len(parts) <= MAX_NAME_PARTS or any(not _NAME_PART.fullmatch(part) for part in parts):
+        return False
+    capitalised = [part for part in parts if part[0].isupper()]
+    lowered = [part for part in parts if not part[0].isupper()]
+    return bool(capitalised) and all(part in NAME_PARTICLES for part in lowered) and parts[-1][0].isupper()
+
 
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
@@ -732,6 +754,8 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
         if not identifier:
             if term.upper() != term:
                 body = f"(?:{body}|{re.escape(term.upper())})"
+            # §52: mehrteiliger Name darf ueber Leerraum/Zeilenumbruch laufen (Adressblock, PDF), nie "kein Abstand"
+            body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
             boundary_after = _GENITIVE_AFTER
         pattern = re.compile(boundary_before + body + boundary_after)
         for match in pattern.finditer(text):

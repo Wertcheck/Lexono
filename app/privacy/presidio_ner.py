@@ -225,7 +225,14 @@ def _neutralize_internal_tokens(text: str) -> str:
     ("durch" + Umbruch + "Fischer", PDF-Spaltenumbruch) zum Leerzeichen; Anzahl/Position aller Zeichen bleiben gleich."""
     text = _MARKER_WITH_BREAK.sub(lambda m: "." + " " * (len(m.group()) - 1), text)
     text = _SOFT_WRAP.sub(" ", text)
-    return _INTERNAL_PLACEHOLDER_PATTERN.sub(lambda m: " " * len(m.group()), text)
+    return _PLACEHOLDER_WITH_GENITIVE.sub(lambda m: " " * len(m.group()), text)
+
+
+# §52 (16.10.2026): die Genitiv-Endung direkt am Platzhalter ("[PERSON_02]s Zeugin", vom Pseudonymizer selbst gesetzt,
+# §32/§51) gehoert in der Analysefassung zum Platzhalter - sonst blieb "s Zeugin" stehen, die NER las es als Person und
+# der Restrisiko-Scan blockierte. Nur unmittelbar am Platzhalter und nur vor einem Wortende.
+_PLACEHOLDER_WITH_GENITIVE = re.compile(_INTERNAL_PLACEHOLDER_PATTERN.pattern + r"(?:s|'s|’s)?(?![\wÄÖÜäöüß])|"
+                                        + _INTERNAL_PLACEHOLDER_PATTERN.pattern)
 
 
 @lru_cache(maxsize=1)

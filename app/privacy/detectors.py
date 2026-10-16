@@ -1672,6 +1672,27 @@ _LETTER_CITATION_BEFORE = re.compile(
 )
 
 
+# §52: Woerter VOR einem Namen, die nicht zum Namen gehoeren - der Browser entfernt sie beim Markieren (chat.html,
+# gleiche Liste, Test prueft die Gleichheit), der Server lehnt einen Begriff ab, der damit beginnt.
+MANUAL_NAME_PREFIX_WORDS = frozenset({
+    "herr", "herrn", "frau", "dr", "prof", "dres", "dipl", "ing", "mag", "richter", "richterin", "vorsitzende",
+    "vorsitzender", "rechtspfleger", "rechtspflegerin", "sachverständige", "sachverständiger", "gutachter",
+    "gutachterin", "zeuge", "zeugin", "rechtsanwalt", "rechtsanwältin", "staatsanwalt", "staatsanwältin", "notar",
+    "notarin", "gerichtsvollzieher", "gerichtsvollzieherin", "mandant", "mandantin", "kläger", "klägerin", "beklagte",
+    "beklagter", "schöffe", "schöffin",
+})
+_PREFIX_WORD = r"(?:" + "|".join(sorted(MANUAL_NAME_PREFIX_WORDS, key=len, reverse=True)) + r")\.?"
+# Anrede/Titel/Rolle(n) VOR einem Namen (ein NER-Treffer "Dr. Hans-Peter Müller" bzw. "Richter Brummelbeck")
+NAME_PREFIX_RUN = re.compile(r"(?:" + _PREFIX_WORD + r"[ \t]+)+", re.IGNORECASE)
+
+
+def strip_name_prefix(value: str) -> str:
+    """§52: Name ohne fuehrende Anrede/Titel/Rolle ("Dr. Hans-Peter Müller" -> "Hans-Peter Müller"); unveraendert, wenn
+    danach nichts uebrig bliebe."""
+    match = NAME_PREFIX_RUN.match(value)
+    return value[match.end():] if match and value[match.end():].strip() else value
+
+
 # §50 (16.10.2026, Qualitaetsmeldung seed-009 "Herrn Gustav Wendelin, Mobil 0170 1234567"): die NER las "Mobil" (im
 # Gateway-Text sogar "Mobil 0170") als Person. Kontaktbezeichnungen sind keine Namen, wenn UNMITTELBAR dahinter eine
 # erkannte Telefonnummer/E-Mail-Adresse beginnt (dieselbe Wortliste wie die Rueckfrage, review.py §75.2). Nur NER-artige
