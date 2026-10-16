@@ -6091,8 +6091,8 @@ präzisiert.
 1. Kontaktbezeichnung (`telefon`, `tel`, `fax`, `mobil`, `handy`, `mail`, `email`, `rufnummer`, `durchwahl` …) **und**
    direkt dahinter ein Kontakt-Platzhalter (`[TELEFON_..]`, `[EMAIL_..]`, optional mit Doppelpunkt). Geprüft am
    Roh-Scantext (Platzhalter sichtbar, positionsgleich zur Analysefassung).
-2. „Grün“/„Rot“/„Gelb“ **direkt nach „bei“** **und** ein Verkehrswort im selben Satz (Ampel, Kreuzung, Lichtzeichen,
-   Fußgänger, Fahrbahn, Zebrastreifen, Abbiegen …).
+2. „Grün“/„Rot“/„Gelb“ **direkt nach „bei“** **und** unmittelbar danach ein Fahr-/Querungsvorgang (siehe §45.1 –
+   die erste Fassung „Verkehrswort irgendwo im Satz“ war zu weit und wurde vor dem Merge korrigiert).
 Unverändert: Presidio, Regex-Erkennung, exakter Aktendaten-Abgleich (eine bekannte Beteiligte „Grün“ wird weiter
 ersetzt – per Test), Restrisiko-Scan, Leak-Check, Siegel, Fail-closed.
 
@@ -6111,6 +6111,39 @@ Kontakt-Platzhalter bleibt wie bisher.
 - „Fahrbahn **bei Rot**“ → „bei [ORT_01]“ (Presidio liest „Rot“ als Ort).
 - „**Mobil** 0170 1234567“ → als Ganzes „[PERSON_02]“ (Nummer bleibt geschützt, Bezeichnung geht verloren).
 
-**Restrisiko der Ausnahme 2:** Ein der Akte **unbekannter** Dritter mit Nachnamen Grün/Rot/Gelb, der in einem
-Verkehrssatz als „bei Grün“ erwähnt wird, würde nicht mehr vorsichtshalber maskiert (Presidio und Restrisiko-Scan
-greifen weiterhin). Bewusst so eng gefasst; bekannte Beteiligte sind über den Aktendaten-Abgleich geschützt.
+### §45.1 Gegenprüfung vor dem Merge (16.10.2026): Ausnahme 2 war zu weit – präzisiert
+
+**Befund (FAIL der ersten Fassung):** Gegenproben mit Sätzen, in denen das Farbwort ein **Name** ist und der Satz ein
+Verkehrswort enthält, liefen über den echten Gateway (`review_mode="mask"`), jeweils mit und ohne Ausnahmen (alter
+Stand = Ausnahmen abgeschaltet, einziger Code-Unterschied):
+
+| Satz (synthetisch) | Stand 5735e5b | erste Fassung §45 | präzisiert §45.1 |
+|---|---|---|---|
+| „…an der Kreuzung meldete der Mandant … bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Nach dem Unfall an der Kreuzung war er noch eine Stunde bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Die Zeugin übernachtete bei Rot, direkt an der Kreuzung.“ | maskiert | **Klartext** | maskiert |
+| „Die Unterlagen zum Unfall an der Ampel liegen bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Sie wohnt bei Grün über die Straße, gleich neben der Ampel.“ | – | – | maskiert |
+| „… ist er bei Grün angefahren und hat geklingelt.“ / „… bei Grün mitgefahren.“ | – | – | maskiert |
+| „…weil er bei Gelb im Auto saß…“ | **Klartext** | Klartext | Klartext (vorbestehend, nicht durch §45) |
+
+**Präzisierung:** Die Ausnahme greift nur noch, wenn **unmittelbar** nach der Farbe folgt: „über/in die|den Kreuzung,
+Ampel, Fahrbahn, Einmündung, Haltelinie, Fußgängerfurt“ oder „gefahren/losgefahren/weitergefahren/durchgefahren/
+überquert“. Bewusst ausgenommen, weil eine Personenlesart möglich ist: „über die Straße“, „angefahren“, „abgebogen“,
+„eingebogen“, „mitgefahren“. Die Sätze der Tabelle stehen als Negativtests in `tests/test_privacy_review.py`.
+Ampelfarben, die lesbar bleiben (per Test): „bei Grün über die Kreuzung“, „bei Gelb noch in die Kreuzung gefahren“,
+„bei Rot durchgefahren“, „bei Grün losgefahren“.
+
+**Ausnahme 1 (Kontaktbezeichnung):** Gegenproben mit Kontaktwörtern als Nachnamen („Frau Mobil, 0301 …“,
+„Zeuge Handy …“, „Herr Kontakt 0301 …“) – alle maskiert, kein neues Leck.
+
+**Messung nach der Präzisierung (identische Fälle zur Messung vor §45):** `bench_name_detection` (1100 Fälle) –
+Gruppen, Lecks, Blocks, Fehlalarme (2/132), Anweisungen (1/17) identisch; `bench_pseudonymization` – `summary`,
+`field_results`, `e2e_results` identisch. **Grenze dieses Belegs:** Beide Korpora enthalten keine Farbwort-Nachnamen
+im Verkehrskontext und keine Kontaktwort-Nachnamen; „identisch“ belegt nur, dass auf diesen Korpora nichts schlechter
+wird. Der gezielte Beleg für die Ausnahmen sind die Negativtests. Vollständige Leckfreiheit ist damit nicht belegt.
+
+**Verbleibendes Restrisiko:** Ein der Akte unbekannter Dritter mit Nachnamen Grün/Rot/Gelb **unmittelbar** vor einem
+der genannten Fahrvorgänge („… bei Grün über die Kreuzung …“ als Person) würde nicht mehr vorsichtshalber maskiert;
+Presidio, Restrisiko-Scan, Leak-Check und Fail-closed greifen weiterhin, bekannte Beteiligte deckt der
+Aktendaten-Abgleich ab.

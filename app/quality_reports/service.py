@@ -180,21 +180,25 @@ class QualityReportService:
 
     def expire_content(self, db: Session, *, content_days: int, now: datetime | None = None) -> int:
         """Aufbewahrung (§75.1): leert Fundstelle und Beschreibung offener Meldungen, die aelter als `content_days`
-        sind, sowie aller Meldungen zu (weich) geloeschten Akten. Die Meldung selbst, Diagnose, Status, Verknuepfungen
-        und Audit bleiben (Nachvollziehbarkeit ohne Inhalt). Gibt die Zahl geleerter Meldungen zurueck."""
+        sind, sowie aller Meldungen zu (weich) geloeschten Akten oder Dokumenten (§75.3: die Fundstelle stammt aus dem
+        Dokument). Die Meldung selbst, Diagnose, Status, Verknuepfungen und Audit bleiben (Nachvollziehbarkeit ohne
+        Inhalt). Gibt die Zahl geleerter Meldungen zurueck."""
         now = now or datetime.now(timezone.utc)
         cutoff = now - timedelta(days=content_days)
         expired = 0
         rows = (
-            db.query(QualityReport, Matter.deleted_at)
+            db.query(QualityReport, Matter.deleted_at, Document.deleted_at)
             .join(Matter, Matter.id == QualityReport.matter_id)
+            .outerjoin(Document, Document.id == QualityReport.document_id)
             .filter((QualityReport.excerpt.isnot(None)) | (QualityReport.description.isnot(None)))
             .all()
         )
-        for report, matter_deleted_at in rows:
+        for report, matter_deleted_at, document_deleted_at in rows:
             created = report.created_at if report.created_at.tzinfo else report.created_at.replace(tzinfo=timezone.utc)
             if matter_deleted_at is not None:
                 reason = "akte_geloescht"
+            elif document_deleted_at is not None:
+                reason = "dokument_geloescht"
             elif created < cutoff:
                 reason = f"frist_{content_days}_tage"
             else:

@@ -512,3 +512,24 @@ def test_retention_setting_range(value, ok) -> None:
     else:
         with pytest.raises(ValidationError):
             Settings(_env_file=None, quality_report_content_days=value)
+
+
+def test_reports_of_deleted_documents_lose_content(db_session: Session) -> None:
+    """§75.3 (Gegenpruefung): die Fundstelle stammt aus dem Dokument - wird nur das Dokument (weich) geloescht,
+    blieb sie bisher stehen."""
+    from datetime import datetime, timezone
+
+    matter = _matter(db_session)
+    doc = _document(db_session, matter)
+    other = _service().create(db_session, matter_id=matter.id, document_id=None, category="privacy_concern",
+                              excerpt="bleibt", description="", actor="x")
+    report = _service().create(db_session, matter_id=matter.id, document_id=doc.id, category="missed_deadline",
+                               excerpt="bis zum 15.03.2027", description="Frist fehlt", actor="x")
+    doc.deleted_at = datetime.now(timezone.utc)
+    db_session.commit()
+    assert _service().expire_content(db_session, content_days=3650) == 1
+    db_session.refresh(report)
+    db_session.refresh(other)
+    assert (report.excerpt, report.description) == (None, None) and other.excerpt == "bleibt"
+    assert "dokument_geloescht" in db_session.query(AuditEvent.details).filter(
+        AuditEvent.event_type == "quality_report_content_expired").scalar()

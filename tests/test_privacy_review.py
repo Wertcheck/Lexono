@@ -499,7 +499,8 @@ def test_decision_terms_must_be_a_single_word(db: Session, term) -> None:
         "Rückfragen bitte an Herrn Gustav Wendelin, Telefon 0301 2345678.",
         "Ansprechpartnerin ist Frau Petra Ostwald, Fax: 0301 2345679.",
         "Der Fahrer fuhr bei Grün über die Kreuzung, als der Unfall geschah.",
-        "An der Kreuzung bog der Wagen bei Gelb ab.",
+        "Er ist bei Gelb noch in die Kreuzung gefahren.",
+        "Der Lkw ist bei Rot durchgefahren.",
         "Bitte schreiben Sie an Frau Petra Ostwald, Mail: erna.probe@example.org.",
     ],
 )
@@ -507,7 +508,7 @@ def test_contact_labels_and_traffic_light_colours_are_not_name_candidates(gatewa
     result = _prepare(gateway, text, mode="mask")
     assert result.allowed is True and result.auto_masked_terms == []
     payload = result.payload.anonymisierter_sachverhalt
-    for kept in ("Telefon", "Fax", "Mail", "bei Grün", "bei Gelb"):
+    for kept in ("Telefon", "Fax", "Mail", "bei Grün", "bei Gelb", "bei Rot"):
         if kept in text:
             assert kept in payload
     for secret in ("Gustav Wendelin", "Petra Ostwald", "0301 2345678", "0301 2345679", "erna.probe@example.org"):
@@ -538,3 +539,25 @@ def test_known_party_named_like_a_colour_is_still_pseudonymized(gateway) -> None
                                      known_entities={"gegner": ["Lisa Grün", "Grün"]}, review_mode="mask")
     assert result.allowed is True
     assert "Grün" not in result.payload.anonymisierter_sachverhalt
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # §45.1 Gegenpruefung: in diesen Saetzen ist das Farbwort ein NAME, obwohl der Satz ein Verkehrswort enthaelt.
+        # Die erste Fassung der Ausnahme liess die ersten vier im Klartext durch (alt 5735e5b: maskiert).
+        "Den Unfall an der Kreuzung meldete der Mandant noch am selben Tag bei Grün.",
+        "Nach dem Unfall an der Kreuzung war er noch eine Stunde bei Grün.",
+        "Die Zeugin übernachtete bei Rot, direkt an der Kreuzung.",
+        "Die Unterlagen zum Unfall an der Ampel liegen bei Grün.",
+        "Sie wohnt bei Grün über die Straße, gleich neben der Ampel.",
+        "Auf dem Rückweg von der Kreuzung ist er bei Grün angefahren und hat geklingelt.",
+        "Nach dem Unfall ist er bei Grün mitgefahren.",
+    ],
+)
+def test_colour_word_used_as_a_name_in_an_accident_file_is_not_sent_in_plaintext(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    payload = result.payload.anonymisierter_sachverhalt if result.allowed else ""
+    for colour in ("Grün", "Rot"):
+        if f"bei {colour}" in text:
+            assert f"bei {colour}" not in payload

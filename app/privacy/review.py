@@ -192,16 +192,20 @@ _CONTACT_LABEL_WORDS = frozenset({
 })
 _CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\d+\]")
 
-# Ampelfarbe nach "bei" in einem Verkehrssatz (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" ->
-# [PERSON_01]; zuvor §34.6). Nur die drei Farbwoerter, nur direkt nach "bei", nur wenn derselbe Satz ein Verkehrswort
-# enthaelt. "Der Vertrag wurde bei Grün unterschrieben" bleibt Kandidat. Bekannte Beteiligte namens Grün deckt der
-# vorgelagerte exakte Aktendaten-Abgleich weiter ab.
+# Ampelfarbe nach "bei" (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" -> [PERSON_01]; zuvor
+# §34.6). PRAEZISIERT nach Gegenpruefung §45.1: die erste Fassung ("Verkehrswort irgendwo im Satz") liess echte Namen
+# durch ("Nach dem Unfall an der Kreuzung war er noch bei Grün", "Die Zeugin uebernachtete bei Rot, direkt an der
+# Kreuzung") - in Unfallakten steht fast ueberall ein Verkehrswort. Jetzt nur, wenn UNMITTELBAR nach der Farbe ein
+# Fahr-/Querungsvorgang folgt, bei dem eine Personenlesart sprachlich ausscheidet: "bei Grün über die Kreuzung",
+# "bei Rot in die Kreuzung", "bei Gelb gefahren/abgebogen". Alles andere bleibt Kandidat (vorsichtig maskiert).
 _TRAFFIC_LIGHT_COLOURS = frozenset({"Grün", "Rot", "Gelb"})
-_TRAFFIC_CONTEXT = re.compile(
-    r"\b(?:Ampel\w*|\w*[Ll]ichtzeichen\w*|\w*[Kk]reuzung\w*|Fußgänger\w*|Fussgänger\w*|Fahrbahn\w*|Zebrastreifen|"
-    r"Verkehrsampel\w*|Signalanlage\w*|Abbieg\w*|abgebogen|Rotlicht\w*|Grünphase\w*|Gelbphase\w*)",
+_TRAFFIC_MANOEUVRE_AFTER = re.compile(
+    r"[ \t]+(?:"
+    r"(?:über|in)[ \t]+(?:die|den)[ \t]+(?:\w*[Kk]reuzung|Ampel|Fahrbahn|Einmündung|Haltelinie|Fußgängerfurt|"
+    r"Fussgängerfurt)"
+    r"|(?:los|weiter|durch)?gefahren|überquert"
+    r")\b"
 )
-_SENTENCE_SPLIT = re.compile(r"[.!?;\n]")
 
 
 def _is_contact_label(scan_text: str, token) -> bool:
@@ -217,10 +221,7 @@ def _is_traffic_light_colour(doc, neutral: str, token) -> bool:
     previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
     if previous is None or previous.lower_ != "bei":
         return False
-    starts = [m.end() for m in _SENTENCE_SPLIT.finditer(neutral, 0, token.idx)]
-    following = _SENTENCE_SPLIT.search(neutral, token.idx)
-    sentence = neutral[starts[-1] if starts else 0 : following.start() if following else len(neutral)]
-    return bool(_TRAFFIC_CONTEXT.search(sentence))
+    return bool(_TRAFFIC_MANOEUVRE_AFTER.match(neutral, token.idx + len(token.text)))
 
 
 def _is_article_contraction_object(doc, token) -> bool:
