@@ -6647,3 +6647,105 @@ Rückkehr zu `#beteiligte`. Screenshots geprüft.
   Berg“ (vorbestehend).
 - Die Verwaltung gibt es nur auf der Aktenseite; Massenaktionen und Suche fehlen.
 - Die Markierung ist eine zusätzliche Schutzmaßnahme, kein Nachweis vollständiger Erkennung.
+- *Nachtrag §53:* „von Anna von Berg“ behoben; Apostroph-Namen und bis zu 8 Namensteile markierbar.
+
+## §53 Rückführung zusammengesetzter Namen, Apostrophe, längere Namen (16.10.2026, Branch `feature/feedback-diagnose`, Basis `0b7a616`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 53.1 Reproduzierte Rückführungsfehler
+
+Prüfmaß ist der **Rundweg**: Schreibt die Cloud-KI den pseudonymisierten Text unverändert zurück, muss die lokale
+Rückführung exakt das Original ergeben. Auf `0b7a616` fehlten 6 von 9 Fällen, auch ohne jede Markierung:
+
+| Original | Rückführung vorher |
+|---|---|
+| „Frau von Berg widersprach“ (neben „Anna von Berg“) | „Frau von **Anna von** Berg widersprach“ (Duplikat) |
+| „Herr Müller verlangte“ (neben „Dr. Hans-Peter Müller“) | „Herr **Dr. Hans-Peter** Müller verlangte“ (Titel eingeschleust) |
+| „Frau Wiebe bestätigte“ (neben „Prof. Dr. Erika Wiebe“) | „Frau **Prof. Dr. Erika** Wiebe bestätigte“ |
+| „und Frau Brenner kamen“ (neben „Mandant Karl Brenner“) | „und Frau **Karl** Brenner kamen“ |
+
+**Ursache:** Ein Platzhalter steht für genau einen Wert, den Vollnamen (`_auto_alias`/`_canonicalize_alias` ordnen
+Kurzformen bewusst demselben Platzhalter zu, damit eine Person einen Platzhalter hat). `Pseudonymizer.reconstruct`
+setzte deshalb überall den Vollnamen ein.
+
+### 53.2 Korrektur (nur lokale Rückführung, der gesendete Inhalt bleibt unverändert)
+
+- Der Pseudonymizer merkt sich je Personen-Platzhalter die im Quelltext vorkommenden Formen **nach einer Anrede,
+  einem Titel oder einer Rolle** (`PseudonymMapping.context_forms`): „herr“ → „Müller“, „frau“ → „von Berg“.
+  Erkennung (`detectors.name_context`): letztes Wort aus `MANUAL_NAME_PREFIX_WORDS` vor höchstens Namenszusätzen,
+  gleiche Zeile.
+- `reconstruct` (`_form_for_context`) wählt je Vorkommen die Form, die im Quelltext nach demselben Kontextwort stand,
+  sofern eindeutig („Herr“/„Frau“ untereinander austauschbar). Sonst gilt der Vollname. In beiden Fällen wird nichts
+  doppelt geschrieben, was direkt davor schon steht: ein Titel („Dr. [P]“ ergibt kein „Dr. Dr.“) oder ein
+  Namenszusatz nach einer Anrede („Frau von [P]“ → „Berg“).
+- **Bewusst ohne Kontext der Vollname:** Im Rubrum eines Schriftsatzes („In Sachen [MANDANT_01] gegen …“) muss die
+  Partei vollständig genannt werden. Eine Kurzform aus dem Quelltext wäre dort ein inhaltlicher Mangel. Deshalb
+  ergibt „Brenners Anspruch“ ohne Anrede weiterhin „Karl Brenners Anspruch“ (bestehender Test unverändert).
+- Es wird nie die Form eines **anderen** Platzhalters eingesetzt, und nichts wird erfunden (nur Formen dieser Person
+  aus diesem Text). Präposition und Namenszusatz bleiben unterscheidbar: „Der Brief von [P]“ ergibt „Der Brief von
+  Anna von Berg“, weil vor „von“ keine Anrede steht. Andere Kategorien (Ort, Aktenzeichen …) sind unberührt.
+- `context_forms` gehört **nicht** zur Leck-Prüfung der Antwort (`variants`), weil eine Kurzform wie „Berg“ dort
+  normale Antworten blockieren würde.
+
+### 53.3 Apostrophe und längere Namen
+
+- **Vorher:** „O'Brien“ und Namen mit mehr als 5 Teilen waren nicht markierbar.
+- **Jetzt (`review._NAME_PART`, `MAX_NAME_PARTS`):**
+  - ein Apostroph **innerhalb** eines Namensteils („O'Brien“, „D’Angelo“, „Dell'Anna Rossi“), nie am Anfang oder
+    Ende, nie doppelt;
+  - bis zu 8 Teile („Maria del Carmen de la Fuente y Santos“), weiterhin höchstens 80 Zeichen (DB-Spalte);
+  - gerades und typografisches Apostroph gelten bei Suche, Gültigkeitsprüfung und Platzhalter-Zuordnung als
+    dieselbe Schreibung; die Rückführung behält die jeweils originale Form.
+- Die Rückfrage bleibt bei Einzelwörtern; an Presidio und der automatischen Erkennung ändert sich nichts.
+
+Die Markierung wirkt weiterhin auf jede exakte Fundstelle desselben Namens und muss in der Nachricht vorkommen.
+Fehlen nach einer Textänderung beide Apostroph-Formen, wird nicht gesendet. Manipulierte Werte (z. B. „O'Brien');
+DROP …“, Zeilenumbruch, mehr als 8 Teile, mehr als 80 Zeichen) lehnt der Server ab.
+
+### 53.4 Tests und Vorher/Nachher
+
+`tests/test_privacy_name_reconstruction.py` (33 Tests):
+
+- **Rundweg:** 9 Fälle exakt, darunter zwei Personen „von Berg“, „Prof. Dr. Erika Wiebe“, „O'Brien“/„O’Brien“, der
+  8-teilige Name.
+- **Gegenproben:**
+  - ohne Anrede bleibt der Vollname (Rubrum);
+  - frei formulierte Antworten ergeben weder „Dr. Dr.“ noch „von Anna von Berg“;
+  - „Der Brief von [P]“ behält den Vollnamen;
+  - Formen wechseln nie zu einem anderen Platzhalter;
+  - andere Kategorien bleiben unverändert.
+- **Apostrophe und lange Namen:** gültige Formen werden angenommen, ungültige oder manipulierte (8 Fälle) und mehr
+  als 80 Zeichen abgewiesen.
+- **HTTP-Nachweis:** Weder „O'Brien“ noch „O’Brien“ stehen in den gesendeten Bytes, Datum, Betrag und § 280 BGB schon.
+
+Ein §52-Test (6 Teile ungültig) wurde auf die neue Grenze umgestellt (9 Teile ungültig).
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, `fetch` durch eine Attrappe ersetzt):
+
+- Apostroph-, lange und Zusatznamen werden markiert; vor „Dell'Anna Rossi“ wird „Frau“ abgetrennt.
+- Eine ungültige Auswahl wird abgewiesen.
+- Steht nur noch die typografische Form im Text, bleibt die Markierung gültig.
+- Fehlen beide Formen, wird ohne Anfrage blockiert.
+
+**Vorher/Nachher** (Vergleich mit §52), getrennt nach Art:
+
+- **Lecks:** unverändert: `pseudonymization_v1` 3 (kein Feldfall geändert), Namen 0,0 % (1100), Chat ohne Akte
+  0/440, Legal-E2E dev/test 0.
+- **Fehlalarme:** 6, Namen 2/132, Rollenobjekte 0/12 (unverändert).
+- **Blockaden:** 0 (unverändert).
+- **Juristische Inhalte:** Behalte-Werte 67/68, Legal-E2E ohne abweichende Kennzahl.
+- **Rückführung:** 3/9 → 8/9 exakte Rundwege; der neunte („Brenners“ ohne Anrede) ergibt bewusst den Vollnamen.
+- **Gesamtsuite** (6 Teile, Vordergrund): **5078 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 53.5 Offene Grenzen
+
+- Ohne Anrede/Titel/Rolle setzt die Rückführung den Vollnamen ein, auch wo der Quelltext nur den Nachnamen hatte
+  (bewusst, s. o.).
+- Schreibt die Antwort eine Anrede, die im Quelltext nicht vorkam (z. B. „Frau [P]“ für eine Person, die nur mit
+  „Herr“ vorkam), greift die Form von „Herr“/„Frau“. Bei fremdem Geschlecht ist das inhaltlich der Text der Antwort.
+- Genitiv und Großschreibung im Antworttext werden wie bisher behandelt; andere Flexionsformen nicht.
+- Erkennt der Titel-Detektor „Dr. Hans-Peter Müller“, steht der Titel im Platzhalter. Die Rückführung stellt ihn
+  wieder her, ohne ihn zu verdoppeln; die Cloud-KI sieht ihn nicht.
+- Kleinschreibung (§52.3) unverändert.

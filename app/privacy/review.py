@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
 from app.privacy.detectors import _ALL_REGEX_DETECTORS, CONTACT_LABEL_WORDS, DetectedSpan
-from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PREFIX_RUN  # noqa: F401 - §52, weiterexportiert
+from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES, NAME_PREFIX_RUN  # noqa: F401 - §52/§53
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -706,12 +706,10 @@ _GENITIVE_AFTER = r"(?=(?:s|'s|’s)?(?![\wÄÖÜäöüß]))"
 # §52 (16.10.2026): Namen aus mehreren Teilen ("Hans-Peter Müller", "Anna von Berg") als EINE Entscheidung. Teile aus
 # Buchstaben mit inneren Bindestrichen, durch einzelne Leerzeichen getrennt; kleingeschrieben nur Namenszusaetze. Ein
 # Zusatz allein ist kein Name ("von" maskierte sonst jedes "von"), mindestens ein Teil beginnt gross.
-NAME_PARTICLES = frozenset({
-    "von", "vom", "van", "de", "der", "den", "del", "della", "di", "da", "du", "dos", "das", "zu", "zum", "zur",
-    "ten", "ter", "le", "la", "y", "bin", "al", "el", "und",
-})
-_NAME_PART = re.compile(r"[^\W\d_]+(?:-[^\W\d_]+)*")
-MAX_NAME_PARTS = 5
+# §53: zusaetzlich ein Apostroph INNERHALB eines Teils ("O'Brien", "D’Angelo", "Dell'Anna") - nie am Anfang/Ende, nie
+# doppelt; bis zu 8 Teile ("Maria del Carmen de la Fuente y Santos"), die 80-Zeichen-Grenze (MAX_TERM_LENGTH) bleibt.
+_NAME_PART = re.compile(r"[^\W\d_]+(?:[-'’][^\W\d_]+)*")
+MAX_NAME_PARTS = 8
 
 
 def is_name_shaped_term(term: str) -> bool:
@@ -756,6 +754,8 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
                 body = f"(?:{body}|{re.escape(term.upper())})"
             # §52: mehrteiliger Name darf ueber Leerraum/Zeilenumbruch laufen (Adressblock, PDF), nie "kein Abstand"
             body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
+            # §53: gerades und typografisches Apostroph sind dieselbe Schreibung ("O'Brien" = "O’Brien")
+            body = re.sub("['’]", "['’]", body)
             boundary_after = _GENITIVE_AFTER
         pattern = re.compile(boundary_before + body + boundary_after)
         for match in pattern.finditer(text):

@@ -2092,7 +2092,7 @@
 
       function termOccursIn(text, term) {
         var gap = "(?:[ \\t]+|[ \\t]*\\r?\\n[ \\t]*)";
-        function body(value) { return value.split(" ").map(escapeRegExp).join(gap); }
+        function body(value) { return value.split(" ").map(escapeRegExp).join(gap).replace(/['’]/g, "['’]"); }
         var pattern = body(term);
         if (term.toUpperCase() !== term) { pattern = "(?:" + pattern + "|" + body(term.toUpperCase()) + ")"; }
         return new RegExp("(?:^|[^\\p{L}\\p{N}_])" + pattern + "(?=(?:s|'s|’s)?(?:[^\\p{L}\\p{N}_]|$))", "u").test(text);
@@ -2105,9 +2105,9 @@
       }
 
       function isNameShaped(words) {
-        if (!words.length || words.length > 5) { return false; }
+        if (!words.length || words.length > 8) { return false; }
         var ok = words.every(function (word) {
-          if (!/^\p{L}+(?:-\p{L}+)*$/u.test(word)) { return false; }
+          if (!/^\p{L}+(?:[-'’]\p{L}+)*$/u.test(word)) { return false; }
           return word[0] !== word[0].toLowerCase() || NAME_PARTICLES.indexOf(word) >= 0;
         });
         var last = words[words.length - 1];

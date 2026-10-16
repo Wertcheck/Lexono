@@ -62,6 +62,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   der nächsten Anfrage in allen Pfaden). Kleinschreibung untersucht: nicht sicher unterscheidbar, keine Änderung.
   Benchmarks unverändert, eine neu gefundene Blockade (Genitiv am Platzhalter) behoben. **Offen:** Markier-UI in
   Formular-Workflows, Apostroph-Namen, Titel im Platzhalter.
+  **Fortschritt 16.10.2026 (§53):** Rückführung zusammengesetzter Namen korrigiert: „Frau von [P]“ ergibt „Frau von
+  Berg“ statt „von Anna von Berg“, „Herr Müller“ bekommt keinen eingeschleusten Titel mehr; exakte Rundwege 3/9 →
+  8/9, ohne Anrede bewusst der Vollname (Rubrum). Apostroph-Namen („O'Brien“ = „O’Brien“) und bis zu 8 Namensteile
+  markierbar. Gesendeter Inhalt und alle Benchmarks unverändert. **Offen:** Markier-UI in Formular-Workflows,
+  Titel im Platzhalter, Kleinschreibung (§52.3).
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

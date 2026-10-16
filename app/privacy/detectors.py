@@ -1686,6 +1686,32 @@ _PREFIX_WORD = r"(?:" + "|".join(sorted(MANUAL_NAME_PREFIX_WORDS, key=len, rever
 NAME_PREFIX_RUN = re.compile(r"(?:" + _PREFIX_WORD + r"[ \t]+)+", re.IGNORECASE)
 
 
+# §52/§53: Namenszusaetze (kleingeschriebene Teile eines Personennamens: "Anna von Berg", "van der Meer")
+NAME_PARTICLES = frozenset({
+    "von", "vom", "van", "de", "der", "den", "del", "della", "di", "da", "du", "dos", "das", "zu", "zum", "zur",
+    "ten", "ter", "le", "la", "y", "bin", "al", "el", "und",
+})
+
+
+def is_name_prefix_word(word: str) -> bool:
+    """§53: Anrede/Titel/Rolle vor einem Namen ("Herr", "Dr.", "Dipl.-Ing.", "Richterin")."""
+    parts = [part for part in re.split(r"[.\-]", word.lower().rstrip(".:,")) if part]
+    return bool(parts) and all(part in MANUAL_NAME_PREFIX_WORDS for part in parts)
+
+
+def name_context(text_before: str) -> tuple[str, tuple[str, ...]] | None:
+    """§53: Steht unmittelbar vor einer Textstelle (gleiche Zeile) eine Anrede/Titel/Rolle, gefolgt von hoechstens
+    Namenszusaetzen? -> (letztes Anrede-/Titel-/Rollenwort in Kleinschreibung ohne Punkt, Zusaetze). Sonst None.
+    "Frau von " -> ("frau", ("von",)); "Herr Dr. " -> ("dr", ()); "Brief von " -> None."""
+    words = text_before.split("\n")[-1].split()
+    particles: list[str] = []
+    while words and words[-1] in NAME_PARTICLES:
+        particles.insert(0, words.pop())
+    if not words or not is_name_prefix_word(words[-1]):
+        return None
+    return words[-1].lower().rstrip(".:,").replace("herrn", "herr"), tuple(particles)
+
+
 def strip_name_prefix(value: str) -> str:
     """§52: Name ohne fuehrende Anrede/Titel/Rolle ("Dr. Hans-Peter Müller" -> "Hans-Peter Müller"); unveraendert, wenn
     danach nichts uebrig bliebe."""

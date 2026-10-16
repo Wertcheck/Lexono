@@ -69,7 +69,7 @@ def test_whitespace_inside_a_marked_name_is_normalised() -> None:
     ("Herr Müller", "ohne Anrede, Titel oder Rolle"),
     ("Hans--Peter Müller", "Ungültiger Begriff|Bitte nur Namen markieren"),
     ("A1 Berg", "Ungültiger Begriff"),
-    ("Eins Zwei Drei Vier Fünf Sechs", "Ungültiger Begriff|Bitte nur Namen markieren"),
+    ("Eins Zwei Drei Vier Fünf Sechs Sieben Acht Neun", "Ungültiger Begriff|Bitte nur Namen markieren"),  # §53: max. 8 Teile
 ])
 def test_not_name_shaped_terms_are_rejected(term, expected) -> None:
     with pytest.raises(InvalidPrivacyDecisionError, match=expected):
