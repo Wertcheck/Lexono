@@ -75,6 +75,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 16.10.2026 (§55):** Im Editor sind auch Namen im noch nicht gespeicherten Text markierbar. Der aktuelle
   Editorinhalt dient nur als Prüfgrundlage: kein automatisches Speichern, nicht in der Cloud-Anfrage. Veraltete oder
   ungültige Markierungen brechen sicher ab. HTTP-Nachweis und Browser-QA; Benchmarks unverändert.
+  **Fortschritt 16.10.2026 (§56):** „Namen schützen“ in hochgeladenen Dokumenten (Akten- und Chat-Dokumentansicht,
+  KI-Aktionen auf Dokumenten). Dieselbe Prüf- und Speicherlogik, an den Textstand gebunden (Fingerabdruck),
+  geschützte Namen im Text hervorgehoben. Unabhängiges Review: ein mittlerer Befund behoben (ungespeicherte
+  Dokument-Markierung beim Chat-Senden). **Offen:** Chat- und Schriftsatz-Upload senden im selben Request, vor jeder
+  Markierung (sicherer Ablauf: zuerst in der Akte hochladen und markieren); Mail- und Intake-Dokumente erst nach der
+  Zuordnung markierbar; Hinweise per Fehlercode statt Freitext in der URL.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

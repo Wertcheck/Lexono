@@ -43,7 +43,8 @@ from app.chat import processing_claims
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
-from app.web.name_protection import install_name_protection
+from app.privacy.decisions import load_decisions
+from app.web.name_protection import document_text_version, install_name_protection, protect_document_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
 from app.privacy.decisions import parse_manual_terms, record_manual_terms
@@ -251,6 +252,8 @@ def chat_document_view(
     document_id: str,
     request: Request,
     mark: str | None = Query(default=None, max_length=80),
+    name_protection: str = "",
+    name_protection_error: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse | RedirectResponse:
@@ -276,7 +279,11 @@ def chat_document_view(
         )
 
     review_terms = frozenset({mark.strip()}) if mark and mark.strip() and "\n" not in mark else frozenset()
-    preview = build_document_preview(document.extracted_text, review_terms=review_terms)
+    # §56: aktenweit geschuetzte Namen sichtbar machen; Markierung an den angezeigten Textstand gebunden
+    preview = build_document_preview(
+        document.extracted_text, review_terms=review_terms,
+        protected_terms=load_decisions(db, matter_id=active_conversation.matter_id, conversation_id=None).personal,
+    )
     return _render_chat_page(
         request,
         db,
@@ -285,6 +292,11 @@ def chat_document_view(
         active_conversation,
         viewing_document=document,
         document_preview=preview,
+        name_protection_context={
+            "document_text_version": document_text_version(document),
+            "name_protection_saved": name_protection == "saved",
+            "name_protection_error": name_protection_error[:300],
+        },
     )
 
 
@@ -352,6 +364,7 @@ def _render_chat_page(
     viewing_document: Document | None = None,
     document_preview=None,
     pending_matter: Matter | None = None,
+    name_protection_context: dict | None = None,
 ) -> HTMLResponse:
     settings = get_settings()
     # Phase 3 (§71): war bisher nur auf den direkten Dev-Modus geprueft
@@ -433,6 +446,8 @@ def _render_chat_page(
         # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
         "viewing_document": viewing_document,
         "document_preview": document_preview,
+        **(name_protection_context or {"document_text_version": "", "name_protection_saved": False,
+                                       "name_protection_error": ""}),
         # Allgemeiner Chat vs. Chat MIT Aktenkontext (05.10., Owner-Direktive
         # "ARCHITECTURE & PRODUCT FLOW PASS" §5-9): jede Konversation ist
         # technisch IMMER an eine Akte gebunden (Aktenisolation, siehe
@@ -920,6 +935,8 @@ def start_conversation_from_document(
     request: Request,
     document_id: str,
     action: str = Form(...),
+    protected_terms: str = Form(""),
+    text_version: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
 ) -> RedirectResponse:
@@ -933,6 +950,13 @@ def start_conversation_from_document(
             status_code=400,
             detail="Dokument muss zuerst einer Akte zugeordnet werden.",
         )
+
+    # §56: in der Dokumentansicht markierte (noch nicht gespeicherte) Namen gehen mit der Aktion mit - gegen den
+    # angezeigten Textstand geprueft und VOR dem ersten Cloud-Aufruf als aktenweite Entscheidung gespeichert.
+    # Fehler -> nichts gestartet, nichts gesendet (Meldung ohne Begriff).
+    problem = protect_document_terms(db, document, protected_terms, text_version, current_user)
+    if problem is not None:
+        raise HTTPException(status_code=400, detail=problem)
 
     filename = document.original_filename or "Dokument"
     prompt = prompt_template.format(filename=filename)

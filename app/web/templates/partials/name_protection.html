@@ -19,3 +19,62 @@
 {% macro field(id_prefix) %}
   <input type="hidden" name="protected_terms" class="{{ id_prefix }}-protected-terms" value="" />
 {% endmacro %}
+
+{# §56: Markierung in einem hochgeladenen Dokument (Akten- und Chat-Dokumentansicht). Gespeichert wird ueber
+   POST .../document/{id}/protect-names (app/web/document_actions_router.py) bzw. zusammen mit einer KI-Aktion
+   (Formulare mit data-name-protection-form="document" tragen dieselben Felder). `text_version` bindet die Markierung
+   an den angezeigten Textstand (app/web/name_protection.document_text_version). #}
+{% macro document_controls(form_action, text_version, csrf_token, return_to="", saved=False, error="") %}
+  <div class="document-name-protection" id="name-protection">
+    <div class="name-protection-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0;">
+      {{ controls("document", "Im Dokumenttext markierten Namen vor jeder Cloud-Übergabe dieser Akte pseudonymisieren") }}
+      <form method="post" action="{{ form_action }}" id="document-protect-form" data-name-protection-form="document" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        {{ field("document") }}
+        <input type="hidden" name="text_version" value="{{ text_version }}" />
+        <input type="hidden" name="return_to" value="{{ return_to }}" />
+        <button type="submit" class="btn" style="padding: 4px 10px; font-size: 12px;">Markierung speichern</button>
+      </form>
+    </div>
+    {% if saved %}
+      <p class="form-hint" id="document-protect-saved">Markierung gespeichert – diese Namen werden vor jeder Cloud-Übergabe dieser Akte pseudonymisiert und unten hervorgehoben.</p>
+    {% endif %}
+    <div class="name-protection-error" id="document-protect-error"{% if not error %} hidden{% endif %}>{{ error }}</div>
+  </div>
+{% endmacro %}
+
+{% macro document_action_fields(text_version) %}
+  {{ field("document") }}
+  <input type="hidden" name="text_version" value="{{ text_version }}" />
+{% endmacro %}
+
+{% macro document_script(text_selector) %}
+  <script>
+    (function () {
+      // §56 "Namen schützen" im Dokumenttext (gemeinsamer Baustein, app_name_protection.js)
+      var text = document.querySelector({{ text_selector | tojson }});
+      var protectError = document.getElementById("document-protect-error");
+      var button = document.getElementById("document-protect-btn");
+      if (!window.LexonoNameProtection || !text || !button || !protectError) { return; }
+      function showProtectError(message) { protectError.textContent = message; protectError.hidden = false; }
+      var widget = window.LexonoDocumentNameProtection = window.LexonoNameProtection.create({
+        button: button,
+        list: document.getElementById("document-protected-list"),
+        fields: Array.prototype.slice.call(document.querySelectorAll(".document-protected-terms")),
+        getText: function () { return text.innerText; },
+        getSelectedText: function () { return window.LexonoNameProtection.selectionWithin([text]); },
+        onError: showProtectError,
+        onOk: function () { protectError.hidden = true; }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-name-protection-form="document"]'), function (form) {
+        window.LexonoNameProtection.guardForm(form, widget, showProtectError, function () { protectError.hidden = true; });
+      });
+      var saveForm = document.getElementById("document-protect-form");
+      if (saveForm) {
+        saveForm.addEventListener("submit", function (evt) {
+          if (!widget.terms().length) { evt.preventDefault(); showProtectError("Bitte zuerst einen Namen im Text markieren."); }
+        });
+      }
+    })();
+  </script>
+{% endmacro %}

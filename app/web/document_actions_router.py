@@ -61,9 +61,11 @@ Aktenisolation (CLAUDE.md) bleibt gewahrt: jedes Dokument wird über
 
 from __future__ import annotations
 
+import json
 import mimetypes
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import RedirectResponse
@@ -78,7 +80,8 @@ from app.db.session import get_db
 from app.documents.lifecycle import restore_document, soft_delete_document
 from app.documents.service import DocumentProcessingService
 from app.ingestion.stability import compute_sha256
-from app.models import AuditEvent, Document, Matter, User
+from app.models import AuditEvent, ChatConversation, Document, Matter, User
+from app.web.name_protection import protect_document_terms
 
 router = APIRouter(prefix="/dashboard/matters", tags=["dashboard-matters-documents"])
 
@@ -129,6 +132,54 @@ def rename_document(
         url=f"/dashboard/matters/{matter.id}/document/{document.id}",
         status_code=303,
     )
+
+
+def _is_empty_list(raw: str) -> bool:
+    try:
+        return json.loads(raw) == []
+    except ValueError:
+        return False
+
+
+@router.post("/{matter_id}/document/{document_id}/protect-names")
+def protect_document_names(
+    matter_id: str,
+    document_id: str,
+    protected_terms: str = Form(""),
+    text_version: str = Form(""),
+    return_to: str = Form(""),
+    current_user: User = Depends(require_role()),
+    db: Session = Depends(get_db),
+) -> RedirectResponse:
+    """§56 "Namen schützen" in einem hochgeladenen Dokument: markierte Namen aus dem angezeigten, extrahierten Text als
+    dieselbe aktenweite Entscheidung "Als Person behandeln" speichern (Chat, Formulare, Entwurfspruefung wenden sie an).
+    Nur zusaetzlicher Schutz - darum fuer jede Rolle mit Aktenzugang; Aufheben bleibt PERM_PRIVACY_DECISION_MANAGE.
+    Aktenisolation: Dokument muss zur Akte der URL gehoeren. Meldungen ohne Begriff (stehen in der URL)."""
+    matter = get_or_404(db, Matter, matter_id, "Akte")
+    if matter.deleted_at is not None:
+        raise HTTPException(status_code=404, detail="Akte nicht gefunden")
+    document = (
+        db.query(Document)
+        .filter(Document.id == document_id, Document.matter_id == matter.id, Document.deleted_at.is_(None))
+        .first()
+    )
+    if document is None:
+        raise HTTPException(status_code=404, detail="Dokument nicht in dieser Akte")
+
+    # Rueckkehr nur in die Dokumentansicht der Akte oder eines EIGENEN Chats DIESER Akte (keine freie Weiterleitung)
+    target = f"/dashboard/matters/{matter.id}/document/{document.id}"
+    if return_to.startswith("chat:"):
+        conversation = db.get(ChatConversation, return_to[len("chat:"):])
+        if conversation is not None and conversation.matter_id == matter.id and conversation.user_id == current_user.id:
+            target = f"/dashboard/chat/{conversation.id}/document/{document.id}"
+
+    if not protected_terms.strip() or _is_empty_list(protected_terms):
+        problem = "Bitte zuerst einen Namen im Text markieren."  # kein "gespeichert" ohne Markierung
+    else:
+        problem = protect_document_terms(db, document, protected_terms, text_version, current_user)
+    if problem is not None:
+        return RedirectResponse(url=f"{target}?name_protection_error={quote(problem)}#name-protection", status_code=303)
+    return RedirectResponse(url=f"{target}?name_protection=saved#name-protection", status_code=303)
 
 
 @router.post("/{matter_id}/document/{document_id}/delete")

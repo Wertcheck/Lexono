@@ -48,6 +48,8 @@ from app.documents.rendering import (
 )
 from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission, require_login, require_role
 from app.privacy.decisions import list_for_matter as list_privacy_decisions
+from app.privacy.decisions import load_decisions
+from app.web.name_protection import document_text_version, install_name_protection
 from app.clients.service import PRACTICE_AREA_SUGGESTIONS
 from app.deadlines.review import has_conflict, kind_label, review_hint
 from app.db.session import get_db
@@ -68,7 +70,7 @@ from app.models import (
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/matters", tags=["dashboard-matters"])
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §56 "Namen schützen" (Dokumentansicht)
 
 
 def _insert_soft_breaks(value: str) -> Markup:
@@ -580,6 +582,8 @@ def matter_document_view(
     document_id: str,
     request: Request,
     reanalysis: str = "",
+    name_protection: str = "",
+    name_protection_error: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
@@ -653,7 +657,14 @@ def matter_document_view(
         "current_user": current_user,
         "matter": matter,
         "document": document,
-        "preview": build_document_preview(document.extracted_text),
+        # §56: aktenweit geschuetzte Namen im Text sichtbar machen (nur Anzeige, dieselbe Fundstellenlogik)
+        "preview": build_document_preview(
+            document.extracted_text,
+            protected_terms=load_decisions(db, matter_id=matter.id, conversation_id=None).personal,
+        ),
+        "text_version": document_text_version(document),
+        "name_protection_saved": name_protection == "saved",
+        "name_protection_error": name_protection_error[:300],
         "document_deadlines": document_deadlines,
         # ARCHITECTURE.md §73: Art, Konflikt und Pruefhinweis je Frist - reine Darstellung (app/deadlines/review.py).
         "deadline_review": {

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% import "_labels.html" as labels %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}{{ document.original_filename or "Dokument" }}{% endblock %}
 {% block content %}
   {# Dokumentansicht innerhalb der Akte (14.09.) - schliesst die Luecke, dass
@@ -153,8 +154,9 @@
             ("extract_data", "Wichtige Daten extrahieren"),
             ("draft_reply", "Schriftsatz-Entwurf erstellen"),
           ] %}
-            <form method="post" action="/dashboard/chat/from-document/{{ document.id }}" class="js-ai-form">
+            <form method="post" action="/dashboard/chat/from-document/{{ document.id }}" class="js-ai-form" data-name-protection-form="document">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              {{ name_protection.document_action_fields(text_version) }}
               <input type="hidden" name="action" value="{{ action }}" />
               <button type="submit" class="btn{% if action == 'draft_reply' %} btn--primary{% endif %}" data-ai-loading-label="Wird gestartet …">{{ label }}</button>
             </form>
@@ -170,7 +172,10 @@
            app/documents/rendering.py-Moduldocstring zur Abgrenzung. #}
         <h2 class="panel-title">Extrahierter Text &amp; erkannte Daten</h2>
         {% if preview and preview.highlighted_html %}
-          <div class="chat-document-pane__text">{{ preview.highlighted_html | safe }}</div>
+          {# §56: nicht erkannte Namen im Text markieren und fuer die ganze Akte schuetzen #}
+          {{ name_protection.document_controls("/dashboard/matters/" ~ matter.id ~ "/document/" ~ document.id ~ "/protect-names",
+                                               text_version, csrf_token, "", name_protection_saved, name_protection_error) }}
+          <div class="chat-document-pane__text" id="document-text">{{ preview.highlighted_html | safe }}</div>
         {% elif document.ocr_status == "pending" %}
           <div class="empty-state">
             Der Text dieses Dokuments wurde noch nicht ausgelesen (Texterkennung steht aus).
@@ -306,4 +311,8 @@
   </div>
 
   <script src="/dashboard/static/js/app_document_viewer.js"></script>
+  {% if preview and preview.highlighted_html %}
+    {{ name_protection.assets() }}
+    {{ name_protection.document_script("#document-text") }}
+  {% endif %}
 {% endblock %}

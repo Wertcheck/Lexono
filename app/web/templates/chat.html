@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% import "_identity.html" as identity %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}Chat{% endblock %}
 {% block content %}
   {# Nutzerkorrektur (01.09.): eine vorherige Aenderung hatte die
@@ -783,7 +784,11 @@
          keine erfundene Datenlogik. #}
       <section class="chat-document-pane">
         {% if document_preview and document_preview.highlighted_html %}
-          <div class="chat-document-pane__text">{{ document_preview.highlighted_html | safe }}</div>
+          {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
+          {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
+                                               document_text_version, csrf_token, "chat:" ~ active_conversation.id,
+                                               name_protection_saved, name_protection_error) }}
+          <div class="chat-document-pane__text" id="document-text">{{ document_preview.highlighted_html | safe }}</div>
         {% else %}
           <div class="chat-document-pane__empty">
             Für dieses Dokument liegt (noch) kein extrahierter Text vor.
@@ -880,8 +885,10 @@
     {% endif %}
   </div>
 
-  {% import "partials/name_protection.html" as name_protection %}
   {{ name_protection.assets() }}
+  {% if viewing_document and document_preview and document_preview.highlighted_html %}
+    {{ name_protection.document_script("#document-text") }}
+  {% endif %}
   <script>
     // Drei-Punkte-Menue (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
     // PROFESSIONAL UX PASS" §13) - wortgleiche Kopie des bereits in
@@ -2394,6 +2401,14 @@
         if (!hasContent && !hasFiles) { return; }
         // §51: veraltete Markierung (Name nach einer Textaenderung nicht mehr im Text) - nicht senden, nicht still
         // weglassen. Der Server prueft dasselbe noch einmal.
+        // §56 (unabhaengiges Review): im angezeigten Dokument markierte, noch NICHT gespeicherte Namen wuerden mit dem
+        // Anhang sonst ungeschuetzt in die Anfrage gehen - deshalb nicht senden, sondern zum Speichern auffordern.
+        var documentProtection = window.LexonoDocumentNameProtection;
+        if (documentProtection && documentProtection.terms().length) {
+          showComposerError("Im Dokument markierte Namen sind noch nicht gespeichert. Bitte zuerst „Markierung speichern“ " +
+            "wählen - es wurde nichts gesendet.");
+          return;
+        }
         var staleTerms = staleProtectedTerms();
         if (staleTerms.length) {
           showComposerError("Der markierte Name „" + staleTerms.join("“, „") +

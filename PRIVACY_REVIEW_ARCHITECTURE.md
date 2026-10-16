@@ -6914,4 +6914,132 @@ die Cloud-Anfrage nur Anweisung und Auswahl, nicht der ganze Entwurf (§54.1).
   und Rollenprüfung gilt unverändert.
 - „Richter“ am Satzanfang wird teils als Person maskiert (bekannte Grenze §46/§50).
 - Die übrigen Grenzen aus §52–§54 bleiben bestehen (Kleinschreibung, hochgeladene Dokumente, Dokument- und
-  Mandanten-Aktionen).
+  Mandanten-Aktionen). *Nachtrag §56:* hochgeladene Dokumente und Dokument-Aktionen sind jetzt angebunden.
+
+## §56 „Namen schützen“ in hochgeladenen Dokumenten (16.10.2026, Branch `feature/feedback-diagnose`, Basis `27cc723`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 56.1 Bestandsaufnahme der Dokumentpfade (vor den Änderungen, am Code)
+
+- **Text:** Einziges Textfeld ist `Document.extracted_text`. Erstmals gespeichert wird es in
+  `DocumentProcessingService.process_document` (`app/documents/service.py`, direkt bzw. nach OCR).
+  - **Synchron** beim Upload: Chat-Anhang, Schriftsatz-Upload, Upload in der Akte, Entwurfsexport.
+  - **Im Hintergrund:** Mail-Anhang, zunächst ohne Akte.
+  - Intake-Ordner: Dokumente zunächst ohne Akte.
+  - Es gibt **keine Bearbeitung** des extrahierten Texts; er ändert sich nur durch eine neue Verarbeitung (OCR-Wiederholung).
+- **Anzeige mit auswählbarem Text:** Dokumentansicht der Akte (`matter_document.html`, Bereich „Extrahierter Text“)
+  und Dokumentansicht im Chat (`chat.html`). Beide rendern `build_document_preview`: escapter Text mit `<mark>`,
+  `innerText` entspricht dem extrahierten Text. PDF/DOCX werden zusätzlich als Seitenbilder gezeigt (nicht auswählbar).
+- **Cloud-Wege:** Alle laufen über `DraftingService._prepare_and_gate`. Aktenweite Entscheidungen „Als Person
+  behandeln“ gelten dort auf **allen** Feldern, auch auf Dokumenttext und Fristen-Ausschnitten:
+  - Chat mit Anhang (`context_document_ids`) bzw. die ganze Akte;
+  - KI-Aktionen auf Dokumenten (`from-document`);
+  - Schriftsatz, Änderungsauftrag, E-Mail-Aktionen (ganze Akte);
+  - die Entwurfsprüfung sendet nur den Entwurf, ebenfalls mit Entscheidungen.
+- **Lokal:** Klassifikation, Fristen-Erkennung, Suche/Embeddings (fastembed), Vorschau-Erkennung, Qualitätsdiagnose,
+  lokale KI (sieht nur die pseudonymisierte Payload).
+- **Protokolle:** Kein Logger, Audit-Eintrag oder Diagnosebericht schreibt Dokumenttext (API-Log: Hash und Kategorien).
+- **Lücke vorher:** Namen im Dokumenttext waren nirgends markierbar; die Chat-Markierung prüft nur gegen den
+  getippten Text.
+
+### 56.2 Änderungen (dieselbe Prüf- und Speicherlogik, keine parallele Schutzarchitektur)
+
+- **Server** (`app/web/name_protection.py`):
+  - `protect_document_terms`: Prüfung mit `parse_manual_terms` gegen genau `extracted_text`, Speicherung mit
+    `record_manual_terms` als aktenweite Entscheidung „Als Person behandeln“, vor jeder Anfrage.
+  - **Bindung an den Textstand:** `document_text_version` (SHA-256-Präfix des extrahierten Texts) wird mit dem
+    Formular gesendet. Hat sich der Text seit dem Öffnen geändert, wird abgewiesen, statt die Markierung auf einen
+    anderen Text anzuwenden.
+  - Ohne Akte, ohne Text, ungültige/manipulierte Markierung oder Speicherfehler: nichts gespeichert, nichts
+    gesendet; Meldungen ohne Begriff.
+- **Endpunkt** `POST /dashboard/matters/{matter}/document/{doc}/protect-names` (`document_actions_router.py`):
+  - Aktenisolation: Dokument der Akte, Akte nicht gelöscht.
+  - Rückkehr nur in die eigene Dokumentansicht bzw. einen eigenen Chat **derselben** Akte (kein offener Redirect).
+  - Jede Rolle mit Aktenzugang, weil es den Schutz nur erweitert; Aufheben bleibt `PERM_PRIVACY_DECISION_MANAGE`.
+  - Eine leere Markierung wird nicht als „gespeichert“ gemeldet.
+- **KI-Aktionen auf Dokumenten** (`from-document`): Sie tragen die noch ungespeicherte Markierung und den
+  Textstand mit und speichern sie vor dem ersten Cloud-Aufruf. Fehler: HTTP 400, nichts gestartet.
+- **UI** (`partials/name_protection.html`: `document_controls`, `document_action_fields`, `document_script`;
+  gemeinsamer Baustein `app_name_protection.js`), eingebunden in Akten- und Chat-Dokumentansicht:
+  - Auswahl im Text, auch über automatische Hervorhebungen hinweg; Anrede, Titel und Rolle werden abgetrennt.
+  - Bereits geschützte Namen werden im Text hervorgehoben (`build_document_preview(protected_terms=…)`, gleiche
+    Fundstellenlogik). Eine Markierung verschwindet so nicht unbemerkt.
+- **Aus dem unabhängigen Review behoben (mittel):** In der Chat-Dokumentansicht hätte eine gesetzte, aber nicht
+  gespeicherte Markierung beim Senden aus dem Eingabefeld still gefehlt; der Anhang ging mit. Jetzt verweigert das
+  Eingabefeld das Senden, bis gespeichert ist.
+- **Ebenfalls aus dem Review (niedrig):** Die Meldung sagt im Dokumentkontext „im Dokumenttext“ statt „in der
+  Nachricht“.
+
+### 56.3 Tests und QA
+
+`tests/test_web_document_name_protection.py` (22 Tests, echte Endpunkte und Gateway, Antwort-Attrappe gibt den
+pseudonymisierten Sachverhalt zurück):
+
+- **Gegenprobe:** Ohne Markierung steht „Zweigelt“ in der Payload.
+- **Speichern und Wirkung:** Nach dem Speichern aktenweit geschützt, sichtbar hervorgehoben, in jeder späteren
+  KI-Aktion maskiert; Datum, Betrag, Paragraf und Aktenzeichen erhalten.
+- **Markierung über die KI-Aktion:** vor der Anfrage gespeichert.
+- **Namensformen:** Mehrwort-, Bindestrich-, Apostroph- und Zusatznamen; zwei Personen „von Berg“ getrennt;
+  „O'Brien“/„O’Brien“ mit einem Platzhalter.
+- **Rückführung:** Die Antwort enthält die Dokumentsätze exakt im Original, ohne „von Anna von Berg“ oder „Dr. Dr.“.
+- **Textstand geändert:** abgewiesen, keine Unterhaltung, keine Anfrage.
+- **Ungültige oder manipulierte Markierungen:** 7 Fälle abgewiesen.
+- **Speicherfehler:** keine Anfrage.
+- **Isolation:** fremde Akte → 404; Rückkehrziel nur in eigene Ansichten.
+- **Rollen:** Mitarbeiter darf schützen, aber nicht aufheben.
+- **Chat-Upload:** echte PDF-Extraktion → Chat-Dokumentansicht → Markierung → Folgeanfrage maskiert; die Grenze ist
+  ausdrücklich geprüft, siehe 56.4.
+- **Sende-Sperre im Chat** verdrahtet; Meldungstext im Dokumentkontext geprüft.
+- **HTTP-Nachweis** über den echten Anthropic-Provider und den lokalen Aufzeichnungsserver: keine markierten Namen
+  in den gesendeten Bytes, juristische Werte enthalten. Mitgeschnittene Protokollausgaben enthalten keinen Namen.
+
+**Geprüft ist die HTTP-Anfrage des SDK an einen lokalen Loopback-Server (unverschlüsselt). Nicht geprüft sind die
+TLS-Übertragung zum echten Endpunkt und der Relay-/Gateway-Pfad gegen einen realen Server (§47).**
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, Anthropic- und Gateway-Endpunkt auf
+einen toten Port gelegt; KI-Aktionen abgefangen):
+
+- Speichern ohne Markierung wird mit Hinweis abgewiesen.
+- „Richter Zweigelt“ → „Zweigelt“; „Zeugin Anna von Berg“ wird über die Hervorhebung hinweg zu „Anna von Berg“.
+- Die KI-Aktion trägt Markierung und Textstand; nach echtem Speichern (temporäre DB) ist der Name hervorgehoben und
+  der Hinweis sichtbar.
+- Chat-Dokumentansicht: Senden aus dem Eingabefeld mit ungespeicherter Markierung wird blockiert, ohne Anfrage.
+- Keine JS-Fehler.
+- **In der QA aufgefallen (Testaufbau, kein Produktfehler):** Die erste Abfangung im QA-Skript griff nicht. Das
+  Formularfeld `name="action"` überdeckt `form.action`, und die Ladeanzeige stoppt die Ereignisweitergabe. Zwei
+  KI-Aktionen erreichten deshalb den temporären Server. **Kein Cloud-Aufruf:** Der Server hatte keinen Schlüssel
+  (Antwort „Cloud-KI ist nicht konfiguriert“, `api_call_logs` leer). Danach wurden die Endpunkte zusätzlich auf einen
+  toten Port gelegt und die Abfangung korrigiert.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** in den Benchmarks keine Änderung (`pseudonymization_v1` kein Feldfall geändert, Legal-E2E dev/test 0,
+  ohne Abweichung). In den Dokumentwegen geht ein markierter Name nicht mehr im Klartext hinaus (Gegenprobe vorher).
+- **Fehlalarme:** unverändert.
+- **Blockaden:** neu nur bewusst bei veraltetem Textstand und ungespeicherter Dokument-Markierung im Chat.
+- **Inhalte:** unverändert (Rückführung exakt).
+- **Gesamtsuite** (6 Teile, Vordergrund): **5137 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 56.4 Grenzen und offene Risiken (nicht durch Scheinlösung verdeckt)
+
+- **Chat- und Schriftsatz-Upload senden im selben Request:** Der Text wird beim Hochladen extrahiert und gleich
+  mitgesendet; vor dem ersten Versand gibt es keinen Moment zum Markieren. Ein Name, den die Erkennung übersieht,
+  geht in dieser ersten Anfrage im Klartext hinaus; der Test hält das ausdrücklich fest.
+  - **Sicherer Ablauf:** in der Akte hochladen („Dokumente“), in der Dokumentansicht markieren, dann die KI-Aktion
+    bzw. den Chat starten.
+  - Eine Upload-ohne-Senden-Option im Chat wäre eine eigene Produktentscheidung.
+- **Mail- und Intake-Dokumente ohne Akte:** Sie sind erst nach der Zuordnung markierbar. Vorher erreichen sie keine
+  Cloud, weil die KI-Aktion eine Akte verlangt.
+- **Aus dem Review (niedrig):**
+  - Ein Name mit geschütztem Leerzeichen oder Leerzeile im Dokument wird abgewiesen (fail-closed, kein Leck).
+  - Fehler der KI-Aktion erscheinen als schlichte 400-Seite.
+  - Der Hinweistext kommt aus einem URL-Parameter (escaped; Textfälschung über einen präparierten Link möglich, wie
+    beim bestehenden `?error=`).
+  - Ein teilweise automatisch erkannter Name wird nicht zusätzlich als „geschützt“ hervorgehoben; maskiert wird er
+    trotzdem.
+  - Jede Rolle kann gewöhnliche großgeschriebene Wörter schützen (Übermaskierung, nie weniger Schutz).
+- PDF/DOCX-Seitenbilder sind nicht auswählbar; markiert wird im extrahierten Text darunter.
+- Die Markierung ist ein zusätzlicher Schutz, kein Nachweis vollständiger Erkennung. Synthetische Tests belegen
+  **keine** vollständige Leckfreiheit.

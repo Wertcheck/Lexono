@@ -7,6 +7,7 @@ Pruefen und Speichern einer Markierung: `app/privacy/decisions.parse_manual_term
 
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 
@@ -34,6 +35,39 @@ def draft_plain_text(draft) -> str:
     if getattr(draft, "content_format", None) == "html":
         content = html.unescape(_TAG.sub(" ", content))
     return content
+
+
+def document_text_version(document) -> str:
+    """§56: Fingerabdruck des extrahierten Dokumenttexts - bindet eine Markierung an GENAU den Textstand, der beim
+    Markieren angezeigt wurde. Aendert sich der Text (z. B. erneute Texterkennung), passt der Fingerabdruck nicht mehr
+    und die Markierung wird abgewiesen statt auf einen anderen Text angewendet zu werden. Kein Klartext."""
+    return hashlib.sha256((document.extracted_text or "").encode("utf-8")).hexdigest()[:32]
+
+
+def protect_document_terms(db: Session, document, protected_terms: str | None, text_version: str | None, user) -> str | None:
+    """§56: Markierung in einem hochgeladenen Dokument. Dieselbe Pruefung und Speicherung wie Chat/Formulare
+    (`parse_manual_terms`/`record_manual_terms`), geprueft gegen den extrahierten Dokumenttext; zusaetzlich muss der
+    Textstand (`document_text_version`) dem angezeigten entsprechen. Aktenweite Entscheidung, gespeichert VOR jeder
+    Anfrage. Rueckgabe: Fehlermeldung ohne Begriff (dann nichts senden) oder None."""
+    if not (protected_terms or "").strip():
+        return None
+    if not document.matter_id:
+        return "Das Dokument ist noch keiner Akte zugeordnet - bitte zuerst zuordnen. Es wurde nichts gespeichert."
+    if not document.extracted_text:
+        return "Das Dokument hat keinen ausgelesenen Text - es kann nichts markiert werden."
+    if (text_version or "") != document_text_version(document):
+        return ("Der Dokumenttext hat sich seit dem Öffnen geändert. Bitte die Ansicht neu laden und erneut markieren - "
+                "es wurde nichts gespeichert oder gesendet.")
+    try:
+        terms = parse_manual_terms(protected_terms, document.extracted_text)
+    except InvalidPrivacyDecisionError as exc:
+        return str(exc).replace("in der Nachricht", "im Dokumenttext")
+    try:
+        record_manual_terms(db, matter_id=document.matter_id, conversation_id=None, terms=terms, user_id=user.id,
+                            actor=user.email)
+    except Exception:  # noqa: BLE001 - fail-closed: ohne gespeicherte Markierung keine Anfrage
+        return "Die Namensmarkierung konnte nicht gespeichert werden - es wurde nichts gesendet."
+    return None
 
 
 def protect_manual_terms(

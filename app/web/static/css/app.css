@@ -10977,6 +10977,13 @@ a.chat-composer__protect-btn {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 55%, transparent);
   border-radius: 3px;
 }
+/* §56: manuell geschuetzter bzw. als Person entschiedener Name in der Dokumentansicht */
+.pii-highlight--protected {
+  background: color-mix(in srgb, var(--brand-green, #1f7a5a) 22%, var(--paper-000));
+  color: var(--ink-900);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-green, #1f7a5a) 55%, transparent);
+  border-radius: 3px;
+}
 .privacy-review__doc-link {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
   font-size: 13px; font-weight: 600; color: var(--brand-green-dark, var(--brand-green)); text-decoration: none;
