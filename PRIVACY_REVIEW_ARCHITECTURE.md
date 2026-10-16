@@ -6848,3 +6848,70 @@ keine Anfrage verließ den Browser), alle vier Wege ohne JS-Fehler:
   erhaltener Auswahl.
 - Kleinschreibung (§52.3) und die übrigen §53-Grenzen unverändert. Die Markierung ist ein zusätzlicher Schutz, kein
   Nachweis vollständiger Erkennung.
+- *Nachtrag §55:* Namen im noch nicht gespeicherten Editortext sind jetzt markierbar.
+
+## §55 „Namen schützen“ im noch nicht gespeicherten Editortext (16.10.2026, Branch `feature/feedback-diagnose`, Basis `799679b`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+**Ursache:** Browser und Server prüften gegen **verschiedene** Texte. Der Browser prüfte gegen den aktuellen
+Editorinhalt, der Server (`name_protection.protect_manual_terms`) gegen Anweisung, Auswahl und den **gespeicherten**
+Entwurf. Ein Name, der nur im ungespeicherten Text stand, wurde deshalb serverseitig als „kommt nicht vor“ abgewiesen,
+und die ganze KI-Bearbeitung brach ab. Das ist sicher, aber nicht nutzbar. Ein Leck gab es nicht: gemessen gehen in
+die Cloud-Anfrage nur Anweisung und Auswahl, nicht der ganze Entwurf (§54.1).
+
+**Änderung:**
+
+- Der Editor (`app_draft_editor.js`) schickt mit der KI-Bearbeitung den **aktuellen** Editorinhalt als `editor_text`
+  mit, aber nur, wenn Markierungen vorhanden sind. Der Browser hat die Markierung aus genau diesem Text abgeleitet,
+  damit ist sie an dieselbe Textversion gebunden.
+- Der Server prüft die Markierung mit derselben Funktion wie bisher (`parse_manual_terms`) gegen Anweisung, Auswahl,
+  aktuellen Editortext und gespeicherten Entwurf, und speichert sie als dieselbe aktenweite Entscheidung, **vor** der
+  Anfrage.
+- `editor_text` ist **nur Prüfgrundlage**: Er wird nicht gespeichert, nicht in die Cloud-Anfrage übernommen und nicht
+  protokolliert. Der Entwurf wird nicht automatisch gespeichert; auch das Markieren selbst löst keine Anfrage aus
+  (Browser-QA).
+- Größer als 200 000 Zeichen: sicherer Abbruch.
+- Ohne `editor_text` bleibt das bisherige Verhalten (Gegenprobe: weiterhin Abweisung).
+- Unverändert: Pseudonymisierung, Rückführung, Rückfrage, Fail-Closed, Siegel, Berechtigungen.
+
+**Tests** (`tests/test_web_editor_unsaved_name_protection.py`, 13 Tests):
+
+- Gegenprobe ohne Editortext.
+- Name nur im ungespeicherten Text, in der Auswahl: geschützt; gespeicherter Entwurf unverändert; Editortext nicht in
+  der Anfrage.
+- Name nur im ungespeicherten Text außerhalb der Auswahl: aktenweit gespeichert und in der späteren Entwurfsprüfung
+  maskiert.
+- 5 veraltete, mehrdeutige oder ungültige Fälle (ersetzt, gelöscht, Wortteil, mit Rolle, manipuliert): Abbruch mit
+  Meldung ohne Begriff, keine Anfrage, keine Entscheidung.
+- Zu langer Editortext; Speicherfehler: keine Anfrage, Entwurf unverändert.
+- Mehrwort-, Bindestrich-, Apostroph- und Zusatznamen, zwei Personen „von Berg“ getrennt.
+- Exakte Rückführung der ungespeicherten Auswahl, ohne „von Anna“, „Dr. Dr.“ oder „Herr Dr.“.
+- **HTTP-Nachweis** über den lokalen Aufzeichnungsserver: „Brummelbeck“ und der übrige Editortext sind nicht in den
+  gesendeten Bytes, das Datum ist enthalten.
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel; `fetch` abgefangen):
+
+- Ein in den Editor getippter, nicht gespeicherter Name wird markiert, ohne dass eine Anfrage entsteht.
+- Beim Senden gehen Markierung und Editortext mit.
+- Wird der Name danach ersetzt, ist die Markierung veraltet und das Senden blockiert, mit verständlichem Hinweis.
+- Keine JS-Fehler.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** keine neuen. `pseudonymization_v1` kein Feldfall geändert, Legal-E2E dev/test 0, abweichend: keine.
+- **Fehlalarme:** unverändert.
+- **Blockaden:** Die bisher unnötige Abweisung (Name nur im ungespeicherten Text) entfällt; bei veralteter Markierung
+  wird weiterhin bewusst blockiert.
+- **Inhalte:** unverändert (Rückführung exakt).
+- **Gesamtsuite** (6 Teile, Vordergrund): **5115 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+**Offene Grenzen:**
+
+- `editor_text` stammt vom Browser. Ein manipulierter Wert kann nur **zusätzliche** Namen als „Als Person behandeln“
+  speichern (mehr Schutz, ggf. Übermaskierung eines selbst gewählten Worts), nie Schutz entfernen. Die Namensform-
+  und Rollenprüfung gilt unverändert.
+- „Richter“ am Satzanfang wird teils als Person maskiert (bekannte Grenze §46/§50).
+- Die übrigen Grenzen aus §52–§54 bleiben bestehen (Kleinschreibung, hochgeladene Dokumente, Dokument- und
+  Mandanten-Aktionen).

@@ -17,6 +17,8 @@ from app.privacy.decisions import InvalidPrivacyDecisionError, parse_manual_term
 from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES
 
 _TAG = re.compile(r"<[^>]+>")
+# §55: Obergrenze fuer den mitgeschickten aktuellen Editortext (nur Pruefgrundlage, wird nie gespeichert/gesendet)
+MAX_CURRENT_TEXT_CHARS = 200_000
 
 
 def install_name_protection(templates: Jinja2Templates) -> Jinja2Templates:
@@ -34,14 +36,24 @@ def draft_plain_text(draft) -> str:
     return content
 
 
-def protect_manual_terms(db: Session, draft, user_text: str, protected_terms: str | None, user) -> str | None:
+def protect_manual_terms(
+    db: Session, draft, user_text: str, protected_terms: str | None, user, *, current_text: str | None = None
+) -> str | None:
     """§54: Markierung fuer eine Anfrage auf einem bestehenden Entwurf (Aenderungsauftrag, Editor). Geprueft gegen
     Auftrag/Auswahl (das geht in die Anfrage) UND den angezeigten Entwurf: ein dort stehender, nicht erkannter Name ist
     ebenso markierbar - die Entscheidung gilt aktenweit fuer jede spaetere Anfrage (gemessen 16.10.2026: der
     Aenderungsauftrag selbst sendet den bisherigen Entwurf nicht mit, nur Aktentitel und Auftrag). Gespeichert VOR der
-    Anfrage. Rueckgabe: Fehlermeldung ohne Begriff (dann nichts senden) oder None."""
+    Anfrage. Rueckgabe: Fehlermeldung ohne Begriff (dann nichts senden) oder None.
+
+    §55 `current_text`: der AKTUELLE, ggf. noch nicht gespeicherte Editorinhalt, mit derselben Anfrage geschickt, aus
+    dem der Browser die Markierung abgeleitet hat - damit ist die Markierung an genau die Textversion gebunden, die die
+    Person sieht. Er ist nur Pruefgrundlage: er wird weder gespeichert noch in die Cloud-Anfrage uebernommen (die
+    enthaelt weiterhin nur Anweisung und Auswahl) und nie protokolliert. Kein automatisches Speichern des Entwurfs."""
+    if current_text is not None and len(current_text) > MAX_CURRENT_TEXT_CHARS:
+        return "Der Editortext ist für die Namensprüfung zu lang - es wurde nichts gesendet."
+    basis = "\n".join((user_text or "", current_text or "", draft_plain_text(draft)))
     try:
-        terms = parse_manual_terms(protected_terms, f"{user_text or ''}\n{draft_plain_text(draft)}")
+        terms = parse_manual_terms(protected_terms, basis)
     except InvalidPrivacyDecisionError as exc:
         return str(exc)
     if not terms:

@@ -207,6 +207,7 @@ def apply_ai_edit(
     purpose: str = Form(...),
     selected_text: str = Form(""),
     protected_terms: str = Form(""),
+    editor_text: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
     service: EditorService = Depends(get_editor_service_for_ai_edit),
@@ -227,7 +228,9 @@ def apply_ai_edit(
         )
     # §54 "Namen schützen": geprueft gegen Anweisung/Auswahl (gehen in die Anfrage) und den gespeicherten Entwurf;
     # gespeichert VOR der Anfrage, Fehler -> nichts gesendet
-    problem = protect_manual_terms(db, draft, f"{instruction_text}\n{selected_text}", protected_terms, current_user)
+    # §55: `editor_text` = aktueller (ggf. ungespeicherter) Editorinhalt, nur Pruefgrundlage der Markierung
+    problem = protect_manual_terms(db, draft, f"{instruction_text}\n{selected_text}", protected_terms, current_user,
+                                   current_text=editor_text)
     if problem is not None:
         return JSONResponse({"success": False, "error": problem}, status_code=422)
 

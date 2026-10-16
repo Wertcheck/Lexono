@@ -72,6 +72,9 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   (`decisions.parse_manual_terms`/`record_manual_terms`) und ein Browser-Baustein (`app_name_protection.js`), auch vom
   Chat genutzt. HTTP-Nachweis, Browser-QA aller vier Wege, Benchmarks unverändert. **Offen:** Markierung in
   hochgeladenen Dokumenten und in Dokument-/Mandanten-Aktionen.
+  **Fortschritt 16.10.2026 (§55):** Im Editor sind auch Namen im noch nicht gespeicherten Text markierbar. Der aktuelle
+  Editorinhalt dient nur als Prüfgrundlage: kein automatisches Speichern, nicht in der Cloud-Anfrage. Veraltete oder
+  ungültige Markierungen brechen sicher ab. HTTP-Nachweis und Browser-QA; Benchmarks unverändert.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

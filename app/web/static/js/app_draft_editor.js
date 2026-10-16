@@ -323,6 +323,9 @@
       purpose: purpose || "improve_draft",
       selected_text: selectedText || "",
       protected_terms: nameProtection && nameProtection.terms().length ? JSON.stringify(nameProtection.terms()) : "",
+      // §55: aktueller (ggf. noch nicht gespeicherter) Editorinhalt - NUR mit Markierung und nur als Pruefgrundlage
+      // (der Server bindet die Markierung daran, speichert und sendet ihn nicht)
+      editor_text: nameProtection && nameProtection.terms().length ? surface.innerText : "",
     })
       .then((resp) => resp.json())
       .then((data) => {
