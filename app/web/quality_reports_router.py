@@ -23,6 +23,7 @@ from app.auth.permissions import (
     require_login,
     require_role,
 )
+from app.config import get_settings
 from app.db.session import get_db
 from app.models import Matter, QualityReport, RegressionCase, User
 from app.models.quality_report import DIAGNOSIS_STAGES, QUALITY_CATEGORIES, STATUS_DISMISSED, STATUS_RESOLVED
@@ -80,6 +81,8 @@ def reports_page(
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     _require_review(current_user)
+    # Aufbewahrung (§75.1) auch ohne Neustart wirksam: vor dem Anzeigen abgelaufene Inhalte leeren.
+    QualityReportService().expire_content(db, content_days=get_settings().quality_report_content_days)
     reports = db.query(QualityReport).order_by(QualityReport.created_at.desc()).all()
     matters = {m.id: m for m in db.query(Matter).filter(Matter.id.in_({r.matter_id for r in reports})).all()} if reports else {}
     report = db.get(QualityReport, selected) if selected else None

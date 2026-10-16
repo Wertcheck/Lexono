@@ -48,7 +48,7 @@
         <dt class="task-detail-panel__field-label">Gemeldet von</dt><dd class="task-detail-panel__field-value">{{ report.reported_by }}</dd>
         <dt class="task-detail-panel__field-label">Status</dt><dd class="task-detail-panel__field-value">{{ report.status }}</dd>
         <dt class="task-detail-panel__field-label">Fundstelle</dt>
-        <dd class="task-detail-panel__field-value">{{ report.excerpt or "– (nicht angegeben oder nach Abschluss gelöscht)" }}</dd>
+        <dd class="task-detail-panel__field-value">{{ report.excerpt or "– (nicht angegeben, nach Abschluss oder nach Ablauf der Aufbewahrungsfrist gelöscht)" }}</dd>
         <dt class="task-detail-panel__field-label">Beschreibung</dt><dd class="task-detail-panel__field-value">{{ report.description or "–" }}</dd>
         {% if report.confirmed_stage %}
           <dt class="task-detail-panel__field-label">Bestätigte Ursache</dt>
@@ -100,7 +100,7 @@
           <label class="form-label">Notiz<input type="text" name="note" maxlength="2000" /></label>
           <button type="submit" name="outcome" value="behoben" class="btn btn--primary">Als behoben abschließen</button>
           <button type="submit" name="outcome" value="verworfen" class="btn">Verwerfen</button>
-          <p class="form-hint">Beim Abschließen wird die Fundstelle gelöscht. „Behoben“ setzt eine bestätigte Ursache und eine Korrektur oder einen freigegebenen Regressionsfall voraus.</p>
+          <p class="form-hint">Beim Abschließen werden Fundstelle und Beschreibung gelöscht (offene Meldungen spätestens nach Ablauf der Aufbewahrungsfrist). „Behoben“ setzt eine bestätigte Ursache und eine Korrektur oder einen freigegebenen Regressionsfall voraus.</p>
         </form>
       {% endif %}
 

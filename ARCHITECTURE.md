@@ -5270,11 +5270,34 @@ HMAC-Statistik. Neu ist `app/quality_reports/` für **aktenbezogene** Fehler der
 
 **Migration:** `schritt3_031` (zwei neue Tabellen `quality_reports`, `regression_cases`, rein additiv).
 
-**Befunde beim Aufbau (16.10.2026, echte lokale Pipeline):** zwei reproduzierte Überpseudonymisierungen als
-`known_open`-Fälle festgehalten, **nicht** behoben (Regeländerung braucht Prüfung): „bei Grün“ → `[PERSON_01]`
-(§34.6, weiterhin offen) und das Wort „Telefon“ vor einer Rufnummer → `[PERSON_02]` (neu).
+**Befunde beim Aufbau (16.10.2026, echte lokale Pipeline):** zwei reproduzierte Überpseudonymisierungen
+(„bei Grün“ → `[PERSON_01]`, „Telefon“ → `[PERSON_02]`) – inzwischen behoben, siehe §75.2.
 
 **Grenzen / nicht umgesetzt:** Meldung nur aus der Dokumentansicht (nicht aus Chat, Entwurf, E-Mail); Diagnose der
 Kategorie „mögliches Datenschutzproblem“ nur Lokalisierung, Rest manuell; keine Aufbewahrungsfrist für offene
 Meldungen (manuelles Löschen); die Diagnose betrachtet ±1500 Zeichen um die Fundstelle, nicht das ganze Dokument und
 nicht andere Pfade (Chat-Verlauf, Wissenseinträge) – „Routing“ heißt dort „im Standardpfad nicht reproduziert“.
+
+## 75.1 Qualitätsmeldungen: Aufbewahrung und Löschung (16.10.2026)
+
+**Bestehende Mechanismen geprüft:** `retention_days` ist nur ein Platzhalter ohne Wirkung (§27.5 K3: nicht als wirksam
+darstellen, solange kein Löschpfad existiert); Aufbewahrungsfristen je Datenkategorie legt die Kanzlei fest (§27.5 K1,
+offen). Periodische Aufgaben laufen bereits im App-Lebenszyklus (`app/main.py::lifespan`).
+
+**Konzept (ohne Datenbankänderung):**
+| Datum | Regel |
+|---|---|
+| Fundstelle + Beschreibung (einzige Inhaltsfelder) | geleert beim Abschließen/Verwerfen; bei offenen Meldungen nach `QUALITY_REPORT_CONTENT_DAYS` (Standard 90, 1–3650); sofort, wenn die Akte (weich) gelöscht ist |
+| Meldung selbst, Status, vermutete/bestätigte Stufe, Diagnose (inhaltsfrei), Korrekturverweis | bleiben zur Nachvollziehbarkeit; endgültiges Löschen manuell (`quality:review`) oder mit der Akte (`ON DELETE CASCADE`) |
+| Synthetische Regressionsfälle | bleiben (keine Mandantendaten, leck-geprüft); Löschung der Meldung entfernt nur den Bezug |
+| Audit | je Leerung `quality_report_content_expired` (Akteur `system`, Grund `frist_<n>_tage`/`akte_geloescht`, kein Inhalt) |
+
+**Ausführung:** täglich im App-Lebenszyklus (erster Lauf nach 5 Minuten, Fehler beenden die Schleife nicht) und vor
+jeder Anzeige der Prüfliste – damit auch ohne Neustart wirksam. Nur Inhaltsreduktion, deshalb mit aktivem Standard; der
+Wert ist eine Kanzleientscheidung im Sinne von K1 und über `.env` änderbar (keine UI).
+
+## 75.2 Überpseudonymisierung „Telefon“/„bei Grün“ behoben (16.10.2026)
+
+Ursache und Korrektur in `PRIVACY_REVIEW_ARCHITECTURE.md` §45 (Rückfrage-Kandidaten, zwei enge Ausnahmen; Presidio,
+Regex, Aktendaten-Abgleich und alle Gates unverändert; Namens- und Pseudonymisierungs-Benchmark vorher/nachher
+identisch). Zwei neue, andersartige Befunde („bei Rot“ → Ort, „Mobil“+Nummer → Person) als `known_open` erfasst.

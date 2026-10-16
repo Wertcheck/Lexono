@@ -6073,3 +6073,44 @@ präzisiert.
 - `tests/test_relay_retry_budget.py` (16): Startprüfung mit Gegenproben, Relay-Start, SDK-Charakterisierung.
 - Mutationsprobe 3/3.
 - Alle Relay-Testdateien: 108 bestanden.
+
+## §45 Rückfrage-Kandidaten: Kontaktbezeichnung und Ampelfarbe sind keine Namen (16.10.2026, Branch `feature/feedback-diagnose`)
+
+**Reproduziert (echter Gateway, `review_mode="mask"`):**
+- „Rückfragen bitte an Herrn Gustav Wendelin, **Telefon** 0301 2345678.“ → „…, [PERSON_02] [TELEFON_01].“
+- „Der Fahrer fuhr **bei Grün** über die Kreuzung …“ → „… bei [PERSON_01] …“ (seit §34.6 als gemessen, offen geführt)
+
+**Ursache:** Nicht Presidio, nicht Regex, nicht Pseudonymizer – beide stammen aus der Stufe „unsichere Kandidaten“
+(`app/privacy/review.py::find_review_candidates`), deren Kandidaten im Maskier-Modus vorsichtshalber ersetzt werden
+(`auto_masked_terms`):
+- „Telefon“: Rolle `aufzaehlung_mit_person` (Wort direkt nach „[PERSON_01],“), Namensprobe 2 → Kandidat. Das Wort ist
+  die Bezeichnung der folgenden, bereits maskierten Rufnummer. „Fax“ verhielt sich gleich.
+- „Grün“: Rolle `nach_praeposition` („bei“ zählt als Namenspräposition), Namensprobe 2 (Grün ist ein Nachname).
+
+**Korrektur (zwei enge Ausnahmen, beide Bedingungen müssen gelten):**
+1. Kontaktbezeichnung (`telefon`, `tel`, `fax`, `mobil`, `handy`, `mail`, `email`, `rufnummer`, `durchwahl` …) **und**
+   direkt dahinter ein Kontakt-Platzhalter (`[TELEFON_..]`, `[EMAIL_..]`, optional mit Doppelpunkt). Geprüft am
+   Roh-Scantext (Platzhalter sichtbar, positionsgleich zur Analysefassung).
+2. „Grün“/„Rot“/„Gelb“ **direkt nach „bei“** **und** ein Verkehrswort im selben Satz (Ampel, Kreuzung, Lichtzeichen,
+   Fußgänger, Fahrbahn, Zebrastreifen, Abbiegen …).
+Unverändert: Presidio, Regex-Erkennung, exakter Aktendaten-Abgleich (eine bekannte Beteiligte „Grün“ wird weiter
+ersetzt – per Test), Restrisiko-Scan, Leak-Check, Siegel, Fail-closed.
+
+**Gegenproben (per Test):** „Der Vertrag wurde bei Grün unterschrieben.“ und „Das Gespräch mit Grün …“ bleiben
+Kandidaten; ein Name direkt vor einer Rufnummer („Lehmann [TELEFON_01]“) bleibt Kandidat; „Telefon“ ohne folgenden
+Kontakt-Platzhalter bleibt wie bisher.
+
+**Messung vorher/nachher (identische Fälle):**
+| Benchmark | vorher | nachher |
+|---|---|---|
+| `scripts/bench_name_detection.py` (1100 Namensfälle, mask) | Leck 0,0 %, Block 0,0 %, sicher 100 %; Fehlalarme 2/132; Anweisungen 1/17 | identisch (nur Laufzeiten abweichend) |
+| `scripts/bench_pseudonymization.py` (pseudonymization_v1) | Ergebnisdatei | `summary`, `field_results`, `e2e_results` identisch |
+
+**Neue, NICHT behobene Befunde** (andere Stufe – vorgelagerte NER; als `known_open` in
+`tests/regression_cases/dokumentierte_befunde.json`):
+- „Fahrbahn **bei Rot**“ → „bei [ORT_01]“ (Presidio liest „Rot“ als Ort).
+- „**Mobil** 0170 1234567“ → als Ganzes „[PERSON_02]“ (Nummer bleibt geschützt, Bezeichnung geht verloren).
+
+**Restrisiko der Ausnahme 2:** Ein der Akte **unbekannter** Dritter mit Nachnamen Grün/Rot/Gelb, der in einem
+Verkehrssatz als „bei Grün“ erwähnt wird, würde nicht mehr vorsichtshalber maskiert (Presidio und Restrisiko-Scan
+greifen weiterhin). Bewusst so eng gefasst; bekannte Beteiligte sind über den Aktendaten-Abgleich geschützt.

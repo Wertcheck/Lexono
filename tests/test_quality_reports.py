@@ -427,3 +427,88 @@ def test_report_confirmation_and_error_are_visible_not_collapsed(client: TestCli
                         ("?quality_error=Unbekannte%20Kategorie.", "Unbekannte Kategorie.")):
         page = client.get(base + query).text
         assert '<details style="margin-top: 16px;" open>' in page and text in page
+
+
+# --- Aufbewahrung (§75.1) --------------------------------------------------------------------------------------------
+
+
+def _aged(db: Session, report: QualityReport, days: int) -> None:
+    from datetime import datetime, timedelta, timezone
+
+    report.created_at = datetime.now(timezone.utc) - timedelta(days=days)
+    db.commit()
+
+
+def test_closing_clears_excerpt_and_description(db_session: Session) -> None:
+    matter = _matter(db_session)
+    svc = _service()
+    report = svc.create(db_session, matter_id=matter.id, document_id=None, category="privacy_concern",
+                        excerpt="Hildegard Quaste", description="Zeugin Quaste stand im Entwurf", actor="x")
+    svc.close(db_session, report, outcome="verworfen", note="", fix_reference="", actor="y")
+    assert (report.excerpt, report.description) == (None, None)
+
+
+def test_open_reports_lose_content_after_the_retention_period_but_stay_traceable(db_session: Session) -> None:
+    matter = _matter(db_session)
+    doc = _document(db_session, matter)
+    svc = _service()
+    old = svc.create(db_session, matter_id=matter.id, document_id=doc.id, category="missed_personal_data",
+                     excerpt="Hildegard Quaste", description="Zeugin Quaste", actor="x")
+    svc.diagnose(db_session, old, actor="y")
+    young = svc.create(db_session, matter_id=matter.id, document_id=doc.id, category="missed_deadline",
+                       excerpt="bis zum 15.03.2027", description="Frist fehlt", actor="x")
+    _aged(db_session, old, 91)
+    _aged(db_session, young, 89)
+
+    assert svc.expire_content(db_session, content_days=90) == 1
+    db_session.refresh(old)
+    db_session.refresh(young)
+    assert (old.excerpt, old.description) == (None, None)
+    assert old.status == "diagnostiziert" and old.suspected_stage == "presidio" and old.diagnosis_json
+    assert (young.excerpt, young.description) == ("bis zum 15.03.2027", "Frist fehlt")
+    (event,) = db_session.query(AuditEvent).filter(AuditEvent.entity_id == old.id,
+                                                   AuditEvent.event_type == "quality_report_content_expired").all()
+    assert event.actor == "system" and "frist_90_tage" in event.details and "Quaste" not in event.details
+    assert svc.expire_content(db_session, content_days=90) == 0  # idempotent
+
+
+def test_reports_of_deleted_matters_lose_content_immediately(db_session: Session) -> None:
+    from datetime import datetime, timezone
+
+    matter = _matter(db_session)
+    report = _service().create(db_session, matter_id=matter.id, document_id=None, category="missed_deadline",
+                               excerpt="bis zum 15.03.2027", description="", actor="x")
+    matter.deleted_at = datetime.now(timezone.utc)
+    db_session.commit()
+    assert _service().expire_content(db_session, content_days=3650) == 1
+    db_session.refresh(report)
+    assert report.excerpt is None
+    assert "akte_geloescht" in db_session.query(AuditEvent.details).filter(
+        AuditEvent.event_type == "quality_report_content_expired").scalar()
+
+
+def test_review_page_applies_retention_before_showing_content(client: TestClient, db_session: Session,
+                                                              monkeypatch) -> None:
+    import app.web.quality_reports_router as router_module
+
+    monkeypatch.setattr(router_module, "QualityReportService", lambda: _service())
+    matter = _matter(db_session)
+    report = _service().create(db_session, matter_id=matter.id, document_id=None, category="missed_deadline",
+                               excerpt="Hildegard Quaste", description="", actor="x")
+    _aged(db_session, report, 400)
+    _login_role(db_session, client, "anwalt")
+    page = client.get(f"/dashboard/quality-reports?selected={report.id}").text
+    assert "Hildegard Quaste" not in page and "Ablauf der Aufbewahrungsfrist" in page
+
+
+@pytest.mark.parametrize("value,ok", [(0, False), (1, True), (90, True), (3650, True), (3651, False)])
+def test_retention_setting_range(value, ok) -> None:
+    from pydantic import ValidationError
+
+    from app.config.settings import Settings
+
+    if ok:
+        assert Settings(_env_file=None, quality_report_content_days=value).quality_report_content_days == value
+    else:
+        with pytest.raises(ValidationError):
+            Settings(_env_file=None, quality_report_content_days=value)

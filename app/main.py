@@ -303,6 +303,31 @@ async def _run_periodic_law_update_check(settings: Settings) -> None:
             )
 
 
+#: Erster Lauf erst nach einigen Minuten (Start nicht belasten; Tests mit `with TestClient(app)` beruehren die
+#: konfigurierte Datenbank nicht), danach taeglich.
+_QUALITY_REPORT_EXPIRY_FIRST_DELAY_SECONDS = 300.0
+_QUALITY_REPORT_EXPIRY_INTERVAL_SECONDS = 86400.0
+
+
+async def _run_periodic_quality_report_expiry(settings) -> None:
+    """Aufbewahrung der Qualitaetsmeldungen (ARCHITECTURE.md §75.1): leert Fundstelle/Beschreibung offener Meldungen
+    nach `quality_report_content_days` und zu geloeschten Akten. Rein lokal, nur Inhaltsreduktion; ein Fehler beendet
+    die Schleife nicht (gleiches Prinzip wie die Gesetzes-Aktualisierungspruefung)."""
+    from app.quality_reports.service import QualityReportService
+
+    await asyncio.sleep(_QUALITY_REPORT_EXPIRY_FIRST_DELAY_SECONDS)
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                QualityReportService().expire_content(db, content_days=settings.quality_report_content_days)
+            finally:
+                db.close()
+        except Exception:  # noqa: BLE001 - siehe Docstring
+            logger.exception("Aufbewahrungslauf der Qualitaetsmeldungen fehlgeschlagen - naechster Versuch morgen.")
+        await asyncio.sleep(_QUALITY_REPORT_EXPIRY_INTERVAL_SECONDS)
+
+
 _CLOUD_HEALTH_INTERVAL_SECONDS = 45.0
 
 
@@ -373,12 +398,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cloud_health_task = asyncio.create_task(_run_periodic_cloud_health(app, settings))
     mail_ingestion_task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
     law_update_check_task = asyncio.create_task(_run_periodic_law_update_check(settings))
+    quality_expiry_task = asyncio.create_task(_run_periodic_quality_report_expiry(settings))
     yield
     update_task.cancel()
     cloud_health_task.cancel()
     local_ai_task.cancel()
     mail_ingestion_task.cancel()
     law_update_check_task.cancel()
+    quality_expiry_task.cancel()
     logger.info("Anwendung wird beendet")
 
 

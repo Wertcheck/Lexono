@@ -10,6 +10,7 @@ Regeln:
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -169,11 +170,43 @@ class QualityReportService:
         report.fix_reference = fix_reference or report.fix_reference
         report.resolution_note = (note or "").strip()[:2000] or report.resolution_note
         report.reviewed_by = actor
-        report.excerpt = None  # Datenminimierung
+        # Datenminimierung (§75.1): Fundstelle UND freie Beschreibung koennen Mandantendaten enthalten.
+        report.excerpt = None
+        report.description = None
         _audit(db, "QualityReport", report.id, f"quality_report_{outcome}", actor,
-               f"Abgeschlossen: {outcome}; Fundstelle geleert")
+               f"Abgeschlossen: {outcome}; Fundstelle und Beschreibung geleert")
         db.commit()
         return report
+
+    def expire_content(self, db: Session, *, content_days: int, now: datetime | None = None) -> int:
+        """Aufbewahrung (§75.1): leert Fundstelle und Beschreibung offener Meldungen, die aelter als `content_days`
+        sind, sowie aller Meldungen zu (weich) geloeschten Akten. Die Meldung selbst, Diagnose, Status, Verknuepfungen
+        und Audit bleiben (Nachvollziehbarkeit ohne Inhalt). Gibt die Zahl geleerter Meldungen zurueck."""
+        now = now or datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=content_days)
+        expired = 0
+        rows = (
+            db.query(QualityReport, Matter.deleted_at)
+            .join(Matter, Matter.id == QualityReport.matter_id)
+            .filter((QualityReport.excerpt.isnot(None)) | (QualityReport.description.isnot(None)))
+            .all()
+        )
+        for report, matter_deleted_at in rows:
+            created = report.created_at if report.created_at.tzinfo else report.created_at.replace(tzinfo=timezone.utc)
+            if matter_deleted_at is not None:
+                reason = "akte_geloescht"
+            elif created < cutoff:
+                reason = f"frist_{content_days}_tage"
+            else:
+                continue
+            report.excerpt = None
+            report.description = None
+            _audit(db, "QualityReport", report.id, "quality_report_content_expired", "system",
+                   f"Fundstelle und Beschreibung geleert: {reason}")
+            expired += 1
+        if expired:
+            db.commit()
+        return expired
 
     def delete(self, db: Session, report: QualityReport, *, actor: str) -> None:
         _audit(db, "QualityReport", report.id, "quality_report_deleted", actor,

@@ -182,6 +182,46 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
 # Rollenwort, "von"/"durch"-Agens, Feldwert, Tabelle usw. bleiben unveraendert.
 _ARTICLE_CONTRACTIONS = frozenset({"im", "ins", "am", "ans", "aufs", "ums", "übers", "überm", "unterm", "hinterm", "vorm"})
 
+# Kontaktbezeichnung vor einer BEREITS maskierten Kontaktangabe (ARCHITECTURE.md §75.2, reproduziert 16.10.2026:
+# "Herrn [PERSON_01], Telefon [TELEFON_01]" -> "Telefon" galt als Aufzaehlungsglied neben einer Person und wurde zu
+# [PERSON_02]). Beide Bedingungen muessen gelten: das Wort ist eine Kontaktbezeichnung UND direkt dahinter steht ein
+# Kontakt-Platzhalter. Ein Name an derselben Stelle ("Lehmann [TELEFON_01]") bleibt Kandidat.
+_CONTACT_LABEL_WORDS = frozenset({
+    "telefon", "tel", "telefonnummer", "rufnummer", "durchwahl", "festnetz", "mobil", "mobilnummer", "mobiltelefon",
+    "handy", "handynummer", "telefax", "fax", "faxnummer", "mail", "email", "emailadresse", "kontakt",
+})
+_CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\d+\]")
+
+# Ampelfarbe nach "bei" in einem Verkehrssatz (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" ->
+# [PERSON_01]; zuvor §34.6). Nur die drei Farbwoerter, nur direkt nach "bei", nur wenn derselbe Satz ein Verkehrswort
+# enthaelt. "Der Vertrag wurde bei Grün unterschrieben" bleibt Kandidat. Bekannte Beteiligte namens Grün deckt der
+# vorgelagerte exakte Aktendaten-Abgleich weiter ab.
+_TRAFFIC_LIGHT_COLOURS = frozenset({"Grün", "Rot", "Gelb"})
+_TRAFFIC_CONTEXT = re.compile(
+    r"\b(?:Ampel\w*|\w*[Ll]ichtzeichen\w*|\w*[Kk]reuzung\w*|Fußgänger\w*|Fussgänger\w*|Fahrbahn\w*|Zebrastreifen|"
+    r"Verkehrsampel\w*|Signalanlage\w*|Abbieg\w*|abgebogen|Rotlicht\w*|Grünphase\w*|Gelbphase\w*)",
+)
+_SENTENCE_SPLIT = re.compile(r"[.!?;\n]")
+
+
+def _is_contact_label(scan_text: str, token) -> bool:
+    # Gegen den ROH-Scantext (Platzhalter sichtbar; positionsgleich zur neutralisierten Analysefassung).
+    return token.text.lower() in _CONTACT_LABEL_WORDS and bool(
+        _CONTACT_PLACEHOLDER_AFTER.match(scan_text, token.idx + len(token.text))
+    )
+
+
+def _is_traffic_light_colour(doc, neutral: str, token) -> bool:
+    if token.text not in _TRAFFIC_LIGHT_COLOURS:
+        return False
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is None or previous.lower_ != "bei":
+        return False
+    starts = [m.end() for m in _SENTENCE_SPLIT.finditer(neutral, 0, token.idx)]
+    following = _SENTENCE_SPLIT.search(neutral, token.idx)
+    sentence = neutral[starts[-1] if starts else 0 : following.start() if following else len(neutral)]
+    return bool(_TRAFFIC_CONTEXT.search(sentence))
+
 
 def _is_article_contraction_object(doc, token) -> bool:
     previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
@@ -307,6 +347,8 @@ def find_review_candidates(
             continue
         if neutral[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Feldbezeichnung ("Akte:", "Name:", "Betreff:"), kein Feldwert
+        if _is_contact_label(scan_text, token) or _is_traffic_light_colour(doc, neutral, token):
+            continue  # §75.2: Bezeichnung einer maskierten Kontaktangabe bzw. Ampelfarbe im Verkehrssatz
         roles = _roles(doc, neutral, token, raw=scan_text)
         if not roles:
             continue

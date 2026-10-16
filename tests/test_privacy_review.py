@@ -488,3 +488,53 @@ def test_decision_terms_must_be_a_single_word(db: Session, term) -> None:
     user, matter_a, _, conv_1, _ = _setup(db)
     with pytest.raises(InvalidPrivacyDecisionError):
         record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term=term, decision="personal", user_id=user.id, actor="a")
+
+
+# --- §75.2: Ueberpseudonymisierung "Telefon" / "bei Grün" (reproduziert 16.10.2026) -----------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Rückfragen bitte an Herrn Gustav Wendelin, Telefon 0301 2345678.",
+        "Ansprechpartnerin ist Frau Petra Ostwald, Fax: 0301 2345679.",
+        "Der Fahrer fuhr bei Grün über die Kreuzung, als der Unfall geschah.",
+        "An der Kreuzung bog der Wagen bei Gelb ab.",
+        "Bitte schreiben Sie an Frau Petra Ostwald, Mail: erna.probe@example.org.",
+    ],
+)
+def test_contact_labels_and_traffic_light_colours_are_not_name_candidates(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True and result.auto_masked_terms == []
+    payload = result.payload.anonymisierter_sachverhalt
+    for kept in ("Telefon", "Fax", "Mail", "bei Grün", "bei Gelb"):
+        if kept in text:
+            assert kept in payload
+    for secret in ("Gustav Wendelin", "Petra Ostwald", "0301 2345678", "0301 2345679", "erna.probe@example.org"):
+        assert secret not in payload  # echte Namen und Kontaktdaten bleiben geschuetzt
+
+
+@pytest.mark.parametrize(
+    ("term", "text"),
+    [
+        ("Grün", "Der Vertrag wurde bei Grün unterschrieben."),  # kein Verkehrssatz: weiter Kandidat
+        ("Grün", "Das Gespräch mit Grün fand gestern statt."),  # andere Praeposition
+        ("Lehmann", "Rückfragen bitte an Herrn [PERSON_01], Lehmann [TELEFON_01]."),  # Name vor Rufnummer
+        ("Telefon", "Rückfragen bitte an Herrn [PERSON_01], Telefon und Brief."),  # Wort ohne Kontakt-Platzhalter
+    ],
+)
+def test_narrow_exceptions_keep_real_name_positions_as_candidates(term, text) -> None:
+    from app.privacy import presidio_ner as pn
+
+    expected_candidate = pn._name_probe_score(term) >= 1 and pn._name_probe_frames(term)[0]
+    terms = [c.term for c in find_review_candidates(text, context_source=text)]
+    assert (term in terms) == bool(expected_candidate)
+
+
+def test_known_party_named_like_a_colour_is_still_pseudonymized(gateway) -> None:
+    """Die Ampel-Ausnahme gilt nur fuer unbekannte Woerter - eine bekannte Beteiligte namens Grün bleibt geschuetzt."""
+    result = gateway.prepare_request(purpose="formulate_draft",
+                                     sachverhalt="Frau Grün fuhr bei Grün über die Kreuzung.",
+                                     known_entities={"gegner": ["Lisa Grün", "Grün"]}, review_mode="mask")
+    assert result.allowed is True
+    assert "Grün" not in result.payload.anonymisierter_sachverhalt

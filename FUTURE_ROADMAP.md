@@ -68,9 +68,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Fortschritt (16.10.2026, ARCHITECTURE.md §75, Branch `feature/feedback-diagnose`):** aktenbezogene
   Qualitätsmeldungen mit lokaler Diagnose (nur Stufen/Zähler, kein Text) und Prozess „Meldung → Diagnose → bestätigte
   Ursache → synthetischer Regressionsfall (fail-closed Leck-Prüfung) → Freigabe → Export → `tests/regression_cases/`“
-  umgesetzt und getestet. Erste Fälle: 5 bestehen gegen die echte Pipeline, 2 reproduzierte offene Fehler als
-  `known_open` („bei Grün“, „Telefon“). **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für Auffälligkeit aus der
-  HMAC-Statistik; Aufbewahrungsfrist offener Meldungen; Behebung der zwei offenen Fälle mit Prüfung.
+  umgesetzt und getestet. „bei Grün“/„Telefon“ behoben (PRIVACY_REVIEW_ARCHITECTURE.md §45, Benchmarks unverändert);
+  Aufbewahrung offener Meldungen umgesetzt (§75.1). Regressionsfälle: 8 bestehen, 2 neue offene Befunde als
+  `known_open` („bei Rot“ → Ort, „Mobil“+Nummer → Person). **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für
+  Auffälligkeit aus der HMAC-Statistik; die zwei neuen Befunde (vorgelagerte NER-Stufe).
 
 #### Phase P5: Datenminimierung, Löschung und Mandantentrennung
 - **Ist-Zustand (belegt):** Pseudonym-Zuordnungen nur im Arbeitsspeicher; API-Log speichert nur Hash des Prompts;
