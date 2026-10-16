@@ -561,3 +561,51 @@ def test_colour_word_used_as_a_name_in_an_accident_file_is_not_sent_in_plaintext
     for colour in ("Grün", "Rot"):
         if f"bei {colour}" in text:
             assert f"bei {colour}" not in payload
+
+
+# --- §46: kleingeschriebener Name direkt nach einer Anrede (pseudonymization_v1 P09, reproduziert 16.10.2026) ---------
+
+
+@pytest.mark.parametrize(
+    ("name", "text"),
+    [
+        ("sauer", "herr sauer hat angerufen und bittet um rückruf wegen der räumung."),
+        ("pfefferkorn", "bitte rufen sie herrn pfefferkorn wegen der kaution zurück."),
+        ("ostwald", "Frau ostwald hat die Unterlagen nachgereicht."),
+    ],
+)
+def test_lowercase_name_after_salutation_does_not_leave_in_plaintext(gateway, name, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    payload = result.payload.anonymisierter_sachverhalt if result.allowed else ""
+    assert name not in payload.lower()
+
+
+def test_lowercase_name_after_salutation_is_asked_about_in_ask_mode(gateway) -> None:
+    result = _prepare(gateway, "herr sauer hat angerufen und bittet um rückruf.", mode="ask")
+    assert result.allowed is False and result.review_required is True
+    assert "sauer" in [c.term for c in result.review_candidates]
+
+
+@pytest.mark.parametrize(
+    ("kept", "text"),
+    [
+        ("Herr der Lage", "Der Mandant ist Herr der Lage und will klagen."),
+        ("frau kollegin", "Sehr geehrte frau kollegin, anbei der Entwurf."),
+        ("herr doktor", "sehr geehrter herr doktor, danke für die nachricht."),
+        ("frau anwältin", "liebe frau anwältin, wie geht es weiter?"),
+        ("herr richter", "herr richter, ich bitte um vertagung."),
+    ],
+)
+def test_salutation_followed_by_function_title_or_role_word_stays_readable(gateway, kept, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True and kept in result.payload.anonymisierter_sachverhalt
+
+
+def test_word_after_an_already_replaced_name_is_not_a_lowercase_name_candidate(gateway) -> None:
+    """Fehlalarm der ersten Fassung (pseudonymization_v1 P02): "Frau [PERSON_01] widerspricht" - die Anrede steht im
+    Rohtext nicht direkt vor "widerspricht"."""
+    text = "Frau Dr. Henrike Wallbaum-Ostertag widerspricht der Kündigung vom 12.05.2026 fristgerecht."
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True
+    payload = result.payload.anonymisierter_sachverhalt
+    assert "widerspricht" in payload and "Wallbaum-Ostertag" not in payload

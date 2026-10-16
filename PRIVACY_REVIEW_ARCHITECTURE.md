@@ -6147,3 +6147,74 @@ wird. Der gezielte Beleg für die Ausnahmen sind die Negativtests. Vollständige
 der genannten Fahrvorgänge („… bei Grün über die Kreuzung …“ als Person) würde nicht mehr vorsichtshalber maskiert;
 Presidio, Restrisiko-Scan, Leak-Check und Fail-closed greifen weiterhin, bekannte Beteiligte deckt der
 Aktendaten-Abgleich ab.
+
+## §46 Kleingeschriebener Name direkt nach einer Anrede (16.10.2026, Branch `feature/feedback-diagnose`)
+
+**Reproduziert im aktuellen Stand (`c52bc0a`):** `pseudonymization_v1` P09 „herr **sauer** hat angerufen und bittet um
+rückruf wegen der räumung.“ – „sauer“ im Klartext im Payload (Grenze „Kleinschreibung“, §20 „Namen in Kleinschreibung
+(Modellgrenze)“). Das Modell erkennt kleingeschriebene Namen nicht; in getipptem Chat-Text ist Kleinschreibung üblich.
+
+**Korrektur (nur Kandidaten-Erzeugung in `app/privacy/review.py`, Richtung mehr Schutz):** Ein kleingeschriebenes Wort
+**unmittelbar** nach „herr/herrn/frau“ (im Rohtext direkt benachbart, kein Platzhalter dazwischen) wird Rückfrage-
+Kandidat – im Maskier-Modus vorsichtshalber ersetzt, im Frage-Modus nachgefragt. Ausgenommen: Stoppwörter, Rollen-,
+Titel- und Berufswörter („Herr der Lage“, „frau kollegin“, „herr doktor“, „frau anwältin“, „herr richter“).
+
+**Geprüft und verworfen:** „Richter“ & Co. als Rollenwörter aufzunehmen (für P10 „Der Richter **Zweigelt** hat
+angerufen“) – ohne Nutzen, weil die Namensprobe „Zweigelt“ nicht als Namen liest; die Probe nach Rollenwörtern
+abzuschalten würde Fachinhalt verfälschen („…der Sachverständige **Mängel** festgestellt…“). P10 bleibt offen.
+
+**Fehlalarm der ersten Fassung, vor dem Commit behoben:** „Frau [PERSON_01] **widerspricht**“ (P02) – in der
+Analysefassung sind Platzhalter ausgeblendet, die Anrede schien direkt vor „widerspricht“ zu stehen. Jetzt Prüfung der
+Nachbarschaft im Rohtext; Regressionstest vorhanden.
+
+**Messung vorher/nachher (identische Fälle):**
+| Benchmark | vorher (`c52bc0a`) | nachher |
+|---|---|---|
+| `bench_pseudonymization` (pseudonymization_v1, 63 Feldfälle) | Klartext-Werte **8** (A06, B03, I07, K04, P08, P09, P10, X02) | **7** (P09 behoben); Fehlalarme, verlorene Behalte-Werte (X05 „Hauptbahnhof“), Blocks (0), E2E identisch |
+| `bench_name_detection` (1100) | Leck 0,0 %, Block 0,0 %, Fehlalarme 2/132, Anweisungen 1/17 | identisch |
+| `bench_chat_without_file` (440, Produktivcode) | Lecks 0/440, Blocks 0, Fachfragen verändert 0/14, Fachbegriffe 20/100 | identisch |
+| `bench_role_object_negatives` | 0/12, 0 Personen-Platzhalter | identisch |
+
+Tests: 9 neue in `tests/test_privacy_review.py` (Leck-, Frage-Modus-, Negativ- und Fehlalarm-Fälle).
+
+## §47 Nachweis auf Netzwerkebene und Schlüsselprüfung (16.10.2026)
+
+**Unterschied, ausdrücklich:** Bisherige Repo-Tests prüften das Payload-**Objekt** vor dem SDK (und den Relay-Pfad gegen
+einen lokalen Fake, §44). Neu `tests/test_privacy_wire_payload.py`: echter Gateway (Presidio) → versiegelte Payload →
+echter `AnthropicClaudeWritingProvider` aus der echten Factory (inkl. Endpunkt-Politik) → echtes Anthropic-SDK →
+lokaler Aufzeichnungsserver (127.0.0.1, nur mit `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1`; toter Proxy gegen jeden Weg
+nach außen; gefälschter Schlüssel). Belegt (`write` und `write_stream`): die **tatsächlich gesendeten HTTP-Bytes**
+enthalten keinen der synthetischen Werte (Name, Geburtsdatum, Anschrift, PLZ, Telefon, E-Mail, IBAN, Gegner), wohl
+aber Platzhalter und die juristisch relevanten Werte (Betrag 4.250,00 EUR, Daten, „Kaution“). Unversiegelte oder nach
+dem Siegel veränderte Payload und Loopback ohne QA-Freigabe: **keine einzige HTTP-Anfrage**.
+**Nicht belegt:** TLS zum echten Endpunkt, tatsächliches Verhalten von Anthropic, Relay/Gateway gegen einen realen
+Server.
+
+**API-Schlüssel (Wert nie ausgegeben, Vergleich nur über exakte Übereinstimmung/Fingerabdruck):** `.env`/`.env.*` in
+`.gitignore`; nur `*.example` versioniert. Der echte Schlüssel (106 Zeichen; Repo-`.env` und `%PROGRAMDATA%\Lexono\.env`
+identisch) kommt in **keinem** Git-Objekt (alle, auch unerreichbare; 217 MB) und in **keiner** von 19 781 Dateien von
+Arbeitsbaum, `dist\`, Datenverzeichnis (Logs; echte DB nicht geöffnet) und Job-Artefakten vor; die schlüsselartigen
+Zeichenketten in sechs Testdateien sind Attrappen. `Lexono_Setup.exe` ist LZMA-komprimiert – eine Klartextsuche dort
+ist nicht aussagekräftig; sein Inhalt stammt aus dem geprüften `dist\Lexono`.
+
+## §48 Nachweisübersicht Datenschutz (Stand 16.10.2026, Branch `feature/feedback-diagnose`, ausgeführt)
+
+Nur, was heute tatsächlich gelaufen ist; synthetische Daten; endliche Korpora – **keine** Aussage über vollständige
+Leckfreiheit und **keine** Datenschutzfreigabe.
+
+| Anforderung | Test/Benchmark (heute ausgeführt) | Ergebnis | Beleg | Offenes Risiko |
+|---|---|---|---|---|
+| Pseudonymisierung/Erkennung | Pseudonymisierungs-/Erkennungs-Tests (6 Dateien); `bench_pseudonymization`; `bench_name_detection` (1100); `bench_chat_without_file` (440) | 244 bestanden; 7 Klartext-Werte, alle als bekannte Grenze markiert; Namen 0,0 %; Chat 0/440 | §46 | P10 Rollenwort+Name ohne Anrede; OCR-Ziffern/-Leerzeichen (P08, K04, B03); gesperrter Name in Prompt-Injection (X02); Ortsname im Grundbuchtext (A06); kurze unbeschriftete Nummern (I07, §22.6) |
+| Pre-Cloud, Siegel, Fail-closed | Gateway-/Siegel-/Prüfungs-Tests (28 Dateien) | 1214 bestanden, 5 xfail (dokumentierte Grenzen) | Testsuite | – |
+| Request-Manipulation, Platzhalterkollision | Platzhalter-Integritäts-Tests (3 Dateien); veränderte Payload auf Netzwerkebene | 39 bestanden; veränderte/unversiegelte Payload: 0 HTTP-Anfragen | §47 | X02 (gesperrte Schreibweise) |
+| Unberechtigte Blockaden / False Positives | `bench_pseudonymization` (0 Blocks, 1 verlorener Behalte-Wert X05); `bench_name_detection` (Fehlalarme 2/132, Anweisungen 1/17); `bench_role_object_negatives` 0/12 | unverändert gegenüber vorher | §45.1, §46 | „bei Rot“ → Ort, „Mobil“+Nummer → Person (`known_open`) |
+| Netzwerkebene direkter Pfad | `test_privacy_wire_payload.py` + Endpunkt-Politik | 30 bestanden (gemeinsam mit Endpunkt-Tests) | §47 | TLS/echter Endpunkt, Relay realer Server NICHT VERIFIZIERT |
+| Rückfrage (HITL) | `test_privacy_review.py` | 97 bestanden | §45, §46 | Rückfragequote in echten Akten unbekannt |
+| Feedback/Diagnose, Minimierung, Löschung | `test_quality_reports.py`, Regressionsfälle | 47 bestanden, 2 xfail (`known_open`) | ARCHITECTURE.md §75 | Meldung nur aus der Dokumentansicht; Frist 90 Tage = Vorschlag |
+| Schlüssel nicht in Git/Logs/Artefakten | Fingerabdruck-Scan | kein Treffer | §47 | komprimiertes Setup nur indirekt |
+
+**Später erforderlich (ausdrücklich nicht jetzt, keine Kosten):** Gateway auf realem Server (Hetzner) mit TLS,
+Authentifizierung der Kanzlei-Clients, Schlüsselverwaltung nur auf dem Server, Zugriffskontrolle, Rate-Limits, Logging
+ohne Inhalte; Integrationstests Client ↔ Gateway ↔ Anthropic über HTTPS (inkl. Zertifikatsprüfung, Fehler-/Timeout-
+Pfade, Payload-Mitschnitt vor dem Upstream); erst danach Stufe B. Der Gateway existiert bisher nur als lokal getesteter
+Code; Cloud-Aufrufe laufen aktuell über den direkten Pfad mit lokalem Schlüssel.

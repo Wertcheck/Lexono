@@ -34,6 +34,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Modell-Probing), Restrisiko-Scan, Final Payload Gate, Antwort-Leak-Check; versiegelte Payload – alle vier Cloud-Provider
   lehnen unversiegelte/veränderte Payloads ab; Fehler in der Prüfung blockieren.
   Synthetische Restlecks (Stand `9d9ab9c`, nicht-interaktiv): 0,4 % mit Akte, 0,7 % ohne Akte.
+  **Stand 16.10.2026 (PRIVACY_REVIEW_ARCHITECTURE.md §48, heute ausgeführt):** `bench_name_detection` 0,0 % (1100),
+  `bench_chat_without_file` 0/440, `pseudonymization_v1` 7 Klartext-Werte (alle als bekannte Grenze markiert; P09
+  Kleinschreibung nach Anrede behoben, §46); Netzwerkebene des direkten Pfads belegt (§47). Endliche Korpora –
+  keine Aussage über vollständige Leckfreiheit.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -111,6 +115,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Schriftsatz, Bearbeitung und Export mit Payload-Erfassung vor der Cloud-Grenze; Regressionstest in der Suite. Erste
   Befunde behoben: drei Wege, auf denen ein Geburtsdatum ohne Bezeichnung oder zerteilt (Fristausschnitt, Auszug langer Dokumente, Schreibweisen) im Klartext hinausging. Gemessen (§34.6): Fehlalarme der Maskierung zerstören Kernfakten ("bei Grün" -> [PERSON], "Testament"); F (§35): strukturelle Kompositum-Regel mit Namensprobe 0 umgesetzt, keine neuen Lecks; LE-T003 entblockt durch erhaltene Feldgrenze in der PDF-Aufbereitung (§35.6), ohne Gate-Lockerung. Q (§36): lokale Fundstellenprüfung (Existenz getrennt von Stützung) umgesetzt, erfundene Fundstellen 0/12 -> 12/12 markiert. §34.7: langer Vertrag im E2E, neuer Testfall LE-T003 (alle Cloud-Anfragen durch NER-Fehlalarm im Restrisiko-Scan blockiert, kein Leck), Firmenname ohne Rechtsform geschuetzt. Offen: mehr Testfälle, Lauf gegen den
   installierten Build, Klassifikationskorrektheit, Antwortqualität eines echten Modells (nach Freigabe).
+- **Fortschritt (16.10.2026, §47):** HTTP-Mitschnitt des direkten Anthropic-Pfads als Repo-Test (lokaler Server,
+  echte SDK-Bytes) – ersetzt für den direkten Pfad den Fang-Server außerhalb des Repos. **Offen, später (keine
+  Kosten jetzt):** Gateway auf realem Server mit TLS, Authentifizierung, Schlüssel nur serverseitig, Zugriffskontrolle,
+  Rate-Limits, inhaltsfreies Logging; HTTPS-Integrationstests Client ↔ Gateway ↔ Anthropic (§48).
 - **Maßnahmen:** Benchmark- und Payload-Prüfung als fester Release-Schritt; Fang-Server als versioniertes QA-Werkzeug ins
   Repo; Datenschutzbericht je Release (Restlecks, Fehlalarme, Rückfragen, Blocks, Laufzeit).
 - **Abhängigkeiten:** P2 (Gate-Kriterien), P4 (Freigabeprozess).

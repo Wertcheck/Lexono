@@ -38,6 +38,18 @@ _ROLE_NOUNS = frozenset(
         "mieterin",
     }
 )
+# §46 (pseudonymization_v1 P09 "herr sauer hat angerufen" - kleingeschriebener Name im Klartext): Kleinschreibung nach
+# einer Anrede ist in getipptem Chat-Text ueblich; das Modell erkennt solche Namen nicht. Kandidat ist das unmittelbar
+# folgende kleingeschriebene Wort - ausser Stoppwoerter, Rollen- und Titelwoerter ("herr der lage", "frau kollegin",
+# "herr doktor"). Ohne Namensprobe: die Anrede selbst ist das Signal.
+_SALUTATIONS = frozenset({"herr", "herrn", "frau"})
+_TITLE_WORDS = frozenset({
+    "doktor", "dr", "professor", "prof", "minister", "ministerin", "präsident", "präsidentin", "vorsitzende",
+    "vorsitzender", "bürgermeister", "bürgermeisterin", "pfarrer", "pfarrerin", "direktor", "direktorin", "kommissar",
+    "kommissarin", "oberbürgermeister", "oberbürgermeisterin", "abgeordnete", "abgeordneter", "kanzler", "kanzlerin",
+    "anwalt", "anwältin", "notar", "notarin", "richter", "richterin", "staatsanwalt", "staatsanwältin", "rechtspfleger",
+    "rechtspflegerin", "gerichtsvollzieher", "gerichtsvollzieherin", "nachbar", "nachbarin", "chef", "chefin",
+})
 _MODIFIER_POS = ("DET", "ADJ", "NUM", "PRON")
 _STRUCTURAL_ROLES = frozenset(
     {"feldwert", "tabellenzelle", "nach_rollenwort", "vor_rollenwort", "aufzaehlung_mit_person", "ueberschrift"}
@@ -384,6 +396,29 @@ def find_review_candidates(
         )
         if max_candidates is not None and len(found) >= max_candidates:
             break
+    # §46: kleingeschriebener Name direkt nach einer Anrede ("herr sauer", "Frau lehmann"). Wie die Kennzeichen nicht
+    # durch max_candidates begrenzt (sonst ginge der Name hinter vielen anderen Kandidaten ungefragt hinaus).
+    for token in doc:
+        word = token.text
+        if not (word.isalpha() and word.islower() and 3 <= len(word) <= MAX_TERM_LENGTH):
+            continue
+        previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+        if previous is None or previous.lower_ not in _SALUTATIONS:
+            continue
+        # Direkt benachbart im ROH-Scantext: in der Analysefassung sind Platzhalter ausgeblendet - "Frau [PERSON_01]
+        # widerspricht" sah sonst wie "Frau widerspricht" aus (Fehlalarm pseudonymization_v1 P02).
+        if scan_text[previous.idx + len(previous.text) : token.idx].strip():
+            continue
+        lowered = word.lower()
+        if token.is_stop or lowered in _ROLE_NOUNS or lowered in _TITLE_WORDS or lowered in pn._NEVER_ENTITY_WORDS:
+            continue
+        if word in found or word in decisions.not_personal or word in decisions.personal:
+            continue
+        before, after = _context(context_source, word)
+        found[word] = ReviewCandidate(
+            term=word, context_before=before, context_after=after, roles=("kleingeschrieben_nach_anrede",),
+            probe_score=0,
+        )
     for match in _PLATE_SHAPE.finditer(neutral):
         # Zeilenumbruch (PDF) im Begriff als Leerzeichen: Entscheidungen sind einzeilig (decisions._validate);
         # detect_decision_terms trifft den Umbruch im Text trotzdem (_decision_term_pattern).
