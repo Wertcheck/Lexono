@@ -65,6 +65,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Abhängigkeiten:** P2 (Benchmark-Gate), P6 (Audit der Freigaben).
 - **Abnahmekriterien:** Keine Regeländerung ohne verlinkten synthetischen Test und Owner-Freigabe; Statistik enthält
   nachweislich keine Klartext-Begriffe (automatisierter Test); kein Modelltraining aus Einzelentscheidungen.
+- **Fortschritt (16.10.2026, ARCHITECTURE.md §75, Branch `feature/feedback-diagnose`):** aktenbezogene
+  Qualitätsmeldungen mit lokaler Diagnose (nur Stufen/Zähler, kein Text) und Prozess „Meldung → Diagnose → bestätigte
+  Ursache → synthetischer Regressionsfall (fail-closed Leck-Prüfung) → Freigabe → Export → `tests/regression_cases/`“
+  umgesetzt und getestet. Erste Fälle: 5 bestehen gegen die echte Pipeline, 2 reproduzierte offene Fehler als
+  `known_open` („bei Grün“, „Telefon“). **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für Auffälligkeit aus der
+  HMAC-Statistik; Aufbewahrungsfrist offener Meldungen; Behebung der zwei offenen Fälle mit Prüfung.
 
 #### Phase P5: Datenminimierung, Löschung und Mandantentrennung
 - **Ist-Zustand (belegt):** Pseudonym-Zuordnungen nur im Arbeitsspeicher; API-Log speichert nur Hash des Prompts;
@@ -127,6 +133,8 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
 | P2.3 Blinder Testkorpus v2 + Dev-Korrekturen | erledigt: `test_v2` (104 Dokumente, vier blinde Agenten, eingefroren). Regeln blind: Typ 64 → 84/104, Fristen 63 → 66/76, kritische Fehler 18 → 16 (3 neue Fristfehler dokumentiert, nicht am Test optimiert) | §42 |
 | P2.4 Modellvergleich mit Dateiname und 3 Läufen | erledigt: Claude Typ 95, Fristen 75/76, kritisch ≈ 2; OpenAI Typ ≈ 92, Fristen 76/76, kritisch ≈ 0; kaum Streuung; kein belastbarer Sieger; ≈ 2,71 USD | §42 |
 | Relay-Schreibpfad (Produktivpfad §70) | Branch `fix/relay-schreibpfad`, nicht in main: Client-Standard `max_tokens` 4096 → 4000 (Relay lehnte jede Schreibanfrage mit 400 ab), `thinking: disabled` wie im direkten Schreibpfad, `stop_reason` sichtbar, Relay ohne Wiederholungen mit 55 s < Client 60 s; echter Relay-Betrieb NICHT VERIFIZIERT | §44 |
+| Hetzner-Gateway (Relay-Server, §70) | **offen – separates Arbeitspaket.** Code und Runbook vorhanden, ausschließlich lokal getestet; kein echter Server eingerichtet, Betrieb, Authentifizierung, Rate-Limit und Logging gegen einen realen Server NICHT VERIFIZIERT. Nicht produktionsreif. | `.agentic/PROJECT_STATE.md`, LEXONO_MASTER_PRODUCT.md P0-08 |
+| Qualitätsmeldungen / Diagnose (P4) | Teilfortschritt, Branch `feature/feedback-diagnose`: Meldung, lokale Diagnose, synthetische Regressionsfälle, Export, Harness gegen echte Pipeline | ARCHITECTURE.md §75 |
 
 **Nächste Schritte (Vorschlag, nicht umgesetzt):**
 1. **Fristen-Restfehler** aus `test_v2` als **neue** Dev-Fälle nachbauen:

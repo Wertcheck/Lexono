@@ -267,6 +267,40 @@
           <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Fristen erneut analysieren</button>
           <span class="form-hint">Lokal, regelbasiert. Bestehende und bestätigte Fristen bleiben unverändert.</span>
         </form>
+
+        {# Qualitaetsmeldung (ARCHITECTURE.md §75): jede Rolle darf melden, gebunden an diese Akte und dieses Dokument.
+           Bleibt lokal; Pruefung/Diagnose nur Anwalt/Admin unter "Qualitaetsmeldungen". #}
+        <details style="margin-top: 16px;"{% if request.query_params.get("quality_reported") or request.query_params.get("quality_error") %} open{% endif %}>
+          <summary class="form-hint" style="cursor: pointer;">Problem mit Datenschutz oder Inhalt melden</summary>
+          {% if request.query_params.get("quality_reported") %}
+            <p class="form-hint" style="color: var(--seal-green-dark);">Danke – die Meldung wurde gespeichert und wird geprüft.</p>
+          {% endif %}
+          {% if request.query_params.get("quality_error") %}
+            <p class="form-hint" style="color: var(--amber);">{{ request.query_params.get("quality_error") }}</p>
+          {% endif %}
+          <form method="post" action="/dashboard/quality-reports" class="dashboard-form" style="max-width: none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="matter_id" value="{{ matter.id }}" />
+            <input type="hidden" name="document_id" value="{{ document.id }}" />
+            <label class="form-label">Art des Problems
+              <select name="category" required>
+                <option value="missed_personal_data">Personenbezogene Daten übersehen</option>
+                <option value="over_pseudonymization">Zu viel pseudonymisiert</option>
+                <option value="altered_legal_content">Rechtlich relevanter Inhalt verfälscht</option>
+                <option value="missed_deadline">Frist nicht erkannt</option>
+                <option value="privacy_concern">Mögliches Datenschutzproblem</option>
+              </select>
+            </label>
+            <label class="form-label">Fundstelle – genau die betroffene Angabe aus diesem Dokument (höchstens 300 Zeichen)
+              <input type="text" name="excerpt" maxlength="300" />
+            </label>
+            <label class="form-label">Beschreibung (bitte ohne weitere Mandantendaten)
+              <textarea name="description" rows="2" maxlength="2000"></textarea>
+            </label>
+            <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Melden</button>
+            <span class="form-hint">Bleibt lokal in der Kanzlei. Die Fundstelle wird nach Abschluss der Prüfung gelöscht.</span>
+          </form>
+        </details>
       </div>
     </div>
   </div>

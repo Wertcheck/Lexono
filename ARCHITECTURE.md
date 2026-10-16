@@ -5224,3 +5224,57 @@ Echte Installation vorher/nachher per Schnappschuss verglichen: unverändert.
    deshalb: erst deinstallieren, PILOT_SUPPORT.md §3.1 Punkt 6).
 
 **Sicherungsarten** (Datenbank vs. Dokumente) sind in PILOT_SUPPORT.md §3.1 Punkt 5 gegenübergestellt.
+
+## 75. Qualitätsmeldungen, lokale Diagnose und synthetische Regressionsfälle (16.10.2026, Branch `feature/feedback-diagnose`)
+
+**Ziel (FUTURE_ROADMAP.md P4):** Gemeldete Datenschutz- und Inhaltsfehler nachvollziehbar von der Meldung über die
+Ursache bis zum Regressionstest führen – ohne echte Mandantendaten zu sammeln, zu versenden oder Regeln automatisch zu
+ändern.
+
+**Abgrenzung zu Bestehendem (nichts ersetzt):** `app/pilot_feedback/` bleibt das allgemeine Software-Feedback,
+`app/quality/` die Bewertung einzelner Entwürfe, `app/privacy/decisions.py` die Rückfrage-Entscheidungen mit
+HMAC-Statistik. Neu ist `app/quality_reports/` für **aktenbezogene** Fehler der Verarbeitungspipeline.
+
+**Ablauf:**
+1. **Meldung** (jede Rolle, Dokumentansicht → „Problem mit Datenschutz oder Inhalt melden“): Kategorie
+   (übersehene personenbezogene Daten, zu viel pseudonymisiert, verfälschter rechtlich relevanter Inhalt, nicht
+   erkannte Frist, mögliches Datenschutzproblem), Fundstelle (≤ 300 Zeichen), Beschreibung. Gebunden an genau eine
+   nicht gelöschte Akte; ein angegebenes Dokument muss zu ihr gehören.
+2. **Lokale Diagnose** (Anwalt/Admin, `quality:review`): dieselben Bausteine wie der Produktivpfad – Fundstelle im
+   extrahierten Text (exakt / abweichende Schreibweise / fehlt → OCR bzw. Extraktion), Regex-/Aktendaten-Erkennung,
+   Presidio-NER, lokaler Teil von `ClaudePrivacyGateway.prepare_request` (sendet nichts), Rückführung, Fristenregeln
+   und gespeicherte Vorschläge. Ergebnis: vermutete Stufe (OCR, Extraktion, Presidio, Pseudonymisierung,
+   Validierung, Routing, Fristenregeln, nicht eingegrenzt) und `reproduced` – ein Hinweis, keine Entscheidung.
+3. **Ursache bestätigen** (Mensch), dann **synthetischer Regressionsfall**: von Hand geschrieben, nur mit erfundenen
+   Werten. Fail-closed-Prüfung vor dem Speichern und erneut bei Freigabe und Export: kein Text der Fundstelle, kein
+   gespeicherter Mandanten-/Beteiligtenname aus irgendeiner Akte (auch Nachname allein), keine E-Mail/Telefon/IBAN.
+   Erwartung je Kategorie (muss pseudonymisiert / muss erhalten bleiben / erwartete Frist), wörtlich im Text.
+4. **Freigabe → Export** (`/dashboard/quality-reports/cases/export.json`, nur freigegebene, erneut geprüfte Fälle, ohne
+   Akten-, Meldungs- oder Nutzerbezug) → Entwickler übernehmen bewusst nach `tests/regression_cases/` →
+   `tests/test_quality_regression_cases.py` prüft sie gegen die **echte** lokale Pipeline (Gateway mit Presidio,
+   Fristenregeln). Offene, reproduzierte Fehler stehen dort als `known_open` (strikt erwartet fehlschlagend).
+5. **Abschluss:** „behoben“ nur mit bestätigter Ursache und Korrekturverweis oder freigegebenem Fall; „verworfen“
+   jederzeit. Beides löscht die Fundstelle.
+
+**Datenschutz der Diagnose- und Feedbackdaten:**
+- Kein Netzwerkzugriff, keine Cloud, kein automatischer Versand, kein Modelltraining.
+- `diagnosis_json` nur feste Schlüssel mit Ja/Nein, Zählern, Kategorie-/Stufennamen (`sanitize_findings`, Allowlist);
+  Gateway-Gründe und Platzhalter werden nicht übernommen (können Begriffe enthalten). Per Test: kein Fragment der
+  Fundstelle oder des Dokuments, auch mit echtem Presidio.
+- Audit nur mit Kategorie/Status/Stufe, nie Fundstelle oder Beschreibung.
+- Fundstelle liegt lokal (Schutzniveau wie das Dokument), wird beim Abschluss gelöscht; Akte endgültig gelöscht →
+  Meldungen per `ON DELETE CASCADE` weg; Dokument gelöscht → Verweis geleert; Meldung löschen → synthetische Fälle
+  bleiben ohne Bezug.
+- Ansicht, Diagnose, Entscheidungen, Export: serverseitig nur `quality:review` (Admin, Anwalt); Melden: jede Rolle.
+- Keine Regel-, Entscheidungs- oder Fristenänderung durch irgendeinen Schritt.
+
+**Migration:** `schritt3_031` (zwei neue Tabellen `quality_reports`, `regression_cases`, rein additiv).
+
+**Befunde beim Aufbau (16.10.2026, echte lokale Pipeline):** zwei reproduzierte Überpseudonymisierungen als
+`known_open`-Fälle festgehalten, **nicht** behoben (Regeländerung braucht Prüfung): „bei Grün“ → `[PERSON_01]`
+(§34.6, weiterhin offen) und das Wort „Telefon“ vor einer Rufnummer → `[PERSON_02]` (neu).
+
+**Grenzen / nicht umgesetzt:** Meldung nur aus der Dokumentansicht (nicht aus Chat, Entwurf, E-Mail); Diagnose der
+Kategorie „mögliches Datenschutzproblem“ nur Lokalisierung, Rest manuell; keine Aufbewahrungsfrist für offene
+Meldungen (manuelles Löschen); die Diagnose betrachtet ±1500 Zeichen um die Fundstelle, nicht das ganze Dokument und
+nicht andere Pfade (Chat-Verlauf, Wissenseinträge) – „Routing“ heißt dort „im Standardpfad nicht reproduziert“.

@@ -70,6 +70,7 @@ _PERM_LABELS: dict[str, str] = {
     "client:manage": "Mandanten anlegen/bearbeiten",
     "client:delete": "Mandanten endgültig löschen",
     "deadline:confirm": "Fristen bestätigen/verwerfen",
+    "quality:review": "Qualitätsmeldungen prüfen",
 }
 
 # --- "Benutzer"-Tab: Aktivitätsverlauf (06.10., Owner-Direktive "SETTINGS

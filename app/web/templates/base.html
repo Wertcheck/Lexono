@@ -488,6 +488,12 @@
               <a href="/dashboard/feedback" class="sidebar__profile-menu-item" role="menuitem">
                 {{ icons.help(class_="icon") }}<span>Hilfe &amp; Support</span>
               </a>
+              {# Qualitaetsmeldungen (§75): nur Rollen mit quality:review (serverseitig erzwungen, hier nur Anzeige). #}
+              {% if current_user and current_user.role and current_user.role.name|lower in ("admin", "anwalt") %}
+                <a href="/dashboard/quality-reports" class="sidebar__profile-menu-item" role="menuitem">
+                  {{ icons.help(class_="icon") }}<span>Qualitätsmeldungen</span>
+                </a>
+              {% endif %}
               <div class="sidebar__profile-menu-divider" role="separator"></div>
               <form method="post" action="/dashboard/logout" class="sidebar__profile-menu-form">
                 <button type="submit" class="sidebar__profile-menu-item sidebar__profile-menu-item--logout" role="menuitem">

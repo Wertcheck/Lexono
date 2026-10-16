@@ -172,3 +172,30 @@ def test_deadline_finding_key_migration_preserves_existing_deadlines(tmp_path: P
     kept = con.execute("select review_status from deadlines where id='d1'").fetchone()
     con.close()
     assert "finding_key" not in columns and kept == ("confirmed",)
+
+
+def test_quality_reports_migration_is_additive_and_reversible(tmp_path: Path) -> None:
+    """schritt3_031 (ARCHITECTURE.md §75): legt nur die zwei neuen Tabellen an; bestehende Fristen bleiben."""
+    import sqlite3
+
+    db_path = tmp_path / "quality_reports.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "schritt3_030")
+    con = sqlite3.connect(str(db_path))
+    con.execute(
+        "insert into deadlines (id, created_at, updated_at, matter_id, source_text, review_status, status)"
+        " values ('d1', '2026-01-01', '2026-01-01', 'm1', 'synthetisch', 'confirmed', 'open')"
+    )
+    con.commit()
+    con.close()
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'")}
+    kept = con.execute("select review_status from deadlines where id='d1'").fetchone()
+    con.close()
+    assert {"quality_reports", "regression_cases"} <= tables and kept == ("confirmed",)
+    command.downgrade(cfg, "schritt3_030")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'")}
+    con.close()
+    assert not {"quality_reports", "regression_cases"} & tables

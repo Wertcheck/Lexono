@@ -53,6 +53,7 @@ from app.web.document_templates_router import router as document_templates_web_r
 from app.web.draft_editor_router import router as draft_editor_web_router
 from app.web.drafts_router import router as drafts_web_router
 from app.web.feedback_router import router as feedback_web_router
+from app.web.quality_reports_router import router as quality_reports_web_router
 from app.web.lock_router import router as lock_web_router
 from app.web.deadline_actions_router import router as deadline_actions_web_router
 from app.web.document_actions_router import router as document_actions_web_router
@@ -441,6 +442,7 @@ app.include_router(letterheads_web_router)
 app.include_router(settings_web_router)
 app.include_router(tasks_web_router)
 app.include_router(feedback_web_router)
+app.include_router(quality_reports_web_router)
 app.include_router(lock_web_router)
 app.include_router(prompt_library_web_router)
 app.include_router(matters_web_router)

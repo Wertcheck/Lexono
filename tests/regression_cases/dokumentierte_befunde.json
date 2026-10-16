@@ -1,0 +1,64 @@
+{
+  "format": "lexono-regression-cases/1",
+  "hinweis": "Ausschliesslich synthetische Texte (erfundene Namen/Werte). Neue Faelle kommen aus dem Export der Qualitaetsmeldungen (/dashboard/quality-reports/cases/export.json) und werden bewusst hier uebernommen. known_open=true: reproduzierter, noch nicht behobener Fehler (strikt als erwartet fehlschlagend markiert) - nach einer geprueften Regelkorrektur auf false setzen.",
+  "cases": [
+    {
+      "id": "seed-001",
+      "category": "over_pseudonymization",
+      "title": "Rechtsbegriff 'Testament' bleibt erhalten",
+      "source": "PRIVACY_REVIEW_ARCHITECTURE.md §34.6/§35 (behoben)",
+      "text": "Das Testament wurde am Tag nach dem Erbfall eröffnet.",
+      "expected": {"must_mask": [], "must_keep": ["Testament"], "expected_due_dates": []}
+    },
+    {
+      "id": "seed-002",
+      "category": "altered_legal_content",
+      "title": "Normzitat bleibt unverändert",
+      "source": "§36 lokale Fundstellenpruefung",
+      "text": "Die Klage wird auf § 280 Abs. 1 BGB gestützt.",
+      "expected": {"must_mask": [], "must_keep": ["§ 280 Abs. 1 BGB"], "expected_due_dates": []}
+    },
+    {
+      "id": "seed-003",
+      "category": "missed_personal_data",
+      "title": "Zeugenname im Fließtext wird pseudonymisiert",
+      "source": "synthetischer Basisfall",
+      "text": "Die Zeugin Erna Probewitz aus Kleinberg hat den Vorfall beobachtet.",
+      "expected": {"must_mask": ["Erna Probewitz"], "must_keep": [], "expected_due_dates": []}
+    },
+    {
+      "id": "seed-004",
+      "category": "missed_personal_data",
+      "title": "Name und Telefonnummer werden pseudonymisiert",
+      "source": "synthetischer Basisfall",
+      "text": "Rückfragen bitte an Herrn Gustav Wendelin, Telefon 0301 2345678.",
+      "expected": {"must_mask": ["Gustav Wendelin", "0301 2345678"], "must_keep": [], "expected_due_dates": []}
+    },
+    {
+      "id": "seed-005",
+      "category": "missed_deadline",
+      "title": "Antwortfrist mit Datum wird erkannt",
+      "source": "P2.1 Fristenerkennung",
+      "text": "Bitte antworten Sie bis zum 15.03.2027.",
+      "expected": {"must_mask": [], "must_keep": [], "expected_due_dates": ["2027-03-15"]}
+    },
+    {
+      "id": "seed-006",
+      "category": "over_pseudonymization",
+      "title": "Ampelfarbe 'bei Grün' ist kein Name",
+      "source": "PRIVACY_REVIEW_ARCHITECTURE.md §34.6 (gemessen, offen) - am 16.10.2026 im echten Gateway reproduziert: 'bei [PERSON_01]'",
+      "known_open": true,
+      "text": "Der Fahrer fuhr bei Grün über die Kreuzung, als der Unfall geschah.",
+      "expected": {"must_mask": [], "must_keep": ["bei Grün"], "expected_due_dates": []}
+    },
+    {
+      "id": "seed-007",
+      "category": "over_pseudonymization",
+      "title": "Wort 'Telefon' vor einer Rufnummer ist kein Name",
+      "source": "Neuer Befund 16.10.2026 im echten Gateway: 'Telefon' wurde zu [PERSON_02]",
+      "known_open": true,
+      "text": "Rückfragen bitte an Herrn Gustav Wendelin, Telefon 0301 2345678.",
+      "expected": {"must_mask": [], "must_keep": ["Telefon"], "expected_due_dates": []}
+    }
+  ]
+}
