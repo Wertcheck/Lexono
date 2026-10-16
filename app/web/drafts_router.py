@@ -77,6 +77,7 @@ from app.models import (
 )
 from app.outbox.service import OutboxEntryAlreadyExistsError, OutboxService
 from app.privacy.api_logger import friendly_block_message
+from app.web.name_protection import install_name_protection, protect_manual_terms
 from app.web.service_factory import (
     WritingProviderNotConfiguredError,
     get_attorney_instruction_service,
@@ -89,7 +90,7 @@ from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/drafts", tags=["dashboard-drafts"])
 
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §54 "Namen schützen"
 
 # Fest verdrahteter Schreibauftrag fuer "Aenderungen uebernehmen & neu
 # formulieren" - siehe SecurityCheckService.ALLOWED_PURPOSES. Kein
@@ -582,6 +583,7 @@ def manual_edit(
 def save_instruction(
     draft_id: str,
     instruction_text: str = Form(...),
+    protected_terms: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_INSTRUCTION_CREATE)),
     service: AttorneyInstructionService = Depends(
@@ -593,6 +595,10 @@ def save_instruction(
     DraftingService (siehe service_factory.py) - funktioniert auch ohne
     konfigurierten Claude-API-Key. Erlaubt für alle drei Rollen."""
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
+    # §54: markierte Namen auch hier speichern - die gespeicherte Anmerkung fliesst bei einer spaeteren Neuformulierung
+    # in die Anfrage; fuer die Aktenlage ist es dieselbe Entscheidung wie im Chat (nur zusaetzlicher Schutz).
+    if (problem := protect_manual_terms(db, draft, instruction_text, protected_terms, current_user)) is not None:
+        return RedirectResponse(url=f"/dashboard/drafts/{draft_id}?error={problem}", status_code=303)
     service.create_instruction(
         draft,
         AttorneyInstructionInput(instruction_text=instruction_text),
@@ -617,6 +623,7 @@ def _deleted_matter_redirect(draft: Draft) -> RedirectResponse | None:
 def save_and_apply_instruction(
     draft_id: str,
     instruction_text: str = Form(...),
+    protected_terms: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
 ) -> RedirectResponse:
@@ -628,6 +635,9 @@ def save_and_apply_instruction(
     draft = get_or_404(db, Draft, draft_id, "Entwurf")
     if (deleted := _deleted_matter_redirect(draft)) is not None:
         return deleted
+    # §54: VOR der Anfrage pruefen und speichern; Fehler -> nichts gesendet
+    if (problem := protect_manual_terms(db, draft, instruction_text, protected_terms, current_user)) is not None:
+        return RedirectResponse(url=f"/dashboard/drafts/{draft_id}?error={problem}", status_code=303)
 
     try:
         service = get_attorney_instruction_service()

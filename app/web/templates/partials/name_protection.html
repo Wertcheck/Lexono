@@ -1,0 +1,21 @@
+{# §54 (16.10.2026): gemeinsames Bedienelement "Namen schützen" fuer Chat, Schriftsatz, Aenderungsauftrag, Editor und
+   E-Mail-Aktionen. Eine markierte Textstelle wird beim Absenden serverseitig geprueft
+   (app/privacy/decisions.parse_manual_terms) und als Entscheidung "Als Person behandeln" fuer die Akte gespeichert -
+   dieselbe Entscheidung wie in der Datenschutz-Rueckfrage, kein zweiter Mechanismus. Logik:
+   /dashboard/static/js/app_name_protection.js. Die Wortlisten kommen vom Server (app/web/name_protection.py). #}
+
+{% macro assets() %}
+  <script type="application/json" id="lexono-name-protection-config">{{ {"prefix": manual_name_prefix_words, "particles": manual_name_particles} | tojson }}</script>
+  <script src="/dashboard/static/js/app_name_protection.js"></script>
+{% endmacro %}
+
+{% macro controls(id_prefix, title="Im Text markierten Namen vor jeder Cloud-Übergabe pseudonymisieren") %}
+  <div class="chat-composer__protect name-protection" id="{{ id_prefix }}-protect">
+    <button type="button" class="chat-composer__protect-btn" id="{{ id_prefix }}-protect-btn" title="{{ title }}">Namen schützen</button>
+    <ul class="chat-composer__protected-list" id="{{ id_prefix }}-protected-list" aria-label="Geschützte Namen"></ul>
+  </div>
+{% endmacro %}
+
+{% macro field(id_prefix) %}
+  <input type="hidden" name="protected_terms" class="{{ id_prefix }}-protected-terms" value="" />
+{% endmacro %}

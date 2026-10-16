@@ -1,5 +1,6 @@
 {% from "partials/_macros.html" import matter_tag, direction_tag %}
 {% import "_icons.html" as icons %}
+{% import "partials/name_protection.html" as name_protection %}
 <div id="detail-pane" class="detail-pane">
   <div class="detail-header">
     {{ matter_tag(message) }} {{ direction_tag(message) }}
@@ -98,18 +99,50 @@
        isolieren") - fuer nicht zugeordnete Nachrichten deshalb bewusst
        NICHT angezeigt, siehe die Zuordnungs-Karten unten stattdessen. #}
     <div class="detail-section-label">Aktion</div>
+    {# §54: nicht erkannte Namen im E-Mail-Text markieren, BEVOR er zusammengefasst/beantwortet wird - dieselbe
+       aktenweite Entscheidung "Als Person behandeln" wie im Chat (der Text geht als Anfrage in die Cloud) #}
+    <div class="name-protection-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      {{ name_protection.controls("message", "Im E-Mail-Text markierten Namen vor jeder Cloud-Übergabe pseudonymisieren") }}
+    </div>
+    <div class="name-protection-error" id="message-protect-error" hidden></div>
     <div class="detail-actions">
-      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form">
+      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form" data-name-protection-form="message">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        {{ name_protection.field("message") }}
         <input type="hidden" name="action" value="summarize" />
         <button type="submit" class="btn" data-ai-loading-label="Wird gestartet …">{{ icons.document(class_="icon") }} Zusammenfassen</button>
       </form>
-      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form">
+      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form" data-name-protection-form="message">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        {{ name_protection.field("message") }}
         <input type="hidden" name="action" value="draft_reply" />
         <button type="submit" class="btn btn--primary" data-ai-loading-label="Wird gestartet …">{{ icons.send(class_="icon") }} Antworten</button>
       </form>
     </div>
+    {{ name_protection.assets() }}
+    <script>
+      (function () {
+        // §54 "Namen schützen" fuer die E-Mail-Aktionen (gemeinsamer Baustein, app_name_protection.js)
+        var pane = document.getElementById("detail-pane");
+        var bound = pane ? [pane.querySelector(".detail-header__subject"), pane.querySelector(".detail-header__meta"),
+                            pane.querySelector(".detail-body")] : [];
+        var protectError = document.getElementById("message-protect-error");
+        if (!window.LexonoNameProtection || !protectError) { return; }
+        function showProtectError(message) { protectError.textContent = message; protectError.hidden = false; }
+        var widget = window.LexonoNameProtection.create({
+          button: document.getElementById("message-protect-btn"),
+          list: document.getElementById("message-protected-list"),
+          fields: Array.prototype.slice.call(document.querySelectorAll(".message-protected-terms")),
+          getText: function () { return bound.map(function (el) { return el ? el.innerText : ""; }).join("\n"); },
+          getSelectedText: function () { return window.LexonoNameProtection.selectionWithin(bound); },
+          onError: showProtectError,
+          onOk: function () { protectError.hidden = true; }
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('[data-name-protection-form="message"]'), function (form) {
+          window.LexonoNameProtection.guardForm(form, widget, showProtectError, function () { protectError.hidden = true; });
+        });
+      })();
+    </script>
   {% endif %}
 
   {% if detected_deadline_preview is defined and detected_deadline_preview %}

@@ -67,6 +67,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   8/9, ohne Anrede bewusst der Vollname (Rubrum). Apostroph-Namen („O'Brien“ = „O’Brien“) und bis zu 8 Namensteile
   markierbar. Gesendeter Inhalt und alle Benchmarks unverändert. **Offen:** Markier-UI in Formular-Workflows,
   Titel im Platzhalter, Kleinschreibung (§52.3).
+  **Fortschritt 16.10.2026 (§54):** „Namen schützen“ einheitlich in Schriftsatz-Generator, Änderungsauftrag,
+  Editor-KI-Bearbeitung und E-Mail-Aktionen (Zusammenfassen/Antworten). Eine Prüf- und Speicherlogik
+  (`decisions.parse_manual_terms`/`record_manual_terms`) und ein Browser-Baustein (`app_name_protection.js`), auch vom
+  Chat genutzt. HTTP-Nachweis, Browser-QA aller vier Wege, Benchmarks unverändert. **Offen:** Markierung in
+  hochgeladenen Dokumenten und in Dokument-/Mandanten-Aktionen.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -86,6 +91,7 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Fortschritt (16.10.2026, §51):** manuelle Namensmarkierung im Chat („Namen schützen“) speist dieselbe Entscheidung
   wie die Rückfrage; aktenweite Entscheidungen gelten jetzt auch in Entwurfsprüfung und Schriftsatz-Pfaden.
   §52: Sammelansicht der Entscheidungen je Akte umgesetzt (Aufheben/Bestätigen, nur Admin/Anwalt).
+  §54: Markierung auch in Formular-Workflows (Schriftsatz, Änderungsauftrag, Editor, E-Mail-Aktionen).
 - **Abhängigkeiten:** P2 (Kandidatenerkennung), P5 (Aufbewahrung der Entscheidungen).
 - **Abnahmekriterien:** Kein Cloud-Aufruf mit offener Rückfrage (Test je Einstiegspunkt); höchstens 1 Rückfrage je
   synthetischem Standarddokument im Median; Pilot-Rückmeldung zur Verständlichkeit dokumentiert.

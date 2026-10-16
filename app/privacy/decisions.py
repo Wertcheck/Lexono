@@ -119,11 +119,43 @@ def validate_manual_terms(terms: object, message_text: str) -> list[str]:
     return result
 
 
+def parse_manual_terms(protected_terms: str | None, sent_text: str) -> list[str]:
+    """§51/§54: Formularfeld `protected_terms` (JSON-Liste) -> gepruefte Namen. EINE Stelle fuer Chat, Schriftsatz,
+    Aenderungsauftrag, Editor und E-Mail-Aktionen. `sent_text` ist genau der Text, der in die Cloud-Anfrage geht
+    (Formularfelder, ggf. Entwurf oder E-Mail): eine Markierung, die dort nicht vorkommt, ist veraltet oder manipuliert.
+    Fehler als InvalidPrivacyDecisionError (Meldungen ohne Begriff) - der Aufrufer sendet dann nichts."""
+    if not (protected_terms or "").strip():
+        return []
+    try:
+        raw = json.loads(protected_terms)
+    except ValueError as exc:
+        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.") from exc
+    return validate_manual_terms(raw, sent_text)
+
+
+def record_manual_terms(
+    db: Session, *, matter_id: str, conversation_id: str | None, terms: list[str], user_id: str | None, actor: str
+) -> None:
+    """§51/§54: dieselbe Entscheidung wie "Als Person behandeln" in der Rueckfrage, aktenweit - gespeichert und
+    committet VOR der Cloud-Anfrage, damit schon deren Pruefung sie laedt (`_prepare_and_gate`/`load_decisions`). Scheitert
+    das Speichern, wird zurueckgerollt und der Fehler weitergegeben: der Aufrufer sendet dann nichts (fail-closed)."""
+    if not terms:
+        return
+    try:
+        for term in terms:
+            record_decision(db, matter_id=matter_id, conversation_id=conversation_id, term=term,
+                            decision=DECISION_PERSONAL, user_id=user_id, actor=actor, manual=True)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+
 def record_decision(
     db: Session,
     *,
     matter_id: str,
-    conversation_id: str,
+    conversation_id: str | None,
     term: str,
     decision: str,
     user_id: str | None,

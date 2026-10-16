@@ -880,6 +880,8 @@
     {% endif %}
   </div>
 
+  {% import "partials/name_protection.html" as name_protection %}
+  {{ name_protection.assets() }}
   <script>
     // Drei-Punkte-Menue (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
     // PROFESSIONAL UX PASS" §13) - wortgleiche Kopie des bereits in
@@ -2074,114 +2076,26 @@
         setProtectedTerms([]);
       }
 
-      // §51/§52 "Namen schützen": markierte Namen als Liste; beim Senden wird daraus serverseitig die Entscheidung
-      // "Als Person behandeln". Eine Auswahl ist EIN Name ("Hans-Peter Müller", "Anna von Berg"); fuehrende Anrede,
-      // Titel oder Rolle ("Dr.", "Herr", "Richter") gehoert nicht dazu und bleibt lesbar. Ein Name gilt als vorhanden,
-      // wenn er als ganze Wortfolge (auch in Versalien, im Genitiv, ueber einen Zeilenumbruch) im Text steht - wie
-      // app/privacy/review.detect_decision_terms. Die Listen kommen vom Server (chat_router, eine Quelle).
-      var NAME_PREFIX_WORDS = {{ manual_name_prefix_words | tojson }};
-      var NAME_PARTICLES = {{ manual_name_particles | tojson }};
-      var protectedTerms = [];
+      // §51-§54 "Namen schützen": gemeinsamer Baustein (/dashboard/static/js/app_name_protection.js) - dieselbe Logik
+      // wie in Schriftsatz, Aenderungsauftrag, Editor und E-Mail-Aktionen. Beim Senden wird daraus serverseitig die
+      // Entscheidung "Als Person behandeln" (app/privacy/decisions.parse_manual_terms).
       var lastSentProtectedTerms = [];
-      var protectBtn = document.getElementById("chat-protect-btn");
-      var protectedList = document.getElementById("chat-protected-list");
-      var protectedField = document.getElementById("chat-protected-terms");
-      var MAX_PROTECTED_TERMS = 20;
-
-      function escapeRegExp(value) { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-
-      function termOccursIn(text, term) {
-        var gap = "(?:[ \\t]+|[ \\t]*\\r?\\n[ \\t]*)";
-        function body(value) { return value.split(" ").map(escapeRegExp).join(gap).replace(/['’]/g, "['’]"); }
-        var pattern = body(term);
-        if (term.toUpperCase() !== term) { pattern = "(?:" + pattern + "|" + body(term.toUpperCase()) + ")"; }
-        return new RegExp("(?:^|[^\\p{L}\\p{N}_])" + pattern + "(?=(?:s|'s|’s)?(?:[^\\p{L}\\p{N}_]|$))", "u").test(text);
-      }
-
-      function isPrefixWord(word) {
-        return word.toLowerCase().replace(/[.:]+$/, "").split(/[.-]/).every(function (part) {
-          return part === "" || NAME_PREFIX_WORDS.indexOf(part) >= 0;
-        });
-      }
-
-      function isNameShaped(words) {
-        if (!words.length || words.length > 8) { return false; }
-        var ok = words.every(function (word) {
-          if (!/^\p{L}+(?:[-'’]\p{L}+)*$/u.test(word)) { return false; }
-          return word[0] !== word[0].toLowerCase() || NAME_PARTICLES.indexOf(word) >= 0;
-        });
-        var last = words[words.length - 1];
-        return ok && last[0] !== last[0].toLowerCase() && words.join(" ").length <= 80;
-      }
-
-      function staleProtectedTerms() {
-        return protectedTerms.filter(function (term) { return !termOccursIn(textarea.value, term); });
-      }
-
-      function setProtectedTerms(terms) {
-        protectedTerms = terms.slice();
-        if (protectedField) { protectedField.value = protectedTerms.length ? JSON.stringify(protectedTerms) : ""; }
-        if (!protectedList) { return; }
-        protectedList.innerHTML = "";
-        var stale = staleProtectedTerms();
-        protectedTerms.forEach(function (term) {
-          var item = document.createElement("li");
-          item.className = "chat-composer__protected-item" +
-            (stale.indexOf(term) >= 0 ? " chat-composer__protected-item--stale" : "");
-          item.title = stale.indexOf(term) >= 0
-            ? "Kommt im Text nicht mehr vor – Markierung entfernen oder Text prüfen"
-            : "Wird vor der Cloud-Übergabe pseudonymisiert";
-          var label = document.createElement("span");
-          label.textContent = term;
-          var remove = document.createElement("button");
-          remove.type = "button";
-          remove.className = "chat-composer__protected-remove";
-          remove.setAttribute("aria-label", "Markierung „" + term + "“ entfernen");
-          remove.textContent = "×";
-          remove.addEventListener("click", function () {
-            setProtectedTerms(protectedTerms.filter(function (other) { return other !== term; }));
-          });
-          item.appendChild(label);
-          item.appendChild(remove);
-          protectedList.appendChild(item);
-        });
-      }
-
-      if (protectBtn) {
-        // Fokus/Auswahl im Eingabefeld behalten, waehrend der Knopf gedrueckt wird.
-        protectBtn.addEventListener("mousedown", function (evt) { evt.preventDefault(); });
-        protectBtn.addEventListener("click", function () {
-          var selected = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd);
-          var words = selected.split(/\s+/).filter(function (word) { return word.length > 0; });
-          while (words.length && isPrefixWord(words[0])) { words.shift(); }  // "Dr.", "Herr", "Richter" bleiben lesbar
-          words = words.map(function (word) { return word.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, ""); })
-            .filter(function (word) { return word.length > 0; });
-          if (!words.length) {
-            showComposerError(selected.trim()
-              ? "Bitte den Namen selbst markieren (ohne Anrede, Titel oder Rolle)."
-              : "Bitte zuerst den Namen im Text markieren, dann „Namen schützen“ wählen.");
-            return;
-          }
-          if (!isNameShaped(words)) {
-            showComposerError("Nur Namen können geschützt werden (Buchstaben, Bindestrich, Namenszusatz wie „von“): „" +
-              words.join(" ") + "“.");
-            return;
-          }
-          var name = words.join(" ");
-          var next = protectedTerms.slice();
-          if (next.indexOf(name) < 0) { next.push(name); }
-          if (next.length > MAX_PROTECTED_TERMS) {
-            showComposerError("Höchstens " + MAX_PROTECTED_TERMS + " Namen je Nachricht.");
-            return;
-          }
+      var nameProtection = window.LexonoNameProtection ? window.LexonoNameProtection.create({
+        button: document.getElementById("chat-protect-btn"),
+        list: document.getElementById("chat-protected-list"),
+        fields: [document.getElementById("chat-protected-terms")],
+        getText: function () { return textarea.value; },
+        getSelectedText: function () { return textarea.value.slice(textarea.selectionStart, textarea.selectionEnd); },
+        onError: function (message) { showComposerError(message); },
+        onOk: function () {
           var existing = document.getElementById("chat-send-error-banner");
           if (existing) { existing.parentNode.removeChild(existing); }
-          setProtectedTerms(next);
-        });
-        textarea.addEventListener("input", function () {
-          if (protectedTerms.length) { setProtectedTerms(protectedTerms); }
-        });
-      }
+        },
+        watch: [textarea]
+      }) : null;
+
+      function setProtectedTerms(terms) { if (nameProtection) { nameProtection.setTerms(terms); } }
+      function staleProtectedTerms() { return nameProtection ? nameProtection.stale() : []; }
 
       // ECHTER FUND (06.10., Owner-Direktive "CHAT / COMPOSER / CHAT-HISTORY
       // FINAL UX & STATE-CONSISTENCY PASS" §10, live per CDP reproduziert):
@@ -2486,7 +2400,7 @@
             "“ kommt im Text nicht mehr vor. Bitte Markierung entfernen oder Text prüfen.");
           return;
         }
-        lastSentProtectedTerms = protectedTerms.slice();
+        lastSentProtectedTerms = nameProtection ? nameProtection.terms() : [];
 
         isSending = true;
         // Zweite Fehlerunterscheidung fuer den `.catch()`-Block weiter

@@ -49,12 +49,14 @@ from app.drafting.quick_matter import create_quick_matter
 from app.ingestion.stability import compute_sha256
 from app.models import Client, Document, Matter, User
 from app.privacy.api_logger import friendly_block_message
+from app.privacy.decisions import InvalidPrivacyDecisionError, parse_manual_terms, record_manual_terms
+from app.web.name_protection import install_name_protection
 from app.web.service_factory import WritingProviderNotConfiguredError, get_drafting_service
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/tools/schriftsatz", tags=["dashboard-schriftsatz"])
 
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §54 "Namen schützen"
 
 # Fest verdrahteter Schreibauftrag (siehe Moduldocstring) - kein
 # Nutzer-Freitextfeld, um versehentlich einen nicht erlaubten Zweck zu
@@ -205,6 +207,7 @@ def generate_schriftsatz(
     stil: str = Form(""),
     vorlage: str = Form(""),
     attorney_anmerkungen: str = Form(""),
+    protected_terms: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -219,6 +222,12 @@ def generate_schriftsatz(
     error = _validate_uploads(documents)
     if error:
         return _redirect_with_error(error)
+    # §54 "Namen schützen": VOR jeder Persistenz gegen genau den Text geprueft, der in die Anfrage geht - ungueltige
+    # oder veraltete Markierung -> nichts angelegt, nichts gesendet (Meldung ohne Begriff, steht in der URL).
+    try:
+        manual_terms = parse_manual_terms(protected_terms, "\n".join((stil, vorlage, attorney_anmerkungen)))
+    except InvalidPrivacyDecisionError as exc:
+        return _redirect_with_error(str(exc))
 
     settings = get_settings()
 
@@ -235,6 +244,14 @@ def generate_schriftsatz(
             client_id=new_client_id.strip() or None,
             actor=current_user.email,
         )
+
+    # Dieselbe aktenweite Entscheidung wie "Als Person behandeln" (Chat-Rueckfrage) - VOR Uploads und Cloud-Anfrage
+    # gespeichert; `create_draft` laedt sie (`_prepare_and_gate`). Scheitert das Speichern: nichts senden.
+    try:
+        record_manual_terms(db, matter_id=matter.id, conversation_id=None, terms=manual_terms,
+                            user_id=current_user.id, actor=current_user.email)
+    except Exception:
+        return _redirect_with_error("Die Namensmarkierung konnte nicht gespeichert werden - es wurde nichts gesendet.")
 
     processor = DocumentProcessingService(
         ocr_enabled=settings.ocr_enabled,

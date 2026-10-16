@@ -174,9 +174,10 @@ def test_marked_multiword_names_never_appear_in_the_http_request(client, db_sess
 def test_chat_page_receives_the_server_word_lists(client, db_session: Session) -> None:
     login_as_admin(db_session, client)
     page = client.get("/dashboard/chat").text
-    prefix = json.loads(re.search(r"var NAME_PREFIX_WORDS = (\[.*?\]);", page).group(1))
-    particles = json.loads(re.search(r"var NAME_PARTICLES = (\[.*?\]);", page).group(1))
-    assert set(prefix) == MANUAL_NAME_PREFIX_WORDS and set(particles) == NAME_PARTICLES  # eine Quelle
+    # §54: Konfiguration des gemeinsamen Bausteins (partials/name_protection.html), eine Quelle
+    config = json.loads(re.search(r'id="lexono-name-protection-config">(.*?)</script>', page).group(1))
+    assert set(config["prefix"]) == MANUAL_NAME_PREFIX_WORDS and set(config["particles"]) == NAME_PARTICLES
+    assert "/dashboard/static/js/app_name_protection.js" in page
 
 
 # --- Verwaltung gespeicherter Entscheidungen ------------------------------------------------------------------------

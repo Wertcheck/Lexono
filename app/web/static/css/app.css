@@ -9215,6 +9215,22 @@ a.chat-composer__protect-btn {
   text-decoration: none;
 }
 
+/* §54: Hinweis des Bausteins "Namen schützen" in Formularen (Schriftsatz, Aenderungsauftrag, E-Mail) - Aussehen wie
+   ein Fehler-Banner, aber eigene Klasse: erst sichtbar, wenn eine Markierung ungueltig oder veraltet ist. */
+.name-protection-error {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--wax-red-tint);
+  border: 1px solid rgba(162, 59, 46, 0.35);
+  color: var(--wax-red);
+}
+
+.name-protection-error[hidden] {
+  display: none;
+}
+
 .chat-composer__protect-btn:hover,
 .chat-composer__protect-btn:focus-visible {
   background: var(--paper-200);

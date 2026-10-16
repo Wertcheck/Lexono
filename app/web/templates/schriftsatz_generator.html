@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}Schriftsatz-Generator{% endblock %}
 {% block content %}
   <div class="topbar">
@@ -73,16 +74,23 @@
         </p>
         <label class="form-label">
           Gewünschter Stil
-          <input type="text" name="stil" placeholder="z. B. sachlich-formell, kurz und präzise" />
+          <input type="text" name="stil" id="schriftsatz-stil" placeholder="z. B. sachlich-formell, kurz und präzise" />
         </label>
         <label class="form-label">
           Schreibvorlage / Muster
-          <textarea name="vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll"></textarea>
+          <textarea name="vorlage" id="schriftsatz-vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll"></textarea>
         </label>
         <label class="form-label">
           Anwaltliche Anmerkungen
-          <textarea name="attorney_anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf"></textarea>
+          <textarea name="attorney_anmerkungen" id="schriftsatz-anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf"></textarea>
         </label>
+        {# §54: Namen, die die automatische Erkennung uebersieht ("Richter Zweigelt"), in einem der drei Felder markieren
+           und schuetzen - dieselbe Entscheidung "Als Person behandeln" wie im Chat, gilt fuer die ganze Akte. #}
+        <div class="name-protection-row" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+          {{ name_protection.controls("schriftsatz") }}
+        </div>
+        <div class="name-protection-error" id="schriftsatz-protect-error" hidden></div>
+        {{ name_protection.field("schriftsatz") }}
       </div>
 
       <div class="settings-section">
@@ -110,8 +118,30 @@
     </form>
   </div>
 
+  {{ name_protection.assets() }}
   <script>
     (function () {
+      // §54 "Namen schützen" (gemeinsamer Baustein, app_name_protection.js)
+      var protectFields = ["schriftsatz-stil", "schriftsatz-vorlage", "schriftsatz-anmerkungen"].map(function (id) {
+        return document.getElementById(id);
+      });
+      var protectError = document.getElementById("schriftsatz-protect-error");
+      function showProtectError(message) { protectError.textContent = message; protectError.hidden = false; }
+      if (window.LexonoNameProtection) {
+        var widget = window.LexonoNameProtection.create({
+          button: document.getElementById("schriftsatz-protect-btn"),
+          list: document.getElementById("schriftsatz-protected-list"),
+          fields: Array.prototype.slice.call(document.querySelectorAll(".schriftsatz-protected-terms")),
+          getText: function () { return protectFields.map(function (el) { return el.value; }).join("\n"); },
+          getSelectedText: function () { return window.LexonoNameProtection.selectionWithin(protectFields); },
+          onError: showProtectError,
+          onOk: function () { protectError.hidden = true; },
+          watch: protectFields
+        });
+        window.LexonoNameProtection.guardForm(document.querySelector("form.js-ai-form"), widget, showProtectError,
+          function () { protectError.hidden = true; });
+      }
+
       var matterSelect = document.getElementById("matter-select");
       var newMatterFields = document.getElementById("new-matter-fields");
       var dropzone = document.getElementById("dropzone");

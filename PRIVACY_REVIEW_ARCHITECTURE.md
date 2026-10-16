@@ -6749,3 +6749,102 @@ Ein §52-Test (6 Teile ungültig) wurde auf die neue Grenze umgestellt (9 Teile 
 - Erkennt der Titel-Detektor „Dr. Hans-Peter Müller“, steht der Titel im Platzhalter. Die Rückführung stellt ihn
   wieder her, ohne ihn zu verdoppeln; die Cloud-KI sieht ihn nicht.
 - Kleinschreibung (§52.3) unverändert.
+
+## §54 „Namen schützen“ einheitlich in Chat, Schriftsatz-, Entwurfs- und E-Mail-Formularen (16.10.2026, Branch `feature/feedback-diagnose`, Basis `0ea1918`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 54.1 Sendewege (ermittelt)
+
+| Formular | Endpunkt | Text in der Anfrage | Weg zur Cloud |
+|---|---|---|---|
+| Schriftsatz-Generator (`schriftsatz_generator.html`) | `POST /dashboard/tools/schriftsatz/generate` | `stil`, `vorlage`, `attorney_anmerkungen` | `create_draft` → `_prepare_and_gate` |
+| Änderungsauftrag (`draft_detail.html`) | `POST /dashboard/drafts/{id}/instructions[/apply]` | Auftrag (gemessen: der bisherige Entwurf geht **nicht** mit, nur Aktentitel und Auftrag) | `apply_instruction` → `create_draft` |
+| Editor, KI-Bearbeitung (`draft_editor.html`, AJAX) | `POST /dashboard/drafts/{id}/ai-edit` | Anweisung und Auswahl | `apply_ai_suggestion` → `create_draft` |
+| E-Mail: Zusammenfassen/Antworten (`partials/message_detail.html`) | `POST /dashboard/chat/from-message/{id}` | Betreff, Absender, E-Mail-Text | Chat (`send_message`), danach weiter im Chat |
+
+- Ein eigenes E-Mail-Verfassen-Formular gibt es nicht (keine Versandfunktion). Der Dokumentengenerator und der
+  Postausgang rufen keine KI auf.
+- Alle Wege laden bereits die aktenweiten Entscheidungen (`_prepare_and_gate` bzw. Entwurfsprüfung, §51). Es fehlten
+  nur das Bedienelement und die serverseitige Aufnahme.
+
+### 54.2 Änderungen (eine Logik statt Kopien)
+
+- **Server:** `decisions.parse_manual_terms` / `record_manual_terms` sind die einzige Stelle für Prüfung und
+  Speicherung. Der Chat ruft sie jetzt ebenfalls auf (vorher private Funktionen im `chat_router`).
+  - Geprüft wird gegen genau den Text, der in die Anfrage geht. Bei Entwürfen kommt der angezeigte Entwurf hinzu: ein
+    dort stehender Name ist markierbar und gilt dann aktenweit für spätere Anfragen
+    (`name_protection.protect_manual_terms`).
+  - Ungültige, veraltete oder manipulierte Markierung: nichts wird angelegt (auch keine Schnellakte), gespeichert
+    oder gesendet. Fehlermeldungen enthalten keinen Begriff.
+  - Gespeichert wird als dieselbe Entscheidung „Als Person behandeln“ (aktenweit, Audit „manuell markiert“), committet
+    **vor** der Anfrage. Scheitert das Speichern, wird zurückgerollt und nichts gesendet.
+- **Browser:** `app_name_protection.js` ist ein gemeinsamer Baustein mit derselben Logik wie im Chat (Namensform,
+  Abtrennen von Anrede/Titel/Rolle, Apostrophe, bis zu 8 Teile, Gültigkeit am aktuellen Text). Der Chat nutzt ihn
+  jetzt ebenfalls; IDs und Verhalten sind unverändert, die Browser-QA aus §52/§53 ist identisch. Markup und
+  Konfiguration kommen aus `partials/name_protection.html`. Die Wortlisten stellt `app/web/name_protection.py` in
+  jedem betroffenen Router bereit, eine Quelle in `detectors.py`.
+  - Formulare: veraltete Markierung blockiert das Absenden (Capture-Phase, vor der Ladeanzeige).
+  - Editor: blockiert vor dem `fetch`.
+  - Markierbar ist eine Auswahl in den Formularfeldern, im angezeigten Entwurf bzw. im E-Mail-Text
+    (`selectionWithin`).
+- **Unverändert:** Rückfrage, Berechtigungen zum Aufheben/Bestätigen (`PERM_PRIVACY_DECISION_MANAGE`, §52),
+  Pseudonymisierung, Rückführung (§53), Fail-Closed, Siegel.
+- **Korrigierte Annahme:** Ich war zunächst davon ausgegangen, der Änderungsauftrag sende den Entwurf mit. Gemessen
+  sendet er ihn nicht; Code-Kommentare und Hinweistexte sind entsprechend formuliert.
+
+### 54.3 Tests und QA
+
+`tests/test_web_form_name_protection.py` (24 Tests, echte Endpunkte und Gateway, Schreib-Attrappe gibt die
+Platzhalter der Anfrage zurück):
+
+- **Schriftsatz:**
+  - Gegenprobe ohne Markierung: „Zweigelt“ steht in der Payload.
+  - Mit Markierung geschützt, Datum, Betrag und § 3 ZPO unverändert, Entscheidung aktenweit.
+  - Bindestrich-, Apostroph- und Zusatznamen in allen drei Feldern; zwei Personen „von Berg“ getrennt.
+  - 5 ungültige oder veraltete Varianten: keine Akte, kein Entwurf, keine Entscheidung, keine Anfrage.
+  - Speicherfehler: keine Anfrage.
+- **Änderungsauftrag:**
+  - geschützt bzw. Gegenprobe;
+  - Name nur im Entwurf markierbar und danach aktenweit wirksam;
+  - veraltet: nichts gespeichert oder gesendet;
+  - „Anmerkung speichern“ speichert die Markierung ohne Cloud-Aufruf.
+- **Editor:** Namen aus Auswahl und Entwurf geschützt; ungültig → 422 ohne Begriff und ohne Anfrage;
+  Speicherfehler → keine Anfrage.
+- **E-Mail:** beide Aktionen geschützt; manipulierte Markierung → 400, keine Unterhaltung; Bedienelement an beiden
+  Formularen, Ladeanzeige unverändert.
+- **Aktenweit:** Eine Markierung aus der E-Mail gilt im Schriftsatz und im Chat derselben Akte.
+- **HTTP-Nachweis** (Schriftsatz über echten Anthropic-Provider und lokalen Aufzeichnungsserver): weder „Zweigelt“
+  noch „O'Brien/O’Brien“ in den gesendeten Bytes; juristische Werte enthalten.
+- **Rückführung im gespeicherten Entwurf:** exakt das Original, ohne „von Anna von Berg“, „Herr Dr.“ oder „Dr. Dr.“.
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel; Absenden und `fetch` abgefangen –
+keine Anfrage verließ den Browser), alle vier Wege ohne JS-Fehler:
+
+- „Richter Zweigelt“ → „Zweigelt“, „Frau Dell’Anna Rossi“ → „Dell’Anna Rossi“; Auswahl im Entwurf und im E-Mail-Text.
+- Veraltete Markierung blockiert ohne Anfrage, im Formular wie im Editor; das Feld `protected_terms` wird übertragen.
+- In der QA gefunden und behoben: Ein früherer Hinweis blieb nach gültigem Absenden sichtbar.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** Benchmarks unverändert (`pseudonymization_v1` kein Feldfall geändert, Chat ohne Akte 0/440,
+  Legal-E2E 0). In den neuen Formularwegen geht ein markierter Name nicht mehr im Klartext hinaus (vorher ging
+  „Zweigelt“ in Schriftsatz und Änderungsauftrag hinaus, s. Gegenproben).
+- **Fehlalarme und Blockaden:** unverändert.
+- **Juristische Inhalte:** unverändert.
+- **Gesamtsuite** (6 Teile, Vordergrund): **5102 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 54.4 Offene Grenzen
+
+- Namen in **hochgeladenen Dokumenten** (Schriftsatz-Upload, Chat-Anhang) lassen sich nicht markieren, weil es keine
+  Textansicht zum Auswählen gibt. Sie sind nur über eine Markierung desselben Namens im eingegebenen Text oder über
+  die Rückfrage geschützt.
+- Aktionen auf Dokumenten und Mandanten (`start_conversation_from_document`) haben noch keine Markierung (feste
+  Aufforderungen; danach geht es im Chat mit Markierung weiter).
+- Im Editor gilt der **gespeicherte** Entwurf. Ein Name, der nur in noch nicht automatisch gespeichertem Text steht,
+  wird serverseitig abgewiesen, und es wird nichts gesendet.
+- Ein Fehler in der E-Mail-Aktion zeigt eine schlichte Fehlerseite (400). Kein Datenabfluss, aber keine Rückkehr mit
+  erhaltener Auswahl.
+- Kleinschreibung (§52.3) und die übrigen §53-Grenzen unverändert. Die Markierung ist ein zusätzlicher Schutz, kein
+  Nachweis vollständiger Erkennung.

@@ -307,6 +307,12 @@
 
   function runAiEdit(instructionText, purpose, selectedText, triggerBtn) {
     if (!canClaudeCall || !instructionText || !instructionText.trim()) return;
+    // §54 "Namen schützen" (draft_editor.html, app_name_protection.js): veraltete Markierung -> nicht senden
+    const nameProtection = window.LexonoEditorNameProtection || null;
+    if (nameProtection) {
+      const staleMessage = nameProtection.staleMessage();
+      if (staleMessage) { window.alert(staleMessage); return; }
+    }
     if (triggerBtn) {
       triggerBtn.disabled = true;
       triggerBtn.dataset.originalText = triggerBtn.dataset.originalText || triggerBtn.textContent;
@@ -316,6 +322,7 @@
       instruction_text: instructionText,
       purpose: purpose || "improve_draft",
       selected_text: selectedText || "",
+      protected_terms: nameProtection && nameProtection.terms().length ? JSON.stringify(nameProtection.terms()) : "",
     })
       .then((resp) => resp.json())
       .then((data) => {

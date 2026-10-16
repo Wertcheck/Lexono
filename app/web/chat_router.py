@@ -42,11 +42,11 @@ from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, 
 from app.chat import processing_claims
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
-from app.privacy.review import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES, detect_decision_terms
+from app.privacy.review import detect_decision_terms
+from app.web.name_protection import install_name_protection
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
-from app.privacy.decisions import validate_manual_terms
-from app.models.privacy_decision import DECISION_PERSONAL
+from app.privacy.decisions import parse_manual_terms, record_manual_terms
 from app.chat.speech import (
     SpeechDecodeError,
     SpeechEmptyRecordingError,
@@ -83,10 +83,8 @@ from app.web.service_factory import WritingProviderNotConfiguredError, get_draft
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/chat", tags=["dashboard-chat"])
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
-# §52 "Namen schützen": dieselben Listen wie die Serverpruefung (eine Quelle, kein Nachbau im JavaScript)
-templates.env.globals["manual_name_prefix_words"] = sorted(MANUAL_NAME_PREFIX_WORDS)
-templates.env.globals["manual_name_particles"] = sorted(NAME_PARTICLES)
+# §52/§54 "Namen schützen": dieselben Listen wie die Serverpruefung (eine Quelle, app/web/name_protection.py)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))
 # Markdown-Rendering fuer Chat-Nachrichten (05.10., Owner-Direktive
 # "LONG-RUN PRODUCT QUALITY PASS" Phase D) - siehe app/chat/markdown_render.py
 # fuer die volle Root-Cause-/Sicherheitsherleitung. Gleiches Registrierungs-
@@ -624,27 +622,14 @@ def transcribe_speech(
 
 
 def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:
-    """§51: Formularfeld `protected_terms` (JSON-Liste) -> gepruefte Namen; Fehler als InvalidPrivacyDecisionError."""
-    if not (protected_terms or "").strip():
-        return []
-    try:
-        raw = json.loads(protected_terms)
-    except ValueError as exc:
-        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.") from exc
-    return validate_manual_terms(raw, content)
+    """§51: siehe app/privacy/decisions.parse_manual_terms (gemeinsam mit den Formularen, §54)."""
+    return parse_manual_terms(protected_terms, content)
 
 
 def _record_manual_terms(db: Session, conversation: ChatConversation, terms: list[str], user: User) -> None:
-    """§51: dieselbe Entscheidung wie "Als Person behandeln" in der Rueckfrage (gilt fuer die Akte bzw. die Schnellakte
-    des Chats ohne Akte) - gespeichert VOR der Nachricht, damit schon die erste Pruefung sie kennt und jede erneute
-    Pruefung (Rueckfrage, Wiederherstellung nach Neuladen, andere Pfade derselben Akte) sie wieder anwendet."""
-    for term in terms:
-        record_privacy_decision(
-            db, matter_id=conversation.matter_id, conversation_id=conversation.id, term=term,
-            decision=DECISION_PERSONAL, user_id=user.id, actor=user.email, manual=True,
-        )
-    if terms:
-        db.commit()
+    """§51: siehe app/privacy/decisions.record_manual_terms (gemeinsam mit den Formularen, §54)."""
+    record_manual_terms(db, matter_id=conversation.matter_id, conversation_id=conversation.id, terms=terms,
+                        user_id=user.id, actor=user.email)
 
 
 @router.post("/send")
@@ -853,6 +838,7 @@ def start_conversation_from_message(
     request: Request,
     message_id: str,
     action: str = Form(...),
+    protected_terms: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
 ) -> RedirectResponse:
@@ -872,6 +858,18 @@ def start_conversation_from_message(
         sender=message.sender or "unbekannt",
         body=message.body_text or "(kein Inhalt extrahiert)",
     )
+    # §54 "Namen schützen": gegen genau die Anfrage (Betreff, Absender, Text) geprueft und als aktenweite Entscheidung
+    # VOR dem ersten Cloud-Aufruf gespeichert. Fehler -> nichts gesendet (Meldung ohne Begriff).
+    try:
+        manual_terms = parse_manual_terms(protected_terms, prompt)
+        record_manual_terms(db, matter_id=message.matter_id, conversation_id=None, terms=manual_terms,
+                            user_id=current_user.id, actor=current_user.email)
+    except InvalidPrivacyDecisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - fail-closed
+        raise HTTPException(
+            status_code=500, detail="Die Namensmarkierung konnte nicht gespeichert werden - es wurde nichts gesendet."
+        ) from exc
 
     conversation = _start_conversation_with_prompt(
         db,
