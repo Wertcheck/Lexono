@@ -7024,7 +7024,8 @@ einen toten Port gelegt; KI-Aktionen abgefangen):
 
 ### 56.4 Grenzen und offene Risiken (nicht durch Scheinlösung verdeckt)
 
-- **Chat- und Schriftsatz-Upload senden im selben Request:** Der Text wird beim Hochladen extrahiert und gleich
+- **Chat- und Schriftsatz-Upload senden im selben Request** (**geschlossen in §57**: Upload und KI-Verarbeitung sind
+  jetzt getrennte Vorgänge): Der Text wird beim Hochladen extrahiert und gleich
   mitgesendet; vor dem ersten Versand gibt es keinen Moment zum Markieren. Ein Name, den die Erkennung übersieht,
   geht in dieser ersten Anfrage im Klartext hinaus; der Test hält das ausdrücklich fest.
   - **Sicherer Ablauf:** in der Akte hochladen („Dokumente“), in der Dokumentansicht markieren, dann die KI-Aktion
@@ -7043,3 +7044,149 @@ einen toten Port gelegt; KI-Aktionen abgefangen):
 - PDF/DOCX-Seitenbilder sind nicht auswählbar; markiert wird im extrahierten Text darunter.
 - Die Markierung ist ein zusätzlicher Schutz, kein Nachweis vollständiger Erkennung. Synthetische Tests belegen
   **keine** vollständige Leckfreiheit.
+
+## §57 Upload und KI-Verarbeitung getrennt – Chat und Schriftsatz-Generator (16.10.2026, Branch `feature/feedback-diagnose`, Basis `df2fa3f`)
+
+Schließt die in §56.4 offen gelassene Lücke: Bisher wurde ein Dokument im Chat bzw. im Schriftsatz-Generator im
+**selben Request** hochgeladen, ausgelesen und mitgesendet. Ein Name, den die automatische Erkennung übersah, ging in
+dieser ersten Anfrage vor jeder Markiermöglichkeit im Klartext hinaus. Status: **teilweise nachgewiesen** (siehe 57.4).
+
+### 57.1 Bestandsaufnahme (am Code, vor den Änderungen)
+
+- **Chat** (`chat_router.send_message_stream` und `/send`): Dateien prüfen → Namensmarkierung prüfen →
+  `ChatService.attach_document` (speichern, `DocumentProcessingService.process_document`: Extraktion/OCR, Klassifikation
+  und Fristen **lokal**) → Nutzernachricht mit Anhang → sofort `send_message[_stream]` → `DraftingService._prepare_and_gate`
+  (zentrale Prüfung) → Cloud.
+- **Schriftsatz** (`schriftsatz_router.generate_schriftsatz`): Akte wählen/anlegen → Markierung speichern → Dateien
+  speichern und verarbeiten → sofort `create_draft` → Cloud.
+- **Keine weiteren automatischen Cloud-Auslöser beim Upload:**
+  - Dokumentverarbeitung, OCR-Wiederholung, Mail-Abruf und Titelbildung (`generate_conversation_title`) laufen lokal.
+  - Die Wiederaufnahme einer Datenschutz-Rückfrage (`pending-review`, `privacy-review`) verlangt eine offene
+    **Nutzer**nachricht (`role == "user"`, letzte Nachricht, Bearbeitungssperre).
+  - Dokument- und E-Mail-Aktionen (`from-document`, `from-message`) sind eigene, bewusste Aktionen und verlangen eine
+    Akte.
+
+### 57.2 Änderungen (bestehende Logik, keine parallele Architektur)
+
+- **Serverseitig erzwungen:** Ein Request **mit Dateien** ist im Chat (beide Endpunkte) und im Schriftsatz-Generator
+  ausschließlich ein Upload. Er speichert, liest lokal aus und ordnet der Akte zu, ruft aber weder
+  `send_message[_stream]` noch `create_draft` auf. Das gilt auch für einen mitgetippten Text: Er wird **nicht**
+  gesendet, nur der Titel einer neuen Unterhaltung entsteht wie bisher lokal daraus.
+- **Chat:**
+  - Neue Nachrichtenrolle `upload` (`ChatService.record_upload`) mit dem lokalen Hinweis „noch keine KI-Verarbeitung“
+    und den Anhängen. Ist ein Dokument nicht lesbar, nennt der Hinweis das sofort (`readiness.blocked_state_sentences`).
+  - Die Rolle ist nie Teil des Verlaufs (`_build_history` nimmt nur user/assistant) und nie eine offene
+    Rückfrage-Nachricht.
+  - Antwort auf den Upload: Weiterleitung bzw. Stream-Ereignis `uploaded` zur Chat-Dokumentansicht
+    (`?uploaded=1#name-protection`) mit Hinweis und der §56-Markierung.
+  - Ein mitgetippter Text bleibt nur im Browser (`sessionStorage` dieser Unterhaltung). Er steht nach dem Prüfen,
+    auch über „Markierung speichern“ hinweg, wieder im Eingabefeld und wird erst beim Absenden entfernt.
+- **Bewusste Aktion im Chat:** Die nächste Nachricht ohne Dateien verarbeitet die seit der letzten Antwort
+  hochgeladenen Dokumente (`_message_scope`, `_referenced_document_ids`). Mehrere Uploads hintereinander werden
+  vereinigt; eine unbeantwortete Zwischenfrage (offene Rückfrage) beendet den Bezug nicht; jede Antwort, auch ein
+  lokaler Sperrhinweis, beendet ihn. Die wiederhergestellte Rückfrage (`pending-review`) prüft denselben Kontext. Datenminimierung §29 bleibt erhalten:
+  nur diese Dokumente begrenzen den Kontext. Lesbarkeitssperre, gespeicherte Markierungen (`load_decisions`), Presidio,
+  Pseudonymisierung, Leak-Check, Siegel und Rückführung laufen unverändert in `_prepare_and_gate`.
+- **Schriftsatz-Generator:**
+  - Mit Dateien wird die Seite neu angezeigt, mit Hinweis (`#upload-notice`), Links zur Prüfung je Dokument
+    (Aktenansicht mit §56-Markierung), vorausgewählter Akte und den bisherigen Eingaben.
+  - Erst „Schriftsatz generieren“ **ohne** Dateien ruft `create_draft` auf.
+  - Die Schaltfläche heißt bei gewählten Dateien „Dokumente hochladen (noch keine KI)“.
+- **Fehlerfälle (fail-closed, unverändert streng):**
+  - Ungültige oder veraltete Markierung beim Upload: nichts gespeichert, nichts gesendet.
+  - Veraltete Dokument-Markierung (`text_version`): abgewiesen.
+  - Ungültige Markierung bei der Frage: nichts gesendet.
+  - Scheitert die zentrale Prüfung: nichts gesendet.
+  - Speicherfehler beim Upload: Abbruch vor jeder Verarbeitung.
+- **Manipulation und Wiederholung:**
+  - Eine Upload-Nachricht kann weder über `privacy-review` beantwortet noch über `pending-review` wiederaufgenommen
+    werden.
+  - Ein wiederholter Upload (Doppelklick, Retry) ist wieder nur ein Upload.
+  - Der Bezug auf die Upload-Dokumente reicht nicht in andere Unterhaltungen oder Akten.
+
+### 57.3 Tests und QA (nur synthetische Daten, kein Anthropic-Aufruf, kein Deployment)
+
+- **Neu: `tests/test_upload_without_ai.py`** (19 Tests). Echter `AnthropicClaudeWritingProvider` (echte Factory und
+  echtes SDK) gegen den lokalen Aufzeichnungsserver, toter Proxy, gefälschter Schlüssel.
+  - Upload im Chat: **0 HTTP-Requests**, `api_call_logs` leer.
+  - Schriftsatz-Upload: **0 HTTP-Requests**, kein Entwurf. `create_draft` beim Upload ist zur Probe verboten
+    (würde den Test sprengen).
+  - Erst die bewusste Frage bzw. Generierung erzeugt genau **einen** Request. Dessen **verifizierter Payload** enthält
+    den nachträglich markierten Namen nicht, wohl aber Daten, Betrag und Norm des Dokuments, und nicht den lokalen
+    Upload-Hinweis.
+  - Außerdem abgedeckt: Rückführung des Namens in der Antwort, Lesbarkeitshinweis und -sperre, veraltete und
+    ungültige Markierungen, ein Ausfall der zentralen Prüfung (nachweislich aufgerufen, fail-closed),
+    Rückfrage-Manipulation, Wiederholung und Aktenisolation; nach dem Review zusätzlich: gleicher Kontext für
+    `pending-review`, mehrere Uploads, Ende des Upload-Bezugs.
+- **Angepasst:** 31 bestehende Tests, die Upload und Senden in einem Schritt erwarteten. Sie laufen jetzt zweistufig
+  über gemeinsame Helfer und prüfen zusätzlich, dass der Upload-Schritt nichts sendet.
+  - `test_web_chat`: 4
+  - `test_web_schriftsatz`: 5
+  - `test_chat_document_readiness`: 15
+  - `test_web_privacy_review`: 2
+  - `test_privacy_cloud_boundary_e2e`: 4
+  - `test_web_document_name_protection`: 1. Die dort festgehaltene §56-Grenze („Zweigelt im ersten Versand“) ist
+    jetzt umgekehrt belegt: Der erste Versand ist die bewusste Frage, ohne den Namen.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, tote Cloud-Endpunkte):
+  - Chat: Datei und Text abgesendet → Dokumentansicht mit Hinweis, Text im Eingabefeld, Upload-Nachricht sichtbar,
+    0 API-Logs.
+  - Markierung gespeichert: Entscheidung vorhanden, Text weiterhin im Eingabefeld.
+  - Die bewusste Frage wurde im Browser abgefangen.
+  - Schriftsatz: Hinweis, Prüf-Link, Eingaben und Akte erhalten, 0 Entwürfe, 0 API-Logs.
+  - Keine JS-Fehler. Während des Uploads zeigt der Chat „Dokument wird lokal ausgelesen … (noch keine KI)“, ohne
+    Nutzerblase mit dem nicht gesendeten Text.
+- **Unabhängiges Review (QA-Agent):** kein Pfad gefunden, auf dem ein Request mit Dateien `send_message*`,
+  `create_draft` oder einen Writer erreicht; Upload-Rolle nie im Verlauf, nicht beantwortbar; keine XSS-Stelle.
+  Befunde und Umgang:
+  - mittel – `pending-review` prüfte den Kontext der ganzen Akte statt des Upload-Bezugs: **behoben**, getestet;
+  - mittel – Chat zeigte beim Upload „Lexono antwortet …“ und den Text als gesendete Blase: **behoben**,
+    Browser-QA;
+  - niedrig/mittel – Hinweis versprach den Text im Eingabefeld auch ohne JavaScript bzw. Browser-Speicher:
+    **umformuliert** (bedingt);
+  - niedrig – mehrere Uploads, offene Zwischenfrage: **behoben** (vereinigt). Das Weiterführen des Bezugs über einen
+    Sperrhinweis hinweg wurde verworfen, weil es das getestete Verhalten „allgemeine Fragen nach einer Sperre“ brach;
+  - niedrig – Hinweistext blieb nach dem Senden scheinbar aktuell: **umformuliert** („beim Hochladen …“);
+  - niedrig – Schriftsatz: Upload-Antwort ohne Redirect (F5 sendet erneut: weitere Schnellakte, doppelte Dokumente,
+    keine KI) und Teilpersistenz bei einem Größenfehler im zweiten Dokument: **offen**, siehe 57.5;
+  - niedrig – Testlücken: ergänzt (siehe oben).
+- **Benchmarks:** Pseudonymisierung (alle Kennzahlen) identisch zur §56-Baseline.
+- **Gesamtsuite** (6 Teile, Vordergrund, nach den Review-Korrekturen): **5156 bestanden**, 10 xfail, 1 xpass
+  (vorbestehend), 1 übersprungen, 4 fehlgeschlagen – die fremden Logo-Tests.
+- **Belegt bzw. nicht belegt:**
+  - Belegt sind die unverschlüsselten Payloads auf diesem Rechner (Loopback).
+  - TLS zum echten Anthropic-Endpunkt und der Relay-Pfad gegen einen realen Server sind **nicht** belegt.
+
+### 57.4 Mail- und Intake-Dokumente ohne Akte (untersucht, keine Nebenlösung umgesetzt)
+
+- **Zuordnung:** Ein Dokument aus dem Mail-Abruf oder Intake bekommt erst mit der Zuordnung eine Akte:
+  - automatisch: `app/matching/service.py:48-51`;
+  - manuell: `app/web/router.py:570-573`, Akte samt Anhängen.
+- **Vorher keine Cloud:** `from-document` und `from-message` (`app/web/chat_router.py:899`, `:982`) verlangen eine
+  Akte. Ohne Akte erreicht kein Inhalt die Cloud.
+- **Sicherer Ablauf:**
+  1. zuordnen;
+  2. in der Aktenansicht des Dokuments prüfen und markieren (§56; die Entscheidung gilt aktenweit);
+  3. erst danach die KI-Aktion starten.
+- **Bewusst nicht umgesetzt:** eine Markierung ohne Akte. Sie bräuchte einen eigenen, aktenlosen
+  Entscheidungsspeicher mit offener Zuordnungs- und Isolationsfrage, also eine fachliche Entscheidung.
+
+### 57.5 Grenzen und offene Risiken
+
+- **Upload-Bezug endet mit der nächsten Antwort:** Danach werden Uploads derselben Unterhaltung wie bisher nur bei
+  ausdrücklichem Dokumentbezug herangezogen.
+- **Ungeprüftes Dokument gehört sofort zur Akte (fachlich zu bestätigen):** Ein hochgeladenes, noch nicht geprüftes
+  Dokument ist mit dem Upload Teil der Akte. Spätere KI-Aktionen mit Aktenkontext (andere Unterhaltung derselben Akte,
+  Schriftsatz-Generierung, Folgefragen mit Dokumentbezug) beziehen es ein, auch wenn niemand es markiert hat. Das
+  entspricht dem bisherigen Akten-Upload; immer laufen die zentrale Prüfung und gespeicherte Markierungen. Ob ein
+  Dokument erst nach ausdrücklicher Prüfung KI-fähig sein soll, ist eine offene fachliche Entscheidung (nicht
+  eigenmächtig umgesetzt).
+- **Schriftsatz ohne Redirect nach dem Upload:** Ein erneutes Absenden per F5 legt eine weitere Schnellakte und doppelte
+  Dokumente an (keine KI). Ein Redirect müsste die Formularwerte in die URL legen (Personenbezug im Verlauf) und wurde
+  deshalb nicht gewählt. Ein Größenfehler im zweiten Dokument hinterlässt wie bisher die Akte mit dem ersten.
+- **Der eingegebene Text liegt im Browser:** Der mitgetippte Text bleibt bis zum Absenden im `sessionStorage` des
+  Browsers, also nur lokal, im Tab und auf dem Gerät. Ein neuer Chat übernimmt ihn als lokalen Titel (wie bisher),
+  gesendet wird er nicht.
+- **Keine vollständige Erkennung:** Die Markierung bleibt ein zusätzlicher Schutz. Was weder erkannt noch markiert
+  wird, geht bei der bewussten Aktion im Klartext hinaus, nun aber erst nach einer Prüfmöglichkeit.
+  Synthetische Tests belegen **keine** vollständige Leckfreiheit.
+- **Weitere Wege:** Die Akten-Uploads („Dokumente“ der Akte) waren schon vorher reine Uploads und sind unverändert.

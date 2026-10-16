@@ -41,6 +41,21 @@ def _send(client: TestClient, csrf: str) -> list[dict]:
     return _parse_sse_events(response.text)
 
 
+def _upload_then_send(client: TestClient, content: str, files: dict) -> list[dict]:
+    """§57: erst nur hochladen (kein KI-Aufruf), dann die Frage bewusst senden."""
+    upload = _parse_sse_events(client.post(
+        "/dashboard/chat/send-stream", files=files,
+        data={"csrf_token": _csrf(client), "conversation_id": "", "content": content},
+    ).text)
+    assert [e["kind"] for e in upload] == ["start", "uploaded"], upload
+    response = client.post(
+        "/dashboard/chat/send-stream",
+        data={"csrf_token": _csrf(client), "conversation_id": upload[0]["conversation_id"], "content": content},
+    )
+    assert response.status_code == 200
+    return _parse_sse_events(response.text)
+
+
 def _review(client: TestClient, csrf: str, conversation_id: str, message_id: str, decisions: list[dict]):
     return client.post(
         f"/dashboard/chat/{conversation_id}/privacy-review",
@@ -179,12 +194,9 @@ def test_review_links_to_the_highlighted_finding_in_the_attached_document(client
     login_as_admin(db_session, client)
     csrf = _csrf(client)
     pdf = _pdf_bytes(["Entwurf (synthetisch)", "Wir bestaetigen den Eingang des Schreibens von Richter vom 16.03.2024."])
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte fasse das Dokument zusammen."},
-        files={"documents": ("entwurf.pdf", pdf, "application/pdf")},
-    )
-    review = next(e for e in _parse_sse_events(response.text) if e["kind"] == "review")
+    events = _upload_then_send(client, "Bitte fasse das Dokument zusammen.",
+                               {"documents": ("entwurf.pdf", pdf, "application/pdf")})
+    review = next(e for e in events if e["kind"] == "review")
     candidate = next(c for c in review["candidates"] if c["term"] == "Richter")
     assert candidate["document_url"].startswith(f"/dashboard/chat/{review['conversation_id']}/document/")
     page = client.get(candidate["document_url"].split("#")[0])
@@ -241,12 +253,9 @@ def test_uploaded_pdf_with_heading_and_wrapped_agent_is_asked_before_any_cloud_c
         "Die Unterlagen wurden am 12.03.2026 durch",
         "Lange geprueft und dem Auftraggeber uebergeben.",
     ])
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Bitte fasse das Protokoll zusammen."},
-        files={"documents": ("protokoll.pdf", pdf, "application/pdf")},
-    )
-    review = next(e for e in _parse_sse_events(response.text) if e["kind"] == "review")
+    events = _upload_then_send(client, "Bitte fasse das Protokoll zusammen.",
+                               {"documents": ("protokoll.pdf", pdf, "application/pdf")})
+    review = next(e for e in events if e["kind"] == "review")
     assert {"Richter", "Lange"} <= {c["term"] for c in review["candidates"]}
     assert writer.received_payloads == []
 

@@ -192,7 +192,8 @@ def test_generate_without_matter_creates_matter_and_redirects_to_draft(
         # <input type="file"> es senden würde) - ohne mindestens einen
         # echten files-Eintrag würde httpx auf urlencoded zurückfallen, das
         # `documents: list[UploadFile] = File(...)` nicht parsen kann.
-        files={"documents": ("leer.pdf", b"", "application/pdf")},
+        # §57: multipart OHNE Dokument (mit Dokument waere es "nur hochladen", ohne KI-Aufruf)
+        files={"unbenutzt": ("", b"", "application/octet-stream")},
         follow_redirects=False,
     )
 
@@ -243,7 +244,8 @@ def test_generate_with_new_client_id_reuses_the_existing_client_not_a_duplicate(
             "vorlage": "",
             "attorney_anmerkungen": "",
         },
-        files={"documents": ("leer.pdf", b"", "application/pdf")},
+        # §57: multipart OHNE Dokument (mit Dokument waere es "nur hochladen", ohne KI-Aufruf)
+        files={"unbenutzt": ("", b"", "application/octet-stream")},
         follow_redirects=False,
     )
 
@@ -279,7 +281,8 @@ def test_generate_with_existing_matter_reuses_it(
             "vorlage": "",
             "attorney_anmerkungen": "",
         },
-        files={"documents": ("leer.pdf", b"", "application/pdf")},
+        # §57: multipart OHNE Dokument (mit Dokument waere es "nur hochladen", ohne KI-Aufruf)
+        files={"unbenutzt": ("", b"", "application/octet-stream")},
         follow_redirects=False,
     )
 
@@ -334,12 +337,15 @@ def test_uploaded_pdf_becomes_document_linked_to_matter(
         follow_redirects=False,
     )
 
-    assert response.status_code == 303
+    # §57: mit Datei NUR gespeichert/ausgelesen - Seite mit Hinweis, kein Entwurf, kein KI-Aufruf
+    assert response.status_code == 200
+    assert "noch keine KI-Verarbeitung" in response.text
     matter = db_session.query(Matter).filter_by(title="Akte mit Upload").first()
     assert matter is not None
     document = db_session.query(Document).filter_by(matter_id=matter.id).first()
     assert document is not None
     assert document.original_filename == "beleg.pdf"
+    assert db_session.query(Draft).count() == 0
 
 
 def test_upload_filename_with_path_traversal_stays_inside_storage_dir(
@@ -368,7 +374,7 @@ def test_upload_filename_with_path_traversal_stays_inside_storage_dir(
         follow_redirects=False,
     )
 
-    assert response.status_code == 303
+    assert response.status_code == 200  # §57: nur hochgeladen
     matter = db_session.query(Matter).filter_by(title="Path Traversal Testakte").first()
     assert matter is not None
     document = db_session.query(Document).filter_by(matter_id=matter.id).first()

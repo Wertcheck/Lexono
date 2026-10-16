@@ -8427,6 +8427,33 @@ body::-webkit-scrollbar-thumb:hover,
   max-width: 80%;
 }
 
+/* §57: "nur hochgeladen" - Ablage durch den Nutzer (rechts wie eine eigene Nachricht), Hinweis statt Sprechblase:
+   noch keine KI-Verarbeitung. Bewusst eigene Klasse (nicht --user), damit keine Rueckfrage-Wiederaufnahme anlaeuft. */
+.chat-message--upload {
+  flex-direction: row-reverse;
+}
+.chat-message--upload .chat-message__avatar {
+  background: var(--ink-500);
+  color: var(--on-brand);
+}
+.chat-message--upload .chat-message__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.chat-message--upload .chat-message__sender {
+  display: none;
+}
+.chat-message--upload .chat-message__text {
+  background: var(--paper-100);
+  border: 1px dashed var(--ink-500);
+  color: var(--ink-700);
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  max-width: 80%;
+}
+
 /* "Lexono denkt nach..."-Sprechblase (KI-Ladezustand) - ueberbrueckt die
    Zeit zwischen Absenden und dem eigentlichen Seitenwechsel (voller
    Redirect nach Serververarbeitung, siehe chat.html). Bewusst als

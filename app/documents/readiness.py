@@ -145,6 +145,11 @@ def _state_sentence(item: DocumentReadiness, *, ocr_enabled: bool) -> str:
     return f"{name} ist nicht verarbeitet."
 
 
+def blocked_state_sentences(items: Sequence[DocumentReadiness], *, ocr_enabled: bool) -> list[str]:
+    """§57: Zustandssaetze der nicht bereiten Dokumente (fuer den lokalen Hinweis direkt nach dem Upload)."""
+    return [_state_sentence(item, ocr_enabled=ocr_enabled) for item in items if not item.ready]
+
+
 def not_ready_notice(items: Sequence[DocumentReadiness], *, ocr_enabled: bool) -> str:
     """Lokale Antwort statt eines Cloud-Aufrufs: welches Dokument in welchem Zustand ist und wie es weitergeht. Behauptet
     nie eine Auswertung; die Anfrage wurde NICHT an die Cloud-KI gesendet."""

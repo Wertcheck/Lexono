@@ -117,7 +117,7 @@ def _use_settings(monkeypatch, tmp_path, *, ocr_enabled: bool) -> Settings:
     return settings
 
 
-def _send_stream(client: TestClient, content: str, files: list[Path] = (), conversation_id: str = "") -> list[dict]:
+def _post_stream(client: TestClient, content: str, files, conversation_id: str) -> list[dict]:
     handles = [open(path, "rb") for path in files]
     try:
         response = client.post(
@@ -130,6 +130,35 @@ def _send_stream(client: TestClient, content: str, files: list[Path] = (), conve
             handle.close()
     assert response.status_code == 200
     return _parse_sse_events(response.text)
+
+
+def _send_stream(client: TestClient, content: str, files: list[Path] = (), conversation_id: str = "") -> list[dict]:
+    """§57: mit Dateien zwei getrennte Vorgaenge - (1) nur hochladen (KEINE KI-Anfrage, nur das Ereignis "uploaded"),
+    (2) die Frage bewusst senden. Die Ereignisse beider Schritte werden zurueckgegeben (Start-Ereignis zuerst)."""
+    if not files:
+        return _post_stream(client, content, files, conversation_id)
+    upload = _post_stream(client, content, files, conversation_id)
+    assert [event["kind"] for event in upload] == ["start", "uploaded"], upload
+    return upload[:1] + _post_stream(client, content, (), _conversation_id(upload))
+
+
+def _send_classic(client: TestClient, content: str, filename: str, data: bytes) -> str:
+    """§57: /send mit Datei = nur hochladen (Weiterleitung, kein KI-Aufruf); danach die Frage bewusst senden."""
+    upload = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": _csrf(client), "conversation_id": "", "content": content},
+        files={"documents": (filename, data, "application/pdf")},
+        follow_redirects=False,
+    )
+    assert upload.status_code == 303 and upload.headers["location"].startswith("/dashboard/chat/")
+    conversation_id = upload.headers["location"].split("/")[3].split("?")[0]
+    response = client.post(
+        "/dashboard/chat/send",
+        data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    return conversation_id
 
 
 def _done(events: list[dict]) -> dict:
@@ -209,13 +238,7 @@ def test_scan_with_ocr_enabled_is_recognised_and_sent_through_the_privacy_pipeli
     scan = _scan_of(source, tmp_path / "protokoll_scan.pdf")
 
     # Nicht-interaktiver Pfad (/send, Maskierung): der Inhalt geht pseudonymisiert und versiegelt an die Cloud.
-    response = client.post(
-        "/dashboard/chat/send",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Bitte fasse das Protokoll zusammen."},
-        files={"documents": ("protokoll_scan.pdf", scan.read_bytes(), "application/pdf")},
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
+    _send_classic(client, "Bitte fasse das Protokoll zusammen.", "protokoll_scan.pdf", scan.read_bytes())
     assert db_session.query(Document).one().ocr_status == "done"
     assert len(writer.received_payloads) == 1
     payload = _payload_text(writer)
@@ -439,13 +462,7 @@ def test_non_streaming_send_blocks_too(client, db_session, writer, monkeypatch, 
     login_as_admin(db_session, client)
     _use_settings(monkeypatch, tmp_path, ocr_enabled=False)
     scan = _scan_of(_text_pdf(tmp_path / "q.pdf"), tmp_path / "bescheid_scan.pdf")
-    response = client.post(
-        "/dashboard/chat/send",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Bitte zusammenfassen."},
-        files={"documents": ("bescheid_scan.pdf", scan.read_bytes(), "application/pdf")},
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
+    _send_classic(client, "Bitte zusammenfassen.", "bescheid_scan.pdf", scan.read_bytes())
     assert writer.received_payloads == []
     reply = db_session.query(ChatMessage).filter_by(role="assistant").one()
     assert reply.blocked and "bescheid_scan.pdf" in reply.content

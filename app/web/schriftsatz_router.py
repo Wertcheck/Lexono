@@ -88,6 +88,20 @@ def schriftsatz_generator_page(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
+    return _render_generator(request, db, current_user, error=error, matter_id=matter_id, client_id=client_id)
+
+
+def _render_generator(
+    request: Request,
+    db: Session,
+    current_user: User,
+    *,
+    error: str | None = None,
+    matter_id: str | None = None,
+    client_id: str | None = None,
+    uploaded_documents: list[Document] | None = None,
+    form_values: dict[str, str] | None = None,
+) -> HTMLResponse:
     open_matters = (
         db.query(Matter).filter(Matter.status == "open", Matter.deleted_at.is_(None))  # §26: keine geloeschten Akten
         .order_by(Matter.updated_at.desc()).all()
@@ -123,6 +137,9 @@ def schriftsatz_generator_page(
         "error": error,
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
         "max_upload_files": _MAX_UPLOAD_FILES,
+        # §57: nach "nur hochladen" - Hinweis, Links zur Pruefung, bisherige Eingaben (nichts davon wurde gesendet)
+        "uploaded_documents": uploaded_documents or [],
+        "form_values": form_values or {},
     }
     return templates.TemplateResponse(request, "schriftsatz_generator.html", context)
 
@@ -197,7 +214,7 @@ def _store_uploaded_document(
     return document
 
 
-@router.post("/generate")
+@router.post("/generate", response_model=None)
 def generate_schriftsatz(
     request: Request,
     matter_id: str = Form(""),
@@ -211,7 +228,7 @@ def generate_schriftsatz(
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
-) -> RedirectResponse:
+) -> RedirectResponse | HTMLResponse:
     """Kostenpflichtiger Claude-Aufruf (KI-Textproduktion) - NUR
     Anwalt/Admin (PERM_CLAUDE_CALL, gleiche Berechtigung wie
     `regenerate_draft`/`review_draft` in app/web/drafts_router.py). Volle
@@ -259,6 +276,7 @@ def generate_schriftsatz(
         tesseract_cmd=settings.tesseract_cmd,
     )
     storage_dir = Path(settings.schriftsatz_upload_storage_dir)
+    stored: list[Document] = []
     try:
         for upload in documents:
             document = _store_uploaded_document(
@@ -266,8 +284,18 @@ def generate_schriftsatz(
             )
             if document is not None:
                 processor.process_document(document, db, actor=current_user.email)
+                stored.append(document)
     except ValueError as exc:
         return _redirect_with_error(str(exc))
+
+    # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen). Mit Dokumenten wird NUR
+    # gespeichert und lokal ausgelesen - KEIN create_draft, keine Cloud. Der Nutzer prueft/markiert die Dokumente in
+    # der Aktenansicht und startet die Generierung danach bewusst (erneut "Schriftsatz generieren", ohne Dateien).
+    if stored:
+        return _render_generator(
+            request, db, current_user, matter_id=matter.id, uploaded_documents=stored,
+            form_values={"stil": stil, "vorlage": vorlage, "attorney_anmerkungen": attorney_anmerkungen},
+        )
 
     try:
         drafting_service = get_drafting_service()

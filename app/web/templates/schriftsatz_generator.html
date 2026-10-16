@@ -15,6 +15,20 @@
   {% if error %}
     <div class="banner banner--error">{{ error }}</div>
   {% endif %}
+  {% if uploaded_documents %}
+    {# §57: Upload ohne KI-Verarbeitung - erst pruefen/markieren, dann bewusst generieren #}
+    <div class="banner banner--info" id="upload-notice">
+      Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
+      gesendet. Bitte die Dokumente prüfen und nicht erkannte Namen schützen; danach „Schriftsatz generieren“
+      (ohne erneute Dateiauswahl) klicken.
+      <ul class="upload-notice__list">
+        {% for document in uploaded_documents %}
+          <li><a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}#name-protection"
+                 target="_blank" rel="noopener">{{ document.original_filename }} prüfen</a>{% if not document.extracted_text %} – kein Text ausgelesen{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
   <div class="draft-page">
     <form method="post" action="/dashboard/tools/schriftsatz/generate"
@@ -74,15 +88,15 @@
         </p>
         <label class="form-label">
           Gewünschter Stil
-          <input type="text" name="stil" id="schriftsatz-stil" placeholder="z. B. sachlich-formell, kurz und präzise" />
+          <input type="text" name="stil" id="schriftsatz-stil" placeholder="z. B. sachlich-formell, kurz und präzise" value="{{ form_values.stil or '' }}" />
         </label>
         <label class="form-label">
           Schreibvorlage / Muster
-          <textarea name="vorlage" id="schriftsatz-vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll"></textarea>
+          <textarea name="vorlage" id="schriftsatz-vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll">{{ form_values.vorlage or '' }}</textarea>
         </label>
         <label class="form-label">
           Anwaltliche Anmerkungen
-          <textarea name="attorney_anmerkungen" id="schriftsatz-anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf"></textarea>
+          <textarea name="attorney_anmerkungen" id="schriftsatz-anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf">{{ form_values.attorney_anmerkungen or '' }}</textarea>
         </label>
         {# §54: Namen, die die automatische Erkennung uebersieht ("Richter Zweigelt"), in einem der drei Felder markieren
            und schuetzen - dieselbe Entscheidung "Als Person behandeln" wie im Chat, gilt fuer die ganze Akte. #}
@@ -97,8 +111,9 @@
         <h2 class="settings-section__title">Dokumente</h2>
         <p class="settings-section__hint">
           Akten, Vorlagen oder Belege (PDF, Word) per Drag &amp; Drop hinzufügen - sie werden
-          als Dokumente der Akte gespeichert, per OCR/Textextraktion verarbeitet und fließen in
-          den generierten Entwurf ein.
+          als Dokumente der Akte gespeichert und lokal per OCR/Textextraktion ausgelesen, aber
+          noch NICHT an die KI gesendet. Nach dem Prüfen fließen sie über „Schriftsatz generieren“
+          (ohne Dateien) in den Entwurf ein.
         </p>
 
         <div id="dropzone" class="dropzone" tabindex="0" role="button"
@@ -114,7 +129,7 @@
         <div id="file-list" class="dropzone__file-list"></div>
       </div>
 
-      <button type="submit" class="btn btn--primary" data-ai-loading-label="Schriftsatz wird generiert …">Schriftsatz generieren</button>
+      <button type="submit" class="btn btn--primary" id="schriftsatz-submit" data-ai-loading-label="Schriftsatz wird generiert …">Schriftsatz generieren</button>
     </form>
   </div>
 
@@ -191,6 +206,13 @@
         });
         fileInput.files = transfer.files;
         renderFileList();
+        // §57: mit Dateien wird nur hochgeladen und lokal ausgelesen (serverseitig erzwungen) - Beschriftung ehrlich
+        var submit = document.getElementById("schriftsatz-submit");
+        if (submit) {
+          submit.textContent = currentFiles.length ? "Dokumente hochladen (noch keine KI)" : "Schriftsatz generieren";
+          submit.setAttribute("data-ai-loading-label", currentFiles.length
+            ? "Dokumente werden lokal ausgelesen …" : "Schriftsatz wird generiert …");
+        }
       }
 
       function addFiles(fileListToAdd) {

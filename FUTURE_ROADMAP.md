@@ -81,6 +81,14 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Dokument-Markierung beim Chat-Senden). **Offen:** Chat- und Schriftsatz-Upload senden im selben Request, vor jeder
   Markierung (sicherer Ablauf: zuerst in der Akte hochladen und markieren); Mail- und Intake-Dokumente erst nach der
   Zuordnung markierbar; Hinweise per Fehlercode statt Freitext in der URL.
+  **Fortschritt 16.10.2026 (§57):** Upload und KI-Verarbeitung im Chat und Schriftsatz-Generator getrennt
+  (serverseitig): Ein Upload speichert und liest nur lokal aus, mit Hinweis „noch keine KI-Verarbeitung“. Erst eine
+  bewusste Frage bzw. „Schriftsatz generieren“ ohne Dateien läuft durch die unveränderte zentrale Prüfung.
+  HTTP-Nachweis: 0 Requests beim Upload, ein maskierter Request erst danach. Browser-QA, unabhängiges Review (zwei
+  mittlere Befunde behoben); Benchmarks unverändert. Status teilweise nachgewiesen. **Offen:** Mail- und
+  Intake-Dokumente erst nach der Zuordnung markierbar (dokumentierter Ablauf, §57.4); fachliche Entscheidung, ob ein
+  ungeprüftes Dokument erst nach Prüfung KI-fähig sein soll; Schriftsatz-Upload ohne Redirect (F5); TLS und realer
+  Relay nicht belegt.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

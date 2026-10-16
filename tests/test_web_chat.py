@@ -258,7 +258,8 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
         pdf.new_page().insert_text((72, 72), "Rechnung Nr. 4711 über Estricharbeiten, Betrag 1.200,00 EUR.")
         pdf_bytes = pdf.tobytes()
 
-    response = client.post(
+    # §57: Schritt 1 - nur hochladen: Weiterleitung zur Dokumentansicht, KEIN KI-Aufruf
+    upload = client.post(
         "/dashboard/chat/send",
         data={
             "csrf_token": csrf,
@@ -268,17 +269,31 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
         files={"documents": ("beleg.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=False,
     )
-    assert response.status_code == 303
+    assert upload.status_code == 303 and "uploaded=1" in upload.headers["location"]
+    assert writer.received_payloads == []
 
     conversation = db_session.query(ChatConversation).first()
     assert conversation is not None
-    user_message = (
+    upload_message = (
         db_session.query(ChatMessage)
-        .filter_by(conversation_id=conversation.id, role="user")
-        .first()
+        .filter_by(conversation_id=conversation.id, role="upload")
+        .one()
     )
-    assert len(user_message.attached_documents) == 1
-    document = user_message.attached_documents[0].document
+    assert db_session.query(ChatMessage).filter_by(conversation_id=conversation.id, role="user").count() == 0
+    assert len(upload_message.attached_documents) == 1
+    document = upload_message.attached_documents[0].document
+
+    # Schritt 2 - die bewusste KI-Aktion
+    response = client.post(
+        "/dashboard/chat/send",
+        data={
+            "csrf_token": _csrf(client),
+            "conversation_id": conversation.id,
+            "content": f"Bitte fasse das Dokument für Mandantin {marker_name} zusammen.",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
     assert document.original_filename == "beleg.pdf"
     assert document.matter_id == conversation.matter_id
 
@@ -287,6 +302,27 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
     assert len(writer.received_payloads) == 1
     payload_json = writer.received_payloads[0].model_dump_json()
     assert marker_name not in payload_json
+
+
+def _upload_then_send(client: TestClient, content: str, files: dict, *, stream: bool = False):
+    """§57: Upload und KI-Verarbeitung getrennt - (1) nur hochladen (kein KI-Aufruf), (2) die Frage bewusst senden.
+    Gibt (conversation_id, Antwort des zweiten Schritts) zurueck."""
+    if stream:
+        upload = client.post("/dashboard/chat/send-stream", files=files,
+                             data={"csrf_token": _csrf(client), "conversation_id": "", "content": content})
+        events = _parse_sse_events(upload.text)
+        assert [event["kind"] for event in events] == ["start", "uploaded"], events
+        conversation_id = events[0]["conversation_id"]
+        response = client.post("/dashboard/chat/send-stream",
+                               data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content})
+        return conversation_id, response
+    upload = client.post("/dashboard/chat/send", files=files, follow_redirects=False,
+                         data={"csrf_token": _csrf(client), "conversation_id": "", "content": content})
+    assert upload.status_code == 303 and upload.headers["location"].startswith("/dashboard/chat/")
+    conversation_id = upload.headers["location"].split("/")[3].split("?")[0]
+    response = client.post("/dashboard/chat/send", follow_redirects=False,
+                           data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content})
+    return conversation_id, response
 
 
 def _parse_sse_events(body: str) -> list[dict]:
@@ -3946,12 +3982,10 @@ def test_docx_with_birthdate_table_attachment_is_sent_without_birthdates(
     buffer = io.BytesIO()
     document.save(buffer)
 
-    response = client.post(
-        "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("erbentabelle.docx", buffer.getvalue(),
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
-        follow_redirects=False,
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("erbentabelle.docx", buffer.getvalue(),
+                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
     )
     assert response.status_code == 303
     assert len(writer.received_payloads) == 1
@@ -3988,11 +4022,11 @@ def test_table_docx_via_send_stream_keeps_structure_and_order_without_birthdates
     writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
     monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
 
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("erbentabelle.docx", _birthdate_table_docx_bytes(),
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("erbentabelle.docx", _birthdate_table_docx_bytes(),
+                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        stream=True,
     )
 
     assert response.status_code == 200
@@ -4017,11 +4051,10 @@ def test_empty_docx_attachment_via_send_stream_is_never_sent_to_the_cloud(
     writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
     monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
 
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("leer.docx", b"",
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("leer.docx", b"", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        stream=True,
     )
 
     assert response.status_code == 200

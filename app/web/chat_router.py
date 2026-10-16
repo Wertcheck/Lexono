@@ -254,6 +254,8 @@ def chat_document_view(
     mark: str | None = Query(default=None, max_length=80),
     name_protection: str = "",
     name_protection_error: str = "",
+    uploaded: str = "",
+    text_not_sent: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse | RedirectResponse:
@@ -296,6 +298,8 @@ def chat_document_view(
             "document_text_version": document_text_version(document),
             "name_protection_saved": name_protection == "saved",
             "name_protection_error": name_protection_error[:300],
+            "upload_notice": uploaded == "1",
+            "upload_text_not_sent": text_not_sent == "1",
         },
     )
 
@@ -447,7 +451,8 @@ def _render_chat_page(
         "viewing_document": viewing_document,
         "document_preview": document_preview,
         **(name_protection_context or {"document_text_version": "", "name_protection_saved": False,
-                                       "name_protection_error": ""}),
+                                       "name_protection_error": "", "upload_notice": False,
+                                       "upload_text_not_sent": False}),
         # Allgemeiner Chat vs. Chat MIT Aktenkontext (05.10., Owner-Direktive
         # "ARCHITECTURE & PRODUCT FLOW PASS" §5-9): jede Konversation ist
         # technisch IMMER an eine Akte gebunden (Aktenisolation, siehe
@@ -636,6 +641,29 @@ def transcribe_speech(
     return JSONResponse(content={"text": text})
 
 
+def _upload_target(db: Session, conversation: ChatConversation, document_ids: list[str], *, text_kept: bool) -> str:
+    """§57: nach "nur hochladen" in die Dokumentansicht des ersten lesbaren Dokuments (dort pruefen/markieren)."""
+    for document_id in document_ids:
+        document = db.get(Document, document_id)
+        if document is not None and document.extracted_text:
+            suffix = "&text_not_sent=1" if text_kept else ""
+            return f"/dashboard/chat/{conversation.id}/document/{document.id}?uploaded=1{suffix}#name-protection"
+    return f"/dashboard/chat/{conversation.id}"
+
+
+def _stream_upload_events(
+    db: Session, conversation: ChatConversation, document_ids: list[str], *, text_kept: bool
+) -> Iterator[str]:
+    """§57: Antwort auf einen reinen Upload - KEIN Aufruf von ChatService.send_message*, damit keine KI-Anfrage."""
+    yield _sse_event({"kind": "start", "conversation_id": conversation.id})
+    yield _sse_event({
+        "kind": "uploaded",
+        "conversation_id": conversation.id,
+        "target": _upload_target(db, conversation, document_ids, text_kept=text_kept),
+        "text_kept": text_kept,
+    })
+
+
 def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:
     """§51: siehe app/privacy/decisions.parse_manual_terms (gemeinsam mit den Formularen, §54)."""
     return parse_manual_terms(protected_terms, content)
@@ -716,6 +744,12 @@ def send_message(
             document_ids.append(document.id)
 
     _record_manual_terms(db, conversation, manual_terms, current_user)
+
+    # §57: wie send-stream - mit Dokumenten nur aufnehmen, nichts senden
+    if document_ids:
+        chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
+        return RedirectResponse(url=_upload_target(db, conversation, document_ids, text_kept=bool(content)),
+                                status_code=303)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): Rueckgabewert jetzt erfasst statt verworfen - die ID
@@ -1346,6 +1380,17 @@ def send_message_stream(
             document_ids.append(document.id)
 
     _record_manual_terms(db, conversation, manual_terms, current_user)
+
+    # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen, nicht nur in der UI). Sind
+    # Dokumente dabei, werden sie NUR gespeichert und lokal ausgelesen - keine KI-Anfrage, kein Cloud-Aufruf, auch nicht
+    # fuer einen mitgetippten Text (der bleibt lokal im Browser und wird erst bewusst gesendet).
+    if document_ids:
+        chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
+        return StreamingResponse(
+            _stream_upload_events(db, conversation, document_ids, text_kept=bool(content)),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): siehe die identische Begruendung beim nicht-

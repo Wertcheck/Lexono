@@ -379,15 +379,15 @@
                  app.css), unabhaengig von jeder Nutzerfarbe. Dieselbe
                  E-Mail-Kennung wie Sidebar-/Einstellungs-Avatar, damit
                  derselbe Nutzer ueberall dieselbe Farbe sieht. #}
-              <div class="chat-message__avatar{% if message.role == 'user' %} identity-avatar--{{ identity.user_avatar_color(current_user.email) }}{% endif %}">
+              <div class="chat-message__avatar{% if message.role in ('user', 'upload') %} identity-avatar--{{ identity.user_avatar_color(current_user.email) }}{% endif %}">
                 {# Konsistent mit dem Sidebar-Avatar (base.html, 19.09.,
                    UI/UX-Referenzabgleich): dieselbe display_name-Fallback-
                    Regel statt ausschliesslich der rohen E-Mail-Adresse. #}
-                {% if message.role == "user" %}{{ (current_user.display_name or current_user.email)[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
+                {% if message.role in ("user", "upload") %}{{ (current_user.display_name or current_user.email)[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
               </div>
               <div class="chat-message__body">
                 <div class="chat-message__sender">
-                  {% if message.role == "user" %}Sie{% else %}Lexono{% endif %}
+                  {% if message.role in ("user", "upload") %}Sie{% else %}Lexono{% endif %}
                 </div>
                 {% if message.attached_documents %}
                   <div class="chat-message__attachments">
@@ -784,6 +784,14 @@
          keine erfundene Datenlogik. #}
       <section class="chat-document-pane">
         {% if document_preview and document_preview.highlighted_html %}
+          {% if upload_notice %}
+            {# §57: Upload ohne KI-Verarbeitung - hier pruefen und schuetzen, erst danach bewusst senden #}
+            <p class="form-hint" id="upload-notice">
+              Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
+              gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden.
+              {% if upload_text_not_sent %}Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte – sonst bitte erneut eingeben.{% endif %}
+            </p>
+          {% endif %}
           {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
           {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
                                                document_text_version, csrf_token, "chat:" ~ active_conversation.id,
@@ -2444,10 +2452,20 @@
         // dem Leeren des Inputs gueltig.
         var pendingFiles = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
 
-        var userBubble = appendUserBubble(pendingContent, pendingFiles);
+        // §57: mit Dateien ist es serverseitig NUR ein Upload - keine Nutzerfrage-Blase mit dem (nicht gesendeten)
+        // Text und kein "Lexono antwortet", sondern ein ehrlicher Ladezustand fuer das lokale Auslesen.
+        var uploadOnly = pendingFiles.length > 0;
+        var userBubble = appendUserBubble(uploadOnly ? "" : pendingContent, pendingFiles);
 
         setLoadingState();
         var thinkingBubble = appendThinkingBubble();
+        if (uploadOnly && thinkingBubble) {
+          var uploadStatus = thinkingBubble.querySelector(".chat-thinking-indicator");
+          uploadStatus.setAttribute("aria-label", "Dokument wird lokal ausgelesen – noch keine KI");
+          uploadStatus.querySelector(".chat-thinking-indicator__status").textContent =
+            "Dokument wird lokal ausgelesen … (noch keine KI)";
+          thinkingBubble.querySelector(".chat-message__sender").textContent = "Lokal";
+        }
         var textSpan = null;
         var conversationIdField = composer.querySelector("input[name=\"conversation_id\"]");
         var formData = new FormData(composer);
@@ -2540,6 +2558,17 @@
                 }
               } else if (payload.kind === "status") {
                 updateThinkingStatus(payload.status);
+              } else if (payload.kind === "uploaded") {
+                // §57: nur hochgeladen - es wurde nichts an die KI gesendet. Ein mitgetippter Text bleibt LOKAL im
+                // Browser (sessionStorage dieser Unterhaltung) und steht nach dem Pruefen wieder im Eingabefeld.
+                isSending = false;
+                try {
+                  if (payload.text_kept && pendingContent.trim()) {
+                    window.sessionStorage.setItem("lexono-unsent-" + payload.conversation_id, pendingContent);
+                  }
+                } catch (storageError) { /* ohne Speicher: Hinweis auf der Zielseite nennt den nicht gesendeten Text */ }
+                window.location.href = payload.target;
+                return;
               } else if (payload.kind === "review") {
                 showPrivacyReview(payload, thinkingBubble, pendingFiles.length > 0, function (decisions) {
                   if (!decisions) { finish(conversationId); return; }
@@ -2627,6 +2656,21 @@
       // Offene Datenschutz-Rueckfrage nach dem Neuladen wiederherstellen (12.10.2026): Ist die letzte Nachricht eine
       // unbeantwortete Nutzernachricht, ermittelt der Server die Rueckfrage rein lokal neu (kein Cloud-Aufruf). Laeuft
       // die Verarbeitung noch, wird KEINE Rueckfrage angeboten, sondern nach kurzer Zeit neu geladen.
+      (function restoreUnsentUploadText() {
+        // §57: nach "nur hochladen" den mitgetippten, NICHT gesendeten Text wieder ins Eingabefeld
+        var field = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;
+        var key = field && field.value ? "lexono-unsent-" + field.value : null;
+        if (!key || !textarea) { return; }
+        try {
+          // bleibt bis zum tatsaechlichen Absenden erhalten (auch ueber "Markierung speichern" mit Neuladen hinweg)
+          var unsent = window.sessionStorage.getItem(key);
+          if (unsent && !textarea.value) { textarea.value = unsent; }
+        } catch (storageError) { /* kein Speicher verfuegbar */ }
+        composer.addEventListener("submit", function () {
+          try { window.sessionStorage.removeItem(key); } catch (storageError) { /* ignorieren */ }
+        }, true);
+      })();
+
       (function restorePendingPrivacyReview() {
         if (!messages || !supportsStreaming) { return; }
         var conversationField = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;

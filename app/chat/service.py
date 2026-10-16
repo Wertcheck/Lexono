@@ -64,6 +64,7 @@ from app.documents.readiness import (
     DocumentReadiness,
     assess_document,
     assess_documents,
+    blocked_state_sentences,
     not_ready_notice,
     unevaluated_note,
 )
@@ -544,6 +545,12 @@ _MAX_HISTORY_CHARS_TOTAL = 12_000
 #: Person erkannt - real mit `.agentic/memos/chatdiag_harness/` verwandten
 #: Ad-hoc-Tests bestaetigt.
 _HISTORY_ROLE_LABELS = {"user": "Anwalt", "assistant": "Assistent"}
+# §57: "nur hochgeladen" - Dokumente gespeichert und lokal ausgelesen, noch KEINE KI-Verarbeitung (siehe record_upload)
+UPLOAD_ROLE = "upload"
+UPLOAD_NOTE = (
+    "Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an die Cloud "
+    "gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach eine Frage dazu senden."
+)
 
 
 #: ECHTER FUND behoben (07.10., Owner-Direktive "CHAT-HISTORY-MANAGEMENT
@@ -695,6 +702,52 @@ class ChatService:
             .first()
         )
 
+    def record_upload(self, db: Session, *, conversation: ChatConversation, document_ids: list[str]) -> ChatMessage:
+        """§57: Dokumente NUR aufgenommen (gespeichert und lokal ausgelesen) - KEINE KI-Verarbeitung. Eigene Rolle
+        "upload": nie Teil des Verlaufs an die Cloud (`_build_history` nimmt nur user/assistant), nie eine offene
+        Nutzernachricht (Rueckfrage-Wiederaufnahme und Doppelversand-Sperre setzen role == "user" voraus), kein Text des
+        Nutzers. Erst die naechste, bewusst gesendete Nachricht verarbeitet diese Dokumente."""
+        # Lesbarkeit sofort LOKAL zeigen (Scan ohne OCR, leeres Dokument ...) - die Sperre beim spaeteren Senden
+        # (`_documents_gate` ueber `_referenced_document_ids`) bleibt davon unabhaengig bestehen.
+        blocked = blocked_state_sentences(
+            assess_documents(db, document_ids, matter_id=conversation.matter_id), ocr_enabled=_ocr_enabled()
+        )
+        content = UPLOAD_NOTE + ("\n\n" + "\n".join(f"- {line}" for line in blocked) if blocked else "")
+        message = self._create_message(db, conversation=conversation, role=UPLOAD_ROLE, content=content)
+        for document_id in document_ids:
+            db.add(ChatMessageDocument(message_id=message.id, document_id=document_id))
+        db.commit()
+        return message
+
+    def _preceding_upload_document_ids(
+        self, db: Session, conversation: ChatConversation, current_message_id: str | None
+    ) -> list[str]:
+        """§57: Dokumente der Upload-Nachrichten seit der letzten Antwort (bewusste KI-Aktion nach "nur hochladen").
+        Mehrere Uploads hintereinander werden vereinigt (Review §57); eine unbeantwortete Zwischenfrage (offene
+        Rueckfrage, abgebrochene Verarbeitung) beendet den Bezug nicht. Jede Antwort - auch ein lokaler Sperrhinweis -
+        beendet ihn: danach gilt das bisherige Verhalten (allgemeine Fragen bleiben moeglich, Dokumentbezug nur
+        ausdruecklich; ein nicht lesbarer Scan wird ohnehin erneut hochgeladen = neuer Upload-Bezug)."""
+        query = db.query(ChatMessage).filter(ChatMessage.conversation_id == conversation.id)
+        if current_message_id is not None:
+            current = db.get(ChatMessage, current_message_id)
+            if current is not None:
+                query = query.filter(ChatMessage.id != current.id, ChatMessage.created_at <= current.created_at)
+        result: list[str] = []
+        for previous in query.order_by(ChatMessage.created_at.desc()).limit(200):
+            if previous.role == "assistant":
+                break  # beantwortet (oder lokal gesperrt): davor hochgeladene Dokumente sind kein Upload-Bezug mehr
+            if previous.role == UPLOAD_ROLE:
+                result.extend(d for d in self._message_document_ids(db, previous.id) if d not in result)
+        return result
+
+    def _message_scope(self, db: Session, conversation: ChatConversation, current_message_id: str | None) -> list[str]:
+        """Datenminimierung §29: die Anhaenge DIESER Nachricht - bzw. (§57) die unmittelbar zuvor nur hochgeladenen
+        Dokumente - begrenzen den Aktenkontext (wie bisher bei "Anhang + Frage in einem Schritt")."""
+        if current_message_id is None:
+            return []
+        own = self._message_document_ids(db, current_message_id)
+        return own or self._preceding_upload_document_ids(db, conversation, current_message_id)
+
     def record_user_message(
         self,
         db: Session,
@@ -728,12 +781,15 @@ class ChatService:
             attached = self._message_document_ids(db, current_message_id)
             if attached:
                 return attached
+            uploaded = self._preceding_upload_document_ids(db, conversation, current_message_id)  # §57
+            if uploaded:
+                return uploaded
         if not _mentions_document(content):
             return []
         query = (
             db.query(ChatMessage)
             .join(ChatMessageDocument, ChatMessageDocument.message_id == ChatMessage.id)
-            .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role == "user")
+            .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role.in_(("user", UPLOAD_ROLE)))
         )
         if current_message_id is not None:
             query = query.filter(ChatMessage.id != current_message_id)
@@ -929,7 +985,7 @@ class ChatService:
             previous_draft=previous_draft,
             privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
             required_document_ids=required,
-            context_document_ids=self._message_document_ids(db, last.id),
+            context_document_ids=self._message_scope(db, conversation, last.id),  # §57: wie beim Senden
             unreadable_document_count=len(unready),
         )
         return (last, candidates) if candidates else (None, [])
@@ -1171,8 +1227,8 @@ class ChatService:
                 db, conversation=conversation, states=not_ready, actor=actor, current_message_id=current_message_id
             )
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
-        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
-        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
+        # Datenminimierung §29 (+ §57: zuvor nur hochgeladene Dokumente), siehe `_message_scope`
+        scope = self._message_scope(db, conversation, current_message_id)
 
         if drafting_service is None:
             return self._create_message(
@@ -1327,8 +1383,8 @@ class ChatService:
             yield ChatStreamEvent(kind="done", message=message)
             return
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
-        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
-        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
+        # Datenminimierung §29 (+ §57: zuvor nur hochgeladene Dokumente), siehe `_message_scope`
+        scope = self._message_scope(db, conversation, current_message_id)
 
         if drafting_service is None:
             yield ChatStreamEvent(kind="delta", text=_PROVIDER_UNAVAILABLE_MESSAGE)

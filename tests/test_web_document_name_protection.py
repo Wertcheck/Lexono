@@ -284,20 +284,22 @@ def test_chat_upload_then_mark_in_the_chat_document_view_then_ask(client, db_ses
     conversation_id = events[0]["conversation_id"]
     document = db_session.query(Document).one()
     assert "Zweigelt" in (document.extracted_text or "")  # Extraktion beim Upload (synchron)
-    # Grenze (§56.4): der erste Versand mit dem Anhang geschieht im selben Request - vor jeder Markierung
-    first_sent = _sent(writer)
-    page = client.get(f"/dashboard/chat/{conversation_id}/document/{document.id}").text
+    # §57 (schliesst die Grenze §56.4): der Upload sendet NICHTS - auch nicht den mitgetippten Text
+    assert writer.received_payloads == []
+    assert [e["kind"] for e in events] == ["start", "uploaded"]
+    assert events[1]["target"] == f"/dashboard/chat/{conversation_id}/document/{document.id}?uploaded=1&text_not_sent=1#name-protection"
+    page = client.get(events[1]["target"].split("#")[0]).text
     assert 'id="document-protect-btn"' in page and 'id="document-text"' in page
+    assert 'id="upload-notice"' in page and "noch keine KI-Verarbeitung" in page
     response = _protect(client, document, ["Zweigelt"], return_to=f"chat:{conversation_id}")
     assert response.headers["location"].startswith(f"/dashboard/chat/{conversation_id}/document/{document.id}")
     assert "name_protection=saved" in response.headers["location"]
     client.post("/dashboard/chat/send-stream", data={
         "csrf_token": extract_csrf(client.get("/dashboard/chat").text), "conversation_id": conversation_id,
         "content": "Fasse das angehängte Dokument jetzt zusammen."})
-    assert len(writer.received_payloads) >= 2 and "Zweigelt" not in _sent(writer)
-    # dokumentierte GRENZE (§56.4), bewusst sichtbar gehalten: die erste Anfrage mit dem frisch hochgeladenen Anhang
-    # ging vor jeder moeglichen Markierung hinaus - der nicht erkannte Name stand darin im Klartext
-    assert "Zweigelt" in first_sent
+    # die bewusste Folgeanfrage ist die ERSTE Cloud-Anfrage - mit dem Dokument, ohne den markierten Namen
+    assert len(writer.received_payloads) == 1 and "Zweigelt" not in _sent(writer)
+    assert "Streitwert" in _sent(writer) and "4.250,00" in _sent(writer)
 
 
 def test_chat_composer_refuses_to_send_while_document_marks_are_unsaved(client, db_session) -> None:
