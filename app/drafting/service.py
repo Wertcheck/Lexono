@@ -87,6 +87,7 @@ from app.firm_profile.letterheads import letterhead_for_draft, resolve_ref_for_n
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
 from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
+from app.privacy.decisions import load_decisions
 from app.privacy.review import PrivacyDecisions
 from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
@@ -866,7 +867,13 @@ class DraftingService:
                 known_entities=preparation.known_entities,
                 gespraechsverlauf=gespraechsverlauf,
                 skip_general_knowledge_pseudonymization=skip_general_knowledge_pseudonymization,
-                privacy_decisions=privacy_decisions,
+                # §51: ohne mitgegebene Entscheidungen (Schriftsatz-, E-Mail-, Formular-Pfade) gelten die aktenweiten
+                # "Als Person behandeln"/"Unsicher"-Entscheidungen und manuellen Namensmarkierungen trotzdem - vorher nur
+                # im Chat. "Kein personenbezogenes Datum" bleibt unterhaltungsbezogen (hier keine Unterhaltung).
+                privacy_decisions=(
+                    privacy_decisions if privacy_decisions is not None
+                    else load_decisions(db, matter_id=matter_id, conversation_id=None)
+                ),
                 review_mode=review_mode,
             )
 

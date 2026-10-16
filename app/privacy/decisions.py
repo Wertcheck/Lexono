@@ -83,6 +83,34 @@ def _validate(term: str, decision: str) -> str:
     return term
 
 
+MAX_MANUAL_TERMS = 20
+
+
+def validate_manual_terms(terms: object, message_text: str) -> list[str]:
+    """§51 (16.10.2026): vom Anwalt im Eingabefeld markierte Namen, die die automatische Erkennung uebersieht ("Der
+    Richter Zweigelt"). Gleiche Form wie eine Rueckfrage-Entscheidung "Als Person behandeln" (ein Wort, siehe `_validate`)
+    und - gegen veraltete Markierungen nach einer Textaenderung - nur, wenn der Begriff in der Nachricht vorkommt.
+    Fehler werden NICHT uebergangen: der Aufrufer sendet dann nichts (keine stillschweigend verlorene Markierung)."""
+    from app.privacy.review import detect_decision_terms
+
+    if not isinstance(terms, list) or len(terms) > MAX_MANUAL_TERMS or not all(isinstance(t, str) for t in terms):
+        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.")
+    result: list[str] = []
+    for raw in terms:
+        term = _validate(raw, DECISION_PERSONAL)
+        if not term.isalpha():
+            raise InvalidPrivacyDecisionError("Bitte nur einzelne Namen (ein Wort) markieren.")
+        if not detect_decision_terms(message_text, {term}):
+            # Ohne den Begriff: die Meldung landet im klassischen Formularpfad in der Redirect-URL (?error=...) und
+            # damit im Zugriffsprotokoll/Browserverlauf. Der Browser nennt den Namen vorher lokal (chat.html).
+            raise InvalidPrivacyDecisionError(
+                "Ein markierter Name kommt in der Nachricht nicht mehr vor. Bitte Markierung prüfen."
+            )
+        if term not in result:
+            result.append(term)
+    return result
+
+
 def record_decision(
     db: Session,
     *,
@@ -93,9 +121,11 @@ def record_decision(
     user_id: str | None,
     actor: str,
     candidate: ReviewCandidate | None = None,
+    manual: bool = False,
 ) -> PrivacyDecision:
     """Speichert (bzw. aktualisiert) eine Entscheidung und zaehlt sie klartextfrei in der Lern-Statistik.
-    Audit ohne Begriff (nur Entscheidungsart) - der Begriff kann ein Name sein."""
+    Audit ohne Begriff (nur Entscheidungsart) - der Begriff kann ein Name sein. `manual`: vom Anwalt selbst markiert
+    (§51), nicht von Lexono gefragt - nur fuer den Audit-Text."""
     term = _validate(term, decision)
     scope_conversation = conversation_id if decision == DECISION_NOT_PERSONAL else None
     row = (
@@ -125,7 +155,8 @@ def record_decision(
             entity_id=matter_id,
             event_type="privacy_decision_recorded",
             actor=actor,
-            details=f"Datenschutz-Rückfrage entschieden: {decision}",
+            details=(f"Name manuell zur Pseudonymisierung markiert: {decision}" if manual
+                     else f"Datenschutz-Rückfrage entschieden: {decision}"),
         )
     )
     db.flush()

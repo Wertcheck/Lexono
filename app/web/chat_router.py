@@ -45,6 +45,8 @@ from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
+from app.privacy.decisions import validate_manual_terms
+from app.models.privacy_decision import DECISION_PERSONAL
 from app.chat.speech import (
     SpeechDecodeError,
     SpeechEmptyRecordingError,
@@ -618,6 +620,30 @@ def transcribe_speech(
     return JSONResponse(content={"text": text})
 
 
+def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:
+    """§51: Formularfeld `protected_terms` (JSON-Liste) -> gepruefte Namen; Fehler als InvalidPrivacyDecisionError."""
+    if not (protected_terms or "").strip():
+        return []
+    try:
+        raw = json.loads(protected_terms)
+    except ValueError as exc:
+        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.") from exc
+    return validate_manual_terms(raw, content)
+
+
+def _record_manual_terms(db: Session, conversation: ChatConversation, terms: list[str], user: User) -> None:
+    """§51: dieselbe Entscheidung wie "Als Person behandeln" in der Rueckfrage (gilt fuer die Akte bzw. die Schnellakte
+    des Chats ohne Akte) - gespeichert VOR der Nachricht, damit schon die erste Pruefung sie kennt und jede erneute
+    Pruefung (Rueckfrage, Wiederherstellung nach Neuladen, andere Pfade derselben Akte) sie wieder anwendet."""
+    for term in terms:
+        record_privacy_decision(
+            db, matter_id=conversation.matter_id, conversation_id=conversation.id, term=term,
+            decision=DECISION_PERSONAL, user_id=user.id, actor=user.email, manual=True,
+        )
+    if terms:
+        db.commit()
+
+
 @router.post("/send")
 def send_message(
     request: Request,
@@ -625,6 +651,7 @@ def send_message(
     matter_id: str = Form(""),
     content: str = Form(""),
     letterhead_ref: str = Form(""),
+    protected_terms: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -639,6 +666,10 @@ def send_message(
     upload_error = _validate_uploads(documents)
     if upload_error:
         return _redirect_with_error(conversation_id or None, upload_error)
+    try:
+        manual_terms = _parse_manual_terms(protected_terms, content)  # §51, wie send-stream
+    except InvalidPrivacyDecisionError as exc:
+        return _redirect_with_error(conversation_id or None, str(exc))
 
     chat_service = _get_chat_service()
 
@@ -680,6 +711,8 @@ def send_message(
             return _redirect_with_error(conversation.id, str(exc))
         if document is not None:
             document_ids.append(document.id)
+
+    _record_manual_terms(db, conversation, manual_terms, current_user)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): Rueckgabewert jetzt erfasst statt verworfen - die ID
@@ -1211,6 +1244,7 @@ def send_message_stream(
     matter_id: str = Form(""),
     content: str = Form(""),
     letterhead_ref: str = Form(""),
+    protected_terms: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -1237,6 +1271,13 @@ def send_message_stream(
     upload_error = _validate_uploads(documents)
     if upload_error:
         return StreamingResponse(_stream_error_event(upload_error), media_type="text/event-stream")
+
+    # §51: im Eingabefeld markierte Namen ("Namen schützen") - VOR jeder Persistenz geprueft; ein Fehler sendet nichts
+    # und gibt die Eingabe samt Markierung zurueck (kein stilles Weglassen, kein Cloud-Aufruf ohne die Markierung).
+    try:
+        manual_terms = _parse_manual_terms(protected_terms, content)
+    except InvalidPrivacyDecisionError as exc:
+        return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
 
     chat_service = _get_chat_service()
 
@@ -1278,6 +1319,8 @@ def send_message_stream(
             return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
         if document is not None:
             document_ids.append(document.id)
+
+    _record_manual_terms(db, conversation, manual_terms, current_user)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): siehe die identische Begruendung beim nicht-

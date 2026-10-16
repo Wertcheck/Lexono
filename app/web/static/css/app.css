@@ -9190,6 +9190,69 @@ body::-webkit-scrollbar-thumb:hover,
   height: 15px;
 }
 
+/* §51 "Namen schützen" - links in derselben dezenten Fusszeile wie das Datenschutz-Icon; markierte Namen als kleine
+   Chips. Veraltete Markierung (Name nicht mehr im Text) in Warnfarbe, weil dann nicht gesendet wird. */
+.chat-composer__protect {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.chat-composer__protect-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chat-composer__protect-btn:hover,
+.chat-composer__protect-btn:focus-visible {
+  background: var(--paper-200);
+  color: var(--seal-green-dark);
+}
+
+.chat-composer__protected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-composer__protected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 1px 4px 1px 8px;
+  border-radius: 999px;
+  background: var(--paper-200);
+  color: var(--ink-700);
+}
+
+.chat-composer__protected-item--stale {
+  background: var(--wax-red-tint);
+  color: var(--wax-red);
+  text-decoration: line-through;
+}
+
+.chat-composer__protected-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
 .chat-composer__privacy-btn:hover,
 .chat-composer__privacy-btn[aria-expanded="true"] {
   background: var(--paper-200);

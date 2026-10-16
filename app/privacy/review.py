@@ -700,9 +700,17 @@ def is_plate_shaped_term(term: str) -> bool:
     return "\n" not in term and _PLATE_SHAPE.fullmatch(term) is not None
 
 
+_GENITIVE_AFTER = r"(?=(?:s|'s|’s)?(?![\wÄÖÜäöüß]))"
+
+
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
-    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung"."""
+    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung".
+
+    §51 (16.10.2026, manuelle Namensmarkierung): bei Personen-Begriffen zusaetzlich GENAU zwei Formen desselben Worts -
+    Versalien ("ZWEIGELT" im Rubrum) und Genitiv ("Zweigelts", "Zweigelt's"; ersetzt wird nur das Wort, die Endung bleibt
+    hinter dem Platzhalter). Vorher fing diese Formen hoechstens zufaellig die NER - mit einem ZWEITEN Platzhalter fuer
+    dieselbe Person. Kleinschreibung bewusst nicht ("lange" ist kein "Lange")."""
     spans: list[DetectedSpan] = []
     for term in sorted(terms, key=len, reverse=True):
         if not term or not term.strip():
@@ -720,7 +728,12 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
         short = identifier and not plate and sum(ch.isdigit() for ch in term) < 7
         # Bindestrich davor bleibt erlaubt: der Rest haengt oft am Aktenzeichen ("345/26-123456").
         boundary_before = r"(?<![\wÄÖÜäöüß/.,])" if short else r"(?<![\wÄÖÜäöüß])"
-        pattern = re.compile(boundary_before + body + r"(?![\wÄÖÜäöüß])")
+        boundary_after = r"(?![\wÄÖÜäöüß])"
+        if not identifier:
+            if term.upper() != term:
+                body = f"(?:{body}|{re.escape(term.upper())})"
+            boundary_after = _GENITIVE_AFTER
+        pattern = re.compile(boundary_before + body + boundary_after)
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue

@@ -50,6 +50,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   nur im eindeutigen Fahrsatz. Fehlalarme 7 → 6, keine neuen Blocks; Legal-E2E maskiert zwei zuvor sichtbare Reste.
   **Offen:** P10 ohne erfasste Partei bzw. im Chat ohne Akte (UX-Entscheidung: freiwilliges „als Namen schützen“);
   „Dr. Zweigelt“ erhält einen zweiten Platzhalter; „bei Rot“ ohne direkt folgenden Fahrvorgang.
+  **Fortschritt 16.10.2026 (§51):** „Namen schützen“ im Chat-Eingabefeld als Erweiterung der bestehenden Rückfrage
+  (dieselbe Entscheidung „Als Person behandeln“, serverseitig geprüft, keine zweite Rückfrage): P10 auch im Chat ohne
+  Akte abgedeckt; Versalien/Genitiv mit einem Platzhalter je Person. Dabei behoben: Entwurfsprüfung, Schriftsatz- und
+  Orchestrator-Pfade wendeten aktenweite Entscheidungen bisher **nicht** an. HTTP-Nachweis über den lokalen
+  Aufzeichnungsserver. **Offen:** Verwaltung/Aufheben von Markierungen, Markier-UI in Formular-Workflows,
+  Bindestrich- und Mehrwortnamen, kleingeschriebenes Homograph wird mitmaskiert (vorbestehend).
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -66,6 +72,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Offene Risiken:** Nicht-interaktive Pfade (Schriftsatz-Generator, Entwurfsanweisungen, Review) fragen nicht, sondern
   maskieren vorsichtshalber; Rückfragequote in echten Akten unbekannt (nur synthetisch gemessen: 4 Rückfragen in 19 Dokumenten).
 - **Maßnahmen:** Rückfrage auch in Formular-Workflows (vor dem Absenden); Sammelansicht offener/unsicherer Entscheidungen je Akte.
+- **Fortschritt (16.10.2026, §51):** manuelle Namensmarkierung im Chat („Namen schützen“) speist dieselbe Entscheidung
+  wie die Rückfrage; aktenweite Entscheidungen gelten jetzt auch in Entwurfsprüfung und Schriftsatz-Pfaden.
 - **Abhängigkeiten:** P2 (Kandidatenerkennung), P5 (Aufbewahrung der Entscheidungen).
 - **Abnahmekriterien:** Kein Cloud-Aufruf mit offener Rückfrage (Test je Einstiegspunkt); höchstens 1 Rückfrage je
   synthetischem Standarddokument im Median; Pilot-Rückmeldung zur Verständlichkeit dokumentiert.

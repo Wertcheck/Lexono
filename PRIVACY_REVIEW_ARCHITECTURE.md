@@ -6422,3 +6422,100 @@ vorbestehender Fehlalarm.) Gesamtsuite (6 Teile nacheinander): **4990 bestanden*
 - Rollen bleiben Freitext; Namen mit Institutions-Teilwort (z. B. „…amt…“ in einem Nachnamen) fallen bei
   Gerichtsrollen weiter in die alte Zuordnung (vorbestehende Prüfung, geschützt bleibt der Name).
 - Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.
+- *Nachtrag §51:* P10 im Chat ohne Akte ist jetzt durch manuelle Markierung abgedeckt („Namen schützen“).
+
+## §51 Manuelle Namensmarkierung als Erweiterung der bestehenden Rückfrage (16.10.2026, Branch `feature/feedback-diagnose`, Basis `3994019`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 51.1 Vorhandene Funktionalität (Ist-Analyse)
+
+- Die Rückfrage (`chat.html` `showPrivacyReview`; `POST /dashboard/chat/{id}/privacy-review`) zeigt nur
+  **von Lexono gefundene** Kandidaten mit drei Optionen. „Als Person behandeln“ und „Unsicher“ werden aktenweit
+  gespeichert (`PrivacyDecision`, `conversation_id = NULL`), „Kein personenbezogenes Datum“ nur für die Unterhaltung.
+  Der Gateway maskiert entschiedene Begriffe über `detect_decision_terms`: exakt, ganze Wörter, alle Vorkommen.
+- Eine **manuelle Markierung beliebiger Textstellen gab es nicht** (keine Textauswahl, kein Freitextfeld). Bei P10
+  („Der Richter Zweigelt“) findet Lexono keinen Kandidaten, also erscheint keine Rückfrage, und der Name ging im
+  Klartext hinaus (Gegenprobe-Test belegt das).
+- Ein Chat „ohne Akte“ hat immer eine automatisch angelegte Schnellakte; Entscheidungen gelten dort.
+- **Lücke beim Fund:** nur die Chat-Pfade luden die gespeicherten Entscheidungen. Entwurfsprüfung
+  (`app/review/engine.py`, schickt den **re-identifizierten** Entwurf), Schriftsatz- und Formularpfade
+  (`DraftingService.create_draft` ohne `privacy_decisions`) und `AIOrchestrator` wendeten „Als Person behandeln“
+  **nicht** an. Ein so geschützter Name ging dort im Klartext hinaus, wenn die Erkennung ihn nicht fand.
+
+### 51.2 Änderungen (keine zweite Rückfrage, keine Änderung an Presidio)
+
+1. **UI** (`chat.html`, `app.css`): In der bestehenden Fußzeile des Eingabefelds steht „Namen schützen“. Der Nutzer
+   markiert den Namen im Text und klickt; es erscheint ein Chip mit ×. Eine Mehrwort-Auswahl wird in einzelne
+   Wörter zerlegt, nur Buchstaben sind zulässig, höchstens 20 Namen. Ändert sich der Text und ein markierter Name
+   kommt nicht mehr vor, wird der Chip als veraltet angezeigt und **nicht gesendet**. Bei einem Fehler vor der
+   Verarbeitung kommen Text **und** Markierung zurück. Die Rückfrage mit ihren drei Optionen bleibt unverändert.
+2. **Server** (`chat_router._parse_manual_terms`/`_record_manual_terms`, `decisions.validate_manual_terms`):
+   Das Feld `protected_terms` wird in `send-stream` **und** im klassischen `/send` **vor jeder Persistenz** geprüft:
+   gleiche Form wie eine Rückfrage-Entscheidung, ein Wort, der Begriff kommt in der Nachricht vor. Ein Fehler
+   bedeutet: keine Nachricht, keine Entscheidung, kein Cloud-Aufruf. Danach wird der Begriff als **dieselbe**
+   Entscheidung „Als Person behandeln“ gespeichert (Audit-Text „manuell markiert“, ohne Begriff; HMAC-Statistik wie
+   bisher). Damit greifen ohne neuen Mechanismus: erneute Gesamtprüfung, Wiederherstellung nach Neuladen,
+   Doppelversand-Sperre, Geltung für spätere Nachrichten und den Verlauf.
+3. **Schreibweisen** (`review.detect_decision_terms`): bei Personen-Begriffen zusätzlich Versalien
+   („ZWEIGELT“) und Genitiv („Zweigelts“; ersetzt wird nur das Wort). Kleinschreibung bewusst nicht. Im Gateway
+   weicht ein NER-Treffer, der **exakt** den Bereich eines entschiedenen Namens (ggf. mit Genitiv) hat, dem
+   Entscheidungs-Treffer. So erhält eine Person **einen** Platzhalter. Vorher las die NER „Zeugen Brummelbeck“ als
+   Ort, „widersprach Brummelbeck“ als Person, und „Zweigelts“ bekam einen zweiten Platzhalter.
+4. **Alle Pfade derselben Akte**: `_prepare_and_gate` (ohne mitgegebene Entscheidungen), Entwurfsprüfung und
+   Orchestrator laden die aktenweiten Entscheidungen. „Kein personenbezogenes Datum“ bleibt unterhaltungsbezogen
+   und wirkt dort nicht.
+5. **Fehlermeldungen ohne Begriff**: im `/send`-Pfad landet die Meldung in der Redirect-URL (`?error=…`) und damit
+   im Zugriffsprotokoll bzw. Browserverlauf. Der Browser nennt den Namen vorher lokal.
+
+**Geprüfte Abflusswege:** Logs (keine Logger-Aufrufe mit Begriff; Audit/Block-Log ohne Begriff), Diagnoseberichte
+(`quality_reports`: nur Zähler), temporäre Dateien (keine), alternative Cloud-Pfade (alle Provider verlangen das
+Siegel, das nur `prepare_request` erzeugt; dessen drei Aufrufer laden jetzt die Entscheidungen), Redirect-URL
+(behoben). Der Begriff steht wie jede Rückfrage-Entscheidung im Klartext in `privacy_decisions` (Aktendatum, lokal).
+
+### 51.3 Tests und QA
+
+`tests/test_web_manual_name_protection.py` (über die echten Endpunkte und den echten Gateway):
+
+- Gegenprobe: ohne Markierung steht „Zweigelt“ in der Payload.
+- P10 im Chat ohne Akte mit Markierung: maskiert; Datum, Betrag und § 3 ZPO unverändert; Entscheidung aktenweit;
+  Audit ohne Begriff.
+- Die Markierung gilt für Folgenachrichten.
+- Markierung eines ohnehin erkannten Namens ist unschädlich.
+- Mehrere Namen, Wiederholungen, Genitiv, Versalien: je Person ein Platzhalter.
+- Veraltete oder ungültige Markierung in 7 Varianten: nichts gesendet, nichts gespeichert.
+- Klassischer `/send`-Pfad: Markierung wirkt; eine veraltete Markierung bricht ab, die URL enthält keinen Namen.
+- Zusammenspiel mit der bestehenden Rückfrage, Abbruch, Neuladen und Wiederaufnahme.
+- Fehler bei der Anwendung blockiert den Versand (fail-closed).
+- Entwurfsprüfung und `create_draft` wenden aktenweite Entscheidungen an.
+- **HTTP-Nachweis:** echter Web-Endpunkt → echter Drafting-Service → echter Anthropic-Provider → lokaler
+  Aufzeichnungsserver (§47). „Zweigelt“ ist nicht in den gesendeten Bytes, Datum/Betrag/§ schon.
+- UI-Render.
+- **Strikter xfail (vorbestehend):** „Herr Lange wartete lange“ – ein als Person entschiedener Name wird auch
+  kleingeschrieben weitergetragen. Das gilt auf `3994019` ebenso für Rückfrage-Entscheidungen.
+
+**Browser-QA** (Edge headless, eigener Server auf temporärer SQLite-DB, kein Schlüssel, `fetch` durch eine
+Attrappe ersetzt – keine Anfrage verließ den Browser): Hinweis ohne Auswahl, Chip und Feldwert, veraltete Markierung
+blockiert ohne Anfrage, Formular trägt `protected_terms`, Wiederherstellung nach Serverfehler, Mehrwort-Auswahl,
+Entfernen, Ziffern-Auswahl abgewiesen; Screenshots geprüft.
+
+**Vorher/Nachher (gleiche Korpora, Vergleich mit dem Stand nach §50):** `pseudonymization_v1` Feld- und
+E2E-Fälle identisch; `bench_name_detection` (1100), `bench_chat_without_file` (0/440), Rollenobjekte (0/12)
+identisch; Legal-E2E dev/test: keine abweichende Kennzahl, pii_leaks 0. Ein erster Legal-E2E-Lauf unter
+Speicherdruck (Hintergrundlauf vom System beendet, Dokumentfehler 0 → 3) war ein Artefakt; der Wiederholungslauf im
+Vordergrund ist identisch. Neue/betroffene Tests: 131 bestanden (+1 strikter xfail), Chat-/Drafting-/Review-Tests 385
+bestanden. **Gesamtsuite** (6 Teile nacheinander): **5011 bestanden**, 10 xfail, 1 xpass (vorbestehend, §49.4),
+1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 51.4 Restrisiken
+
+- Die Markierung ist eine **zusätzliche** Schutzmaßnahme, kein Nachweis, dass alles Übrige erkannt wurde.
+- Nur ganze Wörter aus Buchstaben. Bindestrich-Namen („Müller-Lüdenscheidt“) lassen sich nur als Einzelteile
+  markieren. Mehrwort-Namen erhalten je Wort einen Platzhalter.
+- Andere Flexionsformen als Genitiv-s sowie Kleinschreibung werden nicht erfasst. Umgekehrt wird ein kleingeschriebenes
+  Homograph-Wort mitmaskiert (vorbestehend, xfail).
+- Eine Markierung gilt aktenweit und dauerhaft (wie „Als Person behandeln“). Aufheben geht nur über eine
+  Rückfrage-Entscheidung, und „personal“ gewinnt immer (fail-closed). Eine eigene Verwaltung der Markierungen fehlt.
+- Markierungen fließen in die HMAC-Lernstatistik ein wie Rückfrage-Entscheidungen (kein Klartext).
+- Nur im Chat-Eingabefeld; Formular-Workflows (Schriftsatz, E-Mail) haben keine eigene Markier-UI, wenden aber
+  vorhandene Entscheidungen der Akte jetzt an.
