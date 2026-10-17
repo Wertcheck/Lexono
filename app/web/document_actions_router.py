@@ -287,8 +287,9 @@ def _store_uploaded_document(
 
     content = upload.file.read()
     if len(content) > _MAX_UPLOAD_SIZE_BYTES:
+        # §60: ohne Dateinamen - die Meldung landet in der Redirect-URL (Browserverlauf, Zugriffsprotokoll)
         raise ValueError(
-            f"Datei '{upload.filename}' überschreitet die maximale Größe von "
+            "Eine Datei überschreitet die maximale Größe von "
             f"{_MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB."
         )
 
@@ -345,7 +346,7 @@ def upload_documents(
                 processor.process_document(document, db, actor=current_user.email)
     except ValueError as exc:
         return RedirectResponse(
-            url=f"/dashboard/matters/{matter.id}?error={exc}", status_code=303
+            url=f"/dashboard/matters/{matter.id}?error={quote(str(exc), safe='')}", status_code=303
         )
 
     return RedirectResponse(url=f"/dashboard/matters/{matter.id}", status_code=303)

@@ -75,6 +75,7 @@ def create_quick_matter(
     client_name: str | None,
     actor: str,
     client_id: str | None = None,
+    matter_id: str | None = None,
 ) -> Matter:
     """Legt eine neue `Matter` (Status "open") an und committet sofort - der
     Aufrufer erhält eine sofort nutzbare `matter.id`. Schreibt ein
@@ -118,6 +119,8 @@ def create_quick_matter(
         client_id=client.id,
         title=title or f"Schnellentwurf {date.today().isoformat()}",
         status="open",
+        # §60: vorab vergebene ID (Chat-Upload-Plan) - eine Wiederaufnahme erkennt die bereits angelegte Akte
+        **({"id": matter_id} if matter_id else {}),
     )
     db.add(matter)
     db.flush()  # matter.id fuer das AuditEvent/den weiteren Ablauf benoetigt

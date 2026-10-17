@@ -32,6 +32,7 @@ dasselbe Prinzip wie `_REGENERATE_PURPOSE` in app/web/drafts_router.py.
 from __future__ import annotations
 
 import mimetypes
+import re
 import uuid
 from urllib.parse import urlencode
 from pathlib import Path
@@ -176,7 +177,9 @@ def _validate_uploads(files: list[UploadFile]) -> str | None:
         suffix = Path(upload.filename).suffix.lower()
         if suffix not in _ALLOWED_UPLOAD_EXTENSIONS:
             allowed = ", ".join(sorted(_ALLOWED_UPLOAD_EXTENSIONS))
-            return f"Dateityp '{suffix or '?'}' wird nicht unterstützt (erlaubt: {allowed})."
+            # §60: nur eine kurze technische Endung in die (URL-)Meldung, keine Namensbestandteile
+            shown = suffix if re.fullmatch(r"\.[a-z0-9]{1,8}", suffix) else "?"
+            return f"Dateityp '{shown}' wird nicht unterstützt (erlaubt: {allowed})."
     return None
 
 

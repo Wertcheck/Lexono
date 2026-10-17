@@ -239,3 +239,23 @@ def test_chat_upload_operations_migration_is_additive_and_reversible(tmp_path) -
     tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
     con.close()
     assert "chat_upload_operations" not in tables and "schriftsatz_operations" in tables
+
+
+def test_chat_upload_owner_and_plan_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_034 (§60, Wiederaufnahme nach hartem Abbruch): Besitzer und Plan, beide nullable."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "chat_owner.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    columns = {row[1]: row[3] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall()}
+    con.close()
+    assert columns["owner"] == 0 and columns["plan"] == 0  # nullable: Altbestand bleibt gueltig
+    command.downgrade(cfg, "schritt3_033")
+    con = sqlite3.connect(str(db_path))
+    columns = {row[1] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall()}
+    con.close()
+    assert "owner" not in columns and "plan" not in columns and "fingerprint" in columns

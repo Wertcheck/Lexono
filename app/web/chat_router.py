@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from urllib.parse import quote
 import mimetypes
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -41,8 +42,9 @@ from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
 from app.chat import processing_claims, upload_operations
 from app.models.chat_upload_operation import ChatUploadOperation
-from app.models.schriftsatz_operation import STATUS_DONE, STATUS_FAILED
-from app.chat.service import ChatService
+from app.models.schriftsatz_operation import STATUS_DONE, STATUS_FAILED, STATUS_PROCESSING
+from app.chat.service import ChatService, UploadTooLargeError
+from app.documents.service import DocumentProcessingService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
 from app.privacy.decisions import load_decisions
@@ -227,6 +229,14 @@ def chat_home(
         error,
         pending_matter=pending_matter,
     )
+
+
+@router.get("/upload-token")
+def fresh_upload_token(current_user: User = Depends(require_login)) -> JSONResponse:
+    """§60 (Zurueck-Button): neue Upload-Vorgangs-ID fuer eine aus dem Browser-Cache wiederhergestellte Seite, deren
+    ID bereits verbraucht sein kann. Stellt NUR eine ID aus - kein Schreibvorgang, kein Upload, keine Wiederholung."""
+    return JSONResponse({"upload_token": upload_operations.issue_token(current_user.id)},
+                        headers={"Cache-Control": "no-store"})
 
 
 @router.get("/{conversation_id}", response_class=HTMLResponse)
@@ -480,7 +490,11 @@ def _render_chat_page(
             and active_conversation.matter.client.name != PLACEHOLDER_CLIENT_NAME
         ),
     }
-    return templates.TemplateResponse(request, "chat.html", context)
+    response = templates.TemplateResponse(request, "chat.html", context)
+    # §60: nicht aus dem Browser-Cache wiederherstellen (Zurueck-Button) - die Seite traegt eine Upload-Vorgangs-ID, die
+    # danach verbraucht sein kann; zusaetzlich holt chat.html bei `pageshow` (persisted) eine neue ID
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def _editor_targets(db: Session, messages: list[ChatMessage]) -> dict[str, dict]:
@@ -581,6 +595,15 @@ def _redirect_with_error(conversation_id: str | None, message: str) -> RedirectR
     return RedirectResponse(url=f"{target}?error={quote(message, safe='')}", status_code=303)
 
 
+def _safe_suffix(filename: str) -> str:
+    """Nur eine kurze, technische Dateiendung - ein "Punkt" mitten im Namen ("Klage Meier.Meier GmbH") gibt sonst
+    Namensbestandteile in die Fehler-URL."""
+    import re
+
+    suffix = Path(filename).suffix.lower()
+    return suffix if re.fullmatch(r"\.[a-z0-9]{1,8}", suffix) else "?"
+
+
 def _validate_uploads(documents: list[UploadFile]) -> str | None:
     """Gibt eine Fehlermeldung zurück (oder None), OHNE bereits etwas zu
     speichern/anzulegen - Validierung muss VOR jedem Datenbank-/Dateisystem-
@@ -592,8 +615,10 @@ def _validate_uploads(documents: list[UploadFile]) -> str | None:
             continue
         suffix_ok = any(upload.filename.lower().endswith(ext) for ext in _ALLOWED_UPLOAD_EXTENSIONS)
         if not suffix_ok:
+            # §60: ohne Dateinamen (die Meldung landet im Pfad ohne JavaScript in der Fehler-URL)
+            suffix = _safe_suffix(upload.filename)
             return (
-                f"Dateityp von '{upload.filename}' wird nicht unterstützt "
+                f"Dateityp '{suffix}' wird nicht unterstützt "
                 f"(erlaubt: {', '.join(sorted(_ALLOWED_UPLOAD_EXTENSIONS))})."
             )
     return None
@@ -660,14 +685,16 @@ def _upload_target(db: Session, conversation: ChatConversation, document_ids: li
 
 
 class _UploadOutcome(BaseModel):
-    """Ergebnis eines Upload-Requests (neu ausgefuehrt ODER als Wiederholung erkannt)."""
+    """Ergebnis eines Upload-Requests (neu ausgefuehrt, wiederaufgenommen ODER als Wiederholung erkannt)."""
 
     conversation_id: str | None = None
     target: str | None = None  # Erfolg: Dokumentansicht zum Pruefen/Markieren (§57)
     text_kept: bool = False
     repeated: bool = False
+    resumed: bool = False  # §60: nach hartem Abbruch des urspruenglichen Requests fortgesetzt
     error: str | None = None
-    stored_names: list[str] = []  # bereits gespeicherte Dateien eines fehlgeschlagenen Vorgangs - nie in eine URL
+    # §60: Zusatz NUR fuer die lokale Anzeige im Stream (z. B. Dateinamen) - nie in einer URL
+    detail: str | None = None
 
 
 def _upload_contents(documents: list[UploadFile]) -> list[tuple[str, bytes]]:
@@ -697,7 +724,10 @@ def _chat_upload(
     """§59: EIN Chat-Upload = EIN Vorgang (serverseitig validierte, signierte Vorgangs-ID der Seite). Nur der erste
     Request legt Unterhaltung, Dokumente und Upload-Nachricht an; jede Wiederholung (Doppelklick, paralleler Request,
     Wiederholung nach verlorener Antwort oder Netzwerkfehler) liefert das gespeicherte Ergebnis. Eine geaenderte
-    Anfrage mit derselben ID wird weder ausgefuehrt noch als identisch behandelt. §57 bleibt: keine KI-Anfrage."""
+    Anfrage mit derselben ID wird weder ausgefuehrt noch als identisch behandelt. §57 bleibt: keine KI-Anfrage.
+
+    §60: Beim Anlegen werden alle IDs vorab vergeben (`plan`) und jeder Schritt ist "anlegen, falls nicht vorhanden" -
+    nach einem harten Abbruch (Prozess beendet) setzt eine Wiederholung DENSELBEN Vorgang fort, ohne Doppelanlage."""
     operation_id = upload_operations.read_token(upload_token, current_user.id)
     if operation_id is None:
         return _UploadOutcome(
@@ -712,26 +742,50 @@ def _chat_upload(
     fingerprint = upload_operations.request_fingerprint(
         [conversation_id, matter_id, content, letterhead_ref, protected_terms], contents
     )
-    existing = upload_operations.claim(db, operation_id, user_id=current_user.id, fingerprint=fingerprint)
-    if existing is not None:
-        # Abbruch zwischen "start" (setzt die Unterhaltung im Eingabefeld) und "uploaded": die Wiederholung traegt dann
-        # die Unterhaltung DIESES Vorgangs - inhaltlich identisch, wenn sie ohne Unterhaltung uebereinstimmt
-        without_conversation = upload_operations.request_fingerprint(
-            ["", matter_id, content, letterhead_ref, protected_terms], contents
-        ) if conversation_id and conversation_id == existing.conversation_id else None
-        return _repeated_chat_upload(db, current_user, existing, fingerprint=fingerprint, content=content,
-                                     conversation_id=conversation_id or None,
-                                     alternative_fingerprint=without_conversation)
+    new_conversation = conversation is None
+    plan = {
+        "matter_id": str(uuid.uuid4()) if new_conversation and selected_matter is None else None,
+        "conversation_id": str(uuid.uuid4()) if new_conversation else None,
+        "documents": [str(uuid.uuid4()) for _ in contents],
+        "message_id": str(uuid.uuid4()),
+    }
+    # Vor dem Anlegen als "laeuft in diesem Prozess" vermerkt - keine Luecke, in der eine gleichzeitige Wiederholung
+    # den gerade angelegten Vorgang fuer verwaist halten koennte
+    with upload_operations.running(operation_id):
+        existing = upload_operations.claim(db, operation_id, user_id=current_user.id, fingerprint=fingerprint,
+                                           plan=json.dumps(plan))
+        if existing is None:
+            return _run_upload(db, current_user, operation_id=operation_id, plan=plan, conversation=conversation,
+                               selected_matter=selected_matter, content=content, manual_terms=manual_terms,
+                               documents=documents, recorded=[])
+    # Abbruch zwischen "start" (setzt die Unterhaltung im Eingabefeld) und "uploaded": die Wiederholung traegt dann
+    # die Unterhaltung DIESES Vorgangs - inhaltlich identisch, wenn sie ohne Unterhaltung uebereinstimmt
+    without_conversation = upload_operations.request_fingerprint(
+        ["", matter_id, content, letterhead_ref, protected_terms], contents
+    ) if conversation_id and conversation_id == existing.conversation_id else None
+    if existing.fingerprint == without_conversation:
+        conversation = None  # neue Unterhaltung des Vorgangs: dem Plan folgen (nicht als "bestehende" behandeln)
+    return _repeated_chat_upload(
+        db, current_user, existing, fingerprint=fingerprint, content=content, conversation_id=conversation_id or None,
+        alternative_fingerprint=without_conversation, conversation=conversation, selected_matter=selected_matter,
+        manual_terms=manual_terms, documents=documents,
+    )
+
+
+def _run_upload(db: Session, current_user: User, *, operation_id: str, **kwargs) -> _UploadOutcome:
     try:
-        return _execute_chat_upload(
-            db, current_user, operation_id=operation_id, conversation=conversation, selected_matter=selected_matter,
-            content=content, manual_terms=manual_terms, documents=documents,
-        )
+        return _execute_chat_upload(db, current_user, operation_id=operation_id, **kwargs)
     except Exception:
-        # Der Upload loest keine KI-Anfrage aus - ein Absturz ist daher eindeutig ein Fehlschlag (kein "unklar"):
-        # "fehlgeschlagen" statt 15 Minuten "laeuft noch"; eine Wiederholung fuehrt ihn trotzdem nicht erneut aus.
+        # Ein abgefangener Fehler ist eindeutig ein Fehlschlag (der Upload loest keine KI-Anfrage aus) - "fehlgeschlagen"
+        # statt "laeuft noch". Nur ein HARTER Abbruch (Prozess beendet) bleibt "processing" und wird wiederaufnehmbar.
         upload_operations.update(db, operation_id, status=STATUS_FAILED)
         raise
+
+
+def _upload_failed(db: Session, operation_id: str, conversation_id: str | None, message: str,
+                   detail: str | None = None) -> _UploadOutcome:
+    upload_operations.update(db, operation_id, status=STATUS_FAILED)
+    return _UploadOutcome(conversation_id=conversation_id, error=message, detail=detail)
 
 
 def _execute_chat_upload(
@@ -739,54 +793,111 @@ def _execute_chat_upload(
     current_user: User,
     *,
     operation_id: str,
+    plan: dict,
     conversation: ChatConversation | None,
     selected_matter: Matter | None,
     content: str,
     manual_terms: list[str],
     documents: list[UploadFile],
+    recorded: list[str],
 ) -> _UploadOutcome:
-    """Der EINE Request, der den Upload-Vorgang angelegt hat."""
-    chat_service = _get_chat_service()
-    if conversation is None:
-        conversation = chat_service.create_conversation(
-            db,
-            user=current_user,
-            matter_id=selected_matter.id if selected_matter else None,
-            title=content or "Neues Dokument",
-            actor=current_user.email,
-        )
-    upload_operations.update(db, operation_id, conversation_id=conversation.id)
-    settings = get_settings()
-    document_ids: list[str] = []
-    for upload in documents:
-        if not upload.filename:
-            continue
-        try:
-            document = chat_service.attach_document(
-                db,
-                conversation=conversation,
-                upload=upload,
-                ocr_enabled=settings.ocr_enabled,
-                ocr_languages=settings.ocr_languages,
-                tesseract_cmd=settings.tesseract_cmd,
-                actor=current_user.email,
-            )
-        except ValueError as exc:
-            upload_operations.update(db, operation_id, status=STATUS_FAILED)
-            return _UploadOutcome(conversation_id=conversation.id, error=str(exc))
-        if document is not None:
-            upload_operations.add_document(db, operation_id, document.id)
-            document_ids.append(document.id)
+    """Fuehrt den Plan aus - erstmals ODER als Wiederaufnahme. Jeder Schritt prueft zuerst, ob sein Ergebnis (unter der
+    vorab vergebenen ID) bereits existiert: auch ein Abbruch nach einem Commit, dessen Ausgang unklar war, fuehrt nicht
+    zur Doppelanlage. Ist der Stand nicht stimmig rekonstruierbar: kontrollierter Fehlschlag, nichts geloescht."""
+    from app.documents.readiness import PROCESSING, assess_document
 
-    _record_manual_terms(db, conversation, manual_terms, current_user)
+    chat_service = _get_chat_service()
+
+    def _mark(step: str) -> None:
+        # Fortschrittsmarker im Plan: ein bereits angelegtes, inzwischen GELOESCHTES Objekt wird erkannt und nicht
+        # wiederbelebt (kontrollierter Fehlschlag statt Neuanlage)
+        plan.setdefault("done", []).append(step)
+        upload_operations.update(db, operation_id, plan=json.dumps(plan))
+
+    done = set(plan.get("done") or [])
+    unclear = "Der unterbrochene Upload ließ sich nicht sicher fortsetzen. Es wurde nichts gelöscht und nichts gesendet; " \
+              "bitte die Unterhaltung prüfen und bei Bedarf neu hochladen."
+    if conversation is None:
+        planned_id = plan.get("conversation_id")
+        conversation = db.get(ChatConversation, planned_id) if planned_id else None
+        if conversation is not None and conversation.user_id != current_user.id:
+            return _upload_failed(db, operation_id, None, unclear)
+        if conversation is None:
+            if not planned_id or "conversation" in done:  # fehlt, obwohl schon angelegt: geloescht
+                return _upload_failed(db, operation_id, None, unclear)
+            matter_id = selected_matter.id if selected_matter else None
+            if matter_id is None and plan.get("matter_id"):
+                existing_matter = db.get(Matter, plan["matter_id"])
+                if existing_matter is None and "matter" in done or (
+                        existing_matter is not None and existing_matter.deleted_at is not None):
+                    return _upload_failed(db, operation_id, None, unclear)
+                if existing_matter is None:
+                    existing_matter = create_quick_matter(
+                        db, title=None, client_name=None, actor=current_user.email, matter_id=plan["matter_id"]
+                    )
+                    _mark("matter")
+                matter_id = existing_matter.id
+            conversation = chat_service.create_conversation(
+                db, user=current_user, matter_id=matter_id, title=content or "Neues Dokument",
+                actor=current_user.email, conversation_id=planned_id,
+            )
+            _mark("conversation")
+    upload_operations.update(db, operation_id, conversation_id=conversation.id)
+
+    uploads = [upload for upload in documents if upload.filename]
+    planned_documents = plan.get("documents") or []
+    if len(planned_documents) != len(uploads):
+        return _upload_failed(db, operation_id, conversation.id, unclear)
+    settings = get_settings()
+    for upload, document_id in zip(uploads, planned_documents):
+        document = db.get(Document, document_id)
+        if document is None and document_id in recorded:  # schon angelegt und vermerkt, jetzt verschwunden
+            return _upload_failed(db, operation_id, conversation.id, unclear)
+        if document is None:
+            try:
+                chat_service.attach_document(
+                    db,
+                    conversation=conversation,
+                    upload=upload,
+                    ocr_enabled=settings.ocr_enabled,
+                    ocr_languages=settings.ocr_languages,
+                    tesseract_cmd=settings.tesseract_cmd,
+                    actor=current_user.email,
+                    document_id=document_id,
+                )
+            except UploadTooLargeError as exc:
+                # feste Meldung ohne Dateinamen (kann im Pfad ohne JavaScript in die URL); Name nur lokal im Stream
+                return _upload_failed(db, operation_id, conversation.id, str(exc), detail=exc.filename)
+            except ValueError as exc:
+                return _upload_failed(db, operation_id, conversation.id, str(exc))
+        elif document.deleted_at is not None or document.matter_id != conversation.matter_id:
+            return _upload_failed(db, operation_id, conversation.id, unclear)
+        elif assess_document(db, document).state == PROCESSING:
+            # nach einem Abbruch WAEHREND der Verarbeitung (Text/OCR): lokal neu verarbeiten - keine KI
+            DocumentProcessingService(
+                ocr_enabled=settings.ocr_enabled, ocr_languages=settings.ocr_languages,
+                tesseract_cmd=settings.tesseract_cmd,
+            ).process_document(document, db, actor=current_user.email)
+        if document_id not in recorded:
+            upload_operations.add_document(db, operation_id, document_id)
+            recorded.append(document_id)
+
+    if "terms" not in done:  # bei der Wiederaufnahme nicht doppelt (Audit/Lern-Statistik)
+        _record_manual_terms(db, conversation, manual_terms, current_user)
+        _mark("terms")
 
     # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen, nicht nur in der UI). Die
     # Dokumente werden NUR gespeichert und lokal ausgelesen - keine KI-Anfrage, kein Cloud-Aufruf, auch nicht fuer einen
     # mitgetippten Text (der bleibt lokal im Browser und wird erst bewusst gesendet).
-    message = chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
+    message = db.get(ChatMessage, plan["message_id"])
+    if message is None:
+        message = chat_service.record_upload(db, conversation=conversation, document_ids=planned_documents,
+                                             message_id=plan["message_id"])
+    elif message.conversation_id != conversation.id:
+        return _upload_failed(db, operation_id, conversation.id, unclear)
     upload_operations.update(db, operation_id, status=STATUS_DONE, upload_message_id=message.id)
     return _UploadOutcome(conversation_id=conversation.id, text_kept=bool(content),
-                          target=_upload_target(db, conversation, document_ids, text_kept=bool(content)))
+                          target=_upload_target(db, conversation, planned_documents, text_kept=bool(content)))
 
 
 # Doppelklick: der zweite Request wartet kurz auf den ersten und liefert dann DESSEN Ergebnis (statt einer
@@ -796,11 +907,12 @@ _REPEAT_POLL_SECONDS = 0.25
 
 
 def _await_running_upload(db: Session, operation: ChatUploadOperation) -> ChatUploadOperation:
+    """Wartet, solange der Besitzer NACHWEISLICH laeuft (nicht nach Uhrzeit) - hoechstens `_REPEAT_WAIT_SECONDS`."""
     import time
 
     deadline = time.monotonic() + _REPEAT_WAIT_SECONDS
-    while (operation.status not in (STATUS_DONE, STATUS_FAILED) and not upload_operations.is_stale(operation)
-           and time.monotonic() < deadline):
+    while (operation.status not in (STATUS_DONE, STATUS_FAILED)
+           and upload_operations.owner_state(operation) == upload_operations.ALIVE and time.monotonic() < deadline):
         time.sleep(_REPEAT_POLL_SECONDS)
         operation = upload_operations.load(db, operation.id) or operation
     return operation
@@ -809,8 +921,12 @@ def _await_running_upload(db: Session, operation: ChatUploadOperation) -> ChatUp
 def _repeated_chat_upload(
     db: Session, current_user: User, operation: ChatUploadOperation, *, fingerprint: str, content: str,
     conversation_id: str | None, alternative_fingerprint: str | None = None,
+    conversation: ChatConversation | None = None, selected_matter: Matter | None = None,
+    manual_terms: list[str] | None = None, documents: list[UploadFile] | None = None,
 ) -> _UploadOutcome:
-    """Wiederholung einer bereits verwendeten Upload-Vorgangs-ID: nie erneut ausfuehren."""
+    """Wiederholung einer bereits verwendeten Upload-Vorgangs-ID: ein abgeschlossener oder fehlgeschlagener Vorgang wird
+    nie erneut ausgefuehrt. Ein LAUFENDER Vorgang wird nur fortgesetzt, wenn sein Besitzer nachweislich beendet ist
+    (atomare Uebernahme, genau ein Request); ist das nicht feststellbar, bleibt er unangetastet."""
     if operation.user_id != current_user.id:
         return _UploadOutcome(conversation_id=conversation_id,
                               error="Der Upload-Vorgang ist ungültig. Es wurde nichts angelegt oder gesendet.")
@@ -820,7 +936,24 @@ def _repeated_chat_upload(
             error="Diese Anfrage unterscheidet sich vom ersten Absenden dieses Upload-Vorgangs. Es wurde nichts "
                   "ausgeführt. Bitte erneut absenden.",
         )
-    operation = _await_running_upload(db, operation)
+    for _ in range(3):  # Uebernahme verloren -> erneut beurteilen (ein anderer Request setzt gerade fort)
+        operation = _await_running_upload(db, operation)
+        if operation.status != STATUS_PROCESSING or upload_operations.owner_state(operation) != upload_operations.DEAD:
+            break
+        with upload_operations.running(operation.id):
+            if upload_operations.take_over(db, operation):
+                plan = json.loads(operation.plan or "{}")
+                if not plan.get("message_id"):  # Altbestand ohne Plan: nicht sicher fortsetzbar
+                    return _upload_failed(db, operation.id, operation.conversation_id,
+                                          "Der unterbrochene Upload ließ sich nicht sicher fortsetzen. Es wurde nichts "
+                                          "gelöscht und nichts gesendet; bitte neu hochladen.")
+                outcome = _run_upload(
+                    db, current_user, operation_id=operation.id, plan=plan, conversation=conversation,
+                    selected_matter=selected_matter, content=content, manual_terms=manual_terms or [],
+                    documents=documents or [], recorded=upload_operations.document_ids(operation),
+                )
+                return outcome.model_copy(update={"resumed": outcome.error is None})
+        operation = upload_operations.load(db, operation.id) or operation
     conversation = db.get(ChatConversation, operation.conversation_id) if operation.conversation_id else None
     if conversation is not None and conversation.user_id != current_user.id:
         conversation = None
@@ -836,17 +969,21 @@ def _repeated_chat_upload(
         message = "Dieser Upload wurde bereits ausgeführt; Unterhaltung oder Dokumente sind nicht mehr vorhanden."
     elif operation.status == STATUS_FAILED:
         message = "Dieser Upload ist bereits fehlgeschlagen und wird nicht wiederholt."
-    elif not upload_operations.is_stale(operation):
-        message = "Dieser Upload wird gerade noch verarbeitet. Bitte einen Moment warten - nicht erneut hochladen."
+    elif upload_operations.owner_state(operation) == upload_operations.ALIVE:
+        message = ("Dieser Upload wird gerade noch verarbeitet. Bitte einen Moment warten und die Unterhaltung "
+                   "prüfen; nur falls er dort nicht erscheint, bewusst neu hochladen.")
     else:
-        message = "Dieser Upload wurde unterbrochen; unklar ist, wie weit er kam. Bitte die Unterhaltung prüfen."
+        # Besitzer nicht pruefbar (z. B. anderer Rechner): NICHT uebernehmen - auch nicht nach Ablauf einer Zeit
+        message = ("Dieser Upload wurde unterbrochen, und es lässt sich nicht sicher feststellen, ob er noch läuft. Er "
+                   "wird nicht fortgesetzt; ein neuer Upload ist möglich.")
     message += " Es wurde nichts doppelt angelegt und nichts gesendet."
-    names = []
+    detail = None
     if present and operation.status != STATUS_DONE:
         names = [d.original_filename or "Dokument" for d in db.query(Document).filter(Document.id.in_(present))]
         message += f" Bereits gespeichert: {len(names)} Dokument(e) in der Unterhaltung."
+        detail = ", ".join(names)
     return _UploadOutcome(conversation_id=conversation.id if conversation is not None else conversation_id,
-                          error=message, stored_names=names)
+                          error=message, detail=detail)
 
 
 def _stream_upload_outcome(db: Session, current_user: User, outcome: _UploadOutcome) -> Iterator[str]:
@@ -856,12 +993,13 @@ def _stream_upload_outcome(db: Session, current_user: User, outcome: _UploadOutc
     if outcome.conversation_id:
         yield _sse_event({"kind": "start", "conversation_id": outcome.conversation_id})
     if outcome.error:
-        detail = f" ({', '.join(outcome.stored_names)})" if outcome.stored_names else ""
+        detail = f" ({outcome.detail})" if outcome.detail else ""  # nur lokale Anzeige, nie URL
         yield _sse_event({"kind": "done", "message_id": None, "content": outcome.error + detail, "blocked": True,
                           "sources": [], "upload_token": fresh})
         return
     yield _sse_event({"kind": "uploaded", "conversation_id": outcome.conversation_id, "target": outcome.target,
-                      "text_kept": outcome.text_kept, "repeated": outcome.repeated, "upload_token": fresh})
+                      "text_kept": outcome.text_kept, "repeated": outcome.repeated, "resumed": outcome.resumed,
+                      "upload_token": fresh})
 
 
 def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:

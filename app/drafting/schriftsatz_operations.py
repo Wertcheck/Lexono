@@ -123,6 +123,23 @@ def load(db: Session, operation_id: str, *, model=SchriftsatzOperation) -> Opera
         session.close()
 
 
+def take_over(db: Session, operation_id: str, *, expected_owner: str | None, new_owner: str, model) -> bool:
+    """§60: atomarer Besitzerwechsel eines LAUFENDEN Vorgangs (Compare-and-Set) - genau ein Request gewinnt."""
+    session = _short_session(db)
+    try:
+        owner_clause = model.owner.is_(None) if expected_owner is None else model.owner == expected_owner
+        changed = (
+            session.query(model)
+            .filter(model.id == operation_id, model.status == STATUS_PROCESSING, owner_clause)
+            .update({model.owner: new_owner, model.updated_at: datetime.now(timezone.utc)},
+                    synchronize_session=False)
+        )
+        session.commit()
+        return changed == 1
+    finally:
+        session.close()
+
+
 def update(db: Session, operation_id: str, *, model=SchriftsatzOperation, **fields) -> None:
     session = _short_session(db)
     try:

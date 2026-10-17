@@ -31,3 +31,10 @@ class ChatUploadOperation(TimestampMixin, Base):
         ForeignKey("chat_messages.id", ondelete="SET NULL"), nullable=True
     )
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    # §60: Besitzer des laufenden Vorgangs (Rechner|Prozess-ID|Startzeit, app/chat/process_owner.py) - uebernommen
+    # wird nur bei NACHWEISLICH beendetem Besitzer, nie wegen abgelaufener Zeit
+    owner: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # §60: beim Anlegen vergebene IDs (Schnellakte, Unterhaltung, je Datei ein Dokument, Upload-Nachricht) als JSON -
+    # jeder Schritt "anlegen, falls noch nicht vorhanden": eine Wiederaufnahme nach hartem Abbruch oder unklarem
+    # Commit legt nichts doppelt an. Bewusst ohne Fremdschluessel (die Zeilen entstehen erst danach).
+    plan: Mapped[str | None] = mapped_column(Text, nullable=True)

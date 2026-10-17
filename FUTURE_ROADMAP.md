@@ -97,6 +97,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   4 Upload-Nachrichten). Derselbe Mechanismus wie §58 mit eigener Tabelle `chat_upload_operations`; nur Uploads
   verbrauchen die ID, eine spätere bewusste Nachricht bleibt ein eigener Vorgang mit genau einem Cloud-Aufruf.
   **Offen:** PostgreSQL mit mehreren Prozessen nicht verifiziert; Dateiname in der Chat-Fehler-URL (vorbestehend).
+  **Fortschritt 17.10.2026 (§60):** Hart abgebrochene Chat-Uploads werden bei nachweislich beendetem Besitzerprozess
+  ohne Doppelanlage fortgesetzt (vorab vergebene IDs, „anlegen, falls nicht vorhanden“, atomare Übernahme; Zeit allein
+  gibt nie frei). Keine Dateinamen mehr in Upload-Fehler-URLs; Zurück-Button holt eine neue Kennung, ohne erneut
+  hochzuladen. **Offen:** Besitzer auf fremden Rechnern nicht prüfbar; Schriftsatz-Generator (§58) ohne
+  Wiederaufnahme; PostgreSQL nicht verifiziert.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

@@ -547,6 +547,15 @@ _MAX_HISTORY_CHARS_TOTAL = 12_000
 _HISTORY_ROLE_LABELS = {"user": "Anwalt", "assistant": "Assistent"}
 # §57: "nur hochgeladen" - Dokumente gespeichert und lokal ausgelesen, noch KEINE KI-Verarbeitung (siehe record_upload)
 UPLOAD_ROLE = "upload"
+
+
+class UploadTooLargeError(ValueError):
+    """§60: Meldung OHNE Dateinamen - sie kann im Pfad ohne JavaScript in einer Fehler-URL landen (Browserverlauf,
+    Zugriffsprotokoll). Der Dateiname steht separat zur Verfuegung (nur fuer lokale Anzeige, nie fuer URLs)."""
+
+    def __init__(self, filename: str) -> None:
+        super().__init__(f"Eine Datei überschreitet die maximale Größe von {_MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.")
+        self.filename = filename
 UPLOAD_NOTE = (
     "Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an die Cloud "
     "gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach eine Frage dazu senden."
@@ -579,6 +588,7 @@ class ChatService:
         new_client_name: str | None = None,
         title: str,
         actor: str,
+        conversation_id: str | None = None,
     ) -> ChatConversation:
         if not matter_id:
             matter = create_quick_matter(
@@ -586,7 +596,8 @@ class ChatService:
             )
             matter_id = matter.id
         conversation = ChatConversation(
-            matter_id=matter_id, user_id=user.id, title=_derive_title(title)
+            matter_id=matter_id, user_id=user.id, title=_derive_title(title),
+            **({"id": conversation_id} if conversation_id else {}),  # §60: vorab vergebene ID (Upload-Plan)
         )
         db.add(conversation)
         db.commit()
@@ -616,16 +627,14 @@ class ChatService:
         ocr_languages: str,
         tesseract_cmd: str | None,
         actor: str,
+        document_id: str | None = None,
     ) -> Document | None:
         if not upload.filename:
             return None
 
         content = upload.file.read()
         if len(content) > _MAX_UPLOAD_SIZE_BYTES:
-            raise ValueError(
-                f"Datei '{upload.filename}' überschreitet die maximale Größe von "
-                f"{_MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB."
-            )
+            raise UploadTooLargeError(upload.filename)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         # SICHERHEITSKRITISCH (Path Traversal, siehe Pilot Readiness Review
         # + app/web/schriftsatz_router.py::_store_uploaded_document fuer den
@@ -633,11 +642,14 @@ class ChatService:
         # ungefiltert in den Zielpfad einbauen - `.name` behaelt nur den
         # letzten Pfadbestandteil.
         safe_filename = Path(upload.filename).name or "unbenannt"
-        destination_path = self.storage_dir / f"{uuid.uuid4()}_{safe_filename}"
+        # §60: mit vorab vergebener Dokument-ID ein FESTER Pfad - eine Wiederaufnahme ueberschreibt die Datei eines
+        # abgebrochenen Versuchs, statt eine zweite (verwaiste) Kopie abzulegen
+        destination_path = self.storage_dir / f"{document_id or uuid.uuid4()}_{safe_filename}"
         destination_path.write_bytes(content)
 
         mime_type, _ = mimetypes.guess_type(upload.filename)
         document = Document(
+            **({"id": document_id} if document_id else {}),
             matter_id=conversation.matter_id,
             file_path=str(destination_path),
             original_filename=upload.filename,
@@ -702,7 +714,9 @@ class ChatService:
             .first()
         )
 
-    def record_upload(self, db: Session, *, conversation: ChatConversation, document_ids: list[str]) -> ChatMessage:
+    def record_upload(
+        self, db: Session, *, conversation: ChatConversation, document_ids: list[str], message_id: str | None = None
+    ) -> ChatMessage:
         """§57: Dokumente NUR aufgenommen (gespeichert und lokal ausgelesen) - KEINE KI-Verarbeitung. Eigene Rolle
         "upload": nie Teil des Verlaufs an die Cloud (`_build_history` nimmt nur user/assistant), nie eine offene
         Nutzernachricht (Rueckfrage-Wiederaufnahme und Doppelversand-Sperre setzen role == "user" voraus), kein Text des
@@ -713,10 +727,16 @@ class ChatService:
             assess_documents(db, document_ids, matter_id=conversation.matter_id), ocr_enabled=_ocr_enabled()
         )
         content = UPLOAD_NOTE + ("\n\n" + "\n".join(f"- {line}" for line in blocked) if blocked else "")
-        message = self._create_message(db, conversation=conversation, role=UPLOAD_ROLE, content=content)
+        # §60: Nachricht UND Verknuepfungen in EINEM Commit (vorher zwei) - kein Zwischenzustand "Nachricht ohne
+        # Dokumente" nach einem harten Abbruch; vorab vergebene ID fuer die Wiederaufnahme
+        message = ChatMessage(conversation_id=conversation.id, role=UPLOAD_ROLE, content=content,
+                              **({"id": message_id} if message_id else {}))
+        db.add(message)
+        db.flush()
         for document_id in document_ids:
             db.add(ChatMessageDocument(message_id=message.id, document_id=document_id))
         db.commit()
+        db.refresh(message)
         return message
 
     def _preceding_upload_document_ids(

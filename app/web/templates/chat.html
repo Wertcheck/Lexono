@@ -2664,6 +2664,20 @@
       // Offene Datenschutz-Rueckfrage nach dem Neuladen wiederherstellen (12.10.2026): Ist die letzte Nachricht eine
       // unbeantwortete Nutzernachricht, ermittelt der Server die Rueckfrage rein lokal neu (kein Cloud-Aufruf). Laeuft
       // die Verarbeitung noch, wird KEINE Rueckfrage angeboten, sondern nach kurzer Zeit neu geladen.
+      (function refreshUploadTokenAfterBack() {
+        // §60: Zurueck-Button / Browser-Cache - die wiederhergestellte Seite kann eine bereits VERBRAUCHTE
+        // Upload-Vorgangs-ID tragen. Nur eine neue ID holen (GET, schreibt nichts); nie automatisch erneut hochladen.
+        window.addEventListener("pageshow", function (evt) {
+          if (!evt.persisted || !composer) { return; }
+          var field = composer.querySelector("input[name=\"upload_token\"]");
+          if (!field) { return; }
+          fetch("/dashboard/chat/upload-token", { credentials: "same-origin", cache: "no-store" })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (data) { if (data && data.upload_token) { field.value = data.upload_token; } })
+            .catch(function () { /* ohne neue ID: der Server weist die alte ab und liefert selbst eine neue */ });
+        });
+      })();
+
       (function restoreUnsentUploadText() {
         // §57: nach "nur hochladen" den mitgetippten, NICHT gesendeten Text wieder ins Eingabefeld
         var field = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;

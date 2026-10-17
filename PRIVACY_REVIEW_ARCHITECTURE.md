@@ -7358,10 +7358,122 @@ Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und
 
 - **Ohne JavaScript (`/send`):** Ergebnis- und Fehlerseiten tragen eine neue ID; ein Doppelklick wird serverseitig als
   ein Vorgang erkannt. Die Dateiauswahl muss nach einem Fehler, wie bisher, neu getroffen werden.
-- **Hängende Vorgänge:** Ein durch Absturz auf „processing“ stehender Upload bleibt gesperrt, wie in §58. Dokumente
+- **Hängende Vorgänge** (**geschlossen in §60**: Wiederaufnahme bei nachweislich beendetem Besitzer): Ein durch
+  Absturz auf „processing“ stehender Upload bleibt gesperrt, wie in §58. Dokumente
   ohne Upload-Nachricht bleiben dann in der Unterhaltungsakte; neu hochgeladen wird bewusst.
-- **Mehrere Tabs und Zurück-Button:** Jeder Tab hat eine eigene ID. Derselbe Upload in zwei Tabs gilt als zwei
+- **Mehrere Tabs und Zurück-Button** (Zurück-Button **geschlossen in §60**): Jeder Tab hat eine eigene ID. Derselbe Upload in zwei Tabs gilt als zwei
   bewusste Vorgänge. Eine per „Zurück“ wiederhergestellte Seite trägt eine verbrauchte ID: Ein anderer Upload wird
   abgewiesen (mit neuer ID), der zweite Versuch gelingt.
-- **Dateiname in Fehler-URL (vorbestehend):** Die Größen-Fehlermeldung des Chats beim ersten Fehlschlag nennt den
+- **Dateiname in Fehler-URL (vorbestehend, geschlossen in §60):** Die Größen-Fehlermeldung des Chats beim ersten Fehlschlag nennt den
   Dateinamen und landet im Pfad ohne JavaScript in der Fehler-URL. §59 fügt keine weiteren Namen hinzu.
+
+## §60 Chat-Upload: harter Abbruch, Dateinamen in Fehler-URLs, Zurück-Button (17.10.2026, Branch `feature/feedback-diagnose`, Basis `83aeaaa`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Idempotenz (§58/§59), Namensmarkierung und zentrale Prüfung
+sind unverändert.
+
+### 60.1 Befund (am Code)
+
+- **Absturzpunkte eines Uploads**, jeweils eigener Commit:
+  1. Schnellakte;
+  2. Unterhaltung;
+  3. Datei geschrieben, danach Dokument-Commit;
+  4. Verarbeitung (Text/OCR);
+  5. Vermerk am Vorgang;
+  6. Upload-Nachricht und ihre Dokumentverknüpfungen (bisher **zwei** Commits);
+  7. Status.
+- **Folge eines harten Abbruchs:** Der Vorgang blieb dauerhaft auf `processing`. Eine Wiederholung führte ihn nie aus,
+  und Teildaten blieben zurück: Unterhaltung und Dokumente ohne Upload-Nachricht.
+- **Dateinamen in Fehler-URLs** (Pfad ohne JavaScript):
+  - Größenfehler im Chat;
+  - Dateityp-Fehler im Chat;
+  - Größenfehler beim Akten-Upload; dort war die Meldung zusätzlich unkodiert.
+- **Zurück-Button:** Eine aus dem Browser-Cache wiederhergestellte Seite trug eine bereits verbrauchte Kennung.
+
+### 60.2 Lösung
+
+- **Wiederaufnahme statt Bereinigung, nichts wird gelöscht:**
+  - Beim Anlegen des Vorgangs werden alle IDs vorab vergeben und als Plan gespeichert (Migration `schritt3_034`):
+    Schnellakte, Unterhaltung, je Datei ein Dokument, Upload-Nachricht.
+  - Jeder Schritt ist „anlegen, falls unter der geplanten ID noch nicht vorhanden“. Die Datei bekommt einen festen
+    Pfad je Dokument-ID, ein Dokument mit unterbrochener Verarbeitung wird lokal neu verarbeitet. Upload-Nachricht
+    und Verknüpfungen entstehen in einem Commit.
+  - Auch ein Commit mit unklarem Ausgang führt so nicht zur Doppelanlage.
+- **Besitzer statt Zeit:**
+  - Der Vorgang speichert einen Hash des Rechnernamens, Prozess-ID, Prozess-Startzeit und eine Kennung je
+    Ausführungsversuch (`app/chat/process_owner.py`, ohne Zusatzpaket).
+  - Übernommen wird nur bei **nachweislich beendetem** Besitzer. Im eigenen Prozess entscheidet die Liste der
+    laufenden Vorgänge (Referenzzähler, vor dem Anlegen gesetzt). Bei einem fremden Prozess auf demselben Rechner
+    gilt er als beendet, wenn die Prozess-ID fehlt oder der Startzeitpunkt nicht mehr passt.
+  - Die Übernahme ist atomar (Compare-and-Set auf die Versuchskennung), genau ein Request setzt fort, auch wenn der
+    beendete Besitzer der eigene Prozess war.
+  - Als beendet gilt ein fremder Prozess nur bei „keine solche Prozess-ID“ oder abweichender Startzeit; jeder andere
+    Fehler der Abfrage gilt als „nicht prüfbar“.
+  - **Zeitablauf gibt nie frei.** Ein lebender Besitzer wird auch nach Stunden nicht übernommen.
+  - Ist der Besitzer nicht prüfbar (anderer Rechner, Altbestand), bleibt der Vorgang unangetastet; ein bewusst neuer
+    Upload mit neuer Kennung ist möglich.
+- **Kontrollierter Fehlschlag**, wenn der Stand nicht stimmig rekonstruierbar ist: Dokument, Unterhaltung oder
+  Schnellakte inzwischen gelöscht (erkannt über Fortschrittsmarker im Plan, damit nichts wiederbelebt wird), Vorgang
+  ohne Plan, abweichende Dateizahl oder fremde Unterhaltung. Die Namensmarkierung wird bei der Wiederaufnahme nicht
+  erneut gezählt. Dann wird `failed` gesetzt, nichts gelöscht,
+  und ein Neustart ist mit neuer Kennung möglich.
+- **Keine Dateinamen in URLs:**
+  - feste Meldung für den Größenfehler (`UploadTooLargeError`), der Name erscheint nur lokal im Stream;
+  - Dateityp-Fehler nur mit einer kurzen technischen Endung, sonst „?“ (auch im Schriftsatz-Generator);
+  - Größenfehler beim Akten-Upload ohne Namen und kodiert.
+- **Zurück-Button:**
+  - Chat-Seiten werden nicht im Browser-Cache gehalten (`no-store`).
+  - Nach einer Wiederherstellung (`pageshow`) holt die Seite eine neue Kennung von `GET /dashboard/chat/upload-token`.
+    Der Endpunkt stellt nur eine Kennung aus und schreibt nichts.
+  - Ein Upload wird nie automatisch wiederholt. Eine verbrauchte Kennung mit anderem Inhalt wird abgewiesen, wie in
+    §59.
+
+### 60.3 Tests und QA (synthetisch, isolierte SQLite-Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_chat_upload_recovery.py`** (30 Tests), deckt ab:
+  - harter Abbruch an **6 Speicherpunkten** (nach Akte, nach Unterhaltung, vor Dokument-Commit, während der
+    Verarbeitung, vor dem Vermerk, nach der Upload-Nachricht);
+  - Wiederaufnahme jeweils mit genau 1 Unterhaltung, 1 Dokument, 1 Datei, 1 Upload-Nachricht samt Verknüpfung und
+    1 Akte; das Dokument ist fertig verarbeitet; eine weitere Wiederholung liefert nur das Ergebnis;
+  - **0 HTTP-Requests** am Aufzeichnungsserver;
+  - zwei Dateien in einer bestehenden Unterhaltung;
+  - die bewusste Frage nach der Wiederaufnahme ergibt genau 1 Request;
+  - lebender Besitzer, auch Stunden alt: keine Übernahme; nach seinem Ende Übernahme;
+  - nicht prüfbarer Besitzer: keine Übernahme, sicherer Neustart;
+  - Prozess-Lebenszeichen inklusive wiederverwendeter Prozess-ID;
+  - 8 parallele Übernahmen mit genau einem Gewinner; 2 parallele Wiederaufnahme-Requests, von denen einer fortsetzt
+    und einer wartet (5 von 5 Läufen stabil);
+  - kontrollierter Fehlschlag;
+  - keine Dateinamen in Fehler-URLs (Chat und Akte);
+  - Zurück-Button mit neuer Kennung ohne Schreibvorgang;
+  - Endpunkt nur angemeldet; Vorgangszeile ohne Inhalte und ohne Klartext-Rechnernamen;
+  - nach dem Review: doppelte Übernahme eines eigenen beendeten Versuchs ausgeschlossen, gelöschte Unterhaltung nicht
+    wiederbelebt, Markierung nicht doppelt gezählt, Dateiendung mit Punkt im Namen.
+- **Migration** `schritt3_034` auf und ab.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte): Upload, danach `history.back()`.
+  Die Seite trägt eine neue Kennung, es wird nichts erneut hochgeladen. Der bewusst zweite Upload gelingt, mit
+  0 API-Logs und ohne JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** Absturzpunkte, Atomarität der Upload-Nachricht, Neuverarbeitung,
+  Pfadsicherheit, Token-Endpunkt, Fehler-URLs, §57 und Migration ohne Befund. Behoben wurden:
+  - mittel – im eigenen Prozess konnte die Übernahme mehrfach gelingen (gleiche alte und neue Besitzerkennung);
+  - mittel – eine nach dem Abbruch gelöschte Unterhaltung wäre wiederbelebt worden;
+  - niedrig – zu großzügige Prozessprüfung, unvollständige ctypes-Signaturen, Hinweistext, Dateiendung,
+    Rechnername im Klartext, doppelte Zählung der Markierung, gefährlicher Default.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5231 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+- **PostgreSQL** gehört derzeit nicht zur vorgesehenen Zielarchitektur (SQLite-Prototyp, CLAUDE.md) und wurde nicht
+  geprüft. Compare-and-Set und Primärschlüssel-Claim sind dort **nicht verifiziert**.
+
+### 60.4 Grenzen
+
+- **Mehrere Rechner:** Teilen sich Rechner eine Datenbank, ist der Besitzer auf dem fremden Rechner nicht prüfbar. Der
+  Vorgang bleibt dann gesperrt, ein neuer Upload ist möglich, die Teildaten bleiben in der Unterhaltung.
+- **Ohne Wiederholung kein Abschluss:** Ein abgebrochener Upload, den niemand wiederholt, bleibt mit Teildaten stehen.
+  Eine automatische Bereinigung gibt es bewusst nicht (keine Löschung).
+- **Anderes Konto:** Gehört der Besitzer zu einem anderen Benutzerkonto auf demselben Rechner (Zugriff verweigert),
+  gilt er als nicht prüfbar.
+- **Lebender Prozess, abgebrochener Request:** Lebt der Prozess eines fremden Besitzers weiter, aber sein Request
+  wurde hart abgebrochen, gilt der Vorgang weiter als laufend. Der Hinweis verweist dann auf einen bewusst neuen
+  Upload.
+- **Schriftsatz-Generator (§58):** Dort bleibt ein hart abgebrochener Vorgang weiterhin gesperrt. Der Generator war
+  nicht Teil dieses Schritts; die Generierung ist bewusst fail-closed, weil eine Cloud-Anfrage erfolgt sein könnte.
