@@ -7588,3 +7588,39 @@ Eine zusätzliche Pflicht-Freigabe je Dokument vor jeder KI-Aktion bleibt eine *
 - **Doppelklick bei Entwurfsaktionen:** „Neu generieren“, Änderungsauftrag und KI-Bearbeitung im Editor haben keine
   serverseitige Vorgangs-ID; dort schützt nur die UI-Sperre (`app_ai_loading`). Das war nicht Teil von P2 (Generator
   und Chat-Upload).
+
+### 61.3 P3 – Mail und Intake
+
+**Bestandsaufnahme (am Code):**
+- **Mail-Abruf:** `main._run_periodic_mail_ingestion`, nur wenn ein Postfach konfiguriert ist. Ablauf: IMAP,
+  `MailIngestionService` (Nachricht und Anhänge speichern), `DocumentProcessingService` (lokal), Zuordnung über
+  `MatterMatchingService` und `MatterAssignmentService` (regelbasiert, lokal).
+- **Ordner-Erfassung:** `IntakeService` und `IntakeWatcher`, Symlinks werden abgewiesen. Der Watcher wird in der
+  laufenden App derzeit **nirgends gestartet** (kein `IntakeWatcher(` in `main`/`web`); nur die Fehler-Wiederholung
+  (`errors/service.py`) liest erneut ein.
+- **Spätere KI-Aktionen auf E-Mails:** `POST /dashboard/chat/from-message/{id}` verlangt eine Akte und läuft über die
+  zentrale Prüfung samt Namensmarkierung (§54).
+- **Ergebnis:** Kein Eingangsweg löst eine KI- oder Cloud-Anfrage aus. Eine Lücke wurde nicht gefunden, am App-Code
+  ist nichts geändert.
+
+**Ergänzt: `tests/test_no_ai_on_intake.py`** (dieselben Spione wie P1: alle Cloud-Provider, Gateway-Client, jede
+Socket-Verbindung außer Loopback):
+- echter Mail-Abrufzyklus (nur das Postfach ist ein Fake) mit synthetischer Mail und PDF-Anhang: gespeichert, lokal
+  ausgelesen, zugeordnet, 0 Provider-Aufrufe, 0 Netz, 0 API-Logs;
+- Ordner-Erfassung über den Watcher-Handler samt Verarbeitung: 0 Provider-Aufrufe, 0 Netz;
+- KI-Aktion auf eine nicht zugeordnete Mail: 400, 0 Requests am Aufzeichnungsserver;
+- bewusste KI-Aktion auf eine zugeordnete Mail mit Markierung: genau 1 Request; der markierte Name fehlt im
+  verifizierten HTTP-Payload, Betrag und Datum bleiben erhalten.
+
+**QA P3 (Repository-Tests, SQLite):**
+
+| Prüfung | Status |
+|---|---|
+| Neue Tests sowie vorhandene Mail-, Watcher- und Mail-Service-Tests (20) | PASS |
+| Gesamtsuite | nicht erneut ausgeführt, nur ein Testmodul ergänzt; letztes Gate 5246 PASS (§61.2) |
+| Echter IMAP-Server, installierter Build | NICHT VERIFIZIERT |
+
+**Offen bzw. fachlich:**
+- Mail- und Intake-Dokumente ohne Akte sind erst nach der Zuordnung markierbar (§57.4).
+- Die automatische Zuordnung setzt eine Klassifikation voraus, die keiner der Upload-Pfade aufruft (vorbestehend,
+  dokumentiert in `main.py`). Das ist nicht datenschutzrelevant.
