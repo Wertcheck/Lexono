@@ -540,6 +540,14 @@ class RuleBasedLocalAIProvider:
         # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
         # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
         documents = [d for d in documents if d.extracted_text.strip()]
+        # §62 Dokumentfreigabe - serverseitig an der EINZIGEN Stelle, an der Dokumenttext in eine Anfrage gelangt: ein
+        # nicht freigegebenes Dokument (Freigabe erforderlich, Entscheidung erforderlich, Pruefung fehlgeschlagen) geht
+        # in keinem Modus und keinem Pfad an die Cloud. Lokaler Pruefhinweis, damit die Antwort nicht vollstaendig wirkt.
+        from app.documents.release import released_document_ids
+
+        released = released_document_ids(db, documents)
+        withheld = [d for d in documents if d.id not in released]
+        documents = [d for d in documents if d.id in released]
         # Datenminimierung (§27): ein doppelt hochgeladenes Dokument (gleicher Text) ging bisher zweimal hinaus und nahm
         # anderen Dokumenten Budget weg. Nur das neueste Exemplar senden; alle IDs gelten weiter als einbezogen, damit
         # ein angehaengtes Duplikat die Dokument-Gates nicht blockiert. Es geht keine Information verloren.
@@ -553,6 +561,12 @@ class RuleBasedLocalAIProvider:
                 unique_documents.append(document)
         documents = unique_documents
         notices: list[str] = []
+        if withheld:
+            names = ", ".join(f"„{getattr(d, 'original_filename', None) or 'Dokument'}“" for d in withheld)
+            notices.append(
+                f"Nicht berücksichtigt, da (noch) nicht für die KI-Verarbeitung freigegeben: {names}. "
+                "Freigabe bzw. Prüfung in der Dokumentansicht."
+            )
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):
             excerpt = _document_excerpt(document.extracted_text, allowance)
@@ -582,6 +596,20 @@ class RuleBasedLocalAIProvider:
             )
         } if any(d.document_id for d in deadlines) else set()
         deadlines = [d for d in deadlines if d.document_id not in deleted_document_ids]
+        # §62: kein Fristausschnitt aus einem nicht freigegebenen Dokument (der Ausschnitt ist Dokumenttext)
+        if any(d.document_id for d in deadlines):
+            from app.documents.release import released_document_ids
+
+            sources = list(db.query(Document).filter(Document.id.in_({d.document_id for d in deadlines if d.document_id})))
+            readable = [s for s in sources if (s.extracted_text or "").strip()]
+            released = released_document_ids(db, readable)
+            # Dokument ohne (noch) verwertbaren Text: nur im Modus "auto" weiter wie bisher; sonst nicht freigegeben
+            from app.documents.release import MODE_AUTO, get_mode
+
+            if get_mode(db) == MODE_AUTO:
+                released |= {s.id for s in sources if s not in readable}
+            withheld_sources = {s.id for s in sources} - released
+            deadlines = [d for d in deadlines if d.document_id not in withheld_sources]
         # Vor der Korrektur gespeicherte Vorschlaege zu Geburts-/Todesdaten (§24) nicht mehr als Frist anbieten - geprueft
         # am Ausschnitt und am Volltext des Quelldokuments (Tabellen). Der Text laeuft weiterhin vollstaendig durch den
         # Gateway (Pseudonymisierung, Restrisiko-Scan) - kein Schutz entfaellt.

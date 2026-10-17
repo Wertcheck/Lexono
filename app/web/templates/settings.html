@@ -451,6 +451,19 @@
           </div>
         </div>
 
+        {# §62: kanzleiweiter Freigabemodus - dauerhaft sichtbar, Aenderung auf der eigenen Seite #}
+        <div class="settings-card" id="document-release-card">
+          <h2 class="settings-card__title">
+            {{ icons.shield(class_="icon") }}
+            Datenschutz &amp; Dokumentfreigabe
+          </h2>
+          <p class="settings-section__hint">
+            Aktiver Freigabemodus: <strong>{{ document_release_mode_label }}</strong>. Die zentrale Datenschutzprüfung
+            läuft in jedem Modus.
+            <a href="/dashboard/privacy/document-release">Freigabeeinstellungen öffnen</a>
+          </p>
+        </div>
+
         <div class="settings-card">
           <h2 class="settings-card__title">
             {{ icons.shield(class_="icon") }}

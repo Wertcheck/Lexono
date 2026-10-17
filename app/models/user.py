@@ -65,5 +65,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Nutzers gleichzeitig sperrt (Bedrohungsmodell: fremde Person am
     # Schreibtisch, nicht Multi-Device-Isolation).
     is_locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # §62: nur die INFORMATIVE Meldung "automatisch freigegeben" - pro Benutzer ausblendbar; Warnungen, Blockaden und
+    # erforderliche Freigaben sind davon nie betroffen (app/documents/release.py::show_auto_release_notice)
+    show_auto_release_notice: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, server_default="1")
 
     role: Mapped["Role | None"] = relationship(back_populates="users")

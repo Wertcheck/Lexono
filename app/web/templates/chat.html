@@ -2,6 +2,7 @@
 {% import "_icons.html" as icons %}
 {% import "_identity.html" as identity %}
 {% import "partials/name_protection.html" as name_protection %}
+{% import "partials/document_release.html" as document_release %}
 {% block title %}Chat{% endblock %}
 {% block content %}
   {# Nutzerkorrektur (01.09.): eine vorherige Aenderung hatte die
@@ -794,6 +795,12 @@
               gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden.
               {% if upload_text_not_sent %}Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte – sonst bitte erneut eingeben.{% endif %}
             </p>
+          {% endif %}
+          {% if release_status and viewing_document.matter_id %}
+            {# §62 Dokumentfreigabe: Status am Dokument (dezent, dauerhaft) #}
+            {{ document_release.panel(release_status, active_conversation.matter, viewing_document, csrf_token,
+                                      release_show_notice, release_can_manage, "chat:" ~ active_conversation.id,
+                                      release_released, release_error, release_current_path) }}
           {% endif %}
           {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
           {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",

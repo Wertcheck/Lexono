@@ -62,6 +62,7 @@ from app.chat.title_generation import generate_conversation_title
 from app.config import get_settings
 from app.documents.readiness import (
     DocumentReadiness,
+    apply_release,
     assess_document,
     assess_documents,
     blocked_state_sentences,
@@ -885,7 +886,9 @@ class ChatService:
         )
         if not required:
             return [], None
-        states = assess_documents(db, required, matter_id=conversation.matter_id)
+        # §62: lesbare Dokumente zusaetzlich gegen die Dokumentfreigabe - nicht freigegeben = lokaler Hinweis, kein
+        # Cloud-Aufruf (die Durchsetzung beim Kontextaufbau bleibt davon unabhaengig bestehen)
+        states = apply_release(db, assess_documents(db, required, matter_id=conversation.matter_id))
         return required, (states if any(not item.ready for item in states) else None)
 
     @staticmethod

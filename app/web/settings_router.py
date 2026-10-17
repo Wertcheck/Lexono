@@ -218,6 +218,12 @@ _VALID_DIALOGS = {
 }
 
 
+def _document_release_mode_label(db: Session) -> str:
+    from app.documents import release
+
+    return release.MODE_LABELS[release.get_mode(db)]
+
+
 @router.get("", response_class=HTMLResponse)
 def settings_page(
     request: Request,
@@ -431,6 +437,8 @@ def settings_page(
         "cloud_ai_provider": settings.cloud_ai_provider,
         "cloud_ai_model_label": _cloud_ai_model_label(settings.claude_model_name),
         "cloud_ai_via_gateway": bool(settings.lexono_gateway_url),
+        # §62 Datenschutz & Dokumentfreigabe (kanzleiweiter Modus, eigene Seite)
+        "document_release_mode_label": _document_release_mode_label(db),
         "local_ai_enabled": settings.local_ai_enabled,
         "local_ai_runtime": settings.local_ai_runtime,
         "ollama_base_url": settings.ollama_base_url,

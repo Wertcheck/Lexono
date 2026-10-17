@@ -74,7 +74,7 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider, foreign_matter_names, mentions_any_name
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
-from app.documents.readiness import NOT_INCLUDED, assess_documents
+from app.documents.readiness import NOT_INCLUDED, apply_release, assess_documents
 from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
@@ -799,7 +799,9 @@ class DraftingService:
         # Vorpruefung im Chat und hier (Neuverarbeitung, Loeschen) fuehrt so nie zu einer Antwort, die eine Auswertung
         # vortaeuscht. Kein Gateway-, kein Cloud-Aufruf; der Inhalt nimmt sonst unveraendert den Privacy-Pfad.
         if required_document_ids:
-            states = assess_documents(db, required_document_ids, matter_id=matter_id)
+            # §62: zuerst die Dokumentfreigabe (nicht freigegeben = eigener, verstaendlicher Zustand statt "nicht
+            # uebernommen"); der Kontextaufbau hat nicht freigegebene Dokumente bereits ausgeschlossen
+            states = apply_release(db, assess_documents(db, required_document_ids, matter_id=matter_id))
             included = getattr(preparation, "included_document_ids", None)
             if included is not None:
                 states = [

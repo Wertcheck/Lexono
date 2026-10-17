@@ -32,6 +32,7 @@ from app.models.quality_report import QualityReport, RegressionCase
 from app.models.chat_message_claim import ChatMessageClaim
 from app.models.schriftsatz_operation import SchriftsatzOperation
 from app.models.chat_upload_operation import ChatUploadOperation
+from app.models.document_release import DocumentPrivacyCheck, DocumentRelease
 from app.models.generated_document import GeneratedDocument
 from app.models.knowledge_item import KnowledgeItem
 from app.models.law import Law
@@ -108,6 +109,8 @@ __all__ = [
     "ChatMessageClaim",
     "SchriftsatzOperation",
     "ChatUploadOperation",
+    "DocumentPrivacyCheck",
+    "DocumentRelease",
     "FirmPracticeArea",
     "Law",
     "LawSection",

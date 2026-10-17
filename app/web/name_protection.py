@@ -7,7 +7,6 @@ Pruefen und Speichern einer Markierung: `app/privacy/decisions.parse_manual_term
 
 from __future__ import annotations
 
-import hashlib
 import html
 import re
 
@@ -41,7 +40,9 @@ def document_text_version(document) -> str:
     """§56: Fingerabdruck des extrahierten Dokumenttexts - bindet eine Markierung an GENAU den Textstand, der beim
     Markieren angezeigt wurde. Aendert sich der Text (z. B. erneute Texterkennung), passt der Fingerabdruck nicht mehr
     und die Markierung wird abgewiesen statt auf einen anderen Text angewendet zu werden. Kein Klartext."""
-    return hashlib.sha256((document.extracted_text or "").encode("utf-8")).hexdigest()[:32]
+    from app.documents.release import text_version_of
+
+    return text_version_of(document.extracted_text)  # §62: dieselbe Formel wie die Dokumentfreigabe
 
 
 def protect_document_terms(db: Session, document, protected_terms: str | None, text_version: str | None, user) -> str | None:

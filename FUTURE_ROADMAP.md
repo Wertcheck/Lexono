@@ -109,6 +109,15 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Gateway lokal gehärtet: nur Textblöcke und Rollen user/assistant, Größenschranke vor dem Parsen. **Offen:**
   Pflicht-Freigabe je Dokument (Owner-Entscheidung), Vorgangs-ID für Entwurfsaktionen, Gateway-Betrieb (IP-Rate-Limit,
   TLS, echte Strecke) NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§62):** Konfigurierbare Dokumentfreigabe (kanzleiweit) in drei Modi: manuell, automatisch
+  (Standard, bisheriges Verhalten), automatisch mit Entscheidung bei Auffälligkeiten.
+  - serverseitig an der einzigen Engstelle durchgesetzt, an den Textstand gebunden;
+  - fehlgeschlagene Prüfung in jedem Modus blockierend;
+  - dezente Statusanzeige, ausblendbare Erfolgsmeldung pro Benutzer;
+  - Prüfseite „Pseudonymisierung überprüfen“.
+
+  **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
+  Datum“ in Modus C.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

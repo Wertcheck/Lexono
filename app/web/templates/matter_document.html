@@ -2,6 +2,7 @@
 {% import "_icons.html" as icons %}
 {% import "_labels.html" as labels %}
 {% import "partials/name_protection.html" as name_protection %}
+{% import "partials/document_release.html" as document_release %}
 {% block title %}{{ document.original_filename or "Dokument" }}{% endblock %}
 {% block content %}
   {# Dokumentansicht innerhalb der Akte (14.09.) - schliesst die Luecke, dass
@@ -165,6 +166,12 @@
       </div>
     </div>
 
+    {# §62 Dokumentfreigabe: dezenter, dauerhafter Status am Dokument #}
+    <div style="margin-top: 20px;">
+      {{ document_release.panel(release_status, matter, document, csrf_token, release_show_notice, release_can_manage,
+                                "", release_released, release_error, release_current_path) }}
+    </div>
+
     <div class="split-two" style="margin-top: 28px;">
       <div class="original-box">
         {# Extrahierter Inhalt (Textextraktion, PII-Hervorhebung) - bewusst
@@ -275,6 +282,7 @@
 
         {# Qualitaetsmeldung (ARCHITECTURE.md §75): jede Rolle darf melden, gebunden an diese Akte und dieses Dokument.
            Bleibt lokal; Pruefung/Diagnose nur Anwalt/Admin unter "Qualitaetsmeldungen". #}
+        <span id="quality-report"></span>
         <details style="margin-top: 16px;"{% if request.query_params.get("quality_reported") or request.query_params.get("quality_error") %} open{% endif %}>
           <summary class="form-hint" style="cursor: pointer;">Problem mit Datenschutz oder Inhalt melden</summary>
           {% if request.query_params.get("quality_reported") %}

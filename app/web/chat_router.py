@@ -268,6 +268,8 @@ def chat_document_view(
     name_protection_error: str = "",
     uploaded: str = "",
     text_not_sent: str = "",
+    released: str = "",
+    release_error: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse | RedirectResponse:
@@ -312,6 +314,9 @@ def chat_document_view(
             "name_protection_error": name_protection_error[:300],
             "upload_notice": uploaded == "1",
             "upload_text_not_sent": text_not_sent == "1",
+            # §62 Dokumentfreigabe (lokal, kein Cloud-Aufruf)
+            **_document_release_context(db, document, current_user, request, released=released,
+                                        release_error=release_error),
         },
     )
 
@@ -368,6 +373,21 @@ def chat_document_thumbnail(
         return Response(content=image_bytes, media_type=media_type)
 
     raise HTTPException(status_code=404, detail="Für dieses Dateiformat gibt es keine Vorschau.")
+
+
+def _document_release_context(db: Session, document: Document, user: User, request: Request, *, released: str,
+                              release_error: str) -> dict:
+    from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission
+    from app.documents import release
+
+    return {
+        "release_status": release.release_status(db, document),
+        "release_show_notice": release.show_auto_release_notice(user),
+        "release_can_manage": has_permission(user, PERM_PRIVACY_DECISION_MANAGE),
+        "release_released": released == "1",
+        "release_error": release_error[:300],
+        "release_current_path": request.url.path,
+    }
 
 
 def _render_chat_page(

@@ -7735,3 +7735,87 @@ Browser-, installierte-App- und Server-Tests wurden in §61 **nicht** ausgeführ
 2. Serverseitige Vorgangs-ID für Entwurfsaktionen (Neu generieren, KI-Bearbeitung).
 3. Gateway-Bereitstellung als eigenes Paket mit Freigabe: IP-Rate-Limit, TLS- und Transportnachweis.
 4. Validierung auf realitätsnäheren, nicht modellgenerierten Texten.
+
+## §62 Konfigurierbare Dokumentfreigabe vor KI-Verarbeitung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `022e636`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind in allen
+Modi unverändert verpflichtend.
+
+### 62.1 Modi, Geltungsbereich, Standard
+
+- **A – Manuelle Freigabe:** Jedes Dokument braucht eine ausdrückliche Freigabe.
+- **B – Automatische Freigabe:** Nach erfolgreicher zentraler Prüfung ohne gesonderte Freigabe. Unsichere Begriffe
+  werden bei der Anfrage maskiert bzw. erfragt, wie bisher.
+- **C – Automatische Freigabe mit Entscheidung bei Auffälligkeiten:** Unauffällige Dokumente gehen automatisch durch.
+  Bei unsicheren Begriffen ist eine Entscheidung nötig: Freigabe oder Namensmarkierung.
+- **Geltungsbereich:**
+  - Der Modus gilt **kanzleiweit** (`firm_profiles.document_release_mode`).
+  - Ändern dürfen ihn Admin und Anwalt (`PERM_PRIVACY_DECISION_MANAGE`), mit Audit-Eintrag.
+  - Die Anzeigepräferenz „Automatisch freigegeben“ gilt **pro Benutzer** (`users.show_auto_release_notice`).
+- **Standard ohne gesetzten Wert: B.** Das ist exakt das bisherige, geprüfte Verhalten. Bestehende Installationen
+  ändern sich so nicht stillschweigend, und B ist nicht unsicher, weil die zentrale Prüfung bei jeder Anfrage
+  fail-closed bleibt. Es ist aber die am wenigsten restriktive Variante. **Owner-Entscheidung offen:** Soll für
+  Neuinstallationen C der Standard sein?
+
+### 62.2 Durchsetzung (serverseitig)
+
+- **Prüfung je Dokumentstand:** Die zentrale Prüfung (`ClaudePrivacyGateway.prepare_request`, Modus „ask“) läuft
+  lokal auf dem Dokumenttext, mit Beteiligten und Entscheidungen wie beim Versand. Ergebnisse: unauffällig, auffällig
+  oder fehlgeschlagen.
+- **Zwischenspeicher:** Ergebnisse werden gespeichert nach Textstand, Kontext (Entscheidungen, Beteiligte) und
+  Code-Version. Nur echte Ergebnisse werden gespeichert; „fehlgeschlagen“ wird jedes Mal neu geprüft. Geschrieben wird
+  in einer eigenen kurzen Sitzung.
+- **Manuelle Freigabe:** Sie ist an den angezeigten Textstand gebunden. Ein veralteter Stand wird abgewiesen, und eine
+  Textänderung macht die Freigabe wirkungslos.
+- **Durchsetzung an der einzigen Engstelle** (`_build_sachverhalt`): Dokumenttext nicht freigegebener Dokumente geht
+  in keinem Pfad hinaus, ebenso wenig Frist-Ausschnitte daraus. Der Anwalt bekommt einen lokalen Hinweis.
+- **Ausdrücklich angefragte Dokumente** (Chat-Upload, „Mit Dokument chatten“): Es gibt eine lokale, verständliche
+  Meldung, keinen Cloud-Aufruf.
+- **Fehlgeschlagene Prüfung:** Sie blockiert in jedem Modus, auch eine bestehende manuelle Freigabe. Die Freigabe ist
+  dann serverseitig gesperrt.
+- **Laufzeit:** Im Modus B wird nicht zusätzlich geprüft, denn eine fehlgeschlagene Prüfung blockiert die ganze
+  Anfrage ohnehin. Die Anzeige prüft immer vollständig.
+
+### 62.3 Oberfläche (dezent)
+
+- **Seite „Datenschutz & Dokumentfreigabe“** (`/dashboard/privacy/document-release`): aktiver Modus, Moduswahl und
+  Anzeigepräferenz. Eine Karte im Einstellungs-Tab „KI & Datenschutz“ zeigt den Modus dauerhaft.
+- **Am Dokument** (Akten- und Chat-Dokumentansicht): Statuszeile („Automatisch freigegeben“, „Manuell freigegeben“,
+  „Freigabe erforderlich“, „Entscheidung erforderlich“, „Verarbeitung blockiert – Datenschutzprüfung fehlgeschlagen“)
+  samt Modus.
+- **Erfolgsmeldung bei automatischer Freigabe:** mit „Pseudonymisierung überprüfen“, „Freigabeeinstellungen öffnen“ und
+  „Diese Meldung nicht mehr anzeigen“. Ausblendbar ist nur diese Meldung; Blockade, erforderliche Freigabe und
+  Entscheidung erscheinen immer.
+- **Human in the Loop:** Die Seite „Pseudonymisierung überprüfen“ zeigt lokal Platzhalter, Kategorie und Originalwert
+  sowie den pseudonymisierten Text. Feedback läuft über die bestehenden Wege: Namen schützen (§56),
+  Entscheidungsverwaltung (§52), Qualitätsmeldung (§75). Keine Rückmeldung lockert Regeln automatisch.
+
+### 62.4 Tests und QA
+
+| Prüfung | Art | Status |
+|---|---|---|
+| `tests/test_document_release.py` (34) | Repository, SQLite, echte Endpunkte, lokaler Gateway | PASS |
+| … darin: alle drei Modi; Bindung an den Textstand (Textänderung macht die Freigabe veraltet, veraltetes Formular wird abgewiesen) | Repository | PASS |
+| … darin: Akte und Fristen ohne nicht freigegebenen Text; Markierung löst Auffälligkeit; fehlgeschlagene Prüfung in jedem Modus, nicht übersteuerbar, Fehler fail-closed und nicht gespeichert, vorübergehender Fehler wird neu geprüft | Repository | PASS |
+| … darin: Upload und Öffnen ohne KI in allen Modi (0 Requests am Aufzeichnungsserver); Chat-Frage zu nicht freigegebenem Upload lokal beantwortet, nach Freigabe genau 1 verifizierter Request | Repository, HTTP-Recorder | PASS |
+| … darin: Anzeigepräferenz dauerhaft gespeichert und änderbar, ändert nichts sonst; Warnungen nie ausblendbar; interner Rücksprung; Rechte (Mitarbeiter sieht, ändert und gibt nicht frei); Aktenisolation; Audit; Prüfseite; Migration `schritt3_036` | Repository | PASS |
+| GET-Routendurchlauf (P1) inkl. neuer Seiten: 0 Provider-Aufrufe, 0 Netz, keine Server-Fehler | Repository | PASS |
+| Browser-QA (Edge headless, isolierter Server, temporäre DB, tote Cloud-Endpunkte) | Browser | PASS |
+| … darin: Einstellungsseite; Status und Meldung am Dokument; Ausblenden per Checkbox (DB gespeichert, Status bleibt); Moduswechsel per Formular; Freigabe per Klick; Prüfseite; Einstellungskarte; 0 API-Logs, keine JS-Fehler | Browser | PASS |
+| Unabhängiges Review: kein Bypass (eigene Probe: weder Text noch Frist noch Dateiname eines nicht freigegebenen Dokuments im Payload); mittlere Befunde behoben (vorübergehender Fehler, Commit im Kontextaufbau, Laufzeit, Code-Version im Schlüssel), niedrige behoben (Anzeige/Durchsetzung konsistent, Audit ohne Änderung, Fristen ohne Text, Chat ohne Akte) | Review | PASS |
+| Gesamtsuite: 5298 bestanden, 4 fremde Logo-Fehler | Repository | PASS |
+| Installierte App (WebView2, echte Datenbank) | App | NICHT VERIFIZIERT |
+
+### 62.5 Offene Risiken
+
+- **„Kein personenbezogenes Datum“ in Modus C:** Diese Entscheidung ist nur unterhaltungsbezogen und löst die
+  Auffälligkeit nicht. Mitarbeiter brauchen dann eine Freigabe durch einen Anwalt (fachliche Entscheidung).
+- **Laufzeit in Modus C:** Nach jeder Änderung von Entscheidungen oder Beteiligten wird die Akte beim nächsten Versand
+  synchron neu geprüft (bis zu 30 Dokumente, lokal). Eine Vorab-Prüfung im Hintergrund fehlt noch.
+- **Erstes Öffnen:** Das erste Öffnen eines Dokuments führt in jedem Modus einmal die lokale Prüfung aus (Anzeige).
+  Die Prüfseite rechnet ohne Zwischenspeicher.
+- **Obergrenze vor dem Filter:** Die Obergrenze von 30 Dokumenten im Kontext greift vor dem Freigabefilter. Viele
+  neue, nicht freigegebene Dokumente können ältere freigegebene verdrängen; ein Hinweis erscheint.
+- **E-Mail-Texte:** Die Freigabe betrifft Dokumente (`documents`). E-Mail-Texte selbst laufen weiter über die
+  zentrale Prüfung der jeweiligen Aktion, Anhänge sind Dokumente.
+- **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

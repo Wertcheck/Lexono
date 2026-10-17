@@ -576,6 +576,21 @@ def _reanalysis_summary(value: str) -> str | None:
     return text + ". Bestehende Fristen wurden nicht verändert."
 
 
+def _release_context(db: Session, document: Document, user: User, request: Request, *, released: str,
+                     release_error: str) -> dict:
+    from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission
+    from app.documents import release
+
+    return {
+        "release_status": release.release_status(db, document),
+        "release_show_notice": release.show_auto_release_notice(user),
+        "release_can_manage": has_permission(user, PERM_PRIVACY_DECISION_MANAGE),
+        "release_released": released == "1",
+        "release_error": release_error[:300],
+        "release_current_path": request.url.path,
+    }
+
+
 @router.get("/{matter_id}/document/{document_id}", response_class=HTMLResponse)
 def matter_document_view(
     matter_id: str,
@@ -584,6 +599,8 @@ def matter_document_view(
     reanalysis: str = "",
     name_protection: str = "",
     name_protection_error: str = "",
+    released: str = "",
+    release_error: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse:
@@ -665,6 +682,8 @@ def matter_document_view(
         "text_version": document_text_version(document),
         "name_protection_saved": name_protection == "saved",
         "name_protection_error": name_protection_error[:300],
+        # §62 Dokumentfreigabe: Status des aktuellen Dokumentstands (lokale Pruefung, kein Cloud-Aufruf)
+        **_release_context(db, document, current_user, request, released=released, release_error=release_error),
         "document_deadlines": document_deadlines,
         # ARCHITECTURE.md §73: Art, Konflikt und Pruefhinweis je Frist - reine Darstellung (app/deadlines/review.py).
         "deadline_review": {
