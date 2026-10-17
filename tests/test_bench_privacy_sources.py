@@ -20,9 +20,9 @@ import bench_privacy_sources as bench  # noqa: E402
 from tests.test_privacy_wire_payload import FAKE_KEY, _provider, recorder  # noqa: E402,F401  (Fixture)
 
 KNOWN_KEEP_MISSING = {
-    "Q02:Amtsgericht Köpenick", "Q02:BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23", "Q02:Räumungsklage",
+    "Q02:BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23", "Q02:Räumungsklage",
     "Q03:2019", "Q04:BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24", "Q04:personenidentisch",
-    "Q05:Amtsgericht Kiel", "Q07:Arbeitsgericht Frankfurt am Main", "Q08:2 AZR 72/24", "Q10:Landgericht Osnabrück",
+    "Q07:Arbeitsgericht Frankfurt am Main", "Q08:2 AZR 72/24",
 }
 # §66 behoben (ausgeschriebener Monat in der kanonischen Bundesgericht-Zitierform; "Unterabs."/"Buchst." wie "Abs."):
 # Q05/Q07/Q10 Entscheidungszitate, Q09/Q10 "Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO" - jetzt erhalten und
@@ -32,17 +32,19 @@ FIXED_IN_S66 = {
     "Q05:BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24", "Q07:BAG, Urteil vom 3. April 2025 – 2 AZR 72/24",
     "Q09:Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO", "Q10:Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO",
     "Q10:BGH, Urteil vom 14. Oktober 2025 – VI ZR 431/24",
+    # §67: oeffentliche Gerichtsbezeichnungen (Q07 bleibt maskiert: "Frankfurt am Main" ist dort auch Wohnanschrift)
+    "Q02:Amtsgericht Köpenick", "Q05:Amtsgericht Kiel", "Q10:Landgericht Osnabrück",
 }
 KNOWN_UNREFERENCED_MASKS = {
     "Q01:ADRESSE:10435 Berlin", "Q01:ADRESSE:12557 Berlin", "Q01:ADRESSE:Kastanienallee 41", "Q01:PERSON:Berlin",
     "Q01:PERSON:Bestandswand", "Q01:PERSON:Wohnbau Lindenhof GmbH", "Q02:KENNUNG:VIII ZR 274/23",
-    "Q02:ORGANISATION:Räumungsklage Wohnbau Lindenhof GmbH ./.", "Q02:ORT:Amtsgericht Köpenick", "Q02:PERSON:Sohn",
+    "Q02:ORGANISATION:Räumungsklage Wohnbau Lindenhof GmbH ./.", "Q02:PERSON:Sohn",
     "Q02:PERSON:Wissen", "Q03:ADRESSE:14476 Potsdam", "Q03:ORT:Haus im Jahr 2019", "Q04:KENNUNG:VIII ZR 18/24",
     "Q04:ORGANISATION:veräußernden Gesellschaft personenidentisch", "Q04:ORT:Anderkonto", "Q04:ORT:Potsdam",
-    "Q05:ORT:Amtsgericht Kiel", "Q07:ORT:Frankfurt am Main",
+    "Q07:ORT:Frankfurt am Main",
     "Q07:ORT:am Main", "Q07:PERSON:Gesprächsnotiz", "Q07:PERSON:Integrationsamts", "Q08:KENNUNG:2 AZR 72/24",
     "Q08:PERSON:Tätigkeit", "Q09:PERSON:Identitätsabgleich",
-    "Q10:ORT:Klageentwurf", "Q10:ORT:Landgericht Osnabrück", "Q10:PERSON:Erfolgsaussicht",
+    "Q10:ORT:Klageentwurf", "Q10:PERSON:Erfolgsaussicht",
     "Q11:PERSON:Sohn",
 }
 
@@ -101,7 +103,7 @@ def test_lost_legal_values_and_unreferenced_masks_do_not_get_worse(outcome: dict
 
 def test_fixed_values_stay_preserved(outcome: dict) -> None:
     assert not FIXED_IN_S66 & set(outcome["summary"]["keep_missing"])
-    assert outcome["summary"]["keep_preserved"] == "106/116"
+    assert outcome["summary"]["keep_preserved"] == "109/116"
 
 
 def test_statute_texts_survive_in_the_payload(outcome: dict) -> None:

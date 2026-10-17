@@ -1,7 +1,7 @@
 {
  "benchmark": "privacy_sources_v1",
- "run_at": "2026-10-17T13:20:48+00:00",
- "git_commit": "dd3b24f",
+ "run_at": "2026-10-17T16:03:40+00:00",
+ "git_commit": "da33cf4",
  "cases_sha256": "31709b2a4b9e2155",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -22,7 +22,6 @@
    "Q01:PERSON:Wohnbau Lindenhof GmbH",
    "Q02:KENNUNG:VIII ZR 274/23",
    "Q02:ORGANISATION:Räumungsklage Wohnbau Lindenhof GmbH ./.",
-   "Q02:ORT:Amtsgericht Köpenick",
    "Q02:PERSON:Sohn",
    "Q02:PERSON:Wissen",
    "Q03:ADRESSE:14476 Potsdam",
@@ -31,7 +30,6 @@
    "Q04:ORGANISATION:veräußernden Gesellschaft personenidentisch",
    "Q04:ORT:Anderkonto",
    "Q04:ORT:Potsdam",
-   "Q05:ORT:Amtsgericht Kiel",
    "Q07:ORT:Frankfurt am Main",
    "Q07:ORT:am Main",
    "Q07:PERSON:Gesprächsnotiz",
@@ -40,23 +38,19 @@
    "Q08:PERSON:Tätigkeit",
    "Q09:PERSON:Identitätsabgleich",
    "Q10:ORT:Klageentwurf",
-   "Q10:ORT:Landgericht Osnabrück",
    "Q10:PERSON:Erfolgsaussicht",
    "Q11:PERSON:Sohn"
   ],
-  "false_positive_count": 29,
-  "keep_preserved": "106/116",
+  "false_positive_count": 26,
+  "keep_preserved": "109/116",
   "keep_missing": [
-   "Q02:Amtsgericht Köpenick",
    "Q02:BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
    "Q02:Räumungsklage",
    "Q03:2019",
    "Q04:BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
    "Q04:personenidentisch",
-   "Q05:Amtsgericht Kiel",
    "Q07:Arbeitsgericht Frankfurt am Main",
-   "Q08:2 AZR 72/24",
-   "Q10:Landgericht Osnabrück"
+   "Q08:2 AZR 72/24"
   ],
   "chronology_preserved": "11/11",
   "blocked": [],
@@ -369,12 +363,6 @@
      "on_keep": false
     },
     {
-     "value": "Amtsgericht Köpenick",
-     "type": "ORT",
-     "verdict": "FP",
-     "on_keep": true
-    },
-    {
      "value": "14 C 233/26",
      "type": "KENNUNG",
      "verdict": "TP",
@@ -418,7 +406,6 @@
     }
    ],
    "keep_missing": [
-    "Amtsgericht Köpenick",
     "BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
     "Räumungsklage"
    ],
@@ -774,12 +761,6 @@
      "on_keep": false
     },
     {
-     "value": "Amtsgericht Kiel",
-     "type": "ORT",
-     "verdict": "FP",
-     "on_keep": true
-    },
-    {
      "value": "27 IN 418/25",
      "type": "KENNUNG",
      "verdict": "TP",
@@ -810,9 +791,7 @@
      "on_keep": false
     }
    ],
-   "keep_missing": [
-    "Amtsgericht Kiel"
-   ],
+   "keep_missing": [],
    "keep_total": 14,
    "consistency": [],
    "problem": "QP-C",
@@ -1408,12 +1387,6 @@
      "on_keep": false
     },
     {
-     "value": "Landgericht Osnabrück",
-     "type": "ORT",
-     "verdict": "FP",
-     "on_keep": true
-    },
-    {
      "value": "2 O 1187/26",
      "type": "KENNUNG",
      "verdict": "TP",
@@ -1432,9 +1405,7 @@
      "on_keep": false
     }
    ],
-   "keep_missing": [
-    "Landgericht Osnabrück"
-   ],
+   "keep_missing": [],
    "keep_total": 10,
    "consistency": [],
    "problem": "QP-E",

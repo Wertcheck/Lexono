@@ -8375,3 +8375,115 @@ gab keine Lockerung außerhalb der bestehenden, geprüften §33-Regel.
 - QA-Daten, Programmsicherung und Installer-Archiv sind erhalten.
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §67 Öffentliche Gerichts- und Justizbezeichnungen als Institution (17.10.2026, Branch `feature/feedback-diagnose`, Basis `da33cf4`)
+
+Status: **teilweise nachgewiesen**. Owner-Entscheidung: Öffentliche Gerichtsbezeichnungen bleiben lesbar. Gericht,
+Gerichtsbarkeit und Instanz sind für die rechtliche Einordnung nötig. Fail-Closed, Restrisiko-Scan und Leak-Prüfungen
+sind unverändert.
+
+### 67.1 Ursache (Erkennungskette)
+
+1. **Erkennung:** Die Namenserkennung (spaCy/Presidio, `presidio_ner.detect_presidio_entities`) liefert Gerichte als
+   Ort-Treffer – gemessen für:
+   - `ort: 'Amtsgericht Kiel'`, `ort: 'Landgericht Osnabrück'`, `ort: 'Amtsgerichts Köpenick'`;
+   - `ort: 'Arbeitsgericht Berlin'`, `ort: 'Oberlandesgericht Schleswig'`;
+   - `ort: 'Bundesgerichtshof'`, `ort: 'Bundesarbeitsgericht'`;
+   - bei „Arbeitsgericht Frankfurt am Main“ und „Staatsanwaltschaft Kiel“ nur den Sitz (`ort: 'Frankfurt am Main'`,
+     `ort: 'Kiel'`).
+2. **Klassifikation:** In `detectors.detect_all` gab es keine Institutionsklasse für Justizbehörden. Ein Ort-Treffer
+   wurde wie jede Ortsangabe behandelt.
+3. **Pseudonymisierung:** Daraus entstand `[ORT_xx]`, etwa „Klage beim [ORT_01]“.
+4. **Validierung:** Der Restrisiko-Scan (`security_check`) nutzt dieselbe Funktion `detect_all` und hätte eine
+   unmaskierte Gerichtsbezeichnung als Rest-Ort gemeldet. Eine Regel muss deshalb in `detect_all` greifen, nicht nur in
+   der Pseudonymisierung.
+5. **Nicht verursacht von §67:**
+   - Der Testvorspann „Akte: Beispielakte“ wird vom Restrisiko-Scan als Ort gemeldet und blockiert manche Sätze
+     fail-closed, mit und ohne Gerichtsregel gemessen.
+   - „Richter“ wird im Kontext mitunter als Person maskiert.
+
+### 67.2 Geänderte Klassifikation (`app/privacy/detectors.py`, `_keep_public_court_names`)
+
+Die Regel sitzt in `detect_all` direkt nach `_handle_citations` und wirkt damit gleichermaßen in Pseudonymisierung und
+Restrisiko-Scan.
+
+**Klassifikationsregel** (kein Katalog einzelner Orte):
+
+| Bestandteil | Ausprägung |
+|---|---|
+| Gerichtsart | Amts-, Land-, Oberlandes-, Arbeits-, Landesarbeits-, Sozial-, Landessozial-, Verwaltungs-, Oberverwaltungs-, Finanz-, Familien-, Insolvenzgericht, Verwaltungsgerichtshof, Kammergericht |
+| Bundesgerichte | Bundesgerichtshof, Bundesarbeits-, Bundessozial-, Bundesverwaltungs-, Bundesverfassungs-, Bundespatentgericht, Bundesfinanzhof |
+| Justizbehörden mit amtlicher Namensbildung | Staatsanwaltschaft, Generalstaatsanwaltschaft, Amtsanwaltschaft |
+| Grammatik | jeweils auch im Genitiv |
+| Sitz (optional) | großgeschriebene Wörter, Bindestrich, „am/an der/in der/im/ob der/vor der/bei“, Klammerzusatz, I–IV (z. B. „München I“) |
+
+**Wirkung:**
+- Lesbar bleibt nur ein **Ort- oder Organisationstreffer**, der **genau** „Institution [+ Sitz]“ ist, oder **genau**
+  der Sitz unmittelbar nach einer Institutionsbezeichnung.
+
+**Schutzgrenzen:**
+- Personen-, Anschrifts-, Kontakt-, IBAN-, Kennungs- und Aktenzeichentreffer bleiben unberührt. Sie werden auch direkt
+  neben dem Gericht maskiert.
+- **Mehrdeutigkeit:** Steht ein Wort des Sitzes in einem anderen geschützten Treffer desselben Texts (Personenname,
+  Anschrift wie „24103 Kiel“), bleibt die Bezeichnung maskiert.
+- Ist der Ort an anderer Stelle als Ort erkannt („wohnt in Kiel“), maskiert die Wiederholungsregel ihn auch im
+  Gerichtsnamen („Amtsgericht [ORT_01]“).
+- **Nicht erfasst:**
+  - andere Institutionen (Finanzamt, Stadtwerke);
+  - Sitze, die die Namenserkennung als Person meldet (z. B. „Landgericht [PERSON_01]“, „des Amtsgerichts Köpenick“ in
+    einem Fall) – das bleibt Übermaskierung, kein Leck;
+  - als **Beteiligter der Akte** erfasste Gerichte (bekannte Entität `gericht` → `[GERICHT_01]`). Das ist eine
+    ausdrückliche Akteneinstellung und bleibt unverändert.
+- **Unverändert:**
+  - die §33/§66-Zitatregel, also nicht erweitert;
+  - eigene Aktenzeichen, Aktenzeichen unterer Instanzen und Kurzformen bleiben maskiert;
+  - Fail-Closed bei NER-Ausfall.
+
+### 67.3 Tests
+
+`tests/test_privacy_court_names.py` (32 Tests, in zwei Läufen identisch):
+
+| Prüfung | Ergebnis |
+|---|---|
+| Gerichtsbezeichnungen lesbar: Amtsgericht Kiel, Landgericht Berlin, Bundesgerichtshof, Bundesarbeitsgericht, Arbeitsgericht Berlin, Arbeitsgericht Frankfurt am Main, Landgericht München I, Landgericht Osnabrück, Amtsgerichts Kiel, OLG Schleswig, LAG Berlin-Brandenburg, Staatsanwaltschaft Kiel, Generalstaatsanwaltschaft Schleswig | PASS |
+| Dieselben Orte als gewöhnliche Ortsangabe bleiben maskiert (Kiel, Osnabrück, Köpenick) | PASS |
+| Wohnort im selben Text → Sitz auch im Gerichts- bzw. Behördennamen maskiert | PASS |
+| Sitz in der Anschrift („24103 Kiel“) bzw. als Personenname („Amtsgericht Weber“) → Gericht maskiert | PASS |
+| Gericht + eigenes Aktenzeichen („14 C 233/26“, „27 O 118/26“), eigenes BAG-/BGH-Verfahren („2 AZR 72/24“, „VIII ZR 274/23“) → Aktenzeichen maskiert | PASS |
+| Gericht + Name, Telefon, E-Mail, IBAN, Geburtsdatum → nur das Gericht lesbar | PASS |
+| Mandanten- und Verfahrenskontext (Mandant, Gegner-GmbH, Vertreter, Aktenzeichen) → nichts weiter freigegeben | PASS |
+| Stadtwerke/Finanzamt nicht ausgenommen; als Person erkannter Sitz bleibt maskiert | PASS |
+| NER-Ausfall mit Gerichtsnamen → kein Payload (Fail-Closed) | PASS |
+| Bestehend: Entscheidungszitate, untere Instanzen, Q02/Q04, `test_privacy_identity_genitive_citations` | PASS |
+| Volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5399 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+
+### 67.4 Benchmark `privacy_sources_v1` (gleiche Methodik wie §66)
+
+| Kennzahl | §66 | §67 |
+|---|---|---|
+| **Lecks** (geschützte Werte im Payload) | 0 (52/52 geschützt) | **0** (52/52), Teil-Lecks 0 |
+| erhaltene juristische Werte | 106/116 | **109/116** |
+| **Übermaskierung**: verlorene juristische Werte | 10 | 7 |
+| **Übermaskierung**: Maskierungen ohne Referenz | 29 | 26 |
+| neue Maskierungen / neu verlorene Werte | – | 0 / 0 |
+| Chronologie, Fail-Closed, Blockaden | 11/11, 22/22, 0 | unverändert |
+
+- **Wieder erhalten:** „Amtsgericht Köpenick“ (Q02), „Amtsgericht Kiel“ (Q05), „Landgericht Osnabrück“ (Q10).
+- **Bewusst weiter maskiert:**
+  - „Arbeitsgericht Frankfurt am Main“ (Q07): Der Sitz ist dort auch die Wohnanschrift der Mandantin.
+  - Q02/Q04: Entscheidungszitate mit Hinweis auf eigene Mandanten im Umfeld.
+  - Q08: arabische Kurzform.
+  - 3 zu weite NER-Spannen.
+- Die Sperrklinke ist nachgezogen (`FIXED_IN_S66` um die drei Gerichte ergänzt, 109/116 festgeschrieben).
+- Ein besserer Wert ist **kein Sicherheitsnachweis**. Er gilt nur für diesen endlichen synthetischen Korpus.
+
+### 67.5 Nicht verifiziert
+
+- Installierte App: Der Build `44f3df7` enthält §67 nicht, die App wurde nicht neu gebaut. **NICHT VERIFIZIERT** in
+  der App, nur Repository.
+- Kleinschreibung, OCR-Varianten und Abkürzungen von Gerichtsnamen („AG Kiel“, „LG Berlin“) sind nicht erfasst und
+  bleiben wie bisher.
+- Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

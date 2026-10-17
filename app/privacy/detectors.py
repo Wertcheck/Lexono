@@ -1037,6 +1037,7 @@ def detect_all(
     all_spans = _separate_conflicting_surname_aliases(analysis, all_spans, known_entities)
     all_spans = _anchor_person_variants(all_spans, known_entities, analysis=analysis)
     all_spans = _handle_citations(text, all_spans)
+    all_spans = _keep_public_court_names(text, all_spans)
     all_spans = _drop_contact_labels(text, all_spans)
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
@@ -1377,6 +1378,59 @@ def _handle_citations(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan
                 context = text[max(0, court_pos - 120) : court_pos] + " " + text[span.end : span.end + 80]
                 if not _OWN_PROCEEDING_HINT.search(context):
                     continue
+        result.append(span)
+    return result
+
+
+# --- Oeffentliche Gerichtsbezeichnungen (§67, Owner-Entscheidung 17.10.2026) ----------------------------------------
+# ECHTER FUND (Korpus privacy_sources_v1, §66.3): die NER liefert "Amtsgericht Kiel", "Landgericht Osnabrück",
+# "Bundesgerichtshof" als Ort-Treffer - die zustaendige Institution fehlte im Payload ("Klage beim [ORT_01]"), bei
+# "Arbeitsgericht Frankfurt am Main" nur der Sitz. Owner-Entscheidung: oeffentliche Gerichtsbezeichnungen bleiben als
+# Institutionsbezeichnung lesbar. Bewusst ENG:
+# - nur Ort-/Organisations-Treffer (nie Person, Anschrift, Aktenzeichen, Kontaktdaten - diese Treffer bleiben bestehen und
+#   werden maskiert, auch direkt neben dem Gerichtsnamen);
+# - nur wenn der Treffer GENAU eine Gerichtsbezeichnung ist (Gerichtsart [+ Sitz]) oder GENAU der Sitz unmittelbar nach
+#   einer Gerichtsart ("Arbeitsgericht |Frankfurt am Main|");
+# - nicht, wenn der Sitz im selben Text auch als Personenname erkannt ist (Mehrdeutigkeit -> Schutz);
+# - ein Ort ausserhalb einer Gerichtsbezeichnung ("wohnt in Kiel") bleibt maskiert; ist er irgendwo im Text als Ort
+#   erkannt, maskiert die Wiederholungsregel (`_extend_with_repeated_occurrences`) ihn auch im Gerichtsnamen
+#   ("Amtsgericht [ORT_01]") - im Zweifel gewinnt der Schutz.
+# Gilt identisch im Restrisiko-Scan (dieselbe Funktion `detect_all`).
+_COURT_TYPE = (
+    r"(?:(?:Amts|Land|Oberlandes|Arbeits|Landesarbeits|Sozial|Landessozial|Verwaltungs|Oberverwaltungs|Finanz|"
+    r"Familien|Insolvenz)gericht|Verwaltungsgerichtshof|Kammergericht|Bundesgerichtshof|Bundesarbeitsgericht|"
+    r"Bundessozialgericht|Bundesverwaltungsgericht|Bundesverfassungsgericht|Bundespatentgericht|Bundesfinanzhof|"
+    # §67-Erweiterung: Justizbehoerden mit derselben amtlichen Namensbildung "<Behoerde> <Sitz>"
+    r"Staatsanwaltschaft|Generalstaatsanwaltschaft|Amtsanwaltschaft)(?:e?s)?"
+)
+_SEAT_WORD = r"[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜ][a-zäöüß]+)*"
+_COURT_SEAT = (
+    _SEAT_WORD + r"(?:\s(?:am|an der|in der|im|ob der|vor der|bei)\s" + _SEAT_WORD + r")?"
+    r"(?:\s\(" + _SEAT_WORD + r"\))?(?:\s(?:I{1,3}|IV))?"
+)
+_PUBLIC_COURT_NAME = re.compile(_COURT_TYPE + r"(?:\s" + _COURT_SEAT + r")?")
+_COURT_SEAT_ONLY = re.compile(_COURT_SEAT)
+_COURT_TYPE_BEFORE = re.compile(r"(?<![\wÄÖÜäöüß])" + _COURT_TYPE + r" $")
+_COURT_PROTECTED_CATEGORIES = frozenset({"ort", "organisation"})
+
+
+def _keep_public_court_names(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    # Woerter aller uebrigen Treffer (Personen, Anschriften, Mandanten ...): steht der Sitz dort ("Herr Weber",
+    # "24103 Kiel"), ist er im selben Text personenbezogen - dann bleibt die Gerichtsbezeichnung maskiert (Schutz geht vor)
+    person_values = {word for span in spans if span.category not in _COURT_PROTECTED_CATEGORIES
+                     for word in re.findall(_SEAT_WORD, span.value)}
+    result: list[DetectedSpan] = []
+    for span in spans:
+        if span.category in _COURT_PROTECTED_CATEGORIES:
+            value = span.value.strip()
+            if _PUBLIC_COURT_NAME.fullmatch(value):
+                seat = re.sub(r"^" + _COURT_TYPE + r"\s?", "", value)
+            elif _COURT_SEAT_ONLY.fullmatch(value) and _COURT_TYPE_BEFORE.search(text[max(0, span.start - 40):span.start]):
+                seat = value
+            else:
+                seat = None
+            if seat is not None and not any(word in person_values for word in re.findall(_SEAT_WORD, seat)):
+                continue
         result.append(span)
     return result
 

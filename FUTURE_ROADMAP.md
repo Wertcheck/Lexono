@@ -139,6 +139,9 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - Übermaskierung 101 → 106/116 über die bestehende §33-Zitatregel (ausgeschriebener Monat) und „Buchst.“/„Unterabs.“;
   - Migration, Backup und Wiederherstellung dokumentiert.
   Offen (Owner): Gerichtsnamen als Ort maskiert; echte Migration der Kanzleidatenbank.
+  **Fortschritt 17.10.2026 (§67):** Öffentliche Gerichts- und Justizbezeichnungen bleiben als Institution lesbar
+  (Klassifikationsregel in `detect_all`, wirkt auch im Restrisiko-Scan). Bei Mehrdeutigkeit gewinnt der Schutz.
+  Ergebnis: 0 Lecks, 109/116 erhalten. In der installierten App NICHT VERIFIZIERT (kein neuer Build).
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
