@@ -29,6 +29,16 @@ def extract_csrf(html: str) -> str:
     return match.group(1)
 
 
+_OPERATION_RE = re.compile(r'name="operation_token" value="([^"]+)"')
+
+
+def extract_operation_token(html: str) -> str:
+    """§58: Vorgangs-ID des Schriftsatz-Generators (serverseitig ausgestellt, je Seite neu)."""
+    match = _OPERATION_RE.search(html)
+    assert match is not None, "Kein operation_token-Feld im HTML gefunden"
+    return match.group(1)
+
+
 def seed_roles(db: Session) -> dict[str, Role]:
     """Idempotent: legt die drei Rollen an, falls noch nicht vorhanden."""
     roles = {}

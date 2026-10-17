@@ -199,3 +199,23 @@ def test_quality_reports_migration_is_additive_and_reversible(tmp_path: Path) ->
     tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'")}
     con.close()
     assert not {"quality_reports", "regression_cases"} & tables
+
+
+def test_schriftsatz_operations_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_032 (§58, Idempotenz im Schriftsatz-Generator): Vorgangs-ID als Primaerschluessel."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "operations.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    pk = [row[1] for row in con.execute("pragma table_info(schriftsatz_operations)").fetchall() if row[5]]
+    con.close()
+    assert pk == ["id"]  # atomare Eindeutigkeit je Vorgang
+    command.downgrade(cfg, "schritt3_031")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "schriftsatz_operations" not in tables and "quality_reports" in tables

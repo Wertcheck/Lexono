@@ -18,6 +18,10 @@
   {% if uploaded_documents %}
     {# §57: Upload ohne KI-Verarbeitung - erst pruefen/markieren, dann bewusst generieren #}
     <div class="banner banner--info" id="upload-notice">
+      {% if upload_repeated %}
+        <strong id="upload-repeated">Dieser Upload wurde bereits ausgeführt</strong> – es wurden keine weiteren Akten
+        oder Dokumente angelegt.
+      {% endif %}
       Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
       gesendet. Bitte die Dokumente prüfen und nicht erkannte Namen schützen; danach „Schriftsatz generieren“
       (ohne erneute Dateiauswahl) klicken.
@@ -34,6 +38,8 @@
     <form method="post" action="/dashboard/tools/schriftsatz/generate"
           enctype="multipart/form-data" class="dashboard-form js-ai-form" style="max-width: none;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      {# §58: Vorgangs-ID dieser Seite - eine Wiederholung desselben Absendens (F5, Doppelklick) legt nichts doppelt an #}
+      <input type="hidden" name="operation_token" value="{{ operation_token }}" />
 
       <div class="settings-section">
         <h2 class="settings-section__title">Akte</h2>

@@ -28,7 +28,7 @@ from app.models.attorney_instruction import AttorneyInstruction
 from app.models.base import Base
 from app.models.privacy_decision import PrivacyDecision
 from app.web.service_factory import get_editor_service_for_ai_edit
-from tests.auth_test_utils import extract_csrf, login_as_admin
+from tests.auth_test_utils import extract_operation_token, extract_csrf, login_as_admin
 from tests.test_web_chat import FakeClaudeWritingProvider, _working_drafting_service
 
 P10 = "Der Richter Zweigelt hat den Termin auf den 22.07.2026 verlegt; Streitwert 4.250,00 EUR nach § 3 ZPO."
@@ -113,7 +113,8 @@ def _draft(db: Session, content: str) -> Draft:
 
 def _generate(client, matter_id: str = "", terms=None, **fields):
     page = client.get("/dashboard/tools/schriftsatz")
-    data = {"csrf_token": extract_csrf(page.text), "matter_id": matter_id, **fields}
+    data = {"csrf_token": extract_csrf(page.text), "operation_token": extract_operation_token(page.text),
+            "matter_id": matter_id, **fields}
     if terms is not None:
         data["protected_terms"] = terms if isinstance(terms, str) else json.dumps(terms)
     return client.post("/dashboard/tools/schriftsatz/generate", data=data, follow_redirects=False)

@@ -29,7 +29,7 @@ from app.models import ApiCallLog, ChatConversation, ChatMessage, Document, Draf
 from app.models.base import Base
 from app.models.privacy_decision import PrivacyDecision
 from app.web.name_protection import document_text_version
-from tests.auth_test_utils import extract_csrf, login_as_admin
+from tests.auth_test_utils import extract_csrf, extract_operation_token, login_as_admin
 from tests.test_web_chat import _parse_sse_events, _working_drafting_service
 from tests.test_web_document_name_protection import SachverhaltEcho
 from tests.test_web_privacy_review import _pdf_bytes
@@ -304,9 +304,11 @@ def test_upload_scope_never_crosses_into_another_conversation(client, db_session
 # --- 4. Schriftsatz-Generator -------------------------------------------------------------------------------------------
 
 
-def _generate(client: TestClient, *, files=None, **fields):
-    data = {"csrf_token": _csrf(client, "/dashboard/tools/schriftsatz"), "matter_id": "", "new_matter_title": "",
-            "new_client_name": "", "stil": "", "vorlage": "", "attorney_anmerkungen": "", **fields}
+def _generate(client: TestClient, *, files=None, operation_token: str | None = None, **fields):
+    page = client.get("/dashboard/tools/schriftsatz").text
+    data = {"csrf_token": extract_csrf(page), "operation_token": operation_token or extract_operation_token(page),
+            "matter_id": "", "new_matter_title": "", "new_client_name": "", "stil": "", "vorlage": "",
+            "attorney_anmerkungen": "", **fields}
     return client.post("/dashboard/tools/schriftsatz/generate", data=data, follow_redirects=False,
                        files=files or {"unbenutzt": ("", b"", "application/octet-stream")})
 

@@ -7180,8 +7180,8 @@ dieser ersten Anfrage vor jeder Markiermöglichkeit im Klartext hinaus. Status: 
   entspricht dem bisherigen Akten-Upload; immer laufen die zentrale Prüfung und gespeicherte Markierungen. Ob ein
   Dokument erst nach ausdrücklicher Prüfung KI-fähig sein soll, ist eine offene fachliche Entscheidung (nicht
   eigenmächtig umgesetzt).
-- **Schriftsatz ohne Redirect nach dem Upload:** Ein erneutes Absenden per F5 legt eine weitere Schnellakte und doppelte
-  Dokumente an (keine KI). Ein Redirect müsste die Formularwerte in die URL legen (Personenbezug im Verlauf) und wurde
+- **Schriftsatz ohne Redirect nach dem Upload** (**geschlossen in §58** durch eine Vorgangs-ID): Ein erneutes
+  Absenden per F5 legt eine weitere Schnellakte und doppelte Dokumente an (keine KI). Ein Redirect müsste die Formularwerte in die URL legen (Personenbezug im Verlauf) und wurde
   deshalb nicht gewählt. Ein Größenfehler im zweiten Dokument hinterlässt wie bisher die Akte mit dem ersten.
 - **Der eingegebene Text liegt im Browser:** Der mitgetippte Text bleibt bis zum Absenden im `sessionStorage` des
   Browsers, also nur lokal, im Tab und auf dem Gerät. Ein neuer Chat übernimmt ihn als lokalen Titel (wie bisher),
@@ -7190,3 +7190,91 @@ dieser ersten Anfrage vor jeder Markiermöglichkeit im Klartext hinaus. Status: 
   wird, geht bei der bewussten Aktion im Klartext hinaus, nun aber erst nach einer Prüfmöglichkeit.
   Synthetische Tests belegen **keine** vollständige Leckfreiheit.
 - **Weitere Wege:** Die Akten-Uploads („Dokumente“ der Akte) waren schon vorher reine Uploads und sind unverändert.
+
+## §58 Idempotenz im Schriftsatz-Generator – F5, Doppelklick, Wiederholung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `4c0d808`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und zentrale Prüfung sind unverändert.
+
+### 58.1 Befund (reproduziert)
+
+- Derselbe POST zweimal (F5 auf der Ergebnisseite) ergab **2 Schnellakten und 2 Dokumente**, beide Antworten 200, ohne
+  KI-Aufruf.
+- Für „Schriftsatz generieren“ mit neuer Akte hätte ein Doppelklick zwei Akten und zwei Entwürfe erzeugt, also
+  **zwei Cloud-Anfragen**.
+- Einen Idempotenzschutz gab es nicht. Das nächste vorhandene Muster ist die Bearbeitungssperre im Chat
+  (`chat_message_claims`).
+
+### 58.2 Lösung (bestehende Muster, kein neuer Mechanismus daneben)
+
+- **Vorgangs-ID je Seite** (`app/drafting/schriftsatz_operations.py`):
+  - Jede ausgelieferte Generator-Seite bekommt eine neue, serverseitig ausgestellte ID (uuid4).
+  - Sie ist signiert (itsdangerous, prozessweiter Session-Schlüssel, eigenes Salt), an den Nutzer gebunden und
+    24 h gültig.
+  - Fehlt sie oder ist sie manipuliert, fremd oder abgelaufen, wird **nichts** angelegt. Das ist serverseitig
+    erzwungen, keine UI-Sperre.
+- **Atomarer Vorgang** (`schriftsatz_operations`, Migration `schritt3_032`, rein additiv):
+  - Die ID ist Primärschlüssel. Genau ein Request legt die Zeile an, auch prozessübergreifend, geschrieben in
+    eigener kurzer Sitzung wie `processing_claims`.
+  - Gespeichert werden nur IDs und Zustände: Akte, fortlaufend die Dokument-IDs, Entwurf, Status, außerdem ein
+    Fingerabdruck der Anfrage. Der Fingerabdruck ist ein HMAC mit dem Session-Schlüssel über Art, Formularfelder und
+    Datei-Hashes. Keine Formularinhalte, keine Dateinamen im Klartext.
+  - **Geänderte Anfrage mit alter ID** (z. B. über „Zurück“ bearbeitet): Sie wird weder ausgeführt noch still auf das
+    alte Ergebnis umgeleitet. Es erscheint eine neue Seite mit Hinweis und erhaltenen Eingaben. Die Generator-Seite
+    wird nicht im Browser-Cache gehalten (`Cache-Control: no-store`).
+- **Wiederholung desselben Vorgangs** (F5, erneutes Absenden, Doppelklick, paralleler Request, Wiederholung nach
+  verlorener Antwort):
+  - Ergebnis „Upload erledigt“: dieselbe Seite mit „bereits ausgeführt“ und denselben Dokumenten.
+  - Ergebnis „Generierung erledigt“: Weiterleitung auf denselben Entwurf.
+  - Fehlgeschlagen oder unterbrochen: Hinweis, nichts wird erneut ausgeführt, kein zweiter Cloud-Aufruf. Läuft der
+    Vorgang noch (jünger als 15 min), lautet der Hinweis „bitte warten“, nicht „neu starten“.
+  - Gelöschte Dokumente oder Akten (§26) erscheinen auch in einer Wiederholung nicht.
+  - Ein unerwarteter Absturz lässt den Vorgang auf „processing“. Unklar ist dann, ob schon gesendet wurde, also
+    gibt es keine automatische Wiederholung (fail-closed).
+- **Bewusst neuer Vorgang bleibt möglich:** Jede Ergebnis- oder Fehlerseite trägt eine neue ID, etwa für dieselbe
+  Datei noch einmal oder einen weiteren Upload. Nach einem Teilfehler wählt die Fehlerseite die bereits angelegte Akte
+  vor (`?matter_id=`, nur die ID), statt eine weitere Schnellakte anzulegen.
+- Keine Formularwerte in URL, Redirect oder Verlauf. Die Fehler-URL ist jetzt kodiert, und die Größen-Fehlermeldung
+  nennt keinen Dateinamen mehr. Keine Bereinigung vorhandener Akten oder Dokumente.
+
+### 58.3 Tests und QA (synthetisch, isolierte Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_schriftsatz_idempotency.py`** (20 Tests), deckt ab:
+  - F5 bzw. verlorene Antwort (3 Wiederholungen): 1 Akte, 1 Dokument, **0 HTTP-Requests** am
+    Aufzeichnungsserver.
+  - Wiederholung in eine bestehende Akte.
+  - Ein bewusster zweiter Upload derselben Datei ist möglich.
+  - Bewusste Generierung nach dem Upload: genau **1 Request**, die Wiederholung leitet auf denselben Entwurf,
+    kein zweiter Request.
+  - Doppelklick auf „generieren“ mit neuer Akte.
+  - Absturz mitten im Vorgang (500, danach Wiederholung): nichts doppelt.
+  - Teilfehler: Akte bleibt erhalten und ist vorausgewählt.
+  - Fehlende, gefälschte, fremde und abgelaufene IDs.
+  - 8 parallele Claims (genau ein Gewinner).
+  - 2 echte parallele HTTP-Requests auf einer Datei-DB: 1 Akte, 1 Dokument; die Überlappung ist belegt, der zweite
+    Request trifft den laufenden Vorgang (5 von 5 Läufen stabil).
+  - Nach dem Review: geänderte Anfrage mit alter ID (Felder bzw. Dateien), lange unterbrochener Vorgang, gelöschtes
+    Dokument, `no-store` und kodierte Fehler-URL ohne Dateinamen.
+- **Migration:** Auf- und Abbau getestet (`test_migrations`). Bestehende Generator-Tests senden die ID der Seite mit.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte): echtes F5 auf der
+  Upload-Ergebnisseite. Der Browser sendet den POST erneut, die Seite zeigt „bereits ausgeführt“, es bleibt bei
+  1 Akte, 1 Dokument und 0 API-Logs, ohne JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** kein Pfad zu Duplikaten oder einem zweiten Cloud-Aufruf über dieselbe ID gefunden;
+  Atomarität, Reihenfolge, Token-Prüfung, §57-Trennung und Migration ohne Befund. Behoben wurden: mittel –
+  Zurück-Button mit geänderter Anfrage wurde still auf das alte Ergebnis umgeleitet; niedrig –
+  „neu starten“-Aufforderung bei noch laufendem Vorgang, gelöschte Dokumente in der Wiederholung, widersprüchliches
+  Banner bei Fehlern, unkodierte Fehler-URL mit Dateinamen, fehlender Entwurf, zu schwacher Paralleltest.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5177 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+
+### 58.4 Grenzen
+
+- **Datenbankmigration:** Die Desktop-App wendet `schritt3_032` beim Start automatisch an (`run.py`, mit vorheriger
+  Sicherung). Ein direkt per `uvicorn` gestarteter Entwicklungsserver braucht `alembic upgrade head`. Auf der realen
+  Datenbank wurde in dieser Sitzung **nichts** migriert.
+- **Hängender Vorgang:** Ein nach einem Absturz auf „processing“ stehender Vorgang bleibt dauerhaft gesperrt. Der
+  Nutzer startet bewusst neu, eine automatische Aufräumung gibt es nicht. Eine dabei angelegte Schnellakte bleibt
+  bestehen und ist auf der Fehlerseite vorausgewählt.
+- **Nur der Generator:** Chat-Upload und Akten-Upload sind nicht Teil dieses Schritts. Der Chat sendet per `fetch`
+  bzw. leitet nach `/send` weiter (kein F5-Neusenden); ein Doppelklick ist dort nur clientseitig gesperrt.
+- **Keine Inhaltserkennung:** Zwei bewusst getrennte Vorgänge mit derselben Datei legen weiterhin zwei Dokumente an
+  (gewollt).

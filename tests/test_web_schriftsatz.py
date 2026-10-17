@@ -30,7 +30,7 @@ from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
-from tests.auth_test_utils import extract_csrf, login_as_admin
+from tests.auth_test_utils import extract_csrf, extract_operation_token, login_as_admin
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 
@@ -101,6 +101,10 @@ def client(
 def _csrf(client: TestClient) -> str:
     page = client.get("/dashboard/tools/schriftsatz")
     return extract_csrf(page.text)
+
+
+def _operation_token(client: TestClient) -> str:
+    return extract_operation_token(client.get("/dashboard/tools/schriftsatz").text)
 
 
 # --- GET Seite ---
@@ -177,6 +181,7 @@ def test_generate_without_matter_creates_matter_and_redirects_to_draft(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": "",
             # Bewusst EIN Wort - zwei aufeinanderfolgende grossgeschriebene
             # Woerter wuerden vom SecurityCheckService als moegliche
@@ -236,6 +241,7 @@ def test_generate_with_new_client_id_reuses_the_existing_client_not_a_duplicate(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": "",
             "new_matter_title": "Neue Akte fuer bekannten Mandanten",
             "new_client_name": "",
@@ -274,6 +280,7 @@ def test_generate_with_existing_matter_reuses_it(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": matter.id,
             "new_matter_title": "",
             "new_client_name": "",
@@ -301,6 +308,7 @@ def test_upload_with_disallowed_extension_is_rejected(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": "",
             "new_matter_title": "Sollte nicht entstehen",
             "new_client_name": "",
@@ -326,6 +334,7 @@ def test_uploaded_pdf_becomes_document_linked_to_matter(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": "",
             "new_matter_title": "Akte mit Upload",
             "new_client_name": "",
@@ -363,6 +372,7 @@ def test_upload_filename_with_path_traversal_stays_inside_storage_dir(
         "/dashboard/tools/schriftsatz/generate",
         data={
             "csrf_token": csrf_token,
+            "operation_token": _operation_token(client),  # §58
             "matter_id": "",
             "new_matter_title": "Path Traversal Testakte",
             "new_client_name": "",
