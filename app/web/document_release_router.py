@@ -72,6 +72,7 @@ def document_release_settings(
         "mode_label": release.MODE_LABELS[mode],
         "modes": [(key, release.MODE_LABELS[key], release.MODE_DESCRIPTIONS[key]) for key in release.MODES],
         "default_mode": release.DEFAULT_MODE,
+        "new_installation_mode": release.NEW_INSTALLATION_MODE,
         "can_manage": has_permission(current_user, PERM_PRIVACY_DECISION_MANAGE),
         "show_notice": release.show_auto_release_notice(current_user),
         "saved": saved == "1",

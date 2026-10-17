@@ -43,7 +43,11 @@ from app.models.document_release import (
 MODE_MANUAL = "manual"
 MODE_AUTO = "auto"
 MODE_AUTO_REVIEW = "auto_review"
+# §63: Ohne gespeicherten Wert gilt B (bisheriges Verhalten bestehender Installationen) - ein leerer Wert wird nie
+# stillschweigend strenger. Neuinstallationen bekommen C ausdruecklich gesetzt (Migration schritt3_037, die bei einer
+# leeren Datenbank vor dem ersten Benutzer laeuft).
 DEFAULT_MODE = MODE_AUTO
+NEW_INSTALLATION_MODE = MODE_AUTO_REVIEW
 MODES = (MODE_MANUAL, MODE_AUTO, MODE_AUTO_REVIEW)
 MODE_LABELS = {
     MODE_MANUAL: "Manuelle Freigabe",
@@ -113,6 +117,16 @@ def get_mode(db: Session) -> str:
     from app.firm_profile.service import get_firm_profile
 
     mode = get_firm_profile(db).document_release_mode
+    return mode if mode in MODES else DEFAULT_MODE
+
+
+def _stored_mode(db: Session) -> str:
+    """Modus OHNE bedarfsweises Anlegen des Kanzleiprofils (kein Schreibzugriff - Review §63: die Vorab-Pruefung
+    laeuft in fremden Verarbeitungs-Sitzungen, auch parallel aus dem Mail-Abruf)."""
+    from app.models.firm_profile import FirmProfile
+
+    row = db.query(FirmProfile.document_release_mode).order_by(FirmProfile.created_at, FirmProfile.id).first()
+    mode = row[0] if row is not None else None
     return mode if mode in MODES else DEFAULT_MODE
 
 
@@ -307,12 +321,31 @@ def processing_state(db: Session, document: Document, *, mode: str | None = None
     return STATE_DECISION if outcome == CHECK_UNCERTAIN else STATE_RELEASED_AUTO
 
 
-def released_document_ids(db: Session, documents) -> set[str]:
-    """IDs der aktuell zur Verarbeitung freigegebenen Dokumente (serverseitige Durchsetzung beim Kontextaufbau)."""
+def precheck_document(db: Session, document: Document) -> None:
+    """§63 Vorab-Pruefung in Modus C: direkt nach der lokalen Verarbeitung eines Dokuments MIT Akte (Upload, Import;
+    ein Mail-Anhang wird erst nach der Zuordnung geprueft - bei Anzeige oder Versand) - LOKAL, kein Cloud-Aufruf. Das
+    Ergebnis ist an Textstand, Kontext und Code-Version gebunden (`check_document`); aendert sich eines davon, wird
+    beim Versand neu geprueft. Ein Fehler wird nicht gespeichert (dann prueft der Versand neu und blockiert
+    fail-closed) und unterbricht die Verarbeitung nie. Keine Schreibzugriffe auf die Sitzung des Aufrufers (kein
+    Anlegen des Kanzleiprofils, kein Autoflush; das Ergebnis schreibt `_store_check` in einer eigenen Sitzung)."""
+    if not document.matter_id or not (document.extracted_text or "").strip():
+        return
+    try:
+        with db.no_autoflush:
+            if _stored_mode(db) == MODE_AUTO_REVIEW:
+                check_document(db, document)
+    except Exception:  # noqa: BLE001 - die Vorab-Pruefung ist nur ein Vorwaermen; der Versand prueft verbindlich
+        return
+
+
+def released_document_ids(db: Session, documents, *, contexts: dict | None = None) -> set[str]:
+    """IDs der aktuell zur Verarbeitung freigegebenen Dokumente (serverseitige Durchsetzung beim Kontextaufbau).
+    `contexts`: vom Aufrufer gehaltener Zwischenspeicher, wenn er blockweise prueft (Review §63)."""
     mode = get_mode(db)
     if mode == MODE_AUTO:
         return {document.id for document in documents}
-    contexts: dict[str, object] = {}  # Kontext einmal je Akte (Beteiligte, Entscheidungen) statt je Dokument
+    if contexts is None:
+        contexts = {}  # Kontext einmal je Akte (Beteiligte, Entscheidungen) statt je Dokument
 
     def context_of(document):
         if document.matter_id not in contexts:

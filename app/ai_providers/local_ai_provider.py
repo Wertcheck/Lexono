@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from collections.abc import Sequence
 from typing import Protocol
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.privacy.pseudonymizer import strip_legal_form
@@ -536,18 +537,12 @@ class RuleBasedLocalAIProvider:
         if document_ids is not None:
             # Datenminimierung §29: nur die ausgewaehlten Dokumente (weiterhin nur aus DIESER Akte, nicht geloescht)
             query = query.filter(Document.id.in_(list(document_ids)))
-        documents = query.order_by(Document.created_at.desc()).limit(_MAX_DOCUMENTS_IN_SACHVERHALT).all()
-        # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
-        # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
-        documents = [d for d in documents if d.extracted_text.strip()]
         # §62 Dokumentfreigabe - serverseitig an der EINZIGEN Stelle, an der Dokumenttext in eine Anfrage gelangt: ein
         # nicht freigegebenes Dokument (Freigabe erforderlich, Entscheidung erforderlich, Pruefung fehlgeschlagen) geht
         # in keinem Modus und keinem Pfad an die Cloud. Lokaler Pruefhinweis, damit die Antwort nicht vollstaendig wirkt.
-        from app.documents.release import released_document_ids
-
-        released = released_document_ids(db, documents)
-        withheld = [d for d in documents if d.id not in released]
-        documents = [d for d in documents if d.id in released]
+        # §63: die Hoechstzahl gilt fuer FREIGEGEBENE Dokumente - vorher wurden die 30 neuesten geladen und erst danach
+        # gefiltert, sodass nicht freigegebene neue Dokumente aeltere freigegebene verdraengten.
+        documents, withheld, not_considered, search_limited = self._select_released_documents(db, query)
         # Datenminimierung (§27): ein doppelt hochgeladenes Dokument (gleicher Text) ging bisher zweimal hinaus und nahm
         # anderen Dokumenten Budget weg. Nur das neueste Exemplar senden; alle IDs gelten weiter als einbezogen, damit
         # ein angehaengtes Duplikat die Dokument-Gates nicht blockiert. Es geht keine Information verloren.
@@ -562,10 +557,24 @@ class RuleBasedLocalAIProvider:
         documents = unique_documents
         notices: list[str] = []
         if withheld:
-            names = ", ".join(f"„{getattr(d, 'original_filename', None) or 'Dokument'}“" for d in withheld)
+            shown = withheld[:10]
+            names = ", ".join(f"„{getattr(d, 'original_filename', None) or 'Dokument'}“" for d in shown)
+            more = f" und {len(withheld) - len(shown)} weitere" if len(withheld) > len(shown) else ""
             notices.append(
-                f"Nicht berücksichtigt, da (noch) nicht für die KI-Verarbeitung freigegeben: {names}. "
+                f"Nicht berücksichtigt, da (noch) nicht für die KI-Verarbeitung freigegeben: {names}{more}. "
                 "Freigabe bzw. Prüfung in der Dokumentansicht."
+            )
+        if not_considered and search_limited:
+            notices.append(
+                f"Suchgrenze erreicht: {not_considered} weitere(s), ältere(s) Dokument(e) der Akte wurde(n) nicht auf "
+                "Freigabe geprüft und nicht berücksichtigt (zu viele nicht freigegebene neuere Dokumente). Bitte "
+                "Freigaben erledigen oder gezielt mit einem Dokument chatten."
+            )
+        elif not_considered:
+            notices.append(
+                f"Höchstzahl von {_MAX_DOCUMENTS_IN_SACHVERHALT} Dokumenten erreicht: {not_considered} weitere(s) "
+                "Dokument(e) der Akte wurde(n) nicht berücksichtigt (ältere Dokumente). Bei Bedarf gezielt mit einem "
+                "Dokument chatten."
             )
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):
@@ -583,6 +592,41 @@ class RuleBasedLocalAIProvider:
                     "prüfen."
                 )
         return "\n".join(parts), bool(documents), notices, all_ids
+
+    def _select_released_documents(self, db: Session, query) -> tuple[list, list, int, bool]:
+        """§63: neueste FREIGEGEBENE Dokumente bis zur Hoechstzahl (blockweise; begrenzte Suche, damit viele nicht
+        freigegebene Dokumente keine unbegrenzte lokale Pruefung ausloesen). Rueckgabe: (verwendet, zurueckgehalten,
+        Anzahl nicht beruecksichtigter weiterer Dokumente, Suchgrenze erreicht). Nur Dokumente mit verwertbarem Text
+        (13.10.2026: ein leerer OCR-Text galt sonst als Dokumentkontext)."""
+        from app.documents.release import released_document_ids
+
+        # leere Texte schon in SQL ausschliessen, damit die Anzahl nicht beruecksichtigter Dokumente stimmt
+        ordered = query.filter(func.length(func.trim(Document.extracted_text)) > 0).order_by(
+            Document.created_at.desc(), Document.id
+        )
+        contexts: dict = {}  # Kontext je Akte nur einmal fuer alle Bloecke
+        limit = _MAX_DOCUMENTS_IN_SACHVERHALT
+        selected: list = []
+        withheld: list = []
+        surplus = 0  # gelesene, freigegebene Dokumente jenseits der Hoechstzahl
+        scanned = 0
+        while len(selected) < limit and scanned < limit * 4:
+            batch = ordered.offset(scanned).limit(limit).all()
+            if not batch:
+                break
+            scanned += len(batch)
+            readable = [d for d in batch if d.extracted_text.strip()]
+            released = released_document_ids(db, readable, contexts=contexts)
+            for document in readable:
+                if document.id not in released:
+                    withheld.append(document)
+                elif len(selected) < limit:
+                    selected.append(document)
+                else:
+                    surplus += 1
+        remaining = max(0, ordered.count() - scanned)  # nicht mehr durchsucht (Status ungeprueft) - nie verwendet
+        search_limited = remaining > 0 and len(selected) < limit
+        return selected, withheld, surplus + remaining, search_limited
 
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()

@@ -7815,7 +7815,95 @@ Modi unverändert verpflichtend.
 - **Erstes Öffnen:** Das erste Öffnen eines Dokuments führt in jedem Modus einmal die lokale Prüfung aus (Anzeige).
   Die Prüfseite rechnet ohne Zwischenspeicher.
 - **Obergrenze vor dem Filter:** Die Obergrenze von 30 Dokumenten im Kontext greift vor dem Freigabefilter. Viele
-  neue, nicht freigegebene Dokumente können ältere freigegebene verdrängen; ein Hinweis erscheint.
+  neue, nicht freigegebene Dokumente können ältere freigegebene verdrängen; ein Hinweis erscheint. **Behoben in §63.3.**
 - **E-Mail-Texte:** Die Freigabe betrifft Dokumente (`documents`). E-Mail-Texte selbst laufen weiter über die
   zentrale Prüfung der jeweiligen Aktion, Anhänge sind Dokumente.
 - **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §63 Dokumentfreigabe: Modus C als Standard, Vorab-Prüfung, mehr als 30 Dokumente (17.10.2026, Branch `feature/feedback-diagnose`, Basis `cb38afb`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert
+verpflichtend; nichts davon wurde gelockert. Die offene Owner-Frage aus §62.1 ist durch den Auftrag §63 entschieden:
+**C ist Standard für Neuinstallationen.**
+
+### 63.1 P1 – Modus C für Neuinstallationen, Bestand unverändert
+
+- **Erkennung einer Neuinstallation:** Migration `schritt3_037`. Bei der Ersteinrichtung laufen die Migrationen
+  **vor** dem Anlegen des ersten Benutzers (`app/setup/wizard.py`: `run_migrations` → `create_admin`; die App migriert
+  bei jedem Start). Als Neuinstallation gilt nur eine **wirklich leere** Datenbank: keine Benutzer, kein
+  Kanzleiprofil, keine Mandanten, Akten oder Dokumente. Dann wird ein Kanzleiprofil mit `auto_review` (C) angelegt
+  (übrige Werte = Modell-Standards, wie beim bedarfsweisen Anlegen).
+- **Bestehende Installationen:** Ein Profil **ohne** Wert wird ausdrücklich auf `auto` (B, bisheriges Verhalten)
+  gesetzt. Ein gesetzter Wert (A, B oder C) wird **nie** überschrieben. Ohne Profil wird nichts angelegt; das Profil
+  entsteht wie bisher bedarfsweise, ohne Wert = B.
+- **Code-Standard bleibt B** (`DEFAULT_MODE`): Ein leerer Wert wird nie stillschweigend strenger oder lockerer.
+  `NEW_INSTALLATION_MODE = auto_review` dokumentiert den Standard; die Einstellungsseite zeigt „Standard für
+  Neuinstallationen“ bzw. „Standard bestehender Installationen“. Der Modus bleibt änderbar (Admin/Anwalt, Audit).
+- **Wiederholte Starts, Restore, Downgrade/Re-Upgrade:** Keine Änderung, kein zweites Profil. Downgrade ändert keine
+  Daten (leer und `auto` bedeuten dasselbe).
+- **Grenze:** Mit `create_all` angelegte Entwicklungs-/Testdatenbanken haben keinen Wert und laufen damit in B. In
+  `app/` gibt es keinen solchen Pfad.
+
+### 63.2 P2 – Vorab-Prüfung in Modus C
+
+- `release.precheck_document` läuft am Ende von `DocumentProcessingService.process_document`. Das ist der gemeinsame
+  Punkt aller Eingangswege (Upload, Import, Chat-/Schriftsatz-Upload).
+- Nur in Modus C, nur mit Akte und verwertbarem Text. **Lokal**: dieselbe zentrale Prüfung (`prepare_request`, Modus
+  „ask“), kein KI-, Cloud- oder Netzaufruf.
+- **Bindung:** Ergebnis gespeichert je Textstand, Prüfkontext (Beteiligte, aktenweite Entscheidungen) und Version des
+  Datenschutz-Codes. Ändert sich eines davon, prüft der Versand neu.
+- **Fehler und Abbruch:** werden nicht gespeichert und unterbrechen die Verarbeitung nie. Bis zu einer erfolgreichen
+  Prüfung ist das Dokument **blockiert** (fail-closed). „Fehlgeschlagen“ wird nie zwischengespeichert.
+- **Keine Schreibzugriffe auf die Sitzung des Aufrufers** (Review §63): Modus ohne bedarfsweises Anlegen des Profils
+  gelesen, kein Autoflush; das Ergebnis schreibt eine eigene kurze Sitzung.
+- **Grenzen:**
+  - Mail-Anhänge haben bei der Verarbeitung noch keine Akte. Sie werden bei Anzeige oder Versand geprüft.
+  - Die Vorab-Prüfung läuft synchron im Upload. Der erste Upload nach dem Start (Kaltstart der lokalen Erkennung)
+    und große Texte dauern Sekunden.
+  - Verbindlich ist immer die Prüfung beim Versand; die Vorab-Prüfung ist nur ein Vorwärmen.
+
+### 63.3 P3 – mehr als 30 Dokumente
+
+- Die Höchstzahl (30) gilt jetzt für **freigegebene** Dokumente. Vorher wurden die 30 neuesten geladen und erst danach
+  gefiltert, sodass nicht freigegebene neue Dokumente ältere freigegebene verdrängten.
+- `_select_released_documents`: neueste zuerst (`created_at desc, id`), blockweise je 30, nur Dokumente mit
+  verwertbarem Text. Die Suche ist auf **120 Dokumente** begrenzt, damit viele offene Dokumente keine unbegrenzte
+  lokale Prüfung auslösen. Der Prüfkontext wird je Akte einmal für alle Blöcke berechnet.
+- **Nie verwendet:** nicht freigegebene und nicht durchsuchte Dokumente.
+- **Hinweise:**
+  - zurückgehaltene Dokumente (bis zu 10 Namen, „und N weitere“);
+  - „Höchstzahl von 30 Dokumenten erreicht: N weitere …“;
+  - „Suchgrenze erreicht: N weitere … nicht auf Freigabe geprüft“, wenn die Suche vor 30 Freigaben endet.
+  - Die Hinweise bleiben lokal und gehen nicht in die Cloud-Anfrage.
+- **Grenzen:**
+  - Blättern ohne Snapshot: Ein gleichzeitig neu angelegtes Dokument kann doppelt erscheinen; Inhalte werden
+    dedupliziert, schlimmstenfalls ein doppelter Name im Hinweis. Ein gleichzeitig gelöschtes Dokument kann
+    übersprungen werden; das ist fail-closed.
+  - Modus B: bis zu 30 Dokumente mit Text; vorher nur die mit Text unter den 30 neuesten.
+  - Eine neue Entscheidung oder ein neuer Beteiligter macht die gespeicherten Prüfungen der Akte ungültig. Der
+    nächste Versand prüft dann bis zu 120 Texte lokal neu.
+
+### 63.4 P4 – fachliche Grenzen
+
+- **„Kein personenbezogenes Datum“ gilt nur für sein Gespräch bzw. seinen Kontext.** Die Dokumentprüfung lädt nur
+  aktenweite Entscheidungen (`conversation_id=None`). Eine Entscheidung in einem Gespräch gibt kein Dokument frei und
+  gilt nicht kanzleiweit. Es gibt keine globale Ausnahme.
+- Die Namensmarkierung („personenbezogen“) verschärft den Schutz nur, sie lockert ihn nie.
+- **Mitarbeitende** haben weder `PERM_CLAUDE_CALL` noch `PERM_PRIVACY_DECISION_MANAGE`. Sie können also nicht
+  freigeben, nicht über Chat, „Aus Dokument“ oder die Prüfseite versenden und keine Entscheidung treffen (jeweils 403,
+  keine Freigabe, kein Payload). Eine erforderliche Anwaltsfreigabe ist damit nicht zu umgehen.
+
+### 63.5 Tests
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository (pytest) | `tests/test_document_release_defaults.py` (23): Neuinstallation C, Bestand unverändert (leer/A/B/C), ohne Profil, Altdaten ohne Benutzer, Anzeige; Vorab-Prüfung lokal und versionsgebunden, nicht in B, kein Profil angelegt, Fehler nicht vertraut, Textänderung; Upload ohne KI-Aufruf; >30 Dokumente gemischt, Hinweise, Suchgrenze; Gesprächsentscheidung; Mitarbeitende; alle Schriftsatz-, Chat- und Mailpfade | PASS |
+| Repository | verwandte Suiten (Freigabe, Migrationen, keine KI beim Öffnen/Upload, Drafting) | PASS |
+| Repository | vollständige Suite (6 Blöcke; Block 6 nach Speicherabbruch in drei Teilen im Vordergrund) | PASS (5321 Tests), außer den 4 bekannten fremden Logo-Tests (`test_design_refresh`) |
+| Sandbox | Migration auf temporärer DB: upgrade → downgrade → upgrade, genau 1 Profil `auto_review` (Review-Agent) | PASS |
+| Browser | Einstellungsseite: Hinweis „Standard für Neuinstallationen“ (TestClient-HTML) | PASS (nur gerendertes HTML, keine Browser-Sitzung) |
+| Installierte App / WebView2 / Installer | Neuinstallation mit Modus C, Upgrade einer echten Installation | **NICHT VERIFIZIERT** |
+| PostgreSQL | Migration und Auswahl | **NICHT VERIFIZIERT** |
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

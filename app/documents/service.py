@@ -236,5 +236,9 @@ class DocumentProcessingService:
         # "pending" oder ohne matter_id.
         if document.ocr_status in _TEXT_READY_OCR_STATUSES and document.matter_id:
             self.deadline_service.analyze_document(document, db)
+            # §63: Vorab-Pruefung der Dokumentfreigabe (nur Modus C, lokal, ohne Cloud) - der Versand prueft verbindlich
+            from app.documents.release import precheck_document
+
+            precheck_document(db, document)
 
         return document

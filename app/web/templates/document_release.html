@@ -18,7 +18,8 @@
       <h2 class="settings-card__title">Aktiver Freigabemodus</h2>
       <p class="document-release-mode" id="active-release-mode">
         <span class="tag"><span class="tag__dot"></span>{{ mode_label }}</span>
-        {% if mode == default_mode %}<span class="form-hint">(Standard – entspricht dem bisherigen Verhalten)</span>{% endif %}
+        {% if mode == new_installation_mode %}<span class="form-hint">(Standard für Neuinstallationen)</span>
+        {% elif mode == default_mode %}<span class="form-hint">(Standard bestehender Installationen – bisheriges Verhalten)</span>{% endif %}
       </p>
       <p class="settings-section__hint">Gilt für die gesamte Kanzlei. Ändern dürfen Administration und Anwälte.</p>
 

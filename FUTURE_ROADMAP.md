@@ -115,6 +115,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - fehlgeschlagene Prüfung in jedem Modus blockierend;
   - dezente Statusanzeige, ausblendbare Erfolgsmeldung pro Benutzer;
   - Prüfseite „Pseudonymisierung überprüfen“.
+  **Fortschritt 17.10.2026 (§63):** Modus C ist Standard für Neuinstallationen (Migration `schritt3_037`, nur bei
+  leerer Datenbank); bestehende Installationen bleiben unverändert (leer → ausdrücklich B).
+  - lokale Vorab-Prüfung in Modus C nach der Verarbeitung, an Textstand und Kontext gebunden, Fehler blockieren;
+  - Höchstzahl 30 gilt für freigegebene Dokumente, begrenzte Suche, Hinweise bei unvollständiger Auswahl;
+  - Geltungsbereich „kein personenbezogenes Datum“ (nur Gespräch) und Mitarbeitenden-Grenzen dokumentiert und getestet.
+  Installierte App/WebView2 und PostgreSQL NICHT VERIFIZIERT.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
