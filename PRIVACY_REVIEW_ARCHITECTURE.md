@@ -7870,7 +7870,7 @@ verpflichtend; nichts davon wurde gelockert. Die offene Owner-Frage aus §62.1 i
 - `_select_released_documents`: neueste zuerst (`created_at desc, id`), blockweise je 30, nur Dokumente mit
   verwertbarem Text. Die Suche ist auf **120 Dokumente** begrenzt, damit viele offene Dokumente keine unbegrenzte
   lokale Prüfung auslösen. Der Prüfkontext wird je Akte einmal für alle Blöcke berechnet.
-- **Nie verwendet:** nicht freigegebene und nicht durchsuchte Dokumente.
+- **Nie verwendet:** nicht freigegebene und nicht durchsuchte Dokumente. **Präzisiert in §66.2:** gilt für Volltexte; Fristauszüge freigegebener Dokumente laufen über einen eigenen, ebenfalls freigabegeprüften Pfad.
 - **Hinweise:**
   - zurückgehaltene Dokumente (bis zu 10 Namen, „und N weitere“);
   - „Höchstzahl von 30 Dokumenten erreicht: N weitere …“;
@@ -8198,5 +8198,180 @@ normalen Start, mit automatischem Backup.
 | Build | Worktree `07d5fe0`, PyInstaller und Inno Setup | PASS |
 | Installation | Update der bestehenden Installation, echte Datenbank unverändert | PASS |
 | WebView2 (installierte App, isolierte Daten) | s. 65.3 | PASS (Ausnahmen NICHT VERIFIZIERT) |
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §66 Dokumentauswahl in der installierten App, Übermaskierung juristischer Werte, Migration/Update (17.10.2026, Branch `feature/feedback-diagnose`, Basis `dd3b24f`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert; es
+gab keine Lockerung außerhalb der bestehenden, geprüften §33-Regel.
+
+### 66.1 Ausgangslage Build
+
+- Der installierte Build stammte aus `07d5fe0`.
+- Zwischen `07d5fe0` und `dd3b24f` gibt es **keinen** Unterschied in `app/`, `run.py`, `migrations/`, `windows/`,
+  `alembic.ini` oder `Start.vbs`: Der Build entsprach `dd3b24f` im App-Code.
+- Nach den §66-Änderungen wurde aus Commit **`44f3df7`** neu gebaut (Worktree, PyInstaller und Inno Setup jeweils
+  Exit 0). Im ausgelieferten Code stehen die §66-Marker (`_with_context_notices`, `context_notices`, ausgeschriebene
+  Monatsnamen, „nicht als Volltext“).
+- Stilles Update: Exit 0, `Lexono.exe` byte-gleich mit dem Build, echte Datenbank unverändert (Hash vorher = nachher).
+- Der vorige Installer ist archiviert: `C:\Users\Bonit\lexono_installer_archiv\Lexono_Setup_07d5fe0.exe`.
+
+### 66.2 P1 – Dokumentauswahl in der installierten App (WebView2)
+
+**Aufbau:**
+- Die installierte `Lexono.exe` läuft gegen die isolierte QA-Instanz `C:\Users\Bonit\lexono_qa_s65`; das echte
+  WebView2-Fenster wird über CDP gesteuert.
+- Akten werden über die echten Formulare angelegt, Dokumente über den echten Mehrfach-Upload hochgeladen, Fragen über
+  den echten Chat-Composer gestellt.
+- Die **tatsächlich ausgehende** Anfrage geht an einen lokalen Aufzeichnungsserver (`ANTHROPIC_BASE_URL` auf
+  127.0.0.1 mit `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1`, gefälschter Schlüssel, Gateway-Zeile der QA-`.env`
+  deaktiviert; das Original liegt als `qa_nachweise\s66\env_vor_s66.txt`).
+- Kein Anthropic-Aufruf, kein Gateway, keine Serverkosten. Alle 4 Anfragen gingen an `/v1/messages` des
+  Aufzeichnungsservers, nur mit dem gefälschten Schlüssel.
+- Nachweise (Screenshots, alle Anfragen als JSON, `ergebnis.json`): `qa_nachweise\s66\lauf2` und
+  `qa_nachweise\s66\lauf3_build_44f3df7`.
+
+**Lauf 1 – ungültig, kein Befund gegen Lexono:**
+- `?matter=` öffnete das zuletzt aktive Gespräch, die Fragen liefen deshalb in einer anderen Akte. Richtig ist
+  `?new=1&matter=`.
+- Die Testtexte enthielten kennungsartige Marker („S1-F001“). Die Prüfung fragt bei solchen Zeichenfolgen nach, was
+  im Repository reproduziert und vorsichtiges Verhalten ist.
+
+**Lauf 2 (Build `07d5fe0`) – Befunde:**
+- **Lücke:** Der Chat zeigte die Auswahlhinweise (Höchstzahl, Suchgrenze, nicht freigegebene Dokumente) **nicht** an
+  – weder im Streaming- noch im normalen Pfad. `DraftingResult.open_review_points` wurde vom Chat nie übernommen.
+- **Ungenau dokumentiert:** Fristauszüge („Argumentationspunkte“) freigegebener Dokumente gehen auch für Dokumente
+  jenseits der Höchstzahl bzw. Suchgrenze hinaus. Das ist ein eigener Pfad mit eigener Freigabeprüfung
+  (`_build_argumentationspunkte` → `released_document_ids`), also zulässig. Die Aussage in §63.3 „nicht durchsuchte
+  Dokumente werden nie verwendet“ gilt aber nur für Volltexte.
+
+**Korrektur (Commit `44f3df7`):**
+- Die Hinweise der Kontextauswahl werden als eigenes Feld `DraftingResult.context_notices` (über
+  `_PreparedRequest.context_notices`) bis in den Chat gereicht. Dort stehen sie im lokalen Block „Offene Prüfpunkte /
+  Hinweise“, außerhalb des kopierbaren Texts.
+- Der Gesprächsverlauf entfernt diesen Block vor jeder weiteren Cloud-Anfrage (bestehend, `_build_history`).
+- Die Hinweistexte sind präzisiert: „nicht als Volltext berücksichtigt … erkannte Fristhinweise freigegebener
+  Dokumente bleiben enthalten“.
+
+**Lauf 3 (installierter Build `44f3df7`):**
+
+| Fall | Erwartung | Tatsächliche ausgehende Anfrage | Anzeige in der App | Ergebnis |
+|---|---|---|---|---|
+| S1: 34 freigegebene ältere + 8 auffällige neuere (Modus C, alle 42 vorab geprüft: 34 passed, 8 uncertain) | 30 neueste freigegebene als Volltext; keine auffälligen | Sachverhalt: genau 30 Dokumente; 0 Sperrbeträge; Fristauszüge aus allen 34 freigegebenen; kein Hinweistext | Hinweisblock: 8 Dateinamen „nicht freigegeben“ + „Höchstzahl von 30 … 4 weitere … nicht als Volltext“ | **PASS** |
+| S2: 3 freigegebene ältere + 125 auffällige neuere (>120 durchsucht) | kein Volltext; Suchgrenze benannt | Sachverhalt: 0 Dokumente; 0 Sperrbeträge; 3 Fristauszüge aus den freigegebenen (eigener, freigabegeprüfter Pfad); kein Hinweistext | „… und 110 weitere“ + „Suchgrenze erreicht: 8 weitere …“ | **PASS** |
+| S3: auffälliges Dokument („Richter“), danach Beteiligter „Richter“ über das Formular (Kontextänderung) | vorher zurückgehalten; danach neue Prüfung im neuen Kontext, Name maskiert | vorher: Dokument nicht enthalten; danach Prüfungen `uncertain` → `passed` (2 Kontexte), Dokument enthalten, „Richter“ nicht im Klartext | vorher Hinweis „nicht freigegeben“ | **PASS** |
+| Hinweise/Statusmeldungen im Payload (alle 4 Anfragen) | nie | keine der Phrasen „Nicht berücksichtigt“, „Höchstzahl“, „Suchgrenze“, „Freigabemodus“, „Entscheidung erforderlich“, „Automatisch freigegeben“, „.txt“ | – | **PASS** |
+| Textänderung eines Dokuments | neue Prüfung, keine veraltete Freigabe | über die Oberfläche nicht auslösbar (kein Textbearbeiten) | – | **NICHT VERIFIZIERT** in der App (Repository-Tests: PASS) |
+
+**Beobachtungen ohne Änderung:**
+- Die Seitenleiste zeigt „Cloud-KI (Gateway) Bereit“, obwohl die direkte Strecke zum lokalen Aufzeichnungsserver
+  aktiv war. Die Statusanzeige unterscheidet Gateway und Direktstrecke nicht.
+- Im Payload wurden „Freigabevermerk“ (Dokumenttext) und „Suchgrenze“ (Aktentitel) als Person maskiert: weitere
+  Übermaskierung, kein Leck.
+
+### 66.3 P2 – Übermaskierung der 15 nicht erhaltenen Werte (`privacy_sources_v1`)
+
+| Fall | Wert | Erwartet | Tatsächliche Maskierung | Ursache | Ergebnis |
+|---|---|---|---|---|---|
+| Q05 | BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24 | lesbar (veröffentlichte Entscheidung) | `6 AZR 32/24` → Aktenzeichen | §33-Zitierform kannte nur numerische Daten | **behoben** |
+| Q07 | BAG, Urteil vom 3. April 2025 – 2 AZR 72/24 | lesbar | Aktenzeichen | wie Q05 | **behoben** |
+| Q10 | BGH, Urteil vom 14. Oktober 2025 – VI ZR 431/24 | lesbar | Aktenzeichen | wie Q05 | **behoben** |
+| Q02 | BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23 | lesbar | Aktenzeichen | Datumsform; dazu „Mandantin“ im 80-Zeichen-Fenster → Schutz eigener Verfahren (§33) | **bleibt maskiert** (bewusst) |
+| Q04 | BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24 | lesbar | Aktenzeichen | Datumsform; „unseren Mandanten“ im Fenster danach (§33) | **bleibt maskiert** (bewusst) |
+| Q08 | 2 AZR 72/24 (ohne Gericht/Datum) | lesbar | Aktenzeichen | arabische Kurzform ohne Datum – nach Review §33 bewusst maskiert | **bleibt maskiert** |
+| Q09, Q10 | Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO | lesbar | „Buchst“ → Person (NER) | Abkürzung fehlte in `_LEGAL_ABBREVIATIONS` | **behoben** („Unterabs.“/„Buchst.“ wie „Abs.“, nur mit Punkt) |
+| Q02 | Amtsgericht Köpenick | lesbar | → Ort | Gerichtsname als Ortsangabe | **unverändert** (Owner-Entscheidung) |
+| Q05 | Amtsgericht Kiel | lesbar | → Ort | wie oben | **unverändert** |
+| Q10 | Landgericht Osnabrück | lesbar | → Ort | wie oben | **unverändert** |
+| Q07 | Arbeitsgericht Frankfurt am Main | lesbar | „Frankfurt am Main“, „am Main“ → Ort | wie oben | **unverändert** |
+| Q02 | Räumungsklage | lesbar | „Räumungsklage Wohnbau Lindenhof GmbH ./.“ → Organisation | NER-Spanne zu weit | **unverändert** |
+| Q04 | personenidentisch | lesbar | „veräußernden Gesellschaft personenidentisch“ → Organisation | NER-Spanne zu weit | **unverändert** |
+| Q03 | 2019 | lesbar | „Haus im Jahr 2019“ → Ort | NER-Spanne zu weit | **unverändert** |
+
+**Lösung, eng begrenzt (`app/privacy/detectors.py`):**
+- Die bestehende §33-Ausnahme (nur Bundesgerichte, nur Bundes-Aktenzeichen, nur die kanonische Zitierform „<Gericht>,
+  Urt./Beschl. v. <Datum> – <Az>“, nie bei Hinweis auf ein eigenes Verfahren) erkennt das Datum jetzt auch mit
+  **ausgeschriebenem Monat**.
+- „Unterabs.“ und „Buchst.“ gelten wie „Abs.“ nur mit Punkt als Abkürzung.
+- Nicht erweitert: Kurzformen, untere Instanzen, eigene Aktenzeichen (z. B. „14 C 233/26“ bleibt maskiert), Fenster
+  und Liste der Hinweise auf eigene Verfahren.
+- **Nicht umgesetzt:**
+  - Gerichtsnamen: eine neue Lockerung der Ortserkennung; der Gerichtssitz kann den Wohnort eingrenzen. Bleibt
+    **Owner-Entscheidung**.
+  - NER-Spannen: keine sichere enge Regel.
+
+**Absicherung:**
+- `test_privacy_identity_genitive_citations`: Zitate mit ausgeschriebenem Monat bleiben lesbar.
+- Eigenes Verfahren mit ausgeschriebenem Monat, untere Instanz, eigenes Aktenzeichen und Kurzform bleiben maskiert.
+- Ein Name neben „Buchst.“ wird weiter maskiert.
+
+**Messung `privacy_sources_v1`** (gleiche Methodik):
+
+| Kennzahl | vorher → nachher |
+|---|---|
+| geschützte Werte / Lecks | 52/52, 0 → 52/52, **0** |
+| erhaltene juristische Werte | 101/116 → **106/116** |
+| neue Maskierungen | **0** |
+| Chronologie / Fail-Closed / Blockaden | 11/11, 22/22, 0 → unverändert |
+
+- Die Sperrklinke ist nachgezogen: Die behobenen Werte sind als „bleibt erhalten“ festgeschrieben, die verbleibenden
+  10 bleiben im Regressionsschutz.
+- Die übrigen Datenschutz-Benchmarks liegen in der vollen Suite und sind grün: `pseudonymization_v1`-Sperrklinke,
+  Legal-E2E-Sperrklinke, Chat ohne Akte, Rollenwort-Sätze.
+
+### 66.4 P3 – Datenbank, Backup, Migration, Wiederherstellung
+
+**QA-App:**
+- Datenbank: `C:\Users\Bonit\lexono_qa_s65\data\kanzlei_ai.db`, gewählt über `LEXONO_DATA_DIR` →
+  `.env` `DATABASE_URL`.
+- Stand `schritt3_037`, neu angelegt durch die installierte App (`migrate`, `create-admin`).
+- Es gibt keinen Backup-Ordner: Bei einer neuen, leeren Datenbank und ohne ausstehende Migration legt Lexono
+  bestimmungsgemäß kein Backup an.
+- Der Build `44f3df7` bringt keine neue Migration mit.
+
+**Echte Datenbank:**
+- `C:\ProgramData\Lexono\data\kanzlei_ai.db`, Stand `schritt3_029`, in §65 und §66 **unverändert** (gleicher Hash
+  vor und nach beiden Updates).
+- Daneben liegen ältere Handsicherungen `kanzlei_ai.db.bak_pre_schritt3_019` bis `…_022` vom 03.10.2026.
+
+**Ablauf beim nächsten normalen Start** (`run.py` `cmd_serve` → `cmd_migrate` bei jedem Start):
+1. `pending_revisions` liest den Stand, nur lesend.
+2. Eine Datenbank aus einer neueren Programmversion wird abgewiesen (Downgrade-Schutz: keine Sicherung, keine
+   Migration, kein Start).
+3. Steht etwas aus (hier 029 → 037), legt `create_pre_migration_backup` über die SQLite-Backup-API eine konsistente
+   Kopie als ZIP an: `data\backups\vor-update_schritt3_029_auf_schritt3_037_<Zeitstempel>.zip`. Das ZIP wird geprüft
+   (`testzip`). Schlägt das fehl, gibt es **keine Migration** (fail-closed).
+4. Dann folgt `alembic upgrade head`. Die Probe auf einer Kopie der echten Datenbank (§65.2) ergab: alle 42
+   Tabellen und Zeilenzahlen erhalten, 6 neue Tabellen, Modus explizit B, `integrity_check` ok.
+
+**Wiederherstellung:**
+- Nur offline: `Lexono.exe restore --archive <ZIP>` (`app/backup/restore_service.py`), bei gestoppter App.
+- Vorher sichert Lexono die aktuelle Datei als `*.pre-restore-<Zeitstempel>.bak`.
+- Abgedeckt durch die Repository-Tests `test_update_hardening`, `test_restore_service` und `test_restore_backup_cli`
+  (PASS, volle Suite).
+- **Fremdschlüssel:** Die 9 Verstöße (`chat_message_documents`, `drafts`, `draft_feedback`, `outbox_entries`,
+  `documents`) bestehen **bereits im Original**; die Probe-Migration hat sie weder verursacht noch verändert.
+- **NICHT VERIFIZIERT** (keine Freigabe erteilt): echte Migration, echtes Backup und Wiederherstellung der echten
+  Datenbank; Wiederherstellung in der installierten App.
+
+### 66.5 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Installierte App (WebView2, isolierte QA-Daten, Loopback-Payload) | Lauf 3, s. 66.2 | PASS (Textänderung NICHT VERIFIZIERT) |
+| Build/Installation | Build `44f3df7`, Update, echte Datenbank unverändert | PASS |
+| Repository | `test_document_selection_limits` (+1: Hinweise im Chat lokal, Folgefrage ohne Hinweise), `test_privacy_identity_genitive_citations` (+10), `test_bench_privacy_sources` (+1) | PASS |
+| Repository | volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5367 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+| Sandbox | `privacy_sources_v1` neu gemessen, Ursachendiagnose | PASS |
+| Browser (ohne App) | – | nicht durchgeführt |
+| PostgreSQL, echte Transportstrecke | – | **NICHT VERIFIZIERT** |
+
+**Testprozesse:**
+- Vor den Läufen gab es keine alten Prozesse.
+- Jede QA-Instanz wurde nach Identitätsprüfung (PID-Datei, Pfad, `serve`) über `CloseMainWindow` regulär beendet.
+- Danach lief kein Python-, Lexono- oder llama-Prozess mehr; frei sind 7,4 GB.
+- QA-Daten, Programmsicherung und Installer-Archiv sind erhalten.
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

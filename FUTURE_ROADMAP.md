@@ -134,6 +134,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - Quellen „Gesetze im Internet“ und „Rechtsprechung im Internet“ freigegeben und dokumentiert;
   - Korpus `privacy_sources_v1`: 0 Lecks, 101/116 juristische Werte erhalten, Sperrklinke.
   Offene Owner-Frage: Aktenzeichen oberster Bundesgerichte in Zitaten unmaskiert lassen?
+  **Fortschritt 17.10.2026 (§66):** In der installierten App (WebView2, Loopback-Payload) gefunden: Der Chat zeigte
+  die Auswahlhinweise nicht an. Behoben und im installierten Build `44f3df7` verifiziert (>30, >120, Kontextänderung).
+  - Übermaskierung 101 → 106/116 über die bestehende §33-Zitatregel (ausgeschriebener Monat) und „Buchst.“/„Unterabs.“;
+  - Migration, Backup und Wiederherstellung dokumentiert.
+  Offen (Owner): Gerichtsnamen als Ort maskiert; echte Migration der Kanzleidatenbank.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
