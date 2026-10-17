@@ -33,6 +33,7 @@ from app.deadlines.extractor import (
     remove_unlabelled_personal_dates,
     restore_personal_dates,
     trim_partial_personal_dates,
+    with_institution_prefix,
 )
 from app.models import Deadline, Document, Matter, Message, Party
 from app.search.service import DocumentSearchService
@@ -690,7 +691,8 @@ class RuleBasedLocalAIProvider:
         return [
             # Rand-Bruchstuecke zerschnittener Geburts-/Todesdaten aus Altvorschlaegen entfernen (§24, Fall 19)
             f"{label_of(deadline)} ({deadline.review_status}): "
-            f"{trim_partial_personal_dates(deadline.source_text, source_text_of(deadline))}"
+            # §69: Gerichtsart vor dem Auszug aus dem Volltext ergaenzen (Altvorschlaege, nur nachweisbar)
+            f"{trim_partial_personal_dates(with_institution_prefix(deadline.source_text, source_text_of(deadline)), source_text_of(deadline))}"
             for deadline in deadlines
             # Datenschutz-Pruefung §26: ein abgelehnter Vorschlag ist keine Frist - nicht mehr an die Cloud senden
             if deadline.review_status != "rejected"

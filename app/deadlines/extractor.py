@@ -146,6 +146,28 @@ _NOT_VERIFIED = "Konfidenz bewusst niedrig - diese Frist gilt NICHT als verbindl
 _CONTEXT_WINDOW_CHARS = 60
 
 
+def institution_prefix(text_before: str) -> str:
+    """§69: die Gerichts-/Justizbezeichnung (genau ein Wort + Leerzeichen), mit der `text_before` endet, sonst "".
+    Dieselbe Klassifikation wie app/privacy/detectors.py (§67)."""
+    from app.privacy.detectors import COURT_TYPE_BEFORE_SPACE
+
+    match = COURT_TYPE_BEFORE_SPACE.search(text_before)
+    return text_before[match.start():] if match else ""
+
+
+def with_institution_prefix(snippet: str | None, full_text: str | None) -> str | None:
+    """§69: bereits gespeicherte Fristauszuege (vor §69 erzeugt) nur dann ergaenzen, wenn der Auszug im Volltext des
+    Quelldokuments nachweisbar ist und dort unmittelbar eine Gerichts-/Justizbezeichnung davor steht - sonst
+    unveraendert (kein Volltext, Auszug nicht auffindbar oder kein Gericht davor)."""
+    if not snippet or not full_text:
+        return snippet
+    flat = full_text.replace("\n", "  ")
+    index = flat.find(snippet)
+    if index <= 0 or flat.find(snippet, index + 1) >= 0:  # nicht oder nicht eindeutig auffindbar
+        return snippet
+    return institution_prefix(flat[max(0, index - 60):index]) + snippet
+
+
 class DeadlineExtractor(Protocol):
     def extract(self, text: str) -> list[ExtractedDeadline]: ...
 
@@ -643,6 +665,11 @@ class PlaceholderDeadlineExtractor:
             window_start -= 1
         while window_end < len(text) and not text[window_end - 1].isspace() and not text[window_end].isspace():
             window_end += 1
+        # §69 (installierter Build e8d0a0f, §68 F4): beginnt das Fenster mit dem Sitz direkt nach einer Gerichts-/
+        # Justizbezeichnung ("Amtsgericht |Kiel, Az. ..."), fehlte die Gerichtsart - "Kiel" war im Auszug ein
+        # gewoehnlicher Ort, und die Wiederholungsregel maskierte ihn dann auch im Sachverhalt. Die Gerichtsart aus dem
+        # ORIGINALTEXT unmittelbar davor gehoert deshalb zum Auszug (nur sie, nichts erfunden).
+        window_start -= len(institution_prefix(text[max(0, window_start - 60):window_start]))
         snippet = text[window_start:window_end].replace("\n", "  ").strip()
         return snippet
 

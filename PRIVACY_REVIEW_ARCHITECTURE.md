@@ -8487,3 +8487,92 @@ Restrisiko-Scan.
 - Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §69 Fristauszüge und System-Typbezeichnungen (Befunde F4/F6 aus dem App-Test §68) (17.10.2026, Basis `e8d0a0f`)
+
+Status: **teilweise nachgewiesen**. Die §67-Gerichtsregel ist nicht erweitert. Pseudonymisierung, Leak-Checks und
+Fail-Closed sind unverändert.
+
+### 69.1 F4 – Gerichtsname im Fristauszug maskiert
+
+**Weg des Textes:**
+1. Dokumenttext.
+2. `PlaceholderDeadlineExtractor._context_window`: 60 Zeichen um das Datum, eingerastet auf die nächste Leerstelle.
+3. `Deadline.source_text` (gespeichert).
+4. `RuleBasedLocalAIProvider._build_argumentationspunkte` („Möglicher Termin … :: <Auszug>“).
+5. Gateway: `detect_all` mit der Wiederholungsregel `_extend_with_repeated_occurrences`.
+
+**Ursache:**
+- Die Fenstergrenze fiel zwischen „Amtsgericht“ und „Kiel“, der Auszug begann deshalb mit „Kiel, Az. …“.
+- Ohne Gerichtsart ist „Kiel“ ein gewöhnlicher Ort-Treffer; die §67-Regel greift richtigerweise nicht.
+- Die Wiederholungsregel maskierte den Wert daraufhin an jeder Stelle, auch im Sachverhalt („Amtsgericht [ORT_01]“).
+- Übermaskierung, kein Leck.
+
+**Änderung (Herkunft belegt):**
+- `app/deadlines/extractor.py`:
+  - `institution_prefix`: Steht im **Originaltext** unmittelbar vor dem Fenster genau eine Gerichts- oder
+    Justizbezeichnung (dieselbe Klassifikation wie §67, `detectors.COURT_TYPE_BEFORE_SPACE`), gehört sie zum Auszug.
+  - `with_institution_prefix`: ergänzt **bereits gespeicherte** Auszüge nur, wenn der Auszug im Volltext des
+    Quelldokuments **eindeutig** auffindbar ist und dort unmittelbar eine Gerichtsart davor steht.
+  - In allen anderen Fällen bleibt der Auszug unverändert: kein Volltext, nicht auffindbar, mehrdeutig, kein Gericht
+    davor.
+- `app/ai_providers/local_ai_provider.py`: Die Argumentationspunkte nutzen `with_institution_prefix`.
+- Ein isoliertes „Kiel“ löst nie eine Freigabe aus. Es wird nur das Wort aus dem Originaltext übernommen.
+
+### 69.2 F6 – Blockade bei Gericht + Anschrift
+
+**Reproduktion:**
+- Synthetisch, lokal, über den echten Gateway.
+- Mit und ohne §67-Regel identisch blockiert: „Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']“.
+
+**Verantwortlicher Prüfschritt:** Restrisiko-Scan (`security_check`), Restbefund `person: 'Gerichtliches'`.
+
+**Ursache:**
+- Der Kontextaufbau setzt vor jeden Dokumenttext die von Lexono vergebene Typbezeichnung, etwa
+  `[Gerichtliches Schreiben] …`.
+- Die Namenserkennung las „Gerichtliches“ uneinheitlich als Person: in der Pseudonymisierung mal maskiert
+  („[[PERSON_01] Schreiben]“), mal nicht. Im zweiten Fall meldete der Restrisiko-Scan das Wort als Personen-Rest und
+  blockierte fail-closed.
+- Mit Gerichten oder Anschriften hat das nichts zu tun.
+
+**Änderung (`app/privacy/detectors.py`, `_drop_spans_in_document_type_labels`):**
+- Person-, Ort- und Organisationstreffer, die **vollständig** innerhalb einer solchen Bezeichnung **am Zeilenanfang in
+  eckigen Klammern** liegen, entfallen.
+- Das gilt nur für das **geschlossene Vokabular** des Klassifikators (`ALLOWED_DOCUMENT_TYPES` plus
+  „unklassifiziert“), in Pseudonymisierung und Restrisiko-Scan gleich.
+- Im Fließtext und hinter der Bezeichnung gilt unverändert die normale Erkennung.
+
+### 69.3 Tests
+
+`tests/test_privacy_deadline_excerpts_and_labels.py`, 18 Tests, alle PASS. Eine Mutationsprobe mit abgeschalteter
+Korrektur lässt die F4- und F6-Tests scheitern.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neuer Auszug enthält die Gerichtsart aus dem Originaltext | PASS |
+| Gespeicherter Auszug: ergänzt nur bei eindeutigem Nachweis im Volltext; Wohnort, fehlender Volltext, nicht auffindbar und mehrdeutig bleiben unverändert | PASS |
+| Ende-zu-Ende über `DraftingService` (Payload an den Schreib-Provider): „Amtsgericht Kiel“ in Sachverhalt und Auszug lesbar, kein `[ORT_`, „14 C 233/26“ maskiert | PASS |
+| Wohnort im Auszug: Ort und Name maskiert | PASS |
+| Sitz in der Anschrift: Gericht, Name, Straße, PLZ maskiert | PASS |
+| F6: keine Blockade mehr; Kiel, Name, Straße, PLZ maskiert; Typbezeichnung lesbar | PASS |
+| Typbezeichnungen lesbar, Namen dahinter maskiert (6 Bezeichnungen) | PASS |
+| Wort außerhalb der Bezeichnungsposition nicht ausgenommen | PASS |
+| NER-Ausfall mit Typbezeichnung und Fristauszug: kein Payload (Fail-Closed) | PASS |
+| Volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5417 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+
+**Benchmark `privacy_sources_v1` gegenüber §67:**
+- Lecks 0/0, erhalten 109/116, Maskierungen ohne Referenz 26 – unverändert.
+- Der Korpus nutzt den Feldfall-Pfad ohne Fristauszüge und Typbezeichnungen, misst F4/F6 also nicht. Abgesichert sind
+  sie durch die Tests oben.
+
+### 69.4 Nicht verifiziert
+
+- Installierte App: Der installierte Build `e8d0a0f` enthält §69 nicht. **NICHT VERIFIZIERT** in der App und im
+  App-Payload; geprüft sind Repository und Payload an den Schreib-Provider (Ende-zu-Ende im Repository).
+- **F7 (NER-Ausfall):** In der installierten App nicht auslösbar, ohne die Installation zu verändern.
+  **NICHT VERIFIZIERT** in der App. Repository-Tests `test_ner_failure_still_blocks_with_a_court_name` und
+  `test_ner_failure_still_blocks_with_labels_and_excerpts`: PASS.
+- Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

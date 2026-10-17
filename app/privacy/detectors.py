@@ -1038,6 +1038,7 @@ def detect_all(
     all_spans = _anchor_person_variants(all_spans, known_entities, analysis=analysis)
     all_spans = _handle_citations(text, all_spans)
     all_spans = _keep_public_court_names(text, all_spans)
+    all_spans = _drop_spans_in_document_type_labels(text, all_spans)
     all_spans = _drop_contact_labels(text, all_spans)
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
@@ -1409,6 +1410,8 @@ _COURT_SEAT = (
     r"(?:\s\(" + _SEAT_WORD + r"\))?(?:\s(?:I{1,3}|IV))?"
 )
 _PUBLIC_COURT_NAME = re.compile(_COURT_TYPE + r"(?:\s" + _COURT_SEAT + r")?")
+#: §69: oeffentlich fuer die Fristauszuege (app/deadlines/extractor.py) - eine Gerichtsart unmittelbar vor dem Fenster
+COURT_TYPE_BEFORE_SPACE = re.compile(r"(?<![\wÄÖÜäöüß])" + _COURT_TYPE + r" $")
 _COURT_SEAT_ONLY = re.compile(_COURT_SEAT)
 _COURT_TYPE_BEFORE = re.compile(r"(?<![\wÄÖÜäöüß])" + _COURT_TYPE + r" $")
 _COURT_PROTECTED_CATEGORIES = frozenset({"ort", "organisation"})
@@ -1433,6 +1436,33 @@ def _keep_public_court_names(text: str, spans: list[DetectedSpan]) -> list[Detec
                 continue
         result.append(span)
     return result
+
+
+# --- Dokumenttyp-Bezeichnungen des Systems (§69) --------------------------------------------------------------------
+# ECHTER FUND (installierter Build e8d0a0f, §68 F6): der Kontextaufbau setzt vor jeden Dokumenttext die von Lexono
+# vergebene Typbezeichnung ("[Gerichtliches Schreiben] ...", app/ai_providers/local_ai_provider.py). Die NER las
+# "Gerichtliches" mal als Person (Pseudonymisierung: "[[PERSON_01] Schreiben]"), mal nicht - dann meldete der
+# Restrisiko-Scan dasselbe Wort als Personen-Rest und blockierte die Anfrage fail-closed. Die Bezeichnung stammt aus dem
+# GESCHLOSSENEN Vokabular des Klassifikators (`ALLOWED_DOCUMENT_TYPES`, plus "unklassifiziert"), nie aus Mandantendaten.
+# Deshalb entfallen Person-/Ort-/Organisationstreffer, die VOLLSTAENDIG innerhalb einer solchen Bezeichnung am
+# Zeilenanfang liegen - nur exakt diese Bezeichnungen, nichts dahinter; gilt identisch im Restrisiko-Scan.
+def _document_type_label_pattern() -> re.Pattern:
+    from app.classification.schema import ALLOWED_DOCUMENT_TYPES
+
+    labels = sorted({*ALLOWED_DOCUMENT_TYPES, "unklassifiziert"}, key=len, reverse=True)
+    return re.compile(r"(?m)^\[(?:" + "|".join(re.escape(label) for label in labels) + r")\]")
+
+
+_DOCUMENT_TYPE_LABEL = _document_type_label_pattern()
+
+
+def _drop_spans_in_document_type_labels(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    labels = [(m.start(), m.end()) for m in _DOCUMENT_TYPE_LABEL.finditer(text)]
+    if not labels:
+        return spans
+    return [span for span in spans
+            if not (span.category in ("person", "ort", "organisation")
+                    and any(lo <= span.start and span.end <= hi for lo, hi in labels))]
 
 
 # --- Versalien (13.10.2026, scripts/bench_uppercase.py) ----------------------------------------------------------------

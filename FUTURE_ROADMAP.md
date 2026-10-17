@@ -142,6 +142,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 17.10.2026 (§67):** Öffentliche Gerichts- und Justizbezeichnungen bleiben als Institution lesbar
   (Klassifikationsregel in `detect_all`, wirkt auch im Restrisiko-Scan). Bei Mehrdeutigkeit gewinnt der Schutz.
   Ergebnis: 0 Lecks, 109/116 erhalten. In der installierten App NICHT VERIFIZIERT (kein neuer Build).
+  **Fortschritt 17.10.2026 (§68/§69):** §67 in der installierten App geprüft (Build `e8d0a0f`, WebView2, Loopback-
+  Payload): kein geschützter Wert freigegeben.
+  - F4 behoben: Fristauszüge übernehmen die Gerichtsart nachweisbar aus dem Originaltext;
+  - F6 behoben: System-Typbezeichnungen wie „[Gerichtliches Schreiben]“ lösen keine Fehlblockade mehr aus.
+  §69 ist in der installierten App NICHT VERIFIZIERT.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
