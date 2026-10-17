@@ -41,7 +41,7 @@ from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
-from tests.auth_test_utils import create_test_user, extract_csrf, login, login_as_admin, seed_roles
+from tests.auth_test_utils import extract_upload_token, create_test_user, extract_csrf, login, login_as_admin, seed_roles
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 
@@ -261,7 +261,7 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
     # §57: Schritt 1 - nur hochladen: Weiterleitung zur Dokumentansicht, KEIN KI-Aufruf
     upload = client.post(
         "/dashboard/chat/send",
-        data={
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text),
             "csrf_token": csrf,
             "conversation_id": "",
             "content": f"Bitte fasse das Dokument für Mandantin {marker_name} zusammen.",
@@ -309,7 +309,7 @@ def _upload_then_send(client: TestClient, content: str, files: dict, *, stream: 
     Gibt (conversation_id, Antwort des zweiten Schritts) zurueck."""
     if stream:
         upload = client.post("/dashboard/chat/send-stream", files=files,
-                             data={"csrf_token": _csrf(client), "conversation_id": "", "content": content})
+                             data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content})
         events = _parse_sse_events(upload.text)
         assert [event["kind"] for event in events] == ["start", "uploaded"], events
         conversation_id = events[0]["conversation_id"]
@@ -317,7 +317,7 @@ def _upload_then_send(client: TestClient, content: str, files: dict, *, stream: 
                                data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content})
         return conversation_id, response
     upload = client.post("/dashboard/chat/send", files=files, follow_redirects=False,
-                         data={"csrf_token": _csrf(client), "conversation_id": "", "content": content})
+                         data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content})
     assert upload.status_code == 303 and upload.headers["location"].startswith("/dashboard/chat/")
     conversation_id = upload.headers["location"].split("/")[3].split("?")[0]
     response = client.post("/dashboard/chat/send", follow_redirects=False,
@@ -456,7 +456,7 @@ def test_rejects_disallowed_file_extension(client: TestClient, db_session: Sessi
 
     response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Analysiere das:"},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Analysiere das:"},
         files={"documents": ("script.exe", b"MZ", "application/octet-stream")},
         follow_redirects=False,
     )
@@ -1160,7 +1160,7 @@ def test_document_status_badge_shows_processed_for_text_pdf(
 
     response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
         files={"documents": ("textdokument.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )
@@ -1261,7 +1261,7 @@ def test_document_workspace_shows_highlighted_pii_and_context_panel(
 
     upload_response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
         files={"documents": ("mandantenbrief.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )
@@ -1325,7 +1325,7 @@ def test_document_workspace_rejects_document_from_other_conversation(
 
     client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
         files={"documents": ("erste.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )

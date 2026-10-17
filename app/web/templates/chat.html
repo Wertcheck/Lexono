@@ -576,6 +576,9 @@
         </button>
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
+        {# §59: Upload-Vorgangs-ID - eine Wiederholung DESSELBEN Uploads (Doppelklick, Netzwerkwiederholung) legt nichts
+           doppelt an; jede Upload-Antwort liefert eine neue ID fuer den naechsten, bewusst neuen Upload #}
+        <input type="hidden" name="upload_token" value="{{ upload_token }}" />
         {# Vorgemerkte Akte aus dem "Mit dieser Akte im Chat arbeiten"-
            Einstieg (14.09.) - erst die erste Nachricht legt die
            Unterhaltung an, deshalb wird die Akte bis dahin im Formular
@@ -2537,6 +2540,11 @@
                 payload = JSON.parse(line.slice("data: ".length));
               } catch (parseError) {
                 return;
+              }
+              if (payload.upload_token) {
+                // §59: neue Upload-Vorgangs-ID fuer den naechsten, bewusst neuen Upload (auch nach einem Fehler)
+                var uploadTokenField = composer.querySelector("input[name=\"upload_token\"]");
+                if (uploadTokenField) { uploadTokenField.value = payload.upload_token; }
               }
               if (payload.kind === "start") {
                 conversationId = payload.conversation_id;

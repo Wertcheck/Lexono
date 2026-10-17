@@ -26,7 +26,7 @@ from app.models import ChatConversation, ChatMessage, Client, Document, Matter
 from app.models.base import Base
 from app.models.privacy_decision import PrivacyDecision
 from app.web.name_protection import document_text_version
-from tests.auth_test_utils import create_test_user, extract_csrf, login, login_as_admin, seed_roles
+from tests.auth_test_utils import extract_upload_token, create_test_user, extract_csrf, login, login_as_admin, seed_roles
 from tests.test_web_chat import FakeClaudeWritingProvider, _parse_sse_events, _working_drafting_service
 
 DOC_TEXT = (
@@ -276,7 +276,7 @@ def test_chat_upload_then_mark_in_the_chat_document_view_then_ask(client, db_ses
 
     lines = ["Beschluss vom 03.11.2026, Az. 3 C 117/26.", "Der Richter Zweigelt hat den Termin auf den",
              "22.07.2026 verlegt; Streitwert 4.250,00 EUR."]
-    response = client.post("/dashboard/chat/send-stream", data={
+    response = client.post("/dashboard/chat/send-stream", data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text),
         "csrf_token": extract_csrf(client.get("/dashboard/chat").text), "conversation_id": "",
         "content": "Bitte nur ablegen, noch nichts zusammenfassen."},
         files={"documents": ("beschluss.pdf", _pdf_bytes(lines), "application/pdf")})

@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 import app.web.chat_router as chat_router_module
 from app.models import ChatConversation, ChatMessage
 from app.models.privacy_decision import PrivacyDecision
-from tests.auth_test_utils import create_test_user, login, login_as_admin
+from tests.auth_test_utils import extract_upload_token, create_test_user, login, login_as_admin
 from tests.test_web_chat import (  # noqa: F401 - Fixtures
     FakeClaudeWritingProvider,
     _csrf,
@@ -45,7 +45,7 @@ def _upload_then_send(client: TestClient, content: str, files: dict) -> list[dic
     """§57: erst nur hochladen (kein KI-Aufruf), dann die Frage bewusst senden."""
     upload = _parse_sse_events(client.post(
         "/dashboard/chat/send-stream", files=files,
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": content},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content},
     ).text)
     assert [e["kind"] for e in upload] == ["start", "uploaded"], upload
     response = client.post(

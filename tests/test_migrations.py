@@ -219,3 +219,23 @@ def test_schriftsatz_operations_migration_is_additive_and_reversible(tmp_path) -
     tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
     con.close()
     assert "schriftsatz_operations" not in tables and "quality_reports" in tables
+
+
+def test_chat_upload_operations_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_033 (§59, Idempotenz beim Chat-Upload): Vorgangs-ID als Primaerschluessel."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "chat_operations.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    pk = [row[1] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall() if row[5]]
+    con.close()
+    assert pk == ["id"]
+    command.downgrade(cfg, "schritt3_032")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "chat_upload_operations" not in tables and "schriftsatz_operations" in tables

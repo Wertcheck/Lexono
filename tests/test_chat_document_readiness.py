@@ -24,7 +24,7 @@ from app.config.settings import Settings
 from app.documents import readiness
 from app.documents.extraction import extract_text
 from app.models import AuditEvent, ChatConversation, ChatMessage, Document
-from tests.auth_test_utils import login_as_admin
+from tests.auth_test_utils import extract_upload_token, login_as_admin
 from tests.test_web_chat import (  # noqa: F401 - Fixtures
     FakeClaudeWritingProvider,
     _csrf,
@@ -122,7 +122,7 @@ def _post_stream(client: TestClient, content: str, files, conversation_id: str) 
     try:
         response = client.post(
             "/dashboard/chat/send-stream",
-            data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content},
+            data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content},
             files=[("documents", (path.name, handle, "application/octet-stream")) for path, handle in zip(files, handles)],
         )
     finally:
@@ -146,7 +146,7 @@ def _send_classic(client: TestClient, content: str, filename: str, data: bytes) 
     """§57: /send mit Datei = nur hochladen (Weiterleitung, kein KI-Aufruf); danach die Frage bewusst senden."""
     upload = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": content},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content},
         files={"documents": (filename, data, "application/pdf")},
         follow_redirects=False,
     )

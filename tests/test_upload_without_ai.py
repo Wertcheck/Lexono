@@ -29,7 +29,7 @@ from app.models import ApiCallLog, ChatConversation, ChatMessage, Document, Draf
 from app.models.base import Base
 from app.models.privacy_decision import PrivacyDecision
 from app.web.name_protection import document_text_version
-from tests.auth_test_utils import extract_csrf, extract_operation_token, login_as_admin
+from tests.auth_test_utils import extract_upload_token, extract_csrf, extract_operation_token, login_as_admin
 from tests.test_web_chat import _parse_sse_events, _working_drafting_service
 from tests.test_web_document_name_protection import SachverhaltEcho
 from tests.test_web_privacy_review import _pdf_bytes
@@ -108,7 +108,7 @@ def _upload(client: TestClient, content: str = TYPED, conversation_id: str = "",
             data: bytes | None = None) -> list[dict]:
     response = client.post(
         "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content},
         files={"documents": (name, data if data is not None else _pdf_bytes(LINES), "application/pdf")},
     )
     assert response.status_code == 200
@@ -161,7 +161,7 @@ def test_chat_upload_sends_no_http_request_and_logs_no_api_call(client, db_sessi
 def test_classic_send_with_a_file_only_uploads(client, db_session, writer) -> None:
     response = client.post(
         "/dashboard/chat/send", follow_redirects=False,
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": TYPED},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": TYPED},
         files={"documents": ("beschluss.pdf", _pdf_bytes(LINES), "application/pdf")},
     )
     document = db_session.query(Document).one()
@@ -270,7 +270,7 @@ def test_failed_privacy_check_is_fail_closed_after_an_upload(client, db_session,
 def test_upload_with_invalid_marking_stores_nothing(client, db_session, writer) -> None:
     response = client.post("/dashboard/chat/send-stream", files={
         "documents": ("beschluss.pdf", _pdf_bytes(LINES), "application/pdf")},
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": TYPED,
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": TYPED,
               "protected_terms": json.dumps(["Nichtimtext"])})
     assert _is_rejection(_parse_sse_events(response.text))
     assert db_session.query(Document).count() == 0 and writer.received_payloads == []

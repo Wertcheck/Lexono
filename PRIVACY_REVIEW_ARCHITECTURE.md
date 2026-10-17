@@ -7274,7 +7274,94 @@ Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und
 - **Hängender Vorgang:** Ein nach einem Absturz auf „processing“ stehender Vorgang bleibt dauerhaft gesperrt. Der
   Nutzer startet bewusst neu, eine automatische Aufräumung gibt es nicht. Eine dabei angelegte Schnellakte bleibt
   bestehen und ist auf der Fehlerseite vorausgewählt.
-- **Nur der Generator:** Chat-Upload und Akten-Upload sind nicht Teil dieses Schritts. Der Chat sendet per `fetch`
+- **Nur der Generator** (Chat-Upload **nachgezogen in §59**): Chat-Upload und Akten-Upload sind nicht Teil dieses
+  Schritts. Der Chat sendet per `fetch`
   bzw. leitet nach `/send` weiter (kein F5-Neusenden); ein Doppelklick ist dort nur clientseitig gesperrt.
 - **Keine Inhaltserkennung:** Zwei bewusst getrennte Vorgänge mit derselben Datei legen weiterhin zwei Dokumente an
   (gewollt).
+
+## §59 Idempotenz beim Chat-Upload – Doppelklick, parallele Requests, Wiederholung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `d50e820`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und zentrale Prüfung sind unverändert.
+
+### 59.1 Befund (reproduziert)
+
+- **Doppelte Vorgänge:** Derselbe Upload-Request zweimal, einmal neu und einmal in einer bestehenden Unterhaltung,
+  ergab **2 Unterhaltungen, 4 Dokumente und 4 Upload-Nachrichten**, ohne KI-Aufruf.
+- **Ursache:** Beide Endpunkte (`send-stream` und `/send`) legten Unterhaltung und Dokumente an, ohne die Anfrage
+  wiederzuerkennen. Gesperrt war bisher nur clientseitig (`isSending`).
+
+### 59.2 Lösung (Mechanismus aus §58 wiederverwendet, kein zweiter daneben)
+
+- **Gemeinsamer Mechanismus:** `app/drafting/schriftsatz_operations.py` bekommt Modell und Salt als Parameter.
+  `app/chat/upload_operations.py` ist eine dünne Schicht darüber mit eigenem Salt, damit eine Generator-ID nicht im
+  Chat gilt und umgekehrt.
+- **Neue Tabelle:** `chat_upload_operations` (Migration `schritt3_033`, rein additiv). Sie speichert nur IDs, Status
+  und einen HMAC-Fingerabdruck über Unterhaltung, Akte, Text, Briefkopf, Markierung und Datei-Hashes. Inhalte und
+  Dateinamen werden nicht gespeichert.
+- **Upload-Vorgangs-ID im Eingabefeld:** Jede Chat-Seite trägt eine signierte, nutzergebundene ID. Verbraucht wird sie
+  **nur von einem Request mit Dateien**. Eine spätere, bewusst gesendete Nachricht ohne Dateien braucht keine ID und
+  ist ein eigener Vorgang. Fehlt die ID oder ist sie gefälscht, fremd, abgelaufen oder für einen anderen Zweck
+  ausgestellt, wird nichts angelegt.
+- **Gemeinsamer Upload-Pfad** (`_chat_upload`) für beide Endpunkte:
+  1. Prüfungen ohne Persistenz;
+  2. atomarer Claim über den Primärschlüssel in eigener kurzer Sitzung;
+  3. erst danach Unterhaltung, Dokumente (fortlaufend vermerkt), Markierung und Upload-Nachricht.
+- **Wiederholung desselben Uploads:** dasselbe Ergebnis (Stream `uploaded` mit `repeated`, `/send` mit gleicher
+  Weiterleitung), nichts wird doppelt angelegt.
+- **Veränderte Anfrage mit benutzter ID:** Sie wird weder ausgeführt noch als identisch behandelt.
+- **Gleichzeitige Wiederholung (Doppelklick):** Der zweite Request wartet bis zu 10 s auf den laufenden ersten und
+  liefert dann dessen Ergebnis, statt eine Fehlermeldung zu zeigen, während der Upload gelingt.
+- **Fehlgeschlagen:** Hinweis ohne erneute Ausführung; im Stream werden bereits gespeicherte Dateien genannt, in der
+  `/send`-URL nur ihre Anzahl. Weil der Upload keine KI-Anfrage auslöst, gilt auch ein Absturz als eindeutiger
+  Fehlschlag, nicht als „unklar“.
+- **Abbruch zwischen `start` und `uploaded`:** Trägt die Wiederholung die Unterhaltung desselben Vorgangs, gilt sie
+  als identisch.
+- **Neue ID nach jeder Antwort:** Jede Upload-Antwort im Stream liefert eine neue ID für das Eingabefeld. So bleibt ein
+  bewusst neuer Upload ohne Neuladen möglich, auch nach einem Fehler.
+
+### 59.3 Tests und QA (synthetisch, isolierte SQLite-Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_chat_upload_idempotency.py`** (22 Tests), deckt ab:
+  - Doppelklick bzw. verlorene Antwort: 1 Unterhaltung, 1 Dokument, 1 Upload-Nachricht, **0 HTTP-Requests** am
+    Aufzeichnungsserver.
+  - Wiederholung in eine bestehende Unterhaltung; `/send` dreimal ergibt dieselbe Weiterleitung.
+  - Bewusst neuer Upload mit der neuen ID.
+  - Veränderte Anfrage (Text, Datei, Unterhaltung).
+  - Fehlende, gefälschte, fremde und abgelaufene IDs sowie IDs des Generators und umgekehrt.
+  - Teilfehler (zweite Datei zu groß), Absturz zwischen Speicherung und Upload-Nachricht (500, danach Wiederholung).
+  - Upload ohne Cloud-Aufruf, die bewusste Frage mit genau **einem** Request (Payload enthält den Dokumentinhalt);
+    eine spätere Wiederholung des Uploads sendet nichts.
+  - Eine Nachricht ohne Dateien verbraucht keine ID.
+  - 2 echte parallele Requests auf einer Datei-DB: beide erhalten dasselbe Ergebnis, einer als Wiederholung. Das
+    Warten auf den laufenden Vorgang ist belegt, 5 von 5 Läufen stabil.
+  - Nach dem Review: keine Dateinamen in der `/send`-Fehler-URL, kodierte Fehlermeldung (`#`, `&`), Wiederholung
+    nach dem `start`-Ereignis.
+  - Vorgangszeile ohne Inhalte.
+- **Bestehende Tests:** Uploads senden die ID der Seite mit, sonst ist nichts geändert. Der Migrationstest
+  (`schritt3_033`) ist ergänzt.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte):
+  - Der normale Upload über die Oberfläche ist unverändert (Weiterleitung zur Dokumentansicht).
+  - Zwei gleichzeitige identische Requests derselben Seite, an der UI-Sperre vorbei: ein Upload, beide Antworten
+    `uploaded` (eine als Wiederholung), 0 API-Logs, keine JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** kein hoher Befund, keine Doppelanlage; Claim atomar, §57 und zentrale Prüfung
+  unberührt, Nachrichtenpfad ohne Dateien unverändert. Behoben wurden:
+  - mittel – ein Absturz wurde als „läuft noch“ gemeldet;
+  - mittel – der Verlierer eines `/send`-Doppelklicks sah eine Fehlerseite;
+  - mittel – durch §59 wären Dateinamen in die `/send`-URL gelangt;
+  - niedrig – Wiederholung nach dem `start`-Ereignis, toter Code, Typangaben, Leerzeichen.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5200 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+- **PostgreSQL:** Das Verhalten mehrerer Prozesse ist **nicht verifiziert**, getestet ist nur SQLite.
+
+### 59.4 Grenzen
+
+- **Ohne JavaScript (`/send`):** Ergebnis- und Fehlerseiten tragen eine neue ID; ein Doppelklick wird serverseitig als
+  ein Vorgang erkannt. Die Dateiauswahl muss nach einem Fehler, wie bisher, neu getroffen werden.
+- **Hängende Vorgänge:** Ein durch Absturz auf „processing“ stehender Upload bleibt gesperrt, wie in §58. Dokumente
+  ohne Upload-Nachricht bleiben dann in der Unterhaltungsakte; neu hochgeladen wird bewusst.
+- **Mehrere Tabs und Zurück-Button:** Jeder Tab hat eine eigene ID. Derselbe Upload in zwei Tabs gilt als zwei
+  bewusste Vorgänge. Eine per „Zurück“ wiederhergestellte Seite trägt eine verbrauchte ID: Ein anderer Upload wird
+  abgewiesen (mit neuer ID), der zweite Versuch gelingt.
+- **Dateiname in Fehler-URL (vorbestehend):** Die Größen-Fehlermeldung des Chats beim ersten Fehlschlag nennt den
+  Dateinamen und landet im Pfad ohne JavaScript in der Fehler-URL. §59 fügt keine weiteren Namen hinzu.

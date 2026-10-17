@@ -32,6 +32,16 @@ def extract_csrf(html: str) -> str:
 _OPERATION_RE = re.compile(r'name="operation_token" value="([^"]+)"')
 
 
+_UPLOAD_RE = re.compile(r'name="upload_token" value="([^"]+)"')
+
+
+def extract_upload_token(html: str) -> str:
+    """§59: Upload-Vorgangs-ID des Chat-Eingabefelds (serverseitig ausgestellt, je Seite neu)."""
+    match = _UPLOAD_RE.search(html)
+    assert match is not None, "Kein upload_token-Feld im HTML gefunden"
+    return match.group(1)
+
+
 def extract_operation_token(html: str) -> str:
     """§58: Vorgangs-ID des Schriftsatz-Generators (serverseitig ausgestellt, je Seite neu)."""
     match = _OPERATION_RE.search(html)

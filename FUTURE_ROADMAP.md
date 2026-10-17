@@ -91,8 +91,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 17.10.2026 (§58):** F5-/Doppelupload im Schriftsatz-Generator behoben (reproduziert: 2 Akten,
   2 Dokumente). Signierte, nutzergebundene Vorgangs-ID je Seite und atomarer Vorgang
   (`schriftsatz_operations`): Wiederholungen zeigen das gespeicherte Ergebnis, ohne Duplikate und ohne zweiten
-  Cloud-Aufruf. Getestet mit parallelen Requests und echtem F5 im Browser. **Offen:** Doppelklick-Schutz im Chat
-  nur clientseitig; hängende Vorgänge nach Absturz ohne Aufräumung.
+  Cloud-Aufruf. Getestet mit parallelen Requests und echtem F5 im Browser. **Offen:** hängende Vorgänge nach
+  Absturz ohne Aufräumung.
+  **Fortschritt 17.10.2026 (§59):** Doppelte Chat-Uploads behoben (reproduziert: 2 Unterhaltungen, 4 Dokumente,
+  4 Upload-Nachrichten). Derselbe Mechanismus wie §58 mit eigener Tabelle `chat_upload_operations`; nur Uploads
+  verbrauchen die ID, eine spätere bewusste Nachricht bleibt ein eigener Vorgang mit genau einem Cloud-Aufruf.
+  **Offen:** PostgreSQL mit mehreren Prozessen nicht verifiziert; Dateiname in der Chat-Fehler-URL (vorbestehend).
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

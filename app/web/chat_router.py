@@ -39,7 +39,9 @@ from app.drafting.review_notes import split_review_notes
 from app.drafting.versioning import find_latest_version
 from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
-from app.chat import processing_claims
+from app.chat import processing_claims, upload_operations
+from app.models.chat_upload_operation import ChatUploadOperation
+from app.models.schriftsatz_operation import STATUS_DONE, STATUS_FAILED
 from app.chat.service import ChatService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
@@ -445,6 +447,8 @@ def _render_chat_page(
         # entsprechende "wird geprüft..."-Darstellung.
         "local_ai_status": getattr(request.app.state, "local_ai_status", None),
         "error": error,
+        # §59: Upload-Vorgangs-ID dieser Seite (je Seite neu; verbraucht nur von einem Request MIT Dateien)
+        "upload_token": upload_operations.issue_token(current_user.id),
         # Dokument-Workspace (Task #62) - beide None ausserhalb von
         # chat_document_view, chat.html schaltet darueber zwischen dem
         # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
@@ -573,7 +577,8 @@ def _gather_message_sources(db: Session, messages: list[ChatMessage]) -> dict[st
 
 def _redirect_with_error(conversation_id: str | None, message: str) -> RedirectResponse:
     target = f"/dashboard/chat/{conversation_id}" if conversation_id else "/dashboard/chat"
-    return RedirectResponse(url=f"{target}?error={message}", status_code=303)
+    # §59 (Review): kodiert - ein "#" oder "&" in der Meldung schnitt sie bisher ab
+    return RedirectResponse(url=f"{target}?error={quote(message, safe='')}", status_code=303)
 
 
 def _validate_uploads(documents: list[UploadFile]) -> str | None:
@@ -651,17 +656,212 @@ def _upload_target(db: Session, conversation: ChatConversation, document_ids: li
     return f"/dashboard/chat/{conversation.id}"
 
 
-def _stream_upload_events(
-    db: Session, conversation: ChatConversation, document_ids: list[str], *, text_kept: bool
-) -> Iterator[str]:
-    """§57: Antwort auf einen reinen Upload - KEIN Aufruf von ChatService.send_message*, damit keine KI-Anfrage."""
-    yield _sse_event({"kind": "start", "conversation_id": conversation.id})
-    yield _sse_event({
-        "kind": "uploaded",
-        "conversation_id": conversation.id,
-        "target": _upload_target(db, conversation, document_ids, text_kept=text_kept),
-        "text_kept": text_kept,
-    })
+# --- §59: idempotenter Chat-Upload ---------------------------------------------------------------------------------
+
+
+class _UploadOutcome(BaseModel):
+    """Ergebnis eines Upload-Requests (neu ausgefuehrt ODER als Wiederholung erkannt)."""
+
+    conversation_id: str | None = None
+    target: str | None = None  # Erfolg: Dokumentansicht zum Pruefen/Markieren (§57)
+    text_kept: bool = False
+    repeated: bool = False
+    error: str | None = None
+    stored_names: list[str] = []  # bereits gespeicherte Dateien eines fehlgeschlagenen Vorgangs - nie in eine URL
+
+
+def _upload_contents(documents: list[UploadFile]) -> list[tuple[str, bytes]]:
+    """Name + Inhalt je Datei fuer den Fingerabdruck; der Lesezeiger wird fuer das Speichern zurueckgesetzt."""
+    result = []
+    for upload in documents:
+        if upload.filename:
+            content = upload.file.read()
+            upload.file.seek(0)
+            result.append((upload.filename, content))
+    return result
+
+
+def _chat_upload(
+    db: Session,
+    current_user: User,
+    *,
+    upload_token: str,
+    conversation_id: str,
+    matter_id: str,
+    content: str,
+    letterhead_ref: str,
+    protected_terms: str,
+    manual_terms: list[str],
+    documents: list[UploadFile],
+) -> _UploadOutcome:
+    """§59: EIN Chat-Upload = EIN Vorgang (serverseitig validierte, signierte Vorgangs-ID der Seite). Nur der erste
+    Request legt Unterhaltung, Dokumente und Upload-Nachricht an; jede Wiederholung (Doppelklick, paralleler Request,
+    Wiederholung nach verlorener Antwort oder Netzwerkfehler) liefert das gespeicherte Ergebnis. Eine geaenderte
+    Anfrage mit derselben ID wird weder ausgefuehrt noch als identisch behandelt. §57 bleibt: keine KI-Anfrage."""
+    operation_id = upload_operations.read_token(upload_token, current_user.id)
+    if operation_id is None:
+        return _UploadOutcome(
+            conversation_id=conversation_id or None,
+            error="Der Upload-Vorgang ist abgelaufen oder ungültig - bitte die Seite neu laden und erneut hochladen. "
+                  "Es wurde nichts angelegt oder gesendet.",
+        )
+    # Pruefungen ohne Persistenz VOR dem Anlegen des Vorgangs
+    conversation = _require_own_conversation(db, conversation_id, current_user) if conversation_id else None
+    selected_matter = get_or_404(db, Matter, matter_id, "Akte") if (conversation is None and matter_id) else None
+    contents = _upload_contents(documents)
+    fingerprint = upload_operations.request_fingerprint(
+        [conversation_id, matter_id, content, letterhead_ref, protected_terms], contents
+    )
+    existing = upload_operations.claim(db, operation_id, user_id=current_user.id, fingerprint=fingerprint)
+    if existing is not None:
+        # Abbruch zwischen "start" (setzt die Unterhaltung im Eingabefeld) und "uploaded": die Wiederholung traegt dann
+        # die Unterhaltung DIESES Vorgangs - inhaltlich identisch, wenn sie ohne Unterhaltung uebereinstimmt
+        without_conversation = upload_operations.request_fingerprint(
+            ["", matter_id, content, letterhead_ref, protected_terms], contents
+        ) if conversation_id and conversation_id == existing.conversation_id else None
+        return _repeated_chat_upload(db, current_user, existing, fingerprint=fingerprint, content=content,
+                                     conversation_id=conversation_id or None,
+                                     alternative_fingerprint=without_conversation)
+    try:
+        return _execute_chat_upload(
+            db, current_user, operation_id=operation_id, conversation=conversation, selected_matter=selected_matter,
+            content=content, manual_terms=manual_terms, documents=documents,
+        )
+    except Exception:
+        # Der Upload loest keine KI-Anfrage aus - ein Absturz ist daher eindeutig ein Fehlschlag (kein "unklar"):
+        # "fehlgeschlagen" statt 15 Minuten "laeuft noch"; eine Wiederholung fuehrt ihn trotzdem nicht erneut aus.
+        upload_operations.update(db, operation_id, status=STATUS_FAILED)
+        raise
+
+
+def _execute_chat_upload(
+    db: Session,
+    current_user: User,
+    *,
+    operation_id: str,
+    conversation: ChatConversation | None,
+    selected_matter: Matter | None,
+    content: str,
+    manual_terms: list[str],
+    documents: list[UploadFile],
+) -> _UploadOutcome:
+    """Der EINE Request, der den Upload-Vorgang angelegt hat."""
+    chat_service = _get_chat_service()
+    if conversation is None:
+        conversation = chat_service.create_conversation(
+            db,
+            user=current_user,
+            matter_id=selected_matter.id if selected_matter else None,
+            title=content or "Neues Dokument",
+            actor=current_user.email,
+        )
+    upload_operations.update(db, operation_id, conversation_id=conversation.id)
+    settings = get_settings()
+    document_ids: list[str] = []
+    for upload in documents:
+        if not upload.filename:
+            continue
+        try:
+            document = chat_service.attach_document(
+                db,
+                conversation=conversation,
+                upload=upload,
+                ocr_enabled=settings.ocr_enabled,
+                ocr_languages=settings.ocr_languages,
+                tesseract_cmd=settings.tesseract_cmd,
+                actor=current_user.email,
+            )
+        except ValueError as exc:
+            upload_operations.update(db, operation_id, status=STATUS_FAILED)
+            return _UploadOutcome(conversation_id=conversation.id, error=str(exc))
+        if document is not None:
+            upload_operations.add_document(db, operation_id, document.id)
+            document_ids.append(document.id)
+
+    _record_manual_terms(db, conversation, manual_terms, current_user)
+
+    # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen, nicht nur in der UI). Die
+    # Dokumente werden NUR gespeichert und lokal ausgelesen - keine KI-Anfrage, kein Cloud-Aufruf, auch nicht fuer einen
+    # mitgetippten Text (der bleibt lokal im Browser und wird erst bewusst gesendet).
+    message = chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
+    upload_operations.update(db, operation_id, status=STATUS_DONE, upload_message_id=message.id)
+    return _UploadOutcome(conversation_id=conversation.id, text_kept=bool(content),
+                          target=_upload_target(db, conversation, document_ids, text_kept=bool(content)))
+
+
+# Doppelklick: der zweite Request wartet kurz auf den ersten und liefert dann DESSEN Ergebnis (statt einer
+# Fehlermeldung, waehrend der Upload gelingt). Begrenzt - danach "bitte warten".
+_REPEAT_WAIT_SECONDS = 10.0
+_REPEAT_POLL_SECONDS = 0.25
+
+
+def _await_running_upload(db: Session, operation: ChatUploadOperation) -> ChatUploadOperation:
+    import time
+
+    deadline = time.monotonic() + _REPEAT_WAIT_SECONDS
+    while (operation.status not in (STATUS_DONE, STATUS_FAILED) and not upload_operations.is_stale(operation)
+           and time.monotonic() < deadline):
+        time.sleep(_REPEAT_POLL_SECONDS)
+        operation = upload_operations.load(db, operation.id) or operation
+    return operation
+
+
+def _repeated_chat_upload(
+    db: Session, current_user: User, operation: ChatUploadOperation, *, fingerprint: str, content: str,
+    conversation_id: str | None, alternative_fingerprint: str | None = None,
+) -> _UploadOutcome:
+    """Wiederholung einer bereits verwendeten Upload-Vorgangs-ID: nie erneut ausfuehren."""
+    if operation.user_id != current_user.id:
+        return _UploadOutcome(conversation_id=conversation_id,
+                              error="Der Upload-Vorgang ist ungültig. Es wurde nichts angelegt oder gesendet.")
+    if operation.fingerprint not in (fingerprint, alternative_fingerprint):
+        return _UploadOutcome(
+            conversation_id=conversation_id,
+            error="Diese Anfrage unterscheidet sich vom ersten Absenden dieses Upload-Vorgangs. Es wurde nichts "
+                  "ausgeführt. Bitte erneut absenden.",
+        )
+    operation = _await_running_upload(db, operation)
+    conversation = db.get(ChatConversation, operation.conversation_id) if operation.conversation_id else None
+    if conversation is not None and conversation.user_id != current_user.id:
+        conversation = None
+    ids = upload_operations.document_ids(operation)
+    present = (
+        [d.id for d in db.query(Document).filter(Document.id.in_(ids), Document.deleted_at.is_(None))] if ids else []
+    )
+    present.sort(key=ids.index)
+    if operation.status == STATUS_DONE and conversation is not None and present:
+        return _UploadOutcome(conversation_id=conversation.id, repeated=True, text_kept=bool(content),
+                              target=_upload_target(db, conversation, present, text_kept=bool(content)))
+    if operation.status == STATUS_DONE:
+        message = "Dieser Upload wurde bereits ausgeführt; Unterhaltung oder Dokumente sind nicht mehr vorhanden."
+    elif operation.status == STATUS_FAILED:
+        message = "Dieser Upload ist bereits fehlgeschlagen und wird nicht wiederholt."
+    elif not upload_operations.is_stale(operation):
+        message = "Dieser Upload wird gerade noch verarbeitet. Bitte einen Moment warten - nicht erneut hochladen."
+    else:
+        message = "Dieser Upload wurde unterbrochen; unklar ist, wie weit er kam. Bitte die Unterhaltung prüfen."
+    message += " Es wurde nichts doppelt angelegt und nichts gesendet."
+    names = []
+    if present and operation.status != STATUS_DONE:
+        names = [d.original_filename or "Dokument" for d in db.query(Document).filter(Document.id.in_(present))]
+        message += f" Bereits gespeichert: {len(names)} Dokument(e) in der Unterhaltung."
+    return _UploadOutcome(conversation_id=conversation.id if conversation is not None else conversation_id,
+                          error=message, stored_names=names)
+
+
+def _stream_upload_outcome(db: Session, current_user: User, outcome: _UploadOutcome) -> Iterator[str]:
+    """SSE-Antwort auf einen Upload. Jede Antwort traegt eine NEUE Upload-Vorgangs-ID fuer das Eingabefeld: ein bewusst
+    neuer Upload ist danach immer moeglich, ohne die Seite neu zu laden."""
+    fresh = upload_operations.issue_token(current_user.id)
+    if outcome.conversation_id:
+        yield _sse_event({"kind": "start", "conversation_id": outcome.conversation_id})
+    if outcome.error:
+        detail = f" ({', '.join(outcome.stored_names)})" if outcome.stored_names else ""
+        yield _sse_event({"kind": "done", "message_id": None, "content": outcome.error + detail, "blocked": True,
+                          "sources": [], "upload_token": fresh})
+        return
+    yield _sse_event({"kind": "uploaded", "conversation_id": outcome.conversation_id, "target": outcome.target,
+                      "text_kept": outcome.text_kept, "repeated": outcome.repeated, "upload_token": fresh})
 
 
 def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:
@@ -683,6 +883,7 @@ def send_message(
     content: str = Form(""),
     letterhead_ref: str = Form(""),
     protected_terms: str = Form(""),
+    upload_token: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -701,6 +902,16 @@ def send_message(
         manual_terms = _parse_manual_terms(protected_terms, content)  # §51, wie send-stream
     except InvalidPrivacyDecisionError as exc:
         return _redirect_with_error(conversation_id or None, str(exc))
+
+    if any(doc.filename for doc in documents):  # §57/§59: ein Upload ist ein eigener, idempotenter Vorgang
+        outcome = _chat_upload(
+            db, current_user, upload_token=upload_token, conversation_id=conversation_id, matter_id=matter_id,
+            content=content, letterhead_ref=letterhead_ref, protected_terms=protected_terms,
+            manual_terms=manual_terms, documents=documents,
+        )
+        if outcome.error:
+            return _redirect_with_error(outcome.conversation_id, outcome.error)
+        return RedirectResponse(url=outcome.target, status_code=303)
 
     chat_service = _get_chat_service()
 
@@ -723,33 +934,7 @@ def send_message(
             actor=current_user.email,
         )
 
-    settings = get_settings()
-    document_ids: list[str] = []
-    for upload in documents:
-        if not upload.filename:
-            continue
-        try:
-            document = chat_service.attach_document(
-                db,
-                conversation=conversation,
-                upload=upload,
-                ocr_enabled=settings.ocr_enabled,
-                ocr_languages=settings.ocr_languages,
-                tesseract_cmd=settings.tesseract_cmd,
-                actor=current_user.email,
-            )
-        except ValueError as exc:
-            return _redirect_with_error(conversation.id, str(exc))
-        if document is not None:
-            document_ids.append(document.id)
-
     _record_manual_terms(db, conversation, manual_terms, current_user)
-
-    # §57: wie send-stream - mit Dokumenten nur aufnehmen, nichts senden
-    if document_ids:
-        chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
-        return RedirectResponse(url=_upload_target(db, conversation, document_ids, text_kept=bool(content)),
-                                status_code=303)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): Rueckgabewert jetzt erfasst statt verworfen - die ID
@@ -759,7 +944,7 @@ def send_message(
     # Claude-Payload landen: einmal als History, einmal als aktuelle
     # Nachricht - siehe app/chat/service.py::ChatService._build_history).
     user_message = chat_service.record_user_message(
-        db, conversation=conversation, content=message_text, document_ids=document_ids
+        db, conversation=conversation, content=message_text, document_ids=[]
     )
 
     try:
@@ -1304,6 +1489,7 @@ def send_message_stream(
     content: str = Form(""),
     letterhead_ref: str = Form(""),
     protected_terms: str = Form(""),
+    upload_token: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -1338,6 +1524,18 @@ def send_message_stream(
     except InvalidPrivacyDecisionError as exc:
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
 
+    if any(doc.filename for doc in documents):  # §57/§59: ein Upload ist ein eigener, idempotenter Vorgang
+        outcome = _chat_upload(
+            db, current_user, upload_token=upload_token, conversation_id=conversation_id, matter_id=matter_id,
+            content=content, letterhead_ref=letterhead_ref, protected_terms=protected_terms,
+            manual_terms=manual_terms, documents=documents,
+        )
+        return StreamingResponse(
+            _stream_upload_outcome(db, current_user, outcome),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     chat_service = _get_chat_service()
 
     if conversation_id:
@@ -1359,38 +1557,7 @@ def send_message_stream(
             actor=current_user.email,
         )
 
-    settings = get_settings()
-    document_ids: list[str] = []
-    for upload in documents:
-        if not upload.filename:
-            continue
-        try:
-            document = chat_service.attach_document(
-                db,
-                conversation=conversation,
-                upload=upload,
-                ocr_enabled=settings.ocr_enabled,
-                ocr_languages=settings.ocr_languages,
-                tesseract_cmd=settings.tesseract_cmd,
-                actor=current_user.email,
-            )
-        except ValueError as exc:
-            return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
-        if document is not None:
-            document_ids.append(document.id)
-
     _record_manual_terms(db, conversation, manual_terms, current_user)
-
-    # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen, nicht nur in der UI). Sind
-    # Dokumente dabei, werden sie NUR gespeichert und lokal ausgelesen - keine KI-Anfrage, kein Cloud-Aufruf, auch nicht
-    # fuer einen mitgetippten Text (der bleibt lokal im Browser und wird erst bewusst gesendet).
-    if document_ids:
-        chat_service.record_upload(db, conversation=conversation, document_ids=document_ids)
-        return StreamingResponse(
-            _stream_upload_events(db, conversation, document_ids, text_kept=bool(content)),
-            media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-        )
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): siehe die identische Begruendung beim nicht-
@@ -1398,7 +1565,7 @@ def send_message_stream(
     # verworfen, damit die aktuelle Nachricht von der History ausgeschlossen
     # werden kann.
     user_message = chat_service.record_user_message(
-        db, conversation=conversation, content=message_text, document_ids=document_ids
+        db, conversation=conversation, content=message_text, document_ids=[]
     )
     _claim_message(db, user_message.id)
 
