@@ -100,8 +100,15 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 17.10.2026 (§60):** Hart abgebrochene Chat-Uploads werden bei nachweislich beendetem Besitzerprozess
   ohne Doppelanlage fortgesetzt (vorab vergebene IDs, „anlegen, falls nicht vorhanden“, atomare Übernahme; Zeit allein
   gibt nie frei). Keine Dateinamen mehr in Upload-Fehler-URLs; Zurück-Button holt eine neue Kennung, ohne erneut
-  hochzuladen. **Offen:** Besitzer auf fremden Rechnern nicht prüfbar; Schriftsatz-Generator (§58) ohne
-  Wiederaufnahme; PostgreSQL nicht verifiziert.
+  hochzuladen. **Offen:** Besitzer auf fremden Rechnern nicht prüfbar; PostgreSQL nicht verifiziert.
+  **Fortschritt 17.10.2026 (§61, P1–P5):** Inventur aller Cloud-Pfade ohne Umgehung. Neue Dauertests:
+  - alle GET-Routen und alle Eingangswege (Upload, Mail, Ordner) ohne KI-Aufruf und Netzverbindung;
+  - Schriftsatz-Generator mit Wiederaufnahme nach hartem Abbruch, Generierung nie automatisch wiederholt;
+  - Benchmarks ohne Abweichung reproduziert, Sperrklinke gegen Verschlechterung.
+
+  Gateway lokal gehärtet: nur Textblöcke und Rollen user/assistant, Größenschranke vor dem Parsen. **Offen:**
+  Pflicht-Freigabe je Dokument (Owner-Entscheidung), Vorgangs-ID für Entwurfsaktionen, Gateway-Betrieb (IP-Rate-Limit,
+  TLS, echte Strecke) NICHT VERIFIZIERT.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.

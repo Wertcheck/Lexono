@@ -7667,3 +7667,71 @@ eingefroren; neue synthetische Fälle wurden bewusst nicht ergänzt, weil kein n
 **Status:** Die Ergebnisse gelten nur für endliche synthetische Korpora. Sie belegen **keine** vollständige
 Leckfreiheit und keine Rechtskonformität. Die Validierung auf realitätsnäheren, nicht modellgenerierten Texten ist
 **NICHT VERIFIZIERT**.
+
+### 61.5 P5 – Gateway und Transport (lokal geprüft, keine Bereitstellung)
+
+**Bestandsaufnahme (`gateway/`, ~800 Zeilen, 10 Testdateien, `deploy/` mit Caddy und systemd):**
+
+| Bereich | Ist-Stand | Bewertung |
+|---|---|---|
+| Authentifizierung | `Bearer <client_id>:<secret>`, Argon2id, generische 401, Dummy-Verify gegen Timing-Enumeration, keine OpenAPI/Swagger | in Ordnung |
+| Mandantentrennung | Relay ohne Zustand; Kanzlei-ID nur für Rate-Limit und Log; deaktivierte Kanzlei wird abgewiesen; keine kanzleiübergreifenden Daten | in Ordnung |
+| Berechtigungen | Kanzlei-Credentials nur per Server-CLI (`tenant_admin`, Rotation, Widerruf) | in Ordnung |
+| Größenlimits | `max_request_bytes` (200 KB) in der Route, aber **erst nach** vollständigem Einlesen und JSON-Parsen; Caddy `max_size 250KB` davor | **Lücke** (ohne Proxy Speicherrisiko) |
+| Modellfreigaben | Allowlist, tatsächlich verwendetes Modell zentral (`default_model`), `max_tokens`-Obergrenze, `thinking` nur „disabled“, keine SDK-Wiederholungen, Ziel-URL fest | in Ordnung |
+| Inhalte | `role` beliebig, `content` mit beliebigen Block-Typen (Bild, Dokument, `tool_use`) | **Lücke** (Missbrauch des zentralen Schlüssels bei kompromittierter Credential) |
+| Protokollierung | typisierte Metadaten ohne Inhalt; Caddy-Access-Log ohne Body | in Ordnung |
+| TLS | Caddy (Let's Encrypt), Gateway nur an `127.0.0.1`; Client erzwingt `https://` bei `APP_ENV != development`, die installierte App setzt `APP_ENV=production` | Konfiguration in Ordnung; **realer TLS-Betrieb NICHT VERIFIZIERT** |
+
+**Behoben (nur Code, lokal):**
+- **Nachrichtenschema** (`gateway/schemas.py`): nur Rollen `user` und `assistant`, nur Textblöcke ohne Zusatzschlüssel,
+  `cache_control` nur „ephemeral“, System-Blöcke nur Text. Das entspricht genau dem, was der Lexono-Client sendet.
+  Abweichungen werden mit 422 abgewiesen, ohne Anthropic zu erreichen.
+- **Speicherschutz vor dem Parsen** (`gateway/main.py`, ASGI-Schranke `_BodySizeLimit`):
+  - Ist `Content-Length` zu groß, folgt sofort 413.
+  - Gestückelte Bodys werden höchstens bis zur Schranke gelesen (2 × `max_request_bytes`).
+  - Die Schranke greift vor Authentifizierung und Parsen; die präzise, protokollierte 413 der Route bleibt.
+
+**QA P5 (Repository-Tests mit Anthropic-Fake; kein Server, kein echter Schlüssel):**
+
+| Prüfung | Status |
+|---|---|
+| `tests/test_gateway_hardening.py` (17): Bild, Dokument, `tool_use`, Zusatzschlüssel, falsches `cache_control`, fremde Rollen und System-Blöcke werden mit 422 abgewiesen, ohne Anthropic-Aufruf | PASS |
+| Der echte Client-Payload (versiegelt, pseudonymisiert) läuft weiter durch; einfacher Text bleibt erlaubt | PASS |
+| Größenschranke: Content-Length und gestückelt ergeben 413 ohne Auth und ohne Aufruf; die Routen-Prüfung bleibt; Mutationsprobe (Schranke entfernt, Tests schlagen fehl) | PASS |
+| Vorhandene Gateway-Tests (93, inkl. E2E-Pilotszenario Client → Relay → Anthropic-Fake) | PASS |
+| Gesamtsuite: 5269 bestanden, 4 fremde Logo-Fehler | PASS |
+| Realer Server, TLS, Rate-Limit und Logging im Betrieb, echte Anthropic-Antwort | NICHT VERIFIZIERT |
+
+**Offen (Betrieb, nicht ohne Freigabe umsetzbar):**
+- **Rechenlast ohne gültige Kennung:** Jeder Request ohne gültige Credential kostet einen Argon2-Verify (absichtlich,
+  gegen Enumeration). Ein vorgelagertes IP-Rate-Limit fehlt, die Abwehr läge bei Caddy oder fail2ban
+  (Betriebsentscheidung).
+- **Mehrere Instanzen:** Das Rate-Limit liegt im Prozess; mehrere Instanzen bräuchten einen geteilten Speicher.
+- **Inhaltsprüfung im Relay:** Das Relay prüft weiterhin nicht, ob Inhalte pseudonymisiert sind; die Garantie liegt
+  clientseitig (Siegel). Siehe Roadmap P1.
+- **Kein Produktivnachweis:** Server, Domain, Zertifikat und echte Transportstrecke existieren nicht. Hetzner bzw. P0-08
+  bleiben ein eigenes Arbeitspaket.
+
+### 61.6 Gesamtstatus
+
+**Ergebnisse je Paket:**
+
+| Paket | Ergebnis | Commit |
+|---|---|---|
+| P1 Dokumentfreigabe | keine Umgehung; Routendurchlauf ohne KI und Netz als Dauertest; Export-Kopf korrigiert | `0382518` |
+| P2 Idempotenz | Generator: Wiederaufnahme nach hartem Abbruch, Generierung nie wiederholt, keine Zeitfreigabe | `b5cab05` |
+| P3 Mail/Intake | keine Lücke; Nachweis-Tests (Mail-Zyklus, Ordner, KI-Aktion nur mit Akte) | `aa487e3` |
+| P4 Datenschutzvalidierung | Benchmarks ohne Abweichung reproduziert; Sperrklinke gegen Verschlechterung | `bfb7ff9` |
+| P5 Gateway/Transport | Schema- und Größenhärtung lokal; Betrieb nicht verifiziert | dieser Commit |
+
+**Art der Nachweise:** Alle Prüfungen sind Repository-Tests (SQLite, TestClient, lokale Aufzeichnungsserver, Fakes).
+Browser-, installierte-App- und Server-Tests wurden in §61 **nicht** ausgeführt.
+
+**Datenschutzstatus:** teilweise nachgewiesen. Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+**Nächste Schritte (Vorschlag):**
+1. Owner-Entscheidung: Pflicht-Freigabe je Dokument vor KI-Aktionen (§57.5).
+2. Serverseitige Vorgangs-ID für Entwurfsaktionen (Neu generieren, KI-Bearbeitung).
+3. Gateway-Bereitstellung als eigenes Paket mit Freigabe: IP-Rate-Limit, TLS- und Transportnachweis.
+4. Validierung auf realitätsnäheren, nicht modellgenerierten Texten.
