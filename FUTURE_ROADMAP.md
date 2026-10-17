@@ -121,6 +121,13 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - Höchstzahl 30 gilt für freigegebene Dokumente, begrenzte Suche, Hinweise bei unvollständiger Auswahl;
   - Geltungsbereich „kein personenbezogenes Datum“ (nur Gespräch) und Mitarbeitenden-Grenzen dokumentiert und getestet.
   Installierte App/WebView2 und PostgreSQL NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§64):** Vorab-Prüfung in Modus C im lokalen Hintergrund nach dem Commit (auch nach
+  Mail-Zuordnung und Kontextänderungen), Versandprüfung bleibt verbindlich.
+  - Regressionstests für mehr als 30/120 Dokumente, veraltete Prüfungen, Hinweise nicht im Payload;
+  - Sperrklinken für Fehlalarme sowie Werte- und Normenerhalt (Legal-E2E), Rollenwort-Sätze und Chat ohne Akte;
+  - realitätsnähere, nicht modellgenerierte Texte BLOCKIERT: Einstufung der Quellen durch eine verantwortliche
+    Person offen.
+  Installierte App enthält §62–§64 noch nicht (Build 15.10.2026): NICHT VERIFIZIERT.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.

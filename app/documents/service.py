@@ -67,6 +67,7 @@ from app.documents.extraction import extract_text
 from app.documents.ocr import OcrError, configure_tesseract, run_ocr
 from app.errors.service import RetryService
 from app.models import AuditEvent, Document
+from app.documents import precheck_queue  # noqa: F401  (§64: registriert den Commit-Hook der Vorab-Pruefung)
 
 _TEXT_READY_OCR_STATUSES = ("not_needed", "done")
 
@@ -236,9 +237,7 @@ class DocumentProcessingService:
         # "pending" oder ohne matter_id.
         if document.ocr_status in _TEXT_READY_OCR_STATUSES and document.matter_id:
             self.deadline_service.analyze_document(document, db)
-            # §63: Vorab-Pruefung der Dokumentfreigabe (nur Modus C, lokal, ohne Cloud) - der Versand prueft verbindlich
-            from app.documents.release import precheck_document
-
-            precheck_document(db, document)
+            # §63/§64: die Vorab-Pruefung der Dokumentfreigabe (nur Modus C, lokal, ohne Cloud) plant der Commit-Hook in
+            # app/documents/precheck_queue.py im Hintergrund ein - der Upload wartet nicht; der Versand prueft verbindlich
 
         return document

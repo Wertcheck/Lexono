@@ -142,3 +142,31 @@ def test_document_of_another_matter_attached_to_a_chat_never_reaches_the_payload
     probes = outcome["fremder_anhang"]
     assert probes and all(not p.get("kritisch") for p in probes)
     assert all(p["status"] in ("blockiert", "ohne_cloud_aufruf", "payload") for p in probes)
+
+
+# §64 P3: Sperrklinke - `maskiert_ohne_referenz` (Fehlalarm-Kandidaten), Werte- und Normenerhalt waren bisher nur
+# gemessen, nicht begrenzt; seit e13bffe (14.10.2026) kamen so unbemerkt 3 Fehlalarme hinzu (Erbschein, "-0533", "7").
+# Erlaubt ist genau der am 17.10.2026 gemessene Stand dieser Faelle (Fake-Embedding wie die Fixture) - jeder NEUE
+# Fehlalarm schlaegt fehl; einer, der wegfaellt, darf hier gestrichen werden. Bekannte Grenzfaelle bleiben enthalten.
+KNOWN_UNREFERENCED_MASKS = {
+    "LE-D002:person:Beispielhafen", "LE-D002:person:Bruttomonatsvergütung", "LE-D002:person:Gesprächsnotiz",
+    "LE-D002:person:Schichtleiters",
+    "LE-T001:kennung:-0533", "LE-T001:kennung:G-26-0533", "LE-T001:ort:Beispielstadt", "LE-T001:ort:Gartenstraße",
+    "LE-T001:ort:Kfz-Schadensgutachten Nr. G-26", "LE-T001:ort:Ringallee", "LE-T001:ort:Rot",
+    "LE-T001:person:Beispielstadt", "LE-T001:person:Grün", "LE-T001:person:Schadenabteilung",
+    "LE-T001:person:Tagebuchnummer", "LE-T001:person:Unfallmitteilung",
+    "LE-T002:adresse:7", "LE-T002:kennung:26/0533-EW", "LE-T002:ort:Beispieldorf", "LE-T002:ort:Haus Lindenstraße",
+    "LE-T002:ort:Hausgrundstücks", "LE-T002:person:Beispieldorf", "LE-T002:person:Testament",
+}
+
+
+def test_false_positive_masks_and_preservation_do_not_get_worse(outcome: dict) -> None:
+    for split in ("dev", "test"):
+        summary = outcome["summary"][split]
+        new = set(summary["maskiert_ohne_referenz"]) - KNOWN_UNREFERENCED_MASKS
+        assert not new, f"neue Fehlalarme der Maskierung: {sorted(new)}"
+        for key in ("erhalt_keep", "erhalt_normen", "erhalt_chronologie"):
+            present, total = map(int, summary[key].split("/"))
+            assert present == total > 0, (split, key, summary.get(f"{key}_fehlend"))
+        found, total = map(int, summary["widersprueche_beide_seiten"].split("/"))
+        assert found >= 1, (split, summary["widersprueche_beide_seiten"])  # Stand 17.10.2026: je 1/2

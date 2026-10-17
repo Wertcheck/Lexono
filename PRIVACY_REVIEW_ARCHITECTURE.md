@@ -7907,3 +7907,131 @@ verpflichtend; nichts davon wurde gelockert. Die offene Owner-Frage aus §62.1 i
 | PostgreSQL | Migration und Auswahl | **NICHT VERIFIZIERT** |
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §64 Vorab-Prüfung im Hintergrund, Dokumentauswahl, Datenschutzvalidierung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `4b7387d`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert
+verpflichtend; nichts davon wurde gelockert.
+
+### 64.1 P1 – Vorab-Prüfung in Modus C
+
+**Nachgewiesene Lücken (§63-Stand):**
+- Mail-Anhänge wurden nie vorab geprüft. Bei der Verarbeitung haben sie noch keine Akte; die Zuordnung (automatisch
+  oder „Übernehmen“) folgt danach.
+- Die Prüfung lief synchron im Upload (Kaltstart der lokalen Erkennung, große Texte: Sekunden).
+- Eine aktenweite Entscheidung, ein Beteiligter oder ein geänderter Mandantenname macht alle gespeicherten Prüfungen
+  der Akte ungültig. Der nächste Versand prüfte dann bis zu 120 Texte synchron neu.
+
+**Änderung:** `app/documents/precheck_queue.py`.
+- Ein Session-Listener merkt sich nach jedem Flush die betroffenen Dokumente und Akten:
+  - Dokumente mit geändertem Text oder geänderter Akte;
+  - Akten mit neuen, geänderten oder gelöschten Beteiligten;
+  - Akten mit aktenweiten Entscheidungen (gesprächsbezogene Entscheidungen ändern den Prüfkontext nicht);
+  - Akten eines Mandanten mit geändertem Namen bzw. Akten mit geändertem Mandanten.
+- Erst **nach dem Commit** prüft ein einzelner lokaler Hintergrund-Thread diese Dokumente mit derselben zentralen
+  Prüfung (`check_document`), in eigener Sitzung. Bei einer Akte sind es höchstens die 120 neuesten Dokumente mit Text,
+  wie die Suchgrenze der Auswahl.
+- Ein Rollback verwirft die gesammelten Aufträge. Die Warteschlange ist begrenzt (1000) und dedupliziert.
+- Der Modus wird bei jedem Auftrag frisch gelesen, ohne das Kanzleiprofil anzulegen. Vorab geprüft wird nur in Modus C.
+- Der synchrone Aufruf in `process_document` entfällt. Der Upload wartet nicht mehr.
+- **Sicherheit:**
+  - Die Vorab-Prüfung ist nur ein Vorwärmen. Verbindlich bleibt die Prüfung beim Versand
+    (`released_document_ids` → `processing_state`). Sie prüft selbst, wenn kein passendes Ergebnis vorliegt.
+  - Ein laufender, abgebrochener oder fehlgeschlagener Auftrag bewirkt daher **nie** eine Freigabe.
+  - Das Ergebnis ist an Textstand, Prüfkontext und Datenschutz-Codeversion gebunden: Der Schlüssel entsteht aus den
+    Daten, die der Worker selbst gelesen hat. Ein veralteter Stand erzeugt nur einen Eintrag, den der Versand nie trifft.
+  - „Fehlgeschlagen“ wird nie gespeichert.
+  - Kein KI-, Cloud- oder Netzaufruf. Im Log steht nur der Fehlertyp, kein Inhalt.
+- **Nach dem Review behoben:**
+  - Ein Fehler in den Hooks erreicht den Aufrufer nicht mehr. Ein erfolgreicher Commit sieht also nie wie ein Fehler
+    aus, und ein Flush wird nie abgebrochen.
+  - Das spaCy-Modell wird unter einer Sperre geladen (`presidio_ner._get_analyzer_engine`): Worker und Request laden
+    es nicht gleichzeitig doppelt.
+- **Grenzen:**
+  - Ohne eigene Verbindung (SQLite im Arbeitsspeicher, nur in Tests) läuft die Prüfung direkt im Commit-Hook.
+  - Nicht erfasst; es fehlt dann nur die Vorwärmung, der Versand prüft trotzdem:
+    - neu angelegte Dokumente, die schon Text und Akte haben (z. B. Generator synthetischer Daten);
+    - der alte Wert beim Aktenwechsel eines Beteiligten;
+    - Bulk-Änderungen ohne ORM.
+  - Ein Savepoint-Rollback verwirft alle gesammelten Aufträge der Sitzung, auch hier fehlt nur die Vorwärmung.
+  - Worker und Versand können denselben Text parallel prüfen: doppelte Rechenarbeit, kein Sicherheitsproblem.
+  - PostgreSQL: Der Worker hielte während der Erkennung eine Lesetransaktion offen. **NICHT VERIFIZIERT.**
+  - Globale Datenschutz-Einstellungen außerhalb des Prüfkontexts machen gespeicherte Ergebnisse nicht ungültig
+    (bestehende Grenze seit §62).
+
+### 64.2 P2 – Auswahl bei mehr als 30 bzw. 120 Dokumenten
+
+Geprüft: Die Auswahl aus §63.3 erfüllt die Vorgaben, **keine Code-Lücke gefunden**. Neue Regressionstests
+(`tests/test_document_selection_limits.py`):
+- 160 Dokumente (10 älteste freigegeben): nichts verwendet, „Suchgrenze erreicht: 40 weitere“;
+- 135 Dokumente (100 neuere offen): genau die 20 durchsuchten freigegebenen, „15 weitere“;
+- genau 30 freigegebene: kein Höchstzahl-Hinweis;
+- Modus C gemischt (unauffällig, auffällig, auffällig und manuell freigegeben, fehlgeschlagen trotz Freigabe): nur
+  unauffällige und manuell freigegebene Dokumente;
+- veraltete manuelle Freigabe, veraltete gespeicherte Prüfung, älterer Prüfkontext: nicht verwendet;
+- Hinweise erscheinen **nicht** in der tatsächlich ausgehenden Anfrage (Loopback-Mitschnitt) und nicht im
+  Schriftsatz-Payload.
+
+### 64.3 P3 – Datenschutzvalidierung
+
+**Inventar:**
+
+| Benchmark | Korpus | Regressionsschutz vor §64 |
+|---|---|---|
+| `pseudonymization_v1` (`scripts/bench_pseudonymization.py`) | 63 synthetische Feldfälle | Sperrklinke (§61.4) |
+| `legal_e2e_v1` (`scripts/legal_bench`) | 7 synthetische Akten (dev 4, test 3) | nur Lecks, Fristen und Chronologie; Fehlalarme, Werte- und Normenerhalt **nur gemessen** |
+| `bench_name_detection` | 1100 Namen | `test_privacy_name_second_signal` |
+| `bench_role_object_negatives` | 12 Sätze und 1 Schriftsatz | **keiner** |
+| `bench_chat_without_file` | 440 Namen-Kontexte, 14 Fachfragen, 100 Fachbegriffe | **keiner** |
+| `bench_realistic_documents` | 1 Protokoll als DOCX, PDF und Scan | `test_realistic_documents` |
+| `presidio_audit_corpus` | eingefroren | `test_privacy_presidio_audit` |
+
+**Reproduktion (gleiche Methodik, keine eingecheckte Ergebnisdatei überschrieben):**
+- `pseudonymization_v1`: identisch mit §61.4 (85/88 geschützt, Lecks 3, Teil-Lecks 2, Fehlalarme 6, juristische
+  Werte 67/68, Blockaden 0, Fehler 0).
+- `bench_role_object_negatives`: 0/12. `bench_chat_without_file`: 0/440 Lecks, 0 Blockaden, 0/14 Fachfragen; zusätzlich
+  gemessen: 20/100 Fachbegriffe in mindestens einem Kontext maskiert.
+- `legal_e2e_v1` (alle 7 Fälle) gegen die eingecheckte `results.json` (`e13bffe`, 14.10.2026, gleicher Korpus-Hash):
+  - Lecks 0, Werte, Normen und Chronologie vollständig erhalten.
+  - Fristen ohne Referenz: dev 28 → 1, test 18 → 0 (§40).
+  - Klassifikation: dev 11 → 8 von 20, test 2 → 5 von 13.
+  - **Fehlalarme: dev 37 → 38, test 26 → 28** („Erbschein“ als Person, „-0533“ als Kennung, „7“ als Adresse). Seitdem
+    gab es mehrere bewusste Verschärfungen in `app/privacy` (§45–§54); die Einzelursache ist nicht nachgewiesen. Es
+    handelt sich um Übermaskierung, kein Leck. Der Anstieg blieb unbemerkt, weil er nicht begrenzt war.
+
+**Korrektur des Regressionsschutzes:**
+- `tests/test_legal_benchmark_e2e.py`: Erlaubt sind genau die gemessenen Fehlalarme. Werte, Normen und Chronologie
+  müssen vollständig erhalten bleiben, Widersprüche mindestens 1.
+- `tests/test_privacy_benchmark_ratchets.py`: beide Skripte vollständig, ohne Teilmenge (Lecks 0, Blockaden 0,
+  Fachfragen unverändert, keine neu maskierten Fachbegriffe).
+- Bekannte Grenzfälle bleiben enthalten.
+- Mutationsprobe: Fehlt ein bekannter Eintrag in der Erlaubnisliste, schlägt der jeweilige Test fehl.
+
+**Ausgehende Payloads und Fail-Closed:** `test_privacy_wire_payload`, `test_privacy_cloud_boundary_e2e`,
+`test_bench_pseudonymization` (NER-Ausfall: kein Cloud-Aufruf) und der neue Loopback-Nachweis aus 64.2: PASS.
+
+**Realitätsnähere, nicht modellgenerierte Texte: BLOCKIERT (Owner-Entscheidung).**
+- Das Quellenregister (`benchmarks/legal_e2e_v1/source_register.json`) verlangt vor jeder Nutzung einer öffentlichen
+  Quelle die Einstufung „nutzbar“ mit Prüfdatum und Begründung, ausdrücklich durch eine verantwortliche Person, „nicht
+  der Agent“. Der Validator erzwingt das.
+- Alle 7 Einträge stehen auf `nicht_geprueft`: Gesetze im Internet, Rechtsprechung im Internet, BVerfG, openJur, ZJS,
+  Vis Moot, Soldan Moot.
+- Es wurden deshalb keine fremden Texte übernommen. Alle Ergebnisse gelten weiter nur für synthetische,
+  modellgeschriebene Korpora.
+
+### 64.4 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository | `test_document_precheck_queue` (14), `test_document_selection_limits` (9), `test_privacy_benchmark_ratchets` (2), Sperrklinke in `test_legal_benchmark_e2e` | PASS |
+| Repository | volle Suite (6 Blöcke, Block 6 in 3 Teilen, im Vordergrund) | 5347 PASS; 4 FAIL = bekannte fremde Logo-Tests (`test_design_refresh`) |
+| Sandbox | Benchmarks reproduziert (s. 64.3), Ausgaben nur in temporären Dateien | PASS |
+| Browser | keine Browser-Sitzung | **NICHT VERIFIZIERT** |
+| Installierte App / WebView2 | Installierter Build vom 15.10.2026 (Migrationen bis `schritt3_029`; Repository: `schritt3_037`). §62–§64 sind dort **nicht enthalten**, die App lief nicht. Kein Test, keine Neuinstallation. | **NICHT VERIFIZIERT** |
+| PostgreSQL, echte Transportstrecke | – | **NICHT VERIFIZIERT** |
+
+**Testprozesse:** Vor den großen Läufen liefen keine Python-Prozesse. Danach sind keine verwaisten Prozesse übrig.
+7,4 GB frei.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

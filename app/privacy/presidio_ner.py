@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import threading
 from functools import lru_cache
 
 from app.privacy.detectors import POSSESSIVE_KINSHIP, REFERENCE_LABEL_WORDS, DetectedSpan
@@ -235,8 +236,18 @@ _PLACEHOLDER_WITH_GENITIVE = re.compile(_INTERNAL_PLACEHOLDER_PATTERN.pattern + 
                                         + _INTERNAL_PLACEHOLDER_PATTERN.pattern)
 
 
-@lru_cache(maxsize=1)
+_ENGINE_LOCK = threading.Lock()
+
+
 def _get_analyzer_engine():
+    """§64: unter einer Sperre - die Vorab-Pruefung im Hintergrund (app/documents/precheck_queue.py) und ein Request
+    duerfen das spaCy-Modell nicht gleichzeitig zweimal laden (`lru_cache` sperrt nicht: doppelte Speicherspitze)."""
+    with _ENGINE_LOCK:
+        return _build_analyzer_engine()
+
+
+@lru_cache(maxsize=1)
+def _build_analyzer_engine():
     """Baut die Presidio-`AnalyzerEngine` genau einmal pro Prozess - das
     Laden des spaCy-Modells ist der mit Abstand teuerste Teil (mehrere
     Sekunden), ein wiederholter Aufbau pro Anfrage wäre nicht praktikabel."""
