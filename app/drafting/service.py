@@ -343,6 +343,7 @@ class _PreparedRequest:
     lenient_leak_exempt_placeholders: frozenset[str] = frozenset()
     letterhead_ref: str | None = None
     has_document_context: bool = False
+    context_notices: tuple[str, ...] = ()  # §66: Hinweise der Kontextauswahl (lokal, nie im Payload)
 
 
 @dataclass(frozen=True)
@@ -989,6 +990,7 @@ class DraftingService:
             message_id=message_id,
             chat_triggered=chat_triggered,
             has_document_context=preparation.has_document_context,
+            context_notices=tuple(getattr(preparation, "notices", [])),
         )
 
     def _summary_not_worthwhile(self, payload: ClaudeRequestPayload, *, has_document_context: bool = False) -> bool:
@@ -1554,6 +1556,7 @@ class DraftingService:
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
                 uncertainties=uncertainties,
+                context_notices=list(prepared.context_notices),
             ),
         )
 
@@ -1736,6 +1739,7 @@ class DraftingService:
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
                 uncertainties=uncertainties,
+                context_notices=list(prepared.context_notices),
             ),
         )
 

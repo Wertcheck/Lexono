@@ -566,15 +566,18 @@ class RuleBasedLocalAIProvider:
             )
         if not_considered and search_limited:
             notices.append(
-                f"Suchgrenze erreicht: {not_considered} weitere(s), ältere(s) Dokument(e) der Akte wurde(n) nicht auf "
-                "Freigabe geprüft und nicht berücksichtigt (zu viele nicht freigegebene neuere Dokumente). Bitte "
-                "Freigaben erledigen oder gezielt mit einem Dokument chatten."
+                # §66 (App-Test): Fristhinweise freigegebener Dokumente laufen ueber einen eigenen, ebenfalls
+                # freigabegeprueften Pfad (_build_argumentationspunkte) - der Hinweis sagt das, statt "nie" zu behaupten
+                f"Suchgrenze erreicht: {not_considered} weitere(s), ältere(s) Dokument(e) der Akte wurde(n) nicht "
+                "durchsucht und nicht als Volltext berücksichtigt (zu viele nicht freigegebene neuere Dokumente); "
+                "enthalten sind nur erkannte Fristhinweise freigegebener Dokumente. Bitte Freigaben erledigen oder "
+                "gezielt mit einem Dokument chatten."
             )
         elif not_considered:
             notices.append(
                 f"Höchstzahl von {_MAX_DOCUMENTS_IN_SACHVERHALT} Dokumenten erreicht: {not_considered} weitere(s) "
-                "Dokument(e) der Akte wurde(n) nicht berücksichtigt (ältere Dokumente). Bei Bedarf gezielt mit einem "
-                "Dokument chatten."
+                "Dokument(e) der Akte wurde(n) nicht als Volltext berücksichtigt (ältere Dokumente; erkannte "
+                "Fristhinweise freigegebener Dokumente bleiben enthalten). Bei Bedarf gezielt mit einem Dokument chatten."
             )
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):

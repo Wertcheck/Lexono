@@ -1322,7 +1322,9 @@ def _drop_known_name_in_ordinary_adjective(
 #     davor ein Hinweis auf das eigene Verfahren steht (Review §33: "Unsere Verfassungsbeschwerde beim BVerfG, 1 BvR 77/25"
 #     ging sonst im Klartext hinaus). Aktenzeichen unterer Instanzen und eigene Aktenzeichen bleiben immer maskiert.
 _FEDERAL_COURTS = frozenset({"BGH", "BVerfG", "BAG", "BFH", "BSG", "BVerwG", "BPatG", "EuGH", "EGMR", "BGHZ", "BGHSt"})
-_LEGAL_ABBREVIATIONS = frozenset({"urt", "beschl", "vgl", "rn", "az", "hs", "abs", "bgbl", "anm"})
+# §66 (Korpus privacy_sources_v1): "Unterabs." und "Buchst." in Normzitaten ("Art. 6 Abs. 1 Unterabs. 1 Buchst. f
+# DSGVO") - "Buchst" wurde als Person maskiert, das Zitat war im Payload unvollstaendig. Wie "Abs." nur mit Punkt.
+_LEGAL_ABBREVIATIONS = frozenset({"urt", "beschl", "vgl", "rn", "az", "hs", "abs", "bgbl", "anm", "unterabs", "buchst"})
 _FEDERAL_REGISTER = r"(?:ZR|ZB|ZA|AZR|ABR|AZB|BvR|BvL|BvF|BvE|StR|KZR|KVR)"
 _ROMAN_SENATE_AFTER = re.compile(r"\s+" + _FEDERAL_REGISTER + r"\s+\d{1,5}/\d{2,4}\b")
 _FEDERAL_FILE_NUMBER = re.compile(r"(?<![\w/])(?:[IVXL]{1,6}|\d{1,2})\s+" + _FEDERAL_REGISTER + r"\s+\d{1,5}/\d{2,4}\b")
@@ -1330,9 +1332,13 @@ _FEDERAL_FILE_NUMBER = re.compile(r"(?<![\w/])(?:[IVXL]{1,6}|\d{1,2})\s+" + _FED
 # Stand §22: "Vgl. BGH VI ZR 123/19, NJW 2020, 2345" bleibt lesbar). Reporter-Formen ("BGH NJW 2023, 123 (I ZR 23/20)")
 # bleiben konservativ maskiert.
 _COURT_ALTERNATIVES = r"\b(?:" + "|".join(sorted(_FEDERAL_COURTS)) + r")"
+# §66: Datum auch mit ausgeschriebenem Monat ("BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24", die uebliche Zitierform
+# in Schriftsaetzen und Entscheidungen) - vorher nur numerisch, sodass dieselbe kanonische Zitierform maskiert wurde.
+# Unveraendert: nur Bundesgerichte, nur Bundes-Aktenzeichen, nie bei Hinweis auf das eigene Verfahren (_OWN_PROCEEDING_HINT).
+_GERMAN_MONTHS = r"(?:Januar|Jänner|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)"
 _CITATION_WITH_DATE_BEFORE = re.compile(
     _COURT_ALTERNATIVES + r",?\s+(?:Teil-|Versäumnis-|End-)?(?:Urt|Beschl|Urteil|Beschluss)\.?"
-    r"\s+v(?:om|\.)\s+\d{1,2}\.\s?\d{1,2}\.\s?\d{4}\s*[-–—,]\s*$"
+    r"\s+v(?:om|\.)\s+(?:\d{1,2}\.\s?\d{1,2}\.\s?\d{4}|\d{1,2}\.\s?" + _GERMAN_MONTHS + r"\s+\d{4})\s*[-–—,]\s*$"
 )
 # Kurzform "<Bundesgericht>[,] <Az>" nur mit roemischer Senatsnummer (Stand vor §33, §22: "Vgl. BGH VI ZR 123/19");
 # arabische Kurzformen ("BAG 2 AZR 55/25") blieben vorher maskiert und bleiben es (Review §33)

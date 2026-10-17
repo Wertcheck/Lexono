@@ -181,6 +181,17 @@ class _RevisionBasis:
     version: int
 
 
+def _with_context_notices(text: str, notices: list[str]) -> str:
+    """§66: Hinweise der Kontextauswahl (z. B. "Hoechstzahl von 30 Dokumenten erreicht", "Suchgrenze erreicht", nicht
+    freigegebene Dokumente) sichtbar machen - eine unvollstaendige Auswahl darf im Chat nicht wie eine vollstaendige
+    Antwort wirken. Im Block "Offene Pruefpunkte / Hinweise": LOKAL, nie Teil kuenftiger Cloud-Anfragen (der
+    Gespraechsverlauf entfernt diesen Block, siehe `_build_history`)."""
+    for notice in notices:
+        if notice and text:
+            text = append_review_note(text, notice)
+    return text
+
+
 def _with_basis_note(text: str, basis: "_RevisionBasis | None") -> str:
     """Wurde der Schriftsatz nach der Chat-Fassung veraendert, sagt die Ueberarbeitung das offen:
     sie basiert auf dem aktuellen Editorstand, nicht auf dem urspruenglichen Chat-Text."""
@@ -1317,11 +1328,14 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_scope_note(
-                    self._with_unevaluated_note(
-                        _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                content=_with_context_notices(
+                    self._with_scope_note(
+                        self._with_unevaluated_note(
+                            _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                        ),
+                        db, conversation, scope,
                     ),
-                    db, conversation, scope,
+                    result.context_notices,
                 ),
                 draft_id=result.draft_id,
             )
@@ -1511,11 +1525,14 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_scope_note(
-                    self._with_unevaluated_note(
-                        _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                content=_with_context_notices(
+                    self._with_scope_note(
+                        self._with_unevaluated_note(
+                            _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                        ),
+                        db, conversation, scope,
                     ),
-                    db, conversation, scope,
+                    final_result.context_notices,
                 ),
                 draft_id=final_result.draft_id,
             )

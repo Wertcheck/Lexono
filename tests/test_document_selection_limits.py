@@ -4,6 +4,7 @@ Nur synthetische Daten; Fake-Writer bzw. lokaler Aufzeichnungsserver (Loopback),
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -177,6 +178,37 @@ def test_selection_notices_never_reach_the_outgoing_request(client, db_session, 
     assert "Freigegebener Vermerk" in sent  # freigegebene Inhalte gehen hinaus
     for phrase in (MARKER, "XQ9", *NOTICE_PHRASES):
         assert phrase not in sent, phrase  # ... aber nie in der ausgehenden Anfrage
+
+
+def test_the_chat_shows_selection_notices_locally_and_never_resends_them(client, db_session, recorder) -> None:
+    """§66 (App-Test im installierten Build): der Chat zeigte die Auswahlhinweise NICHT an - eine unvollstaendige
+    Auswahl wirkte wie eine vollstaendige Antwort. Jetzt im lokalen Hinweisblock; auch die Folgefrage (mit
+    Gespraechsverlauf) sendet sie nicht."""
+    from app.drafting.review_notes import split_review_notes
+    from app.models import ChatMessage
+    from tests.test_upload_without_ai import _ask
+
+    matter, older, newer = _many(db_session, released=33, unreleased=4)
+    admin = db_session.query(User).filter_by(email="admin@kanzlei.test").one()
+    conversation = ChatConversation(matter_id=matter.id, user_id=admin.id, title="Grosse Akte")
+    db_session.add(conversation)
+    db_session.commit()
+    _ask(client, conversation.id, "Welche Betraege nennen die Vermerke?")
+    db_session.expire_all()
+    answer = (db_session.query(ChatMessage).filter_by(conversation_id=conversation.id, role="assistant")
+              .order_by(ChatMessage.created_at.desc()).first())
+    letter, notes = split_review_notes(answer.content)
+    assert "Höchstzahl von 30 Dokumenten erreicht: 3 weitere" in notes
+    assert "nicht für die KI-Verarbeitung freigegeben" in notes and "offen_03.txt" in notes
+    assert "Höchstzahl" not in letter  # nicht Teil des kopierbaren Texts
+    page = client.get(f"/dashboard/chat/{conversation.id}").text
+    assert "Offene Prüfpunkte / Hinweise" in page and "Höchstzahl von 30 Dokumenten erreicht" in page
+    _ask(client, conversation.id, "Und welche Frist gilt?")  # Folgefrage mit Gespraechsverlauf
+    assert len(recorder.requests) == 2
+    for request in recorder.requests:
+        sent = json.dumps(json.loads(request["raw"]), ensure_ascii=False)
+        for phrase in (MARKER, "XQ9", *NOTICE_PHRASES):
+            assert phrase not in sent, phrase
 
 
 def test_selection_notices_never_reach_the_drafting_payload(db_session) -> None:
