@@ -128,6 +128,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - realitätsnähere, nicht modellgenerierte Texte BLOCKIERT: Einstufung der Quellen durch eine verantwortliche
     Person offen.
   Installierte App enthält §62–§64 noch nicht (Build 15.10.2026): NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§65):** Installer aus `07d5fe0` gebaut; die bestehende Installation sicher aktualisiert
+  (echte Datenbank unverändert, Migration erst beim nächsten Start mit automatischem Backup).
+  - §62–§64 in der installierten App über WebView2 mit isolierten, synthetischen Daten geprüft;
+  - Quellen „Gesetze im Internet“ und „Rechtsprechung im Internet“ freigegeben und dokumentiert;
+  - Korpus `privacy_sources_v1`: 0 Lecks, 101/116 juristische Werte erhalten, Sperrklinke.
+  Offene Owner-Frage: Aktenzeichen oberster Bundesgerichte in Zitaten unmaskiert lassen?
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.

@@ -8035,3 +8035,168 @@ Geprüft: Die Auswahl aus §63.3 erfüllt die Vorgaben, **keine Code-Lücke gefu
 7,4 GB frei.
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §65 Installer aus 07d5fe0, Update, WebView2-Prüfung, Datenschutzkorpus mit Quellenbezug (17.10.2026, Branch `feature/feedback-diagnose`, Basis `07d5fe0`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert;
+in §65 wurde kein App-Code geändert.
+
+### 65.1 Build
+
+- **Quelle:** separater `git worktree` auf genau `07d5fe0` (`C:\Users\Bonit\lexono_build_07d5fe0`). Der Working Tree mit
+  den fremden Logo-/UX-Änderungen wurde nicht gebaut und nicht verändert. Einzige nicht versionierte Eingabe:
+  `windows/vendor/` (Tesseract, WebView2-Bootstrapper), unverändert kopiert.
+- **Befehle:** `pyinstaller windows\lexono.spec --distpath dist --workpath build --noconfirm` (Exit 0), dann
+  `ISCC.exe windows\installer.iss` (Exit 0, 298 s). Ergebnis: `dist\installer\Lexono_Setup.exe` (556,6 MB).
+- **Inhalt geprüft:**
+  - Migrationen `schritt3_030` bis `schritt3_037` im Bundle;
+  - Templates `document_release.html` und `document_pseudonymization.html`;
+  - Module `app.documents.precheck_queue`, `app.documents.release`, `app.web.document_release_router` und
+    `app.models.document_release` im PYZ-Archiv;
+  - Marker aus §63/§64 im ausgelieferten Bytecode („lexono-document-precheck“, `_build_analyzer_engine`, „Suchgrenze
+    erreicht“).
+- **Ergebnis:** PASS.
+
+### 65.2 Installation (Update der bestehenden Installation)
+
+**Vorab geklärt:**
+- **Programmordner:** `%LOCALAPPDATA%\Lexono` (Build vom 15.10.2026, Migrationen bis `schritt3_029`).
+- **Datenverzeichnis:** `%PROGRAMDATA%\Lexono`. Der Installer verändert es nicht: kein `[UninstallDelete]`, und
+  `[InstallDelete]` betrifft nur den Programmordner.
+- **Echte Datenbank** (`schritt3_029`; 86 Mandanten, 136 Akten, 142 Dokumente; nur Zählungen gelesen): Sie wird erst
+  beim nächsten normalen Start migriert. Dabei legt Lexono vorher automatisch ein geprüftes ZIP-Backup an
+  (`app/backup/pre_migration.py`).
+- **Kein Autostart:** keine Run-Keys, kein Autostart-Ordner, keine geplante Aufgabe. Lexono lief nicht.
+- **Probe der Migration 029 → 037 auf einer Kopie** (SQLite-Backup-API, Original nur lesend, Kopie danach gelöscht):
+  - alle 42 Tabellen erhalten, keine Zeilenzahl verändert, 6 neue Tabellen;
+  - Freigabemodus danach `auto` (B, bisheriges Verhalten);
+  - `integrity_check` ok;
+  - 9 Fremdschlüssel-Verstöße, identisch schon im Original (keine Folge der Migration).
+- **Sicherung des bisherigen Programmordners:** `C:\Users\Bonit\lexono_install_backup_vor_07d5fe0` (989 Dateien,
+  1218 MB).
+
+**Update:**
+- `Lexono_Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG` → Exit 0. Der stille Modus startet die App nicht.
+- WebView2-Bootstrapper: Exit `0x80040C28`. Die Runtime war bereits installiert (154.0.4258.53).
+
+**Danach:**
+- installierte `Lexono.exe` byte-gleich mit dem Build;
+- Migrationen bis `schritt3_037` vorhanden;
+- echte Datenbank unverändert (gleicher Hash, `schritt3_029`).
+
+**Ergebnis:** PASS. Die Migration der echten Datenbank ist **NICHT VERIFIZIERT**: Sie erfolgt erst beim nächsten
+normalen Start, mit automatischem Backup.
+
+### 65.3 WebView2-Prüfung der installierten Anwendung
+
+**Aufbau:**
+- Die installierte `Lexono.exe` (Build `07d5fe0`) läuft gegen ein **isoliertes** Datenverzeichnis
+  (`LEXONO_DATA_DIR=C:\Users\Bonit\lexono_qa_s65`), nicht gegen die echte Datenbank.
+- Die Einrichtung läuft über die Befehle der App selbst (`migrate`, `create-admin`), wie bei einer Neuinstallation.
+- Kein Schlüssel; tote Cloud-Endpunkte (`https://127.0.0.1:9`); lokale KI und Mail-Abruf aus.
+- Gesteuert wird das echte WebView2-Fenster (Edg/155.0.4283.60) über CDP
+  (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port`).
+- Nachweise (Screenshots, `ergebnis*.json`) liegen unter `C:\Users\Bonit\lexono_qa_s65\qa_nachweise`.
+- Danach wurde das Fenster regulär geschlossen; Prozess und Ports sind beendet. `llama-server` lief nicht.
+- **Echte Schutzprüfung bestätigt:** Ein `http://`-Gateway-Endpunkt wird in Produktion abgelehnt.
+
+| Prüfung im echten Fenster | Ergebnis |
+|---|---|
+| Neuinstallation: Migration bis `schritt3_037`, Modus `auto_review` (C); Einstellungsseite „(Standard für Neuinstallationen)“ (§63 P1) | PASS |
+| Erstanmeldung erzwingt Passwortänderung, danach Neuanmeldung | PASS |
+| Mandant und Akte über die echten Formulare angelegt | PASS |
+| Upload zweier Dokumente (0,7 s): Vorab-Prüfung im Hintergrund, unauffällig `passed`, auffällig `uncertain` (§64 P1) | PASS |
+| Anzeige: „Automatisch freigegeben“ bzw. „Entscheidung erforderlich – Auffälligkeit bei der Datenschutzprüfung“ (§62) | PASS |
+| Neuer Beteiligter über das Formular: neue Vorab-Prüfung im neuen Prüfkontext (2 → 4 Ergebnisse, 2 Kontexte) (§64 P1) | PASS |
+| KI-Aktion „Dokument analysieren“ auf das auffällige Dokument: lokaler Hinweis „… nicht an die Cloud-KI gesendet …“, `api_call_logs` = 0 (§62) | PASS |
+| Mehrfach-Upload von 33 Dokumenten (1,5 s): alle 35 Dokumente vorab geprüft (§64 P1) | PASS |
+| Moduswechsel A über das Formular: „Freigabe erforderlich“, Rückwechsel C, 2 Audit-Einträge (§62) | PASS |
+| Auswahl bei mehr als 30 Dokumenten im Chat-/Schriftsatz-Payload (§63/§64 P2): braucht eine Cloud-Anfrage, ohne Cloud nicht sichtbar | **NICHT VERIFIZIERT** (nur Repository) |
+| Migration und Verhalten mit der echten Datenbank, Installer-Erstinstallation auf frischem Rechner, PostgreSQL, echte Transportstrecke | **NICHT VERIFIZIERT** |
+
+### 65.4 Quellen für die Datenschutzvalidierung
+
+- **Freigabe:** Die verantwortliche Person hat zwei Quellengruppen freigegeben, „Gesetze im Internet“ und
+  „Rechtsprechung im Internet“ (Owner-Auftrag §65). Andere Quellen bleiben gesperrt (`nicht_geprueft`, unbenutzt).
+- **Register** (`benchmarks/legal_e2e_v1/source_register.json`): Status `nutzbar` mit Prüfdatum und Begründung.
+  Neu dokumentiert sind Abruf (Datum, Seiten, Einzelabruf statt Massenabruf), Verwendungszweck, rechtliche Grundlage
+  (§ 5 Abs. 1 UrhG) und redaktionelle Bestandteile.
+- **Nutzungsbedingungen** (im Original gelesen, 17.10.2026):
+  - Keine einschränkende Bedingung. Bei „Gesetze im Internet“ sind Deep Links ausdrücklich erlaubt; „Rechtsprechung
+    im Internet“ stellt ein XML-Format „für die Nutzer …, die die … Entscheidungen über automatisierte Verfahren
+    weiterverarbeiten möchten“ bereit.
+  - Haftungsausschluss und „keine Rechtsberatung“ sind vermerkt.
+- **Redaktionelle Bestandteile, gesondert geprüft und nicht als amtliches Werk behandelt:**
+  - `<titelzeile>` und `<norm>` (Dokumentation);
+  - `<sonstosatz>` („Hinweis der Dokumentationsstelle“);
+  - juris-Zusätze wie „(juris: SGB 3)“;
+  - Datenbankstruktur (möglicher Datenbankschutz nach §§ 87a ff. UrhG): genutzt wurden nur Einzeldokumente.
+- **Verwendet:**
+  - 5 Entscheidungen: BGH VIII ZR 274/23, VIII ZR 18/24, VI ZR 431/24 sowie BAG 6 AZR 32/24, 2 AZR 72/24;
+    übernommen werden amtliche Leitsätze, die Rechtsfrage und das Ergebnis;
+  - 6 Normtexte im Wortlaut: §§ 469, 543, 573, 573c, 577 BGB und § 174 InsO.
+
+### 65.5 Korpus `privacy_sources_v1` und Regressionsschutz
+
+- **Korpus** (`benchmarks/privacy_sources_v1/cases.json`):
+  - 5 Problemstellungen, jeweils mit ECLI, Abrufdatum und **dokumentiertem erwartetem Ergebnis** (aus dem amtlichen
+    Leitsatz bzw. Tenor);
+  - 11 vollständig synthetische Dokumente: Kündigung, Aktenvermerk, Mandanten-Mail, Ausübung des Vorkaufsrechts,
+    Prüfvermerk und Tabelle zur Sammelanmeldung, Gesprächsnotiz, Chat-Auftrag, Datenschutzauskunft, Vermerk zur
+    Erfolgsaussicht, Fristenvermerk.
+  - Alle Personen, Anschriften, Konten, Rufnummern, E-Mail-Adressen, Geburtsdaten und Kennungen sind erfunden.
+  - Aus den Entscheidungen werden keine Angaben realer Verfahrensbeteiligter übernommen, auch keine Daten und Orte
+    des Ausgangsfalls.
+  - Die Erzähltexte sind synthetisch (modellgeschrieben); wortgetreu nicht modellgeneriert sind nur Normtexte und
+    Leitsätze.
+- **Runner** `scripts/bench_privacy_sources.py`:
+  - dieselben Prüf- und Bewertungsfunktionen wie `pseudonymization_v1`;
+  - zusätzlich eine Korpusvalidierung: jeder Wert steht im Text, nur freigegebene Quellen;
+  - Chronologie: Daten in derselben Reihenfolge wie im Dokument;
+  - Fail-Closed bei NER-Ausfall (Pseudonymisierung und Restrisiko-Scan).
+  - Die Zahlen sind **nicht** mit `pseudonymization_v1` vergleichbar (anderer Korpus).
+- **Ergebnis 17.10.2026** (`results.json`, deterministisch in 2 Läufen):
+
+| Kennzahl | Wert |
+|---|---|
+| geschützte Werte | 52/52, **0 Lecks, 0 Teil-Lecks** |
+| Blockaden, Fehler | 0, 0 |
+| Chronologie erhalten | 11/11 |
+| Fail-Closed bei NER-Ausfall | 22/22 ohne Payload |
+| juristische Werte erhalten | **101/116** |
+| Maskierungen ohne Referenz | 34 |
+| tatsächlich ausgehende Anfrage (Loopback, Q09) | kein geschützter Wert, Daten und Fachbegriffe erhalten |
+
+- **Befund (neu, Grenze):** Die verlorenen Werte sind vor allem
+  - Aktenzeichen **realer** BGH-/BAG-Entscheidungen in Zitaten, als Kennung maskiert (z. B. „VIII ZR 274/23“): Die
+    zitierte Rechtsprechung ist im Payload nicht mehr identifizierbar;
+  - Gerichtsnamen wie „Amtsgericht Kiel“ oder „Landgericht Osnabrück“, als Ort maskiert;
+  - „Buchst.“ in „Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO“, als Person maskiert.
+  - Ein Teil der Maskierungen ohne Referenz ist dagegen bewusster Schutz (bekannte Mandantin, Anschrift der
+    Hausverwaltung).
+- **Owner-Entscheidung offen:** Sollen Aktenzeichen oberster Bundesgerichte im Zitatkontext unmaskiert bleiben? Das
+  wäre eine Lockerung der Erkennung und braucht eine eigene Abgrenzung zu den Aktenzeichen der eigenen Verfahren
+  (z. B. „14 C 233/26“). Sie wurde **nicht** vorgenommen.
+- **Regressionsschutz** (`tests/test_bench_privacy_sources.py`, 8 Tests):
+  - Korpus und Quellen gültig; der Validator weist erfundene Werte und gesperrte Quellen ab;
+  - 0 Lecks;
+  - Chronologie vollständig, Fail-Closed;
+  - Sperrklinke auf die bekannten Verluste und Maskierungen: jede neue schlägt fehl;
+  - Normtexte bleiben erhalten;
+  - Loopback-Nachweis auf der Leitung.
+- `test_legal_benchmark_corpus`: Der Test „nutzbar ohne Prüfdatum wird abgelehnt“ wählt jetzt ausdrücklich einen
+  gesperrten Eintrag. Die Prüfung bleibt unverändert.
+
+### 65.6 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository | `test_bench_privacy_sources` (8), `test_legal_benchmark_corpus`, `test_legal_benchmark_e2e`, `test_bench_pseudonymization`, `test_privacy_wire_payload`, `test_privacy_benchmark_ratchets` | PASS (56) |
+| Repository | volle Suite: in §65 kein App-Code geändert, letzter voller Lauf §64 (5347 PASS, 4 fremde Logo-Tests FAIL) | nicht erneut ausgeführt |
+| Sandbox | Migrationsprobe auf einer Kopie der echten Datenbank, Benchmarks | PASS |
+| Build | Worktree `07d5fe0`, PyInstaller und Inno Setup | PASS |
+| Installation | Update der bestehenden Installation, echte Datenbank unverändert | PASS |
+| WebView2 (installierte App, isolierte Daten) | s. 65.3 | PASS (Ausnahmen NICHT VERIFIZIERT) |
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.

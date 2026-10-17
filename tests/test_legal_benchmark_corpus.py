@@ -88,7 +88,9 @@ def test_split_and_id_prefix_must_match(corpus_copy: Path) -> None:
 def test_register_status_usable_requires_date_and_reason(corpus_copy: Path) -> None:
     path = corpus_copy / "source_register.json"
     register = json.loads(path.read_text(encoding="utf-8"))
-    register["sources"][0]["nutzungsrechte"]["status"] = "nutzbar"
+    # §65: die ersten Eintraege sind inzwischen ordnungsgemaess freigegeben - einen noch gesperrten ohne Datum waehlen
+    unchecked = next(s for s in register["sources"] if s["nutzungsrechte"]["status"] == "nicht_geprueft")
+    unchecked["nutzungsrechte"].update(status="nutzbar", geprueft_am=None, begruendung=None)
     path.write_text(json.dumps(register, ensure_ascii=False), encoding="utf-8")
     assert any("ohne Pruefdatum" in e for e in _errors(corpus_copy))
 
