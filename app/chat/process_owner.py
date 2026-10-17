@@ -17,7 +17,10 @@ import hashlib
 import os
 import socket
 import sys
+import threading
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 ALIVE = "alive"
 DEAD = "dead"
@@ -108,3 +111,35 @@ def state_of(owner: str | None) -> str:
         return UNKNOWN
     # gleiche Prozess-ID, aber anderer Startzeitpunkt: die ID wurde wiederverwendet - der Besitzer lebt nicht mehr
     return ALIVE if int(ticks) == current_ticks else DEAD
+
+
+class LocalRegistry:
+    """Vorgaenge, die in DIESEM Prozess gerade laufen (Referenzzaehler) - gemeinsam fuer Chat-Upload (§60) und
+    Schriftsatz-Generator (§61 P2), je Zweck eine eigene Instanz. Gesetzt VOR dem Anlegen bzw. der Uebernahme (keine
+    Luecke, in der eine gleichzeitige Wiederholung den Vorgang fuer verwaist hielte); endet auch bei einem harten
+    Abbruch des Requests (finally). Ein unterlegener paralleler Request entfernt die Markierung des Gewinners nicht."""
+
+    def __init__(self) -> None:
+        self._running: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    @contextmanager
+    def running(self, operation_id: str) -> Iterator[None]:
+        with self._lock:
+            self._running[operation_id] = self._running.get(operation_id, 0) + 1
+        try:
+            yield
+        finally:
+            with self._lock:
+                remaining = self._running.get(operation_id, 1) - 1
+                if remaining > 0:
+                    self._running[operation_id] = remaining
+                else:
+                    self._running.pop(operation_id, None)
+
+    def state(self, operation_id: str, owner: str | None) -> str:
+        """ALIVE / DEAD / UNKNOWN des Besitzers eines laufenden Vorgangs."""
+        if is_own(owner):
+            with self._lock:
+                return ALIVE if self._running.get(operation_id) else DEAD
+        return state_of(owner)

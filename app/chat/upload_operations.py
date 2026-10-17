@@ -8,10 +8,6 @@ Prozesses. Zeit allein gibt nie frei.
 
 from __future__ import annotations
 
-import threading
-from collections.abc import Iterator
-from contextlib import contextmanager
-
 from sqlalchemy.orm import Session
 
 from app.chat import process_owner
@@ -20,35 +16,13 @@ from app.models.chat_upload_operation import ChatUploadOperation
 
 ALIVE, DEAD, UNKNOWN = process_owner.ALIVE, process_owner.DEAD, process_owner.UNKNOWN
 
-# Referenzzaehler statt Menge: ein unterlegener paralleler Request darf beim Verlassen nicht die Markierung des noch
-# laufenden Gewinners entfernen
-_running: dict[str, int] = {}
-_running_lock = threading.Lock()
-
-
-@contextmanager
-def running(operation_id: str) -> Iterator[None]:
-    """Markiert den Vorgang als in DIESEM Prozess laufend - VOR dem Anlegen bzw. der Uebernahme gesetzt (keine Luecke),
-    endet auch bei einem harten Abbruch des Requests (finally)."""
-    with _running_lock:
-        _running[operation_id] = _running.get(operation_id, 0) + 1
-    try:
-        yield
-    finally:
-        with _running_lock:
-            remaining = _running.get(operation_id, 1) - 1
-            if remaining > 0:
-                _running[operation_id] = remaining
-            else:
-                _running.pop(operation_id, None)
+_registry = process_owner.LocalRegistry()  # in DIESEM Prozess laufende Chat-Uploads
+running = _registry.running
 
 
 def owner_state(operation: ChatUploadOperation) -> str:
     """ALIVE / DEAD / UNKNOWN des Besitzers eines Vorgangs im Zustand "processing"."""
-    if process_owner.is_own(operation.owner):
-        with _running_lock:
-            return ALIVE if _running.get(operation.id) else DEAD
-    return process_owner.state_of(operation.owner)
+    return _registry.state(operation.id, operation.owner)
 
 
 def take_over(db: Session, operation: ChatUploadOperation) -> bool:

@@ -137,14 +137,17 @@ def test_crash_during_processing_is_not_repeated_and_creates_nothing_twice(clien
     assert crashed.status_code == 500  # Antwort mit unklarem Ergebnis
     monkeypatch.setattr(DocumentProcessingService, "process_document", original)
     retry = _generate(client, new_matter_title=TITLE, files=_files(), operation_token=token)
-    # juenger Vorgang: "bitte warten", NICHT zum Neustart auffordern (sonst ein zweiter Vorgang, Review §58)
-    assert retry.status_code == 200 and "gerade noch verarbeitet" in retry.text and "nicht neu starten" in retry.text
-    assert "nichts doppelt angelegt" in retry.text and 'id="upload-repeated"' not in retry.text
+    # §61 P2: der Besitzer des abgebrochenen Uploads ist nachweislich beendet (Request vorbei) -> der Upload wird
+    # fortgesetzt (keine Cloud), ohne Doppelanlage; vorher meldete die Wiederholung nur zeitabhaengig "bitte warten"
+    assert retry.status_code == 200 and 'id="upload-notice"' in retry.text
     assert _counts(db_session) == (1, 1, 0) and writer.received_payloads == []
     operation = db_session.query(SchriftsatzOperation).one()
-    assert operation.status == STATUS_PROCESSING  # unklar - wird nicht automatisch wiederholt (fail-closed)
+    db_session.refresh(operation)
+    assert operation.status == "done"
+    document = db_session.query(Document).one()
+    assert "Zweigelt" in (document.extracted_text or "")  # die abgebrochene Verarbeitung wurde lokal nachgeholt
     matter = db_session.query(Matter).filter_by(title=TITLE).one()
-    assert f'<option value="{matter.id}" selected>' in retry.text  # neuer Versuch nutzt die vorhandene Akte
+    assert f'<option value="{matter.id}" selected>' in retry.text
 
 
 def test_partial_failure_keeps_the_matter_and_is_not_repeated(client, db_session, writer, monkeypatch) -> None:
@@ -243,6 +246,14 @@ def test_parallel_identical_upload_requests_create_one_matter_and_one_document(f
     settings = Settings(_env_file=None, schriftsatz_upload_storage_dir=str(tmp_path / "uploads"))
     monkeypatch.setattr(schriftsatz_router_module, "get_settings", lambda: settings)
     monkeypatch.setattr(DocumentProcessingService, "process_document", _slow)
+    polls = []
+    original_load = schriftsatz_operations.load
+
+    def _counting_load(*args, **kwargs):
+        polls.append(1)
+        return original_load(*args, **kwargs)
+
+    monkeypatch.setattr(schriftsatz_operations, "load", _counting_load)
     app.dependency_overrides[get_db] = _override_get_db
     try:
         with file_db() as db:
@@ -268,8 +279,9 @@ def test_parallel_identical_upload_requests_create_one_matter_and_one_document(f
         app.dependency_overrides.clear()
         app.dependency_overrides.update({k: v for k, v in previous_overrides.items() if k is not get_db})
     assert sorted(r.status_code for r in responses) == [200, 200]
-    # echte Ueberlappung belegt: der zweite Request trifft den noch laufenden Vorgang (nicht nur eine Wiederholung)
-    assert sum("gerade noch verarbeitet" in r.text for r in responses) == 1
+    # §61 P2: der zweite Request wartet auf den LAUFENDEN ersten (Ueberlappung belegt) und zeigt dessen Ergebnis
+    assert polls, "der zweite Request hat nicht auf den laufenden Vorgang gewartet (keine Ueberlappung)"
+    assert sum('id="upload-repeated"' in r.text for r in responses) == 1
     with file_db() as db:
         assert db.query(Matter).filter_by(title=TITLE).count() == 1 and db.query(Document).count() == 1
         assert db.query(Draft).count() == 0 and db.query(ApiCallLog).count() == 0
@@ -310,11 +322,15 @@ def test_long_interrupted_operation_says_so_without_repeating(client, db_session
     first = _generate(client, new_matter_title=TITLE, files=_files(), operation_token=token)
     assert first.status_code == 200
     operation = db_session.get(SchriftsatzOperation, operation_id)
-    operation.status, operation.created_at = STATUS_PROCESSING, datetime.now(timezone.utc) - timedelta(hours=1)
+    # Altbestand bzw. Besitzer auf einem anderen Rechner: nicht pruefbar -> auch nach einer Stunde NICHT uebernommen
+    operation.status, operation.owner = STATUS_PROCESSING, None
+    operation.created_at = datetime.now(timezone.utc) - timedelta(hours=1)
     db_session.commit()
     retry = _generate(client, new_matter_title=TITLE, files=_files(), operation_token=token)
-    assert "wurde unterbrochen" in retry.text and "beschluss.pdf" in retry.text
-    assert _counts(db_session) == (1, 1, 0)
+    assert "wurde unterbrochen" in retry.text and "nicht sicher feststellen" in retry.text
+    assert "beschluss.pdf" in retry.text and _counts(db_session) == (1, 1, 0)
+    db_session.refresh(operation)
+    assert operation.status == STATUS_PROCESSING
 
 
 def test_repeat_does_not_show_deleted_documents(client, db_session, writer) -> None:

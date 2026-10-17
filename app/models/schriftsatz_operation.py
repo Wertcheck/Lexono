@@ -40,3 +40,8 @@ class SchriftsatzOperation(TimestampMixin, Base):
     # HMAC (Session-Schluessel) ueber Art, Formularfelder und Datei-Hashes - erkennt eine BEWUSST geaenderte Anfrage
     # mit alter Vorgangs-ID (Zurueck-Button): sie wird nicht still auf das alte Ergebnis umgeleitet. Kein Klartext.
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    # §61 P2: Besitzer des laufenden Vorgangs (wie chat_upload_operations, app/chat/process_owner.py) und Plan mit
+    # vorab vergebenen IDs (Schnellakte, je Datei ein Dokument). Ein hart abgebrochener UPLOAD wird bei nachweislich
+    # beendetem Besitzer fortgesetzt; eine GENERIERUNG nie (Cloud-Anfrage evtl. erfolgt) - kontrollierter Fehlschlag.
+    owner: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    plan: Mapped[str | None] = mapped_column(Text, nullable=True)

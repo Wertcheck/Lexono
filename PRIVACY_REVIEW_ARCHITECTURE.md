@@ -7475,7 +7475,8 @@ sind unverändert.
 - **Lebender Prozess, abgebrochener Request:** Lebt der Prozess eines fremden Besitzers weiter, aber sein Request
   wurde hart abgebrochen, gilt der Vorgang weiter als laufend. Der Hinweis verweist dann auf einen bewusst neuen
   Upload.
-- **Schriftsatz-Generator (§58):** Dort bleibt ein hart abgebrochener Vorgang weiterhin gesperrt. Der Generator war
+- **Schriftsatz-Generator (§58)** (**geschlossen in §61.2**): Dort bleibt ein hart abgebrochener Vorgang weiterhin
+  gesperrt. Der Generator war
   nicht Teil dieses Schritts; die Generierung ist bewusst fail-closed, weil eine Cloud-Anfrage erfolgt sein könnte.
 
 ## §61 Arbeitspakete P1–P5 (17.10.2026, Branch `feature/feedback-diagnose`, Basis `666685f`)
@@ -7536,3 +7537,54 @@ Eine zusätzliche Pflicht-Freigabe je Dokument vor jeder KI-Aktion bleibt eine *
 | Export-Tests (DOCX/PDF, Aktenseite) | PASS |
 | Gesamtsuite: 5233 bestanden, 4 fremde Logo-Fehler | PASS |
 | Installierter Build | NICHT VERIFIZIERT |
+
+### 61.2 P2 – Idempotenz: harter Abbruch im Schriftsatz-Generator
+
+**Befund:**
+- Ein hart abgebrochener Generator-Vorgang blieb dauerhaft `processing`, ohne Besitzer und ohne Plan.
+- Die Wiederholung meldete **zeitabhängig**: unter 15 min „bitte warten, nicht neu starten“, auch wenn der Prozess
+  längst beendet war, danach „unterbrochen“.
+- Ein abgebrochener Upload hinterließ Schnellakte und Dokumente ohne Abschluss.
+
+**Lösung (Mechanismus aus §60, keine Kopie):**
+- **Gemeinsamer Prozess-Merker:** `process_owner.LocalRegistry`, je eine Instanz für Chat und Generator; das
+  Chat-Verhalten bleibt unverändert.
+- **Besitzer und Plan:** Der Generator speichert beides (Migration `schritt3_035`, additiv). Der Plan enthält die
+  geplante Schnellakte und je Datei eine Dokument-ID.
+- **Wiederholung desselben Vorgangs:**
+  - Lebt der Besitzer nachweislich, wartet sie höchstens 10 s; danach kommt „bitte warten“.
+  - Ist er nachweislich beendet, folgt die atomare Übernahme.
+  - **Upload:** wird fortgesetzt, Schritt für Schritt „anlegen, falls nicht vorhanden“. Dazu gehören die
+    Schnellakte unter der geplanten ID, Dokumente mit festem Dateipfad und das Nachholen einer abgebrochenen lokalen
+    Verarbeitung. Die Markierung wird einmal gespeichert, gelöschte Objekte führen zum kontrollierten Fehlschlag.
+  - **Generierung:** wird **nie** wiederholt, denn ob die KI-Anfrage schon gesendet war, ist unklar. Es folgt ein
+    kontrollierter Fehlschlag mit Hinweis; die Akte bleibt vorausgewählt, auch wenn der Abbruch direkt nach dem Anlegen
+    der Schnellakte lag. Ein bewusster Neustart ist möglich.
+  - Ein nicht prüfbarer Besitzer bleibt unangetastet. **Zeit allein gibt nie frei.**
+- **Audit:** Übernahme, Fortsetzung und kontrollierter Fehlschlag werden protokolliert, ohne Inhalte. Für die
+  Übernahme im Chat (§60) ist der Eintrag nachgezogen.
+- **Defekter Plan:** führt zum kontrollierten Fehlschlag statt zu wiederholten Server-Fehlern.
+
+**QA P2 (Repository-Tests, SQLite, TestClient):**
+
+| Prüfung | Status |
+|---|---|
+| `tests/test_schriftsatz_recovery.py` (13 Tests): harter Abbruch an 4 Upload-Speicherpunkten mit Wiederaufnahme ohne Doppelanlage (1 Akte, 1 Dokument, 1 Datei, 0 KI-Anfragen, Audit) | PASS |
+| Abbruch nach der Cloud-Anfrage: genau 1 aufgezeichneter Request, Wiederholung ohne zweiten; Abbruch davor und direkt nach der Schnellakte (vorausgewählt, Neustart ohne zweite Akte) | PASS |
+| Lebender Besitzer nach 5 h nicht übernommen; nicht prüfbarer Besitzer unangetastet; gelöschtes Dokument und defekter Plan führen zum kontrollierten Fehlschlag; Übernahme mit genau einem Gewinner; Migration auf und ab | PASS |
+| §58-Tests: 3 Erwartungen auf das neue, nicht mehr zeitabhängige Verhalten umgestellt (Fortsetzung statt „bitte warten“; Doppelklick wartet auf das Ergebnis; „unterbrochen“ nur bei nicht prüfbarem Besitzer) | PASS |
+| Unabhängiges Review: kein hoher Befund; mittel (Akte nicht vorausgewählt) und niedrig (defekter Plan, Audit, Testlücken) behoben | PASS |
+| Gesamtsuite: 5246 bestanden, 4 fremde Logo-Fehler | PASS |
+| Paralleles Übernahme-Rennen über HTTP für den Generator (nur auf Funktionsebene getestet; im Chat auch über HTTP) | NICHT VERIFIZIERT |
+| PostgreSQL | NICHT VERIFIZIERT |
+
+**Bewusst offen:**
+- **Doppelte Zählung:** Ein Abbruch genau zwischen dem Speichern der Markierung und ihrem Merker zählt sie bei der
+  Fortsetzung doppelt (Audit, Lern-Statistik). Die Entscheidung selbst ist ein Upsert. Den Merker vorher zu setzen
+  könnte die Markierung verlieren, also weniger Schutz.
+- **Hart gelöschte Objekte:** Ein zwischen Commit und Merker hart gelöschtes Objekt würde unter der geplanten ID neu
+  angelegt. Akten und Dokumente werden regulär nur weich gelöscht.
+- **Gesperrte Wiederholung:** Eine Wiederholung blockiert bis zu 10 s einen Worker-Thread.
+- **Doppelklick bei Entwurfsaktionen:** „Neu generieren“, Änderungsauftrag und KI-Bearbeitung im Editor haben keine
+  serverseitige Vorgangs-ID; dort schützt nur die UI-Sperre (`app_ai_loading`). Das war nicht Teil von P2 (Generator
+  und Chat-Upload).

@@ -942,7 +942,16 @@ def _repeated_chat_upload(
             break
         with upload_operations.running(operation.id):
             if upload_operations.take_over(db, operation):
-                plan = json.loads(operation.plan or "{}")
+                # Nachvollziehbarkeit (CLAUDE.md, Review §61 P2): Uebernahme nach hartem Abbruch - ohne Inhalte
+                db.add(AuditEvent(entity_type="ChatUploadOperation", entity_id=operation.id,
+                                  event_type="chat_upload_operation_resumed", actor=current_user.email,
+                                  details="Upload nach hartem Abbruch fortgesetzt (Besitzer beendet)"))
+                db.commit()
+                try:
+                    plan = json.loads(operation.plan or "{}")
+                except ValueError:
+                    plan = {}
+                plan = plan if isinstance(plan, dict) else {}
                 if not plan.get("message_id"):  # Altbestand ohne Plan: nicht sicher fortsetzbar
                     return _upload_failed(db, operation.id, operation.conversation_id,
                                           "Der unterbrochene Upload ließ sich nicht sicher fortsetzen. Es wurde nichts "

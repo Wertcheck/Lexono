@@ -170,3 +170,26 @@ def document_ids(operation: Operation) -> list[str]:
     except ValueError:
         return []
     return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+
+
+# --- §61 P2: harter Abbruch im Schriftsatz-Generator -------------------------------------------------------------
+# Derselbe Besitzer-Mechanismus wie beim Chat-Upload (§60), eigene Instanz des Prozess-Merkers.
+from app.chat import process_owner as _process_owner  # noqa: E402 - bewusst hier (Generator-spezifischer Teil)
+
+_registry = _process_owner.LocalRegistry()
+running = _registry.running
+ALIVE, DEAD, UNKNOWN = _process_owner.ALIVE, _process_owner.DEAD, _process_owner.UNKNOWN
+
+
+def new_owner() -> str:
+    return _process_owner.new_attempt()
+
+
+def owner_state(operation: SchriftsatzOperation) -> str:
+    return _registry.state(operation.id, operation.owner)
+
+
+def take_over_operation(db: Session, operation: SchriftsatzOperation) -> bool:
+    """Neuer Ausfuehrungsversuch (eigene Nonce) - genau ein Request gewinnt."""
+    return take_over(db, operation.id, expected_owner=operation.owner, new_owner=new_owner(),
+                     model=SchriftsatzOperation)
