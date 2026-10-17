@@ -7624,3 +7624,46 @@ Socket-Verbindung außer Loopback):
 - Mail- und Intake-Dokumente ohne Akte sind erst nach der Zuordnung markierbar (§57.4).
 - Die automatische Zuordnung setzt eine Klassifikation voraus, die keiner der Upload-Pfade aufruft (vorbestehend,
   dokumentiert in `main.py`). Das ist nicht datenschutzrelevant.
+
+### 61.4 P4 – Datenschutzvalidierung (Benchmarks reproduziert)
+
+Methodik wie in den Vorläufen: dieselben Skripte, dieselben eingefrorenen synthetischen Korpora und dieselbe
+Produktionskonfiguration. Es gab keine Netz- oder Cloud-Aufrufe. Die eingecheckte
+`benchmarks/pseudonymization_v1/results.json` blieb unverändert; sie stammt aus einem Stand vor §49.
+
+| Benchmark | Baseline | Ist (17.10.2026, nach P1–P3) | Status |
+|---|---|---|---|
+| `pseudonymization_v1` (63 Feldfälle, 88 Gold-Werte) | §57-Lauf | **0 abweichende Kennzahlen.** 85 von 88 geschützt; Klartext-Lecks 3, Teil-Lecks 2, alle als bekannte Grenze markiert; Fehlalarme 6; juristische Werte 67/68 erhalten; Blockaden und Fehler 0 | PASS |
+| dasselbe gegen die eingecheckte `results.json` | Stand vor §49 | Lecks 8 → 3: E-Mail, IBAN und zwei Personennamen behoben. Die E-Mail in K04 ist jetzt nur ein Teil-Leck | PASS (Verbesserung) |
+| `bench_name_detection` (baseline, 1100 Namen) | §53 | 0 Lecks, 0 Blockaden, alle Gruppen identisch; Fehlalarme 2/132 („Partei“, „Verwalter“), auch schon in früheren Läufen | PASS |
+| `bench_role_object_negatives` | §53 | 0/12 Sätze mit Verlust, 0 Personen-Platzhalter im Schriftsatz ohne Namen | PASS |
+| `bench_chat_without_file` | §48 | 0/440 Lecks, 0 Blockaden, 0/14 Fachfragen verändert | PASS |
+| Legal-E2E (`scripts.legal_bench.e2e`) | §56 | Nur Laufzeiten verändert (Bruchteile von Sekunden). Alle Qualitätskennzahlen identisch, etwa erfundene Fundstellen 6/6 markiert und keine Aufgabenfehler | PASS |
+
+**Verbleibende Lecks (bekannte Grenzen, unverändert dokumentiert):**
+- P10: Person, Rollenwort und Nachname ohne Anrede. Abgedeckt über die manuelle Markierung (§51), nicht automatisch.
+- A06: Ortsname und Teil einer Kennung im Grundbuchtext.
+- K04: Teil einer E-Mail mit OCR-Leerzeichen.
+- I07: kurze Nummer ohne Bezeichnung.
+
+**Ausgehende Payloads und Fail-Closed:** Vorhandene, weiter grüne Nachweise:
+- `test_privacy_wire_payload`, `test_privacy_cloud_boundary_e2e` sowie die HTTP-Nachweise aus §57–§61 (P1, P3);
+- `test_bench_pseudonymization::test_e2e_paths_protect_and_fail_closed`: Bei einem NER-Ausfall gibt es keinen
+  Cloud-Aufruf, und ein Klarname aus der lokalen Vorabanalyse wird nicht gesendet.
+
+**Neu erkannter Fehler im Regressionsschutz:** `test_no_plaintext_leak_outside_documented_limits` schloss Fälle mit
+bekannter Grenze **vollständig** aus. Folgende Verschlechterungen wären nicht aufgefallen:
+- ein zusätzliches Leck in A06, I07, K04 oder P10;
+- mehr Teil-Lecks oder Fehlalarme;
+- weniger erhaltene juristische Werte.
+
+**Korrektur:** zwei Sperrklinken-Tests in `tests/test_bench_pseudonymization.py`:
+- die zulässige Menge von Lecks und Teil-Lecks je Fall und Typ, jedes davon als Grenze dokumentiert;
+- Fehlalarme ≤ 6, höchstens 1 nicht erhaltener juristischer Wert, 0 Blockaden und 0 Fehler.
+
+Eine Mutationsprobe belegt die Wirkung: Ohne P10 in der Erlaubnisliste schlägt der Test fehl. Der Korpus selbst bleibt
+eingefroren; neue synthetische Fälle wurden bewusst nicht ergänzt, weil kein neuer Fehler gefunden wurde.
+
+**Status:** Die Ergebnisse gelten nur für endliche synthetische Korpora. Sie belegen **keine** vollständige
+Leckfreiheit und keine Rechtskonformität. Die Validierung auf realitätsnäheren, nicht modellgenerierten Texten ist
+**NICHT VERIFIZIERT**.
