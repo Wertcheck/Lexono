@@ -65,3 +65,28 @@ def test_e2e_paths_protect_and_fail_closed() -> None:
     assert results["E05"]["cloud_calls"] == 0 and results["E05b"]["cloud_calls"] == 0  # NER-Ausfall: kein Cloud-Aufruf
     assert results["E04"]["allowed"] is False  # Klarname aus lokaler Vorabanalyse wird nicht gesendet
     assert results["E03"]["quellenverweise"] >= 1 and results["E03"]["keep_missing"] == []  # Wissen gesendet, geschuetzt
+
+
+# --- §61 P4 (17.10.2026): Sperrklinke auf den gemessenen Stand -------------------------------------------------------
+# `test_no_plaintext_leak_outside_documented_limits` schliesst Faelle MIT bekannter Grenze vollstaendig aus: ein
+# zusaetzliches Leck in einem solchen Fall (z. B. ein Personenname in A06), mehr Teil-Lecks, mehr Fehlalarme oder weniger
+# erhaltene juristische Werte blieben unbemerkt. Festgeschrieben ist der reproduzierte Stand (identisch zu §57):
+# Verbesserungen sind erlaubt (dann hier nachziehen), Verschlechterungen schlagen fehl.
+_ALLOWED_LEAKS = {("P10", "PERSON"), ("A06", "ORT"), ("I07", "KENNUNG")}
+_ALLOWED_PARTIAL_LEAKS = {("A06", "KENNUNG"), ("K04", "EMAIL")}
+
+
+def test_leaks_never_exceed_the_documented_known_limits(rows: dict) -> None:
+    leaks = {(cid, item["type"]) for cid, row in rows.items() for item in row["protect"] if item["leak"]}
+    partial = {(cid, item["type"]) for cid, row in rows.items() for item in row["protect"] if item["partial_leak"]}
+    assert leaks <= _ALLOWED_LEAKS, f"neues Klartext-Leck: {sorted(leaks - _ALLOWED_LEAKS)}"
+    assert partial <= _ALLOWED_PARTIAL_LEAKS | _ALLOWED_LEAKS, f"neues Teil-Leck: {sorted(partial - _ALLOWED_PARTIAL_LEAKS)}"
+    assert all(rows[cid]["known_limit"] for cid, _ in leaks | partial)  # jedes Leck ist als Grenze dokumentiert
+
+
+def test_false_positives_and_kept_legal_values_do_not_regress(rows: dict) -> None:
+    overall = bench.summarise(list(rows.values()), [])["overall"]
+    assert overall["false_positives"] <= 6, overall
+    kept, total = (int(x) for x in overall["keep_preserved"].split("/"))
+    assert total - kept <= 1, overall  # Stand: 67/68 ("Hauptbahnhof" in X05 wird mitmaskiert)
+    assert overall["blocked"] == 0 and overall["unnecessary_blocks"] == 0 and overall["errors"] == 0

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% import "partials/document_release.html" as document_release %}
+{% block title %}Pseudonymisierung überprüfen{% endblock %}
+{% block content %}
+  {# §62 Human in the Loop: lokal, ohne Versand - dieselbe zentrale Pruefung wie beim Versand (Modus "mask"). #}
+  <div class="topbar">
+    <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}" class="topbar__back">← Zurück zum Dokument</a>
+    <h1 class="topbar__title">Pseudonymisierung überprüfen</h1>
+    <div class="topbar__meta">
+      {{ document.original_filename or "Dokument" }} · Lokale Ansicht – nichts davon wurde an die Cloud gesendet.
+    </div>
+  </div>
+
+  <div class="draft-page" id="pseudonymization-review">
+    {{ document_release.status_line(status) }}
+
+    {% if blocked_reasons %}
+      <div class="banner banner--error">
+        Die Datenschutzprüfung blockiert dieses Dokument – es wird in keinem Modus an die Cloud gesendet.
+      </div>
+    {% endif %}
+
+    <div class="split-two" style="margin-top: 16px;">
+      <div class="original-box">
+        <h2 class="panel-title">Ersetzte Angaben ({{ mappings | length }})</h2>
+        {% if mappings %}
+          <table class="data-table">
+            <thead><tr><th>Platzhalter</th><th>Kategorie</th><th>Originalwert (nur lokal)</th></tr></thead>
+            <tbody>
+              {% for placeholder, category, original in mappings %}
+                <tr><td><code>{{ placeholder }}</code></td><td>{{ category }}</td><td>{{ original }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state">Keine Angaben ersetzt.</div>
+        {% endif %}
+      </div>
+      <div class="original-box">
+        <h2 class="panel-title">So würde der Text gesendet</h2>
+        {% if pseudonymized %}
+          <div class="chat-document-pane__text" id="pseudonymized-text">{{ pseudonymized }}</div>
+        {% else %}
+          <div class="empty-state">Kein sendefähiger Text (Prüfung blockiert oder kein Textinhalt).</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="settings-card" style="margin-top: 16px;" id="pseudonymization-feedback">
+      <h2 class="settings-card__title">Etwas übersehen oder falsch ersetzt?</h2>
+      <ul class="instruction-list">
+        <li><a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}#name-protection">Nicht erkannten Namen im Dokumenttext schützen</a> – gilt für die ganze Akte.</li>
+        <li><a href="/dashboard/matters/{{ matter.id }}#privacy-decisions">Gespeicherte Entscheidungen der Akte ansehen</a>{% if can_manage %} und verwalten{% endif %}.</li>
+        <li><a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}#quality-report">Problem melden</a> – die Meldung wird geprüft; Schutzregeln werden dadurch nicht automatisch gelockert.</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

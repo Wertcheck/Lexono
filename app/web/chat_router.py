@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from urllib.parse import quote
 import mimetypes
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -39,12 +40,18 @@ from app.drafting.review_notes import split_review_notes
 from app.drafting.versioning import find_latest_version
 from app.export.letterhead import letterhead_text_lines
 from app.firm_profile.letterheads import letterhead_for_draft, letterhead_name, list_letterheads
-from app.chat import processing_claims
-from app.chat.service import ChatService
+from app.chat import processing_claims, upload_operations
+from app.models.chat_upload_operation import ChatUploadOperation
+from app.models.schriftsatz_operation import STATUS_DONE, STATUS_FAILED, STATUS_PROCESSING
+from app.chat.service import ChatService, UploadTooLargeError
+from app.documents.service import DocumentProcessingService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
+from app.privacy.decisions import load_decisions
+from app.web.name_protection import document_text_version, install_name_protection, protect_document_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
+from app.privacy.decisions import parse_manual_terms, record_manual_terms
 from app.chat.speech import (
     SpeechDecodeError,
     SpeechEmptyRecordingError,
@@ -81,7 +88,8 @@ from app.web.service_factory import WritingProviderNotConfiguredError, get_draft
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/chat", tags=["dashboard-chat"])
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# §52/§54 "Namen schützen": dieselben Listen wie die Serverpruefung (eine Quelle, app/web/name_protection.py)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))
 # Markdown-Rendering fuer Chat-Nachrichten (05.10., Owner-Direktive
 # "LONG-RUN PRODUCT QUALITY PASS" Phase D) - siehe app/chat/markdown_render.py
 # fuer die volle Root-Cause-/Sicherheitsherleitung. Gleiches Registrierungs-
@@ -223,6 +231,14 @@ def chat_home(
     )
 
 
+@router.get("/upload-token")
+def fresh_upload_token(current_user: User = Depends(require_login)) -> JSONResponse:
+    """§60 (Zurueck-Button): neue Upload-Vorgangs-ID fuer eine aus dem Browser-Cache wiederhergestellte Seite, deren
+    ID bereits verbraucht sein kann. Stellt NUR eine ID aus - kein Schreibvorgang, kein Upload, keine Wiederholung."""
+    return JSONResponse({"upload_token": upload_operations.issue_token(current_user.id)},
+                        headers={"Cache-Control": "no-store"})
+
+
 @router.get("/{conversation_id}", response_class=HTMLResponse)
 def chat_conversation_page(
     conversation_id: str,
@@ -248,6 +264,12 @@ def chat_document_view(
     document_id: str,
     request: Request,
     mark: str | None = Query(default=None, max_length=80),
+    name_protection: str = "",
+    name_protection_error: str = "",
+    uploaded: str = "",
+    text_not_sent: str = "",
+    released: str = "",
+    release_error: str = "",
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> HTMLResponse | RedirectResponse:
@@ -273,7 +295,11 @@ def chat_document_view(
         )
 
     review_terms = frozenset({mark.strip()}) if mark and mark.strip() and "\n" not in mark else frozenset()
-    preview = build_document_preview(document.extracted_text, review_terms=review_terms)
+    # §56: aktenweit geschuetzte Namen sichtbar machen; Markierung an den angezeigten Textstand gebunden
+    preview = build_document_preview(
+        document.extracted_text, review_terms=review_terms,
+        protected_terms=load_decisions(db, matter_id=active_conversation.matter_id, conversation_id=None).personal,
+    )
     return _render_chat_page(
         request,
         db,
@@ -282,6 +308,16 @@ def chat_document_view(
         active_conversation,
         viewing_document=document,
         document_preview=preview,
+        name_protection_context={
+            "document_text_version": document_text_version(document),
+            "name_protection_saved": name_protection == "saved",
+            "name_protection_error": name_protection_error[:300],
+            "upload_notice": uploaded == "1",
+            "upload_text_not_sent": text_not_sent == "1",
+            # §62 Dokumentfreigabe (lokal, kein Cloud-Aufruf)
+            **_document_release_context(db, document, current_user, request, released=released,
+                                        release_error=release_error),
+        },
     )
 
 
@@ -339,6 +375,21 @@ def chat_document_thumbnail(
     raise HTTPException(status_code=404, detail="Für dieses Dateiformat gibt es keine Vorschau.")
 
 
+def _document_release_context(db: Session, document: Document, user: User, request: Request, *, released: str,
+                              release_error: str) -> dict:
+    from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission
+    from app.documents import release
+
+    return {
+        "release_status": release.release_status(db, document),
+        "release_show_notice": release.show_auto_release_notice(user),
+        "release_can_manage": has_permission(user, PERM_PRIVACY_DECISION_MANAGE),
+        "release_released": released == "1",
+        "release_error": release_error[:300],
+        "release_current_path": request.url.path,
+    }
+
+
 def _render_chat_page(
     request: Request,
     db: Session,
@@ -349,6 +400,7 @@ def _render_chat_page(
     viewing_document: Document | None = None,
     document_preview=None,
     pending_matter: Matter | None = None,
+    name_protection_context: dict | None = None,
 ) -> HTMLResponse:
     settings = get_settings()
     # Phase 3 (§71): war bisher nur auf den direkten Dev-Modus geprueft
@@ -425,11 +477,16 @@ def _render_chat_page(
         # entsprechende "wird geprüft..."-Darstellung.
         "local_ai_status": getattr(request.app.state, "local_ai_status", None),
         "error": error,
+        # §59: Upload-Vorgangs-ID dieser Seite (je Seite neu; verbraucht nur von einem Request MIT Dateien)
+        "upload_token": upload_operations.issue_token(current_user.id),
         # Dokument-Workspace (Task #62) - beide None ausserhalb von
         # chat_document_view, chat.html schaltet darueber zwischen dem
         # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
         "viewing_document": viewing_document,
         "document_preview": document_preview,
+        **(name_protection_context or {"document_text_version": "", "name_protection_saved": False,
+                                       "name_protection_error": "", "upload_notice": False,
+                                       "upload_text_not_sent": False}),
         # Allgemeiner Chat vs. Chat MIT Aktenkontext (05.10., Owner-Direktive
         # "ARCHITECTURE & PRODUCT FLOW PASS" §5-9): jede Konversation ist
         # technisch IMMER an eine Akte gebunden (Aktenisolation, siehe
@@ -453,7 +510,11 @@ def _render_chat_page(
             and active_conversation.matter.client.name != PLACEHOLDER_CLIENT_NAME
         ),
     }
-    return templates.TemplateResponse(request, "chat.html", context)
+    response = templates.TemplateResponse(request, "chat.html", context)
+    # §60: nicht aus dem Browser-Cache wiederherstellen (Zurueck-Button) - die Seite traegt eine Upload-Vorgangs-ID, die
+    # danach verbraucht sein kann; zusaetzlich holt chat.html bei `pageshow` (persisted) eine neue ID
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 def _editor_targets(db: Session, messages: list[ChatMessage]) -> dict[str, dict]:
@@ -550,7 +611,17 @@ def _gather_message_sources(db: Session, messages: list[ChatMessage]) -> dict[st
 
 def _redirect_with_error(conversation_id: str | None, message: str) -> RedirectResponse:
     target = f"/dashboard/chat/{conversation_id}" if conversation_id else "/dashboard/chat"
-    return RedirectResponse(url=f"{target}?error={message}", status_code=303)
+    # §59 (Review): kodiert - ein "#" oder "&" in der Meldung schnitt sie bisher ab
+    return RedirectResponse(url=f"{target}?error={quote(message, safe='')}", status_code=303)
+
+
+def _safe_suffix(filename: str) -> str:
+    """Nur eine kurze, technische Dateiendung - ein "Punkt" mitten im Namen ("Klage Meier.Meier GmbH") gibt sonst
+    Namensbestandteile in die Fehler-URL."""
+    import re
+
+    suffix = Path(filename).suffix.lower()
+    return suffix if re.fullmatch(r"\.[a-z0-9]{1,8}", suffix) else "?"
 
 
 def _validate_uploads(documents: list[UploadFile]) -> str | None:
@@ -564,8 +635,10 @@ def _validate_uploads(documents: list[UploadFile]) -> str | None:
             continue
         suffix_ok = any(upload.filename.lower().endswith(ext) for ext in _ALLOWED_UPLOAD_EXTENSIONS)
         if not suffix_ok:
+            # §60: ohne Dateinamen (die Meldung landet im Pfad ohne JavaScript in der Fehler-URL)
+            suffix = _safe_suffix(upload.filename)
             return (
-                f"Dateityp von '{upload.filename}' wird nicht unterstützt "
+                f"Dateityp '{suffix}' wird nicht unterstützt "
                 f"(erlaubt: {', '.join(sorted(_ALLOWED_UPLOAD_EXTENSIONS))})."
             )
     return None
@@ -618,6 +691,357 @@ def transcribe_speech(
     return JSONResponse(content={"text": text})
 
 
+def _upload_target(db: Session, conversation: ChatConversation, document_ids: list[str], *, text_kept: bool) -> str:
+    """§57: nach "nur hochladen" in die Dokumentansicht des ersten lesbaren Dokuments (dort pruefen/markieren)."""
+    for document_id in document_ids:
+        document = db.get(Document, document_id)
+        if document is not None and document.extracted_text:
+            suffix = "&text_not_sent=1" if text_kept else ""
+            return f"/dashboard/chat/{conversation.id}/document/{document.id}?uploaded=1{suffix}#name-protection"
+    return f"/dashboard/chat/{conversation.id}"
+
+
+# --- §59: idempotenter Chat-Upload ---------------------------------------------------------------------------------
+
+
+class _UploadOutcome(BaseModel):
+    """Ergebnis eines Upload-Requests (neu ausgefuehrt, wiederaufgenommen ODER als Wiederholung erkannt)."""
+
+    conversation_id: str | None = None
+    target: str | None = None  # Erfolg: Dokumentansicht zum Pruefen/Markieren (§57)
+    text_kept: bool = False
+    repeated: bool = False
+    resumed: bool = False  # §60: nach hartem Abbruch des urspruenglichen Requests fortgesetzt
+    error: str | None = None
+    # §60: Zusatz NUR fuer die lokale Anzeige im Stream (z. B. Dateinamen) - nie in einer URL
+    detail: str | None = None
+
+
+def _upload_contents(documents: list[UploadFile]) -> list[tuple[str, bytes]]:
+    """Name + Inhalt je Datei fuer den Fingerabdruck; der Lesezeiger wird fuer das Speichern zurueckgesetzt."""
+    result = []
+    for upload in documents:
+        if upload.filename:
+            content = upload.file.read()
+            upload.file.seek(0)
+            result.append((upload.filename, content))
+    return result
+
+
+def _chat_upload(
+    db: Session,
+    current_user: User,
+    *,
+    upload_token: str,
+    conversation_id: str,
+    matter_id: str,
+    content: str,
+    letterhead_ref: str,
+    protected_terms: str,
+    manual_terms: list[str],
+    documents: list[UploadFile],
+) -> _UploadOutcome:
+    """§59: EIN Chat-Upload = EIN Vorgang (serverseitig validierte, signierte Vorgangs-ID der Seite). Nur der erste
+    Request legt Unterhaltung, Dokumente und Upload-Nachricht an; jede Wiederholung (Doppelklick, paralleler Request,
+    Wiederholung nach verlorener Antwort oder Netzwerkfehler) liefert das gespeicherte Ergebnis. Eine geaenderte
+    Anfrage mit derselben ID wird weder ausgefuehrt noch als identisch behandelt. §57 bleibt: keine KI-Anfrage.
+
+    §60: Beim Anlegen werden alle IDs vorab vergeben (`plan`) und jeder Schritt ist "anlegen, falls nicht vorhanden" -
+    nach einem harten Abbruch (Prozess beendet) setzt eine Wiederholung DENSELBEN Vorgang fort, ohne Doppelanlage."""
+    operation_id = upload_operations.read_token(upload_token, current_user.id)
+    if operation_id is None:
+        return _UploadOutcome(
+            conversation_id=conversation_id or None,
+            error="Der Upload-Vorgang ist abgelaufen oder ungültig - bitte die Seite neu laden und erneut hochladen. "
+                  "Es wurde nichts angelegt oder gesendet.",
+        )
+    # Pruefungen ohne Persistenz VOR dem Anlegen des Vorgangs
+    conversation = _require_own_conversation(db, conversation_id, current_user) if conversation_id else None
+    selected_matter = get_or_404(db, Matter, matter_id, "Akte") if (conversation is None and matter_id) else None
+    contents = _upload_contents(documents)
+    fingerprint = upload_operations.request_fingerprint(
+        [conversation_id, matter_id, content, letterhead_ref, protected_terms], contents
+    )
+    new_conversation = conversation is None
+    plan = {
+        "matter_id": str(uuid.uuid4()) if new_conversation and selected_matter is None else None,
+        "conversation_id": str(uuid.uuid4()) if new_conversation else None,
+        "documents": [str(uuid.uuid4()) for _ in contents],
+        "message_id": str(uuid.uuid4()),
+    }
+    # Vor dem Anlegen als "laeuft in diesem Prozess" vermerkt - keine Luecke, in der eine gleichzeitige Wiederholung
+    # den gerade angelegten Vorgang fuer verwaist halten koennte
+    with upload_operations.running(operation_id):
+        existing = upload_operations.claim(db, operation_id, user_id=current_user.id, fingerprint=fingerprint,
+                                           plan=json.dumps(plan))
+        if existing is None:
+            return _run_upload(db, current_user, operation_id=operation_id, plan=plan, conversation=conversation,
+                               selected_matter=selected_matter, content=content, manual_terms=manual_terms,
+                               documents=documents, recorded=[])
+    # Abbruch zwischen "start" (setzt die Unterhaltung im Eingabefeld) und "uploaded": die Wiederholung traegt dann
+    # die Unterhaltung DIESES Vorgangs - inhaltlich identisch, wenn sie ohne Unterhaltung uebereinstimmt
+    without_conversation = upload_operations.request_fingerprint(
+        ["", matter_id, content, letterhead_ref, protected_terms], contents
+    ) if conversation_id and conversation_id == existing.conversation_id else None
+    if existing.fingerprint == without_conversation:
+        conversation = None  # neue Unterhaltung des Vorgangs: dem Plan folgen (nicht als "bestehende" behandeln)
+    return _repeated_chat_upload(
+        db, current_user, existing, fingerprint=fingerprint, content=content, conversation_id=conversation_id or None,
+        alternative_fingerprint=without_conversation, conversation=conversation, selected_matter=selected_matter,
+        manual_terms=manual_terms, documents=documents,
+    )
+
+
+def _run_upload(db: Session, current_user: User, *, operation_id: str, **kwargs) -> _UploadOutcome:
+    try:
+        return _execute_chat_upload(db, current_user, operation_id=operation_id, **kwargs)
+    except Exception:
+        # Ein abgefangener Fehler ist eindeutig ein Fehlschlag (der Upload loest keine KI-Anfrage aus) - "fehlgeschlagen"
+        # statt "laeuft noch". Nur ein HARTER Abbruch (Prozess beendet) bleibt "processing" und wird wiederaufnehmbar.
+        upload_operations.update(db, operation_id, status=STATUS_FAILED)
+        raise
+
+
+def _upload_failed(db: Session, operation_id: str, conversation_id: str | None, message: str,
+                   detail: str | None = None) -> _UploadOutcome:
+    upload_operations.update(db, operation_id, status=STATUS_FAILED)
+    return _UploadOutcome(conversation_id=conversation_id, error=message, detail=detail)
+
+
+def _execute_chat_upload(
+    db: Session,
+    current_user: User,
+    *,
+    operation_id: str,
+    plan: dict,
+    conversation: ChatConversation | None,
+    selected_matter: Matter | None,
+    content: str,
+    manual_terms: list[str],
+    documents: list[UploadFile],
+    recorded: list[str],
+) -> _UploadOutcome:
+    """Fuehrt den Plan aus - erstmals ODER als Wiederaufnahme. Jeder Schritt prueft zuerst, ob sein Ergebnis (unter der
+    vorab vergebenen ID) bereits existiert: auch ein Abbruch nach einem Commit, dessen Ausgang unklar war, fuehrt nicht
+    zur Doppelanlage. Ist der Stand nicht stimmig rekonstruierbar: kontrollierter Fehlschlag, nichts geloescht."""
+    from app.documents.readiness import PROCESSING, assess_document
+
+    chat_service = _get_chat_service()
+
+    def _mark(step: str) -> None:
+        # Fortschrittsmarker im Plan: ein bereits angelegtes, inzwischen GELOESCHTES Objekt wird erkannt und nicht
+        # wiederbelebt (kontrollierter Fehlschlag statt Neuanlage)
+        plan.setdefault("done", []).append(step)
+        upload_operations.update(db, operation_id, plan=json.dumps(plan))
+
+    done = set(plan.get("done") or [])
+    unclear = "Der unterbrochene Upload ließ sich nicht sicher fortsetzen. Es wurde nichts gelöscht und nichts gesendet; " \
+              "bitte die Unterhaltung prüfen und bei Bedarf neu hochladen."
+    if conversation is None:
+        planned_id = plan.get("conversation_id")
+        conversation = db.get(ChatConversation, planned_id) if planned_id else None
+        if conversation is not None and conversation.user_id != current_user.id:
+            return _upload_failed(db, operation_id, None, unclear)
+        if conversation is None:
+            if not planned_id or "conversation" in done:  # fehlt, obwohl schon angelegt: geloescht
+                return _upload_failed(db, operation_id, None, unclear)
+            matter_id = selected_matter.id if selected_matter else None
+            if matter_id is None and plan.get("matter_id"):
+                existing_matter = db.get(Matter, plan["matter_id"])
+                if existing_matter is None and "matter" in done or (
+                        existing_matter is not None and existing_matter.deleted_at is not None):
+                    return _upload_failed(db, operation_id, None, unclear)
+                if existing_matter is None:
+                    existing_matter = create_quick_matter(
+                        db, title=None, client_name=None, actor=current_user.email, matter_id=plan["matter_id"]
+                    )
+                    _mark("matter")
+                matter_id = existing_matter.id
+            conversation = chat_service.create_conversation(
+                db, user=current_user, matter_id=matter_id, title=content or "Neues Dokument",
+                actor=current_user.email, conversation_id=planned_id,
+            )
+            _mark("conversation")
+    upload_operations.update(db, operation_id, conversation_id=conversation.id)
+
+    uploads = [upload for upload in documents if upload.filename]
+    planned_documents = plan.get("documents") or []
+    if len(planned_documents) != len(uploads):
+        return _upload_failed(db, operation_id, conversation.id, unclear)
+    settings = get_settings()
+    for upload, document_id in zip(uploads, planned_documents):
+        document = db.get(Document, document_id)
+        if document is None and document_id in recorded:  # schon angelegt und vermerkt, jetzt verschwunden
+            return _upload_failed(db, operation_id, conversation.id, unclear)
+        if document is None:
+            try:
+                chat_service.attach_document(
+                    db,
+                    conversation=conversation,
+                    upload=upload,
+                    ocr_enabled=settings.ocr_enabled,
+                    ocr_languages=settings.ocr_languages,
+                    tesseract_cmd=settings.tesseract_cmd,
+                    actor=current_user.email,
+                    document_id=document_id,
+                )
+            except UploadTooLargeError as exc:
+                # feste Meldung ohne Dateinamen (kann im Pfad ohne JavaScript in die URL); Name nur lokal im Stream
+                return _upload_failed(db, operation_id, conversation.id, str(exc), detail=exc.filename)
+            except ValueError as exc:
+                return _upload_failed(db, operation_id, conversation.id, str(exc))
+        elif document.deleted_at is not None or document.matter_id != conversation.matter_id:
+            return _upload_failed(db, operation_id, conversation.id, unclear)
+        elif assess_document(db, document).state == PROCESSING:
+            # nach einem Abbruch WAEHREND der Verarbeitung (Text/OCR): lokal neu verarbeiten - keine KI
+            DocumentProcessingService(
+                ocr_enabled=settings.ocr_enabled, ocr_languages=settings.ocr_languages,
+                tesseract_cmd=settings.tesseract_cmd,
+            ).process_document(document, db, actor=current_user.email)
+        if document_id not in recorded:
+            upload_operations.add_document(db, operation_id, document_id)
+            recorded.append(document_id)
+
+    if "terms" not in done:  # bei der Wiederaufnahme nicht doppelt (Audit/Lern-Statistik)
+        _record_manual_terms(db, conversation, manual_terms, current_user)
+        _mark("terms")
+
+    # §57: Upload und KI-Verarbeitung sind getrennte Vorgaenge (serverseitig erzwungen, nicht nur in der UI). Die
+    # Dokumente werden NUR gespeichert und lokal ausgelesen - keine KI-Anfrage, kein Cloud-Aufruf, auch nicht fuer einen
+    # mitgetippten Text (der bleibt lokal im Browser und wird erst bewusst gesendet).
+    message = db.get(ChatMessage, plan["message_id"])
+    if message is None:
+        message = chat_service.record_upload(db, conversation=conversation, document_ids=planned_documents,
+                                             message_id=plan["message_id"])
+    elif message.conversation_id != conversation.id:
+        return _upload_failed(db, operation_id, conversation.id, unclear)
+    upload_operations.update(db, operation_id, status=STATUS_DONE, upload_message_id=message.id)
+    return _UploadOutcome(conversation_id=conversation.id, text_kept=bool(content),
+                          target=_upload_target(db, conversation, planned_documents, text_kept=bool(content)))
+
+
+# Doppelklick: der zweite Request wartet kurz auf den ersten und liefert dann DESSEN Ergebnis (statt einer
+# Fehlermeldung, waehrend der Upload gelingt). Begrenzt - danach "bitte warten".
+_REPEAT_WAIT_SECONDS = 10.0
+_REPEAT_POLL_SECONDS = 0.25
+
+
+def _await_running_upload(db: Session, operation: ChatUploadOperation) -> ChatUploadOperation:
+    """Wartet, solange der Besitzer NACHWEISLICH laeuft (nicht nach Uhrzeit) - hoechstens `_REPEAT_WAIT_SECONDS`."""
+    import time
+
+    deadline = time.monotonic() + _REPEAT_WAIT_SECONDS
+    while (operation.status not in (STATUS_DONE, STATUS_FAILED)
+           and upload_operations.owner_state(operation) == upload_operations.ALIVE and time.monotonic() < deadline):
+        time.sleep(_REPEAT_POLL_SECONDS)
+        operation = upload_operations.load(db, operation.id) or operation
+    return operation
+
+
+def _repeated_chat_upload(
+    db: Session, current_user: User, operation: ChatUploadOperation, *, fingerprint: str, content: str,
+    conversation_id: str | None, alternative_fingerprint: str | None = None,
+    conversation: ChatConversation | None = None, selected_matter: Matter | None = None,
+    manual_terms: list[str] | None = None, documents: list[UploadFile] | None = None,
+) -> _UploadOutcome:
+    """Wiederholung einer bereits verwendeten Upload-Vorgangs-ID: ein abgeschlossener oder fehlgeschlagener Vorgang wird
+    nie erneut ausgefuehrt. Ein LAUFENDER Vorgang wird nur fortgesetzt, wenn sein Besitzer nachweislich beendet ist
+    (atomare Uebernahme, genau ein Request); ist das nicht feststellbar, bleibt er unangetastet."""
+    if operation.user_id != current_user.id:
+        return _UploadOutcome(conversation_id=conversation_id,
+                              error="Der Upload-Vorgang ist ungültig. Es wurde nichts angelegt oder gesendet.")
+    if operation.fingerprint not in (fingerprint, alternative_fingerprint):
+        return _UploadOutcome(
+            conversation_id=conversation_id,
+            error="Diese Anfrage unterscheidet sich vom ersten Absenden dieses Upload-Vorgangs. Es wurde nichts "
+                  "ausgeführt. Bitte erneut absenden.",
+        )
+    for _ in range(3):  # Uebernahme verloren -> erneut beurteilen (ein anderer Request setzt gerade fort)
+        operation = _await_running_upload(db, operation)
+        if operation.status != STATUS_PROCESSING or upload_operations.owner_state(operation) != upload_operations.DEAD:
+            break
+        with upload_operations.running(operation.id):
+            if upload_operations.take_over(db, operation):
+                # Nachvollziehbarkeit (CLAUDE.md, Review §61 P2): Uebernahme nach hartem Abbruch - ohne Inhalte
+                db.add(AuditEvent(entity_type="ChatUploadOperation", entity_id=operation.id,
+                                  event_type="chat_upload_operation_resumed", actor=current_user.email,
+                                  details="Upload nach hartem Abbruch fortgesetzt (Besitzer beendet)"))
+                db.commit()
+                try:
+                    plan = json.loads(operation.plan or "{}")
+                except ValueError:
+                    plan = {}
+                plan = plan if isinstance(plan, dict) else {}
+                if not plan.get("message_id"):  # Altbestand ohne Plan: nicht sicher fortsetzbar
+                    return _upload_failed(db, operation.id, operation.conversation_id,
+                                          "Der unterbrochene Upload ließ sich nicht sicher fortsetzen. Es wurde nichts "
+                                          "gelöscht und nichts gesendet; bitte neu hochladen.")
+                outcome = _run_upload(
+                    db, current_user, operation_id=operation.id, plan=plan, conversation=conversation,
+                    selected_matter=selected_matter, content=content, manual_terms=manual_terms or [],
+                    documents=documents or [], recorded=upload_operations.document_ids(operation),
+                )
+                return outcome.model_copy(update={"resumed": outcome.error is None})
+        operation = upload_operations.load(db, operation.id) or operation
+    conversation = db.get(ChatConversation, operation.conversation_id) if operation.conversation_id else None
+    if conversation is not None and conversation.user_id != current_user.id:
+        conversation = None
+    ids = upload_operations.document_ids(operation)
+    present = (
+        [d.id for d in db.query(Document).filter(Document.id.in_(ids), Document.deleted_at.is_(None))] if ids else []
+    )
+    present.sort(key=ids.index)
+    if operation.status == STATUS_DONE and conversation is not None and present:
+        return _UploadOutcome(conversation_id=conversation.id, repeated=True, text_kept=bool(content),
+                              target=_upload_target(db, conversation, present, text_kept=bool(content)))
+    if operation.status == STATUS_DONE:
+        message = "Dieser Upload wurde bereits ausgeführt; Unterhaltung oder Dokumente sind nicht mehr vorhanden."
+    elif operation.status == STATUS_FAILED:
+        message = "Dieser Upload ist bereits fehlgeschlagen und wird nicht wiederholt."
+    elif upload_operations.owner_state(operation) == upload_operations.ALIVE:
+        message = ("Dieser Upload wird gerade noch verarbeitet. Bitte einen Moment warten und die Unterhaltung "
+                   "prüfen; nur falls er dort nicht erscheint, bewusst neu hochladen.")
+    else:
+        # Besitzer nicht pruefbar (z. B. anderer Rechner): NICHT uebernehmen - auch nicht nach Ablauf einer Zeit
+        message = ("Dieser Upload wurde unterbrochen, und es lässt sich nicht sicher feststellen, ob er noch läuft. Er "
+                   "wird nicht fortgesetzt; ein neuer Upload ist möglich.")
+    message += " Es wurde nichts doppelt angelegt und nichts gesendet."
+    detail = None
+    if present and operation.status != STATUS_DONE:
+        names = [d.original_filename or "Dokument" for d in db.query(Document).filter(Document.id.in_(present))]
+        message += f" Bereits gespeichert: {len(names)} Dokument(e) in der Unterhaltung."
+        detail = ", ".join(names)
+    return _UploadOutcome(conversation_id=conversation.id if conversation is not None else conversation_id,
+                          error=message, detail=detail)
+
+
+def _stream_upload_outcome(db: Session, current_user: User, outcome: _UploadOutcome) -> Iterator[str]:
+    """SSE-Antwort auf einen Upload. Jede Antwort traegt eine NEUE Upload-Vorgangs-ID fuer das Eingabefeld: ein bewusst
+    neuer Upload ist danach immer moeglich, ohne die Seite neu zu laden."""
+    fresh = upload_operations.issue_token(current_user.id)
+    if outcome.conversation_id:
+        yield _sse_event({"kind": "start", "conversation_id": outcome.conversation_id})
+    if outcome.error:
+        detail = f" ({outcome.detail})" if outcome.detail else ""  # nur lokale Anzeige, nie URL
+        yield _sse_event({"kind": "done", "message_id": None, "content": outcome.error + detail, "blocked": True,
+                          "sources": [], "upload_token": fresh})
+        return
+    yield _sse_event({"kind": "uploaded", "conversation_id": outcome.conversation_id, "target": outcome.target,
+                      "text_kept": outcome.text_kept, "repeated": outcome.repeated, "resumed": outcome.resumed,
+                      "upload_token": fresh})
+
+
+def _parse_manual_terms(protected_terms: str, content: str) -> list[str]:
+    """§51: siehe app/privacy/decisions.parse_manual_terms (gemeinsam mit den Formularen, §54)."""
+    return parse_manual_terms(protected_terms, content)
+
+
+def _record_manual_terms(db: Session, conversation: ChatConversation, terms: list[str], user: User) -> None:
+    """§51: siehe app/privacy/decisions.record_manual_terms (gemeinsam mit den Formularen, §54)."""
+    record_manual_terms(db, matter_id=conversation.matter_id, conversation_id=conversation.id, terms=terms,
+                        user_id=user.id, actor=user.email)
+
+
 @router.post("/send")
 def send_message(
     request: Request,
@@ -625,6 +1049,8 @@ def send_message(
     matter_id: str = Form(""),
     content: str = Form(""),
     letterhead_ref: str = Form(""),
+    protected_terms: str = Form(""),
+    upload_token: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -639,6 +1065,20 @@ def send_message(
     upload_error = _validate_uploads(documents)
     if upload_error:
         return _redirect_with_error(conversation_id or None, upload_error)
+    try:
+        manual_terms = _parse_manual_terms(protected_terms, content)  # §51, wie send-stream
+    except InvalidPrivacyDecisionError as exc:
+        return _redirect_with_error(conversation_id or None, str(exc))
+
+    if any(doc.filename for doc in documents):  # §57/§59: ein Upload ist ein eigener, idempotenter Vorgang
+        outcome = _chat_upload(
+            db, current_user, upload_token=upload_token, conversation_id=conversation_id, matter_id=matter_id,
+            content=content, letterhead_ref=letterhead_ref, protected_terms=protected_terms,
+            manual_terms=manual_terms, documents=documents,
+        )
+        if outcome.error:
+            return _redirect_with_error(outcome.conversation_id, outcome.error)
+        return RedirectResponse(url=outcome.target, status_code=303)
 
     chat_service = _get_chat_service()
 
@@ -661,25 +1101,7 @@ def send_message(
             actor=current_user.email,
         )
 
-    settings = get_settings()
-    document_ids: list[str] = []
-    for upload in documents:
-        if not upload.filename:
-            continue
-        try:
-            document = chat_service.attach_document(
-                db,
-                conversation=conversation,
-                upload=upload,
-                ocr_enabled=settings.ocr_enabled,
-                ocr_languages=settings.ocr_languages,
-                tesseract_cmd=settings.tesseract_cmd,
-                actor=current_user.email,
-            )
-        except ValueError as exc:
-            return _redirect_with_error(conversation.id, str(exc))
-        if document is not None:
-            document_ids.append(document.id)
+    _record_manual_terms(db, conversation, manual_terms, current_user)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): Rueckgabewert jetzt erfasst statt verworfen - die ID
@@ -689,7 +1111,7 @@ def send_message(
     # Claude-Payload landen: einmal als History, einmal als aktuelle
     # Nachricht - siehe app/chat/service.py::ChatService._build_history).
     user_message = chat_service.record_user_message(
-        db, conversation=conversation, content=message_text, document_ids=document_ids
+        db, conversation=conversation, content=message_text, document_ids=[]
     )
 
     try:
@@ -817,6 +1239,7 @@ def start_conversation_from_message(
     request: Request,
     message_id: str,
     action: str = Form(...),
+    protected_terms: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
 ) -> RedirectResponse:
@@ -836,6 +1259,18 @@ def start_conversation_from_message(
         sender=message.sender or "unbekannt",
         body=message.body_text or "(kein Inhalt extrahiert)",
     )
+    # §54 "Namen schützen": gegen genau die Anfrage (Betreff, Absender, Text) geprueft und als aktenweite Entscheidung
+    # VOR dem ersten Cloud-Aufruf gespeichert. Fehler -> nichts gesendet (Meldung ohne Begriff).
+    try:
+        manual_terms = parse_manual_terms(protected_terms, prompt)
+        record_manual_terms(db, matter_id=message.matter_id, conversation_id=None, terms=manual_terms,
+                            user_id=current_user.id, actor=current_user.email)
+    except InvalidPrivacyDecisionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 - fail-closed
+        raise HTTPException(
+            status_code=500, detail="Die Namensmarkierung konnte nicht gespeichert werden - es wurde nichts gesendet."
+        ) from exc
 
     conversation = _start_conversation_with_prompt(
         db,
@@ -886,6 +1321,8 @@ def start_conversation_from_document(
     request: Request,
     document_id: str,
     action: str = Form(...),
+    protected_terms: str = Form(""),
+    text_version: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
 ) -> RedirectResponse:
@@ -899,6 +1336,13 @@ def start_conversation_from_document(
             status_code=400,
             detail="Dokument muss zuerst einer Akte zugeordnet werden.",
         )
+
+    # §56: in der Dokumentansicht markierte (noch nicht gespeicherte) Namen gehen mit der Aktion mit - gegen den
+    # angezeigten Textstand geprueft und VOR dem ersten Cloud-Aufruf als aktenweite Entscheidung gespeichert.
+    # Fehler -> nichts gestartet, nichts gesendet (Meldung ohne Begriff).
+    problem = protect_document_terms(db, document, protected_terms, text_version, current_user)
+    if problem is not None:
+        raise HTTPException(status_code=400, detail=problem)
 
     filename = document.original_filename or "Dokument"
     prompt = prompt_template.format(filename=filename)
@@ -1211,6 +1655,8 @@ def send_message_stream(
     matter_id: str = Form(""),
     content: str = Form(""),
     letterhead_ref: str = Form(""),
+    protected_terms: str = Form(""),
+    upload_token: str = Form(""),
     documents: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
@@ -1238,6 +1684,25 @@ def send_message_stream(
     if upload_error:
         return StreamingResponse(_stream_error_event(upload_error), media_type="text/event-stream")
 
+    # §51: im Eingabefeld markierte Namen ("Namen schützen") - VOR jeder Persistenz geprueft; ein Fehler sendet nichts
+    # und gibt die Eingabe samt Markierung zurueck (kein stilles Weglassen, kein Cloud-Aufruf ohne die Markierung).
+    try:
+        manual_terms = _parse_manual_terms(protected_terms, content)
+    except InvalidPrivacyDecisionError as exc:
+        return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
+
+    if any(doc.filename for doc in documents):  # §57/§59: ein Upload ist ein eigener, idempotenter Vorgang
+        outcome = _chat_upload(
+            db, current_user, upload_token=upload_token, conversation_id=conversation_id, matter_id=matter_id,
+            content=content, letterhead_ref=letterhead_ref, protected_terms=protected_terms,
+            manual_terms=manual_terms, documents=documents,
+        )
+        return StreamingResponse(
+            _stream_upload_outcome(db, current_user, outcome),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     chat_service = _get_chat_service()
 
     if conversation_id:
@@ -1259,25 +1724,7 @@ def send_message_stream(
             actor=current_user.email,
         )
 
-    settings = get_settings()
-    document_ids: list[str] = []
-    for upload in documents:
-        if not upload.filename:
-            continue
-        try:
-            document = chat_service.attach_document(
-                db,
-                conversation=conversation,
-                upload=upload,
-                ocr_enabled=settings.ocr_enabled,
-                ocr_languages=settings.ocr_languages,
-                tesseract_cmd=settings.tesseract_cmd,
-                actor=current_user.email,
-            )
-        except ValueError as exc:
-            return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
-        if document is not None:
-            document_ids.append(document.id)
+    _record_manual_terms(db, conversation, manual_terms, current_user)
 
     message_text = content or "Bitte das angehängte Dokument verarbeiten."
     # CHAT-02 (15.09.): siehe die identische Begruendung beim nicht-
@@ -1285,7 +1732,7 @@ def send_message_stream(
     # verworfen, damit die aktuelle Nachricht von der History ausgeschlossen
     # werden kann.
     user_message = chat_service.record_user_message(
-        db, conversation=conversation, content=message_text, document_ids=document_ids
+        db, conversation=conversation, content=message_text, document_ids=[]
     )
     _claim_message(db, user_message.id)
 

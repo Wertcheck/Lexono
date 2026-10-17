@@ -88,6 +88,67 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+# §61 P5: Speicherschutz VOR dem Parsen - die praezise, geloggte Groessenpruefung in `relay_messages` greift erst nach
+# dem vollstaendigen Einlesen und JSON-Parsen des Bodys. Ohne den vorgeschalteten Reverse Proxy (deploy/Caddyfile, 250 KB)
+# koennte ein sehr grosser Body sonst vollstaendig in den Speicher gelangen. Grobe Schranke: Faktor 2 auf
+# `max_request_bytes` (JSON-Escaping kann den Rohtext vergroessern), damit die praezise 413-Antwort der Route bleibt.
+_BODY_LIMIT_FACTOR = 2
+
+
+def _max_body_bytes() -> int:
+    return get_gateway_settings().max_request_bytes * _BODY_LIMIT_FACTOR
+
+
+class _BodySizeLimit:
+    """ASGI-Schranke: Content-Length zu gross -> sofort 413; ohne/abweichende Laenge wird hoechstens bis zur Schranke
+    gelesen (gestueckelte Uebertragung), danach 413 - der Body erreicht die Anwendung nie vollstaendig."""
+
+    def __init__(self, inner) -> None:  # noqa: ANN001 - ASGI-Anwendung
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send) -> None:  # noqa: ANN001 - ASGI-Signatur
+        if scope["type"] != "http" or scope.get("method") != "POST":
+            await self.inner(scope, receive, send)
+            return
+        limit = _max_body_bytes()
+        declared = dict(scope.get("headers") or []).get(b"content-length")
+        if declared is not None and declared.isdigit() and int(declared) > limit:
+            await _reject_too_large(send)
+            return
+        chunks: list[bytes] = []
+        size = 0
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            chunk = message.get("body", b"")
+            size += len(chunk)
+            if size > limit:
+                await _reject_too_large(send)
+                return
+            chunks.append(chunk)
+            if not message.get("more_body", False):
+                break
+        body = b"".join(chunks)
+        replayed = False
+
+        async def replay():
+            nonlocal replayed
+            if replayed:
+                return await receive()
+            replayed = True
+            return {"type": "http.request", "body": body, "more_body": False}
+
+        await self.inner(scope, replay, send)
+
+
+async def _reject_too_large(send) -> None:  # noqa: ANN001
+    payload = b'{"detail":"Anfrage ueberschreitet das Groessenlimit"}'
+    await send({"type": "http.response.start", "status": 413,
+                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(payload)).encode())]})
+    await send({"type": "http.response.body", "body": payload})
+
+
 app = FastAPI(
     title="Lexono Gateway",
     lifespan=lifespan,
@@ -100,6 +161,7 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
+app.add_middleware(_BodySizeLimit)
 
 
 def _unauthorized() -> HTTPException:

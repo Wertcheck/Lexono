@@ -71,6 +71,12 @@ PERM_CLIENT_DELETE = "client:delete"
 # Frist - NICHT fuer Mitarbeiter (die koennen Vorschlaege korrigieren, zurueckstellen und manuell erfassen; ihre
 # Erfassungen bleiben ungeprueft bis zur anwaltlichen Bestaetigung).
 PERM_DEADLINE_CONFIRM = "deadline:confirm"
+# Qualitaetsmeldungen (ARCHITECTURE.md §75): Meldungen ansehen, lokal diagnostizieren, Ursache bestaetigen,
+# abschliessen, synthetische Regressionsfaelle freigeben und exportieren - Admin und Anwalt. MELDEN darf jede Rolle.
+PERM_QUALITY_REVIEW = "quality:review"
+# Gespeicherte Datenschutz-Entscheidungen einer Akte aufheben/bestaetigen (PRIVACY_REVIEW_ARCHITECTURE.md §52) - Admin
+# und Anwalt: das Aufheben schwaecht den Schutz eines Namens ab. Ansehen darf jede Rolle mit Aktenzugang.
+PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
 
 _ALL_PERMISSIONS = frozenset(
     {
@@ -85,6 +91,8 @@ _ALL_PERMISSIONS = frozenset(
         PERM_CLIENT_MANAGE,
         PERM_CLIENT_DELETE,
         PERM_DEADLINE_CONFIRM,
+        PERM_QUALITY_REVIEW,
+        PERM_PRIVACY_DECISION_MANAGE,
     }
 )
 
@@ -101,6 +109,8 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_OUTBOX_MARK_SENT,
             PERM_CLIENT_MANAGE,
             PERM_DEADLINE_CONFIRM,
+            PERM_QUALITY_REVIEW,
+            PERM_PRIVACY_DECISION_MANAGE,
         }
     ),
     "mitarbeiter": frozenset(

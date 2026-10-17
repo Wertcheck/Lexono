@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.privacy.api_logger import ApiCallLogger
+from app.privacy.decisions import load_decisions
 from app.privacy.gateway import ClaudePrivacyGateway
 
 
@@ -70,6 +71,7 @@ class DraftGenerationOrchestrator:
             stil=stil,
             vorlage=vorlage,
             known_entities=preparation.known_entities,
+            privacy_decisions=load_decisions(db, matter_id=matter_id, conversation_id=None),  # §51, wie Drafting
         )
 
         if not gateway_result.allowed:

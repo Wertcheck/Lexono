@@ -1,0 +1,1607 @@
+{
+ "benchmark": "privacy_sources_v1",
+ "run_at": "2026-10-17T16:03:40+00:00",
+ "git_commit": "da33cf4",
+ "cases_sha256": "31709b2a4b9e2155",
+ "nicht_verifiziert": [
+  "Antwortqualitaet eines echten Modells",
+  "echte Transportstrecke"
+ ],
+ "summary": {
+  "cases": 11,
+  "gold": 52,
+  "protected": 52,
+  "leaks": [],
+  "partial_leaks": [],
+  "false_positives": [
+   "Q01:ADRESSE:10435 Berlin",
+   "Q01:ADRESSE:12557 Berlin",
+   "Q01:ADRESSE:Kastanienallee 41",
+   "Q01:PERSON:Berlin",
+   "Q01:PERSON:Bestandswand",
+   "Q01:PERSON:Wohnbau Lindenhof GmbH",
+   "Q02:KENNUNG:VIII ZR 274/23",
+   "Q02:ORGANISATION:Räumungsklage Wohnbau Lindenhof GmbH ./.",
+   "Q02:PERSON:Sohn",
+   "Q02:PERSON:Wissen",
+   "Q03:ADRESSE:14476 Potsdam",
+   "Q03:ORT:Haus im Jahr 2019",
+   "Q04:KENNUNG:VIII ZR 18/24",
+   "Q04:ORGANISATION:veräußernden Gesellschaft personenidentisch",
+   "Q04:ORT:Anderkonto",
+   "Q04:ORT:Potsdam",
+   "Q07:ORT:Frankfurt am Main",
+   "Q07:ORT:am Main",
+   "Q07:PERSON:Gesprächsnotiz",
+   "Q07:PERSON:Integrationsamts",
+   "Q08:KENNUNG:2 AZR 72/24",
+   "Q08:PERSON:Tätigkeit",
+   "Q09:PERSON:Identitätsabgleich",
+   "Q10:ORT:Klageentwurf",
+   "Q10:PERSON:Erfolgsaussicht",
+   "Q11:PERSON:Sohn"
+  ],
+  "false_positive_count": 26,
+  "keep_preserved": "109/116",
+  "keep_missing": [
+   "Q02:BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
+   "Q02:Räumungsklage",
+   "Q03:2019",
+   "Q04:BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+   "Q04:personenidentisch",
+   "Q07:Arbeitsgericht Frankfurt am Main",
+   "Q08:2 AZR 72/24"
+  ],
+  "chronology_preserved": "11/11",
+  "blocked": [],
+  "errors": [],
+  "fail_closed": "22/22",
+  "per_type": {
+   "PERSON": {
+    "gold": 24,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "ADRESSE": {
+    "gold": 5,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "TELEFON": {
+    "gold": 7,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "EMAIL": {
+    "gold": 4,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "PERS_DATUM": {
+    "gold": 6,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "KENNUNG": {
+    "gold": 5,
+    "leaks": 0,
+    "partial_leaks": 0
+   },
+   "IBAN": {
+    "gold": 1,
+    "leaks": 0,
+    "partial_leaks": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "id": "Q01",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Ulrike Tessendorf",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Sebastian Kranefeld",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Am Weidenhang 17",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ORT"
+     ],
+     "type_match": false,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "030 4412 7731",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "u.tessendorf@lindenhof-wohnbau.example",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Wohnbau Lindenhof GmbH",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Kastanienallee 41",
+     "type": "ADRESSE",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "10435 Berlin",
+     "type": "ADRESSE",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Weidenhang",
+     "type": "ORT",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "12557 Berlin",
+     "type": "ADRESSE",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Berlin",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Ulrike Tessendorf",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Bestandswand",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "030 4412 7731",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "u.tessendorf@lindenhof-wohnbau.example.",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Dr. Sebastian Kranefeld",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 12,
+   "consistency": [],
+   "problem": "QP-A",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q02",
+   "group": "quelle_mietrecht",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "14.02.1941",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "14 C 233/26",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "030 6577 2014",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "DE74 3704 0044 5320 1304 71",
+     "type": "IBAN",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "IBAN"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Räumungsklage Wohnbau Lindenhof GmbH ./.",
+     "type": "ORGANISATION",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "14 C 233/26",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "14.02.1941",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Sohn",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Wissen",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "VIII ZR 274/23",
+     "type": "KENNUNG",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "030 6577 2014",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "DE74 3704 0044 5320 1304 71",
+     "type": "IBAN",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [
+    "BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
+    "Räumungsklage"
+   ],
+   "keep_total": 9,
+   "consistency": [],
+   "problem": "QP-A",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q03",
+   "group": "quelle_mietrecht",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Friedemann Ollesch",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "j.wendehorst@posteo.example",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0331 8812 409",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "j.wendehorst@posteo.example",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "14476 Potsdam",
+     "type": "ADRESSE",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Haus im Jahr 2019",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "Dr. Friedemann Ollesch",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Havelblick Immobilien GmbH & Co. KG",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Havelblick Bestand GmbH & Co. KG",
+     "type": "ORGANISATION",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "0331 8812 409",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [
+    "2019"
+   ],
+   "keep_total": 8,
+   "consistency": [],
+   "problem": "QP-B",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q04",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Mareike Stübbe-Holtkamp",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Havelblick Immobilien GmbH & Co. KG",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Potsdam",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "veräußernden Gesellschaft personenidentisch",
+     "type": "ORGANISATION",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "VIII ZR 18/24",
+     "type": "KENNUNG",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "Anderkonto",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Mareike Stübbe-Holtkamp",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [
+    "BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+    "personenidentisch"
+   ],
+   "keep_total": 11,
+   "consistency": [],
+   "problem": "QP-B",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q05",
+   "group": "quelle_insolvenz",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Kerstin Abelmann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Henning Vosskamp",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "27 IN 418/25",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0431 709 4421",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Metallbau Sörensen GmbH",
+     "type": "ORGANISATION",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "27 IN 418/25",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Dr. Kerstin Abelmann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Bundesagentur für Arbeit",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Henning Vosskamp",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "0431 709 4421",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 14,
+   "consistency": [],
+   "problem": "QP-C",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q06",
+   "group": "quelle_insolvenz",
+   "doctype": "formular",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Ömer Yıldırım",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Agnieszka Wróblewska",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Thorsten Pfannkuch",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "03.09.1987",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "21.11.1992",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "17.05.1979",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Bundesagentur für Arbeit zur Sammelanmeldung",
+     "type": "ORGANISATION",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Bundesagentur für Arbeit",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Ömer Yıldırım",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "03.09.1987",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Agnieszka Wróblewska",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "21.11.1992",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Thorsten Pfannkuch",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "17.05.1979",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 12,
+   "consistency": [],
+   "problem": "QP-C",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q07",
+   "group": "quelle_arbeitsrecht",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Svetlana Marković",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "08.07.1979",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Fliederstraße 22",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "069 4312 8856",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "VK-20817",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Dragana Ilić",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Gesprächsnotiz",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Svetlana Marković",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "08.07.1979",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Fliederstraße 22, 60385 Frankfurt",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "am Main",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "069 4312 8856",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "VK-20817",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Republik Valdoria",
+     "type": "ORT",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Frankfurt am Main",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "Integrationsamts",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Dragana Ilić",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [
+    "Arbeitsgericht Frankfurt am Main"
+   ],
+   "keep_total": 15,
+   "consistency": [],
+   "problem": "QP-D",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q08",
+   "group": "quelle_arbeitsrecht",
+   "doctype": "chat",
+   "field": "anmerkungen",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Marković",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Ilić",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Svetlana Marković",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "2 AZR 72/24",
+     "type": "KENNUNG",
+     "verdict": "FP",
+     "on_keep": true
+    },
+    {
+     "value": "Ilić",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Tätigkeit",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [
+    "2 AZR 72/24"
+   ],
+   "keep_total": 8,
+   "consistency": [],
+   "problem": "QP-D",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q09",
+   "group": "quelle_datenschutz",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Leopold Hanebutt",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "30.10.1985",
+     "type": "PERS_DATUM",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERS_DATUM"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Lindenstraße 3a",
+     "type": "ADRESSE",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "ADRESSE"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "MK-4471-2290-18",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "leo.hanebutt@mailbox.example",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "CrediNord Auskunftei AG · Datenschutzauskunft",
+     "type": "ORGANISATION",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "Leopold Hanebutt",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "30.10.1985",
+     "type": "PERS_DATUM",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Lindenstraße 3a, 49074 Osnabrück",
+     "type": "ADRESSE",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Fernmelde Nord AG",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "MK-4471-2290-18",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "leo.hanebutt@mailbox.example",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Identitätsabgleich",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Auskunftei",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 10,
+   "consistency": [],
+   "problem": "QP-E",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q10",
+   "group": "quelle_datenschutz",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Hanebutt",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "2 O 1187/26",
+     "type": "KENNUNG",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "KENNUNG"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "TELEFON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Erfolgsaussicht",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Leopold Hanebutt",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Fernmelde Nord AG",
+     "type": "PERSON",
+     "verdict": "ignored",
+     "on_keep": false
+    },
+    {
+     "value": "2 O 1187/26",
+     "type": "KENNUNG",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Klageentwurf",
+     "type": "ORT",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 10,
+   "consistency": [],
+   "problem": "QP-E",
+   "chronology_ok": true
+  },
+  {
+   "id": "Q11",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "known_limit": null,
+   "allowed": true,
+   "error": null,
+   "unnecessary_block": false,
+   "missing_block": false,
+   "protect": [
+    {
+     "value": "Brüggemann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "PERSON"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    },
+    {
+     "value": "m.brueggemann@webpost.example",
+     "type": "EMAIL",
+     "detected": true,
+     "mapping_hit": true,
+     "predicted_types": [
+      "EMAIL"
+     ],
+     "type_match": true,
+     "leak": false,
+     "partial_leak": false
+    }
+   ],
+   "predicted": [
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "Sohn",
+     "type": "PERSON",
+     "verdict": "FP",
+     "on_keep": false
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON",
+     "verdict": "TP",
+     "on_keep": false
+    },
+    {
+     "value": "m.brueggemann@webpost.example.",
+     "type": "EMAIL",
+     "verdict": "TP",
+     "on_keep": false
+    }
+   ],
+   "keep_missing": [],
+   "keep_total": 7,
+   "consistency": [],
+   "problem": "QP-A",
+   "chronology_ok": true
+  }
+ ],
+ "fail_closed": [
+  {
+   "id": "Q01",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q02",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q03",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q04",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q05",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q06",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q07",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q08",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q09",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q10",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q11",
+   "failure": "ner_pseudonymisierung",
+   "payload_created": false
+  },
+  {
+   "id": "Q01",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q02",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q03",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q04",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q05",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q06",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q07",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q08",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q09",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q10",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  },
+  {
+   "id": "Q11",
+   "failure": "ner_restrisiko",
+   "payload_created": false
+  }
+ ]
+}

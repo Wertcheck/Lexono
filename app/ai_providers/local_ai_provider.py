@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from collections.abc import Sequence
 from typing import Protocol
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.privacy.pseudonymizer import strip_legal_form
@@ -115,6 +116,22 @@ _MAX_DOCUMENTS_IN_SACHVERHALT = 30
 _OPPONENT_ROLE_KEYWORDS = ("gegner", "gegenseite", "beklagte", "beklagter")
 _COURT_ROLE_KEYWORDS = ("gericht", "finanzamt", "behörde", "behoerde")
 _LAWYER_ROLE_KEYWORDS = ("anwalt", "anwältin", "rechtsanwalt", "prozessbevollmächtigt")
+# §50 (16.10.2026, pseudonymization_v1 P10 "Der Richter Zweigelt"): natuerliche Personen am Gericht. Ihre Rolle enthaelt oft
+# ein Institutionswort ("Richter am Amtsgericht", "Gerichtsvollzieher", "Staatsanwalt") und fiel dadurch in "gericht" bzw.
+# "anwalt": Platzhalter [GERICHT_01] fuer eine Person, und die Aktenisolation (`foreign_matter_names`) zaehlte nur den
+# vollen Namen - "Richter Zweigelt" im Wissenseintrag einer fremden Akte wurde nicht zurueckgehalten, die NER erkennt
+# den Namen nicht. Ganze Woerter: "Staatsanwaltschaft", "Gerichtskasse" sind keine Personenrollen.
+_COURT_PERSON_ROLE = re.compile(
+    r"\b(?:\w*richter(?:in)?|rechtspfleger(?:in)?|\w*sachverständige[rn]?|sachverstaendige[rn]?|gutachter(?:in)?"
+    r"|gerichtsvollzieher(?:in)?|(?:ober)?staatsanwält(?:in)?|(?:ober)?staatsanwalt|urkundsbeamt(?:er|e|in)"
+    r"|protokollführer(?:in)?|schöff(?:e|in)|dolmetscher(?:in)?)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_court_person(name: str, role: str) -> bool:
+    """Rolle einer natuerlichen Person am Gericht UND ein Name, der nicht nach Institution aussieht."""
+    return bool(_COURT_PERSON_ROLE.search(role or "")) and not _is_organisation_name(name)
 
 
 _AMOUNT_RE = re.compile(r"\d[\d.]*,\d{2}\s*(?:EUR|€|Euro)|\d+(?:[.,]\d+)?\s*(?:Prozent|%)")
@@ -386,6 +403,13 @@ _ORGANISATION_PARTS = ("gericht", "amt", "behörde", "behoerde", "agentur", "ver
                        "verwaltung", "kanzlei", "ministerium", "kammer", "senat", "polizei", "staatsanwaltschaft")
 
 
+def _is_organisation_name(name: str) -> bool:
+    lowered = [word.lower() for word in (name or "").replace(",", " , ").split()]
+    return any(w in _ORGANISATION_WORDS for w in lowered) or any(
+        part in w for w in lowered for part in _ORGANISATION_PARTS
+    )
+
+
 def _name_variants(name: str, *, person: bool = True) -> set[str]:
     """Voller Name und - bei mehrteiligen Personennamen - der Nachname (wie `_build_known_entities`). "Nachname, Vorname"
     liefert den Teil vor dem Komma."""
@@ -394,11 +418,7 @@ def _name_variants(name: str, *, person: bool = True) -> set[str]:
         return set()
     variants = {name}
     words = name.replace(",", " , ").split()
-    lowered = [word.lower() for word in words]
-    organisation = any(w in _ORGANISATION_WORDS for w in lowered) or any(
-        part in w for w in lowered for part in _ORGANISATION_PARTS
-    )
-    if person and not organisation and len([w for w in words if w != ","]) > 1:
+    if person and not _is_organisation_name(name) and len([w for w in words if w != ","]) > 1:
         surname = (name.split(",")[0].split()[-1] if "," in name else words[-1]).strip(".")
         if len(surname) >= 3 and surname[0].isupper():
             variants.add(surname)
@@ -419,7 +439,7 @@ def foreign_matter_names(matter: Matter, db: Session) -> set[str]:
     def party_variants(party_name: str, role: str | None) -> set[str]:
         role = (role or "").lower()
         institutional = any(k in role for k in _COURT_ROLE_KEYWORDS + _LAWYER_ROLE_KEYWORDS)
-        return _name_variants(party_name, person=not institutional)
+        return _name_variants(party_name, person=not institutional or _is_court_person(party_name, role))
 
     own: set[str] = set()
     if matter.client and matter.client.name:
@@ -517,10 +537,12 @@ class RuleBasedLocalAIProvider:
         if document_ids is not None:
             # Datenminimierung §29: nur die ausgewaehlten Dokumente (weiterhin nur aus DIESER Akte, nicht geloescht)
             query = query.filter(Document.id.in_(list(document_ids)))
-        documents = query.order_by(Document.created_at.desc()).limit(_MAX_DOCUMENTS_IN_SACHVERHALT).all()
-        # Nur Dokumente mit verwertbarem Text (13.10.2026): ein leerer OCR-Text ("done", aber keine Zeichen) ergab
-        # bisher einen leeren "[Typ] "-Eintrag und galt als Dokumentkontext, obwohl nichts ausgewertet werden konnte.
-        documents = [d for d in documents if d.extracted_text.strip()]
+        # §62 Dokumentfreigabe - serverseitig an der EINZIGEN Stelle, an der Dokumenttext in eine Anfrage gelangt: ein
+        # nicht freigegebenes Dokument (Freigabe erforderlich, Entscheidung erforderlich, Pruefung fehlgeschlagen) geht
+        # in keinem Modus und keinem Pfad an die Cloud. Lokaler Pruefhinweis, damit die Antwort nicht vollstaendig wirkt.
+        # §63: die Hoechstzahl gilt fuer FREIGEGEBENE Dokumente - vorher wurden die 30 neuesten geladen und erst danach
+        # gefiltert, sodass nicht freigegebene neue Dokumente aeltere freigegebene verdraengten.
+        documents, withheld, not_considered, search_limited = self._select_released_documents(db, query)
         # Datenminimierung (§27): ein doppelt hochgeladenes Dokument (gleicher Text) ging bisher zweimal hinaus und nahm
         # anderen Dokumenten Budget weg. Nur das neueste Exemplar senden; alle IDs gelten weiter als einbezogen, damit
         # ein angehaengtes Duplikat die Dokument-Gates nicht blockiert. Es geht keine Information verloren.
@@ -534,6 +556,29 @@ class RuleBasedLocalAIProvider:
                 unique_documents.append(document)
         documents = unique_documents
         notices: list[str] = []
+        if withheld:
+            shown = withheld[:10]
+            names = ", ".join(f"„{getattr(d, 'original_filename', None) or 'Dokument'}“" for d in shown)
+            more = f" und {len(withheld) - len(shown)} weitere" if len(withheld) > len(shown) else ""
+            notices.append(
+                f"Nicht berücksichtigt, da (noch) nicht für die KI-Verarbeitung freigegeben: {names}{more}. "
+                "Freigabe bzw. Prüfung in der Dokumentansicht."
+            )
+        if not_considered and search_limited:
+            notices.append(
+                # §66 (App-Test): Fristhinweise freigegebener Dokumente laufen ueber einen eigenen, ebenfalls
+                # freigabegeprueften Pfad (_build_argumentationspunkte) - der Hinweis sagt das, statt "nie" zu behaupten
+                f"Suchgrenze erreicht: {not_considered} weitere(s), ältere(s) Dokument(e) der Akte wurde(n) nicht "
+                "durchsucht und nicht als Volltext berücksichtigt (zu viele nicht freigegebene neuere Dokumente); "
+                "enthalten sind nur erkannte Fristhinweise freigegebener Dokumente. Bitte Freigaben erledigen oder "
+                "gezielt mit einem Dokument chatten."
+            )
+        elif not_considered:
+            notices.append(
+                f"Höchstzahl von {_MAX_DOCUMENTS_IN_SACHVERHALT} Dokumenten erreicht: {not_considered} weitere(s) "
+                "Dokument(e) der Akte wurde(n) nicht als Volltext berücksichtigt (ältere Dokumente; erkannte "
+                "Fristhinweise freigegebener Dokumente bleiben enthalten). Bei Bedarf gezielt mit einem Dokument chatten."
+            )
         allowances = _document_allowances([len(_normalize_document_text(d.extracted_text)) for d in documents])
         for document, allowance in zip(documents, allowances):
             excerpt = _document_excerpt(document.extracted_text, allowance)
@@ -551,6 +596,41 @@ class RuleBasedLocalAIProvider:
                 )
         return "\n".join(parts), bool(documents), notices, all_ids
 
+    def _select_released_documents(self, db: Session, query) -> tuple[list, list, int, bool]:
+        """§63: neueste FREIGEGEBENE Dokumente bis zur Hoechstzahl (blockweise; begrenzte Suche, damit viele nicht
+        freigegebene Dokumente keine unbegrenzte lokale Pruefung ausloesen). Rueckgabe: (verwendet, zurueckgehalten,
+        Anzahl nicht beruecksichtigter weiterer Dokumente, Suchgrenze erreicht). Nur Dokumente mit verwertbarem Text
+        (13.10.2026: ein leerer OCR-Text galt sonst als Dokumentkontext)."""
+        from app.documents.release import released_document_ids
+
+        # leere Texte schon in SQL ausschliessen, damit die Anzahl nicht beruecksichtigter Dokumente stimmt
+        ordered = query.filter(func.length(func.trim(Document.extracted_text)) > 0).order_by(
+            Document.created_at.desc(), Document.id
+        )
+        contexts: dict = {}  # Kontext je Akte nur einmal fuer alle Bloecke
+        limit = _MAX_DOCUMENTS_IN_SACHVERHALT
+        selected: list = []
+        withheld: list = []
+        surplus = 0  # gelesene, freigegebene Dokumente jenseits der Hoechstzahl
+        scanned = 0
+        while len(selected) < limit and scanned < limit * 4:
+            batch = ordered.offset(scanned).limit(limit).all()
+            if not batch:
+                break
+            scanned += len(batch)
+            readable = [d for d in batch if d.extracted_text.strip()]
+            released = released_document_ids(db, readable, contexts=contexts)
+            for document in readable:
+                if document.id not in released:
+                    withheld.append(document)
+                elif len(selected) < limit:
+                    selected.append(document)
+                else:
+                    surplus += 1
+        remaining = max(0, ordered.count() - scanned)  # nicht mehr durchsucht (Status ungeprueft) - nie verwendet
+        search_limited = remaining > 0 and len(selected) < limit
+        return selected, withheld, surplus + remaining, search_limited
+
     def _build_argumentationspunkte(self, matter_id: str, db: Session) -> list[str]:
         deadlines = db.query(Deadline).filter(Deadline.matter_id == matter_id).all()
         # Datenminimierung (§27): eine Frist aus einem geloeschten Dokument ging weiter an die Cloud, obwohl der
@@ -563,6 +643,20 @@ class RuleBasedLocalAIProvider:
             )
         } if any(d.document_id for d in deadlines) else set()
         deadlines = [d for d in deadlines if d.document_id not in deleted_document_ids]
+        # §62: kein Fristausschnitt aus einem nicht freigegebenen Dokument (der Ausschnitt ist Dokumenttext)
+        if any(d.document_id for d in deadlines):
+            from app.documents.release import released_document_ids
+
+            sources = list(db.query(Document).filter(Document.id.in_({d.document_id for d in deadlines if d.document_id})))
+            readable = [s for s in sources if (s.extracted_text or "").strip()]
+            released = released_document_ids(db, readable)
+            # Dokument ohne (noch) verwertbaren Text: nur im Modus "auto" weiter wie bisher; sonst nicht freigegeben
+            from app.documents.release import MODE_AUTO, get_mode
+
+            if get_mode(db) == MODE_AUTO:
+                released |= {s.id for s in sources if s not in readable}
+            withheld_sources = {s.id for s in sources} - released
+            deadlines = [d for d in deadlines if d.document_id not in withheld_sources]
         # Vor der Korrektur gespeicherte Vorschlaege zu Geburts-/Todesdaten (§24) nicht mehr als Frist anbieten - geprueft
         # am Ausschnitt und am Volltext des Quelldokuments (Tabellen). Der Text laeuft weiterhin vollstaendig durch den
         # Gateway (Pseudonymisierung, Restrisiko-Scan) - kein Schutz entfaellt.
@@ -623,6 +717,8 @@ class RuleBasedLocalAIProvider:
             role = (party.role or "").lower()
             if any(keyword in role for keyword in _OPPONENT_ROLE_KEYWORDS):
                 known["gegner"].append(party.name)
+            elif _is_court_person(party.name, role):
+                known.setdefault("beteiligter", []).append(party.name)  # §50: Person, nicht Institution
             elif any(keyword in role for keyword in _COURT_ROLE_KEYWORDS):
                 known["gericht"].append(party.name)
             elif any(keyword in role for keyword in _LAWYER_ROLE_KEYWORDS):
@@ -672,6 +768,13 @@ class RuleBasedLocalAIProvider:
                     # das letzte Wort ist die Rechtsform - vorher wurde jedes "GmbH" (auch in "GmbHG") zur Partei.
                     if len(stripped.split()) >= 2 and stripped not in names:
                         surnames.append(stripped)
+                elif "," in name and not _is_organisation_name(name):
+                    # §50: "Zweigelt, Hans" (Gerichtslisten, Aktendeckel) - Nachname steht VOR dem Komma, wie in
+                    # `_name_variants`. Vorher wurde der Vorname "Hans" zur bekannten Entitaet.
+                    before = name.split(",")[0].split()
+                    surname = before[-1].strip(".") if before else ""
+                    if len(name.replace(",", " ").split()) >= 2 and len(surname) >= 3 and surname not in names:
+                        surnames.append(surname)
                 elif len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
                     surnames.append(parts[-1])
             known[category] = names + [s for s in surnames if s not in names]

@@ -32,7 +32,7 @@ from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload, UnsealedPayloadError
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
-from tests.auth_test_utils import extract_csrf, login_as_admin
+from tests.auth_test_utils import extract_upload_token, extract_csrf, login_as_admin
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 SYNTHETIC_KEY = "sk-ant-test-synthetic-0000"
@@ -135,10 +135,18 @@ def _send(client, db_session, transport, monkeypatch, *, content="Fasse das Doku
     monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _drafting_service(_provider(transport)))
     login_as_admin(db_session, client)
     csrf = extract_csrf(client.get("/dashboard/chat").text)
+    # §57: (1) nur hochladen - nichts verlaesst die Maschine; (2) die Frage bewusst senden
+    upload = client.post(
+        "/dashboard/chat/send",
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": content},
+        files={"documents": ("synthetisch.pdf", _pdf(), "application/pdf")},
+        follow_redirects=False,
+    )
+    assert upload.status_code == 303 and transport.requests == []
+    conversation_id = upload.headers["location"].split("/")[3].split("?")[0]
     return client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": content},
-        files={"documents": ("synthetisch.pdf", _pdf(), "application/pdf")},
+        data={"csrf_token": csrf, "conversation_id": conversation_id, "content": content},
         follow_redirects=True,
     )
 

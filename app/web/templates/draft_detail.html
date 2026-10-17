@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_labels.html" as labels %}
 {% import "_icons.html" as icons %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}Entwurf v{{ draft.version }}{% endblock %}
 {% block content %}
   <div class="topbar">
@@ -287,6 +288,13 @@
               {{ icons.mic(class_="icon") }}
             </button>
           </div>
+          {# §54: nicht erkannte Namen im Auftrag ODER im angezeigten Entwurf markieren - dieselbe aktenweite
+             Entscheidung wie im Chat, gilt fuer diese und jede spaetere Anfrage der Akte #}
+          <div class="name-protection-row" style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+            {{ name_protection.controls("instruction", "Im Auftrag oder im Entwurf markierten Namen vor jeder Cloud-Übergabe pseudonymisieren") }}
+          </div>
+          <div class="name-protection-error" id="instruction-protect-error" hidden></div>
+          {{ name_protection.field("instruction") }}
           <div class="instruction-actions">
             <button type="submit" class="btn">Anmerkung speichern</button>
             {% if can_claude_call %}
@@ -560,6 +568,29 @@
           instructionText.focus();
         });
       });
+    })();
+  </script>
+  {{ name_protection.assets() }}
+  <script>
+    (function () {
+      // §54 "Namen schützen" im Aenderungsauftrag (gemeinsamer Baustein, app_name_protection.js)
+      var instructionText = document.getElementById("instruction-text");
+      var protectError = document.getElementById("instruction-protect-error");
+      if (!instructionText || !window.LexonoNameProtection) { return; }
+      var draftView = document.querySelector(".document-page__content");
+      function showProtectError(message) { protectError.textContent = message; protectError.hidden = false; }
+      var widget = window.LexonoNameProtection.create({
+        button: document.getElementById("instruction-protect-btn"),
+        list: document.getElementById("instruction-protected-list"),
+        fields: Array.prototype.slice.call(document.querySelectorAll(".instruction-protected-terms")),
+        getText: function () { return instructionText.value + "\n" + (draftView ? draftView.innerText : ""); },
+        getSelectedText: function () { return window.LexonoNameProtection.selectionWithin([instructionText, draftView]); },
+        onError: showProtectError,
+        onOk: function () { protectError.hidden = true; },
+        watch: [instructionText]
+      });
+      window.LexonoNameProtection.guardForm(document.getElementById("instruction-form"), widget, showProtectError,
+        function () { protectError.hidden = true; });
     })();
   </script>
 {% endblock %}

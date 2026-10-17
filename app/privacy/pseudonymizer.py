@@ -14,7 +14,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from app.privacy.detectors import DetectedSpan, detect_all
+from app.privacy.detectors import DetectedSpan, detect_all, name_context, strip_name_prefix
 
 _PLACEHOLDER_PREFIX_BY_CATEGORY = {
     "mandant": "MANDANT",
@@ -178,6 +178,40 @@ _GUARD_OPEN, _GUARD_CLOSE = "", ""
 
 
 _GENITIVE_ENDINGS = ("s", "'s", "’s")
+_PERSON_LIKE_FOR_FORMS = frozenset({"person", "mandant", "gegner", "anwalt", "beteiligter"})
+
+
+def _form_for_context(value: str, context_forms: tuple[tuple[str, str], ...], text_before: str) -> str:
+    """§53: Rueckfuehrungsform fuer EIN Vorkommen eines Personen-Platzhalters, abhaengig vom Wort direkt davor.
+
+    1. Dieselbe Form, die im Quelltext nach demselben Kontextwort stand ("Frau" -> "Brenner"), falls eindeutig.
+    2. Sonst der Vollname. In beiden Faellen wird nichts doppelt geschrieben, was direkt davor schon steht: ein Titel
+       ("Dr. [P]" mit "Dr. Hans-Peter Müller") bzw. ein Namenszusatz nach einer Anrede ("Frau von [P]" -> "Berg").
+    Es wird nie eine Form einer anderen Person eingesetzt (nur Formen dieses Platzhalters) und nie etwas erfunden."""
+    context = name_context(text_before)
+    if context is None:
+        return value  # ohne Anrede/Titel/Rolle davor: Vollname (Rubrum, Parteibezeichnung)
+    word, particles = context
+    candidates = {form for key, form in context_forms if key == word}
+    if not candidates and word in ("herr", "frau"):
+        candidates = {form for key, form in context_forms if key in ("herr", "frau")}
+    chosen = next(iter(candidates)) if len(candidates) == 1 else value
+    words = chosen.split()
+    if context:
+        before = text_before.split("\n")[-1].split()
+        # (a) fuehrende Woerter, die direkt davor schon stehen ("Dr. [P]" + "Dr. Hans-Peter Müller")
+        for size in range(min(len(before), len(words) - 1), 0, -1):
+            if [w.lower() for w in before[-size:]] == [w.lower() for w in words[:size]]:
+                words = words[size:]
+                break
+        # (b) Namenszusaetze direkt davor ("Frau von [P]" + "Anna von Berg" -> "Berg")
+        if particles:
+            size = len(particles)
+            for start in range(0, len(words) - size):
+                if tuple(w.lower() for w in words[start : start + size]) == particles:
+                    words = words[start + size :]
+                    break
+    return " ".join(words) if words else chosen
 
 
 @dataclass
@@ -188,6 +222,11 @@ class PseudonymMapping:
     # P05 (§32): im Quelltext ersetzte Genitivformen ("Brenners"), die demselben Platzhalter zugeordnet wurden - fuer die
     # Leck-Pruefung der Antwort (vor P05 hatten diese Formen eigene Zuordnungen und wurden so mitgeprueft).
     variants: tuple[str, ...] = ()
+    # §53: Oberflaechenformen DERSELBEN Person im Quelltext je vorangehender Anrede/Titel/Rolle ("herr" -> "Müller",
+    # "frau" -> "von Berg"). Nur fuer die lokale Rueckfuehrung: ein Platzhalter steht fuer EINEN
+    # Vollnamen, die Antwort schreibt aber "Frau [PERSON_02]" - vorher wurde daraus "Frau von Anna von Berg" bzw. "Herr
+    # Dr. Hans-Peter Müller" fuer ein urspruengliches "Herr Müller". Bewusst NICHT Teil der Leck-Pruefung (`variants`).
+    context_forms: tuple[tuple[str, str], ...] = ()
 
 
 #: Rechtsform am Ende eines Firmennamens ("Holzbau Wendeburg GmbH" -> "Holzbau Wendeburg"; Legal-E2E-Benchmark §34)
@@ -323,15 +362,31 @@ class Pseudonymizer:
         # eine erfundene Unstimmigkeit. Ein Einzelwort-Treffer wird NUR dann auf den Vollnamen
         # abgebildet, wenn er das letzte Wort GENAU EINES Vollnamens im selben Text ist
         # (bei "Hans Mueller" und "Anna Mueller" bleibt "Mueller" eigenstaendig).
+        # §52: Anrede/Titel/Rolle vor dem Namen gehoeren nicht zur Identitaet - "Dr. Hans-Peter Müller" und "Hans-Peter
+        # Müller" (manuell markiert bzw. NER) sind EINE Person und EIN Vollname (sonst war "Herr Müller" mehrdeutig und
+        # erhielt einen eigenen Platzhalter). Nur der Schluessel, Erkennung und ersetzter Bereich bleiben unveraendert.
+        def _identity(span: DetectedSpan, value: str) -> str:
+            # §53: gerades/typografisches Apostroph sind dieselbe Person ("O'Brien" = "O’Brien")
+            return strip_name_prefix(value).replace("’", "'") if span.category == "person" else value
+
         surname_to_full: dict[str, set[str]] = {}
         for found in spans:
-            if found.category == "person" and len(found.value.split()) >= 2:
-                surname_to_full.setdefault(found.value.split()[-1].lower(), set()).add(found.value)
+            name = _identity(found, found.value)
+            if found.category == "person" and len(name.split()) >= 2:
+                surname_to_full.setdefault(name.split()[-1].lower(), set()).add(found.value)
 
         def _auto_alias(span: DetectedSpan) -> str:
-            if span.category != "person" or len(span.value.split()) != 1:
+            words = _identity(span, span.value).split()
+            if span.category != "person" or not words:
                 return span.value
-            candidates = {full.lower(): full for full in surname_to_full.get(span.value.lower(), set())}
+            if len(words) > 1 and not words[0][0].islower():
+                return span.value  # mehrteilig nur als Kurzform mit Namenszusatz ("von Berg"), §52
+            candidates = {
+                _identity(span, full).lower(): full
+                for full in surname_to_full.get(words[-1].lower(), set())
+                if len(_identity(span, full).split()) > len(words)
+                and [w.lower() for w in _identity(span, full).split()[-len(words):]] == [w.lower() for w in words]
+            }
             return next(iter(candidates.values())) if len(candidates) == 1 else span.value
 
         def _key_and_canonical(span: DetectedSpan) -> tuple[tuple[str, str], str]:
@@ -341,7 +396,7 @@ class Pseudonymizer:
             canonical = _canonicalize_alias(span.category, span.value, known_entities)
             if canonical == span.value:
                 canonical = _auto_alias(span)
-            return (span.category, canonical.lower()), canonical
+            return (span.category, _identity(span, canonical).lower()), canonical
 
         for span in spans:
             key, canonical = _key_and_canonical(span)
@@ -393,6 +448,25 @@ class Pseudonymizer:
             for m in mappings
         ]
 
+        # §53: Formen je Kontext fuer die Rueckfuehrung (nur Personen-Kategorien, nur Formen DIESES Platzhalters)
+        forms: dict[str, set[tuple[str, str]]] = {}
+        for span in spans:
+            if span.category not in _PERSON_LIKE_FOR_FORMS:
+                continue
+            key, _ = _key_and_canonical(span)
+            context = name_context(text[max(0, span.start - 80) : span.start])
+            if context is None:
+                # Ohne Anrede/Titel/Rolle davor bleibt es beim Vollnamen: im Rubrum eines Schriftsatzes ("In Sachen
+                # [MANDANT_01] gegen ...") muss die Partei vollstaendig genannt werden, nicht in ihrer Kurzform.
+                continue
+            word, particles = context
+            forms.setdefault(value_to_placeholder[key], set()).add((word, " ".join([*particles, span.value])))
+        mappings = [
+            PseudonymMapping(m.placeholder, m.category, m.original_value, m.variants, tuple(sorted(forms[m.placeholder])))
+            if m.placeholder in forms else m
+            for m in mappings
+        ]
+
         # Von hinten nach vorne ersetzen, damit sich Indizes vorheriger
         # (frueherer) Treffer durch die Ersetzung nicht verschieben.
         result = text
@@ -437,4 +511,16 @@ class Pseudonymizer:
         if neutralize_leftovers:
             text = neutralize_leftover_placeholder_tokens(text)
         originals = {number: values[placeholder] for placeholder, number in index.items()}
-        return re.sub(_GUARD_OPEN + r"(\d+)" + _GUARD_CLOSE, lambda m: originals[m.group(1)], text)
+        # alle Personen-Platzhalter (auch ohne gespeicherte Form: kein doppelter Titel/Namenszusatz, "Frau von [P]")
+        forms_by_number = {
+            index[m.placeholder]: getattr(m, "context_forms", ()) for m in mappings
+            if m.placeholder in index and m.category in _PERSON_LIKE_FOR_FORMS
+        }
+
+        def restore(match: re.Match) -> str:
+            number = match.group(1)
+            if number not in forms_by_number:
+                return originals[number]
+            return _form_for_context(originals[number], forms_by_number[number], match.string[: match.start()])
+
+        return re.sub(_GUARD_OPEN + r"(\d+)" + _GUARD_CLOSE, restore, text)

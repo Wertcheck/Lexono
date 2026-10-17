@@ -22,6 +22,8 @@ alle drei bisherigen Aufrufstellen nutzen jetzt diese eine Implementierung."""
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from app.export.pdf_text import sanitize_for_base14_font
 
 
@@ -36,3 +38,11 @@ def safe_download_filename(text: str, *, fallback: str = "Dokument") -> str:
     normalized = sanitize_for_base14_font(text)
     kept = "".join(c for c in normalized if c.isalnum() or c in " -_")
     return kept.strip() or fallback
+
+
+def attachment_header(filename: str) -> str:
+    """`Content-Disposition` nach RFC 6266/5987: ASCII-Ersatzname in `filename` und der vollstaendige Name UTF-8-kodiert
+    in `filename*`. Ein Umlaut im Aktentitel ("Betriebsprüfung") stand bisher roh im Header - nicht standardkonform;
+    der Test-Client brach daran mit einem UnicodeDecodeError ab (P1-Routendurchlauf, 17.10.2026)."""
+    ascii_name = "".join(c if 32 <= ord(c) < 127 and c not in '"\\' else "_" for c in filename) or "download"
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename, safe='')}"

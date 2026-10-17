@@ -22,7 +22,8 @@ import re
 from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
-from app.privacy.detectors import _ALL_REGEX_DETECTORS, DetectedSpan
+from app.privacy.detectors import _ALL_REGEX_DETECTORS, CONTACT_LABEL_WORDS, DetectedSpan
+from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES, NAME_PREFIX_RUN  # noqa: F401 - §52/§53
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -38,6 +39,18 @@ _ROLE_NOUNS = frozenset(
         "mieterin",
     }
 )
+# §46 (pseudonymization_v1 P09 "herr sauer hat angerufen" - kleingeschriebener Name im Klartext): Kleinschreibung nach
+# einer Anrede ist in getipptem Chat-Text ueblich; das Modell erkennt solche Namen nicht. Kandidat ist das unmittelbar
+# folgende kleingeschriebene Wort - ausser Stoppwoerter, Rollen- und Titelwoerter ("herr der lage", "frau kollegin",
+# "herr doktor"). Ohne Namensprobe: die Anrede selbst ist das Signal.
+_SALUTATIONS = frozenset({"herr", "herrn", "frau"})
+_TITLE_WORDS = frozenset({
+    "doktor", "dr", "professor", "prof", "minister", "ministerin", "präsident", "präsidentin", "vorsitzende",
+    "vorsitzender", "bürgermeister", "bürgermeisterin", "pfarrer", "pfarrerin", "direktor", "direktorin", "kommissar",
+    "kommissarin", "oberbürgermeister", "oberbürgermeisterin", "abgeordnete", "abgeordneter", "kanzler", "kanzlerin",
+    "anwalt", "anwältin", "notar", "notarin", "richter", "richterin", "staatsanwalt", "staatsanwältin", "rechtspfleger",
+    "rechtspflegerin", "gerichtsvollzieher", "gerichtsvollzieherin", "nachbar", "nachbarin", "chef", "chefin",
+})
 _MODIFIER_POS = ("DET", "ADJ", "NUM", "PRON")
 _STRUCTURAL_ROLES = frozenset(
     {"feldwert", "tabellenzelle", "nach_rollenwort", "vor_rollenwort", "aufzaehlung_mit_person", "ueberschrift"}
@@ -182,6 +195,38 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
 # Rollenwort, "von"/"durch"-Agens, Feldwert, Tabelle usw. bleiben unveraendert.
 _ARTICLE_CONTRACTIONS = frozenset({"im", "ins", "am", "ans", "aufs", "ums", "übers", "überm", "unterm", "hinterm", "vorm"})
 
+# Kontaktbezeichnung vor einer BEREITS maskierten Kontaktangabe (ARCHITECTURE.md §75.2, reproduziert 16.10.2026:
+# "Herrn [PERSON_01], Telefon [TELEFON_01]" -> "Telefon" galt als Aufzaehlungsglied neben einer Person und wurde zu
+# [PERSON_02]). Beide Bedingungen muessen gelten: das Wort ist eine Kontaktbezeichnung UND direkt dahinter steht ein
+# Kontakt-Platzhalter. Ein Name an derselben Stelle ("Lehmann [TELEFON_01]") bleibt Kandidat.
+_CONTACT_LABEL_WORDS = CONTACT_LABEL_WORDS  # §50: dieselbe Liste wie die NER-Nachbearbeitung (detectors.py)
+_CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\d+\]")
+
+# Ampelfarbe nach "bei" (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" -> [PERSON_01]; zuvor
+# §34.6). PRAEZISIERT nach Gegenpruefung §45.1: die erste Fassung ("Verkehrswort irgendwo im Satz") liess echte Namen
+# durch ("Nach dem Unfall an der Kreuzung war er noch bei Grün", "Die Zeugin uebernachtete bei Rot, direkt an der
+# Kreuzung") - in Unfallakten steht fast ueberall ein Verkehrswort. Jetzt nur, wenn UNMITTELBAR nach der Farbe ein
+# Fahr-/Querungsvorgang folgt, bei dem eine Personenlesart sprachlich ausscheidet: "bei Grün über die Kreuzung",
+# "bei Rot in die Kreuzung", "bei Gelb gefahren/abgebogen". Alles andere bleibt Kandidat (vorsichtig maskiert).
+_TRAFFIC_LIGHT_COLOURS = pn.TRAFFIC_LIGHT_COLOURS  # §50: dieselbe Regel gilt nun auch fuer NER-Treffer (presidio_ner)
+_TRAFFIC_MANOEUVRE_AFTER = pn.TRAFFIC_MANOEUVRE_AFTER
+
+
+def _is_contact_label(scan_text: str, token) -> bool:
+    # Gegen den ROH-Scantext (Platzhalter sichtbar; positionsgleich zur neutralisierten Analysefassung).
+    return token.text.lower() in _CONTACT_LABEL_WORDS and bool(
+        _CONTACT_PLACEHOLDER_AFTER.match(scan_text, token.idx + len(token.text))
+    )
+
+
+def _is_traffic_light_colour(doc, neutral: str, token) -> bool:
+    if token.text not in _TRAFFIC_LIGHT_COLOURS:
+        return False
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is None or previous.lower_ != "bei":
+        return False
+    return bool(_TRAFFIC_MANOEUVRE_AFTER.match(neutral, token.idx + len(token.text)))
+
 
 def _is_article_contraction_object(doc, token) -> bool:
     previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
@@ -307,6 +352,8 @@ def find_review_candidates(
             continue
         if neutral[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Feldbezeichnung ("Akte:", "Name:", "Betreff:"), kein Feldwert
+        if _is_contact_label(scan_text, token) or _is_traffic_light_colour(doc, neutral, token):
+            continue  # §75.2: Bezeichnung einer maskierten Kontaktangabe bzw. Ampelfarbe im Verkehrssatz
         roles = _roles(doc, neutral, token, raw=scan_text)
         if not roles:
             continue
@@ -341,6 +388,29 @@ def find_review_candidates(
         )
         if max_candidates is not None and len(found) >= max_candidates:
             break
+    # §46: kleingeschriebener Name direkt nach einer Anrede ("herr sauer", "Frau lehmann"). Wie die Kennzeichen nicht
+    # durch max_candidates begrenzt (sonst ginge der Name hinter vielen anderen Kandidaten ungefragt hinaus).
+    for token in doc:
+        word = token.text
+        if not (word.isalpha() and word.islower() and 3 <= len(word) <= MAX_TERM_LENGTH):
+            continue
+        previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+        if previous is None or previous.lower_ not in _SALUTATIONS:
+            continue
+        # Direkt benachbart im ROH-Scantext: in der Analysefassung sind Platzhalter ausgeblendet - "Frau [PERSON_01]
+        # widerspricht" sah sonst wie "Frau widerspricht" aus (Fehlalarm pseudonymization_v1 P02).
+        if scan_text[previous.idx + len(previous.text) : token.idx].strip():
+            continue
+        lowered = word.lower()
+        if token.is_stop or lowered in _ROLE_NOUNS or lowered in _TITLE_WORDS or lowered in pn._NEVER_ENTITY_WORDS:
+            continue
+        if word in found or word in decisions.not_personal or word in decisions.personal:
+            continue
+        before, after = _context(context_source, word)
+        found[word] = ReviewCandidate(
+            term=word, context_before=before, context_after=after, roles=("kleingeschrieben_nach_anrede",),
+            probe_score=0,
+        )
     for match in _PLATE_SHAPE.finditer(neutral):
         # Zeilenumbruch (PDF) im Begriff als Leerzeichen: Entscheidungen sind einzeilig (decisions._validate);
         # detect_decision_terms trifft den Umbruch im Text trotzdem (_decision_term_pattern).
@@ -631,9 +701,36 @@ def is_plate_shaped_term(term: str) -> bool:
     return "\n" not in term and _PLATE_SHAPE.fullmatch(term) is not None
 
 
+_GENITIVE_AFTER = r"(?=(?:s|'s|’s)?(?![\wÄÖÜäöüß]))"
+
+# §52 (16.10.2026): Namen aus mehreren Teilen ("Hans-Peter Müller", "Anna von Berg") als EINE Entscheidung. Teile aus
+# Buchstaben mit inneren Bindestrichen, durch einzelne Leerzeichen getrennt; kleingeschrieben nur Namenszusaetze. Ein
+# Zusatz allein ist kein Name ("von" maskierte sonst jedes "von"), mindestens ein Teil beginnt gross.
+# §53: zusaetzlich ein Apostroph INNERHALB eines Teils ("O'Brien", "D’Angelo", "Dell'Anna") - nie am Anfang/Ende, nie
+# doppelt; bis zu 8 Teile ("Maria del Carmen de la Fuente y Santos"), die 80-Zeichen-Grenze (MAX_TERM_LENGTH) bleibt.
+_NAME_PART = re.compile(r"[^\W\d_]+(?:[-'’][^\W\d_]+)*")
+MAX_NAME_PARTS = 8
+
+
+def is_name_shaped_term(term: str) -> bool:
+    """Ein- oder mehrteiliger Personenname (siehe oben). Ziffern, Punkte, Klammern, Zeilenumbrueche sind ausgeschlossen -
+    ein solcher Begriff kann damit keine Rufnummer, E-Mail, IBAN oder Fundstelle anschneiden (Audit 12.10.2026)."""
+    parts = term.split(" ")
+    if not 1 <= len(parts) <= MAX_NAME_PARTS or any(not _NAME_PART.fullmatch(part) for part in parts):
+        return False
+    capitalised = [part for part in parts if part[0].isupper()]
+    lowered = [part for part in parts if not part[0].isupper()]
+    return bool(capitalised) and all(part in NAME_PARTICLES for part in lowered) and parts[-1][0].isupper()
+
+
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
-    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung"."""
+    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung".
+
+    §51 (16.10.2026, manuelle Namensmarkierung): bei Personen-Begriffen zusaetzlich GENAU zwei Formen desselben Worts -
+    Versalien ("ZWEIGELT" im Rubrum) und Genitiv ("Zweigelts", "Zweigelt's"; ersetzt wird nur das Wort, die Endung bleibt
+    hinter dem Platzhalter). Vorher fing diese Formen hoechstens zufaellig die NER - mit einem ZWEITEN Platzhalter fuer
+    dieselbe Person. Kleinschreibung bewusst nicht ("lange" ist kein "Lange")."""
     spans: list[DetectedSpan] = []
     for term in sorted(terms, key=len, reverse=True):
         if not term or not term.strip():
@@ -651,7 +748,16 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
         short = identifier and not plate and sum(ch.isdigit() for ch in term) < 7
         # Bindestrich davor bleibt erlaubt: der Rest haengt oft am Aktenzeichen ("345/26-123456").
         boundary_before = r"(?<![\wÄÖÜäöüß/.,])" if short else r"(?<![\wÄÖÜäöüß])"
-        pattern = re.compile(boundary_before + body + r"(?![\wÄÖÜäöüß])")
+        boundary_after = r"(?![\wÄÖÜäöüß])"
+        if not identifier:
+            if term.upper() != term:
+                body = f"(?:{body}|{re.escape(term.upper())})"
+            # §52: mehrteiliger Name darf ueber Leerraum/Zeilenumbruch laufen (Adressblock, PDF), nie "kein Abstand"
+            body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
+            # §53: gerades und typografisches Apostroph sind dieselbe Schreibung ("O'Brien" = "O’Brien")
+            body = re.sub("['’]", "['’]", body)
+            boundary_after = _GENITIVE_AFTER
+        pattern = re.compile(boundary_before + body + boundary_after)
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue

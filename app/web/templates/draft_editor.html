@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_labels.html" as labels %}
 {% import "_icons.html" as icons %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}Editor · Entwurf v{{ draft.version }}{% endblock %}
 {% block content %}
   {# Breadcrumb (04.10., Referenzbild 12_dokument_editor.png zeigt
@@ -290,6 +291,9 @@
               <label class="draft-editor-attach-btn" title="Hinweis als Kontext anhängen (nutzt die aktuelle Textauswahl, falls vorhanden)">
                 {{ icons.clip(class_="icon") }}
               </label>
+              {# §54: nicht erkannte Namen in der Anweisung, der Auswahl ODER im Entwurf markieren - dieselbe
+                 aktenweite Entscheidung wie im Chat, gilt fuer diese und jede spaetere Anfrage der Akte #}
+              {% if can_claude_call %}{{ name_protection.controls("draft-editor", "In der Anweisung oder im Entwurf markierten Namen vor jeder Cloud-Übergabe pseudonymisieren") }}{% endif %}
               <button type="button" class="btn btn--primary" id="draft-editor-send-instruction-btn"
                       {% if not can_claude_call %}disabled{% endif %}
                       data-ai-loading-label="Wird bearbeitet …">
@@ -343,6 +347,25 @@
     document.addEventListener("click", function () {
       document.querySelectorAll(".row-menu").forEach(function (m) { m.hidden = true; });
     });
+  </script>
+  {{ name_protection.assets() }}
+  <script>
+    (function () {
+      // §54 "Namen schützen" im Editor - app_draft_editor.js liest Markierung und Gueltigkeit ueber dieses Objekt
+      var instruction = document.getElementById("draft-editor-instruction-text");
+      var surface = document.getElementById("draft-editor-surface");
+      var button = document.getElementById("draft-editor-protect-btn");
+      if (!window.LexonoNameProtection || !button) { return; }
+      window.LexonoEditorNameProtection = window.LexonoNameProtection.create({
+        button: button,
+        list: document.getElementById("draft-editor-protected-list"),
+        fields: [],
+        getText: function () { return (instruction ? instruction.value : "") + "\n" + (surface ? surface.innerText : ""); },
+        getSelectedText: function () { return window.LexonoNameProtection.selectionWithin([instruction, surface]); },
+        onError: function (message) { window.alert(message); },
+        watch: [instruction, surface]
+      });
+    })();
   </script>
   <script src="/dashboard/static/js/app_draft_editor.js"></script>
 {% endblock %}

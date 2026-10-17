@@ -9,18 +9,56 @@ der Gateway muss das Allowlist-Schema selbst nicht kennen."""
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
+
+# §61 P5 (17.10.2026): nur das, was der Lexono-Client tatsaechlich sendet (app/ai_providers/gateway_writing_provider.py,
+# app/review/gateway_review_provider.py: Textbloecke, Rolle "user", optional cache_control "ephemeral"). Vorher nahm das
+# Relay beliebige Rollen und Block-Typen an (Bilder, Dokumente, tool_use ...) - eine kompromittierte Kanzlei-Credential
+# haette den zentralen Schluessel fuer Inhalte nutzen koennen, die Lexono nie sendet. Kein Ersatz fuer die clientseitige
+# Datenschutzpruefung (die bleibt die eigentliche Garantie), sondern Begrenzung des Missbrauchs.
+_ALLOWED_ROLES = ("user", "assistant")
+_ALLOWED_CACHE_CONTROL = {"type": "ephemeral"}
+_TEXT_BLOCK_KEYS = {"type", "text", "cache_control"}
+
+
+def _check_cache_control(value: dict | None) -> dict | None:
+    if value is not None and value != _ALLOWED_CACHE_CONTROL:
+        raise ValueError('cache_control: nur {"type": "ephemeral"} zulaessig')
+    return value
 
 
 class SystemBlock(BaseModel):
-    type: str = "text"
+    type: Literal["text"] = "text"
     text: str
     cache_control: dict | None = None
+
+    _cache_control = field_validator("cache_control")(classmethod(lambda cls, value: _check_cache_control(value)))
 
 
 class MessageBlock(BaseModel):
     role: str
     content: list[dict] | str
+
+    @field_validator("role")
+    @classmethod
+    def only_conversation_roles(cls, value: str) -> str:
+        if value not in _ALLOWED_ROLES:
+            raise ValueError("role: nur user oder assistant zulaessig")
+        return value
+
+    @field_validator("content")
+    @classmethod
+    def only_text_blocks(cls, value: list[dict] | str) -> list[dict] | str:
+        if isinstance(value, str):
+            return value
+        for block in value:
+            if (set(block) - _TEXT_BLOCK_KEYS or block.get("type") != "text"
+                    or not isinstance(block.get("text"), str)):
+                raise ValueError("content: nur Textbloecke zulaessig")
+            _check_cache_control(block.get("cache_control"))
+        return value
 
 
 class RelayRequest(BaseModel):

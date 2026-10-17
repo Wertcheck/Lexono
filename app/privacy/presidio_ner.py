@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import itertools
 import re
+import threading
 from functools import lru_cache
 
 from app.privacy.detectors import POSSESSIVE_KINSHIP, REFERENCE_LABEL_WORDS, DetectedSpan
@@ -225,11 +226,28 @@ def _neutralize_internal_tokens(text: str) -> str:
     ("durch" + Umbruch + "Fischer", PDF-Spaltenumbruch) zum Leerzeichen; Anzahl/Position aller Zeichen bleiben gleich."""
     text = _MARKER_WITH_BREAK.sub(lambda m: "." + " " * (len(m.group()) - 1), text)
     text = _SOFT_WRAP.sub(" ", text)
-    return _INTERNAL_PLACEHOLDER_PATTERN.sub(lambda m: " " * len(m.group()), text)
+    return _PLACEHOLDER_WITH_GENITIVE.sub(lambda m: " " * len(m.group()), text)
+
+
+# §52 (16.10.2026): die Genitiv-Endung direkt am Platzhalter ("[PERSON_02]s Zeugin", vom Pseudonymizer selbst gesetzt,
+# §32/§51) gehoert in der Analysefassung zum Platzhalter - sonst blieb "s Zeugin" stehen, die NER las es als Person und
+# der Restrisiko-Scan blockierte. Nur unmittelbar am Platzhalter und nur vor einem Wortende.
+_PLACEHOLDER_WITH_GENITIVE = re.compile(_INTERNAL_PLACEHOLDER_PATTERN.pattern + r"(?:s|'s|’s)?(?![\wÄÖÜäöüß])|"
+                                        + _INTERNAL_PLACEHOLDER_PATTERN.pattern)
+
+
+_ENGINE_LOCK = threading.Lock()
+
+
+def _get_analyzer_engine():
+    """§64: unter einer Sperre - die Vorab-Pruefung im Hintergrund (app/documents/precheck_queue.py) und ein Request
+    duerfen das spaCy-Modell nicht gleichzeitig zweimal laden (`lru_cache` sperrt nicht: doppelte Speicherspitze)."""
+    with _ENGINE_LOCK:
+        return _build_analyzer_engine()
 
 
 @lru_cache(maxsize=1)
-def _get_analyzer_engine():
+def _build_analyzer_engine():
     """Baut die Presidio-`AnalyzerEngine` genau einmal pro Prozess - das
     Laden des spaCy-Modells ist der mit Abstand teuerste Teil (mehrere
     Sekunden), ein wiederholter Aufbau pro Anfrage wäre nicht praktikabel."""
@@ -766,6 +784,86 @@ def _restore_for_analysis(text: str) -> tuple[str, list[int], list[int]] | None:
     return (analysis, starts, ends) if consistent else None
 
 
+# §49 (16.10.2026, pseudonymization_v1 X02 "K a r l  B r e n n e r", P08 "Kar1 Brenn3r" im Klartext): gesperrt
+# gesetzte Namen (Briefkopf-Typografie, gezielte Umgehung) und OCR-Ziffern in Namen erkennt das Modell nicht. Zweite
+# Analysefassung nach dem Muster von `_restore_for_analysis`: Einzelbuchstaben-Folgen zusammengezogen, typische
+# OCR-Ziffern in sonst alphabetischen Woertern durch Buchstaben ersetzt. Uebernommen werden NUR Personen-Treffer, die
+# eine geaenderte Stelle beruehren - die Variante kann keine Treffer an unveraenderten Stellen erzeugen.
+_SPACED_LETTER_WORD = re.compile(r"(?<!\S)[A-Za-zÄÖÜäöüß](?: [A-Za-zÄÖÜäöüß]){2,}(?!\S)")
+_OCR_DIGIT_LETTERS = {"0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "8": "b"}
+_OCR_DIGIT_WORD = re.compile(r"(?<![\w-])[A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9]{3,}(?![\w-])")
+
+
+def _ocr_digit_word(word: str) -> bool:
+    """1-2 OCR-typische Ziffern in einem sonst alphabetischen Wort mit mindestens 3 Buchstaben ("Kar1", "Brenn3r")."""
+    digits = [ch for ch in word if ch.isdigit()]
+    letters = sum(ch.isalpha() for ch in word)
+    return 1 <= len(digits) <= 2 and letters >= 3 and all(ch in _OCR_DIGIT_LETTERS for ch in digits)
+
+
+def _ocr_variant_for_analysis(text: str) -> tuple[str, list[int], list[int], list[tuple[int, int]]] | None:
+    """(Analysetext, Start-/Ende-Index je Zeichen im Original, geaenderte Originalbereiche) oder None."""
+    changes: list[tuple[int, int, str]] = []  # (start, end, ersetzter Text) im Original, ueberschneidungsfrei
+    for match in _SPACED_LETTER_WORD.finditer(text):
+        changes.append((match.start(), match.end(), "spaced"))
+    for match in _OCR_DIGIT_WORD.finditer(text):
+        if _ocr_digit_word(match.group()) and not any(a < match.end() and match.start() < b for a, b, _ in changes):
+            changes.append((match.start(), match.end(), "digits"))
+    if not changes:
+        return None
+    changes.sort()
+    out: list[str] = []
+    starts: list[int] = []
+    ends: list[int] = []
+    position = 0
+    previous_kind = None
+    for start, end, kind in changes:
+        gap = text[position:start]
+        if kind == "spaced" and previous_kind == "spaced" and gap and not gap.strip() and "\n" not in gap:
+            # Zwei gesperrte Woerter hintereinander ("K a r l  B r e n n e r"): Doppelleerzeichen -> ein Leerzeichen,
+            # damit das Modell den ganzen Namen sieht (sonst nur "Karl", Nachname bliebe im Klartext).
+            out.append(" "); starts.append(position); ends.append(start)
+        else:
+            for i in range(position, start):
+                out.append(text[i]); starts.append(i); ends.append(i + 1)
+        previous_kind = kind
+        for i in range(start, end):
+            ch = text[i]
+            if kind == "spaced" and ch == " ":
+                continue  # Einzelleerzeichen zwischen den Buchstaben entfaellt
+            if kind == "digits" and ch in _OCR_DIGIT_LETTERS:
+                ch = _OCR_DIGIT_LETTERS[ch]
+            out.append(ch); starts.append(i); ends.append(i + 1)
+        position = end
+    for i in range(position, len(text)):
+        out.append(text[i]); starts.append(i); ends.append(i + 1)
+    return "".join(out), starts, ends, [(a, b) for a, b, _ in changes]
+
+
+# §50 (Qualitaetsmeldung seed-008, "bei Rot" -> [ORT_01]): das Sprachmodell selbst setzt "Rot" als Ort (es gibt Orte
+# dieses Namens). Die gegengepruefte Regel aus §45.1 (review.py) galt nur fuer Rueckfrage-Kandidaten, nicht fuer
+# NER-Treffer. Gleiche, enge Bedingung: "bei" + Farbe + UNMITTELBAR ein Fahr-/Querungsvorgang ("bei Rot in die
+# Kreuzung", "bei Grün über die Kreuzung", "bei Gelb gefahren"). "überquerte die Fahrbahn bei Rot." bleibt maskiert
+# (Ortslesart "bei Rot" sprachlich moeglich), ebenso "übernachtete bei Rot, direkt an der Kreuzung".
+TRAFFIC_LIGHT_COLOURS = frozenset({"Grün", "Rot", "Gelb"})
+TRAFFIC_MANOEUVRE_AFTER = re.compile(
+    r"[ \t]+(?:"
+    r"(?:über|in)[ \t]+(?:die|den)[ \t]+(?:\w*[Kk]reuzung|Ampel|Fahrbahn|Einmündung|Haltelinie|Fußgängerfurt|"
+    r"Fussgängerfurt)"
+    r"|(?:los|weiter|durch)?gefahren|überquert"
+    r")\b"
+)
+_BEI_BEFORE = re.compile(r"(?:^|[^\w])[Bb]ei[ \t]+$")
+
+
+def is_traffic_light_colour_at(text: str, start: int, end: int) -> bool:
+    return (
+        text[start:end] in TRAFFIC_LIGHT_COLOURS
+        and bool(_BEI_BEFORE.search(text[max(0, start - 8) : start]))
+        and bool(TRAFFIC_MANOEUVRE_AFTER.match(text, end))
+    )
+
+
 def detect_presidio_entities(text: str) -> list[DetectedSpan]:
     """Erkennt Personennamen/Orte/Organisationen im übergebenen Text via
     Presidio + deutschem spaCy-Modell und liefert sie als `DetectedSpan`-
@@ -802,6 +900,23 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
     spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+    # §49: Varianten-Treffer erst NACH der Grenzen-Normalisierung - die trennt an Doppelleerzeichen (Tabellenzelle) und
+    # schnitte "K a r l  B r e n n e r" sonst auf "K a r l" zurueck.
+    variant = _ocr_variant_for_analysis(analysis_text)
+    if variant is not None:
+        variant_text, v_starts, v_ends, changed = variant
+        variant_results = analyzer.analyze(
+            text=variant_text, language="de", entities=["PERSON"], score_threshold=_MIN_SCORE
+        )
+        for sp in _collect_spans(variant_results, text, (v_starts, v_ends)):
+            if sp.category != "person" or not any(sp.start < b and a < sp.end for a, b in changed):
+                continue
+            overlapping = [o for o in spans if sp.start < o.end and o.start < sp.end]
+            # Ein Varianten-Treffer, der vorhandene Treffer VOLLSTAENDIG umschliesst, ersetzt sie ("Gu5tav Wende1in": die
+            # Originalanalyse sah nur "Wende1" als Organisation - Vorname und Rest blieben lesbar). Nur mehr Schutz:
+            # ragt ein vorhandener Treffer ueber den Varianten-Treffer hinaus, bleibt alles wie es ist.
+            if all(sp.start <= o.start and o.end <= sp.end for o in overlapping):
+                spans = [o for o in spans if o not in overlapping] + [sp]
     titled = _titled_name_spans(text)
     weak_titled = {(span.start, span.end) for span, strong in titled if not strong}
     for detector in (
@@ -815,6 +930,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         )
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
     spans = drop_possessive_kinship(drop_statute_abbreviations(text, spans))
+    spans = [s for s in spans if not is_traffic_light_colour_at(text, s.start, s.end)]  # §50
     return [*propagate_person_components(text, inverted_name_lines(text, spans), exclude=weak_titled), *id_spans]
 
 

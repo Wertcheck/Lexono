@@ -36,6 +36,7 @@ import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult, seal_payload
 from app.privacy.review import (
+    NAME_PREFIX_RUN,
     PrivacyDecisions,
     ReviewCandidate,
     detect_decision_terms,
@@ -294,7 +295,31 @@ class ClaudePrivacyGateway:
             spans = drop_sentence_initial_imperatives(text, spans)
             if skip_general_knowledge_pseudonymization:
                 spans = drop_common_noun_persons(text, spans)
-            return [*spans, *detect_decision_terms(text, masked_terms)]
+            decided = detect_decision_terms(text, masked_terms)
+            # §51: ein NER-Treffer, der GENAU das entschiedene Wort (ggf. plus Genitiv-Endung, "Zweigelts") ist, weicht dem
+            # Entscheidungs-Treffer - sonst erhielte dieselbe Person einen zweiten Platzhalter (real: "Zeugen Brummelbeck"
+            # las die NER als Ort, "widersprach Brummelbeck" als Person). Nur exakt diese Bereiche; jeder andere
+            # ueberlappende Treffer bleibt (die Ueberlappungsaufloesung verliert seit §50 kein Zeichen).
+            variants = {(d.start, d.end) for d in decided if d.category == "person"} | {
+                (d.start, d.end + len(suffix))
+                for d in decided if d.category == "person" for suffix in ("s", "'s", "’s")
+                if text[d.end : d.end + len(suffix)] == suffix
+            }
+
+            # §52: dasselbe, wenn der NER-Treffer zusaetzlich nur Anrede/Titel/Rolle VOR dem Namen enthaelt ("Dr.
+            # Hans-Peter Müller", "Richter Brummelbeck"): der Titel bleibt lesbar, die Person behaelt EINEN Platzhalter
+            # (sonst zwei Vollnamen-Formen -> auch "Herr Müller" erhielt einen eigenen Platzhalter).
+            def yields_to_decision(s) -> bool:
+                if (s.start, s.end) in variants:
+                    return True
+                return any(
+                    s.start < d.start and (d.start, s.end) in variants
+                    and NAME_PREFIX_RUN.fullmatch(text[s.start : d.start])
+                    for d in decided if d.category == "person"
+                )
+
+            spans = [s for s in spans if s.category not in ("person", "ort", "organisation") or not yields_to_decision(s)]
+            return [*spans, *decided]
 
         def _pseudonymize_and_split():
             pseudonymized, maps = self.pseudonymizer.pseudonymize(

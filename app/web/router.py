@@ -33,11 +33,12 @@ from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME
 from app.matching.matcher import _AMBIGUITY_MARGIN, MatterMatchingService
 from app.matching.service import MatterAssignmentService
 from app.models import AuditEvent, Client, Document, Matter, Message, User
+from app.web.name_protection import install_name_protection
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §54 "Namen schützen" (E-Mail-Aktionen)
 
 # --- Posteingang: Avatar-Initialen/-Farbe, echte Dateigroesse (25.09.,
 # Owner-Direktive "POSTEINGANG PRODUCT COMPLETION" - Referenzabgleich
