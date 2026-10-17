@@ -21,7 +21,11 @@ def test_versioned_corpus_is_valid() -> None:
     assert report.ok, report.errors
     cases = corpus.load_cases()
     assert {c["split"] for c in cases} == {"dev", "test"}
-    assert all(c["synthetic"] for c in cases)
+    # §71: synthetisch ODER ausdruecklich abgeleitet aus freigegebenen Quellen (Status "nutzbar")
+    usable = {s["id"] for s in corpus.load_register()["sources"] if s["nutzungsrechte"]["status"] == "nutzbar"}
+    for case in cases:
+        assert case["synthetic"] or (case.get("derivation") == "abgeleitet" and case["source_refs"]
+                                     and set(case["source_refs"]) <= usable), case["id"]
 
 
 def test_register_entries_are_not_used_without_checked_rights() -> None:

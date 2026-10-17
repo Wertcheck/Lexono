@@ -316,6 +316,11 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
                     record["critical"].append({"kind": "daten_anderer_akte_im_payload", "task": task["id"], "values": cross})
                 if task["kind"] == "schriftsatz":
                     item["erhalt"] = _preservation(case, sent)
+                if case.get("solution") and task.get("analyse"):
+                    # §71: enthaelt der gesendete Payload die Grundlage der Referenzloesung? (ohne Modell messbar)
+                    from scripts.legal_bench.solution_score import payload_basis
+
+                    item["loesungsbasis"] = payload_basis(case, sent)
                 item["maskiert_ohne_referenz"] = _unreferenced_masks(case, seen_mappings)
             for leftover in item.get("export_placeholders", []):
                 record["critical"].append({"kind": "platzhalterrest_im_export", "task": task["id"], "value": leftover})
@@ -324,12 +329,13 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
         results.append(record)
 
     matching = _matching_probes(db, cases, {cid: st["matter"].id for cid, st in state.items()})
+    release = _release_probe(db, user, drafting, Client, Matter)
     foreign_attachment = _foreign_attachment_probes(db, user, cases, state, all_protect, drafting)
     ocr_degraded = _ocr_degraded_probe(db, cases, workdir, intake, processing)
 
     db.close()
     engine.dispose()
-    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment,
+    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment, "freigabe": release,
             "ocr_degraded": ocr_degraded, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
 
@@ -443,6 +449,38 @@ def _foreign_attachment_probes(db, user, cases, state, all_protect, drafting) ->
         rows.append({"case": case["id"], "fremde_akte": other_id, "status": result["status"],
                      "werte_fremder_akte_im_payload": foreign_values, "kritisch": bool(foreign_values)})
     return rows
+
+
+_RELEASE_MARKER = "Sperrvermerk QX-71-NICHT-FREIGEGEBEN"
+
+
+def _release_probe(db, user, drafting, Client, Matter) -> dict:  # noqa: ANN001, N803
+    """§71: Dokumentfreigabe vor KI-Anfragen (§62) im echten Chat-Pfad - Modus C, ein unauffaelliges und ein auffaelliges
+    Dokument (unsicherer Begriff); der Payload darf nur das unauffaellige enthalten. Danach Modus zurueck."""
+    from app.documents import release
+    from app.models import Document
+
+    previous = release.get_mode(db)
+    release.set_mode(db, release.MODE_AUTO_REVIEW, actor="benchmark")
+    try:
+        matter = Matter(client=Client(name="Freigabeprobe Mandantin"), title="Freigabeprobe")
+        db.add(matter)
+        db.flush()
+        clean = Document(matter_id=matter.id, file_path="x", original_filename="beschluss.txt", ocr_status="not_needed",
+                         extracted_text="Beschluss vom 03.11.2026: Der Streitwert wird auf 4.250,00 EUR festgesetzt.")
+        uncertain = Document(matter_id=matter.id, file_path="x", original_filename="schreiben.txt", ocr_status="not_needed",
+                             extracted_text="Wir bestaetigen den Eingang des Schreibens von Richter vom 16.03.2024. "
+                                            f"{_RELEASE_MARKER}.")
+        db.add_all([clean, uncertain])
+        db.commit()
+        states = {doc.original_filename: release.processing_state(db, doc) for doc in (clean, uncertain)}
+        result = _run_chat(db, user, matter, {}, {"id": "FREIGABE", "question": "Fasse die Akte zusammen."}, drafting)
+        sent = result.pop("_payload_text", "") or ""
+        return {"zustaende": states, "status": result["status"], "freigegebenes_im_payload": "4.250,00 EUR" in sent,
+                "zurueckgehaltenes_im_payload": _RELEASE_MARKER in sent or "QX-71" in sent,
+                "kritisch": _RELEASE_MARKER in sent or "QX-71" in sent}
+    finally:
+        release.set_mode(db, previous, actor="benchmark")
 
 
 def _email_message(document: dict) -> tuple[str | None, str | None, str]:
@@ -695,6 +733,13 @@ def summarise(results: list[dict]) -> dict:
             "erfundene_fundstellen_markiert": f"{sum(len(t['quellenintegritaet'].get('als_pruefpunkt_markiert', [])) for t in drafts if 'quellenintegritaet' in t)}/"
                                               f"{sum(len(t['quellenintegritaet'].get('im_entwurf', [])) for t in drafts if 'quellenintegritaet' in t)}",
             "aufgabenfehler": [f"{r['case']}/{t['id']}" for r in rows for t in r["tasks"] if t.get("status") == "error"],
+            # §71: Grundlage der Referenzloesung im tatsaechlich gesendeten Payload (Analyseaufgaben abgeleiteter Faelle)
+            "loesungsbasis_vollstaendig": f"{sum(1 for t in tasks if t.get('loesungsbasis', {}).get('vollstaendig'))}/"
+                                          f"{sum(1 for t in tasks if 'loesungsbasis' in t)}",
+            "loesungsbasis_luecken": sorted(
+                f"{r['case']}/{t['id']}:" + ";".join(f"{k}={v}" for k in ("normen_fehlend", "fakten_fehlend", "fristen_fehlend", "offene_punkte_fehlend")
+                         for v in t["loesungsbasis"][k])
+                for r in rows for t in r["tasks"] if "loesungsbasis" in t and not t["loesungsbasis"]["vollstaendig"]),
         }
 
     return {"dev": per_split("dev"), "test": per_split("test")}
@@ -741,7 +786,7 @@ def main() -> int:
               "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
               "summary": summarise(outcome["results"]), "aktenzuordnung": outcome["matching"],
-              "fremder_anhang": outcome["foreign_attachment"], "ocr_schlechter_scan": outcome["ocr_degraded"],
+              "fremder_anhang": outcome["foreign_attachment"], "freigabe": outcome["freigabe"], "ocr_schlechter_scan": outcome["ocr_degraded"],
               "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"
     out.write_text(json.dumps(output, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")

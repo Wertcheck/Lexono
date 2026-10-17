@@ -25,7 +25,10 @@
         "hinweis": null
       },
       "verwendet_in": [
-        "benchmarks/privacy_sources_v1/cases.json"
+        "benchmarks/privacy_sources_v1/cases.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D005.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json",
+        "benchmarks/legal_e2e_v1/cases/test/LE-T004.json"
       ],
       "abruf": {
         "datum": "2026-10-17",
@@ -60,7 +63,10 @@
         "hinweis": null
       },
       "verwendet_in": [
-        "benchmarks/privacy_sources_v1/cases.json"
+        "benchmarks/privacy_sources_v1/cases.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D005.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json",
+        "benchmarks/legal_e2e_v1/cases/test/LE-T004.json"
       ],
       "abruf": {
         "datum": "2026-10-17",
@@ -103,7 +109,7 @@
           "jb-KORE729362025 (VI ZR 51/24)"
         ]
       },
-      "verwendungszweck": "Juristische Problemstellung, amtlicher Leitsatz und Ergebnis von 5 Entscheidungen als Grundlage VOLLSTAENDIG SYNTHETISCHER Sachverhalte (erfundene Personen, Daten, Orte, Nummern) im Datenschutz-Regressionskorpus privacy_sources_v1; Zitate realer Entscheidungen muessen im Payload erhalten bleiben. Keine Angaben realer Verfahrensbeteiligter uebernommen.",
+      "verwendungszweck": "Juristische Problemstellung, amtlicher Leitsatz und Ergebnis von 5 Entscheidungen als Grundlage VOLLSTAENDIG SYNTHETISCHER Sachverhalte (erfundene Personen, Daten, Orte, Nummern) im Datenschutz-Regressionskorpus privacy_sources_v1; Zitate realer Entscheidungen muessen im Payload erhalten bleiben. Keine Angaben realer Verfahrensbeteiligter uebernommen. §71: Rechtsfrage, amtlicher Leitsatz und Ergebnis von VIII ZR 18/24, 6 AZR 32/24 und 2 AZR 72/24 als Referenzloesung (Block `solution`) vollstaendig synthetischer Akten in legal_e2e_v1 (LE-D005, LE-D006, LE-T004).",
       "rechtliche_grundlage": "§ 5 Abs. 1 UrhG (Entscheidungen, amtlich verfasste Leitsaetze)",
       "redaktionelle_bestandteile": "Gesondert geprueft und NICHT als amtliches Werk behandelt: <titelzeile> und <norm> (Dokumentation), <sonstosatz> ('Hinweis der Dokumentationsstelle' - redaktionell; nur zur Einordnung des Verfahrensausgangs bei VIII ZR 274/23 inhaltlich erwaehnt, nicht wortgetreu uebernommen), juris-Zusaetze wie '(juris: SGB 3)' in Leitsaetzen (nicht uebernommen), Metadaten/Datenbankstruktur (moeglicher Datenbankschutz §§ 87a ff. UrhG - nur Einzeldokumente genutzt). Verwendet: <leitsatz> (amtlich, vom Gericht), Tenor- und Gruende-Inhalt nur sinngemaess."
     },
@@ -151,7 +157,7 @@
         "status": "nicht_geprueft",
         "geprueft_am": null,
         "begruendung": null,
-        "hinweis": "Urheberrecht der Autorinnen und Autoren; Lizenz pruefen."
+        "hinweis": "Geprueft 18.10.2026 (§71, Agent - keine Freigabe): zjs-online.com nennt nur '© 2007 - 2026 ZJS - Zeitschrift fuer das Juristische Studium', keine Lizenz fuer Vervielfaeltigung oder Bearbeitung. Sachverhalte und Loesungen sind urheberrechtlich geschuetzte Beitraege - ohne Erlaubnis der Rechteinhaber nicht uebernehmen. Status bleibt nicht_geprueft; Einordnung durch die verantwortliche Person."
       },
       "verwendet_in": []
     },
@@ -184,6 +190,38 @@
         "geprueft_am": null,
         "begruendung": null,
         "hinweis": "Urheberrecht des Veranstalters; inhaltlich naechstes Vorbild fuer Schriftsatz-Faelle."
+      },
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-OPENREWI-VERWALTUNGSRECHT-KLAUSUR",
+      "name": "Verwaltungsrecht in der Klausur (OpenRewi, Hrsg. Nikolas Eisentraut)",
+      "url": "https://de.wikibooks.org/wiki/Verwaltungsrecht_in_der_Klausur/_Die_F%C3%A4lle",
+      "url_verified": true,
+      "type": "uebungsfaelle",
+      "herkunft": "OpenRewi-Projekt; Druck/Open Access: Carl Grossmann Verlag, DOI 10.24921/2020.94115939, ISBN 978-3-941159-39-6",
+      "umfang": "16 Klausurfaelle mit Loesungen (Verwaltungsprozessrecht: Anfechtungs-, Verpflichtungs-, Fortsetzungsfeststellungs-, Leistungs-, Feststellungsklage, Normenkontrolle, Eilrechtsschutz, Staatshaftung); Stand September 2019",
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Gesichtet 18.10.2026 (§71, Agent - keine Freigabe): 'Dieser Text steht unter der Lizenz CC BY-SA 4.0'. Nutzung erlaubt mit Namensnennung; ABER ShareAlike: eine Bearbeitung (z. B. abgewandelter Sachverhalt im Korpus) waere unter CC BY-SA 4.0 weiterzugeben - Lizenz-/Repository-Entscheidung der verantwortlichen Person. Nicht verwendet."
+      },
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-OPENREWI-GRUNDRECHTE-FALLBUCH",
+      "name": "OpenRewi Grundrechte-Fallbuch (Hrsg. Maximilian Petras, Dana-Sophia Valentiner)",
+      "url": "https://de.wikibooks.org/wiki/OpenRewi/_Grundrechte-Fallbuch",
+      "url_verified": true,
+      "type": "uebungsfaelle",
+      "herkunft": "OpenRewi-Projekt (Wikibooks; PDF beim Verlag)",
+      "umfang": "10 Faelle mit Loesungsvorschlaegen (Kunst-, Berufs-, Handlungs-, Meinungs-, Versammlungs-, Religionsfreiheit, Recht auf Gesundheit, allgemeines Persoenlichkeitsrecht, Eigentum, Gleichheit)",
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Gesichtet 18.10.2026 (§71, Agent - keine Freigabe): CC BY-SA 4.0 (Namensnennung, Weitergabe unter gleichen Bedingungen). ShareAlike-Folge wie bei Verwaltungsrecht in der Klausur; Rechtsgebiet (Grundrechte/Verfassungsbeschwerde) fuer Kanzleiakten nur begrenzt passend. Nicht verwendet."
       },
       "verwendet_in": []
     }

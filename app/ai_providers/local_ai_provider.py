@@ -779,6 +779,13 @@ class RuleBasedLocalAIProvider:
                         surnames.append(surname)
                 elif len(parts) >= 2 and len(parts[-1]) >= 3 and parts[-1] not in names:
                     surnames.append(parts[-1])
+                    # §71 (Legal-E2E LE-T004): Kurzform "erstes + letztes Wort" eines mindestens dreiteiligen Namens
+                    # ("Generalkonsulat der Republik Valdoria" -> "Generalkonsulat Valdoria", typisch im Aktentitel) -
+                    # vorher wurde nur "Valdoria" maskiert und "Generalkonsulat" stand im Klartext daneben. Rein
+                    # zusaetzlicher Schutzwert (verstaerkt, lockert nichts).
+                    short = f"{parts[0]} {parts[-1]}"
+                    if len(parts) >= 3 and len(parts[0]) >= 3 and short not in names:
+                        surnames.append(short)
             known[category] = names + [s for s in surnames if s not in names]
 
         return {category: names for category, names in known.items() if names}

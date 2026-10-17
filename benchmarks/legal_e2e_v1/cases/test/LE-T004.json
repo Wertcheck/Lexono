@@ -1,0 +1,114 @@
+{
+ "id": "LE-T004",
+ "split": "test",
+ "version": 1,
+ "title": "Kündigung durch ein Generalkonsulat: Staatenimmunität und Sonderkündigungsschutz",
+ "rechtsgebiet": "Arbeitsrecht / Kündigungsschutz / Staatenimmunität",
+ "synthetic": false,
+ "derivation": "abgeleitet",
+ "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
+ "notes": "§71: Rechtsfrage und Ergebnis aus BAG, Urteil vom 03.04.2025 - 2 AZR 72/24 (amtlicher Leitsatz; Tenor: Aufhebung und Zurueckverweisung). Staat (Republik Valdoria) frei erfunden; Personen, Orte, Daten, Gehalt, Zugangsstreit VOLLSTAENDIG SYNTHETISCH. Unabhaengiger Testfall - nicht zur Regelabstimmung verwenden.",
+ "parties": [
+  {"id": "P1", "name": "Jelena Radovanović", "role": "mandant", "gender": "f"},
+  {"id": "P2", "name": "Generalkonsulat der Republik Valdoria", "role": "gegner", "gender": "n"},
+  {"id": "P3", "name": "Mirela Kostadinova", "role": "zeuge", "gender": "f"}
+ ],
+ "matter": {"title": "Radovanović ./. Generalkonsulat Valdoria - Kündigungsschutz", "client_party": "P1", "reference_number": "26/0158-AR"},
+ "documents": [
+  {"id": "D1", "type": "vertrag", "format": "docx", "filename": "Arbeitsvertrag_Konsulat.docx", "date": "01.09.2014", "paragraphs": [
+   "Arbeitsvertrag (Auszug)",
+   "Zwischen dem Generalkonsulat der Republik Valdoria, Bockenheimer Weg 40, 60325 Beispielstadt, und Frau Jelena Radovanović, geb. 08.07.1979, wird ab 01.09.2014 ein Arbeitsverhältnis als Sachbearbeiterin in der Visa-Abteilung begründet.",
+   "Monatliches Bruttogehalt: 3.950,00 EUR. Es gilt deutsches Arbeitsrecht."]},
+  {"id": "D2", "type": "schreiben", "format": "scan", "filename": "Kuendigung_Scan.pdf", "date": "15.01.2026", "paragraphs": [
+   "Generalkonsulat der Republik Valdoria - Verwaltung",
+   "Beispielstadt, 15.01.2026",
+   "Sehr geehrte Frau Radovanović, hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.04.2026.",
+   "Die Kündigung beruht auf Gründen aus dem hoheitlichen Bereich, die wir nicht offenlegen.",
+   "Das Schreiben wurde Ihnen am 15.01.2026 persönlich übergeben."]},
+  {"id": "D3", "type": "email", "format": "txt", "filename": "Mail_Mandantin.txt", "date": "20.01.2026", "paragraphs": [
+   "Von: j.radovanovic@beispielpost.example",
+   "Datum: 20.01.2026",
+   "Betreff: Kündigung - bitte um Hilfe (Ihr Zeichen 26/0158-AR)",
+   "Guten Tag, das Kündigungsschreiben lag am 16.01.2026 in meinem Briefkasten; persönlich übergeben wurde mir nichts.",
+   "Ich bin schwerbehindert mit einem Grad der Behinderung von 50; den Bescheid des Versorgungsamts habe ich gerade nicht zur Hand.",
+   "Meine Kollegin Mirela Kostadinova kann bestätigen, dass ich nur Visa-Anträge erfasst habe. Telefon 069 4312 8856. Jelena Radovanović"]},
+  {"id": "D4", "type": "notiz", "format": "txt", "filename": "Vermerk_Erstberatung.txt", "date": "21.01.2026", "paragraphs": [
+   "Vermerk vom 21.01.2026 - Az. 26/0158-AR",
+   "Klagefrist: Die Kündigungsschutzklage ist innerhalb von drei Wochen nach Zugang zu erheben (§ 4 Satz 1 KSchG). Zugang streitig (15.01.2026 laut Konsulat, 16.01.2026 laut Mandantin); vorsorglich Fristende 05.02.2026, spätestens 06.02.2026.",
+   "Eine Zustimmung des Integrationsamts nach § 168 SGB IX liegt nicht vor; der Schwerbehindertenbescheid ist anzufordern.",
+   "Nach BAG, Urteil vom 3. April 2025 - 2 AZR 72/24, wird die Überprüfung der Wirksamkeit einer Kündigung durch das Berufen eines ausländischen Staates auf Gründe aus dem hoheitlichen Bereich nicht insgesamt der deutschen Gerichtsbarkeit entzogen, sondern nur insoweit, wie eine Beurteilung hoheitlichen Handelns erfolgen müsste."]},
+  {"id": "D5", "type": "schreiben", "format": "pdf", "filename": "Schreiben_Konsulat.pdf", "date": "28.01.2026", "paragraphs": [
+   "Generalkonsulat der Republik Valdoria",
+   "Beispielstadt, 28.01.2026",
+   "Wir weisen darauf hin, dass die Republik Valdoria Immunität genießt. Die Kündigung kann von deutschen Gerichten nicht überprüft werden."]}
+ ],
+ "reference": {
+  "facts": [
+   {"id": "F1", "statement": "Beginn des Arbeitsverhältnisses", "values": ["01.09.2014"], "docs": ["D1"]},
+   {"id": "F2", "statement": "Monatliches Bruttogehalt", "values": ["3.950,00 EUR"], "docs": ["D1"]},
+   {"id": "F3", "statement": "Ordentliche Kündigung zum", "values": ["30.04.2026"], "docs": ["D2"]},
+   {"id": "F4", "statement": "Zugang laut Konsulat", "values": ["15.01.2026"], "docs": ["D2"]},
+   {"id": "F5", "statement": "Zugang laut Mandantin", "values": ["16.01.2026"], "docs": ["D3"]},
+   {"id": "F6", "statement": "Schwerbehinderung", "values": ["Grad der Behinderung von 50"], "docs": ["D3"]},
+   {"id": "F7", "statement": "Berufung auf hoheitliche Gründe", "values": ["Gründen aus dem hoheitlichen Bereich"], "docs": ["D2"]},
+   {"id": "F8", "statement": "Tätigkeit ohne hoheitlichen Bezug laut Mandantin", "values": ["Visa-Anträge erfasst"], "docs": ["D3"]}
+  ],
+  "chronology": [
+   {"date": "01.09.2014", "event": "Beginn des Arbeitsverhältnisses", "doc": "D1"},
+   {"date": "15.01.2026", "event": "Kündigungsschreiben / Übergabe laut Konsulat", "doc": "D2"},
+   {"date": "16.01.2026", "event": "Zugang laut Mandantin", "doc": "D3"},
+   {"date": "20.01.2026", "event": "E-Mail der Mandantin", "doc": "D3"},
+   {"date": "21.01.2026", "event": "Erstberatung", "doc": "D4"},
+   {"date": "28.01.2026", "event": "Schreiben des Konsulats zur Immunität", "doc": "D5"}
+  ],
+  "deadlines": [
+   {"date": "05.02.2026", "kind": "Klagefrist § 4 KSchG (bei Zugang am 15.01.2026)", "doc": "D4"},
+   {"date": "06.02.2026", "kind": "Klagefrist § 4 KSchG (bei Zugang am 16.01.2026)", "doc": "D4"}
+  ],
+  "citations": [
+   {"text": "§ 4 Satz 1 KSchG", "kind": "norm", "doc": "D4"},
+   {"text": "§ 168 SGB IX", "kind": "norm", "doc": "D4"},
+   {"text": "BAG, Urteil vom 3. April 2025 - 2 AZR 72/24", "kind": "entscheidung", "doc": "D4",
+    "verified_source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "ecli": "ECLI:DE:BAG:2025:030425.U.2AZR72.24.0", "doc": "jb-KARE600070322"}}
+  ],
+  "contradictions": [
+   {"id": "W1", "topic": "Zugang der Kündigung", "values": [{"doc": "D2", "value": "am 15.01.2026 persönlich übergeben"}, {"doc": "D3", "value": "lag am 16.01.2026 in meinem Briefkasten"}]},
+   {"id": "W2", "topic": "Überprüfbarkeit durch deutsche Gerichte", "values": [{"doc": "D5", "value": "kann von deutschen Gerichten nicht überprüft werden"}, {"doc": "D4", "value": "nicht insgesamt der deutschen Gerichtsbarkeit entzogen"}]}
+  ],
+  "privacy": {
+   "protect": [
+    {"value": "Jelena Radovanović", "type": "PERSON"},
+    {"value": "Mirela Kostadinova", "type": "PERSON"},
+    {"value": "Generalkonsulat der Republik Valdoria", "type": "ORGANISATION"},
+    {"value": "Bockenheimer Weg 40, 60325 Beispielstadt", "type": "ADRESSE"},
+    {"value": "08.07.1979", "type": "PERS_DATUM"},
+    {"value": "j.radovanovic@beispielpost.example", "type": "EMAIL"},
+    {"value": "069 4312 8856", "type": "TELEFON"}
+   ],
+   "keep": ["3.950,00 EUR", "30.04.2026", "05.02.2026", "06.02.2026", "§ 4 Satz 1 KSchG", "§ 168 SGB IX"]
+  },
+  "tasks": [
+   {"id": "Q1", "kind": "chat", "analyse": true, "question": "Kann die Mandantin trotz der behaupteten Immunität klagen, und bis wann?", "attach": [],
+    "needed_facts": ["F4", "F5", "F7"], "needed_values": ["15.01.2026", "16.01.2026", "Gründen aus dem hoheitlichen Bereich"]},
+   {"id": "Q2", "kind": "schriftsatz", "analyse": true, "question": "Kündigungsschutzklage mit Ausführungen zur Gerichtsbarkeit und zum Sonderkündigungsschutz.", "attach": [],
+    "needed_facts": ["F3", "F6", "F8"], "needed_values": ["30.04.2026", "Grad der Behinderung von 50", "3.950,00 EUR"]},
+   {"id": "Q3", "kind": "suche", "question": "Kündigung hoheitlicher Bereich persönlich übergeben", "attach": [], "needed_facts": ["F7"], "expected_documents": ["D2"]},
+   {"id": "Q4", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [], "expected_deadlines": ["05.02.2026", "06.02.2026"]}
+  ]
+ },
+ "solution": {
+  "source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "court": "BAG", "aktenzeichen": "2 AZR 72/24", "date": "2025-04-03", "ecli": "ECLI:DE:BAG:2025:030425.U.2AZR72.24.0", "used": "amtlicher Leitsatz; Tenor (Aufhebung und Zurueckverweisung)"},
+  "question": "Ist die Kündigungsschutzklage trotz Berufung des Staates auf Gründe aus dem hoheitlichen Bereich zulässig, und welche Frist und welcher Sonderkündigungsschutz sind zu beachten?",
+  "expected_result": "Die Überprüfung der Kündigung ist nicht insgesamt der deutschen Gerichtsbarkeit entzogen, sondern nur, soweit hoheitliches Handeln zu beurteilen wäre (BAG 2 AZR 72/24, Leitsatz). Die Klage ist deshalb zu erheben. Die Dreiwochenfrist läuft ab Zugang (§ 4 Satz 1 KSchG); wegen des streitigen Zugangs vorsorglich bis 05.02.2026. Bei Schwerbehinderung ist die Zustimmung des Integrationsamts erforderlich (§ 168 SGB IX); sie fehlt.",
+  "result_terms": ["Gerichtsbarkeit", "hoheitlich"],
+  "wrong_results": ["kann nicht überprüft werden", "Klage ist unzulässig", "keine deutsche Gerichtsbarkeit"],
+  "required_norms": ["§ 4", "§ 168"],
+  "decisive_facts": ["F3", "F4", "F5", "F6", "F7", "F8"],
+  "deadlines": ["05.02.2026"],
+  "open_points": [
+   {"id": "O1", "topic": "Zugang streitig (W1) - vorsorglich Fristende 05.02.2026", "any_terms": ["Zugang", "05.02.2026"]},
+   {"id": "O2", "topic": "Schwerbehindertenbescheid liegt nicht vor", "any_terms": ["Bescheid"]}
+  ],
+  "provenance": {"belegt": ["amtlicher Leitsatz und Tenor 2 AZR 72/24"], "synthetisch": ["Staat, Personen, Orte, Daten, Gehalt, Zugangsstreit, Schwerbehinderung"]}
+ }
+}
