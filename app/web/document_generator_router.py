@@ -27,7 +27,7 @@ from app.document_generator.docx_export import DOCX_MEDIA_TYPE, GeneratedDocumen
 from app.document_generator.pdf_export import PDF_MEDIA_TYPE, GeneratedDocumentPdfExportService
 from app.document_generator.service import generate_from_template, get_unresolved_placeholders, update_content
 from app.document_generator.template_service import DocumentTemplateService
-from app.export.filenames import safe_download_filename
+from app.export.filenames import attachment_header, safe_download_filename
 from app.firm_profile.service import get_firm_profile
 from app.models import DocumentTemplate, GeneratedDocument, Matter, User
 from app.web.template_paths import TEMPLATES_DIR
@@ -151,7 +151,7 @@ def export_document_docx(
     return StreamingResponse(
         buffer,
         media_type=DOCX_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": attachment_header(filename)},
     )
 
 
@@ -167,5 +167,5 @@ def export_document_pdf(
     return StreamingResponse(
         buffer,
         media_type=PDF_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": attachment_header(filename)},
     )

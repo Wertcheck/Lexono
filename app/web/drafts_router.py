@@ -46,7 +46,7 @@ from app.db.session import get_db
 from app.documents.service import DocumentProcessingService
 from app.drafting.versioning import create_manual_edit_version
 from app.export.docx_export_service import DOCX_MEDIA_TYPE, DraftDocxExportService
-from app.export.filenames import safe_download_filename
+from app.export.filenames import attachment_header, safe_download_filename
 from app.export.letterhead import (
     address_and_contact_lines,
     has_letterhead_content,
@@ -498,7 +498,7 @@ def export_draft_docx(
     return Response(
         content=file_bytes,
         media_type=DOCX_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": attachment_header(filename)},
     )
 
 
@@ -550,7 +550,7 @@ def export_draft_pdf(
     return Response(
         content=file_bytes,
         media_type=PDF_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": attachment_header(filename)},
     )
 
 

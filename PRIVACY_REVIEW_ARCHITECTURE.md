@@ -7477,3 +7477,62 @@ sind unverändert.
   Upload.
 - **Schriftsatz-Generator (§58):** Dort bleibt ein hart abgebrochener Vorgang weiterhin gesperrt. Der Generator war
   nicht Teil dieses Schritts; die Generierung ist bewusst fail-closed, weil eine Cloud-Anfrage erfolgt sein könnte.
+
+## §61 Arbeitspakete P1–P5 (17.10.2026, Branch `feature/feedback-diagnose`, Basis `666685f`)
+
+Sequenziell abgearbeitet, je Paket mit Bestandsaufnahme und Qualitätsgate. Status: **teilweise nachgewiesen**;
+keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+### 61.1 P1 – Dokumentfreigabe: Inventur der KI-Pfade
+
+**Was „Freigabe“ hier umfasst:** Einen eigenen Freigabe-Mechanismus „Dokumentfreigabe“ gibt es im Code nicht. Vor
+jeder Cloud-Verarbeitung greifen:
+- die zentrale Prüfung (`ClaudePrivacyGateway.prepare_request`, Siegel);
+- Rückfrage und Namensmarkierung (§51–§56, an den angezeigten Textstand gebunden);
+- die Lesbarkeitsprüfung;
+- die Trennung von Upload und Verarbeitung (§57).
+
+Eine zusätzliche Pflicht-Freigabe je Dokument vor jeder KI-Aktion bleibt eine **offene fachliche Entscheidung**
+(§57.5) und wurde nicht eigenmächtig eingeführt.
+
+**Inventur (am Code, Ist-Stand):**
+- **Cloud-Provider:** Alle vier (direkt und Gateway, Schreiben und Prüfung) verlangen vor dem Netzaufruf ein gültiges
+  Siegel. Versiegelt wird nur in `prepare_request` bzw. `extend_with_local_note` (mit erneuter Prüfung).
+- **Auslöser:** Alle Cloud-Auslöser sind POST-Aktionen über `DraftingService._prepare_and_gate` bzw. `ReviewEngine`:
+  - Chat (`send`, `send-stream`, `from-document`, `from-message`, `privacy-review`);
+  - Entwurf (`regenerate`, `instructions/apply`, `ai-edit`, `review`);
+  - Schriftsatz `generate`, nur ohne Dateien.
+  - Gespeicherte Markierungen laden alle Pfade aktenweit.
+- **GET:** Keine GET-Route ruft einen Provider auf. `pending-review` prüft nur lokal.
+- **Lokal:** Hintergrundaufgaben (Mail-Abholung, Updates, Gesundheitsprüfung), Klassifikation, Fristerkennung,
+  Einbettungen, OCR, Titelbildung und Spracherkennung laufen lokal. Eine Umgehung wurde nicht gefunden.
+- **Dokumenttext:** Nur die Verarbeitung (`process_document`) ändert ihn. Markierungen wirken aktenweit
+  (Übermaskierung, kein Leck). `text_version` bindet nur **neue** Markierungen an den angezeigten Text; die zentrale
+  Prüfung läuft bei jedem Versand über den aktuellen Text.
+
+**Ergänzt:**
+- **`tests/test_no_ai_on_open.py`:** Ruft **alle GET-Routen** (Stand: 99, zur Laufzeit aufgezählt, neue Routen
+  automatisch) mit synthetischen Daten auf. Dazu gehören Mail, Dokumente mit Namen, Entwürfe, Frist, Wissensbasis und
+  ein Chat mit Upload-Nachricht.
+  - Spione liegen auf allen Cloud-Providern und dem Gateway-Client; jede Socket-Verbindung außer Loopback wird
+    gesperrt.
+  - **Ergebnis:** 0 Provider-Aufrufe, 0 Netzverbindungen, keine Server-Fehler.
+  - Dazu kommt der direkte Akten-Upload (dritter Upload-Weg): lokal ausgelesen, geöffnet, 0 Provider-Aufrufe,
+    0 Netzverbindungen.
+- **Dabei gefunden und behoben (kein Datenschutzpfad):** DOCX- und PDF-Export von Entwürfen und generierten Dokumenten
+  setzten einen Dateinamen mit Umlaut roh in den Kopf `Content-Disposition`. Das ist nicht RFC-6266-konform; der
+  Test-Client brach mit `UnicodeDecodeError` ab. Jetzt steht ein ASCII-Ersatzname in `filename=` und der volle Name in
+  `filename*=UTF-8''…` (`app/export/filenames.attachment_header`).
+  - Ob der Export im installierten Build mit WebView2 sichtbar fehlschlug, ist **nicht verifiziert**.
+  - Nebenbefund: Die globale `NoStoreMiddleware` setzt `no-store` ohnehin für alle Antworten; der zusätzliche Kopf
+    aus §60 ist redundant, aber unschädlich.
+
+**QA P1 (Repository-Tests, SQLite, TestClient; kein Browser, keine installierte App):**
+
+| Prüfung | Status |
+|---|---|
+| GET-Routendurchlauf ohne KI und Netz | PASS |
+| Akten-Upload ohne KI und Netz | PASS |
+| Export-Tests (DOCX/PDF, Aktenseite) | PASS |
+| Gesamtsuite: 5233 bestanden, 4 fremde Logo-Fehler | PASS |
+| Installierter Build | NICHT VERIFIZIERT |
