@@ -231,6 +231,8 @@ def _review_info(deadline: Deadline, deferred: dict[str, str], today: date, *, c
         "kind_label": kind_label(deadline),
         # §74: "Beendigungstermin" statt "Frist" in der Spalte/dem Feld "Typ"
         "type_label": type_label(deadline),
+        # §76: weiche Trennstelle (U+00AD) fuer die schmale Typ-Spalte - "Beendigungs-/termin" statt "Beendigu…"
+        "type_label_wrapped": type_label(deadline).replace("Beendigungstermin", "Beendigungs\u00adtermin"),
         "raw_date": raw_date,
         "context": context,
         "confidence": deadline.confidence,

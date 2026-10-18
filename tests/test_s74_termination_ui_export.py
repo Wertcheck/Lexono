@@ -22,7 +22,8 @@ DEADLINE = "Platzhalter. Art: Frist - Fristende ausdrücklich im Text genannt ('
 
 
 def _type_cells(page: str) -> list[str]:
-    return [" ".join(re.sub(r"<[^>]+>", " ", cell).split())
+    # §76: das Label enthaelt eine weiche Trennstelle (U+00AD, unsichtbar) - fuer den Textvergleich entfernt
+    return [" ".join(re.sub(r"<[^>]+>", " ", cell).replace("\u00ad", "").split())
             for cell in re.findall(r'<div class="task-type-cell">(.*?)</div>', page, re.S)]
 
 

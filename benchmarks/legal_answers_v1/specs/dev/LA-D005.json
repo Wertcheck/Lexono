@@ -1,0 +1,40 @@
+{
+  "id": "LA-D005",
+  "case": "LE-D005",
+  "split": "dev",
+  "version": 1,
+  "created": "2026-10-18",
+  "status": "entwurf_juristische_freigabe_offen",
+  "rubric_version": 1,
+  "case_fingerprint": "e48ac8cfe5c25dd91ae77c9dac957d3f5f06299b0d1ec7233ea41ff03d9339f9",
+  "tasks": ["Q1", "Q2"],
+  "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
+  "source_scope": "BGH VIII ZR 18/24, amtlicher Leitsatz (Rechtsfrage und Ergebnis); Wortlaut §§ 469, 577 BGB. Keine Entscheidungsgründe, keine Literatur, keine fremden Falllösungen.",
+  "criteria": [
+    {"id": "K1", "dimension": "ergebnis", "statement": "Dem Mieter steht das Vorkaufsrecht zu; auch der Verkauf an eine Gesellschaft mit personenidentischen Gesellschaftern ist ein Verkauf an einen Dritten.",
+     "accept_any": [["Vorkaufsrecht", "zu"], ["Vorkaufsrecht", "besteht"], ["vorkaufsberechtigt"]],
+     "evaluation": "juristische_pruefung"},
+    {"id": "K2", "dimension": "rechtsgrundlagen", "statement": "§ 577 Abs. 1 BGB (Vorkaufsrecht bei Umwandlung nach Überlassung)",
+     "norm": "§ 577", "accept_any": [["§ 577"], ["§577"], ["577 BGB"]], "evaluation": "teilautomatisch"},
+    {"id": "K3", "dimension": "rechtsgrundlagen", "statement": "§ 469 Abs. 2 BGB (Ausübungsfrist zwei Monate nach Empfang der Mitteilung)",
+     "norm": "§ 469", "accept_any": [["§ 469"], ["§469"], ["469 BGB"]], "evaluation": "teilautomatisch"},
+    {"id": "K4", "dimension": "tatsachen", "statement": "Wohnungseigentum nach der Überlassung begründet (Teilungserklärung 12.06.2019)",
+     "fact": "F2", "accept_any": [["12.06.2019"], ["Teilungserklärung"], ["nach der Überlassung"]], "evaluation": "teilautomatisch"},
+    {"id": "K5", "dimension": "tatsachen", "statement": "Käuferin mit denselben Gesellschaftern",
+     "fact": "F6", "accept_any": [["dieselben Gesellschafter"], ["denselben Gesellschaftern"], ["personenidentisch"]], "evaluation": "teilautomatisch"},
+    {"id": "K6", "dimension": "fristen", "statement": "Vorsorglich Ausübung bis 28.04.2026 (früherer Zugang laut Verkäuferin)",
+     "deadline": "28.04.2026", "accept_any": [["28.04.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K7", "dimension": "unsicherheiten", "statement": "Zugang der Mitteilung streitig (28.02. vs. 03.03.2026); Zustellnachweis anfordern",
+     "open_point": "O1", "accept_any": [["Zugang", "streitig"], ["Zugang", "28.02.2026"], ["Zustellnachweis"]], "evaluation": "teilautomatisch"}
+  ],
+  "dangerous_errors": [
+    {"id": "G1", "statement": "Vorkaufsrecht verneint, weil die Käuferin dieselben Gesellschafter hat", "suspect_any": [["kein Vorkaufsrecht"], ["Vorkaufsrecht besteht nicht"], ["Vorkaufsrecht", "nicht zu"], ["kein Verkauf an einen Dritten"]]},
+    {"id": "G2", "statement": "Späteres Fristende (04.05.2026) als sicheres Fristende ohne Vorsorgehinweis", "suspect_any": [["bis 04.05.2026", "ausreichend"], ["Frist endet sicher am 04.05.2026"]]}
+  ],
+  "known_wrong_decisions": [
+    "Annahme, ein Verkauf an eine personenidentische Gesellschaft sei kein Verkauf an einen Dritten",
+    "Fristbeginn mit dem späteren Zugangsdatum ohne Hinweis auf den Streit",
+    "Ausübung gegenüber der Käuferin statt gegenüber der Verkäuferin"
+  ],
+  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen", "Fristberechnung"]
+}

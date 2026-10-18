@@ -1,14 +1,18 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-18T14:49:04+00:00",
- "git_commit": "fcb9520",
+ "run_at": "2026-10-18T18:15:01+00:00",
+ "git_commit": "6a16014",
  "git_dirty_files": [
   "app/deadlines/extractor.py",
-  "app/web/matters_router.py",
-  "app/web/templates/matter_detail.html",
+  "app/export/service.py",
+  "app/web/static/css/app.css",
+  "app/web/tasks_router.py",
   "app/web/templates/tasks.html",
-  "benchmarks/legal_e2e_v1/cases/dev/LE-D002.json",
-  "tests/test_s75_competing_deadlines.py"
+  "tests/test_s74_termination_ui_export.py",
+  "benchmarks/legal_answers_v1/",
+  "scripts/legal_bench/answer_specs.py",
+  "tests/test_legal_answer_specs.py",
+  "tests/test_s76_alternatives_list_export.py"
  ],
  "corpus_sha256": "48e7406675a236d4",
  "code_fingerprint": {
@@ -17,7 +21,7 @@
   "app/privacy/pseudonymizer.py": "915dcf3fe7c9e9b3",
   "app/documents/service.py": "36bc158bd3cd4bc7",
   "app/documents/extraction.py": "ff83b06dca8cfefb",
-  "app/deadlines/extractor.py": "8c5412724bc7de7f",
+  "app/deadlines/extractor.py": "3e20caf1d4a5bec6",
   "app/search/service.py": "bc812b0e3d85dee9",
   "app/chat/service.py": "adefbfdc00f40c79",
   "app/drafting/service.py": "645e2a9854a8132e",
@@ -31,7 +35,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 186.2,
+ "seconds_total": 186.3,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -147,12 +151,12 @@
    "laufzeit_dokument_s": {
     "n": 45,
     "median": 1.12,
-    "max": 1.8
+    "max": 1.68
    },
    "laufzeit_chat_s": {
     "n": 15,
-    "median": 0.71,
-    "max": 12.27
+    "median": 0.7,
+    "max": 12.31
    },
    "payload_zeichen_chat": {
     "n": 15,
@@ -161,8 +165,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 9,
-    "median": 1.01,
-    "max": 22.27
+    "median": 0.99,
+    "max": 22.49
    },
    "payload_zeichen_schriftsatz": {
     "n": 9,
@@ -171,7 +175,7 @@
    },
    "laufzeit_suche_s": {
     "n": 6,
-    "median": 0.02,
+    "median": 0.03,
     "max": 0.03
    },
    "erfundene_fundstellen_markiert": "18/18",
@@ -257,12 +261,12 @@
    ],
    "laufzeit_dokument_s": {
     "n": 18,
-    "median": 1.13,
-    "max": 1.86
+    "median": 1.12,
+    "max": 1.74
    },
    "laufzeit_chat_s": {
     "n": 7,
-    "median": 0.73,
+    "median": 0.71,
     "max": 0.89
    },
    "payload_zeichen_chat": {
@@ -272,8 +276,8 @@
    },
    "laufzeit_schriftsatz_s": {
     "n": 4,
-    "median": 1.1,
-    "max": 1.11
+    "median": 1.09,
+    "max": 1.09
    },
    "payload_zeichen_schriftsatz": {
     "n": 4,
@@ -886,7 +890,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.19
+     "seconds": 1.18
     },
     "D2": {
      "format": "txt",
@@ -943,7 +947,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.52
     },
     "D5": {
      "format": "docx",
@@ -963,7 +967,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -1027,7 +1031,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.58
+     "seconds": 4.79
     },
     {
      "id": "Q2",
@@ -1063,7 +1067,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.24
+     "seconds": 0.23
     },
     {
      "id": "Q3",
@@ -1127,7 +1131,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 1.27
+     "seconds": 1.28
     },
     {
      "id": "Q4",
@@ -1246,7 +1250,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 2.58
+     "seconds": 2.56
     },
     {
      "id": "Q5",
@@ -1255,7 +1259,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q6",
@@ -1338,7 +1342,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.56
+     "seconds": 1.67
     },
     "D3": {
      "format": "docx",
@@ -1356,7 +1360,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -1396,7 +1400,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.15
     }
    },
    "tasks": [
@@ -1435,7 +1439,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 0.82
+     "seconds": 0.81
     },
     {
      "id": "Q2",
@@ -1457,7 +1461,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.18
+     "seconds": 0.17
     },
     {
      "id": "Q3",
@@ -1635,7 +1639,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.59
+     "seconds": 1.6
     },
     "D2": {
      "format": "txt",
@@ -1666,7 +1670,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.54
+     "seconds": 1.55
     },
     "D4": {
      "format": "docx",
@@ -1683,7 +1687,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D5": {
      "format": "docx",
@@ -1798,7 +1802,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.27
+     "seconds": 12.31
     },
     {
      "id": "Q2",
@@ -1824,7 +1828,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 0.29
+     "seconds": 0.27
     },
     {
      "id": "Q3",
@@ -1912,7 +1916,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 10.39
+     "seconds": 10.57
     },
     {
      "id": "Q4",
@@ -2063,7 +2067,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 22.27
+     "seconds": 22.49
     },
     {
      "id": "Q5",
@@ -2145,7 +2149,7 @@
       "Oskar Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.14
     },
     "D2": {
      "format": "txt",
@@ -2163,7 +2167,7 @@
       "f.lammersdorf@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.09
     },
     "D3": {
      "format": "pdf",
@@ -2178,7 +2182,7 @@
       "312.000,00 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.07
     },
     "D4": {
      "format": "docx",
@@ -2193,7 +2197,7 @@
       "Gerold Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.08
     },
     "D5": {
      "format": "docx",
@@ -2264,7 +2268,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.71
+     "seconds": 0.7
     },
     {
      "id": "Q2",
@@ -2490,7 +2494,7 @@
       "§ 577 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.21
+     "seconds": 1.2
     },
     "D3": {
      "format": "txt",
@@ -2509,7 +2513,7 @@
       "t.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.15
     },
     "D4": {
      "format": "scan",
@@ -2526,7 +2530,7 @@
       "dieselben Gesellschafter"
      ],
      "values_missing": [],
-     "seconds": 1.8
+     "seconds": 1.68
     },
     "D5": {
      "format": "txt",
@@ -2545,7 +2549,7 @@
       "§ 469 Abs. 2 Satz 1 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.21
     }
    },
    "tasks": [
@@ -2632,7 +2636,7 @@
        "platzhalter": "[ADRESSE_04]"
       }
      ],
-     "seconds": 2.28
+     "seconds": 2.24
     },
     {
      "id": "Q2",
@@ -2774,7 +2778,7 @@
        "platzhalter": "[ADRESSE_04]"
       }
      ],
-     "seconds": 3.34
+     "seconds": 3.28
     },
     {
      "id": "Q3",
@@ -2783,7 +2787,7 @@
       5
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q4",
@@ -2849,7 +2853,7 @@
       "§ 169 Satz 1 SGB III"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.15
     },
     "D2": {
      "format": "docx",
@@ -2870,7 +2874,7 @@
       "Ömer Yalçınkaya"
      ],
      "values_missing": [],
-     "seconds": 1.19
+     "seconds": 1.2
     },
     "D3": {
      "format": "txt",
@@ -2892,7 +2896,7 @@
       "§ 174 Abs. 2 InsO"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.19
     },
     "D4": {
      "format": "txt",
@@ -2910,7 +2914,7 @@
       "vierten Arbeitnehmer"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D5": {
      "format": "scan",
@@ -2926,7 +2930,7 @@
       "614,25 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.64
+     "seconds": 1.63
     }
    },
    "tasks": [
@@ -2978,7 +2982,7 @@
        "platzhalter": "[ORGANISATION_03]"
       }
      ],
-     "seconds": 0.96
+     "seconds": 0.94
     },
     {
      "id": "Q2",
@@ -3156,7 +3160,7 @@
       "Lindqvist Bürgerdienste GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.1
     },
     "D2": {
      "format": "scan",
@@ -3171,7 +3175,7 @@
       "Lindqvist Bürgerdienste GmbH"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.49
     },
     "D3": {
      "format": "txt",
@@ -3190,7 +3194,7 @@
       "h.brakenstedt@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     "D4": {
      "format": "pdf",
@@ -3348,7 +3352,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 0.87
+     "seconds": 0.9
     },
     {
      "id": "Q3",
@@ -3461,7 +3465,7 @@
       "l.fahrenkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.08
     },
     "D4": {
      "format": "pdf",
@@ -3492,7 +3496,7 @@
       "3 O 412/25"
      ],
      "values_missing": [],
-     "seconds": 1.44
+     "seconds": 1.46
     }
    },
    "tasks": [
@@ -3537,7 +3541,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 0.68
+     "seconds": 0.7
     },
     {
      "id": "Q2",
@@ -3632,7 +3636,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 1.01
+     "seconds": 0.99
     },
     {
      "id": "Q3",
@@ -3737,7 +3741,7 @@
       "31.10.2026"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D4": {
      "format": "txt",
@@ -3755,7 +3759,7 @@
       "§ 574b Abs. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D5": {
      "format": "scan",
@@ -3893,7 +3897,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 1.14
+     "seconds": 1.15
     },
     {
      "id": "Q3",
@@ -3976,7 +3980,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.6
+     "seconds": 1.61
     },
     "D2": {
      "format": "pdf",
@@ -3995,7 +3999,7 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.11
     },
     "D3": {
      "format": "docx",
@@ -4014,7 +4018,7 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -4032,7 +4036,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     }
    },
    "tasks": [
@@ -4104,7 +4108,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 0.73
+     "seconds": 0.71
     },
     {
      "id": "Q2",
@@ -4130,7 +4134,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 0.17
+     "seconds": 0.16
     },
     {
      "id": "Q3",
@@ -4247,7 +4251,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 0.8
+     "seconds": 0.81
     },
     {
      "id": "Q4",
@@ -4256,7 +4260,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q5",
@@ -4315,7 +4319,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.63
     },
     "D2": {
      "format": "pdf",
@@ -4330,7 +4334,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.07
     },
     "D3": {
      "format": "txt",
@@ -4364,7 +4368,7 @@
       "Ingrid Pohlschmidt"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.12
     },
     "D5": {
      "format": "docx",
@@ -4469,7 +4473,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 0.23
+     "seconds": 0.22
     },
     {
      "id": "Q3",
@@ -4577,7 +4581,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.99
+     "seconds": 1.0
     },
     {
      "id": "Q4",
@@ -4654,7 +4658,7 @@
       "§ 67 Abs. 1 OWiG"
      ],
      "values_missing": [],
-     "seconds": 1.86
+     "seconds": 1.74
     },
     "D2": {
      "format": "pdf",
@@ -4670,7 +4674,7 @@
       "Jannik Brettschneider"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.09
     },
     "D3": {
      "format": "txt",
@@ -4811,7 +4815,7 @@
        "platzhalter": "[PERSON_04]"
       }
      ],
-     "seconds": 0.29
+     "seconds": 0.28
     },
     {
      "id": "Q3",
@@ -4928,7 +4932,7 @@
        "platzhalter": "[AKTENZEICHEN_01]"
       }
      ],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     {
      "id": "Q4",
@@ -4997,7 +5001,7 @@
       "Jelena Radovanović"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.13
     },
     "D2": {
      "format": "scan",
@@ -5013,7 +5017,7 @@
       "Gründen aus dem hoheitlichen Bereich"
      ],
      "values_missing": [],
-     "seconds": 1.53
+     "seconds": 1.55
     },
     "D3": {
      "format": "txt",
@@ -5067,7 +5071,7 @@
       "Generalkonsulat der Republik Valdoria"
      ],
      "values_missing": [],
-     "seconds": 1.07
+     "seconds": 1.11
     }
    },
    "tasks": [
@@ -5273,7 +5277,7 @@
        "platzhalter": "[ADRESSE_01]"
       }
      ],
-     "seconds": 1.11
+     "seconds": 1.09
     },
     {
      "id": "Q3",
@@ -5282,7 +5286,7 @@
       1
      ],
      "foreign_hits": 0,
-     "seconds": 0.03
+     "seconds": 0.02
     },
     {
      "id": "Q4",

@@ -253,7 +253,11 @@
                       {% if item.item_type == "task" %}
                         {{ icons.check(class_="icon task-type-cell__icon--task") }} Aufgabe
                       {% else %}
-                        {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }} {{ info.type_label if info and info.type_label else "Frist" }}
+                        {# §76: Label vollstaendig - Umbruch an der weichen Trennstelle statt Abschneiden ("Beendigu…" in
+                           der festen 9%-Spalte); volle Bezeichnung zusaetzlich als Tooltip #}
+                        {% set type_text = info.type_label if info and info.type_label else "Frist" %}
+                        {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }}
+                        <span class="task-type-cell__label" title="{{ type_text }}" data-type-label="{{ type_text }}">{{ info.type_label_wrapped if info and info.type_label_wrapped else type_text }}</span>
                       {% endif %}
                     </div>
                   </td>

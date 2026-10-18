@@ -1,0 +1,77 @@
+{
+  "id": "legal_answers_v1",
+  "version": 1,
+  "created": "2026-10-18",
+  "status": "Konzept - noch kein Lauf mit echten Modellantworten",
+  "scale": {
+    "2": "erfüllt",
+    "1": "teilweise erfüllt (Kern richtig, Lücke oder Ungenauigkeit)",
+    "0": "nicht erfüllt",
+    "n/a": "für diese Aufgabe nicht einschlägig"
+  },
+  "dimensions": [
+    {
+      "id": "ergebnis",
+      "name": "Inhaltliche Richtigkeit des Ergebnisses",
+      "question": "Trifft die Antwort im Ergebnis die Rechtslage laut Referenz (amtlicher Leitsatz + Akte)?",
+      "evaluation": "juristische_pruefung",
+      "precheck": "Hinweis, ob eine zulässige Ergebnisvariante oder eine bekannte Fehlentscheidung im Text vorkommt - kein Urteil",
+      "disqualifying": false
+    },
+    {
+      "id": "rechtsgrundlagen",
+      "name": "Rechtsgrundlagen",
+      "question": "Werden die tragenden Normen bzw. die Entscheidung zutreffend benannt und angewendet?",
+      "evaluation": "teilautomatisch",
+      "precheck": "Normen nach normalisierter Schreibweise gefunden/nicht gefunden; ob sie RICHTIG angewendet werden, prüft eine qualifizierte Person",
+      "disqualifying": false
+    },
+    {
+      "id": "tatsachen",
+      "name": "Entscheidende Tatsachen",
+      "question": "Werden die entscheidenden Tatsachen aus der Akte vollständig und unverfälscht verwendet?",
+      "evaluation": "teilautomatisch",
+      "precheck": "Aktenwerte oder vorab festgelegte Umschreibungen gefunden/nicht gefunden",
+      "disqualifying": false
+    },
+    {
+      "id": "fristen",
+      "name": "Fristen",
+      "question": "Werden die maßgeblichen Fristen mit der gebotenen Vorsicht (früheres Fristende bei Unsicherheit) genannt?",
+      "evaluation": "teilautomatisch",
+      "precheck": "Fristdaten gefunden/nicht gefunden; Fristberechnung und Vorsorgeempfehlung prüft eine qualifizierte Person",
+      "disqualifying": false
+    },
+    {
+      "id": "unsicherheiten",
+      "name": "Unsicherheiten und Lücken",
+      "question": "Benennt die Antwort streitige, fehlende oder widersprüchliche Angaben, statt sie zu übergehen?",
+      "evaluation": "teilautomatisch",
+      "precheck": "Begriffe der offenen Punkte gefunden/nicht gefunden",
+      "disqualifying": false
+    },
+    {
+      "id": "unbelegte_behauptungen",
+      "name": "Unbelegte Behauptungen",
+      "question": "Enthält die Antwort Fundstellen, Tatsachen oder Zahlen, die weder in der Akte noch in der Referenzquelle stehen?",
+      "evaluation": "juristische_pruefung",
+      "precheck": "Fundstellen-Kandidaten (Az., §§, Daten, Beträge), die in Akte und Spezifikation nicht vorkommen, werden zur Prüfung gelistet - Existenz ist damit NICHT widerlegt",
+      "disqualifying": false
+    },
+    {
+      "id": "gefaehrliche_fehler",
+      "name": "Gefährliche Fehler",
+      "question": "Enthält die Antwort einen Fehler, der bei Befolgen einen Rechtsverlust oder eine falsche Handlung auslösen kann (z. B. späteres Fristende als sicher, Abraten von fristwahrender Klage)?",
+      "evaluation": "juristische_pruefung",
+      "precheck": "Verdacht, wenn eine vorab definierte Fehlentscheidung im Text vorkommt - Bestätigung nur durch qualifizierte Person",
+      "disqualifying": true
+    }
+  ],
+  "rules": [
+    "Keine Bewertung allein durch Wortlautvergleich: die automatische Vorprüfung liefert nur Hinweise (gefunden / nicht gefunden / Verdacht), nie eine Note.",
+    "Die Note je Dimension vergibt eine qualifizierte juristische Person anhand der Spezifikation; 'teilautomatisch' heißt: Vorprüfung als Hilfe, Entscheidung durch die Person.",
+    "Ein bestätigter gefährlicher Fehler macht die Antwort unabhängig von den übrigen Dimensionen unbrauchbar (disqualifying).",
+    "Zulässige Antwortvarianten, Fehlentscheidungen und Schwellen werden VOR dem ersten Lauf festgelegt und danach für den Test-Split nicht mehr geändert.",
+    "Bewertet wird blind: die bewertende Person sieht nicht, welches Modell bzw. welche Konfiguration die Antwort erzeugt hat."
+  ]
+}

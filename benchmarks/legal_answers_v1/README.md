@@ -1,0 +1,117 @@
+# Juristische Ergebnisqualität echter Modellantworten (`legal_answers_v1`) – Konzept
+
+Stand 18.10.2026 (§76). **Konzept, kein Lauf.** Es wurden keine Modellantworten abgerufen, keine Cloud-Aufrufe
+ausgeführt und keine Kosten verursacht. Über die juristische Zuverlässigkeit von Lexono oder einem Modell sagt dieser
+Benchmark derzeit **nichts** aus.
+
+## Zweck und Abgrenzung
+
+`benchmarks/legal_e2e_v1` misst, ob Lexono die **Grundlage** einer richtigen Antwort liefert: Extraktion, Fristen,
+geschützte Inhalte und die Lösungsgrundlage im gesendeten Payload. Ob eine **Antwort** juristisch richtig ist, misst er
+nicht.
+
+Dieser separate Benchmark soll später echte Antworten auf dieselben Akten bewerten. Er nutzt eigene Spezifikationen
+und eine eigene Rubrik, getrennt vom Fristen- und Datenschutz-Benchmark.
+
+## Quellen und Nutzungsrechte
+
+- Grundlage sind nur die drei **quellenbasierten Fälle** aus `legal_e2e_v1` mit Referenzlösung:
+  - LE-D005: BGH VIII ZR 18/24;
+  - LE-D006: BAG 6 AZR 32/24;
+  - LE-T004: BAG 2 AZR 72/24.
+- Verwendet werden ausschließlich die im Quellenregister freigegebenen Quellen (`nutzbar`, §65):
+  - Rechtsprechung im Internet: amtliche Leitsätze, Tenor, angegebene Gründe; § 5 Abs. 1 UrhG;
+  - Gesetze im Internet: Normtexte.
+- Personen, Daten und Beträge sind synthetisch.
+- **Nicht verwendet:** OpenRewi (CC BY-SA 4.0, ShareAlike – Entscheidung des Owners offen), ZJS (© ohne Lizenz),
+  Moot Courts (Rechte ungeklärt). Fremde Falllösungen wurden nicht übernommen.
+- Jede Spezifikation nennt `source_refs` und `source_scope`. Der Validator lässt nur Quellen des Falls mit Status
+  `nutzbar` zu.
+
+## Bestandteile
+
+| Datei | Inhalt |
+|---|---|
+| `rubric.json` | sieben Dimensionen, Skala 0/1/2/n.a., Bewertungsart je Dimension, Regeln |
+| `specs/dev/LA-D005.json`, `specs/dev/LA-D006.json` | Entwicklungs-Spezifikationen |
+| `specs/test/LA-T004.json` | Test-Spezifikation, **eingefroren** (`frozen: true`) |
+| `scripts/legal_bench/answer_specs.py` | Validator, Fingerabdruck, Vorprüfung |
+| `tests/test_legal_answer_specs.py` | Regressionstests (Validator, Einfrieren, Fingerabdruck, Vorprüfung) |
+
+Eine Spezifikation legt **vor jeder späteren Auswertung** fest:
+
+- **Aufgaben:** die Analyse-Aufgaben des Falls, die bewertet werden.
+- **Kriterien** je Dimension:
+  - Ergebnis;
+  - Rechtsgrundlagen (`norm`, muss in der Referenzlösung und im Aktentext stehen);
+  - entscheidende Tatsachen (`fact`, mindestens eine Variante entspricht wörtlich einem Aktenwert);
+  - Fristen (`deadline`, muss in der Referenz stehen);
+  - Unsicherheiten (`open_point`).
+- **Zulässige Antwortvarianten** (`accept_any`): Umschreibungen und Schreibweisen, vorab festgelegt.
+- **Gefährliche Fehler** (`dangerous_errors`) mit Verdachtsformulierungen und **typische Fehlentscheidungen**
+  (`known_wrong_decisions`).
+- **Was eine qualifizierte juristische Prüfung braucht** (`requires_qualified_review`).
+
+## Bewertung: getrennte Dimensionen, keine Wortlautnote
+
+| Dimension | Frage | Bewertung |
+|---|---|---|
+| Ergebnis | Trifft die Antwort die Rechtslage laut Referenz? | **juristische Prüfung** |
+| Rechtsgrundlagen | Tragende Normen und Entscheidung benannt **und richtig angewendet**? | teilautomatisch: Vorprüfung, Note durch die Person |
+| Tatsachen | Entscheidende Tatsachen vollständig und unverfälscht? | teilautomatisch |
+| Fristen | Maßgebliche Fristen mit Vorsorge (früheres Fristende)? | teilautomatisch; Fristberechnung juristisch |
+| Unsicherheiten | Streitige, fehlende oder widersprüchliche Angaben benannt? | teilautomatisch |
+| Unbelegte Behauptungen | Fundstellen, Tatsachen oder Zahlen, die weder in Akte noch Quelle stehen? | **juristische Prüfung** (Vorprüfung listet Kandidaten) |
+| Gefährliche Fehler | Fehler, der bei Befolgen einen Rechtsverlust auslösen kann? | **juristische Prüfung**, **disqualifizierend** |
+
+Die automatische **Vorprüfung** (`precheck`) liefert nur Hinweise:
+
+- „hinweis_gefunden“ oder „nicht_gefunden“ je Kriterium;
+- „verdacht“ je gefährlichem Fehler;
+- eine Liste von Fundstellen-Kandidaten, die weder in Akte noch in Quelle stehen.
+
+Sie vergibt **keine Note und kein Urteil**. Ein Test belegt die Grenze: „Dem Mieter steht das Vorkaufsrecht **nicht**
+zu“ trifft die Ergebnisvariante und zugleich den Verdacht G1. Über das Ergebnis entscheidet deshalb immer eine
+qualifizierte Person.
+
+## Test-Split, Versionierung, Reproduzierbarkeit
+
+- **Test-Split:** LA-T004 ist eingefroren. Varianten, Fehler und Schwellen werden nach dem ersten Lauf nicht mehr
+  geändert. Abstimmung erfolgt nur an LA-D005 und LA-D006.
+- **Referenzversion:** Jede Spezifikation trägt den `case_fingerprint`, einen SHA-256 über den kanonischen JSON-Inhalt
+  des Falls. Ändert sich die Akte oder Referenz, lehnt der Validator ab („Referenz geändert“). Dann wird die
+  Spezifikation geprüft und ihre `version` erhöht. Dazu kommen `rubric_version` und `created`.
+- **Für einen späteren Lauf festzuhalten:**
+  - Modell und Modellversion;
+  - Parameter (Temperatur, max_tokens);
+  - Prompt-Version und Lexono-Commit;
+  - Payload-Hash, Zeitstempel;
+  - mehrere Wiederholungen je Aufgabe;
+  - Rohantworten unverändert und lokal abgelegt;
+  - Bewertungsbögen mit Person, Datum und Rubrik-Version.
+- **Voraussetzungen für einen Lauf (offen, Owner):**
+  - ausdrückliche Freigabe und Kostenrahmen;
+  - Versand nur pseudonymisiert über den regulären Datenschutzpfad (keine Abschwächung von Leak-Checks und
+    Fail-Closed);
+  - keine echten Mandantendaten;
+  - mindestens eine qualifizierte juristische Person für die Bewertung, bei kritischen Dimensionen besser zwei
+    (Übereinstimmung dokumentieren);
+  - blinde Bewertung ohne Kenntnis des Modells.
+
+Aufruf:
+
+```
+python -m scripts.legal_bench.answer_specs                # Spezifikationen validieren
+python -m scripts.legal_bench.answer_specs --fingerprints  # Fingerabdrücke der Fälle ausgeben
+python -m pytest tests/test_legal_answer_specs.py
+```
+
+## Grenzen der Aussagekraft
+
+- **Umfang:** Nur drei Fälle (2 dev, 1 test). Das ist keine statistische Aussage über Modelle oder Rechtsgebiete.
+- **Herkunft:** Rechtsfrage und Ergebnis stammen aus amtlichen Leitsätzen. Die Akten sind synthetisch und kürzer und
+  eindeutiger als reale Akten. Reale Kanzleitexte: **NICHT VERIFIZIERT**.
+- **Abhängigkeit:** Die Bewertung hängt von qualifizierten Personen ab; die Vorprüfung ist nur eine Hilfe.
+- **Freigabe:** Die Spezifikationen haben den Status `entwurf_juristische_freigabe_offen`. Varianten, Fehler und
+  Fehlentscheidungen sind von einer qualifizierten juristischen Person zu prüfen und freizugeben, bevor ein Lauf
+  stattfindet.

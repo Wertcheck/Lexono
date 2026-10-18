@@ -1,0 +1,42 @@
+{
+  "id": "LA-D006",
+  "case": "LE-D006",
+  "split": "dev",
+  "version": 1,
+  "created": "2026-10-18",
+  "status": "entwurf_juristische_freigabe_offen",
+  "rubric_version": 1,
+  "case_fingerprint": "99d64c0c2229676562767f9c64da6da55a6cb4ad0d55f72d4432cf2ba3a8ddcc",
+  "tasks": ["Q1", "Q2"],
+  "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
+  "source_scope": "BAG 6 AZR 32/24, amtliche Leitsätze 1 und 2, Gründe zur Anmeldung als Sachurteilsvoraussetzung; Wortlaut § 174 InsO. Keine Literatur, keine fremden Falllösungen.",
+  "criteria": [
+    {"id": "K1", "dimension": "ergebnis", "statement": "Die Anmeldung vom 12.01.2026 war ohne Einzelangaben nicht ordnungsgemäß; die fehlende Unterschrift schadet nicht.",
+     "accept_any": [["nicht ordnungsgemäß"], ["nicht ordnungsgemäss"], ["nicht hinreichend"]], "evaluation": "juristische_pruefung"},
+    {"id": "K2", "dimension": "ergebnis", "statement": "Fehlende Unterschrift unschädlich (§ 130 Nr. 6 ZPO nicht anwendbar)",
+     "accept_any": [["Unterschrift", "schadet nicht"], ["Unterschrift", "nicht erforderlich"], ["Unterschrift", "unschädlich"]],
+     "evaluation": "juristische_pruefung"},
+    {"id": "K3", "dimension": "rechtsgrundlagen", "statement": "§ 174 Abs. 2 InsO (Angabe von Grund und Betrag)",
+     "norm": "§ 174", "accept_any": [["§ 174"], ["§174"], ["174 InsO"]], "evaluation": "teilautomatisch"},
+    {"id": "K4", "dimension": "rechtsgrundlagen", "statement": "§ 130 Nr. 6 ZPO nicht anwendbar",
+     "norm": "§ 130", "accept_any": [["§ 130"], ["§130"], ["130 ZPO"]], "evaluation": "teilautomatisch"},
+    {"id": "K5", "dimension": "tatsachen", "statement": "Anmeldung vom 12.01.2026 mit Gesamtbetrag ohne Einzelangaben",
+     "fact": "F1", "accept_any": [["12.01.2026"], ["32.112,00 EUR"]], "evaluation": "teilautomatisch"},
+    {"id": "K6", "dimension": "tatsachen", "statement": "Nachgereichte Aufstellung (Eingang 06.02.2026) über 31.497,75 EUR",
+     "fact": "F5", "accept_any": [["31.497,75 EUR"], ["31.497,75"]], "evaluation": "teilautomatisch"},
+    {"id": "K7", "dimension": "fristen", "statement": "Stellungnahme an die Agentur bis 17.02.2026",
+     "deadline": "17.02.2026", "accept_any": [["17.02.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K8", "dimension": "unsicherheiten", "statement": "Differenz von 614,25 EUR ungeklärt; Unterlagen zum vierten Arbeitnehmer fehlen",
+     "open_point": "O1", "accept_any": [["614,25"], ["Differenz"], ["vierten Arbeitnehmer"]], "evaluation": "teilautomatisch"}
+  ],
+  "dangerous_errors": [
+    {"id": "G1", "statement": "Anmeldung wegen fehlender Unterschrift für unwirksam gehalten", "suspect_any": [["Unterschrift ist zwingend"], ["wegen der fehlenden Unterschrift unwirksam"]]},
+    {"id": "G2", "statement": "Anmeldung vom 12.01.2026 als ordnungsgemäß bewertet", "suspect_any": [["Anmeldung vom 12.01.2026 ist ordnungsgemäß"], ["Anmeldung war ordnungsgemäß"]]}
+  ],
+  "known_wrong_decisions": [
+    "Ordnungsgemäßheit allein wegen des Gesamtbetrags bejaht",
+    "Unterschrift als Wirksamkeitsvoraussetzung behandelt",
+    "Differenz von 614,25 EUR ungeprüft übernommen"
+  ],
+  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen"]
+}

@@ -95,7 +95,7 @@ _EXPLICIT_DEADLINE_BEFORE = re.compile(
     r"|\bzahlungsziel\s*:?|\bwiedervorlage\s*:?|\bfristablauf\s*:?|\bablauf\s+(?:am|zum)|\balso\s+am|\bendet\s+am"
     # §72 (LE-D007, Befund LE-T004): "vorsorglich Fristende 05.02.2026, spätestens 06.02.2026" - "Fristende" OHNE
     # Doppelpunkt unmittelbar vor dem Datum ist ebenso ausdruecklich; vorher wurde nur das spaetere Datum erkannt
-    r"|\b\w*fristende(?:\s+vorsorglich)?\s*:?"
+    r"|\b\w*fristende(?:\s+vorsorglich|\s+(?:je\s+nach|bei)\s+[A-Za-zÄÖÜäöüß]+)?\s*:?"
     # §74: mehrteilige Feldbezeichnung ("Frist für Stellungnahme: 20.03.2026", "Frist zur Klageerhebung: ...") - vorher
     # nur ein Wort vor dem Doppelpunkt, die echte Frist ging verloren
     r"|\b\w*frist\w*\s+(?:für|fuer|zur|zum|zu|der|des)(?:\s+[A-Za-zÄÖÜäöüß-]+){1,4}\s*:"
@@ -107,14 +107,26 @@ _EXPLICIT_DEADLINE_BEFORE = re.compile(
 _PRECAUTIONARY_BEFORE = re.compile(r"\bvorsorglich\w*\b[^\d;]{0,25}$", re.IGNORECASE)
 _LATEST_BEFORE = re.compile(r"\b(?:spätestens|spaetestens|äußerstenfalls|aeusserstenfalls)\b[^\d;]{0,15}$", re.IGNORECASE)
 # §75: konkurrierende Fristenden nur bei einem Alternativsignal und ohne anderen Gegenstand zwischen den Daten
+# §76: ergaenzt um "alternativ", "im Fall(e) ...", "je nach ...", "falls/sofern ..." - weiterhin NUR zusammen mit der
+# Kontextbedingung (kein anderer Gegenstand zwischen den Daten), ein Signalwort allein genuegt nie
 _ALTERNATIVE_SIGNAL = re.compile(
     r"\b(?:vorsorglich\w*|spätestens|spaetestens|äußerstenfalls|aeusserstenfalls|hilfsweise|andernfalls|ansonsten|sonst|"
-    r"oder|liefe|bei\s+(?:Zugang|Zustellung|Bekanntgabe))\b", re.IGNORECASE)
+    r"oder|bzw|beziehungsweise|liefe|alternativ\w*|im\s+falle?\b|je\s+nach|falls|sofern|"
+    r"bei\s+(?:Zugang|Zustellung|Bekanntgabe))\b", re.IGNORECASE)
 _PARENTHESES = re.compile(r"\([^()]*\)")
 _CAPITALISED_WORD = re.compile(r"\b[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜa-zäöüß]+)*\b")
+# §76: Datum als ALTERNATIVE zu einem unmittelbar davor genannten Fristende ("Fristende 05.03.2026 oder 06.03.2026",
+# "..., alternativ (bei Zugang am ...) 06.03.2026") - nur wenn das vorige Datum selbst ein Fristende ist
+_ALTERNATIVE_DATE_BEFORE = re.compile(
+    r"(?P<prev>\b\d{1,2}\.\d{1,2}\.\d{2,4})\s*(?:\([^()]*\)\s*)?[,;]?\s*"
+    r"(?:oder|bzw\.?|beziehungsweise|alternativ\w*|hilfsweise|sonst|andernfalls)\s*,?\s*(?:\([^()]*\)\s*)?,?\s*$",
+    re.IGNORECASE)
 _DEADLINE_VOCABULARY = frozenset({
     "frist", "fristen", "fristende", "fristablauf", "ablauf", "ende", "zugang", "zustellung", "bekanntgabe",
     "spätestens", "vorsorglich", "hilfsweise", "andernfalls", "ansonsten", "sonst",
+    # §76: Woerter der Alternativformeln selbst ("Alternativ ...", "im Fall eines späteren Zugangs ...") und ihre
+    # Genitivformen - KEIN Gegenstand einer anderen Frist
+    "alternativ", "alternative", "fall", "falle", "zugangs", "zustellungs", "zugangsdatum", "zustelldatum",
 })
 # "zum <Datum>" ist nur mit Beendigungs-/Ablaufbezug im Satz ein Fristende ("kuendigen ... ordentlich zum 30.06.2026")
 _ZUM_BEFORE = re.compile(r"\bzum\s*$", re.IGNORECASE)
@@ -618,6 +630,9 @@ class PlaceholderDeadlineExtractor:
                 # §73: "Das Fristende ist offen, die Kündigung ging am ..." - offene Angabe, kein Fristende
                 and not _UNDETERMINED_AFTER_WORD.match(before[word.end():])):
             return "frist", word.group(0)
+        alternative = self._alternative_to_deadline(text, match, left, before)
+        if alternative:
+            return "frist", alternative  # §76: Alternative zu einem davor genannten Fristende
         appointment = _APPOINTMENT_BEFORE.search(before)
         if appointment and not _ANY_DATE.search(appointment.group(0)) and not _PAST_REFERENCE_BEFORE.search(before):
             return "termin", appointment.group(0).strip()
@@ -653,6 +668,18 @@ class PlaceholderDeadlineExtractor:
         if _TABLE_HEADER_APPOINTMENT.search(cells[column]):
             return "termin", f"Tabellenspalte '{cells[column]}'"
         return None
+
+    def _alternative_to_deadline(self, text: str, match: re.Match, left: int, before: str) -> str | None:
+        """§76: "<Fristende> oder/alternativ/hilfsweise <Datum>" - das Datum ist eine Alternative, wenn das unmittelbar
+        davor genannte Datum selbst als Fristende eingeordnet wird (ein Fristbeginn oder blosses Datum davor: nein)."""
+        hit = _ALTERNATIVE_DATE_BEFORE.search(before)
+        if not hit:
+            return None
+        prev = _NUMERIC_DATE_PATTERN.match(text, left + hit.start("prev"))
+        if prev is None or prev.end() > match.start():
+            return None
+        role, _hint = self._role(text, prev)
+        return f"Alternative zu {prev.group(0).strip()}" if role == "frist" else None
 
     @staticmethod
     def _termination_cue(before: str, after: str) -> str | None:

@@ -6090,6 +6090,19 @@ body::-webkit-scrollbar-thumb:hover,
   color: var(--accent-blue);
 }
 
+/* §76: das Typ-Label darf in der festen 9%-Spalte umbrechen (weiche Trennstelle "Beendigungs-termin") statt durch
+   `.tasks-table td{overflow:hidden}` abgeschnitten zu werden - Spaltenbreiten und Layout bleiben unveraendert. */
+.task-type-cell__label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  hyphens: manual;
+  line-height: 1.25;
+}
+
+.task-type-cell .icon {
+  flex: 0 0 auto;
+}
+
 .task-type-cell__icon--deadline {
   color: var(--wax-red);
 }
