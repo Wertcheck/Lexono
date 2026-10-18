@@ -106,6 +106,16 @@ _EXPLICIT_DEADLINE_BEFORE = re.compile(
 # entschieden: welches Fristende maßgeblich ist, haengt von ungeklaerten Voraussetzungen ab (z. B. streitiger Zugang)
 _PRECAUTIONARY_BEFORE = re.compile(r"\bvorsorglich\w*\b[^\d;]{0,25}$", re.IGNORECASE)
 _LATEST_BEFORE = re.compile(r"\b(?:spätestens|spaetestens|äußerstenfalls|aeusserstenfalls)\b[^\d;]{0,15}$", re.IGNORECASE)
+# §75: konkurrierende Fristenden nur bei einem Alternativsignal und ohne anderen Gegenstand zwischen den Daten
+_ALTERNATIVE_SIGNAL = re.compile(
+    r"\b(?:vorsorglich\w*|spätestens|spaetestens|äußerstenfalls|aeusserstenfalls|hilfsweise|andernfalls|ansonsten|sonst|"
+    r"oder|liefe|bei\s+(?:Zugang|Zustellung|Bekanntgabe))\b", re.IGNORECASE)
+_PARENTHESES = re.compile(r"\([^()]*\)")
+_CAPITALISED_WORD = re.compile(r"\b[A-ZÄÖÜ][a-zäöüß]+(?:-[A-ZÄÖÜa-zäöüß]+)*\b")
+_DEADLINE_VOCABULARY = frozenset({
+    "frist", "fristen", "fristende", "fristablauf", "ablauf", "ende", "zugang", "zustellung", "bekanntgabe",
+    "spätestens", "vorsorglich", "hilfsweise", "andernfalls", "ansonsten", "sonst",
+})
 # "zum <Datum>" ist nur mit Beendigungs-/Ablaufbezug im Satz ein Fristende ("kuendigen ... ordentlich zum 30.06.2026")
 _ZUM_BEFORE = re.compile(r"\bzum\s*$", re.IGNORECASE)
 _TERMINATION_WORDS = re.compile(r"kündig|kuendig|beend|aufheb|ausscheid|wirksam\b|\bendet\b|ablauf|\w*frist", re.IGNORECASE)
@@ -422,7 +432,7 @@ class PlaceholderDeadlineExtractor:
         dated_deadline_sentences: set[tuple[int, int]] = set()
         # §72: Fristenden je Satz (Index in `results`, Datum, Bedeutung) - mehrere im selben Satz werden einzeln
         # vorgeschlagen und gegenseitig benannt, nie zusammengefuehrt
-        deadlines_by_sentence: dict[tuple[int, int], list[tuple[int, date, str]]] = {}
+        deadlines_by_sentence: dict[tuple[int, int], list[tuple[int, date, str, int, int]]] = {}
         for match in _NUMERIC_DATE_PATTERN.finditer(text):
             if is_personal(match):
                 continue  # Geburts-/Todesdatum ist keine Frist
@@ -438,8 +448,9 @@ class PlaceholderDeadlineExtractor:
                     dated_deadline_sentences.add(sentence)
                     if result.due_date is not None and "Art: Frist -" in result.reasoning:  # nur Fristenden, kein Fristbeginn
                         deadlines_by_sentence.setdefault(sentence, []).append(
-                            (len(results) - 1, parsed, self._qualifier(text, sentence[0], match.start())))
-        self._mark_alternative_deadlines(results, deadlines_by_sentence)
+                            (len(results) - 1, parsed, self._qualifier(text, sentence[0], match.start()),
+                             match.start(), match.end()))
+        self._mark_alternative_deadlines(text, results, deadlines_by_sentence)
 
         for match in _MONTH_NAME_PATTERN.finditer(text):
             if match.span() in seen_spans or is_personal(match):
@@ -476,17 +487,38 @@ class PlaceholderDeadlineExtractor:
         return ""
 
     @staticmethod
+    def _competing(text: str, sentence_start: int, first: tuple, second: tuple) -> bool:
+        """§75: zwei Fristenden eines Satzes konkurrieren nur, wenn der Text sie als ALTERNATIVEN derselben Frist nennt
+        (Signal "vorsorglich", "spätestens", "hilfsweise", "oder", "bei Zugang ... liefe ..." vor bzw. zwischen
+        ihnen) und zwischen ihnen kein ANDERER Gegenstand steht ("... und Zahlung bis ...", "Räumung spätestens am")."""
+        between = _PARENTHESES.sub(" ", text[first[4]:second[3]])
+        before_first = text[sentence_start:first[3]]
+        if not (_ALTERNATIVE_SIGNAL.search(between) or _PRECAUTIONARY_BEFORE.search(before_first)
+                or _ALTERNATIVE_SIGNAL.search(before_first[-40:])):
+            return False
+        return not any(word.lower() not in _DEADLINE_VOCABULARY for word in _CAPITALISED_WORD.findall(between))
+
+    @staticmethod
     def _mark_alternative_deadlines(
-        results: list[ExtractedDeadline], by_sentence: dict[tuple[int, int], list[tuple[int, date, str]]]
+        text: str, results: list[ExtractedDeadline],
+        by_sentence: dict[tuple[int, int], list[tuple[int, date, str, int, int]]],
     ) -> None:
-        """Mehrere verschiedene Fristenden in EINEM Satz (z. B. vorsorglich/spätestens bei streitigem Zugang): jeder
-        Vorschlag bleibt eigenständig und nennt die anderen, mit seiner Stellung (früher/später) und Bedeutung laut Text.
-        Keine Auswahl, keine Zusammenführung - welches Datum maßgeblich ist, ist anwaltlich zu prüfen."""
-        for entries in by_sentence.values():
-            dates = sorted({entry[1] for entry in entries})
-            if len(dates) < 2:
-                continue
-            for index, due, qualifier in entries:
+        """Konkurrierende Fristenden in EINEM Satz (z. B. vorsorglich/spätestens bei streitigem Zugang): jeder
+        Vorschlag bleibt eigenständig und nennt die konkurrierenden, mit seiner Stellung (früher/später) und Bedeutung
+        laut Text. Keine Auswahl, keine Zusammenführung - welches Datum maßgeblich ist, ist anwaltlich zu prüfen.
+        §75: verschiedene Fristen im selben Satz ("Stellungnahme bis ..., Zahlung bis ...") erhalten den Hinweis nicht."""
+        for (sentence_start, _end), entries in by_sentence.items():
+            ordered = sorted(entries, key=lambda entry: entry[3])
+            rivals: dict[int, set[date]] = {}
+            for i, first in enumerate(ordered):
+                for second in ordered[i + 1:]:
+                    if first[1] != second[1] and PlaceholderDeadlineExtractor._competing(text, sentence_start, first, second):
+                        rivals.setdefault(first[0], set()).add(second[1])
+                        rivals.setdefault(second[0], set()).add(first[1])
+            for index, due, qualifier, _start, _stop in entries:
+                if index not in rivals:
+                    continue
+                dates = sorted(rivals[index] | {due})
                 position = "früheste" if due == dates[0] else "späteste" if due == dates[-1] else "mittlere"
                 others = ", ".join(d.strftime("%d.%m.%Y") for d in dates if d != due)
                 meaning = f" ({qualifier})" if qualifier else ""

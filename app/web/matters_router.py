@@ -542,6 +542,8 @@ def matter_detail_page(
         "deleted_documents_count": deleted_documents_count,
         "show_deleted": show_deleted,
         "deadlines": deadlines,
+        # §75: Art je Vorschlag (app/deadlines/review.py, reine Darstellung) - nur KI-Vorschlaege, manuelle Eintraege ohne
+        "deadline_kind_labels": {d.id: kind_label(d) for d in deadlines if d.document_id or d.message_id},
         "tasks": tasks,
         "messages": messages,
         "conversations": conversations,

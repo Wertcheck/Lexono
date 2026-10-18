@@ -291,6 +291,8 @@
                   <span class="message-row__time">{{ deadline.due_date.strftime("%d.%m.%Y") if deadline.due_date else "–" }}</span>
                 </div>
                 {{ labels.deadline_status_tag(deadline.review_status) }}
+                {# §75: Art je Vorschlag (wie in der Dokumentansicht) - ein Beendigungstermin steht nicht unkommentiert unter den Fristen #}
+                {% if deadline_kind_labels and deadline_kind_labels.get(deadline.id) %}<span class="form-hint">{{ deadline_kind_labels[deadline.id] }}</span>{% endif %}
               </li>
             {% endfor %}
           </ul>

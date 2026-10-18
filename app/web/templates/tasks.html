@@ -456,7 +456,8 @@
               <span class="task-detail-panel__field-label">Typ</span>
               <span class="task-detail-panel__field-value">{{ "Aufgabe" if item.item_type == "task" else (item.review.type_label if item.review and item.review.type_label else "Frist") }}</span>
 
-              <span class="task-detail-panel__field-label">Fällig am</span>
+              {# §75: beim Beendigungstermin ist das Datum der Beendigungszeitpunkt laut Text, keine Faelligkeit #}
+              <span class="task-detail-panel__field-label">{{ "Beendigung zum" if item.review and item.review.type_label == "Beendigungstermin" else "Fällig am" }}</span>
               <span class="task-detail-panel__field-value">
                 {% if item.due_date %}{{ item.due_date.strftime("%d.%m.%Y") }} ({{ item.due_text }}){% else %}–{% endif %}
               </span>
@@ -849,7 +850,7 @@
               <input type="text" name="source_text" value="{{ item.title }}" required autofocus />
             </label>
             <label class="form-label">
-              Fällig am
+              {{ "Beendigung zum" if item.review and item.review.type_label == "Beendigungstermin" else "Fällig am" }}
               <input type="date" name="due_date" value="{{ item.due_date.isoformat() if item.due_date else '' }}" />
             </label>
             <label class="form-label">
