@@ -154,6 +154,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Offen:** Frist „Fristende <Datum>“ ohne Doppelpunkt (über einen Dev-Fall beheben); Übermaskierung
   „Visa-Anträge“; Fehlvorschläge bei Vermerkdaten; echte Modellantworten (Owner-Freigabe nötig).
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §71.
+  **Fortschritt 18.10.2026 (§72):** Behoben und in der installierten App geprüft (Build `0303e0e`, WebView2,
+  Loopback): „Fristende <Datum>“ ohne Doppelpunkt (LE-T004 2/2, beide Fristenden getrennt mit Hinweis);
+  Übermaskierung „Visa-Anträge“ (Lösungsgrundlage test 2/2); Statusleiste nennt den tatsächlichen Weg.
+  0 Lecks. Neuer Dev-Fall LE-D007.
+  **Offen:** Vermerkdaten als Fristvorschlag; direkter Weg in der App NICHT VERIFIZIERT; echte Modellantworten.
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §72.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.

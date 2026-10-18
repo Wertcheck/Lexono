@@ -8761,3 +8761,190 @@ Die App-Ergebnisse stimmen mit dem Repository überein.
 
 **Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
 Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §72 Fristenden ohne Doppelpunkt, Verwaltungs-Komposita, KI-Status mit tatsächlichem Weg (18.10.2026, Branch `feature/feedback-diagnose`, Code `0303e0e`)
+
+Ziel: die drei Befunde aus §71 beheben und in der installierten App prüfen. Bestehende Datenschutzgarantien und
+Benchmark-Ergebnisse sollen erhalten bleiben. Es gilt die Benchmark-Regel, dass ein Testfall nicht zur Regelabstimmung
+dient. Beide Erkennungsbefunde wurden deshalb zuerst an einem neuen Entwicklungsfall nachgestellt: **LE-D007**,
+synthetisch, mit eigenen Formulierungen.
+
+### 72.1 P1 – Fristende ohne Doppelpunkt
+
+**Ursache:** In `app/deadlines/extractor.py` zählte „Fristende“ nur mit Doppelpunkt unmittelbar vor dem Datum als
+ausdrückliches Fristende (`\w*frist\w*\s*:`). Ohne Doppelpunkt griff nur die Regel „Fristwort + am/bis/zum“. Bei
+„vorsorglich Fristende 05.02.2026, spätestens 06.02.2026“ trug deshalb nur „spätestens“. Das frühere, vorsorgliche
+Fristende ging verloren, also gerade das sichere.
+
+**Änderung:**
+
+- „Fristende“, auch „Klagefristende“ oder „Fristende vorsorglich“, unmittelbar vor dem Datum zählt jetzt als
+  ausdrückliches Fristende.
+- Nennt ein Satz mehrere Fristenden, bleiben sie **getrennte** Vorschläge. Jeder Vorschlag nennt:
+  - seine Stellung (das früheste / das späteste);
+  - seine Bedeutung laut Text (vorsorglich / spätestens);
+  - die anderen Daten;
+  - den Hinweis, dass nicht entschieden ist, welches maßgeblich ist („NICHT entschieden – anwaltliche Prüfung
+    erforderlich“).
+- Nichts wird zusammengeführt, und kein Datum ersetzt ein anderes.
+- Ein Fristbeginn im selben Satz (Zugang) zählt nicht als Alternative.
+- Konfidenz (0,5) und Prüfstatus „ungeprüft“ bleiben unverändert.
+
+**Tests:** `tests/test_s72_deadline_alternatives.py` mit 15 Tests:
+
+- mit und ohne Doppelpunkt;
+- umgekehrte Reihenfolge;
+- einzelnes Fristende ohne Alternativvermerk;
+- negative Fälle: Fristende in anderem Satz, Ereignisdatum, „Fristendet“, kein Fristwort direkt vor dem Datum;
+- zwei Sätze;
+- Fristbeginn.
+
+Die 261 bestehenden Fristentests: PASS.
+
+**Grenze, bestand schon vorher:** Ein Datum hinter „vom“, gefolgt von einem Fristwort („Vermerk vom 17.02.2026 …
+Klagefrist:“, „Das Fristende ist offen, … am 12.02.2026“), wird weiterhin als Frist vorgeschlagen. Daher stammen die
+Vermerkdaten aus §71 (10.03.2026, 21.01.2026). §72 ändert daran nichts. Die Vorschläge sind „ungeprüft“.
+
+### 72.2 P2 – „Visa-Anträge“ als Organisation
+
+**Ursache:** Das spaCy-Modell (`de_core_news_lg`) stuft Bindestrich-Komposita aus Verwaltungsgegenstand und
+Verfahrensnomen je nach Satz als Organisation ein („Visa-Anträge“, „Steuer-Bescheide“). Die zusammengeschriebene Form
+(„Visaanträge“) gilt sogar als Person. „Visa“ ist zugleich ein Firmenname. Die bestehende Kompositum-Regel
+(`is_common_compound`) griff nicht: Sie prüft nur rein alphabetische Wörter, scheitert also am Bindestrich, und ihr
+Kopfnomen ist nur „antrag“, nicht „anträge“. Die Namensprobe trennt hier nicht: „Visa-Anträge“ ergibt 0,
+„Asyl-Anträge“ ergibt 4.
+
+**Änderung:** `is_admin_procedure_compound` in `app/privacy/presidio_ner.py` verlangt **beide** Teile aus geschlossenen
+Klassen:
+
+- Gegenstände behördlicher Verfahren (Visa, Pass, Asyl, Bau, Steuer, Renten …);
+- Verfahrens- und Dokumentnomen (Antrag/Anträge, Bescheid(e), Verfahren, Akte …).
+
+Die Regel gilt nur für Einwort-Treffer der Kategorien Person und Organisation. Sie wirkt auch in der Zweitsignal- und
+Rückfrageerkennung (`is_technical_compound`). Nichts wird pauschal gelockert. Weiterhin maskiert bleiben:
+
+- „Siemens-Anträge“ und „Müller-Anträge“, weil der Vorderteil nicht in der Klasse steht;
+- „Visa-Anträge GmbH“ und „Visa Europe“ als Mehrworttreffer;
+- „Herr Visa“ wegen der Anrede;
+- „Ostermann-Holtkamp (Personalservice GmbH)“;
+- bekannte Beteiligte über die Abgleichsliste, z. B. „Visa-Anträge Service GmbH“.
+
+**Tests:** `tests/test_s72_admin_procedure_compounds.py` mit 33 Tests:
+
+- die Klassen und ihre Gegenbeispiele;
+- F8 und ähnliche Begriffe im Gateway-Payload lesbar;
+- echte Organisations- und Personennamen im Payload maskiert.
+
+### 72.3 P3 – „Cloud-KI (Gateway) Bereit“
+
+**Ursache:** In `app/web/templates/base.html` war das Label „Cloud-KI (Gateway)“ fest verdrahtet. Der Zustand selbst
+war schon korrekt getrennt: Konfiguration, TCP/TLS-Erreichbarkeit ohne API-Aufruf und letzte Anfrage
+(`cloud_health.py`). In der QA ging die Verbindung direkt an einen lokalen Prüfendpunkt. Zusätzlich galt eine
+Gateway-URL **ohne Zugangsdaten** als prüfbar und damit als „Bereit“, obwohl die Factory dann keinen Provider baut und
+nicht auf den direkten Weg ausweicht.
+
+**Änderung:**
+
+- `cloud_health.cloud_route` bestimmt den Weg mit derselben Regel wie `factory.build_writing_provider`: Gateway (URL
+  und Zugangsdaten), direkt zur offiziellen Adresse oder lokaler QA-Prüfendpunkt.
+- `CloudHealth.route` trägt den Weg. Die Statusleiste zeigt „Cloud-KI (Gateway)“, „Cloud-KI (direkt)“ oder
+  „Cloud-KI (lokaler Prüfendpunkt)“, der Tooltip nennt den Weg. Ohne Statusprüfung erscheint neutral „Cloud-KI“.
+- Die Erreichbarkeit steht weiterhin getrennt daneben; der Weg ist Konfiguration, kein Erreichbarkeitsnachweis.
+- Eine Gateway-URL ohne Zugangsdaten meldet „nicht konfiguriert“.
+- Die lokale KI bleibt eine eigene Zeile.
+- Keine Schlüssel-, Gateway- oder Architekturänderung, keine API-Anfrage.
+
+**Tests:**
+
+- `tests/test_cloud_health.py`: 6 neue Tests (Gateway mit/ohne Zugangsdaten, direkt, Prüfendpunkt, Weg bei
+  Nichterreichbarkeit, unzulässige Adresse).
+- `tests/test_web_chat.py`: Weg-Label, 3 Fälle.
+- 3 bestehende Tests prüften das feste Label, also den Befund selbst. Sie wurden angepasst; ihr Zweck bleibt erhalten.
+
+### 72.4 Repository-QA und Benchmark-Vergleich mit §71
+
+Die volle Suite lief in sechs Teilen im Vordergrund; der erste Gesamtlauf wurde vom System wegen Speichermangels
+beendet. Ergebnis: **5494 PASS**, 4 FAIL. Die Fehlschläge sind die bekannten fremden Logo-Tests (`test_design_refresh`:
+Logo-Dateien fehlen in der Arbeitskopie), kein neuer Fehler. Der eine XPASS (`Richter`) trat schon vorher auf.
+
+Benchmark `python -m scripts.legal_bench.e2e`, `results.json`:
+
+| Messung | §71 dev (6) | §72 dev (7, + LE-D007) | §71 test (4) | §72 test (4) |
+|---|---|---|---|---|
+| kritische Befunde | 0 | 0 | 0 | 0 |
+| Lecks / Werte fremder Akten | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Extraktion | 192/192 | 221/221 | 110/110 | 110/110 |
+| keep-Werte erhalten | 38/38 | 44/44 | 25/25 | 25/25 |
+| Chronologie | 35/35 | 40/40 | 22/22 | 22/22 |
+| Fristdatum-Recall | 13/13 | 16/16 | 4/5 | **5/5** |
+| Fristen nicht in der Referenz | 2 | 3 (LE-D007: Kündigungstermin 31.05.2026) | 2 | 2 |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 0/2 | **2/2** |
+| erfundene Fundstellen markiert | 12/12 | 14/14 | 8/8 | 8/8 |
+
+Weitere Proben unverändert:
+
+- Freigabe-Probe: auffälliges Dokument nicht im Payload;
+- Aktenzuordnung: keine Fremdzuordnung;
+- fremder Chat-Anhang: blockiert.
+
+LE-D007 vorher und nachher:
+
+- Fristen 2/3 → 3/3;
+- keep 5/6 → 6/6 („Steuer-Bescheide versandt“ war vorher maskiert).
+
+### 72.5 Installierte App (WebView2)
+
+**Build und Installation:**
+
+- Build aus `0303e0e` im sauberen Build-Worktree. Die drei geänderten Funktionen sind im Build enthalten und
+  bytecode-gleich mit `0303e0e`.
+- Vorher gesichert: `C:\Users\Bonit\lexono_install_backup_vor_0303e0e` (956/956 Dateien). Vorheriger Installer
+  archiviert als `Lexono_Setup_fc9d3f4.exe`.
+- Stilles Update, Installer-Exit 0. Die installierte `Lexono.exe` ist byte-identisch mit dem Build (SHA-256
+  `07ee1a649bb602b24d9fc2f962479cf2b55ee48d673d93ca578d9b078ad67bcd`).
+- Die echte Kanzleidatenbank wurde nicht gestartet oder verändert: MD5-Präfix `677CAFD8109F` vor und nach
+  Installation und Tests.
+
+**Methode wie §71:**
+
+- isolierte QA-Daten, OCR an;
+- alles über die Oberfläche: Mandant, Akte, Beteiligte, Upload, Freigabe, Chat, Schriftsatz;
+- Anfragen nur an einen lokalen Aufzeichnungsserver mit Testschlüssel;
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s72_legal_benchmark\`.
+
+| | LE-D005 | LE-D006 | LE-D007 | LE-T004 |
+|---|---|---|---|---|
+| Extraktion / Chronologie | 34/34 / 7/7 | 37/37 / 5/5 | 29/29 / 5/5 | 28/28 / 6/6 |
+| Fristen (alle „ungeprüft“) | 2/2 | 2/2 | 3/3 | **2/2** (§71: 1/2) |
+| Hinweis „mehrere mögliche Fristenden“ in der Fristdetailansicht | 28.04. früheste, 04.05. späteste | – (verschiedene Sätze) | 05.03. früheste, 06.03. späteste | 05.02. früheste, 06.02. späteste |
+| Lecks / fremde Akte (Chat, Schriftsatz) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig | vollständig | – (kein Lösungsblock) | **vollständig** (§71: F8 fehlte) |
+| Statusleiste | „Cloud-KI (lokaler Prüfendpunkt)“ Bereit | ebenso | ebenso | ebenso |
+
+**P2 im tatsächlichen Payload:**
+
+- LE-T004: „… [BETEILIGTER_01] kann bestätigen, dass ich nur Visa-Anträge erfasst habe. Telefon [TELE…“;
+- LE-D007: „Steuer-Bescheide versandt“;
+- „Generalkonsulat“, „Valdoria“, „Kostadinova“, „Lindqvist“, „Brakenstedt“ und „Ostermann/Holtkamp“ kommen in keinem
+  Payload vor.
+
+**P3, Gateway-Weg:** eigener App-Start ohne jede Anfrage, mit Gateway-URL auf einen toten lokalen Port und
+Dummy-Zugangsdaten nur in der Prozessumgebung. Angezeigt wurde „Cloud-KI (Gateway)“, „nicht erreichbar“, Tooltip
+„Verbindung abgelehnt – Weg: Lexono-Gateway“. Die lokale KI zeigt „deaktiviert“.
+
+### 72.6 Nicht verifiziert und offen
+
+- **Direkter Weg in der App: NICHT VERIFIZIERT.** Die Erreichbarkeitsprüfung würde eine echte Verbindung zu
+  api.anthropic.com aufbauen. Der Weg ist bewusst nicht in der App getestet, nur im Repository
+  (`test_direct_route_to_the_official_address`).
+- **Echter Gateway-Server: NICHT VERIFIZIERT** (kein Server, §70).
+- Juristische Korrektheit echter Modellantworten: NICHT VERIFIZIERT. Es gab keine Modellaufrufe; der
+  Aufzeichnungsserver liefert eine feste Antwort.
+- Die Klassen in P2 sind geschlossen. Andere Verwaltungsbegriffe außerhalb der Klassen können weiter übermaskiert
+  werden. Das ist fail-closed, aber unverständlich.
+- Vermerkdaten als Fristvorschlag bestanden schon vorher, siehe 72.1.
+- Das längere Label „Cloud-KI (lokaler Prüfendpunkt)“ bricht in der Seitenleiste zweizeilig um. Es tritt nur in der
+  QA auf.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
