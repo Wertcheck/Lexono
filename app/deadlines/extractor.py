@@ -143,6 +143,27 @@ _TRIGGER_EVENT = re.compile(
 # Zeitraum "vom <Datum> bis <Datum>": das zweite Datum ist kein Fristende
 _RANGE_BEFORE = re.compile(r"\d\s*(?:bis|-|–)\s*$", re.IGNORECASE)
 
+# --- §73 (Dev-Fall LE-D008; Befunde LE-D005 10.03.2026, LE-T004 21.01.2026) -----------------------------------------
+# Ereignis UNMITTELBAR am Datum ("Zustellung schon am 21.01.2026", "am 22.01.2026 zugestellt", "ging am ... zu"): das
+# Datum ist ein moeglicher Fristbeginn, auch wenn im Satz ein Fristwort steht - vorher machten die Fristwort-Regeln
+# ("Berufungsfrist: ... am 22.01.2026 zugestellt") daraus ein Fristende. Bewusst eng (kein "Eingang": "Eingang am
+# 15.05.2026 erforderlich" ist ein Fristende); ein ausdrueckliches Fristende ("Fristende", "bis", "spätestens") geht vor.
+_EVENT_AT_DATE_BEFORE = re.compile(
+    r"\b(?P<event>zugang|zustellung|bekanntgabe)\w*(?:\s+[a-zäöüß]\w*){0,2}\s+(?:am|vom)\s*$", re.IGNORECASE)
+_EVENT_PARTICIPLE_AFTER = re.compile(r"^\s*(?P<event>zugestellt|zugegangen|bekanntgegeben)\b", re.IGNORECASE)
+_WENT_TO_BEFORE = re.compile(r"\bging\w*(?:\s+[a-zäöüß]\w*){0,2}\s+am\s*$", re.IGNORECASE)
+_TO_AFTER = re.compile(r"^\s*zu\b", re.IGNORECASE)
+# Fristwort mit ausdruecklich OFFENER Angabe ("das Fristende ist danach offen", "Die Frist ist unklar") ist kein Hinweis
+# auf ein Fristende - unvollstaendige Angabe, kein Datum zuordnen
+_UNDETERMINED_AFTER_WORD = re.compile(
+    r"^\s*(?:ist|bleibt|wird|sind)?\s*(?:danach\s+|noch\s+|derzeit\s+|damit\s+)?"
+    r"(?:offen|unklar|ungeklärt|ungeklaert|nicht\s+bekannt|nicht\s+berechnet|nicht\s+bestimmt)\b",
+    re.IGNORECASE,
+)
+# Feldzeile ("Berufungsfrist: ...", "Betreff: ...") beginnt eine neue Angabe: der Umbruch davor ist eine harte Grenze -
+# sonst verband die Kopfzeile "Aktenvermerk vom 10.03.2026 - Az. ..." (ohne Satzzeichen) mit "Ausübungsfrist:" darunter
+_FIELD_LABEL_LINE = re.compile(r"^[ \t]*[A-ZÄÖÜ][\wÄÖÜäöüß-]{1,40}[ \t]*:(?:[ \t]|$)")
+
 _NUMBER_WORDS = frozenset({
     "ein", "eine", "einem", "einer", "einen", "eines", "zwei", "drei", "vier", "fünf", "fuenf", "sechs", "sieben", "acht", "neun",
     "zehn", "elf", "zwölf", "zwoelf", "vierzehn", "einundzwanzig", "dreißig", "dreissig",
@@ -484,6 +505,8 @@ class PlaceholderDeadlineExtractor:
             return True
         if stripped[-1] in ".!?;":
             return True
+        if _FIELD_LABEL_LINE.match(line_after):
+            return True  # §73: Folgezeile ist eine Feldzeile ("Klagefrist: ...", "Betreff: ...")
         return "|" in line_before or "|" in line_after
 
     def _role(self, text: str, match: re.Match) -> tuple[str, str]:
@@ -505,11 +528,17 @@ class PlaceholderDeadlineExtractor:
         explicit = _EXPLICIT_DEADLINE_BEFORE.search(cue)
         if explicit:
             return "frist", explicit.group(0).strip()
+        event_at_date = self._event_at_date(before, after)
+        if event_at_date:
+            return "fristbeginn", event_at_date  # §73: Ereignis unmittelbar am Datum geht den Fristwort-Regeln vor
         if _ZUM_BEFORE.search(before) and _TERMINATION_WORDS.search(before):
             return "frist", "zum (Beendigung/Ablauf)"
         word_after = _DEADLINE_WORD_AFTER.search(after)
         if (word_after and word_after.start() <= 30 and not _ANY_DATE.search(after[: word_after.start()])
-                and not _ANY_DATE.search(after[word_after.start(): word_after.start() + 40])):
+                and not _ANY_DATE.search(after[word_after.start(): word_after.start() + 40])
+                # §73: "Vermerk vom <Datum> ... Klagefrist" - "vom" kennzeichnet ein Dokument-/Ereignisdatum
+                and not _PAST_REFERENCE_BEFORE.search(before)
+                and not _UNDETERMINED_AFTER_WORD.match(after[word_after.end():])):
             return "frist", word_after.group(0).strip()
         # Fristwort frueher im selben Satzteil, Datum mit "am/bis/zum" angeschlossen, kein anderes Datum dazwischen und
         # kein Fristbeginn ("Die Einspruchsfrist läuft am 20.07.2026 ab"; nicht: "Die Frist begann am ...")
@@ -517,7 +546,9 @@ class PlaceholderDeadlineExtractor:
         for word in _DEADLINE_WORD.finditer(before):
             pass
         if (word and _DEADLINE_CONNECTOR_BEFORE.search(before) and not _ANY_DATE.search(before[word.end():])
-                and not _DEADLINE_START_WORDS.search(before[word.start():])):
+                and not _DEADLINE_START_WORDS.search(before[word.start():])
+                # §73: "Das Fristende ist offen, die Kündigung ging am ..." - offene Angabe, kein Fristende
+                and not _UNDETERMINED_AFTER_WORD.match(before[word.end():])):
             return "frist", word.group(0)
         appointment = _APPOINTMENT_BEFORE.search(before)
         if appointment and not _ANY_DATE.search(appointment.group(0)) and not _PAST_REFERENCE_BEFORE.search(before):
@@ -553,6 +584,20 @@ class PlaceholderDeadlineExtractor:
             return "frist", f"Tabellenspalte '{cells[column]}'"
         if _TABLE_HEADER_APPOINTMENT.search(cells[column]):
             return "termin", f"Tabellenspalte '{cells[column]}'"
+        return None
+
+    @staticmethod
+    def _event_at_date(before: str, after: str) -> str | None:
+        """§73: Zustellung/Zugang/Bekanntgabe UNMITTELBAR am Datum - davor ("Zustellung schon am") oder als Partizip
+        danach ("am 22.01.2026 zugestellt", "ging am 12.02.2026 zu")."""
+        hit = _EVENT_AT_DATE_BEFORE.search(before)
+        if hit:
+            return hit.group("event")
+        hit = _EVENT_PARTICIPLE_AFTER.match(after)
+        if hit:
+            return hit.group("event")
+        if _WENT_TO_BEFORE.search(before) and _TO_AFTER.match(after):
+            return "ging zu (Zugang)"
         return None
 
     @staticmethod
