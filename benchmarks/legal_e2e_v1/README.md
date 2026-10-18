@@ -22,9 +22,18 @@ Namenserkennung (§34.6).
 
 ## Regeln (vom Validator erzwungen)
 
-- Nur synthetische Fälle (`synthetic: true`, keine `source_refs`). Ein Fall aus einer öffentlichen Quelle braucht einen
-  Registereintrag mit Status `nutzbar`, Prüfdatum und Begründung – die Einstufung trifft eine verantwortliche Person,
-  nicht der Agent. Derzeit sind alle Registereinträge `nicht_geprueft` und unbenutzt (BLOCKIERT).
+- Synthetische Fälle (`synthetic: true`, keine `source_refs`) oder **abgeleitete** Fälle (§71: `synthetic: false`,
+  `derivation: "abgeleitet"`). Ein abgeleiteter Fall braucht für jede Quelle einen Registereintrag mit Status `nutzbar`,
+  Prüfdatum und Begründung – die Einstufung trifft eine verantwortliche Person, nicht der Agent. Freigegeben sind
+  derzeit nur „Gesetze im Internet“ und „Rechtsprechung im Internet“ (§65). Alle anderen Einträge, darunter OpenRewi
+  (CC BY-SA 4.0, ShareAlike), ZJS (© ohne Lizenz) und Moot Courts, sind `nicht_geprueft` und unbenutzt.
+- Abgeleitete Fälle übernehmen aus der Entscheidung nur die Rechtsfrage und das Ergebnis aus dem amtlichen Leitsatz.
+  Personen, Firmen, Daten, Beträge und Dokumente sind vollständig erfunden. Es gibt keine echten Mandantendaten und
+  keine Sachverhaltsteile der Originalparteien.
+- Referenzlösung (`solution`, nur in abgeleiteten Fällen): Die Referenzentscheidung steht als belegtes Zitat mit
+  passender ECLI im Fall. `result_terms` stehen im erwarteten Ergebnis. `decisive_facts` sind existierende Fakten-IDs.
+  `required_norms` und die Begriffe der `open_points` stehen wörtlich in den Akten, `deadlines` in den Referenzfristen.
+  Eine Analyse-Aufgabe ist Pflicht.
 - Jeder Referenzwert steht wörtlich im angegebenen Dokument (keine erfundenen Werte, Fristen oder Fundstellen).
 - Zitate außer Normen brauchen eine belegte Quelle; der Korpus enthält derzeit nur reale Normen.
 - Jede geschützte Partei steht in `privacy.protect` und in mindestens einem Dokument.
@@ -36,7 +45,35 @@ Namenserkennung (§34.6).
 ```
 python -m scripts.legal_bench.corpus                  # Korpus validieren
 python -m scripts.legal_bench.e2e [--split dev|test] [--out PFAD]
+python -m pytest tests/test_legal_benchmark_corpus.py tests/test_legal_benchmark_solutions.py
 ```
+
+### Bewertung gegen die Referenzlösung (§71, `scripts/legal_bench/solution_score.py`)
+
+Die Kriterien werden getrennt bewertet, ohne Textähnlichkeit:
+
+| Kriterium | bestanden, wenn |
+|---|---|
+| `ergebnis` | alle `result_terms` vorkommen und kein `wrong_results`-Satz (z. B. „Ein Vorkaufsrecht besteht nicht“) |
+| `normen` | jede `required_norms`-Norm genannt (Gedankenstrich-/Leerzeichen-normalisiert) |
+| `fakten` | jeder Wert der entscheidenden Fakten genannt |
+| `fristen` | jede Lösungsfrist genannt |
+| `offene_punkte` | je offenem Punkt mindestens ein Begriff aus `any_terms` |
+
+`score_answer(case, antwort)` bewertet eine Antwort. `payload_basis(case, payload)` prüft, ob der tatsächlich gesendete
+Payload die Grundlage der Referenzlösung enthält. Das ist eine Voraussetzung für eine richtige Antwort, aber kein
+Nachweis dafür. Die Prüfung arbeitet mit exakten Werten: Andere Beugungen („denselben Gesellschaftern“ statt
+„dieselben Gesellschafter“) zählen als fehlend.
+
+Die Freigabe-Probe (Modus C) prüft, ob ein auffälliges Dokument im Zustand „Entscheidung erforderlich“ im Chat-Payload
+fehlt und ein freigegebenes darin steht.
+
+### Lauf in der installierten App
+
+Der Lauf wird über die echte Oberfläche ausgeführt: Mandant, Akte und Beteiligte über die Formulare, Dokumente über den
+Upload, die Freigabe per Klick, Chat und Schriftsatz-Generator. Der Lauf nutzt das QA-Skript außerhalb des Repos und eine
+isolierte Datenkopie mit lokalem Aufzeichnungsserver und Testschlüssel. Methode und Ergebnisse stehen in
+`PRIVACY_REVIEW_ARCHITECTURE.md` §71.
 
 Der Runner arbeitet offline (`HF_HUB_OFFLINE=1`, lokales Embedding-Modell, vendored Tesseract) und sendet nichts: der
 Schreib-Provider erfasst den Payload unmittelbar vor der Cloud-Grenze. Kritische Befunde (Klartext im Payload, Daten

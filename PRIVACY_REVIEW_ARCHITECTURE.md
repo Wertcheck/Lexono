@@ -8576,3 +8576,188 @@ Korrektur lässt die F4- und F6-Tests scheitern.
 - Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
 
 **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+## §71 Quellenbasierter Legal-Benchmark mit Referenzlösungen, Lauf in der installierten App (18.10.2026, Branch `feature/feedback-diagnose`, Code-Stand `fc9d3f4`)
+
+Ziel: Der Korpus `benchmarks/legal_e2e_v1` soll realistische, quellenbasierte Akten mit Referenzlösung enthalten. Die
+Bewertung soll nach Kriterien getrennt sein. Der Benchmark läuft über die echte Oberfläche der installierten App
+(WebView2), nicht nur im Repository.
+
+### 71.1 Bestandsaudit (vor §71)
+
+- Der Korpus hatte 7 synthetische Fälle (LE-D001–D004, LE-T001–T003). Referenzdaten waren Fakten, Chronologie,
+  Fristen, Zitate, Widersprüche und Datenschutz. Es gab **keine Referenzlösung** und keine Bewertung juristischer
+  Ergebnisse.
+- Der Runner `scripts/legal_bench/e2e.py` arbeitete nur im Repository (In-Memory-DB, Payload-Erfassung vor der
+  Cloud-Grenze). Die Dokumentfreigabe (Modus C) war im Runner nicht geprüft.
+- Das Quellenregister enthielt nur „Gesetze im Internet“ und „Rechtsprechung im Internet“ als `nutzbar` (§65). Alle
+  anderen Einträge waren `nicht_geprueft`.
+
+### 71.2 Quellen und Rechteprüfung
+
+| Quelle | Prüfung (18.10.2026, durch den Agenten, keine Freigabe) | Verwendung |
+|---|---|---|
+| Rechtsprechung im Internet (BGH VIII ZR 18/24, BAG 6 AZR 32/24, BAG 2 AZR 72/24) | bereits `nutzbar` (§65; § 5 Abs. 1 UrhG, amtliche Leitsätze) | Rechtsfrage und Ergebnis aus dem Leitsatz, Aktenzeichen, ECLI |
+| Gesetze im Internet | bereits `nutzbar` (§65) | Normen |
+| OpenRewi „Verwaltungsrecht in der Klausur“ (16 Fälle), „Grundrechte-Fallbuch“ (10 Fälle) | CC BY-SA 4.0. ShareAlike: Eine Bearbeitung müsste unter derselben Lizenz weitergegeben werden. Das ist eine Owner-Entscheidung. | **nicht verwendet**, `nicht_geprueft` |
+| ZJS Übungsfälle | nur „© 2007 - 2026 ZJS“, keine Lizenz | **nicht verwendet** |
+| Vis Moot, Soldan Moot | Urheberrecht der Veranstalter, nicht geklärt | **nicht verwendet** |
+
+Erfunden wurde keine Quelle. Die drei Entscheidungen stehen mit Aktenzeichen und ECLI im Fall. Der Validator verlangt
+die Referenzentscheidung als belegtes Zitat mit passender ECLI. Die Einstufung als `nutzbar` bleibt Aufgabe der
+verantwortlichen Person.
+
+### 71.3 Fälle und Aktenstruktur
+
+Es gibt drei neue **abgeleitete** Fälle (`synthetic: false`, `derivation: "abgeleitet"`). Aus der Entscheidung stammen
+nur die Rechtsfrage und das Ergebnis des Leitsatzes. Alle Personen, Firmen, Daten, Beträge und Schreiben sind erfunden.
+
+| Fall | Split | Rechtsfrage (Quelle) | Dokumente | Fakten / Fristen / Widersprüche |
+|---|---|---|---|---|
+| LE-D005 | dev | Mietervorkaufsrecht bei Verkauf an eine Gesellschaft mit denselben Gesellschaftern (BGH VIII ZR 18/24) | Mietvertrag (docx), Mitteilung der Notarin (pdf), Mail des Mandanten (txt), Schreiben der Verkäuferin (Scan), Aktenvermerk (txt) | 7 / 2 / 2 |
+| LE-D006 | dev | Sammelanmeldung zur Insolvenztabelle (BAG 6 AZR 32/24) | Forderungsanmeldung (pdf), Aufstellung (docx), Prüfvermerk, Mail (txt), Protokoll (Scan) | 7 / 2 / 1 |
+| LE-T004 | test | Kündigungsschutzklage gegen ein Konsulat, Staatenimmunität (BAG 2 AZR 72/24) | Arbeitsvertrag (docx), Kündigung (Scan), Mail, Vermerk (txt), Schreiben des Konsulats (pdf) | 8 / 2 / 2 |
+
+Der Korpus umfasst jetzt 10 Fälle (6 dev, 4 test) mit 48 Dokumenten.
+
+Es gibt fehlende und widersprüchliche Angaben:
+
+- **LE-D005:** Der Zugang der Mitteilung ist streitig, laut Verkäuferin am 28.02.2026, laut Mandant am 03.03.2026.
+  Daraus ergeben sich zwei mögliche Fristenden (28.04. und 04.05.2026).
+- **LE-D006:** Die Beträge widersprechen sich (32.112,00 und 31.497,75 EUR).
+- **LE-T004:** Der Zugang ist streitig (15.01. und 16.01.2026).
+
+### 71.4 Referenzlösung und Bewertung
+
+Der Block `solution` je abgeleitetem Fall enthält:
+
+- erwartetes Ergebnis mit `result_terms` und `wrong_results`;
+- `required_norms`;
+- `decisive_facts`;
+- `deadlines`;
+- `open_points`;
+- Herkunft.
+
+Der Validator (`corpus._validate_solution`) lehnt jedes Kriterium ab, das nicht aus den Akten oder der Quelle
+ableitbar ist.
+
+`scripts/legal_bench/solution_score.py` bewertet getrennt:
+
+- Ergebnis, einschließlich der Erkennung eines falschen Ergebnisses;
+- Normen;
+- Fakten;
+- Fristen;
+- offene Punkte.
+
+Textähnlichkeit wird nicht genutzt. `payload_basis` prüft, ob der **gesendete Payload** die Grundlage der Lösung
+enthält.
+
+Grenze der Bewertung: Die Prüfung arbeitet mit exakten Werten, abweichende Beugungen zählen als fehlend. Eine richtige
+Antwort eines echten Modells ist damit **nicht gemessen**, siehe 71.7.
+
+### 71.5 Ergebnisse im Repository (offline, Payload vor der Cloud-Grenze)
+
+Lauf `benchmarks/legal_e2e_v1/results.json`: Code-Stand `978448a` mit den Änderungen, die als `fc9d3f4` committet
+sind; Fake-Embedding nur in den Tests.
+
+| Messung | dev (6 Fälle) | test (4 Fälle) |
+|---|---|---|
+| kritische Befunde | 0 – **PASS** | 0 – **PASS** (nach Fix, siehe unten) |
+| Lecks / Werte fremder Akten im Payload | 0 / 0 | 0 / 0 |
+| Extraktion der Referenzwerte | 192/192 | 110/110 |
+| Chronologie im Schriftsatz-Payload | 35/35 | 22/22 |
+| Fristdaten-Recall | 13/13 | 4/5 – **FAIL** für LE-T004 05.02.2026 |
+| Lösungsgrundlage im Payload | 4/4 | 0/2 – **FAIL** (F8, Übermaskierung) |
+| Freigabe-Probe Modus C | auffälliges Dokument im Zustand „decision“ nicht im Payload, freigegebenes darin – **PASS** | |
+
+**Gefundener und behobener Befund:** In LE-T004 stand „Generalkonsulat“ aus der Kurzform „Generalkonsulat Valdoria“ des
+Aktentitels im Klartext im Payload. Ursache: Die Gegnerbezeichnung „Generalkonsulat der Republik Valdoria“ war nur in
+voller Länge und als letztes Wort geschützt. Behoben in `_build_known_entities`: Die Kurzform aus erstem und letztem Wort
+dreiteiliger Namen ist jetzt zusätzlich geschützt. Das verstärkt den Schutz und lockert nichts.
+
+Tests:
+
+- `tests/test_legal_benchmark_solutions.py`: 21 Tests, PASS;
+- `tests/test_legal_benchmark_corpus.py`: PASS;
+- volle Suite: 5438 PASS, 4 FAIL in fremden Logo-Tests (`test_design_refresh`, nicht §71).
+
+### 71.6 Lauf in der installierten App (WebView2)
+
+**Build und Methode:**
+
+- Build `fc9d3f4` aus einem sauberen Worktree mit PyInstaller und Inno Setup. Das Update ist still installiert.
+  SHA-256 der installierten `Lexono.exe`: `c2742683…e1e8ff`, byte-identisch mit dem Build.
+- Vorherige Installation gesichert, vorheriger Installer archiviert.
+- Daten: isolierte Kopie `LEXONO_DATA_DIR=C:\Users\Bonit\lexono_qa_s65`.
+- Cloud-Anfragen gehen an einen lokalen Aufzeichnungsserver mit ungültigem Testschlüssel (QA-Loopback-Freigabe).
+  Gateway-Zeile deaktiviert, Proxy auf einen toten Port, keine Kosten.
+- Die echte Kanzleidatenbank wurde weder gestartet noch verändert: MD5-Präfix vor und nach jedem Lauf `677CAFD8109F`.
+
+**Ablauf über die Oberfläche:**
+
+1. Mandant über `/dashboard/clients/create`, Akte über `/dashboard/matters/create`.
+2. Beteiligte über das Formular der Akte.
+3. Upload der gerenderten docx/pdf/txt-Dateien und Bild-PDFs über `#matter-document-upload-input`.
+4. Freigabe-Entscheidung per Klick („Für KI-Verarbeitung freigeben“).
+5. Chat-Analyse über `/dashboard/chat`.
+6. Schriftsatz über den Generator.
+
+Messgrundlage:
+
+- Fristen lesen nur aus der QA-DB.
+- Datenschutz und Lösungsgrundlage werden am **tatsächlich gesendeten HTTP-Payload** geprüft.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s71_legal_benchmark\` (Lauf 1) und `…\lauf2\` (Lauf 2).
+
+**Lauf 1 (Standardkonfiguration der QA-Daten, OCR aus):**
+
+- Die drei Scans blieben `pending` („Noch kein verwertbarer Text“).
+- Der Chat in LE-T004 wies das sichtbar aus: „Nicht ausgewertet, da ohne verarbeiteten Text: Kuendigung_Scan.pdf“.
+  F3 und F7 fehlten deshalb im Payload.
+- LE-D005 Q1: Die Datenschutz-Rückfrage („Kurze Rückfrage … Bis zu Ihrer Auswahl wird nichts an die Cloud gesendet“)
+  blieb unbeantwortet. Es gab keine Anfrage, das System war fail-closed – **PASS**.
+
+**Lauf 2 (OCR in der isolierten Umgebung eingeschaltet, Rückfragen per Klick mit der strengsten Wahl
+„Unsicher – vorsichtshalber pseudonymisieren“ beantwortet):**
+
+| Messung | LE-D005 | LE-D006 | LE-T004 |
+|---|---|---|---|
+| Beteiligte angelegt | 4 | 5 | 2 |
+| Extraktion (OCR-Scan) | 34/34 (Scan 5/5) | 37/37 (Scan 4/4) | 28/28 (Scan 4/4) |
+| Chronologie im App-Text | 7/7 | 5/5 | 6/6 |
+| Freigabe | 2 × „Entscheidung erforderlich“, manuell freigegeben, Rest automatisch | alle automatisch | alle automatisch |
+| Fristvorschläge (alle `unreviewed`) | 2/2, zusätzlich 10.03.2026 (Vermerkdatum) | 2/2 | 1/2, fehlt 05.02.2026; zusätzlich 21.01.2026 (Vermerkdatum), 30.04.2026 (Kündigungstermin) |
+| Chat: Anfrage / Lecks / fremde Akte | 1 (nach 2 Rückfragen) / 0 / 0 | 1 / 0 / 0 | 1 / 0 / 0 |
+| Schriftsatz: Anfrage / Lecks / fremde Akte | 1 / 0 / 0 | 1 / 0 / 0 | 1 / 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig – **PASS** | vollständig – **PASS** | F8 fehlt – **FAIL** (wie Repository) |
+
+Alle Anfragen gingen nur an `/v1/messages` des Aufzeichnungsservers, mit Testschlüssel. Die App wurde jeweils regulär
+geschlossen.
+
+Die App-Ergebnisse stimmen mit dem Repository überein.
+
+### 71.7 Offene Lücken und Blockaden
+
+- **LE-T004, Frist 05.02.2026:** Bei „vorsorglich Fristende 05.02.2026, spätestens 06.02.2026“ wird nur das spätere
+  Datum vorgeschlagen. Für die Praxis ist das riskant, weil die sichere, frühere Frist fehlt. Ursache:
+  `_EXPLICIT_DEADLINE_BEFORE` kennt „Fristende“ nur mit Doppelpunkt. **Bewusst nicht behoben**, weil LE-T004 zum
+  Test-Split gehört und nicht zur Regelabstimmung dienen darf. Vorschlag: einen Dev-Fall mit „Fristende <Datum>“
+  ergänzen und dort beheben.
+- **F8 Übermaskierung (LE-T004):** „Visa-Anträge“ wird als Organisation maskiert, der entscheidende Fakt ist im Payload
+  nicht lesbar. Das ist kein Leck. Es bleibt im Regressionsschutz (`KNOWN_BASIS_GAPS`).
+- **Fehlvorschläge bei Fristen:** Vermerkdaten („Vermerk vom …“ vor „Frist:“) und Kündigungstermine erscheinen als
+  Fristvorschlag. Alle sind `unreviewed`; eine Übernahme braucht eine Bestätigung.
+- **Juristische Korrektheit echter Modellantworten: NICHT VERIFIZIERT.** Der Aufzeichnungsserver liefert eine feste
+  Antwort. Ohne Owner-Freigabe gab es keinen echten Modellaufruf und keine API-Kosten. `score_answer` ist dafür bereit.
+- **Automatische Aktenzuordnung von E-Mails in der App: blockiert.** Es gibt keinen Mail-Import über die Oberfläche
+  ohne IMAP-Postfach, und die Synchronisierung ist in der QA aus. Die Zuordnung ist nur im Repository geprüft
+  (Zuordnungsprobe des Runners).
+- **NER-Ausfall** in der installierten App nicht auslösbar, ohne die Installation zu verändern: **NICHT VERIFIZIERT**.
+- **OCR in der App** wurde nur in der isolierten Umgebung mit `OCR_ENABLED=true` geprüft. Ob der Standard für die
+  Kanzlei OCR einschalten soll, entscheidet der Owner.
+- Exakte Kriterien: Andere Formulierungen werden als fehlend gewertet. Das kann zu falschen FAILs führen, aber nicht
+  zu falschen PASS.
+- Die Statusleiste zeigt „Cloud-KI (Gateway) Bereit“, obwohl die Gateway-Zeile deaktiviert ist und an den lokalen
+  Aufzeichnungsserver gesendet wird. Nur beobachtet, nicht untersucht.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.

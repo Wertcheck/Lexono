@@ -147,6 +147,13 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   - F4 behoben: Fristauszüge übernehmen die Gerichtsart nachweisbar aus dem Originaltext;
   - F6 behoben: System-Typbezeichnungen wie „[Gerichtliches Schreiben]“ lösen keine Fehlblockade mehr aus.
   §69 ist in der installierten App NICHT VERIFIZIERT.
+  **Fortschritt 18.10.2026 (§71):** `legal_e2e_v1` um drei abgeleitete, vollständig synthetische Akten mit
+  Referenzlösung erweitert (BGH VIII ZR 18/24, BAG 6 AZR 32/24, BAG 2 AZR 72/24). Bewertung nach Kriterien getrennt
+  (`solution_score.py`). Lauf in der installierten App (Build `fc9d3f4`, WebView2, Loopback): 0 Lecks, Lösungsgrundlage
+  2/3 vollständig.
+  **Offen:** Frist „Fristende <Datum>“ ohne Doppelpunkt (über einen Dev-Fall beheben); Übermaskierung
+  „Visa-Anträge“; Fehlvorschläge bei Vermerkdaten; echte Modellantworten (Owner-Freigabe nötig).
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §71.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
