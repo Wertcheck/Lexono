@@ -9469,3 +9469,127 @@ In allen Fällen gilt:
 
 **Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
 Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §76 Typ-Label, Alternativformeln, Export, Konzept Antwortqualität (18.10.2026, Branch `feature/feedback-diagnose`, Code `65ea0b0`)
+
+Ausgangsstand: `6a16014` (Doku §75) auf Code `ca695d8`, synchron mit dem Remote; `main` unverändert (`5735e5b`).
+
+### 76.1 Listenansicht: Typ-Label vollständig
+
+- **Ursache:** Die Tabelle hat `table-layout: fixed` mit einer Typ-Spalte von 9 %, damit bei geöffnetem Detailpanel
+  nichts horizontal scrollt (Beschluss vom 03.10.). Mit `td { overflow: hidden }` wurde „Beendigungstermin“ zu
+  „Beendigu…“ abgeschnitten.
+- **Änderung:** Die Spaltenbreiten bleiben gleich. Das Label (`.task-type-cell__label`) darf an einer weichen
+  Trennstelle umbrechen („Beendigungs-⏎termin“, U+00AD, `overflow-wrap: anywhere`, `hyphens: manual`). Der Tooltip und
+  `data-type-label` tragen den vollen Text.
+- Detail und Bearbeitungsformular bleiben wie in §75: „Beendigung zum“ beim Beendigungstermin, „Fällig am“ bei Fristen.
+- **Repository-Tests:** Label vollständig, mit weicher Trennstelle und Tooltip; die CSS-Regel ist vorhanden.
+- **Installierte App:** schmale Fenster und Detailpanel **NICHT VERIFIZIERT** (76.5).
+
+### 76.2 Alternativformeln mit Kontext
+
+- **Neue Signale:** „alternativ“, „bzw.“, „beziehungsweise“, „im Fall(e)“, „je nach“, „falls“, „sofern“. Sie gelten
+  weiterhin **nur** mit der Kontextbedingung aus §75: Zwischen den Daten steht kein anderer Gegenstand. Wörter der
+  Alternativformeln selbst und Genitivformen („Alternativ“, „Fall“, „Zugangs“) zählen nicht als Gegenstand.
+- **Bisher unerkannte Fristenden, behoben:**
+  - Ein Datum nach „oder / bzw. / alternativ / hilfsweise / sonst / andernfalls“ ist ein Fristende, wenn das
+    unmittelbar davor genannte Datum selbst eines ist. So wird „Fristende 05.03.2026, alternativ (bei Zugang am …)
+    06.03.2026“ erkannt.
+  - Ist das vorige Datum ein Fristbeginn, ein Dokumentdatum oder ein Termin, entsteht kein Fristende: „Zugang am
+    12.02.2026 oder 13.02.2026“, „Schreiben vom …“.
+  - „Fristende je nach/bei <Wort> <Datum>“ zählt als ausdrückliches Fristende.
+- **Korpus:** In **keinem** Dokument ändern sich Vorschläge, Begründungen oder Hinweise gegenüber §75.
+- **Tests:** `tests/test_s76_alternatives_list_export.py` mit 21 Tests:
+  - 6 Alternativformeln, beide Fristenden erkannt und markiert;
+  - 6 unabhängige Fristen, alle erkannt, kein Hinweis: „alternativ Ratenzahlung“, „falls Zahlung erfolgt, Frist zur
+    Rücknahme“, satzbeginnendes „Alternativ …“, benachbarte Zeilen, „Im Fall der Zahlung …“;
+  - 5 Fälle mit Zustellung, Vermerk, Fristbeginn-Alternative, Dokumentdatum und Termin;
+  - bestehende Alternativen unverändert;
+  - Liste und Export.
+
+### 76.3 Export
+
+- **Befund:** Seit §74 enthält das Manifest `kind` (z. B. `beendigung`). Für eine Prüfung war das nur eingeschränkt
+  nachvollziehbar, denn der Export enthielt keine Bezeichnung, keine Begründung und keine Konfidenz.
+- **Änderung (additiv):** `kind_label` („Möglicher Beendigungstermin (kein Fristende)“), `reasoning` (mit „kein
+  Fristende“ und der fehlenden Wirksamkeitsaussage) und `confidence`. Der Export ist wie bisher ein unpseudonymisierter
+  interner Datenauszug; `source_text` war schon enthalten.
+- **Pfade:** Seite „Sicherung“ (`/dashboard/backup/matter/<id>`, Admin) und Mandanten-Datenauszug. Beide verwenden
+  `MatterExportService.build_manifest`.
+- **Repository-Test:** PASS.
+- **Installierte App:** **NICHT VERIFIZIERT** (76.5).
+
+### 76.4 Konzept für den Antwortqualitäts-Benchmark
+
+Neuer Bereich `benchmarks/legal_answers_v1/` mit README, `rubric.json`, `specs/dev/LA-D005.json`,
+`specs/dev/LA-D006.json` und `specs/test/LA-T004.json` (eingefroren). Dazu `scripts/legal_bench/answer_specs.py` und
+`tests/test_legal_answer_specs.py` mit 17 Tests.
+
+- **Kein Lauf:** Es wurden keine Modellantworten abgerufen, es gab keine Cloud-Aufrufe und keine Kosten.
+- **Quellen:** Nur die quellenbasierten Fälle mit freigegebenen Quellen (Rechtsprechung im Internet, Gesetze im
+  Internet).
+- **Nicht verwendet:** OpenRewi (ShareAlike), ZJS und Moot Courts. Keine fremden Falllösungen.
+- **Rubrik mit sieben getrennten Dimensionen:**
+  - Ergebnis;
+  - Rechtsgrundlagen;
+  - Tatsachen;
+  - Fristen;
+  - Unsicherheiten;
+  - unbelegte Behauptungen;
+  - gefährliche Fehler (disqualifizierend).
+
+  Ergebnis, unbelegte Behauptungen und gefährliche Fehler sind als **juristische Prüfung** gekennzeichnet, die übrigen
+  als teilautomatisch (Vorprüfung als Hilfe, Note durch eine qualifizierte Person).
+- **Spezifikationen, vorab festgelegt:**
+  - zulässige Antwortvarianten;
+  - Rechtsgrundlagen (müssen in der Referenzlösung und im Aktentext stehen);
+  - entscheidende Tatsachen (mindestens eine Variante entspricht einem Aktenwert);
+  - Fristen (müssen in der Referenz stehen);
+  - Unsicherheiten;
+  - gefährliche Fehler mit Verdachtsformulierungen;
+  - typische Fehlentscheidungen.
+
+  Status: `entwurf_juristische_freigabe_offen`.
+- **Versionierung:**
+  - `case_fingerprint` (SHA-256 über den kanonischen JSON-Inhalt des Falls): Eine geänderte Referenz wird erkannt.
+  - `rubric_version`, `version`.
+  - Der Test-Split ist eingefroren; das prüft der Validator.
+- **Vorprüfung:** nur Hinweise, keine Note. Ein Test belegt die Grenze des Wortlautvergleichs: „Vorkaufsrecht **nicht**
+  zu“ trifft die Ergebnisvariante und den Verdacht zugleich. Fundstellen außerhalb von Akte und Quelle werden zur
+  Prüfung gelistet, ihre Existenz ist damit nicht widerlegt.
+- **Grenzen:** Drei Fälle, keine statistische Aussage. Synthetische Akten aus amtlichen Leitsätzen. Die Bewertung hängt
+  von qualifizierten Personen ab. Juristische Zuverlässigkeit: **NICHT VERIFIZIERT**.
+
+### 76.5 QA
+
+- **Volle Suite** (sechs Teile, Vordergrund): **5626 PASS** (§75: 5588, dazu 21 + 17 neue Tests).
+  - **4 FAIL, bereits bekannt:** `test_design_refresh` mit 4 Logo-Tests; die fremden Logo-Dateien fehlen in der
+    Arbeitskopie.
+  - Dazu 10 xfailed, 1 xpassed (bekannt), 1 skipped.
+- **Benchmark** `legal_e2e_v1`: in **allen** Kennzahlen identisch mit §75, abgesehen von Laufzeit und Payloadgröße.
+  - dev: 0 kritisch / 0 Lecks / 0 Werte fremder Akten; Extraktion 276/276, Chronologie 50/50, keep 54/54, Fristen
+    22/22, Beendigung 2/2.
+  - test: Extraktion 110/110, Chronologie 22/22, keep 25/25, Fristen 5/5.
+  - Lösungsgrundlage dev 4/4, test 2/2.
+- **Build:** `65ea0b0`, PyInstaller und Inno Setup Exit 0. Extraktor (51 Funktionen), Export (5) und Aufgaben-Router
+  (26) sind bytecode-gleich mit `65ea0b0`, Template und CSS enthalten die Änderung. SHA-256 der Build-EXE:
+  `b8e9f368db70245162e8d7a13cd2367d1319b8c659b444b78ed559a7e5985953`. Installer `ca695d8` archiviert.
+- **Installation und App-Test: NICHT VERIFIZIERT – blockiert.**
+  - Bei der Vorprüfung lief die reguläre Kanzlei-Instanz: `Lexono.exe serve`, gestartet 18.10.2026 20:21 über
+    `cmd.exe … >> C:\ProgramData\Lexono\app.log`, mit der echten Datenbank. Deren Hash war deshalb nicht lesbar
+    (Datei in Benutzung).
+  - Der Installer würde die laufende EXE ersetzen. Die Instanz wurde **nicht** beendet und **nicht** überinstalliert.
+    Die echte Datenbank wurde nicht berührt.
+  - Installiert bleibt `ca695d8` (§75).
+  - Das QA-Skript für Listenbreiten, Detailpanel, Export über das Formular der Seite „Sicherung“ und Payloads liegt
+    bereit und wird nach dem Schließen der Instanz ausgeführt.
+
+### 76.6 Offen
+
+- App-Test von Liste, Export und Payload nach dem Schließen der Kanzlei-Instanz (siehe 76.5).
+- Juristische Freigabe der Spezifikationen durch eine qualifizierte Person. Ein Lauf mit echten Modellantworten
+  braucht die Freigabe des Owners und einen Kostenrahmen.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.

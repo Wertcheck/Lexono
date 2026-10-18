@@ -176,6 +176,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Fristenden“ nur bei konkurrierenden Fristenden. Bisherige dev-Fälle 18/18 + 1/1, LE-D009 4/4 + 1/1, test 5/5;
   0 Lecks. In der installierten App geprüft (Build `ca695d8`, WebView2, Loopback). Offen: Export in der App,
   gekürzte Typ-Spalte. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §75.
+  **Fortschritt 18.10.2026 (§76):** Typ-Label vollständig (Umbruch statt Abschneiden), Alternativformeln mit
+  Kontext (alternativ, bzw., im Fall, je nach, falls), Export mit Art-Bezeichnung/Begründung/Konfidenz; Konzept
+  für den Antwortqualitäts-Benchmark `benchmarks/legal_answers_v1` (Rubrik, Spezifikationen, Validator; kein Lauf).
+  5626 PASS, Benchmark identisch zu §75. App-Test NICHT VERIFIZIERT (Kanzlei-Instanz lief, keine Installation).
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
