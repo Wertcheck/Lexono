@@ -119,8 +119,8 @@ def test_label_css_allows_wrapping_instead_of_clipping() -> None:
     css = Path("app/web/static/css/app.css").read_text(encoding="utf-8")
     block = css.split(".task-type-cell__label {", 1)[1].split("}", 1)[0]
     assert "overflow-wrap: normal" in block and "hyphens: manual" in block and "min-width: 0" in block
-    # unter 1280 px wird das Detailpanel unter die Liste gestapelt (vorher erst unter 900 px)
-    assert "@media (max-width: 1279px) {\n  .tasks-layout {\n    flex-direction: column;" in css.replace("\r\n", "\n")
+    # unter 1366 px wird das Detailpanel unter die Liste gestapelt (vorher erst unter 900 px)
+    assert "@media (max-width: 1365.98px) {\n  .tasks-layout {\n    flex-direction: column;" in css.replace("\r\n", "\n")
 
 
 # --- Export: Art nachvollziehbar ------------------------------------------------------------------------------------------
