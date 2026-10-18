@@ -179,7 +179,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 18.10.2026 (§76):** Typ-Label vollständig (Umbruch statt Abschneiden), Alternativformeln mit
   Kontext (alternativ, bzw., im Fall, je nach, falls), Export mit Art-Bezeichnung/Begründung/Konfidenz; Konzept
   für den Antwortqualitäts-Benchmark `benchmarks/legal_answers_v1` (Rubrik, Spezifikationen, Validator; kein Lauf).
-  5626 PASS, Benchmark identisch zu §75. App-Test NICHT VERIFIZIERT (Kanzlei-Instanz lief, keine Installation).
+  5626 PASS, Benchmark identisch zu §75. App-Test (Build `8291158`, WebView2, Loopback) PASS nach zwei
+  Layout-Korrekturen: Detailpanel unter 1366 px gestapelt, Label nur an Silbengrenzen umbrochen; Export in der App geprüft.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

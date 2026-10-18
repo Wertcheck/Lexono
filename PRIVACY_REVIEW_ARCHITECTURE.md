@@ -9574,7 +9574,7 @@ Neuer Bereich `benchmarks/legal_answers_v1/` mit README, `rubric.json`, `specs/d
 - **Build:** `65ea0b0`, PyInstaller und Inno Setup Exit 0. Extraktor (51 Funktionen), Export (5) und Aufgaben-Router
   (26) sind bytecode-gleich mit `65ea0b0`, Template und CSS enthalten die Änderung. SHA-256 der Build-EXE:
   `b8e9f368db70245162e8d7a13cd2367d1319b8c659b444b78ed559a7e5985953`. Installer `ca695d8` archiviert.
-- **Installation und App-Test: NICHT VERIFIZIERT – blockiert.**
+- **Installation und App-Test: NICHT VERIFIZIERT – blockiert** (Stand 20:40; überholt, siehe 76.7).
   - Bei der Vorprüfung lief die reguläre Kanzlei-Instanz: `Lexono.exe serve`, gestartet 18.10.2026 20:21 über
     `cmd.exe … >> C:\ProgramData\Lexono\app.log`, mit der echten Datenbank. Deren Hash war deshalb nicht lesbar
     (Datei in Benutzung).
@@ -9586,10 +9586,62 @@ Neuer Bereich `benchmarks/legal_answers_v1/` mit README, `rubric.json`, `specs/d
 
 ### 76.6 Offen
 
-- App-Test von Liste, Export und Payload nach dem Schließen der Kanzlei-Instanz (siehe 76.5).
+- ~~App-Test von Liste, Export und Payload~~ – nachgeholt, PASS (76.7).
 - Juristische Freigabe der Spezifikationen durch eine qualifizierte Person. Ein Lauf mit echten Modellantworten
   braucht die Freigabe des Owners und einen Kostenrahmen.
 - **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte.
 
 **Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
 Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+### 76.7 Nachtrag: Installation und App-Test (18.10.2026, nachdem die Kanzlei-Instanz um 20:47 regulär geschlossen wurde)
+
+Die Kanzlei-Instanz wurde abgewartet, nicht beendet. Erst danach folgte die Vorprüfung, mit diesem Ergebnis:
+
+- keine Instanz und keine QA-Prozesse;
+- Sicherungsziel frei;
+- echte DB `677CAFD8109F`, unverändert seit 13.10.
+
+**Drei Installationszyklen, jeweils Sicherung (956/956), stilles Update (Exit 0), EXE byte-identisch, DB unverändert:**
+
+| Build | Sicherung | installierte EXE (SHA-256) | Ergebnis App-Test |
+|---|---|---|---|
+| `65ea0b0` | `lexono_install_backup_vor_65ea0b0` | `b8e9f368…5953` | Export, Arten und Payload PASS. **Liste FAIL:** bei 1024 px mit Detailpanel Titel/Akte/Typ/Status abgeschnitten (Breakpoint lag bei 900 px, seit 06.10.); bei 1366 px Umbruch mitten in der Silbe (`overflow-wrap: anywhere`) |
+| `c3787af` | `lexono_install_backup_vor_c3787af` | `280293ee…6dfc` | 1024 px behoben. **FAIL:** bei 1280 px mit Panel war „Beendigungstermin“ abgeschnitten; bei innerWidth 1279 griff `max-width: 1279px` in WebView2 nicht (Bruchteil-Breite) |
+| `8291158` | `lexono_install_backup_vor_8291158` | `280293ee…6dfc` (nur CSS geändert, liegt außerhalb der EXE in `_internal`; installiertes CSS geprüft) | **PASS** |
+
+Dazu kamen zwei Korrekturen:
+
+- **`c3787af`:** Das Label bricht nur an weichen Silbentrennstellen um („Be-en-di-gungs-ter-min“, `overflow-wrap: normal`).
+- **`8291158`:** Das Detailpanel wird unter **1366 px** unter die Liste gestapelt, mit `max-width: 1365.98px` (bisheriges Muster, vorher erst unter 900 px). Die Tabelle ist neben dem Panel für ≥ 1366 px ausgelegt.
+
+Die Installer `65ea0b0` und `c3787af` sind archiviert.
+
+**Abschließender App-Lauf (Build `8291158`, WebView2):** Fälle LE-D002, LE-D009, QA75-FRISTEN und LE-D005, isolierte QA-Daten, OCR an. Nachweise unter
+`C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s76_legal_benchmark\lauf4\`; die Läufe 1–3 sind als Befundverlauf erhalten.
+
+- **Liste:** Geprüft bei 1920, 1440, 1366, 1365, 1280, 1024 und 800 px, jeweils mit und ohne Detailpanel. Abgeschnittene
+  Labels wurden über die Text-Rechtecke gegen den Clip-Bereich der Zelle gemessen.
+  - In **allen 56 Kombinationen** (4 Fälle × 7 Breiten × mit/ohne Panel): 0 abgeschnittene Labels, kein horizontales
+    Scrollen, Text vollständig.
+  - Ab 1366 px stehen Liste und Panel nebeneinander, darunter gestapelt.
+  - Screenshots `*_liste_<Breite>[_panel].png` zeigen „Be-endi-gungs-ter-min“ bei 1366 px mit Panel; bei 1280 px liegt
+    das Panel unter der Liste. **PASS**
+- **Detail und Formular:** Gespeicherte Art = UI-Typ = Datumsfeld („Beendigung zum“ bzw. „Fällig am“) für jeden
+  Vorschlag aller vier Fälle. **PASS**
+- **Export:** über das echte Formular der Seite „Sicherung“ (`/dashboard/backup/matter/<id>`), Antwort 200
+  `application/zip`. Gespeichert unter `<Fall>_export.zip`. Je Fall stimmt die Anzahl der Einträge mit der DB überein
+  (2, 10, 4, 4). In jedem Eintrag entspricht `kind` der gespeicherten Art, `reasoning` ist identisch mit der Datenbank,
+  dazu `kind_label` (z. B. „Möglicher Beendigungstermin (kein Fristende)“), `confidence` und `review_status`
+  „unreviewed“. **PASS**
+- **Hinweis „mehrere mögliche Fristenden“:** QA75-FRISTEN 06.03./13.03. ohne, 23.03./24.03. mit Hinweis, wie erwartet;
+  LE-D005 wie bisher. **PASS**
+- **Payload:** Anfragen nur an `/v1/messages` des lokalen Aufzeichnungsservers mit Testschlüssel; 0 Lecks, 0 Werte
+  fremder Akten in allen Chat- und Schriftsatz-Anfragen. **PASS**
+- **Volle Suite nach den Korrekturen:** 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+- **Abschluss:** echte DB `677CAFD8109F`; keine Lexono- oder QA-Prozesse zurückgeblieben.
+
+Abschnitt 76.5 „Installation und App-Test: NICHT VERIFIZIERT – blockiert“ ist damit **überholt**.
+
+**Weiterhin NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten (Konzept 76.4, kein Lauf), reale
+Kanzleitexte.
