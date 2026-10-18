@@ -112,9 +112,9 @@ def test_payload_basis_of_the_full_file_is_complete() -> None:
 
 # --- E2E (offline) -----------------------------------------------------------------------------------------------------
 
-# Bekannte, gemessene Luecke (Uebermaskierung, kein Leck): in LE-T004 maskiert die NER "Visa-Antraege" als Organisation
-# - der entscheidende Fakt F8 ("Visa-Antraege erfasst") ist im Payload nicht lesbar. Bleibt im Regressionsschutz.
-KNOWN_BASIS_GAPS = {"LE-T004/Q1:fakten_fehlend=F8", "LE-T004/Q2:fakten_fehlend=F8"}
+# §71 gemessen: in LE-T004 maskierte die NER "Visa-Antraege" als Organisation (F8 im Payload unlesbar). §72 behoben
+# (`is_admin_procedure_compound`, entwickelt am Dev-Fall LE-D007) - keine bekannte Luecke mehr.
+KNOWN_BASIS_GAPS: set[str] = set()
 
 
 @pytest.fixture(scope="module")
@@ -137,6 +137,7 @@ def test_the_payload_contains_the_basis_of_the_reference_solution(outcome: dict)
     gaps = set(outcome["summary"]["dev"]["loesungsbasis_luecken"]) | set(outcome["summary"]["test"]["loesungsbasis_luecken"])
     assert gaps <= KNOWN_BASIS_GAPS, sorted(gaps - KNOWN_BASIS_GAPS)
     assert outcome["summary"]["dev"]["loesungsbasis_vollstaendig"] == "4/4"
+    assert outcome["summary"]["test"]["loesungsbasis_vollstaendig"] == "2/2"
 
 
 def test_documents_facts_and_chronology_are_extracted(outcome: dict) -> None:
@@ -151,9 +152,9 @@ def test_documents_facts_and_chronology_are_extracted(outcome: dict) -> None:
 def test_deadline_recall_of_the_source_cases(outcome: dict) -> None:
     rows = {r["case"]: r for r in outcome["results"]}
     assert rows["LE-D005"]["deadlines"]["missing"] == [] and rows["LE-D006"]["deadlines"]["missing"] == []
-    # bekannte Luecke: die VORSORGLICHE Frist 05.02.2026 (Zugang am 15.01.2026) steht nur als Vermerk-Text
-    # ("vorsorglich Fristende 05.02.2026, spaetestens 06.02.2026") - erkannt wird nur 06.02.2026
-    assert rows["LE-T004"]["deadlines"]["missing"] in ([], ["05.02.2026"])
+    # §71: die VORSORGLICHE Frist 05.02.2026 ("vorsorglich Fristende 05.02.2026, spaetestens 06.02.2026") fehlte;
+    # §72 behoben ("Fristende" ohne Doppelpunkt, entwickelt am Dev-Fall LE-D007)
+    assert rows["LE-T004"]["deadlines"]["missing"] == []
 
 
 def test_document_release_withholds_the_uncertain_document(outcome: dict) -> None:

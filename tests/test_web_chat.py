@@ -619,7 +619,7 @@ def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_
 
     # "Bereit" erfordert seit der Pilot-Vorbereitung eine nachgewiesene Erreichbarkeit
     # (app.state.cloud_health, vom Lifespan-Task gepflegt).
-    main_app.state.cloud_health = CloudHealth(REACHABLE)
+    main_app.state.cloud_health = CloudHealth(REACHABLE, route="gateway")
     try:
         response = client.get("/dashboard/chat")
     finally:
@@ -1175,7 +1175,34 @@ def test_chat_page_shows_ai_status_in_sidebar(client: TestClient, db_session: Se
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
     assert "sidebar__status-panel" in response.text
-    assert "Cloud-KI (Gateway)" in response.text
+    # §72: ohne Statuspruefung (kein Lifespan) wird kein Weg behauptet - neutral "Cloud-KI", nicht "(Gateway)"
+    assert "data-cloud-label>Cloud-KI</span>" in response.text
+    assert "Cloud-KI (Gateway)" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("route", "label", "hint"),
+    [
+        ("gateway", "Cloud-KI (Gateway)", "Weg: Lexono-Gateway"),
+        ("direct", "Cloud-KI (direkt)", "Weg: direkt zur Anthropic-API (ohne Gateway)"),
+        ("qa_loopback", "Cloud-KI (lokaler Prüfendpunkt)", "keine Cloud"),
+    ],
+)
+def test_sidebar_names_the_actual_cloud_route(client: TestClient, db_session: Session, route: str, label: str, hint: str) -> None:
+    """§72 (App-Test §71): "Cloud-KI (Gateway) Bereit", obwohl direkt an einen lokalen Pruefendpunkt gesendet wurde."""
+    from app.ai_providers.cloud_health import REACHABLE, CloudHealth
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.cloud_health = CloudHealth(REACHABLE, route=route)
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.cloud_health
+    assert f"data-cloud-label>{label}</span>" in response.text
+    assert hint in response.text and f'data-cloud-route="{route}"' in response.text
+    for other in {"Cloud-KI (Gateway)", "Cloud-KI (direkt)", "Cloud-KI (lokaler Prüfendpunkt)"} - {label}:
+        assert other not in response.text
 
 
 def test_chat_page_includes_thinking_indicator_for_ai_loading_state(

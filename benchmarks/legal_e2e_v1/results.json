@@ -1,27 +1,28 @@
 {
  "benchmark": "legal_e2e_v1",
- "run_at": "2026-10-17T23:57:47+00:00",
- "git_commit": "978448a",
+ "run_at": "2026-10-18T09:36:23+00:00",
+ "git_commit": "6a56932",
  "git_dirty_files": [
-  "app/ai_providers/local_ai_provider.py",
-  "benchmarks/legal_e2e_v1/source_register.json",
-  "scripts/legal_bench/corpus.py",
-  "scripts/legal_bench/e2e.py",
-  "tests/test_legal_benchmark_corpus.py",
-  "benchmarks/legal_e2e_v1/cases/dev/LE-D005.json",
-  "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json",
-  "benchmarks/legal_e2e_v1/cases/test/LE-T004.json",
-  "scripts/legal_bench/solution_score.py",
-  "tests/test_legal_benchmark_solutions.py"
+  "app/ai_providers/cloud_health.py",
+  "app/deadlines/extractor.py",
+  "app/main.py",
+  "app/privacy/presidio_ner.py",
+  "app/web/templates/base.html",
+  "tests/test_cloud_health.py",
+  "tests/test_legal_benchmark_solutions.py",
+  "tests/test_web_chat.py",
+  "benchmarks/legal_e2e_v1/cases/dev/LE-D007.json",
+  "tests/test_s72_admin_procedure_compounds.py",
+  "tests/test_s72_deadline_alternatives.py"
  ],
- "corpus_sha256": "cc0727fd6ab8054a",
+ "corpus_sha256": "e876b8abfe64328d",
  "code_fingerprint": {
   "app/privacy/gateway.py": "e5bfb717bf721983",
   "app/privacy/detectors.py": "02d7af0e2e901fc8",
   "app/privacy/pseudonymizer.py": "915dcf3fe7c9e9b3",
   "app/documents/service.py": "36bc158bd3cd4bc7",
   "app/documents/extraction.py": "ff83b06dca8cfefb",
-  "app/deadlines/extractor.py": "a499179e38ba1668",
+  "app/deadlines/extractor.py": "3b800d7e0dbf8837",
   "app/search/service.py": "bc812b0e3d85dee9",
   "app/chat/service.py": "adefbfdc00f40c79",
   "app/drafting/service.py": "645e2a9854a8132e",
@@ -35,7 +36,7 @@
   "ocr": "C:\\Users\\Bonit\\Lexono\\windows\\vendor\\tesseract\\bin\\tesseract.exe",
   "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"
  },
- "seconds_total": 156.9,
+ "seconds_total": 167.2,
  "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
  "nicht_verifiziert": [
   "Antwortqualitaet eines echten Modells",
@@ -44,33 +45,35 @@
  ],
  "summary": {
   "dev": {
-   "cases": 6,
+   "cases": 7,
    "kritisch": [],
-   "extraktion_werte": "192/192",
-   "ocr_dokumente": 5,
-   "ocr_werte": "21/21",
+   "extraktion_werte": "221/221",
+   "ocr_dokumente": 6,
+   "ocr_werte": "24/24",
    "dokumentfehler": 0,
-   "fristen_datum_recall": "13/13",
-   "fristen_nicht_in_referenz": 2,
+   "fristen_datum_recall": "16/16",
+   "fristen_nicht_in_referenz": 3,
    "davon_bekannte_falldaten": 2,
-   "davon_ungeklaert": [],
-   "klassifiziert_nicht_unbekannt": "10/30",
-   "payload_aufgaben": 18,
+   "davon_ungeklaert": [
+    "LE-D007:31.05.2026"
+   ],
+   "klassifiziert_nicht_unbekannt": "12/35",
+   "payload_aufgaben": 20,
    "pii_leaks": 0,
    "fremde_akte_im_payload": 0,
-   "benoetigte_werte_im_payload": "42/42",
+   "benoetigte_werte_im_payload": "48/48",
    "aufgaben_ohne_payload": [],
    "suche_top1": "3/6",
    "suche_top5": "6/6",
-   "schriftsatz_ok": "6/6",
-   "export_mit_bearbeitung": "6/6",
-   "erhalt_keep": "38/38",
+   "schriftsatz_ok": "7/7",
+   "export_mit_bearbeitung": "7/7",
+   "erhalt_keep": "44/44",
    "erhalt_keep_fehlend": [],
-   "erhalt_chronologie": "35/35",
+   "erhalt_chronologie": "40/40",
    "erhalt_chronologie_fehlend": [],
-   "erhalt_normen": "20/20",
+   "erhalt_normen": "22/22",
    "erhalt_normen_fehlend": [],
-   "widersprueche_beide_seiten": "8/9",
+   "widersprueche_beide_seiten": "9/10",
    "maskiert_ohne_referenz": [
     "LE-D001:adresse:12345 Musterstadt",
     "LE-D001:organisation:Malerbetrieb Schöllhorn GmbH",
@@ -124,31 +127,34 @@
     "LE-D006:organisation:Bundesagentur für Arbeit",
     "LE-D006:organisation:Bundesagentur für Arbeit -",
     "LE-D006:ort:Beispielstadt",
-    "LE-D006:person:Prüfvermerk"
+    "LE-D006:person:Prüfvermerk",
+    "LE-D007:aktenzeichen:26/0214-BR",
+    "LE-D007:ort:Bürgerservice",
+    "LE-D007:person:Beispielhafen"
    ],
    "laufzeit_dokument_s": {
-    "n": 30,
+    "n": 35,
     "median": 1.14,
     "max": 1.68
    },
    "laufzeit_chat_s": {
-    "n": 12,
-    "median": 0.85,
-    "max": 12.36
+    "n": 13,
+    "median": 0.82,
+    "max": 12.51
    },
    "payload_zeichen_chat": {
-    "n": 12,
+    "n": 13,
     "median": 2831,
     "max": 31564
    },
    "laufzeit_schriftsatz_s": {
-    "n": 6,
-    "median": 2.61,
-    "max": 22.43
+    "n": 7,
+    "median": 0.96,
+    "max": 22.62
    },
    "payload_zeichen_schriftsatz": {
-    "n": 6,
-    "median": 2898,
+    "n": 7,
+    "median": 2874,
     "max": 31569
    },
    "laufzeit_suche_s": {
@@ -156,7 +162,7 @@
     "median": 0.02,
     "max": 0.03
    },
-   "erfundene_fundstellen_markiert": "12/12",
+   "erfundene_fundstellen_markiert": "14/14",
    "aufgabenfehler": [],
    "loesungsbasis_vollstaendig": "4/4",
    "loesungsbasis_luecken": []
@@ -168,7 +174,7 @@
    "ocr_dokumente": 4,
    "ocr_werte": "31/31",
    "dokumentfehler": 0,
-   "fristen_datum_recall": "4/5",
+   "fristen_datum_recall": "5/5",
    "fristen_nicht_in_referenz": 2,
    "davon_bekannte_falldaten": 1,
    "davon_ungeklaert": [
@@ -223,7 +229,6 @@
     "LE-T004:adresse:60325 Beispielstadt",
     "LE-T004:aktenzeichen:26/0158-AR",
     "LE-T004:kennung:26/0158-AR",
-    "LE-T004:organisation:Visa-Anträge",
     "LE-T004:ort:Beispielstadt",
     "LE-T004:ort:Bockenheimer Weg",
     "LE-T004:person:Beispielstadt",
@@ -238,23 +243,23 @@
    },
    "laufzeit_chat_s": {
     "n": 7,
-    "median": 0.74,
-    "max": 0.91
+    "median": 0.72,
+    "max": 0.92
    },
    "payload_zeichen_chat": {
     "n": 7,
     "median": 1548,
-    "max": 3186
+    "max": 3352
    },
    "laufzeit_schriftsatz_s": {
     "n": 4,
-    "median": 1.0,
-    "max": 1.11
+    "median": 1.08,
+    "max": 1.12
    },
    "payload_zeichen_schriftsatz": {
     "n": 4,
     "median": 2530,
-    "max": 3206
+    "max": 3372
    },
    "laufzeit_suche_s": {
     "n": 4,
@@ -263,11 +268,8 @@
    },
    "erfundene_fundstellen_markiert": "8/8",
    "aufgabenfehler": [],
-   "loesungsbasis_vollstaendig": "0/2",
-   "loesungsbasis_luecken": [
-    "LE-T004/Q1:fakten_fehlend=F8",
-    "LE-T004/Q2:fakten_fehlend=F8"
-   ]
+   "loesungsbasis_vollstaendig": "2/2",
+   "loesungsbasis_luecken": []
   }
  },
  "aktenzuordnung": {
@@ -278,15 +280,16 @@
    "LE-D004/D2:needs_review",
    "LE-D005/D3:auto_assigned",
    "LE-D006/D4:needs_review",
+   "LE-D007/D3:needs_review",
    "LE-T001/D4:needs_review",
    "LE-T002/D3:needs_review",
    "LE-T003/D3:needs_review",
    "LE-T004/D3:auto_assigned"
   ],
-  "aktenzeichen_korrekt_zugeordnet": "8/8",
-  "ihr_zeichen_korrekt_zugeordnet": "8/8",
-  "aktenzeichen_allein_automatisch": "0/8",
-  "ihr_zeichen_allein_automatisch": "0/8",
+  "aktenzeichen_korrekt_zugeordnet": "9/9",
+  "ihr_zeichen_korrekt_zugeordnet": "9/9",
+  "aktenzeichen_allein_automatisch": "0/9",
+  "ihr_zeichen_allein_automatisch": "0/9",
   "konflikt_automatisch_zur_fremden_akte": [],
   "konflikt_entscheidungen": [
    "LE-D001:needs_review",
@@ -295,6 +298,7 @@
    "LE-D004:needs_review",
    "LE-D005:needs_review",
    "LE-D006:needs_review",
+   "LE-D007:needs_review",
    "LE-T001:needs_review",
    "LE-T002:needs_review",
    "LE-T003:needs_review",
@@ -443,6 +447,34 @@
    },
    {
     "probe": "korpus_email",
+    "case": "LE-D007",
+    "doc": "D3",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "aktenzeichen",
+    "case": "LE-D007",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "vorgeschlagen": "LE-D007",
+    "korrekt": true,
+    "automatisch": false,
+    "fremd": false
+   },
+   {
+    "probe": "ihr_zeichen",
+    "case": "LE-D007",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "vorgeschlagen": "LE-D007",
+    "korrekt": true,
+    "automatisch": false,
+    "fremd": false
+   },
+   {
+    "probe": "korpus_email",
     "case": "LE-T001",
     "doc": "D4",
     "decision": "needs_review",
@@ -583,6 +615,14 @@
    },
    {
     "probe": "konflikt",
+    "case": "LE-D007",
+    "aktenzeichen_von": "LE-D001",
+    "decision": "needs_review",
+    "zugeordnet": null,
+    "fremd": false
+   },
+   {
+    "probe": "konflikt",
     "case": "LE-T001",
     "aktenzeichen_von": "LE-D001",
     "decision": "needs_review",
@@ -653,6 +693,13 @@
   },
   {
    "case": "LE-D006",
+   "fremde_akte": "LE-D007",
+   "status": "blockiert",
+   "werte_fremder_akte_im_payload": [],
+   "kritisch": false
+  },
+  {
+   "case": "LE-D007",
    "fremde_akte": "LE-T001",
    "status": "blockiert",
    "werte_fremder_akte_im_payload": [],
@@ -699,7 +746,7 @@
  },
  "ocr_schlechter_scan": {
   "dev": {
-   "ocr_werte_schlechter_scan": "21/21",
+   "ocr_werte_schlechter_scan": "24/24",
    "fehlend": []
   },
   "test": {
@@ -728,7 +775,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.19
     },
     "D2": {
      "format": "txt",
@@ -749,7 +796,7 @@
       "henrike.osterkamp@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.13
     },
     "D3": {
      "format": "pdf",
@@ -768,7 +815,7 @@
       "Henrike Osterkamp"
      ],
      "values_missing": [],
-     "seconds": 1.17
+     "seconds": 1.18
     },
     "D4": {
      "format": "scan",
@@ -785,7 +832,7 @@
       "R-2026-0311"
      ],
      "values_missing": [],
-     "seconds": 1.52
+     "seconds": 1.54
     },
     "D5": {
      "format": "docx",
@@ -805,7 +852,7 @@
       "§ 543 Abs. 2 Satz 1 Nr. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.16
     }
    },
    "tasks": [
@@ -869,7 +916,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 4.66
+     "seconds": 4.52
     },
     {
      "id": "Q2",
@@ -905,7 +952,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.23
+     "seconds": 0.26
     },
     {
      "id": "Q3",
@@ -1088,7 +1135,7 @@
        "platzhalter": "[ORT_03]"
       }
      ],
-     "seconds": 2.61
+     "seconds": 2.6
     },
     {
      "id": "Q5",
@@ -1170,7 +1217,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.53
+     "seconds": 1.54
     },
     "D3": {
      "format": "docx",
@@ -1188,7 +1235,7 @@
       "Sabine Uhlenbrock"
      ],
      "values_missing": [],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -1228,7 +1275,7 @@
       "§ 42 Abs. 2 GKG"
      ],
      "values_missing": [],
-     "seconds": 1.16
+     "seconds": 1.17
     }
    },
    "tasks": [
@@ -1267,7 +1314,7 @@
        "platzhalter": "[PERSON_05]"
       }
      ],
-     "seconds": 0.8
+     "seconds": 0.82
     },
     {
      "id": "Q2",
@@ -1450,7 +1497,7 @@
       "§ 634a Abs. 1 Nr. 2 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.6
     },
     "D2": {
      "format": "txt",
@@ -1466,7 +1513,7 @@
       "c.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.09
     },
     "D3": {
      "format": "scan",
@@ -1481,7 +1528,7 @@
       "Ralf Ebbinghaus"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.59
     },
     "D4": {
      "format": "docx",
@@ -1498,7 +1545,7 @@
       "Torsten Wendeburg"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D5": {
      "format": "docx",
@@ -1514,7 +1561,7 @@
       "§ 641 Abs. 3 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -1613,7 +1660,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 12.36
+     "seconds": 12.51
     },
     {
      "id": "Q2",
@@ -1639,7 +1686,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 0.27
+     "seconds": 0.26
     },
     {
      "id": "Q3",
@@ -1727,7 +1774,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 10.55
+     "seconds": 10.63
     },
     {
      "id": "Q4",
@@ -1878,7 +1925,7 @@
        "platzhalter": "[ORT_09]"
       }
      ],
-     "seconds": 22.43
+     "seconds": 22.62
     },
     {
      "id": "Q5",
@@ -1950,7 +1997,7 @@
       "Oskar Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.13
+     "seconds": 1.14
     },
     "D2": {
      "format": "txt",
@@ -1983,7 +2030,7 @@
       "312.000,00 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.07
     },
     "D4": {
      "format": "docx",
@@ -1998,7 +2045,7 @@
       "Gerold Lammersdorf"
      ],
      "values_missing": [],
-     "seconds": 1.08
+     "seconds": 1.11
     },
     "D5": {
      "format": "docx",
@@ -2069,7 +2116,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.7
+     "seconds": 0.73
     },
     {
      "id": "Q2",
@@ -2100,7 +2147,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.24
+     "seconds": 0.22
     },
     {
      "id": "Q3",
@@ -2205,7 +2252,7 @@
        "platzhalter": "[ORT_02]"
       }
      ],
-     "seconds": 0.84
+     "seconds": 0.88
     },
     {
      "id": "Q4",
@@ -2263,7 +2310,7 @@
       "Uferweg 8, 14476 Beispielstadt"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.13
     },
     "D2": {
      "format": "pdf",
@@ -2285,7 +2332,7 @@
       "§ 577 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.21
+     "seconds": 1.2
     },
     "D3": {
      "format": "txt",
@@ -2304,7 +2351,7 @@
       "t.haselhorst@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.16
     },
     "D4": {
      "format": "scan",
@@ -2427,7 +2474,7 @@
        "platzhalter": "[ADRESSE_04]"
       }
      ],
-     "seconds": 2.2
+     "seconds": 2.28
     },
     {
      "id": "Q2",
@@ -2569,7 +2616,7 @@
        "platzhalter": "[ADRESSE_04]"
       }
      ],
-     "seconds": 3.44
+     "seconds": 3.45
     },
     {
      "id": "Q3",
@@ -2578,7 +2625,7 @@
       5
      ],
      "foreign_hits": 0,
-     "seconds": 0.02
+     "seconds": 0.03
     },
     {
      "id": "Q4",
@@ -2639,7 +2686,7 @@
       "§ 169 Satz 1 SGB III"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.15
     },
     "D2": {
      "format": "docx",
@@ -2660,7 +2707,7 @@
       "Ömer Yalçınkaya"
      ],
      "values_missing": [],
-     "seconds": 1.2
+     "seconds": 1.19
     },
     "D3": {
      "format": "txt",
@@ -2716,7 +2763,7 @@
       "614,25 EUR"
      ],
      "values_missing": [],
-     "seconds": 1.51
+     "seconds": 1.52
     }
    },
    "tasks": [
@@ -2768,7 +2815,7 @@
        "platzhalter": "[ORGANISATION_03]"
       }
      ],
-     "seconds": 0.85
+     "seconds": 0.98
     },
     {
      "id": "Q2",
@@ -2873,7 +2920,7 @@
        "platzhalter": "[ORGANISATION_03]"
       }
      ],
-     "seconds": 0.93
+     "seconds": 0.96
     },
     {
      "id": "Q3",
@@ -2917,6 +2964,261 @@
    }
   },
   {
+   "case": "LE-D007",
+   "split": "dev",
+   "documents": {
+    "D1": {
+     "format": "docx",
+     "type_reference": "vertrag",
+     "status": "not_needed",
+     "classified": "Vertrag",
+     "chars": 281,
+     "values_total": 6,
+     "values_found": [
+      "01.04.2019",
+      "14.06.1984",
+      "3.240,00 EUR",
+      "Hafenstraße 12, 28195 Beispielhafen",
+      "Henrike Brakenstedt",
+      "Lindqvist Bürgerdienste GmbH"
+     ],
+     "values_missing": [],
+     "seconds": 1.11
+    },
+    "D2": {
+     "format": "scan",
+     "type_reference": "schreiben",
+     "status": "done",
+     "classified": "Kündigungsschreiben",
+     "chars": 202,
+     "values_total": 3,
+     "values_found": [
+      "11.02.2026",
+      "31.05.2026",
+      "Lindqvist Bürgerdienste GmbH"
+     ],
+     "values_missing": [],
+     "seconds": 1.5
+    },
+    "D3": {
+     "format": "txt",
+     "type_reference": "email",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 307,
+     "values_total": 7,
+     "values_found": [
+      "0421 5530 217",
+      "13.02.2026",
+      "16.02.2026",
+      "Henrike Brakenstedt",
+      "Okke Tammerjahn",
+      "Steuer-Bescheide versandt",
+      "h.brakenstedt@beispielpost.example"
+     ],
+     "values_missing": [],
+     "seconds": 1.09
+    },
+    "D4": {
+     "format": "pdf",
+     "type_reference": "schreiben",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 294,
+     "values_total": 6,
+     "values_found": [
+      "02.03.2026",
+      "12.02.2026",
+      "20.03.2026",
+      "9.720,00 EUR",
+      "Lindqvist Bürgerdienste GmbH",
+      "Ostermann-Holtkamp Personalservice GmbH"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    },
+    "D5": {
+     "format": "txt",
+     "type_reference": "notiz",
+     "status": "not_needed",
+     "classified": "Unbekannt",
+     "chars": 323,
+     "values_total": 7,
+     "values_found": [
+      "05.03.2026",
+      "06.03.2026",
+      "12.02.2026",
+      "13.02.2026",
+      "17.02.2026",
+      "§ 4 Satz 1 KSchG",
+      "§ 622 Abs. 2 BGB"
+     ],
+     "values_missing": [],
+     "seconds": 1.1
+    }
+   },
+   "tasks": [
+    {
+     "id": "Q1",
+     "kind": "chat",
+     "status": "payload",
+     "reply_excerpt": "Antwort.",
+     "payload_chars": 2908,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "05.03.2026",
+      "06.03.2026",
+      "Steuer-Bescheide versandt"
+     ],
+     "needed_missing": [],
+     "maskiert_ohne_referenz": [
+      {
+       "original": "26/0214-BR",
+       "kategorie": "aktenzeichen",
+       "platzhalter": "[AKTENZEICHEN_01]"
+      },
+      {
+       "original": "Beispielhafen",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Bürgerservice",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      }
+     ],
+     "seconds": 0.61
+    },
+    {
+     "id": "Q2",
+     "kind": "schriftsatz",
+     "status": "ok",
+     "blocked_reasons": [],
+     "stored": true,
+     "draft_placeholders": [],
+     "client_reconstructed": true,
+     "edit_saved": true,
+     "export_docx_has_edit": true,
+     "export_pdf_has_edit": true,
+     "export_placeholders": [],
+     "quellenintegritaet": {
+      "status": "ok",
+      "im_entwurf": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "als_pruefpunkt_markiert": [
+       "§ 9999 BGB",
+       "BGH, Urt. v. 01.01.2020 - I ZR 999/19"
+      ],
+      "stuetzung_als_ungeprueft_markiert": true
+     },
+     "payload_chars": 2865,
+     "pii_leaks": [],
+     "cross_matter_values": [],
+     "needed_present": [
+      "12.02.2026",
+      "13.02.2026",
+      "31.05.2026"
+     ],
+     "needed_missing": [],
+     "erhalt": {
+      "keep": {
+       "present": [
+        "05.03.2026",
+        "06.03.2026",
+        "20.03.2026",
+        "9.720,00 EUR",
+        "Steuer-Bescheide versandt",
+        "§ 4 Satz 1 KSchG"
+       ],
+       "missing": []
+      },
+      "chronologie": {
+       "present": [
+        "01.04.2019",
+        "02.03.2026",
+        "11.02.2026",
+        "16.02.2026",
+        "17.02.2026"
+       ],
+       "missing": []
+      },
+      "normen": {
+       "present": [
+        "§ 4 Satz 1 KSchG",
+        "§ 622 Abs. 2 BGB"
+       ],
+       "missing": []
+      },
+      "widersprueche_beide_seiten": [
+       "W1"
+      ],
+      "widersprueche_unvollstaendig": []
+     },
+     "maskiert_ohne_referenz": [
+      {
+       "original": "26/0214-BR",
+       "kategorie": "aktenzeichen",
+       "platzhalter": "[AKTENZEICHEN_01]"
+      },
+      {
+       "original": "Beispielhafen",
+       "kategorie": "person",
+       "platzhalter": "[PERSON_01]"
+      },
+      {
+       "original": "Bürgerservice",
+       "kategorie": "ort",
+       "platzhalter": "[ORT_01]"
+      }
+     ],
+     "seconds": 0.91
+    },
+    {
+     "id": "Q3",
+     "kind": "fristen",
+     "expected": [
+      "05.03.2026",
+      "06.03.2026",
+      "20.03.2026"
+     ],
+     "found": [
+      "05.03.2026",
+      "06.03.2026",
+      "20.03.2026"
+     ],
+     "seconds": 0.0
+    }
+   ],
+   "critical": [],
+   "deadlines": {
+    "expected": [
+     "05.03.2026",
+     "06.03.2026",
+     "20.03.2026"
+    ],
+    "found": [
+     "05.03.2026",
+     "06.03.2026",
+     "20.03.2026",
+     "31.05.2026"
+    ],
+    "recall": "3/3",
+    "missing": [],
+    "not_in_reference": [
+     "31.05.2026"
+    ],
+    "known_dates_as_deadline": [],
+    "unexplained": [
+     "31.05.2026"
+    ],
+    "personal_dates_as_deadline": []
+   }
+  },
+  {
    "case": "LE-T001",
    "split": "test",
    "documents": {
@@ -2938,7 +3240,7 @@
       "Lorenz Haberkamp"
      ],
      "values_missing": [],
-     "seconds": 1.63
+     "seconds": 1.62
     },
     "D2": {
      "format": "pdf",
@@ -2957,7 +3259,7 @@
       "Theresa Kalkbrenner"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.15
     },
     "D3": {
      "format": "docx",
@@ -2976,7 +3278,7 @@
       "Ostwind Versicherung AG"
      ],
      "values_missing": [],
-     "seconds": 1.14
+     "seconds": 1.12
     },
     "D4": {
      "format": "txt",
@@ -2994,7 +3296,7 @@
       "ilka.voskuhl@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     }
    },
    "tasks": [
@@ -3066,7 +3368,7 @@
        "platzhalter": "[PERSON_06]"
       }
      ],
-     "seconds": 0.74
+     "seconds": 0.72
     },
     {
      "id": "Q2",
@@ -3092,7 +3394,7 @@
        "platzhalter": "[KENNUNG_01]"
       }
      ],
-     "seconds": 0.15
+     "seconds": 0.18
     },
     {
      "id": "Q3",
@@ -3267,7 +3569,7 @@
       "Waltraud Wehrhahn"
      ],
      "values_missing": [],
-     "seconds": 1.62
+     "seconds": 1.49
     },
     "D2": {
      "format": "pdf",
@@ -3300,7 +3602,7 @@
       "k.wehrhahn@beispielpost.example"
      ],
      "values_missing": [],
-     "seconds": 1.1
+     "seconds": 1.09
     },
     "D4": {
      "format": "docx",
@@ -3335,7 +3637,7 @@
       "§ 2325 BGB"
      ],
      "values_missing": [],
-     "seconds": 1.12
+     "seconds": 1.14
     }
    },
    "tasks": [
@@ -3390,7 +3692,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.83
+     "seconds": 0.81
     },
     {
      "id": "Q2",
@@ -3421,7 +3723,7 @@
        "platzhalter": "[ORT_01]"
       }
      ],
-     "seconds": 0.21
+     "seconds": 0.23
     },
     {
      "id": "Q3",
@@ -3529,7 +3831,7 @@
        "platzhalter": "[PERSON_02]"
       }
      ],
-     "seconds": 0.99
+     "seconds": 1.0
     },
     {
      "id": "Q4",
@@ -3612,7 +3914,7 @@
       "Jannik Brettschneider"
      ],
      "values_missing": [],
-     "seconds": 1.09
+     "seconds": 1.1
     },
     "D3": {
      "format": "txt",
@@ -3711,7 +4013,7 @@
        "platzhalter": "[AKTENZEICHEN_01]"
       }
      ],
-     "seconds": 0.91
+     "seconds": 0.92
     },
     {
      "id": "Q2",
@@ -3753,7 +4055,7 @@
        "platzhalter": "[PERSON_04]"
       }
      ],
-     "seconds": 0.3
+     "seconds": 0.31
     },
     {
      "id": "Q3",
@@ -3870,7 +4172,7 @@
        "platzhalter": "[AKTENZEICHEN_01]"
       }
      ],
-     "seconds": 1.11
+     "seconds": 1.12
     },
     {
      "id": "Q4",
@@ -3945,7 +4247,7 @@
       "Gründen aus dem hoheitlichen Bereich"
      ],
      "values_missing": [],
-     "seconds": 1.56
+     "seconds": 1.59
     },
     "D3": {
      "format": "txt",
@@ -3985,7 +4287,7 @@
       "§ 4 Satz 1 KSchG"
      ],
      "values_missing": [],
-     "seconds": 1.18
+     "seconds": 1.17
     },
     "D5": {
      "format": "pdf",
@@ -4008,7 +4310,7 @@
      "kind": "chat",
      "status": "payload",
      "reply_excerpt": "Antwort.",
-     "payload_chars": 3186,
+     "payload_chars": 3352,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -4020,15 +4322,13 @@
      "loesungsbasis": {
       "normen": "2/2",
       "normen_fehlend": [],
-      "fakten": "5/6",
-      "fakten_fehlend": [
-       "F8"
-      ],
+      "fakten": "6/6",
+      "fakten_fehlend": [],
       "fristen": "1/1",
       "fristen_fehlend": [],
       "offene_punkte": "2/2",
       "offene_punkte_fehlend": [],
-      "vollstaendig": false
+      "vollstaendig": true
      },
      "maskiert_ohne_referenz": [
       {
@@ -4057,11 +4357,6 @@
        "platzhalter": "[PERSON_03]"
       },
       {
-       "original": "Visa-Anträge",
-       "kategorie": "organisation",
-       "platzhalter": "[ORGANISATION_01]"
-      },
-      {
        "original": "Beispielstadt",
        "kategorie": "ort",
        "platzhalter": "[ORT_02]"
@@ -4082,7 +4377,7 @@
        "platzhalter": "[ADRESSE_01]"
       }
      ],
-     "seconds": 0.77
+     "seconds": 0.76
     },
     {
      "id": "Q2",
@@ -4108,7 +4403,7 @@
       ],
       "stuetzung_als_ungeprueft_markiert": true
      },
-     "payload_chars": 3206,
+     "payload_chars": 3372,
      "pii_leaks": [],
      "cross_matter_values": [],
      "needed_present": [
@@ -4157,15 +4452,13 @@
      "loesungsbasis": {
       "normen": "2/2",
       "normen_fehlend": [],
-      "fakten": "5/6",
-      "fakten_fehlend": [
-       "F8"
-      ],
+      "fakten": "6/6",
+      "fakten_fehlend": [],
       "fristen": "1/1",
       "fristen_fehlend": [],
       "offene_punkte": "2/2",
       "offene_punkte_fehlend": [],
-      "vollstaendig": false
+      "vollstaendig": true
      },
      "maskiert_ohne_referenz": [
       {
@@ -4194,11 +4487,6 @@
        "platzhalter": "[PERSON_03]"
       },
       {
-       "original": "Visa-Anträge",
-       "kategorie": "organisation",
-       "platzhalter": "[ORGANISATION_01]"
-      },
-      {
        "original": "Beispielstadt",
        "kategorie": "ort",
        "platzhalter": "[ORT_02]"
@@ -4219,7 +4507,7 @@
        "platzhalter": "[ADRESSE_01]"
       }
      ],
-     "seconds": 1.0
+     "seconds": 1.08
     },
     {
      "id": "Q3",
@@ -4238,6 +4526,7 @@
       "06.02.2026"
      ],
      "found": [
+      "05.02.2026",
       "06.02.2026"
      ],
      "seconds": 0.0
@@ -4250,14 +4539,13 @@
      "06.02.2026"
     ],
     "found": [
+     "05.02.2026",
      "06.02.2026",
      "21.01.2026",
      "30.04.2026"
     ],
-    "recall": "1/2",
-    "missing": [
-     "05.02.2026"
-    ],
+    "recall": "2/2",
+    "missing": [],
     "not_in_reference": [
      "21.01.2026",
      "30.04.2026"

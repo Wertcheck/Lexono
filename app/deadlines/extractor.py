@@ -93,9 +93,16 @@ _EXPLICIT_DEADLINE_BEFORE = re.compile(
     r"|\bspätestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?|\bspaetestens(?:\s+(?:am|bis(?:\s+zum)?|zum))?"
     r"|\bfällig(?:\s+(?:am|zum|bis))?|\bfaellig(?:\s+(?:am|zum|bis))?|\bzahlbar(?:\s+(?:bis|am))?(?:\s+zum)?"
     r"|\bzahlungsziel\s*:?|\bwiedervorlage\s*:?|\bfristablauf\s*:?|\bablauf\s+(?:am|zum)|\balso\s+am|\bendet\s+am"
+    # §72 (LE-D007, Befund LE-T004): "vorsorglich Fristende 05.02.2026, spätestens 06.02.2026" - "Fristende" OHNE
+    # Doppelpunkt unmittelbar vor dem Datum ist ebenso ausdruecklich; vorher wurde nur das spaetere Datum erkannt
+    r"|\b\w*fristende(?:\s+vorsorglich)?\s*:?"
     r"|\b\w*frist\w*\s*:)\s*$",
     re.IGNORECASE,
 )
+# §72: Bedeutung eines Fristendes, wenn ein Satz mehrere nennt ("vorsorglich ..., spätestens ...") - nur benannt, nie
+# entschieden: welches Fristende maßgeblich ist, haengt von ungeklaerten Voraussetzungen ab (z. B. streitiger Zugang)
+_PRECAUTIONARY_BEFORE = re.compile(r"\bvorsorglich\w*\b[^\d;]{0,25}$", re.IGNORECASE)
+_LATEST_BEFORE = re.compile(r"\b(?:spätestens|spaetestens|äußerstenfalls|aeusserstenfalls)\b[^\d;]{0,15}$", re.IGNORECASE)
 # "zum <Datum>" ist nur mit Beendigungs-/Ablaufbezug im Satz ein Fristende ("kuendigen ... ordentlich zum 30.06.2026")
 _ZUM_BEFORE = re.compile(r"\bzum\s*$", re.IGNORECASE)
 _TERMINATION_WORDS = re.compile(r"kündig|kuendig|beend|aufheb|ausscheid|wirksam\b|\bendet\b|ablauf|\w*frist", re.IGNORECASE)
@@ -369,6 +376,9 @@ class PlaceholderDeadlineExtractor:
             return any(start < match.end() and match.start() < end for start, end in personal)
 
         dated_deadline_sentences: set[tuple[int, int]] = set()
+        # §72: Fristenden je Satz (Index in `results`, Datum, Bedeutung) - mehrere im selben Satz werden einzeln
+        # vorgeschlagen und gegenseitig benannt, nie zusammengefuehrt
+        deadlines_by_sentence: dict[tuple[int, int], list[tuple[int, date, str]]] = {}
         for match in _NUMERIC_DATE_PATTERN.finditer(text):
             if is_personal(match):
                 continue  # Geburts-/Todesdatum ist keine Frist
@@ -378,7 +388,12 @@ class PlaceholderDeadlineExtractor:
             if result:
                 results.append(result)
                 if "Art: Frist" in result.reasoning:
-                    dated_deadline_sentences.add(self._sentence_bounds(text, match.start(), match.end()))
+                    sentence = self._sentence_bounds(text, match.start(), match.end())
+                    dated_deadline_sentences.add(sentence)
+                    if result.due_date is not None and "Art: Frist -" in result.reasoning:  # nur Fristenden, kein Fristbeginn
+                        deadlines_by_sentence.setdefault(sentence, []).append(
+                            (len(results) - 1, parsed, self._qualifier(text, sentence[0], match.start())))
+        self._mark_alternative_deadlines(results, deadlines_by_sentence)
 
         for match in _MONTH_NAME_PATTERN.finditer(text):
             if match.span() in seen_spans or is_personal(match):
@@ -401,6 +416,39 @@ class PlaceholderDeadlineExtractor:
             results.append(self._handle_relative_period(text, match))
 
         return results
+
+    @staticmethod
+    def _qualifier(text: str, sentence_start: int, date_start: int) -> str:
+        """Bedeutung eines Fristendes laut Text ("vorsorglich" / "spätestens"), sonst leer - nur fuer den Hinweis."""
+        before = text[sentence_start:date_start]
+        if _LATEST_BEFORE.search(before):
+            return "laut Text: spätestens"
+        if _PRECAUTIONARY_BEFORE.search(before):
+            return "laut Text: vorsorglich"
+        return ""
+
+    @staticmethod
+    def _mark_alternative_deadlines(
+        results: list[ExtractedDeadline], by_sentence: dict[tuple[int, int], list[tuple[int, date, str]]]
+    ) -> None:
+        """Mehrere verschiedene Fristenden in EINEM Satz (z. B. vorsorglich/spätestens bei streitigem Zugang): jeder
+        Vorschlag bleibt eigenständig und nennt die anderen, mit seiner Stellung (früher/später) und Bedeutung laut Text.
+        Keine Auswahl, keine Zusammenführung - welches Datum maßgeblich ist, ist anwaltlich zu prüfen."""
+        for entries in by_sentence.values():
+            dates = sorted({entry[1] for entry in entries})
+            if len(dates) < 2:
+                continue
+            for index, due, qualifier in entries:
+                position = "früheste" if due == dates[0] else "späteste" if due == dates[-1] else "mittlere"
+                others = ", ".join(d.strftime("%d.%m.%Y") for d in dates if d != due)
+                meaning = f" ({qualifier})" if qualifier else ""
+                note = (
+                    f" Im selben Satz stehen mehrere mögliche Fristenden: dieses ist das {position}{meaning}, außerdem "
+                    f"{others}. Alle werden getrennt vorgeschlagen und nicht zusammengeführt; welches maßgeblich ist "
+                    "(z. B. bei streitigem Zugang), ist NICHT entschieden - anwaltliche Prüfung erforderlich."
+                )
+                result = results[index]
+                results[index] = result.model_copy(update={"reasoning": result.reasoning + note})
 
     # --- P2.1 (§40): Rolle des Datums im Satz -----------------------------------------------------------------------
 

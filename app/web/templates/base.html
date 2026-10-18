@@ -401,17 +401,26 @@
              bisher nur die Konfiguration. #}
           {% set _cloud = request.app.state.cloud_health %}
           {% set cloud_state = (_cloud.state if _cloud else ('checking' if cloud_configured else 'not_configured')) %}
+          {# §72: tatsaechlich genutzter Weg (app/ai_providers/cloud_health.py::cloud_route) statt fest "Gateway" -
+             ohne Statuspruefung (z. B. Tests) neutral "Cloud-KI". Der Weg ist Konfiguration, die Erreichbarkeit steht
+             getrennt daneben. #}
+          {% set cloud_route = (_cloud.route if _cloud and _cloud.route else '') %}
+          {% set cloud_label = {'gateway': 'Cloud-KI (Gateway)', 'direct': 'Cloud-KI (direkt)',
+                                'qa_loopback': 'Cloud-KI (lokaler Prüfendpunkt)'}.get(cloud_route, 'Cloud-KI') %}
+          {% set cloud_route_hint = {'gateway': ' – Weg: Lexono-Gateway',
+                                     'direct': ' – Weg: direkt zur Anthropic-API (ohne Gateway)',
+                                     'qa_loopback': ' – Weg: lokaler Prüfendpunkt auf diesem Rechner (QA), keine Cloud'}.get(cloud_route, '') %}
           {% set lai_ready = lai_state == 'ready' %}
           <div class="sidebar__status-panel">
-            <div class="sidebar__status-row" title="{{ {
+            <div class="sidebar__status-row" data-cloud-route="{{ cloud_route or 'none' }}" title="{{ {
               'not_configured': 'Cloud-KI nicht konfiguriert (kein API-Schlüssel hinterlegt)',
               'checking': 'Cloud-KI: Verbindung wird geprüft...',
               'reachable': 'Cloud-KI erreichbar',
               'unreachable': 'Cloud-KI nicht erreichbar' ~ ((': ' ~ _cloud.reason) if _cloud and _cloud.reason else ''),
               'request_failed': 'Cloud-KI erreichbar, aber die letzte Anfrage ist fehlgeschlagen (z. B. Schlüssel oder Guthaben prüfen)',
-            }[cloud_state] }}">
+            }[cloud_state] ~ cloud_route_hint }}">
               {{ icons.cloud(class_="icon sidebar__status-icon") }}
-              <span>Cloud-KI (Gateway)</span>
+              <span class="sidebar__status-label" data-cloud-label>{{ cloud_label }}</span>
               <span class="sidebar__status-value{% if cloud_state == 'reachable' %} sidebar__status-value--ok{% endif %}" data-cloud-state="{{ cloud_state }}">{{ {
                 'not_configured': 'nicht konfiguriert',
                 'checking': 'wird geprüft…',

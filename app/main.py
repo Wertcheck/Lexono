@@ -338,9 +338,18 @@ async def _run_periodic_cloud_health(app: FastAPI, settings) -> None:
     Erreichbarkeitspruefung mit kurzem Timeout plus Auswertung der letzten Anfrage (siehe
     app/ai_providers/cloud_health.py). Keine API-Anfrage, kein Schluessel, kein Inhalt. Aenderungen werden
     nur als feste Kategorie geloggt."""
-    from app.ai_providers.cloud_health import CHECKING, NOT_CONFIGURED, CloudHealth, compute_cloud_health, probe_target
+    from app.ai_providers.cloud_health import (
+        CHECKING,
+        NOT_CONFIGURED,
+        CloudHealth,
+        cloud_route,
+        compute_cloud_health,
+        probe_target,
+    )
 
-    app.state.cloud_health = CloudHealth(CHECKING if probe_target(settings) else NOT_CONFIGURED)
+    app.state.cloud_health = (
+        CloudHealth(CHECKING, route=cloud_route(settings)) if probe_target(settings) else CloudHealth(NOT_CONFIGURED)
+    )
     previous = None
     while True:
         try:

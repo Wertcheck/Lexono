@@ -721,9 +721,53 @@ def is_role_label_before_person(text: str, end: int) -> bool:
     return bool(match and _HAS_PERSON_PLACEHOLDER.search(match.group()))
 
 
+# §72 (Dev-Fall LE-D007 "Steuer-Bescheide versandt", Befund LE-T004 "Visa-Anträge erfasst"): Verwaltungsgegenstand +
+# Verfahrens-Kopfnomen - mit Bindestrich oder zusammengeschrieben - wurde kontextabhaengig als Organisation
+# ("Visa-Anträge", "Steuer-Bescheide") oder Person ("Visaanträge") maskiert; der entscheidende Sachverhaltsfakt war im
+# Payload unverstaendlich. Die Modell-Probe trennt hier nicht ("Visa-Anträge" 0, "Asyl-Anträge" 4), "is_common_compound"
+# griff nicht (Bindestrich, Pluralform). Gleiches Prinzip wie oben, aber BEIDE Teile aus geschlossenen Klassen:
+# Gegenstaende behoerdlicher Verfahren (kein Vor-, Nach- oder Firmenname) und Verfahrens-/Dokumentnomen. Firmennamen wie
+# "Siemens-Anträge" bleiben maskiert (Vorderteil nicht in der Klasse); Mehrworttreffer ("Visa-Anträge GmbH") ohnehin, die
+# Regel gilt nur fuer EIN Wort. Bekannte Beteiligte schuetzt die Abgleichsliste unabhaengig davon.
+_ADMIN_SUBJECTS = frozenset(
+    {
+        "visa", "visum", "pass", "reisepass", "ausweis", "personalausweis", "asyl", "aufenthalt", "aufenthalts",
+        "aufenthaltstitel", "einbürgerung", "einbürgerungs", "bau", "steuer", "renten", "rente", "kindergeld",
+        "elterngeld", "wohngeld", "bürgergeld", "sozialhilfe", "beihilfe", "führerschein", "gewerbe", "melde",
+        "zoll", "insolvenz", "arbeitserlaubnis", "einreise",
+    }
+)
+_ADMIN_PROCEDURE_HEADS = frozenset(
+    {
+        "antrag", "anträge", "anträgen", "antrags", "bescheid", "bescheide", "bescheiden", "bescheids", "verfahren",
+        "verfahrens", "akte", "akten", "sache", "sachen", "formular", "formulare", "formularen", "unterlagen",
+        "abteilung", "stelle", "prüfung", "prüfungen", "angelegenheit", "angelegenheiten",
+    }
+)
+
+
+@lru_cache(maxsize=20000)
+def is_admin_procedure_compound(word: str) -> bool:
+    """EIN Wort aus Verwaltungsgegenstand + Verfahrensnomen ("Visa-Anträge", "Steuerbescheide", "Pass-Antrag")."""
+    value = word.strip()
+    if not value or any(ch.isspace() for ch in value) or value.count("-") > 1:
+        return False
+    if "-" in value:
+        modifier, head = value.lower().split("-")
+        return modifier.isalpha() and head.isalpha() and modifier in _ADMIN_SUBJECTS and head in _ADMIN_PROCEDURE_HEADS
+    if not value.isalpha():
+        return False
+    lower = value.lower()
+    for split in range(3, len(lower) - 3):
+        modifier, head = lower[:split], lower[split:]
+        if head in _ADMIN_PROCEDURE_HEADS and (modifier in _ADMIN_SUBJECTS or modifier.endswith("s") and modifier[:-1] in _ADMIN_SUBJECTS):
+            return True
+    return False
+
+
 def is_technical_compound(word: str) -> bool:
     """Fachwort-Kompositum (mit oder ohne Ableitungsfuge) - kein Name. Nur fuer Treffer OHNE Anrede/Rollenwort."""
-    return is_derivational_compound(word) or is_common_compound(word)
+    return is_derivational_compound(word) or is_common_compound(word) or is_admin_procedure_compound(word)
 
 
 @lru_cache(maxsize=50000)
@@ -1448,6 +1492,8 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
             continue  # Rollenbezeichnung vor bereits ersetzter Person ("Messbeamter: [PERSON_04]"), siehe is_role_label_before_person
         if category in ("person", "organisation") and is_common_compound(value.strip()):
             continue  # Sach-/Rollen-Kompositum ohne Ableitungsfuge, siehe `is_common_compound`
+        if category in ("person", "organisation") and is_admin_procedure_compound(value):
+            continue  # Verwaltungsgegenstand + Verfahrensnomen ("Visa-Anträge"), siehe `is_admin_procedure_compound`
         if category == "ort" and is_safe_head_compound(value.strip()):
             continue  # nur sichere (Dokument-)Kopfnomen - kein Ortsnamenbestandteil
         if category in ("person", "organisation") and is_derivational_compound(value.strip()):
