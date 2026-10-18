@@ -8948,3 +8948,157 @@ Dummy-Zugangsdaten nur in der Prozessumgebung. Angezeigt wurde „Cloud-KI (Gate
 
 **Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
 Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §73 Fristenerkennung: Dokument-/Vermerkdaten, Ereignisdaten und offene Angaben (18.10.2026, Branch `feature/feedback-diagnose`, Code `3019b7b`)
+
+Ziel: die in §72 dokumentierte Restschwäche gezielt beheben. Fristvorschläge zu Vermerkdaten wie
+„Vermerk vom 17.02.2026 … Klagefrist:“ sollen verschwinden, ohne dass echte Fristen verloren gehen. Danach wird der
+Legal-Benchmark erneut ausgewertet. Entwickelt wurde am neuen Entwicklungsfall **LE-D008**. Der Test-Split blieb
+unverändert, ebenso Fälle, Referenzen und Schwellen.
+
+### 73.1 Bestandsaufnahme: alle Fristvorschläge außerhalb der Referenz (Stand §72)
+
+| Fall | Datum | Textstelle | Einordnung |
+|---|---|---|---|
+| LE-D005 | 10.03.2026 | „Aktenvermerk vom 10.03.2026 - Az. …⏎Ausübungsfrist: …“ | **Fehlvorschlag** (Vermerkdatum) |
+| LE-T004 | 21.01.2026 | „Vermerk vom 21.01.2026 - Az. …⏎Klagefrist: …“ | **Fehlvorschlag** (Vermerkdatum) |
+| LE-D003 | 02.12.2025 | „Ortstermin am 02.12.2025“ | korrekt als **Termin**, nicht als Frist eingeordnet; nur außerhalb der Referenz |
+| LE-D007, LE-T004 | 31.05., 30.04.2026 | „kündigen … ordentlich zum …“ | **bewusst** als Fristende geführt (§40, per Test abgesichert): Beendigungstermin – fachliche Frage, nicht geändert (73.6) |
+
+Baseline LE-D008: Recall 3/3, aber **4 Fehlvorschläge**: 23.01. (Vermerk-Kopf), 26.01. (E-Mail-Kopf
+„Datum: …⏎Betreff: Frist …“), 22.01. („am 22.01.2026 zugestellt“) und 21.01. („Zustellung schon am 21.01.2026; das
+Fristende ist danach offen“).
+
+### 73.2 Ursachen (`app/deadlines/extractor.py`)
+
+1. **Feldzeile:** Ein Zeilenumbruch galt nur nach Satzzeichen, an Leerzeilen oder in Tabellen als Satzgrenze. Die
+   Kopfzeile „Aktenvermerk vom … - Az. …“ endet ohne Satzzeichen und verschmolz so mit der Feldzeile „Klagefrist: …“
+   darunter.
+2. **„vom“:** Die Regel „Fristwort bis 30 Zeichen nach dem Datum“ griff auch, wenn „vom“ das Datum als Dokument- oder
+   Ereignisdatum ausweist.
+3. **Reihenfolge:** Ein Ereignis direkt am Datum (Zustellung, Zugang, Bekanntgabe, „ging … zu“) wurde erst nach den
+   Fristwort-Regeln geprüft. Ein Fristwort im Satz machte das Zustelldatum so zum Fristende.
+4. **Offene Angabe:** „das Fristende ist offen“ diente als Hinweis auf ein anderes Datum im Satz.
+
+### 73.3 Änderung (eng, jeweils mit Gegenproben)
+
+- Eine Folgezeile, die als Feldzeile beginnt („Wort:“), ist eine harte Satzgrenze. Weiche PDF-Umbrüche mitten im Satz
+  bleiben unverändert (Regressionstest P2.3).
+- Die Regel „Fristwort danach“ greift nicht bei „vom <Datum>“ und nicht, wenn das Fristwort ausdrücklich offen ist
+  („ist [danach/noch] offen“, „unklar“, „nicht berechnet“ …). Gleiches gilt für die Regel „Fristwort + am/bis/zum“.
+- Zustellung, Zugang oder Bekanntgabe unmittelbar am Datum werden **Fristbeginn**: Vorschlag ohne Fälligkeitsdatum,
+  „Fristende wurde nicht berechnet“. Ein ausdrückliches Fristende („Fristende“, „bis“, „spätestens“) geht weiterhin vor.
+  „Eingang“ ist bewusst nicht in der Regel, weil „Eingang am … erforderlich“ ein Fristende ist.
+- Unverändert:
+  - Konfidenz;
+  - Prüfstatus „ungeprüft“ (keine automatische Bestätigung);
+  - Textstelle und Begründung je Vorschlag;
+  - der §72-Hinweis bei mehreren Fristenden.
+
+### 73.4 Repository-Tests
+
+- `tests/test_s73_deadline_document_dates.py`: 25 Tests.
+  - Vermerk- und Dokumentdaten mit und ohne „vom“, E-Mail-Kopf, „Schreiben vom …“;
+  - Gegenproben mit echtem Fristende in der Feldzeile, „läuft … ab“, „Wiedervorlage:“, weichem Umbruch;
+  - Ereignisdaten als Fristbeginn, Gegenproben dazu („endet am … nach Zugang“, „Eingang … Fristablauf“,
+    „Zustellung spätestens bis“, vorsorglich/spätestens);
+  - offene Angaben;
+  - Prüfstatus, Quelle und Unsicherheit.
+- Bestehende Fristen- und Extraktor-Tests (15 Dateien): **311 PASS**, 1 xfailed wie zuvor.
+- Volle Suite (sechs Teile, Vordergrund): **5519 PASS**, 4 FAIL. Die Fehlschläge sind die bekannten fremden Logo-Tests
+  `test_design_refresh`, kein neuer Fehler. Dazu 10 xfailed, 1 xpassed (bekannt, „Richter“), 1 skipped.
+
+### 73.5 Legal-Benchmark (`python -m scripts.legal_bench.e2e`, `results.json`) im Vergleich zu §72
+
+| Messung | §72 dev (7) | §73 dev (8, + LE-D008) | §72 test (4) | §73 test (4) |
+|---|---|---|---|---|
+| kritische Befunde / Lecks / Werte fremder Akten | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Extraktion | 221/221 | 246/246 | 110/110 | 110/110 |
+| Chronologie | 40/40 | 45/45 | 22/22 | 22/22 |
+| geschützte Inhalte: keep-Werte erhalten | 44/44 | 49/49 | 25/25 | 25/25 |
+| Fristdatum-Recall | 16/16 | 19/19 | 5/5 | 5/5 |
+| **Fristen außerhalb der Referenz** | 3 | **2** | 2 | **1** |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 2/2 | 2/2 |
+| erfundene Fundstellen markiert | 14/14 | 16/16 | 8/8 | 8/8 |
+
+Weitere Proben unverändert:
+
+- Freigabe-Probe: auffälliges Dokument nicht im Payload;
+- Aktenzuordnung: keine Fremdzuordnung;
+- fremder Chat-Anhang: blockiert.
+
+Außerhalb der Referenz verbleiben nur der Termin (LE-D003) und die Kündigungstermine (73.6).
+
+**Grenzen der Bewertung:**
+
+- Die Lösungsgrundlage wird am **gesendeten Payload** geprüft. Er enthält den Aktentext wörtlich, aber
+  pseudonymisiert. Ein exakter Wertvergleich ist dort sachgerecht; er scheitert nur, wenn die Maskierung einen Wert
+  verändert (so F8 vor §72).
+- Die Bewertung von **Antworten** (`score_answer`) arbeitet ebenfalls mit exakten Werten. Zulässige Paraphrasen
+  („denselben Gesellschaftern“) zählen dort als fehlend; das ergibt falsche FAILs, aber keine falschen PASS. Sie wurde
+  mangels echter Modellantworten nicht angewendet.
+- Juristische Korrektheit wird weder gemessen noch aus Textähnlichkeit abgeleitet.
+
+Quellen und Rechte sind unverändert gegenüber §71. LE-D008 ist vollständig synthetisch, mit realen ZPO-Normen; es
+wurde keine fremde Falllösung übernommen. Es gab keine Cloud-Aufrufe und keine Kosten.
+
+### 73.6 Installierte App (WebView2)
+
+**Prüfung vor dem Update:**
+
+- keine laufende Instanz;
+- Sicherungsziel frei, frühere Sicherungen und Archiv vollständig;
+- 74 GB frei;
+- die installierte EXE entsprach dem Build `0303e0e`;
+- Build-Worktree sauber.
+
+**Build und Installation:**
+
+- Build aus `3019b7b`; `_role`, `_is_hard_newline` und `_event_at_date` sind bytecode-gleich mit `3019b7b`.
+- Sicherung `C:\Users\Bonit\lexono_install_backup_vor_3019b7b` (956/956 Dateien). Installer `0303e0e` archiviert.
+- Stilles Update, Exit 0. Die installierte EXE ist byte-identisch mit dem Build (SHA-256
+  `bb63d5c29a4fc1de87a20fb9acef9c45e617ebf8d9b36e19724ae159731f2ced`).
+- Echte Datenbank vor und nach allem `677CAFD8109F`.
+
+**Lauf:**
+
+- Methode wie §71/§72: isolierte QA-Daten, OCR an, alles über die Oberfläche, Anfragen nur an einen lokalen
+  Aufzeichnungsserver mit Testschlüssel.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s73_legal_benchmark\`.
+
+| | LE-D005 | LE-D007 | LE-D008 | LE-T004 |
+|---|---|---|---|---|
+| Fristen mit Datum (Recall / außerhalb Referenz) | 2/2 / – (§72: 10.03.) | 3/3 / 31.05. (Beendigungstermin) | 3/3 / – | 2/2 / 30.04. (Beendigungstermin; §72 zusätzlich 21.01.) |
+| Vorschläge ohne Datum (Art laut Begründung) | 2 × Fristbeginn | Fristbeginn, Fristdauer | 3 × Fristbeginn (Zustellungen 22.01., 21.01., 21.01.) | Fristbeginn, Fristdauer |
+| Prüfstatus | alle ungeprüft | alle ungeprüft | alle ungeprüft | alle ungeprüft |
+| §72-Hinweis „mehrere Fristenden“ in der Detailansicht | ja | ja | – (verschiedene Sätze) | ja |
+| Extraktion / Chronologie | 34/34 / 7/7 | 29/29 / 5/5 | 25/25 / 5/5 | 28/28 / 6/6 |
+| Payload: Lecks / fremde Akte (Chat, Schriftsatz) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig | – | – | vollständig |
+
+In der Detailansicht von „Aufgaben & Fristen“ zeigen Fristbeginn-Vorschläge „nicht berechnet“. Einschränkung: Das
+Merkmal „Möglicher Fristbeginn“ wurde im Seitentext gesucht, nicht nur in der Detailansicht. Maßgeblich für die Art
+ist die gespeicherte Begründung.
+
+LE-D006 wurde in §73 nicht erneut in der App ausgeführt. Er enthält keine der geänderten Formulierungen; sein
+App-Ergebnis aus §72 (2/2) ist nicht neu verifiziert. Nach den Läufen bleiben keine Lexono-, pytest- oder
+QA-Prozesse zurück.
+
+### 73.7 Offene Risiken und nächste Schritte
+
+- **Beendigungstermin „kündigen … zum <Datum>“ als Fristende (fachliche Entscheidung, Owner):**
+  - Option A: so lassen (heute; der Termin ist relevant, wird aber „Frist“ genannt);
+  - Option B: als eigene Art „Beendigungstermin“ führen (Termin, kein Fristablauf);
+  - Option C: nicht vorschlagen.
+
+  Die bestehenden §40-Tests sichern Option A ab.
+- Die Feldzeilen-Grenze erkennt nur „Wort:“ am Zeilenanfang. Mehrwort-Feldbezeichnungen („Frist für Stellungnahme:“)
+  sind keine Grenze. Das kann weiter zu Fehlvorschlägen führen, aber nicht zum Verlust echter Fristen.
+- Die Ereignisregel ist bewusst eng (Zustellung, Zugang, Bekanntgabe, „ging … zu“). Andere Ereignisse („erhalten am“)
+  bleiben unberührt.
+- Antwortbewertung mit exakten Werten: Für echte Modellantworten wären vorab geprüfte, zulässige Varianten je
+  Kriterium nötig, im Entwicklungs-Split und vor dem Lauf festgelegt. Keine juristische Bewertung über Textähnlichkeit.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte, PostgreSQL.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.

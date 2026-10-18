@@ -160,6 +160,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   0 Lecks. Neuer Dev-Fall LE-D007.
   **Offen:** Vermerkdaten als Fristvorschlag; direkter Weg in der App NICHT VERIFIZIERT; echte Modellantworten.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §72.
+  **Fortschritt 18.10.2026 (§73):** Vermerk- und Dokumentdaten, Zustelldaten und offene Angaben werden nicht
+  mehr als Fristende vorgeschlagen (neuer Dev-Fall LE-D008). Fristen außerhalb der Referenz: dev 3 -> 2,
+  test 2 -> 1, bei vollem Recall. In der installierten App geprüft (Build `3019b7b`, WebView2, Loopback): 0 Lecks.
+  **Offen (Owner):** Beendigungstermin „kündigen … zum <Datum>“ als Fristende führen (Optionen A/B/C, §73.7).
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §73.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
