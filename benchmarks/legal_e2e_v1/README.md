@@ -35,6 +35,9 @@ Namenserkennung (§34.6).
   `required_norms` und die Begriffe der `open_points` stehen wörtlich in den Akten, `deadlines` in den Referenzfristen.
   Eine Analyse-Aufgabe ist Pflicht.
 - Jeder Referenzwert steht wörtlich im angegebenen Dokument (keine erfundenen Werte, Fristen oder Fundstellen).
+- Optional (§74): `reference.terminations` (erwartete Beendigungstermine, keine Fristen) und `reference.not_deadlines`
+  (Dokument-, Vermerk- und Ereignisdaten, die kein Fristende sind) - je im Dokument belegt, nicht mit den Fristen
+  überlappend. Der Runner weist sie getrennt aus; der Datums-Recall der Fristen bleibt unverändert definiert.
 - Zitate außer Normen brauchen eine belegte Quelle; der Korpus enthält derzeit nur reale Normen.
 - Jede geschützte Partei steht in `privacy.protect` und in mindestens einem Dokument.
 - Widersprüche: mindestens zwei Dokumente mit unterschiedlichen Werten.

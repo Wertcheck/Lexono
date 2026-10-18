@@ -165,6 +165,12 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   test 2 -> 1, bei vollem Recall. In der installierten App geprüft (Build `3019b7b`, WebView2, Loopback): 0 Lecks.
   **Offen (Owner):** Beendigungstermin „kündigen … zum <Datum>“ als Fristende führen (Optionen A/B/C, §73.7).
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §73.
+  **Fortschritt 18.10.2026 (§74):** Owner-Option B umgesetzt: Beendigungstermin als eigene Art (kein Fristende,
+  keine Wirksamkeitsaussage), in Liste, Detail, Export und Cloud-Kontext erkennbar; kein Duplikat bei erneuter
+  Analyse. „Frist für/zur … : <Datum>“ wird erkannt. Neuer Dev-Fall LE-D009. Recall dev 23/23 (19/19 aus §73),
+  test 5/5; Beendigung 1/1; 0 Lecks. In der installierten App geprüft (Build `fc7d3d3`, WebView2, Loopback).
+  **Offen (Owner):** Referenz LE-D002 (30.06.2026 als Frist geführt); Feldbezeichnung „Fällig am“ bei
+  Beendigungsterminen. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §74.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.

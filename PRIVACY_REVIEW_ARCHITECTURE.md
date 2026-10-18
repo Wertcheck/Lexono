@@ -9102,3 +9102,215 @@ QA-Prozesse zurück.
 
 **Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
 Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §74 Beendigungstermin als eigene Art, mehrteilige Fristfelder, Legal-Benchmark erweitert (18.10.2026, Branch `feature/feedback-diagnose`, Code `fc7d3d3`)
+
+Ziel: Den Beendigungszeitpunkt („Das Mietverhältnis wird ordentlich zum 30.04.2026 gekündigt“) als eigene Art führen,
+nicht als Fristende. Das entspricht Option B aus §73.7, vom Owner beauftragt. Dazu die Fristenerkennung für mehrteilige
+Feldbezeichnungen härten und den Benchmark um einen Fall erweitern, der beides gemeinsam prüft. Bestehende Fälle,
+Test-Split, Referenzen und Schwellen sind unverändert.
+
+### 74.1 Bestandsaufnahme
+
+- Die Art eines Vorschlags steht nur in der Begründung („Art: …“) und wird über `review.kind_from_reasoning`
+  abgeleitet. Es gibt kein eigenes Datenbankfeld und keine Migration.
+- Beendigungstermine entstanden im Zweig „zum + Beendigungswort“ als „Art: Frist“ mit dem Hinweis
+  „zum (Beendigung/Ablauf)“. Derselbe Hinweis traf auch echte Fristenden („Die Widerspruchsfrist endet zum …“).
+- **Nachgelagerte Pfade:**
+  - Bezeichnung (`kind_label`), Liste und Detail in „Aufgaben & Fristen“ (Spalte/Feld „Typ“ war fest „Frist“);
+  - Dokumentansicht der Akte;
+  - Bezeichnung im Cloud-Kontext (`local_ai_provider.label_of`);
+  - Zweitmeinungs-Abgleich (`second_opinion.comparison`, Cloud-Schema frist/termin/fristbeginn);
+  - Akten-Export (ohne Art);
+  - Fund-Schlüssel (`finding_key` = Art|Angabe|n, Duplikatschutz bei erneuter Analyse);
+  - Sortierung und Kalender nach Datum.
+- Erinnerungen sind laut `settings.py` noch nicht an die Fristenlogik angebunden; dort ändert sich nichts.
+- **Weitere Lücken (Probe vor der Änderung):**
+  - „Frist für Stellungnahme: 20.03.2026“ und „Frist zur Klageerhebung: 05.03.2026“ ergaben **keinen** Vorschlag;
+    echte Fristen gingen verloren.
+  - „Aktenvermerk 17.02.2026⏎Frist zur Klageerhebung: …“ ergab einen Fehlvorschlag. Die Feldzeilen-Grenze aus §73
+    kannte nur Bezeichnungen aus einem Wort.
+  - „Das Mietverhältnis wird … zum 30.04.2026 gekündigt“ (Partizip nach dem Datum) ergab keinen Vorschlag.
+
+### 74.2 Änderung
+
+**Beendigungstermin** (`app/deadlines/extractor.py`): Im Zweig „zum <Datum>“ entscheidet `_termination_cue`.
+
+- Beendigungstermin, wenn:
+  - eine Beendigungshandlung vor dem Datum steht („kündig…“, „beend…“, „Aufhebung“, „ausscheiden“);
+  - oder „<Verhältnis/Vertrag/Mitgliedschaft/Mandat> endet zum“;
+  - oder ein Partizip danach folgt („gekündigt“, „beendet“, „aufgehoben“).
+- Gegenprobe: Benennt der Satz das Ende einer **Frist** („Die Kündigungsfrist endet zum …“, „Ablauf“), bleibt es ein
+  Fristende.
+- Begründung: „Art: Beendigungstermin (kein Fristende) – … Das ist keine Frist: ob die Beendigung wirksam ist und ob
+  eine Kündigungsfrist eingehalten wurde, wurde NICHT geprüft; daraus folgende Fristen … sind gesondert zu ermitteln.“
+- Erhalten bleiben Datum, Originalangabe, Textstelle, Konfidenz 0,5 und Prüfstatus „ungeprüft“. Ein Beendigungstermin
+  ist nie Teil des §72-Hinweises „mehrere mögliche Fristenden“.
+
+**Nachgelagerte Pfade:**
+
+- Art `beendigung` mit Bezeichnung „Möglicher Beendigungstermin (kein Fristende)“.
+- `type_label` zeigt „Beendigungstermin“ statt „Frist“ in Spalte und Detailfeld „Typ“.
+- Cloud-Kontext: „Möglicher Beendigungstermin (kein Fristende)“.
+- Zweitmeinung: `termin`, Cloud-Schema unverändert.
+- Export: neues Feld `kind` (additiv).
+
+**Fund-Schlüssel:** Beendigungstermine teilen den Schlüsselraum `frist`. Ein bis §73 gespeicherter Vorschlag
+(`frist|30.04.2026|1`) wird bei erneuter Analyse wiedererkannt, es entsteht **kein** Duplikat. Altvorschläge werden
+**nicht umgedeutet**: Der alte Hinweis traf auch echte Fristenden, deshalb bleiben sie „Frist“, bis ein Mensch sie
+prüft.
+
+**Mehrteilige Feldbezeichnungen und Feldzeilen:**
+
+- „<…frist…> für/zur/zum/zu/der/des <1–4 Wörter>:“ unmittelbar vor dem Datum ist ein ausdrückliches Fristende.
+- Eine Folgezeile mit mehrteiliger Feldbezeichnung (nur Buchstabenwörter, bis zu 6 Wörter, also keine Uhrzeit) ist
+  eine Satzgrenze.
+- Eine **abgeschlossene** Feldzeile „Feld: <Datum>“ ist ebenfalls eine Satzgrenze. Sonst galten zwei verschiedene
+  Fristen auf zwei Zeilen als Alternativen eines Satzes; das hat LE-D009 aufgedeckt.
+- Weiche Umbrüche in einem Feldwert („bis zum⏎31.07.2026“) bleiben verbunden.
+
+**Bestehender Test geändert (bewusst, Owner-Auftrag):** `test_deadlines_kinds.py` führte „kündigen wir … ordentlich zum
+30.06.2026“ als Fristende (§40). Der Fall ist jetzt als Beendigungstermin abgesichert
+(`test_termination_date_is_a_termination_not_a_deadline_end`). Die übrigen Fälle dieser Liste sind unverändert.
+
+### 74.3 Regressionstests (Repository)
+
+- `tests/test_s74_termination_dates.py` (46 Tests):
+  - ordentliche und außerordentliche Kündigungen, „endet zum“, „beendet“, „Kündigung zum“ – mit Prüfung von Begründung,
+    Unsicherheit und fehlender Wirksamkeitsaussage;
+  - Gegenproben: Kündigungs- und Widerspruchsfrist „endet zum“, „bis zum“, „bis spätestens“, „spätestens am“,
+    „Fristende“;
+  - Zugang und Zustellung als Fristbeginn;
+  - Dokument- und Vermerkdaten, unvollständiges „zum nächstmöglichen Termin“, zwei Beendigungstermine;
+  - mehrteilige Feldbezeichnungen positiv und negativ, abgeschlossene Feldzeile, weicher Umbruch, Uhrzeit;
+  - vorsorglich/spätestens weiterhin als Alternativen;
+  - Bezeichnungen, Altvorschläge, Fund-Schlüssel;
+  - erneute Analyse ohne Duplikat;
+  - Speicherung „ungeprüft“;
+  - E2E LE-D009.
+- `tests/test_s74_termination_ui_export.py` (2 Tests): Typ-Spalte und Detail in „Aufgaben & Fristen“, `kind` im
+  Export-Manifest.
+- Fristen-, Zweitmeinungs-, Export- und Aufgaben-Suites (24 Dateien): **519 PASS**, 1 xfailed wie zuvor.
+- Volle Suite (sechs Teile, Vordergrund): **5567 PASS**.
+  - **4 FAIL, bereits bekannt:** `test_design_refresh` mit 4 Logo-Tests; die fremden Logo-Dateien fehlen in der
+    Arbeitskopie. Kein neuer Fehler.
+  - Dazu 10 xfailed, 1 xpassed (bekannt), 1 skipped.
+- Ein Zwischenfehler in `test_legal_benchmark_e2e.py` wurde behoben: `summarise` setzte die neuen Felder voraus. Jetzt
+  abwärtskompatibel, der Test ist unverändert.
+
+### 74.4 Legal-Benchmark
+
+**Neuer Entwicklungsfall LE-D009** (Mietrecht, Eigenbedarfskündigung, vollständig synthetisch, reale BGB-Normen). Die
+Referenz war **vor dem ersten Lauf** festgelegt: SHA-256 `2f9865cb…f25b`, 18.10.2026 15:16, nach dem Lauf unverändert.
+
+- **Fristen (`deadlines`):**
+  - 31.08.2026, Widerspruch, „bis spätestens“ und „Fristende“;
+  - 06.03.2026, „Frist für Stellungnahme:“ und „Frist zur Stellungnahme an die Gegenseite:“;
+  - 02.11.2026, Räumung „spätestens am“;
+  - 02.03.2026, „Wiedervorlage:“.
+- **Beendigungstermin (`terminations`, neu):** 31.10.2026 in drei Formulierungen.
+- **Negativdaten (`not_deadlines`, neu):**
+  - Schreiben vom 27.01. und 16.02.;
+  - E-Mail-Kopf 03.02.;
+  - Zugang 28.01. (Fristbeginn) und 29.01. (bloßes Datum);
+  - Vermerk 18.02.;
+  - Mietbeginn 01.04.2009.
+
+**Validator und Runner** (`scripts/legal_bench/corpus.py`, `e2e.py`): Die neuen Felder sind optional und werden gegen
+den Aktentext geprüft, ohne Überschneidung mit den Fristen. Der Datums-Recall bleibt **wie bisher definiert**
+(Datumsgleichheit, Art nicht geprüft). Zusätzlich und getrennt erfasst werden:
+
+- Beendigungs-Recall;
+- Beendigungstermine außerhalb der Referenz;
+- erwarteter Beendigungstermin als Frist;
+- Negativdatum als Vorschlag;
+- Referenzfrist nur als Beendigungstermin.
+
+Vergleich mit §73:
+
+| Messung | §73 dev (8) | §74 dev (9, + LE-D009) | §73 test (4) | §74 test (4) |
+|---|---|---|---|---|
+| kritische Befunde / Lecks / Werte fremder Akten | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Extraktion | 246/246 | 276/276 | 110/110 | 110/110 |
+| Chronologie | 45/45 | 50/50 | 22/22 | 22/22 |
+| geschützte Inhalte: keep-Werte erhalten | 49/49 | 54/54 | 25/25 | 25/25 |
+| **Fristdatum-Recall** | 19/19 | **23/23** (19/19 der bisherigen Fälle) | 5/5 | **5/5** |
+| Daten außerhalb der Fristreferenz | 2 | 3 (+ LE-D009 31.10. = Beendigungstermin) | 1 | 1 |
+| Beendigungs-Recall | – | **1/1** | – | 0/0 (keine Referenz) |
+| Beendigungstermin als Frist | – | 0 | – | 0 |
+| Negativdatum als Vorschlag | – | 0 | – | 0 |
+| Beendigungstermin außerhalb der Referenz | – | LE-D002 30.06., LE-D007 31.05. | – | LE-T004 30.04. |
+| **Referenzfrist als Beendigungstermin eingeordnet** | – | **LE-D002 30.06.2026** | – | 0 |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 2/2 | 2/2 |
+| erfundene Fundstellen markiert | 16/16 | 18/18 | 8/8 | 8/8 |
+
+Weitere Proben unverändert: Freigabe, Aktenzuordnung, fremder Anhang.
+
+**Art-Abweichung LE-D002 (offen, Owner):** Die bestehende Referenz führt „kündigen wir … ordentlich zum 30.06.2026“
+unter `deadlines` (Art „Ende Arbeitsverhältnis laut Kündigung“). Nach §74 ist das ein Beendigungstermin. Der Fall wurde
+**nicht** geändert, die Abweichung ist ausgewiesen. Eine Referenzkorrektur – Verschieben nach `terminations` – wäre
+eine bewusste Korpusänderung durch die verantwortliche Person. LE-D007 und LE-T004 haben keine Beendigungsreferenz; ihre
+Kündigungstermine sind als „außerhalb der Referenz“ ausgewiesen.
+
+**Grenzen der Bewertung:**
+
+- Exakte Werte sind kein Maßstab für die juristische Qualität von Modellantworten. Echte Modellantworten wurden nicht
+  bewertet.
+- Keine fremden Falllösungen übernommen; Quellenregister unverändert.
+
+### 74.5 Installierte App (WebView2)
+
+**Vorprüfung:**
+
+- keine Lexono-Instanz und keine Test- oder QA-Prozesse;
+- zwei fremde Ollama-Prozesse unberührt; die QA nutzt sie nicht (`LOCAL_AI_ENABLED=false`);
+- Sicherungsziel frei, sechs frühere Sicherungen und Archiv vollständig;
+- die installierte EXE entsprach `3019b7b`;
+- Worktree sauber, echte DB `677CAFD8109F`.
+
+**Build und Installation:**
+
+- Build aus `fc7d3d3`. Bytecode-gleich: Extraktor (`_role`, `_termination_cue`, `_is_hard_newline`, `_candidate`),
+  `review`, `finding_keys`, Export (alle 5 Funktionen), `_review_info`. Das Template enthält `type_label`.
+- Sicherung `C:\Users\Bonit\lexono_install_backup_vor_fc7d3d3` (956/956). Installer `3019b7b` archiviert.
+- Exit 0. Die installierte EXE ist byte-identisch (SHA-256
+  `bff715a3a13cea2eed5b84bca424efc7f801391ae4444c21049781d26890d337`).
+- Echte DB vor und nach allem `677CAFD8109F`.
+
+**Lauf:**
+
+- Methode wie §71–§73: isolierte QA-Daten, OCR an, alles über die Oberfläche, Anfragen nur an den lokalen
+  Aufzeichnungsserver mit Testschlüssel.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s74_legal_benchmark\` (`ergebnis_<Fall>.json` mit `arten`,
+  `liste_typen`, Screenshots `*_beendigung_*.png`, `*_liste.png`).
+
+| Fall | Fristen (Datum) | Beendigungstermine (gespeichert = UI) | Art-Abweichung zur Referenz | Status | Lecks / fremd |
+|---|---|---|---|---|---|
+| LE-D009 | 4/4, alle „Frist“, inkl. „Frist für Stellungnahme:“ und „Frist zur Stellungnahme an die Gegenseite:“ | 31.10.2026 (3×) „Beendigungstermin / Möglicher Beendigungstermin (kein Fristende)“, ohne Wirksamkeitsaussage | keine; kein Negativdatum; Zugang 28.01. als Fristbeginn ohne Datum | ungeprüft | 0 / 0 |
+| LE-D002 | 2/2 | 30.06.2026 | Referenz: Frist (74.4) | ungeprüft | 0 / 0 |
+| LE-D007 | 3/3 | 31.05.2026 | keine Referenz | ungeprüft | 0 / 0 |
+| LE-T004 | 2/2 | 30.04.2026 | keine Referenz | ungeprüft | 0 / 0 |
+| LE-D005, LE-D006, LE-D008 | 2/2, 2/2, 3/3 | – | keine | ungeprüft | 0 / 0 |
+
+In allen Fällen gilt:
+
+- Das Feld „Typ“ in Detail und Liste entspricht der gespeicherten Art.
+- Extraktion und Chronologie sind vollständig.
+- Die Lösungsgrundlage ist bei LE-D005, LE-D006 und LE-T004 vollständig.
+- Nach den Läufen bleiben keine Lexono-, Test- oder QA-Prozesse zurück.
+
+### 74.6 Offene Punkte
+
+- LE-D002: Referenzkorrektur ja oder nein (Owner, siehe 74.4).
+- Das Feld heißt für alle Arten „Fällig am“, auch beim Beendigungstermin. Typ und Art stellen die Einordnung klar; eine
+  eigene Bezeichnung („Beendigung zum“) wäre eine kleine UI-Folgeänderung.
+- Der Prüfhinweis „Datum verstrichen – bitte prüfen“ gilt für alle ungeprüften Vorschläge, auch für
+  Beendigungstermine. Er ist als Prüfhinweis gedacht, behauptet aber kein Fristversäumnis.
+- Altvorschläge mit „zum (Beendigung/Ablauf)“ bleiben „Frist“, bis sie geprüft werden.
+- Der §72-Hinweis „mehrere mögliche Fristenden“ gilt weiterhin für zwei Fristenden im **selben Satz**, auch wenn es
+  verschiedene Fristen sind. Getrennte Zeilen sind jetzt abgegrenzt.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte, Erinnerungen (nicht
+  angebunden).
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
