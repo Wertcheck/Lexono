@@ -31,6 +31,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.deadlines.review import deadline_kind
 from app.models import (
     AttorneyInstruction,
     AuditEvent,
@@ -164,6 +165,9 @@ class MatterExportService:
                     "source_text": dl.source_text,
                     "due_date": dl.due_date,
                     "review_status": dl.review_status,
+                    # §74: Art (frist/termin/fristbeginn/fristdauer/beendigung/manuell) - ein Beendigungstermin ist
+                    # im Export als solcher erkennbar, nicht als Frist
+                    "kind": deadline_kind(dl),
                 }
                 for dl in deadlines
             ],

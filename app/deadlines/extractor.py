@@ -96,6 +96,9 @@ _EXPLICIT_DEADLINE_BEFORE = re.compile(
     # §72 (LE-D007, Befund LE-T004): "vorsorglich Fristende 05.02.2026, spätestens 06.02.2026" - "Fristende" OHNE
     # Doppelpunkt unmittelbar vor dem Datum ist ebenso ausdruecklich; vorher wurde nur das spaetere Datum erkannt
     r"|\b\w*fristende(?:\s+vorsorglich)?\s*:?"
+    # §74: mehrteilige Feldbezeichnung ("Frist für Stellungnahme: 20.03.2026", "Frist zur Klageerhebung: ...") - vorher
+    # nur ein Wort vor dem Doppelpunkt, die echte Frist ging verloren
+    r"|\b\w*frist\w*\s+(?:für|fuer|zur|zum|zu|der|des)(?:\s+[A-Za-zÄÖÜäöüß-]+){1,4}\s*:"
     r"|\b\w*frist\w*\s*:)\s*$",
     re.IGNORECASE,
 )
@@ -163,6 +166,26 @@ _UNDETERMINED_AFTER_WORD = re.compile(
 # Feldzeile ("Berufungsfrist: ...", "Betreff: ...") beginnt eine neue Angabe: der Umbruch davor ist eine harte Grenze -
 # sonst verband die Kopfzeile "Aktenvermerk vom 10.03.2026 - Az. ..." (ohne Satzzeichen) mit "Ausübungsfrist:" darunter
 _FIELD_LABEL_LINE = re.compile(r"^[ \t]*[A-ZÄÖÜ][\wÄÖÜäöüß-]{1,40}[ \t]*:(?:[ \t]|$)")
+# §74: Feldzeile mit mehrteiliger Bezeichnung ("Frist zur Klageerhebung: ...", "Frist für Stellungnahme: ...") - nur
+# Buchstabenwoerter (keine Uhrzeit "Beginn 10:30"), hoechstens sechs Woerter
+_MULTIWORD_FIELD_LABEL_LINE = re.compile(
+    r"^[ \t]*[A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]{1,40}(?:[ \t]+[A-Za-zÄÖÜäöüß-]{2,40}){1,5}[ \t]*:(?:[ \t]|$)")
+
+_DATE_AT_LINE_END = re.compile(r"\b\d{1,2}\.\d{1,2}\.\d{2,4}$")
+
+# --- §74: Beendigungstermin ("Das Mietverhältnis wird ordentlich zum 30.04.2026 gekündigt") --------------------------
+# Der Zeitpunkt, zu dem ein Vertrags-/Arbeits-/Mietverhaeltnis enden soll, ist KEIN Fristende (vorher "Art: Frist" mit
+# Hinweis "zum (Beendigung/Ablauf)"). Eigene Art, nur benannt: keine Aussage ueber Wirksamkeit oder Kuendigungsfrist.
+# Beendigungshandlung vor dem Datum ("kündigen ... zum", "Kündigung zum", "Aufhebung zum", "ausscheiden zum") ...
+_TERMINATION_ACT = re.compile(r"kündig|kuendig|\bbeend\w*|aufheb|aufhebung|ausscheid", re.IGNORECASE)
+# ... oder "<Verhaeltnis/Vertrag> endet zum" ...
+_CONTRACT_ENDS = re.compile(
+    r"(?:verhältnis|verhaeltnis|vertrag|mitgliedschaft|mandat)\w*\s+(?:\w+\s+){0,2}?endet\b", re.IGNORECASE)
+# ... oder Partizip nach dem Datum ("zum 30.04.2026 gekündigt", "zum 31.12.2026 beendet")
+_TERMINATION_AFTER = re.compile(r"^\s*(?:\w+\s+){0,2}?(?:gekündigt|gekuendigt|beendet|aufgehoben)\b", re.IGNORECASE)
+# Gegenprobe: das Ende einer FRIST ist ein Fristende ("Die Kündigungsfrist endet zum 30.06.2026", "Ablauf ...")
+_DEADLINE_END_PHRASE = re.compile(
+    r"\w*frist\w*\s+(?:\w+\s+){0,3}?(?:endet|läuft|laeuft|abläuft|ablaeuft)\b|\bablauf\b", re.IGNORECASE)
 
 _NUMBER_WORDS = frozenset({
     "ein", "eine", "einem", "einer", "einen", "eines", "zwei", "drei", "vier", "fünf", "fuenf", "sechs", "sieben", "acht", "neun",
@@ -408,7 +431,9 @@ class PlaceholderDeadlineExtractor:
             seen_spans.add(match.span())
             if result:
                 results.append(result)
-                if "Art: Frist" in result.reasoning:
+                # §74: Beendigungstermin-Saetze wie bisher (vorher "Art: Frist") - die Dauer im Satz steht in der
+                # Begruendung, kein zusaetzlicher Fristdauer-Vorschlag
+                if "Art: Frist" in result.reasoning or "Art: Beendigungstermin" in result.reasoning:
                     sentence = self._sentence_bounds(text, match.start(), match.end())
                     dated_deadline_sentences.add(sentence)
                     if result.due_date is not None and "Art: Frist -" in result.reasoning:  # nur Fristenden, kein Fristbeginn
@@ -425,7 +450,9 @@ class PlaceholderDeadlineExtractor:
             result = self._candidate(text, match, parsed) if parsed else None
             if result:
                 results.append(result)
-                if "Art: Frist" in result.reasoning:
+                # §74: Beendigungstermin-Saetze wie bisher (vorher "Art: Frist") - die Dauer im Satz steht in der
+                # Begruendung, kein zusaetzlicher Fristdauer-Vorschlag
+                if "Art: Frist" in result.reasoning or "Art: Beendigungstermin" in result.reasoning:
                     dated_deadline_sentences.add(self._sentence_bounds(text, match.start(), match.end()))
 
         for match in _RELATIVE_PERIOD_PATTERN.finditer(text):
@@ -505,8 +532,13 @@ class PlaceholderDeadlineExtractor:
             return True
         if stripped[-1] in ".!?;":
             return True
-        if _FIELD_LABEL_LINE.match(line_after):
-            return True  # §73: Folgezeile ist eine Feldzeile ("Klagefrist: ...", "Betreff: ...")
+        if _FIELD_LABEL_LINE.match(line_after) or _MULTIWORD_FIELD_LABEL_LINE.match(line_after):
+            return True  # §73/§74: Folgezeile ist eine Feldzeile ("Klagefrist: ...", "Frist zur Klageerhebung: ...")
+        if ((_FIELD_LABEL_LINE.match(line_before) or _MULTIWORD_FIELD_LABEL_LINE.match(line_before))
+                and _DATE_AT_LINE_END.search(stripped)):
+            # §74 (LE-D009): abgeschlossene Feldzeile "Frist für Stellungnahme: 06.03.2026" - sonst verschmolz sie mit
+            # der naechsten Zeile, und zwei VERSCHIEDENE Fristen galten als Alternativen eines Satzes (§72-Hinweis)
+            return True
         return "|" in line_before or "|" in line_after
 
     def _role(self, text: str, match: re.Match) -> tuple[str, str]:
@@ -531,8 +563,12 @@ class PlaceholderDeadlineExtractor:
         event_at_date = self._event_at_date(before, after)
         if event_at_date:
             return "fristbeginn", event_at_date  # §73: Ereignis unmittelbar am Datum geht den Fristwort-Regeln vor
-        if _ZUM_BEFORE.search(before) and _TERMINATION_WORDS.search(before):
-            return "frist", "zum (Beendigung/Ablauf)"
+        if _ZUM_BEFORE.search(before):
+            termination = self._termination_cue(before, after)
+            if termination:
+                return "beendigung", termination  # §74: Beendigungszeitpunkt, kein Fristende
+            if _TERMINATION_WORDS.search(before):
+                return "frist", "zum (Beendigung/Ablauf)"
         word_after = _DEADLINE_WORD_AFTER.search(after)
         if (word_after and word_after.start() <= 30 and not _ANY_DATE.search(after[: word_after.start()])
                 and not _ANY_DATE.search(after[word_after.start(): word_after.start() + 40])
@@ -587,6 +623,24 @@ class PlaceholderDeadlineExtractor:
         return None
 
     @staticmethod
+    def _termination_cue(before: str, after: str) -> str | None:
+        """§74: Beendigungshandlung am "zum <Datum>" - aber nicht, wenn das Ende einer Frist benannt ist."""
+        if _DEADLINE_END_PHRASE.search(before):
+            return None
+        hit = None
+        for hit in _TERMINATION_ACT.finditer(before):
+            pass
+        if hit:
+            return hit.group(0)
+        contract = _CONTRACT_ENDS.search(before)
+        if contract:
+            return "endet"
+        participle = _TERMINATION_AFTER.match(after)
+        if participle:
+            return participle.group(0).strip()
+        return None
+
+    @staticmethod
     def _event_at_date(before: str, after: str) -> str | None:
         """§73: Zustellung/Zugang/Bekanntgabe UNMITTELBAR am Datum - davor ("Zustellung schon am") oder als Partizip
         danach ("am 22.01.2026 zugestellt", "ging am 12.02.2026 zu")."""
@@ -632,6 +686,17 @@ class PlaceholderDeadlineExtractor:
             )
             return ExtractedDeadline(source_text=context, raw_date_text=match.group(0).strip(), due_date=None,
                                      confidence=0.3, reasoning=reasoning)
+        if role == "beendigung":
+            # §74: eigener Typ - Datum bleibt erhalten (Anzeige/Sortierung), ist aber ausdruecklich KEIN Fristende und
+            # keine berechnete Frist; ueber Wirksamkeit/Kuendigungsfrist wird nichts ausgesagt
+            reasoning = (
+                f"{base} Art: Beendigungstermin (kein Fristende) - Beendigungszeitpunkt laut Text ('zum', Bezug "
+                f"'{hint}'). Das ist keine Frist: ob die Beendigung wirksam ist und ob eine Kündigungsfrist eingehalten "
+                f"wurde, wurde NICHT geprüft; daraus folgende Fristen (z. B. Klagefrist ab Zugang) sind gesondert zu "
+                f"ermitteln.{self._basis_in_sentence(text, match)} {_NOT_VERIFIED}"
+            )
+            return ExtractedDeadline(source_text=context, raw_date_text=match.group(0).strip(), due_date=parsed,
+                                     confidence=0.5, reasoning=reasoning)
         if role == "termin":
             reasoning = (
                 f"{base} Art: Termin (kein Fristablauf) - Terminhinweis unmittelbar vor dem Datum ('{hint}'). Ob der "

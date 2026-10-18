@@ -29,6 +29,7 @@ from app.deadlines.review import (
     has_conflict,
     kind_label,
     next_unreviewed,
+    type_label,
     review_hint,
     short_review_hint,
     split_source_text,
@@ -228,6 +229,8 @@ def _review_info(deadline: Deadline, deferred: dict[str, str], today: date, *, c
     raw_date, context = split_source_text(deadline.source_text)
     return {
         "kind_label": kind_label(deadline),
+        # §74: "Beendigungstermin" statt "Frist" in der Spalte/dem Feld "Typ"
+        "type_label": type_label(deadline),
         "raw_date": raw_date,
         "context": context,
         "confidence": deadline.confidence,

@@ -686,6 +686,8 @@ class RuleBasedLocalAIProvider:
                 return "Möglicher Fristbeginn (Fristende offen)"
             if "Art: Fristdauer" in reasoning:
                 return "Mögliche Fristdauer (Fristende offen)"
+            if "Art: Beendigungstermin" in reasoning:
+                return "Möglicher Beendigungstermin (kein Fristende)"  # §74
             return "Mögliche Frist"
 
         return [

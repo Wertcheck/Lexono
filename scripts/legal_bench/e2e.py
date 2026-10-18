@@ -255,8 +255,29 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
         record: dict = {"case": case["id"], "split": case["split"], "documents": st["doc_results"], "tasks": [],
                         "critical": []}
 
-        # Fristen (Verarbeitung)
-        found = sorted({d.due_date.strftime("%d.%m.%Y") for d in db.query(Deadline).filter(Deadline.matter_id == matter.id) if d.due_date})
+        # Fristen (Verarbeitung). Der Datums-Recall bleibt wie bisher definiert (nur Datumsgleichheit, Art NICHT
+        # geprueft). §74: die Art "Beendigungstermin" wird ZUSAETZLICH getrennt bewertet (erwartet:
+        # reference.terminations; Negativdaten: reference.not_deadlines; Referenzfrist als Beendigungstermin eingeordnet)
+        from app.deadlines.review import deadline_kind
+
+        dated = [d for d in db.query(Deadline).filter(Deadline.matter_id == matter.id) if d.due_date]
+        found = sorted({d.due_date.strftime("%d.%m.%Y") for d in dated})
+        found_deadline_kind = {d.due_date.strftime("%d.%m.%Y") for d in dated if deadline_kind(d) != "beendigung"}
+        found_terminations = sorted({d.due_date.strftime("%d.%m.%Y") for d in dated if deadline_kind(d) == "beendigung"})
+        expected_terminations = sorted({t["date"] for t in case["reference"].get("terminations", [])})
+        negatives = sorted({n["date"] for n in case["reference"].get("not_deadlines", [])})
+        record["beendigungstermine"] = {
+            "expected": expected_terminations, "found": found_terminations,
+            "recall": f"{len(set(expected_terminations) & set(found_terminations))}/{len(expected_terminations)}",
+            "missing": sorted(set(expected_terminations) - set(found_terminations)),
+            "not_in_reference": sorted(set(found_terminations) - set(expected_terminations)),
+            # erwarteter Beendigungstermin, der (auch) als Frist vorgeschlagen wurde
+            "als_frist": sorted(set(expected_terminations) & found_deadline_kind),
+        }
+        record["negativdaten_als_frist"] = sorted(set(negatives) & set(found))
+        # Referenzfrist, die NUR als Beendigungstermin vorgeschlagen wurde (Art-Abweichung zur Referenz)
+        record["referenzfrist_als_beendigung"] = sorted(
+            {d["date"] for d in case["reference"]["deadlines"]} & set(found_terminations) - found_deadline_kind)
         expected = sorted({d["date"] for d in case["reference"]["deadlines"]})
         personal = [p["value"] for p in case["reference"]["privacy"]["protect"] if p["type"] == "PERS_DATUM"]
         # bekannte Daten des Falls: Chronologie, Dokumentdaten, datierte Widerspruchswerte
@@ -688,6 +709,13 @@ def _runtime_and_size(docs: list[dict], tasks: list[dict]) -> dict:
     return out
 
 
+_NO_TERMINATIONS = {"recall": "0/0", "not_in_reference": [], "als_frist": []}
+
+
+def _terminations(row: dict) -> dict:
+    return row.get("beendigungstermine") or _NO_TERMINATIONS
+
+
 def summarise(results: list[dict]) -> dict:
     def per_split(split: str) -> dict:
         rows = [r for r in results if r["split"] == split]
@@ -708,6 +736,15 @@ def summarise(results: list[dict]) -> dict:
             "fristen_datum_recall": f"{sum(int(r['deadlines']['recall'].split('/')[0]) for r in rows)}/"
                               f"{sum(int(r['deadlines']['recall'].split('/')[1]) for r in rows)}",
             "fristen_nicht_in_referenz": sum(len(r["deadlines"]["not_in_reference"]) for r in rows),
+            # §74: Beendigungstermine getrennt (eigene Art, keine Frist)
+            # (Zeilen ohne diese Felder - Ergebnisse vor §74 - zaehlen als 0/0 bzw. leer)
+            "beendigung_recall": f"{sum(int(_terminations(r)['recall'].split('/')[0]) for r in rows)}/"
+                                 f"{sum(int(_terminations(r)['recall'].split('/')[1]) for r in rows)}",
+            "beendigung_nicht_in_referenz": [f"{r['case']}:{d}" for r in rows for d in _terminations(r)["not_in_reference"]],
+            "beendigung_als_frist": [f"{r['case']}:{d}" for r in rows for d in _terminations(r)["als_frist"]],
+            "negativdaten_als_frist": [f"{r['case']}:{d}" for r in rows for d in r.get("negativdaten_als_frist", [])],
+            "referenzfrist_als_beendigung": [f"{r['case']}:{d}" for r in rows
+                                             for d in r.get("referenzfrist_als_beendigung", [])],
             "davon_bekannte_falldaten": sum(len(r["deadlines"]["known_dates_as_deadline"]) for r in rows),
             "davon_ungeklaert": [f"{r['case']}:{d}" for r in rows for d in r["deadlines"]["unexplained"]],
             # nur ob ueberhaupt ein Typ vergeben wurde - die Korrektheit gegen den Referenztyp ist NICHT bewertet

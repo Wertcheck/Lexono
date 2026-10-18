@@ -253,7 +253,7 @@
                       {% if item.item_type == "task" %}
                         {{ icons.check(class_="icon task-type-cell__icon--task") }} Aufgabe
                       {% else %}
-                        {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }} Frist
+                        {{ icons.calendar_day(class_="icon task-type-cell__icon--deadline") }} {{ info.type_label if info and info.type_label else "Frist" }}
                       {% endif %}
                     </div>
                   </td>
@@ -454,7 +454,7 @@
           <div class="tab-panel" id="tab-task-details">
             <div class="task-detail-panel__fields">
               <span class="task-detail-panel__field-label">Typ</span>
-              <span class="task-detail-panel__field-value">{{ "Aufgabe" if item.item_type == "task" else "Frist" }}</span>
+              <span class="task-detail-panel__field-value">{{ "Aufgabe" if item.item_type == "task" else (item.review.type_label if item.review and item.review.type_label else "Frist") }}</span>
 
               <span class="task-detail-panel__field-label">Fällig am</span>
               <span class="task-detail-panel__field-value">

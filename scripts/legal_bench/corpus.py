@@ -161,6 +161,18 @@ def validate_case(case: dict, register: dict[str, dict], report: ValidationRepor
         in_doc(item["date"], item.get("doc"), f"Chronologie {item.get('event', '')[:30]!r}")
     for item in ref.get("deadlines", []):
         in_doc(item["date"], item.get("doc"), f"Frist {item.get('kind', '')!r}")
+    # §74 (optional): erwartete Beendigungstermine und ausdrueckliche Negativdaten (Dokument-/Vermerk-/Ereignisdaten,
+    # die KEIN Fristende sind) - beide aus den Akten, getrennt von den Fristen, nicht ueberlappend
+    deadline_dates = {d["date"] for d in ref.get("deadlines", [])}
+    for item in ref.get("terminations", []):
+        in_doc(item["date"], item.get("doc"), f"Beendigungstermin {item.get('kind', '')!r}")
+        _require(report, item["date"] not in deadline_dates,
+                 f"{prefix}: Beendigungstermin {item['date']} steht zugleich in reference.deadlines")
+    termination_dates = {t["date"] for t in ref.get("terminations", [])}
+    for item in ref.get("not_deadlines", []):
+        in_doc(item["date"], item.get("doc"), f"Negativdatum {item.get('why', '')!r}")
+        _require(report, item["date"] not in deadline_dates | termination_dates,
+                 f"{prefix}: Negativdatum {item['date']} steht zugleich als Frist/Beendigungstermin in der Referenz")
     for item in ref.get("citations", []):
         in_doc(item["text"], item.get("doc"), "Fundstelle")
         _require(report, item.get("kind") in ("norm", "entscheidung", "literatur"), f"{prefix}: Fundstelle mit unbekanntem Typ")
