@@ -5828,7 +5828,10 @@ body::-webkit-scrollbar-thumb:hover,
    Akten zeigen auf Mobile ebenfalls weiterhin ihre normale, horizontal
    scrollbare Tabelle, kein Kartenlayout) und waere eine neue, auf dieser
    einen Seite inkonsistente Mobile-Architektur gewesen. */
-@media (max-width: 900px) {
+/* §76 (App-Test WebView2): zwischen 901 und 1279 px blieb das 400px-Panel neben der Tabelle - sie wurde so schmal,
+   dass Titel, Akte, Typ und Status abgeschnitten wurden (1024 px: Typ-Spalte ~25 px). Die Tabelle ist fuer >= 1366 px
+   neben dem Panel ausgelegt (Kommentar `.task-title-cell`); unter 1280 px wird daher wie bisher unter 900 px gestapelt. */
+@media (max-width: 1279px) {
   .tasks-layout {
     flex-direction: column;
   }
@@ -6094,7 +6097,8 @@ body::-webkit-scrollbar-thumb:hover,
    `.tasks-table td{overflow:hidden}` abgeschnitten zu werden - Spaltenbreiten und Layout bleiben unveraendert. */
 .task-type-cell__label {
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* nur an den weichen Silbentrennstellen umbrechen ("Be-en-di-gungs-ter-min"), nie mitten in der Silbe */
+  overflow-wrap: normal;
   hyphens: manual;
   line-height: 1.25;
 }

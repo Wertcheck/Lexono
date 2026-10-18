@@ -109,14 +109,18 @@ def test_list_type_label_is_complete_with_soft_hyphen_and_tooltip(client: TestCl
     labels = re.findall(r'<span class="task-type-cell__label" title="([^"]+)" data-type-label="([^"]+)">([^<]+)</span>', page)
     assert sorted((title, data) for title, data, _ in labels) == [("Beendigungstermin", "Beendigungstermin"), ("Frist", "Frist")]
     shown = {data: text for _, data, text in labels}
-    assert shown["Beendigungstermin"] == "Beendigungs­termin"  # vollstaendig, nur weiche Trennstelle
+    # vollstaendig, nur weiche Silbentrennstellen (Be-en-di-gungs-ter-min), kein Umbruch mitten in der Silbe
+    assert shown["Beendigungstermin"] == "Be\u00aden\u00addi\u00adgungs\u00adter\u00admin"
+    assert shown["Beendigungstermin"].replace("\u00ad", "") == "Beendigungstermin"
     assert shown["Frist"] == "Frist"
 
 
 def test_label_css_allows_wrapping_instead_of_clipping() -> None:
     css = Path("app/web/static/css/app.css").read_text(encoding="utf-8")
     block = css.split(".task-type-cell__label {", 1)[1].split("}", 1)[0]
-    assert "overflow-wrap: anywhere" in block and "hyphens: manual" in block and "min-width: 0" in block
+    assert "overflow-wrap: normal" in block and "hyphens: manual" in block and "min-width: 0" in block
+    # unter 1280 px wird das Detailpanel unter die Liste gestapelt (vorher erst unter 900 px)
+    assert "@media (max-width: 1279px) {\n  .tasks-layout {\n    flex-direction: column;" in css.replace("\r\n", "\n")
 
 
 # --- Export: Art nachvollziehbar ------------------------------------------------------------------------------------------
