@@ -89,7 +89,8 @@ def test_changed_reference_is_detected_by_fingerprint() -> None:
 REFERENCE_LIKE = (
     "Dem Mieter steht das Vorkaufsrecht zu: auch der Verkauf an eine Gesellschaft mit denselben Gesellschaftern ist ein "
     "Verkauf an einen Dritten (§ 577 Abs. 1 BGB). Die Teilungserklärung vom 12.06.2019 erfolgte nach der Überlassung. "
-    "Ausübung innerhalb von zwei Monaten (§ 469 Abs. 2 BGB); da der Zugang streitig ist, vorsorglich bis 28.04.2026.")
+    "Ausübung innerhalb von zwei Monaten (§ 469 Abs. 2 BGB); da der Zugang streitig ist, vorsorglich bis 28.04.2026. "
+    "Kaufvertrag vom 24.02.2026; laut Verkäuferin ging die Mitteilung am 28.02.2026 zu - Zustellnachweis anfordern.")
 
 
 def _precheck(answer: str, sid: str = "LA-D005") -> dict:

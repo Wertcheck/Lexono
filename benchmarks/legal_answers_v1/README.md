@@ -1,6 +1,6 @@
 # Juristische Ergebnisqualität echter Modellantworten (`legal_answers_v1`) – Konzept
 
-Stand 18.10.2026 (§76). **Konzept, kein Lauf.** Es wurden keine Modellantworten abgerufen, keine Cloud-Aufrufe
+Stand 18.10.2026 (§76, auditiert und erweitert in §77 – siehe `AUDIT_S77.md`). **Konzept, kein Lauf.** Es wurden keine Modellantworten abgerufen, keine Cloud-Aufrufe
 ausgeführt und keine Kosten verursacht. Über die juristische Zuverlässigkeit von Lexono oder einem Modell sagt dieser
 Benchmark derzeit **nichts** aus.
 
@@ -37,6 +37,10 @@ und eine eigene Rubrik, getrennt vom Fristen- und Datenschutz-Benchmark.
 | `specs/test/LA-T004.json` | Test-Spezifikation, **eingefroren** (`frozen: true`) |
 | `scripts/legal_bench/answer_specs.py` | Validator, Fingerabdruck, Vorprüfung |
 | `tests/test_legal_answer_specs.py` | Regressionstests (Validator, Einfrieren, Fingerabdruck, Vorprüfung) |
+| `LOCK.json` (§77) | Sperre von Rubrik, Test-Spezifikation und Test-Akten (kanonische SHA-256); Neusperre nur mit `--update-lock --reason` |
+| `scripts/legal_bench/answer_run.py` (§77) | Laufvorbereitung **ohne Ausführung**: `check` (offene Freigaben), `plan` (Aufrufplan mit Fingerabdrücken), Antwortdatensatz, blinder Prüfbogen, Zusammenfassung nach Rubrik |
+| `run_config.template.json` (§77) | Vorlage einer Laufkonfiguration, alle Entscheidungen `null` (OFFEN) |
+| `FREIGABE_CHECKLISTE.md`, `AUDIT_S77.md`, `audit/` (§77) | Freigabe-Checkliste, Auditbefunde, Nachweise |
 
 Eine Spezifikation legt **vor jeder späteren Auswertung** fest:
 

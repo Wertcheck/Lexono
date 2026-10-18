@@ -9645,3 +9645,84 @@ Abschnitt 76.5 „Installation und App-Test: NICHT VERIFIZIERT – blockiert“ 
 
 **Weiterhin NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten (Konzept 76.4, kein Lauf), reale
 Kanzleitexte.
+
+## §77 Audit und Laufvorbereitung des juristischen Antwort-Benchmarks (18.10.2026, Branch `feature/feedback-diagnose`, Ausgangsstand `c31fb99`)
+
+**Audit und Vorbereitung, kein Lauf.** Es wurden keine Modellantworten abgerufen, keine Cloud-Aufrufe ausgeführt und
+keine Kosten verursacht. Ausführlicher Bericht: `benchmarks/legal_answers_v1/AUDIT_S77.md`; Checkliste:
+`benchmarks/legal_answers_v1/FREIGABE_CHECKLISTE.md`.
+
+**Ausgangsstand geprüft:** HEAD = Remote = `c31fb99`. Die fünf §76-Commits liegen seit `6a16014` in dieser Reihenfolge
+vor: `65ea0b0`, `b8e3439`, `c3787af`, `8291158`, `c31fb99`. `main` ist unverändert (`5735e5b`).
+
+| Prüfschritt | Status |
+|---|---|
+| Quellen und Nutzungsrechte (nur RII/GII `nutzbar`, Fälle `abgeleitet` mit ECLI, synthetische Akten) | **PASS** |
+| Test-Split `legal_e2e_v1/cases/test` unverändert seit `fc9d3f4` (kanonische Hashes = Ausgangsstand), jetzt gesperrt | **PASS** |
+| Audit der Spezifikationen | **7 nachweisbare Fehler (N1–N7) gefunden und technisch behoben**; 6 Grenzen/Vorschläge (V1–V6) dokumentiert |
+| Validator v2 gegen Spezifikationen v2 inkl. Sperre | **PASS** |
+| Laufvorbereitung (`check`, `plan`, Antwortdatensatz, blinder Prüfbogen, Zusammenfassung) | **PASS** (technisch) |
+| Freigabe-Checkliste der Vorlage | **LAUF NICHT FREIGEGEBEN** (22 offene Punkte), wie erwartet |
+| Juristische Freigabe (J1–J6) | **NICHT ERTEILT** – offen, nicht durch den Agenten |
+| Tatsächliche Modellqualität | **NICHT VERIFIZIERT** – keine Modellantwort vorhanden |
+| Volle Suite | **5664 PASS**; 4 FAIL = bekannte fremde Logo-Tests (`test_design_refresh`) |
+| App-Build/Installation | **nicht nötig** – kein App-Code geändert |
+
+**Nachweisbare Fehler (behoben):**
+
+- **N1:** Die Vorprüfung suchte Begriffe als Teilwort. „zu“ traf „**Zum** Vorkaufsrecht kann ich nichts sagen“; das ergab
+  einen falschen Ergebnis-Hinweis.
+- **N2:** Sieben entscheidende Tatsachen der Referenzlösungen hatten kein Kriterium: LA-D005 F3/F5, LA-D006 F2–F4,
+  LA-T004 F3/F5/F7.
+- **N3:** Offener Punkt O2 war in allen drei Spezifikationen nicht eigenständig, O1 und O2 waren vermischt.
+- **N4:** Eine verneinte Zuständigkeit löste in LA-T004 keinen Verdacht aus.
+- **N5:** Die Rubrik hatte keine Regel gegen den Ausgleich kritischer Fehler und keine Regeln für n/a, Alternativen und
+  Unentscheidbares.
+- **N6:** Test-Spezifikation und Rubrik waren nicht gegen Änderung geschützt.
+- **N7:** Es gab keine Änderungshistorie.
+
+**Maßnahmen:**
+
+- Suche als ganzes Wort und Mindestlänge für Begriffe.
+- Abdeckungspflicht oder begründeter Ausschluss (`not_assessed`); neue Kriterien nur aus vorhandenen Aktenwerten.
+- Ein Kriterium je offenem Punkt; Abgleich der Referenz-Fehlergebnisse.
+- Rubrik v2: Ein bestätigter kritischer Fehler ergibt FAIL_KRITISCH ohne Ausgleich. Ohne festgelegte Schwellen gibt es
+  nie PASS; Gewichte und Schwellen sind **OFFEN**.
+- `LOCK.json` mit Neusperre nur per Begründung; Historie je Spezifikation.
+- Alle Spezifikationsänderungen erfolgten **vor jedem Lauf**, ohne vorhandene Ergebnisse, und sind in `history`
+  dokumentiert. Danach folgte die Erstsperre.
+
+**Offene juristische Entscheidungen:**
+
+- J1: Referenzlösungen;
+- J2: Antwortvarianten und Verdachtsformulierungen, einschließlich der §77-Ergänzungen;
+- J3: vertretbare Alternativergebnisse;
+- J4: Gewichte und Schwellen;
+- J5: bewertende Personen und Zweitprüfung;
+- J6: n/a- und Unentscheidbarkeitsregeln.
+
+**Freigabe-Checkliste C-1 bis C-17**, darunter:
+
+- Modell und Version;
+- Wiederholungen bzw. Aufrufzahl (derzeit 6 × Wiederholungen);
+- Kosten- und Abbruchgrenzen;
+- Datenschutz (Pflichtwerte fest, Freigabe offen);
+- Ablage und Aufbewahrung;
+- Ausführungsschritt über den pseudonymisierten Lexono-Pfad (nicht implementiert).
+
+Alle Entscheidungen der Checkliste sind **OFFEN**.
+
+**Nachweise:**
+
+- `benchmarks/legal_answers_v1/audit/`:
+  - `s77_ausgangshashes_c31fb99.json`;
+  - `s77_validator_gegen_specs_v1.txt` (25 Befunde des gehärteten Validators an der §76-Fassung);
+  - `s77_validator_gegen_specs_v2.txt`;
+  - `s77_check_vorlage.txt`;
+  - `s77_plan_vorlage.json`;
+  - `s77_fingerprints.txt`.
+- `LOCK.json`.
+- Tests: `tests/test_s77_answer_benchmark_audit.py`, `tests/test_legal_answer_specs.py`.
+
+**Kein Beweis:** Keine Aussage über die juristische Qualität eines Modells, über vollständige juristische
+Zuverlässigkeit oder über vollständige Leckfreiheit. Der Datenschutzstatus bleibt „teilweise nachgewiesen“.

@@ -2,15 +2,22 @@
   "id": "LA-T004",
   "case": "LE-T004",
   "split": "test",
-  "version": 1,
+  "version": 2,
   "created": "2026-10-18",
   "status": "entwurf_juristische_freigabe_offen",
   "frozen": true,
-  "rubric_version": 1,
+  "rubric_version": 2,
   "case_fingerprint": "c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6",
+  "history": [
+    {"version": 1, "date": "2026-10-18", "change": "§76: Erstfassung"},
+    {"version": 2, "date": "2026-10-18", "change": "§77-Audit VOR jedem Lauf (keine Modellantworten, keine Ergebnisse vorhanden - keine Anpassung an Ergebnisse): K8 nur noch offener Punkt O1; ergänzt K9 (F3), K10 (F5), K11 (F7), K12 (O2) aus Aktenwerten/Referenzlösung; G1 um Umschreibung 'Gerichtsbarkeit ... nicht gegeben' des Referenz-Fehlergebnisses ergänzt (Vorschlag, juristische Bestätigung offen); danach LOCK.json"}
+  ],
   "tasks": ["Q1", "Q2"],
   "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
   "source_scope": "BAG 2 AZR 72/24, amtlicher Leitsatz und Tenor; Wortlaut § 4 KSchG, § 168 SGB IX. Keine Literatur, keine fremden Falllösungen.",
+  "alternative_results": [],
+  "alternative_results_status": "juristische_pruefung_offen",
+  "not_assessed": [],
   "criteria": [
     {"id": "K1", "dimension": "ergebnis", "statement": "Die Kündigung ist nicht insgesamt der deutschen Gerichtsbarkeit entzogen, nur soweit hoheitliches Handeln zu beurteilen wäre; Klage ist zu erheben.",
      "accept_any": [["Gerichtsbarkeit", "nicht", "entzogen"], ["Klage", "erheben"], ["nicht insgesamt", "Gerichtsbarkeit"]], "evaluation": "juristische_pruefung"},
@@ -18,7 +25,7 @@
      "norm": "§ 4", "accept_any": [["§ 4 KSchG"], ["§ 4 Satz 1 KSchG"], ["§4 KSchG"]], "evaluation": "teilautomatisch"},
     {"id": "K3", "dimension": "rechtsgrundlagen", "statement": "§ 168 SGB IX (Zustimmung des Integrationsamts)",
      "norm": "§ 168", "accept_any": [["§ 168"], ["§168"], ["168 SGB IX"]], "evaluation": "teilautomatisch"},
-    {"id": "K4", "dimension": "tatsachen", "statement": "Zugang streitig (15.01.2026 laut Konsulat, 16.01.2026 laut Mandantin)",
+    {"id": "K4", "dimension": "tatsachen", "statement": "Zugang laut Konsulat am 15.01.2026",
      "fact": "F4", "accept_any": [["15.01.2026"]], "evaluation": "teilautomatisch"},
     {"id": "K5", "dimension": "tatsachen", "statement": "Schwerbehinderung (Grad der Behinderung von 50)",
      "fact": "F6", "accept_any": [["Grad der Behinderung von 50"], ["GdB 50"], ["schwerbehindert"]], "evaluation": "teilautomatisch"},
@@ -26,11 +33,19 @@
      "fact": "F8", "accept_any": [["Visa-Anträge erfasst"], ["Visa-Anträge"], ["Visaanträge"]], "evaluation": "teilautomatisch"},
     {"id": "K7", "dimension": "fristen", "statement": "Klage vorsorglich bis 05.02.2026",
      "deadline": "05.02.2026", "accept_any": [["05.02.2026"]], "evaluation": "teilautomatisch"},
-    {"id": "K8", "dimension": "unsicherheiten", "statement": "Zugang streitig; Schwerbehindertenbescheid liegt nicht vor",
-     "open_point": "O1", "accept_any": [["Zugang", "streitig"], ["Bescheid"]], "evaluation": "teilautomatisch"}
+    {"id": "K8", "dimension": "unsicherheiten", "statement": "Zugang streitig (15.01. vs. 16.01.2026) - vorsorglich Fristende 05.02.2026",
+     "open_point": "O1", "accept_any": [["Zugang", "streitig"], ["Zugang", "05.02.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K9", "dimension": "tatsachen", "statement": "Ordentliche Kündigung zum 30.04.2026",
+     "fact": "F3", "accept_any": [["30.04.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K10", "dimension": "tatsachen", "statement": "Zugang laut Mandantin am 16.01.2026",
+     "fact": "F5", "accept_any": [["16.01.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K11", "dimension": "tatsachen", "statement": "Berufung des Staates auf Gründe aus dem hoheitlichen Bereich",
+     "fact": "F7", "accept_any": [["Gründen aus dem hoheitlichen Bereich"], ["hoheitlichen Bereich"], ["hoheitliche Gründe"]], "evaluation": "teilautomatisch"},
+    {"id": "K12", "dimension": "unsicherheiten", "statement": "Schwerbehindertenbescheid liegt nicht vor",
+     "open_point": "O2", "accept_any": [["Bescheid"]], "evaluation": "teilautomatisch"}
   ],
   "dangerous_errors": [
-    {"id": "G1", "statement": "Abraten von der Klage wegen Staatenimmunität", "suspect_any": [["Klage ist unzulässig"], ["keine deutsche Gerichtsbarkeit"], ["kann nicht überprüft werden"]]},
+    {"id": "G1", "statement": "Abraten von der Klage wegen Staatenimmunität", "suspect_any": [["Klage ist unzulässig"], ["keine deutsche Gerichtsbarkeit"], ["kann nicht überprüft werden"], ["Gerichtsbarkeit", "nicht gegeben"]]},
     {"id": "G2", "statement": "Späteres Fristende (06.02.2026) als sicheres Fristende ohne Vorsorgehinweis", "suspect_any": [["Frist endet sicher am 06.02.2026"], ["bis 06.02.2026", "ausreichend"]]}
   ],
   "known_wrong_decisions": [
@@ -38,5 +53,5 @@
     "Übersehen des Sonderkündigungsschutzes bei Schwerbehinderung",
     "Fristberechnung ab dem späteren Zugang ohne Vorsorge"
   ],
-  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen", "Fristberechnung"]
+  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen", "Fristberechnung", "alternative_results", "Antwortvarianten aller Kriterien", "G1-Ergänzung §77"]
 }

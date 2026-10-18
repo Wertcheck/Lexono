@@ -2,14 +2,21 @@
   "id": "LA-D006",
   "case": "LE-D006",
   "split": "dev",
-  "version": 1,
+  "version": 2,
   "created": "2026-10-18",
   "status": "entwurf_juristische_freigabe_offen",
-  "rubric_version": 1,
+  "rubric_version": 2,
   "case_fingerprint": "99d64c0c2229676562767f9c64da6da55a6cb4ad0d55f72d4432cf2ba3a8ddcc",
+  "history": [
+    {"version": 1, "date": "2026-10-18", "change": "§76: Erstfassung"},
+    {"version": 2, "date": "2026-10-18", "change": "§77-Audit (vor jedem Lauf, keine Ergebnisse vorhanden): K8 nur noch offener Punkt O1; ergänzt K9 (F2), K10 (F3), K11 (F4), K12 (O2) aus Aktenwerten/Referenzlösung; Felder alternative_results/not_assessed"}
+  ],
   "tasks": ["Q1", "Q2"],
   "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
   "source_scope": "BAG 6 AZR 32/24, amtliche Leitsätze 1 und 2, Gründe zur Anmeldung als Sachurteilsvoraussetzung; Wortlaut § 174 InsO. Keine Literatur, keine fremden Falllösungen.",
+  "alternative_results": [],
+  "alternative_results_status": "juristische_pruefung_offen",
+  "not_assessed": [],
   "criteria": [
     {"id": "K1", "dimension": "ergebnis", "statement": "Die Anmeldung vom 12.01.2026 war ohne Einzelangaben nicht ordnungsgemäß; die fehlende Unterschrift schadet nicht.",
      "accept_any": [["nicht ordnungsgemäß"], ["nicht ordnungsgemäss"], ["nicht hinreichend"]], "evaluation": "juristische_pruefung"},
@@ -26,8 +33,16 @@
      "fact": "F5", "accept_any": [["31.497,75 EUR"], ["31.497,75"]], "evaluation": "teilautomatisch"},
     {"id": "K7", "dimension": "fristen", "statement": "Stellungnahme an die Agentur bis 17.02.2026",
      "deadline": "17.02.2026", "accept_any": [["17.02.2026"]], "evaluation": "teilautomatisch"},
-    {"id": "K8", "dimension": "unsicherheiten", "statement": "Differenz von 614,25 EUR ungeklärt; Unterlagen zum vierten Arbeitnehmer fehlen",
-     "open_point": "O1", "accept_any": [["614,25"], ["Differenz"], ["vierten Arbeitnehmer"]], "evaluation": "teilautomatisch"}
+    {"id": "K8", "dimension": "unsicherheiten", "statement": "Differenz von 614,25 EUR ungeklärt",
+     "open_point": "O1", "accept_any": [["614,25"], ["Differenz"]], "evaluation": "teilautomatisch"},
+    {"id": "K9", "dimension": "tatsachen", "statement": "Keine Einzelangaben zu Arbeitnehmern und Bruttoentgelt",
+     "fact": "F2", "accept_any": [["nicht aufgeführt"], ["keine Einzelangaben"], ["ohne Einzelangaben"]], "evaluation": "teilautomatisch"},
+    {"id": "K10", "dimension": "tatsachen", "statement": "Anmeldung nicht unterschrieben",
+     "fact": "F3", "accept_any": [["nicht unterschrieben"], ["fehlende Unterschrift"], ["ohne Unterschrift"]], "evaluation": "teilautomatisch"},
+    {"id": "K11", "dimension": "tatsachen", "statement": "Nachgereichte Aufstellung, Eingang 06.02.2026",
+     "fact": "F4", "accept_any": [["06.02.2026"]], "evaluation": "teilautomatisch"},
+    {"id": "K12", "dimension": "unsicherheiten", "statement": "Unterlagen zum vierten Arbeitnehmer fehlen",
+     "open_point": "O2", "accept_any": [["vierten Arbeitnehmer"], ["Unterlagen"]], "evaluation": "teilautomatisch"}
   ],
   "dangerous_errors": [
     {"id": "G1", "statement": "Anmeldung wegen fehlender Unterschrift für unwirksam gehalten", "suspect_any": [["Unterschrift ist zwingend"], ["wegen der fehlenden Unterschrift unwirksam"]]},
@@ -38,5 +53,5 @@
     "Unterschrift als Wirksamkeitsvoraussetzung behandelt",
     "Differenz von 614,25 EUR ungeprüft übernommen"
   ],
-  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen"]
+  "requires_qualified_review": ["ergebnis", "unbelegte_behauptungen", "gefaehrliche_fehler", "Anwendung der Normen", "alternative_results", "Antwortvarianten aller Kriterien"]
 }

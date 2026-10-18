@@ -181,6 +181,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   für den Antwortqualitäts-Benchmark `benchmarks/legal_answers_v1` (Rubrik, Spezifikationen, Validator; kein Lauf).
   5626 PASS, Benchmark identisch zu §75. App-Test (Build `8291158`, WebView2, Loopback) PASS nach zwei
   Layout-Korrekturen: Detailpanel unter 1366 px gestapelt, Label nur an Silbengrenzen umbrochen; Export in der App geprüft.
+  **Fortschritt 18.10.2026 (§77):** Audit des Antwort-Benchmarks `legal_answers_v1`: 7 nachweisbare Fehler behoben
+  (Teilwortsuche, fehlende entscheidende Tatsachen und offene Punkte, Rubrik ohne Ausgleichsverbot, kein Schutz des
+  Test-Splits); `LOCK.json`, Laufvorbereitung ohne Ausführung (`answer_run check/plan`), Freigabe-Checkliste C-1–C-17.
+  **Offen (Owner/juristisch):** J1–J6, alle Checklistenpunkte; kein Modelllauf. Siehe benchmarks/legal_answers_v1/AUDIT_S77.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

@@ -1,0 +1,50 @@
+{
+  "_hinweis": "Vorlage für einen SPÄTEREN, separat freizugebenden Lauf. null = Entscheidung OFFEN. Solange ein Feld offen ist oder approved=false, verweigert scripts.legal_bench.answer_run jede Ausführung. Kopie als run_config.<run_id>.json anlegen; die Vorlage selbst nicht ausfüllen.",
+  "run_id": null,
+  "approved": false,
+  "approvals": {
+    "owner_freigabe_lauf_und_kosten": null,
+    "juristische_freigabe_spezifikationen": null,
+    "juristische_freigabe_schwellen_und_gewichte": null,
+    "datenschutz_freigabe": null
+  },
+  "model": {
+    "provider": null,
+    "model_id": null,
+    "model_version": null,
+    "temperature": null,
+    "max_tokens": null
+  },
+  "pipeline": {
+    "path": "lexono_chat_pseudonymisiert",
+    "lexono_commit": null,
+    "prompt_version": null
+  },
+  "scope": {
+    "splits": ["dev", "test"],
+    "specs": ["LA-D005", "LA-D006", "LA-T004"],
+    "repetitions": null
+  },
+  "limits": {
+    "max_calls": null,
+    "max_cost_eur": null,
+    "price_per_call_eur_estimate": null,
+    "abort_on_first_privacy_finding": true,
+    "abort_after_failed_calls": null
+  },
+  "privacy": {
+    "payload_capture": true,
+    "leak_check_required": true,
+    "fail_closed_required": true,
+    "real_client_data": false
+  },
+  "storage": {
+    "results_dir": null,
+    "retention": null
+  },
+  "evaluation": {
+    "blind_review": true,
+    "reviewers": null,
+    "second_reviewer_for_critical": null
+  }
+}
