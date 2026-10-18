@@ -171,6 +171,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   test 5/5; Beendigung 1/1; 0 Lecks. In der installierten App geprüft (Build `fc7d3d3`, WebView2, Loopback).
   **Offen (Owner):** Referenz LE-D002 (30.06.2026 als Frist geführt); Feldbezeichnung „Fällig am“ bei
   Beendigungsterminen. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §74.
+  **Fortschritt 18.10.2026 (§75):** Referenz LE-D002 korrigiert (30.06.2026 als Beendigungstermin, Historie im
+  Fall); „Beendigung zum“ in Detail und Formular; Art je Vorschlag auf der Aktenseite; Hinweis „mehrere mögliche
+  Fristenden“ nur bei konkurrierenden Fristenden. Bisherige dev-Fälle 18/18 + 1/1, LE-D009 4/4 + 1/1, test 5/5;
+  0 Lecks. In der installierten App geprüft (Build `ca695d8`, WebView2, Loopback). Offen: Export in der App,
+  gekürzte Typ-Spalte. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §75.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
   Datum“ in Modus C.
