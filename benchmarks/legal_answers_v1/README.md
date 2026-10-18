@@ -37,8 +37,9 @@ und eine eigene Rubrik, getrennt vom Fristen- und Datenschutz-Benchmark.
 | `specs/test/LA-T004.json` | Test-Spezifikation, **eingefroren** (`frozen: true`) |
 | `scripts/legal_bench/answer_specs.py` | Validator, Fingerabdruck, Vorprüfung |
 | `tests/test_legal_answer_specs.py` | Regressionstests (Validator, Einfrieren, Fingerabdruck, Vorprüfung) |
-| `LOCK.json` (§77) | Sperre von Rubrik, Test-Spezifikation und Test-Akten (kanonische SHA-256); Neusperre nur mit `--update-lock --reason` |
-| `scripts/legal_bench/answer_run.py` (§77) | Laufvorbereitung **ohne Ausführung**: `check` (offene Freigaben), `plan` (Aufrufplan mit Fingerabdrücken), Antwortdatensatz, blinder Prüfbogen, Zusammenfassung nach Rubrik |
+| `AUDIT_S78.md` (§78) | Adversariale Prüfung von Freigabesperre, Sperre, Aufrufplan und Datenschutzpfad bis zur HTTP-Leitung |
+| `LOCK.json` (§77, §78) | Sperre von Rubrik, Test-Spezifikation, Test-Akten und der von ihnen genutzten Quellen-Registereinträge (kanonische SHA-256, `entries_sha256` gegen Handbearbeitung); Neusperre nur mit `--update-lock --reason` (≥ 20 Zeichen), Historie mit alten/neuen Hashes |
+| `scripts/legal_bench/answer_run.py` (§77, §78 gehärtet) | Laufvorbereitung **ohne Ausführung**: `check` (offene Freigaben; jedes Feld der Vorlage Pflicht, Werte regelgeprüft, Exit 2 bei Ablehnung), `plan` (Aufrufplan mit Fingerabdrücken), Antwortdatensatz, blinder Prüfbogen, Zusammenfassung nach Rubrik |
 | `run_config.template.json` (§77) | Vorlage einer Laufkonfiguration, alle Entscheidungen `null` (OFFEN) |
 | `FREIGABE_CHECKLISTE.md`, `AUDIT_S77.md`, `audit/` (§77) | Freigabe-Checkliste, Auditbefunde, Nachweise |
 

@@ -185,6 +185,11 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   (Teilwortsuche, fehlende entscheidende Tatsachen und offene Punkte, Rubrik ohne Ausgleichsverbot, kein Schutz des
   Test-Splits); `LOCK.json`, Laufvorbereitung ohne Ausführung (`answer_run check/plan`), Freigabe-Checkliste C-1–C-17.
   **Offen (Owner/juristisch):** J1–J6, alle Checklistenpunkte; kein Modelllauf. Siehe benchmarks/legal_answers_v1/AUDIT_S77.md.
+  **Fortschritt 19.10.2026 (§78):** Freigabesperre, Test-Split-Sperre, Aufrufplan und Datenschutzpfad adversarial
+  geprüft (nur lokal und synthetisch). Die Freigabesperre war umgehbar (G1) und ist jetzt gehärtet; die Sperre
+  wurde um Handbearbeitungs-Erkennung, alte/neue Hashes und Registereinträge erweitert. Die Leitungsprüfung ergab
+  0 Lecks. Offen: B1 (Schriftsatzpfad blockiert bei Ausfall der Namenserkennung nicht geordnet), C-14, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S78.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

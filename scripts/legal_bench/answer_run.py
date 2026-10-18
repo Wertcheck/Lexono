@@ -1,11 +1,16 @@
-"""Vorbereitung eines SPAETEREN Laufs des Antwortqualitaets-Benchmarks `benchmarks/legal_answers_v1` (§77).
+"""Vorbereitung eines SPAETEREN Laufs des Antwortqualitaets-Benchmarks `benchmarks/legal_answers_v1` (§77/§78).
 
-Dieses Modul fuehrt NICHTS aus: es enthaelt keinen Netzwerk-, Cloud- oder Modellaufruf. Es
-1. prueft eine Laufkonfiguration auf offene Entscheidungen (`check`) - ohne vollstaendige Freigabe wird jede
-   Ausfuehrung verweigert (`ensure_runnable`);
-2. erstellt einen versionierten Aufrufplan (`plan`) mit Fingerabdruecken von Akte, Spezifikation, Rubrik und Lock;
+Dieses Modul fuehrt NICHTS aus: es enthaelt keinen Netzwerk-, Cloud- oder Modellaufruf (statisch geprueft,
+tests/test_s78_benchmark_gate.py). Es
+1. prueft eine Laufkonfiguration (`check`) - seit §78 STRENG: jeder Schluessel der Vorlage muss vorhanden sein, keine
+   unbekannten Schluessel, Typen und Wertebereiche, strukturierte Freigaben (Person, Rolle, Datum, Entscheidung),
+   aktueller Commit, bekannte Spezifikationen, Aufrufzahl und Kosten innerhalb der Grenzen, unveraenderte Datenschutz-
+   Pflichtwerte, gueltige Spezifikationen und Lock. Ohne vollstaendige Freigabe wird jede Ausfuehrung verweigert
+   (`ensure_runnable`); es gibt keinen Standardwert und keine Freigabe durch Weglassen;
+2. erstellt einen versionierten Aufrufplan (`plan`) mit Fingerabdruecken von Akte, Spezifikation, Rubrik und Lock und
+   einem reproduzierbaren Plan-Fingerabdruck; ein Plan ohne gueltige Freigabe ist ausdruecklich NICHT ausfuehrbar;
 3. definiert das Format eines spaeteren Antwortdatensatzes (`validate_answer_record`) - echte Antworten muessen ueber
-   den regulaeren, pseudonymisierten Lexono-Pfad entstehen (Payload-Erfassung, Leak-Check, Fail-Closed);
+   den regulaeren, pseudonymisierten Lexono-Pfad entstehen (Gateway-Siegel, Payload-Erfassung, Leak-Check, Fail-Closed);
 4. erzeugt fuer eine vorhandene Antwort einen BLINDEN Pruefbogen mit Referenzbezug und Fundstellen (`review_sheet`) und
    fasst einen ausgefuellten Bogen nach den Rubrikregeln zusammen (`aggregate`): bestaetigter kritischer Fehler ->
    FAIL_KRITISCH ohne Ausgleich; ohne festgelegte Schwellen nie PASS.
@@ -17,18 +22,27 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
 
 from scripts.legal_bench import answer_specs, corpus
 
 TEMPLATE = answer_specs.ROOT / "run_config.template.json"
+#: Version des Konfigurationsschemas - eine Konfiguration mit anderer Version gilt als veraltet
+SCHEMA_VERSION = 1
 #: Datenschutz-Schalter, die fuer einen Lauf exakt diesen Wert haben MUESSEN (keine Abschwaechung)
 REQUIRED_PRIVACY = {"payload_capture": True, "leak_check_required": True, "fail_closed_required": True,
                     "real_client_data": False}
+REQUIRED_PIPELINE = "lexono_chat_pseudonymisiert"
+#: einzig unterstuetzter Cloud-KI-Anbieter in Lexono (app/web/settings_router.py::_SUPPORTED_CLOUD_AI_PROVIDERS)
+SUPPORTED_PROVIDERS = {"claude"}
+#: Obergrenze wie Settings.claude_max_tokens (Relay lehnt groessere Anfragen ab, §70)
+MAX_TOKENS_LIMIT = 4000
 ANSWER_FIELDS = ("answer_id", "spec_id", "task_id", "repetition", "model_id", "model_version", "prompt_version",
                  "lexono_commit", "payload_sha256", "answer_sha256", "created_at", "answer_text")
 SCORES = {0, 1, 2, "n/a"}
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class NotApproved(RuntimeError):
@@ -48,19 +62,156 @@ def _walk(prefix: str, value):
         yield prefix, value
 
 
+def _get(config: dict, path: str):
+    node = config
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            return _MISSING
+        node = node[part]
+    return node
+
+
+_MISSING = object()
+
+
+def _is_int(value, minimum: int = 1, maximum: int | None = None) -> bool:
+    return (isinstance(value, int) and not isinstance(value, bool) and value >= minimum
+            and (maximum is None or value <= maximum))
+
+
+def _is_number(value, minimum: float = 0.0, exclusive: bool = True) -> bool:
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and (value > minimum if exclusive else value >= minimum))
+
+
+def _is_text(value) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _approval_ok(value) -> bool:
+    return (isinstance(value, dict) and _is_text(value.get("person")) and _is_text(value.get("rolle"))
+            and isinstance(value.get("datum"), str) and bool(_DATE.match(value["datum"]))
+            and value.get("entscheidung") == "freigegeben")
+
+
+def _field_rules() -> dict:
+    """Pflichtregel je Konfigurationsfeld (Pfad -> (Pruefung, Fehlermeldung))."""
+    return {
+        "schema_version": (lambda v: v == SCHEMA_VERSION, f"muss {SCHEMA_VERSION} sein (veraltete/unbekannte Konfiguration)"),
+        "run_id": (lambda v: isinstance(v, str) and bool(re.fullmatch(r"[A-Za-z0-9._-]{3,64}", v)), "3-64 Zeichen [A-Za-z0-9._-]"),
+        # false = Freigabe OFFEN (siehe unten), alles ausser true/false ("true", 1, "ja") ist ein Verstoss
+        "approved": (lambda v: isinstance(v, bool), "nur true/false - Gesamtfreigabe ausschliesslich als true"),
+        "approvals.owner_freigabe_lauf_und_kosten": (_approval_ok, "Freigabe {person, rolle, datum YYYY-MM-DD, entscheidung: freigegeben}"),
+        "approvals.juristische_freigabe_spezifikationen": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
+        "approvals.juristische_freigabe_schwellen_und_gewichte": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
+        "approvals.datenschutz_freigabe": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
+        "model.provider": (lambda v: v in SUPPORTED_PROVIDERS, f"unterstuetzt nur {sorted(SUPPORTED_PROVIDERS)}"),
+        "model.model_id": (lambda v: isinstance(v, str) and bool(re.fullmatch(r"claude-[a-z0-9][a-z0-9.-]*", v)), "Modell-ID 'claude-...'"),
+        "model.model_version": (_is_text, "genaue Modellversion angeben"),
+        "model.temperature": (lambda v: _is_number(v, 0.0, exclusive=False) and v <= 1, "Zahl 0..1"),
+        "model.max_tokens": (lambda v: _is_int(v, 1, MAX_TOKENS_LIMIT), f"ganze Zahl 1..{MAX_TOKENS_LIMIT}"),
+        "pipeline.path": (lambda v: v == REQUIRED_PIPELINE, f"muss {REQUIRED_PIPELINE} sein (kein Direktaufruf am Datenschutz vorbei)"),
+        "pipeline.lexono_commit": (lambda v: isinstance(v, str) and bool(re.fullmatch(r"[0-9a-f]{40}", v)), "vollstaendiger Commit-Hash"),
+        "pipeline.prompt_version": (_is_text, "Prompt-Version angeben"),
+        "scope.splits": (lambda v: isinstance(v, list) and bool(v) and set(v) <= {"dev", "test"} and len(v) == len(set(v)), "Teilmenge von dev/test"),
+        "scope.specs": (lambda v: isinstance(v, list) and bool(v) and all(_is_text(s) for s in v) and len(v) == len(set(v)), "nicht leere Liste ohne Doppelungen"),
+        "scope.repetitions": (lambda v: _is_int(v, 1), "ganze Zahl >= 1"),
+        "limits.max_calls": (lambda v: _is_int(v, 1), "ganze Zahl >= 1"),
+        "limits.max_cost_eur": (lambda v: _is_number(v, 0.0), "Zahl > 0"),
+        "limits.price_per_call_eur_estimate": (lambda v: _is_number(v, 0.0), "Zahl > 0"),
+        "limits.abort_on_first_privacy_finding": (lambda v: v is True, "muss true sein"),
+        "limits.abort_after_failed_calls": (lambda v: _is_int(v, 1), "ganze Zahl >= 1"),
+        **{f"privacy.{k}": ((lambda expected: lambda v: v is expected)(v), f"muss {str(v).lower()} sein")
+           for k, v in REQUIRED_PRIVACY.items()},
+        "storage.results_dir": (_is_text, "Ablageort angeben"),
+        "storage.retention": (_is_text, "Aufbewahrung angeben"),
+        "evaluation.blind_review": (lambda v: v is True, "muss true sein"),
+        "evaluation.reviewers": (lambda v: isinstance(v, list) and bool(v) and all(_is_text(r) for r in v), "nicht leere Liste"),
+        "evaluation.second_reviewer_for_critical": (lambda v: isinstance(v, bool), "true/false festlegen"),
+    }
+
+
+def _template_paths() -> set[str]:
+    template = load_config(TEMPLATE)
+    paths = set()
+
+    def collect(prefix: str, node) -> None:
+        for key, value in node.items():
+            if key.startswith("_"):
+                continue
+            path = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict):
+                collect(path, value)
+            else:
+                paths.add(path)
+
+    collect("", template)
+    return paths
+
+
+def _config_paths(config: dict) -> set[str]:
+    paths = set()
+
+    def collect(prefix: str, node) -> None:
+        for key, value in node.items():
+            if key.startswith("_"):
+                continue
+            path = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict) and not path.startswith("approvals."):
+                collect(path, value)
+            else:
+                paths.add(path)
+
+    if isinstance(config, dict):
+        collect("", config)
+    return paths
+
+
 def check(config: dict) -> dict:
-    """Offene Entscheidungen (null) und Verstoesse gegen Pflichtwerte - nichts wird stillschweigend angenommen."""
-    open_items = [path for path, value in _walk("", config) if value is None]
-    if config.get("approved") is not True:
+    """Strenge Freigabepruefung: offene (null/fehlende) Entscheidungen und Verstoesse mit konkretem Grund - nichts wird
+    stillschweigend angenommen, Weglassen eines Feldes ist keine Freigabe."""
+    if not isinstance(config, dict):
+        return {"open": [], "violations": ["Konfiguration ist kein JSON-Objekt"], "runnable": False}
+    rules = _field_rules()
+    expected = _template_paths()
+    open_items, violations = [], []
+    for path in sorted(expected | set(rules)):
+        value = _get(config, path)
+        if value is _MISSING:
+            violations.append(f"{path}: fehlt (Pflichtfeld der Vorlage - Weglassen ist keine Freigabe)")
+        elif value is None:
+            open_items.append(path)
+        elif path in rules and not rules[path][0](value):
+            violations.append(f"{path}: ungueltig ({rules[path][1]})")
+    unknown = sorted(p for p in _config_paths(config) - expected if not any(p.startswith(e + ".") for e in expected))
+    violations += [f"{p}: unbekannter Schluessel (nicht in der Vorlage - keine Zusatzschalter)" for p in unknown]
+    if config.get("approved") is not True and "approved" not in open_items:
         open_items.append("approved (ausdrueckliche Freigabe fehlt)")
-    violations = [f"privacy.{k} muss {v} sein" for k, v in REQUIRED_PRIVACY.items()
-                  if (config.get("privacy") or {}).get(k) is not v]
-    if (config.get("limits") or {}).get("abort_on_first_privacy_finding") is not True:
-        violations.append("limits.abort_on_first_privacy_finding muss true sein")
-    if (config.get("pipeline") or {}).get("path") != "lexono_chat_pseudonymisiert":
-        violations.append("pipeline.path muss lexono_chat_pseudonymisiert sein (kein Direktaufruf am Datenschutz vorbei)")
+
+    commit = _get(config, "pipeline.lexono_commit")
+    current = _git_commit()
+    if isinstance(commit, str) and commit and current and commit != current:
+        violations.append(f"pipeline.lexono_commit: veraltet ({commit[:12]} != aktueller Stand {current[:12]})")
+    specs = {s["id"]: s for s in answer_specs.load_specs()}
+    scope_specs = _get(config, "scope.specs")
+    scope_splits = _get(config, "scope.splits")
+    if isinstance(scope_specs, list):
+        for sid in scope_specs:
+            if sid not in specs:
+                violations.append(f"scope.specs: unbekannte Spezifikation {sid!r}")
+            elif isinstance(scope_splits, list) and specs[sid]["split"] not in scope_splits:
+                violations.append(f"scope.specs: {sid} gehoert zu Split {specs[sid]['split']!r}, der nicht in scope.splits steht")
+    if not open_items and not violations:
+        calls = len(_planned_calls(config))
+        if calls == 0:
+            violations.append("Aufrufplan leer")
+        if calls > config["limits"]["max_calls"]:
+            violations.append(f"limits.max_calls: {calls} geplante Aufrufe > {config['limits']['max_calls']}")
+        cost = calls * config["limits"]["price_per_call_eur_estimate"]
+        if cost > config["limits"]["max_cost_eur"]:
+            violations.append(f"limits.max_cost_eur: geschaetzt {cost:.2f} EUR > {config['limits']['max_cost_eur']} EUR")
     spec_report = answer_specs.validate_all()
-    violations += [f"Spezifikationen: {e}" for e in spec_report.errors]
+    violations += [f"Spezifikationen/Lock: {e}" for e in spec_report.errors]
     return {"open": open_items, "violations": violations, "runnable": not open_items and not violations}
 
 
@@ -79,41 +230,61 @@ def _git_commit() -> str | None:
         return None
 
 
-def plan(config: dict) -> dict:
-    """Aufrufplan mit allen Eingabe-Fingerabdruecken - ohne Ausfuehrung, auch ohne Freigabe erstellbar."""
+def _planned_calls(config: dict) -> list[dict]:
     cases = {c["id"]: c for c in corpus.load_cases()}
     specs = {s["id"]: s for s in answer_specs.load_specs()}
-    rubric_fp = answer_specs.file_fingerprint(answer_specs.ROOT / "rubric.json")
-    scope = config.get("scope") or {}
+    scope = config.get("scope") if isinstance(config.get("scope"), dict) else {}
     repetitions = scope.get("repetitions")
+    repetitions = repetitions if _is_int(repetitions, 1) else 1
+    splits = scope.get("splits") if isinstance(scope.get("splits"), list) else []
     calls = []
-    for sid in scope.get("specs") or []:
+    for sid in scope.get("specs") if isinstance(scope.get("specs"), list) else []:
         spec = specs.get(sid)
-        if spec is None or spec["split"] not in (scope.get("splits") or []):
+        if spec is None or spec["split"] not in splits:
             continue
         case = cases[spec["case"]]
         tasks = {t["id"]: t for t in case["reference"]["tasks"]}
         for tid in spec["tasks"]:
-            for rep in range(1, (repetitions or 1) + 1):
+            for rep in range(1, repetitions + 1):
                 calls.append({"spec_id": sid, "case": spec["case"], "split": spec["split"], "task_id": tid,
                               "kind": tasks[tid]["kind"], "question": tasks[tid]["question"], "repetition": rep,
                               "case_fingerprint": answer_specs.case_fingerprint(case),
                               "spec_fingerprint": answer_specs.spec_fingerprint(spec), "spec_version": spec["version"]})
-    limits = config.get("limits") or {}
+    return calls
+
+
+def plan(config: dict) -> dict:
+    """Aufrufplan mit allen Eingabe-Fingerabdruecken - KEINE Ausfuehrung. Ohne gueltige Freigabe ausdruecklich nicht
+    ausfuehrbar (`ausfuehrbar: false` mit Gruenden)."""
+    calls = _planned_calls(config)
+    rubric_fp = answer_specs.file_fingerprint(answer_specs.ROOT / "rubric.json")
+    lock_path = answer_specs.LOCK_PATH
+    lock_fp = hashlib.sha256(lock_path.read_bytes()).hexdigest() if lock_path.exists() else None
+    commit = _git_commit()
+    limits = config.get("limits") if isinstance(config.get("limits"), dict) else {}
     price = limits.get("price_per_call_eur_estimate")
     max_calls = limits.get("max_calls")
+    scope = config.get("scope") if isinstance(config.get("scope"), dict) else {}
+    repetitions = scope.get("repetitions")
+    gate = check(config)
+    fingerprint_basis = json.dumps({"calls": calls, "commit": commit, "rubric": rubric_fp, "lock": lock_fp},
+                                   ensure_ascii=False, sort_keys=True)
     return {
         "art": "aufrufplan - KEINE Ausfuehrung",
-        "git_commit": _git_commit(),
+        "ausfuehrbar": gate["runnable"],
+        "nicht_ausfuehrbar_weil": [] if gate["runnable"] else gate["open"] + gate["violations"],
+        "plan_fingerprint": hashlib.sha256(fingerprint_basis.encode("utf-8")).hexdigest(),
+        "git_commit": commit,
         "rubric_fingerprint": rubric_fp,
+        "lock_sha256": lock_fp,
         "lock_errors": answer_specs.check_lock(),
-        "repetitions": repetitions if repetitions is not None else "OFFEN (Plan mit 1 Wiederholung)",
+        "repetitions": repetitions if _is_int(repetitions, 1) else "OFFEN (Plan mit 1 Wiederholung)",
         "calls": calls,
         "anzahl_aufrufe": len(calls),
-        "kosten_schaetzung_eur": round(len(calls) * price, 2) if price is not None else "OFFEN",
-        "innerhalb_max_calls": (len(calls) <= max_calls) if max_calls is not None else "OFFEN",
+        "kosten_schaetzung_eur": round(len(calls) * price, 2) if _is_number(price) else "OFFEN",
+        "innerhalb_max_calls": (len(calls) <= max_calls) if _is_int(max_calls, 1) else "OFFEN",
         "innerhalb_max_kosten": ((len(calls) * price) <= limits["max_cost_eur"])
-        if price is not None and limits.get("max_cost_eur") is not None else "OFFEN",
+        if _is_number(price) and _is_number(limits.get("max_cost_eur")) else "OFFEN",
     }
 
 
@@ -212,14 +383,19 @@ def main() -> int:
     parser.add_argument("command", choices=["check", "plan"])
     parser.add_argument("--config", default=str(TEMPLATE))
     args = parser.parse_args()
-    config = load_config(Path(args.config))
+    try:
+        config = load_config(Path(args.config))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        print(f"Konfiguration nicht lesbar ({type(exc).__name__}) - LAUF NICHT FREIGEGEBEN")
+        return 2
     if args.command == "check":
         result = check(config)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         print("LAUF FREIGEGEBEN" if result["runnable"] else "LAUF NICHT FREIGEGEBEN")
         return 0 if result["runnable"] else 2
-    print(json.dumps(plan(config), ensure_ascii=False, indent=2))
-    return 0
+    result = plan(config)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["ausfuehrbar"] else 2  # §78: ein nicht ausfuehrbarer Plan ist kein Erfolg
 
 
 if __name__ == "__main__":

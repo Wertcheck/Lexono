@@ -1,5 +1,6 @@
 {
   "_hinweis": "Vorlage für einen SPÄTEREN, separat freizugebenden Lauf. null = Entscheidung OFFEN. Solange ein Feld offen ist oder approved=false, verweigert scripts.legal_bench.answer_run jede Ausführung. Kopie als run_config.<run_id>.json anlegen; die Vorlage selbst nicht ausfüllen.",
+  "schema_version": 1,
   "run_id": null,
   "approved": false,
   "approvals": {

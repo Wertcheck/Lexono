@@ -4,6 +4,9 @@ Stand §77, 18.10.2026. **Kein Punkt ist freigegeben.** Jeder OFFENE Punkt verhi
 `python -m scripts.legal_bench.answer_run check --config <run_config>` prüft die maschinell erfassbaren Punkte. Es meldet
 „LAUF NICHT FREIGEGEBEN“, solange ein Feld `null` ist, `approved` nicht `true` ist oder eine Datenschutzvorgabe
 abgeschwächt wurde. Eine Ausführungsfunktion gibt es bewusst nicht; sie ist Teil der späteren Freigabe (C-14).
+§78: Fehlende Felder, Platzhalter, Zusatzschalter, ein veralteter Commit oder Kosten/Aufrufe über dem Limit werden
+ebenfalls abgelehnt (Exit 2). Die Freigabe-Angaben sind keine Signatur: Maßgeblich ist die Entscheidung der
+zuständigen Person, nicht der Eintrag in der Datei (siehe AUDIT_S78.md).
 
 | # | Entscheidung | Feld in `run_config` | Zuständig | Status |
 |---|---|---|---|---|

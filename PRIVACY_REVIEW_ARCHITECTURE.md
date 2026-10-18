@@ -9726,3 +9726,31 @@ Alle Entscheidungen der Checkliste sind **OFFEN**.
 
 **Kein Beweis:** Keine Aussage über die juristische Qualität eines Modells, über vollständige juristische
 Zuverlässigkeit oder über vollständige Leckfreiheit. Der Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §78 Benchmark-Freigabe und Datenschutzpfad adversarial geprüft (19.10.2026, Branch `feature/feedback-diagnose`, Ausgangsstand `307cecf`)
+
+Nur technische Absicherung mit synthetischen Daten, temporären Kopien und lokalem QA-Recorder samt Testschlüssel. Kein
+Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `benchmarks/legal_answers_v1/AUDIT_S78.md`.
+
+- **Freigabesperre (`answer_run check`):**
+  - §77-Fassung **FAIL** (G1): gelöschte Schlüssel, `false`/„nein“ als Freigabe und Unsinnswerte wurden freigegeben.
+  - Gehärtet: Jedes Feld der Vorlage ist Pflicht, Werte werden regelgeprüft, Zusatzschalter, ein veralteter Commit und
+    Kosten bzw. Aufrufe über dem Limit sind Verstöße.
+  - 36/36 Manipulationen werden abgelehnt, die Positivkontrolle wird freigegeben. **PASS**
+- **Sperre (LOCK.json):**
+  - Lücken L1–L4 geschlossen: ungültiges JSON, Handbearbeitung (`entries_sha256`), alte/neue Hashes in der Historie,
+    Registereinträge der Test-Quellen.
+  - Die Neusperre ist begründet und dokumentiert; die Originale sind byte-gleich.
+  - Grenze: Wer Lock und Historie gemeinsam fälscht, fällt nur in Git auf. **PASS**
+- **Aufrufplan:** reproduzierbar, versioniert über `plan_fingerprint`, offline (Sockets gesperrt), ohne Cloud-Bibliothek;
+  ohne Freigabe nicht ausführbar (Exit 2). **PASS**
+- **Datenschutzpfad bis zur Leitung:**
+  - LE-D005, LE-D006 und LE-T004 laufen über die echte Pipeline, den echten Anthropic-Provider und das SDK an den
+    lokalen Recorder: 7 Anfragen, 0 Lecks eigener oder fremder Akten, nur der Testschlüssel.
+  - Fail-Closed: Fällt die Namenserkennung aus, gehen 0 Anfragen hinaus. **PASS**
+  - **Befund B1:** Der Schriftsatzpfad reicht die Ausnahme durch, statt geordnet zu blockieren. Er bleibt fail-closed,
+    aber ohne Grund; offen, App-Änderung.
+- **NICHT VERIFIZIERT:** TLS und realer Endpunkt, Relay-Server, die spätere Benchmark-Ausführung (C-14, nicht
+  implementiert) und die Erkennung jenseits dieser Akten. Datenschutzstatus: **teilweise nachgewiesen**.
+- **Nachweise:** `benchmarks/legal_answers_v1/audit/s78_*`; Tests `tests/test_s78_benchmark_gate.py` und
+  `tests/test_s78_wire_privacy.py` (84).

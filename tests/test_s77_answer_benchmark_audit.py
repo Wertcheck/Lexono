@@ -187,7 +187,12 @@ def test_fully_filled_config_still_needs_valid_specs_and_explicit_approval() -> 
             node[leaf] = "TESTWERT"
     assert "approved (ausdrueckliche Freigabe fehlt)" in answer_run.check(config)["open"]
     config["approved"] = True
-    assert answer_run.check(config)["runnable"] is True  # nur Strukturtest - es gibt KEINE Ausfuehrungsfunktion
+    # §78: Platzhalterwerte sind KEINE Freigabe mehr (vorher wurde "TESTWERT" ueberall angenommen) - die Positivkontrolle
+    # mit gueltigen Werten steht in tests/test_s78_benchmark_gate.py
+    result = answer_run.check(config)
+    assert result["runnable"] is False
+    assert any(v.startswith("approvals.") for v in result["violations"])
+    assert any(v.startswith("model.temperature") for v in result["violations"])
     assert not hasattr(answer_run, "execute") and not hasattr(answer_run, "run")
 
 

@@ -1,12 +1,14 @@
 {
-  "purpose": "Schutz von Test-Split, Rubrik und Test-Spezifikationen vor unbemerkter Aenderung (kanonische SHA-256 je Datei). Aenderung nur bewusst mit --update-lock --reason.",
+  "purpose": "Schutz von Test-Split, Rubrik, Test-Spezifikationen und der von ihnen genutzten Quellen-Registereintraege vor unbemerkter Aenderung (kanonische SHA-256 je Datei/Eintrag). Aenderung nur bewusst mit --update-lock --reason; die Historie dokumentiert alte/neue Hashes. Schutz gegen VERSEHENTLICHE/unbemerkte Aenderung - gegen absichtliche Manipulation von Lock und Historie zusammen schuetzt nur die Git-Historie.",
   "entries": {
     "benchmarks/legal_answers_v1/rubric.json": "3e1723c7adc4d17b888cbd641d96f311cc615a885e11c76aabd2db003c009552",
     "benchmarks/legal_answers_v1/specs/test/LA-T004.json": "7cd773851eed56ee575b052a5d5bf9b17d64a8ce109bc2fa562d691f96da8218",
     "benchmarks/legal_e2e_v1/cases/test/LE-T001.json": "803527abfc017d2453dad1405f5ae2716fc621168143f08729c42dce65bd25aa",
     "benchmarks/legal_e2e_v1/cases/test/LE-T002.json": "cada7003bf215a3dcf303eb7aad57bb76e3dc4aa7e273b8d02bc290c7d349cd5",
     "benchmarks/legal_e2e_v1/cases/test/LE-T003.json": "3bd111dc885b63436ee91dd76b03e931d7dbeaf93e039385675c8e7f474939fb",
-    "benchmarks/legal_e2e_v1/cases/test/LE-T004.json": "c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6"
+    "benchmarks/legal_e2e_v1/cases/test/LE-T004.json": "c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6",
+    "benchmarks/legal_e2e_v1/source_register.json#Q-GESETZE-IM-INTERNET": "9d1e769ff1a269c36255745114b2dc2072a559bacec8edf60e44b4dc6fbcba41",
+    "benchmarks/legal_e2e_v1/source_register.json#Q-RECHTSPRECHUNG-IM-INTERNET": "866478efb59fd5b7ba94d458ae40e5b4586ddfbeff5021675ff47a1b1df244b7"
   },
   "history": [
     {
@@ -14,6 +16,28 @@
       "reason": "§77 Erstsperre nach Audit: Test-Split legal_e2e_v1 unveraendert seit fc9d3f4; Rubrik v2 und LA-T004 v2 vor jedem Lauf (keine Modellantworten vorhanden)",
       "erstsperre": true,
       "changed": []
+    },
+    {
+      "date": "2026-10-18",
+      "reason": "§78: Lock-Format erweitert (entries_sha256, alt/neu-Hashes, Registereintraege der Test-Quellen); Test-Akten, Test-Spezifikation und Rubrik unveraendert",
+      "erstsperre": false,
+      "changed": [
+        "benchmarks/legal_e2e_v1/source_register.json#Q-GESETZE-IM-INTERNET",
+        "benchmarks/legal_e2e_v1/source_register.json#Q-RECHTSPRECHUNG-IM-INTERNET"
+      ],
+      "aenderungen": [
+        {
+          "pfad": "benchmarks/legal_e2e_v1/source_register.json#Q-GESETZE-IM-INTERNET",
+          "alt": null,
+          "neu": "9d1e769ff1a269c36255745114b2dc2072a559bacec8edf60e44b4dc6fbcba41"
+        },
+        {
+          "pfad": "benchmarks/legal_e2e_v1/source_register.json#Q-RECHTSPRECHUNG-IM-INTERNET",
+          "alt": null,
+          "neu": "866478efb59fd5b7ba94d458ae40e5b4586ddfbeff5021675ff47a1b1df244b7"
+        }
+      ],
+      "entries_sha256": "3186accaaa7cd353f9642767893751a8f8bb661256eba64505e5caac7f4481a3"
     }
   ]
 }

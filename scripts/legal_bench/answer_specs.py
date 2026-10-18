@@ -95,38 +95,83 @@ def _key(path: Path, root: Path) -> str:
     return path.as_posix()
 
 
+def _register_entries(root: Path) -> dict[str, str]:
+    """§78: Registereintraege der Quellen, auf die Test-Spezifikationen und Test-Akten verweisen - ein entzogenes
+    Nutzungsrecht faellt so auch in der Sperre auf (nicht nur im Validator)."""
+    refs: set[str] = set()
+    for path in sorted((root / "specs" / "test").glob("*.json")):
+        refs |= set(json.loads(path.read_text(encoding="utf-8")).get("source_refs", []))
+    for path in sorted((corpus.CORPUS_DIR / "cases" / "test").glob("*.json")):
+        refs |= set(json.loads(path.read_text(encoding="utf-8")).get("source_refs", []))
+    register = json.loads((corpus.CORPUS_DIR / "source_register.json").read_text(encoding="utf-8"))
+    by_id = {s["id"]: s for s in register.get("sources", [])}
+    return {f"benchmarks/legal_e2e_v1/source_register.json#{ref}": _canonical_sha256(by_id[ref]) if ref in by_id else "FEHLT"
+            for ref in sorted(refs)}
+
+
+def locked_entries(root: Path = ROOT) -> dict[str, str]:
+    entries = {_key(p, root): file_fingerprint(p) for p in locked_paths(root)}
+    entries.update(_register_entries(root))
+    return entries
+
+
+def _entries_digest(entries: dict) -> str:
+    return hashlib.sha256(json.dumps(entries, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def check_lock(root: Path = ROOT, lock_path: Path | None = None) -> list[str]:
     lock_path = lock_path or root / "LOCK.json"
     if not lock_path.exists():
         return ["LOCK.json fehlt - Test-Split nicht gegen Aenderung geschuetzt"]
-    lock = json.loads(lock_path.read_text(encoding="utf-8"))
-    expected = lock.get("entries", {})
-    current = {_key(p, root): file_fingerprint(p) for p in locked_paths(root)}
+    try:
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        return [f"LOCK.json ungueltig (kein lesbares JSON: {type(exc).__name__}) - Sperre nicht pruefbar"]
+    if not isinstance(lock, dict) or not isinstance(lock.get("entries"), dict) or not lock["entries"] \
+            or not isinstance(lock.get("history"), list) or not lock["history"]:
+        return ["LOCK.json ungueltig (entries/history fehlen oder leer) - Sperre nicht pruefbar"]
+    expected = lock["entries"]
     errors = []
+    # §78: Eintraege muessen zum letzten Historieneintrag passen - eine Handbearbeitung ohne Neusperre faellt auf
+    last = lock["history"][-1] if isinstance(lock["history"][-1], dict) else {}
+    if last.get("entries_sha256") != _entries_digest(expected):
+        errors.append("LOCK: Eintraege passen nicht zum letzten Historieneintrag (Handbearbeitung ohne --update-lock?)")
+    current = locked_entries(root)
     for path, digest in sorted(current.items()):
         if path not in expected:
             errors.append(f"LOCK: {path} ist neu und nicht gesperrt")
         elif expected[path] != digest:
-            errors.append(f"LOCK: {path} wurde geaendert (gesperrt {expected[path][:12]}, jetzt {digest[:12]})")
+            errors.append(f"LOCK: {path} wurde geaendert (gesperrt {str(expected[path])[:12]}, jetzt {digest[:12]})")
     for path in sorted(set(expected) - set(current)):
         errors.append(f"LOCK: gesperrte Datei {path} fehlt")
     return errors
 
 
 def write_lock(reason: str, root: Path = ROOT, lock_path: Path | None = None) -> dict:
-    """Bewusste, begruendete Neusperre - nur vor einem Testlauf bzw. mit dokumentiertem Grund; Historie bleibt."""
-    if not reason or len(reason.strip()) < 10:
-        raise ValueError("Neusperre nur mit Begruendung (mindestens 10 Zeichen)")
+    """Bewusste, begruendete Neusperre - nur vor einem Testlauf bzw. mit dokumentiertem Grund; die Historie haelt je
+    Aenderung alten und neuen Hash fest und den Hash aller Eintraege (Pruefung gegen Handbearbeitung)."""
+    if not reason or len(reason.strip()) < 20:
+        raise ValueError("Neusperre nur mit nachvollziehbarer Begruendung (mindestens 20 Zeichen)")
     lock_path = lock_path or root / "LOCK.json"
-    previous = json.loads(lock_path.read_text(encoding="utf-8")) if lock_path.exists() else {}
-    entries = {_key(p, root): file_fingerprint(p) for p in locked_paths(root)}
-    first = not previous
-    history = previous.get("history", []) + [{"date": date.today().isoformat(), "reason": reason.strip(),
-                                               "erstsperre": first,
-                                               "changed": [] if first else sorted(
-                                                   k for k, v in entries.items() if previous.get("entries", {}).get(k) != v)}]
-    lock = {"purpose": "Schutz von Test-Split, Rubrik und Test-Spezifikationen vor unbemerkter Aenderung "
-                       "(kanonische SHA-256 je Datei). Aenderung nur bewusst mit --update-lock --reason.",
+    previous: dict = {}
+    if lock_path.exists():
+        try:
+            previous = json.loads(lock_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            raise ValueError("vorhandene LOCK.json ist ungueltig - nicht ueberschreiben, Ursache klaeren") from None
+    old_entries = previous.get("entries", {}) if isinstance(previous, dict) else {}
+    entries = locked_entries(root)
+    first = not old_entries
+    changes = [] if first else [{"pfad": k, "alt": old_entries.get(k), "neu": entries.get(k)}
+                                for k in sorted(set(old_entries) | set(entries)) if old_entries.get(k) != entries.get(k)]
+    history = (previous.get("history", []) if isinstance(previous, dict) else []) + [{
+        "date": date.today().isoformat(), "reason": reason.strip(), "erstsperre": first,
+        "changed": [c["pfad"] for c in changes], "aenderungen": changes, "entries_sha256": _entries_digest(entries)}]
+    lock = {"purpose": "Schutz von Test-Split, Rubrik, Test-Spezifikationen und der von ihnen genutzten Quellen-"
+                       "Registereintraege vor unbemerkter Aenderung (kanonische SHA-256 je Datei/Eintrag). Aenderung nur "
+                       "bewusst mit --update-lock --reason; die Historie dokumentiert alte/neue Hashes. Schutz gegen "
+                       "VERSEHENTLICHE/unbemerkte Aenderung - gegen absichtliche Manipulation von Lock und Historie "
+                       "zusammen schuetzt nur die Git-Historie.",
             "entries": entries, "history": history}
     lock_path.write_text(json.dumps(lock, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return lock
