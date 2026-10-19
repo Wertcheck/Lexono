@@ -3,7 +3,7 @@
 Stand §77, 18.10.2026. **Kein Punkt ist freigegeben.** Jeder OFFENE Punkt verhindert einen Lauf.
 `python -m scripts.legal_bench.answer_run check --config <run_config>` prüft die maschinell erfassbaren Punkte. Es meldet
 „LAUF NICHT FREIGEGEBEN“, solange ein Feld `null` ist, `approved` nicht `true` ist oder eine Datenschutzvorgabe
-abgeschwächt wurde. Eine Ausführungsfunktion gibt es bewusst nicht; sie ist Teil der späteren Freigabe (C-14).
+abgeschwächt wurde. §82-Korrektur (vorher hieß es hier „Eine Ausführungsfunktion gibt es bewusst nicht“): Seit §80 gibt es den Treiber `answer_driver.py`, er lässt aber nur Mock-Provider und den lokalen Prüfendpunkt zu – echte Endpunkte sind gesperrt (`RealCloudDisabled`); ein echter Lauf bleibt Teil der späteren Freigabe (C-14, GESPERRT).
 §78: Fehlende Felder, Platzhalter, Zusatzschalter, ein veralteter Commit oder Kosten/Aufrufe über dem Limit werden
 ebenfalls abgelehnt (Exit 2). Die Freigabe-Angaben sind keine Signatur: Maßgeblich ist die Entscheidung der
 zuständigen Person, nicht der Eintrag in der Datei (siehe AUDIT_S78.md).
@@ -28,6 +28,8 @@ zuständigen Person, nicht der Eintrag in der Datei (siehe AUDIT_S78.md).
 | C-16 | Kritische Fehler: Definition je Fall (`dangerous_errors`); bestätigter kritischer Fehler ergibt FAIL_KRITISCH ohne Ausgleich | Spezifikationen, `rubric.aggregation` | qualifizierte juristische Person | Regel fest, Inhalte **OFFEN** (J2) |
 | C-17 | Ausdrückliche Gesamtfreigabe des Laufs – §81: Owner-Freigabe nur mit `plan_fingerprint` (gilt für genau einen Plan), Datum nicht in der Zukunft und nicht vor der letzten Neusperre; juristische Freigaben widersprechen offenen Spezifikationen bzw. fehlenden Schwellen | `approved`, `approvals.owner_freigabe_lauf_und_kosten`, `run_id` | Owner | **OFFEN** |
 | F-1 (§81) | Nachweis der Freigaben (Urheberschaft): Signaturverfahren/Vertrauensanker oder bewusster Verzicht; Vier-Augen-Prinzip | – (nicht implementiert, AUDIT_S81.md) | Owner | **OFFEN** |
+
+§82-Hinweis W2: J6 (Regeln zu n/a und Unentscheidbarem, `AUDIT_S77.md`) ist keinem Punkt dieser Liste und keinem Freigabefeld zugeordnet. Die Zuordnung (z. B. zu C-13 oder ein eigener Punkt) ist eine offene Owner-Entscheidung; siehe `ENTSCHEIDUNGSMATRIX.md`.
 
 **Vor dem Lauf (technisch, Pflicht):**
 

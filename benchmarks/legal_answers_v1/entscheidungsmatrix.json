@@ -1,0 +1,104 @@
+{
+  "_hinweis": "§82: Entscheidungsvorbereitung - KEINE Entscheidung, KEINE Freigabe. Status nur OFFEN, ENTSCHEIDUNG VORBEREITET oder NACHWEIS FEHLT. Kennzahlen werden von tests/test_s82_decision_matrix.py gegen die Spezifikationen geprueft. Lesbare Fassung: ENTSCHEIDUNGSMATRIX.md.",
+  "stand": "2026-10-19",
+  "basis_commit": "61dcfa87e0180b58e3b6a4d0a944cb39f9831a18",
+  "c14": "GESPERRT",
+  "erlaubte_status": ["OFFEN", "ENTSCHEIDUNG VORBEREITET", "NACHWEIS FEHLT"],
+  "kennzahlen": {
+    "LA-D005": {"case": "LE-D005", "split": "dev", "kriterien": 10, "antwortvarianten": 23, "gefaehrliche_fehler": 2, "fehlentscheidungen": 3, "offene_punkte_referenz": 2, "alternativergebnisse": 0},
+    "LA-D006": {"case": "LE-D006", "split": "dev", "kriterien": 12, "antwortvarianten": 28, "gefaehrliche_fehler": 2, "fehlentscheidungen": 3, "offene_punkte_referenz": 2, "alternativergebnisse": 0},
+    "LA-T004": {"case": "LE-T004", "split": "test", "kriterien": 12, "antwortvarianten": 25, "gefaehrliche_fehler": 2, "fehlentscheidungen": 3, "offene_punkte_referenz": 2, "alternativergebnisse": 0}
+  },
+  "punkte": [
+    {
+      "id": "J1", "art": "juristisch", "status": "ENTSCHEIDUNG VORBEREITET",
+      "frage": "Sind die drei Referenzloesungen (solution.expected_result, wrong_results, decisive_facts, open_points) juristisch zutreffend und fuer die synthetischen Akten tragfaehig?",
+      "betrifft": ["LA-D005", "LA-D006", "LA-T004"],
+      "nachweise": ["benchmarks/legal_e2e_v1/cases/dev/LE-D005.json", "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json", "benchmarks/legal_e2e_v1/cases/test/LE-T004.json", "benchmarks/legal_e2e_v1/source_register.json", "benchmarks/legal_answers_v1/AUDIT_S77.md"],
+      "zustaendig": "qualifizierte juristische Person (FREIGABE_CHECKLISTE.md C-12)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["Voraussetzung fuer J2, J3, J4"],
+      "fehlend": ["benannte qualifizierte Person", "juristische Pruefung selbst"],
+      "abschluss": "Je Fall schriftlich: freigegeben / korrigiert (mit Begruendung) / verworfen; Person, Datum; danach Spezifikation versionieren und begruendet neu sperren"
+    },
+    {
+      "id": "J2", "art": "juristisch", "status": "ENTSCHEIDUNG VORBEREITET",
+      "frage": "Sind die zulaessigen Antwortvarianten (accept_any) aller Kriterien und die Verdachtsformulierungen der gefaehrlichen Fehler vollstaendig und richtig - einschliesslich der §77-Ergaenzungen (K8-K12, G1-Ergaenzung LA-T004)?",
+      "betrifft": ["LA-D005", "LA-D006", "LA-T004"],
+      "nachweise": ["benchmarks/legal_answers_v1/specs/dev/LA-D005.json", "benchmarks/legal_answers_v1/specs/dev/LA-D006.json", "benchmarks/legal_answers_v1/specs/test/LA-T004.json", "benchmarks/legal_answers_v1/AUDIT_S77.md"],
+      "zustaendig": "qualifizierte juristische Person (FREIGABE_CHECKLISTE.md C-12, C-16)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["J1 (Varianten haengen am Referenzergebnis)"],
+      "fehlend": ["benannte qualifizierte Person", "juristische Pruefung selbst"],
+      "abschluss": "Je Kriterium und gefaehrlichem Fehler: bestaetigt / geaendert / gestrichen; Aenderungen in der Spezifikation mit Versionssprung und Historie"
+    },
+    {
+      "id": "J3", "art": "juristisch", "status": "OFFEN",
+      "frage": "Gibt es je Fall vertretbare Alternativergebnisse, die wie das Referenzergebnis zu bewerten sind - oder ausdruecklich keine?",
+      "betrifft": ["LA-D005", "LA-D006", "LA-T004"],
+      "nachweise": ["benchmarks/legal_answers_v1/specs/dev/LA-D005.json", "benchmarks/legal_answers_v1/specs/dev/LA-D006.json", "benchmarks/legal_answers_v1/specs/test/LA-T004.json", "benchmarks/legal_answers_v1/rubric.json"],
+      "zustaendig": "qualifizierte juristische Person (FREIGABE_CHECKLISTE.md C-12)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["J1"],
+      "fehlend": ["inhaltliche Vorschlaege - bewusst nicht vom Agenten erstellt (AUDIT_S77.md V3)", "benannte qualifizierte Person"],
+      "abschluss": "Je Fall alternative_results gefuellt oder ausdruecklich leer, alternative_results_status nicht mehr 'juristische_pruefung_offen'"
+    },
+    {
+      "id": "J4", "art": "juristisch", "status": "OFFEN",
+      "frage": "Welche Gewichte und PASS/FAIL-Schwellen gelten je Dimension (rubric.aggregation.weights/thresholds, derzeit null)?",
+      "betrifft": ["rubric.json"],
+      "nachweise": ["benchmarks/legal_answers_v1/rubric.json", "benchmarks/legal_answers_v1/AUDIT_S77.md"],
+      "zustaendig": "qualifizierte juristische Person (FREIGABE_CHECKLISTE.md C-13)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["J1-J3 (was bewertet wird)", "J5 (wer bewertet)"],
+      "fehlend": ["keinerlei Kalibrierungsdaten (es gibt keine Modellantworten)", "benannte qualifizierte Person"],
+      "abschluss": "weights und thresholds in rubric.json gesetzt, Rubrik-Version erhoeht, begruendet neu gesperrt; bis dahin nie PASS"
+    },
+    {
+      "id": "J5", "art": "organisatorisch/juristisch", "status": "NACHWEIS FEHLT",
+      "frage": "Wer bewertet (Qualifikation), wann ist eine Zweitpruefung Pflicht, und wie werden abweichende Bewertungen aufgeloest?",
+      "betrifft": ["evaluation.reviewers", "evaluation.second_reviewer_for_critical"],
+      "nachweise": ["benchmarks/legal_answers_v1/run_config.template.json", "benchmarks/legal_answers_v1/FREIGABE_CHECKLISTE.md", "benchmarks/legal_answers_v1/README.md"],
+      "zustaendig": "Owner/juristisch (FREIGABE_CHECKLISTE.md C-15)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["Voraussetzung fuer jede Bewertung; beeinflusst J4"],
+      "fehlend": ["keine Person und keine Qualifikationsanforderung dokumentiert"],
+      "abschluss": "Namentliche Liste mit Qualifikation, Regel zur Zweitpruefung, Verfahren bei Abweichung; in evaluation.* eingetragen"
+    },
+    {
+      "id": "J6", "art": "juristisch", "status": "ENTSCHEIDUNG VORBEREITET",
+      "frage": "Werden die Regeln zu n/a und zu nach der Akte nicht Entscheidbarem (rubric.aggregation.rule_text Nr. 4-6) bestaetigt?",
+      "betrifft": ["rubric.json"],
+      "nachweise": ["benchmarks/legal_answers_v1/rubric.json", "benchmarks/legal_answers_v1/AUDIT_S77.md"],
+      "zustaendig": "qualifizierte juristische Person (AUDIT_S77.md; in der Checkliste KEINEM Punkt zugeordnet - siehe AUDIT_S82.md W2)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["J4 (gleiche Rubrik-Fassung)"],
+      "fehlend": ["Zuordnung zu einem Freigabefeld (Owner-Entscheidung, AUDIT_S82.md W2)", "benannte qualifizierte Person"],
+      "abschluss": "Regeln bestaetigt oder geaendert; Rubrik-Version und Neusperre wie bei J4"
+    },
+    {
+      "id": "F-1", "art": "organisatorisch/technisch", "status": "ENTSCHEIDUNG VORBEREITET",
+      "frage": "Wie wird nachgewiesen, WER eine Freigabe erteilt hat (Vertrauensanker, Schluesselverwaltung, Rotation/Widerruf), und gilt ein Vier-Augen-Prinzip?",
+      "betrifft": ["approvals.*"],
+      "nachweise": ["benchmarks/legal_answers_v1/AUDIT_S81.md", "scripts/legal_bench/answer_run.py", "tests/test_s81_benchmark_hardening.py"],
+      "zustaendig": "Owner (FREIGABE_CHECKLISTE.md F-1)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["vor jeder Freigabe C-12, C-13, C-17"],
+      "fehlend": ["Entscheidung ueber Verfahren und Schluesselverwaltung"],
+      "abschluss": "Verfahren gewaehlt und dokumentiert (oder bewusster Verzicht mit Begruendung); bei Signatur: Schluessel hinterlegt, Pruefung implementiert und negativ getestet"
+    },
+    {
+      "id": "C-7", "art": "organisatorisch", "status": "NACHWEIS FEHLT",
+      "frage": "Welches Modell (Version) zu welchen Tokenpreisen (Quelle, Datum, Waehrung, Steuerbasis, Zusatzgebuehren) mit welchem Budget, und wer gleicht mit der Abrechnung ab?",
+      "betrifft": ["model.*", "limits.*"],
+      "nachweise": ["benchmarks/legal_answers_v1/AUDIT_S80.md", "benchmarks/legal_answers_v1/AUDIT_S81.md", "benchmarks/legal_answers_v1/run_config.template.json", "scripts/legal_bench/answer_exec.py"],
+      "zustaendig": "Owner (FREIGABE_CHECKLISTE.md C-7)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["C-1 (Modell/Version)"],
+      "fehlend": ["Modell-ID und Version", "Preise mit Quelle und Datum", "Waehrung/Kurs", "netto/brutto", "Zusatzgebuehren", "Schaetzung je Aufruf", "max_cost_eur", "Abrechnungsabgleich (Person, Frist)"],
+      "abschluss": "alle Felder in run_config gesetzt und belegt; check ohne Kostenbefund"
+    },
+    {
+      "id": "C-11", "art": "organisatorisch/datenschutz", "status": "ENTSCHEIDUNG VORBEREITET",
+      "frage": "Wo, wie verschluesselt, fuer wen zugreifbar, wie lange, wie geloescht und wie gesichert werden Laufdaten abgelegt?",
+      "betrifft": ["storage.*"],
+      "nachweise": ["benchmarks/legal_answers_v1/AUDIT_S80.md", "benchmarks/legal_answers_v1/AUDIT_S81.md", "scripts/legal_bench/answer_store.py", "tests/test_s80_benchmark_driver.py", "tests/test_s81_benchmark_hardening.py"],
+      "zustaendig": "Owner/Datenschutz (FREIGABE_CHECKLISTE.md C-11)", "person": "NICHT BENANNT",
+      "abhaengigkeiten": ["IT-Betrieb (BitLocker/EFS/DRA) - Zustand NICHT VERIFIZIERT"],
+      "fehlend": ["Speicherort", "Verschluesselungsverfahren inkl. Wiederherstellung", "Zugriffskreis", "Aufbewahrungsdauer", "Loeschverantwortung", "Sicherungsregel"],
+      "abschluss": "Entscheidung dokumentiert; bei Verschluesselung: Schluessel- und Wiederherstellungsverfahren getestet; storage.* gesetzt"
+    }
+  ]
+}

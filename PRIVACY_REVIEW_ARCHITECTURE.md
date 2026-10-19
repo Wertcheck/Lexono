@@ -9810,3 +9810,15 @@ Externe Provideraufrufe 0, Kosten 0 EUR. Bericht: `benchmarks/legal_answers_v1/A
   (Lücke: wurde beim Wiederanlauf nicht fortgeführt). **PASS**
 - **C-14:** **OFFEN**; Entscheidungsliste im Bericht.
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§81-Dateien 198 PASS.
+
+## §82 Freigabevorbereitung und Entscheidungsmatrix (19.10.2026, Branch `feature/feedback-diagnose`, Basis `61dcfa8`)
+
+Keine Entscheidung, keine Freigabe, C-14 GESPERRT; keine Modell-/Cloud-Aufrufe, keine Kosten. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S82.md`, Matrix: `benchmarks/legal_answers_v1/ENTSCHEIDUNGSMATRIX.md` (+ JSON).
+
+- **Matrix:** J1, J2, J6, F-1, C-11 ENTSCHEIDUNG VORBEREITET; J3, J4 OFFEN; J5, C-7 NACHWEIS FEHLT. Zuständigkeit nur
+  als Rolle belegt, keine Person benannt.
+- **Widersprüche:** W1 (Checkliste: „keine Ausführungsfunktion“ – seit §80 Treiber mit Endpunktsperre) korrigiert;
+  W2 (J6 keinem Freigabefeld zugeordnet) dokumentiert, Zuordnung Owner-Entscheidung.
+- **Validierung:** `tests/test_s82_decision_matrix.py` (12, nichtinvasiv). **PASS**
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§82-Dateien 210 PASS.

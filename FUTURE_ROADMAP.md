@@ -201,6 +201,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   **Fortschritt 19.10.2026 (§81):** Freigaben gehärtet (Planbindung, Datum, Widersprüche zu offenen Spezifikationen),
   Kosten- und Ablageprüfungen verschärft, Klärung unklarer Aufrufe ergänzt. Offen: C-7, C-11, C-14, F-1, J1–J6.
   Siehe benchmarks/legal_answers_v1/AUDIT_S81.md.
+  **Fortschritt 19.10.2026 (§82):** Entscheidungsmatrix für J1–J6, F-1, C-7, C-11 erstellt (keine Entscheidung);
+  Checkliste korrigiert (W1), J6-Zuordnung offen (W2). C-14 GESPERRT. Siehe benchmarks/legal_answers_v1/AUDIT_S82.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
