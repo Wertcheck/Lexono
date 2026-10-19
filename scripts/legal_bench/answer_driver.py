@@ -26,7 +26,11 @@ from app.privacy.api_logger import categorize_block_reasons
 from scripts.legal_bench.answer_store import RunStore, StoreError, now
 
 TERMINAL_OK = {"erledigt", "antwort_verworfen"}
-TERMINAL_SENT = {"erledigt", "antwort_verworfen", "fehlgeschlagen"}
+TERMINAL_SENT = {"erledigt", "antwort_verworfen", "fehlgeschlagen", "geklaert_als_gesendet"}
+FAILED = {"fehlgeschlagen", "antwort_verworfen", "geklaert_als_gesendet"}
+#: §81: ein Datenschutzbefund beendet den Lauf DAUERHAFT (abort_on_first_privacy_finding) - auch ueber Wiederanlaeufe
+PRIVACY_STOP = {"blockiert", "abgebrochen_vor_versand", "datenschutzbefund_antwort"}
+CLARIFY_DECISIONS = {"als_gesendet_werten", "nicht_gesendet_belegt"}
 
 
 class RealCloudDisabled(RuntimeError):
@@ -104,9 +108,13 @@ class BenchmarkDriver:
                     "automatische Wiederholung (Klaerung durch die zustaendige Person)" for cid in unclear])
             if state.get("status") == "abgeschlossen":
                 return {"status": "abgeschlossen", "diagnose": [], "state": state}
+            stopped = [f"{cid}: {c['status']}" for cid, c in state["calls"].items() if c["status"] in PRIVACY_STOP]
+            if stopped:
+                return self._stop(run_id, state, "gestoppt_datenschutz_frueher", [
+                    "Frueherer Datenschutzbefund bzw. Blockierung beendet den Lauf dauerhaft "
+                    "(abort_on_first_privacy_finding) - Ursache klaeren, dann neuer Lauf mit neuer run_id:", *stopped])
             sent = [tuple(c["key"]) for c in state["calls"].values() if c["status"] in TERMINAL_SENT]
-            guard.restore(sent=sent, failed_calls=sum(1 for c in state["calls"].values()
-                                                      if c["status"] in ("fehlgeschlagen", "antwort_verworfen")),
+            guard.restore(sent=sent, failed_calls=sum(1 for c in state["calls"].values() if c["status"] in FAILED),
                           actual_cost_eur=state["ledger"]["tatsaechlich_eur"], unknown_cost_calls=state["ledger"]["unbekannt"],
                           estimated_cost_eur=state["ledger"]["geschaetzt_eur"])
             state.update(status="laeuft", diagnosis=[])
@@ -201,6 +209,58 @@ class BenchmarkDriver:
     def _finish(self, run_id: str, state: dict) -> dict:
         done = all(state["calls"].get(cid, {}).get("status") in TERMINAL_OK for cid in state["plan"])
         return self._stop(run_id, state, "abgeschlossen" if done else "unvollstaendig", [])
+
+
+def resolve_unclear(store: RunStore, run_id: str, cid: str, *, entscheidung: str, person: str, rolle: str,
+                    begruendung: str, beleg: str, tatsaechlich_eur: float | None = None) -> dict:
+    """§81 (E4): nachvollziehbare Klaerung EINES Aufrufs im Zustand "in_bearbeitung" (Absturz/Timeout waehrend des
+    Aufrufs - eventuell gesendet, Kosten unbekannt). Nie automatisch; ohne Klaerung bleibt der Lauf gesperrt.
+
+    - "als_gesendet_werten": der Aufruf zaehlt als gesendet und fehlgeschlagen und wird NIE wiederholt. Kosten nur mit
+      Beleg (`tatsaechlich_eur`, z. B. aus der Provider-Abrechnung); ohne Betrag bleiben sie UNBEKANNT - dann bleibt
+      der Lauf nach der sicheren Abbruchregel gestoppt.
+    - "nicht_gesendet_belegt": nur mit Beleg, dass KEINE Anfrage den Provider erreichte (z. B. Recorder/Provider-
+      Protokoll). Der Aufruf wird beim naechsten Lauf genau einmal erneut ausgefuehrt - mit allen Pruefungen.
+    Die Klaerung ersetzt keine Freigabe; Konfiguration, Commit, Plan, Sperre und Freigaben prueft der naechste Lauf neu."""
+    import math
+
+    state = store.load_state(run_id)  # Integritaet zuerst - beschaedigte Ablage: keine Klaerung
+    entry = state["calls"].get(cid)
+    if entry is None or entry.get("status") != "in_bearbeitung":
+        raise StoreError(f"Aufruf {cid} ist nicht unklar (Status {entry.get('status') if entry else 'unbekannt'})")
+    problems = []
+    if entscheidung not in CLARIFY_DECISIONS:
+        problems.append(f"entscheidung muss {sorted(CLARIFY_DECISIONS)} sein")
+    if not (isinstance(person, str) and person.strip() and isinstance(rolle, str) and rolle.strip()):
+        problems.append("person und rolle angeben")
+    if not isinstance(begruendung, str) or len(begruendung.strip()) < 20:
+        problems.append("begruendung mit mindestens 20 Zeichen")
+    if not isinstance(beleg, str) or len(beleg.strip()) < 10:
+        problems.append("beleg (Quelle der Feststellung) mit mindestens 10 Zeichen")
+    if tatsaechlich_eur is not None and (entscheidung != "als_gesendet_werten" or isinstance(tatsaechlich_eur, bool)
+                                         or not isinstance(tatsaechlich_eur, (int, float))
+                                         or not math.isfinite(tatsaechlich_eur) or tatsaechlich_eur < 0):
+        problems.append("tatsaechlich_eur nur bei als_gesendet_werten und als endliche Zahl >= 0")
+    if problems:
+        raise StoreError("Klaerung unvollstaendig: " + "; ".join(problems))
+    klaerung = {"at": now(), "call_id": cid, "entscheidung": entscheidung, "person": person.strip(),
+                "rolle": rolle.strip(), "begruendung": begruendung.strip(), "beleg": beleg.strip(),
+                "tatsaechlich_eur": tatsaechlich_eur}
+    state.setdefault("klaerungen", []).append(klaerung)
+    ledger = state["ledger"]
+    if entscheidung == "als_gesendet_werten":
+        state["calls"][cid] = {**entry, "status": "geklaert_als_gesendet", "gesendet": True, "finished_at": now(),
+                               "cost_eur": tatsaechlich_eur, "gruende": ["nach Absturz geklaert: als gesendet gewertet"]}
+        if tatsaechlich_eur is None:
+            ledger["unbekannt"] = sorted(set(ledger.get("unbekannt", [])) | {cid})
+        else:
+            ledger["tatsaechlich_eur"] = round(ledger.get("tatsaechlich_eur", 0.0) + tatsaechlich_eur, 6)
+    else:
+        del state["calls"][cid]  # wieder offen - der naechste Lauf fuehrt ihn EINMAL mit allen Pruefungen aus
+    state.setdefault("events", []).append({"at": now(), "event": "geklaert", "call_id": cid, "entscheidung": entscheidung})
+    state["status"] = "geklaert_wartet_auf_fortsetzung"
+    store.save_state(run_id, state)
+    return state
 
 
 class _Environment:

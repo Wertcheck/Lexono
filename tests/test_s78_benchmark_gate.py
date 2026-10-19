@@ -18,7 +18,11 @@ import pytest
 
 from scripts.legal_bench import answer_run, answer_specs, corpus
 
-APPROVAL = {"person": "Testperson", "rolle": "Test", "datum": "2026-10-18", "entscheidung": "freigegeben"}
+# §81: Datum = heute (nicht in der Zukunft, nicht vor der letzten Neusperre); synthetisch, KEINE echte Freigabe
+APPROVAL = {"person": "Testperson", "rolle": "Test", "datum": __import__("datetime").date.today().isoformat(),
+            "entscheidung": "freigegeben"}
+# §81: Gate-Positivkontrollen mit synthetischem juristischem Stand (siehe tests/conftest.py)
+pytestmark = pytest.mark.usefixtures("synthetic_legal_state")
 
 
 def _template() -> dict:
@@ -38,6 +42,13 @@ def _valid() -> dict:
                        price_eur_per_million_input_tokens=3.0, price_eur_per_million_output_tokens=15.0)
     c["storage"].update(results_dir="ausserhalb_des_repos/lauf", retention="TEST")
     c["evaluation"].update(reviewers=["Testperson"], second_reviewer_for_critical=True)
+    return bind_owner(c)
+
+
+def bind_owner(c: dict) -> dict:
+    """§81: die Owner-Freigabe gilt fuer genau den aktuellen Plan - nach jeder Umfangsaenderung neu binden."""
+    c["approvals"]["owner_freigabe_lauf_und_kosten"]["plan_fingerprint"] = answer_run._plan_fingerprint(
+        answer_run._planned_calls(c))
     return c
 
 
@@ -141,10 +152,16 @@ def test_cli_refuses_template_and_broken_config_with_exit_code(tmp_path: Path, c
     assert out.returncode == 2 and "Konfiguration nicht lesbar" in out.stdout and "Traceback" not in out.stderr
 
 
-def test_cli_accepts_only_the_valid_positive_control(tmp_path: Path) -> None:
+def test_cli_rejects_even_the_synthetic_control_while_legal_review_is_open(tmp_path: Path) -> None:
+    """§81: eigener Prozess OHNE Test-Fixture = echter Repository-Stand. Solange die Spezifikationen juristisch offen sind
+    und die Rubrik keine Schwellen hat, ist JEDE eingetragene juristische Freigabe ein Widerspruch - kein Lauf moeglich."""
     path = tmp_path / "run_config.test.json"
     path.write_text(json.dumps(_valid()), encoding="utf-8")
-    assert _cli("check", path).returncode == 0 and _cli("plan", path).returncode == 0
+    for command in ("check", "plan"):
+        out = _cli(command, path)
+        assert out.returncode == 2, out.stdout[-400:]
+        assert "juristische_freigabe_spezifikationen: Widerspruch" in out.stdout
+        assert "juristische_freigabe_schwellen_und_gewichte: Widerspruch" in out.stdout
 
 
 def test_no_execution_function_exists() -> None:

@@ -27,6 +27,7 @@ unklar ist, ob abgerechnet wurde), sind die Kosten UNBEKANNT - dann wird kein we
 from __future__ import annotations
 
 import hashlib
+import math
 from pathlib import Path
 
 from scripts.legal_bench import answer_run, corpus
@@ -57,15 +58,20 @@ def call_id(call_or_key) -> str:  # noqa: ANN001
     return f"{spec}.{task}.r{rep}"
 
 
-def actual_cost(result, limits: dict) -> tuple[float | None, dict]:  # noqa: ANN001
-    """Tatsaechliche Kosten aus den Provider-Metadaten - oder (None, ...) = UNBEKANNT."""
+def actual_cost(result, limits: dict, max_tokens: int | None = None) -> tuple[float | None, dict]:  # noqa: ANN001
+    """Tatsaechliche Kosten aus den Provider-Metadaten - oder (None, ...) = UNBEKANNT.
+
+    §81: unplausible Metadaten (keine ganzen Zahlen >= 0, mehr Ausgabe-Tokens als max_tokens) gelten als UNBEKANNT; der
+    Betrag wird auf 1/1.000.000 EUR AUFgerundet (konservativ - ein Kleinstbetrag faellt nie auf 0)."""
     usage = {"input_tokens": getattr(result, "input_tokens", None), "output_tokens": getattr(result, "output_tokens", None)}
     ok = all(isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in usage.values())
     if not ok:
         return None, {**usage, "quelle": "keine verlaesslichen Usage-Metadaten - Kosten UNBEKANNT"}
+    if max_tokens is not None and usage["output_tokens"] > max_tokens:
+        return None, {**usage, "quelle": f"unplausible Usage (output_tokens > max_tokens {max_tokens}) - Kosten UNBEKANNT"}
     eur = (usage["input_tokens"] * limits["price_eur_per_million_input_tokens"]
            + usage["output_tokens"] * limits["price_eur_per_million_output_tokens"]) / 1_000_000
-    return round(eur, 6), {**usage, "quelle": "Provider-Usage x freigegebener Tokenpreis"}
+    return math.ceil(round(eur * 1_000_000, 9)) / 1_000_000, {**usage, "quelle": "Provider-Usage x freigegebener Tokenpreis"}
 
 
 class CallGuard:
@@ -228,7 +234,7 @@ class GuardedWriter:
             self.last.update(outcome="providerfehler", error_type=type(exc).__name__, cost_eur=None,
                              usage={"quelle": "Aufruf fehlgeschlagen - Kosten UNBEKANNT"})
             raise
-        cost, usage = actual_cost(result, self.guard.config["limits"])
+        cost, usage = actual_cost(result, self.guard.config["limits"], self.guard.config["model"]["max_tokens"])
         self.guard.record_cost(key, cost)
         # §80 (E2): abgelegt wird die PSEUDONYMISIERTE Modellantwort (Datensparsamkeit), nie die lokal re-identifizierte
         self.last.update(outcome="antwort_erhalten", cost_eur=cost, usage=usage,

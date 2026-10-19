@@ -18,11 +18,12 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingResult
 from scripts.legal_bench import answer_driver, answer_exec, answer_run, answer_specs
 from scripts.legal_bench.answer_store import MARKER, RunStore, StoreError, access_principals
 from tests.test_privacy_wire_payload import FAKE_KEY, _provider, recorder  # noqa: F401  (Fixture)
-from tests.test_s78_benchmark_gate import _valid
+from tests.test_s78_benchmark_gate import _valid, bind_owner
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fake_embedding_provider import FakeEmbeddingProvider  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures("synthetic_legal_state")  # §81, siehe tests/conftest.py
 PRICE_IN, PRICE_OUT = 3.0, 15.0  # EUR je 1 Mio. Tokens (synthetisch)
 USAGE_IN, USAGE_OUT = 1000, 500
 COST = round((USAGE_IN * PRICE_IN + USAGE_OUT * PRICE_OUT) / 1_000_000, 6)  # 0.0105 EUR je Mock-Aufruf (simuliert)
@@ -56,6 +57,7 @@ def _config(tmp_path: Path, *, specs=("LA-D005",), splits=("dev",), failed=6, **
     c["scope"].update(specs=list(specs), splits=list(splits), repetitions=1)
     c["limits"].update(abort_after_failed_calls=failed, price_eur_per_million_input_tokens=PRICE_IN,
                        price_eur_per_million_output_tokens=PRICE_OUT, **limits)
+    bind_owner(c)  # §81: Owner-Freigabe an den geaenderten Plan binden
     path = tmp_path / "run_config.qa80.json"
     path.write_text(json.dumps(c, ensure_ascii=False), encoding="utf-8")
     return path

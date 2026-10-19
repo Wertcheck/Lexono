@@ -26,7 +26,8 @@ zuständigen Person, nicht der Eintrag in der Datei (siehe AUDIT_S78.md).
 | C-14 | Ausführungsschritt: Umsetzung über den regulären Lexono-Chat- und Schriftsatzpfad mit Payload-Erfassung; erneute Payload-Prüfung vor jedem Aufruf | §79/§80: Wächter, Treiber (`answer_driver`), Ablage, Kostenbuch und Wiederanlauf mit Mock/lokalem Recorder geprüft (AUDIT_S80.md); echter Endpunkt im Treiber **gesperrt** – Freigabe erfordert bewusste Code-Änderung | Technik + Owner | **OFFEN** |
 | C-15 | Bewertende Personen, blinde Bewertung, Zweitprüfung bei kritischen Fehlern (Audit J5) | `evaluation.reviewers`, `evaluation.second_reviewer_for_critical` | Owner/juristisch | **OFFEN** |
 | C-16 | Kritische Fehler: Definition je Fall (`dangerous_errors`); bestätigter kritischer Fehler ergibt FAIL_KRITISCH ohne Ausgleich | Spezifikationen, `rubric.aggregation` | qualifizierte juristische Person | Regel fest, Inhalte **OFFEN** (J2) |
-| C-17 | Ausdrückliche Gesamtfreigabe des Laufs | `approved`, `approvals.owner_freigabe_lauf_und_kosten`, `run_id` | Owner | **OFFEN** |
+| C-17 | Ausdrückliche Gesamtfreigabe des Laufs – §81: Owner-Freigabe nur mit `plan_fingerprint` (gilt für genau einen Plan), Datum nicht in der Zukunft und nicht vor der letzten Neusperre; juristische Freigaben widersprechen offenen Spezifikationen bzw. fehlenden Schwellen | `approved`, `approvals.owner_freigabe_lauf_und_kosten`, `run_id` | Owner | **OFFEN** |
+| F-1 (§81) | Nachweis der Freigaben (Urheberschaft): Signaturverfahren/Vertrauensanker oder bewusster Verzicht; Vier-Augen-Prinzip | – (nicht implementiert, AUDIT_S81.md) | Owner | **OFFEN** |
 
 **Vor dem Lauf (technisch, Pflicht):**
 

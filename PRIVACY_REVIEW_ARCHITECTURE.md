@@ -9792,3 +9792,21 @@ Kein Modelllauf, kein Cloud-Aufruf, tatsächliche Kosten 0 EUR. Bericht: `benchm
   Aufrufs nie automatisch wiederholt; Stopp mit Diagnose bei geänderter Konfiguration, Commit, Freigabe, LOCK, Plan. **PASS**
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§80-Dateien 142 PASS.
 - **Offen:** C-1–C-17, J1–J6; echter Lauf NICHT VERIFIZIERT und gesperrt.
+
+## §81 Sicherheitsprüfung und Freigabevorbereitung des Antwort-Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Basis `82e5d28`)
+
+Externe Provideraufrufe 0, Kosten 0 EUR. Bericht: `benchmarks/legal_answers_v1/AUDIT_S81.md`.
+
+- **Freigaben:** 10 von 15 Manipulationen wurden vorher freigegeben (Datum Zukunft/veraltet/unmöglich, kopierte Owner-
+  Freigabe, Zusatzfeld `signatur`, juristische Freigabe trotz offener Spezifikationen bzw. fehlender Schwellen,
+  unendliches Budget/Preis, Schätzung unter maximaler Ausgabe). Jetzt alle abgelehnt; Owner-Freigabe plangebunden.
+  Mit dem heutigen Repository-Stand ist **keine** Konfiguration freigebbar. Signaturen nicht implementiert (kein
+  Vertrauensanker) - Owner-Entscheidung F-1. **PASS**
+- **C-7:** endliche Werte, unplausible Usage = UNBEKANNT, Aufrunden auf 1e-6 EUR. **OFFEN** (Preise, Währung,
+  Zusatzgebühren, Abgleich).
+- **C-11:** sichere IDs, erweiterte ACL und halb geschriebener Zustand werden erkannt, Junction ins Repository abgelehnt.
+  Verschlüsselung bewertet (DPAPI/EFS/BitLocker/anwendungsseitig), nicht umgesetzt. **OFFEN**
+- **E4:** `resolve_unclear` mit Person, Rolle, Begründung und Beleg; Datenschutzbefund beendet den Lauf dauerhaft
+  (Lücke: wurde beim Wiederanlauf nicht fortgeführt). **PASS**
+- **C-14:** **OFFEN**; Entscheidungsliste im Bericht.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§81-Dateien 198 PASS.

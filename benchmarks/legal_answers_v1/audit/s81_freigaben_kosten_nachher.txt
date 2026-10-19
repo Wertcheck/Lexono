@@ -1,0 +1,16 @@
+FREIGEGEBEN | Positivkontrolle (synthetisch) | []
+abgelehnt   | Freigabe in der Zukunft datiert | ["approvals.owner_freigabe_lauf_und_kosten: in der Zukunft datiert (2026-10-20) - unzulaessig"]
+abgelehnt   | Freigabe vor der letzten Neusperre (veraltet) | ["approvals.juristische_freigabe_spezifikationen: veraltet - datiert 2026-01-01, vor der letzten Neusperre der Referenzen (2026-10-18); die Freigabe bezieht sich nicht auf den gesp
+abgelehnt   | Datum unmoeglich 2026-02-30 | ["approvals.datenschutz_freigabe: ungueltig (Freigabe {person, rolle, datum, entscheidung: freigegeben})"]
+abgelehnt   | juristische Spec-Freigabe, Spec-Status offen (Widerspruch) | ["approvals.juristische_freigabe_spezifikationen: Widerspruch - LA-D005 hat Status 'entwurf_juristische_freigabe_offen'", "approvals.juristische_freigabe_spezifikationen: Widerspru
+abgelehnt   | Schwellen-Freigabe, Rubrik-Schwellen null (Widerspruch) | ["approvals.juristische_freigabe_spezifikationen: Widerspruch - LA-D005 hat Status 'entwurf_juristische_freigabe_offen'", "approvals.juristische_freigabe_spezifikationen: Widerspru
+abgelehnt   | Owner-Freigabe fuer anderen Plan kopiert | ["approvals.owner_freigabe_lauf_und_kosten: gilt fuer einen anderen Plan (000000000000 != 4090988af080) - Plan, Commit oder Sperre haben sich seit der Freigabe geaendert"]
+abgelehnt   | Zusatzfeld 'signatur' in Freigabe | ["approvals.datenschutz_freigabe: ungueltig (Freigabe {person, rolle, datum, entscheidung: freigegeben})"]
+abgelehnt   | Entscheidung 'Freigegeben' (Grossschreibung) | ["approvals.datenschutz_freigabe: ungueltig (Freigabe {person, rolle, datum, entscheidung: freigegeben})"]
+abgelehnt   | Person nur Leerzeichen | ["approvals.datenschutz_freigabe: ungueltig (Freigabe {person, rolle, datum, entscheidung: freigegeben})"]
+abgelehnt   | Freigabe als Liste | ["approvals.datenschutz_freigabe: ungueltig (Freigabe {person, rolle, datum, entscheidung: freigegeben})"]
+abgelehnt   | Tokenpreis unendlich | ["limits.price_eur_per_million_output_tokens: ungueltig (Zahl > 0 (EUR je 1 Mio. Ausgabe-Tokens))"]
+abgelehnt   | Kostenlimit unendlich | ["limits.max_cost_eur: ungueltig (Zahl > 0)"]
+abgelehnt   | Tokenpreis NaN | ["limits.price_eur_per_million_input_tokens: ungueltig (Zahl > 0 (EUR je 1 Mio. Eingabe-Tokens))"]
+abgelehnt   | Schaetzung je Aufruf < Kosten der max. Ausgabe (Widerspruch) | ["limits.price_per_call_eur_estimate: Widerspruch - 0.01 EUR liegt unter den Kosten der maximalen Ausgabe (0.0600 EUR = max_tokens x Ausgabepreis); die Schaetzung waere zu niedrig"
+abgelehnt   | Tokenpreis als Text '3.0' | ["limits.price_eur_per_million_input_tokens: ungueltig (Zahl > 0 (EUR je 1 Mio. Eingabe-Tokens))"]

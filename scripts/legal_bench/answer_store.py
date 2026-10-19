@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -28,7 +29,12 @@ from pathlib import Path
 from scripts.legal_bench import answer_specs
 
 MARKER = ".lexono_benchmark_run"
-_ID_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-")
+# §81: beginnt mit Buchstabe/Ziffer, kein ".." - sonst fuehrte z. B. die ID ".." aus der Basis heraus
+_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+
+
+def _valid_id(value: str) -> bool:
+    return isinstance(value, str) and bool(_ID.fullmatch(value)) and ".." not in value
 
 
 class StoreError(RuntimeError):
@@ -114,7 +120,7 @@ class RunStore:
         self.base = base
 
     def run_dir(self, run_id: str) -> Path:
-        if not run_id or not set(run_id) <= _ID_CHARS:
+        if not _valid_id(run_id):
             raise StoreError(f"ungueltige Lauf-ID {run_id!r}")
         return self.base / run_id
 
@@ -144,7 +150,7 @@ class RunStore:
         return json.loads((self.run_dir(run_id) / "state.json").read_text(encoding="utf-8"))
 
     def write_record(self, run_id: str, cid: str, record: dict) -> str:
-        if not cid or not set(cid) <= _ID_CHARS:
+        if not _valid_id(cid):
             raise StoreError(f"ungueltige Aufruf-ID {cid!r}")
         path = self.run_dir(run_id) / "calls" / f"{cid}.json"
         if path.exists():
@@ -168,6 +174,13 @@ class RunStore:
             return [f"state.json nicht lesbar ({type(exc).__name__})"]
         if not isinstance(state, dict) or state.get("state_sha256") != _digest(state, "state_sha256"):
             return ["state.json veraendert (Hash passt nicht)"]
+        if (directory / "state.json.tmp").exists():
+            errors.append("unvollstaendig geschriebener Zustand state.json.tmp (Absturz beim Speichern?)")
+        # §81: nachtraeglich erweiterte Zugriffsrechte (z. B. weiteres Konto/Gruppe) sind ein Befund
+        for path in (self.base, directory, directory / "state.json"):
+            principals = access_principals(path)
+            if len(principals) != 1:
+                errors.append(f"Zugriffsrechte erweitert auf {path.name or path}: {len(principals)} Eintraege statt 1")
         expected = {cid: c.get("record_sha256") for cid, c in state.get("calls", {}).items() if c.get("record_sha256")}
         present = {p.stem for p in (directory / "calls").glob("*.json")}
         for extra in sorted(present - set(expected)):

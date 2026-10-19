@@ -22,8 +22,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import subprocess
+from datetime import date
 from pathlib import Path
 
 from scripts.legal_bench import answer_specs, corpus
@@ -84,7 +86,8 @@ def _is_int(value, minimum: int = 1, maximum: int | None = None) -> bool:
 
 
 def _is_number(value, minimum: float = 0.0, exclusive: bool = True) -> bool:
-    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+    # §81: nur endliche Zahlen - ein unendliches Kostenlimit/Preis waere sonst "gueltig" (kein Budget)
+    return (isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
             and (value > minimum if exclusive else value >= minimum))
 
 
@@ -92,10 +95,80 @@ def _is_text(value) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def _approval_ok(value) -> bool:
-    return (isinstance(value, dict) and _is_text(value.get("person")) and _is_text(value.get("rolle"))
-            and isinstance(value.get("datum"), str) and bool(_DATE.match(value["datum"]))
+#: §81: erlaubte Felder einer Freigabe (Zusatzfelder wie "signatur" taeuschen Sicherheit vor, die es nicht gibt)
+APPROVAL_FIELDS = {"person", "rolle", "datum", "entscheidung"}
+#: die Owner-Freigabe von Lauf und Kosten gilt fuer GENAU einen Plan (Fingerabdruck aus `plan`)
+OWNER_APPROVAL = "owner_freigabe_lauf_und_kosten"
+
+
+def _parse_date(value) -> date | None:
+    if not isinstance(value, str) or not _DATE.match(value):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _approval_ok(value, fields: set[str] = APPROVAL_FIELDS) -> bool:
+    return (isinstance(value, dict) and set(value) == fields and _is_text(value.get("person"))
+            and _is_text(value.get("rolle")) and _parse_date(value.get("datum")) is not None
             and value.get("entscheidung") == "freigegeben")
+
+
+def _owner_approval_ok(value) -> bool:
+    return _approval_ok(value, APPROVAL_FIELDS | {"plan_fingerprint"}) and bool(
+        re.fullmatch(r"[0-9a-f]{64}", str(value.get("plan_fingerprint"))))
+
+
+def legal_state() -> dict:
+    """§81: juristischer Stand der Bezugsobjekte - eine juristische Freigabe ist ein WIDERSPRUCH, solange die
+    Spezifikationen als Entwurf/offen markiert sind bzw. die Rubrik keine Schwellen und Gewichte hat."""
+    open_specs = {s["id"]: s.get("status") for s in answer_specs.load_specs()
+                  if "entwurf" in str(s.get("status")) or "offen" in str(s.get("status"))}
+    aggregation = json.loads((answer_specs.ROOT / "rubric.json").read_text(encoding="utf-8")).get("aggregation", {})
+    return {"open_specs": open_specs,
+            "rubric_open": aggregation.get("thresholds") is None or aggregation.get("weights") is None}
+
+
+def _lock_date() -> date | None:
+    try:
+        history = json.loads(answer_specs.LOCK_PATH.read_text(encoding="utf-8")).get("history") or []
+        return _parse_date(history[-1].get("date")) if history else None
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def _approval_findings(config: dict, plan_fingerprint: str) -> list[str]:
+    """§81: Widersprueche und veraltete Freigaben (nur fuer formal gueltige Eintraege). Grenze: ohne Signatur und
+    Vertrauensanker bleibt offen, WER den Eintrag geschrieben hat - siehe AUDIT_S81.md."""
+    findings = []
+    approvals = config.get("approvals") if isinstance(config.get("approvals"), dict) else {}
+    today, locked = date.today(), _lock_date()
+    for name, value in sorted(approvals.items()):
+        if not isinstance(value, dict) or _parse_date(value.get("datum")) is None:
+            continue
+        when = _parse_date(value["datum"])
+        if when > today:
+            findings.append(f"approvals.{name}: in der Zukunft datiert ({when}) - unzulaessig")
+        if locked and when < locked:
+            findings.append(f"approvals.{name}: veraltet - datiert {when}, vor der letzten Neusperre der "
+                            f"Referenzen ({locked}); die Freigabe bezieht sich nicht auf den gesperrten Stand")
+    owner = approvals.get(OWNER_APPROVAL)
+    if isinstance(owner, dict) and owner.get("plan_fingerprint") not in (None, plan_fingerprint):
+        findings.append(f"approvals.{OWNER_APPROVAL}: gilt fuer einen anderen Plan "
+                        f"({str(owner.get('plan_fingerprint'))[:12]} != {plan_fingerprint[:12]}) - Plan, Commit oder "
+                        "Sperre haben sich seit der Freigabe geaendert")
+    state = legal_state()
+    scope = set(_get(config, "scope.specs") or []) if isinstance(_get(config, "scope.specs"), list) else set()
+    if _approval_ok(approvals.get("juristische_freigabe_spezifikationen")):
+        for sid in sorted(scope & set(state["open_specs"])):
+            findings.append(f"approvals.juristische_freigabe_spezifikationen: Widerspruch - {sid} hat Status "
+                            f"{state['open_specs'][sid]!r}")
+    if _approval_ok(approvals.get("juristische_freigabe_schwellen_und_gewichte")) and state["rubric_open"]:
+        findings.append("approvals.juristische_freigabe_schwellen_und_gewichte: Widerspruch - rubric.json hat keine "
+                        "Schwellen/Gewichte (null)")
+    return findings
 
 
 def _field_rules() -> dict:
@@ -105,7 +178,7 @@ def _field_rules() -> dict:
         "run_id": (lambda v: isinstance(v, str) and bool(re.fullmatch(r"[A-Za-z0-9._-]{3,64}", v)), "3-64 Zeichen [A-Za-z0-9._-]"),
         # false = Freigabe OFFEN (siehe unten), alles ausser true/false ("true", 1, "ja") ist ein Verstoss
         "approved": (lambda v: isinstance(v, bool), "nur true/false - Gesamtfreigabe ausschliesslich als true"),
-        "approvals.owner_freigabe_lauf_und_kosten": (_approval_ok, "Freigabe {person, rolle, datum YYYY-MM-DD, entscheidung: freigegeben}"),
+        "approvals.owner_freigabe_lauf_und_kosten": (_owner_approval_ok, "Freigabe {person, rolle, datum YYYY-MM-DD, entscheidung: freigegeben, plan_fingerprint} - genau diese Felder"),
         "approvals.juristische_freigabe_spezifikationen": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
         "approvals.juristische_freigabe_schwellen_und_gewichte": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
         "approvals.datenschutz_freigabe": (_approval_ok, "Freigabe {person, rolle, datum, entscheidung: freigegeben}"),
@@ -208,8 +281,19 @@ def check(config: dict) -> dict:
                 violations.append(f"scope.specs: unbekannte Spezifikation {sid!r}")
             elif isinstance(scope_splits, list) and specs[sid]["split"] not in scope_splits:
                 violations.append(f"scope.specs: {sid} gehoert zu Split {specs[sid]['split']!r}, der nicht in scope.splits steht")
+    planned = _planned_calls(config)
+    violations += _approval_findings(config, _plan_fingerprint(planned))
+    limits = config.get("limits") if isinstance(config.get("limits"), dict) else {}
+    model = config.get("model") if isinstance(config.get("model"), dict) else {}
+    if (_is_number(limits.get("price_per_call_eur_estimate")) and _is_number(limits.get("price_eur_per_million_output_tokens"))
+            and _is_int(model.get("max_tokens"), 1)):
+        worst_output = model["max_tokens"] * limits["price_eur_per_million_output_tokens"] / 1_000_000
+        if limits["price_per_call_eur_estimate"] < worst_output:
+            violations.append(f"limits.price_per_call_eur_estimate: Widerspruch - {limits['price_per_call_eur_estimate']} "
+                              f"EUR liegt unter den Kosten der maximalen Ausgabe ({worst_output:.4f} EUR = max_tokens x "
+                              "Ausgabepreis); die Schaetzung waere zu niedrig")
     if not open_items and not violations:
-        calls = len(_planned_calls(config))
+        calls = len(planned)
         if calls == 0:
             violations.append("Aufrufplan leer")
         if calls > config["limits"]["max_calls"]:
@@ -262,6 +346,15 @@ def _planned_calls(config: dict) -> list[dict]:
     return calls
 
 
+def _plan_fingerprint(calls: list[dict]) -> str:
+    lock_path = answer_specs.LOCK_PATH
+    basis = json.dumps({"calls": calls, "commit": _git_commit(),
+                        "rubric": answer_specs.file_fingerprint(answer_specs.ROOT / "rubric.json"),
+                        "lock": hashlib.sha256(lock_path.read_bytes()).hexdigest() if lock_path.exists() else None},
+                       ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()
+
+
 def plan(config: dict) -> dict:
     """Aufrufplan mit allen Eingabe-Fingerabdruecken - KEINE Ausfuehrung. Ohne gueltige Freigabe ausdruecklich nicht
     ausfuehrbar (`ausfuehrbar: false` mit Gruenden)."""
@@ -276,13 +369,11 @@ def plan(config: dict) -> dict:
     scope = config.get("scope") if isinstance(config.get("scope"), dict) else {}
     repetitions = scope.get("repetitions")
     gate = check(config)
-    fingerprint_basis = json.dumps({"calls": calls, "commit": commit, "rubric": rubric_fp, "lock": lock_fp},
-                                   ensure_ascii=False, sort_keys=True)
     return {
         "art": "aufrufplan - KEINE Ausfuehrung",
         "ausfuehrbar": gate["runnable"],
         "nicht_ausfuehrbar_weil": [] if gate["runnable"] else gate["open"] + gate["violations"],
-        "plan_fingerprint": hashlib.sha256(fingerprint_basis.encode("utf-8")).hexdigest(),
+        "plan_fingerprint": _plan_fingerprint(calls),
         "git_commit": commit,
         "rubric_fingerprint": rubric_fp,
         "lock_sha256": lock_fp,

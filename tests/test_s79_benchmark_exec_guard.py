@@ -26,6 +26,7 @@ from tests.test_drafting_service import _service
 from tests.test_privacy_wire_payload import _provider, recorder  # noqa: F401  (Fixture)
 from tests.test_s78_benchmark_gate import _valid
 
+pytestmark = pytest.mark.usefixtures("synthetic_legal_state")  # §81, siehe tests/conftest.py
 TEXT = "Unsere Mandantin Henrike Wallbaum-Ostertag verlangt die Rückzahlung der Kaution von 4.250,00 EUR."
 PROTECT = {"SYNTH": ["Henrike Wallbaum-Ostertag", "Wallbaum-Ostertag"]}
 

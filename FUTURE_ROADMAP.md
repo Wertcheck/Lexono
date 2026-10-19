@@ -198,6 +198,9 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   außerhalb des Repositorys (ACL, Hashes), Kostenbuch geschätzt/tatsächlich mit sicherer Abbruchregel, Wiederanlauf
   ohne Doppelaufrufe. Nur Mock/lokaler Recorder, echter Endpunkt gesperrt. Offen: C-14, C-1–C-17, J1–J6.
   Siehe benchmarks/legal_answers_v1/AUDIT_S80.md.
+  **Fortschritt 19.10.2026 (§81):** Freigaben gehärtet (Planbindung, Datum, Widersprüche zu offenen Spezifikationen),
+  Kosten- und Ablageprüfungen verschärft, Klärung unklarer Aufrufe ergänzt. Offen: C-7, C-11, C-14, F-1, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S81.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
