@@ -9822,3 +9822,16 @@ Keine Entscheidung, keine Freigabe, C-14 GESPERRT; keine Modell-/Cloud-Aufrufe, 
   W2 (J6 keinem Freigabefeld zugeordnet) dokumentiert, Zuordnung Owner-Entscheidung.
 - **Validierung:** `tests/test_s82_decision_matrix.py` (12, nichtinvasiv). **PASS**
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§82-Dateien 210 PASS.
+
+## §83 Technische Pilotvorbereitung des juristischen Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Basis `3e0f3c4`)
+
+Keine Modell-/Cloud-Aufrufe, keine Kosten, keine juristische Entscheidung; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S83.md`.
+
+- **Befund P1:** Die Endpunktsperre des Treibers erkannte nur die Klasse des übergebenen Providers; Wrapper,
+  Unterklasse, Liste und roher `anthropic`-Client mit offiziellem Endpunkt wurden zugelassen. Behoben durch rekursive
+  Objektprüfung (fail-closed ohne erkennbaren Endpunkt) und einen Netzzaun (nur Loopback-Verbindungen während eines
+  Laufs). **PASS** (vorher FAIL)
+- **Reproduzierbarkeit:** §80-Läufe (Mock, Recorder, Wiederanlauf) identisch, 0 Lecks, 0 Doppelaufrufe. **PASS**
+- **Pilotübergabe:** `PILOT_CHECKLISTE.md`; Prüfpaket der Referenzlösungen (nicht juristisch geprüft).
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §83-Tests 17 PASS.

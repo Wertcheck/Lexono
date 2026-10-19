@@ -20,7 +20,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
-from scripts.legal_bench import answer_exec, answer_run, corpus, e2e
+from scripts.legal_bench import answer_exec, answer_run, corpus, e2e, net_fence
 from scripts.legal_bench.e2e import _leaked
 from app.privacy.api_logger import categorize_block_reasons
 from scripts.legal_bench.answer_store import RunStore, StoreError, now
@@ -37,18 +37,65 @@ class RealCloudDisabled(RuntimeError):
     """Echter Cloud-Endpunkt - im Benchmark-Treiber gesperrt (kein echter Modelllauf ohne Freigabe C-14)."""
 
 
+#: §83: Module, deren Objekte Netzverbindungen zu Cloud-Diensten aufbauen koennen (auch als Basisklasse einer Unterklasse)
+_CLOUD_MODULES = ("app.ai_providers", "anthropic", "httpx", "httpcore", "requests", "urllib3", "openai", "aiohttp")
+_LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")
+
+
+_CLIENT_ATTRS = ("base_url", "_client", "request", "send", "post", "write")
+
+
+def _is_cloud_object(obj) -> bool:  # noqa: ANN001
+    """Objekt aus einem Cloud-/HTTP-Modul (auch ueber eine Basisklasse) MIT Endpunkt- oder Sende-Faehigkeit - reine
+    Datenobjekte (z. B. ClaudeWritingResult, anthropic.types.*) zaehlen nicht."""
+    from_cloud = any((getattr(klass, "__module__", "") or "").startswith(_CLOUD_MODULES) for klass in type(obj).__mro__[:-1])
+    return from_cloud and any(hasattr(obj, attr) for attr in _CLIENT_ATTRS)
+
+
+def _cloud_objects(obj, depth: int = 0, seen: set | None = None):  # noqa: ANN001, ANN202
+    """Alle Cloud-Client-Objekte im Provider (Attribute, Listen, Dicts; begrenzte Tiefe) - §83: vorher wurde nur die
+    Klasse des uebergebenen Objekts betrachtet, ein Wrapper/eine Unterklasse umging die Sperre."""
+    seen = seen if seen is not None else set()
+    if id(obj) in seen or depth > 5 or isinstance(obj, (str, bytes, int, float, bool, type(None))):
+        return
+    seen.add(id(obj))
+    if _is_cloud_object(obj):
+        yield obj
+        return  # Inneres des Clients nicht weiter durchsuchen; der Endpunkt wird am Client selbst geprueft
+    if isinstance(obj, dict):
+        children = list(obj.values())
+    elif isinstance(obj, (list, tuple, set, frozenset)):
+        children = list(obj)
+    else:
+        children = list(getattr(obj, "__dict__", {}).values())
+        children += [getattr(obj, name) for name in getattr(type(obj), "__slots__", ()) if hasattr(obj, name)]
+    for child in children:
+        yield from _cloud_objects(child, depth + 1, seen)
+
+
+def _endpoint(client) -> str | None:  # noqa: ANN001
+    for candidate in (client, getattr(client, "_client", None)):
+        base = getattr(candidate, "base_url", None) if candidate is not None else None
+        if base:
+            return str(base)
+    return None
+
+
 def assert_local_only(provider) -> None:  # noqa: ANN001
-    module = type(provider).__module__ or ""
+    """Kein echter Cloud-Endpunkt: jeder im Provider gefundene Cloud-Client muss nachweislich auf einen lokalen
+    Pruefendpunkt zeigen (127.0.0.1/localhost/::1, LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1); ohne erkennbaren Endpunkt wird
+    gesperrt (fail-closed). Zweite Linie: `net_fence.loopback_only` waehrend der Ausfuehrung."""
     if os.environ.get("LEXONO_GATEWAY_URL", "").strip():
         raise RealCloudDisabled("LEXONO_GATEWAY_URL gesetzt - Relay-/Gateway-Weg ist im Benchmark-Treiber gesperrt")
-    if not module.startswith("app.ai_providers"):
-        return  # Test-/Mock-Provider ohne Netzwerkzugang
-    client = getattr(provider, "_client", None)
-    base = str(getattr(client, "base_url", "") or os.environ.get("ANTHROPIC_BASE_URL", ""))
-    host = urlparse(base).hostname or ""
-    if host not in ("127.0.0.1", "localhost", "::1") or os.environ.get("LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT") != "1":
-        raise RealCloudDisabled(f"Provider-Endpunkt {host or '?'} ist kein lokaler Pruefendpunkt - echter Modelllauf "
-                                "ist nicht freigegeben (C-14)")
+    for client in _cloud_objects(provider):
+        base = _endpoint(client)
+        host = urlparse(base).hostname if base else None
+        name = f"{type(client).__module__}.{type(client).__qualname__}"
+        if host is None:
+            raise RealCloudDisabled(f"Cloud-Client {name} ohne erkennbaren Endpunkt - gesperrt (C-14)")
+        if host not in _LOOPBACK_HOSTS or os.environ.get("LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT") != "1":
+            raise RealCloudDisabled(f"Provider-Endpunkt {host} ({name}) ist kein lokaler Pruefendpunkt - echter "
+                                    "Modelllauf ist nicht freigegeben (C-14)")
 
 
 def _sha(text: str) -> str:
@@ -128,6 +175,10 @@ class BenchmarkDriver:
         pending = [c for c in guard.plan["calls"] if answer_exec.call_id(c) not in state["calls"]]
         if not pending:
             return self._finish(run_id, state)
+        with net_fence.loopback_only():  # §83: zweite Linie - nur Loopback-Verbindungen waehrend des Laufs
+            return self._execute_fenced(run_id, state, guard, pending)
+
+    def _execute_fenced(self, run_id: str, state: dict, guard: answer_exec.CallGuard, pending: list) -> dict:
         env = _Environment(self.workdir, self.embedding, guard, self.provider)
         try:
             for call in pending:
