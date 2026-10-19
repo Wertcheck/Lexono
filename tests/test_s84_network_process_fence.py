@@ -232,11 +232,15 @@ def test_subprocesses_are_blocked_before_they_start(fence, tmp_path) -> None:
 
 
 def test_only_allowlisted_programs_with_exact_arguments_start() -> None:
+    # §85: nur mit absolutem, festgeschriebenem Pfad; der blosse Name wuerde von Windows eigenstaendig gesucht
+    git = net_fence.trusted_executable("git")
+    env = {k: v for k, v in os.environ.items() if not k.upper().startswith("GIT_")}
     with net_fence.loopback_only([("git", ("rev-parse", "HEAD"))], check_existing_connections=False):
-        out = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=Path(__file__).parents[1])
+        out = subprocess.run([git, "rev-parse", "HEAD"], capture_output=True, text=True, cwd=Path(__file__).parents[1], env=env)
         assert out.returncode == 0 and len(out.stdout.strip()) == 40
-        _attack(lambda: subprocess.run(["git", "fetch"], capture_output=True), net_fence.ProcessFenceViolation)
-        _attack(lambda: subprocess.run(["git", "rev-parse", "HEAD", "--remote"], capture_output=True),
+        _attack(lambda: subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True), net_fence.ProcessFenceViolation)
+        _attack(lambda: subprocess.run([git, "fetch"], capture_output=True, env=env), net_fence.ProcessFenceViolation)
+        _attack(lambda: subprocess.run([git, "rev-parse", "HEAD", "--remote"], capture_output=True, env=env),
                 net_fence.ProcessFenceViolation)
 
 
@@ -246,8 +250,9 @@ def test_tesseract_allowlist_matches_the_driver() -> None:
     tesseract = e2e._tesseract()
     if tesseract is None:
         pytest.skip("Tesseract nicht verfuegbar")
-    assert (tesseract, None) in answer_driver.allowed_programs()
-    with net_fence.loopback_only(answer_driver.allowed_programs(), check_existing_connections=False):
+    rules = answer_driver.allowed_programs()
+    assert [r.name for r in rules] == ["tesseract"]  # §85: git ist nicht mehr zugelassen
+    with net_fence.loopback_only(rules, check_existing_connections=False):
         assert subprocess.run([tesseract, "--version"], capture_output=True).returncode == 0
 
 

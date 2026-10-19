@@ -1,0 +1,10 @@
+ZUGELASSEN | git bare, rev-parse HEAD (Suchreihenfolge CreateProcess != which)
+ZUGELASSEN | git absoluter Pfad, rev-parse HEAD
+ZUGELASSEN | git mit GIT_EXEC_PATH in der Umgebung
+ZUGELASSEN | git mit GIT_CONFIG_PARAMETERS
+ZUGELASSEN | tesseract URL als Eingabe (libcurl)
+ZUGELASSEN | tesseract UNC-Eingabe (SMB)
+ZUGELASSEN | tesseract --tessdata-dir UNC
+ZUGELASSEN | tesseract mit TESSDATA_PREFIX UNC
+ZUGELASSEN | tesseract regulaer (pytesseract)
+Loopback-Ports eingeschraenkt: False

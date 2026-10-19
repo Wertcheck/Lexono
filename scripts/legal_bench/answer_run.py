@@ -24,7 +24,6 @@ import hashlib
 import json
 import math
 import re
-import subprocess
 from datetime import date
 from pathlib import Path
 
@@ -270,7 +269,10 @@ def check(config: dict) -> dict:
 
     commit = _get(config, "pipeline.lexono_commit")
     current = _git_commit()
-    if isinstance(commit, str) and commit and current and commit != current:
+    if current is None:
+        # §85: vorher fiel die Veraltet-Pruefung still weg, wenn git nicht lief (fail-open)
+        violations.append("pipeline.lexono_commit: aktueller Commit nicht ermittelbar (git) - Pruefung nicht moeglich, fail-closed")
+    elif isinstance(commit, str) and commit and commit != current:
         violations.append(f"pipeline.lexono_commit: veraltet ({commit[:12]} != aktueller Stand {current[:12]})")
     specs = {s["id"]: s for s in answer_specs.load_specs()}
     scope_specs = _get(config, "scope.specs")
@@ -315,12 +317,46 @@ def ensure_runnable(config: dict) -> None:
                           f"{len(result['violations'])} Verstoesse - " + "; ".join(reasons[:3]), reasons)
 
 
+_SHA = re.compile(r"^[0-9a-f]{40}$")
+_REF = re.compile(r"^refs/[A-Za-z0-9._/-]+$")
+
+
 def _git_commit() -> str | None:
+    """Aktueller Commit OHNE Prozessstart (§85): `.git/HEAD` und Refs (lose oder `packed-refs`) direkt lesen. Vorher lief
+    `git rev-parse HEAD` als Unterprozess - der Git-fuer-Windows-Starter startet dabei ein weiteres, nicht geprueftes
+    git.exe, das der Prozesszaun nicht sehen kann. Nicht eindeutig bestimmbar -> None (check: Verstoss, fail-closed)."""
+    git_dir = answer_specs.REPO / ".git"
     try:
-        return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=answer_specs.REPO,
-                              check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
+        if git_dir.is_file():  # Worktree/Submodul: "gitdir: <pfad>"
+            line = git_dir.read_text(encoding="utf-8").strip()
+            if not line.startswith("gitdir: "):
+                return None
+            git_dir = (answer_specs.REPO / line[len("gitdir: "):]).resolve()
+        common = git_dir
+        if (git_dir / "commondir").is_file():
+            common = (git_dir / (git_dir / "commondir").read_text(encoding="utf-8").strip()).resolve()
+        head = (git_dir / "HEAD").read_text(encoding="utf-8").strip()
+        if _SHA.match(head):
+            return head
+        if not head.startswith("ref: "):
+            return None
+        ref = head[len("ref: "):]
+        if not _REF.match(ref) or ".." in ref:
+            return None
+        for base in (git_dir, common):
+            loose = base / ref
+            if loose.is_file():
+                value = loose.read_text(encoding="utf-8").strip()
+                return value if _SHA.match(value) else None
+        packed = common / "packed-refs"
+        if packed.is_file():
+            for line in packed.read_text(encoding="utf-8").splitlines():
+                parts = line.split(" ", 1)
+                if len(parts) == 2 and parts[1].strip() == ref and _SHA.match(parts[0]):
+                    return parts[0]
+    except (OSError, UnicodeDecodeError):
         return None
+    return None
 
 
 def _planned_calls(config: dict) -> list[dict]:

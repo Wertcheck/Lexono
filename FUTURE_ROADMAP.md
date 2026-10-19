@@ -207,6 +207,9 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Endpunktsperre (Wrapper/Unterklassen) geschlossen, Netzzaun ergänzt. C-14 GESPERRT. Siehe benchmarks/legal_answers_v1/AUDIT_S83.md.
   **Fortschritt 19.10.2026 (§84):** Netz- und Prozesszaun über Audit-Hook (DNS, UDP, roher Socket, Proactor, ctypes,
   Unterprozesse per Zulassungsliste); OS-Isolation nicht verfügbar (dokumentiert). Siehe benchmarks/legal_answers_v1/AUDIT_S84.md.
+  **Fortschritt 19.10.2026 (§85):** Zulassungsliste gehärtet (Tesseract ohne URL/UNC, git entfernt), Loopback nur zum
+  Prüfendpunkt; Grenzen gegen nativen Code nachgewiesen; Windows-Isolation bewertet (für C-14: eigene VM/IT-Firewall).
+  Siehe benchmarks/legal_answers_v1/AUDIT_S85.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

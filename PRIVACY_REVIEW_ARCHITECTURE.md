@@ -9850,3 +9850,21 @@ Keine Modell-/Cloud-Aufrufe, keine externen DNS-Abfragen, keine Kosten; C-14 GES
   Overlapped-Aufrufe nicht abgedeckt, absichtliche Manipulation nur per Review. **NICHT VERIFIZIERT**
 - **QA:** 22 Angriffstests mit Test-Wächter; §78–§84-Dateien 249 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde
   Logo-Tests).
+
+## §85 Sicherheitsarchitektur und Windows-Isolation (19.10.2026, Branch `feature/feedback-diagnose`, Basis `f2fd382`)
+
+Keine Modell-/Cloud-Aufrufe, keine externen Verbindungen, keine Systemänderung; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S85.md`.
+
+- **Befunde (vorher alle 9 manipulierten Aufrufe zugelassen):** Tesseract mit beliebigen Argumenten (gebündeltes
+  libcurl: URL-Eingabe = Netzzugriff; UNC = SMB; Bildliste), Start per blossem Namen (CreateProcess-Suchreihenfolge),
+  Austausch von Binärdatei/DLLs, ungeprüfte Umgebung, git-Starter mit ungeprüftem Enkelprozess, Commit-Prüfung fail-open,
+  Loopback zu jedem Port.
+- **Behebung:** `ProgramRule` (absoluter festgeschriebener Pfad, SHA-256, Ordner-Fingerabdruck, Argument-/Umgebungsprüfung),
+  Tesseract nur im pytesseract-Muster mit lokalen Pfaden und Bildsignatur, git nicht mehr gestartet (Commit aus `.git`),
+  nicht ermittelbarer Commit = Verstoß, Loopback nur zu validierten Ports. **PASS**
+- **Grenzen nachgewiesen:** direkter Overlapped-ConnectEx und vorab beschaffter ws2_32-Zeiger umgehen den Audit-Hook
+  (nur gegen lokalen Port geprüft) - der Zaun ist keine Sicherheitsgrenze gegen nativen Code.
+- **Windows:** kein Admin, keine Sandbox/Hyper-V/Docker; Firewall-Regel, AppContainer, VM bewertet, nicht umgesetzt.
+  Empfehlung für C-14: eigene VM/Rechner mit IT-Firewall. **NICHT VERIFIZIERT**
+- **QA:** 28 neue Tests; §78–§85-Dateien 277 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).

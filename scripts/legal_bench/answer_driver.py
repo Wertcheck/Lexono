@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
@@ -81,31 +82,81 @@ def _endpoint(client) -> str | None:  # noqa: ANN001
     return None
 
 
-def assert_local_only(provider) -> None:  # noqa: ANN001
+def assert_local_only(provider) -> set[int]:  # noqa: ANN001
     """Kein echter Cloud-Endpunkt: jeder im Provider gefundene Cloud-Client muss nachweislich auf einen lokalen
     Pruefendpunkt zeigen (127.0.0.1/localhost/::1, LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1); ohne erkennbaren Endpunkt wird
     gesperrt (fail-closed). Zweite Linie: `net_fence.loopback_only` waehrend der Ausfuehrung."""
     if os.environ.get("LEXONO_GATEWAY_URL", "").strip():
         raise RealCloudDisabled("LEXONO_GATEWAY_URL gesetzt - Relay-/Gateway-Weg ist im Benchmark-Treiber gesperrt")
+    ports: set[int] = set()
     for client in _cloud_objects(provider):
         base = _endpoint(client)
-        host = urlparse(base).hostname if base else None
+        parsed = urlparse(base) if base else None
+        host = parsed.hostname if parsed else None
         name = f"{type(client).__module__}.{type(client).__qualname__}"
         if host is None:
             raise RealCloudDisabled(f"Cloud-Client {name} ohne erkennbaren Endpunkt - gesperrt (C-14)")
         if host not in _LOOPBACK_HOSTS or os.environ.get("LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT") != "1":
             raise RealCloudDisabled(f"Provider-Endpunkt {host} ({name}) ist kein lokaler Pruefendpunkt - echter "
                                     "Modelllauf ist nicht freigegeben (C-14)")
+        ports.add(parsed.port or (443 if parsed.scheme == "https" else 80))
+    return ports
 
 
-def allowed_programs() -> list[tuple[str, tuple[str, ...] | None]]:
-    """§84: Programme, die waehrend eines Laufs starten duerfen - nur lokale ohne Netzwerkbedarf (ANNAHME je Programm, keine
-    OS-Isolation): `git rev-parse HEAD` (Commit-Pruefung vor jedem Aufruf) und Tesseract (OCR beim Aktenimport)."""
-    programs: list[tuple[str, tuple[str, ...] | None]] = [("git", ("rev-parse", "HEAD"))]
+_LANG = re.compile(r"^[A-Za-z_]{2,16}(\+[A-Za-z_]{2,16})*$")
+
+
+_IMAGE_MAGIC = (b"\x89PNG", b"BM", b"II*\x00", b"MM\x00*", b"\xff\xd8\xff", b"GIF8", b"P5", b"P6")
+
+
+def _git_env(env: dict) -> str | None:
+    bad = sorted(k for k in env if k.upper().startswith("GIT_"))
+    return f"GIT_*-Variablen gesetzt ({', '.join(bad)})" if bad else None
+
+
+def _tesseract_args(args: list[str]) -> str | None:
+    """Exakt die Aufrufe von pytesseract in Lexono: `--version`, `--list-langs` oder
+    `<Eingabe> <Ausgabebasis> [-l <Sprachen>] txt` mit lokalen absoluten Pfaden. Das gebuendelte Tesseract enthaelt libcurl -
+    eine URL als Eingabe waere ein Netzzugriff; UNC-Pfade waeren SMB-Zugriffe."""
+    if args in (["--version"], ["--list-langs"]):
+        return None
+    if len(args) == 5 and args[2] == "-l" and _LANG.match(args[3]) and args[4] == "txt":
+        paths = args[:2]
+    elif len(args) == 3 and args[2] == "txt":
+        paths = args[:2]
+    else:
+        return f"Argumentmuster nicht zugelassen: {args[:6]}"
+    for value in paths:
+        if not net_fence._is_local_path(value):
+            return f"kein lokaler Pfad: {value[:60]!r}"
+    if not os.path.isfile(paths[0]):
+        return "Eingabedatei existiert nicht"
+    # Keine Bilddatei -> Tesseract liest sie als BILDLISTE (Zeilen = Pfade/URLs, mit libcurl abrufbar): nur echte Bilder
+    with open(paths[0], "rb") as fh:
+        head = fh.read(8)
+    if not head.startswith(_IMAGE_MAGIC):
+        return "Eingabe ist keine Bilddatei (Signatur) - Bildlisten sind nicht zugelassen"
+    return None
+
+
+def _tesseract_env(env: dict) -> str | None:
+    prefix = env.get("TESSDATA_PREFIX")
+    if prefix and (not net_fence._is_local_path(prefix) or not os.path.isdir(prefix)):
+        return f"TESSDATA_PREFIX nicht lokal: {prefix[:60]!r}"
+    return None
+
+
+def allowed_programs() -> list[net_fence.ProgramRule]:
+    """§84/§85: Programme, die waehrend eines Laufs starten duerfen - mit festgeschriebenem Pfad, Argument- und
+    Umgebungspruefung. Ob ein zugelassenes Programm selbst Netzwerk nutzt, ist NICHT isoliert (siehe AUDIT_S85.md)."""
+    # §85: git NICHT mehr zugelassen - der Commit wird ohne Prozess gelesen (answer_run._git_commit); der Git-fuer-Windows-
+    # Starter wuerde ein weiteres, ungeprueftes git.exe starten. `_git_env` bleibt fuer eine spaetere, bewusste Zulassung.
+    rules: list[net_fence.ProgramRule] = []
     tesseract = e2e._tesseract()
     if tesseract:
-        programs.append((tesseract, None))
-    return programs
+        rules.append(net_fence.ProgramRule("tesseract", tesseract, None, validate_args=_tesseract_args,
+                                           validate_env=_tesseract_env))
+    return rules
 
 
 def _sha(text: str) -> str:
@@ -186,7 +237,8 @@ class BenchmarkDriver:
         if not pending:
             return self._finish(run_id, state)
         # §83/§84: zweite Linie - nur Loopback-Verbindungen/-Namensaufloesung, Prozessstart nur fuer zugelassene Programme
-        with net_fence.loopback_only(allowed_programs()):
+        # §85: Loopback nur zu den Ports der validierten lokalen Pruefendpunkte (Mock ohne Endpunkt: keiner)
+        with net_fence.loopback_only(allowed_programs(), allowed_loopback_ports=assert_local_only(self.provider)):
             return self._execute_fenced(run_id, state, guard, pending)
 
     def _execute_fenced(self, run_id: str, state: dict, guard: answer_exec.CallGuard, pending: list) -> dict:
