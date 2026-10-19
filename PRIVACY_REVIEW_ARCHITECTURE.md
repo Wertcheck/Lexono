@@ -9775,3 +9775,20 @@ Kein Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `bench
   Vollständige Ausführung: **NICHT VERIFIZIERT – bewusst nicht gebaut** (E1 Treiber, E2 Ablage, E3 Ist-Kosten,
   E4 Fortsetzen, E5 offene Freigaben).
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); neue §78/§79-Dateien 109 PASS.
+
+## §80 Benchmark-Treiber, sichere Ablage, Kostenkontrolle, Wiederanlauf (19.10.2026, Branch `feature/feedback-diagnose`, Basis `0eba65c`)
+
+Kein Modelllauf, kein Cloud-Aufruf, tatsächliche Kosten 0 EUR. Bericht: `benchmarks/legal_answers_v1/AUDIT_S80.md`.
+
+- **E1:** `answer_driver.BenchmarkDriver` importiert die synthetischen Akten in eine In-Memory-DB und löst je geplantem
+  Aufruf den regulären Chat bzw. Schriftsatz aus; `precheck` vor dem Workflow, `authorize` vor dem Provider. Recorder-
+  Lauf (echter Provider, 127.0.0.1): 6 Anfragen, 0 Lecks. Echte Endpunkte gesperrt (`RealCloudDisabled`). **PASS**
+- **E2:** `answer_store.RunStore` außerhalb von Repository und Lexono-Daten, Konto-ACL (1 Konto), Hashes je Datei,
+  `verify`, kontrollierte Löschung. Abgelegt wird die **pseudonymisierte** Modellantwort; 0 geschützte Werte, kein
+  Schlüssel in der Ablage. **PASS**
+- **E3:** Kostenbuch trennt Schätzung und tatsächliche Kosten (nur Provider-Usage × freigegebener Tokenpreis, Schema 2);
+  fehlende Metadaten oder Providerfehler = Kosten UNBEKANNT = kein weiterer Aufruf; Restbudget vor jedem Aufruf. **PASS**
+- **E4:** Zustand dauerhaft; nach Absturz zwischen Aufrufen nur fehlende (0 Doppelaufrufe); Absturz während eines
+  Aufrufs nie automatisch wiederholt; Stopp mit Diagnose bei geänderter Konfiguration, Commit, Freigabe, LOCK, Plan. **PASS**
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§80-Dateien 142 PASS.
+- **Offen:** C-1–C-17, J1–J6; echter Lauf NICHT VERIFIZIERT und gesperrt.

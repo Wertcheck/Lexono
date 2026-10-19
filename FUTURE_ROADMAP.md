@@ -194,6 +194,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   0 Anfragen) und in der installierten App (Build bfbe53a) nachgewiesen. Wächter vor jedem Benchmark-Aufruf
   gebaut; Treiber, Ablage, Ist-Kosten und Fortsetzen bewusst offen (E1–E4). Offen: C-14, J1–J6.
   Siehe benchmarks/legal_answers_v1/AUDIT_S79.md.
+  **Fortschritt 19.10.2026 (§80):** E1–E4 vorbereitet: Treiber über den regulären Lexono-Pfad, sichere Ablage
+  außerhalb des Repositorys (ACL, Hashes), Kostenbuch geschätzt/tatsächlich mit sicherer Abbruchregel, Wiederanlauf
+  ohne Doppelaufrufe. Nur Mock/lokaler Recorder, echter Endpunkt gesperrt. Offen: C-14, C-1–C-17, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S80.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

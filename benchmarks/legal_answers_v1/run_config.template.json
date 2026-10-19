@@ -1,6 +1,6 @@
 {
   "_hinweis": "Vorlage für einen SPÄTEREN, separat freizugebenden Lauf. null = Entscheidung OFFEN. Solange ein Feld offen ist oder approved=false, verweigert scripts.legal_bench.answer_run jede Ausführung. Kopie als run_config.<run_id>.json anlegen; die Vorlage selbst nicht ausfüllen.",
-  "schema_version": 1,
+  "schema_version": 2,
   "run_id": null,
   "approved": false,
   "approvals": {
@@ -30,6 +30,8 @@
     "max_calls": null,
     "max_cost_eur": null,
     "price_per_call_eur_estimate": null,
+    "price_eur_per_million_input_tokens": null,
+    "price_eur_per_million_output_tokens": null,
     "abort_on_first_privacy_finding": true,
     "abort_after_failed_calls": null
   },

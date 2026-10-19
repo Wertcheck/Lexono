@@ -15,7 +15,7 @@ Aussage über juristische Zuverlässigkeit. J1–J6 und C-1–C-17 bleiben **OFF
 | App-Test WebView2: Ausfall im alten Build (Vorher-Beleg) | B1 reproduziert (HTTP 500), **wie erwartet FAIL** |
 | Echte Datenbank unverändert | **PASS** |
 | Benchmark: Prüfung vor jedem Aufruf (`CallGuard`/`GuardedWriter`) | **PASS** (Mock und lokaler Recorder) |
-| Benchmark: vollständige Ausführung | **NICHT VERIFIZIERT – bewusst nicht gebaut** (Lücken E1–E5) |
+| Benchmark: vollständige Ausführung | **NICHT VERIFIZIERT – bewusst nicht gebaut** (Lücken E1–E5); E1–E4 in §80 vorbereitet (AUDIT_S80.md), echter Lauf weiterhin gesperrt |
 | Volle Suite | **PASS** bis auf die 4 bekannten, fremden Logo-Tests |
 
 ## 1 B1 – Ursache und Behebung

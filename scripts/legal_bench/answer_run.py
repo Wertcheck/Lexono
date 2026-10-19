@@ -30,7 +30,7 @@ from scripts.legal_bench import answer_specs, corpus
 
 TEMPLATE = answer_specs.ROOT / "run_config.template.json"
 #: Version des Konfigurationsschemas - eine Konfiguration mit anderer Version gilt als veraltet
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # §80: Tokenpreise fuer die tatsaechliche Kostenerfassung (limits.price_eur_per_million_*)
 #: Datenschutz-Schalter, die fuer einen Lauf exakt diesen Wert haben MUESSEN (keine Abschwaechung)
 REQUIRED_PRIVACY = {"payload_capture": True, "leak_check_required": True, "fail_closed_required": True,
                     "real_client_data": False}
@@ -123,6 +123,9 @@ def _field_rules() -> dict:
         "limits.max_calls": (lambda v: _is_int(v, 1), "ganze Zahl >= 1"),
         "limits.max_cost_eur": (lambda v: _is_number(v, 0.0), "Zahl > 0"),
         "limits.price_per_call_eur_estimate": (lambda v: _is_number(v, 0.0), "Zahl > 0"),
+        # §80: tatsaechliche Kosten = Usage-Tokens der Provider-Antwort x freigegebener Tokenpreis (Owner-Entscheidung)
+        "limits.price_eur_per_million_input_tokens": (lambda v: _is_number(v, 0.0), "Zahl > 0 (EUR je 1 Mio. Eingabe-Tokens)"),
+        "limits.price_eur_per_million_output_tokens": (lambda v: _is_number(v, 0.0), "Zahl > 0 (EUR je 1 Mio. Ausgabe-Tokens)"),
         "limits.abort_on_first_privacy_finding": (lambda v: v is True, "muss true sein"),
         "limits.abort_after_failed_calls": (lambda v: _is_int(v, 1), "ganze Zahl >= 1"),
         **{f"privacy.{k}": ((lambda expected: lambda v: v is expected)(v), f"muss {str(v).lower()} sein")

@@ -34,7 +34,8 @@ def _valid() -> dict:
                       max_tokens=4000)
     c["pipeline"].update(lexono_commit=answer_run._git_commit(), prompt_version="TEST-1")
     c["scope"]["repetitions"] = 1
-    c["limits"].update(max_calls=6, max_cost_eur=10, price_per_call_eur_estimate=0.5, abort_after_failed_calls=1)
+    c["limits"].update(max_calls=6, max_cost_eur=10, price_per_call_eur_estimate=0.5, abort_after_failed_calls=1,
+                       price_eur_per_million_input_tokens=3.0, price_eur_per_million_output_tokens=15.0)
     c["storage"].update(results_dir="ausserhalb_des_repos/lauf", retention="TEST")
     c["evaluation"].update(reviewers=["Testperson"], second_reviewer_for_critical=True)
     return c
@@ -92,6 +93,11 @@ GATE_CASES = [
     ("Zusatzschalter skip_privacy", lambda c: c.update(skip_privacy=True), "skip_privacy: unbekannter Schluessel"),
     ("Zusatzschalter privacy.override", lambda c: c["privacy"].update(override=True), "privacy.override: unbekannter"),
     ("Schema-Version 0", lambda c: c.update(schema_version=0), "schema_version: ungueltig"),
+    ("Schema-Version 1 (vor §80)", lambda c: c.update(schema_version=1), "schema_version: ungueltig"),
+    ("Tokenpreis fehlt", lambda c: c["limits"].pop("price_eur_per_million_output_tokens"),
+     "price_eur_per_million_output_tokens: fehlt"),
+    ("Tokenpreis 0", lambda c: c["limits"].update(price_eur_per_million_input_tokens=0),
+     "price_eur_per_million_input_tokens: ungueltig"),
     ("blinde Bewertung aus", lambda c: c["evaluation"].update(blind_review=False), "evaluation.blind_review"),
     ("keine Pruefpersonen", lambda c: c["evaluation"].update(reviewers=[]), "evaluation.reviewers: ungueltig"),
 ]
