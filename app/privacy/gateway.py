@@ -32,6 +32,7 @@ LOCAL DATA -> lokale Analyse (bereits erledigt, Ergebnis wird übergeben)
 
 from __future__ import annotations
 
+import logging
 import re
 
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult, seal_payload
@@ -81,6 +82,15 @@ _SEP_VERLAUF = "@@GATEWAY_VERLAUF@@"
 # Stilangabe (Datenschutz-Pruefung §31): Freitext aus dem Schriftsatz-Formular; lief bisher an der Pseudonymisierung
 # vorbei. Jetzt als Unterabschnitt der Anmerkungen im selben Durchlauf (gleiche Platzhalter, gleicher Restrisiko-Scan).
 _SEP_STIL = "@@GATEWAY_STIL@@"
+
+# §79 (B1): fester, inhaltsfreier Grund, wenn die Erkennung personenbezogener Daten selbst ausfaellt (z. B. Presidio/
+# spaCy nicht ladbar). Kategorie "privacy_check_failed" in app/privacy/api_logger.py.
+PRIVACY_CHECK_FAILED_REASON = (
+    "Die Datenschutzprüfung ist fehlgeschlagen (Erkennung personenbezogener Daten nicht verfügbar) - "
+    "keine Übermittlung an die KI."
+)
+_logger = logging.getLogger("lexono.privacy")
+
 
 _ALL_MARKERS = (
     _SEP_SACHVERHALT,
@@ -330,7 +340,26 @@ class ClaudePrivacyGateway:
             )
             return pseudonymized, maps, self._split_combined_text(pseudonymized)
 
-        pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
+        def _detection_failed(step: str, exc: Exception) -> GatewayResult:
+            # §79 (B1): fail-closed wie bei der Kandidatensuche unten - keine Payload, also kann kein Provider senden.
+            # Datensparsam protokolliert: nur Fehlertyp und Schritt, nie die Fehlermeldung (kann Text enthalten).
+            _logger.warning(
+                "Datenschutzpruefung fehlgeschlagen (Schritt %s, %s) - Anfrage blockiert, nichts gesendet",
+                step, type(exc).__name__,
+            )
+            return GatewayResult(
+                allowed=False,
+                purpose=purpose,
+                payload=None,
+                mappings=[],
+                reasons=[PRIVACY_CHECK_FAILED_REASON],
+                locally_sourced_text=locally_sourced_text,
+            )
+
+        try:
+            pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
+        except Exception as exc:  # noqa: BLE001 - fail-closed: ohne vollstaendige Erkennung nie in die Cloud
+            return _detection_failed("pseudonymisierung", exc)
         review_candidates: list[ReviewCandidate] = []
         if review_mode != "off":
             try:
@@ -376,7 +405,10 @@ class ClaudePrivacyGateway:
         if review_candidates:  # review_mode == "mask": vorsichtshalber pseudonymisieren, dann vollstaendig neu pruefen
             auto_masked_terms = [candidate.term for candidate in review_candidates]
             masked_terms.update(auto_masked_terms)
-            pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
+            try:
+                pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
+            except Exception as exc:  # noqa: BLE001 - fail-closed, siehe oben
+                return _detection_failed("pseudonymisierung", exc)
 
         (
             pseudo_sachverhalt,
@@ -419,15 +451,18 @@ class ClaudePrivacyGateway:
             pseudo_verlauf=pseudo_verlauf,
         )
 
-        check_result = self.security_check.check(
-            pseudonymized_combined,
-            mappings,
-            purpose=purpose,
-            unrecognized_name_scan_text=unrecognized_name_scan_text,
-            skip_residual_categories=skip_categories,
-            residual_ner_span_filter=ner_span_filter,
-            residual_ignore_ranges=residual_ignore_ranges,
-        )
+        try:
+            check_result = self.security_check.check(
+                pseudonymized_combined,
+                mappings,
+                purpose=purpose,
+                unrecognized_name_scan_text=unrecognized_name_scan_text,
+                skip_residual_categories=skip_categories,
+                residual_ner_span_filter=ner_span_filter,
+                residual_ignore_ranges=residual_ignore_ranges,
+            )
+        except Exception as exc:  # noqa: BLE001 - fail-closed: ohne Restrisiko-Scan nie in die Cloud
+            return _detection_failed("restrisiko_scan", exc)
         if not check_result.passed:
             return GatewayResult(
                 allowed=False,

@@ -142,6 +142,8 @@ def test_fail_closed_when_name_recognition_fails(wire_env, tmp_path) -> None:
     assert len(rec.requests) == before, "trotz Ausfall der Namenserkennung wurde gesendet"
     by_id = {t["id"]: t for t in tasks}
     assert by_id["Q1"]["status"] == "blockiert"  # Chat: sauber blockiert, Hinweis an die Nutzerin
-    # §78 Befund B1 (dokumentiert, nicht behoben): der Schriftsatzpfad blockiert nicht geordnet, sondern reicht die
-    # Ausnahme durch - fail-closed (nichts gesendet), aber ohne Blockierungsgrund. Aendert sich das, Test anpassen.
-    assert by_id["Q2"]["status"] == "error" and "Namenserkennung ausgefallen" in by_id["Q2"]["error"]
+    # §78 Befund B1, behoben in §79: auch der Schriftsatzpfad blockiert jetzt geordnet mit festem, inhaltsfreiem Grund
+    from app.privacy.gateway import PRIVACY_CHECK_FAILED_REASON
+
+    assert by_id["Q2"]["status"] == "blockiert", by_id["Q2"]
+    assert by_id["Q2"]["blocked_reasons"] == [PRIVACY_CHECK_FAILED_REASON]
