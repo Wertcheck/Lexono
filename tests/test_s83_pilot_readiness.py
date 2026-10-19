@@ -187,5 +187,5 @@ def test_review_packet_states_its_limits_and_decides_nothing() -> None:
 
 def test_net_fence_module_opens_no_connection_itself() -> None:
     source = Path(net_fence.__file__).read_text(encoding="utf-8")
-    assert "_ORIGINAL[\"create_connection\"](address" in source  # nur Weiterreichen nach erfolgreicher Pruefung
-    assert "socket.socket(" not in source and "urlopen" not in source
+    assert "sys.addaudithook(_audit)" in source  # §84: Pruefung in der Laufzeit VOR dem Systemaufruf
+    assert "socket.socket(" not in source and "urlopen" not in source and "create_connection(" not in source

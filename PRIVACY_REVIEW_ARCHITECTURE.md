@@ -9835,3 +9835,18 @@ Keine Modell-/Cloud-Aufrufe, keine Kosten, keine juristische Entscheidung; C-14 
 - **Reproduzierbarkeit:** §80-Läufe (Mock, Recorder, Wiederanlauf) identisch, 0 Lecks, 0 Doppelaufrufe. **PASS**
 - **Pilotübergabe:** `PILOT_CHECKLISTE.md`; Prüfpaket der Referenzlösungen (nicht juristisch geprüft).
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §83-Tests 17 PASS.
+
+## §84 Sicherheitsprüfung der Cloud-Sperre und Unterprozesse (19.10.2026, Branch `feature/feedback-diagnose`, Basis `9d28b4d`)
+
+Keine Modell-/Cloud-Aufrufe, keine externen DNS-Abfragen, keine Kosten; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S84.md`.
+
+- **Befunde (vorher FAIL):** Q1 DNS-Auflösung vor `connect` nicht abgefangen (requests/urllib3), Q2 roher `_socket` und
+  UDP nicht abgefangen, Q3 Unterprozesse unbeschränkt, P2 asyncio-Proactor ohne Audit-Ereignis, P3 Startprüfung
+  sprachabhängig (vor Einsatz erkannt).
+- **Behebung:** `net_fence` über `sys.addaudithook` (Sockets, DNS, UDP, ctypes, Prozesse) mit Zulassungsliste
+  (git rev-parse HEAD, Tesseract), Proactor-Ummantelung, sprachunabhängige Startprüfung offener Verbindungen. **PASS**
+- **Grenzen:** keine OS-Isolation (Netzverhalten zugelassener Programme ist Annahme), native Netzwerk-Stacks und direkte
+  Overlapped-Aufrufe nicht abgedeckt, absichtliche Manipulation nur per Review. **NICHT VERIFIZIERT**
+- **QA:** 22 Angriffstests mit Test-Wächter; §78–§84-Dateien 249 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde
+  Logo-Tests).

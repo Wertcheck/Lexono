@@ -98,6 +98,16 @@ def assert_local_only(provider) -> None:  # noqa: ANN001
                                     "Modelllauf ist nicht freigegeben (C-14)")
 
 
+def allowed_programs() -> list[tuple[str, tuple[str, ...] | None]]:
+    """§84: Programme, die waehrend eines Laufs starten duerfen - nur lokale ohne Netzwerkbedarf (ANNAHME je Programm, keine
+    OS-Isolation): `git rev-parse HEAD` (Commit-Pruefung vor jedem Aufruf) und Tesseract (OCR beim Aktenimport)."""
+    programs: list[tuple[str, tuple[str, ...] | None]] = [("git", ("rev-parse", "HEAD"))]
+    tesseract = e2e._tesseract()
+    if tesseract:
+        programs.append((tesseract, None))
+    return programs
+
+
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -175,7 +185,8 @@ class BenchmarkDriver:
         pending = [c for c in guard.plan["calls"] if answer_exec.call_id(c) not in state["calls"]]
         if not pending:
             return self._finish(run_id, state)
-        with net_fence.loopback_only():  # §83: zweite Linie - nur Loopback-Verbindungen waehrend des Laufs
+        # §83/§84: zweite Linie - nur Loopback-Verbindungen/-Namensaufloesung, Prozessstart nur fuer zugelassene Programme
+        with net_fence.loopback_only(allowed_programs()):
             return self._execute_fenced(run_id, state, guard, pending)
 
     def _execute_fenced(self, run_id: str, state: dict, guard: answer_exec.CallGuard, pending: list) -> dict:
