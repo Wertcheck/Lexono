@@ -1,0 +1,149 @@
+{
+ "art": "§79 Wire-Nachweis (nach B1-Fix) - nur lokaler QA-Recorder 127.0.0.1, gefaelschter Schluessel, kein Modell, keine Kosten",
+ "negativkontrolle_geschuetzte_werte_im_eingang": {
+  "LE-D005": "13/13",
+  "LE-D006": "18/31",
+  "LE-T004": "10/15"
+ },
+ "anfragen": [
+  {
+   "nr": 0,
+   "pfad": "/v1/messages",
+   "bytes": 18181,
+   "sha256": "5cda6a1ec55b351a416c3593dd6fd4cd293a969080af14b9b1bb3316304e6549",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 1,
+   "pfad": "/v1/messages",
+   "bytes": 15346,
+   "sha256": "8a0d0079de327346283d19981e5383216b510a88bb8ac79f29e7d555623e8a5e",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 2,
+   "pfad": "/v1/messages",
+   "bytes": 17389,
+   "sha256": "f2f602c65274d9e07e8d6f277f65841b4cbfbc6c6f75199047a0bedb5566bd70",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 3,
+   "pfad": "/v1/messages",
+   "bytes": 14525,
+   "sha256": "35f68801ec09efe4fee0e6812e6e1beb8a1cfc36569ad1b3ec6c62d3a43b03a2",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 4,
+   "pfad": "/v1/messages",
+   "bytes": 18012,
+   "sha256": "c62d33b1bc9b2f736fadaade89a41fcce2a68b8fd3eebd18af6f9d1c91409438",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 5,
+   "pfad": "/v1/messages",
+   "bytes": 15189,
+   "sha256": "b910620a5296950d50bd6d0aa7cde503f1a67c90fc6a287b5fdd840595388f8c",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  },
+  {
+   "nr": 6,
+   "pfad": "/v1/messages",
+   "bytes": 14558,
+   "sha256": "e4f67bb057900f0aea656cd69bd1826f66781e75a54fc1fa1f6f61ddd1daf18c",
+   "x_api_key_ist_testschluessel": true,
+   "authorization_header": false,
+   "lecks": []
+  }
+ ],
+ "anzahl_anfragen": 7,
+ "anzahl_weitergeleitete_payloads": 7,
+ "aufgaben": [
+  {
+   "akte": "LE-D005",
+   "aufgabe": "Q1",
+   "art": "chat",
+   "status": "payload",
+   "payload_zeichen": 3689
+  },
+  {
+   "akte": "LE-D005",
+   "aufgabe": "Q2",
+   "art": "schriftsatz",
+   "status": "ok",
+   "payload_zeichen": 3696
+  },
+  {
+   "akte": "LE-D006",
+   "aufgabe": "Q1",
+   "art": "chat",
+   "status": "payload",
+   "payload_zeichen": 2916
+  },
+  {
+   "akte": "LE-D006",
+   "aufgabe": "Q2",
+   "art": "schriftsatz",
+   "status": "ok",
+   "payload_zeichen": 2898
+  },
+  {
+   "akte": "LE-T004",
+   "aufgabe": "Q1",
+   "art": "chat",
+   "status": "payload",
+   "payload_zeichen": 3506
+  },
+  {
+   "akte": "LE-T004",
+   "aufgabe": "Q2",
+   "art": "schriftsatz",
+   "status": "ok",
+   "payload_zeichen": 3526
+  }
+ ],
+ "zusammenfassung": {
+  "dev": {
+   "kritisch": [],
+   "pii_leaks": 0,
+   "fremde_akte_im_payload": 0
+  },
+  "test": {
+   "kritisch": [],
+   "pii_leaks": 0,
+   "fremde_akte_im_payload": 0
+  }
+ },
+ "fail_closed": {
+  "anfragen_vorher": 7,
+  "anfragen_nachher": 7,
+  "aufgaben": [
+   {
+    "aufgabe": "Q1",
+    "status": "blockiert",
+    "fehler": null,
+    "grund": "Die Datenschutzprüfung ist fehlgeschlagen (die Erkennung personenbezogener Daten war nicht verfügbar). Es wurde nichts a"
+   },
+   {
+    "aufgabe": "Q2",
+    "status": "blockiert",
+    "fehler": null,
+    "grund": "Die Datenschutzprüfung ist fehlgeschlagen (Erkennung personenbezogener Daten nicht verfügbar) - keine Übermittlung an die KI."
+   }
+  ]
+ }
+}

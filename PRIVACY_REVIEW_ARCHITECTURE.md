@@ -9754,3 +9754,24 @@ Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `benchmarks
   implementiert) und die Erkennung jenseits dieser Akten. Datenschutzstatus: **teilweise nachgewiesen**.
 - **Nachweise:** `benchmarks/legal_answers_v1/audit/s78_*`; Tests `tests/test_s78_benchmark_gate.py` und
   `tests/test_s78_wire_privacy.py` (84).
+
+## §79 B1 behoben: geordnete Blockierung bei Ausfall der Namenserkennung; Ausführungswächter des Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Fix `bfbe53a`)
+
+Kein Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `benchmarks/legal_answers_v1/AUDIT_S79.md`.
+
+- **Ursache B1:** `ClaudePrivacyGateway.prepare_request` fing Fehler nur in der Kandidatensuche fail-closed ab. Eine
+  Ausnahme der Erkennung in Pseudonymisierung oder Restrisiko-Scan stieg auf; Schriftsatz lieferte HTTP 500, Chat den
+  allgemeinen technischen Fehler. Gesendet wurde nie etwas.
+- **Behebung:** Beide Schritte im bestehenden fail-closed-Muster: `GatewayResult(allowed=False)` mit festem,
+  inhaltsfreiem Grund, Kategorie `privacy_check_failed`, verständliche Meldung („Die Datenschutzprüfung ist
+  fehlgeschlagen … Es wurde nichts an die KI übermittelt“). Log nur Schritt und Fehlertyp. Alle Aufrufer (Chat,
+  Schriftsatz inkl. Streaming, Orchestrator, Review) nutzen den vorhandenen Blockierungsweg. **PASS**
+- **Installierte App (Build `bfbe53a`, EXE `01bff911…99b9`, Sicherung `lexono_install_backup_vor_bfbe53a` 956/956,
+  echte DB `677CAFD8109F` unverändert):** echter Ausfall durch umbenanntes spaCy-Modell in einer byte-gleichen Kopie:
+  Chat und Schriftsatz zeigen die Meldung, **0 Anfragen** am Recorder. Normalbetrieb: 2 Anfragen, 0 Lecks. Vorher-Beleg
+  im alten Build: HTTP 500. **PASS**
+- **Benchmark:** `scripts/legal_bench/answer_exec.py` prüft vor **jedem** Provider-Aufruf Freigabe, Konfiguration,
+  Commit, Lock, Plan, Limits, Siegel und Leaks und bricht fail-closed ab (14 Tests, lokaler Recorder). **PASS**
+  Vollständige Ausführung: **NICHT VERIFIZIERT – bewusst nicht gebaut** (E1 Treiber, E2 Ablage, E3 Ist-Kosten,
+  E4 Fortsetzen, E5 offene Freigaben).
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); neue §78/§79-Dateien 109 PASS.

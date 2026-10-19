@@ -190,6 +190,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   wurde um Handbearbeitungs-Erkennung, alte/neue Hashes und Registereinträge erweitert. Die Leitungsprüfung ergab
   0 Lecks. Offen: B1 (Schriftsatzpfad blockiert bei Ausfall der Namenserkennung nicht geordnet), C-14, J1–J6.
   Siehe benchmarks/legal_answers_v1/AUDIT_S78.md.
+  **Fortschritt 19.10.2026 (§79):** B1 behoben (Gateway blockiert geordnet, Meldung in Chat und Schriftsatz,
+  0 Anfragen) und in der installierten App (Build bfbe53a) nachgewiesen. Wächter vor jedem Benchmark-Aufruf
+  gebaut; Treiber, Ablage, Ist-Kosten und Fortsetzen bewusst offen (E1–E4). Offen: C-14, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S79.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

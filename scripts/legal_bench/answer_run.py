@@ -46,7 +46,11 @@ _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class NotApproved(RuntimeError):
-    """Lauf nicht freigegeben - offene Entscheidungen oder unzulaessige Konfiguration."""
+    """Lauf nicht freigegeben - offene Entscheidungen oder unzulaessige Konfiguration. `reasons`: konkrete Gruende."""
+
+    def __init__(self, message: str, reasons: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.reasons = list(reasons or [])
 
 
 def load_config(path: Path) -> dict:
@@ -218,8 +222,10 @@ def check(config: dict) -> dict:
 def ensure_runnable(config: dict) -> None:
     result = check(config)
     if not result["runnable"]:
+        reasons = [f"offen: {item}" for item in result["open"]] + result["violations"]
+        # §79: konkreter Grund statt nur Anzahlen (die ersten drei in der Meldung, alle in `reasons`)
         raise NotApproved(f"Lauf nicht freigegeben: {len(result['open'])} offene Entscheidungen, "
-                          f"{len(result['violations'])} Verstoesse")
+                          f"{len(result['violations'])} Verstoesse - " + "; ".join(reasons[:3]), reasons)
 
 
 def _git_commit() -> str | None:

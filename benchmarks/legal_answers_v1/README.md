@@ -38,6 +38,8 @@ und eine eigene Rubrik, getrennt vom Fristen- und Datenschutz-Benchmark.
 | `scripts/legal_bench/answer_specs.py` | Validator, Fingerabdruck, Vorprüfung |
 | `tests/test_legal_answer_specs.py` | Regressionstests (Validator, Einfrieren, Fingerabdruck, Vorprüfung) |
 | `AUDIT_S78.md` (§78) | Adversariale Prüfung von Freigabesperre, Sperre, Aufrufplan und Datenschutzpfad bis zur HTTP-Leitung |
+| `AUDIT_S79.md` (§79) | B1 behoben (geordnete Blockierung bei Ausfall der Namenserkennung, App-Test), Ausführungswächter und offene Lücken E1–E5 |
+| `scripts/legal_bench/answer_exec.py` (§79) | Wächter vor **jedem** späteren Modellaufruf (Freigabe, Commit, Lock, Plan, Limits, Siegel, Leak-Check) – **kein Lauf**, keine Kommandozeile, kein eigener Provider |
 | `LOCK.json` (§77, §78) | Sperre von Rubrik, Test-Spezifikation, Test-Akten und der von ihnen genutzten Quellen-Registereinträge (kanonische SHA-256, `entries_sha256` gegen Handbearbeitung); Neusperre nur mit `--update-lock --reason` (≥ 20 Zeichen), Historie mit alten/neuen Hashes |
 | `scripts/legal_bench/answer_run.py` (§77, §78 gehärtet) | Laufvorbereitung **ohne Ausführung**: `check` (offene Freigaben; jedes Feld der Vorlage Pflicht, Werte regelgeprüft, Exit 2 bei Ablehnung), `plan` (Aufrufplan mit Fingerabdrücken), Antwortdatensatz, blinder Prüfbogen, Zusammenfassung nach Rubrik |
 | `run_config.template.json` (§77) | Vorlage einer Laufkonfiguration, alle Entscheidungen `null` (OFFEN) |

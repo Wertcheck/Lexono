@@ -12,7 +12,7 @@ C-1–C-17 bleiben **OFFEN**, eine juristische Freigabe wird nicht erteilt.
 | 1 Freigabesperre (`answer_run check`) | **FAIL in der §77-Fassung** (15 von 18 Manipulationen wurden freigegeben), **PASS nach Härtung** |
 | 2 Test-Split/LOCK.json | **FAIL in der §77-Fassung** (Lücken L1–L4), **PASS nach Härtung**; bewusste Fälschung von Lock *und* Historie ist eine dokumentierte Grenze |
 | 3 Aufrufplan (`plan`) | **PASS** (reproduzierbar, versioniert, offline, ohne Freigabe nicht ausführbar) |
-| 4 Datenschutzpfad bis zur HTTP-Leitung | **PASS** für die Akten LE-D005, LE-D006 und LE-T004 auf diesem Rechner; Befund B1 (Schriftsatzpfad) dokumentiert; spätere Benchmark-Ausführung **NICHT VERIFIZIERT** (existiert nicht) |
+| 4 Datenschutzpfad bis zur HTTP-Leitung | **PASS** für die Akten LE-D005, LE-D006 und LE-T004 auf diesem Rechner; Befund B1 (Schriftsatzpfad) dokumentiert – **in §79 behoben** (AUDIT_S79.md); spätere Benchmark-Ausführung **NICHT VERIFIZIERT** (existiert nicht) |
 | 5 Schutzregeln | **PASS** (keine Abschwächung, Originale geprüft, keine produktive DB) |
 | 6 Regression/Suite | **PASS** bis auf die 4 bekannten, fremden Logo-Tests |
 

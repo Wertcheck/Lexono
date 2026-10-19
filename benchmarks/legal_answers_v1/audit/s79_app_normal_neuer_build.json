@@ -1,0 +1,67 @@
+{
+ "modus": "normal",
+ "exe": "%LOCALAPPDATA%\\Lexono\\Lexono.exe (installiert)",
+ "recorder": "http://127.0.0.1:50929",
+ "lauf": "045150",
+ "schritte": {
+  "chat": {
+   "anfragen": 1,
+   "meldung_datenschutzfehler": false,
+   "meldung_nichts_uebermittelt": false,
+   "alte_meldung_technischer_fehler": false,
+   "rueckfragen_unsicher": 0,
+   "wire": [
+    {
+     "pfad": "/v1/messages",
+     "testschluessel": true,
+     "lecks": [],
+     "betrag_lesbar": true,
+     "platzhalter": true
+    }
+   ],
+   "auszug": "fernen\nQ\n\nFasse bitte zusammen: Unsere Mandantin Henrike Wallbaum-Ostertag (h.wallbaum@beispiel-kanzlei.de) verlangt von Konrad Pfefferkorn die Rückzahlung der Kaution von 4.250,00 EUR; der Mietvertrag endete am 31.03.2026.\n\nLexono\n\nEntwurf (synthetisch).\n\nKopieren\n02:52 Uhr\nNamen schützen\nverwalten"
+  },
+  "schriftsatz": {
+   "anfragen": 1,
+   "ui_pfad": "/dashboard/drafts/6560ba61-e09c-49db-96d8-7a392fe26483/edit",
+   "entwurf_geoeffnet": true,
+   "meldung_datenschutzfehler": false,
+   "meldung_nichts_uebermittelt": false,
+   "http_500_seite": false,
+   "wire": [
+    {
+     "pfad": "/v1/messages",
+     "testschluessel": true,
+     "lecks": [],
+     "betrag_lesbar": true,
+     "platzhalter": true
+    }
+   ],
+   "auszug": "Lexono\nIn E-Mails, Mandanten, Akten oder Inhalten suchen …\nNeuen Chat starten\nChat\nMandanten\nAkten\nPosteingang\nAufgaben & Fristen\n99+\nKanzleiwissen\nCloud-KI (lokaler Prüfendpunkt)\nBereit\nLokale KI\ndea",
+   "entwuerfe_der_akte": 2,
+   "api_log": [
+    null,
+    null
+   ]
+  }
+ },
+ "exe_sha256": "01bff911db8bedb19e6f4ff798f0fc1b7a0eab92845710bd44786f492b4999b9",
+ "exe_gleich_installiert": true,
+ "spacy_modell_vorhanden": true,
+ "app_pid": 2732,
+ "webview": "Edg/155.0.4283.62",
+ "nach_login": "/dashboard/chat",
+ "akte": {
+  "matter_id": "bb846b96-ebfa-45a4-b393-1836ff18e0a6",
+  "beteiligte": 1
+ },
+ "anfragen_gesamt": 2,
+ "app_beendet": true,
+ "applog": {
+  "zeilen": 119,
+  "geschuetzte_werte_im_log": [],
+  "kaution_text_im_log": false,
+  "datenschutzfehler_zeilen": [],
+  "testschluessel_im_log": false
+ }
+}
