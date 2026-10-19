@@ -1,0 +1,28 @@
+tests/test_s86_isolation_design.py::test_policy_is_a_default_deny_draft_without_invented_decisions PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_accepts_only_the_approved_endpoint PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[standard_zulassen] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[standard_nicht_konfiguriert] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[export_leer] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[udp_dns] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[beliebige_adresse] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[adressbereich] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[beliebiger_port] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[dot_port] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[zusaetzlicher_proxy] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_rejects_missing_or_faulty_rules[ipv6_ziel] PASSED
+tests/test_s86_isolation_design.py::test_rule_checker_refuses_start_while_endpoint_decision_is_open PASSED
+tests/test_s86_isolation_design.py::test_current_machine_does_not_meet_the_policy PASSED
+tests/test_s86_isolation_design.py::test_probe_guard_refuses_external_targets_before_any_process_starts PASSED
+tests/test_s86_isolation_design.py::test_probes_work_in_separate_processes_against_local_targets PASSED
+tests/test_s86_isolation_design.py::test_acceptance_approved_test_endpoint_is_reachable SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_canary_addresses_are_blocked[tcp] SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_canary_addresses_are_blocked[curl] SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_canary_addresses_are_blocked[native] SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_canary_addresses_are_blocked[udp] SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_dns_is_blocked SKIPPED
+tests/test_s86_isolation_design.py::test_acceptance_firewall_export_from_outside_matches_the_policy SKIPPED
+SKIPPED [1] tests\test_s86_isolation_design.py:284: nur in der freigegebenen, isolierten Zielumgebung (Manifest der IT)
+SKIPPED [4] tests\test_s86_isolation_design.py:290: nur in der freigegebenen, isolierten Zielumgebung (Manifest der IT)
+SKIPPED [1] tests\test_s86_isolation_design.py:299: nur in der freigegebenen, isolierten Zielumgebung (Manifest der IT)
+SKIPPED [1] tests\test_s86_isolation_design.py:306: nur in der freigegebenen, isolierten Zielumgebung (Manifest der IT)
+======================== 16 passed, 7 skipped in 8.16s ========================

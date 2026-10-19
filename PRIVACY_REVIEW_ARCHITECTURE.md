@@ -9868,3 +9868,17 @@ Keine Modell-/Cloud-Aufrufe, keine externen Verbindungen, keine Systemänderung;
 - **Windows:** kein Admin, keine Sandbox/Hyper-V/Docker; Firewall-Regel, AppContainer, VM bewertet, nicht umgesetzt.
   Empfehlung für C-14: eigene VM/Rechner mit IT-Firewall. **NICHT VERIFIZIERT**
 - **QA:** 28 neue Tests; §78–§85-Dateien 277 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+
+## §86 Konzept einer extern durchgesetzten Benchmark-Isolation (19.10.2026, Branch `feature/feedback-diagnose`, Basis `2d499b4`)
+
+Nur Untersuchung und Entwurf - nichts installiert, keine VM, keine Firewall-/Konto-/Systemänderung, keine externen
+Verbindungen; C-14 GESPERRT. Bericht: `benchmarks/legal_answers_v1/AUDIT_S86.md`.
+
+- **Umgebung (gelesen):** Windows 11 Pro ohne Admin, Hypervisor aktiv, Hyper-V-Rolle/Sandbox/WSL nicht installiert,
+  IPv6 aktiv, kein Proxy, ausgehend frei (0 Block-Regeln) - erfüllt die Politik nicht; als Benchmark-Umgebung ungeeignet.
+- **Empfehlung:** dedizierte VM auf IT-Host, Sperre am Host/Perimeter (Standard blockieren v4/v6, nur Endpunkt-IP:Port),
+  Gast-Firewall als zweite Linie, kein DNS in der VM, Golden Image, Kanarienziele; Python-Zaun nur als dritte Schicht.
+- **Werkzeuge:** Netzwerkpolitik als JSON (alles Entscheidungsrelevante OFFEN), Regelprüfer für Firewall-Exporte
+  (fehlend/fehlerhaft = kein Start), Abnahme-Proben in getrennten Prozessen (Python, natives connect, curl, nslookup)
+  mit Schutz vor externen Zielen außerhalb der Zielumgebung. Lokal 16 PASS; Abnahme I8–I11 NICHT VERIFIZIERT.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).

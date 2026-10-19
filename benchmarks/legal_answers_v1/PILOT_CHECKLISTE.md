@@ -21,6 +21,7 @@ Konfiguration wird abgelehnt, solange die juristischen Punkte offen sind.
 | T-8 | Sperre echter Endpunkte: Providerprüfung (§83), Netzzaun über Audit-Hook inkl. Loopback nur zum validierten Prüfendpunkt (§84/§85), Prozesszaun: nur Tesseract mit festgeschriebenem Pfad, Hash, engem Argumentmuster; git nicht mehr gestartet (Commit ohne Prozess) | `AUDIT_S84.md`, `AUDIT_S85.md`, `tests/test_s84_network_process_fence.py`, `tests/test_s85_isolation_boundaries.py` | PASS als Schutzschicht im Python-Prozess – **keine** Sicherheitsgrenze gegen nativen Code (nachgewiesen) und keine OS-Isolation: NICHT VERIFIZIERT |
 | T-9 | Reproduzierbarkeit der Testläufe (Mock, lokaler Recorder) | `audit/s83_reproduktion.json` gegen `audit/s80_treiber_nachweis.json` | PASS |
 | T-10 | Verhalten gegenüber einem echten Modell (Usage, Preise, Rate-Limits, TLS) | – | **NICHT VERIFIZIERT** (kein Lauf erlaubt) |
+| T-11 | Extern durchgesetzte Netzwerkisolation (VM mit Host-/Perimeter-Sperre, nur freigegebener Endpunkt, kein DNS) | `AUDIT_S86.md`, `isolation/netzwerkpolitik.json`, `tests/test_s86_isolation_design.py` | **NICHT umgesetzt** – Konzept und Abnahmewerkzeug vorhanden; Abnahme I8–I11 in der Zielumgebung **NICHT VERIFIZIERT** |
 
 ## 2 Offene juristische Entscheidungen (J1–J6)
 

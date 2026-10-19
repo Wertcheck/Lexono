@@ -1,0 +1,19 @@
+﻿§86 Windows-Umgebung (nur gelesen, nichts installiert/geaendert) - 2026-10-19 14:03
+Windows: Microsoft Windows 11 Pro Build 26200
+Administrator (erhoeht): False
+CPU: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz
+Virtualisierungsbasierte Sicherheit: Status: Wird ausgeführt
+Anforderungen für Hyper-V: Es wurde ein Hypervisor erkannt. Features, die für Hyper-V erforderlich sind, werden nicht angezeigt.
+Hyper-V-Rolle (vmms.exe): False
+Windows Sandbox (WindowsSandbox.exe): False
+WSL installiert: False
+IPv6-Bindung: Ethernet 2=True, WLAN=True, Bluetooth-Netzwerkverbindung=True
+WinHTTP-Proxy:  DirectAccess (kein Proxyserver).
+Benutzer-Proxy aktiv: 0; PAC-Datei gesetzt: False
+Firewall-Profile:
+Domain: aktiviert=True, ausgehend=NotConfigured
+Private: aktiviert=True, ausgehend=NotConfigured
+Public: aktiviert=True, ausgehend=NotConfigured
+Ausgehende Firewall-Regeln: 245 gesamt, 0 aktive Block-Regeln
+AppContainer-API (userenv CreateAppContainerProfile): vorhanden (nur nachgeschlagen, nicht aufgerufen)
+Job-Object-API (kernel32 CreateJobObjectW): vorhanden (nur nachgeschlagen)
