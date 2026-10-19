@@ -22,6 +22,7 @@ Konfiguration wird abgelehnt, solange die juristischen Punkte offen sind.
 | T-9 | Reproduzierbarkeit der Testläufe (Mock, lokaler Recorder) | `audit/s83_reproduktion.json` gegen `audit/s80_treiber_nachweis.json` | PASS |
 | T-10 | Verhalten gegenüber einem echten Modell (Usage, Preise, Rate-Limits, TLS) | – | **NICHT VERIFIZIERT** (kein Lauf erlaubt) |
 | T-11 | Extern durchgesetzte Netzwerkisolation (VM mit Host-/Perimeter-Sperre, nur freigegebener Endpunkt, kein DNS) | `AUDIT_S86.md`, `isolation/netzwerkpolitik.json`, `tests/test_s86_isolation_design.py` | **NICHT umgesetzt** – Konzept und Abnahmewerkzeug vorhanden; Abnahme I8–I11 in der Zielumgebung **NICHT VERIFIZIERT** |
+| T-12 | Start-Gate I12: Lauf nur mit signierter Bestätigung der Prüfstelle (Anker schreibgeschützt; gebunden an Lauf, Maschine, Politik, Host-Export, Endpunkt, DNS, Prüfer, V1–V13, max. 24 h) – vor Start und jedem Aufruf | `AUDIT_S87.md`, `scripts/legal_bench/isolation_gate.py`, `tests/test_s87_isolation_gate.py`, `isolation/vm_abnahme.json` | PASS (Gate implementiert, heute **geschlossen**: kein Anker der IT, Politik ENTWURF); V1–V13 **NICHT DURCHGEFÜHRT** |
 
 ## 2 Offene juristische Entscheidungen (J1–J6)
 

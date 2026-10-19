@@ -19,7 +19,7 @@ from scripts.legal_bench import answer_driver, answer_exec, answer_run, answer_s
 from scripts.legal_bench.answer_store import RunStore, StoreError
 from tests.test_s78_benchmark_gate import _valid
 from tests.fake_embedding_provider import FakeEmbeddingProvider
-from tests.test_s80_benchmark_driver import EchoProvider, _Crash, _config, _driver
+from tests.test_s80_benchmark_driver import EchoProvider, _Crash, _config, _driver, _test_gate
 
 OWNER = "owner_freigabe_lauf_und_kosten"
 
@@ -336,6 +336,7 @@ def test_after_clarification_changed_config_still_stops(tmp_path) -> None:
 def test_privacy_finding_stops_the_run_permanently(tmp_path) -> None:
     store = RunStore(tmp_path / "laeufe")
     first = answer_driver.BenchmarkDriver(_config(tmp_path), store, EchoProvider(), workdir=tmp_path / "work",
+                                          isolation_gate=_test_gate(tmp_path, None),
                                           embedding=(FakeEmbeddingProvider(), "fake"),
                                           protect={"SYNTH": ["Mieter"]}).run()
     assert first["status"] == "gestoppt_abgebrochen_vor_versand"

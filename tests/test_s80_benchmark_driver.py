@@ -68,8 +68,16 @@ def store(tmp_path) -> RunStore:
     return RunStore(tmp_path / "laeufe")
 
 
+def _test_gate(tmp_path: Path, provider):  # noqa: ANN001, ANN202
+    """§87: Mock-Bestaetigung der Isolation (nur Test, nur Loopback) - schaltet keinen echten Lauf frei."""
+    from tests.isolation_test_support import make_test_gate
+
+    return make_test_gate(tmp_path, endpoints=answer_driver.provider_endpoints(provider) or None)
+
+
 def _driver(config: Path, store: RunStore, provider, tmp_path: Path) -> answer_driver.BenchmarkDriver:  # noqa: ANN001
     return answer_driver.BenchmarkDriver(config, store, provider, workdir=tmp_path / "work",
+                                         isolation_gate=_test_gate(tmp_path, provider),
                                          embedding=(FakeEmbeddingProvider(), "fake"))
 
 
@@ -199,7 +207,7 @@ def test_privacy_check_failure_blocks_without_provider_request(tmp_path, store, 
 
 def test_privacy_finding_in_payload_aborts_before_sending(tmp_path, store) -> None:
     provider = EchoProvider()
-    driver = answer_driver.BenchmarkDriver(_config(tmp_path), store, provider, workdir=tmp_path / "work",
+    driver = answer_driver.BenchmarkDriver(_config(tmp_path), store, provider, workdir=tmp_path / "work", isolation_gate=_test_gate(tmp_path, None),
                                            embedding=(FakeEmbeddingProvider(), "fake"), protect={"SYNTH": ["Mieter"]})
     result = driver.run()
     assert result["status"] == "gestoppt_abgebrochen_vor_versand" and provider.payloads == []
@@ -387,7 +395,7 @@ def test_stored_answers_are_pseudonymized_and_store_has_no_protected_values(tmp_
 
 
 def test_model_answer_with_protected_value_is_not_stored_and_stops(tmp_path, store) -> None:
-    driver = answer_driver.BenchmarkDriver(_config(tmp_path), store, EchoProvider(), workdir=tmp_path / "work",
+    driver = answer_driver.BenchmarkDriver(_config(tmp_path), store, EchoProvider(), workdir=tmp_path / "work", isolation_gate=_test_gate(tmp_path, None),
                                            embedding=(FakeEmbeddingProvider(), "fake"), protect={"SYNTH": ["Gruessen"]})
     result = driver.run()
     assert result["status"] == "gestoppt_datenschutzbefund_antwort"

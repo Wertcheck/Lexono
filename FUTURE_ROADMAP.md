@@ -212,6 +212,8 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Siehe benchmarks/legal_answers_v1/AUDIT_S85.md.
   **Fortschritt 19.10.2026 (§86):** Konzept einer extern durchgesetzten Isolation (VM, Host-/Perimeter-Sperre, kein DNS),
   Netzwerkpolitik und Abnahmewerkzeug; nicht umgesetzt. Siehe benchmarks/legal_answers_v1/AUDIT_S86.md.
+  **Fortschritt 19.10.2026 (§87):** Start-Gate I12 (signierte Bestätigung der Prüfstelle, heute geschlossen) und
+  VM-Abnahmematrix V1–V13 (nicht durchgeführt). Siehe benchmarks/legal_answers_v1/AUDIT_S87.md.
   Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
 
   **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes

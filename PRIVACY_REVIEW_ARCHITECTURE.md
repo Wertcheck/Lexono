@@ -9882,3 +9882,18 @@ Verbindungen; C-14 GESPERRT. Bericht: `benchmarks/legal_answers_v1/AUDIT_S86.md`
   (fehlend/fehlerhaft = kein Start), Abnahme-Proben in getrennten Prozessen (Python, natives connect, curl, nslookup)
   mit Schutz vor externen Zielen außerhalb der Zielumgebung. Lokal 16 PASS; Abnahme I8–I11 NICHT VERIFIZIERT.
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+
+## §87 Externes Isolations-Gate (I12) und VM-Abnahme (19.10.2026, Branch `feature/feedback-diagnose`, Basis `951e3e4`)
+
+Keine Installation, keine VM, keine System-/Firewall-Änderung, keine externen Verbindungen; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S87.md`.
+
+- **I12:** `scripts/legal_bench/isolation_gate.py` - Lauf nur mit Ed25519-signierter Bestätigung der Prüfstelle
+  (Anker außerhalb, für das Benchmark-Konto schreibgeschützt; gebunden an Lauf, Hostname+MachineGuid, Hash der
+  freigegebenen Politik, Hash des Host-Firewall-Exports, Endpunkt, DNS-Modus, Prüfer = Schlüsselinhaber, V1–V13,
+  Fenster ≤ 24 h; Gast-Firewall-Plausibilität). Im Treiber vor Start und vor jedem Aufruf. **PASS**
+- **Heute geschlossen:** kein Anker der IT, Politik ENTWURF, kein Endpunkt, DNS offen, keine Bestätigung. Test-Gates
+  nur im Speicher, test-markiert, nur Loopback; Produktiv-Gate lehnt Test-Bestätigungen ab.
+- **Tests:** 37 (20 Negativfälle, Ablauf/Politikänderung im Lauf, Signatur über jedes Feld); Abbruch jeweils vor dem
+  Provider-Aufruf. VM-Abnahme V1–V13 festgelegt, **NICHT DURCHGEFÜHRT**.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).

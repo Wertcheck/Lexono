@@ -22,6 +22,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from scripts.legal_bench import answer_exec, answer_run, corpus, e2e, net_fence
+from scripts.legal_bench.isolation_gate import IsolationGate, IsolationNotConfirmed
 from scripts.legal_bench.e2e import _leaked
 from app.privacy.api_logger import categorize_block_reasons
 from scripts.legal_bench.answer_store import RunStore, StoreError, now
@@ -159,19 +160,35 @@ def allowed_programs() -> list[net_fence.ProgramRule]:
     return rules
 
 
+def provider_endpoints(provider) -> set[tuple[str, int]]:  # noqa: ANN001
+    """§87: (Host, Port) aller im Provider gefundenen Cloud-/HTTP-Clients - fuer den Abgleich mit der Isolations-
+    Bestaetigung (I12). Mock-Provider ohne Client: leere Menge."""
+    found: set[tuple[str, int]] = set()
+    for client in _cloud_objects(provider):
+        base = _endpoint(client)
+        parsed = urlparse(base) if base else None
+        if parsed and parsed.hostname:
+            host = "127.0.0.1" if parsed.hostname == "localhost" else parsed.hostname
+            found.add((host, parsed.port or (443 if parsed.scheme == "https" else 80)))
+    return found
+
+
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 class BenchmarkDriver:
     def __init__(self, config_path: Path, store: RunStore, provider, *, workdir: Path | None = None,  # noqa: ANN001
-                 embedding=None, protect: dict[str, list[str]] | None = None) -> None:  # noqa: ANN001
+                 embedding=None, protect: dict[str, list[str]] | None = None,  # noqa: ANN001
+                 isolation_gate: IsolationGate | None = None) -> None:
         self.config_path = Path(config_path)
         self.store = store
         self.provider = provider
         self.workdir = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="lexono_bench_"))
         self.embedding = embedding
         self.protect = protect
+        # §87 (I12): ohne ausdrueckliches Gate gilt das Produktiv-Gate (Anker/Bestaetigung nur aus IT-Dateien) - heute zu
+        self.isolation_gate = isolation_gate if isolation_gate is not None else IsolationGate.from_environment()
 
     # --- Zustand ------------------------------------------------------------------------------------------------------
 
@@ -192,6 +209,11 @@ class BenchmarkDriver:
                 state = self.store.load_state(run_id)
             except StoreError as exc:
                 return {"status": "gestoppt_ablage_beschaedigt", "diagnose": [str(exc)], "state": None}
+        # §87 (I12): externe Bestaetigung der Isolation - vor Ablage, Plan und jedem Provider-Aufruf
+        try:
+            self.isolation_gate.require(run_id=run_id, provider_endpoints=provider_endpoints(self.provider))
+        except IsolationNotConfirmed as exc:
+            return self._stop(run_id if state else None, state, "gestoppt_isolation_nicht_bestaetigt", exc.reasons)
         try:
             guard = answer_exec.CallGuard(self.config_path, protect=self.protect)
         except answer_run.NotApproved as exc:
@@ -246,6 +268,12 @@ class BenchmarkDriver:
         try:
             for call in pending:
                 cid = answer_exec.call_id(call)
+                # §87 (I12): vor JEDEM Aufruf erneut (Signatur, Gueltigkeit, Maschine, Politik, Endpunkt); die Gast-
+                # Firewall wurde beim Start geprueft (hier waere dafuer ein Prozessstart noetig - im Zaun gesperrt)
+                problems = self.isolation_gate.problems(run_id=run_id, provider_endpoints=provider_endpoints(self.provider),
+                                                        check_firewall=False)
+                if problems:
+                    return self._stop(run_id, state, "gestoppt_isolation_nicht_bestaetigt", [f"{cid}: {r}" for r in problems])
                 try:
                     guard.precheck(answer_exec.call_key(call))  # vor dem Workflow: Freigabe, Commit, Lock, Budget ...
                 except answer_exec.ExecutionAborted as exc:
