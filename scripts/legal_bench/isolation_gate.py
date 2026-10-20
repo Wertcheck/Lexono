@@ -1,24 +1,30 @@
-"""§87 (I12): Externes Isolations-Gate des Antwort-Benchmarks.
+"""§87/§90 (I12): Externes Isolations-Gate des Antwort-Benchmarks - Owner-Freigabe mit Belegbindung (Schema v2).
 
-Vor jedem Lauf und vor jedem Aufruf muss eine UNABHAENGIGE, signierte Bestaetigung vorliegen, dass genau diese
-Zielumgebung die freigegebene Netzwerkpolitik erfuellt. Fehlt etwas, ist etwas manipuliert, veraltet, fremd oder
-widerspruechlich: kein Start bzw. Abbruch vor dem Provider-Aufruf (fail-closed).
+Vor jedem Lauf und vor jedem Aufruf muss eine signierte Bestaetigung des Owners vorliegen, dass genau diese Zielumgebung
+die freigegebene Netzwerkpolitik erfuellt UND dass die VM-Abnahme V1-V13 laut Belegen bestanden ist. Fehlt etwas, ist
+etwas manipuliert, veraltet, fremd, widerrufen oder widerspruechlich: kein Start bzw. Abbruch vor dem Provider-Aufruf
+(fail-closed).
 
-Vertrauensmodell:
-- Vertrauensanker = oeffentliche Ed25519-Schluessel der Pruefstelle (IT), bereitgestellt AUSSERHALB des Benchmarks in
-  einer Datei, die fuer das Benchmark-Konto SCHREIBGESCHUETZT ist (wird geprueft: laesst sich die Datei vom laufenden
-  Prozess zum Schreiben oeffnen, gilt sie nicht als Anker). Heute ist KEIN Anker hinterlegt -> Gate geschlossen.
-- Bestaetigung = signiertes JSON (kanonisch), gebunden an: Lauf-ID, Maschine (Hostname + MachineGuid), SHA-256 der
-  freigegebenen Netzwerkpolitik, SHA-256 des Firewall-Exports vom Host/Perimeter, Endpunkt (IP:Port), DNS-Modus,
-  Pruefer (= Inhaber des Signaturschluessels), Gueltigkeit (max. 24 h) und die bestandenen VM-Abnahmetests V1-V13.
-- Eine vom Benchmark selbst erzeugte oder veraenderbare Datei ist kein Nachweis: ohne gueltige Signatur eines Ankers
-  wird nichts akzeptiert. Der private Schluessel liegt nur bei der Pruefstelle.
-- Test-Anker (`IsolationGate.for_tests`) existieren nur im Speicher, sind als Test markiert und lassen NIE einen
-  Nicht-Loopback-Endpunkt zu; ein Produktiv-Gate lehnt test-markierte Bestaetigungen ab. Die Endpunktsperre
-  (`answer_driver.RealCloudDisabled`, C-14) bleibt davon unberuehrt.
+Vertrauensmodell (AUDIT_S89.md, umgesetzt in §90, AUDIT_S90.md):
+- Wurzelschluessel offline; sein Fingerabdruck steht im geprueften Code (owner_keys.PINNED_ROOT_FINGERPRINTS). Heute
+  LEER -> Gate geschlossen.
+- Schluesselliste (vom Wurzelschluessel signiert, Version, Ablauf <= 90 Tage, Widerrufe) in einer Datei, die fuer das
+  Benchmark-Konto SCHREIBGESCHUETZT ist (Pfad: LEXONO_ISOLATION_TRUST_ANCHORS). Nur dort aktive, nicht widerrufene
+  Freigabeschluessel mit Rolle "Owner" zaehlen.
+- Bestaetigung v2 (LEXONO_ISOLATION_ATTESTATION) = signiertes kanonisches JSON, gebunden an: Lauf-ID, Maschine
+  (Hostname + MachineGuid), SHA-256 der Netzwerkpolitik, SHA-256 des Firewall-Exports (= Beleg V1), Endpunkt, DNS-Modus,
+  Pruefer (= Inhaber des Schluessels), Version und SHA-256 der Schluesselliste, Pruefwerkzeug (Commit + Fingerabdruck),
+  SHA-256 des Belegbuendel-Manifests und das Urteil je Test; Gueltigkeit max. 24 h. Schema v1 (nur "bestanden"-Liste,
+  ohne Belege) wird abgelehnt.
+- Belegbuendel (LEXONO_ISOLATION_EVIDENCE): das Gate rechnet das Urteil SELBST aus den Belegen nach
+  (isolation_evidence.evaluate). Eine Bestaetigung, deren Urteil nicht zu den Belegen passt, wird abgelehnt; eine
+  manuelle PASS-Markierung ersetzt keine Pflichtpruefung.
+- Test-Gates (`IsolationGate.for_tests`): Wurzel nur im Speicher, test-markiert, NIE ein Nicht-Loopback-Endpunkt; ein
+  Produktiv-Gate lehnt test-markierte Listen und Bestaetigungen ab. Die Endpunktsperre (`answer_driver.RealCloudDisabled`,
+  C-14) bleibt davon unberuehrt.
 
-Grenzen: Ob die Pruefstelle wirklich geprueft hat, belegt nur ihre Signatur; Diebstahl des privaten Schluessels oder
-ein schreibbarer Anker brechen das Modell (siehe AUDIT_S87.md)."""
+Grenzen: Die Signatur belegt die Willenserklaerung des Owners, nicht die Herkunft jeder Datei; Diebstahl von Schluessel
+und Passphrase oder ein schreibbarer Anker bzw. veraenderter Code brechen das Modell (AUDIT_S90.md, Restrisiken)."""
 
 from __future__ import annotations
 
@@ -32,19 +38,98 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from scripts.legal_bench import answer_specs
+from scripts.legal_bench import answer_specs, isolation_evidence, owner_keys
 
-SCHEMA = "lexono-isolation-attestation/1"
+SCHEMA = "lexono-isolation-attestation/2"
+LEGACY_SCHEMAS = ("lexono-isolation-attestation/1",)
 POLICY_PATH = answer_specs.ROOT / "isolation" / "netzwerkpolitik.json"
 MAX_VALIDITY = timedelta(hours=24)
-#: VM-Abnahmetests (AUDIT_S87.md), die laut Bestaetigung bestanden sein muessen
-REQUIRED_TESTS = tuple(f"V{i}" for i in range(1, 14))
+#: VM-Abnahmetests (AUDIT_S87.md), die laut Belegen PASS sein muessen
+REQUIRED_TESTS = isolation_evidence.REQUIRED_TESTS
 ENV_ANCHORS = "LEXONO_ISOLATION_TRUST_ANCHORS"
 ENV_ATTESTATION = "LEXONO_ISOLATION_ATTESTATION"
+ENV_EVIDENCE = "LEXONO_ISOLATION_EVIDENCE"
+#: Dateien des Pruefwerkzeugs; ihr Fingerabdruck ist an Bestaetigung und Belegbuendel gebunden.
+#: §96 (M4): ALLE ausfuehrungsrelevanten Dateien des Benchmarks (Treiber, Zaun, Ablage, Ausfuehrung, Isolation) und die
+#: Provider-/Datenschutzpfade - nicht nur die Isolationsdateien. Die Signatur bindet den Inhalt des COMMITS (owner_sign).
+#: §98 (H2): der GESAMTE ausfuehrbare Python-Code des Repositorys, der beim Benchmark bzw. bei den Abnahmetests
+#: importiert werden kann (app/** inkl. der von e2e.py genutzten Module, scripts/** inkl. scripts/__init__.py, Module
+#: im Wurzelverzeichnis - sie liegen beim Start im Suchpfad und koennten Bibliotheken ueberdecken -, tests/conftest.py)
+#: sowie die Projekt-/Abhaengigkeitskonfiguration.
+TOOL_GLOBS = ("*.py", "app/**/*.py", "scripts/**/*.py", "tests/conftest.py", "pyproject.toml", "setup.cfg",
+              "requirements*.txt", "app/**/*.json", "app/**/*.yaml", "app/**/*.yml", "app/**/*.toml")
+TOOL_FILES_EXTRA = (
+    "tests/test_s86_isolation_design.py", "tests/test_s87_isolation_gate.py", "tests/test_s90_owner_gate.py",
+    "tests/test_s91_acceptance_dry_run.py", "tests/test_s92_acl_counter_probe.py", "tests/test_s94_real_acceptance_path.py",
+    "tests/test_s96_review_fixes.py", "tests/test_s98_review_fixes.py", "tests/isolation_test_support.py",
+    "benchmarks/legal_answers_v1/isolation/vm_abnahme.json", "benchmarks/legal_answers_v1/isolation/netzwerkpolitik.json",
+)
+
+
+def tool_files() -> tuple[str, ...]:
+    files = {path.relative_to(answer_specs.REPO).as_posix() for pattern in TOOL_GLOBS
+             for path in answer_specs.REPO.glob(pattern)
+             if (path.is_file() or path.is_symlink()) and "__pycache__" not in path.parts}
+    return tuple(sorted(files | set(TOOL_FILES_EXTRA)))
+
+
+#: Umgebungsvariablen, die beeinflussen, welcher Code geladen wird. Gesetzt = Teil des Fingerabdrucks (Wert normalisiert).
+IMPORT_ENV = ("PYTHONPATH", "PYTHONHOME", "PYTHONSTARTUP", "PYTHONUSERBASE", "PYTHONSAFEPATH", "PYTHONNOUSERSITE",
+              "PYTHONINSPECT", "PYTHONEXECUTABLE")
+
+
+def _normalize_paths(data: bytes) -> bytes:
+    """Absolute Pfade (Repository, venv) gleich behandeln, damit Host und VM bei gleicher Installation gleich sind."""
+    import sys as _sys
+
+    replacements = {str(answer_specs.REPO): "<REPO>", str(answer_specs.REPO).replace("\\", "/"): "<REPO>",
+                    _sys.prefix: "<PREFIX>", _sys.prefix.replace("\\", "/"): "<PREFIX>"}
+    text = data.replace(b"\r\n", b"\n").decode("utf-8", "surrogateescape")
+    for old, new in sorted(replacements.items(), key=lambda kv: -len(kv[0])):
+        text = text.replace(old, new).replace(old.lower(), new)
+    return text.encode("utf-8", "surrogateescape")
+
+
+def laufzeit_stand() -> dict:
+    """§98 (H2): Laufzeitumgebung, die Code ausfuehren kann, ohne im Repository zu liegen.
+
+    - Python-Version/Implementierung;
+    - installierte Distributionen (Name==Version);
+    - Inhalt ALLER .pth-Dateien und der Editable-Finder sowie sitecustomize/usercustomize (sie laufen beim Start);
+    - Liste der Eintraege in site-packages (unbekannte Module/Ordner aendern den Fingerabdruck);
+    - gesetzte Import-Umgebungsvariablen.
+    Nicht lesbar -> sha256 None (fail-closed)."""
+    import importlib.metadata
+    import platform
+    import site
+    import sys as _sys
+
+    try:
+        dists = sorted({f"{d.metadata['Name']}=={d.version}" for d in importlib.metadata.distributions()
+                        if d.metadata and d.metadata["Name"]})
+        packages = [Path(p) for p in site.getsitepackages() if Path(p).name.lower() == "site-packages"]
+        startup: dict[str, str] = {}
+        entries: list[str] = []
+        for folder in packages:
+            for path in sorted(folder.iterdir()):
+                entries.append(path.name)
+                name = path.name.lower()
+                if path.is_file() and (name.endswith(".pth") or name.startswith("__editable__")
+                                       or name in ("sitecustomize.py", "usercustomize.py")):
+                    startup[path.name] = hashlib.sha256(_normalize_paths(path.read_bytes())).hexdigest()
+        env = {k: _normalize_paths(os.environ[k].encode()).decode() for k in IMPORT_ENV if k in os.environ}
+        state = {"python": f"{platform.python_implementation()} {platform.python_version()}", "distributionen": dists,
+                 "startcode": startup, "site_packages": sorted(entries), "umgebung": env}
+    except Exception:  # noqa: BLE001 - nicht erfassbar = geschlossen
+        return {"python": None, "sha256": None}
+    return {"python": state["python"], "sha256": hashlib.sha256(canonical(state)).hexdigest()}
+
+
+TOOL_FILES = tool_files()
 
 
 class IsolationNotConfirmed(RuntimeError):
-    """Keine gueltige externe Bestaetigung der Isolation - kein Start, kein Aufruf."""
+    """Keine gueltige Bestaetigung der Isolation - kein Start, kein Aufruf."""
 
     def __init__(self, reasons: list[str]) -> None:
         super().__init__("Isolation nicht bestaetigt: " + "; ".join(reasons[:3]))
@@ -52,7 +137,7 @@ class IsolationNotConfirmed(RuntimeError):
 
 
 def canonical(payload: dict) -> bytes:
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return owner_keys.canonical(payload)
 
 
 def sha256_file(path: Path) -> str:
@@ -73,12 +158,34 @@ def machine_identity() -> dict:
     return {"hostname": socket.gethostname().lower(), "machine_guid": guid}
 
 
+def pruefwerkzeug_stand() -> dict:
+    """Commit (ohne Prozessstart gelesen) und Fingerabdruck der Pruefwerkzeug-Dateien (Zeilenenden normalisiert, damit
+    Host- und VM-Checkout desselben Commits gleich sind). Fehlende Datei oder unbestimmbarer Commit -> None (fail-closed)."""
+    from scripts.legal_bench import answer_run
+
+    digests = {}
+    laufzeit = laufzeit_stand()
+    for name in tool_files():
+        path = answer_specs.REPO / name
+        try:
+            if path.is_symlink():  # §98: Symlinks sind keine geprueften Dateien (Ziel ausserhalb moeglich)
+                raise OSError("Symlink")
+            data = path.read_bytes().replace(b"\r\n", b"\n")
+        except OSError:
+            return {"commit": answer_run._git_commit(), "sha256": None, "laufzeit_sha256": laufzeit["sha256"]}
+        digests[name] = hashlib.sha256(data).hexdigest()
+    return {"commit": answer_run._git_commit(), "sha256": hashlib.sha256(canonical(digests)).hexdigest(),
+            "laufzeit_sha256": laufzeit["sha256"]}
+
+
 def guest_firewall() -> dict:
     """Gast-Firewall lesen (zweite Linie; nur Plausibilitaet - die Grenze liegt am Host/Perimeter)."""
     if sys.platform != "win32":
         return {}
+    # §96 (M5): wirksame Einstellung (ActiveStore) statt nur lokal gespeicherter (PersistentStore) - NICHT VERIFIZIERT
     out = subprocess.run(["powershell", "-NoProfile", "-Command",
-                          "Get-NetFirewallProfile | Select-Object Name,@{n='Enabled';e={[bool]$_.Enabled}},"
+                          "Get-NetFirewallProfile -PolicyStore ActiveStore | Select-Object Name,"
+                          "@{n='Enabled';e={[bool]$_.Enabled}},"
                           "@{n='Out';e={[string]$_.DefaultOutboundAction}} | ConvertTo-Json"],
                          capture_output=True, text=True, timeout=60, check=True)
     return {p["Name"]: {"enabled": p["Enabled"] is True, "default_outbound": p["Out"]} for p in json.loads(out.stdout)}
@@ -93,59 +200,78 @@ def _writable_by_this_process(path: Path) -> bool:
     return True
 
 
-def load_trust_anchors(path: Path) -> dict:
-    """Anker-Datei der IT: {"anchors": [{"key_id", "public_key_hex", "inhaber", "rolle", "gueltig_bis"}]}."""
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
-    anchors = {}
-    for entry in data.get("anchors", []):
-        anchors[entry["key_id"]] = {"key": Ed25519PublicKey.from_public_bytes(bytes.fromhex(entry["public_key_hex"])),
-                                    "inhaber": entry["inhaber"], "rolle": entry["rolle"],
-                                    "gueltig_bis": entry["gueltig_bis"]}
-    return anchors
+def _approved_endpoints(policy: dict) -> set[tuple[str, int]]:
+    endpoints = [f for f in policy.get("freigaben", []) if f.get("ip_adressen") and f.get("port")]
+    return {(ip, int(f["port"])) for f in endpoints for ip in f["ip_adressen"]}
 
 
 @dataclass
 class IsolationGate:
-    anchors: dict
+    keylist_path: Path | None
     attestation_path: Path | None
+    evidence_path: Path | None = None
     policy_path: Path = POLICY_PATH
     test_only: bool = False
-    anchor_problems: list[str] = field(default_factory=list)
+    pinned_roots: tuple[str, ...] = owner_keys.PINNED_ROOT_FINGERPRINTS
+    min_keylist_version: int = owner_keys.MIN_KEYLIST_VERSION
+    setup_problems: list[str] = field(default_factory=list)
     identity: object = machine_identity
     firewall: object = guest_firewall
+    tool: object = pruefwerkzeug_stand
     now: object = lambda: datetime.now(timezone.utc)  # noqa: E731
 
     @classmethod
     def from_environment(cls) -> IsolationGate:
-        """Produktiv: Anker und Bestaetigung NUR aus von der IT bereitgestellten Dateien."""
+        """Produktiv: Schluesselliste, Bestaetigung und Belegbuendel NUR aus vom Owner bereitgestellten Pfaden."""
         problems: list[str] = []
-        anchors: dict = {}
         anchor_path = os.environ.get(ENV_ANCHORS)
         if not anchor_path:
-            problems.append("kein Vertrauensanker der Pruefstelle hinterlegt (IT/Owner) - Gate geschlossen")
-        elif not Path(anchor_path).is_file():
-            problems.append("Vertrauensanker-Datei nicht vorhanden")
-        elif _writable_by_this_process(Path(anchor_path)):
-            problems.append("Vertrauensanker ist fuer den Benchmark-Prozess schreibbar - kein Vertrauensnachweis")
-        else:
-            try:
-                anchors = load_trust_anchors(Path(anchor_path))
-            except Exception as exc:  # noqa: BLE001 - unlesbarer Anker = geschlossen
-                problems.append(f"Vertrauensanker unlesbar ({type(exc).__name__})")
+            problems.append("kein Vertrauensanker (Schluesselliste des Owners) hinterlegt - Gate geschlossen")
         attestation = os.environ.get(ENV_ATTESTATION)
-        return cls(anchors=anchors, attestation_path=Path(attestation) if attestation else None, anchor_problems=problems)
+        evidence = os.environ.get(ENV_EVIDENCE)
+        return cls(keylist_path=Path(anchor_path) if anchor_path else None,
+                   attestation_path=Path(attestation) if attestation else None,
+                   evidence_path=Path(evidence) if evidence else None, setup_problems=problems)
 
     @classmethod
-    def for_tests(cls, anchors: dict, attestation_path: Path, policy_path: Path, **kwargs) -> IsolationGate:  # noqa: ANN003
-        """NUR fuer Tests: Anker im Speicher, Bestaetigung muss test-markiert sein, nur Loopback-Endpunkte."""
-        return cls(anchors=anchors, attestation_path=attestation_path, policy_path=policy_path, test_only=True, **kwargs)
+    def for_tests(cls, keylist_path: Path, attestation_path: Path, evidence_path: Path, policy_path: Path, *,
+                  pinned_roots: tuple[str, ...], **kwargs) -> IsolationGate:  # noqa: ANN003
+        """NUR fuer Tests: Wurzel im Speicher, Liste/Bestaetigung muessen test-markiert sein, nur Loopback-Endpunkte."""
+        return cls(keylist_path=keylist_path, attestation_path=attestation_path, evidence_path=evidence_path,
+                   policy_path=policy_path, test_only=True, pinned_roots=pinned_roots, **kwargs)
+
+    def load_keylist(self, now: datetime) -> tuple[owner_keys.KeyList | None, list[str]]:
+        if self.keylist_path is None:
+            return None, []
+        path = Path(self.keylist_path)
+        if not path.is_file():
+            return None, ["Vertrauensanker-Datei (Schluesselliste) nicht vorhanden"]
+        if not self.test_only and _writable_by_this_process(path):
+            return None, ["Vertrauensanker ist fuer den Benchmark-Prozess schreibbar - kein Vertrauensnachweis"]
+        try:
+            raw = path.read_bytes()
+        except OSError as exc:
+            return None, [f"Vertrauensanker unlesbar ({type(exc).__name__})"]
+        return owner_keys.verify_keylist(raw, pinned_roots=self.pinned_roots, min_version=self.min_keylist_version,
+                                         now=now, test_only=self.test_only)
 
     def problems(self, *, run_id: str | None, provider_endpoints: set[tuple[str, int]],
                  check_firewall: bool = True) -> list[str]:
-        problems = list(self.anchor_problems)
-        if not self.anchors and not problems:
+        """Alle Gruende gegen einen Start/Aufruf; leer = bestaetigt. Jeder unerwartete Fehler = geschlossen."""
+        try:
+            return self._problems(run_id=run_id, provider_endpoints=provider_endpoints, check_firewall=check_firewall)
+        except Exception as exc:  # noqa: BLE001 - z. B. unerwartete Typen in Bestaetigung/Belegen: nie fail-open
+            return [f"Isolationspruefung fehlgeschlagen ({type(exc).__name__}) - fail-closed"]
+
+    def _problems(self, *, run_id: str | None, provider_endpoints: set[tuple[str, int]],
+                  check_firewall: bool) -> list[str]:
+        problems = list(self.setup_problems)
+        now = self.now()  # ein Zeitpunkt fuer alle Pruefungen dieses Aufrufs
+        if not self.pinned_roots:
+            problems.append(owner_keys.ROOT_MISSING)
+        keylist, keylist_problems = self.load_keylist(now)
+        problems += [p for p in keylist_problems if p not in problems]
+        if keylist is None and not problems:
             problems.append("kein Vertrauensanker - Gate geschlossen")
         # --- Politik ------------------------------------------------------------------------------------------------
         try:
@@ -155,32 +281,39 @@ class IsolationGate:
             return problems + [f"Netzwerkpolitik nicht lesbar ({type(exc).__name__})"]
         if policy.get("status") != "FREIGEGEBEN":
             problems.append(f"Netzwerkpolitik nicht freigegeben (Status {policy.get('status')!r})")
-        endpoints = [f for f in policy.get("freigaben", []) if f.get("ip_adressen") and f.get("port")]
-        if not endpoints:
+        approved = _approved_endpoints(policy)
+        if not approved:
             problems.append("kein freigegebener Endpunkt in der Netzwerkpolitik")
         if not policy.get("dns", {}).get("entscheidung"):
             problems.append("DNS-Entscheidung der Netzwerkpolitik OFFEN")
-        approved = {(ip, int(f["port"])) for f in endpoints for ip in f["ip_adressen"]}
         # --- Bestaetigung -------------------------------------------------------------------------------------------
         if self.attestation_path is None or not Path(self.attestation_path).is_file():
-            return problems + ["keine Bestaetigung der Pruefstelle vorhanden"]
+            return problems + ["keine Bestaetigung des Owners vorhanden"]
         try:
             document = json.loads(Path(self.attestation_path).read_text(encoding="utf-8"))
             payload, signature, key_id = document["payload"], bytes.fromhex(document["signature_hex"]), document["key_id"]
+            if not isinstance(payload, dict):
+                raise TypeError("payload")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             return problems + [f"Bestaetigung unlesbar ({type(exc).__name__})"]
-        anchor = self.anchors.get(key_id)
+        if payload.get("schema") in LEGACY_SCHEMAS:
+            return problems + ["Bestaetigung im veralteten Schema v1 (ohne Belegbindung) - abgelehnt"]
+        if keylist is None:
+            return problems + ["Bestaetigung nicht pruefbar: keine gueltige Schluesselliste"]
+        if key_id in keylist.revoked:
+            return problems + [f"Schluessel {key_id!r} ist widerrufen (seit {keylist.revoked[key_id]['seit']})"]
+        anchor = keylist.anchors.get(key_id)
         if anchor is None:
-            return problems + [f"Bestaetigung mit unbekanntem Schluessel {key_id!r} (fremde Pruefstelle)"]
+            return problems + [f"Bestaetigung mit unbekanntem Schluessel {key_id!r} (nicht in der Schluesselliste)"]
         try:
             anchor["key"].verify(signature, canonical(payload))
         except Exception:  # noqa: BLE001 - jede Abweichung = ungueltig
             return problems + ["Signatur der Bestaetigung ungueltig (manipuliert oder fremd)"]
-        now = self.now()
         try:
             valid_from = datetime.fromisoformat(payload["gueltig_von"])
             valid_to = datetime.fromisoformat(payload["gueltig_bis"])
-            anchor_to = datetime.fromisoformat(anchor["gueltig_bis"])
+            if valid_from.tzinfo is None or valid_to.tzinfo is None:
+                raise ValueError("ohne Zeitzone")
         except (KeyError, ValueError, TypeError):
             return problems + ["Gueltigkeitsangaben fehlen oder sind ungueltig"]
         if payload.get("schema") != SCHEMA:
@@ -188,11 +321,13 @@ class IsolationGate:
         if bool(payload.get("test_only")) != self.test_only:
             problems.append("Test-Bestaetigung im Produktivbetrieb bzw. umgekehrt - abgelehnt")
         if not valid_from <= now <= valid_to:
-            problems.append("Bestaetigung abgelaufen oder noch nicht gueltig")
+            problems.append(isolation_evidence.MSG_ATTESTATION_EXPIRED)
         if valid_to - valid_from > MAX_VALIDITY:
             problems.append("Gueltigkeitsfenster der Bestaetigung laenger als 24 Stunden")
-        if now > anchor_to:
-            problems.append("Schluessel der Pruefstelle abgelaufen")
+        if now > anchor["gueltig_bis"]:
+            problems.append("Schluessel des Owners abgelaufen")
+        if not anchor["gueltig_von"] <= valid_from <= anchor["gueltig_bis"]:
+            problems.append("Bestaetigung ausserhalb der Gueltigkeit des Schluessels ausgestellt")
         if payload.get("run_id") != run_id:
             problems.append(f"Bestaetigung gilt fuer einen anderen Lauf ({payload.get('run_id')!r})")
         identity = self.identity()
@@ -200,24 +335,44 @@ class IsolationGate:
             problems.append("Bestaetigung gilt fuer eine andere Maschine/VM (Hostname oder MachineGuid)")
         if payload.get("netzwerkpolitik_sha256") != policy_sha:
             problems.append("Netzwerkpolitik seit der Bestaetigung geaendert")
-        if not payload.get("firewall_export_sha256") or len(str(payload.get("firewall_export_sha256"))) != 64:
-            problems.append("Bestaetigung ohne Hash des Firewall-Exports vom Host/Perimeter")
-        attested = {(e.get("ip"), e.get("port")) for e in payload.get("endpunkte", [])}
+        attested = {(e.get("ip"), e.get("port")) for e in payload.get("endpunkte") or [] if isinstance(e, dict)}
         if attested != approved:
             problems.append("Endpunkt der Bestaetigung weicht von der Netzwerkpolitik ab")
         if not set(provider_endpoints) <= attested:
             problems.append(f"Provider-Endpunkt {sorted(provider_endpoints)} nicht bestaetigt")
-        if self.test_only and any(not ip.startswith("127.") and ip != "::1" for ip, _ in attested | set(provider_endpoints)):
+        if self.test_only and any(not str(ip).startswith("127.") and ip != "::1"
+                                  for ip, _ in attested | set(provider_endpoints)):
             problems.append("Test-Gate darf nur Loopback-Endpunkte zulassen")
         if payload.get("dns_modus") != policy.get("dns", {}).get("entscheidung"):
             problems.append("DNS-Modus der Bestaetigung weicht von der Netzwerkpolitik ab")
         pruefer = payload.get("pruefer") or {}
-        if not pruefer.get("name") or pruefer.get("name") != anchor["inhaber"] or pruefer.get("rolle") != anchor["rolle"]:
-            problems.append("Pruefer der Bestaetigung ist nicht der Inhaber des Signaturschluessels")
-        results = payload.get("abnahme") or {}
-        missing = [t for t in REQUIRED_TESTS if results.get(t) != "bestanden"]
-        if missing:
-            problems.append(f"VM-Abnahme nicht vollstaendig bestanden ({', '.join(missing[:5])})")
+        if not pruefer.get("name") or pruefer.get("name") != anchor["inhaber"] \
+                or pruefer.get("rolle") != owner_keys.OWNER_ROLE:
+            problems.append("Pruefer der Bestaetigung ist nicht der Inhaber des Signaturschluessels (Owner)")
+        if payload.get("schluesselliste") != {"version": keylist.version, "sha256": keylist.sha256}:
+            problems.append("Bestaetigung gilt fuer eine andere Schluesselliste (Rotation/Widerruf seither)")
+        tool = self.tool()
+        if not tool.get("commit") or not tool.get("sha256") or not tool.get("laufzeit_sha256"):
+            problems.append("Pruefwerkzeug nicht bestimmbar (Commit/Dateien/Laufzeitumgebung) - fail-closed")
+        elif payload.get("pruefwerkzeug") != tool:
+            problems.append("Pruefwerkzeug seit der Bestaetigung geaendert (Commit oder Dateien)")
+        # --- Belege: Urteil wird nachgerechnet ----------------------------------------------------------------------
+        verdict = isolation_evidence.evaluate(
+            self.evidence_path, policy=policy, reference=valid_from, now=now, allow_dry_run=self.test_only,
+            lauf={"run_id": run_id, "maschine": identity, "netzwerkpolitik_sha256": policy_sha, "pruefwerkzeug": tool})
+        problems += verdict["probleme"]
+        if verdict["manifest_sha256"] != payload.get("buendel_sha256"):
+            problems.append("Belegbuendel weicht von der Bestaetigung ab (fehlend, ausgetauscht oder manipuliert)")
+        not_passed = [f"{t}: {r['status']}" for t, r in verdict["tests"].items() if r["status"] != isolation_evidence.PASS]
+        if not_passed:
+            problems.append(f"VM-Abnahme laut Belegen nicht vollstaendig PASS ({', '.join(not_passed[:5])})")
+        claimed = (payload.get("urteil") or {}) if isinstance(payload.get("urteil"), dict) else {}
+        if claimed.get("tests") != {t: r["status"] for t, r in verdict["tests"].items()} \
+                or claimed.get("gesamt") != verdict["gesamt"]:
+            problems.append("Urteil der Bestaetigung widerspricht den Belegen")
+        firewall_sha = payload.get("firewall_export_sha256")
+        if not firewall_sha or firewall_sha != verdict["firewall_export_sha256"]:
+            problems.append("Firewall-Export der Bestaetigung passt nicht zum Beleg V1 (Host/Perimeter)")
         if check_firewall:
             try:
                 firewall = self.firewall()

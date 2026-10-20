@@ -1,5 +1,6 @@
 """§87 (I12): Externes Isolations-Gate - Produktivzustand geschlossen, Negativfaelle, Abbruch vor jedem Provider-Aufruf.
 
+§90: auf Schema v2 (Owner-Schluesselliste, Belegbuendel) umgestellt; weitere Faelle in tests/test_s90_owner_gate.py.
 Positive Faelle nur mit Mock-Bestaetigungen aus tests/isolation_test_support.py (Schluessel im Speicher, test-markiert,
 nur Loopback). Kein Test schaltet einen echten Lauf frei; die Endpunktsperre (C-14) bleibt unberuehrt."""
 
@@ -14,7 +15,9 @@ import pytest
 
 from scripts.legal_bench import answer_driver, isolation_gate
 from scripts.legal_bench.answer_store import RunStore
-from tests.isolation_test_support import BLOCKING_FIREWALL, PRUEFER, make_attestation, make_test_gate
+from scripts.legal_bench import owner_keys
+from tests.isolation_test_support import (BLOCKING_FIREWALL, attestation, keylist_payload, make_test_gate, resign,
+                                          write_keylist)
 from tests.test_s80_benchmark_driver import EchoProvider, FakeEmbeddingProvider, _config
 
 pytestmark = pytest.mark.usefixtures("synthetic_legal_state")
@@ -33,9 +36,10 @@ def test_production_gate_is_closed_today(monkeypatch) -> None:
     monkeypatch.delenv(isolation_gate.ENV_ATTESTATION, raising=False)
     problems = _problems(isolation_gate.IsolationGate.from_environment())
     text = " | ".join(problems)
-    for expected in ("kein Vertrauensanker", "Netzwerkpolitik nicht freigegeben (Status 'ENTWURF')",
+    for expected in ("kein Vertrauensanker", "kein Wurzelschluessel des Owners festgelegt",
+                     "Netzwerkpolitik nicht freigegeben (Status 'ENTWURF')",
                      "kein freigegebener Endpunkt", "DNS-Entscheidung der Netzwerkpolitik OFFEN",
-                     "keine Bestaetigung der Pruefstelle"):
+                     "keine Bestaetigung des Owners"):
         assert expected in text, (expected, problems)
 
 
@@ -48,12 +52,9 @@ def test_driver_without_gate_parameter_stops_before_anything(tmp_path, monkeypat
     assert not store.exists("qa80-lauf")
 
 
-def _anchor_file(tmp_path, gate, *, readonly: bool):  # noqa: ANN001, ANN202
-    public = gate.anchors["test-key-1"]["key"].public_bytes_raw().hex()
-    path = tmp_path / "anker.json"
-    path.write_text(json.dumps({"anchors": [{"key_id": "test-key-1", "public_key_hex": public, "inhaber": PRUEFER["name"],
-                                             "rolle": PRUEFER["rolle"], "gueltig_bis": "2099-01-01T00:00:00+00:00"}]}),
-                    encoding="utf-8")
+def _anchor_file(tmp_path, gate, *, readonly: bool, test_only: bool = True):  # noqa: ANN001, ANN202
+    path = write_keylist(tmp_path / "anker.json", gate._root_key,
+                         keylist_payload([("test-key-1", gate._test_key)], test_only=test_only))
     if readonly:
         os.chmod(path, stat.S_IREAD)
     return path
@@ -73,10 +74,13 @@ def test_production_gate_never_accepts_a_test_attestation(tmp_path, monkeypatch)
         monkeypatch.setenv(isolation_gate.ENV_ANCHORS, str(anchor))
         monkeypatch.setenv(isolation_gate.ENV_ATTESTATION, str(gate.attestation_path))
         production = isolation_gate.IsolationGate.from_environment()
-        assert production.anchors and not production.anchor_problems  # schreibgeschuetzter Anker wird geladen
         problems = _problems(production, endpoints=LOOP)
-        assert any("Test-Bestaetigung im Produktivbetrieb" in p for p in problems)
+        assert owner_keys.ROOT_MISSING in problems  # im Code ist kein Wurzelschluessel festgelegt
         assert any("Netzwerkpolitik nicht freigegeben" in p for p in problems)  # echte Politik bleibt ENTWURF
+        assert not any("schreibbar" in p for p in problems)
+        # selbst mit gepinnter (Test-)Wurzel: eine test-markierte Liste zaehlt im Produktivbetrieb nicht
+        production.pinned_roots = gate.pinned_roots
+        assert any("Test-Schluesselliste im Produktivbetrieb" in p for p in _problems(production, endpoints=LOOP))
     finally:
         os.chmod(anchor, stat.S_IREAD | stat.S_IWRITE)
 
@@ -103,7 +107,7 @@ def _set(path, value):  # noqa: ANN001, ANN202
 
 
 CASES = [
-    ("keine_bestaetigung", {"delete_attestation": True}, "keine Bestaetigung"),
+    ("keine_bestaetigung", {"delete_attestation": True}, "keine Bestaetigung des Owners"),
     ("unlesbar", {"broken_json": True}, "Bestaetigung unlesbar"),
     ("fremde_pruefstelle", {"mutate": _set(["key_id"], "fremder-key")}, "unbekanntem Schluessel"),
     ("nachtraeglich_manipuliert", {"mutate": _set(["payload", "endpunkte"], [{"ip": "127.0.0.1", "port": 1}])},
@@ -118,15 +122,20 @@ CASES = [
     ("anderer_lauf", {"overrides": {"run_id": "anderer-lauf"}}, "anderen Lauf"),
     ("andere_maschine", {"overrides": {"maschine": {"hostname": "fremde-vm", "machine_guid": "0" * 36}}},
      "andere Maschine"),
-    ("ohne_firewall_export", {"overrides": {"firewall_export_sha256": None}}, "Firewall-Exports"),
+    ("ohne_firewall_export", {"overrides": {"firewall_export_sha256": None}}, "Firewall-Export der Bestaetigung"),
+    ("fremder_firewall_export", {"overrides": {"firewall_export_sha256": "a" * 64}}, "passt nicht zum Beleg V1"),
     ("anderer_endpunkt", {"overrides": {"endpunkte": [{"ip": "127.0.0.1", "port": 10}]}}, "weicht von der Netzwerkpolitik ab"),
     ("anderer_dns_modus", {"overrides": {"dns_modus": "kontrollierter_resolver"}}, "DNS-Modus"),
     ("pruefer_nicht_schluesselinhaber", {"overrides": {"pruefer": {"name": "Jemand", "rolle": "QA-Test"}}},
      "nicht der Inhaber"),
-    ("abnahme_unvollstaendig", {"overrides": {"abnahme": {"V1": "bestanden"}}}, "nicht vollstaendig bestanden"),
-    ("abnahme_nicht_bestanden", {"overrides": {"abnahme": {**{f"V{i}": "bestanden" for i in range(1, 13)},
-                                                           "V13": "nicht_bestanden"}}}, "V13"),
+    ("urteil_unvollstaendig", {"overrides": {"urteil": {"gesamt": "PASS", "tests": {"V1": "PASS"}}}},
+     "widerspricht den Belegen"),
+    ("altes_abnahmefeld_statt_urteil", {"overrides": {"urteil": None, "abnahme": {"V1": "bestanden"}}},
+     "widerspricht den Belegen"),
+    ("abnahme_nicht_bestanden", {"via_tool": False, "bundle_hook": lambda items: items[
+        "V13/kriterien_E1.json"]["beobachtung"].update(diagnose=[])}, "V13: FAIL"),
     ("schema_unbekannt", {"overrides": {"schema": "fremd/1"}}, "unbekanntes Schema"),
+    ("schema_v1", {"overrides": {"schema": "lexono-isolation-attestation/1"}}, "veralteten Schema v1"),
     ("nicht_test_markiert", {"overrides": {"test_only": False}}, "Test-Bestaetigung im Produktivbetrieb bzw. umgekehrt"),
     ("gast_firewall_offen", {"firewall": {"Public": {"enabled": True, "default_outbound": "Allow"}}},
      "Gast-Firewall blockiert ausgehend nicht"),
@@ -137,6 +146,7 @@ CASES = [
 @pytest.mark.parametrize("name, spec, expected", CASES, ids=[c[0] for c in CASES])
 def test_gate_rejects_faulty_attestations(tmp_path, name, spec, expected) -> None:
     gate = make_test_gate(tmp_path, endpoints=LOOP, firewall=spec.get("firewall"), mutate=spec.get("mutate"),
+                          bundle_hook=spec.get("bundle_hook"), via_tool=spec.get("via_tool", True),
                           **spec.get("overrides", {}))
     if spec.get("delete_attestation"):
         gate.attestation_path.unlink()
@@ -168,8 +178,11 @@ def test_unreadable_firewall_or_anchor_expiry_fails_closed(tmp_path) -> None:
     gate.firewall = broken
     assert any("Gast-Firewall nicht pruefbar" in p for p in _problems(gate, endpoints=LOOP))
     gate = make_test_gate(tmp_path, endpoints=LOOP)
-    gate.anchors["test-key-1"]["gueltig_bis"] = (NOW - timedelta(days=1)).isoformat()
-    assert any("Schluessel der Pruefstelle abgelaufen" in p for p in _problems(gate, endpoints=LOOP))
+    payload = keylist_payload([("test-key-1", gate._test_key)])
+    payload["schluessel"][0].update(gueltig_von=(NOW - timedelta(days=60)).isoformat(),
+                                    gueltig_bis=(NOW - timedelta(days=1)).isoformat())
+    write_keylist(gate.keylist_path, gate._root_key, payload)
+    assert any("Schluessel des Owners abgelaufen" in p for p in _problems(gate, endpoints=LOOP))
 
 
 def test_machine_without_guid_fails_closed(tmp_path) -> None:
@@ -238,14 +251,13 @@ def test_policy_change_during_run_stops_before_the_next_call(tmp_path) -> None:
 def test_attestation_signature_covers_every_bound_field(tmp_path) -> None:
     """Jedes gebundene Feld ist signiert: nachtraegliche Aenderung eines beliebigen Feldes macht die Signatur ungueltig."""
     gate = make_test_gate(tmp_path, endpoints=LOOP)
-    document = json.loads(gate.attestation_path.read_text(encoding="utf-8"))
+    document = attestation(gate)
     for field in document["payload"]:
         changed = json.loads(json.dumps(document))
         changed["payload"][field] = "veraendert"
         gate.attestation_path.write_text(json.dumps(changed), encoding="utf-8")
         assert any("Signatur der Bestaetigung ungueltig" in p for p in _problems(gate, endpoints=LOOP)), field
-    resigned = make_attestation(gate._test_key, gate.policy_path, run_id="qa80-lauf", endpoints=LOOP)
-    gate.attestation_path.write_text(json.dumps(resigned), encoding="utf-8")
+    resign(gate, document["payload"])
     assert _problems(gate, endpoints=LOOP) == []
     assert BLOCKING_FIREWALL  # Testfirewall nur im Speicher
 
