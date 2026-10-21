@@ -116,9 +116,11 @@ def test_probe_file_detects_real_write_and_readonly(tmp_path) -> None:
     assert cp._probe_file(writable) == "beschreibbar"
     readonly = tmp_path / "r.py"
     readonly.write_text("x = 1\n", encoding="utf-8")
-    os.chmod(readonly, stat.S_IREAD)  # FILE_ATTRIBUTE_READONLY -> CreateFileW GENERIC_WRITE = ACCESS_DENIED
+    os.chmod(readonly, stat.S_IREAD)
     try:
-        assert cp._probe_file(readonly) == ("geschuetzt" if sys.platform == "win32" else "beschreibbar")
+        # §110 (A16): das Read-only-ATTRIBUT sperrt nur den Inhalt; der Eigentuemer hat WRITE_DAC und kann es aufheben
+        # -> die eigene read-only-Datei gilt (korrekt, strenger) als beschreibbar, nicht als geschuetzt.
+        assert cp._probe_file(readonly) == "beschreibbar"
     finally:
         os.chmod(readonly, stat.S_IREAD | stat.S_IWRITE)
     assert cp._probe_file(tmp_path / "fehlt.py") == "nicht_pruefbar"
@@ -131,7 +133,8 @@ def test_probe_dir_detects_real_writability(tmp_path) -> None:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="winerror nur unter Windows aussagekraeftig")
 def test_running_writable_file_is_not_falsely_protected(tmp_path) -> None:
-    """Regression AUDIT_S103 R7: eine laufende, beschreibbare Datei ist KEIN Schutznachweis -> nicht_pruefbar."""
+    """Regression AUDIT_S103 R7: eine laufende, beschreibbare, uns gehoerende Datei ist KEIN Schutznachweis. §110 (A16):
+    der Inhalt ist freigabeverletzt, aber der Eigentuemer kann via WRITE_DAC die Rechte aendern -> nie 'geschuetzt'."""
     source = Path(getattr(sys, "_base_executable", sys.executable))
     exe = tmp_path / "python_kopie.exe"
     exe.write_bytes(source.read_bytes())
@@ -140,7 +143,7 @@ def test_running_writable_file_is_not_falsely_protected(tmp_path) -> None:
     proc = subprocess.Popen([str(exe), "-c", "import time; time.sleep(6)"])
     try:
         time.sleep(1.5)
-        assert cp._probe_file(exe) == "nicht_pruefbar"  # Freigabeverletzung, nicht geschuetzt
+        assert cp._probe_file(exe) != "geschuetzt"  # weder faelschlich geschuetzt (hier: beschreibbar via WRITE_DAC)
     finally:
         proc.kill()
         proc.wait()

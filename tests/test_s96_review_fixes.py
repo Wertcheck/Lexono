@@ -268,9 +268,11 @@ def test_write_access_probe_detects_writable_repository(tmp_path) -> None:
     result = real.observe_write_access(repo, site_packages=[])
     assert "scripts/legal_bench/isolation_gate.py" in result["beschreibbar"] and "./" in result["beschreibbar"]
     assert not list(repo.rglob(".lexono-schreibtest-*"))  # Probedateien wieder entfernt
+    # §110 (A16): das Read-only-ATTRIBUT allein schuetzt nicht - der Eigentuemer kann es via WRITE_DAC aufheben,
+    # die Datei bleibt daher (korrekt, strenger) beschreibbar. Echter Schutz braucht eine ACL ohne WRITE_DAC/WRITE_OWNER.
     os.chmod(repo / "scripts" / "legal_bench" / "isolation_gate.py", stat.S_IREAD)
     try:
-        assert "scripts/legal_bench/isolation_gate.py" not in real.observe_write_access(
+        assert "scripts/legal_bench/isolation_gate.py" in real.observe_write_access(
             repo, site_packages=[])["beschreibbar"]
     finally:
         os.chmod(repo / "scripts" / "legal_bench" / "isolation_gate.py", stat.S_IREAD | stat.S_IWRITE)

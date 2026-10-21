@@ -297,9 +297,11 @@ def test_pytest_children_of_the_vm_part_get_the_same_isolation(monkeypatch, tmp_
 
     monkeypatch.setenv(acc.ENV_REAL, "1")
     monkeypatch.setattr(sys, "pycache_prefix", str(tmp_path / "kein-bytecode"))
+    monkeypatch.setenv("PYTEST_ADDOPTS", "-p boese")  # §112 (A21): Bypass-Versuch muss entfernt werden
     real.run_pytest(["tests/x.py"], tmp_path / "j.xml", manifest_path=tmp_path / "m.json", real=True, runner=runner)
     assert "-B" in seen["argv"] and seen["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
     assert seen["env"]["PYTHONPYCACHEPREFIX"] == str(tmp_path / "kein-bytecode")
+    assert seen["env"]["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "1" and "PYTEST_ADDOPTS" not in seen["env"]
 
 
 # === A4: Schreibrechte ===================================================================================================

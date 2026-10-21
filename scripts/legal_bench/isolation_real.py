@@ -271,15 +271,33 @@ def observe_vm_network(runner=subprocess.run) -> dict:  # noqa: ANN001
             "routen": _ps("vm.routen", runner=runner)}
 
 
-def run_pytest(nodes: list[str], junit: Path, *, manifest_path: Path, real: bool, runner=subprocess.run) -> str:  # noqa: ANN001
+#: §112 (A21): Umgebungsvariablen, die pytest zusaetzliche Plugins/Optionen unterschieben koennten - fuer den
+#: Kindprozess ENTFERNT, damit die Autoload-Sperre nicht umgangen wird.
+PYTEST_BYPASS_ENV = ("PYTEST_ADDOPTS", "PYTEST_PLUGINS", "PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+
+
+def run_pytest(nodes: list[str], junit: Path, *, manifest_path: Path, real: bool, runner=subprocess.run,  # noqa: ANN001
+               plugins: tuple[str, ...] = ()) -> str:
+    """§112 (A21): produktive pytest-Kindprozesse laden KEINE Plugins automatisch (PYTEST_DISABLE_PLUGIN_AUTOLOAD=1).
+    Nur ausdruecklich freigegebene Plugins werden ueber `-p` geladen; ein unbekanntes/fehlendes Plugin laesst pytest
+    scheitern -> kein JUnit -> RuntimeError (BLOCKIERT). Bypass-Umgebungsvariablen werden entfernt. Voraussetzung: die
+    venv gehoert einem GETRENNTEN Eigentuemerkonto und ist fuer das Benchmark-Konto nicht veraenderbar (sonst koennte
+    ein installiertes Plugin trotz Autoload-Sperre ueber -p/konftest nachgeladenen Code einschleusen; vgl. A16)."""
     require_real(real)
-    env = {**os.environ, acc.ENV_REAL: "1", "LEXONO_ISOLATION_MANIFEST": str(manifest_path)}
+    env = {k: v for k, v in os.environ.items() if k not in PYTEST_BYPASS_ENV}
+    env[acc.ENV_REAL], env["LEXONO_ISOLATION_MANIFEST"] = "1", str(manifest_path)
     # §102 (A1): dieselbe Bytecode-Isolation wie der pruefende Prozess (kein Bytecode aus __pycache__, auch nicht pytest)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     if sys.pycache_prefix:
         env["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix
-    runner([sys.executable, "-B", "-m", "pytest", *nodes, "-q", "-p", "no:cacheprovider", f"--junitxml={junit}"],
-           cwd=answer_specs.REPO, env=env, capture_output=True, text=True, timeout=1800, check=False)
+    env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"  # §112 (A21): kein Auto-Laden ueber Entry Points
+    for name in plugins:
+        if not re.match(r"^[A-Za-z0-9_.:-]+$", name):
+            _refuse(f"ungueltiger Plugin-Name {name!r} - nur ausdruecklich freigegebene Plugins")
+    plugin_args = [arg for name in plugins for arg in ("-p", name)]
+    runner([sys.executable, "-B", "-m", "pytest", *nodes, "-q", "-p", "no:cacheprovider", *plugin_args,
+            f"--junitxml={junit}"], cwd=answer_specs.REPO, env=env, capture_output=True, text=True, timeout=1800,
+           check=False)
     if not Path(junit).is_file():
         raise RuntimeError("pytest lieferte kein JUnit-Protokoll")
     return Path(junit).read_text(encoding="utf-8")

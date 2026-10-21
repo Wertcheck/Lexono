@@ -45,6 +45,11 @@ ERROR_PATH_NOT_FOUND = 3
 ERROR_ACCESS_DENIED = 5
 ERROR_SHARING_VIOLATION = 32
 _GENERIC_WRITE = 0x40000000
+#: §110 (A16): Rechte, den SCHUTZ selbst zu veraendern - wer sie hat, kann einen Schreibschutz aufheben und gilt daher
+#: als "beschreibbar" (unsicher), auch wenn der reine Inhalts-Schreibzugriff verweigert waere. WRITE_DAC = DACL aendern,
+#: WRITE_OWNER = Eigentum uebernehmen. (Der Eigentuemer hat WRITE_DAC implizit - ein eigenes Verzeichnis ist nie sicher.)
+_WRITE_DAC = 0x00040000
+_WRITE_OWNER = 0x00080000
 _FILE_SHARE_ALL = 0x1 | 0x2 | 0x4  # READ | WRITE | DELETE - fremde offene Handles stoeren die Pruefung nicht
 _OPEN_EXISTING = 3
 _CREATE_NEW = 1
@@ -178,19 +183,28 @@ def _probe_dir(folder: Path) -> str:
         return "beschreibbar"
     import ctypes
 
+    errors = []
     probe = str(folder / f".lexono-schreibtest-{os.getpid()}-{id(folder)}")
     handle, error = _win_create(probe, _GENERIC_WRITE, _FILE_SHARE_ALL, _CREATE_NEW, _FLAG_DELETE_ON_CLOSE)
     if handle not in _INVALID_HANDLES:
         return "beschreibbar"  # Datei-Anlage moeglich (Handle mit DELETE_ON_CLOSE bereits geschlossen)
+    errors.append(error)
     k32 = _kernel32()
     sub = str(folder / f".lexono-schreibtest-dir-{os.getpid()}-{id(folder)}")
     if k32.CreateDirectoryW(sub, None):
         k32.RemoveDirectoryW(sub)
         return "beschreibbar"  # Unterverzeichnis-Anlage moeglich
-    sub_error = ctypes.get_last_error()
-    if error == ERROR_ACCESS_DENIED and sub_error == ERROR_ACCESS_DENIED:
+    errors.append(ctypes.get_last_error())
+    # §110 (A16): kann das Konto die Berechtigungen/den Eigentuemer des Verzeichnisses aendern? Dann ist der Schutz
+    # aufhebbar -> beschreibbar. (Verzeichnis-Handle braucht FILE_FLAG_BACKUP_SEMANTICS.)
+    for maske in (_WRITE_DAC, _WRITE_OWNER):
+        h, e = _win_create(str(folder), maske, _FILE_SHARE_ALL, _OPEN_EXISTING, _FLAG_BACKUP_SEMANTICS)
+        if h not in _INVALID_HANDLES:
+            return "beschreibbar"
+        errors.append(e)
+    if all(e == ERROR_ACCESS_DENIED for e in errors):
         return "geschuetzt"
-    return _classify(error if error != ERROR_ACCESS_DENIED else sub_error)
+    return "nicht_pruefbar"
 
 
 def _probe_file(path: Path) -> str:
@@ -206,10 +220,20 @@ def _probe_file(path: Path) -> str:
             return "nicht_pruefbar"
         os.close(fd)
         return "beschreibbar"
+    errors = []
     handle, error = _win_create(str(path), _GENERIC_WRITE, _FILE_SHARE_ALL, _OPEN_EXISTING, 0)
     if handle not in _INVALID_HANDLES:
-        return "beschreibbar"
-    return _classify(error)
+        return "beschreibbar"  # Inhalt schreibbar
+    errors.append(error)
+    # §110 (A16): Recht, DACL/Eigentuemer zu aendern (Schutz aufhebbar) -> ebenfalls "beschreibbar" (unsicher)
+    for maske in (_WRITE_DAC, _WRITE_OWNER):
+        h, e = _win_create(str(path), maske, _FILE_SHARE_ALL, _OPEN_EXISTING, 0)
+        if h not in _INVALID_HANDLES:
+            return "beschreibbar"
+        errors.append(e)
+    if all(e == ERROR_ACCESS_DENIED for e in errors):  # nur wenn WEDER Inhalt NOCH Rechte aenderbar sind
+        return "geschuetzt"
+    return "nicht_pruefbar"
 
 
 def bytecode_isolation(*, flags=None, prefix: str | None = None, probe=_probe_dir) -> list[str]:  # noqa: ANN001
@@ -365,8 +389,12 @@ def write_access(repo: Path, *, repo_files: list[str] | None = None, venv: list[
             done.add(key)
             dirnames.sort()
             check(Path(dirpath), True)
+            # §110 (A16): in *.dist-info/*.egg-info auch die Metadaten (entry_points.txt, RECORD, top_level.txt usw.) -
+            # ueber Entry Points/Plugin-Registrierung kann sonst Code nachgeladen werden, ohne im Fingerabdruck zu stehen
+            in_metadata = _norm(dirpath).rstrip("\\/").endswith((".dist-info", ".egg-info"))
             for name in sorted(filenames):
-                if name.lower().endswith(RUNTIME_CODE_SUFFIXES):
+                if name.lower().endswith(RUNTIME_CODE_SUFFIXES) or (in_metadata and name.lower().endswith(".txt")) \
+                        or name in ("RECORD", "entry_points.txt", "top_level.txt"):
                     check(Path(dirpath) / name, False)
     return {"geprueft": checked, "beschreibbar": writable[:MAX_LISTE], "beschreibbar_anzahl": len(writable),
             "nicht_pruefbar": unclear[:MAX_LISTE], "nicht_pruefbar_anzahl": len(unclear), "wurzeln": roots}
