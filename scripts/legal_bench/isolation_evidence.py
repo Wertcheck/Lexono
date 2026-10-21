@@ -43,6 +43,10 @@ CLOCK_SKEW = timedelta(minutes=5)
 MAX_UHRENABWEICHUNG = timedelta(minutes=5)
 #: §96 (H1): Mindest-Ruhezeit (monoton gemessen) ohne neue Treffer, bevor eine Listener-Phase endet
 MIN_NACHLAUF_S = 2.0
+#: §106 (A6): erwarteter Abstand der periodischen Zwischenpruefungen (= isolation_real.KONTROLL_INTERVALL_S) und die
+#: hoechste zulaessige Luecke (3-faches Intervall, deckt die bis zu 30 s lange Thread-Beendigung plus Jitter ab).
+KONTROLL_INTERVALL_S = 15.0
+MAX_KONTROLL_LUECKE_S = 3 * KONTROLL_INTERVALL_S
 #: §96 (N2): exakte Ablehnungsmeldung des Gates fuer eine abgelaufene Bestaetigung (kein Teilstring-Vergleich)
 MSG_ATTESTATION_EXPIRED = "Bestaetigung abgelaufen oder noch nicht gueltig"
 #: §96 (H2): Ergebnisse einer Probe. NUR "zeitueberschreitung" ist mit einer verwerfenden Sperre vereinbar; "abgelehnt"
@@ -78,7 +82,8 @@ ANFORDERUNGEN: dict[str, list[dict]] = {
                       "aenderung_durch_benchmark_konto_gescheitert", "benchmark_konto_ohne_administratorrechte",
                       # §96 (M4, N6, N7)
                       "zustand_nach_aenderungsversuch_unveraendert", "arbeitsbaum_sauber",
-                      "repository_schreibgeschuetzt", "laeuft_als_benchmark_konto"),
+                      "repository_schreibgeschuetzt", "laeuft_als_benchmark_konto",
+                      "codequellen_eindeutig"),  # §102 (A1)
            _kriterien("E1", "gast_richtlinie_vom_host_exportiert")],
     "V3": [_pytest(S86 + "test_acceptance_approved_test_endpoint_is_reachable"),
            _kriterien("E2", "eingehende_verbindung_protokolliert", "keine_weiterleitung_an_modell_endpunkt")],
@@ -310,17 +315,35 @@ def _v2_e0(b: dict, _policy: dict, soll: dict | None = None) -> dict:
     git = git if isinstance(git, dict) else {}
     out["arbeitsbaum_sauber"] = (git.get("porcelain") == "") if git.get("exit_code") == 0 and \
         isinstance(git.get("porcelain"), str) else None
-    write = b.get("schreibtest")
-    write = write if isinstance(write, dict) else {}
-    if isinstance(write.get("geprueft"), int) and write["geprueft"] > 0 and \
-            isinstance(write.get("beschreibbar"), list):
-        out["repository_schreibgeschuetzt"] = not write["beschreibbar"]
-    else:
-        out["repository_schreibgeschuetzt"] = None
+    out["repository_schreibgeschuetzt"] = _write_protected(b.get("schreibtest"))
+    code = b.get("codepfad")  # §102 (A1): Probleme mit Codequellen des pruefenden Prozesses in der VM
+    problems = code.get("probleme") if isinstance(code, dict) else None
+    out["codequellen_eindeutig"] = (True if not problems else "blockiert") if isinstance(problems, list) else None
     expected, actual = _param(soll, "benchmark_konto"), b.get("konto_name")
     out["laeuft_als_benchmark_konto"] = (str(actual).split("\\")[-1].lower() == str(expected).lower()) \
         if isinstance(expected, str) and expected and isinstance(actual, str) and actual else None
     return out
+
+
+#: §102 (A4): Diese Pfadgruppen MUESSEN geprueft worden sein (tatsaechlicher Installationspfad der VM)
+SCHREIBTEST_WURZELN = ("repository", "venv", "basis")
+
+
+def _write_protected(write) -> bool | str | None:  # noqa: ANN001
+    """§96/§98/§102: beschreibbar -> False; nicht eindeutig pruefbar -> "blockiert"; unvollstaendig geprueft -> None."""
+    if not isinstance(write, dict) or not isinstance(write.get("geprueft"), int) or write["geprueft"] <= 0 \
+            or not isinstance(write.get("beschreibbar"), list):
+        return None
+    if write["beschreibbar"] or write.get("beschreibbar_anzahl"):
+        return False
+    unclear, roots = write.get("nicht_pruefbar"), write.get("wurzeln")
+    if not isinstance(unclear, list) or not isinstance(roots, dict):
+        return None
+    if unclear or write.get("nicht_pruefbar_anzahl"):
+        return "blockiert"
+    if not all(isinstance(roots.get(k), list) and roots[k] for k in SCHREIBTEST_WURZELN):
+        return None  # z. B. Standardbibliothek nicht geprueft -> nie "geschuetzt"
+    return True
 
 
 def _v2_e1(b: dict, _policy: dict, _soll: dict | None = None) -> dict:
@@ -494,7 +517,7 @@ assert set(KRITERIEN_ABLEITUNG) == {(t, r["klasse"]) for t, reqs in ANFORDERUNGE
 SOLL_PARAMETER = {("V2", "E0"): ("benchmark_konto",), ("V9", "E0"): ("erlaubte_gateways",), ("V9", "E1"): ("switch",),
                   ("V11", "E1"): ("kind_vhdx", "eltern_vhdx")}
 KANARIEN_FELDER = ("ziele", "treffer", "kontrolle", "aktiv_von", "aktiv_bis", "ausserhalb_der_phasen", "abschluss",
-                   "phasen_token", "kontrollen", "firewall_kontrollen")
+                   "phasen_token", "kontrollen", "firewall_kontrollen", "dauer_s")  # §106 (A6): dauer_s fuer die Lueckenpruefung
 #: §98 (H1): Pflicht-Zeitpunkte der Listener- und Firewall-Kontrollen
 KONTROLLPUNKTE = {"vorher": ("vorher_ende",), "nachher": ("nachher_start", "nachher_ende")}
 
@@ -617,6 +640,54 @@ def _kontroll_problem(content: dict, phase: str) -> str | None:
     return None
 
 
+#: §108 (A19): Kontrollpunkte, die die Nachher-Phase zeitlich abdecken (Start, Zwischenpruefungen, Ende)
+NACHHER_KONTROLLPUNKTE = ("nachher_start", "nachher_waehrend", "nachher_ende")
+
+
+def _abdeckung_problem(content: dict) -> str | None:
+    """§106/§108 (A6/A18/A19): Decken die periodischen Kontrollen (Firewall UND Listener) die GESAMTE Nachher-Phase
+    LUECKENLOS ab? Die Abdeckung wird am tatsaechlichen Phasenfenster (aktiv_von..aktiv_bis) gemessen - nicht an einer
+    frei vorgegebenen `dauer_s`; `dauer_s` muss zum Fenster passen (sonst widerspruechlich -> BLOCKIERT). Zwischen zwei
+    aufeinanderfolgenden Kontrollen (mit den Ankern Fensteranfang/-ende) darf keine Luecke > MAX_KONTROLL_LUECKE_S
+    liegen - gebuendelte Kontrollen am Anfang kompensieren eine spaetere Luecke also NICHT. Fehlende, nicht monotone
+    oder ausserhalb des Fensters liegende Zeitstempel ergeben BLOCKIERT. Rueckgabe = Grund, sonst None."""
+    try:
+        low, high = _time(content.get("aktiv_von")), _time(content.get("aktiv_bis"))
+    except (ValueError, TypeError):
+        return "Phasenfenster (aktiv_von/aktiv_bis) fehlt oder ungueltig - Abdeckung nicht pruefbar"
+    if high < low:
+        return "Phasenfenster widerspruechlich (aktiv_bis liegt vor aktiv_von)"
+    fenster = (high - low).total_seconds()
+    dauer = content.get("dauer_s")
+    if not isinstance(dauer, (int, float)) or isinstance(dauer, bool) or dauer < 0:
+        return "Phasendauer der Nachher-Phase fehlt - Abdeckung nicht pruefbar"
+    # §108 (A18): die (monotone) Dauer muss zum beobachteten Fenster passen; sonst ist die Abdeckung manipulierbar
+    if abs(dauer - fenster) > MAX_KONTROLL_LUECKE_S:
+        return (f"Phasendauer {dauer:.0f}s widerspricht dem Phasenfenster {fenster:.0f}s "
+                f"(Abweichung > {int(MAX_KONTROLL_LUECKE_S)}s) - Abdeckung nicht belastbar")
+    firewall = content.get("firewall_kontrollen") if isinstance(content.get("firewall_kontrollen"), list) else []
+    listener = content.get("kontrollen") if isinstance(content.get("kontrollen"), list) else []
+    toleranz = timedelta(seconds=MAX_KONTROLL_LUECKE_S)
+    for name, checks in (("Firewall", firewall), ("Listener", listener)):
+        pts = [c for c in checks if isinstance(c, dict) and c.get("zeitpunkt") in NACHHER_KONTROLLPUNKTE]
+        if any(c.get("zeit") is None for c in pts):
+            return f"{name}-Kontrolle ohne Zeitstempel - Abdeckung nicht pruefbar"
+        try:
+            parsed = [_time(c["zeit"]) for c in pts]
+        except (ValueError, TypeError):
+            return f"{name}-Kontrolle mit ungueltigem Zeitstempel"
+        if parsed != sorted(parsed):
+            return f"{name}-Kontrollen nicht monoton (umsortiert oder manipuliert)"
+        if parsed and (parsed[0] < low - toleranz or parsed[-1] > high + toleranz):
+            return f"{name}-Kontrolle ausserhalb des Phasenfensters - nicht belastbar"
+        folge = [low, *parsed, high]  # Anker Fensteranfang/-ende: Start und Ende muessen ebenfalls abgedeckt sein
+        luecke = max((b - a).total_seconds() for a, b in zip(folge, folge[1:]))
+        if luecke > MAX_KONTROLL_LUECKE_S:
+            return (f"{name}-Kontrollen lueckenhaft: groesste Luecke {luecke:.0f}s > {int(MAX_KONTROLL_LUECKE_S)}s - "
+                    "gebuendelte Kontrollen am Anfang kompensieren eine spaetere Luecke nicht")
+    return None
+
+
 def _eval_kanarien(content: dict, req: dict, _ctx: dict) -> tuple[str, str]:
     hits, outside = content.get("treffer"), content.get("ausserhalb_der_phasen")
     if not isinstance(hits, list) or not isinstance(outside, list):
@@ -642,6 +713,9 @@ def _eval_kanarien(content: dict, req: dict, _ctx: dict) -> tuple[str, str]:
     if reason:
         return "unklar", reason
     reason = _kontroll_problem(content, "nachher")
+    if reason:
+        return "blockiert", reason
+    reason = _abdeckung_problem(content)  # §106 (A6): Lueckenlosigkeit der Zwischenpruefungen
     if reason:
         return "blockiert", reason
     if not _token_ok(content.get("phasen_token")):
@@ -741,6 +815,28 @@ def vm_clock_problem(contents: list) -> str | None:
         return (f"VM-Uhr weicht mehr als {int(MAX_UHRENABWEICHUNG.total_seconds() // 60)} min von der Host-Uhr ab "
                 "- Belegalter und Gueltigkeit in der VM nicht belastbar")
     return None
+
+
+def zeitanker(contents: list) -> tuple[dict | None, str | None]:
+    """§102 (A3): Zeitanker fuer die Gueltigkeit beim Gebrauch. Die VM schreibt nach allen Nachher-Proben (also innerhalb
+    der Nachher-Phase des Hosts) ihren monotonen Zaehler und ihre Boot-ID in jeden pytest-Beleg; das Ende der Phase
+    (`aktiv_bis` des Kanarienlogs) ist Host-Zeit. Beide stehen im signierten Buendel. Fehlt etwas oder widerspricht es
+    sich -> kein Anker (das Gate bleibt dann geschlossen, V13 BLOCKIERT)."""
+    anchors = [c["beobachtung"].get("zeitanker") for e, c in contents if e["art"] == "pytest" and e["klasse"] == "E0"]
+    logs = [c for e, c in contents if e["art"] == "kanarien"]
+    if not anchors or not logs:
+        return None, "kein Zeitanker (VM-Zaehler/Boot-ID bzw. Ende der Nachher-Phase) im Buendel"
+    first = anchors[0]
+    if not isinstance(first, dict) or type(first.get("tick_ms")) is not int or type(first.get("boot_id")) is not int \
+            or first["tick_ms"] < 0 or any(a != first for a in anchors):
+        return None, "Zeitanker der VM fehlt, ist ungueltig oder in den Belegen widerspruechlich"
+    try:
+        ends = {_time(c["aktiv_bis"]) for c in logs}
+    except (KeyError, TypeError, ValueError):
+        return None, "Ende der Nachher-Phase (Host-Uhr) nicht auswertbar - kein Zeitanker"
+    if len(ends) != 1:
+        return None, "widerspruechliche Enden der Nachher-Phase - kein Zeitanker"
+    return {"tick_ms": first["tick_ms"], "boot_id": first["boot_id"], "host_spaetestens": next(iter(ends)).isoformat()}, None
 
 
 def _v11_cross(own: list, calibration_start) -> list[str]:  # noqa: ANN001
@@ -988,6 +1084,7 @@ def evaluate(bundle: Path | None, *, policy: dict, lauf: dict, reference: dateti
     except (KeyError, TypeError, ValueError):
         calibration_start = None
     clock = vm_clock_problem(contents)
+    anchor, anchor_problem = zeitanker(contents)
     for test in REQUIRED_TESTS:
         own = [(e, c) for e, c in contents if e["test"] == test]
         if not own:
@@ -1031,6 +1128,8 @@ def evaluate(bundle: Path | None, *, policy: dict, lauf: dict, reference: dateti
             blocked += _v12_cross(own)
         if clock and any(e["klasse"] == "E0" for e, _ in own):
             blocked.append(clock)
+        if test == "V13" and anchor_problem:  # §102 (A3): Gueltigkeit beim Gebrauch sonst nicht pruefbar
+            blocked.append(anchor_problem)
         if failed:
             tests[test] = {"status": FAIL, "gruende": failed + blocked}
         elif blocked:
@@ -1038,4 +1137,5 @@ def evaluate(bundle: Path | None, *, policy: dict, lauf: dict, reference: dateti
         else:
             tests[test] = {"status": PASS, "gruende": []}
     return {"gesamt": overall([t["status"] for t in tests.values()]), "probleme": [], "manifest_sha256": manifest_sha,
-            "firewall_export_sha256": firewall_sha, "tests": tests, "nicht_abgedeckt": list(NICHT_ABGEDECKT)}
+            "firewall_export_sha256": firewall_sha, "tests": tests, "nicht_abgedeckt": list(NICHT_ABGEDECKT),
+            "zeitanker": anchor}

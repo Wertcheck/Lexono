@@ -210,7 +210,7 @@ def _as_list(value) -> list:  # noqa: ANN001
     return value if isinstance(value, list) else [value]
 
 
-def observe_vm_v2(runner=subprocess.run, *, worktree=None, write_test=None) -> dict:  # noqa: ANN001
+def observe_vm_v2(runner=subprocess.run, *, worktree=None, write_test=None, code_check=None) -> dict:  # noqa: ANN001
     """V2 (VM, E0). §96 (N6): Aenderungsversuch ZULETZT und mit Ruecknahme, falls er gelingt; Zustand vorher/nachher."""
     profiles = [{"name": p.get("Name"), "enabled": p.get("enabled"), "default_outbound": p.get("default_outbound")}
                 for p in _ps("vm.gast_firewall", runner=runner)]
@@ -221,7 +221,8 @@ def observe_vm_v2(runner=subprocess.run, *, worktree=None, write_test=None) -> d
     observation = {"firewall_profile": profiles, "konto_gruppen_sids": sorted(set(_SID.findall(sids.stdout or ""))),
                    "konto_name": name[0].get("name") if len(name) == 1 else None,
                    "arbeitsbaum": (worktree or observe_worktree)(runner),
-                   "schreibtest": (write_test or observe_write_access)()}
+                   "schreibtest": (write_test or observe_write_access)(),
+                   "codepfad": {"probleme": (code_check or isolation_gate.codepfad_probleme)()}}
     before = _ps("vm.firewall_public_lokal", runner=runner)
     before = before[0].get("wert") if len(before) == 1 else None
     attempt = acc.run_real("vm.aenderungsversuch", real=True, runner=runner)  # MUSS scheitern
@@ -244,61 +245,22 @@ def observe_worktree(runner=subprocess.run) -> dict:  # noqa: ANN001
     return {"exit_code": result.returncode, "porcelain": (result.stdout or "").strip() if result.returncode == 0 else None}
 
 
-def observe_write_access(repo: Path | None = None, *, site_packages: list[Path] | None = None) -> dict:
-    """§96/§98 (M4/M1): Darf das laufende (Benchmark-)Konto ausfuehrbaren Code veraendern?
+def observe_write_access(repo: Path | None = None, *, site_packages: list[Path] | None = None,
+                         venv: list[Path] | None = None, base: list[Path] | None = None) -> dict:
+    """§96/§98/§102 (M4/M1/A4): Darf das laufende (Benchmark-)Konto ausfuehrbaren Code veraendern?
 
-    Geprueft werden ALLE Dateien des Fingerabdrucks, ALLE Ordner, in denen sie liegen (app/**, scripts/**, tests/,
-    Wurzel), `.venv`, alle site-packages-Ordner sowie deren .pth-/Editable-Dateien.
-    Dateien: Oeffnen zum Anhaengen (ohne zu schreiben). Ordner: exklusives Anlegen einer Probedatei, die sofort wieder
-    entfernt wird (nur in der VM; gelingt das, ist der Ordner beschreibbar -> FAIL)."""
-    import site
+    Ohne Angaben (VM): Repository inkl. `__pycache__` und aller Fingerabdruck-Dateien, die TATSAECHLICHE venv (Scripts,
+    pyvenv.cfg, site-packages rekursiv inkl. .pth), die Basis-Installation (Standardbibliothek, `sys.base_prefix`) und
+    alle weiteren Ordner im Suchpfad (isolation_codepfad.write_access). Mit einem anderen `repo` (Tests) werden NUR die
+    uebergebenen Pfade geprueft - nie die echte Installation."""
+    from scripts.legal_bench import isolation_codepfad
 
     repo = Path(repo or answer_specs.REPO)
-    if repo.resolve() == answer_specs.REPO.resolve():
-        names = [n for n in isolation_gate.tool_files() if (repo / n).is_file()]
-    else:
-        names = sorted({q.relative_to(repo).as_posix() for pattern in isolation_gate.TOOL_GLOBS for q in repo.glob(pattern)
-                        if q.is_file() and "__pycache__" not in q.parts})
-    packages = site_packages if site_packages is not None else [
-        Path(x) for x in site.getsitepackages() if Path(x).name.lower() == "site-packages"]
-    files = [repo / n for n in names]
-    for folder in packages:
-        if folder.is_dir():
-            files += [f for f in folder.iterdir() if f.is_file() and (f.suffix.lower() == ".pth"
-                                                                       or f.name.startswith("__editable__"))]
-    folders = sorted({repo, repo / ".venv", *[f.parent for f in files], *packages}, key=str)
-    writable, checked = [], 0
-
-    def label(path: Path) -> str:
-        try:
-            return path.relative_to(repo).as_posix()
-        except ValueError:
-            return str(path)
-
-    for path in files:
-        checked += 1
-        try:
-            fd = os.open(str(path), os.O_WRONLY | os.O_APPEND)
-        except OSError:
-            continue
-        os.close(fd)
-        writable.append(label(path))
-    for folder in folders:
-        if not folder.is_dir():
-            continue
-        checked += 1
-        probe = folder / f".lexono-schreibtest-{os.getpid()}"
-        try:
-            fd = os.open(str(probe), os.O_WRONLY | os.O_CREAT | os.O_EXCL)
-        except OSError:
-            continue
-        os.close(fd)
-        try:
-            os.remove(probe)
-        except OSError:
-            pass
-        writable.append(label(folder).rstrip("/") + "/" if label(folder) != "." else "./")
-    return {"geprueft": checked, "beschreibbar": writable, "ordner": len(folders), "dateien": len(files)}
+    if repo.resolve() == answer_specs.REPO.resolve() and site_packages is None and venv is None and base is None:
+        roots = isolation_codepfad.runtime_roots()
+        return isolation_codepfad.write_access(repo, repo_files=list(isolation_gate.tool_files()), venv=roots["venv"],
+                                               base=roots["basis"], extra=roots["extra"])
+    return isolation_codepfad.write_access(repo, venv=[*(venv or []), *(site_packages or [])], base=list(base or []))
 
 
 def observe_vm_network(runner=subprocess.run) -> dict:  # noqa: ANN001
@@ -312,7 +274,11 @@ def observe_vm_network(runner=subprocess.run) -> dict:  # noqa: ANN001
 def run_pytest(nodes: list[str], junit: Path, *, manifest_path: Path, real: bool, runner=subprocess.run) -> str:  # noqa: ANN001
     require_real(real)
     env = {**os.environ, acc.ENV_REAL: "1", "LEXONO_ISOLATION_MANIFEST": str(manifest_path)}
-    runner([sys.executable, "-m", "pytest", *nodes, "-q", "-p", "no:cacheprovider", f"--junitxml={junit}"],
+    # §102 (A1): dieselbe Bytecode-Isolation wie der pruefende Prozess (kein Bytecode aus __pycache__, auch nicht pytest)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    if sys.pycache_prefix:
+        env["PYTHONPYCACHEPREFIX"] = sys.pycache_prefix
+    runner([sys.executable, "-B", "-m", "pytest", *nodes, "-q", "-p", "no:cacheprovider", f"--junitxml={junit}"],
            cwd=answer_specs.REPO, env=env, capture_output=True, text=True, timeout=1800, check=False)
     if not Path(junit).is_file():
         raise RuntimeError("pytest lieferte kein JUnit-Protokoll")
@@ -362,7 +328,8 @@ def _outside_repo(path: Path) -> None:
 
 def vm_teil(konfig_path: Path, ordner: Path, phase: str, *, real: bool, manifest_path: Path | None = None,  # noqa: PLR0913
             start_token: str | None = None, runner=subprocess.run, identity=isolation_gate.machine_identity,  # noqa: ANN001
-            tool=isolation_gate.pruefwerkzeug_stand, pytest_runner=None, worktree=None, write_test=None) -> dict:  # noqa: ANN001
+            tool=isolation_gate.pruefwerkzeug_stand, pytest_runner=None, worktree=None, write_test=None,  # noqa: ANN001
+            code_check=None, zeitbasis=None) -> dict:  # noqa: ANN001
     """Rueckgabe: {"teil", "vm_abschluss_token"} - der Token wird dem Host gemeldet (er schliesst die Phase danach)."""
     require_real(real)
     konfig = load_konfig(konfig_path)
@@ -402,16 +369,20 @@ def vm_teil(konfig_path: Path, ordner: Path, phase: str, *, real: bool, manifest
             results[name] = {"fehler": f"{type(exc).__name__}: {str(exc)[:200]}"}
     observed = {}
     for key, observer in (("V9", lambda: observe_vm_network(runner)),
-                          ("V2", lambda: observe_vm_v2(runner, worktree=worktree, write_test=write_test))):
+                          ("V2", lambda: observe_vm_v2(runner, worktree=worktree, write_test=write_test,
+                                                       code_check=code_check))):
         try:
             observed[key] = observer()
         except Exception as exc:  # noqa: BLE001
             observed[key] = {"fehler": f"{type(exc).__name__}: {str(exc)[:200]}"}
     phase_token = {"start": manifest["phasen_start_token"], "vm_abschluss": acc.new_token()}
+    # §102 (A3): Zeitanker - nach allen Proben, vor dem Abschluss-Token (also innerhalb der Nachher-Phase des Hosts)
+    anchor = {**(zeitbasis or isolation_gate.vm_zeitbasis)(), "zeit_vm": datetime.now(timezone.utc).isoformat()}
     for test, reqs in ev.ANFORDERUNGEN.items():
         for req in reqs:
             if req["klasse"] == "E0" and req["art"] == "pytest":
-                part.record(test, "pytest", {**results["gate" if test == "V13" else "s86"], "phasen_token": phase_token})
+                part.record(test, "pytest", {**results["gate" if test == "V13" else "s86"], "phasen_token": phase_token,
+                                             "zeitanker": anchor})
     part.record("V11", "kriterien", results["s86"])  # Kurzpruefung nach der Ruecksetzung = derselbe Abnahmelauf
     part.record("V9", "kriterien", observed["V9"])
     part.record("V2", "kriterien", observed["V2"])
@@ -482,12 +453,14 @@ def _rueckbau_aus_ist(konfig: dict, control) -> list[str]:  # noqa: ANN001
 
 def _fw_kontrolle(konfig: dict, control, zeitpunkt: str) -> dict:  # noqa: ANN001
     """§98 (H1): eigene Firewall-Regeln Ist == Soll? Fehler/Unlesbarkeit -> gleich False (nie PASS)."""
+    zeit = datetime.now(timezone.utc).isoformat()  # §106 (A6): Zeitstempel fuer die Lueckenpruefung
     try:
         result = control.fw_pruefen(konfig)
-        return {"zeitpunkt": zeitpunkt, "gleich": result["gleich"], "ist_sha256": result["ist_sha256"],
+        return {"zeitpunkt": zeitpunkt, "zeit": zeit, "gleich": result["gleich"], "ist_sha256": result["ist_sha256"],
                 "probleme": result["probleme"]}
     except Exception as exc:  # noqa: BLE001
-        return {"zeitpunkt": zeitpunkt, "gleich": False, "ist_sha256": None, "probleme": [f"{type(exc).__name__}"]}
+        return {"zeitpunkt": zeitpunkt, "zeit": zeit, "gleich": False, "ist_sha256": None,
+                "probleme": [f"{type(exc).__name__}"]}
 
 
 def host_lauf(konfig_path: Path, ordner: Path, *, real: bool, wait=input, runner=subprocess.run,  # noqa: ANN001, PLR0913, PLR0915

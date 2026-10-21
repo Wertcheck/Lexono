@@ -85,16 +85,41 @@ def judge(bundle: Path, *, policy_path: Path, run_id: str, maschine: dict, tool:
         "pruefwerkzeug": tool})
 
 
+def commit_fingerprint_namen(commit: str, run) -> list[str] | None:  # noqa: ANN001
+    """§105 (A10): die im COMMIT verfolgten Fingerabdruck-Dateien (git ls-tree), gefiltert wie tool_files(). So faellt
+    eine im Arbeitsbaum geloeschte oder hinzugefuegte Fingerabdruck-Datei auf, statt still ausgelassen zu werden."""
+    result = run(["git", "ls-tree", "-r", "--name-only", commit], cwd=answer_specs.REPO, capture_output=True,
+                 timeout=120, check=False)
+    if result.returncode != 0:
+        return None
+    out = result.stdout
+    text = out.decode("utf-8", "surrogateescape") if isinstance(out, bytes) else out
+    return sorted(n for n in text.splitlines() if n and isolation_gate.im_fingerprint(n))
+
+
 def committed_stand(commit: str, runner=None) -> dict:  # noqa: ANN001
-    """§96/§98 (M4/H2): Fingerabdruck des Pruefwerkzeugs aus dem Inhalt des COMMITS - ein `git cat-file --batch`
-    (nur lesend, auf dem Host) fuer ALLE Dateien des Fingerabdrucks. Damit bindet die Signatur den festgeschriebenen Stand
-    und nicht einen geaenderten Arbeitsbaum. Fehlt eine Datei im Commit (uncommittet/untracked) oder ist sie kein normales
-    Blob -> sha256 None (Signieren verweigert)."""
+    """§96/§98/§105 (M4/H2/A10): Fingerabdruck des Pruefwerkzeugs aus dem Inhalt des COMMITS - `git cat-file --batch`
+    (nur lesend, auf dem Host) fuer die im Commit verfolgten Fingerabdruck-Dateien. Weicht die Dateimenge des Commits
+    von der des Arbeitsbaums ab (geloescht/hinzugefuegt/untracked) oder ist eine Datei kein normales Blob -> sha256 None
+    (Signieren verweigert). Damit bindet die Signatur exakt den festgeschriebenen Stand."""
     import hashlib
     import subprocess
 
     run = runner or subprocess.run
-    names = isolation_gate.tool_files()
+    worktree = set(isolation_gate.tool_files())
+    commit_names = commit_fingerprint_namen(commit, run)
+    if commit_names is None:
+        return {"commit": commit, "sha256": None, "fehlend": "git ls-tree fehlgeschlagen"}
+    geloescht = [n for n in commit_names if n not in worktree]  # im Commit verfolgt, im Arbeitsbaum fehlend
+    hinzugefuegt = [n for n in sorted(worktree) if n not in set(commit_names)]  # im Arbeitsbaum, nicht im Commit
+    if geloescht or hinzugefuegt:
+        details = []
+        if geloescht:
+            details.append("geloescht/fehlend: " + ", ".join(geloescht[:5]))
+        if hinzugefuegt:
+            details.append("nicht committet: " + ", ".join(hinzugefuegt[:5]))
+        return {"commit": commit, "sha256": None, "fehlend": "; ".join(details)}
+    names = commit_names
     request = "".join(f"{commit}:{name}\n" for name in names).encode("utf-8")
     result = run(["git", "cat-file", "--batch"], cwd=answer_specs.REPO, input=request, capture_output=True,
                  timeout=120, check=False)
@@ -142,8 +167,8 @@ def sign_attestation(owner_key, key_id: str, *, keylist_path: Path, bundle: Path
         elif not anchor["gueltig_von"] <= now <= anchor["gueltig_bis"]:
             reasons.append(f"Schluessel {key_id!r} ist nicht (mehr) gueltig")
     stand = tool()
-    if not stand.get("commit") or not stand.get("sha256"):
-        reasons.append("Pruefwerkzeug auf dem Host nicht bestimmbar")
+    if not stand.get("commit") or not stand.get("sha256") or not stand.get("laufzeit_sha256"):
+        reasons.append("Pruefwerkzeug auf dem Host nicht bestimmbar (Commit/Dateien/Laufzeitumgebung) - fail-closed")
     else:
         fixed = committed(stand["commit"])
         if fixed.get("sha256") != stand["sha256"]:
@@ -155,6 +180,8 @@ def sign_attestation(owner_key, key_id: str, *, keylist_path: Path, bundle: Path
     if verdict["gesamt"] != isolation_evidence.PASS:
         reasons.append("Urteil nicht PASS: " + ", ".join(f"{t} {r['status']}" for t, r in verdict["tests"].items()
                                                          if r["status"] != isolation_evidence.PASS))
+    if stand.get("sha256") and tool() != stand:  # §105 (A8): kein TOCTOU - Pruefwerkzeug waehrend des Signierens stabil
+        reasons.append("Pruefwerkzeug hat sich waehrend des Signierens veraendert - abgebrochen")
     if reasons:
         raise SigningRefused(reasons)
     payload = attestation_payload(verdict, policy_path=policy_path, keylist=keylist, run_id=run_id, maschine=maschine,

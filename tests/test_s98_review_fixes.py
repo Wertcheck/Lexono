@@ -110,11 +110,13 @@ def test_runtime_fingerprint_normalizes_install_paths(tmp_path, monkeypatch) -> 
 def test_unreadable_runtime_closes_the_gate(tmp_path, monkeypatch) -> None:
     import importlib.metadata
 
+    # laufzeit_stand faellt bei unlesbaren Distributionen fail-closed auf None (ohne aktive Signierung zu verhindern)
     monkeypatch.setattr(importlib.metadata, "distributions", lambda: (_ for _ in ()).throw(OSError("kaputt")))
-    stand = isolation_gate.pruefwerkzeug_stand()
-    assert stand["laufzeit_sha256"] is None
-    gate = make_test_gate(tmp_path / "x") if (tmp_path / "x").mkdir() is None else None
+    assert isolation_gate.pruefwerkzeug_stand()["laufzeit_sha256"] is None
     monkeypatch.undo()
+    # und das Gate schliesst, wenn die Laufzeit zum Pruefzeitpunkt nicht bestimmbar ist
+    (tmp_path / "x").mkdir()
+    gate = make_test_gate(tmp_path / "x")
     gate.tool = lambda: {**isolation_gate.pruefwerkzeug_stand(), "laufzeit_sha256": None}
     assert _has(gate.problems(run_id="qa80-lauf", provider_endpoints=LOOP), "Laufzeitumgebung")
 
@@ -140,6 +142,8 @@ def test_symlinked_tool_file_is_not_accepted(tmp_path, monkeypatch) -> None:
 
 def _batch(mutate=None, missing=()):  # noqa: ANN001, ANN202
     def run(argv, input=b"", **_kw):  # noqa: A002, ANN001, ANN202
+        if "ls-tree" in argv:  # §105 (A10): Commit-Dateiliste = Arbeitsbaum (keine geloeschten/hinzugefuegten)
+            return subprocess.CompletedProcess(argv, 0, "\n".join(isolation_gate.tool_files()), "")
         out = b""
         for line in input.decode().splitlines():
             name = line.split(":", 1)[1]
@@ -318,14 +322,16 @@ def test_nslookup_output_is_interpreted_strictly(output, expected) -> None:
     assert _nslookup_result(output) == expected
 
 
-def test_v7_acceptance_requires_a_resolver_and_a_real_query() -> None:
-    import inspect
+def test_v7_dns_probe_result_is_meaningful_not_a_blind_block() -> None:
+    """§106 (A9, Verhaltenstest statt Quelltextpruefung): Eine DNS-Antwort ohne Resolver bzw. ohne Antwortmarker darf
+    NICHT als Sperre (zeitueberschreitung) gelten; nur eine echte Zeitueberschreitung zaehlt."""
+    from tests.test_s86_isolation_design import _nslookup_result
 
-    from tests import test_s86_isolation_design as s86
-
-    source = inspect.getsource(s86.test_acceptance_dns_is_blocked)
-    assert 'assert ACCEPTANCE["dns_resolver"]' in source and 'probe("dnsquery"' in source
-    assert '!= "erreicht"' in source  # Systemaufloesung nur Plausibilitaet, kein Sperrnachweis
+    assert _nslookup_result(b"Server:  UnKnown\nAddress:  10.0.0.1") == "fehler"  # nur Kopf -> keine Aussage
+    assert _nslookup_result(b"") == "fehler"
+    timeout_en = b"DNS request timed out.\n    timeout was 1 seconds.\nServer:  UnKnown"
+    assert _nslookup_result(timeout_en) == "zeitueberschreitung"  # nur die echte Zeitueberschreitung sperrt
+    assert _nslookup_result(b"*** x can't find y: Non-existent domain\nServer:  r\nAddress:  10.0.0.1") == "erreicht"
 
 
 # --- M4-M6: Journal, Abbruch an jedem Schritt, Stromausfall, alte Laeufe --------------------------------------------------------
@@ -347,7 +353,8 @@ class _Interrupt(FakeSystem):
 @pytest.mark.parametrize("step", [1, 2, 3])
 def test_acl_set_interrupted_at_each_step_is_rolled_back(setup, step) -> None:
     system = _Interrupt(step, "Add-VMNetworkAdapterExtendedAcl")
-    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1")
+    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1",
+                             startcheck_pflicht=False)
     with pytest.raises(KeyboardInterrupt):
         control.acl_setzen(setup["policy"], setup["tmp"] / "acl.json")
     assert system.acl == [] and not (setup["tmp"] / "acl.json").exists()
@@ -359,7 +366,8 @@ def test_acl_set_interrupted_at_each_step_is_rolled_back(setup, step) -> None:
 @pytest.mark.parametrize("step", [1, 3, 5])
 def test_firewall_set_interrupted_at_each_step_is_rolled_back(setup, step) -> None:
     system = _Interrupt(step, "New-NetFirewallRule")
-    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1")
+    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1",
+                             startcheck_pflicht=False)
     with pytest.raises(KeyboardInterrupt):
         control.fw_setzen(setup["konfig"], setup["tmp"] / "fw.json")
     assert system.firewall == []
@@ -375,7 +383,8 @@ def test_failed_rollback_is_recorded_as_incomplete(setup) -> None:
 
     system = Broken()
     system.drop = 2  # Abweichung -> Rueckbau, der aber scheitert
-    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1")
+    control = hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=setup["tmp"] / "j.jsonl", run_id="r1",
+                             startcheck_pflicht=False)
     with pytest.raises(hc.ControlRefused, match="UNVOLLSTAENDIG"):
         control.acl_setzen(setup["policy"], setup["tmp"] / "acl.json")
     open_items = hc.journal_offen(hc.read_journal(setup["tmp"] / "j.jsonl"))
@@ -397,7 +406,8 @@ class PowerLoss(FakeSystem):
             if PowerLoss.count == int(sys.argv[4]):
                 os._exit(9)  # Stromausfall: kein except, kein finally, kein Rueckbau
         return super().__call__(argv, **kw)
-control = hc.HostControl("lexono-bench", ausfuehren=True, runner=PowerLoss(), journal=sys.argv[3], run_id=konfig["run_id"])
+control = hc.HostControl("lexono-bench", ausfuehren=True, runner=PowerLoss(), journal=sys.argv[3], run_id=konfig["run_id"],
+                         startcheck_pflicht=False)
 control.fw_setzen(konfig, sys.argv[3] + ".protokoll")
 '''
 
@@ -420,8 +430,8 @@ def test_power_loss_leaves_an_open_journal_entry_that_startcheck_reports(setup, 
 def test_leftovers_of_an_old_run_are_removed_selectively(setup) -> None:
     system, journal = setup["system"], setup["tmp"] / "j.jsonl"
     old = dict(setup["konfig"], run_id="alter-lauf")
-    hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=journal, run_id="alter-lauf").fw_setzen(
-        old, setup["tmp"] / "fw_alt.json")
+    hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=journal, run_id="alter-lauf",
+                   startcheck_pflicht=False).fw_setzen(old, setup["tmp"] / "fw_alt.json")
     foreign = {**system.firewall[0], "DisplayName": "Lexono-Abnahme alter-lauf TCP-445 10.0.0.1",
                "Description": "run_id=alter-lauf;ablauf=x"}  # gleiches Namensschema, aber NICHT im Journal
     system.firewall.append(foreign)
@@ -437,8 +447,8 @@ def test_leftovers_of_an_old_run_are_removed_selectively(setup) -> None:
 
 def test_acl_leftovers_of_an_old_run_are_removed_selectively(setup) -> None:
     system, journal = setup["system"], setup["tmp"] / "j.jsonl"
-    hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=journal, run_id="alter-lauf").acl_setzen(
-        setup["policy"], setup["tmp"] / "acl_alt.json")
+    hc.HostControl("lexono-bench", ausfuehren=True, runner=system, journal=journal, run_id="alter-lauf",
+                   startcheck_pflicht=False).acl_setzen(setup["policy"], setup["tmp"] / "acl_alt.json")
     foreign = {"Direction": "Outbound", "Action": "Allow", "RemoteIPAddress": "203.0.113.5/32", "RemotePort": "22",
                "Protocol": "TCP", "Weight": 77, "Stateful": True}
     system.acl.append(dict(foreign))

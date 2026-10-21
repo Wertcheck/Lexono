@@ -115,6 +115,9 @@ def _remove_command(vm: str, entry: dict) -> str:
 
 
 FINAL_STATES = ("abgeschlossen", "zurueckgebaut", "entfernt")
+#: §105 (A5): Hoechstalter eines erfolgreichen Startchecks, der eine reale Aenderung freigibt (wie die Firewall-Regeln)
+STARTCHECK_MAX_ALTER = timedelta(hours=12)
+MUTIERENDE_VORGAENGE = ("acl-setzen", "fw-setzen", "image-zuruecksetzen")
 
 
 def read_journal(path: Path | None) -> list[dict]:
@@ -136,9 +139,15 @@ def journal_offen(entries: list[dict]) -> list[dict]:
     """§98 (M4-M6): Vorgaenge ohne Endzustand bzw. mit begonnenen Befehlen ohne Ergebnis (Absturz/Stromausfall)."""
     operations: dict[str, dict] = {}
     open_items = []
+    # §102 (A2): eine unlesbare Zeile (z. B. bei Stromausfall halb geschrieben) bleibt offen, bis `journal-quittieren`
+    # bei nachgelesen leerem Ist-Zustand einen Quittungseintrag ANHAENGT - das Journal selbst wird nie veraendert
+    acknowledged = {e.get("zeile") for e in entries if e.get("status") == "zeile_quittiert"}
     for entry in entries:
+        if entry.get("status") in ("zeile_quittiert", "startcheck_ergebnis"):
+            continue  # Quittungen und Startcheck-Ergebnisse sind informativ, kein eigener Vorgang
         if entry.get("status") == "unlesbar":
-            open_items.append({"vorgang_id": None, "grund": f"Journalzeile {entry.get('zeile')} unlesbar"})
+            if entry.get("zeile") not in acknowledged:
+                open_items.append({"vorgang_id": None, "grund": f"Journalzeile {entry.get('zeile')} unlesbar"})
             continue
         op = operations.setdefault(entry.get("vorgang_id"), {"lauf": entry.get("lauf"), "vorgang": entry.get("vorgang"),
                                                              "status": None, "offen": []})
@@ -159,6 +168,60 @@ def journal_offen(entries: list[dict]) -> list[dict]:
     return open_items
 
 
+def startcheck_frisch(entries: list[dict], run_id: str | None, now: datetime,
+                      max_alter: timedelta = STARTCHECK_MAX_ALTER) -> tuple[bool, str | None]:
+    """§105 (A5): Gibt es fuer diesen Lauf einen aktuellen, ERFOLGREICHEN Startcheck - und keinen fremden mutierenden
+    Eingriff danach? (True, None) nur dann; sonst (False, Grund). Produktion erzwingt das vor jeder realen Aenderung."""
+    ok_zeit = None
+    for entry in entries:
+        if entry.get("vorgang") == "startcheck" and entry.get("lauf") == run_id                 and entry.get("status") == "startcheck_ergebnis" and entry.get("ok") is True:
+            try:
+                zeit = datetime.fromisoformat(entry["zeit"])
+            except (KeyError, ValueError, TypeError):
+                continue
+            alter = now - zeit
+            if timedelta(0) <= alter <= max_alter:
+                ok_zeit = zeit if ok_zeit is None or zeit > ok_zeit else ok_zeit
+    if ok_zeit is None:
+        return False, "kein aktueller, erfolgreicher Startcheck fuer diesen Lauf (startcheck ausfuehren)"
+    for entry in entries:  # kein mutierender Eingriff eines ANDEREN Laufs nach dem Startcheck
+        if entry.get("status") == "geplant" and entry.get("vorgang") in MUTIERENDE_VORGAENGE                 and entry.get("lauf") != run_id:
+            try:
+                if datetime.fromisoformat(entry["zeit"]) >= ok_zeit:
+                    return False, f"fremder Eingriff ({entry.get('vorgang')}, Lauf {entry.get('lauf')!r}) nach dem Startcheck"
+            except (KeyError, ValueError, TypeError):
+                return False, "Zeitangabe eines Vorgangs nach dem Startcheck unlesbar"
+    return True, None
+
+
+def aktiver_acl_besitzer(entries: list[dict]) -> str | None:
+    """§104 (A11): run_id des Laufs, dessen Port-ACL laut Journal aktuell gesetzt ist (None = keine). Da `acl_setzen` nur
+    bei LEERER Ist-ACL setzt, kann hoechstens ein Lauf zugleich eine ACL halten. Ein abgebrochener (unvollstaendiger)
+    Lauf bleibt Besitzer, bis sein Rueckbau nachgelesen bestaetigt ist (zurueckgebaut/entfernt)."""
+    operations: dict[str, dict] = {}
+    order: list[str] = []
+    for entry in entries:
+        vid = entry.get("vorgang_id")
+        if vid is None:
+            continue
+        if vid not in operations:
+            if entry.get("vorgang") not in ("acl-setzen", "acl-entfernen"):
+                continue  # kein ACL-Vorgang (der 'geplant'-Eintrag traegt das 'vorgang'-Feld)
+            operations[vid] = {"art": entry.get("vorgang"), "lauf": entry.get("lauf"), "final": None}
+            order.append(vid)
+        # spaetere Abschlusseintraege (auch der von _close_open, der kein 'vorgang'-Feld traegt) setzen den Endzustand
+        if entry.get("status") in ("abgeschlossen", "zurueckgebaut", "unvollstaendig", "entfernt"):
+            operations[vid]["final"] = entry.get("status")
+    owner = None
+    for vid in order:
+        op = operations[vid]
+        if op["art"] == "acl-setzen":
+            owner = None if op["final"] in ("zurueckgebaut", "entfernt") else op["lauf"]
+        elif op["art"] == "acl-entfernen" and op["final"] == "entfernt":
+            owner = None
+    return owner
+
+
 class HostControl:
     """`runner` ist injizierbar (Tests: simuliertes Hyper-V); real nur subprocess mit allen Freigaben.
 
@@ -168,10 +231,13 @@ class HostControl:
     Startcheck meldet das. Ohne Journaldatei wird nur im Speicher protokolliert (Tests); die CLI verlangt eine Datei."""
 
     def __init__(self, vm: str, *, ausfuehren: bool, runner=subprocess.run, clock=utcnow,  # noqa: ANN001, PLR0913
-                 journal: Path | None = None, run_id: str | None = None) -> None:
+                 journal: Path | None = None, run_id: str | None = None, startcheck_pflicht: bool = True) -> None:
         acc._safe_vm_name(vm)
         self.vm, self.ausfuehren, self.runner, self.clock = vm, ausfuehren, runner, clock
         self.journal, self.run_id = (Path(journal) if journal else None), run_id
+        # §106 (A5): produktiv True - jede reale Aenderung verlangt einen aktuellen ok-Startcheck, egal ueber welchen
+        # Aufrufweg. Tests, die gezielt Szenarien ohne Startcheck aufbauen, setzen das ausdruecklich auf False.
+        self.startcheck_pflicht = startcheck_pflicht
         self.journal_entries: list[dict] = []
         self.plan: list[str] = []
         self._operation: str | None = None
@@ -179,16 +245,49 @@ class HostControl:
     def _allowed(self) -> bool:
         return self.ausfuehren and os.environ.get(ENV_REAL) == "1"
 
+    def _require_startcheck(self, was: str) -> None:
+        """§106 (A5): reale Aenderung nur nach aktuellem, erfolgreichem Startcheck (fail-closed). Greift in jeder
+        mutierenden Methode - auch bei direktem Aufruf, nicht nur ueber die CLI. Ohne Journal nicht nachweisbar ->
+        BLOCKIERT (wenn Pflicht aktiv); Tests schalten die Pflicht fuer Szenarien ausdruecklich ab."""
+        # Erzwungen, sobald ein Aenderungsjournal gefuehrt wird. Produktiv fuehrt die CLI IMMER eines (journal_path),
+        # und `host_lauf` mutiert nie selbst (ausfuehren=False) - damit ist jeder reale Aenderungspfad abgedeckt. Ein
+        # journalloser Aufruf ist Unit-/Ad-hoc-Kontext und wird nicht erzwungen (dokumentiertes Restrisiko, A5).
+        if not (self.startcheck_pflicht and self._allowed()) or self.journal is None:
+            return
+        frisch, grund = startcheck_frisch(self._all_entries(), self.run_id, self.clock())
+        if not frisch:
+            raise ControlRefused([f"{was} ohne aktuellen, erfolgreichen Startcheck - {grund}"])
+
     def _log(self, status: str, **fields) -> None:  # noqa: ANN003
         entry = {"zeit": self.clock().isoformat(), "lauf": fields.pop("lauf", self.run_id), "vm": self.vm,
-                 "vorgang_id": self._operation, "status": status, **fields}
+                 "vorgang_id": fields.pop("vorgang_id", self._operation), "status": status, **fields}
         self.journal_entries.append(entry)
         if self.journal is not None:
             self.journal.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.journal, "a", encoding="utf-8") as handle:
-                handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            with open(self.journal, "a+b") as handle:
+                handle.seek(0, os.SEEK_END)
+                if handle.tell():  # §102 (A2): endet die Datei nicht mit einem Zeilenende (Stromausfall), erst eines
+                    handle.seek(-1, os.SEEK_END)
+                    if handle.read(1) != b"\n":
+                        handle.write(b"\n")
+                handle.write((json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8"))
                 handle.flush()
                 os.fsync(handle.fileno())
+
+    def _all_entries(self) -> list[dict]:
+        persisted = read_journal(self.journal)
+        return persisted + [e for e in self.journal_entries if self.journal is None or e not in persisted]
+
+    def _close_open(self, lauf: str, vorgaenge: tuple[str, ...], nachweis: dict) -> list[str]:
+        """§102 (A2): Offene Vorgaenge eines Laufs abschliessen, NACHDEM der nachgelesene Ist-Zustand zeigt, dass keine
+        seiner Aenderungen mehr besteht. Es wird nur ANGEHAENGT (Verweis auf den abschliessenden Vorgang)."""
+        closed = []
+        for item in journal_offen(self._all_entries()):
+            if item.get("vorgang_id") and item.get("lauf") == lauf and item.get("vorgang") in vorgaenge:
+                self._log("zurueckgebaut", vorgang_id=item["vorgang_id"], lauf=lauf, abschluss_durch=self._operation,
+                          nachweis=nachweis)
+                closed.append(item["vorgang_id"])
+        return closed
 
     def _begin(self, vorgang: str, lauf: str | None, **fields) -> None:  # noqa: ANN003
         import uuid
@@ -242,6 +341,7 @@ class HostControl:
     def acl_setzen(self, policy: dict, record_path: Path) -> dict:
         if not self._allowed():
             raise ControlRefused([f"acl-setzen nicht freigegeben ({ENV_REAL}=1 und --ausfuehren noetig)"])
+        self._require_startcheck("acl-setzen")
         record_path = Path(record_path)
         if record_path.exists():
             raise ControlRefused([f"{record_path} existiert bereits - Protokolle werden nie ueberschrieben"])
@@ -295,14 +395,27 @@ class HostControl:
         if not self._allowed():
             raise ControlRefused([f"acl-entfernen nicht freigegeben ({ENV_REAL}=1 und --ausfuehren noetig)"])
         actual = self.read_acl()
+        ziel_lauf = lauf or self.run_id
+        entries = self._all_entries()
+        besitzer = aktiver_acl_besitzer(entries)
+        if actual and besitzer is not None and besitzer != ziel_lauf:
+            # §104 (A11): die aktive ACL gehoert laut Journal einem ANDEREN Lauf - niemals entfernen (BLOCKIERT)
+            raise ControlRefused([f"aktive Port-ACL gehoert zu Lauf {besitzer!r}, nicht {ziel_lauf!r} - nichts wird "
+                                  "entfernt"])
         if lauf is None:
             soll = normalize_acl(soll_acl(policy))
             own = [e for e in actual if e in soll]
             foreign = [e for e in actual if e not in soll]
             if foreign:
                 raise ControlRefused(["fremde ACL-Eintraege vorhanden - nichts wird entfernt", json.dumps(foreign)])
+            # §104 (A11): aktive Eintraege, die KEIN eigener acl-setzen-Beleg erklaert -> Herkunft unklar, BLOCKIERT
+            belegt = [e for j in entries if j.get("vorgang") == "acl-setzen" and j.get("status") == "geplant"
+                      for e in j.get("soll") or []]
+            if actual and any(e not in belegt for e in actual):
+                raise ControlRefused(["aktive Port-ACL ohne eigenen Setz-Beleg im Journal - Herkunft unklar, nichts "
+                                      "wird entfernt; mit --lauf <run_id> den belegten Lauf angeben"])
         else:
-            recorded = [e for j in read_journal(self.journal) + self.journal_entries
+            recorded = [e for j in self._all_entries()
                         if j.get("lauf") == lauf and j.get("vorgang") == "acl-setzen" and j.get("status") == "geplant"
                         for e in j.get("soll") or []]
             if not recorded:
@@ -315,11 +428,20 @@ class HostControl:
                 self._change(_remove_command(self.vm, entry))
             except ControlRefused:
                 pass
-        remaining = [e for e in self.read_acl() if e in own]
+        after = self.read_acl()
+        remaining = [e for e in after if e in own]
         self._log("entfernt" if not remaining else "unvollstaendig", rest=remaining)
         if remaining:
             raise ControlRefused(["eigene ACL-Eintraege nach dem Entfernen noch vorhanden", json.dumps(remaining)])
-        return {"entfernt": own, "rest": remaining, "unberuehrt": foreign, "zeit": self.clock().isoformat()}
+        run = lauf or self.run_id
+        recorded_all = [e for j in self._all_entries() if j.get("lauf") == run and j.get("vorgang") == "acl-setzen"
+                        and j.get("status") == "geplant" for e in j.get("soll") or []]
+        closed = []
+        if run and not [e for e in after if e in recorded_all]:  # §102 (A2): nichts dieses Laufs mehr vorhanden
+            closed = self._close_open(run, ("acl-setzen", "acl-entfernen"),
+                                      {"acl_nachher_sha256": hashlib.sha256(acc._canonical(after)).hexdigest()})
+        return {"entfernt": own, "rest": remaining, "unberuehrt": foreign, "zeit": self.clock().isoformat(),
+                "abgeschlossene_vorgaenge": closed}
 
     # --- Host-Firewall (§96, M7) ------------------------------------------------------------------------------------------
 
@@ -354,6 +476,7 @@ class HostControl:
     def fw_setzen(self, konfig: dict, record_path: Path, *, hours: float = FW_MAX_HOURS) -> dict:
         if not self._allowed():
             raise ControlRefused([f"fw-setzen nicht freigegeben ({ENV_REAL}=1 und --ausfuehren noetig)"])
+        self._require_startcheck("fw-setzen")
         if not 0 < hours <= FW_MAX_HOURS:
             raise ControlRefused([f"Gueltigkeit der Firewall-Regeln 0 bis {FW_MAX_HOURS} h"])
         record_path = Path(record_path)
@@ -414,7 +537,7 @@ class HostControl:
                 raise ControlRefused(["fremde Regeln in der Gruppe - nichts wird entfernt", json.dumps(foreign)])
             own = actual
         else:
-            created = {name for j in read_journal(self.journal) + self.journal_entries
+            created = {name for j in self._all_entries()
                        if j.get("lauf") == lauf and j.get("vorgang") == "fw-setzen" and j.get("status") == "geplant"
                        for name in j.get("regeln") or []}
             if not created:
@@ -429,11 +552,39 @@ class HostControl:
             except ControlRefused:
                 pass
         names = {e["DisplayName"] for e in own}
-        remaining = [e for e in self.read_firewall() if e["DisplayName"] in names]
+        after = self.read_firewall()
+        remaining = [e for e in after if e["DisplayName"] in names]
         self._log("entfernt" if not remaining else "unvollstaendig", rest=[e["DisplayName"] for e in remaining])
         if remaining:
             raise ControlRefused(["eigene Firewall-Regeln nach dem Entfernen noch vorhanden", json.dumps(remaining)])
-        return {"entfernt": own, "rest": remaining, "unberuehrt": foreign if lauf else [], "zeit": self.clock().isoformat()}
+        run = lauf or konfig["run_id"]
+        planned = {name for j in self._all_entries() if j.get("lauf") == run and j.get("vorgang") == "fw-setzen"
+                   and j.get("status") == "geplant" for name in j.get("regeln") or []}
+        closed = []
+        if not {e["DisplayName"] for e in after} & planned:  # §102 (A2): keine Regel dieses Laufs mehr vorhanden
+            closed = self._close_open(run, ("fw-setzen", "fw-entfernen"),
+                                      {"gruppe_nachher": sorted(e["DisplayName"] for e in after)})
+        return {"entfernt": own, "rest": remaining, "unberuehrt": foreign if lauf else [], "zeit": self.clock().isoformat(),
+                "abgeschlossene_vorgaenge": closed}
+
+    def journal_quittieren(self, konfig: dict) -> dict:
+        """§102 (A2): Unlesbare Journalzeilen (halb geschrieben bei Stromausfall) quittieren - NUR wenn der nachgelesene
+        Ist-Zustand zeigt, dass nichts mehr besteht (Port-ACL leer, eigene Firewall-Gruppe leer). Sonst Abbruch: erst
+        mit `acl-entfernen --lauf`/`fw-entfernen --lauf` zurueckbauen. Es wird nur angehaengt."""
+        if not self._allowed():
+            raise ControlRefused([f"journal-quittieren nicht freigegeben ({ENV_REAL}=1 und --ausfuehren noetig)"])
+        acl, rules = self.read_acl(), self.read_firewall()
+        if acl or rules:
+            raise ControlRefused(["Ist-Zustand nicht leer - erst zurueckbauen, dann quittieren",
+                                  json.dumps({"acl": acl, "firewall": [r["DisplayName"] for r in rules]})])
+        lines = [e["zeile"] for e in read_journal(self.journal) if e.get("status") == "unlesbar"]
+        open_lines = [z for z in lines if z not in {e.get("zeile") for e in read_journal(self.journal)
+                                                    if e.get("status") == "zeile_quittiert"}]
+        self._begin("journal-quittieren", self.run_id, zeilen=open_lines)
+        for number in open_lines:
+            self._log("zeile_quittiert", zeile=number, nachweis={"acl": [], "firewall": []})
+        self._log("abgeschlossen")
+        return {"quittiert": open_lines, "zeit": self.clock().isoformat()}
 
     def startcheck(self, konfig: dict) -> dict:
         """§96/§98 (M7, N1): Reste frueherer Laeufe? ACL leer, eigene Firewall-Gruppe leer, VM aus, Kinddatentraeger
@@ -465,15 +616,19 @@ class HostControl:
             findings.append("Eltern-VHDX (Golden Image) nicht gefunden")
         if not Path(konfig["golden_image"]["kind_vhdx"]).is_file():
             findings.append("Kinddatentraeger fehlt (abgebrochene Ruecksetzung?) - Golden Image pruefen, neu anlegen")
-        for item in journal_offen(read_journal(self.journal) + self.journal_entries):
+        for item in journal_offen(self._all_entries()):
             findings.append(f"Aenderungsjournal: offener Vorgang {item}")
-        return {"ok": not findings, "befunde": findings, "zeit": self.clock().isoformat()}
+        result = {"ok": not findings, "befunde": findings, "zeit": self.clock().isoformat()}
+        if self.journal is not None:  # §105 (A5): Ergebnis festhalten - spaeter verlangen die Setz-Befehle einen ok-Beleg
+            self._log("startcheck_ergebnis", vorgang="startcheck", ok=result["ok"], befunde=findings[:10])
+        return result
 
     # --- Golden Image (V11) -------------------------------------------------------------------------------------------------
 
     def image_zuruecksetzen(self, parent: Path, child: Path, soll_sha256: str, record_path: Path) -> dict:
         if not self._allowed():
             raise ControlRefused([f"image-zuruecksetzen nicht freigegeben ({ENV_REAL}=1 und --ausfuehren noetig)"])
+        self._require_startcheck("image-zuruecksetzen")
         record_path = Path(record_path)
         if record_path.exists():
             raise ControlRefused([f"{record_path} existiert bereits"])
@@ -497,6 +652,11 @@ class HostControl:
         self._log("abgeschlossen" if not exit_code else "unvollstaendig", protokoll=str(record_path))
         if exit_code:
             raise ControlRefused(["Ruecksetzung fehlgeschlagen - Protokoll geschrieben (V11 wird FAIL)"])
+        if Path(child).is_file():  # §102 (A2): neuer Kinddatentraeger vorhanden -> fruehere abgebrochene Ruecksetzungen erledigt
+            for item in journal_offen(self._all_entries()):
+                if item.get("vorgang_id") and item.get("vorgang") == "image-zuruecksetzen":
+                    self._log("zurueckgebaut", vorgang_id=item["vorgang_id"], lauf=item.get("lauf"),
+                              abschluss_durch=self._operation, nachweis={"kind_vhdx": str(child)})
         return record
 
 
@@ -538,7 +698,8 @@ def _fw_add_command(rule: dict, description: str) -> str:
 
 
 def _fw_remove_command(rule: dict) -> str:
-    return f"Remove-NetFirewallRule -DisplayName {_q(rule['DisplayName'])} -ErrorAction Stop"
+    # §104 (A7): auf die eigene Gruppe begrenzt - ein (nicht eindeutiger) DisplayName trifft so nie Regeln ausserhalb
+    return f"Remove-NetFirewallRule -DisplayName {_q(rule['DisplayName'])} -Group {_q(FW_GROUP)} -ErrorAction Stop"
 
 
 def journal_path(konfig: dict) -> Path:
@@ -558,7 +719,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="isolation_host_control", description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
     for name in ("acl-plan", "acl-setzen", "acl-pruefen", "acl-entfernen", "image-zuruecksetzen", "fw-plan", "fw-setzen",
-                 "fw-pruefen", "fw-entfernen", "startcheck"):
+                 "fw-pruefen", "fw-entfernen", "startcheck", "journal-quittieren"):
         p = sub.add_parser(name)
         p.add_argument("--konfig", type=Path, required=True)
         p.add_argument("--ausfuehren", action="store_true", help="ohne: nur Plan bzw. Ablehnung")
@@ -590,6 +751,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(control.fw_pruefen(konfig), ensure_ascii=False, indent=1))
         elif args.cmd == "fw-entfernen":
             print(json.dumps(control.fw_entfernen(konfig, lauf=args.lauf), ensure_ascii=False, indent=1))
+        elif args.cmd == "journal-quittieren":
+            print(json.dumps(control.journal_quittieren(konfig), ensure_ascii=False, indent=1))
         elif args.cmd == "startcheck":
             result = control.startcheck(konfig)
             print(json.dumps(result, ensure_ascii=False, indent=1))

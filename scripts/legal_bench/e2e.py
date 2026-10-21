@@ -143,10 +143,15 @@ def _embedding_provider():  # noqa: ANN202
         provider.embed("Probe")
         return provider, "fastembed:" + get_settings().embedding_model_name
     except Exception as exc:  # noqa: BLE001
-        sys.path.insert(0, str(ROOT / "tests"))
-        from fake_embedding_provider import FakeEmbeddingProvider
+        # §104 (A17): Fake-Provider OHNE sys.path-Aenderung laden - sonst stuende tests/ dauerhaft im Suchpfad und die
+        # Codequellenpruefung (isolation_codepfad) meldete einen unbekannten Suchpfadeintrag (Gate geschlossen).
+        import importlib.util
 
-        return FakeEmbeddingProvider(), f"fake (Produktionsmodell nicht verfuegbar: {type(exc).__name__}) - Retrieval-Qualitaet NICHT VERIFIZIERT"
+        spec = importlib.util.spec_from_file_location("fake_embedding_provider", ROOT / "tests" / "fake_embedding_provider.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.FakeEmbeddingProvider(), (f"fake (Produktionsmodell nicht verfuegbar: {type(exc).__name__}) - "
+                                                "Retrieval-Qualitaet NICHT VERIFIZIERT")
 
 
 def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN001

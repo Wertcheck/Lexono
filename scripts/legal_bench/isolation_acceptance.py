@@ -725,6 +725,15 @@ SYNTHETIC_PARAMETER = {"benchmark_konto": "lexono-bench", "erlaubte_gateways": [
                        "kind_vhdx": "C:\\Hyper-V\\lexono\\kind.vhdx", "eltern_vhdx": "C:\\Hyper-V\\lexono\\golden.vhdx"}
 
 
+#: §102 (A3): synthetischer Zeitanker der VM (monotoner Zaehler in ms, Boot-ID) - nur Trockenlauf/Tests
+SYNTHETIC_ZEITANKER = {"tick_ms": 3_600_000, "boot_id": 7}
+#: §102 (A4): synthetischer Schreibtest einer korrekt geschuetzten VM (alle Pfadgruppen geprueft)
+SYNTHETIC_SCHREIBTEST = {"geprueft": 12, "beschreibbar": [], "beschreibbar_anzahl": 0, "nicht_pruefbar": [],
+                         "nicht_pruefbar_anzahl": 0,
+                         "wurzeln": {"repository": ["C:\\lexono"], "venv": ["C:\\lexono\\.venv"],
+                                     "basis": ["C:\\Program Files\\Python313"], "sys_path": []}}
+
+
 #: synthetischer Fingerabdruck der eigenen Firewall-Regeln (Trockenlauf/Tests - es gibt keine Firewall)
 SYNTHETIC_FW_SHA = hashlib.sha256(b"lexono-firewall-trockenlauf").hexdigest()
 
@@ -741,11 +750,27 @@ def default_canary(now: datetime, tokens: dict | None = None, targets: list[dict
     targets = targets or [{"ip": "127.0.0.1", "port": 40001, "protokoll": "tcp"}, {"ip": "::1", "port": 40002, "protokoll": "tcp"},
                           {"ip": "127.0.0.1", "port": 40003, "protokoll": "udp"},
                           {"ip": "127.0.0.1", "port": 40004, "protokoll": "dns"}, {"ip": "::1", "port": 40005, "protokoll": "udp"}]
-    listener, firewall = synthetic_controls(targets, ev.KONTROLLPUNKTE["nachher"], now)
-    return {"ziele": targets, "kontrolle": [f"{t['ip']}:{t['port']}" for t in targets], "treffer": [],
+    # §108 (A18/A19): Kontrollen decken das Fenster lueckenlos ab (Start, Zwischenpruefungen im Intervall, Ende);
+    # dauer_s == Fensterlaenge. Fenster bleibt 35 min (Uhrpruefung vm_clock_problem unveraendert).
+    von, bis = now - timedelta(minutes=35), now
+    keys = [f"{t['ip']}:{t['port']}" for t in targets]
+    schritt = timedelta(seconds=ev.KONTROLL_INTERVALL_S)
+    listener = [{"zeitpunkt": "nachher_start", "zeit": von.isoformat(), "ok": keys, "fehlend": []}]
+    firewall = [{"zeitpunkt": "nachher_start", "zeit": von.isoformat(), "gleich": True, "ist_sha256": SYNTHETIC_FW_SHA,
+                 "simuliert": True}]
+    t = von + schritt
+    while t < bis:
+        listener.append({"zeitpunkt": "nachher_waehrend", "zeit": t.isoformat(), "ok": keys, "fehlend": []})
+        firewall.append({"zeitpunkt": "nachher_waehrend", "zeit": t.isoformat(), "gleich": True,
+                         "ist_sha256": SYNTHETIC_FW_SHA, "simuliert": True})
+        t += schritt
+    listener.append({"zeitpunkt": "nachher_ende", "zeit": bis.isoformat(), "ok": keys, "fehlend": []})
+    firewall.append({"zeitpunkt": "nachher_ende", "zeit": bis.isoformat(), "gleich": True, "ist_sha256": SYNTHETIC_FW_SHA,
+                     "simuliert": True})
+    return {"ziele": targets, "kontrolle": list(keys), "treffer": [],
             "kontrollen": listener, "firewall_kontrollen": firewall,
-            "aktiv_von": (now - timedelta(minutes=35)).isoformat(), "aktiv_bis": now.isoformat(),
-            "nachlauf_s": ev.MIN_NACHLAUF_S, "dauer_s": 2100.0, "ausserhalb_der_phasen": [],
+            "aktiv_von": von.isoformat(), "aktiv_bis": bis.isoformat(),
+            "nachlauf_s": ev.MIN_NACHLAUF_S, "dauer_s": (bis - von).total_seconds(), "ausserhalb_der_phasen": [],
             "abschluss": {"geleert": True, "threads_beendet": True, "nachlauf_s": ev.MIN_NACHLAUF_S, "fehler": 0},
             "phasen_token": dict(tokens["nachher"])}
 
@@ -757,7 +782,8 @@ def synthetic_beobachtung(test: str, art: str, klasse: str, *, endpoints: set[tu
     acl = synthetic_acl(endpoints)
     canary = json.loads(json.dumps(canary)) if canary else default_canary(now, tokens)
     if art == "pytest":
-        return {"junit_xml": junit_xml(required_nodeids(test)), "phasen_token": dict(tokens["nachher"])}
+        return {"junit_xml": junit_xml(required_nodeids(test)), "phasen_token": dict(tokens["nachher"]),
+                "zeitanker": dict(SYNTHETIC_ZEITANKER, zeit_vm=(now - timedelta(minutes=30)).isoformat())}
     if art == "firewall_export":
         return {"acl": acl}
     if art == "kanarien":
@@ -772,7 +798,8 @@ def synthetic_beobachtung(test: str, art: str, klasse: str, *, endpoints: set[tu
                                                      "nachher": "Block", "rueckbau_exit": None},
                                "konto_gruppen_sids": ["S-1-5-32-545", "S-1-5-11"], "konto_name": "LEXONO-VM\\lexono-bench",
                                "arbeitsbaum": {"exit_code": 0, "porcelain": ""},
-                               "schreibtest": {"geprueft": 12, "beschreibbar": []}},
+                               "schreibtest": json.loads(json.dumps(SYNTHETIC_SCHREIBTEST)),
+                               "codepfad": {"probleme": []}},
         ("V2", "E1"): lambda: {"gast_richtlinie_sha256": h, "golden_image_richtlinie_sha256": h},
         ("V3", "E2"): lambda: {"vm_ip": "10.88.0.2", "fenster": [(now - timedelta(hours=1)).isoformat(), now.isoformat()],
                                "eintraege": [{"zeit": (now - timedelta(minutes=20)).isoformat(), "quelle_ip": "10.88.0.2",
@@ -921,7 +948,8 @@ def dry_run(folder: Path, *, leak: str | None = None, change=None, endpoints=fro
         fw_checks: list = []
 
         def fw_check(point: str) -> None:  # Trockenlauf: keine Host-Firewall - ausdruecklich simuliert
-            fw_checks.append({"zeitpunkt": point, "gleich": True, "ist_sha256": SYNTHETIC_FW_SHA, "simuliert": True})
+            fw_checks.append({"zeitpunkt": point, "zeit": utcnow().isoformat(), "gleich": True,  # §108 (A19): Zeitstempel
+                              "ist_sha256": SYNTHETIC_FW_SHA, "simuliert": True})
         observers = {r: synthetic_observers(r, endpoints=set(endpoints), now=now) for r in ROLLEN}
         for (test, art) in list(observers["vm"]):
             if art == "pytest":

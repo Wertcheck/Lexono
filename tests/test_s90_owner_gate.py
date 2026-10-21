@@ -63,7 +63,8 @@ def test_production_mode_path_works_only_with_a_pinned_root_and_readonly_anchor(
                                  keylist_payload([("test-key-1", test_gate._test_key)], test_only=False))
     gate = isolation_gate.IsolationGate(keylist_path=keylist_path, attestation_path=test_gate.attestation_path,
                                         evidence_path=test_gate.evidence_path, policy_path=test_gate.policy_path,
-                                        pinned_roots=test_gate.pinned_roots, firewall=test_gate.firewall)
+                                        pinned_roots=test_gate.pinned_roots, firewall=test_gate.firewall,
+                                        codepfad=test_gate.codepfad, zeitbasis=test_gate.zeitbasis)
     assert _has(_problems(gate), "schreibbar - kein Vertrauensnachweis")
     os.chmod(keylist_path, stat.S_IREAD)
     try:
@@ -71,6 +72,11 @@ def test_production_mode_path_works_only_with_a_pinned_root_and_readonly_anchor(
         document = _sign(test_gate, keylist_path=keylist_path, test_only=False)
         Path(gate.attestation_path).write_text(json.dumps(document), encoding="utf-8")
         assert _problems(gate) == []
+        gate.codepfad = isolation_gate.codepfad_probleme  # §102 (A1): echte Pruefung im pytest-Prozess ohne Isolation
+        assert _has(_problems(gate), "Codequelle: Bytecode-Isolation fehlt")
+        gate.codepfad, gate.zeitbasis = test_gate.codepfad, isolation_gate.vm_zeitbasis  # §102 (A3): andere Boot-ID
+        assert _has(_problems(gate), "Boot-ID") or _has(_problems(gate), "Zeitanker")
+        gate.zeitbasis = test_gate.zeitbasis
         gate.pinned_roots = ()
         assert owner_keys.ROOT_MISSING in _problems(gate)
     finally:

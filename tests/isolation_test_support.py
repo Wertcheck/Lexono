@@ -25,6 +25,9 @@ BLOCKING_FIREWALL = {p: {"enabled": True, "default_outbound": "Block"} for p in 
 HOST_IDENTITY = {"hostname": "owner-host-test", "machine_guid": "00000000-0000-4000-8000-00000000a001"}
 PRODUCER = {"E0": "vm-abnahme", "E1": "host-abnahme", "E2": "endpunkt-protokoll"}
 SYNTHETIC_PARAMETER = isolation_acceptance.SYNTHETIC_PARAMETER
+#: §102 (A3): aktueller Zaehlerstand der (synthetischen) VM beim Gebrauch - 1 min nach dem Zeitanker, gleicher Start
+SYNTHETIC_ZEITBASIS = {"tick_ms": isolation_acceptance.SYNTHETIC_ZEITANKER["tick_ms"] + 60_000,
+                       "boot_id": isolation_acceptance.SYNTHETIC_ZEITANKER["boot_id"]}
 
 
 def committed_like_worktree(commit: str) -> dict:
@@ -191,7 +194,10 @@ def make_test_gate(tmp_path: Path, *, run_id: str = "qa80-lauf", endpoints: set[
     attestation_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
     gate = isolation_gate.IsolationGate.for_tests(
         keylist_path, attestation_path, bundle, policy_path, pinned_roots=pinned,
-        firewall=lambda: firewall if firewall is not None else BLOCKING_FIREWALL)
+        firewall=lambda: firewall if firewall is not None else BLOCKING_FIREWALL,
+        # §102: der pytest-Prozess selbst hat keine Bytecode-Isolation und laedt Testmodule - die Codequellen-Pruefung
+        # wird in test_s102 gezielt geprueft; der Zeitanker der VM ist synthetisch (1 min nach dem Anker)
+        codepfad=lambda: [], zeitbasis=lambda: dict(SYNTHETIC_ZEITBASIS))
     gate._test_key, gate._root_key, gate._now = owner, root, now  # fuer Tests, die nachtraeglich neu signieren
     return gate
 

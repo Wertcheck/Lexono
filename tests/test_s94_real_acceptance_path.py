@@ -200,11 +200,12 @@ def _junit_runner(skipped: tuple[str, ...] = ()):  # noqa: ANN202
 
 
 CLEAN_TREE = lambda _runner: {"exit_code": 0, "porcelain": ""}  # noqa: E731 - simulierter Arbeitsbaum der VM
-READ_ONLY = lambda: {"geprueft": 12, "beschreibbar": []}  # noqa: E731 - simulierter Schreibtest der VM
+READ_ONLY = lambda: json.loads(json.dumps(acc.SYNTHETIC_SCHREIBTEST))  # noqa: E731 - simulierter Schreibtest (§102: alle Pfadgruppen)
+CLEAN_CODE = lambda: []  # noqa: E731 - §102: simulierte Codequellen-Pruefung der VM (eindeutig)
 
 
 def _full_run(s, *, skipped=(), before_nachher=None, set_acl=True, worktree=CLEAN_TREE, write_test=READ_ONLY,  # noqa: ANN001, ANN202, PLR0913
-              set_firewall=True):
+              set_firewall=True, code_check=CLEAN_CODE):
     system, tmp, konfig = s["system"], s["tmp"], s["konfig"]
     control = hc.HostControl(konfig["vm_name"], ausfuehren=True, runner=system)
     control.image_zuruecksetzen(Path(konfig["golden_image"]["eltern_vhdx"]), Path(konfig["golden_image"]["kind_vhdx"]),
@@ -225,7 +226,7 @@ def _full_run(s, *, skipped=(), before_nachher=None, set_acl=True, worktree=CLEA
                 before_nachher()
             return real.vm_teil(s["konfig_path"], vm_folder, "nachher", real=True, runner=system, identity=lambda: VM_ID,
                                 manifest_path=tmp / "lauf" / "abnahme_manifest.json", pytest_runner=_junit_runner(skipped),
-                                worktree=worktree, write_test=write_test)["vm_abschluss_token"]
+                                worktree=worktree, write_test=write_test, code_check=code_check)["vm_abschluss_token"]
         return ""
 
     result = real.host_lauf(s["konfig_path"], tmp / "lauf", real=True, wait=wait, runner=system, identity=lambda: HOST_ID)

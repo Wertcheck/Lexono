@@ -219,6 +219,8 @@ def test_committed_stand_detects_uncommitted_files() -> None:
 def test_committed_stand_matches_worktree_only_if_contents_match() -> None:
     def batch(mutate=None):  # noqa: ANN001, ANN202 - simuliert `git cat-file --batch` mit dem Arbeitsbaum-Inhalt
         def run(argv, input=b"", **_kw):  # noqa: A002, ANN001, ANN202
+            if "ls-tree" in argv:  # §105 (A10): Commit-Dateiliste = Arbeitsbaum
+                return subprocess.CompletedProcess(argv, 0, "\n".join(isolation_gate.tool_files()), "")
             out = b""
             for line in input.decode().splitlines():
                 name = line.split(":", 1)[1]

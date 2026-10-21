@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from scripts.legal_bench import answer_specs, isolation_evidence, owner_keys
+from scripts.legal_bench import answer_specs, isolation_codepfad, isolation_evidence, owner_keys
 
 SCHEMA = "lexono-isolation-attestation/2"
 LEGACY_SCHEMAS = ("lexono-isolation-attestation/1",)
@@ -56,8 +56,10 @@ ENV_EVIDENCE = "LEXONO_ISOLATION_EVIDENCE"
 #: importiert werden kann (app/** inkl. der von e2e.py genutzten Module, scripts/** inkl. scripts/__init__.py, Module
 #: im Wurzelverzeichnis - sie liegen beim Start im Suchpfad und koennten Bibliotheken ueberdecken -, tests/conftest.py)
 #: sowie die Projekt-/Abhaengigkeitskonfiguration.
-TOOL_GLOBS = ("*.py", "app/**/*.py", "scripts/**/*.py", "tests/conftest.py", "pyproject.toml", "setup.cfg",
-              "requirements*.txt", "app/**/*.json", "app/**/*.yaml", "app/**/*.yml", "app/**/*.toml")
+#: §102 (AUDIT_S100 A1): `*.py` in JEDEM importierbaren Ordner des Repositorys (isolation_codepfad.python_files - z. B.
+#: auch gateway/, tests/, Wurzelmodule), nur Build-Ausgaben/Caches/Daten sind ausgenommen; dazu die Konfiguration.
+TOOL_GLOBS = ("pyproject.toml", "setup.cfg", "requirements*.txt", "app/**/*.json", "app/**/*.yaml", "app/**/*.yml",
+              "app/**/*.toml")
 TOOL_FILES_EXTRA = (
     "tests/test_s86_isolation_design.py", "tests/test_s87_isolation_gate.py", "tests/test_s90_owner_gate.py",
     "tests/test_s91_acceptance_dry_run.py", "tests/test_s92_acl_counter_probe.py", "tests/test_s94_real_acceptance_path.py",
@@ -66,11 +68,85 @@ TOOL_FILES_EXTRA = (
 )
 
 
+def im_fingerprint(name: str) -> bool:
+    """§105 (A10): Gehoert ein repo-relativer POSIX-Pfad zum Fingerabdruck? Spiegelt tool_files() - dient dem Abgleich
+    der im COMMIT verfolgten Dateien gegen den Arbeitsbaum (geloeschte/hinzugefuegte Dateien erkennen)."""
+    from pathlib import PurePosixPath
+
+    if name in TOOL_FILES_EXTRA:
+        return True
+    pure = PurePosixPath(name)
+    if any(pure.full_match(pattern) for pattern in TOOL_GLOBS):
+        return True
+    if name.endswith(".py"):
+        segments = name.split("/")[:-1]
+        for index, segment in enumerate(segments):
+            if segment in isolation_codepfad.EXCLUDED_ANY or segment.startswith(".") or segment.endswith(".egg-info") \
+                    or (index == 0 and segment in isolation_codepfad.EXCLUDED_ROOT):
+                return False
+        return True
+    return False
+
+
 def tool_files() -> tuple[str, ...]:
     files = {path.relative_to(answer_specs.REPO).as_posix() for pattern in TOOL_GLOBS
              for path in answer_specs.REPO.glob(pattern)
              if (path.is_file() or path.is_symlink()) and "__pycache__" not in path.parts}
+    files |= set(isolation_codepfad.python_files(answer_specs.REPO))
     return tuple(sorted(files | set(TOOL_FILES_EXTRA)))
+
+
+def codepfad_probleme() -> list[str]:
+    """§102 (A1): Codequellen dieses Prozesses - leer nur bei Bytecode-Isolation und ausschliesslich erfasstem Code."""
+    try:
+        return isolation_codepfad.code_source_problems(answer_specs.REPO, set(tool_files()))
+    except Exception as exc:  # noqa: BLE001 - nicht pruefbar = geschlossen
+        return [f"Codequellen nicht pruefbar ({type(exc).__name__})"]
+
+
+#: §102 (A3): Zeitanker. Die Gueltigkeit beim GEBRAUCH haengt nicht allein an der VM-Uhr: Das Ende der Nachher-Phase
+#: (Host-Uhr, im signierten Buendel) plus die seither vergangene Zeit nach dem monotonen Systemzaehler der VM
+#: (GetTickCount64 - zaehlt seit dem Start, auch im Ruhezustand, von keinem Konto stellbar) muss vor dem Ablauf liegen.
+#: Ein Neustart (andere Boot-ID) oder ein fehlender Anker -> geschlossen.
+ZEITANKER_DRIFT = 0.001  # 0,1 % zusaetzliche Laufzeit als Sicherheitsabschlag (Zaehler-Drift)
+ZEITANKER_MARGE = timedelta(minutes=5)
+BOOT_ID_KEY = r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters"
+
+
+def vm_zeitbasis() -> dict:
+    """Monotoner Zaehler (ms seit Systemstart) und Boot-ID dieser Maschine; nicht lesbar -> None (fail-closed)."""
+    tick = boot = None
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            import winreg
+
+            getter = ctypes.windll.kernel32.GetTickCount64
+            getter.restype = ctypes.c_ulonglong
+            tick = int(getter())
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, BOOT_ID_KEY) as key:
+                boot = int(winreg.QueryValueEx(key, "BootId")[0])
+        except (OSError, AttributeError, ValueError):
+            tick = boot = None
+    return {"tick_ms": tick, "boot_id": boot}
+
+
+def zeitanker_probleme(anchor: dict | None, current: dict, valid_to: datetime) -> list[str]:
+    """§102 (A3): Ablauf beim Gebrauch ueber Host-Zeitanker + monotone VM-Dauer (siehe oben). Leer = noch gueltig."""
+    if not isinstance(anchor, dict):
+        return ["kein Zeitanker im Belegbuendel - Gueltigkeit beim Gebrauch nicht unabhaengig von der VM-Uhr pruefbar"]
+    tick, boot = current.get("tick_ms"), current.get("boot_id")
+    if type(tick) is not int or type(boot) is not int:
+        return ["monotoner Zaehler bzw. Boot-ID der VM nicht lesbar - Gueltigkeit nicht pruefbar"]
+    if boot != anchor["boot_id"]:
+        return ["VM seit der Abnahme neu gestartet (Boot-ID) - Zeitanker ungueltig, neue Abnahme noetig"]
+    elapsed = tick - anchor["tick_ms"]
+    if elapsed < 0:
+        return ["monotoner Zaehler der VM liegt vor dem Zeitanker (widerspruechlich)"]
+    latest_now = datetime.fromisoformat(anchor["host_spaetestens"]) + timedelta(milliseconds=elapsed * (1 + ZEITANKER_DRIFT)) + ZEITANKER_MARGE
+    if latest_now > valid_to:
+        return ["Bestaetigung laut Host-Zeitanker und VM-Laufzeit abgelaufen (VM-Uhr nicht massgeblich)"]
+    return []
 
 
 #: Umgebungsvariablen, die beeinflussen, welcher Code geladen wird. Gesetzt = Teil des Fingerabdrucks (Wert normalisiert).
@@ -218,6 +294,8 @@ class IsolationGate:
     identity: object = machine_identity
     firewall: object = guest_firewall
     tool: object = pruefwerkzeug_stand
+    codepfad: object = codepfad_probleme
+    zeitbasis: object = vm_zeitbasis
     now: object = lambda: datetime.now(timezone.utc)  # noqa: E731
 
     @classmethod
@@ -356,10 +434,25 @@ class IsolationGate:
             problems.append("Pruefwerkzeug nicht bestimmbar (Commit/Dateien/Laufzeitumgebung) - fail-closed")
         elif payload.get("pruefwerkzeug") != tool:
             problems.append("Pruefwerkzeug seit der Bestaetigung geaendert (Commit oder Dateien)")
+        problems += [f"Codequelle: {p}" for p in self.codepfad()]  # §102 (A1): tatsaechlich geladener Code
         # --- Belege: Urteil wird nachgerechnet ----------------------------------------------------------------------
-        verdict = isolation_evidence.evaluate(
-            self.evidence_path, policy=policy, reference=valid_from, now=now, allow_dry_run=self.test_only,
-            lauf={"run_id": run_id, "maschine": identity, "netzwerkpolitik_sha256": policy_sha, "pruefwerkzeug": tool})
+        lauf = {"run_id": run_id, "maschine": identity, "netzwerkpolitik_sha256": policy_sha, "pruefwerkzeug": tool}
+        verdict = isolation_evidence.evaluate(self.evidence_path, policy=policy, reference=valid_from, now=now,
+                                              allow_dry_run=self.test_only, lauf=lauf)
+        basis = self.zeitbasis()
+        problems += zeitanker_probleme(verdict.get("zeitanker"), basis, valid_to)  # §102 (A3)
+        # §104 (A13): Das Belegalter beim Gebrauch (24 h) nicht allein an der VM-Uhr messen. Liegt der aus dem Host-
+        # Zeitanker und dem monotonen VM-Zaehler abgeleitete Zeitpunkt SPAETER als die VM-Uhr (zurueckgestellte Uhr),
+        # dann mit diesem strengeren Zeitpunkt neu bewerten.
+        anker = verdict.get("zeitanker")
+        if anker and type(basis.get("tick_ms")) is int and basis.get("boot_id") == anker.get("boot_id"):
+            elapsed = basis["tick_ms"] - anker["tick_ms"]
+            if elapsed >= 0:
+                anker_now = datetime.fromisoformat(anker["host_spaetestens"]) + timedelta(
+                    milliseconds=elapsed * (1 + ZEITANKER_DRIFT))
+                if anker_now > now:
+                    verdict = isolation_evidence.evaluate(self.evidence_path, policy=policy, reference=valid_from,
+                                                          now=anker_now, allow_dry_run=self.test_only, lauf=lauf)
         problems += verdict["probleme"]
         if verdict["manifest_sha256"] != payload.get("buendel_sha256"):
             problems.append("Belegbuendel weicht von der Bestaetigung ab (fehlend, ausgetauscht oder manipuliert)")
