@@ -210,10 +210,31 @@ def test_tool_fingerprint_covers_execution_relevant_files() -> None:
     assert any(f.startswith("app/ai_providers/") for f in files) and any(f.startswith("app/privacy/") for f in files)
 
 
-def test_committed_stand_detects_uncommitted_files() -> None:
-    """Echt (lesend, lokales git): die §96-Testdatei ist nicht im Commit -> kein festgeschriebener Stand."""
+def test_committed_stand_binds_commit_but_gate_stays_closed() -> None:
+    """Echt (lesend, lokales git), zustandsunabhaengig: Seit dem Checkpoint-Commit (§110-§112) stimmt der Arbeitsbaum
+    fuer alle Fingerabdruck-Dateien mit dem HEAD ueberein -> `committed_stand` bindet eine Signaturbasis (sha256
+    gesetzt, reproduzierbar). Weicht der Arbeitsbaum je ab, bleibt sha256 None MIT Begruendung. In BEIDEN Faellen bleibt
+    das Gate wegen fehlendem Wurzelschluessel (ROOT_MISSING) geschlossen - eine gebundene Basis ist KEINE Freigabe.
+    Der echte Arbeitsbaum wird nicht veraendert."""
     stand = owner_sign.committed_stand("HEAD")
-    assert stand["sha256"] is None and stand["fehlend"]
+    if stand["sha256"] is None:
+        assert stand["fehlend"]  # Divergenz wird benannt, nicht verschwiegen
+    else:
+        assert len(stand["sha256"]) == 64 and int(stand["sha256"], 16) >= 0  # wohlgeformter Hash
+        assert owner_sign.committed_stand("HEAD")["sha256"] == stand["sha256"]  # reproduzierbar
+
+    # Ein fehlender Commit bleibt zustandsunabhaengig nachweisbar: Commit kennt eine Fingerabdruck-Datei weniger ->
+    # der Arbeitsbaum hat sie zusaetzlich -> keine festgeschriebene Basis (nie still ausgelassen).
+    def ls_one_missing(argv, input=b"", **_kw):  # noqa: A002, ANN001, ANN202
+        if "ls-tree" in argv:
+            return subprocess.CompletedProcess(argv, 0, "\n".join(list(isolation_gate.tool_files())[:-1]), "")
+        return subprocess.CompletedProcess(argv, 0, b"", "")
+
+    untracked = owner_sign.committed_stand("x", runner=ls_one_missing)
+    assert untracked["sha256"] is None and "nicht committet" in untracked["fehlend"]
+    # Eine gebundene Signaturbasis impliziert KEINE Freigabe: das reale Gate bleibt geschlossen.
+    problems = isolation_gate.IsolationGate.from_environment().problems(run_id=None, provider_endpoints=set())
+    assert owner_keys.ROOT_MISSING in problems
 
 
 def test_committed_stand_matches_worktree_only_if_contents_match() -> None:

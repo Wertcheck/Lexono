@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 from scripts.legal_bench import answer_specs, isolation_acceptance as acc, isolation_evidence as ev, isolation_gate
-from scripts.legal_bench import isolation_host_control as hc, isolation_real as real, owner_sign
+from scripts.legal_bench import isolation_host_control as hc, isolation_real as real, owner_keys, owner_sign
 from scripts.legal_bench.isolation_evidence import BLOCKIERT, FAIL, PASS
 from tests.isolation_test_support import bundle_items, make_test_gate, synthetic_policy, write_bundle
 from tests.test_s94_real_acceptance_path import FakeSystem, _full_run, setup  # noqa: F401 - Fixture
@@ -169,9 +169,23 @@ def test_commit_boundary_detects_changed_untracked_and_unknown_files() -> None:
     assert broken["sha256"] is None
 
 
-def test_real_git_reports_uncommitted_tool_files() -> None:
-    """Echt (nur lesend): §90-§98 sind uncommittet -> kein festgeschriebener Stand, Signieren unmoeglich."""
-    assert owner_sign.committed_stand("HEAD")["sha256"] is None
+def test_real_git_committed_stand_binds_commit_but_gate_stays_closed() -> None:
+    """Echt (nur lesend, lokales git), zustandsunabhaengig: Seit dem Checkpoint-Commit (§110-§112) bindet
+    `committed_stand` eine Signaturbasis (sha256 gesetzt, reproduzierbar); weicht der Arbeitsbaum je ab, bleibt sha256
+    None MIT Begruendung. In BEIDEN Faellen bleibt das Gate wegen fehlendem Wurzelschluessel (ROOT_MISSING)
+    geschlossen - eine gebundene Basis ist KEINE Freigabe. Der echte Arbeitsbaum wird nicht veraendert."""
+    stand = owner_sign.committed_stand("HEAD")
+    if stand["sha256"] is None:
+        assert stand["fehlend"]  # Divergenz wird benannt, nicht verschwiegen
+    else:
+        assert len(stand["sha256"]) == 64 and int(stand["sha256"], 16) >= 0  # wohlgeformter Hash
+        assert owner_sign.committed_stand("HEAD")["sha256"] == stand["sha256"]  # reproduzierbar
+    # Ein fehlender Commit bleibt zustandsunabhaengig ueber den git-Stub nachweisbar (Datei nicht im Commit):
+    untracked = owner_sign.committed_stand("x", runner=_batch(missing=("tests/conftest.py",)))
+    assert untracked["sha256"] is None and untracked["fehlend"] == "tests/conftest.py"
+    # Eine gebundene Signaturbasis impliziert KEINE Freigabe: das reale Gate bleibt geschlossen.
+    problems = isolation_gate.IsolationGate.from_environment().problems(run_id=None, provider_endpoints=set())
+    assert owner_keys.ROOT_MISSING in problems
 
 
 def test_write_test_covers_app_dirs_site_packages_and_pth(tmp_path) -> None:
