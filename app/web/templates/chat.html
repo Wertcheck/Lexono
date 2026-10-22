@@ -746,37 +746,47 @@
             <input type="hidden" name="protected_terms" id="chat-protected-terms" value="" />
           </div>
           <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
-          <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
-                  title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
-                  aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
-            {{ icons.shield(class_="icon") }}
-          </button>
-          <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
-               aria-label="Datenschutzinformationen" hidden>
-            <div class="chat-privacy-popover__title">
-              {{ icons.shield(class_="icon") }}
-              <span>Datenschutz &amp; Pseudonymisierung</span>
-            </div>
-            <p>
-              Lexono erkennt personenbezogene und andere sensible Daten
-              (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
-              lokal auf diesem Rechner und pseudonymisiert sie vor der
-              Verarbeitung durch eine Cloud-KI.
-            </p>
-            <p>
-              Unpseudonymisierte personenbezogene Daten werden dadurch
-              nicht unnötig an die Cloud-KI übertragen. Diese lokale
-              Erkennungs- und Pseudonymisierungsschicht ist fester
-              Bestandteil der Lexono-Verarbeitung.
-            </p>
-            <p>
-              Die konkrete Verarbeitung kann je nach Workflow variieren
-              (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
-              teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
-            </p>
-          </div>
         </div>
       </form>
+
+      {# Datenschutz-/Shield-Hinweis als schwebendes Element in der RECHTEN UNTEREN ECKE des Chatfensters
+         (22.10., Owner-Direktive "DATENSCHUTZ-ICON IN DIE ECKE") - aus der Composer-Fusszeile herausgeloest
+         und an `.chat-panel` (dem Chat-Hauptbereich rechts der Unterhaltungsliste) verankert, damit es
+         UNABHAENGIG von der zentrierten, maximalbreiten Composer-Breite bei jeder Fenstergroesse nahe am
+         rechten/unteren Rand bleibt. Button + Popover sind UNVERAENDERT uebernommen (gleiche IDs, gleiche
+         JS-Verdrahtung in #chat-privacy-btn/#chat-privacy-popover, gleiche Datenschutzlogik) - nur Position und
+         Groesse aendern sich (siehe `.chat-privacy-corner` in app.css). #}
+      <div class="chat-privacy-corner">
+        <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
+                title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
+                aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
+          {{ icons.shield(class_="icon") }}
+        </button>
+        <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
+             aria-label="Datenschutzinformationen" hidden>
+          <div class="chat-privacy-popover__title">
+            {{ icons.shield(class_="icon") }}
+            <span>Datenschutz &amp; Pseudonymisierung</span>
+          </div>
+          <p>
+            Lexono erkennt personenbezogene und andere sensible Daten
+            (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
+            lokal auf diesem Rechner und pseudonymisiert sie vor der
+            Verarbeitung durch eine Cloud-KI.
+          </p>
+          <p>
+            Unpseudonymisierte personenbezogene Daten werden dadurch
+            nicht unnötig an die Cloud-KI übertragen. Diese lokale
+            Erkennungs- und Pseudonymisierungsschicht ist fester
+            Bestandteil der Lexono-Verarbeitung.
+          </p>
+          <p>
+            Die konkrete Verarbeitung kann je nach Workflow variieren
+            (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
+            teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
+          </p>
+        </div>
+      </div>
     </section>
 
     {% if viewing_document %}

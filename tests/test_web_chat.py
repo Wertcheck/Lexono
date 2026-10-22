@@ -3803,15 +3803,16 @@ def test_permanent_privacy_hint_below_composer_is_replaced_by_an_icon_popover(
 def test_privacy_hint_lives_outside_the_input_row_not_among_its_actions(
     client: TestClient, db_session: Session
 ) -> None:
-    """ECHTER FUND behoben (07.10., Owner-Direktive "DATENSCHUTZ-HINWEIS
-    POSITIONIERUNG KORRIGIEREN"): das Shield-Icon sass bisher INNERHALB
-    von `.chat-composer__row` (derselben Zeile wie Anhang/Eingabefeld/
-    Mikrofon/Senden) - wirkte dadurch wie eine fuenfte Eingabeaktion,
-    obwohl es eine reine Information ist, keine Bedienhandlung fuer die
-    Nachricht. Prueft strukturell, dass der Ausloeser-Button jetzt
-    AUSSERHALB von `.chat-composer__row` liegt (in der eigenen
-    `.chat-composer__footer`-Zeile darunter), nicht mehr als Kind
-    zwischen Mikrofon und Senden."""
+    """07.10. (Owner-Direktive "DATENSCHUTZ-HINWEIS POSITIONIERUNG KORRIGIEREN"):
+    das Shield-Icon sass einmal INNERHALB von `.chat-composer__row` und wirkte
+    wie eine fuenfte Eingabeaktion - es ist aber reine Information, keine
+    Bedienhandlung fuer die Nachricht. 22.10. (Owner-Direktive "DATENSCHUTZ-ICON
+    IN DIE ECKE"): es wurde zusaetzlich aus der Composer-Fusszeile herausgeloest
+    und schwebt jetzt als `.chat-privacy-corner` in der rechten unteren Ecke des
+    Chat-Hauptbereichs. Prueft strukturell, dass der Ausloeser-Button WEDER in
+    der Eingabezeile NOCH im Composer-Formular liegt, sondern in der
+    eigenstaendigen Ecke danach - Button/Popover-IDs (und damit JS/Logik)
+    unveraendert."""
     login_as_admin(db_session, client)
     conversation = _active_conversation(db_session, "admin@kanzlei.test")
 
@@ -3824,14 +3825,21 @@ def test_privacy_hint_lives_outside_the_input_row_not_among_its_actions(
     assert "chat-composer__privacy-btn" not in row_block
     assert "chat-privacy-popover" not in row_block
 
+    # Der Ausloeser liegt jetzt in der schwebenden Ecke, NACH dem Composer-Formular,
+    # nicht mehr in dessen Fusszeile.
+    form_end = html.index("</form>", row_start)
     footer_start = html.index('<div class="chat-composer__footer">')
-    footer_end = html.index("</form>", footer_start)
-    footer_block = html[footer_start:footer_end]
-    assert "chat-composer__privacy-btn" in footer_block
-    assert "chat-privacy-popover" in footer_block
-    # Die Fusszeile selbst liegt NACH der Eingabezeile im Markup (unterhalb,
-    # nicht daneben).
-    assert footer_start > row_start
+    footer_block = html[footer_start:form_end]
+    assert "chat-composer__privacy-btn" not in footer_block
+    assert "chat-privacy-popover" not in footer_block
+
+    corner_start = html.index('<div class="chat-privacy-corner">')
+    corner_block = html[corner_start:]
+    assert "chat-composer__privacy-btn" in corner_block
+    assert "chat-privacy-popover" in corner_block
+    # Die Ecke liegt NACH der Eingabezeile und NACH dem Composer-Formular.
+    assert corner_start > row_start
+    assert corner_start > form_end
 
 
 def test_scroll_to_bottom_button_present_in_composer(

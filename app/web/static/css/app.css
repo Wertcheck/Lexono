@@ -7710,6 +7710,10 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* 22.10.: Positionierungskontext fuer das schwebende Datenschutz-Icon in der
+     rechten unteren Ecke (`.chat-privacy-corner`) - verankert es am
+     Chat-Hauptbereich, nicht am (zentrierten, maximalbreiten) Composer. */
+  position: relative;
 }
 
 /* Kopfbereich (Abschnitt 4A des Auftrags: "Lexono/Chat-Kontext, optional
@@ -9358,6 +9362,42 @@ a.chat-composer__protect-btn {
    `hidden`-Attribut (JS, siehe chat.html), nicht ueber `:hover` (soll
    nach dem Klick geoeffnet BLEIBEN, bis der Nutzer es aktiv schliesst,
    anders als der obige reine Hover-Tooltip). */
+/* 22.10., Owner-Direktive "DATENSCHUTZ-ICON IN DIE ECKE": das Datenschutz-/
+   Shield-Icon schwebt jetzt in der RECHTEN UNTEREN ECKE des Chat-Hauptbereichs
+   (`.chat-panel`, hat dafuer `position: relative`), unabhaengig von der
+   zentrierten Composer-Breite - bleibt damit bei jeder Fenstergroesse am
+   rechten/unteren Rand. Deutlich groesser und als eigenstaendiges, gut
+   anklickbares Flaechenelement (Pille mit Rahmen/Schatten), weiterhin in
+   ruhigen Design-Tokens (kein Warnton), gut sichtbar in Light & Dark Mode.
+   Button-/Popover-Logik (IDs, JS, Hover-Tooltip) unveraendert. */
+.chat-privacy-corner {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  z-index: 30;
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--paper-000);
+  color: var(--seal-green-dark);
+  border: 1px solid var(--paper-line);
+  box-shadow: var(--shadow-elevated);
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn:hover,
+.chat-privacy-corner .chat-composer__privacy-btn[aria-expanded="true"] {
+  background: var(--paper-200);
+  color: var(--seal-green-dark);
+}
+
 .chat-privacy-popover {
   position: absolute;
   bottom: calc(100% + 10px);
