@@ -430,3 +430,29 @@ def test_a_changed_privacy_code_invalidates_cached_results(db_session, monkeypat
     monkeypatch.setattr(release, "_check_code_version", lambda: "neue-erkennungsregeln")
     release.release_status(db_session, document)
     assert db_session.query(DocumentPrivacyCheck).filter_by(document_id=document.id).count() == 2
+
+
+def test_release_manually_swallows_a_concurrent_duplicate_without_crashing(db_session, monkeypatch) -> None:
+    """Regression (23.10.2026): release_manually fing `IntegrityError`, ohne es zu importieren - bei einem echten
+    Doppel-Insert (Unique-Constraint uq_document_release_version, z. B. Doppelklick/paralleler Request) waere ein
+    NameError statt des beabsichtigten, sauberen Rollbacks entstanden. Simuliert das Rennen zwischen Pruefung und
+    Commit: die bereits (committed) vorhandene Freigabe wird von der Pruefung NICHT gesehen, der zweite Insert
+    verletzt den Unique-Constraint. Erwartet: kein Absturz, Rollback, weiterhin genau EINE Freigabe."""
+    from tests.auth_test_utils import create_test_user, seed_roles
+
+    user = create_test_user(db_session, seed_roles(db_session)["admin"], "race@kanzlei.test")
+    _mode(db_session, release.MODE_MANUAL)  # Modus A -> STATE_REQUIRED, der Insert-Pfad wird erreicht
+    document = _doc(db_session, CLEAN)
+    version = release.text_version_of(document.extracted_text)
+    # Freigabe, die der "andere" Request soeben committet hat (reale, bestehende Zeile).
+    db_session.add(DocumentRelease(document_id=document.id, text_version=version,
+                                   released_by_user_id=user.id, mode_at_release=release.MODE_MANUAL))
+    db_session.commit()
+    # Rennen: die Pruefung in release_manually/release_status sieht diese Freigabe NICHT -> zweiter Insert.
+    monkeypatch.setattr(release, "_valid_manual_release", lambda db, doc, v: None)
+
+    status = release.release_manually(db_session, document, text_version=version, user=user)  # darf NICHT abbrechen
+
+    assert status.state in (release.STATE_REQUIRED, release.STATE_DECISION) or status.released
+    assert db_session.query(DocumentRelease).filter_by(
+        document_id=document.id, text_version=version).count() == 1  # doppelter Insert zurueckgerollt

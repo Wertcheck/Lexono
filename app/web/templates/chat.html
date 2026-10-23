@@ -816,6 +816,19 @@
           {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
                                                document_text_version, csrf_token, "chat:" ~ active_conversation.id,
                                                name_protection_saved, name_protection_error) }}
+          {# Pseudonymisierung (23.10.2026): kompakter Status + Button statt der schmalen Seitenspalte, die den
+             A4-Text quetschte. Die Details oeffnen sich in einem zentrierten Dialog (unten); Oeffnen/Schliessen
+             aendert keinen Workflow-Zustand. #}
+          <div class="chat-pseudonymization-summary">
+            <span class="tag tag--matched"><span class="tag__dot"></span>Lokal analysiert &amp; pseudonymisiert</span>
+            <span class="chat-pseudonymization-summary__count">
+              {{ document_preview.entities | length if document_preview else 0 }} erkannte Mandantendaten
+            </span>
+            <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
+                    data-pseudonymization-open aria-haspopup="dialog" aria-controls="pseudonymization-dialog">
+              Pseudonymisierung anzeigen
+            </button>
+          </div>
           <div class="chat-document-pane__text" id="document-text">{{ document_preview.highlighted_html | safe }}</div>
         {% else %}
           <div class="chat-document-pane__empty">
@@ -824,11 +837,16 @@
         {% endif %}
       </section>
 
-      <aside class="chat-context-pane">
-        <div class="chat-context-pane__header">
-          {{ icons.check(class_="icon") }}
-          <span>Pseudonymisierung</span>
+      {# Zentrierter, optionaler Dialog mit den REALEN Ergebnissen dieses Dokuments (ersetzt die Seitenspalte). #}
+      <dialog id="pseudonymization-dialog" class="modal modal--large" aria-labelledby="pseudonymization-dialog-title">
+        <div class="modal__header">
+          <h2 class="modal__title" id="pseudonymization-dialog-title">
+            {{ icons.check(class_="icon") }}
+            <span>Pseudonymisierung</span>
+          </h2>
+          <button type="button" class="modal__close" data-pseudonymization-dialog-close aria-label="Schließen">✕</button>
         </div>
+        <div class="modal__body chat-context-pane">
         <div class="chat-context-pane__status">
           <span class="tag tag--matched">Abgeschlossen</span>
         </div>
@@ -909,9 +927,22 @@
             <span>Herunterladen</span>
           </a>
         {% endif %}
-      </aside>
+        </div>{# .modal__body.chat-context-pane #}
+      </dialog>
     {% endif %}
   </div>
+
+  {# Human in the Loop (23.10.2026): zentrierter Dialog fuer die Datenschutz-Rueckfrage statt einer in die
+     Chat-Blase gequetschten Karte. Schliessen beantwortet NICHTS (nur die Options-Buttons entscheiden); die
+     kompakte Statuszeile in der Blase oeffnet den Dialog erneut. Faellt `<dialog>` aus, rendert showPrivacyReview
+     unveraendert in die Blase (Fallback). #}
+  <dialog id="privacy-review-dialog" class="modal modal--medium" aria-labelledby="privacy-review-dialog-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="privacy-review-dialog-title">Datenschutz-Rückfrage</h2>
+      <button type="button" class="modal__close" data-privacy-dialog-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body" id="privacy-review-dialog-body"></div>
+  </dialog>
 
   {{ name_protection.assets() }}
   {% if viewing_document and document_preview and document_preview.highlighted_html %}
@@ -2258,13 +2289,17 @@
           { label: "Pseudonymisierung", state: "pending" },
           { label: "Cloud-Verarbeitung", state: "pending" }
         ];
+        // Fortschritt NICHT fest verdrahten (Anti-Fake-Vollstaendigkeit): Anzahl und Balkenbreite aus den
+        // tatsaechlich gerenderten Schritt-Zustaenden ableiten, damit die Anzeige nicht von der Realitaet abweicht.
+        var doneCount = steps.filter(function (step) { return step.state === "done"; }).length;
         var head = privacyEl("div", "privacy-review__progress-head");
         head.appendChild(privacyEl("span", "privacy-review__progress-title", "Datenschutzprüfung"));
-        head.appendChild(privacyEl("span", "privacy-review__progress-count", "2 von 5 Schritten abgeschlossen"));
+        head.appendChild(privacyEl("span", "privacy-review__progress-count",
+          doneCount + " von " + steps.length + " Schritten abgeschlossen"));
         container.appendChild(head);
         var bar = privacyEl("div", "privacy-review__bar");
         var fill = privacyEl("div", "privacy-review__bar-fill");
-        fill.style.width = "40%";
+        fill.style.width = Math.round((doneCount / steps.length) * 100) + "%";
         bar.appendChild(fill);
         container.appendChild(bar);
         var list = privacyEl("ol", "privacy-review__steps");
@@ -2277,6 +2312,29 @@
         container.appendChild(list);
       }
 
+      // Dialog-Element (P3). Fehlt es oder kann der Browser kein modales <dialog>, faellt alles auf die bisherige
+      // Darstellung in der Chat-Blase zurueck (kein Funktionsverlust).
+      function privacyDialog() {
+        var dialog = document.getElementById("privacy-review-dialog");
+        return dialog && typeof dialog.showModal === "function" ? dialog : null;
+      }
+
+      // Kompakte Statuszeile in der Chat-Blase, solange die Rueckfrage im Dialog offen ist - mit einem Button, der
+      // den (ggf. mit Escape/✕ geschlossenen) Dialog erneut oeffnet. Schliessen beantwortet nie etwas.
+      function renderPrivacyBubbleStatus(bubble, dialog) {
+        bubble.classList.remove("chat-message--thinking");
+        var body = bubble.querySelector(".chat-message__text");
+        body.className = "chat-message__text privacy-review-status";
+        body.removeAttribute("role");
+        body.removeAttribute("aria-label");
+        body.textContent = "";
+        body.appendChild(privacyEl("span", "privacy-review-status__label", "Datenschutz-Rückfrage offen – bitte entscheiden."));
+        var open = privacyEl("button", "btn btn--primary privacy-review-status__open", "Rückfrage öffnen");
+        open.type = "button";
+        open.addEventListener("click", function () { if (!dialog.open) { dialog.showModal(); } });
+        body.appendChild(open);
+      }
+
       function showPrivacyReview(payload, bubble, hasFiles, onSubmitted) {
         if (!bubble || !payload.candidates || !payload.candidates.length) { onSubmitted(null); return; }
         // Neue Unterhaltung: Adresse auf die Unterhaltung setzen, damit ein Neuladen die offene Rueckfrage wiederfindet
@@ -2287,12 +2345,21 @@
             window.history.replaceState(null, "", reviewPath);
           }
         }
-        bubble.classList.remove("chat-message--thinking");
-        var body = bubble.querySelector(".chat-message__text");
-        body.className = "chat-message__text privacy-review";
-        body.removeAttribute("role");
-        body.removeAttribute("aria-label");
-        body.textContent = "";
+        var dialog = privacyDialog();
+        var body;
+        if (dialog) {
+          body = document.getElementById("privacy-review-dialog-body");
+          body.className = "modal__body privacy-review";
+          body.textContent = "";
+          renderPrivacyBubbleStatus(bubble, dialog);
+        } else {
+          bubble.classList.remove("chat-message--thinking");
+          body = bubble.querySelector(".chat-message__text");
+          body.className = "chat-message__text privacy-review";
+          body.removeAttribute("role");
+          body.removeAttribute("aria-label");
+          body.textContent = "";
+        }
         renderPrivacySteps(body, hasFiles);
 
         var card = privacyEl("section", "privacy-review__card");
@@ -2356,6 +2423,8 @@
               if (index < payload.candidates.length) { renderCandidate(); return; }
               options.querySelectorAll("button").forEach(function (b) { b.disabled = true; });
               footer.textContent = "Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …";
+              // Erst nach einer echten Auswahl schliesst der Dialog (Escape/✕ allein beantwortet NICHTS).
+              if (dialog && dialog.open) { dialog.close(); }
               onSubmitted(decisions);
             });
             options.appendChild(button);
@@ -2364,7 +2433,11 @@
           if (first) { first.focus({ preventScroll: true }); }
         }
         renderCandidate();
-        messages.scrollTop = messages.scrollHeight;
+        if (dialog) {
+          if (!dialog.open) { dialog.showModal(); }
+        } else {
+          messages.scrollTop = messages.scrollHeight;
+        }
       }
 
       function readSseStream(response, onPayload) {
@@ -2745,6 +2818,73 @@
             });
           })
           .catch(function () { /* keine Rueckfrage anzeigen; das Senden prueft ohnehin erneut */ });
+      })();
+
+      // --- Dialoge (23.10.2026): Schliessen-Buttons; Pseudonymisierungs-Dialog oeffnen ---------------------------
+      (function wireDialogs() {
+        function closeOn(selector) {
+          document.querySelectorAll(selector).forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var dialog = btn.closest("dialog");
+              if (dialog && dialog.open) { dialog.close(); }
+            });
+          });
+        }
+        closeOn("[data-privacy-dialog-close]");
+        closeOn("[data-pseudonymization-dialog-close]");
+        var pseudoOpen = document.querySelector("[data-pseudonymization-open]");
+        var pseudoDialog = document.getElementById("pseudonymization-dialog");
+        if (pseudoOpen && pseudoDialog && typeof pseudoDialog.showModal === "function") {
+          pseudoOpen.addEventListener("click", function () { if (!pseudoDialog.open) { pseudoDialog.showModal(); } });
+        } else if (pseudoOpen && pseudoDialog) {
+          // Fallback ohne modales <dialog>: Details als normaler Block sichtbar lassen.
+          pseudoDialog.setAttribute("open", "open");
+          pseudoOpen.hidden = true;
+        }
+      })();
+
+      // --- P4 (23.10.2026): "Pseudonymisierung bestätigen und Schriftsatz erstellen" --------------------------------
+      // Gibt das Dokument frei UND nimmt den unterbrochenen Auftrag wieder auf. Treibt denselben SSE-Strom wie der
+      // Chat (showPrivacyReview/submitPrivacyReview), damit eine faellige Rueckfrage im Dialog erscheint und erst
+      // danach der Entwurf entsteht. Kein Scheinerfolg: angezeigt wird immer der tatsaechliche Serverstand.
+      (function wireConfirmReleaseAndGenerate() {
+        if (!messages || !supportsStreaming) { return; }
+        var trigger = document.querySelector("[data-confirm-release-generate]");
+        if (!trigger) { return; }
+        trigger.addEventListener("click", function () {
+          var conversationId = trigger.getAttribute("data-conversation-id");
+          var documentId = trigger.getAttribute("data-document-id");
+          var textVersion = trigger.getAttribute("data-text-version");
+          if (!conversationId || !documentId) { return; }
+          trigger.disabled = true;
+          var bubble = appendThinkingBubble();
+          var backToChat = function () {
+            window.location.href = "/dashboard/chat/" + encodeURIComponent(conversationId);
+          };
+          var form = new FormData();
+          var csrfField = composer ? composer.querySelector("input[name=\"csrf_token\"]") : null;
+          form.append("csrf_token", csrfField ? csrfField.value : "");
+          form.append("document_id", documentId);
+          form.append("text_version", textVersion || "");
+          fetch("/dashboard/chat/" + encodeURIComponent(conversationId) + "/confirm-release-and-generate", {
+            method: "POST", body: form, credentials: "same-origin"
+          })
+            .then(function (response) {
+              return readSseStream(response, function (next) {
+                if (next.kind === "review") {
+                  showPrivacyReview(next, bubble, false, function (decisions) {
+                    if (!decisions) { backToChat(); return; }
+                    submitPrivacyReview(next, decisions, bubble, false, backToChat);
+                  });
+                } else if (next.kind === "done") {
+                  // Entwurf/Blockade/Fehler sind serverseitig persistiert - in die Unterhaltung wechseln, die den
+                  // tatsaechlichen Stand (inkl. Editor-Link am Entwurf) zeigt.
+                  backToChat();
+                }
+              });
+            })
+            .catch(function () { backToChat(); });
+        });
       })();
 
       if (messages) {

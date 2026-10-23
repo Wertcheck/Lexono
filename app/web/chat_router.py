@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_or_404
 from app.auth.permissions import (
     PERM_CLAUDE_CALL,
+    PERM_PRIVACY_DECISION_MANAGE,
     PermissionDeniedError,
     require_login,
     require_role,
@@ -1628,6 +1629,131 @@ def submit_privacy_review(
         db.rollback()
         _release_message(db, message.id)
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
+
+    try:
+        drafting_service = get_drafting_service()
+    except WritingProviderNotConfiguredError:
+        drafting_service = None
+    return StreamingResponse(
+        _stream_chat_reply(
+            _get_chat_service(),
+            db,
+            conversation,
+            message.content,
+            drafting_service,
+            current_user.email,
+            current_message_id=message.id,
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/{conversation_id}/confirm-release-and-generate")
+def confirm_release_and_generate(
+    conversation_id: str,
+    document_id: str = Form(...),
+    text_version: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(permission=PERM_PRIVACY_DECISION_MANAGE)),
+) -> StreamingResponse:
+    """"Pseudonymisierung bestätigen und Schriftsatz erstellen" im Chat-Kontext (23.10.2026).
+
+    Schliesst die Luecke, die einen Schriftsatz-Auftrag auf ein Dokument mit unsicherem Begriff im Modus
+    "auto_review" am Dokument-Gate haengen liess (Reproduktion: tests/test_schriftsatz_release_resume.py): die
+    bisherige Freigabe (`POST .../release`) schrieb nur eine DocumentRelease-Zeile und nahm den unterbrochenen
+    Auftrag NICHT wieder auf.
+
+    Diese Aktion gibt das ANGEZEIGTE Dokument frei (dieselbe `release.release_manually` wie §62, an den Textstand
+    gebunden) UND verarbeitet dieselbe, zuletzt offene Nutzernachricht erneut. KEIN clientseitiges Umgehen des
+    Gateways: die Wiederaufnahme laeuft ueber `send_message_stream`, das den gesamten Inhalt erneut fail-closed
+    prueft (analog `submit_privacy_review`). Bleibt danach noch ein unsicherer Begriff offen, erscheint wieder
+    eine Rueckfrage; eine fehlgeschlagene Pruefung blockiert weiterhin; eine Freigabe uebersteuert sie nie.
+    Nur die zuletzt gestellte, noch offene Nutzernachricht der EIGENEN Unterhaltung; Aktenisolation beim Dokument;
+    Doppelversand ausgeschlossen (Message-Claim vor der Freigabe)."""
+    from app.documents import release
+
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+    # Aktenisolation: Dokument muss zur Akte DIESER Unterhaltung gehoeren.
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.matter_id == conversation.matter_id,
+            Document.deleted_at.is_(None),
+        )
+        .first()
+    )
+    if document is None:
+        return StreamingResponse(
+            _stream_error_event("Dieses Dokument gehört nicht zu dieser Unterhaltung."),
+            media_type="text/event-stream",
+        )
+    # Offenen Schriftsatz-Auftrag bestimmen. Anders als bei der Rueckfrage (die nichts speichert) hat das
+    # Dokument-Gate bereits eine blockierte Hinweis-Nachricht angelegt - die zuletzt gestellte Nutzernachricht ist
+    # daher der Auftrag, der wiederaufgenommen werden soll. Ist die letzte Nachricht eine ERFOLGREICHE
+    # Assistenten-Antwort, gilt der Auftrag als erledigt und wird NICHT erneut generiert (keine Doppelerzeugung).
+    last = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .first()
+    )
+    if last is not None and last.role == "assistant" and not last.blocked:
+        return StreamingResponse(
+            _stream_error_event("Zu diesem Dokument gibt es keinen offenen Auftrag mehr."),
+            media_type="text/event-stream",
+        )
+    message = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id, role="user")
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .first()
+    )
+    if message is None:
+        return StreamingResponse(
+            _stream_error_event("Es gibt keinen offenen Auftrag, der fortgesetzt werden kann."),
+            media_type="text/event-stream",
+        )
+    # Claim VOR der Freigabe: verhindert, dass dieselbe Nachricht parallel (zweiter Klick, laufende Verarbeitung)
+    # ein zweites Mal generiert.
+    if not _claim_message(db, message.id):
+        interrupted = processing_claims.state(db, message.id) == "interrupted"
+        return StreamingResponse(
+            _stream_error_event(
+                "Die Verarbeitung dieser Nachricht wurde unterbrochen. Bitte die Nachricht erneut senden."
+                if interrupted
+                else "Diese Anfrage wird bereits verarbeitet."
+            ),
+            media_type="text/event-stream",
+        )
+    # Freigabe des ANGEZEIGTEN Textstands. Scheitert sie (veralteter Stand, fehlgeschlagene Pruefung,
+    # kein verwertbarer Text), wird NICHTS generiert und die Nachricht wieder freigegeben.
+    try:
+        release.release_manually(db, document, text_version=text_version, user=current_user)
+    except release.ReleaseError as exc:
+        _release_message(db, message.id)
+        return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
+
+    # Veraltete Dokument-Gate-Hinweise (blockierte Assistenten-Nachrichten NACH dem Auftrag) entfernen, damit der
+    # Auftrag wieder die letzte Nachricht ist - Invariante, auf die sich die Wiederaufnahme/Rueckfrage
+    # (`submit_privacy_review`, `pending-review`) stuetzt. Es sind reine Statushinweise (blocked=True, kein Entwurf,
+    # keine Anhaenge); substanzielle Beitraege werden nie entfernt.
+    stale_notices = (
+        db.query(ChatMessage)
+        .filter(
+            ChatMessage.conversation_id == conversation.id,
+            ChatMessage.role == "assistant",
+            ChatMessage.blocked.is_(True),
+            ChatMessage.draft_id.is_(None),
+            ChatMessage.created_at >= message.created_at,
+        )
+        .all()
+    )
+    for notice in stale_notices:
+        db.delete(notice)
+    if stale_notices:
+        db.commit()
 
     try:
         drafting_service = get_drafting_service()

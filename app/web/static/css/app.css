@@ -11082,6 +11082,38 @@ a.chat-composer__protect-btn {
   .privacy-review__options { grid-template-columns: 1fr; }
 }
 
+/* ============================================================================================================
+   Pop-ups (23.10.2026): Pseudonymisierung + Datenschutz-Rueckfrage als zentrierte Dialoge.
+   - Die Pseudonymisierungs-Details liegen jetzt im zentrierten <dialog>, nicht mehr in einer schmalen Spalte,
+     die den A4-Text quetschte. Dafuer darf der Dokumenttext breiter werden (A4-naehere Proportionen).
+   - Die HITL-Rueckfrage wird im Dialog gezeigt; in der Chat-Blase bleibt nur eine kompakte Statuszeile.
+   ============================================================================================================ */
+
+/* Dokumentansicht ohne die alte Kontext-Spalte: der A4-Text bekommt mehr Breite */
+.chat-shell--document-view .chat-document-pane {
+  width: clamp(360px, 48%, 760px);
+}
+.chat-pseudonymization-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 14px; padding: 10px 12px;
+  background: var(--paper-050, var(--paper-100)); border: 1px solid var(--paper-line); border-radius: var(--radius-md);
+}
+.chat-pseudonymization-summary__count { font-size: 12.5px; color: var(--ink-500); }
+.chat-pseudonymization-summary__open { margin-left: auto; }
+
+/* Kontext-Pane im Dialog: volle Breite statt der frueheren 220px-Spalte, ohne linke Trennlinie */
+.modal__body.chat-context-pane {
+  width: auto; border-left: 0; background: transparent;
+  display: block; overflow-y: visible;
+}
+
+/* Kompakte Statuszeile in der Chat-Blase, solange die Rueckfrage im Dialog offen ist */
+.privacy-review-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.privacy-review-status__label { font-size: 13.5px; color: var(--ink-700, var(--ink-900)); }
+
+/* Dialog-Titel mit Icon (Pseudonymisierung) */
+#pseudonymization-dialog .modal__title { display: inline-flex; align-items: center; gap: 8px; }
+
 
 /* Fundstellenpruefung im Editor (§37): Hinweisblock oberhalb des Schreibens, nicht Teil des Schreibens/Exports */
 .draft-editor-citation-check {

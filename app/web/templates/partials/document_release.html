@@ -30,11 +30,23 @@
         {% endif %}
         <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/pseudonymisierung">Pseudonymisierung überprüfen</a>
         {% if can_manage %}
+          {% if return_to.startswith("chat:") %}
+            {# §63/23.10.2026: Im Chat-Kontext gibt dieser Button das Dokument frei UND nimmt den am Dokument-Gate
+               haengenden Schriftsatz-Auftrag wieder auf (POST /dashboard/chat/<id>/confirm-release-and-generate).
+               Kein Gateway-Bypass: die Wiederaufnahme prueft den gesamten Inhalt erneut fail-closed. #}
+            <button type="button" class="btn btn--primary" style="padding: 4px 10px; font-size: 12px;"
+                    data-confirm-release-generate
+                    data-conversation-id="{{ return_to[5:] }}"
+                    data-document-id="{{ document.id }}"
+                    data-text-version="{{ status.text_version }}">
+              Pseudonymisierung bestätigen und Schriftsatz erstellen
+            </button>
+          {% endif %}
           <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/release" style="display: inline;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <input type="hidden" name="text_version" value="{{ status.text_version }}" />
             <input type="hidden" name="return_to" value="{{ return_to }}" />
-            <button type="submit" class="btn btn--primary" style="padding: 4px 10px; font-size: 12px;">Für KI-Verarbeitung freigeben</button>
+            <button type="submit" class="btn {% if return_to.startswith('chat:') %}btn--ghost{% else %}btn--primary{% endif %}" style="padding: 4px 10px; font-size: 12px;">{% if return_to.startswith('chat:') %}Nur freigeben{% else %}Für KI-Verarbeitung freigeben{% endif %}</button>
           </form>
         {% else %}
           <span class="form-hint">Freigeben dürfen Administration und Anwälte.</span>
