@@ -220,10 +220,15 @@ def test_main_serve_without_env_runs_setup_first(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     order: list[str] = []
     monkeypatch.setattr(
-        run, "cmd_setup", lambda data_dir, *, force: (order.append("setup"), 0)[1]
+        run, "cmd_setup", lambda data_dir, *, force, gui=False: (order.append("setup"), 0)[1]
     )
     monkeypatch.setattr(
         run, "cmd_serve", lambda *, open_window=True: (order.append("serve"), 0)[1]
+    )
+    # Ohne vorhandene .env (echte Ersteinrichtung) darf VOR dem Setup KEINE
+    # Migration laufen - der Setup-Assistent legt Schema + Admin selbst an.
+    monkeypatch.setattr(
+        run, "cmd_migrate", lambda: (order.append("migrate"), 0)[1]
     )
 
     assert run.main([]) == 0
@@ -264,11 +269,12 @@ def test_main_serve_skips_setup_when_env_exists_and_admin_exists(tmp_path, monke
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
     _patch_fake_user_session(monkeypatch, has_user=True)
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)  # Vorab-Migration (No-op im Test)
 
     monkeypatch.setattr(
         run,
         "cmd_setup",
-        lambda data_dir, *, force: (_ for _ in ()).throw(
+        lambda data_dir, *, force, gui=False: (_ for _ in ()).throw(
             AssertionError("Setup sollte nicht erneut laufen, wenn bereits ein Benutzer existiert")
         ),
     )
@@ -290,10 +296,11 @@ def test_main_serve_reruns_setup_when_env_exists_but_no_admin_was_ever_created(
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
     (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
     _patch_fake_user_session(monkeypatch, has_user=False)
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)  # Vorab-Migration (No-op im Test)
 
     recorded: list[tuple[Path, bool]] = []
     monkeypatch.setattr(
-        run, "cmd_setup", lambda data_dir, *, force: (recorded.append((data_dir, force)), 0)[1]
+        run, "cmd_setup", lambda data_dir, *, force, gui=False: (recorded.append((data_dir, force)), 0)[1]
     )
     monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
 
@@ -319,10 +326,13 @@ def test_main_serve_reruns_setup_when_users_table_does_not_exist_yet(
     import app.db.session as db_session_module
 
     monkeypatch.setattr(db_session_module, "SessionLocal", EmptySessionLocal)
+    # Vorab-Migration im Test als No-op gestubbt (die echte Migration liefe
+    # gegen settings.database_url, nicht gegen die hier gepatchte Session).
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)
 
     recorded: list[tuple[Path, bool]] = []
     monkeypatch.setattr(
-        run, "cmd_setup", lambda data_dir, *, force: (recorded.append((data_dir, force)), 0)[1]
+        run, "cmd_setup", lambda data_dir, *, force, gui=False: (recorded.append((data_dir, force)), 0)[1]
     )
     monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
 
@@ -332,7 +342,7 @@ def test_main_serve_reruns_setup_when_users_table_does_not_exist_yet(
 
 def test_main_serve_aborts_if_setup_fails(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
-    monkeypatch.setattr(run, "cmd_setup", lambda data_dir, *, force: 1)
+    monkeypatch.setattr(run, "cmd_setup", lambda data_dir, *, force, gui=False: 1)
     monkeypatch.setattr(
         run,
         "cmd_serve",
@@ -354,6 +364,7 @@ def test_main_serve_default_opens_window(tmp_path, monkeypatch) -> None:
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
     )
 
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)
     assert run.main(["serve"]) == 0
     assert recorded == [True]
 
@@ -370,6 +381,7 @@ def test_main_serve_bare_invocation_without_subcommand_opens_window(tmp_path, mo
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
     )
 
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)
     assert run.main([]) == 0
     assert recorded == [True]
 
@@ -396,11 +408,138 @@ def test_main_serve_no_window_flag_disables_window(tmp_path, monkeypatch) -> Non
         run, "cmd_serve", lambda *, open_window=True: (recorded.append(open_window), 0)[1]
     )
 
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 0)
     try:
         assert run.main(["serve", "--no-window"]) == 0
         assert recorded == [False]
     finally:
         os.chdir(original_cwd)
+
+
+# --- ROOT-CAUSE-FIX (Doppelklick-/GUI-Start ohne Konsole): Migration VOR dem
+# First-Run-Check + kein stiller EOFError-Absturz im Setup-Assistenten ---
+
+
+def test_main_serve_migrates_before_the_first_run_check_when_env_exists(
+    tmp_path, monkeypatch
+) -> None:
+    """Kernfix: bei vorhandener Konfiguration muessen ausstehende Migrationen
+    LAUFEN, BEVOR der First-Run-Check die users-Tabelle abfragt. Sonst wirft
+    die Abfrage gegen ein veraltetes Schema und wird faelschlich als
+    'Ersteinrichtung noetig' gewertet (-> interaktiver Assistent -> ohne
+    Konsole stiller EOFError-Absturz)."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    order: list[str] = []
+    monkeypatch.setattr(run, "cmd_migrate", lambda: (order.append("migrate"), 0)[1])
+    monkeypatch.setattr(
+        run, "_first_run_setup_required", lambda data_dir: (order.append("check"), False)[1]
+    )
+    monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: (order.append("serve"), 0)[1])
+
+    assert run.main(["serve"]) == 0
+    assert order == ["migrate", "check", "serve"]
+
+
+def test_main_serve_aborts_when_pre_check_migration_fails(tmp_path, monkeypatch) -> None:
+    """Scheitert die Vorab-Migration, darf WEDER der First-Run-Check NOCH der
+    Setup-Assistent NOCH der Server laufen - stattdessen eine sichtbare
+    GUI-Fehlermeldung (open_window-Standard) und ein Nicht-Null-Exit. Daten
+    bleiben unveraendert (cmd_migrate ist fail-closed)."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))
+    (tmp_path / ".env").write_text("APP_ENV=production\n", encoding="utf-8")
+    monkeypatch.setattr(run, "cmd_migrate", lambda: 1)
+    shown: list[str] = []
+    monkeypatch.setattr(run, "_show_startup_error", lambda message: shown.append(message))
+    monkeypatch.setattr(
+        run,
+        "_first_run_setup_required",
+        lambda data_dir: (_ for _ in ()).throw(
+            AssertionError("First-Run-Check darf nach fehlgeschlagener Migration nicht laufen")
+        ),
+    )
+    monkeypatch.setattr(
+        run,
+        "cmd_setup",
+        lambda data_dir, *, force, gui=False: (_ for _ in ()).throw(
+            AssertionError("Setup darf nach fehlgeschlagener Migration nicht laufen")
+        ),
+    )
+    monkeypatch.setattr(
+        run,
+        "cmd_serve",
+        lambda *, open_window=True: (_ for _ in ()).throw(
+            AssertionError("Serve darf nach fehlgeschlagener Migration nicht laufen")
+        ),
+    )
+
+    assert run.main(["serve"]) == 1
+    assert len(shown) == 1
+
+
+def test_main_serve_does_not_migrate_before_setup_on_fresh_install(tmp_path, monkeypatch) -> None:
+    """Echte Ersteinrichtung (keine .env): VOR dem Setup-Assistenten darf keine
+    Vorab-Migration laufen - der Assistent legt Schema UND Admin selbst an
+    (eine Migration haette hier mangels Tabellen ohnehin nichts zu tun)."""
+    monkeypatch.setenv("KANZLEI_AI_DATA_DIR", str(tmp_path))  # bewusst KEINE .env
+    migrated: list[bool] = []
+    monkeypatch.setattr(run, "cmd_migrate", lambda: (migrated.append(True), 0)[1])
+    monkeypatch.setattr(run, "cmd_setup", lambda data_dir, *, force, gui=False: 0)
+    monkeypatch.setattr(run, "cmd_serve", lambda *, open_window=True: 0)
+
+    assert run.main(["serve"]) == 0
+    assert migrated == []
+
+
+def test_cmd_setup_without_console_aborts_cleanly_without_creating_a_user(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """Start ueber die Verknuepfung (wscript, keine Konsole): input()/getpass()
+    werfen EOFError. Statt eines stillen Absturzes muss cmd_setup sauber mit
+    einem Nicht-Null-Exit und einer umsetzbaren Anweisung abbrechen - und dabei
+    den Setup-Assistenten NICHT starten (keine Benutzeranlage, keine Umgehung
+    der Authentifizierung)."""
+    import getpass
+
+    def _raise_eof(*_a, **_k):  # noqa: ANN002, ANN003, ANN202
+        raise EOFError("EOF when reading a line")
+
+    monkeypatch.setattr("builtins.input", _raise_eof)
+    monkeypatch.setattr(getpass, "getpass", _raise_eof)
+    monkeypatch.setattr(
+        "app.setup.run_setup_wizard",
+        lambda **_k: (_ for _ in ()).throw(
+            AssertionError("run_setup_wizard darf ohne Konsole NICHT laufen")
+        ),
+    )
+
+    exit_code = run.cmd_setup(tmp_path, force=False)
+
+    assert exit_code == 1
+    assert "Lexono.exe\" setup" in capsys.readouterr().err  # konkrete Handlungsanweisung
+
+
+def test_cmd_setup_without_console_shows_a_gui_error_box_when_gui_true(
+    tmp_path, monkeypatch
+) -> None:
+    """Im Fenster-/GUI-Start (gui=True) zusaetzlich eine sichtbare Meldung
+    (MessageBox), weil stderr beim unsichtbaren Start niemand sieht."""
+
+    def _raise_eof(*_a, **_k):  # noqa: ANN002, ANN003, ANN202
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", _raise_eof)
+    shown: list[str] = []
+    monkeypatch.setattr(run, "_show_startup_error", lambda message: shown.append(message))
+    monkeypatch.setattr(
+        "app.setup.run_setup_wizard",
+        lambda **_k: (_ for _ in ()).throw(AssertionError("Wizard darf nicht laufen")),
+    )
+
+    exit_code = run.cmd_setup(tmp_path, force=False, gui=True)
+
+    assert exit_code == 1
+    assert len(shown) == 1 and "setup" in shown[0]
 
 
 def test_wait_for_server_ready_returns_on_first_successful_check() -> None:
