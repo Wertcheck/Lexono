@@ -34,7 +34,9 @@ from app.privacy.review import (
     MAX_TERM_LENGTH,
     PrivacyDecisions,
     ReviewCandidate,
+    MANUAL_NAME_PREFIX_WORDS,
     is_identifier_shaped_term,
+    is_name_shaped_term,
     is_plate_shaped_term,
 )
 
@@ -66,7 +68,7 @@ def load_decisions(db: Session, *, matter_id: str, conversation_id: str | None) 
     return PrivacyDecisions(personal=frozenset(personal), not_personal=frozenset(not_personal - personal))
 
 
-def _validate(term: str, decision: str) -> str:
+def _validate(term: str, decision: str, *, allow_names: bool = False) -> str:
     term = (term or "").strip()
     if decision not in VALID_PRIVACY_DECISIONS:
         raise InvalidPrivacyDecisionError("Unbekannte Entscheidung.")
@@ -78,25 +80,93 @@ def _validate(term: str, decision: str) -> str:
     # Ohne sie wurde die Antwort des Anwalts verworfen und Lexono fragte endlos erneut (installierter Build). Die Form ist
     # eng (Buchstaben, Bindestrich, Leerzeichen, Ziffern) und wird immer als "kennung" maskiert.
     # Ebenso kennnummernfoermige Kandidaten (§22, review.is_identifier_shaped_term).
-    if not term.isalpha() and not is_plate_shaped_term(term) and not is_identifier_shaped_term(term):
+    # §52: NUR fuer die manuelle Markierung (`allow_names`) zusaetzlich mehrteilige Personennamen (review.is_name_shaped_term:
+    # nur Buchstaben, innere Bindestriche, Leerzeichen, Namenszusaetze). Die Rueckfrage bleibt bei Einzelwoertern (Audit oben).
+    if (not term.isalpha() and not (allow_names and is_name_shaped_term(term)) and not is_plate_shaped_term(term)
+            and not is_identifier_shaped_term(term)):
         raise InvalidPrivacyDecisionError("Ungültiger Begriff.")
     return term
+
+
+MAX_MANUAL_TERMS = 20
+
+
+def validate_manual_terms(terms: object, message_text: str) -> list[str]:
+    """§51 (16.10.2026): vom Anwalt im Eingabefeld markierte Namen, die die automatische Erkennung uebersieht ("Der
+    Richter Zweigelt"). Gleiche Form wie eine Rueckfrage-Entscheidung "Als Person behandeln" (ein Wort, siehe `_validate`)
+    und - gegen veraltete Markierungen nach einer Textaenderung - nur, wenn der Begriff in der Nachricht vorkommt.
+    Fehler werden NICHT uebergangen: der Aufrufer sendet dann nichts (keine stillschweigend verlorene Markierung)."""
+    from app.privacy.review import detect_decision_terms
+
+    if not isinstance(terms, list) or len(terms) > MAX_MANUAL_TERMS or not all(isinstance(t, str) for t in terms):
+        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.")
+    result: list[str] = []
+    for raw in terms:
+        term = _validate(" ".join(raw.split()), DECISION_PERSONAL, allow_names=True)
+        if not is_name_shaped_term(term):
+            raise InvalidPrivacyDecisionError("Bitte nur Namen markieren (Buchstaben, Bindestrich, Namenszusatz).")
+        if term.split(" ")[0].lower().rstrip(".:") in MANUAL_NAME_PREFIX_WORDS:
+            # Rolle/Anrede/Titel gehoert nicht in den Platzhalter (sonst verschwindet "Richter" mit dem Namen)
+            raise InvalidPrivacyDecisionError("Bitte nur den Namen ohne Anrede, Titel oder Rolle markieren.")
+        if not detect_decision_terms(message_text, {term}):
+            # Ohne den Begriff: die Meldung landet im klassischen Formularpfad in der Redirect-URL (?error=...) und
+            # damit im Zugriffsprotokoll/Browserverlauf. Der Browser nennt den Namen vorher lokal (chat.html).
+            raise InvalidPrivacyDecisionError(
+                "Ein markierter Name kommt in der Nachricht nicht mehr vor. Bitte Markierung prüfen."
+            )
+        if term not in result:
+            result.append(term)
+    return result
+
+
+def parse_manual_terms(protected_terms: str | None, sent_text: str) -> list[str]:
+    """§51/§54: Formularfeld `protected_terms` (JSON-Liste) -> gepruefte Namen. EINE Stelle fuer Chat, Schriftsatz,
+    Aenderungsauftrag, Editor und E-Mail-Aktionen. `sent_text` ist genau der Text, der in die Cloud-Anfrage geht
+    (Formularfelder, ggf. Entwurf oder E-Mail): eine Markierung, die dort nicht vorkommt, ist veraltet oder manipuliert.
+    Fehler als InvalidPrivacyDecisionError (Meldungen ohne Begriff) - der Aufrufer sendet dann nichts."""
+    if not (protected_terms or "").strip():
+        return []
+    try:
+        raw = json.loads(protected_terms)
+    except ValueError as exc:
+        raise InvalidPrivacyDecisionError("Ungültige Namensmarkierung.") from exc
+    return validate_manual_terms(raw, sent_text)
+
+
+def record_manual_terms(
+    db: Session, *, matter_id: str, conversation_id: str | None, terms: list[str], user_id: str | None, actor: str
+) -> None:
+    """§51/§54: dieselbe Entscheidung wie "Als Person behandeln" in der Rueckfrage, aktenweit - gespeichert und
+    committet VOR der Cloud-Anfrage, damit schon deren Pruefung sie laedt (`_prepare_and_gate`/`load_decisions`). Scheitert
+    das Speichern, wird zurueckgerollt und der Fehler weitergegeben: der Aufrufer sendet dann nichts (fail-closed)."""
+    if not terms:
+        return
+    try:
+        for term in terms:
+            record_decision(db, matter_id=matter_id, conversation_id=conversation_id, term=term,
+                            decision=DECISION_PERSONAL, user_id=user_id, actor=actor, manual=True)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def record_decision(
     db: Session,
     *,
     matter_id: str,
-    conversation_id: str,
+    conversation_id: str | None,
     term: str,
     decision: str,
     user_id: str | None,
     actor: str,
     candidate: ReviewCandidate | None = None,
+    manual: bool = False,
 ) -> PrivacyDecision:
     """Speichert (bzw. aktualisiert) eine Entscheidung und zaehlt sie klartextfrei in der Lern-Statistik.
-    Audit ohne Begriff (nur Entscheidungsart) - der Begriff kann ein Name sein."""
-    term = _validate(term, decision)
+    Audit ohne Begriff (nur Entscheidungsart) - der Begriff kann ein Name sein. `manual`: vom Anwalt selbst markiert
+    (§51), nicht von Lexono gefragt - nur fuer den Audit-Text."""
+    term = _validate(term, decision, allow_names=manual)
     scope_conversation = conversation_id if decision == DECISION_NOT_PERSONAL else None
     row = (
         db.query(PrivacyDecision)
@@ -125,7 +195,8 @@ def record_decision(
             entity_id=matter_id,
             event_type="privacy_decision_recorded",
             actor=actor,
-            details=f"Datenschutz-Rückfrage entschieden: {decision}",
+            details=(f"Name manuell zur Pseudonymisierung markiert: {decision}" if manual
+                     else f"Datenschutz-Rückfrage entschieden: {decision}"),
         )
     )
     db.flush()
@@ -146,6 +217,45 @@ def _count_feedback(db: Session, *, term: str, decision: str, candidate: ReviewC
     stat.last_seen_at = datetime.now(timezone.utc)
     if candidate is not None:
         stat.features_json = json.dumps({"roles": list(candidate.roles), "probe": candidate.probe_score})
+
+
+def list_for_matter(db: Session, matter_id: str) -> list[PrivacyDecision]:
+    """§52: alle Entscheidungen EINER Akte (aktenweite zuerst, dann unterhaltungsbezogene; je alphabetisch)."""
+    rows = db.query(PrivacyDecision).filter(PrivacyDecision.matter_id == matter_id).all()
+    return sorted(rows, key=lambda r: (r.conversation_id is not None, r.term.lower()))
+
+
+def revoke_decision(db: Session, *, matter_id: str, decision_id: str, actor: str) -> PrivacyDecision:
+    """§52: Entscheidung gezielt aufheben (Zeile loeschen). Gilt ab der NAECHSTEN Pruefung jedes Pfads - die Entscheidungen
+    werden bei jeder Anfrage frisch geladen (`load_decisions`), es gibt keinen Zwischenspeicher. Die automatische Erkennung
+    bleibt unberuehrt. Nur innerhalb DERSELBEN Akte (Aktenisolation); Audit ohne Begriff."""
+    row = _row_of_matter(db, matter_id, decision_id)
+    db.add(AuditEvent(entity_type="Matter", entity_id=matter_id, event_type="privacy_decision_revoked", actor=actor,
+                      details=f"Datenschutz-Entscheidung aufgehoben: {row.decision}"))
+    db.delete(row)
+    db.flush()
+    return row
+
+
+def confirm_unsure_decision(db: Session, *, matter_id: str, decision_id: str, user_id: str | None, actor: str) -> PrivacyDecision:
+    """§52: "Unsicher" als "Als Person behandeln" bestaetigen (beides maskiert; die Bestaetigung ist eine Korrektur der
+    Aktenlage, keine Schutzaenderung)."""
+    row = _row_of_matter(db, matter_id, decision_id)
+    if row.decision != DECISION_UNSURE:
+        raise InvalidPrivacyDecisionError("Nur „Unsicher“ kann bestätigt werden.")
+    row.decision = DECISION_PERSONAL
+    row.decided_by_user_id = user_id
+    db.add(AuditEvent(entity_type="Matter", entity_id=matter_id, event_type="privacy_decision_confirmed", actor=actor,
+                      details="Datenschutz-Entscheidung bestätigt: unsure -> personal"))
+    db.flush()
+    return row
+
+
+def _row_of_matter(db: Session, matter_id: str, decision_id: str) -> PrivacyDecision:
+    row = db.query(PrivacyDecision).filter(PrivacyDecision.id == decision_id, PrivacyDecision.matter_id == matter_id).first()
+    if row is None:
+        raise InvalidPrivacyDecisionError("Diese Entscheidung gehört nicht zu dieser Akte.")
+    return row
 
 
 def delete_for_conversation(db: Session, conversation_id: str) -> int:

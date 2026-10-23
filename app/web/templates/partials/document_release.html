@@ -1,0 +1,72 @@
+{# §62 Dokumentfreigabe - Statusanzeige am Dokument (Akten- und Chat-Dokumentansicht).
+   `status`: app/documents/release.py::ReleaseStatus. Nur die informative Meldung "automatisch freigegeben" ist
+   ausblendbar (Benutzerpraeferenz); Blockade, erforderliche Freigabe und Entscheidung werden IMMER angezeigt. #}
+
+{% macro status_line(status) %}
+  <p class="document-release-status document-release-status--{{ status.state }}" id="document-release-state">
+    <span class="tag"><span class="tag__dot"></span>{{ status.label }}</span>
+    <span class="form-hint">Freigabemodus: {{ status.mode_label }} · <a href="/dashboard/privacy/document-release">Freigabeeinstellungen</a></span>
+  </p>
+{% endmacro %}
+
+{% macro panel(status, matter, document, csrf_token, show_notice, can_manage, return_to="", released=False, error="", current_path="") %}
+  <div class="document-release" id="document-release">
+    {{ status_line(status) }}
+    {% if error %}<div class="banner banner--error" id="document-release-error">{{ error }}</div>{% endif %}
+
+    {% if status.state == "blocked" %}
+      <div class="banner banner--error" id="document-release-blocked">
+        Verarbeitung blockiert – die Datenschutzprüfung ist fehlgeschlagen. Das Dokument wird in keinem Modus an die
+        Cloud gesendet; eine Freigabe ist nicht möglich.
+        <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/pseudonymisierung">Pseudonymisierung überprüfen</a>
+      </div>
+    {% elif status.state in ("required", "decision") %}
+      <div class="banner" id="document-release-required">
+        {% if status.state == "required" %}
+          Freigabe erforderlich – dieses Dokument wird erst nach Ihrer ausdrücklichen Freigabe von der KI verarbeitet.
+        {% else %}
+          Entscheidung erforderlich – die Datenschutzprüfung zeigt {{ status.candidate_count }} unsichere Angabe(n).
+          Bitte prüfen; nicht erkannte Namen können Sie im Text schützen.
+        {% endif %}
+        <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/pseudonymisierung">Pseudonymisierung überprüfen</a>
+        {% if can_manage %}
+          {% if return_to.startswith("chat:") %}
+            {# §63/23.10.2026: Im Chat-Kontext gibt dieser Button das Dokument frei UND nimmt den am Dokument-Gate
+               haengenden Schriftsatz-Auftrag wieder auf (POST /dashboard/chat/<id>/confirm-release-and-generate).
+               Kein Gateway-Bypass: die Wiederaufnahme prueft den gesamten Inhalt erneut fail-closed. #}
+            <button type="button" class="btn btn--primary" style="padding: 4px 10px; font-size: 12px;"
+                    data-confirm-release-generate
+                    data-conversation-id="{{ return_to[5:] }}"
+                    data-document-id="{{ document.id }}"
+                    data-text-version="{{ status.text_version }}">
+              Pseudonymisierung bestätigen und Schriftsatz erstellen
+            </button>
+          {% endif %}
+          <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/release" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="text_version" value="{{ status.text_version }}" />
+            <input type="hidden" name="return_to" value="{{ return_to }}" />
+            <button type="submit" class="btn {% if return_to.startswith('chat:') %}btn--ghost{% else %}btn--primary{% endif %}" style="padding: 4px 10px; font-size: 12px;">{% if return_to.startswith('chat:') %}Nur freigeben{% else %}Für KI-Verarbeitung freigeben{% endif %}</button>
+          </form>
+        {% else %}
+          <span class="form-hint">Freigeben dürfen Administration und Anwälte.</span>
+        {% endif %}
+      </div>
+    {% elif status.state == "released_manual" and released %}
+      <p class="form-hint" id="document-release-saved">Freigegeben – gilt für diesen Textstand; bei einer Änderung des Texts ist eine erneute Freigabe nötig.</p>
+    {% elif status.state == "released_auto" and show_notice %}
+      <div class="document-release-notice" id="document-release-auto-notice">
+        <span>Automatisch freigegeben gemäß Ihren Freigabeeinstellungen (Datenschutzprüfung erfolgreich).</span>
+        <a href="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/pseudonymisierung">Pseudonymisierung überprüfen</a>
+        <a href="/dashboard/privacy/document-release">Freigabeeinstellungen öffnen</a>
+        <form method="post" action="/dashboard/privacy/document-release/notice" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <input type="hidden" name="show" value="0" />
+          <input type="hidden" name="return_to" value="{{ current_path }}" />
+          <label class="form-hint"><input type="checkbox" onchange="this.form.requestSubmit()" /> Diese Meldung nicht mehr anzeigen</label>
+          <noscript><button type="submit" class="btn">Ausblenden</button></noscript>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}

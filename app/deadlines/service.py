@@ -55,6 +55,9 @@ class ReanalysisResult:
     confirmed_not_found: int = 0
 
 
+_KEY_KIND = {"beendigung": "frist"}
+
+
 def _candidate_kind(candidate: ExtractedDeadline) -> str:
     return kind_from_reasoning(candidate.reasoning, from_analysis=True)
 
@@ -67,6 +70,9 @@ def finding_keys(findings: list[tuple[str, str | None]]) -> list[str]:
     counts: dict[str, int] = {}
     keys: list[str] = []
     for kind, raw in findings:
+        # §74: Beendigungstermine wurden bis §73 als "frist" gespeichert - gleicher Schluesselraum, damit eine erneute
+        # Analyse denselben Fund wiedererkennt und KEINEN zweiten Vorschlag fuer dasselbe Datum anlegt
+        kind = _KEY_KIND.get(kind, kind)
         base = f"{kind}|{' '.join((raw or '').split()).lower()}"[:240]
         counts[base] = counts.get(base, 0) + 1
         keys.append(f"{base}|{counts[base]}")

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% import "_labels.html" as labels %}
+{% import "partials/name_protection.html" as name_protection %}
+{% import "partials/document_release.html" as document_release %}
 {% block title %}{{ document.original_filename or "Dokument" }}{% endblock %}
 {% block content %}
   {# Dokumentansicht innerhalb der Akte (14.09.) - schliesst die Luecke, dass
@@ -153,14 +155,21 @@
             ("extract_data", "Wichtige Daten extrahieren"),
             ("draft_reply", "Schriftsatz-Entwurf erstellen"),
           ] %}
-            <form method="post" action="/dashboard/chat/from-document/{{ document.id }}" class="js-ai-form">
+            <form method="post" action="/dashboard/chat/from-document/{{ document.id }}" class="js-ai-form" data-name-protection-form="document">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              {{ name_protection.document_action_fields(text_version) }}
               <input type="hidden" name="action" value="{{ action }}" />
               <button type="submit" class="btn{% if action == 'draft_reply' %} btn--primary{% endif %}" data-ai-loading-label="Wird gestartet …">{{ label }}</button>
             </form>
           {% endfor %}
         </div>
       </div>
+    </div>
+
+    {# §62 Dokumentfreigabe: dezenter, dauerhafter Status am Dokument #}
+    <div style="margin-top: 20px;">
+      {{ document_release.panel(release_status, matter, document, csrf_token, release_show_notice, release_can_manage,
+                                "", release_released, release_error, release_current_path) }}
     </div>
 
     <div class="split-two" style="margin-top: 28px;">
@@ -170,7 +179,10 @@
            app/documents/rendering.py-Moduldocstring zur Abgrenzung. #}
         <h2 class="panel-title">Extrahierter Text &amp; erkannte Daten</h2>
         {% if preview and preview.highlighted_html %}
-          <div class="chat-document-pane__text">{{ preview.highlighted_html | safe }}</div>
+          {# §56: nicht erkannte Namen im Text markieren und fuer die ganze Akte schuetzen #}
+          {{ name_protection.document_controls("/dashboard/matters/" ~ matter.id ~ "/document/" ~ document.id ~ "/protect-names",
+                                               text_version, csrf_token, "", name_protection_saved, name_protection_error) }}
+          <div class="chat-document-pane__text" id="document-text">{{ preview.highlighted_html | safe }}</div>
         {% elif document.ocr_status == "pending" %}
           <div class="empty-state">
             Der Text dieses Dokuments wurde noch nicht ausgelesen (Texterkennung steht aus).
@@ -267,9 +279,48 @@
           <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Fristen erneut analysieren</button>
           <span class="form-hint">Lokal, regelbasiert. Bestehende und bestätigte Fristen bleiben unverändert.</span>
         </form>
+
+        {# Qualitaetsmeldung (ARCHITECTURE.md §75): jede Rolle darf melden, gebunden an diese Akte und dieses Dokument.
+           Bleibt lokal; Pruefung/Diagnose nur Anwalt/Admin unter "Qualitaetsmeldungen". #}
+        <span id="quality-report"></span>
+        <details style="margin-top: 16px;"{% if request.query_params.get("quality_reported") or request.query_params.get("quality_error") %} open{% endif %}>
+          <summary class="form-hint" style="cursor: pointer;">Problem mit Datenschutz oder Inhalt melden</summary>
+          {% if request.query_params.get("quality_reported") %}
+            <p class="form-hint" style="color: var(--seal-green-dark);">Danke – die Meldung wurde gespeichert und wird geprüft.</p>
+          {% endif %}
+          {% if request.query_params.get("quality_error") %}
+            <p class="form-hint" style="color: var(--amber);">{{ request.query_params.get("quality_error") }}</p>
+          {% endif %}
+          <form method="post" action="/dashboard/quality-reports" class="dashboard-form" style="max-width: none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <input type="hidden" name="matter_id" value="{{ matter.id }}" />
+            <input type="hidden" name="document_id" value="{{ document.id }}" />
+            <label class="form-label">Art des Problems
+              <select name="category" required>
+                <option value="missed_personal_data">Personenbezogene Daten übersehen</option>
+                <option value="over_pseudonymization">Zu viel pseudonymisiert</option>
+                <option value="altered_legal_content">Rechtlich relevanter Inhalt verfälscht</option>
+                <option value="missed_deadline">Frist nicht erkannt</option>
+                <option value="privacy_concern">Mögliches Datenschutzproblem</option>
+              </select>
+            </label>
+            <label class="form-label">Fundstelle – genau die betroffene Angabe aus diesem Dokument (höchstens 300 Zeichen)
+              <input type="text" name="excerpt" maxlength="300" />
+            </label>
+            <label class="form-label">Beschreibung (bitte ohne weitere Mandantendaten)
+              <textarea name="description" rows="2" maxlength="2000"></textarea>
+            </label>
+            <button type="submit" class="btn" style="padding: 4px 10px; font-size: 11.5px;">Melden</button>
+            <span class="form-hint">Bleibt lokal in der Kanzlei. Die Fundstelle wird nach Abschluss der Prüfung gelöscht.</span>
+          </form>
+        </details>
       </div>
     </div>
   </div>
 
   <script src="/dashboard/static/js/app_document_viewer.js"></script>
+  {% if preview and preview.highlighted_html %}
+    {{ name_protection.assets() }}
+    {{ name_protection.document_script("#document-text") }}
+  {% endif %}
 {% endblock %}

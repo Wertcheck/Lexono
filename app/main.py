@@ -53,6 +53,7 @@ from app.web.document_templates_router import router as document_templates_web_r
 from app.web.draft_editor_router import router as draft_editor_web_router
 from app.web.drafts_router import router as drafts_web_router
 from app.web.feedback_router import router as feedback_web_router
+from app.web.quality_reports_router import router as quality_reports_web_router
 from app.web.lock_router import router as lock_web_router
 from app.web.deadline_actions_router import router as deadline_actions_web_router
 from app.web.document_actions_router import router as document_actions_web_router
@@ -62,6 +63,8 @@ from app.web.note_actions_router import (
     matters_router as note_actions_web_router,
 )
 from app.web.parties_router import router as parties_web_router
+from app.web.privacy_decisions_router import router as privacy_decisions_web_router
+from app.web.document_release_router import router as document_release_web_router
 from app.web.prompt_library_router import router as prompt_library_web_router
 from app.web.quality_router import router as quality_web_router
 from app.web.schriftsatz_router import router as schriftsatz_web_router
@@ -302,6 +305,31 @@ async def _run_periodic_law_update_check(settings: Settings) -> None:
             )
 
 
+#: Erster Lauf erst nach einigen Minuten (Start nicht belasten; Tests mit `with TestClient(app)` beruehren die
+#: konfigurierte Datenbank nicht), danach taeglich.
+_QUALITY_REPORT_EXPIRY_FIRST_DELAY_SECONDS = 300.0
+_QUALITY_REPORT_EXPIRY_INTERVAL_SECONDS = 86400.0
+
+
+async def _run_periodic_quality_report_expiry(settings) -> None:
+    """Aufbewahrung der Qualitaetsmeldungen (ARCHITECTURE.md §75.1): leert Fundstelle/Beschreibung offener Meldungen
+    nach `quality_report_content_days` und zu geloeschten Akten. Rein lokal, nur Inhaltsreduktion; ein Fehler beendet
+    die Schleife nicht (gleiches Prinzip wie die Gesetzes-Aktualisierungspruefung)."""
+    from app.quality_reports.service import QualityReportService
+
+    await asyncio.sleep(_QUALITY_REPORT_EXPIRY_FIRST_DELAY_SECONDS)
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                QualityReportService().expire_content(db, content_days=settings.quality_report_content_days)
+            finally:
+                db.close()
+        except Exception:  # noqa: BLE001 - siehe Docstring
+            logger.exception("Aufbewahrungslauf der Qualitaetsmeldungen fehlgeschlagen - naechster Versuch morgen.")
+        await asyncio.sleep(_QUALITY_REPORT_EXPIRY_INTERVAL_SECONDS)
+
+
 _CLOUD_HEALTH_INTERVAL_SECONDS = 45.0
 
 
@@ -310,9 +338,18 @@ async def _run_periodic_cloud_health(app: FastAPI, settings) -> None:
     Erreichbarkeitspruefung mit kurzem Timeout plus Auswertung der letzten Anfrage (siehe
     app/ai_providers/cloud_health.py). Keine API-Anfrage, kein Schluessel, kein Inhalt. Aenderungen werden
     nur als feste Kategorie geloggt."""
-    from app.ai_providers.cloud_health import CHECKING, NOT_CONFIGURED, CloudHealth, compute_cloud_health, probe_target
+    from app.ai_providers.cloud_health import (
+        CHECKING,
+        NOT_CONFIGURED,
+        CloudHealth,
+        cloud_route,
+        compute_cloud_health,
+        probe_target,
+    )
 
-    app.state.cloud_health = CloudHealth(CHECKING if probe_target(settings) else NOT_CONFIGURED)
+    app.state.cloud_health = (
+        CloudHealth(CHECKING, route=cloud_route(settings)) if probe_target(settings) else CloudHealth(NOT_CONFIGURED)
+    )
     previous = None
     while True:
         try:
@@ -372,12 +409,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cloud_health_task = asyncio.create_task(_run_periodic_cloud_health(app, settings))
     mail_ingestion_task = asyncio.create_task(_run_periodic_mail_ingestion(settings))
     law_update_check_task = asyncio.create_task(_run_periodic_law_update_check(settings))
+    quality_expiry_task = asyncio.create_task(_run_periodic_quality_report_expiry(settings))
     yield
     update_task.cancel()
     cloud_health_task.cancel()
     local_ai_task.cancel()
     mail_ingestion_task.cancel()
     law_update_check_task.cancel()
+    quality_expiry_task.cancel()
     logger.info("Anwendung wird beendet")
 
 
@@ -441,10 +480,13 @@ app.include_router(letterheads_web_router)
 app.include_router(settings_web_router)
 app.include_router(tasks_web_router)
 app.include_router(feedback_web_router)
+app.include_router(quality_reports_web_router)
 app.include_router(lock_web_router)
 app.include_router(prompt_library_web_router)
 app.include_router(matters_web_router)
 app.include_router(parties_web_router)
+app.include_router(privacy_decisions_web_router)
+app.include_router(document_release_web_router)
 app.include_router(document_actions_web_router)
 app.include_router(deadline_actions_web_router)
 app.include_router(note_actions_web_router)

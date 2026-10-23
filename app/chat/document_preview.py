@@ -69,7 +69,9 @@ class DocumentPreview:
     entities: list[DocumentPreviewEntity]
 
 
-def build_document_preview(text: str | None, review_terms: frozenset[str] = frozenset()) -> DocumentPreview:
+def build_document_preview(
+    text: str | None, review_terms: frozenset[str] = frozenset(), protected_terms: frozenset[str] = frozenset()
+) -> DocumentPreview:
     """Erkennt PII im übergebenen (bereits lokal extrahierten) Dokumenttext
     und liefert sowohl hervorgehobenes HTML als auch eine gruppierte
     Kategorienliste für die rechte Kontextleiste.
@@ -108,13 +110,29 @@ def build_document_preview(text: str | None, review_terms: frozenset[str] = froz
     ]
     review_starts = {span.start for span in review_spans}
     first_review = min(review_starts) if review_starts else None
+    # §56: bereits als "Als Person behandeln" entschiedene bzw. manuell geschuetzte Namen der Akte sichtbar machen -
+    # dieselbe Fundstellenlogik wie bei der Pseudonymisierung (`detect_decision_terms`); nur dort, wo keine
+    # automatische Erkennung und keine offene Rueckfrage liegt. Nur Anzeige, keine Aenderung am Text.
+    protected_spans = [
+        span
+        for span in detect_decision_terms(text, protected_terms)
+        if not any(other.start < span.end and span.start < other.end for other in [*non_overlapping, *review_spans])
+    ]
+    protected_starts = {span.start for span in protected_spans}
     entity_spans = list(non_overlapping)
-    non_overlapping = sorted([*non_overlapping, *review_spans], key=lambda span: span.start)
+    non_overlapping = sorted([*non_overlapping, *review_spans, *protected_spans], key=lambda span: span.start)
 
     html_parts: list[str] = []
     cursor = 0
     for span in non_overlapping:
         html_parts.append(escape(text[cursor : span.start]))
+        if span.start in protected_starts:
+            html_parts.append(
+                '<mark class="pii-highlight pii-highlight--protected" title="Geschützt (Als Person behandeln)">'
+                f"{escape(text[span.start : span.end])}</mark>"
+            )
+            cursor = span.end
+            continue
         if span.start in review_starts:
             anchor = ' id="review-mark"' if span.start == first_review else ""
             html_parts.append(

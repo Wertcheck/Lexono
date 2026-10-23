@@ -1,0 +1,26 @@
+FEHLER: rubric: aggregation.non_compensation muss true sein (kritische Fehler nicht ausgleichbar)
+FEHLER: rubric: aggregation.critical_rule muss FAIL_KRITISCH sein
+FEHLER: rubric: aggregation.thresholds fehlt (null = juristisch offen)
+FEHLER: LA-D005: Aenderungshistorie fehlt oder passt nicht zur Version
+FEHLER: LA-D005: alternative_results/alternative_results_status fehlen
+FEHLER: LA-D005: K1: Begriff 'zu' zu kurz (trifft beliebige Woerter)
+FEHLER: LA-D005: K7: jede Variante muss einen Begriff des offenen Punkts O1 enthalten (kein Vermischen mehrerer offener Punkte)
+FEHLER: LA-D005: entscheidender Fakt F3 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-D005: entscheidender Fakt F5 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-D005: offener Punkt O2 der Referenz ohne eigenes Kriterium/Ausschluss
+FEHLER: LA-D006: Aenderungshistorie fehlt oder passt nicht zur Version
+FEHLER: LA-D006: alternative_results/alternative_results_status fehlen
+FEHLER: LA-D006: K8: jede Variante muss einen Begriff des offenen Punkts O1 enthalten (kein Vermischen mehrerer offener Punkte)
+FEHLER: LA-D006: entscheidender Fakt F2 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-D006: entscheidender Fakt F3 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-D006: entscheidender Fakt F4 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-D006: offener Punkt O2 der Referenz ohne eigenes Kriterium/Ausschluss
+FEHLER: LA-T004: Aenderungshistorie fehlt oder passt nicht zur Version
+FEHLER: LA-T004: alternative_results/alternative_results_status fehlen
+FEHLER: LA-T004: K8: jede Variante muss einen Begriff des offenen Punkts O1 enthalten (kein Vermischen mehrerer offener Punkte)
+FEHLER: LA-T004: entscheidender Fakt F3 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-T004: entscheidender Fakt F5 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-T004: entscheidender Fakt F7 der Referenz ohne Kriterium/Ausschluss
+FEHLER: LA-T004: offener Punkt O2 der Referenz ohne eigenes Kriterium/Ausschluss
+FEHLER: LOCK.json fehlt - Test-Split nicht gegen Aenderung geschuetzt
+3 Spezifikationen - FEHLER

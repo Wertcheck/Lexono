@@ -1,0 +1,23 @@
+tests/test_s84_network_process_fence.py::test_raw_and_c_level_sockets_are_blocked PASSED
+tests/test_s84_network_process_fence.py::test_udp_send_is_blocked PASSED
+tests/test_s84_network_process_fence.py::test_dns_resolution_of_external_names_is_blocked_before_any_query PASSED
+tests/test_s84_network_process_fence.py::test_alternative_http_libraries_are_blocked PASSED
+tests/test_s84_network_process_fence.py::test_asyncio_connections_are_blocked PASSED
+tests/test_s84_network_process_fence.py::test_threads_are_covered_process_wide PASSED
+tests/test_s84_network_process_fence.py::test_native_network_apis_via_ctypes_are_blocked PASSED
+tests/test_s84_network_process_fence.py::test_symbol_lookup_on_preloaded_network_dll_is_blocked PASSED
+tests/test_s84_network_process_fence.py::test_loopback_recorder_connections_stay_possible PASSED
+tests/test_s84_network_process_fence.py::test_subprocesses_are_blocked_before_they_start PASSED
+tests/test_s84_network_process_fence.py::test_only_allowlisted_programs_with_exact_arguments_start PASSED
+tests/test_s84_network_process_fence.py::test_tesseract_allowlist_matches_the_driver PASSED
+tests/test_s84_network_process_fence.py::test_missing_allowlisted_program_fails_closed PASSED
+tests/test_s84_network_process_fence.py::test_fence_is_released_after_exceptions_and_nesting PASSED
+tests/test_s84_network_process_fence.py::test_activation_fails_closed_on_existing_external_connection_or_check_error PASSED
+tests/test_s84_network_process_fence.py::test_existing_connection_check_runs_on_this_machine PASSED
+tests/test_s84_network_process_fence.py::test_provider_check_refuses_other_http_clients PASSED
+tests/test_s84_network_process_fence.py::test_driver_run_stops_hidden_subprocess_and_dns_access[unterprozess] PASSED
+tests/test_s84_network_process_fence.py::test_driver_run_stops_hidden_subprocess_and_dns_access[dns_http] PASSED
+tests/test_s84_network_process_fence.py::test_existing_connection_parser_is_locale_independent PASSED
+tests/test_s84_network_process_fence.py::test_windows_proactor_is_fenced_and_restored PASSED
+tests/test_s84_network_process_fence.py::test_safety_net_of_these_tests_works_without_the_fence PASSED
+============================= 22 passed in 24.77s =============================

@@ -102,7 +102,9 @@ def kind_from_reasoning(reasoning: str | None) -> str | None:
     text = reasoning or ""
     if "Art: Fristdauer" in text:
         return None
-    if "Art: Termin" in text:
+    if "Art: Termin" in text or "Art: Beendigungstermin" in text:
+        # §74: das Cloud-Schema kennt nur frist/termin/fristbeginn - ein Beendigungstermin ist ein Termin ohne
+        # Fristablauf (vorher "frist"); das Schema bleibt unveraendert
         return "termin"
     if "Art: Fristbeginn" in text:
         return "fristbeginn"

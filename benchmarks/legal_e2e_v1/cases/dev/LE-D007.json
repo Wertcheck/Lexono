@@ -1,0 +1,117 @@
+{
+  "id": "LE-D007",
+  "split": "dev",
+  "version": 2,
+  "title": "Kündigungsschutz: streitiger Zugang, vorsorgliches und spätestes Fristende",
+  "rechtsgebiet": "Arbeitsrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Vollständig synthetisch, Normen real (KSchG, BGB). §72-Entwicklungsfall: zwei Fristenden in einem Satz ohne Doppelpunkt (\"vorsorglich Fristende ..., spätestens ...\"), eine weitere Frist mit Doppelpunkt, Verwaltungs-Kompositum \"Steuer-Bescheide\" als entscheidende Tätigkeit, Organisationsname mit Bindestrich außerhalb der Beteiligten.",
+  "parties": [
+    {"id": "P1", "name": "Henrike Brakenstedt", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Lindqvist Bürgerdienste GmbH", "role": "gegner", "gender": "n"},
+    {"id": "P3", "name": "Okke Tammerjahn", "role": "zeuge", "gender": "m"}
+  ],
+  "matter": {"title": "Brakenstedt ./. Lindqvist Bürgerdienste - Kündigungsschutz", "client_party": "P1", "reference_number": "26/0214-BR"},
+  "documents": [
+    {
+      "id": "D1", "type": "vertrag", "format": "docx", "filename": "Arbeitsvertrag.docx", "date": "01.04.2019",
+      "paragraphs": [
+        "Arbeitsvertrag vom 01.04.2019",
+        "Zwischen der Lindqvist Bürgerdienste GmbH, Hafenstraße 12, 28195 Beispielhafen, und Frau Henrike Brakenstedt, geb. 14.06.1984, wird ein Arbeitsverhältnis als Sachbearbeiterin im Bürgerservice begründet.",
+        "Die Monatsvergütung beträgt 3.240,00 EUR brutto."
+      ]
+    },
+    {
+      "id": "D2", "type": "schreiben", "format": "scan", "filename": "Kuendigung_Scan.pdf", "date": "11.02.2026",
+      "paragraphs": [
+        "Lindqvist Bürgerdienste GmbH - Personalabteilung",
+        "Beispielhafen, 11.02.2026",
+        "Sehr geehrte Frau Brakenstedt, hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 31.05.2026.",
+        "Mit freundlichen Grüßen"
+      ]
+    },
+    {
+      "id": "D3", "type": "email", "format": "txt", "filename": "Mail_Mandantin.txt", "date": "16.02.2026",
+      "paragraphs": [
+        "Von: h.brakenstedt@beispielpost.example",
+        "Datum: 16.02.2026",
+        "Betreff: Kündigung",
+        "Die Kündigung lag erst am 13.02.2026 in meinem Briefkasten.",
+        "Ich habe nur Steuer-Bescheide versandt, Personalverantwortung hatte ich nie.",
+        "Mein Kollege Okke Tammerjahn kann das bestätigen. Telefon 0421 5530 217.",
+        "Henrike Brakenstedt"
+      ]
+    },
+    {
+      "id": "D4", "type": "schreiben", "format": "pdf", "filename": "Schreiben_Arbeitgeberin.pdf", "date": "02.03.2026",
+      "paragraphs": [
+        "Lindqvist Bürgerdienste GmbH",
+        "Beispielhafen, 02.03.2026",
+        "Die Kündigung wurde am 12.02.2026 durch einen Boten der Ostermann-Holtkamp Personalservice GmbH in den Briefkasten eingeworfen.",
+        "Wir bieten eine Abfindung von 9.720,00 EUR an. Für Ihre Stellungnahme zum Angebot gilt: Fristende: 20.03.2026."
+      ]
+    },
+    {
+      "id": "D5", "type": "notiz", "format": "txt", "filename": "Aktenvermerk_Klagefrist.txt", "date": "17.02.2026",
+      "paragraphs": [
+        "Aktenvermerk vom 17.02.2026 - Az. 26/0214-BR",
+        "Die Kündigungsschutzklage ist innerhalb von drei Wochen nach Zugang zu erheben (§ 4 Satz 1 KSchG).",
+        "Zugang streitig (12.02.2026 laut Arbeitgeberin, 13.02.2026 laut Mandantin); vorsorglich Fristende 05.03.2026, spätestens 06.03.2026.",
+        "Kündigungsfrist nach § 622 Abs. 2 BGB prüfen."
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Beginn des Arbeitsverhältnisses", "values": ["01.04.2019"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Kündigung zum", "values": ["31.05.2026"], "docs": ["D2"]},
+      {"id": "F3", "statement": "Zugang laut Mandantin", "values": ["13.02.2026"], "docs": ["D3"]},
+      {"id": "F4", "statement": "Zugang laut Arbeitgeberin", "values": ["12.02.2026"], "docs": ["D4"]},
+      {"id": "F5", "statement": "Tätigkeit ohne Personalverantwortung laut Mandantin", "values": ["Steuer-Bescheide versandt"], "docs": ["D3"]},
+      {"id": "F6", "statement": "Abfindungsangebot", "values": ["9.720,00 EUR"], "docs": ["D4"]},
+      {"id": "F7", "statement": "Monatsvergütung", "values": ["3.240,00 EUR"], "docs": ["D1"]}
+    ],
+    "chronology": [
+      {"date": "01.04.2019", "event": "Arbeitsvertrag", "doc": "D1"},
+      {"date": "11.02.2026", "event": "Kündigungsschreiben", "doc": "D2"},
+      {"date": "16.02.2026", "event": "E-Mail der Mandantin", "doc": "D3"},
+      {"date": "17.02.2026", "event": "Aktenvermerk Klagefrist", "doc": "D5"},
+      {"date": "02.03.2026", "event": "Schreiben der Arbeitgeberin", "doc": "D4"}
+    ],
+    "deadlines": [
+      {"date": "05.03.2026", "kind": "Klagefrist, vorsorglich (Zugang 12.02.2026)", "doc": "D5"},
+      {"date": "06.03.2026", "kind": "Klagefrist, spätestens (Zugang 13.02.2026)", "doc": "D5"},
+      {"date": "20.03.2026", "kind": "Stellungnahme zum Abfindungsangebot", "doc": "D4"}
+    ],
+    "citations": [
+      {"text": "§ 4 Satz 1 KSchG", "kind": "norm", "doc": "D5"},
+      {"text": "§ 622 Abs. 2 BGB", "kind": "norm", "doc": "D5"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Zugang der Kündigung",
+       "values": [{"doc": "D4", "value": "12.02.2026"}, {"doc": "D3", "value": "13.02.2026"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Henrike Brakenstedt", "type": "PERSON"},
+        {"value": "Lindqvist Bürgerdienste GmbH", "type": "ORGANISATION"},
+        {"value": "Okke Tammerjahn", "type": "PERSON"},
+        {"value": "Ostermann-Holtkamp Personalservice GmbH", "type": "ORGANISATION"},
+        {"value": "14.06.1984", "type": "PERS_DATUM"},
+        {"value": "Hafenstraße 12, 28195 Beispielhafen", "type": "ADRESSE"},
+        {"value": "h.brakenstedt@beispielpost.example", "type": "EMAIL"},
+        {"value": "0421 5530 217", "type": "TELEFON"}
+      ],
+      "keep": ["Steuer-Bescheide versandt", "05.03.2026", "06.03.2026", "20.03.2026", "9.720,00 EUR", "§ 4 Satz 1 KSchG"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Bis wann muss die Kündigungsschutzklage erhoben werden, und welche Tätigkeit hat die Mandantin ausgeübt?", "attach": [],
+       "needed_facts": ["F3", "F4", "F5"], "needed_values": ["05.03.2026", "06.03.2026", "Steuer-Bescheide versandt"]},
+      {"id": "Q2", "kind": "schriftsatz", "question": "Kündigungsschutzklage vorbereiten; der Zugang ist streitig.", "attach": [],
+       "needed_facts": ["F3", "F4", "F2"], "needed_values": ["12.02.2026", "13.02.2026", "31.05.2026"]},
+      {"id": "Q3", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["05.03.2026", "06.03.2026", "20.03.2026"]}
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+# Freigabe-Checkliste für einen späteren Lauf (`legal_answers_v1`)
+
+Stand §77, 18.10.2026. **Kein Punkt ist freigegeben.** Jeder OFFENE Punkt verhindert einen Lauf.
+`python -m scripts.legal_bench.answer_run check --config <run_config>` prüft die maschinell erfassbaren Punkte. Es meldet
+„LAUF NICHT FREIGEGEBEN“, solange ein Feld `null` ist, `approved` nicht `true` ist oder eine Datenschutzvorgabe
+abgeschwächt wurde. §82-Korrektur (vorher hieß es hier „Eine Ausführungsfunktion gibt es bewusst nicht“): Seit §80 gibt es den Treiber `answer_driver.py`, er lässt aber nur Mock-Provider und den lokalen Prüfendpunkt zu – echte Endpunkte sind gesperrt (`RealCloudDisabled`); ein echter Lauf bleibt Teil der späteren Freigabe (C-14, GESPERRT).
+§78: Fehlende Felder, Platzhalter, Zusatzschalter, ein veralteter Commit oder Kosten/Aufrufe über dem Limit werden
+ebenfalls abgelehnt (Exit 2). Die Freigabe-Angaben sind keine Signatur: Maßgeblich ist die Entscheidung der
+zuständigen Person, nicht der Eintrag in der Datei (siehe AUDIT_S78.md).
+
+| # | Entscheidung | Feld in `run_config` | Zuständig | Status |
+|---|---|---|---|---|
+| C-1 | Modell-Anbieter, Modell-ID und genaue Modellversion | `model.provider`, `model.model_id`, `model.model_version` | Owner | **OFFEN** |
+| C-2 | Parameter: Temperatur, max_tokens | `model.temperature`, `model.max_tokens` | Owner | **OFFEN** |
+| C-3 | Lexono-Commit und Prompt-Version, die den Payload erzeugen | `pipeline.lexono_commit`, `pipeline.prompt_version` | Owner/Technik | **OFFEN** |
+| C-4 | Fälle und Splits; Reihenfolge erst dev, dann test | `scope.specs`, `scope.splits` | Owner | Vorlage: LA-D005, LA-D006, LA-T004 – **OFFEN bis Freigabe** |
+| C-5 | Wiederholungen je Aufgabe; daraus ergibt sich die Aufrufzahl (derzeit 6 × Wiederholungen) | `scope.repetitions` | Owner | **OFFEN** |
+| C-6 | Höchstzahl der Aufrufe | `limits.max_calls` | Owner | **OFFEN** |
+| C-7 | Maximaler Kostenrahmen in EUR, Preisannahme je Aufruf und (§80) Tokenpreise für die tatsächliche Kostenerfassung | `limits.max_cost_eur`, `limits.price_per_call_eur_estimate`, `limits.price_eur_per_million_input_tokens`, `limits.price_eur_per_million_output_tokens` | Owner | **OFFEN** |
+| C-8 | Abbruch nach fehlgeschlagenen Aufrufen | `limits.abort_after_failed_calls` | Owner | **OFFEN** |
+| C-9 | Abbruch beim ersten Datenschutzbefund | `limits.abort_on_first_privacy_finding` | – | fest **true** (nicht abschwächbar) |
+| C-10 | Datenschutz: nur über den pseudonymisierten Lexono-Pfad, Payload-Erfassung, Leak-Check, Fail-Closed, keine echten Mandantendaten | `pipeline.path`, `privacy.*` | Datenschutz | Pflichtwerte fest; Freigabe `approvals.datenschutz_freigabe` **OFFEN** |
+| C-11 | Ablage der Antworten und Payloads und Aufbewahrungsdauer – §80: `answer_store.RunStore` außerhalb des Repositorys/der Lexono-Daten, Konto-ACL, Hashes, kontrollierte Löschung; Ort und Aufbewahrung entscheidet die zuständige Person | `storage.results_dir`, `storage.retention` | Owner/Datenschutz | **OFFEN** |
+| C-12 | Juristische Freigabe der Spezifikationen: Referenzlösungen, Varianten, Alternativergebnisse (Audit J1–J3) | `approvals.juristische_freigabe_spezifikationen` | qualifizierte juristische Person | **OFFEN** |
+| C-13 | Gewichte und PASS/FAIL-Schwellen je Dimension (Audit J4); bis dahin gibt es nur FAIL_KRITISCH oder OFFEN, nie PASS | `rubric.aggregation`, `approvals.juristische_freigabe_schwellen_und_gewichte` | qualifizierte juristische Person | **OFFEN** |
+| C-14 | Ausführungsschritt: Umsetzung über den regulären Lexono-Chat- und Schriftsatzpfad mit Payload-Erfassung; erneute Payload-Prüfung vor jedem Aufruf | §79/§80: Wächter, Treiber (`answer_driver`), Ablage, Kostenbuch und Wiederanlauf mit Mock/lokalem Recorder geprüft (AUDIT_S80.md); echter Endpunkt im Treiber **gesperrt** – Freigabe erfordert bewusste Code-Änderung | Technik + Owner | **OFFEN** |
+| C-15 | Bewertende Personen, blinde Bewertung, Zweitprüfung bei kritischen Fehlern (Audit J5) | `evaluation.reviewers`, `evaluation.second_reviewer_for_critical` | Owner/juristisch | **OFFEN** |
+| C-16 | Kritische Fehler: Definition je Fall (`dangerous_errors`); bestätigter kritischer Fehler ergibt FAIL_KRITISCH ohne Ausgleich | Spezifikationen, `rubric.aggregation` | qualifizierte juristische Person | Regel fest, Inhalte **OFFEN** (J2) |
+| C-17 | Ausdrückliche Gesamtfreigabe des Laufs – §81: Owner-Freigabe nur mit `plan_fingerprint` (gilt für genau einen Plan), Datum nicht in der Zukunft und nicht vor der letzten Neusperre; juristische Freigaben widersprechen offenen Spezifikationen bzw. fehlenden Schwellen | `approved`, `approvals.owner_freigabe_lauf_und_kosten`, `run_id` | Owner | **OFFEN** |
+| F-1 (§81) | Nachweis der Freigaben (Urheberschaft): Signaturverfahren/Vertrauensanker oder bewusster Verzicht; Vier-Augen-Prinzip | – (nicht implementiert, AUDIT_S81.md) | Owner | **OFFEN** |
+
+§82-Hinweis W2: J6 (Regeln zu n/a und Unentscheidbarem, `AUDIT_S77.md`) ist keinem Punkt dieser Liste und keinem Freigabefeld zugeordnet. Die Zuordnung (z. B. zu C-13 oder ein eigener Punkt) ist eine offene Owner-Entscheidung; siehe `ENTSCHEIDUNGSMATRIX.md`.
+
+**Vor dem Lauf (technisch, Pflicht):**
+
+- Spezifikationen gültig und Sperre unverändert (`python -m scripts.legal_bench.answer_specs`).
+- Aufrufplan erzeugt und archiviert (`python -m scripts.legal_bench.answer_run plan --config <run_config>`).
+- `check` meldet „LAUF FREIGEGEBEN“.
+- Nach Freigabe der Schwellen bewusst neu sperren (`--update-lock --reason …`). Danach gilt für den Test-Split: keine
+  Änderung mehr, solange Ergebnisse ausgewertet werden.

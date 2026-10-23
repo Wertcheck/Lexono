@@ -1,0 +1,30 @@
+{
+  "open": [
+    "approvals.datenschutz_freigabe",
+    "approvals.juristische_freigabe_schwellen_und_gewichte",
+    "approvals.juristische_freigabe_spezifikationen",
+    "approvals.owner_freigabe_lauf_und_kosten",
+    "evaluation.reviewers",
+    "evaluation.second_reviewer_for_critical",
+    "limits.abort_after_failed_calls",
+    "limits.max_calls",
+    "limits.max_cost_eur",
+    "limits.price_per_call_eur_estimate",
+    "model.max_tokens",
+    "model.model_id",
+    "model.model_version",
+    "model.provider",
+    "model.temperature",
+    "pipeline.lexono_commit",
+    "pipeline.prompt_version",
+    "run_id",
+    "scope.repetitions",
+    "storage.results_dir",
+    "storage.retention",
+    "approved (ausdrueckliche Freigabe fehlt)"
+  ],
+  "violations": [],
+  "runnable": false
+}
+LAUF NICHT FREIGEGEBEN
+exit=2

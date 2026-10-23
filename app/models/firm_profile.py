@@ -99,6 +99,9 @@ class FirmProfile(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     auto_number_new_matters: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="0"
     )
+    # §62 Dokumentfreigabe vor KI-Verarbeitung - KANZLEIWEIT (app/documents/release.py). Kein Wert = Standard "auto"
+    # (bisheriges Verhalten, keine stillschweigende Aenderung bestehender Installationen).
+    document_release_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     # Kanzleifachprofil (03.10., Owner-Direktive "KANZLEIFACHPROFIL UND
     # JURISTISCHE WISSENSSTEUERUNG") - siehe app/models/firm_practice_area.py

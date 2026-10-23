@@ -77,6 +77,16 @@ def use_bundled_tesseract_if_no_system_install():
 
 
 @pytest.fixture()
+def synthetic_legal_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    """§81: Positivkontrollen des Benchmark-Gates brauchen einen Stand OHNE offene juristische Punkte. Die echten
+    Spezifikationen/Rubrik bleiben unveraendert offen (J1-J6) - nur `answer_run.legal_state` wird im Test ersetzt.
+    Tests, die den Widerspruch "Freigabe trotz offener Spezifikation" pruefen, nutzen diese Fixture NICHT."""
+    from scripts.legal_bench import answer_run
+
+    monkeypatch.setattr(answer_run, "legal_state", lambda: {"open_specs": {}, "rubric_open": False})
+
+
+@pytest.fixture()
 def always_run_local_summary(monkeypatch: pytest.MonkeyPatch) -> None:
     """Performance (10.10.): die lokale Vorabanalyse wird bei sehr kurzem Sachverhalt uebersprungen
     (`app.drafting.service._LOCAL_SUMMARY_MIN_CHARS`). Tests, die gerade den Vorabanalyse-Pfad mit kurzen

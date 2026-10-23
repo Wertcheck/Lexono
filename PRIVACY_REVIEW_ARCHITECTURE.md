@@ -6073,3 +6073,3827 @@ präzisiert.
 - `tests/test_relay_retry_budget.py` (16): Startprüfung mit Gegenproben, Relay-Start, SDK-Charakterisierung.
 - Mutationsprobe 3/3.
 - Alle Relay-Testdateien: 108 bestanden.
+
+## §45 Rückfrage-Kandidaten: Kontaktbezeichnung und Ampelfarbe sind keine Namen (16.10.2026, Branch `feature/feedback-diagnose`)
+
+**Reproduziert (echter Gateway, `review_mode="mask"`):**
+- „Rückfragen bitte an Herrn Gustav Wendelin, **Telefon** 0301 2345678.“ → „…, [PERSON_02] [TELEFON_01].“
+- „Der Fahrer fuhr **bei Grün** über die Kreuzung …“ → „… bei [PERSON_01] …“ (seit §34.6 als gemessen, offen geführt)
+
+**Ursache:** Nicht Presidio, nicht Regex, nicht Pseudonymizer – beide stammen aus der Stufe „unsichere Kandidaten“
+(`app/privacy/review.py::find_review_candidates`), deren Kandidaten im Maskier-Modus vorsichtshalber ersetzt werden
+(`auto_masked_terms`):
+- „Telefon“: Rolle `aufzaehlung_mit_person` (Wort direkt nach „[PERSON_01],“), Namensprobe 2 → Kandidat. Das Wort ist
+  die Bezeichnung der folgenden, bereits maskierten Rufnummer. „Fax“ verhielt sich gleich.
+- „Grün“: Rolle `nach_praeposition` („bei“ zählt als Namenspräposition), Namensprobe 2 (Grün ist ein Nachname).
+
+**Korrektur (zwei enge Ausnahmen, beide Bedingungen müssen gelten):**
+1. Kontaktbezeichnung (`telefon`, `tel`, `fax`, `mobil`, `handy`, `mail`, `email`, `rufnummer`, `durchwahl` …) **und**
+   direkt dahinter ein Kontakt-Platzhalter (`[TELEFON_..]`, `[EMAIL_..]`, optional mit Doppelpunkt). Geprüft am
+   Roh-Scantext (Platzhalter sichtbar, positionsgleich zur Analysefassung).
+2. „Grün“/„Rot“/„Gelb“ **direkt nach „bei“** **und** unmittelbar danach ein Fahr-/Querungsvorgang (siehe §45.1 –
+   die erste Fassung „Verkehrswort irgendwo im Satz“ war zu weit und wurde vor dem Merge korrigiert).
+Unverändert: Presidio, Regex-Erkennung, exakter Aktendaten-Abgleich (eine bekannte Beteiligte „Grün“ wird weiter
+ersetzt – per Test), Restrisiko-Scan, Leak-Check, Siegel, Fail-closed.
+
+**Gegenproben (per Test):** „Der Vertrag wurde bei Grün unterschrieben.“ und „Das Gespräch mit Grün …“ bleiben
+Kandidaten; ein Name direkt vor einer Rufnummer („Lehmann [TELEFON_01]“) bleibt Kandidat; „Telefon“ ohne folgenden
+Kontakt-Platzhalter bleibt wie bisher.
+
+**Messung vorher/nachher (identische Fälle):**
+| Benchmark | vorher | nachher |
+|---|---|---|
+| `scripts/bench_name_detection.py` (1100 Namensfälle, mask) | Leck 0,0 %, Block 0,0 %, sicher 100 %; Fehlalarme 2/132; Anweisungen 1/17 | identisch (nur Laufzeiten abweichend) |
+| `scripts/bench_pseudonymization.py` (pseudonymization_v1) | Ergebnisdatei | `summary`, `field_results`, `e2e_results` identisch |
+
+**Neue, NICHT behobene Befunde** (andere Stufe – vorgelagerte NER; als `known_open` in
+`tests/regression_cases/dokumentierte_befunde.json`):
+- „Fahrbahn **bei Rot**“ → „bei [ORT_01]“ (Presidio liest „Rot“ als Ort).
+- „**Mobil** 0170 1234567“ → als Ganzes „[PERSON_02]“ (Nummer bleibt geschützt, Bezeichnung geht verloren).
+
+### §45.1 Gegenprüfung vor dem Merge (16.10.2026): Ausnahme 2 war zu weit – präzisiert
+
+**Befund (FAIL der ersten Fassung):** Gegenproben mit Sätzen, in denen das Farbwort ein **Name** ist und der Satz ein
+Verkehrswort enthält, liefen über den echten Gateway (`review_mode="mask"`), jeweils mit und ohne Ausnahmen (alter
+Stand = Ausnahmen abgeschaltet, einziger Code-Unterschied):
+
+| Satz (synthetisch) | Stand 5735e5b | erste Fassung §45 | präzisiert §45.1 |
+|---|---|---|---|
+| „…an der Kreuzung meldete der Mandant … bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Nach dem Unfall an der Kreuzung war er noch eine Stunde bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Die Zeugin übernachtete bei Rot, direkt an der Kreuzung.“ | maskiert | **Klartext** | maskiert |
+| „Die Unterlagen zum Unfall an der Ampel liegen bei Grün.“ | maskiert | **Klartext** | maskiert |
+| „Sie wohnt bei Grün über die Straße, gleich neben der Ampel.“ | – | – | maskiert |
+| „… ist er bei Grün angefahren und hat geklingelt.“ / „… bei Grün mitgefahren.“ | – | – | maskiert |
+| „…weil er bei Gelb im Auto saß…“ | **Klartext** | Klartext | Klartext (vorbestehend, nicht durch §45) |
+
+**Präzisierung:** Die Ausnahme greift nur noch, wenn **unmittelbar** nach der Farbe folgt: „über/in die|den Kreuzung,
+Ampel, Fahrbahn, Einmündung, Haltelinie, Fußgängerfurt“ oder „gefahren/losgefahren/weitergefahren/durchgefahren/
+überquert“. Bewusst ausgenommen, weil eine Personenlesart möglich ist: „über die Straße“, „angefahren“, „abgebogen“,
+„eingebogen“, „mitgefahren“. Die Sätze der Tabelle stehen als Negativtests in `tests/test_privacy_review.py`.
+Ampelfarben, die lesbar bleiben (per Test): „bei Grün über die Kreuzung“, „bei Gelb noch in die Kreuzung gefahren“,
+„bei Rot durchgefahren“, „bei Grün losgefahren“.
+
+**Ausnahme 1 (Kontaktbezeichnung):** Gegenproben mit Kontaktwörtern als Nachnamen („Frau Mobil, 0301 …“,
+„Zeuge Handy …“, „Herr Kontakt 0301 …“) – alle maskiert, kein neues Leck.
+
+**Messung nach der Präzisierung (identische Fälle zur Messung vor §45):** `bench_name_detection` (1100 Fälle) –
+Gruppen, Lecks, Blocks, Fehlalarme (2/132), Anweisungen (1/17) identisch; `bench_pseudonymization` – `summary`,
+`field_results`, `e2e_results` identisch. **Grenze dieses Belegs:** Beide Korpora enthalten keine Farbwort-Nachnamen
+im Verkehrskontext und keine Kontaktwort-Nachnamen; „identisch“ belegt nur, dass auf diesen Korpora nichts schlechter
+wird. Der gezielte Beleg für die Ausnahmen sind die Negativtests. Vollständige Leckfreiheit ist damit nicht belegt.
+
+**Verbleibendes Restrisiko:** Ein der Akte unbekannter Dritter mit Nachnamen Grün/Rot/Gelb **unmittelbar** vor einem
+der genannten Fahrvorgänge („… bei Grün über die Kreuzung …“ als Person) würde nicht mehr vorsichtshalber maskiert;
+Presidio, Restrisiko-Scan, Leak-Check und Fail-closed greifen weiterhin, bekannte Beteiligte deckt der
+Aktendaten-Abgleich ab.
+
+## §46 Kleingeschriebener Name direkt nach einer Anrede (16.10.2026, Branch `feature/feedback-diagnose`)
+
+**Reproduziert im aktuellen Stand (`c52bc0a`):** `pseudonymization_v1` P09 „herr **sauer** hat angerufen und bittet um
+rückruf wegen der räumung.“ – „sauer“ im Klartext im Payload (Grenze „Kleinschreibung“, §20 „Namen in Kleinschreibung
+(Modellgrenze)“). Das Modell erkennt kleingeschriebene Namen nicht; in getipptem Chat-Text ist Kleinschreibung üblich.
+
+**Korrektur (nur Kandidaten-Erzeugung in `app/privacy/review.py`, Richtung mehr Schutz):** Ein kleingeschriebenes Wort
+**unmittelbar** nach „herr/herrn/frau“ (im Rohtext direkt benachbart, kein Platzhalter dazwischen) wird Rückfrage-
+Kandidat – im Maskier-Modus vorsichtshalber ersetzt, im Frage-Modus nachgefragt. Ausgenommen: Stoppwörter, Rollen-,
+Titel- und Berufswörter („Herr der Lage“, „frau kollegin“, „herr doktor“, „frau anwältin“, „herr richter“).
+
+**Geprüft und verworfen:** „Richter“ & Co. als Rollenwörter aufzunehmen (für P10 „Der Richter **Zweigelt** hat
+angerufen“) – ohne Nutzen, weil die Namensprobe „Zweigelt“ nicht als Namen liest; die Probe nach Rollenwörtern
+abzuschalten würde Fachinhalt verfälschen („…der Sachverständige **Mängel** festgestellt…“). P10 bleibt offen.
+
+**Fehlalarm der ersten Fassung, vor dem Commit behoben:** „Frau [PERSON_01] **widerspricht**“ (P02) – in der
+Analysefassung sind Platzhalter ausgeblendet, die Anrede schien direkt vor „widerspricht“ zu stehen. Jetzt Prüfung der
+Nachbarschaft im Rohtext; Regressionstest vorhanden.
+
+**Messung vorher/nachher (identische Fälle):**
+| Benchmark | vorher (`c52bc0a`) | nachher |
+|---|---|---|
+| `bench_pseudonymization` (pseudonymization_v1, 63 Feldfälle) | Klartext-Werte **8** (A06, B03, I07, K04, P08, P09, P10, X02) | **7** (P09 behoben); Fehlalarme, verlorene Behalte-Werte (X05 „Hauptbahnhof“), Blocks (0), E2E identisch |
+| `bench_name_detection` (1100) | Leck 0,0 %, Block 0,0 %, Fehlalarme 2/132, Anweisungen 1/17 | identisch |
+| `bench_chat_without_file` (440, Produktivcode) | Lecks 0/440, Blocks 0, Fachfragen verändert 0/14, Fachbegriffe 20/100 | identisch |
+| `bench_role_object_negatives` | 0/12, 0 Personen-Platzhalter | identisch |
+
+Tests: 9 neue in `tests/test_privacy_review.py` (Leck-, Frage-Modus-, Negativ- und Fehlalarm-Fälle).
+
+## §47 Nachweis auf Netzwerkebene und Schlüsselprüfung (16.10.2026)
+
+**Unterschied, ausdrücklich:** Bisherige Repo-Tests prüften das Payload-**Objekt** vor dem SDK (und den Relay-Pfad gegen
+einen lokalen Fake, §44). Neu `tests/test_privacy_wire_payload.py`: echter Gateway (Presidio) → versiegelte Payload →
+echter `AnthropicClaudeWritingProvider` aus der echten Factory (inkl. Endpunkt-Politik) → echtes Anthropic-SDK →
+lokaler Aufzeichnungsserver (127.0.0.1, nur mit `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1`; toter Proxy gegen jeden Weg
+nach außen; gefälschter Schlüssel). Belegt (`write` und `write_stream`): die **tatsächlich gesendeten HTTP-Bytes**
+enthalten keinen der synthetischen Werte (Name, Geburtsdatum, Anschrift, PLZ, Telefon, E-Mail, IBAN, Gegner), wohl
+aber Platzhalter und die juristisch relevanten Werte (Betrag 4.250,00 EUR, Daten, „Kaution“). Unversiegelte oder nach
+dem Siegel veränderte Payload und Loopback ohne QA-Freigabe: **keine einzige HTTP-Anfrage**.
+**Nicht belegt:** TLS zum echten Endpunkt, tatsächliches Verhalten von Anthropic, Relay/Gateway gegen einen realen
+Server.
+
+**API-Schlüssel (Wert nie ausgegeben, Vergleich nur über exakte Übereinstimmung/Fingerabdruck):** `.env`/`.env.*` in
+`.gitignore`; nur `*.example` versioniert. Der echte Schlüssel (106 Zeichen; Repo-`.env` und `%PROGRAMDATA%\Lexono\.env`
+identisch) kommt in **keinem** Git-Objekt (alle, auch unerreichbare; 217 MB) und in **keiner** von 19 781 Dateien von
+Arbeitsbaum, `dist\`, Datenverzeichnis (Logs; echte DB nicht geöffnet) und Job-Artefakten vor; die schlüsselartigen
+Zeichenketten in sechs Testdateien sind Attrappen. `Lexono_Setup.exe` ist LZMA-komprimiert – eine Klartextsuche dort
+ist nicht aussagekräftig; sein Inhalt stammt aus dem geprüften `dist\Lexono`.
+
+## §48 Nachweisübersicht Datenschutz (Stand 16.10.2026, Branch `feature/feedback-diagnose`, ausgeführt)
+
+Nur, was heute tatsächlich gelaufen ist; synthetische Daten; endliche Korpora – **keine** Aussage über vollständige
+Leckfreiheit und **keine** Datenschutzfreigabe.
+
+| Anforderung | Test/Benchmark (heute ausgeführt) | Ergebnis | Beleg | Offenes Risiko |
+|---|---|---|---|---|
+| Pseudonymisierung/Erkennung | Pseudonymisierungs-/Erkennungs-Tests (6 Dateien); `bench_pseudonymization`; `bench_name_detection` (1100); `bench_chat_without_file` (440) | 244 bestanden; 7 Klartext-Werte, alle als bekannte Grenze markiert; Namen 0,0 %; Chat 0/440. **Nachtrag §49:** 3 Klartext-Werte (B03, K04, P08, X02 behoben) | §46, §49 | P10 Rollenwort+Name ohne Anrede; Ortsname im Grundbuchtext (A06); kurze unbeschriftete Nummern (I07, §22.6); gesperrte IBAN mit OCR-Ziffernfehler (§49.5) |
+| Pre-Cloud, Siegel, Fail-closed | Gateway-/Siegel-/Prüfungs-Tests (28 Dateien) | 1214 bestanden, 5 xfail (dokumentierte Grenzen) | Testsuite | – |
+| Request-Manipulation, Platzhalterkollision | Platzhalter-Integritäts-Tests (3 Dateien); veränderte Payload auf Netzwerkebene | 39 bestanden; veränderte/unversiegelte Payload: 0 HTTP-Anfragen | §47 | X02 (gesperrte Schreibweise) |
+| Unberechtigte Blockaden / False Positives | `bench_pseudonymization` (0 Blocks, 1 verlorener Behalte-Wert X05); `bench_name_detection` (Fehlalarme 2/132, Anweisungen 1/17); `bench_role_object_negatives` 0/12 | unverändert gegenüber vorher | §45.1, §46, §50 | „bei Rot“ ohne direkt folgenden Fahrvorgang → Ort (`known_open`); „Mobil“ behoben (§50) |
+| Netzwerkebene direkter Pfad | `test_privacy_wire_payload.py` + Endpunkt-Politik | 30 bestanden (gemeinsam mit Endpunkt-Tests) | §47 | TLS/echter Endpunkt, Relay realer Server NICHT VERIFIZIERT |
+| Rückfrage (HITL) | `test_privacy_review.py` | 97 bestanden | §45, §46 | Rückfragequote in echten Akten unbekannt |
+| Feedback/Diagnose, Minimierung, Löschung | `test_quality_reports.py`, Regressionsfälle | 47 bestanden, 2 xfail (`known_open`) | ARCHITECTURE.md §75 | Meldung nur aus der Dokumentansicht; Frist 90 Tage = Vorschlag |
+| Schlüssel nicht in Git/Logs/Artefakten | Fingerabdruck-Scan | kein Treffer | §47 | komprimiertes Setup nur indirekt |
+
+**Später erforderlich (ausdrücklich nicht jetzt, keine Kosten):** Gateway auf realem Server (Hetzner) mit TLS,
+Authentifizierung der Kanzlei-Clients, Schlüsselverwaltung nur auf dem Server, Zugriffskontrolle, Rate-Limits, Logging
+ohne Inhalte; Integrationstests Client ↔ Gateway ↔ Anthropic über HTTPS (inkl. Zertifikatsprüfung, Fehler-/Timeout-
+Pfade, Payload-Mitschnitt vor dem Upstream); erst danach Stufe B. Der Gateway existiert bisher nur als lokal getesteter
+Code; Cloud-Aufrufe laufen aktuell über den direkten Pfad mit lokalem Schlüssel.
+
+## §49 Offene Datenschutzgrenzen priorisiert: OCR-/Sperrsatz-Varianten (16.10.2026, Branch `feature/feedback-diagnose`, Basis `971ad7f`)
+
+**Ziel:** vermeidbare Klartext-Lecks aus §48 verringern, ohne juristische Inhalte zu verändern und ohne einen
+Schutzmechanismus abzuschwächen. Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe.
+
+### 49.1 Reproduktion und Priorisierung (qualitativ, keine Messwerte erfunden)
+
+Alle sieben Fälle aus `benchmarks/pseudonymization_v1/cases.json` wurden über den echten Gateway (Maskier-Modus)
+reproduziert. Bei allen stand der Wert vor dieser Änderung im Klartext im Payload. Alle sind echte Lecks, kein Fall
+war ein Fehlalarm.
+
+| Rang | Fall | Muster | Schaden | Wahrscheinlichkeit | Sichtbar für Anwender | Gefahr der Übermaskierung | Sicher behebbar? |
+|---|---|---|---|---|---|---|---|
+| 1 | B03 | gesperrte IBAN `I B A N  D E 8 9 …` | hoch (Konto direkt zuordenbar) | mittel (OCR, Formulare) | gering | gering: die Prüfziffer filtert Zufallsfolgen | **ja**, über die ISO-13616-Prüfziffer |
+| 2 | K04 | E-Mail mit OCR-Leerzeichen `… @ beispiel-mail . de` | hoch (direkt identifizierend) | mittel (OCR) | gering | gering, wenn `@` und eine Domain mit Endung Pflicht sind | **ja** |
+| 3 | P10 | „Der Richter Zweigelt“ (Rollenwort + seltener Nachname, ohne Anrede) | mittel (Person aus dem Gericht, nicht der Mandant) | mittel | mittel | **hoch** | **nein** (s. u.) |
+| 4 | X02 | Name in gesperrter Schreibweise in einer Prompt-Injection | mittel bis hoch (gezielte Umgehung) | gering bis mittel | gering | gering: nur Personen-Treffer an veränderten Stellen | **ja** |
+| 5 | P08 | OCR-Ziffern im Namen `Kar1 Brenn3r` | mittel | mittel (OCR) | mittel | mittel: Kennungen wie „B3-Formular“ müssen bleiben | **ja**, mit Negativtests |
+| 6 | A06 | Ortsname im Grundbuchtext („Grundbuch von Musterstadt“) | gering (Gemarkung; Blatt und Flurstück sind maskiert) | hoch | hoch | hoch (Ortsnamen sind oft Fachinhalt) | nein, Grenze dokumentiert |
+| 7 | I07 | kurze unbeschriftete Nummer („Startnummer 815“) | gering | gering | hoch | sehr hoch (Mengen, Beträge, Paragrafen) | nein, Designgrenze §22.6 |
+
+**Warum P10 nicht behoben wird:** spaCy (`de_core_news_lg`) markiert „Zweigelt“ in diesem Satz genau wie
+„Termin“/„Recht“: NOUN, Abhängigkeit `nk`, Nominativ Singular. Es gibt kein unabhängiges Signal. Eine Regel
+„Rollenwort + großgeschriebenes Wort“ würde „der Richter Termin …“ und „der Verwalter Bericht …“ ebenso maskieren.
+Das entspricht der dokumentierten Grenze „Richter/Fürst“ (§46, xfail). **Schutzmaßnahme:** Gerichtspersonen als
+Beteiligte der Akte erfassen; dann greifen die bekannten Entitäten (voller Name und Nachname).
+
+### 49.2 Änderungen
+
+1. **Gesperrte IBAN** (`app/privacy/detectors.py`, `_spaced_ibans`): eine Folge einzelner Buchstaben/Ziffern mit
+   1–3 Leerzeichen dazwischen wird zusammengezogen. Treffer ist nur ein Teilstück, das mit Ländercode + 2 Ziffern
+   beginnt und die Prüfziffer mod 97 = 1 besteht. Dieser Bereich wird auf den Originaltext zurückgeführt. Kompakte
+   Treffer bleiben unverändert.
+2. **E-Mail mit Leerzeichen** (`_SPACED_EMAIL_PATTERN`): Leerraum um `.` und `@` ist erlaubt. Pflicht sind ein `@` und
+   eine Domain mit mindestens einem Punkt und einer alphabetischen Endung. Zusätzlich gemeldet wird nur, was Leerraum
+   enthält und nicht schon von der kompakten Erkennung abgedeckt ist. Leerraum **nach** einem Punkt zählt nur, wenn
+   auch **davor** Leerraum steht (OCR-Form „ . “). **In der QA gefunden und behoben:** In der ersten Fassung wurde aus
+   „info@beispielkanzlei.de. Erneut“ die Adresse samt Folgewort („Erneut“ als vermeintliche Endung). Das hätte
+   Inhalt nach jedem Satzende hinter einer E-Mail-Adresse mitmaskiert. Die Benchmarks zeigten es nicht, erst
+   `tests/test_document_preview.py` in der Gesamtsuite. Der Fall ist jetzt als eigener Negativtest abgedeckt.
+   Verbleibende Grenze: „Wort @ Wort . Wort“ mit Leerzeichen vor dem Punkt würde in Fließtext als E-Mail gelesen; in
+   normaler Schreibweise kommt das kaum vor.
+3. **Zweite NER-Analysefassung für Personen** (`app/privacy/presidio_ner.py`, `_ocr_variant_for_analysis`):
+   gesperrte Wörter (Einzelbuchstaben mit Leerzeichen) werden zusammengezogen; die Lücke zwischen zwei gesperrten
+   Wörtern wird zu einem Leerzeichen. In Wörtern mit 1–2 OCR-typischen Ziffern (0→o, 1→l, 3→e, 4→a, 5→s, 8→b) und
+   mindestens 3 Buchstaben werden die Ziffern 1:1 ersetzt. Die Positionen werden wie bei `_restore_for_analysis` auf
+   das Original zurückgeführt. Übernommen werden **nur Personen-Treffer, die eine veränderte Stelle berühren**. An
+   unveränderten Stellen erzeugt die Fassung also keine neuen Treffer. Der Block läuft **nach** der
+   Grenzennormalisierung, weil diese „K a r l  B r e n n e r“ sonst beim Doppelleerzeichen abschnitt. Schließt ein
+   Varianten-Treffer bestehende Treffer vollständig ein, ersetzt er sie. Beispiel: „Gu5tav Wende1in“ – vorher war nur
+   „Wende1“ als Organisation erkannt, „Gu5tav“ und „in“ blieben lesbar. Das kann den Schutz nur erweitern, nie
+   verringern.
+
+Unverändert: Fail-Closed, Siegel, Platzhalter-Integrität, Restrisiko-Scan, Final Payload Gate, Rückfrage-Logik.
+Keine Ausnahme für bestimmte Wörter.
+
+### 49.3 Tests
+
+Neu `tests/test_privacy_ocr_variants.py` (21 bestanden, 1 strikter xfail; darunter „Satzende nach kompakter
+E-Mail verschluckt kein Folgewort“). Die Positivfälle nutzen **andere**
+synthetische Werte als der Benchmark: gesperrte IBAN (GB/DE, auch in Vierergruppen), E-Mail mit OCR-Leerzeichen,
+gesperrter Name in einer Prompt-Injection, Namen mit OCR-Ziffern. Negativfälle bleiben wörtlich unverändert:
+gesperrte Überschriften („U R T E I L  I M  N A M E N …“), Aufzählungen ohne gültige Prüfziffer, „z . B . § 280 Abs . 1
+BGB“, „Treffen @ 10 Uhr“, „Raum1“, „B3-Formular, Typ A4, Kd1-Kennung, COVID19-Verordnung, Abschnitt 1a“, Beträge,
+Daten und Paragrafen.
+
+### 49.4 Vorher/Nachher (heute ausgeführt, gleiche Korpora)
+
+| Benchmark | vorher (`971ad7f`) | nachher | Bemerkung |
+|---|---|---|---|
+| `pseudonymization_v1` Klartext-Lecks | 7 (A06, B03, I07, K04, P08, P10, X02) | 3 (A06, I07, P10) | geschützt 81 → 85 von 88 |
+| ‒ Fehlalarme (FP) | 7 | 7, identische Menge | keine neuen, keine weggefallenen |
+| ‒ Behalte-Werte / Blocks | 67/68 (X05 „Hauptbahnhof“) / 0 | 67/68 / 0 | unverändert |
+| ‒ Teil-Klartext | 1 | 2 | neu K04: **Artefakt der Messung** (s. u.), kein Leck |
+| ‒ E2E-Fälle (7) | wie erwartet | identisch | |
+| `bench_name_detection` (1100) | 0,0 %; Fehlalarme 2/132; Anweisungen 1/17 | identisch | |
+| `bench_chat_without_file` | 0/440; Fachfragen 0/14 | identisch | |
+| `bench_role_object_negatives` | 0/12 | identisch | |
+| Legal-E2E dev/test | pii_leaks 0/0 | 0/0, keine abweichende Kennzahl | |
+
+**K04 Teil-Klartext:** Der Benchmark zerlegt Werte an `[\s,.-]` in Teile ab 4 Zeichen. Der Domainteil „mail“ trifft
+das Wort „E-Mail“ im Etikett. Der Payload lautet vollständig `E-Mail: [EMAIL_01], …`.
+
+Datenschutz-Testdateien (Privacy, Platzhalter, Regression, Benchmark-Tests; vor der E-Mail-Korrektur): 1804
+bestanden, 9 xfail, 1 xpass. **Gesamtsuite nach der Korrektur** (6 Teile nacheinander): 4948 bestanden, 9 xfail,
+1 xpass, 1 übersprungen, 4 fehlgeschlagen. Die vier Fehlschläge sind die `test_design_refresh`-Logo-Tests; sie
+hängen an fremden, nicht angefassten Logo-Dateien im Arbeitsbaum. Alle Benchmarks oben wurden nach der Korrektur
+erneut ausgeführt und sind identisch.
+Der xpass `…common_noun[Richter]` tritt auch auf `971ad7f` ohne diese Änderung auf (in einem eigenen Arbeitsbaum
+geprüft); er ist vorbestehend und wurde nicht verändert.
+
+### 49.5 Offene Grenzen (Status: teilweise nachgewiesen)
+
+- **P10** Rollenwort + seltener Nachname ohne Anrede (s. o.). Schutz: Beteiligte erfassen.
+- **A06** Gemarkung/Ortsname im Grundbuchtext; **I07** kurze unbeschriftete Nummern (§22.6).
+- **Gesperrte IBAN mit OCR-Ziffernfehler:** besteht die Prüfziffer nicht und bleibt erkennbar (strikter xfail). Eine
+  Lockerung ohne Prüfziffer würde Aufzählungen und Messreihen treffen. Deshalb bleibt es bewusst so.
+- **Namen mit OCR-Buchstaben-Verwechslungen** (rn↔m, cl↔d) und mit mehr als 2 Ziffern sind nicht abgedeckt. Die
+  Varianten erkennen nur Personen und nur das, was das NER-Modell nach dem Ersetzen erkennt.
+- **„bei Rot“ → Ort, „Mobil“+Nummer → Person** (`known_open`, §75) wurden nicht angefasst; die Ursache in der
+  vorgelagerten NER-Stufe ist nicht abschließend geklärt. *(Nachtrag: in §50 geklärt und teilweise behoben.)*
+- Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.
+
+## §50 Gerichtspersonen als Aktenbeteiligte (P10), „Mobil“ und „bei Rot“ (16.10.2026, Branch `feature/feedback-diagnose`, Basis `febd5e2`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 50.1 Reproduktion und Ursachen (belegt, roh im Modell und Stufe für Stufe)
+
+| Fall | Reproduziert (Maskier-Modus) | Ursache |
+|---|---|---|
+| P10 „Der Richter Zweigelt …“ | Klartext; auch im Rückfrage-Modus keine Rückfrage | spaCy/Presidio: keine Entität; keine Folgestufe greift (vgl. §49.1) |
+| seed-008 „… überquerte die Fahrbahn bei Rot.“ | `bei [ORT_01]` | spaCy `de_core_news_lg` setzt „Rot“ **selbst** als `LOC` (es gibt Orte dieses Namens); Presidio übernimmt es. Die Ampelregel aus §45.1 galt nur für Rückfrage-Kandidaten, nicht für NER-Treffer. Auch die eindeutige Form „bei Rot in die Kreuzung“ wurde maskiert. |
+| seed-009 „Herrn Gustav Wendelin, Mobil 0170 1234567.“ | `[PERSON_02] 1234567` – **Teil-Leck**, nicht nur Übermaskierung | (1) spaCy setzt „Mobil“ als `PER`; im zusammengesetzten Gateway-Text (Feldmarker danach) sogar „Mobil 0170“. (2) `_resolve_overlaps` verwarf bei Überlappung **verschiedener** Kategorien den später beginnenden Treffer vollständig (Telefon „0170 1234567“), dessen Rest blieb im Klartext. Die Beschreibung des Regressionsfalls („Nummer geschützt“) war falsch und ist korrigiert; die Gegenprobe seed-010 prüfte nur die ganze Nummer und übersah den Rest. |
+
+**Erfassung von Gerichtspersonen (Ist-Zustand):** Beteiligte werden je Akte als `Party` mit freier Rolle erfasst
+(Reiter „Beteiligte“). `_build_known_entities` ordnet sie per Stichwort zu und speist voller Name + Nachname in die
+Pseudonymisierung ein. **Mit erfasster Partei ist P10 geschützt** (jede getestete Rolle). Gefundene Schwächen:
+(a) „Richter am Amtsgericht“, „Gerichtsvollzieher“, „Gerichtssachverständiger“ fielen über „gericht“ in `gericht`,
+„Staatsanwalt“ über „anwalt“ in `anwalt` – Platzhalter `[GERICHT_01]` für eine Person, und die Aktenisolation (§27,
+`foreign_matter_names`) zählte bei diesen Rollen nur den **vollen** Namen: „Richter Zweigelt“ in einem Wissenseintrag
+einer fremden Akte wäre nicht zurückgehalten worden (die NER erkennt den Namen nicht). (b) „Zweigelt, Hans“ ergab als
+„Nachnamen“ den Vornamen „Hans“. (c) „Richter Dr. Zweigelt“ erhält neben `[BETEILIGTER_01]` einen zweiten Platzhalter
+(Titel-Treffer länger als der bekannte Name) – kein Leck. **Ohne Akte** (Chat ohne Akte) gibt es keine Beteiligten
+und damit kein Signal.
+
+### 50.2 Änderungen
+
+1. **Gerichtspersonen** (`app/ai_providers/local_ai_provider.py`): `_COURT_PERSON_ROLE` (ganze Wörter: Richter:in,
+   Rechtspfleger:in, Sachverständige:r, Gutachter:in, Gerichtsvollzieher:in, (Ober-)Staatsanwält:in, Urkundsbeamt:in,
+   Protokollführer:in, Schöff:in, Dolmetscher:in) geht der Institutionszuordnung vor, **sofern der Name nicht nach
+   Institution aussieht** (dieselbe Prüfung wie bisher in `_name_variants`). Ergebnis: Kategorie `beteiligter`
+   (Person) mit Nachname, auch in der Aktenisolation. „Amtsgericht …“, „Staatsanwaltschaft …“, „Finanzamt …“ und
+   Kanzleien bleiben unverändert. Keine Regel für Wörter nach Rollenbezeichnungen im Text.
+2. **„Nachname, Vorname“** in `_build_known_entities` wie in `_name_variants`: Nachname vor dem Komma.
+3. **Kontaktbezeichnung** (`app/privacy/detectors.py`, `_drop_contact_labels`): ein NER-Treffer (Person/Ort/
+   Organisation), dessen erstes Wort eine Kontaktbezeichnung ist (dieselbe Liste wie die Rückfrage §75.2, jetzt
+   gemeinsam genutzt), entfällt nur, wenn **unmittelbar** dahinter eine erkannte Rufnummer/E-Mail bzw. – im
+   Restrisiko-Scan – ein `[TELEFON_…]`/`[EMAIL_…]`/`[KENNUNG_…]`-Platzhalter beginnt und der Treffer nicht über sie
+   hinausreicht. Die Nummer bleibt eigener Treffer.
+4. **Überlappung ohne Zeichenverlust** (`_resolve_overlaps`): ragt ein Treffer einer **anderen** Kategorie über den
+   vorherigen hinaus, wird er nicht mehr verworfen. Schneidet ein NER-Treffer eine strukturierte Angabe (Telefon,
+   E-Mail, IBAN, BIC, URL) an, endet der NER-Treffer davor und die Angabe bleibt vollständig; sonst wird der
+   überstehende Rest als eigener Treffer seiner Kategorie maskiert. Das bestehende Testbeispiel für „andere Kategorie:
+   bisheriges Verhalten“ wurde **bewusst** auf das neue Verhalten umgestellt (begründet im Test).
+5. **Ampelfarbe** (`app/privacy/presidio_ner.py`, `is_traffic_light_colour_at`): die gegengeprüfte §45.1-Bedingung
+   („bei“ + Farbe + **unmittelbar** Fahr-/Querungsvorgang) gilt jetzt auch für NER-Treffer; `review.py` nutzt dieselbe
+   Regel statt einer Kopie.
+6. **Hinweis im Beteiligten-Formular** (`matter_detail.html`): Gerichtspersonen mit Rolle erfassen; Beispielrollen.
+
+**Verworfen (in der QA gefunden, nicht übernommen):** akademische Titel („Dr.“, „Prof.“) wie eine Anrede abtrennen,
+damit „Dr. Zweigelt“ den bekannten Platzhalter erhält. Der stehen gebliebene Titel ließ den Restrisiko-Scan anschlagen –
+**neue Blockaden** („Herr Prof. Dr. Zweigelt …“, „Prof. Dr. Erika Wiebe …“) und geändertes Verhalten ohne bekannte
+Namen. Vollständig zurückgenommen; (c) bleibt offen. Ebenfalls in der QA gefunden und behoben: die erste Fassung von 3.
+blockierte, weil der Restrisiko-Scan „Mobil“ vor dem Platzhalter erneut als Person las (Platzhalter als Anker
+ergänzt), und K04 („Mobil 0171-234 56 78“, als Kennnummer länger erfasst) blockierte, bis `KENNUNG` als Anker galt.
+
+### 50.3 Tests
+
+Neu `tests/test_privacy_court_persons_and_labels.py` (Rollen je Schreibweise, Institutionen unverändert,
+Komma-Nachname, bekannte Gerichtsperson in vier Schreibweisen inkl. Genitiv und Versalien, Fachwörter mit erfasster
+Gerichtsperson wörtlich unverändert, Aktenisolation fremd/eigen, unbekannte Gerichtsperson ohne Akte als **strikter
+xfail**, Kontaktbezeichnungen samt vollständiger Nummernmaskierung, Namen neben Nummern weiter maskiert,
+Überlappungs-Einheitstests, Ampel positiv/negativ inkl. „übernachtete bei Rot“, „Herr Rot“, „Rot am See“, „Herr Grün“).
+Regressionsfälle: seed-009 behoben (`known_open` entfernt, `must_mask` „1234567“), seed-010 um den Nummernrest
+ergänzt, neu seed-011 (eindeutiger Fahrsatz), seed-008 bleibt `known_open` mit präziser Ursache. Gegenprobe: auf
+`febd5e2` schlagen 19 der neuen Prüfungen fehl, alle Negativproben bestehen dort wie hier.
+
+### 50.4 Vorher/Nachher (gleiche Korpora, heute ausgeführt; vorher = Stand nach §49)
+
+| Prüfung | vorher | nachher |
+|---|---|---|
+| `pseudonymization_v1` Klartext-Lecks | 3 (A06, I07, P10) | 3 (unverändert; P10 ohne Beteiligte im Korpus) |
+| ‒ Fehlalarme | 7 | **6** (K04 „Mobil“ als Person entfällt) |
+| ‒ Blocks / Behalte-Werte / Konsistenz | 0 / 67/68 / 2/2 | 0 / 67/68 / 2/2 |
+| ‒ E2E-Fälle | – | identisch |
+| `bench_name_detection` (1100), `bench_chat_without_file` (440), Rollenobjekte (12) | – | identisch |
+| Legal-E2E dev | pii_leaks 0 | 0, keine abweichende Kennzahl |
+| Legal-E2E test | pii_leaks 0 | 0; **zwei zusätzlich maskierte Reste** (`-0533` einer Gutachten-Nummer, `7` einer Hausnummer), Schriftsatz-Payload Median 2476 → 2487 Zeichen; Fristen/Fakten unverändert |
+
+Die beiden Legal-E2E-Reste sind die beabsichtigte Wirkung von Änderung 4: isoliert nachgestellt sendete `febd5e2`
+„Laut [ORT_01]-0533 …“, jetzt „[ORT_01][KENNUNG_01]“. (Die Ortsmaske für „Kfz-Schadensgutachten Nr. G-26“ ist ein
+vorbestehender Fehlalarm.) Gesamtsuite (6 Teile nacheinander): **4990 bestanden**, 9 xfail, 1 xpass (vorbestehend,
+§49.4), 1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 50.5 Offene Grenzen und erforderliches UX-Verhalten
+
+- **P10 ohne erfasste Partei** – auch im **Chat ohne Akte** – nicht sicher lösbar: kein unabhängiges Signal, eine
+  Rollenwort-Regel würde Fachwörter maskieren. Erforderliches Verhalten: Gerichtspersonen im Reiter „Beteiligte“ mit
+  Rolle erfassen (Hinweis ergänzt); für den Chat ohne Akte empfohlen (nicht umgesetzt): bei Nennung eines
+  Rollenworts mit Großwort eine **freiwillige** Möglichkeit „als Namen schützen“ statt automatischer Maskierung, oder
+  den Chat einer Akte zuordnen. Owner-Entscheidung.
+- **„Dr. Zweigelt“ neben bekanntem „Zweigelt“:** zweiter Platzhalter (kein Leck); Lösung über Titel-Abtrennung
+  verworfen (Blockaden), anderer Ansatz offen.
+- **seed-008 „überquerte die Fahrbahn bei Rot.“** bleibt maskiert (Ortslesart möglich); ebenso „Die Ampel zeigte
+  Rot“, „Er überfuhr die Ampel bei Rot“, „Bei Rot darf nicht gefahren werden“ (Inhaltsverlust im Verkehrsrecht).
+  Eine breitere Regel bräuchte ein Verkehrskontext-Signal, das §45.1 bereits als unzuverlässig verworfen hat.
+- „Richter“ am Satzanfang wird teils als Person maskiert (bekannte Grenze „Richter/Fürst“, §46).
+- Diagnosepfad der Qualitätsmeldungen (`matter_known_entities`) ordnet weiterhin alle Beteiligten als `beteiligter`
+  ein und kennt die Komma-Regel nicht (nur lokale Diagnose, kein Cloud-Pfad).
+- Rollen bleiben Freitext; Namen mit Institutions-Teilwort (z. B. „…amt…“ in einem Nachnamen) fallen bei
+  Gerichtsrollen weiter in die alte Zuordnung (vorbestehende Prüfung, geschützt bleibt der Name).
+- Endliche, handverfasste Korpora: **keine** Aussage über vollständige Leckfreiheit.
+- *Nachtrag §51:* P10 im Chat ohne Akte ist jetzt durch manuelle Markierung abgedeckt („Namen schützen“).
+
+## §51 Manuelle Namensmarkierung als Erweiterung der bestehenden Rückfrage (16.10.2026, Branch `feature/feedback-diagnose`, Basis `3994019`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 51.1 Vorhandene Funktionalität (Ist-Analyse)
+
+- Die Rückfrage (`chat.html` `showPrivacyReview`; `POST /dashboard/chat/{id}/privacy-review`) zeigt nur
+  **von Lexono gefundene** Kandidaten mit drei Optionen. „Als Person behandeln“ und „Unsicher“ werden aktenweit
+  gespeichert (`PrivacyDecision`, `conversation_id = NULL`), „Kein personenbezogenes Datum“ nur für die Unterhaltung.
+  Der Gateway maskiert entschiedene Begriffe über `detect_decision_terms`: exakt, ganze Wörter, alle Vorkommen.
+- Eine **manuelle Markierung beliebiger Textstellen gab es nicht** (keine Textauswahl, kein Freitextfeld). Bei P10
+  („Der Richter Zweigelt“) findet Lexono keinen Kandidaten, also erscheint keine Rückfrage, und der Name ging im
+  Klartext hinaus (Gegenprobe-Test belegt das).
+- Ein Chat „ohne Akte“ hat immer eine automatisch angelegte Schnellakte; Entscheidungen gelten dort.
+- **Lücke beim Fund:** nur die Chat-Pfade luden die gespeicherten Entscheidungen. Entwurfsprüfung
+  (`app/review/engine.py`, schickt den **re-identifizierten** Entwurf), Schriftsatz- und Formularpfade
+  (`DraftingService.create_draft` ohne `privacy_decisions`) und `AIOrchestrator` wendeten „Als Person behandeln“
+  **nicht** an. Ein so geschützter Name ging dort im Klartext hinaus, wenn die Erkennung ihn nicht fand.
+
+### 51.2 Änderungen (keine zweite Rückfrage, keine Änderung an Presidio)
+
+1. **UI** (`chat.html`, `app.css`): In der bestehenden Fußzeile des Eingabefelds steht „Namen schützen“. Der Nutzer
+   markiert den Namen im Text und klickt; es erscheint ein Chip mit ×. Eine Mehrwort-Auswahl wird in einzelne
+   Wörter zerlegt, nur Buchstaben sind zulässig, höchstens 20 Namen. Ändert sich der Text und ein markierter Name
+   kommt nicht mehr vor, wird der Chip als veraltet angezeigt und **nicht gesendet**. Bei einem Fehler vor der
+   Verarbeitung kommen Text **und** Markierung zurück. Die Rückfrage mit ihren drei Optionen bleibt unverändert.
+2. **Server** (`chat_router._parse_manual_terms`/`_record_manual_terms`, `decisions.validate_manual_terms`):
+   Das Feld `protected_terms` wird in `send-stream` **und** im klassischen `/send` **vor jeder Persistenz** geprüft:
+   gleiche Form wie eine Rückfrage-Entscheidung, ein Wort, der Begriff kommt in der Nachricht vor. Ein Fehler
+   bedeutet: keine Nachricht, keine Entscheidung, kein Cloud-Aufruf. Danach wird der Begriff als **dieselbe**
+   Entscheidung „Als Person behandeln“ gespeichert (Audit-Text „manuell markiert“, ohne Begriff; HMAC-Statistik wie
+   bisher). Damit greifen ohne neuen Mechanismus: erneute Gesamtprüfung, Wiederherstellung nach Neuladen,
+   Doppelversand-Sperre, Geltung für spätere Nachrichten und den Verlauf.
+3. **Schreibweisen** (`review.detect_decision_terms`): bei Personen-Begriffen zusätzlich Versalien
+   („ZWEIGELT“) und Genitiv („Zweigelts“; ersetzt wird nur das Wort). Kleinschreibung bewusst nicht. Im Gateway
+   weicht ein NER-Treffer, der **exakt** den Bereich eines entschiedenen Namens (ggf. mit Genitiv) hat, dem
+   Entscheidungs-Treffer. So erhält eine Person **einen** Platzhalter. Vorher las die NER „Zeugen Brummelbeck“ als
+   Ort, „widersprach Brummelbeck“ als Person, und „Zweigelts“ bekam einen zweiten Platzhalter.
+4. **Alle Pfade derselben Akte**: `_prepare_and_gate` (ohne mitgegebene Entscheidungen), Entwurfsprüfung und
+   Orchestrator laden die aktenweiten Entscheidungen. „Kein personenbezogenes Datum“ bleibt unterhaltungsbezogen
+   und wirkt dort nicht.
+5. **Fehlermeldungen ohne Begriff**: im `/send`-Pfad landet die Meldung in der Redirect-URL (`?error=…`) und damit
+   im Zugriffsprotokoll bzw. Browserverlauf. Der Browser nennt den Namen vorher lokal.
+
+**Geprüfte Abflusswege:** Logs (keine Logger-Aufrufe mit Begriff; Audit/Block-Log ohne Begriff), Diagnoseberichte
+(`quality_reports`: nur Zähler), temporäre Dateien (keine), alternative Cloud-Pfade (alle Provider verlangen das
+Siegel, das nur `prepare_request` erzeugt; dessen drei Aufrufer laden jetzt die Entscheidungen), Redirect-URL
+(behoben). Der Begriff steht wie jede Rückfrage-Entscheidung im Klartext in `privacy_decisions` (Aktendatum, lokal).
+
+### 51.3 Tests und QA
+
+`tests/test_web_manual_name_protection.py` (über die echten Endpunkte und den echten Gateway):
+
+- Gegenprobe: ohne Markierung steht „Zweigelt“ in der Payload.
+- P10 im Chat ohne Akte mit Markierung: maskiert; Datum, Betrag und § 3 ZPO unverändert; Entscheidung aktenweit;
+  Audit ohne Begriff.
+- Die Markierung gilt für Folgenachrichten.
+- Markierung eines ohnehin erkannten Namens ist unschädlich.
+- Mehrere Namen, Wiederholungen, Genitiv, Versalien: je Person ein Platzhalter.
+- Veraltete oder ungültige Markierung in 7 Varianten: nichts gesendet, nichts gespeichert.
+- Klassischer `/send`-Pfad: Markierung wirkt; eine veraltete Markierung bricht ab, die URL enthält keinen Namen.
+- Zusammenspiel mit der bestehenden Rückfrage, Abbruch, Neuladen und Wiederaufnahme.
+- Fehler bei der Anwendung blockiert den Versand (fail-closed).
+- Entwurfsprüfung und `create_draft` wenden aktenweite Entscheidungen an.
+- **HTTP-Nachweis:** echter Web-Endpunkt → echter Drafting-Service → echter Anthropic-Provider → lokaler
+  Aufzeichnungsserver (§47). „Zweigelt“ ist nicht in den gesendeten Bytes, Datum/Betrag/§ schon.
+- UI-Render.
+- **Strikter xfail (vorbestehend):** „Herr Lange wartete lange“ – ein als Person entschiedener Name wird auch
+  kleingeschrieben weitergetragen. Das gilt auf `3994019` ebenso für Rückfrage-Entscheidungen.
+
+**Browser-QA** (Edge headless, eigener Server auf temporärer SQLite-DB, kein Schlüssel, `fetch` durch eine
+Attrappe ersetzt – keine Anfrage verließ den Browser): Hinweis ohne Auswahl, Chip und Feldwert, veraltete Markierung
+blockiert ohne Anfrage, Formular trägt `protected_terms`, Wiederherstellung nach Serverfehler, Mehrwort-Auswahl,
+Entfernen, Ziffern-Auswahl abgewiesen; Screenshots geprüft.
+
+**Vorher/Nachher (gleiche Korpora, Vergleich mit dem Stand nach §50):** `pseudonymization_v1` Feld- und
+E2E-Fälle identisch; `bench_name_detection` (1100), `bench_chat_without_file` (0/440), Rollenobjekte (0/12)
+identisch; Legal-E2E dev/test: keine abweichende Kennzahl, pii_leaks 0. Ein erster Legal-E2E-Lauf unter
+Speicherdruck (Hintergrundlauf vom System beendet, Dokumentfehler 0 → 3) war ein Artefakt; der Wiederholungslauf im
+Vordergrund ist identisch. Neue/betroffene Tests: 131 bestanden (+1 strikter xfail), Chat-/Drafting-/Review-Tests 385
+bestanden. **Gesamtsuite** (6 Teile nacheinander): **5011 bestanden**, 10 xfail, 1 xpass (vorbestehend, §49.4),
+1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 51.4 Restrisiken
+
+- Die Markierung ist eine **zusätzliche** Schutzmaßnahme, kein Nachweis, dass alles Übrige erkannt wurde.
+- Nur ganze Wörter aus Buchstaben. Bindestrich-Namen („Müller-Lüdenscheidt“) lassen sich nur als Einzelteile
+  markieren. Mehrwort-Namen erhalten je Wort einen Platzhalter.
+- Andere Flexionsformen als Genitiv-s sowie Kleinschreibung werden nicht erfasst. Umgekehrt wird ein kleingeschriebenes
+  Homograph-Wort mitmaskiert (vorbestehend, xfail).
+- Eine Markierung gilt aktenweit und dauerhaft (wie „Als Person behandeln“). Aufheben geht nur über eine
+  Rückfrage-Entscheidung, und „personal“ gewinnt immer (fail-closed). Eine eigene Verwaltung der Markierungen fehlt.
+- Markierungen fließen in die HMAC-Lernstatistik ein wie Rückfrage-Entscheidungen (kein Klartext).
+- Nur im Chat-Eingabefeld; Formular-Workflows (Schriftsatz, E-Mail) haben keine eigene Markier-UI, wenden aber
+  vorhandene Entscheidungen der Akte jetzt an.
+- *Nachtrag §52:* Mehrwort- und Bindestrichnamen sowie Verwaltung/Aufheben umgesetzt; Kleinschreibung untersucht.
+
+## §52 Namensschutz: Mehrwort-/Bindestrichnamen, Verwaltung der Entscheidungen, Kleinschreibung (16.10.2026, Branch `feature/feedback-diagnose`, Basis `f59e3e0`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 52.1 Mehrwort- und Bindestrichnamen
+
+**Ist-Zustand (reproduziert):**
+
+- „Hans-Peter Müller“ und „Anna von Berg“ ließen sich nicht als Entscheidung speichern. Die Oberfläche zerlegte die
+  Auswahl in Einzelwörter; „von“ allein wäre gültig gewesen und hätte jedes „von“ maskiert.
+- Rohe Mehrwort-Entscheidungen hätten die Konsistenz **verschlechtert**. Der Titel-Detektor (`detect_titled_person`)
+  liefert „Dr. Hans-Peter Müller“, die Entscheidung „Hans-Peter Müller“. Zwei Vollnamen-Formen machten die
+  Nachnamen-Zuordnung mehrdeutig, und „Herr Müller“ erhielt einen eigenen Platzhalter.
+
+**Änderungen:**
+
+1. `review.is_name_shaped_term`: Teile aus Buchstaben mit inneren Bindestrichen, durch Leerzeichen getrennt, 1–5
+   Teile. Kleingeschrieben sind nur Namenszusätze erlaubt (`NAME_PARTICLES`: von, van, de, der, zu …). Der letzte
+   Teil beginnt groß, ein Zusatz allein ist kein Name. Ziffern, Punkte und Apostrophe sind ausgeschlossen, damit
+   kann ein solcher Begriff keine Rufnummer, E-Mail, IBAN oder Fundstelle anschneiden.
+   - Zulässig **nur für die manuelle Markierung**; Rückfrage-Antworten bleiben Einzelwörter (Audit 12.10.2026,
+     bestehender Test unverändert).
+   - Beginnt der Begriff mit Anrede, Titel oder Rolle (`MANUAL_NAME_PREFIX_WORDS`), lehnt der Server ihn ab,
+     damit z. B. „Richter“ nicht im Platzhalter verschwindet. Der Browser entfernt diese Wörter schon beim Markieren;
+     beide nutzen dieselbe Liste, an die Seite übergeben über Jinja-Globals von `chat_router`.
+2. `detect_decision_terms`: Ein mehrteiliger Name trifft auch über Leerraum oder Zeilenumbruch (Adressblock, PDF),
+   dazu wie bisher Versalien und Genitiv.
+3. Gateway-Filter: Ein NER-Treffer, der nur Anrede/Titel/Rolle plus den markierten Namen enthält („Richter
+   Brummelbeck“), weicht der Entscheidung. Die Rolle bleibt lesbar.
+4. Pseudonymizer, nur die Platzhalter-Zuordnung, nicht die Erkennung:
+   - Führende Anrede/Titel/Rolle gehören nicht zur Identität. „Dr. Hans-Peter Müller“ und „Hans-Peter Müller“ sind
+     ein Vollname. Dadurch ist auch „Herr Müller“ wieder eindeutig zugeordnet.
+   - Eine Kurzform mit Namenszusatz („von Berg“) wird wie ein Nachname dem einzigen passenden Vollnamen zugeordnet.
+     Zwei verschiedene Personen („Anna von Berg“, „Bernd von Berg“) werden nie zusammengelegt.
+5. Restrisiko-Scan: In der Analysefassung wird die Genitiv-Endung direkt am Platzhalter mit neutralisiert. Vorher las
+   die NER in „[PERSON_02]s Zeugin“ die Folge „s Zeugin“ als Person und **blockierte** (in der QA dieser Runde
+   gefunden). Der gesendete Text ändert sich dadurch nicht.
+
+Eine Markierung zeigt nie auf eine falsche Stelle: Sie wirkt auf jede exakte Fundstelle desselben Namens. Fehlt der
+Name nach einer Textänderung (z. B. Bindestrich entfernt), sendet weder der Browser noch der Server etwas.
+
+### 52.2 Verwaltung gespeicherter Entscheidungen
+
+**Ist-Zustand:** Entscheidungen waren nirgends sichtbar und nur über eine neue Rückfrage-Entscheidung „überstimmbar“,
+wobei „personal“ immer gewinnt. Ein fälschlich geschützter Begriff blieb für die Akte dauerhaft maskiert.
+
+**Änderung:**
+
+- **Ort:** Reiter „Beteiligte“ der Akte, Abschnitt „Geschützte Namen & Datenschutz-Entscheidungen“; im Chat führt
+  „verwalten“ zur Akte bzw. Schnellakte (`matter_detail.html`, `app/web/privacy_decisions_router.py`).
+- **Anzeige:** Begriff, Entscheidung, Geltung (ganze Akte / eine Unterhaltung), Datum.
+- **Aktionen:**
+  - „Schutz aufheben“ bzw. für „Kein personenbezogenes Datum“: „Rückfrage wieder aktivieren“ (Zeile löschen).
+  - „Als Person bestätigen“ (Unsicher → Als Person behandeln).
+- **Berechtigung:** neue `PERM_PRIVACY_DECISION_MANAGE`, nur Admin und Anwalt, weil das Aufheben den Schutz abschwächt.
+  Mitarbeiter sehen die Liste ohne Schaltflächen.
+- **Aktenisolation:** Die Entscheidung muss zur Akte der URL gehören. Fehlermeldungen und Audit enthalten keinen
+  Begriff.
+- **Wirkung und Fehlerverhalten:**
+  - Entscheidungen werden bei jeder Anfrage frisch geladen (`load_decisions`, kein Zwischenspeicher). Ein
+    aufgehobener Schutz wirkt ab der nächsten Prüfung in Chat, Entwurfsprüfung, Schriftsatz und Orchestrator nicht
+    mehr; die automatische Erkennung bleibt aktiv.
+  - Scheitert das Speichern, wird zurückgerollt und der Schutz bleibt bestehen (Test simuliert den Fehler nach dem
+    Löschen, vor dem Commit).
+
+### 52.3 Kleinschreibung („Herr Lange wartete lange“)
+
+**Ursache (belegt):** nicht die Entscheidung, sondern `detectors._extend_with_repeated_occurrences`. Ein einmal
+erkannter Wert wird ohne Rücksicht auf Groß-/Kleinschreibung auf jedes weitere Vorkommen übertragen, auch ohne jede
+Entscheidung, sobald die NER „Herr Lange“ erkennt. Bei bekannten Namen kommt die ebenfalls schreibungsunabhängige
+Suche (`detect_known_entities`) hinzu.
+
+**Keine Änderung, weil nicht sicher unterscheidbar (gemessen):** spaCy taggt kleingeschriebene **Namen** genauso wie
+gewöhnliche Wörter. Beispiele: „ich habe mit lange telefoniert“ → ADV, „dass weiß die Kaution zurückfordert“ → VERB,
+„groß will vergleichen“ → ADV; die gewöhnlichen Wörter tragen dieselben Tags. Eine Regel, die kleingeschriebene
+Wiederholungen freigibt, würde schlampig getippte Namen im Chat offenlegen. Die Grenze bleibt als strikter xfail
+festgehalten; zwei Gegenproben belegen, dass solche Namen maskiert bleiben.
+
+### 52.4 Tests und Vorher/Nachher
+
+`tests/test_privacy_manual_names_v2.py` (33 Tests):
+
+- Namensform positiv und negativ (Zusatz allein, Titel, Rolle, Doppel-Bindestrich, Ziffern, zu viele Teile).
+- Die Rückfrage bleibt bei Einzelwörtern.
+- Ein Platzhalter je Person über Titel, Nachname, Genitiv und „Frau von Berg“; zwei Personen mit gleichem
+  Familiennamen getrennt; markierter Nachname neben markiertem Vollnamen.
+- Zeilenumbruch und Versalien; Rolle vor markiertem Namen bleibt lesbar; Beträge, Daten, § 535 BGB und Aktenzeichen
+  bleiben korrekt.
+- Veränderte Schreibweise sendet nichts.
+- **HTTP-Nachweis** über den echten Anthropic-Provider und den lokalen Aufzeichnungsserver.
+- Wortlisten aus einer Quelle (Seite = Server).
+- Verwaltung: Liste, Aufheben mit Wirkung auf die nächste Chat-Anfrage und auf `create_draft`; Mitarbeiter ohne
+  Recht; fremde Akte; Bestätigen; Rückfrage reaktivieren; Fehler beim Aufheben lässt den Schutz bestehen.
+- Kleinschreibung als Gegenprobe.
+
+Ein bestehender §51-Test („Hans Zweigelt“ ungültig) wurde auf das neue, gewollte Verhalten umgestellt (Rolle bzw.
+Zusatz allein ungültig).
+
+**Browser-QA** (Edge headless, eigener Server auf temporärer SQLite-DB, kein Schlüssel, `fetch` im Chat durch eine
+Attrappe ersetzt): Bei der Auswahl „Dr. Hans-Peter Müller“ und „Richter Brummelbeck“ entfallen Titel bzw. Rolle;
+„Anna von Berg“ wird über den Zeilenumbruch erkannt; ein Zusatz allein wird abgewiesen; ein veränderter Bindestrich
+blockiert ohne Anfrage. Auf der Aktenseite funktionieren Bestätigen und Aufheben gegen die temporäre DB, mit
+Rückkehr zu `#beteiligte`. Screenshots geprüft.
+
+**Vorher/Nachher** (gleiche Korpora, Vergleich mit §51), getrennt nach Art:
+
+- **Lecks:** `pseudonymization_v1` 3 (unverändert, kein Feldfall geändert); Namen 0,0 % (1100); Chat ohne Akte
+  0/440; Legal-E2E dev/test pii_leaks 0.
+- **Fehlalarme:** 6 (unverändert); Namen-Benchmark 2/132; Rollenobjekte 0/12.
+- **Blockaden:** 0 (unverändert); eine in dieser Runde gefundene Blockade (Genitiv am Platzhalter) wurde vor dem
+  Commit behoben.
+- **Juristische Inhalte:** Behalte-Werte 67/68 (unverändert); Legal-E2E ohne abweichende Kennzahl.
+- **Gesamtsuite** (6 Teile nacheinander, Vordergrund): **5045 bestanden**, 10 xfail, 1 xpass (vorbestehend),
+  1 übersprungen, 4 fehlgeschlagen – die fremden `test_design_refresh`-Logo-Tests.
+
+### 52.5 Offene Grenzen
+
+- Kleinschreibung: ein als Name erkannter oder entschiedener Begriff maskiert auch das kleingeschriebene Homograph
+  (vorbestehend, nicht sicher lösbar, s. 52.3).
+- Apostroph-Namen („O'Brien“) und Namen mit mehr als 5 Teilen sind nicht markierbar.
+- Erkennt der Titel-Detektor „Dr. Hans-Peter Müller“, verschwindet der Titel weiterhin im Platzhalter
+  (vorbestehend). Die Rückführung stellt ihn wieder her.
+- Bei „Frau von [PERSON_02]“ (NER erkennt nur „Berg“) bleibt „von“ lesbar, und die Rückführung ergibt „von Anna von
+  Berg“ (vorbestehend).
+- Die Verwaltung gibt es nur auf der Aktenseite; Massenaktionen und Suche fehlen.
+- Die Markierung ist eine zusätzliche Schutzmaßnahme, kein Nachweis vollständiger Erkennung.
+- *Nachtrag §53:* „von Anna von Berg“ behoben; Apostroph-Namen und bis zu 8 Namensteile markierbar.
+
+## §53 Rückführung zusammengesetzter Namen, Apostrophe, längere Namen (16.10.2026, Branch `feature/feedback-diagnose`, Basis `0b7a616`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 53.1 Reproduzierte Rückführungsfehler
+
+Prüfmaß ist der **Rundweg**: Schreibt die Cloud-KI den pseudonymisierten Text unverändert zurück, muss die lokale
+Rückführung exakt das Original ergeben. Auf `0b7a616` fehlten 6 von 9 Fällen, auch ohne jede Markierung:
+
+| Original | Rückführung vorher |
+|---|---|
+| „Frau von Berg widersprach“ (neben „Anna von Berg“) | „Frau von **Anna von** Berg widersprach“ (Duplikat) |
+| „Herr Müller verlangte“ (neben „Dr. Hans-Peter Müller“) | „Herr **Dr. Hans-Peter** Müller verlangte“ (Titel eingeschleust) |
+| „Frau Wiebe bestätigte“ (neben „Prof. Dr. Erika Wiebe“) | „Frau **Prof. Dr. Erika** Wiebe bestätigte“ |
+| „und Frau Brenner kamen“ (neben „Mandant Karl Brenner“) | „und Frau **Karl** Brenner kamen“ |
+
+**Ursache:** Ein Platzhalter steht für genau einen Wert, den Vollnamen (`_auto_alias`/`_canonicalize_alias` ordnen
+Kurzformen bewusst demselben Platzhalter zu, damit eine Person einen Platzhalter hat). `Pseudonymizer.reconstruct`
+setzte deshalb überall den Vollnamen ein.
+
+### 53.2 Korrektur (nur lokale Rückführung, der gesendete Inhalt bleibt unverändert)
+
+- Der Pseudonymizer merkt sich je Personen-Platzhalter die im Quelltext vorkommenden Formen **nach einer Anrede,
+  einem Titel oder einer Rolle** (`PseudonymMapping.context_forms`): „herr“ → „Müller“, „frau“ → „von Berg“.
+  Erkennung (`detectors.name_context`): letztes Wort aus `MANUAL_NAME_PREFIX_WORDS` vor höchstens Namenszusätzen,
+  gleiche Zeile.
+- `reconstruct` (`_form_for_context`) wählt je Vorkommen die Form, die im Quelltext nach demselben Kontextwort stand,
+  sofern eindeutig („Herr“/„Frau“ untereinander austauschbar). Sonst gilt der Vollname. In beiden Fällen wird nichts
+  doppelt geschrieben, was direkt davor schon steht: ein Titel („Dr. [P]“ ergibt kein „Dr. Dr.“) oder ein
+  Namenszusatz nach einer Anrede („Frau von [P]“ → „Berg“).
+- **Bewusst ohne Kontext der Vollname:** Im Rubrum eines Schriftsatzes („In Sachen [MANDANT_01] gegen …“) muss die
+  Partei vollständig genannt werden. Eine Kurzform aus dem Quelltext wäre dort ein inhaltlicher Mangel. Deshalb
+  ergibt „Brenners Anspruch“ ohne Anrede weiterhin „Karl Brenners Anspruch“ (bestehender Test unverändert).
+- Es wird nie die Form eines **anderen** Platzhalters eingesetzt, und nichts wird erfunden (nur Formen dieser Person
+  aus diesem Text). Präposition und Namenszusatz bleiben unterscheidbar: „Der Brief von [P]“ ergibt „Der Brief von
+  Anna von Berg“, weil vor „von“ keine Anrede steht. Andere Kategorien (Ort, Aktenzeichen …) sind unberührt.
+- `context_forms` gehört **nicht** zur Leck-Prüfung der Antwort (`variants`), weil eine Kurzform wie „Berg“ dort
+  normale Antworten blockieren würde.
+
+### 53.3 Apostrophe und längere Namen
+
+- **Vorher:** „O'Brien“ und Namen mit mehr als 5 Teilen waren nicht markierbar.
+- **Jetzt (`review._NAME_PART`, `MAX_NAME_PARTS`):**
+  - ein Apostroph **innerhalb** eines Namensteils („O'Brien“, „D’Angelo“, „Dell'Anna Rossi“), nie am Anfang oder
+    Ende, nie doppelt;
+  - bis zu 8 Teile („Maria del Carmen de la Fuente y Santos“), weiterhin höchstens 80 Zeichen (DB-Spalte);
+  - gerades und typografisches Apostroph gelten bei Suche, Gültigkeitsprüfung und Platzhalter-Zuordnung als
+    dieselbe Schreibung; die Rückführung behält die jeweils originale Form.
+- Die Rückfrage bleibt bei Einzelwörtern; an Presidio und der automatischen Erkennung ändert sich nichts.
+
+Die Markierung wirkt weiterhin auf jede exakte Fundstelle desselben Namens und muss in der Nachricht vorkommen.
+Fehlen nach einer Textänderung beide Apostroph-Formen, wird nicht gesendet. Manipulierte Werte (z. B. „O'Brien');
+DROP …“, Zeilenumbruch, mehr als 8 Teile, mehr als 80 Zeichen) lehnt der Server ab.
+
+### 53.4 Tests und Vorher/Nachher
+
+`tests/test_privacy_name_reconstruction.py` (33 Tests):
+
+- **Rundweg:** 9 Fälle exakt, darunter zwei Personen „von Berg“, „Prof. Dr. Erika Wiebe“, „O'Brien“/„O’Brien“, der
+  8-teilige Name.
+- **Gegenproben:**
+  - ohne Anrede bleibt der Vollname (Rubrum);
+  - frei formulierte Antworten ergeben weder „Dr. Dr.“ noch „von Anna von Berg“;
+  - „Der Brief von [P]“ behält den Vollnamen;
+  - Formen wechseln nie zu einem anderen Platzhalter;
+  - andere Kategorien bleiben unverändert.
+- **Apostrophe und lange Namen:** gültige Formen werden angenommen, ungültige oder manipulierte (8 Fälle) und mehr
+  als 80 Zeichen abgewiesen.
+- **HTTP-Nachweis:** Weder „O'Brien“ noch „O’Brien“ stehen in den gesendeten Bytes, Datum, Betrag und § 280 BGB schon.
+
+Ein §52-Test (6 Teile ungültig) wurde auf die neue Grenze umgestellt (9 Teile ungültig).
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, `fetch` durch eine Attrappe ersetzt):
+
+- Apostroph-, lange und Zusatznamen werden markiert; vor „Dell'Anna Rossi“ wird „Frau“ abgetrennt.
+- Eine ungültige Auswahl wird abgewiesen.
+- Steht nur noch die typografische Form im Text, bleibt die Markierung gültig.
+- Fehlen beide Formen, wird ohne Anfrage blockiert.
+
+**Vorher/Nachher** (Vergleich mit §52), getrennt nach Art:
+
+- **Lecks:** unverändert: `pseudonymization_v1` 3 (kein Feldfall geändert), Namen 0,0 % (1100), Chat ohne Akte
+  0/440, Legal-E2E dev/test 0.
+- **Fehlalarme:** 6, Namen 2/132, Rollenobjekte 0/12 (unverändert).
+- **Blockaden:** 0 (unverändert).
+- **Juristische Inhalte:** Behalte-Werte 67/68, Legal-E2E ohne abweichende Kennzahl.
+- **Rückführung:** 3/9 → 8/9 exakte Rundwege; der neunte („Brenners“ ohne Anrede) ergibt bewusst den Vollnamen.
+- **Gesamtsuite** (6 Teile, Vordergrund): **5078 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 53.5 Offene Grenzen
+
+- Ohne Anrede/Titel/Rolle setzt die Rückführung den Vollnamen ein, auch wo der Quelltext nur den Nachnamen hatte
+  (bewusst, s. o.).
+- Schreibt die Antwort eine Anrede, die im Quelltext nicht vorkam (z. B. „Frau [P]“ für eine Person, die nur mit
+  „Herr“ vorkam), greift die Form von „Herr“/„Frau“. Bei fremdem Geschlecht ist das inhaltlich der Text der Antwort.
+- Genitiv und Großschreibung im Antworttext werden wie bisher behandelt; andere Flexionsformen nicht.
+- Erkennt der Titel-Detektor „Dr. Hans-Peter Müller“, steht der Titel im Platzhalter. Die Rückführung stellt ihn
+  wieder her, ohne ihn zu verdoppeln; die Cloud-KI sieht ihn nicht.
+- Kleinschreibung (§52.3) unverändert.
+
+## §54 „Namen schützen“ einheitlich in Chat, Schriftsatz-, Entwurfs- und E-Mail-Formularen (16.10.2026, Branch `feature/feedback-diagnose`, Basis `0ea1918`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 54.1 Sendewege (ermittelt)
+
+| Formular | Endpunkt | Text in der Anfrage | Weg zur Cloud |
+|---|---|---|---|
+| Schriftsatz-Generator (`schriftsatz_generator.html`) | `POST /dashboard/tools/schriftsatz/generate` | `stil`, `vorlage`, `attorney_anmerkungen` | `create_draft` → `_prepare_and_gate` |
+| Änderungsauftrag (`draft_detail.html`) | `POST /dashboard/drafts/{id}/instructions[/apply]` | Auftrag (gemessen: der bisherige Entwurf geht **nicht** mit, nur Aktentitel und Auftrag) | `apply_instruction` → `create_draft` |
+| Editor, KI-Bearbeitung (`draft_editor.html`, AJAX) | `POST /dashboard/drafts/{id}/ai-edit` | Anweisung und Auswahl | `apply_ai_suggestion` → `create_draft` |
+| E-Mail: Zusammenfassen/Antworten (`partials/message_detail.html`) | `POST /dashboard/chat/from-message/{id}` | Betreff, Absender, E-Mail-Text | Chat (`send_message`), danach weiter im Chat |
+
+- Ein eigenes E-Mail-Verfassen-Formular gibt es nicht (keine Versandfunktion). Der Dokumentengenerator und der
+  Postausgang rufen keine KI auf.
+- Alle Wege laden bereits die aktenweiten Entscheidungen (`_prepare_and_gate` bzw. Entwurfsprüfung, §51). Es fehlten
+  nur das Bedienelement und die serverseitige Aufnahme.
+
+### 54.2 Änderungen (eine Logik statt Kopien)
+
+- **Server:** `decisions.parse_manual_terms` / `record_manual_terms` sind die einzige Stelle für Prüfung und
+  Speicherung. Der Chat ruft sie jetzt ebenfalls auf (vorher private Funktionen im `chat_router`).
+  - Geprüft wird gegen genau den Text, der in die Anfrage geht. Bei Entwürfen kommt der angezeigte Entwurf hinzu: ein
+    dort stehender Name ist markierbar und gilt dann aktenweit für spätere Anfragen
+    (`name_protection.protect_manual_terms`).
+  - Ungültige, veraltete oder manipulierte Markierung: nichts wird angelegt (auch keine Schnellakte), gespeichert
+    oder gesendet. Fehlermeldungen enthalten keinen Begriff.
+  - Gespeichert wird als dieselbe Entscheidung „Als Person behandeln“ (aktenweit, Audit „manuell markiert“), committet
+    **vor** der Anfrage. Scheitert das Speichern, wird zurückgerollt und nichts gesendet.
+- **Browser:** `app_name_protection.js` ist ein gemeinsamer Baustein mit derselben Logik wie im Chat (Namensform,
+  Abtrennen von Anrede/Titel/Rolle, Apostrophe, bis zu 8 Teile, Gültigkeit am aktuellen Text). Der Chat nutzt ihn
+  jetzt ebenfalls; IDs und Verhalten sind unverändert, die Browser-QA aus §52/§53 ist identisch. Markup und
+  Konfiguration kommen aus `partials/name_protection.html`. Die Wortlisten stellt `app/web/name_protection.py` in
+  jedem betroffenen Router bereit, eine Quelle in `detectors.py`.
+  - Formulare: veraltete Markierung blockiert das Absenden (Capture-Phase, vor der Ladeanzeige).
+  - Editor: blockiert vor dem `fetch`.
+  - Markierbar ist eine Auswahl in den Formularfeldern, im angezeigten Entwurf bzw. im E-Mail-Text
+    (`selectionWithin`).
+- **Unverändert:** Rückfrage, Berechtigungen zum Aufheben/Bestätigen (`PERM_PRIVACY_DECISION_MANAGE`, §52),
+  Pseudonymisierung, Rückführung (§53), Fail-Closed, Siegel.
+- **Korrigierte Annahme:** Ich war zunächst davon ausgegangen, der Änderungsauftrag sende den Entwurf mit. Gemessen
+  sendet er ihn nicht; Code-Kommentare und Hinweistexte sind entsprechend formuliert.
+
+### 54.3 Tests und QA
+
+`tests/test_web_form_name_protection.py` (24 Tests, echte Endpunkte und Gateway, Schreib-Attrappe gibt die
+Platzhalter der Anfrage zurück):
+
+- **Schriftsatz:**
+  - Gegenprobe ohne Markierung: „Zweigelt“ steht in der Payload.
+  - Mit Markierung geschützt, Datum, Betrag und § 3 ZPO unverändert, Entscheidung aktenweit.
+  - Bindestrich-, Apostroph- und Zusatznamen in allen drei Feldern; zwei Personen „von Berg“ getrennt.
+  - 5 ungültige oder veraltete Varianten: keine Akte, kein Entwurf, keine Entscheidung, keine Anfrage.
+  - Speicherfehler: keine Anfrage.
+- **Änderungsauftrag:**
+  - geschützt bzw. Gegenprobe;
+  - Name nur im Entwurf markierbar und danach aktenweit wirksam;
+  - veraltet: nichts gespeichert oder gesendet;
+  - „Anmerkung speichern“ speichert die Markierung ohne Cloud-Aufruf.
+- **Editor:** Namen aus Auswahl und Entwurf geschützt; ungültig → 422 ohne Begriff und ohne Anfrage;
+  Speicherfehler → keine Anfrage.
+- **E-Mail:** beide Aktionen geschützt; manipulierte Markierung → 400, keine Unterhaltung; Bedienelement an beiden
+  Formularen, Ladeanzeige unverändert.
+- **Aktenweit:** Eine Markierung aus der E-Mail gilt im Schriftsatz und im Chat derselben Akte.
+- **HTTP-Nachweis** (Schriftsatz über echten Anthropic-Provider und lokalen Aufzeichnungsserver): weder „Zweigelt“
+  noch „O'Brien/O’Brien“ in den gesendeten Bytes; juristische Werte enthalten.
+- **Rückführung im gespeicherten Entwurf:** exakt das Original, ohne „von Anna von Berg“, „Herr Dr.“ oder „Dr. Dr.“.
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel; Absenden und `fetch` abgefangen –
+keine Anfrage verließ den Browser), alle vier Wege ohne JS-Fehler:
+
+- „Richter Zweigelt“ → „Zweigelt“, „Frau Dell’Anna Rossi“ → „Dell’Anna Rossi“; Auswahl im Entwurf und im E-Mail-Text.
+- Veraltete Markierung blockiert ohne Anfrage, im Formular wie im Editor; das Feld `protected_terms` wird übertragen.
+- In der QA gefunden und behoben: Ein früherer Hinweis blieb nach gültigem Absenden sichtbar.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** Benchmarks unverändert (`pseudonymization_v1` kein Feldfall geändert, Chat ohne Akte 0/440,
+  Legal-E2E 0). In den neuen Formularwegen geht ein markierter Name nicht mehr im Klartext hinaus (vorher ging
+  „Zweigelt“ in Schriftsatz und Änderungsauftrag hinaus, s. Gegenproben).
+- **Fehlalarme und Blockaden:** unverändert.
+- **Juristische Inhalte:** unverändert.
+- **Gesamtsuite** (6 Teile, Vordergrund): **5102 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 54.4 Offene Grenzen
+
+- Namen in **hochgeladenen Dokumenten** (Schriftsatz-Upload, Chat-Anhang) lassen sich nicht markieren, weil es keine
+  Textansicht zum Auswählen gibt. Sie sind nur über eine Markierung desselben Namens im eingegebenen Text oder über
+  die Rückfrage geschützt.
+- Aktionen auf Dokumenten und Mandanten (`start_conversation_from_document`) haben noch keine Markierung (feste
+  Aufforderungen; danach geht es im Chat mit Markierung weiter).
+- Im Editor gilt der **gespeicherte** Entwurf. Ein Name, der nur in noch nicht automatisch gespeichertem Text steht,
+  wird serverseitig abgewiesen, und es wird nichts gesendet.
+- Ein Fehler in der E-Mail-Aktion zeigt eine schlichte Fehlerseite (400). Kein Datenabfluss, aber keine Rückkehr mit
+  erhaltener Auswahl.
+- Kleinschreibung (§52.3) und die übrigen §53-Grenzen unverändert. Die Markierung ist ein zusätzlicher Schutz, kein
+  Nachweis vollständiger Erkennung.
+- *Nachtrag §55:* Namen im noch nicht gespeicherten Editortext sind jetzt markierbar.
+
+## §55 „Namen schützen“ im noch nicht gespeicherten Editortext (16.10.2026, Branch `feature/feedback-diagnose`, Basis `799679b`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+**Ursache:** Browser und Server prüften gegen **verschiedene** Texte. Der Browser prüfte gegen den aktuellen
+Editorinhalt, der Server (`name_protection.protect_manual_terms`) gegen Anweisung, Auswahl und den **gespeicherten**
+Entwurf. Ein Name, der nur im ungespeicherten Text stand, wurde deshalb serverseitig als „kommt nicht vor“ abgewiesen,
+und die ganze KI-Bearbeitung brach ab. Das ist sicher, aber nicht nutzbar. Ein Leck gab es nicht: gemessen gehen in
+die Cloud-Anfrage nur Anweisung und Auswahl, nicht der ganze Entwurf (§54.1).
+
+**Änderung:**
+
+- Der Editor (`app_draft_editor.js`) schickt mit der KI-Bearbeitung den **aktuellen** Editorinhalt als `editor_text`
+  mit, aber nur, wenn Markierungen vorhanden sind. Der Browser hat die Markierung aus genau diesem Text abgeleitet,
+  damit ist sie an dieselbe Textversion gebunden.
+- Der Server prüft die Markierung mit derselben Funktion wie bisher (`parse_manual_terms`) gegen Anweisung, Auswahl,
+  aktuellen Editortext und gespeicherten Entwurf, und speichert sie als dieselbe aktenweite Entscheidung, **vor** der
+  Anfrage.
+- `editor_text` ist **nur Prüfgrundlage**: Er wird nicht gespeichert, nicht in die Cloud-Anfrage übernommen und nicht
+  protokolliert. Der Entwurf wird nicht automatisch gespeichert; auch das Markieren selbst löst keine Anfrage aus
+  (Browser-QA).
+- Größer als 200 000 Zeichen: sicherer Abbruch.
+- Ohne `editor_text` bleibt das bisherige Verhalten (Gegenprobe: weiterhin Abweisung).
+- Unverändert: Pseudonymisierung, Rückführung, Rückfrage, Fail-Closed, Siegel, Berechtigungen.
+
+**Tests** (`tests/test_web_editor_unsaved_name_protection.py`, 13 Tests):
+
+- Gegenprobe ohne Editortext.
+- Name nur im ungespeicherten Text, in der Auswahl: geschützt; gespeicherter Entwurf unverändert; Editortext nicht in
+  der Anfrage.
+- Name nur im ungespeicherten Text außerhalb der Auswahl: aktenweit gespeichert und in der späteren Entwurfsprüfung
+  maskiert.
+- 5 veraltete, mehrdeutige oder ungültige Fälle (ersetzt, gelöscht, Wortteil, mit Rolle, manipuliert): Abbruch mit
+  Meldung ohne Begriff, keine Anfrage, keine Entscheidung.
+- Zu langer Editortext; Speicherfehler: keine Anfrage, Entwurf unverändert.
+- Mehrwort-, Bindestrich-, Apostroph- und Zusatznamen, zwei Personen „von Berg“ getrennt.
+- Exakte Rückführung der ungespeicherten Auswahl, ohne „von Anna“, „Dr. Dr.“ oder „Herr Dr.“.
+- **HTTP-Nachweis** über den lokalen Aufzeichnungsserver: „Brummelbeck“ und der übrige Editortext sind nicht in den
+  gesendeten Bytes, das Datum ist enthalten.
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel; `fetch` abgefangen):
+
+- Ein in den Editor getippter, nicht gespeicherter Name wird markiert, ohne dass eine Anfrage entsteht.
+- Beim Senden gehen Markierung und Editortext mit.
+- Wird der Name danach ersetzt, ist die Markierung veraltet und das Senden blockiert, mit verständlichem Hinweis.
+- Keine JS-Fehler.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** keine neuen. `pseudonymization_v1` kein Feldfall geändert, Legal-E2E dev/test 0, abweichend: keine.
+- **Fehlalarme:** unverändert.
+- **Blockaden:** Die bisher unnötige Abweisung (Name nur im ungespeicherten Text) entfällt; bei veralteter Markierung
+  wird weiterhin bewusst blockiert.
+- **Inhalte:** unverändert (Rückführung exakt).
+- **Gesamtsuite** (6 Teile, Vordergrund): **5115 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+**Offene Grenzen:**
+
+- `editor_text` stammt vom Browser. Ein manipulierter Wert kann nur **zusätzliche** Namen als „Als Person behandeln“
+  speichern (mehr Schutz, ggf. Übermaskierung eines selbst gewählten Worts), nie Schutz entfernen. Die Namensform-
+  und Rollenprüfung gilt unverändert.
+- „Richter“ am Satzanfang wird teils als Person maskiert (bekannte Grenze §46/§50).
+- Die übrigen Grenzen aus §52–§54 bleiben bestehen (Kleinschreibung, hochgeladene Dokumente, Dokument- und
+  Mandanten-Aktionen). *Nachtrag §56:* hochgeladene Dokumente und Dokument-Aktionen sind jetzt angebunden.
+
+## §56 „Namen schützen“ in hochgeladenen Dokumenten (16.10.2026, Branch `feature/feedback-diagnose`, Basis `27cc723`)
+
+Daten nur synthetisch, alles lokal, keine Cloud-Aufrufe. Status bleibt **teilweise nachgewiesen**.
+
+### 56.1 Bestandsaufnahme der Dokumentpfade (vor den Änderungen, am Code)
+
+- **Text:** Einziges Textfeld ist `Document.extracted_text`. Erstmals gespeichert wird es in
+  `DocumentProcessingService.process_document` (`app/documents/service.py`, direkt bzw. nach OCR).
+  - **Synchron** beim Upload: Chat-Anhang, Schriftsatz-Upload, Upload in der Akte, Entwurfsexport.
+  - **Im Hintergrund:** Mail-Anhang, zunächst ohne Akte.
+  - Intake-Ordner: Dokumente zunächst ohne Akte.
+  - Es gibt **keine Bearbeitung** des extrahierten Texts; er ändert sich nur durch eine neue Verarbeitung (OCR-Wiederholung).
+- **Anzeige mit auswählbarem Text:** Dokumentansicht der Akte (`matter_document.html`, Bereich „Extrahierter Text“)
+  und Dokumentansicht im Chat (`chat.html`). Beide rendern `build_document_preview`: escapter Text mit `<mark>`,
+  `innerText` entspricht dem extrahierten Text. PDF/DOCX werden zusätzlich als Seitenbilder gezeigt (nicht auswählbar).
+- **Cloud-Wege:** Alle laufen über `DraftingService._prepare_and_gate`. Aktenweite Entscheidungen „Als Person
+  behandeln“ gelten dort auf **allen** Feldern, auch auf Dokumenttext und Fristen-Ausschnitten:
+  - Chat mit Anhang (`context_document_ids`) bzw. die ganze Akte;
+  - KI-Aktionen auf Dokumenten (`from-document`);
+  - Schriftsatz, Änderungsauftrag, E-Mail-Aktionen (ganze Akte);
+  - die Entwurfsprüfung sendet nur den Entwurf, ebenfalls mit Entscheidungen.
+- **Lokal:** Klassifikation, Fristen-Erkennung, Suche/Embeddings (fastembed), Vorschau-Erkennung, Qualitätsdiagnose,
+  lokale KI (sieht nur die pseudonymisierte Payload).
+- **Protokolle:** Kein Logger, Audit-Eintrag oder Diagnosebericht schreibt Dokumenttext (API-Log: Hash und Kategorien).
+- **Lücke vorher:** Namen im Dokumenttext waren nirgends markierbar; die Chat-Markierung prüft nur gegen den
+  getippten Text.
+
+### 56.2 Änderungen (dieselbe Prüf- und Speicherlogik, keine parallele Schutzarchitektur)
+
+- **Server** (`app/web/name_protection.py`):
+  - `protect_document_terms`: Prüfung mit `parse_manual_terms` gegen genau `extracted_text`, Speicherung mit
+    `record_manual_terms` als aktenweite Entscheidung „Als Person behandeln“, vor jeder Anfrage.
+  - **Bindung an den Textstand:** `document_text_version` (SHA-256-Präfix des extrahierten Texts) wird mit dem
+    Formular gesendet. Hat sich der Text seit dem Öffnen geändert, wird abgewiesen, statt die Markierung auf einen
+    anderen Text anzuwenden.
+  - Ohne Akte, ohne Text, ungültige/manipulierte Markierung oder Speicherfehler: nichts gespeichert, nichts
+    gesendet; Meldungen ohne Begriff.
+- **Endpunkt** `POST /dashboard/matters/{matter}/document/{doc}/protect-names` (`document_actions_router.py`):
+  - Aktenisolation: Dokument der Akte, Akte nicht gelöscht.
+  - Rückkehr nur in die eigene Dokumentansicht bzw. einen eigenen Chat **derselben** Akte (kein offener Redirect).
+  - Jede Rolle mit Aktenzugang, weil es den Schutz nur erweitert; Aufheben bleibt `PERM_PRIVACY_DECISION_MANAGE`.
+  - Eine leere Markierung wird nicht als „gespeichert“ gemeldet.
+- **KI-Aktionen auf Dokumenten** (`from-document`): Sie tragen die noch ungespeicherte Markierung und den
+  Textstand mit und speichern sie vor dem ersten Cloud-Aufruf. Fehler: HTTP 400, nichts gestartet.
+- **UI** (`partials/name_protection.html`: `document_controls`, `document_action_fields`, `document_script`;
+  gemeinsamer Baustein `app_name_protection.js`), eingebunden in Akten- und Chat-Dokumentansicht:
+  - Auswahl im Text, auch über automatische Hervorhebungen hinweg; Anrede, Titel und Rolle werden abgetrennt.
+  - Bereits geschützte Namen werden im Text hervorgehoben (`build_document_preview(protected_terms=…)`, gleiche
+    Fundstellenlogik). Eine Markierung verschwindet so nicht unbemerkt.
+- **Aus dem unabhängigen Review behoben (mittel):** In der Chat-Dokumentansicht hätte eine gesetzte, aber nicht
+  gespeicherte Markierung beim Senden aus dem Eingabefeld still gefehlt; der Anhang ging mit. Jetzt verweigert das
+  Eingabefeld das Senden, bis gespeichert ist.
+- **Ebenfalls aus dem Review (niedrig):** Die Meldung sagt im Dokumentkontext „im Dokumenttext“ statt „in der
+  Nachricht“.
+
+### 56.3 Tests und QA
+
+`tests/test_web_document_name_protection.py` (22 Tests, echte Endpunkte und Gateway, Antwort-Attrappe gibt den
+pseudonymisierten Sachverhalt zurück):
+
+- **Gegenprobe:** Ohne Markierung steht „Zweigelt“ in der Payload.
+- **Speichern und Wirkung:** Nach dem Speichern aktenweit geschützt, sichtbar hervorgehoben, in jeder späteren
+  KI-Aktion maskiert; Datum, Betrag, Paragraf und Aktenzeichen erhalten.
+- **Markierung über die KI-Aktion:** vor der Anfrage gespeichert.
+- **Namensformen:** Mehrwort-, Bindestrich-, Apostroph- und Zusatznamen; zwei Personen „von Berg“ getrennt;
+  „O'Brien“/„O’Brien“ mit einem Platzhalter.
+- **Rückführung:** Die Antwort enthält die Dokumentsätze exakt im Original, ohne „von Anna von Berg“ oder „Dr. Dr.“.
+- **Textstand geändert:** abgewiesen, keine Unterhaltung, keine Anfrage.
+- **Ungültige oder manipulierte Markierungen:** 7 Fälle abgewiesen.
+- **Speicherfehler:** keine Anfrage.
+- **Isolation:** fremde Akte → 404; Rückkehrziel nur in eigene Ansichten.
+- **Rollen:** Mitarbeiter darf schützen, aber nicht aufheben.
+- **Chat-Upload:** echte PDF-Extraktion → Chat-Dokumentansicht → Markierung → Folgeanfrage maskiert; die Grenze ist
+  ausdrücklich geprüft, siehe 56.4.
+- **Sende-Sperre im Chat** verdrahtet; Meldungstext im Dokumentkontext geprüft.
+- **HTTP-Nachweis** über den echten Anthropic-Provider und den lokalen Aufzeichnungsserver: keine markierten Namen
+  in den gesendeten Bytes, juristische Werte enthalten. Mitgeschnittene Protokollausgaben enthalten keinen Namen.
+
+**Geprüft ist die HTTP-Anfrage des SDK an einen lokalen Loopback-Server (unverschlüsselt). Nicht geprüft sind die
+TLS-Übertragung zum echten Endpunkt und der Relay-/Gateway-Pfad gegen einen realen Server (§47).**
+
+**Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, Anthropic- und Gateway-Endpunkt auf
+einen toten Port gelegt; KI-Aktionen abgefangen):
+
+- Speichern ohne Markierung wird mit Hinweis abgewiesen.
+- „Richter Zweigelt“ → „Zweigelt“; „Zeugin Anna von Berg“ wird über die Hervorhebung hinweg zu „Anna von Berg“.
+- Die KI-Aktion trägt Markierung und Textstand; nach echtem Speichern (temporäre DB) ist der Name hervorgehoben und
+  der Hinweis sichtbar.
+- Chat-Dokumentansicht: Senden aus dem Eingabefeld mit ungespeicherter Markierung wird blockiert, ohne Anfrage.
+- Keine JS-Fehler.
+- **In der QA aufgefallen (Testaufbau, kein Produktfehler):** Die erste Abfangung im QA-Skript griff nicht. Das
+  Formularfeld `name="action"` überdeckt `form.action`, und die Ladeanzeige stoppt die Ereignisweitergabe. Zwei
+  KI-Aktionen erreichten deshalb den temporären Server. **Kein Cloud-Aufruf:** Der Server hatte keinen Schlüssel
+  (Antwort „Cloud-KI ist nicht konfiguriert“, `api_call_logs` leer). Danach wurden die Endpunkte zusätzlich auf einen
+  toten Port gelegt und die Abfangung korrigiert.
+
+**Vorher/Nachher**, getrennt nach Art:
+
+- **Lecks:** in den Benchmarks keine Änderung (`pseudonymization_v1` kein Feldfall geändert, Legal-E2E dev/test 0,
+  ohne Abweichung). In den Dokumentwegen geht ein markierter Name nicht mehr im Klartext hinaus (Gegenprobe vorher).
+- **Fehlalarme:** unverändert.
+- **Blockaden:** neu nur bewusst bei veraltetem Textstand und ungespeicherter Dokument-Markierung im Chat.
+- **Inhalte:** unverändert (Rückführung exakt).
+- **Gesamtsuite** (6 Teile, Vordergrund): **5137 bestanden**, 10 xfail, 1 xpass (vorbestehend), 1 übersprungen,
+  4 fehlgeschlagen – die fremden Logo-Tests.
+
+### 56.4 Grenzen und offene Risiken (nicht durch Scheinlösung verdeckt)
+
+- **Chat- und Schriftsatz-Upload senden im selben Request** (**geschlossen in §57**: Upload und KI-Verarbeitung sind
+  jetzt getrennte Vorgänge): Der Text wird beim Hochladen extrahiert und gleich
+  mitgesendet; vor dem ersten Versand gibt es keinen Moment zum Markieren. Ein Name, den die Erkennung übersieht,
+  geht in dieser ersten Anfrage im Klartext hinaus; der Test hält das ausdrücklich fest.
+  - **Sicherer Ablauf:** in der Akte hochladen („Dokumente“), in der Dokumentansicht markieren, dann die KI-Aktion
+    bzw. den Chat starten.
+  - Eine Upload-ohne-Senden-Option im Chat wäre eine eigene Produktentscheidung.
+- **Mail- und Intake-Dokumente ohne Akte:** Sie sind erst nach der Zuordnung markierbar. Vorher erreichen sie keine
+  Cloud, weil die KI-Aktion eine Akte verlangt.
+- **Aus dem Review (niedrig):**
+  - Ein Name mit geschütztem Leerzeichen oder Leerzeile im Dokument wird abgewiesen (fail-closed, kein Leck).
+  - Fehler der KI-Aktion erscheinen als schlichte 400-Seite.
+  - Der Hinweistext kommt aus einem URL-Parameter (escaped; Textfälschung über einen präparierten Link möglich, wie
+    beim bestehenden `?error=`).
+  - Ein teilweise automatisch erkannter Name wird nicht zusätzlich als „geschützt“ hervorgehoben; maskiert wird er
+    trotzdem.
+  - Jede Rolle kann gewöhnliche großgeschriebene Wörter schützen (Übermaskierung, nie weniger Schutz).
+- PDF/DOCX-Seitenbilder sind nicht auswählbar; markiert wird im extrahierten Text darunter.
+- Die Markierung ist ein zusätzlicher Schutz, kein Nachweis vollständiger Erkennung. Synthetische Tests belegen
+  **keine** vollständige Leckfreiheit.
+
+## §57 Upload und KI-Verarbeitung getrennt – Chat und Schriftsatz-Generator (16.10.2026, Branch `feature/feedback-diagnose`, Basis `df2fa3f`)
+
+Schließt die in §56.4 offen gelassene Lücke: Bisher wurde ein Dokument im Chat bzw. im Schriftsatz-Generator im
+**selben Request** hochgeladen, ausgelesen und mitgesendet. Ein Name, den die automatische Erkennung übersah, ging in
+dieser ersten Anfrage vor jeder Markiermöglichkeit im Klartext hinaus. Status: **teilweise nachgewiesen** (siehe 57.4).
+
+### 57.1 Bestandsaufnahme (am Code, vor den Änderungen)
+
+- **Chat** (`chat_router.send_message_stream` und `/send`): Dateien prüfen → Namensmarkierung prüfen →
+  `ChatService.attach_document` (speichern, `DocumentProcessingService.process_document`: Extraktion/OCR, Klassifikation
+  und Fristen **lokal**) → Nutzernachricht mit Anhang → sofort `send_message[_stream]` → `DraftingService._prepare_and_gate`
+  (zentrale Prüfung) → Cloud.
+- **Schriftsatz** (`schriftsatz_router.generate_schriftsatz`): Akte wählen/anlegen → Markierung speichern → Dateien
+  speichern und verarbeiten → sofort `create_draft` → Cloud.
+- **Keine weiteren automatischen Cloud-Auslöser beim Upload:**
+  - Dokumentverarbeitung, OCR-Wiederholung, Mail-Abruf und Titelbildung (`generate_conversation_title`) laufen lokal.
+  - Die Wiederaufnahme einer Datenschutz-Rückfrage (`pending-review`, `privacy-review`) verlangt eine offene
+    **Nutzer**nachricht (`role == "user"`, letzte Nachricht, Bearbeitungssperre).
+  - Dokument- und E-Mail-Aktionen (`from-document`, `from-message`) sind eigene, bewusste Aktionen und verlangen eine
+    Akte.
+
+### 57.2 Änderungen (bestehende Logik, keine parallele Architektur)
+
+- **Serverseitig erzwungen:** Ein Request **mit Dateien** ist im Chat (beide Endpunkte) und im Schriftsatz-Generator
+  ausschließlich ein Upload. Er speichert, liest lokal aus und ordnet der Akte zu, ruft aber weder
+  `send_message[_stream]` noch `create_draft` auf. Das gilt auch für einen mitgetippten Text: Er wird **nicht**
+  gesendet, nur der Titel einer neuen Unterhaltung entsteht wie bisher lokal daraus.
+- **Chat:**
+  - Neue Nachrichtenrolle `upload` (`ChatService.record_upload`) mit dem lokalen Hinweis „noch keine KI-Verarbeitung“
+    und den Anhängen. Ist ein Dokument nicht lesbar, nennt der Hinweis das sofort (`readiness.blocked_state_sentences`).
+  - Die Rolle ist nie Teil des Verlaufs (`_build_history` nimmt nur user/assistant) und nie eine offene
+    Rückfrage-Nachricht.
+  - Antwort auf den Upload: Weiterleitung bzw. Stream-Ereignis `uploaded` zur Chat-Dokumentansicht
+    (`?uploaded=1#name-protection`) mit Hinweis und der §56-Markierung.
+  - Ein mitgetippter Text bleibt nur im Browser (`sessionStorage` dieser Unterhaltung). Er steht nach dem Prüfen,
+    auch über „Markierung speichern“ hinweg, wieder im Eingabefeld und wird erst beim Absenden entfernt.
+- **Bewusste Aktion im Chat:** Die nächste Nachricht ohne Dateien verarbeitet die seit der letzten Antwort
+  hochgeladenen Dokumente (`_message_scope`, `_referenced_document_ids`). Mehrere Uploads hintereinander werden
+  vereinigt; eine unbeantwortete Zwischenfrage (offene Rückfrage) beendet den Bezug nicht; jede Antwort, auch ein
+  lokaler Sperrhinweis, beendet ihn. Die wiederhergestellte Rückfrage (`pending-review`) prüft denselben Kontext. Datenminimierung §29 bleibt erhalten:
+  nur diese Dokumente begrenzen den Kontext. Lesbarkeitssperre, gespeicherte Markierungen (`load_decisions`), Presidio,
+  Pseudonymisierung, Leak-Check, Siegel und Rückführung laufen unverändert in `_prepare_and_gate`.
+- **Schriftsatz-Generator:**
+  - Mit Dateien wird die Seite neu angezeigt, mit Hinweis (`#upload-notice`), Links zur Prüfung je Dokument
+    (Aktenansicht mit §56-Markierung), vorausgewählter Akte und den bisherigen Eingaben.
+  - Erst „Schriftsatz generieren“ **ohne** Dateien ruft `create_draft` auf.
+  - Die Schaltfläche heißt bei gewählten Dateien „Dokumente hochladen (noch keine KI)“.
+- **Fehlerfälle (fail-closed, unverändert streng):**
+  - Ungültige oder veraltete Markierung beim Upload: nichts gespeichert, nichts gesendet.
+  - Veraltete Dokument-Markierung (`text_version`): abgewiesen.
+  - Ungültige Markierung bei der Frage: nichts gesendet.
+  - Scheitert die zentrale Prüfung: nichts gesendet.
+  - Speicherfehler beim Upload: Abbruch vor jeder Verarbeitung.
+- **Manipulation und Wiederholung:**
+  - Eine Upload-Nachricht kann weder über `privacy-review` beantwortet noch über `pending-review` wiederaufgenommen
+    werden.
+  - Ein wiederholter Upload (Doppelklick, Retry) ist wieder nur ein Upload.
+  - Der Bezug auf die Upload-Dokumente reicht nicht in andere Unterhaltungen oder Akten.
+
+### 57.3 Tests und QA (nur synthetische Daten, kein Anthropic-Aufruf, kein Deployment)
+
+- **Neu: `tests/test_upload_without_ai.py`** (19 Tests). Echter `AnthropicClaudeWritingProvider` (echte Factory und
+  echtes SDK) gegen den lokalen Aufzeichnungsserver, toter Proxy, gefälschter Schlüssel.
+  - Upload im Chat: **0 HTTP-Requests**, `api_call_logs` leer.
+  - Schriftsatz-Upload: **0 HTTP-Requests**, kein Entwurf. `create_draft` beim Upload ist zur Probe verboten
+    (würde den Test sprengen).
+  - Erst die bewusste Frage bzw. Generierung erzeugt genau **einen** Request. Dessen **verifizierter Payload** enthält
+    den nachträglich markierten Namen nicht, wohl aber Daten, Betrag und Norm des Dokuments, und nicht den lokalen
+    Upload-Hinweis.
+  - Außerdem abgedeckt: Rückführung des Namens in der Antwort, Lesbarkeitshinweis und -sperre, veraltete und
+    ungültige Markierungen, ein Ausfall der zentralen Prüfung (nachweislich aufgerufen, fail-closed),
+    Rückfrage-Manipulation, Wiederholung und Aktenisolation; nach dem Review zusätzlich: gleicher Kontext für
+    `pending-review`, mehrere Uploads, Ende des Upload-Bezugs.
+- **Angepasst:** 31 bestehende Tests, die Upload und Senden in einem Schritt erwarteten. Sie laufen jetzt zweistufig
+  über gemeinsame Helfer und prüfen zusätzlich, dass der Upload-Schritt nichts sendet.
+  - `test_web_chat`: 4
+  - `test_web_schriftsatz`: 5
+  - `test_chat_document_readiness`: 15
+  - `test_web_privacy_review`: 2
+  - `test_privacy_cloud_boundary_e2e`: 4
+  - `test_web_document_name_protection`: 1. Die dort festgehaltene §56-Grenze („Zweigelt im ersten Versand“) ist
+    jetzt umgekehrt belegt: Der erste Versand ist die bewusste Frage, ohne den Namen.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, kein Schlüssel, tote Cloud-Endpunkte):
+  - Chat: Datei und Text abgesendet → Dokumentansicht mit Hinweis, Text im Eingabefeld, Upload-Nachricht sichtbar,
+    0 API-Logs.
+  - Markierung gespeichert: Entscheidung vorhanden, Text weiterhin im Eingabefeld.
+  - Die bewusste Frage wurde im Browser abgefangen.
+  - Schriftsatz: Hinweis, Prüf-Link, Eingaben und Akte erhalten, 0 Entwürfe, 0 API-Logs.
+  - Keine JS-Fehler. Während des Uploads zeigt der Chat „Dokument wird lokal ausgelesen … (noch keine KI)“, ohne
+    Nutzerblase mit dem nicht gesendeten Text.
+- **Unabhängiges Review (QA-Agent):** kein Pfad gefunden, auf dem ein Request mit Dateien `send_message*`,
+  `create_draft` oder einen Writer erreicht; Upload-Rolle nie im Verlauf, nicht beantwortbar; keine XSS-Stelle.
+  Befunde und Umgang:
+  - mittel – `pending-review` prüfte den Kontext der ganzen Akte statt des Upload-Bezugs: **behoben**, getestet;
+  - mittel – Chat zeigte beim Upload „Lexono antwortet …“ und den Text als gesendete Blase: **behoben**,
+    Browser-QA;
+  - niedrig/mittel – Hinweis versprach den Text im Eingabefeld auch ohne JavaScript bzw. Browser-Speicher:
+    **umformuliert** (bedingt);
+  - niedrig – mehrere Uploads, offene Zwischenfrage: **behoben** (vereinigt). Das Weiterführen des Bezugs über einen
+    Sperrhinweis hinweg wurde verworfen, weil es das getestete Verhalten „allgemeine Fragen nach einer Sperre“ brach;
+  - niedrig – Hinweistext blieb nach dem Senden scheinbar aktuell: **umformuliert** („beim Hochladen …“);
+  - niedrig – Schriftsatz: Upload-Antwort ohne Redirect (F5 sendet erneut: weitere Schnellakte, doppelte Dokumente,
+    keine KI) und Teilpersistenz bei einem Größenfehler im zweiten Dokument: **offen**, siehe 57.5;
+  - niedrig – Testlücken: ergänzt (siehe oben).
+- **Benchmarks:** Pseudonymisierung (alle Kennzahlen) identisch zur §56-Baseline.
+- **Gesamtsuite** (6 Teile, Vordergrund, nach den Review-Korrekturen): **5156 bestanden**, 10 xfail, 1 xpass
+  (vorbestehend), 1 übersprungen, 4 fehlgeschlagen – die fremden Logo-Tests.
+- **Belegt bzw. nicht belegt:**
+  - Belegt sind die unverschlüsselten Payloads auf diesem Rechner (Loopback).
+  - TLS zum echten Anthropic-Endpunkt und der Relay-Pfad gegen einen realen Server sind **nicht** belegt.
+
+### 57.4 Mail- und Intake-Dokumente ohne Akte (untersucht, keine Nebenlösung umgesetzt)
+
+- **Zuordnung:** Ein Dokument aus dem Mail-Abruf oder Intake bekommt erst mit der Zuordnung eine Akte:
+  - automatisch: `app/matching/service.py:48-51`;
+  - manuell: `app/web/router.py:570-573`, Akte samt Anhängen.
+- **Vorher keine Cloud:** `from-document` und `from-message` (`app/web/chat_router.py:899`, `:982`) verlangen eine
+  Akte. Ohne Akte erreicht kein Inhalt die Cloud.
+- **Sicherer Ablauf:**
+  1. zuordnen;
+  2. in der Aktenansicht des Dokuments prüfen und markieren (§56; die Entscheidung gilt aktenweit);
+  3. erst danach die KI-Aktion starten.
+- **Bewusst nicht umgesetzt:** eine Markierung ohne Akte. Sie bräuchte einen eigenen, aktenlosen
+  Entscheidungsspeicher mit offener Zuordnungs- und Isolationsfrage, also eine fachliche Entscheidung.
+
+### 57.5 Grenzen und offene Risiken
+
+- **Upload-Bezug endet mit der nächsten Antwort:** Danach werden Uploads derselben Unterhaltung wie bisher nur bei
+  ausdrücklichem Dokumentbezug herangezogen.
+- **Ungeprüftes Dokument gehört sofort zur Akte (fachlich zu bestätigen):** Ein hochgeladenes, noch nicht geprüftes
+  Dokument ist mit dem Upload Teil der Akte. Spätere KI-Aktionen mit Aktenkontext (andere Unterhaltung derselben Akte,
+  Schriftsatz-Generierung, Folgefragen mit Dokumentbezug) beziehen es ein, auch wenn niemand es markiert hat. Das
+  entspricht dem bisherigen Akten-Upload; immer laufen die zentrale Prüfung und gespeicherte Markierungen. Ob ein
+  Dokument erst nach ausdrücklicher Prüfung KI-fähig sein soll, ist eine offene fachliche Entscheidung (nicht
+  eigenmächtig umgesetzt).
+- **Schriftsatz ohne Redirect nach dem Upload** (**geschlossen in §58** durch eine Vorgangs-ID): Ein erneutes
+  Absenden per F5 legt eine weitere Schnellakte und doppelte Dokumente an (keine KI). Ein Redirect müsste die Formularwerte in die URL legen (Personenbezug im Verlauf) und wurde
+  deshalb nicht gewählt. Ein Größenfehler im zweiten Dokument hinterlässt wie bisher die Akte mit dem ersten.
+- **Der eingegebene Text liegt im Browser:** Der mitgetippte Text bleibt bis zum Absenden im `sessionStorage` des
+  Browsers, also nur lokal, im Tab und auf dem Gerät. Ein neuer Chat übernimmt ihn als lokalen Titel (wie bisher),
+  gesendet wird er nicht.
+- **Keine vollständige Erkennung:** Die Markierung bleibt ein zusätzlicher Schutz. Was weder erkannt noch markiert
+  wird, geht bei der bewussten Aktion im Klartext hinaus, nun aber erst nach einer Prüfmöglichkeit.
+  Synthetische Tests belegen **keine** vollständige Leckfreiheit.
+- **Weitere Wege:** Die Akten-Uploads („Dokumente“ der Akte) waren schon vorher reine Uploads und sind unverändert.
+
+## §58 Idempotenz im Schriftsatz-Generator – F5, Doppelklick, Wiederholung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `4c0d808`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und zentrale Prüfung sind unverändert.
+
+### 58.1 Befund (reproduziert)
+
+- Derselbe POST zweimal (F5 auf der Ergebnisseite) ergab **2 Schnellakten und 2 Dokumente**, beide Antworten 200, ohne
+  KI-Aufruf.
+- Für „Schriftsatz generieren“ mit neuer Akte hätte ein Doppelklick zwei Akten und zwei Entwürfe erzeugt, also
+  **zwei Cloud-Anfragen**.
+- Einen Idempotenzschutz gab es nicht. Das nächste vorhandene Muster ist die Bearbeitungssperre im Chat
+  (`chat_message_claims`).
+
+### 58.2 Lösung (bestehende Muster, kein neuer Mechanismus daneben)
+
+- **Vorgangs-ID je Seite** (`app/drafting/schriftsatz_operations.py`):
+  - Jede ausgelieferte Generator-Seite bekommt eine neue, serverseitig ausgestellte ID (uuid4).
+  - Sie ist signiert (itsdangerous, prozessweiter Session-Schlüssel, eigenes Salt), an den Nutzer gebunden und
+    24 h gültig.
+  - Fehlt sie oder ist sie manipuliert, fremd oder abgelaufen, wird **nichts** angelegt. Das ist serverseitig
+    erzwungen, keine UI-Sperre.
+- **Atomarer Vorgang** (`schriftsatz_operations`, Migration `schritt3_032`, rein additiv):
+  - Die ID ist Primärschlüssel. Genau ein Request legt die Zeile an, auch prozessübergreifend, geschrieben in
+    eigener kurzer Sitzung wie `processing_claims`.
+  - Gespeichert werden nur IDs und Zustände: Akte, fortlaufend die Dokument-IDs, Entwurf, Status, außerdem ein
+    Fingerabdruck der Anfrage. Der Fingerabdruck ist ein HMAC mit dem Session-Schlüssel über Art, Formularfelder und
+    Datei-Hashes. Keine Formularinhalte, keine Dateinamen im Klartext.
+  - **Geänderte Anfrage mit alter ID** (z. B. über „Zurück“ bearbeitet): Sie wird weder ausgeführt noch still auf das
+    alte Ergebnis umgeleitet. Es erscheint eine neue Seite mit Hinweis und erhaltenen Eingaben. Die Generator-Seite
+    wird nicht im Browser-Cache gehalten (`Cache-Control: no-store`).
+- **Wiederholung desselben Vorgangs** (F5, erneutes Absenden, Doppelklick, paralleler Request, Wiederholung nach
+  verlorener Antwort):
+  - Ergebnis „Upload erledigt“: dieselbe Seite mit „bereits ausgeführt“ und denselben Dokumenten.
+  - Ergebnis „Generierung erledigt“: Weiterleitung auf denselben Entwurf.
+  - Fehlgeschlagen oder unterbrochen: Hinweis, nichts wird erneut ausgeführt, kein zweiter Cloud-Aufruf. Läuft der
+    Vorgang noch (jünger als 15 min), lautet der Hinweis „bitte warten“, nicht „neu starten“.
+  - Gelöschte Dokumente oder Akten (§26) erscheinen auch in einer Wiederholung nicht.
+  - Ein unerwarteter Absturz lässt den Vorgang auf „processing“. Unklar ist dann, ob schon gesendet wurde, also
+    gibt es keine automatische Wiederholung (fail-closed).
+- **Bewusst neuer Vorgang bleibt möglich:** Jede Ergebnis- oder Fehlerseite trägt eine neue ID, etwa für dieselbe
+  Datei noch einmal oder einen weiteren Upload. Nach einem Teilfehler wählt die Fehlerseite die bereits angelegte Akte
+  vor (`?matter_id=`, nur die ID), statt eine weitere Schnellakte anzulegen.
+- Keine Formularwerte in URL, Redirect oder Verlauf. Die Fehler-URL ist jetzt kodiert, und die Größen-Fehlermeldung
+  nennt keinen Dateinamen mehr. Keine Bereinigung vorhandener Akten oder Dokumente.
+
+### 58.3 Tests und QA (synthetisch, isolierte Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_schriftsatz_idempotency.py`** (20 Tests), deckt ab:
+  - F5 bzw. verlorene Antwort (3 Wiederholungen): 1 Akte, 1 Dokument, **0 HTTP-Requests** am
+    Aufzeichnungsserver.
+  - Wiederholung in eine bestehende Akte.
+  - Ein bewusster zweiter Upload derselben Datei ist möglich.
+  - Bewusste Generierung nach dem Upload: genau **1 Request**, die Wiederholung leitet auf denselben Entwurf,
+    kein zweiter Request.
+  - Doppelklick auf „generieren“ mit neuer Akte.
+  - Absturz mitten im Vorgang (500, danach Wiederholung): nichts doppelt.
+  - Teilfehler: Akte bleibt erhalten und ist vorausgewählt.
+  - Fehlende, gefälschte, fremde und abgelaufene IDs.
+  - 8 parallele Claims (genau ein Gewinner).
+  - 2 echte parallele HTTP-Requests auf einer Datei-DB: 1 Akte, 1 Dokument; die Überlappung ist belegt, der zweite
+    Request trifft den laufenden Vorgang (5 von 5 Läufen stabil).
+  - Nach dem Review: geänderte Anfrage mit alter ID (Felder bzw. Dateien), lange unterbrochener Vorgang, gelöschtes
+    Dokument, `no-store` und kodierte Fehler-URL ohne Dateinamen.
+- **Migration:** Auf- und Abbau getestet (`test_migrations`). Bestehende Generator-Tests senden die ID der Seite mit.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte): echtes F5 auf der
+  Upload-Ergebnisseite. Der Browser sendet den POST erneut, die Seite zeigt „bereits ausgeführt“, es bleibt bei
+  1 Akte, 1 Dokument und 0 API-Logs, ohne JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** kein Pfad zu Duplikaten oder einem zweiten Cloud-Aufruf über dieselbe ID gefunden;
+  Atomarität, Reihenfolge, Token-Prüfung, §57-Trennung und Migration ohne Befund. Behoben wurden: mittel –
+  Zurück-Button mit geänderter Anfrage wurde still auf das alte Ergebnis umgeleitet; niedrig –
+  „neu starten“-Aufforderung bei noch laufendem Vorgang, gelöschte Dokumente in der Wiederholung, widersprüchliches
+  Banner bei Fehlern, unkodierte Fehler-URL mit Dateinamen, fehlender Entwurf, zu schwacher Paralleltest.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5177 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+
+### 58.4 Grenzen
+
+- **Datenbankmigration:** Die Desktop-App wendet `schritt3_032` beim Start automatisch an (`run.py`, mit vorheriger
+  Sicherung). Ein direkt per `uvicorn` gestarteter Entwicklungsserver braucht `alembic upgrade head`. Auf der realen
+  Datenbank wurde in dieser Sitzung **nichts** migriert.
+- **Hängender Vorgang:** Ein nach einem Absturz auf „processing“ stehender Vorgang bleibt dauerhaft gesperrt. Der
+  Nutzer startet bewusst neu, eine automatische Aufräumung gibt es nicht. Eine dabei angelegte Schnellakte bleibt
+  bestehen und ist auf der Fehlerseite vorausgewählt.
+- **Nur der Generator** (Chat-Upload **nachgezogen in §59**): Chat-Upload und Akten-Upload sind nicht Teil dieses
+  Schritts. Der Chat sendet per `fetch`
+  bzw. leitet nach `/send` weiter (kein F5-Neusenden); ein Doppelklick ist dort nur clientseitig gesperrt.
+- **Keine Inhaltserkennung:** Zwei bewusst getrennte Vorgänge mit derselben Datei legen weiterhin zwei Dokumente an
+  (gewollt).
+
+## §59 Idempotenz beim Chat-Upload – Doppelklick, parallele Requests, Wiederholung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `d50e820`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Namensmarkierung und zentrale Prüfung sind unverändert.
+
+### 59.1 Befund (reproduziert)
+
+- **Doppelte Vorgänge:** Derselbe Upload-Request zweimal, einmal neu und einmal in einer bestehenden Unterhaltung,
+  ergab **2 Unterhaltungen, 4 Dokumente und 4 Upload-Nachrichten**, ohne KI-Aufruf.
+- **Ursache:** Beide Endpunkte (`send-stream` und `/send`) legten Unterhaltung und Dokumente an, ohne die Anfrage
+  wiederzuerkennen. Gesperrt war bisher nur clientseitig (`isSending`).
+
+### 59.2 Lösung (Mechanismus aus §58 wiederverwendet, kein zweiter daneben)
+
+- **Gemeinsamer Mechanismus:** `app/drafting/schriftsatz_operations.py` bekommt Modell und Salt als Parameter.
+  `app/chat/upload_operations.py` ist eine dünne Schicht darüber mit eigenem Salt, damit eine Generator-ID nicht im
+  Chat gilt und umgekehrt.
+- **Neue Tabelle:** `chat_upload_operations` (Migration `schritt3_033`, rein additiv). Sie speichert nur IDs, Status
+  und einen HMAC-Fingerabdruck über Unterhaltung, Akte, Text, Briefkopf, Markierung und Datei-Hashes. Inhalte und
+  Dateinamen werden nicht gespeichert.
+- **Upload-Vorgangs-ID im Eingabefeld:** Jede Chat-Seite trägt eine signierte, nutzergebundene ID. Verbraucht wird sie
+  **nur von einem Request mit Dateien**. Eine spätere, bewusst gesendete Nachricht ohne Dateien braucht keine ID und
+  ist ein eigener Vorgang. Fehlt die ID oder ist sie gefälscht, fremd, abgelaufen oder für einen anderen Zweck
+  ausgestellt, wird nichts angelegt.
+- **Gemeinsamer Upload-Pfad** (`_chat_upload`) für beide Endpunkte:
+  1. Prüfungen ohne Persistenz;
+  2. atomarer Claim über den Primärschlüssel in eigener kurzer Sitzung;
+  3. erst danach Unterhaltung, Dokumente (fortlaufend vermerkt), Markierung und Upload-Nachricht.
+- **Wiederholung desselben Uploads:** dasselbe Ergebnis (Stream `uploaded` mit `repeated`, `/send` mit gleicher
+  Weiterleitung), nichts wird doppelt angelegt.
+- **Veränderte Anfrage mit benutzter ID:** Sie wird weder ausgeführt noch als identisch behandelt.
+- **Gleichzeitige Wiederholung (Doppelklick):** Der zweite Request wartet bis zu 10 s auf den laufenden ersten und
+  liefert dann dessen Ergebnis, statt eine Fehlermeldung zu zeigen, während der Upload gelingt.
+- **Fehlgeschlagen:** Hinweis ohne erneute Ausführung; im Stream werden bereits gespeicherte Dateien genannt, in der
+  `/send`-URL nur ihre Anzahl. Weil der Upload keine KI-Anfrage auslöst, gilt auch ein Absturz als eindeutiger
+  Fehlschlag, nicht als „unklar“.
+- **Abbruch zwischen `start` und `uploaded`:** Trägt die Wiederholung die Unterhaltung desselben Vorgangs, gilt sie
+  als identisch.
+- **Neue ID nach jeder Antwort:** Jede Upload-Antwort im Stream liefert eine neue ID für das Eingabefeld. So bleibt ein
+  bewusst neuer Upload ohne Neuladen möglich, auch nach einem Fehler.
+
+### 59.3 Tests und QA (synthetisch, isolierte SQLite-Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_chat_upload_idempotency.py`** (22 Tests), deckt ab:
+  - Doppelklick bzw. verlorene Antwort: 1 Unterhaltung, 1 Dokument, 1 Upload-Nachricht, **0 HTTP-Requests** am
+    Aufzeichnungsserver.
+  - Wiederholung in eine bestehende Unterhaltung; `/send` dreimal ergibt dieselbe Weiterleitung.
+  - Bewusst neuer Upload mit der neuen ID.
+  - Veränderte Anfrage (Text, Datei, Unterhaltung).
+  - Fehlende, gefälschte, fremde und abgelaufene IDs sowie IDs des Generators und umgekehrt.
+  - Teilfehler (zweite Datei zu groß), Absturz zwischen Speicherung und Upload-Nachricht (500, danach Wiederholung).
+  - Upload ohne Cloud-Aufruf, die bewusste Frage mit genau **einem** Request (Payload enthält den Dokumentinhalt);
+    eine spätere Wiederholung des Uploads sendet nichts.
+  - Eine Nachricht ohne Dateien verbraucht keine ID.
+  - 2 echte parallele Requests auf einer Datei-DB: beide erhalten dasselbe Ergebnis, einer als Wiederholung. Das
+    Warten auf den laufenden Vorgang ist belegt, 5 von 5 Läufen stabil.
+  - Nach dem Review: keine Dateinamen in der `/send`-Fehler-URL, kodierte Fehlermeldung (`#`, `&`), Wiederholung
+    nach dem `start`-Ereignis.
+  - Vorgangszeile ohne Inhalte.
+- **Bestehende Tests:** Uploads senden die ID der Seite mit, sonst ist nichts geändert. Der Migrationstest
+  (`schritt3_033`) ist ergänzt.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte):
+  - Der normale Upload über die Oberfläche ist unverändert (Weiterleitung zur Dokumentansicht).
+  - Zwei gleichzeitige identische Requests derselben Seite, an der UI-Sperre vorbei: ein Upload, beide Antworten
+    `uploaded` (eine als Wiederholung), 0 API-Logs, keine JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** kein hoher Befund, keine Doppelanlage; Claim atomar, §57 und zentrale Prüfung
+  unberührt, Nachrichtenpfad ohne Dateien unverändert. Behoben wurden:
+  - mittel – ein Absturz wurde als „läuft noch“ gemeldet;
+  - mittel – der Verlierer eines `/send`-Doppelklicks sah eine Fehlerseite;
+  - mittel – durch §59 wären Dateinamen in die `/send`-URL gelangt;
+  - niedrig – Wiederholung nach dem `start`-Ereignis, toter Code, Typangaben, Leerzeichen.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5200 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+- **PostgreSQL:** Das Verhalten mehrerer Prozesse ist **nicht verifiziert**, getestet ist nur SQLite.
+
+### 59.4 Grenzen
+
+- **Ohne JavaScript (`/send`):** Ergebnis- und Fehlerseiten tragen eine neue ID; ein Doppelklick wird serverseitig als
+  ein Vorgang erkannt. Die Dateiauswahl muss nach einem Fehler, wie bisher, neu getroffen werden.
+- **Hängende Vorgänge** (**geschlossen in §60**: Wiederaufnahme bei nachweislich beendetem Besitzer): Ein durch
+  Absturz auf „processing“ stehender Upload bleibt gesperrt, wie in §58. Dokumente
+  ohne Upload-Nachricht bleiben dann in der Unterhaltungsakte; neu hochgeladen wird bewusst.
+- **Mehrere Tabs und Zurück-Button** (Zurück-Button **geschlossen in §60**): Jeder Tab hat eine eigene ID. Derselbe Upload in zwei Tabs gilt als zwei
+  bewusste Vorgänge. Eine per „Zurück“ wiederhergestellte Seite trägt eine verbrauchte ID: Ein anderer Upload wird
+  abgewiesen (mit neuer ID), der zweite Versuch gelingt.
+- **Dateiname in Fehler-URL (vorbestehend, geschlossen in §60):** Die Größen-Fehlermeldung des Chats beim ersten Fehlschlag nennt den
+  Dateinamen und landet im Pfad ohne JavaScript in der Fehler-URL. §59 fügt keine weiteren Namen hinzu.
+
+## §60 Chat-Upload: harter Abbruch, Dateinamen in Fehler-URLs, Zurück-Button (17.10.2026, Branch `feature/feedback-diagnose`, Basis `83aeaaa`)
+
+Status: **teilweise nachgewiesen**. Upload-Trennung (§57), Idempotenz (§58/§59), Namensmarkierung und zentrale Prüfung
+sind unverändert.
+
+### 60.1 Befund (am Code)
+
+- **Absturzpunkte eines Uploads**, jeweils eigener Commit:
+  1. Schnellakte;
+  2. Unterhaltung;
+  3. Datei geschrieben, danach Dokument-Commit;
+  4. Verarbeitung (Text/OCR);
+  5. Vermerk am Vorgang;
+  6. Upload-Nachricht und ihre Dokumentverknüpfungen (bisher **zwei** Commits);
+  7. Status.
+- **Folge eines harten Abbruchs:** Der Vorgang blieb dauerhaft auf `processing`. Eine Wiederholung führte ihn nie aus,
+  und Teildaten blieben zurück: Unterhaltung und Dokumente ohne Upload-Nachricht.
+- **Dateinamen in Fehler-URLs** (Pfad ohne JavaScript):
+  - Größenfehler im Chat;
+  - Dateityp-Fehler im Chat;
+  - Größenfehler beim Akten-Upload; dort war die Meldung zusätzlich unkodiert.
+- **Zurück-Button:** Eine aus dem Browser-Cache wiederhergestellte Seite trug eine bereits verbrauchte Kennung.
+
+### 60.2 Lösung
+
+- **Wiederaufnahme statt Bereinigung, nichts wird gelöscht:**
+  - Beim Anlegen des Vorgangs werden alle IDs vorab vergeben und als Plan gespeichert (Migration `schritt3_034`):
+    Schnellakte, Unterhaltung, je Datei ein Dokument, Upload-Nachricht.
+  - Jeder Schritt ist „anlegen, falls unter der geplanten ID noch nicht vorhanden“. Die Datei bekommt einen festen
+    Pfad je Dokument-ID, ein Dokument mit unterbrochener Verarbeitung wird lokal neu verarbeitet. Upload-Nachricht
+    und Verknüpfungen entstehen in einem Commit.
+  - Auch ein Commit mit unklarem Ausgang führt so nicht zur Doppelanlage.
+- **Besitzer statt Zeit:**
+  - Der Vorgang speichert einen Hash des Rechnernamens, Prozess-ID, Prozess-Startzeit und eine Kennung je
+    Ausführungsversuch (`app/chat/process_owner.py`, ohne Zusatzpaket).
+  - Übernommen wird nur bei **nachweislich beendetem** Besitzer. Im eigenen Prozess entscheidet die Liste der
+    laufenden Vorgänge (Referenzzähler, vor dem Anlegen gesetzt). Bei einem fremden Prozess auf demselben Rechner
+    gilt er als beendet, wenn die Prozess-ID fehlt oder der Startzeitpunkt nicht mehr passt.
+  - Die Übernahme ist atomar (Compare-and-Set auf die Versuchskennung), genau ein Request setzt fort, auch wenn der
+    beendete Besitzer der eigene Prozess war.
+  - Als beendet gilt ein fremder Prozess nur bei „keine solche Prozess-ID“ oder abweichender Startzeit; jeder andere
+    Fehler der Abfrage gilt als „nicht prüfbar“.
+  - **Zeitablauf gibt nie frei.** Ein lebender Besitzer wird auch nach Stunden nicht übernommen.
+  - Ist der Besitzer nicht prüfbar (anderer Rechner, Altbestand), bleibt der Vorgang unangetastet; ein bewusst neuer
+    Upload mit neuer Kennung ist möglich.
+- **Kontrollierter Fehlschlag**, wenn der Stand nicht stimmig rekonstruierbar ist: Dokument, Unterhaltung oder
+  Schnellakte inzwischen gelöscht (erkannt über Fortschrittsmarker im Plan, damit nichts wiederbelebt wird), Vorgang
+  ohne Plan, abweichende Dateizahl oder fremde Unterhaltung. Die Namensmarkierung wird bei der Wiederaufnahme nicht
+  erneut gezählt. Dann wird `failed` gesetzt, nichts gelöscht,
+  und ein Neustart ist mit neuer Kennung möglich.
+- **Keine Dateinamen in URLs:**
+  - feste Meldung für den Größenfehler (`UploadTooLargeError`), der Name erscheint nur lokal im Stream;
+  - Dateityp-Fehler nur mit einer kurzen technischen Endung, sonst „?“ (auch im Schriftsatz-Generator);
+  - Größenfehler beim Akten-Upload ohne Namen und kodiert.
+- **Zurück-Button:**
+  - Chat-Seiten werden nicht im Browser-Cache gehalten (`no-store`).
+  - Nach einer Wiederherstellung (`pageshow`) holt die Seite eine neue Kennung von `GET /dashboard/chat/upload-token`.
+    Der Endpunkt stellt nur eine Kennung aus und schreibt nichts.
+  - Ein Upload wird nie automatisch wiederholt. Eine verbrauchte Kennung mit anderem Inhalt wird abgewiesen, wie in
+    §59.
+
+### 60.3 Tests und QA (synthetisch, isolierte SQLite-Datenbanken, kein Anthropic-Aufruf)
+
+- **Neu: `tests/test_chat_upload_recovery.py`** (30 Tests), deckt ab:
+  - harter Abbruch an **6 Speicherpunkten** (nach Akte, nach Unterhaltung, vor Dokument-Commit, während der
+    Verarbeitung, vor dem Vermerk, nach der Upload-Nachricht);
+  - Wiederaufnahme jeweils mit genau 1 Unterhaltung, 1 Dokument, 1 Datei, 1 Upload-Nachricht samt Verknüpfung und
+    1 Akte; das Dokument ist fertig verarbeitet; eine weitere Wiederholung liefert nur das Ergebnis;
+  - **0 HTTP-Requests** am Aufzeichnungsserver;
+  - zwei Dateien in einer bestehenden Unterhaltung;
+  - die bewusste Frage nach der Wiederaufnahme ergibt genau 1 Request;
+  - lebender Besitzer, auch Stunden alt: keine Übernahme; nach seinem Ende Übernahme;
+  - nicht prüfbarer Besitzer: keine Übernahme, sicherer Neustart;
+  - Prozess-Lebenszeichen inklusive wiederverwendeter Prozess-ID;
+  - 8 parallele Übernahmen mit genau einem Gewinner; 2 parallele Wiederaufnahme-Requests, von denen einer fortsetzt
+    und einer wartet (5 von 5 Läufen stabil);
+  - kontrollierter Fehlschlag;
+  - keine Dateinamen in Fehler-URLs (Chat und Akte);
+  - Zurück-Button mit neuer Kennung ohne Schreibvorgang;
+  - Endpunkt nur angemeldet; Vorgangszeile ohne Inhalte und ohne Klartext-Rechnernamen;
+  - nach dem Review: doppelte Übernahme eines eigenen beendeten Versuchs ausgeschlossen, gelöschte Unterhaltung nicht
+    wiederbelebt, Markierung nicht doppelt gezählt, Dateiendung mit Punkt im Namen.
+- **Migration** `schritt3_034` auf und ab.
+- **Browser-QA** (Edge headless, eigener Server, temporäre DB, tote Cloud-Endpunkte): Upload, danach `history.back()`.
+  Die Seite trägt eine neue Kennung, es wird nichts erneut hochgeladen. Der bewusst zweite Upload gelingt, mit
+  0 API-Logs und ohne JS-Fehler.
+- **Unabhängiges Review (QA-Agent):** Absturzpunkte, Atomarität der Upload-Nachricht, Neuverarbeitung,
+  Pfadsicherheit, Token-Endpunkt, Fehler-URLs, §57 und Migration ohne Befund. Behoben wurden:
+  - mittel – im eigenen Prozess konnte die Übernahme mehrfach gelingen (gleiche alte und neue Besitzerkennung);
+  - mittel – eine nach dem Abbruch gelöschte Unterhaltung wäre wiederbelebt worden;
+  - niedrig – zu großzügige Prozessprüfung, unvollständige ctypes-Signaturen, Hinweistext, Dateiendung,
+    Rechnername im Klartext, doppelte Zählung der Markierung, gefährlicher Default.
+- **Gesamtsuite** (6 Teile, nach den Review-Korrekturen): **5231 bestanden**, 10 xfail, 1 xpass, 1 übersprungen, 4 fehlgeschlagen – die fremden
+  Logo-Tests.
+- **PostgreSQL** gehört derzeit nicht zur vorgesehenen Zielarchitektur (SQLite-Prototyp, CLAUDE.md) und wurde nicht
+  geprüft. Compare-and-Set und Primärschlüssel-Claim sind dort **nicht verifiziert**.
+
+### 60.4 Grenzen
+
+- **Mehrere Rechner:** Teilen sich Rechner eine Datenbank, ist der Besitzer auf dem fremden Rechner nicht prüfbar. Der
+  Vorgang bleibt dann gesperrt, ein neuer Upload ist möglich, die Teildaten bleiben in der Unterhaltung.
+- **Ohne Wiederholung kein Abschluss:** Ein abgebrochener Upload, den niemand wiederholt, bleibt mit Teildaten stehen.
+  Eine automatische Bereinigung gibt es bewusst nicht (keine Löschung).
+- **Anderes Konto:** Gehört der Besitzer zu einem anderen Benutzerkonto auf demselben Rechner (Zugriff verweigert),
+  gilt er als nicht prüfbar.
+- **Lebender Prozess, abgebrochener Request:** Lebt der Prozess eines fremden Besitzers weiter, aber sein Request
+  wurde hart abgebrochen, gilt der Vorgang weiter als laufend. Der Hinweis verweist dann auf einen bewusst neuen
+  Upload.
+- **Schriftsatz-Generator (§58)** (**geschlossen in §61.2**): Dort bleibt ein hart abgebrochener Vorgang weiterhin
+  gesperrt. Der Generator war
+  nicht Teil dieses Schritts; die Generierung ist bewusst fail-closed, weil eine Cloud-Anfrage erfolgt sein könnte.
+
+## §61 Arbeitspakete P1–P5 (17.10.2026, Branch `feature/feedback-diagnose`, Basis `666685f`)
+
+Sequenziell abgearbeitet, je Paket mit Bestandsaufnahme und Qualitätsgate. Status: **teilweise nachgewiesen**;
+keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+### 61.1 P1 – Dokumentfreigabe: Inventur der KI-Pfade
+
+**Was „Freigabe“ hier umfasst:** Einen eigenen Freigabe-Mechanismus „Dokumentfreigabe“ gibt es im Code nicht. Vor
+jeder Cloud-Verarbeitung greifen:
+- die zentrale Prüfung (`ClaudePrivacyGateway.prepare_request`, Siegel);
+- Rückfrage und Namensmarkierung (§51–§56, an den angezeigten Textstand gebunden);
+- die Lesbarkeitsprüfung;
+- die Trennung von Upload und Verarbeitung (§57).
+
+Eine zusätzliche Pflicht-Freigabe je Dokument vor jeder KI-Aktion bleibt eine **offene fachliche Entscheidung**
+(§57.5) und wurde nicht eigenmächtig eingeführt.
+
+**Inventur (am Code, Ist-Stand):**
+- **Cloud-Provider:** Alle vier (direkt und Gateway, Schreiben und Prüfung) verlangen vor dem Netzaufruf ein gültiges
+  Siegel. Versiegelt wird nur in `prepare_request` bzw. `extend_with_local_note` (mit erneuter Prüfung).
+- **Auslöser:** Alle Cloud-Auslöser sind POST-Aktionen über `DraftingService._prepare_and_gate` bzw. `ReviewEngine`:
+  - Chat (`send`, `send-stream`, `from-document`, `from-message`, `privacy-review`);
+  - Entwurf (`regenerate`, `instructions/apply`, `ai-edit`, `review`);
+  - Schriftsatz `generate`, nur ohne Dateien.
+  - Gespeicherte Markierungen laden alle Pfade aktenweit.
+- **GET:** Keine GET-Route ruft einen Provider auf. `pending-review` prüft nur lokal.
+- **Lokal:** Hintergrundaufgaben (Mail-Abholung, Updates, Gesundheitsprüfung), Klassifikation, Fristerkennung,
+  Einbettungen, OCR, Titelbildung und Spracherkennung laufen lokal. Eine Umgehung wurde nicht gefunden.
+- **Dokumenttext:** Nur die Verarbeitung (`process_document`) ändert ihn. Markierungen wirken aktenweit
+  (Übermaskierung, kein Leck). `text_version` bindet nur **neue** Markierungen an den angezeigten Text; die zentrale
+  Prüfung läuft bei jedem Versand über den aktuellen Text.
+
+**Ergänzt:**
+- **`tests/test_no_ai_on_open.py`:** Ruft **alle GET-Routen** (Stand: 99, zur Laufzeit aufgezählt, neue Routen
+  automatisch) mit synthetischen Daten auf. Dazu gehören Mail, Dokumente mit Namen, Entwürfe, Frist, Wissensbasis und
+  ein Chat mit Upload-Nachricht.
+  - Spione liegen auf allen Cloud-Providern und dem Gateway-Client; jede Socket-Verbindung außer Loopback wird
+    gesperrt.
+  - **Ergebnis:** 0 Provider-Aufrufe, 0 Netzverbindungen, keine Server-Fehler.
+  - Dazu kommt der direkte Akten-Upload (dritter Upload-Weg): lokal ausgelesen, geöffnet, 0 Provider-Aufrufe,
+    0 Netzverbindungen.
+- **Dabei gefunden und behoben (kein Datenschutzpfad):** DOCX- und PDF-Export von Entwürfen und generierten Dokumenten
+  setzten einen Dateinamen mit Umlaut roh in den Kopf `Content-Disposition`. Das ist nicht RFC-6266-konform; der
+  Test-Client brach mit `UnicodeDecodeError` ab. Jetzt steht ein ASCII-Ersatzname in `filename=` und der volle Name in
+  `filename*=UTF-8''…` (`app/export/filenames.attachment_header`).
+  - Ob der Export im installierten Build mit WebView2 sichtbar fehlschlug, ist **nicht verifiziert**.
+  - Nebenbefund: Die globale `NoStoreMiddleware` setzt `no-store` ohnehin für alle Antworten; der zusätzliche Kopf
+    aus §60 ist redundant, aber unschädlich.
+
+**QA P1 (Repository-Tests, SQLite, TestClient; kein Browser, keine installierte App):**
+
+| Prüfung | Status |
+|---|---|
+| GET-Routendurchlauf ohne KI und Netz | PASS |
+| Akten-Upload ohne KI und Netz | PASS |
+| Export-Tests (DOCX/PDF, Aktenseite) | PASS |
+| Gesamtsuite: 5233 bestanden, 4 fremde Logo-Fehler | PASS |
+| Installierter Build | NICHT VERIFIZIERT |
+
+### 61.2 P2 – Idempotenz: harter Abbruch im Schriftsatz-Generator
+
+**Befund:**
+- Ein hart abgebrochener Generator-Vorgang blieb dauerhaft `processing`, ohne Besitzer und ohne Plan.
+- Die Wiederholung meldete **zeitabhängig**: unter 15 min „bitte warten, nicht neu starten“, auch wenn der Prozess
+  längst beendet war, danach „unterbrochen“.
+- Ein abgebrochener Upload hinterließ Schnellakte und Dokumente ohne Abschluss.
+
+**Lösung (Mechanismus aus §60, keine Kopie):**
+- **Gemeinsamer Prozess-Merker:** `process_owner.LocalRegistry`, je eine Instanz für Chat und Generator; das
+  Chat-Verhalten bleibt unverändert.
+- **Besitzer und Plan:** Der Generator speichert beides (Migration `schritt3_035`, additiv). Der Plan enthält die
+  geplante Schnellakte und je Datei eine Dokument-ID.
+- **Wiederholung desselben Vorgangs:**
+  - Lebt der Besitzer nachweislich, wartet sie höchstens 10 s; danach kommt „bitte warten“.
+  - Ist er nachweislich beendet, folgt die atomare Übernahme.
+  - **Upload:** wird fortgesetzt, Schritt für Schritt „anlegen, falls nicht vorhanden“. Dazu gehören die
+    Schnellakte unter der geplanten ID, Dokumente mit festem Dateipfad und das Nachholen einer abgebrochenen lokalen
+    Verarbeitung. Die Markierung wird einmal gespeichert, gelöschte Objekte führen zum kontrollierten Fehlschlag.
+  - **Generierung:** wird **nie** wiederholt, denn ob die KI-Anfrage schon gesendet war, ist unklar. Es folgt ein
+    kontrollierter Fehlschlag mit Hinweis; die Akte bleibt vorausgewählt, auch wenn der Abbruch direkt nach dem Anlegen
+    der Schnellakte lag. Ein bewusster Neustart ist möglich.
+  - Ein nicht prüfbarer Besitzer bleibt unangetastet. **Zeit allein gibt nie frei.**
+- **Audit:** Übernahme, Fortsetzung und kontrollierter Fehlschlag werden protokolliert, ohne Inhalte. Für die
+  Übernahme im Chat (§60) ist der Eintrag nachgezogen.
+- **Defekter Plan:** führt zum kontrollierten Fehlschlag statt zu wiederholten Server-Fehlern.
+
+**QA P2 (Repository-Tests, SQLite, TestClient):**
+
+| Prüfung | Status |
+|---|---|
+| `tests/test_schriftsatz_recovery.py` (13 Tests): harter Abbruch an 4 Upload-Speicherpunkten mit Wiederaufnahme ohne Doppelanlage (1 Akte, 1 Dokument, 1 Datei, 0 KI-Anfragen, Audit) | PASS |
+| Abbruch nach der Cloud-Anfrage: genau 1 aufgezeichneter Request, Wiederholung ohne zweiten; Abbruch davor und direkt nach der Schnellakte (vorausgewählt, Neustart ohne zweite Akte) | PASS |
+| Lebender Besitzer nach 5 h nicht übernommen; nicht prüfbarer Besitzer unangetastet; gelöschtes Dokument und defekter Plan führen zum kontrollierten Fehlschlag; Übernahme mit genau einem Gewinner; Migration auf und ab | PASS |
+| §58-Tests: 3 Erwartungen auf das neue, nicht mehr zeitabhängige Verhalten umgestellt (Fortsetzung statt „bitte warten“; Doppelklick wartet auf das Ergebnis; „unterbrochen“ nur bei nicht prüfbarem Besitzer) | PASS |
+| Unabhängiges Review: kein hoher Befund; mittel (Akte nicht vorausgewählt) und niedrig (defekter Plan, Audit, Testlücken) behoben | PASS |
+| Gesamtsuite: 5246 bestanden, 4 fremde Logo-Fehler | PASS |
+| Paralleles Übernahme-Rennen über HTTP für den Generator (nur auf Funktionsebene getestet; im Chat auch über HTTP) | NICHT VERIFIZIERT |
+| PostgreSQL | NICHT VERIFIZIERT |
+
+**Bewusst offen:**
+- **Doppelte Zählung:** Ein Abbruch genau zwischen dem Speichern der Markierung und ihrem Merker zählt sie bei der
+  Fortsetzung doppelt (Audit, Lern-Statistik). Die Entscheidung selbst ist ein Upsert. Den Merker vorher zu setzen
+  könnte die Markierung verlieren, also weniger Schutz.
+- **Hart gelöschte Objekte:** Ein zwischen Commit und Merker hart gelöschtes Objekt würde unter der geplanten ID neu
+  angelegt. Akten und Dokumente werden regulär nur weich gelöscht.
+- **Gesperrte Wiederholung:** Eine Wiederholung blockiert bis zu 10 s einen Worker-Thread.
+- **Doppelklick bei Entwurfsaktionen:** „Neu generieren“, Änderungsauftrag und KI-Bearbeitung im Editor haben keine
+  serverseitige Vorgangs-ID; dort schützt nur die UI-Sperre (`app_ai_loading`). Das war nicht Teil von P2 (Generator
+  und Chat-Upload).
+
+### 61.3 P3 – Mail und Intake
+
+**Bestandsaufnahme (am Code):**
+- **Mail-Abruf:** `main._run_periodic_mail_ingestion`, nur wenn ein Postfach konfiguriert ist. Ablauf: IMAP,
+  `MailIngestionService` (Nachricht und Anhänge speichern), `DocumentProcessingService` (lokal), Zuordnung über
+  `MatterMatchingService` und `MatterAssignmentService` (regelbasiert, lokal).
+- **Ordner-Erfassung:** `IntakeService` und `IntakeWatcher`, Symlinks werden abgewiesen. Der Watcher wird in der
+  laufenden App derzeit **nirgends gestartet** (kein `IntakeWatcher(` in `main`/`web`); nur die Fehler-Wiederholung
+  (`errors/service.py`) liest erneut ein.
+- **Spätere KI-Aktionen auf E-Mails:** `POST /dashboard/chat/from-message/{id}` verlangt eine Akte und läuft über die
+  zentrale Prüfung samt Namensmarkierung (§54).
+- **Ergebnis:** Kein Eingangsweg löst eine KI- oder Cloud-Anfrage aus. Eine Lücke wurde nicht gefunden, am App-Code
+  ist nichts geändert.
+
+**Ergänzt: `tests/test_no_ai_on_intake.py`** (dieselben Spione wie P1: alle Cloud-Provider, Gateway-Client, jede
+Socket-Verbindung außer Loopback):
+- echter Mail-Abrufzyklus (nur das Postfach ist ein Fake) mit synthetischer Mail und PDF-Anhang: gespeichert, lokal
+  ausgelesen, zugeordnet, 0 Provider-Aufrufe, 0 Netz, 0 API-Logs;
+- Ordner-Erfassung über den Watcher-Handler samt Verarbeitung: 0 Provider-Aufrufe, 0 Netz;
+- KI-Aktion auf eine nicht zugeordnete Mail: 400, 0 Requests am Aufzeichnungsserver;
+- bewusste KI-Aktion auf eine zugeordnete Mail mit Markierung: genau 1 Request; der markierte Name fehlt im
+  verifizierten HTTP-Payload, Betrag und Datum bleiben erhalten.
+
+**QA P3 (Repository-Tests, SQLite):**
+
+| Prüfung | Status |
+|---|---|
+| Neue Tests sowie vorhandene Mail-, Watcher- und Mail-Service-Tests (20) | PASS |
+| Gesamtsuite | nicht erneut ausgeführt, nur ein Testmodul ergänzt; letztes Gate 5246 PASS (§61.2) |
+| Echter IMAP-Server, installierter Build | NICHT VERIFIZIERT |
+
+**Offen bzw. fachlich:**
+- Mail- und Intake-Dokumente ohne Akte sind erst nach der Zuordnung markierbar (§57.4).
+- Die automatische Zuordnung setzt eine Klassifikation voraus, die keiner der Upload-Pfade aufruft (vorbestehend,
+  dokumentiert in `main.py`). Das ist nicht datenschutzrelevant.
+
+### 61.4 P4 – Datenschutzvalidierung (Benchmarks reproduziert)
+
+Methodik wie in den Vorläufen: dieselben Skripte, dieselben eingefrorenen synthetischen Korpora und dieselbe
+Produktionskonfiguration. Es gab keine Netz- oder Cloud-Aufrufe. Die eingecheckte
+`benchmarks/pseudonymization_v1/results.json` blieb unverändert; sie stammt aus einem Stand vor §49.
+
+| Benchmark | Baseline | Ist (17.10.2026, nach P1–P3) | Status |
+|---|---|---|---|
+| `pseudonymization_v1` (63 Feldfälle, 88 Gold-Werte) | §57-Lauf | **0 abweichende Kennzahlen.** 85 von 88 geschützt; Klartext-Lecks 3, Teil-Lecks 2, alle als bekannte Grenze markiert; Fehlalarme 6; juristische Werte 67/68 erhalten; Blockaden und Fehler 0 | PASS |
+| dasselbe gegen die eingecheckte `results.json` | Stand vor §49 | Lecks 8 → 3: E-Mail, IBAN und zwei Personennamen behoben. Die E-Mail in K04 ist jetzt nur ein Teil-Leck | PASS (Verbesserung) |
+| `bench_name_detection` (baseline, 1100 Namen) | §53 | 0 Lecks, 0 Blockaden, alle Gruppen identisch; Fehlalarme 2/132 („Partei“, „Verwalter“), auch schon in früheren Läufen | PASS |
+| `bench_role_object_negatives` | §53 | 0/12 Sätze mit Verlust, 0 Personen-Platzhalter im Schriftsatz ohne Namen | PASS |
+| `bench_chat_without_file` | §48 | 0/440 Lecks, 0 Blockaden, 0/14 Fachfragen verändert | PASS |
+| Legal-E2E (`scripts.legal_bench.e2e`) | §56 | Nur Laufzeiten verändert (Bruchteile von Sekunden). Alle Qualitätskennzahlen identisch, etwa erfundene Fundstellen 6/6 markiert und keine Aufgabenfehler | PASS |
+
+**Verbleibende Lecks (bekannte Grenzen, unverändert dokumentiert):**
+- P10: Person, Rollenwort und Nachname ohne Anrede. Abgedeckt über die manuelle Markierung (§51), nicht automatisch.
+- A06: Ortsname und Teil einer Kennung im Grundbuchtext.
+- K04: Teil einer E-Mail mit OCR-Leerzeichen.
+- I07: kurze Nummer ohne Bezeichnung.
+
+**Ausgehende Payloads und Fail-Closed:** Vorhandene, weiter grüne Nachweise:
+- `test_privacy_wire_payload`, `test_privacy_cloud_boundary_e2e` sowie die HTTP-Nachweise aus §57–§61 (P1, P3);
+- `test_bench_pseudonymization::test_e2e_paths_protect_and_fail_closed`: Bei einem NER-Ausfall gibt es keinen
+  Cloud-Aufruf, und ein Klarname aus der lokalen Vorabanalyse wird nicht gesendet.
+
+**Neu erkannter Fehler im Regressionsschutz:** `test_no_plaintext_leak_outside_documented_limits` schloss Fälle mit
+bekannter Grenze **vollständig** aus. Folgende Verschlechterungen wären nicht aufgefallen:
+- ein zusätzliches Leck in A06, I07, K04 oder P10;
+- mehr Teil-Lecks oder Fehlalarme;
+- weniger erhaltene juristische Werte.
+
+**Korrektur:** zwei Sperrklinken-Tests in `tests/test_bench_pseudonymization.py`:
+- die zulässige Menge von Lecks und Teil-Lecks je Fall und Typ, jedes davon als Grenze dokumentiert;
+- Fehlalarme ≤ 6, höchstens 1 nicht erhaltener juristischer Wert, 0 Blockaden und 0 Fehler.
+
+Eine Mutationsprobe belegt die Wirkung: Ohne P10 in der Erlaubnisliste schlägt der Test fehl. Der Korpus selbst bleibt
+eingefroren; neue synthetische Fälle wurden bewusst nicht ergänzt, weil kein neuer Fehler gefunden wurde.
+
+**Status:** Die Ergebnisse gelten nur für endliche synthetische Korpora. Sie belegen **keine** vollständige
+Leckfreiheit und keine Rechtskonformität. Die Validierung auf realitätsnäheren, nicht modellgenerierten Texten ist
+**NICHT VERIFIZIERT**.
+
+### 61.5 P5 – Gateway und Transport (lokal geprüft, keine Bereitstellung)
+
+**Bestandsaufnahme (`gateway/`, ~800 Zeilen, 10 Testdateien, `deploy/` mit Caddy und systemd):**
+
+| Bereich | Ist-Stand | Bewertung |
+|---|---|---|
+| Authentifizierung | `Bearer <client_id>:<secret>`, Argon2id, generische 401, Dummy-Verify gegen Timing-Enumeration, keine OpenAPI/Swagger | in Ordnung |
+| Mandantentrennung | Relay ohne Zustand; Kanzlei-ID nur für Rate-Limit und Log; deaktivierte Kanzlei wird abgewiesen; keine kanzleiübergreifenden Daten | in Ordnung |
+| Berechtigungen | Kanzlei-Credentials nur per Server-CLI (`tenant_admin`, Rotation, Widerruf) | in Ordnung |
+| Größenlimits | `max_request_bytes` (200 KB) in der Route, aber **erst nach** vollständigem Einlesen und JSON-Parsen; Caddy `max_size 250KB` davor | **Lücke** (ohne Proxy Speicherrisiko) |
+| Modellfreigaben | Allowlist, tatsächlich verwendetes Modell zentral (`default_model`), `max_tokens`-Obergrenze, `thinking` nur „disabled“, keine SDK-Wiederholungen, Ziel-URL fest | in Ordnung |
+| Inhalte | `role` beliebig, `content` mit beliebigen Block-Typen (Bild, Dokument, `tool_use`) | **Lücke** (Missbrauch des zentralen Schlüssels bei kompromittierter Credential) |
+| Protokollierung | typisierte Metadaten ohne Inhalt; Caddy-Access-Log ohne Body | in Ordnung |
+| TLS | Caddy (Let's Encrypt), Gateway nur an `127.0.0.1`; Client erzwingt `https://` bei `APP_ENV != development`, die installierte App setzt `APP_ENV=production` | Konfiguration in Ordnung; **realer TLS-Betrieb NICHT VERIFIZIERT** |
+
+**Behoben (nur Code, lokal):**
+- **Nachrichtenschema** (`gateway/schemas.py`): nur Rollen `user` und `assistant`, nur Textblöcke ohne Zusatzschlüssel,
+  `cache_control` nur „ephemeral“, System-Blöcke nur Text. Das entspricht genau dem, was der Lexono-Client sendet.
+  Abweichungen werden mit 422 abgewiesen, ohne Anthropic zu erreichen.
+- **Speicherschutz vor dem Parsen** (`gateway/main.py`, ASGI-Schranke `_BodySizeLimit`):
+  - Ist `Content-Length` zu groß, folgt sofort 413.
+  - Gestückelte Bodys werden höchstens bis zur Schranke gelesen (2 × `max_request_bytes`).
+  - Die Schranke greift vor Authentifizierung und Parsen; die präzise, protokollierte 413 der Route bleibt.
+
+**QA P5 (Repository-Tests mit Anthropic-Fake; kein Server, kein echter Schlüssel):**
+
+| Prüfung | Status |
+|---|---|
+| `tests/test_gateway_hardening.py` (17): Bild, Dokument, `tool_use`, Zusatzschlüssel, falsches `cache_control`, fremde Rollen und System-Blöcke werden mit 422 abgewiesen, ohne Anthropic-Aufruf | PASS |
+| Der echte Client-Payload (versiegelt, pseudonymisiert) läuft weiter durch; einfacher Text bleibt erlaubt | PASS |
+| Größenschranke: Content-Length und gestückelt ergeben 413 ohne Auth und ohne Aufruf; die Routen-Prüfung bleibt; Mutationsprobe (Schranke entfernt, Tests schlagen fehl) | PASS |
+| Vorhandene Gateway-Tests (93, inkl. E2E-Pilotszenario Client → Relay → Anthropic-Fake) | PASS |
+| Gesamtsuite: 5269 bestanden, 4 fremde Logo-Fehler | PASS |
+| Realer Server, TLS, Rate-Limit und Logging im Betrieb, echte Anthropic-Antwort | NICHT VERIFIZIERT |
+
+**Offen (Betrieb, nicht ohne Freigabe umsetzbar):**
+- **Rechenlast ohne gültige Kennung:** Jeder Request ohne gültige Credential kostet einen Argon2-Verify (absichtlich,
+  gegen Enumeration). Ein vorgelagertes IP-Rate-Limit fehlt, die Abwehr läge bei Caddy oder fail2ban
+  (Betriebsentscheidung).
+- **Mehrere Instanzen:** Das Rate-Limit liegt im Prozess; mehrere Instanzen bräuchten einen geteilten Speicher.
+- **Inhaltsprüfung im Relay:** Das Relay prüft weiterhin nicht, ob Inhalte pseudonymisiert sind; die Garantie liegt
+  clientseitig (Siegel). Siehe Roadmap P1.
+- **Kein Produktivnachweis:** Server, Domain, Zertifikat und echte Transportstrecke existieren nicht. Hetzner bzw. P0-08
+  bleiben ein eigenes Arbeitspaket.
+
+### 61.6 Gesamtstatus
+
+**Ergebnisse je Paket:**
+
+| Paket | Ergebnis | Commit |
+|---|---|---|
+| P1 Dokumentfreigabe | keine Umgehung; Routendurchlauf ohne KI und Netz als Dauertest; Export-Kopf korrigiert | `0382518` |
+| P2 Idempotenz | Generator: Wiederaufnahme nach hartem Abbruch, Generierung nie wiederholt, keine Zeitfreigabe | `b5cab05` |
+| P3 Mail/Intake | keine Lücke; Nachweis-Tests (Mail-Zyklus, Ordner, KI-Aktion nur mit Akte) | `aa487e3` |
+| P4 Datenschutzvalidierung | Benchmarks ohne Abweichung reproduziert; Sperrklinke gegen Verschlechterung | `bfb7ff9` |
+| P5 Gateway/Transport | Schema- und Größenhärtung lokal; Betrieb nicht verifiziert | dieser Commit |
+
+**Art der Nachweise:** Alle Prüfungen sind Repository-Tests (SQLite, TestClient, lokale Aufzeichnungsserver, Fakes).
+Browser-, installierte-App- und Server-Tests wurden in §61 **nicht** ausgeführt.
+
+**Datenschutzstatus:** teilweise nachgewiesen. Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+**Nächste Schritte (Vorschlag):**
+1. Owner-Entscheidung: Pflicht-Freigabe je Dokument vor KI-Aktionen (§57.5).
+2. Serverseitige Vorgangs-ID für Entwurfsaktionen (Neu generieren, KI-Bearbeitung).
+3. Gateway-Bereitstellung als eigenes Paket mit Freigabe: IP-Rate-Limit, TLS- und Transportnachweis.
+4. Validierung auf realitätsnäheren, nicht modellgenerierten Texten.
+
+## §62 Konfigurierbare Dokumentfreigabe vor KI-Verarbeitung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `022e636`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind in allen
+Modi unverändert verpflichtend.
+
+### 62.1 Modi, Geltungsbereich, Standard
+
+- **A – Manuelle Freigabe:** Jedes Dokument braucht eine ausdrückliche Freigabe.
+- **B – Automatische Freigabe:** Nach erfolgreicher zentraler Prüfung ohne gesonderte Freigabe. Unsichere Begriffe
+  werden bei der Anfrage maskiert bzw. erfragt, wie bisher.
+- **C – Automatische Freigabe mit Entscheidung bei Auffälligkeiten:** Unauffällige Dokumente gehen automatisch durch.
+  Bei unsicheren Begriffen ist eine Entscheidung nötig: Freigabe oder Namensmarkierung.
+- **Geltungsbereich:**
+  - Der Modus gilt **kanzleiweit** (`firm_profiles.document_release_mode`).
+  - Ändern dürfen ihn Admin und Anwalt (`PERM_PRIVACY_DECISION_MANAGE`), mit Audit-Eintrag.
+  - Die Anzeigepräferenz „Automatisch freigegeben“ gilt **pro Benutzer** (`users.show_auto_release_notice`).
+- **Standard ohne gesetzten Wert: B.** Das ist exakt das bisherige, geprüfte Verhalten. Bestehende Installationen
+  ändern sich so nicht stillschweigend, und B ist nicht unsicher, weil die zentrale Prüfung bei jeder Anfrage
+  fail-closed bleibt. Es ist aber die am wenigsten restriktive Variante. **Owner-Entscheidung offen:** Soll für
+  Neuinstallationen C der Standard sein?
+
+### 62.2 Durchsetzung (serverseitig)
+
+- **Prüfung je Dokumentstand:** Die zentrale Prüfung (`ClaudePrivacyGateway.prepare_request`, Modus „ask“) läuft
+  lokal auf dem Dokumenttext, mit Beteiligten und Entscheidungen wie beim Versand. Ergebnisse: unauffällig, auffällig
+  oder fehlgeschlagen.
+- **Zwischenspeicher:** Ergebnisse werden gespeichert nach Textstand, Kontext (Entscheidungen, Beteiligte) und
+  Code-Version. Nur echte Ergebnisse werden gespeichert; „fehlgeschlagen“ wird jedes Mal neu geprüft. Geschrieben wird
+  in einer eigenen kurzen Sitzung.
+- **Manuelle Freigabe:** Sie ist an den angezeigten Textstand gebunden. Ein veralteter Stand wird abgewiesen, und eine
+  Textänderung macht die Freigabe wirkungslos.
+- **Durchsetzung an der einzigen Engstelle** (`_build_sachverhalt`): Dokumenttext nicht freigegebener Dokumente geht
+  in keinem Pfad hinaus, ebenso wenig Frist-Ausschnitte daraus. Der Anwalt bekommt einen lokalen Hinweis.
+- **Ausdrücklich angefragte Dokumente** (Chat-Upload, „Mit Dokument chatten“): Es gibt eine lokale, verständliche
+  Meldung, keinen Cloud-Aufruf.
+- **Fehlgeschlagene Prüfung:** Sie blockiert in jedem Modus, auch eine bestehende manuelle Freigabe. Die Freigabe ist
+  dann serverseitig gesperrt.
+- **Laufzeit:** Im Modus B wird nicht zusätzlich geprüft, denn eine fehlgeschlagene Prüfung blockiert die ganze
+  Anfrage ohnehin. Die Anzeige prüft immer vollständig.
+
+### 62.3 Oberfläche (dezent)
+
+- **Seite „Datenschutz & Dokumentfreigabe“** (`/dashboard/privacy/document-release`): aktiver Modus, Moduswahl und
+  Anzeigepräferenz. Eine Karte im Einstellungs-Tab „KI & Datenschutz“ zeigt den Modus dauerhaft.
+- **Am Dokument** (Akten- und Chat-Dokumentansicht): Statuszeile („Automatisch freigegeben“, „Manuell freigegeben“,
+  „Freigabe erforderlich“, „Entscheidung erforderlich“, „Verarbeitung blockiert – Datenschutzprüfung fehlgeschlagen“)
+  samt Modus.
+- **Erfolgsmeldung bei automatischer Freigabe:** mit „Pseudonymisierung überprüfen“, „Freigabeeinstellungen öffnen“ und
+  „Diese Meldung nicht mehr anzeigen“. Ausblendbar ist nur diese Meldung; Blockade, erforderliche Freigabe und
+  Entscheidung erscheinen immer.
+- **Human in the Loop:** Die Seite „Pseudonymisierung überprüfen“ zeigt lokal Platzhalter, Kategorie und Originalwert
+  sowie den pseudonymisierten Text. Feedback läuft über die bestehenden Wege: Namen schützen (§56),
+  Entscheidungsverwaltung (§52), Qualitätsmeldung (§75). Keine Rückmeldung lockert Regeln automatisch.
+
+### 62.4 Tests und QA
+
+| Prüfung | Art | Status |
+|---|---|---|
+| `tests/test_document_release.py` (34) | Repository, SQLite, echte Endpunkte, lokaler Gateway | PASS |
+| … darin: alle drei Modi; Bindung an den Textstand (Textänderung macht die Freigabe veraltet, veraltetes Formular wird abgewiesen) | Repository | PASS |
+| … darin: Akte und Fristen ohne nicht freigegebenen Text; Markierung löst Auffälligkeit; fehlgeschlagene Prüfung in jedem Modus, nicht übersteuerbar, Fehler fail-closed und nicht gespeichert, vorübergehender Fehler wird neu geprüft | Repository | PASS |
+| … darin: Upload und Öffnen ohne KI in allen Modi (0 Requests am Aufzeichnungsserver); Chat-Frage zu nicht freigegebenem Upload lokal beantwortet, nach Freigabe genau 1 verifizierter Request | Repository, HTTP-Recorder | PASS |
+| … darin: Anzeigepräferenz dauerhaft gespeichert und änderbar, ändert nichts sonst; Warnungen nie ausblendbar; interner Rücksprung; Rechte (Mitarbeiter sieht, ändert und gibt nicht frei); Aktenisolation; Audit; Prüfseite; Migration `schritt3_036` | Repository | PASS |
+| GET-Routendurchlauf (P1) inkl. neuer Seiten: 0 Provider-Aufrufe, 0 Netz, keine Server-Fehler | Repository | PASS |
+| Browser-QA (Edge headless, isolierter Server, temporäre DB, tote Cloud-Endpunkte) | Browser | PASS |
+| … darin: Einstellungsseite; Status und Meldung am Dokument; Ausblenden per Checkbox (DB gespeichert, Status bleibt); Moduswechsel per Formular; Freigabe per Klick; Prüfseite; Einstellungskarte; 0 API-Logs, keine JS-Fehler | Browser | PASS |
+| Unabhängiges Review: kein Bypass (eigene Probe: weder Text noch Frist noch Dateiname eines nicht freigegebenen Dokuments im Payload); mittlere Befunde behoben (vorübergehender Fehler, Commit im Kontextaufbau, Laufzeit, Code-Version im Schlüssel), niedrige behoben (Anzeige/Durchsetzung konsistent, Audit ohne Änderung, Fristen ohne Text, Chat ohne Akte) | Review | PASS |
+| Gesamtsuite: 5298 bestanden, 4 fremde Logo-Fehler | Repository | PASS |
+| Installierte App (WebView2, echte Datenbank) | App | NICHT VERIFIZIERT |
+
+### 62.5 Offene Risiken
+
+- **„Kein personenbezogenes Datum“ in Modus C:** Diese Entscheidung ist nur unterhaltungsbezogen und löst die
+  Auffälligkeit nicht. Mitarbeiter brauchen dann eine Freigabe durch einen Anwalt (fachliche Entscheidung).
+- **Laufzeit in Modus C:** Nach jeder Änderung von Entscheidungen oder Beteiligten wird die Akte beim nächsten Versand
+  synchron neu geprüft (bis zu 30 Dokumente, lokal). Eine Vorab-Prüfung im Hintergrund fehlt noch.
+- **Erstes Öffnen:** Das erste Öffnen eines Dokuments führt in jedem Modus einmal die lokale Prüfung aus (Anzeige).
+  Die Prüfseite rechnet ohne Zwischenspeicher.
+- **Obergrenze vor dem Filter:** Die Obergrenze von 30 Dokumenten im Kontext greift vor dem Freigabefilter. Viele
+  neue, nicht freigegebene Dokumente können ältere freigegebene verdrängen; ein Hinweis erscheint. **Behoben in §63.3.**
+- **E-Mail-Texte:** Die Freigabe betrifft Dokumente (`documents`). E-Mail-Texte selbst laufen weiter über die
+  zentrale Prüfung der jeweiligen Aktion, Anhänge sind Dokumente.
+- **Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §63 Dokumentfreigabe: Modus C als Standard, Vorab-Prüfung, mehr als 30 Dokumente (17.10.2026, Branch `feature/feedback-diagnose`, Basis `cb38afb`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert
+verpflichtend; nichts davon wurde gelockert. Die offene Owner-Frage aus §62.1 ist durch den Auftrag §63 entschieden:
+**C ist Standard für Neuinstallationen.**
+
+### 63.1 P1 – Modus C für Neuinstallationen, Bestand unverändert
+
+- **Erkennung einer Neuinstallation:** Migration `schritt3_037`. Bei der Ersteinrichtung laufen die Migrationen
+  **vor** dem Anlegen des ersten Benutzers (`app/setup/wizard.py`: `run_migrations` → `create_admin`; die App migriert
+  bei jedem Start). Als Neuinstallation gilt nur eine **wirklich leere** Datenbank: keine Benutzer, kein
+  Kanzleiprofil, keine Mandanten, Akten oder Dokumente. Dann wird ein Kanzleiprofil mit `auto_review` (C) angelegt
+  (übrige Werte = Modell-Standards, wie beim bedarfsweisen Anlegen).
+- **Bestehende Installationen:** Ein Profil **ohne** Wert wird ausdrücklich auf `auto` (B, bisheriges Verhalten)
+  gesetzt. Ein gesetzter Wert (A, B oder C) wird **nie** überschrieben. Ohne Profil wird nichts angelegt; das Profil
+  entsteht wie bisher bedarfsweise, ohne Wert = B.
+- **Code-Standard bleibt B** (`DEFAULT_MODE`): Ein leerer Wert wird nie stillschweigend strenger oder lockerer.
+  `NEW_INSTALLATION_MODE = auto_review` dokumentiert den Standard; die Einstellungsseite zeigt „Standard für
+  Neuinstallationen“ bzw. „Standard bestehender Installationen“. Der Modus bleibt änderbar (Admin/Anwalt, Audit).
+- **Wiederholte Starts, Restore, Downgrade/Re-Upgrade:** Keine Änderung, kein zweites Profil. Downgrade ändert keine
+  Daten (leer und `auto` bedeuten dasselbe).
+- **Grenze:** Mit `create_all` angelegte Entwicklungs-/Testdatenbanken haben keinen Wert und laufen damit in B. In
+  `app/` gibt es keinen solchen Pfad.
+
+### 63.2 P2 – Vorab-Prüfung in Modus C
+
+- `release.precheck_document` läuft am Ende von `DocumentProcessingService.process_document`. Das ist der gemeinsame
+  Punkt aller Eingangswege (Upload, Import, Chat-/Schriftsatz-Upload).
+- Nur in Modus C, nur mit Akte und verwertbarem Text. **Lokal**: dieselbe zentrale Prüfung (`prepare_request`, Modus
+  „ask“), kein KI-, Cloud- oder Netzaufruf.
+- **Bindung:** Ergebnis gespeichert je Textstand, Prüfkontext (Beteiligte, aktenweite Entscheidungen) und Version des
+  Datenschutz-Codes. Ändert sich eines davon, prüft der Versand neu.
+- **Fehler und Abbruch:** werden nicht gespeichert und unterbrechen die Verarbeitung nie. Bis zu einer erfolgreichen
+  Prüfung ist das Dokument **blockiert** (fail-closed). „Fehlgeschlagen“ wird nie zwischengespeichert.
+- **Keine Schreibzugriffe auf die Sitzung des Aufrufers** (Review §63): Modus ohne bedarfsweises Anlegen des Profils
+  gelesen, kein Autoflush; das Ergebnis schreibt eine eigene kurze Sitzung.
+- **Grenzen:**
+  - Mail-Anhänge haben bei der Verarbeitung noch keine Akte. Sie werden bei Anzeige oder Versand geprüft.
+  - Die Vorab-Prüfung läuft synchron im Upload. Der erste Upload nach dem Start (Kaltstart der lokalen Erkennung)
+    und große Texte dauern Sekunden.
+  - Verbindlich ist immer die Prüfung beim Versand; die Vorab-Prüfung ist nur ein Vorwärmen.
+
+### 63.3 P3 – mehr als 30 Dokumente
+
+- Die Höchstzahl (30) gilt jetzt für **freigegebene** Dokumente. Vorher wurden die 30 neuesten geladen und erst danach
+  gefiltert, sodass nicht freigegebene neue Dokumente ältere freigegebene verdrängten.
+- `_select_released_documents`: neueste zuerst (`created_at desc, id`), blockweise je 30, nur Dokumente mit
+  verwertbarem Text. Die Suche ist auf **120 Dokumente** begrenzt, damit viele offene Dokumente keine unbegrenzte
+  lokale Prüfung auslösen. Der Prüfkontext wird je Akte einmal für alle Blöcke berechnet.
+- **Nie verwendet:** nicht freigegebene und nicht durchsuchte Dokumente. **Präzisiert in §66.2:** gilt für Volltexte; Fristauszüge freigegebener Dokumente laufen über einen eigenen, ebenfalls freigabegeprüften Pfad.
+- **Hinweise:**
+  - zurückgehaltene Dokumente (bis zu 10 Namen, „und N weitere“);
+  - „Höchstzahl von 30 Dokumenten erreicht: N weitere …“;
+  - „Suchgrenze erreicht: N weitere … nicht auf Freigabe geprüft“, wenn die Suche vor 30 Freigaben endet.
+  - Die Hinweise bleiben lokal und gehen nicht in die Cloud-Anfrage.
+- **Grenzen:**
+  - Blättern ohne Snapshot: Ein gleichzeitig neu angelegtes Dokument kann doppelt erscheinen; Inhalte werden
+    dedupliziert, schlimmstenfalls ein doppelter Name im Hinweis. Ein gleichzeitig gelöschtes Dokument kann
+    übersprungen werden; das ist fail-closed.
+  - Modus B: bis zu 30 Dokumente mit Text; vorher nur die mit Text unter den 30 neuesten.
+  - Eine neue Entscheidung oder ein neuer Beteiligter macht die gespeicherten Prüfungen der Akte ungültig. Der
+    nächste Versand prüft dann bis zu 120 Texte lokal neu.
+
+### 63.4 P4 – fachliche Grenzen
+
+- **„Kein personenbezogenes Datum“ gilt nur für sein Gespräch bzw. seinen Kontext.** Die Dokumentprüfung lädt nur
+  aktenweite Entscheidungen (`conversation_id=None`). Eine Entscheidung in einem Gespräch gibt kein Dokument frei und
+  gilt nicht kanzleiweit. Es gibt keine globale Ausnahme.
+- Die Namensmarkierung („personenbezogen“) verschärft den Schutz nur, sie lockert ihn nie.
+- **Mitarbeitende** haben weder `PERM_CLAUDE_CALL` noch `PERM_PRIVACY_DECISION_MANAGE`. Sie können also nicht
+  freigeben, nicht über Chat, „Aus Dokument“ oder die Prüfseite versenden und keine Entscheidung treffen (jeweils 403,
+  keine Freigabe, kein Payload). Eine erforderliche Anwaltsfreigabe ist damit nicht zu umgehen.
+
+### 63.5 Tests
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository (pytest) | `tests/test_document_release_defaults.py` (23): Neuinstallation C, Bestand unverändert (leer/A/B/C), ohne Profil, Altdaten ohne Benutzer, Anzeige; Vorab-Prüfung lokal und versionsgebunden, nicht in B, kein Profil angelegt, Fehler nicht vertraut, Textänderung; Upload ohne KI-Aufruf; >30 Dokumente gemischt, Hinweise, Suchgrenze; Gesprächsentscheidung; Mitarbeitende; alle Schriftsatz-, Chat- und Mailpfade | PASS |
+| Repository | verwandte Suiten (Freigabe, Migrationen, keine KI beim Öffnen/Upload, Drafting) | PASS |
+| Repository | vollständige Suite (6 Blöcke; Block 6 nach Speicherabbruch in drei Teilen im Vordergrund) | PASS (5321 Tests), außer den 4 bekannten fremden Logo-Tests (`test_design_refresh`) |
+| Sandbox | Migration auf temporärer DB: upgrade → downgrade → upgrade, genau 1 Profil `auto_review` (Review-Agent) | PASS |
+| Browser | Einstellungsseite: Hinweis „Standard für Neuinstallationen“ (TestClient-HTML) | PASS (nur gerendertes HTML, keine Browser-Sitzung) |
+| Installierte App / WebView2 / Installer | Neuinstallation mit Modus C, Upgrade einer echten Installation | **NICHT VERIFIZIERT** |
+| PostgreSQL | Migration und Auswahl | **NICHT VERIFIZIERT** |
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §64 Vorab-Prüfung im Hintergrund, Dokumentauswahl, Datenschutzvalidierung (17.10.2026, Branch `feature/feedback-diagnose`, Basis `4b7387d`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert
+verpflichtend; nichts davon wurde gelockert.
+
+### 64.1 P1 – Vorab-Prüfung in Modus C
+
+**Nachgewiesene Lücken (§63-Stand):**
+- Mail-Anhänge wurden nie vorab geprüft. Bei der Verarbeitung haben sie noch keine Akte; die Zuordnung (automatisch
+  oder „Übernehmen“) folgt danach.
+- Die Prüfung lief synchron im Upload (Kaltstart der lokalen Erkennung, große Texte: Sekunden).
+- Eine aktenweite Entscheidung, ein Beteiligter oder ein geänderter Mandantenname macht alle gespeicherten Prüfungen
+  der Akte ungültig. Der nächste Versand prüfte dann bis zu 120 Texte synchron neu.
+
+**Änderung:** `app/documents/precheck_queue.py`.
+- Ein Session-Listener merkt sich nach jedem Flush die betroffenen Dokumente und Akten:
+  - Dokumente mit geändertem Text oder geänderter Akte;
+  - Akten mit neuen, geänderten oder gelöschten Beteiligten;
+  - Akten mit aktenweiten Entscheidungen (gesprächsbezogene Entscheidungen ändern den Prüfkontext nicht);
+  - Akten eines Mandanten mit geändertem Namen bzw. Akten mit geändertem Mandanten.
+- Erst **nach dem Commit** prüft ein einzelner lokaler Hintergrund-Thread diese Dokumente mit derselben zentralen
+  Prüfung (`check_document`), in eigener Sitzung. Bei einer Akte sind es höchstens die 120 neuesten Dokumente mit Text,
+  wie die Suchgrenze der Auswahl.
+- Ein Rollback verwirft die gesammelten Aufträge. Die Warteschlange ist begrenzt (1000) und dedupliziert.
+- Der Modus wird bei jedem Auftrag frisch gelesen, ohne das Kanzleiprofil anzulegen. Vorab geprüft wird nur in Modus C.
+- Der synchrone Aufruf in `process_document` entfällt. Der Upload wartet nicht mehr.
+- **Sicherheit:**
+  - Die Vorab-Prüfung ist nur ein Vorwärmen. Verbindlich bleibt die Prüfung beim Versand
+    (`released_document_ids` → `processing_state`). Sie prüft selbst, wenn kein passendes Ergebnis vorliegt.
+  - Ein laufender, abgebrochener oder fehlgeschlagener Auftrag bewirkt daher **nie** eine Freigabe.
+  - Das Ergebnis ist an Textstand, Prüfkontext und Datenschutz-Codeversion gebunden: Der Schlüssel entsteht aus den
+    Daten, die der Worker selbst gelesen hat. Ein veralteter Stand erzeugt nur einen Eintrag, den der Versand nie trifft.
+  - „Fehlgeschlagen“ wird nie gespeichert.
+  - Kein KI-, Cloud- oder Netzaufruf. Im Log steht nur der Fehlertyp, kein Inhalt.
+- **Nach dem Review behoben:**
+  - Ein Fehler in den Hooks erreicht den Aufrufer nicht mehr. Ein erfolgreicher Commit sieht also nie wie ein Fehler
+    aus, und ein Flush wird nie abgebrochen.
+  - Das spaCy-Modell wird unter einer Sperre geladen (`presidio_ner._get_analyzer_engine`): Worker und Request laden
+    es nicht gleichzeitig doppelt.
+- **Grenzen:**
+  - Ohne eigene Verbindung (SQLite im Arbeitsspeicher, nur in Tests) läuft die Prüfung direkt im Commit-Hook.
+  - Nicht erfasst; es fehlt dann nur die Vorwärmung, der Versand prüft trotzdem:
+    - neu angelegte Dokumente, die schon Text und Akte haben (z. B. Generator synthetischer Daten);
+    - der alte Wert beim Aktenwechsel eines Beteiligten;
+    - Bulk-Änderungen ohne ORM.
+  - Ein Savepoint-Rollback verwirft alle gesammelten Aufträge der Sitzung, auch hier fehlt nur die Vorwärmung.
+  - Worker und Versand können denselben Text parallel prüfen: doppelte Rechenarbeit, kein Sicherheitsproblem.
+  - PostgreSQL: Der Worker hielte während der Erkennung eine Lesetransaktion offen. **NICHT VERIFIZIERT.**
+  - Globale Datenschutz-Einstellungen außerhalb des Prüfkontexts machen gespeicherte Ergebnisse nicht ungültig
+    (bestehende Grenze seit §62).
+
+### 64.2 P2 – Auswahl bei mehr als 30 bzw. 120 Dokumenten
+
+Geprüft: Die Auswahl aus §63.3 erfüllt die Vorgaben, **keine Code-Lücke gefunden**. Neue Regressionstests
+(`tests/test_document_selection_limits.py`):
+- 160 Dokumente (10 älteste freigegeben): nichts verwendet, „Suchgrenze erreicht: 40 weitere“;
+- 135 Dokumente (100 neuere offen): genau die 20 durchsuchten freigegebenen, „15 weitere“;
+- genau 30 freigegebene: kein Höchstzahl-Hinweis;
+- Modus C gemischt (unauffällig, auffällig, auffällig und manuell freigegeben, fehlgeschlagen trotz Freigabe): nur
+  unauffällige und manuell freigegebene Dokumente;
+- veraltete manuelle Freigabe, veraltete gespeicherte Prüfung, älterer Prüfkontext: nicht verwendet;
+- Hinweise erscheinen **nicht** in der tatsächlich ausgehenden Anfrage (Loopback-Mitschnitt) und nicht im
+  Schriftsatz-Payload.
+
+### 64.3 P3 – Datenschutzvalidierung
+
+**Inventar:**
+
+| Benchmark | Korpus | Regressionsschutz vor §64 |
+|---|---|---|
+| `pseudonymization_v1` (`scripts/bench_pseudonymization.py`) | 63 synthetische Feldfälle | Sperrklinke (§61.4) |
+| `legal_e2e_v1` (`scripts/legal_bench`) | 7 synthetische Akten (dev 4, test 3) | nur Lecks, Fristen und Chronologie; Fehlalarme, Werte- und Normenerhalt **nur gemessen** |
+| `bench_name_detection` | 1100 Namen | `test_privacy_name_second_signal` |
+| `bench_role_object_negatives` | 12 Sätze und 1 Schriftsatz | **keiner** |
+| `bench_chat_without_file` | 440 Namen-Kontexte, 14 Fachfragen, 100 Fachbegriffe | **keiner** |
+| `bench_realistic_documents` | 1 Protokoll als DOCX, PDF und Scan | `test_realistic_documents` |
+| `presidio_audit_corpus` | eingefroren | `test_privacy_presidio_audit` |
+
+**Reproduktion (gleiche Methodik, keine eingecheckte Ergebnisdatei überschrieben):**
+- `pseudonymization_v1`: identisch mit §61.4 (85/88 geschützt, Lecks 3, Teil-Lecks 2, Fehlalarme 6, juristische
+  Werte 67/68, Blockaden 0, Fehler 0).
+- `bench_role_object_negatives`: 0/12. `bench_chat_without_file`: 0/440 Lecks, 0 Blockaden, 0/14 Fachfragen; zusätzlich
+  gemessen: 20/100 Fachbegriffe in mindestens einem Kontext maskiert.
+- `legal_e2e_v1` (alle 7 Fälle) gegen die eingecheckte `results.json` (`e13bffe`, 14.10.2026, gleicher Korpus-Hash):
+  - Lecks 0, Werte, Normen und Chronologie vollständig erhalten.
+  - Fristen ohne Referenz: dev 28 → 1, test 18 → 0 (§40).
+  - Klassifikation: dev 11 → 8 von 20, test 2 → 5 von 13.
+  - **Fehlalarme: dev 37 → 38, test 26 → 28** („Erbschein“ als Person, „-0533“ als Kennung, „7“ als Adresse). Seitdem
+    gab es mehrere bewusste Verschärfungen in `app/privacy` (§45–§54); die Einzelursache ist nicht nachgewiesen. Es
+    handelt sich um Übermaskierung, kein Leck. Der Anstieg blieb unbemerkt, weil er nicht begrenzt war.
+
+**Korrektur des Regressionsschutzes:**
+- `tests/test_legal_benchmark_e2e.py`: Erlaubt sind genau die gemessenen Fehlalarme. Werte, Normen und Chronologie
+  müssen vollständig erhalten bleiben, Widersprüche mindestens 1.
+- `tests/test_privacy_benchmark_ratchets.py`: beide Skripte vollständig, ohne Teilmenge (Lecks 0, Blockaden 0,
+  Fachfragen unverändert, keine neu maskierten Fachbegriffe).
+- Bekannte Grenzfälle bleiben enthalten.
+- Mutationsprobe: Fehlt ein bekannter Eintrag in der Erlaubnisliste, schlägt der jeweilige Test fehl.
+
+**Ausgehende Payloads und Fail-Closed:** `test_privacy_wire_payload`, `test_privacy_cloud_boundary_e2e`,
+`test_bench_pseudonymization` (NER-Ausfall: kein Cloud-Aufruf) und der neue Loopback-Nachweis aus 64.2: PASS.
+
+**Realitätsnähere, nicht modellgenerierte Texte: BLOCKIERT (Owner-Entscheidung).**
+- Das Quellenregister (`benchmarks/legal_e2e_v1/source_register.json`) verlangt vor jeder Nutzung einer öffentlichen
+  Quelle die Einstufung „nutzbar“ mit Prüfdatum und Begründung, ausdrücklich durch eine verantwortliche Person, „nicht
+  der Agent“. Der Validator erzwingt das.
+- Alle 7 Einträge stehen auf `nicht_geprueft`: Gesetze im Internet, Rechtsprechung im Internet, BVerfG, openJur, ZJS,
+  Vis Moot, Soldan Moot.
+- Es wurden deshalb keine fremden Texte übernommen. Alle Ergebnisse gelten weiter nur für synthetische,
+  modellgeschriebene Korpora.
+
+### 64.4 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository | `test_document_precheck_queue` (14), `test_document_selection_limits` (9), `test_privacy_benchmark_ratchets` (2), Sperrklinke in `test_legal_benchmark_e2e` | PASS |
+| Repository | volle Suite (6 Blöcke, Block 6 in 3 Teilen, im Vordergrund) | 5347 PASS; 4 FAIL = bekannte fremde Logo-Tests (`test_design_refresh`) |
+| Sandbox | Benchmarks reproduziert (s. 64.3), Ausgaben nur in temporären Dateien | PASS |
+| Browser | keine Browser-Sitzung | **NICHT VERIFIZIERT** |
+| Installierte App / WebView2 | Installierter Build vom 15.10.2026 (Migrationen bis `schritt3_029`; Repository: `schritt3_037`). §62–§64 sind dort **nicht enthalten**, die App lief nicht. Kein Test, keine Neuinstallation. | **NICHT VERIFIZIERT** |
+| PostgreSQL, echte Transportstrecke | – | **NICHT VERIFIZIERT** |
+
+**Testprozesse:** Vor den großen Läufen liefen keine Python-Prozesse. Danach sind keine verwaisten Prozesse übrig.
+7,4 GB frei.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §65 Installer aus 07d5fe0, Update, WebView2-Prüfung, Datenschutzkorpus mit Quellenbezug (17.10.2026, Branch `feature/feedback-diagnose`, Basis `07d5fe0`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert;
+in §65 wurde kein App-Code geändert.
+
+### 65.1 Build
+
+- **Quelle:** separater `git worktree` auf genau `07d5fe0` (`C:\Users\Bonit\lexono_build_07d5fe0`). Der Working Tree mit
+  den fremden Logo-/UX-Änderungen wurde nicht gebaut und nicht verändert. Einzige nicht versionierte Eingabe:
+  `windows/vendor/` (Tesseract, WebView2-Bootstrapper), unverändert kopiert.
+- **Befehle:** `pyinstaller windows\lexono.spec --distpath dist --workpath build --noconfirm` (Exit 0), dann
+  `ISCC.exe windows\installer.iss` (Exit 0, 298 s). Ergebnis: `dist\installer\Lexono_Setup.exe` (556,6 MB).
+- **Inhalt geprüft:**
+  - Migrationen `schritt3_030` bis `schritt3_037` im Bundle;
+  - Templates `document_release.html` und `document_pseudonymization.html`;
+  - Module `app.documents.precheck_queue`, `app.documents.release`, `app.web.document_release_router` und
+    `app.models.document_release` im PYZ-Archiv;
+  - Marker aus §63/§64 im ausgelieferten Bytecode („lexono-document-precheck“, `_build_analyzer_engine`, „Suchgrenze
+    erreicht“).
+- **Ergebnis:** PASS.
+
+### 65.2 Installation (Update der bestehenden Installation)
+
+**Vorab geklärt:**
+- **Programmordner:** `%LOCALAPPDATA%\Lexono` (Build vom 15.10.2026, Migrationen bis `schritt3_029`).
+- **Datenverzeichnis:** `%PROGRAMDATA%\Lexono`. Der Installer verändert es nicht: kein `[UninstallDelete]`, und
+  `[InstallDelete]` betrifft nur den Programmordner.
+- **Echte Datenbank** (`schritt3_029`; 86 Mandanten, 136 Akten, 142 Dokumente; nur Zählungen gelesen): Sie wird erst
+  beim nächsten normalen Start migriert. Dabei legt Lexono vorher automatisch ein geprüftes ZIP-Backup an
+  (`app/backup/pre_migration.py`).
+- **Kein Autostart:** keine Run-Keys, kein Autostart-Ordner, keine geplante Aufgabe. Lexono lief nicht.
+- **Probe der Migration 029 → 037 auf einer Kopie** (SQLite-Backup-API, Original nur lesend, Kopie danach gelöscht):
+  - alle 42 Tabellen erhalten, keine Zeilenzahl verändert, 6 neue Tabellen;
+  - Freigabemodus danach `auto` (B, bisheriges Verhalten);
+  - `integrity_check` ok;
+  - 9 Fremdschlüssel-Verstöße, identisch schon im Original (keine Folge der Migration).
+- **Sicherung des bisherigen Programmordners:** `C:\Users\Bonit\lexono_install_backup_vor_07d5fe0` (989 Dateien,
+  1218 MB).
+
+**Update:**
+- `Lexono_Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG` → Exit 0. Der stille Modus startet die App nicht.
+- WebView2-Bootstrapper: Exit `0x80040C28`. Die Runtime war bereits installiert (154.0.4258.53).
+
+**Danach:**
+- installierte `Lexono.exe` byte-gleich mit dem Build;
+- Migrationen bis `schritt3_037` vorhanden;
+- echte Datenbank unverändert (gleicher Hash, `schritt3_029`).
+
+**Ergebnis:** PASS. Die Migration der echten Datenbank ist **NICHT VERIFIZIERT**: Sie erfolgt erst beim nächsten
+normalen Start, mit automatischem Backup.
+
+### 65.3 WebView2-Prüfung der installierten Anwendung
+
+**Aufbau:**
+- Die installierte `Lexono.exe` (Build `07d5fe0`) läuft gegen ein **isoliertes** Datenverzeichnis
+  (`LEXONO_DATA_DIR=C:\Users\Bonit\lexono_qa_s65`), nicht gegen die echte Datenbank.
+- Die Einrichtung läuft über die Befehle der App selbst (`migrate`, `create-admin`), wie bei einer Neuinstallation.
+- Kein Schlüssel; tote Cloud-Endpunkte (`https://127.0.0.1:9`); lokale KI und Mail-Abruf aus.
+- Gesteuert wird das echte WebView2-Fenster (Edg/155.0.4283.60) über CDP
+  (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port`).
+- Nachweise (Screenshots, `ergebnis*.json`) liegen unter `C:\Users\Bonit\lexono_qa_s65\qa_nachweise`.
+- Danach wurde das Fenster regulär geschlossen; Prozess und Ports sind beendet. `llama-server` lief nicht.
+- **Echte Schutzprüfung bestätigt:** Ein `http://`-Gateway-Endpunkt wird in Produktion abgelehnt.
+
+| Prüfung im echten Fenster | Ergebnis |
+|---|---|
+| Neuinstallation: Migration bis `schritt3_037`, Modus `auto_review` (C); Einstellungsseite „(Standard für Neuinstallationen)“ (§63 P1) | PASS |
+| Erstanmeldung erzwingt Passwortänderung, danach Neuanmeldung | PASS |
+| Mandant und Akte über die echten Formulare angelegt | PASS |
+| Upload zweier Dokumente (0,7 s): Vorab-Prüfung im Hintergrund, unauffällig `passed`, auffällig `uncertain` (§64 P1) | PASS |
+| Anzeige: „Automatisch freigegeben“ bzw. „Entscheidung erforderlich – Auffälligkeit bei der Datenschutzprüfung“ (§62) | PASS |
+| Neuer Beteiligter über das Formular: neue Vorab-Prüfung im neuen Prüfkontext (2 → 4 Ergebnisse, 2 Kontexte) (§64 P1) | PASS |
+| KI-Aktion „Dokument analysieren“ auf das auffällige Dokument: lokaler Hinweis „… nicht an die Cloud-KI gesendet …“, `api_call_logs` = 0 (§62) | PASS |
+| Mehrfach-Upload von 33 Dokumenten (1,5 s): alle 35 Dokumente vorab geprüft (§64 P1) | PASS |
+| Moduswechsel A über das Formular: „Freigabe erforderlich“, Rückwechsel C, 2 Audit-Einträge (§62) | PASS |
+| Auswahl bei mehr als 30 Dokumenten im Chat-/Schriftsatz-Payload (§63/§64 P2): braucht eine Cloud-Anfrage, ohne Cloud nicht sichtbar | **NICHT VERIFIZIERT** (nur Repository) |
+| Migration und Verhalten mit der echten Datenbank, Installer-Erstinstallation auf frischem Rechner, PostgreSQL, echte Transportstrecke | **NICHT VERIFIZIERT** |
+
+### 65.4 Quellen für die Datenschutzvalidierung
+
+- **Freigabe:** Die verantwortliche Person hat zwei Quellengruppen freigegeben, „Gesetze im Internet“ und
+  „Rechtsprechung im Internet“ (Owner-Auftrag §65). Andere Quellen bleiben gesperrt (`nicht_geprueft`, unbenutzt).
+- **Register** (`benchmarks/legal_e2e_v1/source_register.json`): Status `nutzbar` mit Prüfdatum und Begründung.
+  Neu dokumentiert sind Abruf (Datum, Seiten, Einzelabruf statt Massenabruf), Verwendungszweck, rechtliche Grundlage
+  (§ 5 Abs. 1 UrhG) und redaktionelle Bestandteile.
+- **Nutzungsbedingungen** (im Original gelesen, 17.10.2026):
+  - Keine einschränkende Bedingung. Bei „Gesetze im Internet“ sind Deep Links ausdrücklich erlaubt; „Rechtsprechung
+    im Internet“ stellt ein XML-Format „für die Nutzer …, die die … Entscheidungen über automatisierte Verfahren
+    weiterverarbeiten möchten“ bereit.
+  - Haftungsausschluss und „keine Rechtsberatung“ sind vermerkt.
+- **Redaktionelle Bestandteile, gesondert geprüft und nicht als amtliches Werk behandelt:**
+  - `<titelzeile>` und `<norm>` (Dokumentation);
+  - `<sonstosatz>` („Hinweis der Dokumentationsstelle“);
+  - juris-Zusätze wie „(juris: SGB 3)“;
+  - Datenbankstruktur (möglicher Datenbankschutz nach §§ 87a ff. UrhG): genutzt wurden nur Einzeldokumente.
+- **Verwendet:**
+  - 5 Entscheidungen: BGH VIII ZR 274/23, VIII ZR 18/24, VI ZR 431/24 sowie BAG 6 AZR 32/24, 2 AZR 72/24;
+    übernommen werden amtliche Leitsätze, die Rechtsfrage und das Ergebnis;
+  - 6 Normtexte im Wortlaut: §§ 469, 543, 573, 573c, 577 BGB und § 174 InsO.
+
+### 65.5 Korpus `privacy_sources_v1` und Regressionsschutz
+
+- **Korpus** (`benchmarks/privacy_sources_v1/cases.json`):
+  - 5 Problemstellungen, jeweils mit ECLI, Abrufdatum und **dokumentiertem erwartetem Ergebnis** (aus dem amtlichen
+    Leitsatz bzw. Tenor);
+  - 11 vollständig synthetische Dokumente: Kündigung, Aktenvermerk, Mandanten-Mail, Ausübung des Vorkaufsrechts,
+    Prüfvermerk und Tabelle zur Sammelanmeldung, Gesprächsnotiz, Chat-Auftrag, Datenschutzauskunft, Vermerk zur
+    Erfolgsaussicht, Fristenvermerk.
+  - Alle Personen, Anschriften, Konten, Rufnummern, E-Mail-Adressen, Geburtsdaten und Kennungen sind erfunden.
+  - Aus den Entscheidungen werden keine Angaben realer Verfahrensbeteiligter übernommen, auch keine Daten und Orte
+    des Ausgangsfalls.
+  - Die Erzähltexte sind synthetisch (modellgeschrieben); wortgetreu nicht modellgeneriert sind nur Normtexte und
+    Leitsätze.
+- **Runner** `scripts/bench_privacy_sources.py`:
+  - dieselben Prüf- und Bewertungsfunktionen wie `pseudonymization_v1`;
+  - zusätzlich eine Korpusvalidierung: jeder Wert steht im Text, nur freigegebene Quellen;
+  - Chronologie: Daten in derselben Reihenfolge wie im Dokument;
+  - Fail-Closed bei NER-Ausfall (Pseudonymisierung und Restrisiko-Scan).
+  - Die Zahlen sind **nicht** mit `pseudonymization_v1` vergleichbar (anderer Korpus).
+- **Ergebnis 17.10.2026** (`results.json`, deterministisch in 2 Läufen):
+
+| Kennzahl | Wert |
+|---|---|
+| geschützte Werte | 52/52, **0 Lecks, 0 Teil-Lecks** |
+| Blockaden, Fehler | 0, 0 |
+| Chronologie erhalten | 11/11 |
+| Fail-Closed bei NER-Ausfall | 22/22 ohne Payload |
+| juristische Werte erhalten | **101/116** |
+| Maskierungen ohne Referenz | 34 |
+| tatsächlich ausgehende Anfrage (Loopback, Q09) | kein geschützter Wert, Daten und Fachbegriffe erhalten |
+
+- **Befund (neu, Grenze):** Die verlorenen Werte sind vor allem
+  - Aktenzeichen **realer** BGH-/BAG-Entscheidungen in Zitaten, als Kennung maskiert (z. B. „VIII ZR 274/23“): Die
+    zitierte Rechtsprechung ist im Payload nicht mehr identifizierbar;
+  - Gerichtsnamen wie „Amtsgericht Kiel“ oder „Landgericht Osnabrück“, als Ort maskiert;
+  - „Buchst.“ in „Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO“, als Person maskiert.
+  - Ein Teil der Maskierungen ohne Referenz ist dagegen bewusster Schutz (bekannte Mandantin, Anschrift der
+    Hausverwaltung).
+- **Owner-Entscheidung offen:** Sollen Aktenzeichen oberster Bundesgerichte im Zitatkontext unmaskiert bleiben? Das
+  wäre eine Lockerung der Erkennung und braucht eine eigene Abgrenzung zu den Aktenzeichen der eigenen Verfahren
+  (z. B. „14 C 233/26“). Sie wurde **nicht** vorgenommen.
+- **Regressionsschutz** (`tests/test_bench_privacy_sources.py`, 8 Tests):
+  - Korpus und Quellen gültig; der Validator weist erfundene Werte und gesperrte Quellen ab;
+  - 0 Lecks;
+  - Chronologie vollständig, Fail-Closed;
+  - Sperrklinke auf die bekannten Verluste und Maskierungen: jede neue schlägt fehl;
+  - Normtexte bleiben erhalten;
+  - Loopback-Nachweis auf der Leitung.
+- `test_legal_benchmark_corpus`: Der Test „nutzbar ohne Prüfdatum wird abgelehnt“ wählt jetzt ausdrücklich einen
+  gesperrten Eintrag. Die Prüfung bleibt unverändert.
+
+### 65.6 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Repository | `test_bench_privacy_sources` (8), `test_legal_benchmark_corpus`, `test_legal_benchmark_e2e`, `test_bench_pseudonymization`, `test_privacy_wire_payload`, `test_privacy_benchmark_ratchets` | PASS (56) |
+| Repository | volle Suite: in §65 kein App-Code geändert, letzter voller Lauf §64 (5347 PASS, 4 fremde Logo-Tests FAIL) | nicht erneut ausgeführt |
+| Sandbox | Migrationsprobe auf einer Kopie der echten Datenbank, Benchmarks | PASS |
+| Build | Worktree `07d5fe0`, PyInstaller und Inno Setup | PASS |
+| Installation | Update der bestehenden Installation, echte Datenbank unverändert | PASS |
+| WebView2 (installierte App, isolierte Daten) | s. 65.3 | PASS (Ausnahmen NICHT VERIFIZIERT) |
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §66 Dokumentauswahl in der installierten App, Übermaskierung juristischer Werte, Migration/Update (17.10.2026, Branch `feature/feedback-diagnose`, Basis `dd3b24f`)
+
+Status: **teilweise nachgewiesen**. Zentrale Prüfung, Pseudonymisierung, Validierung und Fail-Closed sind unverändert; es
+gab keine Lockerung außerhalb der bestehenden, geprüften §33-Regel.
+
+### 66.1 Ausgangslage Build
+
+- Der installierte Build stammte aus `07d5fe0`.
+- Zwischen `07d5fe0` und `dd3b24f` gibt es **keinen** Unterschied in `app/`, `run.py`, `migrations/`, `windows/`,
+  `alembic.ini` oder `Start.vbs`: Der Build entsprach `dd3b24f` im App-Code.
+- Nach den §66-Änderungen wurde aus Commit **`44f3df7`** neu gebaut (Worktree, PyInstaller und Inno Setup jeweils
+  Exit 0). Im ausgelieferten Code stehen die §66-Marker (`_with_context_notices`, `context_notices`, ausgeschriebene
+  Monatsnamen, „nicht als Volltext“).
+- Stilles Update: Exit 0, `Lexono.exe` byte-gleich mit dem Build, echte Datenbank unverändert (Hash vorher = nachher).
+- Der vorige Installer ist archiviert: `C:\Users\Bonit\lexono_installer_archiv\Lexono_Setup_07d5fe0.exe`.
+
+### 66.2 P1 – Dokumentauswahl in der installierten App (WebView2)
+
+**Aufbau:**
+- Die installierte `Lexono.exe` läuft gegen die isolierte QA-Instanz `C:\Users\Bonit\lexono_qa_s65`; das echte
+  WebView2-Fenster wird über CDP gesteuert.
+- Akten werden über die echten Formulare angelegt, Dokumente über den echten Mehrfach-Upload hochgeladen, Fragen über
+  den echten Chat-Composer gestellt.
+- Die **tatsächlich ausgehende** Anfrage geht an einen lokalen Aufzeichnungsserver (`ANTHROPIC_BASE_URL` auf
+  127.0.0.1 mit `LEXONO_QA_LOOPBACK_CLOUD_ENDPOINT=1`, gefälschter Schlüssel, Gateway-Zeile der QA-`.env`
+  deaktiviert; das Original liegt als `qa_nachweise\s66\env_vor_s66.txt`).
+- Kein Anthropic-Aufruf, kein Gateway, keine Serverkosten. Alle 4 Anfragen gingen an `/v1/messages` des
+  Aufzeichnungsservers, nur mit dem gefälschten Schlüssel.
+- Nachweise (Screenshots, alle Anfragen als JSON, `ergebnis.json`): `qa_nachweise\s66\lauf2` und
+  `qa_nachweise\s66\lauf3_build_44f3df7`.
+
+**Lauf 1 – ungültig, kein Befund gegen Lexono:**
+- `?matter=` öffnete das zuletzt aktive Gespräch, die Fragen liefen deshalb in einer anderen Akte. Richtig ist
+  `?new=1&matter=`.
+- Die Testtexte enthielten kennungsartige Marker („S1-F001“). Die Prüfung fragt bei solchen Zeichenfolgen nach, was
+  im Repository reproduziert und vorsichtiges Verhalten ist.
+
+**Lauf 2 (Build `07d5fe0`) – Befunde:**
+- **Lücke:** Der Chat zeigte die Auswahlhinweise (Höchstzahl, Suchgrenze, nicht freigegebene Dokumente) **nicht** an
+  – weder im Streaming- noch im normalen Pfad. `DraftingResult.open_review_points` wurde vom Chat nie übernommen.
+- **Ungenau dokumentiert:** Fristauszüge („Argumentationspunkte“) freigegebener Dokumente gehen auch für Dokumente
+  jenseits der Höchstzahl bzw. Suchgrenze hinaus. Das ist ein eigener Pfad mit eigener Freigabeprüfung
+  (`_build_argumentationspunkte` → `released_document_ids`), also zulässig. Die Aussage in §63.3 „nicht durchsuchte
+  Dokumente werden nie verwendet“ gilt aber nur für Volltexte.
+
+**Korrektur (Commit `44f3df7`):**
+- Die Hinweise der Kontextauswahl werden als eigenes Feld `DraftingResult.context_notices` (über
+  `_PreparedRequest.context_notices`) bis in den Chat gereicht. Dort stehen sie im lokalen Block „Offene Prüfpunkte /
+  Hinweise“, außerhalb des kopierbaren Texts.
+- Der Gesprächsverlauf entfernt diesen Block vor jeder weiteren Cloud-Anfrage (bestehend, `_build_history`).
+- Die Hinweistexte sind präzisiert: „nicht als Volltext berücksichtigt … erkannte Fristhinweise freigegebener
+  Dokumente bleiben enthalten“.
+
+**Lauf 3 (installierter Build `44f3df7`):**
+
+| Fall | Erwartung | Tatsächliche ausgehende Anfrage | Anzeige in der App | Ergebnis |
+|---|---|---|---|---|
+| S1: 34 freigegebene ältere + 8 auffällige neuere (Modus C, alle 42 vorab geprüft: 34 passed, 8 uncertain) | 30 neueste freigegebene als Volltext; keine auffälligen | Sachverhalt: genau 30 Dokumente; 0 Sperrbeträge; Fristauszüge aus allen 34 freigegebenen; kein Hinweistext | Hinweisblock: 8 Dateinamen „nicht freigegeben“ + „Höchstzahl von 30 … 4 weitere … nicht als Volltext“ | **PASS** |
+| S2: 3 freigegebene ältere + 125 auffällige neuere (>120 durchsucht) | kein Volltext; Suchgrenze benannt | Sachverhalt: 0 Dokumente; 0 Sperrbeträge; 3 Fristauszüge aus den freigegebenen (eigener, freigabegeprüfter Pfad); kein Hinweistext | „… und 110 weitere“ + „Suchgrenze erreicht: 8 weitere …“ | **PASS** |
+| S3: auffälliges Dokument („Richter“), danach Beteiligter „Richter“ über das Formular (Kontextänderung) | vorher zurückgehalten; danach neue Prüfung im neuen Kontext, Name maskiert | vorher: Dokument nicht enthalten; danach Prüfungen `uncertain` → `passed` (2 Kontexte), Dokument enthalten, „Richter“ nicht im Klartext | vorher Hinweis „nicht freigegeben“ | **PASS** |
+| Hinweise/Statusmeldungen im Payload (alle 4 Anfragen) | nie | keine der Phrasen „Nicht berücksichtigt“, „Höchstzahl“, „Suchgrenze“, „Freigabemodus“, „Entscheidung erforderlich“, „Automatisch freigegeben“, „.txt“ | – | **PASS** |
+| Textänderung eines Dokuments | neue Prüfung, keine veraltete Freigabe | über die Oberfläche nicht auslösbar (kein Textbearbeiten) | – | **NICHT VERIFIZIERT** in der App (Repository-Tests: PASS) |
+
+**Beobachtungen ohne Änderung:**
+- Die Seitenleiste zeigt „Cloud-KI (Gateway) Bereit“, obwohl die direkte Strecke zum lokalen Aufzeichnungsserver
+  aktiv war. Die Statusanzeige unterscheidet Gateway und Direktstrecke nicht.
+- Im Payload wurden „Freigabevermerk“ (Dokumenttext) und „Suchgrenze“ (Aktentitel) als Person maskiert: weitere
+  Übermaskierung, kein Leck.
+
+### 66.3 P2 – Übermaskierung der 15 nicht erhaltenen Werte (`privacy_sources_v1`)
+
+| Fall | Wert | Erwartet | Tatsächliche Maskierung | Ursache | Ergebnis |
+|---|---|---|---|---|---|
+| Q05 | BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24 | lesbar (veröffentlichte Entscheidung) | `6 AZR 32/24` → Aktenzeichen | §33-Zitierform kannte nur numerische Daten | **behoben** |
+| Q07 | BAG, Urteil vom 3. April 2025 – 2 AZR 72/24 | lesbar | Aktenzeichen | wie Q05 | **behoben** |
+| Q10 | BGH, Urteil vom 14. Oktober 2025 – VI ZR 431/24 | lesbar | Aktenzeichen | wie Q05 | **behoben** |
+| Q02 | BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23 | lesbar | Aktenzeichen | Datumsform; dazu „Mandantin“ im 80-Zeichen-Fenster → Schutz eigener Verfahren (§33) | **bleibt maskiert** (bewusst) |
+| Q04 | BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24 | lesbar | Aktenzeichen | Datumsform; „unseren Mandanten“ im Fenster danach (§33) | **bleibt maskiert** (bewusst) |
+| Q08 | 2 AZR 72/24 (ohne Gericht/Datum) | lesbar | Aktenzeichen | arabische Kurzform ohne Datum – nach Review §33 bewusst maskiert | **bleibt maskiert** |
+| Q09, Q10 | Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO | lesbar | „Buchst“ → Person (NER) | Abkürzung fehlte in `_LEGAL_ABBREVIATIONS` | **behoben** („Unterabs.“/„Buchst.“ wie „Abs.“, nur mit Punkt) |
+| Q02 | Amtsgericht Köpenick | lesbar | → Ort | Gerichtsname als Ortsangabe | **unverändert** (Owner-Entscheidung) |
+| Q05 | Amtsgericht Kiel | lesbar | → Ort | wie oben | **unverändert** |
+| Q10 | Landgericht Osnabrück | lesbar | → Ort | wie oben | **unverändert** |
+| Q07 | Arbeitsgericht Frankfurt am Main | lesbar | „Frankfurt am Main“, „am Main“ → Ort | wie oben | **unverändert** |
+| Q02 | Räumungsklage | lesbar | „Räumungsklage Wohnbau Lindenhof GmbH ./.“ → Organisation | NER-Spanne zu weit | **unverändert** |
+| Q04 | personenidentisch | lesbar | „veräußernden Gesellschaft personenidentisch“ → Organisation | NER-Spanne zu weit | **unverändert** |
+| Q03 | 2019 | lesbar | „Haus im Jahr 2019“ → Ort | NER-Spanne zu weit | **unverändert** |
+
+**Lösung, eng begrenzt (`app/privacy/detectors.py`):**
+- Die bestehende §33-Ausnahme (nur Bundesgerichte, nur Bundes-Aktenzeichen, nur die kanonische Zitierform „<Gericht>,
+  Urt./Beschl. v. <Datum> – <Az>“, nie bei Hinweis auf ein eigenes Verfahren) erkennt das Datum jetzt auch mit
+  **ausgeschriebenem Monat**.
+- „Unterabs.“ und „Buchst.“ gelten wie „Abs.“ nur mit Punkt als Abkürzung.
+- Nicht erweitert: Kurzformen, untere Instanzen, eigene Aktenzeichen (z. B. „14 C 233/26“ bleibt maskiert), Fenster
+  und Liste der Hinweise auf eigene Verfahren.
+- **Nicht umgesetzt:**
+  - Gerichtsnamen: eine neue Lockerung der Ortserkennung; der Gerichtssitz kann den Wohnort eingrenzen. Bleibt
+    **Owner-Entscheidung**.
+  - NER-Spannen: keine sichere enge Regel.
+
+**Absicherung:**
+- `test_privacy_identity_genitive_citations`: Zitate mit ausgeschriebenem Monat bleiben lesbar.
+- Eigenes Verfahren mit ausgeschriebenem Monat, untere Instanz, eigenes Aktenzeichen und Kurzform bleiben maskiert.
+- Ein Name neben „Buchst.“ wird weiter maskiert.
+
+**Messung `privacy_sources_v1`** (gleiche Methodik):
+
+| Kennzahl | vorher → nachher |
+|---|---|
+| geschützte Werte / Lecks | 52/52, 0 → 52/52, **0** |
+| erhaltene juristische Werte | 101/116 → **106/116** |
+| neue Maskierungen | **0** |
+| Chronologie / Fail-Closed / Blockaden | 11/11, 22/22, 0 → unverändert |
+
+- Die Sperrklinke ist nachgezogen: Die behobenen Werte sind als „bleibt erhalten“ festgeschrieben, die verbleibenden
+  10 bleiben im Regressionsschutz.
+- Die übrigen Datenschutz-Benchmarks liegen in der vollen Suite und sind grün: `pseudonymization_v1`-Sperrklinke,
+  Legal-E2E-Sperrklinke, Chat ohne Akte, Rollenwort-Sätze.
+
+### 66.4 P3 – Datenbank, Backup, Migration, Wiederherstellung
+
+**QA-App:**
+- Datenbank: `C:\Users\Bonit\lexono_qa_s65\data\kanzlei_ai.db`, gewählt über `LEXONO_DATA_DIR` →
+  `.env` `DATABASE_URL`.
+- Stand `schritt3_037`, neu angelegt durch die installierte App (`migrate`, `create-admin`).
+- Es gibt keinen Backup-Ordner: Bei einer neuen, leeren Datenbank und ohne ausstehende Migration legt Lexono
+  bestimmungsgemäß kein Backup an.
+- Der Build `44f3df7` bringt keine neue Migration mit.
+
+**Echte Datenbank:**
+- `C:\ProgramData\Lexono\data\kanzlei_ai.db`, Stand `schritt3_029`, in §65 und §66 **unverändert** (gleicher Hash
+  vor und nach beiden Updates).
+- Daneben liegen ältere Handsicherungen `kanzlei_ai.db.bak_pre_schritt3_019` bis `…_022` vom 03.10.2026.
+
+**Ablauf beim nächsten normalen Start** (`run.py` `cmd_serve` → `cmd_migrate` bei jedem Start):
+1. `pending_revisions` liest den Stand, nur lesend.
+2. Eine Datenbank aus einer neueren Programmversion wird abgewiesen (Downgrade-Schutz: keine Sicherung, keine
+   Migration, kein Start).
+3. Steht etwas aus (hier 029 → 037), legt `create_pre_migration_backup` über die SQLite-Backup-API eine konsistente
+   Kopie als ZIP an: `data\backups\vor-update_schritt3_029_auf_schritt3_037_<Zeitstempel>.zip`. Das ZIP wird geprüft
+   (`testzip`). Schlägt das fehl, gibt es **keine Migration** (fail-closed).
+4. Dann folgt `alembic upgrade head`. Die Probe auf einer Kopie der echten Datenbank (§65.2) ergab: alle 42
+   Tabellen und Zeilenzahlen erhalten, 6 neue Tabellen, Modus explizit B, `integrity_check` ok.
+
+**Wiederherstellung:**
+- Nur offline: `Lexono.exe restore --archive <ZIP>` (`app/backup/restore_service.py`), bei gestoppter App.
+- Vorher sichert Lexono die aktuelle Datei als `*.pre-restore-<Zeitstempel>.bak`.
+- Abgedeckt durch die Repository-Tests `test_update_hardening`, `test_restore_service` und `test_restore_backup_cli`
+  (PASS, volle Suite).
+- **Fremdschlüssel:** Die 9 Verstöße (`chat_message_documents`, `drafts`, `draft_feedback`, `outbox_entries`,
+  `documents`) bestehen **bereits im Original**; die Probe-Migration hat sie weder verursacht noch verändert.
+- **NICHT VERIFIZIERT** (keine Freigabe erteilt): echte Migration, echtes Backup und Wiederherstellung der echten
+  Datenbank; Wiederherstellung in der installierten App.
+
+### 66.5 Tests und Prüfebenen
+
+| Ebene | Inhalt | Ergebnis |
+|---|---|---|
+| Installierte App (WebView2, isolierte QA-Daten, Loopback-Payload) | Lauf 3, s. 66.2 | PASS (Textänderung NICHT VERIFIZIERT) |
+| Build/Installation | Build `44f3df7`, Update, echte Datenbank unverändert | PASS |
+| Repository | `test_document_selection_limits` (+1: Hinweise im Chat lokal, Folgefrage ohne Hinweise), `test_privacy_identity_genitive_citations` (+10), `test_bench_privacy_sources` (+1) | PASS |
+| Repository | volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5367 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+| Sandbox | `privacy_sources_v1` neu gemessen, Ursachendiagnose | PASS |
+| Browser (ohne App) | – | nicht durchgeführt |
+| PostgreSQL, echte Transportstrecke | – | **NICHT VERIFIZIERT** |
+
+**Testprozesse:**
+- Vor den Läufen gab es keine alten Prozesse.
+- Jede QA-Instanz wurde nach Identitätsprüfung (PID-Datei, Pfad, `serve`) über `CloseMainWindow` regulär beendet.
+- Danach lief kein Python-, Lexono- oder llama-Prozess mehr; frei sind 7,4 GB.
+- QA-Daten, Programmsicherung und Installer-Archiv sind erhalten.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §67 Öffentliche Gerichts- und Justizbezeichnungen als Institution (17.10.2026, Branch `feature/feedback-diagnose`, Basis `da33cf4`)
+
+Status: **teilweise nachgewiesen**. Owner-Entscheidung: Öffentliche Gerichtsbezeichnungen bleiben lesbar. Gericht,
+Gerichtsbarkeit und Instanz sind für die rechtliche Einordnung nötig. Fail-Closed, Restrisiko-Scan und Leak-Prüfungen
+sind unverändert.
+
+### 67.1 Ursache (Erkennungskette)
+
+1. **Erkennung:** Die Namenserkennung (spaCy/Presidio, `presidio_ner.detect_presidio_entities`) liefert Gerichte als
+   Ort-Treffer – gemessen für:
+   - `ort: 'Amtsgericht Kiel'`, `ort: 'Landgericht Osnabrück'`, `ort: 'Amtsgerichts Köpenick'`;
+   - `ort: 'Arbeitsgericht Berlin'`, `ort: 'Oberlandesgericht Schleswig'`;
+   - `ort: 'Bundesgerichtshof'`, `ort: 'Bundesarbeitsgericht'`;
+   - bei „Arbeitsgericht Frankfurt am Main“ und „Staatsanwaltschaft Kiel“ nur den Sitz (`ort: 'Frankfurt am Main'`,
+     `ort: 'Kiel'`).
+2. **Klassifikation:** In `detectors.detect_all` gab es keine Institutionsklasse für Justizbehörden. Ein Ort-Treffer
+   wurde wie jede Ortsangabe behandelt.
+3. **Pseudonymisierung:** Daraus entstand `[ORT_xx]`, etwa „Klage beim [ORT_01]“.
+4. **Validierung:** Der Restrisiko-Scan (`security_check`) nutzt dieselbe Funktion `detect_all` und hätte eine
+   unmaskierte Gerichtsbezeichnung als Rest-Ort gemeldet. Eine Regel muss deshalb in `detect_all` greifen, nicht nur in
+   der Pseudonymisierung.
+5. **Nicht verursacht von §67:**
+   - Der Testvorspann „Akte: Beispielakte“ wird vom Restrisiko-Scan als Ort gemeldet und blockiert manche Sätze
+     fail-closed, mit und ohne Gerichtsregel gemessen.
+   - „Richter“ wird im Kontext mitunter als Person maskiert.
+
+### 67.2 Geänderte Klassifikation (`app/privacy/detectors.py`, `_keep_public_court_names`)
+
+Die Regel sitzt in `detect_all` direkt nach `_handle_citations` und wirkt damit gleichermaßen in Pseudonymisierung und
+Restrisiko-Scan.
+
+**Klassifikationsregel** (kein Katalog einzelner Orte):
+
+| Bestandteil | Ausprägung |
+|---|---|
+| Gerichtsart | Amts-, Land-, Oberlandes-, Arbeits-, Landesarbeits-, Sozial-, Landessozial-, Verwaltungs-, Oberverwaltungs-, Finanz-, Familien-, Insolvenzgericht, Verwaltungsgerichtshof, Kammergericht |
+| Bundesgerichte | Bundesgerichtshof, Bundesarbeits-, Bundessozial-, Bundesverwaltungs-, Bundesverfassungs-, Bundespatentgericht, Bundesfinanzhof |
+| Justizbehörden mit amtlicher Namensbildung | Staatsanwaltschaft, Generalstaatsanwaltschaft, Amtsanwaltschaft |
+| Grammatik | jeweils auch im Genitiv |
+| Sitz (optional) | großgeschriebene Wörter, Bindestrich, „am/an der/in der/im/ob der/vor der/bei“, Klammerzusatz, I–IV (z. B. „München I“) |
+
+**Wirkung:**
+- Lesbar bleibt nur ein **Ort- oder Organisationstreffer**, der **genau** „Institution [+ Sitz]“ ist, oder **genau**
+  der Sitz unmittelbar nach einer Institutionsbezeichnung.
+
+**Schutzgrenzen:**
+- Personen-, Anschrifts-, Kontakt-, IBAN-, Kennungs- und Aktenzeichentreffer bleiben unberührt. Sie werden auch direkt
+  neben dem Gericht maskiert.
+- **Mehrdeutigkeit:** Steht ein Wort des Sitzes in einem anderen geschützten Treffer desselben Texts (Personenname,
+  Anschrift wie „24103 Kiel“), bleibt die Bezeichnung maskiert.
+- Ist der Ort an anderer Stelle als Ort erkannt („wohnt in Kiel“), maskiert die Wiederholungsregel ihn auch im
+  Gerichtsnamen („Amtsgericht [ORT_01]“).
+- **Nicht erfasst:**
+  - andere Institutionen (Finanzamt, Stadtwerke);
+  - Sitze, die die Namenserkennung als Person meldet (z. B. „Landgericht [PERSON_01]“, „des Amtsgerichts Köpenick“ in
+    einem Fall) – das bleibt Übermaskierung, kein Leck;
+  - als **Beteiligter der Akte** erfasste Gerichte (bekannte Entität `gericht` → `[GERICHT_01]`). Das ist eine
+    ausdrückliche Akteneinstellung und bleibt unverändert.
+- **Unverändert:**
+  - die §33/§66-Zitatregel, also nicht erweitert;
+  - eigene Aktenzeichen, Aktenzeichen unterer Instanzen und Kurzformen bleiben maskiert;
+  - Fail-Closed bei NER-Ausfall.
+
+### 67.3 Tests
+
+`tests/test_privacy_court_names.py` (32 Tests, in zwei Läufen identisch):
+
+| Prüfung | Ergebnis |
+|---|---|
+| Gerichtsbezeichnungen lesbar: Amtsgericht Kiel, Landgericht Berlin, Bundesgerichtshof, Bundesarbeitsgericht, Arbeitsgericht Berlin, Arbeitsgericht Frankfurt am Main, Landgericht München I, Landgericht Osnabrück, Amtsgerichts Kiel, OLG Schleswig, LAG Berlin-Brandenburg, Staatsanwaltschaft Kiel, Generalstaatsanwaltschaft Schleswig | PASS |
+| Dieselben Orte als gewöhnliche Ortsangabe bleiben maskiert (Kiel, Osnabrück, Köpenick) | PASS |
+| Wohnort im selben Text → Sitz auch im Gerichts- bzw. Behördennamen maskiert | PASS |
+| Sitz in der Anschrift („24103 Kiel“) bzw. als Personenname („Amtsgericht Weber“) → Gericht maskiert | PASS |
+| Gericht + eigenes Aktenzeichen („14 C 233/26“, „27 O 118/26“), eigenes BAG-/BGH-Verfahren („2 AZR 72/24“, „VIII ZR 274/23“) → Aktenzeichen maskiert | PASS |
+| Gericht + Name, Telefon, E-Mail, IBAN, Geburtsdatum → nur das Gericht lesbar | PASS |
+| Mandanten- und Verfahrenskontext (Mandant, Gegner-GmbH, Vertreter, Aktenzeichen) → nichts weiter freigegeben | PASS |
+| Stadtwerke/Finanzamt nicht ausgenommen; als Person erkannter Sitz bleibt maskiert | PASS |
+| NER-Ausfall mit Gerichtsnamen → kein Payload (Fail-Closed) | PASS |
+| Bestehend: Entscheidungszitate, untere Instanzen, Q02/Q04, `test_privacy_identity_genitive_citations` | PASS |
+| Volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5399 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+
+### 67.4 Benchmark `privacy_sources_v1` (gleiche Methodik wie §66)
+
+| Kennzahl | §66 | §67 |
+|---|---|---|
+| **Lecks** (geschützte Werte im Payload) | 0 (52/52 geschützt) | **0** (52/52), Teil-Lecks 0 |
+| erhaltene juristische Werte | 106/116 | **109/116** |
+| **Übermaskierung**: verlorene juristische Werte | 10 | 7 |
+| **Übermaskierung**: Maskierungen ohne Referenz | 29 | 26 |
+| neue Maskierungen / neu verlorene Werte | – | 0 / 0 |
+| Chronologie, Fail-Closed, Blockaden | 11/11, 22/22, 0 | unverändert |
+
+- **Wieder erhalten:** „Amtsgericht Köpenick“ (Q02), „Amtsgericht Kiel“ (Q05), „Landgericht Osnabrück“ (Q10).
+- **Bewusst weiter maskiert:**
+  - „Arbeitsgericht Frankfurt am Main“ (Q07): Der Sitz ist dort auch die Wohnanschrift der Mandantin.
+  - Q02/Q04: Entscheidungszitate mit Hinweis auf eigene Mandanten im Umfeld.
+  - Q08: arabische Kurzform.
+  - 3 zu weite NER-Spannen.
+- Die Sperrklinke ist nachgezogen (`FIXED_IN_S66` um die drei Gerichte ergänzt, 109/116 festgeschrieben).
+- Ein besserer Wert ist **kein Sicherheitsnachweis**. Er gilt nur für diesen endlichen synthetischen Korpus.
+
+### 67.5 Nicht verifiziert
+
+- Installierte App: Der Build `44f3df7` enthält §67 nicht, die App wurde nicht neu gebaut. **NICHT VERIFIZIERT** in
+  der App, nur Repository.
+- Kleinschreibung, OCR-Varianten und Abkürzungen von Gerichtsnamen („AG Kiel“, „LG Berlin“) sind nicht erfasst und
+  bleiben wie bisher.
+- Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+
+## §69 Fristauszüge und System-Typbezeichnungen (Befunde F4/F6 aus dem App-Test §68) (17.10.2026, Basis `e8d0a0f`)
+
+Status: **teilweise nachgewiesen**. Die §67-Gerichtsregel ist nicht erweitert. Pseudonymisierung, Leak-Checks und
+Fail-Closed sind unverändert.
+
+### 69.1 F4 – Gerichtsname im Fristauszug maskiert
+
+**Weg des Textes:**
+1. Dokumenttext.
+2. `PlaceholderDeadlineExtractor._context_window`: 60 Zeichen um das Datum, eingerastet auf die nächste Leerstelle.
+3. `Deadline.source_text` (gespeichert).
+4. `RuleBasedLocalAIProvider._build_argumentationspunkte` („Möglicher Termin … :: <Auszug>“).
+5. Gateway: `detect_all` mit der Wiederholungsregel `_extend_with_repeated_occurrences`.
+
+**Ursache:**
+- Die Fenstergrenze fiel zwischen „Amtsgericht“ und „Kiel“, der Auszug begann deshalb mit „Kiel, Az. …“.
+- Ohne Gerichtsart ist „Kiel“ ein gewöhnlicher Ort-Treffer; die §67-Regel greift richtigerweise nicht.
+- Die Wiederholungsregel maskierte den Wert daraufhin an jeder Stelle, auch im Sachverhalt („Amtsgericht [ORT_01]“).
+- Übermaskierung, kein Leck.
+
+**Änderung (Herkunft belegt):**
+- `app/deadlines/extractor.py`:
+  - `institution_prefix`: Steht im **Originaltext** unmittelbar vor dem Fenster genau eine Gerichts- oder
+    Justizbezeichnung (dieselbe Klassifikation wie §67, `detectors.COURT_TYPE_BEFORE_SPACE`), gehört sie zum Auszug.
+  - `with_institution_prefix`: ergänzt **bereits gespeicherte** Auszüge nur, wenn der Auszug im Volltext des
+    Quelldokuments **eindeutig** auffindbar ist und dort unmittelbar eine Gerichtsart davor steht.
+  - In allen anderen Fällen bleibt der Auszug unverändert: kein Volltext, nicht auffindbar, mehrdeutig, kein Gericht
+    davor.
+- `app/ai_providers/local_ai_provider.py`: Die Argumentationspunkte nutzen `with_institution_prefix`.
+- Ein isoliertes „Kiel“ löst nie eine Freigabe aus. Es wird nur das Wort aus dem Originaltext übernommen.
+
+### 69.2 F6 – Blockade bei Gericht + Anschrift
+
+**Reproduktion:**
+- Synthetisch, lokal, über den echten Gateway.
+- Mit und ohne §67-Regel identisch blockiert: „Nach Pseudonymisierung weiterhin erkennbare Muster: ['person']“.
+
+**Verantwortlicher Prüfschritt:** Restrisiko-Scan (`security_check`), Restbefund `person: 'Gerichtliches'`.
+
+**Ursache:**
+- Der Kontextaufbau setzt vor jeden Dokumenttext die von Lexono vergebene Typbezeichnung, etwa
+  `[Gerichtliches Schreiben] …`.
+- Die Namenserkennung las „Gerichtliches“ uneinheitlich als Person: in der Pseudonymisierung mal maskiert
+  („[[PERSON_01] Schreiben]“), mal nicht. Im zweiten Fall meldete der Restrisiko-Scan das Wort als Personen-Rest und
+  blockierte fail-closed.
+- Mit Gerichten oder Anschriften hat das nichts zu tun.
+
+**Änderung (`app/privacy/detectors.py`, `_drop_spans_in_document_type_labels`):**
+- Person-, Ort- und Organisationstreffer, die **vollständig** innerhalb einer solchen Bezeichnung **am Zeilenanfang in
+  eckigen Klammern** liegen, entfallen.
+- Das gilt nur für das **geschlossene Vokabular** des Klassifikators (`ALLOWED_DOCUMENT_TYPES` plus
+  „unklassifiziert“), in Pseudonymisierung und Restrisiko-Scan gleich.
+- Im Fließtext und hinter der Bezeichnung gilt unverändert die normale Erkennung.
+
+### 69.3 Tests
+
+`tests/test_privacy_deadline_excerpts_and_labels.py`, 18 Tests, alle PASS. Eine Mutationsprobe mit abgeschalteter
+Korrektur lässt die F4- und F6-Tests scheitern.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Neuer Auszug enthält die Gerichtsart aus dem Originaltext | PASS |
+| Gespeicherter Auszug: ergänzt nur bei eindeutigem Nachweis im Volltext; Wohnort, fehlender Volltext, nicht auffindbar und mehrdeutig bleiben unverändert | PASS |
+| Ende-zu-Ende über `DraftingService` (Payload an den Schreib-Provider): „Amtsgericht Kiel“ in Sachverhalt und Auszug lesbar, kein `[ORT_`, „14 C 233/26“ maskiert | PASS |
+| Wohnort im Auszug: Ort und Name maskiert | PASS |
+| Sitz in der Anschrift: Gericht, Name, Straße, PLZ maskiert | PASS |
+| F6: keine Blockade mehr; Kiel, Name, Straße, PLZ maskiert; Typbezeichnung lesbar | PASS |
+| Typbezeichnungen lesbar, Namen dahinter maskiert (6 Bezeichnungen) | PASS |
+| Wort außerhalb der Bezeichnungsposition nicht ausgenommen | PASS |
+| NER-Ausfall mit Typbezeichnung und Fristauszug: kein Payload (Fail-Closed) | PASS |
+| Volle Suite (6 Blöcke im Vordergrund, Block 6 in 3 Teilen) | 5417 PASS; 4 FAIL = bekannte fremde Logo-Tests |
+
+**Benchmark `privacy_sources_v1` gegenüber §67:**
+- Lecks 0/0, erhalten 109/116, Maskierungen ohne Referenz 26 – unverändert.
+- Der Korpus nutzt den Feldfall-Pfad ohne Fristauszüge und Typbezeichnungen, misst F4/F6 also nicht. Abgesichert sind
+  sie durch die Tests oben.
+
+### 69.4 Nicht verifiziert
+
+- Installierte App: Der installierte Build `e8d0a0f` enthält §69 nicht. **NICHT VERIFIZIERT** in der App und im
+  App-Payload; geprüft sind Repository und Payload an den Schreib-Provider (Ende-zu-Ende im Repository).
+- **F7 (NER-Ausfall):** In der installierten App nicht auslösbar, ohne die Installation zu verändern.
+  **NICHT VERIFIZIERT** in der App. Repository-Tests `test_ner_failure_still_blocks_with_a_court_name` und
+  `test_ner_failure_still_blocks_with_labels_and_excerpts`: PASS.
+- Reale Texte, PostgreSQL, echte Transportstrecke: **NICHT VERIFIZIERT**.
+
+**Kein Beweis:** Keine Aussage über vollständige Leckfreiheit oder Rechtskonformität.
+
+## §71 Quellenbasierter Legal-Benchmark mit Referenzlösungen, Lauf in der installierten App (18.10.2026, Branch `feature/feedback-diagnose`, Code-Stand `fc9d3f4`)
+
+Ziel: Der Korpus `benchmarks/legal_e2e_v1` soll realistische, quellenbasierte Akten mit Referenzlösung enthalten. Die
+Bewertung soll nach Kriterien getrennt sein. Der Benchmark läuft über die echte Oberfläche der installierten App
+(WebView2), nicht nur im Repository.
+
+### 71.1 Bestandsaudit (vor §71)
+
+- Der Korpus hatte 7 synthetische Fälle (LE-D001–D004, LE-T001–T003). Referenzdaten waren Fakten, Chronologie,
+  Fristen, Zitate, Widersprüche und Datenschutz. Es gab **keine Referenzlösung** und keine Bewertung juristischer
+  Ergebnisse.
+- Der Runner `scripts/legal_bench/e2e.py` arbeitete nur im Repository (In-Memory-DB, Payload-Erfassung vor der
+  Cloud-Grenze). Die Dokumentfreigabe (Modus C) war im Runner nicht geprüft.
+- Das Quellenregister enthielt nur „Gesetze im Internet“ und „Rechtsprechung im Internet“ als `nutzbar` (§65). Alle
+  anderen Einträge waren `nicht_geprueft`.
+
+### 71.2 Quellen und Rechteprüfung
+
+| Quelle | Prüfung (18.10.2026, durch den Agenten, keine Freigabe) | Verwendung |
+|---|---|---|
+| Rechtsprechung im Internet (BGH VIII ZR 18/24, BAG 6 AZR 32/24, BAG 2 AZR 72/24) | bereits `nutzbar` (§65; § 5 Abs. 1 UrhG, amtliche Leitsätze) | Rechtsfrage und Ergebnis aus dem Leitsatz, Aktenzeichen, ECLI |
+| Gesetze im Internet | bereits `nutzbar` (§65) | Normen |
+| OpenRewi „Verwaltungsrecht in der Klausur“ (16 Fälle), „Grundrechte-Fallbuch“ (10 Fälle) | CC BY-SA 4.0. ShareAlike: Eine Bearbeitung müsste unter derselben Lizenz weitergegeben werden. Das ist eine Owner-Entscheidung. | **nicht verwendet**, `nicht_geprueft` |
+| ZJS Übungsfälle | nur „© 2007 - 2026 ZJS“, keine Lizenz | **nicht verwendet** |
+| Vis Moot, Soldan Moot | Urheberrecht der Veranstalter, nicht geklärt | **nicht verwendet** |
+
+Erfunden wurde keine Quelle. Die drei Entscheidungen stehen mit Aktenzeichen und ECLI im Fall. Der Validator verlangt
+die Referenzentscheidung als belegtes Zitat mit passender ECLI. Die Einstufung als `nutzbar` bleibt Aufgabe der
+verantwortlichen Person.
+
+### 71.3 Fälle und Aktenstruktur
+
+Es gibt drei neue **abgeleitete** Fälle (`synthetic: false`, `derivation: "abgeleitet"`). Aus der Entscheidung stammen
+nur die Rechtsfrage und das Ergebnis des Leitsatzes. Alle Personen, Firmen, Daten, Beträge und Schreiben sind erfunden.
+
+| Fall | Split | Rechtsfrage (Quelle) | Dokumente | Fakten / Fristen / Widersprüche |
+|---|---|---|---|---|
+| LE-D005 | dev | Mietervorkaufsrecht bei Verkauf an eine Gesellschaft mit denselben Gesellschaftern (BGH VIII ZR 18/24) | Mietvertrag (docx), Mitteilung der Notarin (pdf), Mail des Mandanten (txt), Schreiben der Verkäuferin (Scan), Aktenvermerk (txt) | 7 / 2 / 2 |
+| LE-D006 | dev | Sammelanmeldung zur Insolvenztabelle (BAG 6 AZR 32/24) | Forderungsanmeldung (pdf), Aufstellung (docx), Prüfvermerk, Mail (txt), Protokoll (Scan) | 7 / 2 / 1 |
+| LE-T004 | test | Kündigungsschutzklage gegen ein Konsulat, Staatenimmunität (BAG 2 AZR 72/24) | Arbeitsvertrag (docx), Kündigung (Scan), Mail, Vermerk (txt), Schreiben des Konsulats (pdf) | 8 / 2 / 2 |
+
+Der Korpus umfasst jetzt 10 Fälle (6 dev, 4 test) mit 48 Dokumenten.
+
+Es gibt fehlende und widersprüchliche Angaben:
+
+- **LE-D005:** Der Zugang der Mitteilung ist streitig, laut Verkäuferin am 28.02.2026, laut Mandant am 03.03.2026.
+  Daraus ergeben sich zwei mögliche Fristenden (28.04. und 04.05.2026).
+- **LE-D006:** Die Beträge widersprechen sich (32.112,00 und 31.497,75 EUR).
+- **LE-T004:** Der Zugang ist streitig (15.01. und 16.01.2026).
+
+### 71.4 Referenzlösung und Bewertung
+
+Der Block `solution` je abgeleitetem Fall enthält:
+
+- erwartetes Ergebnis mit `result_terms` und `wrong_results`;
+- `required_norms`;
+- `decisive_facts`;
+- `deadlines`;
+- `open_points`;
+- Herkunft.
+
+Der Validator (`corpus._validate_solution`) lehnt jedes Kriterium ab, das nicht aus den Akten oder der Quelle
+ableitbar ist.
+
+`scripts/legal_bench/solution_score.py` bewertet getrennt:
+
+- Ergebnis, einschließlich der Erkennung eines falschen Ergebnisses;
+- Normen;
+- Fakten;
+- Fristen;
+- offene Punkte.
+
+Textähnlichkeit wird nicht genutzt. `payload_basis` prüft, ob der **gesendete Payload** die Grundlage der Lösung
+enthält.
+
+Grenze der Bewertung: Die Prüfung arbeitet mit exakten Werten, abweichende Beugungen zählen als fehlend. Eine richtige
+Antwort eines echten Modells ist damit **nicht gemessen**, siehe 71.7.
+
+### 71.5 Ergebnisse im Repository (offline, Payload vor der Cloud-Grenze)
+
+Lauf `benchmarks/legal_e2e_v1/results.json`: Code-Stand `978448a` mit den Änderungen, die als `fc9d3f4` committet
+sind; Fake-Embedding nur in den Tests.
+
+| Messung | dev (6 Fälle) | test (4 Fälle) |
+|---|---|---|
+| kritische Befunde | 0 – **PASS** | 0 – **PASS** (nach Fix, siehe unten) |
+| Lecks / Werte fremder Akten im Payload | 0 / 0 | 0 / 0 |
+| Extraktion der Referenzwerte | 192/192 | 110/110 |
+| Chronologie im Schriftsatz-Payload | 35/35 | 22/22 |
+| Fristdaten-Recall | 13/13 | 4/5 – **FAIL** für LE-T004 05.02.2026 |
+| Lösungsgrundlage im Payload | 4/4 | 0/2 – **FAIL** (F8, Übermaskierung) |
+| Freigabe-Probe Modus C | auffälliges Dokument im Zustand „decision“ nicht im Payload, freigegebenes darin – **PASS** | |
+
+**Gefundener und behobener Befund:** In LE-T004 stand „Generalkonsulat“ aus der Kurzform „Generalkonsulat Valdoria“ des
+Aktentitels im Klartext im Payload. Ursache: Die Gegnerbezeichnung „Generalkonsulat der Republik Valdoria“ war nur in
+voller Länge und als letztes Wort geschützt. Behoben in `_build_known_entities`: Die Kurzform aus erstem und letztem Wort
+dreiteiliger Namen ist jetzt zusätzlich geschützt. Das verstärkt den Schutz und lockert nichts.
+
+Tests:
+
+- `tests/test_legal_benchmark_solutions.py`: 21 Tests, PASS;
+- `tests/test_legal_benchmark_corpus.py`: PASS;
+- volle Suite: 5438 PASS, 4 FAIL in fremden Logo-Tests (`test_design_refresh`, nicht §71).
+
+### 71.6 Lauf in der installierten App (WebView2)
+
+**Build und Methode:**
+
+- Build `fc9d3f4` aus einem sauberen Worktree mit PyInstaller und Inno Setup. Das Update ist still installiert.
+  SHA-256 der installierten `Lexono.exe`: `c2742683…e1e8ff`, byte-identisch mit dem Build.
+- Vorherige Installation gesichert, vorheriger Installer archiviert.
+- Daten: isolierte Kopie `LEXONO_DATA_DIR=C:\Users\Bonit\lexono_qa_s65`.
+- Cloud-Anfragen gehen an einen lokalen Aufzeichnungsserver mit ungültigem Testschlüssel (QA-Loopback-Freigabe).
+  Gateway-Zeile deaktiviert, Proxy auf einen toten Port, keine Kosten.
+- Die echte Kanzleidatenbank wurde weder gestartet noch verändert: MD5-Präfix vor und nach jedem Lauf `677CAFD8109F`.
+
+**Ablauf über die Oberfläche:**
+
+1. Mandant über `/dashboard/clients/create`, Akte über `/dashboard/matters/create`.
+2. Beteiligte über das Formular der Akte.
+3. Upload der gerenderten docx/pdf/txt-Dateien und Bild-PDFs über `#matter-document-upload-input`.
+4. Freigabe-Entscheidung per Klick („Für KI-Verarbeitung freigeben“).
+5. Chat-Analyse über `/dashboard/chat`.
+6. Schriftsatz über den Generator.
+
+Messgrundlage:
+
+- Fristen lesen nur aus der QA-DB.
+- Datenschutz und Lösungsgrundlage werden am **tatsächlich gesendeten HTTP-Payload** geprüft.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s71_legal_benchmark\` (Lauf 1) und `…\lauf2\` (Lauf 2).
+
+**Lauf 1 (Standardkonfiguration der QA-Daten, OCR aus):**
+
+- Die drei Scans blieben `pending` („Noch kein verwertbarer Text“).
+- Der Chat in LE-T004 wies das sichtbar aus: „Nicht ausgewertet, da ohne verarbeiteten Text: Kuendigung_Scan.pdf“.
+  F3 und F7 fehlten deshalb im Payload.
+- LE-D005 Q1: Die Datenschutz-Rückfrage („Kurze Rückfrage … Bis zu Ihrer Auswahl wird nichts an die Cloud gesendet“)
+  blieb unbeantwortet. Es gab keine Anfrage, das System war fail-closed – **PASS**.
+
+**Lauf 2 (OCR in der isolierten Umgebung eingeschaltet, Rückfragen per Klick mit der strengsten Wahl
+„Unsicher – vorsichtshalber pseudonymisieren“ beantwortet):**
+
+| Messung | LE-D005 | LE-D006 | LE-T004 |
+|---|---|---|---|
+| Beteiligte angelegt | 4 | 5 | 2 |
+| Extraktion (OCR-Scan) | 34/34 (Scan 5/5) | 37/37 (Scan 4/4) | 28/28 (Scan 4/4) |
+| Chronologie im App-Text | 7/7 | 5/5 | 6/6 |
+| Freigabe | 2 × „Entscheidung erforderlich“, manuell freigegeben, Rest automatisch | alle automatisch | alle automatisch |
+| Fristvorschläge (alle `unreviewed`) | 2/2, zusätzlich 10.03.2026 (Vermerkdatum) | 2/2 | 1/2, fehlt 05.02.2026; zusätzlich 21.01.2026 (Vermerkdatum), 30.04.2026 (Kündigungstermin) |
+| Chat: Anfrage / Lecks / fremde Akte | 1 (nach 2 Rückfragen) / 0 / 0 | 1 / 0 / 0 | 1 / 0 / 0 |
+| Schriftsatz: Anfrage / Lecks / fremde Akte | 1 / 0 / 0 | 1 / 0 / 0 | 1 / 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig – **PASS** | vollständig – **PASS** | F8 fehlt – **FAIL** (wie Repository) |
+
+Alle Anfragen gingen nur an `/v1/messages` des Aufzeichnungsservers, mit Testschlüssel. Die App wurde jeweils regulär
+geschlossen.
+
+Die App-Ergebnisse stimmen mit dem Repository überein.
+
+### 71.7 Offene Lücken und Blockaden
+
+- **LE-T004, Frist 05.02.2026:** Bei „vorsorglich Fristende 05.02.2026, spätestens 06.02.2026“ wird nur das spätere
+  Datum vorgeschlagen. Für die Praxis ist das riskant, weil die sichere, frühere Frist fehlt. Ursache:
+  `_EXPLICIT_DEADLINE_BEFORE` kennt „Fristende“ nur mit Doppelpunkt. **Bewusst nicht behoben**, weil LE-T004 zum
+  Test-Split gehört und nicht zur Regelabstimmung dienen darf. Vorschlag: einen Dev-Fall mit „Fristende <Datum>“
+  ergänzen und dort beheben.
+- **F8 Übermaskierung (LE-T004):** „Visa-Anträge“ wird als Organisation maskiert, der entscheidende Fakt ist im Payload
+  nicht lesbar. Das ist kein Leck. Es bleibt im Regressionsschutz (`KNOWN_BASIS_GAPS`).
+- **Fehlvorschläge bei Fristen:** Vermerkdaten („Vermerk vom …“ vor „Frist:“) und Kündigungstermine erscheinen als
+  Fristvorschlag. Alle sind `unreviewed`; eine Übernahme braucht eine Bestätigung.
+- **Juristische Korrektheit echter Modellantworten: NICHT VERIFIZIERT.** Der Aufzeichnungsserver liefert eine feste
+  Antwort. Ohne Owner-Freigabe gab es keinen echten Modellaufruf und keine API-Kosten. `score_answer` ist dafür bereit.
+- **Automatische Aktenzuordnung von E-Mails in der App: blockiert.** Es gibt keinen Mail-Import über die Oberfläche
+  ohne IMAP-Postfach, und die Synchronisierung ist in der QA aus. Die Zuordnung ist nur im Repository geprüft
+  (Zuordnungsprobe des Runners).
+- **NER-Ausfall** in der installierten App nicht auslösbar, ohne die Installation zu verändern: **NICHT VERIFIZIERT**.
+- **OCR in der App** wurde nur in der isolierten Umgebung mit `OCR_ENABLED=true` geprüft. Ob der Standard für die
+  Kanzlei OCR einschalten soll, entscheidet der Owner.
+- Exakte Kriterien: Andere Formulierungen werden als fehlend gewertet. Das kann zu falschen FAILs führen, aber nicht
+  zu falschen PASS.
+- Die Statusleiste zeigt „Cloud-KI (Gateway) Bereit“, obwohl die Gateway-Zeile deaktiviert ist und an den lokalen
+  Aufzeichnungsserver gesendet wird. Nur beobachtet, nicht untersucht.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §72 Fristenden ohne Doppelpunkt, Verwaltungs-Komposita, KI-Status mit tatsächlichem Weg (18.10.2026, Branch `feature/feedback-diagnose`, Code `0303e0e`)
+
+Ziel: die drei Befunde aus §71 beheben und in der installierten App prüfen. Bestehende Datenschutzgarantien und
+Benchmark-Ergebnisse sollen erhalten bleiben. Es gilt die Benchmark-Regel, dass ein Testfall nicht zur Regelabstimmung
+dient. Beide Erkennungsbefunde wurden deshalb zuerst an einem neuen Entwicklungsfall nachgestellt: **LE-D007**,
+synthetisch, mit eigenen Formulierungen.
+
+### 72.1 P1 – Fristende ohne Doppelpunkt
+
+**Ursache:** In `app/deadlines/extractor.py` zählte „Fristende“ nur mit Doppelpunkt unmittelbar vor dem Datum als
+ausdrückliches Fristende (`\w*frist\w*\s*:`). Ohne Doppelpunkt griff nur die Regel „Fristwort + am/bis/zum“. Bei
+„vorsorglich Fristende 05.02.2026, spätestens 06.02.2026“ trug deshalb nur „spätestens“. Das frühere, vorsorgliche
+Fristende ging verloren, also gerade das sichere.
+
+**Änderung:**
+
+- „Fristende“, auch „Klagefristende“ oder „Fristende vorsorglich“, unmittelbar vor dem Datum zählt jetzt als
+  ausdrückliches Fristende.
+- Nennt ein Satz mehrere Fristenden, bleiben sie **getrennte** Vorschläge. Jeder Vorschlag nennt:
+  - seine Stellung (das früheste / das späteste);
+  - seine Bedeutung laut Text (vorsorglich / spätestens);
+  - die anderen Daten;
+  - den Hinweis, dass nicht entschieden ist, welches maßgeblich ist („NICHT entschieden – anwaltliche Prüfung
+    erforderlich“).
+- Nichts wird zusammengeführt, und kein Datum ersetzt ein anderes.
+- Ein Fristbeginn im selben Satz (Zugang) zählt nicht als Alternative.
+- Konfidenz (0,5) und Prüfstatus „ungeprüft“ bleiben unverändert.
+
+**Tests:** `tests/test_s72_deadline_alternatives.py` mit 15 Tests:
+
+- mit und ohne Doppelpunkt;
+- umgekehrte Reihenfolge;
+- einzelnes Fristende ohne Alternativvermerk;
+- negative Fälle: Fristende in anderem Satz, Ereignisdatum, „Fristendet“, kein Fristwort direkt vor dem Datum;
+- zwei Sätze;
+- Fristbeginn.
+
+Die 261 bestehenden Fristentests: PASS.
+
+**Grenze, bestand schon vorher:** Ein Datum hinter „vom“, gefolgt von einem Fristwort („Vermerk vom 17.02.2026 …
+Klagefrist:“, „Das Fristende ist offen, … am 12.02.2026“), wird weiterhin als Frist vorgeschlagen. Daher stammen die
+Vermerkdaten aus §71 (10.03.2026, 21.01.2026). §72 ändert daran nichts. Die Vorschläge sind „ungeprüft“.
+
+### 72.2 P2 – „Visa-Anträge“ als Organisation
+
+**Ursache:** Das spaCy-Modell (`de_core_news_lg`) stuft Bindestrich-Komposita aus Verwaltungsgegenstand und
+Verfahrensnomen je nach Satz als Organisation ein („Visa-Anträge“, „Steuer-Bescheide“). Die zusammengeschriebene Form
+(„Visaanträge“) gilt sogar als Person. „Visa“ ist zugleich ein Firmenname. Die bestehende Kompositum-Regel
+(`is_common_compound`) griff nicht: Sie prüft nur rein alphabetische Wörter, scheitert also am Bindestrich, und ihr
+Kopfnomen ist nur „antrag“, nicht „anträge“. Die Namensprobe trennt hier nicht: „Visa-Anträge“ ergibt 0,
+„Asyl-Anträge“ ergibt 4.
+
+**Änderung:** `is_admin_procedure_compound` in `app/privacy/presidio_ner.py` verlangt **beide** Teile aus geschlossenen
+Klassen:
+
+- Gegenstände behördlicher Verfahren (Visa, Pass, Asyl, Bau, Steuer, Renten …);
+- Verfahrens- und Dokumentnomen (Antrag/Anträge, Bescheid(e), Verfahren, Akte …).
+
+Die Regel gilt nur für Einwort-Treffer der Kategorien Person und Organisation. Sie wirkt auch in der Zweitsignal- und
+Rückfrageerkennung (`is_technical_compound`). Nichts wird pauschal gelockert. Weiterhin maskiert bleiben:
+
+- „Siemens-Anträge“ und „Müller-Anträge“, weil der Vorderteil nicht in der Klasse steht;
+- „Visa-Anträge GmbH“ und „Visa Europe“ als Mehrworttreffer;
+- „Herr Visa“ wegen der Anrede;
+- „Ostermann-Holtkamp (Personalservice GmbH)“;
+- bekannte Beteiligte über die Abgleichsliste, z. B. „Visa-Anträge Service GmbH“.
+
+**Tests:** `tests/test_s72_admin_procedure_compounds.py` mit 33 Tests:
+
+- die Klassen und ihre Gegenbeispiele;
+- F8 und ähnliche Begriffe im Gateway-Payload lesbar;
+- echte Organisations- und Personennamen im Payload maskiert.
+
+### 72.3 P3 – „Cloud-KI (Gateway) Bereit“
+
+**Ursache:** In `app/web/templates/base.html` war das Label „Cloud-KI (Gateway)“ fest verdrahtet. Der Zustand selbst
+war schon korrekt getrennt: Konfiguration, TCP/TLS-Erreichbarkeit ohne API-Aufruf und letzte Anfrage
+(`cloud_health.py`). In der QA ging die Verbindung direkt an einen lokalen Prüfendpunkt. Zusätzlich galt eine
+Gateway-URL **ohne Zugangsdaten** als prüfbar und damit als „Bereit“, obwohl die Factory dann keinen Provider baut und
+nicht auf den direkten Weg ausweicht.
+
+**Änderung:**
+
+- `cloud_health.cloud_route` bestimmt den Weg mit derselben Regel wie `factory.build_writing_provider`: Gateway (URL
+  und Zugangsdaten), direkt zur offiziellen Adresse oder lokaler QA-Prüfendpunkt.
+- `CloudHealth.route` trägt den Weg. Die Statusleiste zeigt „Cloud-KI (Gateway)“, „Cloud-KI (direkt)“ oder
+  „Cloud-KI (lokaler Prüfendpunkt)“, der Tooltip nennt den Weg. Ohne Statusprüfung erscheint neutral „Cloud-KI“.
+- Die Erreichbarkeit steht weiterhin getrennt daneben; der Weg ist Konfiguration, kein Erreichbarkeitsnachweis.
+- Eine Gateway-URL ohne Zugangsdaten meldet „nicht konfiguriert“.
+- Die lokale KI bleibt eine eigene Zeile.
+- Keine Schlüssel-, Gateway- oder Architekturänderung, keine API-Anfrage.
+
+**Tests:**
+
+- `tests/test_cloud_health.py`: 6 neue Tests (Gateway mit/ohne Zugangsdaten, direkt, Prüfendpunkt, Weg bei
+  Nichterreichbarkeit, unzulässige Adresse).
+- `tests/test_web_chat.py`: Weg-Label, 3 Fälle.
+- 3 bestehende Tests prüften das feste Label, also den Befund selbst. Sie wurden angepasst; ihr Zweck bleibt erhalten.
+
+### 72.4 Repository-QA und Benchmark-Vergleich mit §71
+
+Die volle Suite lief in sechs Teilen im Vordergrund; der erste Gesamtlauf wurde vom System wegen Speichermangels
+beendet. Ergebnis: **5494 PASS**, 4 FAIL. Die Fehlschläge sind die bekannten fremden Logo-Tests (`test_design_refresh`:
+Logo-Dateien fehlen in der Arbeitskopie), kein neuer Fehler. Der eine XPASS (`Richter`) trat schon vorher auf.
+
+Benchmark `python -m scripts.legal_bench.e2e`, `results.json`:
+
+| Messung | §71 dev (6) | §72 dev (7, + LE-D007) | §71 test (4) | §72 test (4) |
+|---|---|---|---|---|
+| kritische Befunde | 0 | 0 | 0 | 0 |
+| Lecks / Werte fremder Akten | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Extraktion | 192/192 | 221/221 | 110/110 | 110/110 |
+| keep-Werte erhalten | 38/38 | 44/44 | 25/25 | 25/25 |
+| Chronologie | 35/35 | 40/40 | 22/22 | 22/22 |
+| Fristdatum-Recall | 13/13 | 16/16 | 4/5 | **5/5** |
+| Fristen nicht in der Referenz | 2 | 3 (LE-D007: Kündigungstermin 31.05.2026) | 2 | 2 |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 0/2 | **2/2** |
+| erfundene Fundstellen markiert | 12/12 | 14/14 | 8/8 | 8/8 |
+
+Weitere Proben unverändert:
+
+- Freigabe-Probe: auffälliges Dokument nicht im Payload;
+- Aktenzuordnung: keine Fremdzuordnung;
+- fremder Chat-Anhang: blockiert.
+
+LE-D007 vorher und nachher:
+
+- Fristen 2/3 → 3/3;
+- keep 5/6 → 6/6 („Steuer-Bescheide versandt“ war vorher maskiert).
+
+### 72.5 Installierte App (WebView2)
+
+**Build und Installation:**
+
+- Build aus `0303e0e` im sauberen Build-Worktree. Die drei geänderten Funktionen sind im Build enthalten und
+  bytecode-gleich mit `0303e0e`.
+- Vorher gesichert: `C:\Users\Bonit\lexono_install_backup_vor_0303e0e` (956/956 Dateien). Vorheriger Installer
+  archiviert als `Lexono_Setup_fc9d3f4.exe`.
+- Stilles Update, Installer-Exit 0. Die installierte `Lexono.exe` ist byte-identisch mit dem Build (SHA-256
+  `07ee1a649bb602b24d9fc2f962479cf2b55ee48d673d93ca578d9b078ad67bcd`).
+- Die echte Kanzleidatenbank wurde nicht gestartet oder verändert: MD5-Präfix `677CAFD8109F` vor und nach
+  Installation und Tests.
+
+**Methode wie §71:**
+
+- isolierte QA-Daten, OCR an;
+- alles über die Oberfläche: Mandant, Akte, Beteiligte, Upload, Freigabe, Chat, Schriftsatz;
+- Anfragen nur an einen lokalen Aufzeichnungsserver mit Testschlüssel;
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s72_legal_benchmark\`.
+
+| | LE-D005 | LE-D006 | LE-D007 | LE-T004 |
+|---|---|---|---|---|
+| Extraktion / Chronologie | 34/34 / 7/7 | 37/37 / 5/5 | 29/29 / 5/5 | 28/28 / 6/6 |
+| Fristen (alle „ungeprüft“) | 2/2 | 2/2 | 3/3 | **2/2** (§71: 1/2) |
+| Hinweis „mehrere mögliche Fristenden“ in der Fristdetailansicht | 28.04. früheste, 04.05. späteste | – (verschiedene Sätze) | 05.03. früheste, 06.03. späteste | 05.02. früheste, 06.02. späteste |
+| Lecks / fremde Akte (Chat, Schriftsatz) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig | vollständig | – (kein Lösungsblock) | **vollständig** (§71: F8 fehlte) |
+| Statusleiste | „Cloud-KI (lokaler Prüfendpunkt)“ Bereit | ebenso | ebenso | ebenso |
+
+**P2 im tatsächlichen Payload:**
+
+- LE-T004: „… [BETEILIGTER_01] kann bestätigen, dass ich nur Visa-Anträge erfasst habe. Telefon [TELE…“;
+- LE-D007: „Steuer-Bescheide versandt“;
+- „Generalkonsulat“, „Valdoria“, „Kostadinova“, „Lindqvist“, „Brakenstedt“ und „Ostermann/Holtkamp“ kommen in keinem
+  Payload vor.
+
+**P3, Gateway-Weg:** eigener App-Start ohne jede Anfrage, mit Gateway-URL auf einen toten lokalen Port und
+Dummy-Zugangsdaten nur in der Prozessumgebung. Angezeigt wurde „Cloud-KI (Gateway)“, „nicht erreichbar“, Tooltip
+„Verbindung abgelehnt – Weg: Lexono-Gateway“. Die lokale KI zeigt „deaktiviert“.
+
+### 72.6 Nicht verifiziert und offen
+
+- **Direkter Weg in der App: NICHT VERIFIZIERT.** Die Erreichbarkeitsprüfung würde eine echte Verbindung zu
+  api.anthropic.com aufbauen. Der Weg ist bewusst nicht in der App getestet, nur im Repository
+  (`test_direct_route_to_the_official_address`).
+- **Echter Gateway-Server: NICHT VERIFIZIERT** (kein Server, §70).
+- Juristische Korrektheit echter Modellantworten: NICHT VERIFIZIERT. Es gab keine Modellaufrufe; der
+  Aufzeichnungsserver liefert eine feste Antwort.
+- Die Klassen in P2 sind geschlossen. Andere Verwaltungsbegriffe außerhalb der Klassen können weiter übermaskiert
+  werden. Das ist fail-closed, aber unverständlich.
+- Vermerkdaten als Fristvorschlag bestanden schon vorher, siehe 72.1.
+- Das längere Label „Cloud-KI (lokaler Prüfendpunkt)“ bricht in der Seitenleiste zweizeilig um. Es tritt nur in der
+  QA auf.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §73 Fristenerkennung: Dokument-/Vermerkdaten, Ereignisdaten und offene Angaben (18.10.2026, Branch `feature/feedback-diagnose`, Code `3019b7b`)
+
+Ziel: die in §72 dokumentierte Restschwäche gezielt beheben. Fristvorschläge zu Vermerkdaten wie
+„Vermerk vom 17.02.2026 … Klagefrist:“ sollen verschwinden, ohne dass echte Fristen verloren gehen. Danach wird der
+Legal-Benchmark erneut ausgewertet. Entwickelt wurde am neuen Entwicklungsfall **LE-D008**. Der Test-Split blieb
+unverändert, ebenso Fälle, Referenzen und Schwellen.
+
+### 73.1 Bestandsaufnahme: alle Fristvorschläge außerhalb der Referenz (Stand §72)
+
+| Fall | Datum | Textstelle | Einordnung |
+|---|---|---|---|
+| LE-D005 | 10.03.2026 | „Aktenvermerk vom 10.03.2026 - Az. …⏎Ausübungsfrist: …“ | **Fehlvorschlag** (Vermerkdatum) |
+| LE-T004 | 21.01.2026 | „Vermerk vom 21.01.2026 - Az. …⏎Klagefrist: …“ | **Fehlvorschlag** (Vermerkdatum) |
+| LE-D003 | 02.12.2025 | „Ortstermin am 02.12.2025“ | korrekt als **Termin**, nicht als Frist eingeordnet; nur außerhalb der Referenz |
+| LE-D007, LE-T004 | 31.05., 30.04.2026 | „kündigen … ordentlich zum …“ | **bewusst** als Fristende geführt (§40, per Test abgesichert): Beendigungstermin – fachliche Frage, nicht geändert (73.6) |
+
+Baseline LE-D008: Recall 3/3, aber **4 Fehlvorschläge**: 23.01. (Vermerk-Kopf), 26.01. (E-Mail-Kopf
+„Datum: …⏎Betreff: Frist …“), 22.01. („am 22.01.2026 zugestellt“) und 21.01. („Zustellung schon am 21.01.2026; das
+Fristende ist danach offen“).
+
+### 73.2 Ursachen (`app/deadlines/extractor.py`)
+
+1. **Feldzeile:** Ein Zeilenumbruch galt nur nach Satzzeichen, an Leerzeilen oder in Tabellen als Satzgrenze. Die
+   Kopfzeile „Aktenvermerk vom … - Az. …“ endet ohne Satzzeichen und verschmolz so mit der Feldzeile „Klagefrist: …“
+   darunter.
+2. **„vom“:** Die Regel „Fristwort bis 30 Zeichen nach dem Datum“ griff auch, wenn „vom“ das Datum als Dokument- oder
+   Ereignisdatum ausweist.
+3. **Reihenfolge:** Ein Ereignis direkt am Datum (Zustellung, Zugang, Bekanntgabe, „ging … zu“) wurde erst nach den
+   Fristwort-Regeln geprüft. Ein Fristwort im Satz machte das Zustelldatum so zum Fristende.
+4. **Offene Angabe:** „das Fristende ist offen“ diente als Hinweis auf ein anderes Datum im Satz.
+
+### 73.3 Änderung (eng, jeweils mit Gegenproben)
+
+- Eine Folgezeile, die als Feldzeile beginnt („Wort:“), ist eine harte Satzgrenze. Weiche PDF-Umbrüche mitten im Satz
+  bleiben unverändert (Regressionstest P2.3).
+- Die Regel „Fristwort danach“ greift nicht bei „vom <Datum>“ und nicht, wenn das Fristwort ausdrücklich offen ist
+  („ist [danach/noch] offen“, „unklar“, „nicht berechnet“ …). Gleiches gilt für die Regel „Fristwort + am/bis/zum“.
+- Zustellung, Zugang oder Bekanntgabe unmittelbar am Datum werden **Fristbeginn**: Vorschlag ohne Fälligkeitsdatum,
+  „Fristende wurde nicht berechnet“. Ein ausdrückliches Fristende („Fristende“, „bis“, „spätestens“) geht weiterhin vor.
+  „Eingang“ ist bewusst nicht in der Regel, weil „Eingang am … erforderlich“ ein Fristende ist.
+- Unverändert:
+  - Konfidenz;
+  - Prüfstatus „ungeprüft“ (keine automatische Bestätigung);
+  - Textstelle und Begründung je Vorschlag;
+  - der §72-Hinweis bei mehreren Fristenden.
+
+### 73.4 Repository-Tests
+
+- `tests/test_s73_deadline_document_dates.py`: 25 Tests.
+  - Vermerk- und Dokumentdaten mit und ohne „vom“, E-Mail-Kopf, „Schreiben vom …“;
+  - Gegenproben mit echtem Fristende in der Feldzeile, „läuft … ab“, „Wiedervorlage:“, weichem Umbruch;
+  - Ereignisdaten als Fristbeginn, Gegenproben dazu („endet am … nach Zugang“, „Eingang … Fristablauf“,
+    „Zustellung spätestens bis“, vorsorglich/spätestens);
+  - offene Angaben;
+  - Prüfstatus, Quelle und Unsicherheit.
+- Bestehende Fristen- und Extraktor-Tests (15 Dateien): **311 PASS**, 1 xfailed wie zuvor.
+- Volle Suite (sechs Teile, Vordergrund): **5519 PASS**, 4 FAIL. Die Fehlschläge sind die bekannten fremden Logo-Tests
+  `test_design_refresh`, kein neuer Fehler. Dazu 10 xfailed, 1 xpassed (bekannt, „Richter“), 1 skipped.
+
+### 73.5 Legal-Benchmark (`python -m scripts.legal_bench.e2e`, `results.json`) im Vergleich zu §72
+
+| Messung | §72 dev (7) | §73 dev (8, + LE-D008) | §72 test (4) | §73 test (4) |
+|---|---|---|---|---|
+| kritische Befunde / Lecks / Werte fremder Akten | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Extraktion | 221/221 | 246/246 | 110/110 | 110/110 |
+| Chronologie | 40/40 | 45/45 | 22/22 | 22/22 |
+| geschützte Inhalte: keep-Werte erhalten | 44/44 | 49/49 | 25/25 | 25/25 |
+| Fristdatum-Recall | 16/16 | 19/19 | 5/5 | 5/5 |
+| **Fristen außerhalb der Referenz** | 3 | **2** | 2 | **1** |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 2/2 | 2/2 |
+| erfundene Fundstellen markiert | 14/14 | 16/16 | 8/8 | 8/8 |
+
+Weitere Proben unverändert:
+
+- Freigabe-Probe: auffälliges Dokument nicht im Payload;
+- Aktenzuordnung: keine Fremdzuordnung;
+- fremder Chat-Anhang: blockiert.
+
+Außerhalb der Referenz verbleiben nur der Termin (LE-D003) und die Kündigungstermine (73.6).
+
+**Grenzen der Bewertung:**
+
+- Die Lösungsgrundlage wird am **gesendeten Payload** geprüft. Er enthält den Aktentext wörtlich, aber
+  pseudonymisiert. Ein exakter Wertvergleich ist dort sachgerecht; er scheitert nur, wenn die Maskierung einen Wert
+  verändert (so F8 vor §72).
+- Die Bewertung von **Antworten** (`score_answer`) arbeitet ebenfalls mit exakten Werten. Zulässige Paraphrasen
+  („denselben Gesellschaftern“) zählen dort als fehlend; das ergibt falsche FAILs, aber keine falschen PASS. Sie wurde
+  mangels echter Modellantworten nicht angewendet.
+- Juristische Korrektheit wird weder gemessen noch aus Textähnlichkeit abgeleitet.
+
+Quellen und Rechte sind unverändert gegenüber §71. LE-D008 ist vollständig synthetisch, mit realen ZPO-Normen; es
+wurde keine fremde Falllösung übernommen. Es gab keine Cloud-Aufrufe und keine Kosten.
+
+### 73.6 Installierte App (WebView2)
+
+**Prüfung vor dem Update:**
+
+- keine laufende Instanz;
+- Sicherungsziel frei, frühere Sicherungen und Archiv vollständig;
+- 74 GB frei;
+- die installierte EXE entsprach dem Build `0303e0e`;
+- Build-Worktree sauber.
+
+**Build und Installation:**
+
+- Build aus `3019b7b`; `_role`, `_is_hard_newline` und `_event_at_date` sind bytecode-gleich mit `3019b7b`.
+- Sicherung `C:\Users\Bonit\lexono_install_backup_vor_3019b7b` (956/956 Dateien). Installer `0303e0e` archiviert.
+- Stilles Update, Exit 0. Die installierte EXE ist byte-identisch mit dem Build (SHA-256
+  `bb63d5c29a4fc1de87a20fb9acef9c45e617ebf8d9b36e19724ae159731f2ced`).
+- Echte Datenbank vor und nach allem `677CAFD8109F`.
+
+**Lauf:**
+
+- Methode wie §71/§72: isolierte QA-Daten, OCR an, alles über die Oberfläche, Anfragen nur an einen lokalen
+  Aufzeichnungsserver mit Testschlüssel.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s73_legal_benchmark\`.
+
+| | LE-D005 | LE-D007 | LE-D008 | LE-T004 |
+|---|---|---|---|---|
+| Fristen mit Datum (Recall / außerhalb Referenz) | 2/2 / – (§72: 10.03.) | 3/3 / 31.05. (Beendigungstermin) | 3/3 / – | 2/2 / 30.04. (Beendigungstermin; §72 zusätzlich 21.01.) |
+| Vorschläge ohne Datum (Art laut Begründung) | 2 × Fristbeginn | Fristbeginn, Fristdauer | 3 × Fristbeginn (Zustellungen 22.01., 21.01., 21.01.) | Fristbeginn, Fristdauer |
+| Prüfstatus | alle ungeprüft | alle ungeprüft | alle ungeprüft | alle ungeprüft |
+| §72-Hinweis „mehrere Fristenden“ in der Detailansicht | ja | ja | – (verschiedene Sätze) | ja |
+| Extraktion / Chronologie | 34/34 / 7/7 | 29/29 / 5/5 | 25/25 / 5/5 | 28/28 / 6/6 |
+| Payload: Lecks / fremde Akte (Chat, Schriftsatz) | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Lösungsgrundlage im Payload | vollständig | – | – | vollständig |
+
+In der Detailansicht von „Aufgaben & Fristen“ zeigen Fristbeginn-Vorschläge „nicht berechnet“. Einschränkung: Das
+Merkmal „Möglicher Fristbeginn“ wurde im Seitentext gesucht, nicht nur in der Detailansicht. Maßgeblich für die Art
+ist die gespeicherte Begründung.
+
+LE-D006 wurde in §73 nicht erneut in der App ausgeführt. Er enthält keine der geänderten Formulierungen; sein
+App-Ergebnis aus §72 (2/2) ist nicht neu verifiziert. Nach den Läufen bleiben keine Lexono-, pytest- oder
+QA-Prozesse zurück.
+
+### 73.7 Offene Risiken und nächste Schritte
+
+- **Beendigungstermin „kündigen … zum <Datum>“ als Fristende (fachliche Entscheidung, Owner):**
+  - Option A: so lassen (heute; der Termin ist relevant, wird aber „Frist“ genannt);
+  - Option B: als eigene Art „Beendigungstermin“ führen (Termin, kein Fristablauf);
+  - Option C: nicht vorschlagen.
+
+  Die bestehenden §40-Tests sichern Option A ab.
+- Die Feldzeilen-Grenze erkennt nur „Wort:“ am Zeilenanfang. Mehrwort-Feldbezeichnungen („Frist für Stellungnahme:“)
+  sind keine Grenze. Das kann weiter zu Fehlvorschlägen führen, aber nicht zum Verlust echter Fristen.
+- Die Ereignisregel ist bewusst eng (Zustellung, Zugang, Bekanntgabe, „ging … zu“). Andere Ereignisse („erhalten am“)
+  bleiben unberührt.
+- Antwortbewertung mit exakten Werten: Für echte Modellantworten wären vorab geprüfte, zulässige Varianten je
+  Kriterium nötig, im Entwicklungs-Split und vor dem Lauf festgelegt. Keine juristische Bewertung über Textähnlichkeit.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte, PostgreSQL.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §74 Beendigungstermin als eigene Art, mehrteilige Fristfelder, Legal-Benchmark erweitert (18.10.2026, Branch `feature/feedback-diagnose`, Code `fc7d3d3`)
+
+Ziel: Den Beendigungszeitpunkt („Das Mietverhältnis wird ordentlich zum 30.04.2026 gekündigt“) als eigene Art führen,
+nicht als Fristende. Das entspricht Option B aus §73.7, vom Owner beauftragt. Dazu die Fristenerkennung für mehrteilige
+Feldbezeichnungen härten und den Benchmark um einen Fall erweitern, der beides gemeinsam prüft. Bestehende Fälle,
+Test-Split, Referenzen und Schwellen sind unverändert.
+
+### 74.1 Bestandsaufnahme
+
+- Die Art eines Vorschlags steht nur in der Begründung („Art: …“) und wird über `review.kind_from_reasoning`
+  abgeleitet. Es gibt kein eigenes Datenbankfeld und keine Migration.
+- Beendigungstermine entstanden im Zweig „zum + Beendigungswort“ als „Art: Frist“ mit dem Hinweis
+  „zum (Beendigung/Ablauf)“. Derselbe Hinweis traf auch echte Fristenden („Die Widerspruchsfrist endet zum …“).
+- **Nachgelagerte Pfade:**
+  - Bezeichnung (`kind_label`), Liste und Detail in „Aufgaben & Fristen“ (Spalte/Feld „Typ“ war fest „Frist“);
+  - Dokumentansicht der Akte;
+  - Bezeichnung im Cloud-Kontext (`local_ai_provider.label_of`);
+  - Zweitmeinungs-Abgleich (`second_opinion.comparison`, Cloud-Schema frist/termin/fristbeginn);
+  - Akten-Export (ohne Art);
+  - Fund-Schlüssel (`finding_key` = Art|Angabe|n, Duplikatschutz bei erneuter Analyse);
+  - Sortierung und Kalender nach Datum.
+- Erinnerungen sind laut `settings.py` noch nicht an die Fristenlogik angebunden; dort ändert sich nichts.
+- **Weitere Lücken (Probe vor der Änderung):**
+  - „Frist für Stellungnahme: 20.03.2026“ und „Frist zur Klageerhebung: 05.03.2026“ ergaben **keinen** Vorschlag;
+    echte Fristen gingen verloren.
+  - „Aktenvermerk 17.02.2026⏎Frist zur Klageerhebung: …“ ergab einen Fehlvorschlag. Die Feldzeilen-Grenze aus §73
+    kannte nur Bezeichnungen aus einem Wort.
+  - „Das Mietverhältnis wird … zum 30.04.2026 gekündigt“ (Partizip nach dem Datum) ergab keinen Vorschlag.
+
+### 74.2 Änderung
+
+**Beendigungstermin** (`app/deadlines/extractor.py`): Im Zweig „zum <Datum>“ entscheidet `_termination_cue`.
+
+- Beendigungstermin, wenn:
+  - eine Beendigungshandlung vor dem Datum steht („kündig…“, „beend…“, „Aufhebung“, „ausscheiden“);
+  - oder „<Verhältnis/Vertrag/Mitgliedschaft/Mandat> endet zum“;
+  - oder ein Partizip danach folgt („gekündigt“, „beendet“, „aufgehoben“).
+- Gegenprobe: Benennt der Satz das Ende einer **Frist** („Die Kündigungsfrist endet zum …“, „Ablauf“), bleibt es ein
+  Fristende.
+- Begründung: „Art: Beendigungstermin (kein Fristende) – … Das ist keine Frist: ob die Beendigung wirksam ist und ob
+  eine Kündigungsfrist eingehalten wurde, wurde NICHT geprüft; daraus folgende Fristen … sind gesondert zu ermitteln.“
+- Erhalten bleiben Datum, Originalangabe, Textstelle, Konfidenz 0,5 und Prüfstatus „ungeprüft“. Ein Beendigungstermin
+  ist nie Teil des §72-Hinweises „mehrere mögliche Fristenden“.
+
+**Nachgelagerte Pfade:**
+
+- Art `beendigung` mit Bezeichnung „Möglicher Beendigungstermin (kein Fristende)“.
+- `type_label` zeigt „Beendigungstermin“ statt „Frist“ in Spalte und Detailfeld „Typ“.
+- Cloud-Kontext: „Möglicher Beendigungstermin (kein Fristende)“.
+- Zweitmeinung: `termin`, Cloud-Schema unverändert.
+- Export: neues Feld `kind` (additiv).
+
+**Fund-Schlüssel:** Beendigungstermine teilen den Schlüsselraum `frist`. Ein bis §73 gespeicherter Vorschlag
+(`frist|30.04.2026|1`) wird bei erneuter Analyse wiedererkannt, es entsteht **kein** Duplikat. Altvorschläge werden
+**nicht umgedeutet**: Der alte Hinweis traf auch echte Fristenden, deshalb bleiben sie „Frist“, bis ein Mensch sie
+prüft.
+
+**Mehrteilige Feldbezeichnungen und Feldzeilen:**
+
+- „<…frist…> für/zur/zum/zu/der/des <1–4 Wörter>:“ unmittelbar vor dem Datum ist ein ausdrückliches Fristende.
+- Eine Folgezeile mit mehrteiliger Feldbezeichnung (nur Buchstabenwörter, bis zu 6 Wörter, also keine Uhrzeit) ist
+  eine Satzgrenze.
+- Eine **abgeschlossene** Feldzeile „Feld: <Datum>“ ist ebenfalls eine Satzgrenze. Sonst galten zwei verschiedene
+  Fristen auf zwei Zeilen als Alternativen eines Satzes; das hat LE-D009 aufgedeckt.
+- Weiche Umbrüche in einem Feldwert („bis zum⏎31.07.2026“) bleiben verbunden.
+
+**Bestehender Test geändert (bewusst, Owner-Auftrag):** `test_deadlines_kinds.py` führte „kündigen wir … ordentlich zum
+30.06.2026“ als Fristende (§40). Der Fall ist jetzt als Beendigungstermin abgesichert
+(`test_termination_date_is_a_termination_not_a_deadline_end`). Die übrigen Fälle dieser Liste sind unverändert.
+
+### 74.3 Regressionstests (Repository)
+
+- `tests/test_s74_termination_dates.py` (46 Tests):
+  - ordentliche und außerordentliche Kündigungen, „endet zum“, „beendet“, „Kündigung zum“ – mit Prüfung von Begründung,
+    Unsicherheit und fehlender Wirksamkeitsaussage;
+  - Gegenproben: Kündigungs- und Widerspruchsfrist „endet zum“, „bis zum“, „bis spätestens“, „spätestens am“,
+    „Fristende“;
+  - Zugang und Zustellung als Fristbeginn;
+  - Dokument- und Vermerkdaten, unvollständiges „zum nächstmöglichen Termin“, zwei Beendigungstermine;
+  - mehrteilige Feldbezeichnungen positiv und negativ, abgeschlossene Feldzeile, weicher Umbruch, Uhrzeit;
+  - vorsorglich/spätestens weiterhin als Alternativen;
+  - Bezeichnungen, Altvorschläge, Fund-Schlüssel;
+  - erneute Analyse ohne Duplikat;
+  - Speicherung „ungeprüft“;
+  - E2E LE-D009.
+- `tests/test_s74_termination_ui_export.py` (2 Tests): Typ-Spalte und Detail in „Aufgaben & Fristen“, `kind` im
+  Export-Manifest.
+- Fristen-, Zweitmeinungs-, Export- und Aufgaben-Suites (24 Dateien): **519 PASS**, 1 xfailed wie zuvor.
+- Volle Suite (sechs Teile, Vordergrund): **5567 PASS**.
+  - **4 FAIL, bereits bekannt:** `test_design_refresh` mit 4 Logo-Tests; die fremden Logo-Dateien fehlen in der
+    Arbeitskopie. Kein neuer Fehler.
+  - Dazu 10 xfailed, 1 xpassed (bekannt), 1 skipped.
+- Ein Zwischenfehler in `test_legal_benchmark_e2e.py` wurde behoben: `summarise` setzte die neuen Felder voraus. Jetzt
+  abwärtskompatibel, der Test ist unverändert.
+
+### 74.4 Legal-Benchmark
+
+**Neuer Entwicklungsfall LE-D009** (Mietrecht, Eigenbedarfskündigung, vollständig synthetisch, reale BGB-Normen). Die
+Referenz war **vor dem ersten Lauf** festgelegt: SHA-256 `2f9865cb…f25b`, 18.10.2026 15:16, nach dem Lauf unverändert.
+
+- **Fristen (`deadlines`):**
+  - 31.08.2026, Widerspruch, „bis spätestens“ und „Fristende“;
+  - 06.03.2026, „Frist für Stellungnahme:“ und „Frist zur Stellungnahme an die Gegenseite:“;
+  - 02.11.2026, Räumung „spätestens am“;
+  - 02.03.2026, „Wiedervorlage:“.
+- **Beendigungstermin (`terminations`, neu):** 31.10.2026 in drei Formulierungen.
+- **Negativdaten (`not_deadlines`, neu):**
+  - Schreiben vom 27.01. und 16.02.;
+  - E-Mail-Kopf 03.02.;
+  - Zugang 28.01. (Fristbeginn) und 29.01. (bloßes Datum);
+  - Vermerk 18.02.;
+  - Mietbeginn 01.04.2009.
+
+**Validator und Runner** (`scripts/legal_bench/corpus.py`, `e2e.py`): Die neuen Felder sind optional und werden gegen
+den Aktentext geprüft, ohne Überschneidung mit den Fristen. Der Datums-Recall bleibt **wie bisher definiert**
+(Datumsgleichheit, Art nicht geprüft). Zusätzlich und getrennt erfasst werden:
+
+- Beendigungs-Recall;
+- Beendigungstermine außerhalb der Referenz;
+- erwarteter Beendigungstermin als Frist;
+- Negativdatum als Vorschlag;
+- Referenzfrist nur als Beendigungstermin.
+
+Vergleich mit §73:
+
+| Messung | §73 dev (8) | §74 dev (9, + LE-D009) | §73 test (4) | §74 test (4) |
+|---|---|---|---|---|
+| kritische Befunde / Lecks / Werte fremder Akten | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Extraktion | 246/246 | 276/276 | 110/110 | 110/110 |
+| Chronologie | 45/45 | 50/50 | 22/22 | 22/22 |
+| geschützte Inhalte: keep-Werte erhalten | 49/49 | 54/54 | 25/25 | 25/25 |
+| **Fristdatum-Recall** | 19/19 | **23/23** (19/19 der bisherigen Fälle) | 5/5 | **5/5** |
+| Daten außerhalb der Fristreferenz | 2 | 3 (+ LE-D009 31.10. = Beendigungstermin) | 1 | 1 |
+| Beendigungs-Recall | – | **1/1** | – | 0/0 (keine Referenz) |
+| Beendigungstermin als Frist | – | 0 | – | 0 |
+| Negativdatum als Vorschlag | – | 0 | – | 0 |
+| Beendigungstermin außerhalb der Referenz | – | LE-D002 30.06., LE-D007 31.05. | – | LE-T004 30.04. |
+| **Referenzfrist als Beendigungstermin eingeordnet** | – | **LE-D002 30.06.2026** | – | 0 |
+| Lösungsgrundlage im Payload | 4/4 | 4/4 | 2/2 | 2/2 |
+| erfundene Fundstellen markiert | 16/16 | 18/18 | 8/8 | 8/8 |
+
+Weitere Proben unverändert: Freigabe, Aktenzuordnung, fremder Anhang.
+
+**Art-Abweichung LE-D002 (offen, Owner):** Die bestehende Referenz führt „kündigen wir … ordentlich zum 30.06.2026“
+unter `deadlines` (Art „Ende Arbeitsverhältnis laut Kündigung“). Nach §74 ist das ein Beendigungstermin. Der Fall wurde
+**nicht** geändert, die Abweichung ist ausgewiesen. Eine Referenzkorrektur – Verschieben nach `terminations` – wäre
+eine bewusste Korpusänderung durch die verantwortliche Person. LE-D007 und LE-T004 haben keine Beendigungsreferenz; ihre
+Kündigungstermine sind als „außerhalb der Referenz“ ausgewiesen.
+
+**Grenzen der Bewertung:**
+
+- Exakte Werte sind kein Maßstab für die juristische Qualität von Modellantworten. Echte Modellantworten wurden nicht
+  bewertet.
+- Keine fremden Falllösungen übernommen; Quellenregister unverändert.
+
+### 74.5 Installierte App (WebView2)
+
+**Vorprüfung:**
+
+- keine Lexono-Instanz und keine Test- oder QA-Prozesse;
+- zwei fremde Ollama-Prozesse unberührt; die QA nutzt sie nicht (`LOCAL_AI_ENABLED=false`);
+- Sicherungsziel frei, sechs frühere Sicherungen und Archiv vollständig;
+- die installierte EXE entsprach `3019b7b`;
+- Worktree sauber, echte DB `677CAFD8109F`.
+
+**Build und Installation:**
+
+- Build aus `fc7d3d3`. Bytecode-gleich: Extraktor (`_role`, `_termination_cue`, `_is_hard_newline`, `_candidate`),
+  `review`, `finding_keys`, Export (alle 5 Funktionen), `_review_info`. Das Template enthält `type_label`.
+- Sicherung `C:\Users\Bonit\lexono_install_backup_vor_fc7d3d3` (956/956). Installer `3019b7b` archiviert.
+- Exit 0. Die installierte EXE ist byte-identisch (SHA-256
+  `bff715a3a13cea2eed5b84bca424efc7f801391ae4444c21049781d26890d337`).
+- Echte DB vor und nach allem `677CAFD8109F`.
+
+**Lauf:**
+
+- Methode wie §71–§73: isolierte QA-Daten, OCR an, alles über die Oberfläche, Anfragen nur an den lokalen
+  Aufzeichnungsserver mit Testschlüssel.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s74_legal_benchmark\` (`ergebnis_<Fall>.json` mit `arten`,
+  `liste_typen`, Screenshots `*_beendigung_*.png`, `*_liste.png`).
+
+| Fall | Fristen (Datum) | Beendigungstermine (gespeichert = UI) | Art-Abweichung zur Referenz | Status | Lecks / fremd |
+|---|---|---|---|---|---|
+| LE-D009 | 4/4, alle „Frist“, inkl. „Frist für Stellungnahme:“ und „Frist zur Stellungnahme an die Gegenseite:“ | 31.10.2026 (3×) „Beendigungstermin / Möglicher Beendigungstermin (kein Fristende)“, ohne Wirksamkeitsaussage | keine; kein Negativdatum; Zugang 28.01. als Fristbeginn ohne Datum | ungeprüft | 0 / 0 |
+| LE-D002 | 2/2 | 30.06.2026 | Referenz: Frist (74.4) | ungeprüft | 0 / 0 |
+| LE-D007 | 3/3 | 31.05.2026 | keine Referenz | ungeprüft | 0 / 0 |
+| LE-T004 | 2/2 | 30.04.2026 | keine Referenz | ungeprüft | 0 / 0 |
+| LE-D005, LE-D006, LE-D008 | 2/2, 2/2, 3/3 | – | keine | ungeprüft | 0 / 0 |
+
+In allen Fällen gilt:
+
+- Das Feld „Typ“ in Detail und Liste entspricht der gespeicherten Art.
+- Extraktion und Chronologie sind vollständig.
+- Die Lösungsgrundlage ist bei LE-D005, LE-D006 und LE-T004 vollständig.
+- Nach den Läufen bleiben keine Lexono-, Test- oder QA-Prozesse zurück.
+
+### 74.6 Offene Punkte
+
+- LE-D002: Referenzkorrektur ja oder nein (Owner, siehe 74.4).
+- Das Feld heißt für alle Arten „Fällig am“, auch beim Beendigungstermin. Typ und Art stellen die Einordnung klar; eine
+  eigene Bezeichnung („Beendigung zum“) wäre eine kleine UI-Folgeänderung.
+- Der Prüfhinweis „Datum verstrichen – bitte prüfen“ gilt für alle ungeprüften Vorschläge, auch für
+  Beendigungstermine. Er ist als Prüfhinweis gedacht, behauptet aber kein Fristversäumnis.
+- Altvorschläge mit „zum (Beendigung/Ablauf)“ bleiben „Frist“, bis sie geprüft werden.
+- Der §72-Hinweis „mehrere mögliche Fristenden“ gilt weiterhin für zwei Fristenden im **selben Satz**, auch wenn es
+  verschiedene Fristen sind. Getrennte Zeilen sind jetzt abgegrenzt.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte, Erinnerungen (nicht
+  angebunden).
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §75 Referenzkorrektur LE-D002, „Beendigung zum“, Hinweis nur bei konkurrierenden Fristenden (18.10.2026, Branch `feature/feedback-diagnose`, Code `ca695d8`)
+
+Ausgangsstand: `fcb9520` (Doku §74) auf Code `fc7d3d3`, synchron mit dem Remote. `main` unverändert (`5735e5b`).
+
+### 75.1 Referenz LE-D002 (dev)
+
+- **Formulierung (D3):** „hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.“
+- **Alt:** `reference.deadlines`, Art „Ende Arbeitsverhältnis laut Kündigung“.
+- **Neu (18.10.2026, §75, Owner-Auftrag):** `reference.terminations`, Art „Beendigung des Arbeitsverhältnisses laut
+  Kündigung (kein Fristende)“. Fallversion 3.
+- **Begründung:** Nach der seit §74 geltenden fachlichen Klassifikation nennt die Formulierung den Zeitpunkt, zu dem
+  das Arbeitsverhältnis enden soll, kein Fristende.
+- **Nachweis:** Alte und neue Einordnung, Begründung und Datum stehen im Fall unter `reference_history`. Der Test
+  `test_only_le_d002_carries_a_reference_history` sichert ab, dass nur dieser Fall eine Änderungshistorie trägt.
+- **Unverändert:**
+  - Fristen-Aufgabe Q5 (erwartete schon nur 13.04.2026);
+  - keep-Wert 30.06.2026 und Fakt F3 – das Datum muss weiter im Payload stehen;
+  - alle anderen Fälle, Referenzwerte und Schwellen;
+  - der Test-Split: kein Diff seit §74.
+- **Tests:** Kein bestehender Test setzte 30.06.2026 als Frist voraus. `test_legal_benchmark_e2e` prüft nur den
+  Datums-Recall und Datenschutz von LE-D002. Die neue Einordnung wird über die Erkennung selbst geprüft und nicht nur
+  über die Referenz.
+
+### 75.2 Datumsfeld beim Beendigungstermin
+
+- **Detailansicht** „Aufgaben & Fristen“ und **Bearbeitungsformular** des Vorschlags: „Beendigung zum“ statt „Fällig am“,
+  wenn die Art „Beendigungstermin“ ist. Für alle anderen Arten bleibt „Fällig am“.
+- **Aktenseite** (Reiter „Aufgaben & Fristen“): Die Art je KI-Vorschlag wird jetzt genannt, wie bisher schon in der
+  Dokumentansicht. Ein Beendigungstermin steht dort nicht mehr unkommentiert unter den Fristen. Manuelle Einträge
+  bleiben ohne Art.
+- **Unverändert:**
+  - Spaltenüberschrift der Liste („Fällig am“, gilt für alle Zeilen); die Typ-Spalte nennt „Beendigungstermin“;
+  - Speicherung (keine Migration, Art in der Begründung);
+  - Export (`kind`, §74);
+  - Sortierung nach Datum;
+  - Kalender (Ansicht weiterhin deaktiviert);
+  - Erinnerungen (nicht angebunden);
+  - Typ, Unsicherheit, Fundstelle und Begründung. Es gibt keine Wirksamkeitsaussage.
+
+### 75.3 Hinweis „mehrere mögliche Fristenden“
+
+**Ursache:** Bis §74 bekam jedes Fristende eines Satzes den Hinweis, sobald ein zweites, anderes Fristende im selben Satz
+stand. So galten auch verschiedene Fristen als Alternativen („Wir erwarten Ihre Stellungnahme bis 06.03.2026 und die
+Zahlung … bis 13.03.2026“).
+
+**Änderung** (`_competing`, `_mark_alternative_deadlines`): Zwei Fristenden konkurrieren nur, wenn beides zutrifft:
+
+1. Es gibt ein **Alternativsignal** vor oder zwischen ihnen: „vorsorglich“, „spätestens“, „hilfsweise“, „andernfalls“,
+   „sonst“, „oder“, „liefe“, „bei Zugang/Zustellung/Bekanntgabe“.
+2. Zwischen ihnen steht **kein anderer Gegenstand**. Erlaubt ist nur Fristvokabular (Frist, Fristende, Fristablauf,
+   Zugang, Zustellung …). Klammerinhalte wie „(laut Mandantin)“ zählen nicht.
+
+Jeder Vorschlag nennt nur seine tatsächlichen Konkurrenten. Ein Fristbeginn, ein Beendigungstermin oder ein
+Dokumentdatum ist nie Konkurrent; das ist unverändert seit §72–§74. Fristen werden nicht entfernt, nur der Hinweis
+ändert sich.
+
+**Korpus vorher/nachher:** Der Hinweis steht weiterhin genau bei den drei echten Alternativpaaren:
+
+- LE-D005: 28.04./04.05.;
+- LE-D007: 05.03./06.03.;
+- LE-T004: 05.02./06.02.
+
+Die gefundenen Daten sind in allen Dokumenten identisch.
+
+**Tests:** `tests/test_s75_competing_deadlines.py` mit 21 Tests:
+
+- 6 konkurrierende Paare, darunter umgekehrte Reihenfolge, „bei Zugang … liefe … erst“, Klammerzusätze und „oder“;
+- 6 Paare verschiedener Fristen, im selben Satz und in benachbarten Zeilen – alle Fristen bleiben erhalten, kein
+  Hinweis;
+- 5 Fälle mit Zustellung oder Zugang plus Fristende, Vermerk- und Schreibendaten sowie Beendigungstermin plus Fristende;
+- UI: „Beendigung zum“ und „Fällig am“, Art-Angabe auf der Aktenseite;
+- Referenz LE-D002 und ihre Historie.
+
+### 75.4 Repository-QA
+
+- Fristen-, UI-, Export-, Zweitmeinungs- und Benchmark-Suites (29 Dateien): **671 PASS**, 1 xfailed wie zuvor.
+- Volle Suite (sechs Teile, Vordergrund): **5588 PASS**.
+  - **4 FAIL, bereits bekannt:** `test_design_refresh` mit 4 Logo-Tests; die fremden Logo-Dateien fehlen in der
+    Arbeitskopie. Kein neuer Fehler.
+  - Dazu 10 xfailed, 1 xpassed (bekannt), 1 skipped.
+
+**Benchmark** (`results.json`) im Vergleich zu §74:
+
+| Messung | §74 dev | §75 dev | §74 test | §75 test |
+|---|---|---|---|---|
+| kritisch / Lecks / Werte fremder Akten | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
+| Extraktion / Chronologie / keep | 276/276 / 50/50 / 54/54 | unverändert | 110/110 / 22/22 / 25/25 | unverändert |
+| Fristdatum-Recall | 23/23 | 22/22 (30.06.2026 ist jetzt Beendigungsreferenz) | 5/5 | 5/5 |
+| **bisherige dev-Fälle:** Fristen + Beendigung | 19/19 (alles als Frist) | **18/18 + 1/1 = 19/19** | – | – |
+| **LE-D009 (separat):** Fristen + Beendigung | 4/4 + 1/1 | 4/4 + 1/1 | – | – |
+| Beendigungs-Recall | 1/1 | 2/2 | 0/0 | 0/0 |
+| Referenzfrist als Beendigungstermin | LE-D002 30.06. | **keine** | 0 | 0 |
+| Beendigungstermin außerhalb der Referenz | LE-D002, LE-D007 | LE-D007 31.05. | LE-T004 30.04. | LE-T004 30.04. |
+| Beendigungstermin als Frist / Negativdatum als Vorschlag | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
+| Lösungsgrundlage | 4/4 | 4/4 | 2/2 | 2/2 |
+
+Freigabe, Aktenzuordnung und fremder Anhang sind unverändert ohne kritischen Befund. Exakte Werte sind kein Maßstab für
+die juristische Qualität von Modellantworten; Modellantworten wurden nicht bewertet.
+
+### 75.5 Installierte App (WebView2)
+
+**Vorprüfung:**
+
+- keine Lexono-Instanz und keine Test- oder QA-Prozesse;
+- Sicherungsziel frei, sieben frühere Sicherungen, Archiv vollständig;
+- 71 GB frei;
+- die installierte EXE entsprach `fc7d3d3`;
+- Worktree sauber, echte DB `677CAFD8109F`.
+
+**Build und Installation:**
+
+- Build aus `ca695d8`. Bytecode-gleich: Extraktor (50 Funktionen, inklusive `_competing`) und Akten-Router (17
+  Funktionen). Beide Templates enthalten die Änderungen.
+- Sicherung `C:\Users\Bonit\lexono_install_backup_vor_ca695d8` (956/956). Installer `fc7d3d3` archiviert.
+- Stilles Update, Exit 0. Die installierte EXE ist byte-identisch (SHA-256
+  `e3eee2efada1471529fd546487fe9da914df10564c7f7331c2768bf4bbd67cff`).
+- Echte DB vor und nach allem `677CAFD8109F`.
+
+**Lauf:**
+
+- Methode wie §71–§74: isolierte QA-Daten, OCR an, alles über die Oberfläche, Anfragen nur an den lokalen
+  Aufzeichnungsserver mit Testschlüssel.
+- Zusätzlich die synthetische QA-Akte `QA75-FRISTEN`. Sie ist nicht Teil des Benchmarks und ändert keine Referenz; ihre
+  Erwartung war vor dem Lauf festgelegt.
+- Nachweise: `C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s75_legal_benchmark\`.
+
+| Fall | Ergebnis (gespeicherte Art = UI-Typ = Datumsfeld) | Hinweis „mehrere“ |
+|---|---|---|
+| QA75-FRISTEN | 06.03. und 13.03. (verschiedene Fristen in einem Satz): Frist / „Fällig am“; 23.03. und 24.03. (vorsorglich/spätestens): Frist / „Fällig am“; 4/4 | 06.03./13.03. **nein**, 23.03./24.03. **ja**, wie erwartet, gespeichert und in der UI |
+| LE-D002 | 13.04. Frist / „Fällig am“; 30.06. **Beendigungstermin / „Beendigung zum“ / „Möglicher Beendigungstermin (kein Fristende)“**, ohne Wirksamkeitsaussage; Aktenseite nennt beide Arten | nein |
+| LE-D009 | 4/4 Fristen „Fällig am“; 31.10. (3×) „Beendigung zum“ | nein (verschiedene Fristen in benachbarten Zeilen) |
+| LE-D005 | 28.04./04.05. Frist | ja (konkurrierend) |
+| LE-T004 | 05.02./06.02. Frist; 30.04. Beendigungstermin / „Beendigung zum“ (Test-Split ohne Beendigungsreferenz, unverändert) | 05.02./06.02. ja |
+
+In allen Fällen gilt:
+
+- Prüfstatus „ungeprüft“.
+- Extraktion vollständig.
+- Payload: 0 Lecks, 0 Werte fremder Akten, nur Testschlüssel und `/v1/messages` des Aufzeichnungsservers.
+- Die Aktenseite wurde zusätzlich mit einem App-Start ohne Anfrage geprüft (`ergebnis_lauf_AKTE-LE-D002.json`,
+  `aktenseite_fristen.png`).
+- Nach den Läufen bleiben keine Lexono-, Test- oder QA-Prozesse zurück.
+
+### 75.6 Offen und nicht verifiziert
+
+- Der Export mit `kind` ist nur im Repository geprüft (§74, PASS); in der App **NICHT VERIFIZIERT**.
+- Die Typ-Spalte der Liste kürzt „Beendigungstermin“ auf „Beendigu…“ (schmale Spalte). Detail und Tooltip zeigen den
+  vollen Text.
+- Die Alternativsignale sind eine geschlossene Liste. Andere Formulierungen konkurrierender Fristenden („alternativ“,
+  „im Fall …“) erhalten den Hinweis nicht. Das ist kein Fristverlust, aber ein fehlender Hinweis.
+- Juristische Korrektheit echter Modellantworten und reale Kanzleitexte: **NICHT VERIFIZIERT**.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §76 Typ-Label, Alternativformeln, Export, Konzept Antwortqualität (18.10.2026, Branch `feature/feedback-diagnose`, Code `65ea0b0`)
+
+Ausgangsstand: `6a16014` (Doku §75) auf Code `ca695d8`, synchron mit dem Remote; `main` unverändert (`5735e5b`).
+
+### 76.1 Listenansicht: Typ-Label vollständig
+
+- **Ursache:** Die Tabelle hat `table-layout: fixed` mit einer Typ-Spalte von 9 %, damit bei geöffnetem Detailpanel
+  nichts horizontal scrollt (Beschluss vom 03.10.). Mit `td { overflow: hidden }` wurde „Beendigungstermin“ zu
+  „Beendigu…“ abgeschnitten.
+- **Änderung:** Die Spaltenbreiten bleiben gleich. Das Label (`.task-type-cell__label`) darf an einer weichen
+  Trennstelle umbrechen („Beendigungs-⏎termin“, U+00AD, `overflow-wrap: anywhere`, `hyphens: manual`). Der Tooltip und
+  `data-type-label` tragen den vollen Text.
+- Detail und Bearbeitungsformular bleiben wie in §75: „Beendigung zum“ beim Beendigungstermin, „Fällig am“ bei Fristen.
+- **Repository-Tests:** Label vollständig, mit weicher Trennstelle und Tooltip; die CSS-Regel ist vorhanden.
+- **Installierte App:** schmale Fenster und Detailpanel **NICHT VERIFIZIERT** (76.5).
+
+### 76.2 Alternativformeln mit Kontext
+
+- **Neue Signale:** „alternativ“, „bzw.“, „beziehungsweise“, „im Fall(e)“, „je nach“, „falls“, „sofern“. Sie gelten
+  weiterhin **nur** mit der Kontextbedingung aus §75: Zwischen den Daten steht kein anderer Gegenstand. Wörter der
+  Alternativformeln selbst und Genitivformen („Alternativ“, „Fall“, „Zugangs“) zählen nicht als Gegenstand.
+- **Bisher unerkannte Fristenden, behoben:**
+  - Ein Datum nach „oder / bzw. / alternativ / hilfsweise / sonst / andernfalls“ ist ein Fristende, wenn das
+    unmittelbar davor genannte Datum selbst eines ist. So wird „Fristende 05.03.2026, alternativ (bei Zugang am …)
+    06.03.2026“ erkannt.
+  - Ist das vorige Datum ein Fristbeginn, ein Dokumentdatum oder ein Termin, entsteht kein Fristende: „Zugang am
+    12.02.2026 oder 13.02.2026“, „Schreiben vom …“.
+  - „Fristende je nach/bei <Wort> <Datum>“ zählt als ausdrückliches Fristende.
+- **Korpus:** In **keinem** Dokument ändern sich Vorschläge, Begründungen oder Hinweise gegenüber §75.
+- **Tests:** `tests/test_s76_alternatives_list_export.py` mit 21 Tests:
+  - 6 Alternativformeln, beide Fristenden erkannt und markiert;
+  - 6 unabhängige Fristen, alle erkannt, kein Hinweis: „alternativ Ratenzahlung“, „falls Zahlung erfolgt, Frist zur
+    Rücknahme“, satzbeginnendes „Alternativ …“, benachbarte Zeilen, „Im Fall der Zahlung …“;
+  - 5 Fälle mit Zustellung, Vermerk, Fristbeginn-Alternative, Dokumentdatum und Termin;
+  - bestehende Alternativen unverändert;
+  - Liste und Export.
+
+### 76.3 Export
+
+- **Befund:** Seit §74 enthält das Manifest `kind` (z. B. `beendigung`). Für eine Prüfung war das nur eingeschränkt
+  nachvollziehbar, denn der Export enthielt keine Bezeichnung, keine Begründung und keine Konfidenz.
+- **Änderung (additiv):** `kind_label` („Möglicher Beendigungstermin (kein Fristende)“), `reasoning` (mit „kein
+  Fristende“ und der fehlenden Wirksamkeitsaussage) und `confidence`. Der Export ist wie bisher ein unpseudonymisierter
+  interner Datenauszug; `source_text` war schon enthalten.
+- **Pfade:** Seite „Sicherung“ (`/dashboard/backup/matter/<id>`, Admin) und Mandanten-Datenauszug. Beide verwenden
+  `MatterExportService.build_manifest`.
+- **Repository-Test:** PASS.
+- **Installierte App:** **NICHT VERIFIZIERT** (76.5).
+
+### 76.4 Konzept für den Antwortqualitäts-Benchmark
+
+Neuer Bereich `benchmarks/legal_answers_v1/` mit README, `rubric.json`, `specs/dev/LA-D005.json`,
+`specs/dev/LA-D006.json` und `specs/test/LA-T004.json` (eingefroren). Dazu `scripts/legal_bench/answer_specs.py` und
+`tests/test_legal_answer_specs.py` mit 17 Tests.
+
+- **Kein Lauf:** Es wurden keine Modellantworten abgerufen, es gab keine Cloud-Aufrufe und keine Kosten.
+- **Quellen:** Nur die quellenbasierten Fälle mit freigegebenen Quellen (Rechtsprechung im Internet, Gesetze im
+  Internet).
+- **Nicht verwendet:** OpenRewi (ShareAlike), ZJS und Moot Courts. Keine fremden Falllösungen.
+- **Rubrik mit sieben getrennten Dimensionen:**
+  - Ergebnis;
+  - Rechtsgrundlagen;
+  - Tatsachen;
+  - Fristen;
+  - Unsicherheiten;
+  - unbelegte Behauptungen;
+  - gefährliche Fehler (disqualifizierend).
+
+  Ergebnis, unbelegte Behauptungen und gefährliche Fehler sind als **juristische Prüfung** gekennzeichnet, die übrigen
+  als teilautomatisch (Vorprüfung als Hilfe, Note durch eine qualifizierte Person).
+- **Spezifikationen, vorab festgelegt:**
+  - zulässige Antwortvarianten;
+  - Rechtsgrundlagen (müssen in der Referenzlösung und im Aktentext stehen);
+  - entscheidende Tatsachen (mindestens eine Variante entspricht einem Aktenwert);
+  - Fristen (müssen in der Referenz stehen);
+  - Unsicherheiten;
+  - gefährliche Fehler mit Verdachtsformulierungen;
+  - typische Fehlentscheidungen.
+
+  Status: `entwurf_juristische_freigabe_offen`.
+- **Versionierung:**
+  - `case_fingerprint` (SHA-256 über den kanonischen JSON-Inhalt des Falls): Eine geänderte Referenz wird erkannt.
+  - `rubric_version`, `version`.
+  - Der Test-Split ist eingefroren; das prüft der Validator.
+- **Vorprüfung:** nur Hinweise, keine Note. Ein Test belegt die Grenze des Wortlautvergleichs: „Vorkaufsrecht **nicht**
+  zu“ trifft die Ergebnisvariante und den Verdacht zugleich. Fundstellen außerhalb von Akte und Quelle werden zur
+  Prüfung gelistet, ihre Existenz ist damit nicht widerlegt.
+- **Grenzen:** Drei Fälle, keine statistische Aussage. Synthetische Akten aus amtlichen Leitsätzen. Die Bewertung hängt
+  von qualifizierten Personen ab. Juristische Zuverlässigkeit: **NICHT VERIFIZIERT**.
+
+### 76.5 QA
+
+- **Volle Suite** (sechs Teile, Vordergrund): **5626 PASS** (§75: 5588, dazu 21 + 17 neue Tests).
+  - **4 FAIL, bereits bekannt:** `test_design_refresh` mit 4 Logo-Tests; die fremden Logo-Dateien fehlen in der
+    Arbeitskopie.
+  - Dazu 10 xfailed, 1 xpassed (bekannt), 1 skipped.
+- **Benchmark** `legal_e2e_v1`: in **allen** Kennzahlen identisch mit §75, abgesehen von Laufzeit und Payloadgröße.
+  - dev: 0 kritisch / 0 Lecks / 0 Werte fremder Akten; Extraktion 276/276, Chronologie 50/50, keep 54/54, Fristen
+    22/22, Beendigung 2/2.
+  - test: Extraktion 110/110, Chronologie 22/22, keep 25/25, Fristen 5/5.
+  - Lösungsgrundlage dev 4/4, test 2/2.
+- **Build:** `65ea0b0`, PyInstaller und Inno Setup Exit 0. Extraktor (51 Funktionen), Export (5) und Aufgaben-Router
+  (26) sind bytecode-gleich mit `65ea0b0`, Template und CSS enthalten die Änderung. SHA-256 der Build-EXE:
+  `b8e9f368db70245162e8d7a13cd2367d1319b8c659b444b78ed559a7e5985953`. Installer `ca695d8` archiviert.
+- **Installation und App-Test: NICHT VERIFIZIERT – blockiert** (Stand 20:40; überholt, siehe 76.7).
+  - Bei der Vorprüfung lief die reguläre Kanzlei-Instanz: `Lexono.exe serve`, gestartet 18.10.2026 20:21 über
+    `cmd.exe … >> C:\ProgramData\Lexono\app.log`, mit der echten Datenbank. Deren Hash war deshalb nicht lesbar
+    (Datei in Benutzung).
+  - Der Installer würde die laufende EXE ersetzen. Die Instanz wurde **nicht** beendet und **nicht** überinstalliert.
+    Die echte Datenbank wurde nicht berührt.
+  - Installiert bleibt `ca695d8` (§75).
+  - Das QA-Skript für Listenbreiten, Detailpanel, Export über das Formular der Seite „Sicherung“ und Payloads liegt
+    bereit und wird nach dem Schließen der Instanz ausgeführt.
+
+### 76.6 Offen
+
+- ~~App-Test von Liste, Export und Payload~~ – nachgeholt, PASS (76.7).
+- Juristische Freigabe der Spezifikationen durch eine qualifizierte Person. Ein Lauf mit echten Modellantworten
+  braucht die Freigabe des Owners und einen Kostenrahmen.
+- **NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten, reale Kanzleitexte.
+
+**Kein Beweis:** Keine Aussage über vollständige juristische Zuverlässigkeit oder vollständige Leckfreiheit. Der
+Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+### 76.7 Nachtrag: Installation und App-Test (18.10.2026, nachdem die Kanzlei-Instanz um 20:47 regulär geschlossen wurde)
+
+Die Kanzlei-Instanz wurde abgewartet, nicht beendet. Erst danach folgte die Vorprüfung, mit diesem Ergebnis:
+
+- keine Instanz und keine QA-Prozesse;
+- Sicherungsziel frei;
+- echte DB `677CAFD8109F`, unverändert seit 13.10.
+
+**Drei Installationszyklen, jeweils Sicherung (956/956), stilles Update (Exit 0), EXE byte-identisch, DB unverändert:**
+
+| Build | Sicherung | installierte EXE (SHA-256) | Ergebnis App-Test |
+|---|---|---|---|
+| `65ea0b0` | `lexono_install_backup_vor_65ea0b0` | `b8e9f368…5953` | Export, Arten und Payload PASS. **Liste FAIL:** bei 1024 px mit Detailpanel Titel/Akte/Typ/Status abgeschnitten (Breakpoint lag bei 900 px, seit 06.10.); bei 1366 px Umbruch mitten in der Silbe (`overflow-wrap: anywhere`) |
+| `c3787af` | `lexono_install_backup_vor_c3787af` | `280293ee…6dfc` | 1024 px behoben. **FAIL:** bei 1280 px mit Panel war „Beendigungstermin“ abgeschnitten; bei innerWidth 1279 griff `max-width: 1279px` in WebView2 nicht (Bruchteil-Breite) |
+| `8291158` | `lexono_install_backup_vor_8291158` | `280293ee…6dfc` (nur CSS geändert, liegt außerhalb der EXE in `_internal`; installiertes CSS geprüft) | **PASS** |
+
+Dazu kamen zwei Korrekturen:
+
+- **`c3787af`:** Das Label bricht nur an weichen Silbentrennstellen um („Be-en-di-gungs-ter-min“, `overflow-wrap: normal`).
+- **`8291158`:** Das Detailpanel wird unter **1366 px** unter die Liste gestapelt, mit `max-width: 1365.98px` (bisheriges Muster, vorher erst unter 900 px). Die Tabelle ist neben dem Panel für ≥ 1366 px ausgelegt.
+
+Die Installer `65ea0b0` und `c3787af` sind archiviert.
+
+**Abschließender App-Lauf (Build `8291158`, WebView2):** Fälle LE-D002, LE-D009, QA75-FRISTEN und LE-D005, isolierte QA-Daten, OCR an. Nachweise unter
+`C:\Users\Bonit\lexono_qa_s65\qa_nachweise\s76_legal_benchmark\lauf4\`; die Läufe 1–3 sind als Befundverlauf erhalten.
+
+- **Liste:** Geprüft bei 1920, 1440, 1366, 1365, 1280, 1024 und 800 px, jeweils mit und ohne Detailpanel. Abgeschnittene
+  Labels wurden über die Text-Rechtecke gegen den Clip-Bereich der Zelle gemessen.
+  - In **allen 56 Kombinationen** (4 Fälle × 7 Breiten × mit/ohne Panel): 0 abgeschnittene Labels, kein horizontales
+    Scrollen, Text vollständig.
+  - Ab 1366 px stehen Liste und Panel nebeneinander, darunter gestapelt.
+  - Screenshots `*_liste_<Breite>[_panel].png` zeigen „Be-endi-gungs-ter-min“ bei 1366 px mit Panel; bei 1280 px liegt
+    das Panel unter der Liste. **PASS**
+- **Detail und Formular:** Gespeicherte Art = UI-Typ = Datumsfeld („Beendigung zum“ bzw. „Fällig am“) für jeden
+  Vorschlag aller vier Fälle. **PASS**
+- **Export:** über das echte Formular der Seite „Sicherung“ (`/dashboard/backup/matter/<id>`), Antwort 200
+  `application/zip`. Gespeichert unter `<Fall>_export.zip`. Je Fall stimmt die Anzahl der Einträge mit der DB überein
+  (2, 10, 4, 4). In jedem Eintrag entspricht `kind` der gespeicherten Art, `reasoning` ist identisch mit der Datenbank,
+  dazu `kind_label` (z. B. „Möglicher Beendigungstermin (kein Fristende)“), `confidence` und `review_status`
+  „unreviewed“. **PASS**
+- **Hinweis „mehrere mögliche Fristenden“:** QA75-FRISTEN 06.03./13.03. ohne, 23.03./24.03. mit Hinweis, wie erwartet;
+  LE-D005 wie bisher. **PASS**
+- **Payload:** Anfragen nur an `/v1/messages` des lokalen Aufzeichnungsservers mit Testschlüssel; 0 Lecks, 0 Werte
+  fremder Akten in allen Chat- und Schriftsatz-Anfragen. **PASS**
+- **Volle Suite nach den Korrekturen:** 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+- **Abschluss:** echte DB `677CAFD8109F`; keine Lexono- oder QA-Prozesse zurückgeblieben.
+
+Abschnitt 76.5 „Installation und App-Test: NICHT VERIFIZIERT – blockiert“ ist damit **überholt**.
+
+**Weiterhin NICHT VERIFIZIERT:** juristische Korrektheit echter Modellantworten (Konzept 76.4, kein Lauf), reale
+Kanzleitexte.
+
+## §77 Audit und Laufvorbereitung des juristischen Antwort-Benchmarks (18.10.2026, Branch `feature/feedback-diagnose`, Ausgangsstand `c31fb99`)
+
+**Audit und Vorbereitung, kein Lauf.** Es wurden keine Modellantworten abgerufen, keine Cloud-Aufrufe ausgeführt und
+keine Kosten verursacht. Ausführlicher Bericht: `benchmarks/legal_answers_v1/AUDIT_S77.md`; Checkliste:
+`benchmarks/legal_answers_v1/FREIGABE_CHECKLISTE.md`.
+
+**Ausgangsstand geprüft:** HEAD = Remote = `c31fb99`. Die fünf §76-Commits liegen seit `6a16014` in dieser Reihenfolge
+vor: `65ea0b0`, `b8e3439`, `c3787af`, `8291158`, `c31fb99`. `main` ist unverändert (`5735e5b`).
+
+| Prüfschritt | Status |
+|---|---|
+| Quellen und Nutzungsrechte (nur RII/GII `nutzbar`, Fälle `abgeleitet` mit ECLI, synthetische Akten) | **PASS** |
+| Test-Split `legal_e2e_v1/cases/test` unverändert seit `fc9d3f4` (kanonische Hashes = Ausgangsstand), jetzt gesperrt | **PASS** |
+| Audit der Spezifikationen | **7 nachweisbare Fehler (N1–N7) gefunden und technisch behoben**; 6 Grenzen/Vorschläge (V1–V6) dokumentiert |
+| Validator v2 gegen Spezifikationen v2 inkl. Sperre | **PASS** |
+| Laufvorbereitung (`check`, `plan`, Antwortdatensatz, blinder Prüfbogen, Zusammenfassung) | **PASS** (technisch) |
+| Freigabe-Checkliste der Vorlage | **LAUF NICHT FREIGEGEBEN** (22 offene Punkte), wie erwartet |
+| Juristische Freigabe (J1–J6) | **NICHT ERTEILT** – offen, nicht durch den Agenten |
+| Tatsächliche Modellqualität | **NICHT VERIFIZIERT** – keine Modellantwort vorhanden |
+| Volle Suite | **5664 PASS**; 4 FAIL = bekannte fremde Logo-Tests (`test_design_refresh`) |
+| App-Build/Installation | **nicht nötig** – kein App-Code geändert |
+
+**Nachweisbare Fehler (behoben):**
+
+- **N1:** Die Vorprüfung suchte Begriffe als Teilwort. „zu“ traf „**Zum** Vorkaufsrecht kann ich nichts sagen“; das ergab
+  einen falschen Ergebnis-Hinweis.
+- **N2:** Sieben entscheidende Tatsachen der Referenzlösungen hatten kein Kriterium: LA-D005 F3/F5, LA-D006 F2–F4,
+  LA-T004 F3/F5/F7.
+- **N3:** Offener Punkt O2 war in allen drei Spezifikationen nicht eigenständig, O1 und O2 waren vermischt.
+- **N4:** Eine verneinte Zuständigkeit löste in LA-T004 keinen Verdacht aus.
+- **N5:** Die Rubrik hatte keine Regel gegen den Ausgleich kritischer Fehler und keine Regeln für n/a, Alternativen und
+  Unentscheidbares.
+- **N6:** Test-Spezifikation und Rubrik waren nicht gegen Änderung geschützt.
+- **N7:** Es gab keine Änderungshistorie.
+
+**Maßnahmen:**
+
+- Suche als ganzes Wort und Mindestlänge für Begriffe.
+- Abdeckungspflicht oder begründeter Ausschluss (`not_assessed`); neue Kriterien nur aus vorhandenen Aktenwerten.
+- Ein Kriterium je offenem Punkt; Abgleich der Referenz-Fehlergebnisse.
+- Rubrik v2: Ein bestätigter kritischer Fehler ergibt FAIL_KRITISCH ohne Ausgleich. Ohne festgelegte Schwellen gibt es
+  nie PASS; Gewichte und Schwellen sind **OFFEN**.
+- `LOCK.json` mit Neusperre nur per Begründung; Historie je Spezifikation.
+- Alle Spezifikationsänderungen erfolgten **vor jedem Lauf**, ohne vorhandene Ergebnisse, und sind in `history`
+  dokumentiert. Danach folgte die Erstsperre.
+
+**Offene juristische Entscheidungen:**
+
+- J1: Referenzlösungen;
+- J2: Antwortvarianten und Verdachtsformulierungen, einschließlich der §77-Ergänzungen;
+- J3: vertretbare Alternativergebnisse;
+- J4: Gewichte und Schwellen;
+- J5: bewertende Personen und Zweitprüfung;
+- J6: n/a- und Unentscheidbarkeitsregeln.
+
+**Freigabe-Checkliste C-1 bis C-17**, darunter:
+
+- Modell und Version;
+- Wiederholungen bzw. Aufrufzahl (derzeit 6 × Wiederholungen);
+- Kosten- und Abbruchgrenzen;
+- Datenschutz (Pflichtwerte fest, Freigabe offen);
+- Ablage und Aufbewahrung;
+- Ausführungsschritt über den pseudonymisierten Lexono-Pfad (nicht implementiert).
+
+Alle Entscheidungen der Checkliste sind **OFFEN**.
+
+**Nachweise:**
+
+- `benchmarks/legal_answers_v1/audit/`:
+  - `s77_ausgangshashes_c31fb99.json`;
+  - `s77_validator_gegen_specs_v1.txt` (25 Befunde des gehärteten Validators an der §76-Fassung);
+  - `s77_validator_gegen_specs_v2.txt`;
+  - `s77_check_vorlage.txt`;
+  - `s77_plan_vorlage.json`;
+  - `s77_fingerprints.txt`.
+- `LOCK.json`.
+- Tests: `tests/test_s77_answer_benchmark_audit.py`, `tests/test_legal_answer_specs.py`.
+
+**Kein Beweis:** Keine Aussage über die juristische Qualität eines Modells, über vollständige juristische
+Zuverlässigkeit oder über vollständige Leckfreiheit. Der Datenschutzstatus bleibt „teilweise nachgewiesen“.
+
+## §78 Benchmark-Freigabe und Datenschutzpfad adversarial geprüft (19.10.2026, Branch `feature/feedback-diagnose`, Ausgangsstand `307cecf`)
+
+Nur technische Absicherung mit synthetischen Daten, temporären Kopien und lokalem QA-Recorder samt Testschlüssel. Kein
+Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `benchmarks/legal_answers_v1/AUDIT_S78.md`.
+
+- **Freigabesperre (`answer_run check`):**
+  - §77-Fassung **FAIL** (G1): gelöschte Schlüssel, `false`/„nein“ als Freigabe und Unsinnswerte wurden freigegeben.
+  - Gehärtet: Jedes Feld der Vorlage ist Pflicht, Werte werden regelgeprüft, Zusatzschalter, ein veralteter Commit und
+    Kosten bzw. Aufrufe über dem Limit sind Verstöße.
+  - 36/36 Manipulationen werden abgelehnt, die Positivkontrolle wird freigegeben. **PASS**
+- **Sperre (LOCK.json):**
+  - Lücken L1–L4 geschlossen: ungültiges JSON, Handbearbeitung (`entries_sha256`), alte/neue Hashes in der Historie,
+    Registereinträge der Test-Quellen.
+  - Die Neusperre ist begründet und dokumentiert; die Originale sind byte-gleich.
+  - Grenze: Wer Lock und Historie gemeinsam fälscht, fällt nur in Git auf. **PASS**
+- **Aufrufplan:** reproduzierbar, versioniert über `plan_fingerprint`, offline (Sockets gesperrt), ohne Cloud-Bibliothek;
+  ohne Freigabe nicht ausführbar (Exit 2). **PASS**
+- **Datenschutzpfad bis zur Leitung:**
+  - LE-D005, LE-D006 und LE-T004 laufen über die echte Pipeline, den echten Anthropic-Provider und das SDK an den
+    lokalen Recorder: 7 Anfragen, 0 Lecks eigener oder fremder Akten, nur der Testschlüssel.
+  - Fail-Closed: Fällt die Namenserkennung aus, gehen 0 Anfragen hinaus. **PASS**
+  - **Befund B1:** Der Schriftsatzpfad reicht die Ausnahme durch, statt geordnet zu blockieren. Er bleibt fail-closed,
+    aber ohne Grund; offen, App-Änderung.
+- **NICHT VERIFIZIERT:** TLS und realer Endpunkt, Relay-Server, die spätere Benchmark-Ausführung (C-14, nicht
+  implementiert) und die Erkennung jenseits dieser Akten. Datenschutzstatus: **teilweise nachgewiesen**.
+- **Nachweise:** `benchmarks/legal_answers_v1/audit/s78_*`; Tests `tests/test_s78_benchmark_gate.py` und
+  `tests/test_s78_wire_privacy.py` (84).
+
+## §79 B1 behoben: geordnete Blockierung bei Ausfall der Namenserkennung; Ausführungswächter des Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Fix `bfbe53a`)
+
+Kein Modelllauf, kein Cloud-Aufruf, keine Kosten. Vollständiger Bericht: `benchmarks/legal_answers_v1/AUDIT_S79.md`.
+
+- **Ursache B1:** `ClaudePrivacyGateway.prepare_request` fing Fehler nur in der Kandidatensuche fail-closed ab. Eine
+  Ausnahme der Erkennung in Pseudonymisierung oder Restrisiko-Scan stieg auf; Schriftsatz lieferte HTTP 500, Chat den
+  allgemeinen technischen Fehler. Gesendet wurde nie etwas.
+- **Behebung:** Beide Schritte im bestehenden fail-closed-Muster: `GatewayResult(allowed=False)` mit festem,
+  inhaltsfreiem Grund, Kategorie `privacy_check_failed`, verständliche Meldung („Die Datenschutzprüfung ist
+  fehlgeschlagen … Es wurde nichts an die KI übermittelt“). Log nur Schritt und Fehlertyp. Alle Aufrufer (Chat,
+  Schriftsatz inkl. Streaming, Orchestrator, Review) nutzen den vorhandenen Blockierungsweg. **PASS**
+- **Installierte App (Build `bfbe53a`, EXE `01bff911…99b9`, Sicherung `lexono_install_backup_vor_bfbe53a` 956/956,
+  echte DB `677CAFD8109F` unverändert):** echter Ausfall durch umbenanntes spaCy-Modell in einer byte-gleichen Kopie:
+  Chat und Schriftsatz zeigen die Meldung, **0 Anfragen** am Recorder. Normalbetrieb: 2 Anfragen, 0 Lecks. Vorher-Beleg
+  im alten Build: HTTP 500. **PASS**
+- **Benchmark:** `scripts/legal_bench/answer_exec.py` prüft vor **jedem** Provider-Aufruf Freigabe, Konfiguration,
+  Commit, Lock, Plan, Limits, Siegel und Leaks und bricht fail-closed ab (14 Tests, lokaler Recorder). **PASS**
+  Vollständige Ausführung: **NICHT VERIFIZIERT – bewusst nicht gebaut** (E1 Treiber, E2 Ablage, E3 Ist-Kosten,
+  E4 Fortsetzen, E5 offene Freigaben).
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); neue §78/§79-Dateien 109 PASS.
+
+## §80 Benchmark-Treiber, sichere Ablage, Kostenkontrolle, Wiederanlauf (19.10.2026, Branch `feature/feedback-diagnose`, Basis `0eba65c`)
+
+Kein Modelllauf, kein Cloud-Aufruf, tatsächliche Kosten 0 EUR. Bericht: `benchmarks/legal_answers_v1/AUDIT_S80.md`.
+
+- **E1:** `answer_driver.BenchmarkDriver` importiert die synthetischen Akten in eine In-Memory-DB und löst je geplantem
+  Aufruf den regulären Chat bzw. Schriftsatz aus; `precheck` vor dem Workflow, `authorize` vor dem Provider. Recorder-
+  Lauf (echter Provider, 127.0.0.1): 6 Anfragen, 0 Lecks. Echte Endpunkte gesperrt (`RealCloudDisabled`). **PASS**
+- **E2:** `answer_store.RunStore` außerhalb von Repository und Lexono-Daten, Konto-ACL (1 Konto), Hashes je Datei,
+  `verify`, kontrollierte Löschung. Abgelegt wird die **pseudonymisierte** Modellantwort; 0 geschützte Werte, kein
+  Schlüssel in der Ablage. **PASS**
+- **E3:** Kostenbuch trennt Schätzung und tatsächliche Kosten (nur Provider-Usage × freigegebener Tokenpreis, Schema 2);
+  fehlende Metadaten oder Providerfehler = Kosten UNBEKANNT = kein weiterer Aufruf; Restbudget vor jedem Aufruf. **PASS**
+- **E4:** Zustand dauerhaft; nach Absturz zwischen Aufrufen nur fehlende (0 Doppelaufrufe); Absturz während eines
+  Aufrufs nie automatisch wiederholt; Stopp mit Diagnose bei geänderter Konfiguration, Commit, Freigabe, LOCK, Plan. **PASS**
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§80-Dateien 142 PASS.
+- **Offen:** C-1–C-17, J1–J6; echter Lauf NICHT VERIFIZIERT und gesperrt.
+
+## §81 Sicherheitsprüfung und Freigabevorbereitung des Antwort-Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Basis `82e5d28`)
+
+Externe Provideraufrufe 0, Kosten 0 EUR. Bericht: `benchmarks/legal_answers_v1/AUDIT_S81.md`.
+
+- **Freigaben:** 10 von 15 Manipulationen wurden vorher freigegeben (Datum Zukunft/veraltet/unmöglich, kopierte Owner-
+  Freigabe, Zusatzfeld `signatur`, juristische Freigabe trotz offener Spezifikationen bzw. fehlender Schwellen,
+  unendliches Budget/Preis, Schätzung unter maximaler Ausgabe). Jetzt alle abgelehnt; Owner-Freigabe plangebunden.
+  Mit dem heutigen Repository-Stand ist **keine** Konfiguration freigebbar. Signaturen nicht implementiert (kein
+  Vertrauensanker) - Owner-Entscheidung F-1. **PASS**
+- **C-7:** endliche Werte, unplausible Usage = UNBEKANNT, Aufrunden auf 1e-6 EUR. **OFFEN** (Preise, Währung,
+  Zusatzgebühren, Abgleich).
+- **C-11:** sichere IDs, erweiterte ACL und halb geschriebener Zustand werden erkannt, Junction ins Repository abgelehnt.
+  Verschlüsselung bewertet (DPAPI/EFS/BitLocker/anwendungsseitig), nicht umgesetzt. **OFFEN**
+- **E4:** `resolve_unclear` mit Person, Rolle, Begründung und Beleg; Datenschutzbefund beendet den Lauf dauerhaft
+  (Lücke: wurde beim Wiederanlauf nicht fortgeführt). **PASS**
+- **C-14:** **OFFEN**; Entscheidungsliste im Bericht.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§81-Dateien 198 PASS.
+
+## §82 Freigabevorbereitung und Entscheidungsmatrix (19.10.2026, Branch `feature/feedback-diagnose`, Basis `61dcfa8`)
+
+Keine Entscheidung, keine Freigabe, C-14 GESPERRT; keine Modell-/Cloud-Aufrufe, keine Kosten. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S82.md`, Matrix: `benchmarks/legal_answers_v1/ENTSCHEIDUNGSMATRIX.md` (+ JSON).
+
+- **Matrix:** J1, J2, J6, F-1, C-11 ENTSCHEIDUNG VORBEREITET; J3, J4 OFFEN; J5, C-7 NACHWEIS FEHLT. Zuständigkeit nur
+  als Rolle belegt, keine Person benannt.
+- **Widersprüche:** W1 (Checkliste: „keine Ausführungsfunktion“ – seit §80 Treiber mit Endpunktsperre) korrigiert;
+  W2 (J6 keinem Freigabefeld zugeordnet) dokumentiert, Zuordnung Owner-Entscheidung.
+- **Validierung:** `tests/test_s82_decision_matrix.py` (12, nichtinvasiv). **PASS**
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §78–§82-Dateien 210 PASS.
+
+## §83 Technische Pilotvorbereitung des juristischen Benchmarks (19.10.2026, Branch `feature/feedback-diagnose`, Basis `3e0f3c4`)
+
+Keine Modell-/Cloud-Aufrufe, keine Kosten, keine juristische Entscheidung; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S83.md`.
+
+- **Befund P1:** Die Endpunktsperre des Treibers erkannte nur die Klasse des übergebenen Providers; Wrapper,
+  Unterklasse, Liste und roher `anthropic`-Client mit offiziellem Endpunkt wurden zugelassen. Behoben durch rekursive
+  Objektprüfung (fail-closed ohne erkennbaren Endpunkt) und einen Netzzaun (nur Loopback-Verbindungen während eines
+  Laufs). **PASS** (vorher FAIL)
+- **Reproduzierbarkeit:** §80-Läufe (Mock, Recorder, Wiederanlauf) identisch, 0 Lecks, 0 Doppelaufrufe. **PASS**
+- **Pilotübergabe:** `PILOT_CHECKLISTE.md`; Prüfpaket der Referenzlösungen (nicht juristisch geprüft).
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests); §83-Tests 17 PASS.
+
+## §84 Sicherheitsprüfung der Cloud-Sperre und Unterprozesse (19.10.2026, Branch `feature/feedback-diagnose`, Basis `9d28b4d`)
+
+Keine Modell-/Cloud-Aufrufe, keine externen DNS-Abfragen, keine Kosten; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S84.md`.
+
+- **Befunde (vorher FAIL):** Q1 DNS-Auflösung vor `connect` nicht abgefangen (requests/urllib3), Q2 roher `_socket` und
+  UDP nicht abgefangen, Q3 Unterprozesse unbeschränkt, P2 asyncio-Proactor ohne Audit-Ereignis, P3 Startprüfung
+  sprachabhängig (vor Einsatz erkannt).
+- **Behebung:** `net_fence` über `sys.addaudithook` (Sockets, DNS, UDP, ctypes, Prozesse) mit Zulassungsliste
+  (git rev-parse HEAD, Tesseract), Proactor-Ummantelung, sprachunabhängige Startprüfung offener Verbindungen. **PASS**
+- **Grenzen:** keine OS-Isolation (Netzverhalten zugelassener Programme ist Annahme), native Netzwerk-Stacks und direkte
+  Overlapped-Aufrufe nicht abgedeckt, absichtliche Manipulation nur per Review. **NICHT VERIFIZIERT**
+- **QA:** 22 Angriffstests mit Test-Wächter; §78–§84-Dateien 249 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde
+  Logo-Tests).
+
+## §85 Sicherheitsarchitektur und Windows-Isolation (19.10.2026, Branch `feature/feedback-diagnose`, Basis `f2fd382`)
+
+Keine Modell-/Cloud-Aufrufe, keine externen Verbindungen, keine Systemänderung; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S85.md`.
+
+- **Befunde (vorher alle 9 manipulierten Aufrufe zugelassen):** Tesseract mit beliebigen Argumenten (gebündeltes
+  libcurl: URL-Eingabe = Netzzugriff; UNC = SMB; Bildliste), Start per blossem Namen (CreateProcess-Suchreihenfolge),
+  Austausch von Binärdatei/DLLs, ungeprüfte Umgebung, git-Starter mit ungeprüftem Enkelprozess, Commit-Prüfung fail-open,
+  Loopback zu jedem Port.
+- **Behebung:** `ProgramRule` (absoluter festgeschriebener Pfad, SHA-256, Ordner-Fingerabdruck, Argument-/Umgebungsprüfung),
+  Tesseract nur im pytesseract-Muster mit lokalen Pfaden und Bildsignatur, git nicht mehr gestartet (Commit aus `.git`),
+  nicht ermittelbarer Commit = Verstoß, Loopback nur zu validierten Ports. **PASS**
+- **Grenzen nachgewiesen:** direkter Overlapped-ConnectEx und vorab beschaffter ws2_32-Zeiger umgehen den Audit-Hook
+  (nur gegen lokalen Port geprüft) - der Zaun ist keine Sicherheitsgrenze gegen nativen Code.
+- **Windows:** kein Admin, keine Sandbox/Hyper-V/Docker; Firewall-Regel, AppContainer, VM bewertet, nicht umgesetzt.
+  Empfehlung für C-14: eigene VM/Rechner mit IT-Firewall. **NICHT VERIFIZIERT**
+- **QA:** 28 neue Tests; §78–§85-Dateien 277 PASS; volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+
+## §86 Konzept einer extern durchgesetzten Benchmark-Isolation (19.10.2026, Branch `feature/feedback-diagnose`, Basis `2d499b4`)
+
+Nur Untersuchung und Entwurf - nichts installiert, keine VM, keine Firewall-/Konto-/Systemänderung, keine externen
+Verbindungen; C-14 GESPERRT. Bericht: `benchmarks/legal_answers_v1/AUDIT_S86.md`.
+
+- **Umgebung (gelesen):** Windows 11 Pro ohne Admin, Hypervisor aktiv, Hyper-V-Rolle/Sandbox/WSL nicht installiert,
+  IPv6 aktiv, kein Proxy, ausgehend frei (0 Block-Regeln) - erfüllt die Politik nicht; als Benchmark-Umgebung ungeeignet.
+- **Empfehlung:** dedizierte VM auf IT-Host, Sperre am Host/Perimeter (Standard blockieren v4/v6, nur Endpunkt-IP:Port),
+  Gast-Firewall als zweite Linie, kein DNS in der VM, Golden Image, Kanarienziele; Python-Zaun nur als dritte Schicht.
+- **Werkzeuge:** Netzwerkpolitik als JSON (alles Entscheidungsrelevante OFFEN), Regelprüfer für Firewall-Exporte
+  (fehlend/fehlerhaft = kein Start), Abnahme-Proben in getrennten Prozessen (Python, natives connect, curl, nslookup)
+  mit Schutz vor externen Zielen außerhalb der Zielumgebung. Lokal 16 PASS; Abnahme I8–I11 NICHT VERIFIZIERT.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+
+## §87 Externes Isolations-Gate (I12) und VM-Abnahme (19.10.2026, Branch `feature/feedback-diagnose`, Basis `951e3e4`)
+
+Keine Installation, keine VM, keine System-/Firewall-Änderung, keine externen Verbindungen; C-14 GESPERRT. Bericht:
+`benchmarks/legal_answers_v1/AUDIT_S87.md`.
+
+- **I12:** `scripts/legal_bench/isolation_gate.py` - Lauf nur mit Ed25519-signierter Bestätigung der Prüfstelle
+  (Anker außerhalb, für das Benchmark-Konto schreibgeschützt; gebunden an Lauf, Hostname+MachineGuid, Hash der
+  freigegebenen Politik, Hash des Host-Firewall-Exports, Endpunkt, DNS-Modus, Prüfer = Schlüsselinhaber, V1–V13,
+  Fenster ≤ 24 h; Gast-Firewall-Plausibilität). Im Treiber vor Start und vor jedem Aufruf. **PASS**
+- **Heute geschlossen:** kein Anker der IT, Politik ENTWURF, kein Endpunkt, DNS offen, keine Bestätigung. Test-Gates
+  nur im Speicher, test-markiert, nur Loopback; Produktiv-Gate lehnt Test-Bestätigungen ab.
+- **Tests:** 37 (20 Negativfälle, Ablauf/Politikänderung im Lauf, Signatur über jedes Feld); Abbruch jeweils vor dem
+  Provider-Aufruf. VM-Abnahme V1–V13 festgelegt, **NICHT DURCHGEFÜHRT**.
+- **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).

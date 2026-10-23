@@ -1,0 +1,26 @@
+2026-10-19 04:50:54 INFO app.main Anwendung gestartet (app_env=production)
+
+2026-10-19 04:50:54 INFO app.main Cloud-KI-Status: reachable
+
+2026-10-19 04:51:08 INFO lexono.perf PERF trace=aaae677e4067 step=routing duration_s=0.000
+
+2026-10-19 04:51:08 INFO lexono.perf PERF trace=aaae677e4067 step=retrieval duration_s=0.008
+
+2026-10-19 04:51:08 INFO presidio-analyzer Using device of type: cpu
+
+2026-10-19 04:51:09 WARNING lexono.privacy Datenschutzpruefung fehlgeschlagen (Schritt pseudonymisierung, OSError) - Anfrage blockiert, nichts gesendet
+
+2026-10-19 04:51:09 INFO lexono.perf PERF trace=aaae677e4067 step=privacy_gateway duration_s=1.613
+
+2026-10-19 04:51:09 WARNING lexono.privacy Anfrage/Antwort blockiert: privacy_check_failed (Platzhalter: -)
+
+2026-10-19 04:51:15 INFO lexono.perf PERF trace=b67c26be44cb step=retrieval duration_s=0.008
+
+2026-10-19 04:51:15 WARNING lexono.privacy Datenschutzpruefung fehlgeschlagen (Schritt pseudonymisierung, OSError) - Anfrage blockiert, nichts gesendet
+
+2026-10-19 04:51:15 INFO lexono.perf PERF trace=b67c26be44cb step=privacy_gateway duration_s=0.002
+
+2026-10-19 04:51:15 WARNING lexono.privacy Anfrage/Antwort blockiert: privacy_check_failed (Platzhalter: -)
+
+2026-10-19 04:51:21 INFO app.main Anwendung wird beendet
+

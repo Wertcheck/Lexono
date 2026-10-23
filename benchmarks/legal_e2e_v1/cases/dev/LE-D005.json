@@ -1,0 +1,129 @@
+{
+ "id": "LE-D005",
+ "split": "dev",
+ "version": 1,
+ "title": "Mietervorkaufsrecht bei Verkauf an eine personenidentische Gesellschaft",
+ "rechtsgebiet": "Mietrecht (Wohnraum) / Vorkaufsrecht",
+ "synthetic": false,
+ "derivation": "abgeleitet",
+ "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
+ "notes": "§71: Rechtsfrage und Ergebnis aus BGH, Urteil vom 08.10.2025 - VIII ZR 18/24 (amtlicher Leitsatz); Normtexte §§ 469, 577 BGB im Wortlaut (Gesetze im Internet). Sachverhalt, Personen, Orte, Daten, Kaufpreis, Zugangsstreit und Fristberechnung VOLLSTAENDIG SYNTHETISCH - keine Angaben realer Verfahrensbeteiligter.",
+ "parties": [
+  {"id": "P1", "name": "Torben Haselhorst", "role": "mandant", "gender": "m"},
+  {"id": "P2", "name": "Uferblick Immobilien GmbH & Co. KG", "role": "gegner", "gender": "n"},
+  {"id": "P3", "name": "Jutta Kammeyer", "role": "dritter", "gender": "f"},
+  {"id": "P4", "name": "Ilka Haselhorst", "role": "dritter", "gender": "f"},
+  {"id": "P5", "name": "Rechtsanwalt Fabian Wetzorke", "role": "anwalt_gegner", "gender": "m"}
+ ],
+ "matter": {"title": "Haselhorst ./. Uferblick Immobilien - Mietervorkaufsrecht", "client_party": "P1", "reference_number": "26/0733-VK"},
+ "documents": [
+  {"id": "D1", "type": "vertrag", "format": "docx", "filename": "Mietvertrag_Auszug.docx", "date": "01.04.2011", "paragraphs": [
+   "Mietvertrag über Wohnraum (Auszug)",
+   "Zwischen der Uferblick Immobilien GmbH & Co. KG, Vermieterin, und Herrn Torben Haselhorst, Mieter, wird folgender Vertrag geschlossen.",
+   "§ 1 Mietsache: Wohnung Nr. 5 im Mehrfamilienhaus Uferweg 8, 14476 Beispielstadt.",
+   "§ 2 Mietbeginn: 01.04.2011.",
+   "§ 3 Miete: Die monatliche Gesamtmiete beträgt 980,00 EUR."]},
+  {"id": "D2", "type": "schreiben", "format": "pdf", "filename": "Mitteilung_Notarin.pdf", "date": "27.02.2026", "paragraphs": [
+   "Notarin Dr. Jutta Kammeyer · Lindenplatz 2 · 14467 Beispielstadt",
+   "Beispielstadt, den 27.02.2026",
+   "Mitteilung über den Inhalt eines Kaufvertrags",
+   "Sehr geehrter Herr Haselhorst, mit Urkunde vom 24.02.2026 (UR-Nr. 412/2026) hat die Uferblick Immobilien GmbH & Co. KG die Eigentumswohnung Nr. 5, Uferweg 8, an die Uferblick Bestand GmbH & Co. KG verkauft. Der Kaufpreis beträgt 287.500,00 EUR.",
+   "Das Wohnungseigentum an der von Ihnen gemieteten Wohnung wurde mit Teilungserklärung vom 12.06.2019 begründet. Als Mieter steht Ihnen nach § 577 BGB ein Vorkaufsrecht zu. Die Ausübung des Vorkaufsrechts erfolgt durch schriftliche Erklärung des Mieters gegenüber dem Verkäufer (§ 577 Abs. 3 BGB).",
+   "Mit freundlichen Grüßen, Dr. Jutta Kammeyer, Notarin"]},
+  {"id": "D3", "type": "email", "format": "txt", "filename": "Mail_Mandant.txt", "date": "05.03.2026", "paragraphs": [
+   "Von: t.haselhorst@beispielpost.example",
+   "An: kanzlei@beispielkanzlei.example",
+   "Datum: 05.03.2026",
+   "Betreff: Verkauf unserer Wohnung - Vorkaufsrecht? (Ihr Zeichen 26/0733-VK)",
+   "Guten Tag, das Schreiben der Notarin vom 27.02.2026 lag am 03.03.2026 in unserem Briefkasten; meine Frau Ilka Haselhorst hat es dort gefunden.",
+   "Die Verkäuferin behauptet, ein Vorkaufsrecht bestehe nicht, weil beide Gesellschaften dieselben Gesellschafter hätten. Wir möchten die Wohnung zum Kaufpreis erwerben.",
+   "Erreichbar bin ich unter 0331 8812 409. Viele Grüße, Torben Haselhorst"]},
+  {"id": "D4", "type": "schreiben", "format": "scan", "filename": "Schreiben_Verkaeuferin.pdf", "date": "09.03.2026", "paragraphs": [
+   "Uferblick Immobilien GmbH & Co. KG · Hafenkante 1 · 14469 Beispielstadt",
+   "Beispielstadt, 09.03.2026",
+   "Sehr geehrter Herr Haselhorst, die Mitteilung der Notarin ist Ihnen ausweislich des Zustellnachweises bereits am 28.02.2026 zugegangen.",
+   "Ein Vorkaufsrecht besteht nach unserer Auffassung nicht: Die Käuferin hat dieselben Gesellschafter wie wir; es handelt sich lediglich um eine Umstrukturierung innerhalb der Unternehmensgruppe und nicht um einen Verkauf an einen Dritten.",
+   "Rechtsanwalt Fabian Wetzorke, für die Verkäuferin"]},
+  {"id": "D5", "type": "notiz", "format": "txt", "filename": "Aktenvermerk_Frist.txt", "date": "10.03.2026", "paragraphs": [
+   "Aktenvermerk vom 10.03.2026 - Az. 26/0733-VK",
+   "Ausübungsfrist: Das Vorkaufsrecht kann bei Grundstücken nur bis zum Ablauf von zwei Monaten nach dem Empfang der Mitteilung ausgeübt werden (§ 469 Abs. 2 Satz 1 BGB).",
+   "Zugang streitig: nach Angabe des Mandanten 03.03.2026, nach Angabe der Verkäuferin 28.02.2026. Vorsorglich ist vom früheren Zugang auszugehen: Fristablauf am 28.04.2026; bei Zugang am 03.03.2026 liefe die Frist erst am 04.05.2026 ab (03.05.2026 ist ein Sonntag, § 193 BGB).",
+   "Offen: Der Zustellnachweis liegt der Kanzlei nicht vor und ist anzufordern.",
+   "Vgl. BGH, Urteil vom 8. Oktober 2025 - VIII ZR 18/24: Auch die Veräußerung an eine Personenhandelsgesellschaft, deren Gesellschafter mit denen der veräußernden Gesellschaft personenidentisch sind, ist ein Verkauf an einen Dritten."]}
+ ],
+ "reference": {
+  "facts": [
+   {"id": "F1", "statement": "Mietbeginn", "values": ["01.04.2011"], "docs": ["D1"]},
+   {"id": "F2", "statement": "Wohnungseigentum nach Überlassung begründet (Teilungserklärung)", "values": ["12.06.2019"], "docs": ["D2"]},
+   {"id": "F3", "statement": "Kaufvertrag und Kaufpreis", "values": ["24.02.2026", "287.500,00 EUR"], "docs": ["D2"]},
+   {"id": "F4", "statement": "Zugang der Mitteilung laut Mandant", "values": ["03.03.2026"], "docs": ["D3"]},
+   {"id": "F5", "statement": "Zugang der Mitteilung laut Verkäuferin", "values": ["28.02.2026"], "docs": ["D4"]},
+   {"id": "F6", "statement": "Käuferin mit denselben Gesellschaftern", "values": ["dieselben Gesellschafter"], "docs": ["D3", "D4"]},
+   {"id": "F7", "statement": "Monatliche Miete", "values": ["980,00 EUR"], "docs": ["D1"]}
+  ],
+  "chronology": [
+   {"date": "01.04.2011", "event": "Mietbeginn", "doc": "D1"},
+   {"date": "12.06.2019", "event": "Teilungserklärung", "doc": "D2"},
+   {"date": "24.02.2026", "event": "Kaufvertrag", "doc": "D2"},
+   {"date": "27.02.2026", "event": "Mitteilung der Notarin", "doc": "D2"},
+   {"date": "28.02.2026", "event": "Zugang laut Verkäuferin", "doc": "D4"},
+   {"date": "03.03.2026", "event": "Zugang laut Mandant", "doc": "D3"},
+   {"date": "09.03.2026", "event": "Schreiben der Verkäuferin", "doc": "D4"}
+  ],
+  "deadlines": [
+   {"date": "28.04.2026", "kind": "Ausübungsfrist Vorkaufsrecht (bei Zugang am 28.02.2026)", "doc": "D5"},
+   {"date": "04.05.2026", "kind": "Ausübungsfrist Vorkaufsrecht (bei Zugang am 03.03.2026)", "doc": "D5"}
+  ],
+  "citations": [
+   {"text": "§ 577 BGB", "kind": "norm", "doc": "D2"},
+   {"text": "§ 577 Abs. 3 BGB", "kind": "norm", "doc": "D2"},
+   {"text": "§ 469 Abs. 2 Satz 1 BGB", "kind": "norm", "doc": "D5"},
+   {"text": "§ 193 BGB", "kind": "norm", "doc": "D5"},
+   {"text": "BGH, Urteil vom 8. Oktober 2025 - VIII ZR 18/24", "kind": "entscheidung", "doc": "D5",
+    "verified_source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "ecli": "ECLI:DE:BGH:2025:081025UVIIIZR18.24.0", "doc": "jb-KORE727122025"}}
+  ],
+  "contradictions": [
+   {"id": "W1", "topic": "Zugang der notariellen Mitteilung", "values": [{"doc": "D3", "value": "lag am 03.03.2026 in unserem Briefkasten"}, {"doc": "D4", "value": "bereits am 28.02.2026 zugegangen"}]},
+   {"id": "W2", "topic": "Besteht ein Vorkaufsrecht?", "values": [{"doc": "D2", "value": "steht Ihnen nach § 577 BGB ein Vorkaufsrecht zu"}, {"doc": "D4", "value": "Ein Vorkaufsrecht besteht nach unserer Auffassung nicht"}]}
+  ],
+  "privacy": {
+   "protect": [
+    {"value": "Torben Haselhorst", "type": "PERSON"},
+    {"value": "Ilka Haselhorst", "type": "PERSON"},
+    {"value": "Jutta Kammeyer", "type": "PERSON"},
+    {"value": "Uferblick Immobilien GmbH & Co. KG", "type": "ORGANISATION"},
+    {"value": "Uferweg 8, 14476 Beispielstadt", "type": "ADRESSE"},
+    {"value": "Lindenplatz 2", "type": "ADRESSE"},
+    {"value": "Hafenkante 1", "type": "ADRESSE"},
+    {"value": "t.haselhorst@beispielpost.example", "type": "EMAIL"},
+    {"value": "0331 8812 409", "type": "TELEFON"},
+    {"value": "412/2026", "type": "KENNUNG"}
+   ],
+   "keep": ["287.500,00 EUR", "28.04.2026", "04.05.2026", "24.02.2026", "§ 577 Abs. 3 BGB", "§ 469 Abs. 2 Satz 1 BGB"]
+  },
+  "tasks": [
+   {"id": "Q1", "kind": "chat", "analyse": true, "question": "Besteht ein Vorkaufsrecht, und bis wann muss es ausgeübt werden?", "attach": [],
+    "needed_facts": ["F2", "F3", "F5", "F6"], "needed_values": ["12.06.2019", "24.02.2026", "28.02.2026", "03.03.2026"]},
+   {"id": "Q2", "kind": "schriftsatz", "analyse": true, "question": "Ausübung des Vorkaufsrechts gegenüber der Verkäuferin mit Begründung.", "attach": [],
+    "needed_facts": ["F3", "F6"], "needed_values": ["287.500,00 EUR", "24.02.2026"]},
+   {"id": "Q3", "kind": "suche", "question": "Teilungserklärung Wohnungseigentum Vorkaufsrecht", "attach": [], "needed_facts": ["F2"], "expected_documents": ["D2"]},
+   {"id": "Q4", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [], "expected_deadlines": ["28.04.2026", "04.05.2026"]}
+  ]
+ },
+ "solution": {
+  "source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "court": "BGH", "aktenzeichen": "VIII ZR 18/24", "date": "2025-10-08", "ecli": "ECLI:DE:BGH:2025:081025UVIIIZR18.24.0", "used": "amtlicher Leitsatz (Rechtsfrage und Ergebnis)"},
+  "question": "Steht dem Mieter beim Verkauf der umgewandelten Wohnung an eine Gesellschaft mit personenidentischen Gesellschaftern ein Vorkaufsrecht zu, und bis wann ist es auszuüben?",
+  "expected_result": "Ja, dem Mieter steht das Vorkaufsrecht zu. Auch die Veräußerung an eine Personenhandelsgesellschaft mit personenidentischen Gesellschaftern ist ein Verkauf an einen Dritten (§ 577 Abs. 1 Satz 1 BGB; BGH VIII ZR 18/24, Leitsatz). Das Wohnungseigentum wurde nach der Überlassung begründet. Die Ausübung erfolgt schriftlich gegenüber der Verkäuferin (§ 577 Abs. 3 BGB) innerhalb von zwei Monaten nach Empfang der Mitteilung (§ 469 Abs. 2 BGB); wegen des streitigen Zugangs vorsorglich bis 28.04.2026.",
+  "result_terms": ["Vorkaufsrecht", "Dritte"],
+  "wrong_results": ["kein Vorkaufsrecht besteht", "Vorkaufsrecht besteht nicht", "kein Verkauf an einen Dritten"],
+  "required_norms": ["§ 577", "§ 469"],
+  "decisive_facts": ["F2", "F3", "F5", "F6"],
+  "deadlines": ["28.04.2026"],
+  "open_points": [
+   {"id": "O1", "topic": "Zugang der Mitteilung streitig (W1) - vorsorglich vom früheren Zugang ausgehen", "any_terms": ["Zugang", "28.02.2026"]},
+   {"id": "O2", "topic": "Zustellnachweis fehlt - anfordern", "any_terms": ["Zustellnachweis"]}
+  ],
+  "provenance": {"belegt": ["Rechtsfrage und Ergebnis (amtlicher Leitsatz VIII ZR 18/24)", "Wortlaut §§ 469, 577 BGB"],
+                 "synthetisch": ["Personen, Gesellschaften, Anschriften, Daten, Kaufpreis, Zugangsstreit, Fristberechnung"]}
+ }
+}

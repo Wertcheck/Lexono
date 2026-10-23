@@ -1,0 +1,130 @@
+{
+  "id": "LE-D009",
+  "split": "dev",
+  "version": 2,
+  "title": "Eigenbedarfskündigung: Beendigungstermin, Widerspruchsfrist, mehrteilige Fristfelder",
+  "rechtsgebiet": "Mietrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Vollständig synthetisch, Normen real (BGB). §74-Entwicklungsfall, Referenz VOR dem ersten Lauf festgelegt: Beendigungstermin 31.10.2026 in drei Formulierungen (\"kündigen ... ordentlich zum\", \"Das Mietverhältnis endet zum\", \"vor der Beendigung zum\") ist KEIN Fristende (reference.terminations); echte Fristen mit \"bis spätestens\", \"Fristende\", \"spätestens am\", \"Wiedervorlage:\" und mehrteiligen Feldbezeichnungen (\"Frist für Stellungnahme:\", \"Frist zur Stellungnahme an die Gegenseite:\"); Negativdaten (reference.not_deadlines): Schreiben-, Vermerk-, Dokument- und Zugangsdaten, Mietbeginn; streitiger Zugang.",
+  "parties": [
+    {"id": "P1", "name": "Hannelore Westerkamp", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Gudrun Achterberg", "role": "gegner", "gender": "f"}
+  ],
+  "matter": {"title": "Westerkamp ./. Achterberg - Eigenbedarfskündigung", "client_party": "P1", "reference_number": "26/0244-MR"},
+  "documents": [
+    {
+      "id": "D1", "type": "schreiben", "format": "pdf", "filename": "Kuendigung_Vermieterin.pdf", "date": "27.01.2026",
+      "paragraphs": [
+        "Gudrun Achterberg",
+        "Beispielstadt, 27.01.2026",
+        "Sehr geehrte Frau Westerkamp, hiermit kündige ich das Mietverhältnis über die Wohnung Amselgasse 4, 22303 Beispielstadt, ordentlich zum 31.10.2026 wegen Eigenbedarfs (§ 573 Abs. 2 Nr. 2 BGB).",
+        "Hilfsweise wird das Mietverhältnis zum nächstmöglichen Termin gekündigt.",
+        "Einen Widerspruch nach § 574 BGB bitte ich bis spätestens 31.08.2026 zu erklären."
+      ]
+    },
+    {
+      "id": "D2", "type": "email", "format": "txt", "filename": "Mail_Mandantin.txt", "date": "03.02.2026",
+      "paragraphs": [
+        "Von: h.westerkamp@beispielpost.example",
+        "Datum: 03.02.2026",
+        "Betreff: Kündigung Wohnung",
+        "Das Kündigungsschreiben lag erst am 29.01.2026 in meinem Briefkasten.",
+        "Ich bin 67 Jahre alt und wohne seit über sechzehn Jahren in der Wohnung. Telefon 040 6612 905.",
+        "Hannelore Westerkamp"
+      ]
+    },
+    {
+      "id": "D3", "type": "schreiben", "format": "pdf", "filename": "Schreiben_Gegenseite.pdf", "date": "16.02.2026",
+      "paragraphs": [
+        "Beispielstadt, 16.02.2026",
+        "Wir verweisen auf das Kündigungsschreiben vom 27.01.2026, das Ihrer Mandantin am 28.01.2026 zugegangen ist.",
+        "Das Mietverhältnis endet zum 31.10.2026.",
+        "Frist für Stellungnahme: 06.03.2026",
+        "Räumung und Herausgabe der Wohnung erwarten wir spätestens am 02.11.2026."
+      ]
+    },
+    {
+      "id": "D4", "type": "notiz", "format": "txt", "filename": "Aktenvermerk_Fristen.txt", "date": "18.02.2026",
+      "paragraphs": [
+        "Aktenvermerk vom 18.02.2026 - Az. 26/0244-MR",
+        "Frist zur Stellungnahme an die Gegenseite: 06.03.2026.",
+        "Wiedervorlage: 02.03.2026",
+        "Widerspruch nach § 574b Abs. 2 BGB: Fristende 31.08.2026, zwei Monate vor der Beendigung zum 31.10.2026.",
+        "Klagefrist: keine, eine Räumungsklage ist noch nicht erhoben; das Fristende ist offen."
+      ]
+    },
+    {
+      "id": "D5", "type": "vertrag", "format": "scan", "filename": "Mietvertrag_Scan.pdf", "date": "01.04.2009",
+      "paragraphs": [
+        "Mietvertrag vom 01.04.2009",
+        "Mieterin: Hannelore Westerkamp, geb. 03.11.1958",
+        "Mietsache: Wohnung Amselgasse 4, 22303 Beispielstadt",
+        "Monatsmiete 780,00 EUR"
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Kündigungsgrund laut Vermieterin", "values": ["Eigenbedarfs"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Beendigungstermin laut Kündigung", "values": ["31.10.2026"], "docs": ["D1"]},
+      {"id": "F3", "statement": "Zugang laut Mandantin", "values": ["29.01.2026"], "docs": ["D2"]},
+      {"id": "F4", "statement": "Zugang laut Gegenseite", "values": ["28.01.2026"], "docs": ["D3"]},
+      {"id": "F5", "statement": "Monatsmiete", "values": ["780,00 EUR"], "docs": ["D5"]},
+      {"id": "F6", "statement": "Mietbeginn", "values": ["01.04.2009"], "docs": ["D5"]}
+    ],
+    "chronology": [
+      {"date": "01.04.2009", "event": "Mietvertrag", "doc": "D5"},
+      {"date": "27.01.2026", "event": "Kündigungsschreiben", "doc": "D1"},
+      {"date": "03.02.2026", "event": "E-Mail der Mandantin", "doc": "D2"},
+      {"date": "16.02.2026", "event": "Schreiben der Gegenseite", "doc": "D3"},
+      {"date": "18.02.2026", "event": "Aktenvermerk Fristen", "doc": "D4"}
+    ],
+    "deadlines": [
+      {"date": "31.08.2026", "kind": "Widerspruch gegen die Kündigung (§ 574b Abs. 2 BGB)", "doc": "D1"},
+      {"date": "06.03.2026", "kind": "Stellungnahme an die Gegenseite (mehrteilige Feldbezeichnung)", "doc": "D3"},
+      {"date": "02.11.2026", "kind": "Räumung und Herausgabe (Forderung der Gegenseite)", "doc": "D3"},
+      {"date": "02.03.2026", "kind": "Wiedervorlage (intern)", "doc": "D4"}
+    ],
+    "terminations": [
+      {"date": "31.10.2026", "kind": "Beendigung des Mietverhältnisses laut Kündigung (kein Fristende)", "doc": "D1"}
+    ],
+    "not_deadlines": [
+      {"date": "27.01.2026", "why": "Datum des Kündigungsschreibens", "doc": "D1"},
+      {"date": "03.02.2026", "why": "E-Mail-Kopf \"Datum:\" vor \"Betreff:\"", "doc": "D2"},
+      {"date": "29.01.2026", "why": "Zugang laut Mandantin (bloßes Datum)", "doc": "D2"},
+      {"date": "16.02.2026", "why": "Datum des Schreibens der Gegenseite", "doc": "D3"},
+      {"date": "28.01.2026", "why": "Zugang laut Gegenseite (Fristbeginn, kein Fristende)", "doc": "D3"},
+      {"date": "18.02.2026", "why": "Vermerkdatum vor mehrteiliger Fristfeldzeile", "doc": "D4"},
+      {"date": "01.04.2009", "why": "Mietbeginn", "doc": "D5"}
+    ],
+    "citations": [
+      {"text": "§ 573 Abs. 2 Nr. 2 BGB", "kind": "norm", "doc": "D1"},
+      {"text": "§ 574 BGB", "kind": "norm", "doc": "D1"},
+      {"text": "§ 574b Abs. 2 BGB", "kind": "norm", "doc": "D4"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Zugang der Kündigung",
+       "values": [{"doc": "D3", "value": "28.01.2026"}, {"doc": "D2", "value": "29.01.2026"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Hannelore Westerkamp", "type": "PERSON"},
+        {"value": "Gudrun Achterberg", "type": "PERSON"},
+        {"value": "Amselgasse 4, 22303 Beispielstadt", "type": "ADRESSE"},
+        {"value": "03.11.1958", "type": "PERS_DATUM"},
+        {"value": "h.westerkamp@beispielpost.example", "type": "EMAIL"},
+        {"value": "040 6612 905", "type": "TELEFON"}
+      ],
+      "keep": ["31.10.2026", "31.08.2026", "06.03.2026", "780,00 EUR", "§ 574b Abs. 2 BGB"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Wann soll das Mietverhältnis laut Kündigung enden, und welche Fristen laufen?", "attach": [],
+       "needed_facts": ["F2", "F3", "F4"], "needed_values": ["31.10.2026", "31.08.2026", "06.03.2026"]},
+      {"id": "Q2", "kind": "schriftsatz", "question": "Widerspruch gegen die Eigenbedarfskündigung vorbereiten; der Zugang ist streitig.", "attach": [],
+       "needed_facts": ["F1", "F3", "F4"], "needed_values": ["31.10.2026", "29.01.2026", "28.01.2026"]},
+      {"id": "Q3", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["02.03.2026", "06.03.2026", "31.08.2026", "02.11.2026"]}
+    ]
+  }
+}

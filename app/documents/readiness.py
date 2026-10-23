@@ -28,6 +28,10 @@ UNSUPPORTED = "unsupported"  # Dateiformat nicht verarbeitbar
 DELETED = "deleted"  # Dokument wurde inzwischen geloescht
 OTHER_MATTER = "other_matter"  # Unterhaltung wurde einer anderen Akte zugeordnet (Aktenisolation)
 NOT_INCLUDED = "not_included"  # lesbar, aber nicht in den lokal vorbereiteten Kontext uebernommen
+# §62 Dokumentfreigabe (app/documents/release.py): lesbar, aber (noch) nicht fuer die KI-Verarbeitung freigegeben
+RELEASE_REQUIRED = "release_required"
+RELEASE_DECISION = "release_decision"
+RELEASE_BLOCKED = "release_blocked"
 
 #: Audit-Ereignisse, die `DocumentProcessingService.process_document` am ENDE jeder Verarbeitung schreibt. Fehlt jedes
 #: davon, ist die Verarbeitung noch nicht abgeschlossen (oder wurde hart abgebrochen) - nie "fertig ohne Text".
@@ -140,9 +144,43 @@ def _state_sentence(item: DocumentReadiness, *, ocr_enabled: bool) -> str:
         return f"{name} wurde inzwischen gelöscht."
     if item.state == OTHER_MATTER:
         return f"{name} gehört zu einer anderen Akte und wird in dieser Unterhaltung nicht mehr verwendet."
+    if item.state == RELEASE_REQUIRED:
+        return (f"{name} ist noch nicht für die KI-Verarbeitung freigegeben (Einstellung: manuelle Freigabe). Bitte "
+                "das Dokument in der Dokumentansicht prüfen und freigeben.")
+    if item.state == RELEASE_DECISION:
+        return (f"{name} zeigt bei der Datenschutzprüfung Auffälligkeiten. Bitte die Pseudonymisierung prüfen und das "
+                "Dokument freigeben oder nicht erkannte Namen schützen.")
+    if item.state == RELEASE_BLOCKED:
+        return f"Für {name} ist die Datenschutzprüfung fehlgeschlagen – die Verarbeitung ist blockiert."
     if item.state == NOT_INCLUDED:
         return f"{name} konnte nicht in den vorbereiteten Kontext übernommen werden; bitte erneut senden."
     return f"{name} ist nicht verarbeitet."
+
+
+def apply_release(db: Session, items: Sequence[DocumentReadiness]) -> list[DocumentReadiness]:
+    """§62: lesbare Dokumente zusaetzlich gegen die Dokumentfreigabe pruefen (lokal, ohne Cloud). Nicht freigegeben ->
+    nicht bereit, mit eigenem Zustand (Freigabe erforderlich / Entscheidung erforderlich / Pruefung fehlgeschlagen)."""
+    from dataclasses import replace
+
+    from app.documents import release
+
+    states = {release.STATE_REQUIRED: RELEASE_REQUIRED, release.STATE_DECISION: RELEASE_DECISION,
+              release.STATE_BLOCKED: RELEASE_BLOCKED}
+    mode = release.get_mode(db) if any(item.ready for item in items) else None
+    result = []
+    for item in items:
+        if item.ready:
+            document = db.get(Document, item.document_id)
+            state = release.processing_state(db, document, mode=mode) if document is not None else None
+            if state in states:
+                item = replace(item, state=states[state])
+        result.append(item)
+    return result
+
+
+def blocked_state_sentences(items: Sequence[DocumentReadiness], *, ocr_enabled: bool) -> list[str]:
+    """§57: Zustandssaetze der nicht bereiten Dokumente (fuer den lokalen Hinweis direkt nach dem Upload)."""
+    return [_state_sentence(item, ocr_enabled=ocr_enabled) for item in items if not item.ready]
 
 
 def not_ready_notice(items: Sequence[DocumentReadiness], *, ocr_enabled: bool) -> str:

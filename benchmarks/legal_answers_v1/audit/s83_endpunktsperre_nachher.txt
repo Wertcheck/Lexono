@@ -1,0 +1,5 @@
+gesperrt   | echter Provider | Provider-Endpunkt api.anthropic.com (app.ai_providers.anthropic_writing_provider.Anthropic
+gesperrt   | Wrapper (Attribut) | Provider-Endpunkt api.anthropic.com (app.ai_providers.anthropic_writing_provider.Anthropic
+gesperrt   | Unterklasse | Provider-Endpunkt api.anthropic.com (__main__.Sub) ist kein lokaler Pruefendpunkt - echter
+gesperrt   | Wrapper (Liste) | Provider-Endpunkt api.anthropic.com (app.ai_providers.anthropic_writing_provider.Anthropic
+gesperrt   | roher anthropic-Client | Provider-Endpunkt api.anthropic.com (anthropic.Anthropic) ist kein lokaler Pruefendpunkt -

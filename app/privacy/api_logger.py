@@ -100,6 +100,9 @@ _BLOCK_CATEGORIES = (
     # "unknown_block_reason" protokolliert - weder ein Fehler noch ein Leck, sondern eine erwartete Rueckfrage.
     ("Rückfrage erforderlich", "privacy_review_required"),
     ("Datenschutzprüfung auf unsichere Begriffe", "privacy_review_check_failed"),
+    # §79 (B1): Ausfall der Erkennung personenbezogener Daten (gateway.PRIVACY_CHECK_FAILED_REASON) - vorher im Chat
+    # als "unerwarteter technischer Fehler", im Schriftsatz als ungefangene Ausnahme.
+    ("Die Datenschutzprüfung ist fehlgeschlagen", "privacy_check_failed"),
 )
 
 
@@ -131,6 +134,11 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
     ),
     "privacy_review_check_failed": (
         "Die Datenschutzprüfung konnte nicht abgeschlossen werden. Es wurde nichts an die Cloud gesendet."
+    ),
+    "privacy_check_failed": (
+        "Die Datenschutzprüfung ist fehlgeschlagen (die Erkennung personenbezogener Daten war nicht verfügbar). "
+        "Es wurde nichts an die KI übermittelt. Bitte erneut versuchen; bleibt der Fehler, Lexono neu starten "
+        "bzw. die Administration informieren."
     ),
     "purpose_not_allowed": "Der angeforderte Zweck ist nicht freigegeben.",
     "residual_pii_detected": (

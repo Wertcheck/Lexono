@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% import "_identity.html" as identity %}
+{% import "partials/name_protection.html" as name_protection %}
+{% import "partials/document_release.html" as document_release %}
 {% block title %}Chat{% endblock %}
 {% block content %}
   {# Nutzerkorrektur (01.09.): eine vorherige Aenderung hatte die
@@ -378,15 +380,15 @@
                  app.css), unabhaengig von jeder Nutzerfarbe. Dieselbe
                  E-Mail-Kennung wie Sidebar-/Einstellungs-Avatar, damit
                  derselbe Nutzer ueberall dieselbe Farbe sieht. #}
-              <div class="chat-message__avatar{% if message.role == 'user' %} identity-avatar--{{ identity.user_avatar_color(current_user.email) }}{% endif %}">
+              <div class="chat-message__avatar{% if message.role in ('user', 'upload') %} identity-avatar--{{ identity.user_avatar_color(current_user.email) }}{% endif %}">
                 {# Konsistent mit dem Sidebar-Avatar (base.html, 19.09.,
                    UI/UX-Referenzabgleich): dieselbe display_name-Fallback-
                    Regel statt ausschliesslich der rohen E-Mail-Adresse. #}
-                {% if message.role == "user" %}{{ (current_user.display_name or current_user.email)[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
+                {% if message.role in ("user", "upload") %}{{ (current_user.display_name or current_user.email)[0]|upper }}{% else %}{{ icons.bulb(class_="icon") }}{% endif %}
               </div>
               <div class="chat-message__body">
                 <div class="chat-message__sender">
-                  {% if message.role == "user" %}Sie{% else %}Lexono{% endif %}
+                  {% if message.role in ("user", "upload") %}Sie{% else %}Lexono{% endif %}
                 </div>
                 {% if message.attached_documents %}
                   <div class="chat-message__attachments">
@@ -575,6 +577,9 @@
         </button>
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         <input type="hidden" name="conversation_id" value="{{ active_conversation.id if active_conversation else '' }}" />
+        {# §59: Upload-Vorgangs-ID - eine Wiederholung DESSELBEN Uploads (Doppelklick, Netzwerkwiederholung) legt nichts
+           doppelt an; jede Upload-Antwort liefert eine neue ID fuer den naechsten, bewusst neuen Upload #}
+        <input type="hidden" name="upload_token" value="{{ upload_token }}" />
         {# Vorgemerkte Akte aus dem "Mit dieser Akte im Chat arbeiten"-
            Einstieg (14.09.) - erst die erste Nachricht legt die
            Unterhaltung an, deshalb wird die Akte bis dahin im Formular
@@ -723,38 +728,65 @@
               </select>
             </label>
           {% endif %}
-          <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
-          <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
-                  title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
-                  aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
-            {{ icons.shield(class_="icon") }}
-          </button>
-          <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
-               aria-label="Datenschutzinformationen" hidden>
-            <div class="chat-privacy-popover__title">
-              {{ icons.shield(class_="icon") }}
-              <span>Datenschutz &amp; Pseudonymisierung</span>
-            </div>
-            <p>
-              Lexono erkennt personenbezogene und andere sensible Daten
-              (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
-              lokal auf diesem Rechner und pseudonymisiert sie vor der
-              Verarbeitung durch eine Cloud-KI.
-            </p>
-            <p>
-              Unpseudonymisierte personenbezogene Daten werden dadurch
-              nicht unnötig an die Cloud-KI übertragen. Diese lokale
-              Erkennungs- und Pseudonymisierungsschicht ist fester
-              Bestandteil der Lexono-Verarbeitung.
-            </p>
-            <p>
-              Die konkrete Verarbeitung kann je nach Workflow variieren
-              (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
-              teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
-            </p>
+          {# §51 (16.10.2026): Namen, die die automatische Erkennung uebersieht ("Der Richter Zweigelt"), im Text
+             markieren und schuetzen. Kein zweiter Rueckfrage-Dialog: beim Senden wird daraus dieselbe Entscheidung
+             "Als Person behandeln" wie in der bestehenden Rueckfrage (serverseitig geprueft, siehe
+             chat_router._parse_manual_terms). Kommt ein markierter Name nach einer Textaenderung nicht mehr vor, wird
+             nicht gesendet. #}
+          <div class="chat-composer__protect" id="chat-protect">
+            <button type="button" class="chat-composer__protect-btn" id="chat-protect-btn"
+                    title="Im Text markierten Namen vor jeder Cloud-Übergabe pseudonymisieren">Namen schützen</button>
+            <ul class="chat-composer__protected-list" id="chat-protected-list" aria-label="Geschützte Namen"></ul>
+            {% if active_conversation %}
+              {# §52: gespeicherte Namensentscheidungen dieser Akte (auch der Schnellakte eines Chats ohne Akte) #}
+              <a class="chat-composer__protect-btn" id="chat-protect-manage"
+                 href="/dashboard/matters/{{ active_conversation.matter_id }}#beteiligte"
+                 title="Geschützte Namen und Datenschutz-Entscheidungen dieser Akte ansehen oder aufheben">verwalten</a>
+            {% endif %}
+            <input type="hidden" name="protected_terms" id="chat-protected-terms" value="" />
           </div>
+          <p id="chat-speech-status" class="chat-composer__speech-status" hidden role="status" aria-live="polite"></p>
         </div>
       </form>
+
+      {# Datenschutz-/Shield-Hinweis als schwebendes Element in der RECHTEN UNTEREN ECKE des Chatfensters
+         (22.10., Owner-Direktive "DATENSCHUTZ-ICON IN DIE ECKE") - aus der Composer-Fusszeile herausgeloest
+         und an `.chat-panel` (dem Chat-Hauptbereich rechts der Unterhaltungsliste) verankert, damit es
+         UNABHAENGIG von der zentrierten, maximalbreiten Composer-Breite bei jeder Fenstergroesse nahe am
+         rechten/unteren Rand bleibt. Button + Popover sind UNVERAENDERT uebernommen (gleiche IDs, gleiche
+         JS-Verdrahtung in #chat-privacy-btn/#chat-privacy-popover, gleiche Datenschutzlogik) - nur Position und
+         Groesse aendern sich (siehe `.chat-privacy-corner` in app.css). #}
+      <div class="chat-privacy-corner">
+        <button type="button" class="chat-composer__privacy-btn" id="chat-privacy-btn"
+                title="Datenschutz & Pseudonymisierung" aria-label="Datenschutzinformationen anzeigen"
+                aria-haspopup="dialog" aria-expanded="false" aria-controls="chat-privacy-popover">
+          {{ icons.shield(class_="icon") }}
+        </button>
+        <div class="chat-privacy-popover" id="chat-privacy-popover" role="dialog"
+             aria-label="Datenschutzinformationen" hidden>
+          <div class="chat-privacy-popover__title">
+            {{ icons.shield(class_="icon") }}
+            <span>Datenschutz &amp; Pseudonymisierung</span>
+          </div>
+          <p>
+            Lexono erkennt personenbezogene und andere sensible Daten
+            (z.&nbsp;B. Namen, Adressen, Aktenzeichen, IBANs) wo möglich
+            lokal auf diesem Rechner und pseudonymisiert sie vor der
+            Verarbeitung durch eine Cloud-KI.
+          </p>
+          <p>
+            Unpseudonymisierte personenbezogene Daten werden dadurch
+            nicht unnötig an die Cloud-KI übertragen. Diese lokale
+            Erkennungs- und Pseudonymisierungsschicht ist fester
+            Bestandteil der Lexono-Verarbeitung.
+          </p>
+          <p>
+            Die konkrete Verarbeitung kann je nach Workflow variieren
+            (z.&nbsp;B. werden reine, aktenunabhängige Rechtsfragen
+            teils direkt lokal beantwortet, ganz ohne Cloud-Anfrage).
+          </p>
+        </div>
+      </div>
     </section>
 
     {% if viewing_document %}
@@ -766,7 +798,38 @@
          keine erfundene Datenlogik. #}
       <section class="chat-document-pane">
         {% if document_preview and document_preview.highlighted_html %}
-          <div class="chat-document-pane__text">{{ document_preview.highlighted_html | safe }}</div>
+          {% if upload_notice %}
+            {# §57: Upload ohne KI-Verarbeitung - hier pruefen und schuetzen, erst danach bewusst senden #}
+            <p class="form-hint" id="upload-notice">
+              Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
+              gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden.
+              {% if upload_text_not_sent %}Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte – sonst bitte erneut eingeben.{% endif %}
+            </p>
+          {% endif %}
+          {% if release_status and viewing_document.matter_id %}
+            {# §62 Dokumentfreigabe: Status am Dokument (dezent, dauerhaft) #}
+            {{ document_release.panel(release_status, active_conversation.matter, viewing_document, csrf_token,
+                                      release_show_notice, release_can_manage, "chat:" ~ active_conversation.id,
+                                      release_released, release_error, release_current_path) }}
+          {% endif %}
+          {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
+          {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
+                                               document_text_version, csrf_token, "chat:" ~ active_conversation.id,
+                                               name_protection_saved, name_protection_error) }}
+          {# Pseudonymisierung (23.10.2026): kompakter Status + Button statt der schmalen Seitenspalte, die den
+             A4-Text quetschte. Die Details oeffnen sich in einem zentrierten Dialog (unten); Oeffnen/Schliessen
+             aendert keinen Workflow-Zustand. #}
+          <div class="chat-pseudonymization-summary">
+            <span class="tag tag--matched"><span class="tag__dot"></span>Lokal analysiert &amp; pseudonymisiert</span>
+            <span class="chat-pseudonymization-summary__count">
+              {{ document_preview.entities | length if document_preview else 0 }} erkannte Mandantendaten
+            </span>
+            <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
+                    data-pseudonymization-open aria-haspopup="dialog" aria-controls="pseudonymization-dialog">
+              Pseudonymisierung anzeigen
+            </button>
+          </div>
+          <div class="chat-document-pane__text" id="document-text">{{ document_preview.highlighted_html | safe }}</div>
         {% else %}
           <div class="chat-document-pane__empty">
             Für dieses Dokument liegt (noch) kein extrahierter Text vor.
@@ -774,11 +837,16 @@
         {% endif %}
       </section>
 
-      <aside class="chat-context-pane">
-        <div class="chat-context-pane__header">
-          {{ icons.check(class_="icon") }}
-          <span>Pseudonymisierung</span>
+      {# Zentrierter, optionaler Dialog mit den REALEN Ergebnissen dieses Dokuments (ersetzt die Seitenspalte). #}
+      <dialog id="pseudonymization-dialog" class="modal modal--large" aria-labelledby="pseudonymization-dialog-title">
+        <div class="modal__header">
+          <h2 class="modal__title" id="pseudonymization-dialog-title">
+            {{ icons.check(class_="icon") }}
+            <span>Pseudonymisierung</span>
+          </h2>
+          <button type="button" class="modal__close" data-pseudonymization-dialog-close aria-label="Schließen">✕</button>
         </div>
+        <div class="modal__body chat-context-pane">
         <div class="chat-context-pane__status">
           <span class="tag tag--matched">Abgeschlossen</span>
         </div>
@@ -859,10 +927,27 @@
             <span>Herunterladen</span>
           </a>
         {% endif %}
-      </aside>
+        </div>{# .modal__body.chat-context-pane #}
+      </dialog>
     {% endif %}
   </div>
 
+  {# Human in the Loop (23.10.2026): zentrierter Dialog fuer die Datenschutz-Rueckfrage statt einer in die
+     Chat-Blase gequetschten Karte. Schliessen beantwortet NICHTS (nur die Options-Buttons entscheiden); die
+     kompakte Statuszeile in der Blase oeffnet den Dialog erneut. Faellt `<dialog>` aus, rendert showPrivacyReview
+     unveraendert in die Blase (Fallback). #}
+  <dialog id="privacy-review-dialog" class="modal modal--medium" aria-labelledby="privacy-review-dialog-title">
+    <div class="modal__header">
+      <h2 class="modal__title" id="privacy-review-dialog-title">Datenschutz-Rückfrage</h2>
+      <button type="button" class="modal__close" data-privacy-dialog-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="modal__body" id="privacy-review-dialog-body"></div>
+  </dialog>
+
+  {{ name_protection.assets() }}
+  {% if viewing_document and document_preview and document_preview.highlighted_html %}
+    {{ name_protection.document_script("#document-text") }}
+  {% endif %}
   <script>
     // Drei-Punkte-Menue (06.10., Owner-Direktive "CHAT & CHAT-HISTORY
     // PROFESSIONAL UX PASS" §13) - wortgleiche Kopie des bereits in
@@ -2054,7 +2139,29 @@
         autoGrow();
         if (fileInput) { fileInput.value = ""; }
         if (fileList) { fileList.innerHTML = ""; }
+        setProtectedTerms([]);
       }
+
+      // §51-§54 "Namen schützen": gemeinsamer Baustein (/dashboard/static/js/app_name_protection.js) - dieselbe Logik
+      // wie in Schriftsatz, Aenderungsauftrag, Editor und E-Mail-Aktionen. Beim Senden wird daraus serverseitig die
+      // Entscheidung "Als Person behandeln" (app/privacy/decisions.parse_manual_terms).
+      var lastSentProtectedTerms = [];
+      var nameProtection = window.LexonoNameProtection ? window.LexonoNameProtection.create({
+        button: document.getElementById("chat-protect-btn"),
+        list: document.getElementById("chat-protected-list"),
+        fields: [document.getElementById("chat-protected-terms")],
+        getText: function () { return textarea.value; },
+        getSelectedText: function () { return textarea.value.slice(textarea.selectionStart, textarea.selectionEnd); },
+        onError: function (message) { showComposerError(message); },
+        onOk: function () {
+          var existing = document.getElementById("chat-send-error-banner");
+          if (existing) { existing.parentNode.removeChild(existing); }
+        },
+        watch: [textarea]
+      }) : null;
+
+      function setProtectedTerms(terms) { if (nameProtection) { nameProtection.setTerms(terms); } }
+      function staleProtectedTerms() { return nameProtection ? nameProtection.stale() : []; }
 
       // ECHTER FUND (06.10., Owner-Direktive "CHAT / COMPOSER / CHAT-HISTORY
       // FINAL UX & STATE-CONSISTENCY PASS" §10, live per CDP reproduziert):
@@ -2123,6 +2230,7 @@
         // um den eigentlichen Fehler (z. B. falscher Dateityp) zu beheben.
         textarea.value = pendingContent;
         autoGrow();
+        setProtectedTerms(lastSentProtectedTerms);  // §51: Markierung geht mit der Eingabe nicht verloren
         if (fileInput && pendingFiles && pendingFiles.length) {
           var dt = new DataTransfer();
           Array.prototype.forEach.call(pendingFiles, function (file) { dt.items.add(file); });
@@ -2181,13 +2289,17 @@
           { label: "Pseudonymisierung", state: "pending" },
           { label: "Cloud-Verarbeitung", state: "pending" }
         ];
+        // Fortschritt NICHT fest verdrahten (Anti-Fake-Vollstaendigkeit): Anzahl und Balkenbreite aus den
+        // tatsaechlich gerenderten Schritt-Zustaenden ableiten, damit die Anzeige nicht von der Realitaet abweicht.
+        var doneCount = steps.filter(function (step) { return step.state === "done"; }).length;
         var head = privacyEl("div", "privacy-review__progress-head");
         head.appendChild(privacyEl("span", "privacy-review__progress-title", "Datenschutzprüfung"));
-        head.appendChild(privacyEl("span", "privacy-review__progress-count", "2 von 5 Schritten abgeschlossen"));
+        head.appendChild(privacyEl("span", "privacy-review__progress-count",
+          doneCount + " von " + steps.length + " Schritten abgeschlossen"));
         container.appendChild(head);
         var bar = privacyEl("div", "privacy-review__bar");
         var fill = privacyEl("div", "privacy-review__bar-fill");
-        fill.style.width = "40%";
+        fill.style.width = Math.round((doneCount / steps.length) * 100) + "%";
         bar.appendChild(fill);
         container.appendChild(bar);
         var list = privacyEl("ol", "privacy-review__steps");
@@ -2200,6 +2312,29 @@
         container.appendChild(list);
       }
 
+      // Dialog-Element (P3). Fehlt es oder kann der Browser kein modales <dialog>, faellt alles auf die bisherige
+      // Darstellung in der Chat-Blase zurueck (kein Funktionsverlust).
+      function privacyDialog() {
+        var dialog = document.getElementById("privacy-review-dialog");
+        return dialog && typeof dialog.showModal === "function" ? dialog : null;
+      }
+
+      // Kompakte Statuszeile in der Chat-Blase, solange die Rueckfrage im Dialog offen ist - mit einem Button, der
+      // den (ggf. mit Escape/✕ geschlossenen) Dialog erneut oeffnet. Schliessen beantwortet nie etwas.
+      function renderPrivacyBubbleStatus(bubble, dialog) {
+        bubble.classList.remove("chat-message--thinking");
+        var body = bubble.querySelector(".chat-message__text");
+        body.className = "chat-message__text privacy-review-status";
+        body.removeAttribute("role");
+        body.removeAttribute("aria-label");
+        body.textContent = "";
+        body.appendChild(privacyEl("span", "privacy-review-status__label", "Datenschutz-Rückfrage offen – bitte entscheiden."));
+        var open = privacyEl("button", "btn btn--primary privacy-review-status__open", "Rückfrage öffnen");
+        open.type = "button";
+        open.addEventListener("click", function () { if (!dialog.open) { dialog.showModal(); } });
+        body.appendChild(open);
+      }
+
       function showPrivacyReview(payload, bubble, hasFiles, onSubmitted) {
         if (!bubble || !payload.candidates || !payload.candidates.length) { onSubmitted(null); return; }
         // Neue Unterhaltung: Adresse auf die Unterhaltung setzen, damit ein Neuladen die offene Rueckfrage wiederfindet
@@ -2210,12 +2345,21 @@
             window.history.replaceState(null, "", reviewPath);
           }
         }
-        bubble.classList.remove("chat-message--thinking");
-        var body = bubble.querySelector(".chat-message__text");
-        body.className = "chat-message__text privacy-review";
-        body.removeAttribute("role");
-        body.removeAttribute("aria-label");
-        body.textContent = "";
+        var dialog = privacyDialog();
+        var body;
+        if (dialog) {
+          body = document.getElementById("privacy-review-dialog-body");
+          body.className = "modal__body privacy-review";
+          body.textContent = "";
+          renderPrivacyBubbleStatus(bubble, dialog);
+        } else {
+          bubble.classList.remove("chat-message--thinking");
+          body = bubble.querySelector(".chat-message__text");
+          body.className = "chat-message__text privacy-review";
+          body.removeAttribute("role");
+          body.removeAttribute("aria-label");
+          body.textContent = "";
+        }
         renderPrivacySteps(body, hasFiles);
 
         var card = privacyEl("section", "privacy-review__card");
@@ -2279,6 +2423,8 @@
               if (index < payload.candidates.length) { renderCandidate(); return; }
               options.querySelectorAll("button").forEach(function (b) { b.disabled = true; });
               footer.textContent = "Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …";
+              // Erst nach einer echten Auswahl schliesst der Dialog (Escape/✕ allein beantwortet NICHTS).
+              if (dialog && dialog.open) { dialog.close(); }
               onSubmitted(decisions);
             });
             options.appendChild(button);
@@ -2287,7 +2433,11 @@
           if (first) { first.focus({ preventScroll: true }); }
         }
         renderCandidate();
-        messages.scrollTop = messages.scrollHeight;
+        if (dialog) {
+          if (!dialog.open) { dialog.showModal(); }
+        } else {
+          messages.scrollTop = messages.scrollHeight;
+        }
       }
 
       function readSseStream(response, onPayload) {
@@ -2350,6 +2500,23 @@
         var hasContent = textarea.value.trim().length > 0;
         var hasFiles = !!(fileInput && fileInput.files && fileInput.files.length);
         if (!hasContent && !hasFiles) { return; }
+        // §51: veraltete Markierung (Name nach einer Textaenderung nicht mehr im Text) - nicht senden, nicht still
+        // weglassen. Der Server prueft dasselbe noch einmal.
+        // §56 (unabhaengiges Review): im angezeigten Dokument markierte, noch NICHT gespeicherte Namen wuerden mit dem
+        // Anhang sonst ungeschuetzt in die Anfrage gehen - deshalb nicht senden, sondern zum Speichern auffordern.
+        var documentProtection = window.LexonoDocumentNameProtection;
+        if (documentProtection && documentProtection.terms().length) {
+          showComposerError("Im Dokument markierte Namen sind noch nicht gespeichert. Bitte zuerst „Markierung speichern“ " +
+            "wählen - es wurde nichts gesendet.");
+          return;
+        }
+        var staleTerms = staleProtectedTerms();
+        if (staleTerms.length) {
+          showComposerError("Der markierte Name „" + staleTerms.join("“, „") +
+            "“ kommt im Text nicht mehr vor. Bitte Markierung entfernen oder Text prüfen.");
+          return;
+        }
+        lastSentProtectedTerms = nameProtection ? nameProtection.terms() : [];
 
         isSending = true;
         // Zweite Fehlerunterscheidung fuer den `.catch()`-Block weiter
@@ -2378,10 +2545,20 @@
         // dem Leeren des Inputs gueltig.
         var pendingFiles = fileInput && fileInput.files ? Array.prototype.slice.call(fileInput.files) : [];
 
-        var userBubble = appendUserBubble(pendingContent, pendingFiles);
+        // §57: mit Dateien ist es serverseitig NUR ein Upload - keine Nutzerfrage-Blase mit dem (nicht gesendeten)
+        // Text und kein "Lexono antwortet", sondern ein ehrlicher Ladezustand fuer das lokale Auslesen.
+        var uploadOnly = pendingFiles.length > 0;
+        var userBubble = appendUserBubble(uploadOnly ? "" : pendingContent, pendingFiles);
 
         setLoadingState();
         var thinkingBubble = appendThinkingBubble();
+        if (uploadOnly && thinkingBubble) {
+          var uploadStatus = thinkingBubble.querySelector(".chat-thinking-indicator");
+          uploadStatus.setAttribute("aria-label", "Dokument wird lokal ausgelesen – noch keine KI");
+          uploadStatus.querySelector(".chat-thinking-indicator__status").textContent =
+            "Dokument wird lokal ausgelesen … (noch keine KI)";
+          thinkingBubble.querySelector(".chat-message__sender").textContent = "Lokal";
+        }
         var textSpan = null;
         var conversationIdField = composer.querySelector("input[name=\"conversation_id\"]");
         var formData = new FormData(composer);
@@ -2454,6 +2631,11 @@
               } catch (parseError) {
                 return;
               }
+              if (payload.upload_token) {
+                // §59: neue Upload-Vorgangs-ID fuer den naechsten, bewusst neuen Upload (auch nach einem Fehler)
+                var uploadTokenField = composer.querySelector("input[name=\"upload_token\"]");
+                if (uploadTokenField) { uploadTokenField.value = payload.upload_token; }
+              }
               if (payload.kind === "start") {
                 conversationId = payload.conversation_id;
                 if (conversationIdField) { conversationIdField.value = conversationId; }
@@ -2474,6 +2656,17 @@
                 }
               } else if (payload.kind === "status") {
                 updateThinkingStatus(payload.status);
+              } else if (payload.kind === "uploaded") {
+                // §57: nur hochgeladen - es wurde nichts an die KI gesendet. Ein mitgetippter Text bleibt LOKAL im
+                // Browser (sessionStorage dieser Unterhaltung) und steht nach dem Pruefen wieder im Eingabefeld.
+                isSending = false;
+                try {
+                  if (payload.text_kept && pendingContent.trim()) {
+                    window.sessionStorage.setItem("lexono-unsent-" + payload.conversation_id, pendingContent);
+                  }
+                } catch (storageError) { /* ohne Speicher: Hinweis auf der Zielseite nennt den nicht gesendeten Text */ }
+                window.location.href = payload.target;
+                return;
               } else if (payload.kind === "review") {
                 showPrivacyReview(payload, thinkingBubble, pendingFiles.length > 0, function (decisions) {
                   if (!decisions) { finish(conversationId); return; }
@@ -2561,6 +2754,35 @@
       // Offene Datenschutz-Rueckfrage nach dem Neuladen wiederherstellen (12.10.2026): Ist die letzte Nachricht eine
       // unbeantwortete Nutzernachricht, ermittelt der Server die Rueckfrage rein lokal neu (kein Cloud-Aufruf). Laeuft
       // die Verarbeitung noch, wird KEINE Rueckfrage angeboten, sondern nach kurzer Zeit neu geladen.
+      (function refreshUploadTokenAfterBack() {
+        // §60: Zurueck-Button / Browser-Cache - die wiederhergestellte Seite kann eine bereits VERBRAUCHTE
+        // Upload-Vorgangs-ID tragen. Nur eine neue ID holen (GET, schreibt nichts); nie automatisch erneut hochladen.
+        window.addEventListener("pageshow", function (evt) {
+          if (!evt.persisted || !composer) { return; }
+          var field = composer.querySelector("input[name=\"upload_token\"]");
+          if (!field) { return; }
+          fetch("/dashboard/chat/upload-token", { credentials: "same-origin", cache: "no-store" })
+            .then(function (response) { return response.ok ? response.json() : null; })
+            .then(function (data) { if (data && data.upload_token) { field.value = data.upload_token; } })
+            .catch(function () { /* ohne neue ID: der Server weist die alte ab und liefert selbst eine neue */ });
+        });
+      })();
+
+      (function restoreUnsentUploadText() {
+        // §57: nach "nur hochladen" den mitgetippten, NICHT gesendeten Text wieder ins Eingabefeld
+        var field = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;
+        var key = field && field.value ? "lexono-unsent-" + field.value : null;
+        if (!key || !textarea) { return; }
+        try {
+          // bleibt bis zum tatsaechlichen Absenden erhalten (auch ueber "Markierung speichern" mit Neuladen hinweg)
+          var unsent = window.sessionStorage.getItem(key);
+          if (unsent && !textarea.value) { textarea.value = unsent; }
+        } catch (storageError) { /* kein Speicher verfuegbar */ }
+        composer.addEventListener("submit", function () {
+          try { window.sessionStorage.removeItem(key); } catch (storageError) { /* ignorieren */ }
+        }, true);
+      })();
+
       (function restorePendingPrivacyReview() {
         if (!messages || !supportsStreaming) { return; }
         var conversationField = composer ? composer.querySelector("input[name=\"conversation_id\"]") : null;
@@ -2596,6 +2818,73 @@
             });
           })
           .catch(function () { /* keine Rueckfrage anzeigen; das Senden prueft ohnehin erneut */ });
+      })();
+
+      // --- Dialoge (23.10.2026): Schliessen-Buttons; Pseudonymisierungs-Dialog oeffnen ---------------------------
+      (function wireDialogs() {
+        function closeOn(selector) {
+          document.querySelectorAll(selector).forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var dialog = btn.closest("dialog");
+              if (dialog && dialog.open) { dialog.close(); }
+            });
+          });
+        }
+        closeOn("[data-privacy-dialog-close]");
+        closeOn("[data-pseudonymization-dialog-close]");
+        var pseudoOpen = document.querySelector("[data-pseudonymization-open]");
+        var pseudoDialog = document.getElementById("pseudonymization-dialog");
+        if (pseudoOpen && pseudoDialog && typeof pseudoDialog.showModal === "function") {
+          pseudoOpen.addEventListener("click", function () { if (!pseudoDialog.open) { pseudoDialog.showModal(); } });
+        } else if (pseudoOpen && pseudoDialog) {
+          // Fallback ohne modales <dialog>: Details als normaler Block sichtbar lassen.
+          pseudoDialog.setAttribute("open", "open");
+          pseudoOpen.hidden = true;
+        }
+      })();
+
+      // --- P4 (23.10.2026): "Pseudonymisierung bestätigen und Schriftsatz erstellen" --------------------------------
+      // Gibt das Dokument frei UND nimmt den unterbrochenen Auftrag wieder auf. Treibt denselben SSE-Strom wie der
+      // Chat (showPrivacyReview/submitPrivacyReview), damit eine faellige Rueckfrage im Dialog erscheint und erst
+      // danach der Entwurf entsteht. Kein Scheinerfolg: angezeigt wird immer der tatsaechliche Serverstand.
+      (function wireConfirmReleaseAndGenerate() {
+        if (!messages || !supportsStreaming) { return; }
+        var trigger = document.querySelector("[data-confirm-release-generate]");
+        if (!trigger) { return; }
+        trigger.addEventListener("click", function () {
+          var conversationId = trigger.getAttribute("data-conversation-id");
+          var documentId = trigger.getAttribute("data-document-id");
+          var textVersion = trigger.getAttribute("data-text-version");
+          if (!conversationId || !documentId) { return; }
+          trigger.disabled = true;
+          var bubble = appendThinkingBubble();
+          var backToChat = function () {
+            window.location.href = "/dashboard/chat/" + encodeURIComponent(conversationId);
+          };
+          var form = new FormData();
+          var csrfField = composer ? composer.querySelector("input[name=\"csrf_token\"]") : null;
+          form.append("csrf_token", csrfField ? csrfField.value : "");
+          form.append("document_id", documentId);
+          form.append("text_version", textVersion || "");
+          fetch("/dashboard/chat/" + encodeURIComponent(conversationId) + "/confirm-release-and-generate", {
+            method: "POST", body: form, credentials: "same-origin"
+          })
+            .then(function (response) {
+              return readSseStream(response, function (next) {
+                if (next.kind === "review") {
+                  showPrivacyReview(next, bubble, false, function (decisions) {
+                    if (!decisions) { backToChat(); return; }
+                    submitPrivacyReview(next, decisions, bubble, false, backToChat);
+                  });
+                } else if (next.kind === "done") {
+                  // Entwurf/Blockade/Fehler sind serverseitig persistiert - in die Unterhaltung wechseln, die den
+                  // tatsaechlichen Stand (inkl. Editor-Link am Entwurf) zeigt.
+                  backToChat();
+                }
+              });
+            })
+            .catch(function () { backToChat(); });
+        });
       })();
 
       if (messages) {

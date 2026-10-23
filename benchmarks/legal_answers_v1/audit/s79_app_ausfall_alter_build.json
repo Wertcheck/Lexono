@@ -1,0 +1,48 @@
+{
+ "modus": "ausfall_alter_build",
+ "exe": "<QA-Kopie der Sicherung vor bfbe53a, spaCy-Modell umbenannt>\\Lexono.exe",
+ "recorder": "http://127.0.0.1:49215",
+ "lauf": "045358",
+ "schritte": {
+  "chat": {
+   "anfragen": 0,
+   "meldung_datenschutzfehler": false,
+   "meldung_nichts_uebermittelt": false,
+   "alte_meldung_technischer_fehler": true,
+   "rueckfragen_unsicher": 0,
+   "wire": [],
+   "auszug": ") verlangt von Konrad Pfefferkorn die Rückzahlung der Kaution von 4.250,00 EUR; der Mietvertrag endete am 31.03.2026.\n\nLexono\n\nBei der Verarbeitung ist ein unerwarteter technischer Fehler aufgetreten. Die Anfrage wurde nicht an die Cloud-KI gesendet. Bitte erneut versuchen.\n\nNamen schützen\nverwalten"
+  },
+  "schriftsatz": {
+   "anfragen": 0,
+   "ui_pfad": "/dashboard/tools/schriftsatz/generate",
+   "entwurf_geoeffnet": false,
+   "meldung_datenschutzfehler": false,
+   "meldung_nichts_uebermittelt": false,
+   "http_500_seite": true,
+   "wire": [],
+   "auszug": "Internal Server Error",
+   "entwuerfe_der_akte": 0,
+   "api_log": []
+  }
+ },
+ "exe_sha256": "280293ee6824ed92b344cc819b99f6e05379adf5f97e71a88bb53fce374c6dfc",
+ "exe_gleich_installiert": false,
+ "spacy_modell_vorhanden": false,
+ "app_pid": 13168,
+ "webview": "Edg/155.0.4283.62",
+ "nach_login": "/dashboard/chat",
+ "akte": {
+  "matter_id": "1cbe9247-18d5-4531-b0df-522a371b92bc",
+  "beteiligte": 1
+ },
+ "anfragen_gesamt": 0,
+ "app_beendet": true,
+ "applog": {
+  "zeilen": 9,
+  "geschuetzte_werte_im_log": [],
+  "kaution_text_im_log": false,
+  "datenschutzfehler_zeilen": [],
+  "testschluessel_im_log": false
+ }
+}

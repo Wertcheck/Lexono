@@ -1,0 +1,15 @@
+﻿§85 Windows-Umgebung (nur gelesen, nichts geaendert) - 2026-10-19 12:39
+Administrator (erhoeht): False
+Integritaetsstufe: Verbindliche Beschriftung\Mittlere Verbindlichkeitsstufe Bezeichnung S-1-16-8192 
+Windows: Microsoft Windows 11 Pro 10.0.26200 Build 26200
+Firewall-Profile:
+Domain: aktiviert=True, ausgehend=NotConfigured
+Private: aktiviert=True, ausgehend=NotConfigured
+Public: aktiviert=True, ausgehend=NotConfigured
+Firewall-Gruppenrichtlinie vorhanden: False
+WindowsSandbox.exe: False
+Hyper-V-Dienst vmms: False
+Hyper-V-Dienst vmcompute: False
+wsl.exe vorhanden: True
+docker vorhanden: False
+Tesseract-Bundle mit libcurl.dll: True

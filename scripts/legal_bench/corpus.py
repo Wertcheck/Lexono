@@ -161,6 +161,18 @@ def validate_case(case: dict, register: dict[str, dict], report: ValidationRepor
         in_doc(item["date"], item.get("doc"), f"Chronologie {item.get('event', '')[:30]!r}")
     for item in ref.get("deadlines", []):
         in_doc(item["date"], item.get("doc"), f"Frist {item.get('kind', '')!r}")
+    # §74 (optional): erwartete Beendigungstermine und ausdrueckliche Negativdaten (Dokument-/Vermerk-/Ereignisdaten,
+    # die KEIN Fristende sind) - beide aus den Akten, getrennt von den Fristen, nicht ueberlappend
+    deadline_dates = {d["date"] for d in ref.get("deadlines", [])}
+    for item in ref.get("terminations", []):
+        in_doc(item["date"], item.get("doc"), f"Beendigungstermin {item.get('kind', '')!r}")
+        _require(report, item["date"] not in deadline_dates,
+                 f"{prefix}: Beendigungstermin {item['date']} steht zugleich in reference.deadlines")
+    termination_dates = {t["date"] for t in ref.get("terminations", [])}
+    for item in ref.get("not_deadlines", []):
+        in_doc(item["date"], item.get("doc"), f"Negativdatum {item.get('why', '')!r}")
+        _require(report, item["date"] not in deadline_dates | termination_dates,
+                 f"{prefix}: Negativdatum {item['date']} steht zugleich als Frist/Beendigungstermin in der Referenz")
     for item in ref.get("citations", []):
         in_doc(item["text"], item.get("doc"), "Fundstelle")
         _require(report, item.get("kind") in ("norm", "entscheidung", "literatur"), f"{prefix}: Fundstelle mit unbekanntem Typ")
@@ -192,6 +204,43 @@ def validate_case(case: dict, register: dict[str, dict], report: ValidationRepor
             _require(report, did in docs, f"{prefix}: Aufgabe {task['id']} haengt unbekanntes Dokument {did} an")
         for fid in task.get("needed_facts", []):
             _require(report, fid in fact_ids, f"{prefix}: Aufgabe {task['id']} braucht unbekannten Fakt {fid}")
+    _validate_solution(case, prefix, fact_ids, all_text, report)
+
+
+def _validate_solution(case: dict, prefix: str, fact_ids: set, all_text: str, report: ValidationReport) -> None:
+    """§71: Referenzloesung (Block `solution`) - nur fuer aus freigegebenen Quellen abgeleitete Faelle, mit belegter
+    Referenzentscheidung im Fall; jedes Kriterium muss aus den Akten ableitbar sein (keine erfundenen Begriffe/Werte)."""
+    solution = case.get("solution")
+    if solution is None:
+        return
+    _require(report, not case["synthetic"] and case.get("derivation") == "abgeleitet",
+             f"{prefix}: Referenzloesung nur fuer abgeleitete Faelle (synthetic=false, derivation='abgeleitet')")
+    source = solution.get("source", {})
+    _require(report, source.get("register") in case.get("source_refs", []), f"{prefix}: Loesungsquelle nicht in source_refs")
+    _require(report, bool(source.get("ecli")) and bool(source.get("aktenzeichen")), f"{prefix}: Loesungsquelle ohne ECLI/Az.")
+    citations = case["reference"].get("citations", [])
+    _require(report, any(c.get("kind") == "entscheidung" and source.get("aktenzeichen", "?") in c["text"]
+                         and c.get("verified_source", {}).get("ecli") == source.get("ecli") for c in citations),
+             f"{prefix}: Referenzentscheidung nicht als belegtes Zitat im Fall")
+    for key in ("question", "expected_result"):
+        _require(report, bool(solution.get(key)), f"{prefix}: Referenzloesung ohne '{key}'")
+    _require(report, bool(solution.get("result_terms")), f"{prefix}: Referenzloesung ohne result_terms")
+    for term in solution.get("result_terms", []):
+        _require(report, term.lower() in solution.get("expected_result", "").lower(),
+                 f"{prefix}: result_term {term!r} steht nicht im erwarteten Ergebnis")
+    for fid in solution.get("decisive_facts", []):
+        _require(report, fid in fact_ids, f"{prefix}: entscheidender Fakt {fid} unbekannt")
+    for norm in solution.get("required_norms", []):
+        _require(report, norm in all_text, f"{prefix}: Norm {norm!r} steht in keinem Dokument")
+    reference_deadlines = {d["date"] for d in case["reference"].get("deadlines", [])}
+    for date in solution.get("deadlines", []):
+        _require(report, date in reference_deadlines, f"{prefix}: Loesungsfrist {date} nicht in reference.deadlines")
+    for point in solution.get("open_points", []):
+        _require(report, bool(point.get("any_terms")), f"{prefix}: offener Punkt {point.get('id')} ohne Begriffe")
+        for term in point.get("any_terms", []):
+            _require(report, term in all_text, f"{prefix}: offener Punkt {point.get('id')}: {term!r} steht in keinem Dokument")
+    _require(report, any(t.get("analyse") for t in case["reference"].get("tasks", [])),
+             f"{prefix}: Referenzloesung ohne Analyseaufgabe (analyse: true)")
 
 
 def validate_corpus(corpus_dir: Path = CORPUS_DIR) -> ValidationReport:

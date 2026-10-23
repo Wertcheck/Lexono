@@ -5828,7 +5828,12 @@ body::-webkit-scrollbar-thumb:hover,
    Akten zeigen auf Mobile ebenfalls weiterhin ihre normale, horizontal
    scrollbare Tabelle, kein Kartenlayout) und waere eine neue, auf dieser
    einen Seite inkonsistente Mobile-Architektur gewesen. */
-@media (max-width: 900px) {
+/* §76 (App-Test WebView2): zwischen 901 und 1365 px blieb das 400px-Panel neben der Tabelle - sie wurde so schmal,
+   dass Titel, Akte, Typ und Status abgeschnitten wurden (1024 px: Typ-Spalte ~25 px; 1280 px: "Beendigungstermin"
+   abgeschnitten). Die Tabelle ist fuer >= 1366 px neben dem Panel ausgelegt (Kommentar `.task-title-cell`); darunter
+   wird wie bisher unter 900 px gestapelt. ".98": WebView2 meldete bei innerWidth 1279 fuer "max-width: 1279px" kein
+   Match (Bruchteil-Breite) - der Grenzwert knapp unter der naechsten ganzen Breite ist robust. */
+@media (max-width: 1365.98px) {
   .tasks-layout {
     flex-direction: column;
   }
@@ -6088,6 +6093,20 @@ body::-webkit-scrollbar-thumb:hover,
 
 .task-type-cell__icon--task {
   color: var(--accent-blue);
+}
+
+/* §76: das Typ-Label darf in der festen 9%-Spalte umbrechen (weiche Trennstelle "Beendigungs-termin") statt durch
+   `.tasks-table td{overflow:hidden}` abgeschnitten zu werden - Spaltenbreiten und Layout bleiben unveraendert. */
+.task-type-cell__label {
+  min-width: 0;
+  /* nur an den weichen Silbentrennstellen umbrechen ("Be-en-di-gungs-ter-min"), nie mitten in der Silbe */
+  overflow-wrap: normal;
+  hyphens: manual;
+  line-height: 1.25;
+}
+
+.task-type-cell .icon {
+  flex: 0 0 auto;
 }
 
 .task-type-cell__icon--deadline {
@@ -7691,6 +7710,10 @@ body::-webkit-scrollbar-thumb:hover,
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* 22.10.: Positionierungskontext fuer das schwebende Datenschutz-Icon in der
+     rechten unteren Ecke (`.chat-privacy-corner`) - verankert es am
+     Chat-Hauptbereich, nicht am (zentrierten, maximalbreiten) Composer. */
+  position: relative;
 }
 
 /* Kopfbereich (Abschnitt 4A des Auftrags: "Lexono/Chat-Kontext, optional
@@ -8423,6 +8446,33 @@ body::-webkit-scrollbar-thumb:hover,
   background: var(--paper-200);
   color: var(--ink-900);
   padding: 10px 16px;
+  border-radius: var(--radius-md);
+  max-width: 80%;
+}
+
+/* §57: "nur hochgeladen" - Ablage durch den Nutzer (rechts wie eine eigene Nachricht), Hinweis statt Sprechblase:
+   noch keine KI-Verarbeitung. Bewusst eigene Klasse (nicht --user), damit keine Rueckfrage-Wiederaufnahme anlaeuft. */
+.chat-message--upload {
+  flex-direction: row-reverse;
+}
+.chat-message--upload .chat-message__avatar {
+  background: var(--ink-500);
+  color: var(--on-brand);
+}
+.chat-message--upload .chat-message__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.chat-message--upload .chat-message__sender {
+  display: none;
+}
+.chat-message--upload .chat-message__text {
+  background: var(--paper-100);
+  border: 1px dashed var(--ink-500);
+  color: var(--ink-700);
+  font-size: 13px;
+  padding: 8px 14px;
   border-radius: var(--radius-md);
   max-width: 80%;
 }
@@ -9190,6 +9240,89 @@ body::-webkit-scrollbar-thumb:hover,
   height: 15px;
 }
 
+/* §51 "Namen schützen" - links in derselben dezenten Fusszeile wie das Datenschutz-Icon; markierte Namen als kleine
+   Chips. Veraltete Markierung (Name nicht mehr im Text) in Warnfarbe, weil dann nicht gesendet wird. */
+.chat-composer__protect {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.chat-composer__protect-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-500);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+a.chat-composer__protect-btn {
+  text-decoration: none;
+}
+
+/* §54: Hinweis des Bausteins "Namen schützen" in Formularen (Schriftsatz, Aenderungsauftrag, E-Mail) - Aussehen wie
+   ein Fehler-Banner, aber eigene Klasse: erst sichtbar, wenn eine Markierung ungueltig oder veraltet ist. */
+.name-protection-error {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--wax-red-tint);
+  border: 1px solid rgba(162, 59, 46, 0.35);
+  color: var(--wax-red);
+}
+
+.name-protection-error[hidden] {
+  display: none;
+}
+
+.chat-composer__protect-btn:hover,
+.chat-composer__protect-btn:focus-visible {
+  background: var(--paper-200);
+  color: var(--seal-green-dark);
+}
+
+.chat-composer__protected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-composer__protected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  padding: 1px 4px 1px 8px;
+  border-radius: 999px;
+  background: var(--paper-200);
+  color: var(--ink-700);
+}
+
+.chat-composer__protected-item--stale {
+  background: var(--wax-red-tint);
+  color: var(--wax-red);
+  text-decoration: line-through;
+}
+
+.chat-composer__protected-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
 .chat-composer__privacy-btn:hover,
 .chat-composer__privacy-btn[aria-expanded="true"] {
   background: var(--paper-200);
@@ -9229,6 +9362,42 @@ body::-webkit-scrollbar-thumb:hover,
    `hidden`-Attribut (JS, siehe chat.html), nicht ueber `:hover` (soll
    nach dem Klick geoeffnet BLEIBEN, bis der Nutzer es aktiv schliesst,
    anders als der obige reine Hover-Tooltip). */
+/* 22.10., Owner-Direktive "DATENSCHUTZ-ICON IN DIE ECKE": das Datenschutz-/
+   Shield-Icon schwebt jetzt in der RECHTEN UNTEREN ECKE des Chat-Hauptbereichs
+   (`.chat-panel`, hat dafuer `position: relative`), unabhaengig von der
+   zentrierten Composer-Breite - bleibt damit bei jeder Fenstergroesse am
+   rechten/unteren Rand. Deutlich groesser und als eigenstaendiges, gut
+   anklickbares Flaechenelement (Pille mit Rahmen/Schatten), weiterhin in
+   ruhigen Design-Tokens (kein Warnton), gut sichtbar in Light & Dark Mode.
+   Button-/Popover-Logik (IDs, JS, Hover-Tooltip) unveraendert. */
+.chat-privacy-corner {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  z-index: 30;
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--paper-000);
+  color: var(--seal-green-dark);
+  border: 1px solid var(--paper-line);
+  box-shadow: var(--shadow-elevated);
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn:hover,
+.chat-privacy-corner .chat-composer__privacy-btn[aria-expanded="true"] {
+  background: var(--paper-200);
+  color: var(--seal-green-dark);
+}
+
 .chat-privacy-popover {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -10894,6 +11063,13 @@ body::-webkit-scrollbar-thumb:hover,
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 55%, transparent);
   border-radius: 3px;
 }
+/* §56: manuell geschuetzter bzw. als Person entschiedener Name in der Dokumentansicht */
+.pii-highlight--protected {
+  background: color-mix(in srgb, var(--brand-green, #1f7a5a) 22%, var(--paper-000));
+  color: var(--ink-900);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-green, #1f7a5a) 55%, transparent);
+  border-radius: 3px;
+}
 .privacy-review__doc-link {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
   font-size: 13px; font-weight: 600; color: var(--brand-green-dark, var(--brand-green)); text-decoration: none;
@@ -10905,6 +11081,38 @@ body::-webkit-scrollbar-thumb:hover,
 @container (max-width: 560px) {
   .privacy-review__options { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================================================
+   Pop-ups (23.10.2026): Pseudonymisierung + Datenschutz-Rueckfrage als zentrierte Dialoge.
+   - Die Pseudonymisierungs-Details liegen jetzt im zentrierten <dialog>, nicht mehr in einer schmalen Spalte,
+     die den A4-Text quetschte. Dafuer darf der Dokumenttext breiter werden (A4-naehere Proportionen).
+   - Die HITL-Rueckfrage wird im Dialog gezeigt; in der Chat-Blase bleibt nur eine kompakte Statuszeile.
+   ============================================================================================================ */
+
+/* Dokumentansicht ohne die alte Kontext-Spalte: der A4-Text bekommt mehr Breite */
+.chat-shell--document-view .chat-document-pane {
+  width: clamp(360px, 48%, 760px);
+}
+.chat-pseudonymization-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin: 0 0 14px; padding: 10px 12px;
+  background: var(--paper-050, var(--paper-100)); border: 1px solid var(--paper-line); border-radius: var(--radius-md);
+}
+.chat-pseudonymization-summary__count { font-size: 12.5px; color: var(--ink-500); }
+.chat-pseudonymization-summary__open { margin-left: auto; }
+
+/* Kontext-Pane im Dialog: volle Breite statt der frueheren 220px-Spalte, ohne linke Trennlinie */
+.modal__body.chat-context-pane {
+  width: auto; border-left: 0; background: transparent;
+  display: block; overflow-y: visible;
+}
+
+/* Kompakte Statuszeile in der Chat-Blase, solange die Rueckfrage im Dialog offen ist */
+.privacy-review-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.privacy-review-status__label { font-size: 13.5px; color: var(--ink-700, var(--ink-900)); }
+
+/* Dialog-Titel mit Icon (Pseudonymisierung) */
+#pseudonymization-dialog .modal__title { display: inline-flex; align-items: center; gap: 8px; }
 
 
 /* Fundstellenpruefung im Editor (§37): Hinweisblock oberhalb des Schreibens, nicht Teil des Schreibens/Exports */
@@ -10926,3 +11134,11 @@ body::-webkit-scrollbar-thumb:hover,
   font-size: 11.5px;
   color: var(--ink-500);
 }
+
+/* §62 Dokumentfreigabe: dezenter Status und informative Meldung am Dokument */
+.document-release-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 6px; }
+.document-release-status--blocked .tag, .document-release-status--required .tag,
+.document-release-status--decision .tag { color: var(--amber, #b26a00); }
+.document-release-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12.5px;
+  padding: 6px 10px; border-radius: 8px; background: var(--surface-muted, rgba(0, 128, 96, 0.06)); }
+.document-release-option { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }

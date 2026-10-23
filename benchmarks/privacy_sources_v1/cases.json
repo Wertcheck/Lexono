@@ -1,0 +1,771 @@
+{
+ "benchmark": "privacy_sources",
+ "version": "v1",
+ "created": "2026-10-17",
+ "description": "Datenschutz-Regressionskorpus mit Quellenbezug (§65): juristische Problemstellungen aus amtlich veroeffentlichten Entscheidungen (Rechtsprechung im Internet) und amtliche Normtexte (Gesetze im Internet) im Wortlaut, eingebettet in VOLLSTAENDIG SYNTHETISCHE Sachverhalte. Alle Personen, Anschriften, Konten, Rufnummern, E-Mail-Adressen, Geburtsdaten, Kunden-/Personalnummern und Aktenzeichen der fiktiven Verfahren sind erfunden; aus den Entscheidungen werden keine Angaben realer Verfahrensbeteiligter, keine Daten und Orte des Ausgangsfalls uebernommen - nur die Rechtsfrage, amtliche Leitsaetze und das Ergebnis. Die Erzaehltexte sind synthetisch (modellgeschrieben); wortgetreu uebernommen sind ausschliesslich Normtexte und amtliche Leitsaetze bzw. Tenorinhalte (amtliche Werke, § 5 Abs. 1 UrhG). Redaktionelle Bestandteile der Portale (Titelzeile, Normenkette, Orientierungs-/Dokumentationshinweise) werden nicht verwendet.",
+ "rules": {
+  "protect": "darf nie im Klartext im Payload stehen (Leck); Teilleck = ein Bestandteil (>= 4 Zeichen) eines mehrteiligen Werts",
+  "keep": "muss lesbar im Payload stehen (Fehlalarm/Verlust, wenn nicht) - Betraege, Fristen, Daten, Normen, Zitate realer Entscheidungen, Gerichte, Fachbegriffe",
+  "chronology": "Daten muessen im Payload in derselben Reihenfolge stehen wie im Dokument",
+  "methodik": "gleiche Pruef- und Bewertungsfunktionen wie pseudonymization_v1 (scripts/bench_pseudonymization.py: _call/evaluate, Modus mask, Produktions-known_entities); Zahlen sind wegen des anderen Korpus NICHT mit pseudonymization_v1 vergleichbar"
+ },
+ "problems": [
+  {
+   "id": "QP-A",
+   "source_refs": [
+    "Q-RECHTSPRECHUNG-IM-INTERNET",
+    "Q-GESETZE-IM-INTERNET"
+   ],
+   "decision": {
+    "court": "BGH, VIII. Zivilsenat",
+    "type": "Beschluss (Hinweisbeschluss nach § 552a ZPO)",
+    "date": "2025-12-02",
+    "aktenzeichen": "VIII ZR 274/23",
+    "ecli": "ECLI:DE:BGH:2025:021225BVIIIZR274.23.0",
+    "doc": "jb-KORE704572026",
+    "retrieved": "2026-10-17"
+   },
+   "norms": [
+    "§ 543 BGB",
+    "§ 573 BGB"
+   ],
+   "question": "Rechtfertigen vom Vermieter nicht genehmigte bauliche Veraenderungen des Mieters in einem langjaehrigen Mietverhaeltnis eine fristlose oder ordentliche Kuendigung?",
+   "expected_result": "Ob ein wichtiger Grund (§ 543 BGB) oder ein berechtigtes Interesse (§ 573 Abs. 1, Abs. 2 Nr. 1 BGB) vorliegt, erfordert eine umfassende Wuerdigung aller Umstaende des Einzelfalls und ist einer abstrakt-generellen Klaerung nicht zugaenglich; der Senat sah keine grundsaetzliche Bedeutung und beabsichtigte, die Revision der Vermieterin gegen die Abweisung der Raeumungsklage zurueckzuweisen (Hinweis der Dokumentationsstelle: Revision danach zurueckgenommen - redaktioneller Hinweis, nur zur Einordnung)."
+  },
+  {
+   "id": "QP-B",
+   "source_refs": [
+    "Q-RECHTSPRECHUNG-IM-INTERNET",
+    "Q-GESETZE-IM-INTERNET"
+   ],
+   "decision": {
+    "court": "BGH, VIII. Zivilsenat",
+    "type": "Urteil",
+    "date": "2025-10-08",
+    "aktenzeichen": "VIII ZR 18/24",
+    "ecli": "ECLI:DE:BGH:2025:081025UVIIIZR18.24.0",
+    "doc": "jb-KORE727122025",
+    "retrieved": "2026-10-17"
+   },
+   "norms": [
+    "§ 577 BGB",
+    "§ 469 BGB"
+   ],
+   "question": "Ist der Verkauf vermieteter, in Wohnungseigentum umgewandelter Wohnraeume an eine Personenhandelsgesellschaft mit personenidentischen Gesellschaftern ein Verkauf an einen Dritten (Mietervorkaufsrecht)?",
+   "expected_result": "Ja (amtlicher Leitsatz): auch die Veraeusserung an eine Personenhandelsgesellschaft, deren Gesellschafter mit denen der veraeussernden Gesellschaft personenidentisch sind, ist ein Verkauf an einen Dritten im Sinne von § 570b Abs. 1 Satz 1 BGB aF (§ 577 Abs. 1 Satz 1 BGB); das gilt auch bei einer nach der Ueberlassung vollzogenen oder beabsichtigten Realteilung des Grundstuecks."
+  },
+  {
+   "id": "QP-C",
+   "source_refs": [
+    "Q-RECHTSPRECHUNG-IM-INTERNET",
+    "Q-GESETZE-IM-INTERNET"
+   ],
+   "decision": {
+    "court": "BAG, 6. Senat",
+    "type": "Urteil",
+    "date": "2025-02-20",
+    "aktenzeichen": "6 AZR 32/24",
+    "ecli": "ECLI:DE:BAG:2025:200225.U.6AZR32.24.0",
+    "doc": "jb-KARE600070232",
+    "retrieved": "2026-10-17"
+   },
+   "norms": [
+    "§ 174 InsO",
+    "§ 169 SGB III",
+    "§ 130 ZPO"
+   ],
+   "question": "Wann ist eine Sammelanmeldung der Bundesagentur fuer Arbeit zur Insolvenztabelle (uebergegangene Arbeitnehmeransprueche) ordnungsgemaess, und gilt § 130 Nr. 6 ZPO?",
+   "expected_result": "Amtliche Leitsaetze: § 130 Nr. 6 ZPO findet auf Forderungsanmeldungen nach § 174 Abs. 1 Satz 1 InsO keine Anwendung; eine Sammelanmeldung ist nur ordnungsgemaess (§ 174 Abs. 2 InsO), wenn die einzelnen Arbeitnehmer, ihr jeweiliges monatliches Bruttoentgelt und die konkreten Anspruchszeitraeume angegeben sind."
+  },
+  {
+   "id": "QP-D",
+   "source_refs": [
+    "Q-RECHTSPRECHUNG-IM-INTERNET",
+    "Q-GESETZE-IM-INTERNET"
+   ],
+   "decision": {
+    "court": "BAG, 2. Senat",
+    "type": "Urteil",
+    "date": "2025-04-03",
+    "aktenzeichen": "2 AZR 72/24",
+    "ecli": "ECLI:DE:BAG:2025:030425.U.2AZR72.24.0",
+    "doc": "jb-KARE600070322",
+    "retrieved": "2026-10-17"
+   },
+   "norms": [
+    "§ 1 KSchG",
+    "§ 168 SGB IX",
+    "§ 20 Abs. 2 GVG"
+   ],
+   "question": "Entzieht die Berufung eines auslaendischen Staates auf 'Gruende aus dem hoheitlichen Bereich' die Kuendigungsschutzklage einer Konsulatsmitarbeiterin insgesamt der deutschen Gerichtsbarkeit?",
+   "expected_result": "Nein (amtlicher Leitsatz): die Ueberpruefung der Wirksamkeit einer Kuendigung wird nur insoweit der deutschen Gerichtsbarkeit entzogen, wie eine Beurteilung hoheitlichen Handelns erfolgen muesste; im Ausgangsfall Aufhebung und Zurueckverweisung an das Landesarbeitsgericht."
+  },
+  {
+   "id": "QP-E",
+   "source_refs": [
+    "Q-RECHTSPRECHUNG-IM-INTERNET"
+   ],
+   "decision": {
+    "court": "BGH, VI. Zivilsenat",
+    "type": "Urteil",
+    "date": "2025-10-14",
+    "aktenzeichen": "VI ZR 431/24",
+    "ecli": "ECLI:DE:BGH:2025:141025UVIZR431.24.0",
+    "doc": "jb-KORE726462025",
+    "retrieved": "2026-10-17"
+   },
+   "norms": [
+    "Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO"
+   ],
+   "question": "Darf ein Mobilfunkanbieter Positivdaten (Stammdaten, Begruendung/Beendigung des Vertrags) zur Betrugspraevention an eine Wirtschaftsauskunftei uebermitteln?",
+   "expected_result": "Amtliche Leitsaetze: die Uebermittlung kann nach Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO durch das Interesse an einer Betrugspraevention gerechtfertigt sein; ein Unterlassungsantrag, der auch datenschutzrechtlich nicht zu beanstandende Verhaltensweisen erfasst, ist zu weit gefasst und damit unbegruendet (Revision des Klaegers zurueckgewiesen)."
+  }
+ ],
+ "cases": [
+  {
+   "id": "Q01",
+   "problem": "QP-A",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Wohnbau Lindenhof GmbH"
+    ],
+    "gegner": [
+     "Hannelore Brüggemann",
+     "Matthias Brüggemann"
+    ]
+   },
+   "text": "Wohnbau Lindenhof GmbH · Hausverwaltung · Kastanienallee 41 · 10435 Berlin\n\nFrau Hannelore Brüggemann\nHerrn Matthias Brüggemann\nAm Weidenhang 17, 2. OG links\n12557 Berlin\n\nBerlin, den 12.03.2026\n\nMietverhältnis über die Dreizimmerwohnung Am Weidenhang 17, 2. OG links – Kündigung\n\nSehr geehrte Frau Brüggemann, sehr geehrter Herr Brüggemann,\n\nbei der Besichtigung am 18.02.2026 hat unsere Mitarbeiterin Frau Ulrike Tessendorf festgestellt, dass Sie das Badezimmer ohne unsere schriftliche Zustimmung umgebaut haben: Vor die Bestandswand wurde eine Trockenbauwand gesetzt, ein Hänge-WC montiert und in die Wand wurden Schlitze für Leitungen gefräst. Nach § 7 des Mietvertrags dürfen bauliche Veränderungen nur mit schriftlicher Zustimmung des Vermieters vorgenommen werden.\n\nMit Schreiben vom 23.02.2026 haben wir Sie abgemahnt und zum Rückbau bis zum 09.03.2026 aufgefordert. Die Frist ist fruchtlos verstrichen.\n\nWir kündigen das Mietverhältnis daher gemäß § 543 Abs. 1, Abs. 2 Satz 1 Nr. 2 BGB fristlos, hilfsweise ordentlich gemäß § 573 Abs. 2 Nr. 1 BGB zum 31.12.2026. Nach § 573 Abs. 1 Satz 1 BGB kann der Vermieter nur kündigen, wenn er ein berechtigtes Interesse an der Beendigung des Mietverhältnisses hat; ein solches liegt nach § 573 Abs. 2 Nr. 1 BGB insbesondere vor, wenn der Mieter seine vertraglichen Pflichten schuldhaft nicht unerheblich verletzt hat.\n\nDie Kaution in Höhe von 1.840,00 EUR wird nach Rückgabe der Wohnung abgerechnet. Rückfragen bitte an Frau Tessendorf, Telefon 030 4412 7731, u.tessendorf@lindenhof-wohnbau.example.\n\nMit freundlichen Grüßen\nDr. Sebastian Kranefeld, Geschäftsführer",
+   "protect": [
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON"
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON"
+    },
+    {
+     "value": "Ulrike Tessendorf",
+     "type": "PERSON"
+    },
+    {
+     "value": "Sebastian Kranefeld",
+     "type": "PERSON"
+    },
+    {
+     "value": "Am Weidenhang 17",
+     "type": "ADRESSE"
+    },
+    {
+     "value": "030 4412 7731",
+     "type": "TELEFON"
+    },
+    {
+     "value": "u.tessendorf@lindenhof-wohnbau.example",
+     "type": "EMAIL"
+    }
+   ],
+   "keep": [
+    "12.03.2026",
+    "18.02.2026",
+    "23.02.2026",
+    "09.03.2026",
+    "31.12.2026",
+    "1.840,00 EUR",
+    "§ 543 Abs. 1, Abs. 2 Satz 1 Nr. 2 BGB",
+    "§ 573 Abs. 2 Nr. 1 BGB",
+    "berechtigtes Interesse an der Beendigung des Mietverhältnisses",
+    "schuldhaft nicht unerheblich verletzt",
+    "Trockenbauwand",
+    "Hänge-WC"
+   ],
+   "chronology": [
+    "18.02.2026",
+    "23.02.2026",
+    "09.03.2026",
+    "31.12.2026"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q02",
+   "problem": "QP-A",
+   "group": "quelle_mietrecht",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Hannelore Brüggemann"
+    ],
+    "gegner": [
+     "Wohnbau Lindenhof GmbH"
+    ]
+   },
+   "text": "Aktenvermerk – Räumungsklage Wohnbau Lindenhof GmbH ./. Brüggemann, Amtsgericht Köpenick, Az. 14 C 233/26\n\nDie Mandantin, Frau Hannelore Brüggemann (geb. 14.02.1941), ist seit dem Jahr 1976 Mieterin der Wohnung. Sie bewohnt diese gemeinsam mit ihrem Sohn. Nach ihren Angaben wurde das Badezimmer bereits im Jahr 1979 mit Wissen und Billigung der damaligen Vermieterin auf Kosten der Mieter umgebaut; ein Schreiben der Vormieterin vom 06.06.1979 liegt im Original vor. Im Januar 2026 ließ die Mandantin die Ausstattung erneuern.\n\nRechtliche Einordnung: Ob ein wichtiger Grund im Sinne von § 543 Abs. 1 BGB oder ein berechtigtes Interesse nach § 573 Abs. 1 Satz 1 BGB vorliegt, bedarf stets einer umfassenden Würdigung aller Umstände des Einzelfalls (vgl. BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23). Für die Mandantin sprechen die Dauer des Mietverhältnisses von rund fünfzig Jahren und die frühere Billigung des Umbaus.\n\nKlageerwiderung bis 15.04.2026. Kontakt Mandantin: Telefon 030 6577 2014; Kontoverbindung für die Kautionsrückzahlung: IBAN DE74 3704 0044 5320 1304 71.",
+   "protect": [
+    {
+     "value": "Hannelore Brüggemann",
+     "type": "PERSON"
+    },
+    {
+     "value": "14.02.1941",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "14 C 233/26",
+     "type": "KENNUNG"
+    },
+    {
+     "value": "030 6577 2014",
+     "type": "TELEFON"
+    },
+    {
+     "value": "DE74 3704 0044 5320 1304 71",
+     "type": "IBAN"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Köpenick",
+    "06.06.1979",
+    "Januar 2026",
+    "15.04.2026",
+    "§ 543 Abs. 1 BGB",
+    "§ 573 Abs. 1 Satz 1 BGB",
+    "umfassenden Würdigung aller Umstände des Einzelfalls",
+    "BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
+    "Räumungsklage"
+   ],
+   "chronology": [
+    "06.06.1979",
+    "Januar 2026",
+    "15.04.2026"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q03",
+   "problem": "QP-B",
+   "group": "quelle_mietrecht",
+   "doctype": "email",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Jörg Wendehorst",
+     "Sabine Wendehorst"
+    ],
+    "gegner": [
+     "Havelblick Immobilien GmbH & Co. KG"
+    ]
+   },
+   "text": "Von: j.wendehorst@posteo.example\nAn: Kanzlei\nBetreff: Verkauf unserer Wohnung – Vorkaufsrecht?\n\nGuten Tag,\n\nmeine Frau Sabine Wendehorst und ich wohnen seit dem 01.04.2011 zur Miete in der Wohnung Uferweg 8, Wohnung 5, 14476 Potsdam. Nach unserem Einzug wurde das Haus im Jahr 2019 in Wohnungseigentum aufgeteilt. Am 03.03.2026 erhielten wir ein Schreiben des Notars Dr. Friedemann Ollesch: Die Havelblick Immobilien GmbH & Co. KG hat unsere Wohnung mit Vertrag vom 24.02.2026 für 287.500,00 EUR an die Havelblick Bestand GmbH & Co. KG verkauft. Die Verkäuferin meint, ein Vorkaufsrecht bestehe nicht, weil beide Gesellschaften dieselben Gesellschafter hätten und es sich nur um eine Umstrukturierung im Konzern handele.\n\nKönnen wir das Vorkaufsrecht ausüben, und bis wann? Sie erreichen mich unter 0331 8812 409.\n\nViele Grüße\nJörg Wendehorst",
+   "protect": [
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON"
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON"
+    },
+    {
+     "value": "Friedemann Ollesch",
+     "type": "PERSON"
+    },
+    {
+     "value": "j.wendehorst@posteo.example",
+     "type": "EMAIL"
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE"
+    },
+    {
+     "value": "0331 8812 409",
+     "type": "TELEFON"
+    }
+   ],
+   "keep": [
+    "01.04.2011",
+    "2019",
+    "03.03.2026",
+    "24.02.2026",
+    "287.500,00 EUR",
+    "Wohnungseigentum",
+    "Vorkaufsrecht",
+    "dieselben Gesellschafter"
+   ],
+   "chronology": [
+    "01.04.2011",
+    "03.03.2026",
+    "24.02.2026"
+   ],
+   "neutral": [
+    "Havelblick Bestand GmbH & Co. KG",
+    "Havelblick Immobilien GmbH & Co. KG"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q04",
+   "problem": "QP-B",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Jörg Wendehorst",
+     "Sabine Wendehorst"
+    ],
+    "gegner": [
+     "Havelblick Immobilien GmbH & Co. KG"
+    ]
+   },
+   "text": "Einschreiben/Rückschein\n\nHavelblick Immobilien GmbH & Co. KG\nz. Hd. der Geschäftsführung\n\nAusübung des Vorkaufsrechts – Wohnung Nr. 5, Uferweg 8, Potsdam\n\nSehr geehrte Damen und Herren,\n\nnamens und in Vollmacht unserer Mandanten, der Eheleute Jörg Wendehorst und Sabine Wendehorst, üben wir hiermit das Vorkaufsrecht an der vorbezeichneten Wohnung aus.\n\nWerden vermietete Wohnräume, an denen nach der Überlassung an den Mieter Wohnungseigentum begründet worden ist oder begründet werden soll, an einen Dritten verkauft, so ist der Mieter zum Vorkauf berechtigt (§ 577 Abs. 1 Satz 1 BGB). Dritter ist nach der Rechtsprechung auch eine Personenhandelsgesellschaft, deren Gesellschafter mit denen der veräußernden Gesellschaft personenidentisch sind (BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24).\n\nDie Mitteilung über den Kaufvertrag ist unseren Mandanten am 03.03.2026 zugegangen. Das Vorkaufsrecht kann bei Grundstücken nur bis zum Ablauf von zwei Monaten nach dem Empfang der Mitteilung ausgeübt werden (§ 469 Abs. 2 Satz 1 BGB); da der 03.05.2026 ein Sonntag ist, endet die Frist am 04.05.2026. Diese Erklärung erfolgt fristgerecht am 20.04.2026.\n\nDer Kaufpreis von 287.500,00 EUR wird nach Fälligkeitsmitteilung des Notars auf das Anderkonto überwiesen. Bitte richten Sie Rückfragen ausschließlich an uns.\n\nRechtsanwältin Mareike Stübbe-Holtkamp",
+   "protect": [
+    {
+     "value": "Jörg Wendehorst",
+     "type": "PERSON"
+    },
+    {
+     "value": "Sabine Wendehorst",
+     "type": "PERSON"
+    },
+    {
+     "value": "Mareike Stübbe-Holtkamp",
+     "type": "PERSON"
+    },
+    {
+     "value": "Uferweg 8",
+     "type": "ADRESSE"
+    }
+   ],
+   "keep": [
+    "§ 577 Abs. 1 Satz 1 BGB",
+    "an einen Dritten verkauft, so ist der Mieter zum Vorkauf berechtigt",
+    "BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+    "personenidentisch",
+    "03.03.2026",
+    "§ 469 Abs. 2 Satz 1 BGB",
+    "Ablauf von zwei Monaten",
+    "03.05.2026",
+    "04.05.2026",
+    "20.04.2026",
+    "287.500,00 EUR"
+   ],
+   "chronology": [
+    "03.03.2026",
+    "03.05.2026",
+    "04.05.2026",
+    "20.04.2026"
+   ],
+   "neutral": [
+    "Havelblick Immobilien GmbH & Co. KG"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q05",
+   "problem": "QP-C",
+   "group": "quelle_insolvenz",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Kerstin Abelmann"
+    ],
+    "gegner": [
+     "Bundesagentur für Arbeit"
+    ]
+   },
+   "text": "Insolvenzverfahren über das Vermögen der Metallbau Sörensen GmbH, Amtsgericht Kiel, Az. 27 IN 418/25\nInsolvenzverwalterin: Rechtsanwältin Dr. Kerstin Abelmann\n\nPrüfvermerk zur Forderungsanmeldung der Bundesagentur für Arbeit vom 12.01.2026\n\nDie Bundesagentur für Arbeit meldet aus übergegangenem Recht (§ 169 Satz 1 SGB III) Forderungen in Höhe von insgesamt 31.497,75 EUR zur Tabelle an. Die Anmeldung nennt nur den Gesamtbetrag und den Zeitraum 01.08.2025 bis 31.10.2025; die einzelnen Arbeitnehmer und ihr monatliches Bruttoentgelt sind nicht angegeben.\n\nBei der Anmeldung sind der Grund und der Betrag der Forderung anzugeben (§ 174 Abs. 2 InsO). Eine Sammelanmeldung der Bundesagentur für Arbeit ist nur dann ordnungsgemäß, wenn die einzelnen betreffenden Arbeitnehmer, ihr jeweiliges monatliches Bruttoentgelt und die konkreten Anspruchszeiträume angegeben sind (BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24). Auf die fehlende Unterschrift kommt es dagegen nicht an, weil § 130 Nr. 6 ZPO auf Forderungsanmeldungen nach § 174 Abs. 1 Satz 1 InsO keine Anwendung findet.\n\nErgebnis: Forderung im Prüfungstermin am 24.02.2026 vorläufig bestreiten; Nachbesserung bis 10.02.2026 anfordern. Sachbearbeiter bei der Agentur: Herr Henning Vosskamp, Telefon 0431 709 4421.",
+   "protect": [
+    {
+     "value": "Kerstin Abelmann",
+     "type": "PERSON"
+    },
+    {
+     "value": "Henning Vosskamp",
+     "type": "PERSON"
+    },
+    {
+     "value": "27 IN 418/25",
+     "type": "KENNUNG"
+    },
+    {
+     "value": "0431 709 4421",
+     "type": "TELEFON"
+    }
+   ],
+   "keep": [
+    "Amtsgericht Kiel",
+    "12.01.2026",
+    "§ 169 Satz 1 SGB III",
+    "31.497,75 EUR",
+    "01.08.2025 bis 31.10.2025",
+    "§ 174 Abs. 2 InsO",
+    "Grund und der Betrag der Forderung",
+    "BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24",
+    "§ 130 Nr. 6 ZPO",
+    "§ 174 Abs. 1 Satz 1 InsO",
+    "24.02.2026",
+    "10.02.2026",
+    "Sammelanmeldung",
+    "Bruttoentgelt"
+   ],
+   "chronology": [
+    "12.01.2026",
+    "24.02.2026",
+    "10.02.2026"
+   ],
+   "neutral": [
+    "Metallbau Sörensen GmbH",
+    "Bundesagentur für Arbeit"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q06",
+   "problem": "QP-C",
+   "group": "quelle_insolvenz",
+   "doctype": "formular",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "gegner": [
+     "Bundesagentur für Arbeit"
+    ]
+   },
+   "text": "Nachgereichte Aufstellung der Bundesagentur für Arbeit zur Sammelanmeldung vom 12.01.2026 (Eingang 06.02.2026)\n\nArbeitnehmer | Geburtsdatum | monatliches Bruttoentgelt | Anspruchszeitraum | Betrag\nÖmer Yıldırım | 03.09.1987 | 3.412,50 EUR | 01.08.2025–31.10.2025 | 10.237,50 EUR\nAgnieszka Wróblewska | 21.11.1992 | 2.980,00 EUR | 01.08.2025–31.10.2025 | 8.940,00 EUR\nThorsten Pfannkuch | 17.05.1979 | 4.106,75 EUR | 01.08.2025–31.10.2025 | 12.320,25 EUR\nSumme | | | | 31.497,75 EUR\n\nDie Ansprüche sind gemäß § 169 Satz 1 SGB III mit dem Antrag auf Insolvenzgeld auf die Bundesagentur für Arbeit übergegangen.",
+   "protect": [
+    {
+     "value": "Ömer Yıldırım",
+     "type": "PERSON"
+    },
+    {
+     "value": "Agnieszka Wróblewska",
+     "type": "PERSON"
+    },
+    {
+     "value": "Thorsten Pfannkuch",
+     "type": "PERSON"
+    },
+    {
+     "value": "03.09.1987",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "21.11.1992",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "17.05.1979",
+     "type": "PERS_DATUM"
+    }
+   ],
+   "keep": [
+    "12.01.2026",
+    "06.02.2026",
+    "3.412,50 EUR",
+    "2.980,00 EUR",
+    "4.106,75 EUR",
+    "10.237,50 EUR",
+    "8.940,00 EUR",
+    "12.320,25 EUR",
+    "31.497,75 EUR",
+    "01.08.2025–31.10.2025",
+    "§ 169 Satz 1 SGB III",
+    "Insolvenzgeld"
+   ],
+   "chronology": [
+    "12.01.2026",
+    "06.02.2026"
+   ],
+   "neutral": [
+    "Bundesagentur für Arbeit"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q07",
+   "problem": "QP-D",
+   "group": "quelle_arbeitsrecht",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Svetlana Marković"
+    ],
+    "gegner": [
+     "Generalkonsulat der Republik Valdoria"
+    ]
+   },
+   "text": "Gesprächsnotiz – Erstberatung am 26.01.2026\n\nMandantin: Frau Svetlana Marković, geb. 08.07.1979, wohnhaft Fliederstraße 22, 60385 Frankfurt am Main, Telefon 069 4312 8856, Personalnummer im Konsulat VK-20817.\n\nDie Mandantin ist seit dem 01.09.2014 als Sachbearbeiterin in der Visa-Abteilung des Generalkonsulats der Republik Valdoria in Frankfurt am Main beschäftigt, Bruttomonatsgehalt 3.950,00 EUR. Sie ist schwerbehindert mit einem Grad der Behinderung von 50. Mit Schreiben vom 15.01.2026, zugegangen am 16.01.2026, kündigte das Generalkonsulat ordentlich zum 30.04.2026. Eine Zustimmung des Integrationsamts nach § 168 SGB IX wurde nicht eingeholt. Das Konsulat beruft sich auf „Gründe aus dem hoheitlichen Bereich“.\n\nVorgehen: Kündigungsschutzklage zum Arbeitsgericht Frankfurt am Main; die Dreiwochenfrist des § 4 Satz 1 KSchG endet am 06.02.2026. Nach BAG, Urteil vom 3. April 2025 – 2 AZR 72/24, wird die Überprüfung der Kündigung durch das Berufen auf Gründe aus dem hoheitlichen Bereich nicht insgesamt der deutschen Gerichtsbarkeit entzogen, sondern nur insoweit, wie eine Beurteilung hoheitlichen Handelns erfolgen müsste. Kollegin im Konsulat und mögliche Zeugin: Frau Dragana Ilić.",
+   "protect": [
+    {
+     "value": "Svetlana Marković",
+     "type": "PERSON"
+    },
+    {
+     "value": "08.07.1979",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "Fliederstraße 22",
+     "type": "ADRESSE"
+    },
+    {
+     "value": "069 4312 8856",
+     "type": "TELEFON"
+    },
+    {
+     "value": "VK-20817",
+     "type": "KENNUNG"
+    },
+    {
+     "value": "Dragana Ilić",
+     "type": "PERSON"
+    }
+   ],
+   "keep": [
+    "26.01.2026",
+    "01.09.2014",
+    "3.950,00 EUR",
+    "Grad der Behinderung von 50",
+    "15.01.2026",
+    "16.01.2026",
+    "30.04.2026",
+    "§ 168 SGB IX",
+    "Gründe aus dem hoheitlichen Bereich",
+    "Arbeitsgericht Frankfurt am Main",
+    "§ 4 Satz 1 KSchG",
+    "06.02.2026",
+    "BAG, Urteil vom 3. April 2025 – 2 AZR 72/24",
+    "nicht insgesamt der deutschen Gerichtsbarkeit entzogen",
+    "Kündigungsschutzklage"
+   ],
+   "chronology": [
+    "01.09.2014",
+    "15.01.2026",
+    "16.01.2026",
+    "30.04.2026",
+    "06.02.2026"
+   ],
+   "neutral": [
+    "Republik Valdoria"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q08",
+   "problem": "QP-D",
+   "group": "quelle_arbeitsrecht",
+   "doctype": "chat",
+   "field": "anmerkungen",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Svetlana Marković"
+    ]
+   },
+   "text": "Bitte entwirf die Kündigungsschutzklage für Frau Marković gegen das Generalkonsulat. Kündigung vom 15.01.2026, Zugang 16.01.2026, Frist bis 06.02.2026. Schwerbehinderung (GdB 50) war dem Arbeitgeber bekannt, die Zustimmung nach § 168 SGB IX fehlt. Gehe auf die Staatenimmunität ein (BAG, 2 AZR 72/24) und darauf, dass Frau Ilić als Zeugin zur Tätigkeit ohne hoheitlichen Bezug benannt werden kann.",
+   "protect": [
+    {
+     "value": "Marković",
+     "type": "PERSON"
+    },
+    {
+     "value": "Ilić",
+     "type": "PERSON"
+    }
+   ],
+   "keep": [
+    "15.01.2026",
+    "16.01.2026",
+    "06.02.2026",
+    "GdB 50",
+    "§ 168 SGB IX",
+    "Staatenimmunität",
+    "2 AZR 72/24",
+    "Kündigungsschutzklage"
+   ],
+   "chronology": [
+    "15.01.2026",
+    "16.01.2026",
+    "06.02.2026"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q09",
+   "problem": "QP-E",
+   "group": "quelle_datenschutz",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Leopold Hanebutt"
+    ],
+    "gegner": [
+     "Fernmelde Nord AG"
+    ]
+   },
+   "text": "CrediNord Auskunftei AG · Datenschutzauskunft nach Art. 15 DSGVO\n\nAuskunft vom 09.03.2026 für: Herrn Leopold Hanebutt, geb. 30.10.1985, Lindenstraße 3a, 49074 Osnabrück\n\nGespeicherte Daten (Positivdaten):\n1. Mobilfunkvertrag bei der Fernmelde Nord AG, Kundennummer MK-4471-2290-18, Vertragsbeginn 01.06.2023, gemeldet am 05.06.2023\n2. Beendigung desselben Vertrags zum 31.05.2025, gemeldet am 02.06.2025\nRufnummer laut Meldung: 0171 4432198\nE-Mail laut Meldung: leo.hanebutt@mailbox.example\n\nZweck der Speicherung: Betrugsprävention und Identitätsabgleich. Rechtsgrundlage nach Angabe der Auskunftei: Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO. Löschung nach Ablauf von 36 Monaten.",
+   "protect": [
+    {
+     "value": "Leopold Hanebutt",
+     "type": "PERSON"
+    },
+    {
+     "value": "30.10.1985",
+     "type": "PERS_DATUM"
+    },
+    {
+     "value": "Lindenstraße 3a",
+     "type": "ADRESSE"
+    },
+    {
+     "value": "MK-4471-2290-18",
+     "type": "KENNUNG"
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON"
+    },
+    {
+     "value": "leo.hanebutt@mailbox.example",
+     "type": "EMAIL"
+    }
+   ],
+   "keep": [
+    "Art. 15 DSGVO",
+    "09.03.2026",
+    "Positivdaten",
+    "01.06.2023",
+    "05.06.2023",
+    "31.05.2025",
+    "02.06.2025",
+    "Betrugsprävention",
+    "Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO",
+    "36 Monaten"
+   ],
+   "chronology": [
+    "09.03.2026",
+    "01.06.2023",
+    "05.06.2023",
+    "31.05.2025",
+    "02.06.2025"
+   ],
+   "neutral": [
+    "CrediNord Auskunftei AG",
+    "Fernmelde Nord AG"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q10",
+   "problem": "QP-E",
+   "group": "quelle_datenschutz",
+   "doctype": "notiz",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Leopold Hanebutt"
+    ],
+    "gegner": [
+     "Fernmelde Nord AG"
+    ]
+   },
+   "text": "Vermerk zur Erfolgsaussicht – Hanebutt ./. Fernmelde Nord AG, Landgericht Osnabrück, Az. 2 O 1187/26\n\nDer Mandant möchte der Fernmelde Nord AG untersagen lassen, Positivdaten an Auskunfteien zu übermitteln, und verlangt 1.000,00 EUR Schadensersatz nach Art. 82 DSGVO. Der Klageentwurf vom 14.04.2026 ist auf jede Übermittlung von Vertragsdaten gerichtet.\n\nNach BGH, Urteil vom 14. Oktober 2025 – VI ZR 431/24, ist ein Unterlassungsantrag, der auch datenschutzrechtlich nicht zu beanstandende Verhaltensweisen erfasst, zu weit gefasst und damit unbegründet. Die Übermittlung personenbezogener Positivdaten an eine Wirtschaftsauskunftei kann gemäß Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO durch das Interesse an einer Betrugsprävention gerechtfertigt sein.\n\nEmpfehlung: Antrag auf konkrete Verletzungsform beschränken; Besprechung mit Herrn Hanebutt am 21.04.2026, Rückruf unter 0171 4432198.",
+   "protect": [
+    {
+     "value": "Hanebutt",
+     "type": "PERSON"
+    },
+    {
+     "value": "2 O 1187/26",
+     "type": "KENNUNG"
+    },
+    {
+     "value": "0171 4432198",
+     "type": "TELEFON"
+    }
+   ],
+   "keep": [
+    "Landgericht Osnabrück",
+    "Positivdaten",
+    "1.000,00 EUR",
+    "Art. 82 DSGVO",
+    "14.04.2026",
+    "BGH, Urteil vom 14. Oktober 2025 – VI ZR 431/24",
+    "zu weit gefasst und damit unbegründet",
+    "Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO",
+    "Betrugsprävention",
+    "21.04.2026"
+   ],
+   "chronology": [
+    "14.04.2026",
+    "21.04.2026"
+   ],
+   "neutral": [
+    "Fernmelde Nord AG"
+   ],
+   "expect": "allow"
+  },
+  {
+   "id": "Q11",
+   "problem": "QP-A",
+   "group": "quelle_mietrecht",
+   "doctype": "brief",
+   "field": "sachverhalt",
+   "mode": "mask",
+   "known_entities": {
+    "mandant": [
+     "Hannelore Brüggemann"
+    ],
+    "gegner": [
+     "Wohnbau Lindenhof GmbH"
+    ]
+   },
+   "text": "Fristen der ordentlichen Kündigung (§ 573c Abs. 1 BGB): Die Kündigung ist spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats zulässig. Die Kündigungsfrist für den Vermieter verlängert sich nach fünf und acht Jahren seit der Überlassung des Wohnraums um jeweils drei Monate.\n\nFür die Mandantin, Frau Brüggemann, die die Wohnung seit 1976 nutzt, beträgt die Frist des Vermieters damit neun Monate. Die hilfsweise ordentliche Kündigung vom 12.03.2026 wirkt daher frühestens zum 31.12.2026. Ansprechpartnerin für die Mandantin ist ihr Sohn, Herr Matthias Brüggemann, erreichbar unter m.brueggemann@webpost.example.",
+   "protect": [
+    {
+     "value": "Brüggemann",
+     "type": "PERSON"
+    },
+    {
+     "value": "Matthias Brüggemann",
+     "type": "PERSON"
+    },
+    {
+     "value": "m.brueggemann@webpost.example",
+     "type": "EMAIL"
+    }
+   ],
+   "keep": [
+    "§ 573c Abs. 1 BGB",
+    "spätestens am dritten Werktag eines Kalendermonats zum Ablauf des übernächsten Monats",
+    "nach fünf und acht Jahren seit der Überlassung des Wohnraums um jeweils drei Monate",
+    "1976",
+    "neun Monate",
+    "12.03.2026",
+    "31.12.2026"
+   ],
+   "chronology": [
+    "12.03.2026",
+    "31.12.2026"
+   ],
+   "expect": "allow"
+  }
+ ]
+}

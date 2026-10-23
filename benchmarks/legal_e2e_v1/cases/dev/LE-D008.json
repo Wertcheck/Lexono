@@ -1,0 +1,111 @@
+{
+  "id": "LE-D008",
+  "split": "dev",
+  "version": 2,
+  "title": "Berufung: Zustellung streitig, Fristen im Aktenvermerk, Dokumentdaten",
+  "rechtsgebiet": "Zivilprozessrecht",
+  "synthetic": true,
+  "source_refs": [],
+  "notes": "Vollständig synthetisch, Normen real (ZPO). §73-Entwicklungsfall: Vermerk-Kopfzeile \"Aktenvermerk vom <Datum> - Az. ...\" mit Fristfeld in der Folgezeile, E-Mail-Kopf \"Datum: <Datum>\" mit \"Betreff: Frist ...\", zwei Fristenden ohne Doppelpunkt, Fristende ausdrücklich offen, streitige Zustellung, bloße Dokument- und Wochentagsdaten.",
+  "parties": [
+    {"id": "P1", "name": "Leonore Fahrenkamp", "role": "mandant", "gender": "f"},
+    {"id": "P2", "name": "Bertold Quaschning", "role": "gegner", "gender": "m"}
+  ],
+  "matter": {"title": "Quaschning ./. Fahrenkamp - Berufung", "client_party": "P1", "reference_number": "26/0091-HV"},
+  "documents": [
+    {
+      "id": "D1", "type": "anlage", "format": "pdf", "filename": "Urteil_Auszug.pdf", "date": "14.01.2026",
+      "paragraphs": [
+        "Landgericht Beispielburg",
+        "Urteil vom 14.01.2026 - Az. 3 O 412/25",
+        "In dem Rechtsstreit Bertold Quaschning, Lerchenweg 7, 31135 Beispielburg, Kläger, gegen Leonore Fahrenkamp, Beklagte, wird die Beklagte verurteilt, an den Kläger 4.870,00 EUR nebst Zinsen zu zahlen.",
+        "Rechtsmittelbelehrung: Gegen dieses Urteil ist die Berufung zulässig."
+      ]
+    },
+    {
+      "id": "D2", "type": "notiz", "format": "txt", "filename": "Aktenvermerk_Fristen.txt", "date": "23.01.2026",
+      "paragraphs": [
+        "Aktenvermerk vom 23.01.2026 - Az. 26/0091-HV",
+        "Berufungsfrist: Das Urteil wurde laut Empfangsbekenntnis am 22.01.2026 zugestellt (§ 517 ZPO); Fristende 23.02.2026, da 22.02.2026 ein Sonntag ist.",
+        "Berufungsbegründungsfrist: Fristende 23.03.2026 (§ 520 Abs. 2 ZPO), da 22.03.2026 ein Sonntag ist.",
+        "Die Gegenseite behauptet eine Zustellung schon am 21.01.2026; das Fristende ist danach offen und wird nach Vorlage des Zustellnachweises geprüft."
+      ]
+    },
+    {
+      "id": "D3", "type": "email", "format": "txt", "filename": "Mail_Mandantin.txt", "date": "26.01.2026",
+      "paragraphs": [
+        "Von: l.fahrenkamp@beispielpost.example",
+        "Datum: 26.01.2026",
+        "Betreff: Frist Berufung",
+        "Ich möchte gegen das Urteil vorgehen. Die Reparaturrechnung über 2.315,40 EUR habe ich nie erhalten.",
+        "Erreichbar bin ich unter 0511 7720 418.",
+        "Leonore Fahrenkamp"
+      ]
+    },
+    {
+      "id": "D4", "type": "schreiben", "format": "pdf", "filename": "Schreiben_Gegenseite.pdf", "date": "30.01.2026",
+      "paragraphs": [
+        "Beispielburg, 30.01.2026",
+        "Wir verweisen auf unser Schreiben vom 12.12.2025.",
+        "Das Urteil wurde Ihrer Mandantin bereits am 21.01.2026 zugestellt.",
+        "Zur Vermeidung weiterer Kosten erwarten wir Zahlung von 4.870,00 EUR bis 13.02.2026."
+      ]
+    },
+    {
+      "id": "D5", "type": "anlage", "format": "scan", "filename": "Empfangsbekenntnis_Scan.pdf", "date": "22.01.2026",
+      "paragraphs": [
+        "Empfangsbekenntnis",
+        "Az. 3 O 412/25 - Urteil vom 14.01.2026",
+        "Empfangen am 22.01.2026",
+        "Unterschrift Rechtsanwalt"
+      ]
+    }
+  ],
+  "reference": {
+    "facts": [
+      {"id": "F1", "statement": "Verurteilung zur Zahlung", "values": ["4.870,00 EUR"], "docs": ["D1"]},
+      {"id": "F2", "statement": "Zustellung laut Empfangsbekenntnis", "values": ["22.01.2026"], "docs": ["D5"]},
+      {"id": "F3", "statement": "Zustellung laut Gegenseite", "values": ["21.01.2026"], "docs": ["D4"]},
+      {"id": "F4", "statement": "Bestrittene Reparaturrechnung", "values": ["2.315,40 EUR"], "docs": ["D3"]},
+      {"id": "F5", "statement": "Aktenzeichen des Landgerichts", "values": ["3 O 412/25"], "docs": ["D1"]}
+    ],
+    "chronology": [
+      {"date": "14.01.2026", "event": "Urteil", "doc": "D1"},
+      {"date": "22.01.2026", "event": "Empfangsbekenntnis", "doc": "D5"},
+      {"date": "23.01.2026", "event": "Aktenvermerk Fristen", "doc": "D2"},
+      {"date": "26.01.2026", "event": "E-Mail der Mandantin", "doc": "D3"},
+      {"date": "30.01.2026", "event": "Schreiben der Gegenseite", "doc": "D4"}
+    ],
+    "deadlines": [
+      {"date": "23.02.2026", "kind": "Berufungsfrist (Zustellung 22.01.2026)", "doc": "D2"},
+      {"date": "23.03.2026", "kind": "Berufungsbegründungsfrist", "doc": "D2"},
+      {"date": "13.02.2026", "kind": "Zahlungsaufforderung der Gegenseite", "doc": "D4"}
+    ],
+    "citations": [
+      {"text": "§ 517 ZPO", "kind": "norm", "doc": "D2"},
+      {"text": "§ 520 Abs. 2 ZPO", "kind": "norm", "doc": "D2"}
+    ],
+    "contradictions": [
+      {"id": "W1", "topic": "Zustellung des Urteils",
+       "values": [{"doc": "D5", "value": "22.01.2026"}, {"doc": "D4", "value": "21.01.2026"}]}
+    ],
+    "privacy": {
+      "protect": [
+        {"value": "Leonore Fahrenkamp", "type": "PERSON"},
+        {"value": "Bertold Quaschning", "type": "PERSON"},
+        {"value": "Lerchenweg 7, 31135 Beispielburg", "type": "ADRESSE"},
+        {"value": "l.fahrenkamp@beispielpost.example", "type": "EMAIL"},
+        {"value": "0511 7720 418", "type": "TELEFON"}
+      ],
+      "keep": ["23.02.2026", "23.03.2026", "13.02.2026", "4.870,00 EUR", "§ 517 ZPO"]
+    },
+    "tasks": [
+      {"id": "Q1", "kind": "chat", "question": "Welche Fristen laufen für die Berufung, und ab welcher Zustellung?", "attach": [],
+       "needed_facts": ["F2", "F3"], "needed_values": ["23.02.2026", "23.03.2026", "22.01.2026"]},
+      {"id": "Q2", "kind": "schriftsatz", "question": "Berufung einlegen; die Zustellung ist streitig.", "attach": [],
+       "needed_facts": ["F1", "F2", "F3"], "needed_values": ["22.01.2026", "21.01.2026", "4.870,00 EUR"]},
+      {"id": "Q3", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [],
+       "expected_deadlines": ["13.02.2026", "23.02.2026", "23.03.2026"]}
+    ]
+  }
+}

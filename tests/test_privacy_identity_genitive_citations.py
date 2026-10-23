@@ -161,6 +161,46 @@ def test_own_and_lower_court_file_numbers_stay_masked(gateway, text, value) -> N
     assert value not in payload
 
 
+@pytest.mark.parametrize(
+    "citation",
+    [
+        "BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+        "BAG, Urteil vom 20. Februar 2025 – 6 AZR 32/24",
+        "BGH, Beschluss vom 2. Dezember 2025 - VIII ZR 274/23",
+        "BVerfG, Beschluss vom 1. März 2022 – 1 BvR 2017/21",
+    ],
+)
+def test_federal_court_citations_with_written_month_stay_readable(gateway, citation) -> None:
+    """§66: dieselbe kanonische Zitierform mit ausgeschriebenem Monat (vorher nur numerisch erkannt)."""
+    _, sach, _ = _run(gateway, f"Vgl. {citation}; die Kündigung ist unwirksam.")
+    assert citation in sach, sach
+
+
+@pytest.mark.parametrize(
+    "text, value",
+    [
+        ("Unsere Revision: BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23 ist anhängig.", "VIII ZR 274/23"),
+        ("BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24 - unser Verfahren für den Mandanten.", "VIII ZR 18/24"),
+        ("Klage beim Amtsgericht Köpenick, Az. 14 C 233/26, eingereicht am 2. Dezember 2025.", "14 C 233/26"),
+        ("LG Kiel, Urteil vom 8. Oktober 2025 – 3 O 123/25 (Vorinstanz).", "3 O 123/25"),
+        ("Unser Zeichen BAG, 2 AZR 72/24 - bitte angeben.", "2 AZR 72/24"),
+    ],
+)
+def test_own_lower_court_and_short_form_file_numbers_stay_masked_with_written_month(gateway, text, value) -> None:
+    """§66: die Erweiterung gilt nur fuer Bundesgerichte, nur fuer Bundes-Aktenzeichen, nie mit Hinweis auf das eigene
+    Verfahren - Aktenzeichen unterer Instanzen, eigene Aktenzeichen und arabische Kurzformen bleiben maskiert."""
+    _, _, payload = _run(gateway, text)
+    assert value not in payload
+
+
+def test_norm_abbreviations_stay_readable_but_names_next_to_them_are_masked(gateway) -> None:
+    """§66: "Unterabs." und "Buchst." (wie "Abs.") - nur mit Punkt; der Name im selben Satz bleibt geschuetzt."""
+    _, sach, payload = _run(gateway, "Rechtsgrundlage: Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO; Zeuge ist Herr Leopold "
+                                     "Hanebutt.")
+    assert "Art. 6 Abs. 1 Unterabs. 1 Buchst. f DSGVO" in sach
+    assert "Hanebutt" not in payload
+
+
 def test_court_abbreviation_does_not_unmask_a_company_or_person(gateway) -> None:
     _, _, payload = _run(gateway, "Die BGH Bau GmbH und Herr Bernd Vogel streiten; vgl. BGH VIII ZR 1/21.")
     assert "Bernd Vogel" not in payload and "Vogel" not in payload

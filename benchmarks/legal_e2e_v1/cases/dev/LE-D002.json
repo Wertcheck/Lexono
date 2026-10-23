@@ -1,12 +1,18 @@
 {
   "id": "LE-D002",
   "split": "dev",
-  "version": 2,
+  "version": 3,
   "title": "Kündigungsschutzklage nach verhaltensbedingter Kündigung",
   "rechtsgebiet": "Arbeitsrecht",
   "synthetic": true,
   "source_refs": [],
-  "notes": "v2: Umlaute statt ae/oe/ue/ss (realistischere Schreibweise; v1 erhöhte Fehlalarme der Erkennung). Vollständig synthetisch. Normen real (KSchG, BGB). Enthält eine Abmahnung als Scan und widersprüchliche Daten.",
+  "notes": "v2: Umlaute statt ae/oe/ue/ss (realistischere Schreibweise; v1 erhöhte Fehlalarme der Erkennung). Vollständig synthetisch. Normen real (KSchG, BGB). Enthält eine Abmahnung als Scan und widersprüchliche Daten. v3 (§75, 18.10.2026): Referenzkorrektur 30.06.2026 von Frist zu Beendigungstermin, siehe reference_history.",
+  "reference_history": [
+    {"date": "2026-10-18", "section": "§75", "value": "30.06.2026", "doc": "D3",
+     "old": "reference.deadlines (kind: Ende Arbeitsverhältnis laut Kündigung)",
+     "new": "reference.terminations (kind: Beendigung des Arbeitsverhältnisses laut Kündigung, kein Fristende)",
+     "reason": "\"hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026\" nennt den Zeitpunkt, zu dem das Arbeitsverhältnis enden soll - nach der seit §74 geltenden fachlichen Klassifikation ein Beendigungstermin, kein Fristende. Die Fristen-Aufgabe Q5 erwartete schon nur 13.04.2026; keep-Wert und Fakt F3 bleiben unverändert (das Datum muss weiter im Payload erhalten bleiben). Owner-Auftrag §75."}
+  ],
   "parties": [
     {"id": "P1", "name": "Jonas Wiegelmann", "role": "mandant", "gender": "m"},
     {"id": "P2", "name": "Kerkhoff Logistik GmbH", "role": "gegner", "gender": null},
@@ -90,8 +96,10 @@
       {"date": "23.03.2026", "event": "Zugang der Kündigung", "doc": "D4"}
     ],
     "deadlines": [
-      {"date": "13.04.2026", "kind": "Klagefrist § 4 KSchG", "doc": "D5"},
-      {"date": "30.06.2026", "kind": "Ende Arbeitsverhältnis laut Kündigung", "doc": "D3"}
+      {"date": "13.04.2026", "kind": "Klagefrist § 4 KSchG", "doc": "D5"}
+    ],
+    "terminations": [
+      {"date": "30.06.2026", "kind": "Beendigung des Arbeitsverhältnisses laut Kündigung (kein Fristende)", "doc": "D3"}
     ],
     "citations": [
       {"text": "§ 4 KSchG", "kind": "norm", "doc": "D5"},

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
+{% import "partials/name_protection.html" as name_protection %}
 {% block title %}Schriftsatz-Generator{% endblock %}
 {% block content %}
   <div class="topbar">
@@ -14,11 +15,31 @@
   {% if error %}
     <div class="banner banner--error">{{ error }}</div>
   {% endif %}
+  {% if uploaded_documents %}
+    {# §57: Upload ohne KI-Verarbeitung - erst pruefen/markieren, dann bewusst generieren #}
+    <div class="banner banner--info" id="upload-notice">
+      {% if upload_repeated %}
+        <strong id="upload-repeated">Dieser Upload wurde bereits ausgeführt</strong> – es wurden keine weiteren Akten
+        oder Dokumente angelegt.
+      {% endif %}
+      Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
+      gesendet. Bitte die Dokumente prüfen und nicht erkannte Namen schützen; danach „Schriftsatz generieren“
+      (ohne erneute Dateiauswahl) klicken.
+      <ul class="upload-notice__list">
+        {% for document in uploaded_documents %}
+          <li><a href="/dashboard/matters/{{ document.matter_id }}/document/{{ document.id }}#name-protection"
+                 target="_blank" rel="noopener">{{ document.original_filename }} prüfen</a>{% if not document.extracted_text %} – kein Text ausgelesen{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
   <div class="draft-page">
     <form method="post" action="/dashboard/tools/schriftsatz/generate"
           enctype="multipart/form-data" class="dashboard-form js-ai-form" style="max-width: none;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      {# §58: Vorgangs-ID dieser Seite - eine Wiederholung desselben Absendens (F5, Doppelklick) legt nichts doppelt an #}
+      <input type="hidden" name="operation_token" value="{{ operation_token }}" />
 
       <div class="settings-section">
         <h2 class="settings-section__title">Akte</h2>
@@ -73,24 +94,32 @@
         </p>
         <label class="form-label">
           Gewünschter Stil
-          <input type="text" name="stil" placeholder="z. B. sachlich-formell, kurz und präzise" />
+          <input type="text" name="stil" id="schriftsatz-stil" placeholder="z. B. sachlich-formell, kurz und präzise" value="{{ form_values.stil or '' }}" />
         </label>
         <label class="form-label">
           Schreibvorlage / Muster
-          <textarea name="vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll"></textarea>
+          <textarea name="vorlage" id="schriftsatz-vorlage" rows="4" placeholder="Optionaler Referenztext, an dem sich der Entwurf orientieren soll">{{ form_values.vorlage or '' }}</textarea>
         </label>
         <label class="form-label">
           Anwaltliche Anmerkungen
-          <textarea name="attorney_anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf"></textarea>
+          <textarea name="attorney_anmerkungen" id="schriftsatz-anmerkungen" rows="4" placeholder="Konkrete Arbeitsaufträge an den Entwurf">{{ form_values.attorney_anmerkungen or '' }}</textarea>
         </label>
+        {# §54: Namen, die die automatische Erkennung uebersieht ("Richter Zweigelt"), in einem der drei Felder markieren
+           und schuetzen - dieselbe Entscheidung "Als Person behandeln" wie im Chat, gilt fuer die ganze Akte. #}
+        <div class="name-protection-row" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+          {{ name_protection.controls("schriftsatz") }}
+        </div>
+        <div class="name-protection-error" id="schriftsatz-protect-error" hidden></div>
+        {{ name_protection.field("schriftsatz") }}
       </div>
 
       <div class="settings-section">
         <h2 class="settings-section__title">Dokumente</h2>
         <p class="settings-section__hint">
           Akten, Vorlagen oder Belege (PDF, Word) per Drag &amp; Drop hinzufügen - sie werden
-          als Dokumente der Akte gespeichert, per OCR/Textextraktion verarbeitet und fließen in
-          den generierten Entwurf ein.
+          als Dokumente der Akte gespeichert und lokal per OCR/Textextraktion ausgelesen, aber
+          noch NICHT an die KI gesendet. Nach dem Prüfen fließen sie über „Schriftsatz generieren“
+          (ohne Dateien) in den Entwurf ein.
         </p>
 
         <div id="dropzone" class="dropzone" tabindex="0" role="button"
@@ -106,12 +135,34 @@
         <div id="file-list" class="dropzone__file-list"></div>
       </div>
 
-      <button type="submit" class="btn btn--primary" data-ai-loading-label="Schriftsatz wird generiert …">Schriftsatz generieren</button>
+      <button type="submit" class="btn btn--primary" id="schriftsatz-submit" data-ai-loading-label="Schriftsatz wird generiert …">Schriftsatz generieren</button>
     </form>
   </div>
 
+  {{ name_protection.assets() }}
   <script>
     (function () {
+      // §54 "Namen schützen" (gemeinsamer Baustein, app_name_protection.js)
+      var protectFields = ["schriftsatz-stil", "schriftsatz-vorlage", "schriftsatz-anmerkungen"].map(function (id) {
+        return document.getElementById(id);
+      });
+      var protectError = document.getElementById("schriftsatz-protect-error");
+      function showProtectError(message) { protectError.textContent = message; protectError.hidden = false; }
+      if (window.LexonoNameProtection) {
+        var widget = window.LexonoNameProtection.create({
+          button: document.getElementById("schriftsatz-protect-btn"),
+          list: document.getElementById("schriftsatz-protected-list"),
+          fields: Array.prototype.slice.call(document.querySelectorAll(".schriftsatz-protected-terms")),
+          getText: function () { return protectFields.map(function (el) { return el.value; }).join("\n"); },
+          getSelectedText: function () { return window.LexonoNameProtection.selectionWithin(protectFields); },
+          onError: showProtectError,
+          onOk: function () { protectError.hidden = true; },
+          watch: protectFields
+        });
+        window.LexonoNameProtection.guardForm(document.querySelector("form.js-ai-form"), widget, showProtectError,
+          function () { protectError.hidden = true; });
+      }
+
       var matterSelect = document.getElementById("matter-select");
       var newMatterFields = document.getElementById("new-matter-fields");
       var dropzone = document.getElementById("dropzone");
@@ -161,6 +212,13 @@
         });
         fileInput.files = transfer.files;
         renderFileList();
+        // §57: mit Dateien wird nur hochgeladen und lokal ausgelesen (serverseitig erzwungen) - Beschriftung ehrlich
+        var submit = document.getElementById("schriftsatz-submit");
+        if (submit) {
+          submit.textContent = currentFiles.length ? "Dokumente hochladen (noch keine KI)" : "Schriftsatz generieren";
+          submit.setAttribute("data-ai-loading-label", currentFiles.length
+            ? "Dokumente werden lokal ausgelesen …" : "Schriftsatz wird generiert …");
+        }
       }
 
       function addFiles(fileListToAdd) {

@@ -21,7 +21,11 @@ def test_versioned_corpus_is_valid() -> None:
     assert report.ok, report.errors
     cases = corpus.load_cases()
     assert {c["split"] for c in cases} == {"dev", "test"}
-    assert all(c["synthetic"] for c in cases)
+    # §71: synthetisch ODER ausdruecklich abgeleitet aus freigegebenen Quellen (Status "nutzbar")
+    usable = {s["id"] for s in corpus.load_register()["sources"] if s["nutzungsrechte"]["status"] == "nutzbar"}
+    for case in cases:
+        assert case["synthetic"] or (case.get("derivation") == "abgeleitet" and case["source_refs"]
+                                     and set(case["source_refs"]) <= usable), case["id"]
 
 
 def test_register_entries_are_not_used_without_checked_rights() -> None:
@@ -88,7 +92,9 @@ def test_split_and_id_prefix_must_match(corpus_copy: Path) -> None:
 def test_register_status_usable_requires_date_and_reason(corpus_copy: Path) -> None:
     path = corpus_copy / "source_register.json"
     register = json.loads(path.read_text(encoding="utf-8"))
-    register["sources"][0]["nutzungsrechte"]["status"] = "nutzbar"
+    # §65: die ersten Eintraege sind inzwischen ordnungsgemaess freigegeben - einen noch gesperrten ohne Datum waehlen
+    unchecked = next(s for s in register["sources"] if s["nutzungsrechte"]["status"] == "nicht_geprueft")
+    unchecked["nutzungsrechte"].update(status="nutzbar", geprueft_am=None, begruendung=None)
     path.write_text(json.dumps(register, ensure_ascii=False), encoding="utf-8")
     assert any("ohne Pruefdatum" in e for e in _errors(corpus_copy))
 
