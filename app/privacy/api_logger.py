@@ -103,6 +103,8 @@ _BLOCK_CATEGORIES = (
     # §79 (B1): Ausfall der Erkennung personenbezogener Daten (gateway.PRIVACY_CHECK_FAILED_REASON) - vorher im Chat
     # als "unerwarteter technischer Fehler", im Schriftsatz als ungefangene Ausnahme.
     ("Die Datenschutzprüfung ist fehlgeschlagen", "privacy_check_failed"),
+    # Option C (24.10.2026): Firmen-Kurzform = zitierte Gesetzesabkuerzung (gateway.SHORT_FORM_STATUTE_COLLISION_REASON).
+    ("Kurzform-Kollision", "short_form_statute_collision"),
 )
 
 
@@ -127,6 +129,15 @@ def categorize_block_reasons(reasons: list[str]) -> str | None:
     return ",".join(matched_categories)
 
 
+# Option C (24.10.2026) - bewusst ohne die Abkuerzung selbst (sie ist die geschuetzte Kurzform der Firma). Auch vom Chat
+# genutzt, um eine so blockierte Anwaltsnachricht aus dem spaeteren Verlauf zu nehmen (app/chat/service.py).
+SHORT_FORM_COLLISION_MESSAGE = (
+    "Die Anfrage wurde nicht an die KI übermittelt: Eine im Text eingeführte Firmen-Kurzform ist zugleich die "
+    "Abkürzung eines zitierten Gesetzes. So lässt sich die Firma nicht sicher schützen, ohne das Gesetzeszitat "
+    "unlesbar zu machen. Bitte bezeichnen Sie die Firma anders – zum Beispiel als „die Gesellschaft“ – und senden "
+    "Sie die Anfrage erneut."
+)
+
 _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
     "privacy_review_required": (
         "Lexono ist sich bei einem Begriff nicht sicher, ob es sich um eine Person handelt. Bitte die Rückfrage "
@@ -140,6 +151,7 @@ _FRIENDLY_BLOCK_MESSAGES: dict[str, str] = {
         "Es wurde nichts an die KI übermittelt. Bitte erneut versuchen; bleibt der Fehler, Lexono neu starten "
         "bzw. die Administration informieren."
     ),
+    "short_form_statute_collision": SHORT_FORM_COLLISION_MESSAGE,
     "purpose_not_allowed": "Der angeforderte Zweck ist nicht freigegeben.",
     "residual_pii_detected": (
         "Es wurden nach der Pseudonymisierung weiterhin erkennbare Muster gefunden."

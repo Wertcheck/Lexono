@@ -184,11 +184,11 @@ def test_filter_unit_keeps_subject_but_drops_imperative() -> None:
     assert dropped == []
 
 
-# Dokumentierte Grenze (NICHT geloest): Namen, die als bares Gattungswort getaggt werden und vom NER nicht als PER erkannt werden.
-# Gemessen: eine Regel "bares Substantiv als Subjekt" erfasst 8/55 Namen, aber 141/153 Rechtsbegriffe -> verworfen (zu viele Fehlalarme).
-@pytest.mark.xfail(reason="Richter/Fuerst: Gattungswort ohne unabhaengiges Signal, Regel waere nicht fehlalarmarm", strict=False)
+# Frueher dokumentierte Grenze (G3, behoben 24.10.2026). Ursache war NICHT das Wort: die Systemzeile "Akte: ..." wurde in der
+# Analysefassung (weicher Umbruch zusammengezogen) bis ins naechste Dokumentwort verlaengert, das dann nie gefragt wurde.
+# Die verworfene Regel "bares Substantiv als Subjekt" (8/55 Namen, 141/153 Rechtsbegriffe) bleibt verworfen.
 @pytest.mark.parametrize("name", ["Richter", "Fuerst"])
-def test_known_limit_name_that_is_also_a_common_noun(gateway, name) -> None:
+def test_name_that_is_also_a_common_noun_after_the_matter_line(gateway, name) -> None:
     result = _prepare(gateway, f"Akte: Beispielakte\nDazu erklärt {name}, die Anlage sei mangelhaft.")
     assert name not in _outgoing(result)
 
@@ -315,9 +315,8 @@ def test_probe_respects_the_exception_words_and_protocol_labels() -> None:
     assert detect_probed_names("Assistent: Hallo, Schnellentwurf und Lichtkuppel sind keine Namen.") == []
 
 
-# Dokumentierte Grenze (NICHT geloest): Schwelle 3 von 5 wuerde "Stuckenschneider" erfassen, aber auch Fachwoerter wie
-# "Nebenkostenvorauszahlung"/"Schiedsgutachter" -> verworfen. Richter/Fuerst haben kein unabhaengiges Signal.
-@pytest.mark.xfail(reason="Stuckenschneider erreicht nur Probe-Score 3 (< Schwelle 4)", strict=False)
-def test_known_limit_name_below_the_probe_threshold(gateway) -> None:
+# Frueher dokumentierte Grenze (G4, behoben 24.10.2026): dieselbe Ursache wie oben (Systemzeile "Akte: ..."); als
+# Tabellenzelle mit Rollenwort ist "Stuckenschneider" Rueckfragekandidat. Die Zweitsignal-Schwelle 4 bleibt unveraendert.
+def test_name_below_the_probe_threshold_in_a_role_table(gateway) -> None:
     result = _prepare(gateway, "Akte: Beispielakte\nZeuge  |  Stuckenschneider  |  Hamburg  |  geladen")
     assert "Stuckenschneider" not in _outgoing(result)

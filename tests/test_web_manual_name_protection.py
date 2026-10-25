@@ -59,11 +59,14 @@ def _done(events: list[dict]) -> dict:
 # --- Ausgangsfall P10 im Chat ohne Akte ---------------------------------------------------------------------------
 
 
-def test_unmarked_judge_reaches_the_cloud_payload_in_clear_text(client, db_session: Session, writer) -> None:
-    """Gegenprobe (dokumentierte Grenze §50): ohne Markierung erkennt nichts den Namen - deshalb die Erweiterung."""
+def test_unmarked_judge_is_asked_about_before_any_cloud_call(client, db_session: Session, writer) -> None:
+    """Frueher Gegenprobe der Grenze §50 ("ohne Markierung erkennt nichts den Namen", Klartext in der Cloud-Payload).
+    Seit 24.10.2026 (Grenzfall G2) fragt der Chat vorher nach - nichts erreicht die Cloud."""
     login_as_admin(db_session, client)
-    _send(client, _csrf(client), P10)
-    assert "Zweigelt" in _sent_text(writer)
+    events = _send(client, _csrf(client), P10)
+    review = [e for e in events if e["kind"] == "review"]
+    assert review and "Zweigelt" in [c["term"] for c in review[0]["candidates"]]
+    assert writer.received_payloads == []
 
 
 def test_marked_judge_in_chat_without_matter_is_pseudonymized(client, db_session: Session, writer) -> None:

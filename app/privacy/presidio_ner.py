@@ -770,6 +770,399 @@ def is_technical_compound(word: str) -> bool:
     return is_derivational_compound(word) or is_common_compound(word) or is_admin_procedure_compound(word)
 
 
+# --- Fachbegriffe im Sachkontext (24.10.2026) ------------------------------------------------------------------------
+# ECHTER FUND (installierte App, synthetische Finanzamt-Musterdokumente): Tabellenbeschriftungen und Satzanfaenge wie
+# "Rohergebnis  212.900,00 EUR", "Zahlungsstatus pruefen", "Bezirksfinanzamt / Gewerbesteuerstelle", "Festgesetzte
+# Gewerbesteuer", "Die Gesellschaft ist ..." wurden als Person/Organisation/Ort maskiert. Schrieb die KI in ihrer Antwort
+# diese Alltagswoerter, blockierte die (unveraenderte) Leck-Pruefung jede Antwort. Die wortbezogenen Signale trennen hier
+# nicht (gemessen: Namensprobe "Rohergebnis" 5/5, "Berger" 1/5; Vokabular und POS des Einzelworts ebenso wenig) - deshalb
+# verlangt jede Regel unten ZWEI unabhaengige Signale: eine Wortbildung, die keine Namen/Orte bildet, UND die Verwendung
+# im konkreten Dokumentkontext. Bestehende Regeln und ihre red-team-geprueften Klassen bleiben unveraendert; nichts gilt
+# nach Anrede, Titel oder als Feldwert hinter "Bezeichnung:". Bekannte Beteiligte der Akte schuetzt die Abgleichsliste
+# unabhaengig davon, und die Leck-Pruefung der Antwort bleibt unveraendert.
+#
+# Geschlossene Klasse von Kopfnomen des Rechnungs-, Steuer- und Verwaltungswesens - abstrakte Sachnomen, die keine
+# Nachnamen- oder Ortsnamenbestandteile sind (bewusst NICHT -mann, -berg, -leiter, -hof, -dorf, -bauer, -wald, ...;
+# gemessen: deren Namensprobe trennt nicht, "Leiter"/"Dorf"/"Bauer"/"Wald" haben Probe 0).
+_CONTEXT_TERM_HEADS = frozenset(
+    {
+        "ergebnis", "ergebnisse", "ergebnisses", "status", "stelle", "stellen", "amt", "amts", "ämter", "betrag",
+        "beträge", "betrags", "wert", "werte", "werts", "daten", "satz", "sätze", "ertrag", "erträge", "aufwand",
+        "aufwendungen", "einkommen", "einkünfte", "umsatz", "umsätze", "gewinn", "verlust", "verluste", "saldo",
+        "bilanz", "steuer", "steuern", "abgabe", "abgaben", "zuschlag", "zuschläge", "rückstand", "rückstände",
+        "guthaben", "anteil", "anteile", "kapital", "posten", "position", "positionen", "konto", "kennzahl",
+        "kennzahlen", "aufstellung", "auswertung", "festsetzung", "veranlagung", "erstattung", "vorauszahlung",
+        "vorauszahlungen", "nachzahlung", "einnahmen", "ausgaben", "kosten", "zinsen", "gebühr", "gebühren",
+    }
+)
+# Kurze Kopfnomen verlangen einen laengeren Vorderteil: "Sie|wert" ist ein realer Nachname ("Siewert"), "Roh|ergebnis" nicht.
+_LONG_HEAD = 6
+# Adjektivisch gebrauchtes Partizip II ("fest|ge|setz|t|es", "an|ge|forder|t|e", "aus|ge|wies|en|e") - Namen tragen keine
+# Adjektivendung. Nur attributiv (ein weiteres Wort folgt in derselben Zeile), siehe `is_contextual_technical_term`.
+_PARTICIPLE_ADJECTIVE = re.compile(r"(?:[a-zäöü]{2,8})?ge[a-zäöüß]{2,}(?:t|et|en)(?:e|es|er|en|em)")
+_ADJECTIVE_ENDING = re.compile(r"(?:e|es|er|en|em)$")
+# Beschriftung eines Zahlenfelds: Zellen-/Zeilentrenner und dann ein Zahlenwert ("Rohergebnis  212.900,00 EUR",
+# "Nebenkosten (Musterwert)\n120,00 EUR").
+_NUMERIC_VALUE_AFTER = re.compile(r"\)?(?:[ \t]{2,}|\t|[ \t]*\|[ \t]*|[ \t]*\n[ \t]*)[-+]?\d")
+_SALUTATION_OR_TITLE_BEFORE = frozenset({"herr", "herrn", "frau", "dr", "prof"})
+_FINITE_VERB_TAGS = frozenset({"VVFIN", "VAFIN", "VMFIN"})
+_AGENT_PREPOSITIONS = frozenset({"von", "durch", "mit", "bei", "für"})
+
+
+@lru_cache(maxsize=20000)
+def _known_word_chain(part: str, depth: int = 0) -> bool:
+    """`part` ist ein dem Modell bekanntes Wort (ggf. ohne Fugenelement) oder aus hoechstens drei solchen Woertern
+    zusammengesetzt ("Gewerbe|steuer", "Bezirk|s|finanz")."""
+    if len(part) < 3:
+        return False
+    forms = [part] + [part[: -len(joint)] for joint in ("es", "en", "s", "n") if part.endswith(joint) and len(part) - len(joint) >= 3]
+    if any(_model_knows(form) for form in forms):
+        return True
+    if depth >= 2:
+        return False
+    return any(
+        _known_word_chain(part[:split], depth + 1) and _known_word_chain(part[split:], depth + 1)
+        for split in range(3, len(part) - 2)
+    )
+
+
+@lru_cache(maxsize=20000)
+def is_context_term_compound(word: str) -> bool:
+    """Vorderteil aus bekannten Woertern + Kopfnomen aus `_CONTEXT_TERM_HEADS` ("Roh|ergebnis", "Zahlungs|status",
+    "Gewerbesteuer|stelle", "Bezirksfinanz|amt", "Steuermess|betrag"). Allein KEIN Freigabegrund - nur zusammen mit dem
+    Kontextsignal in `is_contextual_technical_term`."""
+    if not word.isalpha() or len(word) < 7:
+        return False
+    lower = word.lower()
+    for split in range(3, len(lower) - 2):
+        head = lower[split:]
+        if head not in _CONTEXT_TERM_HEADS:
+            continue
+        if split < (3 if len(head) >= _LONG_HEAD else _MIN_COMPOUND_MODIFIER):
+            continue
+        if _known_word_chain(word[:split]):
+            return True
+    return False
+
+
+def is_contextual_technical_term(text: str, start: int, end: int) -> bool:
+    """EIN Wort an [start, end) ist im konkreten Kontext ein Fachbegriff, kein Name (siehe Kommentarblock oben).
+
+    Verlangt (1) eine Wortbildung, die keine Namen bildet (`is_context_term_compound` oder adjektivisches Partizip) UND
+    (2) ein Kontextsignal: Gattungsnomen/attributives Adjektiv laut Tagger im Dokumentsatz, oder Beschriftung direkt vor
+    einem Zahlenwert. Nie nach Anrede/Titel und nie als Feldwert hinter einem Doppelpunkt."""
+    word = text[start:end]
+    if not word.isalpha() or not word[0].isupper() or word.isupper():
+        return False
+    doc = _analysis_doc(text)
+    span = doc.char_span(start, end, alignment_mode="expand")
+    if span is None or len(span) != 1:
+        return False
+    token = span[0]
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is not None and (previous.lower_.rstrip(".") in _SALUTATION_OR_TITLE_BEFORE or previous.text == ":"):
+        return False
+    following = next((t for t in doc[token.i + 1 :] if not t.is_space), None)
+    same_line_word_after = (
+        following is not None and following.is_alpha and "\n" not in text[end : following.idx]
+        and not re.search(r"[ \t]{2,}", text[end : following.idx])
+    )
+    # Namensrolle im Satz: Subjekt direkt vor finitem Verb ("X hat angerufen") oder Agens nach "von/durch/mit/bei/fuer"
+    # - dann gilt der Tagger-Befund "Gattungsnomen" NICHT als Kontextsignal (am Satzanfang taggt das Modell auch
+    # unbekannte Namen als NN; gemessen: "Rohergebnis hat gestern angerufen" -> NN).
+    # Kongruenz: ein Einzelname als Subjekt verlangt ein finites Verb im SINGULAR ("X hat angerufen"); eine Pluralform
+    # ("Zahlungsstatus pruefen", formgleich mit dem Infinitiv) ist keine Namensrolle. Fehlt die Numerus-Angabe, gilt die
+    # Rolle vorsichtshalber als Namensrolle.
+    name_role = (
+        same_line_word_after and following.tag_ in _FINITE_VERB_TAGS and "Plur" not in following.morph.get("Number")
+    ) or (previous is not None and previous.lower_ in _AGENT_PREPOSITIONS)
+    if _PARTICIPLE_ADJECTIVE.fullmatch(word.lower()):
+        # Das Partizip selbst ("festgesetzt", "angefordert") muss ein bekanntes Wort mit mindestens acht Buchstaben sein:
+        # die Form allein traefe auch den Nachnamen "Gerste" (gemessen an 5432 Korpuswoertern: einziger Namenstreffer).
+        base = _ADJECTIVE_ENDING.sub("", word)
+        return (
+            len(base) >= 8 and _model_knows(base) and token.tag_ in ("NN", "ADJA") and same_line_word_after
+            and not name_role
+        )
+    if not is_context_term_compound(word):
+        return False
+    table = _table_of(text, start, end)
+    if table is not None:
+        # Tabellenbeschriftung: der Tagger-Befund NN traegt hier nicht (ohne Satzkontext taggt das Modell auch
+        # unbekannte Namen als NN - gemessen "Brandhuber  1.900,00 EUR" -> NN). Freigabe nur in einer Fachspalte
+        # (mindestens eine ANDERE eindeutige Fachbeschriftung) und nie unter einer Personen-Ueberschrift.
+        return not table[1] and _technical_column(text, table[0], table[2])
+    if _NUMERIC_VALUE_AFTER.match(text, end):
+        return False  # Zahlenwert ohne erkennbare Tabelle: kein Freigabegrund
+    return token.tag_ == "NN" and not name_role
+
+
+# --- Gattungsnomen in ASCII-Umschrift (24.10.2026) -------------------------------------------------------------------
+# ECHTER FUND (installierte App, synthetisches Kontrolldokument): "Nach § 1 StVO gilt Ruecksicht." -> "[PERSON_02]". Das
+# Modell kennt die Umschrift "Ruecksicht" nicht und etikettiert sie als PER (0,85); die gleichwertige Schreibweise
+# "Rücksicht" ist ihm bekannt und in keiner Analyse eine Person. Bisher galt die Vereinigung beider Analysen, die
+# Umschrift wurde also schlechter behandelt als dasselbe Wort mit Umlaut. Gemessen (40 synthetische Nachnamen in
+# Umschrift, 8 Kontexte): ALLE Nachnamen-Umschriften sind dem Modell als Wort bekannt (dann greift diese Regel nie) oder
+# bleiben in der Umlautfassung eine Person; abweichend waren nur Gattungsnomen ("Maengel", "Glaeubiger", "Haerte").
+# Die Gegenprobe der ersten Fassung (nur Wort- und Satzsignale) gab jedoch den Nachnamen "Fuerst" frei: "Fürst" ist
+# ebenfalls in keinem Namensrahmen eine Person, und "Anwesend war Fuerst" hat das Subjekt hinter dem Verb. Deshalb
+# zusaetzlich, wie bei den uebrigen Fachwort-Regeln, eine Wortbildung, die keine Namen bildet: Abstraktsuffix der
+# Umlautform (-ung, -heit, -keit, -schaft, -sicht). Freigabe verlangt ALLE Signale: Umschrift unbekannt + Umlautform
+# bekannt, Abstraktsuffix, Umlautform in keinem Namensrahmen eine Person, Umlautfassung des Dokuments ohne Treffer an
+# dieser Stelle (prueft der Aufrufer), Gattungsnomen-Tag im Satz und keine Namensrolle (nicht nach Anrede/Titel/"laut",
+# nicht als Feldwert hinter ":", nicht in Tabellen, nicht Subjekt vor finitem Singular-Verb, nicht Agens nach
+# "von/durch/mit/bei/fuer").
+_SOURCE_ATTRIBUTION_BEFORE = frozenset({"laut", "lt", "gemäß", "gemäss"})
+_ABSTRACT_NOUN_SUFFIX = re.compile(r"[a-zäöüß]{3,}(?:ung|heit|keit|schaft|sicht)(?:en)?")
+
+
+def is_transliterated_common_noun(text: str, start: int, end: int) -> bool:
+    """EIN Wort an [start, end) ist die ASCII-Umschrift eines Gattungsnomens ("Ruecksicht" = "Rücksicht") im Satzkontext."""
+    word = text[start:end]
+    if not word.isalpha() or not word[0].isupper() or word.isupper():
+        return False
+    pieces = _restore_word(word)
+    if pieces is None:
+        return False
+    restored = "".join(ch for ch, _a, _b in pieces)
+    if not _ABSTRACT_NOUN_SUFFIX.fullmatch(restored.lower()) or _name_probe_score(restored) != 0:
+        return False
+    doc = _analysis_doc(text)
+    span = doc.char_span(start, end, alignment_mode="expand")
+    if span is None or len(span) != 1 or span[0].tag_ != "NN":
+        return False
+    token = span[0]
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is not None and (
+        previous.lower_.rstrip(".") in _SALUTATION_OR_TITLE_BEFORE | _SOURCE_ATTRIBUTION_BEFORE
+        or previous.lower_ in _AGENT_PREPOSITIONS
+        or previous.text == ":"
+    ):
+        return False
+    if _table_of(text, start, end) is not None:
+        return False
+    following = next((t for t in doc[token.i + 1 :] if not t.is_space), None)
+    return not (
+        following is not None and following.tag_ in _FINITE_VERB_TAGS and "\n" not in text[end : following.idx]
+        and "Plur" not in following.morph.get("Number")
+    )
+
+
+def is_generic_article_noun(text: str, start: int, end: int) -> bool:
+    """Artikel + EIN Gattungsnomen ("Die Gesellschaft ist seit ...") - eine allgemeine Bezugnahme, kein Name: das Nomen ist
+    dem Modell als Wort bekannt, im Satz als Gattungsnomen getaggt UND in keinem neutralen Namensrahmen eine Person."""
+    doc = _analysis_doc(text)
+    span = doc.char_span(start, end, alignment_mode="expand")
+    if span is None or len(span) != 2:
+        return False
+    article, noun = span[0], span[1]
+    if article.lower_ not in _ARTICLES or not noun.is_alpha or noun.tag_ != "NN":
+        return False
+    return _model_knows(noun.text) and _name_probe_score(noun.text) == 0
+
+
+# --- Im Dokument definierte Fach-Abkuerzung (24.10.2026) -------------------------------------------------------------
+# "Die EÜR ist ..." wurde als Organisation maskiert; im selben Dokument steht die Langform "Einnahmenüberschussrechnung"
+# (Einnahmen|überschuss|rechnung -> E Ü R). Freigabe nur mit ZWEI Signalen: (1) die Abkuerzung (3-5 Grossbuchstaben)
+# ist im selben Text als Initialen EINES Kompositums aus bekannten Woertern definiert, (2) dessen Kopfwort stammt aus
+# den geschlossenen Fach-Kopfklassen (Dokument-/Rechts-/Verwaltungsnomen) - ein firmennamensfoermiges Kompositum
+# ("Nordbauholding" -> NBH, Kopf "holding") definiert keine freigebbare Abkuerzung. Ohne Langform im Text: maskiert.
+_ABBREVIATION = re.compile(r"[A-ZÄÖÜ]{3,5}")
+_LONG_FORM_CANDIDATE = re.compile(r"(?<![\wÄÖÜäöüß])[A-ZÄÖÜ][a-zäöüß]{8,}(?![\wÄÖÜäöüß])")
+
+
+def _technical_head(head: str) -> bool:
+    return head in _COMMON_COMPOUND_HEADS or head in _LEGAL_COMPOUND_HEADS or head in _CONTEXT_TERM_HEADS or (
+        head in _ADMIN_PROCEDURE_HEADS
+    )
+
+
+@lru_cache(maxsize=20000)
+def _compound_initialisms(word: str) -> frozenset[str]:
+    """Initialen aller Zerlegungen von `word` in 2-4 bekannte Woerter (je >= 3 Buchstaben, Fugen erlaubt), deren
+    letztes Wort ein Fach-Kopfnomen ist."""
+    lower = word.lower()
+    results: set[str] = set()
+
+    def known(part: str) -> bool:
+        return _known_word_chain(part, 2)  # Tiefe 2: nur das Wort selbst bzw. ohne Fugenelement
+
+    def walk(position: int, initials: str) -> None:
+        if len(initials) > 4:
+            return
+        for split in range(position + 3, len(lower) + 1):
+            part = lower[position:split]
+            if not known(part):
+                continue
+            if split == len(lower):
+                if len(initials) >= 1 and _technical_head(part):
+                    results.add((initials + part[0]).upper())
+            else:
+                walk(split, initials + part[0])
+
+    walk(0, "")
+    return frozenset(results)
+
+
+def is_defined_abbreviation(text: str, value: str) -> bool:
+    if not _ABBREVIATION.fullmatch(value):
+        return False
+    target = value.upper()
+    return any(target in _compound_initialisms(word) for word in set(_LONG_FORM_CANDIDATE.findall(text)))
+
+
+# --- Tabellen aus Beschriftung + Zahlenwert: Spalten teilen ihren Typ (24.10.2026) -----------------------------------
+# GRENZFALL (gemessen, auch ohne die Fachbegriff-Regel): in "Lohnliste  Hochleiter  2.300,00 EUR  Brandhuber
+# 1.900,00 EUR" ging "Brandhuber" im Klartext hinaus. Ursache: NER ohne Treffer, Modell-Probe 3 (< 4), Wortart NN (kein
+# Eigenname) und die Rueckfrage-Rolle "tabellenzelle" verlangt den Personenhinweis in DERSELBEN Zeile
+# (review._row_mentions_a_person) - in einer Lohnliste steht er aber in der Spaltenueberschrift ("Mitarbeiter", "Name")
+# bzw. folgt aus den Nachbarzeilen (erkannte Personen). Prinzip wie bei Aufzaehlungen (review: "Glieder einer
+# Aufzaehlung teilen ihren Typ"): die Beschriftungen EINER Tabelle teilen ihren Typ.
+# - Namensspalte (Personen-Ueberschrift oder mindestens eine Nachbarbeschriftung ist eine erkannte Person bzw. ein
+#   Personen-Platzhalter): Fachbegriffe werden dort NIE freigegeben, namensartige Beschriftungen zusaetzlich maskiert
+#   (`detect_name_column_labels`, nur Hinzufuegen - fail-closed).
+# - Die Freigabe "Beschriftung vor Zahlenwert" gilt nur in einer Fachspalte: mindestens eine ANDERE Beschriftung derselben
+#   Tabelle ist eindeutig ein Fachbegriff. Ein einzelnes "Waldbetrag  500,00 EUR" ohne solche Nachbarn reicht nicht.
+_CELL_SEPARATOR = re.compile(r"[ \t]*(?:\n|\|)[ \t]*|[ \t]{2,}|\t")
+_NUMERIC_CELL = re.compile(r"[-+]?\d[\d.]*(?:,\d+)?(?:[ \t]*(?:EUR|€|%|Euro|TEUR|T€))?")
+_WORD_IN_CELL = re.compile(r"[A-Za-zÄÖÜäöüß]+")
+# Spaltenueberschriften, unter denen Personen stehen (Bedeutung der Spalte, kein Freigabekriterium - die Liste schaltet
+# ausschliesslich ZUSAETZLICHEN Schutz ein).
+_PERSON_COLUMN_WORDS = frozenset(
+    {
+        "name", "namen", "vorname", "nachname", "mitarbeiter", "mitarbeiterin", "mitarbeitende", "arbeitnehmer",
+        "arbeitnehmerin", "beschäftigte", "beschäftigter", "personal", "lohnliste", "gehaltsliste", "lohnjournal",
+        "empfänger", "empfängerin", "zahlungsempfänger", "gläubiger", "gläubigerin", "schuldner", "schuldnerin",
+        "gesellschafter", "gesellschafterin", "mieter", "mieterin", "vermieter", "vermieterin", "erbe", "erben",
+        "beteiligte", "beteiligter", "kunde", "kundin", "kunden", "mandant", "mandantin", "zeuge", "zeugin", "person",
+        "personen", "eigentümer", "eigentümerin", "teilnehmer", "teilnehmerin", "bewohner", "bewohnerin",
+    }
+)
+_PERSON_PLACEHOLDER_IN_CELL = re.compile(r"\[(?:PERSON|BETEILIGTER|MANDANT|GEGNER|ANWALT)_\d+\]")
+_DOCUMENT_TYPE_MARKER = re.compile(r"\[[A-Za-zÄÖÜäöüß \-]+\][ \t]+")  # nie ein Platzhalter (die tragen "_" und Ziffern)
+_MAX_LABEL_WORDS = 6
+_ANY_PLACEHOLDER = re.compile(r"\[[A-Z][A-Z_]*_\d+\]")
+_SENTENCE_END = re.compile(r"[.!?][\"“”']?\s*$")
+
+
+@lru_cache(maxsize=8)
+def _label_value_tables(text: str) -> tuple[tuple[tuple[tuple[int, int], ...], bool], ...]:
+    """Tabellen als ((Beschriftungen als (start, end)), Personen-Ueberschrift). Eine Tabelle ist eine Folge von
+    Beschriftung -> Zahlenwert mit hoechstens einer Zwischenzelle; Ueberschrift = bis zu drei Zellen davor."""
+    cells: list[tuple[int, int]] = []
+    position = 0
+    for match in itertools.chain(_CELL_SEPARATOR.finditer(text), [None]):
+        cut = len(text) if match is None else match.start()
+        segment = text[position:cut]
+        if segment.strip():
+            lead = len(segment) - len(segment.lstrip())
+            # Dokument-Typkopf der Kontextaufbereitung ("[Lohnliste] ") gehoert nicht zur Zelle
+            marker = _DOCUMENT_TYPE_MARKER.match(segment, lead)
+            if marker is not None and segment[marker.end() :].strip():
+                lead = marker.end()
+            cells.append((position + lead, position + len(segment.rstrip())))
+        if match is not None:
+            position = match.end()
+
+    def numeric(index: int) -> bool:
+        return bool(_NUMERIC_CELL.fullmatch(text[cells[index][0] : cells[index][1]]))
+
+    def label(index: int) -> bool:
+        value = text[cells[index][0] : cells[index][1]]
+        return (
+            not any(ch.isdigit() for ch in value) and bool(_WORD_IN_CELL.search(value))
+            and len(value.split()) <= _MAX_LABEL_WORDS
+        ) or bool(_PERSON_PLACEHOLDER_IN_CELL.fullmatch(value))
+
+    pairs = [i for i in range(len(cells) - 1) if label(i) and numeric(i + 1)]
+    tables: list[tuple[tuple[tuple[int, int], ...], bool]] = []
+    group: list[int] = []
+    for i in pairs:
+        if group and i - (group[-1] + 1) > 2:
+            tables.append(_finish_table(text, cells, group))
+            group = []
+        group.append(i)
+    if group:
+        tables.append(_finish_table(text, cells, group))
+    return tuple(tables)
+
+
+def _finish_table(text: str, cells: list[tuple[int, int]], group: list[int]) -> tuple[tuple[tuple[int, int], ...], bool]:
+    header_words: set[str] = set()
+    for index in range(group[0] - 1, max(group[0] - 4, -1), -1):
+        value = text[cells[index][0] : cells[index][1]]
+        if _NUMERIC_CELL.fullmatch(value):
+            break
+        # Nur kurze Beschriftungszellen sind Ueberschriften - ein Fliesstextsatz davor nicht. Platzhalter zaehlen nie als
+        # Ueberschriftswort (ECHTER FUND, installierter Build 24.10.2026: im Restrisiko-Scan lieferte "... von
+        # [PERSON_02] vom 16.03.2024." das Wort "PERSON" -> Fachtabelle galt als Namensspalte -> Anfrage blockiert).
+        if len(value.split()) > _MAX_LABEL_WORDS or _SENTENCE_END.search(value):
+            continue
+        header_words |= {w.lower() for w in _WORD_IN_CELL.findall(_ANY_PLACEHOLDER.sub(" ", value))}
+    return tuple(cells[i] for i in group), bool(header_words & _PERSON_COLUMN_WORDS)
+
+
+def _table_of(text: str, start: int, end: int):
+    """(Beschriftungen, Personen-Ueberschrift, eigene Beschriftung) der Tabelle, deren Beschriftung [start, end) enthaelt."""
+    for labels, person_header in _label_value_tables(text):
+        for label in labels:
+            if label[0] <= start and end <= label[1]:
+                return labels, person_header, label
+    return None
+
+
+def _clearly_technical_label(value: str) -> bool:
+    """Beschriftung, die unabhaengig vom Kontext ein Fachbegriff ist: enthaelt ein kleingeschriebenes Wort
+    ("Festgesetztes zu versteuerndes Einkommen") oder besteht aus Fachwort-Komposita/bekannten Woertern ohne
+    Namenslesart ("Gewerbeertrag", "Hebesatz", "Personalaufwand")."""
+    words = _WORD_IN_CELL.findall(value)
+    if not words or _PERSON_PLACEHOLDER_IN_CELL.search(value):
+        return False
+    if any(w[0].islower() for w in words):
+        return True
+    return all(
+        is_technical_compound(w) or is_context_term_compound(w) or (_model_knows(w) and _name_probe_score(w) == 0)
+        for w in words
+    )
+
+
+def _technical_column(text: str, labels, own_label) -> bool:
+    """Mindestens eine ANDERE Beschriftung derselben Tabelle ist eindeutig ein Fachbegriff."""
+    return any(label != own_label and _clearly_technical_label(text[label[0] : label[1]]) for label in labels)
+
+
+def _label_name_like(value: str) -> bool:
+    """Beschriftung, die ein Name sein kann: 1-3 grossgeschriebene Woerter ohne Kleinschreibung; das letzte Wort ist kein
+    bestehender Fachbegriff und kein bekanntes Wort ohne Namenslesart."""
+    words = value.split()
+    if not 1 <= len(words) <= 3 or not all(w.replace("-", "").isalpha() and w[0].isupper() and not w.isupper() for w in words):
+        return False
+    last = words[-1]
+    if last.lower() in _NEVER_ENTITY_WORDS or last.lower() in _PERSON_COLUMN_WORDS or is_technical_compound(last):
+        return False
+    return not (_model_knows(last) and _name_probe_score(last) == 0)
+
+
+def detect_name_column_labels(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Namensartige Beschriftungen einer Namensspalte (siehe Kommentarblock oben) als Person - NUR Hinzufuegen."""
+    added: list[DetectedSpan] = []
+    for labels, person_header in _label_value_tables(text):
+        # Nur ECHTE Personentreffer zaehlen als Nachbar-Evidenz, keine Platzhalter (ECHTER FUND, installierter Build
+        # 24.10.2026): ein vorsichtshalber bzw. nach Rueckfrage maskierter Fachbegriff ("Umsatzerloese" ->
+        # "[PERSON_02]") machte im Restrisiko-Scan die Fachtabelle zur Namensspalte -> Anfrage blockiert. Der erste
+        # Durchlauf wertet die echten Nachbarn bereits aus und maskiert; der Restrisiko-Scan sieht so dieselbe Evidenz.
+        person_sibling = any(
+            any(s.category == "person" and a <= s.start and s.end <= b for s in spans) for a, b in labels
+        )
+        if not (person_header or person_sibling):
+            continue
+        for a, b in labels:
+            if any(s.start < b and a < s.end for s in spans) or not _label_name_like(text[a:b]):
+                continue
+            added.append(DetectedSpan(category="person", start=a, end=b, value=text[a:b]))
+    return added
+
+
 @lru_cache(maxsize=50000)
 def _restore_word(word: str) -> tuple[tuple[str, int, int], ...] | None:
     """Umlautform eines unbekannten Wortes als Folge (Zeichen, Start, Ende) im ORIGINALwort, oder None.
@@ -939,6 +1332,20 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         restored_results = analyzer.analyze(
             text=restored_text, language="de", entities=list(_REQUESTED_ENTITIES), score_threshold=_MIN_SCORE
         )
+        # Gleichbehandlung gleichwertiger Schreibweisen: ein Personen-Treffer NUR der Originalanalyse auf der Umschrift
+        # eines Gattungsnomens entfaellt, wenn die Umlautfassung an dieser Stelle nichts findet (siehe
+        # `is_transliterated_common_noun`). Spaetere Zweitsignale koennen die Stelle weiterhin maskieren.
+        restored_ranges = [
+            (starts[r.start], ends[r.end - 1]) for r in restored_results if 0 <= r.start < r.end <= len(starts)
+        ]
+        spans = [
+            sp for sp in spans
+            if not (
+                sp.category == "person"
+                and not any(a < sp.end and sp.start < b for a, b in restored_ranges)
+                and is_transliterated_common_noun(text, sp.start, sp.end)
+            )
+        ]
         known = {(sp.category, sp.start, sp.end) for sp in spans}
         spans.extend(
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
@@ -972,6 +1379,9 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
             for extra in detector(text)
             if not any(extra.start < other.end and other.start < extra.end for other in spans)
         )
+    # Namensspalten (Spalten teilen ihren Typ): namensartige Beschriftungen neben erkannten Personen bzw. unter einer
+    # Personen-Ueberschrift - nur Hinzufuegen (fail-closed), siehe `detect_name_column_labels`.
+    spans.extend(detect_name_column_labels(text, spans))
     # Schwache Rollenwort-Treffer werden nur weitergetragen, wenn ein anderes Signal dieselbe Stelle ebenfalls traegt.
     spans = drop_possessive_kinship(drop_statute_abbreviations(text, spans))
     spans = [s for s in spans if not is_traffic_light_colour_at(text, s.start, s.end)]  # §50
@@ -997,14 +1407,35 @@ _NORM_CITATION_BEFORE = re.compile(
 _STATUTE_ABBREVIATION = re.compile(r"^(?=(?:[^A-ZÄÖÜ]*[A-ZÄÖÜ]){2})[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{1,11}$")
 
 
+# Wertbezogen (24.10.2026, Befund "Straßenverkehrs-Ordnung (StVO); nach § 1 StVO ..."): der Wortart-Tagger
+# (`detect_unlabelled_proper_nouns`) markierte BEIDE Vorkommen als Person; die positionsbezogene Regel oben entfernte nur
+# das Vorkommen hinter "§ 1", und das Weitertragen der Namensbestandteile (`propagate_person_components`) uebertrug den
+# verbliebenen Klammertreffer zurueck auf "§ 1 StVO". Steht eine Abkuerzung im SELBEN Text unmittelbar hinter einem
+# Normzitat, ist dieser Wert in diesem Text eine Gesetzesabkuerzung - dann entfaellt JEDER Treffer mit genau diesem Wert.
+# Ohne Normzitat im Text aendert sich nichts (keine pauschale Freigabe von Abkuerzungen oder Klammerinhalten).
+_CITED_STATUTE_ABBREVIATION = re.compile(
+    _NORM_CITATION_BEFORE.pattern.removesuffix("$") + r"(?P<abbr>[A-ZÄÖÜ][A-Za-zÄÖÜäöü]{1,11})(?![\wÄÖÜäöüß])"
+)
+
+
+def cited_statute_abbreviations(text: str) -> frozenset[str]:
+    """Abkuerzungen, die im Text unmittelbar hinter einem Normzitat stehen ("§ 1 StVO", "§§ 433, 434 BGB")."""
+    return frozenset(
+        match.group("abbr")
+        for match in _CITED_STATUTE_ABBREVIATION.finditer(text)
+        if _STATUTE_ABBREVIATION.match(match.group("abbr"))
+    )
+
+
 def drop_statute_abbreviations(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
     analysis = _neutralize_internal_tokens(text)
+    cited = cited_statute_abbreviations(analysis)
     return [
         span
         for span in spans
         if not (
             _STATUTE_ABBREVIATION.match(span.value)
-            and _NORM_CITATION_BEFORE.search(analysis[max(0, span.start - 60) : span.start])
+            and (span.value in cited or _NORM_CITATION_BEFORE.search(analysis[max(0, span.start - 60) : span.start]))
         )
     ]
 
@@ -1063,6 +1494,8 @@ def detect_probed_names(text: str) -> list[DetectedSpan]:
             continue
         if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_technical_compound(word):
             continue
+        if is_contextual_technical_term(text, token.idx, token.idx + len(word)):
+            continue  # dieselbe Kontextregel wie in `_collect_spans` - sonst kaeme der Fachbegriff hier zurueck
         if is_role_label_before_person(text, token.idx + len(word)):
             continue
         previous = doc[token.i - 1] if token.i else None
@@ -1419,6 +1852,8 @@ def detect_article_names(text: str) -> list[DetectedSpan]:
             continue
         if word.lower() in _NEVER_ENTITY_WORDS or word in _PROTOCOL_LABELS or is_technical_compound(word):
             continue
+        if is_contextual_technical_term(text, token.idx, token.idx + len(word)):
+            continue  # dieselbe Kontextregel wie in `_collect_spans` ("auf das Anderkonto ueberwiesen")
         if _name_probe_score(word) >= _NAME_PROBE_MIN_SCORE:
             spans.append(DetectedSpan(category="person", start=token.idx, end=token.idx + len(word), value=text[token.idx : token.idx + len(word)]))
     return spans
@@ -1443,6 +1878,8 @@ def detect_unlabelled_proper_nouns(text: str) -> list[DetectedSpan]:
             continue
         if not word.replace("-", "").isalpha() or word.lower() in _NEVER_ENTITY_WORDS or is_technical_compound(word):
             continue
+        if is_contextual_technical_term(text, token.idx, token.idx + len(word)):
+            continue  # dieselbe Kontextregel wie in `_collect_spans`
         if _is_identifier_label(word):
             continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Patientennummer [KENNUNG_01]"), wie _collect_spans
         if is_role_label_before_person(text, token.idx + len(word)):
@@ -1501,6 +1938,12 @@ def _collect_spans(results, text: str, mapping: tuple[list[int], list[int]] | No
             # ("Zustellungsurkunde", "Versicherungskammer") identifiziert niemanden; ein echter Organisationsname ist ein
             # Mehrworttreffer und bleibt geschuetzt. Bewusst NICHT "ort": reale Ortsnamen dieser Bauart ("Hoffnungsthal").
             continue
+        if is_contextual_technical_term(text, start, end):
+            continue  # Fachbegriff im Sachkontext (Wortbildung UND Dokumentkontext), siehe `is_contextual_technical_term`
+        if category in ("person", "organisation") and is_generic_article_noun(text, start, end):
+            continue  # "Die Gesellschaft ist ..." - allgemeine Bezugnahme, siehe `is_generic_article_noun`
+        if category == "organisation" and is_defined_abbreviation(text, value.strip()):
+            continue  # im Dokument definierte Fach-Abkuerzung ("EÜR" neben "Einnahmenüberschussrechnung")
         if _INTERNAL_PLACEHOLDER_PATTERN.search(value):
             # ECHTER FUND (realer Abnahme-Test, 13.09.): auf dem bereits
             # PSEUDONYMISIERTEN Text (zweiter Durchlauf, Restrisiko-Scan in

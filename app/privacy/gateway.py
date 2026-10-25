@@ -45,6 +45,7 @@ from app.privacy.review import (
     history_only_identifiers,
 )
 from app.privacy.date_chronology import build_age_note, build_chronology_note, build_death_note
+from app.privacy.detectors import short_form_statute_collisions
 from app.privacy.party_addresses import build_party_address_note
 from app.privacy.presidio_ner import (
     detect_presidio_entities,
@@ -87,6 +88,13 @@ _SEP_STIL = "@@GATEWAY_STIL@@"
 # spaCy nicht ladbar). Kategorie "privacy_check_failed" in app/privacy/api_logger.py.
 PRIVACY_CHECK_FAILED_REASON = (
     "Die Datenschutzprüfung ist fehlgeschlagen (Erkennung personenbezogener Daten nicht verfügbar) - "
+    "keine Übermittlung an die KI."
+)
+# Option C (24.10.2026): Firmen-Kurzform = zitierte Gesetzesabkuerzung ("... GmbH (BGB) ... § 823 BGB") ist nicht sicher
+# aufloesbar - siehe detectors.short_form_statute_collisions. Fester, inhaltsfreier Grund (nie die Abkuerzung selbst);
+# Kategorie "short_form_statute_collision" in app/privacy/api_logger.py.
+SHORT_FORM_STATUTE_COLLISION_REASON = (
+    "Kurzform-Kollision: Eine Firmen-Kurzform im Text ist zugleich als Gesetzesabkürzung zitiert - "
     "keine Übermittlung an die KI."
 )
 _logger = logging.getLogger("lexono.privacy")
@@ -360,6 +368,28 @@ class ClaudePrivacyGateway:
             pseudonymized_combined, mappings, parts = _pseudonymize_and_split()
         except Exception as exc:  # noqa: BLE001 - fail-closed: ohne vollstaendige Erkennung nie in die Cloud
             return _detection_failed("pseudonymisierung", exc)
+        # Option C: VOR Rueckfrage, Restrisiko-Scan und Payload - bei einer Kollision entsteht keine (auch keine teilweise
+        # pseudonymisierte) Payload, und im Modus "ask" wird nicht erst eine Rueckfrage gestellt, die nichts mehr aendert.
+        try:
+            collisions = short_form_statute_collisions(
+                combined, [(m.category, m.original_value) for m in mappings]
+            )
+        except Exception as exc:  # noqa: BLE001 - fail-closed: unklare Pruefung blockiert
+            return _detection_failed("kurzform_kollision", exc)
+        if collisions:
+            _logger.warning(  # nur die Anzahl - nie die Abkuerzung (geschuetzte Kurzform der Firma)
+                "Anfrage blockiert: Firmen-Kurzform kollidiert mit einer zitierten Gesetzesabkuerzung (%d) - "
+                "nichts gesendet",
+                len(collisions),
+            )
+            return GatewayResult(
+                allowed=False,
+                purpose=purpose,
+                payload=None,
+                mappings=mappings,
+                reasons=[SHORT_FORM_STATUTE_COLLISION_REASON],
+                locally_sourced_text=locally_sourced_text,
+            )
         review_candidates: list[ReviewCandidate] = []
         if review_mode != "off":
             try:

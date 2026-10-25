@@ -229,6 +229,9 @@ def test_deliberate_question_is_scoped_to_the_uploaded_document_and_reconstructe
 
 def test_second_question_does_not_resend_the_upload_note(client, db_session, writer) -> None:
     conversation_id = _upload(client)[0]["conversation_id"]
+    # Das Testdokument nennt "Der Richter Zweigelt" - seit 24.10.2026 (Grenzfall G2) ein Rueckfrage-Signal. Der Name wird
+    # deshalb wie im echten Ablauf in der Dokumentansicht geschuetzt; Gegenstand hier ist der Upload-Umfang.
+    _protect_in_chat_view(client, conversation_id, db_session.query(Document).order_by(Document.created_at).first(), ["Zweigelt"])
     _ask(client, conversation_id)
     _ask(client, conversation_id, "Welche Frist ergibt sich daraus?")
     assert len(writer.received_payloads) == 2
@@ -400,6 +403,9 @@ def test_several_uploads_in_a_row_are_all_in_scope(client, db_session, writer) -
     _upload(client, conversation_id=conversation_id, name="zweites.pdf",
             data=_pdf_bytes(["Vergleich vom 05.12.2026 über 1.100,00 EUR."]))
     assert writer.received_payloads == []
+    # Das Testdokument nennt "Der Richter Zweigelt" - seit 24.10.2026 (Grenzfall G2) ein Rueckfrage-Signal. Der Name wird
+    # deshalb wie im echten Ablauf in der Dokumentansicht geschuetzt; Gegenstand hier ist der Upload-Umfang.
+    _protect_in_chat_view(client, conversation_id, db_session.query(Document).order_by(Document.created_at).first(), ["Zweigelt"])
     _ask(client, conversation_id, "Fasse die beiden Dokumente zusammen.")
     sent = json.dumps(writer.received_payloads[0].model_dump(), ensure_ascii=False)
     assert "4.250,00 EUR" in sent and "1.100,00 EUR" in sent

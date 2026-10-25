@@ -381,8 +381,18 @@ def test_chat_question_about_an_unreleased_upload_is_answered_locally(client, db
     assert recorder.requests == []
     document = db_session.query(Document).one()
     _release(client, document)
-    _ask(client, conversation_id, "Fasse das angehängte Dokument jetzt zusammen.")
+    events = _ask(client, conversation_id, "Fasse das angehängte Dokument jetzt zusammen.")
+    # Seit 24.10.2026 (Grenzfall G2) ist "Der Richter Zweigelt" im Dokument unsicher: erst die Rueckfrage, ohne Cloud-Anfrage.
+    review = [e for e in events if e["kind"] == "review"]
+    assert len(review) == 1 and "Zweigelt" in [c["term"] for c in review[0]["candidates"]]
+    assert recorder.requests == []
+    page = client.get(f"/dashboard/chat/{conversation_id}").text
+    client.post(f"/dashboard/chat/{conversation_id}/privacy-review", data={
+        "csrf_token": extract_csrf(page), "message_id": review[0]["message_id"],
+        "decisions": json.dumps([{"term": c["term"], "decision": "personal"} for c in review[0]["candidates"]]),
+    })
     assert len(recorder.requests) == 1 and "4.250,00 EUR" in _wire(recorder.requests[0])
+    assert "Zweigelt" not in _wire(recorder.requests[0])
 
 
 # --- Nachtraege aus dem unabhaengigen Review (§62) -------------------------------------------------------------------

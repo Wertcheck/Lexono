@@ -27,7 +27,7 @@ from app.models import ApiCallLog, ChatConversation, ChatMessage, Document, User
 from app.models.base import Base
 from app.models.chat_upload_operation import ChatUploadOperation
 from tests.auth_test_utils import extract_csrf, extract_upload_token, login_as_admin
-from tests.test_upload_without_ai import LINES, QUESTION, TYPED, _ask, _pdf_bytes, _wire
+from tests.test_upload_without_ai import LINES, QUESTION, TYPED, _ask, _pdf_bytes, _protect_in_chat_view, _wire
 from tests.test_upload_without_ai import client, db_session, recorder, writer  # noqa: F401  (Fixtures)
 from tests.test_web_chat import _parse_sse_events
 
@@ -213,6 +213,9 @@ def test_upload_has_no_cloud_call_and_the_deliberate_question_exactly_one(client
     conversation_id = _uploaded(_stream(client, token))["conversation_id"]
     _uploaded(_stream(client, token))  # Wiederholung des Uploads
     assert recorder.requests == []
+    # Das Testdokument nennt "Der Richter Zweigelt" - seit 24.10.2026 (Grenzfall G2) ein Rueckfrage-Signal. Der Name wird
+    # deshalb wie im echten Ablauf in der Dokumentansicht geschuetzt; Gegenstand hier ist der Upload-Umfang.
+    _protect_in_chat_view(client, conversation_id, db_session.query(Document).order_by(Document.created_at).first(), ["Zweigelt"])
     _ask(client, conversation_id, QUESTION)  # bewusste Aktion: ohne Dateien, ohne Upload-Vorgangs-ID
     assert len(recorder.requests) == 1
     wire = _wire(recorder.requests[0])

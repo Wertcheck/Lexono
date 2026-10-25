@@ -92,7 +92,7 @@ from app.models import (
     User,
 )
 from app.observability.perf_trace import PerfTrace
-from app.privacy.api_logger import friendly_block_message
+from app.privacy.api_logger import SHORT_FORM_COLLISION_MESSAGE, friendly_block_message
 
 #: ECHTER FUND (realer Abnahme-Test, 13.09.): der Chat rief
 #: `drafting_service.create_draft` bisher IMMER mit `_PURPOSE_DRAFT`
@@ -1047,6 +1047,24 @@ class ChatService:
         purpose = _PURPOSE_DRAFT if _looks_like_drafting_request(content) else _PURPOSE_CHAT
         return purpose, None, None
 
+    @staticmethod
+    def _turns_blocked_by_short_form_collision(db: Session, conversation: ChatConversation) -> list[str]:
+        """IDs der Anwaltsnachrichten, deren unmittelbare Antwort die Kurzform-Kollisionsmeldung ist (siehe
+        `_build_history`). Erkannt an der festen, inhaltsfreien Meldung - kein Originalwert wird gelesen oder gespeichert."""
+        rows = (
+            db.query(ChatMessage.id, ChatMessage.role, ChatMessage.blocked, ChatMessage.content)
+            .filter(ChatMessage.conversation_id == conversation.id)
+            .filter(ChatMessage.role.in_(("user", "assistant")))
+            .order_by(ChatMessage.created_at.asc())
+            .all()
+        )
+        return [
+            earlier.id
+            for earlier, later in zip(rows, rows[1:])
+            if earlier.role == "user" and later.role == "assistant" and later.blocked
+            and later.content == SHORT_FORM_COLLISION_MESSAGE
+        ]
+
     def _build_history(
         self,
         db: Session,
@@ -1125,6 +1143,12 @@ class ChatService:
         )
         if exclude_message_id is not None:
             query = query.filter(ChatMessage.id != exclude_message_id)
+        # Option C (24.10.2026): eine Anwaltsnachricht, die wegen einer Kurzform-Kollision blockiert wurde, ist nie
+        # uebermittelt worden und kann es auch nicht werden - als Verlauf mitgeschickt, blockierte sie jede spaetere
+        # Anfrage dieses Gespraechs erneut (gemessen: auch die Umformulierung). Nur dieser Blockgrund; nur Weglassen.
+        collision_turns = self._turns_blocked_by_short_form_collision(db, conversation)
+        if collision_turns:
+            query = query.filter(ChatMessage.id.notin_(collision_turns))
 
         newest_first = (
             query.order_by(ChatMessage.created_at.desc())

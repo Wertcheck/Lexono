@@ -208,9 +208,11 @@ def test_matter_page_lists_decisions_and_revoking_takes_effect_on_the_next_reque
     assert db_session.query(PrivacyDecision).count() == 0
     audit = db_session.query(AuditEvent).filter_by(event_type="privacy_decision_revoked").one()
     assert "Zweigelt" not in audit.details
-    # aufgehoben -> wirkt nicht unbemerkt weiter (die automatische Erkennung findet diesen Namen nicht, §50)
+    # Frueher: aufgehoben -> Name wieder lesbar ("die automatische Erkennung findet diesen Namen nicht", §50). Seit
+    # 24.10.2026 (Grenzfall G2) ist "Der Richter Zweigelt" im Gespraechsverlauf aus eigenem Recht unsicher und bleibt
+    # geschuetzt - die Wirkung der Aufhebung belegt test_revoked_decision_no_longer_applies_to_drafts_of_the_matter.
     _send(client, "Der Richter Zweigelt hat den Termin erneut verlegt.", [], conversation_id=conversation.id)
-    assert "Zweigelt" in writer.received_payloads[-1].model_dump_json()
+    assert "Zweigelt" not in writer.received_payloads[-1].model_dump_json()
 
 
 def test_revoked_decision_no_longer_applies_to_drafts_of_the_matter(client, db_session: Session, writer) -> None:

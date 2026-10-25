@@ -329,7 +329,11 @@ _STREET_PATTERN = re.compile(
     r"chaussee|damm|ufer|steig|stieg|promenade|wall|steg|anger|kai|hof|markt|pfad|"
     r"zeile|park|graben|kamp|tor)\s?\d+[a-z]?\b"
 )
-_POSTAL_CODE_CITY_PATTERN = re.compile(r"\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+\b")
+# (?<!/): fuenf Ziffern direkt hinter "/" sind das Ende einer Kennnummer, keine PLZ (24.10.2026, synthetische
+# Finanzamt-Musterdokumente: "Steuernummer 12/345/67890\nAntrag" wurde als "PLZ + Ort" gelesen; nach der Ueberlappung
+# mit der Steuernummer blieb "Antrag" als ADRESSE-Platzhalter, und die Antwortpruefung blockierte jede KI-Antwort mit
+# diesem Alltagswort). "D-10115 Berlin" und PLZ/Ort auf getrennten Zeilen bleiben unveraendert Anschriften.
+_POSTAL_CODE_CITY_PATTERN = re.compile(r"(?<!/)\b\d{5}\s+[A-ZÄÖÜ][a-zäöüß]+\b")
 
 
 def _matches_from_pattern(
@@ -953,6 +957,190 @@ def _extend_with_repeated_occurrences(
     return _resolve_overlaps(spans + extra)
 
 
+# --- Kurzform einer Firma in Klammern (24.10.2026) ------------------------------------------------------------------
+# LUECKE (gemessen, vorbestehend): in "Die Nordbauholding GmbH (NBH) hat Einspruch eingelegt. Die NBH ist Mandantin."
+# wurde die Firma erkannt, die Kurzform "NBH" aber an keiner Stelle - sie ging im Klartext hinaus. Die allgemeine
+# Weitertragung (`_extend_with_repeated_occurrences`) hilft hier bewusst nicht: Mindestlaenge 4 und Vergleich OHNE
+# Gross-/Kleinschreibung (fuer Kurzformen wie "AB" gefaehrlich: "ab 01.01.").
+# Regel (nur Hinzufuegen, fail-closed): eine Abkuerzung in Klammern DIREKT hinter einem Firmentreffer (Organisation oder
+# Wert mit Rechtsform) ist dessen Kurzform, wenn sie eindeutig zugeordnet ist - ihre Buchstaben stehen der Reihe nach im
+# Firmennamen und sie beginnt mit dessen Anfangsbuchstaben ("NBH" <- "Nordbauholding"), oder die Klammer definiert sie
+# ausdruecklich ("nachfolgend", "im Folgenden", "kurz"). Jede wortgenaue, gross-/kleinschreibungsgleiche Erwaehnung im
+# selben Text erhaelt dieselbe Kategorie. Ausgenommen: Rechtsformen ("(AG)") und Gesetzesabkuerzungen - eine Abkuerzung,
+# die irgendwo im Text unmittelbar nach einem Normzitat steht ("§ 433 BGB"), oder deren Langform ein Gesetzeswort enthaelt.
+_SHORT_FORM_DEFINITION = re.compile(
+    r"[ \t]*\([ \t]*(?P<marker>(?:nachfolgend|im[ \t]+Folgenden|kurz|fortan)[ \t]*:?[ \t]*)?"
+    r"[\"„“‚'«»]?(?P<abbr>[A-ZÄÖÜ][A-ZÄÖÜ0-9&\-]{1,7})[\"“”‘'«»]?[ \t]*\)"
+)
+_LEGAL_FORM_SPELLINGS = frozenset({"GmbH", "mbH", "AG", "KG", "SE", "UG", "OHG", "GbR", "KGaA", "eG", "eV", "KGAA", "GBR"})
+_STATUTE_LONG_FORM = re.compile(r"gesetz|ordnung|verordnung|richtlinie|abkommen|satzung|kodex", re.IGNORECASE)
+_WORD_CHAR = r"[\wÄÖÜäöüß]"
+
+
+def _abbreviation_fits(abbreviation: str, long_form: str) -> bool:
+    """Buchstaben der Abkuerzung der Reihe nach im Namen, erster Buchstabe = Anfangsbuchstabe des Namens."""
+    letters = [ch.lower() for ch in abbreviation if ch.isalpha()]
+    name = re.sub(r"^(?:der|die|das|den|dem|des)\s+", "", long_form.strip(), flags=re.IGNORECASE)
+    name_letters = [ch.lower() for ch in name if ch.isalpha()]
+    if not letters or not name_letters or letters[0] != name_letters[0]:
+        return False
+    position = 0
+    for letter in letters:
+        try:
+            position = name_letters.index(letter, position) + 1
+        except ValueError:
+            return False
+    return True
+
+
+def _used_as_statute(text: str, abbreviation: str) -> bool:
+    from app.privacy.presidio_ner import _NORM_CITATION_BEFORE
+
+    for match in re.finditer(r"(?<!" + _WORD_CHAR + r")" + re.escape(abbreviation) + r"(?!" + _WORD_CHAR + r")", text):
+        if _NORM_CITATION_BEFORE.search(text[max(0, match.start() - 60) : match.start()]):
+            return True
+    return False
+
+
+def _defined_short_form(text: str, category: str, value: str, end: int) -> str | None:
+    """Kurzform, die die Klammer direkt hinter dem Firmentreffer `value` (endet bei `end`) definiert - oder None.
+    Gesetzeskollisionen sind hier NICHT ausgeschlossen (siehe `_organisation_short_forms`, `short_form_statute_collisions`)."""
+    if not (category == "organisation" or re.search(_LEGAL_FORM_SUFFIX + r"\b", value)):
+        return None
+    match = _SHORT_FORM_DEFINITION.match(text, end)
+    if match is None:
+        return None
+    abbreviation = match.group("abbr")
+    if abbreviation in _LEGAL_FORM_SPELLINGS or _STATUTE_LONG_FORM.search(value):
+        return None
+    if not match.group("marker") and not _abbreviation_fits(abbreviation, value):
+        return None
+    return abbreviation
+
+
+def short_form_statute_collisions(text: str, organisations: list[tuple[str, str]]) -> set[str]:
+    """Option C (24.10.2026): Kurzformen, die im Text als Firmen-Kurzform definiert UND als Gesetzesabkuerzung zitiert
+    werden ("Bremer Grundbesitz GmbH (BGB) ... Die BGB verweigert ... § 823 BGB").
+
+    Nicht sicher aufloesbar: maskiert man die Kurzform, steht derselbe Originalwert lesbar im Normzitat und die
+    (unveraenderte) Leck-Pruefung blockiert; laesst man sie lesbar, gehen die Initialen der Firma hinaus. Der Gateway
+    blockiert deshalb VOR jeder Payload. `organisations` = (Kategorie, Originalwert) der erkannten Firmen. Die Werte
+    sind nur fuer die Pruefung bestimmt - nie in Meldungen oder Logs ausgeben."""
+    collisions: set[str] = set()
+    for category, value in organisations:
+        if not value:
+            continue
+        for occurrence in re.finditer(r"(?<!" + _WORD_CHAR + r")" + re.escape(value) + r"(?!" + _WORD_CHAR + r")", text):
+            abbreviation = _defined_short_form(text, category, value, occurrence.end())
+            if abbreviation is not None and _used_as_statute(text, abbreviation):
+                collisions.add(abbreviation)
+    return collisions
+
+
+# --- Firmen im Chat ohne Akte: Vertraulichkeit aus dem Satz (24.10.2026) -------------------------------------------
+# Im allgemeinen Wissenschat (gateway._GENERAL_KNOWLEDGE_SKIP_CATEGORIES) wurden ALLE Firmentreffer verworfen - richtig fuer
+# "Wie hoch ist der Umsatz der Deutschen Bahn AG?", aber gemessen auch "Unsere Mandantin, die Bremer Grundbesitz GmbH,
+# will kuendigen." im Klartext: der Text selbst offenbart die vertrauliche Mandatsbeziehung. Ein Firmentreffer bleibt
+# dort deshalb erhalten (wird also pseudonymisiert, samt Kurzform und spaeteren Erwaehnungen), wenn DERSELBE ABSATZ (ein
+# Chat-Beitrag, eine Verlaufszeile) ein ausdrueckliches Mandats-/Parteisignal des Anwalts enthaelt. Bewusst Absatz statt
+# Satz: "Unsere Mandantin hat ein Problem. Die X GmbH zahlt nicht." offenbart den Bezug ueber zwei Saetze (Preis:
+# oeffentliche Firmen in einem Mandats-Beitrag werden mitmaskiert). Nie aus dem Firmennamen allein; gewoehnliche Rollen
+# ohne Mandatsbezug ("Vermieterin ist die X SE", "die Beklagte im BGH-Urteil") sind kein Signal.
+#
+# Erweitert 24.10.2026 (gemessen an 21 Mandats- und 9 oeffentlichen Formulierungen, vorher 14 Mandatsfaelle im
+# Klartext): Beauftragung, "Mandat", anwaltliche Taetigkeit in der ersten Person in beiden Wortstellungen. Firmentreffer
+# werden vor der Suche ausgeblendet - "Mandanten Service GmbH" oder "Gegner Consulting AG" sind kein Signal fuer sich.
+_W = r"[\wÄÖÜäöüß]"
+_WORDS = r"(?:[^\s.!?]+\s+)"  # ein Wort samt Leerraum, nie ueber ein Satzende hinweg
+_FIRST_PERSON = r"(?:[Ww]ir|[Uu]ns|[Ii]ch|[Mm]ich|[Mm]ir)"
+_MANDATE_SIGNAL = re.compile(
+    rf"(?<!{_W})(?:"
+    r"[Mm]andant(?:in|innen|en|schaft)?|[Mm]andat(?:s|e|en)?|[Mm]andatier\w*"
+    r"|[Gg]egenseite|[Gg]egner(?:in|innen|s)?|[Gg]egnerische[nrms]?"
+    r"|[Uu]nser(?:e|er|em|en|es)?\s+(?:Auftraggeber(?:in|innen)?|Kund(?:e|in|en|innen)|Klient(?:in|en|innen)?|"
+    r"Vertragspartner(?:in|innen)?)"
+    # anwaltliche Taetigkeit in der ersten Person ("wir beraten", "ich vertrete", "die X GmbH betreuen wir")
+    rf"|{_FIRST_PERSON}\s+{_WORDS}{{0,6}}?(?:vertret|berat|betreu)\w*"
+    rf"|(?:vertret|vertrit|berat|betreu)\w*\s+(?:wir|ich)"
+    # Beauftragung ("hat uns beauftragt", "beauftragte mich", "wir wurden ... beauftragt")
+    rf"|(?:[Uu]ns|[Mm]ich)\s+{_WORDS}{{0,8}}?beauftrag\w*"
+    rf"|beauftrag\w*\s+{_WORDS}{{0,2}}?(?:uns|mich)"
+    rf"|(?:[Ww]ir|[Ii]ch)\s+(?:wurden?|sind|bin|wurde)\s+{_WORDS}{{0,8}}?beauftragt"
+    rf")(?!{_W})"
+)
+# "Fuer die X GmbH pruefen wir", "Gegen die X GmbH haben wir Klage erhoben": Praeposition DIREKT vor der Firma und die erste
+# Person im selben Satz. Gilt nur fuer diese eine Firma ("Gilt § 1 AEG auch fuer die Deutsche Bahn AG?" bleibt lesbar).
+_FOR_OR_AGAINST_BEFORE = re.compile(r"(?<![\wÄÖÜäöüß])(?:[Ff]ür|[Gg]egen)\s+(?:die|den|das|der|dem)?\s*$")
+_FIRST_PERSON_WORD = re.compile(rf"(?<!{_W}){_FIRST_PERSON}(?!{_W})|(?<!{_W})[Uu]nser\w*|(?<!{_W})[Mm]ein\w*")
+
+
+def is_confidential_organisation_mention(
+    text: str, span: DetectedSpan, spans: list[DetectedSpan] | tuple[DetectedSpan, ...] = ()
+) -> bool:
+    """Firmentreffer mit ausdruecklichem Mandatsbezug im selben Absatz bzw. (fuer/gegen) im selben Satz - siehe oben.
+    `spans`: weitere Treffer des Textes; Firmentreffer darunter werden wie `span` vor der Signalsuche ausgeblendet."""
+    if span.category != "organisation":
+        return False
+    start = text.rfind("\n", 0, span.start) + 1
+    end = text.find("\n", span.end)
+    end = end if end >= 0 else len(text)
+    blanked = list(text[start:end])
+    for other in (span, *spans):
+        if other.category == "organisation" and other.start < end and start < other.end:
+            for i in range(max(other.start, start), min(other.end, end)):
+                blanked[i - start] = " "
+    paragraph = "".join(blanked)
+    if _MANDATE_SIGNAL.search(paragraph):
+        return True
+    before = paragraph[: span.start - start]
+    if not _FOR_OR_AGAINST_BEFORE.search(before):
+        return False
+    sentence_start = max(before.rfind(mark) for mark in (". ", "? ", "! ")) + 1
+    sentence_end = min([i for i in (paragraph.find(mark, span.end - start) for mark in (". ", "? ", "! ")) if i >= 0]
+                       or [len(paragraph)])
+    return bool(_FIRST_PERSON_WORD.search(paragraph[sentence_start:sentence_end]))
+
+
+# "Consulting" in "Muster Consulting AG" (24.10.2026, gemessen, vorbestehend seit mindestens 8a219ec): das Zweitsignal
+# presidio_ner.detect_unlabelled_proper_nouns markiert das englische Lehnwort als Person (spaCy: PROPN). Im Aktenmodus
+# ueberdeckt der Firmentreffer die Stelle; im allgemeinen Wissenschat wird der Firmentreffer verworfen und der innere
+# Personentreffer rueckte nach ("Muster [PERSON_01] AG"). Ein solcher Treffer entfaellt mit seiner Firma - aber nur, wenn
+# er VOLLSTAENDIG in der verworfenen Firma liegt, EIN dem Modell bekanntes Wort ist, in KEINEM Namensrahmen als Person
+# gelesen wird und kein bekannter Aktenbeteiligter ist. Ein Nachname im Firmennamen ("Müller Consulting GmbH") hat eine
+# Namensprobe > 0 und bleibt geschuetzt. Ausserhalb einer erkannten Firma aendert sich nichts.
+def _is_generic_word_inside_dropped_firm(
+    span: DetectedSpan, dropped_organisations: list[DetectedSpan], known_spans: list[DetectedSpan]
+) -> bool:
+    if span.category != "person" or not span.value.isalpha():
+        return False
+    if not any(o.start <= span.start and span.end <= o.end and (o.start, o.end) != (span.start, span.end)
+               for o in dropped_organisations):
+        return False
+    if any(k.start < span.end and span.start < k.end for k in known_spans):
+        return False
+    from app.privacy import presidio_ner as pn
+
+    return pn._model_knows(span.value) and pn._name_probe_score(span.value) == 0
+
+
+def _organisation_short_forms(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    added: list[DetectedSpan] = []
+    defined: set[str] = set()
+    for span in spans:
+        abbreviation = _defined_short_form(text, span.category, span.value, span.end)
+        if abbreviation is None or abbreviation in defined:
+            continue
+        if _used_as_statute(text, abbreviation):
+            continue  # Kollision mit einem Gesetz: der Gateway blockiert (short_form_statute_collisions)
+        defined.add(abbreviation)
+        pattern = re.compile(r"(?<!" + _WORD_CHAR + r")" + re.escape(abbreviation) + r"(?!" + _WORD_CHAR + r")")
+        for occurrence in pattern.finditer(text):  # gross-/kleinschreibungsgenau, wortgenau
+            added.append(
+                DetectedSpan(category=span.category, start=occurrence.start(), end=occurrence.end(), value=abbreviation)
+            )
+    return added
+
+
 def detect_all(
     text: str,
     known_entities: dict[str, list[str]] | None = None,
@@ -1008,8 +1196,8 @@ def detect_all(
     all_spans: list[DetectedSpan] = []
     for detector in _ALL_REGEX_DETECTORS:
         all_spans.extend(detector(text))
-    if known_entities:
-        all_spans.extend(detect_known_entities(text, known_entities))
+    known_spans = detect_known_entities(text, known_entities) if known_entities else []
+    all_spans.extend(known_spans)
     # Generische Firmenerkennung ueber die Rechtsform: bewusst NACH den bekannten
     # Entitaeten angehaengt (wie die NER) - bei gleich langem Treffer gewinnt der zuerst
     # hinzugefuegte, und eine bekannte, rollenzugeordnete Entitaet (Gegner, Mandant ...)
@@ -1023,7 +1211,22 @@ def detect_all(
         all_spans.extend(ner_spans)
 
     if skip_categories:
-        all_spans = [span for span in all_spans if span.category not in skip_categories]
+        # Firmen im Chat ohne Akte: erhalten, wenn der Absatz eine Mandatsbeziehung offenbart (siehe
+        # `is_confidential_organisation_mention`) - nur Schutz hinzufuegen. Nicht, wenn ein bekannter Aktenbeteiligter
+        # dieselbe Stelle schon schuetzt: er ist die zuverlaessigere Quelle (Rolle bleibt erhalten, "[MANDANT_01]").
+        kept = [
+            span for span in all_spans
+            if span.category not in skip_categories
+            or (
+                is_confidential_organisation_mention(text, span, all_spans)
+                and not any(k.start < span.end and span.start < k.end for k in known_spans)
+            )
+        ]
+        dropped_organisations = [s for s in all_spans if s.category == "organisation" and s not in kept]
+        all_spans = [
+            span for span in kept
+            if not _is_generic_word_inside_dropped_firm(span, dropped_organisations, known_spans)
+        ]
 
     if uppercase_variant:
         all_spans.extend(
@@ -1040,6 +1243,8 @@ def detect_all(
     all_spans = _keep_public_court_names(text, all_spans)
     all_spans = _drop_spans_in_document_type_labels(text, all_spans)
     all_spans = _drop_contact_labels(text, all_spans)
+    # Kurzform einer Firma in Klammern ("Nordbauholding GmbH (NBH)") samt Folgeerwaehnungen - nur Hinzufuegen
+    all_spans.extend(_organisation_short_forms(text, all_spans))
     resolved = _resolve_overlaps(all_spans)
     return _extend_with_repeated_occurrences(text, resolved)
 
@@ -1695,8 +1900,10 @@ def _uppercase_variant_pass(
 
     accepted: list[DetectedSpan] = []
     for span in validated:
-        if span.category in skip_categories:
-            continue
+        if span.category in skip_categories and not is_confidential_organisation_mention(
+            text, span, [*original_spans, *validated]
+        ):
+            continue  # Versalfassung: dieselbe Ausnahme wie in detect_all (Satz offenbart eine Mandatsbeziehung)
         overlapping = [other for other in original_spans if span.start < other.end and other.start < span.end]
         # Ein urspruenglicher Treffer wird nie verdraengt oder verkuerzt. Erlaubt ist eine OBERMENGE gleicher Kategorie
         # (Red-Team 4, C1: "HANS MEIER" - der Nachname war schon erkannt; "HANS" blieb sonst im Klartext und der

@@ -122,10 +122,13 @@ def _action(client, document: Document, action: str = "summarize", terms=None, v
 # --- Gegenprobe und Grundfall --------------------------------------------------------------------------------------
 
 
-def test_without_marking_the_unrecognised_judge_in_the_document_reaches_the_payload(client, db_session, writer) -> None:
+def test_without_marking_the_judge_in_the_document_is_still_protected(client, db_session, writer) -> None:
+    """Frueher Gegenprobe der Grenze §50 ("automatische Erkennung uebersieht ihn - deshalb die Markierung"). Seit
+    24.10.2026 (Grenzfall G2) ist "Richter Zweigelt" auch ohne Markierung unsicher und wird vorsichtig maskiert; die
+    Markierung bleibt der Weg zu einem dauerhaften, aktenweiten Schutz."""
     document = _document(db_session)
     _action(client, document)
-    assert "Zweigelt" in _sent(writer)  # automatische Erkennung uebersieht ihn (§50) - deshalb die Markierung
+    assert "Zweigelt" not in _sent(writer)
 
 
 def test_marking_in_the_document_view_protects_the_name_in_every_later_ai_action(client, db_session, writer) -> None:

@@ -54,3 +54,43 @@ def test_citation_rule_only_applies_directly_after_the_citation() -> None:
     assert pn._NORM_CITATION_BEFORE.search("aus § 280 Abs. 1 ")
     assert not pn._NORM_CITATION_BEFORE.search("nach § 7 StVG hat Herr ")
     assert not pn._STATUTE_ABBREVIATION.match("Sommer")
+
+
+# --- Wertbezogen: Abkuerzung mit Normbezug an JEDER Stelle des Textes (24.10.2026) -----------------------------------
+# Befund: "Straßenverkehrs-Ordnung (StVO); nach § 1 StVO" - der Wortart-Tagger markierte beide Vorkommen als Person, die
+# positionsbezogene Regel entfernte nur das Vorkommen hinter "§ 1", das Weitertragen der Namensbestandteile uebertrug den
+# Klammertreffer zurueck auf das Normzitat.
+
+DEFINED_AND_CITED = [
+    ("Es gilt die Straßenverkehrs-Ordnung (StVO); nach § 1 StVO ist Rücksicht geboten.", ["(StVO)", "§ 1 StVO"]),
+    ("Nach der Strafprozessordnung (StPO) gilt § 136 StPO; die StPO schützt den Beschuldigten.",
+     ["(StPO)", "§ 136 StPO", "die StPO"]),
+    ("Das Betriebsverfassungsgesetz (BetrVG) regelt in § 87 BetrVG die Mitbestimmung.", ["(BetrVG)", "§ 87 BetrVG"]),
+    ("Das Arbeitszeitgesetz (ArbZG) begrenzt in §§ 3, 4 ArbZG die Arbeitszeit.", ["(ArbZG)", "§§ 3, 4 ArbZG"]),
+    ("Nach Art. 6 DSGVO ist die Verarbeitung erlaubt; die DSGVO gilt unmittelbar.", ["Art. 6 DSGVO", "die DSGVO"]),
+]
+
+
+@pytest.mark.parametrize("text, readable", DEFINED_AND_CITED)
+def test_cited_statute_abbreviation_stays_readable_everywhere_in_the_text(gateway, text: str, readable: list[str]) -> None:
+    payload = _payload(gateway, text)
+    for value in readable:
+        assert value in payload, f"{value!r} wurde maskiert"
+
+
+def test_without_a_norm_citation_nothing_changes() -> None:
+    """Kein Normzitat im Text -> keine wertbezogene Freigabe (keine pauschale Freigabe von Abkuerzungen)."""
+    assert pn.cited_statute_abbreviations("Die Straßenverkehrs-Ordnung (StVO) ist bekannt.") == frozenset()
+    assert pn.cited_statute_abbreviations("Nach § 1 StVO und §§ 433, 434 BGB sowie Art. 6 DSGVO.") == frozenset(
+        {"StVO", "BGB", "DSGVO"}
+    )
+
+
+@pytest.mark.parametrize("value", ["Thomas Berger", "Beispielstraße 17", "12/345/67890", "NBH", "McAllister"])
+def test_real_values_next_to_a_cited_statute_stay_protected(gateway, value: str) -> None:
+    payload = _payload(
+        gateway,
+        "Die Nordbauholding GmbH (NBH) beruft sich auf § 1 StVO. Laut Rechtsanwalt McAllister muss Thomas Berger, "
+        "Beispielstraße 17, 10115 Berlin, Rücksicht nehmen; Steuernummer 12/345/67890. Die NBH zahlt nicht.",
+    )
+    assert value not in payload, f"{value!r} ging im Klartext hinaus"

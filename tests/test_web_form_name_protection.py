@@ -120,10 +120,11 @@ def _generate(client, matter_id: str = "", terms=None, **fields):
     return client.post("/dashboard/tools/schriftsatz/generate", data=data, follow_redirects=False)
 
 
-def test_schriftsatz_without_marking_sends_the_unrecognised_judge(client, db_session, writer) -> None:
-    """Gegenprobe: die automatische Erkennung findet "Zweigelt" nicht (§50) - deshalb die Markierung."""
+def test_schriftsatz_without_marking_still_protects_the_judge(client, db_session, writer) -> None:
+    """Frueher Gegenprobe der Grenze §50. Seit 24.10.2026 (Grenzfall G2) ist "Richter Zweigelt" auch ohne Markierung
+    unsicher und wird vorsichtig maskiert."""
     _generate(client, _matter(db_session).id, attorney_anmerkungen=P10)
-    assert "Zweigelt" in _sent(writer)
+    assert "Zweigelt" not in _sent(writer)
 
 
 def test_schriftsatz_marking_protects_the_name_and_keeps_legal_content(client, db_session, writer) -> None:
@@ -197,10 +198,11 @@ def test_instruction_marking_protects_the_name_and_keeps_legal_content(client, d
     assert "Zweigelt" not in sent and all(value in sent for value in LEGAL)
 
 
-def test_instruction_without_marking_sends_the_unrecognised_name(client, db_session, writer) -> None:
+def test_instruction_without_marking_still_protects_the_judge(client, db_session, writer) -> None:
+    """Frueher Gegenprobe der Grenze §50 - siehe oben (Grenzfall G2, 24.10.2026)."""
     draft = _draft(db_session, "Ursprünglicher Entwurfstext.")
     _instruct(client, draft.id, "Ergänze: " + P10)
-    assert "Zweigelt" in _sent(writer)
+    assert "Zweigelt" not in _sent(writer)
 
 
 def test_name_shown_only_in_the_draft_can_be_protected_for_the_matter(client, db_session, writer) -> None:

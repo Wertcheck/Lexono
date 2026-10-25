@@ -122,8 +122,8 @@ def test_own_judge_is_not_foreign(db) -> None:
     assert "Zweigelt" not in foreign_matter_names(own, db)
 
 
-@pytest.mark.xfail(strict=True, reason="§50/§49 Grenze P10: ohne erfasste Partei (auch im Chat ohne Akte) kein "
-                   "unabhaengiges Signal - spaCy liest 'Zweigelt' wie 'Termin'")
+# Frueher Grenze P10 (G2, behoben 24.10.2026): das Amtswort davor ist jetzt Kontextsignal fuer die Rueckfrage
+# (review._roles "nach_rollenwort"); spaCy liest "Zweigelt" weiterhin wie "Termin".
 def test_unrecorded_judge_without_matter_is_masked(gateway) -> None:
     assert "Zweigelt" not in _payload(gateway, "Der Richter Zweigelt hat den Termin verlegt.")
 

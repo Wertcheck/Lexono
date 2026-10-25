@@ -105,11 +105,10 @@ def test_common_noun_surname_in_feminine_singular_is_protected(gateway) -> None:
     assert "Bergmann" not in result.payload.anonymisierter_sachverhalt
 
 
-# Bekannte Grenze (dokumentiert, NOT VERIFIED geloest): im MASKULINEN Kontext ("der Bergmann") sind Nachnamen, die
-# zugleich Berufsbezeichnungen sind, ohne Einfuehrung nicht vom Gattungswort zu unterscheiden; ebenso schwach erkannte
-# unbekannte Namen ("Grotelueschen").
-@pytest.mark.xfail(reason="maskuliner Artikel + Nachname = Gattungswort (Bergmann/Zimmermann) nicht unterscheidbar", strict=False)
-def test_known_limit_common_noun_surname_after_article(gateway) -> None:
+# Frueher bekannte Grenze (G1, behoben 24.10.2026): maskuliner Artikel + Nachname, der zugleich Berufswort ist, ist vom
+# Gattungswort nicht unterscheidbar - jetzt Rueckfrage bzw. vorsichtige Maskierung (review._is_definite_article_name_reading),
+# keine sichere Erkennung.
+def test_common_noun_surname_after_article_is_masked_as_uncertain(gateway) -> None:
     result = _payload(gateway, "Der Bergmann ist bislang nicht erschienen.")
     assert "Bergmann" not in result.payload.anonymisierter_sachverhalt
 

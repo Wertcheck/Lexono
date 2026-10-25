@@ -34,7 +34,7 @@ from app.models.base import Base
 from app.models.chat_upload_operation import ChatUploadOperation
 from tests.auth_test_utils import extract_csrf, extract_upload_token, login_as_admin
 from tests.test_chat_upload_idempotency import PDF, _counts, _page, _rejection, _stream, _uploaded
-from tests.test_upload_without_ai import QUESTION, TYPED, _ask, _wire
+from tests.test_upload_without_ai import QUESTION, TYPED, _ask, _protect_in_chat_view, _wire
 from tests.test_upload_without_ai import client, db_session, recorder, writer  # noqa: F401  (Fixtures)
 
 
@@ -164,6 +164,9 @@ def test_deliberate_question_after_a_resumed_upload_is_exactly_one_request(clien
         _abort_stream(client, token)
     conversation_id = _uploaded(_stream(client, token))["conversation_id"]
     assert recorder.requests == []
+    # Das Testdokument nennt "Der Richter Zweigelt" - seit 24.10.2026 (Grenzfall G2) ein Rueckfrage-Signal. Der Name wird
+    # deshalb wie im echten Ablauf in der Dokumentansicht geschuetzt; Gegenstand hier ist die Wiederaufnahme des Uploads.
+    _protect_in_chat_view(client, conversation_id, db_session.query(Document).one(), ["Zweigelt"])
     _ask(client, conversation_id, QUESTION)
     assert len(recorder.requests) == 1 and "4.250,00 EUR" in _wire(recorder.requests[0])
 
