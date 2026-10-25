@@ -4,6 +4,13 @@ Stand 21.10.2026. Branch `feature/feedback-diagnose`, HEAD `c9cecc3` (geprüft; 
 SICHERHEITSABGENOMMEN). Die §110/§112-Änderungen sind **uncommittet**. **Keine Sicherheitsfreigabe.** D1, Signierung
 und C-14 bleiben **GESPERRT**.
 
+> **Nachtrag 25.10.2026 (nur Stand, keine inhaltliche Änderung):**
+> - Der oben als uncommittet bezeichnete §110/§112-Stand ist seit 21.10.2026 als Commit `8f0b702` („checkpoint
+>   §110-§112 — NOT SECURITY APPROVED“) festgehalten. Dieser Bericht selbst ist Teil dieses Commits.
+> - Danach folgten `8b715a4` (Tests zustandsunabhängig), `263b4e7`, `db9ab1a` und `8a219ec`. Aktueller HEAD: `8a219ec`.
+> - Die obigen Ergebnisse gelten unverändert für den damaligen Stand. Weiterhin keine Sicherheitsfreigabe; D1,
+>   Signierung und C-14 bleiben **GESPERRT**.
+
 **Grenzen:** Nur lokale Code-, Test- und Dokumentänderungen. Keine System-/venv-/Rechte-/VM-/Netz-Änderung, keine
 echten Schlüssel/Signaturen, keine Produktivdatenbank. Keine echte venv verändert, keine Plugins installiert. Unit-Tests
 und Simulation sind **kein Nachweis realer Isolation**. Die vier fremden Arbeitsbaum-Änderungen blieben unangetastet.

@@ -1,0 +1,4601 @@
+{
+ "bench_article_noun_persons": {
+  "fachwort_beispiele": [
+   "die Teilabnahme | Abnahmeprotokoll zum Werkver",
+   "die Teilabnahme | {A} {X} ist bislang nicht ei",
+   "die Teilabnahme | Nach Rücksprache am 12.03.20",
+   "die Teilabnahme | Im Termin am 12.03.2026 wurd",
+   "der Feuchtigkeitsschaden | Abnahmeprotokoll zum Werkver",
+   "der Feuchtigkeitsschaden | {A} {X} ist bislang nicht ei",
+   "der Feuchtigkeitsschaden | Nach Rücksprache am 12.03.20",
+   "der Feuchtigkeitsschaden | Im Termin am 12.03.2026 wurd"
+  ],
+  "fachwort_faelle": 240,
+  "fachwort_maskiert": 8,
+  "leck_beispiele": [
+   "der Zimmermann | Abnahmeprotokoll zum Werkver",
+   "der Zimmermann | Nach Rücksprache am 12.03.20",
+   "der Zimmermann | Im Termin am 12.03.2026 wurd"
+  ],
+  "namen_faelle": 96,
+  "namen_lecks": 3
+ },
+ "bench_chat_without_file": {
+  "blocks": 0,
+  "changed_questions": [],
+  "leaks": 0,
+  "leaks_by_context": {},
+  "terms_affected": [
+   "Außenwand",
+   "Basiszinssatz",
+   "Baumangel",
+   "Dachrinne",
+   "Dampfsperre",
+   "Estrich",
+   "Feuchtigkeit",
+   "Flachdach",
+   "Gewährleistungsausschluss",
+   "Grundbesitzwert",
+   "Kündigungsschutzklage",
+   "Nebenkostenvorauszahlung",
+   "Rauchmelder",
+   "Sachverständiger",
+   "Streitwert",
+   "Testamentsvollstrecker",
+   "Vermächtnis",
+   "Vertragsstrafe",
+   "Verzugszinsen",
+   "Zugluft"
+  ],
+  "terms_total": 100,
+  "total": 440
+ },
+ "bench_letter_conventions": {
+  "leck_beispiele": [
+   "Sommer | 'In Sachen {N} ./. Baugesellschaft wegen '",
+   "Sommer | 'In Sachen Baugesellschaft ./. {N} wegen '",
+   "Winter | 'In Sachen {N} ./. Baugesellschaft wegen '",
+   "Winter | 'In Sachen Baugesellschaft ./. {N} wegen '",
+   "Bauer | 'In Sachen {N} ./. Baugesellschaft wegen '",
+   "Bauer | 'In Sachen Baugesellschaft ./. {N} wegen '"
+  ],
+  "lecks": 6,
+  "total": 220,
+  "verlorene_fachinhalte": 2,
+  "verlust_beispiele": [
+   "Mängelanzeige | 'z. H. Herrn {N}\\nBetreff: Mängelanzeige'"
+  ]
+ },
+ "bench_name_followups": {
+  "A_beispiele": [],
+  "A_folgeerwaehnung_lecks": 0,
+  "A_total": 1288,
+  "B_artikel_lecks": 14,
+  "B_beispiele": [
+   "Schuster | Der {N} hat am 12.03.2026 ange",
+   "Wagner | Der {N} hat am 12.03.2026 ange",
+   "Bauer | Der {N} hat am 12.03.2026 ange",
+   "König | Der {N} hat am 12.03.2026 ange",
+   "Kaiser | Der {N} hat am 12.03.2026 ange",
+   "Vogel | Der {N} hat am 12.03.2026 ange",
+   "Hahn | Der {N} hat am 12.03.2026 ange",
+   "Winter | Nach Rücksprache hat die {N} d",
+   "Winter | Im Termin wurde mit der {N} di",
+   "Winter | Der {N} hat am 12.03.2026 ange",
+   "Sommer | Nach Rücksprache hat die {N} d",
+   "Sommer | Der {N} hat am 12.03.2026 ange",
+   "Horn | Der {N} hat am 12.03.2026 ange",
+   "Graf | Der {N} hat am 12.03.2026 ange"
+  ],
+  "B_total": 138,
+  "N_beispiele": [
+   "Der Fachmann hat den Schaden begutachtet -> verloren ['Fachmann']",
+   "Der Zimmermann hat den Dachstuhl reparie -> verloren ['Zimmermann']",
+   "Der Schneider hat die Hose gekürzt. -> verloren ['Schneider']",
+   "Die Schneider haben ihre Werkstätten ges -> verloren ['Schneider']"
+  ],
+  "N_fehlalarme": 4,
+  "N_total": 22
+ },
+ "bench_privacy_sources": {
+  "fail_closed": [
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q01",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q02",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q03",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q04",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q05",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q06",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q07",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q08",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q09",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q10",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_pseudonymisierung",
+    "id": "Q11",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q01",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q02",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q03",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q04",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q05",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q06",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q07",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q08",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q09",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q10",
+    "payload_created": false
+   },
+   {
+    "failure": "ner_restrisiko",
+    "id": "Q11",
+    "payload_created": false
+   }
+  ],
+  "rows": [
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_mietrecht",
+    "id": "Q01",
+    "keep_missing": [],
+    "keep_total": 12,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Wohnbau Lindenhof GmbH",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Kastanienallee 41",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "10435 Berlin",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Hannelore Brüggemann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Matthias Brüggemann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Weidenhang",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "12557 Berlin",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Berlin",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Ulrike Tessendorf",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Bestandswand",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "030 4412 7731",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "u.tessendorf@lindenhof-wohnbau.example.",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Dr. Sebastian Kranefeld",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-A",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Hannelore Brüggemann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Matthias Brüggemann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Ulrike Tessendorf"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Sebastian Kranefeld"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "ADRESSE",
+      "type_match": false,
+      "value": "Am Weidenhang 17"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "030 4412 7731"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "u.tessendorf@lindenhof-wohnbau.example"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "notiz",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_mietrecht",
+    "id": "Q02",
+    "keep_missing": [
+     "BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
+     "Räumungsklage"
+    ],
+    "keep_total": 9,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": true,
+      "type": "ORGANISATION",
+      "value": "Räumungsklage Wohnbau Lindenhof GmbH ./.",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Hannelore Brüggemann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "14 C 233/26",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "14.02.1941",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sohn",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Wissen",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": true,
+      "type": "KENNUNG",
+      "value": "VIII ZR 274/23",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "030 6577 2014",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "DE74 3704 0044 5320 1304 71",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-A",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Hannelore Brüggemann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "14.02.1941"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "14 C 233/26"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "030 6577 2014"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "DE74 3704 0044 5320 1304 71"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "email",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_mietrecht",
+    "id": "Q03",
+    "keep_missing": [
+     "2019"
+    ],
+    "keep_total": 8,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "j.wendehorst@posteo.example",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sabine Wendehorst",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Uferweg 8",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "14476 Potsdam",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": true,
+      "type": "ORT",
+      "value": "Haus im Jahr 2019",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Dr. Friedemann Ollesch",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Havelblick Immobilien GmbH & Co. KG",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Havelblick Bestand GmbH & Co. KG",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0331 8812 409",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Jörg Wendehorst",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-B",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Jörg Wendehorst"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Sabine Wendehorst"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Friedemann Ollesch"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "j.wendehorst@posteo.example"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Uferweg 8"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0331 8812 409"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_mietrecht",
+    "id": "Q04",
+    "keep_missing": [
+     "BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+     "personenidentisch"
+    ],
+    "keep_total": 11,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Havelblick Immobilien GmbH & Co. KG",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Uferweg 8",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Potsdam",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Jörg Wendehorst",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sabine Wendehorst",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": true,
+      "type": "ORGANISATION",
+      "value": "veräußernden Gesellschaft personenidentisch",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": true,
+      "type": "KENNUNG",
+      "value": "VIII ZR 18/24",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Mareike Stübbe-Holtkamp",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-B",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Jörg Wendehorst"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Sabine Wendehorst"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Mareike Stübbe-Holtkamp"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Uferweg 8"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_insolvenz",
+    "id": "Q05",
+    "keep_missing": [],
+    "keep_total": 14,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Metallbau Sörensen GmbH",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "27 IN 418/25",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Dr. Kerstin Abelmann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Bundesagentur für Arbeit",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Henning Vosskamp",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0431 709 4421",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-C",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Kerstin Abelmann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Henning Vosskamp"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "27 IN 418/25"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0431 709 4421"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "formular",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_insolvenz",
+    "id": "Q06",
+    "keep_missing": [],
+    "keep_total": 12,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Bundesagentur für Arbeit zur Sammelanmeldung",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Bundesagentur für Arbeit",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Ömer Yıldırım",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "03.09.1987",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Agnieszka Wróblewska",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "21.11.1992",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Thorsten Pfannkuch",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "17.05.1979",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-C",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Ömer Yıldırım"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Agnieszka Wróblewska"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Thorsten Pfannkuch"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "03.09.1987"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "21.11.1992"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "17.05.1979"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "notiz",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_arbeitsrecht",
+    "id": "Q07",
+    "keep_missing": [
+     "Arbeitsgericht Frankfurt am Main"
+    ],
+    "keep_total": 15,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Gesprächsnotiz",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Svetlana Marković",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "08.07.1979",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Fliederstraße 22, 60385 Frankfurt",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": true,
+      "type": "ORT",
+      "value": "am Main",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "069 4312 8856",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "VK-20817",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Republik Valdoria",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": true,
+      "type": "ORT",
+      "value": "Frankfurt am Main",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Dragana Ilić",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-D",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Svetlana Marković"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "08.07.1979"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Fliederstraße 22"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "069 4312 8856"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "VK-20817"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Dragana Ilić"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "chat",
+    "error": null,
+    "field": "anmerkungen",
+    "group": "quelle_arbeitsrecht",
+    "id": "Q08",
+    "keep_missing": [
+     "2 AZR 72/24"
+    ],
+    "keep_total": 8,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Svetlana Marković",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": true,
+      "type": "KENNUNG",
+      "value": "2 AZR 72/24",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Ilić",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Tätigkeit",
+      "verdict": "FP"
+     }
+    ],
+    "problem": "QP-D",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Marković"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Ilić"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_datenschutz",
+    "id": "Q09",
+    "keep_missing": [],
+    "keep_total": 10,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "CrediNord Auskunftei AG · Datenschutzauskunft",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Leopold Hanebutt",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "30.10.1985",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Lindenstraße 3a, 49074 Osnabrück",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Fernmelde Nord AG",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "MK-4471-2290-18",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0171 4432198",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "leo.hanebutt@mailbox.example",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Identitätsabgleich",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Auskunftei",
+      "verdict": "ignored"
+     }
+    ],
+    "problem": "QP-E",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Leopold Hanebutt"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "30.10.1985"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Lindenstraße 3a"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "MK-4471-2290-18"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0171 4432198"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "leo.hanebutt@mailbox.example"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "notiz",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_datenschutz",
+    "id": "Q10",
+    "keep_missing": [],
+    "keep_total": 10,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Erfolgsaussicht",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Leopold Hanebutt",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Fernmelde Nord AG",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "2 O 1187/26",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Klageentwurf",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0171 4432198",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-E",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Hanebutt"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "2 O 1187/26"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0171 4432198"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   {
+    "allowed": true,
+    "chronology_ok": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "quelle_mietrecht",
+    "id": "Q11",
+    "keep_missing": [],
+    "keep_total": 7,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Hannelore Brüggemann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sohn",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Matthias Brüggemann",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "m.brueggemann@webpost.example.",
+      "verdict": "TP"
+     }
+    ],
+    "problem": "QP-A",
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Brüggemann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Matthias Brüggemann"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "m.brueggemann@webpost.example"
+     }
+    ],
+    "unnecessary_block": false
+   }
+  ],
+  "summary": {
+   "blocked": [],
+   "cases": 11,
+   "chronology_preserved": "11/11",
+   "errors": [],
+   "fail_closed": "22/22",
+   "false_positive_count": 24,
+   "false_positives": [
+    "Q01:ADRESSE:10435 Berlin",
+    "Q01:ADRESSE:12557 Berlin",
+    "Q01:ADRESSE:Kastanienallee 41",
+    "Q01:PERSON:Berlin",
+    "Q01:PERSON:Bestandswand",
+    "Q01:PERSON:Wohnbau Lindenhof GmbH",
+    "Q02:KENNUNG:VIII ZR 274/23",
+    "Q02:ORGANISATION:Räumungsklage Wohnbau Lindenhof GmbH ./.",
+    "Q02:PERSON:Sohn",
+    "Q02:PERSON:Wissen",
+    "Q03:ADRESSE:14476 Potsdam",
+    "Q03:ORT:Haus im Jahr 2019",
+    "Q04:KENNUNG:VIII ZR 18/24",
+    "Q04:ORGANISATION:veräußernden Gesellschaft personenidentisch",
+    "Q04:ORT:Potsdam",
+    "Q07:ORT:Frankfurt am Main",
+    "Q07:ORT:am Main",
+    "Q07:PERSON:Gesprächsnotiz",
+    "Q08:KENNUNG:2 AZR 72/24",
+    "Q08:PERSON:Tätigkeit",
+    "Q09:PERSON:Identitätsabgleich",
+    "Q10:ORT:Klageentwurf",
+    "Q10:PERSON:Erfolgsaussicht",
+    "Q11:PERSON:Sohn"
+   ],
+   "gold": 52,
+   "keep_missing": [
+    "Q02:BGH, Beschluss vom 2. Dezember 2025 – VIII ZR 274/23",
+    "Q02:Räumungsklage",
+    "Q03:2019",
+    "Q04:BGH, Urteil vom 8. Oktober 2025 – VIII ZR 18/24",
+    "Q04:personenidentisch",
+    "Q07:Arbeitsgericht Frankfurt am Main",
+    "Q08:2 AZR 72/24"
+   ],
+   "keep_preserved": "109/116",
+   "leaks": [],
+   "partial_leaks": [],
+   "per_type": {
+    "ADRESSE": {
+     "gold": 5,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "EMAIL": {
+     "gold": 4,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "IBAN": {
+     "gold": 1,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "KENNUNG": {
+     "gold": 5,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "PERSON": {
+     "gold": 24,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "PERS_DATUM": {
+     "gold": 6,
+     "leaks": 0,
+     "partial_leaks": 0
+    },
+    "TELEFON": {
+     "gold": 7,
+     "leaks": 0,
+     "partial_leaks": 0
+    }
+   },
+   "protected": 52
+  }
+ },
+ "bench_pseudonymization": {
+  "cases": {
+   "A01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A01",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Birkenallee 17, 12345 Musterstadt",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Birkenallee 17, 12345 Musterstadt"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "A02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "email",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A02",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Lindenhof 3a, 54321 Beispielhausen",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Am Lindenhof 3a, 54321 Beispielhausen"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "A03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Kastanienstraße 8",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Köln",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Kastanienstraße 8"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "ORT",
+      "type_match": true,
+      "value": "Köln"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "A04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A04",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Gernot Hahn",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Kleinmachnow",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Gernot Hahn"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "ORT",
+      "type_match": true,
+      "value": "Kleinmachnow"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "A05": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "ocr",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A05",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "Postfachanschrift",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "Postfach 12 34 56, 99999 Testdorf",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "Postfach 12 34 56, 99999 Testdorf"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "A06": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adresse",
+    "id": "A06",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": "Ortsname im Grundbuchtext bleibt lesbar (Inventur)",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "4711",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "12/3",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": true,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "Blatt 4711"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "12/3"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     },
+     {
+      "detected": false,
+      "leak": true,
+      "mapping_hit": false,
+      "partial_leak": false,
+      "predicted_types": [],
+      "type": "ORT",
+      "type_match": false,
+      "value": "Musterstadt"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "B01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "bank",
+    "id": "B01",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "DE89 3704 0044 0532 0130 00",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "BIC",
+      "value": "COBADEFFXXX",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "DE89 3704 0044 0532 0130 00"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "BIC"
+      ],
+      "type": "BIC",
+      "type_match": true,
+      "value": "COBADEFFXXX"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "B02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "email",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "bank",
+    "id": "B02",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "DE89370400440532013000",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "DE89370400440532013000"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "B03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "ocr",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "bank",
+    "id": "B03",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": "gesperrte IBAN (OCR)",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "D E 8 9 3 7 0 4 0 0 4 4 0 5 3 2 0 1 3 0 0 0",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "D E 8 9 3 7 0 4 0 0 4 4 0 5 3 2 0 1 3 0 0 0"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "B04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "bank",
+    "id": "B04",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "4111 1111 1111 1111",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "4111 1111 1111 1111"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "D01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "datum_person",
+    "id": "D01",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "12.03.1961",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "12.03.1961"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "D02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "datum_person",
+    "id": "D02",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "01.02.2026",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Ausschlagungsfrist",
+      "verdict": "FP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "01.02.2026"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "D03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "datum_person",
+    "id": "D03",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "D04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "datum_person",
+    "id": "D04",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "12.03.2025",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERS_DATUM"
+      ],
+      "type": "PERS_DATUM",
+      "type_match": true,
+      "value": "12.03.2025"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "F01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "fakten",
+    "id": "F01",
+    "keep_missing": [],
+    "keep_total": 4,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "F02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "fakten",
+    "id": "F02",
+    "keep_missing": [],
+    "keep_total": 4,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "F03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "fakten",
+    "id": "F03",
+    "keep_missing": [],
+    "keep_total": 5,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "F04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "fakten",
+    "id": "F04",
+    "keep_missing": [],
+    "keep_total": 4,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Bad",
+      "verdict": "FP"
+     }
+    ],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "I01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I01",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "12 345 678 901",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "143/215/12345",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "12 345 678 901"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "143/215/12345"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I02",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "3 O 123/26",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "KD-458812",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "V-2026-0042",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "3 O 123/26"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "KD-458812"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "V-2026-0042"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "2026-117",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "65 170839 J 003",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "2026-117"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "65 170839 J 003"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I04",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "M-AB 1234",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "M-AB 1234"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I05": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I05",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "T22000129",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Reisepass C01X00T47",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "B072RRE2I55",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "T22000129"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORGANISATION"
+      ],
+      "type": "KENNUNG",
+      "type_match": false,
+      "value": "C01X00T47"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "B072RRE2I55"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I06": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I06",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "123456",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "4713",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "123456"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "4713"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I07": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I07",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "kurze Nummern ohne Bezeichnung (§22.6)",
+    "missing_block": false,
+    "predicted": [],
+    "protect": [
+     {
+      "detected": false,
+      "leak": true,
+      "mapping_hit": false,
+      "partial_leak": false,
+      "predicted_types": [],
+      "type": "KENNUNG",
+      "type_match": false,
+      "value": "815"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I08": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "tabelle",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I08",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": "Wert nicht direkt hinter Bezeichnung (§18.4)",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "HH-XY 777",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "J123456789",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "HH-XY 777"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "J123456789"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "I09": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kennung",
+    "id": "I09",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "HRB 123456",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "DE123456789",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "HRB 123456"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "DE123456789"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "K01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "email",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kontakt",
+    "id": "K01",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "karl.brenner@beispiel-mail.de",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0171 2345678",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "karl.brenner@beispiel-mail.de"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0171 2345678"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "K02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kontakt",
+    "id": "K02",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "30 123 456-78",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "030/98765432",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "info@brenner-bau.example",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "TELEFON",
+      "type_match": false,
+      "value": "+49 (0)30 123 456-78"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "030/98765432"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "info@brenner-bau.example"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "K03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kontakt",
+    "id": "K03",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "URL",
+      "value": "linkedin.com/in/karl-brenner-1961",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "URL"
+      ],
+      "type": "URL",
+      "type_match": true,
+      "value": "linkedin.com/in/karl-brenner-1961"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "K04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "ocr",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kontakt",
+    "id": "K04",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": "OCR-Leerzeichen in E-Mail",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "EMAIL",
+      "value": "karl . brenner @ beispiel-mail . de",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "0171-234 56 78",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": true,
+      "predicted_types": [
+       "EMAIL"
+      ],
+      "type": "EMAIL",
+      "type_match": true,
+      "value": "karl . brenner @ beispiel-mail . de"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "TELEFON",
+      "type_match": false,
+      "value": "0171-234 56 78"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "K05": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "notiz",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "kontakt",
+    "id": "K05",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "KENNUNG",
+      "value": "192.168.178.23",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "KENNUNG"
+      ],
+      "type": "KENNUNG",
+      "type_match": true,
+      "value": "192.168.178.23"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "O01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "organisation",
+    "id": "O01",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Brezlmayr Logistik GmbH",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORGANISATION"
+      ],
+      "type": "ORGANISATION",
+      "type_match": true,
+      "value": "Brezlmayr Logistik GmbH"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "O02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "organisation",
+    "id": "O02",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORGANISATION",
+      "value": "Elektro Lindqvist KG",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORGANISATION"
+      ],
+      "type": "ORGANISATION",
+      "type_match": true,
+      "value": "Elektro Lindqvist KG"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "O03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "organisation",
+    "id": "O03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "P01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P01",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P02",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Dr. Henrike Wallbaum-Ostertag",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Henrike Wallbaum-Ostertag"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "notiz",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Jean-Baptiste Okonkwo-Lefèvre",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Jean-Baptiste Okonkwo-Lefèvre"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P04": {
+    "allowed": true,
+    "consistency": [
+     {
+      "consistent": true,
+      "group": [
+       "Karl Brenner",
+       "Brenner"
+      ],
+      "placeholders": [
+       "[MANDANT_01]"
+      ]
+     }
+    ],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P04",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P05": {
+    "allowed": true,
+    "consistency": [
+     {
+      "consistent": true,
+      "group": [
+       "Brenner",
+       "Brenners"
+      ],
+      "placeholders": [
+       "[MANDANT_01]"
+      ]
+     }
+    ],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P05",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": false,
+      "partial_leak": false,
+      "predicted_types": [],
+      "type": "PERSON",
+      "type_match": false,
+      "value": "Brenners"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P06": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "email",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P06",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sabine Kowalczyk",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Betreff",
+      "verdict": "FP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Sabine Kowalczyk"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": false,
+      "partial_leak": false,
+      "predicted_types": [],
+      "type": "PERSON",
+      "type_match": false,
+      "value": "S. Kowalczyk"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P07": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "ocr",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P07",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "gesperrte Schreibweise (OCR) - unbekannt, ob erkannt",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Ö",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Weber",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "PERSON",
+      "type_match": false,
+      "value": "M A R T I N   S C H Ö N F E L D"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Weber"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P08": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "ocr",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P08",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "OCR-Ziffern in Namen",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Kar1 Brenn3r",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Kar1 Brenn3r"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P09": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P09",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "Kleinschreibung (§ bekannt, L01)",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "sauer",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "sauer"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P10": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P10",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "Rollenwort + Nachname ohne Anrede (Inventur reproduziert)",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Zweigelt",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Zweigelt"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P11": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P11",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": "Nachnamen, die Substantive sind",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Richter",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Fürst",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Richter"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Fürst"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P12": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P12",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Aylin Yıldırım",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Aylin Yıldırım"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P13": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P13",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Nguyễn Thị Lan",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Nguyễn Thị Lan"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P14": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "tabelle",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P14",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Brenner",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ORT",
+      "value": "Sasskamp | Brunhilde",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "PERSON",
+      "type_match": false,
+      "value": "Sasskamp"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ORT"
+      ],
+      "type": "PERSON",
+      "type_match": false,
+      "value": "Brunhilde"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "P15": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P15",
+    "keep_missing": [],
+    "keep_total": 2,
+    "known_limit": "bekannte Uebermaskierung ('Ihres Vaters', 'Ausschlagungsfrist')",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERS_DATUM",
+      "value": "02.01.2026",
+      "verdict": "ignored"
+     }
+    ],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "P16": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "name",
+    "id": "P16",
+    "keep_missing": [],
+    "keep_total": 4,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "W01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "chat",
+    "error": null,
+    "field": "anmerkungen",
+    "group": "pfad",
+    "id": "W01",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Herrn Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "W02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "chat",
+    "error": null,
+    "field": "verlauf",
+    "group": "pfad",
+    "id": "W02",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Sabine Kowalczyk",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "TELEFON",
+      "value": "0171 2345678",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Sabine Kowalczyk"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "TELEFON"
+      ],
+      "type": "TELEFON",
+      "type_match": true,
+      "value": "0171 2345678"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "W03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "wissen",
+    "error": null,
+    "field": "quellen",
+    "group": "pfad",
+    "id": "W03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Zabelhuber",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "DE89 3704 0044 0532 0130 00",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Zabelhuber"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "DE89 3704 0044 0532 0130 00"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "W04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "frist",
+    "error": null,
+    "field": "argumentationspunkte",
+    "group": "pfad",
+    "id": "W04",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "W05": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "formular",
+    "error": null,
+    "field": "stil",
+    "group": "pfad",
+    "id": "W05",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Wiebke Sonnenfeld",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "IBAN",
+      "value": "DE89370400440532013000",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Wiebke Sonnenfeld"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "IBAN"
+      ],
+      "type": "IBAN",
+      "type_match": true,
+      "value": "DE89370400440532013000"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "W06": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "vorlage",
+    "error": null,
+    "field": "vorlage",
+    "group": "pfad",
+    "id": "W06",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Henrike Wallbaum",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Henrike Wallbaum"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "X01": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X01",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Platzhalter-Trick",
+      "verdict": "FP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Karl Brenner",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "X02": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X02",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": "gesperrter Name in Prompt-Injection",
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "K a r l  B r e n n e r",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "K a r l  B r e n n e r"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "X03": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X03",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "KarlBrenner",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Nullbreite",
+      "verdict": "FP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl­Brenner"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Karl​Brenner"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "X04": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X04",
+    "keep_missing": [],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "KARL BRENNER",
+      "verdict": "TP"
+     },
+     {
+      "on_keep": false,
+      "type": "ADRESSE",
+      "value": "BIRKENALLEE 17, 12345 MUSTERSTADT",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "KARL BRENNER"
+     },
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "ADRESSE"
+      ],
+      "type": "ADRESSE",
+      "type_match": true,
+      "value": "BIRKENALLEE 17, 12345 MUSTERSTADT"
+     }
+    ],
+    "unnecessary_block": false
+   },
+   "X05": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X05",
+    "keep_missing": [
+     "Hauptbahnhof"
+    ],
+    "keep_total": 1,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "K. B.",
+      "verdict": "ignored"
+     },
+     {
+      "on_keep": true,
+      "type": "ORT",
+      "value": "Hauptbahnhof",
+      "verdict": "FP"
+     }
+    ],
+    "protect": [],
+    "unnecessary_block": false
+   },
+   "X06": {
+    "allowed": true,
+    "consistency": [],
+    "doctype": "brief",
+    "error": null,
+    "field": "sachverhalt",
+    "group": "adversarial",
+    "id": "X06",
+    "keep_missing": [],
+    "keep_total": 0,
+    "known_limit": null,
+    "missing_block": false,
+    "predicted": [
+     {
+      "on_keep": false,
+      "type": "PERSON",
+      "value": "Prof. Dr. med. Ilse von der Heydt-Brückmann",
+      "verdict": "TP"
+     }
+    ],
+    "protect": [
+     {
+      "detected": true,
+      "leak": false,
+      "mapping_hit": true,
+      "partial_leak": false,
+      "predicted_types": [
+       "PERSON"
+      ],
+      "type": "PERSON",
+      "type_match": true,
+      "value": "Ilse von der Heydt-Brückmann"
+     }
+    ],
+    "unnecessary_block": false
+   }
+  },
+  "e2e": [
+   {
+    "allowed": true,
+    "as_expected": true,
+    "cloud_calls": 1,
+    "expect": "allow",
+    "id": "E01",
+    "keep_missing": [],
+    "keep_total": 2,
+    "kind": "anhang",
+    "leaks": [],
+    "protect_total": 7,
+    "quellen_text": [],
+    "quellenverweise": 0
+   },
+   {
+    "allowed": true,
+    "as_expected": true,
+    "cloud_calls": 1,
+    "expect": "allow",
+    "id": "E02",
+    "keep_missing": [],
+    "keep_total": 0,
+    "kind": "verlauf",
+    "leaks": [],
+    "protect_total": 2,
+    "quellen_text": [],
+    "quellenverweise": 0
+   },
+   {
+    "allowed": true,
+    "as_expected": true,
+    "cloud_calls": 1,
+    "expect": "allow",
+    "id": "E03",
+    "keep_missing": [],
+    "keep_total": 1,
+    "kind": "wissen",
+    "leaks": [],
+    "protect_total": 2,
+    "quellen_text": [
+     "Mietrecht Wohnraum Kaution: Mietrecht Wohnraum: Kaution 1.500,00 EUR erstattet an Herrn [PERSON_01], IBAN DE02 [KENNUNG_01]…"
+    ],
+    "quellenverweise": 1
+   },
+   {
+    "allowed": false,
+    "as_expected": true,
+    "cloud_calls": 0,
+    "expect": "either",
+    "id": "E04",
+    "keep_missing": [],
+    "keep_total": 0,
+    "kind": "lokale_vorabanalyse",
+    "leaks": [],
+    "protect_total": 6,
+    "quellen_text": [],
+    "quellenverweise": 0
+   },
+   {
+    "allowed": false,
+    "as_expected": true,
+    "cloud_calls": 0,
+    "expect": "block",
+    "id": "E05",
+    "keep_missing": [],
+    "keep_total": 0,
+    "kind": "fail_closed_ner",
+    "leaks": [],
+    "protect_total": 6,
+    "quellen_text": [],
+    "quellenverweise": 0
+   },
+   {
+    "allowed": false,
+    "as_expected": true,
+    "cloud_calls": 0,
+    "expect": "block",
+    "id": "E05b",
+    "keep_missing": [],
+    "keep_total": 0,
+    "kind": "fail_closed_restrisiko_ner",
+    "leaks": [],
+    "protect_total": 6,
+    "quellen_text": [],
+    "quellenverweise": 0
+   },
+   {
+    "allowed": true,
+    "as_expected": true,
+    "cloud_calls": 1,
+    "expect": "allow",
+    "id": "E06",
+    "keep_missing": [],
+    "keep_total": 1,
+    "kind": "frist_aus_email",
+    "leaks": [],
+    "protect_total": 1,
+    "quellen_text": [],
+    "quellenverweise": 0
+   }
+  ]
+ },
+ "bench_realistic_documents": {
+  "protokoll.docx": {
+   "extracted_missing": [],
+   "keep_absent_in_extraction": [],
+   "keep_missing": [],
+   "leaks": [],
+   "payload_sent": true,
+   "questions": [
+    "Richter",
+    "Lange",
+    "Fuerst"
+   ]
+  },
+  "protokoll.pdf": {
+   "extracted_missing": [],
+   "keep_absent_in_extraction": [],
+   "keep_missing": [],
+   "leaks": [],
+   "payload_sent": true,
+   "questions": [
+    "Richter",
+    "Fuerst"
+   ]
+  },
+  "protokoll_scan.pdf": {
+   "extracted_missing": [],
+   "keep_absent_in_extraction": [],
+   "keep_missing": [],
+   "leaks": [],
+   "payload_sent": true,
+   "questions": [
+    "Richter",
+    "Lange",
+    "Fuerst"
+   ]
+  }
+ },
+ "bench_role_object_negatives": {
+  "saetze_mit_verlust": 0,
+  "saetze_total": 12,
+  "satz_beispiele": [],
+  "schriftsatz_personen_platzhalter": 0,
+  "schriftsatz_verloren": []
+ },
+ "bench_statute_citations": {
+  "abkuerzung_verloren": 3,
+  "beispiele": [
+   "BImSchG | Herr Wessolowski beruft sich a",
+   "BeurkG | Der Halter haftet nach § 7 {C}",
+   "BeurkG | Herr Wessolowski beruft sich a"
+  ],
+  "blockiert": 0,
+  "faelle": 180,
+  "name_lecks": 0
+ },
+ "bench_uppercase": {
+  "blockiert": [],
+  "leck_beispiele": [],
+  "leck_werte": 0,
+  "negativ_werte": 59,
+  "positiv_werte": 36,
+  "verlorene_werte": 3,
+  "verlust_beispiele": [
+   "ENTSCHEIDUNGSGRÜNDE | 'TATBESTAND\\nDie Parteien streiten über Mä'",
+   "ANTRÄGE | 'ANTRÄGE\\n1. Die Beklagte wird verurteilt,'",
+   "ESTRICHARBEITEN | 'RECHNUNG NR. 4711 ÜBER EUR 1.200,00 FÜR '"
+  ]
+ },
+ "bench_uppercase_negatives": {
+  "beispiele": [
+   "'ALLGEMEINE GESCHÄFTSBEDINGUNGEN\\n1. G': verloren ['FÄLLIG', 'SOFORT', 'VERTRÄGE'], Platzhalter ['ORGANISATION', 'ORGANISATION']",
+   "'PROTOKOLL DER MÜNDLICHEN VERHANDLUNG': verloren ['ERÖRTERT', 'SACH'], Platzhalter ['ORGANISATION', 'ORGANISATION']",
+   "'KÜNDIGUNG\\nHIERMIT KÜNDIGEN WIR DAS M': verloren ['BESTÄTIGEN'], Platzhalter ['ORGANISATION']",
+   "'ÜBERGABEPROTOKOLL\\nZÄHLERSTAND STROM:': verloren ['MÄNGEL', 'ZÄHLERSTAND'], Platzhalter ['ORGANISATION', 'ORGANISATION']",
+   "'BESCHEINIGUNG ÜBER DIE ARBEITSUNFÄHI': verloren [], Platzhalter ['ORGANISATION']",
+   "'GUTACHTEN\\nZUSAMMENFASSUNG: DIE MÄNGE': verloren ['ZURÜCKZUFÜHREN'], Platzhalter ['ORGANISATION']",
+   "'HAFTUNGSAUSSCHLUSS\\nDIE HAFTUNG FÜR L': verloren [], Platzhalter ['ORGANISATION']"
+  ],
+  "blockiert": [
+   "ACHTUNG FRIST! WIDERSPRUCH BIS SPÄTESTEN",
+   "BAUSTELLENVERORDNUNG – SICHERHEITS- UND "
+  ],
+  "texte": 20,
+  "verloren": 25,
+  "versalwoerter": 171
+ }
+}

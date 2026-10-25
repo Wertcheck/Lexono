@@ -3,6 +3,14 @@
 Stand 21.10.2026. Branch `feature/feedback-diagnose`, HEAD `c9cecc3` (Zwischencommit §102–§109) plus uncommittete
 Änderungen §110/§112. Dieser Plan konsolidiert die Befunde A1–A21 aus AUDIT_S100 und AUDIT_S103–S112.
 
+> **Nachtrag 25.10.2026 (nur Stand, keine inhaltliche Änderung):**
+> - Die §110/§112-Änderungen sind seit 21.10.2026 als Commit `8f0b702` („checkpoint §110-§112 — NOT SECURITY
+>   APPROVED“) festgehalten; dieser Plan selbst ist Teil dieses Commits.
+> - Der in §4 genannte Schritt „Commit des §110/§112-Stands (als weiterer Zwischenstand)“ ist damit erledigt. Der Beginn
+>   der realen D1-Vorbereitung ist weiterhin **nicht** freigegeben.
+> - Aktueller HEAD: `8a219ec`. Die Befundmatrix A1–A21 und die Kriterien §2/§3 sind unverändert.
+> - **Keine Sicherheitsfreigabe.** D1, Signierung und C-14 bleiben **GESPERRT**.
+
 **Status dieses Dokuments:** Arbeitsstand, **NICHT SICHERHEITSABGENOMMEN**. Es hebt keine Sperre auf. D1, Signierung
 und C-14 bleiben **GESPERRT**. Nach diesem Plan wird **keine** weitere nummerierte Prüfrunde automatisch begonnen; neue
 Arbeit nur bei einem konkreten kritischen/hohen Befund oder einer nicht erfüllten Pflichtbedingung (§4).

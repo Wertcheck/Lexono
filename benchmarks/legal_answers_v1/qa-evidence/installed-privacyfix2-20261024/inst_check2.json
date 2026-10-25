@@ -1,0 +1,57 @@
+{
+ "anmeldung_ok": true,
+ "upload": [
+  "start",
+  "uploaded"
+ ],
+ "auftrag": {
+  "blocked": true,
+  "content": "Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an "
+ },
+ "dokumentstatus": "decision",
+ "freigabe_button": true,
+ "pruefseite_sendefaehig": true,
+ "lesbar": {
+  "Rohergebnis": true,
+  "Steuermessbetrag": true,
+  "Antrag": true,
+  "§ 1 StVO": true,
+  "Wareneinsatz": true,
+  "Gewerbeertrag": true
+ },
+ "geschuetzt": {
+  "Thomas Berger": true,
+  "NBH": true,
+  "Nordbauholding": true,
+  "12/345/67890": true,
+  "Beispielstrasse 17": true
+ },
+ "geschuetzte_werte_liste": [
+  "12/345/67890",
+  "Beispielstrasse 17, 10115 Berlin",
+  "Berlin",
+  "NBH",
+  "Nordbauholding GmbH",
+  "Richter",
+  "Thomas Berger"
+ ],
+ "js_04-pseudonymisierung-dialog": true,
+ "bestaetigen": [
+  "start",
+  "review"
+ ],
+ "rueckfragen": [
+  "Richter"
+ ],
+ "js_06-hitl-rueckfrage-dialog": true,
+ "nach_antwort": {
+  "kinds": [
+   "start",
+   "status",
+   "done"
+  ],
+  "blocked": true,
+  "content": "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "pending_danach": "none"
+}

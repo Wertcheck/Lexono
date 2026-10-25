@@ -1,0 +1,43 @@
+{
+ "login_landing": "/dashboard/chat",
+ "upload_events": [
+  "start",
+  "uploaded"
+ ],
+ "auftrag_1": {
+  "kinds": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blocked": true,
+  "content": "Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI gesendet, und es wurde nichts ausgewertet.\n\n- „QA-SYNTH-Einspruch.pdf“ zeigt bei der Da"
+ },
+ "dokument_status": "decision",
+ "confirm_button": true,
+ "pseudonymisiert_lesbar": {
+  "Rohergebnis": false,
+  "Steuermessbetrag": false,
+  "Antrag": false,
+  "§ 1 StVO": false,
+  "(StVO)": false,
+  "Wareneinsatz": false
+ },
+ "pseudonymisiert_geschuetzt": {
+  "Thomas Berger": true,
+  "NBH": true,
+  "Nordbauholding": true,
+  "12/345/67890": true,
+  "Beispielstrasse 17": true
+ },
+ "pseudonymisierter_text_vorhanden": false,
+ "js_05-pseudonymisierung-dialog": true,
+ "bestaetigen_kinds": [
+  "start",
+  "delta",
+  "done"
+ ],
+ "rueckfragen": [],
+ "js_07-hitl-rueckfrage-dialog": false,
+ "pending_review_danach": "none"
+}

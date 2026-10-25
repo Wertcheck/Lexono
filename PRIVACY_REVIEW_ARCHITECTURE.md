@@ -9897,3 +9897,182 @@ Keine Installation, keine VM, keine System-/Firewall-Änderung, keine externen V
 - **Tests:** 37 (20 Negativfälle, Ablauf/Politikänderung im Lauf, Signatur über jedes Feld); Abbruch jeweils vor dem
   Provider-Aufruf. VM-Abnahme V1–V13 festgelegt, **NICHT DURCHGEFÜHRT**.
 - **QA:** volle Suite 5626 PASS, 4 FAIL (bekannte fremde Logo-Tests).
+
+## Nachtrag 25.10.2026: Datenschutzkorrekturen Namens-/Firmenerkennung (Arbeitsbaum ab 24.10.2026 14:23, Branch feature/feedback-diagnose, Basis 8a219ec, nicht committet, nicht gebaut)
+
+Nicht umfasst sind die am 24.10.2026 vormittags installierten Korrekturen (EXE `DEB6FA9B`, 12:20; Belege
+`qa-evidence/installed-privacyfix*-20261024`); sie waren bei Erstellung dieses Nachtrags in dieser Datei noch nicht dokumentiert und nicht durch einen EXE-Bytecode-Abgleich belegt; der nachträgliche Nachweis steht im Abschnitt „Nachtrag 24.10.2026: Installierte Datenschutzkorrekturen“ am Dateiende.
+
+Nur lokale Code-, Test- und Dokumentationsänderungen. Es gab keine Installation, keinen Build, keine Cloud-Aufrufe, keine
+echten Mandantendaten und keine Produktivdatenbank-Änderung. Die Antwort-Leck-Prüfung
+(`check_response_placeholder_integrity`) und das Fail-Closed-Verhalten des Gateways sind unverändert. **Keine
+Datenschutz-, P0-08-, C-14- oder Pilotfreigabe.** Die Pilotstufen bleiben unverändert (§26.5: A nur synthetisch, B und C
+No-Go).
+
+- **Stand der Nachweise:** implementiert: ja; lokal getestet: ja (Loopback, synthetisch); im installierten Build
+  verifiziert: **nein**; echter Cloud-E2E-Test: **nein**; freigegeben: **nein**.
+- **Umschrift statt Name** (`presidio_ner.is_transliterated_common_noun`): Ein umschriebenes Abstraktnomen wie
+  „Ruecksicht“ (Endung -ung/-heit/-keit/-schaft/-sicht, Umlautprobe) gilt nicht mehr als Person. Das gilt nur für
+  NER-Treffer, die allein auf der Originalschreibung beruhen.
+- **Ungeschützte Namen G1–G8** (`review.py`):
+  - neue Rollen `direkt_nach_rollenwort`, `betragszeile` und `nach_finitem_verb_satzende`;
+  - Artikel-Lesart „der“ + Nachname (`_is_definite_article_name_reading`), ausgenommen Akten-Komposita und
+    Legaldefinitionen;
+  - die Systemzeile „Akte: …“ wird nicht als Namenskontext gewertet (`_SYSTEM_LABEL_LINE`, Prüfung auf dem Rohtext).
+- **Femininer Artikel** (`review._feminine_article_name_reading`):
+  - Genus-Unstimmigkeit („die Zimmermann“, „mit der König“) oder „die“ + unbekanntes Wort führt zu einer Rückfrage oder
+    vorsichtigen Maskierung;
+  - ausgenommen sind feminine Fachwort-Köpfe (`_FEMININE_TERM_HEAD`) und „die“ vor einer Rechtsform
+    (`_FIRM_LEGAL_FORM_AFTER`, z. B. „die Muster Consulting AG“).
+- **Kurzform-/Gesetzeskollision (Option C):**
+  - Erkennung über `detectors.short_form_statute_collisions`;
+  - kollidiert eine definierte Firmen-Kurzform mit einer Gesetzesabkürzung, blockiert das Gateway **vor** dem
+    Cloud-Aufruf (`SHORT_FORM_STATUTE_COLLISION_REASON`, `_detection_failed("kurzform_kollision")`);
+  - protokolliert wird nur die Anzahl;
+  - die Hinweismeldung lautet `SHORT_FORM_COLLISION_MESSAGE`;
+  - blockierte Nutzerzüge werden aus dem Chatverlauf ausgeschlossen (`chat/service._turns_blocked_by_short_form_collision`).
+- **Firmen im Chat ohne Akte:** Im Allgemeinwissen-Modus bleibt eine Organisation geschützt, wenn im selben Absatz ein
+  Mandatssignal steht (`detectors.is_confidential_organisation_mention`, `_MANDATE_SIGNAL`: Mandant/Mandat/Gegenseite/
+  Gegner, „unser(e) Auftraggeber/Kundin/…“, „wir vertreten/beraten/betreuen“, „beauftragt uns“). Öffentliche
+  Firmenfragen bleiben lesbar.
+- **Gattungswörter in Firmennamen** (`detectors._is_generic_word_inside_dropped_firm`): Wörter wie „Consulting“ in einer
+  verworfenen Firmenbezeichnung werden nicht mehr als eigener Personenname gemeldet.
+- **Tests (neu, synthetisch):**
+
+  | Datei | Tests |
+  |---|---|
+  | `tests/test_privacy_transliterated_terms.py` | 23 |
+  | `tests/test_privacy_uncertain_name_contexts.py` | 80 |
+  | `tests/test_privacy_short_form_collision.py` | 32 |
+  | `tests/test_web_short_form_collision.py` | 1 |
+  | `tests/test_privacy_company_confidentiality.py` | 57 |
+  | `tests/test_privacy_firm_generic_words.py` | 27 |
+  | `tests/test_privacy_review_ask_firm_names.py` | 9 |
+  | `tests/test_privacy_feminine_article_names.py` | 34 |
+
+  Bestehende xfail-Fälle wurden zu regulären Tests. Upload-/Web-Fixtures wurden angepasst.
+- **Lokaler Stand 25.10.2026 (Loopback, keine Cloud):**
+  - Testsuiten:
+
+    | Suite | Ergebnis |
+    |---|---|
+    | Datenschutz | 2174 PASS, 8 xfail |
+    | Gateway/HITL | 518 PASS, 1 skip |
+    | Review | 457 PASS, 2 skip |
+    | Web/Chat | 1093 PASS, 2 xfail |
+
+    Übrige Blöcke laut Sitzungsnachweis: 1599 PASS und 4 bekannte fremde Logo-FAIL; Block 4: 998 PASS, 7 skip.
+  - Benchmarks (synthetisch):
+
+    | Benchmark | Ergebnis |
+    |---|---|
+    | Chat ohne Datei | 0/440 Lecks |
+    | Artikel-Namen | 3/96 Lecks (zuvor 11) |
+    | Folgeerwähnungen B | 14/138 (zuvor 26) |
+    | Folgeerwähnungen N | 4/22 Fehlalarme |
+    | Fachwort maskiert | 8/240 |
+    | Briefkonventionen | 6 Lecks |
+
+    Diese Zahlen zeigen einen datierten Stand, **keine Leckfreiheit**.
+  - Belegstatus: Testläufe nur als Laufzeitnachweis, nicht im Repository abgelegt. Benchmark-JSON lag zunächst nur
+    temporär; es wurde am 25.10.2026 unverändert nach `benchmarks/legal_answers_v1/qa-evidence/bench_feminine_20261025.json`
+    kopiert (SHA-256 `42667d4ac11c77593c90f510f434c8aa77d8563770ab37a0624084f2370ae237`, nicht committet).
+- **Bekannte Grenzen (offen):**
+  - „Der“ + Gattungswort-Nachname als Subjekt („Der Bauer/Winter/Vogel hat angerufen“, strikt xfail);
+  - Mandatsumschreibungen ohne Signalwort;
+  - die StVO-Kurzform-Kollision;
+  - feminine Gattungswort-Namen („die Winter“, „die Fürst“).
+- **NICHT VERIFIZIERT:**
+  - Der Code ist nicht in der installierten EXE enthalten. Diese wurde am 24.10.2026 um 12:20 geschrieben (`DEB6FA9B…`);
+    die Datenschutzquellen wurden später geändert.
+  - Es gab keinen echten Cloud-E2E-Test.
+  - Kein Commit.
+
+## Nachtrag 24.10.2026: Installierte Datenschutzkorrekturen (EXE `DEB6FA9B…`, installiert 24.10.2026 12:27, Branch feature/feedback-diagnose, Basis 8a219ec, nicht committet)
+
+Der Nachtrag dokumentiert nachträglich, am 25.10.2026, welche Datenschutzkorrekturen am 24.10.2026 vormittags gebaut und
+installiert wurden. **Keine Datenschutz-, P0-08-, C-14- oder Pilotfreigabe.** Die Pilotstufen bleiben unverändert
+(§26.5: A nur synthetisch, B und C No-Go). Keine Leckfreiheit.
+
+- **Stand der Nachweise:**
+  - implementiert: ja (Arbeitsbaum, nicht committet);
+  - lokal getestet: ja (historisch, 24.10.2026, siehe unten);
+  - im installierten Build verifiziert: **teilweise** – Bytecode-Abgleich und ein App-Test mit synthetischem Dokument,
+    jedoch ohne echte Cloud-Antwort;
+  - echter Cloud-E2E-Test: **nein**;
+  - freigegeben: **nein**.
+- **Installationskette 24.10.2026:**
+
+  | Schritt | Zeit | EXE (SHA-256) | Beleg |
+  |---|---|---|---|
+  | vorher installiert (Build aus `8a219ec`) | – | `68DA37C6…` | Sicherung `C:\Users\Bonit\Lexono_backup_20261024_pre_privacyfix\` |
+  | 1. Installation | 11:05–11:50 | `81363941…` | `install_privacyfix.log` in dieser Sicherung („Installation process succeeded“ 11:50:42) |
+  | 2. Installation (aktuell) | 12:25–12:27 | `DEB6FA9B91F0CFD48ABF643BE7C9B656840964139D2C9C9C6F56FB43847F4FB7` | `C:\Users\Bonit\Lexono_backup_20261024_pre_privacyfix2\install_privacyfix2.log` („Installation process succeeded“ 12:27:59) |
+
+  Die EXE wurde um 12:20:18 gebaut (Dateizeit). Der Installer `dist/installer/Lexono_Setup.exe` hat den SHA-256
+  `092262DC…`. Die installierte EXE und `dist/Lexono/Lexono.exe` haben am 25.10.2026 nachgemessen beide `DEB6FA9B…`.
+- **Installierte Korrekturen** (in der EXE nachgewiesen durch Bytecode-Abgleich, 25.10.2026):
+  - **Fachbegriffe im Sachkontext statt Name/Firma/Ort** (`presidio_ner.is_contextual_technical_term`,
+    `is_context_term_compound`, `is_generic_article_noun`, `_CONTEXT_TERM_HEADS`; Aufruf auch in
+    `review.find_review_candidates`). Test: `tests/test_privacy_contextual_terms.py` (17 Tests).
+  - **Namen als Tabellen- und Spaltenbeschriftung, EÜR, Kopfzeilen** (`presidio_ner.detect_name_column_labels`,
+    `_label_value_tables`, `_clearly_technical_label`, `_PERSON_COLUMN_WORDS`, `_NUMERIC_CELL`). Test:
+    `tests/test_privacy_contextual_terms.py`.
+  - **Tabellenüberschrift bei Platzhalter und Fließtext** (`_ANY_PLACEHOLDER`, `_SENTENCE_END`,
+    `_PERSON_PLACEHOLDER_IN_CELL`). Nur im 2. Build enthalten. Die Bündelprüfung vom 24.10.2026 (Sitzungsverlauf) meldet
+    für den 1. Build „Überschrift-Fix: False“.
+  - **Firmen-Kurzform in Klammern** („Nordbauholding GmbH (NBH)“; `detectors._organisation_short_forms`,
+    `_SHORT_FORM_DEFINITION`, `_abbreviation_fits`, `_LEGAL_FORM_SPELLINGS`, `_used_as_statute`, `_STATUTE_LONG_FORM`;
+    `presidio_ner.is_defined_abbreviation`, `_compound_initialisms`). Test: `tests/test_privacy_short_forms.py`.
+  - **Gesetzesabkürzung mit Normbezug** („§ 1 StVO“) wird nicht als Person erkannt
+    (`presidio_ner.cited_statute_abbreviations`, `_CITED_STATUTE_ABBREVIATION`). Test:
+    `tests/test_privacy_statute_citations.py`.
+  - **Fünf Ziffern nach „/“ sind keine PLZ:** „Steuernummer 12/345/67890\nAntrag“ wurde als Anschrift gelesen, und die
+    Antwortprüfung blockierte deshalb jede Antwort mit „Antrag“. Behoben in der PLZ-Regel in `detectors.py`
+    (`(?<!/)`, in der EXE nachgewiesen). Test: `tests/test_hitl_decisions_response_check.py` (8 Tests).
+  - **Zeilenbezug von Personen in Tabellen:** `review._row_mentions_a_person`. Die Funktion ist gegenüber `8a219ec`
+    geändert und in der EXE gleich dem heutigen Arbeitsbaum.
+- **Nicht installiert** (nur im Arbeitsbaum, erst nach 12:20 entstanden, siehe Nachtrag 25.10.2026):
+  - `presidio_ner.is_transliterated_common_noun` (ab 14:23);
+  - aus `review.py`: `_is_definite_article_name_reading`, `_feminine_article_name_reading`, `_is_case_file_compound`, die
+    Rollenmengen und der `\Z`-Anker von `_SYSTEM_LABEL_LINE` (die EXE enthält noch `$`);
+  - aus `detectors.py`: `short_form_statute_collisions`, `is_confidential_organisation_mention`, `_MANDATE_SIGNAL`,
+    `_is_generic_word_inside_dropped_firm`;
+  - aus dem übrigen Code: `gateway.SHORT_FORM_STATUTE_COLLISION_REASON`, `api_logger.SHORT_FORM_COLLISION_MESSAGE` und
+    `chat/service._turns_blocked_by_short_form_collision`;
+  - nachträglich geändert wurden außerdem `detect_presidio_entities`, `_organisation_short_forms`, `detect_all`,
+    `find_review_candidates` und `_roles`.
+
+  `gateway.py`, `api_logger.py` und `chat/service.py` sind in der EXE byte-gleich mit `8a219ec`.
+- **Lokale Tests vor dem 2. Build** (historisch, 24.10.2026 12:02–12:16, Sitzungsverlauf, nicht als Artefakt abgelegt):
+
+  | Lauf | Ergebnis |
+  |---|---|
+  | gezielt (Fachbegriffe, Kurzformen, Normzitate, HITL) | 124 PASS |
+  | Datenschutz | 1912 PASS, 8 xfail, 1 xpass |
+  | Gateway/HITL | 518 PASS, 1 skip |
+  | Review | 457 PASS, 2 skip |
+
+  Ein Web/Chat-Lauf vor dem Build ist im Sitzungsverlauf nicht belegt.
+- **App-Test in der installierten EXE** (synthetisches Finanzamt-Dokument; keine echte KI-Antwort):
+  - **1. Build**, 11:53, `qa-evidence/installed-privacyfix-20261024/inst_check.json` (SHA-256 `451e2b6c…`):
+    - Kennwerte geschützt (Thomas Berger, NBH, Nordbauholding, 12/345/67890, Beispielstrasse 17);
+    - Fachbegriffe aber weiterhin maskiert (Rohergebnis, Steuermessbetrag, Antrag, „§ 1 StVO“, Wareneinsatz: lesbar
+      = false). Ursache: der fehlende Überschrift-Fix.
+  - **HITL-Test 1. Build**, 11:57, `…-hitl/inst_hitl.json` (`707618af…`): Rückfrage „Richter“, Dialog geöffnet.
+  - **2. Build**, 13:22, `qa-evidence/installed-privacyfix2-20261024/inst_check2.json` (`281bbc22…`):
+    - dieselben Kennwerte geschützt;
+    - Fachbegriffe lesbar (Rohergebnis, Steuermessbetrag, Antrag, „§ 1 StVO“, Wareneinsatz, Gewerbeertrag);
+    - Prüfseite sendefähig, Rückfrage „Richter“ mit Dialog.
+  - Danach jeweils „Die Antwort konnte aus technischen Gründen nicht erzeugt werden“: **keine echte KI-Antwort, kein
+    Cloud-E2E**.
+- **Offen / Grenzen:**
+  - Restlecks und Fehlalarme des damaligen Stands sind nicht gemessen. Die Benchmark-Zahlen des Nachtrags vom 25.10.2026
+    gelten für den späteren Arbeitsbaum, nicht für diese EXE.
+  - Die im Nachtrag vom 25.10.2026 behobenen Lücken bestehen in der installierten EXE fort, z. B. „die Zimmermann“,
+    Kurzform/Gesetzes-Kollision und Firmen im Chat ohne Akte.
+  - Mehrere Screenshots sind byte-gleich, obwohl sie verschiedene Schritte zeigen sollen. Im 1. Lauf sind es 01–03 (Login,
+    Dashboard, blockierter Auftrag) und 07/08 (HITL-Dialog, Wiederaufnahme), im 2. Lauf 01/02. Die Bildbelege sind daher
+    schwächer als die JSON-Protokolle.
+  - Nicht dauerhaft archiviert: Build-Protokolle, Quell-Fingerabdrücke und Prüfskripte liegen nur im temporären Job-Ordner.
+  - Die Tests sind uncommittet; einige wurden nach 12:20 weiter geändert, ihr Stand zum Build ist nicht gesichert.
