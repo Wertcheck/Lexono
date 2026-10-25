@@ -1,0 +1,154 @@
+{
+ "quelle": "dist/Lexono/Lexono.exe (nicht installiert), Commit 88a13ac",
+ "cloud_endpunkt": "127.0.0.1:9 (tot)",
+ "anmeldung_ok": true,
+ "upload": [
+  "start",
+  "uploaded"
+ ],
+ "auftrag": {
+  "blocked": true,
+  "content": "Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an "
+ },
+ "dokumentstatus": "decision",
+ "pruefseite_sendefaehig": true,
+ "lesbar": {
+  "Rohergebnis": true,
+  "Steuermessbetrag": true,
+  "Antrag": true,
+  "§ 1 StVO": true,
+  "Wareneinsatz": true,
+  "Gewerbeertrag": true,
+  "Umsatzerloese": true
+ },
+ "geschuetzt": {
+  "Thomas Berger": true,
+  "NBH": true,
+  "Nordbauholding": true,
+  "12/345/67890": true,
+  "Beispielstrasse 17": true
+ },
+ "js_04-pseudonymisierung-dialog": true,
+ "bestaetigen": [
+  "start",
+  "review"
+ ],
+ "rueckfragen": [
+  "Richter"
+ ],
+ "js_06-hitl-rueckfrage-dialog": true,
+ "nach_antwort": {
+  "kinds": [
+   "start",
+   "status",
+   "done"
+  ],
+  "blocked": true,
+  "content": "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "chat_ohne_dokument": {
+  "femininer_artikel_name": {
+   "ereignisse": [
+    "start",
+    "review"
+   ],
+   "rueckfrage": [
+    "Kaufmann"
+   ],
+   "abschluss_blockiert": null,
+   "abschluss": "",
+   "conversation_id": "eb4eaeb0-812c-43c7-bc77-07673f616a75"
+  },
+  "kurzform_kollision": {
+   "ereignisse": [
+    "start",
+    "status",
+    "done"
+   ],
+   "rueckfrage": [],
+   "abschluss_blockiert": true,
+   "abschluss": "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung.",
+   "conversation_id": "49c4156b-9773-4a8a-b0de-7fcdf7881937"
+  },
+  "umschrift_ruecksicht": {
+   "ereignisse": [
+    "start",
+    "review"
+   ],
+   "rueckfrage": [
+    "Ruecksicht"
+   ],
+   "abschluss_blockiert": null,
+   "abschluss": "",
+   "conversation_id": "9cc8f44f-ac5d-40fd-9f71-2b4c858ece8e"
+  },
+  "mandant_firma_ohne_akte": {
+   "ereignisse": [
+    "start",
+    "status",
+    "done"
+   ],
+   "rueckfrage": [],
+   "abschluss_blockiert": true,
+   "abschluss": "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung.",
+   "conversation_id": "90e99ed0-25f4-4eba-86dc-08113037a5ac"
+  }
+ },
+ "screenshots": {
+  "01-login-maske": {
+   "angefragt": "/dashboard/login",
+   "angezeigt": "/dashboard/chat",
+   "sha256": "a3580d474426bb0e"
+  },
+  "02-chat-auftrag-am-dokument-angehalten": {
+   "angefragt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "angezeigt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "sha256": "0429a2c01e8e3b6e"
+  },
+  "03-dokumentansicht": {
+   "angefragt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded",
+   "angezeigt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded",
+   "sha256": "36a83bd1a795097d"
+  },
+  "04-pseudonymisierung-dialog": {
+   "angefragt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded",
+   "angezeigt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded",
+   "sha256": "daaa3b16788a42ee"
+  },
+  "05-pseudonymisierung-pruefseite": {
+   "angefragt": "/dashboard/matters/6c350191-ddf0-47d3-b99d-680ad588f4cb/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded/pseudonymisierung",
+   "angezeigt": "/dashboard/matters/6c350191-ddf0-47d3-b99d-680ad588f4cb/document/ec84d2b1-ef5f-49f8-ac2d-6ff3e86d7ded/pseudonymisierung",
+   "sha256": "963c189f6aedf24c"
+  },
+  "06-hitl-rueckfrage-dialog": {
+   "angefragt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "angezeigt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "sha256": "5abc9787bcb5f84b"
+  },
+  "07-nach-hitl": {
+   "angefragt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "angezeigt": "/dashboard/chat/0aa3cc56-91d0-4d5a-b6e6-2c6d09ff798c",
+   "sha256": "f2eacd91167c1677"
+  },
+  "08-chat-femininer_artikel_name": {
+   "angefragt": "/dashboard/chat/eb4eaeb0-812c-43c7-bc77-07673f616a75",
+   "angezeigt": "/dashboard/chat/eb4eaeb0-812c-43c7-bc77-07673f616a75",
+   "sha256": "723bda72ceb16265"
+  },
+  "08-chat-kurzform_kollision": {
+   "angefragt": "/dashboard/chat/49c4156b-9773-4a8a-b0de-7fcdf7881937",
+   "angezeigt": "/dashboard/chat/49c4156b-9773-4a8a-b0de-7fcdf7881937",
+   "sha256": "35e4c7688fbf0d5b"
+  },
+  "08-chat-umschrift_ruecksicht": {
+   "angefragt": "/dashboard/chat/9cc8f44f-ac5d-40fd-9f71-2b4c858ece8e",
+   "angezeigt": "/dashboard/chat/9cc8f44f-ac5d-40fd-9f71-2b4c858ece8e",
+   "sha256": "18463904afb46ffa"
+  },
+  "08-chat-mandant_firma_ohne_akte": {
+   "angefragt": "/dashboard/chat/90e99ed0-25f4-4eba-86dc-08113037a5ac",
+   "angezeigt": "/dashboard/chat/90e99ed0-25f4-4eba-86dc-08113037a5ac",
+   "sha256": "0f5b80a41cd082b8"
+  }
+ }
+}
