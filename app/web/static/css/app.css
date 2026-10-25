@@ -585,7 +585,7 @@ body.has-app-titlebar .app-titlebar {
    identisch zu `html.sidebar-collapsed .sidebar`s eigener Breite). */
 .sidebar-edge-toggle {
   position: absolute;
-  top: 17px;
+  top: 8px; /* 25.10.2026: naeher an die obere Kante der Navigation (vorher 17px, auf Hoehe des Neuer-Chat-Buttons) */
   left: var(--sidebar-width);
   transform: translateX(-50%);
   z-index: 5;
@@ -9377,14 +9377,16 @@ a.chat-composer__protect-btn {
   z-index: 30;
 }
 
+/* 25.10.2026: flach statt schwebender Karte - kein Schatten, nur feine Kontur; Schild in ruhigem Grau, das Info-"i"
+   (`.icon__info-mark`, siehe icons.shield_info) in Lexono-Gruen. Groesse, Position und Logik unveraendert. */
 .chat-privacy-corner .chat-composer__privacy-btn {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--paper-000);
-  color: var(--seal-green-dark);
+  color: var(--ink-500);
   border: 1px solid var(--paper-line);
-  box-shadow: var(--shadow-elevated);
+  box-shadow: none;
 }
 
 .chat-privacy-corner .chat-composer__privacy-btn .icon {
@@ -9392,10 +9394,15 @@ a.chat-composer__protect-btn {
   height: 24px;
 }
 
+.chat-privacy-corner .chat-composer__privacy-btn .icon__info-mark {
+  color: var(--brand-green);
+}
+
 .chat-privacy-corner .chat-composer__privacy-btn:hover,
 .chat-privacy-corner .chat-composer__privacy-btn[aria-expanded="true"] {
   background: var(--paper-200);
-  color: var(--seal-green-dark);
+  border-color: var(--brand-green);
+  color: var(--ink-700);
 }
 
 .chat-privacy-popover {
