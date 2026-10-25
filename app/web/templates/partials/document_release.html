@@ -9,7 +9,7 @@
   </p>
 {% endmacro %}
 
-{% macro panel(status, matter, document, csrf_token, show_notice, can_manage, return_to="", released=False, error="", current_path="") %}
+{% macro panel(status, matter, document, csrf_token, show_notice, can_manage, return_to="", released=False, error="", current_path="", confirm_label="Schriftsatz erstellen") %}
   <div class="document-release" id="document-release">
     {{ status_line(status) }}
     {% if error %}<div class="banner banner--error" id="document-release-error">{{ error }}</div>{% endif %}
@@ -39,7 +39,7 @@
                     data-conversation-id="{{ return_to[5:] }}"
                     data-document-id="{{ document.id }}"
                     data-text-version="{{ status.text_version }}">
-              Pseudonymisierung bestätigen und Schriftsatz erstellen
+              Pseudonymisierung bestätigen und {{ confirm_label }}
             </button>
           {% endif %}
           <form method="post" action="/dashboard/matters/{{ matter.id }}/document/{{ document.id }}/release" style="display: inline;">

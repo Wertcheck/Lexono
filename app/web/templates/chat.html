@@ -3,6 +3,7 @@
 {% import "_identity.html" as identity %}
 {% import "partials/name_protection.html" as name_protection %}
 {% import "partials/document_release.html" as document_release %}
+{% import "partials/pseudonymization_center.html" as pseudonymization_center %}
 {% block title %}Chat{% endblock %}
 {% block content %}
   {# Nutzerkorrektur (01.09.): eine vorherige Aenderung hatte die
@@ -810,7 +811,8 @@
             {# §62 Dokumentfreigabe: Status am Dokument (dezent, dauerhaft) #}
             {{ document_release.panel(release_status, active_conversation.matter, viewing_document, csrf_token,
                                       release_show_notice, release_can_manage, "chat:" ~ active_conversation.id,
-                                      release_released, release_error, release_current_path) }}
+                                      release_released, release_error, release_current_path,
+                                      release_order_label or "Schriftsatz erstellen") }}
           {% endif %}
           {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
           {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
@@ -824,6 +826,12 @@
             <span class="chat-pseudonymization-summary__count">
               {{ document_preview.entities | length if document_preview else 0 }} erkannte Mandantendaten
             </span>
+            {# 25.10.2026: oeffnet den zentralen Pseudonymisierungsdialog (Seitenansicht, Markierungen, Rueckfragen);
+               die bisherigen Details/Schnellaktionen bleiben ueber "Pseudonymisierung anzeigen" erreichbar. #}
+            <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
+                    data-pseudonymization-center-open aria-haspopup="dialog" aria-controls="pseudonymization-center">
+              Pseudonymisierung prüfen
+            </button>
             <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
                     data-pseudonymization-open aria-haspopup="dialog" aria-controls="pseudonymization-dialog">
               Pseudonymisierung anzeigen
@@ -929,6 +937,10 @@
         {% endif %}
         </div>{# .modal__body.chat-context-pane #}
       </dialog>
+      {% if viewing_document.matter_id and release_status %}
+        {{ pseudonymization_center.dialog(active_conversation.id, viewing_document, release_status.text_version,
+                                          release_order_label, release_can_manage) }}
+      {% endif %}
     {% endif %}
   </div>
 
@@ -2849,6 +2861,8 @@
       // danach der Entwurf entsteht. Kein Scheinerfolg: angezeigt wird immer der tatsaechliche Serverstand.
       (function wireConfirmReleaseAndGenerate() {
         if (!messages || !supportsStreaming) { return; }
+        // 25.10.2026: mit zentralem Pseudonymisierungsdialog uebernimmt dieser Freigabe, Rueckfragen und Fortsetzen
+        if (document.getElementById("pseudonymization-center")) { return; }
         var trigger = document.querySelector("[data-confirm-release-generate]");
         if (!trigger) { return; }
         trigger.addEventListener("click", function () {

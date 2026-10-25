@@ -1,0 +1,60 @@
+{# Zentraler Pseudonymisierungsdialog (25.10.2026) - EIN Dialog fuer Dokumentanalyse und Schriftsatzerstellung mit
+   vorheriger Pseudonymisierung. Eigenstaendige Ebene ueber dem Chat (<dialog>), aendert die Chat-Oberflaeche nicht.
+   Inhalte (Seiten, Markierungen, Rueckfragen, Ergebnis) laedt static/js/pseudonymization_center.js aus
+   GET /dashboard/chat/<id>/document/<id>/pseudonymization-review - alles lokal, Dokumentinhalte ausschliesslich per
+   textContent. Bestaetigen nutzt POST .../confirm-release-and-generate (serverseitige Pruefung der Entscheidungen). #}
+{% macro dialog(conversation_id, document, text_version, order_label, can_manage) %}
+  <dialog id="pseudonymization-center" class="modal pseudo-center" aria-labelledby="pseudo-center-title"
+          data-conversation-id="{{ conversation_id }}" data-document-id="{{ document.id }}"
+          data-text-version="{{ text_version }}" data-can-manage="{{ '1' if can_manage else '0' }}">
+    <div class="modal__header pseudo-center__header">
+      <div class="pseudo-center__heading">
+        <h2 class="modal__title" id="pseudo-center-title">Pseudonymisierung prüfen</h2>
+        <span class="pseudo-center__file">{{ document.original_filename }}</span>
+      </div>
+      <div class="pseudo-center__tabs" role="tablist" aria-label="Ansicht">
+        <button type="button" role="tab" class="pseudo-center__tab is-active" data-pseudo-view="marked" aria-selected="true">Markierte Vorschau</button>
+        <button type="button" role="tab" class="pseudo-center__tab" data-pseudo-view="original" aria-selected="false">Original</button>
+        <button type="button" role="tab" class="pseudo-center__tab" data-pseudo-view="result" aria-selected="false">Pseudonymisiertes Ergebnis</button>
+      </div>
+      <button type="button" class="modal__close" data-pseudo-center-cancel aria-label="Schließen">✕</button>
+    </div>
+
+    <div class="pseudo-center__legend" aria-label="Legende">
+      <span class="pseudo-center__swatch pseudo-center__swatch--masked"></span>wird pseudonymisiert
+      <span class="pseudo-center__swatch pseudo-center__swatch--open"></span>Rückfrage offen
+      <span class="pseudo-center__swatch pseudo-center__swatch--kept"></span>bleibt lesbar (Ihre Entscheidung)
+      <span class="pseudo-center__local">Lokale Ansicht – nichts davon wurde an die Cloud gesendet.</span>
+    </div>
+
+    <div class="pseudo-center__body">
+      <section class="pseudo-center__document" aria-label="Dokument" data-pseudo-document>
+        <p class="pseudo-center__loading" data-pseudo-loading>Dokument wird lokal geprüft …</p>
+      </section>
+      <aside class="pseudo-center__panel" aria-label="Prüfung">
+        <div class="pseudo-center__status" data-pseudo-status></div>
+        <div data-pseudo-questions></div>
+        <div data-pseudo-followup></div>
+        <details class="pseudo-center__section" data-pseudo-mappings-wrap>
+          <summary>Ersetzte Angaben <span data-pseudo-mapping-count></span></summary>
+          <ul class="pseudo-center__mappings" data-pseudo-mappings></ul>
+        </details>
+        <div class="pseudo-center__limits" data-pseudo-limits></div>
+      </aside>
+    </div>
+
+    <div class="modal__footer pseudo-center__footer">
+      <span class="pseudo-center__open-count" data-pseudo-open-count aria-live="polite"></span>
+      <button type="button" class="btn btn--ghost" data-pseudo-center-cancel>{{ "Abbrechen" if order_label else "Schließen" }}</button>
+      {% if order_label %}
+        <button type="button" class="btn btn--primary" data-pseudo-center-confirm disabled>
+          Pseudonymisierung bestätigen und {{ order_label }}
+        </button>
+      {% else %}
+        {# Kein offener Auftrag (z. B. nur hochgeladen, §57): reine Pruefansicht - nichts wird fortgesetzt. #}
+        <span class="form-hint" data-pseudo-no-order>Kein offener Auftrag – stellen Sie Ihre Frage im Chat; die Prüfung erfolgt dann erneut.</span>
+      {% endif %}
+    </div>
+  </dialog>
+  <script src="/dashboard/static/js/pseudonymization_center.js"></script>
+{% endmacro %}

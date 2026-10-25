@@ -318,6 +318,8 @@ def chat_document_view(
             # §62 Dokumentfreigabe (lokal, kein Cloud-Aufruf)
             **_document_release_context(db, document, current_user, request, released=released,
                                         release_error=release_error),
+            # zentraler Pseudonymisierungsdialog: welcher Auftrag nach dem Bestaetigen fortgesetzt wird
+            "release_order_label": _open_order_label(db, active_conversation),
         },
     )
 
@@ -374,6 +376,57 @@ def chat_document_thumbnail(
         return Response(content=image_bytes, media_type=media_type)
 
     raise HTTPException(status_code=404, detail="Für dieses Dateiformat gibt es keine Vorschau.")
+
+
+@router.get("/{conversation_id}/document/{document_id}/pseudonymization-review")
+def chat_document_pseudonymization_review(
+    conversation_id: str,
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> JSONResponse:
+    """Daten fuer den zentralen Pseudonymisierungsdialog (25.10.2026): Seiten, Markierungen, offene Rueckfragen und
+    das pseudonymisierte Ergebnis des AKTUELLEN Dokumentstands - aus der zentralen Pruefung, lokal, kein Cloud-Aufruf
+    (app/documents/pseudonymization_review.py). Isolation wie `chat_document_view`: nur an DIESE Unterhaltung
+    angehaengte Dokumente. Nichts wird gespeichert; Antwort nicht zwischenspeichern (enthaelt Originalwerte)."""
+    from app.documents.pseudonymization_review import build_review
+
+    chat_service = _get_chat_service()
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+    document = chat_service.get_attached_document(db, conversation=conversation, document_id=document_id)
+    if document is None or document.matter_id is None or document.matter_id != conversation.matter_id:
+        raise HTTPException(status_code=404, detail="Dokument wurde in dieser Unterhaltung nicht gefunden.")
+    data = build_review(db, document, conversation.matter, conversation.id).as_dict()
+    data["page_url_base"] = f"/dashboard/matters/{document.matter_id}/document/{document.id}/page/"
+    return JSONResponse(data, headers={"Cache-Control": "no-store"})
+
+
+def _open_order_message(db: Session, conversation) -> ChatMessage | None:
+    """Der offene, fortsetzbare Auftrag: die juengste Nachricht ist - abgesehen von blockierten reinen Statushinweisen
+    (Dokument-Gate, kein Entwurf) - eine Nutzernachricht. Nach einer erfolgreichen Antwort oder einem reinen Upload
+    (§57, Rolle "upload") gibt es KEINEN offenen Auftrag; eine aeltere, bereits beantwortete Nachricht wird nie
+    erneut verarbeitet (25.10.2026)."""
+    for row in (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .limit(50)
+    ):
+        if row.role == "assistant" and row.blocked and row.draft_id is None:
+            continue
+        return row if row.role == "user" else None
+    return None
+
+
+def _open_order_label(db: Session, conversation) -> str:
+    """Beschriftung des Fortsetzen-Buttons nach dem zuletzt gestellten Auftrag: Schriftsatz (Erstellungsauftrag)
+    oder Dokumentanalyse (jeder andere Auftrag). Dieselbe Routing-Regel wie ChatService (`_looks_like_drafting_request`)."""
+    from app.chat.service import _looks_like_drafting_request
+
+    order = _open_order_message(db, conversation)
+    if order is None:
+        return ""  # kein offener Auftrag: der Dialog ist dann reine Pruefansicht
+    return "Schriftsatz erstellen" if _looks_like_drafting_request(order.content or "") else "Analyse fortsetzen"
 
 
 def _document_release_context(db: Session, document: Document, user: User, request: Request, *, released: str,
@@ -1649,15 +1702,59 @@ def submit_privacy_review(
     )
 
 
+def _apply_dialog_decisions(db: Session, conversation, document: Document, text_version: str, raw: str,
+                            require_resolved: bool, user: User) -> str:
+    """Prueft und speichert die Dialog-Entscheidungen (siehe `confirm_release_and_generate`). Rueckgabe: Fehlertext
+    oder "" bei Erfolg. Speichert erst, wenn ALLE Pruefungen bestanden sind."""
+    from app.documents import release
+    from app.documents.pseudonymization_review import open_candidate_terms
+
+    if not text_version or text_version != release.text_version_of(document.extracted_text):
+        return "Der Dokumenttext hat sich seit der Anzeige geändert. Bitte die Pseudonymisierung erneut prüfen."
+    try:
+        parsed = [_PrivacyReviewDecision(**item) for item in json.loads(raw or "[]")]
+    except (ValueError, TypeError):
+        return "Die Entscheidungen konnten nicht gelesen werden. Bitte erneut prüfen."
+    if len(parsed) > 50:
+        return "Zu viele Entscheidungen in einer Anfrage."
+    try:
+        open_terms = open_candidate_terms(db, document, conversation.matter, conversation.id)
+    except Exception:  # noqa: BLE001 - fail-closed
+        return "Die Datenschutzprüfung ist fehlgeschlagen – es wurde nichts gesendet."
+    decided = {item.term for item in parsed}
+    if decided - set(open_terms):
+        return "Mindestens eine Rückfrage ist nicht mehr aktuell. Bitte die Pseudonymisierung erneut prüfen."
+    if require_resolved and set(open_terms) - decided:
+        return "Bitte zuerst alle offenen Rückfragen im Pseudonymisierungsdialog beantworten."
+    try:
+        for item in parsed:
+            record_privacy_decision(db, matter_id=conversation.matter_id, conversation_id=conversation.id,
+                                    term=item.term, decision=item.decision, user_id=user.id, actor=user.email)
+        db.commit()
+    except InvalidPrivacyDecisionError as exc:
+        db.rollback()
+        return str(exc)
+    return ""
+
+
 @router.post("/{conversation_id}/confirm-release-and-generate")
 def confirm_release_and_generate(
     conversation_id: str,
     document_id: str = Form(...),
     text_version: str = Form(...),
+    decisions: str = Form(default=""),
+    require_resolved: str = Form(default=""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_PRIVACY_DECISION_MANAGE)),
 ) -> StreamingResponse:
     """"Pseudonymisierung bestätigen und Schriftsatz erstellen" im Chat-Kontext (23.10.2026).
+
+    25.10.2026 (zentraler Pseudonymisierungsdialog): optional `decisions` (JSON wie bei `privacy-review`) mit den im
+    Dialog beantworteten Rueckfragen zu DIESEM Dokument und `require_resolved=1`. Dann gilt serverseitig: der Textstand
+    ist aktuell, jede Entscheidung betrifft eine AKTUELL offene Rueckfrage dieses Dokuments (keine veraltete
+    Zuordnung), und mit `require_resolved` ist JEDE offene Rueckfrage beantwortet - sonst wird nichts gespeichert,
+    nichts freigegeben und nichts gesendet. Die Entscheidungen laufen ueber denselben `record_privacy_decision` wie die
+    Chat-Rueckfrage; die Wiederaufnahme prueft danach wie bisher alles erneut fail-closed.
 
     Schliesst die Luecke, die einen Schriftsatz-Auftrag auf ein Dokument mit unsicherem Begriff im Modus
     "auto_review" am Dokument-Gate haengen liess (Reproduktion: tests/test_schriftsatz_release_resume.py): die
@@ -1710,7 +1807,7 @@ def confirm_release_and_generate(
         .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
         .first()
     )
-    if message is None:
+    if message is None or _open_order_message(db, conversation) is None:
         return StreamingResponse(
             _stream_error_event("Es gibt keinen offenen Auftrag, der fortgesetzt werden kann."),
             media_type="text/event-stream",
@@ -1727,6 +1824,12 @@ def confirm_release_and_generate(
             ),
             media_type="text/event-stream",
         )
+    if decisions or require_resolved:
+        problem = _apply_dialog_decisions(db, conversation, document, text_version, decisions,
+                                          require_resolved == "1", current_user)
+        if problem:
+            _release_message(db, message.id)
+            return StreamingResponse(_stream_error_event(problem), media_type="text/event-stream")
     # Freigabe des ANGEZEIGTEN Textstands. Scheitert sie (veralteter Stand, fehlgeschlagene Pruefung,
     # kein verwertbarer Text), wird NICHTS generiert und die Nachricht wieder freigegeben.
     try:

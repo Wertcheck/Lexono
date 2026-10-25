@@ -1,0 +1,86 @@
+{
+ "instanz": "uvicorn app.main:app aus dem Arbeitsbaum, Scratch-DB, Cloud-Endpunkt 127.0.0.1:9 (tot)",
+ "pdf_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_00-chat-dokumentansicht-vor-dialog": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_00-chat-dokumentansicht-vor-dialog": "8045e89d6af21b66",
+ "js_01-vorschau-markiert-pdf": true,
+ "pfad_01-vorschau-markiert-pdf": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_01-vorschau-markiert-pdf": "b96f0aadbef1215c",
+ "zustand_01": {
+  "open": true,
+  "marks_masked": 8,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "pfad_01b-zustand": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_01b-zustand": "b96f0aadbef1215c",
+ "js_02-hitl-rueckfrage-im-dialog": true,
+ "pfad_02-hitl-rueckfrage-im-dialog": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_02-hitl-rueckfrage-im-dialog": "c557338fd4b19310",
+ "pfad_03-rueckfrage-beantwortet-bestaetigen-aktiv": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_03-rueckfrage-beantwortet-bestaetigen-aktiv": "3785541d6a091ee3",
+ "zustand_03": {
+  "open": true,
+  "marks_masked": 10,
+  "marks_open": 0,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": false,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "Alle Rückfragen beantwortet.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "js_04-pseudonymisiertes-ergebnis": true,
+ "pfad_04-pseudonymisiertes-ergebnis": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_04-pseudonymisiertes-ergebnis": "49ab9e80940fb1c1",
+ "js_05-original-ohne-markierung": true,
+ "pfad_05-original-ohne-markierung": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a/document/ba73db4a-a0dd-4b60-ba18-2db9746587fc",
+ "sha_05-original-ohne-markierung": "cdb2546bc1df37a6",
+ "js_06-nach-bestaetigung-zurueck-im-chat": true,
+ "pfad_06-nach-bestaetigung-zurueck-im-chat": "/dashboard/chat/d9999fc4-6c33-454b-bd8d-f4d069eded5a",
+ "sha_06-nach-bestaetigung-zurueck-im-chat": "721d17bb0504dd20",
+ "docx_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_07-vorschau-markiert-docx-analyse": "/dashboard/chat/9c5da390-86b2-4af7-9ec7-b45ef6c04740/document/6e36cc0b-5d56-4ce7-a0ef-d9d9aab68762",
+ "sha_07-vorschau-markiert-docx-analyse": "0d653699e11c7eb4",
+ "zustand_07": {
+  "open": true,
+  "marks_masked": 3,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 1,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Analyse fortsetzen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal mit der eingebauten Layout-Engine (PyMuPDF) gesetzt. Schriftarten, Abstände, Seitenumbrüche sowie Kopf- und Fußzeilen können von der Darstellung in Microsoft Word abweichen.2 Kopf-/Fußzeile(n) dieses Word-Dokuments erscheinen in der Seitenansicht nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten. Tabell"
+ },
+ "review_json_pdf": {
+  "status": "ok",
+  "viewer_kind": "pages",
+  "not_located": [],
+  "limitations": [
+   "PDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  ]
+ }
+}
