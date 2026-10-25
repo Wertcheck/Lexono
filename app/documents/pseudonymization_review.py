@@ -21,19 +21,20 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.documents.release import text_version_of
+from app.documents.docx_layout import open_rendered, unrendered_image_count
 from app.documents.rendering import determine_viewer_mode
 from app.models import Document, Matter
 
 #: Hoechstzahl der Seiten, fuer die Markierungen ermittelt werden (Laufzeitgrenze; darueber Hinweis im Dialog).
-MAX_MARKED_PAGES = 60
+MAX_MARKED_PAGES = 300
 
 _WORD_EDGE = re.compile(r"^[\W_]+|[\W_]+$")
 
 FORMAT_NOTES = {
     ".pdf": "PDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
-    ".docx": ("Word (DOCX): Seiten werden lokal mit der eingebauten Layout-Engine (PyMuPDF) gesetzt. Schriftarten, "
-              "Abstände, Seitenumbrüche sowie Kopf- und Fußzeilen können von der Darstellung in Microsoft Word "
-              "abweichen."),
+    ".docx": ("Word (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, "
+              "Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, "
+              "Textfelder und Fußnoten werden nicht dargestellt."),
     ".txt": "Textdatei: ohne Seitenlayout; Markierungen nur in der Textansicht.",
 }
 
@@ -104,7 +105,7 @@ def _page_marks(path: Path, values: dict[str, dict]) -> tuple[list[dict], set[st
 
     pages, found = [], set()
     truncated = False
-    with pymupdf.open(path) as doc:
+    with open_rendered(path) as doc:
         for index, page in enumerate(doc):
             if index >= MAX_MARKED_PAGES:
                 truncated = True
@@ -140,13 +141,17 @@ def _docx_header_footer_gaps(path: Path, pages: list[dict]) -> list[str]:
                     lines.append(paragraph.text.strip())
     if not lines:
         return []
-    with pymupdf.open(path) as doc:
+    with open_rendered(path) as doc:
         rendered = " ".join(page.get_text() for page in doc)
     normalized = " ".join(rendered.split())
     return [line for line in lines if " ".join(line.split()) not in normalized]
 
 
-def build_review(db: Session, document: Document, matter: Matter, conversation_id: str | None) -> ReviewData:
+def build_review(db: Session, document: Document, matter: Matter, conversation_id: str | None,
+                 extra_terms: tuple[str, ...] = ()) -> ReviewData:
+    """`extra_terms`: offene Rueckfragen, die die zentrale Pruefung beim Versand gestellt hat (Chat-Rueckfrage) - sie
+    werden in diesem Dokument als "Rueckfrage offen" markiert, wo sie vorkommen. Nur Positionen; die Begriffe selbst
+    stammen vom Server (Rueckfrage-Ereignis), nicht aus dem Dokument."""
     text = document.extracted_text or ""
     data = ReviewData(document_id=document.id, filename=document.original_filename or "Dokument",
                       text_version=text_version_of(text), status="no_text")
@@ -188,6 +193,12 @@ def build_review(db: Session, document: Document, matter: Matter, conversation_i
     for candidate in data.candidates:
         values[candidate["term"]] = {"kind": "open", "placeholder": "", "category": "rueckfrage",
                                      "term": candidate["term"]}
+    own_terms = {v["term"] for v in values.values()}
+    for term in extra_terms:
+        if term and term.strip() and term not in values:
+            values[term] = {"kind": "open", "placeholder": "", "category": "rueckfrage", "term": term}
+        elif term in values:
+            values[term] = {**values[term], "kind": "open", "placeholder": "", "category": "rueckfrage"}
 
     try:
         mode = determine_viewer_mode(path)
@@ -207,7 +218,9 @@ def build_review(db: Session, document: Document, matter: Matter, conversation_i
             found, truncated = set(), False
         if data.pages:
             located_terms = {values[k]["term"] for k in found}
-            data.not_located = sorted({v["term"] for v in values.values()} - located_terms)
+            # Nur Funde DIESES Dokuments melden; Rueckfrage-Begriffe aus der Chat-Nachricht, die hier nicht vorkommen,
+            # sind kein Darstellungsproblem des Dokuments.
+            data.not_located = sorted(own_terms - located_terms)
             if any(p["has_text"] is False for p in data.pages):
                 data.limitations.append("Mindestens eine Seite enthält keine Textebene (Scan). Treffer aus der "
                                         "Texterkennung können dort nicht positionsgenau markiert werden.")
@@ -216,8 +229,11 @@ def build_review(db: Session, document: Document, matter: Matter, conversation_i
                 if missing:
                     data.limitations.append(
                         f"{len(missing)} Kopf-/Fußzeile(n) dieses Word-Dokuments erscheinen in der Seitenansicht "
-                        "nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten. "
-                        "Tabellenrahmen werden ebenfalls nicht dargestellt.")
+                        "nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten.")
+                images = unrendered_image_count(path)
+                if images:
+                    data.limitations.append(f"{images} Bild(er)/Grafik(en) dieses Word-Dokuments werden in der "
+                                            "Seitenansicht nicht dargestellt (Text in Bildern wird nicht geprüft).")
             if truncated:
                 data.limitations.append(f"Markierungen werden für die ersten {MAX_MARKED_PAGES} Seiten angezeigt.")
             if data.not_located:

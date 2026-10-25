@@ -176,8 +176,9 @@ def test_upload_without_text_and_the_upload_notice_is_visible(client, db_session
     events = _upload(client, content="")
     assert events[1]["text_kept"] is False and "text_not_sent" not in events[1]["target"]
     page = client.get(events[1]["target"].split("#")[0]).text
-    assert 'id="upload-notice"' in page and "noch keine KI-Verarbeitung" in page
-    assert 'id="document-protect-btn"' in page  # Pruefen und Markieren direkt hier
+    # 26.10.2026: Hinweis und Namensschutz im zentralen Pop-up ueber dem Chat (keine Dokumentspalte mehr)
+    assert 'id="pseudonymization-center"' in page and "noch keine KI-Verarbeitung" in page
+    assert "data-pseudo-protect-form" in page  # Pruefen und Markieren direkt im Pop-up
     chat_page = client.get(f"/dashboard/chat/{events[0]['conversation_id']}").text
     assert "chat-message--upload" in chat_page and "beim Hochladen keine KI-Verarbeitung" in chat_page
     assert writer.received_payloads == []

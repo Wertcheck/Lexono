@@ -201,7 +201,12 @@ def test_review_links_to_the_highlighted_finding_in_the_attached_document(client
     assert candidate["document_url"].startswith(f"/dashboard/chat/{review['conversation_id']}/document/")
     page = client.get(candidate["document_url"].split("#")[0])
     assert page.status_code == 200
-    assert '<mark class="pii-highlight pii-highlight--review" id="review-mark"' in page.text
+    # 26.10.2026: die Fundstelle wird im zentralen Pop-up an ihrer Position im Dokument markiert (keine Spalte mehr)
+    doc_id = candidate["document_url"].split("/document/")[1].split("?")[0]
+    assert f'data-open-document="{doc_id}"' in page.text
+    data = client.get(f"/dashboard/chat/{review['conversation_id']}/document/{doc_id}/pseudonymization-review",
+                      params={"terms": "Richter"}).json()
+    assert any(m["term"] == "Richter" and m["kind"] == "open" for p in data["pages"] for m in p["marks"])
     assert writer.received_payloads == []
 
 

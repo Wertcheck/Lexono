@@ -357,17 +357,16 @@ def test_document_view_uses_a_pseudonymization_dialog_and_offers_confirm_and_gen
     doc = _doc_of_conversation(db_session, conversation_id)
 
     page = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}").text
-    # P2: Dialog + kompakter Oeffnen-Button vorhanden; die alte, dauerhaft sichtbare Seitenspalte (<aside>) ist weg.
-    assert 'id="pseudonymization-dialog"' in page
-    assert "data-pseudonymization-open" in page and "Pseudonymisierung anzeigen" in page
-    assert '<aside class="chat-context-pane"' not in page
-    # Die Details (reale erkannte Kategorien) liegen jetzt im Dialog-Body.
-    assert 'class="modal__body chat-context-pane"' in page
-    # P4: kombinierter Button mit der Konversations-/Dokument-Zuordnung.
-    assert "data-confirm-release-generate" in page
+    # 26.10.2026: KEINE Dokumentspalte mehr; der zentrale Pop-up-Dialog oeffnet sich fuer dieses Dokument ueber dem
+    # Chat (Bestaetigen-Beschriftung kommt aus der Dokumentliste, sobald ein offener Auftrag besteht).
+    assert '<aside class="chat-context-pane"' not in page and 'class="chat-document-pane"' not in page
+    assert 'id="pseudonymization-center"' in page
     assert f'data-conversation-id="{conversation_id}"' in page
-    assert f'data-document-id="{doc.id}"' in page
-    assert "Pseudonymisierung bestätigen und Schriftsatz erstellen" in page
+    assert f'data-open-document="{doc.id}"' in page
+    _send_order(client, conversation_id)
+    listing = client.get(f"/dashboard/chat/{conversation_id}/pseudonymization-documents").json()
+    assert listing["order_label"] == "Schriftsatz erstellen"
+    assert [d["id"] for d in listing["documents"]] == [doc.id] and listing["documents"][0]["needs_confirmation"]
 
 
 # --- Autorisierung + Anti-Doppelauftrag (Review 23.10.2026) -----------------------------------------------------------

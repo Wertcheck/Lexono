@@ -144,8 +144,8 @@ def test_review_of_docx_marks_table_cells_and_names_the_layout_limitation(client
     data = _review(client, conversation_id, doc)
     assert data["viewer_kind"] == "pages" and data["pages"]
     assert any("DOCX" in note and "abweichen" in note for note in data["limitations"])  # transparent benannt
-    # gemessene Grenze: Kopf-/Fusszeilen erscheinen in der DOCX-Seitenansicht nicht -> ausdruecklich gemeldet
-    assert any("Kopf-/Fußzeile" in note and "nicht" in note for note in data["limitations"])
+    # 26.10.2026: lokaler DOCX-Satz setzt Kopf-/Fusszeilen -> keine Luecken-Meldung mehr
+    assert not any("Kopf-/Fußzeile(n)" in note for note in data["limitations"])
     marked = {m["term"] for p in data["pages"] for m in p["marks"]}
     assert any("Berger" in term for term in marked)  # Name in der Tabellenzelle an seiner Position
     assert "Richter" in {c["term"] for c in data["candidates"]}
@@ -223,8 +223,8 @@ def test_schriftsatz_entry_confirm_with_dialog_decisions_drafts_pseudonymized(cl
     pseudonymisiert und es gibt KEINE zweite Rueckfrage im Chat."""
     conversation_id, doc = pdf_case
     _order(client, conversation_id, AUFTRAG)
-    page = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}").text
-    assert "Pseudonymisierung bestätigen und Schriftsatz erstellen" in page
+    listing = client.get(f"/dashboard/chat/{conversation_id}/pseudonymization-documents").json()
+    assert listing["order_label"] == "Schriftsatz erstellen" and listing["has_open_order"] is True
     events = _confirm(client, conversation_id, doc, [{"term": "Richter", "decision": "personal"}])
     assert not [e for e in events if e["kind"] == "review"]
     assert next(e for e in events if e["kind"] == "done").get("blocked") is not True
@@ -250,8 +250,9 @@ def test_analysis_entry_uses_the_same_dialog_and_continues_the_analysis(client, 
     blocked = _order(client, conversation_id, ANALYSE)
     assert next(e for e in blocked if e["kind"] == "done").get("blocked") is True  # Dokument-Gate
     page = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}").text
-    assert 'id="pseudonymization-center"' in page
-    assert "Pseudonymisierung bestätigen und Analyse fortsetzen" in page
+    assert 'id="pseudonymization-center"' in page and f'data-open-document="{doc.id}"' in page
+    listing = client.get(f"/dashboard/chat/{conversation_id}/pseudonymization-documents").json()
+    assert listing["order_label"] == "Analyse fortsetzen"
     events = _confirm(client, conversation_id, doc, [{"term": "Richter", "decision": "not_personal"}])
     assert not [e for e in events if e["kind"] == "review"]
     done = next(e for e in events if e["kind"] == "done")
@@ -266,10 +267,8 @@ def test_analysis_entry_uses_the_same_dialog_and_continues_the_analysis(client, 
 def test_without_an_open_order_the_dialog_is_review_only_and_confirm_refuses(client, db_session, writer, pdf_case) -> None:
     """Nur hochgeladen (§57): kein Auftrag -> keine Fortsetzung, keine Weiterverarbeitung."""
     conversation_id, doc = pdf_case
-    page = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}").text
-    center = page[page.index('id="pseudonymization-center"'):]
-    center = center[:center.index("</dialog>")]
-    assert "data-pseudo-center-confirm" not in center and "Kein offener Auftrag" in center
+    listing = client.get(f"/dashboard/chat/{conversation_id}/pseudonymization-documents").json()
+    assert listing["has_open_order"] is False and listing["order_label"] == ""  # Dialog = reine Pruefansicht
     events = _confirm(client, conversation_id, doc, [{"term": "Richter", "decision": "personal"}])
     assert events[0]["message_id"] is None and "keinen offenen Auftrag" in events[0]["content"]
     assert writer.received_payloads == []
@@ -299,19 +298,160 @@ def test_an_answered_order_is_never_reprocessed_after_a_new_upload(client, db_se
 # --- Chat-Oberflaeche unveraendert ------------------------------------------------------------------------------------
 
 
-def test_chat_page_without_a_document_contains_no_dialog_and_keeps_its_controls(client, db_session, writer) -> None:
+def test_chat_page_keeps_its_controls_and_offers_the_dialog_closed(client, db_session, writer) -> None:
+    """Der Chat bleibt die Arbeitsflaeche: der zentrale Dialog ist auf jeder Chat-Seite vorhanden, aber geschlossen
+    und ohne Dokument; alle bisherigen Bedienelemente bleiben."""
     login_as_admin(db_session, client)
     page = client.get("/dashboard/chat").text
-    assert 'id="pseudonymization-center"' not in page and "pseudonymization_center.js" not in page
-    for marker in ('id="privacy-review-dialog"', 'class="chat-privacy-corner"', "chat-quick-action"):
+    center = page[page.index('<dialog id="pseudonymization-center"'):]
+    center = center[:center.index(">")]
+    assert " open" not in center and 'data-open-document=""' in center
+    for marker in ('id="privacy-review-dialog"', 'class="chat-privacy-corner"', "chat-quick-action",
+                   'id="sidebar-collapse-toggle"', "/dashboard/static/js/pseudonymization_center.js"):
         assert marker in page
+    assert 'class="chat-document-pane"' not in page and "chat-shell--document-view" not in page
 
 
-def test_document_view_offers_both_entry_buttons_and_keeps_the_existing_dialog(client, db_session, writer, pdf_case) -> None:
+def test_document_view_is_the_chat_with_the_dialog_opened_for_that_document(client, db_session, writer, pdf_case) -> None:
+    """Ursache der frueheren Dokumentspalte (`viewing_document` -> `chat-document-pane`) ist beseitigt: die
+    Dokumentansicht zeigt den unveraenderten Chat und oeffnet den Dialog fuer genau dieses Dokument."""
     conversation_id, doc = pdf_case
     _order(client, conversation_id, AUFTRAG)
     page = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}").text
+    assert 'class="chat-document-pane"' not in page and "chat-shell--document-view" not in page
+    assert 'id="document-text"' not in page
+    assert f'data-open-document="{doc.id}"' in page and f'data-conversation-id="{conversation_id}"' in page
+    assert 'id="chat-messages"' in page or "chat-message--user" in page  # Chat-Verlauf ist sichtbar
+    # Sperrhinweis im Chat bietet den Dialog an (offener Auftrag + freigabepflichtiges Dokument)
     assert "data-pseudonymization-center-open" in page and "Pseudonymisierung prüfen" in page
-    assert 'id="pseudonymization-dialog"' in page  # bisherige Details/Schnellaktionen bleiben
-    assert f'data-conversation-id="{conversation_id}"' in page and f'data-document-id="{doc.id}"' in page
-    assert "/dashboard/static/js/pseudonymization_center.js" in page
+    # Anhang-Chip oeffnet denselben Dialog statt einer Spalte
+    assert f'data-pseudo-document-link data-document-id="{doc.id}"' in page
+
+
+def test_dialog_document_list_covers_all_documents_of_the_conversation(client, db_session, writer) -> None:
+    login_as_admin(db_session, client)
+    release.set_mode(db_session, release.MODE_AUTO_REVIEW, actor="test")
+    conversation_id = _upload(client, "a.pdf", _pdf_multipage(), "application/pdf")
+    _parse_sse_events(client.post(
+        "/dashboard/chat/send-stream", files={"documents": ("b.docx", _docx_with_table(),
+                                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        data={"upload_token": extract_upload_token(client.get(f"/dashboard/chat/{conversation_id}").text),
+              "csrf_token": _csrf(client), "conversation_id": conversation_id, "content": ""},
+    ).text)
+    _order(client, conversation_id, AUFTRAG)
+    listing = client.get(f"/dashboard/chat/{conversation_id}/pseudonymization-documents")
+    assert listing.headers.get("cache-control") == "no-store"
+    docs = listing.json()["documents"]
+    assert [d["filename"] for d in docs] == ["a.pdf", "b.docx"]
+    assert all(d["needs_confirmation"] for d in docs) and all(d["text_version"] for d in docs)
+    assert writer.received_payloads == []
+
+
+def _two_document_case(client, db_session):
+    login_as_admin(db_session, client)
+    release.set_mode(db_session, release.MODE_AUTO_REVIEW, actor="test")
+    conversation_id = _upload(client, "a.pdf", _pdf_multipage(), "application/pdf")
+    _parse_sse_events(client.post(
+        "/dashboard/chat/send-stream", files={"documents": ("b.docx", _docx_with_table(),
+                                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        data={"upload_token": extract_upload_token(client.get(f"/dashboard/chat/{conversation_id}").text),
+              "csrf_token": _csrf(client), "conversation_id": conversation_id, "content": ""},
+    ).text)
+    from app.models import Document
+
+    docs = db_session.query(Document).order_by(Document.created_at).all()
+    return conversation_id, docs
+
+
+def _confirm_many(client, conversation_id, docs, decisions, *, versions=None):
+    versions = versions or [release.text_version_of(d.extracted_text) for d in docs]
+    return _parse_sse_events(client.post(f"/dashboard/chat/{conversation_id}/confirm-release-and-generate", data={
+        "csrf_token": _csrf(client), "document_id": docs[0].id, "text_version": versions[0],
+        "documents": json.dumps([{"document_id": d.id, "text_version": v} for d, v in zip(docs[1:], versions[1:])]),
+        "decisions": json.dumps(decisions), "require_resolved": "1"}).text)
+
+
+def test_multi_document_confirm_releases_all_documents_with_one_decision_set(client, db_session, writer) -> None:
+    conversation_id, docs = _two_document_case(client, db_session)
+    _order(client, conversation_id, AUFTRAG)
+    events = _confirm_many(client, conversation_id, docs, [{"term": "Richter", "decision": "personal"}])
+    assert not [e for e in events if e["kind"] == "review"]
+    assert next(e for e in events if e["kind"] == "done").get("blocked") is not True
+    assert len(writer.received_payloads) == 1
+    sent = writer.received_payloads[0].model_dump_json()
+    assert "Richter" not in sent and "Thomas Berger" not in sent
+    db_session.expire_all()
+    assert all(release.release_status(db_session, d).state in release.RELEASED_STATES for d in docs)
+
+
+def test_multi_document_confirm_rejects_a_stale_second_document(client, db_session, writer) -> None:
+    conversation_id, docs = _two_document_case(client, db_session)
+    _order(client, conversation_id, AUFTRAG)
+    events = _confirm_many(client, conversation_id, docs, [{"term": "Richter", "decision": "personal"}],
+                           versions=[release.text_version_of(docs[0].extracted_text), "veraltet"])
+    assert events[0]["message_id"] is None and "geändert" in events[0]["content"]
+    db_session.expire_all()
+    assert db_session.query(PrivacyDecision).count() == 0 and writer.received_payloads == []
+
+
+def test_multi_document_confirm_rejects_a_foreign_document(client, db_session, writer) -> None:
+    from app.models import Client as ClientModel, Document, Matter
+
+    conversation_id, docs = _two_document_case(client, db_session)
+    _order(client, conversation_id, AUFTRAG)
+    other = Matter(client=ClientModel(name="Fremd (synthetisch)"), title="Fremd", reference_number="2027/9")
+    db_session.add(other)
+    db_session.commit()
+    foreign = Document(matter_id=other.id, original_filename="fremd.txt", mime_type="text/plain",
+                       file_path="synthetic/fremd.txt", extracted_text="Fremder Text.", ocr_status="not_needed")
+    db_session.add(foreign)
+    db_session.commit()
+    events = _confirm_many(client, conversation_id, [docs[0], foreign], [{"term": "Richter", "decision": "personal"}])
+    assert events[0]["message_id"] is None and "nicht zu dieser Unterhaltung" in events[0]["content"]
+    assert writer.received_payloads == []
+
+
+def test_review_marks_chat_question_terms_at_their_position(client, db_session, writer, pdf_case) -> None:
+    """HITL aus dem Chat im selben Dialog: die vom Server gestellten Rueckfrage-Begriffe werden im Dokument an ihrer
+    Fundstelle als offene Rueckfrage markiert (`terms`); unbekannte Begriffe erzeugen keine falschen Markierungen."""
+    conversation_id, doc = pdf_case
+    data = client.get(f"/dashboard/chat/{conversation_id}/document/{doc.id}/pseudonymization-review",
+                      params=[("terms", "Kopfzeile"), ("terms", "Gibtesnicht")]).json()
+    marks = [m for p in data["pages"] for m in p["marks"] if m["kind"] == "open"]
+    assert {m["term"] for m in marks} >= {"Kopfzeile"} and len([m for m in marks if m["term"] == "Kopfzeile"]) == 2
+    assert not any(m["term"] == "Gibtesnicht" for m in marks)
+    # Begriffe aus der Chat-Nachricht, die im Dokument nicht vorkommen, sind KEIN Darstellungsproblem des Dokuments
+    assert "Gibtesnicht" not in data["not_located"]
+
+
+def test_docx_layout_renders_header_footer_and_table_borders(tmp_path) -> None:
+    import pymupdf
+
+    from app.documents.docx_layout import docx_pdf_bytes
+
+    import docx
+
+    plain = tmp_path / "plain.docx"
+    plain.write_bytes(_docx_with_table())  # Tabelle OHNE Rahmen
+    doc = pymupdf.open("pdf", docx_pdf_bytes(plain))
+    text = doc[0].get_text()
+    assert "Kopfzeile: Kanzlei Muster" in text and "Fusszeile: Seite 1" in text and "Thomas Berger" in text
+    assert doc[0].get_drawings() == []  # keine erfundenen Rahmen
+    grid_doc = docx.Document(str(plain))
+    grid_doc.tables[0].style = "Table Grid"
+    grid = tmp_path / "grid.docx"
+    grid_doc.save(str(grid))
+    drawn = pymupdf.open("pdf", docx_pdf_bytes(grid))[0].get_drawings()
+    assert drawn  # Tabellenrahmen ("Table Grid") werden gezeichnet
+
+
+def test_no_findings_document_has_no_questions_and_is_ok(client, db_session, writer) -> None:
+    import pymupdf
+
+    login_as_admin(db_session, client)
+    pdf = pymupdf.open()
+    pdf.new_page().insert_text((50, 80), "Die Abnahme der Bauleistung erfolgte vollstaendig.")
+    conversation_id = _upload(client, "leer.pdf", pdf.tobytes(), "application/pdf")
+    doc = _doc_of_conversation(db_session, conversation_id)
+    data = _review(client, conversation_id, doc)
+    assert data["status"] == "ok" and data["candidates"] == [] and data["result_text"]

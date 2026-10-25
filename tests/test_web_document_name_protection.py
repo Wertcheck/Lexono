@@ -292,8 +292,9 @@ def test_chat_upload_then_mark_in_the_chat_document_view_then_ask(client, db_ses
     assert [e["kind"] for e in events] == ["start", "uploaded"]
     assert events[1]["target"] == f"/dashboard/chat/{conversation_id}/document/{document.id}?uploaded=1&text_not_sent=1#name-protection"
     page = client.get(events[1]["target"].split("#")[0]).text
-    assert 'id="document-protect-btn"' in page and 'id="document-text"' in page
-    assert 'id="upload-notice"' in page and "noch keine KI-Verarbeitung" in page
+    # 26.10.2026: Pruefen + Namensschutz im zentralen Pop-up ueber dem Chat (keine Dokumentspalte mehr)
+    assert 'id="pseudonymization-center"' in page and f'data-open-document="{document.id}"' in page
+    assert "data-pseudo-protect-form" in page and "noch keine KI-Verarbeitung" in page
     response = _protect(client, document, ["Zweigelt"], return_to=f"chat:{conversation_id}")
     assert response.headers["location"].startswith(f"/dashboard/chat/{conversation_id}/document/{document.id}")
     assert "name_protection=saved" in response.headers["location"]

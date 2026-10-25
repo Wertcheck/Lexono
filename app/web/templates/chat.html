@@ -406,7 +406,7 @@
                          reine Icon-Chip-Fallback unveraendert. #}
                       {% set has_thumbnail = doc.file_path | document_has_thumbnail %}
                       <{{ chip_tag }}
-                        {% if has_preview %}href="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}"{% endif %}
+                        {% if has_preview %}href="/dashboard/chat/{{ active_conversation.id }}/document/{{ doc.id }}" data-pseudo-document-link data-document-id="{{ doc.id }}"{% endif %}
                         class="doc-chip chat-attachment-chip{% if has_preview %} chat-attachment-chip--link{% endif %}{% if has_thumbnail %} chat-attachment-chip--thumb{% endif %}"
                         {% if has_preview %}title="Dokument mit hervorgehobenen Mandantendaten öffnen"{% endif %}>
                         {% if has_thumbnail %}
@@ -511,7 +511,9 @@
                   </div>
                 {% else %}
                   <div class="chat-message__text chat-message__text--markdown" {% if message.role == "assistant" and not message.blocked %}id="chat-message-text-{{ message.id }}"{% endif %}>
-                    {% if message.blocked %}{{ icons.warning(class_="icon") }}<div class="chat-message__blocked-body">{{ review_parts[0] | chat_markdown | safe }}</div>{% else %}
+                    {% if message.blocked %}{{ icons.warning(class_="icon") }}<div class="chat-message__blocked-body">{{ review_parts[0] | chat_markdown | safe }}{% if message.id == pseudo_pending_message_id %}
+                      {# 26.10.2026: offener Auftrag am freigabepflichtigen Dokument -> zentraler Dialog ueber dem Chat #}
+                      <p class="chat-message__pseudo-action"><button type="button" class="btn btn--primary" data-pseudonymization-center-open>Pseudonymisierung prüfen</button></p>{% endif %}</div>{% else %}
                     {{ review_parts[0] | chat_markdown | safe }}{% endif %}
                   </div>
                 {% endif %}
@@ -790,164 +792,21 @@
       </div>
     </section>
 
-    {% if viewing_document %}
-      {# Dokument-Vorschau (Mitte) + Pseudonymisierungs-Kontextleiste
-         (rechts) - Masterprompt V2, Task #62. Zeigt den bereits lokal
-         extrahierten Dokumenttext mit denselben Hervorhebungen, die auch
-         der echte Pseudonymisierungslauf erkennen wuerde (siehe
-         app/chat/document_preview.py) - NUR reale erkannte Kategorien,
-         keine erfundene Datenlogik. #}
-      <section class="chat-document-pane">
-        {% if document_preview and document_preview.highlighted_html %}
-          {% if upload_notice %}
-            {# §57: Upload ohne KI-Verarbeitung - hier pruefen und schuetzen, erst danach bewusst senden #}
-            <p class="form-hint" id="upload-notice">
-              Hochgeladen und lokal ausgelesen – <strong>noch keine KI-Verarbeitung</strong>, nichts wurde an die Cloud
-              gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden.
-              {% if upload_text_not_sent %}Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte – sonst bitte erneut eingeben.{% endif %}
-            </p>
-          {% endif %}
-          {% if release_status and viewing_document.matter_id %}
-            {# §62 Dokumentfreigabe: Status am Dokument (dezent, dauerhaft) #}
-            {{ document_release.panel(release_status, active_conversation.matter, viewing_document, csrf_token,
-                                      release_show_notice, release_can_manage, "chat:" ~ active_conversation.id,
-                                      release_released, release_error, release_current_path,
-                                      release_order_label or "Schriftsatz erstellen") }}
-          {% endif %}
-          {# §56: nicht erkannte Namen im angehaengten Dokument markieren und fuer die Akte schuetzen #}
-          {{ name_protection.document_controls("/dashboard/matters/" ~ active_conversation.matter_id ~ "/document/" ~ viewing_document.id ~ "/protect-names",
-                                               document_text_version, csrf_token, "chat:" ~ active_conversation.id,
-                                               name_protection_saved, name_protection_error) }}
-          {# Pseudonymisierung (23.10.2026): kompakter Status + Button statt der schmalen Seitenspalte, die den
-             A4-Text quetschte. Die Details oeffnen sich in einem zentrierten Dialog (unten); Oeffnen/Schliessen
-             aendert keinen Workflow-Zustand. #}
-          <div class="chat-pseudonymization-summary">
-            <span class="tag tag--matched"><span class="tag__dot"></span>Lokal analysiert &amp; pseudonymisiert</span>
-            <span class="chat-pseudonymization-summary__count">
-              {{ document_preview.entities | length if document_preview else 0 }} erkannte Mandantendaten
-            </span>
-            {# 25.10.2026: oeffnet den zentralen Pseudonymisierungsdialog (Seitenansicht, Markierungen, Rueckfragen);
-               die bisherigen Details/Schnellaktionen bleiben ueber "Pseudonymisierung anzeigen" erreichbar. #}
-            <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
-                    data-pseudonymization-center-open aria-haspopup="dialog" aria-controls="pseudonymization-center">
-              Pseudonymisierung prüfen
-            </button>
-            <button type="button" class="btn btn--ghost chat-pseudonymization-summary__open"
-                    data-pseudonymization-open aria-haspopup="dialog" aria-controls="pseudonymization-dialog">
-              Pseudonymisierung anzeigen
-            </button>
-          </div>
-          <div class="chat-document-pane__text" id="document-text">{{ document_preview.highlighted_html | safe }}</div>
-        {% else %}
-          <div class="chat-document-pane__empty">
-            Für dieses Dokument liegt (noch) kein extrahierter Text vor.
-          </div>
-        {% endif %}
-      </section>
-
-      {# Zentrierter, optionaler Dialog mit den REALEN Ergebnissen dieses Dokuments (ersetzt die Seitenspalte). #}
-      <dialog id="pseudonymization-dialog" class="modal modal--large" aria-labelledby="pseudonymization-dialog-title">
-        <div class="modal__header">
-          <h2 class="modal__title" id="pseudonymization-dialog-title">
-            {{ icons.check(class_="icon") }}
-            <span>Pseudonymisierung</span>
-          </h2>
-          <button type="button" class="modal__close" data-pseudonymization-dialog-close aria-label="Schließen">✕</button>
-        </div>
-        <div class="modal__body chat-context-pane">
-        <div class="chat-context-pane__status">
-          <span class="tag tag--matched">Abgeschlossen</span>
-        </div>
-
-        {# KI-Analyse-Transparenzkarte (UI/UX-Ueberarbeitung, Phase 5,
-           13.09.) - macht sichtbar, WAS technisch bereits passiert ist
-           (Presidio-Erkennung lokal auf diesem Rechner), bevor irgendein
-           Cloud-KI-Aufruf stattfindet - eine wahre, bereits durch die
-           bestehende Architektur zutreffende Aussage, keine neue
-           Funktion. #}
-        <div class="chat-transparency-card">
-          {{ icons.shield(class_="icon") }}
-          <div class="chat-transparency-card__text">
-            <strong>Lokal analysiert.</strong>
-            Mandantendaten in diesem Dokument wurden mit Presidio
-            <em>lokal auf diesem Rechner</em> erkannt. Nur bei einer
-            KI-Anfrage zu diesem Dokument wird der Text zusätzlich lokal
-            pseudonymisiert - unpseudonymisierte Daten verlassen diesen
-            Rechner nie.
-          </div>
-        </div>
-
-        <div class="chat-context-pane__section-title">Schnellaktionen</div>
-        <div class="chat-context-pane__actions">
-          <button type="button" class="chat-quick-action chat-quick-action--compact"
-                  data-prefill="Bitte entwirf auf Basis von „{{ viewing_document.original_filename }}“ eine Antwort auf dieses Dokument.">
-            <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
-            <span>Antwort entwerfen</span>
-          </button>
-          <button type="button" class="chat-quick-action chat-quick-action--compact"
-                  data-prefill="Bitte pruefe „{{ viewing_document.original_filename }}“ auf Fristen und rechtliche Risiken und fasse sie zusammen.">
-            <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.clock(class_="icon") }}</span>
-            <span>Fristen &amp; Risiken pruefen</span>
-          </button>
-          <button type="button" class="chat-quick-action chat-quick-action--compact"
-                  data-prefill="Bitte fasse „{{ viewing_document.original_filename }}“ in wenigen Saetzen zusammen.">
-            <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
-            <span>Zusammenfassung erstellen</span>
-          </button>
-        </div>
-        <div class="chat-context-pane__section-title">
-          Erkannte Mandantendaten
-          <span class="chat-context-pane__count">{{ document_preview.entities | length if document_preview else 0 }}</span>
-        </div>
-        {% if document_preview and document_preview.entities %}
-          <ul class="chat-context-pane__entity-list">
-            {% for entity in document_preview.entities %}
-              <li class="chat-context-pane__entity">
-                <span class="pii-highlight pii-highlight--{{ entity.category }} chat-context-pane__entity-dot"></span>
-                <span class="chat-context-pane__entity-label">{{ entity.label }}</span>
-                <span class="chat-context-pane__entity-value">{{ entity.value }}</span>
-                {% if entity.count > 1 %}
-                  <span class="chat-context-pane__entity-count">×{{ entity.count }}</span>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div class="chat-context-pane__empty">Keine Mandantendaten erkannt.</div>
-        {% endif %}
-        <div class="chat-context-pane__section-title">Dokumentstatus</div>
-        <dl class="chat-context-pane__meta">
-          <dt>Datei</dt>
-          <dd>{{ viewing_document.original_filename }}</dd>
-          <dt>Verarbeitung</dt>
-          <dd>{{ "Abgeschlossen" if viewing_document.ocr_status in ("done", "not_needed") else viewing_document.ocr_status }}</dd>
-        </dl>
-        {% if viewing_document.matter_id %}
-          {# "Herunterladen" (16.09., UI/UX-Sweep - Referenz
-             `02_chat_dokumentkontext.png`) - derselbe Download-Endpunkt
-             wie in matter_document.html, keine zweite Serving-Logik. Nur
-             wenn das Dokument bereits einer Akte zugeordnet ist (bei
-             Chat-Uploads immer der Fall, siehe ChatService.attach_document -
-             ein neuer Schnellentwurf legt die Akte VOR dem Anhang an). #}
-          <a class="chat-context-pane__download"
-             href="/dashboard/matters/{{ viewing_document.matter_id }}/document/{{ viewing_document.id }}/download">
-            {{ icons.download(class_="icon") }}
-            <span>Herunterladen</span>
-          </a>
-        {% endif %}
-        </div>{# .modal__body.chat-context-pane #}
-      </dialog>
-      {% if viewing_document.matter_id and release_status %}
-        {{ pseudonymization_center.dialog(active_conversation.id, viewing_document, release_status.text_version,
-                                          release_order_label, release_can_manage) }}
-      {% endif %}
-    {% endif %}
+    {# 26.10.2026: KEINE separate Dokumentspalte mehr (frueher `chat-document-pane` neben dem Chat, ausgeloest durch
+       `viewing_document`). Dokumentvorschau, Markierungen, Dokumentauswahl, Namensschutz und ALLE Datenschutz-
+       Rueckfragen laufen im zentralen Pop-up `#pseudonymization-center` ueber dem unveraenderten Chat (unten). #}
   </div>
 
   {# Human in the Loop (23.10.2026): zentrierter Dialog fuer die Datenschutz-Rueckfrage statt einer in die
      Chat-Blase gequetschten Karte. Schliessen beantwortet NICHTS (nur die Options-Buttons entscheiden); die
      kompakte Statuszeile in der Blase oeffnet den Dialog erneut. Faellt `<dialog>` aus, rendert showPrivacyReview
      unveraendert in die Blase (Fallback). #}
+  {# Zentraler Pseudonymisierungsdialog (26.10.2026): EIN Pop-up fuer Dokumentvorschau, Dokumentauswahl,
+     Markierungen und alle HITL-Rueckfragen. Der fruehere HITL-Dialog unten bleibt nur als Rueckfall ohne Skript. #}
+  {{ pseudonymization_center.dialog(active_conversation.id if active_conversation else "",
+                                    active_conversation.matter_id if active_conversation else "",
+                                    pseudo_can_manage, pseudo_open_document, pseudo_notice, pseudo_notice_kind) }}
+
   <dialog id="privacy-review-dialog" class="modal modal--medium" aria-labelledby="privacy-review-dialog-title">
     <div class="modal__header">
       <h2 class="modal__title" id="privacy-review-dialog-title">Datenschutz-Rückfrage</h2>
@@ -2357,6 +2216,18 @@
             window.history.replaceState(null, "", reviewPath);
           }
         }
+        // 26.10.2026: Rueckfragen laufen im ZENTRALEN Pseudonymisierungsdialog (Fragen + Dokumentvorschau mit den
+        // Fundstellen im selben Pop-up). Antworten gehen unveraendert ueber onSubmitted -> privacy-review an den Server;
+        // Abbrechen sendet nichts, die Blase behaelt "Rückfrage öffnen".
+        var center = window.LexonoPseudonymizationCenter;
+        if (center) {
+          var reopen = { open: false, showModal: function () {
+            center.openReview(payload, function (decisions) { onSubmitted(decisions); }, function () {});
+          } };
+          renderPrivacyBubbleStatus(bubble, reopen);
+          reopen.showModal();
+          return;
+        }
         var dialog = privacyDialog();
         var body;
         if (dialog) {
@@ -2695,6 +2566,11 @@
                     payload.content, thinkingBubble, userBubble, pendingContent, pendingFiles
                   );
                   return;
+                }
+                if (payload.blocked && conversationId) {
+                  // 26.10.2026: nach einer Sperre am Dokument-Gate den zentralen Pseudonymisierungsdialog direkt
+                  // ueber dem Chat oeffnen (nur wenn der Server einen offenen Auftrag + freigabepflichtiges Dokument meldet)
+                  try { window.sessionStorage.setItem("lexono-open-pseudo-" + conversationId, "1"); } catch (e) { /* ohne Speicher: Button im Hinweis */ }
                 }
                 finish(conversationId);
               }

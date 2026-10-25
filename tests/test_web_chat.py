@@ -1303,34 +1303,19 @@ def test_document_workspace_shows_highlighted_pii_and_context_panel(
         f"/dashboard/chat/{conversation.id}/document/{document.id}"
     )
     assert workspace_response.status_code == 200
-    assert "chat-shell--document-view" in workspace_response.text
-    assert "mandantenbrief.pdf" in workspace_response.text
-    # "Herunterladen" (16.09., UI/UX-Sweep) - derselbe Download-Endpunkt
-    # wie in matter_document.html, siehe tests/test_web_matters.py fuer
-    # die eigentlichen Download-Verhaltenstests.
-    assert (
-        f"/dashboard/matters/{conversation.matter_id}/document/{document.id}/download"
-        in workspace_response.text
-    )
-    assert "mandant@beispielkanzlei.de" in workspace_response.text
-    assert 'pii-highlight--email' in workspace_response.text
-    assert "Pseudonymisierung" in workspace_response.text
-    assert "Erkannte Mandantendaten" in workspace_response.text
-    # KI-Analyse-Transparenzkarte (Phase 5, 13.09.).
-    assert "chat-transparency-card" in workspace_response.text
-    assert "Lokal analysiert." in workspace_response.text
-
-    # Schnellaktionen im Dokument-Workspace (Referenzbild "Antwort
-    # entwerfen"/"Fristen & Risiken pruefen"/"Zusammenfassung erstellen")
-    # nutzen denselben Prefill-Mechanismus wie die leeren Chat-Quick-Actions
-    # und referenzieren den echten Dateinamen - keine neue Sende-Logik.
-    assert "Schnellaktionen" in workspace_response.text
-    assert "Antwort entwerfen" in workspace_response.text
-    assert "Fristen &amp; Risiken pruefen" in workspace_response.text
-    assert "Zusammenfassung erstellen" in workspace_response.text
-    assert "mandantenbrief.pdf" in workspace_response.text.split("Schnellaktionen", 1)[1].split(
-        "Erkannte Mandantendaten", 1
-    )[0]
+    # 26.10.2026: KEINE separate Dokumentspalte mehr - die Dokumentansicht ist der Chat dieser Unterhaltung, ueber
+    # dem der zentrale Pseudonymisierungsdialog fuer DIESES Dokument geoeffnet wird.
+    assert "chat-shell--document-view" not in workspace_response.text
+    assert 'class="chat-document-pane"' not in workspace_response.text
+    assert 'id="pseudonymization-center"' in workspace_response.text
+    assert f'data-open-document="{document.id}"' in workspace_response.text
+    assert "mandantenbrief.pdf" in workspace_response.text  # Anhang-Chip im unveraenderten Chat
+    # Die erkannte E-Mail kommt aus der zentralen Pruefung und wird im Dialog markiert/ersetzt.
+    review = client.get(
+        f"/dashboard/chat/{conversation.id}/document/{document.id}/pseudonymization-review"
+    ).json()
+    assert any(m["original"] == "mandant@beispielkanzlei.de" for m in review["mappings"])
+    assert "mandant@beispielkanzlei.de" not in review["result_text"]
 
 
 def test_document_workspace_rejects_document_from_other_conversation(

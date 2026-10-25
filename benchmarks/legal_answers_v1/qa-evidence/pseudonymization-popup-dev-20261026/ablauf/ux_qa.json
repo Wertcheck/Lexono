@@ -1,0 +1,565 @@
+{
+ "base": "http://127.0.0.1:8063",
+ "auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert": true
+ },
+ "dokumentliste": {
+  "documents": [
+   {
+    "id": "1f0b5d9e-ebd2-441a-84bd-877bcae87e70",
+    "filename": "QA-SYNTH-Einspruch.pdf",
+    "release_state": "decision",
+    "text_version": "438f1f7fdaa3c8d3bc78265232923ec9",
+    "needs_confirmation": true
+   },
+   {
+    "id": "da086632-8025-4ea6-b46b-d94dac991ac3",
+    "filename": "QA-SYNTH-Sachstand.docx",
+    "release_state": "decision",
+    "text_version": "168afff19207a89b0bc818f3a765bb9f",
+    "needs_confirmation": true
+   }
+  ],
+  "order_label": "Schriftsatz erstellen",
+  "has_open_order": true
+ },
+ "db_vorher": {
+  "privacy_decisions": 8,
+  "document_releases": 0
+ },
+ "A-chat-ohne-dialog": {
+  "sha256": "5e2ba91c9923b12d",
+  "zustand": {
+   "dialog_offen": false,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 0,
+   "dialog_hoehe": 0,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seiten": 0,
+   "markiert_masked": 0,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 0,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Bestätigen",
+   "fusszeile": "",
+   "seite_info": "",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": ""
+  }
+ },
+ "B_klick": "ok",
+ "B-popup-markiertes-pdf": {
+  "sha256": "968e6f407d03170c",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf1",
+    "QA-SYNTH-Sachstand.docx2"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf1",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 10,
+   "markiert_offen": 1,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 2,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "E_klick": "ok",
+ "E-hitl-rueckfrage-mit-vorschau": {
+  "sha256": "dfa03345625460c1",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf1",
+    "QA-SYNTH-Sachstand.docx2"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf1",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 10,
+   "markiert_offen": 1,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 2,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "H_klick": "ok",
+ "H-offene-rueckfrage-bestaetigen-gesperrt": {
+  "sha256": "0e0f896397278d4a",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx1"
+   ],
+   "aktiver_tab": "QA-SYNTH-Sachstand.docx1",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 1,
+   "markiert_masked": 6,
+   "markiert_offen": 1,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 1",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt."
+  }
+ },
+ "C-popup-originalansicht": {
+  "sha256": "971df6b17a7862c6",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx1"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Original",
+   "seiten": 3,
+   "markiert_masked": 0,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "D-popup-pseudonymisiertes-ergebnis": {
+  "sha256": "e3631b6d4d70e32e",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx1"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Pseudonymisiertes Ergebnis",
+   "seiten": 0,
+   "markiert_masked": 0,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "–",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "K-zoom-140-seite-2": {
+  "sha256": "033b6f5f8f244e16",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx1"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 2 / 3",
+   "zoom": "140 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "F_klick": "ok",
+ "F-G-mehrere-dokumente-docx-mit-tabelle": {
+  "sha256": "a9945b98b925627b",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx1"
+   ],
+   "aktiver_tab": "QA-SYNTH-Sachstand.docx1",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 1,
+   "markiert_masked": 6,
+   "markiert_offen": 1,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 1",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt."
+  }
+ },
+ "entscheidung_nach_wechsel": "personal",
+ "I_klicks": 1,
+ "I_klicks_2": 0,
+ "I-alle-beantwortet-bestaetigen-aktiv": {
+  "sha256": "3f3bf6a851d18723",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx✓"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": false,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "J-abbruch-zurueck-im-chat": {
+  "sha256": "4dc0436df68389ff",
+  "zustand": {
+   "dialog_offen": false,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 0,
+   "dialog_hoehe": 0,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx✓"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 2,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": false,
+   "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+   "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "nach_abbruch_db": {
+  "privacy_decisions": 8,
+  "document_releases": 0
+ },
+ "M_vor_bestaetigen": {
+  "dialog_offen": true,
+  "dokumentspalte_vorhanden": false,
+  "chat_sichtbar": true,
+  "dialog_breite": 1180,
+  "dialog_hoehe": 936,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dok_tabs": [
+   "QA-SYNTH-Einspruch.pdf✓",
+   "QA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "QA-SYNTH-Sachstand.docx✓",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "footer_sichtbar": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt."
+ },
+ "M-nach-bestaetigung-zurueck-im-chat": {
+  "sha256": "f2d653820021a7ee",
+  "zustand": {
+   "dialog_offen": false,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 0,
+   "dialog_hoehe": 0,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seiten": 0,
+   "markiert_masked": 0,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 0,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Bestätigen",
+   "fusszeile": "",
+   "seite_info": "",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": ""
+  }
+ },
+ "M_pfad": "/dashboard/chat/0d13eb02-abc8-42c9-8a06-3b9347fb611e",
+ "L-hitl-beim-senden-im-selben-popup": {
+  "sha256": "259390bcbe49280c",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx✓"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 1,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Antworten übernehmen und fortfahren",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "L_fragen": [
+  "Ruecksicht"
+ ],
+ "L2-rueckfrage-abgebrochen-chat": {
+  "sha256": "d8b76c028e3d6f77",
+  "zustand": {
+   "dialog_offen": false,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 0,
+   "dialog_hoehe": 0,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx✓"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 1,
+   "fragen_offen": 1,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Antworten übernehmen und fortfahren",
+   "fusszeile": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "L2_blase": "Rückfrage öffnen",
+ "L3_wieder_oeffnen": true,
+ "L3-rueckfrage-beantwortet": {
+  "sha256": "f959b512f3c7467d",
+  "zustand": {
+   "dialog_offen": true,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 1180,
+   "dialog_hoehe": 936,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [
+    "QA-SYNTH-Einspruch.pdf✓",
+    "QA-SYNTH-Sachstand.docx✓"
+   ],
+   "aktiver_tab": "QA-SYNTH-Einspruch.pdf✓",
+   "ansicht": "Markierte Vorschau",
+   "seiten": 3,
+   "markiert_masked": 11,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 1,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": false,
+   "bestaetigen_text": "Antworten übernehmen und fortfahren",
+   "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+   "seite_info": "Seite 1 / 3",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  }
+ },
+ "L4-nach-antwort-zurueck-im-chat": {
+  "sha256": "7559836e6a21e65a",
+  "zustand": {
+   "dialog_offen": false,
+   "dokumentspalte_vorhanden": false,
+   "chat_sichtbar": true,
+   "dialog_breite": 0,
+   "dialog_hoehe": 0,
+   "fenster": [
+    1600,
+    1000
+   ],
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seiten": 0,
+   "markiert_masked": 0,
+   "markiert_offen": 0,
+   "markiert_lesbar": 0,
+   "fragen": 0,
+   "fragen_offen": 0,
+   "bestaetigen_gesperrt": true,
+   "bestaetigen_text": "Bestätigen",
+   "fusszeile": "",
+   "seite_info": "",
+   "zoom": "100 %",
+   "footer_sichtbar": true,
+   "hinweise": ""
+  }
+ }
+}

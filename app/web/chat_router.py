@@ -35,7 +35,6 @@ from app.auth.permissions import (
     require_login,
     require_role,
 )
-from app.chat.document_preview import build_document_preview
 from app.chat.markdown_render import render_chat_markdown
 from app.drafting.review_notes import split_review_notes
 from app.drafting.versioning import find_latest_version
@@ -49,7 +48,7 @@ from app.documents.service import DocumentProcessingService
 from app.privacy.decisions import InvalidPrivacyDecisionError
 from app.privacy.review import detect_decision_terms
 from app.privacy.decisions import load_decisions
-from app.web.name_protection import document_text_version, install_name_protection, protect_document_terms
+from app.web.name_protection import install_name_protection, protect_document_terms
 from app.privacy.decisions import delete_for_conversation as delete_privacy_decisions_for_conversation
 from app.privacy.decisions import record_decision as record_privacy_decision
 from app.privacy.decisions import parse_manual_terms, record_manual_terms
@@ -295,32 +294,32 @@ def chat_document_view(
             active_conversation.id, "Dokument wurde in dieser Unterhaltung nicht gefunden."
         )
 
-    review_terms = frozenset({mark.strip()}) if mark and mark.strip() and "\n" not in mark else frozenset()
-    # §56: aktenweit geschuetzte Namen sichtbar machen; Markierung an den angezeigten Textstand gebunden
-    preview = build_document_preview(
-        document.extracted_text, review_terms=review_terms,
-        protected_terms=load_decisions(db, matter_id=active_conversation.matter_id, conversation_id=None).personal,
-    )
+    # 26.10.2026: KEINE separate Dokumentspalte mehr. Die Dokumentansicht ist der unveraenderte Chat dieser
+    # Unterhaltung, ueber dem der zentrale Pseudonymisierungsdialog fuer DIESES Dokument geoeffnet wird (Vorschau,
+    # Markierungen, Rueckfragen, Namensschutz, Bestaetigen). Meldungen der Ruecksprung-Ziele (§56/§57/§62) erscheinen
+    # im Dialog. `mark` (frueherer Fundstellen-Link) wird nicht mehr gebraucht: der Dialog markiert Rueckfragen selbst.
+    del mark
+    notice, notice_kind = "", ""
+    if name_protection_error or release_error:
+        notice, notice_kind = (name_protection_error or release_error)[:300], "error"
+    elif name_protection == "saved":
+        notice = ("Markierung gespeichert – diese Namen werden vor jeder Cloud-Übergabe dieser Akte pseudonymisiert "
+                  "und in der Vorschau markiert.")
+    elif released == "1":
+        notice = "Freigegeben – gilt für diesen Textstand; bei einer Änderung des Texts ist eine erneute Freigabe nötig."
+    elif uploaded == "1":
+        notice = ("Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. "
+                  "Bitte prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden.")
+        if text_not_sent == "1":
+            notice += (" Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser "
+                       "ihn zwischenspeichern konnte.")
     return _render_chat_page(
         request,
         db,
         current_user,
         conversations,
         active_conversation,
-        viewing_document=document,
-        document_preview=preview,
-        name_protection_context={
-            "document_text_version": document_text_version(document),
-            "name_protection_saved": name_protection == "saved",
-            "name_protection_error": name_protection_error[:300],
-            "upload_notice": uploaded == "1",
-            "upload_text_not_sent": text_not_sent == "1",
-            # §62 Dokumentfreigabe (lokal, kein Cloud-Aufruf)
-            **_document_release_context(db, document, current_user, request, released=released,
-                                        release_error=release_error),
-            # zentraler Pseudonymisierungsdialog: welcher Auftrag nach dem Bestaetigen fortgesetzt wird
-            "release_order_label": _open_order_label(db, active_conversation),
-        },
+        pseudo_context={"open_document": document.id, "notice": notice, "notice_kind": notice_kind},
     )
 
 
@@ -382,6 +381,7 @@ def chat_document_thumbnail(
 def chat_document_pseudonymization_review(
     conversation_id: str,
     document_id: str,
+    terms: list[str] = Query(default=[]),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_login),
 ) -> JSONResponse:
@@ -396,9 +396,46 @@ def chat_document_pseudonymization_review(
     document = chat_service.get_attached_document(db, conversation=conversation, document_id=document_id)
     if document is None or document.matter_id is None or document.matter_id != conversation.matter_id:
         raise HTTPException(status_code=404, detail="Dokument wurde in dieser Unterhaltung nicht gefunden.")
-    data = build_review(db, document, conversation.matter, conversation.id).as_dict()
+    # `terms`: offene Chat-Rueckfragen (vom Server im review-Ereignis geliefert), nur zur Positionsmarkierung
+    extra = tuple(t.strip() for t in terms[:20] if t and t.strip() and len(t) <= 80 and "\n" not in t)
+    data = build_review(db, document, conversation.matter, conversation.id, extra_terms=extra).as_dict()
     data["page_url_base"] = f"/dashboard/matters/{document.matter_id}/document/{document.id}/page/"
     return JSONResponse(data, headers={"Cache-Control": "no-store"})
+
+
+@router.get("/{conversation_id}/pseudonymization-documents")
+def chat_pseudonymization_documents(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> JSONResponse:
+    """Dokumentauswahl des zentralen Pseudonymisierungsdialogs (26.10.2026): alle an DIESE Unterhaltung angehaengten
+    Dokumente der Akte mit Freigabestatus (lokale Pruefung, zwischengespeichert, kein Cloud-Aufruf) und ob ein offener
+    Auftrag fortgesetzt werden kann. Keine Inhalte, nur Namen/IDs/Status."""
+    from app.documents import release
+
+    conversation = _require_own_conversation(db, conversation_id, current_user)
+    rows = (
+        db.query(Document)
+        .join(ChatMessageDocument, ChatMessageDocument.document_id == Document.id)
+        .join(ChatMessage, ChatMessage.id == ChatMessageDocument.message_id)
+        .filter(ChatMessage.conversation_id == conversation.id, Document.deleted_at.is_(None),
+                Document.matter_id == conversation.matter_id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
+    seen, items = set(), []
+    for document in rows:
+        if document.id in seen:
+            continue
+        seen.add(document.id)
+        status = release.release_status(db, document)
+        items.append({"id": document.id, "filename": document.original_filename or "Dokument",
+                      "release_state": status.state, "text_version": status.text_version,
+                      "needs_confirmation": status.state in ("required", "decision")})
+    label = _open_order_label(db, conversation)
+    return JSONResponse({"documents": items, "order_label": label, "has_open_order": bool(label)},
+                        headers={"Cache-Control": "no-store"})
 
 
 def _open_order_message(db: Session, conversation) -> ChatMessage | None:
@@ -418,6 +455,36 @@ def _open_order_message(db: Session, conversation) -> ChatMessage | None:
     return None
 
 
+def _pending_gate_notice_id(db: Session, conversation) -> str:
+    """ID des juengsten blockierten Statushinweises, solange ein offener Auftrag an einem freigabepflichtigen
+    Dokument dieser Unterhaltung haengt - dort bietet der Chat "Pseudonymisierung prüfen" (Dialog) an. Sonst ""."""
+    from app.documents import release
+
+    if conversation is None or _open_order_message(db, conversation) is None:
+        return ""
+    notice = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .first()
+    )
+    if notice is None or notice.role != "assistant" or not notice.blocked or notice.draft_id is not None:
+        return ""
+    documents = (
+        db.query(Document)
+        .join(ChatMessageDocument, ChatMessageDocument.document_id == Document.id)
+        .join(ChatMessage, ChatMessage.id == ChatMessageDocument.message_id)
+        .filter(ChatMessage.conversation_id == conversation.id, Document.deleted_at.is_(None),
+                Document.matter_id == conversation.matter_id)
+        .all()
+    )
+    try:
+        pending = any(release.release_status(db, d).state in ("required", "decision") for d in documents)
+    except Exception:  # noqa: BLE001 - nur Anzeige; die Sperre selbst bleibt serverseitig
+        pending = False
+    return notice.id if pending else ""
+
+
 def _open_order_label(db: Session, conversation) -> str:
     """Beschriftung des Fortsetzen-Buttons nach dem zuletzt gestellten Auftrag: Schriftsatz (Erstellungsauftrag)
     oder Dokumentanalyse (jeder andere Auftrag). Dieselbe Routing-Regel wie ChatService (`_looks_like_drafting_request`)."""
@@ -427,21 +494,6 @@ def _open_order_label(db: Session, conversation) -> str:
     if order is None:
         return ""  # kein offener Auftrag: der Dialog ist dann reine Pruefansicht
     return "Schriftsatz erstellen" if _looks_like_drafting_request(order.content or "") else "Analyse fortsetzen"
-
-
-def _document_release_context(db: Session, document: Document, user: User, request: Request, *, released: str,
-                              release_error: str) -> dict:
-    from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission
-    from app.documents import release
-
-    return {
-        "release_status": release.release_status(db, document),
-        "release_show_notice": release.show_auto_release_notice(user),
-        "release_can_manage": has_permission(user, PERM_PRIVACY_DECISION_MANAGE),
-        "release_released": released == "1",
-        "release_error": release_error[:300],
-        "release_current_path": request.url.path,
-    }
 
 
 def _render_chat_page(
@@ -455,7 +507,10 @@ def _render_chat_page(
     document_preview=None,
     pending_matter: Matter | None = None,
     name_protection_context: dict | None = None,
+    pseudo_context: dict | None = None,
 ) -> HTMLResponse:
+    from app.auth.permissions import PERM_PRIVACY_DECISION_MANAGE, has_permission
+
     settings = get_settings()
     # Phase 3 (§71): war bisher nur auf den direkten Dev-Modus geprueft
     # (anthropic_api_key) - eine echte Kanzlei-Installation im
@@ -538,6 +593,12 @@ def _render_chat_page(
         # normalen Zwei-Spalten-Chat und dem Drei-Spalten-Workspace um.
         "viewing_document": viewing_document,
         "document_preview": document_preview,
+        # Zentraler Pseudonymisierungsdialog (26.10.2026): auf JEDER Chat-Seite, oeffnet ueber dem Chat.
+        "pseudo_can_manage": has_permission(current_user, PERM_PRIVACY_DECISION_MANAGE),
+        "pseudo_open_document": (pseudo_context or {}).get("open_document", ""),
+        "pseudo_notice": (pseudo_context or {}).get("notice", ""),
+        "pseudo_notice_kind": (pseudo_context or {}).get("notice_kind", ""),
+        "pseudo_pending_message_id": _pending_gate_notice_id(db, active_conversation),
         **(name_protection_context or {"document_text_version": "", "name_protection_saved": False,
                                        "name_protection_error": "", "upload_notice": False,
                                        "upload_text_not_sent": False}),
@@ -1702,15 +1763,17 @@ def submit_privacy_review(
     )
 
 
-def _apply_dialog_decisions(db: Session, conversation, document: Document, text_version: str, raw: str,
+def _apply_dialog_decisions(db: Session, conversation, documents: list[tuple[Document, str]], raw: str,
                             require_resolved: bool, user: User) -> str:
-    """Prueft und speichert die Dialog-Entscheidungen (siehe `confirm_release_and_generate`). Rueckgabe: Fehlertext
-    oder "" bei Erfolg. Speichert erst, wenn ALLE Pruefungen bestanden sind."""
+    """Prueft und speichert die Dialog-Entscheidungen (siehe `confirm_release_and_generate`) fuer ALLE im Dialog
+    bestaetigten Dokumente. Rueckgabe: Fehlertext oder "" bei Erfolg. Speichert erst, wenn ALLE Pruefungen bestanden
+    sind (Textstand jedes Dokuments aktuell, nur aktuell offene Rueckfragen, mit `require_resolved` alle beantwortet)."""
     from app.documents import release
     from app.documents.pseudonymization_review import open_candidate_terms
 
-    if not text_version or text_version != release.text_version_of(document.extracted_text):
-        return "Der Dokumenttext hat sich seit der Anzeige geändert. Bitte die Pseudonymisierung erneut prüfen."
+    for document, text_version in documents:
+        if not text_version or text_version != release.text_version_of(document.extracted_text):
+            return "Der Dokumenttext hat sich seit der Anzeige geändert. Bitte die Pseudonymisierung erneut prüfen."
     try:
         parsed = [_PrivacyReviewDecision(**item) for item in json.loads(raw or "[]")]
     except (ValueError, TypeError):
@@ -1718,7 +1781,10 @@ def _apply_dialog_decisions(db: Session, conversation, document: Document, text_
     if len(parsed) > 50:
         return "Zu viele Entscheidungen in einer Anfrage."
     try:
-        open_terms = open_candidate_terms(db, document, conversation.matter, conversation.id)
+        open_terms = []
+        for document, _version in documents:
+            open_terms.extend(t for t in open_candidate_terms(db, document, conversation.matter, conversation.id)
+                              if t not in open_terms)
     except Exception:  # noqa: BLE001 - fail-closed
         return "Die Datenschutzprüfung ist fehlgeschlagen – es wurde nichts gesendet."
     decided = {item.term for item in parsed}
@@ -1744,10 +1810,16 @@ def confirm_release_and_generate(
     text_version: str = Form(...),
     decisions: str = Form(default=""),
     require_resolved: str = Form(default=""),
+    documents: str = Form(default=""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_PRIVACY_DECISION_MANAGE)),
 ) -> StreamingResponse:
     """"Pseudonymisierung bestätigen und Schriftsatz erstellen" im Chat-Kontext (23.10.2026).
+
+    26.10.2026 (mehrere Dokumente im zentralen Dialog): optional `documents` = JSON-Liste
+    `[{"document_id": ..., "text_version": ...}]` WEITERER Dokumente derselben Unterhaltung/Akte, die mit demselben
+    Klick bestaetigt werden. Jedes wird wie das Hauptdokument geprueft (Aktenisolation, Textstand, offene Rueckfragen)
+    und freigegeben; ein Fehler bei irgendeinem Dokument verhindert die Fortsetzung.
 
     25.10.2026 (zentraler Pseudonymisierungsdialog): optional `decisions` (JSON wie bei `privacy-review`) mit den im
     Dialog beantworteten Rueckfragen zu DIESEM Dokument und `require_resolved=1`. Dann gilt serverseitig: der Textstand
@@ -1786,6 +1858,25 @@ def confirm_release_and_generate(
             _stream_error_event("Dieses Dokument gehört nicht zu dieser Unterhaltung."),
             media_type="text/event-stream",
         )
+    targets: list[tuple[Document, str]] = [(document, text_version)]
+    try:
+        extra = json.loads(documents) if documents else []
+        if not isinstance(extra, list) or len(extra) > 30:
+            raise ValueError
+        for item in extra:
+            extra_id, extra_version = str(item["document_id"]), str(item["text_version"])
+            if extra_id == document.id or extra_id in {d.id for d, _ in targets}:
+                continue
+            extra_doc = _get_chat_service().get_attached_document(db, conversation=conversation, document_id=extra_id)
+            if extra_doc is None or extra_doc.matter_id != conversation.matter_id:
+                return StreamingResponse(
+                    _stream_error_event("Dieses Dokument gehört nicht zu dieser Unterhaltung."),
+                    media_type="text/event-stream",
+                )
+            targets.append((extra_doc, extra_version))
+    except (ValueError, TypeError, KeyError):
+        return StreamingResponse(_stream_error_event("Die Dokumentauswahl konnte nicht gelesen werden."),
+                                 media_type="text/event-stream")
     # Offenen Schriftsatz-Auftrag bestimmen. Anders als bei der Rueckfrage (die nichts speichert) hat das
     # Dokument-Gate bereits eine blockierte Hinweis-Nachricht angelegt - die zuletzt gestellte Nutzernachricht ist
     # daher der Auftrag, der wiederaufgenommen werden soll. Ist die letzte Nachricht eine ERFOLGREICHE
@@ -1825,15 +1916,15 @@ def confirm_release_and_generate(
             media_type="text/event-stream",
         )
     if decisions or require_resolved:
-        problem = _apply_dialog_decisions(db, conversation, document, text_version, decisions,
-                                          require_resolved == "1", current_user)
+        problem = _apply_dialog_decisions(db, conversation, targets, decisions, require_resolved == "1", current_user)
         if problem:
             _release_message(db, message.id)
             return StreamingResponse(_stream_error_event(problem), media_type="text/event-stream")
-    # Freigabe des ANGEZEIGTEN Textstands. Scheitert sie (veralteter Stand, fehlgeschlagene Pruefung,
+    # Freigabe der ANGEZEIGTEN Textstaende. Scheitert sie (veralteter Stand, fehlgeschlagene Pruefung,
     # kein verwertbarer Text), wird NICHTS generiert und die Nachricht wieder freigegeben.
     try:
-        release.release_manually(db, document, text_version=text_version, user=current_user)
+        for target, target_version in targets:
+            release.release_manually(db, target, text_version=target_version, user=current_user)
     except release.ReleaseError as exc:
         _release_message(db, message.id)
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
