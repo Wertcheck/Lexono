@@ -1,0 +1,2961 @@
+{
+ "base": "http://127.0.0.1:8062",
+ "auftraege": {
+  "1958fd1d-c590-437b-9008-2a942179122e": true,
+  "6ad49c9d-cbc5-4729-bbc8-c672f12784cc": true,
+  "b2e9da0c-2b09-454f-a3ed-de641de9edd3": true,
+  "0dd3a355-ead1-4880-a437-781553ff93ff": true
+ },
+ "setup_s": 13.7,
+ "brief_vollstaendigkeit": {
+  "seiten": 3,
+  "rufnummern_erkannt": 18,
+  "rufnummern_markiert": 18,
+  "rufnummern_je_seite": {
+   "1": 17,
+   "2": 1,
+   "3": 0
+  },
+  "hoffmann_markiert_auf_seite": [
+   2
+  ],
+  "richter_markiert_auf_seite": [
+   1
+  ],
+  "nicht_gefunden": [],
+  "hinweise": [
+   "Word (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt."
+  ],
+  "seite1_markierungen": 22
+ },
+ "convs": {
+  "mix": "1958fd1d-c590-437b-9008-2a942179122e",
+  "many": "6ad49c9d-cbc5-4729-bbc8-c672f12784cc",
+  "long": "b2e9da0c-2b09-454f-a3ed-de641de9edd3",
+  "view": "523a2f01-81da-492d-94b0-f888a1674862"
+ },
+ "db_start": {
+  "privacy_decisions": 0,
+  "document_releases": 0,
+  "chat_messages": 19
+ },
+ "klicks": {
+  "0dd3a355-ead1-4880-a437-781553ff93ff": "sperrhinweis",
+  "1958fd1d-c590-437b-9008-2a942179122e": "sperrhinweis",
+  "6ad49c9d-cbc5-4729-bbc8-c672f12784cc": "sperrhinweis",
+  "b2e9da0c-2b09-454f-a3ed-de641de9edd3": "sperrhinweis",
+  "523a2f01-81da-492d-94b0-f888a1674862": "api"
+ },
+ "ladezeit_ms": {
+  "0dd3a355-ead1-4880-a437-781553ff93ff": 2444,
+  "1958fd1d-c590-437b-9008-2a942179122e": 2137,
+  "6ad49c9d-cbc5-4729-bbc8-c672f12784cc": 2734,
+  "b2e9da0c-2b09-454f-a3ed-de641de9edd3": 10931,
+  "523a2f01-81da-492d-94b0-f888a1674862": 1518
+ },
+ "00d-1400x830-briefvorlage-docx-seite-1": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   17,
+   200,
+   982,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   622,
+   488
+  ],
+  "vorschau_scroll": [
+   8,
+   3832,
+   555
+  ],
+  "dok_tabs": [
+   "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 3 Seite(n) · 23 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 25,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "23 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 950,
+  "vorschaubreite": 982,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "00e-1400x830-briefvorlage-seitenuebersicht": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   622,
+   488
+  ],
+  "vorschau_scroll": [
+   8,
+   3428,
+   555
+  ],
+  "dok_tabs": [
+   "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 3 Seite(n) · 23 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 25,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "23 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "00f-1400x830-briefvorlage-manueller-umbruch-anlage": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   622,
+   488
+  ],
+  "vorschau_scroll": [
+   2280,
+   3428,
+   555
+  ],
+  "dok_tabs": [
+   "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Briefvorlage-Layouttabelle.docx1",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 3 Seite(n) · 23 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 25,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "23 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 3 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "3",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "brief_markierungen": [
+  "Jakobstrasse 6 10179 Berlin@1",
+  "Jakobstrasse 6 10179 Berlin@1",
+  "Berlin@1",
+  "Berlin@1",
+  "Richter@1",
+  "030 5550 100@1",
+  "030 5550 101@1",
+  "030 5550 102@1",
+  "030 5550 103@1",
+  "030 5550 104@1",
+  "030 5550 105@1",
+  "030 5550 106@1",
+  "030 5550 107@1",
+  "030 5550 108@1",
+  "030 5550 109@1",
+  "030 5550 110@1",
+  "030 5550 111@1",
+  "030 5550 112@1",
+  "030 5550 113@1",
+  "030 5550 114@1",
+  "030 5550 115@1",
+  "030 5550 116@1",
+  "Beispielstrasse 17, 10115 Berlin@2",
+  "Berlin@2",
+  "Steffen Hoffmann@2",
+  "030 5550 117@2"
+ ],
+ "01-desktop-chat-mit-sperrhinweis": {
+  "dialog_offen": false,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [],
+  "auswahlliste": false,
+  "datei_info": "",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "",
+  "fusszeile_text": "",
+  "seite_info": "",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "",
+  "seitenbreite": null,
+  "vorschaubreite": 0,
+  "bild_dpi": null,
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": null,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": null
+ },
+ "02-desktop-popup-markierte-vorschau": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   17,
+   200,
+   982,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   685,
+   488
+  ],
+  "vorschau_scroll": [
+   1390,
+   4177,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 950,
+  "vorschaubreite": 982,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 444,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_thumbs": "ok",
+ "03-desktop-seitenuebersicht": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   685,
+   488
+  ],
+  "vorschau_scroll": [
+   1242,
+   3735,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 444,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_antwort1": "ok",
+ "04-desktop-erste-antwort-naechste-frage": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   667,
+   488
+  ],
+  "vorschau_scroll": [
+   8,
+   1164,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx1",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 1,
+  "markiert_masked": 6,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_docx": "ok",
+ "05-desktop-dokumentwechsel-docx": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   667,
+   488
+  ],
+  "vorschau_scroll": [
+   0,
+   1164,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx1",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 1,
+  "markiert_masked": 6,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_pdf": "ok",
+ "entscheidungen_nach_dokumentwechsel": [
+  [
+   "Richter",
+   "pseudonymisiert",
+   null
+  ],
+  [
+   "12/345/67890",
+   "offen",
+   null
+  ]
+ ],
+ "06-desktop-originalansicht": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   667,
+   488
+  ],
+  "vorschau_scroll": [
+   0,
+   3735,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Original",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "07-desktop-pseudonymisiertes-ergebnis": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   17,
+   200,
+   982,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   667,
+   488
+  ],
+  "vorschau_scroll": [
+   0,
+   555,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Pseudonymisiertes Ergebnis",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "–",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": null,
+  "vorschaubreite": 982,
+  "bild_dpi": null,
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "entscheidungen_nach_ansichtswechsel": [
+  [
+   "Richter",
+   "pseudonymisiert",
+   null
+  ],
+  [
+   "12/345/67890",
+   "offen",
+   null
+  ]
+ ],
+ "08-desktop-vorschau-maximiert": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": true,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   121,
+   200,
+   1262,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   8,
+   4814,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 11,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1100,
+  "vorschaubreite": 1262,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 0,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "09-desktop-bestaetigen-gesperrt-offene-frage": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   151,
+   384,
+   604
+  ],
+  "vorschau": [
+   121,
+   200,
+   878,
+   555
+  ],
+  "panel_scroll": [
+   0,
+   667,
+   488
+  ],
+  "vorschau_scroll": [
+   8,
+   3735,
+   555
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 11,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 1,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "1 von 2 Rückfragen beantwortet 50 %",
+  "fusszeile_status": "16 Funde gesamt1 / 2 offen2 Dokumente",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 426,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_rest": 1,
+ "10-desktop-alle-beantwortet-bestaetigen-aktiv": {
+  "dialog_offen": true,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   16,
+   16,
+   1368,
+   798
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   999,
+   149,
+   384,
+   606
+  ],
+  "vorschau": [
+   121,
+   198,
+   878,
+   557
+  ],
+  "panel_scroll": [
+   0,
+   665,
+   490
+  ],
+  "vorschau_scroll": [
+   0,
+   3735,
+   557
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 11,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 846,
+  "vorschaubreite": 878,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 424,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "11-desktop-abbrechen-zurueck-im-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1400,
+   830
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 3,
+  "markiert_masked": 11,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "seite_info": "Seite 1 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 0,
+  "vorschaubreite": 0,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": 0,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "db_nach_abbruch": {
+  "privacy_decisions": 0,
+  "document_releases": 0,
+  "chat_messages": 19
+ },
+ "12-1280x720-popup": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   613,
+   421
+  ],
+  "vorschau_scroll": [
+   1276,
+   3837,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 372,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "13-1280x720-panel-unabhaengig-gescrollt": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   192,
+   613,
+   421
+  ],
+  "vorschau_scroll": [
+   1276,
+   3837,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 372,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "14-desktop-6-dokumente-8-rueckfragen": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   151,
+   384,
+   774
+  ],
+  "vorschau": [
+   61,
+   200,
+   1094,
+   725
+  ],
+  "panel_scroll": [
+   0,
+   1020,
+   658
+  ],
+  "vorschau_scroll": [
+   8,
+   3112,
+   725
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf8",
+   "PDFQA-SYNTH-Anlage-1-Kontoauszug.pdf✓",
+   "DOCXQA-SYNTH-Anlage-2-Stellungnahme.docx2",
+   "PDFQA-SYNTH-Anlage-3-Bescheid.pdf✓",
+   "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf1",
+   "DOCXQA-SYNTH-Anlage-5-Vollmacht.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf8",
+  "auswahlliste": true,
+  "datei_info": "PDF · 2 Seite(n) · 10 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 2,
+  "miniaturen": 0,
+  "markiert_masked": 2,
+  "markiert_offen": 8,
+  "markiert_lesbar": 0,
+  "fragen": 9,
+  "fragen_offen": 9,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 9 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "33 Funde gesamt9 / 9 offen6 Dokumente",
+  "fusszeile_text": "9 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 2",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1062,
+  "vorschaubreite": 1094,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 464,
+  "kompakte_karten": 8,
+  "antworten_sichtbar": true
+ },
+ "15-1280x720-6-dokumente-8-rueckfragen": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   949,
+   421
+  ],
+  "vorschau_scroll": [
+   8,
+   2569,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf8",
+   "PDFQA-SYNTH-Anlage-1-Kontoauszug.pdf✓",
+   "DOCXQA-SYNTH-Anlage-2-Stellungnahme.docx2",
+   "PDFQA-SYNTH-Anlage-3-Bescheid.pdf✓",
+   "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf1",
+   "DOCXQA-SYNTH-Anlage-5-Vollmacht.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf8",
+  "auswahlliste": true,
+  "datei_info": "PDF · 2 Seite(n) · 10 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 2,
+  "miniaturen": 0,
+  "markiert_masked": 2,
+  "markiert_offen": 8,
+  "markiert_lesbar": 0,
+  "fragen": 9,
+  "fragen_offen": 9,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 9 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "33 Funde gesamt9 / 9 offen6 Dokumente",
+  "fusszeile_text": "9 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 2",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 392,
+  "kompakte_karten": 8,
+  "antworten_sichtbar": true
+ },
+ "16-1280x720-fortschritt-3-von-8": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   96,
+   910,
+   421
+  ],
+  "vorschau_scroll": [
+   8,
+   2569,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf5",
+   "PDFQA-SYNTH-Anlage-1-Kontoauszug.pdf✓",
+   "DOCXQA-SYNTH-Anlage-2-Stellungnahme.docx1",
+   "PDFQA-SYNTH-Anlage-3-Bescheid.pdf✓",
+   "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf✓",
+   "DOCXQA-SYNTH-Anlage-5-Vollmacht.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf5",
+  "auswahlliste": true,
+  "datei_info": "PDF · 2 Seite(n) · 10 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 2,
+  "miniaturen": 0,
+  "markiert_masked": 5,
+  "markiert_offen": 5,
+  "markiert_lesbar": 0,
+  "fragen": 9,
+  "fragen_offen": 6,
+  "aktive_frage": "Gärtner",
+  "fortschritt": "3 von 9 Rückfragen beantwortet 33 %",
+  "fusszeile_status": "33 Funde gesamt6 / 9 offen6 Dokumente",
+  "fusszeile_text": "6 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 2",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 8,
+  "antworten_sichtbar": true
+ },
+ "17-1280x720-naechste-offene-frage": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   186,
+   910,
+   421
+  ],
+  "vorschau_scroll": [
+   1276,
+   2569,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf5",
+   "PDFQA-SYNTH-Anlage-1-Kontoauszug.pdf✓",
+   "DOCXQA-SYNTH-Anlage-2-Stellungnahme.docx1",
+   "PDFQA-SYNTH-Anlage-3-Bescheid.pdf✓",
+   "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf✓",
+   "DOCXQA-SYNTH-Anlage-5-Vollmacht.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf5",
+  "auswahlliste": true,
+  "datei_info": "PDF · 2 Seite(n) · 10 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 2,
+  "miniaturen": 0,
+  "markiert_masked": 5,
+  "markiert_offen": 5,
+  "markiert_lesbar": 0,
+  "fragen": 9,
+  "fragen_offen": 6,
+  "aktive_frage": "Kellner",
+  "fortschritt": "3 von 9 Rückfragen beantwortet 33 %",
+  "fusszeile_status": "33 Funde gesamt6 / 9 offen6 Dokumente",
+  "fusszeile_text": "6 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 2",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 8,
+  "antworten_sichtbar": true
+ },
+ "k_select": "1823735b-12ab-4af0-89e5-dd47abf51130",
+ "18-1280x720-auswahlliste-anlage-4": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   186,
+   910,
+   421
+  ],
+  "vorschau_scroll": [
+   0,
+   1300,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Vermerk-viele-Rueckfragen.pdf5",
+   "PDFQA-SYNTH-Anlage-1-Kontoauszug.pdf✓",
+   "DOCXQA-SYNTH-Anlage-2-Stellungnahme.docx1",
+   "PDFQA-SYNTH-Anlage-3-Bescheid.pdf✓",
+   "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf✓",
+   "DOCXQA-SYNTH-Anlage-5-Vollmacht.docx1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Anlage-4-Protokoll-mit-sehr-langem-Dateinamen.pdf✓",
+  "auswahlliste": true,
+  "datei_info": "PDF · 1 Seite(n) · 3 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 3,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 9,
+  "fragen_offen": 6,
+  "aktive_frage": "Kellner",
+  "fortschritt": "3 von 9 Rückfragen beantwortet 33 %",
+  "fusszeile_status": "33 Funde gesamt6 / 9 offen6 Dokumente",
+  "fusszeile_text": "6 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 8,
+  "antworten_sichtbar": true
+ },
+ "entscheidungen_viele_nach_wechsel": 3,
+ "19-1280x720-70-seiten-sprung-zu-rueckfrage": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   17,
+   179,
+   902,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   550,
+   421
+  ],
+  "vorschau_scroll": [
+   81186,
+   88820,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 70 Seite(n) · 5 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 70,
+  "miniaturen": 0,
+  "markiert_masked": 280,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Kaufmann",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "5 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 65 / 70",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "65",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "20-1280x720-70-seiten-seitenuebersicht": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   121,
+   179,
+   798,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   550,
+   421
+  ],
+  "vorschau_scroll": [
+   71767,
+   78518,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 70 Seite(n) · 5 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 70,
+  "miniaturen": 70,
+  "markiert_masked": 280,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Kaufmann",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "5 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 65 / 70",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 766,
+  "vorschaubreite": 798,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "65",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "21-1280x720-miniatur-seite-3": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   121,
+   179,
+   798,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   550,
+   421
+  ],
+  "vorschau_scroll": [
+   2250,
+   78518,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 70 Seite(n) · 5 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 70,
+  "miniaturen": 70,
+  "markiert_masked": 280,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Kaufmann",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "5 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 3 / 70",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 766,
+  "vorschaubreite": 798,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "3",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "22-1280x720-zoom-140": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   130,
+   344,
+   529
+  ],
+  "vorschau": [
+   121,
+   179,
+   798,
+   480
+  ],
+  "panel_scroll": [
+   0,
+   550,
+   421
+  ],
+  "vorschau_scroll": [
+   3118,
+   108869,
+   480
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Langes-Dokument-70-Seiten.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 70 Seite(n) · 5 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 70,
+  "miniaturen": 70,
+  "markiert_masked": 280,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Kaufmann",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "5 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 3 / 70",
+  "zoom": "140 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1072,
+  "vorschaubreite": 798,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "3",
+  "aktive_karte_hoehe": 354,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "23-desktop-pruefansicht-schnellaktionen-namensschutz": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": "versteckt",
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   149,
+   384,
+   776
+  ],
+  "vorschau": [
+   61,
+   198,
+   1094,
+   727
+  ],
+  "panel_scroll": [
+   0,
+   689,
+   689
+  ],
+  "vorschau_scroll": [
+   0,
+   1572,
+   727
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "6 Funde",
+  "fusszeile_text": "",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [
+   "Antwort entwerfen",
+   "Fristen & Risiken prüfen",
+   "Kurz zusammenfassen"
+  ],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1062,
+  "vorschaubreite": 1094,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": null,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": null
+ },
+ "k_schnellaktion": "ok",
+ "24-desktop-schnellaktion-ins-eingabefeld": {
+  "dialog_offen": false,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": "versteckt",
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "6 Funde",
+  "fusszeile_text": "",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [
+   "Antwort entwerfen",
+   "Fristen & Risiken prüfen",
+   "Kurz zusammenfassen"
+  ],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 0,
+  "vorschaubreite": 0,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": null,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": null
+ },
+ "schnellaktion_eingabe": "Bitte entwirf auf Basis von „QA-SYNTH-Nur-Ansicht.pdf“ eine Antwort auf dieses Dokument.",
+ "schnellaktion_db": {
+  "vorher": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 19
+  },
+  "nachher": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 19
+  }
+ },
+ "24b-desktop-rueckfrage-beim-senden-im-popup": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   149,
+   384,
+   776
+  ],
+  "vorschau": [
+   61,
+   198,
+   1094,
+   727
+  ],
+  "panel_scroll": [
+   0,
+   670,
+   660
+  ],
+  "vorschau_scroll": [
+   0,
+   1572,
+   727
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Ruecksicht",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "6 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1062,
+  "vorschaubreite": 1094,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 473,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "review_fragen": [
+  "Ruecksicht"
+ ],
+ "24c-desktop-rueckfrage-abgebrochen-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 1,
+  "aktive_frage": "Ruecksicht",
+  "fortschritt": "0 von 1 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "6 Funde1 / 1 offen",
+  "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 0,
+  "vorschaubreite": 0,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": 0,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "review_abbruch": {
+  "blase": "Rückfrage öffnen",
+  "db_vor_abbruch": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 20
+  },
+  "db_nach_abbruch": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 20
+  }
+ },
+ "25-960x600-gestapelt": {
+  "dialog_offen": true,
+  "fenster": [
+   960,
+   600
+  ],
+  "dialog": [
+   16,
+   8,
+   928,
+   584
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   623,
+   106,
+   320,
+   433
+  ],
+  "vorschau": [
+   17,
+   174,
+   606,
+   365
+  ],
+  "panel_scroll": [
+   6,
+   613,
+   345
+  ],
+  "vorschau_scroll": [
+   858,
+   2581,
+   365
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 574,
+  "vorschaubreite": 606,
+  "bild_dpi": "96",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 372,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "26-desktop-dark-mode": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   151,
+   384,
+   774
+  ],
+  "vorschau": [
+   61,
+   200,
+   1094,
+   725
+  ],
+  "panel_scroll": [
+   0,
+   685,
+   658
+  ],
+  "vorschau_scroll": [
+   1548,
+   4652,
+   725
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf1",
+   "DOCXQA-SYNTH-Sachstand.docx2"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Einspruch.pdf1",
+  "auswahlliste": false,
+  "datei_info": "PDF · 3 Seite(n) · 9 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 3,
+  "miniaturen": 0,
+  "markiert_masked": 10,
+  "markiert_offen": 1,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 2,
+  "aktive_frage": "Richter",
+  "fortschritt": "0 von 2 Rückfragen beantwortet 0 %",
+  "fusszeile_status": "16 Funde gesamt2 / 2 offen2 Dokumente",
+  "fusszeile_text": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "seite_info": "Seite 2 / 3",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1062,
+  "vorschaubreite": 1094,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "2",
+  "aktive_karte_hoehe": 444,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "k_alle_mix": 2,
+ "27-1280x720-vor-bestaetigung": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   128,
+   344,
+   531
+  ],
+  "vorschau": [
+   17,
+   177,
+   902,
+   482
+  ],
+  "panel_scroll": [
+   0,
+   593,
+   423
+  ],
+  "vorschau_scroll": [
+   8,
+   1195,
+   482
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx✓",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 352,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "28-1280x720-bestaetigung-laeuft": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   128,
+   344,
+   531
+  ],
+  "vorschau": [
+   17,
+   177,
+   902,
+   482
+  ],
+  "panel_scroll": [
+   0,
+   593,
+   423
+  ],
+  "vorschau_scroll": [
+   8,
+   1195,
+   482
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx✓",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word abweichen; Bilder, Textfelder und Fußnoten werden nicht dargestellt.",
+  "seitenbreite": 870,
+  "vorschaubreite": 902,
+  "bild_dpi": "120",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 352,
+  "kompakte_karten": 1,
+  "antworten_sichtbar": true
+ },
+ "29-1280x720-nach-bestaetigung-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [],
+  "auswahlliste": false,
+  "datei_info": "",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "",
+  "fusszeile_text": "",
+  "seite_info": "",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "",
+  "seitenbreite": null,
+  "vorschaubreite": 0,
+  "bild_dpi": null,
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": null,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": null
+ },
+ "bestaetigen_gate": {
+  "vorher": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 20
+  },
+  "nachher": {
+   "privacy_decisions": 2,
+   "document_releases": 0,
+   "chat_messages": 20
+  },
+  "pfad": "/dashboard/chat/1958fd1d-c590-437b-9008-2a942179122e",
+  "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "k_blase": "ok",
+ "30-desktop-chat-rueckfrage-beantwortet": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   149,
+   384,
+   776
+  ],
+  "vorschau": [
+   61,
+   198,
+   1094,
+   727
+  ],
+  "panel_scroll": [
+   0,
+   668,
+   660
+  ],
+  "vorschau_scroll": [
+   0,
+   1572,
+   727
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 0,
+  "aktive_frage": "Ruecksicht",
+  "fortschritt": "1 von 1 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "6 Funde0 / 1 offen",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild.",
+  "seitenbreite": 1062,
+  "vorschaubreite": 1094,
+  "bild_dpi": "144",
+  "sichtbare_seite_oben": "1",
+  "aktive_karte_hoehe": 471,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": true
+ },
+ "31-desktop-nach-antwort-fortgesetzt-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [],
+  "auswahlliste": false,
+  "datei_info": "",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "",
+  "fusszeile_text": "",
+  "seite_info": "",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "",
+  "seitenbreite": null,
+  "vorschaubreite": 0,
+  "bild_dpi": null,
+  "sichtbare_seite_oben": null,
+  "aktive_karte_hoehe": null,
+  "kompakte_karten": 0,
+  "antworten_sichtbar": null
+ },
+ "bestaetigen_review": {
+  "vorher": {
+   "privacy_decisions": 2,
+   "document_releases": 0,
+   "chat_messages": 20
+  },
+  "nachher": {
+   "privacy_decisions": 3,
+   "document_releases": 0,
+   "chat_messages": 21
+  },
+  "pfad": "/dashboard/chat/523a2f01-81da-492d-94b0-f888a1674862",
+  "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "db_ende": {
+  "privacy_decisions": 3,
+  "document_releases": 0,
+  "chat_messages": 21
+ }
+}
