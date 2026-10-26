@@ -1,103 +1,94 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% block title %}Posteingang{% endblock %}
+{% block sidebar_primary_action %}
+  {# "Neue Nachricht" (Posteingang-Referenz, 26.10.): Lexono versendet selbst keine E-Mails (Postausgang ist eine reine
+     Warteschlange, siehe outbox_router.py/DECISIONS.md). Der Button startet deshalb ehrlich einen neuen Chat, in dem
+     Lexono einen pruefbaren E-Mail-ENTWURF erstellt - derselbe, vollstaendig gepruefte Weg wie jede Chat-Anfrage
+     (Privacy Gateway, Freigabe). Kein Versand, kein Fake-Compose-Fenster. #}
+  <a href="/dashboard/chat?new=1&amp;compose=email" class="sidebar__new-chat-btn"
+     title="Neue E-Mail als Entwurf im Chat verfassen – Lexono versendet nichts selbst">
+    {{ icons.plus(class_="icon") }}
+    <span>Neue Nachricht</span>
+  </a>
+  {# "Neuen Chat starten" bleibt auf JEDER Seite erreichbar (Owner-Korrektur 26.09., test_web_inbox.py) - hier als
+     Nebenaktion unter der posteingangsspezifischen Hauptaktion. #}
+  <a href="/dashboard/chat?new=1" class="sidebar__new-chat-btn sidebar__new-chat-btn--secondary">
+    {{ icons.chat(class_="icon") }}
+    <span>Neuen Chat starten</span>
+  </a>
+{% endblock %}
 {% block content %}
-  {# Seitenkopf mit Icon/Untertitel (25.09., Owner-Direktive "POSTEINGANG
-     PRODUCT COMPLETION" §7 - Referenzbild `04_posteingang_nachricht_
-     detail.png`). "E-Mail-Konten verwalten" verlinkt echt auf den bereits
-     bestehenden IMAP-Bereich der Einstellungsseite (admin-only, wie die
-     Einstellungsseite selbst) statt eines neuen Screens. "Neue E-Mail"
-     aus der Referenz bewusst NICHT ergaenzt - es gibt projektweit KEINE
-     Versandfaehigkeit (Postausgang ist eine reine Warteschlange, siehe
-     draft_detail.html/DECISIONS.md); ein Compose-Button ohne echten
-     Versandweg waere ein Fake-Button (Direktive §7/§19). #}
-  {# Kompakter Seitenkopf (25.09., Owner-Direktive "POSTEINGANG FINAL
-     UI/UX PRODUCT-COMPLETION" §10) - deutlich reduzierte vertikale
-     Flaeche gegenueber der vorherigen Fassung (kleineres Icon, engere
-     Abstaende, kompaktere Zaehlerzeile), damit der Nutzer schneller zur
-     Nachrichtenliste gelangt. #}
-  <div class="topbar topbar--compact">
-    <div class="topbar__icon-row">
-      <span class="topbar__icon topbar__icon--sm">{{ icons.envelope(class_="icon") }}</span>
-      <div class="topbar__heading">
-        <h1 class="topbar__title topbar__title--sm">Posteingang</h1>
-        <p class="topbar__subtitle">E-Mails und andere Nachrichten dieser Kanzlei zentral verwalten</p>
+  {# Posteingang nach Referenzbild (26.10., Owner-Auftrag "Posteingang anhand des Referenzbildes"): Kopfbereich mit
+     Beschreibung, echter E-Mail-Statistik und Zustand des automatischen Abrufs; Filtertabs; Filterzeile; zweigeteilter
+     Hauptbereich (Liste | Lesebereich) mit unabhaengigem Scrollen. Alle Steuerelemente nutzen die bestehenden Routen
+     (app/web/router.py) - keine zweite Posteingangsimplementierung, keine Beispieldaten. #}
+  <div class="inbox-page">
+    <header class="inbox-head">
+      <div class="inbox-head__row">
+        <span class="inbox-head__icon">{{ icons.envelope(class_="icon") }}</span>
+        <div class="inbox-head__heading">
+          <h1 class="inbox-head__title">Posteingang</h1>
+          <p class="inbox-head__subtitle">E-Mails und andere Nachrichten der Kanzlei zentral verwalten und Akten zuordnen</p>
+        </div>
+        {% if current_user.role and current_user.role.name.lower() == "admin" %}
+          <div class="inbox-head__actions">
+            {# echter Link auf den bestehenden IMAP-Bereich der Einstellungen (admin-only wie die Seite selbst) #}
+            <a href="/dashboard/settings#email-postfach" class="btn">
+              {{ icons.settings(class_="icon") }} E-Mail-Konto verwalten
+            </a>
+          </div>
+        {% endif %}
       </div>
-      {% if current_user.role and current_user.role.name.lower() == "admin" %}
-        <div class="topbar__actions">
-          <a href="/dashboard/settings#email-postfach" class="btn">
-            {{ icons.settings(class_="icon") }} E-Mail-Konten verwalten
-          </a>
-        </div>
-      {% endif %}
-    </div>
-    <div class="topbar__meta topbar__meta--compact">
-      <strong>{{ total_count }}</strong> Nachrichten insgesamt
-      &middot; <strong>{{ unmatched_count }}</strong> ohne Aktenzuordnung
-    </div>
-    {# Tabs/Filterleiste/Suche IMMER sichtbar, auch bei total_count == 0
-       (06.10., Owner-Direktive "POSTEINGANG AUF DEN BESTEHENDEN
-       REFERENZSTAND ZURUECKFUEHREN" §5: "Ein leerer Posteingang bedeutet
-       NICHT automatisch 'Willkommen bei Lexono - Erste Schritte'... Tabs
-       bleiben erhalten, Filter bleiben erhalten"). Vorher an
-       `total_count > 0` gekoppelt (siehe Kommentar unten zum
-       urspruenglichen Grund dafuer, 18.09.) - das hing an derselben
-       Stelle wie der jetzt entfernte Onboarding-Ersatz unten und hatte
-       denselben Effekt: eine leere Mailbox zeigte NUR noch die grosse
-       Onboarding-Karte, nicht mehr die eigentliche Posteingangs-Oberflaeche.
-       `hx-target="#message-list"` existiert jetzt IMMER (siehe Entfernung
-       unten), der 18.09.-Grund fuer die Kopplung entfaellt damit. #}
-      {# Ein gemeinsames Formular fuer Tabs+Filterleiste+Suche (25.09.,
-         Refactoring): vorher musste jeder einzelne Filter-Trigger ALLE
-         anderen aktiven Filterwerte manuell in seine eigene URL kopieren
-         (fehleranfaellig, sobald ein neuer Filter dazukommt - genau das
-         ist mit Mandant/Zeitraum jetzt der Fall). `hx-include` auf dieses
-         EINE Formular buendelt alle aktuellen Werte automatisch, Tabs
-         ueberschreiben nur ihren eigenen "filter"-Wert per `hx-vals`. #}
-      <form id="inbox-filter-form" class="inbox-filter-form">
-        <input type="hidden" name="filter" value="{{ active_filter }}" />
-        {# ECHTER FUND (18.09., gefunden per systematischer JS-/HTMX-
-           Ziel-Pruefung): Filter-Tabs und Suche zielten mit `hx-target=
-           "#message-list"` auf ein Element, das NUR existiert, wenn
-           `total_count > 0` (partials/message_list.html wird sonst durch
-           den Onboarding-Banner ersetzt) - jetzt konsistent nur gezeigt,
-           wenn es ueberhaupt etwas zu filtern/durchsuchen gibt. #}
-        <div class="filters">
-          {% for key, label in filter_options %}
-            <a
-              class="filter-tab{% if active_filter == key %} filter-tab--active{% endif %}"
-              href="/dashboard/inbox?filter={{ key }}"
-              hx-get="/dashboard/inbox/list"
-              hx-vals='{"filter": "{{ key }}"}'
-              hx-include="#inbox-filter-form"
-              hx-target="#message-list"
-              hx-swap="outerHTML"
-              hx-push-url="true"
-            >{{ label }}</a>
-          {% endfor %}
-        </div>
-        {# Filterleiste: Mandant/Akte/Zeitraum/Sortierung + Suche (26.09.,
-           Owner-Direktive "POSTEINGANG FINAL POLISH" §4/§10/§11 - vorher
-           zwei separate Zeilen, jetzt EINE gemeinsame Flex-Zeile (spart
-           eine ganze Zeile vertikale Hoehe, Direktive §4 "vertikale
-           Informationsdichte") - `.inbox-filter-bar{flex-wrap:wrap}`
-           bricht bei schmalen Fenstern responsiv um, kein fester
-           Pixel-Hack. Alle vier Dropdowns beeinflussen echte
-           Datenbankabfragen (app/web/router.py::_load_messages). "Alle
-           Konten" bewusst weiterhin NICHT gebaut - nur ein IMAP-Postfach
-           konfigurierbar, kein Mehrkonten-Datenmodell (kein `Account`-
-           Modell im Projekt) - ein Dropdown mit praktisch einer Option
-           waere eine Fake-Steuerung. #}
-        <div class="inbox-filter-bar">
+      <div class="inbox-stats" aria-label="E-Mail-Statistik">
+        <span class="inbox-stats__item"><strong>{{ total_count }}</strong> E-Mails</span>
+        <span class="inbox-stats__item inbox-stats__item--unread"><strong>{{ unread_count }}</strong> ungelesen</span>
+        <span class="inbox-stats__item"><strong>{{ unmatched_count }}</strong> nicht zugeordnet</span>
+        <span class="inbox-stats__item"><strong>{{ attachment_count }}</strong> mit Anhang</span>
+        <span class="inbox-stats__poll inbox-stats__poll--{{ mail_poll.state }}" data-mail-poll="{{ mail_poll.state }}">
+          {{ icons.refresh(class_="icon") }} {{ mail_poll.label }}
+        </span>
+      </div>
+    </header>
+
+    {# Ein gemeinsames Formular fuer Tabs+Filterleiste+Suche (25.09.): `hx-include` buendelt alle aktuellen Werte,
+       Tabs ueberschreiben nur ihren eigenen "filter"-Wert per `hx-vals`. Tabs/Filter bleiben auch bei leerem
+       Posteingang sichtbar (06.10., "POSTEINGANG AUF DEN BESTEHENDEN REFERENZSTAND ZURUECKFUEHREN" §5). #}
+    <form id="inbox-filter-form" class="inbox-toolbar" onsubmit="return false;">
+      <input type="hidden" name="filter" value="{{ active_filter }}" />
+      <nav class="inbox-tabs" aria-label="Posteingang filtern">
+        {% for key, label in filter_options %}
+          <a
+            class="filter-tab inbox-tab{% if active_filter == key %} filter-tab--active{% endif %}"
+            href="/dashboard/inbox?filter={{ key }}"
+            hx-get="/dashboard/inbox/list"
+            hx-vals='{"filter": "{{ key }}"}'
+            hx-include="#inbox-filter-form"
+            hx-target="#message-list"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            data-filter-key="{{ key }}"
+          >{{ label }}</a>
+        {% endfor %}
+      </nav>
+      {# Filterzeile: Mandant/Akte/Zeitraum + Absender-/Betreffsuche + weitere Filter (Sortierung, Zuruecksetzen). Alle
+         Werte wirken auf echte Datenbankabfragen (app/web/router.py::_load_messages). "Alle Konten" bewusst nicht
+         gebaut - nur ein IMAP-Postfach, kein Mehrkonten-Datenmodell. #}
+      <div class="inbox-filter-bar">
+        <label class="inbox-filter-bar__field">
+          <span class="inbox-filter-bar__label">Mandant</span>
           <select name="client" hx-get="/dashboard/inbox/list" hx-include="#inbox-filter-form"
-                   hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
+                  hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
             <option value="">Alle Mandanten</option>
             {% for c in client_filter_options %}
               <option value="{{ c.id }}" {% if c.id == active_client_id %}selected{% endif %}>{{ c.name }}</option>
             {% endfor %}
           </select>
+        </label>
+        <label class="inbox-filter-bar__field">
+          <span class="inbox-filter-bar__label">Akte</span>
           <select name="matter" hx-get="/dashboard/inbox/list" hx-include="#inbox-filter-form"
-                   hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
+                  hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
             <option value="">Alle Akten</option>
             {% for matter in matter_filter_options %}
               <option value="{{ matter.id }}" {% if matter.id == active_matter_id %}selected{% endif %}>
@@ -105,67 +96,104 @@
               </option>
             {% endfor %}
           </select>
+        </label>
+        <label class="inbox-filter-bar__field">
+          <span class="inbox-filter-bar__label">Zeitraum</span>
           <select name="period" hx-get="/dashboard/inbox/list" hx-include="#inbox-filter-form"
-                   hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
+                  hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
             {% for key, label in period_options %}
               <option value="{{ key }}" {% if key == active_period %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
-          {# Kompakter Sortier-Umschalter statt vollem Text-Dropdown
-             (Referenzbild zeigt ein kleines quadratisches Icon) - hidden
-             input traegt den echten, bestehenden `sort`-Parameter,
-             derselbe Server-seitige Zweig wie zuvor
-             (app/web/router.py::_load_messages). #}
+        </label>
+        {# Posteingang-Suche (18.09.) - bewusst auf Absender/Betreff beschraenkt, klar getrennt von der globalen Suche
+           in der Kopfzeile (Strg+K). #}
+        <div class="clients-search-bar inbox-filter-bar__search">
+          <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
+          <input type="text" name="q" value="{{ search }}" placeholder="Absender oder Betreff durchsuchen…"
+                 aria-label="Absender oder Betreff suchen"
+                 hx-get="/dashboard/inbox/list"
+                 hx-include="#inbox-filter-form"
+                 hx-trigger="input changed delay:300ms, search"
+                 hx-target="#message-list"
+                 hx-swap="outerHTML"
+                 hx-push-url="true" />
+        </div>
+        <div class="inbox-filter-bar__more">
           <input type="hidden" name="sort" value="{{ active_sort }}" />
           <button type="button" class="inbox-sort-toggle"
                   title="{{ 'Älteste zuerst anzeigen' if active_sort == 'newest' else 'Neueste zuerst anzeigen' }}"
-                  aria-label="Sortierung umschalten"
+                  aria-label="Sortierung umschalten (aktuell: {{ 'neueste' if active_sort == 'newest' else 'älteste' }} zuerst)"
                   hx-get="/dashboard/inbox/list"
                   hx-vals='{"sort": "{{ "oldest" if active_sort == "newest" else "newest" }}"}'
                   hx-include="#inbox-filter-form"
                   hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
             {{ icons.sort(class_="icon") }}
           </button>
-          {# Posteingang-Suche (18.09.) - bewusst auf Absender/Betreff
-             beschraenkt und damit klar von der globalen Command-Bar
-             (Strg+K: Mandanten/Akten/Dokumente/Rechtsquellen, siehe
-             base.html) unterschieden (Direktive §14) - kein
-             Ueberschneiden. Jetzt in derselben Zeile wie die Dropdowns
-             (26.09., siehe Kommentar oben). #}
-          <div class="clients-search-bar inbox-filter-bar__search">
-            <span class="clients-search-bar__icon">{{ icons.search(class_="icon") }}</span>
-            <input type="text" name="q" value="{{ search }}" placeholder="Absender oder Betreff durchsuchen…"
-                   hx-get="/dashboard/inbox/list"
-                   hx-include="#inbox-filter-form"
-                   hx-trigger="input changed delay:300ms, search"
-                   hx-target="#message-list"
-                   hx-swap="outerHTML"
-                   hx-push-url="true" />
+          {% if active_client_id or active_matter_id or active_period != "all" or search or active_filter != "all" %}
+            <a href="/dashboard/inbox" class="inbox-filter-bar__reset" title="Alle Filter zurücksetzen">Zurücksetzen</a>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+
+    {# Sammelaktion fuer die Auswahlkaestchen der Nachrichtenzeilen (form="inbox-bulk-form"): echte Route
+       /dashboard/inbox/mark - aendert ausschliesslich den Lesestatus. Archivieren/Loeschen existieren im Projekt nicht
+       und werden deshalb auch nicht angeboten. #}
+    <form id="inbox-bulk-form" method="post" action="/dashboard/inbox/mark" hidden>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <input type="hidden" name="return_to" value="/dashboard/inbox" data-inbox-return-to />
+    </form>
+
+    <div class="split">
+      <section class="inbox-list-pane" aria-label="E-Mail-Liste">
+        <div class="inbox-list-head">
+          <label class="inbox-list-head__select" title="Alle sichtbaren Nachrichten auswählen">
+            <input type="checkbox" id="inbox-select-all" aria-label="Alle sichtbaren Nachrichten auswählen" />
+          </label>
+          <span class="inbox-list-head__count" id="inbox-selection-count" aria-live="polite"></span>
+          <div class="inbox-list-head__actions">
+            <button type="submit" form="inbox-bulk-form" name="state" value="read" class="inbox-icon-btn"
+                    data-bulk-action disabled title="Auswahl als gelesen markieren" aria-label="Auswahl als gelesen markieren">
+              {{ icons.mail_open(class_="icon") }}
+            </button>
+            <button type="submit" form="inbox-bulk-form" name="state" value="unread" class="inbox-icon-btn"
+                    data-bulk-action disabled title="Auswahl als ungelesen markieren" aria-label="Auswahl als ungelesen markieren">
+              {{ icons.mail_dot(class_="icon") }}
+            </button>
           </div>
         </div>
-      </form>
-  </div>
-  {# Nachrichtenbereich (Liste + Detail) IMMER als echter Posteingang
-     gerendert - NICHT mehr durch den Onboarding-Screen ersetzt, wenn
-     `total_count == 0` (06.10., Owner-Direktive "POSTEINGANG AUF DEN
-     BESTEHENDEN REFERENZSTAND ZURUECKFUEHREN" §5: "Die gesamte
-     Posteingangs-IA darf NICHT durch einen alten Setup-/Onboarding-
-     Screen ersetzt werden"). `partials/message_list.html` traegt selbst
-     bereits einen Empty-State fuer "keine Nachrichten" (wird jetzt auch
-     fuer die echte "noch nie eine Nachricht erhalten"-Situation
-     verwendet, nicht nur fuer "aktueller Filter liefert 0 Treffer" - siehe
-     dort fuer die Unterscheidung). `onboarding_banner.html` bleibt als
-     Datei bestehen (Scan-Ordner/E-Mail-Verknuepfung/Claude-API-Pruefung
-     sind echte, funktionierende Einstellungen) - der Einstieg dorthin ist
-     weiterhin ueber "E-Mail-Konten verwalten" oben im Seitenkopf
-     erreichbar (unveraendert, nie an `total_count` gekoppelt), nur nicht
-     mehr als die gesamte Posteingangsflaeche ersetzende Pflichtkarte. #}
-    <div class="split">
-      {% include "partials/message_list.html" %}
+        {% include "partials/message_list.html" %}
+      </section>
       {% if message %}
         {% include "partials/message_detail.html" %}
       {% else %}
         {% include "partials/message_detail_empty.html" %}
       {% endif %}
     </div>
+  </div>
+  <script>
+    (function () {
+      // Auswahl/Sammelaktion (26.10.): Zaehler, "alle auswaehlen", Buttons nur mit Auswahl aktiv; Ruecksprung auf die
+      // aktuelle (per HTMX fortgeschriebene) Posteingangs-URL.
+      var all = document.getElementById("inbox-select-all");
+      var count = document.getElementById("inbox-selection-count");
+      var form = document.getElementById("inbox-bulk-form");
+      function boxes() { return Array.prototype.slice.call(document.querySelectorAll('#message-list input[name="message_ids"]')); }
+      function update() {
+        var list = boxes(), selected = list.filter(function (b) { return b.checked; }).length;
+        count.textContent = selected ? selected + " ausgewählt" : (list.length + " E-Mail" + (list.length === 1 ? "" : "s"));
+        all.checked = list.length > 0 && selected === list.length;
+        all.indeterminate = selected > 0 && selected < list.length;
+        document.querySelectorAll("[data-bulk-action]").forEach(function (b) { b.disabled = selected === 0; });
+      }
+      all.addEventListener("change", function () { boxes().forEach(function (b) { b.checked = all.checked; }); update(); });
+      document.addEventListener("change", function (e) { if (e.target.name === "message_ids") { update(); } });
+      document.body.addEventListener("htmx:afterSwap", function (e) { if (e.target.id === "message-list") { update(); } });
+      form.addEventListener("submit", function () {
+        form.querySelector("[data-inbox-return-to]").value = location.pathname + location.search;
+      });
+      update();
+    })();
+  </script>
 {% endblock %}

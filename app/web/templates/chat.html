@@ -635,7 +635,7 @@
                Absicherung neben der eigentlichen Ursache (siehe
                clearComposer()), kein Ersatz dafuer. #}
             <textarea name="content" id="chat-input" class="chat-composer__input" rows="1"
-                      placeholder="Nachricht an Lexono …" autofocus autocomplete="off"></textarea>
+                      placeholder="Nachricht an Lexono …" autofocus autocomplete="off">{% if not active_conversation and request.query_params.get('compose') == 'email' %}Bitte entwirf eine neue E-Mail an {% endif %}</textarea>
             <button type="button" class="chat-composer__mic-btn" id="chat-mic-btn"
                     title="Spracheingabe (lokal, Whisper)" aria-label="Spracheingabe starten"
                     aria-pressed="false">

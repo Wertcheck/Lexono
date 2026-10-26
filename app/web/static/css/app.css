@@ -11498,3 +11498,797 @@ a.chat-composer__protect-btn {
   .pseudo-center__panel { border-left: none; border-top: 1px solid var(--paper-line); }
   .pseudo-center__legend { display: none; }
 }
+
+/* ==========================================================================
+   Posteingang nach Referenzbild (26.10., Owner-Auftrag "Posteingang anhand des
+   Referenzbildes"): Kopfbereich mit Statistik, Tabs, Filterzeile, zweigeteilter
+   Hauptbereich. Ausschliesslich unter `.inbox-page` (inbox.html) - `.split`/
+   `.message-list`/`.detail-pane` werden auch von der Gesetzesbibliothek genutzt
+   und bleiben dort unveraendert. Nur bestehende Tokens (Farben, Radien, Schrift).
+   ========================================================================== */
+
+.inbox-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-000);
+}
+
+.inbox-head {
+  padding: 18px 28px 12px;
+}
+
+.inbox-head__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.inbox-head__icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--brand-green-tint);
+  color: var(--brand-green-dark);
+}
+
+.inbox-head__icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.inbox-head__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.inbox-head__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink-900);
+}
+
+.inbox-head__subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+
+.inbox-head__actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.inbox-head__actions .btn {
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.inbox-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.inbox-stats__item strong {
+  color: var(--ink-900);
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.inbox-stats__item--unread strong {
+  color: var(--brand-green-dark);
+}
+
+.inbox-stats__poll {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.inbox-stats__poll .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.inbox-stats__poll--failed {
+  color: var(--wax-red);
+}
+
+/* --- Tabs + Filterzeile --- */
+
+.inbox-toolbar {
+  margin: 0;
+  max-width: none;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.inbox-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.inbox-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.inbox-page .inbox-tab {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 9px 14px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-500);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.inbox-page .inbox-tab:hover:not(.filter-tab--active) {
+  color: var(--ink-900);
+}
+
+.inbox-page .inbox-tab.filter-tab--active {
+  color: var(--brand-green-dark);
+  font-weight: 600;
+  border-bottom-color: var(--brand-green);
+}
+
+.inbox-page .inbox-filter-bar {
+  margin: 0;
+  padding: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.inbox-filter-bar__field {
+  position: relative;
+  display: flex;
+  flex: 0 1 190px;
+  min-width: 140px;
+}
+
+/* Feldbeschriftung nur fuer Screenreader/Tooltip - sichtbar steht der Wert ("Alle Mandanten") wie in der Referenz */
+.inbox-filter-bar__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.inbox-page .inbox-filter-bar select {
+  width: 100%;
+  max-width: none;
+  height: 34px;
+  font-size: 12.5px;
+  color: var(--ink-700);
+  background-color: var(--paper-000);
+}
+
+.inbox-page .inbox-filter-bar__search {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 180px;
+  flex-wrap: nowrap;
+}
+
+/* Lupe IM Feld wie in der Referenz; Breite gegen die spaetere .clients-search-bar input{width:220px} */
+.inbox-page .inbox-filter-bar__search .clients-search-bar__icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  pointer-events: none;
+}
+
+.inbox-page .inbox-filter-bar__search input[type="text"] {
+  width: 100%;
+  height: 34px;
+  padding-left: 32px;
+}
+
+.inbox-filter-bar__more {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.inbox-page .inbox-sort-toggle {
+  width: 34px;
+  height: 34px;
+}
+
+.inbox-filter-bar__reset {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.inbox-filter-bar__reset:hover {
+  color: var(--brand-green-dark);
+  text-decoration: underline;
+}
+
+/* --- Hauptbereich: Liste | Lesebereich --- */
+
+.inbox-page > .split {
+  flex: 1;
+  min-height: 0;
+}
+
+.inbox-list-pane {
+  flex: 0 1 46%;
+  min-width: 340px;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--paper-line);
+  background: var(--paper-000);
+}
+
+.inbox-page .message-list {
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  min-width: 0;
+  border-right: none;
+  overflow-y: auto;
+}
+
+.inbox-list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  min-height: 42px;
+  border-bottom: 1px solid var(--paper-line);
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.inbox-list-head__select,
+.message-row__select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.inbox-list-head__select input,
+.message-row__select input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--brand-green);
+  cursor: pointer;
+}
+
+.inbox-list-head__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.inbox-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-700);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.inbox-icon-btn:hover:not(:disabled) {
+  border-color: var(--brand-green);
+  color: var(--brand-green-dark);
+}
+
+.inbox-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.inbox-icon-btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Nachrichtenzeile --- */
+
+.inbox-page .message-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--paper-line);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+}
+
+.inbox-page .message-row:hover {
+  background: var(--paper-100);
+}
+
+.inbox-page .message-row--active,
+.inbox-page .message-row--active:hover {
+  background: var(--brand-green-tint);
+  border-left-color: var(--brand-green);
+  padding-left: 16px;
+}
+
+.inbox-page .message-row__select {
+  height: 34px;
+}
+
+.message-row__link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.inbox-page .message-row__avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+
+.inbox-page .message-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inbox-page .message-row__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.message-row__unread-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--brand-green);
+}
+
+.inbox-page .message-row__sender {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.inbox-page .message-row__time {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--ink-500);
+  flex-shrink: 0;
+}
+
+.inbox-page .message-row__subject {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-700);
+  margin: 0;
+}
+
+.message-row__bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.inbox-page .message-row__snippet {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+
+.message-row__attachment {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.inbox-page .message-row__attachment-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.message-row__tags {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.message-row__tags .tag {
+  font-size: 10.5px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+/* Ungelesen: kraeftiger Absender/Betreff + Punkt (Lesestatus aus messages.read_at) */
+.inbox-page .message-row--unread .message-row__sender,
+.inbox-page .message-row--unread .message-row__subject {
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.inbox-page .message-row--unread .message-row__time {
+  color: var(--brand-green-dark);
+  font-weight: 600;
+}
+
+/* --- Lesebereich --- */
+
+.inbox-page .detail-pane {
+  flex: 1 1 54%;
+  min-width: 0;
+  padding: 18px 28px 28px;
+  overflow-y: auto;
+  background: var(--paper-000);
+}
+
+.inbox-page .detail-header,
+.inbox-page .detail-body,
+.inbox-page .attachment-list,
+.inbox-page .detail-actions,
+.inbox-page .detail-toolbar,
+.inbox-page .detail-action-card {
+  max-width: 860px;
+}
+
+.detail-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.detail-toolbar__tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.detail-toolbar__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.detail-toolbar__form {
+  margin: 0;
+}
+
+.inbox-page .detail-header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+}
+
+.inbox-page .detail-header__subject {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0 0 14px;
+  color: var(--ink-900);
+}
+
+.detail-sender {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detail-sender__avatar {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-brand);
+}
+
+.inbox-page .detail-header__meta {
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+  font-size: 12.5px;
+}
+
+.detail-sender__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.detail-sender__address,
+.detail-sender__recipient,
+.detail-sender__matter {
+  overflow-wrap: anywhere;
+}
+
+.detail-sender__matter a {
+  color: var(--brand-green-dark);
+}
+
+.detail-sender__date {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+
+.inbox-page .detail-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.detail-section-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 16px 0 8px;
+}
+
+.inbox-page .attachment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.detail-action-card {
+  margin: 4px 0 16px;
+  padding: 2px 16px 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md);
+}
+
+.detail-action-card .detail-section-title {
+  margin-top: 12px;
+}
+
+.inbox-page .detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-action-card__hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.inbox-page .match-suggestion-card {
+  max-width: 860px;
+  background: var(--paper-000);
+}
+
+.inbox-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.inbox-empty__title {
+  font-size: 14px;
+  color: var(--ink-900);
+}
+
+/* Sidebar-Nebenaktion "Neuen Chat starten" unter "Neue Nachricht" (nur Posteingang) */
+.sidebar__new-chat-btn--secondary {
+  margin-top: -6px;
+  background: transparent;
+  color: var(--ink-700);
+  border: 1px solid var(--paper-line);
+  box-shadow: none;
+}
+
+.sidebar__new-chat-btn--secondary:hover {
+  background: var(--paper-100);
+  color: var(--ink-900);
+}
+
+/* Dark-Mode-Umschalter in der Kopfzeile: Mond im hellen, Sonne im dunklen Design */
+#theme-toggle-btn .theme-toggle__sun {
+  display: none;
+}
+
+:root[data-theme="dark"] #theme-toggle-btn .theme-toggle__sun {
+  display: inline-flex;
+}
+
+:root[data-theme="dark"] #theme-toggle-btn .theme-toggle__moon {
+  display: none;
+}
+
+#theme-toggle-btn span {
+  display: inline-flex;
+}
+
+:root[data-theme="dark"] .inbox-head__icon {
+  background: var(--brand-green-tint);
+  color: var(--waveform-idle);
+}
+
+:root[data-theme="dark"] .inbox-page .inbox-tab.filter-tab--active,
+:root[data-theme="dark"] .inbox-stats__item--unread strong,
+:root[data-theme="dark"] .inbox-page .message-row--unread .message-row__time,
+:root[data-theme="dark"] .detail-sender__matter a {
+  color: var(--waveform-idle);
+}
+
+/* --- Responsiv: kleinere Fenster (1280x720, 960x600) --- */
+
+@media (max-width: 1400px) {
+  .inbox-head {
+    padding: 14px 22px 10px;
+  }
+  .inbox-toolbar {
+    padding: 0 22px;
+  }
+  .inbox-page .detail-pane {
+    padding: 16px 22px 24px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .inbox-head__subtitle {
+    display: none;
+  }
+  .inbox-stats {
+    margin-top: 8px;
+    gap: 4px 14px;
+    font-size: 12px;
+  }
+  .inbox-list-pane {
+    flex-basis: 48%;
+    min-width: 300px;
+  }
+  .message-row__tags .tag--outbound {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .inbox-head {
+    padding: 10px 16px 8px;
+  }
+  .inbox-head__icon {
+    width: 32px;
+    height: 32px;
+  }
+  .inbox-head__title {
+    font-size: 18px;
+  }
+  .inbox-stats__poll {
+    margin-left: 0;
+  }
+  .inbox-toolbar {
+    padding: 0 16px;
+  }
+  .inbox-page .inbox-tab {
+    padding: 7px 10px 8px;
+    font-size: 12.5px;
+  }
+  .inbox-page .inbox-filter-bar {
+    padding: 7px 0;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .inbox-filter-bar__field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .inbox-page .inbox-filter-bar__search {
+    flex: 1.4 1 0;
+    min-width: 0;
+  }
+  .inbox-page .inbox-filter-bar select,
+  .inbox-page .inbox-filter-bar__search input[type="text"],
+  .inbox-page .inbox-sort-toggle {
+    height: 30px;
+  }
+  .inbox-filter-bar__reset {
+    display: none;
+  }
+  .inbox-list-pane {
+    min-width: 280px;
+  }
+  .inbox-page .message-row {
+    padding: 9px 12px;
+    gap: 8px;
+  }
+  .inbox-page .message-row__avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .message-row__tags {
+    display: none;
+  }
+  .inbox-page .detail-pane {
+    padding: 12px 16px 20px;
+  }
+  .inbox-page .detail-header__subject {
+    font-size: 17px;
+  }
+  .detail-sender__avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+  .detail-sender {
+    flex-wrap: wrap;
+  }
+  .detail-sender__date {
+    width: 100%;
+    padding-left: 46px;
+  }
+}
+
+/* Dark Mode: .tag--outbound hat global einen fest hellen Hintergrund (#eef0ef) - im Posteingang auf Tokens */
+:root[data-theme="dark"] .inbox-page .tag--outbound {
+  background: var(--paper-200);
+  border-color: var(--paper-line);
+  color: var(--ink-500);
+}

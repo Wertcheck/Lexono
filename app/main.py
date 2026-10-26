@@ -38,6 +38,7 @@ from app.laws.install_service import check_law_for_update
 from app.local_ai.setup_orchestrator import LocalAiSetupService, LocalAiState
 from app.models import Law
 from app.mail.factory import build_mail_provider
+from app.mail import poll_status as mail_poll_status
 from app.mail.service import MailIngestionService
 from app.matching.matcher import MatterMatchingService
 from app.matching.service import MatterAssignmentService
@@ -244,9 +245,11 @@ async def _run_periodic_mail_ingestion(settings: Settings) -> None:
                         logger.info(
                             "E-Mail erfasst und bewertet (Entscheidung: %s).", result.decision
                         )
+                    mail_poll_status.record_poll(ok=True, new_messages=len(new_messages))
                 finally:
                     db.close()
             except Exception:  # noqa: BLE001 - siehe Docstring: darf die Schleife nicht beenden
+                mail_poll_status.record_poll(ok=False)
                 logger.exception(
                     "Automatischer E-Mail-Abruf fehlgeschlagen - naechster Versuch in %ss.",
                     poll_interval,

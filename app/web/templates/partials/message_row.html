@@ -1,30 +1,42 @@
 {% from "partials/_macros.html" import matter_tag, direction_tag %}
 {% import "_icons.html" as icons %}
-<a
-  class="message-row{% if active_message_id == message.id %} message-row--active{% endif %}"
-  href="/dashboard/inbox/{{ message.id }}"
-  hx-get="/dashboard/inbox/{{ message.id }}/detail"
-  hx-target="#detail-pane"
-  hx-swap="outerHTML"
-  hx-push-url="/dashboard/inbox/{{ message.id }}"
->
-  <div class="message-row__layout">
-    <span class="message-row__avatar message-row__avatar--{{ avatar_color(message.sender) }}">
-      {{ avatar_initials(message.sender) }}
+{# Nachrichtenzeile nach Posteingang-Referenz (26.10.): Auswahl, Avatar, Absendername, Betreff, Vorschau, rechts Zeit
+   und Tags, Anhang-Symbol, Lesestatus. Das Auswahlkaestchen gehoert zum Sammelformular `#inbox-bulk-form`
+   (inbox.html, echte Route /dashboard/inbox/mark) und liegt bewusst AUSSERHALB des Links - ein Klick darauf oeffnet
+   die Nachricht nicht. #}
+{% set sender_name, sender_address = sender_parts(message.sender) %}
+<div class="message-row{% if active_message_id == message.id %} message-row--active{% endif %}{% if message.is_unread %} message-row--unread{% endif %}"
+     data-message-id="{{ message.id }}">
+  <label class="message-row__select" title="Nachricht auswählen">
+    <input type="checkbox" name="message_ids" value="{{ message.id }}" form="inbox-bulk-form"
+           aria-label="Nachricht von {{ sender_name }} auswählen" />
+  </label>
+  <a class="message-row__link"
+     href="/dashboard/inbox/{{ message.id }}"
+     hx-get="/dashboard/inbox/{{ message.id }}/detail"
+     hx-target="#detail-pane"
+     hx-swap="outerHTML"
+     hx-push-url="/dashboard/inbox/{{ message.id }}"
+     title="{{ message.sender or 'Unbekannter Absender' }}">
+    <span class="message-row__avatar message-row__avatar--{{ avatar_color(sender_name) }}" aria-hidden="true">
+      {{ avatar_initials(sender_name) }}
     </span>
-    <div class="message-row__body">
-      <div class="message-row__top">
-        <span class="message-row__sender">{{ message.sender or "Unbekannter Absender" }}</span>
-        <span class="message-row__time">{{ message.created_at.strftime("%d.%m. %H:%M") }}</span>
-      </div>
-      <div class="message-row__subject">{{ message.subject or "(kein Betreff)" }}</div>
-      <div class="message-row__snippet">{{ (message.body_text or "")|truncate(90, true, "…") }}</div>
-      <div class="message-row__footer">
-        {{ matter_tag(message) }} {{ direction_tag(message) }}
+    <span class="message-row__body">
+      <span class="message-row__top">
+        {% if message.is_unread %}<span class="message-row__unread-dot" role="img" aria-label="Ungelesen" title="Ungelesen"></span>{% endif %}
+        <span class="message-row__sender">{{ sender_name }}</span>
+        <span class="message-row__time">{{ message_time_label(message.created_at) }}</span>
+      </span>
+      <span class="message-row__subject">{{ message.subject or "(kein Betreff)" }}</span>
+      <span class="message-row__bottom">
+        <span class="message-row__snippet">{{ (message.body_text or "")|replace("\n", " ")|truncate(110, true, "…") }}</span>
         {% if message.documents %}
-          {{ icons.clip(class_="icon message-row__attachment-icon") }}
+          <span class="message-row__attachment" title="{{ message.documents|length }} Anhang/Anhänge">
+            {{ icons.clip(class_="icon message-row__attachment-icon") }}
+          </span>
         {% endif %}
-      </div>
-    </div>
-  </div>
-</a>
+        <span class="message-row__tags">{{ direction_tag(message) }} {{ matter_tag(message) }}</span>
+      </span>
+    </span>
+  </a>
+</div>

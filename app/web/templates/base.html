@@ -41,10 +41,16 @@
     document.addEventListener("click", function (evt) {
       var row = evt.target.closest(".message-row");
       if (row) {
+        // Auswahlkaestchen der Zeile oeffnet die Nachricht nicht (Posteingang, 26.10.)
+        if (evt.target.closest(".message-row__select")) {
+          return;
+        }
         document.querySelectorAll(".message-row--active").forEach(function (el) {
           el.classList.remove("message-row--active");
         });
         row.classList.add("message-row--active");
+        // Oeffnen setzt die Nachricht serverseitig auf gelesen (app/web/router.py::_mark_read)
+        row.classList.remove("message-row--unread");
         return;
       }
       var tab = evt.target.closest(".filter-tab");
@@ -199,6 +205,17 @@
           <a href="/dashboard/errors" class="header-icons__btn" title="Fehler &amp; Hinweise" aria-label="Fehler und Hinweise">
             {{ icons.bell(class_="icon") }}
           </a>
+          {# Dark-Mode-Umschalter (Posteingang-Referenz, 26.10.): derselbe Mechanismus wie die Auswahl unter
+             Einstellungen -> Allgemein (data-theme + localStorage + native Titelleiste). Fuer Admins wird der Wert
+             zusaetzlich ueber DIESELBE Route wie dort gespeichert (Settings.ui_theme), sonst nur auf diesem Geraet. #}
+          {% set _header_is_admin = current_user.role and current_user.role.name.lower() == "admin" %}
+          <button type="button" class="header-icons__btn" id="theme-toggle-btn" aria-pressed="false"
+                  title="Dunkles Design ein-/ausschalten" aria-label="Dunkles Design ein- oder ausschalten"
+                  data-persist-url="{{ '/dashboard/settings/general/theme' if _header_is_admin else '' }}"
+                  data-csrf="{{ request.state.csrf_token if _header_is_admin and request.state.csrf_token is defined else '' }}">
+            <span class="theme-toggle__moon">{{ icons.moon(class_="icon") }}</span>
+            <span class="theme-toggle__sun">{{ icons.sun(class_="icon") }}</span>
+          </button>
           <form method="post" action="/dashboard/lock-now" id="lock-now-form" class="header-icons__form" style="display: none;">
             <input type="hidden" name="csrf_token" id="lock-now-csrf" value="" />
             <button type="submit" class="header-icons__btn" title="Jetzt sperren" aria-label="Jetzt sperren">
@@ -212,6 +229,33 @@
           </form>
         </div>
       </header>
+      <script>
+        (function () {
+          // Dark-Mode-Umschalter in der Kopfzeile (Posteingang-Referenz, 26.10.) - siehe Kommentar am Button
+          var btn = document.getElementById("theme-toggle-btn");
+          if (!btn) { return; }
+          function isDark() { return document.documentElement.getAttribute("data-theme") === "dark"; }
+          function sync() { btn.setAttribute("aria-pressed", isDark() ? "true" : "false"); }
+          sync();
+          btn.addEventListener("click", function () {
+            var next = isDark() ? "light" : "dark";
+            if (next === "dark") { document.documentElement.setAttribute("data-theme", "dark"); }
+            else { document.documentElement.removeAttribute("data-theme"); }
+            try { localStorage.setItem("lexono_theme", next); } catch (e) {}
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.set_title_bar_dark_mode) {
+              window.pywebview.api.set_title_bar_dark_mode(next === "dark");
+            }
+            sync();
+            var url = btn.getAttribute("data-persist-url"), csrf = btn.getAttribute("data-csrf");
+            if (url && csrf) {
+              var body = new FormData();
+              body.append("csrf_token", csrf);
+              body.append("ui_theme", next);
+              fetch(url, { method: "POST", body: body, credentials: "same-origin", redirect: "manual" }).catch(function () {});
+            }
+          });
+        })();
+      </script>
     {% endif %}
     <div class="app-shell">
       <nav class="sidebar">
@@ -229,10 +273,12 @@
          chat_home fuer die volle Begruendung des `?new=1`-Parameters) -
          keine neue Chat-Start-Logik, nur ein zweiter, permanent
          sichtbarer Einstiegspunkt dafuer. #}
+      {% block sidebar_primary_action %}
       <a href="/dashboard/chat?new=1" class="sidebar__new-chat-btn">
         {{ icons.plus(class_="icon") }}
         <span>Neuen Chat starten</span>
       </a>
+      {% endblock %}
       <div class="sidebar__nav">
         {% set is_admin = current_user and current_user.role and current_user.role.name.lower() == "admin" %}
         {# Flachere Navigation (Referenzbild, 01.09.): Punkte, die im
@@ -360,6 +406,9 @@
                    KEIN Router ausserhalb von tasks_router.py diesen Wert
                    kennen muss. Kein erfundener Platzhalterwert. #}
                 <span hx-get="/dashboard/tasks/badge" hx-trigger="load" hx-swap="innerHTML"></span>
+              {% elif group.label == "Posteingang" %}
+                {# Ungelesene eingehende Nachrichten (Posteingang-Referenz, 26.10.) - gleiches Lazy-Load-Muster #}
+                <span hx-get="/dashboard/inbox/badge" hx-trigger="load" hx-swap="innerHTML"></span>
               {% endif %}
             </a>
           </div>

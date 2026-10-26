@@ -716,10 +716,11 @@ def test_email_accounts_link_always_available_even_when_inbox_empty(
 ) -> None:
     """Direktive §5 "E-Mail-Konten verwalten bleibt verfügbar" - dieser
     Link stand schon vorher ausserhalb der total_count-Verzweigung im
-    Seitenkopf, hier als expliziter Regressionstest festgehalten."""
+    Seitenkopf, hier als expliziter Regressionstest festgehalten. Beschriftung seit 26.10. "E-Mail-Konto verwalten"
+    (Owner-Auftrag Posteingang-Referenz; es gibt genau ein konfigurierbares Postfach)."""
     response = client.get("/dashboard/inbox")
     assert response.status_code == 200
-    assert "E-Mail-Konten verwalten" in response.text
+    assert "E-Mail-Konto verwalten" in response.text
     assert 'href="/dashboard/settings#email-postfach"' in response.text
 
 
@@ -1450,8 +1451,8 @@ def test_email_accounts_link_visible_for_admin_only(
     admin_response = client.get("/dashboard/inbox")
     mitarbeiter_response = mitarbeiter_client.get("/dashboard/inbox")
 
-    assert "E-Mail-Konten verwalten" in admin_response.text
-    assert "E-Mail-Konten verwalten" not in mitarbeiter_response.text
+    assert "E-Mail-Konto verwalten" in admin_response.text
+    assert "E-Mail-Konto verwalten" not in mitarbeiter_response.text
 
 
 # --- Posteingang Final UI/UX Product-Completion (25.09., Owner-Direktive
