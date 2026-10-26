@@ -264,7 +264,14 @@
     if (state.view === "result") { renderResult(data); renderThumbs(null); updatePageInfo(); return; }
     if (data.viewer_kind !== "pages" || !data.pages.length) { renderTextView(data); renderThumbs(null); updatePageInfo(); return; }
     var holder = el("div", "pseudo-center__page-stack");
+    // Seitenbreite = verfuegbare Vorschaubreite (bis 1100 px) x Zoom; Aufloesung passend zur angezeigten Groesse und
+    // zur Bildschirmskalierung (vorher fest 110/160 dpi bei max. 900 px - klein und bei 125 % Skalierung unscharf)
     holder.style.width = Math.round(state.zoom * 100) + "%";
+    holder.style.maxWidth = Math.round(1100 * state.zoom) + "px";
+    var shownPx = Math.min(Math.max(docPane.clientWidth - 32, 320), 1100) * state.zoom;
+    var firstWidthPt = data.pages[0].width || 595;
+    var dpi = Math.ceil(shownPx * (window.devicePixelRatio || 1) / firstWidthPt * 72 / 24) * 24;
+    dpi = Math.min(240, Math.max(96, dpi));
     data.pages.forEach(function (page) {
       var wrap = el("figure", "pseudo-page");
       wrap.setAttribute("data-page", String(page.number));
@@ -273,7 +280,7 @@
       var img = el("img", "pseudo-page__img");
       img.alt = "Seite " + page.number + " (Original)";
       img.loading = "lazy";
-      img.src = data.page_url_base + page.number + ".png?dpi=" + (state.zoom > 1.2 ? 160 : 110);
+      img.src = data.page_url_base + page.number + ".png?dpi=" + dpi;
       box.appendChild(img);
       if (state.view === "marked") {
         page.marks.forEach(function (mark) {
@@ -425,7 +432,15 @@
   function scrollToMark(term) {
     var mark = docPane.querySelector("[data-term=\"" + cssEscape(term) + "\"]");
     if (mark) {
-      mark.scrollIntoView({ block: "center", behavior: "smooth" });
+      // Fundstelle im oberen Drittel, aber den Seitenanfang nicht unnoetig verlassen: vorher wurde die Markierung
+      // zentriert, sodass bei Funden weit oben vor allem der leere untere Teil der VORSEITE zu sehen war (26.10.2026).
+      var paneRect = docPane.getBoundingClientRect();
+      var markTop = mark.getBoundingClientRect().top - paneRect.top + docPane.scrollTop;
+      var pageNode = mark.closest(".pseudo-page");
+      var pageTop = pageNode ? pageNode.offsetTop - 8 : markTop;
+      var target = markTop - docPane.clientHeight / 3;
+      if (markTop - pageTop < docPane.clientHeight * 0.75) { target = pageTop; }
+      docPane.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
       mark.classList.add("is-focused");
       setTimeout(function () { mark.classList.remove("is-focused"); }, 1600);
       setTimeout(updatePageInfo, 450);
@@ -486,59 +501,86 @@
     return -1;
   }
 
+  function decisionText(term) {
+    var d = state.decisions[term];
+    if (!d) { return "offen"; }
+    return d === "not_personal" ? "bleibt lesbar" : (d === "unsure" ? "unsicher – wird pseudonymisiert" : "pseudonymisiert");
+  }
+
+  function whereButtons(q, container) {
+    // aktuelles Dokument zuerst; bei vielen Dokumenten kompakt ("in n Dokumenten")
+    var docs = q.docs.slice().sort(function (a, b) { return (b === state.currentId) - (a === state.currentId); });
+    if (docs.length > 3) { container.appendChild(el("span", "pseudo-question__more", "in " + docs.length + " Dokumenten")); }
+    docs.slice(0, 2).concat(docs.length === 3 ? docs.slice(2) : []).forEach(function (id) {
+      var pages = pagesWithTerm(id, q.term);
+      var where = el("button", "pseudo-question__where",
+        docName(id) + (pages.length ? " · S. " + pages.slice(0, 3).join(", ") + (pages.length > 3 ? " …" : "") : ""));
+      where.type = "button";
+      where.title = "Zur Fundstelle springen";
+      where.addEventListener("click", function () {
+        state.activeTerm = q.term;
+        if (id !== state.currentId) { selectDoc(id, q.term); }
+        else { if (state.view !== "marked") { setView("marked"); } renderDocument(); renderPanel(); scrollToMark(q.term); }
+      });
+      container.appendChild(where);
+    });
+  }
+
+  /** Aktive Frage ausfuehrlich (Fund -> Frage -> Antworten -> Kontext, klar getrennt); alle anderen als kompakte
+   *  Zeile (Begriff, Kategorie, Status) - ein Klick holt sie nach vorn. Entscheidungen liegen in `state.decisions`
+   *  und bleiben dadurch ueber Dokument- und Ansichtswechsel erhalten. */
   function renderQuestions() {
     questionsBox.textContent = "";
     var qs = questions();
     if (!qs.length) { return; }
+    if (!qs.some(function (q) { return q.term === state.activeTerm; })) {
+      state.activeTerm = (qs.filter(function (q) { return !state.decisions[q.term]; })[0] || qs[0]).term;
+    }
     qs.forEach(function (q, index) {
       var kind = decisionKind(q.term);
-      var item = el("article", "pseudo-question pseudo-question--" + kind + (q.term === state.activeTerm ? " is-active" : ""));
+      var active = q.term === state.activeTerm;
+      var item = el("article", "pseudo-question pseudo-question--" + kind + (active ? " is-active" : " is-compact"));
       item.setAttribute("data-question", q.term);
-      item.addEventListener("click", function (evt) {
-        if (evt.target.closest("button, summary, a")) { return; }
-        activateQuestion(q.term, false, true);
-      });
-      var head = el("div", "pseudo-question__head");
+      var head = el(active ? "div" : "button", "pseudo-question__head");
+      if (!active) {
+        head.type = "button";
+        head.title = "Rückfrage öffnen";
+        head.setAttribute("aria-expanded", "false");
+        head.addEventListener("click", function () { activateQuestion(q.term, true, true); });
+      }
       head.appendChild(el("span", "pseudo-question__index", (index + 1) + " / " + qs.length));
       head.appendChild(el("span", "pseudo-question__term", q.term));
-      head.appendChild(el("span", "pseudo-question__state pseudo-question__state--" + kind,
-        kind === "open" ? "offen" : (state.decisions[q.term] === "not_personal" ? "bleibt lesbar"
-                                     : (state.decisions[q.term] === "unsure" ? "unsicher" : "pseudonymisiert"))));
+      head.appendChild(el("span", "pseudo-question__state pseudo-question__state--" + kind, decisionText(q.term)));
       item.appendChild(head);
+      if (!active) { questionsBox.appendChild(item); return; }
+
+      // 1) Fund: Begriff, Kategorie, Fundstellen
+      var found = el("section", "pseudo-question__section pseudo-question__found");
+      found.appendChild(el("span", "pseudo-question__label", "Fund"));
+      var termBox = el("p", "pseudo-question__finding");
+      termBox.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + kind, q.term));
+      termBox.appendChild(el("span", "pseudo-question__cat", questionCategory(q.term)));
+      found.appendChild(termBox);
       var meta = el("div", "pseudo-question__meta");
-      meta.appendChild(el("span", "pseudo-question__cat", questionCategory(q.term)));
-      if (q.docs.length) {
-        // aktuelles Dokument zuerst; bei vielen Dokumenten kompakt ("+ n weitere")
-        var docs = q.docs.slice().sort(function (a, b) { return (b === state.currentId) - (a === state.currentId); });
-        if (docs.length > 3) {
-          meta.appendChild(el("span", "pseudo-question__more", "in " + docs.length + " Dokumenten"));
-        }
-        docs.slice(0, 2).concat(docs.length === 3 ? docs.slice(2) : []).forEach(function (id) {
-          var pages = pagesWithTerm(id, q.term);
-          var where = el("button", "pseudo-question__where",
-            docName(id) + (pages.length ? " · S. " + pages.slice(0, 3).join(", ") + (pages.length > 3 ? " …" : "") : ""));
-          where.type = "button";
-          where.title = "Zur Fundstelle springen";
-          where.addEventListener("click", function () {
-            state.activeTerm = q.term;
-            if (id !== state.currentId) { selectDoc(id, q.term); }
-            else { if (state.view !== "marked") { setView("marked"); } renderDocument(); renderPanel(); scrollToMark(q.term); }
-          });
-          meta.appendChild(where);
-        });
-      } else if (q.fromChat) {
-        meta.appendChild(el("span", "pseudo-question__source", "aus Ihrer Nachricht im Chat"));
-      }
-      item.appendChild(meta);
-      item.appendChild(el("p", "pseudo-question__ask", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
+      if (q.docs.length) { whereButtons(q, meta); }
+      else if (q.fromChat) { meta.appendChild(el("span", "pseudo-question__source", "aus Ihrer Nachricht im Chat")); }
+      found.appendChild(meta);
+      item.appendChild(found);
+
+      // 2) Frage + 3) Antworten (Frage als eigene Zeile direkt ueber den Antworten)
+      var answers = el("section", "pseudo-question__section");
+      answers.appendChild(el("span", "pseudo-question__label", "Frage"));
+      answers.appendChild(el("p", "pseudo-question__ask", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
       var row = el("div", "pseudo-question__options");
+      row.setAttribute("role", "group");
+      row.setAttribute("aria-label", "Antwort zu " + q.term);
       OPTIONS.forEach(function (option) {
         var b = el("button", "pseudo-question__option");
         b.type = "button";
         b.setAttribute("data-decision", option.decision);
         b.setAttribute("aria-pressed", state.decisions[q.term] === option.decision ? "true" : "false");
-        b.title = option.hint;
         b.disabled = state.busy || (state.mode === "view");
+        b.title = option.title + " – " + option.hint;
         b.appendChild(el("strong", "", option.title));
         b.appendChild(el("small", "", option.hint));
         b.addEventListener("click", function () {
@@ -552,7 +594,10 @@
         });
         row.appendChild(b);
       });
-      item.appendChild(row);
+      answers.appendChild(row);
+      item.appendChild(answers);
+
+      // 4) Kontext (aufklappbar; bei Rueckfragen aus dem Chat ohne Dokumentfundstelle offen)
       var ctx = el("details", "pseudo-question__context");
       ctx.appendChild(el("summary", "", "Kontext anzeigen"));
       var quote = el("p", "pseudo-question__quote");
@@ -560,7 +605,7 @@
       quote.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + kind, q.term));
       quote.appendChild(document.createTextNode((q.context_after || "") + " …“"));
       ctx.appendChild(quote);
-      ctx.open = q.term === state.activeTerm && !q.docs.length;
+      ctx.open = !q.docs.length;
       item.appendChild(ctx);
       questionsBox.appendChild(item);
     });
@@ -574,17 +619,17 @@
 
   /** Frage hervorheben (Karte + Markierung). `scrollCard`: Karte ins Bild holen; `jump`: zur Fundstelle springen. */
   function activateQuestion(term, scrollCard, jump) {
+    var changed = state.activeTerm !== term;
     state.activeTerm = term;
-    questionsBox.querySelectorAll(".pseudo-question").forEach(function (node) {
-      node.classList.toggle("is-active", node.getAttribute("data-question") === term);
-    });
+    if (changed) { renderQuestions(); } // nur die aktive Frage ist ausfuehrlich dargestellt
     docPane.querySelectorAll(".pseudo-mark").forEach(function (node) {
       node.classList.toggle("is-active", node.getAttribute("data-term") === term);
     });
     renderProgress();
     var node = questionsBox.querySelector("[data-question=\"" + cssEscape(term) + "\"]");
     if (node && scrollCard) {
-      var top = node.offsetTop - panelScroll.offsetTop;
+      // Position relativ zum Scrollbereich (unabhaengig vom offsetParent)
+      var top = node.getBoundingClientRect().top - panelScroll.getBoundingClientRect().top + panelScroll.scrollTop;
       if (top < panelScroll.scrollTop || top + node.offsetHeight > panelScroll.scrollTop + panelScroll.clientHeight) {
         panelScroll.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
       }
@@ -732,7 +777,8 @@
     if (loadingNeeded && !lock) { lock = "Dokumente werden noch geprüft …"; }
     confirmBtn.disabled = state.mode === "view" || state.busy || remaining > 0 || loadingNeeded ||
       (state.mode === "release" && (!state.canManage || blocked));
-    confirmBtn.title = confirmBtn.disabled ? lock : "";
+    // Tooltip traegt immer den Hinweis (bei niedrigen Fenstern ist die Hinweiszeile der Fussleiste ausgeblendet)
+    confirmBtn.title = confirmBtn.disabled ? (lock || openCount.textContent) : openCount.textContent;
     renderFooterStatus();
   }
 
@@ -891,6 +937,13 @@
   thumbsToggle.addEventListener("click", function () { rerenderKeepingPage(function () { state.thumbs = !state.thumbs; }); });
   maximizeBtn.addEventListener("click", function () {
     rerenderKeepingPage(function () { setMaximized(!state.maximized); });
+  });
+  // Fenstergroesse geaendert: Seiten neu bemessen (Breite/Aufloesung), aktuelle Seite bleibt
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    if (!dialog.open) { return; }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { rerenderKeepingPage(function () {}); }, 250);
   });
   var scrollTimer = null;
   docPane.addEventListener("scroll", function () {

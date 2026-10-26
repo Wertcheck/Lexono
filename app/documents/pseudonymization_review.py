@@ -21,7 +21,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.documents.release import text_version_of
-from app.documents.docx_layout import open_rendered, unrendered_image_count
+from app.documents.docx_layout import layout_notes, open_rendered, unrendered_image_count
 from app.documents.rendering import determine_viewer_mode
 from app.models import Document, Matter
 
@@ -88,15 +88,25 @@ def _normalized(rect, page_rect) -> dict:
             "h": round(rect.height / page_rect.height, 5)}
 
 
+def _text_flags(base: int) -> int:
+    """Ligaturen ("ff", "fi", "fl") als Einzelbuchstaben liefern (26.10.2026, reproduziert: "Betreﬀ" im DOCX-Satz,
+    ebenso in PDFs mit Ligaturen) - sonst fanden Wort- und Phrasensuche z. B. "Hoffmann" nicht und markierten nichts."""
+    import pymupdf
+
+    return base & ~pymupdf.TEXT_PRESERVE_LIGATURES
+
+
 def _locate(page, value: str, words) -> list:
     """Fundstellen EINES Werts auf einer Seite. Einwortwerte: nur ganze Woerter (kein "Richter" in "Richterin");
     Mehrwortwerte: Phrasensuche der Seite."""
+    import pymupdf
+
     value = value.strip()
     if not value:
         return []
     if " " not in value:
         return [w[:4] for w in words if _WORD_EDGE.sub("", w[4]) == value]
-    return list(page.search_for(value))
+    return list(page.search_for(value, flags=_text_flags(pymupdf.TEXTFLAGS_SEARCH)))
 
 
 def _page_marks(path: Path, values: dict[str, dict]) -> tuple[list[dict], set[str], bool]:
@@ -112,7 +122,7 @@ def _page_marks(path: Path, values: dict[str, dict]) -> tuple[list[dict], set[st
                 pages.append({"number": index + 1, "width": page.rect.width, "height": page.rect.height,
                               "marks": [], "has_text": None})
                 continue
-            words = page.get_text("words")
+            words = page.get_text("words", flags=_text_flags(pymupdf.TEXTFLAGS_WORDS))
             marks = []
             for value, attrs in values.items():
                 for rect in _locate(page, value, words):
@@ -142,7 +152,7 @@ def _docx_header_footer_gaps(path: Path, pages: list[dict]) -> list[str]:
     if not lines:
         return []
     with open_rendered(path) as doc:
-        rendered = " ".join(page.get_text() for page in doc)
+        rendered = " ".join(page.get_text(flags=_text_flags(pymupdf.TEXTFLAGS_TEXT)) for page in doc)
     normalized = " ".join(rendered.split())
     return [line for line in lines if " ".join(line.split()) not in normalized]
 
@@ -230,6 +240,7 @@ def build_review(db: Session, document: Document, matter: Matter, conversation_i
                     data.limitations.append(
                         f"{len(missing)} Kopf-/Fußzeile(n) dieses Word-Dokuments erscheinen in der Seitenansicht "
                         "nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten.")
+                data.limitations.extend(layout_notes(path))
                 images = unrendered_image_count(path)
                 if images:
                     data.limitations.append(f"{images} Bild(er)/Grafik(en) dieses Word-Dokuments werden in der "

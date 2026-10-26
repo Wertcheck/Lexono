@@ -123,6 +123,24 @@ def test_quick_actions_only_prefill_the_chat_input() -> None:
     assert 'state.mode === "view"' in quick  # nur in der reinen Pruefansicht ohne offenen Auftrag
 
 
+def test_active_question_is_detailed_and_the_others_are_compact_rows() -> None:
+    """26.10.2026 (2. Ueberarbeitung): Fund, Frage/Antworten und Kontext getrennt; nur die aktive Frage ausfuehrlich."""
+    cards = _function("renderQuestions")
+    for marker in ("is-compact", '"Fund"', '"Frage"', "pseudo-question__options", "pseudo-question__context",
+                   "activateQuestion(q.term, true, true)"):
+        assert marker in cards, marker
+    # Aktivieren baut die Liste neu auf (sonst bliebe die alte Karte ausgeklappt)
+    assert "renderQuestions()" in _function("activateQuestion")
+
+
+def test_preview_size_follows_the_available_width_and_screen_scaling() -> None:
+    render = _function("renderDocument")
+    assert "docPane.clientWidth" in render and "devicePixelRatio" in render and "maxWidth" in render
+    assert '".png?dpi=" + dpi' in render
+    # Sprung zur Fundstelle beginnt am Seitenanfang statt die Markierung zu zentrieren (fast leere Vorseite)
+    assert "pageTop" in _function("scrollToMark") and 'block: "center"' not in _function("scrollToMark")
+
+
 def test_document_content_is_rendered_as_text_only() -> None:
     assert "innerHTML" not in SCRIPT and "insertAdjacentHTML" not in SCRIPT
 

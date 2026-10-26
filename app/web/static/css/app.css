@@ -11285,9 +11285,9 @@ a.chat-composer__protect-btn {
 }
 .pseudo-thumb__num { font-size: 11px; color: var(--ink-500); }
 .pseudo-thumb.is-current .pseudo-thumb__num { color: var(--pc-navy); font-weight: 600; }
-.pseudo-center__pages { flex: 1 1 auto; overflow: auto; padding: 20px; min-height: 0; min-width: 0; }
-.pseudo-center__page-stack { margin: 0 auto; min-width: 280px; max-width: 900px; }
-.pseudo-page { margin: 0 auto 18px; }
+.pseudo-center__pages { position: relative; flex: 1 1 auto; overflow: auto; padding: 16px; min-height: 0; min-width: 0; }
+.pseudo-center__page-stack { margin: 0 auto; min-width: 280px; }
+.pseudo-page { margin: 0 auto 14px; }
 .pseudo-page__box { position: relative; width: 100%; background: #fff; border: 1px solid var(--paper-line);
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 4px 14px rgba(16, 24, 40, 0.05); }
 .pseudo-page__img { display: block; width: 100%; height: 100%; }
@@ -11308,7 +11308,8 @@ a.chat-composer__protect-btn {
 /* Pruefpanel */
 .pseudo-center__panel { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-left: 1px solid var(--paper-line); background: var(--paper-000); }
 .pseudo-center__panel-head { flex: 0 0 auto; padding: 14px 16px 12px; border-bottom: 1px solid var(--paper-line); display: flex; flex-direction: column; gap: 8px; }
-.pseudo-center__panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.pseudo-center__panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+[data-pseudo-questions] { display: flex; flex-direction: column; gap: 8px; }
 .pseudo-center__notice { font-size: 12.5px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--brand-green-tint); color: var(--ink-900); }
 .pseudo-center__notice--error { background: var(--accent-amber-tint); }
 .pseudo-center__status { display: flex; flex-direction: column; gap: 4px; }
@@ -11333,49 +11334,61 @@ a.chat-composer__protect-btn {
 .pseudo-center__qnav-btn:disabled { opacity: 0.4; cursor: default; }
 .pseudo-center__section-title { font-size: 12.5px; font-weight: 650; margin: 0 0 6px; color: var(--pc-navy); }
 
-/* Fragekarten */
+/* Fragekarten (26.10.2026, 2. Ueberarbeitung): nur die aktive Frage ist ausfuehrlich - Fund, Frage, Antwort und
+   Kontext als getrennte Abschnitte; alle anderen sind kompakte Zeilen (Begriff, Status), ein Klick oeffnet sie. */
 .pseudo-question {
-  border: 1px solid var(--paper-line); border-left: 3px solid var(--paper-line); border-radius: var(--radius-md); padding: 10px 12px;
+  border: 1px solid var(--paper-line); border-left: 3px solid var(--paper-line); border-radius: var(--radius-md);
   background: var(--paper-000); box-shadow: var(--pc-shadow); cursor: default;
 }
 .pseudo-question--open { border-left-color: var(--accent-amber); }
 .pseudo-question--masked { border-left-color: var(--pc-green); }
 .pseudo-question--kept { border-left-color: var(--ink-300); }
-.pseudo-question.is-active { border-color: var(--pc-green); border-left-color: var(--pc-green); box-shadow: 0 0 0 3px rgba(36, 157, 116, 0.14); }
+.pseudo-question.is-active { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 12px;
+  border-color: var(--pc-green); border-left-color: var(--pc-green); box-shadow: 0 0 0 3px rgba(36, 157, 116, 0.14); }
 .pseudo-question.is-active.pseudo-question--open { border-color: var(--accent-amber); border-left-color: var(--accent-amber); box-shadow: 0 0 0 3px rgba(224, 160, 40, 0.16); }
-.pseudo-question__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pseudo-question__head { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; }
+.pseudo-question.is-compact .pseudo-question__head {
+  border: 0; background: none; padding: 9px 12px; cursor: pointer; text-align: left; border-radius: var(--radius-md); color: inherit;
+}
+.pseudo-question.is-compact .pseudo-question__head:hover { background: var(--pc-surface); }
+.pseudo-question.is-compact .pseudo-question__term { font-size: 13px; font-weight: 600; }
 .pseudo-question__index { font-size: 11px; color: var(--ink-500); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .pseudo-question__term { font-weight: 650; font-size: 13.5px; color: var(--pc-navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
-.pseudo-question__state { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: var(--radius-md); white-space: nowrap; flex: 0 0 auto; }
+.pseudo-question__state { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-pill); white-space: nowrap; flex: 0 0 auto; }
 .pseudo-question__state--open { background: var(--accent-amber-tint); color: var(--accent-amber); }
 .pseudo-question__state--masked { background: var(--brand-green-tint); color: var(--brand-green-dark); }
 .pseudo-question__state--kept { background: var(--paper-200); color: var(--ink-700); }
-.pseudo-question__meta { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 6px 0 4px; align-items: center; }
+.pseudo-question__section { display: flex; flex-direction: column; gap: 6px; }
+.pseudo-question__section + .pseudo-question__section { padding-top: 12px; border-top: 1px solid var(--paper-line); }
+.pseudo-question__label { font-size: 10.5px; font-weight: 650; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-500); }
+.pseudo-question__finding { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pseudo-question__finding .pseudo-mark-inline { font-size: 15px; font-weight: 650; color: var(--pc-navy); padding: 2px 6px; overflow-wrap: anywhere; }
+.pseudo-question__meta { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 .pseudo-question__cat { font-size: 11px; padding: 1px 7px; border-radius: 4px; background: var(--pc-surface); border: 1px solid var(--paper-line); color: var(--ink-700); }
 .pseudo-question__where {
-  border: 0; background: none; color: var(--brand-green-dark); font-size: 11.5px; cursor: pointer;
+  border: 0; background: none; color: var(--brand-green-dark); font-size: 12px; cursor: pointer;
   text-decoration: underline; text-underline-offset: 2px; padding: 0; text-align: left;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pseudo-question__more { font-size: 11.5px; color: var(--ink-500); }
-.pseudo-question__source { font-size: 11.5px; color: var(--ink-500); }
-.pseudo-question__ask { margin: 2px 0 8px; font-size: 12.5px; color: var(--ink-700); line-height: 1.4; }
-/* Antworten ohne Silbenbruch: nebeneinander, solange sie passen, sonst umbrechend (ganze Buttons, keine Wortteile) */
-.pseudo-question__options { display: flex; flex-wrap: wrap; gap: 6px; }
+.pseudo-question__source { font-size: 12px; color: var(--ink-500); }
+.pseudo-question__ask { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--ink-900); line-height: 1.45; }
+/* Antworten untereinander mit Erklaerung - verstaendlich, ohne Silbenbruch */
+.pseudo-question__options { display: flex; flex-direction: column; gap: 6px; }
 .pseudo-question__option {
-  flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; text-align: center;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; width: 100%;
   border: 1px solid var(--paper-line); background: var(--paper-000); color: var(--ink-900);
-  border-radius: var(--radius-sm); padding: 6px 10px; cursor: pointer; font-size: 12px; line-height: 1.25; white-space: nowrap;
+  border-radius: var(--radius-sm); padding: 7px 12px; cursor: pointer; font-size: 12.5px; line-height: 1.3;
 }
 .pseudo-question__option strong { font-weight: 600; }
-.pseudo-question__option small { display: none; }
-.pseudo-question__option:hover:not(:disabled) { border-color: var(--ink-300); }
+.pseudo-question__option small { font-size: 11.5px; color: var(--ink-500); }
+.pseudo-question__option:hover:not(:disabled) { border-color: var(--ink-300); background: var(--pc-surface); }
 .pseudo-question__option[aria-pressed="true"] { border-color: var(--pc-green); background: var(--brand-green-tint); color: var(--brand-green-dark); }
 .pseudo-question__option[data-decision="not_personal"][aria-pressed="true"] { border-color: var(--ink-500); background: var(--paper-200); color: var(--ink-900); }
 .pseudo-question__option:disabled { cursor: not-allowed; opacity: 0.6; }
-.pseudo-question__context { margin-top: 8px; }
-.pseudo-question__context summary { cursor: pointer; font-size: 11.5px; color: var(--ink-500); }
-.pseudo-question__quote { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-700); line-height: 1.5; overflow-wrap: anywhere; }
+.pseudo-question__context { padding-top: 10px; border-top: 1px solid var(--paper-line); }
+.pseudo-question__context summary { cursor: pointer; font-size: 12px; color: var(--ink-500); }
+.pseudo-question__quote { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-700); line-height: 1.55; overflow-wrap: anywhere; }
 
 /* Weitere Abschnitte */
 .pseudo-center__section { border: 1px solid var(--paper-line); border-radius: var(--radius-md); padding: 9px 12px; background: var(--paper-000); }
@@ -11440,8 +11453,25 @@ a.chat-composer__protect-btn {
   .pseudo-center__intro { font-size: 12px; }
   .pseudo-center__title-icon { width: 30px; height: 30px; }
   .pseudo-center__docbar { padding-top: 6px; padding-bottom: 6px; }
-  .pseudo-center__panel-head { padding-top: 10px; padding-bottom: 10px; }
+  .pseudo-center__panel-head { padding-top: 10px; padding-bottom: 10px; gap: 6px; }
+  /* niedrige Fenster (1280x720): aktive Frage passt komplett ins Panel - Erklaerungen der Antworten im Tooltip */
+  .pseudo-question.is-active { padding: 10px 12px 12px; gap: 9px; }
+  .pseudo-question__section + .pseudo-question__section { padding-top: 9px; }
+  .pseudo-question__option { padding: 6px 12px; }
+  .pseudo-question__option small { display: none; }
+  .pseudo-question__finding .pseudo-mark-inline { font-size: 14px; }
   .pseudo-center__footer { padding-top: 8px; padding-bottom: 8px; }
+}
+/* Mindestfenster der App (run.py: 900x600): Platz fuer Vorschau und aktive Rueckfrage statt fuer Wiederholungen -
+   Einleitung aus (Titel bleibt), Ansichten zurueck in die Titelzeile, Fusszeilen-Hinweis nur noch als Tooltip am
+   Bestaetigen-Button (offene Rueckfragen zeigt der Zaehler), Panel-Ueberschrift aus (Fortschritt bleibt). */
+@media (max-height: 640px) {
+  .pseudo-center__intro { display: none; }
+  .pseudo-center__header { grid-template-columns: auto minmax(0, 1fr) auto auto; padding-top: 8px; padding-bottom: 8px; }
+  .pseudo-center__views { grid-column: auto; grid-row: auto; justify-self: end; }
+  .pseudo-center__footer .pseudo-center__open-count { display: none; }
+  .pseudo-center__status .pseudo-center__state { display: none; }
+  .pseudo-center__toolbar { padding-top: 5px; padding-bottom: 5px; }
 }
 @media (max-width: 900px) {
   .modal.pseudo-center { max-width: calc(100vw - 16px); }
