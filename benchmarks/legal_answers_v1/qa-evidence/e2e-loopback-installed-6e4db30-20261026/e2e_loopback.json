@@ -1,0 +1,67 @@
+{
+ "exe_sha256_prefix": "97f8deb686b06215",
+ "conversation": "84dbc57a-1542-4558-9dc3-ef9f0f50797c",
+ "1_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert": true
+ },
+ "1_recorder_anfragen_nach_auftrag": 0,
+ "2_pruefung": {
+  "status": "review",
+  "rueckfragen": [
+   "Richter"
+  ],
+  "funde": 6,
+  "seiten": 2
+ },
+ "3_bestaetigen": {
+  "ereignisse": [
+   "delta",
+   "done",
+   "start",
+   "status"
+  ],
+  "message_id": "4c6f47dc-8794-4805-8055-2afe01fec229",
+  "blockiert": false
+ },
+ "4_antwort_im_chat": {
+  "qa_recorder_antwort_sichtbar": true,
+  "rueckgefuehrt_richter": false,
+  "platzhalter_sichtbar": false
+ },
+ "4_letzte_antwort_db": [
+  "QA-Recorder (synthetische Antwort, keine echte KI): Entwurf eines Schreibens an das Finanzamt. Bezugnehmend auf das Schreiben von Thomas Berger bitten wir um Aussetzung der Vollziehung. Verwendete Platzhalter in der Anfrage: 5.\n\nOFFENE PRÜFPUNKTE / HINWEISE – NICHT BESTANDTEIL DES SCHREIBENS\n- Briefkopf und Unterzeichner sind im gewählten Briefkopfprofil nicht hinterlegt - bitte unter Einstellunge"
+ ],
+ "4_entscheidungen": 6,
+ "5_payload": {
+  "anfragen": 1,
+  "pfade": [
+   "/v1/messages"
+  ],
+  "schluessel_praefix": [
+   "sk-ant-qa-in"
+  ],
+  "lecks": {
+   "Thomas Berger": 0,
+   "Berger": 0,
+   "Beispielstrasse 17": 0,
+   "10115 Berlin": 0,
+   "12/345/67890": 0,
+   "Nordbauholding": 0,
+   "Richter": 0,
+   "Sabine Hartmann": 0
+  },
+  "platzhalter_im_payload": [
+   "[ADRESSE_01]",
+   "[KENNUNG_01]",
+   "[ORGANISATION_01]",
+   "[ORT_01]",
+   "[PERSON_01]",
+   "[PERSON_02]"
+  ]
+ }
+}

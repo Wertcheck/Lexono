@@ -1229,3 +1229,29 @@ def test_cmd_local_ai_setup_stops_heartbeat_thread_after_fast_setup(monkeypatch,
     assert "laeuft noch" not in capsys.readouterr().out
     assert threads_after - threads_before == set()
     run._apply_rounded_corners(None)
+
+
+# --- Startgroesse des nativen Fensters (26.10.2026, native Desktopprüfung) ------------------------------------------
+
+
+def test_window_starts_maximized_when_the_default_size_does_not_fit_the_work_area() -> None:
+    """Gemessen: 1400x900 auf 1536x864 (125 %) - die Fussleiste des Pseudonymisierungsdialogs lag unter dem Rand."""
+    assert run._should_start_maximized(run._START_WINDOW_WIDTH, run._START_WINDOW_HEIGHT, (1536, 864)) is True
+    assert run._should_start_maximized(run._START_WINDOW_WIDTH, run._START_WINDOW_HEIGHT, (1280, 1000)) is True
+
+
+def test_window_keeps_its_default_size_when_it_fits_or_nothing_is_known() -> None:
+    assert run._should_start_maximized(run._START_WINDOW_WIDTH, run._START_WINDOW_HEIGHT, (1920, 1040)) is False
+    assert run._should_start_maximized(run._START_WINDOW_WIDTH, run._START_WINDOW_HEIGHT, None) is False
+
+
+def test_work_area_is_scaled_to_logical_pixels(monkeypatch) -> None:
+    class _Screen:
+        width, height = 1536, 864
+
+    if sys.platform != "win32":
+        assert run._work_area_logical([_Screen()]) is None
+        return
+    area = run._work_area_logical([_Screen()])
+    assert area is not None and 0 < area[0] <= 1536 and 0 < area[1] <= 864
+    assert run._work_area_logical([]) is None

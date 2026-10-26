@@ -127,6 +127,44 @@ _WEBVIEW2_DOWNLOAD_URL = "https://developer.microsoft.com/en-us/microsoft-edge/w
 #: `_NativeApi` nachgebildet.
 _MIN_WINDOW_WIDTH = 900
 _MIN_WINDOW_HEIGHT = 600
+#: Startgroesse des nativen Fensters (logische Pixel).
+_START_WINDOW_WIDTH = 1400
+_START_WINDOW_HEIGHT = 900
+
+
+def _should_start_maximized(width: int, height: int, work_area: tuple[int, int] | None) -> bool:
+    """Passt die Startgroesse nicht in den Arbeitsbereich (Bildschirm ohne Taskleiste, logische Pixel), startet das
+    Fenster maximiert (26.10.2026, native Desktopprüfung, gemessen: 1400x900 auf 1536x864 bei 125 % Skalierung - die
+    unteren ~40 px samt Fussleiste des Pseudonymisierungsdialogs lagen unterhalb des Bildschirmrands). Ohne Messwert
+    (`None`) bleibt alles wie bisher."""
+    if work_area is None:
+        return False
+    work_w, work_h = work_area
+    return width > work_w or height > work_h
+
+
+def _work_area_logical(screens) -> tuple[int, int] | None:
+    """Arbeitsbereich des Hauptbildschirms in LOGISCHEN Pixeln: Verhaeltnis Arbeitsbereich/Bildschirm aus der Windows-API
+    (beide Werte im selben Koordinatenraum, unabhaengig von der DPI-Betriebsart des Prozesses) angewendet auf die
+    logische Bildschirmgroesse von pywebview. Fehler -> None (kein Eingriff)."""
+    if sys.platform != "win32" or not screens:
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        rect = wintypes.RECT()
+        user32 = ctypes.windll.user32
+        if not user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
+            return None
+        screen_w, screen_h = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        if screen_w <= 0 or screen_h <= 0:
+            return None
+        primary = screens[0]
+        return (int(primary.width * (rect.right - rect.left) / screen_w),
+                int(primary.height * (rect.bottom - rect.top) / screen_h))
+    except Exception:  # noqa: BLE001 - rein kosmetisch, nie den Start verhindern
+        return None
 
 
 def _bundle_base_dir() -> Path:
@@ -950,6 +988,11 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
     import webview
 
     native_api = _NativeApi()
+    try:
+        screens = webview.screens
+    except Exception:  # noqa: BLE001 - ohne Bildschirmdaten wie bisher
+        screens = []
+    start_maximized = _should_start_maximized(_START_WINDOW_WIDTH, _START_WINDOW_HEIGHT, _work_area_logical(screens))
     window = webview.create_window(
         # Bewusst LEER, nicht "Lexono" (Owner-Fund, 19.09., per neuem
         # Login-Referenzbild bestaetigt und gegen die bereits laenger
@@ -964,9 +1007,12 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         # der .exe-Ressource, unabhaengig vom Fenstertitel-Text).
         "",
         f"{base_url}/dashboard/login",
-        width=1400,
-        height=900,
+        width=_START_WINDOW_WIDTH,
+        height=_START_WINDOW_HEIGHT,
         min_size=(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT),
+        # Passt 1400x900 nicht auf den Bildschirm (z. B. 1536x864 bei 125 %), maximiert starten statt die Fussleiste
+        # unter den Bildschirmrand zu legen - siehe `_should_start_maximized`.
+        maximized=start_maximized,
         resizable=True,
         # Bewusst KEIN frameless=True mehr (siehe _NativeApi-Kommentar
         # oben) - natives Fenster-Chrome ist Voraussetzung fuer echtes

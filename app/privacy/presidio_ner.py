@@ -493,6 +493,51 @@ def normalize_ner_span_boundaries(text: str, spans: list[DetectedSpan]) -> list[
     return result
 
 
+# Absender-Wendung "<Kommunikationsnomen> von X" (26.10.2026, reproduziert mit "Wir bestaetigen den Eingang des Schreibens
+# von X vom 16.03.2024."): spaCy etikettiert "Schreibens von Fuchs" als EINEN Ort - der Platzhalter verschluckte Nomen
+# und Praeposition ("Eingang des [ORT_01]"), im Gateway sogar das Datum. Dieselbe Liste nutzt die Rueckfrage
+# (review._sender_after_communication_noun) fuer Absender, die das Modell als Gattungswort kennt ("König", "Bauer").
+COMMUNICATION_NOUNS = frozenset({
+    "schreiben", "schreibens", "brief", "briefes", "briefs", "mail", "e-mail", "email", "nachricht", "mitteilung",
+    "anruf", "anrufs", "anrufes", "telefonat", "telefonats", "stellungnahme", "gutachten", "gutachtens", "bericht",
+    "berichts", "berichtes", "antrag", "antrags", "antrages", "antwort", "erklärung", "erklaerung", "aussage",
+    "vollmacht", "rechnung", "angebot", "angebots", "angebotes", "kündigung", "kuendigung", "mahnung", "fax", "faxes",
+    "zuschrift", "eingabe", "klage", "widerspruch", "widerspruchs", "einspruch", "einspruchs", "vermerk", "vermerks",
+    "protokoll", "protokolls", "hinweis", "hinweises", "rückruf", "rueckruf", "rückrufs", "rueckrufs", "auftrag",
+    "auftrags", "auftrages", "post", "unterlagen", "anfrage", "zusage", "absage", "beschwerde", "rüge", "ruege",
+})
+_SENDER_PREFIX = re.compile(r"(?P<noun>[A-ZÄÖÜ][\wÄÖÜäöüß\-]*)\s+(?P<prep>von|vom)\s+(?=\S)")
+_DATE_TAIL = re.compile(r"\s+(?:vom|am|v\.)\s+\d")
+
+
+def trim_sender_phrases(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
+    """Ein Namens-/Orts-/Organisations-Treffer, der mit "<Kommunikationsnomen> von|vom" BEGINNT, wird auf den Absender
+    gekuerzt; ein mitgefangenes Datum ("Stein vom 16.03.2024") bleibt ausserhalb (Daten erfasst der Datumsdetektor).
+    Nur Kuerzen, nie Entfernen: der Absender bleibt maskiert (fail-closed). Ein einzelnes Wort nach "von" (ohne Artikel)
+    ist als Absender eine Person ("Schreiben von Fuchs"); nach "vom" (= von dem: "vom Finanzamt") und bei mehreren
+    Woertern bleibt die erkannte Kategorie."""
+    result: list[DetectedSpan] = []
+    for span in spans:
+        match = _SENDER_PREFIX.match(span.value)
+        if span.category not in ("person", "ort", "organisation") or not match or \
+                match.group("noun").lower() not in COMMUNICATION_NOUNS:
+            result.append(span)
+            continue
+        rest = span.value[match.end():]
+        tail = _DATE_TAIL.search(rest)
+        if tail:
+            rest = rest[: tail.start()]
+        rest = rest.rstrip(" .,;:")
+        if not _HAS_LETTER.search(rest):
+            result.append(span)  # nichts Sinnvolles uebrig - lieber unveraendert maskieren
+            continue
+        start = span.start + match.end()
+        single = re.fullmatch(r"[A-ZÄÖÜ][\wÄÖÜäöüß\-]*", rest) is not None
+        category = "person" if match.group("prep") == "von" and single else span.category
+        result.append(DetectedSpan(category=category, start=start, end=start + len(rest), value=rest))
+    return result
+
+
 def normalize_organisation_spans(text: str, spans: list[DetectedSpan]) -> list[DetectedSpan]:
     """Vereinheitlicht die Grenzen erkannter Organisationsnamen.
 
@@ -1350,7 +1395,7 @@ def detect_presidio_entities(text: str) -> list[DetectedSpan]:
         spans.extend(
             sp for sp in _collect_spans(restored_results, text, (starts, ends)) if (sp.category, sp.start, sp.end) not in known
         )
-    spans = normalize_organisation_spans(text, normalize_ner_span_boundaries(text, spans))
+    spans = normalize_organisation_spans(text, trim_sender_phrases(text, normalize_ner_span_boundaries(text, spans)))
     # §49: Varianten-Treffer erst NACH der Grenzen-Normalisierung - die trennt an Doppelleerzeichen (Tabellenzelle) und
     # schnitte "K a r l  B r e n n e r" sonst auf "K a r l" zurueck.
     variant = _ocr_variant_for_analysis(analysis_text)

@@ -469,6 +469,37 @@ def _context(source: str, term: str) -> tuple[str, str]:
     return " ".join(before.split()) + lead, trail + " ".join(after.split())
 
 
+# Absender nach "<Kommunikationsnomen> von" (26.10.2026, reproduziert): "Eingang des Schreibens von König" - die
+# Namensrolle wurde erkannt, das Modell-Probing ergab aber 0 von 5 (König, Kaiser, Graf, Bauer, Sommer, Notar ... sind
+# dem Modell als Gattungs-/Titelwoerter bekannt), der Begriff ging ohne Rueckfrage im Klartext hinaus. In genau dieser
+# Wendung ist ein artikelloses Einzelwort der ABSENDER - Person oder Organisation -, daher Rueckfrage auch ohne Probe.
+# Ausgenommen: Redewendungen, Abstrakta, Zeitangaben und ein Rollen-/Titelwort, dem der eigentliche Name folgt.
+_SENDER_IDIOMS = frozenset({
+    "amts", "seiten", "hand", "anfang", "bedeutung", "interesse", "belang", "gewicht", "relevanz", "dauer", "wert",
+    "rechts", "gesetzes", "haus", "hause", "neuem", "vornherein", "heute", "gestern", "morgen",
+    "januar", "februar", "märz", "maerz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november",
+    "dezember", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonnabend", "sonntag",
+})
+_ABSTRACT_SUFFIXES = ("ung", "heit", "keit", "schaft", "tion", "sion", "ität", "itaet", "nis", "ismus", "tum")
+
+
+def _sender_after_communication_noun(doc, token, raw: str) -> bool:
+    """`token` steht artikellos direkt nach "von" und davor ein Kommunikationsnomen ("Schreiben/Brief/E-Mail von X").
+    `raw` ist der Scantext MIT Platzhaltern (in der Analysefassung sind sie ausgeblendet)."""
+    i = token.i
+    if i < 2 or doc[i - 1].lower_ != "von" or doc[i - 2].text.lower() not in pn.COMMUNICATION_NOUNS:
+        return False
+    word = token.text.lower()
+    if word in _SENDER_IDIOMS or word.endswith(_ABSTRACT_SUFFIXES):
+        return False
+    # Folgt direkt ein grossgeschriebenes Wort oder ein Platzhalter, ist `token` ein Titel-/Rollenwort vor dem Namen
+    # ("von Notar Weber", "von Notar [PERSON_01]", "von Notar Dr. Weber") - der Name hat seine eigene Erkennung.
+    rest = raw[token.idx + len(token.text):].lstrip(" \t")
+    if rest[:1].isupper() or rest[:1] == "[" or re.match(r"wegen\b", rest):
+        return False  # ... bzw. Redewendung "von Amts wegen"
+    return "Plur" not in token.morph.get("Number")
+
+
 def find_review_candidates(
     scan_text: str,
     *,
@@ -548,6 +579,16 @@ def find_review_candidates(
         if pn._SENTENCE_START_PREFIX.search(neutral[: token.idx]) and not roles & (_SENTENCE_ROLES | _STRONG_ROLES):
             continue
         score = pn._name_probe_score(word)
+        if not article_reading and _sender_after_communication_noun(doc, token, scan_text):
+            # Absenderrolle ist ein eigenes Signal - Rueckfrage auch bei Probing 0 (siehe _sender_after_communication_noun)
+            before, after = _context(context_source, word)
+            found[word] = ReviewCandidate(
+                term=word, context_before=before, context_after=after,
+                roles=tuple(sorted(roles | {"absender_nach_kommunikationsnomen"})), probe_score=score,
+            )
+            if max_candidates is not None and len(found) >= max_candidates:
+                break
+            continue
         if feminine_reading == "gender_mismatch":
             # Grammatisches Eigensignal (siehe _feminine_article_name_reading) - ohne Namensprobe
             before, after = _context(context_source, word)

@@ -9394,6 +9394,19 @@ a.chat-composer__protect-btn {
   height: 24px;
 }
 
+/* Tooltip in der Ecke rechtsbuendig statt zentriert (26.10.2026, native Desktopprüfung): zentriert ragte der - auch
+   unsichtbar mitgelayoutete - Tooltip 57 px ueber den rechten Rand von `.main` hinaus und erzeugte auf JEDER
+   Chatseite eine horizontale Scrollleiste (im Screenshot des Nutzers vom 25.10. bereits sichtbar). */
+.chat-privacy-corner .chat-composer__privacy-btn::after {
+  left: auto;
+  right: 0;
+  transform: translateY(2px);
+}
+
+.chat-privacy-corner .chat-composer__privacy-btn:hover::after {
+  transform: translateY(0);
+}
+
 .chat-privacy-corner .chat-composer__privacy-btn .icon__info-mark {
   color: var(--brand-green);
 }
@@ -11173,6 +11186,12 @@ a.chat-composer__protect-btn {
 .modal.pseudo-center[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
 /* Buttons/Auswahl erben die Schrift sonst nicht (Abgleich: Arial statt Inter in Antworten, Tabs, Ansichten) */
 .pseudo-center button, .pseudo-center select, .pseudo-center input { font-family: var(--font-body); }
+/* Startfokus auf dem Titel (autofocus, tabindex=-1) statt auf dem ersten Button - der schwarze Standardrahmen um
+   "Markierte Vorschau" fiel in der nativen Desktopprüfung auf; Tastaturfokus bleibt sichtbar, im Lexono-Gruen. */
+.pseudo-center__title:focus { outline: none; }
+.pseudo-center button:focus-visible, .pseudo-center select:focus-visible, .pseudo-center summary:focus-visible {
+  outline: 2px solid var(--pc-green); outline-offset: 2px;
+}
 .pseudo-center [hidden] { display: none !important; }
 
 /* Kopf */
