@@ -1,125 +1,140 @@
-# Posteingang nach Referenzbild – Umsetzung und visuelle QA (26.10.2026)
+# Posteingang nach Referenzbild – Umsetzung und visuelle QA (26./27.10.2026)
 
-Alle Aufnahmen stammen aus der **laufenden Anwendung** (Quellstand, `python run.py serve`).
+Alle Aufnahmen stammen aus der **laufenden Anwendung** (Quellstand, `python run.py serve`):
 
-- **Isolierte QA-Ablagen** im Job-Ordner mit ausschließlich **synthetischen** E-Mails (`*.example`, „QA-SYNTH“) und dem
-  Konto `qa-inbox@lexono.test`.
-- **Cloud-Endpunkt tot** (`127.0.0.1:9`), E-Mail-Abruf aus, Proxy auf einen toten Port: Es verlässt nichts den Rechner.
-- Die produktive Datenbank wurde nicht verwendet.
+- **Testumgebung:** isolierte QA-Ablagen im Job-Ordner, ausschließlich **synthetische** E-Mails (`*.example`,
+  „QA-SYNTH“), Konto `qa-inbox@lexono.test`.
+- **Keine Cloud:** Cloud-Endpunkt tot (`127.0.0.1:9`), E-Mail-Abruf aus, Proxy auf einen toten Port. Es verlässt nichts
+  den Rechner. Die produktive Datenbank wurde nicht verwendet.
 - **Aufnahmewege:**
   - headless Edge per CDP mit exakten Viewports (DPR 1);
-  - zusätzlich zwei Aufnahmen per `PrintWindow` aus dem **echten WebView2-Desktopfenster** (`nachher/webview2/`).
+  - zusätzlich per `PrintWindow` aus dem **echten WebView2-Desktopfenster** (`nachher/webview2/`, maximiert,
+    1536×842 CSS-Pixel bei 125 %).
 
 ## Referenz
 
-Im Auftrag war ein Referenzbild „beigefügt“, es kam aber nicht an. Weder im Chat noch im Repository noch in
-Downloads, Desktop oder Bilder lag ein Posteingangsbild mit den beschriebenen Tabs. Grundlage waren deshalb:
+- **`referenz-posteingang-verbindlich.png`:** das vom Owner am 26.10. nachgereichte, **verbindliche** Referenzbild.
+  Danach wurde abgeglichen.
+- **`nachher-textvorgabe/`:** die erste Fassung (Commit `221ed86`), entstanden vor Eingang des Bildes nach der
+  Textvorgabe und `assets/ux-ui/04_posteingang_nachricht_detail.png` (`referenz-04_…png`). Sie bleibt zum Vergleich
+  erhalten.
+- **`vorher/`:** der Stand vor dem Auftrag.
+- **`nachher/`:** der Stand nach dem Abgleich mit dem verbindlichen Bild.
 
-1. die **Textvorgabe des Auftrags** (Seitenleiste, Kopfzeile, Kopfbereich, Tabs, Filterzeile, Liste, Lesebereich);
-2. die nächstliegende Bildreferenz im Repository, `assets/ux-ui/04_posteingang_nachricht_detail.png` (als
-   `referenz-04_posteingang_nachricht_detail.png` beigelegt);
-3. der bestehende App-Rahmen (`assets/ux-ui/Lexono Kanzlei-Dashboard im Darkmode.png`).
+## Abgleich mit dem verbindlichen Referenzbild (`nachher/`)
 
-**Sobald das eigentliche Referenzbild vorliegt, ist ein Feinabgleich (Abstände, Proportionen) offen.**
-
-## Szenarien
-
-| Datei (`vorher/` und `nachher/`) | Größe | Inhalt |
+| Element im Referenzbild | Umsetzung | Status |
 |---|---|---|
-| `*-01-posteingang` | 1920×1080, 1280×720, 960×600 · hell/dunkel | Standardansicht, erste Nachricht im Lesebereich |
+| Seitenleiste: Logo, grüne Schaltfläche „Neue Nachricht“ | wie Referenz; öffnet einen Chat mit vorausgefülltem E-Mail-Entwurfsauftrag (Lexono versendet nichts) | ✔ |
+| Navigation mit Zählern (Posteingang 12, Aufgaben 3) | Posteingang = echte Zahl ungelesener E-Mails, Aufgaben wie bisher | ✔ (Badge-Farbe: bestehendes graues Token statt Grün) |
+| KI-Status lokal/Cloud | bestehende Statuszeilen mit echtem Zustand | ✔ (ohne Modellnamen-Unterzeile) |
+| Kopfzeile: Suche, Glocke, Dark Mode, Profil-Avatar | Suche, Glocke, **Dark-Mode-Umschalter (neu)**; Umschlag und Abmelden bleiben | ⚠ siehe Abweichungen |
+| Titel „Posteingang“ + Beschreibung | wie Referenz | ✔ |
+| Rechts: „42 E-Mails (12 ungelesen)“ + „Letzter Abruf: heute, 08:12 Uhr“ | echte Zahlen; Abrufzeile = echter Zustand dieser Instanz | ✔ |
+| „E-Mail-Konto verwalten“ | Link auf den bestehenden IMAP-Bereich (Admin) | ✔ |
+| Tabs mit Zahlen, aktiver Tab grün hinterlegt | sechs Tabs, Zahlen aus denselben Bedingungen wie die Filter | ✔ |
+| Filterzeile „Mandant / Akte / Zeitraum“ mit Beschriftung, Suche rechts, Filter-Symbol | wie Referenz; Filter-Symbol öffnet „Weitere Filter“ (Sortierung, Zurücksetzen) | ✔ |
+| Liste: Kästchen, Avatar, Absender, Betreff, Vorschau, Tags, Anhang, Zeit, grüner Lesepunkt | ab 1600 px vierspaltig wie Referenz; Tags = Rechtsgebiet der Akte + „Akte: Aktenzeichen“ (nur echte Felder) | ✔ |
+| Aktive Zeile grün hinterlegt mit grüner Kante | wie Referenz | ✔ |
+| Lesebereich: Icon-Leiste (Antworten, Archiv, Löschen, Etikett, …) | Antworten, Akte öffnen, gelesen/ungelesen | ⚠ Archiv/Löschen/Etikett fehlen im Projekt |
+| Betreff groß, „Name &lt;Adresse&gt;“, „An:“, Datum rechts | wie Referenz; zusätzlich „Akte:“-Link | ✔ (kein „Cc:“, siehe Abweichungen) |
+| Text, „1 Anhang“, Anhangkarte mit Download | wie Referenz | ✔ |
+| „Zusammenfassen“ / „Antworten“ | wie Referenz; „Namen schützen“ (Datenschutz) darüber | ✔ (ohne Dropdown-Pfeil am Antworten-Button) |
+
+## Szenarien und Größen (`nachher/`, gleiche Dateinamen auch in `vorher/` bzw. `nachher-textvorgabe/`)
+
+| Datei | Größe | Inhalt |
+|---|---|---|
+| `*-01-posteingang` | 1920×1080, 1280×720, 960×600 · hell/dunkel | Standardansicht |
 | `1920x1080-hell-02-nachricht-mit-anhang` | 1920×1080 | ausgewählte Nachricht mit Anhang |
 | `1920x1080-hell-03-filter-nicht-zugeordnet` | 1920×1080 | Tab „Nicht zugeordnet“, Zuordnungskarten |
-| `1920x1080-hell-04-suche-absender` | 1920×1080 | Suche nach Absender |
-| `1920x1080-*-05-leerer-posteingang` | 1920×1080 · hell/dunkel | leerer Posteingang (eigene leere Instanz) |
-| `nachher/1920x1080-hell-06-ungelesene-nachrichten` | 1920×1080 | 4 ungelesene Nachrichten (Punkt, fett), Zähler 4 in der Navigation |
-| `nachher/1920x1080-hell-07-ausgewaehlte-nachricht-geoeffnet` | 1920×1080 | ungelesene Nachricht per Klick geöffnet → gelesen |
-| `nachher/1920x1080-hell-08-auswahl-sammelaktion` | 1920×1080 | 2 Kästchen gewählt, „2 ausgewählt“, Sammelaktionen aktiv |
-| `nachher/1920x1080-hell-09-tab-mit-anhang` | 1920×1080 | Tab „Mit Anhang“ (HTMX), 5 Zeilen = 5 in der DB |
-| `nachher/1280x720-hell-10-liste-gescrollt` | 1280×720 | Liste gescrollt, Lesebereich und Seite nicht |
-| `nachher/1920x1080-dunkel-11-umschalter-kopfzeile` | 1920×1080 | Dark Mode per Umschalter in der Kopfzeile |
-| `nachher/1920x1080-hell-12-zugeordnet-mit-anhaengen-und-aktionen` | 1920×1080 | Lesebereich: Aktionsleiste, Absenderblock, 2 Anhänge, Zusammenfassen/Antworten |
-| `nachher/1920x1080-hell-13-antwortfunktion-geoeffnet` | 1920×1080 | „Antworten“ → Chat-Entwurf; ohne Cloud ehrliche Meldung, nichts gesendet |
-| `nachher/1920x1080-hell-14-neue-nachricht-entwurf-im-chat` | 1920×1080 | „Neue Nachricht“ → neuer Chat mit vorausgefülltem Entwurfsauftrag, nicht gesendet |
-| `nachher/*-15-nachricht-mit-anhang` | 960×600 hell/dunkel, 1280×720 dunkel | Lesebereich bei kleinen Fenstern |
-| `nachher/webview2/01/02` | natives Fenster maximiert, 1536×842 CSS bei 125 % | echtes WebView2-Fenster, hell/dunkel |
+| `1920x1080-hell-04-suche-absender` | 1920×1080 | Absendersuche |
+| `1920x1080-*-05-leerer-posteingang` | 1920×1080 · hell/dunkel | leerer Posteingang |
+| `1920x1080-hell-06-ungelesene-nachrichten` | 1920×1080 | 4 ungelesen (grüner Punkt, fett), Zähler 4 |
+| `1920x1080-hell-07-ausgewaehlte-nachricht-geoeffnet` | 1920×1080 | ungelesene Nachricht geöffnet → gelesen |
+| `1920x1080-hell-08-auswahl-sammelaktion` | 1920×1080 | 2 ausgewählt, Sammelaktionen aktiv |
+| `1920x1080-hell-09-tab-mit-anhang` | 1920×1080 | Tab „Mit Anhang“ |
+| `1920x1080-hell-16-weitere-filter` | 1920×1080 | Panel „Weitere Filter“ geöffnet |
+| `1280x720-hell-10-liste-gescrollt` | 1280×720 | Liste gescrollt, Lesebereich und Seite nicht |
+| `1920x1080-dunkel-11-umschalter-kopfzeile` | 1920×1080 | Dark Mode über den Umschalter |
+| `1920x1080-hell-12-zugeordnet-mit-anhaengen-und-aktionen` | 1920×1080 | Lesebereich vollständig |
+| `1920x1080-hell-13-antwortfunktion-geoeffnet` | 1920×1080 | „Antworten“ → Chat-Entwurf; ohne Cloud ehrliche Meldung, nichts gesendet |
+| `1920x1080-hell-14-neue-nachricht-entwurf-im-chat` | 1920×1080 | „Neue Nachricht“ → Chat mit vorausgefülltem Auftrag |
+| `*-15-nachricht-mit-anhang` | 960×600 hell/dunkel, 1280×720 dunkel | kleine Fenster |
+| `webview2/01/02` | natives Fenster, maximiert | hell/dunkel |
 
-**Messwerte:**
+**Responsiv:**
 
-- `vorher/messwerte_vorher.json`, `nachher/messwerte_nachher.json`: Viewport, Querscrollen, Breiten von Liste und
-  Lesebereich, eigener Scroll je Bereich.
-- Abschnitt `funktion`: Prüfungen gegen die QA-Datenbank, siehe unten.
+- **ab 1600 px:** vierspaltige Zeilen wie in der Referenz.
+- **darunter:** zweizeilig (Absender über dem Betreff), Filterzeile einzeilig.
+- **unter 1100 px:** Feldbeschriftungen und Unterzeilen ausgeblendet.
+- **unter 1000 px:** kompakter Kopf, Tags ausgeblendet.
 
-## Vorher → nachher (Abweichungen von der Vorgabe und was geändert wurde)
+## Funktion (gegen die QA-Datenbank geprüft, `nachher/messwerte_nachher.json` → `funktion`)
 
-| Bereich | vorher | nachher |
-|---|---|---|
-| Seitenleiste | „Neuen Chat starten“, kein Zähler am Posteingang | grüne Hauptaktion **„Neue Nachricht“**, darunter weiterhin „Neuen Chat starten“; Zähler **ungelesener** Nachrichten am Posteingang; KI-Status unverändert |
-| Kopfzeile | Suche, Umschlag, Glocke, Abmelden | zusätzlich **Dark-Mode-Umschalter** (Mond/Sonne) |
-| Kopfbereich | schmal zentriert (max. 1280 px), gegen die Liste versetzt; nur „Nachrichten insgesamt/ohne Aktenzuordnung“ | volle Breite; Icon, Titel, Beschreibung; Statistik **E-Mails / ungelesen / nicht zugeordnet / mit Anhang**; **Abrufstatus**; „E-Mail-Konto verwalten“ |
-| Tabs | unterstrichene Links | Tabs mit grüner Aktiv-Linie |
-| Filterzeile | Felder ohne Ausrichtung, Suche schmal; bei 960 px zweizeilig | Mandant, Akte, Zeitraum, Suche (füllt die Zeile, Lupe im Feld), Sortierung und „Zurücksetzen“ in **einer** Zeile, auch bei 960 px |
-| Liste | Absender als „Name &lt;adresse&gt;“, Mono-Zeitstempel in UTC „26.10. 21:36“, Tags unter der Vorschau | **Auswahlkästchen**, größerer Avatar, nur Absendername, Zeit wie in der Referenz (heute Uhrzeit, „Gestern“, sonst Datum, **Ortszeit**), Vorschau mit Anhangsymbol und Tags in einer Zeile, **Lesestatus** (Punkt, fett); Listenkopf mit „alle auswählen“, Zähler, Sammelaktionen |
-| Lesebereich | Tags, Betreff, „Von:/An:“-Zeilen; „ANHÄNGE (2)“ als Mono-Label; Karten untereinander; „Aktion“ als Mono-Label | **Aktionsleiste** (Tags; Akte öffnen; als gelesen/ungelesen markieren), Betreff, **Absenderblock** mit Avatar, Name, Adresse, „an:“, Akte, Datum rechts; Text; „2 Anhänge“ mit **Kartenraster**; **Aktionskarte** mit Zusammenfassen/Antworten und Hinweis „Lexono versendet nichts selbst“ |
-| 960×600 | Kopf und Filter nahmen 300 px ein | kompakter Kopf, Liste beginnt bei ca. 230 px |
-
-## Funktion (Prüfungen gegen die QA-Datenbank, `nachher/messwerte_nachher.json` → `funktion`)
-
-- **Ungelesen:** 4 in der Datenbank = 4 markierte Zeilen = Zähler „4“ in der Navigation.
-- **Öffnen:** Klick öffnet die Nachricht per HTMX im Lesebereich. Die Zeile verliert „ungelesen“, in der Datenbank wird
-  `read_at` gesetzt, die URL lautet `/dashboard/inbox/<id>`.
-- **Automatische Vorauswahl:** Die beim Laden vorausgewählte erste Nachricht wird bewusst **nicht** als gelesen markiert
-  (Test).
-- **Auswahl:**
-  - Ein Klick auf ein Kästchen öffnet die Nachricht nicht.
-  - Der Zähler zeigt „2 ausgewählt“, die Sammelaktionen werden aktiv.
-  - „Als ungelesen markieren“ setzt die eingehende Nachricht in der Datenbank zurück. Für ausgehende Nachrichten wird
-    kein Lesestatus geführt.
-- **Tab „Mit Anhang“:** 5 Zeilen = 5 Nachrichten mit Anhang in der Datenbank. Die Verlaufs-URL ist jetzt die volle Seite
-  (`/dashboard/inbox?...`), vorher das nackte Listenfragment.
-- **Scrollen:** Die Liste scrollt unabhängig (370 px), Lesebereich und Seite bleiben bei 0.
-- **Dark-Mode-Umschalter:** wirkt sofort (`data-theme`, localStorage, native Titelleiste). Für Admins wird der Wert
-  über die bestehende Route der Einstellungen gespeichert; die `.env` der QA-Ablage stand danach auf `UI_THEME="dark"`
-  und nach dem Zurückschalten auf `"light"`.
-- **Antworten:** erzeugt einen Chat zur Akte (`/dashboard/chat/<id>`) über den bestehenden, geprüften Weg. Ohne Cloud
-  erscheint die ehrliche Fehlermeldung, nichts wurde gesendet.
-- **Neue Nachricht:** öffnet `/dashboard/chat?new=1&compose=email`. Das Eingabefeld ist mit „Bitte entwirf eine neue
-  E-Mail an “ vorausgefüllt, es wird nichts automatisch gesendet.
+- **Ungelesen:** 4 in der Datenbank = 4 markierte Zeilen = Zähler 4.
+- **Öffnen:** Klick öffnet die Nachricht per HTMX. Danach ist `read_at` gesetzt, die Zeile nicht mehr ungelesen, die URL
+  `/dashboard/inbox/<id>`.
+- **Automatische Vorauswahl:** zählt nicht als gelesen (Test).
+- **Auswahl:** Ein Klick aufs Kästchen öffnet nichts; der Zähler zeigt „2 ausgewählt“. „Als ungelesen markieren“ wirkt in
+  der Datenbank, nur bei eingehenden Nachrichten.
+- **Tabs:** Die Tab-Zahl entspricht der Trefferzahl (Test über alle sechs Tabs). Nach einem Tabwechsel ist die
+  Verlaufs-URL die volle Seite.
+- **Sortierung:** schaltet in beide Richtungen um. Vorher schickte der Umschalter nach dem ersten Klick denselben Wert
+  erneut (behoben).
+- **Scrollen:** Die Liste scrollt unabhängig (400 px), Lesebereich und Seite bleiben bei 0.
+- **Dark Mode:** wirkt sofort; Admins speichern ihn über die bestehende Einstellungsroute (QA-`.env`: `UI_THEME="dark"` →
+  `"light"`).
+- **Antworten / Neue Nachricht:** erzeugen nur Entwürfe im Chat, ohne Versand.
 - **Querscrollen:** bei keiner Aufnahme.
+
+## Tests
+
+- **Posteingang:** `test_web_inbox.py` + neu `test_web_inbox_reference_layout.py`: **119/119** bestanden.
+- **Regression:** 66 Dateien (Web/Chat/UI, Migrationen, Mail, Design/Theme, Auth/CSRF, Akten/Mandanten/Aufgaben/
+  Einstellungen) in 6 Gruppen:
+  - **1606 bestanden**, 1 übersprungen, 1 xfailed;
+  - **4 fehlgeschlagen**, ausschließlich die bekannten Logo-Tests in `test_design_refresh.py` (fremdgelöschte Logos,
+    vorbestehend, nicht verändert).
+- **Angepasste bestehende Tests:**
+  - „E-Mail-Konto verwalten“ (Einzahl laut Auftrag, es gibt genau ein Postfach).
+  - Der Test „Neuen Chat starten auf jeder Seite“ prüft jetzt eine Nicht-Posteingangsseite, weil das verbindliche Bild
+    im Posteingang nur „Neue Nachricht“ zeigt.
 
 ## Nicht vorhanden bzw. bewusst nicht gebaut (keine Fake-Steuerelemente)
 
-- **Archivieren / Löschen:** existieren im Projekt nicht (kein Datenmodell, keine Route). Sie werden nicht angeboten.
-  Das endgültige Löschen von E-Mails wäre zudem eine fachliche Entscheidung (Aufbewahrungspflichten).
-- **E-Mail-Versand / echtes Verfassen:** Lexono versendet nichts selbst (Grundregel), der Postausgang ist eine
-  Warteschlange. „Neue Nachricht“ und „Antworten“ erzeugen deshalb prüfbare **Entwürfe** im Chat.
-- **„Alle Konten“, beA:** nur ein IMAP-Postfach, kein Mehrkonten-Modell; beA ist nicht angebunden.
-- **„In Akte speichern“** (Referenz 04): entspricht der bestehenden Zuordnung (Vorschlagskarte/„Zuordnen“) bei nicht
-  zugeordneten Nachrichten. Zugeordnete Nachrichten zeigen stattdessen „Akte öffnen“.
-- **„Weitere Filter“:** vorhanden sind Sortierung und „Zurücksetzen“. Weitere Filterkriterien gibt das Datenmodell nicht
-  her.
+- **Archivieren, Löschen, Etiketten** (Icon-Leiste der Referenz): kein Datenmodell, keine Route. Das endgültige Löschen
+  von E-Mails wäre zudem eine fachliche Entscheidung (Aufbewahrungspflichten).
+- **Versand / echtes Verfassen:** Lexono versendet nichts selbst (Grundregel). „Neue Nachricht“ und „Antworten“ erzeugen
+  prüfbare Entwürfe.
+- **„Cc:“:** Das Datenmodell speichert keinen Cc-Header. Ein „Cc: —“ würde fälschlich „kein Cc“ behaupten, deshalb
+  weggelassen.
+- **Dropdown am „Antworten“-Button** (Allen antworten / Weiterleiten): Diese Varianten existieren nicht.
+- **Mehrere Konten, beA:** nicht vorhanden.
 
-## Bekannte Abweichungen / offene Punkte
+## Bekannte Abweichungen
 
-- **Das eigentliche Referenzbild fehlt** (siehe oben). Ein pixelgenauer Abgleich ist erst nach dessen Übergabe möglich.
-- **Seitenleiste:** „Neuen Chat starten“ bleibt unter „Neue Nachricht“ sichtbar. Grund ist die ausdrückliche
-  Owner-Korrektur vom 26.09., dass dieser Einstieg auf jeder Seite bleibt (Test `test_web_inbox.py`).
-- **Unzugeordnete Nachrichten:** zeigen bewusst **keine** Zusammenfassen-/Antworten-Buttons, nur einen Hinweis
-  (Aktenisolation, bestehender Test).
+- **Kopfzeile:** Das Posteingangsbild zeigt Glocke, Mond und Profil-Avatar. Das ebenfalls vom Owner stammende
+  Dashboard-Bild (`assets/ux-ui/Lexono Kanzlei-Dashboard im Darkmode.png`) zeigt dagegen Umschlag, Glocke und Abmelden.
+  Die Kopfzeile ist seitenübergreifend, deshalb blieb sie bis auf den neuen Mond wie sie ist (**Owner-Entscheidung
+  offen**).
+- **Seitenleiste:**
+  - Badge-Farbe und Form des aktiven Punkts folgen dem bestehenden, seitenübergreifenden Stil (grau bzw. volle Breite
+    statt der grünen Pille der Referenz).
+  - Der Profilbereich zeigt Name, Rolle und Menü statt Kanzleiname und Zahnrad.
+- **„Neuen Chat starten“:** fehlt im Posteingang (Referenz); auf allen anderen Seiten bleibt er (Owner-Korrektur
+  26.09.).
+- **Unzugeordnete Nachrichten:** zeigen bewusst keine Zusammenfassen-/Antworten-Buttons (Aktenisolation, bestehender
+  Test).
 - **Lesestatus:**
   - gilt kanzleiweit, nicht pro Benutzer;
-  - beim Update gelten **bestehende** Nachrichten als gelesen (Migration `schritt3_038`), sonst wäre der ganze Bestand
-    plötzlich ungelesen;
-  - fachlich anpassbar, falls ein Lesestatus pro Benutzer gewünscht ist.
-- **„Letzter Abruf“:** zeigt den letzten Lauf **dieser** Instanz (Prozessspeicher); nach einem Neustart steht dort ehrlich
-  „Noch kein Abruf seit dem Start“. Ohne Postfach: „Kein E-Mail-Postfach eingerichtet“.
+  - beim Update gelten bestehende Nachrichten als gelesen (Migration `schritt3_038`).
+- **„Letzter Abruf“:** zeigt den letzten Lauf **dieser** Instanz; nach einem Neustart steht dort ehrlich „Noch kein Abruf
+  seit dem Start“.
 - **Darstellung:**
-  - Das Tag „ausgehend“ hatte im Dark Mode global einen fest hellen Hintergrund. Behoben nur im Posteingang, andere
-    Seiten unverändert.
-  - Die Avatarfarbe „grün“ ist im hellen Design Navy, weil dort das bestehende Token `--seal-green` = `#101828` ist
-    (unverändert übernommen).
-- **QA-Hinweis Entwicklungsmodus:** Ohne `SESSION_SECRET_KEY` erzeugt Lexono im Entwicklungsmodus bei jeder
-  Einstellungsänderung ein neues Sitzungsgeheimnis und meldet dadurch ab. Das gilt auch für die Einstellungsseite und
-  ist vorbestehend; die QA-Ablage nutzt deshalb einen Wegwerf-Schlüssel. In Produktion ist der Schlüssel Pflicht.
-- **Tests:** `test_web_inbox.py` + neu `test_web_inbox_reference_layout.py` 117/117 bestanden. Regression über 66 Dateien (Web/Chat/UI, Migrationen, Mail, Design/Theme, Auth/CSRF, Akten/Mandanten/Aufgaben/Einstellungen) in 6 Gruppen: **1604 bestanden**, 1 übersprungen, 1 xfailed, **4 fehlgeschlagen** – ausschließlich die bekannten Logo-Tests in `test_design_refresh.py` (fremdgelöschte Logos unter `assets/branding/`, vorbestehend, nicht verändert). Ein erster Gesamtlauf wurde vom System bei 71 % wegen Speichermangels beendet und deshalb in Gruppen wiederholt.
-- **Installierte EXE:** wurde in diesem Auftrag nicht neu gebaut und nicht installiert. Die Prüfung erfolgte am
-  Quellstand, auch im WebView2-Fenster.
+  - Die Avatarfarbe „grün“ ist im hellen Design Navy (bestehendes Token `--seal-green`).
+  - Pastell-Avatare wie in der Referenz wären eine neue Farbsprache und wurden deshalb nicht eingeführt.
+- **QA-Hinweis Entwicklungsmodus:** Ohne `SESSION_SECRET_KEY` meldet jede Einstellungsänderung ab (vorbestehend). Die
+  QA-Ablage nutzt deshalb einen Wegwerf-Schlüssel.
+- **Installierte EXE:** in diesem Auftrag weder neu gebaut noch installiert; geprüft wurde der Quellstand, auch im
+  WebView2-Fenster.

@@ -3,11 +3,15 @@
 {% import "partials/name_protection.html" as name_protection %}
 {% set sender_name, sender_address = sender_parts(message.sender) %}
 <div id="detail-pane" class="detail-pane" data-message-id="{{ message.id }}">
-  {# Aktionsleiste (Posteingang-Referenz, 26.10.): links Status-Tags, rechts echte Aktionen - Lesestatus ueber
-     /dashboard/inbox/mark, Akte oeffnen. Archivieren/Loeschen gibt es im Projekt nicht (nicht angeboten). #}
+  {# Aktionsleiste (verbindliches Referenzbild, 26.10.): Icon-Gruppe oben. Nur echte Aktionen - Antworten (dasselbe
+     Formular wie der Button unten), Lesestatus (/dashboard/inbox/mark), Akte oeffnen. Archivieren, Loeschen und
+     Etiketten aus der Referenz gibt es im Projekt nicht (kein Datenmodell/keine Route) - bewusst nicht angeboten. #}
   <div class="detail-toolbar">
-    <div class="detail-toolbar__tags">{{ direction_tag(message) }} {{ matter_tag(message) }}</div>
     <div class="detail-toolbar__actions">
+      {% if message.matter %}
+        <button type="submit" form="message-reply-form" class="inbox-icon-btn" title="Antworten (Entwurf im Chat)"
+                aria-label="Antworten (Entwurf im Chat)">{{ icons.reply(class_="icon") }}</button>
+      {% endif %}
       {% if message.matter %}
         <a href="/dashboard/matters/{{ message.matter_id }}" class="inbox-icon-btn" title="Akte öffnen" aria-label="Akte öffnen">
           {{ icons.folder(class_="icon") }}
@@ -28,15 +32,16 @@
         </form>
       {% endif %}
     </div>
+    {# Zuordnungsstatus bleibt im Lesebereich sichtbar (Akte bzw. "nicht zugeordnet", bestehender Test) #}
+    <div class="detail-toolbar__tags">{{ direction_tag(message) }} {{ matter_tag(message) }}</div>
   </div>
   <div class="detail-header">
     <h2 class="detail-header__subject">{{ message.subject or "(kein Betreff)" }}</h2>
     <div class="detail-sender">
       <span class="detail-sender__avatar message-row__avatar--{{ avatar_color(sender_name) }}" aria-hidden="true">{{ avatar_initials(sender_name) }}</span>
       <div class="detail-header__meta">
-        <span class="detail-sender__name">{{ sender_name }}</span>
-        {% if sender_address %}<span class="detail-sender__address">{{ sender_address }}</span>{% endif %}
-        {% if message.recipient %}<span class="detail-sender__recipient">an: {{ message.recipient }}</span>{% endif %}
+        <span class="detail-sender__line"><span class="detail-sender__name">{{ sender_name }}</span>{% if sender_address and sender_address != sender_name %} <span class="detail-sender__address">&lt;{{ sender_address }}&gt;</span>{% endif %}</span>
+        {% if message.recipient %}<span class="detail-sender__recipient">An: {{ message.recipient }}</span>{% endif %}
         {# ECHTER FUND (18.09., Flow-Audit "Posteingang -> Akte"): die zugeordnete Akte ist ein echter Link. #}
         {% if message.matter %}<span class="detail-sender__matter">Akte: <a href="/dashboard/matters/{{ message.matter_id }}">{{ message.matter.title }}</a></span>{% endif %}
       </div>
@@ -125,7 +130,6 @@
        isolieren") - fuer nicht zugeordnete Nachrichten deshalb bewusst
        NICHT angezeigt, siehe die Zuordnungs-Karten unten stattdessen. #}
     <div class="detail-action-card">
-    <div class="detail-section-title">Aktion</div>
     {# §54: nicht erkannte Namen im E-Mail-Text markieren, BEVOR er zusammengefasst/beantwortet wird - dieselbe
        aktenweite Entscheidung "Als Person behandeln" wie im Chat (der Text geht als Anfrage in die Cloud) #}
     <div class="name-protection-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -139,7 +143,8 @@
         <input type="hidden" name="action" value="summarize" />
         <button type="submit" class="btn" data-ai-loading-label="Wird gestartet …">{{ icons.sparkles(class_="icon") }} Zusammenfassen</button>
       </form>
-      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form" data-name-protection-form="message">
+      <form method="post" action="/dashboard/chat/from-message/{{ message.id }}" class="js-ai-form" data-name-protection-form="message"
+            id="message-reply-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
         {{ name_protection.field("message") }}
         <input type="hidden" name="action" value="draft_reply" />

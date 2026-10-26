@@ -10,15 +10,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -35,15 +35,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -110,15 +110,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    275,
+    257,
     334,
-    326
+    343
    ],
    "detail": [
     583,
-    228,
+    210,
     377,
-    373
+    390
    ],
    "liste_scrollt": true,
    "detail_scrollt": true,
@@ -135,15 +135,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -160,15 +160,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": false,
    "detail_scrollt": false,
@@ -185,15 +185,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": false,
    "detail_scrollt": false,
@@ -210,15 +210,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": false,
    "detail_scrollt": false,
@@ -235,15 +235,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": false,
    "detail_scrollt": false,
@@ -260,15 +260,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -285,15 +285,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -310,15 +310,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -335,20 +335,45 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": false,
    "detail_scrollt": false,
    "ueber_rechts": [],
    "zeilen": 5,
+   "theme": "light"
+  },
+  "1920x1080-hell-16-weitere-filter": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
    "theme": "light"
   },
   "1280x720-hell-10-liste-gescrollt": {
@@ -385,15 +410,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -410,15 +435,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    315,
+    309,
     719,
-    765
+    771
    ],
    "detail": [
     968,
-    268,
+    262,
     952,
-    812
+    818
    ],
    "liste_scrollt": true,
    "detail_scrollt": false,
@@ -465,15 +490,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    275,
+    257,
     334,
-    326
+    343
    ],
    "detail": [
     583,
-    228,
+    210,
     377,
-    373
+    390
    ],
    "liste_scrollt": true,
    "detail_scrollt": true,
@@ -490,15 +515,15 @@
    "seite_hochscroll": false,
    "liste": [
     248,
-    275,
+    257,
     334,
-    326
+    343
    ],
    "detail": [
     583,
-    228,
+    210,
     377,
-    373
+    390
    ],
    "liste_scrollt": true,
    "detail_scrollt": true,
@@ -537,11 +562,11 @@
   "ungelesen_db_vorher": 4,
   "badge_sidebar": "4",
   "ungelesene_zeilen": 4,
-  "geoeffnet_id_kurz": "32623d17",
+  "geoeffnet_id_kurz": "5d6ef234",
   "nach_klick_detail_id_passt": true,
   "nach_klick_zeile_noch_ungelesen": false,
   "nach_klick_db_gelesen": true,
-  "url_nach_klick": "/dashboard/inbox/32623d17-4b25-4e46-a3f4-88e93ed7f24b",
+  "url_nach_klick": "/dashboard/inbox/5d6ef234-b3f4-4bc6-815a-6966a45a8ce9",
   "auswahl_zaehler": "2 ausgewählt",
   "auswahl_buttons_aktiv": true,
   "kaestchen_oeffnet_nicht": true,
@@ -552,8 +577,11 @@
   "tab_mit_anhang_url": "/dashboard/inbox?client=&matter=&period=all&q=&sort=newest&filter=with_attachment",
   "tab_mit_anhang_zeilen": 5,
   "tab_mit_anhang_db": 5,
+  "weitere_filter_offen": true,
+  "sortierung_umgekehrt": true,
+  "sortierung_zurueck": true,
   "scroll_unabhaengig": {
-   "liste": 370,
+   "liste": 400,
    "detail": 0,
    "seite": 0
   },
@@ -561,7 +589,7 @@
   "umschalter_localstorage": "dark",
   "umschalter_serverwert_gespeichert": false,
   "umschalter_zurueck": null,
-  "antworten_ziel": "/dashboard/chat/5ea87ccf-5d6b-4d10-94a1-ca67ab43ff13",
+  "antworten_ziel": "/dashboard/chat/e1589c36-74ac-4d23-95db-e5eaac4e4f39",
   "neue_nachricht_href": "/dashboard/chat?new=1&compose=email",
   "neue_nachricht_eingabe": "Bitte entwirf eine neue E-Mail an "
  }

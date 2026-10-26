@@ -512,8 +512,12 @@ def test_sidebar_no_longer_has_its_own_search_but_has_new_chat_button(
     Redundanz. Der Button ist jetzt wieder ein permanenter, von jeder
     Seite aus sichtbarer Sidebar-Eintrag (siehe base.html/app.css
     `.sidebar__new-chat-btn`), wiederverwendet dieselbe bestehende Route
-    wie der "+"-Button in chat.html (`/dashboard/chat?new=1`)."""
-    response = client.get("/dashboard/inbox")
+    wie der "+"-Button in chat.html (`/dashboard/chat?new=1`).
+
+    26.10.: Ausnahme NUR der Posteingang selbst - das dort verbindliche, vom Owner nachgereichte Referenzbild zeigt
+    an dieser Stelle "Neue Nachricht" (siehe test_web_inbox_reference_layout.py). Geprueft wird deshalb eine andere
+    Seite; dort gilt die Korrektur vom 26.09. unveraendert."""
+    response = client.get("/dashboard/clients")
     sidebar_start = response.text.index('<nav class="sidebar">')
     sidebar_end = response.text.index("</nav>", sidebar_start)
     sidebar_html = response.text[sidebar_start:sidebar_end]

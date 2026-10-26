@@ -131,11 +131,34 @@ def test_rows_have_selection_checkbox_outside_the_link(client: TestClient, seede
 
 def test_header_shows_real_statistics_and_poll_state(client: TestClient, seeded: dict) -> None:
     html = client.get("/dashboard/inbox").text
-    assert "<strong>3</strong> E-Mails" in html
-    assert "<strong>2</strong> ungelesen" in html
-    assert "<strong>1</strong> nicht zugeordnet" in html
-    assert "<strong>1</strong> mit Anhang" in html
+    assert "3 E-Mails (2 ungelesen)" in html
     assert 'data-mail-poll="not_configured"' in html  # Testumgebung ohne Postfach: ehrlich, kein erfundener Abruf
+
+
+def test_tabs_show_counts_matching_the_filters(client: TestClient, seeded: dict) -> None:
+    """Tab-Zahlen (Referenzbild "Alle 42" ...) aus denselben Bedingungen wie die Filter."""
+    html = client.get("/dashboard/inbox").text
+    expected = {"all": 3, "unmatched": 1, "matched": 2, "with_attachment": 1, "inbound": 2, "outbound": 1}
+    for key, count in expected.items():
+        tab = html[html.index(f'data-filter-key="{key}"'):]
+        assert tab[:tab.index("</a>")].endswith(f'<span class="inbox-tab__count">{count}</span>')
+        listed = client.get(f"/dashboard/inbox/list?filter={key}").text.count('<div class="message-row')
+        assert listed == count
+
+
+def test_row_tags_show_practice_area_and_matter_reference(
+    client: TestClient, db_session: Session, seeded: dict
+) -> None:
+    from app.models import Matter
+
+    matter = db_session.get(Matter, seeded["matter_id"])
+    matter.practice_area = "Steuerrecht"
+    db_session.commit()
+    html = client.get("/dashboard/inbox").text
+    row = _row_html(html, seeded["matched_message_id"])
+    assert '<span class="inbox-tag inbox-tag--area">Steuerrecht</span>' in row
+    assert "Akte: 2025/0142-ESt" in row
+    assert "nicht zugeordnet" in _row_html(html, seeded["unmatched_message_id"])
 
 
 def test_poll_state_reflects_the_last_run_of_this_instance(client: TestClient, seeded: dict, monkeypatch) -> None:
@@ -174,14 +197,16 @@ def test_detail_shows_sender_block_and_mark_unread_action(
     assert "1 Anhang" in html
 
 
-def test_inbox_sidebar_offers_new_message_as_chat_draft_and_keeps_new_chat(client: TestClient, seeded: dict) -> None:
+def test_inbox_sidebar_offers_new_message_as_chat_draft(client: TestClient, seeded: dict) -> None:
+    """Verbindliches Referenzbild: im Posteingang nur "Neue Nachricht"; alle anderen Seiten behalten "Neuen Chat
+    starten" (test_web_inbox.py::test_sidebar_has_no_search_trigger_but_has_new_chat_button)."""
     html = client.get("/dashboard/inbox").text
     sidebar = html[html.index('<nav class="sidebar">'):html.index("</nav>", html.index('<nav class="sidebar">'))]
     assert 'href="/dashboard/chat?new=1&amp;compose=email"' in sidebar and "Neue Nachricht" in sidebar
-    assert "Neuen Chat starten" in sidebar
-    # andere Seiten unveraendert
+    assert 'href="/dashboard/chat"' in sidebar  # Chat bleibt ueber die Navigation erreichbar
     other = client.get("/dashboard/clients").text
-    assert "Neue Nachricht" not in other[other.index('<nav class="sidebar">'):]
+    other_sidebar = other[other.index('<nav class="sidebar">'):]
+    assert "Neue Nachricht" not in other_sidebar and "Neuen Chat starten" in other_sidebar
 
 
 def test_new_message_prefills_the_chat_composer_without_sending(client: TestClient, db_session: Session) -> None:

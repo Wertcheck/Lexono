@@ -429,14 +429,18 @@ def _inbox_stats(db: Session) -> dict:
         poll = {"state": "pending", "label": "Noch kein Abruf seit dem Start"}
     else:
         when = _message_time_label(last.at)
-        when = f"heute, {when}" if ":" in when else when
+        when = f"heute, {when} Uhr" if ":" in when else when
         poll = {"state": "ok" if last.ok else "failed",
                 "label": f"Letzter Abruf: {when}" + ("" if last.ok else " (fehlgeschlagen)")}
+    # Zahlen je Filtertab (Referenzbild: "Alle 42", "Nicht zugeordnet 12" ...) - dieselben Bedingungen wie
+    # `_apply_filter`, damit Tab-Zahl und Trefferliste nie auseinanderlaufen
+    filter_counts = {key: _apply_filter(db.query(Message), key).count() for key in _VALID_FILTER_KEYS}
     return {
-        "total_count": db.query(Message).count(),
+        "total_count": filter_counts["all"],
         "unread_count": _unread_query(db).count(),
-        "unmatched_count": db.query(Message).filter(Message.matter_id.is_(None)).count(),
-        "attachment_count": db.query(Message).filter(Message.documents.any()).count(),
+        "unmatched_count": filter_counts["unmatched"],
+        "attachment_count": filter_counts["with_attachment"],
+        "filter_counts": filter_counts,
         "mail_poll": poll,
     }
 

@@ -11,12 +11,8 @@
     {{ icons.plus(class_="icon") }}
     <span>Neue Nachricht</span>
   </a>
-  {# "Neuen Chat starten" bleibt auf JEDER Seite erreichbar (Owner-Korrektur 26.09., test_web_inbox.py) - hier als
-     Nebenaktion unter der posteingangsspezifischen Hauptaktion. #}
-  <a href="/dashboard/chat?new=1" class="sidebar__new-chat-btn sidebar__new-chat-btn--secondary">
-    {{ icons.chat(class_="icon") }}
-    <span>Neuen Chat starten</span>
-  </a>
+  {# Das verbindliche Posteingang-Referenzbild (26.10.) zeigt hier NUR "Neue Nachricht". "Neuen Chat starten" bleibt
+     auf allen anderen Seiten (Owner-Korrektur 26.09.); der Chat ist ueber den Navigationspunkt "Chat" erreichbar. #}
 {% endblock %}
 {% block content %}
   {# Posteingang nach Referenzbild (26.10., Owner-Auftrag "Posteingang anhand des Referenzbildes"): Kopfbereich mit
@@ -26,10 +22,18 @@
   <div class="inbox-page">
     <header class="inbox-head">
       <div class="inbox-head__row">
-        <span class="inbox-head__icon">{{ icons.envelope(class_="icon") }}</span>
         <div class="inbox-head__heading">
           <h1 class="inbox-head__title">Posteingang</h1>
-          <p class="inbox-head__subtitle">E-Mails und andere Nachrichten der Kanzlei zentral verwalten und Akten zuordnen</p>
+          <p class="inbox-head__subtitle">E-Mails und andere Nachrichten Ihrer Kanzlei zentral verwalten.</p>
+        </div>
+        {# E-Mail-Statistik + letzter Abruf (Referenz: rechts neben dem Titel) - echte Zaehler, Abrufzustand dieser
+           Instanz (app/mail/poll_status.py), kein erfundener Zeitpunkt #}
+        <div class="inbox-summary" aria-label="E-Mail-Statistik">
+          <span class="inbox-summary__icon">{{ icons.envelope(class_="icon") }}</span>
+          <span class="inbox-summary__text">
+            <strong class="inbox-summary__count">{{ total_count }} E-Mail{{ "" if total_count == 1 else "s" }} ({{ unread_count }} ungelesen)</strong>
+            <span class="inbox-summary__poll inbox-summary__poll--{{ mail_poll.state }}" data-mail-poll="{{ mail_poll.state }}">{{ mail_poll.label }}</span>
+          </span>
         </div>
         {% if current_user.role and current_user.role.name.lower() == "admin" %}
           <div class="inbox-head__actions">
@@ -39,15 +43,6 @@
             </a>
           </div>
         {% endif %}
-      </div>
-      <div class="inbox-stats" aria-label="E-Mail-Statistik">
-        <span class="inbox-stats__item"><strong>{{ total_count }}</strong> E-Mails</span>
-        <span class="inbox-stats__item inbox-stats__item--unread"><strong>{{ unread_count }}</strong> ungelesen</span>
-        <span class="inbox-stats__item"><strong>{{ unmatched_count }}</strong> nicht zugeordnet</span>
-        <span class="inbox-stats__item"><strong>{{ attachment_count }}</strong> mit Anhang</span>
-        <span class="inbox-stats__poll inbox-stats__poll--{{ mail_poll.state }}" data-mail-poll="{{ mail_poll.state }}">
-          {{ icons.refresh(class_="icon") }} {{ mail_poll.label }}
-        </span>
       </div>
     </header>
 
@@ -68,7 +63,7 @@
             hx-swap="outerHTML"
             hx-push-url="true"
             data-filter-key="{{ key }}"
-          >{{ label }}</a>
+          >{{ label }} <span class="inbox-tab__count">{{ filter_counts[key] }}</span></a>
         {% endfor %}
       </nav>
       {# Filterzeile: Mandant/Akte/Zeitraum + Absender-/Betreffsuche + weitere Filter (Sortierung, Zuruecksetzen). Alle
@@ -119,20 +114,27 @@
                  hx-swap="outerHTML"
                  hx-push-url="true" />
         </div>
-        <div class="inbox-filter-bar__more">
-          <input type="hidden" name="sort" value="{{ active_sort }}" />
-          <button type="button" class="inbox-sort-toggle"
-                  title="{{ 'Älteste zuerst anzeigen' if active_sort == 'newest' else 'Neueste zuerst anzeigen' }}"
-                  aria-label="Sortierung umschalten (aktuell: {{ 'neueste' if active_sort == 'newest' else 'älteste' }} zuerst)"
-                  hx-get="/dashboard/inbox/list"
-                  hx-vals='{"sort": "{{ "oldest" if active_sort == "newest" else "newest" }}"}'
-                  hx-include="#inbox-filter-form"
-                  hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
-            {{ icons.sort(class_="icon") }}
+        {# "Weitere Filter" (Referenz: Filter-Symbol rechts): echte Sortierung (bestehender `sort`-Parameter) und
+           Zuruecksetzen - weitere Filterkriterien gibt das Datenmodell nicht her. #}
+        <input type="hidden" name="sort" value="{{ active_sort }}" />
+        <div class="inbox-more-filters">
+          <div class="inbox-more-filters__panel" id="inbox-more-filters-panel" role="group" aria-label="Weitere Filter" hidden>
+            <span class="inbox-more-filters__label">Sortierung</span>
+            <button type="button" class="inbox-sort-toggle"
+                    title="{{ 'Älteste zuerst anzeigen' if active_sort == 'newest' else 'Neueste zuerst anzeigen' }}"
+                    aria-label="Sortierung umschalten (aktuell: {{ 'neueste' if active_sort == 'newest' else 'älteste' }} zuerst)"
+                    hx-get="/dashboard/inbox/list"
+                    hx-vals='{"sort": "{{ "oldest" if active_sort == "newest" else "newest" }}"}'
+                    hx-include="#inbox-filter-form"
+                    hx-target="#message-list" hx-swap="outerHTML" hx-push-url="true">
+              {{ icons.sort(class_="icon") }} {{ 'Neueste zuerst' if active_sort == 'newest' else 'Älteste zuerst' }}
+            </button>
+            <a href="/dashboard/inbox" class="inbox-more-filters__reset">Alle Filter zurücksetzen</a>
+          </div>
+          <button type="button" class="inbox-icon-btn inbox-icon-btn--lg" title="Weitere Filter" aria-label="Weitere Filter"
+                  aria-expanded="false" aria-controls="inbox-more-filters-panel" data-more-filters-toggle>
+            {{ icons.filter_lines(class_="icon") }}
           </button>
-          {% if active_client_id or active_matter_id or active_period != "all" or search or active_filter != "all" %}
-            <a href="/dashboard/inbox" class="inbox-filter-bar__reset" title="Alle Filter zurücksetzen">Zurücksetzen</a>
-          {% endif %}
         </div>
       </div>
     </form>
@@ -190,6 +192,25 @@
       all.addEventListener("change", function () { boxes().forEach(function (b) { b.checked = all.checked; }); update(); });
       document.addEventListener("change", function (e) { if (e.target.name === "message_ids") { update(); } });
       document.body.addEventListener("htmx:afterSwap", function (e) { if (e.target.id === "message-list") { update(); } });
+      // Sortier-Umschalter: hx-vals war fest - ein zweiter Klick schickte denselben Wert erneut. Nach jeder Antwort
+      // Richtung, verstecktes Feld (fuer weitere Filterwechsel) und Beschriftung fortschreiben.
+      document.body.addEventListener("htmx:afterRequest", function (e) {
+        var btn = e.detail.elt;
+        if (!btn || !btn.classList || !btn.classList.contains("inbox-sort-toggle") || !e.detail.successful) { return; }
+        var sent = JSON.parse(btn.getAttribute("hx-vals")).sort;
+        var next = sent === "oldest" ? "newest" : "oldest";
+        document.querySelector('#inbox-filter-form input[name="sort"]').value = sent;
+        btn.setAttribute("hx-vals", JSON.stringify({ sort: next }));
+        btn.title = next === "oldest" ? "Älteste zuerst anzeigen" : "Neueste zuerst anzeigen";
+        btn.lastChild.textContent = " " + (sent === "newest" ? "Neueste zuerst" : "Älteste zuerst");
+      });
+      // "Weitere Filter": Panel auf/zu, schliesst bei Klick ausserhalb oder Escape
+      var moreBtn = document.querySelector("[data-more-filters-toggle]");
+      var morePanel = document.getElementById("inbox-more-filters-panel");
+      function setMore(open) { morePanel.hidden = !open; moreBtn.setAttribute("aria-expanded", open ? "true" : "false"); }
+      moreBtn.addEventListener("click", function () { setMore(morePanel.hidden); });
+      document.addEventListener("click", function (e) { if (!morePanel.hidden && !e.target.closest(".inbox-more-filters")) { setMore(false); } });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !morePanel.hidden) { setMore(false); moreBtn.focus(); } });
       form.addEventListener("submit", function () {
         form.querySelector("[data-inbox-return-to]").value = location.pathname + location.search;
       });
