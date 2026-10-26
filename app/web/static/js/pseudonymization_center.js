@@ -6,10 +6,15 @@
  *    Rueckfragen, alle beantwortet; danach fail-closed Wiederaufnahme).
  *  - "review": Datenschutz-Rueckfragen beim Senden (vorher eigener HITL-Dialog) - Fragen + Dokumentvorschau mit den
  *    Fundstellen; Antworten gehen an den unveraenderten Server-Pfad (privacy-review).
- *  - "view": reine Pruefansicht ohne offenen Auftrag.
+ *  - "view": reine Pruefansicht ohne offenen Auftrag (mit Schnellaktionen, die NUR das Chat-Eingabefeld vorbelegen).
  *
- * Regeln: Dokumentinhalte sind untrusted input (nur textContent). Entscheidungen bleiben bis "Bestaetigen" im Dialog;
- * Abbrechen speichert und sendet nichts. Bestaetigen ist erst moeglich, wenn jede Rueckfrage beantwortet ist.
+ * Regeln: Dokumentinhalte sind untrusted input (nur textContent). Entscheidungen bleiben bis "Bestaetigen" im Dialog
+ * (auch ueber Dokument- und Ansichtswechsel); Abbrechen speichert und sendet nichts. Bestaetigen ist erst moeglich,
+ * wenn jede Rueckfrage beantwortet ist - der Server prueft das beim Bestaetigen erneut.
+ *
+ * 26.10.2026 UX-Ueberarbeitung: Dokument-Tabs mit Typ und offenen Rueckfragen (+ Auswahlliste ab 5 Dokumenten),
+ * Seitenuebersicht, "Breite", Maximieren, Fortschritt mit Fragenavigation, kompakte Fragekarten mit Kategorie und
+ * Seitenbezug, Statusleiste in der Fusszeile.
  */
 (function () {
   "use strict";
@@ -20,13 +25,30 @@
   var $ = function (sel) { return dialog.querySelector(sel); };
   var docPane = $("[data-pseudo-document]");
   var docTabs = $("[data-pseudo-doc-tabs]");
+  var docSelectWrap = $("[data-pseudo-doc-select-wrap]");
+  var docSelect = $("[data-pseudo-doc-select]");
+  var thumbs = $("[data-pseudo-thumbs]");
+  var thumbsToggle = $("[data-pseudo-thumbs-toggle]");
+  var maximizeBtn = $("[data-pseudo-maximize]");
   var statusBox = $("[data-pseudo-status]");
+  var progressBox = $("[data-pseudo-progress]");
+  var progressText = $("[data-pseudo-progress-text]");
+  var progressPercent = $("[data-pseudo-progress-percent]");
+  var progressBar = $("[data-pseudo-progress-bar]");
+  var progressFill = $("[data-pseudo-progress-fill]");
+  var qPrev = $("[data-pseudo-q-prev]");
+  var qNext = $("[data-pseudo-q-next]");
+  var panelScroll = $("[data-pseudo-panel-scroll]");
   var questionsBox = $("[data-pseudo-questions]");
   var followupBox = $("[data-pseudo-followup]");
+  var mappingsWrap = $("[data-pseudo-mappings-wrap]");
   var mappingsList = $("[data-pseudo-mappings]");
   var mappingCount = $("[data-pseudo-mapping-count]");
+  var quickBox = $("[data-pseudo-quick]");
+  var quickActions = $("[data-pseudo-quick-actions]");
   var limitsBox = $("[data-pseudo-limits]");
   var noticeBox = $("[data-pseudo-notice]");
+  var footerStatus = $("[data-pseudo-footer-status]");
   var openCount = $("[data-pseudo-open-count]");
   var confirmBtn = $("[data-pseudo-center-confirm]");
   var subtitle = $("[data-pseudo-subtitle]");
@@ -41,12 +63,21 @@
     { decision: "unsure", title: "Unsicher", hint: "vorsichtshalber pseudonymisieren" }
   ];
 
+  var CATEGORY_LABELS = {
+    person: "Person", organisation: "Organisation", organization: "Organisation", ort: "Ort", adresse: "Anschrift",
+    anschrift: "Anschrift", kennung: "Kennnummer", aktenzeichen: "Aktenzeichen", email: "E-Mail", telefon: "Telefon",
+    iban: "IBAN", datum: "Datum", geburtsdatum: "Geburtsdatum"
+  };
+
+  var MANY_DOCS = 5; // ab dieser Anzahl zusaetzlich die Auswahlliste
+
   var state = {
     conversationId: dialog.getAttribute("data-conversation-id") || "",
     matterId: dialog.getAttribute("data-matter-id") || "",
     canManage: dialog.getAttribute("data-can-manage") === "1",
     mode: "view", docs: [], order: { label: "", has_open_order: false }, currentId: null, reviews: {},
-    decisions: {}, view: "marked", zoom: 1, busy: false, payload: null, callback: null, generation: 0
+    decisions: {}, view: "marked", zoom: 1, busy: false, payload: null, callback: null, generation: 0,
+    activeTerm: null, thumbs: false, maximized: false
   };
 
   function el(tag, className, text) {
@@ -65,12 +96,22 @@
 
   function cssEscape(value) { return window.CSS && CSS.escape ? CSS.escape(value) : value.replace(/"/g, "\\\""); }
 
+  function fileType(name) {
+    var m = /\.([A-Za-z0-9]{1,5})$/.exec(name || "");
+    return m ? m[1].toUpperCase() : "TEXT";
+  }
+
+  function categoryLabel(category) {
+    return CATEGORY_LABELS[(category || "").toLowerCase()] || "Unsicherer Begriff";
+  }
+
   // --- Fragen ---------------------------------------------------------------------------------------------------
 
   function questions() {
     if (state.mode === "review" && state.payload) {
       return state.payload.candidates.map(function (c) {
-        return { term: c.term, context_before: c.context_before, context_after: c.context_after, docs: docsWithMark(c.term) };
+        return { term: c.term, context_before: c.context_before, context_after: c.context_after,
+                 docs: docsWithMark(c.term), fromChat: true };
       });
     }
     var byTerm = {}, list = [];
@@ -97,6 +138,27 @@
     }).map(function (doc) { return doc.id; });
   }
 
+  /** Seitennummern, auf denen `term` in Dokument `id` als Rueckfrage markiert ist. */
+  function pagesWithTerm(id, term) {
+    var data = state.reviews[id];
+    if (!data || !data.pages) { return []; }
+    return data.pages.filter(function (p) {
+      return p.marks.some(function (m) { return m.term === term && m.kind === "open"; });
+    }).map(function (p) { return p.number; });
+  }
+
+  /** Kategorie aus den erkannten Funden, falls der Begriff dort (vorsichtig) bereits zugeordnet ist. */
+  function questionCategory(term) {
+    var found = null;
+    state.docs.forEach(function (doc) {
+      var data = state.reviews[doc.id];
+      (data && data.mappings || []).forEach(function (m) {
+        if (!found && (m.original === term || (m.variants || []).indexOf(term) !== -1)) { found = m.category; }
+      });
+    });
+    return categoryLabel(found);
+  }
+
   function openTerms() {
     return questions().map(function (q) { return q.term; }).filter(function (t) { return !state.decisions[t]; });
   }
@@ -112,28 +174,57 @@
     return doc ? doc.filename : "Dokument";
   }
 
+  function openForDoc(id) {
+    return questions().filter(function (q) { return q.docs.indexOf(id) !== -1 && !state.decisions[q.term]; }).length;
+  }
+
   // --- Dokumentauswahl -------------------------------------------------------------------------------------------
 
   function renderDocTabs() {
     docTabs.textContent = "";
-    if (state.docs.length <= 1) {
-      docTabs.appendChild(el("span", "pseudo-center__doc-single", state.docs.length ? state.docs[0].filename : ""));
-      return;
-    }
     state.docs.forEach(function (doc) {
-      var tab = el("button", "pseudo-center__doc-tab" + (doc.id === state.currentId ? " is-active" : ""));
+      var active = doc.id === state.currentId;
+      var tab = el("button", "pseudo-center__doc-tab" + (active ? " is-active" : ""));
       tab.type = "button";
       tab.setAttribute("role", "tab");
-      tab.setAttribute("aria-selected", doc.id === state.currentId ? "true" : "false");
+      tab.setAttribute("aria-selected", active ? "true" : "false");
       tab.setAttribute("data-doc-id", doc.id);
+      tab.title = doc.filename;
+      tab.appendChild(el("span", "pseudo-center__doc-type pseudo-center__doc-type--" + fileType(doc.filename).toLowerCase(),
+                         fileType(doc.filename)));
       tab.appendChild(el("span", "pseudo-center__doc-tab-name", doc.filename));
-      var open = questions().filter(function (q) { return q.docs.indexOf(doc.id) !== -1 && !state.decisions[q.term]; }).length;
-      if (open) { tab.appendChild(el("span", "pseudo-center__doc-badge", String(open))); }
-      else if (state.reviews[doc.id]) { tab.appendChild(el("span", "pseudo-center__doc-ok", "✓")); }
+      var open = openForDoc(doc.id);
+      if (open) {
+        var badge = el("span", "pseudo-center__doc-badge", String(open));
+        badge.title = open + " offene Rückfrage(n)";
+        tab.appendChild(badge);
+      } else if (state.reviews[doc.id]) {
+        var ok = el("span", "pseudo-center__doc-ok", "✓");
+        ok.title = "keine offene Rückfrage";
+        tab.appendChild(ok);
+      } else {
+        tab.appendChild(el("span", "pseudo-center__doc-wait", "…"));
+      }
       tab.addEventListener("click", function () { selectDoc(doc.id); });
       docTabs.appendChild(tab);
     });
+    var active = docTabs.querySelector(".is-active");
+    if (active && active.scrollIntoView) { active.scrollIntoView({ block: "nearest", inline: "nearest" }); }
+    // Viele Dokumente: zusaetzlich Auswahlliste (Tabs bleiben horizontal scrollbar)
+    docSelectWrap.hidden = state.docs.length < MANY_DOCS;
+    if (!docSelectWrap.hidden) {
+      docSelect.textContent = "";
+      state.docs.forEach(function (doc, index) {
+        var open = openForDoc(doc.id);
+        var option = el("option", "", (index + 1) + ". " + doc.filename + (open ? " – " + open + " offen" : ""));
+        option.value = doc.id;
+        option.selected = doc.id === state.currentId;
+        docSelect.appendChild(option);
+      });
+    }
   }
+
+  docSelect.addEventListener("change", function () { selectDoc(docSelect.value); });
 
   function selectDoc(id, thenTerm) {
     state.currentId = id;
@@ -149,22 +240,29 @@
   // --- Dokumentansicht -------------------------------------------------------------------------------------------
 
   function markClass(mark) {
-    if (mark.kind === "open") { return "pseudo-mark pseudo-mark--" + decisionKind(mark.term); }
+    var active = state.activeTerm && mark.term === state.activeTerm ? " is-active" : "";
+    if (mark.kind === "open") { return "pseudo-mark pseudo-mark--" + decisionKind(mark.term) + active; }
     return "pseudo-mark pseudo-mark--masked";
   }
 
   function renderDocument() {
     docPane.textContent = "";
     var data = state.reviews[state.currentId];
-    subtitle.textContent = data ? data.filename : (state.docs.length ? "" : "Keine Dokumente in dieser Unterhaltung");
+    var doc = state.docs.filter(function (d) { return d.id === state.currentId; })[0];
+    subtitle.textContent = data
+      ? fileType(data.filename) + (data.pages && data.pages.length ? " · " + data.pages.length + " Seite(n)" : "") +
+        " · " + data.mappings.length + " Fund(e)"
+      : (state.docs.length ? "" : "Keine Dokumente in dieser Unterhaltung");
+    if (doc) { subtitle.title = doc.filename; }
     if (!data) {
       docPane.appendChild(el("p", "pseudo-center__loading",
         state.docs.length ? "Dokument wird lokal geprüft …" : "Dieser Chat enthält keine Dokumente."));
+      renderThumbs(null);
       updatePageInfo();
       return;
     }
-    if (state.view === "result") { renderResult(data); updatePageInfo(); return; }
-    if (data.viewer_kind !== "pages" || !data.pages.length) { renderTextView(data); updatePageInfo(); return; }
+    if (state.view === "result") { renderResult(data); renderThumbs(null); updatePageInfo(); return; }
+    if (data.viewer_kind !== "pages" || !data.pages.length) { renderTextView(data); renderThumbs(null); updatePageInfo(); return; }
     var holder = el("div", "pseudo-center__page-stack");
     holder.style.width = Math.round(state.zoom * 100) + "%";
     data.pages.forEach(function (page) {
@@ -187,8 +285,8 @@
           m.setAttribute("data-term", mark.term);
           m.title = mark.kind === "open"
             ? (decisionKind(mark.term) === "open" ? "Rückfrage offen: " : "Entschieden: ") + mark.term
-            : mark.placeholder + " (" + mark.category + ")";
-          if (mark.kind === "open") { m.addEventListener("click", function () { focusQuestion(mark.term); }); }
+            : mark.placeholder + " (" + categoryLabel(mark.category) + ")";
+          if (mark.kind === "open") { m.addEventListener("click", function () { activateQuestion(mark.term, true); }); }
           box.appendChild(m);
         });
       }
@@ -197,7 +295,36 @@
       holder.appendChild(wrap);
     });
     docPane.appendChild(holder);
+    renderThumbs(data);
     updatePageInfo();
+  }
+
+  function renderThumbs(data) {
+    thumbs.textContent = "";
+    var usable = data && data.viewer_kind === "pages" && data.pages.length > 0 && state.view !== "result";
+    thumbsToggle.disabled = !usable;
+    thumbs.hidden = !(usable && state.thumbs);
+    thumbsToggle.setAttribute("aria-pressed", state.thumbs && usable ? "true" : "false");
+    if (thumbs.hidden) { return; }
+    data.pages.forEach(function (page) {
+      var b = el("button", "pseudo-thumb");
+      b.type = "button";
+      b.setAttribute("data-thumb-page", String(page.number));
+      b.setAttribute("aria-label", "Seite " + page.number);
+      var frame = el("span", "pseudo-thumb__frame");
+      frame.style.aspectRatio = page.width + " / " + page.height;
+      var img = el("img", "pseudo-thumb__img");
+      img.alt = "";
+      img.loading = "lazy";
+      img.src = data.page_url_base + page.number + ".png?dpi=40";
+      frame.appendChild(img);
+      var open = page.marks.filter(function (m) { return m.kind === "open" && !state.decisions[m.term]; }).length;
+      if (open) { frame.appendChild(el("span", "pseudo-thumb__badge", String(open))); }
+      b.appendChild(frame);
+      b.appendChild(el("span", "pseudo-thumb__num", String(page.number)));
+      b.addEventListener("click", function () { scrollToPage(page.number - 1); });
+      thumbs.appendChild(b);
+    });
   }
 
   function renderTextView(data) {
@@ -237,32 +364,62 @@
 
   function pagesList() { return Array.prototype.slice.call(docPane.querySelectorAll(".pseudo-page")); }
 
+  /** Seite unter der Mitte des sichtbaren Bereichs (nicht die oberste angeschnittene). */
   function currentPageIndex() {
     var pages = pagesList();
-    var top = docPane.getBoundingClientRect().top;
+    var rect = docPane.getBoundingClientRect();
+    var middle = rect.top + Math.min(rect.height / 2, 240);
     for (var i = 0; i < pages.length; i += 1) {
-      if (pages[i].getBoundingClientRect().bottom - top > 40) { return i; }
+      if (pages[i].getBoundingClientRect().bottom > middle) { return i; }
     }
     return Math.max(0, pages.length - 1);
   }
 
-  function updatePageInfo() {
+  /** Neu darstellen (andere Breite/Zoom/Seitenuebersicht), ohne die aktuelle Seite zu verlieren. */
+  function rerenderKeepingPage(change) {
+    var index = currentPageIndex();
+    change();
+    renderDocument();
     var pages = pagesList();
-    pageInfo.textContent = pages.length ? "Seite " + (currentPageIndex() + 1) + " / " + pages.length : "–";
-    zoomLabel.textContent = Math.round(state.zoom * 100) + " %";
+    if (pages[index]) { docPane.scrollTop = pages[index].offsetTop - 8; }
+    updatePageInfo();
   }
 
-  function goToPage(delta) {
+  function updatePageInfo() {
+    var pages = pagesList();
+    var index = currentPageIndex();
+    pageInfo.textContent = pages.length ? "Seite " + (index + 1) + " / " + pages.length : "–";
+    zoomLabel.textContent = Math.round(state.zoom * 100) + " %";
+    $("[data-pseudo-page-prev]").disabled = !pages.length || index === 0;
+    $("[data-pseudo-page-next]").disabled = !pages.length || index >= pages.length - 1;
+    if (!thumbs.hidden) {
+      var current = null;
+      thumbs.querySelectorAll(".pseudo-thumb").forEach(function (t) {
+        var on = t.getAttribute("data-thumb-page") === String(index + 1);
+        t.classList.toggle("is-current", on);
+        if (on) { current = t; }
+      });
+      if (current) {
+        var top = current.offsetTop, bottom = top + current.offsetHeight;
+        if (top < thumbs.scrollTop || bottom > thumbs.scrollTop + thumbs.clientHeight) {
+          thumbs.scrollTop = top - thumbs.clientHeight / 2 + current.offsetHeight / 2;
+        }
+      }
+    }
+  }
+
+  function scrollToPage(target) {
     var pages = pagesList();
     if (!pages.length) { return; }
-    var target = Math.min(pages.length - 1, Math.max(0, currentPageIndex() + delta));
+    target = Math.min(pages.length - 1, Math.max(0, target));
     docPane.scrollTo({ top: pages[target].offsetTop - 8, behavior: "smooth" });
     setTimeout(updatePageInfo, 400);
   }
 
+  function goToPage(delta) { scrollToPage(currentPageIndex() + delta); }
+
   function setZoom(next) {
-    state.zoom = Math.min(2, Math.max(0.6, Math.round(next * 10) / 10));
-    renderDocument();
+    rerenderKeepingPage(function () { state.zoom = Math.min(2, Math.max(0.6, Math.round(next * 10) / 10)); });
   }
 
   function scrollToMark(term) {
@@ -271,6 +428,7 @@
       mark.scrollIntoView({ block: "center", behavior: "smooth" });
       mark.classList.add("is-focused");
       setTimeout(function () { mark.classList.remove("is-focused"); }, 1600);
+      setTimeout(updatePageInfo, 450);
     }
   }
 
@@ -290,10 +448,11 @@
       text = "Kein verwertbarer Text – keine Verarbeitung möglich.";
     } else if (qs.length) {
       cls = "pseudo-center__state pseudo-center__state--open";
-      text = qs.length + " Rückfrage(n) zu unsicheren Begriffen";
+      text = state.mode === "review" ? "Datenschutz-Rückfrage zu Ihrer Nachricht" : "Rückfragen zu unsicheren Begriffen";
     } else {
       cls = "pseudo-center__state pseudo-center__state--ok";
-      text = "Keine offenen Rückfragen";
+      text = state.docs.length && state.docs.every(function (d) { return state.reviews[d.id]; })
+        ? "Keine offenen Rückfragen" : "Dokumente werden lokal geprüft …";
     }
     statusBox.appendChild(el("p", cls, text));
     if (state.mode === "view") {
@@ -306,94 +465,187 @@
     });
   }
 
+  function renderProgress() {
+    var qs = questions();
+    progressBox.hidden = !qs.length;
+    if (!qs.length) { return; }
+    var done = qs.length - openTerms().length;
+    var percent = Math.round(done * 100 / qs.length);
+    progressText.textContent = done + " von " + qs.length + " Rückfragen beantwortet";
+    progressPercent.textContent = percent + " %";
+    progressBar.setAttribute("aria-valuenow", String(percent));
+    progressBar.setAttribute("aria-label", progressText.textContent);
+    progressFill.style.width = percent + "%";
+    var index = activeIndex(qs);
+    qPrev.disabled = qs.length < 2 || index <= 0;
+    qNext.disabled = !openTerms().some(function (t) { return t !== state.activeTerm; });
+  }
+
+  function activeIndex(qs) {
+    for (var i = 0; i < qs.length; i += 1) { if (qs[i].term === state.activeTerm) { return i; } }
+    return -1;
+  }
+
   function renderQuestions() {
     questionsBox.textContent = "";
     var qs = questions();
     if (!qs.length) { return; }
-    questionsBox.appendChild(el("h3", "pseudo-center__section-title",
-      state.mode === "review" ? "Datenschutz-Rückfrage" : "Rückfragen"));
     qs.forEach(function (q, index) {
-      var item = el("div", "pseudo-question pseudo-question--" + decisionKind(q.term));
+      var kind = decisionKind(q.term);
+      var item = el("article", "pseudo-question pseudo-question--" + kind + (q.term === state.activeTerm ? " is-active" : ""));
       item.setAttribute("data-question", q.term);
+      item.addEventListener("click", function (evt) {
+        if (evt.target.closest("button, summary, a")) { return; }
+        activateQuestion(q.term, false, true);
+      });
       var head = el("div", "pseudo-question__head");
       head.appendChild(el("span", "pseudo-question__index", (index + 1) + " / " + qs.length));
-      if (q.docs.length) {
-        var where = el("button", "pseudo-question__where", "Fundstelle: " + q.docs.map(docName).join(", "));
-        where.type = "button";
-        where.addEventListener("click", function () { goToQuestion(q); });
-        head.appendChild(where);
-      } else if (state.mode === "review") {
-        head.appendChild(el("span", "pseudo-question__source", "aus Ihrer Nachricht im Chat"));
-      }
+      head.appendChild(el("span", "pseudo-question__term", q.term));
+      head.appendChild(el("span", "pseudo-question__state pseudo-question__state--" + kind,
+        kind === "open" ? "offen" : (state.decisions[q.term] === "not_personal" ? "bleibt lesbar"
+                                     : (state.decisions[q.term] === "unsure" ? "unsicher" : "pseudonymisiert"))));
       item.appendChild(head);
-      var quote = el("p", "pseudo-question__quote");
-      quote.appendChild(document.createTextNode("„… " + (q.context_before || "")));
-      quote.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + decisionKind(q.term), q.term));
-      quote.appendChild(document.createTextNode((q.context_after || "") + " …“"));
-      item.appendChild(quote);
+      var meta = el("div", "pseudo-question__meta");
+      meta.appendChild(el("span", "pseudo-question__cat", questionCategory(q.term)));
+      if (q.docs.length) {
+        // aktuelles Dokument zuerst; bei vielen Dokumenten kompakt ("+ n weitere")
+        var docs = q.docs.slice().sort(function (a, b) { return (b === state.currentId) - (a === state.currentId); });
+        if (docs.length > 3) {
+          meta.appendChild(el("span", "pseudo-question__more", "in " + docs.length + " Dokumenten"));
+        }
+        docs.slice(0, 2).concat(docs.length === 3 ? docs.slice(2) : []).forEach(function (id) {
+          var pages = pagesWithTerm(id, q.term);
+          var where = el("button", "pseudo-question__where",
+            docName(id) + (pages.length ? " · S. " + pages.slice(0, 3).join(", ") + (pages.length > 3 ? " …" : "") : ""));
+          where.type = "button";
+          where.title = "Zur Fundstelle springen";
+          where.addEventListener("click", function () {
+            state.activeTerm = q.term;
+            if (id !== state.currentId) { selectDoc(id, q.term); }
+            else { if (state.view !== "marked") { setView("marked"); } renderDocument(); renderPanel(); scrollToMark(q.term); }
+          });
+          meta.appendChild(where);
+        });
+      } else if (q.fromChat) {
+        meta.appendChild(el("span", "pseudo-question__source", "aus Ihrer Nachricht im Chat"));
+      }
+      item.appendChild(meta);
+      item.appendChild(el("p", "pseudo-question__ask", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
       var row = el("div", "pseudo-question__options");
       OPTIONS.forEach(function (option) {
         var b = el("button", "pseudo-question__option");
         b.type = "button";
         b.setAttribute("data-decision", option.decision);
         b.setAttribute("aria-pressed", state.decisions[q.term] === option.decision ? "true" : "false");
+        b.title = option.hint;
         b.disabled = state.busy || (state.mode === "view");
         b.appendChild(el("strong", "", option.title));
         b.appendChild(el("small", "", option.hint));
         b.addEventListener("click", function () {
           state.decisions[q.term] = option.decision;
+          var next = questions().filter(function (x) { return !state.decisions[x.term]; })[0];
+          state.activeTerm = next ? next.term : q.term;
           renderDocTabs();
           renderDocument();
           renderPanel();
-          var next = questions().filter(function (x) { return !state.decisions[x.term]; })[0];
           if (next) { goToQuestion(next); } else { confirmBtn.focus({ preventScroll: true }); }
         });
         row.appendChild(b);
       });
       item.appendChild(row);
+      var ctx = el("details", "pseudo-question__context");
+      ctx.appendChild(el("summary", "", "Kontext anzeigen"));
+      var quote = el("p", "pseudo-question__quote");
+      quote.appendChild(document.createTextNode("„… " + (q.context_before || "")));
+      quote.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + kind, q.term));
+      quote.appendChild(document.createTextNode((q.context_after || "") + " …“"));
+      ctx.appendChild(quote);
+      ctx.open = q.term === state.activeTerm && !q.docs.length;
+      item.appendChild(ctx);
       questionsBox.appendChild(item);
     });
   }
 
   function goToQuestion(q) {
-    focusQuestion(q.term);
+    activateQuestion(q.term, true, false);
     if (q.docs.length && q.docs.indexOf(state.currentId) === -1) { selectDoc(q.docs[0], q.term); }
     else { if (state.view !== "marked") { setView("marked"); } scrollToMark(q.term); }
   }
 
-  function focusQuestion(term) {
+  /** Frage hervorheben (Karte + Markierung). `scrollCard`: Karte ins Bild holen; `jump`: zur Fundstelle springen. */
+  function activateQuestion(term, scrollCard, jump) {
+    state.activeTerm = term;
+    questionsBox.querySelectorAll(".pseudo-question").forEach(function (node) {
+      node.classList.toggle("is-active", node.getAttribute("data-question") === term);
+    });
+    docPane.querySelectorAll(".pseudo-mark").forEach(function (node) {
+      node.classList.toggle("is-active", node.getAttribute("data-term") === term);
+    });
+    renderProgress();
     var node = questionsBox.querySelector("[data-question=\"" + cssEscape(term) + "\"]");
-    if (!node) { return; }
-    node.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    node.classList.add("is-focused");
-    setTimeout(function () { node.classList.remove("is-focused"); }, 1400);
+    if (node && scrollCard) {
+      var top = node.offsetTop - panelScroll.offsetTop;
+      if (top < panelScroll.scrollTop || top + node.offsetHeight > panelScroll.scrollTop + panelScroll.clientHeight) {
+        panelScroll.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
+      }
+    }
+    if (jump) {
+      var q = questions().filter(function (x) { return x.term === term; })[0];
+      if (q) { goToQuestion(q); }
+    }
   }
+
+  function stepQuestion(delta) {
+    var qs = questions();
+    if (!qs.length) { return; }
+    var index = activeIndex(qs);
+    if (delta > 0) {
+      // naechste OFFENE Frage nach der aktuellen (zyklisch)
+      for (var step = 1; step <= qs.length; step += 1) {
+        var candidate = qs[(Math.max(index, -1) + step) % qs.length];
+        if (!state.decisions[candidate.term] && candidate.term !== state.activeTerm) { goToQuestion(candidate); return; }
+      }
+      return;
+    }
+    if (index > 0) { goToQuestion(qs[index - 1]); }
+  }
+
+  qPrev.addEventListener("click", function () { stepQuestion(-1); });
+  qNext.addEventListener("click", function () { stepQuestion(1); });
 
   function renderMappings() {
     mappingsList.textContent = "";
     var data = state.reviews[state.currentId];
     var mappings = data ? data.mappings : [];
-    mappingCount.textContent = "(" + mappings.length + ")";
+    mappingCount.textContent = String(mappings.length);
+    mappingsWrap.hidden = !data;
     mappings.forEach(function (m) {
       var li = el("li", "pseudo-center__mapping");
-      li.appendChild(el("code", "", m.placeholder));
-      li.appendChild(el("span", "pseudo-center__mapping-cat", m.category));
       li.appendChild(el("span", "pseudo-center__mapping-val", m.original));
+      li.appendChild(el("span", "pseudo-center__mapping-cat", categoryLabel(m.category)));
+      li.appendChild(el("code", "", m.placeholder));
+      li.title = "Zur Fundstelle";
+      li.tabIndex = 0;
+      li.addEventListener("click", function () { if (state.view !== "marked") { setView("marked"); } scrollToMark(m.original); });
       mappingsList.appendChild(li);
     });
+    if (!mappings.length && data) { mappingsList.appendChild(el("li", "form-hint", "Keine Funde in diesem Dokument.")); }
   }
 
   function renderLimits() {
     limitsBox.textContent = "";
     var data = state.reviews[state.currentId];
     if (!data || (!data.limitations.length && !data.not_located.length)) { return; }
-    limitsBox.appendChild(el("h3", "pseudo-center__section-title", "Hinweise zur Darstellung"));
-    data.limitations.forEach(function (text) { limitsBox.appendChild(el("p", "form-hint", text)); });
+    var details = el("details", "pseudo-center__section");
+    details.appendChild(el("summary", "", "Hinweise zur Darstellung"));
+    data.limitations.forEach(function (text) { details.appendChild(el("p", "form-hint", text)); });
     if (data.not_located.length) {
       var ul = el("ul", "pseudo-center__not-located");
       data.not_located.forEach(function (v) { ul.appendChild(el("li", "", v)); });
-      limitsBox.appendChild(ul);
+      details.appendChild(ul);
+      details.open = true; // nicht markierte Werte nicht verstecken
     }
+    limitsBox.appendChild(details);
   }
 
   function renderProtect() {
@@ -407,9 +659,52 @@
     protectForm.querySelector("input[name=\"return_to\"]").value = "chat:" + state.conversationId;
   }
 
+  var QUICK = [
+    { label: "Antwort entwerfen", text: "Bitte entwirf auf Basis von „{f}“ eine Antwort auf dieses Dokument." },
+    { label: "Fristen & Risiken prüfen", text: "Bitte pruefe „{f}“ auf Fristen und rechtliche Risiken und fasse sie zusammen." },
+    { label: "Kurz zusammenfassen", text: "Bitte fasse „{f}“ in wenigen Saetzen zusammen." }
+  ];
+
+  function renderQuick() {
+    quickActions.textContent = "";
+    var data = state.reviews[state.currentId];
+    var input = document.querySelector("textarea[name=\"content\"]");
+    quickBox.hidden = !(state.mode === "view" && data && data.status !== "no_text" && input);
+    if (quickBox.hidden) { return; }
+    QUICK.forEach(function (action) {
+      var b = el("button", "btn btn--ghost pseudo-center__quick-btn", action.label);
+      b.type = "button";
+      b.setAttribute("data-quick-action", action.label);
+      b.addEventListener("click", function () {
+        // nur vorbelegen - gesendet wird erst durch den Nutzer, der Server prueft dann erneut
+        input.value = action.text.replace("{f}", data.filename);
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        close("quick");
+        input.focus();
+      });
+      quickActions.appendChild(b);
+    });
+  }
+
   function confirmLabel() {
     if (state.mode === "review") { return "Antworten übernehmen und fortfahren"; }
-    return "Pseudonymisierung bestätigen und " + (state.order.label || "fortsetzen");
+    return "Pseudonymisierung bestätigen und " + (state.order.label || "fortfahren");
+  }
+
+  function renderFooterStatus() {
+    footerStatus.textContent = "";
+    var funde = 0;
+    state.docs.forEach(function (d) { var r = state.reviews[d.id]; if (r) { funde += r.mappings.length; } });
+    var qs = questions().length, open = openTerms().length;
+    function chip(cls, label, value) {
+      var c = el("span", "pseudo-center__chip " + cls);
+      c.appendChild(el("strong", "", String(value)));
+      c.appendChild(document.createTextNode(" " + label));
+      footerStatus.appendChild(c);
+    }
+    chip("pseudo-center__chip--masked", (funde === 1 ? "Fund" : "Funde") + (state.docs.length > 1 ? " gesamt" : ""), funde);
+    if (qs) { chip(open ? "pseudo-center__chip--open" : "pseudo-center__chip--ok", "offen", open + " / " + qs); }
+    if (state.docs.length > 1) { chip("", "Dokumente", state.docs.length); }
   }
 
   function renderFooter() {
@@ -417,27 +712,34 @@
     var blocked = state.docs.some(function (d) { var r = state.reviews[d.id]; return r && (r.status === "blocked" || r.status === "no_text") && d.needs_confirmation; });
     confirmBtn.hidden = state.mode === "view";
     confirmBtn.textContent = confirmLabel();
+    var lock = "";
     if (state.mode === "view") {
       openCount.textContent = "";
     } else if (!state.canManage && state.mode === "release") {
-      openCount.textContent = "Bestätigen dürfen Administration und Anwälte.";
+      openCount.textContent = lock = "Bestätigen dürfen Administration und Anwälte.";
     } else if (blocked && state.mode === "release") {
-      openCount.textContent = "Mindestens ein Dokument ist blockiert – Fortsetzen nicht möglich.";
+      openCount.textContent = lock = "Mindestens ein Dokument ist blockiert – Fortsetzen nicht möglich.";
     } else {
       openCount.textContent = remaining ? remaining + " Rückfrage(n) offen – bitte zuerst entscheiden."
                                         : (questions().length ? "Alle Rückfragen beantwortet – bitte prüfen und bestätigen."
                                                               : "Keine offenen Rückfragen.");
+      if (remaining) { lock = "Erst alle Rückfragen beantworten."; }
     }
     var loadingNeeded = state.mode === "release" && state.docs.some(function (d) { return d.needs_confirmation && !state.reviews[d.id]; });
+    if (loadingNeeded && !lock) { lock = "Dokumente werden noch geprüft …"; }
     confirmBtn.disabled = state.mode === "view" || state.busy || remaining > 0 || loadingNeeded ||
       (state.mode === "release" && (!state.canManage || blocked));
+    confirmBtn.title = confirmBtn.disabled ? lock : "";
+    renderFooterStatus();
   }
 
   function renderPanel() {
     renderStatus();
+    renderProgress();
     renderQuestions();
     renderMappings();
     renderProtect();
+    renderQuick();
     renderLimits();
     renderFooter();
   }
@@ -480,6 +782,13 @@
     noticeBox.textContent = text || "";
   }
 
+  function setMaximized(on) {
+    state.maximized = on;
+    dialog.classList.toggle("is-maximized", on);
+    maximizeBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    maximizeBtn.title = on ? "Prüfpanel wieder einblenden" : "Vorschau maximieren (Prüfpanel ausblenden)";
+  }
+
   var returnFocus = null;
 
   function open(options) {
@@ -493,6 +802,8 @@
     state.decisions = {};
     state.busy = false;
     state.view = "marked";
+    state.activeTerm = null;
+    setMaximized(false);
     followupBox.textContent = "";
     returnFocus = document.activeElement;
     setView("marked", true);
@@ -529,7 +840,7 @@
         renderPanel();
         if (!state.docs.length) { renderDocument(); }
         var firstOpen = questions().filter(function (q) { return !state.decisions[q.term]; })[0];
-        if (firstOpen && firstOpen.docs.length) { goToQuestion(firstOpen); }
+        if (firstOpen) { state.activeTerm = firstOpen.term; renderPanel(); if (firstOpen.docs.length) { goToQuestion(firstOpen); } }
       });
     }).catch(function () {
       docPane.textContent = "";
@@ -545,8 +856,8 @@
     var callback = state.callback;
     state.callback = null;
     if (dialog.open && typeof dialog.close === "function") { dialog.close(); } else { dialog.removeAttribute("open"); }
-    if (returnFocus && returnFocus.focus) { returnFocus.focus({ preventScroll: true }); }
-    if (callback && reason === "cancel" && typeof callback.onCancel === "function") { callback.onCancel(); }
+    if (reason !== "quick" && returnFocus && returnFocus.focus) { returnFocus.focus({ preventScroll: true }); }
+    if (callback && (reason === "cancel" || reason === "quick") && typeof callback.onCancel === "function") { callback.onCancel(); }
   }
 
   function setView(view, silent) {
@@ -573,7 +884,16 @@
   $("[data-pseudo-page-next]").addEventListener("click", function () { goToPage(1); });
   $("[data-pseudo-zoom-in]").addEventListener("click", function () { setZoom(state.zoom + 0.2); });
   $("[data-pseudo-zoom-out]").addEventListener("click", function () { setZoom(state.zoom - 0.2); });
-  docPane.addEventListener("scroll", function () { updatePageInfo(); });
+  $("[data-pseudo-zoom-fit]").addEventListener("click", function () { setZoom(1); });
+  thumbsToggle.addEventListener("click", function () { rerenderKeepingPage(function () { state.thumbs = !state.thumbs; }); });
+  maximizeBtn.addEventListener("click", function () {
+    rerenderKeepingPage(function () { setMaximized(!state.maximized); });
+  });
+  var scrollTimer = null;
+  docPane.addEventListener("scroll", function () {
+    if (scrollTimer) { return; }
+    scrollTimer = setTimeout(function () { scrollTimer = null; updatePageInfo(); }, 80);
+  });
 
   protectForm.addEventListener("submit", function (evt) {
     var name = (protectInput.value || "").trim();
@@ -637,6 +957,7 @@
         state.callback = { onDecisions: submitFollowup, onCancel: backToChat };
         state.decisions = {};
         state.reviews = {};
+        state.activeTerm = next.candidates && next.candidates.length ? next.candidates[0].term : null;
         followupBox.textContent = "";
         followupBox.appendChild(el("p", "form-hint", "Beim Fortsetzen ist eine weitere Rückfrage entstanden."));
         var ids = state.docs.map(function (d) { return d.id; });

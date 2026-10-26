@@ -1,0 +1,134 @@
+"""Aufbau des ueberarbeiteten Pseudonymisierungs-Pop-ups (26.10.2026): Kopf -> Dokumentleiste -> Vorschau | Pruefpanel
+-> Fussleiste, und die im Browser-Skript verankerten Regeln (Bestaetigungssperre, Abbruch ohne Speichern,
+Schnellaktionen nur als Vorbelegung, Entscheidungen ueber Dokument-/Ansichtswechsel).
+
+Das Verhalten im Browser (Layout bei 1920x1080, 1280x720, 960x600, Dokumentwechsel, viele Rueckfragen, 70 Seiten)
+ist zusaetzlich per Screenshot-QA belegt (benchmarks/legal_answers_v1/qa-evidence/pseudonymization-popup-redesign-
+20261026/). Hier: serverseitig gerendertes Markup + statische Pruefung der Skriptregeln - keine JS-Laufzeit im Test.
+Ausschliesslich synthetische Daten; keine Produktiv-Datenbank."""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from tests.auth_test_utils import login_as_admin
+from tests.test_schriftsatz_release_resume import writer  # noqa: F401 - Fixture
+from tests.test_web_chat import client, db_session  # noqa: F401
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = (ROOT / "app/web/static/js/pseudonymization_center.js").read_text(encoding="utf-8")
+CSS = (ROOT / "app/web/static/css/app.css").read_text(encoding="utf-8")
+
+
+def _dialog_markup(client, db_session) -> str:
+    login_as_admin(db_session, client)
+    page = client.get("/dashboard/chat").text
+    start = page.index('<dialog id="pseudonymization-center"')
+    return page[start:page.index("</dialog>", start)]
+
+
+def _function(name: str) -> str:
+    """Rumpf einer Funktion `function <name>(...) { ... }` des Skripts (Klammerzaehlung)."""
+    start = SCRIPT.index(f"function {name}(")
+    depth, index = 0, SCRIPT.index("{", start)
+    for position in range(index, len(SCRIPT)):
+        depth += {"{": 1, "}": -1}.get(SCRIPT[position], 0)
+        if depth == 0:
+            return SCRIPT[start:position + 1]
+    raise AssertionError(name)
+
+
+def test_layout_regions_are_in_order_header_docbar_body_footer(client, db_session, writer) -> None:
+    html = _dialog_markup(client, db_session)
+    order = [html.index(marker) for marker in ('class="pseudo-center__header"', 'class="pseudo-center__docbar"',
+                                               'class="pseudo-center__body"', 'class="pseudo-center__footer"')]
+    assert order == sorted(order)
+    body = html[html.index('class="pseudo-center__body"'):html.index('class="pseudo-center__footer"')]
+    # Vorschau links (groesster Bereich), Pruefpanel rechts mit eigenem Scrollbereich
+    assert body.index('class="pseudo-center__document"') < body.index('class="pseudo-center__panel"')
+    assert "data-pseudo-panel-scroll" in body
+    # Fussleiste liegt AUSSERHALB der scrollbaren Bereiche -> immer sichtbar
+    footer = html[html.index('class="pseudo-center__footer"'):]
+    assert "data-pseudo-center-confirm" in footer and "data-pseudo-center-cancel" in footer
+    assert "data-pseudo-footer-status" in footer and "data-pseudo-open-count" in footer
+
+
+def test_header_has_title_explanation_three_views_and_close(client, db_session, writer) -> None:
+    html = _dialog_markup(client, db_session)
+    header = html[html.index('class="pseudo-center__header"'):html.index('class="pseudo-center__docbar"')]
+    assert "Pseudonymisierung prüfen" in header and 'id="pseudo-center-intro"' in header
+    assert "bis dahin wird nichts gesendet" in header
+    views = re.findall(r'data-pseudo-view="(\w+)"', header)
+    assert views == ["marked", "original", "result"]
+    for label in ("Markierte Vorschau", "Original", "Pseudonymisiertes Ergebnis"):
+        assert label in header
+    # Schliessen = Abbrechen (gleiche Regel, kein eigener Pfad)
+    assert re.search(r'class="pseudo-center__close" data-pseudo-center-cancel', header)
+
+
+def test_docbar_tabs_with_select_for_many_documents_and_preview_tools(client, db_session, writer) -> None:
+    html = _dialog_markup(client, db_session)
+    assert "data-pseudo-doc-tabs" in html
+    assert re.search(r"data-pseudo-doc-select-wrap hidden", html)  # erst bei vielen Dokumenten sichtbar
+    for tool in ("data-pseudo-thumbs-toggle", "data-pseudo-page-prev", "data-pseudo-page-info", "data-pseudo-page-next",
+                 "data-pseudo-zoom-out", "data-pseudo-zoom-in", "data-pseudo-zoom-fit", "data-pseudo-maximize"):
+        assert tool in html, tool
+    assert re.search(r"data-pseudo-thumbs hidden", html)
+    legend = html[html.index('class="pseudo-center__legend"'):]
+    for label in ("wird pseudonymisiert", "Rückfrage offen", "bleibt lesbar"):
+        assert label in legend[:800]
+
+
+def test_panel_offers_progress_question_navigation_protect_and_quick_actions(client, db_session, writer) -> None:
+    html = _dialog_markup(client, db_session)
+    panel = html[html.index('class="pseudo-center__panel"'):html.index('class="pseudo-center__footer"')]
+    for marker in ("data-pseudo-progress hidden", 'role="progressbar"', "data-pseudo-q-prev", "data-pseudo-q-next",
+                   "data-pseudo-questions", "data-pseudo-mappings", "data-pseudo-protect-form", "data-pseudo-quick hidden",
+                   "data-pseudo-limits"):
+        assert marker in panel, marker
+    # Namensschutz bleibt erhalten (aktenweit, serverseitige Pruefung) - nicht kommentarlos entfernt
+    assert 'name="protected_terms"' in panel and 'name="text_version"' in panel
+
+
+def test_confirm_is_disabled_by_default_and_locked_while_questions_are_open() -> None:
+    assert re.search(r"data-pseudo-center-confirm disabled", (ROOT / "app/web/templates/partials/"
+                                                               "pseudonymization_center.html").read_text(encoding="utf-8"))
+    footer = _function("renderFooter")
+    assert "remaining > 0" in footer and "state.busy" in footer and 'state.mode === "view"' in footer
+    assert "!state.canManage" in footer and "blocked" in footer and "loadingNeeded" in footer
+    # Auch der Klick prueft die Sperre noch einmal; der Server revalidiert (require_resolved=1)
+    assert "if (confirmBtn.disabled) { return; }" in SCRIPT and 'form.append("require_resolved", "1")' in SCRIPT
+
+
+def test_cancel_discards_decisions_and_sends_nothing() -> None:
+    close = _function("close")
+    assert "state.decisions = {}" in close
+    assert "fetch(" not in close and "submit" not in close
+    assert "onCancel" in close  # Chat-Rueckfrage: Abbrechen setzt nur die bestehende Blase zurueck
+
+
+def test_decisions_survive_document_and_view_switches() -> None:
+    for name in ("selectDoc", "setView", "renderDocument", "rerenderKeepingPage", "stepQuestion", "setMaximized"):
+        assert "state.decisions = {}" not in _function(name), name
+    # neu gesetzt werden Entscheidungen nur beim Oeffnen, beim Abbruch und bei einer NEUEN Server-Rueckfrage
+    assert SCRIPT.count("state.decisions = {}") == 3
+
+
+def test_quick_actions_only_prefill_the_chat_input() -> None:
+    quick = _function("renderQuick")
+    assert "fetch(" not in quick and "requestSubmit" not in quick and ".submit(" not in quick
+    assert 'textarea[name=\\"content\\"]' in quick and "input.value =" in quick
+    assert 'state.mode === "view"' in quick  # nur in der reinen Pruefansicht ohne offenen Auftrag
+
+
+def test_document_content_is_rendered_as_text_only() -> None:
+    assert "innerHTML" not in SCRIPT and "insertAdjacentHTML" not in SCRIPT
+
+
+def test_css_keeps_hidden_rule_and_responsive_fallbacks() -> None:
+    block = CSS[CSS.index("/* --- Zentraler Pseudonymisierungsdialog (25./26.10.2026"):]
+    assert ".pseudo-center [hidden] { display: none !important; }" in block
+    assert "grid-template-rows: auto auto minmax(0, 1fr) auto" in block  # Fussleiste nie herausgeschoben
+    assert "@media (max-width: 900px)" in block and "@media (max-height: 760px)" in block
+    assert ".modal.pseudo-center.is-maximized .pseudo-center__panel { display: none; }" in block
