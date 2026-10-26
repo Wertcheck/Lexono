@@ -133,3 +133,12 @@ def test_css_keeps_hidden_rule_and_responsive_fallbacks() -> None:
     assert "grid-template-rows: auto auto minmax(0, 1fr) auto" in block  # Fussleiste nie herausgeschoben
     assert "@media (max-width: 900px)" in block and "@media (max-height: 760px)" in block
     assert ".modal.pseudo-center.is-maximized .pseudo-center__panel { display: none; }" in block
+
+
+def test_css_follows_the_app_tokens_found_in_the_reference_comparison() -> None:
+    """Abgleich mit Screenshots der laufenden App (26.10.2026): Buttons im Pop-up erbten die Schrift nicht (Arial statt
+    Inter), Radien wichen von --radius-sm/--radius-md ab."""
+    block = CSS[CSS.index("/* --- Zentraler Pseudonymisierungsdialog (25./26.10.2026"):]
+    assert ".pseudo-center button, .pseudo-center select, .pseudo-center input { font-family: var(--font-body); }" in block
+    assert not re.search(r"border-radius:\s*(7|8|10|14)px", block)
+    assert "border-radius: var(--radius-md)" in block and "border-radius: var(--radius-sm)" in block

@@ -1,21 +1,21 @@
 {
  "base": "http://127.0.0.1:8063",
  "auftraege": {
-  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": true,
-  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": true,
-  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": true
+  "9002fea3-1e39-45ec-a558-4cfa004b1198": true,
+  "57fe3a5b-39d8-4ba5-8362-822bcc73f562": true,
+  "f83366e6-392e-4688-947e-4db17138c657": true
  },
- "setup_s": 11.7,
+ "setup_s": 8.1,
  "convs": {
-  "mix": "0e1fb92b-c052-4e7e-a155-624d58b9eb0b",
-  "many": "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff",
-  "long": "d6cdbf4a-5261-4628-8576-e12a90dbddeb",
-  "view": "5c43462a-a96c-4034-ab44-f4226e205d13"
+  "mix": "9002fea3-1e39-45ec-a558-4cfa004b1198",
+  "many": "57fe3a5b-39d8-4ba5-8362-822bcc73f562",
+  "long": "f83366e6-392e-4688-947e-4db17138c657",
+  "view": "b25b3df5-b8bc-4cf7-b161-67d1427d2139"
  },
  "db_start": {
-  "privacy_decisions": 3,
+  "privacy_decisions": 6,
   "document_releases": 0,
-  "chat_messages": 73
+  "chat_messages": 91
  },
  "01-desktop-chat-mit-sperrhinweis": {
   "dialog_offen": false,
@@ -84,16 +84,16 @@
   "hinweise": ""
  },
  "klicks": {
-  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": "sperrhinweis",
-  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": "sperrhinweis",
-  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": "sperrhinweis",
-  "5c43462a-a96c-4034-ab44-f4226e205d13": "api"
+  "9002fea3-1e39-45ec-a558-4cfa004b1198": "sperrhinweis",
+  "57fe3a5b-39d8-4ba5-8362-822bcc73f562": "sperrhinweis",
+  "f83366e6-392e-4688-947e-4db17138c657": "sperrhinweis",
+  "b25b3df5-b8bc-4cf7-b161-67d1427d2139": "api"
  },
  "ladezeit_ms": {
-  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": 2138,
-  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": 2433,
-  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": 11263,
-  "5c43462a-a96c-4034-ab44-f4226e205d13": 1514
+  "9002fea3-1e39-45ec-a558-4cfa004b1198": 1828,
+  "57fe3a5b-39d8-4ba5-8362-822bcc73f562": 2430,
+  "f83366e6-392e-4688-947e-4db17138c657": 11031,
+  "b25b3df5-b8bc-4cf7-b161-67d1427d2139": 1514
  },
  "02-desktop-popup-markierte-vorschau": {
   "dialog_offen": true,
@@ -132,8 +132,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    1093,
@@ -203,8 +203,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    1510,
@@ -274,8 +274,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    0,
@@ -345,8 +345,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    0,
@@ -426,8 +426,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    0,
@@ -496,8 +496,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    0,
@@ -646,8 +646,8 @@
   ],
   "panel_scroll": [
    0,
-   739,
-   739
+   738,
+   738
   ],
   "vorschau_scroll": [
    195,
@@ -717,8 +717,8 @@
   ],
   "panel_scroll": [
    0,
-   741,
-   741
+   740,
+   740
   ],
   "vorschau_scroll": [
    195,
@@ -821,9 +821,9 @@
   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
  },
  "db_nach_abbruch": {
-  "privacy_decisions": 3,
+  "privacy_decisions": 6,
   "document_releases": 0,
-  "chat_messages": 73
+  "chat_messages": 91
  },
  "12-1280x720-popup": {
   "dialog_offen": true,
@@ -862,8 +862,8 @@
   ],
   "panel_scroll": [
    0,
-   610,
-   420
+   612,
+   419
   ],
   "vorschau_scroll": [
    1195,
@@ -931,9 +931,9 @@
    480
   ],
   "panel_scroll": [
-   190,
-   610,
-   420
+   193,
+   612,
+   419
   ],
   "vorschau_scroll": [
    1195,
@@ -1002,8 +1002,8 @@
   ],
   "panel_scroll": [
    0,
-   2076,
-   659
+   2210,
+   658
   ],
   "vorschau_scroll": [
    0,
@@ -1076,8 +1076,8 @@
   ],
   "panel_scroll": [
    0,
-   2205,
-   420
+   2227,
+   419
   ],
   "vorschau_scroll": [
    0,
@@ -1149,9 +1149,9 @@
    480
   ],
   "panel_scroll": [
-   683,
-   2205,
-   420
+   691,
+   2227,
+   419
   ],
   "vorschau_scroll": [
    78,
@@ -1223,9 +1223,9 @@
    480
   ],
   "panel_scroll": [
-   904,
-   2205,
-   420
+   914,
+   2227,
+   419
   ],
   "vorschau_scroll": [
    1195,
@@ -1261,7 +1261,7 @@
   "namensschutz": true,
   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
  },
- "k_select": "55cf7bb2-d84e-42e2-a1d8-651ab903fafc",
+ "k_select": "b8cbaac7-74fb-4908-84ff-391005cdb1e6",
  "18-1280x720-auswahlliste-anlage-4": {
   "dialog_offen": true,
   "fenster": [
@@ -1298,9 +1298,9 @@
    480
   ],
   "panel_scroll": [
-   904,
-   2205,
-   420
+   914,
+   2227,
+   419
   ],
   "vorschau_scroll": [
    821,
@@ -1374,8 +1374,8 @@
   ],
   "panel_scroll": [
    0,
-   420,
-   420
+   419,
+   419
   ],
   "vorschau_scroll": [
    80730,
@@ -1443,8 +1443,8 @@
   ],
   "panel_scroll": [
    0,
-   420,
-   420
+   419,
+   419
   ],
   "vorschau_scroll": [
    71472,
@@ -1512,8 +1512,8 @@
   ],
   "panel_scroll": [
    0,
-   420,
-   420
+   419,
+   419
   ],
   "vorschau_scroll": [
    2410,
@@ -1581,8 +1581,8 @@
   ],
   "panel_scroll": [
    0,
-   420,
-   420
+   419,
+   419
   ],
   "vorschau_scroll": [
    2812,
@@ -1763,14 +1763,14 @@
  "schnellaktion_eingabe": "Bitte entwirf auf Basis von „QA-SYNTH-Nur-Ansicht.pdf“ eine Antwort auf dieses Dokument.",
  "schnellaktion_db": {
   "vorher": {
-   "privacy_decisions": 3,
+   "privacy_decisions": 6,
    "document_releases": 0,
-   "chat_messages": 73
+   "chat_messages": 91
   },
   "nachher": {
-   "privacy_decisions": 3,
+   "privacy_decisions": 6,
    "document_releases": 0,
-   "chat_messages": 73
+   "chat_messages": 91
   }
  },
  "24b-desktop-rueckfrage-beim-senden-im-popup": {
@@ -1810,8 +1810,8 @@
   ],
   "panel_scroll": [
    0,
-   661,
-   661
+   660,
+   660
   ],
   "vorschau_scroll": [
    0,
@@ -1917,14 +1917,14 @@
  "review_abbruch": {
   "blase": "Rückfrage öffnen",
   "db_vor_abbruch": {
-   "privacy_decisions": 3,
+   "privacy_decisions": 6,
    "document_releases": 0,
-   "chat_messages": 74
+   "chat_messages": 92
   },
   "db_nach_abbruch": {
-   "privacy_decisions": 3,
+   "privacy_decisions": 6,
    "document_releases": 0,
-   "chat_messages": 74
+   "chat_messages": 92
   }
  },
  "25-960x600-gestapelt": {
@@ -1952,25 +1952,25 @@
   "maximiert": false,
   "panel": [
    623,
-   178,
+   179,
    320,
-   338
+   337
   ],
   "vorschau": [
    17,
-   250,
+   251,
    606,
-   266
+   265
   ],
   "panel_scroll": [
    4,
-   626,
-   229
+   630,
+   227
   ],
   "vorschau_scroll": [
    831,
    2567,
-   266
+   265
   ],
   "dok_tabs": [
    "PDFQA-SYNTH-Einspruch.pdf1",
@@ -2034,8 +2034,8 @@
   ],
   "panel_scroll": [
    0,
-   659,
-   659
+   658,
+   658
   ],
   "vorschau_scroll": [
    1133,
@@ -2104,9 +2104,9 @@
    482
   ],
   "panel_scroll": [
-   188,
-   610,
-   422
+   191,
+   612,
+   421
   ],
   "vorschau_scroll": [
    31,
@@ -2174,9 +2174,9 @@
    482
   ],
   "panel_scroll": [
-   188,
-   610,
-   422
+   191,
+   612,
+   421
   ],
   "vorschau_scroll": [
    31,
@@ -2276,16 +2276,16 @@
  },
  "bestaetigen_gate": {
   "vorher": {
-   "privacy_decisions": 3,
+   "privacy_decisions": 6,
    "document_releases": 0,
-   "chat_messages": 74
+   "chat_messages": 92
   },
   "nachher": {
-   "privacy_decisions": 5,
+   "privacy_decisions": 8,
    "document_releases": 0,
-   "chat_messages": 74
+   "chat_messages": 92
   },
-  "pfad": "/dashboard/chat/0e1fb92b-c052-4e7e-a155-624d58b9eb0b",
+  "pfad": "/dashboard/chat/9002fea3-1e39-45ec-a558-4cfa004b1198",
   "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
  },
  "k_blase": "ok",
@@ -2326,8 +2326,8 @@
   ],
   "panel_scroll": [
    0,
-   661,
-   661
+   660,
+   660
   ],
   "vorschau_scroll": [
    0,
@@ -2426,21 +2426,21 @@
  },
  "bestaetigen_review": {
   "vorher": {
-   "privacy_decisions": 5,
+   "privacy_decisions": 8,
    "document_releases": 0,
-   "chat_messages": 74
+   "chat_messages": 92
   },
   "nachher": {
-   "privacy_decisions": 6,
+   "privacy_decisions": 9,
    "document_releases": 0,
-   "chat_messages": 75
+   "chat_messages": 93
   },
-  "pfad": "/dashboard/chat/5c43462a-a96c-4034-ab44-f4226e205d13",
+  "pfad": "/dashboard/chat/b25b3df5-b8bc-4cf7-b161-67d1427d2139",
   "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
  },
  "db_ende": {
-  "privacy_decisions": 6,
+  "privacy_decisions": 9,
   "document_releases": 0,
-  "chat_messages": 75
+  "chat_messages": 93
  }
 }
