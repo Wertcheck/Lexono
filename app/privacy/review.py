@@ -94,6 +94,10 @@ class ReviewCandidate:
     context_after: str
     roles: tuple[str, ...]
     probe_score: int
+    #: Nur Rueckfrage (Modus "ask"), keine vorsichtige Maskierung im Modus "mask" (26.10.2026): fuer Lesarten, bei denen
+    #: eine bestehende, dokumentierte Entscheidung die Gattungswort-Lesart lesbar halten will ("Der Bauer hat die Pacht
+    #: gezahlt", tests/test_privacy_feminine_article_names.py) - dort entscheidet der Mensch, nicht eine Regel.
+    ask_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -500,6 +504,45 @@ def _sender_after_communication_noun(doc, token, raw: str) -> bool:
     return "Plur" not in token.morph.get("Number")
 
 
+# Nachname nach Artikel als handelnde Prozesspartei (26.10.2026, Benchmark bench_article_surname_nouns: 38 von 80 Faellen
+# "Der König hat den Mietvertrag unterschrieben" gingen ohne Rueckfrage hinaus - die Artikel-Lesart verlangt ein
+# Personennomen bzw. den staerksten Namensrahmen, beides fehlt bei Winter/Sommer/Hahn bzw. König/Kaiser). Eng gefasst,
+# weil die Artikel-Lesart grammatisch gleichwertig ist: NUR haeufige deutsche Nachnamen, die zugleich Gattungswoerter sind,
+# und NUR als Subjekt einer typischen Parteihandlung (unterschreiben, anrufen, widersprechen, zahlen ...). "Der Winter war
+# streng", "Der Bauer bestellt das Feld", "Der Mieter hat gezahlt" (kein Nachname) sind nicht betroffen.
+_SURNAME_COMMON_NOUNS = frozenset({
+    "müller", "schneider", "fischer", "weber", "wagner", "schäfer", "koch", "bauer", "wolf", "zimmermann", "köhler",
+    "könig", "kaiser", "fuchs", "hahn", "vogel", "keller", "schuster", "winter", "schumacher", "krämer", "vogt", "stein",
+    "jäger", "sommer", "schreiber", "graf", "ziegler", "engel", "horn", "busch", "bergmann", "herzog", "fürst", "ritter",
+    "gärtner", "förster", "schmied", "bäcker", "kellner", "wirt", "meister", "kaufmann", "richter", "pfeiffer", "schütz",
+    "lang", "frank", "sauer", "voigt", "hofmann", "baumann",
+})
+_PARTY_ACT_VERBS = frozenset({
+    "anrufen", "unterschreiben", "unterzeichnen", "widersprechen", "zahlen", "bezahlen", "überweisen", "kündigen",
+    "mitteilen", "bestätigen", "zusagen", "absagen", "beauftragen", "zustimmen", "ablehnen", "mahnen", "einreichen",
+    "antworten", "beantragen", "rügen", "beanstanden", "monieren", "anfechten", "widerrufen", "vorsprechen", "vollmacht",
+    "bevollmächtigen", "klagen", "verklagen", "anzeigen", "abmahnen",
+})
+
+
+def _surname_noun_as_party(doc, token, raw: str) -> bool:
+    """`der` + haeufiger Nachname, der zugleich Gattungswort ist, als Subjekt einer Parteihandlung. `raw` ist der
+    Scantext MIT Platzhaltern."""
+    if token.text.lower() not in _SURNAME_COMMON_NOUNS or token.i == 0:
+        return False
+    previous = doc[token.i - 1]
+    if previous.lower_ != "der" or previous.pos_ != "DET" or token.dep_ != "sb":
+        return False
+    # Folgt direkt ein Name bzw. Platzhalter, ist `token` ein Titel/Rollenwort davor ("Der Richter Zweigelt hat
+    # angerufen" - Regressionstest test_privacy_court_persons_and_labels): der Name hat seine eigene Erkennung.
+    rest = raw[token.idx + len(token.text):].lstrip(" \t")
+    if rest[:1].isupper() or rest[:1] == "[":
+        return False
+    head = token.head
+    verbs = [head, *[c for c in head.children if c.dep_ in ("oc", "cj") and c.pos_ in ("VERB", "AUX")]]
+    return any(v.lemma_.lower() in _PARTY_ACT_VERBS for v in verbs)
+
+
 def find_review_candidates(
     scan_text: str,
     *,
@@ -536,12 +579,14 @@ def find_review_candidates(
             continue  # Umschrift eines Gattungsnomens ("Ruecksicht") - dieselbe Regel wie bei der Erkennung
         article_reading = False
         feminine_reading = None
+        party_reading = False
         if not _is_bare(doc, token, raw=scan_text):
+            party_reading = _surname_noun_as_party(doc, token, scan_text)
             article_reading = _is_definite_article_name_reading(doc, token)
             if not article_reading:
                 feminine_reading = _feminine_article_name_reading(doc, token)
                 article_reading = feminine_reading == "unknown_after_die"
-                if feminine_reading is None:
+                if feminine_reading is None and not party_reading:
                     continue
         # Systemzeile im ROHtext pruefen (24.10.2026, Grenzfaelle G3/G4, gemessen): die Analysefassung zieht weiche
         # Zeilenumbrueche zusammen ("Akte: Beispielakte\nDazu erklaert Fuerst" -> eine Zeile) - dann galt der GANZE
@@ -553,6 +598,8 @@ def find_review_candidates(
         if _is_contact_label(scan_text, token) or _is_traffic_light_colour(doc, neutral, token):
             continue  # §75.2: Bezeichnung einer maskierten Kontaktangabe bzw. Ampelfarbe im Verkehrssatz
         roles = _roles(doc, neutral, token, raw=scan_text)
+        if party_reading:
+            roles = roles | {"nachname_nach_artikel_handlung"}
         if not roles:
             continue
         if (
@@ -589,6 +636,16 @@ def find_review_candidates(
             if max_candidates is not None and len(found) >= max_candidates:
                 break
             continue
+
+        def _party_fallback() -> None:
+            # Nur dort, wo die bestehende Logik den Begriff VERWERFEN wuerde: Rueckfrage ohne vorsichtige Maskierung
+            # (ask_only). Wird der Begriff auf dem bestehenden Weg gefunden, bleibt es bei dessen Verhalten (inkl.
+            # Maskierung im Modus "mask") - sonst gingen bisher maskierte Namen ("Der Kaufmann ...") neu im Klartext raus.
+            before, after = _context(context_source, word)
+            found[word] = ReviewCandidate(
+                term=word, context_before=before, context_after=after, roles=tuple(sorted(roles)), probe_score=score,
+                ask_only=True,
+            )
         if feminine_reading == "gender_mismatch":
             # Grammatisches Eigensignal (siehe _feminine_article_name_reading) - ohne Namensprobe
             before, after = _context(context_source, word)
@@ -600,6 +657,10 @@ def find_review_candidates(
                 break
             continue
         if score < REVIEW_MIN_PROBE_SCORE:
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
             continue
         # Fachwort-Fehlalarme (12.10.2026, 600er-Korpus): jeder synthetische Testname wird im staerksten Namensrahmen
         # "Herr X hat unterschrieben" als Person gelesen; Fachwoerter wie "Bescheid", "Flachdach", "Zugluft" nicht.
@@ -617,9 +678,18 @@ def find_review_candidates(
             # von "Riss" - bleibt lesbar, Red-Team 13.10.2026) oder (b) in einer Tabellen-/Aufzaehlungs- oder Satzrolle bei
             # einem dem Modell UNBEKANNTEN Wort - die gemessenen Fachwort-Fehlalarme ("Bescheid", "Flachdach", "Zugluft",
             # Spaltenkopf "Betrag" in Benchmark Q06) sind bekannte Woerter.
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
             continue
         if article_reading and not frames[0]:
-            continue  # Artikel-Lesart nur mit dem staerksten Namensrahmen (siehe _is_definite_article_name_reading)
+            # Artikel-Lesart nur mit dem staerksten Namensrahmen (siehe _is_definite_article_name_reading)
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
+            continue
         before, after = _context(context_source, word)
         found[word] = ReviewCandidate(
             term=word, context_before=before, context_after=after, roles=tuple(sorted(roles)), probe_score=score

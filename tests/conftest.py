@@ -24,6 +24,32 @@ _VENDOR_TESSERACT_EXE = (
 )
 
 
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Fingerabdruck des Repository-Codes zu Beginn des Laufs (siehe tests/repo_change_guard.py)."""
+    from tests.repo_change_guard import code_fingerprint
+
+    session.config._lexono_code_fingerprint = code_fingerprint()  # type: ignore[attr-defined]
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config) -> None:  # noqa: ANN001
+    """Warnt deutlich, wenn Python-Code des Repositorys WAEHREND des Laufs geaendert wurde: Isolations-/Gate-Tests
+    scheitern dann korrekt fail-closed ("Pruefwerkzeug seit der Bestaetigung geaendert") - kein Codefehler."""
+    from tests.repo_change_guard import changed_files, code_fingerprint
+
+    before = getattr(config, "_lexono_code_fingerprint", None)
+    if before is None:
+        return
+    changed = changed_files(before, code_fingerprint())
+    if changed:
+        terminalreporter.section("Repository-Code waehrend des Testlaufs geaendert", sep="!", red=True, bold=True)
+        terminalreporter.line(
+            "Ergebnisse von Isolations-/Gate-Tests (z. B. test_s80, test_s8x/s9x/s10x) sind fuer diesen Lauf NICHT "
+            "aussagekraeftig: das Gate verweigert fail-closed, wenn sich Code zwischen Bestaetigung und Pruefung aendert. "
+            "Lauf ohne parallele Bearbeitung wiederholen.", red=True)
+        for path in changed[:15]:
+            terminalreporter.line(f"  geaendert: {path}")
+
+
 @pytest.fixture(scope="module")
 def use_bundled_tesseract_if_no_system_install():
     """Verwendet automatisch das mit `windows/fetch_tesseract.ps1` erzeugte,

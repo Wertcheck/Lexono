@@ -420,6 +420,11 @@ class ClaudePrivacyGateway:
                     reasons=["Die Datenschutzprüfung auf unsichere Begriffe konnte nicht abgeschlossen werden."],
                     locally_sourced_text=locally_sourced_text,
                 )
+        if review_mode == "mask":
+            # Nur-Rueckfrage-Kandidaten (review.ReviewCandidate.ask_only) werden ohne Rueckfrage NICHT vorsichtig maskiert:
+            # dort haelt eine dokumentierte Entscheidung die Gattungswort-Lesart lesbar - im Modus "mask" also exakt
+            # das Verhalten vor ihrer Einfuehrung (26.10.2026).
+            review_candidates = [candidate for candidate in review_candidates if not candidate.ask_only]
         if review_candidates and review_mode == "ask":
             return GatewayResult(
                 allowed=False,

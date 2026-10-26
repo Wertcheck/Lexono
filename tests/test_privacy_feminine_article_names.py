@@ -103,10 +103,24 @@ def test_matching_article_terms_and_citations_stay_readable(gateway, text: str, 
 
 @pytest.mark.xfail(strict=True, reason="'Der' + Gattungswort-Nachname als Subjekt: nicht von 'Der Bauer hat die Pacht "
                    "gezahlt' (Negativfall, muss lesbar bleiben) unterscheidbar - Bedeutungswissen ueber das Verb fehlt")
-@pytest.mark.parametrize("name", ["Bauer", "Winter", "Vogel"])
+@pytest.mark.parametrize("name", ["Bauer"])
 def test_known_limit_masculine_article_common_noun_surname(gateway, name: str) -> None:
     result = _document_payload(gateway, f"Der {name} hat am 12.03.2026 angerufen.")
     assert name not in result.payload.anonymisierter_sachverhalt
+
+
+@pytest.mark.parametrize("name", ["Winter", "Vogel"])
+def test_masculine_article_surname_as_acting_party_is_masked(gateway, name: str) -> None:
+    """26.10.2026 (review._surname_noun_as_party): als Subjekt einer Parteihandlung erreichen diese Woerter jetzt die
+    bestehende Pruefung mit dem staerksten Namensrahmen und werden maskiert; vorher dokumentierte Grenze. Fuer "Bauer"
+    bleibt sie bestehen (Negativfall unten) - dort fragt der Chat nur nach (ask_only)."""
+    result = _document_payload(gateway, f"Der {name} hat am 12.03.2026 angerufen.")
+    assert name not in result.payload.anonymisierter_sachverhalt
+
+
+def test_documented_negative_role_noun_with_party_act_stays_readable(gateway) -> None:
+    result = _document_payload(gateway, "Der Bauer hat die Pacht für das Feld gezahlt.")
+    assert result.allowed and "Der Bauer hat die Pacht" in result.payload.anonymisierter_sachverhalt
 
 
 # --- Leitung (Loopback): kein Klartext im tatsaechlich gesendeten Auftrag ------------------------------------------

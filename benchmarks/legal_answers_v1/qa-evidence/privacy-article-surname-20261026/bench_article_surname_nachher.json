@@ -1,0 +1,65 @@
+{
+ "P_faelle": 80,
+ "P_lecks_mask": 26,
+ "P_ungefragt_ask": 0,
+ "G_faelle": 20,
+ "G_fehlalarme": 10,
+ "G_uebermaskierung_andere_woerter": 1,
+ "M_faelle": 20,
+ "M_rueckfragen": 3,
+ "R_faelle": 8,
+ "R_gefragt_oder_maskiert": 8,
+ "R_saetze": [
+  "Der König hat den Friedensvertrag 1648 unterzeichnet.",
+  "Der Kaiser hat das Gesetz im Jahr 1871 unterschrieben.",
+  "Der Bauer hat die Pacht für das Feld gezahlt.",
+  "Der Koch hat die Rechnung des Großhändlers bezahlt.",
+  "Der Jäger hat die Jagdpacht zum Jahresende gekündigt.",
+  "Der Schuster hat die Miete für die Werkstatt überwiesen.",
+  "Der Wirt hat der Mieterhöhung widersprochen.",
+  "Der Fischer hat den Pachtvertrag für den See unterschrieben."
+ ],
+ "P_lecks_beispiele": [
+  "Der König hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+  "Der König hat den Mietvertrag am 01.02.2025 unterschrieben.",
+  "Der König hat mit Schreiben vom 16.03.2024 widersprochen.",
+  "Der König hat die Kaution in Höhe von 1.200,00 EUR gezahlt.",
+  "Der Kaiser hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+  "Der Kaiser hat den Mietvertrag am 01.02.2025 unterschrieben.",
+  "Der Kaiser hat mit Schreiben vom 16.03.2024 widersprochen.",
+  "Der Kaiser hat die Kaution in Höhe von 1.200,00 EUR gezahlt.",
+  "Der Graf hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+  "Der Graf hat den Mietvertrag am 01.02.2025 unterschrieben.",
+  "Der Graf hat mit Schreiben vom 16.03.2024 widersprochen.",
+  "Der Graf hat die Kaution in Höhe von 1.200,00 EUR gezahlt.",
+  "Der Bauer hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+  "Der Bauer hat den Mietvertrag am 01.02.2025 unterschrieben.",
+  "Der Bauer hat mit Schreiben vom 16.03.2024 widersprochen.",
+  "Der Bauer hat die Kaution in Höhe von 1.200,00 EUR gezahlt.",
+  "Der Sommer hat am 12.03.2026 angerufen und um Rückruf gebeten.",
+  "Der Sommer hat den Mietvertrag am 01.02.2025 unterschrieben.",
+  "Der Sommer hat mit Schreiben vom 16.03.2024 widersprochen.",
+  "Der Sommer hat die Kaution in Höhe von 1.200,00 EUR gezahlt."
+ ],
+ "G_fehlalarm_saetze": [
+  "Der Wagner fertigte früher Räder und Wagen.",
+  "Der Koch hat das Essen für die Gäste zubereitet.",
+  "Der Fischer hat am Morgen die Netze eingeholt.",
+  "Der Schneider hat die Hose gekürzt.",
+  "Der Fuchs hat in der Nacht ein Huhn gerissen.",
+  "Der Wolf wurde in Brandenburg mehrfach gesichtet.",
+  "Der Engel auf dem Gemälde ist vergoldet.",
+  "Der Jäger hat im Revier einen Hochsitz gebaut.",
+  "Der Ritter trug eine schwere Rüstung.",
+  "Der Zimmermann hat den Dachstuhl repariert."
+ ],
+ "G_uebermaskierung": [
+  {
+   "satz": "Der Wolf wurde in Brandenburg mehrfach gesichtet.",
+   "maskiert": [
+    "Brandenburg"
+   ]
+  }
+ ],
+ "laufzeit_s": 11.3
+}

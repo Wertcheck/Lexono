@@ -210,7 +210,9 @@ def test_privacy_finding_in_payload_aborts_before_sending(tmp_path, store) -> No
     driver = answer_driver.BenchmarkDriver(_config(tmp_path), store, provider, workdir=tmp_path / "work", isolation_gate=_test_gate(tmp_path, None),
                                            embedding=(FakeEmbeddingProvider(), "fake"), protect={"SYNTH": ["Mieter"]})
     result = driver.run()
-    assert result["status"] == "gestoppt_abgebrochen_vor_versand" and provider.payloads == []
+    # Gruende im Fehlerfall ausgeben (26.10.2026): "gestoppt_isolation_nicht_bestaetigt" mit "Pruefwerkzeug seit der
+    # Bestaetigung geaendert" bedeutet, dass Repository-Code WAEHREND des Laufs bearbeitet wurde (tests/repo_change_guard.py).
+    assert result["status"] == "gestoppt_abgebrochen_vor_versand" and provider.payloads == [], result.get("diagnose")
     assert "Datenschutzbefund im Payload" in " ".join(result["diagnose"])
 
 

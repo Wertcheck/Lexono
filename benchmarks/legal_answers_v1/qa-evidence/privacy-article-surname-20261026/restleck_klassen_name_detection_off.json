@@ -1,0 +1,82 @@
+{
+ "variant": "baseline",
+ "total": 1100,
+ "leaks": 36,
+ "blocks": 1,
+ "groups": {
+  "anrede": {
+   "n": 110,
+   "leaks": 1,
+   "blocks": 0,
+   "seconds": 0.05740338364108042
+  },
+  "feldanfang": {
+   "n": 110,
+   "leaks": 4,
+   "blocks": 0,
+   "seconds": 0.05073220364072106
+  },
+  "pdf_umbruch": {
+   "n": 110,
+   "leaks": 4,
+   "blocks": 0,
+   "seconds": 0.09442917364226146
+  },
+  "satzanfang": {
+   "n": 110,
+   "leaks": 4,
+   "blocks": 0,
+   "seconds": 0.05650432818061249
+  },
+  "satzmitte": {
+   "n": 110,
+   "leaks": 3,
+   "blocks": 0,
+   "seconds": 0.0575500154402107
+  },
+  "tabelle": {
+   "n": 110,
+   "leaks": 7,
+   "blocks": 0,
+   "seconds": 0.06229278361424804
+  },
+  "titel": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.05854489272037013
+  },
+  "ueberschrift": {
+   "n": 110,
+   "leaks": 6,
+   "blocks": 0,
+   "seconds": 0.06094156362708997
+  },
+  "vollname": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.05616262724877081
+  },
+  "zwei_namen": {
+   "n": 110,
+   "leaks": 7,
+   "blocks": 1,
+   "seconds": 0.06049098997715522
+  }
+ },
+ "false_alarms": {
+  "flagged": 1,
+  "total": 132,
+  "words": [
+   "Verwalter"
+  ]
+ },
+ "instruction_false_alarms": {
+  "flagged": 1,
+  "total": 17,
+  "texts": [
+   "Gilt das auch für [PERSON_01]?"
+  ]
+ }
+}

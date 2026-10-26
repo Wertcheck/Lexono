@@ -141,6 +141,27 @@ def test_preview_size_follows_the_available_width_and_screen_scaling() -> None:
     assert "pageTop" in _function("scrollToMark") and 'block: "center"' not in _function("scrollToMark")
 
 
+def test_initial_focus_is_the_dialog_title_not_the_first_view_tab(client, db_session, writer) -> None:
+    """Native Desktopprüfung 26.10.2026: showModal() fokussierte "Markierte Vorschau" (schwarzer Rahmen)."""
+    html = _dialog_markup(client, db_session)
+    title = re.search(r"<h2[^>]*id=\"pseudo-center-title\"[^>]*>", html).group(0)
+    assert "autofocus" in title and 'tabindex="-1"' in title
+    assert not re.search(r"<button[^>]*autofocus", html)
+    assert ".pseudo-center__title:focus { outline: none; }" in CSS
+    assert "button:focus-visible" in CSS[CSS.index("/* --- Zentraler Pseudonymisierungsdialog (25./26.10.2026"):]
+
+
+def test_privacy_corner_tooltip_does_not_overflow_the_main_area() -> None:
+    """Native Desktopprüfung 26.10.2026: der zentrierte (unsichtbare) Tooltip ragte 57 px ueber `.main` hinaus und
+    erzeugte auf jeder Chatseite eine horizontale Scrollleiste - in der Ecke ist er rechtsbuendig."""
+    rule = re.search(r"\.chat-privacy-corner \.chat-composer__privacy-btn::after \{([^}]*)\}", CSS)
+    assert rule, "Eck-Variante des Tooltips fehlt"
+    body = rule.group(1)
+    assert "right: 0" in body and "left: auto" in body and "translateX(-50%)" not in body
+    hover = re.search(r"\.chat-privacy-corner \.chat-composer__privacy-btn:hover::after \{([^}]*)\}", CSS).group(1)
+    assert "translateX" not in hover
+
+
 def test_document_content_is_rendered_as_text_only() -> None:
     assert "innerHTML" not in SCRIPT and "insertAdjacentHTML" not in SCRIPT
 
