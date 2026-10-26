@@ -94,6 +94,7 @@ def test_panel_offers_progress_question_navigation_protect_and_quick_actions(cli
 def test_confirm_is_disabled_by_default_and_locked_while_questions_are_open() -> None:
     assert re.search(r"data-pseudo-center-confirm disabled", (ROOT / "app/web/templates/partials/"
                                                                "pseudonymization_center.html").read_text(encoding="utf-8"))
+    assert 'return "Pseudonymisierung bestätigen und fortfahren"' in _function("confirmLabel")
     footer = _function("renderFooter")
     assert "remaining > 0" in footer and "state.busy" in footer and 'state.mode === "view"' in footer
     assert "!state.canManage" in footer and "blocked" in footer and "loadingNeeded" in footer

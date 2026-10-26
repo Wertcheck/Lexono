@@ -1,21 +1,21 @@
 {
  "base": "http://127.0.0.1:8063",
  "auftraege": {
-  "3828be13-feaa-4044-b596-f9c5dd4fe0d8": true,
-  "2fe45cfa-472d-4873-9d38-2a311cf82fa7": true,
-  "46c8cbfc-8545-488a-abd2-0b37c7f7ce91": true
+  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": true,
+  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": true,
+  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": true
  },
- "setup_s": 8.2,
+ "setup_s": 11.7,
  "convs": {
-  "mix": "3828be13-feaa-4044-b596-f9c5dd4fe0d8",
-  "many": "2fe45cfa-472d-4873-9d38-2a311cf82fa7",
-  "long": "46c8cbfc-8545-488a-abd2-0b37c7f7ce91",
-  "view": "d0e657b3-aa4e-4148-9ca8-335b2d42b922"
+  "mix": "0e1fb92b-c052-4e7e-a155-624d58b9eb0b",
+  "many": "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff",
+  "long": "d6cdbf4a-5261-4628-8576-e12a90dbddeb",
+  "view": "5c43462a-a96c-4034-ab44-f4226e205d13"
  },
  "db_start": {
   "privacy_decisions": 3,
   "document_releases": 0,
-  "chat_messages": 56
+  "chat_messages": 73
  },
  "01-desktop-chat-mit-sperrhinweis": {
   "dialog_offen": false,
@@ -36,7 +36,7 @@
   "fusszeile_sichtbar": false,
   "bestaetigen_sichtbar": false,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Bestätigen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "",
   "abbrechen_sichtbar": false,
   "maximiert": false,
@@ -84,16 +84,16 @@
   "hinweise": ""
  },
  "klicks": {
-  "3828be13-feaa-4044-b596-f9c5dd4fe0d8": "sperrhinweis",
-  "2fe45cfa-472d-4873-9d38-2a311cf82fa7": "sperrhinweis",
-  "46c8cbfc-8545-488a-abd2-0b37c7f7ce91": "sperrhinweis",
-  "d0e657b3-aa4e-4148-9ca8-335b2d42b922": "api"
+  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": "sperrhinweis",
+  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": "sperrhinweis",
+  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": "sperrhinweis",
+  "5c43462a-a96c-4034-ab44-f4226e205d13": "api"
  },
  "ladezeit_ms": {
-  "3828be13-feaa-4044-b596-f9c5dd4fe0d8": 1816,
-  "2fe45cfa-472d-4873-9d38-2a311cf82fa7": 2733,
-  "46c8cbfc-8545-488a-abd2-0b37c7f7ce91": 10954,
-  "d0e657b3-aa4e-4148-9ca8-335b2d42b922": 4606
+  "0e1fb92b-c052-4e7e-a155-624d58b9eb0b": 2138,
+  "f648d858-e7fb-4dc2-b1a1-e8f69c9896ff": 2433,
+  "d6cdbf4a-5261-4628-8576-e12a90dbddeb": 11263,
+  "5c43462a-a96c-4034-ab44-f4226e205d13": 1514
  },
  "02-desktop-popup-markierte-vorschau": {
   "dialog_offen": true,
@@ -114,7 +114,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -185,7 +185,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -256,7 +256,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -327,7 +327,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -408,7 +408,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -478,7 +478,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -558,7 +558,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": true,
@@ -628,7 +628,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -699,7 +699,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": false,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -743,7 +743,7 @@
   "aktive_frage": "12/345/67890",
   "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
   "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
-  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
   "seite_info": "Seite 1 / 3",
   "zoom": "100 %",
   "schnellaktionen": [],
@@ -769,7 +769,7 @@
   "fusszeile_sichtbar": false,
   "bestaetigen_sichtbar": false,
   "bestaetigen_gesperrt": false,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "",
   "abbrechen_sichtbar": false,
   "maximiert": false,
@@ -813,7 +813,7 @@
   "aktive_frage": "12/345/67890",
   "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
   "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
-  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen.",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
   "seite_info": "Seite 1 / 3",
   "zoom": "100 %",
   "schnellaktionen": [],
@@ -823,7 +823,7 @@
  "db_nach_abbruch": {
   "privacy_decisions": 3,
   "document_releases": 0,
-  "chat_messages": 56
+  "chat_messages": 73
  },
  "12-1280x720-popup": {
   "dialog_offen": true,
@@ -844,7 +844,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -914,7 +914,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -984,7 +984,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1058,7 +1058,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1132,7 +1132,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1206,7 +1206,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1261,7 +1261,7 @@
   "namensschutz": true,
   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
  },
- "k_select": "9425894e-cce3-49e5-8aaf-1a07432eed76",
+ "k_select": "55cf7bb2-d84e-42e2-a1d8-651ab903fafc",
  "18-1280x720-auswahlliste-anlage-4": {
   "dialog_offen": true,
   "fenster": [
@@ -1281,7 +1281,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1356,7 +1356,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1425,7 +1425,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1494,7 +1494,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1563,7 +1563,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1765,12 +1765,12 @@
   "vorher": {
    "privacy_decisions": 3,
    "document_releases": 0,
-   "chat_messages": 56
+   "chat_messages": 73
   },
   "nachher": {
    "privacy_decisions": 3,
    "document_releases": 0,
-   "chat_messages": 56
+   "chat_messages": 73
   }
  },
  "24b-desktop-rueckfrage-beim-senden-im-popup": {
@@ -1792,7 +1792,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Antworten übernehmen und fortfahren",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -1864,7 +1864,7 @@
   "fusszeile_sichtbar": false,
   "bestaetigen_sichtbar": false,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Antworten übernehmen und fortfahren",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": false,
   "maximiert": false,
@@ -1919,12 +1919,12 @@
   "db_vor_abbruch": {
    "privacy_decisions": 3,
    "document_releases": 0,
-   "chat_messages": 57
+   "chat_messages": 74
   },
   "db_nach_abbruch": {
    "privacy_decisions": 3,
    "document_releases": 0,
-   "chat_messages": 57
+   "chat_messages": 74
   }
  },
  "25-960x600-gestapelt": {
@@ -1946,7 +1946,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -2016,7 +2016,7 @@
   "fusszeile_sichtbar": true,
   "bestaetigen_sichtbar": true,
   "bestaetigen_gesperrt": true,
-  "bestaetigen_text": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
   "bestaetigen_tooltip": "Erst alle Rückfragen beantworten.",
   "abbrechen_sichtbar": true,
   "maximiert": false,
@@ -2067,9 +2067,380 @@
   "namensschutz": true,
   "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
  },
+ "k_alle_mix": 2,
+ "27-1280x720-vor-bestaetigung": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   128,
+   344,
+   531
+  ],
+  "vorschau": [
+   17,
+   177,
+   902,
+   482
+  ],
+  "panel_scroll": [
+   188,
+   610,
+   422
+  ],
+  "vorschau_scroll": [
+   31,
+   1197,
+   482
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx✓",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word ab"
+ },
+ "28-1280x720-bestaetigung-laeuft": {
+  "dialog_offen": true,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   16,
+   8,
+   1248,
+   704
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   919,
+   128,
+   344,
+   531
+  ],
+  "vorschau": [
+   17,
+   177,
+   902,
+   482
+  ],
+  "panel_scroll": [
+   188,
+   610,
+   422
+  ],
+  "vorschau_scroll": [
+   31,
+   1197,
+   482
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Einspruch.pdf✓",
+   "DOCXQA-SYNTH-Sachstand.docx✓"
+  ],
+  "aktiver_tab": "DOCXQA-SYNTH-Sachstand.docx✓",
+  "auswahlliste": false,
+  "datei_info": "DOCX · 1 Seite(n) · 7 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 2,
+  "fragen_offen": 0,
+  "aktive_frage": "12/345/67890",
+  "fortschritt": "2 von 2 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "16 Funde gesamt0 / 2 offen2 Dokumente",
+  "fusszeile_text": "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal nachgesetzt (Kopf-/Fußzeilen, Tabellen mit Rahmen, Überschriften, Hervorhebungen). Schriftarten und Seitenumbrüche können von Microsoft Word ab"
+ },
+ "29-1280x720-nach-bestaetigung-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1280,
+   720
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [],
+  "auswahlliste": false,
+  "datei_info": "",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "",
+  "fusszeile_text": "",
+  "seite_info": "",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": ""
+ },
+ "bestaetigen_gate": {
+  "vorher": {
+   "privacy_decisions": 3,
+   "document_releases": 0,
+   "chat_messages": 74
+  },
+  "nachher": {
+   "privacy_decisions": 5,
+   "document_releases": 0,
+   "chat_messages": 74
+  },
+  "pfad": "/dashboard/chat/0e1fb92b-c052-4e7e-a155-624d58b9eb0b",
+  "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "k_blase": "ok",
+ "30-desktop-chat-rueckfrage-beantwortet": {
+  "dialog_offen": true,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   60,
+   16,
+   1480,
+   968
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": true,
+  "fusszeile_sichtbar": true,
+  "bestaetigen_sichtbar": true,
+  "bestaetigen_gesperrt": false,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": true,
+  "maximiert": false,
+  "panel": [
+   1155,
+   149,
+   384,
+   776
+  ],
+  "vorschau": [
+   61,
+   198,
+   1094,
+   727
+  ],
+  "panel_scroll": [
+   0,
+   661,
+   661
+  ],
+  "vorschau_scroll": [
+   0,
+   1355,
+   727
+  ],
+  "dok_tabs": [
+   "PDFQA-SYNTH-Nur-Ansicht.pdf✓"
+  ],
+  "aktiver_tab": "PDFQA-SYNTH-Nur-Ansicht.pdf✓",
+  "auswahlliste": false,
+  "datei_info": "PDF · 1 Seite(n) · 6 Fund(e)",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 1,
+  "miniaturen": 0,
+  "markiert_masked": 7,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 1,
+  "fragen_offen": 0,
+  "aktive_frage": "Ruecksicht",
+  "fortschritt": "1 von 1 Rückfragen beantwortet 100 %",
+  "fusszeile_status": "6 Funde0 / 1 offen",
+  "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+  "seite_info": "Seite 1 / 1",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "31-desktop-nach-antwort-fortgesetzt-chat": {
+  "dialog_offen": false,
+  "fenster": [
+   1600,
+   1000
+  ],
+  "dialog": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "seite_horizontal_scroll": false,
+  "dialog_horizontal_scroll": false,
+  "ueberlaufende_bereiche": [],
+  "dialog_im_fenster": false,
+  "fusszeile_sichtbar": false,
+  "bestaetigen_sichtbar": false,
+  "bestaetigen_gesperrt": true,
+  "bestaetigen_text": "Pseudonymisierung bestätigen und fortfahren",
+  "bestaetigen_tooltip": "",
+  "abbrechen_sichtbar": false,
+  "maximiert": false,
+  "panel": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "vorschau": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "panel_scroll": [
+   0,
+   0,
+   0
+  ],
+  "vorschau_scroll": [
+   0,
+   0,
+   0
+  ],
+  "dok_tabs": [],
+  "auswahlliste": false,
+  "datei_info": "",
+  "ansicht": "Markierte Vorschau",
+  "seiten": 0,
+  "miniaturen": 0,
+  "markiert_masked": 0,
+  "markiert_offen": 0,
+  "markiert_lesbar": 0,
+  "fragen": 0,
+  "fragen_offen": 0,
+  "aktive_frage": null,
+  "fortschritt": null,
+  "fusszeile_status": "",
+  "fusszeile_text": "",
+  "seite_info": "",
+  "zoom": "100 %",
+  "schnellaktionen": [],
+  "namensschutz": true,
+  "hinweise": ""
+ },
+ "bestaetigen_review": {
+  "vorher": {
+   "privacy_decisions": 5,
+   "document_releases": 0,
+   "chat_messages": 74
+  },
+  "nachher": {
+   "privacy_decisions": 6,
+   "document_releases": 0,
+   "chat_messages": 75
+  },
+  "pfad": "/dashboard/chat/5c43462a-a96c-4034-ab44-f4226e205d13",
+  "letzte_nachricht": "Lexono\n                \n                \n                \n                \n                \n                \n                \n                  \n                    \n\nDie Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
  "db_ende": {
-  "privacy_decisions": 3,
+  "privacy_decisions": 6,
   "document_releases": 0,
-  "chat_messages": 57
+  "chat_messages": 75
  }
 }

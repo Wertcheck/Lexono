@@ -51,6 +51,10 @@ In **allen** Pop-up-Screenshots gilt:
 | 24b/24c | 1600×1000 | Rückfrage beim Senden („Ruecksicht“) | im selben Pop-up, „aus Ihrer Nachricht im Chat“, Kontext aufgeklappt; Abbrechen → Blase „Rückfrage öffnen“, DB unverändert |
 | 25 | 960×600 | wenig Platz | Ansichten in eigener Zeile, Fußleistentext in eigener Zeile, kein Abschneiden |
 | 26 | 1600×1000 | Dark Mode | lesbar, Seiten weiß |
+| 27 | 1280×720 | alle beantwortet, Button „Pseudonymisierung bestätigen und fortfahren“ aktiv | Hinweis links: „Danach: Schriftsatz erstellen.“ |
+| 28 | 1280×720 | Bestätigung läuft | Abbrechen, Schließen und Bestätigen gesperrt; „der gesamte Inhalt wird erneut geprüft“ |
+| 29 | 1280×720 | nach Bestätigung | zurück im Chat; Entscheidungen gespeichert (3 → 5); Wiederaufnahme bis zum Cloud-Aufruf, der am toten Endpunkt endet („technische Gründe, keine Datenschutz-Blockierung“) – **kein E2E** |
+| 30/31 | 1600×1000 | Chat-Rückfrage über „Rückfrage öffnen“ wieder geöffnet, beantwortet, bestätigt | Entscheidung gespeichert (+1), Nachricht fortgesetzt bis zum toten Endpunkt |
 
 ## Bekannte Einschränkungen
 

@@ -686,9 +686,12 @@
     });
   }
 
-  function confirmLabel() {
-    if (state.mode === "review") { return "Antworten übernehmen und fortfahren"; }
-    return "Pseudonymisierung bestätigen und " + (state.order.label || "fortfahren");
+  /** Ein einheitlicher Button-Text; der naechste Schritt (z. B. "Schriftsatz erstellen") steht im Hinweis links. */
+  function confirmLabel() { return "Pseudonymisierung bestätigen und fortfahren"; }
+
+  function nextStep() {
+    if (state.mode === "review") { return "Danach wird Ihre Nachricht erneut geprüft und fortgesetzt."; }
+    return state.order.label ? "Danach: " + state.order.label + "." : "";
   }
 
   function renderFooterStatus() {
@@ -721,8 +724,8 @@
       openCount.textContent = lock = "Mindestens ein Dokument ist blockiert – Fortsetzen nicht möglich.";
     } else {
       openCount.textContent = remaining ? remaining + " Rückfrage(n) offen – bitte zuerst entscheiden."
-                                        : (questions().length ? "Alle Rückfragen beantwortet – bitte prüfen und bestätigen."
-                                                              : "Keine offenen Rückfragen.");
+                                        : ((questions().length ? "Alle Rückfragen beantwortet – bitte prüfen und bestätigen."
+                                                               : "Keine offenen Rückfragen.") + " " + nextStep()).trim();
       if (remaining) { lock = "Erst alle Rückfragen beantworten."; }
     }
     var loadingNeeded = state.mode === "release" && state.docs.some(function (d) { return d.needs_confirmation && !state.reviews[d.id]; });
