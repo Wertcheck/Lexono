@@ -13902,3 +13902,21 @@ a.chat-composer__protect-btn {
     padding-bottom: 8px;
   }
 }
+/* Tabellen-Panel und Info-Karte schliessen unten buendig ab (27.10., Owner-Hinweis): die Karte wird auf die volle
+   Zeilenhoehe gestreckt (vorher align-items:flex-start -> Karte endete oberhalb der Tabelle). Nur nebeneinander
+   (> 1100 px); die Karte scrollt weiterhin nie. */
+@media (min-width: 1101px) {
+  .knowledge-page #knowledge-panel > .knowledge-laws-layout {
+    align-items: stretch;
+  }
+  .knowledge-page .knowledge-laws-layout .law-info-card {
+    align-self: stretch;
+    box-sizing: border-box;
+  }
+}
+/* globales .instructions-panel{margin-bottom:20px} wuerde das Tabellen-Panel 20 px vor der Karte enden lassen */
+@media (min-width: 1101px) {
+  .knowledge-page .knowledge-laws-layout .instructions-panel {
+    margin-bottom: 0;
+  }
+}

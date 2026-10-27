@@ -67,6 +67,14 @@ def test_info_card_never_scrolls_internally() -> None:
         assert "overflow-y: auto" not in block and "max-height: 100%" not in block
 
 
+def test_table_panel_and_info_card_end_flush_side_by_side() -> None:
+    """Owner-Hinweis 27.10.: Tabellen-Panel und Info-Karte schliessen unten buendig ab - die Zeile streckt beide auf
+    dieselbe Hoehe, und der globale Panel-Aussenabstand unten ist dort aufgehoben."""
+    tail = CSS[CSS.index("Tabellen-Panel und Info-Karte schliessen unten buendig ab"):]
+    assert "align-items: stretch" in tail and "align-self: stretch" in tail
+    assert ".knowledge-page .knowledge-laws-layout .instructions-panel {\n    margin-bottom: 0;" in tail
+
+
 def test_info_card_is_not_hidden_on_narrow_windows() -> None:
     """Unter 1100 px stand frueher `display: none` - jetzt ein Band unter der Tabelle (Grid), nie ausgeblendet."""
     for block in _rule_blocks("  .knowledge-page .law-info-card") + _rule_blocks(

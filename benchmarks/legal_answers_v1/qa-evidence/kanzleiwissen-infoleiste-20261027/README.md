@@ -63,15 +63,18 @@ nicht angezeigt.
   Referenz kurz vor dem unteren Fensterrand: ca. 28 px bei 1920×1080, 20 px bei 1280×720.
 - **Position der Info-Leiste:** rechts neben der Tabelle wie in der Referenz, bei allen Breiten über 1100 px. Nur bei
   schmaleren Fenstern steht sie über der Tabelle, weil daneben kein Platz ist.
+- **Bündiger Abschluss** (Owner-Hinweis 27.10.): Tabellen-Panel und Info-Karte enden unten auf derselben Linie. Beide
+  werden auf die Zeilenhöhe gestreckt; der globale Panel-Außenabstand von 20 px ist dort aufgehoben. Ist der Inhalt der
+  Karte kürzer, bleibt unten in der Karte Luft, gescrollt wird nichts.
 
 ## Ergebnis (`nachher/messwerte_nachher.json`)
 
 | Größe | Inhalt / Höhe der Karte | intern scrollend | Karte endet / Tabelle endet | Seite muss scrollen |
 |---|---|---|---|---|
-| 1920×1080 | 656 / 656 | nein | 1020 / 1052 | nein |
-| 1536×842 (maximiertes Desktopfenster bei 125 %) | 449 / 449 | nein | 813 / 814 | nein |
-| 1366×768 | 392 / 392 | nein | 697 / 748 | nein |
-| 1280×720 | 388 / 388 | nein | 692 / 700 | nein |
+| 1920×1080 | 656 / 656 | nein | 1052 / 1052 (bündig) | nein |
+| 1536×842 (maximiertes Desktopfenster bei 125 %) | 449 / 449 | nein | 814 / 814 (bündig) | nein |
+| 1366×768 | 392 / 392 | nein | 748 / 748 (bündig) | nein |
+| 1280×720 | 388 / 388 | nein | 700 / 700 (bündig) | nein |
 | 960×600 | 144 / 144 (Leiste über der Tabelle) | nein | 372 / 570 | **nein** |
 
 Gleiche Werte im Dark Mode, in keiner Aufnahme Querscrollen. Die Aufnahme `960x600-*-01b-infoleiste-unten` ist jetzt
