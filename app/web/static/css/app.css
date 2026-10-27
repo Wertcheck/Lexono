@@ -13237,9 +13237,6 @@ a.chat-composer__protect-btn {
     padding-left: 18px;
     padding-right: 18px;
   }
-  .knowledge-page .law-info-card {
-    display: none;
-  }
   .knowledge-page .knowledge-category-card {
     flex: 1 1 0;
     max-width: none;
@@ -13327,4 +13324,190 @@ a.chat-composer__protect-btn {
   outline: none;
   border-color: var(--seal-green);
   background: var(--paper-000);
+}
+/* --------------------------------------------------------------------------
+   Kanzleiwissen, rechte Info-Leiste ohne eigenes Scrollen (27.10.)
+   Vorher: max-height + overflow-y:auto -> interne Scrollleiste bei 1920x1080
+   (712/692 px) und 1280x720 (631/392 px); unter 1100 px ausgeblendet.
+   Jetzt: Illustration, Abstaende und Schrift skalieren mit der Fensterhoehe,
+   die Karte scrollt nie selbst; unter 1100 px Breite steht sie als kompaktes
+   Band unter der Tabelle (die Seite scrollt, nicht die Karte).
+   -------------------------------------------------------------------------- */
+
+.knowledge-page .knowledge-laws-layout .law-info-card {
+  max-height: none;
+  overflow: visible;
+  padding: 0 20px clamp(14px, 2vh, 22px);
+}
+
+.knowledge-page .law-info-card__illustration {
+  width: calc(100% + 40px);
+  margin: 0 -20px clamp(10px, 1.6vh, 18px);
+  height: clamp(72px, calc(18vh - 38px), 170px);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.knowledge-page .law-info-card__title {
+  font-size: clamp(16px, calc(1.1vh + 9px), 22px);
+  margin-bottom: clamp(6px, 1vh, 10px);
+}
+
+.knowledge-page .law-info-card__text {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  font-size: clamp(12.5px, calc(0.35vh + 9.5px), 14px);
+  line-height: 1.5;
+  margin-bottom: clamp(10px, 1.6vh, 18px);
+}
+
+.knowledge-page .law-info-card__feature {
+  gap: 12px;
+  margin-bottom: clamp(8px, 1.3vh, 14px);
+}
+
+.knowledge-page .law-info-card__feature:last-child {
+  margin-bottom: 0;
+}
+
+.knowledge-page .law-info-card__feature-icon {
+  width: clamp(18px, calc(1vh + 10px), 22px);
+  height: clamp(18px, calc(1vh + 10px), 22px);
+}
+
+.knowledge-page .law-info-card__feature-title {
+  font-size: clamp(12.5px, calc(0.3vh + 10px), 14px);
+  margin-bottom: 1px;
+}
+
+.knowledge-page .law-info-card__feature-text {
+  font-size: clamp(11.5px, calc(0.25vh + 9.5px), 13px);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Die alte Hoehen-Regel (max-height: 800px) begrenzte Illustration/Schrift fest und clampte den Text - durch die
+   fliessenden Werte oben ersetzt; hier nur noch engere Raender fuer sehr niedrige Fenster. */
+@media (max-height: 800px) {
+  .knowledge-page .knowledge-laws-layout .law-info-card {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .knowledge-page .law-info-card__illustration {
+    width: calc(100% + 32px);
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+  .knowledge-page .law-info-card__feature {
+    gap: 10px;
+  }
+}
+
+/* Schmale Fenster: Karte als Band UNTER der Tabelle statt ausgeblendet - Illustration links, Text Mitte,
+   Merkmale rechts; die Seite (.main) scrollt, die Tabelle behaelt ihren eigenen Scrollbereich. */
+@media (max-width: 1100px) {
+  .knowledge-page,
+  .knowledge-page #knowledge-panel,
+  .knowledge-page #knowledge-panel > .knowledge-laws-layout {
+    flex: none;
+    min-height: auto;
+  }
+  .knowledge-page #knowledge-panel > .knowledge-laws-layout {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .knowledge-page .knowledge-laws-layout .instructions-panel {
+    max-height: none;
+  }
+  .knowledge-page .knowledge-laws-layout .instructions-panel > .table-container {
+    flex: none;
+    max-height: 340px;
+  }
+  .knowledge-page .knowledge-laws-layout .law-info-card {
+    display: grid;
+    flex: none;
+    grid-template-columns: 132px minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-areas:
+      "bild titel merkmal1"
+      "bild text merkmal2"
+      "bild text merkmal3";
+    column-gap: 18px;
+    row-gap: 6px;
+    align-items: start;
+    padding: 14px 16px 14px 0;
+    overflow: hidden;
+  }
+  .knowledge-page .law-info-card__illustration {
+    grid-area: bild;
+    width: 132px;
+    height: 100%;
+    min-height: 120px;
+    margin: -14px 0 -14px 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+  .knowledge-page .law-info-card__title {
+    grid-area: titel;
+    font-size: 16px;
+    margin: 0;
+  }
+  .knowledge-page .law-info-card__title br {
+    display: none;
+  }
+  .knowledge-page .law-info-card__text {
+    grid-area: text;
+    font-size: 12.5px;
+    margin: 0;
+  }
+  .knowledge-page .law-info-card__feature {
+    margin: 0;
+  }
+  .knowledge-page .law-info-card__feature:nth-of-type(1) { grid-area: merkmal1; }
+  .knowledge-page .law-info-card__feature:nth-of-type(2) { grid-area: merkmal2; }
+  .knowledge-page .law-info-card__feature:nth-of-type(3) { grid-area: merkmal3; }
+}
+
+/* niedrige Fenster (u. a. 1280x720): Karte endet innerhalb der Tabellenhoehe */
+@media (max-height: 800px) and (min-width: 1101px) {
+  .knowledge-page .law-info-card__illustration {
+    height: 70px;
+    margin-bottom: 8px;
+  }
+  .knowledge-page .law-info-card__title {
+    margin-bottom: 5px;
+  }
+  .knowledge-page .law-info-card__text {
+    margin-bottom: 9px;
+  }
+  .knowledge-page .law-info-card__feature {
+    margin-bottom: 7px;
+  }
+}
+/* Band-Layout: erstes Merkmal ueber zwei Zeilen, damit die Titelzeile nur so hoch wie der Titel ist (keine Luecke
+   zwischen Titel und Text) */
+@media (max-width: 1100px) {
+  .knowledge-page .knowledge-laws-layout .law-info-card {
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas:
+      "bild titel merkmal1"
+      "bild text merkmal1"
+      "bild text merkmal2"
+      "bild text merkmal3";
+  }
+  .knowledge-page .law-info-card__illustration {
+    grid-row: 1 / -1;
+  }
+}
+/* 1501-1600 px (u. a. maximiertes Desktopfenster 1536 px bei 125 %): dieselbe Spaltenaufteilung wie <= 1500 px,
+   sonst stiess der Status an den Schalter und "Lokal verfuegbar" wurde abgeschnitten */
+@media (min-width: 1501px) and (max-width: 1600px) {
+  .knowledge-page .law-catalog-table th:nth-child(1) { width: 29% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(2) { width: 10% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(3) { width: 15% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(4) { width: 10% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(5) { width: 19% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(6) { width: 17% !important; }
+  .knowledge-page .law-info-card {
+    flex-basis: 300px;
+  }
 }

@@ -48,6 +48,39 @@ def test_info_card_uses_refresh_icon_for_updates(client: TestClient, db_session:
     assert "law-info-card__illustration" in card
 
 
+def _rule_blocks(selector: str) -> list[str]:
+    blocks, start = [], 0
+    while (i := CSS.find(selector + " {", start)) != -1:
+        blocks.append(CSS[i:CSS.index("}", i)])
+        start = i + 1
+    return blocks
+
+
+def test_info_card_never_scrolls_internally() -> None:
+    """Rechte Info-Leiste (27.10.): kein eigenes Scrollen mehr - die zuletzt geltende Regel setzt overflow:visible
+    und hebt die Hoehenbegrenzung auf (vorher max-height:100% + overflow-y:auto)."""
+    blocks = _rule_blocks(".knowledge-page .knowledge-laws-layout .law-info-card")
+    assert any("max-height: none" in b and "overflow: visible" in b for b in blocks)
+    # nach der Umstellung fuehrt keine spaetere Regel das interne Scrollen wieder ein
+    tail = CSS[CSS.index("rechte Info-Leiste ohne eigenes Scrollen"):]
+    for block in (b for b in blocks if b in tail):
+        assert "overflow-y: auto" not in block and "max-height: 100%" not in block
+
+
+def test_info_card_is_not_hidden_on_narrow_windows() -> None:
+    """Unter 1100 px stand frueher `display: none` - jetzt ein Band unter der Tabelle (Grid), nie ausgeblendet."""
+    for block in _rule_blocks("  .knowledge-page .law-info-card") + _rule_blocks(
+            "  .knowledge-page .knowledge-laws-layout .law-info-card"):
+        assert "display: none" not in block
+    assert "grid-template-areas" in CSS[CSS.index("Schmale Fenster: Karte als Band"):]
+
+
+def test_info_card_title_keeps_a_space_when_the_line_break_is_hidden(client: TestClient, db_session: Session) -> None:
+    login_as_admin(db_session, client)
+    html = client.get("/dashboard/knowledge?category=laws").text
+    assert "Aktuelles Recht. <br />Lokal verfügbar." in html
+
+
 def test_reference_styles_are_scoped_to_the_knowledge_page() -> None:
     """Die Angleichung (Satzschrift statt Mono/Versalien, Status-Punkte) darf `.draft-table`/`.topbar` anderer Seiten
     nicht veraendern - alle neuen Regeln haengen an `.knowledge-head`/`.knowledge-page`."""
