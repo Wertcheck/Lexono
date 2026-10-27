@@ -27,8 +27,13 @@
   var docTabs = $("[data-pseudo-doc-tabs]");
   var docSelectWrap = $("[data-pseudo-doc-select-wrap]");
   var docSelect = $("[data-pseudo-doc-select]");
+  var docRow = $("[data-pseudo-doc-row]");
   var thumbs = $("[data-pseudo-thumbs]");
-  var thumbsToggle = $("[data-pseudo-thumbs-toggle]");
+  var fileName = $("[data-pseudo-file-name]");
+  var fileTypeBadge = $("[data-pseudo-file-type]");
+  var fileIcon = $("[data-pseudo-file-icon]");
+  var applyBtn = $("[data-pseudo-q-apply]");
+  var applyLabel = $("[data-pseudo-q-apply-label]");
   var maximizeBtn = $("[data-pseudo-maximize]");
   var statusBox = $("[data-pseudo-status]");
   var progressBox = $("[data-pseudo-progress]");
@@ -57,11 +62,60 @@
   var protectForm = $("[data-pseudo-protect-form]");
   var protectInput = $("[data-pseudo-protect-input]");
 
+  // Erklaerungen beschreiben das TATSAECHLICHE Verhalten (Server: "unsure" wird wie "personal" pseudonymisiert)
   var OPTIONS = [
-    { decision: "personal", title: "Pseudonymisieren", hint: "als Person/sensibel behandeln" },
-    { decision: "not_personal", title: "Nicht pseudonymisieren", hint: "kein personenbezogenes Datum" },
-    { decision: "unsure", title: "Unsicher", hint: "vorsichtshalber pseudonymisieren" }
+    { decision: "personal", title: "Pseudonymisieren", icon: "shield",
+      hint: "Wird durch einen Platzhalter ersetzt." },
+    { decision: "not_personal", title: "Nicht pseudonymisieren", icon: "eye-off",
+      hint: "Der Begriff bleibt im Text lesbar." },
+    { decision: "unsure", title: "Unsicher", icon: "question",
+      hint: "Wird vorsichtshalber pseudonymisiert." }
   ];
+
+  var ICONS = {
+    shield: "M12 3.3l7 2.5v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9v-6l7-2.5Z|M9 12.3l2.1 2.1 4-4",
+    "eye-off": "M3 3l18 18|M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 8.5 4.2 9.5 6-.5.9-1.5 2.3-2.9 3.6|M6.6 7.6C4.6 8.9 3.2 10.8 2.5 12c1 1.8 4.5 6 9.5 6 1.6 0 3-.4 4.3-1|M9.9 10a3 3 0 0 0 4.1 4.1",
+    question: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z|M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6|M12 17h.01",
+    person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z|M4.5 20.5c.9-3.6 3.9-5.5 7.5-5.5s6.6 1.9 7.5 5.5",
+    organisation: "M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16|M15 9h4a1 1 0 0 1 1 1v11|M3 21h18|M8 8h3M8 12h3M8 16h3",
+    adresse: "M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21Z|M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
+    datum: "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z|M4 10h16|M8 3v4M16 3v4",
+    sonstiges: "M3.5 12.5 11 5h7.5a1 1 0 0 1 1 1v7.5L12 21a1 1 0 0 1-1.4 0l-7.1-7.1a1 1 0 0 1 0-1.4Z|M15.5 8.5h.01",
+    unsicher: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z|M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6|M12 17h.01"
+  };
+
+  /** Inline-SVG aus festen Pfaden per createElementNS (keine Dokumentinhalte, kein HTML-Parsing). */
+  function icon(name, className) {
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.7");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    if (className) { svg.setAttribute("class", className); }
+    (ICONS[name] || ICONS.sonstiges).split("|").forEach(function (d) {
+      var path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+    });
+    return svg;
+  }
+
+  // Farbgruppen der Legende (Referenz: Person, Organisation, Adresse, Datum, Sonstiges)
+  var CATEGORY_GROUPS = {
+    person: "person", name: "person", organisation: "organisation", organization: "organisation", firma: "organisation",
+    adresse: "adresse", anschrift: "adresse", ort: "adresse", strasse: "adresse", plz: "adresse",
+    datum: "datum", geburtsdatum: "datum", todesdatum: "datum"
+  };
+  var GROUP_TITLES = {
+    person: "Erkannte Person", organisation: "Erkannte Organisation", adresse: "Erkannte Adresse",
+    datum: "Erkanntes Datum", sonstiges: "Erkannte Angabe", unsicher: "Unsicherer Begriff"
+  };
+
+  function categoryGroup(category) { return CATEGORY_GROUPS[(category || "").toLowerCase()] || "sonstiges"; }
 
   var CATEGORY_LABELS = {
     person: "Person", organisation: "Organisation", organization: "Organisation", ort: "Ort", adresse: "Anschrift",
@@ -77,7 +131,7 @@
     canManage: dialog.getAttribute("data-can-manage") === "1",
     mode: "view", docs: [], order: { label: "", has_open_order: false }, currentId: null, reviews: {},
     decisions: {}, view: "marked", zoom: 1, busy: false, payload: null, callback: null, generation: 0,
-    activeTerm: null, thumbs: false, maximized: false
+    activeTerm: null, occurrence: 0, maximized: false
   };
 
   function el(tag, className, text) {
@@ -147,8 +201,8 @@
     }).map(function (p) { return p.number; });
   }
 
-  /** Kategorie aus den erkannten Funden, falls der Begriff dort (vorsichtig) bereits zugeordnet ist. */
-  function questionCategory(term) {
+  /** Rohkategorie aus den erkannten Funden, falls der Begriff dort (vorsichtig) bereits zugeordnet ist, sonst null. */
+  function questionCategoryRaw(term) {
     var found = null;
     state.docs.forEach(function (doc) {
       var data = state.reviews[doc.id];
@@ -156,7 +210,25 @@
         if (!found && (m.original === term || (m.variants || []).indexOf(term) !== -1)) { found = m.category; }
       });
     });
-    return categoryLabel(found);
+    return found;
+  }
+
+  /** Farbgruppe einer Rueckfrage: bekannte Kategorie, sonst "unsicher" (kein erfundener Typ). */
+  function questionGroup(term) {
+    var raw = questionCategoryRaw(term);
+    return raw ? categoryGroup(raw) : "unsicher";
+  }
+
+  /** Alle Fundstellen eines Begriffs ueber die Dokumente: [{doc, page}] (Dokumentreihenfolge, Seitenreihenfolge). */
+  function occurrences(q) {
+    var list = [];
+    q.docs.forEach(function (id) {
+      var data = state.reviews[id];
+      (data && data.pages || []).forEach(function (p) {
+        p.marks.forEach(function (m) { if (m.term === q.term && m.kind === "open") { list.push({ doc: id, page: p.number }); } });
+      });
+    });
+    return list;
   }
 
   function openTerms() {
@@ -182,6 +254,7 @@
 
   function renderDocTabs() {
     docTabs.textContent = "";
+    docRow.hidden = state.docs.length < 2; // ein Dokument: Datei steht in der Werkzeugleiste (wie in der Referenz)
     state.docs.forEach(function (doc) {
       var active = doc.id === state.currentId;
       var tab = el("button", "pseudo-center__doc-tab" + (active ? " is-active" : ""));
@@ -195,12 +268,14 @@
       tab.appendChild(el("span", "pseudo-center__doc-tab-name", doc.filename));
       var open = openForDoc(doc.id);
       if (open) {
-        var badge = el("span", "pseudo-center__doc-badge", String(open));
+        var badge = el("span", "pseudo-center__doc-badge", open + " offen");
         badge.title = open + " offene Rückfrage(n)";
         tab.appendChild(badge);
       } else if (state.reviews[doc.id]) {
-        var ok = el("span", "pseudo-center__doc-ok", "✓");
-        ok.title = "keine offene Rückfrage";
+        var blockedDoc = state.reviews[doc.id].status === "blocked" || state.reviews[doc.id].status === "no_text";
+        var ok = el("span", blockedDoc ? "pseudo-center__doc-blocked" : "pseudo-center__doc-ok",
+                    blockedDoc ? "gesperrt" : "✓ geprüft");
+        ok.title = blockedDoc ? "Dokument kann nicht verarbeitet werden" : "keine offene Rückfrage";
         tab.appendChild(ok);
       } else {
         tab.appendChild(el("span", "pseudo-center__doc-wait", "…"));
@@ -226,34 +301,69 @@
 
   docSelect.addEventListener("change", function () { selectDoc(docSelect.value); });
 
-  function selectDoc(id, thenTerm) {
+  function selectDoc(id, thenTerm, nth) {
     state.currentId = id;
     renderDocTabs();
     ensureReview(id).then(function () {
       if (state.currentId !== id) { return; }
       renderDocument();
       renderPanel();
-      if (thenTerm) { scrollToMark(thenTerm); }
+      if (thenTerm) { scrollToMark(thenTerm, nth); }
     });
   }
 
   // --- Dokumentansicht -------------------------------------------------------------------------------------------
 
+  /** Markierung nach Zustand UND Kategorie: Funde flaechig in der Farbe ihrer Kategorie; Rueckfragen gestrichelt
+   *  (offen), nach "Pseudonymisieren"/"Unsicher" flaechig, nach "Nicht pseudonymisieren" nur gepunktete Kontur. */
+  function kindClass(kind, group) {
+    if (kind === "open") { return "pseudo-mark--open"; }
+    if (kind === "kept") { return "pseudo-mark--kept"; }
+    return "pseudo-mark--masked pseudo-mark--cat-" + (group === "unsicher" ? "sonstiges" : group);
+  }
+
   function markClass(mark) {
     var active = state.activeTerm && mark.term === state.activeTerm ? " is-active" : "";
-    if (mark.kind === "open") { return "pseudo-mark pseudo-mark--" + decisionKind(mark.term) + active; }
-    return "pseudo-mark pseudo-mark--masked";
+    if (mark.kind === "open") { return "pseudo-mark " + kindClass(decisionKind(mark.term), questionGroup(mark.term)) + active; }
+    return "pseudo-mark " + kindClass("masked", categoryGroup(mark.category));
+  }
+
+  /** Nach einer Entscheidung nur Klassen aktualisieren (kein Neuladen der Seitenbilder, Scrollposition bleibt). */
+  function refreshMarks() {
+    docPane.querySelectorAll(".pseudo-mark[data-kind=\"open\"], .pseudo-mark-inline[data-kind=\"open\"]").forEach(function (node) {
+      var term = node.getAttribute("data-term");
+      var base = node.classList.contains("pseudo-mark-inline") ? "pseudo-mark-inline " : "pseudo-mark ";
+      node.className = base + kindClass(decisionKind(term), questionGroup(term)) +
+        (term === state.activeTerm ? " is-active" : "");
+    });
+    thumbs.querySelectorAll(".pseudo-thumb").forEach(function (t) {
+      var data = state.reviews[state.currentId];
+      var page = data && data.pages ? data.pages[Number(t.getAttribute("data-thumb-page")) - 1] : null;
+      var badge = t.querySelector(".pseudo-thumb__badge");
+      var open = page ? page.marks.filter(function (m) { return m.kind === "open" && !state.decisions[m.term]; }).length : 0;
+      if (badge && !open) { badge.remove(); } else if (badge) { badge.textContent = String(open); }
+    });
+  }
+
+  function renderFileInfo(data, doc) {
+    var name = data ? data.filename : (doc ? doc.filename : "");
+    var type = name ? fileType(name) : "";
+    fileName.textContent = name || (state.docs.length ? "Dokument wird geladen …" : "Keine Dokumente");
+    fileName.title = name;
+    fileTypeBadge.textContent = type;
+    fileIcon.className = "pseudo-center__file-icon" + (type ? " pseudo-center__file-icon--" + type.toLowerCase() : "");
+    var funde = data ? data.mappings.length : 0;
+    subtitle.textContent = data
+      ? type + (data.pages && data.pages.length ? " · " + data.pages.length + (data.pages.length === 1 ? " Seite" : " Seiten") : "") +
+        " · " + funde + (funde === 1 ? " Fund" : " Funde")
+      : (state.docs.length ? "" : "Keine Dokumente in dieser Unterhaltung");
   }
 
   function renderDocument() {
     docPane.textContent = "";
     var data = state.reviews[state.currentId];
     var doc = state.docs.filter(function (d) { return d.id === state.currentId; })[0];
-    subtitle.textContent = data
-      ? fileType(data.filename) + (data.pages && data.pages.length ? " · " + data.pages.length + " Seite(n)" : "") +
-        " · " + data.mappings.length + " Fund(e)"
-      : (state.docs.length ? "" : "Keine Dokumente in dieser Unterhaltung");
-    if (doc) { subtitle.title = doc.filename; }
+    renderFileInfo(data, doc);
     if (!data) {
       docPane.appendChild(el("p", "pseudo-center__loading",
         state.docs.length ? "Dokument wird lokal geprüft …" : "Dieser Chat enthält keine Dokumente."));
@@ -290,6 +400,7 @@
           m.style.width = (mark.w * 100) + "%";
           m.style.height = (mark.h * 100) + "%";
           m.setAttribute("data-term", mark.term);
+          m.setAttribute("data-kind", mark.kind);
           m.title = mark.kind === "open"
             ? (decisionKind(mark.term) === "open" ? "Rückfrage offen: " : "Entschieden: ") + mark.term
             : mark.placeholder + " (" + categoryLabel(mark.category) + ")";
@@ -308,10 +419,9 @@
 
   function renderThumbs(data) {
     thumbs.textContent = "";
+    // Seitenleiste dauerhaft (Referenz), sobald es Seitenbilder gibt - nicht im Ergebnis-/Textmodus
     var usable = data && data.viewer_kind === "pages" && data.pages.length > 0 && state.view !== "result";
-    thumbsToggle.disabled = !usable;
-    thumbs.hidden = !(usable && state.thumbs);
-    thumbsToggle.setAttribute("aria-pressed", state.thumbs && usable ? "true" : "false");
+    thumbs.hidden = !usable;
     if (thumbs.hidden) { return; }
     data.pages.forEach(function (page) {
       var b = el("button", "pseudo-thumb");
@@ -339,7 +449,7 @@
     var text = data.original_text || "";
     if (state.view !== "marked") { box.textContent = text; docPane.appendChild(box); return; }
     var terms = {};
-    data.mappings.forEach(function (m) { terms[m.original] = { kind: "masked", term: m.original }; });
+    data.mappings.forEach(function (m) { terms[m.original] = { kind: "masked", term: m.original, group: categoryGroup(m.category) }; });
     questions().forEach(function (q) { terms[q.term] = { kind: "open", term: q.term }; });
     var keys = Object.keys(terms).filter(Boolean).sort(function (a, b) { return b.length - a.length; });
     var pos = 0;
@@ -352,8 +462,10 @@
       if (best === -1) { box.appendChild(document.createTextNode(text.slice(pos))); break; }
       box.appendChild(document.createTextNode(text.slice(pos, best)));
       var info = terms[bestKey];
-      var mark = el("mark", "pseudo-mark-inline pseudo-mark--" + (info.kind === "open" ? decisionKind(info.term) : "masked"), bestKey);
+      var mark = el("mark", "pseudo-mark-inline " + (info.kind === "open"
+        ? kindClass(decisionKind(info.term), questionGroup(info.term)) : kindClass("masked", info.group)), bestKey);
       mark.setAttribute("data-term", info.term);
+      mark.setAttribute("data-kind", info.kind);
       box.appendChild(mark);
       pos = best + bestKey.length;
     }
@@ -399,6 +511,8 @@
     zoomLabel.textContent = Math.round(state.zoom * 100) + " %";
     $("[data-pseudo-page-prev]").disabled = !pages.length || index === 0;
     $("[data-pseudo-page-next]").disabled = !pages.length || index >= pages.length - 1;
+    $("[data-pseudo-zoom-out]").disabled = state.zoom <= 0.6;
+    $("[data-pseudo-zoom-in]").disabled = state.zoom >= 2;
     if (!thumbs.hidden) {
       var current = null;
       thumbs.querySelectorAll(".pseudo-thumb").forEach(function (t) {
@@ -429,8 +543,9 @@
     rerenderKeepingPage(function () { state.zoom = Math.min(2, Math.max(0.6, Math.round(next * 10) / 10)); });
   }
 
-  function scrollToMark(term) {
-    var mark = docPane.querySelector("[data-term=\"" + cssEscape(term) + "\"]");
+  function scrollToMark(term, nth) {
+    var all = docPane.querySelectorAll("[data-term=\"" + cssEscape(term) + "\"]");
+    var mark = all[Math.min(nth || 0, Math.max(0, all.length - 1))];
     if (mark) {
       // Fundstelle im oberen Drittel, aber den Seitenanfang nicht unnoetig verlassen: vorher wurde die Markierung
       // zentriert, sodass bei Funden weit oben vor allem der leere untere Teil der VORSEITE zu sehen war (26.10.2026).
@@ -453,7 +568,7 @@
     statusBox.textContent = "";
     var data = state.reviews[state.currentId];
     var qs = questions();
-    var text, cls;
+    var text = null, cls;
     var anyBlocked = state.docs.some(function (d) { var r = state.reviews[d.id]; return r && (r.status === "blocked"); });
     if (anyBlocked) {
       cls = "pseudo-center__state pseudo-center__state--blocked";
@@ -462,14 +577,15 @@
       cls = "pseudo-center__state pseudo-center__state--blocked";
       text = "Kein verwertbarer Text – keine Verarbeitung möglich.";
     } else if (qs.length) {
-      cls = "pseudo-center__state pseudo-center__state--open";
-      text = state.mode === "review" ? "Datenschutz-Rückfrage zu Ihrer Nachricht" : "Rückfragen zu unsicheren Begriffen";
+      // Bei offenen Rueckfragen spricht der Fortschritt ("Rueckfrage 2 von 5") fuer sich; nur die Chat-Rueckfrage
+      // wird als solche benannt.
+      if (state.mode === "review") { cls = "pseudo-center__state pseudo-center__state--open"; text = "Datenschutz-Rückfrage zu Ihrer Nachricht"; }
     } else {
       cls = "pseudo-center__state pseudo-center__state--ok";
       text = state.docs.length && state.docs.every(function (d) { return state.reviews[d.id]; })
         ? "Keine offenen Rückfragen" : "Dokumente werden lokal geprüft …";
     }
-    statusBox.appendChild(el("p", cls, text));
+    if (text) { statusBox.appendChild(el("p", cls, text)); }
     if (state.mode === "view") {
       statusBox.appendChild(el("p", "form-hint", "Kein offener Auftrag – reine Prüfansicht. Stellen Sie Ihre Frage im " +
         "Chat; die Prüfung erfolgt beim Senden erneut."));
@@ -478,22 +594,28 @@
       var r = state.reviews[d.id];
       (r && r.blocked_reasons || []).forEach(function (reason) { statusBox.appendChild(el("p", "form-hint", reason)); });
     });
+    statusBox.hidden = !statusBox.childNodes.length;
   }
 
+  /** "Rueckfrage i von n" (Position der angezeigten Frage) + Balken = Anteil beantworteter Rueckfragen. */
   function renderProgress() {
     var qs = questions();
     progressBox.hidden = !qs.length;
     if (!qs.length) { return; }
     var done = qs.length - openTerms().length;
     var percent = Math.round(done * 100 / qs.length);
-    progressText.textContent = done + " von " + qs.length + " Rückfragen beantwortet";
-    progressPercent.textContent = percent + " %";
-    progressBar.setAttribute("aria-valuenow", String(percent));
-    progressBar.setAttribute("aria-label", progressText.textContent);
-    progressFill.style.width = percent + "%";
     var index = activeIndex(qs);
+    progressText.textContent = "Rückfrage " + (Math.max(index, 0) + 1) + " von " + qs.length;
+    progressPercent.textContent = done + " von " + qs.length + " beantwortet";
+    progressBar.setAttribute("aria-valuenow", String(percent));
+    progressBar.setAttribute("aria-label", done + " von " + qs.length + " Rückfragen beantwortet");
+    progressFill.style.width = percent + "%";
     qPrev.disabled = qs.length < 2 || index <= 0;
-    qNext.disabled = !openTerms().some(function (t) { return t !== state.activeTerm; });
+    var otherOpen = openTerms().some(function (t) { return t !== state.activeTerm; });
+    // Naechste OFFENE Rueckfrage; sind alle beantwortet, blaettert ">" der Reihe nach weiter (Kontrolle vor Bestaetigen)
+    qNext.disabled = !otherOpen && index >= qs.length - 1;
+    qNext.title = otherOpen ? "Nächste offene Rückfrage" : "Nächste Rückfrage";
+    qNext.setAttribute("aria-label", qNext.title);
   }
 
   function activeIndex(qs) {
@@ -501,139 +623,137 @@
     return -1;
   }
 
-  function decisionText(term) {
-    var d = state.decisions[term];
-    if (!d) { return "offen"; }
-    return d === "not_personal" ? "bleibt lesbar" : (d === "unsure" ? "unsicher – wird pseudonymisiert" : "pseudonymisiert");
+  /** Ende des Vorkontexts mit hoechstens `max` Zeichen, an einer Wortgrenze beginnend. */
+  function contextTail(text, max) {
+    if (text.length <= max) { return text; }
+    var tail = text.slice(text.length - max);
+    var space = tail.indexOf(" ");
+    return space > -1 && space < tail.length - 1 ? tail.slice(space + 1) : tail;
   }
 
-  function whereButtons(q, container) {
-    // aktuelles Dokument zuerst; bei vielen Dokumenten kompakt ("in n Dokumenten")
-    var docs = q.docs.slice().sort(function (a, b) { return (b === state.currentId) - (a === state.currentId); });
-    if (docs.length > 3) { container.appendChild(el("span", "pseudo-question__more", "in " + docs.length + " Dokumenten")); }
-    docs.slice(0, 2).concat(docs.length === 3 ? docs.slice(2) : []).forEach(function (id) {
-      var pages = pagesWithTerm(id, q.term);
-      var where = el("button", "pseudo-question__where",
-        docName(id) + (pages.length ? " · S. " + pages.slice(0, 3).join(", ") + (pages.length > 3 ? " …" : "") : ""));
-      where.type = "button";
-      where.title = "Zur Fundstelle springen";
-      where.addEventListener("click", function () {
-        state.activeTerm = q.term;
-        if (id !== state.currentId) { selectDoc(id, q.term); }
-        else { if (state.view !== "marked") { setView("marked"); } renderDocument(); renderPanel(); scrollToMark(q.term); }
-      });
-      container.appendChild(where);
-    });
-  }
-
-  /** Aktive Frage ausfuehrlich (Fund -> Frage -> Antworten -> Kontext, klar getrennt); alle anderen als kompakte
-   *  Zeile (Begriff, Kategorie, Status) - ein Klick holt sie nach vorn. Entscheidungen liegen in `state.decisions`
-   *  und bleiben dadurch ueber Dokument- und Ansichtswechsel erhalten. */
+  /** Genau EINE Rueckfrage (27.10.2026, Referenzbild): Fundkarte (Kategorie, Begriff, Seite, Fundstelle), Kontext im
+   *  Dokument, Frage, drei Optionen mit Erklaerung. Keine Liste weiterer Rueckfragen - geblaettert wird ueber den
+   *  Fortschritt (Vorherige/Naechste offene) bzw. "Uebernehmen und naechste Rueckfrage". Entscheidungen liegen in
+   *  `state.decisions` und bleiben dadurch ueber Fragen-, Dokument- und Ansichtswechsel erhalten. */
   function renderQuestions() {
     questionsBox.textContent = "";
     var qs = questions();
     if (!qs.length) { return; }
     if (!qs.some(function (q) { return q.term === state.activeTerm; })) {
       state.activeTerm = (qs.filter(function (q) { return !state.decisions[q.term]; })[0] || qs[0]).term;
+      state.occurrence = 0;
     }
-    qs.forEach(function (q, index) {
-      var kind = decisionKind(q.term);
-      var active = q.term === state.activeTerm;
-      var item = el("article", "pseudo-question pseudo-question--" + kind + (active ? " is-active" : " is-compact"));
-      item.setAttribute("data-question", q.term);
-      var head = el(active ? "div" : "button", "pseudo-question__head");
-      if (!active) {
-        head.type = "button";
-        head.title = "Rückfrage öffnen";
-        head.setAttribute("aria-expanded", "false");
-        head.addEventListener("click", function () { activateQuestion(q.term, true, true); });
-      }
-      head.appendChild(el("span", "pseudo-question__index", (index + 1) + " / " + qs.length));
-      head.appendChild(el("span", "pseudo-question__term", q.term));
-      head.appendChild(el("span", "pseudo-question__state pseudo-question__state--" + kind, decisionText(q.term)));
-      item.appendChild(head);
-      if (!active) { questionsBox.appendChild(item); return; }
+    var q = qs[activeIndex(qs)];
+    var kind = decisionKind(q.term);
+    var group = questionGroup(q.term);
+    var item = el("article", "pseudo-question pseudo-question--" + kind + " is-active");
+    item.setAttribute("data-question", q.term);
 
-      // 1) Fund: Begriff, Kategorie, Fundstellen
-      var found = el("section", "pseudo-question__section pseudo-question__found");
-      found.appendChild(el("span", "pseudo-question__label", "Fund"));
-      var termBox = el("p", "pseudo-question__finding");
-      termBox.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + kind, q.term));
-      termBox.appendChild(el("span", "pseudo-question__cat", questionCategory(q.term)));
-      found.appendChild(termBox);
-      var meta = el("div", "pseudo-question__meta");
-      if (q.docs.length) { whereButtons(q, meta); }
-      else if (q.fromChat) { meta.appendChild(el("span", "pseudo-question__source", "aus Ihrer Nachricht im Chat")); }
-      found.appendChild(meta);
-      item.appendChild(found);
-
-      // 2) Frage + 3) Antworten (Frage als eigene Zeile direkt ueber den Antworten)
-      var answers = el("section", "pseudo-question__section");
-      answers.appendChild(el("span", "pseudo-question__label", "Frage"));
-      answers.appendChild(el("p", "pseudo-question__ask", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
-      var row = el("div", "pseudo-question__options");
-      row.setAttribute("role", "group");
-      row.setAttribute("aria-label", "Antwort zu " + q.term);
-      OPTIONS.forEach(function (option) {
-        var b = el("button", "pseudo-question__option");
-        b.type = "button";
-        b.setAttribute("data-decision", option.decision);
-        b.setAttribute("aria-pressed", state.decisions[q.term] === option.decision ? "true" : "false");
-        b.disabled = state.busy || (state.mode === "view");
-        b.title = option.title + " – " + option.hint;
-        b.appendChild(el("strong", "", option.title));
-        b.appendChild(el("small", "", option.hint));
-        b.addEventListener("click", function () {
-          state.decisions[q.term] = option.decision;
-          var next = questions().filter(function (x) { return !state.decisions[x.term]; })[0];
-          state.activeTerm = next ? next.term : q.term;
-          renderDocTabs();
-          renderDocument();
-          renderPanel();
-          if (next) { goToQuestion(next); } else { confirmBtn.focus({ preventScroll: true }); }
-        });
-        row.appendChild(b);
+    // 1) Fund: Kategorie (nur wenn erkannt, sonst "Unsicherer Begriff"), Begriff, Seite, Fundstelle
+    var found = el("section", "pseudo-question__found pseudo-question__found--" + group);
+    found.appendChild(el("span", "pseudo-question__found-icon")).appendChild(icon(group));
+    var main = el("div", "pseudo-question__found-main");
+    main.appendChild(el("span", "pseudo-question__label", GROUP_TITLES[group]));
+    main.appendChild(el("strong", "pseudo-question__term", q.term));
+    found.appendChild(main);
+    var where = el("div", "pseudo-question__where-box");
+    var occ = occurrences(q);
+    if (occ.length) {
+      var at = occ[Math.min(state.occurrence, occ.length - 1)];
+      where.appendChild(el("span", "pseudo-question__page", "Seite " + at.page));
+      var jump = el("button", "pseudo-question__occ", "Fundstelle " + (Math.min(state.occurrence, occ.length - 1) + 1) + " von " + occ.length);
+      jump.type = "button";
+      jump.title = occ.length > 1 ? "Zur nächsten Fundstelle springen" : "Zur Fundstelle springen";
+      jump.addEventListener("click", function () {
+        state.occurrence = occ.length > 1 ? (state.occurrence + 1) % occ.length : 0;
+        renderQuestions();
+        goToQuestion(q);
       });
-      answers.appendChild(row);
-      item.appendChild(answers);
+      where.appendChild(jump);
+      if (state.docs.length > 1) { where.appendChild(el("span", "pseudo-question__doc", docName(at.doc))); }
+    } else if (q.docs.length) {
+      where.appendChild(el("span", "pseudo-question__page", state.docs.length > 1 ? docName(q.docs[0]) : "im Dokument"));
+    } else if (q.fromChat) {
+      where.appendChild(el("span", "pseudo-question__page", "aus Ihrer Nachricht"));
+    }
+    found.appendChild(where);
+    item.appendChild(found);
 
-      // 4) Kontext (aufklappbar; bei Rueckfragen aus dem Chat ohne Dokumentfundstelle offen)
-      var ctx = el("details", "pseudo-question__context");
-      ctx.appendChild(el("summary", "", "Kontext anzeigen"));
-      var quote = el("p", "pseudo-question__quote");
-      quote.appendChild(document.createTextNode("„… " + (q.context_before || "")));
-      quote.appendChild(el("mark", "pseudo-mark-inline pseudo-mark--" + kind, q.term));
-      quote.appendChild(document.createTextNode((q.context_after || "") + " …“"));
-      ctx.appendChild(quote);
-      ctx.open = !q.docs.length;
-      item.appendChild(ctx);
-      questionsBox.appendChild(item);
+    // 2) Kontext im Dokument
+    var ctx = el("section", "pseudo-question__context");
+    ctx.appendChild(el("h4", "pseudo-question__context-title", q.docs.length ? "Kontext im Dokument" : "Kontext in Ihrer Nachricht"));
+    var quote = el("p", "pseudo-question__quote");
+    var quoteText = el("span", "pseudo-question__quote-text"); // eigene Zeile fuer die Kuerzung bei niedrigen Fenstern
+    // Begriff frueh im Ausschnitt (wie in der Referenz), damit er auch bei gekuerzter Anzeige sichtbar bleibt
+    quoteText.appendChild(document.createTextNode("… " + contextTail(q.context_before || "", 40)));
+    quoteText.appendChild(el("mark", "pseudo-mark-inline " + kindClass(kind, group), q.term));
+    quoteText.appendChild(document.createTextNode((q.context_after || "") + " …"));
+    quote.appendChild(quoteText);
+    quote.title = (q.context_before || "") + q.term + (q.context_after || "");
+    ctx.appendChild(quote);
+    item.appendChild(ctx);
+
+    // 3) Frage + Optionen (Radiokarten mit Erklaerung)
+    var answers = el("section", "pseudo-question__answers");
+    answers.appendChild(el("h3", "pseudo-question__ask", "Was möchten Sie mit diesem Begriff tun?"));
+    answers.appendChild(el("p", "pseudo-question__sub", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
+    var row = el("div", "pseudo-question__options");
+    row.setAttribute("role", "radiogroup");
+    row.setAttribute("aria-label", "Antwort zu " + q.term);
+    OPTIONS.forEach(function (option) {
+      var chosen = state.decisions[q.term] === option.decision;
+      var b = el("button", "pseudo-question__option" + (chosen ? " is-selected" : ""));
+      b.type = "button";
+      b.setAttribute("role", "radio");
+      b.setAttribute("data-decision", option.decision);
+      b.setAttribute("aria-checked", chosen ? "true" : "false");
+      b.setAttribute("aria-pressed", chosen ? "true" : "false");
+      b.disabled = state.busy || (state.mode === "view");
+      b.title = option.title + " – " + option.hint;
+      b.appendChild(el("span", "pseudo-question__option-icon")).appendChild(icon(option.icon));
+      var text = el("span", "pseudo-question__option-text");
+      text.appendChild(el("strong", "", option.title));
+      text.appendChild(el("small", "", option.hint));
+      b.appendChild(text);
+      b.appendChild(el("span", "pseudo-question__radio"));
+      b.addEventListener("click", function () {
+        // Nur waehlen - weiter geht es bewusst ueber "Uebernehmen und naechste Rueckfrage" (Auswahl bleibt sichtbar)
+        state.decisions[q.term] = option.decision;
+        renderDocTabs();
+        refreshMarks();
+        renderPanel();
+        var again = questionsBox.querySelector("[data-decision=\"" + option.decision + "\"]");
+        if (again) { again.focus({ preventScroll: true }); }
+      });
+      row.appendChild(b);
     });
+    answers.appendChild(row);
+    item.appendChild(answers);
+    questionsBox.appendChild(item);
   }
 
   function goToQuestion(q) {
     activateQuestion(q.term, true, false);
-    if (q.docs.length && q.docs.indexOf(state.currentId) === -1) { selectDoc(q.docs[0], q.term); }
-    else { if (state.view !== "marked") { setView("marked"); } scrollToMark(q.term); }
+    var occ = occurrences(q);
+    var at = occ[Math.min(state.occurrence, Math.max(0, occ.length - 1))];
+    if (!at) { if (q.docs.length && q.docs.indexOf(state.currentId) === -1) { selectDoc(q.docs[0], q.term); } return; }
+    // n-te Fundstelle INNERHALB des Zieldokuments
+    var nth = occ.slice(0, occ.indexOf(at)).filter(function (o) { return o.doc === at.doc; }).length;
+    if (at.doc !== state.currentId) { selectDoc(at.doc, q.term, nth); }
+    else { if (state.view !== "marked") { setView("marked"); } scrollToMark(q.term, nth); }
   }
 
-  /** Frage hervorheben (Karte + Markierung). `scrollCard`: Karte ins Bild holen; `jump`: zur Fundstelle springen. */
+  /** Frage anzeigen (Panel + Markierung). `scrollCard`: Panel an den Anfang; `jump`: zur Fundstelle springen. */
   function activateQuestion(term, scrollCard, jump) {
     var changed = state.activeTerm !== term;
     state.activeTerm = term;
-    if (changed) { renderQuestions(); } // nur die aktive Frage ist ausfuehrlich dargestellt
-    docPane.querySelectorAll(".pseudo-mark").forEach(function (node) {
+    if (changed) { state.occurrence = 0; renderQuestions(); } // es ist immer genau eine Frage dargestellt
+    docPane.querySelectorAll(".pseudo-mark, .pseudo-mark-inline").forEach(function (node) {
       node.classList.toggle("is-active", node.getAttribute("data-term") === term);
     });
     renderProgress();
-    var node = questionsBox.querySelector("[data-question=\"" + cssEscape(term) + "\"]");
-    if (node && scrollCard) {
-      // Position relativ zum Scrollbereich (unabhaengig vom offsetParent)
-      var top = node.getBoundingClientRect().top - panelScroll.getBoundingClientRect().top + panelScroll.scrollTop;
-      if (top < panelScroll.scrollTop || top + node.offsetHeight > panelScroll.scrollTop + panelScroll.clientHeight) {
-        panelScroll.scrollTo({ top: Math.max(0, top - 8), behavior: "smooth" });
-      }
-    }
+    renderFooter();
+    if (scrollCard && changed) { panelScroll.scrollTop = 0; }
     if (jump) {
       var q = questions().filter(function (x) { return x.term === term; })[0];
       if (q) { goToQuestion(q); }
@@ -645,11 +765,12 @@
     if (!qs.length) { return; }
     var index = activeIndex(qs);
     if (delta > 0) {
-      // naechste OFFENE Frage nach der aktuellen (zyklisch)
+      // naechste OFFENE Frage nach der aktuellen (zyklisch); sind alle beantwortet, der Reihe nach
       for (var step = 1; step <= qs.length; step += 1) {
         var candidate = qs[(Math.max(index, -1) + step) % qs.length];
         if (!state.decisions[candidate.term] && candidate.term !== state.activeTerm) { goToQuestion(candidate); return; }
       }
+      if (index < qs.length - 1) { goToQuestion(qs[index + 1]); }
       return;
     }
     if (index > 0) { goToQuestion(qs[index - 1]); }
@@ -657,6 +778,13 @@
 
   qPrev.addEventListener("click", function () { stepQuestion(-1); });
   qNext.addEventListener("click", function () { stepQuestion(1); });
+  // "Uebernehmen und naechste Rueckfrage": Auswahl der angezeigten Frage steht bereits in state.decisions
+  applyBtn.addEventListener("click", function () {
+    if (applyBtn.disabled) { return; }
+    if (openTerms().length) { stepQuestion(1); }
+    renderFooter();
+    if (!confirmBtn.hidden && !confirmBtn.disabled) { confirmBtn.focus({ preventScroll: true }); }
+  });
 
   function renderMappings() {
     mappingsList.textContent = "";
@@ -779,6 +907,21 @@
       (state.mode === "release" && (!state.canManage || blocked));
     // Tooltip traegt immer den Hinweis (bei niedrigen Fenstern ist die Hinweiszeile der Fussleiste ausgeblendet)
     confirmBtn.title = confirmBtn.disabled ? (lock || openCount.textContent) : openCount.textContent;
+    // Solange Rueckfragen offen sind, steht an der Stelle des Bestaetigens "Uebernehmen und naechste Rueckfrage"
+    // (erst nach einer Auswahl aktiv); Bestaetigen erscheint, sobald alle beantwortet sind - gesperrt bleibt es nach
+    // den Regeln oben, der Server prueft beim Bestaetigen erneut.
+    var stepping = state.mode !== "view" && remaining > 0;
+    applyBtn.hidden = !stepping;
+    if (stepping) {
+      confirmBtn.hidden = true;
+      var chosen = !!state.decisions[state.activeTerm];
+      applyBtn.disabled = state.busy || !chosen;
+      // letzte offene Rueckfrage: nach der Auswahl erscheint direkt "Bestaetigen" - kein Verweis auf eine naechste
+      applyLabel.textContent = openTerms().some(function (t) { return t !== state.activeTerm; })
+        ? "Übernehmen und nächste Rückfrage" : "Option wählen, dann bestätigen";
+      applyBtn.title = chosen ? "Auswahl übernehmen und zur nächsten offenen Rückfrage wechseln"
+                              : "Bitte zuerst eine Option wählen.";
+    }
     renderFooterStatus();
   }
 
@@ -934,7 +1077,6 @@
   $("[data-pseudo-zoom-in]").addEventListener("click", function () { setZoom(state.zoom + 0.2); });
   $("[data-pseudo-zoom-out]").addEventListener("click", function () { setZoom(state.zoom - 0.2); });
   $("[data-pseudo-zoom-fit]").addEventListener("click", function () { setZoom(1); });
-  thumbsToggle.addEventListener("click", function () { rerenderKeepingPage(function () { state.thumbs = !state.thumbs; }); });
   maximizeBtn.addEventListener("click", function () {
     rerenderKeepingPage(function () { setMaximized(!state.maximized); });
   });

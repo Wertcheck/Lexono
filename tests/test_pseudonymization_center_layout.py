@@ -4,7 +4,7 @@ Schnellaktionen nur als Vorbelegung, Entscheidungen ueber Dokument-/Ansichtswech
 
 Das Verhalten im Browser (Layout bei 1920x1080, 1280x720, 960x600, Dokumentwechsel, viele Rueckfragen, 70 Seiten)
 ist zusaetzlich per Screenshot-QA belegt (benchmarks/legal_answers_v1/qa-evidence/pseudonymization-popup-redesign-
-20261026/). Hier: serverseitig gerendertes Markup + statische Pruefung der Skriptregeln - keine JS-Laufzeit im Test.
+20261026/; Referenzbild-Umsetzung 27.10.2026: .../pseudonymisierung-popup-referenz-20261027/). Hier: serverseitig gerendertes Markup + statische Pruefung der Skriptregeln - keine JS-Laufzeit im Test.
 Ausschliesslich synthetische Daten; keine Produktiv-Datenbank."""
 
 from __future__ import annotations
@@ -69,15 +69,19 @@ def test_header_has_title_explanation_three_views_and_close(client, db_session, 
 
 def test_docbar_tabs_with_select_for_many_documents_and_preview_tools(client, db_session, writer) -> None:
     html = _dialog_markup(client, db_session)
-    assert "data-pseudo-doc-tabs" in html
-    assert re.search(r"data-pseudo-doc-select-wrap hidden", html)  # erst bei vielen Dokumenten sichtbar
-    for tool in ("data-pseudo-thumbs-toggle", "data-pseudo-page-prev", "data-pseudo-page-info", "data-pseudo-page-next",
+    docbar = html[html.index('class="pseudo-center__docbar"'):html.index('class="pseudo-center__body"')]
+    # Dokument-Tabs (Typ + Status) nur bei mehreren Dokumenten; Auswahlliste erst bei vielen
+    assert "data-pseudo-doc-tabs" in docbar and re.search(r"data-pseudo-doc-row hidden", docbar)
+    assert re.search(r"data-pseudo-doc-select-wrap hidden", docbar)
+    assert "data-pseudo-file-name" in docbar and "data-pseudo-subtitle" in docbar  # Datei wie in der Referenz
+    for tool in ("data-pseudo-page-prev", "data-pseudo-page-info", "data-pseudo-page-next",
                  "data-pseudo-zoom-out", "data-pseudo-zoom-in", "data-pseudo-zoom-fit", "data-pseudo-maximize"):
-        assert tool in html, tool
-    assert re.search(r"data-pseudo-thumbs hidden", html)
-    legend = html[html.index('class="pseudo-center__legend"'):]
-    for label in ("wird pseudonymisiert", "Rückfrage offen", "bleibt lesbar"):
-        assert label in legend[:800]
+        assert tool in docbar, tool
+    # Seitenleiste mit Miniaturen dauerhaft (kein Ein-/Ausblende-Schalter mehr); bis zum Laden versteckt
+    assert "data-pseudo-thumbs-toggle" not in html and re.search(r"data-pseudo-thumbs hidden", html)
+    legend = docbar[docbar.index('class="pseudo-center__legend"'):]
+    for label in ("Person", "Organisation", "Adresse", "Datum", "Sonstiges", "Rückfrage offen", "bleibt lesbar"):
+        assert label in legend[:3000], label
 
 
 def test_panel_offers_progress_question_navigation_protect_and_quick_actions(client, db_session, writer) -> None:
@@ -123,14 +127,57 @@ def test_quick_actions_only_prefill_the_chat_input() -> None:
     assert 'state.mode === "view"' in quick  # nur in der reinen Pruefansicht ohne offenen Auftrag
 
 
-def test_active_question_is_detailed_and_the_others_are_compact_rows() -> None:
-    """26.10.2026 (2. Ueberarbeitung): Fund, Frage/Antworten und Kontext getrennt; nur die aktive Frage ausfuehrlich."""
+def test_panel_shows_exactly_one_question_without_a_list_of_the_others() -> None:
+    """27.10.2026 (Referenzbild): immer genau EINE Rueckfrage - Fund, Kontext, Frage, drei Optionen; keine Liste
+    weiterer Rueckfragen, kein zweiter Dialog."""
     cards = _function("renderQuestions")
-    for marker in ("is-compact", '"Fund"', '"Frage"', "pseudo-question__options", "pseudo-question__context",
-                   "activateQuestion(q.term, true, true)"):
+    assert "qs.forEach" not in cards and "is-compact" not in cards
+    assert "var q = qs[activeIndex(qs)];" in cards and cards.count('el("article"') == 1
+    for marker in ("pseudo-question__found", '"Kontext im Dokument"', '"Was möchten Sie mit diesem Begriff tun?"',
+                   '"radiogroup"', '"radio"', "aria-checked", "pseudo-question__options"):
         assert marker in cards, marker
-    # Aktivieren baut die Liste neu auf (sonst bliebe die alte Karte ausgeklappt)
+    assert "showModal" not in cards and "<dialog" not in cards
+    # Fortschritt "Rueckfrage i von n" + Vorherige / Naechste offene Rueckfrage
+    progress = _function("renderProgress")
+    assert '"Rückfrage " + (Math.max(index, 0) + 1) + " von " + qs.length' in progress
+    assert '"Nächste offene Rückfrage"' in progress
     assert "renderQuestions()" in _function("activateQuestion")
+
+
+def test_three_options_explain_the_real_server_behaviour() -> None:
+    options = SCRIPT[SCRIPT.index("var OPTIONS = ["):SCRIPT.index("];", SCRIPT.index("var OPTIONS = ["))]
+    assert re.findall(r'decision: "(\w+)"', options) == ["personal", "not_personal", "unsure"]
+    for title in ("Pseudonymisieren", "Nicht pseudonymisieren", "Unsicher"):
+        assert f'title: "{title}"' in options
+    # "Unsicher" wird serverseitig wie "personal" pseudonymisiert - die Erklaerung darf nichts anderes versprechen
+    assert 'hint: "Wird vorsichtshalber pseudonymisiert."' in options
+    assert "Zur weiteren Prüfung" not in SCRIPT
+
+
+def test_choosing_an_option_only_selects_and_apply_steps_to_the_next_open_question() -> None:
+    cards = _function("renderQuestions")
+    click = cards[cards.index('b.addEventListener("click"'):]
+    click = click[:click.index("});") + 3]
+    assert "state.decisions[q.term] = option.decision" in click
+    assert "goToQuestion" not in click and "stepQuestion" not in click and "fetch(" not in click
+    apply = SCRIPT[SCRIPT.index('applyBtn.addEventListener("click"'):]
+    apply = apply[:apply.index("});") + 3]
+    assert "if (applyBtn.disabled) { return; }" in apply and "stepQuestion(1)" in apply
+    assert "fetch(" not in apply and "submit" not in apply and "state.decisions" not in apply
+    footer = _function("renderFooter")
+    # waehrend Rueckfragen offen sind: "Uebernehmen und naechste Rueckfrage" (erst nach Auswahl aktiv) statt Bestaetigen
+    assert "applyBtn.hidden = !stepping" in footer and "confirmBtn.hidden = true" in footer
+    assert "applyBtn.disabled = state.busy || !chosen" in footer
+
+
+def test_marks_and_legend_use_the_reference_categories() -> None:
+    assert "function categoryGroup(" in SCRIPT and "function questionGroup(" in SCRIPT
+    for group in ("person", "organisation", "adresse", "datum", "sonstiges"):
+        assert f".pseudo-mark--cat-{group}" in CSS and f".pseudo-center__swatch--{group}" in CSS
+    # Rueckfrage ohne erkannte Kategorie: "Unsicherer Begriff" statt eines erfundenen Typs
+    assert 'unsicher: "Unsicherer Begriff"' in SCRIPT and 'return raw ? categoryGroup(raw) : "unsicher";' in SCRIPT
+    # Entscheidungen aendern nur Klassen (Seitenbilder werden nicht neu geladen)
+    assert "renderDocument" not in _function("refreshMarks")
 
 
 def test_preview_size_follows_the_available_width_and_screen_scaling() -> None:
