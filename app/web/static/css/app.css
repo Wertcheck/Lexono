@@ -13511,3 +13511,56 @@ a.chat-composer__protect-btn {
     flex-basis: 300px;
   }
 }
+/* Referenzgroessen der Info-Karte (43_Kanzleiwissen_Gesetze.png: Illustration ~190 px, Titel 24 px, Text 15 px,
+   Merkmale 15/13,5 px) bei ausreichender Hoehe; nur so weit verkleinert, wie die Fensterhoehe es verlangt -
+   weiterhin ohne eigenes Scrollen. */
+@media (min-width: 1101px) {
+  .knowledge-page .law-info-card__illustration {
+    height: clamp(72px, calc(24vh - 70px), 190px);
+  }
+  .knowledge-page .law-info-card__title {
+    font-size: clamp(16px, calc(2vh + 2px), 24px);
+    margin-bottom: clamp(6px, calc(1.4vh - 3px), 12px);
+  }
+  .knowledge-page .law-info-card__text {
+    font-size: clamp(12.5px, calc(0.6vh + 8px), 15px);
+    margin-bottom: clamp(9px, calc(2vh - 4px), 22px);
+  }
+  .knowledge-page .law-info-card__feature {
+    gap: 14px;
+    margin-bottom: clamp(7px, calc(1.6vh - 4px), 16px);
+  }
+  .knowledge-page .law-info-card__feature-icon {
+    width: clamp(18px, calc(1.2vh + 9px), 24px);
+    height: clamp(18px, calc(1.2vh + 9px), 24px);
+  }
+  .knowledge-page .law-info-card__feature-title {
+    font-size: clamp(12.5px, calc(0.45vh + 9.5px), 15px);
+  }
+  .knowledge-page .law-info-card__feature-text {
+    font-size: clamp(11.5px, calc(0.35vh + 9px), 13.5px);
+  }
+}
+
+@media (max-height: 800px) and (min-width: 1101px) {
+  .knowledge-page .law-info-card__illustration {
+    height: 70px;
+  }
+}
+/* Zwischenhoehen 801-900 px (u. a. maximiertes Desktopfenster 1536x842 bei 125 %) */
+@media (min-height: 801px) and (max-height: 900px) and (min-width: 1101px) {
+  .knowledge-page .law-info-card__illustration {
+    height: 104px;
+    margin-bottom: 12px;
+  }
+  .knowledge-page .law-info-card__title {
+    font-size: 18px;
+    margin-bottom: 7px;
+  }
+  .knowledge-page .law-info-card__text {
+    margin-bottom: 12px;
+  }
+  .knowledge-page .law-info-card__feature {
+    margin-bottom: 9px;
+  }
+}

@@ -12,9 +12,9 @@ Alle Aufnahmen stammen aus der **laufenden Anwendung**:
 
 ## Ausgangslage
 
-**Referenz:** Der im Auftrag erwähnte Screenshot ist nicht angekommen; in den Uploads und unter `assets/` gab es keine
-neue Bilddatei. Grundlage waren deshalb die Textvorgabe und die bestehende Kanzleiwissen-Referenz
-`assets/ux-ui/43_Kanzleiwissen_Gesetze.png`.
+**Referenz:** Auf Rückfrage hat der Owner das Referenzbild im Ordner `assets` benannt: die Info-Karte in
+`assets/ux-ui/43_Kanzleiwissen_Gesetze.png` (beigelegt als `referenz-43_Kanzleiwissen_Gesetze.png`) mit dem Panel-Bild
+`assets/ux-ui/Kanzleiwissen_Panellbackground.png`. Daran wurde in einem zweiten Durchgang abgeglichen.
 
 **Inhalt der Leiste:** Die rechte Leiste ist die Info-Karte „Aktuelles Recht. Lokal verfügbar.“ mit:
 
@@ -55,25 +55,43 @@ keine Datenquelle auf dieser Seite. Sie wurden **nicht erfunden**, gemäß der R
 
 ## Ergebnis (`nachher/messwerte_nachher.json`)
 
-| Größe | Inhalt / Höhe | intern scrollend | Karte endet bei / Tabelle endet bei | vollständig sichtbar |
+**Abgleich mit der Referenz (zweiter Durchgang):** Die erste kompakte Fassung (`zwischenstand/kompakt-*`) verkleinerte die
+Karte auch dort, wo genug Platz war. Jetzt gelten bei ausreichender Höhe die Referenzgrößen:
+
+- Illustration ca. 190 px;
+- Titel 24 px;
+- Beschreibung 15 px;
+- Merkmale 15 px (Titel) bzw. 13,5 px (Text);
+- Icons 24 px.
+
+Diese Größen werden nur so weit verkleinert, wie die Fensterhöhe es verlangt:
+
+- fließend über `clamp(…vh…)`;
+- eine Stufe für 801–900 px Höhe;
+- eine Stufe unter 800 px Höhe.
+
+| Größe | Inhalt / Höhe der Karte | intern scrollend | Karte endet bei / Tabelle endet bei | vollständig sichtbar |
 |---|---|---|---|---|
-| 1920×1080 | 516 / 516 | nein | 880 / 1056 | ja |
-| 1536×842 | 435 / 435 | nein | 799 / 818 | ja |
-| 1366×768 | 382 / 382 | nein | 687 / 744 | ja |
-| 1280×720 | 380 / 380 | nein | 684 / 696 | ja |
+| 1920×1080 | 573 / 573 | nein | 937 / 1056 | ja (Referenzgrößen) |
+| 1536×842 | 442 / 442 | nein | 806 / 818 | ja |
+| 1366×768 | 394 / 394 | nein | 698 / 744 | ja |
+| 1280×720 | 384 / 384 | nein | 689 / 696 | ja |
 | 960×600 | 180 / 180 (Band) | nein | Band unter der Tabelle | ja, nach Seitenscroll (`…-01b-infoleiste-unten`) |
 
-Gleiche Werte im Dark Mode. Querscrollen tritt in keiner Aufnahme auf. Die Aufnahmen wurden einzeln gesichtet.
+Gleiche Werte im Dark Mode. Querscrollen tritt in keiner Aufnahme auf. Die Aufnahmen wurden einzeln gesichtet und mit der
+Referenzkarte verglichen: gleiche Reihenfolge (Bild, zweizeiliger Titel, Beschreibung, drei Merkmale mit Icon, Titel
+und Text).
 
 **Zwischenstand (`zwischenstand/`), korrigiert:**
 
 - Bei 1280×720 ragte die Karte zunächst 20 px unter die Tabelle.
 - Im Band fehlte das Leerzeichen im Titel, und zwischen Titel und Text entstand eine Lücke.
-
+- Bei 1536×842 ragte die Karte mit Referenzgrößen 24 px unter die Tabelle (Stufe 801–900 px ergänzt).
+- `kompakt-*`: die erste, zu stark verkleinerte Fassung.
 ## Tests
 
 - **Kanzleiwissen:** `tests/test_web_knowledge.py` + `tests/test_web_knowledge_reference_layout.py` (3 neue Tests):
-  **52/52** bestanden. Die neuen Tests prüfen:
+  **52/52** bestanden (nach dem Referenzabgleich erneut: Kanzleiwissen-, Gesetze-, Design-, Posteingang- und Chat-Tests 438 bestanden, 4 bekannte Logo-Fehler). Die neuen Tests prüfen:
   - kein internes Scrollen und keine Rückkehr von `overflow-y: auto` / `max-height: 100%`;
   - nie mehr `display: none` für die Karte, Band-Layout vorhanden;
   - Leerzeichen im Titel.
@@ -89,5 +107,4 @@ Gleiche Werte im Dark Mode. Querscrollen tritt in keiner Aufnahme auf. Die Aufna
   und Leiste nebeneinander.
 - **Sehr niedrige Fenster:** Unterhalb von etwa 700 px Höhe bei voller Breite kann die Karte länger als die Tabelle
   werden. Sie scrollt dann nicht selbst; die Seite scrollt.
-- **Fehlende Referenz:** Ein Abgleich mit dem angekündigten Screenshot war nicht möglich.
 - **Team- und Kontaktinformationen:** Die Leiste enthält keine, weil es dafür keine Datenquelle gibt.
