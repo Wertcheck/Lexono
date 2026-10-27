@@ -1,4 +1,4 @@
-# Kanzleiwissen – rechte Informationsleiste ohne eigenes Scrollen (27.10.2026)
+# Kanzleiwissen – rechte Informationsleiste ohne Scrollen (27.10.2026)
 
 Alle Aufnahmen stammen aus der **laufenden Anwendung**:
 
@@ -8,103 +8,93 @@ Alle Aufnahmen stammen aus der **laufenden Anwendung**:
 - **Messwerte:** Die Messung der Karte (`karte` in `*/messwerte_*.json`) stammt aus dem DOM:
   - `scrollHeight` gegenüber `clientHeight`;
   - `overflow-y`;
-  - Unterkante der Karte gegenüber der Unterkante der Tabelle und dem Viewport.
+  - Unterkante gegenüber Tabelle und Viewport;
+  - ob die Seite (`.main`) scrollen müsste.
 
-## Ausgangslage
+## Referenz und Inhalt
 
 **Referenz:** Auf Rückfrage hat der Owner das Referenzbild im Ordner `assets` benannt: die Info-Karte in
 `assets/ux-ui/43_Kanzleiwissen_Gesetze.png` (beigelegt als `referenz-43_Kanzleiwissen_Gesetze.png`) mit dem Panel-Bild
-`assets/ux-ui/Kanzleiwissen_Panellbackground.png`. Daran wurde in einem zweiten Durchgang abgeglichen.
+`assets/ux-ui/Kanzleiwissen_Panellbackground.png`.
 
-**Inhalt der Leiste:** Die rechte Leiste ist die Info-Karte „Aktuelles Recht. Lokal verfügbar.“ mit:
+**Inhalt der Leiste in dieser Reihenfolge (Informationshierarchie laut Auftrag):**
 
-- Illustration;
-- Überschrift;
-- Beschreibung;
-- den drei Merkmalen „Rechtssicher“, „Flexibel“ und „Immer aktuell“.
+1. Illustration, Überschrift „Aktuelles Recht. Lokal verfügbar.“ und Beschreibung.
+2. **Kanzlei-Team:** neu, aus echten Daten der Benutzerverwaltung – aktive Konten je Rolle, ohne Namen; deaktivierte
+   Konten zählen nicht.
+3. **Lokal verfügbar:** neu, aus echten Daten – lokal aktive Gesetze und deren Paragraphen; deaktivierte Gesetze zählen
+   nicht.
+4. Nutzungshinweise „Rechtssicher“, „Flexibel“ und „Immer aktuell“.
 
-**Keine Teamdaten:** Informationen über das Kanzlei-Team oder Kontakte enthält die Leiste nicht, und es gibt dafür auch
-keine Datenquelle auf dieser Seite. Sie wurden **nicht erfunden**, gemäß der Regel „keine statischen Demo-Inhalte“.
+Es gibt keine Demo-Werte und keine neuen Bedienelemente. Kontaktdaten des Teams gibt es im Datenmodell nicht; sie werden
+nicht angezeigt.
 
-**Vorher gemessen (`vorher/messwerte_vorher.json`):**
+## Vorher (`vorher/messwerte_vorher.json`)
 
-| Größe | Inhalt / sichtbare Höhe der Karte | Ergebnis |
+| Größe | Inhalt / sichtbare Höhe | Ergebnis |
 |---|---|---|
 | 1920×1080 | 712 / 692 px | **interne Scrollleiste** |
-| 1280×720 | 631 / 392 px | **interne Scrollleiste**, ~40 % des Inhalts nur per Scrollen erreichbar |
+| 1280×720 | 631 / 392 px | **interne Scrollleiste**, ~40 % nur per Scrollen erreichbar |
 | 960×600 | – | **Karte ausgeblendet** (`display: none`) |
 
-## Änderungen (nur CSS unter `.knowledge-page` sowie ein Leerzeichen im Kartentitel)
+## Änderungen
 
 - **Kein internes Scrollen:** `max-height: none` und `overflow: visible` statt `max-height: 100%` und
   `overflow-y: auto`.
-- **Höhenabhängig kompakt:**
-  - Illustration, Abstände und Schriftgrößen skalieren fließend mit der Fensterhöhe (`clamp(…vh…)`);
-  - Merkmale kompakt mit Titel und Text direkt untereinander;
-  - unter 800 px Höhe zusätzlich engere Ränder und eine flachere Illustration;
-  - der Text wird nie gekürzt (die frühere 2-Zeilen-Ellipse ist entfernt).
-- **Schmale Fenster (≤ 1100 px):** Statt die Karte auszublenden, steht sie als **Band unter der Tabelle**:
-  - Illustration links, Überschrift und Beschreibung in der Mitte, die drei Merkmale rechts;
-  - die Seite scrollt, die Karte selbst nie;
-  - die Tabelle behält ihren eigenen Scrollbereich (max. 340 px).
-- **Titel:** Ein Leerzeichen vor dem Zeilenumbruch, damit der einzeilige Titel im Band „Aktuelles Recht. Lokal
-  verfügbar.“ lautet (`zwischenstand/…titel-ohne-leerzeichen`).
-- **Nebenbefund behoben:** Zwischen 1501 und 1600 px Breite (u. a. das maximierte Desktopfenster, 1536 px bei 125 %)
-  stieß der Tabellenstatus an den Schalter, und „Lokal verfügbar“ war abgeschnitten. Dafür gilt jetzt dieselbe
-  Spaltenaufteilung wie unter 1500 px.
+- **Referenzgrößen, wo Platz ist:** Bei ausreichender Höhe gelten die Größen der Referenz (Illustration ca. 190 px,
+  Titel 24 px, Text 15 px, Merkmale 15 / 13,5 px). Sie schrumpfen nur so weit, wie die Fensterhöhe es verlangt:
+  - fließend über `clamp(…vh…)`;
+  - Stufe 801–900 px Höhe: kleinere Illustration, Merkmale als Fließtext „Titel – Text“;
+  - Stufe unter 800 px Höhe: die rein dekorative Illustration entfällt (kein Informationsgehalt), Merkmale als
+    Fließtext.
+  - Text wird nie gekürzt.
+- **Schmale Fenster (≤ 1100 px):** Die Karte steht als **kompakte Leiste über der Tabelle**:
+  - links die Illustration;
+  - in der Mitte Titel und Beschreibung;
+  - rechts die drei Hinweise;
+  - darunter Team und lokale Inhalte;
+  - die Tabelle darunter behält ihren eigenen Scrollbereich.
+- **Sehr niedrige schmale Fenster (960×600):** Kacheln einzeilig, kompakter Tabellenkopf. Leiste, Kacheln und erste
+  Tabellenzeile sind dadurch gleichzeitig sichtbar, ohne Seitenscroll.
+- **Titel:** Leerzeichen vor dem Zeilenumbruch, damit der einzeilige Titel korrekt getrennt ist.
+- **Nebenbefund behoben:** Bei 1501–1600 px Breite stieß der Tabellenstatus an den Schalter.
 
 ## Ergebnis (`nachher/messwerte_nachher.json`)
 
-**Abgleich mit der Referenz (zweiter Durchgang):** Die erste kompakte Fassung (`zwischenstand/kompakt-*`) verkleinerte die
-Karte auch dort, wo genug Platz war. Jetzt gelten bei ausreichender Höhe die Referenzgrößen:
-
-- Illustration ca. 190 px;
-- Titel 24 px;
-- Beschreibung 15 px;
-- Merkmale 15 px (Titel) bzw. 13,5 px (Text);
-- Icons 24 px.
-
-Diese Größen werden nur so weit verkleinert, wie die Fensterhöhe es verlangt:
-
-- fließend über `clamp(…vh…)`;
-- eine Stufe für 801–900 px Höhe;
-- eine Stufe unter 800 px Höhe.
-
-| Größe | Inhalt / Höhe der Karte | intern scrollend | Karte endet bei / Tabelle endet bei | vollständig sichtbar |
+| Größe | Inhalt / Höhe der Karte | intern scrollend | Karte endet / Tabelle endet | Seite muss scrollen |
 |---|---|---|---|---|
-| 1920×1080 | 573 / 573 | nein | 937 / 1056 | ja (Referenzgrößen) |
-| 1536×842 | 442 / 442 | nein | 806 / 818 | ja |
-| 1366×768 | 394 / 394 | nein | 698 / 744 | ja |
-| 1280×720 | 384 / 384 | nein | 689 / 696 | ja |
-| 960×600 | 180 / 180 (Band) | nein | Band unter der Tabelle | ja, nach Seitenscroll (`…-01b-infoleiste-unten`) |
+| 1920×1080 | 656 / 656 | nein | 1020 / 1056 | nein |
+| 1536×842 (maximiertes Desktopfenster bei 125 %) | 449 / 449 | nein | 813 / 818 | nein |
+| 1366×768 | 392 / 392 | nein | 697 / 744 | nein |
+| 1280×720 | 388 / 388 | nein | 692 / 696 | nein |
+| 960×600 | 144 / 144 (Leiste über der Tabelle) | nein | 372 / 572 | **nein** |
 
-Gleiche Werte im Dark Mode. Querscrollen tritt in keiner Aufnahme auf. Die Aufnahmen wurden einzeln gesichtet und mit der
-Referenzkarte verglichen: gleiche Reihenfolge (Bild, zweizeiliger Titel, Beschreibung, drei Merkmale mit Icon, Titel
-und Text).
+Gleiche Werte im Dark Mode, in keiner Aufnahme Querscrollen. Die Aufnahme `960x600-*-01b-infoleiste-unten` ist jetzt
+identisch mit `-01`, weil es nichts mehr zu scrollen gibt. Alle Aufnahmen wurden einzeln gesichtet und mit der
+Referenzkarte verglichen.
 
-**Zwischenstand (`zwischenstand/`), korrigiert:**
+**Zwischenstände (`zwischenstand/`), alle korrigiert:**
 
-- Bei 1280×720 ragte die Karte zunächst 20 px unter die Tabelle.
-- Im Band fehlte das Leerzeichen im Titel, und zwischen Titel und Text entstand eine Lücke.
-- Bei 1536×842 ragte die Karte mit Referenzgrößen 24 px unter die Tabelle (Stufe 801–900 px ergänzt).
-- `kompakt-*`: die erste, zu stark verkleinerte Fassung.
+- `kompakt-*`: erste Fassung, auch bei viel Platz zu stark verkleinert.
+- `referenzgroessen-ohne-team-*`: Referenzgrößen, noch ohne Team- und Inhaltszahlen; bei 960 px stand die Karte als
+  Band **unter** der Tabelle und war erst nach Seitenscroll sichtbar.
+- `1280x720-…-karte-ragt-unter-tabelle`, `960x600-…-band-titel-ohne-leerzeichen`: frühere Darstellungsfehler.
+
 ## Tests
 
-- **Kanzleiwissen:** `tests/test_web_knowledge.py` + `tests/test_web_knowledge_reference_layout.py` (3 neue Tests):
-  **52/52** bestanden (nach dem Referenzabgleich erneut: Kanzleiwissen-, Gesetze-, Design-, Posteingang- und Chat-Tests 438 bestanden, 4 bekannte Logo-Fehler). Die neuen Tests prüfen:
-  - kein internes Scrollen und keine Rückkehr von `overflow-y: auto` / `max-height: 100%`;
-  - nie mehr `display: none` für die Karte, Band-Layout vorhanden;
-  - Leerzeichen im Titel.
-- **Regression:** 51 Dateien (Web/UI, Design/Theme, Gesetze/Wissen, globale Suche):
-  - **1185 bestanden**, 1 xfailed;
-  - **4 fehlgeschlagen**, ausschließlich die bekannten, vorbestehenden Logo-Tests in `test_design_refresh.py`
-    (fremdgelöschte Logos).
+- **Neu in `tests/test_web_knowledge_reference_layout.py`:**
+  - kein internes Scrollen;
+  - nie ausgeblendet;
+  - Leerzeichen im Titel;
+  - echte Team- und Inhaltszahlen: aktive Konten je Rolle, inaktive Konten und deaktivierte Gesetze werden nicht
+    mitgezählt.
+- **Kanzleiwissen, Gesetze, Design, Posteingang, Chat:** **439 bestanden**, 4 fehlgeschlagen. Die 4 Fehler sind
+  ausschließlich die bekannten, vorbestehenden Logo-Tests in `test_design_refresh.py` (fremdgelöschte Logos).
 
 ## Verbleibende Einschränkungen
 
-- **Unter 1100 px Breite:** Die Leiste steht unter der Tabelle. Sie ist dort vollständig sichtbar, aber erst nach
-  Scrollen der Seite, nicht gleichzeitig mit dem oberen Seitenbereich. Bei 960×600 reicht der Platz nicht für Tabelle
-  und Leiste nebeneinander.
-- **Sehr niedrige Fenster:** Unterhalb von etwa 700 px Höhe bei voller Breite kann die Karte länger als die Tabelle
-  werden. Sie scrollt dann nicht selbst; die Seite scrollt.
-- **Team- und Kontaktinformationen:** Die Leiste enthält keine, weil es dafür keine Datenquelle gibt.
+- **Illustration:** Unter 800 px Fensterhöhe (bei Breite > 1100 px) entfällt sie zugunsten der vollständigen
+  Information; sie ist dekorativ.
+- **960×600:** Neben Leiste und Kacheln ist nur die erste Tabellenzeile direkt sichtbar. Die übrigen Zeilen erreicht man
+  über den eigenen Scrollbereich der Tabelle; er bestand schon vorher.
+- **Kontaktinformationen des Teams:** gibt es im Datenmodell nicht und werden daher nicht angezeigt.

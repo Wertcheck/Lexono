@@ -21,16 +21,16 @@
     1550,
     362,
     340,
-    575
+    658
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 573,
-    "clientH": 573,
+    "scrollH": 656,
+    "clientH": 656,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 937,
+    "unten": 1020,
     "tabelle_unten": 1056,
     "viewport_h": 1080,
     "ganz_im_viewport": true,
@@ -57,16 +57,16 @@
     1550,
     362,
     340,
-    575
+    658
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 573,
-    "clientH": 573,
+    "scrollH": 656,
+    "clientH": 656,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 937,
+    "unten": 1020,
     "tabelle_unten": 1056,
     "viewport_h": 1080,
     "ganz_im_viewport": true,
@@ -93,16 +93,16 @@
     1206,
     362,
     300,
-    444
+    451
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 442,
-    "clientH": 442,
+    "scrollH": 449,
+    "clientH": 449,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 806,
+    "unten": 813,
     "tabelle_unten": 818,
     "viewport_h": 842,
     "ganz_im_viewport": true,
@@ -129,16 +129,16 @@
     1206,
     362,
     300,
-    444
+    451
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 442,
-    "clientH": 442,
+    "scrollH": 449,
+    "clientH": 449,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 806,
+    "unten": 813,
     "tabelle_unten": 818,
     "viewport_h": 842,
     "ganz_im_viewport": true,
@@ -165,16 +165,16 @@
     1056,
     302,
     280,
-    396
+    394
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 394,
-    "clientH": 394,
+    "scrollH": 392,
+    "clientH": 392,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 698,
+    "unten": 697,
     "tabelle_unten": 744,
     "viewport_h": 768,
     "ganz_im_viewport": true,
@@ -201,16 +201,16 @@
     1056,
     302,
     280,
-    396
+    394
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 394,
-    "clientH": 394,
+    "scrollH": 392,
+    "clientH": 392,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 698,
+    "unten": 697,
     "tabelle_unten": 744,
     "viewport_h": 768,
     "ganz_im_viewport": true,
@@ -237,16 +237,16 @@
     970,
     302,
     280,
-    386
+    390
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 384,
-    "clientH": 384,
+    "scrollH": 388,
+    "clientH": 388,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 689,
+    "unten": 692,
     "tabelle_unten": 696,
     "viewport_h": 720,
     "ganz_im_viewport": true,
@@ -273,16 +273,16 @@
     970,
     302,
     280,
-    386
+    390
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 384,
-    "clientH": 384,
+    "scrollH": 388,
+    "clientH": 388,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 689,
+    "unten": 692,
     "tabelle_unten": 696,
     "viewport_h": 720,
     "ganz_im_viewport": true,
@@ -295,7 +295,7 @@
     600
    ],
    "seite_querscroll": false,
-   "main_scrollt": true,
+   "main_scrollt": false,
    "ueber_rechts": [
     "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
    ],
@@ -303,28 +303,28 @@
    "aktiv": "Gesetze & Normen 5",
    "tabelle": [
     267,
-    395,
-    654,
-    2023
+    434,
+    664,
+    1653
    ],
    "infokarte": [
     266,
-    776,
-    666,
-    182
+    226,
+    676,
+    146
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 180,
-    "clientH": 180,
+    "scrollH": 144,
+    "clientH": 144,
     "scrollt_intern": false,
     "overflow_y": "hidden",
-    "unten": 958,
-    "tabelle_unten": 742,
+    "unten": 372,
+    "tabelle_unten": 572,
     "viewport_h": 600,
-    "ganz_im_viewport": false,
-    "main_scroll_noetig": true
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
    }
   },
   "960x600-hell-01b-infoleiste-unten": {
@@ -333,7 +333,7 @@
     600
    ],
    "seite_querscroll": false,
-   "main_scrollt": true,
+   "main_scrollt": false,
    "ueber_rechts": [
     "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
    ],
@@ -341,28 +341,28 @@
    "aktiv": "Gesetze & Normen 5",
    "tabelle": [
     267,
-    13,
-    654,
-    2023
+    434,
+    664,
+    1653
    ],
    "infokarte": [
     266,
-    394,
-    666,
-    182
+    226,
+    676,
+    146
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 180,
-    "clientH": 180,
+    "scrollH": 144,
+    "clientH": 144,
     "scrollt_intern": false,
     "overflow_y": "hidden",
-    "unten": 576,
-    "tabelle_unten": 360,
+    "unten": 372,
+    "tabelle_unten": 572,
     "viewport_h": 600,
     "ganz_im_viewport": true,
-    "main_scroll_noetig": true
+    "main_scroll_noetig": false
    }
   },
   "960x600-dunkel-01-gesetze-normen": {
@@ -371,7 +371,7 @@
     600
    ],
    "seite_querscroll": false,
-   "main_scrollt": true,
+   "main_scrollt": false,
    "ueber_rechts": [
     "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
    ],
@@ -379,28 +379,28 @@
    "aktiv": "Gesetze & Normen 5",
    "tabelle": [
     267,
-    395,
-    654,
-    2023
+    434,
+    664,
+    1653
    ],
    "infokarte": [
     266,
-    776,
-    666,
-    182
+    226,
+    676,
+    146
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 180,
-    "clientH": 180,
+    "scrollH": 144,
+    "clientH": 144,
     "scrollt_intern": false,
     "overflow_y": "hidden",
-    "unten": 958,
-    "tabelle_unten": 742,
+    "unten": 372,
+    "tabelle_unten": 572,
     "viewport_h": 600,
-    "ganz_im_viewport": false,
-    "main_scroll_noetig": true
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
    }
   },
   "960x600-dunkel-01b-infoleiste-unten": {
@@ -409,7 +409,7 @@
     600
    ],
    "seite_querscroll": false,
-   "main_scrollt": true,
+   "main_scrollt": false,
    "ueber_rechts": [
     "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
    ],
@@ -417,28 +417,28 @@
    "aktiv": "Gesetze & Normen 5",
    "tabelle": [
     267,
-    13,
-    654,
-    2023
+    434,
+    664,
+    1653
    ],
    "infokarte": [
     266,
-    394,
-    666,
-    182
+    226,
+    676,
+    146
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 180,
-    "clientH": 180,
+    "scrollH": 144,
+    "clientH": 144,
     "scrollt_intern": false,
     "overflow_y": "hidden",
-    "unten": 576,
-    "tabelle_unten": 360,
+    "unten": 372,
+    "tabelle_unten": 572,
     "viewport_h": 600,
     "ganz_im_viewport": true,
-    "main_scroll_noetig": true
+    "main_scroll_noetig": false
    }
   },
   "1920x1080-hell-02-rechtsprechung": {
@@ -541,16 +541,16 @@
     1550,
     362,
     340,
-    575
+    658
    ],
    "zeilen": 1,
    "karte": {
     "sichtbar": true,
-    "scrollH": 573,
-    "clientH": 573,
+    "scrollH": 656,
+    "clientH": 656,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 937,
+    "unten": 1020,
     "tabelle_unten": 541,
     "viewport_h": 1080,
     "ganz_im_viewport": true,
@@ -572,16 +572,16 @@
     1550,
     362,
     340,
-    575
+    658
    ],
    "zeilen": 0,
    "karte": {
     "sichtbar": true,
-    "scrollH": 573,
-    "clientH": 573,
+    "scrollH": 656,
+    "clientH": 656,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 937,
+    "unten": 1020,
     "tabelle_unten": 482,
     "viewport_h": 1080,
     "ganz_im_viewport": true,
@@ -643,16 +643,16 @@
     1550,
     362,
     340,
-    575
+    658
    ],
    "zeilen": 36,
    "karte": {
     "sichtbar": true,
-    "scrollH": 573,
-    "clientH": 573,
+    "scrollH": 656,
+    "clientH": 656,
     "scrollt_intern": false,
     "overflow_y": "visible",
-    "unten": 937,
+    "unten": 1020,
     "tabelle_unten": 1056,
     "viewport_h": 1080,
     "ganz_im_viewport": true,

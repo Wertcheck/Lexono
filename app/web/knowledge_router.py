@@ -78,7 +78,7 @@ from app.knowledge.service import KnowledgeItemService
 from app.laws.catalog import get_catalog, get_catalog_entry_for_code
 from app.laws.install_service import check_law_for_update, get_progress, start_install
 from app.laws.service import get_law_stats, toggle_law_active
-from app.models import DocumentTemplate, KnowledgeItem, Law, LawSection, Source, User
+from app.models import DocumentTemplate, KnowledgeItem, Law, LawSection, Role, Source, User
 from app.sources.schema import ALLOWED_SOURCE_TYPES, SourceImport
 from app.sources.service import SourceService
 from app.web.service_factory import get_document_search_service
@@ -137,6 +137,9 @@ _CATEGORIES = [
     ("internal", "Interne Dokumente", "users"),
 ]
 _VALID_CATEGORIES = {key for key, _, _ in _CATEGORIES}
+
+#: Anzeige-Labels der Rollen fuer die Team-Zeile der Info-Leiste (Rollennamen siehe Migration 4e15e8bb50a1).
+_TEAM_ROLE_LABELS = {"admin": "Admin", "anwalt": "Anwalt/Anwältin", "mitarbeiter": "Mitarbeiter/in"}
 _DEFAULT_CATEGORY = "laws"
 
 # Kurze, nicht-technische Erklaerung je Kategorie (26.09., Direktive §6) -
@@ -296,6 +299,20 @@ def _build_knowledge_context(
 
     law_count = db.query(func.count(Law.id)).scalar() or 0
     section_count = db.query(func.count(LawSection.id)).scalar() or 0
+    # Info-Leiste (27.10.): echte Zahlen statt Demo-Inhalten - lokal aktive Gesetze und deren Paragraphen sowie das
+    # Kanzlei-Team aus der Benutzerverwaltung (aktive Konten je Rolle, keine Namen).
+    active_law_count = db.query(func.count(Law.id)).filter(Law.is_active.is_(True)).scalar() or 0
+    active_section_count = (
+        db.query(func.count(LawSection.id)).join(Law, Law.code == LawSection.law_code)
+        .filter(Law.is_active.is_(True)).scalar() or 0
+    )
+    team_by_role: dict[str, int] = {}
+    for role_name, count in (
+        db.query(Role.name, func.count(User.id)).outerjoin(Role, User.role_id == Role.id)
+        .filter(User.is_active.is_(True)).group_by(Role.name).all()
+    ):
+        label = _TEAM_ROLE_LABELS.get((role_name or "").strip().lower(), (role_name or "ohne Rolle").capitalize())
+        team_by_role[label] = team_by_role.get(label, 0) + count
 
     return {
         "request": request,
@@ -316,6 +333,10 @@ def _build_knowledge_context(
         "search": search,
         "law_count": law_count,
         "section_count": section_count,
+        "active_law_count": active_law_count,
+        "active_section_count": active_section_count,
+        "team_member_count": sum(team_by_role.values()),
+        "team_by_role": sorted(team_by_role.items(), key=lambda item: (-item[1], item[0])),
         "firm_practice_areas": firm_practice_areas,
         "firm_practice_areas_lower": {area.lower() for area in firm_practice_areas},
         # 26.09., "AUTONOMOUS PRODUCT GAP AUDIT": gleiches Muster wie

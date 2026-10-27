@@ -81,6 +81,33 @@ def test_info_card_title_keeps_a_space_when_the_line_break_is_hidden(client: Tes
     assert "Aktuelles Recht. <br />Lokal verfügbar." in html
 
 
+def test_info_card_shows_real_team_and_local_content_counts(client: TestClient, db_session: Session) -> None:
+    """Info-Leiste (27.10.): Kanzlei-Team aus der Benutzerverwaltung (aktive Konten je Rolle) und lokal aktive
+    Gesetze/Paragraphen - echte Zahlen, deaktivierte Konten und deaktivierte Gesetze zaehlen nicht mit."""
+    from datetime import date
+
+    from app.models import Law, LawSection
+    from tests.auth_test_utils import create_test_user, seed_roles
+
+    login_as_admin(db_session, client)
+    roles = seed_roles(db_session)
+    create_test_user(db_session, roles["anwalt"], "anwalt@kanzlei.test")
+    inactive = create_test_user(db_session, roles["anwalt"], "ehemalig@kanzlei.test")
+    inactive.is_active = False
+    db_session.add_all([Law(code="QAA", title="QA-Gesetz A", is_active=True),
+                        Law(code="QAB", title="QA-Gesetz B", is_active=False)])
+    db_session.flush()
+    db_session.add_all([LawSection(law_code=code, section_number=str(n), title="QA", text_content="QA",
+                                   last_updated=date(2026, 1, 1)) for code in ("QAA", "QAB") for n in (1, 2, 3)])
+    db_session.commit()
+
+    html = client.get("/dashboard/knowledge?category=laws").text
+    stats = html[html.index('class="law-info-card__stats"'):html.index("</dl>", html.index('class="law-info-card__stats"'))]
+    assert "<dt>Kanzlei-Team</dt>" in stats
+    assert "2 aktive Konten" in stats and "1 Admin" in stats and "1 Anwalt/Anwältin" in stats
+    assert "1 Gesetz · 3 Paragraphen" in stats
+
+
 def test_reference_styles_are_scoped_to_the_knowledge_page() -> None:
     """Die Angleichung (Satzschrift statt Mono/Versalien, Status-Punkte) darf `.draft-table`/`.topbar` anderer Seiten
     nicht veraendern - alle neuen Regeln haengen an `.knowledge-head`/`.knowledge-page`."""
