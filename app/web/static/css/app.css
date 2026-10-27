@@ -12891,3 +12891,440 @@ a.chat-composer__protect-btn {
     min-width: 0;
   }
 }
+
+/* ==========================================================================
+   Kanzleiwissen: Referenzabgleich 43_Kanzleiwissen_Gesetze.png (27.10.)
+   Kopf buendig mit Kacheln/Tabelle, groessere Typografie, Tabelle in
+   Satzschrift ohne Monospace, farbige Statuspunkte, Info-Karte mit
+   randfuellender Illustration. Nur unter `.knowledge-head`/`.knowledge-page`
+   - `.draft-table`/`.topbar` bleiben fuer alle anderen Seiten unveraendert.
+   ========================================================================== */
+
+.knowledge-head {
+  flex-shrink: 0;
+  padding: 26px 30px 16px;
+}
+
+.knowledge-head__row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.knowledge-head__icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--ink-900);
+}
+
+.knowledge-head__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+
+.knowledge-head #knowledge-subtitle {
+  margin-top: 4px;
+  font-size: 17px;
+  color: var(--ink-500);
+}
+
+.knowledge-head #knowledge-description {
+  max-width: 860px;
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-700);
+}
+
+.knowledge-page {
+  padding: 4px 30px 24px;
+}
+
+/* Kacheln: Icon, Bezeichnung, Zahl - Zahl wie in der Referenz zurueckhaltend */
+.knowledge-page .knowledge-categories {
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.knowledge-page .knowledge-category-card {
+  flex: 0 1 172px;
+  max-width: 172px;
+  gap: 4px;
+  padding: 16px 12px 14px;
+}
+
+.knowledge-page .knowledge-category-card__icon {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.knowledge-page .knowledge-category-card__title {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.knowledge-page .knowledge-category-card__count {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-500);
+}
+
+.knowledge-page .knowledge-category-card--active .knowledge-category-card__title,
+.knowledge-page .knowledge-category-card--active .knowledge-category-card__count {
+  color: var(--brand-green-dark);
+}
+
+/* Inhaltskarte + Tabellen (alle Kategorien) in Satzschrift statt Mono/Versalien */
+.knowledge-page #knowledge-panel .instructions-panel {
+  padding: 18px 0 6px;
+  box-shadow: none;
+}
+
+.knowledge-page #knowledge-panel .instructions-panel > .panel-title,
+.knowledge-page .knowledge-laws-layout__header,
+.knowledge-page #knowledge-panel .instructions-panel > .manual-edit-toggle,
+.knowledge-page #knowledge-panel .instructions-panel > .settings-section__hint {
+  margin-left: 18px;
+  margin-right: 18px;
+}
+
+.knowledge-page .panel-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.knowledge-page .knowledge-laws-layout__header .panel-title {
+  margin-bottom: 0;
+}
+
+.knowledge-page .knowledge-laws-layout__header {
+  margin-bottom: 12px;
+}
+
+.knowledge-page #knowledge-panel .draft-table {
+  border: none;
+  border-radius: 0;
+}
+
+.knowledge-page #knowledge-panel .draft-table th {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink-500);
+  background: var(--paper-100);
+  padding: 11px 14px;
+  white-space: nowrap;
+}
+
+.knowledge-page #knowledge-panel .draft-table td {
+  font-size: 14px;
+  color: var(--ink-900);
+  padding: 12px 14px;
+}
+
+.knowledge-page #knowledge-panel .draft-table td.mono {
+  font-family: var(--font-body);
+  color: var(--ink-700);
+}
+
+.knowledge-page #knowledge-panel .draft-table tbody tr {
+  cursor: default;
+}
+
+.knowledge-page .law-catalog-table__title {
+  font-weight: 400;
+}
+
+.knowledge-page .law-catalog-table__title a {
+  color: var(--ink-900);
+  text-decoration: none;
+}
+
+.knowledge-page .law-catalog-table__title a:hover {
+  color: var(--brand-green-dark);
+  text-decoration: underline;
+}
+
+.knowledge-page .law-catalog-table__row-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  color: var(--ink-700);
+}
+
+/* Status wie in der Referenz: farbiger Punkt + Text in normaler Schrift */
+.knowledge-page .tag--installed,
+.knowledge-page .tag--not-installed,
+.knowledge-page .tag--downloading,
+.knowledge-page .tag--law-error,
+.knowledge-page .tag--update-available {
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: normal;
+  white-space: nowrap;
+  gap: 7px;
+}
+
+.knowledge-page .tag--installed .tag__dot,
+.knowledge-page .tag--not-installed .tag__dot,
+.knowledge-page .tag--downloading .tag__dot {
+  width: 8px;
+  height: 8px;
+}
+
+.knowledge-page .tag--installed .tag__dot {
+  background: var(--brand-green);
+}
+
+.knowledge-page .tag--not-installed .tag__dot {
+  background: var(--ink-300);
+}
+
+.knowledge-page .law-toggle {
+  width: 44px;
+  height: 24px;
+}
+
+.knowledge-page .law-toggle::after {
+  width: 20px;
+  height: 20px;
+}
+
+.knowledge-page .law-toggle--on::after {
+  transform: translateX(20px);
+}
+
+/* Info-Karte: Illustration randfuellend oben, groessere Ueberschrift */
+.knowledge-page .law-info-card {
+  flex: 0 0 340px;
+  padding: 0 22px 22px;
+  background: var(--paper-000);
+  overflow: hidden;
+}
+
+.knowledge-page .law-info-card__illustration {
+  width: calc(100% + 44px);
+  max-width: none;
+  height: 200px;
+  margin: 0 -22px 18px;
+  object-fit: cover;
+  object-position: center 58%;
+}
+
+.knowledge-page .law-info-card__title {
+  font-size: 24px;
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+
+.knowledge-page .law-info-card__text {
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.knowledge-page .law-info-card__feature {
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.knowledge-page .law-info-card__feature-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--ink-900);
+}
+
+.knowledge-page .law-info-card__feature-title {
+  font-size: 14.5px;
+}
+
+.knowledge-page .law-info-card__feature-text {
+  font-size: 13px;
+}
+
+:root[data-theme="dark"] .knowledge-page .law-info-card__feature-icon {
+  color: var(--ink-700);
+}
+
+:root[data-theme="dark"] .knowledge-page .law-info-card__illustration {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+/* niedrige Fenster (1280x720 u. ae.): kompaktere Karte, aber KEIN abgeschnittener Text mehr (vorher 2-Zeilen-Ellipse) */
+@media (max-height: 800px) {
+  .knowledge-head {
+    padding: 14px 30px 10px;
+  }
+  .knowledge-head__icon {
+    width: 34px;
+    height: 34px;
+  }
+  .knowledge-head__title {
+    font-size: 26px;
+  }
+  .knowledge-head #knowledge-subtitle {
+    font-size: 15px;
+    margin-top: 2px;
+  }
+  .knowledge-head #knowledge-description {
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .knowledge-page .knowledge-category-card {
+    padding: 10px 10px 9px;
+  }
+  .knowledge-page .knowledge-category-card__icon {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+  }
+  .knowledge-page .knowledge-categories {
+    margin-bottom: 14px;
+  }
+  .knowledge-page .law-info-card__illustration {
+    height: 120px;
+    margin-bottom: 12px;
+  }
+  .knowledge-page .law-info-card__title {
+    font-size: 19px;
+    margin-bottom: 8px;
+  }
+  .knowledge-page .law-info-card__text {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .knowledge-page .law-info-card__feature {
+    margin-bottom: 10px;
+  }
+  .knowledge-page .law-info-card__feature-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .knowledge-page .law-info-card {
+    flex-basis: 300px;
+  }
+  .knowledge-page #knowledge-panel .draft-table th,
+  .knowledge-page #knowledge-panel .draft-table td {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .knowledge-page #knowledge-panel .draft-table td {
+    font-size: 13px;
+  }
+}
+
+/* schmale Fenster: Info-Karte (rein erlaeuternd, keine Funktion) weicht der Tabelle */
+@media (max-width: 1100px) {
+  .knowledge-head,
+  .knowledge-page {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .knowledge-page .law-info-card {
+    display: none;
+  }
+  .knowledge-page .knowledge-category-card {
+    flex: 1 1 0;
+    max-width: none;
+    min-width: 0;
+  }
+  .knowledge-page .knowledge-category-card__title {
+    font-size: 12.5px;
+  }
+}
+
+/* Namensspalte bleibt eine echte Tabellenzelle (vorher display:flex -> Zeilenlinien der ersten Spalte versetzt);
+   Icon inline, Name mit Ellipse */
+.knowledge-page .law-catalog-table td.law-catalog-table__title {
+  display: table-cell;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.knowledge-page .law-catalog-table td.law-catalog-table__title a,
+.knowledge-page .law-catalog-table td.law-catalog-table__title span {
+  display: inline;
+  vertical-align: middle;
+}
+
+.knowledge-page .law-catalog-table__row-icon {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+/* Spaltenaufteilung fuer schmalere Tabellen: Status + Schalter brauchen feste Mindestbreiten */
+@media (max-width: 1500px) {
+  .knowledge-page .law-catalog-table th:nth-child(1) { width: 31% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(2) { width: 10% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(3) { width: 15% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(4) { width: 9% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(5) { width: 19% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(6) { width: 16% !important; }
+  .knowledge-page .law-info-card {
+    flex-basis: 280px;
+  }
+  .knowledge-page .tag--installed,
+  .knowledge-page .tag--not-installed,
+  .knowledge-page .tag--downloading,
+  .knowledge-page .tag--law-error,
+  .knowledge-page .tag--update-available {
+    font-size: 12.5px;
+  }
+}
+.knowledge-page #knowledge-panel .law-catalog-table td.mono {
+  white-space: nowrap;
+}
+
+@media (max-width: 1500px) {
+  .knowledge-page .law-catalog-table th:nth-child(1) { width: 29% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(4) { width: 10% !important; }
+  .knowledge-page .law-catalog-table th:nth-child(6) { width: 17% !important; }
+}
+
+@media (max-width: 1100px) {
+  .knowledge-page #knowledge-panel .law-catalog-table th {
+    white-space: normal;
+  }
+}
+
+/* Dark Mode: aktive Kachel lesbar (Gruen auf Gruen-Tint war zu kontrastarm) */
+:root[data-theme="dark"] .knowledge-page .knowledge-category-card--active .knowledge-category-card__title,
+:root[data-theme="dark"] .knowledge-page .knowledge-category-card--active .knowledge-category-card__count,
+:root[data-theme="dark"] .knowledge-page .knowledge-category-card--active .knowledge-category-card__icon {
+  color: var(--waveform-idle);
+}
+/* Datumsfeld im Erfassungsformular (Rechtsprechung) wie die uebrigen Eingabefelder - das globale Feld-Styling
+   (input[type=text|url|...]) deckt type="date" nicht ab; hier nur fuer Kanzleiwissen ergaenzt */
+.knowledge-page input[type="date"] {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 9px 11px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-100);
+  color: var(--ink-900);
+}
+
+.knowledge-page input[type="date"]:focus {
+  outline: none;
+  border-color: var(--seal-green);
+  background: var(--paper-000);
+}
