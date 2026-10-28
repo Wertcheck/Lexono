@@ -1,0 +1,209 @@
+{
+ "phase": "vorher",
+ "aufnahmen": {
+  "1920x1080-ausgeklappt": {
+   "eingeklappt": false,
+   "toggle": {
+    "l": 237,
+    "t": 72,
+    "r": 259,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 248,
+    "b": 1080
+   },
+   "neuer_chat": {
+    "l": 16,
+    "t": 82,
+    "r": 231,
+    "b": 122
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  },
+  "1280x720-ausgeklappt": {
+   "eingeklappt": false,
+   "toggle": {
+    "l": 237,
+    "t": 72,
+    "r": 259,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 248,
+    "b": 720
+   },
+   "neuer_chat": {
+    "l": 16,
+    "t": 82,
+    "r": 231,
+    "b": 122
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  },
+  "960x600-ausgeklappt": {
+   "eingeklappt": false,
+   "toggle": {
+    "l": 237,
+    "t": 72,
+    "r": 259,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 248,
+    "b": 600
+   },
+   "neuer_chat": {
+    "l": 16,
+    "t": 82,
+    "r": 231,
+    "b": 122
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  },
+  "1920x1080-eingeklappt": {
+   "eingeklappt": true,
+   "toggle": {
+    "l": 57,
+    "t": 72,
+    "r": 79,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 68,
+    "b": 1080
+   },
+   "neuer_chat": {
+    "l": 10,
+    "t": 82,
+    "r": 57,
+    "b": 117
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  },
+  "1280x720-eingeklappt": {
+   "eingeklappt": true,
+   "toggle": {
+    "l": 57,
+    "t": 72,
+    "r": 79,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 68,
+    "b": 720
+   },
+   "neuer_chat": {
+    "l": 10,
+    "t": 82,
+    "r": 57,
+    "b": 117
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  },
+  "960x600-eingeklappt": {
+   "eingeklappt": true,
+   "toggle": {
+    "l": 57,
+    "t": 72,
+    "r": 79,
+    "b": 94
+   },
+   "kopfzeile_unten": 64,
+   "sidebar": {
+    "l": 0,
+    "t": 64,
+    "r": 68,
+    "b": 600
+   },
+   "neuer_chat": {
+    "l": 10,
+    "t": 82,
+    "r": 57,
+    "b": 117
+   },
+   "abstand_zur_kopfzeile": 8,
+   "mitte_auf_sidebarkante": true,
+   "ueberdeckt_neuer_chat": false,
+   "ueberdeckt_navigation": false,
+   "unter_kopfzeile": true,
+   "stil": {
+    "w": "22px",
+    "h": "22px",
+    "bg": "rgb(248, 250, 252)",
+    "shadow": "rgba(15, 23, 42, 0.06) 0px 1px 2px 0px, rgba(15, 23, 42, 0.0",
+    "radius": "999px"
+   }
+  }
+ }
+}

@@ -335,75 +335,72 @@
                  (app/web/prompt_library_router.py, /dashboard/library/prompts)
                  - keine neue Funktion, nur ein zweiter Einstiegspunkt
                  dorthin (Referenzbild, 01.09.). #}
-              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts"
-                 title="Standard-Prompts bearbeiten, anlegen oder löschen">
+              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts" data-prompt-manager-open
+                 aria-haspopup="dialog" title="Standard-Prompts bearbeiten, anlegen oder löschen">
                 {{ icons.plus(class_="icon") }}
                 <span>Standard-Prompts verwalten</span>
               </a>
             </div>
-            {# Kompakte Karten nach Referenzbild (28.10.2026): Icon im Kreis links, Titel + kurze Beschreibung rechts,
-               die ganze Karte ist die Aktion. Die Prompt-Verwaltung erreicht man ueber "Standard-Prompts verwalten"
-               oben rechts (vorher zusaetzlich als vierte Karte "Weitere Prompts"). #}
-            <div class="chat-empty-state__actions">
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-green" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
-                <span class="chat-quick-action__text">
-                  <span class="chat-quick-action__title">Dokument analysieren</span>
-                  <span class="chat-quick-action__subtitle">Inhalte verstehen und auswerten</span>
-                </span>
-              </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-blue" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.pencil(class_="icon") }}</span>
-                <span class="chat-quick-action__text">
-                  <span class="chat-quick-action__title">Schriftsatz erstellen</span>
-                  <span class="chat-quick-action__subtitle">z. B. an Mandanten, Gericht oder Behörde</span>
-                </span>
-              </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-purple" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.list_bulleted(class_="icon") }}</span>
-                <span class="chat-quick-action__text">
-                  <span class="chat-quick-action__title">Zusammenfassen</span>
-                  <span class="chat-quick-action__subtitle">Wesentliche Inhalte auf den Punkt bringen</span>
-                </span>
-              </button>
-              {# "Akte öffnen": nutzt den bestehenden Einstieg "Mit dieser Akte im Chat arbeiten"
-                 (GET /dashboard/chat?new=1&matter=<id>, siehe chat_router.chat_home) - die Akte wird nur vorgemerkt,
-                 die erste Nachricht legt die Unterhaltung an. Ohne Akten fuehrt die Karte zur Aktenliste. #}
-              {% if all_matters %}
-                <div class="chat-start-matter">
-                  <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange"
-                          data-matter-picker aria-expanded="false" aria-controls="chat-start-matter-panel">
-                    <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
+            {# Startkarten (28.10.2026): ausschliesslich die in "Standard-Prompts verwalten" aktivierten Prompts (max. 4)
+               in deren gespeicherter Reihenfolge (app/prompt_library/start_prompts.py). Aktion je Prompt:
+               "prefill" = Anweisung ins Eingabefeld, "prefill_attach" = zusaetzlich Dateiauswahl,
+               "open_matter" = Aktenauswahl ueber den bestehenden Einstieg GET /dashboard/chat?new=1&matter=<id>
+               (Akte wird nur vorgemerkt, die erste Nachricht legt die Unterhaltung an; ohne Akten -> Aktenliste). #}
+            {% if start_cards %}
+            <div class="chat-empty-state__actions" data-start-count="{{ start_cards | length }}">
+              {% for card in start_cards %}
+                {% set icon_html = (icons | attr(card.icon_macro))(class_="icon") %}
+                {% if card.action == "open_matter" %}
+                  {% if all_matters %}
+                    <div class="chat-start-matter">
+                      <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-{{ card.tint }}"
+                              data-matter-picker aria-expanded="false" aria-controls="chat-start-matter-panel">
+                        <span class="chat-quick-action__icon chat-quick-action__icon--{{ card.tint }}">{{ icon_html }}</span>
+                        <span class="chat-quick-action__text">
+                          <span class="chat-quick-action__title">{{ card.title }}</span>
+                          <span class="chat-quick-action__subtitle">{{ card.description }}</span>
+                        </span>
+                      </button>
+                      <form method="get" action="/dashboard/chat" class="chat-start-matter__panel" id="chat-start-matter-panel" hidden>
+                        <input type="hidden" name="new" value="1" />
+                        <label class="chat-start-matter__label" for="chat-start-matter-select">Chat mit Akte beginnen</label>
+                        <select name="matter" id="chat-start-matter-select" required>
+                          <option value="" disabled selected>— Akte wählen —</option>
+                          {% for matter in all_matters %}
+                            <option value="{{ matter.id }}">{{ matter.reference_number or "" }} {{ matter.title }} ({{ matter.client.name }})</option>
+                          {% endfor %}
+                        </select>
+                        <div class="chat-start-matter__actions">
+                          <a href="/dashboard/matters" class="chat-start-matter__all">Alle Akten</a>
+                          <button type="submit" class="btn btn--primary">Öffnen</button>
+                        </div>
+                      </form>
+                    </div>
+                  {% else %}
+                    <a href="/dashboard/matters" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-{{ card.tint }}">
+                      <span class="chat-quick-action__icon chat-quick-action__icon--{{ card.tint }}">{{ icon_html }}</span>
+                      <span class="chat-quick-action__text">
+                        <span class="chat-quick-action__title">{{ card.title }}</span>
+                        <span class="chat-quick-action__subtitle">{{ card.description }}</span>
+                      </span>
+                    </a>
+                  {% endif %}
+                {% else %}
+                  <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-{{ card.tint }}"
+                          data-prefill="{{ card.content }}"{% if card.action == "prefill_attach" %} data-attach="true"{% endif %}>
+                    <span class="chat-quick-action__icon chat-quick-action__icon--{{ card.tint }}">{{ icon_html }}</span>
                     <span class="chat-quick-action__text">
-                      <span class="chat-quick-action__title">Akte öffnen</span>
-                      <span class="chat-quick-action__subtitle">Vorhandene Dokumente und Kontext nutzen</span>
+                      <span class="chat-quick-action__title">{{ card.title }}</span>
+                      <span class="chat-quick-action__subtitle">{{ card.description }}</span>
                     </span>
                   </button>
-                  <form method="get" action="/dashboard/chat" class="chat-start-matter__panel" id="chat-start-matter-panel" hidden>
-                    <input type="hidden" name="new" value="1" />
-                    <label class="chat-start-matter__label" for="chat-start-matter-select">Chat mit Akte beginnen</label>
-                    <select name="matter" id="chat-start-matter-select" required>
-                      <option value="" disabled selected>— Akte wählen —</option>
-                      {% for matter in all_matters %}
-                        <option value="{{ matter.id }}">{{ matter.reference_number or "" }} {{ matter.title }} ({{ matter.client.name }})</option>
-                      {% endfor %}
-                    </select>
-                    <div class="chat-start-matter__actions">
-                      <a href="/dashboard/matters" class="chat-start-matter__all">Alle Akten</a>
-                      <button type="submit" class="btn btn--primary">Öffnen</button>
-                    </div>
-                  </form>
-                </div>
-              {% else %}
-                <a href="/dashboard/matters" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange">
-                  <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
-                  <span class="chat-quick-action__text">
-                    <span class="chat-quick-action__title">Akte öffnen</span>
-                    <span class="chat-quick-action__subtitle">Vorhandene Dokumente und Kontext nutzen</span>
-                  </span>
-                </a>
-              {% endif %}
+                {% endif %}
+              {% endfor %}
             </div>
+            {% else %}
+              <p class="chat-empty-state__no-prompts">Keine Standard-Prompts auf der Startseite aktiviert – über
+                „Standard-Prompts verwalten“ lassen sich bis zu vier auswählen.</p>
+            {% endif %}
           </div>
         {% else %}
           {% for message in messages %}
@@ -840,6 +837,8 @@
   {{ pseudonymization_center.dialog(active_conversation.id if active_conversation else "",
                                     active_conversation.matter_id if active_conversation else "",
                                     pseudo_can_manage, pseudo_open_document, pseudo_notice, pseudo_notice_kind) }}
+  {# "Standard-Prompts verwalten" (28.10.2026): Modal ueber dem Chat, nur auf der Startseite #}
+  {% if not active_conversation %}{% include "partials/prompt_manager.html" %}{% endif %}
 
   <dialog id="privacy-review-dialog" class="modal modal--medium" aria-labelledby="privacy-review-dialog-title">
     <div class="modal__header">

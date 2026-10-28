@@ -20,7 +20,7 @@ Vorlage ist immer die aktuellste."""
 
 from __future__ import annotations
 
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -35,3 +35,12 @@ class PromptTemplate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
     updated_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Chat-Startseite (28.10.2026, "Standard-Prompts verwalten"): hoechstens vier Vorlagen gleichzeitig aktiv
+    # (serverseitig geprueft, app/prompt_library/start_prompts.py); `sort_order` bestimmt die Reihenfolge in der
+    # Verwaltung und damit die Position der aktivierten Karten auf der Startseite. `icon` aus einer festen Liste,
+    # `start_action` legt fest, was die Karte tut: Text ins Eingabefeld ("prefill"), zusaetzlich Dateiauswahl
+    # ("prefill_attach") oder Aktenauswahl ("open_matter").
+    show_on_start: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    icon: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    start_action: Mapped[str] = mapped_column(String(20), nullable=False, default="prefill", server_default="prefill")

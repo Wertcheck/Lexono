@@ -496,6 +496,18 @@ def _open_order_label(db: Session, conversation) -> str:
     return "Schriftsatz erstellen" if _looks_like_drafting_request(order.content or "") else "Analyse fortsetzen"
 
 
+def _start_cards(db: Session) -> list:
+    from app.prompt_library.start_prompts import start_cards
+
+    return start_cards(db)
+
+
+def _prompt_icons() -> dict:
+    from app.prompt_library.start_prompts import ICONS
+
+    return ICONS
+
+
 def _render_chat_page(
     request: Request,
     db: Session,
@@ -578,6 +590,10 @@ def _render_chat_page(
         "letterhead_choices": list_letterheads(db),
         "other_matters": other_matters,
         "all_matters": all_matters,
+        # Startkarten (28.10.2026): ausschliesslich aktivierte Standard-Prompts in gespeicherter Reihenfolge
+        "start_cards": _start_cards(db) if active_conversation is None else [],
+        "prompt_icons": _prompt_icons(),
+        "can_manage_prompts": bool(current_user.role and current_user.role.name.strip().lower() in {"admin", "anwalt"}),
         "allowed_upload_extensions": sorted(_ALLOWED_UPLOAD_EXTENSIONS),
         "provider_configured": provider_configured,
         # Kein erfundener Zwischenzustand, solange der stille Startcheck

@@ -1255,7 +1255,10 @@ def test_chat_empty_state_quick_actions_have_distinct_accent_colors(
     die Markenfarbe (Logo/Sendebutton/aktive Chat-Navigation), wird hier
     aber zusaetzlich fuer GENAU eine von vier gleichwertigen
     Schnellaktionen verwendet, identisch zur Referenz."""
+    from app.prompt_library.start_prompts import seed_default_start_prompts
+
     login_as_admin(db_session, client)
+    seed_default_start_prompts(db_session)  # Startkarten kommen seit 28.10.2026 aus den Standard-Prompts
     response = client.get("/dashboard/chat")
     assert "chat-quick-action__icon--green" in response.text
     assert "chat-quick-action__icon--blue" in response.text

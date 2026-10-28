@@ -1,0 +1,129 @@
+{# "Standard-Prompts verwalten" (28.10.2026, Referenzbilder "Uebersicht mit leerem rechten Bereich" und "Neuen Prompt
+   erstellen"): zentriertes Modal ueber dem Chat. Links alle Kanzlei-Prompts (aktivierte zuerst, Ziehgriff,
+   Startseiten-Schalter, Menue), rechts leerer Zustand bzw. Formular. Alle Aenderungen werden im Modal gesammelt und
+   mit "Speichern" in EINEM serverseitig geprueften Schritt uebernommen (POST /dashboard/library/prompts/manage);
+   "Abbrechen" verwirft sie. Inhalte ausschliesslich per textContent (static/js/prompt_manager.js). #}
+{% import "_icons.html" as icons %}
+<dialog id="prompt-manager" class="modal prompt-manager" aria-labelledby="pm-title" aria-describedby="pm-intro"
+        data-csrf="{{ csrf_token }}">
+  <header class="pm__header">
+    <div>
+      <h2 class="pm__title" id="pm-title" tabindex="-1">Standard-Prompts verwalten</h2>
+      <p class="pm__intro" id="pm-intro">
+        Hier können Sie Ihre Standard-Prompts bearbeiten, neue hinzufügen oder entfernen.<br />
+        Die Prompts gelten für die ganze Kanzlei. Sie können bis zu 4 Prompts auf der Startseite anzeigen.
+      </p>
+    </div>
+    <button type="button" class="pm__close" data-pm-close aria-label="Schließen" title="Schließen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </header>
+
+  <div class="pm__body">
+    <section class="pm__list-col" aria-label="Alle Prompts">
+      <div class="pm__list-head">
+        <strong>Alle Prompts</strong>
+        <span class="pm__count" data-pm-count></span>
+        <span class="pm__info" tabindex="0" role="img" aria-label="Hinweis"
+              title="Grüner Schalter = auf der Chat-Startseite. Die Reihenfolge der aktivierten Prompts (per Ziehgriff) bestimmt ihre Position auf der Startseite. Höchstens 4 gleichzeitig.">i</span>
+      </div>
+      <p class="pm__limit-msg" data-pm-limit-msg role="alert" hidden></p>
+      <div class="pm__list" data-pm-list></div>
+      <button type="button" class="pm__add" data-pm-add>
+        {{ icons.plus(class_="icon") }}
+        <span class="pm__add-text"><strong>Neuen Prompt hinzufügen</strong><small>Einen neuen Standard-Prompt anlegen</small></span>
+      </button>
+      <p class="pm__readonly" data-pm-readonly hidden>Nur Administration und Anwälte können Standard-Prompts ändern.</p>
+    </section>
+
+    <section class="pm__detail" aria-live="polite">
+      <div class="pm__empty" data-pm-empty>
+        <span class="pm__empty-icon">{{ icons.document(class_="icon") }}</span>
+        <h3 class="pm__empty-title">Prompt auswählen oder erstellen</h3>
+        <p class="pm__empty-text">Wählen Sie links einen Prompt zum Bearbeiten aus<br />oder erstellen Sie einen neuen Prompt.</p>
+        <ul class="pm__empty-list">
+          <li>{{ icons.pencil(class_="icon") }}<span>Individuelle Prompts für wiederkehrende Aufgaben</span></li>
+          <li>{{ icons.dashboard(class_="icon") }}<span>Bis zu 4 Prompts auf der Chat-Startseite anzeigen</span></li>
+          <li>{{ icons.filter_lines(class_="icon") }}<span>Prompts jederzeit bearbeiten, aktivieren oder entfernen</span></li>
+        </ul>
+      </div>
+
+      <form class="pm__form" data-pm-form hidden novalidate>
+        <div class="pm__form-head">
+          <div>
+            <h3 class="pm__form-title" data-pm-form-title>Neuen Prompt erstellen</h3>
+            <p class="pm__form-sub" data-pm-form-sub>Geben Sie hier die Details für Ihren neuen Prompt ein.</p>
+          </div>
+          <button type="button" class="pm__delete" data-pm-delete hidden>{{ icons.trash(class_="icon") }}<span>Löschen</span></button>
+        </div>
+        <div class="pm__row">
+          <div class="pm__icon-field">
+            <span class="pm__label" id="pm-icon-label">Icon <span class="pm__optional">(optional)</span></span>
+            <div class="pm__icon-select">
+              <button type="button" class="pm__icon-btn" data-pm-icon-btn aria-haspopup="listbox" aria-expanded="false"
+                      aria-labelledby="pm-icon-label">
+                <span class="pm__icon-current" data-pm-icon-current></span>
+                {{ icons.chevron_down(class_="icon pm__chevron") }}
+              </button>
+              <div class="pm__icon-menu" data-pm-icon-menu role="listbox" aria-labelledby="pm-icon-label" hidden></div>
+            </div>
+          </div>
+          <div class="pm__start-field">
+            <div class="pm__switch-row">
+              <button type="button" class="pm__switch" role="switch" aria-checked="false" data-pm-form-switch
+                      aria-label="Auf der Chat-Startseite anzeigen"><span></span></button>
+              <span class="pm__switch-label">Auf der Chat-Startseite anzeigen</span>
+              <span class="pm__info" tabindex="0" role="img" aria-label="Hinweis"
+                    title="Höchstens 4 Prompts gleichzeitig. Die Position ergibt sich aus der Reihenfolge links.">i</span>
+            </div>
+            <p class="pm__switch-note" data-pm-switch-note hidden></p>
+          </div>
+        </div>
+        <p class="pm__action-note" data-pm-action-note hidden></p>
+        <label class="pm__field">
+          <span class="pm__label">Titel <span class="pm__req" aria-hidden="true">*</span></span>
+          <input type="text" class="pm__input" data-pm-field="name" placeholder="z. B. Vertragsanalyse" required />
+          <span class="pm__meta"><span class="pm__error" data-pm-error="name"></span><span class="pm__counter" data-pm-counter="name"></span></span>
+        </label>
+        <label class="pm__field">
+          <span class="pm__label">Beschreibung <span class="pm__req" aria-hidden="true">*</span></span>
+          <textarea class="pm__input pm__input--desc" data-pm-field="description" rows="2" required
+                    placeholder="Kurze Beschreibung, was dieser Prompt macht und wann er verwendet werden soll."></textarea>
+          <span class="pm__meta"><span class="pm__error" data-pm-error="description"></span><span class="pm__counter" data-pm-counter="description"></span></span>
+        </label>
+        <label class="pm__field">
+          <span class="pm__label">Prompt-Anweisung <span class="pm__req" aria-hidden="true">*</span></span>
+          <textarea class="pm__input pm__input--content" data-pm-field="content" rows="4" required
+                    placeholder="Geben Sie hier die vollständige Anweisung für die KI ein. Beschreiben Sie Ziel, Kontext, gewünschte Struktur und wichtige Anforderungen."></textarea>
+          <span class="pm__meta"><span class="pm__error" data-pm-error="content"></span><span class="pm__counter" data-pm-counter="content"></span></span>
+        </label>
+      </form>
+    </section>
+  </div>
+
+  <footer class="pm__footer">
+    <span class="pm__status" data-pm-status aria-live="polite"></span>
+    <button type="button" class="btn btn--ghost pm__cancel" data-pm-cancel>Abbrechen</button>
+    <button type="button" class="btn btn--primary pm__save" data-pm-save>Speichern</button>
+  </footer>
+
+  <div class="pm__confirm" data-pm-confirm hidden>
+    <div class="pm__confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="pm-confirm-text">
+      <p id="pm-confirm-text" data-pm-confirm-text></p>
+      <div class="pm__confirm-actions">
+        <button type="button" class="btn btn--ghost" data-pm-confirm-no></button>
+        <button type="button" class="btn btn--primary" data-pm-confirm-yes></button>
+      </div>
+    </div>
+  </div>
+
+  {# Icon-Vorlagen (feste Liste, app/prompt_library/start_prompts.ICONS) #}
+  {% for key, info in prompt_icons.items() %}
+    <template data-pm-icon="{{ key }}" data-tint="{{ info[1] }}">{{ (icons | attr(info[0]))(class_="icon") }}</template>
+  {% endfor %}
+  <template data-pm-icon-ui="grip">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+  </template>
+  <template data-pm-icon-ui="dots">{{ icons.dots_vertical(class_="icon") }}</template>
+</dialog>
+<script src="/dashboard/static/js/prompt_manager.js"></script>

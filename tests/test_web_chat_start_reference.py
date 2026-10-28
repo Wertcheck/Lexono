@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import Client, Matter
+from app.prompt_library.start_prompts import seed_default_start_prompts
 from tests.auth_test_utils import login_as_admin
 from tests.test_web_chat import client, db_session  # noqa: F401 - Fixtures
 
@@ -24,6 +25,7 @@ def _start_block(html: str) -> str:
 
 def test_start_page_has_four_compact_prompt_cards_in_reference_order(client: TestClient, db_session: Session) -> None:
     login_as_admin(db_session, client)
+    seed_default_start_prompts(db_session)  # entspricht der Migration schritt3_039
     html = client.get("/dashboard/chat?new=1").text
     assert 'class="chat-panel chat-panel--start"' in html
     block = _start_block(html)
@@ -41,6 +43,7 @@ def test_start_page_has_four_compact_prompt_cards_in_reference_order(client: Tes
 
 def test_akte_oeffnen_uses_the_existing_chat_with_matter_entry(client: TestClient, db_session: Session) -> None:
     login_as_admin(db_session, client)
+    seed_default_start_prompts(db_session)
     owner = Client(name="QA-SYNTH Muster GmbH")
     db_session.add(owner)
     db_session.flush()
@@ -59,6 +62,7 @@ def test_akte_oeffnen_uses_the_existing_chat_with_matter_entry(client: TestClien
 
 def test_akte_oeffnen_without_matters_links_to_the_matter_list(client: TestClient, db_session: Session) -> None:
     login_as_admin(db_session, client)
+    seed_default_start_prompts(db_session)
     block = _start_block(client.get("/dashboard/chat?new=1").text)
     assert "data-matter-picker" not in block
     assert re.search(r'<a href="/dashboard/matters" class="chat-quick-action chat-quick-action--card', block)
