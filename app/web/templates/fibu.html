@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% import "_icons.html" as icons %}
 {% block title %}Finanzbuchhaltung{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/dashboard/static/css/fibu.css" />{% endblock %}
 {% block content %}
 {# Finanzbuchhaltung (MVP, 28.10.2026) nach Referenzbild. Alle Zahlen stammen aus gespeicherten Buchungen des
    gewaehlten Mandanten und Jahres (app/fibu/service.py) - keine Demo-Werte. Funktionen ausserhalb des MVP

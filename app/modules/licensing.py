@@ -117,8 +117,12 @@ def current_status(db: Session, *, today: date | None = None) -> LicenseStatus:
 
 
 def enabled_modules(db: Session, *, today: date | None = None) -> frozenset[str]:
+    """Basispaket + gueltig lizenzierte Module, die das Build-Profil ueberhaupt enthaelt (app/modules/profile.py):
+    im Paket "kanzlei-pilot" schaltet auch eine gueltige Finance-Lizenz nichts frei."""
+    from app.modules.profile import available_modules
+
     status = current_status(db, today=today)
-    return BASE_MODULES | (status.modules if status.valid else frozenset())
+    return (BASE_MODULES | (status.modules if status.valid else frozenset())) & available_modules()
 
 
 def is_enabled(db: Session, module: str) -> bool:
@@ -177,6 +181,10 @@ def require_module(module: str):
     from app.auth.permissions import require_login  # lokal: vermeidet Importzyklus beim App-Start
 
     def dependency(request: Request, db: Session = Depends(get_db), _user=Depends(require_login)) -> None:
+        from app.modules.profile import module_available
+
+        if not module_available(module):  # Paket ohne dieses Modul (Build-Profil): Route gilt als nicht vorhanden
+            raise HTTPException(status_code=404, detail="Not Found")
         # Anmeldung zuerst (Nicht-Angemeldete -> Login), danach die Modulsperre fuer ALLE Rollen
         if not is_enabled(db, module):
             # Rolle jetzt laden: der Fehlerhandler (app/main.py) rendert erst NACH dem Schliessen der DB-Sitzung

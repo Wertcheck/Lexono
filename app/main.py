@@ -31,7 +31,9 @@ from fastapi.staticfiles import StaticFiles
 from app.ai_providers.factory import build_local_llm_provider
 from app.api import api_router
 from app.auth.permissions import AppLockedError, ForcePasswordChangeError, NotAuthenticatedError
+from app.modules.catalog import MODULE_FINANZEN
 from app.modules.licensing import ModuleLockedError
+from app.modules.profile import module_available
 from app.config import Settings, get_settings
 from app.db.session import SessionLocal
 from app.documents.service import DocumentProcessingService
@@ -81,7 +83,6 @@ from app.web.laws_router import router as laws_web_router
 from app.web.monitoring_router import router as monitoring_web_router
 from app.web.outbox_router import router as outbox_web_router
 from app.web.placeholder_router import router as placeholder_web_router
-from app.web.fibu_router import router as fibu_web_router
 from app.web.router import router as web_router
 from app.web.users_router import router as users_web_router
 
@@ -520,7 +521,12 @@ app.include_router(deadline_actions_web_router)
 app.include_router(note_actions_web_router)
 app.include_router(client_notes_web_router)
 app.include_router(placeholder_web_router)
-app.include_router(fibu_web_router)
+# Lexono Finance nur, wenn das Build-Profil das Modul enthaelt (app/modules/profile.py). Im Paket "kanzlei-pilot"
+# ist der Code nicht gebuendelt und der Router nicht registriert - direkte URLs ergeben 404.
+if module_available(MODULE_FINANZEN):
+    from app.web.fibu_router import router as fibu_web_router
+
+    app.include_router(fibu_web_router)
 app.mount(
     "/dashboard/static",
     StaticFiles(directory=STATIC_DIR),

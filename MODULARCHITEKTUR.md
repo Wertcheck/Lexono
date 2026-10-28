@@ -348,3 +348,48 @@ gegen die Originale zu prüfen.
 4. **Fachlich entscheiden:** Vertretungsmodell (Vollmachtsdatenbank oder ELSTER-Vollmacht) und Organisationszertifikat
    der Kanzlei.
 5. **Update-Prozess** für die jährliche ERiC-Mindestversion festlegen.
+
+## 12. Build-Profile „kanzlei-pilot" und „full" (28.10.2026, Owner-Freigabe Trennung Kanzlei/Finance/Steuern)
+
+**Ziel:** Das erste Kanzlei-Pilotpaket liefert Lexono Finance nicht aus. Der Finance-Code bleibt im Repository
+vollständig erhalten und wird im Vollprofil weiter ausgeliefert.
+
+| Profil | Module | Verwendung |
+|---|---|---|
+| `kanzlei-pilot` | `kanzlei` | Standard des Installers (`windows/lexono.spec`) |
+| `full` | `kanzlei`, `finanzen`, `steuern` | Quelltext/Tests (Standard), Vollpaket per `LEXONO_BUILD_PROFILE=full` beim Build |
+
+**Ermittlung** (`app/modules/profile.py`):
+
+- Die gebaute EXE liest ausschließlich die mitgebündelte Datei `lexono_build_profile.txt`.
+- Fehlt die Datei oder ist ihr Inhalt unbekannt, gilt fail-closed `kanzlei-pilot`.
+- Eine Umgebungsvariable kann ein installiertes Paket nicht erweitern.
+- Im Quelltext gilt `LEXONO_BUILD_PROFILE`, Standard `full`. Ein unbekannter Wert bricht mit Fehler ab.
+
+**Wirkung im Pilotprofil:**
+
+- **Router:** `app/main.py` registriert den Finance-Router nur, wenn das Modul im Profil verfügbar ist.
+  `/dashboard/fibu…` liefert daher dieselbe 404-Antwort wie jede nicht existierende URL.
+- **Abhängigkeit:** `require_module` antwortet zusätzlich mit 404, falls ein Router doch eingebunden wäre.
+- **Freischaltung:** `enabled_modules()` wird mit dem Profil geschnitten. Eine gültige Finance-Lizenz schaltet im Pilot
+  nichts frei, die Lizenzprüfung selbst bleibt aktiv.
+- **Oberfläche:** Navigation und Lizenz-Tab zeigen nur „Lexono Kanzlei".
+- **Paket:** PyInstaller schließt `app.fibu`, `app.fibu.service` und `app.web.fibu_router` aus. Auch `fibu.html` und
+  `static/css/fibu.css` sind nicht im Paket; die Finance-Stile wurden dazu aus `app.css` herausgelöst.
+
+**Bleibt im Pilotprofil bewusst erhalten:**
+
+- **Migrationen:** Alle Migrationen inklusive 040–042 und damit die Tabellen `fibu_*`, `module_licenses`, `tax_*` und
+  `client_user_access`. Datenbanken auf Revision 042 starten unverändert, Downgrades sind nicht nötig.
+- **Modelle:** `app.models.fibu` und `app.models.tax`. Begründung: `app/models/__init__.py` importiert sie für die
+  Metadaten/Migrationen, und die Tabellen existieren in bestehenden DBs. Ein Entfernen ist nicht nachweislich
+  abhängigkeitsfrei.
+- **Modulkatalog und Lizenzmodul:** einschließlich des Lizenzimports. Im Pilot ist ein Import zwar möglich, schaltet
+  aber nichts frei. Der Hinweistext zu „Zusatzmodulen" bleibt; eine pilotspezifische Formulierung wäre eine
+  UI-Entscheidung.
+
+**Nachweise:**
+
+- Tests: `tests/test_build_profile.py`.
+- QA-Ordner: `benchmarks/legal_answers_v1/qa-evidence/build-profile-kanzlei-pilot-20261028/`. Er enthält die
+  Bundle-Inhalte beider Profile und die Laufzeitprobe der gebauten Pilot-EXE auf einer synthetischen DB mit Stand 042.

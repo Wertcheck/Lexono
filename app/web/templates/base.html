@@ -33,6 +33,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Lexono{% endblock %} · Lexono</title>
   <link rel="stylesheet" href="/dashboard/static/css/app.css" />
+  {# Modulspezifische Stylesheets (Build-Profil 28.10.2026): nur Seiten eines ausgelieferten Moduls laden sie #}
+  {% block extra_head %}{% endblock %}
   <script src="/dashboard/static/js/htmx.min.js"></script>
   <script>
     // Markiert die angeklickte Zeile sofort als aktiv (noch bevor die

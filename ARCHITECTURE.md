@@ -5311,3 +5311,12 @@ lizenzpflichtige Module. Zentrale Freischaltung ueber signierte Lizenzen (Ed2551
 serverseitig erzwungen (Router-Dependency `require_module`, Service-Pruefung `ensure_module`), fail-closed; produktiver
 Herstellerschluessel noch nicht hinterlegt (Owner-Entscheidung). Details, ERiC-Machbarkeit, Workflow, Pilot-
 Prioritaeten und offene Entscheidungen: `MODULARCHITEKTUR.md`.
+
+## 76.1 Build-Profile kanzlei-pilot / full (28.10.2026)
+
+Das Installer-Standardprofil `kanzlei-pilot` liefert nur Lexono Kanzlei aus. Finance-Router, Finance-Templates,
+Finance-CSS und Finance-Laufzeitcode sind nicht im Paket, die URLs liefern 404. Die Lizenzpruefung bleibt erhalten;
+eine Finance-Lizenz schaltet im Pilot nichts frei. Migrationen 040-042 und die Modelle bleiben enthalten, damit
+bestehende Datenbanken auf 042 weiter starten. `full` stellt Finance unveraendert bereit. Die EXE liest das Profil
+nur aus der mitgebuendelten Datei, fail-closed auf Pilot (`app/modules/profile.py`). Details:
+`MODULARCHITEKTUR.md` Paragraph 12.

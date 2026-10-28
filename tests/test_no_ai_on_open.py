@@ -125,6 +125,7 @@ def _seed(db: Session) -> dict[str, str]:
         "knowledge_item_id": knowledge[0].id, "template_id": templates[0].id if templates else "keine",
         "task_id": "keine", "entity_type": "Matter", "entity_id": case.matter.id, "law_code": "AO",
         "section_id": "keine", "ref": "standard", "page_number": "1",
+        "receipt_id": "keine",  # Finanzbuchhaltung (28.10.2026, nur Profil "full"): Belegdatei ohne Beleg -> 404
     }
     values["_upload_message"] = upload.id
     return values

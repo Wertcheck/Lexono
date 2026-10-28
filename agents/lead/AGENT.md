@@ -56,6 +56,26 @@ funktionaler Fehlbestand gefunden - lediglich diese Klarstellung ergaenzt,
 damit ein kuenftiger Bearbeiter (Mensch oder Agent) den Mechanismus nicht
 mit einer tatsaechlichen Laufzeit-Orchestrierung verwechselt.
 
+## Parallele Produktstraenge (Owner-Freigabe 28.10.2026)
+
+| Strang | Rolle | Arbeitsbereich | Branch |
+|---|---|---|---|
+| Lexono Kanzlei (Prioritaet 1) | bestehende Rollen A-L | `C:\Users\Bonit\Lexono` | `feature/feedback-diagnose` |
+| Lexono Finance | Agent M (`agents/finance/`) | Worktree `C:\Users\Bonit\Lexono-wt-finance` | `feature/finance-pilot` |
+| Lexono Steuern | Agent N (`agents/tax/`) | erst ab Implementierung eigener Worktree | `feature/steuern-plattform` |
+
+Regeln:
+- Jeder Worktree nutzt eine EIGENE `.venv` und ein eigenes `LEXONO_DATA_DIR`; Ports: Kanzlei bis 8099, Finance
+  8100-8149, Steuern 8150-8199. Nie `C:\ProgramData\Lexono` aus einem Modul-Strang.
+- Volle Regression, Builds und native Pruefungen laufen seriell (begrenzter Arbeitsspeicher, bisherige Abbrueche).
+- Nur der Kanzlei-Strang installiert den Installer.
+- Gemeinsame Dateien (`app/main.py`, `base.html`, `app/auth/permissions.py`, `app/models/__init__.py`, `app/modules/*`,
+  Migrationen) aendert zuerst der Kanzlei-Strang als kleinen, abgestimmten Commit; Modul-Branches uebernehmen per Merge.
+- Migrationen in Modul-Branches erhalten ihre endgueltige `down_revision` erst bei der kontrollierten Integration.
+- `ARCHITECTURE.md` und `.agentic/` schreibt nur der Kanzlei-Strang; Modul-Straenge fuehren eigene Notizen in ihrem
+  Agentenordner, die bei der Integration uebernommen werden.
+- Zusammenfuehrung nur manuell, nach Regression beider Seiten und mit Owner-Freigabe; kein automatischer Merge/Rebase.
+
 ## Relevante Dateien
 
 - `.agentic/PROJECT_STATE.md` – Gesamtstatus

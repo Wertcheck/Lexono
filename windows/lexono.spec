@@ -106,6 +106,28 @@ if not (_TESSERACT_VENDOR_DIR / "bin" / "tesseract.exe").is_file():
         "manuelle Zusatzinstallation funktioniert)."
     )
 
+# Build-Profil (28.10.2026, app/modules/profile.py): LEXONO_BUILD_PROFILE=kanzlei-pilot (Standard fuer Installer-
+# Builds) oder full. Das Profil wird als Datei ins Bundle geschrieben - die installierte EXE liest NUR diese Datei
+# (keine Umgebungsvariable zur Laufzeit). Im Pilotprofil werden Finance-Code, -Template und -CSS nicht gebuendelt;
+# Modelle und ALLE Migrationen bleiben enthalten (bestehende Datenbanken auf Revision 042 muessen starten).
+import os as _os
+import sys as _sys
+
+_sys.path.insert(0, str(PROJECT_ROOT))
+from app.modules.profile import PROFILE_FILE_NAME, PROFILE_PILOT, PROFILES  # noqa: E402
+
+BUILD_PROFILE = _os.environ.get("LEXONO_BUILD_PROFILE", PROFILE_PILOT).strip()
+if BUILD_PROFILE not in PROFILES:
+    raise SystemExit(f"Unbekanntes LEXONO_BUILD_PROFILE {BUILD_PROFILE!r} (erlaubt: {sorted(PROFILES)})")
+_PROFILE_FILE = Path(workpath) / PROFILE_FILE_NAME  # noqa: F821 (workpath von PyInstaller injiziert)
+_PROFILE_FILE.parent.mkdir(parents=True, exist_ok=True)
+_PROFILE_FILE.write_text(BUILD_PROFILE, encoding="utf-8")
+print(f"[lexono.spec] Build-Profil: {BUILD_PROFILE}")
+_PILOT = BUILD_PROFILE == PROFILE_PILOT
+# Python-Pakete und Datendateien, die nur das Vollprofil ausliefert
+_FINANCE_EXCLUDES = ["app.fibu", "app.fibu.service", "app.web.fibu_router"] if _PILOT else []
+_FINANCE_DATA = {"app/web/templates/fibu.html", "app/web/static/css/fibu.css"} if _PILOT else set()
+
 a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
     [str(PROJECT_ROOT / "run.py")],
     pathex=[str(PROJECT_ROOT)],
@@ -125,6 +147,7 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
         (str(_TESSERACT_VENDOR_DIR / "bin"), "tesseract/bin"),
         (str(_TESSERACT_VENDOR_DIR / "tessdata"), "tesseract/tessdata"),
         (str(_TESSERACT_VENDOR_DIR / "THIRD_PARTY_NOTICES.md"), "tesseract"),
+        (str(_PROFILE_FILE), "."),
         *collect_data_files(_SPACY_MODEL_PACKAGE),
         *copy_metadata(_SPACY_MODEL_PACKAGE),
         *collect_data_files(_PRESIDIO_ANALYZER_PACKAGE),
@@ -167,9 +190,12 @@ a = Analysis(  # noqa: F821 (von PyInstaller zur Laufzeit des Specs injiziert)
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=_FINANCE_EXCLUDES,
     noarchive=False,
 )
+if _FINANCE_DATA:
+    # Datendateien des Vollprofils aus dem Pilotpaket entfernen (Ziel-Pfade wie oben, mit "/" oder "\")
+    a.datas = [d for d in a.datas if d[0].replace("\\", "/") not in _FINANCE_DATA]
 
 pyz = PYZ(a.pure, a.zipped_data)  # noqa: F821
 

@@ -78,8 +78,8 @@ PERM_QUALITY_REVIEW = "quality:review"
 # und Anwalt: das Aufheben schwaecht den Schutz eines Namens ab. Ansehen darf jede Rolle mit Aktenzugang.
 PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
 # Finanzbuchhaltung (28.10.2026, MVP): Buchungen erfassen/aendern/buchen/stornieren, Belege hochladen, Konten,
-# Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter lesen nur.
-# Ob Mitarbeiter (z. B. Buchhaltungskraefte) erfassen duerfen, ist eine offene fachliche Entscheidung.
+# Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter erfassen seit der
+# Owner-Entscheidung vom 28.10.2026 ueber PERM_FIBU_CAPTURE (nur zugewiesene Mandanten), siehe unten.
 PERM_FIBU_MANAGE = "fibu:manage"
 # Erfassen (28.10.2026, Owner-Entscheidung): Buchungen erfassen und offene Buchungen bearbeiten, Belege hochladen und
 # zuordnen, Aufgaben - auch Mitarbeiter, aber nur fuer ihnen zugewiesene Mandanten (app/modules/client_access.py).

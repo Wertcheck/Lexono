@@ -45,6 +45,7 @@ from app.firm_profile import (
 from app.models import AuditEvent, Role, User
 from app.modules import licensing as module_licensing
 from app.modules.catalog import CATALOG as MODULE_CATALOG
+from app.modules.profile import module_available
 from app.setup.env_writer import update_env_values
 from app.setup.paths import resolve_data_dir
 from app.updater.checker import CURRENT_APP_VERSION
@@ -410,7 +411,8 @@ def settings_page(
         "active_tab": active_tab,
         "active_dialog": active_dialog,
         # Module & Lizenz (28.10.2026, app/modules): Status jedes Moduls aus der zentralen Lizenzpruefung
-        "module_catalog": MODULE_CATALOG,
+        # nur Module, die dieses Paket enthaelt (Build-Profil, app/modules/profile.py)
+        "module_catalog": {k: m for k, m in MODULE_CATALOG.items() if module_available(k)},
         "module_license_status": module_licensing.current_status(db),
         "enabled_modules": module_licensing.enabled_modules(db),
         "module_key_configured": bool(module_licensing.TRUSTED_PUBLIC_KEYS),
