@@ -128,3 +128,25 @@ wiederhergestellt.
    `content_hash` ungeprüft, offene Buchungen in USt-KPIs) betreffen nur das Vollprofil und gehen in den
    Finance-Strang.
 5. Die volle Regression lief einmal im Arbeitsbaum, nicht auf einer frischen Kopie. Ein Test (s81) ist unter Last nicht deterministisch.
+
+## Finance-Worktree (Abschnitt 5, 29.10.2026)
+
+Vor dem Anlegen wurde auf Konflikte geprüft: Pfad und Branch existierten nicht, die Ports 8100–8149 waren frei, und
+der einzige weitere Worktree `lexono_build_07d5fe0` ist unberührt.
+
+| Punkt | Stand |
+|---|---|
+| Worktree | `C:\Users\Bonit\Lexono-wt-finance`, Branch `feature/finance-pilot` ab **33dbd7b** (wie vorgegeben; enthält das Build-Profil 3f13bf4 noch nicht) |
+| Python | eigene `.venv` im Worktree (Python 3.13.15, gleiche Paketversionen wie das Haupt-venv). Editable install `lexono` zeigt auf den Worktree, `app` wird aus dem Worktree importiert |
+| Daten | `C:\Users\Bonit\Lexono-wt-finance-data` (eigenes `LEXONO_DATA_DIR`, `.env` mit Port 8100, Cloud/Mail/Websuche aus, tote Gateway-URL), außerhalb beider Checkouts |
+| Smoke-Test | frische DB → `schritt3_042`, synthetischer Admin; Server auf 8100: Chat/Mandanten/Lizenz-Tab 200, `/dashboard/fibu` 403 (ohne Lizenz gesperrt), 0 Tracebacks; Server danach beendet |
+| Tests im Worktree | `test_fibu`, `test_modules`, `test_staff_rights`, `test_migrations`: 95 passed |
+| Steuern-Worktree | nicht angelegt (erst bei Beginn der Implementierung) |
+| Branch-Push | `feature/finance-pilot` nur lokal, nicht gepusht |
+
+**Risiken des Worktrees:**
+
+- **Doppelte Bearbeitung:** Der Finance-Strang arbeitet ohne `fibu.css`-Trennung. Ändert er FiBu-Stile in `app.css`,
+  kollidiert das mit 3f13bf4. Deshalb vor solchen Änderungen 3f13bf4 kontrolliert per Merge übernehmen (kein Rebase).
+- **Gemeinsame Ressourcen:** CPU/RAM sind geteilt. Volle Regressionen, Builds und native Prüfungen laufen nur seriell
+  und nach Absprache.
