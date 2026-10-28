@@ -1193,6 +1193,19 @@ def test_chat_empty_state_quick_actions_have_distinct_accent_colors(
     aber zusaetzlich fuer GENAU eine von vier gleichwertigen
     Schnellaktionen verwendet, identisch zur Referenz."""
     login_as_admin(db_session, client)
+    # Die Kacheln kommen seit der Standard-Prompts-Verwaltung (28.10.) aus der
+    # Datenbank (frueher fest in chat.html verdrahtet); die Akzentfarbe folgt
+    # dem Icon (app/prompt_library/icons.py::PROMPT_ICON_TINTS).
+    from app.models import PromptTemplate
+
+    for position, icon in enumerate(("document", "printer", "bulb", "folder")):
+        db_session.add(
+            PromptTemplate(
+                name=f"Kachel {icon}", description="Beschreibung", content="Anweisung",
+                icon=icon, show_on_home=True, sort_order=position, version=1,
+            )
+        )
+    db_session.commit()
     response = client.get("/dashboard/chat")
     assert "chat-quick-action__icon--green" in response.text
     assert "chat-quick-action__icon--blue" in response.text

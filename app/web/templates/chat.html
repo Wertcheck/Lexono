@@ -328,46 +328,38 @@
                 <h1 class="chat-empty-state__greeting" id="chat-greeting">Guten Tag.</h1>
                 <p class="chat-empty-state__hint">Wie kann ich Sie heute unterstützen?</p>
               </div>
-              {# Verlinkt die bereits bestehende Standard-Prompts-Verwaltung
-                 (app/web/prompt_library_router.py, /dashboard/library/prompts)
-                 - keine neue Funktion, nur ein zweiter Einstiegspunkt
-                 dorthin (Referenzbild, 01.09.). #}
-              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts">
-                {{ icons.printer(class_="icon") }}
-                <span>Standard-Prompts bearbeiten</span>
-              </a>
+              {# Standard-Prompts-Verwaltung: Kuratoren (Admin/Anwalt) oeffnen das Modal
+                 (partials/prompt_manager_modal.html, static/js/app_prompt_manager.js),
+                 alle anderen Rollen behalten den bisherigen Link zur (lesenden)
+                 Bibliothek. #}
+              {% if can_manage_prompts %}
+                <button type="button" class="chat-empty-state__edit-prompts" data-prompt-manager-open aria-haspopup="dialog">
+                  {{ icons.printer(class_="icon") }}
+                  <span>Standard-Prompts verwalten</span>
+                </button>
+              {% else %}
+                <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts">
+                  {{ icons.printer(class_="icon") }}
+                  <span>Standard-Prompts ansehen</span>
+                </a>
+              {% endif %}
             </div>
-            <div class="chat-empty-state__actions">
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-green" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Dokument analysieren</span>
-                <span class="chat-quick-action__subtitle">Inhalte verstehen und auswerten</span>
-              </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-blue" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Schriftsatz erstellen</span>
-                <span class="chat-quick-action__subtitle">Z. B. an Mandanten, Gericht oder Behörde</span>
-              </button>
-              <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-purple" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Zusammenfassen</span>
-                <span class="chat-quick-action__subtitle">Wesentliche Inhalte auf den Punkt bringen</span>
-              </button>
-              {# "Weitere Prompts" (Referenzbild-Redesign, 13.09., Farb-/
-                 Kartenstil an assets/ux-ui/05_chat_startseite.png
-                 angeglichen, 14.09.) - fuehrt weiterhin zur bereits
-                 bestehenden Standard-Prompts-Verwaltung
-                 (app/web/prompt_library_router.py), in der echte,
-                 wiederverwendbare Prompt-Vorlagen angelegt werden koennen -
-                 kein Fake-Button, dieselbe reale Funktion wie der Link oben
-                 in der Kopfzeile. #}
-              <a href="/dashboard/library/prompts" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange">
-                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.plus(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Weitere Prompts</span>
-                <span class="chat-quick-action__subtitle">Eigene Vorlagen verwalten</span>
-              </a>
+            <div class="chat-empty-state__actions" id="chat-home-prompts">
+              {# Genau die in der Verwaltung aktivierten Prompts (hoechstens 4) in
+                 der dort festgelegten Reihenfolge - nicht automatisch die obersten vier. #}
+              {% for prompt in home_prompts %}
+                {% set tint = prompt_tints.get(prompt.icon, "green") %}
+                <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-{{ tint }}" data-prefill="{{ prompt.content }}"{% if prompt.attach_on_use %} data-attach="true"{% endif %}>
+                  <span class="chat-quick-action__icon chat-quick-action__icon--{{ tint }}">{{ icons[prompt.icon if prompt.icon in prompt_icon_keys else "document"](class_="icon") }}</span>
+                  <span class="chat-quick-action__title">{{ prompt.name }}</span>
+                  <span class="chat-quick-action__subtitle">{{ prompt.description }}</span>
+                </button>
+              {% else %}
+                <p class="chat-empty-state__no-prompts">Es sind keine Standard-Prompts auf der Startseite aktiviert.{% if can_manage_prompts %} Über „Standard-Prompts verwalten“ können Sie bis zu vier auswählen.{% endif %}</p>
+              {% endfor %}
             </div>
           </div>
+          {% if can_manage_prompts %}{% include "partials/prompt_manager_modal.html" %}{% endif %}
         {% else %}
           {% for message in messages %}
             <div class="chat-message chat-message--{{ message.role }}{% if message.blocked %} chat-message--blocked{% endif %}">
@@ -1880,15 +1872,18 @@
         });
       });
 
-      document.querySelectorAll(".chat-quick-action").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          textarea.value = btn.getAttribute("data-prefill");
-          textarea.focus();
-          autoGrow();
-          if (btn.getAttribute("data-attach") === "true" && fileInput) {
-            fileInput.click();
-          }
-        });
+      // Delegiert (statt je Button gebunden): die Startseiten-Kacheln werden
+      // nach dem Speichern im Modal "Standard-Prompts verwalten" ohne
+      // Seitenneuladung neu aufgebaut (app_prompt_manager.js).
+      document.addEventListener("click", function (event) {
+        var btn = event.target.closest(".chat-quick-action[data-prefill]");
+        if (!btn) { return; }
+        textarea.value = btn.getAttribute("data-prefill");
+        textarea.focus();
+        autoGrow();
+        if (btn.getAttribute("data-attach") === "true" && fileInput) {
+          fileInput.click();
+        }
       });
 
       // Sofortiges User-Nachricht-Rendering (06.10., Owner-Direktive "CHAT &

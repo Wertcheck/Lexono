@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent, PromptTemplate
@@ -16,7 +17,9 @@ class PromptTemplateService:
     def create_template(
         self, db: Session, data: PromptTemplateInput, *, actor: str
     ) -> PromptTemplate:
+        next_order = (db.query(func.max(PromptTemplate.sort_order)).scalar() or 0) + 1
         template = PromptTemplate(
+            sort_order=next_order,
             name=data.name,
             description=data.description,
             content=data.content,

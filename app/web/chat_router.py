@@ -78,6 +78,8 @@ from app.models import (
     User,
 )
 from app.web.service_factory import WritingProviderNotConfiguredError, get_drafting_service
+from app.prompt_library import home_service as home_prompt_service
+from app.prompt_library.icons import PROMPT_ICON_TINTS, PROMPT_ICONS
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard/chat", tags=["dashboard-chat"])
@@ -408,6 +410,16 @@ def _render_chat_page(
         "active_nav": "Chat",
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
+        # Standard-Prompts der Startseite (Verwaltung: Modal, siehe
+        # app/prompt_library/home_service.py) - genau die aktivierten, in
+        # gespeicherter Reihenfolge.
+        "home_prompts": home_prompt_service.home_prompts(db) if active_conversation is None else [],
+        "can_manage_prompts": bool(
+            current_user.role and current_user.role.name.strip().lower() in {"admin", "anwalt"}
+        ),
+        "prompt_tints": PROMPT_ICON_TINTS,
+        "prompt_icon_keys": list(PROMPT_ICONS),
+        "prompt_icons": PROMPT_ICONS,
         "conversations": conversations,
         "pending_matter": pending_matter,
         "active_conversation": active_conversation,

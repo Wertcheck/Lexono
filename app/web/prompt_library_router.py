@@ -11,20 +11,37 @@ manuell, kuratiert aber keine KI-Textbausteine)."""
 
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_or_404
-from app.auth.permissions import require_login, require_role
+from app.auth.permissions import PermissionDeniedError, require_login, require_role
 from app.db.session import get_db
 from app.models import PromptTemplate, User
+from app.prompt_library import home_service
+from app.prompt_library.home import CONTENT_MAX, DESCRIPTION_MAX, HOME_PROMPT_LIMIT, NAME_MAX
+from app.prompt_library.icons import PROMPT_ICONS
 from app.prompt_library.rendering import extract_variables, render_template
 from app.prompt_library.schema import PromptTemplateInput
 from app.prompt_library.service import PromptTemplateService
 from app.prompt_library.system_prompts import SYSTEM_PROMPT_REFERENCES
 from app.web.template_paths import TEMPLATES_DIR
+
+def require_role_get(*roles: str):
+    """GET-Variante von `require_role` (kein CSRF-Formularfeld bei reinem Lesen)."""
+
+    def dependency(current_user: User = Depends(require_login)) -> User:
+        name = current_user.role.name.strip().lower() if current_user.role else ""
+        if name not in {r.lower() for r in roles}:
+            raise PermissionDeniedError()
+        return current_user
+
+    return dependency
+
 
 router = APIRouter(prefix="/dashboard/library/prompts", tags=["dashboard-prompt-library"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
@@ -74,6 +91,43 @@ def create_template(
         )
     PromptTemplateService().create_template(db, data, actor=current_user.email)
     return RedirectResponse(url="/dashboard/library/prompts", status_code=303)
+
+
+@router.get("/manage/state")
+def home_state(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role_get("admin", "anwalt")),
+) -> JSONResponse:
+    """Aktueller Zustand für das Modal "Standard-Prompts verwalten" (Chat-Startseite)."""
+    return JSONResponse(
+        {
+            "prompts": [home_service.serialize(p) for p in home_service.list_prompts(db)],
+            "limit": HOME_PROMPT_LIMIT,
+            "icons": PROMPT_ICONS,
+            "max": {"name": NAME_MAX, "description": DESCRIPTION_MAX, "content": CONTENT_MAX},
+        }
+    )
+
+
+@router.post("/manage/state")
+def save_home_state(
+    payload: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "anwalt")),
+) -> JSONResponse:
+    """Speichert den gesamten Arbeitszustand des Modals atomar (siehe home_service.save_state)."""
+    try:
+        data = json.loads(payload)
+    except ValueError:
+        return JSONResponse({"errors": [{"index": None, "field": "payload", "message": "Ungültige Daten."}]}, status_code=422)
+    if not isinstance(data, dict):
+        return JSONResponse({"errors": [{"index": None, "field": "payload", "message": "Ungültige Daten."}]}, status_code=422)
+    try:
+        prompts = home_service.save_state(db, data, actor=current_user.email)
+    except home_service.PromptStateError as exc:
+        db.rollback()
+        return JSONResponse({"errors": exc.errors}, status_code=422)
+    return JSONResponse({"prompts": [home_service.serialize(p) for p in prompts]})
 
 
 @router.get("/{template_id}/edit", response_class=HTMLResponse)

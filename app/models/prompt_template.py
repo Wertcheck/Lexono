@@ -20,7 +20,7 @@ Vorlage ist immer die aktuellste."""
 
 from __future__ import annotations
 
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -35,3 +35,16 @@ class PromptTemplate(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
     updated_by_actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    # Startseiten-Verwaltung ("Standard-Prompts verwalten", Modal im Chat):
+    # `sort_order` ist die Reihenfolge der GESAMTEN Liste (Drag-and-drop) und
+    # bestimmt damit auch die Reihenfolge der auf der Chat-Startseite
+    # gezeigten Prompts; `show_on_home` markiert die (höchstens
+    # HOME_PROMPT_LIMIT) dort angezeigten Prompts - NICHT automatisch die
+    # obersten vier. `icon` ist ein Schlüssel aus app/prompt_library/icons.py,
+    # `attach_on_use` öffnet nach dem Vorbefüllen den Dateidialog (wie früher
+    # bei "Dokument analysieren").
+    icon: Mapped[str] = mapped_column(String(32), nullable=False, default="document", server_default="document")
+    show_on_home: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    attach_on_use: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="0")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")

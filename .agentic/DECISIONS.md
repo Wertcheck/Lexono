@@ -5507,3 +5507,20 @@ Live per CDP verifiziert: echte Akte "Muster, Anna offen 1" verknuepft ->
 natuerlichen Unterhaltungstitel zurueck, "Akte hinzufügen" ersetzt "Akte
 ändern", der entfernte Button verschwindet.
 DATE: 05.10. (vierte Folge-Runde, selber Tag)
+
+---
+
+DECISION: Standard-Prompts der Chat-Startseite sind jetzt echte, verwaltbare Daten statt fest verdrahteter Kacheln
+(app/models/prompt_template.py + Migration schritt3_031, app/prompt_library/home_service.py, Modal
+app/web/templates/partials/prompt_manager_modal.html + app/web/static/js/app_prompt_manager.js). Die bestehende
+`PromptTemplate`-Tabelle wurde erweitert (icon, show_on_home, attach_on_use, sort_order) statt eine zweite
+Prompt-Tabelle anzulegen. Beliebig viele Prompts sind speicherbar, hoechstens 4 duerfen `show_on_home` sein
+(`HOME_PROMPT_LIMIT`, serverseitig erzwungen); die Startseite zeigt genau die aktivierten in `sort_order`.
+Das Modal arbeitet auf einer Arbeitskopie; "Speichern" sendet den ganzen Zustand atomar (POST
+/dashboard/library/prompts/manage/state, CSRF + Rolle admin/anwalt). Die Migration uebernimmt die bisherigen drei
+Startseiten-Prompts (Dokument analysieren, Schriftsatz erstellen, Zusammenfassen); eine gleichnamige Kanzlei-Vorlage
+behaelt ihren Inhalt. Die Kachel "Weitere Prompts" entfaellt (ersetzt durch "Standard-Prompts verwalten").
+REASON: Owner-Direktive (Goal 28.10.) mit Referenzbildern; Bestandsdaten duerfen nicht verloren gehen.
+GETESTET: tests/test_web_prompt_home_manager.py (22), UI-Pruefungen 60/60 bei 1280x720 und 960x600
+(benchmarks/legal_answers_v1/qa-evidence/standard-prompts-verwalten/).
+DATE: 28.10.

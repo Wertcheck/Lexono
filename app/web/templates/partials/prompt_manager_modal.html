@@ -1,0 +1,117 @@
+{# Modal "Standard-Prompts verwalten" (Chat-Startseite, nur Admin/Anwalt).
+   Bedienlogik: static/js/app_prompt_manager.js; Daten/Speichern:
+   GET/POST /dashboard/library/prompts/manage/state
+   (app/web/prompt_library_router.py, app/prompt_library/home_service.py).
+   Das Modal haelt eine Arbeitskopie; erst "Speichern" schreibt sie in einer
+   Transaktion. Die Icons stammen aus _icons.html (<template>-Vorrat). #}
+{% import "_icons.html" as icons %}
+<dialog id="pm-modal" class="modal pm-modal" aria-labelledby="pm-title" aria-describedby="pm-intro"
+        data-csrf="{{ csrf_token }}" data-state-url="/dashboard/library/prompts/manage/state">
+  <header class="pm-head">
+    <div class="pm-head__text">
+      <h2 class="pm-head__title" id="pm-title">Standard-Prompts verwalten</h2>
+      <p class="pm-head__intro" id="pm-intro">
+        Hier können Sie Ihre Standard-Prompts bearbeiten, neue hinzufügen oder entfernen.<br>
+        Die Prompts werden in Ihrem Konto gespeichert. Sie können bis zu <span data-pm-limit>4</span> Prompts auf der Startseite anzeigen.
+      </p>
+    </div>
+    <button type="button" class="pm-close" data-pm-close aria-label="Fenster schließen">{{ icons.close_window(class_="icon") }}</button>
+  </header>
+
+  <div class="pm-body">
+    <section class="pm-list-col" aria-labelledby="pm-list-title">
+      <div class="pm-list-head">
+        <h3 class="pm-list-title" id="pm-list-title">Alle Prompts <span class="pm-list-count" data-pm-count></span></h3>
+        <span class="pm-slots" data-pm-slots></span>
+      </div>
+      <ul class="pm-list" data-pm-list aria-label="Alle Prompts"></ul>
+      <button type="button" class="pm-add" data-pm-add>
+        {{ icons.plus(class_="icon") }}<span>Neuen Prompt hinzufügen</span>
+      </button>
+    </section>
+
+    <section class="pm-edit-col" aria-live="polite">
+      <div class="pm-empty" data-pm-empty>
+        <span class="pm-empty__icon">{{ icons.document(class_="icon") }}</span>
+        <h3 class="pm-empty__title">Neuen Prompt erstellen</h3>
+        <p class="pm-empty__text">Wählen Sie links einen Prompt zum Bearbeiten aus oder erstellen Sie einen neuen Prompt.</p>
+        <ul class="pm-empty__tips">
+          <li>{{ icons.pencil(class_="icon") }}<span>Individuelle Prompts für wiederkehrende Aufgaben</span></li>
+          <li>{{ icons.dashboard(class_="icon") }}<span>Bis zu <span data-pm-limit>4</span> Prompts auf der Chat-Startseite anzeigen</span></li>
+          <li>{{ icons.settings(class_="icon") }}<span>Prompts jederzeit bearbeiten, aktivieren oder entfernen</span></li>
+        </ul>
+      </div>
+
+      <form class="pm-form" data-pm-form hidden novalidate>
+        <div class="pm-form__head">
+          <h3 class="pm-form__title" data-pm-form-title>Neuen Prompt erstellen</h3>
+          <p class="pm-form__sub" data-pm-form-sub>Geben Sie hier die Details für Ihren neuen Prompt ein.</p>
+        </div>
+        <div class="pm-form__row">
+          <div class="pm-field pm-field--icon">
+            <span class="pm-label" id="pm-icon-label">Icon <span class="pm-label__opt">(optional)</span></span>
+            <div class="pm-icon-picker">
+              <button type="button" class="pm-icon-btn" data-pm-icon-btn aria-haspopup="listbox" aria-expanded="false" aria-labelledby="pm-icon-label">
+                <span data-pm-icon-current></span>{{ icons.collapse(class_="icon pm-icon-btn__caret") }}
+              </button>
+              <ul class="pm-icon-menu" data-pm-icon-menu role="listbox" aria-labelledby="pm-icon-label" hidden></ul>
+            </div>
+          </div>
+          <div class="pm-field pm-field--home">
+            <div class="pm-home-toggle">
+              <button type="button" class="pm-switch" role="switch" aria-checked="false" data-pm-home-toggle aria-labelledby="pm-home-label"><span class="pm-switch__knob"></span></button>
+              <span class="pm-home-toggle__label" id="pm-home-label">Auf der Chat-Startseite anzeigen</span>
+            </div>
+            <p class="pm-home-note" data-pm-home-note></p>
+          </div>
+        </div>
+
+        <div class="pm-field">
+          <label class="pm-label" for="pm-f-name">Titel <span class="pm-req" aria-hidden="true">*</span></label>
+          <input type="text" id="pm-f-name" class="pm-input" data-pm-input="name" placeholder="z. B. Vertragsanalyse" autocomplete="off" aria-required="true" aria-describedby="pm-e-name">
+          <div class="pm-meta"><span class="pm-err" id="pm-e-name" data-pm-err="name" role="alert"></span><span class="pm-count" data-pm-counter="name"></span></div>
+        </div>
+        <div class="pm-field">
+          <label class="pm-label" for="pm-f-description">Beschreibung <span class="pm-req" aria-hidden="true">*</span></label>
+          <textarea id="pm-f-description" class="pm-input pm-input--area pm-input--short" data-pm-input="description" rows="2" placeholder="Kurze Beschreibung, was dieser Prompt macht und wann er verwendet werden soll." aria-required="true" aria-describedby="pm-e-description"></textarea>
+          <div class="pm-meta"><span class="pm-err" id="pm-e-description" data-pm-err="description" role="alert"></span><span class="pm-count" data-pm-counter="description"></span></div>
+        </div>
+        <div class="pm-field">
+          <label class="pm-label" for="pm-f-content">Prompt-Anweisung <span class="pm-req" aria-hidden="true">*</span></label>
+          <textarea id="pm-f-content" class="pm-input pm-input--area" data-pm-input="content" rows="5" placeholder="Geben Sie hier die vollständige Anweisung für die KI ein. Beschreiben Sie Ziel, Kontext, gewünschte Struktur und wichtige Anforderungen." aria-required="true" aria-describedby="pm-e-content"></textarea>
+          <div class="pm-meta"><span class="pm-err" id="pm-e-content" data-pm-err="content" role="alert"></span><span class="pm-count" data-pm-counter="content"></span></div>
+        </div>
+        <label class="pm-check">
+          <input type="checkbox" data-pm-attach>
+          <span>Beim Verwenden direkt den Dateidialog öffnen (für Prompts, die ein Dokument brauchen)</span>
+        </label>
+        <div class="pm-form__foot" data-pm-delete-wrap hidden>
+          <button type="button" class="pm-delete" data-pm-delete>{{ icons.trash(class_="icon") }}<span>Prompt löschen</span></button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <footer class="pm-foot">
+    <p class="pm-status" data-pm-status role="status" aria-live="polite"></p>
+    <button type="button" class="btn" data-pm-cancel>Abbrechen</button>
+    <button type="button" class="btn btn--primary" data-pm-save>Speichern</button>
+  </footer>
+
+  <div class="pm-confirm" data-pm-confirm hidden>
+    <div class="pm-confirm__box" role="alertdialog" aria-modal="true" aria-labelledby="pm-confirm-title" aria-describedby="pm-confirm-text">
+      <h3 class="pm-confirm__title" id="pm-confirm-title" data-pm-confirm-title></h3>
+      <p class="pm-confirm__text" id="pm-confirm-text" data-pm-confirm-text></p>
+      <div class="pm-confirm__actions">
+        <button type="button" class="btn" data-pm-confirm-no></button>
+        <button type="button" class="btn btn--danger" data-pm-confirm-yes></button>
+      </div>
+    </div>
+  </div>
+</dialog>
+<div hidden aria-hidden="true">
+  {% for key in prompt_icon_keys %}<template data-pm-icon="{{ key }}" data-label="{{ prompt_icons[key] }}" data-tint="{{ prompt_tints.get(key, 'green') }}">{{ icons[key](class_="icon") }}</template>{% endfor %}
+  <template data-pm-icon-extra="grip"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></template>
+  <template data-pm-icon-extra="more"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.5" r="1.7"/></svg></template>
+</div>
+<script src="/dashboard/static/js/app_prompt_manager.js" defer></script>

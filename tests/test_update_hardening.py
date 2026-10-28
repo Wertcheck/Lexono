@@ -85,7 +85,7 @@ def test_interrupted_migration_is_rolled_back_and_the_next_start_succeeds(tmp_pa
     assert "finding_key" not in columns and _version(db_path) == "schritt3_029"
 
     command.upgrade(_cfg(db_path), "head")
-    assert _version(db_path) == "schritt3_030"
+    assert _version(db_path) == "schritt3_031"
 
 
 def test_pending_revisions_only_for_existing_outdated_databases(tmp_path) -> None:
@@ -95,7 +95,7 @@ def test_pending_revisions_only_for_existing_outdated_databases(tmp_path) -> Non
 
     db_path = _old_db_with_data(tmp_path)
     url = f"sqlite:///{db_path.as_posix()}"
-    assert pending_revisions(_cfg(db_path), url) == ("schritt3_029", "schritt3_030")
+    assert pending_revisions(_cfg(db_path), url) == ("schritt3_029", "schritt3_031")
     command.upgrade(_cfg(db_path), "head")
     assert pending_revisions(_cfg(db_path), url) is None
 
@@ -155,7 +155,7 @@ def test_cmd_migrate_backs_up_then_migrates(tmp_path, monkeypatch, capsys) -> No
     finally:
         from app.config import get_settings
         get_settings.cache_clear()
-    assert _version(db_path) == "schritt3_030"
+    assert _version(db_path) == "schritt3_031"
     backups = list((db_path.parent / "backups").glob("vor-update_*.zip"))
     assert len(backups) == 1 and str(backups[0]) in capsys.readouterr().out
     con = sqlite3.connect(db_path)
