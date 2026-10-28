@@ -1,0 +1,3708 @@
+{
+ "phase": "nachher",
+ "exe": "%LOCALAPPDATA%\\Lexono\\Lexono.exe",
+ "exe_sha256": "EC1CF4556C236E026AB3D4E651964F7A48404F4A02AA44EAAEAC9E27D1796E92",
+ "aufnahmen": {
+  "00-maximiert-hell-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ],
+   "zustand": {
+    "viewport": [
+     1920,
+     1051,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "light",
+    "startseite": true,
+    "composer": [
+     455,
+     913,
+     1260,
+     138
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1671,
+     987
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       669,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1051,
+    1
+   ],
+   "theme": "light"
+  },
+  "00-maximiert-hell-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1051
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1019
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     871,
+     705
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     788
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     788
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1051,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1920,
+     1055,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "light",
+    "startseite": true,
+    "composer": [
+     455,
+     917,
+     1260,
+     138
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1671,
+     991
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       669,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     410,
+     175,
+     1100,
+     705
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     410,
+     73,
+     1100,
+     909
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1920,
+     1055,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "light",
+    "startseite": false,
+    "composer": [
+     675,
+     933,
+     820,
+     122
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1671,
+     991
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       669,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     871,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     870,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     883,
+     657
+    ],
+    "panel": [
+     1339,
+     227,
+     440,
+     740
+    ],
+    "vorschau": [
+     277,
+     227,
+     1062,
+     740
+    ],
+    "seite": [
+     305,
+     235,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     709,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1280,
+     720,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "light",
+    "startseite": true,
+    "composer": [
+     345,
+     602,
+     840,
+     118
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1031,
+     656
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       349,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     90,
+     79,
+     1100,
+     561
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     90,
+     16,
+     1100,
+     688
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1280,
+     720,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "light",
+    "startseite": false,
+    "composer": [
+     355,
+     608,
+     820,
+     112
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1031,
+     656
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       349,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     731,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     731,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     731,
+     402
+    ],
+    "panel": [
+     883,
+     181,
+     380,
+     471
+    ],
+    "vorschau": [
+     129,
+     181,
+     754,
+     471
+    ],
+    "seite": [
+     157,
+     189,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     587,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1107,
+     703,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "light",
+    "startseite": true,
+    "composer": [
+     258,
+     585,
+     840,
+     118
+    ],
+    "chatbereich": [
+     249,
+     64,
+     858,
+     639
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       264,
+       14,
+       637,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     16,
+     71,
+     1075,
+     561
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     16,
+     16,
+     1075,
+     671
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1107,
+     703,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "light",
+    "startseite": false,
+    "composer": [
+     268,
+     591,
+     820,
+     112
+    ],
+    "chatbereich": [
+     249,
+     64,
+     858,
+     639
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       264,
+       14,
+       637,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     710,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     710,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     710,
+     362
+    ],
+    "panel": [
+     760,
+     206,
+     330,
+     429
+    ],
+    "vorschau": [
+     109,
+     206,
+     651,
+     429
+    ],
+    "seite": [
+     127,
+     214,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     548,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-dunkel-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1920,
+     1055,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "dark",
+    "startseite": true,
+    "composer": [
+     455,
+     917,
+     1260,
+     138
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1671,
+     991
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       669,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     410,
+     175,
+     1100,
+     705
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     410,
+     73,
+     1100,
+     909
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1920,
+     1055,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "dark",
+    "startseite": false,
+    "composer": [
+     675,
+     933,
+     820,
+     122
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1671,
+     991
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       669,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     871,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     870,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     883,
+     657
+    ],
+    "panel": [
+     1339,
+     227,
+     440,
+     740
+    ],
+    "vorschau": [
+     277,
+     227,
+     1062,
+     740
+    ],
+    "seite": [
+     305,
+     235,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     140,
+     16,
+     1640,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     709,
+     709
+    ],
+    "panel": [
+     1339,
+     175,
+     440,
+     792
+    ],
+    "vorschau": [
+     277,
+     175,
+     1062,
+     792
+    ],
+    "seite": [
+     305,
+     183,
+     996,
+     1433
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1280,
+     720,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "dark",
+    "startseite": true,
+    "composer": [
+     345,
+     602,
+     840,
+     118
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1031,
+     656
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       349,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     90,
+     79,
+     1100,
+     561
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     90,
+     16,
+     1100,
+     688
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1280,
+     720,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "dark",
+    "startseite": false,
+    "composer": [
+     355,
+     608,
+     820,
+     112
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1031,
+     656
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       349,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     731,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     731,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     731,
+     402
+    ],
+    "panel": [
+     883,
+     181,
+     380,
+     471
+    ],
+    "vorschau": [
+     129,
+     181,
+     754,
+     471
+    ],
+    "seite": [
+     157,
+     189,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     587,
+     444
+    ],
+    "panel": [
+     883,
+     139,
+     380,
+     513
+    ],
+    "vorschau": [
+     129,
+     139,
+     754,
+     513
+    ],
+    "seite": [
+     157,
+     147,
+     688,
+     997
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-01-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1107,
+     703,
+     1
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "dark",
+    "startseite": true,
+    "composer": [
+     258,
+     585,
+     840,
+     118
+    ],
+    "chatbereich": [
+     249,
+     64,
+     858,
+     639
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Akte öffnen"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": true,
+    "suchleiste": [
+     {
+      "box": [
+       264,
+       14,
+       637,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-02-standard-prompts-verwalten": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     16,
+     71,
+     1075,
+     561
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 4 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": true,
+    "formular_sichtbar": false,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": null,
+    "status": "",
+    "speichern_aktiv": false,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-03-neuer-prompt-formular": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "offen": true,
+    "modal": [
+     16,
+     16,
+     1075,
+     671
+    ],
+    "zeilen": [
+     [
+      "Dokument analysieren",
+      true,
+      false
+     ],
+     [
+      "Schriftsatz erstellen",
+      true,
+      false
+     ],
+     [
+      "Zusammenfassen",
+      true,
+      false
+     ],
+     [
+      "Akte öffnen",
+      true,
+      false
+     ]
+    ],
+    "zaehler": "(4 von 5 aktiv auf Startseite)",
+    "limit_hinweis": null,
+    "leer_sichtbar": false,
+    "formular_sichtbar": true,
+    "formular_titel": "Neuen Prompt erstellen",
+    "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+    "status": "Ungespeicherte Änderungen",
+    "speichern_aktiv": true,
+    "speichern_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "rueckfrage": null,
+    "fehler": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-04-chatverlauf-eingabe": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "viewport": [
+     1107,
+     703,
+     1
+    ],
+    "pfad": "/dashboard/chat/8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+    "theme": "dark",
+    "startseite": false,
+    "composer": [
+     268,
+     591,
+     820,
+     112
+    ],
+    "chatbereich": [
+     249,
+     64,
+     858,
+     639
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       264,
+       14,
+       637,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     66,
+     22,
+     22
+    ],
+    "nachrichten": 3,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-05-pseudonymisierung-erste-rueckfrage-markierungen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     710,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-06-pseudonymisierung-rueckfrage-2-von-5": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Kaufmann",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 2 von 5",
+    "panel_intern_scroll": [
+     710,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-07-pseudonymisierung-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     710,
+     362
+    ],
+    "panel": [
+     760,
+     206,
+     330,
+     429
+    ],
+    "vorschau": [
+     109,
+     206,
+     651,
+     429
+    ],
+    "seite": [
+     127,
+     214,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+     "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-08-pseudonymisierung-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Option wählen, dann bestätigen",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 1",
+    "panel_intern_scroll": [
+     548,
+     404
+    ],
+    "panel": [
+     760,
+     164,
+     330,
+     471
+    ],
+    "vorschau": [
+     109,
+     164,
+     651,
+     471
+    ],
+    "seite": [
+     127,
+     172,
+     605,
+     879
+    ],
+    "miniaturen_sichtbar": 1,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 4,
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  }
+ },
+ "funktion": {
+  "rollen": [
+   "admin",
+   "anwalt",
+   "mitarbeiter"
+  ],
+  "webview2_argumente": "--remote-debugging-port=9334 --force-device-scale-factor=1",
+  "head": "64e130018959efa28041c26acdf601c20ea940dd",
+  "ausgelieferter_code": {
+   "static/css/app.css": {
+    "sha256": "df45432c8b3a55b0",
+    "gleich_HEAD": true,
+    "gleich_6542754": false,
+    "marker": {
+     ".prompt-manager": true,
+     "chat-panel--start": true,
+     "pseudo-mark--open": true
+    }
+   },
+   "static/js/pseudonymization_center.js": {
+    "sha256": "33a921b4d84e90d0",
+    "gleich_HEAD": true,
+    "gleich_6542754": false,
+    "marker": {
+     "data-pseudo-q-apply": true,
+     "pseudo-mark--kept": true
+    }
+   },
+   "static/js/prompt_manager.js": {
+    "sha256": "1349753df33559ca",
+    "gleich_HEAD": true,
+    "gleich_6542754": false,
+    "marker": {
+     "data-pm-save": true
+    }
+   }
+  },
+  "chat_seite_marker": {
+   "chat-panel--start": true,
+   "data-prompt-manager-open": true,
+   "id=\"prompt-manager\"": true,
+   "prompt_manager.js": true,
+   "data-command-bar-open": true
+  },
+  "prompts_manage_json": [
+   [
+    "Dokument analysieren",
+    true
+   ],
+   [
+    "Schriftsatz erstellen",
+    true
+   ],
+   [
+    "Zusammenfassen",
+    true
+   ],
+   [
+    "Akte öffnen",
+    true
+   ]
+  ],
+  "alembic": [
+   [
+    "schritt3_039"
+   ]
+  ],
+  "auftrag_blockiert": {
+   "8a91c868-c8ca-434b-ab2a-4cc71129ae5d": true,
+   "99ed10cb-c710-4a9b-8b1a-9f813ce00aab": true,
+   "57d4f17e-c689-4f6f-b807-7a7714fc805f": true
+  },
+  "convs": {
+   "main": "8a91c868-c8ca-434b-ab2a-4cc71129ae5d",
+   "multi": "99ed10cb-c710-4a9b-8b1a-9f813ce00aab",
+   "single": "57d4f17e-c689-4f6f-b807-7a7714fc805f"
+  },
+  "setup_s": 4.3,
+  "recorder_nach_setup": 0,
+  "db_start": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 11,
+   "chat_conversations": 3
+  },
+  "start_url": "http://127.0.0.1:8066/dashboard/login",
+  "nach_login": "/dashboard/chat",
+  "standard_viewport": [
+   1920,
+   1051,
+   1
+  ],
+  "standard_zoomed": true,
+  "fenstergroessen": {
+   "1920x1080-hell": [
+    1920,
+    1055,
+    1
+   ],
+   "1280x720-hell": [
+    1280,
+    720,
+    1
+   ],
+   "960x600-hell": [
+    1107,
+    703,
+    1
+   ],
+   "1920x1080-dunkel": [
+    1920,
+    1055,
+    1
+   ],
+   "1280x720-dunkel": [
+    1280,
+    720,
+    1
+   ],
+   "960x600-dunkel": [
+    1107,
+    703,
+    1
+   ]
+  }
+ },
+ "pid": 2976
+}
