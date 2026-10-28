@@ -11560,6 +11560,25 @@ a.chat-composer__protect-btn {
   .pseudo-center__actions .btn { min-height: 42px; padding-left: 16px; padding-right: 16px; }
   .pseudo-center__footer-info { padding: 10px 16px; }
 }
+/* Fensterhoehe bis 900 px (u. a. maximiertes Fenster auf 1920x1080 bei 125 % Skalierung = Viewport 1536x842, native
+   Pruefung 28.10.2026): Rueckfrage kompakter, damit alle drei Optionen ohne Scrollen im Panel stehen. Kopf und
+   Werkzeugleiste bleiben in voller Groesse; darunter greifen die Stufen 760 px und 640 px. */
+@media (max-height: 900px) {
+  .pseudo-center__panel-head { padding-top: 14px; gap: 8px; }
+  .pseudo-center__panel-scroll { gap: 12px; padding-top: 10px; }
+  .pseudo-question { gap: 10px; }
+  .pseudo-question__found { padding: 10px 12px; gap: 12px; }
+  .pseudo-question__found-icon { width: 38px; height: 38px; }
+  .pseudo-question__term { font-size: 16.5px; }
+  .pseudo-question__quote { padding: 9px 12px; font-size: 13px; line-height: 1.5; }
+  .pseudo-question__quote-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .pseudo-question__ask { font-size: 15.5px; }
+  .pseudo-question__sub { font-size: 13px; margin-bottom: 6px; }
+  .pseudo-question__options { gap: 7px; }
+  .pseudo-question__option { padding: 9px 14px; }
+  .pseudo-question__option-icon svg { width: 26px; height: 26px; }
+  .pseudo-question__option small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
 @media (max-height: 760px) {
   .modal.pseudo-center { height: calc(100vh - 16px); max-height: calc(100vh - 16px); }
   .pseudo-center__header { padding-top: 10px; padding-bottom: 9px; }
@@ -11595,10 +11614,24 @@ a.chat-composer__protect-btn {
   .pseudo-question__options { gap: 6px; }
   .pseudo-question__option { padding: 8px 12px; }
   .pseudo-question__option-icon svg { width: 24px; height: 24px; }
-  .pseudo-question__option small { font-size: 12px; }
+  /* einzeilig (vollstaendig im Tooltip): im nativen WebView2-Fenster mit sichtbarer Bildlaufleiste brach
+     "Wird vorsichtshalber pseudonymisiert." sonst um und schob "Unsicher" unter den Rand (native Pruefung 28.10.) */
+  .pseudo-question__option small { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pseudo-center__actions { padding-top: 9px; padding-bottom: 9px; }
   .pseudo-center__actions .btn { min-height: 40px; }
   .pseudo-center__footer-info { padding-top: 9px; padding-bottom: 9px; }
+}
+/* schmal UND niedrig (z. B. 1107x703 bei 100 % Skalierung): Ansichten zurueck in die Titelzeile statt eigener Zeile -
+   die Hoehe gehoert der Rueckfrage (native Pruefung 28.10.2026) */
+@media (max-width: 1180px) and (max-height: 760px) {
+  .pseudo-center__header { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+  .pseudo-center__views { grid-column: auto; grid-row: auto; justify-self: end; }
+  .pseudo-center__intro { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* Hinweis der Fussleiste nur als Tooltip am Button; den Stand zeigen die Zaehler links */
+  .pseudo-center__footer .pseudo-center__open-count { display: none; }
+  /* Kontext ohne eigene Ueberschrift (Ausschnitt mit "…" und markiertem Begriff, voller Text im Tooltip) */
+  .pseudo-question__context-title { display: none; }
+  .pseudo-question__option { padding-top: 7px; padding-bottom: 7px; }
 }
 /* Mindestfenster der App (run.py: 900x600): Platz fuer Vorschau und Rueckfrage statt fuer Wiederholungen -
    Einleitung aus (Titel bleibt), Ansichten zurueck in die Titelzeile, Fusszeilen-Hinweis nur noch als Tooltip am

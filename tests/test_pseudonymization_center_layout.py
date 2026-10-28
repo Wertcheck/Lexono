@@ -144,6 +144,34 @@ def test_panel_shows_exactly_one_question_without_a_list_of_the_others() -> None
     assert "renderQuestions()" in _function("activateQuestion")
 
 
+def test_chat_question_context_is_labelled_as_message_context() -> None:
+    """Native Pruefung 28.10.2026: bei der Rueckfrage beim Senden stammt der Kontext aus der Chat-Nachricht - auch wenn
+    der Begriff zusaetzlich in einem angehaengten Dokument markiert ist."""
+    cards = _function("renderQuestions")
+    assert 'q.fromChat ? "Kontext in Ihrer Nachricht" : "Kontext im Dokument"' in cards
+
+
+def test_option_hints_stay_on_one_line_in_low_windows() -> None:
+    """Native Pruefung 28.10.2026 (WebView2 mit sichtbarer Bildlaufleiste, 1280x720): ein umbrechender Hinweis schob
+    "Unsicher" unter den Panelrand - unter 760 px Hoehe sind die Hinweise einzeilig (voll im Tooltip)."""
+    block = CSS[CSS.index("@media (max-height: 760px)", CSS.index("/* --- Zentraler Pseudonymisierungsdialog")):]
+    block = block[:block.index("\n}\n")]
+    assert ".pseudo-question__option small { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }" in block
+
+
+def test_question_is_compacted_up_to_900px_window_height() -> None:
+    """Native Pruefung 28.10.2026: im maximierten Fenster auf 1920x1080 bei 125 % (Viewport 1536x842) lag "Unsicher"
+    unter dem Panelrand. Bis 900 px Hoehe ist die Rueckfrage kompakter; schmal UND niedrig stehen die Ansichten in
+    der Titelzeile."""
+    block = CSS[CSS.index("/* --- Zentraler Pseudonymisierungsdialog (25./26.10.2026"):]
+    tier = block[block.index("@media (max-height: 900px) {"):]
+    tier = tier[:tier.index("\n}\n")]
+    assert "-webkit-line-clamp: 2" in tier and ".pseudo-question__option small { white-space: nowrap;" in tier
+    # die 900-px-Stufe steht VOR der 760-px-Stufe, damit diese sie weiter verdichten kann
+    assert block.index("@media (max-height: 900px) {") < block.index("@media (max-height: 760px) {")
+    assert "@media (max-width: 1180px) and (max-height: 760px) {" in block
+
+
 def test_three_options_explain_the_real_server_behaviour() -> None:
     options = SCRIPT[SCRIPT.index("var OPTIONS = ["):SCRIPT.index("];", SCRIPT.index("var OPTIONS = ["))]
     assert re.findall(r'decision: "(\w+)"', options) == ["personal", "not_personal", "unsure"]

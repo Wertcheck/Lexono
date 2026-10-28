@@ -681,7 +681,9 @@
 
     // 2) Kontext im Dokument
     var ctx = el("section", "pseudo-question__context");
-    ctx.appendChild(el("h4", "pseudo-question__context-title", q.docs.length ? "Kontext im Dokument" : "Kontext in Ihrer Nachricht"));
+    // Rueckfrage beim Senden: der Kontext stammt aus der Chat-Nachricht, auch wenn der Begriff zusaetzlich in einem
+    // Dokument markiert ist (native Pruefung 28.10.2026)
+    ctx.appendChild(el("h4", "pseudo-question__context-title", q.fromChat ? "Kontext in Ihrer Nachricht" : "Kontext im Dokument"));
     var quote = el("p", "pseudo-question__quote");
     var quoteText = el("span", "pseudo-question__quote-text"); // eigene Zeile fuer die Kuerzung bei niedrigen Fenstern
     // Begriff frueh im Ausschnitt (wie in der Referenz), damit er auch bei gekuerzter Anzeige sichtbar bleibt
