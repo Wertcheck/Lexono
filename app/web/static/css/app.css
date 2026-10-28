@@ -13094,6 +13094,268 @@ a.chat-composer__protect-btn {
 }
 
 /* ==========================================================================
+   Chat-Startseite nach Referenzbild (28.10.2026): grosse Begruessung,
+   kompakte waagerechte Prompt-Karten (Icon im Kreis links, Titel + kurze
+   Beschreibung), "Standard-Prompts verwalten" rechts oberhalb der Karten,
+   breite weisse Eingabe am unteren Rand. Ausschliesslich unter
+   `.chat-panel--start` (nur ohne aktive Unterhaltung, siehe chat.html) -
+   laufende Chats, Dokument-Workspace und die --compact-Variante bleiben
+   unveraendert. Nur bestehende Tokens fuer Text/Flaechen; Pastelltoene als
+   leichte Tinten der Akzentfarben.
+   ========================================================================== */
+.chat-panel--start {
+  --start-width: 1180px;
+  background-image:
+    radial-gradient(1100px 520px at 88% 8%, rgba(36, 157, 116, 0.05), transparent 62%),
+    radial-gradient(900px 560px at 18% 105%, rgba(59, 130, 246, 0.035), transparent 60%);
+}
+:root[data-theme="dark"] .chat-panel--start {
+  background-image:
+    radial-gradient(1100px 520px at 88% 8%, rgba(52, 211, 153, 0.06), transparent 62%),
+    radial-gradient(900px 560px at 18% 105%, rgba(96, 165, 250, 0.04), transparent 60%);
+}
+/* Startseite: Inhaltsbreite nach Referenz statt der 820-px-Chatspalte */
+.chat-panel--start .chat-panel__messages { max-width: none; }
+.chat-panel--start .chat-empty-state {
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+  gap: 0;
+  padding: 32px 40px 6vh;
+}
+.chat-panel--start .chat-empty-state__top {
+  max-width: var(--start-width);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  row-gap: 14px;
+  margin-bottom: 30px;
+}
+.chat-panel--start .chat-empty-state__greeting {
+  font-size: clamp(32px, 2.8vw, 50px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--ink-900);
+}
+.chat-panel--start .chat-empty-state__hint {
+  margin: 6px 0 0;
+  font-size: clamp(19px, 1.7vw, 31px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink-500);
+}
+.chat-panel--start .chat-empty-state__edit-prompts {
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  border-color: rgba(36, 157, 116, 0.55);
+  background: var(--paper-000);
+  color: var(--brand-green-dark);
+}
+.chat-panel--start .chat-empty-state__edit-prompts .icon {
+  width: 16px;
+  height: 16px;
+}
+.chat-panel--start .chat-empty-state__edit-prompts:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
+}
+
+/* Karten: kompakt, waagerecht, ganze Karte ist die Aktion */
+.chat-panel--start .chat-empty-state__actions {
+  max-width: var(--start-width);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+.chat-panel--start .chat-start-matter {
+  position: relative;
+  display: flex;
+}
+.chat-panel--start .chat-quick-action.chat-quick-action--card {
+  --card-line: rgba(36, 157, 116, 0.2);
+  --card-line-strong: rgba(36, 157, 116, 0.45);
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  box-shadow: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.chat-panel--start .chat-quick-action--card .chat-quick-action__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+.chat-panel--start .chat-quick-action--card .chat-quick-action__icon .icon {
+  width: 21px;
+  height: 21px;
+}
+.chat-panel--start .chat-quick-action__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 1px;
+}
+.chat-panel--start .chat-quick-action__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-900);
+  line-height: 1.3;
+}
+.chat-panel--start .chat-quick-action__subtitle {
+  font-size: 13.5px;
+  color: var(--ink-500);
+  line-height: 1.45;
+}
+.chat-panel--start .chat-quick-action.chat-quick-action--tint-green { background: linear-gradient(135deg, #f2fbf6, #ecf8f1); }
+.chat-panel--start .chat-quick-action.chat-quick-action--tint-blue {
+  --card-line: rgba(59, 130, 246, 0.2); --card-line-strong: rgba(59, 130, 246, 0.45);
+  background: linear-gradient(135deg, #f3f7fe, #edf3fd);
+}
+.chat-panel--start .chat-quick-action.chat-quick-action--tint-purple {
+  --card-line: rgba(139, 92, 246, 0.22); --card-line-strong: rgba(139, 92, 246, 0.45);
+  background: linear-gradient(135deg, #f7f3fe, #f2edfd);
+}
+.chat-panel--start .chat-quick-action.chat-quick-action--tint-orange {
+  --card-line: rgba(236, 138, 0, 0.2); --card-line-strong: rgba(236, 138, 0, 0.45);
+  background: linear-gradient(135deg, #fff8f0, #fef4e8);
+}
+.chat-panel--start .chat-quick-action__icon--green { background: rgba(36, 157, 116, 0.12); }
+.chat-panel--start .chat-quick-action__icon--blue { background: rgba(59, 130, 246, 0.12); }
+.chat-panel--start .chat-quick-action__icon--purple { background: rgba(139, 92, 246, 0.13); }
+.chat-panel--start .chat-quick-action__icon--orange { background: rgba(236, 138, 0, 0.13); }
+.chat-panel--start .chat-quick-action--card:hover {
+  border-color: var(--card-line-strong);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
+}
+.chat-panel--start .chat-quick-action--card:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
+}
+/* Dark Mode: getoente dunkle Karten statt heller Flaechen */
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action--card {
+  --ink-900: #f1f5f9;
+  --ink-500: #a3b0c2;
+}
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action.chat-quick-action--tint-green { background: rgba(36, 157, 116, 0.1); --card-line: rgba(52, 211, 153, 0.22); --card-line-strong: rgba(52, 211, 153, 0.5); }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action.chat-quick-action--tint-blue { background: rgba(59, 130, 246, 0.1); --card-line: rgba(96, 165, 250, 0.22); --card-line-strong: rgba(96, 165, 250, 0.5); }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action.chat-quick-action--tint-purple { background: rgba(139, 92, 246, 0.11); --card-line: rgba(167, 139, 250, 0.24); --card-line-strong: rgba(167, 139, 250, 0.5); }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action.chat-quick-action--tint-orange { background: rgba(236, 138, 0, 0.1); --card-line: rgba(251, 191, 36, 0.22); --card-line-strong: rgba(251, 191, 36, 0.5); }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action__icon--green { background: rgba(52, 211, 153, 0.14); color: #6ee7b7; }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action__icon--blue { background: rgba(96, 165, 250, 0.14); color: #93c5fd; }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action__icon--purple { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; }
+:root[data-theme="dark"] .chat-panel--start .chat-quick-action__icon--orange { background: rgba(251, 191, 36, 0.14); color: #fcd34d; }
+
+/* "Akte öffnen": kompakte Aktenauswahl unter der Karte */
+.chat-panel--start .chat-start-matter__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(360px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: 12px;
+  background: var(--paper-000);
+  box-shadow: var(--shadow-elevated);
+}
+.chat-panel--start .chat-start-matter__panel[hidden] { display: none; }
+.chat-panel--start .chat-start-matter__label { font-size: 13px; font-weight: 600; color: var(--ink-900); }
+.chat-panel--start .chat-start-matter__panel select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--paper-line);
+  border-radius: var(--radius-sm);
+  background: var(--paper-000);
+  color: var(--ink-900);
+  font: inherit;
+  font-size: 13px;
+}
+.chat-panel--start .chat-start-matter__actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.chat-panel--start .chat-start-matter__all { font-size: 13px; color: var(--brand-green-dark); }
+
+/* Eingabe: breit, weiss, abgerundet, am unteren Rand */
+.chat-panel--start .chat-composer {
+  max-width: calc(var(--start-width) + 80px);
+  border-top: 0;
+  padding: 10px 40px 26px;
+}
+.chat-panel--start .chat-composer__row {
+  align-items: center;
+  gap: 10px;
+  min-height: 74px;
+  padding: 11px 12px 11px 11px;
+  border: 1px solid #e3e8ee;
+  border-radius: 18px;
+  background: var(--paper-000);
+  box-shadow: 0 8px 28px rgba(16, 24, 40, 0.07);
+}
+.chat-panel--start .chat-composer__row:focus-within {
+  border-color: rgba(36, 157, 116, 0.45);
+  box-shadow: 0 8px 28px rgba(16, 24, 40, 0.08);
+}
+.chat-panel--start .chat-composer__normal-controls { align-items: center; }
+.chat-panel--start .chat-composer__attach-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #f2f4f7;
+  color: var(--ink-700);
+}
+.chat-panel--start .chat-composer__attach-btn .icon { width: 22px; height: 22px; }
+.chat-panel--start .chat-composer__input { font-size: 16px; padding-top: 0; padding-bottom: 0; align-self: center; }
+.chat-panel--start .chat-composer__mic-btn { width: 44px; height: 44px; background: transparent; }
+.chat-panel--start .chat-composer__mic-btn .icon { width: 22px; height: 22px; }
+.chat-panel--start .chat-composer__send-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+.chat-panel--start .chat-composer__send-btn .icon { width: 22px; height: 22px; }
+.chat-panel--start .chat-composer__footer { padding-left: 6px; }
+:root[data-theme="dark"] .chat-panel--start .chat-empty-state__edit-prompts { color: var(--brand-green); }
+:root[data-theme="dark"] .chat-panel--start .chat-composer__row { border-color: var(--paper-line); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); }
+:root[data-theme="dark"] .chat-panel--start .chat-composer__attach-btn { background: rgba(255, 255, 255, 0.07); }
+
+/* Responsiv: unter 1360 px zwei Karten je Zeile, darunter kompakter */
+@media (max-width: 1359px) {
+  .chat-panel--start { --start-width: 760px; }
+  .chat-panel--start .chat-empty-state__actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .chat-panel--start .chat-empty-state__top { margin-bottom: 22px; }
+  .chat-panel--start .chat-quick-action.chat-quick-action--card { padding: 14px 16px; }
+}
+@media (max-height: 760px) {
+  .chat-panel--start .chat-empty-state { padding-top: 20px; }
+  .chat-panel--start .chat-empty-state__top { margin-bottom: 18px; }
+  .chat-panel--start .chat-quick-action.chat-quick-action--card { padding: 12px 14px; gap: 12px; }
+  .chat-panel--start .chat-quick-action--card .chat-quick-action__icon { width: 36px; height: 36px; }
+  .chat-panel--start .chat-quick-action__subtitle { font-size: 13px; }
+  .chat-panel--start .chat-composer { padding-bottom: 16px; }
+  .chat-panel--start .chat-composer__row { min-height: 64px; padding-top: 8px; padding-bottom: 8px; }
+  .chat-panel--start .chat-composer__attach-btn,
+  .chat-panel--start .chat-composer__send-btn { width: 44px; height: 44px; }
+}
+@media (max-width: 1100px) {
+  .chat-panel--start .chat-empty-state { padding-left: 24px; padding-right: 24px; }
+  /* rechts Platz fuer den schwebenden Datenschutz-Button (.chat-privacy-corner) - er lag bei 960x600 ueber dem
+     Senden-Button (auch vor dieser Umstellung) */
+  .chat-panel--start .chat-composer { padding-left: 24px; padding-right: 76px; }
+}
+@media (max-width: 720px) {
+  .chat-panel--start .chat-empty-state__actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ==========================================================================
    Kanzleiwissen: Referenzabgleich 43_Kanzleiwissen_Gesetze.png (27.10.)
    Kopf buendig mit Kacheln/Tabelle, groessere Typografie, Tabelle in
    Satzschrift ohne Monospace, farbige Statuspunkte, Info-Karte mit

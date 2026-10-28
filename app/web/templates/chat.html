@@ -166,7 +166,7 @@
       </div>
     </aside>
 
-    <section class="chat-panel">
+    <section class="chat-panel{% if not active_conversation and not viewing_document %} chat-panel--start{% endif %}">
       {# Kopfzeile nur bei aktiver Unterhaltung/Dokumentansicht - die reine
          Chat-Startansicht (Referenzbild, 01.09.) zeigt KEINE eigene
          Kopfzeile mehr; der Lokale-KI-/Cloud-KI-Status steht seitdem
@@ -335,40 +335,74 @@
                  (app/web/prompt_library_router.py, /dashboard/library/prompts)
                  - keine neue Funktion, nur ein zweiter Einstiegspunkt
                  dorthin (Referenzbild, 01.09.). #}
-              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts">
-                {{ icons.printer(class_="icon") }}
-                <span>Standard-Prompts bearbeiten</span>
+              <a href="/dashboard/library/prompts" class="chat-empty-state__edit-prompts"
+                 title="Standard-Prompts bearbeiten, anlegen oder löschen">
+                {{ icons.plus(class_="icon") }}
+                <span>Standard-Prompts verwalten</span>
               </a>
             </div>
+            {# Kompakte Karten nach Referenzbild (28.10.2026): Icon im Kreis links, Titel + kurze Beschreibung rechts,
+               die ganze Karte ist die Aktion. Die Prompt-Verwaltung erreicht man ueber "Standard-Prompts verwalten"
+               oben rechts (vorher zusaetzlich als vierte Karte "Weitere Prompts"). #}
             <div class="chat-empty-state__actions">
               <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-green" data-prefill="Bitte analysiere das angehängte Dokument und fasse die wichtigsten Punkte zusammen." data-attach="true">
                 <span class="chat-quick-action__icon chat-quick-action__icon--green">{{ icons.document(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Dokument analysieren</span>
-                <span class="chat-quick-action__subtitle">Inhalte verstehen und auswerten</span>
+                <span class="chat-quick-action__text">
+                  <span class="chat-quick-action__title">Dokument analysieren</span>
+                  <span class="chat-quick-action__subtitle">Inhalte verstehen und auswerten</span>
+                </span>
               </button>
               <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-blue" data-prefill="Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ">
-                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.printer(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Schriftsatz erstellen</span>
-                <span class="chat-quick-action__subtitle">Z. B. an Mandanten, Gericht oder Behörde</span>
+                <span class="chat-quick-action__icon chat-quick-action__icon--blue">{{ icons.pencil(class_="icon") }}</span>
+                <span class="chat-quick-action__text">
+                  <span class="chat-quick-action__title">Schriftsatz erstellen</span>
+                  <span class="chat-quick-action__subtitle">z. B. an Mandanten, Gericht oder Behörde</span>
+                </span>
               </button>
               <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-purple" data-prefill="Bitte fasse das angehängte Dokument in wenigen Sätzen zusammen." data-attach="true">
-                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.bulb(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Zusammenfassen</span>
-                <span class="chat-quick-action__subtitle">Wesentliche Inhalte auf den Punkt bringen</span>
+                <span class="chat-quick-action__icon chat-quick-action__icon--purple">{{ icons.list_bulleted(class_="icon") }}</span>
+                <span class="chat-quick-action__text">
+                  <span class="chat-quick-action__title">Zusammenfassen</span>
+                  <span class="chat-quick-action__subtitle">Wesentliche Inhalte auf den Punkt bringen</span>
+                </span>
               </button>
-              {# "Weitere Prompts" (Referenzbild-Redesign, 13.09., Farb-/
-                 Kartenstil an assets/ux-ui/05_chat_startseite.png
-                 angeglichen, 14.09.) - fuehrt weiterhin zur bereits
-                 bestehenden Standard-Prompts-Verwaltung
-                 (app/web/prompt_library_router.py), in der echte,
-                 wiederverwendbare Prompt-Vorlagen angelegt werden koennen -
-                 kein Fake-Button, dieselbe reale Funktion wie der Link oben
-                 in der Kopfzeile. #}
-              <a href="/dashboard/library/prompts" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange">
-                <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.plus(class_="icon") }}</span>
-                <span class="chat-quick-action__title">Weitere Prompts</span>
-                <span class="chat-quick-action__subtitle">Eigene Vorlagen verwalten</span>
-              </a>
+              {# "Akte öffnen": nutzt den bestehenden Einstieg "Mit dieser Akte im Chat arbeiten"
+                 (GET /dashboard/chat?new=1&matter=<id>, siehe chat_router.chat_home) - die Akte wird nur vorgemerkt,
+                 die erste Nachricht legt die Unterhaltung an. Ohne Akten fuehrt die Karte zur Aktenliste. #}
+              {% if all_matters %}
+                <div class="chat-start-matter">
+                  <button type="button" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange"
+                          data-matter-picker aria-expanded="false" aria-controls="chat-start-matter-panel">
+                    <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
+                    <span class="chat-quick-action__text">
+                      <span class="chat-quick-action__title">Akte öffnen</span>
+                      <span class="chat-quick-action__subtitle">Vorhandene Dokumente und Kontext nutzen</span>
+                    </span>
+                  </button>
+                  <form method="get" action="/dashboard/chat" class="chat-start-matter__panel" id="chat-start-matter-panel" hidden>
+                    <input type="hidden" name="new" value="1" />
+                    <label class="chat-start-matter__label" for="chat-start-matter-select">Chat mit Akte beginnen</label>
+                    <select name="matter" id="chat-start-matter-select" required>
+                      <option value="" disabled selected>— Akte wählen —</option>
+                      {% for matter in all_matters %}
+                        <option value="{{ matter.id }}">{{ matter.reference_number or "" }} {{ matter.title }} ({{ matter.client.name }})</option>
+                      {% endfor %}
+                    </select>
+                    <div class="chat-start-matter__actions">
+                      <a href="/dashboard/matters" class="chat-start-matter__all">Alle Akten</a>
+                      <button type="submit" class="btn btn--primary">Öffnen</button>
+                    </div>
+                  </form>
+                </div>
+              {% else %}
+                <a href="/dashboard/matters" class="chat-quick-action chat-quick-action--card chat-quick-action--tint-orange">
+                  <span class="chat-quick-action__icon chat-quick-action__icon--orange">{{ icons.folder(class_="icon") }}</span>
+                  <span class="chat-quick-action__text">
+                    <span class="chat-quick-action__title">Akte öffnen</span>
+                    <span class="chat-quick-action__subtitle">Vorhandene Dokumente und Kontext nutzen</span>
+                  </span>
+                </a>
+              {% endif %}
             </div>
           </div>
         {% else %}
@@ -1836,7 +1870,7 @@
         });
       });
 
-      document.querySelectorAll(".chat-quick-action").forEach(function (btn) {
+      document.querySelectorAll(".chat-quick-action[data-prefill]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           textarea.value = btn.getAttribute("data-prefill");
           textarea.focus();
@@ -1846,6 +1880,26 @@
           }
         });
       });
+
+      // "Akte öffnen" (Startseite, 28.10.2026): kompakte Aktenauswahl unter der Karte; Abschicken nutzt den
+      // bestehenden Einstieg /dashboard/chat?new=1&matter=<id>. Escape oder Klick ausserhalb schliesst.
+      (function () {
+        var trigger = document.querySelector("[data-matter-picker]");
+        var panel = document.getElementById("chat-start-matter-panel");
+        if (!trigger || !panel) { return; }
+        function setOpen(open) {
+          panel.hidden = !open;
+          trigger.setAttribute("aria-expanded", open ? "true" : "false");
+          if (open) { panel.querySelector("select").focus(); }
+        }
+        trigger.addEventListener("click", function () { setOpen(panel.hidden); });
+        document.addEventListener("keydown", function (evt) {
+          if (evt.key === "Escape" && !panel.hidden) { setOpen(false); trigger.focus(); }
+        });
+        document.addEventListener("click", function (evt) {
+          if (!panel.hidden && !panel.contains(evt.target) && !trigger.contains(evt.target)) { setOpen(false); }
+        });
+      })();
 
       // Sofortiges User-Nachricht-Rendering (06.10., Owner-Direktive "CHAT &
       // CHAT-HISTORY PROFESSIONAL UX PASS" §4-§12) - ROOT CAUSE (siehe
