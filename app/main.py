@@ -80,6 +80,7 @@ from app.web.laws_router import router as laws_web_router
 from app.web.monitoring_router import router as monitoring_web_router
 from app.web.outbox_router import router as outbox_web_router
 from app.web.placeholder_router import router as placeholder_web_router
+from app.web.fibu_router import router as fibu_web_router
 from app.web.router import router as web_router
 from app.web.users_router import router as users_web_router
 
@@ -495,6 +496,7 @@ app.include_router(deadline_actions_web_router)
 app.include_router(note_actions_web_router)
 app.include_router(client_notes_web_router)
 app.include_router(placeholder_web_router)
+app.include_router(fibu_web_router)
 app.mount(
     "/dashboard/static",
     StaticFiles(directory=STATIC_DIR),

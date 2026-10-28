@@ -96,6 +96,9 @@ class Settings(BaseSettings):
     # (Herkunft am Speicherort erkennbar), gleiches Sicherheitsmuster wie
     # schriftsatz_upload_storage_dir (app/chat/service.py::attach_document).
     chat_upload_storage_dir: str = "data/chat_uploads"
+    # Belege der Finanzbuchhaltung (28.10.2026) - eigener Ordner, je Mandant ein Unterordner (app/fibu/service.py).
+    # Bewusst getrennt von den Akten-Dokumenten: keine Datenschutzpruefung/KI-Pipeline, kein Chat-Kontext.
+    fibu_receipt_storage_dir: str = "data/fibu_receipts"
 
     # --- Klassifikation ---
     # Ab welchem Konfidenzwert (0.0-1.0) eine Klassifikation als

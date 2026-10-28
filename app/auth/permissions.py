@@ -77,6 +77,10 @@ PERM_QUALITY_REVIEW = "quality:review"
 # Gespeicherte Datenschutz-Entscheidungen einer Akte aufheben/bestaetigen (PRIVACY_REVIEW_ARCHITECTURE.md §52) - Admin
 # und Anwalt: das Aufheben schwaecht den Schutz eines Namens ab. Ansehen darf jede Rolle mit Aktenzugang.
 PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
+# Finanzbuchhaltung (28.10.2026, MVP): Buchungen erfassen/aendern/buchen/stornieren, Belege hochladen, Konten,
+# Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter lesen nur.
+# Ob Mitarbeiter (z. B. Buchhaltungskraefte) erfassen duerfen, ist eine offene fachliche Entscheidung.
+PERM_FIBU_MANAGE = "fibu:manage"
 
 _ALL_PERMISSIONS = frozenset(
     {
@@ -93,6 +97,7 @@ _ALL_PERMISSIONS = frozenset(
         PERM_DEADLINE_CONFIRM,
         PERM_QUALITY_REVIEW,
         PERM_PRIVACY_DECISION_MANAGE,
+        PERM_FIBU_MANAGE,
     }
 )
 
@@ -111,6 +116,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_DEADLINE_CONFIRM,
             PERM_QUALITY_REVIEW,
             PERM_PRIVACY_DECISION_MANAGE,
+            PERM_FIBU_MANAGE,
         }
     ),
     "mitarbeiter": frozenset(

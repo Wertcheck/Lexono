@@ -390,7 +390,15 @@
             "href": "/dashboard/knowledge",
             "flat": true,
           },
+          {
+            "label": "Finanzbuchhaltung",
+            "icon": icons.ledger,
+            "href": "/dashboard/fibu",
+            "flat": true,
+          },
         ] %}
+        {# "Finanzbuchhaltung" (28.10.2026, Owner-Auftrag mit Referenzbild) ergaenzt die sechs Kernbereiche um einen
+           siebten Eintrag, gekennzeichnet mit "NEU" wie im Referenzbild. #}
         {# Alle sechs Bereiche sind bewusst flach (kein <details>-Aufklapp
            mehr) - eine feste, immer sechs Zeilen hohe Hauptnavigation ist
            Teil der verbindlichen Vorgabe. #}
@@ -409,6 +417,8 @@
               {% elif group.label == "Posteingang" %}
                 {# Ungelesene eingehende Nachrichten (Posteingang-Referenz, 26.10.) - gleiches Lazy-Load-Muster #}
                 <span hx-get="/dashboard/inbox/badge" hx-trigger="load" hx-swap="innerHTML"></span>
+              {% elif group.label == "Finanzbuchhaltung" %}
+                <span class="sidebar__new-badge">NEU</span>
               {% endif %}
             </a>
           </div>

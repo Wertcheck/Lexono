@@ -1,0 +1,793 @@
+{
+ "aufnahmen": {
+  "1920x1080-hell-01-uebersicht": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1920x1080-hell-01b-uebersicht-ganze-seite": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1920x1080-hell-02-buchen": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-01-uebersicht": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-01b-uebersicht-ganze-seite": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-02-buchen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "960x600-hell-01-uebersicht": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "seitenhoehe": 600,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    694,
+    199
+   ],
+   "js_fehler": []
+  },
+  "960x600-hell-01b-uebersicht-ganze-seite": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "seitenhoehe": 600,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    694,
+    199
+   ],
+   "js_fehler": []
+  },
+  "960x600-hell-02-buchen": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "seitenhoehe": 600,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    694,
+    199
+   ],
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-01-uebersicht": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-01b-uebersicht-ganze-seite": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-02-buchen": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "seitenhoehe": 1080,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1654,
+    70
+   ],
+   "js_fehler": []
+  },
+  "1280x720-dunkel-01-uebersicht": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-dunkel-02-buchen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "960x600-dunkel-01-uebersicht": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "seitenhoehe": 600,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    694,
+    199
+   ],
+   "js_fehler": []
+  },
+  "960x600-dunkel-02-buchen": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "seitenhoehe": 600,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    694,
+    199
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-03-belege": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 2,
+   "ueberlauf": [],
+   "aktiver_reiter": "Belege",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-04-konten": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 9,
+   "ueberlauf": [],
+   "aktiver_reiter": "Konten",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-05-ust": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 4,
+   "ueberlauf": [],
+   "aktiver_reiter": "USt-Voranmeldung",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1024,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-06-bwa": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 21,
+   "ueberlauf": [],
+   "aktiver_reiter": "Auswertungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-07-susa": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 13,
+   "ueberlauf": [],
+   "aktiver_reiter": "Auswertungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-08-kontenblatt": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 13,
+   "ueberlauf": [],
+   "aktiver_reiter": "Auswertungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-09-op-liste": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 4,
+   "ueberlauf": [],
+   "aktiver_reiter": "Auswertungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1024,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-10-datev-entwurf": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 0,
+   "ueberlauf": [],
+   "aktiver_reiter": "Auswertungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1024,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-11-einstellungen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 0,
+   "ueberlauf": [],
+   "aktiver_reiter": "Einstellungen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-12-buchung-bearbeiten-verlauf": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-13-stornierte-buchung-verlauf": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-14-mandantenwechsel-handwerk-kg": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "4.760,00 €",
+    "-1.190,00 €",
+    "3.000,00 €",
+    "-190,00 €"
+   ],
+   "zeilen": 2,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-15-jahreswechsel-2025-mandant-b-leer": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "0,00 €",
+    "0,00 €",
+    "0,00 €",
+    "0,00 €"
+   ],
+   "zeilen": 1,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-16-zeilenmenue": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 1,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-17-primaerknopf-menue": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [
+    "125.430,50 €",
+    "-87.214,20 €",
+    "28.552,93 €",
+    "642,77 €"
+   ],
+   "zeilen": 10,
+   "ueberlauf": [],
+   "aktiver_reiter": "Übersicht",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  },
+  "1280x720-hell-18-mitarbeiter-nur-lesen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "seitenhoehe": 720,
+   "kpis": [],
+   "zeilen": 18,
+   "ueberlauf": [],
+   "aktiver_reiter": "Buchen",
+   "nav_aktiv": "Finanzbuchhaltung",
+   "neu_badge": true,
+   "kopf": [
+    252,
+    102,
+    1014,
+    141
+   ],
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "belege_angelegt": 2,
+  "kennzahlen_mandant_a": [
+   "125.430,50 €",
+   "-87.214,20 €",
+   "28.552,93 €",
+   "642,77 €"
+  ],
+  "kennzahlen_mandant_b": [
+   "4.760,00 €",
+   "-1.190,00 €",
+   "3.000,00 €",
+   "-190,00 €"
+  ],
+  "mandant_b_zeigt_keine_buchung_von_a": true,
+  "fremde_buchung_ueber_mandant_b_lesen_http": 404,
+  "fremde_buchung_ueber_mandant_b_stornieren_http": 404,
+  "fremder_beleg_ueber_mandant_b_http": 404,
+  "konto_von_b_in_buchung_von_a": [
+   400,
+   "Bitte ein Konto dieses Mandanten wählen."
+  ],
+  "pflichtfeld_fehlt": [
+   400,
+   "Bitte eine Belegnummer eingeben."
+  ],
+  "ungueltiger_beleg": [
+   400,
+   "Nicht gespeichert: „QA-SYNTH-Makro.exe“: nur PDF, JPG und PNG sind erlaubt."
+  ],
+  "pdf_endung_ohne_pdf_inhalt": [
+   400,
+   "Nicht gespeichert: „QA-SYNTH-falsch.pdf“ ist keine gültige PDF-Datei."
+  ],
+  "mitarbeiter_sieht_zahlen": true,
+  "mitarbeiter_ohne_hochladen_knopf": true,
+  "mitarbeiter_buchen_http": 403,
+  "mitarbeiter_datev_http": 403,
+  "ohne_csrf_http": 422,
+  "datev_zeilen": 16,
+  "datev_kopf": "Umsatz (ohne Soll/Haben-Kz);Soll/Haben-Kennzeichen;WKZ Umsatz;Konto;Gegenkonto (ohne BU-Schlüssel);BU-Schlüssel;Belegdatum;Belegfeld 1;Buchungstext;Steuersatz (Info)",
+  "datev_beispiel": [
+   "1250,00;S;EUR;1000;8400;;2710;RE-2026-105;Beratung Projekt XY;19 %"
+  ],
+  "datev_ohne_offene_und_stornierte": true,
+  "susa_summenzeile": [
+   "<td class=\"fibu-num\">212.644,70</td><td class=\"fibu-num\">212.644,70</td><td class=\"fibu-num\">0,00</td>"
+  ],
+  "ust_q4_zeile": "3.890,76 739,24 0,00 0,00 0,00 96,47 642,77 10.01.2027 8",
+  "unbekannter_mandant_http": 404,
+  "mandantenwechsel_url": "?tab=uebersicht&client=78078a1b-44e8-419c-a1ae-25567fb08473&year=2026"
+ }
+}

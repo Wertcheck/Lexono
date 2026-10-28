@@ -24,6 +24,7 @@ from app.models.draft_feedback import DraftFeedback
 from app.models.draft_quality_rating import DraftQualityRating
 from app.models.draft_reference_links import DraftKnowledgeItemLink, DraftSourceLink
 from app.models.embedding import Embedding
+from app.models.fibu import FibuAccount, FibuBooking, FibuClientProfile, FibuReceipt, FibuTask
 from app.models.firm_practice_area import FirmPracticeArea
 from app.models.firm_profile import FirmProfile
 from app.models.letterhead import Letterhead
@@ -63,6 +64,11 @@ from app.models.workflow_run import VALID_WORKFLOW_STATUSES, WorkflowRun
 
 __all__ = [
     "Base",
+    "FibuAccount",
+    "FibuBooking",
+    "FibuClientProfile",
+    "FibuReceipt",
+    "FibuTask",
     "Client",
     "VALID_CLIENT_STATUSES",
     "Matter",
