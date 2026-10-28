@@ -1,0 +1,4863 @@
+{
+ "phase": "vorher",
+ "aufnahmen": {
+  "1920x1080-hell-01-zoom100-fenster": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      587,
+      403,
+      218,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      581,
+      543,
+      207,
+      25
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      492,
+      438,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      598,
+      627,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      758,
+      403,
+      47,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      639,
+      795,
+      52,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      488,
+      403,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      860,
+      543,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      654,
+      657,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      143,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      795,
+      81,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      814,
+      473,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      849,
+      508,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      567,
+      508,
+      84,
+      25
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      627,
+      127,
+      25
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1920x1080-hell-02-zoom100-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      587,
+      403,
+      218,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      581,
+      543,
+      207,
+      25
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      492,
+      438,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      598,
+      627,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      758,
+      403,
+      47,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      639,
+      795,
+      52,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      488,
+      403,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      860,
+      543,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      654,
+      657,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      143,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      795,
+      81,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      814,
+      473,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      849,
+      508,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      567,
+      508,
+      84,
+      25
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      627,
+      127,
+      25
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1920x1080-hell-03-zoom160-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      756,
+      528,
+      348,
+      40
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      746,
+      751,
+      331,
+      40
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      604,
+      584,
+      301,
+      40
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      774,
+      886,
+      301,
+      40
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      1029,
+      528,
+      75,
+      40
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      839,
+      1155,
+      83,
+      40
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      597,
+      528,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1193,
+      751,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      864,
+      934,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1127,
+      584,
+      229,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1054,
+      1102,
+      92,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      466,
+      1155,
+      129,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      1119,
+      639,
+      93,
+      40
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      1175,
+      695,
+      93,
+      40
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      723,
+      695,
+      134,
+      40
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      466,
+      886,
+      203,
+      40
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1127,
+      584,
+      92,
+      40
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1054,
+      1102,
+      92,
+      40
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "160 %"
+  },
+  "1920x1080-hell-09-docx-tabelle-nah": {
+   "anzahl": 5,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 1",
+   "fundstelle": "Fundstelle 1 von 1",
+   "aktive_markierungen": [
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--masked pseudo-mark--cat-person"
+   ],
+   "beispiele": [
+    {
+     "term": "Beispielstrasse 17, 10115 Berlin",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      611,
+      441,
+      255,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      611,
+      474,
+      183,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      848,
+      369,
+      57,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Thomas",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      611,
+      407,
+      65,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      681,
+      407,
+      54,
+      25
+     ],
+     "title": "[PERSON_03] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-01-zoom100-fenster": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      303,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      399,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      327,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      458,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      303,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      573,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      303,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      399,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      478,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      573,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      351,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      375,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      375,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      458,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-02-zoom100-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      303,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      399,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      327,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      458,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      303,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      573,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      303,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      399,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      478,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      573,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      351,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      375,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      375,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      458,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-03-zoom160-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      469,
+      389,
+      241,
+      28
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      462,
+      543,
+      228,
+      28
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      364,
+      427,
+      208,
+      28
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      481,
+      636,
+      208,
+      28
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      657,
+      389,
+      52,
+      28
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      526,
+      822,
+      58,
+      28
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      359,
+      389,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      770,
+      543,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      543,
+      669,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      725,
+      427,
+      158,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      674,
+      785,
+      63,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      269,
+      822,
+      89,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      719,
+      466,
+      64,
+      28
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      758,
+      505,
+      64,
+      28
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      446,
+      505,
+      93,
+      28
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      269,
+      636,
+      140,
+      28
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      725,
+      427,
+      63,
+      28
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      674,
+      785,
+      63,
+      28
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "160 %"
+  },
+  "1280x720-hell-03b-zoom80-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      382,
+      274,
+      120,
+      14
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      378,
+      351,
+      114,
+      14
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      329,
+      294,
+      104,
+      14
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      388,
+      398,
+      104,
+      14
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      476,
+      274,
+      26,
+      14
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      411,
+      491,
+      29,
+      14
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      327,
+      274,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      532,
+      351,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      419,
+      414,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      510,
+      294,
+      79,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      484,
+      472,
+      32,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      282,
+      491,
+      45,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      507,
+      313,
+      32,
+      14
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      526,
+      332,
+      32,
+      14
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      371,
+      332,
+      46,
+      14
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      282,
+      398,
+      70,
+      14
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      510,
+      294,
+      32,
+      14
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      484,
+      472,
+      32,
+      14
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "80 %"
+  },
+  "1280x720-hell-04-hover-fundstelle-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      291,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      387,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      315,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      446,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      291,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      561,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      291,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      387,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      466,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      561,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      339,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      363,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      363,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      446,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-05-klick-fundstelle-panel-folgt": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      291,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      387,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      315,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      446,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      291,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      561,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      291,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      387,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      466,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      561,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      339,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      363,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      363,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      446,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-06-klick-andere-rueckfrage": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Kaufmann",
+   "fortschritt": "Rückfrage 2 von 2",
+   "fundstelle": "Fundstelle 1 von 1",
+   "aktive_markierungen": [
+    "Kaufmann"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open",
+    "pseudo-mark--open is-active"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      291,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      387,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      315,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      446,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      291,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      561,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      291,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      387,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      466,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      561,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open",
+     "box": [
+      508,
+      339,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open",
+     "box": [
+      532,
+      363,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      338,
+      363,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      446,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-07-panel-naechste-rueckfrage-dokument-folgt": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      291,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      387,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      315,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      446,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      291,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      561,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      291,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      387,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      466,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      561,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      339,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      363,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      363,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      446,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-08-entscheidung-bleibt-lesbar-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--kept is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      291,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      387,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      315,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      446,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      291,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      561,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      291,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      387,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      466,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      561,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--kept is-active",
+     "box": [
+      508,
+      339,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--kept is-active",
+     "box": [
+      532,
+      363,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      363,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      446,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      315,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      538,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-hell-09-docx-tabelle-nah": {
+   "anzahl": 5,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 1",
+   "fundstelle": "Fundstelle 1 von 1",
+   "aktive_markierungen": [
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--masked pseudo-mark--cat-person"
+   ],
+   "beispiele": [
+    {
+     "term": "Beispielstrasse 17, 10115 Berlin",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      369,
+      329,
+      176,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      369,
+      352,
+      126,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      279,
+      39,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Thomas",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      369,
+      306,
+      45,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      416,
+      306,
+      37,
+      17
+     ],
+     "title": "[PERSON_03] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1920x1080-dunkel-01-zoom100-fenster": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      587,
+      403,
+      218,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      581,
+      543,
+      207,
+      25
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      492,
+      438,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      598,
+      627,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      758,
+      403,
+      47,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      639,
+      795,
+      52,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      488,
+      403,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      860,
+      543,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      654,
+      657,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      143,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      795,
+      81,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      814,
+      473,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      849,
+      508,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      567,
+      508,
+      84,
+      25
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      627,
+      127,
+      25
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1920x1080-dunkel-02-zoom100-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      587,
+      403,
+      218,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      581,
+      543,
+      207,
+      25
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      492,
+      438,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      598,
+      627,
+      188,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      758,
+      403,
+      47,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      639,
+      795,
+      52,
+      25
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      488,
+      403,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      860,
+      543,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      654,
+      657,
+      89,
+      25
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      143,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      795,
+      81,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      814,
+      473,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      849,
+      508,
+      58,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      567,
+      508,
+      84,
+      25
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      406,
+      627,
+      127,
+      25
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      819,
+      438,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      773,
+      762,
+      57,
+      25
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1920x1080-dunkel-03-zoom160-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      756,
+      528,
+      348,
+      40
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      746,
+      751,
+      331,
+      40
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      604,
+      584,
+      301,
+      40
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      774,
+      886,
+      301,
+      40
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      1029,
+      528,
+      75,
+      40
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      839,
+      1155,
+      83,
+      40
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      597,
+      528,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1193,
+      751,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      864,
+      934,
+      142,
+      40
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1127,
+      584,
+      229,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1054,
+      1102,
+      92,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      466,
+      1155,
+      129,
+      40
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      1119,
+      639,
+      93,
+      40
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      1175,
+      695,
+      93,
+      40
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      723,
+      695,
+      134,
+      40
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      466,
+      886,
+      203,
+      40
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1127,
+      584,
+      92,
+      40
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      1054,
+      1102,
+      92,
+      40
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "160 %"
+  },
+  "1920x1080-dunkel-09-docx-tabelle-nah": {
+   "anzahl": 5,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 1",
+   "fundstelle": "Fundstelle 1 von 1",
+   "aktive_markierungen": [
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--masked pseudo-mark--cat-person"
+   ],
+   "beispiele": [
+    {
+     "term": "Beispielstrasse 17, 10115 Berlin",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      611,
+      441,
+      255,
+      25
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      611,
+      474,
+      183,
+      25
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      848,
+      369,
+      57,
+      25
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Thomas",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      611,
+      407,
+      65,
+      25
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      681,
+      407,
+      54,
+      25
+     ],
+     "title": "[PERSON_03] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-dunkel-01-zoom100-fenster": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      303,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      399,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      327,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      458,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      303,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      573,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      303,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      399,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      478,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      573,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      351,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      375,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      375,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      458,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-dunkel-02-zoom100-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      352,
+      303,
+      150,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      348,
+      399,
+      143,
+      17
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      286,
+      327,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      360,
+      458,
+      130,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      470,
+      303,
+      32,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      388,
+      573,
+      36,
+      17
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      284,
+      303,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      540,
+      399,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      398,
+      478,
+      61,
+      17
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      99,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      573,
+      56,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      508,
+      351,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      375,
+      40,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      338,
+      375,
+      58,
+      17
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      227,
+      458,
+      87,
+      17
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      512,
+      327,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      480,
+      550,
+      39,
+      17
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  },
+  "1280x720-dunkel-03-zoom160-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      469,
+      389,
+      241,
+      28
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      462,
+      543,
+      228,
+      28
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      364,
+      427,
+      208,
+      28
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      481,
+      636,
+      208,
+      28
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      657,
+      389,
+      52,
+      28
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      526,
+      822,
+      58,
+      28
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      359,
+      389,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      770,
+      543,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      543,
+      669,
+      98,
+      28
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      725,
+      427,
+      158,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      674,
+      785,
+      63,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      269,
+      822,
+      89,
+      28
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      719,
+      466,
+      64,
+      28
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      758,
+      505,
+      64,
+      28
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      446,
+      505,
+      93,
+      28
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      269,
+      636,
+      140,
+      28
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      725,
+      427,
+      63,
+      28
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      674,
+      785,
+      63,
+      28
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "160 %"
+  },
+  "1280x720-dunkel-03b-zoom80-nah": {
+   "anzahl": 18,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 2",
+   "fundstelle": "Fundstelle 1 von 2",
+   "aktive_markierungen": [
+    "Richter",
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--masked pseudo-mark--cat-person",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--open"
+   ],
+   "beispiele": [
+    {
+     "term": "Lindenweg 4, 50667 Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      382,
+      274,
+      120,
+      14
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "max.bauer@example.org",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-sonstiges",
+     "box": [
+      378,
+      351,
+      114,
+      14
+     ],
+     "title": "[EMAIL_01] (E-Mail)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      329,
+      294,
+      104,
+      14
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      388,
+      398,
+      104,
+      14
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      476,
+      274,
+      26,
+      14
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Koeln",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      411,
+      491,
+      29,
+      14
+     ],
+     "title": "[ORT_01] (Ort)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      327,
+      274,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      532,
+      351,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Max Bauer",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      419,
+      414,
+      49,
+      14
+     ],
+     "title": "[PERSON_01] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      510,
+      294,
+      79,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      484,
+      472,
+      32,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Sabine Hartmann",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      282,
+      491,
+      45,
+      14
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      507,
+      313,
+      32,
+      14
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      526,
+      332,
+      32,
+      14
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Kaufmann",
+     "cls": "pseudo-mark--open",
+     "box": [
+      371,
+      332,
+      46,
+      14
+     ],
+     "title": "Rückfrage offen: Kaufmann"
+    },
+    {
+     "term": "Thomas Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      282,
+      398,
+      70,
+      14
+     ],
+     "title": "[PERSON_05] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      510,
+      294,
+      32,
+      14
+     ],
+     "title": "[PERSON_06] (Person)"
+    },
+    {
+     "term": "Sabine",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      484,
+      472,
+      32,
+      14
+     ],
+     "title": "[PERSON_06] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "80 %"
+  },
+  "1280x720-dunkel-09-docx-tabelle-nah": {
+   "anzahl": 5,
+   "js_fehler": [],
+   "aktive_frage": "Richter",
+   "fortschritt": "Rückfrage 1 von 1",
+   "fundstelle": "Fundstelle 1 von 1",
+   "aktive_markierungen": [
+    "Richter"
+   ],
+   "aktuelle_markierung": [],
+   "klassen": [
+    "pseudo-mark--masked pseudo-mark--cat-adresse",
+    "pseudo-mark--masked pseudo-mark--cat-organisation",
+    "pseudo-mark--open is-active",
+    "pseudo-mark--masked pseudo-mark--cat-person"
+   ],
+   "beispiele": [
+    {
+     "term": "Beispielstrasse 17, 10115 Berlin",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-adresse",
+     "box": [
+      369,
+      329,
+      176,
+      17
+     ],
+     "title": "[ADRESSE_01] (Anschrift)"
+    },
+    {
+     "term": "Nordbauholding GmbH",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-organisation",
+     "box": [
+      369,
+      352,
+      126,
+      17
+     ],
+     "title": "[ORGANISATION_01] (Organisation)"
+    },
+    {
+     "term": "Richter",
+     "cls": "pseudo-mark--open is-active",
+     "box": [
+      532,
+      279,
+      39,
+      17
+     ],
+     "title": "Rückfrage offen: Richter"
+    },
+    {
+     "term": "Thomas",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      369,
+      306,
+      45,
+      17
+     ],
+     "title": "[PERSON_02] (Person)"
+    },
+    {
+     "term": "Berger",
+     "cls": "pseudo-mark--masked pseudo-mark--cat-person",
+     "box": [
+      416,
+      306,
+      37,
+      17
+     ],
+     "title": "[PERSON_03] (Person)"
+    }
+   ],
+   "stil_beispiel": {
+    "bg": "rgba(236, 138, 0, 0.18)",
+    "border": "1px solid solid",
+    "shadow": "none",
+    "radius": "3px"
+   },
+   "zoom": "100 %"
+  }
+ },
+ "funktion": {
+  "server": {
+   "brief": {
+    "rueckfragen": [
+     "Richter",
+     "Kaufmann"
+    ],
+    "funde": [
+     [
+      "Lindenweg 4, 50667 Koeln",
+      "adresse"
+     ],
+     [
+      "max.bauer@example.org",
+      "email"
+     ],
+     [
+      "Nordbauholding GmbH",
+      "organisation"
+     ],
+     [
+      "Koeln",
+      "ort"
+     ],
+     [
+      "Max Bauer",
+      "person"
+     ],
+     [
+      "Sabine Hartmann",
+      "person"
+     ],
+     [
+      "Richter",
+      "person"
+     ],
+     [
+      "Kaufmann",
+      "person"
+     ],
+     [
+      "Thomas Berger",
+      "person"
+     ],
+     [
+      "Sabine",
+      "person"
+     ]
+    ],
+    "markierungen": [
+     [
+      "Lindenweg 4, 50667 Koeln",
+      "masked",
+      "adresse",
+      0.147
+     ],
+     [
+      "max.bauer@example.org",
+      "masked",
+      "email",
+      0.2463
+     ],
+     [
+      "Nordbauholding GmbH",
+      "masked",
+      "organisation",
+      0.1718
+     ],
+     [
+      "Nordbauholding GmbH",
+      "masked",
+      "organisation",
+      0.3062
+     ],
+     [
+      "Koeln",
+      "masked",
+      "ort",
+      0.147
+     ],
+     [
+      "Koeln",
+      "masked",
+      "ort",
+      0.4255
+     ],
+     [
+      "Max Bauer",
+      "masked",
+      "person",
+      0.147
+     ],
+     [
+      "Max Bauer",
+      "masked",
+      "person",
+      0.2463
+     ],
+     [
+      "Max Bauer",
+      "masked",
+      "person",
+      0.3273
+     ],
+     [
+      "Sabine Hartmann",
+      "masked",
+      "person",
+      0.1718
+     ],
+     [
+      "Sabine Hartmann",
+      "masked",
+      "person",
+      0.4017
+     ],
+     [
+      "Sabine Hartmann",
+      "masked",
+      "person",
+      0.4255
+     ],
+     [
+      "Richter",
+      "open",
+      "rueckfrage",
+      0.1966
+     ],
+     [
+      "Richter",
+      "open",
+      "rueckfrage",
+      0.2215
+     ],
+     [
+      "Kaufmann",
+      "open",
+      "rueckfrage",
+      0.2215
+     ],
+     [
+      "Thomas Berger",
+      "masked",
+      "person",
+      0.3062
+     ],
+     [
+      "Sabine",
+      "masked",
+      "person",
+      0.1718
+     ],
+     [
+      "Sabine",
+      "masked",
+      "person",
+      0.4017
+     ]
+    ]
+   },
+   "tabelle": {
+    "rueckfragen": [
+     "Richter"
+    ],
+    "funde": [
+     [
+      "Beispielstrasse 17, 10115 Berlin",
+      "adresse"
+     ],
+     [
+      "Nordbauholding GmbH",
+      "organisation"
+     ],
+     [
+      "Richter",
+      "person"
+     ],
+     [
+      "Thomas",
+      "person"
+     ],
+     [
+      "Berger",
+      "person"
+     ]
+    ],
+    "markierungen": [
+     [
+      "Beispielstrasse 17, 10115 Berlin",
+      "masked",
+      "adresse",
+      0.1898
+     ],
+     [
+      "Nordbauholding GmbH",
+      "masked",
+      "organisation",
+      0.2157
+     ],
+     [
+      "Richter",
+      "open",
+      "rueckfrage",
+      0.1343
+     ],
+     [
+      "Thomas",
+      "masked",
+      "person",
+      0.164
+     ],
+     [
+      "Berger",
+      "masked",
+      "person",
+      0.164
+     ]
+    ]
+   }
+  },
+  "klick_zweite_fundstelle": 2
+ }
+}

@@ -335,7 +335,9 @@
       var base = node.classList.contains("pseudo-mark-inline") ? "pseudo-mark-inline " : "pseudo-mark ";
       node.className = base + kindClass(decisionKind(term), questionGroup(term)) +
         (term === state.activeTerm ? " is-active" : "");
+      if (!node.classList.contains("pseudo-mark-inline")) { node.title = markTitle({ kind: "open", term: term }); }
     });
+    markCurrent();
     thumbs.querySelectorAll(".pseudo-thumb").forEach(function (t) {
       var data = state.reviews[state.currentId];
       var page = data && data.pages ? data.pages[Number(t.getAttribute("data-thumb-page")) - 1] : null;
@@ -343,6 +345,107 @@
       var open = page ? page.marks.filter(function (m) { return m.kind === "open" && !state.decisions[m.term]; }).length : 0;
       if (badge && !open) { badge.remove(); } else if (badge) { badge.textContent = String(open); }
     });
+  }
+
+  // --- Markierungen im Seitenbild (Annotationsdesign 28.10.2026) ----------------------------------------------------
+
+  /** Darstellungsliste einer Seite (nur Anzeige - Serverdaten bleiben unveraendert):
+   *  - maskierte Funde, die vollstaendig in einem anderen maskierten Fund liegen (z. B. "Bauer" in "Max Bauer"),
+   *    entfallen, damit sich Toenungen nicht doppeln;
+   *  - benachbarte maskierte Teile DERSELBEN Kategorie in einer Zeile (z. B. "Thomas" | "Berger" in einer
+   *    Tabellenzelle) werden zu EINER Markierung verbunden;
+   *  - offene Rueckfragen bleiben einzeln und in Serverreihenfolge (jede Fundstelle ist eigens anwaehlbar) und liegen
+   *    oben. Zeilenuebergreifende Funde liefert der Server je Zeile - sie bleiben je Zeile, gleich gestaltet. */
+  function drawableMarks(page) {
+    var pw = page.width || 595, ph = page.height || 842, eps = 0.0015;
+    var masked = page.marks.filter(function (m) { return m.kind !== "open"; });
+    var inside = function (a, b) {
+      return a !== b && a.x >= b.x - eps && a.x + a.w <= b.x + b.w + eps && a.y >= b.y - eps && a.y + a.h <= b.y + b.h + eps;
+    };
+    masked = masked.filter(function (a) {
+      return !masked.some(function (b) { return inside(a, b) && (b.w * b.h > a.w * a.h || masked.indexOf(b) < masked.indexOf(a)); });
+    });
+    masked = masked.map(function (m) {
+      return { kind: m.kind, term: m.term, category: m.category, x: m.x, y: m.y, w: m.w, h: m.h,
+               parts: [{ term: m.term, placeholder: m.placeholder }] };
+    }).sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
+    var merged = [];
+    masked.forEach(function (m) {
+      var prev = merged[merged.length - 1];
+      var gapPt = prev ? (m.x - (prev.x + prev.w)) * pw : 0;
+      var sameLine = prev && Math.abs(prev.y - m.y) < 0.35 * m.h && Math.abs(prev.h - m.h) < 0.35 * m.h;
+      if (prev && sameLine && categoryGroup(prev.category) === categoryGroup(m.category) &&
+          gapPt > -1 && gapPt < 0.6 * m.h * ph) {
+        var right = Math.max(prev.x + prev.w, m.x + m.w), bottom = Math.max(prev.y + prev.h, m.y + m.h);
+        prev.x = Math.min(prev.x, m.x); prev.y = Math.min(prev.y, m.y);
+        prev.w = right - prev.x; prev.h = bottom - prev.y;
+        prev.parts = prev.parts.concat(m.parts);
+        return;
+      }
+      merged.push(m);
+    });
+    return merged.concat(page.marks.filter(function (m) { return m.kind === "open"; }));
+  }
+
+  function markTitle(mark) {
+    if (mark.kind === "open") {
+      var kind = decisionKind(mark.term);
+      return kind === "open" ? "Rückfrage offen: „" + mark.term + "“ – zum Prüfen anklicken"
+        : "„" + mark.term + "“ – " + (kind === "kept" ? "bleibt lesbar" : "wird pseudonymisiert") + " (Ihre Auswahl)";
+    }
+    var label = categoryLabel(mark.category);
+    return mark.parts.map(function (p) { return p.term; }).join(" ") + " – " + label + ", wird ersetzt durch " +
+      mark.parts.map(function (p) { return p.placeholder; }).filter(Boolean).join(" ");
+  }
+
+  /** Overlay einer Fundstelle. Die Wortrahmen der PDF-Textebene reichen von Ober- bis Unterlaenge; die Toenung wird
+   *  oben/unten leicht eingezogen und seitlich um 1,5 px erweitert, damit sie den Text ruhig umschliesst, ohne
+   *  Nachbarzeilen zu beruehren. Prozentwerte: folgt jeder Zoomstufe. */
+  function buildMark(mark, occ) {
+    var m = el("span", markClass(mark));
+    m.style.left = "calc(" + (mark.x * 100) + "% - 1.5px)";
+    m.style.width = "calc(" + (mark.w * 100) + "% + 3px)";
+    m.style.top = ((mark.y + mark.h * 0.06) * 100) + "%";
+    m.style.height = (mark.h * 0.88 * 100) + "%";
+    m.setAttribute("data-term", mark.term);
+    m.setAttribute("data-kind", mark.kind);
+    m.title = markTitle(mark);
+    if (mark.kind === "open") {
+      m.setAttribute("data-occ", String(occ));
+      m.tabIndex = 0;
+      m.setAttribute("role", "button");
+      m.setAttribute("aria-label", "Rückfrage zu „" + mark.term + "“, Fundstelle " + (occ + 1));
+      m.addEventListener("click", function () { selectOccurrence(mark.term, occ); });
+      m.addEventListener("keydown", function (evt) {
+        if (evt.key === "Enter" || evt.key === " ") { evt.preventDefault(); selectOccurrence(mark.term, occ); }
+      });
+    }
+    return m;
+  }
+
+  /** Index der ersten Fundstelle von `term` im aktuellen Dokument innerhalb von `occurrences()` (dokumentuebergreifend). */
+  function occOffset(term) {
+    var q = questions().filter(function (x) { return x.term === term; })[0];
+    if (!q) { return 0; }
+    var occ = occurrences(q);
+    for (var i = 0; i < occ.length; i += 1) { if (occ[i].doc === state.currentId) { return i; } }
+    return 0;
+  }
+
+  /** Aktuelle Fundstelle der angezeigten Rueckfrage im Dokument hervorheben (Panel -> Dokument). */
+  function markCurrent() {
+    docPane.querySelectorAll(".pseudo-mark.is-current").forEach(function (n) { n.classList.remove("is-current"); });
+    if (!state.activeTerm) { return; }
+    var node = docPane.querySelector(".pseudo-mark[data-kind=\"open\"][data-term=\"" + cssEscape(state.activeTerm) +
+                                     "\"][data-occ=\"" + state.occurrence + "\"]");
+    if (node) { node.classList.add("is-current"); }
+  }
+
+  /** Klick/Enter auf eine Fundstelle: zugehoerige Rueckfrage MIT genau dieser Fundstelle anzeigen (Dokument -> Panel). */
+  function selectOccurrence(term, occ) {
+    activateQuestion(term, true, false);
+    if (state.occurrence !== occ) { state.occurrence = occ; renderQuestions(); }
+    markCurrent();
   }
 
   function renderFileInfo(data, doc) {
@@ -382,6 +485,7 @@
     var firstWidthPt = data.pages[0].width || 595;
     var dpi = Math.ceil(shownPx * (window.devicePixelRatio || 1) / firstWidthPt * 72 / 24) * 24;
     dpi = Math.min(240, Math.max(96, dpi));
+    var occCounter = {}; // Rueckfrage-Begriff -> laufende Fundstellennummer (wie `occurrences()`)
     data.pages.forEach(function (page) {
       var wrap = el("figure", "pseudo-page");
       wrap.setAttribute("data-page", String(page.number));
@@ -393,19 +497,14 @@
       img.src = data.page_url_base + page.number + ".png?dpi=" + dpi;
       box.appendChild(img);
       if (state.view === "marked") {
-        page.marks.forEach(function (mark) {
-          var m = el("span", markClass(mark));
-          m.style.left = (mark.x * 100) + "%";
-          m.style.top = (mark.y * 100) + "%";
-          m.style.width = (mark.w * 100) + "%";
-          m.style.height = (mark.h * 100) + "%";
-          m.setAttribute("data-term", mark.term);
-          m.setAttribute("data-kind", mark.kind);
-          m.title = mark.kind === "open"
-            ? (decisionKind(mark.term) === "open" ? "Rückfrage offen: " : "Entschieden: ") + mark.term
-            : mark.placeholder + " (" + categoryLabel(mark.category) + ")";
-          if (mark.kind === "open") { m.addEventListener("click", function () { activateQuestion(mark.term, true); }); }
-          box.appendChild(m);
+        drawableMarks(page).forEach(function (mark) {
+          var occ = null;
+          if (mark.kind === "open") {
+            if (!(mark.term in occCounter)) { occCounter[mark.term] = occOffset(mark.term); }
+            occ = occCounter[mark.term];
+            occCounter[mark.term] += 1;
+          }
+          box.appendChild(buildMark(mark, occ));
         });
       }
       wrap.appendChild(box);
@@ -413,6 +512,7 @@
       holder.appendChild(wrap);
     });
     docPane.appendChild(holder);
+    markCurrent();
     renderThumbs(data);
     updatePageInfo();
   }
@@ -544,7 +644,9 @@
   }
 
   function scrollToMark(term, nth) {
-    var all = docPane.querySelectorAll("[data-term=\"" + cssEscape(term) + "\"]");
+    // Rueckfrage-Fundstellen zuerst (dieselbe Zaehlung wie "Fundstelle i von n"), sonst Funde (Liste "Erkannte Funde")
+    var all = docPane.querySelectorAll("[data-kind=\"open\"][data-term=\"" + cssEscape(term) + "\"]");
+    if (!all.length) { all = docPane.querySelectorAll("[data-term=\"" + cssEscape(term) + "\"]"); }
     var mark = all[Math.min(nth || 0, Math.max(0, all.length - 1))];
     if (mark) {
       // Fundstelle im oberen Drittel, aber den Seitenanfang nicht unnoetig verlassen: vorher wurde die Markierung
@@ -750,9 +852,10 @@
     var changed = state.activeTerm !== term;
     state.activeTerm = term;
     if (changed) { state.occurrence = 0; renderQuestions(); } // es ist immer genau eine Frage dargestellt
-    docPane.querySelectorAll(".pseudo-mark, .pseudo-mark-inline").forEach(function (node) {
+    docPane.querySelectorAll(".pseudo-mark[data-kind=\"open\"], .pseudo-mark-inline[data-kind=\"open\"]").forEach(function (node) {
       node.classList.toggle("is-active", node.getAttribute("data-term") === term);
     });
+    markCurrent();
     renderProgress();
     renderFooter();
     if (scrollCard && changed) { panelScroll.scrollTop = 0; }

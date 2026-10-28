@@ -172,6 +172,75 @@ def test_question_is_compacted_up_to_900px_window_height() -> None:
     assert "@media (max-width: 1180px) and (max-height: 760px) {" in block
 
 
+def _marks_css() -> str:
+    start = CSS.index("/* Markierungen (Seitenbild-Overlay, Textansicht, Legende) - Annotationsdesign 28.10.2026")
+    return CSS[start:CSS.index(".pseudo-mark-inline.is-active", start) + 200]
+
+
+def test_marks_are_subtle_fills_with_fine_underlines_not_frames() -> None:
+    """Annotationsdesign 28.10.2026: Toenung + 1,5-px-Unterstreichung in der Kategoriefarbe, kleine Rundung, kein
+    Rahmen; Art der Fundstelle zusaetzlich ueber den Linienstil (nicht nur Farbe)."""
+    css = _marks_css()
+    assert "border-radius: 3px; border: 0;" in css and "background-size: 100% 1.5px" in css  # durchgezogen
+    for group in ("person", "organisation", "adresse", "datum", "sonstiges"):
+        rule = re.search(r"\.pseudo-mark--cat-" + group + r", \.pseudo-center__swatch--" + group + r" \{([^}]*)\}", css)
+        assert rule and "--mk-line" in rule.group(1) and "--mk-fill:" in rule.group(1), group
+        # zurueckhaltende Toenung (Alpha <= 0,12) - Text bleibt lesbar
+        alpha = float(re.search(r"--mk-fill: rgba\([^)]*, (0\.\d+)\)", rule.group(1)).group(1))
+        assert alpha <= 0.12, (group, alpha)
+    open_rule = re.search(r"\.pseudo-mark--open, \.pseudo-center__swatch--open \{([^}]*)\}", css).group(1)
+    kept_rule = re.search(r"\.pseudo-mark--kept, \.pseudo-center__swatch--kept \{([^}]*)\}", css).group(1)
+    assert "transparent 0" in open_rule and "background-size: 6px 1.5px" in open_rule  # gestrichelt = pruefpflichtig
+    assert "--mk-fill: transparent" in kept_rule and "background-size: 3px 1.5px" in kept_rule  # gepunktet, ohne Toenung
+    # keine groben Rahmen, keine Animationen mehr an den Markierungen
+    assert "dashed" not in css and "dotted" not in css and "@keyframes" not in css and "animation" not in css
+    assert not re.search(r"\.pseudo-mark[^{]*\{[^}]*border: (1|2)", CSS[CSS.index("/* --- Zentraler Pseudonymisierungsdialog"):])
+
+
+def test_active_question_and_current_occurrence_are_graded() -> None:
+    css = _marks_css()
+    active = re.search(r"\.pseudo-mark\.is-active \{([^}]*)\}", css).group(1)
+    current = re.search(r"\.pseudo-mark\.is-current \{([^}]*)\}", css).group(1)
+    assert "0 0 0 1px" in active  # alle Fundstellen der angezeigten Rueckfrage: feine Kontur
+    assert "0 0 0 1.5px" in current and "0 0 0 5px" in current  # aktuelle Fundstelle: Kontur + weicher Halo
+    assert ".pseudo-mark:focus-visible" in css and ".pseudo-mark:hover" in css
+
+
+def test_marks_hug_the_text_and_follow_every_zoom_level() -> None:
+    build = _function("buildMark")
+    assert 'm.style.left = "calc(" + (mark.x * 100) + "% - 1.5px)"' in build
+    assert "(mark.y + mark.h * 0.06) * 100" in build and "mark.h * 0.88 * 100" in build
+    assert "style.top = " in build and "px\"" not in build.split("style.top")[1].split(";")[0]  # Prozent, nicht px
+
+
+def test_multi_part_findings_merge_and_contained_duplicates_are_dropped() -> None:
+    drawable = _function("drawableMarks")
+    # gleiche Kategorie, gleiche Zeile, kleiner Abstand -> EINE Markierung (z. B. "Thomas" | "Berger")
+    assert "categoryGroup(prev.category) === categoryGroup(m.category)" in drawable and "sameLine" in drawable
+    assert "prev.parts = prev.parts.concat(m.parts)" in drawable
+    # vollstaendig enthaltene maskierte Funde (z. B. "Bauer" in "Max Bauer") werden nicht doppelt getoent
+    assert "inside(a, b)" in drawable
+    # offene Rueckfragen werden nie verbunden/entfernt und liegen oben (jede Fundstelle einzeln anwaehlbar)
+    assert 'merged.concat(page.marks.filter(function (m) { return m.kind === "open"; }))' in drawable
+    assert "drawableMarks(page).forEach" in _function("renderDocument")
+
+
+def test_document_and_question_stay_synchronised_both_ways() -> None:
+    """Native/Browser-QA 28.10.2026: Klick auf die ZWEITE Fundstelle zeigte "Fundstelle 1 von 2"."""
+    build = _function("buildMark")
+    assert 'm.setAttribute("data-occ", String(occ))' in build and "selectOccurrence(mark.term, occ)" in build
+    assert 'evt.key === "Enter"' in build and 'm.setAttribute("role", "button")' in build and "m.tabIndex = 0" in build
+    select = _function("selectOccurrence")
+    assert "state.occurrence = occ" in select and "renderQuestions()" in select and "markCurrent()" in select
+    current = _function("markCurrent")
+    assert '[data-occ=\\"" + state.occurrence + "\\"]' in current and 'classList.add("is-current")' in current
+    # Panel -> Dokument: jede Aktivierung/Neuzeichnung setzt die aktuelle Fundstelle neu
+    for name in ("activateQuestion", "refreshMarks", "renderDocument"):
+        assert "markCurrent()" in _function(name), name
+    # Zaehlung im Dokument = Zaehlung im Panel (dokumentuebergreifend)
+    assert "occOffset(mark.term)" in _function("renderDocument") and "occurrences(q)" in _function("occOffset")
+
+
 def test_three_options_explain_the_real_server_behaviour() -> None:
     options = SCRIPT[SCRIPT.index("var OPTIONS = ["):SCRIPT.index("];", SCRIPT.index("var OPTIONS = ["))]
     assert re.findall(r'decision: "(\w+)"', options) == ["personal", "not_personal", "unsure"]
