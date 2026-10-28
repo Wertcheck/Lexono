@@ -32,8 +32,8 @@
           <div class="fibu-menu__list" role="menu">
             {% if b.receipt_id %}<a role="menuitem" href="/dashboard/fibu/receipts/{{ b.receipt_id }}/file?client={{ client.id }}" target="_blank" rel="noopener">Beleg ansehen</a>{% endif %}
             <a role="menuitem" href="{{ url('buchen', edit=b.id) if b.status == 'open' else url('buchen', cancel=b.id) }}">Details &amp; Verlauf</a>
+            {% if can_capture and b.status == 'open' %}<a role="menuitem" href="{{ url('buchen', edit=b.id) }}">Bearbeiten</a>{% endif %}
             {% if can_manage and b.status == 'open' %}
-              <a role="menuitem" href="{{ url('buchen', edit=b.id) }}">Bearbeiten</a>
               <form method="post" action="/dashboard/fibu/bookings/{{ b.id }}/post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
                 <input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
@@ -124,7 +124,7 @@
       </div>
       <noscript><button type="submit" class="fibu-btn fibu-btn--ghost">Anzeigen</button></noscript>
     </form>
-    {% if can_manage %}
+    {% if can_capture %}
     <div class="fibu-split">
       <label for="fibu-upload-input" class="fibu-btn fibu-btn--primary fibu-split__main" tabindex="0" role="button">{{ icons.plus(class_="icon") }}<span>Belege hochladen</span></label>
       <details class="fibu-split__more">
@@ -133,7 +133,7 @@
           <a role="menuitem" href="{{ url('buchen') }}#fibu-booking-form">Neue Buchung erfassen</a>
           <label role="menuitem" for="fibu-upload-input">Belege hochladen …</label>
           <a role="menuitem" href="{{ url('uebersicht') }}#fibu-task-form">Aufgabe anlegen</a>
-          <a role="menuitem" href="{{ url('auswertungen', report='datev') }}">DATEV-Export (Entwurf)</a>
+          {% if can_manage %}<a role="menuitem" href="{{ url('auswertungen', report='datev') }}">DATEV-Export (Entwurf)</a>{% endif %}
         </div>
       </details>
     </div>
@@ -234,7 +234,7 @@
       <aside class="fibu-side">
         <section class="fibu-card" aria-labelledby="fibu-capture-title">
           <h2 id="fibu-capture-title">Belege erfassen</h2>
-          {% if can_manage %}
+          {% if can_capture %}
           <label for="fibu-upload-input" class="fibu-drop" data-fibu-drop>
             <span class="fibu-drop__icon">{{ icons.document(class_="icon") }}</span>
             <span><strong>Belege hier ablegen oder klicken</strong><small>PDF, JPG, PNG • Mehrere Dateien möglich</small></span>
@@ -254,7 +254,7 @@
             {% for t in tasks %}
               {% set overdue = t.due_date and t.due_date <= today %}
               <li class="fibu-task">
-                {% if can_manage %}
+                {% if can_capture %}
                 <form method="post" action="/dashboard/fibu/tasks/{{ t.id }}/toggle">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" />
                   <input type="hidden" name="year" value="{{ year }}" /><input type="hidden" name="done" value="1" />
@@ -266,7 +266,7 @@
               </li>
             {% endfor %}
           </ul>
-          {% if can_manage %}
+          {% if can_capture %}
           <form id="fibu-task-form" method="post" action="/dashboard/fibu/tasks" class="fibu-task-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
             <input type="text" name="title" maxlength="200" placeholder="Neue Aufgabe …" aria-label="Neue Aufgabe" value="{{ form.task_title or '' }}" required />
@@ -310,13 +310,13 @@
             <div class="fibu-form__actions"><a class="fibu-btn fibu-btn--ghost" href="{{ url('buchen') }}">Abbrechen</a><button type="submit" class="fibu-btn fibu-btn--danger">Stornieren</button></div>
           </form>
           {% endif %}
-        {% elif not can_manage %}
+        {% elif not can_capture %}
           <h2 id="fibu-form-title">Buchungen</h2>
-          <p class="fibu-muted">Sie können Buchungen ansehen. Erfassen, Buchen und Stornieren ist Admin und Anwalt vorbehalten.</p>
+          <p class="fibu-muted">Sie können Buchungen ansehen, aber nicht erfassen.</p>
         {% elif not active_accounts %}
           <h2 id="fibu-form-title">Neue Buchung</h2>
           <p class="fibu-muted">Für diesen Mandanten sind noch keine Konten angelegt.</p>
-          <a class="fibu-btn fibu-btn--primary" href="{{ url('konten') }}">Konten anlegen</a>
+          {% if can_manage %}<a class="fibu-btn fibu-btn--primary" href="{{ url('konten') }}">Konten anlegen</a>{% else %}<p class="fibu-muted">Konten legen Admin oder Anwalt an.</p>{% endif %}
         {% else %}
           {% set f = form if form else ({
               'booking_date': edit.booking_date.isoformat(), 'receipt_number': edit.receipt_number, 'description': edit.description,
@@ -348,14 +348,14 @@
               <span class="fibu-select"><select name="receipt_id"><option value="">Ohne Belegdatei</option>
                 {% for r in receipts %}<option value="{{ r.id }}"{% if r.id == f.receipt_id %} selected{% endif %}>{{ r.original_filename }} ({{ r.created_at.strftime('%d.%m.%Y') }})</option>{% endfor %}
               </select>{{ icons.chevron_down(class_="icon") }}</span></label>
-            <p class="fibu-muted">Netto und Steuer werden aus Brutto und Steuersatz berechnet. Offene Buchungen bleiben änderbar; „Buchen“ schließt die Bearbeitung ab, danach ist nur noch ein Storno möglich.</p>
+            <p class="fibu-muted">Netto und Steuer werden aus Brutto und Steuersatz berechnet. Offene Buchungen bleiben änderbar; „Buchen“ schließt die Bearbeitung ab, danach ist nur noch ein Storno möglich.{% if not can_manage %} Buchen und Stornieren übernehmen Admin oder Anwalt.{% endif %}</p>
             <div class="fibu-form__actions">
               {% if edit %}
                 <a class="fibu-btn fibu-btn--ghost" href="{{ url('buchen') }}">Abbrechen</a>
                 <button type="submit" class="fibu-btn fibu-btn--primary">Änderungen speichern</button>
               {% else %}
                 <button type="submit" name="action" value="save" class="fibu-btn fibu-btn--ghost">Als offen speichern</button>
-                <button type="submit" name="action" value="save_post" class="fibu-btn fibu-btn--primary">Speichern und buchen</button>
+                {% if can_manage %}<button type="submit" name="action" value="save_post" class="fibu-btn fibu-btn--primary">Speichern und buchen</button>{% endif %}
               {% endif %}
             </div>
           </form>
@@ -389,7 +389,7 @@
     <div class="fibu-grid fibu-grid--form">
       <section class="fibu-card" aria-labelledby="fibu-upload-title">
         <h2 id="fibu-upload-title">Belege hochladen</h2>
-        {% if can_manage %}
+        {% if can_capture %}
           <label for="fibu-upload-input" class="fibu-drop fibu-drop--tall" data-fibu-drop>
             <span class="fibu-drop__icon">{{ icons.upload(class_="icon") }}</span>
             <span><strong>Belege hier ablegen oder klicken</strong><small>PDF, JPG, PNG • bis 20 MB je Datei • mehrere Dateien möglich</small></span>
@@ -413,7 +413,7 @@
                   <td class="fibu-actions">
                     <a class="fibu-link" href="/dashboard/fibu/receipts/{{ r.id }}/file?client={{ client.id }}" target="_blank" rel="noopener">Ansehen</a>
                     <a class="fibu-link" href="/dashboard/fibu/receipts/{{ r.id }}/file?client={{ client.id }}&download=1">Herunterladen</a>
-                    {% if can_manage %}<a class="fibu-link" href="{{ url('buchen', receipt=r.id) }}#fibu-booking-form">Buchung erfassen</a>{% endif %}
+                    {% if can_capture %}<a class="fibu-link" href="{{ url('buchen', receipt=r.id) }}#fibu-booking-form">Buchung erfassen</a>{% endif %}
                   </td>
                 </tr>
               {% else %}<tr><td colspan="6" class="fibu-empty">Noch keine Belege für diesen Mandanten.</td></tr>{% endfor %}
@@ -573,6 +573,23 @@
           {% if can_manage %}<div class="fibu-form__actions"><button type="submit" class="fibu-btn fibu-btn--primary">Speichern</button></div>{% endif %}
         </form>
       </section>
+      {% if can_manage_access %}
+      <section class="fibu-card" aria-labelledby="fibu-access-title" id="fibu-access">
+        <h2 id="fibu-access-title">Mitarbeiterzugriff</h2>
+        <p class="fibu-muted">Mitarbeiter sehen und bearbeiten in Finanzen und Steuern nur Mandanten, die ihnen hier zugewiesen sind. Ohne Zuweisung kein Zugriff. Admin und Anwalt haben immer Zugriff.</p>
+        {% if staff_users %}
+        <form method="post" action="/dashboard/fibu/access" class="fibu-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+          <ul class="fibu-access-list">
+            {% for u in staff_users %}
+              <li><label><input type="checkbox" name="user_ids" value="{{ u.id }}"{% if u.id in staff_assigned %} checked{% endif %} /> {{ u.display_name or u.email }} <span class="fibu-muted">({{ u.email }})</span></label></li>
+            {% endfor %}
+          </ul>
+          <div class="fibu-form__actions"><button type="submit" class="fibu-btn fibu-btn--primary">Zugriff speichern</button></div>
+        </form>
+        {% else %}<p class="fibu-muted">Es gibt keine aktiven Mitarbeiter-Konten.</p>{% endif %}
+      </section>
+      {% endif %}
       <section class="fibu-card">
         <h2>Hinweise zum MVP</h2>
         <ul class="fibu-list">

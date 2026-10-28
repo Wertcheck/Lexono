@@ -15,7 +15,6 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.auth.permissions import PermissionDeniedError
 from app.models import AuditEvent, Client, Matter, TaxFieldValue, TaxSubmission
 from app.modules import licensing
 from app.modules.catalog import BASE_MODULES, CATALOG
@@ -254,16 +253,19 @@ def test_tax_module_is_locked_without_license(db_session: Session, tax_env) -> N
         tax.list_filings(db_session, people["anwalt"], a.id)
 
 
-def test_staff_has_no_tax_rights_by_default(db_session: Session, tax_env) -> None:
+def test_staff_without_assignment_has_no_tax_access(db_session: Session, tax_env) -> None:
+    """Seit 28.10.2026 (Vier-Augen-Entscheidung) duerfen Mitarbeiter vorbereiten - aber nur fuer zugewiesene
+    Mandanten. Ohne Zuweisung: kein Zugriff (deny by default); freigeben/uebermitteln nie."""
     people, a, _b, factory = tax_env
     factory.activate(db_session, ("steuern",))
-    with pytest.raises(PermissionDeniedError):
+    with pytest.raises(tax.TaxNotFound):
         tax.create_filing(db_session, people["mitarbeiter"], a.id, tax_type="est", year=2025, period_kind="year")
     filing = tax.create_filing(db_session, people["anwalt"], a.id, tax_type="est", year=2025, period_kind="year")
     for call in (lambda: tax.transition(db_session, people["mitarbeiter"], a.id, filing.id, "in_review"),
                  lambda: tax.add_part(db_session, people["mitarbeiter"], a.id, filing.id, part_code="x", label="x"),
+                 lambda: tax.list_filings(db_session, people["mitarbeiter"], a.id),
                  lambda: tax.submit_filing(db_session, people["mitarbeiter"], a.id, filing.id)):
-        with pytest.raises(PermissionDeniedError):
+        with pytest.raises(tax.TaxNotFound):
             call()
 
 
@@ -331,7 +333,7 @@ def test_submission_is_never_performed(db_session: Session, tax_env) -> None:
     with pytest.raises(tax.TaxError, match="Nur freigegebene"):
         tax.submit_filing(db_session, people["anwalt"], a.id, filing.id)
     tax.transition(db_session, people["anwalt"], a.id, filing.id, "in_review")
-    tax.transition(db_session, people["anwalt"], a.id, filing.id, "approved")
+    tax.transition(db_session, people["admin"], a.id, filing.id, "approved")   # zweite Person (Vier-Augen-Prinzip)
     for env in ("test", "production"):
         with pytest.raises(tax.SubmissionNotAvailable, match="nichts übermittelt"):
             tax.submit_filing(db_session, people["anwalt"], a.id, filing.id, environment=env)
@@ -400,3 +402,32 @@ def test_migration_041_adds_only_new_tables_and_keeps_fibu_data(tmp_path: Path) 
                                           "name = 'module_licenses'")}
     assert con.execute("select count(*) from fibu_accounts").fetchone()[0] == 1
     con.close()
+
+
+# --- Produktplanung (vorlaeufig, nicht live) ----------------------------------------------------------------------
+
+
+def test_product_plan_prices_are_combinable_and_without_setup_fee() -> None:
+    from decimal import Decimal
+
+    from app.modules import plans
+
+    assert plans.plan_price(set()) == Decimal("99.00")                                  # nur Basispaket
+    assert plans.plan_price({"finanzen"}) == Decimal("248.00")
+    assert plans.plan_price({"steuern"}) == Decimal("398.00")
+    assert plans.plan_price({"finanzen", "steuern"}) == Decimal("547.00")                # kombinierbar
+    assert plans.SETUP_FEE == 0 and "nicht live" in plans.PLANNING_STATUS
+    for bad in ({"kanzlei"}, {"unbekannt"}):
+        with pytest.raises(plans.PlanError):
+            plans.plan_modules(bad)
+    with pytest.raises(plans.PlanError):
+        plans.plan_price(set(), term="weekly")
+
+
+def test_plan_metadata_in_license_does_not_unlock_anything(monkeypatch: pytest.MonkeyPatch) -> None:
+    f = LicenseFactory(monkeypatch)
+    env = json.loads(f.text(("finanzen",)))
+    payload = json.loads(base64.urlsafe_b64decode(env["payload"] + "=" * (-len(env["payload"]) % 4)))
+    assert payload["plan"] == "kanzlei+finanzen" and payload["term"] is None
+    status = licensing.verify_license_text(json.dumps(env))
+    assert status.valid and status.modules == {"finanzen"}                              # Plan-Text schaltet nichts frei

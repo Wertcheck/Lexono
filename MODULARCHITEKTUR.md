@@ -106,11 +106,13 @@ ERiC eingeführt und gegen die Dokumentation geprüft; es werden keine erfunden.
 - Zurück von „In Prüfung“ und „Freigegeben“ nur mit Grund; Stornieren mit Grund.
 - Werte sind nur im Entwurf änderbar.
 
-**Rechte (Standard):**
+**Rechte und Vier-Augen-Prinzip** (Owner-Entscheidung 28.10.2026, siehe Abschnitt 8):
 
-- Vorbereiten, Freigeben und Übermitteln dürfen nur Admin und Anwalt.
-- Mitarbeiter haben keine Steuerrechte.
-- Eine Übermittlung ist nie allein durch eine Rolle ohne ausdrückliches Recht möglich (`PERM_TAX_SUBMIT`).
+- Vorbereiten (anlegen, Anlagen, Werte, zur Prüfung geben) dürfen auch Mitarbeiter, aber nur für ihnen zugewiesene
+  Mandanten.
+- Freigeben dürfen nur Admin und Anwalt (`PERM_TAX_APPROVE`), und nur, wer den Vorgang **weder erstellt noch Teile oder
+  Werte geändert** hat. Abgelehnte Selbstfreigaben werden protokolliert.
+- Übermitteln (`PERM_TAX_SUBMIT`) nie durch Mitarbeiter; die Übermittlung selbst ist ohnehin noch nicht implementiert.
 
 ## 5. ERiC/ELSTER – Machbarkeit (Recherche 28.10.2026)
 
@@ -206,11 +208,143 @@ Basispaket bleibt allgemein.
 | Thema | Status |
 |---|---|
 | Produktives Lizenz-Schlüsselpaar | Owner erzeugt es; bis dahin sind die Zusatzmodule in echten Installationen gesperrt |
-| Preise und Lizenzlaufzeiten, Verlängerung, Kulanzzeit nach Ablauf | offen; heute: harte Sperre ab dem Tag nach `valid_until`, Daten bleiben erhalten |
-| Mitarbeiterrechte für FiBu/Steuern | offen; heute nur lesend (FiBu) bzw. ohne Rechte (Steuern) |
-| Vier-Augen-Prinzip (Freigeber ≠ Bearbeiter) | offen; heute nicht erzwungen (kleine Kanzleien) |
+| Preise und Lizenzlaufzeiten | vorläufige Planung festgelegt (Abschnitt 9), nicht live |
+| Verlängerung, Kulanzzeit nach Ablauf | offen; heute: harte Sperre ab dem Tag nach `valid_until`, Daten bleiben erhalten |
+| Mitarbeiterrechte für FiBu/Steuern | **entschieden 28.10.2026**, umgesetzt (Abschnitt 8) |
+| Vier-Augen-Prinzip (Freigeber ≠ Bearbeiter) | **entschieden 28.10.2026**, umgesetzt (Abschnitt 8) |
+| Kanzlei mit nur einer freigabeberechtigten Person | Freigabe eigener Vorgänge dann nicht möglich (gewollt); Sonderregel für Einzelkanzleien offen |
+| Lizenzpflicht für das Basispaket | offen; heute läuft das Basispaket ohne Lizenz (keine Aussperrung bestehender Installationen) |
 | Herstellerregistrierung ELSTER, Hersteller-ID, Prüfung der ERiC-Lizenz | Owner/Hersteller muss handeln |
 | Vertretungsmodell (Vollmachtsdatenbank vs. ELSTER-Vollmacht, Organisationszertifikat) | fachlich offen |
 | Steuerberechnung | bewusst nicht umgesetzt; nur mit fachlicher Prüfung |
 | ERiC-Pflichtupdates (jährlich, harte Abschaltung) | dauerhafter Betriebsaufwand, Update-Kanal nötig |
 | Offline-Lizenz ohne Server | kein Widerruf vor Ablauf möglich; kurze Laufzeiten empfohlen |
+
+
+## 8. Mitarbeiterrechte und Mandantenzuweisung (28.10.2026)
+
+| Rolle | Lexono Finanzen | Lexono Steuern |
+|---|---|---|
+| Admin, Anwalt | alle Mandanten; erfassen, bearbeiten, buchen, stornieren, Konten, Stammdaten, DATEV-Entwurf, Mitarbeiterzugriff verwalten | alle Mandanten; vorbereiten, freigeben (nie eigene oder selbst bearbeitete Vorgänge), übermitteln (nicht implementiert) |
+| Mitarbeiter | **nur zugewiesene Mandanten**; Buchungen erfassen und offene bearbeiten, Belege hochladen und zuordnen, Aufgaben | **nur zugewiesene Mandanten**; vorbereiten und zur Prüfung geben |
+| Mitarbeiter ohne Zuweisung | kein Zugriff (deny by default, 404) | kein Zugriff |
+
+**Umsetzung:**
+
+- `PERM_FIBU_CAPTURE` (alle Rollen) bzw. `PERM_FIBU_MANAGE` (Admin, Anwalt).
+- `PERM_TAX_PREPARE` (alle Rollen) bzw. `PERM_TAX_APPROVE`/`PERM_TAX_SUBMIT` (Admin, Anwalt).
+- **Mandantenzuweisung:** Tabelle `client_user_access` (Migration `schritt3_042`, ohne Vorbelegung). Gepflegt wird sie
+  durch Admin oder Anwalt unter *Finanzbuchhaltung → Einstellungen → Mitarbeiterzugriff*, mit Audit-Ereignis
+  `client_access_changed`.
+- **Durchsetzung:** Jede FiBu-Route und jede Steuerfunktion prüft serverseitig Modul, Recht **und** Mandantenzugriff.
+  Die Oberfläche blendet nur zusätzlich aus.
+- „Buchen“ (festschreiben) ist auch beim Anlegen (`action=save_post`) serverseitig gesperrt.
+- **Vier-Augen-Prinzip:** Wer als Ersteller im Audit-Log steht oder dort Teile bzw. Werte geändert hat
+  (`tax_filing_created`, `tax_part_added`, `tax_value_changed`), kann nicht freigeben. Der Versuch wird als
+  `tax_approval_refused` protokolliert.
+- **Basispaket unverändert:** Mandanten, Akten und Chat sehen alle Rollen wie bisher. Die Zuweisung gilt bewusst nur
+  für die Zusatzmodule.
+
+## 9. Lizenzmodell und Preise (vorläufige Produktplanung, nicht live)
+
+Konfiguriert in `app/modules/plans.py`. Die Preise sind dort reine Planung: Lexono zeigt sie nicht als Kaufpreise an
+und schaltet anhand von Preisen nichts frei.
+
+| Produkt | Monatlich (netto, vorläufig) | Art |
+|---|---|---|
+| Lexono Kanzlei | 99 € | Basispaket |
+| Lexono Finance (Modul `finanzen`) | +149 € | Zusatzmodul |
+| Lexono Steuern (Modul `steuern`) | +299 € | Zusatzmodul |
+
+- **Kombinationen:** Finance und Steuern sind frei kombinierbar.
+  - Kanzlei + Finance: 248 €
+  - Kanzlei + Steuern: 398 €
+  - alle drei: 547 €
+- **Kosten und Vertrieb:** Keine Einrichtungsgebühr; Kunden kaufen und installieren selbst.
+- **Flexibilität:**
+  - Die Lizenz enthält **Module** und **Laufzeit** (`valid_from`/`valid_until`). Nur diese schalten frei.
+  - Dazu kommen informativ `plan` (z. B. `kanzlei+finanzen`) und `term` (z. B. `monthly`).
+  - Neue Module, Bundles oder Abrechnungszeiträume (z. B. jährlich) lassen sich ergänzen, ohne Lizenzformat oder
+    Prüfung zu ändern.
+  - Bei monatlicher Abrechnung empfiehlt sich eine kurze Laufzeit je Lizenzdatei, z. B. ein oder zwei Monate mit
+    Nachlieferung durch den Shop, weil eine Offline-Lizenz vor Ablauf nicht widerrufen werden kann.
+- **Offen:**
+  - Ausweisung der Umsatzsteuer;
+  - Lizenzpflicht für das Basispaket;
+  - Kulanzzeit nach Ablauf;
+  - Shop-Anbindung (automatische Signatur nach Zahlung);
+  - Lizenz je Installation oder je Nutzerzahl.
+
+## 10. Produktiver Lizenzschlüssel – sichere Erzeugung und Verwahrung (Anleitung, noch NICHT ausgeführt)
+
+**Stand 28.10.2026:** Es gibt **kein** produktives Schlüsselpaar.
+
+- `TRUSTED_PUBLIC_KEYS` ist leer, deshalb sind Zusatzmodule in echten Installationen gesperrt.
+- Tests erzeugen klar gekennzeichnete Wegwerf-Schlüssel zur Laufzeit (`tests/module_license_utils.py`). Im Repository
+  liegt kein Schlüssel.
+
+**Schlüssel erzeugen:**
+
+1. **Ort:** ein vertrauenswürdiger, aktueller Rechner des Herstellers, nicht der Build-Rechner und kein
+   Kanzleirechner, idealerweise ohne Netz während der Erzeugung.
+2. **Passwort setzen:** `LEXONO_LICENSE_KEY_PASSWORD` auf ein langes, zufälliges Passwort, zu verwahren im
+   Passwortmanager. Danach erzeugen:
+   `python scripts/lexono_license_tool.py keygen --out-dir <verschlüsselter Datenträger>`.
+   Das Werkzeug verweigert Ziele im Repository.
+3. **Ablage:** Datei `lexono_license_private.pem` mindestens doppelt sichern, verschlüsselt und offline, an getrennten
+   Orten (z. B. zwei verschlüsselte USB-Datenträger im Tresor). Später möglichst HSM oder Cloud-KMS, damit der
+   private Schlüssel die Signierumgebung nie verlässt.
+4. **Eintragen und ausliefern:**
+   - Die ausgegebene Zeile (`key_id` und öffentlicher Schlüssel) in `app/modules/licensing.TRUSTED_PUBLIC_KEYS`
+     eintragen, committen, bauen und ausliefern.
+   - Der öffentliche Schlüssel ist nicht geheim.
+   - **Niemals** gehört der private Schlüssel ins Repository, in die App, in den Installer, in Logs, in E-Mails oder
+     in Tickets.
+
+**Schlüsselwechsel:** neuen Schlüssel ergänzen (mehrere Einträge sind möglich), Lizenzen mit dem neuen signieren, den
+alten nach Auslauf aller damit signierten Lizenzen entfernen.
+
+**Kompromittierung:** Schlüssel sofort aus `TRUSTED_PUBLIC_KEYS` entfernen, Update ausliefern, Lizenzen neu ausstellen.
+
+## 11. ELSTER-Herstellerregistrierung – offiziell bestätigt (Abruf elster.de, 28.10.2026)
+
+**Ablauf** laut https://www.elster.de/elsterweb/infoseite/entwickler:
+
+1. Registrierung als Hersteller/Entwickler.
+2. Prüfung durch den IuK-Bereich des Bayerischen Landesamts für Steuern, „ob die Herstellung von Software beabsichtigt
+   ist“.
+3. Zugang zum Entwicklerbereich; die Zugangsdaten kommen „innerhalb weniger Tage“ per E-Mail.
+4. ERiC im Entwicklerbereich herunterladen.
+5. Hersteller-ID unter „Anträge und Formulare“ beantragen.
+6. ELSTER-Newsletter abonnieren.
+
+ERiC wird „kostenlos zur Integration in die eigenen Steuer-, Finanz- und Lohnbuchhaltungsprogramme zur Verfügung
+gestellt“.
+
+**Registrierungsformular** (https://www.elster.de/elsterweb/registrierung-entwickler):
+
+- Pflichtfelder: Anrede, Vor- und Nachname, Firma, E-Mail, Webseite, Telefon, Begründung der Anmeldung.
+- „Ein Anspruch auf die Erteilung eines Accounts besteht nicht“; erteilte Zugänge können wieder gelöscht werden.
+
+Die technischen ERiC-Seiten (`/elsterweb/entwickler/infoseite/eric`) sind nur nach Anmeldung lesbar. Die technischen
+Details in Abschnitt 5 stammen daher aus dem Entwicklerhandbuch 43.3 (Drittquelle) und sind nach der Registrierung
+gegen die Originale zu prüfen.
+
+**Status:** **nicht registriert**, keine Hersteller-ID, keine ERiC-Bibliothek im Projekt, keine Übermittlung.
+
+**Nächste Schritte** (Owner bzw. Hersteller):
+
+1. **Registrieren:** Firma, Webseite und Begründung, z. B. „Kanzleisoftware Lexono, Modul Steuern:
+   Erklärungserstellung und Übermittlung über ERiC“.
+2. **Nach dem Zugang:**
+   - ERiC herunterladen;
+   - `lizenz.pdf` rechtlich prüfen (Bundling, Datenschutz, Logdateien);
+   - Hersteller-ID für „Lexono Steuern“ beantragen;
+   - den Newsletter abonnieren.
+3. **Technischen Prototyp bauen**, ausschließlich mit Testmerker und amtlichen Testzertifikaten:
+   - ctypes-Anbindung;
+   - Validierung und PDF für Einspruch und Fristverlängerung;
+   - ERiC-Verzeichnis per Inno Setup, Signaturen unverändert.
+4. **Fachlich entscheiden:** Vertretungsmodell (Vollmachtsdatenbank oder ELSTER-Vollmacht) und Organisationszertifikat
+   der Kanzlei.
+5. **Update-Prozess** für die jährliche ERiC-Mindestversion festlegen.

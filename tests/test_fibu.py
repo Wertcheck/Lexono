@@ -317,18 +317,27 @@ def test_cross_client_access_via_web_is_404(web, db_session: Session) -> None:
     assert client_.get("/dashboard/fibu?client=00000000-0000-0000-0000-000000000000").status_code == 404
 
 
-def test_staff_reads_but_cannot_change_and_csrf_is_required(web, db_session: Session) -> None:
+def test_staff_needs_assignment_and_can_capture_but_not_post(web, db_session: Session) -> None:
+    """Mitarbeiter (28.10.2026): ohne Mandantenzuweisung kein Zugriff (404); mit Zuweisung erfassen/bearbeiten, aber
+    nicht buchen, stornieren, Konten/Stammdaten/DATEV verwalten (403). Ausfuehrlich: tests/test_staff_rights.py."""
+    from app.models import User
+    from app.modules.client_access import set_staff_access
+
     client_, a, _b = web
     fs.create_booking(db_session, a.id, _data(db_session, a.id), actor="qa", post=True)
     token = _token(client_)
     assert client_.post("/dashboard/fibu/tasks", data={"csrf_token": "falsch", "client_id": a.id, "title": "x"}).status_code == 403
     client_.post("/dashboard/logout", data={"csrf_token": token})
     login(client_, "mitarbeiter@kanzlei.test")
+    assert client_.get(f"/dashboard/fibu?client={a.id}&year=2026").status_code == 404
+    admin_like = db_session.query(User).filter_by(email="anwalt@kanzlei.test").one()
+    staff = db_session.query(User).filter_by(email="mitarbeiter@kanzlei.test").one()
+    set_staff_access(db_session, a.id, {staff.id}, actor=admin_like)
     html = client_.get(f"/dashboard/fibu?client={a.id}&year=2026").text
-    assert "1.250,00 €" in html and "Belege hochladen</span>" not in html and "fibu-upload-form" not in html
+    assert "1.250,00 €" in html and "Belege hochladen</span>" in html
     token = _token(client_)
-    for path, data in (("/dashboard/fibu/bookings", _data(db_session, a.id)), ("/dashboard/fibu/accounts/seed", {}),
-                       ("/dashboard/fibu/tasks", {"title": "x"}), ("/dashboard/fibu/profile", {"legal_form": "AG"})):
+    for path, data in (("/dashboard/fibu/accounts/seed", {}), ("/dashboard/fibu/profile", {"legal_form": "AG"}),
+                       ("/dashboard/fibu/bookings", {**_data(db_session, a.id), "action": "save_post"})):
         assert client_.post(path, data={"csrf_token": token, "client_id": a.id, **data}).status_code == 403
     assert client_.get(f"/dashboard/fibu/export/datev-entwurf.csv?client={a.id}&year=2026").status_code == 403
     assert db_session.query(FibuBooking).count() == 1

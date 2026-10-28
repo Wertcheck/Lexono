@@ -38,13 +38,16 @@ def _raw_public(key: Ed25519PrivateKey) -> bytes:
 
 
 def build_license(private_key: Ed25519PrivateKey, *, licensee: str, modules: list[str], valid_from: date,
-                  valid_until: date | None, license_id: str | None = None) -> str:
+                  valid_until: date | None, license_id: str | None = None, term: str | None = None) -> str:
+    """``term`` (z. B. "monthly") und ``plan`` sind reine Information fuer Support/Shop - freigeschaltet wird
+    ausschliesslich ueber ``modules`` und die Laufzeit (app/modules/licensing.py ignoriert weitere Felder)."""
     unknown = [m for m in modules if m not in LICENSED_MODULES]
     if unknown or not modules:
         raise SystemExit(f"Unbekannte/fehlende Module: {unknown or modules}; erlaubt: {sorted(LICENSED_MODULES)}")
     payload = {"license_id": license_id or str(uuid.uuid4()), "licensee": licensee, "modules": sorted(set(modules)),
                "valid_from": valid_from.isoformat(), "valid_until": valid_until.isoformat() if valid_until else None,
-               "issued_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+               "issued_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+               "plan": "+".join(["kanzlei", *sorted(set(modules))]), "term": term}
     payload_bytes = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
     return json.dumps({"format": 1, "key_id": key_id_for(_raw_public(private_key)), "payload": _b64url(payload_bytes),
                        "signature": _b64url(private_key.sign(payload_bytes))}, indent=1)
@@ -63,6 +66,7 @@ def main() -> None:
     s.add_argument("--key", required=True); s.add_argument("--licensee", required=True)
     s.add_argument("--modules", required=True); s.add_argument("--valid-from", default=date.today().isoformat())
     s.add_argument("--valid-until"); s.add_argument("--out", required=True)
+    s.add_argument("--term", choices=["monthly"], default="monthly")
     v = sub.add_parser("verify"); v.add_argument("file")
     args = parser.parse_args()
 
@@ -84,7 +88,8 @@ def main() -> None:
         key = serialization.load_pem_private_key(Path(args.key).read_bytes(), password=_password())
         text = build_license(key, licensee=args.licensee, modules=[m.strip() for m in args.modules.split(",") if m.strip()],
                              valid_from=date.fromisoformat(args.valid_from),
-                             valid_until=date.fromisoformat(args.valid_until) if args.valid_until else None)
+                             valid_until=date.fromisoformat(args.valid_until) if args.valid_until else None,
+                             term=args.term)
         Path(args.out).write_text(text, encoding="utf-8")
         print(f"Lizenz geschrieben: {args.out}")
     else:

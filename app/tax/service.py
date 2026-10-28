@@ -5,6 +5,10 @@ Jede Funktion prueft serverseitig, in dieser Reihenfolge:
 2. Berechtigung des Nutzers (PERM_TAX_PREPARE / _APPROVE / _SUBMIT) - sonst PermissionDeniedError;
 3. Mandantentrennung: Vorgaenge, Teile und Werte nur ueber ``client_id`` erreichbar - fremd = TaxNotFound.
 
+Vier-Augen-Prinzip (28.10.2026, Owner-Entscheidung): vorbereiten duerfen auch Mitarbeiter (nur zugewiesene Mandanten);
+freigeben nur PERM_TAX_APPROVE (Admin/Anwalt) UND nur eine Person, die den Vorgang weder erstellt noch Teile/Werte
+geaendert hat (``preparers``, aus dem Audit-Log); abgelehnte Selbstfreigaben werden protokolliert.
+
 Statusmodell (Vier-Stufen-Freigabe, angelehnt an § 87d AO: Daten nach Zustimmung unveraendert uebermitteln)::
 
     draft --(Pruefung anfordern)--> in_review --(freigeben)--> approved --(uebermitteln: NICHT implementiert)
@@ -29,6 +33,7 @@ from app.auth.permissions import PERM_TAX_APPROVE, PERM_TAX_PREPARE, PERM_TAX_SU
 from app.models import AuditEvent, Client, Matter, User
 from app.models.tax import TAX_VALUE_SOURCES, TAX_VALUE_TYPES, TaxFieldValue, TaxFiling, TaxFilingPart
 from app.modules.catalog import MODULE_STEUERN
+from app.modules.client_access import can_access_client
 from app.modules.licensing import ensure_module
 from app.tax.catalog import PERIOD_LIMITS, TAX_TYPES
 
@@ -71,8 +76,24 @@ def _audit(db: Session, filing: TaxFiling, event: str, user: User, details: str)
                       details=details))
 
 
+def _client_access(db: Session, user: User, client_id: str) -> None:
+    """Mitarbeiter nur fuer zugewiesene Mandanten (deny by default) - fremd/ohne Zuweisung = nicht vorhanden."""
+    if not can_access_client(db, user, client_id):
+        raise TaxNotFound("Vorgang nicht gefunden.")
+
+
+def preparers(db: Session, filing: TaxFiling) -> set[str]:
+    """Alle Personen, die den Vorgang erstellt oder Teile/Werte geaendert haben (fuer das Vier-Augen-Prinzip)."""
+    actors = {filing.created_by[:64]}
+    actors |= {a for (a,) in db.query(AuditEvent.actor).filter(
+        AuditEvent.entity_type == "TaxFiling", AuditEvent.entity_id == filing.id,
+        AuditEvent.event_type.in_(("tax_filing_created", "tax_part_added", "tax_value_changed")))}
+    return actors
+
+
 def get_filing(db: Session, user: User, client_id: str, filing_id: str) -> TaxFiling:
     ensure_module(db, MODULE_STEUERN)
+    _client_access(db, user, client_id)
     filing = db.query(TaxFiling).filter_by(id=filing_id, client_id=client_id).first() if filing_id else None
     if filing is None:
         raise TaxNotFound("Vorgang nicht gefunden.")
@@ -81,6 +102,7 @@ def get_filing(db: Session, user: User, client_id: str, filing_id: str) -> TaxFi
 
 def list_filings(db: Session, user: User, client_id: str) -> list[TaxFiling]:
     ensure_module(db, MODULE_STEUERN)
+    _client_access(db, user, client_id)
     return (db.query(TaxFiling).filter(TaxFiling.client_id == client_id)
             .order_by(TaxFiling.year.desc(), TaxFiling.created_at.desc()).all())
 
@@ -90,6 +112,8 @@ def create_filing(db: Session, user: User, client_id: str, *, tax_type: str, yea
                   correction_of_id: str | None = None, form_version: str | None = None) -> TaxFiling:
     _guard(db, user, PERM_TAX_PREPARE)
     client = db.get(Client, client_id)
+    if client is not None:
+        _client_access(db, user, client_id)
     if client is None:
         raise TaxNotFound("Mandant nicht gefunden.")
     if client.status != "active":
@@ -165,6 +189,7 @@ def _normalize(value_type: str, raw: str | None) -> str | None:
 def set_value(db: Session, user: User, client_id: str, part_id: str, *, field_key: str, value: str | None,
               value_type: str = "text", source: str = "manual") -> TaxFieldValue | None:
     _guard(db, user, PERM_TAX_PREPARE)
+    _client_access(db, user, client_id)
     part = (db.query(TaxFilingPart).join(TaxFiling, TaxFilingPart.filing_id == TaxFiling.id)
             .filter(TaxFilingPart.id == part_id, TaxFiling.client_id == client_id).first() if part_id else None)
     if part is None:
@@ -207,6 +232,12 @@ def transition(db: Session, user: User, client_id: str, filing_id: str, target: 
     reason = (reason or "").strip()
     if reason_required and not reason:
         raise TaxError("Bitte einen Grund angeben.")
+    if target == "approved" and user.email[:64] in preparers(db, filing):
+        # Vier-Augen-Prinzip: wer erstellt oder bearbeitet hat, darf nicht selbst freigeben
+        _audit(db, filing, "tax_approval_refused", user, "Selbstfreigabe abgelehnt (Vier-Augen-Prinzip)")
+        db.commit()
+        raise TaxError("Vier-Augen-Prinzip: Die Freigabe muss eine andere berechtigte Person erteilen als die, die den "
+                       "Vorgang erstellt oder bearbeitet hat.")
     previous = filing.status
     filing.status, filing.updated_by = target, user.email
     if target == "approved":

@@ -1,8 +1,10 @@
 """Dashboard-Router "Finanzbuchhaltung" (MVP, 28.10.2026, Referenzbild) - reine UI-Fassade vor app/fibu/service.py.
 
-Rechte: Lesen fuer alle angemeldeten Rollen (`require_login`), jede Aenderung ueber `require_role(permission=
-PERM_FIBU_MANAGE)` (Login -> CSRF -> Berechtigung, serverseitig). Der Mandant kommt bei JEDER Anfrage als Parameter
-und wird im Service gegen jede ID geprueft; fremde IDs ergeben 404.
+Rechte (serverseitig, Login -> CSRF -> Berechtigung): Modul "finanzen" lizenziert (Router-Dependency); Mandanten-
+zugriff je Anfrage (`_client_or_404`: Admin/Anwalt alle, Mitarbeiter nur zugewiesene - sonst 404); Erfassen
+(Buchung anlegen/aendern, Belege, Aufgaben) = PERM_FIBU_CAPTURE, Buchen/Stornieren/Konten/Stammdaten/DATEV =
+PERM_FIBU_MANAGE, Mitarbeiterzugriff = PERM_CLIENT_MANAGE. Der Mandant kommt bei JEDER Anfrage als Parameter und wird
+im Service gegen jede ID geprueft; fremde IDs ergeben 404.
 
 Fehler bei Formularen rendern die Seite mit Meldung und den eingegebenen Werten neu (HTTP 400), damit keine Eingaben
 oder Dateinamen in URLs landen. Erfolg -> 303-Redirect mit kurzem Meldungscode.
@@ -18,12 +20,27 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Resp
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.auth.permissions import PERM_FIBU_MANAGE, has_permission, require_login, require_role
+from app.auth.permissions import (
+    PERM_CLIENT_MANAGE,
+    PERM_FIBU_CAPTURE,
+    PERM_FIBU_MANAGE,
+    has_permission,
+    require_login,
+    require_role,
+)
 from app.config.settings import Settings, get_settings
 from app.db.session import get_db
 from app.fibu import service as fs
 from app.models import User
 from app.modules.catalog import MODULE_FINANZEN
+from app.modules.client_access import (
+    AccessChangeError,
+    accessible_client_ids,
+    assigned_user_ids,
+    can_access_client,
+    has_full_client_access,
+    set_staff_access,
+)
 from app.modules.licensing import require_module
 from app.web.template_paths import TEMPLATES_DIR
 
@@ -46,7 +63,7 @@ _OK_MESSAGES = {
     "booking_cancelled": "Buchung storniert.", "receipts_uploaded": "Beleg(e) gespeichert.",
     "account_created": "Konto angelegt.", "accounts_seeded": "Startkonten angelegt.",
     "account_toggled": "Konto aktualisiert.", "task_created": "Aufgabe angelegt.", "task_toggled": "Aufgabe aktualisiert.",
-    "profile_saved": "Stammdaten gespeichert.",
+    "profile_saved": "Stammdaten gespeichert.", "access_saved": "Mitarbeiterzugriff gespeichert.",
 }
 
 
@@ -68,21 +85,26 @@ def _url(client_id: str, year: int, tab: str = "uebersicht", **extra: str) -> st
     return "/dashboard/fibu?" + urlencode(params)
 
 
-def _client_or_404(db: Session, client_id: str | None):
+def _client_or_404(db: Session, client_id: str | None, user: User):
+    """Mandant laden UND Zugriff pruefen (Mitarbeiter nur zugewiesene Mandanten) - fremd/ohne Zugriff = 404."""
     try:
-        return fs.get_client(db, client_id)
+        client = fs.get_client(db, client_id)
     except fs.FibuNotFound:
         raise HTTPException(status_code=404, detail="Mandant nicht gefunden") from None
+    if not can_access_client(db, user, client.id):
+        raise HTTPException(status_code=404, detail="Mandant nicht gefunden")
+    return client
 
 
 def _render(request: Request, db: Session, user: User, *, client_id: str | None, year: int, tab: str = "uebersicht",
             error: str | None = None, error_field: str | None = None, form: dict | None = None, status: int = 200,
             params: dict | None = None) -> HTMLResponse:
     params = params or {}
-    clients = fs.list_clients(db)
+    allowed = accessible_client_ids(db, user)
+    clients = [c for c in fs.list_clients(db) if allowed is None or c.id in allowed]
     client = None
     if client_id:
-        client = _client_or_404(db, client_id)
+        client = _client_or_404(db, client_id, user)
     elif clients:
         client = clients[0]
     tab = tab if tab in _TAB_KEYS else "uebersicht"
@@ -91,6 +113,8 @@ def _render(request: Request, db: Session, user: User, *, client_id: str | None,
         "csrf_token": getattr(request.state, "csrf_token", ""), "clients": clients, "client": client, "year": year,
         "tab": tab, "tabs": TABS, "error": error, "error_field": error_field, "form": form or {},
         "ok": _OK_MESSAGES.get(params.get("ok", "")), "can_manage": has_permission(user, PERM_FIBU_MANAGE),
+        "can_capture": has_permission(user, PERM_FIBU_CAPTURE),
+        "can_manage_access": has_full_client_access(user),
         "status_labels": fs.STATUS_LABELS, "kind_labels": fs.KIND_LABELS, "direction_labels": fs.DIRECTION_LABELS,
         "tax_rates": (19, 7, 0), "page_sizes": _PAGE_SIZES, "months": _MONTHS, "today": date.today(),
     }
@@ -146,6 +170,10 @@ def _render(request: Request, db: Session, user: User, *, client_id: str | None,
         ctx.update(receipts=fs.list_receipts(db, cid), receipt_links=fs.receipt_bookings(db, cid))
     elif tab == "konten":
         ctx.update(susa={r.account_id: r for r in fs.trial_balance(db, cid, year) if r.account_id})
+    elif tab == "einstellungen" and has_full_client_access(user):
+        staff = [u for u in db.query(User).filter(User.is_active.is_(True)).order_by(User.email)
+                 if not has_full_client_access(u)]
+        ctx.update(staff_users=staff, staff_assigned=assigned_user_ids(db, cid))
     elif tab == "ust":
         ctx.update(vat=fs.vat_overview(db, cid, year))
     elif tab == "auswertungen":
@@ -202,9 +230,12 @@ async def _booking_form(request: Request) -> dict:
 @router.post("/bookings")
 async def create_booking(request: Request, client_id: str = Form(...), year: str = Form(""),
                          action: str = Form("save"), db: Session = Depends(get_db),
-                         current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+                         current_user: User = Depends(require_role(permission=PERM_FIBU_CAPTURE))):
+    _client_or_404(db, client_id, current_user)
     form = await _booking_form(request)
+    if action == "save_post" and not has_permission(current_user, PERM_FIBU_MANAGE):
+        # Erfassen duerfen auch Mitarbeiter, endgueltig buchen nicht (serverseitig, nicht nur ausgeblendet)
+        raise HTTPException(status_code=403, detail="Buchen ist Admin und Anwalt vorbehalten")
     try:
         booking = fs.create_booking(db, client_id, form, actor=current_user.email, post=action == "save_post")
     except fs.FibuError as exc:
@@ -215,8 +246,8 @@ async def create_booking(request: Request, client_id: str = Form(...), year: str
 @router.post("/bookings/{booking_id}/update")
 async def update_booking(request: Request, booking_id: str, client_id: str = Form(...), year: str = Form(""),
                          db: Session = Depends(get_db),
-                         current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+                         current_user: User = Depends(require_role(permission=PERM_FIBU_CAPTURE))):
+    _client_or_404(db, client_id, current_user)
     form = await _booking_form(request)
     try:
         booking = fs.update_booking(db, client_id, booking_id, form, actor=current_user.email)
@@ -231,7 +262,7 @@ async def update_booking(request: Request, booking_id: str, client_id: str = For
 def post_booking(request: Request, booking_id: str, client_id: str = Form(...), year: str = Form(""),
                  return_tab: str = Form("buchen"), db: Session = Depends(get_db),
                  current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.post_booking(db, client_id, booking_id, actor=current_user.email)
     except fs.FibuNotFound:
@@ -245,7 +276,7 @@ def post_booking(request: Request, booking_id: str, client_id: str = Form(...), 
 def cancel_booking(request: Request, booking_id: str, client_id: str = Form(...), year: str = Form(""),
                    reason: str = Form(""), db: Session = Depends(get_db),
                    current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.cancel_booking(db, client_id, booking_id, reason=reason, actor=current_user.email)
     except fs.FibuNotFound:
@@ -260,8 +291,8 @@ def cancel_booking(request: Request, booking_id: str, client_id: str = Form(...)
 async def upload_receipts(request: Request, client_id: str = Form(...), year: str = Form(""),
                           return_tab: str = Form("belege"), files: list[UploadFile] = File(default=[]),
                           db: Session = Depends(get_db), settings: Settings = Depends(get_settings),
-                          current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+                          current_user: User = Depends(require_role(permission=PERM_FIBU_CAPTURE))):
+    _client_or_404(db, client_id, current_user)
     tab = return_tab if return_tab in _TAB_KEYS else "belege"
     uploads = [f for f in files if f.filename]
     if not uploads:
@@ -288,6 +319,8 @@ async def upload_receipts(request: Request, client_id: str = Form(...), year: st
 def receipt_file(receipt_id: str, client: str, download: int = 0, db: Session = Depends(get_db),
                  settings: Settings = Depends(get_settings), current_user: User = Depends(require_login)):
     try:
+        if not can_access_client(db, current_user, client):
+            raise fs.FibuNotFound("kein Zugriff")
         receipt = fs.get_receipt(db, client, receipt_id)
     except fs.FibuNotFound:
         raise HTTPException(status_code=404, detail="Beleg nicht gefunden") from None
@@ -304,7 +337,7 @@ def receipt_file(receipt_id: str, client: str, download: int = 0, db: Session = 
 def create_account(request: Request, client_id: str = Form(...), year: str = Form(""), number: str = Form(""),
                    name: str = Form(""), kind: str = Form(""), db: Session = Depends(get_db),
                    current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.create_account(db, client_id, number=number, name=name, kind=kind, actor=current_user.email)
     except fs.FibuError as exc:
@@ -316,7 +349,7 @@ def create_account(request: Request, client_id: str = Form(...), year: str = For
 @router.post("/accounts/seed")
 def seed_accounts(request: Request, client_id: str = Form(...), year: str = Form(""), db: Session = Depends(get_db),
                   current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.seed_example_accounts(db, client_id, actor=current_user.email)
     except fs.FibuError as exc:
@@ -328,7 +361,7 @@ def seed_accounts(request: Request, client_id: str = Form(...), year: str = Form
 def toggle_account(request: Request, account_id: str, client_id: str = Form(...), year: str = Form(""),
                    active: str = Form("0"), db: Session = Depends(get_db),
                    current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.set_account_active(db, client_id, account_id, active=active == "1", actor=current_user.email)
     except fs.FibuNotFound:
@@ -341,8 +374,8 @@ def toggle_account(request: Request, account_id: str, client_id: str = Form(...)
 @router.post("/tasks")
 def create_task(request: Request, client_id: str = Form(...), year: str = Form(""), title: str = Form(""),
                 due_date: str = Form(""), db: Session = Depends(get_db),
-                current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+                current_user: User = Depends(require_role(permission=PERM_FIBU_CAPTURE))):
+    _client_or_404(db, client_id, current_user)
     try:
         fs.create_task(db, client_id, title=title, due_date=due_date, actor=current_user.email)
     except fs.FibuError as exc:
@@ -354,8 +387,8 @@ def create_task(request: Request, client_id: str = Form(...), year: str = Form("
 @router.post("/tasks/{task_id}/toggle")
 def toggle_task(request: Request, task_id: str, client_id: str = Form(...), year: str = Form(""),
                 done: str = Form("1"), db: Session = Depends(get_db),
-                current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+                current_user: User = Depends(require_role(permission=PERM_FIBU_CAPTURE))):
+    _client_or_404(db, client_id, current_user)
     try:
         fs.set_task_done(db, client_id, task_id, done=done == "1", actor=current_user.email)
     except fs.FibuNotFound:
@@ -369,7 +402,7 @@ def toggle_task(request: Request, task_id: str, client_id: str = Form(...), year
 def save_profile(request: Request, client_id: str = Form(...), year: str = Form(""), legal_form: str = Form(""),
                  tax_number: str = Form(""), vat_id: str = Form(""), db: Session = Depends(get_db),
                  current_user: User = Depends(require_role(permission=PERM_FIBU_MANAGE))):
-    _client_or_404(db, client_id)
+    _client_or_404(db, client_id, current_user)
     try:
         fs.save_profile(db, client_id, legal_form=legal_form, tax_number=tax_number, vat_id=vat_id,
                         actor=current_user.email)
@@ -384,9 +417,23 @@ def export_datev_draft(client: str, year: str | None = None, db: Session = Depen
                        current_user: User = Depends(require_login)) -> Response:
     if not has_permission(current_user, PERM_FIBU_MANAGE):
         raise HTTPException(status_code=403, detail="Keine Berechtigung für diese Aktion")
-    target = _client_or_404(db, client)
+    target = _client_or_404(db, client, current_user)
     y = _year(year)
     content, _count = fs.datev_draft_csv(db, target.id, y, actor=current_user.email)
     filename = f"Lexono_DATEV-Entwurf_{y}.csv"
     return Response(content="﻿" + content, media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@router.post("/access")
+async def save_staff_access(request: Request, client_id: str = Form(...), year: str = Form(""),
+                            db: Session = Depends(get_db),
+                            current_user: User = Depends(require_role(permission=PERM_CLIENT_MANAGE))):
+    """Mitarbeiter-Zugriff je Mandant (deny by default) - nur Admin/Anwalt, protokolliert."""
+    _client_or_404(db, client_id, current_user)
+    data = await request.form()
+    try:
+        set_staff_access(db, client_id, {str(v) for v in data.getlist("user_ids")}, actor=current_user)
+    except AccessChangeError as exc:
+        return _fail(request, db, current_user, client_id, _year(year), "einstellungen", fs.FibuError(str(exc)))
+    return _done(client_id, _year(year), "einstellungen", "access_saved")

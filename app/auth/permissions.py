@@ -81,8 +81,13 @@ PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
 # Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter lesen nur.
 # Ob Mitarbeiter (z. B. Buchhaltungskraefte) erfassen duerfen, ist eine offene fachliche Entscheidung.
 PERM_FIBU_MANAGE = "fibu:manage"
+# Erfassen (28.10.2026, Owner-Entscheidung): Buchungen erfassen und offene Buchungen bearbeiten, Belege hochladen und
+# zuordnen, Aufgaben - auch Mitarbeiter, aber nur fuer ihnen zugewiesene Mandanten (app/modules/client_access.py).
+# Buchen (festschreiben), Stornieren, Konten, Stammdaten, DATEV-Entwurf und Zugriffsverwaltung bleiben PERM_FIBU_MANAGE.
+PERM_FIBU_CAPTURE = "fibu:capture"
 # Lexono Steuern (28.10.2026, Datenmodell ohne Oberflaeche): Vorgaenge vorbereiten (anlegen, Werte erfassen, zur
-# Pruefung geben), freigeben, uebermitteln. Standard minimal: nur Admin und Anwalt; Mitarbeiter haben keine Steuerrechte.
+# Pruefung geben), freigeben, uebermitteln. Vorbereiten auch Mitarbeiter (nur zugewiesene Mandanten, 28.10.2026);
+# freigeben/uebermitteln nur Admin und Anwalt, und nie die Person, die den Vorgang erstellt/bearbeitet hat.
 # Die Uebermittlung (ELSTER/ERiC) ist NICHT implementiert - das Recht existiert, damit sie spaeter nie allein ueber
 # eine Rolle ohne ausdrueckliche Berechtigung moeglich wird.
 PERM_TAX_PREPARE = "tax:prepare"
@@ -105,6 +110,7 @@ _ALL_PERMISSIONS = frozenset(
         PERM_QUALITY_REVIEW,
         PERM_PRIVACY_DECISION_MANAGE,
         PERM_FIBU_MANAGE,
+        PERM_FIBU_CAPTURE,
         PERM_TAX_PREPARE,
         PERM_TAX_APPROVE,
         PERM_TAX_SUBMIT,
@@ -127,6 +133,7 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_QUALITY_REVIEW,
             PERM_PRIVACY_DECISION_MANAGE,
             PERM_FIBU_MANAGE,
+            PERM_FIBU_CAPTURE,
             PERM_TAX_PREPARE,
             PERM_TAX_APPROVE,
             PERM_TAX_SUBMIT,
@@ -137,6 +144,10 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_DASHBOARD_READ,
             PERM_DRAFT_MANUAL_EDIT,
             PERM_INSTRUCTION_CREATE,
+            # Zusatzmodule (28.10.2026): erfassen/vorbereiten nur fuer zugewiesene Mandanten; nie buchen/freigeben/
+            # uebermitteln (Vier-Augen-Prinzip in app/tax/service.py)
+            PERM_FIBU_CAPTURE,
+            PERM_TAX_PREPARE,
         }
     ),
 }
