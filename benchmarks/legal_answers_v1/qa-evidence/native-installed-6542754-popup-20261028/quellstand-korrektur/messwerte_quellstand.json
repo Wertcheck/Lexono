@@ -1,0 +1,4585 @@
+{
+ "phase": "nachher",
+ "aufnahmen": {
+  "1920x1055-hell-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    871,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-hell-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    870,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-hell-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    849,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    -2718,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-hell-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    849,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    -2718,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1920x1055-hell-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    883,
+    657
+   ],
+   "panel": [
+    1339,
+    227,
+    440,
+    740
+   ],
+   "vorschau": [
+    277,
+    227,
+    1062,
+    740
+   ],
+   "seite": [
+    305,
+    235,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-hell-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    709,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-hell-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-hell-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    777,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-hell-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    -2418,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-hell-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    -2418,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1536x842-hell-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    773,
+    450
+   ],
+   "panel": [
+    1109,
+    227,
+    410,
+    527
+   ],
+   "vorschau": [
+    153,
+    227,
+    956,
+    527
+   ],
+   "seite": [
+    181,
+    235,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-hell-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    613,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-03-ansicht-original": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Original",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 0,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-04-ansicht-ergebnis": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    17,
+    139,
+    866,
+    513
+   ],
+   "seite": null,
+   "miniaturen_sichtbar": 0,
+   "dok_tabs": [],
+   "ansicht": "Pseudonymisiertes Ergebnis",
+   "seite_info": "–",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 0,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-04b-zurueck-markiert-entscheidung-erhalten": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-05b-vorherige-beantwortete-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Gärtner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 4 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1280x720-hell-07-abgebrochen-zurueck-im-chat": {
+   "dialog_offen": false,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "dialog_im_fenster": false,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": false,
+   "abbrechen_sichtbar": false,
+   "primaer_text": null,
+   "primaer_sichtbar": false,
+   "primaer_gesperrt": null,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 0,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 0,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    0,
+    0
+   ],
+   "panel": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "vorschau": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "seite": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "miniaturen_sichtbar": 0,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1280x720-hell-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    731,
+    402
+   ],
+   "panel": [
+    883,
+    181,
+    380,
+    471
+   ],
+   "vorschau": [
+    129,
+    181,
+    754,
+    471
+   ],
+   "seite": [
+    157,
+    189,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-09-dokumentwechsel-docx": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    587,
+    402
+   ],
+   "panel": [
+    883,
+    181,
+    380,
+    471
+   ],
+   "vorschau": [
+    129,
+    181,
+    754,
+    471
+   ],
+   "seite": [
+    157,
+    201,
+    688,
+    914
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 4,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    587,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-hell-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-hell-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-hell-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    -1623,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-hell-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    -1623,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1107x703-hell-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    710,
+    362
+   ],
+   "panel": [
+    760,
+    206,
+    330,
+    429
+   ],
+   "vorschau": [
+    109,
+    206,
+    651,
+    429
+   ],
+   "seite": [
+    127,
+    214,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-hell-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    548,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-hell-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-hell-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-hell-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    -1242,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-hell-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    -1242,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "960x600-hell-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    660,
+    310
+   ],
+   "panel": [
+    613,
+    171,
+    330,
+    369
+   ],
+   "vorschau": [
+    109,
+    171,
+    504,
+    369
+   ],
+   "seite": [
+    127,
+    179,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-hell-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    498,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    871,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    870,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    849,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    -2718,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    849,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    -2718,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    883,
+    657
+   ],
+   "panel": [
+    1339,
+    227,
+    440,
+    740
+   ],
+   "vorschau": [
+    277,
+    227,
+    1062,
+    740
+   ],
+   "seite": [
+    305,
+    235,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1920x1055-dunkel-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1920,
+    1055
+   ],
+   "dialog": [
+    140,
+    16,
+    1640,
+    1023
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    709,
+    709
+   ],
+   "panel": [
+    1339,
+    175,
+    440,
+    792
+   ],
+   "vorschau": [
+    277,
+    175,
+    1062,
+    792
+   ],
+   "seite": [
+    305,
+    183,
+    996,
+    1433
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    777,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    -2418,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    757,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    -2418,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    773,
+    450
+   ],
+   "panel": [
+    1109,
+    227,
+    410,
+    527
+   ],
+   "vorschau": [
+    153,
+    227,
+    956,
+    527
+   ],
+   "seite": [
+    181,
+    235,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1536x842-dunkel-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1536,
+    842
+   ],
+   "dialog": [
+    16,
+    16,
+    1504,
+    810
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    613,
+    502
+   ],
+   "panel": [
+    1109,
+    175,
+    410,
+    579
+   ],
+   "vorschau": [
+    153,
+    175,
+    956,
+    579
+   ],
+   "seite": [
+    181,
+    183,
+    890,
+    1283
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-03-ansicht-original": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Original",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 0,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-04-ansicht-ergebnis": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    17,
+    139,
+    866,
+    513
+   ],
+   "seite": null,
+   "miniaturen_sichtbar": 0,
+   "dok_tabs": [],
+   "ansicht": "Pseudonymisiertes Ergebnis",
+   "seite_info": "–",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 0,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-04b-zurueck-markiert-entscheidung-erhalten": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-05b-vorherige-beantwortete-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Gärtner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 4 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    731,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    -1883,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-07-abgebrochen-zurueck-im-chat": {
+   "dialog_offen": false,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "dialog_im_fenster": false,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": false,
+   "abbrechen_sichtbar": false,
+   "primaer_text": null,
+   "primaer_sichtbar": false,
+   "primaer_gesperrt": null,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 0,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 0,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    0,
+    0
+   ],
+   "panel": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "vorschau": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "seite": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "miniaturen_sichtbar": 0,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    731,
+    402
+   ],
+   "panel": [
+    883,
+    181,
+    380,
+    471
+   ],
+   "vorschau": [
+    129,
+    181,
+    754,
+    471
+   ],
+   "seite": [
+    157,
+    189,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-09-dokumentwechsel-docx": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    587,
+    402
+   ],
+   "panel": [
+    883,
+    181,
+    380,
+    471
+   ],
+   "vorschau": [
+    129,
+    181,
+    754,
+    471
+   ],
+   "seite": [
+    157,
+    201,
+    688,
+    914
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 4,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-dunkel-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    587,
+    444
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    147,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    -1623,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    710,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    -1623,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    710,
+    362
+   ],
+   "panel": [
+    760,
+    206,
+    330,
+    429
+   ],
+   "vorschau": [
+    109,
+    206,
+    651,
+    429
+   ],
+   "seite": [
+    127,
+    214,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1107x703-dunkel-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    1107,
+    703
+   ],
+   "dialog": [
+    16,
+    8,
+    1075,
+    687
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    548,
+    404
+   ],
+   "panel": [
+    760,
+    164,
+    330,
+    471
+   ],
+   "vorschau": [
+    109,
+    164,
+    651,
+    471
+   ],
+   "seite": [
+    127,
+    172,
+    605,
+    879
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-01-erste-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-02-rueckfrage-2-von-5": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kaufmann",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 2 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "4 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-05-letzte-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    -1242,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-06-alle-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Kellner",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "personal",
+   "fortschritt": "Rückfrage 5 von 5",
+   "panel_intern_scroll": [
+    660,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    -1242,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 3 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-08-mehrere-dokumente": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Übernehmen und nächste Rückfrage",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 5",
+   "panel_intern_scroll": [
+    660,
+    310
+   ],
+   "panel": [
+    613,
+    171,
+    330,
+    369
+   ],
+   "vorschau": [
+    109,
+    171,
+    504,
+    369
+   ],
+   "seite": [
+    127,
+    179,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 3,
+   "dok_tabs": [
+    "PDFQA-SYNTH-Einspruch-Bauer.pdf5 offen",
+    "DOCXQA-SYNTH-Stellungnahme.docx1 offen",
+    "PDFQA-SYNTH-Anlage-K1.pdf✓ geprüft"
+   ],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 3",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 8,
+   "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "960x600-dunkel-10-einzelne-rueckfrage": {
+   "dialog_offen": true,
+   "fenster": [
+    960,
+    600
+   ],
+   "dialog": [
+    16,
+    8,
+    928,
+    584
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Richter",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    498,
+    352
+   ],
+   "panel": [
+    613,
+    129,
+    330,
+    411
+   ],
+   "vorschau": [
+    109,
+    129,
+    504,
+    411
+   ],
+   "seite": [
+    127,
+    137,
+    458,
+    671
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 3,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-11-rueckfrage-beim-senden-im-popup": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Option wählen, dann bestätigen",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": true,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": true,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Ruecksicht",
+   "optionen_sichtbar": 3,
+   "gewaehlt": null,
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    587,
+    416
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 1,
+   "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+   "js_fehler": []
+  },
+  "1280x720-hell-11b-rueckfrage-beim-senden-beantwortet": {
+   "dialog_offen": true,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    16,
+    8,
+    1248,
+    704
+   ],
+   "dialog_im_fenster": true,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+   "primaer_sichtbar": true,
+   "primaer_gesperrt": false,
+   "bestaetigen_sichtbar": true,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 1,
+   "aktive_frage": "Ruecksicht",
+   "optionen_sichtbar": 3,
+   "gewaehlt": "not_personal",
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    587,
+    416
+   ],
+   "panel": [
+    883,
+    139,
+    380,
+    513
+   ],
+   "vorschau": [
+    129,
+    139,
+    754,
+    513
+   ],
+   "seite": [
+    157,
+    159,
+    688,
+    997
+   ],
+   "miniaturen_sichtbar": 1,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 1,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+   "js_fehler": []
+  },
+  "1280x720-hell-12-rueckfrage-beim-senden-abgebrochen": {
+   "dialog_offen": false,
+   "fenster": [
+    1280,
+    720
+   ],
+   "dialog": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "dialog_im_fenster": false,
+   "seite_querscroll": false,
+   "ueberlauf": [],
+   "fusszeile_sichtbar": false,
+   "abbrechen_sichtbar": false,
+   "primaer_text": null,
+   "primaer_sichtbar": false,
+   "primaer_gesperrt": null,
+   "bestaetigen_sichtbar": false,
+   "bestaetigen_gesperrt": false,
+   "sichtbare_fragekarten": 0,
+   "aktive_frage": "Ruecksicht",
+   "optionen_sichtbar": 0,
+   "gewaehlt": "not_personal",
+   "fortschritt": "Rückfrage 1 von 1",
+   "panel_intern_scroll": [
+    0,
+    0
+   ],
+   "panel": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "vorschau": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "seite": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "miniaturen_sichtbar": 0,
+   "dok_tabs": [],
+   "ansicht": "Markierte Vorschau",
+   "seite_info": "Seite 1 / 1",
+   "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+   "markierungen": 1,
+   "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "auftrag_blockiert": {
+   "db86a553-1692-467d-9fd0-ed9c21156ca6": true,
+   "ea5186e7-df89-4e84-8088-7f192bd25fff": true,
+   "2e502906-5b81-4737-9fc7-12872bd4e75d": true
+  },
+  "setup_s": 4.8,
+  "convs": {
+   "main": "db86a553-1692-467d-9fd0-ed9c21156ca6",
+   "multi": "ea5186e7-df89-4e84-8088-7f192bd25fff",
+   "single": "2e502906-5b81-4737-9fc7-12872bd4e75d",
+   "view": "2b8d074f-56b0-452e-bbb1-fc52ef91a8df"
+  },
+  "rueckfragen": {
+   "main": {
+    "QA-SYNTH-Einspruch-Bauer.pdf": [
+     "Richter",
+     "Kaufmann",
+     "Meister",
+     "Gärtner",
+     "Kellner"
+    ]
+   },
+   "multi": {
+    "QA-SYNTH-Einspruch-Bauer.pdf": [
+     "Richter",
+     "Kaufmann",
+     "Meister",
+     "Gärtner",
+     "Kellner"
+    ],
+    "QA-SYNTH-Stellungnahme.docx": [
+     "Richter"
+    ],
+    "QA-SYNTH-Anlage-K1.pdf": []
+   },
+   "single": {
+    "QA-SYNTH-Vermerk.pdf": [
+     "Richter"
+    ]
+   },
+   "view": {
+    "QA-SYNTH-Nur-Ansicht.pdf": []
+   }
+  },
+  "abbruch_db": {
+   "1920x1055-hell": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1536x842-hell": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1280x720-hell": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1107x703-hell": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "960x600-hell": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1920x1055-dunkel": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1536x842-dunkel": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1280x720-dunkel": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "1107x703-dunkel": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   },
+   "960x600-dunkel": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12
+    }
+   }
+  },
+  "review_geoeffnet": true,
+  "review_callbacks": [
+   [
+    "abgebrochen"
+   ]
+  ],
+  "review_abbruch_db": {
+   "vorher": {
+    "privacy_decisions": 0,
+    "document_releases": 0,
+    "chat_messages": 12
+   },
+   "nachher": {
+    "privacy_decisions": 0,
+    "document_releases": 0,
+    "chat_messages": 12
+   },
+   "dialoge_offen": []
+  },
+  "db_ende": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 12
+  }
+ }
+}
