@@ -17,6 +17,7 @@ from app.fibu import service as fs
 from app.main import app
 from app.models import AuditEvent, Client, FibuBooking
 from tests.auth_test_utils import create_test_user, extract_csrf, login, seed_roles
+from tests.module_license_utils import LicenseFactory
 from tests.test_web_chat import client, db_session  # noqa: F401 - Fixtures
 
 PDF = b"%PDF-1.4\n% QA-SYNTH Beleg\n"
@@ -230,7 +231,9 @@ def test_receipts_are_type_checked_and_stored_without_the_original_name_in_the_p
 
 
 @pytest.fixture()
-def web(client: TestClient, db_session: Session, tmp_path: Path):  # noqa: F811
+def web(client: TestClient, db_session: Session, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):  # noqa: F811
+    # Modul "Lexono Finanzen" mit synthetischer, zur Laufzeit signierter Testlizenz freischalten
+    LicenseFactory(monkeypatch).activate(db_session, ("finanzen",))
     test_settings = get_settings().model_copy(update={"fibu_receipt_storage_dir": str(tmp_path / "fibu")})
     app.dependency_overrides[get_settings] = lambda: test_settings
     roles = seed_roles(db_session)

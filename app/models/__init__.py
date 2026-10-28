@@ -26,6 +26,7 @@ from app.models.draft_reference_links import DraftKnowledgeItemLink, DraftSource
 from app.models.embedding import Embedding
 from app.models.fibu import FibuAccount, FibuBooking, FibuClientProfile, FibuReceipt, FibuTask
 from app.models.firm_practice_area import FirmPracticeArea
+from app.models.module_license import ModuleLicense
 from app.models.firm_profile import FirmProfile
 from app.models.letterhead import Letterhead
 from app.models.privacy_decision import PrivacyDecision, PrivacyFeedbackStat
@@ -59,6 +60,7 @@ from app.models.review_finding import ReviewFinding
 from app.models.role import Role
 from app.models.source import Source
 from app.models.task import Task
+from app.models.tax import TaxFieldValue, TaxFiling, TaxFilingPart, TaxSubmission
 from app.models.user import User
 from app.models.workflow_run import VALID_WORKFLOW_STATUSES, WorkflowRun
 
@@ -69,6 +71,11 @@ __all__ = [
     "FibuClientProfile",
     "FibuReceipt",
     "FibuTask",
+    "ModuleLicense",
+    "TaxFiling",
+    "TaxFilingPart",
+    "TaxFieldValue",
+    "TaxSubmission",
     "Client",
     "VALID_CLIENT_STATUSES",
     "Matter",

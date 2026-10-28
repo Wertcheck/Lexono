@@ -1762,6 +1762,43 @@
       </p>
       <p>{{ active_users }} von {{ total_users }} Benutzer{{ "n" if total_users != 1 else "" }} aktiv.</p>
     </div>
+    {# Module & Lizenz (28.10.2026, app/modules): Basispaket immer aktiv; Zusatzmodule nur mit gueltiger, signierter
+       Lizenz - die Pruefung passiert serverseitig bei jeder Anfrage, diese Ansicht zeigt nur den Stand. #}
+    <div class="settings-section" id="module-licenses">
+      <h2 class="settings-section__title">Module</h2>
+      <p class="settings-section__hint">„Lexono Kanzlei“ ist immer enthalten. Zusatzmodule werden über eine signierte Lizenzdatei des Herstellers freigeschaltet.</p>
+      <table class="module-table">
+        <thead><tr><th>Modul</th><th>Inhalt</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for key, m in module_catalog.items() %}
+            <tr data-module="{{ key }}">
+              <td><strong>{{ m.name }}</strong>{% if m.licensed %} <span class="module-table__tag">Zusatzmodul</span>{% endif %}</td>
+              <td>{{ m.description }}</td>
+              <td>{% if key in enabled_modules %}<span class="module-state module-state--on">{{ 'Enthalten' if not m.licensed else 'Freigeschaltet' }}</span>{% else %}<span class="module-state module-state--off">Nicht freigeschaltet</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% set ls = module_license_status %}
+      <p class="module-license-line{% if ls.valid %} is-valid{% endif %}">
+        {% if ls.valid %}Lizenz {{ ls.license_id }} für {{ ls.licensee }}, gültig {% if ls.valid_until %}bis {{ ls.valid_until.strftime('%d.%m.%Y') }}{% else %}unbefristet{% endif %}.
+        {% else %}{{ ls.reason }}{% if ls.licensee %} ({{ ls.licensee }}){% endif %}{% endif %}
+      </p>
+      {% if not module_key_configured %}
+        <p class="settings-section__hint">Hinweis: In dieser Version ist noch kein Hersteller-Prüfschlüssel hinterlegt. Zusatzmodule können deshalb noch nicht freigeschaltet werden.</p>
+      {% endif %}
+      <form method="post" action="/dashboard/settings/license/import" enctype="multipart/form-data" class="module-license-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="module-license-form__file">Lizenzdatei <input type="file" name="license_file" accept=".lexono-license,.json,.txt" /></label>
+        <button type="submit" class="settings-add-btn">Lizenz importieren</button>
+      </form>
+      {% if ls.valid %}
+      <form method="post" action="/dashboard/settings/license/remove" class="module-license-form" onsubmit="return confirm('Lizenz deaktivieren? Die Zusatzmodule werden gesperrt, ihre Daten bleiben erhalten.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button type="submit" class="settings-add-btn module-license-form__remove">Lizenz deaktivieren</button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   {# ===================== TAB: ERWEITERT ===================== #}

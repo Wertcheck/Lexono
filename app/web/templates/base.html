@@ -390,15 +390,14 @@
             "href": "/dashboard/knowledge",
             "flat": true,
           },
-          {
-            "label": "Finanzbuchhaltung",
-            "icon": icons.ledger,
-            "href": "/dashboard/fibu",
-            "flat": true,
-          },
         ] %}
-        {# "Finanzbuchhaltung" (28.10.2026, Owner-Auftrag mit Referenzbild) ergaenzt die sechs Kernbereiche um einen
-           siebten Eintrag, gekennzeichnet mit "NEU" wie im Referenzbild. #}
+        {# "Finanzbuchhaltung" (28.10.2026) gehoert zum optionalen Modul "Lexono Finanzen" (app/modules): der Eintrag
+           erscheint nur, wenn das Modul lizenziert ist - allgemeine Kanzleien sehen die sechs Kernbereiche. Die Sperre
+           selbst ist serverseitig (require_module), das hier ist nur die Anzeige. #}
+        {% set _enabled_modules = (request.state.enabled_modules if request is defined else none) or () %}
+        {% if "finanzen" in _enabled_modules %}
+          {% set nav_groups = nav_groups + [{"label": "Finanzbuchhaltung", "icon": icons.ledger, "href": "/dashboard/fibu", "flat": true}] %}
+        {% endif %}
         {# Alle sechs Bereiche sind bewusst flach (kein <details>-Aufklapp
            mehr) - eine feste, immer sechs Zeilen hohe Hauptnavigation ist
            Teil der verbindlichen Vorgabe. #}

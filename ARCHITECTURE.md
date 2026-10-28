@@ -5302,3 +5302,12 @@ Ursache und Korrektur in `PRIVACY_REVIEW_ARCHITECTURE.md` §45 (Rückfrage-Kandi
 Regex, Aktendaten-Abgleich und alle Gates unverändert; Namens- und Pseudonymisierungs-Benchmark vorher/nachher
 identisch). Gegenprüfung vor dem Merge (§45.1): die Ampel-Ausnahme war zu weit und liess echte Namen durch –
 präzisiert, mit Negativtests. Zwei neue, andersartige Befunde („bei Rot“ → Ort, „Mobil“+Nummer → Person) als `known_open` erfasst.
+
+## 76. Produktmodule: Lexono Kanzlei, Finanzen, Steuern (28.10.2026)
+
+Basispaket "Lexono Kanzlei" ohne Abhaengigkeit von Zusatzmodulen; "Lexono Finanzen" (Finanzbuchhaltung, `app/fibu`)
+und "Lexono Steuern" (Datenmodell `app/tax`, ohne Oberflaeche und ohne ELSTER-Uebermittlung) sind optionale,
+lizenzpflichtige Module. Zentrale Freischaltung ueber signierte Lizenzen (Ed25519, `app/modules/licensing.py`),
+serverseitig erzwungen (Router-Dependency `require_module`, Service-Pruefung `ensure_module`), fail-closed; produktiver
+Herstellerschluessel noch nicht hinterlegt (Owner-Entscheidung). Details, ERiC-Machbarkeit, Workflow, Pilot-
+Prioritaeten und offene Entscheidungen: `MODULARCHITEKTUR.md`.

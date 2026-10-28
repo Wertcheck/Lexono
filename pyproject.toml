@@ -18,6 +18,9 @@ dependencies = [
     "python-multipart>=0.0.9",
     "itsdangerous>=2.2",
     "argon2-cffi>=23.1",
+    # Signaturpruefung der Modul-Lizenzen (Ed25519, app/modules/licensing.py) - bisher nur indirekt ueber
+    # presidio-anonymizer installiert, jetzt ausdruecklich, weil Lexono es selbst sicherheitsrelevant nutzt.
+    "cryptography>=42",
     "pydantic-settings>=2.4",
     "sqlalchemy>=2.0",
     "alembic>=1.13",

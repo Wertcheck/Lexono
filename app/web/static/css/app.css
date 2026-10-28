@@ -13951,6 +13951,34 @@ html.sidebar-collapsed .sidebar__new-badge { display: none; }
 }
 
 /* ==========================================================================
+   Module & Lizenz (28.10.2026, app/modules): Hinweisseite fuer gesperrte Zusatzmodule, Modultabelle im Lizenz-Tab.
+   ========================================================================== */
+.module-locked { max-width: 620px; margin: 48px auto; padding: 32px; text-align: center; background: var(--paper-000);
+  border: 1px solid var(--paper-line); border-radius: var(--radius-md); color: var(--ink-900); }
+.module-locked__icon { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: var(--radius-pill);
+  background: var(--paper-200); color: var(--ink-500); }
+.module-locked__icon .icon { width: 28px; height: 28px; }
+.module-locked h1 { margin: 16px 0 8px; font-size: 22px; }
+.module-locked p { margin: 6px 0; color: var(--ink-700); font-size: 14.5px; line-height: 1.5; }
+.module-locked__hint { color: var(--ink-500) !important; font-size: 13.5px !important; }
+.module-locked__btn { display: inline-flex; margin-top: 16px; padding: 10px 18px; border-radius: var(--radius-md);
+  background: var(--brand-green); color: var(--on-brand); font-weight: 600; text-decoration: none; }
+.module-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 14px; }
+.module-table th { text-align: left; font-weight: 500; color: var(--ink-500); padding: 8px 10px; border-bottom: 1px solid var(--paper-line); }
+.module-table td { padding: 10px; border-bottom: 1px solid var(--paper-line); vertical-align: top; color: var(--ink-900); }
+.module-table__tag { margin-left: 6px; padding: 1px 8px; border-radius: var(--radius-pill); background: var(--accent-amber-tint);
+  color: var(--accent-amber); font-size: 11.5px; font-weight: 600; }
+.module-state { display: inline-flex; padding: 2px 10px; border-radius: var(--radius-pill); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.module-state--on { background: var(--brand-green-tint); color: var(--brand-green-dark); }
+.module-state--off { background: var(--paper-200); color: var(--ink-500); }
+:root[data-theme="dark"] .module-state--on { color: var(--brand-green); }
+.module-license-line { margin: 0 0 12px; font-size: 13.5px; color: var(--ink-700); }
+.module-license-line.is-valid { color: var(--brand-green-dark); }
+.module-license-form { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0; }
+.module-license-form__file { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-700); }
+.module-license-form__remove { color: var(--wax-red) !important; }
+
+/* ==========================================================================
    Kanzleiwissen: Referenzabgleich 43_Kanzleiwissen_Gesetze.png (27.10.)
    Kopf buendig mit Kacheln/Tabelle, groessere Typografie, Tabelle in
    Satzschrift ohne Monospace, farbige Statuspunkte, Info-Karte mit

@@ -31,6 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from app.ai_providers.factory import build_local_llm_provider
 from app.api import api_router
 from app.auth.permissions import AppLockedError, ForcePasswordChangeError, NotAuthenticatedError
+from app.modules.licensing import ModuleLockedError
 from app.config import Settings, get_settings
 from app.db.session import SessionLocal
 from app.documents.service import DocumentProcessingService
@@ -450,6 +451,29 @@ def handle_force_password_change(
 @app.exception_handler(AppLockedError)
 def handle_app_locked(request: Request, exc: AppLockedError) -> RedirectResponse:
     return RedirectResponse(url="/dashboard/unlock", status_code=303)
+
+
+@app.exception_handler(ModuleLockedError)
+def handle_module_locked(request: Request, exc: ModuleLockedError):
+    """Zusatzmodul ohne gueltige Lizenz (app/modules/licensing.py): Dashboard-Seiten bekommen eine verstaendliche
+    Hinweisseite, alles andere (Formular-POSTs, Downloads, API) ein schlichtes 403 - in beiden Faellen 403."""
+    from fastapi.responses import PlainTextResponse
+    from fastapi.templating import Jinja2Templates
+
+    from app.modules.catalog import CATALOG
+    from app.web.template_paths import TEMPLATES_DIR
+
+    user = getattr(request.state, "user", None)
+    if request.method == "GET" and request.url.path.startswith("/dashboard") and user is not None:
+        is_admin = bool(getattr(request.state, "locked_user_is_admin", False))
+        try:
+            return Jinja2Templates(directory=TEMPLATES_DIR).TemplateResponse(
+                request, "module_locked.html",
+                {"request": request, "current_user": user, "module": CATALOG[exc.module], "is_admin": is_admin,
+                 "hide_back_link": True}, status_code=403)
+        except Exception:  # noqa: BLE001 - Hinweisseite ist Komfort; die Sperre (403) gilt in jedem Fall
+            logger.exception("Hinweisseite fuer gesperrtes Modul konnte nicht gerendert werden")
+    return PlainTextResponse(exc.detail, status_code=403)
 
 
 @app.get("/health")

@@ -43,6 +43,8 @@ from app.firm_profile import (
     set_practice_areas,
 )
 from app.models import AuditEvent, Role, User
+from app.modules import licensing as module_licensing
+from app.modules.catalog import CATALOG as MODULE_CATALOG
 from app.setup.env_writer import update_env_values
 from app.setup.paths import resolve_data_dir
 from app.updater.checker import CURRENT_APP_VERSION
@@ -407,6 +409,11 @@ def settings_page(
         "error": error,
         "active_tab": active_tab,
         "active_dialog": active_dialog,
+        # Module & Lizenz (28.10.2026, app/modules): Status jedes Moduls aus der zentralen Lizenzpruefung
+        "module_catalog": MODULE_CATALOG,
+        "module_license_status": module_licensing.current_status(db),
+        "enabled_modules": module_licensing.enabled_modules(db),
+        "module_key_configured": bool(module_licensing.TRUSTED_PUBLIC_KEYS),
         # --- "Benutzer"-Tab ---
         "user_rows": user_rows,
         "roles": db_roles,
@@ -1139,3 +1146,41 @@ def firm_signature_file(
     if not profile.signature_path or not Path(profile.signature_path).exists():
         raise HTTPException(status_code=404, detail="Keine Unterschrift hinterlegt")
     return FileResponse(profile.signature_path)
+
+
+# --- Module & Lizenz (28.10.2026) ----------------------------------------------------------------------------------
+
+
+@router.post("/license/import")
+async def import_module_license(
+    license_file: UploadFile | None = File(default=None),
+    license_text: str = Form(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Signierte Lizenz fuer Zusatzmodule importieren (Datei ODER eingefuegter Text). Nur eine gueltige Lizenz wird
+    uebernommen - Pruefung vollstaendig serverseitig in app/modules/licensing.py."""
+    text = license_text
+    if license_file is not None and license_file.filename:
+        raw = await license_file.read(module_licensing.MAX_LICENSE_BYTES + 1)
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return _redirect(error="Die Lizenzdatei ist keine Textdatei.", tab="lizenz")
+    try:
+        status = module_licensing.import_license(db, text, actor=current_user.email)
+    except module_licensing.LicenseImportError as exc:
+        return _redirect(error=f"Lizenz nicht übernommen: {exc}", tab="lizenz")
+    names = ", ".join(MODULE_CATALOG[m].name for m in sorted(status.modules))
+    return _redirect(success=f"Lizenz übernommen: {names}", tab="lizenz")
+
+
+@router.post("/license/remove")
+def remove_module_license(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Lizenz deaktivieren - Zusatzmodule sind danach gesperrt, ihre Daten bleiben unveraendert erhalten."""
+    if module_licensing.remove_license(db, actor=current_user.email):
+        return _redirect(success="Lizenz deaktiviert. Die Daten der Zusatzmodule bleiben erhalten.", tab="lizenz")
+    return _redirect(error="Es ist keine Lizenz aktiv.", tab="lizenz")

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}{{ module.name }}{% endblock %}
+{% block content %}
+{# Zusatzmodul ohne gueltige Lizenz (app/modules/licensing.py) - serverseitig gesperrt; diese Seite erklaert nur. #}
+<section class="module-locked" aria-labelledby="module-locked-title">
+  <span class="module-locked__icon">{{ icons.lock(class_="icon") }}</span>
+  <h1 id="module-locked-title">{{ module.name }} ist nicht freigeschaltet</h1>
+  <p>{{ module.description }}.</p>
+  <p class="module-locked__hint">Dieses Zusatzmodul ist optional und lizenzpflichtig. Das Basispaket „Lexono Kanzlei“ funktioniert unabhängig davon vollständig.</p>
+  {% if is_admin %}
+    <a class="module-locked__btn" href="/dashboard/settings?tab=lizenz">Lizenz in den Einstellungen importieren</a>
+  {% else %}
+    <p class="module-locked__hint">Bitte wenden Sie sich an die Administration Ihrer Kanzlei.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -23,9 +23,14 @@ from app.config.settings import Settings, get_settings
 from app.db.session import get_db
 from app.fibu import service as fs
 from app.models import User
+from app.modules.catalog import MODULE_FINANZEN
+from app.modules.licensing import require_module
 from app.web.template_paths import TEMPLATES_DIR
 
-router = APIRouter(prefix="/dashboard/fibu", tags=["dashboard-fibu"])
+# Modul "Lexono Finanzen" (28.10.2026): JEDE Route dieses Routers ist ohne gueltige Lizenz gesperrt (403), unabhaengig
+# von Rolle und Navigation - siehe app/modules/licensing.py.
+router = APIRouter(prefix="/dashboard/fibu", tags=["dashboard-fibu"],
+                   dependencies=[Depends(require_module(MODULE_FINANZEN))])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 templates.env.filters["eur"] = fs.format_cents
 

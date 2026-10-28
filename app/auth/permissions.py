@@ -81,6 +81,13 @@ PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
 # Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter lesen nur.
 # Ob Mitarbeiter (z. B. Buchhaltungskraefte) erfassen duerfen, ist eine offene fachliche Entscheidung.
 PERM_FIBU_MANAGE = "fibu:manage"
+# Lexono Steuern (28.10.2026, Datenmodell ohne Oberflaeche): Vorgaenge vorbereiten (anlegen, Werte erfassen, zur
+# Pruefung geben), freigeben, uebermitteln. Standard minimal: nur Admin und Anwalt; Mitarbeiter haben keine Steuerrechte.
+# Die Uebermittlung (ELSTER/ERiC) ist NICHT implementiert - das Recht existiert, damit sie spaeter nie allein ueber
+# eine Rolle ohne ausdrueckliche Berechtigung moeglich wird.
+PERM_TAX_PREPARE = "tax:prepare"
+PERM_TAX_APPROVE = "tax:approve"
+PERM_TAX_SUBMIT = "tax:submit"
 
 _ALL_PERMISSIONS = frozenset(
     {
@@ -98,6 +105,9 @@ _ALL_PERMISSIONS = frozenset(
         PERM_QUALITY_REVIEW,
         PERM_PRIVACY_DECISION_MANAGE,
         PERM_FIBU_MANAGE,
+        PERM_TAX_PREPARE,
+        PERM_TAX_APPROVE,
+        PERM_TAX_SUBMIT,
     }
 )
 
@@ -117,6 +127,9 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_QUALITY_REVIEW,
             PERM_PRIVACY_DECISION_MANAGE,
             PERM_FIBU_MANAGE,
+            PERM_TAX_PREPARE,
+            PERM_TAX_APPROVE,
+            PERM_TAX_SUBMIT,
         }
     ),
     "mitarbeiter": frozenset(
@@ -282,7 +295,23 @@ def require_login(
         raise ForcePasswordChangeError()
     if user.is_locked and request.url.path not in _LOCK_EXEMPT_PATHS:
         raise AppLockedError()
+    _remember_enabled_modules(request, db)
     return user
+
+
+def _remember_enabled_modules(request: Request, db: Session) -> None:
+    """Freigeschaltete Module fuer die Navigation in base.html (28.10.2026). Nur ANZEIGE - die eigentliche Sperre
+    erzwingt app/modules/licensing.require_module serverseitig. Fehler -> nur das Basispaket (fail-closed)."""
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from app.modules.catalog import BASE_MODULES
+    from app.modules.licensing import enabled_modules
+
+    try:
+        request.state.enabled_modules = enabled_modules(db)
+    except SQLAlchemyError:
+        db.rollback()
+        request.state.enabled_modules = BASE_MODULES
 
 
 def require_api_login(
