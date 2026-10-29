@@ -229,6 +229,8 @@ def test_installer_clears_shipped_migrations_before_copying() -> None:
     iss = (ROOT / "windows" / "installer.iss").read_text(encoding="utf-8")
     section = iss.split("[InstallDelete]", 1)[1].split("\n[", 1)[0]
     assert 'Type: filesandordirs; Name: "{app}\\_internal\\migrations\\versions"' in section
+    # Build-Profil (29.10.2026): auch Templates/Assets der Vorversion (z. B. fibu.html im Kanzlei-Pilot) nicht liegen lassen
+    assert 'Type: filesandordirs; Name: "{app}\\_internal\\app"' in section
     assert iss.index("\n[InstallDelete]") < iss.index("\n[Files]")  # Inno fuehrt InstallDelete vor dem Kopieren aus
     assert "PROGRAMDATA" not in section.upper() and "{commonappdata}" not in section  # nie das Datenverzeichnis
 
