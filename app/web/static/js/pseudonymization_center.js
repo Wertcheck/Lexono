@@ -801,6 +801,11 @@
     var answers = el("section", "pseudo-question__answers");
     answers.appendChild(el("h3", "pseudo-question__ask", "Was möchten Sie mit diesem Begriff tun?"));
     answers.appendChild(el("p", "pseudo-question__sub", "Soll „" + q.term + "“ vor der Übergabe pseudonymisiert werden?"));
+    if (state.mode === "view") {
+      // Reine Pruefansicht: die Optionen sind gesperrt - das sagen wir direkt an der Frage, nicht nur im Kopf
+      answers.appendChild(el("p", "pseudo-question__view-hint",
+        "Nur Ansicht – entscheiden können Sie, sobald Sie Ihren Auftrag im Chat senden."));
+    }
     var row = el("div", "pseudo-question__options");
     row.setAttribute("role", "radiogroup");
     row.setAttribute("aria-label", "Antwort zu " + q.term);
@@ -969,7 +974,33 @@
 
   function nextStep() {
     if (state.mode === "review") { return "Danach wird Ihre Nachricht erneut geprüft und fortgesetzt."; }
+    if (state.pendingOrder) {
+      var shown = state.pendingOrder.length > 60 ? state.pendingOrder.slice(0, 60) + " …" : state.pendingOrder;
+      return "Danach wird Ihr Auftrag „" + shown + "“ gesendet.";
+    }
     return state.order.label ? "Danach: " + state.order.label + "." : "";
+  }
+
+  // Beim Upload mitgetippter, nach §57 NICHT gesendeter Auftrag (liegt nur im Browser, siehe chat.html
+  // restoreUnsentUploadText). 29.10.2026: Ist er vorhanden, oeffnet der Dialog nach dem Upload direkt bedienbar und
+  // sendet den Auftrag erst mit "Bestaetigen" (bewusste Aktion, serverseitig wie jede Freigabe geprueft) - vorher
+  // oeffnete er als reine Pruefansicht mit gesperrten Optionen, und erst ein zweites Senden legte den Auftrag an.
+  function unsentOrderKey() { return "lexono-unsent-" + state.conversationId; }
+
+  function readUnsentOrder() {
+    var text = "";
+    try { text = window.sessionStorage.getItem(unsentOrderKey()) || ""; } catch (e) { text = ""; }
+    if (!text && /[?&]text_not_sent=1/.test(window.location.search)) {
+      var input = document.getElementById("chat-input");
+      text = input ? input.value : "";
+    }
+    return text.trim();
+  }
+
+  function clearUnsentOrder() {
+    try { window.sessionStorage.removeItem(unsentOrderKey()); } catch (e) { /* ohne Speicher */ }
+    var input = document.getElementById("chat-input");
+    if (input && state.pendingOrder && input.value.trim() === state.pendingOrder) { input.value = ""; }
   }
 
   function renderFooterStatus() {
@@ -1098,6 +1129,7 @@
     state.reviews = {};
     state.decisions = {};
     state.busy = false;
+    state.pendingOrder = "";
     state.view = "marked";
     state.activeTerm = null;
     setMaximized(false);
@@ -1114,6 +1146,15 @@
       if (generation !== state.generation) { return; }
       if (state.payload) { state.mode = "review"; }
       else if (state.order.has_open_order && state.docs.some(function (d) { return d.needs_confirmation; })) { state.mode = "release"; }
+      else if (!state.order.has_open_order && state.docs.length && readUnsentOrder()) {
+        state.mode = "release";
+        state.pendingOrder = readUnsentOrder();
+        // Der Upload-Hinweis ("Text nicht gesendet ... im Chat senden") trifft hier nicht mehr zu
+        noticeBox.hidden = false;
+        noticeBox.className = "pseudo-center__notice";
+        noticeBox.textContent = "Hochgeladen und lokal ausgelesen – bisher wurde nichts an die Cloud gesendet. Ihr " +
+          "Auftrag wird erst gesendet, wenn Sie die Pseudonymisierung bestätigen.";
+      }
       else { state.mode = "view"; }
       var wanted = options.documentId && state.docs.some(function (d) { return d.id === options.documentId; })
         ? options.documentId : null;
@@ -1207,13 +1248,28 @@
 
   // --- Bestaetigen -----------------------------------------------------------------------------------------------
 
+  // Ohne jedes Server-Ereignis so lange (Standard 5 min) gilt die Verbindung als haengend: die Anzeige endet mit
+  // einer verstaendlichen Meldung statt einer endlosen Animation. Der Server verarbeitet die Nachricht hoechstens
+  // einmal (Claim) - ein Neuladen zeigt den tatsaechlichen Stand, nichts wird doppelt gesendet.
+  function idleLimitMs() { return window.LEXONO_STREAM_IDLE_MS || 300000; }
+
   function readSse(response, onPayload) {
     if (!response.ok || !response.body) { return Promise.reject(new Error("stream_failed")); }
     var reader = response.body.getReader();
     var decoder = new TextDecoder("utf-8");
     var buffer = "";
+    function readWithIdleLimit() {
+      return new Promise(function (resolve, reject) {
+        var timer = setTimeout(function () {
+          try { reader.cancel(); } catch (e) { /* bereits beendet */ }
+          reject(new Error("timeout"));
+        }, idleLimitMs());
+        reader.read().then(function (r) { clearTimeout(timer); resolve(r); },
+                           function (e) { clearTimeout(timer); reject(e); });
+      });
+    }
     function pump() {
-      return reader.read().then(function (result) {
+      return readWithIdleLimit().then(function (result) {
         if (result.done) { return; }
         buffer += decoder.decode(result.value, { stream: true });
         var frames = buffer.split("\n\n");
@@ -1247,11 +1303,62 @@
     followupBox.appendChild(el("p", "banner banner--error", text));
   }
 
+  // Ladezustand (29.10.2026): nach dem Bestaetigen schliesst der Dialog und der Chat zeigt sofort eine Statusblase
+  // (window.LexonoChatProgress aus chat.html) mit den TATSAECHLICHEN Serverphasen - keine erfundenen Prozente.
+  // Ohne diese Anzeige (anderer Seitenkontext) bleibt der Status wie bisher in der Fussleiste des Dialogs.
+  function progressUi() { return window.LexonoChatProgress || null; }
+
+  function startWork(text, orderText) {
+    var progress = progressUi();
+    if (!progress) { setBusy(true, text); return; }
+    state.busy = true;
+    if (dialog.open && typeof dialog.close === "function") { dialog.close(); }
+    progress.start(text, orderText || "");
+  }
+
+  function workFailed(text) {
+    var progress = progressUi();
+    if (progress) { state.busy = false; progress.error(text); return; }
+    if (!dialog.open && typeof dialog.showModal === "function") { dialog.showModal(); }
+    showError(text);
+  }
+
+  function streamProblem(err) {
+    var limit = idleLimitMs();
+    var span = limit >= 60000 ? Math.round(limit / 60000) + " Minuten" : Math.round(limit / 1000) + " Sekunden";
+    return err && err.message === "timeout"
+      ? "Keine Rückmeldung vom Server seit " + span + " – die Anzeige wurde " +
+        "beendet. Bitte den Chat neu laden; der Auftrag wird nicht doppelt gesendet."
+      : "Die Verbindung wurde unterbrochen. Bitte den Chat neu laden – der tatsächliche Stand wird dann angezeigt.";
+  }
+
   function handleStream(response) {
     var finished = false;
+    var progress = progressUi();
     return readSse(response, function (next) {
+      if (next.kind === "start") {
+        // Auftrag ist serverseitig angelegt/uebernommen: lokale Kopie des Auftrags nicht mehr anbieten
+        clearUnsentOrder();
+        state.pendingOrder = "";
+        state.drafting = !!next.drafting;
+        // Adresse von der Upload-Ansicht (?uploaded=1&text_not_sent=1) auf die Unterhaltung setzen: ein Neuladen
+        // zeigt dann den tatsaechlichen Stand statt erneut die Pruefansicht mit veraltetem "nicht gesendet"-Hinweis
+        var convPath = "/dashboard/chat/" + encodeURIComponent(state.conversationId);
+        if (window.history && window.history.replaceState && window.location.pathname !== convPath) {
+          window.history.replaceState(null, "", convPath);
+        }
+        if (progress) { progress.status(state.drafting ? "Schriftsatz wird erstellt …" : "Auftrag wird verarbeitet …"); }
+        return;
+      }
+      if (next.kind === "status") {
+        var phase = next.status ? (state.drafting ? "Schriftsatz wird erstellt – " + next.status : next.status) : "";
+        if (progress) { progress.status(phase); } else if (phase) { openCount.textContent = phase; }
+        return;
+      }
       if (next.kind === "review") {
         finished = true;
+        if (progress) { progress.pause("Datenschutz-Rückfrage – bitte im Dialog entscheiden."); }
+        if (!dialog.open && typeof dialog.showModal === "function") { dialog.showModal(); }
         // Rueckfrage beim Fortsetzen (z. B. aus dem Auftragstext): im SELBEN Dialog weiterarbeiten
         state.busy = false;
         dialog.querySelectorAll("[data-pseudo-center-cancel]").forEach(function (b) { b.disabled = false; });
@@ -1270,7 +1377,8 @@
         renderPanel();
       } else if (next.kind === "done") {
         finished = true;
-        if (next.message_id === null && next.content) { showError(next.content); return; }
+        if (next.message_id === null && next.content) { workFailed(next.content); return; }
+        if (progress) { progress.status("Ergebnis wird aufbereitet …"); }
         backToChat();
       }
     }).then(function () { if (!finished) { backToChat(); } });
@@ -1281,10 +1389,10 @@
     form.append("csrf_token", csrfToken());
     form.append("message_id", state.payload.message_id);
     form.append("decisions", JSON.stringify(decisions));
-    setBusy(true, "Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …");
+    startWork("Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …");
     fetch("/dashboard/chat/" + encodeURIComponent(state.conversationId) + "/privacy-review",
           { method: "POST", body: form, credentials: "same-origin" })
-      .then(handleStream).catch(backToChat);
+      .then(handleStream).catch(function (err) { workFailed(streamProblem(err)); });
   }
 
   confirmBtn.addEventListener("click", function () {
@@ -1314,11 +1422,12 @@
     })));
     form.append("decisions", JSON.stringify(decisions));
     form.append("require_resolved", "1");
-    setBusy(true, "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …");
+    if (state.pendingOrder) { form.append("order", state.pendingOrder); }
+    startWork("Pseudonymisierung bestätigt – Dokumente werden freigegeben und erneut geprüft …", state.pendingOrder);
     fetch("/dashboard/chat/" + encodeURIComponent(state.conversationId) + "/confirm-release-and-generate",
           { method: "POST", body: form, credentials: "same-origin" })
       .then(handleStream)
-      .catch(function () { showError("Die Verbindung wurde unterbrochen. Bitte den Chat neu laden."); });
+      .catch(function (err) { workFailed(streamProblem(err)); });
   });
 
   // --- Einstiege --------------------------------------------------------------------------------------------------

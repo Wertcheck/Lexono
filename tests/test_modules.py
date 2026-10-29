@@ -407,21 +407,36 @@ def test_migration_041_adds_only_new_tables_and_keeps_fibu_data(tmp_path: Path) 
 # --- Produktplanung (vorlaeufig, nicht live) ----------------------------------------------------------------------
 
 
-def test_product_plan_prices_are_combinable_and_without_setup_fee() -> None:
+def test_product_tiers_prices_per_user_incl_vat_and_without_setup_fee() -> None:
+    """Owner-Vorgabe 29.10.2026: drei Produktstufen (jede schliesst die vorherige ein), Preise je Benutzer und Monat
+    inkl. MwSt.; ersetzt die kombinierbaren Zusatzmodul-Preise vom 28.10.2026."""
     from decimal import Decimal
 
     from app.modules import plans
 
-    assert plans.plan_price(set()) == Decimal("99.00")                                  # nur Basispaket
-    assert plans.plan_price({"finanzen"}) == Decimal("248.00")
-    assert plans.plan_price({"steuern"}) == Decimal("398.00")
-    assert plans.plan_price({"finanzen", "steuern"}) == Decimal("547.00")                # kombinierbar
+    assert [(p.name, p.monthly_gross_per_user, p.status_label) for p in plans.PRODUCTS] == [
+        ("Lexono", Decimal("99.00"), "Verfügbar"),
+        ("Lexono Finance", Decimal("149.00"), "In Entwicklung"),
+        ("Lexono Finance & Tax", Decimal("249.00"), "In Entwicklung"),
+    ]
+    assert plans.PRODUCTS[0].modules < plans.PRODUCTS[1].modules < plans.PRODUCTS[2].modules  # jede Stufe enthaelt alles
+    assert plans.plan_price(set()) == Decimal("99.00")
+    assert plans.plan_price({"finanzen"}) == Decimal("149.00")
+    assert plans.plan_price({"finanzen", "steuern"}) == Decimal("249.00")
+    assert plans.plan_price({"finanzen"}, users=3) == Decimal("447.00")
+    assert "inkl. MwSt." in plans.PRICE_BASIS and "pro Benutzer" in plans.PRICE_BASIS
     assert plans.SETUP_FEE == 0 and "nicht live" in plans.PLANNING_STATUS
+    with pytest.raises(plans.PlanError):
+        plans.plan_price({"steuern"})  # Steuern ohne Finance ist keine Produktstufe
     for bad in ({"kanzlei"}, {"unbekannt"}):
         with pytest.raises(plans.PlanError):
             plans.plan_modules(bad)
     with pytest.raises(plans.PlanError):
         plans.plan_price(set(), term="weekly")
+    # Anzeige des aktuellen Pakets folgt NUR den tatsaechlich freigeschalteten Modulen
+    assert plans.current_product({"kanzlei"}).key == "lexono"
+    assert plans.current_product({"kanzlei", "steuern"}).key == "lexono"
+    assert plans.current_product({"kanzlei", "finanzen", "steuern"}).key == "finance_tax"
 
 
 def test_plan_metadata_in_license_does_not_unlock_anything(monkeypatch: pytest.MonkeyPatch) -> None:

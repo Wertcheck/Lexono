@@ -2275,7 +2275,14 @@
         var center = window.LexonoPseudonymizationCenter;
         if (center) {
           var reopen = { open: false, showModal: function () {
-            center.openReview(payload, function (decisions) { onSubmitted(decisions); }, function () {});
+            center.openReview(payload, function (decisions) {
+              // Nach der Entscheidung sofort sichtbar weiterarbeiten statt "Rückfrage offen" stehen zu lassen
+              if (bubble.parentNode && !bubble.querySelector(".chat-thinking-indicator__status")) {
+                bubble.parentNode.removeChild(bubble);
+              }
+              chatProgress.start("Ihre Auswahl wird übernommen – der Inhalt wird erneut geprüft …");
+              onSubmitted(decisions);
+            }, function () {});
           } };
           renderPrivacyBubbleStatus(bubble, reopen);
           reopen.showModal();
@@ -2405,23 +2412,97 @@
         form.append("csrf_token", csrfField ? csrfField.value : "");
         form.append("message_id", payload.message_id);
         form.append("decisions", JSON.stringify(decisions));
+        var drafting = false;
         fetch("/dashboard/chat/" + encodeURIComponent(conversationId) + "/privacy-review", {
           method: "POST",
           body: form
         })
           .then(function (response) {
             return readSseStream(response, function (next) {
-              if (next.kind === "review") {
-                showPrivacyReview(next, bubble, hasFiles, function (more) {
-                  if (more) { submitPrivacyReview(next, more, bubble, hasFiles, finish); }
+              if (next.kind === "start") {
+                drafting = !!next.drafting;
+              } else if (next.kind === "status") {
+                chatProgress.status(next.status && drafting ? "Schriftsatz wird erstellt – " + next.status : next.status);
+              } else if (next.kind === "review") {
+                chatProgress.pause("Datenschutz-Rückfrage – bitte im Dialog entscheiden.");
+                showPrivacyReview(next, chatProgress.current() || bubble, hasFiles, function (more) {
+                  if (more) { submitPrivacyReview(next, more, chatProgress.current() || bubble, hasFiles, finish); }
                 });
               } else if (next.kind === "done") {
+                if (next.message_id === null && next.content) { chatProgress.error(next.content); return; }
+                chatProgress.status("Ergebnis wird aufbereitet …");
                 finish(conversationId);
               }
             });
           })
           .catch(function () { finish(conversationId); });
       }
+
+      // Ladezustand fuer Ablaeufe aus dem zentralen Pseudonymisierungsdialog (29.10.2026): nach dem Bestaetigen
+      // schliesst der Dialog, und der Chat zeigt SOFORT eine Statusblase mit den tatsaechlichen Serverphasen
+      // (inhaltsfreie Vokabeln, z. B. DraftingService._STEP_STATUS_LABELS) und der verstrichenen Zeit - keine
+      // Prozente. Das Eingabefeld bleibt bis Ergebnis, Fehler oder Abbruch gesperrt (kein paralleler Auftrag); ein
+      // Fehler ersetzt die Animation durch eine Meldung. Vorher blieb der Dialog ~1 min mit einer grauen Fusszeile stehen.
+      var chatProgress = (function () {
+        var bubble = null, timer = null, started = 0, label = "";
+        function render() {
+          var statusEl = bubble ? bubble.querySelector(".chat-thinking-indicator__status") : null;
+          if (!statusEl) { return; }
+          var seconds = Math.max(0, Math.round((Date.now() - started) / 1000));
+          statusEl.textContent = label + (seconds >= 3 ? " (" + seconds + " s)" : "");
+        }
+        function stopTimer() { if (timer) { window.clearInterval(timer); timer = null; } }
+        function unlock() {
+          isSending = false;
+          textarea.readOnly = false;
+          sendBtn.disabled = false;
+          sendBtn.classList.remove("chat-composer__send-btn--loading");
+        }
+        return {
+          start: function (text, orderText) {
+            // Auftrag aus dem Dialog (Upload-Auftrag, noch ohne Blase): sofort als eigene Nachricht zeigen
+            if (orderText && (!bubble || !bubble.isConnected)) { appendUserBubble(orderText, []); }
+            // Eine zwischenzeitlich zur Rueckfrage-Statuszeile umgebaute Blase wird ersetzt (sie zeigt keine Phase mehr)
+            if (bubble && bubble.isConnected && !bubble.querySelector(".chat-thinking-indicator__status")) {
+              bubble.parentNode.removeChild(bubble);
+            }
+            if (!bubble || !bubble.isConnected) { bubble = appendThinkingBubble(); started = started || Date.now(); }
+            if (!bubble) { return; }
+            isSending = true;
+            setLoadingState();
+            bubble.setAttribute("data-chat-progress", "");
+            var indicator = bubble.querySelector(".chat-thinking-indicator");
+            if (indicator) { indicator.setAttribute("aria-label", "Lexono arbeitet …"); }
+            label = text;
+            render();
+            stopTimer();
+            timer = window.setInterval(render, 1000);
+          },
+          status: function (text) { if (text) { label = text; render(); } },
+          pause: function (text) { stopTimer(); label = text; render(); },
+          current: function () { return bubble; },
+          error: function (text) {
+            stopTimer();
+            if (bubble) {
+              bubble.classList.remove("chat-message--thinking");
+              bubble.removeAttribute("data-chat-progress");
+              var body = bubble.querySelector(".chat-message__text");
+              body.className = "chat-message__text";
+              body.removeAttribute("role");
+              body.removeAttribute("aria-label");
+              body.textContent = "";
+              var banner = document.createElement("p");
+              banner.className = "banner banner--error";
+              banner.setAttribute("data-chat-progress-error", "");
+              banner.textContent = text;
+              body.appendChild(banner);
+            }
+            bubble = null;
+            unlock();
+          }
+        };
+      })();
+      window.LexonoChatProgress = chatProgress;
 
       function runStreamingSend(evt) {
         evt.preventDefault();

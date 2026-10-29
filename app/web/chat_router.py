@@ -1578,7 +1578,12 @@ def _stream_chat_reply(
     # URL aktualisieren kann, BEVOR die eigentliche Antwort eintrifft -
     # wichtig, wenn der Nutzer aus der Startansicht heraus die allererste
     # Nachricht einer neuen Unterhaltung sendet.
-    yield _sse_event({"kind": "start", "conversation_id": conversation.id})
+    # `drafting` (29.10.2026): inhaltsfreies Kennzeichen nach derselben Weiche wie ChatService - die Ladeanzeige kann
+    # so ehrlich "Schriftsatz wird erstellt" sagen statt einer allgemeinen Meldung.
+    from app.chat.service import _looks_like_drafting_request
+
+    yield _sse_event({"kind": "start", "conversation_id": conversation.id,
+                      "drafting": _looks_like_drafting_request(message_text or "")})
     try:
         yield from _stream_chat_events(
             chat_service,
@@ -1819,6 +1824,50 @@ def _apply_dialog_decisions(db: Session, conversation, documents: list[tuple[Doc
     return ""
 
 
+def _record_upload_order(db: Session, conversation: ChatConversation, order: str, user: User) -> str:
+    """Legt den beim Upload nur lokal gehaltenen Auftrag (§57) als Nutzernachricht an - ausschliesslich, wenn die
+    juengste Nachricht der Unterhaltung der Upload selbst ist (kein Nachschieben in eine beantwortete Unterhaltung).
+    Gleichzeitige Klicks: nur die ERSTE Nutzernachricht nach dem Upload bleibt, eine zweite wird sofort wieder
+    entfernt (sie wurde nie verarbeitet). Rueckgabe: Fehlermeldung oder ""."""
+    from app.auth.permissions import has_permission
+
+    if not has_permission(user, PERM_CLAUDE_CALL):
+        return "Sie haben keine Berechtigung, einen Auftrag zu senden."
+    latest = (
+        db.query(ChatMessage)
+        .filter_by(conversation_id=conversation.id)
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .first()
+    )
+    if latest is None or latest.role != "upload":
+        return "Es gibt keinen offenen Auftrag, der fortgesetzt werden kann."
+    message = _get_chat_service().record_user_message(db, conversation=conversation, content=order, document_ids=[])
+    first = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role == "user",
+                ChatMessage.created_at >= latest.created_at)
+        .order_by(ChatMessage.created_at.asc(), ChatMessage.id.asc())
+        .first()
+    )
+    if first is not None and first.id != message.id:
+        db.delete(message)
+        db.commit()
+        return "Diese Anfrage wird bereits verarbeitet."
+    return ""
+
+
+def _drop_unprocessed_order(db: Session, message_id: str) -> None:
+    """Scheitern Entscheidungen oder Freigabe, nachdem DIESER Klick den Upload-Auftrag angelegt hat, wird die nie
+    verarbeitete Nachricht wieder entfernt: der Zustand ist dann exakt wie vor dem Klick (juengste Nachricht = Upload,
+    Auftrag nur im Browser) - ein erneutes Bestaetigen legt ihn genau einmal an, kein verwaister Doppelauftrag."""
+    if not message_id:
+        return
+    row = db.get(ChatMessage, message_id)
+    if row is not None and row.role == "user":
+        db.delete(row)
+        db.commit()
+
+
 @router.post("/{conversation_id}/confirm-release-and-generate")
 def confirm_release_and_generate(
     conversation_id: str,
@@ -1827,10 +1876,18 @@ def confirm_release_and_generate(
     decisions: str = Form(default=""),
     require_resolved: str = Form(default=""),
     documents: str = Form(default=""),
+    order: str = Form(default=""),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_PRIVACY_DECISION_MANAGE)),
 ) -> StreamingResponse:
     """"Pseudonymisierung bestätigen und Schriftsatz erstellen" im Chat-Kontext (23.10.2026).
+
+    29.10.2026 (Erstversuch "Dokument hochladen + Auftrag"): optional `order` = der beim Upload mitgetippte, nach §57
+    bewusst NICHT gesendete Auftrag (lag nur im Browser). Gibt es noch keinen offenen Auftrag und ist die juengste
+    Nachricht genau dieser Upload, wird der Auftrag mit DIESEM Klick als Nutzernachricht angelegt und - nach den
+    Entscheidungen und der Freigabe - genau einmal verarbeitet (`_record_upload_order`). Ohne `order` unveraendert.
+    Bisher oeffnete der Dialog nach dem Upload nur als Pruefansicht (alle Optionen gesperrt) und erst ein zweites
+    Senden aus dem Eingabefeld legte den Auftrag an.
 
     26.10.2026 (mehrere Dokumente im zentralen Dialog): optional `documents` = JSON-Liste
     `[{"document_id": ..., "text_version": ...}]` WEITERER Dokumente derselben Unterhaltung/Akte, die mit demselben
@@ -1893,6 +1950,13 @@ def confirm_release_and_generate(
     except (ValueError, TypeError, KeyError):
         return StreamingResponse(_stream_error_event("Die Dokumentauswahl konnte nicht gelesen werden."),
                                  media_type="text/event-stream")
+    order = order.strip()
+    new_order_id = ""  # nur gesetzt, wenn DIESER Klick den Upload-Auftrag angelegt hat
+    if order and _open_order_message(db, conversation) is None:
+        problem = _record_upload_order(db, conversation, order, current_user)
+        if problem:
+            return StreamingResponse(_stream_error_event(problem), media_type="text/event-stream")
+        new_order_id = _open_order_message(db, conversation).id
     # Offenen Schriftsatz-Auftrag bestimmen. Anders als bei der Rueckfrage (die nichts speichert) hat das
     # Dokument-Gate bereits eine blockierte Hinweis-Nachricht angelegt - die zuletzt gestellte Nutzernachricht ist
     # daher der Auftrag, der wiederaufgenommen werden soll. Ist die letzte Nachricht eine ERFOLGREICHE
@@ -1935,6 +1999,7 @@ def confirm_release_and_generate(
         problem = _apply_dialog_decisions(db, conversation, targets, decisions, require_resolved == "1", current_user)
         if problem:
             _release_message(db, message.id)
+            _drop_unprocessed_order(db, new_order_id)
             return StreamingResponse(_stream_error_event(problem), media_type="text/event-stream")
     # Freigabe der ANGEZEIGTEN Textstaende. Scheitert sie (veralteter Stand, fehlgeschlagene Pruefung,
     # kein verwertbarer Text), wird NICHTS generiert und die Nachricht wieder freigegeben.
@@ -1943,6 +2008,7 @@ def confirm_release_and_generate(
             release.release_manually(db, target, text_version=target_version, user=current_user)
     except release.ReleaseError as exc:
         _release_message(db, message.id)
+        _drop_unprocessed_order(db, new_order_id)
         return StreamingResponse(_stream_error_event(str(exc)), media_type="text/event-stream")
 
     # Veraltete Dokument-Gate-Hinweise (blockierte Assistenten-Nachrichten NACH dem Auftrag) entfernen, damit der

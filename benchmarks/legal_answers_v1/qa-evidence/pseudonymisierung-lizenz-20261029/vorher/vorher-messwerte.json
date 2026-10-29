@@ -1,0 +1,475 @@
+{
+ "phase": "vorher",
+ "schritte": [
+  {
+   "schritt": "01-erster-versuch-dialog",
+   "t": 9.7,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     true,
+     true,
+     true
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     false
+    ],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": false
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "offene_zaehlung": "",
+    "hinweis": "Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. Bitte prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden. Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte.",
+    "composer_text": "Erstelle einen Schriftsatz",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a/document/9348279b-b79b-4e50-ba4f-4b7d3c53d0b1?uploaded=1&text_not_sent=1",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an"
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 0
+   },
+   "dialog_mit_optionen": true
+  },
+  {
+   "schritt": "02-erster-versuch-klick-pseudonymisieren",
+   "t": 10.3,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     true,
+     true,
+     true
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": false
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "offene_zaehlung": "",
+    "hinweis": "Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. Bitte prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden. Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte.",
+    "composer_text": "Erstelle einen Schriftsatz",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a/document/9348279b-b79b-4e50-ba4f-4b7d3c53d0b1?uploaded=1&text_not_sent=1",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an"
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 0
+   }
+  },
+  {
+   "schritt": "03-nach-abbrechen",
+   "t": 10.8,
+   "ui": {
+    "offen": false,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     true,
+     true,
+     true
+    ],
+    "treffer_elementFromPoint": [
+     false,
+     false,
+     false
+    ],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": false
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "offene_zaehlung": "",
+    "hinweis": "Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. Bitte prüfen und nicht erkannte Namen schützen; danach die Frage im Chat senden. Ihr eingegebener Text wurde nicht gesendet; er steht wieder im Eingabefeld, sofern der Browser ihn zwischenspeichern konnte.",
+    "composer_text": "Erstelle einen Schriftsatz",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a/document/9348279b-b79b-4e50-ba4f-4b7d3c53d0b1?uploaded=1&text_not_sent=1",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an"
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 0
+   }
+  },
+  {
+   "schritt": "04-zweiter-versuch-dialog",
+   "t": 11.8,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": false
+    },
+    "uebernehmen": {
+     "sichtbar": true,
+     "gesperrt": true
+    },
+    "offene_zaehlung": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant chat-message--blocked | Lexono Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI "
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user",
+     "assistant:blocked"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 0
+   },
+   "dialog_bedienbar": true
+  },
+  {
+   "schritt": "05-entscheidungen-gewaehlt",
+   "t": 13.3,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": false,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "offene_zaehlung": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach: Schriftsatz erstellen.",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant chat-message--blocked | Lexono Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI "
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user",
+     "assistant:blocked"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 0
+   }
+  },
+  {
+   "schritt": "06-warten-00",
+   "t": 18.8,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "offene_zaehlung": "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant chat-message--blocked | Lexono Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI "
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "06-warten-01",
+   "t": 24.3,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "offene_zaehlung": "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant chat-message--blocked | Lexono Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI "
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "06-warten-02",
+   "t": 29.8,
+   "ui": {
+    "offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "treffer_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "offene_zaehlung": "Pseudonymisierung wird bestätigt – der gesamte Inhalt wird erneut geprüft …",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant chat-message--blocked | Lexono Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI "
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "freigaben": 0,
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "06-warten-03",
+   "t": 35.3,
+   "ui": {
+    "offen": false,
+    "optionen": 0,
+    "optionen_gesperrt": [],
+    "treffer_elementFromPoint": [],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "offene_zaehlung": "",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant | Lexono Schriftsatz Kopieren An das Finanzamt Musterstadt Einspruch gegen den Bescheid… An das Finanzamt Musterstadt Einspruch gegen den Besc"
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user",
+     "assistant"
+    ],
+    "entwuerfe": 1,
+    "freigaben": 0,
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "07-ergebnis",
+   "t": 38.8,
+   "ui": {
+    "offen": false,
+    "optionen": 0,
+    "optionen_gesperrt": [],
+    "treffer_elementFromPoint": [],
+    "gewaehlt": [],
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "offene_zaehlung": "",
+    "hinweis": "",
+    "composer_text": "",
+    "url": "/dashboard/chat/5c91fbed-3307-48f5-8845-25ea83afc33a",
+    "blasen": [
+     "chat-message--upload | Q Sie einspruch_synthetisch.pdf 2 KB Verarbeitet Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an",
+     "chat-message--user | Q Sie Erstelle einen Schriftsatz",
+     "chat-message--assistant | Lexono Schriftsatz Kopieren An das Finanzamt Musterstadt Einspruch gegen den Bescheid… An das Finanzamt Musterstadt Einspruch gegen den Besc"
+    ],
+    "ladeanzeige": [],
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user",
+     "assistant"
+    ],
+    "entwuerfe": 1,
+    "freigaben": 0,
+    "fake_aufrufe": 1
+   },
+   "sekunden_seit_bestaetigen": 25.1
+  }
+ ]
+}

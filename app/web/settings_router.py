@@ -44,6 +44,7 @@ from app.firm_profile import (
 )
 from app.models import AuditEvent, Role, User
 from app.modules import licensing as module_licensing
+from app.modules import plans
 from app.modules.catalog import CATALOG as MODULE_CATALOG
 from app.modules.profile import module_available
 from app.setup.env_writer import update_env_values
@@ -396,6 +397,7 @@ def settings_page(
     # geoeffnet") - `open_dialog` landet ebenfalls in einem <script>-Block.
     active_dialog = open_dialog if open_dialog in _VALID_DIALOGS else None
 
+    enabled_modules = module_licensing.enabled_modules(db)
     context = {
         "request": request,
         "current_user": current_user,
@@ -414,7 +416,13 @@ def settings_page(
         # nur Module, die dieses Paket enthaelt (Build-Profil, app/modules/profile.py)
         "module_catalog": {k: m for k, m in MODULE_CATALOG.items() if module_available(k)},
         "module_license_status": module_licensing.current_status(db),
-        "enabled_modules": module_licensing.enabled_modules(db),
+        "enabled_modules": enabled_modules,
+        # Produktuebersicht (29.10.2026, app/modules/plans.py): reine Anzeige - das aktuelle Paket folgt nur den
+        # tatsaechlich freigeschalteten Modulen (Lizenz UND Build-Profil), Preise/Status schalten nichts frei.
+        "license_products": plans.PRODUCTS,
+        "license_features": plans.FEATURES,
+        "license_price_basis": plans.PRICE_BASIS,
+        "license_current_product": plans.current_product(enabled_modules).key,
         "module_key_configured": bool(module_licensing.TRUSTED_PUBLIC_KEYS),
         # --- "Benutzer"-Tab ---
         "user_rows": user_rows,

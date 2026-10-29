@@ -1,0 +1,344 @@
+{
+ "szenario": "doppelklick",
+ "fake_delay_s": "12",
+ "schritte": [
+  {
+   "schritt": "01-erster-versuch-dialog",
+   "t": 7.2,
+   "ui": {
+    "dialog_offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "klickbar_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": false
+    },
+    "uebernehmen": {
+     "sichtbar": true,
+     "gesperrt": true
+    },
+    "fusszeile": "2 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "composer_text": "Erstelle einen Schriftsatz",
+    "composer_gesperrt": false,
+    "ladeanzeige": null,
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": false,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07/document/92337192-d51c-4f31-96c2-7cb208123d55?uploaded=1&text_not_sent=1",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload"
+    ],
+    "entwuerfe": 0,
+    "entscheidungen": [],
+    "fake_aufrufe": 0
+   }
+  },
+  {
+   "schritt": "03-alle-beantwortet",
+   "t": 8.7,
+   "ui": {
+    "dialog_offen": true,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "klickbar_elementFromPoint": [
+     true,
+     true,
+     true
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": false,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihr Auftrag „Erstelle einen Schriftsatz“ gesendet.",
+    "composer_text": "Erstelle einen Schriftsatz",
+    "composer_gesperrt": false,
+    "ladeanzeige": null,
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": false,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07/document/92337192-d51c-4f31-96c2-7cb208123d55?uploaded=1&text_not_sent=1",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload"
+    ],
+    "entwuerfe": 0,
+    "entscheidungen": [],
+    "fake_aufrufe": 0
+   }
+  },
+  {
+   "schritt": "04-direkt-nach-bestaetigen",
+   "t": 9.8,
+   "ui": {
+    "dialog_offen": false,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "klickbar_elementFromPoint": [
+     false,
+     false,
+     false
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": false,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihr Auftrag „Erstelle einen Schriftsatz“ gesendet.",
+    "composer_text": "",
+    "composer_gesperrt": true,
+    "ladeanzeige": "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet…",
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": false,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07/document/92337192-d51c-4f31-96c2-7cb208123d55?uploaded=1&text_not_sent=1",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "entscheidungen": [
+     [
+      "Kaufmann",
+      "personal"
+     ],
+     [
+      "Richter",
+      "personal"
+     ]
+    ],
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "10-ladezustand-00",
+   "t": 12.3,
+   "ui": {
+    "dialog_offen": false,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "klickbar_elementFromPoint": [
+     false,
+     false,
+     false
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": false,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihr Auftrag „Erstelle einen Schriftsatz“ gesendet.",
+    "composer_text": "",
+    "composer_gesperrt": true,
+    "ladeanzeige": "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (3 s)",
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": false,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07/document/92337192-d51c-4f31-96c2-7cb208123d55?uploaded=1&text_not_sent=1",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "entscheidungen": [
+     [
+      "Kaufmann",
+      "personal"
+     ],
+     [
+      "Richter",
+      "personal"
+     ]
+    ],
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "10-ladezustand-04",
+   "t": 20.9,
+   "ui": {
+    "dialog_offen": false,
+    "optionen": 3,
+    "optionen_gesperrt": [
+     false,
+     false,
+     false
+    ],
+    "klickbar_elementFromPoint": [
+     false,
+     false,
+     false
+    ],
+    "gewaehlt": [
+     "personal"
+    ],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": false,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": true
+    },
+    "fusszeile": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihr Auftrag „Erstelle einen Schriftsatz“ gesendet.",
+    "composer_text": "",
+    "composer_gesperrt": true,
+    "ladeanzeige": "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (12 s)",
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": false,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07/document/92337192-d51c-4f31-96c2-7cb208123d55?uploaded=1&text_not_sent=1",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user"
+    ],
+    "entwuerfe": 0,
+    "entscheidungen": [
+     [
+      "Kaufmann",
+      "personal"
+     ],
+     [
+      "Richter",
+      "personal"
+     ]
+    ],
+    "fake_aufrufe": 1
+   }
+  },
+  {
+   "schritt": "20-ergebnis",
+   "t": 26.5,
+   "ui": {
+    "dialog_offen": false,
+    "optionen": 0,
+    "optionen_gesperrt": [],
+    "klickbar_elementFromPoint": [],
+    "gewaehlt": [],
+    "ansicht_hinweis": false,
+    "bestaetigen": {
+     "text": "Pseudonymisierung bestätigen und fortfahren",
+     "gesperrt": true,
+     "sichtbar": true
+    },
+    "uebernehmen": {
+     "sichtbar": false,
+     "gesperrt": false
+    },
+    "fusszeile": "",
+    "composer_text": "",
+    "composer_gesperrt": false,
+    "ladeanzeige": null,
+    "fehleranzeige": null,
+    "ergebnisblock": false,
+    "offene_fragen_im_ergebnis": true,
+    "url": "/dashboard/chat/ca764fd0-9b4f-452c-bf69-26e783f0de07",
+    "js_fehler": []
+   },
+   "db": {
+    "nachrichten": [
+     "upload",
+     "user",
+     "assistant"
+    ],
+    "entwuerfe": 1,
+    "entscheidungen": [
+     [
+      "Kaufmann",
+      "personal"
+     ],
+     [
+      "Richter",
+      "personal"
+     ]
+    ],
+    "fake_aufrufe": 1
+   }
+  }
+ ],
+ "pruefungen": {
+  "dialog_beim_ersten_versuch_bereit": true,
+  "erster_versuch_optionen_bedienbar": true,
+  "vor_bestaetigen_kein_auftrag_kein_ki_aufruf": true,
+  "alle_beantwortet": true,
+  "sofort_ladeanzeige": true,
+  "eingabe_waehrend_verarbeitung_gesperrt": true,
+  "gesehene_ladetexte": [
+   "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (3 s)",
+   "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (5 s)",
+   "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (7 s)",
+   "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (9 s)",
+   "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet… (11 s)"
+  ],
+  "sekunden_bis_ende": 17.8,
+  "ki_aufrufe": 1,
+  "nutzernachrichten": 1,
+  "entwuerfe": 1,
+  "ergebnis_mit_offenen_fragen": true,
+  "ladeanzeige_entfernt": true
+ }
+}

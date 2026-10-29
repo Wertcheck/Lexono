@@ -247,19 +247,26 @@ Basispaket bleibt allgemein.
 
 ## 9. Lizenzmodell und Preise (vorläufige Produktplanung, nicht live)
 
-Konfiguriert in `app/modules/plans.py`. Die Preise sind dort reine Planung: Lexono zeigt sie nicht als Kaufpreise an
-und schaltet anhand von Preisen nichts frei.
+Konfiguriert in `app/modules/plans.py`. Die Preise und Produktstufen werden seit dem 29.10.2026 im Lizenz-Tab der
+Einstellungen als Produktübersicht angezeigt. Das ist reine Anzeige ohne Kauf-Button: Lexono schaltet anhand von
+Preisen oder Produktstufen nichts frei. „Ihr Paket“ folgt ausschließlich den tatsächlich freigeschalteten Modulen
+(signierte Lizenz und Build-Profil).
 
-| Produkt | Monatlich (netto, vorläufig) | Art |
-|---|---|---|
-| Lexono Kanzlei | 99 € | Basispaket |
-| Lexono Finance (Modul `finanzen`) | +149 € | Zusatzmodul |
-| Lexono Steuern (Modul `steuern`) | +299 € | Zusatzmodul |
+**Owner-Vorgabe 29.10.2026:** Drei Produktstufen ersetzen die kombinierbaren Zusatzmodul-Preise vom 28.10.2026
+(99/149/299 € netto, additiv).
 
-- **Kombinationen:** Finance und Steuern sind frei kombinierbar.
-  - Kanzlei + Finance: 248 €
-  - Kanzlei + Steuern: 398 €
-  - alle drei: 547 €
+| Produkt | Module | Preis je Benutzer und Monat (inkl. MwSt.) | Status |
+|---|---|---|---|
+| Lexono | `kanzlei` | 99 € | Verfügbar |
+| Lexono Finance | `kanzlei`, `finanzen` | 149 € | In Entwicklung |
+| Lexono Finance & Tax | `kanzlei`, `finanzen`, `steuern` | 249 € | In Entwicklung |
+
+- **Stufen:** Jede Stufe schließt die vorherige vollständig ein. „Steuern ohne Finance“ ist keine Produktstufe
+  (`plans.product_for` lehnt diese Kombination ab).
+- **Funktionsvergleich „Ihre Vorteile im Überblick“** (`plans.FEATURES`):
+  - Kanzlei-Funktionen in allen drei Stufen;
+  - Finanzbuchhaltung und digitale Belegverwaltung ab Finance;
+  - Steuererklärungen und Steuer-Workflows nur in Finance & Tax.
 - **Kosten und Vertrieb:** Keine Einrichtungsgebühr; Kunden kaufen und installieren selbst.
 - **Flexibilität:**
   - Die Lizenz enthält **Module** und **Laufzeit** (`valid_from`/`valid_until`). Nur diese schalten frei.
@@ -268,12 +275,12 @@ und schaltet anhand von Preisen nichts frei.
     Prüfung zu ändern.
   - Bei monatlicher Abrechnung empfiehlt sich eine kurze Laufzeit je Lizenzdatei, z. B. ein oder zwei Monate mit
     Nachlieferung durch den Shop, weil eine Offline-Lizenz vor Ablauf nicht widerrufen werden kann.
+- **Entschieden (29.10.2026):** Preise inklusive MwSt. und je Benutzer.
 - **Offen:**
-  - Ausweisung der Umsatzsteuer;
   - Lizenzpflicht für das Basispaket;
   - Kulanzzeit nach Ablauf;
   - Shop-Anbindung (automatische Signatur nach Zahlung);
-  - Lizenz je Installation oder je Nutzerzahl.
+  - technische Durchsetzung der Benutzerzahl in der Lizenz (heute nicht geprüft).
 
 ## 10. Produktiver Lizenzschlüssel – sichere Erzeugung und Verwahrung (Anleitung, noch NICHT ausgeführt)
 

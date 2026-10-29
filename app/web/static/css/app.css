@@ -11482,6 +11482,7 @@ a.chat-composer__protect-btn {
 .pseudo-question__answers { display: flex; flex-direction: column; gap: 4px; }
 .pseudo-question__ask { margin: 0; font-size: 17px; font-weight: 700; color: var(--pc-navy); line-height: 1.3; }
 .pseudo-question__sub { margin: 0 0 10px; font-size: 13.5px; color: var(--ink-500); line-height: 1.5; overflow-wrap: anywhere; }
+.pseudo-question__view-hint { margin: 0 0 10px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--paper-100); color: var(--ink-700); font-size: 13px; line-height: 1.45; }
 .pseudo-question__options { display: flex; flex-direction: column; gap: 10px; }
 .pseudo-question__option {
   display: grid; grid-template-columns: 32px minmax(0, 1fr) 22px; align-items: center; gap: 14px; text-align: left; width: 100%;
@@ -13683,6 +13684,52 @@ html.sidebar-collapsed .sidebar__new-badge { display: none; }
 .module-license-form { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 8px 0; }
 .module-license-form__file { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-700); }
 .module-license-form__remove { color: var(--wax-red) !important; }
+
+/* Lizenz-Tab: Produktuebersicht und Funktionsvergleich (29.10.2026). Seriös und reduziert: Weiss, Navy (--ink-900),
+   dezentes Grau, Lexono-Gruen nur fuer "enthalten", den Status "Verfuegbar" und das aktuelle Paket. Schmale,
+   zentrierte Karten statt voller Breite; keine Produktgrafiken. */
+.license-products-section { margin-bottom: 20px; }
+.license-products-section__head { text-align: center; max-width: 680px; margin: 0 auto 16px; }
+.license-products-section__head .settings-section__title { margin-bottom: 4px; }
+.license-products { display: grid; grid-template-columns: repeat(3, minmax(0, 236px)); justify-content: center; gap: 16px; }
+.license-product { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 10px; padding: 26px 18px 20px; background: var(--paper-000); border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-sm); min-width: 0; }
+.license-product.is-current { border-color: var(--brand-green); box-shadow: 0 0 0 1px var(--brand-green), var(--shadow-sm); }
+.license-product__current { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); padding: 2px 10px;
+  border-radius: var(--radius-pill); background: var(--brand-green); color: var(--on-brand); font-size: 11.5px;
+  font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+.license-product__name { display: flex; flex-direction: column; align-items: center; margin: 0; color: var(--ink-900);
+  line-height: 1.2; min-height: 48px; justify-content: center; }
+.license-product__brand { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.license-product__edition { font-size: 15px; font-weight: 600; color: var(--ink-700); margin-top: 2px; }
+.license-product__price { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0; }
+.license-product__price strong { font-size: 30px; font-weight: 700; color: var(--ink-900); letter-spacing: -0.02em; line-height: 1.1; }
+.license-product__price span { font-size: 12.5px; color: var(--ink-500); line-height: 1.35; }
+.license-status { display: inline-flex; padding: 2px 10px; border-radius: var(--radius-pill); font-size: 12px;
+  font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.license-status--verfuegbar { background: var(--brand-green-tint); color: var(--brand-green-dark); }
+.license-status--in_entwicklung { background: var(--paper-200); color: var(--ink-700); border-color: var(--paper-line); }
+.license-product__summary { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.45; overflow-wrap: anywhere; }
+.license-compare .settings-section__hint { margin-bottom: 12px; }
+.license-compare__scroll { overflow-x: auto; }
+.license-compare__table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+.license-compare__table th, .license-compare__table td { padding: 10px 12px; border-bottom: 1px solid var(--paper-line); }
+.license-compare__table thead th { color: var(--ink-900); font-weight: 600; vertical-align: bottom; }
+.license-compare__table tbody th { text-align: left; font-weight: 500; color: var(--ink-900); }
+.license-compare__feature-col { text-align: left; width: 40%; color: var(--ink-500) !important; font-weight: 500 !important; }
+.license-compare__product-col { text-align: center; width: 20%; }
+.license-compare__brand, .license-compare__edition { display: block; line-height: 1.25; }
+.license-compare__edition { font-size: 12.5px; color: var(--ink-700); font-weight: 600; }
+.license-compare__table td { text-align: center; }
+.license-compare__yes { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--brand-green-tint); color: var(--brand-green-dark); }
+.license-compare__yes svg { width: 14px; height: 14px; }
+.license-compare__no { color: var(--ink-300); font-size: 16px; }
+.license-compare__table tbody tr:last-child th, .license-compare__table tbody tr:last-child td { border-bottom: 0; }
+@media (max-width: 860px) {
+  .license-products { grid-template-columns: minmax(0, 320px); }
+}
 
 /* ==========================================================================
    Kanzleiwissen: Referenzabgleich 43_Kanzleiwissen_Gesetze.png (27.10.)

@@ -5320,3 +5320,29 @@ eine Finance-Lizenz schaltet im Pilot nichts frei. Migrationen 040-042 und die M
 bestehende Datenbanken auf 042 weiter starten. `full` stellt Finance unveraendert bereit. Die EXE liest das Profil
 nur aus der mitgebuendelten Datei, fail-closed auf Pilot (`app/modules/profile.py`). Details:
 `MODULARCHITEKTUR.md` Paragraph 12.
+
+## 76.2 Erstversuch "Dokument hochladen + Auftrag" und Ladezustand (29.10.2026)
+
+**Befund** (reproduziert in der echten UI mit echten Mausklicks): Mit Dateien ist eine Anfrage nach §57 nur ein Upload,
+der mitgetippte Auftrag bleibt im Browser. Der danach automatisch geöffnete Pseudonymisierungsdialog fand keinen
+offenen Auftrag und öffnete deshalb als reine Prüfansicht.
+
+- Alle Optionen waren `disabled`, und es gab keinen Bestätigen-Button.
+- Erst ein zweites Senden aus dem Eingabefeld legte den Auftrag an. Das Gate sperrte, und der Dialog wurde bedienbar.
+- Nach dem Bestätigen blieb der Dialog bis zur Antwort stehen, nur mit einer grauen Fußzeile. Die
+  `status`-Ereignisse des Servers wurden ignoriert.
+
+**Entscheidung:** §57 bleibt gültig: Vor einer bewussten Bestätigung wird nichts gesendet.
+
+- **Bestätigen:** Der Dialog öffnet mit dem lokal gehaltenen Auftrag direkt bedienbar und sendet ihn erst mit
+  „Bestätigen“ an `confirm-release-and-generate` (Parameter `order`).
+- **Anlage des Auftrags:** Der Server legt ihn genau einmal an, und zwar nur, wenn die jüngste Nachricht der Upload
+  ist. Danach wendet er die Entscheidungen an, gibt frei und verarbeitet den Auftrag über denselben fail-closed Pfad.
+  Scheitern Entscheidungen oder Freigabe, wird der nie verarbeitete Auftrag wieder entfernt.
+- **Ladezustand:** Nach dem Bestätigen schließt der Dialog. Der Chat zeigt sofort eine Statusblase mit den
+  tatsächlichen Serverphasen und der verstrichenen Zeit, keine Prozente. `start` trägt dazu das inhaltsfreie
+  Kennzeichen `drafting`.
+- **Fehler und Timeout:** Fehler beenden die Anzeige mit einer Meldung. Ohne Server-Ereignis endet die Anzeige nach
+  5 Minuten mit einer Meldung.
+
+**Nachweise:** `tests/test_upload_order_first_attempt.py` und der QA-Ordner `pseudonymisierung-lizenz-20261029`.
