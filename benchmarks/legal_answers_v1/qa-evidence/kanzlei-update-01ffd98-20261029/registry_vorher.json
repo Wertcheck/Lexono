@@ -1,0 +1,8 @@
+﻿{
+    "DisplayName":  "Lexono",
+    "DisplayVersion":  "0.1.0",
+    "InstallLocation":  "C:\\Users\\Bonit\\AppData\\Local\\Lexono\\",
+    "InstallDate":  "20261028",
+    "Inno Setup: App Path":  "C:\\Users\\Bonit\\AppData\\Local\\Lexono",
+    "Inno Setup: Selected Tasks":  "desktopicon"
+}

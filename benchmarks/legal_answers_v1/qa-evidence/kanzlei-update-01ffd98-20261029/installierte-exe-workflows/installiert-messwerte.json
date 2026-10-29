@@ -1,0 +1,90 @@
+{
+ "schritte": {
+  "lizenz": {
+   "produkte": [
+    "lexono:verfuegbar",
+    "finance:in_entwicklung",
+    "finance_tax:in_entwicklung"
+   ],
+   "aktiv": 1,
+   "bald": 2,
+   "module": [
+    "kanzlei"
+   ],
+   "querscroll": false,
+   "mwst": 4
+  },
+  "optionen_erstversuch": {
+   "gesperrt": [
+    false,
+    false,
+    false
+   ],
+   "treffer": [
+    true,
+    true,
+    true
+   ]
+  },
+  "nach_abbruch": {
+   "nachrichten": [
+    "upload"
+   ],
+   "recorder": 0,
+   "eingabe": "Erstelle einen Schriftsatz"
+  },
+  "erfolg_abbruchpfad": {
+   "ladeanzeige": [
+    "LexonoPseudonymisierung bestätigt – Dokumente werden freigegeben und erneut geprüft …",
+    "LexonoSchriftsatz wird erstellt …",
+    "LexonoSchriftsatz wird erstellt – Anfrage wird an Claude gesendet…",
+    "LexonoSchriftsatz wird erstellt – Antwort wird zusammengesetzt…",
+    "LexonoErgebnis wird aufbereitet …"
+   ],
+   "nachrichten": [
+    "upload",
+    "user",
+    "assistant"
+   ],
+   "recorder": 1
+  },
+  "erfolg_erstversuch": {
+   "nachrichten": [
+    "upload",
+    "user",
+    "assistant"
+   ],
+   "recorder_gesamt": 2
+  },
+  "fehlerweg": {
+   "nachrichten": [
+    "upload",
+    "user",
+    "assistant:blocked"
+   ],
+   "meldung": "Lexono Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung.",
+   "eingabe_frei": true
+  }
+ },
+ "pruefungen": {
+  "natives_webview2_fenster_der_installierten_exe": true,
+  "lizenzseite": true,
+  "erstversuch_dialog_bereit": true,
+  "erstversuch_optionen_bedienbar": true,
+  "alle_optionen_waehlbar": true,
+  "abbruch_sauber": true,
+  "erneut_gesendet_dialog_bereit": true,
+  "erneut_genau_ein_auftrag": true,
+  "ladeanzeige_mit_echten_phasen": true,
+  "erfolg_ergebnis_mit_offenen_fragen": true,
+  "dreifachklick_genau_ein_ki_aufruf": true,
+  "anfrage_pseudonymisiert": true,
+  "erstversuch2_dialog_bereit": true,
+  "erstversuch_erfolg_genau_einmal": true,
+  "fehlerweg_dialog_bereit": true,
+  "fehlerweg_verstaendlich_ohne_haengen": true
+ },
+ "engine_ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+ "tracebacks_app_log": 0,
+ "recorder_aufrufe_gesamt": 2
+}

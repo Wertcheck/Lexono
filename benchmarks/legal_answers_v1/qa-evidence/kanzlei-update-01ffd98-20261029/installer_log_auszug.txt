@@ -1,0 +1,23 @@
+2026-10-29 17:28:35.555   Setup version: Inno Setup version 6.7.3
+2026-10-29 17:28:35.555   Original Setup EXE: C:\Users\Bonit\Lexono\dist\installer\Lexono_Setup.exe
+2026-10-29 17:28:58.588   Starting the installation process.
+2026-10-29 17:28:58.627   Directory for uninstall files: C:\Users\Bonit\AppData\Local\Lexono
+2026-10-29 17:28:58.627   Will append to existing uninstall log: C:\Users\Bonit\AppData\Local\Lexono\unins000.dat
+2026-10-29 17:29:02.773   Creating directory: C:\Users\Bonit\AppData\Local\Lexono\_internal\app
+2026-10-29 17:29:30.032   Creating directory: C:\Users\Bonit\AppData\Local\Lexono\_internal\migrations\versions
+2026-10-29 17:29:38.296   -- Icon entry --
+2026-10-29 17:29:38.323   Successfully created the icon.
+2026-10-29 17:29:38.334   -- Icon entry --
+2026-10-29 17:29:38.408   Successfully created the icon.
+2026-10-29 17:29:38.413   -- Icon entry --
+2026-10-29 17:29:38.415   Successfully created the icon.
+2026-10-29 17:29:38.434   Deleting uninstall key left over from previous non administrative install.
+2026-10-29 17:29:38.434   Creating new uninstall key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\{9F4B9E7A-2B1E-4C77-9C7C-3D9B5E5B0B21}}_is1
+2026-10-29 17:29:38.434   Writing uninstall key values.
+2026-10-29 17:29:38.441   Installation process succeeded.
+2026-10-29 17:29:38.451   Filename: C:\Users\Bonit\AppData\Local\Temp\is-SPFJYOO8YV.tmp\MicrosoftEdgeWebview2Setup.exe
+2026-10-29 17:29:47.451   Process exit code: 2147747880
+2026-10-29 17:29:47.459   Need to restart Windows? No
+2026-10-29 17:29:47.487   Log closed.
+
+[Auszug: 21 von 6821 Zeilen; die 'Dest filename'-Zeilen (1027 Dateien) sind ausgelassen]

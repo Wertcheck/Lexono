@@ -1,0 +1,55 @@
+{
+ "zeit": "2026-10-29 17:26:27",
+ "ziel": "C:\\Users\\Bonit\\LexonoBackups\\vor-update-01ffd98-20261029-1726",
+ "vollstaendig": true,
+ "quellen": {
+  "ProgramData_Lexono": {
+   "pfad": "C:\\ProgramData\\Lexono",
+   "vorhanden": true,
+   "dateien": 957,
+   "bytes": 1967745392,
+   "kopiert": 957,
+   "alle_hashes_gleich": true
+  },
+  "ProgramData_KanzleiAI": {
+   "pfad": "C:\\ProgramData\\KanzleiAI",
+   "vorhanden": true,
+   "dateien": 1,
+   "bytes": 503808,
+   "kopiert": 1,
+   "alle_hashes_gleich": true
+  },
+  "LocalAppData_Lexono_App": {
+   "pfad": "C:\\Users\\Bonit\\AppData\\Local\\Lexono",
+   "vorhanden": true,
+   "dateien": 1027,
+   "bytes": 1283424478,
+   "kopiert": 1027,
+   "alle_hashes_gleich": true
+  }
+ },
+ "db": {
+  "quelle": {
+   "revision": "schritt3_042",
+   "integrity_check": "ok",
+   "tabellen": 59,
+   "zeilen_gesamt": 15959,
+   "inhalt_sha256": "7400b5a2c0a67e620252e710716917e5312e02526c0508b2c39cc0357525cbfa"
+  },
+  "rohkopie": {
+   "revision": "schritt3_042",
+   "integrity_check": "ok",
+   "tabellen": 59,
+   "zeilen_gesamt": 15959,
+   "inhalt_sha256": "7400b5a2c0a67e620252e710716917e5312e02526c0508b2c39cc0357525cbfa"
+  },
+  "backup_api": {
+   "revision": "schritt3_042",
+   "integrity_check": "ok",
+   "tabellen": 59,
+   "zeilen_gesamt": 15959,
+   "inhalt_sha256": "7400b5a2c0a67e620252e710716917e5312e02526c0508b2c39cc0357525cbfa"
+  },
+  "identisch": true
+ }
+}

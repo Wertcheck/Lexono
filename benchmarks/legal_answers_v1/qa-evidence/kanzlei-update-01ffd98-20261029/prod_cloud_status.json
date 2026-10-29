@@ -1,0 +1,22 @@
+{
+ "konfiguration": {
+  "gateway_url_gesetzt": false,
+  "anthropic_schluessel_gesetzt": true,
+  "route": "direct"
+ },
+ "ziel_vorhanden": true,
+ "erreichbarkeit": {
+  "host": "api.anthropic.com",
+  "port": 443,
+  "tls": true,
+  "erreichbar": false,
+  "detail": "Zeitüberschreitung"
+ },
+ "letzte_anfrage_fehlgeschlagen": false,
+ "statusanzeige": {
+  "state": "reachable",
+  "reason": "",
+  "checked_at": "2026-10-29 16:31:47.453034+00:00",
+  "route": "direct"
+ }
+}
