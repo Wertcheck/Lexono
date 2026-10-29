@@ -15,6 +15,7 @@ from app.models.audit_event import AuditEvent, AuditLogImmutableError
 from app.models.base import Base
 from app.models.chat_conversation import ChatConversation
 from app.models.chat_message import VALID_CHAT_MESSAGE_ROLES, ChatMessage, ChatMessageDocument
+from app.models.client_access import ClientUserAccess
 from app.models.client import VALID_CLIENT_STATUSES, Client
 from app.models.deadline import Deadline
 from app.models.document import Document
@@ -24,11 +25,17 @@ from app.models.draft_feedback import DraftFeedback
 from app.models.draft_quality_rating import DraftQualityRating
 from app.models.draft_reference_links import DraftKnowledgeItemLink, DraftSourceLink
 from app.models.embedding import Embedding
+from app.models.fibu import FibuAccount, FibuBooking, FibuClientProfile, FibuReceipt, FibuTask
 from app.models.firm_practice_area import FirmPracticeArea
+from app.models.module_license import ModuleLicense
 from app.models.firm_profile import FirmProfile
 from app.models.letterhead import Letterhead
 from app.models.privacy_decision import PrivacyDecision, PrivacyFeedbackStat
+from app.models.quality_report import QualityReport, RegressionCase
 from app.models.chat_message_claim import ChatMessageClaim
+from app.models.schriftsatz_operation import SchriftsatzOperation
+from app.models.chat_upload_operation import ChatUploadOperation
+from app.models.document_release import DocumentPrivacyCheck, DocumentRelease
 from app.models.generated_document import GeneratedDocument
 from app.models.knowledge_item import KnowledgeItem
 from app.models.law import Law
@@ -54,11 +61,23 @@ from app.models.review_finding import ReviewFinding
 from app.models.role import Role
 from app.models.source import Source
 from app.models.task import Task
+from app.models.tax import TaxFieldValue, TaxFiling, TaxFilingPart, TaxSubmission
 from app.models.user import User
 from app.models.workflow_run import VALID_WORKFLOW_STATUSES, WorkflowRun
 
 __all__ = [
     "Base",
+    "FibuAccount",
+    "FibuBooking",
+    "FibuClientProfile",
+    "FibuReceipt",
+    "FibuTask",
+    "ModuleLicense",
+    "ClientUserAccess",
+    "TaxFiling",
+    "TaxFilingPart",
+    "TaxFieldValue",
+    "TaxSubmission",
     "Client",
     "VALID_CLIENT_STATUSES",
     "Matter",
@@ -93,6 +112,8 @@ __all__ = [
     "User",
     "Role",
     "PilotFeedback",
+    "QualityReport",
+    "RegressionCase",
     "VALID_FEEDBACK_CATEGORIES",
     "VALID_REVIEW_STATUSES",
     "PromptTemplate",
@@ -101,6 +122,10 @@ __all__ = [
     "PrivacyDecision",
     "PrivacyFeedbackStat",
     "ChatMessageClaim",
+    "SchriftsatzOperation",
+    "ChatUploadOperation",
+    "DocumentPrivacyCheck",
+    "DocumentRelease",
     "FirmPracticeArea",
     "Law",
     "LawSection",

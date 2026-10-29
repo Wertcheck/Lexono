@@ -14,25 +14,104 @@
       "id": "Q-GESETZE-IM-INTERNET",
       "name": "Gesetze im Internet (Bundesrecht)",
       "url": "https://www.gesetze-im-internet.de",
-      "url_verified": false,
+      "url_verified": true,
       "type": "gesetze",
       "herkunft": "Bundesministerium der Justiz / juris (amtliches Bundesrecht)",
       "umfang": "Bundesgesetze und -verordnungen; in Lexono bereits als Normenquelle angebunden (app/laws/gesetze_im_internet.py)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Vorlaeufige, ungepruefte Einschaetzung: Gesetzestexte als amtliche Werke voraussichtlich gemeinfrei (§ 5 UrhG). Pruefung der Nutzungsbedingungen ausstehend."},
-      "verwendet_in": []
+      "nutzungsrechte": {
+        "status": "nutzbar",
+        "geprueft_am": "2026-10-17",
+        "begruendung": "Amtliche Gesetzestexte des Bundes sind nach § 5 Abs. 1 UrhG gemeinfrei (Gesetze, Verordnungen). Die Seiten 'Hinweise' und 'Impressum' (abgerufen 17.10.2026) enthalten keine einschraenkende Nutzungsbedingung; Deep Links sind ausdruecklich erlaubt, die Gesamtausgaben stehen zum Download bereit. Herausgeber: Bundesrepublik Deutschland (BMJV), Redaktion: Bundesamt fuer Justiz, technischer Betrieb: juris GmbH. Haftungsausschluss: keine Gewaehr fuer Vollstaendigkeit/Richtigkeit - der Text dient nur als Testinhalt, nicht als Rechtsquelle einer Auskunft. Freigabe der Quellengruppe zur Pruefung und Verwendung durch die verantwortliche Person (Owner-Auftrag vom 17.10.2026, Abschnitt 'Quellen fuer Datenschutzvalidierung'); Einordnung der Nutzungsbedingungen durch den Agenten dokumentiert, nicht ersetzt.",
+        "hinweis": null
+      },
+      "verwendet_in": [
+        "benchmarks/privacy_sources_v1/cases.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D005.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json",
+        "benchmarks/legal_e2e_v1/cases/test/LE-T004.json"
+      ],
+      "abruf": {
+        "datum": "2026-10-17",
+        "art": "Einzelabruf je Paragraph (6 Seiten), kein Massenabruf",
+        "seiten": [
+          "https://www.gesetze-im-internet.de/hinweise.html",
+          "https://www.gesetze-im-internet.de/impressum.html",
+          "https://www.gesetze-im-internet.de/bgb/__469.html",
+          "https://www.gesetze-im-internet.de/bgb/__543.html",
+          "https://www.gesetze-im-internet.de/bgb/__573.html",
+          "https://www.gesetze-im-internet.de/bgb/__573c.html",
+          "https://www.gesetze-im-internet.de/bgb/__577.html",
+          "https://www.gesetze-im-internet.de/inso/__174.html"
+        ]
+      },
+      "verwendungszweck": "Wortgetreue Normtexte (§§ 469, 543, 573, 573c, 577 BGB; § 174 InsO) in synthetischen Akten des Datenschutz-Regressionskorpus privacy_sources_v1 - Pruefung, dass Normen und Fristenregeln im Payload erhalten bleiben (keine Fehlmaskierung).",
+      "rechtliche_grundlage": "§ 5 Abs. 1 UrhG (amtliche Werke: Gesetze, Verordnungen)",
+      "redaktionelle_bestandteile": "Nicht verwendet: Seitengestaltung, Navigations-/Fussnotenapparat, Inhaltsverzeichnisse und Datenbankstruktur des Portals (moeglicher Datenbankschutz §§ 87a ff. UrhG) - uebernommen wird nur der Normtext einzelner Vorschriften."
     },
     {
       "id": "Q-RECHTSPRECHUNG-IM-INTERNET",
       "name": "Rechtsprechung im Internet (Bundesgerichte)",
       "url": "https://www.rechtsprechung-im-internet.de",
-      "url_verified": false,
+      "url_verified": true,
       "type": "entscheidungen",
       "herkunft": "Bundesministerium der Justiz (Entscheidungen der obersten Bundesgerichte)",
       "umfang": "Entscheidungen von BVerfG, BGH, BVerwG, BFH, BAG, BSG, BPatG (Umfang nicht geprueft)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Entscheidungen als amtliche Werke voraussichtlich gemeinfrei; Leitsaetze und Aufbereitung pruefen."},
-      "verwendet_in": []
+      "nutzungsrechte": {
+        "status": "nutzbar",
+        "geprueft_am": "2026-10-17",
+        "begruendung": "Gerichtsentscheidungen und amtlich verfasste Leitsaetze sind nach § 5 Abs. 1 UrhG gemeinfrei. Die Seite 'Hinweise' (abgerufen 17.10.2026) stellt die Entscheidungen ausdruecklich als HTML/PDF/XML zum Download und ein tagesaktuelles XML-Inhaltsverzeichnis 'fuer die Nutzer ..., die die ... Entscheidungen ueber automatisierte Verfahren weiterverarbeiten moechten' bereit; eine einschraenkende Nutzungsbedingung ist nicht angegeben (Impressum: Herausgeber Bundesrepublik Deutschland/BMJV, Redaktion Bundesamt fuer Justiz; keine Rechtsberatung, Haftungsausschluss). Die XML-Dokumente tragen accessRights 'public', publisher 'BMJV'. Freigabe der Quellengruppe zur Pruefung und Verwendung durch die verantwortliche Person (Owner-Auftrag vom 17.10.2026, Abschnitt 'Quellen fuer Datenschutzvalidierung'); Einordnung der Nutzungsbedingungen durch den Agenten dokumentiert, nicht ersetzt.",
+        "hinweis": null
+      },
+      "verwendet_in": [
+        "benchmarks/privacy_sources_v1/cases.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D005.json",
+        "benchmarks/legal_e2e_v1/cases/dev/LE-D006.json",
+        "benchmarks/legal_e2e_v1/cases/test/LE-T004.json"
+      ],
+      "abruf": {
+        "datum": "2026-10-17",
+        "art": "1 x Inhaltsverzeichnis rii-toc.xml, 8 Einzeldokumente (je 2 s Abstand), kein Massenabruf",
+        "seiten": [
+          "https://www.rechtsprechung-im-internet.de/jportal/portal/page/bsjrsprod.psml?cmsuri=%2Ftechnik%2Fde%2Fhilfe_1%2Fbsjrshinweise.jsp",
+          "https://www.rechtsprechung-im-internet.de/jportal/portal/page/bsjrsprod.psml?cmsuri=%2Ftechnik%2Fde%2Fimpressum%2Fbsjrsimpressum.jsp",
+          "https://www.rechtsprechung-im-internet.de/rii-toc.xml"
+        ],
+        "verwendete_dokumente": [
+          {
+            "ecli": "ECLI:DE:BGH:2025:021225BVIIIZR274.23.0",
+            "aktenzeichen": "VIII ZR 274/23",
+            "doc": "jb-KORE704572026"
+          },
+          {
+            "ecli": "ECLI:DE:BGH:2025:081025UVIIIZR18.24.0",
+            "aktenzeichen": "VIII ZR 18/24",
+            "doc": "jb-KORE727122025"
+          },
+          {
+            "ecli": "ECLI:DE:BAG:2025:200225.U.6AZR32.24.0",
+            "aktenzeichen": "6 AZR 32/24",
+            "doc": "jb-KARE600070232"
+          },
+          {
+            "ecli": "ECLI:DE:BAG:2025:030425.U.2AZR72.24.0",
+            "aktenzeichen": "2 AZR 72/24",
+            "doc": "jb-KARE600070322"
+          },
+          {
+            "ecli": "ECLI:DE:BGH:2025:141025UVIZR431.24.0",
+            "aktenzeichen": "VI ZR 431/24",
+            "doc": "jb-KORE726462025"
+          }
+        ],
+        "gesichtet_nicht_verwendet": [
+          "jb-KORE724962025 (VIII ZR 51/24)",
+          "jb-KORE726282025 (VIII ZR 165/24)",
+          "jb-KORE729362025 (VI ZR 51/24)"
+        ]
+      },
+      "verwendungszweck": "Juristische Problemstellung, amtlicher Leitsatz und Ergebnis von 5 Entscheidungen als Grundlage VOLLSTAENDIG SYNTHETISCHER Sachverhalte (erfundene Personen, Daten, Orte, Nummern) im Datenschutz-Regressionskorpus privacy_sources_v1; Zitate realer Entscheidungen muessen im Payload erhalten bleiben. Keine Angaben realer Verfahrensbeteiligter uebernommen. §71: Rechtsfrage, amtlicher Leitsatz und Ergebnis von VIII ZR 18/24, 6 AZR 32/24 und 2 AZR 72/24 als Referenzloesung (Block `solution`) vollstaendig synthetischer Akten in legal_e2e_v1 (LE-D005, LE-D006, LE-T004).",
+      "rechtliche_grundlage": "§ 5 Abs. 1 UrhG (Entscheidungen, amtlich verfasste Leitsaetze)",
+      "redaktionelle_bestandteile": "Gesondert geprueft und NICHT als amtliches Werk behandelt: <titelzeile> und <norm> (Dokumentation), <sonstosatz> ('Hinweis der Dokumentationsstelle' - redaktionell; nur zur Einordnung des Verfahrensausgangs bei VIII ZR 274/23 inhaltlich erwaehnt, nicht wortgetreu uebernommen), juris-Zusaetze wie '(juris: SGB 3)' in Leitsaetzen (nicht uebernommen), Metadaten/Datenbankstruktur (moeglicher Datenbankschutz §§ 87a ff. UrhG - nur Einzeldokumente genutzt). Verwendet: <leitsatz> (amtlich, vom Gericht), Tenor- und Gruende-Inhalt nur sinngemaess."
     },
     {
       "id": "Q-BVERFG",
@@ -42,7 +121,12 @@
       "type": "entscheidungen",
       "herkunft": "Bundesverfassungsgericht",
       "umfang": "veroeffentlichte Entscheidungen (Umfang nicht geprueft)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null, "hinweis": null},
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": null
+      },
       "verwendet_in": []
     },
     {
@@ -53,8 +137,12 @@
       "type": "entscheidungen",
       "herkunft": "privater Betreiber (Entscheidungen verschiedener Gerichte)",
       "umfang": "Entscheidungen aller Instanzen (Umfang nicht geprueft)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Nutzungsbedingungen des Betreibers und Datenbankschutz pruefen."},
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Nutzungsbedingungen des Betreibers und Datenbankschutz pruefen."
+      },
       "verwendet_in": []
     },
     {
@@ -65,8 +153,12 @@
       "type": "uebungsfaelle",
       "herkunft": "Online-Ausbildungszeitschrift",
       "umfang": "Klausur- und Hausarbeitsfaelle mit Loesung (Umfang nicht geprueft)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Urheberrecht der Autorinnen und Autoren; Lizenz pruefen."},
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Geprueft 18.10.2026 (§71, Agent - keine Freigabe): zjs-online.com nennt nur '© 2007 - 2026 ZJS - Zeitschrift fuer das Juristische Studium', keine Lizenz fuer Vervielfaeltigung oder Bearbeitung. Sachverhalte und Loesungen sind urheberrechtlich geschuetzte Beitraege - ohne Erlaubnis der Rechteinhaber nicht uebernehmen. Status bleibt nicht_geprueft; Einordnung durch die verantwortliche Person."
+      },
       "verwendet_in": []
     },
     {
@@ -77,8 +169,12 @@
       "type": "moot_court",
       "herkunft": "Veranstalter des Vis Moot",
       "umfang": "jaehrliche Problemsachverhalte (Schiedsverfahren, englisch)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Urheberrecht des Veranstalters; englischsprachig, deutsches Verfahrensrecht nicht abgebildet."},
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Urheberrecht des Veranstalters; englischsprachig, deutsches Verfahrensrecht nicht abgebildet."
+      },
       "verwendet_in": []
     },
     {
@@ -89,8 +185,44 @@
       "type": "moot_court",
       "herkunft": "Veranstalter des Soldan Moot Court",
       "umfang": "jaehrlicher Zivilrechtsfall mit Schriftsatzphase (deutsch)",
-      "nutzungsrechte": {"status": "nicht_geprueft", "geprueft_am": null, "begruendung": null,
-                          "hinweis": "Urheberrecht des Veranstalters; inhaltlich naechstes Vorbild fuer Schriftsatz-Faelle."},
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Urheberrecht des Veranstalters; inhaltlich naechstes Vorbild fuer Schriftsatz-Faelle."
+      },
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-OPENREWI-VERWALTUNGSRECHT-KLAUSUR",
+      "name": "Verwaltungsrecht in der Klausur (OpenRewi, Hrsg. Nikolas Eisentraut)",
+      "url": "https://de.wikibooks.org/wiki/Verwaltungsrecht_in_der_Klausur/_Die_F%C3%A4lle",
+      "url_verified": true,
+      "type": "uebungsfaelle",
+      "herkunft": "OpenRewi-Projekt; Druck/Open Access: Carl Grossmann Verlag, DOI 10.24921/2020.94115939, ISBN 978-3-941159-39-6",
+      "umfang": "16 Klausurfaelle mit Loesungen (Verwaltungsprozessrecht: Anfechtungs-, Verpflichtungs-, Fortsetzungsfeststellungs-, Leistungs-, Feststellungsklage, Normenkontrolle, Eilrechtsschutz, Staatshaftung); Stand September 2019",
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Gesichtet 18.10.2026 (§71, Agent - keine Freigabe): 'Dieser Text steht unter der Lizenz CC BY-SA 4.0'. Nutzung erlaubt mit Namensnennung; ABER ShareAlike: eine Bearbeitung (z. B. abgewandelter Sachverhalt im Korpus) waere unter CC BY-SA 4.0 weiterzugeben - Lizenz-/Repository-Entscheidung der verantwortlichen Person. Nicht verwendet."
+      },
+      "verwendet_in": []
+    },
+    {
+      "id": "Q-OPENREWI-GRUNDRECHTE-FALLBUCH",
+      "name": "OpenRewi Grundrechte-Fallbuch (Hrsg. Maximilian Petras, Dana-Sophia Valentiner)",
+      "url": "https://de.wikibooks.org/wiki/OpenRewi/_Grundrechte-Fallbuch",
+      "url_verified": true,
+      "type": "uebungsfaelle",
+      "herkunft": "OpenRewi-Projekt (Wikibooks; PDF beim Verlag)",
+      "umfang": "10 Faelle mit Loesungsvorschlaegen (Kunst-, Berufs-, Handlungs-, Meinungs-, Versammlungs-, Religionsfreiheit, Recht auf Gesundheit, allgemeines Persoenlichkeitsrecht, Eigentum, Gleichheit)",
+      "nutzungsrechte": {
+        "status": "nicht_geprueft",
+        "geprueft_am": null,
+        "begruendung": null,
+        "hinweis": "Gesichtet 18.10.2026 (§71, Agent - keine Freigabe): CC BY-SA 4.0 (Namensnennung, Weitergabe unter gleichen Bedingungen). ShareAlike-Folge wie bei Verwaltungsrecht in der Klausur; Rechtsgebiet (Grundrechte/Verfassungsbeschwerde) fuer Kanzleiakten nur begrenzt passend. Nicht verwendet."
+      },
       "verwendet_in": []
     }
   ]

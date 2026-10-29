@@ -143,6 +143,11 @@ Type: files; Name: "{app}\kanzlei_ai.exe"
 ; leeren: danach liegen genau die Migrationen DIESES Pakets dort, eine neuere Datenbank wird beim Start erkannt und
 ; abgewiesen (run.py::cmd_migrate). Betrifft nur den Programmordner, nie das Datenverzeichnis.
 Type: filesandordirs; Name: "{app}\_internal\migrations\versions"
+; Build-Profil (29.10.2026, isolierter Update-Test): aus demselben Grund blieben nach einem Update Templates/Assets der
+; Vorversion liegen, die das neue Paket nicht mehr enthaelt - u. a. "fibu.html" einer Vollversion im Kanzlei-Pilot
+; (ohne Route nicht erreichbar, aber eine Altlast). Der gebuendelte Paketordner `app` (nur Templates und statische
+; Dateien aus dem Build, keine Nutzerdaten) wird deshalb vor dem Kopieren geleert; danach liegt dort genau das neue Paket.
+Type: filesandordirs; Name: "{app}\_internal\app"
 
 [Files]
 Source: "..\dist\Lexono\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

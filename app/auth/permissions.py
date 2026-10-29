@@ -71,6 +71,28 @@ PERM_CLIENT_DELETE = "client:delete"
 # Frist - NICHT fuer Mitarbeiter (die koennen Vorschlaege korrigieren, zurueckstellen und manuell erfassen; ihre
 # Erfassungen bleiben ungeprueft bis zur anwaltlichen Bestaetigung).
 PERM_DEADLINE_CONFIRM = "deadline:confirm"
+# Qualitaetsmeldungen (ARCHITECTURE.md §75): Meldungen ansehen, lokal diagnostizieren, Ursache bestaetigen,
+# abschliessen, synthetische Regressionsfaelle freigeben und exportieren - Admin und Anwalt. MELDEN darf jede Rolle.
+PERM_QUALITY_REVIEW = "quality:review"
+# Gespeicherte Datenschutz-Entscheidungen einer Akte aufheben/bestaetigen (PRIVACY_REVIEW_ARCHITECTURE.md §52) - Admin
+# und Anwalt: das Aufheben schwaecht den Schutz eines Namens ab. Ansehen darf jede Rolle mit Aktenzugang.
+PERM_PRIVACY_DECISION_MANAGE = "privacy_decision:manage"
+# Finanzbuchhaltung (28.10.2026, MVP): Buchungen erfassen/aendern/buchen/stornieren, Belege hochladen, Konten,
+# Aufgaben, Stammdaten und DATEV-Entwurf - Admin und Anwalt (wie PERM_CLIENT_MANAGE). Mitarbeiter erfassen seit der
+# Owner-Entscheidung vom 28.10.2026 ueber PERM_FIBU_CAPTURE (nur zugewiesene Mandanten), siehe unten.
+PERM_FIBU_MANAGE = "fibu:manage"
+# Erfassen (28.10.2026, Owner-Entscheidung): Buchungen erfassen und offene Buchungen bearbeiten, Belege hochladen und
+# zuordnen, Aufgaben - auch Mitarbeiter, aber nur fuer ihnen zugewiesene Mandanten (app/modules/client_access.py).
+# Buchen (festschreiben), Stornieren, Konten, Stammdaten, DATEV-Entwurf und Zugriffsverwaltung bleiben PERM_FIBU_MANAGE.
+PERM_FIBU_CAPTURE = "fibu:capture"
+# Lexono Steuern (28.10.2026, Datenmodell ohne Oberflaeche): Vorgaenge vorbereiten (anlegen, Werte erfassen, zur
+# Pruefung geben), freigeben, uebermitteln. Vorbereiten auch Mitarbeiter (nur zugewiesene Mandanten, 28.10.2026);
+# freigeben/uebermitteln nur Admin und Anwalt, und nie die Person, die den Vorgang erstellt/bearbeitet hat.
+# Die Uebermittlung (ELSTER/ERiC) ist NICHT implementiert - das Recht existiert, damit sie spaeter nie allein ueber
+# eine Rolle ohne ausdrueckliche Berechtigung moeglich wird.
+PERM_TAX_PREPARE = "tax:prepare"
+PERM_TAX_APPROVE = "tax:approve"
+PERM_TAX_SUBMIT = "tax:submit"
 
 _ALL_PERMISSIONS = frozenset(
     {
@@ -85,6 +107,13 @@ _ALL_PERMISSIONS = frozenset(
         PERM_CLIENT_MANAGE,
         PERM_CLIENT_DELETE,
         PERM_DEADLINE_CONFIRM,
+        PERM_QUALITY_REVIEW,
+        PERM_PRIVACY_DECISION_MANAGE,
+        PERM_FIBU_MANAGE,
+        PERM_FIBU_CAPTURE,
+        PERM_TAX_PREPARE,
+        PERM_TAX_APPROVE,
+        PERM_TAX_SUBMIT,
     }
 )
 
@@ -101,6 +130,13 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_OUTBOX_MARK_SENT,
             PERM_CLIENT_MANAGE,
             PERM_DEADLINE_CONFIRM,
+            PERM_QUALITY_REVIEW,
+            PERM_PRIVACY_DECISION_MANAGE,
+            PERM_FIBU_MANAGE,
+            PERM_FIBU_CAPTURE,
+            PERM_TAX_PREPARE,
+            PERM_TAX_APPROVE,
+            PERM_TAX_SUBMIT,
         }
     ),
     "mitarbeiter": frozenset(
@@ -108,6 +144,10 @@ PERMISSION_MATRIX: dict[str, frozenset[str]] = {
             PERM_DASHBOARD_READ,
             PERM_DRAFT_MANUAL_EDIT,
             PERM_INSTRUCTION_CREATE,
+            # Zusatzmodule (28.10.2026): erfassen/vorbereiten nur fuer zugewiesene Mandanten; nie buchen/freigeben/
+            # uebermitteln (Vier-Augen-Prinzip in app/tax/service.py)
+            PERM_FIBU_CAPTURE,
+            PERM_TAX_PREPARE,
         }
     ),
 }
@@ -266,7 +306,23 @@ def require_login(
         raise ForcePasswordChangeError()
     if user.is_locked and request.url.path not in _LOCK_EXEMPT_PATHS:
         raise AppLockedError()
+    _remember_enabled_modules(request, db)
     return user
+
+
+def _remember_enabled_modules(request: Request, db: Session) -> None:
+    """Freigeschaltete Module fuer die Navigation in base.html (28.10.2026). Nur ANZEIGE - die eigentliche Sperre
+    erzwingt app/modules/licensing.require_module serverseitig. Fehler -> nur das Basispaket (fail-closed)."""
+    from sqlalchemy.exc import SQLAlchemyError
+
+    from app.modules.catalog import BASE_MODULES
+    from app.modules.licensing import enabled_modules
+
+    try:
+        request.state.enabled_modules = enabled_modules(db)
+    except SQLAlchemyError:
+        db.rollback()
+        request.state.enabled_modules = BASE_MODULES
 
 
 def require_api_login(

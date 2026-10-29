@@ -1,0 +1,232 @@
+{
+ "aufnahmen": {
+  "1920x1080-01-mitarbeiter-uebersicht-nur-zugewiesener-mandant": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1920x1080-02-mitarbeiter-erfassen-ohne-buchen": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": true,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1920x1080-03-anwalt-mitarbeiterzugriff": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Beispiel Handwerk KG",
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-01-mitarbeiter-uebersicht-nur-zugewiesener-mandant": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-02-mitarbeiter-erfassen-ohne-buchen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": true,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-03-anwalt-mitarbeiterzugriff": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Beispiel Handwerk KG",
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "960x600-01-mitarbeiter-uebersicht-nur-zugewiesener-mandant": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "960x600-02-mitarbeiter-erfassen-ohne-buchen": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": true,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "960x600-03-anwalt-mitarbeiterzugriff": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Beispiel Handwerk KG",
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-04-mitarbeiter-zeilenmenue-ohne-buchen-storno": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [
+    "QA Muster GmbH"
+   ],
+   "buchen_knopf": false,
+   "offen_knopf": true,
+   "hochladen": true,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-05-mitarbeiter-ohne-zuweisung-kein-mandant": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": false,
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-06-lizenz-mit-plan": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "mandanten": [],
+   "buchen_knopf": false,
+   "offen_knopf": false,
+   "hochladen": false,
+   "titel": "Einstellungen",
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "lizenzimport": 200,
+  "ma_ohne_zuweisung_mandant_a": 404,
+  "ma_ohne_zuweisung_liste_leer": true,
+  "zuweisung_durch_anwalt": 200,
+  "ma_mit_zuweisung_mandant_a": 200,
+  "ma_mandant_b": 404,
+  "ma_buchung_erfassen_offen": 200,
+  "ma_speichern_und_buchen": 403,
+  "ma_beleg_hochladen": 200,
+  "ma_buchen": 403,
+  "ma_stornieren": 403,
+  "ma_konto_anlegen": 403,
+  "ma_zugriff_verwalten": 403,
+  "ma_datev": 403,
+  "ma_buchung_fremder_mandant": 404,
+  "anwalt_bucht_ma_buchung": 200,
+  "buchungen": [
+   [
+    "BE-MA-001",
+    "posted",
+    "qa-mitarbeiter@lexono.test",
+    "qa-anwalt@lexono.test"
+   ],
+   [
+    "RE-2026-105",
+    "posted",
+    "qa-pseudo@lexono.test",
+    "qa-pseudo@lexono.test"
+   ]
+  ],
+  "audit_zugriff": [
+   "zugewiesen: qa-mitarbeiter@lexono.test; entzogen: -"
+  ],
+  "audit_buchung_ma": [
+   [
+    "fibu_booking_created",
+    "qa-pseudo@lexono.test"
+   ],
+   [
+    "fibu_booking_created",
+    "qa-mitarbeiter@lexono.test"
+   ],
+   [
+    "fibu_booking_posted",
+    "qa-anwalt@lexono.test"
+   ]
+  ]
+ }
+}

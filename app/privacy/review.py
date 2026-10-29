@@ -22,7 +22,8 @@ import re
 from dataclasses import dataclass, field
 
 from app.privacy import presidio_ner as pn
-from app.privacy.detectors import _ALL_REGEX_DETECTORS, DetectedSpan
+from app.privacy.detectors import _ALL_REGEX_DETECTORS, _LEGAL_FORM_SUFFIX, CONTACT_LABEL_WORDS, DetectedSpan
+from app.privacy.detectors import MANUAL_NAME_PREFIX_WORDS, NAME_PARTICLES, NAME_PREFIX_RUN  # noqa: F401 - §52/§53
 
 REVIEW_MIN_PROBE_SCORE = 1
 _CONTEXT_CHARS = 60
@@ -38,9 +39,22 @@ _ROLE_NOUNS = frozenset(
         "mieterin",
     }
 )
+# §46 (pseudonymization_v1 P09 "herr sauer hat angerufen" - kleingeschriebener Name im Klartext): Kleinschreibung nach
+# einer Anrede ist in getipptem Chat-Text ueblich; das Modell erkennt solche Namen nicht. Kandidat ist das unmittelbar
+# folgende kleingeschriebene Wort - ausser Stoppwoerter, Rollen- und Titelwoerter ("herr der lage", "frau kollegin",
+# "herr doktor"). Ohne Namensprobe: die Anrede selbst ist das Signal.
+_SALUTATIONS = frozenset({"herr", "herrn", "frau"})
+_TITLE_WORDS = frozenset({
+    "doktor", "dr", "professor", "prof", "minister", "ministerin", "präsident", "präsidentin", "vorsitzende",
+    "vorsitzender", "bürgermeister", "bürgermeisterin", "pfarrer", "pfarrerin", "direktor", "direktorin", "kommissar",
+    "kommissarin", "oberbürgermeister", "oberbürgermeisterin", "abgeordnete", "abgeordneter", "kanzler", "kanzlerin",
+    "anwalt", "anwältin", "notar", "notarin", "richter", "richterin", "staatsanwalt", "staatsanwältin", "rechtspfleger",
+    "rechtspflegerin", "gerichtsvollzieher", "gerichtsvollzieherin", "nachbar", "nachbarin", "chef", "chefin",
+})
 _MODIFIER_POS = ("DET", "ADJ", "NUM", "PRON")
 _STRUCTURAL_ROLES = frozenset(
-    {"feldwert", "tabellenzelle", "nach_rollenwort", "vor_rollenwort", "aufzaehlung_mit_person", "ueberschrift"}
+    {"feldwert", "tabellenzelle", "nach_rollenwort", "vor_rollenwort", "aufzaehlung_mit_person", "ueberschrift",
+     "betragszeile", "nach_finitem_verb_satzende"}
 )
 _SENTENCE_ROLES = frozenset(
     {"subjekt", "vor_finitem_verb", "feldwert", "tabellenzelle", "vor_rollenwort", "aufzaehlung_mit_person"}
@@ -54,12 +68,20 @@ _TITLE = r"(?:(?:Herrn?|Frau|Dr\.|Prof\.)\s+)*"
 _ENUM_AFTER_PERSON = re.compile(_PERSON_PLACEHOLDER + _ENUM_LINK + _TITLE + r"$")
 _ENUM_BEFORE_PERSON = re.compile(_ENUM_LINK + _TITLE + _PERSON_PLACEHOLDER)
 _LINE_BOUNDARY = re.compile(r"\n|[ \t]{2,}")
+_AMOUNT_AFTER = re.compile(r"(?:[ \t]{2,}|\t|[ \t]*\|[ \t]*)[-+]?\d[\d.]*(?:,\d{2})?[ \t]*(?:EUR|€|Euro)\b")
+# Rollen, in denen der Kontext selbst auf eine Person zeigt - dort genuegt jeder Namensrahmen (siehe Rahmen-0-Pruefung).
+_ADJACENT_ROLE_ROLES = frozenset({"direkt_nach_rollenwort", "vor_rollenwort"})
+_STRUCTURE_ROLES = frozenset({"tabellenzelle", "aufzaehlung_mit_person"})
+_STRONG_ROLES = _ADJACENT_ROLE_ROLES | _STRUCTURE_ROLES
+_SENTENCE_NAME_ROLES = frozenset({"subjekt", "vor_finitem_verb", "nach_praeposition"})
 _ROLE_NOUN_AFTER = re.compile(r",\s*(?:" + "|".join(sorted(_ROLE_NOUNS, key=len, reverse=True)) + r")\b", re.IGNORECASE)
 MAX_TERM_LENGTH = 80
 # Vom System selbst erzeugte Kopfzeilen (app/ai_providers/local_ai_provider.py: "Akte: <Titel>") sind keine
 # Namensrolle im Sinne einer Rueckfrage - der Aktentitel ist lokale Stammdaten-Information; Mandant/Beteiligte darin
 # deckt known_entities ab. Ohne diese Ausnahme fragte JEDE Nachricht einer Akte nach ihrem eigenen Titel.
-_SYSTEM_LABEL_LINE = re.compile(r"(?:^|\n)[ \t.]*Akte:[^\n]*$")
+# "\Z" statt "$" (24.10.2026, gemessen): "$" passt auch VOR einem abschliessenden Umbruch - das erste Wort der Zeile NACH
+# "Akte: ..." ("Brandhuber  1.900,00 EUR") galt sonst ebenfalls als Aktentitel.
+_SYSTEM_LABEL_LINE = re.compile(r"(?:^|\n)[ \t.]*Akte:[^\n]*\Z")
 
 
 @dataclass(frozen=True)
@@ -72,6 +94,10 @@ class ReviewCandidate:
     context_after: str
     roles: tuple[str, ...]
     probe_score: int
+    #: Nur Rueckfrage (Modus "ask"), keine vorsichtige Maskierung im Modus "mask" (26.10.2026): fuer Lesarten, bei denen
+    #: eine bestehende, dokumentierte Entscheidung die Gattungswort-Lesart lesbar halten will ("Der Bauer hat die Pacht
+    #: gezahlt", tests/test_privacy_feminine_article_names.py) - dort entscheidet der Mensch, nicht eine Regel.
+    ask_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -139,6 +165,42 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
     previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
     if previous is not None and previous.lower_ in _ROLE_NOUNS:
         roles.add("nach_rollenwort")
+    # 24.10.2026 (Grenzfaelle G2/G8/K8-K10, gemessen: "Der Richter Zweigelt hat ...", "Mandantin Licht", "Zeuge: Schuetz."
+    # im Klartext): Rollen- oder Amtswort UNMITTELBAR davor - im Rohtext nur Leerzeichen bzw. ": " dazwischen, kein
+    # Platzhalter, kein Umbruch ("Rechtsanwaeltin Dr. [PERSON_01]" + Leerzeile + "Pruefvermerk" ist keine Rolle; Benchmark
+    # Q05). Anrede ("Herr", "Frau") zaehlt hier nicht: dort trennt nur der staerkste Namensrahmen Namen von "Herr
+    # Bescheid". Bei einem Doppelpunkt nur echte Rollenwoerter - "Anwalt: Fasse ..." ist das Praefix des Verlaufs.
+    raw_source = raw if raw is not None else text
+    if previous is not None:
+        between = raw_source[previous.idx + len(previous.text) : token.idx]
+        lowered_previous = previous.lower_.rstrip(".")
+        if (
+            lowered_previous in (_ROLE_NOUNS | _TITLE_WORDS) - _SALUTATIONS - {"dr", "prof"}
+            and re.fullmatch(r"[ \t]+", between)
+        ):
+            roles.update({"nach_rollenwort", "direkt_nach_rollenwort"})
+        if previous.text == ":" and re.fullmatch(r"[ \t]*", between):
+            label = next((t for t in reversed(doc[: previous.i]) if not t.is_space), None)
+            if (
+                label is not None and label.lower_ in _ROLE_NOUNS - _SALUTATIONS
+                and re.fullmatch(r"[ \t]*", raw_source[label.idx + len(label.text) : previous.idx])
+            ):
+                roles.update({"nach_rollenwort", "direkt_nach_rollenwort"})
+    # 24.10.2026 (gemessen, Klartext): dem Modell UNBEKANNTES Wort als Beschriftung eines Betrags am Zeilenanfang
+    # ("Brandhuber  1.900,00 EUR", Lohnliste mit einer Zeile) bzw. direkt nach finitem Verb am Satzende ("Das Schreiben
+    # unterzeichnete Fuerst."). Bekannte Fachwoerter ("Miete  900,00 EUR") erhalten diese Rolle nicht; Namensprobe und
+    # Rahmen 0 bleiben Voraussetzung.
+    if not pn._model_knows(token.text):
+        line_starts = [m.end() for m in _LINE_BOUNDARY.finditer(lines_source, 0, token.idx)]
+        at_line_start = not lines_source[line_starts[-1] if line_starts else 0 : token.idx].strip(" \t.|")
+        if at_line_start and _AMOUNT_AFTER.match(lines_source, end):
+            roles.add("betragszeile")
+        if (
+            previous is not None and previous.pos_ in ("VERB", "AUX") and "Fin" in previous.morph.get("VerbForm")
+            and same_line(previous)
+            and following is not None and following.text in (".", "!", ";")
+        ):
+            roles.add("nach_finitem_verb_satzende")
     # "Stuckenschneider, Zeuge" (Kopfzeile eines Protokolls): Apposition VOR einem Rollenwort.
     if _ROLE_NOUN_AFTER.match(text, end):
         roles.add("vor_rollenwort")
@@ -181,6 +243,38 @@ def _roles(doc, text: str, token, raw: str | None = None) -> set[str]:
 # "zum", "zur" - umgangssprachlich auch vor Namen ("beim Huber", "vom Keller"). Nur diese eine Rolle entfaellt; Subjekt,
 # Rollenwort, "von"/"durch"-Agens, Feldwert, Tabelle usw. bleiben unveraendert.
 _ARTICLE_CONTRACTIONS = frozenset({"im", "ins", "am", "ans", "aufs", "ums", "übers", "überm", "unterm", "hinterm", "vorm"})
+
+# Kontaktbezeichnung vor einer BEREITS maskierten Kontaktangabe (ARCHITECTURE.md §75.2, reproduziert 16.10.2026:
+# "Herrn [PERSON_01], Telefon [TELEFON_01]" -> "Telefon" galt als Aufzaehlungsglied neben einer Person und wurde zu
+# [PERSON_02]). Beide Bedingungen muessen gelten: das Wort ist eine Kontaktbezeichnung UND direkt dahinter steht ein
+# Kontakt-Platzhalter. Ein Name an derselben Stelle ("Lehmann [TELEFON_01]") bleibt Kandidat.
+_CONTACT_LABEL_WORDS = CONTACT_LABEL_WORDS  # §50: dieselbe Liste wie die NER-Nachbearbeitung (detectors.py)
+_CONTACT_PLACEHOLDER_AFTER = re.compile(r"\.?[ \t]*:?[ \t]*\[(?:TELEFON|EMAIL)_\d+\]")
+
+# Ampelfarbe nach "bei" (§75.2, reproduziert: "Der Fahrer fuhr bei Grün über die Kreuzung" -> [PERSON_01]; zuvor
+# §34.6). PRAEZISIERT nach Gegenpruefung §45.1: die erste Fassung ("Verkehrswort irgendwo im Satz") liess echte Namen
+# durch ("Nach dem Unfall an der Kreuzung war er noch bei Grün", "Die Zeugin uebernachtete bei Rot, direkt an der
+# Kreuzung") - in Unfallakten steht fast ueberall ein Verkehrswort. Jetzt nur, wenn UNMITTELBAR nach der Farbe ein
+# Fahr-/Querungsvorgang folgt, bei dem eine Personenlesart sprachlich ausscheidet: "bei Grün über die Kreuzung",
+# "bei Rot in die Kreuzung", "bei Gelb gefahren/abgebogen". Alles andere bleibt Kandidat (vorsichtig maskiert).
+_TRAFFIC_LIGHT_COLOURS = pn.TRAFFIC_LIGHT_COLOURS  # §50: dieselbe Regel gilt nun auch fuer NER-Treffer (presidio_ner)
+_TRAFFIC_MANOEUVRE_AFTER = pn.TRAFFIC_MANOEUVRE_AFTER
+
+
+def _is_contact_label(scan_text: str, token) -> bool:
+    # Gegen den ROH-Scantext (Platzhalter sichtbar; positionsgleich zur neutralisierten Analysefassung).
+    return token.text.lower() in _CONTACT_LABEL_WORDS and bool(
+        _CONTACT_PLACEHOLDER_AFTER.match(scan_text, token.idx + len(token.text))
+    )
+
+
+def _is_traffic_light_colour(doc, neutral: str, token) -> bool:
+    if token.text not in _TRAFFIC_LIGHT_COLOURS:
+        return False
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is None or previous.lower_ != "bei":
+        return False
+    return bool(_TRAFFIC_MANOEUVRE_AFTER.match(neutral, token.idx + len(token.text)))
 
 
 def _is_article_contraction_object(doc, token) -> bool:
@@ -241,16 +335,124 @@ def _agrees_with_singular_verb(doc, token) -> bool:
     return verb is not None and "Fin" in verb.morph.get("VerbForm") and "Sing" in verb.morph.get("Number")
 
 
+# Bestimmter Artikel + Nachname (24.10.2026, G1/G7, gemessen: "Der Bergmann ist bislang nicht erschienen", "Der Fischer
+# hat ... angerufen" im Klartext). Umgangssprachlich ("der Fischer" = Herr Fischer) und von einem Berufswort nicht
+# sicher unterscheidbar - deshalb KEINE Erkennung, sondern nur Rueckfrage (ask) bzw. vorsichtige Maskierung (mask), und
+# nur wenn: genau "der" direkt davor (maskulin, Nominativ - "Die Akte wurde ...", "Die Ware ging ..." waren gemessene
+# Fehlalarme; "die Fischer" fuer eine Frau bleibt damit eine dokumentierte Grenze) und sonst kein Modifikator, das Wort
+# ist Subjekt eines finiten Verbs im Singular, kein Rollen-/Titelwort ("Der Richter hat ...") und der staerkste
+# Namensrahmen trifft (Pruefung im Aufrufer).
+# Bekannter Preis: Berufswoerter mit demselben Profil ("Der Handwerker ist nicht erschienen") werden ebenfalls gefragt.
+def _is_definite_article_name_reading(doc, token) -> bool:
+    previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+    if previous is None or previous.lower_ != "der" or previous.i != token.i - 1:
+        return False
+    if "Masc" not in token.morph.get("Gender") or "Nom" not in token.morph.get("Case"):
+        return False
+    if any(c.i < token.i and _is_modifier(c) and c.i != previous.i for c in token.children):
+        return False
+    lowered = token.lower_
+    if lowered in _ROLE_NOUNS or lowered in _TITLE_WORDS or lowered in pn._NEVER_ENTITY_WORDS:
+        return False
+    # Nur Personennomen (Berufswort mit femininer Form bzw. "-mann": "Fischer", "Bergmann") oder dem Modell unbekannte
+    # Woerter - Sachnomen ("Der Streitwert betraegt ...", gemessen als Fehlalarm) haben keine Personenlesart.
+    if not (pn._is_masculine_person_noun(token.text) or not pn._model_knows(token.text)):
+        return False
+    if _is_case_file_compound(token.text):
+        return False
+    # Begriffsbestimmung dahinter ("Der Kaufmann im Sinne des HGB haftet ...", Benchmark bench_name_followups): Rechtsbegriff.
+    if _LEGAL_DEFINITION_AFTER.match(doc.text, token.idx + len(token.text)):
+        return False
+    return _agrees_with_singular_verb(doc, token)
+
+
+# Femininer Artikel + Nachname (25.10.2026, gemessen: Benchmarks bench_article_noun_persons / bench_name_followups,
+# 23 Restlecks "die Zimmermann", "mit der König", "die Stuckenschneider"). Zwei enge Lesarten, beide nur Rueckfrage bzw.
+# vorsichtige Maskierung:
+# (a) Genus-Unstimmigkeit: Artikel laut Satzanalyse feminin Singular ("die", Dativ "mit der"), das Wort danach maskulin
+#     oder neutral - grammatisch nur als Frauenname aufloesbar ("die Zimmermann" = Frau Zimmermann). Eigenstaendiges
+#     Signal, die Namensprobe ist hier nicht noetig ("König", "Kaiser" lesen sich in keinem Rahmen als Person).
+#     "Die Akte", "mit der Kammer", "die Leiter ist umgefallen" (Plural) stimmen ueberein und sind nicht betroffen.
+# (b) "die" + dem Modell unbekanntes Wort als Subjekt eines finiten Verbs im Singular ("Die Stuckenschneider ist ...") -
+#     wie die maskuline Lesart nur mit dem staerksten Namensrahmen (Pruefung im Aufrufer).
+def _feminine_article_name_reading(doc, token) -> str | None:
+    """"gender_mismatch", "unknown_after_die" oder None (siehe Kommentar oben)."""
+    if token.i == 0:
+        return None
+    previous = doc[token.i - 1]
+    if previous.lower_ not in ("die", "der") or previous.pos_ != "DET":
+        return None
+    lowered = token.lower_
+    if lowered in _ROLE_NOUNS or lowered in _TITLE_WORDS or lowered in pn._NEVER_ENTITY_WORDS:
+        return None
+    if _is_case_file_compound(token.text):
+        return None
+    article_gender, article_number = previous.morph.get("Gender"), previous.morph.get("Number")
+    if (
+        article_gender == ["Fem"] and article_number == ["Sing"] and set(token.morph.get("Gender")) & {"Masc", "Neut"}
+        and not _FIRM_LEGAL_FORM_AFTER.match(doc.text, token.idx + len(token.text))
+    ):
+        # Nicht vor einer Rechtsform: "die Muster Consulting AG" - "die" gehoert zur Firma (gemessen 25.10.2026,
+        # Fehlalarm im Chat ohne Akte, tests/test_privacy_review_ask_firm_names.py).
+        return "gender_mismatch"
+    if (
+        previous.lower_ == "die" and not pn._model_knows(token.text) and not _FEMININE_TERM_HEAD.search(lowered)
+        and _agrees_with_singular_verb(doc, token)
+    ):
+        return "unknown_after_die"
+    return None
+
+
+# Bis zu vier weitere Namenswoerter auf derselben Zeile, dann eine Rechtsform (dieselbe Liste wie detectors.py).
+_FIRM_LEGAL_FORM_AFTER = re.compile(
+    r"(?:[ \t]+(?:[A-ZÄÖÜ][\wÄÖÜäöüß&\-]*|&)){0,4}[ \t]+" + _LEGAL_FORM_SUFFIX + r"(?![\wÄÖÜäöüß])"
+)
+
+# Feminine Fach-Kopfnomen (gemessen: "die Abnahmeerklärung", "die Abschlagsrechnung", "die Kostenfestsetzung", "die
+# Bauhandwerkersicherung" waren Fehlalarme von Lesart (b)) - ein unbekanntes Kompositum mit diesem Kopf ist ein Sachwort.
+_FEMININE_TERM_HEAD = re.compile(
+    r"(?:ung|heit|keit|schaft|ion|tät|nahme|rechnung|frist|anzeige|rüge|strafe|urkunde|vollmacht|erklärung|klage|sache|"
+    r"akte|summe|miete|kaution|gebühr|pflicht|lage|stelle|liste|vereinbarung|abrede)$"
+)
+
+
+# Maskuline Sach-Kopfnomen des Akten- und Verfahrenswesens (24.10.2026, gemessen: "Offen: Der Zustellnachweis liegt nicht
+# vor" - Benchmark LE-D005 -, "der Sachverstaendigenbeweis"). Unbekanntes Kompositum aus bekanntem Bestimmungswort (mind.
+# vier Buchstaben) + einem dieser Kopfnomen hat keine Personenlesart. Gilt NUR fuer die Artikel-Lesart oben - es gibt
+# nichts frei, was vorher geschuetzt war. Bewusst ohne "-plan", "-brief" ("Rosenplan", "Hochbrief" sind namensfoermig).
+_CASE_FILE_HEADS = (
+    "nachweis", "beweis", "bescheid", "vertrag", "antrag", "vermerk", "bericht", "beschluss", "termin", "schaden",
+    "anspruch", "vorgang", "auftrag", "betrag", "zeitraum", "mangel", "verzug", "widerspruch", "einspruch", "vergleich",
+    "entwurf", "schriftsatz", "hinweis", "zugang", "eingang", "verlust", "zins", "stichtag", "zeitpunkt", "sachverhalt",
+)
+
+
+def _is_case_file_compound(word: str) -> bool:
+    lowered = word.lower()
+    return any(
+        lowered.endswith(head) and len(word) - len(head) >= 4 and pn._known_word_chain(word[: len(word) - len(head)])
+        for head in _CASE_FILE_HEADS
+    )
+
+
+_LEGAL_DEFINITION_AFTER = re.compile(r"[ \t]+(?:im[ \t]+Sinne[ \t]+(?:des|der|von)|i\.[ \t]?S\.[ \t]?(?:d|v)\.)")
+
+
 def _is_modifier(token) -> bool:
     # Nur echte Woerter/Zahlen zaehlen: der Tagger etikettiert z. B. das Tabellenzeichen "|" als ADJ.
     return token.pos_ in _MODIFIER_POS and (token.is_alpha or token.like_num)
 
 
-def _is_bare(doc, token) -> bool:
-    if any(c.i < token.i and _is_modifier(c) for c in token.children):
+def _is_bare(doc, token, raw: str | None = None) -> bool:
+    # Ein "Modifikator" in einer ANDEREN Rohtextzeile zaehlt nicht (24.10.2026, gemessen: "Akte: Beispielakte\nBrandhuber
+    # 1.900,00 EUR" - die Analysefassung zieht den Umbruch zusammen, "Beispielakte" galt als Adjektiv zu "Brandhuber").
+    def counts(modifier) -> bool:
+        return _is_modifier(modifier) and not (raw is not None and "\n" in raw[modifier.idx : token.idx])
+
+    if any(c.i < token.i and counts(c) for c in token.children):
         return False
     previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
-    return not (previous is not None and _is_modifier(previous))
+    return not (previous is not None and counts(previous))
 
 
 def _context(source: str, term: str) -> tuple[str, str]:
@@ -269,6 +471,76 @@ def _context(source: str, term: str) -> tuple[str, str]:
     lead = " " if before[-1:].isspace() else ""
     trail = " " if after[:1].isspace() else ""
     return " ".join(before.split()) + lead, trail + " ".join(after.split())
+
+
+# Absender nach "<Kommunikationsnomen> von" (26.10.2026, reproduziert): "Eingang des Schreibens von König" - die
+# Namensrolle wurde erkannt, das Modell-Probing ergab aber 0 von 5 (König, Kaiser, Graf, Bauer, Sommer, Notar ... sind
+# dem Modell als Gattungs-/Titelwoerter bekannt), der Begriff ging ohne Rueckfrage im Klartext hinaus. In genau dieser
+# Wendung ist ein artikelloses Einzelwort der ABSENDER - Person oder Organisation -, daher Rueckfrage auch ohne Probe.
+# Ausgenommen: Redewendungen, Abstrakta, Zeitangaben und ein Rollen-/Titelwort, dem der eigentliche Name folgt.
+_SENDER_IDIOMS = frozenset({
+    "amts", "seiten", "hand", "anfang", "bedeutung", "interesse", "belang", "gewicht", "relevanz", "dauer", "wert",
+    "rechts", "gesetzes", "haus", "hause", "neuem", "vornherein", "heute", "gestern", "morgen",
+    "januar", "februar", "märz", "maerz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november",
+    "dezember", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonnabend", "sonntag",
+})
+_ABSTRACT_SUFFIXES = ("ung", "heit", "keit", "schaft", "tion", "sion", "ität", "itaet", "nis", "ismus", "tum")
+
+
+def _sender_after_communication_noun(doc, token, raw: str) -> bool:
+    """`token` steht artikellos direkt nach "von" und davor ein Kommunikationsnomen ("Schreiben/Brief/E-Mail von X").
+    `raw` ist der Scantext MIT Platzhaltern (in der Analysefassung sind sie ausgeblendet)."""
+    i = token.i
+    if i < 2 or doc[i - 1].lower_ != "von" or doc[i - 2].text.lower() not in pn.COMMUNICATION_NOUNS:
+        return False
+    word = token.text.lower()
+    if word in _SENDER_IDIOMS or word.endswith(_ABSTRACT_SUFFIXES):
+        return False
+    # Folgt direkt ein grossgeschriebenes Wort oder ein Platzhalter, ist `token` ein Titel-/Rollenwort vor dem Namen
+    # ("von Notar Weber", "von Notar [PERSON_01]", "von Notar Dr. Weber") - der Name hat seine eigene Erkennung.
+    rest = raw[token.idx + len(token.text):].lstrip(" \t")
+    if rest[:1].isupper() or rest[:1] == "[" or re.match(r"wegen\b", rest):
+        return False  # ... bzw. Redewendung "von Amts wegen"
+    return "Plur" not in token.morph.get("Number")
+
+
+# Nachname nach Artikel als handelnde Prozesspartei (26.10.2026, Benchmark bench_article_surname_nouns: 38 von 80 Faellen
+# "Der König hat den Mietvertrag unterschrieben" gingen ohne Rueckfrage hinaus - die Artikel-Lesart verlangt ein
+# Personennomen bzw. den staerksten Namensrahmen, beides fehlt bei Winter/Sommer/Hahn bzw. König/Kaiser). Eng gefasst,
+# weil die Artikel-Lesart grammatisch gleichwertig ist: NUR haeufige deutsche Nachnamen, die zugleich Gattungswoerter sind,
+# und NUR als Subjekt einer typischen Parteihandlung (unterschreiben, anrufen, widersprechen, zahlen ...). "Der Winter war
+# streng", "Der Bauer bestellt das Feld", "Der Mieter hat gezahlt" (kein Nachname) sind nicht betroffen.
+_SURNAME_COMMON_NOUNS = frozenset({
+    "müller", "schneider", "fischer", "weber", "wagner", "schäfer", "koch", "bauer", "wolf", "zimmermann", "köhler",
+    "könig", "kaiser", "fuchs", "hahn", "vogel", "keller", "schuster", "winter", "schumacher", "krämer", "vogt", "stein",
+    "jäger", "sommer", "schreiber", "graf", "ziegler", "engel", "horn", "busch", "bergmann", "herzog", "fürst", "ritter",
+    "gärtner", "förster", "schmied", "bäcker", "kellner", "wirt", "meister", "kaufmann", "richter", "pfeiffer", "schütz",
+    "lang", "frank", "sauer", "voigt", "hofmann", "baumann",
+})
+_PARTY_ACT_VERBS = frozenset({
+    "anrufen", "unterschreiben", "unterzeichnen", "widersprechen", "zahlen", "bezahlen", "überweisen", "kündigen",
+    "mitteilen", "bestätigen", "zusagen", "absagen", "beauftragen", "zustimmen", "ablehnen", "mahnen", "einreichen",
+    "antworten", "beantragen", "rügen", "beanstanden", "monieren", "anfechten", "widerrufen", "vorsprechen", "vollmacht",
+    "bevollmächtigen", "klagen", "verklagen", "anzeigen", "abmahnen",
+})
+
+
+def _surname_noun_as_party(doc, token, raw: str) -> bool:
+    """`der` + haeufiger Nachname, der zugleich Gattungswort ist, als Subjekt einer Parteihandlung. `raw` ist der
+    Scantext MIT Platzhaltern."""
+    if token.text.lower() not in _SURNAME_COMMON_NOUNS or token.i == 0:
+        return False
+    previous = doc[token.i - 1]
+    if previous.lower_ != "der" or previous.pos_ != "DET" or token.dep_ != "sb":
+        return False
+    # Folgt direkt ein Name bzw. Platzhalter, ist `token` ein Titel/Rollenwort davor ("Der Richter Zweigelt hat
+    # angerufen" - Regressionstest test_privacy_court_persons_and_labels): der Name hat seine eigene Erkennung.
+    rest = raw[token.idx + len(token.text):].lstrip(" \t")
+    if rest[:1].isupper() or rest[:1] == "[":
+        return False
+    head = token.head
+    verbs = [head, *[c for c in head.children if c.dep_ in ("oc", "cj") and c.pos_ in ("VERB", "AUX")]]
+    return any(v.lemma_.lower() in _PARTY_ACT_VERBS for v in verbs)
 
 
 def find_review_candidates(
@@ -301,13 +573,33 @@ def find_review_candidates(
             continue  # Kennnummer-Bezeichnung neben maskierter Nummer ("Schadennummer [KENNUNG_01]", §22) - kein Name
         if pn.is_technical_compound(word):
             continue  # Fachwort-Kompositum ("Raeumungsfrist", "Reparaturdauer") - kein Name, siehe presidio_ner
-        if not _is_bare(doc, token):
-            continue
-        if _SYSTEM_LABEL_LINE.search(neutral[: token.idx]):
+        if pn.is_contextual_technical_term(scan_text, token.idx, token.idx + len(word)):
+            continue  # Fachbegriff im Sachkontext - dieselbe Regel wie bei der Erkennung, siehe presidio_ner
+        if pn.is_transliterated_common_noun(scan_text, token.idx, token.idx + len(word)):
+            continue  # Umschrift eines Gattungsnomens ("Ruecksicht") - dieselbe Regel wie bei der Erkennung
+        article_reading = False
+        feminine_reading = None
+        party_reading = False
+        if not _is_bare(doc, token, raw=scan_text):
+            party_reading = _surname_noun_as_party(doc, token, scan_text)
+            article_reading = _is_definite_article_name_reading(doc, token)
+            if not article_reading:
+                feminine_reading = _feminine_article_name_reading(doc, token)
+                article_reading = feminine_reading == "unknown_after_die"
+                if feminine_reading is None and not party_reading:
+                    continue
+        # Systemzeile im ROHtext pruefen (24.10.2026, Grenzfaelle G3/G4, gemessen): die Analysefassung zieht weiche
+        # Zeilenumbrueche zusammen ("Akte: Beispielakte\nDazu erklaert Fuerst" -> eine Zeile) - dann galt der GANZE
+        # Folgetext bis zum naechsten harten Umbruch als Aktentitel und wurde nie gefragt.
+        if _SYSTEM_LABEL_LINE.search(scan_text[: token.idx]):
             continue
         if neutral[token.idx + len(word) : token.idx + len(word) + 1] == ":":
             continue  # Feldbezeichnung ("Akte:", "Name:", "Betreff:"), kein Feldwert
+        if _is_contact_label(scan_text, token) or _is_traffic_light_colour(doc, neutral, token):
+            continue  # §75.2: Bezeichnung einer maskierten Kontaktangabe bzw. Ampelfarbe im Verkehrssatz
         roles = _roles(doc, neutral, token, raw=scan_text)
+        if party_reading:
+            roles = roles | {"nachname_nach_artikel_handlung"}
         if not roles:
             continue
         if (
@@ -316,24 +608,87 @@ def find_review_candidates(
             and not _agrees_with_singular_verb(doc, token)
             and not (
                 "nach_praeposition" in roles
-                and token.head.lower_ in ("von", "durch")
+                and (
+                    token.head.lower_ in ("von", "durch")
+                    or (token.head.lower_ == "an" and not token.text.endswith("n"))
+                )
                 and token.lemma_.lower() == token.text.lower()
             )
         ):
-            # Echter Plural ("Zahlungen", Lemma "Zahlung") bleibt ausgeschlossen; formgleiche Woerter als Agens nach
-            # "von"/"durch" ("durch Lange geprueft", Lemma == Wortform) sind mehrdeutig und werden weiter am
-            # Probing-Score gemessen. Andere Praepositionen ("bei Maengeln") bleiben ausgeschlossen.
+            # Echter Plural ("Zahlungen", "Maengeln": Lemma weicht ab) bleibt ausgeschlossen; formgleiche Woerter nach
+            # einer Rollenpraeposition ("durch Lange geprueft", "an Kuester und Partner", "an Gruener uebergeben" -
+            # Lemma == Wortform) sind mehrdeutig und werden weiter am Probing-Score gemessen. Bis 24.10.2026 galt das nur
+            # nach "von"/"durch" - gemessen gingen 7 Nachnamen nach "an" im Klartext hinaus. Nach "an" ohne Endung "-n"
+            # (Dativ Plural: "an Kunden"); andere Praepositionen bleiben ausgeschlossen ("bei Maengeln" - der Lemmatisierer
+            # liefert dort teils die Wortform selbst, gemessener Fehlalarm).
             continue
         # Anweisungs-Imperativ am Satzanfang ("Ueberarbeite den Entwurf") ist keine Namensrolle.
-        if pn._SENTENCE_START_PREFIX.search(neutral[: token.idx]) and not roles & _SENTENCE_ROLES:
+        if pn._SENTENCE_START_PREFIX.search(neutral[: token.idx]) and not roles & (_SENTENCE_ROLES | _STRONG_ROLES):
             continue
         score = pn._name_probe_score(word)
+        if not article_reading and _sender_after_communication_noun(doc, token, scan_text):
+            # Absenderrolle ist ein eigenes Signal - Rueckfrage auch bei Probing 0 (siehe _sender_after_communication_noun)
+            before, after = _context(context_source, word)
+            found[word] = ReviewCandidate(
+                term=word, context_before=before, context_after=after,
+                roles=tuple(sorted(roles | {"absender_nach_kommunikationsnomen"})), probe_score=score,
+            )
+            if max_candidates is not None and len(found) >= max_candidates:
+                break
+            continue
+
+        def _party_fallback() -> None:
+            # Nur dort, wo die bestehende Logik den Begriff VERWERFEN wuerde: Rueckfrage ohne vorsichtige Maskierung
+            # (ask_only). Wird der Begriff auf dem bestehenden Weg gefunden, bleibt es bei dessen Verhalten (inkl.
+            # Maskierung im Modus "mask") - sonst gingen bisher maskierte Namen ("Der Kaufmann ...") neu im Klartext raus.
+            before, after = _context(context_source, word)
+            found[word] = ReviewCandidate(
+                term=word, context_before=before, context_after=after, roles=tuple(sorted(roles)), probe_score=score,
+                ask_only=True,
+            )
+        if feminine_reading == "gender_mismatch":
+            # Grammatisches Eigensignal (siehe _feminine_article_name_reading) - ohne Namensprobe
+            before, after = _context(context_source, word)
+            found[word] = ReviewCandidate(
+                term=word, context_before=before, context_after=after, roles=tuple(sorted(roles | {"genus_artikel"})),
+                probe_score=score,
+            )
+            if max_candidates is not None and len(found) >= max_candidates:
+                break
+            continue
         if score < REVIEW_MIN_PROBE_SCORE:
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
             continue
         # Fachwort-Fehlalarme (12.10.2026, 600er-Korpus): jeder synthetische Testname wird im staerksten Namensrahmen
         # "Herr X hat unterschrieben" als Person gelesen; Fachwoerter wie "Bescheid", "Flachdach", "Zugluft" nicht.
         # Gemessen: Fachwort-Faelle 100 -> 87 von 600, Klartext-Namen unveraendert 0,4 %.
-        if not pn._name_probe_frames(word)[0]:
+        frames = pn._name_probe_frames(word)
+        uninflected = token.lemma_.lower() == word.lower()
+        unknown = not pn._model_knows(word)
+        if not frames[0] and not (
+            (roles & _ADJACENT_ROLE_ROLES and uninflected)
+            or (roles & (_STRUCTURE_ROLES | _SENTENCE_NAME_ROLES) and unknown)
+        ):
+            # 24.10.2026 (G2/G8/K15-K17, gemessen): "Mandantin Licht", "Richter Zweigelt", "| Beteiligter | Kuehne |",
+            # "haftet Kuehne" scheiterten NUR an diesem Rahmen. Er bleibt Pflicht ausser (a) direkt nach bzw. vor einem
+            # Rollenwort bei einer unflektierten Form (Lemma == Wortform; "hat der Gutachter Risse festgestellt" - Plural
+            # von "Riss" - bleibt lesbar, Red-Team 13.10.2026) oder (b) in einer Tabellen-/Aufzaehlungs- oder Satzrolle bei
+            # einem dem Modell UNBEKANNTEN Wort - die gemessenen Fachwort-Fehlalarme ("Bescheid", "Flachdach", "Zugluft",
+            # Spaltenkopf "Betrag" in Benchmark Q06) sind bekannte Woerter.
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
+            continue
+        if article_reading and not frames[0]:
+            # Artikel-Lesart nur mit dem staerksten Namensrahmen (siehe _is_definite_article_name_reading)
+            if party_reading:
+                _party_fallback()
+                if max_candidates is not None and len(found) >= max_candidates:
+                    break
             continue
         before, after = _context(context_source, word)
         found[word] = ReviewCandidate(
@@ -341,6 +696,29 @@ def find_review_candidates(
         )
         if max_candidates is not None and len(found) >= max_candidates:
             break
+    # §46: kleingeschriebener Name direkt nach einer Anrede ("herr sauer", "Frau lehmann"). Wie die Kennzeichen nicht
+    # durch max_candidates begrenzt (sonst ginge der Name hinter vielen anderen Kandidaten ungefragt hinaus).
+    for token in doc:
+        word = token.text
+        if not (word.isalpha() and word.islower() and 3 <= len(word) <= MAX_TERM_LENGTH):
+            continue
+        previous = next((t for t in reversed(doc[: token.i]) if not t.is_space), None)
+        if previous is None or previous.lower_ not in _SALUTATIONS:
+            continue
+        # Direkt benachbart im ROH-Scantext: in der Analysefassung sind Platzhalter ausgeblendet - "Frau [PERSON_01]
+        # widerspricht" sah sonst wie "Frau widerspricht" aus (Fehlalarm pseudonymization_v1 P02).
+        if scan_text[previous.idx + len(previous.text) : token.idx].strip():
+            continue
+        lowered = word.lower()
+        if token.is_stop or lowered in _ROLE_NOUNS or lowered in _TITLE_WORDS or lowered in pn._NEVER_ENTITY_WORDS:
+            continue
+        if word in found or word in decisions.not_personal or word in decisions.personal:
+            continue
+        before, after = _context(context_source, word)
+        found[word] = ReviewCandidate(
+            term=word, context_before=before, context_after=after, roles=("kleingeschrieben_nach_anrede",),
+            probe_score=0,
+        )
     for match in _PLATE_SHAPE.finditer(neutral):
         # Zeilenumbruch (PDF) im Begriff als Leerzeichen: Entscheidungen sind einzeilig (decisions._validate);
         # detect_decision_terms trifft den Umbruch im Text trotzdem (_decision_term_pattern).
@@ -631,9 +1009,36 @@ def is_plate_shaped_term(term: str) -> bool:
     return "\n" not in term and _PLATE_SHAPE.fullmatch(term) is not None
 
 
+_GENITIVE_AFTER = r"(?=(?:s|'s|’s)?(?![\wÄÖÜäöüß]))"
+
+# §52 (16.10.2026): Namen aus mehreren Teilen ("Hans-Peter Müller", "Anna von Berg") als EINE Entscheidung. Teile aus
+# Buchstaben mit inneren Bindestrichen, durch einzelne Leerzeichen getrennt; kleingeschrieben nur Namenszusaetze. Ein
+# Zusatz allein ist kein Name ("von" maskierte sonst jedes "von"), mindestens ein Teil beginnt gross.
+# §53: zusaetzlich ein Apostroph INNERHALB eines Teils ("O'Brien", "D’Angelo", "Dell'Anna") - nie am Anfang/Ende, nie
+# doppelt; bis zu 8 Teile ("Maria del Carmen de la Fuente y Santos"), die 80-Zeichen-Grenze (MAX_TERM_LENGTH) bleibt.
+_NAME_PART = re.compile(r"[^\W\d_]+(?:[-'’][^\W\d_]+)*")
+MAX_NAME_PARTS = 8
+
+
+def is_name_shaped_term(term: str) -> bool:
+    """Ein- oder mehrteiliger Personenname (siehe oben). Ziffern, Punkte, Klammern, Zeilenumbrueche sind ausgeschlossen -
+    ein solcher Begriff kann damit keine Rufnummer, E-Mail, IBAN oder Fundstelle anschneiden (Audit 12.10.2026)."""
+    parts = term.split(" ")
+    if not 1 <= len(parts) <= MAX_NAME_PARTS or any(not _NAME_PART.fullmatch(part) for part in parts):
+        return False
+    capitalised = [part for part in parts if part[0].isupper()]
+    lowered = [part for part in parts if not part[0].isupper()]
+    return bool(capitalised) and all(part in NAME_PARTICLES for part in lowered) and parts[-1][0].isupper()
+
+
 def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[DetectedSpan]:
     """Fundstellen der als personenbezogen entschiedenen Begriffe (exakte Schreibung, ganze Woerter - "Richter" trifft
-    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung"."""
+    nicht "Schiedsrichter"). Kategorie "person"; kennzeichenfoermige Begriffe (siehe _PLATE_SHAPE) "kennung".
+
+    §51 (16.10.2026, manuelle Namensmarkierung): bei Personen-Begriffen zusaetzlich GENAU zwei Formen desselben Worts -
+    Versalien ("ZWEIGELT" im Rubrum) und Genitiv ("Zweigelts", "Zweigelt's"; ersetzt wird nur das Wort, die Endung bleibt
+    hinter dem Platzhalter). Vorher fing diese Formen hoechstens zufaellig die NER - mit einem ZWEITEN Platzhalter fuer
+    dieselbe Person. Kleinschreibung bewusst nicht ("lange" ist kein "Lange")."""
     spans: list[DetectedSpan] = []
     for term in sorted(terms, key=len, reverse=True):
         if not term or not term.strip():
@@ -651,7 +1056,16 @@ def detect_decision_terms(text: str, terms: set[str] | frozenset[str]) -> list[D
         short = identifier and not plate and sum(ch.isdigit() for ch in term) < 7
         # Bindestrich davor bleibt erlaubt: der Rest haengt oft am Aktenzeichen ("345/26-123456").
         boundary_before = r"(?<![\wÄÖÜäöüß/.,])" if short else r"(?<![\wÄÖÜäöüß])"
-        pattern = re.compile(boundary_before + body + r"(?![\wÄÖÜäöüß])")
+        boundary_after = r"(?![\wÄÖÜäöüß])"
+        if not identifier:
+            if term.upper() != term:
+                body = f"(?:{body}|{re.escape(term.upper())})"
+            # §52: mehrteiliger Name darf ueber Leerraum/Zeilenumbruch laufen (Adressblock, PDF), nie "kein Abstand"
+            body = body.replace(r"\ ", r"(?:[ \t]+|[ \t]*\r?\n[ \t]*)")
+            # §53: gerades und typografisches Apostroph sind dieselbe Schreibung ("O'Brien" = "O’Brien")
+            body = re.sub("['’]", "['’]", body)
+            boundary_after = _GENITIVE_AFTER
+        pattern = re.compile(boundary_before + body + boundary_after)
         for match in pattern.finditer(text):
             if any(s.start < match.end() and match.start() < s.end for s in spans):
                 continue

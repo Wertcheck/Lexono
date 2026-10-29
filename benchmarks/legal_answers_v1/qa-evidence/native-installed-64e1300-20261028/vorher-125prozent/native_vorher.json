@@ -1,0 +1,231 @@
+{
+ "phase": "vorher",
+ "exe": "%LOCALAPPDATA%\\Lexono\\Lexono.exe",
+ "exe_sha256": "25B330117F5ADC49F546E720340AE01DA8C312E56C957496D75F56A76684B896",
+ "aufnahmen": {
+  "00-maximiert-hell-chat-startseite": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ],
+   "zustand": {
+    "viewport": [
+     1536,
+     842,
+     1.25
+    ],
+    "pfad": "/dashboard/chat",
+    "theme": "light",
+    "startseite": false,
+    "composer": [
+     482,
+     720,
+     820,
+     122
+    ],
+    "chatbereich": [
+     249,
+     64,
+     1287,
+     778
+    ],
+    "composer_im_bild": true,
+    "composer_mitte_abweichung_px": 0,
+    "karten": [
+     "Dokument analysieren",
+     "Schriftsatz erstellen",
+     "Zusammenfassen",
+     "Weitere Prompts"
+    ],
+    "karten_ueberlappen_eingabe": false,
+    "verwalten_link": false,
+    "suchleiste": [
+     {
+      "box": [
+       477,
+       14,
+       640,
+       36
+      ],
+      "im_bild": true,
+      "text": "In E-Mails, Mandanten, Akten oder Inhalt"
+     }
+    ],
+    "sidebar_toggle": [
+     237,
+     72,
+     22,
+     22
+    ],
+    "nachrichten": 0,
+    "markierungen": 0,
+    "markierung_klassen": [],
+    "querscroll": false,
+    "js_fehler": []
+   },
+   "viewport": [
+    1536,
+    842,
+    1.25
+   ],
+   "theme": "light"
+  },
+  "00-maximiert-hell-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1536,
+     842
+    ],
+    "dialog": [
+     16,
+     16,
+     1504,
+     810
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Übernehmen und nächste Rückfrage",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 2,
+    "gewaehlt": null,
+    "fortschritt": "Rückfrage 1 von 5",
+    "panel_intern_scroll": [
+     888,
+     496
+    ],
+    "panel": [
+     1109,
+     175,
+     410,
+     579
+    ],
+    "vorschau": [
+     153,
+     175,
+     956,
+     579
+    ],
+    "seite": [
+     181,
+     183,
+     890,
+     1283
+    ],
+    "miniaturen_sichtbar": 3,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "Person Organisation Adresse Datum Sonstiges Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "markierungen": 9,
+   "viewport": [
+    1536,
+    842,
+    1.25
+   ],
+   "theme": "light"
+  }
+ },
+ "funktion": {
+  "rollen": [
+   "admin",
+   "anwalt",
+   "mitarbeiter"
+  ],
+  "webview2_argumente": "--remote-debugging-port=9334",
+  "head": "64e130018959efa28041c26acdf601c20ea940dd",
+  "ausgelieferter_code": {
+   "static/css/app.css": {
+    "sha256": "ba47b1d94844c22e",
+    "gleich_HEAD": false,
+    "gleich_6542754": true,
+    "marker": {
+     ".prompt-manager": false,
+     "chat-panel--start": false,
+     "pseudo-mark--open": true
+    }
+   },
+   "static/js/pseudonymization_center.js": {
+    "sha256": "0619182c3c2e98b2",
+    "gleich_HEAD": false,
+    "gleich_6542754": true,
+    "marker": {
+     "data-pseudo-q-apply": true,
+     "pseudo-mark--kept": true
+    }
+   },
+   "static/js/prompt_manager.js": {
+    "http": 404
+   }
+  },
+  "chat_seite_marker": {
+   "chat-panel--start": false,
+   "data-prompt-manager-open": false,
+   "id=\"prompt-manager\"": false,
+   "prompt_manager.js": false,
+   "data-command-bar-open": true
+  },
+  "prompts_manage_json": {
+   "http": 405
+  },
+  "alembic": [
+   [
+    "schritt3_038"
+   ]
+  ],
+  "auftrag_blockiert": {
+   "1f4c9b81-f532-41cc-a170-0367ac783ee1": true,
+   "d96dac4a-51ea-4711-bc62-06017a468fd5": true,
+   "58afa9eb-30a5-49ec-87cb-bcaa9c767889": true
+  },
+  "convs": {
+   "main": "1f4c9b81-f532-41cc-a170-0367ac783ee1",
+   "multi": "d96dac4a-51ea-4711-bc62-06017a468fd5",
+   "single": "58afa9eb-30a5-49ec-87cb-bcaa9c767889"
+  },
+  "setup_s": 5.9,
+  "recorder_nach_setup": 0,
+  "db_start": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 11,
+   "chat_conversations": 3
+  },
+  "start_url": "http://127.0.0.1:8066/dashboard/login",
+  "nach_login": "/dashboard/chat",
+  "standard_viewport": [
+   1536,
+   842,
+   1.25
+  ],
+  "standard_zoomed": true,
+  "js_fehler": []
+ },
+ "pid": 16196
+}

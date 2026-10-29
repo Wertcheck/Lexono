@@ -318,6 +318,8 @@ def test_sidebar_edge_toggle_sits_at_sidebar_right_edge_not_next_to_logo() -> No
     block = css[start:end]
     assert "left: var(--sidebar-width);" in block
     assert "position: absolute;" in block
+    # 28.10.2026: direkt unter der Kopfzeile (Oberkante der Sidebar), nicht mehr auf Hoehe von "Neuen Chat starten"
+    assert "top: 2px;" in block
 
     collapsed_start = css.index("html.sidebar-collapsed .sidebar-edge-toggle {")
     collapsed_end = css.index("}", collapsed_start)

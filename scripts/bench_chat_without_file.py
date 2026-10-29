@@ -50,7 +50,7 @@ def call(gateway: ClaudePrivacyGateway, text: str):
     )
 
 
-def run(label: str) -> None:
+def run(label: str) -> dict:
     gateway = ClaudePrivacyGateway()
     started = time.perf_counter()
     leaks = total = blocks = 0
@@ -80,6 +80,9 @@ def run(label: str) -> None:
         f"{changed}, Fachbegriffe betroffen {len(terms)}/{len(D.TERMS)}, {time.perf_counter() - started:.0f} s"
     )
     print("   Lecks je Kontext:", by_context)
+    # §64: Messwerte auch zurueckgeben - Regressionsschutz in tests/test_privacy_benchmark_ratchets.py
+    return {"leaks": leaks, "total": total, "blocks": blocks, "changed_questions": changed, "terms_affected": sorted(terms),
+            "terms_total": len(D.TERMS), "leaks_by_context": by_context}
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ base.html.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -33,11 +34,12 @@ from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME
 from app.matching.matcher import _AMBIGUITY_MARGIN, MatterMatchingService
 from app.matching.service import MatterAssignmentService
 from app.models import AuditEvent, Client, Document, Matter, Message, User
+from app.web.name_protection import install_name_protection
 from app.web.template_paths import TEMPLATES_DIR
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §54 "Namen schützen" (E-Mail-Aktionen)
 
 # --- Posteingang: Avatar-Initialen/-Farbe, echte Dateigroesse (25.09.,
 # Owner-Direktive "POSTEINGANG PRODUCT COMPLETION" - Referenzabgleich
@@ -86,9 +88,51 @@ def _document_file_size(document: Document) -> int | None:
         return None
 
 
+def _sender_parts(sender: str | None) -> tuple[str, str]:
+    """Posteingang-Referenz (26.10.): die Liste zeigt nur den Namen, der Lesebereich Name UND Adresse darunter.
+    Zerlegt den echten Absender-Header ("Name <adresse>"); ohne Namen ist die Adresse zugleich der Anzeigename."""
+    from email.utils import parseaddr
+
+    raw = (sender or "").strip()
+    if not raw:
+        return "Unbekannter Absender", ""
+    name, address = parseaddr(raw)
+    name = name.strip().strip('"')
+    if not address or "@" not in address:
+        return raw, ""
+    return (name or address), address
+
+
+def _local(dt: datetime) -> datetime:
+    """SQLite liefert die UTC-Zeitstempel naiv zurueck - als UTC lesen, in der Ortszeit des Arbeitsplatzes anzeigen."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone()
+
+
+def _message_time_label(dt: datetime | None, now: datetime | None = None) -> str:
+    """Zeitstempel der Nachrichtenzeile wie in der Referenz: heute nur Uhrzeit, gestern "Gestern", sonst Datum."""
+    if dt is None:
+        return ""
+    local = _local(dt)
+    today = _local(now or datetime.now(timezone.utc)).date()
+    if local.date() == today:
+        return local.strftime("%H:%M")
+    if local.date() == today - timedelta(days=1):
+        return "Gestern"
+    return local.strftime("%d.%m.%Y")
+
+
+def _message_datetime_label(dt: datetime | None) -> str:
+    return _local(dt).strftime("%d.%m.%Y, %H:%M") if dt else ""
+
+
 templates.env.globals["avatar_initials"] = _avatar_initials
 templates.env.globals["avatar_color"] = _avatar_color
 templates.env.globals["document_file_size"] = _document_file_size
+templates.env.globals["sender_parts"] = _sender_parts
+templates.env.globals["message_time_label"] = _message_time_label
+templates.env.globals["message_datetime_label"] = _message_datetime_label
 
 _FILTER_OPTIONS: list[tuple[str, str]] = [
     ("all", "Alle"),
@@ -370,6 +414,49 @@ def dashboard_root(
 _VALID_SORT_KEYS = {"newest", "oldest"}
 
 
+def _inbox_stats(db: Session) -> dict:
+    """Kopfbereich "Posteingang" (Referenzumsetzung 26.10.): echte Zaehler aus der Datenbank plus der Zustand des
+    automatischen Abrufs - konfiguriert/ausgeschaltet/letzter Lauf dieser Instanz (app/mail/poll_status.py)."""
+    from app.mail import poll_status
+
+    settings = get_settings()
+    last = poll_status.last_poll()
+    if not settings.mail_provider:
+        poll = {"state": "not_configured", "label": "Kein E-Mail-Postfach eingerichtet"}
+    elif not settings.mail_auto_sync_enabled:
+        poll = {"state": "disabled", "label": "Automatischer Abruf ausgeschaltet"}
+    elif last is None:
+        poll = {"state": "pending", "label": "Noch kein Abruf seit dem Start"}
+    else:
+        when = _message_time_label(last.at)
+        when = f"heute, {when} Uhr" if ":" in when else when
+        poll = {"state": "ok" if last.ok else "failed",
+                "label": f"Letzter Abruf: {when}" + ("" if last.ok else " (fehlgeschlagen)")}
+    # Zahlen je Filtertab (Referenzbild: "Alle 42", "Nicht zugeordnet 12" ...) - dieselben Bedingungen wie
+    # `_apply_filter`, damit Tab-Zahl und Trefferliste nie auseinanderlaufen
+    filter_counts = {key: _apply_filter(db.query(Message), key).count() for key in _VALID_FILTER_KEYS}
+    return {
+        "total_count": filter_counts["all"],
+        "unread_count": _unread_query(db).count(),
+        "unmatched_count": filter_counts["unmatched"],
+        "attachment_count": filter_counts["with_attachment"],
+        "filter_counts": filter_counts,
+        "mail_poll": poll,
+    }
+
+
+def _unread_query(db: Session):
+    return db.query(Message).filter(Message.direction == "inbound", Message.read_at.is_(None))
+
+
+def _mark_read(db: Session, message: Message) -> None:
+    """Ausdrueckliches Oeffnen einer Nachricht (Zeilenklick/Direktaufruf) setzt sie auf gelesen. Die beim Laden des
+    Posteingangs automatisch vorausgewaehlte erste Nachricht zaehlt bewusst NICHT als geoeffnet."""
+    if message.read_at is None and message.direction == "inbound":
+        message.read_at = datetime.now(timezone.utc)
+        db.commit()
+
+
 @router.get("/inbox", response_class=HTMLResponse)
 def inbox_page(
     request: Request,
@@ -389,8 +476,6 @@ def inbox_page(
         db, filter_key, search=q, matter_id=matter, client_id=client,
         period=period_key, sort=sort_key,
     )
-    total_count = db.query(Message).count()
-    unmatched_count = db.query(Message).filter(Message.matter_id.is_(None)).count()
 
     # Default-Auswahl (25.09., Owner-Direktive "POSTEINGANG FINAL UI/UX
     # PRODUCT-COMPLETION" §17, Referenzabgleich - die Referenz zeigt beim
@@ -420,8 +505,7 @@ def inbox_page(
         "active_client_id": client,
         "active_period": period_key,
         "active_sort": sort_key,
-        "total_count": total_count,
-        "unmatched_count": unmatched_count,
+        **_inbox_stats(db),
         "active_message_id": active_message_id,
         "current_user": current_user,
         # Fuer partials/message_detail.html ("In Akte speichern"/
@@ -471,7 +555,62 @@ def inbox_list_partial(
         "active_message_id": None,
         "total_count": db.query(Message).count(),
     }
-    return templates.TemplateResponse(request, "partials/message_list.html", context)
+    response = templates.TemplateResponse(request, "partials/message_list.html", context)
+    # Die Filter pushen per hx-push-url sonst DIESE Fragment-URL in den Verlauf - ein Neuladen zeigte dann nur die
+    # nackte Liste. HX-Push-Url ersetzt sie durch die volle Seite mit denselben Filtern (26.10.).
+    query = request.url.query
+    response.headers["HX-Push-Url"] = "/dashboard/inbox" + (f"?{query}" if query else "")
+    return response
+
+
+@router.get("/inbox/badge", response_class=HTMLResponse)
+def inbox_unread_badge(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> HTMLResponse:
+    """Zaehler am Navigationspunkt "Posteingang" (Referenz): echte Zahl ungelesener eingehender Nachrichten, per HTMX
+    nachgeladen wie /dashboard/tasks/badge. Bei 0 bewusst leer - kein Platzhalterwert."""
+    count = _unread_query(db).count()
+    if not count:
+        return HTMLResponse("")
+    label = "99+" if count > 99 else str(count)
+    return HTMLResponse(
+        f'<span class="sidebar__group-badge" title="{count} ungelesene Nachricht(en)">{label}</span>'
+    )
+
+
+_VALID_MARK_STATES = {"read", "unread"}
+
+
+@router.post("/inbox/mark")
+def mark_messages(
+    request: Request,
+    state: str = Form(...),
+    message_ids: list[str] = Form(default=[]),
+    return_to: str = Form(default="/dashboard/inbox"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role()),
+) -> RedirectResponse:
+    """"Als gelesen/ungelesen markieren" fuer die per Auswahlkaestchen gewaehlten Nachrichten oder die geoeffnete
+    Nachricht. Aendert ausschliesslich den Lesestatus - keine Zuordnung, kein Versand, kein Loeschen."""
+    if state not in _VALID_MARK_STATES:
+        raise HTTPException(status_code=400, detail="Unbekannter Status")
+    # Ruecksprung nur auf die Posteingangsliste (kein offener Redirect ueber einen Formularwert). Eine Einzel-
+    # nachrichten-URL (/dashboard/inbox/<id>) wird bewusst NICHT angesprungen: deren Aufruf setzte die gerade als
+    # ungelesen markierte Nachricht sofort wieder auf gelesen.
+    path, _, query = return_to.partition("?")
+    if path not in ("/dashboard/inbox", "/dashboard/inbox/list") or "//" in return_to or "\\" in return_to:
+        return_to = "/dashboard/inbox"
+    else:
+        return_to = "/dashboard/inbox" + (f"?{query}" if query else "")
+    ids = [i for i in dict.fromkeys(message_ids) if i]
+    if ids:
+        value = datetime.now(timezone.utc) if state == "read" else None
+        for message in db.query(Message).filter(Message.id.in_(ids)).all():
+            if message.direction == "inbound":
+                message.read_at = value
+        db.commit()
+    return RedirectResponse(url=return_to, status_code=303)
 
 
 @router.get("/inbox/{message_id}", response_class=HTMLResponse)
@@ -485,9 +624,8 @@ def inbox_message_page(
     Verlinken/Neuladen eines einzelnen Postfach-Eintrags (siehe
     `hx-push-url` in partials/message_row.html)."""
     detail_context = _load_detail_context(db, message_id)
+    _mark_read(db, detail_context["message"])
     messages = _load_messages(db, "all")
-    total_count = db.query(Message).count()
-    unmatched_count = db.query(Message).filter(Message.matter_id.is_(None)).count()
 
     context = {
         "request": request,
@@ -502,8 +640,7 @@ def inbox_message_page(
         "active_client_id": "",
         "active_period": "all",
         "active_sort": "newest",
-        "total_count": total_count,
-        "unmatched_count": unmatched_count,
+        **_inbox_stats(db),
         "active_message_id": message_id,
         "current_user": current_user,
         "csrf_token": getattr(request.state, "csrf_token", ""),
@@ -522,6 +659,7 @@ def inbox_message_detail_partial(
     """HTMX-Partial: nur das Detail-Panel, fuer den Klick auf eine
     Nachrichten-Zeile ohne vollen Seiten-Reload."""
     detail_context = _load_detail_context(db, message_id)
+    _mark_read(db, detail_context["message"])
     context = {
         "request": request,
         "csrf_token": getattr(request.state, "csrf_token", ""),

@@ -1,0 +1,29 @@
+{
+ "alembic_nach_voll_migrate": "schritt3_042",
+ "pilot_start_auf_042": 200,
+ "basis": {
+  "/dashboard/chat": 200,
+  "/dashboard/clients": 200,
+  "/dashboard/matters": 200,
+  "/dashboard/tasks": 200,
+  "/dashboard/inbox": 200,
+  "/dashboard/knowledge": 200
+ },
+ "nav_ohne_finanzbuchhaltung": true,
+ "fibu_get": 404,
+ "fibu_post": 404,
+ "fibu_export": 404,
+ "fibu_css": 404,
+ "lizenz_tab_nur_kanzlei": true,
+ "app_css": 200,
+ "alembic_nach_pilot_start": "schritt3_042",
+ "quick_check": "ok",
+ "fibu_tabellen_vorhanden": [
+  "fibu_client_profiles",
+  "fibu_accounts",
+  "fibu_receipts",
+  "fibu_bookings",
+  "fibu_tasks"
+ ],
+ "log_tracebacks": 0
+}

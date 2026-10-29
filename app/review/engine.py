@@ -17,6 +17,7 @@ from app.ai_providers.local_ai_provider import LocalAIProvider
 from app.cost_control import CostControlService
 from app.models import AuditEvent, Draft, Matter, ReviewFinding
 from app.privacy.api_logger import ApiCallLogger
+from app.privacy.decisions import load_decisions
 from app.privacy.gateway import ClaudePrivacyGateway
 from app.research.service import LegalResearchService
 from app.review.provider import ClaudeReviewProvider
@@ -73,6 +74,9 @@ class ReviewEngine:
             sachverhalt=draft.content,
             quellenverweise=quellen_texte,
             known_entities=preparation.known_entities,
+            # §51: der Entwurf ist re-identifiziert - ein manuell markierter bzw. als Person entschiedener Name, den die
+            # Erkennung nicht findet ("Richter Zweigelt"), ginge hier sonst im Klartext hinaus.
+            privacy_decisions=load_decisions(db, matter_id=matter.id, conversation_id=None),
         )
 
         if not gateway_result.allowed:

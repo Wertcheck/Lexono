@@ -1,0 +1,256 @@
+{
+ "phase": "vorher",
+ "aufnahmen": {
+  "1920x1080-hell-01-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-dunkel-01-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "1280x720-hell-01-posteingang": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    516,
+    478
+   ],
+   "detail": [
+    764,
+    242,
+    516,
+    478
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1280x720-dunkel-01-posteingang": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    516,
+    478
+   ],
+   "detail": [
+    764,
+    242,
+    516,
+    478
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "960x600-hell-01-posteingang": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    302,
+    360,
+    299
+   ],
+   "detail": [
+    608,
+    302,
+    352,
+    299
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-02-nachricht-mit-anhang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-03-filter-nicht-zugeordnet": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 5,
+   "theme": "light"
+  },
+  "1920x1080-hell-04-suche-absender": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 1,
+   "theme": "light"
+  },
+  "1920x1080-hell-05-leerer-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "light"
+  },
+  "1920x1080-dunkel-05-leerer-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    242,
+    640,
+    838
+   ],
+   "detail": [
+    888,
+    242,
+    1032,
+    838
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "dark"
+  }
+ },
+ "phase_ok": true
+}

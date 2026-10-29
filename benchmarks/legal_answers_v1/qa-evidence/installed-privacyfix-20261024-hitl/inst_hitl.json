@@ -1,0 +1,24 @@
+{
+ "auftrag": "Die Anfrage bezieht sich auf ein Dokument, dessen Inhalt noch nicht ausgewertet werden kann. Sie wurde deshalb nicht an die Cloud-KI gesendet, und es wurde nich",
+ "bestaetigen": [
+  "start",
+  "review"
+ ],
+ "rueckfragen": [
+  "Richter"
+ ],
+ "js_09-hitl-rueckfrage-dialog-installiert": {
+  "offen": true,
+  "text": "Datenschutz-Rückfrage\n✕\nDatenschutzprüfung\n2 von 5 Schritten abgeschlossen\nAnfrage erfasst\nText vorbereitet\nPersonenbezogene Daten werden geprüft …\nPseudonymisi"
+ },
+ "nach_antwort": {
+  "kinds": [
+   "start",
+   "status",
+   "done"
+  ],
+  "blocked": true,
+  "content": "Die Antwort konnte aus technischen Gründen nicht erzeugt werden. Es handelt sich nicht um eine Datenschutz-Blockierung."
+ },
+ "pending_danach": "none"
+}

@@ -1,0 +1,5 @@
+gesperrt   | echter Provider | Provider-Endpunkt api.anthropic.com ist kein lokaler Pruefendpunkt - echter Modelllauf ist
+ZUGELASSEN | Wrapper (Attribut)
+ZUGELASSEN | Unterklasse
+ZUGELASSEN | Wrapper (Liste)
+ZUGELASSEN | roher anthropic-Client

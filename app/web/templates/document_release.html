@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Datenschutz & Dokumentfreigabe{% endblock %}
+{% block content %}
+  {# §62: konfigurierbare Dokumentfreigabe. Der Modus gilt KANZLEIWEIT; die Anzeigepraeferenz gilt nur fuer Sie. #}
+  <div class="topbar">
+    <h1 class="topbar__title">Datenschutz &amp; Dokumentfreigabe</h1>
+    <div class="topbar__meta">
+      Legt fest, wann ein Dokument für die KI-Verarbeitung freigegeben ist. Die zentrale Datenschutzprüfung,
+      Pseudonymisierung und Validierung laufen in jedem Modus – eine fehlgeschlagene Prüfung blockiert immer.
+    </div>
+  </div>
+
+  <div class="draft-page" id="document-release-settings">
+    {% if saved %}<div class="banner banner--success">Gespeichert.</div>{% endif %}
+    {% if error %}<div class="banner banner--error">{{ error }}</div>{% endif %}
+
+    <div class="settings-card">
+      <h2 class="settings-card__title">Aktiver Freigabemodus</h2>
+      <p class="document-release-mode" id="active-release-mode">
+        <span class="tag"><span class="tag__dot"></span>{{ mode_label }}</span>
+        {% if mode == new_installation_mode %}<span class="form-hint">(Standard für Neuinstallationen)</span>
+        {% elif mode == default_mode %}<span class="form-hint">(Standard bestehender Installationen – bisheriges Verhalten)</span>{% endif %}
+      </p>
+      <p class="settings-section__hint">Gilt für die gesamte Kanzlei. Ändern dürfen Administration und Anwälte.</p>
+
+      {% if can_manage %}
+        <form method="post" action="/dashboard/privacy/document-release/mode" class="dashboard-form" style="max-width: none;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          {% for key, label, description in modes %}
+            <label class="document-release-option">
+              <input type="radio" name="mode" value="{{ key }}"{% if key == mode %} checked{% endif %} />
+              <span><strong>{{ label }}</strong><br /><span class="form-hint">{{ description }}</span></span>
+            </label>
+          {% endfor %}
+          <button type="submit" class="btn btn--primary" style="align-self: flex-start;">Freigabemodus speichern</button>
+        </form>
+      {% else %}
+        <p class="form-hint">Sie können den Freigabemodus ansehen; ändern dürfen ihn Administration und Anwälte.</p>
+      {% endif %}
+    </div>
+
+    <div class="settings-card" id="auto-release-notice-setting">
+      <h2 class="settings-card__title">Hinweis „Automatisch freigegeben“</h2>
+      <p class="settings-section__hint">
+        Betrifft nur die informative Meldung am Dokument, nicht Freigabe, Prüfung oder Verarbeitung. Warnungen,
+        fehlgeschlagene Prüfungen und erforderliche Freigaben werden immer angezeigt. Gilt nur für Ihr Benutzerkonto.
+      </p>
+      <form method="post" action="/dashboard/privacy/document-release/notice">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="return_to" value="/dashboard/privacy/document-release?saved=1" />
+        <label class="document-release-option">
+          <input type="checkbox" name="show" value="1"{% if show_notice %} checked{% endif %} onchange="this.form.requestSubmit()" />
+          <span>Meldung „Automatisch freigegeben“ am Dokument anzeigen</span>
+        </label>
+        <noscript><button type="submit" class="btn">Speichern</button></noscript>
+      </form>
+    </div>
+  </div>
+{% endblock %}

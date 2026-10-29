@@ -1,0 +1,43 @@
+{
+ "maximiert": true,
+ "01-webview2-posteingang-hell": {
+  "viewport": [
+   1536,
+   842,
+   1.25
+  ],
+  "querscroll": false,
+  "zeilen": 9,
+  "aufnahme": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ]
+  }
+ },
+ "02-webview2-posteingang-dunkel": {
+  "viewport": [
+   1536,
+   842,
+   1.25
+  ],
+  "querscroll": false,
+  "zeilen": 9,
+  "aufnahme": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ]
+  }
+ }
+}

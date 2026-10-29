@@ -1,0 +1,77 @@
+{
+ "lang": {
+  "sekunden_pruefansicht": 8.5,
+  "seiten": 70,
+  "markierungen_gesamt": 280,
+  "seiten_ohne_markierungsberechnung": 0,
+  "hinweise": [
+   "PDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  ],
+  "nicht_gefunden": [],
+  "status": "ok"
+ },
+ "N-langes-dokument-70-seiten": {
+  "sha256": "9cff94889754b2ab",
+  "zustand": {
+   "offen": true,
+   "seiten": 70,
+   "masked": 280,
+   "fragen": 0,
+   "bestaetigen_sichtbar": false,
+   "status": "Keine offenen RückfragenKein offener Auftrag – reine Prüfansicht. Stellen Sie Ihre Frage im Chat; die Prüfung erfolgt beim Senden erneut.",
+   "footer_im_fenster": true,
+   "dialog_im_fenster": true,
+   "seite_info": "Seite 1 / 70",
+   "hinweis": "Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. Bitte prüfen und nich",
+   "spalte": false
+  }
+ },
+ "N2-langes-dokument-seite-65": {
+  "sha256": "9791117fef7268f4",
+  "zustand": {
+   "offen": true,
+   "seiten": 70,
+   "masked": 280,
+   "fragen": 0,
+   "bestaetigen_sichtbar": false,
+   "status": "Keine offenen RückfragenKein offener Auftrag – reine Prüfansicht. Stellen Sie Ihre Frage im Chat; die Prüfung erfolgt beim Senden erneut.",
+   "footer_im_fenster": true,
+   "dialog_im_fenster": true,
+   "seite_info": "Seite 65 / 70",
+   "hinweis": "Hochgeladen und lokal ausgelesen – noch keine KI-Verarbeitung, nichts wurde an die Cloud gesendet. Bitte prüfen und nich",
+   "spalte": false
+  }
+ },
+ "O-ohne-treffer-reine-pruefansicht": {
+  "sha256": "488e5332a5ff9e87",
+  "zustand": {
+   "offen": true,
+   "seiten": 1,
+   "masked": 0,
+   "fragen": 0,
+   "bestaetigen_sichtbar": false,
+   "status": "Keine offenen RückfragenKein offener Auftrag – reine Prüfansicht. Stellen Sie Ihre Frage im Chat; die Prüfung erfolgt beim Senden erneut.",
+   "footer_im_fenster": true,
+   "dialog_im_fenster": true,
+   "seite_info": "Seite 1 / 1",
+   "hinweis": "",
+   "spalte": false
+  }
+ },
+ "P-kleines-fenster-1280x720": {
+  "sha256": "7085c722b2d8273f",
+  "zustand": {
+   "offen": true,
+   "seiten": 70,
+   "masked": 280,
+   "fragen": 0,
+   "bestaetigen_sichtbar": false,
+   "status": "Keine offenen RückfragenKein offener Auftrag – reine Prüfansicht. Stellen Sie Ihre Frage im Chat; die Prüfung erfolgt beim Senden erneut.",
+   "footer_im_fenster": true,
+   "dialog_im_fenster": true,
+   "seite_info": "Seite 1 / 70",
+   "hinweis": "",
+   "spalte": false
+  }
+ }
+}

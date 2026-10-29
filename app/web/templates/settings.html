@@ -451,6 +451,19 @@
           </div>
         </div>
 
+        {# §62: kanzleiweiter Freigabemodus - dauerhaft sichtbar, Aenderung auf der eigenen Seite #}
+        <div class="settings-card" id="document-release-card">
+          <h2 class="settings-card__title">
+            {{ icons.shield(class_="icon") }}
+            Datenschutz &amp; Dokumentfreigabe
+          </h2>
+          <p class="settings-section__hint">
+            Aktiver Freigabemodus: <strong>{{ document_release_mode_label }}</strong>. Die zentrale Datenschutzprüfung
+            läuft in jedem Modus.
+            <a href="/dashboard/privacy/document-release">Freigabeeinstellungen öffnen</a>
+          </p>
+        </div>
+
         <div class="settings-card">
           <h2 class="settings-card__title">
             {{ icons.shield(class_="icon") }}
@@ -1741,6 +1754,77 @@
 
   {# ===================== TAB: LIZENZ ===================== #}
   <div class="settings-tabpanel" data-tabpanel="lizenz" hidden>
+    {# Produktuebersicht (29.10.2026, app/modules/plans.py): drei Produktstufen mit Preis und ehrlichem Status. Reine
+       Anzeige - es gibt keinen Kauf-Button (noch kein Shop) und nichts wird hierueber freigeschaltet; "Ihr Paket"
+       folgt nur den tatsaechlich freigeschalteten Modulen (signierte Lizenz UND Build-Profil). #}
+    <section class="license-products-section" aria-labelledby="license-products-title">
+      <div class="license-products-section__head">
+        <h2 class="license-products-section__title" id="license-products-title">Lexono Produkte</h2>
+        <p class="license-products-section__intro">Lexono ist die zentrale Plattform für Ihre Kanzlei. Weitere Module wie Finance und Finance &amp; Tax befinden sich aktuell in der Entwicklung und werden künftig direkt in Ihrer Lexono-Anwendung verfügbar sein.</p>
+      </div>
+      <div class="license-products" role="list">
+        {% for p in license_products %}
+          {% set is_current = p.key == license_current_product %}
+          <article class="license-product{% if is_current %} is-current{% endif %}" role="listitem"
+                   data-product="{{ p.key }}" data-product-status="{{ p.status }}" aria-label="{{ p.name }}">
+            <span class="license-status license-status--{{ p.status }}">{{ p.status_label }}</span>
+            <h3 class="license-product__name">
+              <span class="license-product__brand">Lexono</span>
+              {% if p.edition %}<span class="license-product__edition">{{ p.edition }}</span>{% endif %}
+            </h3>
+            <p class="license-product__summary">{{ p.summary }}</p>
+            <div class="license-product__divider" aria-hidden="true"></div>
+            <p class="license-product__price">
+              <strong>{{ p.monthly_gross_per_user|int }} €</strong>
+              <span>/ Monat pro Benutzer</span>
+              <span>(inkl. MwSt.)</span>
+            </p>
+            {# Statusleiste wie im Referenzbild - bewusst KEIN Button/Link: es gibt (noch) keinen Kauf und nichts wird
+               hierueber freigeschaltet. #}
+            {% if is_current %}
+              <span class="license-product__state license-product__state--active" data-product-state="active">Aktiv genutzt</span>
+            {% elif p.status == "in_entwicklung" %}
+              <span class="license-product__state" data-product-state="soon">Bald verfügbar</span>
+            {% else %}
+              <span class="license-product__state" data-product-state="available">Verfügbar</span>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+      <p class="license-products-section__note">Preise {{ license_price_basis }} – vorläufige Produktplanung; ein Kauf über einen Shop ist noch nicht möglich, freigeschaltet wird ausschließlich über eine signierte Lizenzdatei.</p>
+    </section>
+
+    <section class="settings-section license-compare" aria-labelledby="license-compare-title">
+      <h2 class="license-compare__title" id="license-compare-title">Ihre Vorteile im Überblick</h2>
+      <p class="license-compare__intro">Alle Funktionen sind nahtlos in Lexono integriert. Finance und Finance &amp; Tax enthalten alle Funktionen von Lexono und ergänzen diese um weitere Möglichkeiten.</p>
+      <div class="license-compare__scroll">
+        <table class="license-compare__table">
+          <thead>
+            <tr>
+              <th scope="col" class="license-compare__feature-col">Funktion</th>
+              {% for p in license_products %}
+                <th scope="col" class="license-compare__product-col">
+                  <span class="license-compare__name">{{ p.name }}</span>
+                  {% if p.status == "in_entwicklung" %}<span class="license-compare__meta">(in Entwicklung)</span>{% endif %}
+                  <span class="license-compare__meta">{{ p.monthly_gross_per_user|int }} € / Monat</span>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in license_features %}
+              <tr>
+                <th scope="row"><span class="license-compare__feature">{{ f.label }}</span><span class="license-compare__detail">{{ f.detail }}</span></th>
+                {% for p in license_products %}
+                  <td>{% if f.module in p.modules %}<span class="license-compare__yes" role="img" aria-label="enthalten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span>{% else %}<span class="license-compare__no" role="img" aria-label="nicht enthalten">–</span>{% endif %}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <div class="settings-section">
       <h2 class="settings-section__title">Lizenz</h2>
       <p class="settings-section__hint">
@@ -1748,6 +1832,43 @@
         aktuell keine zentrale, mandantenfähige Lizenzverwaltung.
       </p>
       <p>{{ active_users }} von {{ total_users }} Benutzer{{ "n" if total_users != 1 else "" }} aktiv.</p>
+    </div>
+    {# Module & Lizenz (28.10.2026, app/modules): Basispaket immer aktiv; Zusatzmodule nur mit gueltiger, signierter
+       Lizenz - die Pruefung passiert serverseitig bei jeder Anfrage, diese Ansicht zeigt nur den Stand. #}
+    <div class="settings-section" id="module-licenses">
+      <h2 class="settings-section__title">Module</h2>
+      <p class="settings-section__hint">„Lexono Kanzlei“ ist immer enthalten. Zusatzmodule werden über eine signierte Lizenzdatei des Herstellers freigeschaltet.</p>
+      <table class="module-table">
+        <thead><tr><th>Modul</th><th>Inhalt</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for key, m in module_catalog.items() %}
+            <tr data-module="{{ key }}">
+              <td><strong>{{ m.name }}</strong>{% if m.licensed %} <span class="module-table__tag">Zusatzmodul</span>{% endif %}</td>
+              <td>{{ m.description }}</td>
+              <td>{% if key in enabled_modules %}<span class="module-state module-state--on">{{ 'Enthalten' if not m.licensed else 'Freigeschaltet' }}</span>{% else %}<span class="module-state module-state--off">Nicht freigeschaltet</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% set ls = module_license_status %}
+      <p class="module-license-line{% if ls.valid %} is-valid{% endif %}">
+        {% if ls.valid %}Lizenz {{ ls.license_id }} für {{ ls.licensee }}, gültig {% if ls.valid_until %}bis {{ ls.valid_until.strftime('%d.%m.%Y') }}{% else %}unbefristet{% endif %}.
+        {% else %}{{ ls.reason }}{% if ls.licensee %} ({{ ls.licensee }}){% endif %}{% endif %}
+      </p>
+      {% if not module_key_configured %}
+        <p class="settings-section__hint">Hinweis: In dieser Version ist noch kein Hersteller-Prüfschlüssel hinterlegt. Zusatzmodule können deshalb noch nicht freigeschaltet werden.</p>
+      {% endif %}
+      <form method="post" action="/dashboard/settings/license/import" enctype="multipart/form-data" class="module-license-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <label class="module-license-form__file">Lizenzdatei <input type="file" name="license_file" accept=".lexono-license,.json,.txt" /></label>
+        <button type="submit" class="settings-add-btn">Lizenz importieren</button>
+      </form>
+      {% if ls.valid %}
+      <form method="post" action="/dashboard/settings/license/remove" class="module-license-form" onsubmit="return confirm('Lizenz deaktivieren? Die Zusatzmodule werden gesperrt, ihre Daten bleiben erhalten.');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button type="submit" class="settings-add-btn module-license-form__remove">Lizenz deaktivieren</button>
+      </form>
+      {% endif %}
     </div>
   </div>
 

@@ -38,7 +38,6 @@ def test_plain_dates_and_event_dates_are_never_deadline_suggestions(text: str) -
     ("Die Restzahlung ist fällig am 14.04.2026.", date(2026, 4, 14)),
     ("Spätestens am 20.08.2026 muss der Einspruch eingehen.", date(2026, 8, 20)),
     ("Am 15.05.2026 läuft die Frist ab.", date(2026, 5, 15)),
-    ("hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.", date(2026, 6, 30)),
 ])
 def test_explicit_deadlines_are_recognised_as_explicit(text: str, expected: date) -> None:
     found = _dated(text)
@@ -46,6 +45,16 @@ def test_explicit_deadlines_are_recognised_as_explicit(text: str, expected: date
     candidate = found[expected]
     assert candidate.confidence >= 0.4
     assert "Art: Frist" in candidate.reasoning and "ausdrücklich" in candidate.reasoning
+
+
+def test_termination_date_is_a_termination_not_a_deadline_end() -> None:
+    """§74 (Owner-Auftrag): bis §73 stand dieser Fall oben als Fristende. Der Beendigungszeitpunkt bleibt erkannt
+    (Datum, Konfidenz), ist aber eine eigene Art "Beendigungstermin" - kein Fristende, keine Wirksamkeitsaussage."""
+    found = _dated("hiermit kündigen wir das Arbeitsverhältnis ordentlich zum 30.06.2026.")
+    assert set(found) == {date(2026, 6, 30)}
+    candidate = found[date(2026, 6, 30)]
+    assert candidate.confidence >= 0.4
+    assert "Art: Beendigungstermin (kein Fristende)" in candidate.reasoning and "Art: Frist" not in candidate.reasoning
 
 
 def test_deadline_with_start_event_keeps_event_and_duration_and_only_end_is_a_deadline() -> None:

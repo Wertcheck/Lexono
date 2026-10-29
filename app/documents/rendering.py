@@ -63,9 +63,17 @@ def clamp_dpi(dpi: int) -> int:
     return max(_MIN_DPI, min(_MAX_DPI, dpi))
 
 
+def _open(path: Path):
+    """DOCX ueber den lokalen Seitensatz (app/documents/docx_layout.py: Kopf-/Fusszeilen, Tabellenrahmen), sonst
+    direkt mit PyMuPDF (26.10.2026)."""
+    from app.documents.docx_layout import open_rendered
+
+    return open_rendered(path)
+
+
 def get_page_count(path: Path) -> int:
     try:
-        with pymupdf.open(path) as doc:
+        with _open(path) as doc:
             return doc.page_count
     except Exception as exc:  # PyMuPDF wirft diverse eigene Fehlerklassen
         raise DocumentRenderError(
@@ -77,7 +85,7 @@ def render_page_png(path: Path, page_number: int, *, dpi: int = DEFAULT_PAGE_DPI
     """`page_number` ist 1-basiert (wie in der UI angezeigt: "Seite 1")."""
     dpi = clamp_dpi(dpi)
     try:
-        with pymupdf.open(path) as doc:
+        with _open(path) as doc:
             if page_number < 1 or page_number > doc.page_count:
                 raise DocumentRenderError(
                     f"Seite {page_number} existiert nicht "

@@ -1,0 +1,401 @@
+{
+ "aufnahmen": {
+  "1920x1080-A1-basispaket-navigation-ohne-finanzen": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "1920x1080-A2-finanzen-gesperrt-admin": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "js_fehler": []
+  },
+  "1920x1080-A3-lizenz-tab-ohne-lizenz": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "1280x720-A1-basispaket-navigation-ohne-finanzen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "1280x720-A2-finanzen-gesperrt-admin": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "js_fehler": []
+  },
+  "1280x720-A3-lizenz-tab-ohne-lizenz": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "960x600-A1-basispaket-navigation-ohne-finanzen": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "960x600-A2-finanzen-gesperrt-admin": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "js_fehler": []
+  },
+  "960x600-A3-lizenz-tab-ohne-lizenz": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "1920x1080-B1-lizenz-tab-freigeschaltet": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "1920x1080-B2-navigation-mit-finanzbuchhaltung": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "1920x1080-B3-finanzbuchhaltung-nutzbar": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-B1-lizenz-tab-freigeschaltet": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "1280x720-B2-navigation-mit-finanzbuchhaltung": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "1280x720-B3-finanzbuchhaltung-nutzbar": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "960x600-B1-lizenz-tab-freigeschaltet": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Einstellungen",
+   "js_fehler": []
+  },
+  "960x600-B2-navigation-mit-finanzbuchhaltung": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "960x600-B3-finanzbuchhaltung-nutzbar": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-B4-mitarbeiter-finanzen-nur-lesen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen",
+    "Finanzbuchhaltung"
+   ],
+   "titel": "Finanzbuchhaltung",
+   "js_fehler": []
+  },
+  "1280x720-C1-nach-deaktivierung-navigation-ohne-finanzen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "js_fehler": []
+  },
+  "1280x720-C2-mitarbeiter-finanzen-gesperrt": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "A_chat_nav_ohne_fibu": true,
+  "A_fibu_admin_http": 403,
+  "A_fibu_mitarbeiter_http": 403,
+  "A_fibu_post_http": 403,
+  "A_basis_seiten_http": {
+   "/dashboard/chat": 200,
+   "/dashboard/clients": 200,
+   "/dashboard/matters": 200,
+   "/dashboard/tasks": 200,
+   "/dashboard/inbox": 200,
+   "/dashboard/knowledge": 200
+  },
+  "A_gefaelschte_lizenz": "Lizenz nicht übernommen: Die Lizenz ist nicht mit einem bekannten Lexono-Herstellerschlüssel signiert.",
+  "A_mitarbeiter_lizenzimport_http": 403,
+  "B_import": "Lizenz übernommen: Lexono Finanzen, Lexono Steuern",
+  "B_fibu_admin_http": 200,
+  "B_seed_konten_http": 200,
+  "C_deaktivieren": 200,
+  "C_fibu_admin_http": 403,
+  "C_fibu_konten_erhalten": 9,
+  "audit_lizenz": [
+   "module_license_imported",
+   "module_license_removed"
+  ],
+  "lizenzzeilen": [
+   1,
+   0
+  ]
+ }
+}

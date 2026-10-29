@@ -1,0 +1,10 @@
+gesperrt   | git bare, rev-parse HEAD (Suchreihenfolge CreateProcess != which) | Prozesszaun: Start von 'git' verweigert - nur zugelassene Programme mit absolute
+gesperrt   | git absoluter Pfad, rev-parse HEAD | Prozesszaun: git mit unzulaessiger Umgebung verweigert (GIT_*-Variablen gesetzt 
+gesperrt   | git mit GIT_EXEC_PATH in der Umgebung | Prozesszaun: git mit unzulaessiger Umgebung verweigert (GIT_*-Variablen gesetzt 
+gesperrt   | git mit GIT_CONFIG_PARAMETERS | Prozesszaun: git mit unzulaessiger Umgebung verweigert (GIT_*-Variablen gesetzt 
+gesperrt   | tesseract URL als Eingabe (libcurl) | Prozesszaun: tesseract mit unzulaessigen Argumenten verweigert (kein lokaler Pfa
+gesperrt   | tesseract UNC-Eingabe (SMB) | Prozesszaun: tesseract mit unzulaessigen Argumenten verweigert (kein lokaler Pfa
+gesperrt   | tesseract --tessdata-dir UNC | Prozesszaun: tesseract mit unzulaessigen Argumenten verweigert (Argumentmuster n
+gesperrt   | tesseract mit TESSDATA_PREFIX UNC | Prozesszaun: tesseract mit unzulaessiger Umgebung verweigert (TESSDATA_PREFIX ni
+gesperrt   | tesseract regulaer (pytesseract) | Prozesszaun: tesseract mit unzulaessigen Argumenten verweigert (Eingabedatei exi
+Loopback-Ports eingeschraenkt: False

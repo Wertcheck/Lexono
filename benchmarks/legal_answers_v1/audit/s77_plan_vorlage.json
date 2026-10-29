@@ -1,0 +1,85 @@
+{
+  "art": "aufrufplan - KEINE Ausfuehrung",
+  "git_commit": "c31fb99bb59acd27ab8ccc8f05ff1efbc27c2b5a",
+  "rubric_fingerprint": "3e1723c7adc4d17b888cbd641d96f311cc615a885e11c76aabd2db003c009552",
+  "lock_errors": [],
+  "repetitions": "OFFEN (Plan mit 1 Wiederholung)",
+  "calls": [
+    {
+      "spec_id": "LA-D005",
+      "case": "LE-D005",
+      "split": "dev",
+      "task_id": "Q1",
+      "kind": "chat",
+      "question": "Besteht ein Vorkaufsrecht, und bis wann muss es ausgeübt werden?",
+      "repetition": 1,
+      "case_fingerprint": "e48ac8cfe5c25dd91ae77c9dac957d3f5f06299b0d1ec7233ea41ff03d9339f9",
+      "spec_fingerprint": "c87b10aad2590435ea4494f0ded4b63c91d80eb1286f2616301b45a73bdf799a",
+      "spec_version": 2
+    },
+    {
+      "spec_id": "LA-D005",
+      "case": "LE-D005",
+      "split": "dev",
+      "task_id": "Q2",
+      "kind": "schriftsatz",
+      "question": "Ausübung des Vorkaufsrechts gegenüber der Verkäuferin mit Begründung.",
+      "repetition": 1,
+      "case_fingerprint": "e48ac8cfe5c25dd91ae77c9dac957d3f5f06299b0d1ec7233ea41ff03d9339f9",
+      "spec_fingerprint": "c87b10aad2590435ea4494f0ded4b63c91d80eb1286f2616301b45a73bdf799a",
+      "spec_version": 2
+    },
+    {
+      "spec_id": "LA-D006",
+      "case": "LE-D006",
+      "split": "dev",
+      "task_id": "Q1",
+      "kind": "chat",
+      "question": "Ist die Forderungsanmeldung der Agentur ordnungsgemäß, und schadet die fehlende Unterschrift?",
+      "repetition": 1,
+      "case_fingerprint": "99d64c0c2229676562767f9c64da6da55a6cb4ad0d55f72d4432cf2ba3a8ddcc",
+      "spec_fingerprint": "52bdf66356bc4447a34890887f6db08937cfd50d1499db0416b4ec4e859a8186",
+      "spec_version": 2
+    },
+    {
+      "spec_id": "LA-D006",
+      "case": "LE-D006",
+      "split": "dev",
+      "task_id": "Q2",
+      "kind": "schriftsatz",
+      "question": "Stellungnahme an die Agentur zur Anmeldung und zur ungeklärten Differenz.",
+      "repetition": 1,
+      "case_fingerprint": "99d64c0c2229676562767f9c64da6da55a6cb4ad0d55f72d4432cf2ba3a8ddcc",
+      "spec_fingerprint": "52bdf66356bc4447a34890887f6db08937cfd50d1499db0416b4ec4e859a8186",
+      "spec_version": 2
+    },
+    {
+      "spec_id": "LA-T004",
+      "case": "LE-T004",
+      "split": "test",
+      "task_id": "Q1",
+      "kind": "chat",
+      "question": "Kann die Mandantin trotz der behaupteten Immunität klagen, und bis wann?",
+      "repetition": 1,
+      "case_fingerprint": "c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6",
+      "spec_fingerprint": "7cd773851eed56ee575b052a5d5bf9b17d64a8ce109bc2fa562d691f96da8218",
+      "spec_version": 2
+    },
+    {
+      "spec_id": "LA-T004",
+      "case": "LE-T004",
+      "split": "test",
+      "task_id": "Q2",
+      "kind": "schriftsatz",
+      "question": "Kündigungsschutzklage mit Ausführungen zur Gerichtsbarkeit und zum Sonderkündigungsschutz.",
+      "repetition": 1,
+      "case_fingerprint": "c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6",
+      "spec_fingerprint": "7cd773851eed56ee575b052a5d5bf9b17d64a8ce109bc2fa562d691f96da8218",
+      "spec_version": 2
+    }
+  ],
+  "anzahl_aufrufe": 6,
+  "kosten_schaetzung_eur": "OFFEN",
+  "innerhalb_max_calls": "OFFEN",
+  "innerhalb_max_kosten": "OFFEN"
+}

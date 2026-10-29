@@ -96,6 +96,9 @@ class Settings(BaseSettings):
     # (Herkunft am Speicherort erkennbar), gleiches Sicherheitsmuster wie
     # schriftsatz_upload_storage_dir (app/chat/service.py::attach_document).
     chat_upload_storage_dir: str = "data/chat_uploads"
+    # Belege der Finanzbuchhaltung (28.10.2026) - eigener Ordner, je Mandant ein Unterordner (app/fibu/service.py).
+    # Bewusst getrennt von den Akten-Dokumenten: keine Datenschutzpruefung/KI-Pipeline, kein Chat-Kontext.
+    fibu_receipt_storage_dir: str = "data/fibu_receipts"
 
     # --- Klassifikation ---
     # Ab welchem Konfidenzwert (0.0-1.0) eine Klassifikation als
@@ -488,6 +491,10 @@ class Settings(BaseSettings):
     # 0 = keine automatische Loeschung (sicherer Default).
     retention_days: int = 0
 
+    # Qualitaetsmeldungen (ARCHITECTURE.md §75.1): Fundstelle/Beschreibung OFFENER Meldungen werden nach so vielen
+    # Tagen geleert (Meldung, Diagnose und Audit bleiben). Reduziert nur Inhalte - deshalb mit aktivem Default.
+    quality_report_content_days: int = 90
+
     # --- Allgemeine Oberflaechen-Einstellungen (06.10., Owner-Direktive
     # "LEXONO - EINSTELLUNGEN UI REBUILD") - dieselbe .env-basierte
     # Persistenz wie retention_days/mail_*/ollama_* oben (kein neues
@@ -580,6 +587,13 @@ class Settings(BaseSettings):
                 "nicht überschreiten"
             )
         return self
+
+    @field_validator("quality_report_content_days")
+    @classmethod
+    def quality_report_content_days_in_range(cls, value: int) -> int:
+        if not (1 <= value <= 3650):
+            raise ValueError("quality_report_content_days muss zwischen 1 und 3650 liegen")
+        return value
 
     @field_validator("retention_days")
     @classmethod

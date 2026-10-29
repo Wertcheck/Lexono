@@ -151,9 +151,12 @@ def test_fail_closed_on_ner_failure_is_unchanged() -> None:
     def failing(text):  # noqa: ANN001
         raise RuntimeError("NER nicht verfuegbar (simuliert)")
 
-    with pytest.raises(RuntimeError):
-        ClaudePrivacyGateway(pseudonymizer=Pseudonymizer(ner_detector=failing)).prepare_request(
-            purpose="formulate_draft", sachverhalt="Herrn Brenners Brief.", known_entities=MANDANT)
+    # §79 (B1): fail-closed heisst jetzt geordnet blockiert (keine Payload, fester Grund) statt ungefangener Ausnahme
+    from app.privacy.gateway import PRIVACY_CHECK_FAILED_REASON
+
+    result = ClaudePrivacyGateway(pseudonymizer=Pseudonymizer(ner_detector=failing)).prepare_request(
+        purpose="formulate_draft", sachverhalt="Herrn Brenners Brief.", known_entities=MANDANT)
+    assert result.allowed is False and result.payload is None and result.reasons == [PRIVACY_CHECK_FAILED_REASON]
 
 
 def test_e2e_chat_payload_uses_one_placeholder_for_all_variants(tmp_path) -> None:

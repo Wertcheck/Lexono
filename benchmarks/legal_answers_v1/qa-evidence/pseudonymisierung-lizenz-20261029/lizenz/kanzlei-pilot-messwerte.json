@@ -1,0 +1,206 @@
+{
+ "kanzlei-pilot-1672x941-hell": {
+  "fenster": [
+   1672,
+   941
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    400,
+    331
+   ],
+   [
+    "finance",
+    400,
+    755
+   ],
+   [
+    "finance_tax",
+    400,
+    1179
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ },
+ "kanzlei-pilot-1920x1080-hell": {
+  "fenster": [
+   1920,
+   1080
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    400,
+    455
+   ],
+   [
+    "finance",
+    400,
+    879
+   ],
+   [
+    "finance_tax",
+    400,
+    1303
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ },
+ "kanzlei-pilot-1280x720-hell": {
+  "fenster": [
+   1280,
+   720
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    311,
+    268
+   ],
+   [
+    "finance",
+    311,
+    603
+   ],
+   [
+    "finance_tax",
+    311,
+    939
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ },
+ "kanzlei-pilot-960x600-hell": {
+  "fenster": [
+   960,
+   600
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    400,
+    399
+   ],
+   [
+    "finance",
+    400,
+    399
+   ],
+   [
+    "finance_tax",
+    400,
+    399
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ },
+ "kanzlei-pilot-1672x941-dunkel": {
+  "fenster": [
+   1672,
+   941
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    400,
+    331
+   ],
+   [
+    "finance",
+    400,
+    755
+   ],
+   [
+    "finance_tax",
+    400,
+    1179
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ },
+ "kanzlei-pilot-1280x720-dunkel": {
+  "fenster": [
+   1280,
+   720
+  ],
+  "aktiver_tab": "Lizenz",
+  "seite_querscroll": false,
+  "container_querscroll": [],
+  "tabelle_querscroll": false,
+  "karten": [
+   [
+    "lexono",
+    311,
+    268
+   ],
+   [
+    "finance",
+    311,
+    603
+   ],
+   [
+    "finance_tax",
+    311,
+    939
+   ]
+  ],
+  "abgeschnitten": [],
+  "titel": [
+   "Lexono",
+   "Lexono | Finance",
+   "Lexono | Finance & Tax"
+  ],
+  "js_fehler": []
+ }
+}

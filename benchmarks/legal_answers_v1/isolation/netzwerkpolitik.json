@@ -1,0 +1,60 @@
+{
+  "_hinweis": "§86: ENTWURF der Netzwerkpolitik fuer eine spaetere, EXTERN durchgesetzte Isolation des Benchmark-Laufs. Nicht umgesetzt, nicht eingerichtet, nicht abgenommen. null = OFFEN (Owner/IT). Geprueft durch tests/test_s86_isolation_design.py. C-14 bleibt GESPERRT.",
+  "status": "ENTWURF",
+  "c14": "GESPERRT",
+  "durchsetzung": {
+    "ort": "ausserhalb_des_benchmark_prozesses",
+    "zielarchitektur": "dedizierte_vm_mit_hostseitiger_sperre",
+    "durchsetzungspunkte": [
+      {"ebene": "host_oder_perimeter", "beschreibung": "Virtueller Switch bzw. Host-/Perimeter-Firewall vor der VM; die VM kann sie nicht aendern", "verwaltet_durch": null},
+      {"ebene": "gast_firewall", "beschreibung": "Windows-Firewall in der VM mit Standard 'ausgehend blockieren' (zweite Linie, per Richtlinie gesperrt)", "verwaltet_durch": null}
+    ],
+    "nicht_als_grenze": ["python_audit_hook", "prozess_zulassungsliste", "providerpruefung"],
+    "pruefung_unabhaengig_vom_benchmark_prozess": true
+  },
+  "standard": {
+    "ausgehend": "blockieren",
+    "eingehend": "blockieren",
+    "ipv4": "blockieren",
+    "ipv6": "blockieren",
+    "tcp": "blockieren",
+    "udp": "blockieren",
+    "icmp": "blockieren",
+    "andere_protokolle": "blockieren"
+  },
+  "freigaben": [
+    {
+      "zweck": "Modell-Endpunkt des freigegebenen Benchmark-Laufs (C-14)",
+      "hostname": null,
+      "ip_adressen": null,
+      "protokoll": "tcp",
+      "port": null,
+      "tls_pflicht": true,
+      "gueltig_von": null,
+      "gueltig_bis": null,
+      "freigegeben_durch": null
+    }
+  ],
+  "dns": {
+    "modus": "kein_dns_in_der_vm",
+    "beschreibung": "Keine Namensaufloesung aus der VM (UDP/TCP 53, DoH 443, DoT 853, LLMNR 5355, mDNS 5353, NetBIOS 137 blockiert). Der freigegebene Hostname wird ausserhalb festgelegt und als feste Adresse eingetragen (hosts-Datei bzw. Regel auf IP-Ebene); Aenderungen nur mit neuer Freigabe.",
+    "alternative": "kontrollierter_resolver_nur_fuer_den_freigegebenen_namen",
+    "entscheidung": null
+  },
+  "proxy": {
+    "erlaubt": false,
+    "beschreibung": "Kein Proxy; WPAD/PAC deaktiviert; ein Proxy waere ein zweiter Ausgang"
+  },
+  "lokal": {
+    "loopback_erlaubt": true,
+    "beschreibung": "Nur innerhalb der VM (lokaler Recorder fuer Abnahmetests); keine Weiterleitung nach aussen"
+  },
+  "alternative_pfade_gesperrt": ["vpn", "zweiter_netzadapter", "wlan", "bluetooth_pan", "usb_netzwerk", "gemeinsame_ordner_des_hosts", "zwischenablage_des_hosts", "remotedesktop_ausgehend", "windows_update", "telemetrie", "zeitdienst_ntp"],
+  "fehlerverhalten": {
+    "regel_fehlt_oder_weicht_ab": "kein_start",
+    "nachweis_veraltet_oder_unlesbar": "kein_start",
+    "abnahmetest_fehlgeschlagen": "kein_start",
+    "verbindung_zu_nicht_freigegebenem_ziel_im_lauf": "lauf_abbrechen_und_melden"
+  },
+  "offene_entscheidungen": ["freigegebener_endpunkt", "dns_modus", "verwaltung_host_firewall", "verwaltung_gast_firewall", "pruefende_stelle_der_abnahme", "kanarienziel_fuer_abnahme", "kosten_und_hardware"]
+}

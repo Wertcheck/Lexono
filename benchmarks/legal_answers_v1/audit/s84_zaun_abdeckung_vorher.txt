@@ -1,0 +1,11 @@
+abgefangen      | socket.socket.connect
+abgefangen      | socket.socket.connect_ex
+abgefangen      | socket.create_connection
+NICHT abgefangen | socket.getaddrinfo (DNS)
+NICHT abgefangen | socket.gethostbyname (DNS)
+NICHT abgefangen | socket.socket.sendto (UDP)
+NICHT abgefangen | _socket.socket.connect (roher C-Socket)
+NICHT abgefangen | subprocess.Popen (Unterprozess)
+NICHT abgefangen | os.system
+NICHT abgefangen | os.startfile
+Audit-Hook (faengt C-Ebene/Prozessstart ab): nein

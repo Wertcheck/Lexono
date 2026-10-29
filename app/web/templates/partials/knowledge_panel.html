@@ -73,12 +73,26 @@
       <div class="law-info-card">
         <img src="/dashboard/static/img/law-library-illustration.png" alt=""
              class="law-info-card__illustration" />
-        <h3 class="law-info-card__title">Aktuelles Recht.<br />Lokal verfügbar.</h3>
+        {# Leerzeichen vor dem Umbruch: im schmalen Band-Layout (<= 1100 px) wird der <br> ausgeblendet #}
+        <h3 class="law-info-card__title">Aktuelles Recht. <br />Lokal verfügbar.</h3>
         <p class="law-info-card__text">
           Wählen Sie die relevanten Gesetzbücher und Normen aus. Die Inhalte
           werden lokal gespeichert und stehen Ihrer Kanzlei jederzeit für
           eine rechtssichere KI-Nutzung zur Verfügung.
         </p>
+        {# Kanzlei-Team + lokal verfuegbare Inhalte (27.10.): echte Zahlen aus der Benutzerverwaltung und den lokal
+           aktiven Gesetzen (knowledge_router.py::_build_knowledge_context) - keine Demo-Werte, keine Namen. #}
+        <dl class="law-info-card__stats">
+          <div class="law-info-card__stat">
+            <dt>Kanzlei-Team</dt>
+            <dd>{{ team_member_count }} aktive{{ "s Konto" if team_member_count == 1 else " Konten" }}{% if team_by_role %}
+              ({% for label, count in team_by_role %}{{ count }} {{ label }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}</dd>
+          </div>
+          <div class="law-info-card__stat">
+            <dt>Lokal verfügbar</dt>
+            <dd>{{ active_law_count }} {{ "Gesetz" if active_law_count == 1 else "Gesetze" }} · {{ active_section_count }} Paragraphen</dd>
+          </div>
+        </dl>
         <div class="law-info-card__feature">
           {{ icons.shield(class_="law-info-card__feature-icon") }}
           <div>
@@ -94,7 +108,8 @@
           </div>
         </div>
         <div class="law-info-card__feature">
-          {{ icons.clock(class_="law-info-card__feature-icon") }}
+          {# Referenz: Kreispfeile ("Aktualisierung") statt Uhr (27.10.) #}
+          {{ icons.refresh(class_="law-info-card__feature-icon") }}
           <div>
             <p class="law-info-card__feature-title">Immer aktuell</p>
             <p class="law-info-card__feature-text">Regelmäßige Updates verfügbar</p>

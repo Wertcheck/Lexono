@@ -1,0 +1,54 @@
+{
+ "modus": "ausfall",
+ "exe": "<QA-Kopie der Installation, spaCy-Modell umbenannt>\\Lexono.exe",
+ "recorder": "http://127.0.0.1:60109",
+ "lauf": "045049",
+ "schritte": {
+  "chat": {
+   "anfragen": 0,
+   "meldung_datenschutzfehler": true,
+   "meldung_nichts_uebermittelt": true,
+   "alte_meldung_technischer_fehler": false,
+   "rueckfragen_unsicher": 0,
+   "wire": [],
+   "auszug": "Die Datenschutzprüfung ist fehlgeschlagen (die Erkennung personenbezogener Daten war nicht verfügbar). Es wurde nichts an die KI übermittelt. Bitte erneut versuchen; bleibt der Fehler, Lexono neu starten bzw. die Administration informieren.\n\nNamen schützen\nverwalten"
+  },
+  "schriftsatz": {
+   "anfragen": 0,
+   "ui_pfad": "/dashboard/tools/schriftsatz",
+   "entwurf_geoeffnet": false,
+   "meldung_datenschutzfehler": true,
+   "meldung_nichts_uebermittelt": true,
+   "http_500_seite": false,
+   "wire": [],
+   "auszug": "Generierung blockiert: Die Datenschutzprüfung ist fehlgeschlagen (die Erkennung personenbezogener Daten war nicht verfügbar). Es wurde nichts an die KI übermittelt. Bitte erneut versuchen; bleibt der Fehler, Lexono neu starten bzw. die Administration informieren.\nAkte\n\nEntweder eine bestehende offen",
+   "entwuerfe_der_akte": 0,
+   "api_log": [
+    "privacy_check_failed",
+    "privacy_check_failed"
+   ]
+  }
+ },
+ "exe_sha256": "01bff911db8bedb19e6f4ff798f0fc1b7a0eab92845710bd44786f492b4999b9",
+ "exe_gleich_installiert": true,
+ "spacy_modell_vorhanden": false,
+ "app_pid": 3448,
+ "webview": "Edg/155.0.4283.62",
+ "nach_login": "/dashboard/chat",
+ "akte": {
+  "matter_id": "b1981392-b694-4e38-b392-0a3af65c0841",
+  "beteiligte": 1
+ },
+ "anfragen_gesamt": 0,
+ "app_beendet": true,
+ "applog": {
+  "zeilen": 13,
+  "geschuetzte_werte_im_log": [],
+  "kaution_text_im_log": false,
+  "datenschutzfehler_zeilen": [
+   "2026-10-19 04:51:09 WARNING lexono.privacy Datenschutzpruefung fehlgeschlagen (Schritt pseudonymisierung, OSError) - Anfrage blockiert, nichts gesendet",
+   "2026-10-19 04:51:15 WARNING lexono.privacy Datenschutzpruefung fehlgeschlagen (Schritt pseudonymisierung, OSError) - Anfrage blockiert, nichts gesendet"
+  ],
+  "testschluessel_im_log": false
+ }
+}

@@ -1,0 +1,94 @@
+{
+ "instanz": "INSTALLIERTE %LOCALAPPDATA%/Lexono/Lexono.exe (SHA-256 f3d0b6d0..., Build 00d5f8a), LEXONO_DATA_DIR Scratch, Port 8062, Cloud-Endpunkt 127.0.0.1:9 (tot)",
+ "pdf_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_00-chat-dokumentansicht-vor-dialog": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_00-chat-dokumentansicht-vor-dialog": "aa890de8796a8fe2",
+ "js_01-vorschau-markiert-pdf": true,
+ "pfad_01-vorschau-markiert-pdf": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_01-vorschau-markiert-pdf": "86d59b5495249758",
+ "zustand_01": {
+  "open": true,
+  "marks_masked": 8,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "pfad_01b-zustand": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_01b-zustand": "86d59b5495249758",
+ "js_02-hitl-rueckfrage-im-dialog": true,
+ "pfad_02-hitl-rueckfrage-im-dialog": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_02-hitl-rueckfrage-im-dialog": "7f049968a8f67f18",
+ "pfad_03-rueckfrage-beantwortet-bestaetigen-aktiv": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_03-rueckfrage-beantwortet-bestaetigen-aktiv": "1bf5374e7c710027",
+ "zustand_03": {
+  "open": true,
+  "marks_masked": 10,
+  "marks_open": 0,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": false,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "Alle Rückfragen beantwortet.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "js_04-pseudonymisiertes-ergebnis": true,
+ "pfad_04-pseudonymisiertes-ergebnis": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_04-pseudonymisiertes-ergebnis": "280fbbb4179fafab",
+ "js_05-original-ohne-markierung": true,
+ "pfad_05-original-ohne-markierung": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_05-original-ohne-markierung": "5c96c2a134a8b0cd",
+ "pfad_05b-nach-abbrechen-dialog-geschlossen": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6/document/08ef71f6-7f07-4479-bdce-ab3706d59381",
+ "sha_05b-nach-abbrechen-dialog-geschlossen": "05854e0f0fed1609",
+ "abbrechen_dialog_offen_danach": false,
+ "nach_abbrechen": {
+  "privacy_decisions": 0,
+  "document_releases": 0,
+  "review_status": "review"
+ },
+ "js_06-nach-bestaetigung-zurueck-im-chat": true,
+ "pfad_06-nach-bestaetigung-zurueck-im-chat": "/dashboard/chat/725c8909-de63-47de-80aa-6e63141c59b6",
+ "sha_06-nach-bestaetigung-zurueck-im-chat": "2fc5bb02f2126453",
+ "docx_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_07-vorschau-markiert-docx-analyse": "/dashboard/chat/7fbdea05-7b9c-4f48-9d06-fbb6157bbfe1/document/b43be9ad-b50f-4cff-bfc5-95f5e7760205",
+ "sha_07-vorschau-markiert-docx-analyse": "a154ad8a32abd6cc",
+ "zustand_07": {
+  "open": true,
+  "marks_masked": 3,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 1,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Analyse fortsetzen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal mit der eingebauten Layout-Engine (PyMuPDF) gesetzt. Schriftarten, Abstände, Seitenumbrüche sowie Kopf- und Fußzeilen können von der Darstellung in Microsoft Word abweichen.2 Kopf-/Fußzeile(n) dieses Word-Dokuments erscheinen in der Seitenansicht nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten. Tabell"
+ },
+ "review_json_pdf": {
+  "status": "ok",
+  "viewer_kind": "pages",
+  "not_located": [],
+  "limitations": [
+   "PDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  ]
+ }
+}

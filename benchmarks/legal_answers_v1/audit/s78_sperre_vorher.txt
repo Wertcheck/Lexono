@@ -1,0 +1,12 @@
+UNERKANNT | unveraendert | []
+ERKANNT   | Testakte LE-T004 Referenzfrist geaendert | ['LOCK: benchmarks/legal_e2e_v1/cases/test/LE-T004.json wurde geaendert (gesperrt c30ad0c11fe4, jetzt 49130644b876)']
+ERKANNT   | Testakte LE-T001 geloescht | ['LOCK: gesperrte Datei benchmarks/legal_e2e_v1/cases/test/LE-T001.json fehlt']
+ERKANNT   | zusaetzliche Testakte | ['LOCK: benchmarks/legal_e2e_v1/cases/test/LE-T099.json ist neu und nicht gesperrt']
+ERKANNT   | Test-Spezifikation geaendert | ['LOCK: benchmarks/legal_answers_v1/specs/test/LA-T004.json wurde geaendert (gesperrt 7cd773851eed, jetzt 79fbec91cc2e)']
+ERKANNT   | zusaetzliche Test-Spezifikation | ['LOCK: benchmarks/legal_answers_v1/specs/test/LA-T005.json ist neu und nicht gesperrt']
+ERKANNT   | Rubrik-Schwellen gesetzt | ['LOCK: benchmarks/legal_answers_v1/rubric.json wurde geaendert (gesperrt 3e1723c7adc4, jetzt a78133279430)']
+UNERKANNT | Quellenregister: Quelle auf nicht_geprueft | []
+ABSTURZ   | LOCK.json ungueltiges JSON | JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+ERKANNT   | LOCK.json leer | ['LOCK: benchmarks/legal_answers_v1/rubric.json ist neu und nicht gesperrt', 'LOCK: benchmarks/legal_answers_v1/specs/test/LA-T004.json ist neu und nicht gesperrt']
+ERKANNT   | LOCK.json fehlt | ['LOCK.json fehlt - Test-Split nicht gegen Aenderung geschuetzt']
+UNERKANNT | Testakte geaendert UND LOCK-Eintrag von Hand angepasst (ohne Historie) | []

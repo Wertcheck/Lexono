@@ -1,0 +1,52 @@
+{
+ "fenster_px": [
+  -9,
+  -9,
+  1929,
+  1089
+ ],
+ "arbeitsbereich_px": [
+  0,
+  0,
+  1920,
+  1080
+ ],
+ "maximiert": true,
+ "client_px": [
+  0,
+  29,
+  1920,
+  1080
+ ],
+ "client_im_arbeitsbereich": true,
+ "viewport": [
+  1536,
+  842,
+  1.25
+ ],
+ "main_horizontaler_ueberstand_px": 0,
+ "chat": {
+  "methode": "PrintWindow",
+  "fenster_px": [
+   1938,
+   1098
+  ],
+  "position": [
+   -9,
+   -9
+  ]
+ },
+ "fokus_nach_oeffnen": "H2#pseudo-center-title.pseudo-center__title",
+ "fusszeile_im_viewport": true,
+ "popup": {
+  "methode": "PrintWindow",
+  "fenster_px": [
+   1938,
+   1098
+  ],
+  "position": [
+   -9,
+   -9
+  ]
+ }
+}

@@ -1,0 +1,171 @@
+{# Zentraler Pseudonymisierungsdialog (25./26.10.2026) - EIN Pop-up ueber dem Chat fuer Dokumentanalyse,
+   Schriftsatzerstellung und ALLE Datenschutz-Rueckfragen (HITL). Der Chat bleibt darunter unveraendert die
+   Arbeitsflaeche; es gibt keine separate Dokumentspalte.
+   Aufbau (27.10.2026, Referenzbild "Pseudonymisierung pruefen"): Kopf (Titel, Erklaerung, Ansichtsumschaltung,
+   Schliessen) -> Dokumentleiste (Dokument-Tabs nur bei mehreren Dokumenten; Datei, Seitennavigation, Zoom, Vollbild,
+   Legende nach Kategorie) -> Seitenleiste mit Miniaturen | grosse Vorschau | Pruefpanel mit GENAU EINER Rueckfrage
+   (Fortschritt, Fund, Kontext, Frage, drei Optionen) -> Fussleiste (Status, Abbrechen, Weiter/Bestaetigen).
+   Inhalte laedt static/js/pseudonymization_center.js (GET .../pseudonymization-documents, .../pseudonymization-review)
+   - alles lokal, Dokumentinhalte ausschliesslich per textContent. Bestaetigen nutzt die bestehenden, serverseitig
+   pruefenden Endpunkte (confirm-release-and-generate bzw. privacy-review). #}
+{% macro dialog(conversation_id, matter_id, can_manage, open_document_id="", notice="", notice_kind="") %}
+  <dialog id="pseudonymization-center" class="modal pseudo-center" aria-labelledby="pseudo-center-title"
+          aria-describedby="pseudo-center-intro"
+          data-conversation-id="{{ conversation_id or '' }}" data-matter-id="{{ matter_id or '' }}"
+          data-can-manage="{{ '1' if can_manage else '0' }}" data-open-document="{{ open_document_id or '' }}"
+          data-notice="{{ notice }}" data-notice-kind="{{ notice_kind }}">
+    <header class="pseudo-center__header">
+      <span class="pseudo-center__title-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.3l7 2.5v6c0 4.6-3 7.9-7 9-4-1.1-7-4.4-7-9v-6l7-2.5Z"/><path d="M9 12.3l2.1 2.1 4-4"/></svg>
+      </span>
+      <div class="pseudo-center__heading">
+        <h2 class="pseudo-center__title" id="pseudo-center-title" tabindex="-1" autofocus>Pseudonymisierung prüfen</h2>
+        <p class="pseudo-center__intro" id="pseudo-center-intro">
+          Markierte Angaben wurden von der lokalen KI erkannt. Bitte prüfen Sie die Rückfragen und bestätigen Sie die
+          Pseudonymisierung – bis dahin wird nichts gesendet.
+        </p>
+      </div>
+      <div class="pseudo-center__views" role="tablist" aria-label="Ansicht">
+        <button type="button" role="tab" class="pseudo-center__tab is-active" data-pseudo-view="marked" aria-selected="true">Markierte Vorschau</button>
+        <button type="button" role="tab" class="pseudo-center__tab" data-pseudo-view="original" aria-selected="false">Original</button>
+        <button type="button" role="tab" class="pseudo-center__tab" data-pseudo-view="result" aria-selected="false">Pseudonymisiertes Ergebnis</button>
+      </div>
+      <button type="button" class="pseudo-center__close" data-pseudo-center-cancel aria-label="Schließen" title="Schließen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+
+    <div class="pseudo-center__docbar">
+      <div class="pseudo-center__doc-row" data-pseudo-doc-row hidden>
+        <div class="pseudo-center__doc-tabs" role="tablist" aria-label="Dokumente" data-pseudo-doc-tabs></div>
+        <label class="pseudo-center__doc-select-wrap" data-pseudo-doc-select-wrap hidden>
+          <select class="pseudo-center__doc-select" data-pseudo-doc-select aria-label="Dokument wählen"></select>
+        </label>
+      </div>
+      <div class="pseudo-center__toolbar" role="toolbar" aria-label="Vorschau">
+        <div class="pseudo-center__file">
+          <span class="pseudo-center__file-icon" data-pseudo-file-icon aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/></svg>
+            <span class="pseudo-center__file-type" data-pseudo-file-type></span>
+          </span>
+          <span class="pseudo-center__file-text">
+            <strong class="pseudo-center__file-name" data-pseudo-file-name></strong>
+            <span class="pseudo-center__file-meta" data-pseudo-subtitle></span>
+          </span>
+        </div>
+        <div class="pseudo-center__tool-group pseudo-center__tool-group--pages">
+          <button type="button" class="pseudo-center__tool" data-pseudo-page-prev aria-label="Vorherige Seite" title="Vorherige Seite">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+          </button>
+          <span class="pseudo-center__page-info" data-pseudo-page-info aria-live="polite"></span>
+          <button type="button" class="pseudo-center__tool" data-pseudo-page-next aria-label="Nächste Seite" title="Nächste Seite">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="pseudo-center__tool-group">
+          <button type="button" class="pseudo-center__tool" data-pseudo-zoom-out aria-label="Verkleinern" title="Verkleinern">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 12h12"/></svg>
+          </button>
+          <button type="button" class="pseudo-center__zoom" data-pseudo-zoom-fit title="Auf 100 % (Seitenbreite) zurücksetzen" data-pseudo-zoom>100 %</button>
+          <button type="button" class="pseudo-center__tool" data-pseudo-zoom-in aria-label="Vergrößern" title="Vergrößern">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 12h12M12 6v12"/></svg>
+          </button>
+        </div>
+        <button type="button" class="pseudo-center__tool pseudo-center__tool--solo" data-pseudo-maximize aria-pressed="false" title="Vorschau maximieren (Prüfpanel ausblenden)" aria-label="Vorschau maximieren">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        </button>
+        <div class="pseudo-center__legend" aria-label="Legende">
+          <span class="pseudo-center__legend-item"><i class="pseudo-center__swatch pseudo-center__swatch--person"></i>Person</span>
+          <span class="pseudo-center__legend-item"><i class="pseudo-center__swatch pseudo-center__swatch--organisation"></i>Organisation</span>
+          <span class="pseudo-center__legend-item"><i class="pseudo-center__swatch pseudo-center__swatch--adresse"></i>Adresse</span>
+          <span class="pseudo-center__legend-item"><i class="pseudo-center__swatch pseudo-center__swatch--datum"></i>Datum</span>
+          <span class="pseudo-center__legend-item"><i class="pseudo-center__swatch pseudo-center__swatch--sonstiges"></i>Sonstiges</span>
+          <span class="pseudo-center__legend-item" title="gestrichelt: Rückfrage noch offen"><i class="pseudo-center__swatch pseudo-center__swatch--open"></i>Rückfrage offen</span>
+          <span class="pseudo-center__legend-item" title="gepunktet: bleibt lesbar (nicht pseudonymisiert)"><i class="pseudo-center__swatch pseudo-center__swatch--kept"></i>bleibt lesbar</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pseudo-center__body" data-pseudo-body>
+      <section class="pseudo-center__document" aria-label="Dokumentvorschau">
+        <div class="pseudo-center__viewer">
+          <nav class="pseudo-center__thumbs" aria-label="Seitenübersicht" data-pseudo-thumbs hidden></nav>
+          <div class="pseudo-center__pages" data-pseudo-document>
+            <p class="pseudo-center__loading">Dokument wird lokal geprüft …</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="pseudo-center__panel" aria-label="Prüfung" data-pseudo-panel>
+        <div class="pseudo-center__panel-head">
+          <div class="pseudo-center__notice" data-pseudo-notice hidden></div>
+          <div class="pseudo-center__status" data-pseudo-status></div>
+          <div class="pseudo-center__progress" data-pseudo-progress hidden>
+            <div class="pseudo-center__progress-row">
+              <div class="pseudo-center__progress-text">
+                <strong data-pseudo-progress-text></strong>
+                <span data-pseudo-progress-percent></span>
+              </div>
+              <div class="pseudo-center__qnav">
+                <button type="button" class="pseudo-center__qnav-btn" data-pseudo-q-prev aria-label="Vorherige Rückfrage" title="Vorherige Rückfrage">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+                </button>
+                <button type="button" class="pseudo-center__qnav-btn" data-pseudo-q-next aria-label="Nächste offene Rückfrage" title="Nächste offene Rückfrage">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="pseudo-center__progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-pseudo-progress-bar>
+              <span data-pseudo-progress-fill></span>
+            </div>
+          </div>
+        </div>
+        <div class="pseudo-center__panel-scroll" data-pseudo-panel-scroll>
+          <div data-pseudo-questions></div>
+          <div data-pseudo-followup></div>
+          <div class="pseudo-center__extras">
+            <details class="pseudo-center__section" data-pseudo-mappings-wrap>
+              <summary>Erkannte Funde <span class="pseudo-center__count" data-pseudo-mapping-count></span></summary>
+              <ul class="pseudo-center__mappings" data-pseudo-mappings></ul>
+            </details>
+            <details class="pseudo-center__section" data-pseudo-protect-wrap>
+              <summary>Nicht erkannten Namen schützen</summary>
+              <form method="post" class="pseudo-center__protect" data-pseudo-protect-form>
+                <input type="hidden" name="csrf_token" value="" />
+                <input type="hidden" name="text_version" value="" />
+                <input type="hidden" name="return_to" value="" />
+                <input type="hidden" name="protected_terms" value="" />
+                <label class="form-hint" for="pseudo-protect-name">Name genau wie im Dokument (gilt für die ganze Akte):</label>
+                <div class="pseudo-center__protect-row">
+                  <input type="text" id="pseudo-protect-name" class="input" maxlength="80" autocomplete="off" data-pseudo-protect-input />
+                  <button type="submit" class="btn" data-pseudo-protect-submit>Schützen</button>
+                </div>
+              </form>
+            </details>
+            <section class="pseudo-center__section pseudo-center__quick" data-pseudo-quick hidden>
+              <h3 class="pseudo-center__section-title">Schnellaktionen zu diesem Dokument</h3>
+              <p class="form-hint">Übernimmt den Auftrag in das Chat-Eingabefeld; gesendet wird erst, wenn Sie ihn abschicken – die Prüfung erfolgt dann erneut.</p>
+              <div class="pseudo-center__quick-actions" data-pseudo-quick-actions></div>
+            </section>
+            <div class="pseudo-center__limits" data-pseudo-limits></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="pseudo-center__footer">
+      <div class="pseudo-center__footer-info">
+        <div class="pseudo-center__footer-status" data-pseudo-footer-status></div>
+        <span class="pseudo-center__open-count" data-pseudo-open-count aria-live="polite"></span>
+      </div>
+      <div class="pseudo-center__actions">
+        <button type="button" class="btn btn--ghost pseudo-center__cancel" data-pseudo-center-cancel>Abbrechen</button>
+        <button type="button" class="btn btn--primary pseudo-center__apply" data-pseudo-q-apply hidden><span data-pseudo-q-apply-label>Übernehmen und nächste Rückfrage</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <button type="button" class="btn btn--primary pseudo-center__confirm" data-pseudo-center-confirm disabled>Pseudonymisierung bestätigen und fortfahren</button>
+      </div>
+    </footer>
+  </dialog>
+  <script src="/dashboard/static/js/pseudonymization_center.js"></script>
+{% endmacro %}

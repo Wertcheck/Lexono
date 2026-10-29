@@ -32,6 +32,10 @@ class DraftingResult(BaseModel):
     # z. B. "Keine ausreichende Rechtsquelle gefunden fuer ..." - Punkte,
     # die der Anwalt vor Freigabe explizit pruefen sollte.
     open_review_points: list[str] = Field(default_factory=list)
+    # §66: Hinweise der Kontextauswahl (zurueckgehaltene/nicht beruecksichtigte Dokumente, Hoechstzahl, Suchgrenze,
+    # gekuerzte Dokumente) GETRENNT - der Chat zeigt sie lokal an (sie sind auch in `open_review_points` enthalten).
+    # Nie Teil einer Cloud-Anfrage.
+    context_notices: list[str] = Field(default_factory=list)
     # z. B. Hinweise auf unbestaetigte Fristen - weichere Warnungen als
     # offene Pruefungen, aber ebenfalls nicht verschwiegen.
     uncertainties: list[str] = Field(default_factory=list)

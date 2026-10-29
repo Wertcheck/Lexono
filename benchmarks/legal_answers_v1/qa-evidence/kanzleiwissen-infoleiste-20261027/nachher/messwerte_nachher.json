@@ -1,0 +1,686 @@
+{
+ "phase": "nachher",
+ "aufnahmen": {
+  "1920x1080-hell-01-gesetze-normen": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    438,
+    1240,
+    2007
+   ],
+   "infokarte": [
+    1550,
+    362,
+    340,
+    690
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 688,
+    "clientH": 688,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 1052,
+    "tabelle_unten": 1052,
+    "viewport_h": 1080,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1920x1080-dunkel-01-gesetze-normen": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    438,
+    1240,
+    2007
+   ],
+   "infokarte": [
+    1550,
+    362,
+    340,
+    690
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 688,
+    "clientH": 688,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 1052,
+    "tabelle_unten": 1052,
+    "viewport_h": 1080,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1536x842-hell-01-gesetze-normen": {
+   "viewport": [
+    1536,
+    842
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    438,
+    896,
+    2007
+   ],
+   "infokarte": [
+    1206,
+    362,
+    300,
+    452
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 450,
+    "clientH": 450,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 814,
+    "tabelle_unten": 814,
+    "viewport_h": 842,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1536x842-dunkel-01-gesetze-normen": {
+   "viewport": [
+    1536,
+    842
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    438,
+    896,
+    2007
+   ],
+   "infokarte": [
+    1206,
+    362,
+    300,
+    452
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 450,
+    "clientH": 450,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 814,
+    "tabelle_unten": 814,
+    "viewport_h": 842,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1366x768-hell-01-gesetze-normen": {
+   "viewport": [
+    1366,
+    768
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    378,
+    746,
+    2004
+   ],
+   "infokarte": [
+    1056,
+    302,
+    280,
+    446
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 444,
+    "clientH": 444,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 748,
+    "tabelle_unten": 748,
+    "viewport_h": 768,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1366x768-dunkel-01-gesetze-normen": {
+   "viewport": [
+    1366,
+    768
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    378,
+    746,
+    2004
+   ],
+   "infokarte": [
+    1056,
+    302,
+    280,
+    446
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 444,
+    "clientH": 444,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 748,
+    "tabelle_unten": 748,
+    "viewport_h": 768,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1280x720-hell-01-gesetze-normen": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    378,
+    660,
+    2004
+   ],
+   "infokarte": [
+    970,
+    302,
+    280,
+    398
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 396,
+    "clientH": 396,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 700,
+    "tabelle_unten": 700,
+    "viewport_h": 720,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1280x720-dunkel-01-gesetze-normen": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    378,
+    660,
+    2004
+   ],
+   "infokarte": [
+    970,
+    302,
+    280,
+    398
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 396,
+    "clientH": 396,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 700,
+    "tabelle_unten": 700,
+    "viewport_h": 720,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "960x600-hell-01-gesetze-normen": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [
+    "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
+   ],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    267,
+    434,
+    664,
+    1653
+   ],
+   "infokarte": [
+    266,
+    226,
+    676,
+    146
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 144,
+    "clientH": 144,
+    "scrollt_intern": false,
+    "overflow_y": "hidden",
+    "unten": 372,
+    "tabelle_unten": 570,
+    "viewport_h": 600,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "960x600-hell-01b-infoleiste-unten": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [
+    "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
+   ],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    267,
+    434,
+    664,
+    1653
+   ],
+   "infokarte": [
+    266,
+    226,
+    676,
+    146
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 144,
+    "clientH": 144,
+    "scrollt_intern": false,
+    "overflow_y": "hidden",
+    "unten": 372,
+    "tabelle_unten": 570,
+    "viewport_h": 600,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "960x600-dunkel-01-gesetze-normen": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [
+    "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
+   ],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    267,
+    434,
+    664,
+    1653
+   ],
+   "infokarte": [
+    266,
+    226,
+    676,
+    146
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 144,
+    "clientH": 144,
+    "scrollt_intern": false,
+    "overflow_y": "hidden",
+    "unten": 372,
+    "tabelle_unten": 570,
+    "viewport_h": 600,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "960x600-dunkel-01b-infoleiste-unten": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [
+    "SPAN|Sozialgesetzbuch (SGB) Neuntes|965|in-scroll"
+   ],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    267,
+    434,
+    664,
+    1653
+   ],
+   "infokarte": [
+    266,
+    226,
+    676,
+    146
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 144,
+    "clientH": 144,
+    "scrollt_intern": false,
+    "overflow_y": "hidden",
+    "unten": 372,
+    "tabelle_unten": 570,
+    "viewport_h": 600,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1920x1080-hell-02-rechtsprechung": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Rechtsprechung 2",
+   "tabelle": [
+    279,
+    450,
+    1610,
+    151
+   ],
+   "infokarte": null,
+   "zeilen": 2,
+   "karte": null
+  },
+  "1920x1080-hell-03-vorlagen": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Vorlagen & Muster 2",
+   "tabelle": [
+    279,
+    394,
+    1610,
+    134
+   ],
+   "infokarte": null,
+   "zeilen": 2,
+   "karte": null
+  },
+  "1920x1080-hell-04-fachwissen": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Fachwissen 3",
+   "tabelle": [
+    279,
+    450,
+    1610,
+    210
+   ],
+   "infokarte": null,
+   "zeilen": 3,
+   "karte": null
+  },
+  "1920x1080-hell-05-interne-dokumente": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Interne Dokumente 2",
+   "tabelle": [
+    279,
+    450,
+    1610,
+    151
+   ],
+   "infokarte": null,
+   "zeilen": 2,
+   "karte": null
+  },
+  "1920x1080-hell-06-suche-treffer": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": [
+    279,
+    438,
+    1250,
+    96
+   ],
+   "infokarte": [
+    1550,
+    362,
+    340,
+    690
+   ],
+   "zeilen": 1,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 688,
+    "clientH": 688,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 1052,
+    "tabelle_unten": 1052,
+    "viewport_h": 1080,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1920x1080-hell-07-suche-ohne-treffer": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 5",
+   "tabelle": null,
+   "infokarte": [
+    1550,
+    362,
+    340,
+    690
+   ],
+   "zeilen": 0,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 688,
+    "clientH": 688,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 1052,
+    "tabelle_unten": 1052,
+    "viewport_h": 1080,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1920x1080-hell-08-gesetz-geoeffnet": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 0,
+   "tabelle": null,
+   "infokarte": null,
+   "zeilen": 0,
+   "karte": null,
+   "aktiv": ""
+  },
+  "1920x1080-hell-09-erfassen-rechtsprechung": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Rechtsprechung 2",
+   "tabelle": [
+    279,
+    870,
+    1610,
+    151
+   ],
+   "infokarte": null,
+   "zeilen": 2,
+   "karte": null
+  },
+  "1920x1080-hell-10-leer-gesetze": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Gesetze & Normen 0",
+   "tabelle": [
+    279,
+    438,
+    1240,
+    2007
+   ],
+   "infokarte": [
+    1550,
+    362,
+    340,
+    690
+   ],
+   "zeilen": 36,
+   "karte": {
+    "sichtbar": true,
+    "scrollH": 688,
+    "clientH": 688,
+    "scrollt_intern": false,
+    "overflow_y": "visible",
+    "unten": 1052,
+    "tabelle_unten": 1052,
+    "viewport_h": 1080,
+    "ganz_im_viewport": true,
+    "main_scroll_noetig": false
+   }
+  },
+  "1920x1080-hell-11-leer-rechtsprechung": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "main_scrollt": false,
+   "ueber_rechts": [],
+   "kacheln": 5,
+   "aktiv": "Rechtsprechung 0",
+   "tabelle": null,
+   "infokarte": null,
+   "zeilen": 0,
+   "karte": null
+  }
+ },
+ "funktion": {
+  "htmx_kategorie": {
+   "url": "/dashboard/knowledge?category=expertise",
+   "aktiv": "Fachwissen 3",
+   "titel": "Fachwissen"
+  },
+  "gesetz_link": "/dashboard/laws/BDSG"
+ }
+}

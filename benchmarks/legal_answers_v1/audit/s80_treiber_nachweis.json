@@ -1,0 +1,182 @@
+{
+ "art": "§80 Nachweis - Mock-Provider bzw. lokaler Recorder; tatsaechliche Kosten 0 EUR (Mock-Usage simuliert)",
+ "mock_lauf": {
+  "status": "abgeschlossen",
+  "diagnose": [],
+  "aufrufe": {
+   "LA-D005.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "ea90a9c1f83be40d"
+   },
+   "LA-D005.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "db57dd1d6dc54b77"
+   },
+   "LA-D006.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "fb92cfa19286e1d1"
+   },
+   "LA-D006.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "47a25a5809875d83"
+   },
+   "LA-T004.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "1e285efe947cae92"
+   },
+   "LA-T004.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "849fa3b9594809d2"
+   }
+  },
+  "kostenbuch": {
+   "geschaetzt_eur": 3.0,
+   "tatsaechlich_eur": 0.063,
+   "unbekannt": [],
+   "restbudget_eur": 9.937,
+   "aufrufe_gesendet": 6,
+   "fehlversuche": 0
+  },
+  "ereignisse": [
+   "gestartet",
+   "abgeschlossen"
+  ],
+  "integritaet": "OK",
+  "zugriff_konten": 1,
+  "provider_aufrufe": 6
+ },
+ "recorder_lauf": {
+  "status": "abgeschlossen",
+  "diagnose": [],
+  "aufrufe": {
+   "LA-D005.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "485b2b981b70d933"
+   },
+   "LA-D005.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "5430e352660b34bf"
+   },
+   "LA-D006.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "142d9483259f02fe"
+   },
+   "LA-D006.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "090655808b840782"
+   },
+   "LA-T004.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "84a0e1866b3d04a5"
+   },
+   "LA-T004.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 1.8e-05,
+    "record_sha256": "01a922060e51bb4a"
+   }
+  },
+  "kostenbuch": {
+   "geschaetzt_eur": 3.0,
+   "tatsaechlich_eur": 0.000108,
+   "unbekannt": [],
+   "restbudget_eur": 9.999892,
+   "aufrufe_gesendet": 6,
+   "fehlversuche": 0
+  },
+  "ereignisse": [
+   "gestartet",
+   "abgeschlossen"
+  ],
+  "integritaet": "OK",
+  "zugriff_konten": 1,
+  "http_anfragen": 6,
+  "pfade": [
+   "/v1/messages"
+  ],
+  "nur_testschluessel": true,
+  "lecks": []
+ },
+ "wiederanlauf": {
+  "status": "abgeschlossen",
+  "diagnose": [],
+  "aufrufe": {
+   "LA-D005.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "bb37dff20e377093"
+   },
+   "LA-D005.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "493ca68cd5ce352f"
+   },
+   "LA-D006.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "1f3172e46c2aa359"
+   },
+   "LA-D006.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "c54e71eb434586bd"
+   },
+   "LA-T004.Q1.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "a220a66dc2a54392"
+   },
+   "LA-T004.Q2.r1": {
+    "status": "erledigt",
+    "gesendet": true,
+    "kosten_eur": 0.0105,
+    "record_sha256": "0d80ac16d5747ae5"
+   }
+  },
+  "kostenbuch": {
+   "geschaetzt_eur": 3.0,
+   "tatsaechlich_eur": 0.063,
+   "unbekannt": [],
+   "restbudget_eur": 9.937,
+   "aufrufe_gesendet": 6,
+   "fehlversuche": 0
+  },
+  "ereignisse": [
+   "gestartet",
+   "fortgesetzt",
+   "abgeschlossen"
+  ],
+  "integritaet": "OK",
+  "zugriff_konten": 1,
+  "aufrufe_vor_absturz": 3,
+  "aufrufe_gesamt": 6,
+  "doppelte_payloads": 0
+ }
+}

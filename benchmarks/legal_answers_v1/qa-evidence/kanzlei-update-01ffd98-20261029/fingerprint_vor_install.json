@@ -1,0 +1,49 @@
+{
+ "installierte_app": {
+  "exe": {
+   "vorhanden": true,
+   "bytes": 35182229,
+   "mtime": 1793219668.0,
+   "sha256": "28F9C043D4227FAE21BC31FCC5A0DA515CC3BD138B7EC077BB9F8B047254AA41"
+  },
+  "dateien": 1027,
+  "migrationen": [
+   "schritt3_039_prompt_templates_start_page.py",
+   "schritt3_040_fibu_mvp.py",
+   "schritt3_041_modules_and_tax.py",
+   "schritt3_042_client_user_access.py"
+  ]
+ },
+ "produktiv_daten": {
+  "db": {
+   "vorhanden": true,
+   "bytes": 25915392,
+   "mtime": 1793236662.096524,
+   "sha256": "9F0B1D442084C54946ECD882A48301141A0E9CD2B65BA8999871E67BE2787538"
+  },
+  "env": {
+   "vorhanden": true,
+   "bytes": 1402,
+   "mtime": 1793236168.5051644,
+   "sha256": "8A7DE8F3545414F4F6201A6ABB5D946DAF6CF5BA7D810A68FA13612C0D7817DF"
+  },
+  "setup_complete": {
+   "vorhanden": true,
+   "bytes": 1,
+   "mtime": 1789243238.5806968,
+   "sha256": "6B86B273FF34FCE19D6B804EFF5A3F5747ADA4EAA22F1D49C01E52DDB7875B4B"
+  }
+ },
+ "uninstall_eintraege": [
+  "HKCU\\{9F4B9E7A-2B1E-4C77-9C7C-3D9B5E5B0B21}}_is1 = Lexono"
+ ],
+ "verknuepfungen": {
+  "desktop_onedrive": {
+   "Lexono.lnk": "60855569D7D8419D63153FDB2C16F6717B8B8180BDE82660D9793EA272E3E78B"
+  },
+  "startmenue": {
+   "Lexono\\Lexono deinstallieren.lnk": "1140A843753D840F1F8134E27F223D712A8F81A45C7DAC7F7D269D2985001C7B",
+   "Lexono\\Lexono.lnk": "FB76729E6BB71D4F3040C109B11EEAB2C4B983DDD69F6856EF0DD465D83172AA"
+  }
+ }
+}

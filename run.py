@@ -127,6 +127,44 @@ _WEBVIEW2_DOWNLOAD_URL = "https://developer.microsoft.com/en-us/microsoft-edge/w
 #: `_NativeApi` nachgebildet.
 _MIN_WINDOW_WIDTH = 900
 _MIN_WINDOW_HEIGHT = 600
+#: Startgroesse des nativen Fensters (logische Pixel).
+_START_WINDOW_WIDTH = 1400
+_START_WINDOW_HEIGHT = 900
+
+
+def _should_start_maximized(width: int, height: int, work_area: tuple[int, int] | None) -> bool:
+    """Passt die Startgroesse nicht in den Arbeitsbereich (Bildschirm ohne Taskleiste, logische Pixel), startet das
+    Fenster maximiert (26.10.2026, native Desktopprüfung, gemessen: 1400x900 auf 1536x864 bei 125 % Skalierung - die
+    unteren ~40 px samt Fussleiste des Pseudonymisierungsdialogs lagen unterhalb des Bildschirmrands). Ohne Messwert
+    (`None`) bleibt alles wie bisher."""
+    if work_area is None:
+        return False
+    work_w, work_h = work_area
+    return width > work_w or height > work_h
+
+
+def _work_area_logical(screens) -> tuple[int, int] | None:
+    """Arbeitsbereich des Hauptbildschirms in LOGISCHEN Pixeln: Verhaeltnis Arbeitsbereich/Bildschirm aus der Windows-API
+    (beide Werte im selben Koordinatenraum, unabhaengig von der DPI-Betriebsart des Prozesses) angewendet auf die
+    logische Bildschirmgroesse von pywebview. Fehler -> None (kein Eingriff)."""
+    if sys.platform != "win32" or not screens:
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        rect = wintypes.RECT()
+        user32 = ctypes.windll.user32
+        if not user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):  # SPI_GETWORKAREA
+            return None
+        screen_w, screen_h = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        if screen_w <= 0 or screen_h <= 0:
+            return None
+        primary = screens[0]
+        return (int(primary.width * (rect.right - rect.left) / screen_w),
+                int(primary.height * (rect.bottom - rect.top) / screen_h))
+    except Exception:  # noqa: BLE001 - rein kosmetisch, nie den Start verhindern
+        return None
 
 
 def _bundle_base_dir() -> Path:
@@ -950,6 +988,11 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
     import webview
 
     native_api = _NativeApi()
+    try:
+        screens = webview.screens
+    except Exception:  # noqa: BLE001 - ohne Bildschirmdaten wie bisher
+        screens = []
+    start_maximized = _should_start_maximized(_START_WINDOW_WIDTH, _START_WINDOW_HEIGHT, _work_area_logical(screens))
     window = webview.create_window(
         # Bewusst LEER, nicht "Lexono" (Owner-Fund, 19.09., per neuem
         # Login-Referenzbild bestaetigt und gegen die bereits laenger
@@ -964,9 +1007,12 @@ def _serve_with_window(settings) -> int:  # noqa: ANN001 - Settings-Typ nur lazy
         # der .exe-Ressource, unabhaengig vom Fenstertitel-Text).
         "",
         f"{base_url}/dashboard/login",
-        width=1400,
-        height=900,
+        width=_START_WINDOW_WIDTH,
+        height=_START_WINDOW_HEIGHT,
         min_size=(_MIN_WINDOW_WIDTH, _MIN_WINDOW_HEIGHT),
+        # Passt 1400x900 nicht auf den Bildschirm (z. B. 1536x864 bei 125 %), maximiert starten statt die Fussleiste
+        # unter den Bildschirmrand zu legen - siehe `_should_start_maximized`.
+        maximized=start_maximized,
         resizable=True,
         # Bewusst KEIN frameless=True mehr (siehe _NativeApi-Kommentar
         # oben) - natives Fenster-Chrome ist Voraussetzung fuer echtes
@@ -1135,31 +1181,56 @@ def _first_run_setup_required(data_dir: Path) -> bool:
         get_settings.cache_clear()
 
 
-def cmd_setup(data_dir: Path, *, force: bool) -> int:
+def cmd_setup(data_dir: Path, *, force: bool, gui: bool = False) -> int:
     from app.config.settings import Settings
     from app.setup import WizardError, run_setup_wizard
 
     print("=== Lexono Setup-Assistent ===")
     print(f"Datenverzeichnis: {data_dir}")
-    admin_email = input("E-Mail-Adresse des ersten Admin-Nutzers: ").strip()
-    entered_password = getpass.getpass(
-        "Initiales Admin-Passwort (leer lassen, um automatisch eines zu generieren): "
-    )
-    admin_password = entered_password or None
+    try:
+        admin_email = input("E-Mail-Adresse des ersten Admin-Nutzers: ").strip()
+        entered_password = getpass.getpass(
+            "Initiales Admin-Passwort (leer lassen, um automatisch eines zu generieren): "
+        )
+        admin_password = entered_password or None
 
-    # Lokale KI ist Bestandteil der Zielarchitektur (Phase 3, §6: "Local AI
-    # ist jetzt Pflicht") - deshalb als Standardvorschlag beim Setup
-    # angeboten (leere Eingabe = Ja), aber NICHT erzwungen: ein Nein hier
-    # (oder ein spaeterer Fehlschlag, z. B. fehlendes Internet) verhindert
-    # nicht die Installation/Nutzung der Anwendung, siehe run_setup_wizard.
-    setup_local_ai_answer = input(
-        "Lokale KI (Ollama) jetzt automatisch einrichten? Erkennt die "
-        "Hardware und laedt bei Bedarf ein passendes Modell herunter "
-        "(Groesse und Dauer haengen von der erkannten Hardware ab - von "
-        "unter einer Minute bis zu einer Stunde oder mehr, je nach "
-        "Internetverbindung; waehrend des Downloads erscheint regelmaessig "
-        "eine Statusmeldung). [J/n]: "
-    ).strip().lower()
+        # Lokale KI ist Bestandteil der Zielarchitektur (Phase 3, §6: "Local AI
+        # ist jetzt Pflicht") - deshalb als Standardvorschlag beim Setup
+        # angeboten (leere Eingabe = Ja), aber NICHT erzwungen: ein Nein hier
+        # (oder ein spaeterer Fehlschlag, z. B. fehlendes Internet) verhindert
+        # nicht die Installation/Nutzung der Anwendung, siehe run_setup_wizard.
+        setup_local_ai_answer = input(
+            "Lokale KI (Ollama) jetzt automatisch einrichten? Erkennt die "
+            "Hardware und laedt bei Bedarf ein passendes Modell herunter "
+            "(Groesse und Dauer haengen von der erkannten Hardware ab - von "
+            "unter einer Minute bis zu einer Stunde oder mehr, je nach "
+            "Internetverbindung; waehrend des Downloads erscheint regelmaessig "
+            "eine Statusmeldung). [J/n]: "
+        ).strip().lower()
+    except (EOFError, OSError):
+        # ROOT-CAUSE-FIX (stiller Absturz beim GUI-/Doppelklick-Start):
+        # Ohne interaktive Konsole (Start ueber die Verknuepfung/wscript)
+        # koennen input()/getpass() nichts lesen und warfen ein ungefangenes
+        # EOFError - die Anwendung starb unbemerkt (kein Fenster, keine
+        # Meldung). Stattdessen BEWUSST mit einer umsetzbaren Anweisung
+        # abbrechen; die Ersteinrichtung und die Authentifizierung werden
+        # dabei NICHT umgangen (es wird kein Benutzer angelegt).
+        message = (
+            "Lexono muss einmalig eingerichtet werden (es ist noch kein "
+            "Administrator-Konto vorhanden). Beim Start ueber die Verknuepfung "
+            "steht dafuer jedoch keine Tastatureingabe zur Verfuegung.\n\n"
+            "Bitte die Ersteinrichtung EINMAL aus einer Eingabeaufforderung "
+            "(cmd.exe) ausfuehren:\n"
+            '    "%LOCALAPPDATA%\\Lexono\\Lexono.exe" setup\n\n'
+            "Alternativ ein Administrator-Konto nicht-interaktiv anlegen "
+            "(liest ADMIN_EMAIL / ADMIN_INITIAL_PASSWORD aus der Umgebung):\n"
+            '    "%LOCALAPPDATA%\\Lexono\\Lexono.exe" create-admin\n\n'
+            "Danach Lexono normal ueber die Verknuepfung starten."
+        )
+        if gui:
+            _show_startup_error(message)
+        print("FEHLER: " + message, file=sys.stderr)
+        return 1
     setup_local_ai = setup_local_ai_answer not in ("n", "nein", "no")
 
     default_host = Settings.model_fields["host"].default
@@ -1271,8 +1342,31 @@ def main(argv: list[str] | None = None) -> int:
     # getattr mit sicherem Default statt args.no_window direkt).
     open_window = not getattr(args, "no_window", False)
 
+    env_existed_already = (data_dir / ".env").exists()
+    # ROOT-CAUSE-FIX (stiller Absturz beim GUI-/Doppelklick-Start ueber
+    # Start.vbs/wscript): Ausstehende Datenbank-Migrationen MUESSEN vor dem
+    # First-Run-Check laufen. `_first_run_setup_required()` fragt die
+    # users-Tabelle ab; gegen eine noch nicht migrierte Datenbank (Programm
+    # neuer als DB-Schema) wirft diese Abfrage und wurde als "kein Benutzer
+    # -> Ersteinrichtung" fehlgedeutet, was den interaktiven Setup-Assistenten
+    # ausloeste - ohne Konsole ein stiller EOFError. Nur migrieren, wenn
+    # bereits eine Konfiguration (.env) existiert: eine echte Ersteinrichtung
+    # (keine .env) legt Schema + Admin ueber den Setup-Assistenten selbst an
+    # (und haette hier mangels Tabellen ohnehin nichts zu pruefen). cmd_migrate
+    # ist idempotent - der spaetere, unveraenderte Aufruf in cmd_serve ist dann
+    # ein wirkungsloser No-op (keine doppelte Migration, keine zweite Sicherung).
+    if env_existed_already:
+        migrate_exit_code = cmd_migrate()
+        if migrate_exit_code != 0:
+            if open_window:
+                _show_startup_error(
+                    "Lexono konnte die Datenbank beim Start nicht aktualisieren und wurde nicht "
+                    "gestartet. Ihre Daten wurden nicht veraendert.\n\nDetails und Hinweise zur "
+                    "Wiederherstellung stehen in der Datei app.log im Lexono-Datenverzeichnis."
+                )
+            return migrate_exit_code
+
     if _first_run_setup_required(data_dir):
-        env_existed_already = (data_dir / ".env").exists()
         if env_existed_already:
             print(
                 "Unvollstaendige Ersteinrichtung erkannt (Konfiguration vorhanden, "
@@ -1280,7 +1374,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         else:
             print("Keine Konfiguration gefunden - Ersteinrichtung wird gestartet.")
-        setup_exit_code = cmd_setup(data_dir, force=env_existed_already)
+        setup_exit_code = cmd_setup(data_dir, force=env_existed_already, gui=open_window)
         if setup_exit_code != 0:
             return setup_exit_code
     return cmd_serve(open_window=open_window)

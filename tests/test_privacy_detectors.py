@@ -486,6 +486,39 @@ def test_more_street_forms_are_detected(text: str, expected: str) -> None:
     assert expected in [s.value for s in detect_address(text)]
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        # Real (24.10.2026, synthetische Finanzamt-Musterdokumente): die letzten fuenf Ziffern der Steuernummer
+        # "12/345/67890" + erstes Wort der Folgezeile wurden als "PLZ + Ort" gelesen; nach der Ueberlappung mit der
+        # Steuernummer blieb das Alltagswort ("Antrag") als ADRESSE-Platzhalter - die Antwortpruefung blockierte dann
+        # jede KI-Antwort, die dieses Wort normal verwendete.
+        "Steuernummer 12/345/67890\nAntrag\nHiermit legen wir Einspruch ein.",
+        "Steuernummer 12/345/67890\nSteuerpflichtiger\nMuster & Beispiel Handelsservice GmbH",
+        "Steuernummer 12/345/67890 Offener Betrag",
+    ],
+)
+def test_tail_of_a_tax_number_is_not_read_as_postal_code(text: str) -> None:
+    from app.privacy.detectors import detect_address
+
+    assert detect_address(text) == []
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Beispielstraße 17 · 10115 Berlin", "10115 Berlin"),
+        ("10115 Berlin", "10115 Berlin"),
+        ("D-10115 Berlin", "10115 Berlin"),  # Laenderkennzeichen-Schreibweise bleibt eine Anschrift
+        ("Postanschrift\n10115\nBerlin", "10115\nBerlin"),  # PLZ und Ort auf getrennten Zeilen bleiben erkannt
+    ],
+)
+def test_real_postal_codes_are_still_detected(text: str, expected: str) -> None:
+    from app.privacy.detectors import detect_address
+
+    assert any(expected in s.value for s in detect_address(text))
+
+
 def test_longer_organisation_absorbs_a_contained_place_span() -> None:
     """"Ostsee" in "Ostsee Anlagenbau KG" wurde als Ort ersetzt, der Rest der Firma
     blieb lesbar und die Anweisung bekam einen anderen Platzhalter."""
@@ -701,7 +734,9 @@ def test_overlap_resolution_is_unchanged_for_contained_disjoint_and_different_ca
     a, b = _span("person", 0, "Wiebe"), _span("person", 10, "Kostka")
     assert _resolve_overlaps([a, b]) == [a, b]  # ueberlappungsfrei bleibt unveraendert
     p, o = _span("person", 0, "Abc Def"), _span("ort", 4, "Def Ghi")
-    assert _resolve_overlaps([p, o]) == [p]  # andere Kategorie: bisheriges Verhalten
+    # §50 (bewusst geaendert): auch bei anderer Kategorie bleibt kein Zeichen unersetzt - vorher fiel "Ghi" heraus
+    # (real: Rest "1234567" einer Rufnummer im Cloud-Payload, seed-009/010)
+    assert _resolve_overlaps([p, o]) == [p, _span("ort", 8, "Ghi")]
 
 
 def test_titled_name_after_a_partial_ner_span_is_fully_pseudonymized_end_to_end() -> None:

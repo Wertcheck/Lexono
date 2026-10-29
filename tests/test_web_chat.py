@@ -41,7 +41,7 @@ from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload
 from app.research.service import LegalResearchService
 from app.search.service import DocumentSearchService
-from tests.auth_test_utils import create_test_user, extract_csrf, login, login_as_admin, seed_roles
+from tests.auth_test_utils import extract_upload_token, create_test_user, extract_csrf, login, login_as_admin, seed_roles
 from tests.fake_embedding_provider import FakeEmbeddingProvider
 
 
@@ -258,9 +258,10 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
         pdf.new_page().insert_text((72, 72), "Rechnung Nr. 4711 über Estricharbeiten, Betrag 1.200,00 EUR.")
         pdf_bytes = pdf.tobytes()
 
-    response = client.post(
+    # §57: Schritt 1 - nur hochladen: Weiterleitung zur Dokumentansicht, KEIN KI-Aufruf
+    upload = client.post(
         "/dashboard/chat/send",
-        data={
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text),
             "csrf_token": csrf,
             "conversation_id": "",
             "content": f"Bitte fasse das Dokument für Mandantin {marker_name} zusammen.",
@@ -268,17 +269,31 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
         files={"documents": ("beleg.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=False,
     )
-    assert response.status_code == 303
+    assert upload.status_code == 303 and "uploaded=1" in upload.headers["location"]
+    assert writer.received_payloads == []
 
     conversation = db_session.query(ChatConversation).first()
     assert conversation is not None
-    user_message = (
+    upload_message = (
         db_session.query(ChatMessage)
-        .filter_by(conversation_id=conversation.id, role="user")
-        .first()
+        .filter_by(conversation_id=conversation.id, role="upload")
+        .one()
     )
-    assert len(user_message.attached_documents) == 1
-    document = user_message.attached_documents[0].document
+    assert db_session.query(ChatMessage).filter_by(conversation_id=conversation.id, role="user").count() == 0
+    assert len(upload_message.attached_documents) == 1
+    document = upload_message.attached_documents[0].document
+
+    # Schritt 2 - die bewusste KI-Aktion
+    response = client.post(
+        "/dashboard/chat/send",
+        data={
+            "csrf_token": _csrf(client),
+            "conversation_id": conversation.id,
+            "content": f"Bitte fasse das Dokument für Mandantin {marker_name} zusammen.",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
     assert document.original_filename == "beleg.pdf"
     assert document.matter_id == conversation.matter_id
 
@@ -287,6 +302,27 @@ def test_document_attachment_flows_through_ocr_pseudonymization_to_chat(
     assert len(writer.received_payloads) == 1
     payload_json = writer.received_payloads[0].model_dump_json()
     assert marker_name not in payload_json
+
+
+def _upload_then_send(client: TestClient, content: str, files: dict, *, stream: bool = False):
+    """§57: Upload und KI-Verarbeitung getrennt - (1) nur hochladen (kein KI-Aufruf), (2) die Frage bewusst senden.
+    Gibt (conversation_id, Antwort des zweiten Schritts) zurueck."""
+    if stream:
+        upload = client.post("/dashboard/chat/send-stream", files=files,
+                             data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content})
+        events = _parse_sse_events(upload.text)
+        assert [event["kind"] for event in events] == ["start", "uploaded"], events
+        conversation_id = events[0]["conversation_id"]
+        response = client.post("/dashboard/chat/send-stream",
+                               data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content})
+        return conversation_id, response
+    upload = client.post("/dashboard/chat/send", files=files, follow_redirects=False,
+                         data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client), "conversation_id": "", "content": content})
+    assert upload.status_code == 303 and upload.headers["location"].startswith("/dashboard/chat/")
+    conversation_id = upload.headers["location"].split("/")[3].split("?")[0]
+    response = client.post("/dashboard/chat/send", follow_redirects=False,
+                           data={"csrf_token": _csrf(client), "conversation_id": conversation_id, "content": content})
+    return conversation_id, response
 
 
 def _parse_sse_events(body: str) -> list[dict]:
@@ -420,7 +456,7 @@ def test_rejects_disallowed_file_extension(client: TestClient, db_session: Sessi
 
     response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Analysiere das:"},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Analysiere das:"},
         files={"documents": ("script.exe", b"MZ", "application/octet-stream")},
         follow_redirects=False,
     )
@@ -583,7 +619,7 @@ def test_chat_page_shows_cloud_ki_verbunden_when_gateway_configured_without_dev_
 
     # "Bereit" erfordert seit der Pilot-Vorbereitung eine nachgewiesene Erreichbarkeit
     # (app.state.cloud_health, vom Lifespan-Task gepflegt).
-    main_app.state.cloud_health = CloudHealth(REACHABLE)
+    main_app.state.cloud_health = CloudHealth(REACHABLE, route="gateway")
     try:
         response = client.get("/dashboard/chat")
     finally:
@@ -1124,7 +1160,7 @@ def test_document_status_badge_shows_processed_for_text_pdf(
 
     response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
         files={"documents": ("textdokument.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )
@@ -1139,7 +1175,34 @@ def test_chat_page_shows_ai_status_in_sidebar(client: TestClient, db_session: Se
     login_as_admin(db_session, client)
     response = client.get("/dashboard/chat")
     assert "sidebar__status-panel" in response.text
-    assert "Cloud-KI (Gateway)" in response.text
+    # §72: ohne Statuspruefung (kein Lifespan) wird kein Weg behauptet - neutral "Cloud-KI", nicht "(Gateway)"
+    assert "data-cloud-label>Cloud-KI</span>" in response.text
+    assert "Cloud-KI (Gateway)" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("route", "label", "hint"),
+    [
+        ("gateway", "Cloud-KI (Gateway)", "Weg: Lexono-Gateway"),
+        ("direct", "Cloud-KI (direkt)", "Weg: direkt zur Anthropic-API (ohne Gateway)"),
+        ("qa_loopback", "Cloud-KI (lokaler Prüfendpunkt)", "keine Cloud"),
+    ],
+)
+def test_sidebar_names_the_actual_cloud_route(client: TestClient, db_session: Session, route: str, label: str, hint: str) -> None:
+    """§72 (App-Test §71): "Cloud-KI (Gateway) Bereit", obwohl direkt an einen lokalen Pruefendpunkt gesendet wurde."""
+    from app.ai_providers.cloud_health import REACHABLE, CloudHealth
+    from app.main import app as main_app
+
+    login_as_admin(db_session, client)
+    main_app.state.cloud_health = CloudHealth(REACHABLE, route=route)
+    try:
+        response = client.get("/dashboard/chat")
+    finally:
+        del main_app.state.cloud_health
+    assert f"data-cloud-label>{label}</span>" in response.text
+    assert hint in response.text and f'data-cloud-route="{route}"' in response.text
+    for other in {"Cloud-KI (Gateway)", "Cloud-KI (direkt)", "Cloud-KI (lokaler Prüfendpunkt)"} - {label}:
+        assert other not in response.text
 
 
 def test_chat_page_includes_thinking_indicator_for_ai_loading_state(
@@ -1192,7 +1255,10 @@ def test_chat_empty_state_quick_actions_have_distinct_accent_colors(
     die Markenfarbe (Logo/Sendebutton/aktive Chat-Navigation), wird hier
     aber zusaetzlich fuer GENAU eine von vier gleichwertigen
     Schnellaktionen verwendet, identisch zur Referenz."""
+    from app.prompt_library.start_prompts import seed_default_start_prompts
+
     login_as_admin(db_session, client)
+    seed_default_start_prompts(db_session)  # Startkarten kommen seit 28.10.2026 aus den Standard-Prompts
     response = client.get("/dashboard/chat")
     assert "chat-quick-action__icon--green" in response.text
     assert "chat-quick-action__icon--blue" in response.text
@@ -1225,7 +1291,7 @@ def test_document_workspace_shows_highlighted_pii_and_context_panel(
 
     upload_response = client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Bitte pruefen."},
         files={"documents": ("mandantenbrief.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )
@@ -1240,34 +1306,19 @@ def test_document_workspace_shows_highlighted_pii_and_context_panel(
         f"/dashboard/chat/{conversation.id}/document/{document.id}"
     )
     assert workspace_response.status_code == 200
-    assert "chat-shell--document-view" in workspace_response.text
-    assert "mandantenbrief.pdf" in workspace_response.text
-    # "Herunterladen" (16.09., UI/UX-Sweep) - derselbe Download-Endpunkt
-    # wie in matter_document.html, siehe tests/test_web_matters.py fuer
-    # die eigentlichen Download-Verhaltenstests.
-    assert (
-        f"/dashboard/matters/{conversation.matter_id}/document/{document.id}/download"
-        in workspace_response.text
-    )
-    assert "mandant@beispielkanzlei.de" in workspace_response.text
-    assert 'pii-highlight--email' in workspace_response.text
-    assert "Pseudonymisierung" in workspace_response.text
-    assert "Erkannte Mandantendaten" in workspace_response.text
-    # KI-Analyse-Transparenzkarte (Phase 5, 13.09.).
-    assert "chat-transparency-card" in workspace_response.text
-    assert "Lokal analysiert." in workspace_response.text
-
-    # Schnellaktionen im Dokument-Workspace (Referenzbild "Antwort
-    # entwerfen"/"Fristen & Risiken pruefen"/"Zusammenfassung erstellen")
-    # nutzen denselben Prefill-Mechanismus wie die leeren Chat-Quick-Actions
-    # und referenzieren den echten Dateinamen - keine neue Sende-Logik.
-    assert "Schnellaktionen" in workspace_response.text
-    assert "Antwort entwerfen" in workspace_response.text
-    assert "Fristen &amp; Risiken pruefen" in workspace_response.text
-    assert "Zusammenfassung erstellen" in workspace_response.text
-    assert "mandantenbrief.pdf" in workspace_response.text.split("Schnellaktionen", 1)[1].split(
-        "Erkannte Mandantendaten", 1
-    )[0]
+    # 26.10.2026: KEINE separate Dokumentspalte mehr - die Dokumentansicht ist der Chat dieser Unterhaltung, ueber
+    # dem der zentrale Pseudonymisierungsdialog fuer DIESES Dokument geoeffnet wird.
+    assert "chat-shell--document-view" not in workspace_response.text
+    assert 'class="chat-document-pane"' not in workspace_response.text
+    assert 'id="pseudonymization-center"' in workspace_response.text
+    assert f'data-open-document="{document.id}"' in workspace_response.text
+    assert "mandantenbrief.pdf" in workspace_response.text  # Anhang-Chip im unveraenderten Chat
+    # Die erkannte E-Mail kommt aus der zentralen Pruefung und wird im Dialog markiert/ersetzt.
+    review = client.get(
+        f"/dashboard/chat/{conversation.id}/document/{document.id}/pseudonymization-review"
+    ).json()
+    assert any(m["original"] == "mandant@beispielkanzlei.de" for m in review["mappings"])
+    assert "mandant@beispielkanzlei.de" not in review["result_text"]
 
 
 def test_document_workspace_rejects_document_from_other_conversation(
@@ -1289,7 +1340,7 @@ def test_document_workspace_rejects_document_from_other_conversation(
 
     client.post(
         "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": csrf, "conversation_id": "", "content": "Erste Unterhaltung."},
         files={"documents": ("erste.pdf", pdf_bytes, "application/pdf")},
         follow_redirects=True,
     )
@@ -3740,15 +3791,16 @@ def test_permanent_privacy_hint_below_composer_is_replaced_by_an_icon_popover(
 def test_privacy_hint_lives_outside_the_input_row_not_among_its_actions(
     client: TestClient, db_session: Session
 ) -> None:
-    """ECHTER FUND behoben (07.10., Owner-Direktive "DATENSCHUTZ-HINWEIS
-    POSITIONIERUNG KORRIGIEREN"): das Shield-Icon sass bisher INNERHALB
-    von `.chat-composer__row` (derselben Zeile wie Anhang/Eingabefeld/
-    Mikrofon/Senden) - wirkte dadurch wie eine fuenfte Eingabeaktion,
-    obwohl es eine reine Information ist, keine Bedienhandlung fuer die
-    Nachricht. Prueft strukturell, dass der Ausloeser-Button jetzt
-    AUSSERHALB von `.chat-composer__row` liegt (in der eigenen
-    `.chat-composer__footer`-Zeile darunter), nicht mehr als Kind
-    zwischen Mikrofon und Senden."""
+    """07.10. (Owner-Direktive "DATENSCHUTZ-HINWEIS POSITIONIERUNG KORRIGIEREN"):
+    das Shield-Icon sass einmal INNERHALB von `.chat-composer__row` und wirkte
+    wie eine fuenfte Eingabeaktion - es ist aber reine Information, keine
+    Bedienhandlung fuer die Nachricht. 22.10. (Owner-Direktive "DATENSCHUTZ-ICON
+    IN DIE ECKE"): es wurde zusaetzlich aus der Composer-Fusszeile herausgeloest
+    und schwebt jetzt als `.chat-privacy-corner` in der rechten unteren Ecke des
+    Chat-Hauptbereichs. Prueft strukturell, dass der Ausloeser-Button WEDER in
+    der Eingabezeile NOCH im Composer-Formular liegt, sondern in der
+    eigenstaendigen Ecke danach - Button/Popover-IDs (und damit JS/Logik)
+    unveraendert."""
     login_as_admin(db_session, client)
     conversation = _active_conversation(db_session, "admin@kanzlei.test")
 
@@ -3761,14 +3813,21 @@ def test_privacy_hint_lives_outside_the_input_row_not_among_its_actions(
     assert "chat-composer__privacy-btn" not in row_block
     assert "chat-privacy-popover" not in row_block
 
+    # Der Ausloeser liegt jetzt in der schwebenden Ecke, NACH dem Composer-Formular,
+    # nicht mehr in dessen Fusszeile.
+    form_end = html.index("</form>", row_start)
     footer_start = html.index('<div class="chat-composer__footer">')
-    footer_end = html.index("</form>", footer_start)
-    footer_block = html[footer_start:footer_end]
-    assert "chat-composer__privacy-btn" in footer_block
-    assert "chat-privacy-popover" in footer_block
-    # Die Fusszeile selbst liegt NACH der Eingabezeile im Markup (unterhalb,
-    # nicht daneben).
-    assert footer_start > row_start
+    footer_block = html[footer_start:form_end]
+    assert "chat-composer__privacy-btn" not in footer_block
+    assert "chat-privacy-popover" not in footer_block
+
+    corner_start = html.index('<div class="chat-privacy-corner">')
+    corner_block = html[corner_start:]
+    assert "chat-composer__privacy-btn" in corner_block
+    assert "chat-privacy-popover" in corner_block
+    # Die Ecke liegt NACH der Eingabezeile und NACH dem Composer-Formular.
+    assert corner_start > row_start
+    assert corner_start > form_end
 
 
 def test_scroll_to_bottom_button_present_in_composer(
@@ -3946,12 +4005,10 @@ def test_docx_with_birthdate_table_attachment_is_sent_without_birthdates(
     buffer = io.BytesIO()
     document.save(buffer)
 
-    response = client.post(
-        "/dashboard/chat/send",
-        data={"csrf_token": csrf, "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("erbentabelle.docx", buffer.getvalue(),
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
-        follow_redirects=False,
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("erbentabelle.docx", buffer.getvalue(),
+                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
     )
     assert response.status_code == 303
     assert len(writer.received_payloads) == 1
@@ -3988,11 +4045,11 @@ def test_table_docx_via_send_stream_keeps_structure_and_order_without_birthdates
     writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
     monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
 
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("erbentabelle.docx", _birthdate_table_docx_bytes(),
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("erbentabelle.docx", _birthdate_table_docx_bytes(),
+                       "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        stream=True,
     )
 
     assert response.status_code == 200
@@ -4017,11 +4074,10 @@ def test_empty_docx_attachment_via_send_stream_is_never_sent_to_the_cloud(
     writer = FakeClaudeWritingProvider("Zusammenfassung erstellt.")
     monkeypatch.setattr(chat_router_module, "get_drafting_service", lambda: _working_drafting_service(writer))
 
-    response = client.post(
-        "/dashboard/chat/send-stream",
-        data={"csrf_token": _csrf(client), "conversation_id": "", "content": "Wer erbt zu welcher Quote?"},
-        files={"documents": ("leer.docx", b"",
-                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    _, response = _upload_then_send(
+        client, "Wer erbt zu welcher Quote?",
+        {"documents": ("leer.docx", b"", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        stream=True,
     )
 
     assert response.status_code == 200

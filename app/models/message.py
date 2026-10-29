@@ -7,7 +7,9 @@ den Workflow-Zustand NEEDS_MATTER_MATCH, bevor sie einer Akte zugeordnet ist
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String, Text
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -28,6 +30,13 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     recipient: Mapped[str | None] = mapped_column(String(255), nullable=True)
     subject: Mapped[str | None] = mapped_column(String(998), nullable=True)
     body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Lesestatus im Posteingang (Migration schritt3_038): None = ungelesen. Gesetzt beim ausdruecklichen Oeffnen der
+    # Nachricht oder per "Als gelesen markieren" (app/web/router.py); ausgehende Nachrichten gelten nie als ungelesen.
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @property
+    def is_unread(self) -> bool:
+        return self.direction == "inbound" and self.read_at is None
 
     matter: Mapped["Matter | None"] = relationship(back_populates="messages")
     documents: Mapped[list["Document"]] = relationship(back_populates="message")

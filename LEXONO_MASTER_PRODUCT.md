@@ -163,8 +163,13 @@ Status legend (§12 below): `NOT_STARTED / IMPLEMENTED / PARTIALLY_IMPLEMENTED /
 **P0-05 — Microsoft Presidio / Pseudonymization**
 - Purpose: the actual, structural privacy boundary — the reason this architecture is not "just call Claude directly."
 - Architecture role: `app/privacy/detectors.py` (regex) + `app/privacy/presidio_ner.py` (real Presidio `AnalyzerEngine`, spaCy `de_core_news_lg`, lazy-cached) → `pseudonymizer.py` → `security_check.py` (7-point check, fail-closed) → `gateway.py::ClaudePrivacyGateway` (single allowed path toward Claude) → `check_payload_placeholder_integrity` (Final Payload Gate).
-- Status: **VERIFIED**. Evidence: real Presidio/spaCy NER run against synthetic data this session and in the prior `CORE_ARCHITECTURE_PROOF` run; placeholder integrity (`[MANDANT_01]`, `[AKTENZEICHEN_01]`) confirmed preserved through real local-AI inference multiple times this session.
-- Release blocking: NO.
+- Status: **IMPLEMENTED — current code NOT VERIFIED in the installed build; complete leak-freeness NOT VERIFIED** (corrected 25.10.2026; was VERIFIED). Historical evidence (12.09.2026, still valid for that build): real Presidio/spaCy NER run against synthetic data and in the prior `CORE_ARCHITECTURE_PROOF` run; placeholder integrity (`[MANDANT_01]`, `[AKTENZEICHEN_01]`) confirmed preserved through real local-AI inference.
+- Why corrected (evidence, 25.10.2026):
+  - `PRIVACY_REVIEW_ARCHITECTURE.md` §27.7: "Vollständige Leckfreiheit: NICHT VERIFIZIERT".
+  - Documented synthetic residual leaks (local benchmarks, payload text): names after an article 3/96, article follow-up cases 14/138, letter conventions 6; chat without file 0/440.
+  - The installed `Lexono.exe` (SHA-256 prefix `DEB6FA9B`, written 24.10.2026 12:20) predates the current working-tree privacy changes (`app/privacy/*.py`, `app/chat/service.py`, modified 24.10.2026 14:23 – 25.10.2026); these changes are uncommitted and not built.
+  - Local test suites for the current code pass, but per §16 `TEST_EXISTS != VERIFIED`.
+- Release blocking: NO for pilot stage A (synthetic data only, `PRIVACY_REVIEW_ARCHITECTURE.md` §26.5 A). Stages B and C remain NO-GO (§26.5 B/C); this line is no release statement for them.
 
 **P0-06 — Local AI / Ollama**
 - Purpose: mandatory local reasoning step before any data (even pseudonymized) reaches Claude; also the practical hardware-adaptive on-ramp for firms without cloud access.
@@ -193,8 +198,13 @@ Status legend (§12 below): `NOT_STARTED / IMPLEMENTED / PARTIALLY_IMPLEMENTED /
 
 **P0-10 — Security / Secrets / Data Isolation**
 - Purpose: non-negotiable per CLAUDE.md.
-- Status: **VERIFIED with one real finding, now fixed**: this session found and redacted a plaintext test-admin password that had been written directly into `.agentic/PROJECT_STATE.md` in an earlier session — a real, concrete violation of the "never write secrets into code/logs" rule, now corrected. `.env` confirmed gitignored. No secrets observed in this session's own logs/tests/docs. `tests/test_no_ai_gateway_proxy.py`/`test_no_editable_api_key_in_ui.py` structurally guard against key exposure.
-- Release blocking: NO (finding fixed).
+- Status: **PARTIALLY_IMPLEMENTED** (corrected 25.10.2026; was "VERIFIED with one real finding, now fixed"). Still valid (12.09.2026): a plaintext test-admin password found in `.agentic/PROJECT_STATE.md` was redacted; `.env` confirmed gitignored; no secrets observed in that session's logs/tests/docs; `tests/test_no_ai_gateway_proxy.py`/`test_no_editable_api_key_in_ui.py` structurally guard against key exposure.
+- **Open finding (not fixed):**
+  - `PRIVACY_REVIEW_ARCHITECTURE.md` §25.3: the Anthropic key is stored in plain text in `C:\ProgramData\Lexono\.env`, readable by all local Windows users, with no rotation procedure.
+  - Re-checked read-only 25.10.2026: ACL still contains `VORDEFINIERT\Benutzer: ReadAndExecute`; only key names were read, no values.
+  - Owner decision 13.10.2026 (§26.4): local key management deliberately unchanged until the Gateway (P0-08) is set up. That is a deferral, not a documented risk acceptance.
+  - Access protection for `C:\ProgramData\Lexono` (DB, files, logs) is likewise open (§27.5 K9, §28.3 W6).
+- Release blocking: NO for pilot stage A (synthetic data; account-misuse risk only, §26.5 A). For stage C (real client data) **blocking** — §26.5 C items 1 and 4, `PILOT_CHECKLIST.md` J (C).
 
 **P0-11 — Persistence / Database**
 - Purpose: SQLite prototype, PostgreSQL-ready abstraction (CLAUDE.md, non-negotiable technical decision).
@@ -267,7 +277,22 @@ missing implementation.
    the Gateway is DEFERRED for this path by explicit decision, not an
    unresolved blocker for it), P1 risks explicitly assessed (done —
    antivirus/Defender D-classified with new negative evidence;
-   model-latency tie-break RISK_ACCEPTED). **→ RELEASE READY.**
+   model-latency tie-break RISK_ACCEPTED). **→ RELEASE READY (assessment of
+   12.09.2026 — superseded, see correction below).**
+
+   **Correction 25.10.2026: NOT RELEASE_READY.** The 12.09.2026 assessment
+   no longer holds:
+   - P0-05 and P0-10 are no longer VERIFIED (see §7).
+   - The cited release candidate (`9c495240…`) and test count (1522) are
+     not the current state; the installed `Lexono.exe` (`DEB6FA9B…`) does
+     not contain the current uncommitted privacy changes.
+   - Owner decision 13.10.2026 (P0-08, `PRIVACY_REVIEW_ARCHITECTURE.md`
+     §23/§26.4) made a separate P0-08 checkpoint mandatory before the
+     later pilot operation.
+   - The pilot is governed by the stages in `PRIVACY_REVIEW_ARCHITECTURE.md`
+     §26.5: A only with synthetic data after the firm's confirmations,
+     B NO-GO until its evidence exists, C (real client data) NO-GO.
+   - No release or privacy approval is granted by this correction.
 2. **Future production (Lexono Gateway relay path).** P0-08/P0-09's
    Gateway variant is DEFERRED, not verified, not deployed — this target
    is simply **not yet evaluated for release readiness** and must not be
@@ -275,18 +300,26 @@ missing implementation.
 
 **Never state "Lexono is release ready" or "the production architecture
 is verified" without naming which of these two targets is meant** — say
-"the current Direct-Key pilot path is release ready" specifically.
+"the current Direct-Key pilot path is release ready" specifically (as of
+25.10.2026 that statement is **false**, see the correction above).
 
 ## 14. Release Gates
 
 A release must not be called RELEASE_READY while any P0 system relevant
 to *that specific release target* is BLOCKED, UNKNOWN, or NOT VERIFIED,
 except where explicitly marked RISK_ACCEPTED or DEFERRED with a
-documented decision. Per §7/§13, the **current Direct-Key pilot** has no
-system in that state — all its relevant P0 gates are VERIFIED. **P0-08
+documented decision. ~~Per §7/§13, the **current Direct-Key pilot** has no
+system in that state — all its relevant P0 gates are VERIFIED.~~ **Corrected
+25.10.2026:** P0-05 (IMPLEMENTED, not verified in the installed build) and
+P0-10 (PARTIALLY_IMPLEMENTED, open `.env` finding) are not VERIFIED, so no
+release target may be called RELEASE_READY (see §13). **P0-08
 (Gateway)** carries status DEFERRED by explicit governing decision for
 this pilot — this is a deliberate deferral, not a silent pass, and it
-does not block the current pilot's release-ready call. It remains its
+does not block the current pilot's release-ready call. **Corrected
+25.10.2026:** superseded by the owner decision of 13.10.2026 (§7 P0-08,
+`PRIVACY_REVIEW_ARCHITECTURE.md` §23/§26.4): P0-08 is a mandatory checkpoint
+before the later pilot operation and a prerequisite for stage C (real
+client data, §26.5 C1). It remains its
 own open gate (**DECISION REQUIRED before *any future* Gateway-based
 production release**), tracked separately, not forgotten (`DEFERRED !=
 FORGOTTEN`).
@@ -523,3 +556,19 @@ this update.
   intentional (ARCHITECTURE.md §59), not legacy debris, and not the
   cause of either P0. New release candidate SHA-256
   `a973cf1f66eb77beef3a3e3be5e62b22af78ba750ddbff9092b18385a8e0f258`.
+
+- 25.10.2026 — **Documentation correction only (no code, no build, no
+  approval).** A read-only release audit found status claims contradicted
+  by current evidence; corrected per §15/§16:
+  - P0-05 VERIFIED → IMPLEMENTED (leak-freeness NOT VERIFIED per
+    `PRIVACY_REVIEW_ARCHITECTURE.md` §27.7; residual synthetic leaks;
+    installed EXE `DEB6FA9B…` predates the uncommitted privacy changes).
+  - P0-10 VERIFIED → PARTIALLY_IMPLEMENTED (open §25.3 finding: `.env` readable
+    by all local users, no rotation; K9 open).
+  - §13/§14: the 12.09.2026 RELEASE READY assessment is marked superseded →
+    NOT RELEASE_READY; P0-08 is a pilot checkpoint per the 13.10.2026 owner
+    decision.
+  - Not changed: P0-08 (already DEFERRED / NOT VERIFIED), all other P0 entries.
+  - The current privacy work itself is not yet recorded in
+    `PRIVACY_REVIEW_ARCHITECTURE.md`, because that file has uncommitted
+    third-party changes.

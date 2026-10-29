@@ -1,0 +1,36 @@
+{
+ "port_aus_konfiguration": 8000,
+ "start_ok": true,
+ "start_sekunden": 3.5,
+ "login_seite": 200,
+ "fibu_ohne_route": 404,
+ "fibu_css": 404,
+ "pseudo_js_mit_fix": [
+  200,
+  true
+ ],
+ "app_css_lizenzseite": [
+  200,
+  true
+ ],
+ "log_tracebacks": 0,
+ "log_migration_hinweise": [
+  "INFO  [alembic.runtime.migration] Context impl SQLiteImpl.",
+  "INFO  [alembic.runtime.migration] Will assume non-transactional DDL.",
+  "INFO  [alembic.runtime.migration] Context impl SQLiteImpl.",
+  "INFO  [alembic.runtime.migration] Will assume non-transactional DDL.",
+  "INFO  [alembic.runtime.migration] Context impl SQLiteImpl.",
+  "INFO  [alembic.runtime.migration] Will assume non-transactional DDL."
+ ],
+ "revision_vorher_nachher": [
+  "schritt3_042",
+  "schritt3_042"
+ ],
+ "integrity_nachher": "ok",
+ "zeilen_aenderungen_durch_start": {},
+ "zeilen_gesamt_vorher_nachher": [
+  15959,
+  15959
+ ],
+ "kerntabellen_unveraendert": true
+}

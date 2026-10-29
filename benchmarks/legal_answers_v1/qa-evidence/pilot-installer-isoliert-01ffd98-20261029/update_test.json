@@ -1,0 +1,140 @@
+{
+ "vorher": {
+  "exe_sha256": "28F9C043D4227FAE21BC31FCC5A0DA515CC3BD138B7EC077BB9F8B047254AA41",
+  "profil_datei": false,
+  "migrationsdateien": 60,
+  "migrate_exit": 0,
+  "create_admin_exit": 0,
+  "unterhaltung": "c2834bcd-1967-44f5-be11-23abe0a857b4",
+  "db": {
+   "revision": "schritt3_042",
+   "quick_check": "ok",
+   "zeilen": {
+    "alembic_version": 1,
+    "audit_events": 6,
+    "chat_conversations": 1,
+    "chat_message_documents": 1,
+    "chat_messages": 3,
+    "chat_upload_operations": 1,
+    "clients": 1,
+    "document_privacy_checks": 1,
+    "documents": 1,
+    "firm_profiles": 1,
+    "matters": 1,
+    "prompt_templates": 4,
+    "roles": 3,
+    "users": 1
+   },
+   "inhalt_hash": {
+    "users": "b9f3de13dfedc969",
+    "clients": "6a9b0b88446b04b7",
+    "matters": "d18f73d3a6249eb5",
+    "documents": "caf926548f093577",
+    "chat_conversations": "3b7eb94fb44dd113",
+    "chat_messages": "b8944c66b91c9ad7",
+    "privacy_decisions": "4f53cda18c2baa0c"
+   }
+  },
+  "dateien": {
+   ".env": "1ABE28FBD54D31DA608635969C078B7A8F1FC9BB321603CA1F729090A3FE7148",
+   ".setup_complete": "6B86B273FF34FCE19D6B804EFF5A3F5747ADA4EAA22F1D49C01E52DDB7875B4B",
+   "data\\chat_uploads\\d4e91e35-7c3f-43aa-9b2f-675a2fa4071c_altdaten_synthetisch.pdf": "13E4E6F194C01FAA3E9482A76F3BE0EFE24B525A73A450E0DB5A63FEDB7960E3"
+  }
+ },
+ "nachher": {
+  "exe_sha256": "D9DF619610D38687417EA6900DED4AACC6E1E72C38D0DE8D53B71B7F016C8879",
+  "profil_datei": "kanzlei-pilot",
+  "migrationsordner_gleich_paket": true,
+  "fibu_router_template_im_programmordner": [],
+  "db_vor_start": {
+   "revision": "schritt3_042",
+   "quick_check": "ok",
+   "zeilen": {
+    "alembic_version": 1,
+    "audit_events": 6,
+    "chat_conversations": 1,
+    "chat_message_documents": 1,
+    "chat_messages": 3,
+    "chat_upload_operations": 1,
+    "clients": 1,
+    "document_privacy_checks": 1,
+    "documents": 1,
+    "firm_profiles": 1,
+    "matters": 1,
+    "prompt_templates": 4,
+    "roles": 3,
+    "users": 1
+   },
+   "inhalt_hash": {
+    "users": "b9f3de13dfedc969",
+    "clients": "6a9b0b88446b04b7",
+    "matters": "d18f73d3a6249eb5",
+    "documents": "caf926548f093577",
+    "chat_conversations": "3b7eb94fb44dd113",
+    "chat_messages": "b8944c66b91c9ad7",
+    "privacy_decisions": "4f53cda18c2baa0c"
+   }
+  },
+  "login_ziel": "/dashboard/chat",
+  "alte_unterhaltung_http": 200,
+  "alte_unterhaltung_inhalt": [
+   true,
+   true
+  ],
+  "fibu_http": 404,
+  "lizenzseite": [
+   true,
+   false
+  ],
+  "db_nach_start": {
+   "revision": "schritt3_042",
+   "quick_check": "ok",
+   "zeilen": {
+    "alembic_version": 1,
+    "audit_events": 7,
+    "chat_conversations": 1,
+    "chat_message_documents": 1,
+    "chat_messages": 3,
+    "chat_upload_operations": 1,
+    "clients": 1,
+    "document_privacy_checks": 1,
+    "documents": 1,
+    "firm_profiles": 1,
+    "matters": 1,
+    "prompt_templates": 4,
+    "roles": 3,
+    "users": 1
+   },
+   "inhalt_hash": {
+    "users": "b9f3de13dfedc969",
+    "clients": "6a9b0b88446b04b7",
+    "matters": "d18f73d3a6249eb5",
+    "documents": "caf926548f093577",
+    "chat_conversations": "3b7eb94fb44dd113",
+    "chat_messages": "b8944c66b91c9ad7",
+    "privacy_decisions": "4f53cda18c2baa0c"
+   }
+  },
+  "dateien": {
+   ".env": "1ABE28FBD54D31DA608635969C078B7A8F1FC9BB321603CA1F729090A3FE7148",
+   ".setup_complete": "6B86B273FF34FCE19D6B804EFF5A3F5747ADA4EAA22F1D49C01E52DDB7875B4B",
+   "data\\chat_uploads\\d4e91e35-7c3f-43aa-9b2f-675a2fa4071c_altdaten_synthetisch.pdf": "13E4E6F194C01FAA3E9482A76F3BE0EFE24B525A73A450E0DB5A63FEDB7960E3"
+  }
+ },
+ "pruefungen": {
+  "installer_ok": true,
+  "exe_ersetzt": true,
+  "profil_pilot": true,
+  "migrationsordner_ohne_altlasten": true,
+  "keine_finance_dateien": true,
+  "revision_unveraendert_042": true,
+  "daten_zeilen_erhalten": true,
+  "kerninhalte_identisch": true,
+  "konfiguration_und_dateien_erhalten": true,
+  "quick_check": true,
+  "login_und_alte_unterhaltung": true,
+  "finance_nicht_erreichbar": true,
+  "lizenzseite_neu_ohne_finance_modul": true
+ },
+ "installer_exit": 0
+}

@@ -1,0 +1,78 @@
+{
+ "hell": {
+  "rect": {
+   "top": 838,
+   "left": 1536,
+   "w": 44,
+   "h": 44,
+   "right": 20,
+   "bottom": 18
+  },
+  "boxShadow": "none",
+  "background": "rgb(255, 255, 255)",
+  "border": "rgb(226, 232, 240)",
+  "radius": "12px",
+  "color": "rgb(100, 116, 139)",
+  "infoMarkColor": "rgb(36, 157, 116)",
+  "ariaExpanded": "false",
+  "popoverHidden": true,
+  "theme": null
+ },
+ "nach_klick": {
+  "rect": {
+   "top": 838,
+   "left": 1536,
+   "w": 44,
+   "h": 44,
+   "right": 20,
+   "bottom": 18
+  },
+  "boxShadow": "none",
+  "background": "rgb(241, 245, 249)",
+  "border": "rgb(36, 157, 116)",
+  "radius": "12px",
+  "color": "rgb(51, 65, 85)",
+  "infoMarkColor": "rgb(36, 157, 116)",
+  "ariaExpanded": "true",
+  "popoverHidden": false,
+  "theme": null
+ },
+ "nach_zweitem_klick": {
+  "rect": {
+   "top": 838,
+   "left": 1536,
+   "w": 44,
+   "h": 44,
+   "right": 20,
+   "bottom": 18
+  },
+  "boxShadow": "none",
+  "background": "rgb(255, 255, 255)",
+  "border": "rgb(226, 232, 240)",
+  "radius": "12px",
+  "color": "rgb(100, 116, 139)",
+  "infoMarkColor": "rgb(36, 157, 116)",
+  "ariaExpanded": "false",
+  "popoverHidden": true,
+  "theme": null
+ },
+ "dunkel": {
+  "rect": {
+   "top": 838,
+   "left": 1536,
+   "w": 44,
+   "h": 44,
+   "right": 20,
+   "bottom": 18
+  },
+  "boxShadow": "none",
+  "background": "rgb(20, 21, 24)",
+  "border": "rgb(42, 45, 51)",
+  "radius": "12px",
+  "color": "rgb(148, 163, 184)",
+  "infoMarkColor": "rgb(36, 157, 116)",
+  "ariaExpanded": "false",
+  "popoverHidden": true,
+  "theme": "dark"
+ }
+}

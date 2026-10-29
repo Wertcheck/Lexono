@@ -43,6 +43,10 @@ from app.firm_profile import (
     set_practice_areas,
 )
 from app.models import AuditEvent, Role, User
+from app.modules import licensing as module_licensing
+from app.modules import plans
+from app.modules.catalog import CATALOG as MODULE_CATALOG
+from app.modules.profile import module_available
 from app.setup.env_writer import update_env_values
 from app.setup.paths import resolve_data_dir
 from app.updater.checker import CURRENT_APP_VERSION
@@ -70,6 +74,7 @@ _PERM_LABELS: dict[str, str] = {
     "client:manage": "Mandanten anlegen/bearbeiten",
     "client:delete": "Mandanten endgültig löschen",
     "deadline:confirm": "Fristen bestätigen/verwerfen",
+    "quality:review": "Qualitätsmeldungen prüfen",
 }
 
 # --- "Benutzer"-Tab: Aktivitätsverlauf (06.10., Owner-Direktive "SETTINGS
@@ -215,6 +220,12 @@ _VALID_DIALOGS = {
     "kanzleiinformationen", "standorte", "branding", "fachliche-schwerpunkte",
     "kanzlei-defaults", "kanzlei-einstellungen",
 }
+
+
+def _document_release_mode_label(db: Session) -> str:
+    from app.documents import release
+
+    return release.MODE_LABELS[release.get_mode(db)]
 
 
 @router.get("", response_class=HTMLResponse)
@@ -386,6 +397,7 @@ def settings_page(
     # geoeffnet") - `open_dialog` landet ebenfalls in einem <script>-Block.
     active_dialog = open_dialog if open_dialog in _VALID_DIALOGS else None
 
+    enabled_modules = module_licensing.enabled_modules(db)
     context = {
         "request": request,
         "current_user": current_user,
@@ -400,6 +412,18 @@ def settings_page(
         "error": error,
         "active_tab": active_tab,
         "active_dialog": active_dialog,
+        # Module & Lizenz (28.10.2026, app/modules): Status jedes Moduls aus der zentralen Lizenzpruefung
+        # nur Module, die dieses Paket enthaelt (Build-Profil, app/modules/profile.py)
+        "module_catalog": {k: m for k, m in MODULE_CATALOG.items() if module_available(k)},
+        "module_license_status": module_licensing.current_status(db),
+        "enabled_modules": enabled_modules,
+        # Produktuebersicht (29.10.2026, app/modules/plans.py): reine Anzeige - das aktuelle Paket folgt nur den
+        # tatsaechlich freigeschalteten Modulen (Lizenz UND Build-Profil), Preise/Status schalten nichts frei.
+        "license_products": plans.PRODUCTS,
+        "license_features": plans.FEATURES,
+        "license_price_basis": plans.PRICE_BASIS,
+        "license_current_product": plans.current_product(enabled_modules).key,
+        "module_key_configured": bool(module_licensing.TRUSTED_PUBLIC_KEYS),
         # --- "Benutzer"-Tab ---
         "user_rows": user_rows,
         "roles": db_roles,
@@ -430,6 +454,8 @@ def settings_page(
         "cloud_ai_provider": settings.cloud_ai_provider,
         "cloud_ai_model_label": _cloud_ai_model_label(settings.claude_model_name),
         "cloud_ai_via_gateway": bool(settings.lexono_gateway_url),
+        # §62 Datenschutz & Dokumentfreigabe (kanzleiweiter Modus, eigene Seite)
+        "document_release_mode_label": _document_release_mode_label(db),
         "local_ai_enabled": settings.local_ai_enabled,
         "local_ai_runtime": settings.local_ai_runtime,
         "ollama_base_url": settings.ollama_base_url,
@@ -1130,3 +1156,41 @@ def firm_signature_file(
     if not profile.signature_path or not Path(profile.signature_path).exists():
         raise HTTPException(status_code=404, detail="Keine Unterschrift hinterlegt")
     return FileResponse(profile.signature_path)
+
+
+# --- Module & Lizenz (28.10.2026) ----------------------------------------------------------------------------------
+
+
+@router.post("/license/import")
+async def import_module_license(
+    license_file: UploadFile | None = File(default=None),
+    license_text: str = Form(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Signierte Lizenz fuer Zusatzmodule importieren (Datei ODER eingefuegter Text). Nur eine gueltige Lizenz wird
+    uebernommen - Pruefung vollstaendig serverseitig in app/modules/licensing.py."""
+    text = license_text
+    if license_file is not None and license_file.filename:
+        raw = await license_file.read(module_licensing.MAX_LICENSE_BYTES + 1)
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return _redirect(error="Die Lizenzdatei ist keine Textdatei.", tab="lizenz")
+    try:
+        status = module_licensing.import_license(db, text, actor=current_user.email)
+    except module_licensing.LicenseImportError as exc:
+        return _redirect(error=f"Lizenz nicht übernommen: {exc}", tab="lizenz")
+    names = ", ".join(MODULE_CATALOG[m].name for m in sorted(status.modules))
+    return _redirect(success=f"Lizenz übernommen: {names}", tab="lizenz")
+
+
+@router.post("/license/remove")
+def remove_module_license(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+) -> RedirectResponse:
+    """Lizenz deaktivieren - Zusatzmodule sind danach gesperrt, ihre Daten bleiben unveraendert erhalten."""
+    if module_licensing.remove_license(db, actor=current_user.email):
+        return _redirect(success="Lizenz deaktiviert. Die Daten der Zusatzmodule bleiben erhalten.", tab="lizenz")
+    return _redirect(error="Es ist keine Lizenz aktiv.", tab="lizenz")

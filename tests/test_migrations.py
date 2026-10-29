@@ -172,3 +172,90 @@ def test_deadline_finding_key_migration_preserves_existing_deadlines(tmp_path: P
     kept = con.execute("select review_status from deadlines where id='d1'").fetchone()
     con.close()
     assert "finding_key" not in columns and kept == ("confirmed",)
+
+
+def test_quality_reports_migration_is_additive_and_reversible(tmp_path: Path) -> None:
+    """schritt3_031 (ARCHITECTURE.md §75): legt nur die zwei neuen Tabellen an; bestehende Fristen bleiben."""
+    import sqlite3
+
+    db_path = tmp_path / "quality_reports.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "schritt3_030")
+    con = sqlite3.connect(str(db_path))
+    con.execute(
+        "insert into deadlines (id, created_at, updated_at, matter_id, source_text, review_status, status)"
+        " values ('d1', '2026-01-01', '2026-01-01', 'm1', 'synthetisch', 'confirmed', 'open')"
+    )
+    con.commit()
+    con.close()
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'")}
+    kept = con.execute("select review_status from deadlines where id='d1'").fetchone()
+    con.close()
+    assert {"quality_reports", "regression_cases"} <= tables and kept == ("confirmed",)
+    command.downgrade(cfg, "schritt3_030")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'")}
+    con.close()
+    assert not {"quality_reports", "regression_cases"} & tables
+
+
+def test_schriftsatz_operations_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_032 (§58, Idempotenz im Schriftsatz-Generator): Vorgangs-ID als Primaerschluessel."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "operations.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    pk = [row[1] for row in con.execute("pragma table_info(schriftsatz_operations)").fetchall() if row[5]]
+    con.close()
+    assert pk == ["id"]  # atomare Eindeutigkeit je Vorgang
+    command.downgrade(cfg, "schritt3_031")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "schriftsatz_operations" not in tables and "quality_reports" in tables
+
+
+def test_chat_upload_operations_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_033 (§59, Idempotenz beim Chat-Upload): Vorgangs-ID als Primaerschluessel."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "chat_operations.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    pk = [row[1] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall() if row[5]]
+    con.close()
+    assert pk == ["id"]
+    command.downgrade(cfg, "schritt3_032")
+    con = sqlite3.connect(str(db_path))
+    tables = {r[0] for r in con.execute("select name from sqlite_master where type='table'").fetchall()}
+    con.close()
+    assert "chat_upload_operations" not in tables and "schriftsatz_operations" in tables
+
+
+def test_chat_upload_owner_and_plan_migration_is_additive_and_reversible(tmp_path) -> None:
+    """schritt3_034 (§60, Wiederaufnahme nach hartem Abbruch): Besitzer und Plan, beide nullable."""
+    import sqlite3
+
+    from alembic import command
+
+    db_path = tmp_path / "chat_owner.db"
+    cfg = _alembic_config_for(db_path)
+    command.upgrade(cfg, "head")
+    con = sqlite3.connect(str(db_path))
+    columns = {row[1]: row[3] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall()}
+    con.close()
+    assert columns["owner"] == 0 and columns["plan"] == 0  # nullable: Altbestand bleibt gueltig
+    command.downgrade(cfg, "schritt3_033")
+    con = sqlite3.connect(str(db_path))
+    columns = {row[1] for row in con.execute("pragma table_info(chat_upload_operations)").fetchall()}
+    con.close()
+    assert "owner" not in columns and "plan" not in columns and "fingerprint" in columns

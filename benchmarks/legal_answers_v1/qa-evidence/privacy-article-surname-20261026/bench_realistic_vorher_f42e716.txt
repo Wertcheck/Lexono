@@ -1,0 +1,21 @@
+﻿== protokoll.docx
+   extracted_missing: []
+   leaks: []
+   keep_missing: []
+   keep_absent_in_extraction: []
+   questions: ['Richter', 'Lange', 'Fuerst']
+   payload_sent: True
+== protokoll.pdf
+   extracted_missing: []
+   leaks: []
+   keep_missing: []
+   keep_absent_in_extraction: []
+   questions: ['Richter', 'Fuerst']
+   payload_sent: True
+== protokoll_scan.pdf
+   extracted_missing: []
+   leaks: []
+   keep_missing: []
+   keep_absent_in_extraction: []
+   questions: ['Richter', 'Lange', 'Fuerst']
+   payload_sent: True

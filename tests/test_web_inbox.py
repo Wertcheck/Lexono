@@ -512,8 +512,12 @@ def test_sidebar_no_longer_has_its_own_search_but_has_new_chat_button(
     Redundanz. Der Button ist jetzt wieder ein permanenter, von jeder
     Seite aus sichtbarer Sidebar-Eintrag (siehe base.html/app.css
     `.sidebar__new-chat-btn`), wiederverwendet dieselbe bestehende Route
-    wie der "+"-Button in chat.html (`/dashboard/chat?new=1`)."""
-    response = client.get("/dashboard/inbox")
+    wie der "+"-Button in chat.html (`/dashboard/chat?new=1`).
+
+    26.10.: Ausnahme NUR der Posteingang selbst - das dort verbindliche, vom Owner nachgereichte Referenzbild zeigt
+    an dieser Stelle "Neue Nachricht" (siehe test_web_inbox_reference_layout.py). Geprueft wird deshalb eine andere
+    Seite; dort gilt die Korrektur vom 26.09. unveraendert."""
+    response = client.get("/dashboard/clients")
     sidebar_start = response.text.index('<nav class="sidebar">')
     sidebar_end = response.text.index("</nav>", sidebar_start)
     sidebar_html = response.text[sidebar_start:sidebar_end]
@@ -716,10 +720,11 @@ def test_email_accounts_link_always_available_even_when_inbox_empty(
 ) -> None:
     """Direktive §5 "E-Mail-Konten verwalten bleibt verfügbar" - dieser
     Link stand schon vorher ausserhalb der total_count-Verzweigung im
-    Seitenkopf, hier als expliziter Regressionstest festgehalten."""
+    Seitenkopf, hier als expliziter Regressionstest festgehalten. Beschriftung seit 26.10. "E-Mail-Konto verwalten"
+    (Owner-Auftrag Posteingang-Referenz; es gibt genau ein konfigurierbares Postfach)."""
     response = client.get("/dashboard/inbox")
     assert response.status_code == 200
-    assert "E-Mail-Konten verwalten" in response.text
+    assert "E-Mail-Konto verwalten" in response.text
     assert 'href="/dashboard/settings#email-postfach"' in response.text
 
 
@@ -1450,8 +1455,8 @@ def test_email_accounts_link_visible_for_admin_only(
     admin_response = client.get("/dashboard/inbox")
     mitarbeiter_response = mitarbeiter_client.get("/dashboard/inbox")
 
-    assert "E-Mail-Konten verwalten" in admin_response.text
-    assert "E-Mail-Konten verwalten" not in mitarbeiter_response.text
+    assert "E-Mail-Konto verwalten" in admin_response.text
+    assert "E-Mail-Konto verwalten" not in mitarbeiter_response.text
 
 
 # --- Posteingang Final UI/UX Product-Completion (25.09., Owner-Direktive

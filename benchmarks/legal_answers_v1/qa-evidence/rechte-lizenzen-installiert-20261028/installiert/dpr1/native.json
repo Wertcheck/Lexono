@@ -1,0 +1,191 @@
+{
+ "exe": "%LOCALAPPDATA%\\Lexono\\Lexono.exe",
+ "exe_sha256": "28F9C043D4227FAE21BC31FCC5A0DA515CC3BD138B7EC077BB9F8B047254AA41",
+ "aufnahmen": {
+  "1920x1080-01-basispaket-ohne-finanzen": {
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "pfad": "/dashboard/chat",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1920x1080-02-finanzen-gesperrt-admin": {
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "pfad": "/dashboard/fibu",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1920x1080-03-lizenz-tab-kein-pruefschluessel": {
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "pfad": "/dashboard/settings",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Einstellungen",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-01-basispaket-ohne-finanzen": {
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "pfad": "/dashboard/chat",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Guten Abend.",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-02-finanzen-gesperrt-admin": {
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "pfad": "/dashboard/fibu",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-03-lizenz-tab-kein-pruefschluessel": {
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "pfad": "/dashboard/settings",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Einstellungen",
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-04-mitarbeiter-finanzen-gesperrt": {
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "pfad": "/dashboard/fibu",
+   "nav": [
+    "Chat",
+    "Mandanten",
+    "Akten",
+    "Posteingang",
+    "Aufgaben & Fristen",
+    "Kanzleiwissen"
+   ],
+   "titel": "Lexono Finanzen ist nicht freigeschaltet",
+   "querscroll": false,
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "alembic_nach_migrate": "schritt3_042",
+  "app_css_gleich_head": true,
+  "chat_nav_ohne_fibu": true,
+  "fibu_admin": 403,
+  "fibu_mitarbeiter": 403,
+  "fibu_post_admin": 403,
+  "fibu_export_admin": 403,
+  "lizenz_tab_hinweis_kein_schluessel": true,
+  "fremde_lizenz": "Lizenz nicht übernommen: Die Lizenz ist nicht mit einem bekannten Lexono-Herstellerschlüssel signiert.",
+  "fibu_nach_fremder_lizenz": 403,
+  "mitarbeiter_lizenzimport": 403,
+  "basis_seiten": {
+   "/dashboard/chat": 200,
+   "/dashboard/clients": 200,
+   "/dashboard/matters": 200,
+   "/dashboard/tasks": 200,
+   "/dashboard/inbox": 200,
+   "/dashboard/knowledge": 200
+  },
+  "fenster": {
+   "1920x1080": [
+    1920,
+    1055,
+    1
+   ],
+   "1280x720": [
+    1280,
+    720,
+    1
+   ]
+  },
+  "js_fehler": [],
+  "db_quick_check": "ok",
+  "db_alembic": "schritt3_042",
+  "db_neue_tabellen": [
+   "client_user_access",
+   "fibu_accounts",
+   "fibu_bookings",
+   "fibu_client_profiles",
+   "fibu_receipts",
+   "fibu_tasks",
+   "module_licenses",
+   "tax_field_values",
+   "tax_filing_parts",
+   "tax_filings",
+   "tax_submissions"
+  ],
+  "lizenzzeilen": 0,
+  "log_tracebacks": 0,
+  "log_error_zeilen": []
+ }
+}

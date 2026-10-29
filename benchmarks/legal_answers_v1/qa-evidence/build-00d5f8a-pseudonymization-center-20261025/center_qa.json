@@ -1,0 +1,86 @@
+{
+ "instanz": "dist/Lexono/Lexono.exe (Build aus 00d5f8a, SHA-256 f3d0b6d0...), nicht installiert, LEXONO_DATA_DIR Scratch, Port 8062, Cloud-Endpunkt 127.0.0.1:9 (tot)",
+ "pdf_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_00-chat-dokumentansicht-vor-dialog": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_00-chat-dokumentansicht-vor-dialog": "aa890de8796a8fe2",
+ "js_01-vorschau-markiert-pdf": true,
+ "pfad_01-vorschau-markiert-pdf": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_01-vorschau-markiert-pdf": "86d59b5495249758",
+ "zustand_01": {
+  "open": true,
+  "marks_masked": 8,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "pfad_01b-zustand": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_01b-zustand": "86d59b5495249758",
+ "js_02-hitl-rueckfrage-im-dialog": true,
+ "pfad_02-hitl-rueckfrage-im-dialog": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_02-hitl-rueckfrage-im-dialog": "7f049968a8f67f18",
+ "pfad_03-rueckfrage-beantwortet-bestaetigen-aktiv": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_03-rueckfrage-beantwortet-bestaetigen-aktiv": "1bf5374e7c710027",
+ "zustand_03": {
+  "open": true,
+  "marks_masked": 10,
+  "marks_open": 0,
+  "marks_kept": 0,
+  "pages": 2,
+  "questions": 1,
+  "confirm_disabled": false,
+  "confirm_label": "Pseudonymisierung bestätigen und Schriftsatz erstellen",
+  "footer": "Alle Rückfragen beantwortet.",
+  "limits": "Hinweise zur DarstellungPDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+ },
+ "js_04-pseudonymisiertes-ergebnis": true,
+ "pfad_04-pseudonymisiertes-ergebnis": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_04-pseudonymisiertes-ergebnis": "280fbbb4179fafab",
+ "js_05-original-ohne-markierung": true,
+ "pfad_05-original-ohne-markierung": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9/document/22adf834-fb75-4c93-9056-42651f01e1a8",
+ "sha_05-original-ohne-markierung": "5c96c2a134a8b0cd",
+ "js_06-nach-bestaetigung-zurueck-im-chat": true,
+ "pfad_06-nach-bestaetigung-zurueck-im-chat": "/dashboard/chat/55bca1cb-e1f8-4f5c-965f-537c434dc5b9",
+ "sha_06-nach-bestaetigung-zurueck-im-chat": "2fc5bb02f2126453",
+ "docx_auftrag": {
+  "ereignisse": [
+   "start",
+   "delta",
+   "done"
+  ],
+  "blockiert_am_gate": true
+ },
+ "pfad_07-vorschau-markiert-docx-analyse": "/dashboard/chat/03b75a74-2fc7-4cf9-8c68-d58e81411969/document/80feb9fe-7b16-4752-b06f-2f7ac702b81f",
+ "sha_07-vorschau-markiert-docx-analyse": "a154ad8a32abd6cc",
+ "zustand_07": {
+  "open": true,
+  "marks_masked": 3,
+  "marks_open": 1,
+  "marks_kept": 0,
+  "pages": 1,
+  "questions": 1,
+  "confirm_disabled": true,
+  "confirm_label": "Pseudonymisierung bestätigen und Analyse fortsetzen",
+  "footer": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+  "limits": "Hinweise zur DarstellungWord (DOCX): Seiten werden lokal mit der eingebauten Layout-Engine (PyMuPDF) gesetzt. Schriftarten, Abstände, Seitenumbrüche sowie Kopf- und Fußzeilen können von der Darstellung in Microsoft Word abweichen.2 Kopf-/Fußzeile(n) dieses Word-Dokuments erscheinen in der Seitenansicht nicht. Ihr Inhalt wurde trotzdem geprüft und ist im pseudonymisierten Ergebnis enthalten. Tabell"
+ },
+ "review_json_pdf": {
+  "status": "ok",
+  "viewer_kind": "pages",
+  "not_located": [],
+  "limitations": [
+   "PDF: Originalseiten als Bild, Markierungen an der Fundstelle im Seitenbild."
+  ]
+ }
+}

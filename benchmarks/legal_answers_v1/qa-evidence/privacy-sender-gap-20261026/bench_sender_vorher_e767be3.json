@@ -1,0 +1,41 @@
+{
+ "positiv_faelle": 180,
+ "lecks_mask": 50,
+ "ungefragt_ask": 50,
+ "kommunikationsnomen_und_datum_lesbar": 165,
+ "negativ_faelle": 13,
+ "fehlalarme": 2,
+ "lecks_beispiele": [
+  "Wir bestaetigen den Eingang des Schreibens von König vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Kaiser vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Graf vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Bauer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Sommer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Notar vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Kommissar vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Pfarrer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Direktor vom 16.03.2024.",
+  "Der Brief von König ist am 12.03.2026 eingegangen.",
+  "Der Brief von Kaiser ist am 12.03.2026 eingegangen.",
+  "Der Brief von Graf ist am 12.03.2026 eingegangen."
+ ],
+ "ungefragt_beispiele": [
+  "Wir bestaetigen den Eingang des Schreibens von König vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Kaiser vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Graf vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Bauer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Sommer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Notar vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Kommissar vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Pfarrer vom 16.03.2024.",
+  "Wir bestaetigen den Eingang des Schreibens von Direktor vom 16.03.2024.",
+  "Der Brief von König ist am 12.03.2026 eingegangen.",
+  "Der Brief von Kaiser ist am 12.03.2026 eingegangen.",
+  "Der Brief von Graf ist am 12.03.2026 eingegangen."
+ ],
+ "fehlalarm_saetze": [
+  "Das Schreiben von Hand wurde eingescannt.",
+  "Ludwig II. war König von Bayern."
+ ],
+ "laufzeit_s": 17.9
+}

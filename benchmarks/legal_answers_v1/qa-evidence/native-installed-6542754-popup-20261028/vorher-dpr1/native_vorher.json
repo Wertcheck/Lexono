@@ -1,0 +1,1920 @@
+{
+ "phase": "vorher",
+ "exe": "%LOCALAPPDATA%\\Lexono\\Lexono.exe",
+ "exe_sha256": "81C9ED788048C7D6AEAF30CFE81A3D33E90E0DA1D97E265645DBF5D393F53235",
+ "aufnahmen": {
+  "00-maximiert-hell-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1098
+   ],
+   "position": [
+    -9,
+    -9
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1051
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1019
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     946,
+     709
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     825
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     776
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1051,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     946,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     964,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-hell-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     713,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     892,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     910,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     550,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     892,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     910,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "960x600-hell-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     550,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "light"
+  },
+  "1920x1080-dunkel-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     946,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     964,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1920x1080-dunkel-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1938,
+    1102
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1920,
+     1055
+    ],
+    "dialog": [
+     220,
+     16,
+     1480,
+     1023
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     713,
+     713
+    ],
+    "panel": [
+     1315,
+     151,
+     384,
+     829
+    ],
+    "vorschau": [
+     221,
+     200,
+     1094,
+     780
+    ],
+    "seite": [
+     237,
+     208,
+     1052,
+     1512
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1920,
+    1055,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     892,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     910,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-dunkel-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     550,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-01-erste-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     892,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-08-mehrere-dokumente": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 5,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 5 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     910,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Einspruch-Bauer.pdf5",
+     "DOCXQA-SYNTH-Stellungnahme.docx1",
+     "PDFQA-SYNTH-Anlage-K1.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 3",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 8,
+    "fusszeile_text": "5 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "960x600-dunkel-10-einzelne-rueckfrage": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1125,
+    750
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1107,
+     703
+    ],
+    "dialog": [
+     16,
+     8,
+     1075,
+     687
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     550,
+     332
+    ],
+    "panel": [
+     770,
+     179,
+     320,
+     440
+    ],
+    "vorschau": [
+     17,
+     251,
+     753,
+     368
+    ],
+    "seite": [
+     33,
+     259,
+     711,
+     1029
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1107,
+    703,
+    1
+   ],
+   "theme": "dark"
+  },
+  "1280x720-hell-30-chat-rueckfrage-beim-senden": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": true,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     550,
+     421
+    ],
+    "panel": [
+     919,
+     130,
+     344,
+     529
+    ],
+    "vorschau": [
+     17,
+     179,
+     902,
+     480
+    ],
+    "seite": [
+     33,
+     187,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf1"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-31-chat-rueckfrage-abgebrochen": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": false,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dialog_im_fenster": false,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": false,
+    "abbrechen_sichtbar": false,
+    "primaer_text": null,
+    "primaer_sichtbar": false,
+    "primaer_gesperrt": null,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 0,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 0,
+    "gewaehlt": null,
+    "fortschritt": "0 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     0,
+     0
+    ],
+    "panel": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "vorschau": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "seite": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "1 Rückfrage(n) offen – bitte zuerst entscheiden.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-32-chat-rueckfrage-beantwortet": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": true,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     16,
+     8,
+     1248,
+     704
+    ],
+    "dialog_im_fenster": true,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": true,
+    "abbrechen_sichtbar": true,
+    "primaer_text": "Pseudonymisierung bestätigen und fortfahren",
+    "primaer_sichtbar": true,
+    "primaer_gesperrt": false,
+    "bestaetigen_sichtbar": true,
+    "bestaetigen_gesperrt": false,
+    "sichtbare_fragekarten": 1,
+    "aktive_frage": "Richter",
+    "optionen_sichtbar": 3,
+    "gewaehlt": "personal",
+    "fortschritt": "1 von 1 Rückfragen beantwortet",
+    "panel_intern_scroll": [
+     548,
+     423
+    ],
+    "panel": [
+     919,
+     128,
+     344,
+     531
+    ],
+    "vorschau": [
+     17,
+     177,
+     902,
+     482
+    ],
+    "seite": [
+     33,
+     193,
+     860,
+     1240
+    ],
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [
+     "PDFQA-SYNTH-Vermerk.pdf✓"
+    ],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": "Seite 1 / 1",
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 3,
+    "fusszeile_text": "Alle Rückfragen beantwortet – bitte prüfen und bestätigen. Danach wird Ihre Nachricht erneut geprüft und fortgesetzt.",
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  },
+  "1280x720-hell-33-chat-fortgesetzt-antwort": {
+   "methode": "PrintWindow",
+   "fenster_px": [
+    1298,
+    767
+   ],
+   "position": [
+    0,
+    0
+   ],
+   "zustand": {
+    "dialog_offen": false,
+    "fenster": [
+     1280,
+     720
+    ],
+    "dialog": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "dialog_im_fenster": false,
+    "seite_querscroll": false,
+    "ueberlauf": [],
+    "fusszeile_sichtbar": false,
+    "abbrechen_sichtbar": false,
+    "primaer_text": null,
+    "primaer_sichtbar": false,
+    "primaer_gesperrt": null,
+    "bestaetigen_sichtbar": false,
+    "bestaetigen_gesperrt": true,
+    "sichtbare_fragekarten": 0,
+    "aktive_frage": null,
+    "optionen_sichtbar": 0,
+    "gewaehlt": null,
+    "fortschritt": null,
+    "panel_intern_scroll": [
+     0,
+     0
+    ],
+    "panel": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "vorschau": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "seite": null,
+    "miniaturen_sichtbar": 0,
+    "dok_tabs": [],
+    "ansicht": "Markierte Vorschau",
+    "seite_info": null,
+    "legende": "wird pseudonymisiert Rückfrage offen bleibt lesbar",
+    "markierungen": 0,
+    "fusszeile_text": null,
+    "js_fehler": []
+   },
+   "viewport": [
+    1280,
+    720,
+    1
+   ],
+   "theme": "light"
+  }
+ },
+ "funktion": {
+  "rollen": [
+   "admin",
+   "anwalt",
+   "mitarbeiter"
+  ],
+  "webview2_argumente": "--remote-debugging-port=9334 --force-device-scale-factor=1",
+  "ausgelieferter_code": {
+   "static/js/pseudonymization_center.js": {
+    "sha256": "27e5d5bd5c6a027e",
+    "gleich_repo_HEAD_arbeitsstand": false,
+    "neues_layout_marker": true
+   },
+   "static/css/app.css": {
+    "sha256": "0d5fe40c47e2ce7c",
+    "gleich_repo_HEAD_arbeitsstand": false,
+    "neues_layout_marker": false
+   }
+  },
+  "auftrag_blockiert": {
+   "52e12c85-9336-4f6a-b99e-1f09335ba968": true,
+   "aa248723-c839-4e11-96b2-aba0fcf1a86a": true,
+   "a8c55522-ad24-4f70-96df-310e16f536a4": true
+  },
+  "convs": {
+   "main": "52e12c85-9336-4f6a-b99e-1f09335ba968",
+   "multi": "aa248723-c839-4e11-96b2-aba0fcf1a86a",
+   "single": "a8c55522-ad24-4f70-96df-310e16f536a4"
+  },
+  "setup_s": 5.5,
+  "recorder_nach_setup": 0,
+  "db_start": {
+   "privacy_decisions": 0,
+   "document_releases": 0,
+   "chat_messages": 11,
+   "chat_conversations": 3
+  },
+  "start_url": "http://127.0.0.1:8066/dashboard/login",
+  "nach_login": "/dashboard/chat",
+  "standard_viewport": [
+   1732,
+   1055,
+   1
+  ],
+  "standard_zoomed": false,
+  "fenstergroessen": {
+   "1920x1080-hell": [
+    1920,
+    1055,
+    1
+   ],
+   "1280x720-hell": [
+    1280,
+    720,
+    1
+   ],
+   "960x600-hell": [
+    1107,
+    703,
+    1
+   ],
+   "1920x1080-dunkel": [
+    1920,
+    1055,
+    1
+   ],
+   "1280x720-dunkel": [
+    1280,
+    720,
+    1
+   ],
+   "960x600-dunkel": [
+    1107,
+    703,
+    1
+   ]
+  },
+  "chat_rueckfrage": {
+   "fragen": [
+    "Richter"
+   ],
+   "recorder_vor_entscheidung": 0,
+   "abbrechen": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 11,
+     "chat_conversations": 3
+    },
+    "nachher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12,
+     "chat_conversations": 3
+    },
+    "recorder": 0,
+    "erneut_oeffnen_button": true
+   },
+   "bestaetigen_klick": "ok",
+   "bestaetigen": {
+    "vorher": {
+     "privacy_decisions": 0,
+     "document_releases": 0,
+     "chat_messages": 12,
+     "chat_conversations": 3
+    },
+    "nachher": {
+     "privacy_decisions": 1,
+     "document_releases": 0,
+     "chat_messages": 13,
+     "chat_conversations": 3
+    },
+    "recorder_anfragen": 1,
+    "pfade": [
+     "/v1/messages"
+    ],
+    "richter_im_payload": 0,
+    "platzhalter": [
+     "[ADRESSE_01]",
+     "[PERSON_01]",
+     "[PERSON_02]"
+    ],
+    "antwort_sichtbar": true,
+    "pfad": "/dashboard/chat/a8c55522-ad24-4f70-96df-310e16f536a4"
+   }
+  },
+  "js_fehler": [],
+  "db_ende": {
+   "privacy_decisions": 1,
+   "document_releases": 0,
+   "chat_messages": 13,
+   "chat_conversations": 3
+  },
+  "recorder_gesamt": 1,
+  "recorder_schluessel": [
+   "sk-ant-qa-in"
+  ]
+ },
+ "pid": 15712
+}

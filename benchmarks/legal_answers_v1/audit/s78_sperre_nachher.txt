@@ -1,0 +1,18 @@
+UNERKANNT | unveraendert | []
+ERKANNT   | Testakte LE-T004 Referenzfrist geaendert | ['LOCK: benchmarks/legal_e2e_v1/cases/test/LE-T004.json wurde geaendert (gesperrt c30ad0c11fe4, jetzt 49130644b876)']
+ERKANNT   | Testakte LE-T001 geloescht | ['LOCK: gesperrte Datei benchmarks/legal_e2e_v1/cases/test/LE-T001.json fehlt']
+ERKANNT   | zusaetzliche Testakte | ['LOCK: benchmarks/legal_e2e_v1/cases/test/LE-T099.json ist neu und nicht gesperrt']
+ERKANNT   | Test-Spezifikation geaendert | ['LOCK: benchmarks/legal_answers_v1/specs/test/LA-T004.json wurde geaendert (gesperrt 7cd773851eed, jetzt 79fbec91cc2e)']
+ERKANNT   | zusaetzliche Test-Spezifikation | ['LOCK: benchmarks/legal_answers_v1/specs/test/LA-T005.json ist neu und nicht gesperrt']
+ERKANNT   | Rubrik-Schwellen gesetzt | ['LOCK: benchmarks/legal_answers_v1/rubric.json wurde geaendert (gesperrt 3e1723c7adc4, jetzt a78133279430)']
+ERKANNT   | Quellenregister: Quelle auf nicht_geprueft | ['LOCK: benchmarks/legal_e2e_v1/source_register.json#Q-RECHTSPRECHUNG-IM-INTERNET wurde geaendert (gesperrt 866478efb59f, jetzt c299ee9240d8)']
+ERKANNT   | LOCK.json ungueltiges JSON | ['LOCK.json ungueltig (kein lesbares JSON: JSONDecodeError) - Sperre nicht pruefbar']
+ERKANNT   | LOCK.json leer | ['LOCK.json ungueltig (entries/history fehlen oder leer) - Sperre nicht pruefbar']
+ERKANNT   | LOCK.json fehlt | ['LOCK.json fehlt - Test-Split nicht gegen Aenderung geschuetzt']
+ERKANNT   | Testakte geaendert UND LOCK-Eintrag von Hand angepasst (ohne Historie) | ['LOCK: Eintraege passen nicht zum letzten Historieneintrag (Handbearbeitung ohne --update-lock?)']
+UNERKANNT | Quellenregister: anderer Eintrag (nicht genutzt) geaendert | []
+UNERKANNT | Testakte + LOCK-Eintrag + Historien-Hash von Hand (absichtliche Manipulation) | []
+   Neusperre ohne Grund: abgelehnt - Neusperre nur mit nachvollziehbarer Begruendung (mindestens 20 Zeichen)
+   Neusperre mit 7 Zeichen: abgelehnt - Neusperre nur mit nachvollziehbarer Begruendung (mindestens 20 Zeichen)
+   begruendete Neusperre dokumentiert: [{'pfad': 'benchmarks/legal_e2e_v1/cases/test/LE-T004.json', 'alt': 'c30ad0c11fe48f9ed0a56351093c124990ae3dc66a7711aaa30757ac587c65d6', 'neu': '49130644b8763456683c26d22511e7fb46343ea27adef108bee375a4567fc8b6'}]
+UNERKANNT | Neusperre ohne/mit Begruendung (Kopie) | []

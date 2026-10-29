@@ -1,0 +1,88 @@
+{
+ "variant": "baseline",
+ "total": 1100,
+ "leaks": 0,
+ "blocks": 0,
+ "groups": {
+  "anrede": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06288669815879654
+  },
+  "feldanfang": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.05692691272547976
+  },
+  "pdf_umbruch": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.10413101000541991
+  },
+  "satzanfang": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06079048907638274
+  },
+  "satzmitte": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06660872728309848
+  },
+  "tabelle": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06972564453767105
+  },
+  "titel": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06227484731088308
+  },
+  "ueberschrift": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.0661637036172165
+  },
+  "vollname": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.061569886332885786
+  },
+  "zwei_namen": {
+   "n": 110,
+   "leaks": 0,
+   "blocks": 0,
+   "seconds": 0.06818100636062974
+  }
+ },
+ "false_alarms": {
+  "flagged": 7,
+  "total": 132,
+  "words": [
+   "Gericht",
+   "Protokoll",
+   "Rücktritt",
+   "Schadensersatz",
+   "Urteil",
+   "Verwalter",
+   "Verzug"
+  ]
+ },
+ "instruction_false_alarms": {
+  "flagged": 1,
+  "total": 17,
+  "texts": [
+   "Gilt das auch für [PERSON_01]?"
+  ]
+ }
+}

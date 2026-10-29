@@ -1,0 +1,58 @@
+{
+ "exe": "C:\\Users\\Bonit\\.claude\\jobs\\02f3f8ce\\tmp\\exe_dist\\Lexono\\Lexono.exe",
+ "schritte": {
+  "lizenz": {
+   "produkte": [
+    "lexono:verfuegbar",
+    "finance:in_entwicklung",
+    "finance_tax:in_entwicklung"
+   ],
+   "aktiv": 1,
+   "module": [
+    "kanzlei"
+   ],
+   "querscroll": false
+  },
+  "optionen": {
+   "gesperrt": [
+    false,
+    false,
+    false
+   ],
+   "treffer": [
+    true,
+    true,
+    true
+   ]
+  },
+  "ladeanzeige_protokoll": [
+   "LexonoPseudonymisierung bestätigt – Dokumente werden freigegeben und erneut geprüft …",
+   "LexonoSchriftsatz wird erstellt …",
+   "LexonoErgebnis wird aufbereitet …"
+  ],
+  "nach_bestaetigen": {
+   "dialog_offen": false,
+   "ladeanzeige": null,
+   "eingabe_gesperrt": false
+  },
+  "ende": {
+   "fehler": "Lexono Die Cloud-KI ist nicht konfiguriert (kein Anthropic-API-Schlüssel hinterlegt). Bitte eine Administratorin oder einen Administrator kontaktieren, bevor Sie den Chat für KI-Antworten nutzen könne",
+   "ladeanzeige": false
+  },
+  "nachrichten": [
+   "upload",
+   "user",
+   "assistant:blocked"
+  ]
+ },
+ "pruefungen": {
+  "natives_webview2_fenster": true,
+  "erster_versuch_dialog_bedienbar": true,
+  "vor_bestaetigen_nur_upload": true,
+  "ladeanzeige_sofort": true,
+  "ende_mit_verstaendlicher_meldung_statt_haengen": true,
+  "genau_ein_auftrag": true
+ },
+ "engine_ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+ "tracebacks": 0
+}

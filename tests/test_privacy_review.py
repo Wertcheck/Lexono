@@ -488,3 +488,124 @@ def test_decision_terms_must_be_a_single_word(db: Session, term) -> None:
     user, matter_a, _, conv_1, _ = _setup(db)
     with pytest.raises(InvalidPrivacyDecisionError):
         record_decision(db, matter_id=matter_a.id, conversation_id=conv_1.id, term=term, decision="personal", user_id=user.id, actor="a")
+
+
+# --- §75.2: Ueberpseudonymisierung "Telefon" / "bei Grün" (reproduziert 16.10.2026) -----------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Rückfragen bitte an Herrn Gustav Wendelin, Telefon 0301 2345678.",
+        "Ansprechpartnerin ist Frau Petra Ostwald, Fax: 0301 2345679.",
+        "Der Fahrer fuhr bei Grün über die Kreuzung, als der Unfall geschah.",
+        "Er ist bei Gelb noch in die Kreuzung gefahren.",
+        "Der Lkw ist bei Rot durchgefahren.",
+        "Bitte schreiben Sie an Frau Petra Ostwald, Mail: erna.probe@example.org.",
+    ],
+)
+def test_contact_labels_and_traffic_light_colours_are_not_name_candidates(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True and result.auto_masked_terms == []
+    payload = result.payload.anonymisierter_sachverhalt
+    for kept in ("Telefon", "Fax", "Mail", "bei Grün", "bei Gelb", "bei Rot"):
+        if kept in text:
+            assert kept in payload
+    for secret in ("Gustav Wendelin", "Petra Ostwald", "0301 2345678", "0301 2345679", "erna.probe@example.org"):
+        assert secret not in payload  # echte Namen und Kontaktdaten bleiben geschuetzt
+
+
+@pytest.mark.parametrize(
+    ("term", "text"),
+    [
+        ("Grün", "Der Vertrag wurde bei Grün unterschrieben."),  # kein Verkehrssatz: weiter Kandidat
+        ("Grün", "Das Gespräch mit Grün fand gestern statt."),  # andere Praeposition
+        ("Lehmann", "Rückfragen bitte an Herrn [PERSON_01], Lehmann [TELEFON_01]."),  # Name vor Rufnummer
+        ("Telefon", "Rückfragen bitte an Herrn [PERSON_01], Telefon und Brief."),  # Wort ohne Kontakt-Platzhalter
+    ],
+)
+def test_narrow_exceptions_keep_real_name_positions_as_candidates(term, text) -> None:
+    from app.privacy import presidio_ner as pn
+
+    expected_candidate = pn._name_probe_score(term) >= 1 and pn._name_probe_frames(term)[0]
+    terms = [c.term for c in find_review_candidates(text, context_source=text)]
+    assert (term in terms) == bool(expected_candidate)
+
+
+def test_known_party_named_like_a_colour_is_still_pseudonymized(gateway) -> None:
+    """Die Ampel-Ausnahme gilt nur fuer unbekannte Woerter - eine bekannte Beteiligte namens Grün bleibt geschuetzt."""
+    result = gateway.prepare_request(purpose="formulate_draft",
+                                     sachverhalt="Frau Grün fuhr bei Grün über die Kreuzung.",
+                                     known_entities={"gegner": ["Lisa Grün", "Grün"]}, review_mode="mask")
+    assert result.allowed is True
+    assert "Grün" not in result.payload.anonymisierter_sachverhalt
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # §45.1 Gegenpruefung: in diesen Saetzen ist das Farbwort ein NAME, obwohl der Satz ein Verkehrswort enthaelt.
+        # Die erste Fassung der Ausnahme liess die ersten vier im Klartext durch (alt 5735e5b: maskiert).
+        "Den Unfall an der Kreuzung meldete der Mandant noch am selben Tag bei Grün.",
+        "Nach dem Unfall an der Kreuzung war er noch eine Stunde bei Grün.",
+        "Die Zeugin übernachtete bei Rot, direkt an der Kreuzung.",
+        "Die Unterlagen zum Unfall an der Ampel liegen bei Grün.",
+        "Sie wohnt bei Grün über die Straße, gleich neben der Ampel.",
+        "Auf dem Rückweg von der Kreuzung ist er bei Grün angefahren und hat geklingelt.",
+        "Nach dem Unfall ist er bei Grün mitgefahren.",
+    ],
+)
+def test_colour_word_used_as_a_name_in_an_accident_file_is_not_sent_in_plaintext(gateway, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    payload = result.payload.anonymisierter_sachverhalt if result.allowed else ""
+    for colour in ("Grün", "Rot"):
+        if f"bei {colour}" in text:
+            assert f"bei {colour}" not in payload
+
+
+# --- §46: kleingeschriebener Name direkt nach einer Anrede (pseudonymization_v1 P09, reproduziert 16.10.2026) ---------
+
+
+@pytest.mark.parametrize(
+    ("name", "text"),
+    [
+        ("sauer", "herr sauer hat angerufen und bittet um rückruf wegen der räumung."),
+        ("pfefferkorn", "bitte rufen sie herrn pfefferkorn wegen der kaution zurück."),
+        ("ostwald", "Frau ostwald hat die Unterlagen nachgereicht."),
+    ],
+)
+def test_lowercase_name_after_salutation_does_not_leave_in_plaintext(gateway, name, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    payload = result.payload.anonymisierter_sachverhalt if result.allowed else ""
+    assert name not in payload.lower()
+
+
+def test_lowercase_name_after_salutation_is_asked_about_in_ask_mode(gateway) -> None:
+    result = _prepare(gateway, "herr sauer hat angerufen und bittet um rückruf.", mode="ask")
+    assert result.allowed is False and result.review_required is True
+    assert "sauer" in [c.term for c in result.review_candidates]
+
+
+@pytest.mark.parametrize(
+    ("kept", "text"),
+    [
+        ("Herr der Lage", "Der Mandant ist Herr der Lage und will klagen."),
+        ("frau kollegin", "Sehr geehrte frau kollegin, anbei der Entwurf."),
+        ("herr doktor", "sehr geehrter herr doktor, danke für die nachricht."),
+        ("frau anwältin", "liebe frau anwältin, wie geht es weiter?"),
+        ("herr richter", "herr richter, ich bitte um vertagung."),
+    ],
+)
+def test_salutation_followed_by_function_title_or_role_word_stays_readable(gateway, kept, text) -> None:
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True and kept in result.payload.anonymisierter_sachverhalt
+
+
+def test_word_after_an_already_replaced_name_is_not_a_lowercase_name_candidate(gateway) -> None:
+    """Fehlalarm der ersten Fassung (pseudonymization_v1 P02): "Frau [PERSON_01] widerspricht" - die Anrede steht im
+    Rohtext nicht direkt vor "widerspricht"."""
+    text = "Frau Dr. Henrike Wallbaum-Ostertag widerspricht der Kündigung vom 12.05.2026 fristgerecht."
+    result = _prepare(gateway, text, mode="mask")
+    assert result.allowed is True
+    payload = result.payload.anonymisierter_sachverhalt
+    assert "widerspricht" in payload and "Wallbaum-Ostertag" not in payload

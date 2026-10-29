@@ -1,0 +1,963 @@
+{
+ "phase": "vorher",
+ "aufnahmen": {
+  "1920x1080-hell-01-startseite": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      699,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      895,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      1092,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      1288,
+      477,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     1227,
+     379,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    675,
+    958,
+    820,
+    122
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1920x1080-hell-02-hover-und-fokus": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      699,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      895,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      1092,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      1288,
+      477,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     1227,
+     379,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    675,
+    958,
+    820,
+    122
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1920x1080-hell-04-prompt-uebernommen": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      699,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      895,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      1092,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      1288,
+      477,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     1227,
+     380,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    675,
+    958,
+    820,
+    122
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-hell-01-startseite": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-hell-02-hover-und-fokus": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-hell-04-prompt-uebernommen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "960x600-hell-01-startseite": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      273,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      442,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      612,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      781,
+      221,
+      155,
+      195
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     693,
+     138,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    249,
+    488,
+    711,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": true,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-01-startseite": {
+   "fenster": [
+    1920,
+    1080
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      699,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      895,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      1092,
+      477,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      1288,
+      477,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     1227,
+     379,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    675,
+    958,
+    820,
+    122
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-dunkel-01-startseite": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-dunkel-02-hover-und-fokus": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "1280x720-dunkel-04-prompt-uebernommen": {
+   "fenster": [
+    1280,
+    720
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      379,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      575,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      772,
+      290,
+      183,
+      177
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      968,
+      290,
+      183,
+      177
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     907,
+     207,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    355,
+    608,
+    820,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": false,
+   "drei_punkte": 0,
+   "js_fehler": []
+  },
+  "960x600-dunkel-01-startseite": {
+   "fenster": [
+    960,
+    600
+   ],
+   "querscroll": false,
+   "begruessung": "Guten Abend.",
+   "unterzeile": "Wie kann ich Sie heute unterstützen?",
+   "karten": [
+    {
+     "titel": "Dokument analysieren",
+     "box": [
+      273,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(220, 252, 231)"
+    },
+    {
+     "titel": "Schriftsatz erstellen",
+     "box": [
+      442,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(232, 238, 247)"
+    },
+    {
+     "titel": "Zusammenfassen",
+     "box": [
+      612,
+      221,
+      155,
+      195
+     ],
+     "tag": "BUTTON",
+     "bg": "rgb(239, 233, 245)"
+    },
+    {
+     "titel": "Weitere Prompts",
+     "box": [
+      781,
+      221,
+      155,
+      195
+     ],
+     "tag": "A",
+     "bg": "rgb(246, 235, 223)"
+    }
+   ],
+   "verwalten": {
+    "text": "Standard-Prompts bearbeiten",
+    "box": [
+     693,
+     138,
+     243,
+     40
+    ],
+    "href": "/dashboard/library/prompts"
+   },
+   "eingabe": [
+    249,
+    488,
+    711,
+    112
+   ],
+   "eingabe_sichtbar": true,
+   "karten_ueberlappen_eingabe": false,
+   "platzhalter": "Nachricht an Lexono …",
+   "kopf_icons": 0,
+   "eckbutton_ueberlappt_senden": true,
+   "drei_punkte": 0,
+   "js_fehler": []
+  }
+ },
+ "vierte_karte": {
+  "1920x1080-hell": [
+   "A",
+   "/dashboard/library/prompts",
+   "Weitere Prompts\n                Eigene V"
+  ],
+  "1280x720-hell": [
+   "A",
+   "/dashboard/library/prompts",
+   "Weitere Prompts\n                Eigene V"
+  ],
+  "1280x720-dunkel": [
+   "A",
+   "/dashboard/library/prompts",
+   "Weitere Prompts\n                Eigene V"
+  ]
+ },
+ "prefill": {
+  "1920x1080-hell": "Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ",
+  "1280x720-hell": "Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: ",
+  "1280x720-dunkel": "Bitte erstelle einen Schriftsatz-Entwurf zu folgendem Sachverhalt: "
+ }
+}

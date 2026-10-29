@@ -1,0 +1,1444 @@
+{
+ "phase": "nachher",
+ "aufnahmen": {
+  "1920x1080-hell-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    410,
+    82,
+    1100,
+    916
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1920x1080-hell-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    410,
+    71,
+    1100,
+    939
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "960x600-hell-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    16,
+    16,
+    928,
+    568
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "960x600-hell-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    16,
+    16,
+    928,
+    568
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    410,
+    82,
+    1100,
+    916
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1920x1080-dunkel-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    410,
+    71,
+    1100,
+    939
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-dunkel-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-dunkel-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "960x600-dunkel-01-uebersicht-leerer-zustand": {
+   "offen": true,
+   "modal": [
+    16,
+    16,
+    928,
+    568
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "960x600-dunkel-02-neuer-prompt-formular": {
+   "offen": true,
+   "modal": [
+    16,
+    16,
+    928,
+    568
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 8 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-11-prompt-bearbeiten-auswahl": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-12-fuenfte-aktivierung-verhindert": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     true,
+     false
+    ],
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Recherche",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": "Bereits 4 von 4 Startplätzen belegt. Bitte zuerst einen anderen Prompt deaktivieren, um diesen auf der Startseite anzuzeigen.",
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-13-aktiviert-und-sortiert-ungespeichert": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-14-rueckfrage-ungespeichert": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "Ungespeicherte Änderungen",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": "Ungespeicherte Änderungen verwerfen?",
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-15-gespeichert": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "Gespeichert",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-16-menue": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-17-loeschen-bestaetigen": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     true
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Fristenkontrolle",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": "Prompt „Fristenkontrolle“ löschen? Die Löschung wird mit „Speichern“ übernommen.",
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-18-validierung-pflichtfeld": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Bitte eine Beschreibung eingeben.",
+   "speichern_aktiv": true,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [
+    "Bitte eine Beschreibung eingeben."
+   ],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-19-neu-gespeichert": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Mandantenschreiben",
+     false,
+     true
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": false,
+   "formular_sichtbar": true,
+   "formular_titel": "Prompt bearbeiten",
+   "schalter_hinweis": "Aktuell 4 von 4 Prompts ausgewählt. Bitte einen bestehenden Prompt deaktivieren, um diesen anzuzeigen.",
+   "status": "Gespeichert",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  },
+  "1280x720-hell-21-nach-neuladen": {
+   "offen": true,
+   "modal": [
+    90,
+    16,
+    1100,
+    688
+   ],
+   "zeilen": [
+    [
+     "Akte öffnen",
+     true,
+     false
+    ],
+    [
+     "Dokument analysieren",
+     true,
+     false
+    ],
+    [
+     "Recherche",
+     true,
+     false
+    ],
+    [
+     "Schriftsatz erstellen",
+     true,
+     false
+    ],
+    [
+     "Zusammenfassen",
+     false,
+     false
+    ],
+    [
+     "Rechtliche Bewertung",
+     false,
+     false
+    ],
+    [
+     "Mandantenschreiben",
+     false,
+     false
+    ]
+   ],
+   "zaehler": "(4 von 7 aktiv auf Startseite)",
+   "limit_hinweis": null,
+   "leer_sichtbar": true,
+   "formular_sichtbar": false,
+   "formular_titel": "Neuen Prompt erstellen",
+   "schalter_hinweis": null,
+   "status": "",
+   "speichern_aktiv": false,
+   "speichern_sichtbar": true,
+   "abbrechen_sichtbar": true,
+   "rueckfrage": null,
+   "fehler": [],
+   "querscroll": false,
+   "js_fehler": []
+  }
+ },
+ "funktion": {
+  "nach_migration": [
+   [
+    "Dokument analysieren",
+    true
+   ],
+   [
+    "Schriftsatz erstellen",
+    true
+   ],
+   [
+    "Zusammenfassen",
+    true
+   ],
+   [
+    "Akte öffnen",
+    true
+   ]
+  ],
+  "synthetische_prompts_angelegt": true,
+  "startseite_vorher": [
+   "Dokument analysieren",
+   "Schriftsatz erstellen",
+   "Zusammenfassen",
+   "Akte öffnen"
+  ],
+  "drag_and_drop": [
+   "Akte öffnen",
+   "Dokument analysieren",
+   "Recherche",
+   "Schriftsatz erstellen",
+   "Zusammenfassen",
+   "Rechtliche Bewertung",
+   "Fristenkontrolle"
+  ],
+  "nach_speichern": [
+   [
+    "Akte öffnen",
+    true,
+    false
+   ],
+   [
+    "Dokument analysieren",
+    true,
+    false
+   ],
+   [
+    "Recherche",
+    true,
+    false
+   ],
+   [
+    "Schriftsatz erstellen",
+    true,
+    false
+   ],
+   [
+    "Zusammenfassen",
+    false,
+    false
+   ],
+   [
+    "Rechtliche Bewertung",
+    false,
+    false
+   ],
+   [
+    "Mandantenschreiben",
+    false,
+    true
+   ]
+  ],
+  "startseite_nachher": [
+   "Akte öffnen",
+   "Dokument analysieren",
+   "Recherche",
+   "Schriftsatz erstellen"
+  ],
+  "startseite_nach_neuladen": [
+   "Akte öffnen",
+   "Dokument analysieren",
+   "Recherche",
+   "Schriftsatz erstellen"
+  ],
+  "verwaltung_nach_neuladen": [
+   [
+    "Akte öffnen",
+    true,
+    false
+   ],
+   [
+    "Dokument analysieren",
+    true,
+    false
+   ],
+   [
+    "Recherche",
+    true,
+    false
+   ],
+   [
+    "Schriftsatz erstellen",
+    true,
+    false
+   ],
+   [
+    "Zusammenfassen",
+    false,
+    false
+   ],
+   [
+    "Rechtliche Bewertung",
+    false,
+    false
+   ],
+   [
+    "Mandantenschreiben",
+    false,
+    false
+   ]
+  ]
+ }
+}

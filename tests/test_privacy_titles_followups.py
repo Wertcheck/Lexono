@@ -134,10 +134,8 @@ def test_masculine_person_noun_check() -> None:
     assert not pn._is_masculine_person_noun("Steuer")
 
 
-# Bekannte, dokumentierte Grenze: maskuliner Artikel + Berufsname ohne Einfuehrung ("Der Fischer hat angerufen") ist ohne
-# weiteren Kontext nicht vom Gattungswort zu unterscheiden.
-@pytest.mark.xfail(reason="maskuliner Artikel + Berufsname ohne Einfuehrung nicht unterscheidbar", strict=False)
-def test_known_limit_masculine_article_occupational_surname(gateway) -> None:
+# Frueher bekannte Grenze (G7, behoben 24.10.2026): nicht unterscheidbar, deshalb Rueckfrage bzw. vorsichtige Maskierung.
+def test_masculine_article_occupational_surname_is_masked_as_uncertain(gateway) -> None:
     assert "Fischer" not in _payload(gateway, "Der Fischer hat am 12.03.2026 angerufen.")
 
 
@@ -229,10 +227,9 @@ def test_object_after_role_in_verb_final_clause_stays_readable(gateway, sentence
     assert keep in _payload(gateway, sentence)
 
 
-# Bekannte Grenze: der Parser liest manche Namen in dieser Stellung als Objekt ("hat die Mandantin Licht unterschrieben":
-# Licht = oa) - dann nicht von einem echten Objekt zu unterscheiden.
-@pytest.mark.xfail(reason="Parser liest Namen als Objekt des Partizips", strict=False)
-def test_known_limit_name_parsed_as_object(gateway) -> None:
+# Frueher bekannte Grenze (G8, behoben 24.10.2026): der Parser liest "Licht" weiter als Objekt; das Rollenwort davor
+# ("Mandantin") ist jetzt Kontextsignal fuer die Rueckfrage, auch ohne Treffer im staerksten Namensrahmen.
+def test_name_parsed_as_object_after_a_role_word(gateway) -> None:
     assert "Licht" not in _payload(gateway, "Nach Rücksprache hat die Mandantin Licht unterschrieben.")
 
 

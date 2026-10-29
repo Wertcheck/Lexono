@@ -34,8 +34,12 @@ _KIND_LABELS = {
     "termin": "Möglicher Termin (kein Fristablauf)",
     "fristbeginn": "Möglicher Fristbeginn (Fristende offen)",
     "fristdauer": "Mögliche Fristdauer (Fristende offen)",
+    # §74: Beendigungszeitpunkt eines Vertrags-/Arbeits-/Mietverhaeltnisses - keine Frist, keine Wirksamkeitsaussage
+    "beendigung": "Möglicher Beendigungstermin (kein Fristende)",
     "manuell": "Manuell erfasst",
 }
+#: §74: Arten, die KEIN Fristende sind (Anzeige "Typ" statt "Frist")
+TYPE_LABELS = {"beendigung": "Beendigungstermin"}
 
 
 class ReviewDecisionError(Exception):
@@ -51,6 +55,10 @@ def kind_from_reasoning(reasoning: str | None, *, from_analysis: bool) -> str:
         return "fristbeginn"
     if "Art: Termin" in reasoning:
         return "termin"
+    if "Art: Beendigungstermin" in reasoning:
+        # §74. Altvorschlaege ("Art: Frist ... 'zum (Beendigung/Ablauf)'") bleiben "frist": der alte Hinweis traf
+        # auch echte Fristenden ("Die Widerspruchsfrist endet zum ..."), gespeicherte Daten werden nicht umgedeutet
+        return "beendigung"
     if from_analysis or "Art: Frist" in reasoning:
         return "frist"
     return "manuell"
@@ -62,6 +70,11 @@ def deadline_kind(deadline: Deadline) -> str:
 
 def kind_label(deadline: Deadline) -> str:
     return _KIND_LABELS[deadline_kind(deadline)]
+
+
+def type_label(deadline: Deadline) -> str:
+    """Spalte "Typ" in Aufgaben & Fristen: "Beendigungstermin" statt "Frist" (§74); alle anderen Arten unveraendert."""
+    return TYPE_LABELS.get(deadline_kind(deadline), "Frist")
 
 
 def split_source_text(source_text: str | None) -> tuple[str | None, str | None]:

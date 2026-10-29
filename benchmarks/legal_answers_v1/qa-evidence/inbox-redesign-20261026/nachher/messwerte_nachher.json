@@ -1,0 +1,596 @@
+{
+ "phase": "nachher",
+ "aufnahmen": {
+  "1920x1080-hell-01-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-dunkel-01-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "1280x720-hell-01-posteingang": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    474,
+    411
+   ],
+   "detail": [
+    723,
+    262,
+    557,
+    458
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1280x720-dunkel-01-posteingang": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    474,
+    411
+   ],
+   "detail": [
+    723,
+    262,
+    557,
+    458
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "960x600-hell-01-posteingang": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    257,
+    334,
+    343
+   ],
+   "detail": [
+    583,
+    210,
+    377,
+    390
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-02-nachricht-mit-anhang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-03-filter-nicht-zugeordnet": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 5,
+   "theme": "light"
+  },
+  "1920x1080-hell-04-suche-absender": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 1,
+   "theme": "light"
+  },
+  "1920x1080-hell-05-leerer-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "light"
+  },
+  "1920x1080-dunkel-05-leerer-posteingang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "dark"
+  },
+  "1920x1080-hell-06-ungelesene-nachrichten": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-07-ausgewaehlte-nachricht-geoeffnet": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-08-auswahl-sammelaktion": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-09-tab-mit-anhang": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": false,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 5,
+   "theme": "light"
+  },
+  "1920x1080-hell-16-weitere-filter": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1280x720-hell-10-liste-gescrollt": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    474,
+    411
+   ],
+   "detail": [
+    723,
+    262,
+    557,
+    458
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-dunkel-11-umschalter-kopfzeile": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "1920x1080-hell-12-zugeordnet-mit-anhaengen-und-aktionen": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    719,
+    771
+   ],
+   "detail": [
+    968,
+    262,
+    952,
+    818
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": false,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "1920x1080-hell-13-antwortfunktion-geoeffnet": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": null,
+   "detail": null,
+   "liste_scrollt": null,
+   "detail_scrollt": null,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "light"
+  },
+  "1920x1080-hell-14-neue-nachricht-entwurf-im-chat": {
+   "viewport": [
+    1920,
+    1080
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": null,
+   "detail": null,
+   "liste_scrollt": null,
+   "detail_scrollt": null,
+   "ueber_rechts": [],
+   "zeilen": 0,
+   "theme": "light"
+  },
+  "960x600-hell-15-nachricht-mit-anhang": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    257,
+    334,
+    343
+   ],
+   "detail": [
+    583,
+    210,
+    377,
+    390
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "light"
+  },
+  "960x600-dunkel-15-nachricht-mit-anhang": {
+   "viewport": [
+    960,
+    600
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    257,
+    334,
+    343
+   ],
+   "detail": [
+    583,
+    210,
+    377,
+    390
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  },
+  "1280x720-dunkel-15-nachricht-mit-anhang": {
+   "viewport": [
+    1280,
+    720
+   ],
+   "seite_querscroll": false,
+   "seite_hochscroll": false,
+   "liste": [
+    248,
+    309,
+    474,
+    411
+   ],
+   "detail": [
+    723,
+    262,
+    557,
+    458
+   ],
+   "liste_scrollt": true,
+   "detail_scrollt": true,
+   "ueber_rechts": [],
+   "zeilen": 9,
+   "theme": "dark"
+  }
+ },
+ "phase_ok": true,
+ "funktion": {
+  "ungelesen_db_vorher": 4,
+  "badge_sidebar": "4",
+  "ungelesene_zeilen": 4,
+  "geoeffnet_id_kurz": "5d6ef234",
+  "nach_klick_detail_id_passt": true,
+  "nach_klick_zeile_noch_ungelesen": false,
+  "nach_klick_db_gelesen": true,
+  "url_nach_klick": "/dashboard/inbox/5d6ef234-b3f4-4bc6-815a-6966a45a8ce9",
+  "auswahl_zaehler": "2 ausgewählt",
+  "auswahl_buttons_aktiv": true,
+  "kaestchen_oeffnet_nicht": true,
+  "sammel_ungelesen_db": [
+   1
+  ],
+  "url_nach_sammelaktion": "/dashboard/inbox",
+  "tab_mit_anhang_url": "/dashboard/inbox?client=&matter=&period=all&q=&sort=newest&filter=with_attachment",
+  "tab_mit_anhang_zeilen": 5,
+  "tab_mit_anhang_db": 5,
+  "weitere_filter_offen": true,
+  "sortierung_umgekehrt": true,
+  "sortierung_zurueck": true,
+  "scroll_unabhaengig": {
+   "liste": 400,
+   "detail": 0,
+   "seite": 0
+  },
+  "umschalter_dunkel": "dark",
+  "umschalter_localstorage": "dark",
+  "umschalter_serverwert_gespeichert": false,
+  "umschalter_zurueck": null,
+  "antworten_ziel": "/dashboard/chat/e1589c36-74ac-4d23-95db-e5eaac4e4f39",
+  "neue_nachricht_href": "/dashboard/chat?new=1&compose=email",
+  "neue_nachricht_eingabe": "Bitte entwirf eine neue E-Mail an "
+ }
+}

@@ -143,10 +143,15 @@ def _embedding_provider():  # noqa: ANN202
         provider.embed("Probe")
         return provider, "fastembed:" + get_settings().embedding_model_name
     except Exception as exc:  # noqa: BLE001
-        sys.path.insert(0, str(ROOT / "tests"))
-        from fake_embedding_provider import FakeEmbeddingProvider
+        # §104 (A17): Fake-Provider OHNE sys.path-Aenderung laden - sonst stuende tests/ dauerhaft im Suchpfad und die
+        # Codequellenpruefung (isolation_codepfad) meldete einen unbekannten Suchpfadeintrag (Gate geschlossen).
+        import importlib.util
 
-        return FakeEmbeddingProvider(), f"fake (Produktionsmodell nicht verfuegbar: {type(exc).__name__}) - Retrieval-Qualitaet NICHT VERIFIZIERT"
+        spec = importlib.util.spec_from_file_location("fake_embedding_provider", ROOT / "tests" / "fake_embedding_provider.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.FakeEmbeddingProvider(), (f"fake (Produktionsmodell nicht verfuegbar: {type(exc).__name__}) - "
+                                                "Retrieval-Qualitaet NICHT VERIFIZIERT")
 
 
 def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN001
@@ -255,8 +260,29 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
         record: dict = {"case": case["id"], "split": case["split"], "documents": st["doc_results"], "tasks": [],
                         "critical": []}
 
-        # Fristen (Verarbeitung)
-        found = sorted({d.due_date.strftime("%d.%m.%Y") for d in db.query(Deadline).filter(Deadline.matter_id == matter.id) if d.due_date})
+        # Fristen (Verarbeitung). Der Datums-Recall bleibt wie bisher definiert (nur Datumsgleichheit, Art NICHT
+        # geprueft). §74: die Art "Beendigungstermin" wird ZUSAETZLICH getrennt bewertet (erwartet:
+        # reference.terminations; Negativdaten: reference.not_deadlines; Referenzfrist als Beendigungstermin eingeordnet)
+        from app.deadlines.review import deadline_kind
+
+        dated = [d for d in db.query(Deadline).filter(Deadline.matter_id == matter.id) if d.due_date]
+        found = sorted({d.due_date.strftime("%d.%m.%Y") for d in dated})
+        found_deadline_kind = {d.due_date.strftime("%d.%m.%Y") for d in dated if deadline_kind(d) != "beendigung"}
+        found_terminations = sorted({d.due_date.strftime("%d.%m.%Y") for d in dated if deadline_kind(d) == "beendigung"})
+        expected_terminations = sorted({t["date"] for t in case["reference"].get("terminations", [])})
+        negatives = sorted({n["date"] for n in case["reference"].get("not_deadlines", [])})
+        record["beendigungstermine"] = {
+            "expected": expected_terminations, "found": found_terminations,
+            "recall": f"{len(set(expected_terminations) & set(found_terminations))}/{len(expected_terminations)}",
+            "missing": sorted(set(expected_terminations) - set(found_terminations)),
+            "not_in_reference": sorted(set(found_terminations) - set(expected_terminations)),
+            # erwarteter Beendigungstermin, der (auch) als Frist vorgeschlagen wurde
+            "als_frist": sorted(set(expected_terminations) & found_deadline_kind),
+        }
+        record["negativdaten_als_frist"] = sorted(set(negatives) & set(found))
+        # Referenzfrist, die NUR als Beendigungstermin vorgeschlagen wurde (Art-Abweichung zur Referenz)
+        record["referenzfrist_als_beendigung"] = sorted(
+            {d["date"] for d in case["reference"]["deadlines"]} & set(found_terminations) - found_deadline_kind)
         expected = sorted({d["date"] for d in case["reference"]["deadlines"]})
         personal = [p["value"] for p in case["reference"]["privacy"]["protect"] if p["type"] == "PERS_DATUM"]
         # bekannte Daten des Falls: Chronologie, Dokumentdaten, datierte Widerspruchswerte
@@ -316,6 +342,11 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
                     record["critical"].append({"kind": "daten_anderer_akte_im_payload", "task": task["id"], "values": cross})
                 if task["kind"] == "schriftsatz":
                     item["erhalt"] = _preservation(case, sent)
+                if case.get("solution") and task.get("analyse"):
+                    # §71: enthaelt der gesendete Payload die Grundlage der Referenzloesung? (ohne Modell messbar)
+                    from scripts.legal_bench.solution_score import payload_basis
+
+                    item["loesungsbasis"] = payload_basis(case, sent)
                 item["maskiert_ohne_referenz"] = _unreferenced_masks(case, seen_mappings)
             for leftover in item.get("export_placeholders", []):
                 record["critical"].append({"kind": "platzhalterrest_im_export", "task": task["id"], "value": leftover})
@@ -324,12 +355,13 @@ def run(cases: list[dict], workdir: Path, embedding=None) -> dict:  # noqa: ANN0
         results.append(record)
 
     matching = _matching_probes(db, cases, {cid: st["matter"].id for cid, st in state.items()})
+    release = _release_probe(db, user, drafting, Client, Matter)
     foreign_attachment = _foreign_attachment_probes(db, user, cases, state, all_protect, drafting)
     ocr_degraded = _ocr_degraded_probe(db, cases, workdir, intake, processing)
 
     db.close()
     engine.dispose()
-    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment,
+    return {"results": results, "matching": matching, "foreign_attachment": foreign_attachment, "freigabe": release,
             "ocr_degraded": ocr_degraded, "environment": {"embedding": embedding_label, "ocr": tesseract or "nicht verfuegbar",
                                                  "writer": "CapturingWriter (offline, kein Cloud-Aufruf)"}}
 
@@ -443,6 +475,38 @@ def _foreign_attachment_probes(db, user, cases, state, all_protect, drafting) ->
         rows.append({"case": case["id"], "fremde_akte": other_id, "status": result["status"],
                      "werte_fremder_akte_im_payload": foreign_values, "kritisch": bool(foreign_values)})
     return rows
+
+
+_RELEASE_MARKER = "Sperrvermerk QX-71-NICHT-FREIGEGEBEN"
+
+
+def _release_probe(db, user, drafting, Client, Matter) -> dict:  # noqa: ANN001, N803
+    """§71: Dokumentfreigabe vor KI-Anfragen (§62) im echten Chat-Pfad - Modus C, ein unauffaelliges und ein auffaelliges
+    Dokument (unsicherer Begriff); der Payload darf nur das unauffaellige enthalten. Danach Modus zurueck."""
+    from app.documents import release
+    from app.models import Document
+
+    previous = release.get_mode(db)
+    release.set_mode(db, release.MODE_AUTO_REVIEW, actor="benchmark")
+    try:
+        matter = Matter(client=Client(name="Freigabeprobe Mandantin"), title="Freigabeprobe")
+        db.add(matter)
+        db.flush()
+        clean = Document(matter_id=matter.id, file_path="x", original_filename="beschluss.txt", ocr_status="not_needed",
+                         extracted_text="Beschluss vom 03.11.2026: Der Streitwert wird auf 4.250,00 EUR festgesetzt.")
+        uncertain = Document(matter_id=matter.id, file_path="x", original_filename="schreiben.txt", ocr_status="not_needed",
+                             extracted_text="Wir bestaetigen den Eingang des Schreibens von Richter vom 16.03.2024. "
+                                            f"{_RELEASE_MARKER}.")
+        db.add_all([clean, uncertain])
+        db.commit()
+        states = {doc.original_filename: release.processing_state(db, doc) for doc in (clean, uncertain)}
+        result = _run_chat(db, user, matter, {}, {"id": "FREIGABE", "question": "Fasse die Akte zusammen."}, drafting)
+        sent = result.pop("_payload_text", "") or ""
+        return {"zustaende": states, "status": result["status"], "freigegebenes_im_payload": "4.250,00 EUR" in sent,
+                "zurueckgehaltenes_im_payload": _RELEASE_MARKER in sent or "QX-71" in sent,
+                "kritisch": _RELEASE_MARKER in sent or "QX-71" in sent}
+    finally:
+        release.set_mode(db, previous, actor="benchmark")
 
 
 def _email_message(document: dict) -> tuple[str | None, str | None, str]:
@@ -650,6 +714,13 @@ def _runtime_and_size(docs: list[dict], tasks: list[dict]) -> dict:
     return out
 
 
+_NO_TERMINATIONS = {"recall": "0/0", "not_in_reference": [], "als_frist": []}
+
+
+def _terminations(row: dict) -> dict:
+    return row.get("beendigungstermine") or _NO_TERMINATIONS
+
+
 def summarise(results: list[dict]) -> dict:
     def per_split(split: str) -> dict:
         rows = [r for r in results if r["split"] == split]
@@ -670,6 +741,15 @@ def summarise(results: list[dict]) -> dict:
             "fristen_datum_recall": f"{sum(int(r['deadlines']['recall'].split('/')[0]) for r in rows)}/"
                               f"{sum(int(r['deadlines']['recall'].split('/')[1]) for r in rows)}",
             "fristen_nicht_in_referenz": sum(len(r["deadlines"]["not_in_reference"]) for r in rows),
+            # §74: Beendigungstermine getrennt (eigene Art, keine Frist)
+            # (Zeilen ohne diese Felder - Ergebnisse vor §74 - zaehlen als 0/0 bzw. leer)
+            "beendigung_recall": f"{sum(int(_terminations(r)['recall'].split('/')[0]) for r in rows)}/"
+                                 f"{sum(int(_terminations(r)['recall'].split('/')[1]) for r in rows)}",
+            "beendigung_nicht_in_referenz": [f"{r['case']}:{d}" for r in rows for d in _terminations(r)["not_in_reference"]],
+            "beendigung_als_frist": [f"{r['case']}:{d}" for r in rows for d in _terminations(r)["als_frist"]],
+            "negativdaten_als_frist": [f"{r['case']}:{d}" for r in rows for d in r.get("negativdaten_als_frist", [])],
+            "referenzfrist_als_beendigung": [f"{r['case']}:{d}" for r in rows
+                                             for d in r.get("referenzfrist_als_beendigung", [])],
             "davon_bekannte_falldaten": sum(len(r["deadlines"]["known_dates_as_deadline"]) for r in rows),
             "davon_ungeklaert": [f"{r['case']}:{d}" for r in rows for d in r["deadlines"]["unexplained"]],
             # nur ob ueberhaupt ein Typ vergeben wurde - die Korrektheit gegen den Referenztyp ist NICHT bewertet
@@ -695,6 +775,13 @@ def summarise(results: list[dict]) -> dict:
             "erfundene_fundstellen_markiert": f"{sum(len(t['quellenintegritaet'].get('als_pruefpunkt_markiert', [])) for t in drafts if 'quellenintegritaet' in t)}/"
                                               f"{sum(len(t['quellenintegritaet'].get('im_entwurf', [])) for t in drafts if 'quellenintegritaet' in t)}",
             "aufgabenfehler": [f"{r['case']}/{t['id']}" for r in rows for t in r["tasks"] if t.get("status") == "error"],
+            # §71: Grundlage der Referenzloesung im tatsaechlich gesendeten Payload (Analyseaufgaben abgeleiteter Faelle)
+            "loesungsbasis_vollstaendig": f"{sum(1 for t in tasks if t.get('loesungsbasis', {}).get('vollstaendig'))}/"
+                                          f"{sum(1 for t in tasks if 'loesungsbasis' in t)}",
+            "loesungsbasis_luecken": sorted(
+                f"{r['case']}/{t['id']}:" + ";".join(f"{k}={v}" for k in ("normen_fehlend", "fakten_fehlend", "fristen_fehlend", "offene_punkte_fehlend")
+                         for v in t["loesungsbasis"][k])
+                for r in rows for t in r["tasks"] if "loesungsbasis" in t and not t["loesungsbasis"]["vollstaendig"]),
         }
 
     return {"dev": per_split("dev"), "test": per_split("test")}
@@ -741,7 +828,7 @@ def main() -> int:
               "kosten": "keine (kein Cloud-Aufruf); echte Modellkosten NICHT VERIFIZIERT - gemessen ist nur die Payload-Groesse in Zeichen",
               "nicht_verifiziert": ["Antwortqualitaet eines echten Modells", "Kosten", "installierter Build (eigener Lauf)"],
               "summary": summarise(outcome["results"]), "aktenzuordnung": outcome["matching"],
-              "fremder_anhang": outcome["foreign_attachment"], "ocr_schlechter_scan": outcome["ocr_degraded"],
+              "fremder_anhang": outcome["foreign_attachment"], "freigabe": outcome["freigabe"], "ocr_schlechter_scan": outcome["ocr_degraded"],
               "results": outcome["results"]}
     out = Path(args.out) if args.out else CORPUS_DIR / "results.json"
     out.write_text(json.dumps(output, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")

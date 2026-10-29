@@ -1,0 +1,629 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block title %}Finanzbuchhaltung{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/dashboard/static/css/fibu.css" />{% endblock %}
+{% block content %}
+{# Finanzbuchhaltung (MVP, 28.10.2026) nach Referenzbild. Alle Zahlen stammen aus gespeicherten Buchungen des
+   gewaehlten Mandanten und Jahres (app/fibu/service.py) - keine Demo-Werte. Funktionen ausserhalb des MVP
+   (Jahresabschluss) sind sichtbar als nicht verfuegbar gekennzeichnet, nicht als Attrappe verlinkt. #}
+{% macro amount(b) -%}
+  <span class="fibu-amount fibu-amount--{{ 'in' if b.direction == 'income' else 'out' }}{% if b.status == 'cancelled' %} fibu-amount--void{% endif %}">{{ (b.gross_cents if b.direction == 'income' else -b.gross_cents) | eur(signed=True) }} €</span>
+{%- endmacro %}
+{% macro trend(change, good_when_up) -%}
+  {% if change is none %}<span class="fibu-kpi__trend is-neutral">kein Vorjahreswert</span>
+  {%- else %}{% set up = change >= 0 %}<span class="fibu-kpi__trend {{ 'is-good' if up == good_when_up else 'is-bad' }}">{{ icons.trend_up(class_="icon" ~ ('' if up else ' is-down')) }} {{ '+' if up else '−' }} {{ ('%g'|format(change|abs)).replace('.', ',') }} %</span><span class="fibu-kpi__vs">vs. Vorjahr</span>{% endif %}
+{%- endmacro %}
+{% macro status_pill(status) -%}
+  <span class="fibu-pill fibu-pill--{{ status }}">{{ status_labels[status] }}</span>
+{%- endmacro %}
+{% macro booking_rows(rows, return_tab) %}
+  {% for b in rows %}
+    <tr class="{% if b.status == 'cancelled' %}is-void{% endif %}{% if edit and edit.id == b.id %} is-selected{% endif %}">
+      <td class="fibu-nowrap">{{ b.booking_date.strftime('%d.%m.%Y') }}</td>
+      <td class="fibu-nowrap">{{ b.receipt_number }}</td>
+      <td class="fibu-desc" title="{{ b.description }}">{{ b.description }}</td>
+      <td class="fibu-nowrap">{{ b.account.number }} {{ b.account.name }}</td>
+      <td class="fibu-nowrap">{{ b.contra_account.number }} {{ b.contra_account.name }}</td>
+      <td class="fibu-num fibu-nowrap">{{ amount(b) }}</td>
+      <td class="fibu-num">{{ b.tax_rate }} %</td>
+      <td>{{ status_pill(b.status) }}</td>
+      <td class="fibu-menu-cell">
+        <details class="fibu-menu">
+          <summary aria-label="Aktionen zu {{ b.receipt_number }}">{{ icons.dots_vertical(class_="icon") }}</summary>
+          <div class="fibu-menu__list" role="menu">
+            {% if b.receipt_id %}<a role="menuitem" href="/dashboard/fibu/receipts/{{ b.receipt_id }}/file?client={{ client.id }}" target="_blank" rel="noopener">Beleg ansehen</a>{% endif %}
+            <a role="menuitem" href="{{ url('buchen', edit=b.id) if b.status == 'open' else url('buchen', cancel=b.id) }}">Details &amp; Verlauf</a>
+            {% if can_capture and b.status == 'open' %}<a role="menuitem" href="{{ url('buchen', edit=b.id) }}">Bearbeiten</a>{% endif %}
+            {% if can_manage and b.status == 'open' %}
+              <form method="post" action="/dashboard/fibu/bookings/{{ b.id }}/post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+                <input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+                <input type="hidden" name="return_tab" value="{{ return_tab }}" />
+                <button type="submit" role="menuitem">Buchen</button>
+              </form>
+            {% endif %}
+            {% if can_manage and b.status != 'cancelled' %}<a role="menuitem" class="is-danger" href="{{ url('buchen', cancel=b.id) }}">Stornieren …</a>{% endif %}
+          </div>
+        </details>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="fibu-empty">{% if search or account_filter %}Keine Buchungen zu diesem Filter.{% else %}Für {{ year }} sind noch keine Buchungen erfasst.{% endif %}</td></tr>
+  {% endfor %}
+{% endmacro %}
+{% macro booking_table(rows, return_tab) %}
+  <div class="fibu-table-wrap">
+    <table class="fibu-table">
+      <thead><tr>
+        <th>Datum <span class="fibu-sort" aria-hidden="true">▾</span></th><th>Beleg</th><th>Beschreibung</th><th>Konto</th><th>Gegenkonto</th>
+        <th class="fibu-num">Betrag</th><th class="fibu-num">USt.</th><th>Status</th><th class="fibu-menu-cell"><span class="visually-hidden">Aktionen</span>{{ icons.dots_vertical(class_="icon fibu-th-icon") }}</th>
+      </tr></thead>
+      <tbody>{{ booking_rows(rows, return_tab) }}</tbody>
+    </table>
+  </div>
+{% endmacro %}
+{% macro pager(return_tab) %}
+  <div class="fibu-pager">
+    <nav class="fibu-pager__pages" aria-label="Seiten">
+      {% set base = dict(q=search, account=account_filter, page_size=page_size|string) %}
+      {% if page > 1 %}<a href="{{ url(return_tab, page=(page - 1)|string, **base) }}" aria-label="Vorherige Seite">{{ icons.chevron_left(class_="icon") }}</a>{% else %}<span class="is-disabled">{{ icons.chevron_left(class_="icon") }}</span>{% endif %}
+      {% for p in range(1, pages + 1) %}
+        {% if p == 1 or p == pages or (p - page)|abs <= 1 %}
+          <a href="{{ url(return_tab, page=p|string, **base) }}" class="{% if p == page %}is-current{% endif %}"{% if p == page %} aria-current="page"{% endif %}>{{ p }}</a>
+        {% elif (p - page)|abs == 2 %}<span class="fibu-pager__gap">…</span>{% endif %}
+      {% endfor %}
+      {% if page < pages %}<a href="{{ url(return_tab, page=(page + 1)|string, **base) }}" aria-label="Nächste Seite">{{ icons.chevron_right(class_="icon") }}</a>{% else %}<span class="is-disabled">{{ icons.chevron_right(class_="icon") }}</span>{% endif %}
+    </nav>
+    <form method="get" action="/dashboard/fibu" class="fibu-pager__size">
+      <input type="hidden" name="client" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+      <input type="hidden" name="tab" value="{{ return_tab }}" /><input type="hidden" name="q" value="{{ search }}" />
+      <input type="hidden" name="account" value="{{ account_filter }}" />
+      <label for="fibu-page-size-{{ return_tab }}">Einträge pro Seite</label>
+      <span class="fibu-select fibu-select--sm"><select id="fibu-page-size-{{ return_tab }}" name="page_size" onchange="this.form.submit()">
+        {% for s in page_sizes %}<option value="{{ s }}"{% if s == page_size %} selected{% endif %}>{{ s }}</option>{% endfor %}
+      </select>{{ icons.chevron_down(class_="icon") }}</span>
+      <noscript><button type="submit" class="fibu-btn fibu-btn--ghost">OK</button></noscript>
+    </form>
+  </div>
+{% endmacro %}
+{% macro account_options(selected, kinds) %}
+  <option value="">Bitte wählen …</option>
+  {% for a in active_accounts %}{% if not kinds or a.kind in kinds %}<option value="{{ a.id }}"{% if a.id == selected %} selected{% endif %}>{{ a.number }} {{ a.name }} ({{ kind_labels[a.kind] }})</option>{% endif %}{% endfor %}
+{% endmacro %}
+
+<div class="fibu" data-fibu>
+  <nav class="fibu-crumbs" aria-label="Brotkrumen">
+    <a href="/dashboard/chat" aria-label="Startseite">{{ icons.home(class_="icon") }}</a>
+    {{ icons.chevron_right(class_="icon fibu-crumbs__sep") }}
+    <span>Finanzbuchhaltung</span>
+  </nav>
+
+  <header class="fibu-head">
+    <div class="fibu-head__title">
+      <span class="fibu-head__icon">{{ icons.ledger(class_="icon") }}</span>
+      <div>
+        <h1>Finanzbuchhaltung</h1>
+        <p>Digitale Buchhaltung für Ihre Mandanten. Belege erfassen, buchen und auswerten.</p>
+      </div>
+    </div>
+    {% if client %}
+    <form class="fibu-head__filters" method="get" action="/dashboard/fibu">
+      <input type="hidden" name="tab" value="{{ tab }}" />
+      <div class="fibu-field">
+        <label for="fibu-client">Mandant</label>
+        <span class="fibu-select fibu-select--client">{{ icons.document(class_="icon fibu-select__lead") }}
+          <select id="fibu-client" name="client" onchange="this.form.submit()">
+            {% for c in clients %}<option value="{{ c.id }}"{% if c.id == client.id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            {% if client.status != 'active' %}<option value="{{ client.id }}" selected>{{ client.name }} (archiviert)</option>{% endif %}
+          </select>{{ icons.chevron_down(class_="icon") }}</span>
+      </div>
+      <div class="fibu-field">
+        <label for="fibu-year">Aktuelles Jahr</label>
+        <span class="fibu-select fibu-select--year"><select id="fibu-year" name="year" onchange="this.form.submit()">
+          {% for y in years %}<option value="{{ y }}"{% if y == year %} selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>{{ icons.chevron_down(class_="icon") }}</span>
+      </div>
+      <noscript><button type="submit" class="fibu-btn fibu-btn--ghost">Anzeigen</button></noscript>
+    </form>
+    {% if can_capture %}
+    <div class="fibu-split">
+      <label for="fibu-upload-input" class="fibu-btn fibu-btn--primary fibu-split__main" tabindex="0" role="button">{{ icons.plus(class_="icon") }}<span>Belege hochladen</span></label>
+      <details class="fibu-split__more">
+        <summary class="fibu-btn fibu-btn--primary" aria-label="Weitere Aktionen">{{ icons.chevron_down(class_="icon") }}</summary>
+        <div class="fibu-menu__list fibu-menu__list--right" role="menu">
+          <a role="menuitem" href="{{ url('buchen') }}#fibu-booking-form">Neue Buchung erfassen</a>
+          <label role="menuitem" for="fibu-upload-input">Belege hochladen …</label>
+          <a role="menuitem" href="{{ url('uebersicht') }}#fibu-task-form">Aufgabe anlegen</a>
+          {% if can_manage %}<a role="menuitem" href="{{ url('auswertungen', report='datev') }}">DATEV-Export (Entwurf)</a>{% endif %}
+        </div>
+      </details>
+    </div>
+    <form id="fibu-upload-form" method="post" action="/dashboard/fibu/receipts" enctype="multipart/form-data" hidden>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+      <input type="hidden" name="return_tab" value="{{ 'belege' if tab == 'belege' else tab }}" />
+      <input id="fibu-upload-input" type="file" name="files" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+    </form>
+    {% endif %}
+    {% endif %}
+  </header>
+
+  {% if client %}
+  <nav class="fibu-tabs" aria-label="Bereiche der Finanzbuchhaltung">
+    {% for key, label in tabs %}
+      {% if key == 'jahresabschluss' %}
+        <span class="fibu-tabs__tab is-unavailable" aria-disabled="true" title="Noch nicht verfügbar – nicht Teil des MVP">{{ label }}</span>
+      {% else %}
+        <a class="fibu-tabs__tab{% if key == tab %} is-active{% endif %}" href="{{ url(key) }}"{% if key == tab %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  {% if ok %}<div class="fibu-flash fibu-flash--ok" role="status">{{ icons.check(class_="icon") }}<span>{{ ok }}</span></div>{% endif %}
+  {% if error %}<div class="fibu-flash fibu-flash--error" role="alert">{{ icons.warning(class_="icon") }}<span>{{ error }}</span></div>{% endif %}
+
+  {% if not client %}
+    <section class="fibu-card fibu-empty-state">
+      {{ icons.users(class_="icon") }}
+      <h2>Noch kein aktiver Mandant</h2>
+      <p>Die Finanzbuchhaltung arbeitet mandantenbezogen. Bitte zuerst einen Mandanten anlegen.</p>
+      <a class="fibu-btn fibu-btn--primary" href="/dashboard/clients">Zu den Mandanten</a>
+    </section>
+  {% elif tab == 'uebersicht' %}
+    {% set k = kpis %}
+    <section class="fibu-kpis" aria-label="Kennzahlen {{ year }}">
+      <article class="fibu-card fibu-kpi">
+        <span class="fibu-kpi__icon is-green">{{ icons.chart(class_="icon") }}</span>
+        <div><p class="fibu-kpi__label">Gesamtumsatz (brutto)</p><p class="fibu-kpi__value">{{ k.revenue_gross | eur }} €</p><p class="fibu-kpi__meta">{{ trend(k.revenue_change, true) }}</p></div>
+      </article>
+      <article class="fibu-card fibu-kpi">
+        <span class="fibu-kpi__icon is-red">{{ icons.trend_up(class_="icon") }}</span>
+        <div><p class="fibu-kpi__label">Gesamtkosten (brutto)</p><p class="fibu-kpi__value">{{ (-k.cost_gross) | eur }} €</p><p class="fibu-kpi__meta">{{ trend(k.cost_change, false) }}</p></div>
+      </article>
+      <article class="fibu-card fibu-kpi">
+        <span class="fibu-kpi__icon is-blue">{{ icons.calculator(class_="icon") }}</span>
+        <div><p class="fibu-kpi__label">Vorläufiges Ergebnis (netto)</p><p class="fibu-kpi__value">{{ k.result_net | eur }} €</p><p class="fibu-kpi__meta">{{ trend(k.result_change, true) }}</p></div>
+      </article>
+      <article class="fibu-card fibu-kpi">
+        <span class="fibu-kpi__icon is-sky">{{ icons.coins(class_="icon") }}</span>
+        <div><p class="fibu-kpi__label">USt. Zahllast Q{{ k.vat_quarter }}/{{ k.vat_year }}</p><p class="fibu-kpi__value">{{ k.vat_payable | eur }} €</p><p class="fibu-kpi__meta fibu-kpi__due">Fällig am {{ k.vat_due.strftime('%d.%m.%Y') }}</p></div>
+      </article>
+    </section>
+    <p class="fibu-note">Aus {{ k.booking_count }} Buchung(en) {{ year }} berechnet{% if k.open_count %}, davon {{ k.open_count }} noch offen{% endif %}; stornierte Buchungen zählen nicht. Vorbereitende Werte ohne steuerliche Prüfung; Fälligkeit ohne Dauerfristverlängerung und ohne Wochenend-/Feiertagsverschiebung.</p>
+
+    <div class="fibu-grid">
+      <div class="fibu-main">
+        <section class="fibu-card fibu-bookings" aria-labelledby="fibu-recent-title">
+          <div class="fibu-card__head">
+            <h2 id="fibu-recent-title">Letzte Buchungen</h2>
+            <form method="get" action="/dashboard/fibu" class="fibu-filters">
+              <input type="hidden" name="client" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" /><input type="hidden" name="tab" value="uebersicht" />
+              <label class="fibu-search">{{ icons.search(class_="icon") }}<span class="visually-hidden">Buchungen suchen</span><input type="search" name="q" value="{{ search }}" placeholder="Buchungen suchen …" /></label>
+              <span class="fibu-select fibu-select--sm"><select name="account" aria-label="Konto filtern" onchange="this.form.submit()">
+                <option value="">Alle Konten</option>
+                {% for a in accounts %}<option value="{{ a.id }}"{% if a.id == account_filter %} selected{% endif %}>{{ a.number }} {{ a.name }}</option>{% endfor %}
+              </select>{{ icons.chevron_down(class_="icon") }}</span>
+            </form>
+          </div>
+          {{ booking_table(bookings, 'uebersicht') }}
+          {{ pager('uebersicht') }}
+        </section>
+
+        <div class="fibu-bottom">
+          <section class="fibu-card fibu-clientinfo" aria-labelledby="fibu-clientinfo-title">
+            <div class="fibu-card__head"><h2 id="fibu-clientinfo-title">Mandanteninformation</h2>
+              <a class="fibu-icon-btn" href="{{ url('einstellungen') }}" aria-label="Stammdaten bearbeiten" title="Stammdaten bearbeiten">{{ icons.dots_vertical(class_="icon") }}</a></div>
+            <dl class="fibu-facts">
+              <div><dt>Name</dt><dd>{{ client.name }}</dd></div>
+              <div><dt>StNr.</dt><dd>{{ profile.tax_number if profile and profile.tax_number else '–' }}</dd></div>
+              <div><dt>USt-IdNr.</dt><dd>{{ profile.vat_id if profile and profile.vat_id else '–' }}</dd></div>
+              <div><dt>Rechtsform</dt><dd>{{ profile.legal_form if profile and profile.legal_form else '–' }}</dd></div>
+            </dl>
+          </section>
+          <section class="fibu-card fibu-reports" aria-labelledby="fibu-reports-title">
+            <div class="fibu-card__head"><h2 id="fibu-reports-title">Aktuelle Auswertungen</h2><a class="fibu-link" href="{{ url('auswertungen') }}">Alle anzeigen</a></div>
+            <div class="fibu-tiles">
+              <a class="fibu-tile" href="{{ url('auswertungen', report='bwa') }}"><span class="fibu-tile__icon is-blue">{{ icons.document(class_="icon") }}</span><span><strong>BWA</strong><small>{{ report_month }} {{ year }}</small></span>{{ icons.chevron_right(class_="icon fibu-tile__go") }}</a>
+              <a class="fibu-tile" href="{{ url('auswertungen', report='susa') }}"><span class="fibu-tile__icon is-green">{{ icons.document(class_="icon") }}</span><span><strong>Summen- und Saldenliste</strong><small>{{ report_month }} {{ year }}</small></span>{{ icons.chevron_right(class_="icon fibu-tile__go") }}</a>
+              <a class="fibu-tile" href="{{ url('auswertungen', report='konto') }}"><span class="fibu-tile__icon is-blue">{{ icons.document(class_="icon") }}</span><span><strong>Kontenblatt</strong><small>{{ report_month }} {{ year }}</small></span>{{ icons.chevron_right(class_="icon fibu-tile__go") }}</a>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <aside class="fibu-side">
+        <section class="fibu-card" aria-labelledby="fibu-capture-title">
+          <h2 id="fibu-capture-title">Belege erfassen</h2>
+          {% if can_capture %}
+          <label for="fibu-upload-input" class="fibu-drop" data-fibu-drop>
+            <span class="fibu-drop__icon">{{ icons.document(class_="icon") }}</span>
+            <span><strong>Belege hier ablegen oder klicken</strong><small>PDF, JPG, PNG • Mehrere Dateien möglich</small></span>
+          </label>
+          {% else %}<p class="fibu-muted">Nur Admin und Anwalt können Belege hochladen.</p>{% endif %}
+          {% if unassigned_receipts %}<p class="fibu-muted fibu-drop__hint"><a class="fibu-link" href="{{ url('belege') }}">{{ unassigned_receipts }} Beleg(e)</a> noch keiner Buchung zugeordnet.</p>{% endif %}
+        </section>
+
+        <section class="fibu-card" aria-labelledby="fibu-tasks-title">
+          <div class="fibu-card__head"><h2 id="fibu-tasks-title">Offene Aufgaben</h2><a class="fibu-link" href="{{ url('uebersicht') }}#fibu-task-form">Alle anzeigen</a></div>
+          <ul class="fibu-tasks">
+            <li class="fibu-task is-derived" title="Aus dem Kalender berechnet, keine gespeicherte Aufgabe">
+              <span class="fibu-task__check is-static" aria-hidden="true"></span>
+              <a class="fibu-task__title" href="{{ url('ust') }}">USt-Voranmeldung Q{{ k.vat_quarter }}/{{ k.vat_year }}</a>
+              <span class="fibu-task__due{% if k.vat_due <= today %} is-urgent{% endif %}">{{ k.vat_due.strftime('%d.%m.%Y') }}</span>
+            </li>
+            {% for t in tasks %}
+              {% set overdue = t.due_date and t.due_date <= today %}
+              <li class="fibu-task">
+                {% if can_capture %}
+                <form method="post" action="/dashboard/fibu/tasks/{{ t.id }}/toggle">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" />
+                  <input type="hidden" name="year" value="{{ year }}" /><input type="hidden" name="done" value="1" />
+                  <button type="submit" class="fibu-task__check" aria-label="„{{ t.title }}“ erledigen"></button>
+                </form>
+                {% else %}<span class="fibu-task__check is-static" aria-hidden="true"></span>{% endif %}
+                <span class="fibu-task__title">{{ t.title }}</span>
+                <span class="fibu-task__due{% if overdue %} is-urgent{% endif %}">{% if t.due_date == today %}Heute{% elif t.due_date %}{{ t.due_date.strftime('%d.%m.%Y') }}{% endif %}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          {% if can_capture %}
+          <form id="fibu-task-form" method="post" action="/dashboard/fibu/tasks" class="fibu-task-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+            <input type="text" name="title" maxlength="200" placeholder="Neue Aufgabe …" aria-label="Neue Aufgabe" value="{{ form.task_title or '' }}" required />
+            <input type="date" name="due_date" aria-label="Fällig am" value="{{ form.task_due or '' }}" />
+            <button type="submit" class="fibu-btn fibu-btn--ghost" aria-label="Aufgabe anlegen">{{ icons.plus(class_="icon") }}</button>
+          </form>
+          {% endif %}
+        </section>
+
+        <section class="fibu-card" aria-labelledby="fibu-quick-title">
+          <h2 id="fibu-quick-title">Schnellaktionen</h2>
+          <div class="fibu-quick">
+            <a class="fibu-quick__item" href="{{ url('ust') }}"><span class="fibu-tile__icon is-green">{{ icons.document(class_="icon") }}</span><span>USt-Voranmeldung</span>{{ icons.chevron_right(class_="icon") }}</a>
+            <a class="fibu-quick__item" href="{{ url('auswertungen', report='op') }}"><span class="fibu-tile__icon is-blue">{{ icons.list_bulleted(class_="icon") }}</span><span>OP-Liste</span>{{ icons.chevron_right(class_="icon") }}</a>
+            <a class="fibu-quick__item" href="{{ url('auswertungen', report='konto') }}"><span class="fibu-tile__icon is-purple">{{ icons.document(class_="icon") }}</span><span>Kontenauszug</span>{{ icons.chevron_right(class_="icon") }}</a>
+            <a class="fibu-quick__item" href="{{ url('auswertungen', report='datev') }}"><span class="fibu-tile__icon is-orange">{{ icons.download(class_="icon") }}</span><span>DATEV Export</span>{{ icons.chevron_right(class_="icon") }}</a>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+  {% elif tab == 'buchen' %}
+    <div class="fibu-grid fibu-grid--form">
+      <section class="fibu-card" id="fibu-booking-form" aria-labelledby="fibu-form-title">
+        {% if cancel %}
+          <h2 id="fibu-form-title">Buchung {{ cancel.receipt_number }}</h2>
+          <dl class="fibu-facts fibu-facts--stack">
+            <div><dt>Datum</dt><dd>{{ cancel.booking_date.strftime('%d.%m.%Y') }}</dd></div>
+            <div><dt>Beschreibung</dt><dd>{{ cancel.description }}</dd></div>
+            <div><dt>Konto / Gegenkonto</dt><dd>{{ cancel.account.number }} {{ cancel.account.name }} / {{ cancel.contra_account.number }} {{ cancel.contra_account.name }}</dd></div>
+            <div><dt>Betrag</dt><dd>{{ amount(cancel) }} ({{ cancel.tax_rate }} % USt.: {{ cancel.tax_cents | eur }} €, netto {{ cancel.net_cents | eur }} €)</dd></div>
+            <div><dt>Status</dt><dd>{{ status_pill(cancel.status) }}{% if cancel.cancel_reason %} – Grund: {{ cancel.cancel_reason }}{% endif %}</dd></div>
+            {% if cancel.receipt %}<div><dt>Beleg</dt><dd><a class="fibu-link" href="/dashboard/fibu/receipts/{{ cancel.receipt.id }}/file?client={{ client.id }}" target="_blank" rel="noopener">{{ cancel.receipt.original_filename }}</a></dd></div>{% endif %}
+          </dl>
+          {% if can_manage and cancel.status != 'cancelled' %}
+          <form method="post" action="/dashboard/fibu/bookings/{{ cancel.id }}/cancel" class="fibu-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+            <label class="fibu-form__field{% if error_field == 'reason' %} has-error{% endif %}"><span>Stornogrund *</span>
+              <textarea name="reason" rows="3" maxlength="500" required>{{ form.reason or '' }}</textarea></label>
+            <p class="fibu-muted">Die Buchung bleibt sichtbar und nachvollziehbar, zählt aber in keiner Summe mehr.</p>
+            <div class="fibu-form__actions"><a class="fibu-btn fibu-btn--ghost" href="{{ url('buchen') }}">Abbrechen</a><button type="submit" class="fibu-btn fibu-btn--danger">Stornieren</button></div>
+          </form>
+          {% endif %}
+        {% elif not can_capture %}
+          <h2 id="fibu-form-title">Buchungen</h2>
+          <p class="fibu-muted">Sie können Buchungen ansehen, aber nicht erfassen.</p>
+        {% elif not active_accounts %}
+          <h2 id="fibu-form-title">Neue Buchung</h2>
+          <p class="fibu-muted">Für diesen Mandanten sind noch keine Konten angelegt.</p>
+          {% if can_manage %}<a class="fibu-btn fibu-btn--primary" href="{{ url('konten') }}">Konten anlegen</a>{% else %}<p class="fibu-muted">Konten legen Admin oder Anwalt an.</p>{% endif %}
+        {% else %}
+          {% set f = form if form else ({
+              'booking_date': edit.booking_date.isoformat(), 'receipt_number': edit.receipt_number, 'description': edit.description,
+              'direction': edit.direction, 'amount': edit.gross_cents | eur, 'tax_rate': edit.tax_rate|string,
+              'account_id': edit.account_id, 'contra_account_id': edit.contra_account_id, 'receipt_id': edit.receipt_id or ''} if edit else
+              {'booking_date': today.isoformat() if year == today.year else (year|string) ~ '-01-01', 'direction': 'expense', 'tax_rate': '19', 'receipt_id': preset_receipt}) %}
+          <h2 id="fibu-form-title">{{ 'Buchung bearbeiten' if edit else 'Neue Buchung' }}</h2>
+          <form method="post" action="{{ '/dashboard/fibu/bookings/' ~ edit.id ~ '/update' if edit else '/dashboard/fibu/bookings' }}" class="fibu-form" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+            <fieldset class="fibu-segment{% if error_field == 'direction' %} has-error{% endif %}"><legend>Art</legend>
+              <label><input type="radio" name="direction" value="income"{% if f.direction == 'income' %} checked{% endif %} /> Einnahme</label>
+              <label><input type="radio" name="direction" value="expense"{% if f.direction == 'expense' %} checked{% endif %} /> Ausgabe</label>
+            </fieldset>
+            <div class="fibu-form__row">
+              <label class="fibu-form__field{% if error_field == 'booking_date' %} has-error{% endif %}"><span>Datum *</span><input type="date" name="booking_date" value="{{ f.booking_date or '' }}" required /></label>
+              <label class="fibu-form__field{% if error_field == 'receipt_number' %} has-error{% endif %}"><span>Belegnummer *</span><input type="text" name="receipt_number" maxlength="64" value="{{ f.receipt_number or '' }}" required /></label>
+            </div>
+            <label class="fibu-form__field{% if error_field == 'description' %} has-error{% endif %}"><span>Beschreibung *</span><input type="text" name="description" maxlength="200" value="{{ f.description or '' }}" required /></label>
+            <div class="fibu-form__row">
+              <label class="fibu-form__field{% if error_field == 'amount' %} has-error{% endif %}"><span>Betrag brutto (€) *</span><input type="text" inputmode="decimal" name="amount" value="{{ f.amount or '' }}" placeholder="0,00" required /></label>
+              <label class="fibu-form__field{% if error_field == 'tax_rate' %} has-error{% endif %}"><span>USt.-Satz *</span>
+                <span class="fibu-select"><select name="tax_rate">{% for r in tax_rates %}<option value="{{ r }}"{% if f.tax_rate == r|string %} selected{% endif %}>{{ r }} %</option>{% endfor %}</select>{{ icons.chevron_down(class_="icon") }}</span></label>
+            </div>
+            <label class="fibu-form__field{% if error_field == 'account_id' %} has-error{% endif %}"><span>Konto * <small>(Erlös- bzw. Aufwandskonto)</small></span>
+              <span class="fibu-select"><select name="account_id">{{ account_options(f.account_id, ['revenue', 'expense']) }}</select>{{ icons.chevron_down(class_="icon") }}</span></label>
+            <label class="fibu-form__field{% if error_field == 'contra_account_id' %} has-error{% endif %}"><span>Gegenkonto * <small>(Bank, Forderungen/Verbindlichkeiten, Sonstiges)</small></span>
+              <span class="fibu-select"><select name="contra_account_id">{{ account_options(f.contra_account_id, ['bank', 'receivable', 'payable', 'other']) }}</select>{{ icons.chevron_down(class_="icon") }}</span></label>
+            <label class="fibu-form__field{% if error_field == 'receipt_id' %} has-error{% endif %}"><span>Belegdatei</span>
+              <span class="fibu-select"><select name="receipt_id"><option value="">Ohne Belegdatei</option>
+                {% for r in receipts %}<option value="{{ r.id }}"{% if r.id == f.receipt_id %} selected{% endif %}>{{ r.original_filename }} ({{ r.created_at.strftime('%d.%m.%Y') }})</option>{% endfor %}
+              </select>{{ icons.chevron_down(class_="icon") }}</span></label>
+            <p class="fibu-muted">Netto und Steuer werden aus Brutto und Steuersatz berechnet. Offene Buchungen bleiben änderbar; „Buchen“ schließt die Bearbeitung ab, danach ist nur noch ein Storno möglich.{% if not can_manage %} Buchen und Stornieren übernehmen Admin oder Anwalt.{% endif %}</p>
+            <div class="fibu-form__actions">
+              {% if edit %}
+                <a class="fibu-btn fibu-btn--ghost" href="{{ url('buchen') }}">Abbrechen</a>
+                <button type="submit" class="fibu-btn fibu-btn--primary">Änderungen speichern</button>
+              {% else %}
+                <button type="submit" name="action" value="save" class="fibu-btn fibu-btn--ghost">Als offen speichern</button>
+                {% if can_manage %}<button type="submit" name="action" value="save_post" class="fibu-btn fibu-btn--primary">Speichern und buchen</button>{% endif %}
+              {% endif %}
+            </div>
+          </form>
+        {% endif %}
+        {% if history %}
+          <h3 class="fibu-subhead">Verlauf</h3>
+          <ol class="fibu-history">
+            {% for e in history %}<li><time>{{ e.created_at.strftime('%d.%m.%Y %H:%M') }}</time> <strong>{{ {'fibu_booking_created': 'Erfasst', 'fibu_booking_updated': 'Geändert', 'fibu_booking_posted': 'Gebucht', 'fibu_booking_cancelled': 'Storniert'}.get(e.event_type, e.event_type) }}</strong> – {{ e.actor }}{% if e.details %}<br /><span class="fibu-muted">{{ e.details }}</span>{% endif %}</li>{% endfor %}
+          </ol>
+        {% endif %}
+      </section>
+
+      <section class="fibu-card fibu-bookings" aria-labelledby="fibu-journal-title">
+        <div class="fibu-card__head">
+          <h2 id="fibu-journal-title">Buchungsjournal {{ year }}</h2>
+          <form method="get" action="/dashboard/fibu" class="fibu-filters">
+            <input type="hidden" name="client" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" /><input type="hidden" name="tab" value="buchen" />
+            <label class="fibu-search">{{ icons.search(class_="icon") }}<span class="visually-hidden">Buchungen suchen</span><input type="search" name="q" value="{{ search }}" placeholder="Buchungen suchen …" /></label>
+            <span class="fibu-select fibu-select--sm"><select name="account" aria-label="Konto filtern" onchange="this.form.submit()">
+              <option value="">Alle Konten</option>
+              {% for a in accounts %}<option value="{{ a.id }}"{% if a.id == account_filter %} selected{% endif %}>{{ a.number }} {{ a.name }}</option>{% endfor %}
+            </select>{{ icons.chevron_down(class_="icon") }}</span>
+          </form>
+        </div>
+        {{ booking_table(bookings, 'buchen') }}
+        {{ pager('buchen') }}
+      </section>
+    </div>
+
+  {% elif tab == 'belege' %}
+    <div class="fibu-grid fibu-grid--form">
+      <section class="fibu-card" aria-labelledby="fibu-upload-title">
+        <h2 id="fibu-upload-title">Belege hochladen</h2>
+        {% if can_capture %}
+          <label for="fibu-upload-input" class="fibu-drop fibu-drop--tall" data-fibu-drop>
+            <span class="fibu-drop__icon">{{ icons.upload(class_="icon") }}</span>
+            <span><strong>Belege hier ablegen oder klicken</strong><small>PDF, JPG, PNG • bis 20 MB je Datei • mehrere Dateien möglich</small></span>
+          </label>
+          <p class="fibu-muted">Belege werden nur lokal gespeichert, dem Mandanten zugeordnet und nicht automatisch ausgelesen oder an eine KI übergeben.</p>
+        {% else %}<p class="fibu-muted">Nur Admin und Anwalt können Belege hochladen.</p>{% endif %}
+      </section>
+      <section class="fibu-card" aria-labelledby="fibu-receipts-title">
+        <div class="fibu-card__head"><h2 id="fibu-receipts-title">Belege des Mandanten ({{ receipts|length }})</h2></div>
+        <div class="fibu-table-wrap">
+          <table class="fibu-table">
+            <thead><tr><th>Datei</th><th>Hochgeladen</th><th class="fibu-num">Größe</th><th>Zuordnung</th><th>Status</th><th><span class="visually-hidden">Aktionen</span></th></tr></thead>
+            <tbody>
+              {% for r in receipts %}{% set links = receipt_links.get(r.id, []) %}
+                <tr>
+                  <td class="fibu-desc" title="{{ r.original_filename }}"><span class="fibu-filetype">{{ 'PDF' if r.mime_type == 'application/pdf' else 'BILD' }}</span> {{ r.original_filename }}</td>
+                  <td class="fibu-nowrap">{{ r.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                  <td class="fibu-num fibu-nowrap">{{ '%.1f'|format(r.size_bytes / 1024) if r.size_bytes < 1048576 else '%.1f'|format(r.size_bytes / 1048576) }} {{ 'KB' if r.size_bytes < 1048576 else 'MB' }}</td>
+                  <td>{% for b in links %}<a class="fibu-link" href="{{ url('buchen', edit=b.id) if b.status == 'open' else url('buchen', cancel=b.id) }}">{{ b.receipt_number }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="fibu-muted">nicht zugeordnet</span>{% endfor %}</td>
+                  <td>{% if links %}<span class="fibu-pill fibu-pill--posted">Zugeordnet</span>{% else %}<span class="fibu-pill fibu-pill--open">Neu</span>{% endif %}</td>
+                  <td class="fibu-actions">
+                    <a class="fibu-link" href="/dashboard/fibu/receipts/{{ r.id }}/file?client={{ client.id }}" target="_blank" rel="noopener">Ansehen</a>
+                    <a class="fibu-link" href="/dashboard/fibu/receipts/{{ r.id }}/file?client={{ client.id }}&download=1">Herunterladen</a>
+                    {% if can_capture %}<a class="fibu-link" href="{{ url('buchen', receipt=r.id) }}#fibu-booking-form">Buchung erfassen</a>{% endif %}
+                  </td>
+                </tr>
+              {% else %}<tr><td colspan="6" class="fibu-empty">Noch keine Belege für diesen Mandanten.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  {% elif tab == 'konten' %}
+    <div class="fibu-grid fibu-grid--form">
+      <section class="fibu-card" aria-labelledby="fibu-acc-new-title">
+        <h2 id="fibu-acc-new-title">Konto anlegen</h2>
+        {% if can_manage %}
+          <form method="post" action="/dashboard/fibu/accounts" class="fibu-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+            <div class="fibu-form__row">
+              <label class="fibu-form__field{% if error_field == 'number' %} has-error{% endif %}"><span>Kontonummer *</span><input type="text" name="number" inputmode="numeric" maxlength="8" value="{{ form.number or '' }}" required /></label>
+              <label class="fibu-form__field{% if error_field == 'kind' %} has-error{% endif %}"><span>Kontoart *</span>
+                <span class="fibu-select"><select name="kind"><option value="">Bitte wählen …</option>{% for key, label in kind_labels.items() %}<option value="{{ key }}"{% if form.kind == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>{{ icons.chevron_down(class_="icon") }}</span></label>
+            </div>
+            <label class="fibu-form__field{% if error_field == 'name' %} has-error{% endif %}"><span>Bezeichnung *</span><input type="text" name="name" maxlength="120" value="{{ form.name or '' }}" required /></label>
+            <div class="fibu-form__actions"><button type="submit" class="fibu-btn fibu-btn--primary">Konto anlegen</button></div>
+          </form>
+          <form method="post" action="/dashboard/fibu/accounts/seed" class="fibu-form fibu-seed">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+            <p class="fibu-muted">Startkonten aus der Designvorlage (1000 Bank, 1200 Ford. L+L, 1600 Verb. L+L, 4930–4980 Aufwand, 8400 Erlöse). <strong>Kein geprüfter Kontenrahmen (SKR03/SKR04)</strong> – bitte fachlich prüfen und anpassen. Vorhandene Nummern bleiben unverändert.</p>
+            <button type="submit" class="fibu-btn fibu-btn--ghost">Startkonten anlegen</button>
+          </form>
+        {% else %}<p class="fibu-muted">Nur Admin und Anwalt können Konten anlegen.</p>{% endif %}
+      </section>
+      <section class="fibu-card" aria-labelledby="fibu-acc-title">
+        <div class="fibu-card__head"><h2 id="fibu-acc-title">Kontenübersicht {{ year }}</h2></div>
+        <div class="fibu-table-wrap">
+          <table class="fibu-table">
+            <thead><tr><th>Konto</th><th>Bezeichnung</th><th>Art</th><th class="fibu-num">Soll</th><th class="fibu-num">Haben</th><th class="fibu-num">Saldo</th><th>Status</th><th><span class="visually-hidden">Aktionen</span></th></tr></thead>
+            <tbody>
+              {% for a in accounts %}{% set s = susa.get(a.id) %}
+                <tr class="{% if not a.is_active %}is-void{% endif %}">
+                  <td class="fibu-nowrap">{{ a.number }}</td><td>{{ a.name }}</td><td>{{ kind_labels[a.kind] }}</td>
+                  <td class="fibu-num fibu-nowrap">{{ (s.debit if s else 0) | eur }}</td><td class="fibu-num fibu-nowrap">{{ (s.credit if s else 0) | eur }}</td>
+                  <td class="fibu-num fibu-nowrap">{{ (s.balance if s else 0) | eur }}</td>
+                  <td>{{ 'Aktiv' if a.is_active else 'Deaktiviert' }}</td>
+                  <td class="fibu-actions">
+                    <a class="fibu-link" href="{{ url('auswertungen', report='konto', konto=a.id) }}">Kontenblatt</a>
+                    {% if can_manage %}
+                    <form method="post" action="/dashboard/fibu/accounts/{{ a.id }}/toggle">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+                      <input type="hidden" name="active" value="{{ '0' if a.is_active else '1' }}" />
+                      <button type="submit" class="fibu-link-btn">{{ 'Deaktivieren' if a.is_active else 'Aktivieren' }}</button>
+                    </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% else %}<tr><td colspan="8" class="fibu-empty">Noch keine Konten für diesen Mandanten.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  {% elif tab == 'ust' %}
+    <section class="fibu-card" aria-labelledby="fibu-vat-title">
+      <div class="fibu-card__head"><h2 id="fibu-vat-title">Umsatzsteuer {{ year }} – vorbereitende Übersicht</h2></div>
+      <p class="fibu-note fibu-note--warn">Keine Umsatzsteuer-Voranmeldung im rechtlichen Sinn und keine Übermittlung (ELSTER). Annahmen: vierteljährlicher Voranmeldungszeitraum, Ist-Werte aus den erfassten Buchungen (offen und gebucht), nur Steuersätze 19/7/0 %, keine Sonderfälle (z. B. Reverse Charge, innergemeinschaftliche Lieferungen), Fälligkeit ohne Dauerfristverlängerung. Bitte fachlich prüfen.</p>
+      <div class="fibu-table-wrap">
+        <table class="fibu-table">
+          <thead><tr><th>Zeitraum</th><th class="fibu-num">Bemessung 19 %</th><th class="fibu-num">USt. 19 %</th><th class="fibu-num">Bemessung 7 %</th><th class="fibu-num">USt. 7 %</th><th class="fibu-num">Umsätze 0 %</th><th class="fibu-num">Vorsteuer</th><th class="fibu-num">Zahllast</th><th>Fällig</th><th class="fibu-num">Buchungen</th></tr></thead>
+          <tbody>
+            {% for q in vat %}{% set r19, r7, r0 = q.by_rate %}
+              <tr><td>Q{{ q.quarter }}/{{ year }}</td>
+                <td class="fibu-num">{{ r19.base | eur }}</td><td class="fibu-num">{{ r19.tax | eur }}</td>
+                <td class="fibu-num">{{ r7.base | eur }}</td><td class="fibu-num">{{ r7.tax | eur }}</td>
+                <td class="fibu-num">{{ r0.base | eur }}</td><td class="fibu-num">{{ q.vst | eur }}</td>
+                <td class="fibu-num"><strong>{{ q.payable | eur }}</strong></td><td class="fibu-nowrap">{{ q.due.strftime('%d.%m.%Y') }}</td><td class="fibu-num">{{ q.count }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  {% elif tab == 'auswertungen' %}
+    <nav class="fibu-subtabs" aria-label="Auswertungen">
+      {% for key, label in [('bwa', 'BWA (Übersicht)'), ('susa', 'Summen- und Saldenliste'), ('konto', 'Kontenblatt'), ('op', 'OP-Liste'), ('datev', 'DATEV-Export')] %}
+        <a href="{{ url('auswertungen', report=key) }}" class="{% if report == key %}is-active{% endif %}"{% if report == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <section class="fibu-card">
+    {% if report == 'bwa' %}
+      <div class="fibu-card__head"><h2>BWA-ähnliche Übersicht {{ year }} (netto)</h2></div>
+      <p class="fibu-note">Vereinfachte Übersicht aus den erfassten Buchungen – keine BWA nach DATEV-Schema, keine Bestandsveränderungen oder Abgrenzungen.</p>
+      <div class="fibu-bwa">
+        <table class="fibu-table">
+          <thead><tr><th colspan="2">Erlöse</th><th class="fibu-num">Betrag</th></tr></thead>
+          <tbody>{% for l in bwa.revenue %}<tr><td>{{ l.number }}</td><td>{{ l.name }}</td><td class="fibu-num">{{ l.amount | eur }} €</td></tr>{% else %}<tr><td colspan="3" class="fibu-empty">Keine Erlöse.</td></tr>{% endfor %}
+            <tr class="is-total"><td colspan="2">Summe Erlöse</td><td class="fibu-num">{{ bwa.total_revenue | eur }} €</td></tr></tbody>
+          <thead><tr><th colspan="2">Aufwand</th><th class="fibu-num">Betrag</th></tr></thead>
+          <tbody>{% for l in bwa.expense %}<tr><td>{{ l.number }}</td><td>{{ l.name }}</td><td class="fibu-num">{{ l.amount | eur }} €</td></tr>{% else %}<tr><td colspan="3" class="fibu-empty">Kein Aufwand.</td></tr>{% endfor %}
+            <tr class="is-total"><td colspan="2">Summe Aufwand</td><td class="fibu-num">{{ bwa.total_expense | eur }} €</td></tr>
+            <tr class="is-total is-result"><td colspan="2">Vorläufiges Ergebnis</td><td class="fibu-num">{{ bwa.result | eur }} €</td></tr></tbody>
+        </table>
+        <table class="fibu-table fibu-table--months">
+          <thead><tr><th>Monat</th><th class="fibu-num">Erlöse</th><th class="fibu-num">Aufwand</th><th class="fibu-num">Ergebnis</th></tr></thead>
+          <tbody>{% for m in bwa.months %}<tr><td>{{ months[m.month - 1] }}</td><td class="fibu-num">{{ m.revenue | eur }}</td><td class="fibu-num">{{ m.expense | eur }}</td><td class="fibu-num">{{ m.result | eur }}</td></tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    {% elif report == 'susa' %}
+      <div class="fibu-card__head"><h2>Summen- und Saldenliste {{ year }}</h2></div>
+      <p class="fibu-note">Je Buchung: Einnahme = Gegenkonto (Soll, brutto) an Erlöskonto (Haben, netto) und Umsatzsteuer; Ausgabe = Aufwandskonto (Soll, netto) und Vorsteuer an Gegenkonto (Haben, brutto). Steuerzeilen sind berechnet, keine eigenen Konten.</p>
+      <div class="fibu-table-wrap"><table class="fibu-table">
+        <thead><tr><th>Konto</th><th>Bezeichnung</th><th class="fibu-num">Soll</th><th class="fibu-num">Haben</th><th class="fibu-num">Saldo</th></tr></thead>
+        <tbody>{% for r in susa_rows %}<tr><td>{{ r.number or '–' }}</td><td>{{ r.name }}</td><td class="fibu-num">{{ r.debit | eur }}</td><td class="fibu-num">{{ r.credit | eur }}</td><td class="fibu-num">{{ (r.balance|abs) | eur }} {{ 'S' if r.balance > 0 else ('H' if r.balance < 0 else '') }}</td></tr>{% else %}<tr><td colspan="5" class="fibu-empty">Keine Buchungen.</td></tr>{% endfor %}
+          <tr class="is-total"><td colspan="2">Summe</td><td class="fibu-num">{{ susa_debit | eur }}</td><td class="fibu-num">{{ susa_credit | eur }}</td><td class="fibu-num">{{ (susa_debit - susa_credit) | eur }}</td></tr></tbody>
+      </table></div>
+    {% elif report == 'konto' %}
+      <div class="fibu-card__head"><h2>Kontenblatt {{ year }}</h2>
+        {% if accounts %}<form method="get" action="/dashboard/fibu" class="fibu-filters">
+          <input type="hidden" name="client" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" /><input type="hidden" name="tab" value="auswertungen" /><input type="hidden" name="report" value="konto" />
+          <span class="fibu-select fibu-select--sm"><select name="konto" aria-label="Konto" onchange="this.form.submit()">{% for a in accounts %}<option value="{{ a.id }}"{% if ledger_account and a.id == ledger_account.id %} selected{% endif %}>{{ a.number }} {{ a.name }}</option>{% endfor %}</select>{{ icons.chevron_down(class_="icon") }}</span>
+          <noscript><button type="submit" class="fibu-btn fibu-btn--ghost">Anzeigen</button></noscript>
+        </form>{% endif %}</div>
+      {% if ledger_account %}
+      <div class="fibu-table-wrap"><table class="fibu-table">
+        <thead><tr><th>Datum</th><th>Beleg</th><th>Beschreibung</th><th class="fibu-num">Soll</th><th class="fibu-num">Haben</th><th class="fibu-num">Saldo</th><th>Status</th></tr></thead>
+        <tbody>{% for l in ledger %}<tr><td>{{ l.booking.booking_date.strftime('%d.%m.%Y') }}</td><td>{{ l.booking.receipt_number }}</td><td class="fibu-desc">{{ l.booking.description }}</td><td class="fibu-num">{{ l.debit | eur if l.debit else '' }}</td><td class="fibu-num">{{ l.credit | eur if l.credit else '' }}</td><td class="fibu-num">{{ l.balance | eur }}</td><td>{{ status_pill(l.booking.status) }}</td></tr>{% else %}<tr><td colspan="7" class="fibu-empty">Keine Buchungen auf {{ ledger_account.number }} {{ ledger_account.name }} in {{ year }}.</td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="fibu-muted">Noch keine Konten angelegt.</p>{% endif %}
+    {% elif report == 'op' %}
+      <div class="fibu-card__head"><h2>OP-Liste {{ year }} (vereinfacht)</h2></div>
+      <p class="fibu-note fibu-note--warn">Zeigt alle aktiven Buchungen gegen Forderungs- und Verbindlichkeitskonten. Ein Zahlungsausgleich wird im MVP noch nicht erfasst – die Liste unterscheidet daher nicht zwischen bezahlten und unbezahlten Posten.</p>
+      <div class="fibu-table-wrap"><table class="fibu-table">
+        <thead><tr><th>Datum</th><th>Beleg</th><th>Beschreibung</th><th>Art</th><th>Gegenkonto</th><th class="fibu-num">Betrag</th><th>Status</th></tr></thead>
+        <tbody>{% for b in op_rows %}<tr><td>{{ b.booking_date.strftime('%d.%m.%Y') }}</td><td>{{ b.receipt_number }}</td><td class="fibu-desc">{{ b.description }}</td><td>{{ 'Forderung' if b.contra_account.kind == 'receivable' else 'Verbindlichkeit' }}</td><td>{{ b.contra_account.number }} {{ b.contra_account.name }}</td><td class="fibu-num">{{ amount(b) }}</td><td>{{ status_pill(b.status) }}</td></tr>{% else %}<tr><td colspan="7" class="fibu-empty">Keine Buchungen gegen Forderungs- oder Verbindlichkeitskonten.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    {% elif report == 'datev' %}
+      <div class="fibu-card__head"><h2>DATEV-Export {{ year }} – Entwurf</h2></div>
+      <p class="fibu-note fibu-note--warn"><strong>Kein validierter DATEV-Export.</strong> Die CSV-Datei enthält die Kernspalten eines Buchungsstapels (Umsatz, Soll/Haben-Kennzeichen, Konto, Gegenkonto, Belegdatum, Belegfeld 1, Buchungstext). Es fehlen u. a. der DATEV-Header (EXTF), BU-Schlüssel/Steuerschlüssel und weitere Pflichtangaben; ein Import in DATEV wurde nicht geprüft. Exportiert werden nur gebuchte Buchungen.</p>
+      <p>{{ datev_count }} gebuchte Buchung(en) in {{ year }}.</p>
+      {% if can_manage %}<a class="fibu-btn fibu-btn--primary" href="/dashboard/fibu/export/datev-entwurf.csv?client={{ client.id }}&year={{ year }}">{{ icons.download(class_="icon") }}<span>CSV-Entwurf herunterladen</span></a>
+      {% else %}<p class="fibu-muted">Der Export ist Admin und Anwalt vorbehalten.</p>{% endif %}
+    {% endif %}
+    </section>
+
+  {% elif tab == 'einstellungen' %}
+    <div class="fibu-grid fibu-grid--form">
+      <section class="fibu-card" aria-labelledby="fibu-profile-title">
+        <h2 id="fibu-profile-title">Steuerliche Stammdaten</h2>
+        <form method="post" action="/dashboard/fibu/profile" class="fibu-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+          {% set p = form if form else {'legal_form': profile.legal_form if profile else '', 'tax_number': profile.tax_number if profile else '', 'vat_id': profile.vat_id if profile else ''} %}
+          <label class="fibu-form__field"><span>Name</span><input type="text" value="{{ client.name }}" disabled /></label>
+          <label class="fibu-form__field{% if error_field == 'legal_form' %} has-error{% endif %}"><span>Rechtsform</span><input type="text" name="legal_form" maxlength="64" value="{{ p.legal_form or '' }}" placeholder="z. B. GmbH"{% if not can_manage %} disabled{% endif %} /></label>
+          <div class="fibu-form__row">
+            <label class="fibu-form__field{% if error_field == 'tax_number' %} has-error{% endif %}"><span>Steuernummer</span><input type="text" name="tax_number" maxlength="32" value="{{ p.tax_number or '' }}"{% if not can_manage %} disabled{% endif %} /></label>
+            <label class="fibu-form__field{% if error_field == 'vat_id' %} has-error{% endif %}"><span>USt-IdNr.</span><input type="text" name="vat_id" maxlength="32" value="{{ p.vat_id or '' }}" placeholder="DE…"{% if not can_manage %} disabled{% endif %} /></label>
+          </div>
+          {% if can_manage %}<div class="fibu-form__actions"><button type="submit" class="fibu-btn fibu-btn--primary">Speichern</button></div>{% endif %}
+        </form>
+      </section>
+      {% if can_manage_access %}
+      <section class="fibu-card" aria-labelledby="fibu-access-title" id="fibu-access">
+        <h2 id="fibu-access-title">Mitarbeiterzugriff</h2>
+        <p class="fibu-muted">Mitarbeiter sehen und bearbeiten in Finanzen und Steuern nur Mandanten, die ihnen hier zugewiesen sind. Ohne Zuweisung kein Zugriff. Admin und Anwalt haben immer Zugriff.</p>
+        {% if staff_users %}
+        <form method="post" action="/dashboard/fibu/access" class="fibu-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><input type="hidden" name="client_id" value="{{ client.id }}" /><input type="hidden" name="year" value="{{ year }}" />
+          <ul class="fibu-access-list">
+            {% for u in staff_users %}
+              <li><label><input type="checkbox" name="user_ids" value="{{ u.id }}"{% if u.id in staff_assigned %} checked{% endif %} /> {{ u.display_name or u.email }} <span class="fibu-muted">({{ u.email }})</span></label></li>
+            {% endfor %}
+          </ul>
+          <div class="fibu-form__actions"><button type="submit" class="fibu-btn fibu-btn--primary">Zugriff speichern</button></div>
+        </form>
+        {% else %}<p class="fibu-muted">Es gibt keine aktiven Mitarbeiter-Konten.</p>{% endif %}
+      </section>
+      {% endif %}
+      <section class="fibu-card">
+        <h2>Hinweise zum MVP</h2>
+        <ul class="fibu-list">
+          <li>Mandantenstammdaten (Name, Kontakt) werden in der <a class="fibu-link" href="/dashboard/clients/{{ client.id }}">Mandantenverwaltung</a> gepflegt.</li>
+          <li>Kontenrahmen, Steuerberechnung, GoBD-Anforderungen (Festschreibung, Unveränderbarkeit, Verfahrensdokumentation) und DATEV-Kompatibilität sind noch nicht fachlich geprüft.</li>
+          <li>Der Jahresabschluss ist nicht Teil des MVP.</li>
+        </ul>
+      </section>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  (function () {
+    var input = document.getElementById("fibu-upload-input");
+    if (!input) { return; }
+    input.addEventListener("change", function () { if (input.files && input.files.length) { input.form.submit(); } });
+    document.querySelectorAll("[data-fibu-drop]").forEach(function (zone) {
+      zone.addEventListener("dragover", function (e) { e.preventDefault(); zone.classList.add("is-over"); });
+      zone.addEventListener("dragleave", function () { zone.classList.remove("is-over"); });
+      zone.addEventListener("drop", function (e) {
+        e.preventDefault(); zone.classList.remove("is-over");
+        if (!e.dataTransfer || !e.dataTransfer.files.length) { return; }
+        try { input.files = e.dataTransfer.files; } catch (err) { return; }
+        input.form.submit();
+      });
+    });
+    document.querySelectorAll(".fibu-split__main").forEach(function (lbl) {
+      lbl.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    });
+    document.addEventListener("click", function (e) {
+      document.querySelectorAll(".fibu-menu[open], .fibu-split__more[open]").forEach(function (d) { if (!d.contains(e.target)) { d.removeAttribute("open"); } });
+    });
+  })();
+</script>
+{% endblock %}

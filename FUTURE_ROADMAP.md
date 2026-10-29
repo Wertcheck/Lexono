@@ -34,6 +34,190 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Modell-Probing), Restrisiko-Scan, Final Payload Gate, Antwort-Leak-Check; versiegelte Payload – alle vier Cloud-Provider
   lehnen unversiegelte/veränderte Payloads ab; Fehler in der Prüfung blockieren.
   Synthetische Restlecks (Stand `9d9ab9c`, nicht-interaktiv): 0,4 % mit Akte, 0,7 % ohne Akte.
+  **Stand 16.10.2026 (PRIVACY_REVIEW_ARCHITECTURE.md §48, heute ausgeführt):** `bench_name_detection` 0,0 % (1100),
+  `bench_chat_without_file` 0/440, `pseudonymization_v1` 7 Klartext-Werte (alle als bekannte Grenze markiert; P09
+  Kleinschreibung nach Anrede behoben, §46); Netzwerkebene des direkten Pfads belegt (§47). Endliche Korpora –
+  keine Aussage über vollständige Leckfreiheit.
+  **Fortschritt 16.10.2026 (§49):** Die sieben offenen Fälle wurden priorisiert (Rangfolge B03, K04, P10, X02, P08, A06,
+  I07). Behoben: gesperrte IBAN (über die Prüfziffer), E-Mail mit OCR-Leerzeichen, gesperrte Namen und Namen
+  mit OCR-Ziffern (zweite NER-Fassung, nur Personen an veränderten Stellen). `pseudonymization_v1`: 7 → 3
+  Klartext-Werte. Fehlalarme, Behalte-Werte, Blocks und alle übrigen Benchmarks sind unverändert. Offen:
+  P10/A06/I07 sowie die gesperrte IBAN mit OCR-Ziffernfehler (§49.5).
+  **Fortschritt 16.10.2026 (§50):** Gerichtspersonen (Richter:in, Sachverständige, Gerichtsvollzieher, Staatsanwält:in …)
+  werden als Personen-Beteiligte samt Nachnamen erfasst, auch in der Aktenisolation; „Nachname, Vorname“ korrigiert.
+  Ursachen „Mobil“ und „bei Rot“ belegt (spaCy selbst). Dabei gefundenes **Teil-Leck** behoben: Rest einer Rufnummer
+  ging bei Überlappung verschiedener Kategorien im Klartext hinaus. „Mobil“ vor einer Nummer bleibt lesbar, „bei Rot“
+  nur im eindeutigen Fahrsatz. Fehlalarme 7 → 6, keine neuen Blocks; Legal-E2E maskiert zwei zuvor sichtbare Reste.
+  **Offen:** P10 ohne erfasste Partei bzw. im Chat ohne Akte (UX-Entscheidung: freiwilliges „als Namen schützen“);
+  „Dr. Zweigelt“ erhält einen zweiten Platzhalter; „bei Rot“ ohne direkt folgenden Fahrvorgang.
+  **Fortschritt 16.10.2026 (§51):** „Namen schützen“ im Chat-Eingabefeld als Erweiterung der bestehenden Rückfrage
+  (dieselbe Entscheidung „Als Person behandeln“, serverseitig geprüft, keine zweite Rückfrage): P10 auch im Chat ohne
+  Akte abgedeckt; Versalien/Genitiv mit einem Platzhalter je Person. Dabei behoben: Entwurfsprüfung, Schriftsatz- und
+  Orchestrator-Pfade wendeten aktenweite Entscheidungen bisher **nicht** an. HTTP-Nachweis über den lokalen
+  Aufzeichnungsserver. **Offen:** Verwaltung/Aufheben von Markierungen, Markier-UI in Formular-Workflows,
+  Bindestrich- und Mehrwortnamen, kleingeschriebenes Homograph wird mitmaskiert (vorbestehend).
+  **Fortschritt 16.10.2026 (§52):** Mehrwort-, Bindestrich- und Zusatznamen („Hans-Peter Müller“, „Anna von Berg“)
+  markierbar, ein Platzhalter je Person über Titel, Nachname, Genitiv und Zeilenumbruch. Gespeicherte Entscheidungen
+  sind auf der Aktenseite sichtbar und aufhebbar bzw. bestätigbar (nur Admin/Anwalt, Aktenisolation, Wirkung ab
+  der nächsten Anfrage in allen Pfaden). Kleinschreibung untersucht: nicht sicher unterscheidbar, keine Änderung.
+  Benchmarks unverändert, eine neu gefundene Blockade (Genitiv am Platzhalter) behoben. **Offen:** Markier-UI in
+  Formular-Workflows, Apostroph-Namen, Titel im Platzhalter.
+  **Fortschritt 16.10.2026 (§53):** Rückführung zusammengesetzter Namen korrigiert: „Frau von [P]“ ergibt „Frau von
+  Berg“ statt „von Anna von Berg“, „Herr Müller“ bekommt keinen eingeschleusten Titel mehr; exakte Rundwege 3/9 →
+  8/9, ohne Anrede bewusst der Vollname (Rubrum). Apostroph-Namen („O'Brien“ = „O’Brien“) und bis zu 8 Namensteile
+  markierbar. Gesendeter Inhalt und alle Benchmarks unverändert. **Offen:** Markier-UI in Formular-Workflows,
+  Titel im Platzhalter, Kleinschreibung (§52.3).
+  **Fortschritt 16.10.2026 (§54):** „Namen schützen“ einheitlich in Schriftsatz-Generator, Änderungsauftrag,
+  Editor-KI-Bearbeitung und E-Mail-Aktionen (Zusammenfassen/Antworten). Eine Prüf- und Speicherlogik
+  (`decisions.parse_manual_terms`/`record_manual_terms`) und ein Browser-Baustein (`app_name_protection.js`), auch vom
+  Chat genutzt. HTTP-Nachweis, Browser-QA aller vier Wege, Benchmarks unverändert. **Offen:** Markierung in
+  hochgeladenen Dokumenten und in Dokument-/Mandanten-Aktionen.
+  **Fortschritt 16.10.2026 (§55):** Im Editor sind auch Namen im noch nicht gespeicherten Text markierbar. Der aktuelle
+  Editorinhalt dient nur als Prüfgrundlage: kein automatisches Speichern, nicht in der Cloud-Anfrage. Veraltete oder
+  ungültige Markierungen brechen sicher ab. HTTP-Nachweis und Browser-QA; Benchmarks unverändert.
+  **Fortschritt 16.10.2026 (§56):** „Namen schützen“ in hochgeladenen Dokumenten (Akten- und Chat-Dokumentansicht,
+  KI-Aktionen auf Dokumenten). Dieselbe Prüf- und Speicherlogik, an den Textstand gebunden (Fingerabdruck),
+  geschützte Namen im Text hervorgehoben. Unabhängiges Review: ein mittlerer Befund behoben (ungespeicherte
+  Dokument-Markierung beim Chat-Senden). **Offen:** Chat- und Schriftsatz-Upload senden im selben Request, vor jeder
+  Markierung (sicherer Ablauf: zuerst in der Akte hochladen und markieren); Mail- und Intake-Dokumente erst nach der
+  Zuordnung markierbar; Hinweise per Fehlercode statt Freitext in der URL.
+  **Fortschritt 16.10.2026 (§57):** Upload und KI-Verarbeitung im Chat und Schriftsatz-Generator getrennt
+  (serverseitig): Ein Upload speichert und liest nur lokal aus, mit Hinweis „noch keine KI-Verarbeitung“. Erst eine
+  bewusste Frage bzw. „Schriftsatz generieren“ ohne Dateien läuft durch die unveränderte zentrale Prüfung.
+  HTTP-Nachweis: 0 Requests beim Upload, ein maskierter Request erst danach. Browser-QA, unabhängiges Review (zwei
+  mittlere Befunde behoben); Benchmarks unverändert. Status teilweise nachgewiesen. **Offen:** Mail- und
+  Intake-Dokumente erst nach der Zuordnung markierbar (dokumentierter Ablauf, §57.4); fachliche Entscheidung, ob ein
+  ungeprüftes Dokument erst nach Prüfung KI-fähig sein soll; TLS und realer Relay nicht belegt.
+  **Fortschritt 17.10.2026 (§58):** F5-/Doppelupload im Schriftsatz-Generator behoben (reproduziert: 2 Akten,
+  2 Dokumente). Signierte, nutzergebundene Vorgangs-ID je Seite und atomarer Vorgang
+  (`schriftsatz_operations`): Wiederholungen zeigen das gespeicherte Ergebnis, ohne Duplikate und ohne zweiten
+  Cloud-Aufruf. Getestet mit parallelen Requests und echtem F5 im Browser. **Offen:** hängende Vorgänge nach
+  Absturz ohne Aufräumung.
+  **Fortschritt 17.10.2026 (§59):** Doppelte Chat-Uploads behoben (reproduziert: 2 Unterhaltungen, 4 Dokumente,
+  4 Upload-Nachrichten). Derselbe Mechanismus wie §58 mit eigener Tabelle `chat_upload_operations`; nur Uploads
+  verbrauchen die ID, eine spätere bewusste Nachricht bleibt ein eigener Vorgang mit genau einem Cloud-Aufruf.
+  **Offen:** PostgreSQL mit mehreren Prozessen nicht verifiziert; Dateiname in der Chat-Fehler-URL (vorbestehend).
+  **Fortschritt 17.10.2026 (§60):** Hart abgebrochene Chat-Uploads werden bei nachweislich beendetem Besitzerprozess
+  ohne Doppelanlage fortgesetzt (vorab vergebene IDs, „anlegen, falls nicht vorhanden“, atomare Übernahme; Zeit allein
+  gibt nie frei). Keine Dateinamen mehr in Upload-Fehler-URLs; Zurück-Button holt eine neue Kennung, ohne erneut
+  hochzuladen. **Offen:** Besitzer auf fremden Rechnern nicht prüfbar; PostgreSQL nicht verifiziert.
+  **Fortschritt 17.10.2026 (§61, P1–P5):** Inventur aller Cloud-Pfade ohne Umgehung. Neue Dauertests:
+  - alle GET-Routen und alle Eingangswege (Upload, Mail, Ordner) ohne KI-Aufruf und Netzverbindung;
+  - Schriftsatz-Generator mit Wiederaufnahme nach hartem Abbruch, Generierung nie automatisch wiederholt;
+  - Benchmarks ohne Abweichung reproduziert, Sperrklinke gegen Verschlechterung.
+
+  Gateway lokal gehärtet: nur Textblöcke und Rollen user/assistant, Größenschranke vor dem Parsen. **Offen:**
+  Pflicht-Freigabe je Dokument (Owner-Entscheidung), Vorgangs-ID für Entwurfsaktionen, Gateway-Betrieb (IP-Rate-Limit,
+  TLS, echte Strecke) NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§62):** Konfigurierbare Dokumentfreigabe (kanzleiweit) in drei Modi: manuell, automatisch
+  (Standard, bisheriges Verhalten), automatisch mit Entscheidung bei Auffälligkeiten.
+  - serverseitig an der einzigen Engstelle durchgesetzt, an den Textstand gebunden;
+  - fehlgeschlagene Prüfung in jedem Modus blockierend;
+  - dezente Statusanzeige, ausblendbare Erfolgsmeldung pro Benutzer;
+  - Prüfseite „Pseudonymisierung überprüfen“.
+  **Fortschritt 17.10.2026 (§63):** Modus C ist Standard für Neuinstallationen (Migration `schritt3_037`, nur bei
+  leerer Datenbank); bestehende Installationen bleiben unverändert (leer → ausdrücklich B).
+  - lokale Vorab-Prüfung in Modus C nach der Verarbeitung, an Textstand und Kontext gebunden, Fehler blockieren;
+  - Höchstzahl 30 gilt für freigegebene Dokumente, begrenzte Suche, Hinweise bei unvollständiger Auswahl;
+  - Geltungsbereich „kein personenbezogenes Datum“ (nur Gespräch) und Mitarbeitenden-Grenzen dokumentiert und getestet.
+  Installierte App/WebView2 und PostgreSQL NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§64):** Vorab-Prüfung in Modus C im lokalen Hintergrund nach dem Commit (auch nach
+  Mail-Zuordnung und Kontextänderungen), Versandprüfung bleibt verbindlich.
+  - Regressionstests für mehr als 30/120 Dokumente, veraltete Prüfungen, Hinweise nicht im Payload;
+  - Sperrklinken für Fehlalarme sowie Werte- und Normenerhalt (Legal-E2E), Rollenwort-Sätze und Chat ohne Akte;
+  - realitätsnähere, nicht modellgenerierte Texte BLOCKIERT: Einstufung der Quellen durch eine verantwortliche
+    Person offen.
+  Installierte App enthält §62–§64 noch nicht (Build 15.10.2026): NICHT VERIFIZIERT.
+  **Fortschritt 17.10.2026 (§65):** Installer aus `07d5fe0` gebaut; die bestehende Installation sicher aktualisiert
+  (echte Datenbank unverändert, Migration erst beim nächsten Start mit automatischem Backup).
+  - §62–§64 in der installierten App über WebView2 mit isolierten, synthetischen Daten geprüft;
+  - Quellen „Gesetze im Internet“ und „Rechtsprechung im Internet“ freigegeben und dokumentiert;
+  - Korpus `privacy_sources_v1`: 0 Lecks, 101/116 juristische Werte erhalten, Sperrklinke.
+  Offene Owner-Frage: Aktenzeichen oberster Bundesgerichte in Zitaten unmaskiert lassen?
+  **Fortschritt 17.10.2026 (§66):** In der installierten App (WebView2, Loopback-Payload) gefunden: Der Chat zeigte
+  die Auswahlhinweise nicht an. Behoben und im installierten Build `44f3df7` verifiziert (>30, >120, Kontextänderung).
+  - Übermaskierung 101 → 106/116 über die bestehende §33-Zitatregel (ausgeschriebener Monat) und „Buchst.“/„Unterabs.“;
+  - Migration, Backup und Wiederherstellung dokumentiert.
+  Offen (Owner): Gerichtsnamen als Ort maskiert; echte Migration der Kanzleidatenbank.
+  **Fortschritt 17.10.2026 (§67):** Öffentliche Gerichts- und Justizbezeichnungen bleiben als Institution lesbar
+  (Klassifikationsregel in `detect_all`, wirkt auch im Restrisiko-Scan). Bei Mehrdeutigkeit gewinnt der Schutz.
+  Ergebnis: 0 Lecks, 109/116 erhalten. In der installierten App NICHT VERIFIZIERT (kein neuer Build).
+  **Fortschritt 17.10.2026 (§68/§69):** §67 in der installierten App geprüft (Build `e8d0a0f`, WebView2, Loopback-
+  Payload): kein geschützter Wert freigegeben.
+  - F4 behoben: Fristauszüge übernehmen die Gerichtsart nachweisbar aus dem Originaltext;
+  - F6 behoben: System-Typbezeichnungen wie „[Gerichtliches Schreiben]“ lösen keine Fehlblockade mehr aus.
+  §69 ist in der installierten App NICHT VERIFIZIERT.
+  **Fortschritt 18.10.2026 (§71):** `legal_e2e_v1` um drei abgeleitete, vollständig synthetische Akten mit
+  Referenzlösung erweitert (BGH VIII ZR 18/24, BAG 6 AZR 32/24, BAG 2 AZR 72/24). Bewertung nach Kriterien getrennt
+  (`solution_score.py`). Lauf in der installierten App (Build `fc9d3f4`, WebView2, Loopback): 0 Lecks, Lösungsgrundlage
+  2/3 vollständig.
+  **Offen:** Frist „Fristende <Datum>“ ohne Doppelpunkt (über einen Dev-Fall beheben); Übermaskierung
+  „Visa-Anträge“; Fehlvorschläge bei Vermerkdaten; echte Modellantworten (Owner-Freigabe nötig).
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §71.
+  **Fortschritt 18.10.2026 (§72):** Behoben und in der installierten App geprüft (Build `0303e0e`, WebView2,
+  Loopback): „Fristende <Datum>“ ohne Doppelpunkt (LE-T004 2/2, beide Fristenden getrennt mit Hinweis);
+  Übermaskierung „Visa-Anträge“ (Lösungsgrundlage test 2/2); Statusleiste nennt den tatsächlichen Weg.
+  0 Lecks. Neuer Dev-Fall LE-D007.
+  **Offen:** Vermerkdaten als Fristvorschlag; direkter Weg in der App NICHT VERIFIZIERT; echte Modellantworten.
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §72.
+  **Fortschritt 18.10.2026 (§73):** Vermerk- und Dokumentdaten, Zustelldaten und offene Angaben werden nicht
+  mehr als Fristende vorgeschlagen (neuer Dev-Fall LE-D008). Fristen außerhalb der Referenz: dev 3 -> 2,
+  test 2 -> 1, bei vollem Recall. In der installierten App geprüft (Build `3019b7b`, WebView2, Loopback): 0 Lecks.
+  **Offen (Owner):** Beendigungstermin „kündigen … zum <Datum>“ als Fristende führen (Optionen A/B/C, §73.7).
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §73.
+  **Fortschritt 18.10.2026 (§74):** Owner-Option B umgesetzt: Beendigungstermin als eigene Art (kein Fristende,
+  keine Wirksamkeitsaussage), in Liste, Detail, Export und Cloud-Kontext erkennbar; kein Duplikat bei erneuter
+  Analyse. „Frist für/zur … : <Datum>“ wird erkannt. Neuer Dev-Fall LE-D009. Recall dev 23/23 (19/19 aus §73),
+  test 5/5; Beendigung 1/1; 0 Lecks. In der installierten App geprüft (Build `fc7d3d3`, WebView2, Loopback).
+  **Offen (Owner):** Referenz LE-D002 (30.06.2026 als Frist geführt); Feldbezeichnung „Fällig am“ bei
+  Beendigungsterminen. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §74.
+  **Fortschritt 18.10.2026 (§75):** Referenz LE-D002 korrigiert (30.06.2026 als Beendigungstermin, Historie im
+  Fall); „Beendigung zum“ in Detail und Formular; Art je Vorschlag auf der Aktenseite; Hinweis „mehrere mögliche
+  Fristenden“ nur bei konkurrierenden Fristenden. Bisherige dev-Fälle 18/18 + 1/1, LE-D009 4/4 + 1/1, test 5/5;
+  0 Lecks. In der installierten App geprüft (Build `ca695d8`, WebView2, Loopback). Offen: Export in der App,
+  gekürzte Typ-Spalte. Siehe PRIVACY_REVIEW_ARCHITECTURE.md §75.
+  **Fortschritt 18.10.2026 (§76):** Typ-Label vollständig (Umbruch statt Abschneiden), Alternativformeln mit
+  Kontext (alternativ, bzw., im Fall, je nach, falls), Export mit Art-Bezeichnung/Begründung/Konfidenz; Konzept
+  für den Antwortqualitäts-Benchmark `benchmarks/legal_answers_v1` (Rubrik, Spezifikationen, Validator; kein Lauf).
+  5626 PASS, Benchmark identisch zu §75. App-Test (Build `8291158`, WebView2, Loopback) PASS nach zwei
+  Layout-Korrekturen: Detailpanel unter 1366 px gestapelt, Label nur an Silbengrenzen umbrochen; Export in der App geprüft.
+  **Fortschritt 18.10.2026 (§77):** Audit des Antwort-Benchmarks `legal_answers_v1`: 7 nachweisbare Fehler behoben
+  (Teilwortsuche, fehlende entscheidende Tatsachen und offene Punkte, Rubrik ohne Ausgleichsverbot, kein Schutz des
+  Test-Splits); `LOCK.json`, Laufvorbereitung ohne Ausführung (`answer_run check/plan`), Freigabe-Checkliste C-1–C-17.
+  **Offen (Owner/juristisch):** J1–J6, alle Checklistenpunkte; kein Modelllauf. Siehe benchmarks/legal_answers_v1/AUDIT_S77.md.
+  **Fortschritt 19.10.2026 (§78):** Freigabesperre, Test-Split-Sperre, Aufrufplan und Datenschutzpfad adversarial
+  geprüft (nur lokal und synthetisch). Die Freigabesperre war umgehbar (G1) und ist jetzt gehärtet; die Sperre
+  wurde um Handbearbeitungs-Erkennung, alte/neue Hashes und Registereinträge erweitert. Die Leitungsprüfung ergab
+  0 Lecks. Offen: B1 (Schriftsatzpfad blockiert bei Ausfall der Namenserkennung nicht geordnet), C-14, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S78.md.
+  **Fortschritt 19.10.2026 (§79):** B1 behoben (Gateway blockiert geordnet, Meldung in Chat und Schriftsatz,
+  0 Anfragen) und in der installierten App (Build bfbe53a) nachgewiesen. Wächter vor jedem Benchmark-Aufruf
+  gebaut; Treiber, Ablage, Ist-Kosten und Fortsetzen bewusst offen (E1–E4). Offen: C-14, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S79.md.
+  **Fortschritt 19.10.2026 (§80):** E1–E4 vorbereitet: Treiber über den regulären Lexono-Pfad, sichere Ablage
+  außerhalb des Repositorys (ACL, Hashes), Kostenbuch geschätzt/tatsächlich mit sicherer Abbruchregel, Wiederanlauf
+  ohne Doppelaufrufe. Nur Mock/lokaler Recorder, echter Endpunkt gesperrt. Offen: C-14, C-1–C-17, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S80.md.
+  **Fortschritt 19.10.2026 (§81):** Freigaben gehärtet (Planbindung, Datum, Widersprüche zu offenen Spezifikationen),
+  Kosten- und Ablageprüfungen verschärft, Klärung unklarer Aufrufe ergänzt. Offen: C-7, C-11, C-14, F-1, J1–J6.
+  Siehe benchmarks/legal_answers_v1/AUDIT_S81.md.
+  **Fortschritt 19.10.2026 (§82):** Entscheidungsmatrix für J1–J6, F-1, C-7, C-11 erstellt (keine Entscheidung);
+  Checkliste korrigiert (W1), J6-Zuordnung offen (W2). C-14 GESPERRT. Siehe benchmarks/legal_answers_v1/AUDIT_S82.md.
+  **Fortschritt 19.10.2026 (§83):** Pilotübergabe (PILOT_CHECKLISTE.md, Prüfpaket der Referenzlösungen); Lücke der
+  Endpunktsperre (Wrapper/Unterklassen) geschlossen, Netzzaun ergänzt. C-14 GESPERRT. Siehe benchmarks/legal_answers_v1/AUDIT_S83.md.
+  **Fortschritt 19.10.2026 (§84):** Netz- und Prozesszaun über Audit-Hook (DNS, UDP, roher Socket, Proactor, ctypes,
+  Unterprozesse per Zulassungsliste); OS-Isolation nicht verfügbar (dokumentiert). Siehe benchmarks/legal_answers_v1/AUDIT_S84.md.
+  **Fortschritt 19.10.2026 (§85):** Zulassungsliste gehärtet (Tesseract ohne URL/UNC, git entfernt), Loopback nur zum
+  Prüfendpunkt; Grenzen gegen nativen Code nachgewiesen; Windows-Isolation bewertet (für C-14: eigene VM/IT-Firewall).
+  Siehe benchmarks/legal_answers_v1/AUDIT_S85.md.
+  **Fortschritt 19.10.2026 (§86):** Konzept einer extern durchgesetzten Isolation (VM, Host-/Perimeter-Sperre, kein DNS),
+  Netzwerkpolitik und Abnahmewerkzeug; nicht umgesetzt. Siehe benchmarks/legal_answers_v1/AUDIT_S86.md.
+  **Fortschritt 19.10.2026 (§87):** Start-Gate I12 (signierte Bestätigung der Prüfstelle, heute geschlossen) und
+  VM-Abnahmematrix V1–V13 (nicht durchgeführt). Siehe benchmarks/legal_answers_v1/AUDIT_S87.md.
+  Siehe PRIVACY_REVIEW_ARCHITECTURE.md §76.
+
+  **Offen:** Standard für Neuinstallationen (B oder C, Owner); Vorab-Prüfung im Hintergrund; „kein personenbezogenes
+  Datum“ in Modus C.
 - **Offene Risiken:** Restlecks bei Namen ohne unabhängiges Signal (z. B. „Richter“ in Überschriften, „Lange“ als Adjektiv
   gelesen); Fachbegriff-Fehlalarme im Masken-Modus in künstlichen Namensrollen-Sätzen (100/600); Siegel-Schlüssel nur
   prozesslokal (ausreichend für Ein-Prozess-Betrieb, nicht für verteilte Varianten); Erkennung hängt von `de_core_news_lg` ab.
@@ -50,6 +234,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Offene Risiken:** Nicht-interaktive Pfade (Schriftsatz-Generator, Entwurfsanweisungen, Review) fragen nicht, sondern
   maskieren vorsichtshalber; Rückfragequote in echten Akten unbekannt (nur synthetisch gemessen: 4 Rückfragen in 19 Dokumenten).
 - **Maßnahmen:** Rückfrage auch in Formular-Workflows (vor dem Absenden); Sammelansicht offener/unsicherer Entscheidungen je Akte.
+- **Fortschritt (16.10.2026, §51):** manuelle Namensmarkierung im Chat („Namen schützen“) speist dieselbe Entscheidung
+  wie die Rückfrage; aktenweite Entscheidungen gelten jetzt auch in Entwurfsprüfung und Schriftsatz-Pfaden.
+  §52: Sammelansicht der Entscheidungen je Akte umgesetzt (Aufheben/Bestätigen, nur Admin/Anwalt).
+  §54: Markierung auch in Formular-Workflows (Schriftsatz, Änderungsauftrag, Editor, E-Mail-Aktionen).
 - **Abhängigkeiten:** P2 (Kandidatenerkennung), P5 (Aufbewahrung der Entscheidungen).
 - **Abnahmekriterien:** Kein Cloud-Aufruf mit offener Rückfrage (Test je Einstiegspunkt); höchstens 1 Rückfrage je
   synthetischem Standarddokument im Median; Pilot-Rückmeldung zur Verständlichkeit dokumentiert.
@@ -65,6 +253,14 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
 - **Abhängigkeiten:** P2 (Benchmark-Gate), P6 (Audit der Freigaben).
 - **Abnahmekriterien:** Keine Regeländerung ohne verlinkten synthetischen Test und Owner-Freigabe; Statistik enthält
   nachweislich keine Klartext-Begriffe (automatisierter Test); kein Modelltraining aus Einzelentscheidungen.
+- **Fortschritt (16.10.2026, ARCHITECTURE.md §75, Branch `feature/feedback-diagnose`):** aktenbezogene
+  Qualitätsmeldungen mit lokaler Diagnose (nur Stufen/Zähler, kein Text) und Prozess „Meldung → Diagnose → bestätigte
+  Ursache → synthetischer Regressionsfall (fail-closed Leck-Prüfung) → Freigabe → Export → `tests/regression_cases/`“
+  umgesetzt und getestet. „bei Grün“/„Telefon“ behoben (PRIVACY_REVIEW_ARCHITECTURE.md §45, Benchmarks unverändert);
+  Aufbewahrung offener Meldungen umgesetzt (§75.1). Regressionsfälle: 8 bestehen, 2 neue offene Befunde als
+  `known_open` („bei Rot“ → Ort, „Mobil“+Nummer → Person). *Nachtrag §50: „Mobil“ behoben (samt Teil-Leck der
+  Nummer), „bei Rot“ nur im eindeutigen Fahrsatz; seed-008 bleibt offen.* **Offen:** Meldung aus Chat/Entwurf/E-Mail; Schwellen für
+  Auffälligkeit aus der HMAC-Statistik; die zwei neuen Befunde (vorgelagerte NER-Stufe).
 
 #### Phase P5: Datenminimierung, Löschung und Mandantentrennung
 - **Ist-Zustand (belegt):** Pseudonym-Zuordnungen nur im Arbeitsspeicher; API-Log speichert nur Hash des Prompts;
@@ -104,6 +300,10 @@ synthetischen Daten belegt sind. Vollständige Leckfreiheit wird nie aus synthet
   Schriftsatz, Bearbeitung und Export mit Payload-Erfassung vor der Cloud-Grenze; Regressionstest in der Suite. Erste
   Befunde behoben: drei Wege, auf denen ein Geburtsdatum ohne Bezeichnung oder zerteilt (Fristausschnitt, Auszug langer Dokumente, Schreibweisen) im Klartext hinausging. Gemessen (§34.6): Fehlalarme der Maskierung zerstören Kernfakten ("bei Grün" -> [PERSON], "Testament"); F (§35): strukturelle Kompositum-Regel mit Namensprobe 0 umgesetzt, keine neuen Lecks; LE-T003 entblockt durch erhaltene Feldgrenze in der PDF-Aufbereitung (§35.6), ohne Gate-Lockerung. Q (§36): lokale Fundstellenprüfung (Existenz getrennt von Stützung) umgesetzt, erfundene Fundstellen 0/12 -> 12/12 markiert. §34.7: langer Vertrag im E2E, neuer Testfall LE-T003 (alle Cloud-Anfragen durch NER-Fehlalarm im Restrisiko-Scan blockiert, kein Leck), Firmenname ohne Rechtsform geschuetzt. Offen: mehr Testfälle, Lauf gegen den
   installierten Build, Klassifikationskorrektheit, Antwortqualität eines echten Modells (nach Freigabe).
+- **Fortschritt (16.10.2026, §47):** HTTP-Mitschnitt des direkten Anthropic-Pfads als Repo-Test (lokaler Server,
+  echte SDK-Bytes) – ersetzt für den direkten Pfad den Fang-Server außerhalb des Repos. **Offen, später (keine
+  Kosten jetzt):** Gateway auf realem Server mit TLS, Authentifizierung, Schlüssel nur serverseitig, Zugriffskontrolle,
+  Rate-Limits, inhaltsfreies Logging; HTTPS-Integrationstests Client ↔ Gateway ↔ Anthropic (§48).
 - **Maßnahmen:** Benchmark- und Payload-Prüfung als fester Release-Schritt; Fang-Server als versioniertes QA-Werkzeug ins
   Repo; Datenschutzbericht je Release (Restlecks, Fehlalarme, Rückfragen, Blocks, Laufzeit).
 - **Abhängigkeiten:** P2 (Gate-Kriterien), P4 (Freigabeprozess).
@@ -127,6 +327,8 @@ gemessen und in `PRIVACY_REVIEW_ARCHITECTURE.md` belegt ist.
 | P2.3 Blinder Testkorpus v2 + Dev-Korrekturen | erledigt: `test_v2` (104 Dokumente, vier blinde Agenten, eingefroren). Regeln blind: Typ 64 → 84/104, Fristen 63 → 66/76, kritische Fehler 18 → 16 (3 neue Fristfehler dokumentiert, nicht am Test optimiert) | §42 |
 | P2.4 Modellvergleich mit Dateiname und 3 Läufen | erledigt: Claude Typ 95, Fristen 75/76, kritisch ≈ 2; OpenAI Typ ≈ 92, Fristen 76/76, kritisch ≈ 0; kaum Streuung; kein belastbarer Sieger; ≈ 2,71 USD | §42 |
 | Relay-Schreibpfad (Produktivpfad §70) | Branch `fix/relay-schreibpfad`, nicht in main: Client-Standard `max_tokens` 4096 → 4000 (Relay lehnte jede Schreibanfrage mit 400 ab), `thinking: disabled` wie im direkten Schreibpfad, `stop_reason` sichtbar, Relay ohne Wiederholungen mit 55 s < Client 60 s; echter Relay-Betrieb NICHT VERIFIZIERT | §44 |
+| Hetzner-Gateway (Relay-Server, §70) | **offen – separates Arbeitspaket.** Code und Runbook vorhanden, ausschließlich lokal getestet; kein echter Server eingerichtet, Betrieb, Authentifizierung, Rate-Limit und Logging gegen einen realen Server NICHT VERIFIZIERT. Nicht produktionsreif. | `.agentic/PROJECT_STATE.md`, LEXONO_MASTER_PRODUCT.md P0-08 |
+| Qualitätsmeldungen / Diagnose (P4) | Teilfortschritt, Branch `feature/feedback-diagnose`: Meldung, lokale Diagnose, synthetische Regressionsfälle, Export, Harness gegen echte Pipeline | ARCHITECTURE.md §75 |
 
 **Nächste Schritte (Vorschlag, nicht umgesetzt):**
 1. **Fristen-Restfehler** aus `test_v2` als **neue** Dev-Fälle nachbauen:

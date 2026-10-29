@@ -1,0 +1,127 @@
+{
+ "id": "LE-D006",
+ "split": "dev",
+ "version": 1,
+ "title": "Insolvenz: Sammelanmeldung der Bundesagentur für Arbeit ohne Einzelangaben",
+ "rechtsgebiet": "Insolvenzrecht / Insolvenzgeld",
+ "synthetic": false,
+ "derivation": "abgeleitet",
+ "source_refs": ["Q-RECHTSPRECHUNG-IM-INTERNET", "Q-GESETZE-IM-INTERNET"],
+ "notes": "§71: Rechtsfrage und Ergebnis aus BAG, Urteil vom 20.02.2025 - 6 AZR 32/24 (amtliche Leitsaetze; Gruende: ordnungsgemaesse Anmeldung ist Sachurteilsvoraussetzung der Feststellung zur Tabelle); § 174 InsO im Wortlaut (Gesetze im Internet). Schuldnerin, Arbeitnehmer, Betraege, Daten, Differenz VOLLSTAENDIG SYNTHETISCH.",
+ "parties": [
+  {"id": "P1", "name": "Wiebke Tannenhauer", "role": "mandant", "gender": "f"},
+  {"id": "P2", "name": "Metallbau Sörensen GmbH", "role": "dritter", "gender": "n"},
+  {"id": "P3", "name": "Ömer Yalçınkaya", "role": "dritter", "gender": "m"},
+  {"id": "P4", "name": "Agnieszka Wrzesińska", "role": "dritter", "gender": "f"},
+  {"id": "P5", "name": "Thorsten Pfannenberg", "role": "dritter", "gender": "m"},
+  {"id": "P6", "name": "Henning Vossberg", "role": "dritter", "gender": "m"}
+ ],
+ "matter": {"title": "Insolvenz Metallbau Sörensen - Anmeldung der Agentur für Arbeit", "client_party": "P1", "reference_number": "26/0911-IN"},
+ "documents": [
+  {"id": "D1", "type": "schreiben", "format": "pdf", "filename": "Forderungsanmeldung_Agentur.pdf", "date": "12.01.2026", "paragraphs": [
+   "Bundesagentur für Arbeit - Insolvenzgeld-Service",
+   "An die Insolvenzverwalterin Dr. Wiebke Tannenhauer, Insolvenzverfahren Metallbau Sörensen GmbH, Az. 27 IN 418/25",
+   "Beispielstadt, 12.01.2026",
+   "Forderungsanmeldung zur Insolvenztabelle",
+   "Wir melden aus übergegangenem Recht nach § 169 Satz 1 SGB III Ansprüche auf Arbeitsentgelt für den Zeitraum 01.08.2025 bis 31.10.2025 in Höhe von insgesamt 32.112,00 EUR an.",
+   "Die einzelnen Arbeitnehmer und deren Bruttoentgelt werden nicht aufgeführt; die Anmeldung ist maschinell erstellt und nicht unterschrieben."]},
+  {"id": "D2", "type": "anlage", "format": "docx", "filename": "Aufstellung_Insolvenzgeld.docx", "date": "06.02.2026", "paragraphs": [
+   "Nachgereichte Aufstellung zur Forderungsanmeldung vom 12.01.2026 (Eingang 06.02.2026)",
+   "Die Ansprüche sind mit dem Antrag auf Insolvenzgeld auf die Bundesagentur für Arbeit übergegangen."],
+   "table": {"header": ["Arbeitnehmer", "Geburtsdatum", "Bruttoentgelt monatlich", "Zeitraum", "Betrag"],
+             "rows": [["Ömer Yalçınkaya", "03.09.1987", "3.412,50 EUR", "01.08.2025-31.10.2025", "10.237,50 EUR"],
+                      ["Agnieszka Wrzesińska", "21.11.1992", "2.980,00 EUR", "01.08.2025-31.10.2025", "8.940,00 EUR"],
+                      ["Thorsten Pfannenberg", "17.05.1979", "4.106,75 EUR", "01.08.2025-31.10.2025", "12.320,25 EUR"],
+                      ["Summe", "", "", "", "31.497,75 EUR"]]}},
+  {"id": "D3", "type": "notiz", "format": "txt", "filename": "Pruefvermerk.txt", "date": "09.02.2026", "paragraphs": [
+   "Prüfvermerk vom 09.02.2026 - Kanzlei-Zeichen 26/0911-IN",
+   "Die Anmeldung vom 12.01.2026 nennt nur den Gesamtbetrag. Bei der Anmeldung sind der Grund und der Betrag der Forderung anzugeben (§ 174 Abs. 2 InsO).",
+   "Nach BAG, Urteil vom 20. Februar 2025 - 6 AZR 32/24, ist eine Sammelanmeldung der Bundesagentur für Arbeit nur dann ordnungsgemäß, wenn die einzelnen betreffenden Arbeitnehmer, ihr jeweiliges monatliches Bruttoentgelt und die konkreten Anspruchszeiträume angegeben sind; § 130 Nr. 6 ZPO findet auf Forderungsanmeldungen keine Anwendung.",
+   "Widerspruch: Anmeldung 32.112,00 EUR, Summe der Aufstellung 31.497,75 EUR - Differenz von 614,25 EUR ungeklärt.",
+   "Prüfungstermin am 24.02.2026; Stellungnahme an die Agentur bis 17.02.2026."]},
+  {"id": "D4", "type": "email", "format": "txt", "filename": "Mail_Agentur.txt", "date": "11.02.2026", "paragraphs": [
+   "Von: insolvenzgeld.nord@agentur.example",
+   "Datum: 11.02.2026",
+   "Betreff: Forderungsanmeldung Metallbau Sörensen GmbH",
+   "Sehr geehrte Frau Dr. Tannenhauer, die fehlende Unterschrift auf der Anmeldung ist nach unserer Auffassung unschädlich.",
+   "Die Differenz zum Gesamtbetrag erklären wir mit einem vierten Arbeitnehmer, dessen Unterlagen noch fehlen.",
+   "Mit freundlichen Grüßen, Henning Vossberg, Sachbearbeiter, Telefon 0431 709 4421"]},
+  {"id": "D5", "type": "protokoll", "format": "scan", "filename": "Protokoll_Pruefungstermin.pdf", "date": "24.02.2026", "paragraphs": [
+   "Amtsgericht Beispielstadt - Insolvenzgericht - 27 IN 418/25",
+   "Protokoll des Prüfungstermins vom 24.02.2026",
+   "Die Forderung der Bundesagentur für Arbeit wird von der Insolvenzverwalterin in Höhe von 31.497,75 EUR festgestellt und in Höhe von 614,25 EUR bestritten."]}
+ ],
+ "reference": {
+  "facts": [
+   {"id": "F1", "statement": "Anmeldung mit Gesamtbetrag", "values": ["12.01.2026", "32.112,00 EUR"], "docs": ["D1"]},
+   {"id": "F2", "statement": "Keine Einzelangaben zu Arbeitnehmern und Bruttoentgelt", "values": ["nicht aufgeführt"], "docs": ["D1"]},
+   {"id": "F3", "statement": "Anmeldung nicht unterschrieben", "values": ["nicht unterschrieben"], "docs": ["D1"]},
+   {"id": "F4", "statement": "Nachgereichte Aufstellung (Eingang)", "values": ["06.02.2026"], "docs": ["D2"]},
+   {"id": "F5", "statement": "Summe der Aufstellung", "values": ["31.497,75 EUR"], "docs": ["D2"]},
+   {"id": "F6", "statement": "Differenz soll auf vierten Arbeitnehmer entfallen, Unterlagen fehlen", "values": ["vierten Arbeitnehmer"], "docs": ["D4"]},
+   {"id": "F7", "statement": "Teilweises Bestreiten im Prüfungstermin", "values": ["614,25 EUR"], "docs": ["D5"]}
+  ],
+  "chronology": [
+   {"date": "12.01.2026", "event": "Forderungsanmeldung der Agentur", "doc": "D1"},
+   {"date": "06.02.2026", "event": "Eingang der nachgereichten Aufstellung", "doc": "D2"},
+   {"date": "09.02.2026", "event": "Prüfvermerk der Kanzlei", "doc": "D3"},
+   {"date": "11.02.2026", "event": "E-Mail der Agentur", "doc": "D4"},
+   {"date": "24.02.2026", "event": "Prüfungstermin", "doc": "D5"}
+  ],
+  "deadlines": [
+   {"date": "17.02.2026", "kind": "Stellungnahme an die Agentur", "doc": "D3"},
+   {"date": "24.02.2026", "kind": "Prüfungstermin", "doc": "D3"}
+  ],
+  "citations": [
+   {"text": "§ 169 Satz 1 SGB III", "kind": "norm", "doc": "D1"},
+   {"text": "§ 174 Abs. 2 InsO", "kind": "norm", "doc": "D3"},
+   {"text": "§ 130 Nr. 6 ZPO", "kind": "norm", "doc": "D3"},
+   {"text": "BAG, Urteil vom 20. Februar 2025 - 6 AZR 32/24", "kind": "entscheidung", "doc": "D3",
+    "verified_source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "ecli": "ECLI:DE:BAG:2025:200225.U.6AZR32.24.0", "doc": "jb-KARE600070232"}}
+  ],
+  "contradictions": [
+   {"id": "W1", "topic": "Höhe der angemeldeten Forderung", "values": [{"doc": "D1", "value": "32.112,00 EUR"}, {"doc": "D2", "value": "31.497,75 EUR"}]}
+  ],
+  "privacy": {
+   "protect": [
+    {"value": "Wiebke Tannenhauer", "type": "PERSON"},
+    {"value": "Metallbau Sörensen GmbH", "type": "ORGANISATION"},
+    {"value": "Ömer Yalçınkaya", "type": "PERSON"},
+    {"value": "Agnieszka Wrzesińska", "type": "PERSON"},
+    {"value": "Thorsten Pfannenberg", "type": "PERSON"},
+    {"value": "Henning Vossberg", "type": "PERSON"},
+    {"value": "03.09.1987", "type": "PERS_DATUM"},
+    {"value": "21.11.1992", "type": "PERS_DATUM"},
+    {"value": "17.05.1979", "type": "PERS_DATUM"},
+    {"value": "insolvenzgeld.nord@agentur.example", "type": "EMAIL"},
+    {"value": "0431 709 4421", "type": "TELEFON"},
+    {"value": "27 IN 418/25", "type": "KENNUNG"}
+   ],
+   "keep": ["32.112,00 EUR", "31.497,75 EUR", "614,25 EUR", "§ 174 Abs. 2 InsO", "§ 169 Satz 1 SGB III", "17.02.2026", "24.02.2026"]
+  },
+  "tasks": [
+   {"id": "Q1", "kind": "chat", "analyse": true, "question": "Ist die Forderungsanmeldung der Agentur ordnungsgemäß, und schadet die fehlende Unterschrift?", "attach": [],
+    "needed_facts": ["F1", "F2", "F3", "F4"], "needed_values": ["12.01.2026", "06.02.2026", "32.112,00 EUR", "31.497,75 EUR"]},
+   {"id": "Q2", "kind": "schriftsatz", "analyse": true, "question": "Stellungnahme an die Agentur zur Anmeldung und zur ungeklärten Differenz.", "attach": [],
+    "needed_facts": ["F1", "F5", "F6"], "needed_values": ["32.112,00 EUR", "31.497,75 EUR", "614,25 EUR"]},
+   {"id": "Q3", "kind": "suche", "question": "Prüfungstermin Protokoll bestritten", "attach": [], "needed_facts": ["F7"], "expected_documents": ["D5"]},
+   {"id": "Q4", "kind": "fristen", "question": "Fristen aus den Akten", "attach": [], "needed_facts": [], "expected_deadlines": ["17.02.2026", "24.02.2026"]}
+  ]
+ },
+ "solution": {
+  "source": {"register": "Q-RECHTSPRECHUNG-IM-INTERNET", "court": "BAG", "aktenzeichen": "6 AZR 32/24", "date": "2025-02-20", "ecli": "ECLI:DE:BAG:2025:200225.U.6AZR32.24.0", "used": "amtliche Leitsaetze; Gruende Rn. 12 f. (ordnungsgemaesse Anmeldung als Sachurteilsvoraussetzung)"},
+  "question": "Ist die Sammelanmeldung der Agentur ordnungsgemäß, und schadet die fehlende Unterschrift?",
+  "expected_result": "Die Anmeldung vom 12.01.2026 war ohne Angabe der einzelnen Arbeitnehmer, ihres monatlichen Bruttoentgelts und der Anspruchszeiträume nicht ordnungsgemäß (§ 174 Abs. 2 InsO; BAG 6 AZR 32/24, Leitsatz 2). Die fehlende Unterschrift schadet nicht, weil § 130 Nr. 6 ZPO auf Forderungsanmeldungen keine Anwendung findet (Leitsatz 1). Die ordnungsgemäße Anmeldung ist Sachurteilsvoraussetzung einer Feststellung zur Tabelle. Erst mit der Aufstellung (Eingang 06.02.2026) ist sie für 31.497,75 EUR prüffähig; die Differenz von 614,25 EUR ist nicht belegt.",
+  "result_terms": ["ordnungsgemäß", "Bruttoentgelt"],
+  "wrong_results": ["Unterschrift ist zwingend", "wegen der fehlenden Unterschrift unwirksam", "Anmeldung vom 12.01.2026 ist ordnungsgemäß"],
+  "required_norms": ["§ 174", "§ 130"],
+  "decisive_facts": ["F1", "F2", "F3", "F4", "F5"],
+  "deadlines": ["17.02.2026"],
+  "open_points": [
+   {"id": "O1", "topic": "Differenz von 614,25 EUR ungeklärt (W1)", "any_terms": ["614,25", "Differenz"]},
+   {"id": "O2", "topic": "Unterlagen zum vierten Arbeitnehmer fehlen", "any_terms": ["vierten Arbeitnehmer", "Unterlagen"]}
+  ],
+  "provenance": {"belegt": ["Leitsaetze 1 und 2 von 6 AZR 32/24", "Gruende: Anmeldung als Sachurteilsvoraussetzung", "Wortlaut § 174 InsO"],
+                 "synthetisch": ["Schuldnerin, Arbeitnehmer, Betraege, Daten, Differenz, Pruefungstermin"]}
+ }
+}

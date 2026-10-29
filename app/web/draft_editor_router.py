@@ -69,6 +69,7 @@ from app.web.letterhead_context import draft_letterhead_context
 from app.models import Draft, Matter, User
 from app.prompt_library.service import PromptTemplateService
 from app.privacy.api_logger import friendly_block_message
+from app.web.name_protection import install_name_protection, protect_manual_terms
 from app.web.service_factory import (
     WritingProviderNotConfiguredError,
     get_editor_service,
@@ -79,7 +80,7 @@ from app.web.template_paths import TEMPLATES_DIR
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/dashboard/drafts", tags=["dashboard-draft-editor"])
 
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates = install_name_protection(Jinja2Templates(directory=TEMPLATES_DIR))  # §54 "Namen schützen"
 
 
 def _load_chain_by_id(draft: Draft, db: Session) -> dict[str, Draft]:
@@ -205,6 +206,8 @@ def apply_ai_edit(
     instruction_text: str = Form(...),
     purpose: str = Form(...),
     selected_text: str = Form(""),
+    protected_terms: str = Form(""),
+    editor_text: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_role(permission=PERM_CLAUDE_CALL)),
     service: EditorService = Depends(get_editor_service_for_ai_edit),
@@ -223,6 +226,13 @@ def apply_ai_edit(
         return JSONResponse(
             {"success": False, "error": "Die Akte wurde gelöscht - keine KI-Aktion mehr möglich."}, status_code=422
         )
+    # §54 "Namen schützen": geprueft gegen Anweisung/Auswahl (gehen in die Anfrage) und den gespeicherten Entwurf;
+    # gespeichert VOR der Anfrage, Fehler -> nichts gesendet
+    # §55: `editor_text` = aktueller (ggf. ungespeicherter) Editorinhalt, nur Pruefgrundlage der Markierung
+    problem = protect_manual_terms(db, draft, f"{instruction_text}\n{selected_text}", protected_terms, current_user,
+                                   current_text=editor_text)
+    if problem is not None:
+        return JSONResponse({"success": False, "error": problem}, status_code=422)
 
     try:
         result = service.apply_ai_suggestion(

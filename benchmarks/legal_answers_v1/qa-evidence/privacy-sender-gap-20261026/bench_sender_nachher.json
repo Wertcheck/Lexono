@@ -1,0 +1,15 @@
+{
+ "positiv_faelle": 180,
+ "lecks_mask": 0,
+ "ungefragt_ask": 0,
+ "kommunikationsnomen_und_datum_lesbar": 180,
+ "negativ_faelle": 13,
+ "fehlalarme": 2,
+ "lecks_beispiele": [],
+ "ungefragt_beispiele": [],
+ "fehlalarm_saetze": [
+  "Das Schreiben von Hand wurde eingescannt.",
+  "Ludwig II. war König von Bayern."
+ ],
+ "laufzeit_s": 18.1
+}

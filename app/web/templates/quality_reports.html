@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Qualitätsmeldungen{% endblock %}
+{% block content %}
+  {# ARCHITECTURE.md §75: aktenbezogene Meldungen, lokale Diagnose (nur Stufen/Kategorien/Zähler), synthetische
+     Regressionsfälle. Nichts ändert automatisch Regeln; nichts wird nach außen gesendet. #}
+  <div class="topbar">
+    <h1 class="topbar__title">Qualitätsmeldungen</h1>
+    <div class="topbar__meta">
+      Gemeldete Datenschutz- und Inhaltsfehler – lokale Diagnose, geprüfte Ursache, synthetischer Regressionsfall.
+      Keine automatische Regeländerung, keine Übermittlung nach außen.
+    </div>
+  </div>
+
+  <div class="draft-page">
+    {% if notice %}<p class="form-hint" style="color: var(--seal-green-dark);">{{ notice }}</p>{% endif %}
+    {% if error %}<p class="form-hint" style="color: var(--amber);">{{ error }}</p>{% endif %}
+
+    <h2 class="panel-title">Meldungen ({{ reports | length }})</h2>
+    {% if reports %}
+      <table class="data-table">
+        <thead><tr><th>Gemeldet</th><th>Akte</th><th>Kategorie</th><th>Status</th><th>Vermutete Stufe</th><th></th></tr></thead>
+        <tbody>
+          {% for r in reports %}
+            <tr{% if report and report.id == r.id %} class="tasks-table-row--selected"{% endif %}>
+              <td class="mono">{{ r.created_at.strftime("%d.%m.%Y %H:%M") }}</td>
+              <td>{{ matters[r.matter_id].reference_number or matters[r.matter_id].title if r.matter_id in matters else "–" }}</td>
+              <td>{{ categories.get(r.category, r.category) }}</td>
+              <td>{{ r.status }}</td>
+              <td>{{ stages.get(r.suspected_stage, "–") if r.suspected_stage else "–" }}</td>
+              <td><a href="/dashboard/quality-reports?selected={{ r.id }}">Öffnen</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">Keine Meldungen. Gemeldet wird aus der Dokumentansicht einer Akte.</div>
+    {% endif %}
+
+    {% if report %}
+      <h2 class="panel-title" style="margin-top: 24px;">Meldung: {{ categories.get(report.category, report.category) }}</h2>
+      <dl class="task-detail-panel__fields">
+        <dt class="task-detail-panel__field-label">Akte</dt>
+        <dd class="task-detail-panel__field-value">
+          <a href="/dashboard/matters/{{ report.matter_id }}{% if report.document_id %}/document/{{ report.document_id }}{% endif %}">
+            {{ matters[report.matter_id].reference_number or matters[report.matter_id].title if report.matter_id in matters else "–" }}
+          </a>
+        </dd>
+        <dt class="task-detail-panel__field-label">Gemeldet von</dt><dd class="task-detail-panel__field-value">{{ report.reported_by }}</dd>
+        <dt class="task-detail-panel__field-label">Status</dt><dd class="task-detail-panel__field-value">{{ report.status }}</dd>
+        <dt class="task-detail-panel__field-label">Fundstelle</dt>
+        <dd class="task-detail-panel__field-value">{{ report.excerpt or "– (nicht angegeben, nach Abschluss oder nach Ablauf der Aufbewahrungsfrist gelöscht)" }}</dd>
+        <dt class="task-detail-panel__field-label">Beschreibung</dt><dd class="task-detail-panel__field-value">{{ report.description or "–" }}</dd>
+        {% if report.confirmed_stage %}
+          <dt class="task-detail-panel__field-label">Bestätigte Ursache</dt>
+          <dd class="task-detail-panel__field-value">{{ stages.get(report.confirmed_stage) }}{% if report.reviewed_by %} ({{ report.reviewed_by }}){% endif %}</dd>
+        {% endif %}
+        {% if report.resolution_note %}<dt class="task-detail-panel__field-label">Notiz</dt><dd class="task-detail-panel__field-value">{{ report.resolution_note }}</dd>{% endif %}
+        {% if report.fix_reference %}<dt class="task-detail-panel__field-label">Korrektur</dt><dd class="task-detail-panel__field-value mono">{{ report.fix_reference }}</dd>{% endif %}
+      </dl>
+
+      <h3 class="panel-title">Lokale Diagnose</h3>
+      {% if diagnosis %}
+        <p class="form-hint">
+          Vermutete Stufe: <strong>{{ stages.get(report.suspected_stage, "–") }}</strong> ·
+          im lokalen Pfad reproduziert:
+          {{ "ja" if diagnosis.reproduced else ("nein" if diagnosis.reproduced is sameas false else "nicht feststellbar") }}.
+          Hinweis, keine Entscheidung – bitte prüfen.
+        </p>
+        <ul class="instruction-list">
+          {% for key, value in diagnosis | dictsort %}
+            {% if key != "reproduced" %}<li class="instruction-item mono">{{ key }}: {{ value }}</li>{% endif %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="form-hint">Noch keine Diagnose.</p>
+      {% endif %}
+
+      {% if report.status not in ("behoben", "verworfen") %}
+        <form method="post" action="/dashboard/quality-reports/{{ report.id }}/diagnose" style="margin: 8px 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <button type="submit" class="btn">Diagnose ausführen (lokal)</button>
+        </form>
+
+        <form method="post" action="/dashboard/quality-reports/{{ report.id }}/confirm" class="dashboard-form" style="max-width: none;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="form-label">Ursache bestätigen
+            <select name="stage">
+              {% for key, label in stages.items() %}
+                <option value="{{ key }}" {% if (report.confirmed_stage or report.suspected_stage) == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="form-label">Notiz (ohne Mandantendaten)<input type="text" name="note" maxlength="2000" /></label>
+          <button type="submit" class="btn">Ursache bestätigen</button>
+        </form>
+
+        <form method="post" action="/dashboard/quality-reports/{{ report.id }}/close" class="dashboard-form" style="max-width: none;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <label class="form-label">Korrektur (Commit/Version)<input type="text" name="fix_reference" maxlength="200" /></label>
+          <label class="form-label">Notiz<input type="text" name="note" maxlength="2000" /></label>
+          <button type="submit" name="outcome" value="behoben" class="btn btn--primary">Als behoben abschließen</button>
+          <button type="submit" name="outcome" value="verworfen" class="btn">Verwerfen</button>
+          <p class="form-hint">Beim Abschließen werden Fundstelle und Beschreibung gelöscht (offene Meldungen spätestens nach Ablauf der Aufbewahrungsfrist). „Behoben“ setzt eine bestätigte Ursache und eine Korrektur oder einen freigegebenen Regressionsfall voraus.</p>
+        </form>
+      {% endif %}
+
+      <h3 class="panel-title">Regressionsfälle zu dieser Meldung</h3>
+      {% for case in report_cases %}
+        <div class="instruction-item">
+          <strong>{{ case.title }}</strong> · {{ case.status }}{% if case.test_reference %} · {{ case.test_reference }}{% endif %}
+          {% if case.status == "entwurf" %}
+            <form method="post" action="/dashboard/quality-reports/cases/{{ case.id }}/decide" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <input type="text" name="test_reference" placeholder="Testverweis (optional)" maxlength="200" />
+              <button type="submit" name="decision" value="approve" class="btn">Freigeben</button>
+              <button type="submit" name="decision" value="reject" class="btn">Verwerfen</button>
+            </form>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="form-hint">Keine.</p>
+      {% endfor %}
+      {% if report.status == "ursache_bestaetigt" %}
+        <form method="post" action="/dashboard/quality-reports/{{ report.id }}/cases" class="dashboard-form" style="max-width: none;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+          <p class="form-hint">
+            <strong>Nur erfundene Namen und Werte.</strong> Der Text wird gegen die Fundstelle und alle gespeicherten
+            Mandanten-/Beteiligtennamen geprüft und sonst abgelehnt. Er wirkt nicht auf produktive Regeln.
+          </p>
+          <label class="form-label">Kategorie
+            <select name="category">{% for key in case_categories %}<option value="{{ key }}" {% if key == report.category %}selected{% endif %}>{{ categories[key] }}</option>{% endfor %}</select>
+          </label>
+          <label class="form-label">Titel<input type="text" name="title" maxlength="200" required /></label>
+          <label class="form-label">Synthetischer Text<textarea name="synthetic_text" rows="4" maxlength="4000" required></textarea></label>
+          <label class="form-label">Muss pseudonymisiert werden (je Zeile)<textarea name="must_mask" rows="2"></textarea></label>
+          <label class="form-label">Muss unverändert bleiben (je Zeile)<textarea name="must_keep" rows="2"></textarea></label>
+          <label class="form-label">Erwartete Frist(en), JJJJ-MM-TT (je Zeile)<textarea name="due_dates" rows="1"></textarea></label>
+          <button type="submit" class="btn">Regressionsfall anlegen</button>
+        </form>
+      {% endif %}
+
+      <form method="post" action="/dashboard/quality-reports/{{ report.id }}/delete" style="margin-top: 16px;"
+            onsubmit="return confirm('Meldung endgültig löschen?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <button type="submit" class="btn btn--danger">Meldung löschen</button>
+      </form>
+    {% endif %}
+
+    <h2 class="panel-title" style="margin-top: 24px;">Alle Regressionsfälle ({{ cases | length }})</h2>
+    <p class="form-hint">
+      Freigegebene Fälle: <a href="/dashboard/quality-reports/cases/export.json">als JSON exportieren</a>
+      (nur synthetischer Text und Erwartung; zur Übernahme nach <span class="mono">tests/regression_cases/</span>).
+    </p>
+    <ul class="instruction-list">
+      {% for case in cases %}<li class="instruction-item">{{ case.title }} · {{ categories.get(case.category) }} · {{ case.status }}</li>{% endfor %}
+    </ul>
+  </div>
+{% endblock %}

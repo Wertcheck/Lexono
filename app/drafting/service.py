@@ -74,7 +74,7 @@ from app.ai_providers.claude_writing_provider import ClaudeWritingProvider
 from app.ai_providers.local_ai_provider import LocalAIProvider, foreign_matter_names, mentions_any_name
 from app.ai_providers.local_llm_provider import LocalLLMProvider, LocalLLMUnavailableError
 from app.cost_control import CostControlService
-from app.documents.readiness import NOT_INCLUDED, assess_documents
+from app.documents.readiness import NOT_INCLUDED, apply_release, assess_documents
 from app.drafting.firm_placeholders import compose_letter_notes, strip_firm_placeholders
 from app.drafting.markdown_to_draft_html import render_ai_markdown_to_draft_html
 from app.drafting.quick_matter import PLACEHOLDER_CLIENT_NAME, create_quick_matter
@@ -87,6 +87,7 @@ from app.firm_profile.letterheads import letterhead_for_draft, resolve_ref_for_n
 from app.models import Deadline, Draft, DraftKnowledgeItemLink, DraftSourceLink, KnowledgeItem, Matter
 from app.observability.perf_trace import PerfTrace
 from app.privacy.api_logger import ApiCallLogger, categorize_block_reasons
+from app.privacy.decisions import load_decisions
 from app.privacy.review import PrivacyDecisions
 from app.privacy.gateway import ClaudePrivacyGateway
 from app.privacy.gateway_schema import ClaudeRequestPayload, GatewayResult
@@ -342,6 +343,7 @@ class _PreparedRequest:
     lenient_leak_exempt_placeholders: frozenset[str] = frozenset()
     letterhead_ref: str | None = None
     has_document_context: bool = False
+    context_notices: tuple[str, ...] = ()  # §66: Hinweise der Kontextauswahl (lokal, nie im Payload)
 
 
 @dataclass(frozen=True)
@@ -798,7 +800,9 @@ class DraftingService:
         # Vorpruefung im Chat und hier (Neuverarbeitung, Loeschen) fuehrt so nie zu einer Antwort, die eine Auswertung
         # vortaeuscht. Kein Gateway-, kein Cloud-Aufruf; der Inhalt nimmt sonst unveraendert den Privacy-Pfad.
         if required_document_ids:
-            states = assess_documents(db, required_document_ids, matter_id=matter_id)
+            # §62: zuerst die Dokumentfreigabe (nicht freigegeben = eigener, verstaendlicher Zustand statt "nicht
+            # uebernommen"); der Kontextaufbau hat nicht freigegebene Dokumente bereits ausgeschlossen
+            states = apply_release(db, assess_documents(db, required_document_ids, matter_id=matter_id))
             included = getattr(preparation, "included_document_ids", None)
             if included is not None:
                 states = [
@@ -866,7 +870,13 @@ class DraftingService:
                 known_entities=preparation.known_entities,
                 gespraechsverlauf=gespraechsverlauf,
                 skip_general_knowledge_pseudonymization=skip_general_knowledge_pseudonymization,
-                privacy_decisions=privacy_decisions,
+                # §51: ohne mitgegebene Entscheidungen (Schriftsatz-, E-Mail-, Formular-Pfade) gelten die aktenweiten
+                # "Als Person behandeln"/"Unsicher"-Entscheidungen und manuellen Namensmarkierungen trotzdem - vorher nur
+                # im Chat. "Kein personenbezogenes Datum" bleibt unterhaltungsbezogen (hier keine Unterhaltung).
+                privacy_decisions=(
+                    privacy_decisions if privacy_decisions is not None
+                    else load_decisions(db, matter_id=matter_id, conversation_id=None)
+                ),
                 review_mode=review_mode,
             )
 
@@ -980,6 +990,7 @@ class DraftingService:
             message_id=message_id,
             chat_triggered=chat_triggered,
             has_document_context=preparation.has_document_context,
+            context_notices=tuple(getattr(preparation, "notices", [])),
         )
 
     def _summary_not_worthwhile(self, payload: ClaudeRequestPayload, *, has_document_context: bool = False) -> bool:
@@ -1545,6 +1556,7 @@ class DraftingService:
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
                 uncertainties=uncertainties,
+                context_notices=list(prepared.context_notices),
             ),
         )
 
@@ -1727,6 +1739,7 @@ class DraftingService:
                 knowledge_items_used=prepared.knowledge_items_used,
                 open_review_points=open_review_points,
                 uncertainties=uncertainties,
+                context_notices=list(prepared.context_notices),
             ),
         )
 

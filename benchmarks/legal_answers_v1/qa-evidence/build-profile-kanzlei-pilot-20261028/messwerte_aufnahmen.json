@@ -1,0 +1,105 @@
+{
+ "pilot-fibu_http": 404,
+ "pilot-1-navigation": {
+  "titel": "Guten Abend.",
+  "nav": [
+   "Neuen Chat starten",
+   "Chat",
+   "Mandanten",
+   "Akten",
+   "Posteingang",
+   "Aufgaben & Fristen",
+   "Kanzleiwissen",
+   "Mein Profil",
+   "Einstellungen",
+   "Hilfe & Support",
+   "Qualitätsmeldungen"
+  ],
+  "module": [],
+  "js_fehler": []
+ },
+ "pilot-2-fibu-url-direkt": {
+  "nav": [],
+  "module": [],
+  "js_fehler": []
+ },
+ "pilot-3-lizenz-tab": {
+  "titel": "Einstellungen",
+  "nav": [
+   "Neuen Chat starten",
+   "Chat",
+   "Mandanten",
+   "Akten",
+   "Posteingang",
+   "Aufgaben & Fristen",
+   "Kanzleiwissen",
+   "Mein Profil",
+   "Einstellungen",
+   "Hilfe & Support",
+   "Qualitätsmeldungen"
+  ],
+  "module": [
+   "kanzlei"
+  ],
+  "js_fehler": []
+ },
+ "voll-fibu_http": 403,
+ "voll-1-navigation": {
+  "titel": "Guten Abend.",
+  "nav": [
+   "Neuen Chat starten",
+   "Chat",
+   "Mandanten",
+   "Akten",
+   "Posteingang",
+   "Aufgaben & Fristen",
+   "Kanzleiwissen",
+   "Mein Profil",
+   "Einstellungen",
+   "Hilfe & Support",
+   "Qualitätsmeldungen"
+  ],
+  "module": [],
+  "js_fehler": []
+ },
+ "voll-2-fibu-url-direkt": {
+  "titel": "Lexono Finanzen ist nicht freigeschaltet",
+  "nav": [
+   "Neuen Chat starten",
+   "Chat",
+   "Mandanten",
+   "Akten",
+   "Posteingang",
+   "Aufgaben & Fristen",
+   "Kanzleiwissen",
+   "Mein Profil",
+   "Einstellungen",
+   "Hilfe & Support",
+   "Qualitätsmeldungen"
+  ],
+  "module": [],
+  "js_fehler": []
+ },
+ "voll-3-lizenz-tab": {
+  "titel": "Einstellungen",
+  "nav": [
+   "Neuen Chat starten",
+   "Chat",
+   "Mandanten",
+   "Akten",
+   "Posteingang",
+   "Aufgaben & Fristen",
+   "Kanzleiwissen",
+   "Mein Profil",
+   "Einstellungen",
+   "Hilfe & Support",
+   "Qualitätsmeldungen"
+  ],
+  "module": [
+   "kanzlei",
+   "finanzen",
+   "steuern"
+  ],
+  "js_fehler": []
+ }
+}

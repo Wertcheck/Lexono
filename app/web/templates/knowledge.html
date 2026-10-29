@@ -14,18 +14,20 @@
      Suche deckt kanzleiweite Suche bereits ab, eine kontextbezogene Suche
      gehoert stattdessen direkt an die jeweilige Liste (siehe die kleine
      Suche neben "Gesetze & Normen" in knowledge_panel.html). #}
-  <div class="topbar">
-    <div class="topbar__icon-row">
-      {{ icons.book(class_="icon topbar__icon") }}
-      <div class="topbar__heading">
-        <h1 class="topbar__title">Kanzleiwissen</h1>
+  {# Seitenkopf (27.10., Referenzabgleich 43_Kanzleiwissen_Gesetze.png): eigener, buendig mit Kacheln und Tabelle
+     ausgerichteter Kopf statt der zentrierten `.topbar` (max. 1280 px), die bei breiten Fenstern gegen den Inhalt
+     darunter versetzt stand. Untertitel/Beschreibung bleiben die bestehenden OOB-Swap-Ziele. #}
+  <header class="knowledge-head">
+    <div class="knowledge-head__row">
+      {{ icons.book(class_="icon knowledge-head__icon") }}
+      <div class="knowledge-head__heading">
+        <h1 class="knowledge-head__title">Kanzleiwissen</h1>
         {% include "partials/knowledge_subtitle.html" %}
       </div>
     </div>
-    {# Erklaerende Beschreibung unter Titel/Untertitel (26.09.,
-       Referenzabgleich §6). #}
+    {# Erklaerende Beschreibung unter Titel/Untertitel (26.09., Referenzabgleich §6). #}
     {% include "partials/knowledge_description.html" %}
-  </div>
+  </header>
 
   {# Eigene Wrapper-Klasse statt der geteilten `.draft-page` (26.09.,
      App-Shell-Korrektur §8): fuellt `.main` exakt aus und verwaltet ihren

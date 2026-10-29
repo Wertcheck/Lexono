@@ -62,8 +62,10 @@ from app.chat.title_generation import generate_conversation_title
 from app.config import get_settings
 from app.documents.readiness import (
     DocumentReadiness,
+    apply_release,
     assess_document,
     assess_documents,
+    blocked_state_sentences,
     not_ready_notice,
     unevaluated_note,
 )
@@ -90,7 +92,7 @@ from app.models import (
     User,
 )
 from app.observability.perf_trace import PerfTrace
-from app.privacy.api_logger import friendly_block_message
+from app.privacy.api_logger import SHORT_FORM_COLLISION_MESSAGE, friendly_block_message
 
 #: ECHTER FUND (realer Abnahme-Test, 13.09.): der Chat rief
 #: `drafting_service.create_draft` bisher IMMER mit `_PURPOSE_DRAFT`
@@ -177,6 +179,17 @@ class _RevisionBasis:
     text: str
     edited: bool
     version: int
+
+
+def _with_context_notices(text: str, notices: list[str]) -> str:
+    """§66: Hinweise der Kontextauswahl (z. B. "Hoechstzahl von 30 Dokumenten erreicht", "Suchgrenze erreicht", nicht
+    freigegebene Dokumente) sichtbar machen - eine unvollstaendige Auswahl darf im Chat nicht wie eine vollstaendige
+    Antwort wirken. Im Block "Offene Pruefpunkte / Hinweise": LOKAL, nie Teil kuenftiger Cloud-Anfragen (der
+    Gespraechsverlauf entfernt diesen Block, siehe `_build_history`)."""
+    for notice in notices:
+        if notice and text:
+            text = append_review_note(text, notice)
+    return text
 
 
 def _with_basis_note(text: str, basis: "_RevisionBasis | None") -> str:
@@ -544,6 +557,21 @@ _MAX_HISTORY_CHARS_TOTAL = 12_000
 #: Person erkannt - real mit `.agentic/memos/chatdiag_harness/` verwandten
 #: Ad-hoc-Tests bestaetigt.
 _HISTORY_ROLE_LABELS = {"user": "Anwalt", "assistant": "Assistent"}
+# §57: "nur hochgeladen" - Dokumente gespeichert und lokal ausgelesen, noch KEINE KI-Verarbeitung (siehe record_upload)
+UPLOAD_ROLE = "upload"
+
+
+class UploadTooLargeError(ValueError):
+    """§60: Meldung OHNE Dateinamen - sie kann im Pfad ohne JavaScript in einer Fehler-URL landen (Browserverlauf,
+    Zugriffsprotokoll). Der Dateiname steht separat zur Verfuegung (nur fuer lokale Anzeige, nie fuer URLs)."""
+
+    def __init__(self, filename: str) -> None:
+        super().__init__(f"Eine Datei überschreitet die maximale Größe von {_MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB.")
+        self.filename = filename
+UPLOAD_NOTE = (
+    "Dokument hochgeladen und lokal ausgelesen – beim Hochladen keine KI-Verarbeitung, nichts an die Cloud "
+    "gesendet. Bitte den Text prüfen und nicht erkannte Namen schützen; danach eine Frage dazu senden."
+)
 
 
 #: ECHTER FUND behoben (07.10., Owner-Direktive "CHAT-HISTORY-MANAGEMENT
@@ -572,6 +600,7 @@ class ChatService:
         new_client_name: str | None = None,
         title: str,
         actor: str,
+        conversation_id: str | None = None,
     ) -> ChatConversation:
         if not matter_id:
             matter = create_quick_matter(
@@ -579,7 +608,8 @@ class ChatService:
             )
             matter_id = matter.id
         conversation = ChatConversation(
-            matter_id=matter_id, user_id=user.id, title=_derive_title(title)
+            matter_id=matter_id, user_id=user.id, title=_derive_title(title),
+            **({"id": conversation_id} if conversation_id else {}),  # §60: vorab vergebene ID (Upload-Plan)
         )
         db.add(conversation)
         db.commit()
@@ -609,16 +639,14 @@ class ChatService:
         ocr_languages: str,
         tesseract_cmd: str | None,
         actor: str,
+        document_id: str | None = None,
     ) -> Document | None:
         if not upload.filename:
             return None
 
         content = upload.file.read()
         if len(content) > _MAX_UPLOAD_SIZE_BYTES:
-            raise ValueError(
-                f"Datei '{upload.filename}' überschreitet die maximale Größe von "
-                f"{_MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB."
-            )
+            raise UploadTooLargeError(upload.filename)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         # SICHERHEITSKRITISCH (Path Traversal, siehe Pilot Readiness Review
         # + app/web/schriftsatz_router.py::_store_uploaded_document fuer den
@@ -626,11 +654,14 @@ class ChatService:
         # ungefiltert in den Zielpfad einbauen - `.name` behaelt nur den
         # letzten Pfadbestandteil.
         safe_filename = Path(upload.filename).name or "unbenannt"
-        destination_path = self.storage_dir / f"{uuid.uuid4()}_{safe_filename}"
+        # §60: mit vorab vergebener Dokument-ID ein FESTER Pfad - eine Wiederaufnahme ueberschreibt die Datei eines
+        # abgebrochenen Versuchs, statt eine zweite (verwaiste) Kopie abzulegen
+        destination_path = self.storage_dir / f"{document_id or uuid.uuid4()}_{safe_filename}"
         destination_path.write_bytes(content)
 
         mime_type, _ = mimetypes.guess_type(upload.filename)
         document = Document(
+            **({"id": document_id} if document_id else {}),
             matter_id=conversation.matter_id,
             file_path=str(destination_path),
             original_filename=upload.filename,
@@ -695,6 +726,60 @@ class ChatService:
             .first()
         )
 
+    def record_upload(
+        self, db: Session, *, conversation: ChatConversation, document_ids: list[str], message_id: str | None = None
+    ) -> ChatMessage:
+        """§57: Dokumente NUR aufgenommen (gespeichert und lokal ausgelesen) - KEINE KI-Verarbeitung. Eigene Rolle
+        "upload": nie Teil des Verlaufs an die Cloud (`_build_history` nimmt nur user/assistant), nie eine offene
+        Nutzernachricht (Rueckfrage-Wiederaufnahme und Doppelversand-Sperre setzen role == "user" voraus), kein Text des
+        Nutzers. Erst die naechste, bewusst gesendete Nachricht verarbeitet diese Dokumente."""
+        # Lesbarkeit sofort LOKAL zeigen (Scan ohne OCR, leeres Dokument ...) - die Sperre beim spaeteren Senden
+        # (`_documents_gate` ueber `_referenced_document_ids`) bleibt davon unabhaengig bestehen.
+        blocked = blocked_state_sentences(
+            assess_documents(db, document_ids, matter_id=conversation.matter_id), ocr_enabled=_ocr_enabled()
+        )
+        content = UPLOAD_NOTE + ("\n\n" + "\n".join(f"- {line}" for line in blocked) if blocked else "")
+        # §60: Nachricht UND Verknuepfungen in EINEM Commit (vorher zwei) - kein Zwischenzustand "Nachricht ohne
+        # Dokumente" nach einem harten Abbruch; vorab vergebene ID fuer die Wiederaufnahme
+        message = ChatMessage(conversation_id=conversation.id, role=UPLOAD_ROLE, content=content,
+                              **({"id": message_id} if message_id else {}))
+        db.add(message)
+        db.flush()
+        for document_id in document_ids:
+            db.add(ChatMessageDocument(message_id=message.id, document_id=document_id))
+        db.commit()
+        db.refresh(message)
+        return message
+
+    def _preceding_upload_document_ids(
+        self, db: Session, conversation: ChatConversation, current_message_id: str | None
+    ) -> list[str]:
+        """§57: Dokumente der Upload-Nachrichten seit der letzten Antwort (bewusste KI-Aktion nach "nur hochladen").
+        Mehrere Uploads hintereinander werden vereinigt (Review §57); eine unbeantwortete Zwischenfrage (offene
+        Rueckfrage, abgebrochene Verarbeitung) beendet den Bezug nicht. Jede Antwort - auch ein lokaler Sperrhinweis -
+        beendet ihn: danach gilt das bisherige Verhalten (allgemeine Fragen bleiben moeglich, Dokumentbezug nur
+        ausdruecklich; ein nicht lesbarer Scan wird ohnehin erneut hochgeladen = neuer Upload-Bezug)."""
+        query = db.query(ChatMessage).filter(ChatMessage.conversation_id == conversation.id)
+        if current_message_id is not None:
+            current = db.get(ChatMessage, current_message_id)
+            if current is not None:
+                query = query.filter(ChatMessage.id != current.id, ChatMessage.created_at <= current.created_at)
+        result: list[str] = []
+        for previous in query.order_by(ChatMessage.created_at.desc()).limit(200):
+            if previous.role == "assistant":
+                break  # beantwortet (oder lokal gesperrt): davor hochgeladene Dokumente sind kein Upload-Bezug mehr
+            if previous.role == UPLOAD_ROLE:
+                result.extend(d for d in self._message_document_ids(db, previous.id) if d not in result)
+        return result
+
+    def _message_scope(self, db: Session, conversation: ChatConversation, current_message_id: str | None) -> list[str]:
+        """Datenminimierung §29: die Anhaenge DIESER Nachricht - bzw. (§57) die unmittelbar zuvor nur hochgeladenen
+        Dokumente - begrenzen den Aktenkontext (wie bisher bei "Anhang + Frage in einem Schritt")."""
+        if current_message_id is None:
+            return []
+        own = self._message_document_ids(db, current_message_id)
+        return own or self._preceding_upload_document_ids(db, conversation, current_message_id)
+
     def record_user_message(
         self,
         db: Session,
@@ -728,12 +813,15 @@ class ChatService:
             attached = self._message_document_ids(db, current_message_id)
             if attached:
                 return attached
+            uploaded = self._preceding_upload_document_ids(db, conversation, current_message_id)  # §57
+            if uploaded:
+                return uploaded
         if not _mentions_document(content):
             return []
         query = (
             db.query(ChatMessage)
             .join(ChatMessageDocument, ChatMessageDocument.message_id == ChatMessage.id)
-            .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role == "user")
+            .filter(ChatMessage.conversation_id == conversation.id, ChatMessage.role.in_(("user", UPLOAD_ROLE)))
         )
         if current_message_id is not None:
             query = query.filter(ChatMessage.id != current_message_id)
@@ -809,7 +897,9 @@ class ChatService:
         )
         if not required:
             return [], None
-        states = assess_documents(db, required, matter_id=conversation.matter_id)
+        # §62: lesbare Dokumente zusaetzlich gegen die Dokumentfreigabe - nicht freigegeben = lokaler Hinweis, kein
+        # Cloud-Aufruf (die Durchsetzung beim Kontextaufbau bleibt davon unabhaengig bestehen)
+        states = apply_release(db, assess_documents(db, required, matter_id=conversation.matter_id))
         return required, (states if any(not item.ready for item in states) else None)
 
     @staticmethod
@@ -929,7 +1019,7 @@ class ChatService:
             previous_draft=previous_draft,
             privacy_decisions=load_decisions(db, matter_id=conversation.matter_id, conversation_id=conversation.id),
             required_document_ids=required,
-            context_document_ids=self._message_document_ids(db, last.id),
+            context_document_ids=self._message_scope(db, conversation, last.id),  # §57: wie beim Senden
             unreadable_document_count=len(unready),
         )
         return (last, candidates) if candidates else (None, [])
@@ -956,6 +1046,24 @@ class ChatService:
                 return _PURPOSE_DRAFT, head, basis
         purpose = _PURPOSE_DRAFT if _looks_like_drafting_request(content) else _PURPOSE_CHAT
         return purpose, None, None
+
+    @staticmethod
+    def _turns_blocked_by_short_form_collision(db: Session, conversation: ChatConversation) -> list[str]:
+        """IDs der Anwaltsnachrichten, deren unmittelbare Antwort die Kurzform-Kollisionsmeldung ist (siehe
+        `_build_history`). Erkannt an der festen, inhaltsfreien Meldung - kein Originalwert wird gelesen oder gespeichert."""
+        rows = (
+            db.query(ChatMessage.id, ChatMessage.role, ChatMessage.blocked, ChatMessage.content)
+            .filter(ChatMessage.conversation_id == conversation.id)
+            .filter(ChatMessage.role.in_(("user", "assistant")))
+            .order_by(ChatMessage.created_at.asc())
+            .all()
+        )
+        return [
+            earlier.id
+            for earlier, later in zip(rows, rows[1:])
+            if earlier.role == "user" and later.role == "assistant" and later.blocked
+            and later.content == SHORT_FORM_COLLISION_MESSAGE
+        ]
 
     def _build_history(
         self,
@@ -1035,6 +1143,12 @@ class ChatService:
         )
         if exclude_message_id is not None:
             query = query.filter(ChatMessage.id != exclude_message_id)
+        # Option C (24.10.2026): eine Anwaltsnachricht, die wegen einer Kurzform-Kollision blockiert wurde, ist nie
+        # uebermittelt worden und kann es auch nicht werden - als Verlauf mitgeschickt, blockierte sie jede spaetere
+        # Anfrage dieses Gespraechs erneut (gemessen: auch die Umformulierung). Nur dieser Blockgrund; nur Weglassen.
+        collision_turns = self._turns_blocked_by_short_form_collision(db, conversation)
+        if collision_turns:
+            query = query.filter(ChatMessage.id.notin_(collision_turns))
 
         newest_first = (
             query.order_by(ChatMessage.created_at.desc())
@@ -1171,8 +1285,8 @@ class ChatService:
                 db, conversation=conversation, states=not_ready, actor=actor, current_message_id=current_message_id
             )
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
-        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
-        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
+        # Datenminimierung §29 (+ §57: zuvor nur hochgeladene Dokumente), siehe `_message_scope`
+        scope = self._message_scope(db, conversation, current_message_id)
 
         if drafting_service is None:
             return self._create_message(
@@ -1238,11 +1352,14 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_scope_note(
-                    self._with_unevaluated_note(
-                        _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                content=_with_context_notices(
+                    self._with_scope_note(
+                        self._with_unevaluated_note(
+                            _with_basis_note(result.draft_text or "", basis), unready_matter_documents
+                        ),
+                        db, conversation, scope,
                     ),
-                    db, conversation, scope,
+                    result.context_notices,
                 ),
                 draft_id=result.draft_id,
             )
@@ -1327,8 +1444,8 @@ class ChatService:
             yield ChatStreamEvent(kind="done", message=message)
             return
         unready_matter_documents = self._unready_matter_documents(db, conversation, content, required)
-        # Datenminimierung §29: nur die Anhaenge DIESER Nachricht begrenzen den Aktenkontext
-        scope = self._message_document_ids(db, current_message_id) if current_message_id is not None else []
+        # Datenminimierung §29 (+ §57: zuvor nur hochgeladene Dokumente), siehe `_message_scope`
+        scope = self._message_scope(db, conversation, current_message_id)
 
         if drafting_service is None:
             yield ChatStreamEvent(kind="delta", text=_PROVIDER_UNAVAILABLE_MESSAGE)
@@ -1432,11 +1549,14 @@ class ChatService:
                 db,
                 conversation=conversation,
                 role="assistant",
-                content=self._with_scope_note(
-                    self._with_unevaluated_note(
-                        _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                content=_with_context_notices(
+                    self._with_scope_note(
+                        self._with_unevaluated_note(
+                            _with_basis_note(final_result.draft_text or "", basis), unready_matter_documents
+                        ),
+                        db, conversation, scope,
                     ),
-                    db, conversation, scope,
+                    final_result.context_notices,
                 ),
                 draft_id=final_result.draft_id,
             )

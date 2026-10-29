@@ -12,7 +12,7 @@ manuell, kuratiert aber keine KI-Textbausteine)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
@@ -74,6 +74,56 @@ def create_template(
         )
     PromptTemplateService().create_template(db, data, actor=current_user.email)
     return RedirectResponse(url="/dashboard/library/prompts", status_code=303)
+
+
+def _is_curator(user: User) -> bool:
+    return bool(user.role and user.role.name.strip().lower() in {"admin", "anwalt"})
+
+
+@router.get("/manage.json")
+def manage_list(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_login),
+) -> JSONResponse:
+    """Daten der Verwaltung "Standard-Prompts verwalten" im Chat (28.10.2026): alle Vorlagen in Verwaltungs-
+    reihenfolge (aktivierte zuerst), Startseiten-Limit, Icons und ob der Nutzer aendern darf (Admin/Anwalt, wie die
+    bestehende Bibliothek). Keine Mandantendaten - reine Textbausteine."""
+    from app.prompt_library import start_prompts as sp
+
+    return JSONResponse({
+        "items": [sp.serialize(row) for row in sp.ordered_templates(db)],
+        "max_start": sp.MAX_START_PROMPTS,
+        "limits": {"name": sp.NAME_MAX, "description": sp.DESCRIPTION_MAX, "content": sp.CONTENT_MAX},
+        "icons": list(sp.ICONS),
+        "can_edit": _is_curator(current_user),
+    }, headers={"Cache-Control": "no-store"})
+
+
+@router.post("/manage")
+def manage_save(
+    payload: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "anwalt")),
+) -> JSONResponse:
+    """Speichert den gesamten Verwaltungsstand in EINEM Schritt (Anlegen, Bearbeiten, Loeschen, Aktivieren,
+    Sortieren). Vollstaendige serverseitige Pruefung vor dem Schreiben - Viererlimit, Pflichtfelder, Laengen,
+    Icons; bei einem Fehler bleibt der gespeicherte Stand unveraendert (HTTP 400 mit verstaendlicher Meldung)."""
+    import json
+
+    from app.prompt_library import start_prompts as sp
+
+    try:
+        data = json.loads(payload)
+        if not isinstance(data, dict):
+            raise ValueError
+    except ValueError:
+        return JSONResponse({"error": "Die Änderungen konnten nicht gelesen werden."}, status_code=400)
+    try:
+        rows = sp.apply_management_save(db, data, actor=current_user.email)
+    except sp.PromptManagementError as exc:
+        db.rollback()
+        return JSONResponse({"error": str(exc), "key": exc.key, "field": exc.field}, status_code=400)
+    return JSONResponse({"ok": True, "items": [sp.serialize(row) for row in rows]})
 
 
 @router.get("/{template_id}/edit", response_class=HTMLResponse)
