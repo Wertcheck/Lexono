@@ -111,6 +111,39 @@ liegengebliebenen headless-Edge-Instanz aus einer früheren eigenen QA-Sitzung (
 nicht an einer frisch gestarteten. Als Chromium-Browserprüfung bleiben sie gültig. Die Instanz wurde gezielt beendet;
 die WebView2-Läufe nutzen Port 9374 mit Engine-Prüfung.
 
+
+### 3b. Gebaute Pilot-EXE, nativ im eigenen WebView2-Fenster (nicht installiert, `gebaute-exe/`)
+
+**Rahmen:**
+
+- **Build:** PyInstaller-Build aus Stand `d3d657f` mit Profil `kanzlei-pilot`, ohne Installer, ins Job-Verzeichnis.
+  `Lexono.exe` SHA-256 `E70BDB0D69F869E5…328FC436`.
+- **Start:** isoliertes Datenverzeichnis, synthetisches PDF, toter Cloud-Endpunkt, `LEXONO_BUILD_PROFILE=full` in der
+  Umgebung (darf die Pilot-EXE nicht erweitern). Steuerung per CDP über `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`.
+- **Nicht installiert:** keine Installation, produktive Datenbank unberührt.
+
+| Prüfung | Ergebnis |
+|---|---|
+| Natives WebView2-Fenster (Engine `Chrome/156 … Edg/156`, nicht headless) | ja |
+| Erstversuch: Dialog bedienbar | alle 3 Optionen aktiv und (ins Bild gescrollt) per Klickpunkt erreichbar |
+| Vor dem Bestätigen | nur `upload`, kein Auftrag |
+| Ladeanzeige nach dem Bestätigen (Protokoll über das Neuladen hinweg) | „Pseudonymisierung bestätigt – Dokumente werden freigegeben und erneut geprüft …“ → „Schriftsatz wird erstellt …“ → „Ergebnis wird aufbereitet …“ |
+| Ende ohne Schreibmodell | verständliche, gespeicherte Meldung „Die Cloud-KI ist nicht konfiguriert …“; keine hängende Anzeige |
+| Auftrag | genau 1 Nutzernachricht |
+| Lizenz-Tab | 3 Produkte (Verfügbar / In Entwicklung / In Entwicklung), 1× „Aktiv genutzt“, Modul nur `kanzlei`, kein Querscroll |
+| Tracebacks im EXE-Log | 0 |
+
+**Grenze:** In die EXE lässt sich kein Fake-Schreibmodell einsetzen. Der Erfolgspfad mit fertigem Schriftsatz ist
+deshalb im Quellstand belegt (headless Edge und WebView2-Fenster, Abschnitte 3/3a). In der EXE ist es der
+Fehlerpfad.
+
+**Erster Messfehler, offen benannt:** Der erste EXE-Lauf meldete zwei Fehlschläge („nicht bedienbar“, „keine
+Ladeanzeige“). Beides waren Messartefakte; die Messung ist korrigiert und wiederholt:
+
+- Die dritte Option lag im scrollbaren Panel außerhalb des sichtbaren Bereichs. Die Treffer-Prüfung ohne Scrollen
+  schlug deshalb fehl.
+- Ohne API-Schlüssel lädt die Seite nach 0,8 s neu, und dabei ging das JS-Protokoll verloren.
+
 ## 4. Lizenzseite (Einstellungen → Tab „Lizenz“) – nach Referenzbild
 
 Der Owner hat das Referenzbild am 29.10.2026 nachgereicht (`lizenz/00-referenzbild.png`). Die zuvor nach Textvorgabe
@@ -183,11 +216,15 @@ gebaute Seite ist danach angeglichen. Gegenüberstellung: `lizenz/01-vergleich-r
       Datei und `scripts/legal_bench` sind unverändert. Der Test ist nicht behoben, aber nicht durch diese Änderung
       verursacht.
   - **Neu verursachte Fehler:** keine.
+- **Finale Regression nach allen Nachträgen** (Stand `d3d657f`, 329 Dateien): **7132 passed**, 8 xfailed, 10 skipped,
+  **4 failed = nur die bekannten Logo-Tests**. `test_s81` lief diesmal grün.
 
 ## 6. Offene Punkte und Risiken
 
-1. **Kein Build, keine Installation:** Geprüft ist der Quellstand in headless Edge und im echten WebView2-Fenster. Die
-   gebaute und installierte EXE ist nicht geprüft; die Installation braucht deine Freigabe.
+1. **Keine Installation:** Geprüft sind der Quellstand (headless Edge und WebView2-Fenster) sowie die **gebaute**
+   Pilot-EXE im eigenen WebView2-Fenster (Abschnitt 3b). Eine **Installation** auf dem gemeinsam genutzten System ist
+   nicht erfolgt, weil sie laut Vorgabe eine Freigabe braucht. Offen sind damit nur Installer (Inno Setup),
+   Installation und Update-Pfad.
 2. **Referenzbild:** nachgereicht und umgesetzt (Abschnitt 4); die Abweichungen sind dort begründet.
 3. **Timeout-Folge, geklärt:**
    - Ein Verbindungsabbruch beendet auch die Server-Verarbeitung; der Server gibt die Sperre frei, es entsteht kein
