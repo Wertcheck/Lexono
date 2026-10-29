@@ -1,0 +1,40 @@
+{
+ "profil_datei": "kanzlei-pilot",
+ "app_module_im_bundle": 315,
+ "finance_laufzeit_im_bundle": [],
+ "finance_templates": [],
+ "migrationen_040_042": [
+  "schritt3_040_fibu_mvp.py",
+  "schritt3_041_modules_and_tax.py",
+  "schritt3_042_client_user_access.py"
+ ],
+ "migrationen_gesamt": 60,
+ "quelle_ohne_bundle": [
+  "app.modules.client_access",
+  "app.second_opinion",
+  "app.second_opinion.comparison",
+  "app.second_opinion.validation",
+  "app.synthetic_data",
+  "app.synthetic_data.generator",
+  "app.synthetic_data.scenarios",
+  "app.tax",
+  "app.tax.catalog",
+  "app.tax.service",
+  "app.workflow",
+  "app.workflow.exceptions",
+  "app.workflow.service",
+  "app.workflow.transitions"
+ ],
+ "bundle_ohne_quelle": [],
+ "lizenz_und_profil_code": {
+  "app.modules.licensing": true,
+  "app.modules.profile": true,
+  "app.modules.plans": true,
+  "app.models.fibu": true,
+  "app.web.chat_router": true,
+  "app.web.settings_router": true
+ },
+ "settings_template_mit_lizenzseite": true,
+ "center_js_mit_fix": true,
+ "chat_template_mit_ladezustand": true
+}

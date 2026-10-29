@@ -1,0 +1,175 @@
+﻿; Inno-Setup-Skript für die Windows-Installation (Prompt 36; App-Icon
+; Prompt 47; Installation unter %LocalAppData% ohne Admin-Rechte Schritt 3).
+;
+; Voraussetzung: der PyInstaller-Build liegt bereits unter dist\Lexono\
+; (siehe windows\lexono.spec bzw. windows\build.ps1, das beide Schritte
+; nacheinander ausführt). Übersetzen mit dem Inno-Setup-Compiler (ISCC.exe,
+; Teil der kostenlosen Inno-Setup-Installation von jrsoftware.org):
+;
+;     iscc windows\installer.iss
+;
+; WICHTIG zu relativen Pfaden in dieser Datei: Inno Setup löst sie relativ
+; zum Speicherort DIESES Skripts auf (windows\), nicht relativ zum
+; Projekt-Root - daher unten "app_icon.ico" (liegt direkt daneben in
+; windows\), NICHT "windows\app_icon.ico" (das würde windows\windows\...
+; suchen und fehlschlagen). Aus demselben Grund referenziert [Files] oben
+; bereits "..\dist\Lexono\*".
+; Installiert AUSSCHLIESSLICH den Programmordner (Code, Templates,
+; statische Assets, Migrationsskripte) unter %LocalAppData%\Lexono (bis
+; Prompt 36-Schritt 3 unter {autopf}\"Program Files") - KEINE Mandantendaten.
+; Konfiguration/Datenbank/Dokumente entstehen erst beim ersten Start des
+; Setup-Assistenten (app/setup/, Prompt 37) unter %PROGRAMDATA%\Lexono -
+; bewusst getrennt vom Installationsverzeichnis, siehe ARCHITECTURE.md
+; (Programminstallation vs. Anwendungsdaten). Bis zur KanzleiAI->Lexono-
+; Produktidentitaets-Bereinigung hiess dieses Datenverzeichnis
+; %PROGRAMDATA%\KanzleiAI - eine bestehende Installation mit echten
+; Mandantendaten dort wird von app/setup/paths.py::resolve_data_dir()
+; beim ersten Start dieser Version SICHER und EINMALIG (echter, atomarer
+; Verzeichnis-Rename, niemals Loeschen/Kopieren) auf den neuen Namen
+; migriert - siehe dort fuer die genaue, bewusst konservative Umsetzung
+; und .agentic/DECISIONS.md fuer die Begruendung.
+
+#define MyAppName "Lexono"
+#define MyAppVersion "0.1.0"
+#define MyAppExeName "Lexono.exe"
+#define MyAppPublisher "Lexono Projekt"
+
+[Setup]
+Uninstallable=no
+CreateUninstallRegKey=no
+UsePreviousAppDir=no
+DisableDirPage=yes
+DisableReadyPage=yes
+DisableFinishedPage=yes
+AppId={{6D2C8E41-5A7B-4F0E-9B3D-QA1500000001}
+AppName=Lexono QA Isoliert
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+; Reliability-Fund (01.09., unabhaengige Installer-Review): dieselbe
+; Windows-Mutex, die run.py selbst zur Single-Instance-Absicherung nutzt
+; (siehe run.py::_SINGLE_INSTANCE_MUTEX_NAME/"Lexono_SingleInstance_Mutex",
+; CreateMutexW), war Inno Setup bisher NICHT bekannt - ein Reinstall/Update
+; waehrend Lexono noch im Hintergrund laeuft (real moeglich: Start.vbs
+; startet die App unsichtbar, kein Tray-Icon als Erinnerung) konnte
+; laufende .exe-/DLL-Dateien mitten im Kopiervorgang sperren, im
+; ungünstigsten Fall ein teilweise ueberschriebenes {app}-Verzeichnis
+; hinterlassen. AppMutex laesst Setup denselben Mutex-Namen pruefen und
+; den Nutzer VOR dem Kopieren zum Schliessen der laufenden Instanz
+; auffordern, statt mitten im Kopiervorgang auf eine gesperrte Datei zu
+; stossen.
+AppMutex=Lexono_QA_Isolated_Install_Mutex
+; Geaendert (Schritt 3, 20.08.): Installation je Windows-Benutzerkonto unter
+; %LocalAppData%\Lexono statt {autopf} ("Program Files") - Ziel laut
+; Vorgabe: Updates ohne Windows-Administratorrechte moeglich, da
+; %LocalAppData% vom jeweiligen Benutzerkonto selbst beschreibbar ist. Bricht
+; bewusst mit der Prompt-36-Entscheidung (Program Files) - eine bereits
+; unter Program Files installierte Pilot-Instanz muss vor der Installation
+; dieser Version manuell deinstalliert werden (siehe RELEASE_NOTES.md),
+; sonst entstehen zwei parallele Installationen.
+;
+; Markenumbenennung "Kanzlei-AI" -> "Lexono" (siehe ARCHITECTURE.md): der
+; Ordnername wechselt hier von \KanzleiAI zu \Lexono - fuer NEUE Installationen.
+; Bereits installierte Pilot-Instanzen aktualisieren dank stabiler AppId (siehe
+; oben) weiterhin am zuvor gewaehlten Pfad (Inno Setup verwendet bei
+; erkannter AppId den zuletzt genutzten Installationsort, nicht DefaultDirName) -
+; keine manuelle Nacharbeit fuer bestehende Installationen noetig.
+;
+; UPDATE (KanzleiAI->Lexono-Produktidentitaets-Bereinigung): das getrennte,
+; persistente Datenverzeichnis wechselt JETZT ebenfalls von
+; %PROGRAMDATA%\KanzleiAI auf %PROGRAMDATA%\Lexono (siehe
+; app/setup/paths.py::resolve_data_dir) - die frühere Begründung ("bleibt
+; BEWUSST unveraendert, eine Umbenennung wuerde den Pfad entziehen") ist
+; damit UEBERHOLT: statt den alten Namen dauerhaft zu behalten, migriert
+; resolve_data_dir() ein bestehendes Verzeichnis jetzt selbst sicher und
+; atomar (echter Rename, kein Kopieren/Loeschen, mit Fallback auf den
+; alten Pfad, falls der Rename aus irgendeinem Grund fehlschlaegt) - siehe
+; dort fuer Details. Diese Installer-Datei selbst loest die Migration
+; NICHT aus (reine Laufzeit-/Python-Logik), muss sie aber auch nicht
+; kennen.
+DefaultDirName=C:\Users\Bonit\.claude\jobs\02f3f8ce\tmp\iso\app
+DefaultGroupName=Lexono QA Isoliert
+DisableProgramGroupPage=yes
+OutputDir=C:\Users\Bonit\.claude\jobs\02f3f8ce\tmp\iso\setup_neu
+; Fester Dateiname "Lexono_Setup.exe" (bewusst OHNE Versionsnummer im
+; Namen, auf ausdrücklichen Wunsch) - Kehrseite: ein neuer Build
+; überschreibt in dist\installer\ den vorherigen, es liegen also nie
+; mehrere Versionsstände parallel. Falls künftig mehrere Versionen
+; nebeneinander aufbewahrt werden sollen (z. B. für ein Rollback), einfach
+; wieder "Lexono_Setup-{#MyAppVersion}" verwenden.
+OutputBaseFilename=Lexono_QA_Isolated_Setup
+Compression=lzma
+SolidCompression=yes
+ArchitecturesInstallIn64BitMode=x64compatible
+; Geaendert (Schritt 3): "lowest" statt "admin" - keine UAC-Erhoehung mehr
+; noetig, konsistent mit der Installation unter %LocalAppData% oben. Das
+; persistente Datenverzeichnis (%PROGRAMDATA%\Lexono, siehe
+; app/setup/paths.py) bleibt davon unberuehrt - dort war ohnehin nie eine
+; Admin-Erhoehung fuer den Setup-Assistenten noetig (laeuft unter dem Konto
+; des Anwalts/der Kanzleimitarbeiter).
+PrivilegesRequired=lowest
+; Anwendungssymbol fuer den Installer selbst (Setup.exe-Datei-Icon,
+; Titelleiste, Add/Remove-Programme-Eintrag) - Prompt 47. Aus dem echten,
+; offiziellen Lexono-Markenzeichen generiert (siehe windows/
+; generate_placeholder_icon.py, Dateiname historisch, Inhalt zuletzt am
+; 20.08. aktualisiert: neues Dokument+Schild+Kette-Icon, CI-Farbcode
+; #101828 als Icon-Hintergrund) - dasselbe Icon erscheint unveraendert auf
+; der Desktop-/Startmenue-Verknuepfung (siehe [Icons] unten, IconFilename
+; zeigt auf {#MyAppExeName}, dessen eingebettetes Icon wiederum aus
+; derselben app_icon.ico stammt, siehe windows/lexono.spec).
+SetupIconFile=C:\Users\Bonit\Lexono\windows\app_icon.ico
+; Weiterhin KEIN WizardImageFile (grossflaechiges Bild auf den
+; Assistenten-Seiten) - kanzleispezifisches Vollbild-Branding ist Teil der
+; zurückgestellten "Multi-Kanzlei-Profile"-Frage (Prompt 38), siehe
+; PROMPT38_ANALYSIS.md, hier weiterhin bewusst NICHT vorweggenommen. Die am
+; 20.08. angefragte CI-Farbkonsistenz ("Verknüpfungs-Panel/Hintergrundfarben
+; im Setup") ist über das oben gesetzte SetupIconFile (#101828) bereits
+; erfüllt - das ist die einzige tatsächlich sichtbare "Hintergrundfarbe"
+; einer Desktop-Verknüpfung/eines Installer-Icons unter Windows.
+; Icon fuer den Eintrag unter "Apps & Features"/"Programme und Funktionen" -
+; ohne diese Zeile wuerde Windows dort ein generisches Deinstaller-Icon
+; zeigen statt des tatsaechlichen App-Icons.
+UninstallDisplayIcon={app}\{#MyAppExeName}
+UninstallDisplayName=Lexono QA Isoliert
+
+[Languages]
+Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+
+; KanzleiAI->Lexono-Produktidentitaets-Bereinigung: eine bestehende
+; Installation (identifiziert ueber die stabile AppId oben) hatte bisher
+; "kanzlei_ai.exe" unter {app} liegen - Inno Setup entfernt Dateien, die
+; nicht mehr im aktuellen [Files]-Abschnitt vorkommen, bei einem Upgrade
+; NICHT automatisch. Ohne diesen Eintrag bliebe die alte, funktionslose
+; .exe als Altlast im Installationsverzeichnis liegen.
+[InstallDelete]
+Type: files; Name: "{app}\kanzlei_ai.exe"
+; Downgrade-Schutz (ARCHITECTURE.md §74.1, im echten Installer-Lauf reproduziert): Inno Setup entfernt Dateien, die
+; im neuen Paket fehlen, NICHT. Nach der Installation einer AELTEREN Version ueber eine neuere blieben deren
+; Migrationsskripte im Programmordner liegen - Alembic hielt sie fuer bekannt, die aeltere Version lief mit einer fuer
+; sie unbekannten Datenbankstruktur scheinbar erfolgreich weiter. Deshalb den Migrationsordner vor dem Kopieren
+; leeren: danach liegen genau die Migrationen DIESES Pakets dort, eine neuere Datenbank wird beim Start erkannt und
+; abgewiesen (run.py::cmd_migrate). Betrifft nur den Programmordner, nie das Datenverzeichnis.
+Type: filesandordirs; Name: "{app}\_internal\migrations\versions"
+; Build-Profil (29.10.2026, isolierter Update-Test): aus demselben Grund blieben nach einem Update Templates/Assets der
+; Vorversion liegen, die das neue Paket nicht mehr enthaelt - u. a. "fibu.html" einer Vollversion im Kanzlei-Pilot
+; (ohne Route nicht erreichbar, aber eine Altlast). Der gebuendelte Paketordner `app` (nur Templates und statische
+; Dateien aus dem Build, keine Nutzerdaten) wird deshalb vor dem Kopieren geleert; danach liegt dort genau das neue Paket.
+Type: filesandordirs; Name: "{app}\_internal\app"
+
+[Files]
+Source: "C:\Users\Bonit\Lexono\dist\Lexono\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Stummer Starter (Schritt 3) - siehe [Icons] unten: Start Menü/Desktop
+; starten die App darüber statt direkt über die .exe, damit im normalen
+; Betrieb kein Konsolenfenster erscheint (nur beim allerersten Start
+; bleibt die Konsole sichtbar, siehe Start.vbs-Kommentar).
+Source: "C:\Users\Bonit\Lexono\Start.vbs"; DestDir: "{app}"; Flags: ignoreversion
+; WebView2-Evergreen-Bootstrapper (ARCHITECTURE.md §70/Pilot-Readiness-
+; Review) - siehe windows\fetch_webview2.ps1 fuer Herkunft/Lizenz. "Flags:
+; dontcopy" - wird NICHT automatisch nach {tmp} entpackt (Fund aus einem
+; echten Installationslauf, 31.08.: "dontcopy" bedeutet nur "nicht nach
+; {app} kopieren" - ohne einen expliziten `ExtractTemporaryFile`-Aufruf im
+; [Code]-Abschnitt unten bleibt die Datei komplett unentpackt, der
+; [Run]-Schritt scheitert dann mit "Datei kann nicht ausgefuehrt werden" /
+; CreateProcess-Fehlercode 2. Bleibt NICHT im Installationsverzeichnis
+; liegen (kein dauerhaft benoetigtes Programmbestandteil, nur ein
+; einmaliger Setup-Schritt) - siehe [Code] fuer die tatsaechliche
+; Entpackung vor dem [Run]-Aufruf.
