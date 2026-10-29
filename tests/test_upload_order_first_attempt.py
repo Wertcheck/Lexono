@@ -197,3 +197,46 @@ def test_frontend_sends_the_pending_order_and_shows_a_real_loading_state() -> No
     # keine erfundenen Fortschrittsprozente in der Ladeanzeige
     progress_block = chat.split("var chatProgress = (function () {", 1)[1].split("window.LexonoChatProgress", 1)[0]
     assert "%" not in progress_block
+
+
+def test_name_marked_in_the_composer_at_upload_also_protects_the_dialog_order(client, db_session, writer) -> None:
+    """Im Eingabefeld markierte Namen (§51) speichert schon der Upload fuer die Unterhaltung - der spaeter aus dem
+    Dialog gesendete Auftrag geht deshalb ebenfalls nur pseudonymisiert hinaus."""
+    from tests.auth_test_utils import extract_upload_token
+
+    login_as_admin(db_session, client)
+    release.set_mode(db_session, release.MODE_AUTO_REVIEW, actor="test")
+    order = "Erstelle einen Schriftsatz für Herrn Zweigelt an das Finanzamt."
+    events = _parse_sse_events(client.post(
+        "/dashboard/chat/send-stream", files={"documents": ("sachstand.pdf", _pdf_multipage(), "application/pdf")},
+        data={"upload_token": extract_upload_token(client.get("/dashboard/chat").text), "csrf_token": _csrf(client),
+              "conversation_id": "", "content": order, "protected_terms": json.dumps(["Zweigelt"])},
+    ).text)
+    conversation_id = events[0]["conversation_id"]
+    assert _roles(db_session, conversation_id) == ["upload"] and writer.received_payloads == []
+    doc = _doc_of_conversation(db_session, conversation_id)
+    result = _confirm_with_order(client, conversation_id, doc, [{"term": "Richter", "decision": "personal"}],
+                                 order=order)
+    assert next(e for e in result if e["kind"] == "done").get("blocked") is not True
+    assert len(writer.received_payloads) == 1
+    assert "Zweigelt" not in writer.received_payloads[0].model_dump_json()
+
+
+def test_abandoned_stream_leaves_no_result_and_no_running_claim(client, db_session, writer, pdf_case) -> None:
+    """Zeitlimit der Anzeige/Verbindungsabbruch: der Client liest nur das erste Ereignis und trennt. Danach laeuft
+    nichts weiter (Sperre frei), die Wiederherstellung bietet weder Rueckfrage noch Neuversand an (Zustand "none"),
+    und es wurde hoechstens ein (Simulations-)Aufruf ausgeloest."""
+    from app.chat import processing_claims
+
+    conversation_id, doc = pdf_case
+    data = {"csrf_token": _csrf(client), "document_id": doc.id, "order": AUFTRAG,
+            "text_version": release.text_version_of(doc.extracted_text),
+            "decisions": json.dumps([{"term": "Richter", "decision": "personal"}]), "require_resolved": "1"}
+    with client.stream("POST", f"/dashboard/chat/{conversation_id}/confirm-release-and-generate", data=data) as resp:
+        first = next(resp.iter_lines())
+        assert first.startswith("data: ") and '"start"' in first
+    user = _user_messages(db_session, conversation_id)
+    assert len(user) == 1
+    assert processing_claims.state(db_session, user[0].id) == "free"
+    assert client.get(f"/dashboard/chat/{conversation_id}/pending-review").json()["state"] in ("none", "review")
+    assert len(writer.received_payloads) <= 1

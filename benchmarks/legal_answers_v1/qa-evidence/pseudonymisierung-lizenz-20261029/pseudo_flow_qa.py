@@ -16,7 +16,7 @@ OUT = Path(sys.argv[1]); OUT.mkdir(parents=True, exist_ok=True)
 SC = sys.argv[2]
 DELAY = sys.argv[3] if len(sys.argv) > 3 else "20"
 MODE = "error" if SC == "fehler" else "ok"
-INST, PORT, CDP = T / f"flowqa_{SC}", 8077, 9364
+INST, PORT, CDP = T / f"flowqa_{SC}", 8077, (9374 if os.environ.get("QA_WEBVIEW") == "1" else 9364)
 BASE = f"http://127.0.0.1:{PORT}"
 FAKE_LOG = INST / "fake_writer.log"
 R = {"szenario": SC, "fake_delay_s": DELAY, "schritte": [], "pruefungen": {}}
@@ -66,6 +66,7 @@ UI = r"""(() => { const d = document.getElementById('pseudonymization-center');
    ladeanzeige: prog ? prog.textContent.replace(/\s+/g, ' ').trim() : null, fehleranzeige: err ? err.textContent.replace(/\s+/g, ' ').trim().slice(0, 160) : null,
    ergebnisblock: !!document.querySelector('.chat-message--assistant .chat-draft, .chat-message--assistant [class*=draft]'),
    offene_fragen_im_ergebnis: [...document.querySelectorAll('.chat-message--assistant')].some(m => /Offene Fragen|Offene Pr/.test(m.textContent)),
+   hinweis_unbeantwortet: !!document.querySelector('[data-chat-unanswered]'),
    url: location.pathname + location.search, js_fehler: window.__errs || []}; })()"""
 
 
@@ -81,8 +82,13 @@ def db():
 
 
 async def main():
-    edge = subprocess.Popen([EDGE, "--headless=new", f"--remote-debugging-port={CDP}", f"--user-data-dir={T / ('edge_flowqa_' + SC)}",
-                             "--no-first-run", "--disable-extensions", "--no-proxy-server", "about:blank"])
+    if os.environ.get("QA_WEBVIEW") == "1":  # echtes WebView2-Fenster statt headless Edge
+        wv_env = dict(os.environ, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=f"--remote-debugging-port={CDP} --no-proxy-server",
+                      WEBVIEW2_USER_DATA_FOLDER=str(T / ("webview2_flowqa_" + SC)))
+        edge = subprocess.Popen([PY, str(T / "webview_launcher.py"), BASE + "/dashboard/login"], env=wv_env)
+    else:
+        edge = subprocess.Popen([EDGE, "--headless=new", f"--remote-debugging-port={CDP}", f"--user-data-dir={T / ('edge_flowqa_' + SC)}",
+                                 "--no-first-run", "--disable-extensions", "--no-proxy-server", "about:blank"])
     try:
         for _ in range(60):
             try:
@@ -91,6 +97,10 @@ async def main():
             except Exception:
                 time.sleep(1)
         page = next(t for t in targets if t["type"] == "page")
+        R["engine_ua"] = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{CDP}/json/version", timeout=5).read()).get("User-Agent", "")
+        if os.environ.get("QA_WEBVIEW") == "1":
+            assert "Headless" not in R["engine_ua"] and "Edg/" in R["engine_ua"], "nicht am WebView2-Fenster: " + R["engine_ua"]
+            R["webview2_fenster"] = True
         async with websockets.connect(page["webSocketDebuggerUrl"], max_size=300_000_000) as ws:
             n = 0
 
@@ -256,12 +266,16 @@ async def main():
                         st = await step("30-nach-neuladen")
                         P["neuladen_zeigt_unterhaltung_nicht_pruefansicht"] = ("uploaded=1" not in st["ui"]["url"]) and not st["ui"]["dialog_offen"]
                         P["neuladen_ergebnis_oder_status"] = st["db"]["nachrichten"]
+                        P["neuladen_hinweis_unbeantwortet"] = st["ui"]["hinweis_unbeantwortet"]
+                        P["neuladen_auftrag_im_eingabefeld"] = st["ui"]["composer_text"]
+                        P["neuladen_kein_weiterer_ki_aufruf"] = st["db"]["fake_aufrufe"] <= 1
     finally:
-        edge.terminate()
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(edge.pid)], capture_output=True)
         subprocess.run(["taskkill", "/F", "/T", "/PID", str(server.pid)], capture_output=True)
 
 
 T0 = time.time()
 asyncio.run(main())
 (OUT / f"{SC}-messwerte.json").write_text(json.dumps(R, ensure_ascii=False, indent=1), encoding="utf-8")
+print("ENGINE", R.get("engine_ua", "")[-60:])
 print("PRUEFUNGEN", json.dumps(R["pruefungen"], ensure_ascii=False))

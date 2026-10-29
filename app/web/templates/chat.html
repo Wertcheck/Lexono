@@ -2831,6 +2831,26 @@
               }
               return;
             }
+            if (payload.state === "none") {
+              // 29.10.2026: unbeantwortete letzte Nachricht, nichts laeuft, keine Rueckfrage -> die Verarbeitung wurde
+              // abgebrochen (z. B. Verbindung getrennt/Zeitlimit der Anzeige), es wurde kein Ergebnis gespeichert.
+              // Nichts automatisch erneut senden; den Auftrag nur zum bewussten erneuten Senden anbieten.
+              var info = appendThinkingBubble();
+              if (info) {
+                info.classList.remove("chat-message--thinking");
+                info.setAttribute("data-chat-unanswered", "");
+                var infoText = info.querySelector(".chat-message__text");
+                infoText.className = "chat-message__text";
+                infoText.removeAttribute("role");
+                infoText.removeAttribute("aria-label");
+                infoText.textContent = "Zu dieser Nachricht liegt keine Antwort vor – die Verarbeitung wurde abgebrochen, " +
+                  "es wurde kein Ergebnis gespeichert. Es wird nichts automatisch erneut gesendet; der Auftrag steht " +
+                  "wieder im Eingabefeld und kann bei Bedarf erneut gesendet werden.";
+              }
+              var lastText = last.querySelector(".chat-message__text");
+              if (textarea && !textarea.value && lastText) { textarea.value = lastText.textContent.trim(); }
+              return;
+            }
             if (payload.state !== "review") { return; }
             var bubble = appendThinkingBubble();
             var reload = function () { window.location.reload(); };

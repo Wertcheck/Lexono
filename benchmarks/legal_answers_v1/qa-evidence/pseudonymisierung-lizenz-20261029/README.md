@@ -2,8 +2,11 @@
 
 **Status:** Quellstand geprüft.
 
-- **Prüfumfang:** Browser-QA mit echten Mausklicks (headless Edge per CDP) und automatisierte Tests.
-- **Nicht geprüft:** Es gibt keinen Build und keine Installation. Eine native WebView2-Prüfung steht deshalb noch aus.
+- **Prüfumfang:**
+  - Browser-QA mit echten Mausklicks: headless Edge und ein **echtes WebView2-Fenster** (pywebview/edgechromium, dieselbe
+    Engine wie die Desktop-App);
+  - automatisierte Tests.
+- **Kein Build, keine Installation:** Die gebaute EXE ist nicht geprüft.
 - **NICHT freigegeben:** keine Datenschutz-, P0-08-, C-14- oder Pilotfreigabe.
 - **Daten:** nur synthetisch; das Schreibmodell ist ein lokaler, verzögerter Fake (`qa_serve_fake_writer.py`) ohne
   Netz.
@@ -74,7 +77,7 @@ Aufnahmen und Messwerte (`*-messwerte.json`) liegen in `nachher/`. „KI“ bede
 | Fehler (Provider) | Ladeanzeige endet, Fehlermeldung sichtbar, Eingabe wieder frei, 0 Entwürfe |
 | Timeout (Testlimit 6 s) | Meldung sichtbar, keine endlose Animation, Eingabe frei, kein zweiter KI-Aufruf. Nach dem Neuladen: Unterhaltung statt veralteter Prüfansicht |
 
-**Automatisiert:** `tests/test_upload_order_first_attempt.py` (10 Tests) prüft:
+**Automatisiert:** `tests/test_upload_order_first_attempt.py` (12 Tests, inkl. Namensmarkierung und abgebrochenem Stream) prüft:
 
 - Upload allein sendet nichts;
 - Erstversuch pseudonymisiert genau einmal;
@@ -85,6 +88,28 @@ Aufnahmen und Messwerte (`*-messwerte.json`) liegen in `nachher/`. „KI“ bede
 - der parallele Race-Fall;
 - das `drafting`-Kennzeichen;
 - die statische Verdrahtung.
+
+
+### 3a. Nachweis im echten WebView2-Fenster (Nachtrag 29.10.2026, `webview2/`)
+
+Alle sechs Szenarien liefen zusätzlich in einem nativen WebView2-Fenster: `webview_launcher.py` startet ein
+pywebview-Fenster mit Backend edgechromium auf die isolierte Quellstand-Instanz, und die Steuerung läuft per CDP über
+`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`. Die Engine-Kennung des Fensters lautet `Chrome/156 … Edg/156` (nicht
+„Headless“); das Skript bricht ab, wenn es nicht am WebView2-Fenster hängt.
+
+| Szenario | WebView2-Ergebnis |
+|---|---|
+| Erstversuch | bedienbar beim 1. Versuch, Ladeanzeige sofort, **1 KI, 1 Entwurf**, offene Fragen im Ergebnis |
+| Optionen | alle drei wählbar; gespeichert `Richter → not_personal`, `Kaufmann → unsure` |
+| Abbrechen | kein Auftrag, 0 KI, Eingabe erhalten; erneut senden: genau 1 Auftrag, 1 KI, 1 Entwurf |
+| Doppelklick | 1 KI, 1 Nutzernachricht, 1 Entwurf |
+| Fehler | Meldung sichtbar, keine endlose Ladeanzeige, Eingabe frei |
+| Timeout | Meldung, kein zweiter KI-Aufruf; nach dem Neuladen Hinweis „keine Antwort … nichts automatisch erneut gesendet“, Auftrag wieder im Eingabefeld |
+
+**Eigener QA-Fehler, offen benannt:** Die headless-Edge-Läufe in Abschnitt 3 hingen am CDP-Port 9364 einer
+liegengebliebenen headless-Edge-Instanz aus einer früheren eigenen QA-Sitzung (Profil `edge_profile_marks_vorher`),
+nicht an einer frisch gestarteten. Als Chromium-Browserprüfung bleiben sie gültig. Die Instanz wurde gezielt beendet;
+die WebView2-Läufe nutzen Port 9374 mit Engine-Prüfung.
 
 ## 4. Lizenzseite (Einstellungen → Tab „Lizenz“)
 
@@ -119,6 +144,8 @@ Bilder. Umgesetzt ist deshalb die schriftliche Vorgabe; ein Abgleich mit dem Bil
   - Upload-Erstversuch, Pseudonymisierungszentrum, Release-Fortsetzung, Web-Chat: 211 passed
   - Module/Build-Profil/Rechte/Settings: 171 passed (davon 1 Fehler durch das Wort „Online-Kauf“, behoben)
   - Lizenzseite: 2 passed
+  - Nachtrag nach Hinweis/Tests: Upload-Erstversuch, Pseudonymisierungszentrum, Release-Fortsetzung, Web-Chat und
+    Lizenzseite: 215 passed
 - **Volle Regression:** alle 329 Testdateien, seriell im Vordergrund, in Blöcken zu 12 Dateien.
   - **Gesamt:** 7129 passed, 8 xfailed, 10 skipped, 5 failed. Die 5 Fehler sind ausschließlich bekannte bzw. nicht
     verursachte:
@@ -136,15 +163,21 @@ Bilder. Umgesetzt ist deshalb die schriftliche Vorgabe; ein Abgleich mit dem Bil
 
 ## 6. Offene Punkte und Risiken
 
-1. **Kein Build, keine Installation:** Die WebView2-Desktopprüfung steht aus. Die Ursache war Anwendungslogik, nicht
-   browserspezifisch; trotzdem ist das nicht nativ nachgewiesen.
+1. **Kein Build, keine Installation:** Geprüft ist der Quellstand in headless Edge und im echten WebView2-Fenster. Die
+   gebaute und installierte EXE ist nicht geprüft; die Installation braucht deine Freigabe.
 2. **Kein Referenzbild:** Die Lizenzseite ist nicht mit einem Referenzbild abgeglichen (Bild nicht auffindbar).
-3. **Timeout-Folge:** Bricht die Anzeige nach 5 Minuten ohne Server-Ereignis ab, beendet der Verbindungsabbruch auch die
-   Server-Verarbeitung; es entsteht kein Entwurf. Nach dem Neuladen steht die Nutzernachricht ohne Antwort da. Ob
-   dann der bestehende Hinweis „Verarbeitung unterbrochen“ erscheint, ist nicht abschließend geprüft (die Abfrage
-   wurde in dieser Sitzung nicht ausgeführt). Ein erneutes Senden ist bewusst manuell.
+3. **Timeout-Folge, geklärt:**
+   - Ein Verbindungsabbruch beendet auch die Server-Verarbeitung; der Server gibt die Sperre frei, es entsteht kein
+     Ergebnis.
+   - Neu: Nach dem Neuladen erscheint der Hinweis „keine Antwort … nichts automatisch erneut gesendet“, und der
+     Auftrag steht wieder im Eingabefeld.
+   - Nachweise: Browser (headless Edge und WebView2) sowie
+     `test_abandoned_stream_leaves_no_result_and_no_running_claim`. Ob der TestClient wirklich trennt, ist nicht
+     sicher; der Test prüft die Endzustände.
 4. **Ohne Browser-Speicher:** Ist kein `sessionStorage` verfügbar, liest der Dialog den Auftrag nur bei
    `text_not_sent=1` aus dem Eingabefeld. Sonst öffnet er wie bisher als Prüfansicht, jetzt mit Hinweis an der Frage.
-5. **Namensmarkierung im Eingabefeld:** Im Eingabefeld markierte Namen (`protected_terms`) gehen beim Senden aus dem
-   Dialog nicht mit. Die zentrale Pseudonymisierung und die Rückfrage zum Auftragstext laufen unverändert serverseitig.
+5. **Namensmarkierung im Eingabefeld, geklärt:** Im Eingabefeld markierte Namen speichert schon der Upload für die
+   Unterhaltung (`_record_manual_terms` im Upload-Pfad). Der aus dem Dialog gesendete Auftrag ist damit geschützt;
+   `test_name_marked_in_the_composer_at_upload_also_protects_the_dialog_order` belegt, dass der Name nicht in der
+   Cloud-Anfrage steht.
 6. **Preise:** Die Anzeige ist Planung. Die Benutzerzahl wird in der Lizenz technisch nicht geprüft.

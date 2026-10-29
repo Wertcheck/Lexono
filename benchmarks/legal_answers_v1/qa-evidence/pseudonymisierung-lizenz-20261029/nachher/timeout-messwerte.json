@@ -4,7 +4,7 @@
  "schritte": [
   {
    "schritt": "01-erster-versuch-dialog",
-   "t": 6.8,
+   "t": 7.2,
    "ui": {
     "dialog_offen": true,
     "optionen": 3,
@@ -36,7 +36,8 @@
     "fehleranzeige": null,
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25/document/255fc4dd-d4b4-4d98-ae25-8a201bd5b321?uploaded=1&text_not_sent=1",
+    "hinweis_unbeantwortet": false,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab/document/5b1b9b92-b968-4ad3-90ba-54524a720613?uploaded=1&text_not_sent=1",
     "js_fehler": []
    },
    "db": {
@@ -50,7 +51,7 @@
   },
   {
    "schritt": "03-alle-beantwortet",
-   "t": 8.3,
+   "t": 8.7,
    "ui": {
     "dialog_offen": true,
     "optionen": 3,
@@ -84,7 +85,8 @@
     "fehleranzeige": null,
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25/document/255fc4dd-d4b4-4d98-ae25-8a201bd5b321?uploaded=1&text_not_sent=1",
+    "hinweis_unbeantwortet": false,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab/document/5b1b9b92-b968-4ad3-90ba-54524a720613?uploaded=1&text_not_sent=1",
     "js_fehler": []
    },
    "db": {
@@ -98,7 +100,7 @@
   },
   {
    "schritt": "04-direkt-nach-bestaetigen",
-   "t": 9.4,
+   "t": 9.8,
    "ui": {
     "dialog_offen": false,
     "optionen": 3,
@@ -132,7 +134,8 @@
     "fehleranzeige": null,
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25",
+    "hinweis_unbeantwortet": false,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab",
     "js_fehler": []
    },
    "db": {
@@ -156,7 +159,7 @@
   },
   {
    "schritt": "10-ladezustand-00",
-   "t": 11.9,
+   "t": 12.3,
    "ui": {
     "dialog_offen": false,
     "optionen": 3,
@@ -190,7 +193,8 @@
     "fehleranzeige": null,
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25",
+    "hinweis_unbeantwortet": false,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab",
     "js_fehler": []
    },
    "db": {
@@ -214,7 +218,7 @@
   },
   {
    "schritt": "20-ergebnis",
-   "t": 19.5,
+   "t": 19.9,
    "ui": {
     "dialog_offen": false,
     "optionen": 3,
@@ -248,7 +252,8 @@
     "fehleranzeige": "Keine Rückmeldung vom Server seit 6 Sekunden – die Anzeige wurde beendet. Bitte den Chat neu laden; der Auftrag wird nicht doppelt gesendet.",
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25",
+    "hinweis_unbeantwortet": false,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab",
     "js_fehler": []
    },
    "db": {
@@ -272,7 +277,7 @@
   },
   {
    "schritt": "30-nach-neuladen",
-   "t": 56.0,
+   "t": 56.4,
    "ui": {
     "dialog_offen": false,
     "optionen": 0,
@@ -290,13 +295,14 @@
      "gesperrt": false
     },
     "fusszeile": "",
-    "composer_text": "",
+    "composer_text": "Erstelle einen Schriftsatz",
     "composer_gesperrt": false,
     "ladeanzeige": null,
     "fehleranzeige": null,
     "ergebnisblock": false,
     "offene_fragen_im_ergebnis": false,
-    "url": "/dashboard/chat/59cff8e9-cf30-4a4d-ad43-aa96bdf54f25",
+    "hinweis_unbeantwortet": true,
+    "url": "/dashboard/chat/9987c732-4a62-45ad-9787-69b67980e3ab",
     "js_fehler": []
    },
    "db": {
@@ -342,6 +348,9 @@
   "neuladen_ergebnis_oder_status": [
    "upload",
    "user"
-  ]
+  ],
+  "neuladen_hinweis_unbeantwortet": true,
+  "neuladen_auftrag_im_eingabefeld": "Erstelle einen Schriftsatz",
+  "neuladen_kein_weiterer_ki_aufruf": true
  }
 }

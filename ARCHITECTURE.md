@@ -5344,5 +5344,8 @@ offenen Auftrag und öffnete deshalb als reine Prüfansicht.
   Kennzeichen `drafting`.
 - **Fehler und Timeout:** Fehler beenden die Anzeige mit einer Meldung. Ohne Server-Ereignis endet die Anzeige nach
   5 Minuten mit einer Meldung.
+- **Unbeantwortete Nachricht:** Ist die letzte Nachricht eine unbeantwortete Nutzernachricht, nichts läuft und es gibt
+  keine Rückfrage (`pending-review` = `none`, z. B. nach einem Abbruch), zeigt der Chat einen Hinweis. Er legt den
+  Auftrag nur zum bewussten erneuten Senden ins Eingabefeld; es wird nie automatisch gesendet.
 
 **Nachweise:** `tests/test_upload_order_first_attempt.py` und der QA-Ordner `pseudonymisierung-lizenz-20261029`.
