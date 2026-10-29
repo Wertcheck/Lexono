@@ -1759,32 +1759,44 @@
        folgt nur den tatsaechlich freigeschalteten Modulen (signierte Lizenz UND Build-Profil). #}
     <section class="license-products-section" aria-labelledby="license-products-title">
       <div class="license-products-section__head">
-        <h2 class="settings-section__title" id="license-products-title">Lexono-Produkte</h2>
-        <p class="settings-section__hint">Preise {{ license_price_basis }} – vorläufige Produktplanung – ein Kauf über einen Shop ist noch nicht möglich; freigeschaltet wird ausschließlich über eine signierte Lizenzdatei.</p>
+        <h2 class="license-products-section__title" id="license-products-title">Lexono Produkte</h2>
+        <p class="license-products-section__intro">Lexono ist die zentrale Plattform für Ihre Kanzlei. Weitere Module wie Finance und Finance &amp; Tax befinden sich aktuell in der Entwicklung und werden künftig direkt in Ihrer Lexono-Anwendung verfügbar sein.</p>
       </div>
       <div class="license-products" role="list">
         {% for p in license_products %}
-          <article class="license-product{% if p.key == license_current_product %} is-current{% endif %}" role="listitem"
+          {% set is_current = p.key == license_current_product %}
+          <article class="license-product{% if is_current %} is-current{% endif %}" role="listitem"
                    data-product="{{ p.key }}" data-product-status="{{ p.status }}" aria-label="{{ p.name }}">
-            {% if p.key == license_current_product %}<span class="license-product__current">Ihr Paket</span>{% endif %}
+            <span class="license-status license-status--{{ p.status }}">{{ p.status_label }}</span>
             <h3 class="license-product__name">
               <span class="license-product__brand">Lexono</span>
               {% if p.edition %}<span class="license-product__edition">{{ p.edition }}</span>{% endif %}
             </h3>
+            <p class="license-product__summary">{{ p.summary }}</p>
+            <div class="license-product__divider" aria-hidden="true"></div>
             <p class="license-product__price">
               <strong>{{ p.monthly_gross_per_user|int }} €</strong>
-              <span>pro Benutzer / Monat<br />inkl. MwSt.</span>
+              <span>/ Monat pro Benutzer</span>
+              <span>(inkl. MwSt.)</span>
             </p>
-            <span class="license-status license-status--{{ p.status }}">{{ p.status_label }}</span>
-            <p class="license-product__summary">{{ p.summary }}</p>
+            {# Statusleiste wie im Referenzbild - bewusst KEIN Button/Link: es gibt (noch) keinen Kauf und nichts wird
+               hierueber freigeschaltet. #}
+            {% if is_current %}
+              <span class="license-product__state license-product__state--active" data-product-state="active">Aktiv genutzt</span>
+            {% elif p.status == "in_entwicklung" %}
+              <span class="license-product__state" data-product-state="soon">Bald verfügbar</span>
+            {% else %}
+              <span class="license-product__state" data-product-state="available">Verfügbar</span>
+            {% endif %}
           </article>
         {% endfor %}
       </div>
+      <p class="license-products-section__note">Preise {{ license_price_basis }} – vorläufige Produktplanung; ein Kauf über einen Shop ist noch nicht möglich, freigeschaltet wird ausschließlich über eine signierte Lizenzdatei.</p>
     </section>
 
     <section class="settings-section license-compare" aria-labelledby="license-compare-title">
-      <h2 class="settings-section__title" id="license-compare-title">Ihre Vorteile im Überblick</h2>
-      <p class="settings-section__hint">Alle Erweiterungen beinhalten den vollständigen Leistungsumfang von Lexono. Lexono Finance und Lexono Finance &amp; Tax befinden sich in Entwicklung und sind in dieser Version noch nicht nutzbar.</p>
+      <h2 class="license-compare__title" id="license-compare-title">Ihre Vorteile im Überblick</h2>
+      <p class="license-compare__intro">Alle Funktionen sind nahtlos in Lexono integriert. Finance und Finance &amp; Tax enthalten alle Funktionen von Lexono und ergänzen diese um weitere Möglichkeiten.</p>
       <div class="license-compare__scroll">
         <table class="license-compare__table">
           <thead>
@@ -1792,7 +1804,9 @@
               <th scope="col" class="license-compare__feature-col">Funktion</th>
               {% for p in license_products %}
                 <th scope="col" class="license-compare__product-col">
-                  <span class="license-compare__brand">Lexono</span>{% if p.edition %}<span class="license-compare__edition">{{ p.edition }}</span>{% endif %}
+                  <span class="license-compare__name">{{ p.name }}</span>
+                  {% if p.status == "in_entwicklung" %}<span class="license-compare__meta">(in Entwicklung)</span>{% endif %}
+                  <span class="license-compare__meta">{{ p.monthly_gross_per_user|int }} € / Monat</span>
                 </th>
               {% endfor %}
             </tr>
@@ -1800,9 +1814,9 @@
           <tbody>
             {% for f in license_features %}
               <tr>
-                <th scope="row">{{ f.label }}</th>
+                <th scope="row"><span class="license-compare__feature">{{ f.label }}</span><span class="license-compare__detail">{{ f.detail }}</span></th>
                 {% for p in license_products %}
-                  <td>{% if f.module in p.modules %}<span class="license-compare__yes" role="img" aria-label="enthalten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span>{% else %}<span class="license-compare__no" role="img" aria-label="nicht enthalten">–</span>{% endif %}</td>
+                  <td>{% if f.module in p.modules %}<span class="license-compare__yes" role="img" aria-label="enthalten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6.5 12.5 3.5 3.5 7.5-8"/></svg></span>{% else %}<span class="license-compare__no" role="img" aria-label="nicht enthalten">–</span>{% endif %}</td>
                 {% endfor %}
               </tr>
             {% endfor %}

@@ -13685,50 +13685,68 @@ html.sidebar-collapsed .sidebar__new-badge { display: none; }
 .module-license-form__file { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-700); }
 .module-license-form__remove { color: var(--wax-red) !important; }
 
-/* Lizenz-Tab: Produktuebersicht und Funktionsvergleich (29.10.2026). Seriös und reduziert: Weiss, Navy (--ink-900),
-   dezentes Grau, Lexono-Gruen nur fuer "enthalten", den Status "Verfuegbar" und das aktuelle Paket. Schmale,
-   zentrierte Karten statt voller Breite; keine Produktgrafiken. */
+/* Lizenz-Tab: Produktuebersicht und Funktionsvergleich (29.10.2026, nach Referenzbild
+   qa-evidence/pseudonymisierung-lizenz-20261029/lizenz/00-referenzbild.png). Weiss, Navy, dezentes Grau,
+   Lexono-Gruen fuer "Verfuegbar", "Aktiv genutzt", das aktuelle Paket und "enthalten". Keine Produktgrafiken. */
+.license-products-section, .license-compare { --lic-navy: #13213f; --lic-muted: #5b6577; }
+:root[data-theme="dark"] .license-products-section, :root[data-theme="dark"] .license-compare { --lic-navy: var(--ink-900); --lic-muted: var(--ink-500); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .license-products-section, :root:not([data-theme="light"]) .license-compare { --lic-navy: var(--ink-900); --lic-muted: var(--ink-500); }
+}
 .license-products-section { margin-bottom: 20px; }
-.license-products-section__head { text-align: center; max-width: 680px; margin: 0 auto 16px; }
-.license-products-section__head .settings-section__title { margin-bottom: 4px; }
-.license-products { display: grid; grid-template-columns: repeat(3, minmax(0, 236px)); justify-content: center; gap: 16px; }
-.license-product { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center;
-  gap: 10px; padding: 26px 18px 20px; background: var(--paper-000); border: 1px solid var(--paper-line);
-  border-radius: var(--radius-md); box-shadow: var(--shadow-sm); min-width: 0; }
-.license-product.is-current { border-color: var(--brand-green); box-shadow: 0 0 0 1px var(--brand-green), var(--shadow-sm); }
-.license-product__current { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); padding: 2px 10px;
-  border-radius: var(--radius-pill); background: var(--brand-green); color: var(--on-brand); font-size: 11.5px;
-  font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
-.license-product__name { display: flex; flex-direction: column; align-items: center; margin: 0; color: var(--ink-900);
-  line-height: 1.2; min-height: 48px; justify-content: center; }
-.license-product__brand { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
-.license-product__edition { font-size: 15px; font-weight: 600; color: var(--ink-700); margin-top: 2px; }
-.license-product__price { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0; }
-.license-product__price strong { font-size: 30px; font-weight: 700; color: var(--ink-900); letter-spacing: -0.02em; line-height: 1.1; }
-.license-product__price span { font-size: 12.5px; color: var(--ink-500); line-height: 1.35; }
-.license-status { display: inline-flex; padding: 2px 10px; border-radius: var(--radius-pill); font-size: 12px;
-  font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.license-products-section__head { margin: 4px 0 16px; }
+.license-products-section__title { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -0.01em; color: var(--lic-navy); }
+.license-products-section__intro { margin: 0; max-width: 980px; font-size: 14.5px; line-height: 1.5; color: var(--lic-muted); }
+.license-products-section__note { margin: 10px 0 0; font-size: 12.5px; color: var(--ink-500); text-align: center; }
+.license-products { display: grid; grid-template-columns: repeat(3, minmax(0, 400px)); justify-content: center; gap: 24px; }
+.license-product { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0;
+  padding: 18px 24px 18px; background: var(--paper-000); border: 1px solid var(--paper-line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.license-product.is-current { border: 2px solid var(--brand-green); padding: 17px 23px; background: color-mix(in srgb, var(--brand-green-tint) 22%, var(--paper-000)); }
+.license-status { display: inline-flex; padding: 3px 11px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .license-status--verfuegbar { background: var(--brand-green-tint); color: var(--brand-green-dark); }
-.license-status--in_entwicklung { background: var(--paper-200); color: var(--ink-700); border-color: var(--paper-line); }
-.license-product__summary { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.45; overflow-wrap: anywhere; }
-.license-compare .settings-section__hint { margin-bottom: 12px; }
-.license-compare__scroll { overflow-x: auto; }
-.license-compare__table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
-.license-compare__table th, .license-compare__table td { padding: 10px 12px; border-bottom: 1px solid var(--paper-line); }
-.license-compare__table thead th { color: var(--ink-900); font-weight: 600; vertical-align: bottom; }
-.license-compare__table tbody th { text-align: left; font-weight: 500; color: var(--ink-900); }
-.license-compare__feature-col { text-align: left; width: 40%; color: var(--ink-500) !important; font-weight: 500 !important; }
-.license-compare__product-col { text-align: center; width: 20%; }
-.license-compare__brand, .license-compare__edition { display: block; line-height: 1.25; }
-.license-compare__edition { font-size: 12.5px; color: var(--ink-700); font-weight: 600; }
-.license-compare__table td { text-align: center; }
+.license-status--in_entwicklung { background: var(--paper-200); color: var(--ink-700); font-weight: 500; }
+.license-product__name { display: flex; flex-direction: column; align-items: center; margin: 10px 0 0; color: var(--lic-navy); line-height: 1.15;
+  font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.license-product__edition { font-size: 22px; font-weight: 700; }
+.license-product__summary { margin: 8px 0 0; max-width: 300px; font-size: 14px; color: var(--lic-muted); line-height: 1.45; overflow-wrap: anywhere; flex: 1 0 auto; }
+.license-product__divider { width: 88%; height: 1px; margin: 14px 0 12px; background: var(--paper-line); }
+.license-product__price { display: flex; flex-direction: column; align-items: center; margin: 0 0 12px; }
+.license-product__price strong { font-size: 28px; font-weight: 700; color: var(--lic-navy); letter-spacing: -0.02em; line-height: 1.15; }
+.license-product__price span { font-size: 13.5px; color: var(--lic-muted); line-height: 1.4; }
+.license-product__state { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 40px; padding: 8px 12px;
+  border-radius: var(--radius-sm); background: var(--paper-200); color: var(--ink-700); font-size: 14px; font-weight: 500; cursor: default; }
+.license-product__state--active { background: var(--brand-green); color: var(--on-brand); font-weight: 600; }
+.license-compare__title { margin: 0 0 4px; font-size: 21px; font-weight: 700; color: var(--lic-navy); }
+.license-compare__intro { margin: 0 0 14px; font-size: 14px; color: var(--lic-muted); line-height: 1.45; }
+/* Die Mindestbreite der Tabelle darf das Panel nicht verbreitern - nur die Tabelle selbst scrollt bei Bedarf */
+[data-tabpanel="lizenz"], .license-compare, .license-products-section { min-width: 0; max-width: 100%; }
+.license-compare__scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--paper-line); border-radius: var(--radius-sm); }
+.license-compare__table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 500px; }
+.license-compare__table th, .license-compare__table td { padding: 9px 14px; border-bottom: 1px solid var(--paper-line); }
+.license-compare__table th + th, .license-compare__table td, .license-compare__table thead th + th { border-left: 1px solid var(--paper-line); }
+.license-compare__table thead th { background: var(--paper-100); color: var(--lic-navy); vertical-align: middle; }
+.license-compare__feature-col { text-align: left; width: 46%; font-weight: 700; }
+.license-compare__product-col { text-align: center; width: 18%; }
+.license-compare__name { display: block; font-weight: 700; font-size: 13.5px; }
+.license-compare__meta { display: block; font-size: 12px; font-weight: 500; color: var(--lic-muted); line-height: 1.35; }
+.license-compare__table tbody th { text-align: left; font-weight: 400; }
+.license-compare__feature { display: block; font-weight: 600; color: var(--lic-navy); }
+.license-compare__detail { display: block; margin-top: 1px; font-size: 12.5px; color: var(--lic-muted); }
+.license-compare__table td { text-align: center; vertical-align: middle; }
 .license-compare__yes { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center;
-  border-radius: 50%; background: var(--brand-green-tint); color: var(--brand-green-dark); }
+  border-radius: 50%; background: var(--brand-green); color: var(--on-brand); }
 .license-compare__yes svg { width: 14px; height: 14px; }
-.license-compare__no { color: var(--ink-300); font-size: 16px; }
+.license-compare__no { color: var(--ink-500); font-size: 16px; }
 .license-compare__table tbody tr:last-child th, .license-compare__table tbody tr:last-child td { border-bottom: 0; }
-@media (max-width: 860px) {
-  .license-products { grid-template-columns: minmax(0, 320px); }
+@media (max-width: 1080px) {
+  .license-products { gap: 14px; }
+  .license-product { padding: 16px 14px; }
+  .license-product.is-current { padding: 15px 13px; }
+}
+@media (max-width: 1000px) {
+  /* schmales Fenster (Inhaltsbreite unter ~720 px): Karten untereinander statt gequetscht oder mit Querscroll */
+  .license-products { grid-template-columns: minmax(0, 400px); }
 }
 
 /* ==========================================================================
@@ -14758,4 +14776,8 @@ html.sidebar-collapsed .sidebar__new-badge { display: none; }
   .knowledge-page .knowledge-laws-layout .instructions-panel {
     margin-bottom: 0;
   }
+}
+@media (max-width: 1000px) {
+  .license-compare__table th, .license-compare__table td { padding: 8px 10px; }
+  .license-compare__feature-col { width: 40%; }
 }

@@ -111,32 +111,55 @@ liegengebliebenen headless-Edge-Instanz aus einer früheren eigenen QA-Sitzung (
 nicht an einer frisch gestarteten. Als Chromium-Browserprüfung bleiben sie gültig. Die Instanz wurde gezielt beendet;
 die WebView2-Läufe nutzen Port 9374 mit Engine-Prüfung.
 
-## 4. Lizenzseite (Einstellungen → Tab „Lizenz“)
+## 4. Lizenzseite (Einstellungen → Tab „Lizenz“) – nach Referenzbild
 
-**Kein Referenzbild gefunden:** Ein Lizenz-Referenzbild lag weder im Repository noch unter Downloads, Desktop oder
-Bilder. Umgesetzt ist deshalb die schriftliche Vorgabe; ein Abgleich mit dem Bild steht aus.
+Der Owner hat das Referenzbild am 29.10.2026 nachgereicht (`lizenz/00-referenzbild.png`). Die zuvor nach Textvorgabe
+gebaute Seite ist danach angeglichen. Gegenüberstellung: `lizenz/01-vergleich-referenz-umsetzung.png`.
 
-- **Rahmen:** Bestehende Kopfzeile, Original-Logo, Navigation und Einstellungs-Tabs bleiben, „Lizenz“ ist aktiv. Es
-  gibt keinen neuen Menüpunkt.
-- **Produktkarten:** drei kompakte Karten (je max. 236 px), zentriert, ohne Grafiken. „Lexono“ steht über dem Zusatz.
-  - Lexono: 99 €, **Verfügbar**, mit „Ihr Paket“
-  - Lexono Finance: 149 €, **In Entwicklung**
-  - Lexono Finance & Tax: 249 €, **In Entwicklung**
-  - Alle Preise gelten pro Benutzer und Monat, inkl. MwSt.
-- **Vergleich „Ihre Vorteile im Überblick“:**
-  - Kanzlei-Funktionen in allen drei Produkten;
-  - Finanzbuchhaltung und Belegverwaltung ab Finance;
-  - Steuern nur in Finance & Tax;
-  - keine Legende.
-- **Keine Wirkung auf die Freischaltung:** Die Karten haben keinen Kauf- oder Freischalt-Button. „Ihr Paket“ folgt nur
-  den tatsächlich freigeschalteten Modulen (Lizenz ∩ Build-Profil). Lizenzstatus und Import bleiben unverändert
-  darunter.
-- **Preismodell:** `app/modules/plans.py` mit Produktstufen ersetzt das Addierungsmodell vom 28.10.;
-  MODULARCHITEKTUR §9 ist aktualisiert.
-- **Visuelle Prüfung** (`lizenz/`, Pilotprofil): 1920×1080, 1280×720 und 960×600 hell, 1280×720 dunkel. Ergebnis:
-  kein Seiten- oder Tabellen-Querscroll, nichts abgeschnitten, keine JS-Fehler (`kanzlei-pilot-messwerte.json`).
-- **Tests:** `tests/test_license_page.py` (2) prüft Produkte, Preise, Status, Vergleich, fehlende Kauf-Buttons und
-  „Ihr Paket“ gemäß Lizenz.
+**Umgesetzt wie in der Referenz:**
+
+- **Kopf:** „Lexono Produkte“ (Navy, linksbündig) mit dem Einleitungstext aus dem Bild.
+- **Drei Karten** (je max. 400 px, zentriert, keine Grafiken), von oben nach unten:
+  - Statusbadge (Lexono „Verfügbar“ grün, Finance und Finance & Tax „In Entwicklung“ grau);
+  - zweizeiliger Name („Lexono“ über dem Zusatz) und Kurzbeschreibung;
+  - Trennlinie, Preis 99 / 149 / 249 € mit „/ Monat pro Benutzer“ und „(inkl. MwSt.)“;
+  - Statusleiste „Aktiv genutzt“ (grün, aktuelles Paket) bzw. „Bald verfügbar“ (grau).
+  - Die aktuelle Karte hat einen grünen Rahmen.
+- **„Ihre Vorteile im Überblick“:** Einleitungstext aus dem Bild und eine umrandete Tabelle.
+  - Spaltenköpfe mit Name, „(in Entwicklung)“ und Preis.
+  - Vier Funktionszeilen mit Unterzeilen, gefüllte grüne Haken, „–“ für nicht enthalten.
+  - Zeilen: KI-Chat und Kanzlei-Workflows; Mandanten- und Aktenverwaltung; Digitale Belegverwaltung (ab Finance);
+    Steuererklärungen & Steuer-Workflows (nur Finance & Tax).
+
+**Bewusste Abweichungen bzw. Ergänzungen:**
+
+- **Einstellungs-Kopf:** Zentrierter Kopf „Einstellungen“ und die Tabs bleiben wie bisher (Vorgabe: bestehende Kopfzeile
+  und Tabs beibehalten). Die Referenz zeigt ihn linksbündig mit großem Zahnrad.
+- **Statusleisten:** „Aktiv genutzt“ und „Bald verfügbar“ sind reine Statusanzeigen ohne Klickfunktion. Es gibt
+  keinen Shop, und nichts wird freigeschaltet (keine Fake-Funktion).
+- **Aktuelles Paket:** „Aktiv genutzt“ folgt nur den tatsächlich freigeschalteten Modulen (Lizenz ∩ Build-Profil).
+- **Preiszeile:** Unter den Karten steht eine kleine Zeile, dass die Preise vorläufige Planung sind und es noch keinen
+  Kauf über einen Shop gibt.
+- **Lizenzprüfung:** Lizenzstatus und Lizenzimport bleiben unverändert unter dem Vergleich.
+- **Unterzeilen = Zielumfang:** Die Unterzeilen nennen den Zielumfang der Stufen, z. B. „Bankimport, DATEV-Export“ und
+  „ELSTER-/ERiC-Übermittlung“. Diese Funktionen sind heute nicht implementiert. Die betroffenen Spalten sind als
+  „(in Entwicklung)“ gekennzeichnet.
+
+**Visuelle Prüfung** (`lizenz/`, Pilotprofil, headless Edge):
+
+- **Größen:** 1672×941 (Referenzgröße) und 1280×720 je hell und dunkel, dazu 1920×1080 und 960×600 hell.
+- **Ergebnis:** In allen Größen kein Querscroll (weder Seite noch Container noch Tabelle), nichts abgeschnitten, keine
+  JS-Fehler (`kanzlei-pilot-messwerte.json`).
+- **Beim Abgleich gefunden und behoben:** Bei 960 px verbreiterte die Mindestbreite der Vergleichstabelle den Tab um
+  18 px.
+  - Das Panel ist jetzt begrenzt (`min-width: 0`), die Tabellen-Mindestbreite ist kleiner.
+  - Unter 1000 px stehen die Karten untereinander.
+
+**Tests:** `tests/test_license_page.py` (2) prüft:
+
+- Produkte, Preise, Status, die vier Vergleichszeilen und „(in Entwicklung)“;
+- keine Buttons, Links oder Formulare auf den Karten;
+- „Aktiv genutzt“ nur gemäß Lizenz.
 
 ## 5. Tests
 
@@ -165,7 +188,7 @@ Bilder. Umgesetzt ist deshalb die schriftliche Vorgabe; ein Abgleich mit dem Bil
 
 1. **Kein Build, keine Installation:** Geprüft ist der Quellstand in headless Edge und im echten WebView2-Fenster. Die
    gebaute und installierte EXE ist nicht geprüft; die Installation braucht deine Freigabe.
-2. **Kein Referenzbild:** Die Lizenzseite ist nicht mit einem Referenzbild abgeglichen (Bild nicht auffindbar).
+2. **Referenzbild:** nachgereicht und umgesetzt (Abschnitt 4); die Abweichungen sind dort begründet.
 3. **Timeout-Folge, geklärt:**
    - Ein Verbindungsabbruch beendet auch die Server-Verarbeitung; der Server gibt die Sperre frei, es entsteht kein
      Ergebnis.

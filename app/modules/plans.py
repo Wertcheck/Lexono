@@ -39,7 +39,7 @@ class Product:
     modules: frozenset[str]
     monthly_gross_per_user: Decimal
     status: str
-    summary: str
+    summary: str         # Kurzbeschreibung auf der Produktkarte (Referenzbild Lizenzseite 29.10.2026)
 
     @property
     def status_label(self) -> str:
@@ -48,12 +48,12 @@ class Product:
 
 PRODUCTS: tuple[Product, ...] = (
     Product("lexono", "Lexono", "", frozenset({MODULE_KANZLEI}), Decimal("99.00"), STATUS_AVAILABLE,
-            "Kanzlei-Workflows, KI-Chat, Pseudonymisierung, Schriftsätze, Mandanten- und Aktenverwaltung"),
+            "Die zentrale KI-Workflow-Plattform für Ihre Kanzlei."),
     Product("finance", "Lexono Finance", "Finance", frozenset({MODULE_KANZLEI, MODULE_FINANZEN}), Decimal("149.00"),
-            STATUS_IN_DEVELOPMENT, "Alles aus Lexono, dazu Finanzbuchhaltung und digitale Belegverwaltung"),
+            STATUS_IN_DEVELOPMENT, "Finanzbuchhaltung und digitale Belegverwaltung – direkt in Lexono."),
     Product("finance_tax", "Lexono Finance & Tax", "Finance & Tax",
             frozenset({MODULE_KANZLEI, MODULE_FINANZEN, MODULE_STEUERN}), Decimal("249.00"), STATUS_IN_DEVELOPMENT,
-            "Alles aus Lexono Finance, dazu Steuererklärungen und Steuer-Workflows"),
+            "Steuererklärungen, Steuer-Workflows und erweiterte Finanzfunktionen – direkt in Lexono."),
 )
 PRODUCTS_BY_KEY = {p.key: p for p in PRODUCTS}
 
@@ -61,19 +61,19 @@ PRODUCTS_BY_KEY = {p.key: p for p in PRODUCTS}
 @dataclass(frozen=True)
 class Feature:
     label: str
+    detail: str  # Unterzeile (Zielumfang; Produkte "In Entwicklung" sind in der Tabelle als solche gekennzeichnet)
     module: str  # das Modul, das die Funktion traegt
 
 
-#: Funktionsvergleich "Ihre Vorteile im Überblick" - enthalten, wenn das Modul zur Produktstufe gehoert
+#: Funktionsvergleich "Ihre Vorteile im Überblick" (Referenzbild 29.10.2026) - enthalten, wenn das Modul zur Stufe
+#: gehoert. Beschreibt den ZIELUMFANG der Stufe; was heute nutzbar ist, bestimmen Status und Freischaltung.
 FEATURES: tuple[Feature, ...] = (
-    Feature("Kanzlei-Workflows", MODULE_KANZLEI),
-    Feature("Mandanten- und Aktenverwaltung", MODULE_KANZLEI),
-    Feature("KI-Chat und Dokumentenanalyse", MODULE_KANZLEI),
-    Feature("Lokale Pseudonymisierung", MODULE_KANZLEI),
-    Feature("Schriftsätze", MODULE_KANZLEI),
-    Feature("Finanzbuchhaltung", MODULE_FINANZEN),
-    Feature("Digitale Belegverwaltung", MODULE_FINANZEN),
-    Feature("Steuererklärungen und Steuer-Workflows", MODULE_STEUERN),
+    Feature("KI-Chat und Kanzlei-Workflows", "Dokumentenanalyse, Pseudonymisierung, Schriftsätze u. v. m.",
+            MODULE_KANZLEI),
+    Feature("Mandanten- und Aktenverwaltung", "E-Mail-Integration, Aufgaben & Fristen, Kanzleiwissen", MODULE_KANZLEI),
+    Feature("Digitale Belegverwaltung", "Buchungen, Konten, Bankimport, DATEV-Export u. v. m.", MODULE_FINANZEN),
+    Feature("Steuererklärungen & Steuer-Workflows",
+            "Steuererklärungen, ELSTER-/ERiC-Übermittlung, Plausibilitätsprüfungen u. v. m.", MODULE_STEUERN),
 )
 
 BILLING_TERMS = {"monthly": 1}  # Abrechnungszeitraum -> Monate; weitere (z. B. "yearly": 12) spaeter

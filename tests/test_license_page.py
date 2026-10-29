@@ -23,18 +23,22 @@ def test_license_tab_shows_three_products_with_prices_and_status(client, db_sess
     assert products == [("lexono", "verfuegbar"), ("finance", "in_entwicklung"), ("finance_tax", "in_entwicklung")]
     for price in ("99 €", "149 €", "249 €"):
         assert price in tab
-    assert tab.count("inkl. MwSt.") >= 3 and "pro Benutzer / Monat" in tab
+    assert tab.count("inkl. MwSt.") >= 3
     assert tab.count("In Entwicklung") == 2 and "Verfügbar" in tab
     assert "Finance &amp; Tax" in tab and "Ihre Vorteile im Überblick" in tab
-    # Funktionsvergleich: Kanzlei-Funktionen in allen drei, Belege ab Finance, Steuern nur in Finance & Tax
-    row = lambda label: tab.split(f"<th scope=\"row\">{label}</th>", 1)[1].split("</tr>", 1)[0]  # noqa: E731
-    assert row("Kanzlei-Workflows").count('aria-label="enthalten"') == 3
+    assert "Lexono Produkte" in tab and "(inkl. MwSt.)" in tab and "/ Monat pro Benutzer" in tab
+    # Funktionsvergleich (Referenzbild): Kanzlei-Funktionen in allen drei, Belege ab Finance, Steuern nur Finance & Tax
+    def row(label: str) -> str:
+        return tab.split(f'<span class="license-compare__feature">{label}</span>', 1)[1].split("</tr>", 1)[0]
+    assert row("KI-Chat und Kanzlei-Workflows").count('aria-label="enthalten"') == 3
     assert row("Mandanten- und Aktenverwaltung").count('aria-label="enthalten"') == 3
     assert row("Digitale Belegverwaltung").count('aria-label="enthalten"') == 2
-    assert row("Steuererklärungen und Steuer-Workflows").count('aria-label="enthalten"') == 1
-    # keine erfundene Kauf-/Freischaltfunktion auf den Karten, keine Legende "Enthalten/Nicht enthalten/In Entwicklung"
+    assert row("Steuererklärungen &amp; Steuer-Workflows").count('aria-label="enthalten"') == 1
+    assert tab.count("(in Entwicklung)") == 2  # Spaltenkoepfe kennzeichnen den Zielumfang als in Entwicklung
+    # Statusleisten statt Kauf-/Freischaltfunktion: keine Buttons, Links oder Formulare auf den Karten, keine Legende
     cards = tab.split('class="license-products"', 1)[1].split("</section>", 1)[0]
     assert "<button" not in cards and "<a " not in cards and "<form" not in cards
+    assert cards.count('data-product-state="soon"') == 2 and "Bald verfügbar" in cards
     assert "Legende" not in tab
 
 
@@ -42,7 +46,7 @@ def test_current_package_follows_only_the_real_license_state(client, db_session,
     login_as_admin(db_session, client)
     tab = _license_tab(client)
     assert re.search(r'license-product is-current"[^>]*data-product="lexono"', tab)
-    assert tab.count("Ihr Paket") == 1
+    assert tab.count('data-product-state="active"') == 1 and "Aktiv genutzt" in tab
     LicenseFactory(monkeypatch).activate(db_session, ("finanzen", "steuern"))
     tab = _license_tab(client)
     assert re.search(r'license-product is-current"[^>]*data-product="finance_tax"', tab)  # Vollprofil + Lizenz
